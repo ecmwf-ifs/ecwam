@@ -103,8 +103,8 @@
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LALTAS   ,LSARAS
+     &            NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,MARSTYPE ,
+     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -323,8 +323,8 @@
      &                     DEG, PPMISS, PPEPS, PPREC,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                     CFDB2DSP, NENSFNB, NTOTENS, LFDBIOOUT,
-     &                     ICPLEN, CPATH, ITEST, MFDBSF)
+     &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
+     &                     LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
             ISTAT = IFLUSHFDB (MFDBSF)
             LLFLUSH = .FALSE.
           ELSE

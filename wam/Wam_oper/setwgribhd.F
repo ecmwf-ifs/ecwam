@@ -43,10 +43,9 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY,
      &             CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,MARSTYPE ,YCLASS,
-     &            YEXPVER  ,ISTREAM
+      USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
+     &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM
       USE YOWTEST  , ONLY : IU06     ,ITEST 
-
 
       IMPLICIT NONE
 
@@ -54,7 +53,7 @@
 
 !-------------------------------------------------------------------
 
-      NKSEK1 = 49+NANG+NFRE
+      NKSEK1 = 51+NANG+NFRE
 
       ALLOCATE(KSEK0(NKSEK0))
       ALLOCATE(KSEK1(NKSEK1))
@@ -107,12 +106,18 @@
       KSEK1(23) =     0     !
       KSEK1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
 !       25-36                                                  0
-      KSEK1(37) =     1     ! INDICATES LABELLING WITH MARS PARAMETERS 
+      IF(MARSTYPE .EQ. 'sf' ) THEN
+        KSEK1(37) =    15   ! INDICATES LABELLING WITH MARS PARAMETERS 
+      ELSE
+        KSEK1(37) =     1   ! INDICATES LABELLING WITH MARS PARAMETERS 
+      ENDIF
       ICLASS=CLASS_WGRIB(YCLASS,IU06)
       KSEK1(38) = ICLASS    ! INDICATES CLASS
       KSEK1(39) =     2     ! TYPE OF FIELD 1=FG 2=AN 9=FC 10=F 11=PF
       IF(ISTREAM.NE.0) THEN
         KSEK1(40)= ISTREAM  ! STREAM
+      ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
+        KSEK1(40)=1082      ! STREAM 1082=SEASONAL WAVE (WASF) 
       ELSE
         IF(MARSTYPE .EQ. 'cf' .OR. MARSTYPE .EQ. 'pf') THEN
           KSEK1(40)=1081      ! STREAM 1081=ENSEMBLE WAVE 
@@ -127,9 +132,18 @@
       IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf') THEN
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+        KSEK1(44) = 0
+        KSEK1(45) = 0
+      ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
+        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+        KSEK1(43) = 0
+        KSEK1(44) = NSYSNB ! SYSTEM NUMBER
+        KSEK1(45) = NMETNB ! METHOD NUMBER
       ELSE
         KSEK1(42) = 0
         KSEK1(43) = 0
+        KSEK1(44) = 0
+        KSEK1(45) = 0
       ENDIF
 
 !    *SECTION 2*  INTEGER  GRID DEFINITION BLOCK.

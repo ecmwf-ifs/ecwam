@@ -47,7 +47,7 @@
 !          *LFDB*   - LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
 !                     .T. TO ACTIVATE, .F. TO IGNORE
 !          *ITEST*  - TEST OUTPUT GIVEN IF ITEST GT 2.
-!          *MARSTYPE* TYPE OF CURRENT FIELD ( FG, 4v, AN, OR FC )
+!          *MARSTYPE* TYPE OF CURRENT FIELD
 !          *YCLASS* - CLASS OF THE CURRENT RUN.
 !          *YEXPVER*- EXPERIMENT VERSION NUMBER OF THE CURRENT RUN.
 !          *NENSFNB*- ENSEMBLE FORECAST NUMBER
@@ -160,6 +160,8 @@
         KSEC1(39) = 6
       ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 2
+      ELSEIF ( MARSTYPE .EQ. 'sf' ) THEN
+        KSEC1(39) = 9
       ELSE
         IF(NTOTENS.EQ.0) THEN 
           KSEC1(39) = 9
@@ -210,9 +212,6 @@
       ELSE
         CSTREAM='****'
       ENDIF
-
-
-
 
       WRITE(IU06,*)'  '
       WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,

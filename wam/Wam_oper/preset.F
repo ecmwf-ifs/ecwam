@@ -124,7 +124,7 @@
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
-     &            NENSFNB  ,NTOTENS
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
@@ -292,6 +292,9 @@
       ICPLEN=LEN_TRIM(CPATH)
 
       NTOTENS = 0
+      NENSFNB = 0  
+      NSYSNB  = -1
+      NMETNB  = -1
 ! ----------------------------------------------------------------------
 
 !*    3. READ PREPROC OUTPUT.
@@ -577,8 +580,9 @@
      &                 DEG, PPMISS, PPEPS, PPREC,
      &                 CDATEA, CDATEF, CDATEA,
      &                 CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                 CFDB2DSP, NENSFNB, NTOTENS, LFDBIOOUT,
-     &                 ICPLEN, CPATH, ITEST, IFDB)
+     &                 CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
+     &                 LFDBIOOUT,ICPLEN, CPATH, ITEST, IFDB)
+
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPEC2FDB DONE'
       ELSEIF (.NOT.LGRIBOUT) THEN
         CALL SAVSPEC(FL1,NSTART,NEND,CDATEA,CDATEA,CDUM,

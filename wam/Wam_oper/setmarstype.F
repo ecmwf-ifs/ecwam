@@ -26,7 +26,8 @@
 
 ! ----------------------------------------------------------------------
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,
-     &            IASSI    ,NENSFNB  ,NTOTENS  ,LANAONLY ,L4VTYPE
+     &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
+     &            LANAONLY ,L4VTYPE
 
 ! ----------------------------------------------------------------------
 
@@ -42,7 +43,9 @@
 
       IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
 
-        IF(NTOTENS.EQ.0) THEN
+        IF( NSYSNB.GE.0 .AND. NMETNB.GE.0 ) THEN
+          MARSTYPE = 'sf'
+        ELSE IF(NTOTENS.EQ.0) THEN
           MARSTYPE = 'fc'
         ELSE
           IF(NENSFNB.EQ.0) THEN

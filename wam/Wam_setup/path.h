@@ -6,7 +6,7 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY22R3_BC
+VERSION=CY22R2_seasonal
 #.
 DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
@@ -56,7 +56,7 @@ nfre=25
 grid="050"
 #elif region=='g' &&  resolution==300
 GRID="3.0/3.0"
-AREA="72./ 0./ -63./357.0"
+AREA="81./ 0./ -78./357.0"
 grid="300"
 nang=12
 nfre=25
@@ -107,12 +107,12 @@ laltas=T
 lsaras=F
 #endif
 #
-typeset -Z12 begofrn=200006130600      # BEGin date OF RUn
-typeset -Z12 endofrn=200006131200      # END   date OF RUn
-typeset -Z12 begoffo=200006131200      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=200006160600      # BEGin date OF RUn
+typeset -Z12 endofrn=200006161200      # END   date OF RUn
+typeset -Z12 begoffo=200006161200      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=200006131200      # Date to output restart file(s).
+typeset -Z12 outofrf=200006161200      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
 typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are

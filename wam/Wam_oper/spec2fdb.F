@@ -9,8 +9,8 @@
      &                     PPDEG, PPMISS, PPEPS, PPREC,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
-     &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
-     &                     KCPLEN, CPAD, KTEST, KFDB )
+     &                     CDFDB2DSP, KENSFNB, KTOTENS, KSYSNB, KMETNB,
+     &                     LFDBIOOUT, KCPLEN, CPAD, KTEST, KFDB )
 
 !----------------------------------------------------------------------
 
@@ -130,8 +130,8 @@
       LOGICAL LDWCOU, LFDBIOOUT
 
       INTEGER KU06, KINF, KSUP, KANG, KFRE, KGX, KGY, KIBLO, KBLO,
-     &        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS,
-     &        KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
+     &        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS, KSYSNB,
+     &        KMETNB, KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
      &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
      &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
      &        NTENCODE, KCPLEN
@@ -233,6 +233,8 @@
         ISEC1(39) = 1
       ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 2
+      ELSEIF ( CDTYPE .EQ. 'sf' ) THEN
+        ISEC1(39) = 9
       ELSE
         IF (KTOTENS .EQ. 0) THEN
           ISEC1(39) = 9
@@ -270,6 +272,16 @@
       DO IC=1,KFRE
         ISEC1(49+KANG+IC) = NINT(ISEC1(49)*PFREQ(IC))
       ENDDO
+
+!* SYSTEM AND METHOD (for seasonal forecast only)
+!  -----------------
+      IF ( CDTYPE .EQ. 'sf' ) THEN
+        ISEC1(50+KANG+KFRE) = KSYSNB 
+        ISEC1(51+KANG+KFRE) = KMETNB 
+      ELSE
+        ISEC1(50+KANG+KFRE) = 65535
+        ISEC1(51+KANG+KFRE) = 65535
+      ENDIF
 
 !    *SECTION 2* GRID DEFINITION BLOCK. 
 !    -----------------------------------

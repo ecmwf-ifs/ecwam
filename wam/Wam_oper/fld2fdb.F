@@ -22,7 +22,7 @@
 !**             CDFUN     - FUNCTION: 'WRITE' - WRITE KFIELD INTO FDB.
 !**                                   'READ'  - READ FDB FIELD.
 !**                                   'CLOSE' - CLOSE FDB.
-!**             CDTYPE    - TYPE OF FIELD ( FG, AN OR FC).
+!**             CDTYPE    - TYPE OF FIELD
 !**             CDCLASS   - CLASS OF CURRENT RUN.
 !**             CDEXPVER  - EXPERIMENT VERSION NUMBER.
 !**             CDDOMAIN  - FDB DOMAIN IDENTIFIER.
@@ -94,6 +94,8 @@
 !**                                     's' for Southern Hemisphere
 !        J. BIDLOT ECMWF NOV 1997 : allow new stream waef and type
 !                                   cf or pf from ensemble runs.
+!        J. BIDLOT ECMWF MAY 2000 : allow new stream wasf and 
+!                                   system and method numbers.
 
 !        B. HANSEN,  ECMWF, FEB-1998
 !          MOVE INITIALIZATION TO USERIN AT THE BOTTOM OF SECTION 1.4. 
@@ -106,7 +108,7 @@
 
       DIMENSION ksec1(*), kfield(*)
 
-      INTEGER       klen, kdir, kfre 
+      INTEGER       klen, kdir, kfre, ndir, nfre 
 
       CHARACTER*(*) cdfun
       CHARACTER*(*) cdfdbsf
@@ -127,6 +129,8 @@
 
       CHARACTER*4  cdexpver
       CHARACTER*4  clexpver
+      CHARACTER*5  clsystem
+      CHARACTER*5  clmethod
       CHARACTER*6  clstep
       CHARACTER*4  clstream
 
@@ -170,6 +174,9 @@
         ELSE
           cltype   = cdtype
         ENDIF
+        if(cdtype.eq.'sf') then
+          cltype   = 'fc'
+        endif
 
         cldomain = cddomain
 
@@ -203,7 +210,11 @@
 
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
         IF ( .NOT. lopenfdb )  THEN
-          istat = iopenfdb( 'fdb', iaddr1, cdfun(1:1) )
+          if (cdtype.eq.'sf') then
+            istat = iopenfdb( 'seas', iaddr1, cdfun(1:1) )
+          else
+            istat = iopenfdb( 'fdb', iaddr1, cdfun(1:1) )
+          endif
           IF ( istat .NE. 0 ) THEN
             WRITE(kuso,'("Error\ /Fld2fdb/ Action specified: ",a)')
      &      cdfun
@@ -257,8 +268,31 @@
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
           istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
 
-          IF (KTEST.GT.1) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
+          IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
      &                    " NUMBER ", a3)') clstream, clnumber
+
+!         system and method
+
+          if (cdtype.eq.'sf') then
+            if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
+     &          clparam .EQ. '251' ) THEN
+              ndir=ksec1(44)
+              nfre=ksec1(45)
+              write( clsystem, '(i5.5)' ) ksec1(50+ndir+nfre)
+              istat = isetvalfdb( iaddr1,   'system',  clsystem)
+              write( clmethod, '(i5.5)' ) ksec1(51+ndir+nfre)
+              istat = isetvalfdb( iaddr1,   'method',  clmethod)
+            else
+              write( clsystem, '(i5.5)' ) ksec1(44)
+              istat = isetvalfdb( iaddr1,   'system',  clsystem)
+              write( clmethod, '(i5.5)' ) ksec1(45)
+              istat = isetvalfdb( iaddr1,   'method',  clmethod)
+              istat = isetvalfdb( iaddr1, 'level','0000')
+            endif
+
+            IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ system:", a5,
+     &                      " method ", a5)') clsystem,clmethod 
+          endif
 
         ENDIF
       ELSEIF ( cdfun .EQ. 'close' ) THEN
@@ -320,7 +354,7 @@
         istat = isetvalfdb( iaddr1,   'frequency', clfre )
       ENDIF
 
-      IF (KTEST.GT.1) THEN
+      IF (KTEST.GT.3) THEN
         WRITE(kuso,'("\ /Fld2fdb/ CLASS: ", a8)') clclass
         WRITE(kuso,'("\ /Fld2fdb/ EXPVER:", a8)') clexpver
         WRITE(kuso,'("\ /Fld2fdb/ DOMAIN:", a8)') cldomain

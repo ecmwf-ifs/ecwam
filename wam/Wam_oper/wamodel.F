@@ -316,9 +316,9 @@
      &            CDTSPS   ,CFDB2DSP ,MFDBSF   ,IDELPRO  ,IDELT    ,
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
-     &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,CDATEA   ,
-     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LANAONLY ,LALTCOR  ,
-     &            LFRSTFLD
+     &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
+     &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
+     &            LANAONLY ,LALTCOR  ,LFRSTFLD
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
@@ -439,7 +439,8 @@
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
         IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc'.OR.
-     &     MARSTYPE.EQ.'4v'.OR.LANAONLY.OR.LFRSTFLD)THEN
+     &     MARSTYPE.EQ.'sf'.OR.MARSTYPE.EQ.'4v'.OR.
+     &     LANAONLY.OR.LFRSTFLD) THEN
 
           IF(LFRSTFLD) THEN
             GFLAGBAK=GFLAG
@@ -1149,8 +1150,8 @@ C
      &                       DEG, PPMISS, PPEPS, PPREC,
      &                       CDTPRO, CDATEF, CDATEA,
      &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                       CFDB2DSP, NENSFNB, NTOTENS, LFDBIOOUT,
-     &                       ICPLEN, CPATH, ITEST, MFDBSF)
+     &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
+     &                       LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
               IF (LFDB) ISTAT = IFLUSHFDB (MFDBSF)
               LLFLUSH = .FALSE.
             ELSE
