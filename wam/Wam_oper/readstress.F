@@ -55,7 +55,7 @@
 !     B. HANSEN    ECMWF      NOVEMBER 1998  KOUNT IS 12 FOR Y2K.
 
       CHARACTER*1 MODE
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
 
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
 ! ----------------------------------------------------------------------

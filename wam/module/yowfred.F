@@ -17,6 +17,8 @@
       REAL, PARAMETER :: FRATIO = 1.1
       REAL, PARAMETER :: WETAIL = 0.25
       REAL, PARAMETER :: FRTAIL = 0.2
+      REAL, PARAMETER :: WP1TAIL = 1./3. 
+      REAL, PARAMETER :: WP2TAIL = 0.5
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -32,6 +34,8 @@
 !      *FRATIO*    REAL      FREQUENCY RATIO.
 !      *WETAIL*    REAL      WAVE ENERGY TAIL CONSTANT FACTOR.
 !      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.
+!      *WP1TAIL*   REAL      PERIOD 1 TAIL CONSTANT FACTOR.
+!      *WP2TAIL*   REAL      PERIOD 2 TAIL CONSTANT FACTOR.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWFRED

@@ -10,6 +10,7 @@
 !     L.ZAMBRESKY    NOVEMBER 87   GKSS/ECMWF   OPTIMIZED SUB.
 !     J. BIDLOT      FEBRARY 1996       ECMWF   MESSAGE PASSING
 !     J. BIDLOT      MAY     1999       ECMWF   ADD HIGH FREQUENCY TAIL
+!     J. BIDLOT      APRIL   200        ECMWF   ADD  EXTRA PARAMETERS
 
 !*    PURPOSE.
 !     --------
@@ -46,41 +47,29 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,C        ,
-     &            TH       ,COSTH    ,SINTH    ,WETAIL   ,FRTAIL
+      USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
+     &            TH       ,COSTH    ,SINTH
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : EPSMIN
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
-     &            FSEA     ,THWISEA
+     &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
+     &            P1SEA    ,P2SEA    ,SPRDSEA
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+      REAL, PARAMETER :: FRIC=28.
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE)  :: FL1,FL3
-
       REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD
       REAL,DIMENSION(NINF:NSUP) :: USNEW
+      REAL, ALLOCATABLE :: THRESHOLD(:)
 
-! ----------------------------------------------------------------------
-      PARAMETER (FRIC = 28.)
-
-      REAL,ALLOCATABLE,DIMENSION(:) :: CIS,SIS,CIWS,SIWS,SF3SW,SF3WIS
-      REAL,ALLOCATABLE,DIMENSION(:) :: TEMP
+      LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
 
 ! ----------------------------------------------------------------------
 
-      ALLOCATE(CIS(IJS:IJL)) 
-      ALLOCATE(SIS(IJS:IJL)) 
-      ALLOCATE(CIWS(IJS:IJL)) 
-      ALLOCATE(SIWS(IJS:IJL)) 
-      ALLOCATE(SF3SW(IJS:IJL)) 
-      ALLOCATE(SF3WIS(IJS:IJL)) 
-
-      DELTWH = WETAIL*FR(NFRE)*DELTH
-      DELTMF = FRTAIL*DELTH
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
@@ -93,112 +82,141 @@
         ENDDO
       ENDDO
 
+      ALLOCATE(THRESHOLD(IJS:IJL))
       DO K=1,NANG
         DO IJ=IJS,IJL
-          SIS(IJ) = 1.2*USOLD(IJ,IG)*COS(TH(K)-THWOLD(IJ,IG))
+          THRESHOLD(IJ) = 1.2*USOLD(IJ,IG)*COS(TH(K)-THWOLD(IJ,IG))
         ENDDO
         DO M=1,NFRE
           CM = FRIC/C(M)
           DO IJ=IJS,IJL
-            CHECKTA = CM*SIS(IJ)
+            CHECKTA = CM*THRESHOLD(IJ)
             IF (CHECKTA.LT.1.) THEN
               FL1(IJ,K,M)=1.
             ENDIF
           ENDDO
         ENDDO
       ENDDO
+      DEALLOCATE(THRESHOLD)
 
-!*    2. COMPUTATION OF SWELL TOTAL ENERGY,MEAN FREQUENCY,MEAN DIRECTION
-!*       AND OF WIND-SEA MEAN DIRECTION.
-!        ---------------------------------------------------------------
 
-      DO IJ=IJS,IJL
-        ESWELL(IJ) = 0.
-        FSWELL(IJ) = 0.
-        SIS(IJ)    = 0.
-        CIS(IJ)    = 0.
-        ESEA(IJ)   = 0.
-        FSEA(IJ)   = 0.
-        CIWS(IJ)   = 0.
-        SIWS(IJ)   = 0.
-      ENDDO
+!*    2. COMPUTATION OF SWELL OUTPUT PARAMETERS
+!        ---------------------------------------
 
-      DO K=1,NANG
-        CIK = COSTH(K)
-        SIK = SINTH(K)
-        DO IJ=IJS,IJL
-          SF3SW(IJ)  = 0.
-          SF3WIS(IJ) = 0.
-        ENDDO
-        DO M=1,NFRE
-          DF = DFIM(M)
-          FD = DF/FR(M)
+      DO M=1,NFRE
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            F3SW  = FL3(IJ,K,M)*FL1(IJ,K,M)
-            F3WIS = FL3(IJ,K,M)-F3SW
-            SF3SW(IJ) = SF3SW(IJ)+F3SW*DF
-            SF3WIS(IJ) = SF3WIS(IJ)+F3WIS*DF
-            ESWELL(IJ) = ESWELL(IJ)+DF*F3SW
-            FSWELL(IJ) = FSWELL(IJ)+FD*F3SW
-            ESEA(IJ)   = ESEA(IJ)+DF*F3WIS
-            FSEA(IJ)   = FSEA(IJ)+FD*F3WIS
+            FL1(IJ,K,M) = FL3(IJ,K,M)*FL1(IJ,K,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
-          SIS(IJ)  = SIS(IJ)+SF3SW(IJ)*SIK
-          CIS(IJ)  = CIS(IJ)+SF3SW(IJ)*CIK
-          SIWS(IJ) = SIWS(IJ)+SF3WIS(IJ)*SIK
-          CIWS(IJ) = CIWS(IJ)+SF3WIS(IJ)*CIK
-        ENDDO
       ENDDO
+  
+      IF(IPFGTBL(16).NE.0) THEN
+        IF(.NOT.ALLOCATED(ESWELL)) ALLOCATE(ESWELL(IJS:IJL))
+        IF(.NOT.ALLOCATED(FSWELL)) ALLOCATE(FSWELL(IJS:IJL))
+        LLAK=.FALSE.
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL, FSWELL, LLAK)
+      ENDIF
 
-      DEALLOCATE(SF3SW) 
-      DEALLOCATE(SF3WIS) 
-
-!     ADD HIGH FREQUENCY TAIL
-
-      ALLOCATE(TEMP(IJS:IJL)) 
-
-      TEMP=0.
-      DO K=1,NANG
+!     femean must be called before semean since LLEPSMIN is false
+      IF(IPFGTBL(12).NE.0) THEN
+        IF(.NOT.ALLOCATED(ESWELL)) ALLOCATE(ESWELL(IJS:IJL))
+        LLEPSMIN=.FALSE.
+        CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
         DO IJ=IJS,IJL
-          TEMP(IJ) = TEMP(IJ) + FL3(IJ,K,NFRE)
+          IF (USNEW(IJ).EQ.0.) ESWELL(IJ) = EMEAN(IJ)
         ENDDO
-      ENDDO
+      ENDIF
+      
+      IF(IPFGTBL(14).NE.0) THEN
+        IF(.NOT.ALLOCATED(THSWELL)) ALLOCATE(THSWELL(IJS:IJL))
+        CALL STHQ   (FL1, IJS, IJL, THSWELL)
+      ENDIF
 
-      DO IJ=IJS,IJL
-        IF (ESEA(IJ).EQ.0.) THEN
-          ESWELL(IJ) = ESWELL(IJ) + DELTWH*TEMP(IJ)
-          FSWELL(IJ) = FSWELL(IJ) + DELTMF*TEMP(IJ)
-        ELSE
-          ESEA(IJ) = ESEA(IJ) + DELTWH*TEMP(IJ)
-          FSEA(IJ) = FSEA(IJ) + DELTMF*TEMP(IJ)
+      IF(IPFGTBL(29).NE.0) THEN
+        IF(.NOT.ALLOCATED(P1SWELL)) ALLOCATE(P1SWELL(IJS:IJL))
+        IF(.NOT.ALLOCATED(ESWELL)) THEN
+          ALLOCATE(ESWELL(IJS:IJL))
+          LLEPSMIN=.FALSE.
+          CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
         ENDIF
+        CALL MWP1 (FL1, IJS, IJL, ESWELL, P1SWELL)
+      ENDIF
+
+      IF(IPFGTBL(31).NE.0) THEN
+        IF(.NOT.ALLOCATED(P2SWELL)) ALLOCATE(P2SWELL(IJS:IJL))
+        IF(.NOT.ALLOCATED(ESWELL)) THEN
+          ALLOCATE(ESWELL(IJS:IJL))
+          LLEPSMIN=.FALSE.
+          CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
+        ENDIF
+        CALL MWP2 (FL1, IJS, IJL, ESWELL, P2SWELL)
+      ENDIF
+
+      IF(IPFGTBL(33).NE.0) THEN
+        LLPEAKF = .TRUE.
+        IF(.NOT.ALLOCATED(SPRDSWELL)) ALLOCATE(SPRDSWELL(IJS:IJL))
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
+      ENDIF
+
+
+
+!*    3. COMPUTATION OF WIND SEA OUTPUT PARAMETERS
+!        -----------------------------------------
+
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M) = FL3(IJ,K,M)-FL1(IJ,K,M)
+          ENDDO
+        ENDDO
       ENDDO
+  
+      IF(IPFGTBL(15).NE.0) THEN
+        IF(.NOT.ALLOCATED(ESEA)) ALLOCATE(ESEA(IJS:IJL))
+        IF(.NOT.ALLOCATED(FSEA)) ALLOCATE(FSEA(IJS:IJL))
+        LLAK=.FALSE.
+        CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA, FSEA, LLAK)
+      ENDIF
 
-      DEALLOCATE(TEMP) 
+!     femean must be called before semean since LLEPSMIN is false
+      IF(IPFGTBL(11).NE.0) THEN
+        IF(.NOT.ALLOCATED(ESEA)) ALLOCATE(ESEA(IJS:IJL))
+        LLEPSMIN=.FALSE.
+        CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+      ENDIF
+      
+      IF(IPFGTBL(13).NE.0) THEN
+        IF(.NOT.ALLOCATED(THWISEA)) ALLOCATE(THWISEA(IJS:IJL))
+        CALL STHQ   (FL1, IJS, IJL, THWISEA)
+      ENDIF
 
-!     COMPUTE MEAN FREQUENCIES AND DIRECTIONS
+      IF(IPFGTBL(28).NE.0) THEN
+        IF(.NOT.ALLOCATED(P1SEA)) ALLOCATE(P1SEA(IJS:IJL))
+        IF(.NOT.ALLOCATED(ESEA)) THEN
+          ALLOCATE(ESEA(IJS:IJL))
+          LLEPSMIN=.FALSE.
+          CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+        ENDIF
+        CALL MWP1 (FL1, IJS, IJL, ESEA, P1SEA)
+      ENDIF
 
-      DO IJ=IJS,IJL
-        IF (CIWS(IJ).EQ.0.) CIWS(IJ) = EPSMIN
-        IF (CIS(IJ).EQ.0.) CIS(IJ) = EPSMIN
-        IF (FSWELL(IJ).EQ.0.) FSWELL(IJ) = EPSMIN
-        IF (FSEA(IJ).EQ.0.) FSEA(IJ) = EPSMIN
-        IF (USNEW(IJ).EQ.0.) ESWELL(IJ) = EMEAN(IJ)
-      ENDDO
+      IF(IPFGTBL(30).NE.0) THEN
+        IF(.NOT.ALLOCATED(P2SEA)) ALLOCATE(P2SEA(IJS:IJL))
+        IF(.NOT.ALLOCATED(ESEA)) THEN
+          ALLOCATE(ESEA(IJS:IJL))
+          LLEPSMIN=.FALSE.
+          CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+        ENDIF
+        CALL MWP2 (FL1, IJS, IJL, ESEA, P2SEA)
+      ENDIF
 
-      DO IJ=IJS,IJL
-        THWISEA(IJ) = ATAN2(SIWS(IJ),CIWS(IJ))
-        THSWELL(IJ) = ATAN2(SIS(IJ),CIS(IJ))
-        FSWELL(IJ)  = ESWELL(IJ)/(FSWELL(IJ))
-        FSEA(IJ)    = ESEA(IJ)/(FSEA(IJ))
-      ENDDO
+      IF(IPFGTBL(32).NE.0) THEN
+        LLPEAKF = .TRUE.
+        IF(.NOT.ALLOCATED(SPRDSEA)) ALLOCATE(SPRDSEA(IJS:IJL))
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA)
+      ENDIF
 
-      DEALLOCATE(CIS) 
-      DEALLOCATE(SIS) 
-      DEALLOCATE(CIWS) 
-      DEALLOCATE(SIWS) 
 
       RETURN
       END SUBROUTINE SEPWISW

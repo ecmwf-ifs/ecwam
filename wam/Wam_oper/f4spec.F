@@ -35,7 +35,7 @@
 
 ! --------------------------------------------------------------------- 
 
-      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
 
@@ -58,7 +58,7 @@
 !        -----------------------------                                  
 
       DO M=1,ML                                                    
-        DELFR(M) = FR(M)*0.1                                           
+        DELFR(M) = FR(M)*(FRATIO-1.)                                           
       ENDDO
 
 !---------------------------------------------------------------------- 

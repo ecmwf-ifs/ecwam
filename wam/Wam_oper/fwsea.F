@@ -36,7 +36,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -47,12 +47,12 @@
 
       DIMENSION F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NINF:NSUP) :: EWFG, THEW, FMWFG, ETOI, THMO, USMO
-      DIMENSION FJONS(NANG,NFRE), FSEA(NANG,NFRE)                       
+      DIMENSION FJONS(NANG,NFRE), FSEA(NANG,NFRE)
+      REAL :: XL11 
 
 ! ----------------------------------------------------------------------
 
       PARAMETER (CGAM = 0.00608,EGAM = 1.439, ESAO = 2.338)
-      PARAMETER (XL11 = 0.0953101 )                                     
 
 !     CGAM       : P.M. FREQUENCY IN THE WAM MODEL                      
 !     EGAM,ESAO  : PARAMETERS IN THE WINDSEA SPECTRUM SHAPE             
@@ -74,6 +74,8 @@
 
 !*   1. PARAMETERS AND INITIALIZATION.                                  
 !       ------------------------------                                  
+
+      XL11 = LOG(FRATIO)
 
       FR1=FR(1)                                                         
       NWP=0                                                             

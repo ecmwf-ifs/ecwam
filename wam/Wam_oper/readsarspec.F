@@ -42,7 +42,7 @@
       CHARACTER* 3 :: YOFID
       CHARACTER*12 :: CDT
 
-      LOGICAL :: ZERO2, LLOPENED, LNODATA 
+      LOGICAL :: ZERO2, LLOPENED, LNODATA, LLTEST
 
       DATA YOFID /'INV'/
  
@@ -86,7 +86,8 @@
         CALL ABORT1
       ENDIF
 
-      CALL CONFILE (IU06, INUNIT, CDTPRO, YOFID, IFAIL)
+      LLTEST=.TRUE.
+      CALL CONFILE (IU06, INUNIT, CDTPRO, YOFID, IFAIL, LLTEST)
       IF(IFAIL.NE.0) THEN
         WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) ' +                                     +'

@@ -1,6 +1,6 @@
 !=======================================================================
 
-      SUBROUTINE CONFILE (kuso, kunit, cdate, yafileid, kfail)
+      SUBROUTINE CONFILE (kuso, kunit, cdate, yafileid, kfail, losuvi)
 
 !-----------------------------------------------------------------------
 
@@ -30,6 +30,7 @@
 !        *yafileid*   CHARACTER*3   FILE ID.
 !        *kfail*      INTEGER       = 0 NO ERROR.
 !                                   > 0 ERROR.
+!        *losuvi*     LOGICAL       IF TRUE THAN MESSAGES SENT TO KUSO
 
 !     EXTERNALS.
 !     ----------
@@ -63,7 +64,7 @@
 
 !----------------------------------------------------------------------
 
-      LOGICAL lotest, losuvi
+      LOGICAL losuvi
       CHARACTER*7 csubna
       DATA csubna /"confile"/
 
@@ -73,8 +74,6 @@
 !  ---------------------
 
       kfail = 0
-      losuvi = .TRUE.
-      lotest = .FALSE.
 
 !----------------------------------------------------------------------
 
@@ -134,32 +133,22 @@
 !  --------------------------------
  8100 CONTINUE
       kfail=20
-      IF (losuvi) THEN
-        WRITE(kuso,*) ' INQUIRY ON FILE NAMED ',yoname,' FAILED'
-        WRITE(kuso,*) '  '
-      ENDIF
+      WRITE(kuso,*) ' INQUIRY ON FILE NAMED ',yoname,' FAILED'
+      WRITE(kuso,*) '  '
       RETURN
  8200 CONTINUE
       kfail=30
-      IF (losuvi) THEN
-        WRITE(kuso,*) ' INQUIRY ON UNIT ',kunit,' FAILED'
-        WRITE(kuso,*) '  '
-      ENDIF
+      WRITE(kuso,*) ' INQUIRY ON UNIT ',kunit,' FAILED'
+      WRITE(kuso,*) '  '
       RETURN
  8300 CONTINUE
       kfail=40
-      IF (losuvi) THEN
-        WRITE(kuso,*) ' CLOSE ON UNIT ',kunit,' FAILED'
-        WRITE(kuso,*) '  '
-      ENDIF
+      WRITE(kuso,*) ' CLOSE ON UNIT ',kunit,' FAILED'
+      WRITE(kuso,*) '  '
       RETURN
  8400 CONTINUE
       kfail=50
-      IF (losuvi) THEN
-        WRITE(kuso,*) ' OPEN ON FILE NAMED ',yoname,' FAILED'
-        WRITE(kuso,*) '  '
-      ENDIF
+      WRITE(kuso,*) ' OPEN ON FILE NAMED ',yoname,' FAILED'
+      WRITE(kuso,*) '  '
       RETURN
       END SUBROUTINE CONFILE
-
-

@@ -1,6 +1,7 @@
       SUBROUTINE MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
      &                           FL3,FLPTS,
-     &                           EMEAN,FMEAN,THQ,U10,THW,US)
+     &                           U10,THW,US,
+     &                           EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
 
 !****  *MPGATHERERSFILE* - GATHERS SPECTRUM AND SCALAR FIELDS ONTO 
 !****                      A SINGLE PE FOR COLLOCATION FILE IN OUTERS
@@ -20,7 +21,8 @@
 
 !     CALL *MPGATHERSPP*(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD, 
 !    1                   FL1,FLPTS,
-!    2                   EMEAN,FMEAN,THQ,U10,THW,US)
+!    2                   U10,THW,US,
+!    3                   EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
 
 
 !     *IRECV*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
@@ -35,12 +37,16 @@
 !     *NSCFLD*    NUMBER OF SCALAR FIELDS
 !     *FL3*       BLOCK OF SPECTRA.
 !     *FLPTS*     SPECTRA AT THE SELECTED GRID POINTS (OUTPUT) 
-!     *EMEAN*     TOTAL ENERGY.
-!     *FMEAN*     MEAN FREQUENCY (1./MEAN PERIOD).
-!     *THQ*       MEAN WAVE DIRECTION IN RADIANS.
 !     *U10*       WIND SPEED IN M/S.
 !     *THW*       WIND DIRECTION IN RADIANS
 !     *US*        FRICTION VELOCITY IN M/S.
+!     *EMPTS*     TOTAL ENERGY AT SELECTED GRID POINTS (OUTPUT).
+!     *FMPTS*     MEAN FREQUENCY AT SELECTED GRID POINTS (OUTPUT). 
+!     *THQPTS*    MEAN WAVE DIRECTION AT SELECTED GRID POINTS (OUTPUT).
+!     *U10PTS*    WIND SPEED AT SELECTED GRID POINTS (OUTPUT). 
+!     *THWPTS*    WIND DIRECTION AT SELECTED GRID POINTS (OUTPUT).
+!     *USPTS*     FRICTION VELOCITY AT SELECTED GRID POINTS (OUTPUT).
+
 
 !     METHOD.
 !     -------
@@ -63,6 +69,7 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOER  , ONLY : IERS     ,IJERS
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
 !----------------------------------------------------------------------
@@ -72,7 +79,9 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) ::  FL3
       REAL,DIMENSION(NSPFLD,IERS,NANG,NFRE) :: FLPTS
 
-      REAL,DIMENSION(NIBLO) :: EMEAN,FMEAN,THQ,U10,THW,US
+      REAL,DIMENSION(NINF:NSUP) :: U10,THW,US
+
+      REAL,DIMENSION(IERS)  :: EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS
 !----------------------------------------------------------------------
 
       REAL,ALLOCATABLE :: ZCOMBUF(:)
@@ -85,6 +94,12 @@
       IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
+          EMPTS(NGOU) = EMEAN(IJ)
+          FMPTS(NGOU) = FMEAN(IJ)
+          THQPTS(NGOU) = THQ(IJ)
+          U10PTS(NGOU) = U10(IJ)
+          THWPTS(NGOU) = THW(IJ)
+          USPTS(NGOU) = US(IJ)
           DO  M = 1, NFRE
             DO K = 1, NANG
               FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
@@ -152,17 +167,17 @@
             IJ=IJERS(NGOU)
             IF((IJ.GE.NSTART(KRFROM)).AND.(IJ.LE.NEND(KRFROM))) THEN
               KCOUNT=KCOUNT+1
-              EMEAN(IJ)=ZCOMBUF(KCOUNT)
+              EMPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              FMEAN(IJ)=ZCOMBUF(KCOUNT)
+              FMPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              THQ(IJ)=ZCOMBUF(KCOUNT)
+              THQPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              U10(IJ)=ZCOMBUF(KCOUNT)
+              U10PTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              THW(IJ)=ZCOMBUF(KCOUNT)
+              THWPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              US(IJ)=ZCOMBUF(KCOUNT)
+              USPTS(NGOU)=ZCOMBUF(KCOUNT)
 
               DO  M = 1, NFRE
                 DO K = 1, NANG
@@ -190,6 +205,12 @@
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
           IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK)))THEN
+            EMPTS(NGOU) = EMEAN(IJ)
+            FMPTS(NGOU) = FMEAN(IJ)
+            THQPTS(NGOU) = THQ(IJ)
+            U10PTS(NGOU) = U10(IJ)
+            THWPTS(NGOU) = THW(IJ)
+            USPTS(NGOU) = US(IJ)
             DO  M = 1, NFRE
               DO K = 1, NANG
                 FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)

@@ -72,6 +72,7 @@
       DIMENSION BETAG(NLONW,NLATW)
 ! ----------------------------------------------------------------------
 
+      LOGICAL :: LSQRT
       DIMENSION BETA(NIBLO)
 
 ! ----------------------------------------------------------------------
@@ -80,27 +81,23 @@
 !        ---------------------------------
 
       DO IJ = IJS,IJL
-        BETA(IJ) = G*Z0NEW(IJ)/(USNEW(IJ)**2 +0.0001)
+        IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
+          BETA(IJ) = 0.0
+        ELSE
+          BETA(IJ) = G*Z0NEW(IJ)/(USNEW(IJ)**2 +0.0001)
+        ENDIF
       ENDDO
-
-      IF (LICERUN) THEN
-        DO IJ = IJS,IJL
-          ZICE     = REAL(ICEMASK(IJ,IG))
-          BETA(IJ) = ZICE*BETA(IJ)
-        ENDDO
-      ENDIF   
 
 !*    1.1 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
 !         -------------------------------------------------
 
+      LSQRT=.FALSE.
+
       IF(LMESSPASS) THEN
-
         CALL MPBCASTSCFLD(20,NSTART,NEND,BETA)
-
-        CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG)
-
+        CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG, LSQRT)
       ELSE
-        CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG)
+        CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG, LSQRT)
       ENDIF
 
 
@@ -108,8 +105,8 @@
 !         ------------------------------------
 
       IF (IG.EQ.IGL) THEN
-        DO I=1,NGX
-          DO J=1,NGY
+        DO J=1,NGY
+          DO I=1,NGX
             IF (BETAG(I,J).LE.0.0) THEN
               BETAG(I,J) = 0.018
             ENDIF

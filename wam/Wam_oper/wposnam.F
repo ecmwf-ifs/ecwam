@@ -56,7 +56,7 @@
       ILEN=LEN(CDNAML)
  102  CONTINUE
       CLINE=' '
-      READ(KULNAM,'(A)', END=9000) CLINE
+      READ(KULNAM,'(A)', END=9000, ERR=9001) CLINE
       IND1=INDEX(CLINE,'&'//CDNAML)
       IF(IND1.EQ.0) GO TO 102
       CLTEST=CLINE(IND1+ILEN+1:IND1+ILEN+1)
@@ -73,6 +73,15 @@
  9000 CONTINUE
 
       LDEOF = .TRUE.
+      RETURN
+
+ 9001 CONTINUE
+
+      WRITE(*,*) '*********************'
+      WRITE(*,*) 'READ ERROR IN WPOSNAM ' 
+      WRITE(*,*) '*********************'
+      CALL ABORT
+
       RETURN
 
       END SUBROUTINE WPOSNAM

@@ -47,6 +47,7 @@
       INTEGER MFDBSF 
       INTEGER MFDB2DSP 
       INTEGER NCALL 
+      INTEGER ISTREAM
 
       LOGICAL LANAONLY
       LOGICAL LALTCOR
@@ -164,5 +165,9 @@
 !      *NCALL*     INTEGER   NUMBER OF TIME AIRSEA-SINPUT-STRESSO ARE
 !                            CALLED FOR EACH CALL TO IMPLSCH. 
 !                            = 1 BY DEFAULT.
+!      *ISTREAM*   INTEGER   STREAM NUMBER WHEN CODING DATA IN GRID
+!                            IF SET TO 0 IT WILL NOT BE USED AND
+!                            INSTEAD MARSTYPE WILL BVE USED TO DETERMINE
+!                            THE STREAM.
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

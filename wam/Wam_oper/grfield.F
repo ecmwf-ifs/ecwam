@@ -61,7 +61,7 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LLFAILED, LLOPENED
+      LOGICAL LLFAILED, LLOPENED, LLTEST
       INTEGER IREAD
       INTEGER,ALLOCATABLE :: IJALT(:,:), IJKAP(:)
       CHARACTER* 3 CLFID
@@ -96,8 +96,10 @@
         UNIT: DO IUME=33,99,1
           INQUIRE ( UNIT=IUME, OPENED=LLOPENED)
           IF ( .NOT. LLOPENED) THEN
-            WRITE(IU06,'("  GRFIELD : TAKES UNIT ", I2,
-     &       " AS ALTIMETER DATA INPUT UNIT")') IUME
+            IF(ITEST.GT.0) THEN
+              WRITE(IU06,'("  GRFIELD : TAKES UNIT ", I2,
+     &         " AS ALTIMETER DATA INPUT UNIT")') IUME
+            ENDIF
             EXIT UNIT
           ENDIF
         ENDDO UNIT
@@ -106,7 +108,9 @@
 !*                 IFIELD MAY BE MISSING INDICATING THERE ARE NO FIELDS.
 
         IF (IUME.LT.100) THEN
-          CALL CONFILE (IU06, IUME, CDTPRO, CLFID, IFAIL)
+          LLTEST=.FALSE.
+          IF(ITEST.GT.0) LLTEST=.TRUE.
+          CALL CONFILE (IU06, IUME, CDTPRO, CLFID, IFAIL, LLTEST)
           IF(IFAIL.EQ.0) THEN
             READ (IUME,ERR=9000) CTIME, IFIELD
             READ (IUME,ERR=9000) WHME, USME
@@ -217,9 +221,11 @@
             ENDDO
           ENDDO
         ENDIF
-        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-        WRITE(IU06,*) '           Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR
-        WRITE(IU06,*) ' '
+        IF(ITEST.GT.0) THEN
+          WRITE(IU06,*)' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
+          WRITE(IU06,*)'           Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR
+          WRITE(IU06,*)' '
+        ENDIF
       ENDIF
 
 
@@ -292,12 +298,8 @@
       CWHTAG = ZMISS
       RANGAG = ZMISS
  
-      IF(LALTCOR) THEN
-        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-        WRITE(IU06,*) ' '
-      ENDIF
-
       IF(LALTCOR.AND.ITEST.GT.0) THEN
+        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT CORRECTION '
         WRITE(IU06,*) ' -------------------------------- ' 

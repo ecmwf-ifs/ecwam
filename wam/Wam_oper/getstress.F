@@ -52,7 +52,7 @@
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
       CHARACTER*12 ZERO
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
 
 ! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND

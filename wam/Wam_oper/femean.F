@@ -1,8 +1,12 @@
-      SUBROUTINE FEMEAN (F, IJS, IJL)
+      SUBROUTINE FEMEAN (F, IJS, IJL, EM, FM, AK, LLAK)
 
 ! ----------------------------------------------------------------------
 
-!**** *FEMEAN* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
+!**** *FEMEAN* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT
+!                AND MEAN WAVE NUMBER .
+!                THE COMPUTATION OF THE MEAN WAVE ENERGU WAS ALSO
+!                ADDED SUCH THAT A CALL TO FEMEAN DOES NOT NEED
+!                TO BE PRECEDED BY A CALL TO SEMEAN.
 
 !     S.D. HASSELMANN
 !     MODIFIED : P.JANSSEN (INTEGRATION OF F**-4 TAIL)
@@ -17,10 +21,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL)*
+!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, AK, LLAK)*
 !              *F*   - SPECTRUM.
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
+!              *EM*  - MEAN WAVE ENERGY (INPUT)
+!              *FM*  - MEAN WAVE FREQUENCY (OUTPUT)
+!              *AK*  - MEAN WAVE NUMBER (OUTPUT)
+!              *LLAK*- TRUE IF MEAN WAVE NUMBER IS COMPUTED
 
 !     METHOD.
 !     -------
@@ -39,8 +47,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FRTAIL
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL    ,
+     &                FRTAIL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
@@ -49,9 +57,14 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER :: IJ,M,K,IJS,IJL
+      REAL :: DELT25, DELT2, DEL2
       REAL :: F(NINF-1:NSUP,NANG,NFRE)
-      REAL :: TEMP1(IJS:IJL), TEMP2(IJS:IJL)
+      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM, AK
       REAL :: FD(NFRE)
+      LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
 
@@ -59,19 +72,21 @@
 !        ------------------------------------------------
 
       DO IJ=IJS,IJL
-        FMEAN(IJ) = EPSMIN
+        EM(IJ) = EPSMIN
+        FM(IJ) = EPSMIN
       ENDDO
-      DELT25 = FRTAIL*DELTH
 
-! ----------------------------------------------------------------------
+      DELT25 = WETAIL*FR(NFRE)*DELTH
+      DELT2 = FRTAIL*DELTH
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
+
       DO M=1,NFRE
         FD(M) = DFIM(M)/FR(M)
       ENDDO
 
-      IF (ISHALLO.EQ.1) THEN
+      IF (ISHALLO.EQ.1 .OR. .NOT.LLAK) THEN
 
 !*    2.1 DEEP WATER INTEGRATION.
 !         -----------------------
@@ -86,17 +101,18 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            FMEAN(IJ) = FMEAN(IJ)+FD(M)*TEMP2(IJ)
+            EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
+            FM(IJ) = FM(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
-!SHALLOW
+
       ELSE
 
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
         DO IJ=IJS,IJL
-          AKMEAN(IJ) = EPSMIN
+          AK(IJ) = EPSMIN
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -109,29 +125,38 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            FMEAN(IJ) = FMEAN(IJ)+FD(M)*TEMP2(IJ)
-            AKMEAN(IJ) = AKMEAN(IJ)+TEMP1(IJ)*TEMP2(IJ)
+            EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
+            FM(IJ) = FM(IJ)+FD(M)*TEMP2(IJ)
+            AK(IJ) = AK(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
 
-!        ADD TAIL TO MEAN WAVENUMBER AND NORMALIZE WITH TOTAL ENERGY.
-
-        DEL2 = DELT25*SQRT(G)/ZPI
-        DO IJ=IJS,IJL
-          AKMEAN(IJ) = AKMEAN(IJ)+DEL2*TEMP2(IJ)
-          AKMEAN(IJ) = (EMEAN(IJ)/AKMEAN(IJ))**2
-        ENDDO
       ENDIF
-!SHALLOW
 
 !*    3. ADD TAIL CORRECTION TO MEAN FREQUENCY AND
 !*       NORMALIZE WITH TOTAL ENERGY.
 !        ------------------------------------------
 
-      DO IJ=IJS,IJL
-        FMEAN(IJ) = FMEAN(IJ)+DELT25*TEMP2(IJ)
-        FMEAN(IJ) = EMEAN(IJ)/FMEAN(IJ)
-      ENDDO
+      IF (ISHALLO.EQ.1 .OR. .NOT.LLAK) THEN
+
+        DO IJ=IJS,IJL
+          EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+          FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
+          FM(IJ) = EM(IJ)/FM(IJ)
+        ENDDO
+
+      ELSE
+
+        DEL2 = DELT2*SQRT(G)/ZPI
+        DO IJ=IJS,IJL
+          EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+          FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
+          FM(IJ) = EM(IJ)/FM(IJ)
+          AK(IJ) = AK(IJ)+DEL2*TEMP2(IJ)
+          AK(IJ) = (EM(IJ)/AK(IJ))**2
+        ENDDO
+
+      ENDIF
 
       RETURN
       END SUBROUTINE FEMEAN

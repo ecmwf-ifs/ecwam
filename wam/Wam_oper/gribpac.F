@@ -90,7 +90,7 @@
       LOGICAL LFDB, FRSTIME30, FRSTIME32
       CHARACTER*2 MARSTYPE
       CHARACTER*2 YCLASS
-      CHARACTER*4 YEXPVER
+      CHARACTER*4 YEXPVER, CSTREAM
       CHARACTER*24 FILNM
       CHARACTER*(*) CDFDBSF
       DATA FRSTIME30 / .TRUE. /
@@ -189,10 +189,6 @@
 
       ALLOCATE(KGRIB(KLENG))
 
-      WRITE(IU06,*)'  '
-      WRITE(IU06,*)'   SUB. GRIBPAC : EXPERIMENT VERSION=',YEXPVER,
-     &                           '   TYPE OF MARS DATA = ',MARSTYPE
-
       KRET  = 1
       IF (ITEST .GT. 8 ) CALL GRSDBG (1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
@@ -203,8 +199,26 @@
 !*    2. CHECK ERROR CODE.
 !        ----------------
 
-      WRITE(IU06,*) '   SUB. GRIBPAC : GRIBEX STATUS CODE ',KRET,
-     &              ' FOR PARAMETER ', IPARAM
+      IF(KSEC1(40).eq.1045) THEN
+        CSTREAM='wave'
+      ELSE IF(KSEC1(40).eq.1081) THEN
+        CSTREAM='waef'
+      ELSE IF(KSEC1(40).eq.1082) THEN
+        CSTREAM='wasf'
+      ELSE IF(KSEC1(40).eq.1027) THEN
+        CSTREAM='scwv'
+      ELSE
+        CSTREAM='****'
+      ENDIF
+
+
+
+
+      WRITE(IU06,*)'  '
+      WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,
+     &                              ' STREAM= ', CSTREAM,
+     &                              ' EXPVER=',YEXPVER,
+     &                              ' TYPE OF MARS DATA = ',MARSTYPE
 
       IF(KRET.EQ.0) THEN
         IF(LFDB) THEN
@@ -218,9 +232,11 @@
      &     IERR,
      &     MARSTYPE, YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
      &     IDIR, IFRE , KFDB)
-          WRITE(IU06,*) '   SUB. GRIBPAC:  PACKED FIELD LENGTH ',
-     &     KWORD, ' WRITTEN TO FDB ',
-     &     '(REFERENCE=',Kfdb,')'
+          IF(ITEST.GT.0) THEN
+            WRITE(IU06,*) '   SUB. GRIBPAC:  GRIB FIELD LENGTH ',
+     &       KWORD, ' WRITTEN TO FDB ',
+     &       '(REFERENCE=',Kfdb,')'
+          ENDIF
 
 !*       2.2 PRINT ERROR CODE.
 !            -----------------

@@ -1,4 +1,4 @@
-      SUBROUTINE STHQ (F3, IJS, IJL)
+      SUBROUTINE STHQ (F3, IJS, IJL, THQ)
 
 ! ----------------------------------------------------------------------
 
@@ -15,10 +15,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STHQ (F3, IJS, IJL)*
+!       *CALL* *STHQ (F3, IJS, IJL, THQ)*
 !          *F3*  - SPECTRUM.
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
+!          *THQ* - MEAN WAVE DIRECTION
 
 !     METHOD.
 !     -------
@@ -40,17 +41,15 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DFIM     ,COSTH    ,SINTH
-      USE YOWMEAN  , ONLY : THQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION TEMP(IJS:IJL)
+      IMPLICIT NONE
 
-! ----------------------------------------------------------------------
-
-
-      DIMENSION SI(IJS:IJL), CI(IJS:IJL), F3(NINF-1:NSUP,NANG,NFRE)
+      INTEGER :: IJ,M,K,IJS,IJL
+      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL, DIMENSION(IJS:IJL) :: TEMP, THQ, SI, CI
 
 ! ----------------------------------------------------------------------
 
@@ -68,8 +67,6 @@
 !        ------------------------------------------
 
       DO K=1,NANG
-        CIH = COSTH(K)
-        SIH = SINTH(K)
         DO IJ=IJS,IJL
           TEMP(IJ) = 0.
         ENDDO
@@ -79,8 +76,8 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          SI(IJ) = SI(IJ)+SIH*TEMP(IJ)
-          CI(IJ) = CI(IJ)+CIH*TEMP(IJ)
+          SI(IJ) = SI(IJ)+SINTH(K)*TEMP(IJ)
+          CI(IJ) = CI(IJ)+COSTH(K)*TEMP(IJ)
         ENDDO
       ENDDO
 

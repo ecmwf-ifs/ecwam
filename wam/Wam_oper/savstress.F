@@ -49,7 +49,7 @@
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
       CHARACTER*12 CDTPRO,CDATEF
       LOGICAL LPBOPEN, LPBCLOSE
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND

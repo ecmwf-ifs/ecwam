@@ -59,7 +59,8 @@
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
-     &            NFLAGALL ,LFDB     ,NOUTT    ,NOUTS    ,NASS
+     &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
+     &            NASS
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : XKAPPA2  ,SWAMPWIND,HSCOEFCOR,HSCONSCOR
@@ -70,7 +71,7 @@
      &            IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,CDATEA   ,YCLASS   ,YEXPVER  ,LALTCOR  ,
      &            L4VTYPE  ,LFRSTFLD ,LALTAS   ,LSARAS   ,LALTLRGR ,
-     &            NCALL
+     &            NCALL    ,ISTREAM
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -109,7 +110,7 @@
      &   NENSFNB, NTOTENS,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, XKAPPA2, NCALL,
-     $   SWAMPWIND,LALTLRGR,HSCOEFCOR,HSCONSCOR
+     $   SWAMPWIND, LALTLRGR, HSCOEFCOR, HSCONSCOR, ISTREAM
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -209,6 +210,7 @@
 !                ALTIMETER WAVE HEIGHTS.
 !     HSCONSCOR: CONSTANT OF THE CORRECTIVE LINEAR REGRESSION FOR
 !                ALTIMETER WAVE HEIGHTS.
+!     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -290,7 +292,7 @@
 
       NOUTT     = 0
 
-      CFDBSF    = "/vpp700/fdb18"
+      CFDBSF    = ""
       CFDB2DSP  = ""
 
       LNOCDIN   = .FALSE. 
@@ -312,6 +314,8 @@
       SWAMPWIND = 18.45
 
       NCALL     = 1
+ 
+      ISTREAM   = 0
 
       NOUTS     = 0
 
@@ -322,10 +326,19 @@
 !*    1. READ NAMELIST NALINE.
 !        ---------------------
 
-      REWIND(IU05)
-
       CALL WPOSNAM (IU05, 'NALINE', LLEOF)
-      IF (.NOT. LLEOF) READ (IU05, NALINE)
+      IF (.NOT. LLEOF) THEN
+        READ (IU05, NALINE)
+      ELSE
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
 
       IF(LWCOU) LMESSPASS = LMESSPIFS
 
@@ -431,13 +444,6 @@
         WRITE(IU06,*) ' NOT IMPLEMENTED IN OUTINT ' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (GFLAG(5)) THEN
-        GFLAG(5) = .FALSE.
-        WRITE(IU06,*) ' ******************* NOTE ***************** ' 
-        WRITE(IU06,*) ' NO GRIB OUTPUT POSSIBLE FOR WIND DIRECTION'
-        WRITE(IU06,*) ' NOT IMPLEMENTED IN OUTINT ' 
-        WRITE(IU06,*) ' '
-      ENDIF
       IF (GFLAG(8)) THEN
         GFLAG(8) = .FALSE.
         WRITE(IU06,*) ' *********** NOTE *************** ' 
@@ -480,21 +486,24 @@
       FFLAG20 = FFLAG( 1).OR.FFLAG( 2).OR.FFLAG( 3).OR.FFLAG( 4).OR.
      &          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
      &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
-     &          FFLAG(24)
+     &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
      &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
-     &          PFLAG(24)
+     &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
      &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
-     &          GFLAG(24)
+     &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27)
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
-     &          FFLAG(15).OR.FFLAG(16) 
+     &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
+     &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
       PFLAG21 = PFLAG(11).OR.PFLAG(12).OR.PFLAG(13).OR.PFLAG(14).OR.
-     &          PFLAG(15).OR.PFLAG(16) 
+     &          PFLAG(15).OR.PFLAG(16).OR.PFLAG(28).OR.PFLAG(29).OR.
+     &          PFLAG(30).OR.PFLAG(31).OR.PFLAG(32).OR.PFLAG(33) 
       GFLAG21 = GFLAG(11).OR.GFLAG(12).OR.GFLAG(13).OR.GFLAG(14).OR.
-     &          GFLAG(15).OR.GFLAG(16) 
+     &          GFLAG(15).OR.GFLAG(16).OR.GFLAG(28).OR.GFLAG(29).OR.
+     &          GFLAG(30).OR.GFLAG(31).OR.GFLAG(32).OR.GFLAG(33)
       FFLAG25 = FFLAG(17)
       PFLAG25 = PFLAG(17)
       GFLAG25 = GFLAG(17)
@@ -505,7 +514,18 @@
      &          NFLAG( 5).OR.NFLAG( 6).OR.NFLAG( 7).OR.NFLAG( 8).OR.
      &          NFLAG( 9).OR.NFLAG(10).OR.NFLAG(11).OR.NFLAG(12).OR.
      &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16).OR.
-     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24)
+     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24).OR.NFLAG(25).OR.
+     &          NFLAG(26).OR.NFLAG(27).OR.NFLAG(28).OR.NFLAG(29).OR.
+     &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
+     &          NFLAG(34)
+
+!     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE ALSO USED IN THE ASSIMILATION
+      UFLAG=.FALSE.
+      IF(IASSI.EQ.1) THEN
+        UFLAG(1)=.TRUE.
+        UFLAG(4)=.TRUE.
+        UFLAG(7)=.TRUE.
+      ENDIF
 
       ICPLEN=LEN_TRIM(CPATH)
       IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
@@ -794,66 +814,86 @@
      & NOUTT,'IU20','IU30','IU20','IU32')
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' SIGNIFICANT WAVE HEIGHT ...', PFLAG( 1),
+      WRITE(IU06,*) '                           PRINTER   FILE    GRIB'
+      WRITE(IU06,*) '1  SIGNIFICANT WAVE HEIGHT ...', PFLAG( 1),
      & '......', FFLAG( 1),'.....',GFLAG( 1)
-      WRITE(IU06,*) ' MEAN WAVE DIRECTION .......', PFLAG( 2),
+      WRITE(IU06,*) '2  MEAN WAVE DIRECTION .......', PFLAG( 2),
      & '......', FFLAG( 2),'.....',GFLAG( 2)
-      WRITE(IU06,*) ' WAVE MEAN FREQUENCY .......', PFLAG( 3),
+      WRITE(IU06,*) '3  WAVE MEAN PERIOD (-1) .....', PFLAG( 3),
      & '......', FFLAG( 3),'.....',GFLAG( 3)
-      WRITE(IU06,*) ' FRICTION VELOCITY .........', PFLAG( 4),
+      WRITE(IU06,*) '4  FRICTION VELOCITY .........', PFLAG( 4),
      & '......', FFLAG( 4),'.....',GFLAG( 4)
-      WRITE(IU06,*) ' WIND DIRECTION ............', PFLAG( 5),
+      WRITE(IU06,*) '5  WAVE MODEL WIND DIRECTION..', PFLAG( 5),
      & '......', FFLAG( 5),'.....',GFLAG( 5)
-      WRITE(IU06,*) ' WAVE PEAK FREQUENCY .......', PFLAG( 6),
+      WRITE(IU06,*) '6  WAVE PEAK FREQUENCY .......', PFLAG( 6),
      & '......', FFLAG( 6),'.....',GFLAG( 6)
-      WRITE(IU06,*) ' DRAG COEFFICIENT ..........', PFLAG( 7),
+      WRITE(IU06,*) '7  DRAG COEFFICIENT ..........', PFLAG( 7),
      & '......', FFLAG( 7),'.....',GFLAG( 7)
-      WRITE(IU06,*) ' NORMALISED WAVE STRESS ....', PFLAG( 8),
+      WRITE(IU06,*) '8  NORMALISED WAVE STRESS ....', PFLAG( 8),
      & '......', FFLAG( 8),'.....',GFLAG( 8)
-      WRITE(IU06,*) ' MEAN SQUARE SLOPE..........', PFLAG( 9),
+      WRITE(IU06,*) '9  MEAN SQUARE SLOPE..........', PFLAG( 9),
      & '......', FFLAG( 9),'.....',GFLAG( 9)
-      WRITE(IU06,*) ' WAVE MODEL WIND SPEED......', PFLAG(10),
+      WRITE(IU06,*) '10 WAVE MODEL WIND SPEED......', PFLAG(10),
      & '......', FFLAG(10),'.....',GFLAG(10)
-      WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT......', PFLAG(22),
+      WRITE(IU06,*) '11 WIND SEA WAVE HEIGHT.......', PFLAG(11),
+     & '......', FFLAG(11),'.....',GFLAG(11)
+      WRITE(IU06,*) '12 SWELL WAVE HEIGHT..........', PFLAG(12),
+     & '......', FFLAG(12),'.....',GFLAG(12)
+      WRITE(IU06,*) '13 WIND SEA DIRECTION.........', PFLAG(13),
+     & '......', FFLAG(13),'.....',GFLAG(13)
+      WRITE(IU06,*) '14 SWELL WAVE DIRECTION.......', PFLAG(14),
+     & '......', FFLAG(14),'.....',GFLAG(14)
+      WRITE(IU06,*) '15 WIND SEA MEAN PERIOD (-1) .', PFLAG(15),
+     & '......', FFLAG(15),'.....',GFLAG(15)
+      WRITE(IU06,*) '16 SWELL MEAN PERIOD (-1) ....', PFLAG(16),
+     & '......', FFLAG(16),'.....',GFLAG(16)
+      WRITE(IU06,*) ' '
+      WRITE(IU06,*) '22 ALTIMETER WAVE HEIGHT......', PFLAG(22),
      & '......', FFLAG(22),'.....',GFLAG(22)
-      WRITE(IU06,*) ' CORRECTED ALT WAVE HEIGHT..', PFLAG(23),
+      WRITE(IU06,*) '23 CORRECTED ALT WAVE HEIGHT..', PFLAG(23),
      & '......', FFLAG(23),'.....',GFLAG(23)
-      WRITE(IU06,*) ' ALTIMETER RANGE CORRECTION.', PFLAG(23),
-     & '......', FFLAG(23),'.....',GFLAG(23)
-      WRITE(IU06,*) '  '
+      WRITE(IU06,*) '24 ALTIMETER RANGE CORRECTION.', PFLAG(24),
+     & '......', FFLAG(24),'.....',GFLAG(24)
+      WRITE(IU06,*) ' '
+      WRITE(IU06,*) '25 WAVE MEAN PERIOD (1)  .....', PFLAG(25),
+     & '......', FFLAG(25),'.....',GFLAG(25)
+      WRITE(IU06,*) '26 WAVE MEAN PERIOD (2)  .....', PFLAG(26),
+     & '......', FFLAG(26),'.....',GFLAG(26)
+      WRITE(IU06,*) '27 WAVE DIRECTIONAL SPREAD ...', PFLAG(27),
+     & '......', FFLAG(27),'.....',GFLAG(27)
+      WRITE(IU06,*) '28 WIND SEA MEAN PERIOD (1) ..', PFLAG(28),
+     & '......', FFLAG(28),'.....',GFLAG(28)
+      WRITE(IU06,*) '29 SWELL MEAN PERIOD (1) .....', PFLAG(29),
+     & '......', FFLAG(29),'.....',GFLAG(29)
+      WRITE(IU06,*) '30 WIND SEA MEAN PERIOD (2) ..', PFLAG(30),
+     & '......', FFLAG(30),'.....',GFLAG(30)
+      WRITE(IU06,*) '31 SWELL MEAN PERIOD (2) .....', PFLAG(31),
+     & '......', FFLAG(31),'.....',GFLAG(31)
+      WRITE(IU06,*) '32 WIND SEA DIRECTIONAL SPREAD', PFLAG(32),
+     & '......', FFLAG(32),'.....',GFLAG(32)
+      WRITE(IU06,*) '33 SWELL DIRECTIONAL SPREAD ..', PFLAG(33),
+     & '......', FFLAG(33),'.....',GFLAG(33)
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
-      WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' WIND SEA WAVE HEIGHT.......', PFLAG(11),
-     & '......', FFLAG(11),'.....',GFLAG(11)
-      WRITE(IU06,*) ' WIND SEA DIRECTION.........', PFLAG(13),
-     & '......', FFLAG(12),'.....',GFLAG(13)
-      WRITE(IU06,*) ' WIND SEA MEAN FREQUENCY....', PFLAG(15),
-     & '......', FFLAG(15),'.....',GFLAG(15)
-      WRITE(IU06,*) ' SWELL WAVE HEIGHT..........', PFLAG(12),
-     & '......', FFLAG(12),'.....',GFLAG(12)
-      WRITE(IU06,*) ' SWELL WAVE DIRECTION.......', PFLAG(14),
-     & '......', FFLAG(14),'.....',GFLAG(14)
-      WRITE(IU06,*) ' SWELL MEAN FREQUENCY ......', PFLAG(16),
-     & '......', FFLAG(16),'.....',GFLAG(16)
-
       IF(FFLAG25) CALL OUTXT(IU06,IU25,IU35,IU27,IU37,IDELSPT,IASSI,
      & NOUTT,'IU25','IU35','IU27','IU37')
+      IF(FFLAG26) CALL OUTXT(IU06,IU26,IU36,IU28,IU38,IDELSPS,IASSI,
+     & NOUTT,'IU26','IU36','IU28','IU38')
+
+      IF(ITEST.GT.0) THEN
       WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' SPECTRA OF TOTAL SEA .....', PFLAG(17),
+      WRITE(IU06,*) '17 SPECTRA OF TOTAL SEA .....', PFLAG(17),
      & '......', FFLAG(17),'.....',GFLAG(17)
       WRITE(IU06,*) ' SEE INSTEAD OUTPUT OF RESTART SPECTRA IN GRIB !!!'
       WRITE(IU06,*) '  '
 
-      IF(FFLAG26) CALL OUTXT(IU06,IU26,IU36,IU28,IU38,IDELSPS,IASSI,
-     & NOUTT,'IU26','IU36','IU28','IU38')
       WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' SWELL SPECTRA ............', PFLAG(18),
+      WRITE(IU06,*) '18 SWELL SPECTRA ............', PFLAG(18),
      & '......', FFLAG(18),'.....',GFLAG(18)
       WRITE(IU06,*) ' GRIBBING NOT YET IMPLEMENTED !!!'
       WRITE(IU06,*) '  '
+      ENDIF
 
       WRITE(IU06,*) '  '
 
@@ -909,8 +949,13 @@
         WRITE(IU06,*) '  '
 
       ELSEIF (IREST.EQ.1) THEN
-        WRITE(IU06,*) ' RESTART FILES WILL BE DISPOSED '
-     &   ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
+        IF(.NOT.LGRIBOUT) THEN
+          WRITE(IU06,*) ' SPECTRA FILES WILLBE WRITTEN OUT TO DISK '
+     &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
+        ELSE
+          WRITE(IU06,*) ' RESTART FILES WILL BE DISPOSED '
+     &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
+        ENDIF
         IF(CDATER.LT.CDATEE.AND..NOT.LGRIBOUT) WRITE(IU06,*)
      &   ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',
      &   ' AT ...', CDATER 
@@ -918,7 +963,7 @@
      &   ' BUT SPECTRA FILES ALONE  WILL BE SAVED UNTIL '
      &   ,'...', CDATES 
       ELSE
-        WRITE(IU06,*) ' SPECTRA FILES WILL NOT BE DISPOSED '
+        WRITE(IU06,*) ' SPECTRA FILES WILL NOT BE WRITTEN OUT TO DISK'
       ENDIF
 
       WRITE(IU06,*) '  '
@@ -933,7 +978,7 @@
         WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
         WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
       ENDIF
-      IF(LGRIBIN) THEN
+      IF(LGRIBIN.AND.ITEST.GT.0) THEN
         WRITE(IU06,*) '  '
         WRITE (IU06,*)
      &   ' GRIB SPECTRA FIELD ARE USED AS INPUT' 
@@ -948,7 +993,7 @@
         WRITE (IU06,*)
      &   ' FDB SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
       ELSE
-        WRITE (IU06,*)
+        IF(ITEST.GT.0) WRITE (IU06,*)
      &   ' INPUT FILES ARE READ FROM DISK' 
       ENDIF
       WRITE(IU06,*) '  '

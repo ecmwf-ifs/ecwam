@@ -71,7 +71,7 @@
       CHARACTER*1 MODE
       CHARACTER*12 CZDATE,CDATE 
       CHARACTER*40 CLMSG
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
       LOGICAL LLEXIST
 !-----------------------------------------------------------------------
 

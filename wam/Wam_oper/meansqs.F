@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS(F, IJS, IJL, USNEW)
+      SUBROUTINE MEANSQS(F, IJS, IJL, USNEW, FM, SM)
 
 ! ----------------------------------------------------------------------
 
@@ -16,11 +16,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (F, IJS, IJL, USNEW)*
+!       *CALL* *MEANSQS (F, IJS, IJL, USNEW, FM, SM)*
 !              *F*   - SPECTRUM.
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
-!              *USNEW*     NEW FRICTION VELOCITY IN M/S.
+!              *USNEW*     NEW FRICTION VELOCITY IN M/S (INPUT).
+!              *FM*  - MEAN WAVE FREQUENCY (INPUT).
+!              *SM*  - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -41,7 +43,6 @@
 
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
-      USE YOWMEAN  , ONLY : FMEAN    ,SMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
@@ -49,25 +50,26 @@
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+      IMPLICIT NONE
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F
+      REAL, PARAMETER :: XLAMBDAC=0.0628
+      REAL, PARAMETER :: SURFT=0.000075
 
+      INTEGER :: IJ,M,K,IJS,IJL
+      REAL :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      REAL :: F(NINF-1:NSUP,NANG,NFRE), FD(NFRE)
       REAL,DIMENSION(NINF:NSUP) :: USNEW
+      REAL, DIMENSION(IJS:IJL) ::  FM, SM, TEMP1, TEMP2
+
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (XLAMBDAC=0.0628,SURFT=0.000075)
-
-      DIMENSION TEMP1(IJS:IJL), TEMP2(IJS:IJL)
-
-! ----------------------------------------------------------------------
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
       DO IJ=IJS,IJL
-        SMEAN(IJ) = EPSMIN
+        SM(IJ) = EPSMIN
       ENDDO
 
       FS     = FR(NFRE)      
@@ -86,7 +88,10 @@
 !         -----------------------
 
         DO M=1,NFRE
-          FD = DFIM(M)*(ZPI*FR(M))**4/G**2
+          FD(M) = DFIM(M)*(ZPI*FR(M))**4/G**2
+        ENDDO
+
+        DO M=1,NFRE
           DO IJ=IJS,IJL
             TEMP2(IJ) = 0.
           ENDDO
@@ -96,7 +101,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SMEAN(IJ) = SMEAN(IJ)+FD*TEMP2(IJ)
+            SM(IJ) = SM(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 !SHALLOW
@@ -116,7 +121,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SMEAN(IJ) = SMEAN(IJ)+TEMP1(IJ)*TEMP2(IJ)
+            SM(IJ) = SM(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
       ENDIF
@@ -127,13 +132,11 @@
 
       DO IJ=IJS,IJL      
         CONST1    = LOG(FC/FS)  
-        CP        = G/(ZPI*FMEAN(IJ))
+        CP        = G/(ZPI*FM(IJ))
         XI        = CP/USNEW(IJ)
         ALPHAP    = MAX(0.21/XI,0.0040)
-!        CONST3    = MAX(CONST2*DELTH*TEMP2(IJ),ALPHAP)
-!        CONST3    = CONST2*DELTH*TEMP2(IJ)+ALPHAP
         CONST3    = CONST2*DELTH*TEMP2(IJ)
-        SMEAN(IJ) = SMEAN(IJ)+CONST1*CONST3
+        SM(IJ) = SM(IJ)+CONST1*CONST3
       ENDDO
 
       RETURN

@@ -52,8 +52,8 @@
  CPATH="$STORAGE_PATH",
  CFDBSF   = "$cfdbsf",
  CFDB2DSP = "$cfdb2dsp"
- PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F
+ PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= T, T, T, F, T, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T
  NCALL=2
  /

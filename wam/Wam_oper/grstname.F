@@ -51,8 +51,9 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER FILEID*3, FILENA*17, FILENAME*80, CPAD*80
+      CHARACTER FILEID*3, FILENA*17
       CHARACTER CDATE*12, CDATEF*12, CDATEH*10
+      CHARACTER*(*) CPAD, FILENAME
 
 !*    1.0  CONSTRUCT FILE NAME ALONE 
 !          -------------------------

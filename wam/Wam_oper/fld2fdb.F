@@ -233,10 +233,19 @@
 
           lopenfdb = .TRUE.
 
-          if(cltype.eq.'cf'.or.cltype.eq.'pf') then
-            clstream = 'waef'
-          else
+          if(ksec1(40).eq.1045) then
             clstream = 'wave'
+          else if(ksec1(40).eq.1081) then
+            clstream = 'waef'
+          else if(ksec1(40).eq.1082) then
+            clstream = 'wasf'
+          else if(ksec1(40).eq.1027) then
+            clstream = 'scwv'
+          else
+            WRITE(kuso,'( "Error\ /Fld2fdb/ stream unknown ", i4)' )
+     &      ksec1(40) 
+            kerr = 1
+            return
           endif
 
           istat = isetvalfdb( iaddr1,   'STREAM', clstream )

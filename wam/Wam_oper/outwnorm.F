@@ -33,9 +33,10 @@
      &            NFLAGALL ,IPFGTBL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G
-      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WHGTWG   ,WDIRWG   ,
-     &            WMNFWG
+     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG
+      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
+     &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
+     &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY
@@ -57,10 +58,7 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(1),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
-            FAVG=4*SQRT(MAX(0.,FAVG))
-            FMIN=4*SQRT(MAX(0.,FMIN))
-            FMAX=4*SQRT(MAX(0.,FMAX))
-            WRITE(IU06,*) '   4*SQRT OF WAMNORM FOR WAVE ENERGY:'
+            WRITE(IU06,*) '   WAMNORM FOR TOTAL WAVE HEIGHT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF
@@ -104,7 +102,7 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(5),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM FOR MEAN WIND DIRECTION'
+            WRITE(IU06,*) '   WAMNORM FOR WIND DIRECTION'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF
@@ -170,9 +168,6 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(11),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
-            FAVG=4*SQRT(MAX(0.,FAVG))
-            FMIN=4*SQRT(MAX(0.,FMIN))
-            FMAX=4*SQRT(MAX(0.,FMAX))
             WRITE(IU06,*) '   WAMNORM FOR WIND SEA WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
@@ -184,9 +179,6 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(12),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
-            FAVG=4*SQRT(MAX(0.,FAVG))
-            FMIN=4*SQRT(MAX(0.,FMIN))
-            FMAX=4*SQRT(MAX(0.,FMAX))
             WRITE(IU06,*) '   WAMNORM FOR SWELL WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
@@ -227,11 +219,110 @@
         ENDIF
 
         IF(NFLAG(16).AND.(GFLAG(16).OR.FFLAG(16).OR.PFLAG(16))) THEN
-          CALL WAMNORM(WMNFWG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+          CALL WAMNORM(WMNFSG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(16),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM SWELL MEAN PERIOD: '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(25).AND.(GFLAG(25).OR.FFLAG(25).OR.PFLAG(25))) THEN
+          CALL WAMNORM(MWP1G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(25),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WAVE PERIOD (1): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(26).AND.(GFLAG(26).OR.FFLAG(26).OR.PFLAG(26))) THEN
+          CALL WAMNORM(MWP2G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(26),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WAVE PERIOD (2): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(27).AND.(GFLAG(27).OR.FFLAG(27).OR.PFLAG(27))) THEN
+          CALL WAMNORM(WSPRDG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(27),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WAVE DIRECTIONAL SPREAD: '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(28).AND.(GFLAG(28).OR.FFLAG(28).OR.PFLAG(28))) THEN
+          CALL WAMNORM(MWP1WG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(28),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (1): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(29).AND.(GFLAG(29).OR.FFLAG(29).OR.PFLAG(29))) THEN
+          CALL WAMNORM(MWP1SG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(29),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN SWELL PERIOD (1): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(30).AND.(GFLAG(30).OR.FFLAG(30).OR.PFLAG(30))) THEN
+          CALL WAMNORM(MWP2WG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(30),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (2): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(31).AND.(GFLAG(31).OR.FFLAG(31).OR.PFLAG(31))) THEN
+          CALL WAMNORM(MWP2SG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(31),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (2): '
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(32).AND.(GFLAG(32).OR.FFLAG(32).OR.PFLAG(32))) THEN
+          CALL WAMNORM(WSPRDWG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(32),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN WIND SEA DIRECTIONAL SPREAD:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(33).AND.(GFLAG(33).OR.FFLAG(33).OR.PFLAG(33))) THEN
+          CALL WAMNORM(WSPRDSG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(33),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MEAN SWELL DIRECTIONAL SPREAD:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF

@@ -107,7 +107,7 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,FRATIO
       USE YOWICE   , ONLY : FLMIN
-      USE YOWMEAN  , ONLY : FMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,NCALL
@@ -124,8 +124,9 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION MIJ(IJS:IJL), GADIAG(IJS:IJL),
+      REAL :: MIJ(IJS:IJL), GADIAG(IJS:IJL),
      &          TEMP(IJS:IJL,NFRE), DELFL(NFRE)
+      LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
 
@@ -144,8 +145,9 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !         ------------------------
 
-      CALL SEMEAN(FL3, IJS, IJL)
-      CALL FEMEAN(FL3, IJS, IJL)
+      LLAK=.TRUE.
+      CALL FEMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &            AKMEAN(IJS), LLAK)
 
 ! ----------------------------------------------------------------------
 
@@ -232,8 +234,8 @@
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
 
-      CALL SEMEAN(FL3, IJS, IJL)
-      CALL FEMEAN(FL3, IJS, IJL)
+      CALL FEMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &            AKMEAN(IJS), LLAK)
 
 !*    2.5.2 COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !*          FREQUENCIES LE 2.5*FMEAN.

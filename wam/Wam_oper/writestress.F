@@ -65,7 +65,7 @@
 ! ----------------------------------------------------------------------
 
       CHARACTER*1 MODE
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
       LOGICAL LPBOPEN,LPBCLOSE
       REAL,DIMENSION(IJINF:IJSUP,NBLO) :: U10OLD,THWOLD,USOLD,
      &                                    Z0OLD,TAUW

@@ -51,27 +51,27 @@
       USE YOWCBOU  , ONLY : NBOUNC   ,IJARC    ,IGARC
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
-
-      DIMENSION FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: FL3(NINF-1:NSUP,NANG,NFRE)
 
       REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW
+      LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL SEMEAN (FL3, IJS, IJL)
-      CALL FEMEAN (FL3, IJS, IJL)
-      CALL STHQ   (FL3, IJS, IJL)
+      LLAK=.FALSE.
+      CALL FEMEAN (FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &             AKMEAN(IJS), LLAK)
+      CALL STHQ   (FL3, IJS, IJL, THQ(IJS))
       IF (ITEST.GE.3) THEN
         IF (ITESTB.GE.IG) THEN
           WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',

@@ -44,7 +44,7 @@
      &             CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,MARSTYPE ,YCLASS,
-     &            YEXPVER
+     &            YEXPVER  ,ISTREAM
       USE YOWTEST  , ONLY : IU06     ,ITEST 
 
 
@@ -111,10 +111,14 @@
       ICLASS=CLASS_WGRIB(YCLASS,IU06)
       KSEK1(38) = ICLASS    ! INDICATES CLASS
       KSEK1(39) =     2     ! TYPE OF FIELD 1=FG 2=AN 9=FC 10=F 11=PF
-      IF(MARSTYPE .EQ. 'cf' .OR. MARSTYPE .EQ. 'pf') THEN
-        KSEK1(40)=1081      ! STREAM 1081=ENSEMBLE WAVE 
+      IF(ISTREAM.NE.0) THEN
+        KSEK1(40)= ISTREAM  ! STREAM
       ELSE
-        KSEK1(40)=1045      ! STREAM 1045=WAVE
+        IF(MARSTYPE .EQ. 'cf' .OR. MARSTYPE .EQ. 'pf') THEN
+          KSEK1(40)=1081      ! STREAM 1081=ENSEMBLE WAVE 
+        ELSE
+          KSEK1(40)=1045      ! STREAM 1045=WAVE
+        ENDIF
       ENDIF
       KSEK1(41) =     0     ! EXPERIMENT VERSION
       DO JC = 1, 4

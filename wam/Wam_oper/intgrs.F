@@ -86,7 +86,7 @@
       CHARACTER*12 CZDATE,CDATE 
       CHARACTER*20 CHARV(4) 
       CHARACTER*40 CLMSG
-      CHARACTER*80 INFILEN,OUTFILEN
+      CHARACTER*120 INFILEN,OUTFILEN
       LOGICAL LINTGRS, LNEWAREA, LNINT, LLEXIST
 !-----------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-      SUBROUTINE SEMEAN (F3, IJS, IJL)
+      SUBROUTINE SEMEAN (F3, IJS, IJL, EM, LLEPSMIN)
 
 ! ----------------------------------------------------------------------
 
@@ -15,10 +15,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEMEAN(F3, IJS, IJL)*
+!       *CALL* *SEMEAN(F3, IJS, IJL, EM)*
 !          *F3*  - SPECTRUM.
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
+!          *EM*  - MEAN ENERGY
+!          *LLEPSMIN* - TRUE IF THE WAVE ENERGY IS AT LEAST = EPSMIN
 
 !     METHOD.
 !     -------
@@ -38,23 +40,34 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
-      USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION F3(NINF-1:NSUP,NANG,NFRE), TEMP(IJS:IJL)
+      IMPLICIT NONE
+
+      INTEGER :: IJ,M,K,IJS,IJL
+      REAL :: DELT25
+      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL, DIMENSION(IJS:IJL) ::  EM, TEMP
+      LOGICAL :: LLEPSMIN
 
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALISE ENERGY ARRAY.
 !        ------------------------
 
-      DO IJ=IJS,IJL
-        EMEAN(IJ) = EPSMIN
-      ENDDO
+      IF(LLEPSMIN) THEN
+        DO IJ=IJS,IJL
+          EM(IJ) = EPSMIN
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          EM(IJ) = 0.
+        ENDDO
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -71,7 +84,7 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          EMEAN(IJ) = EMEAN(IJ)+DFIM(M)*TEMP(IJ)
+          EM(IJ) = EM(IJ)+DFIM(M)*TEMP(IJ)
         ENDDO
       ENDDO
 
@@ -82,7 +95,7 @@
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
       DO IJ=IJS,IJL
-        EMEAN(IJ) = EMEAN(IJ)+DELT25*TEMP(IJ)
+        EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
       ENDDO
 
       RETURN

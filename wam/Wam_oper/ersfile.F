@@ -82,12 +82,10 @@
 !       DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
           CLOSE (IU92,STATUS='KEEP')
-          IF(ITEST.GT.0) THEN
-            WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
-     &       IU92, '  CLOSED    '
-            WRITE (IU06,*) '                                      '
-            CALL FLUSH (IU06)
-          ENDIF
+          WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
+     &     IU92, '  CLOSED    '
+          WRITE (IU06,*) '                                      '
+          CALL FLUSH (IU06)
         ENDIF
         IERS = 0
         RETURN
@@ -128,6 +126,12 @@
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
       IF(LMESSPASS.AND.(IRANK.NE.1)) RETURN
 
+!     DO NOT DEAL WITH IU91 AND IU92 IF IT IS NOT COLLOCATION TIME 
+      IF (CDTPRO.NE.CDTERS) THEN
+        IERS=0
+        RETURN
+	  ENDIF
+
       IERS = 0                                                          
       IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'
      &    .OR.MARSTYPE.EQ.'4v') THEN
@@ -136,22 +140,19 @@
      &   IOSTAT=IERR)                                             
         IF (IERR.NE.0) THEN                                            
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            IF(ITEST.GT.0) THEN
-              WRITE (IU06,*) '                                     '
-              WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
-     &         FNAME, ' NOT OPENED'
-              WRITE (IU06,*) '                                     ' 
-            ENDIF
+            WRITE (IU06,*) '                                     '
+            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
+     &       FNAME, ' NOT OPENED'
+            WRITE (IU06,*) '                                     ' 
+            CALL FLUSH (IU06)
           ENDIF
           RETURN                                                      
         ELSE                                                           
           READ(IU91)CL_DATE
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            IF(ITEST.GT.0) THEN
-              WRITE (IU06,*) '                                     '
-              WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
-     &         FNAME, ' OPENED    '
-            ENDIF
+            WRITE (IU06,*) '                                     '
+            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
+     &       FNAME, ' OPENED    '
           ENDIF
 
           WRITE(FNAME,'(''COS'',A12)') CDTERS                         

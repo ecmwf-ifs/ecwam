@@ -76,6 +76,8 @@ SOURCE	=\
               ispoff.F \
               jafu.F \
               lasttwobins.F \
+              llalloc_grdfld.F \
+              loc2glo.F \
               locint.F \
               lowenergy.F \
               makeblo.F \
@@ -120,6 +122,8 @@ SOURCE	=\
               mtabs.F \
               mubuf.F \
               myindex.F \
+              mwp1.F \
+              mwp2.F \
               newwind.F \
               nlweigt.F \
               notim.F \
@@ -144,6 +148,7 @@ SOURCE	=\
               partitioning.F \
               peak.F \
               peakfr.F \
+              peakfri.F \
               phys.F \
               preproc.F \
               preset.F \
@@ -177,6 +182,7 @@ SOURCE	=\
               savstress.F \
               sbottom.F \
               sdissip.F \
+              scosfl.F \
               secondhh.F \
               semean.F \
               sepwisw.F \
@@ -232,7 +238,8 @@ SOURCE	=\
               writsta.F \
               wsmfen.F \
               wvalloc.F \
-              wvdealloc.F
+              wvdealloc.F \
+              wdirspread.F
 
 OBJECTS	=	$(SOURCE:.F=.o)
 

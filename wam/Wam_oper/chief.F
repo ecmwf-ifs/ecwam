@@ -81,8 +81,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN   ,
-     &            SMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
@@ -238,11 +237,10 @@
       ALLOCATE (SL(NINF-1:NSUP,NANG,NFRE))
       ALLOCATE (FCONST(NINF:NSUP,NFRE))
 
-      ALLOCATE (EMEAN(NIBLO))
-      ALLOCATE (FMEAN(NIBLO))
-      ALLOCATE (THQ(NIBLO))
-      ALLOCATE (AKMEAN(NINF:NSUP))
-      ALLOCATE (SMEAN(NIBLO))
+      ALLOCATE (EMEAN(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE (FMEAN(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE (THQ(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE (AKMEAN(NSTART(IRANK):NEND(IRANK)))
 
 !     0.4 INITIALIZE SIGNAL HANDLER.
 !         --------------------------

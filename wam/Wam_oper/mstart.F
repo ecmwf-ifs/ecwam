@@ -24,7 +24,7 @@
 !      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
 !      *IOPTI*  INTEGER    START FIELD OPTION
-!                          = 0 FROM PARAMTERS.
+!                          = 0 FROM PARAMETERS.
 !                          = 1 FROM WINDS CALM ENERGY=0.
 !                          = 2 FROM WINDS CALM FROM PARAMETERS.
 !      *FETCH*  REAL       FETCH IN METERS.
@@ -69,7 +69,7 @@
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,
-     &            ALFA     ,GAMMA    ,SA       ,SB
+     &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -104,7 +104,7 @@
         ENDDO
       ENDDO
 
-      WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SIDES:'')')
+      WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
       WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',
      &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
 
@@ -128,6 +128,12 @@
             ALPHJ(IJ) = 0.
             THES(IJ) = THWOLD(IJ,IG)
           ENDDO
+        ELSE IF (IOPTI.EQ.0) THEN
+          DO IJ = IJS(IG), IJL(IG)
+            FP(IJ) = FM
+            ALPHJ(IJ) = ALFA
+            THES(IJ) = THETAQ
+          ENDDO
         ELSE
           DO IJ = IJS(IG), IJL(IG)
             FP(IJ) = FM
@@ -135,7 +141,7 @@
             IF (U10OLD(IJ,IG) .GT. 0.1E-08) THEN
               THES(IJ) = THWOLD(IJ,IG)
             ELSE
-              THES(IJ) = THES(IJ)
+              THES(IJ) = 0.
             ENDIF
           ENDDO
         ENDIF

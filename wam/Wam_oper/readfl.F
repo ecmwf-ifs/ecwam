@@ -53,7 +53,7 @@
 ! ----------------------------------------------------------------------
 
       CHARACTER*1 MODE
-      CHARACTER*80 FILENAME
+      CHARACTER*120 FILENAME
       LOGICAL LPBOPEN,LPBCLOSE
 
       REAL,DIMENSION(0:NIBLO,NANG,MINF:MSUP) :: FL

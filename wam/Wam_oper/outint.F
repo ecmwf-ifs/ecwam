@@ -60,9 +60,11 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,
+     &            MWP1G    ,MWP2G    ,WSPRDG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
-     &            WDIRWG   ,WMNFWG
+     &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
+     &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -84,13 +86,18 @@
 
       IF(CLDOMAIN.EQ.'s') THEN
 !     the swamp case has been reduced to a one grid point model
-!     the necessary paramters for the study of the non dimensional
+!     the necessary parameters for the study of the non dimensional
 !     growth curves are output
-!!!!  MAKE SURE that whgttg(i,j) is the wave energy and not wave height.
+!!!!  MAKE SURE that whgttg(i,j) is the wave wave height.
 
 
         call difdate(cdatea,cdtpro,itime)
-        do j=1,ngy
+        if(allocated(whgttg).and.
+     &     allocated(cdg).and.
+     &     allocated(u10g).and.
+     &     allocated(wmnftg).and.
+     &     allocated(wpkftg) ) then
+          do j=1,ngy
           do i=1,ngx
             if(whgttg(i,j).ne.zmiss) then
 !             take the definiton from the model for the relation
@@ -98,40 +105,29 @@
               ustar2=cdg(i,j)*(u10g(i,j)**2+0.01)-0.0001
               ustar=sqrt(ustar2)
               tstar=itime*g/ustar
-              estar=whgttg(i,j)*g**2/(ustar**4)
+              estar=(whgttg(i,j)**2/16)*g**2/(ustar**4)
               anfit=EGRCRV*tanh(AGRCRV*tstar**BGRCRV)
               fmstar=ustar*wmnftg(i,j)/g
               fmfit=AFCRV*fmstar**BFCRV
               cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
               z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
               charnock=max(g*z0/ustar2,alpha)
-              write(iu06,*) 'grow ',tstar,estar,ustar,whgttg(i,j),
+              write(iu06,*) 'grow ',tstar,estar,ustar,whgttg(i,j)**2/16,
      &                      cdg(i,j),u10g(i,j),anfit,fmstar,fmfit,
      &                      wpkftg(i,j),charnock
+              write(iu06,*) ' '
             endif
           enddo
-        enddo
+          enddo
+        endif
 
       ENDIF
 
       IF (CDTINTT.EQ.CDTPRO) THEN
 
-!*      0.1 CONVERT TO TOTAL SEA WAVE HEIGHT
-!           --------------------------------
-        IF(FFLAG(1).OR.PFLAG(1).OR.GFLAG(1)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(1)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-                IF(WHGTTG(I,J).NE.ZMISS)
-     &            WHGTTG(I,J) = 4.0 * SQRT(WHGTTG(I,J))
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
-
 !*      0.2 CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
 !           -----------------------------------------------------------
+
         IF(FFLAG(2).OR.PFLAG(2).OR.GFLAG(2)) THEN
           IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(2)))
      &     .OR.(.NOT.LMESSPASS)) THEN
@@ -158,22 +154,7 @@
 
       ENDIF
 
-
       IF (CDTINTS.EQ.CDTPRO) THEN
-!*      0.3 CONVERT TO SWELL AND WINDSEA WAVE HEIGHT AND DEGREES.
-!           -----------------------------------------------------
-
-        IF(FFLAG(12).OR.PFLAG(12).OR.GFLAG(12)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(12)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-                IF(WHGTSG(I,J).NE.ZMISS)
-     &            WHGTSG(I,J) = 4.0 * SQRT(WHGTSG(I,J))
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
 
 !*      0.4 CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
 !           -----------------------------------------------------------
@@ -184,18 +165,6 @@
               DO I=1,NGX
               IF(WDIRSG(I,J).NE.ZMISS)
      &          WDIRSG(I,J) = MOD(DEG * WDIRSG(I,J) + 180.,360.)
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
-
-        IF(FFLAG(11).OR.PFLAG(11).OR.GFLAG(11)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(11)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-              IF(WHGTWG(I,J).NE.ZMISS)
-     &          WHGTWG(I,J) = 4.0 * SQRT(WHGTWG(I,J))
               ENDDO
             ENDDO
           ENDIF
@@ -233,6 +202,9 @@
         IF (FFLAG(8)) CALL MPGATHERGRDFLD(IPFGTBL(8),IRECV,8,TAUWG)
         IF (FFLAG(9)) CALL MPGATHERGRDFLD(IPFGTBL(9),IRECV,9,SMEANG)
         IF (FFLAG(10))CALL MPGATHERGRDFLD(IPFGTBL(10),IRECV,10,U10G)
+        IF (FFLAG(25))CALL MPGATHERGRDFLD(IPFGTBL(25),IRECV,25,MWP1G)
+        IF (FFLAG(26))CALL MPGATHERGRDFLD(IPFGTBL(26),IRECV,26,MWP2G)
+        IF (FFLAG(27))CALL MPGATHERGRDFLD(IPFGTBL(27),IRECV,27,WSPRDG)
 
       ENDIF
 
@@ -274,6 +246,12 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(15),IRECV,115,WMNFWG)
         IF (PFLAG(16).OR.(.NOT.LFDB.AND.GFLAG(16)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(16),IRECV,116,WMNFSG)
+        IF (PFLAG(25).OR.(.NOT.LFDB.AND.GFLAG(25)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(25),IRECV,125,MWP1G)
+        IF (PFLAG(26).OR.(.NOT.LFDB.AND.GFLAG(26)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(26),IRECV,126,MWP2G)
+        IF (PFLAG(27).OR.(.NOT.LFDB.AND.GFLAG(27)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(27),IRECV,127,WSPRDG)
 
       ENDIF
 
@@ -288,6 +266,12 @@
         IF (FFLAG(14)) CALL MPGATHERGRDFLD(IPFGTBL(14),IRECV,14,WDIRSG)
         IF (FFLAG(15)) CALL MPGATHERGRDFLD(IPFGTBL(15),IRECV,15,WMNFWG)
         IF (FFLAG(16)) CALL MPGATHERGRDFLD(IPFGTBL(16),IRECV,16,WMNFSG)
+        IF (FFLAG(28)) CALL MPGATHERGRDFLD(IPFGTBL(28),IRECV,28,MWP1WG)
+        IF (FFLAG(29)) CALL MPGATHERGRDFLD(IPFGTBL(29),IRECV,29,MWP1SG)
+        IF (FFLAG(30)) CALL MPGATHERGRDFLD(IPFGTBL(30),IRECV,30,MWP2WG)
+        IF (FFLAG(31)) CALL MPGATHERGRDFLD(IPFGTBL(31),IRECV,31,MWP2SG)
+        IF (FFLAG(32)) CALL MPGATHERGRDFLD(IPFGTBL(32),IRECV,32,WSPRDWG)
+        IF (FFLAG(33)) CALL MPGATHERGRDFLD(IPFGTBL(33),IRECV,33,WSPRDSG)
 
       ENDIF
 
@@ -319,6 +303,9 @@
             IF (FFLAG(8)) WRITE (IU20) TAUWG
             IF (FFLAG(9)) WRITE (IU20) SMEANG
             IF (FFLAG(10))WRITE (IU20) U10G
+            IF (FFLAG(25))WRITE (IU20) MWP1G 
+            IF (FFLAG(26))WRITE (IU20) MWP2G 
+            IF (FFLAG(27))WRITE (IU20) WSPRDG
           ENDIF
         ENDIF
 
@@ -416,6 +403,27 @@
      &                 RANGAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        IF (PFLAG(25)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN PERIOD (1) ( SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 MWP1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(26)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN PERIOD (2) ( SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 MWP2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(27)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN DIRECTIONAL SPREAD (x 0.01)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 WSPRDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -444,6 +452,12 @@
             IF (FFLAG(12)) WRITE (IU21) WHGTSG
             IF (FFLAG(14)) WRITE (IU21) WDIRSG
             IF (FFLAG(16)) WRITE (IU21) WMNFSG
+            IF (FFLAG(28)) WRITE (IU21) MWP1WG
+            IF (FFLAG(29)) WRITE (IU21) MWP1SG
+            IF (FFLAG(30)) WRITE (IU21) MWP2WG
+            IF (FFLAG(31)) WRITE (IU21) MWP2SG
+            IF (FFLAG(32)) WRITE (IU21) WSPRDWG
+            IF (FFLAG(33)) WRITE (IU21) WSPRDSG
           ENDIF
         ENDIF
 
@@ -459,7 +473,7 @@
         ENDIF
         IF (PFLAG(13)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' MEAN SEA DIRECTION ( DEGREE FROM NORTH FROM )'
+            TITL = ' MEAN WIND SEA DIRECTION ( DEGREE FROM NORTH FROM )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
      &                 WDIRWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
@@ -490,6 +504,48 @@
             TITL = ' MEAN SWELL FREQUENCY ( 0.01 HERTZ )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
      &                 WMNFSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(28)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN WIND SEA PERIOD (1) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP1WG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(29)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN SWELL PERIOD (1) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP1SG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(30)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN WIND SEA PERIOD (2) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP2WG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(31)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN SWELL PERIOD (2) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP2SG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(32)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN WIND SEA DIRECTIONAL SPREAD (x 0.01)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 WSPRDWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(33)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN SWELL DIRECTIONAL SPREAD (x 0.01 )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 WSPRDSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
       ENDIF
@@ -572,6 +628,20 @@
           ENDIF
         ENDIF
 
+!*      WIND DIRECTION.
+!       ---------------
+
+        IF (GFLAG(5)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(5)))
+     &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &      .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=249
+            CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
 !*      WAVE PEAK PERIOD.
 !       -----------------
 
@@ -628,8 +698,8 @@
           ENDIF
         ENDIF
 
-!*      WIND SPEED .
-!       -----------
+!*      WIND SPEED.
+!       ----------
 
         IF (GFLAG(10)) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(10)))
@@ -642,8 +712,6 @@
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
-
-      ENDIF
 
 !*      ALTIMETER WAVE HEIGHT.
 !       ---------------------
@@ -686,6 +754,51 @@
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
+
+!*      MEAN PERIOD 1.
+!       -------------
+
+        IF (GFLAG(25)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(25)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=220
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN PERIOD 2.
+!       -------------
+
+        IF (GFLAG(26)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(26)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=221
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN DIRECTIONAL SPREAD. 
+!       -----------------------
+
+        IF (GFLAG(27)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(27)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=222
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+      ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -805,7 +918,92 @@
      &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
+
+!*      MEAN WIND SEA PERIOD 1.
+!       -----------------------
+
+        IF (GFLAG(28)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(28)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=223
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN WIND SEA PERIOD 2.
+!       -----------------------
+
+        IF (GFLAG(30)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(30)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=224
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN WIND SEA DIRECTIONAL SPREAD. 
+!       ---------------------------------
+
+        IF (GFLAG(32)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(32)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=225
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
       ENDIF  
+
+!*      MEAN SWELL PERIOD 1.
+!       --------------------
+
+        IF (GFLAG(29)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(29)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=226
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN SWELL PERIOD 2.
+!       --------------------
+
+        IF (GFLAG(31)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(31)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=227
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MEAN SWELL DIRECTIONAL SPREAD. 
+!       ------------------------------
+
+        IF (GFLAG(33)) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(33)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=228
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
 
       RETURN
       END SUBROUTINE OUTINT

@@ -1,4 +1,4 @@
-      SUBROUTINE MAKEGRID (BLOCK, GRID, IJS, IJL, IG)
+      SUBROUTINE MAKEGRID (BLOCK, GRID, IJS, IJL, IG, LSQRT)
 
 ! ----------------------------------------------------------------------
 
@@ -20,6 +20,9 @@
 !           *IJS*     INTEGER INDEX OF FIRST GRIDPOINT IN BLOCK
 !           *IJL*     INTEGER INDEX OF LAST  GRIDPOINT IN BLOCK
 !           *IG*      INTEGER BLOCK NUMBER
+!           *LSQRT*   LOGICAL IF TRUE THE 4*SQUARE ROOT OF BLOCK IS
+!                     COMPUTED WHEN TRANSFERRING TO GRID EXCEPT IF
+!                     BLOCK EQUALS ZMISS.
 
 !     METHOD.
 !     -------
@@ -41,19 +44,14 @@
 
 ! ----------------------------------------------------------------------
 
-
+      USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
-
-
-
 
 ! ----------------------------------------------------------------------
 
+      LOGICAL LSQRT
       DIMENSION BLOCK(NIBLO), GRID(NGX,NGY)
-
-! ----------------------------------------------------------------------
 
 !*    1. INITIALIZATION
 !     -----------------
@@ -69,11 +67,21 @@
 !*    2. MAKE GRIDDED FIELD
 !     ---------------------
 
-      DO IJ = IJS,IJL
-        IX = IXLG(IJ,IG)
-        IY = NGY- KXLT(IJ,IG) +1
-        GRID(IX,IY) = BLOCK(IJ)
-      ENDDO
+      IF(LSQRT) THEN
+        DO IJ = IJS,IJL
+          IF(BLOCK(IJ).NE.ZMISS) THEN
+            IX = IXLG(IJ,IG)
+            IY = NGY- KXLT(IJ,IG) +1
+            GRID(IX,IY) = 4.*SQRT(BLOCK(IJ))
+          ENDIF
+        ENDDO
+      ELSE
+        DO IJ = IJS,IJL
+          IX = IXLG(IJ,IG)
+          IY = NGY- KXLT(IJ,IG) +1
+          GRID(IX,IY) = BLOCK(IJ)
+        ENDDO
+      ENDIF
 
       RETURN
       END SUBROUTINE MAKEGRID

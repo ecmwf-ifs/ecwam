@@ -70,7 +70,7 @@
 
       CHARACTER*  9 CMBXSIZE
       CHARACTER* 12 CDATE 
-      CHARACTER* 80 FILENAME
+      CHARACTER* 120 FILENAME
 
 !* fdb variables.
 

@@ -74,7 +74,7 @@
      &   NENSFNB, NTOTENS,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, XKAPPA2, NCALL,
-     $   SWAMPWIND,LALTLRGR,HSCOEFCOR,HSCONSCOR
+     $   SWAMPWIND, LALTLRGR, HSCOEFCOR, HSCONSCOR, ISTREAM
 
 ! ----------------------------------------------------------------------
 
@@ -92,7 +92,8 @@
 
       REWIND(IU05)
       READ (IU05, NALINE)
-      REWIND(IU05)
+      CLOSE(IU05)
+
 
       WRITE(6,*) '==============================================='
       WRITE(6,*) '*** MPUSERIN has read the following settings'

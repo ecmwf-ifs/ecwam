@@ -168,7 +168,7 @@
 
       CHARACTER*  1 CDDOMAIN
       CHARACTER* 40 CLMSG
-      CHARACTER* 80 OUTFILEN
+      CHARACTER* 120 OUTFILEN
 
 !-----------------------------------------------------------------------
 

@@ -19,10 +19,10 @@
  CLOTSU="S", "S", "S", "S", "S", "S", "S"
  CDATER="${outofrf}",
  CDATES="${outof2d}"
- PFLAG= T, F, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- NFLAG= F, F, F, F, F, F, T, T, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ PFLAG= T, F, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ NFLAG= F, F, F, F, F, F, T, T, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  LFDB= F,
  LPBIOIN= T,
  LGRIBIN= ${lgribin},

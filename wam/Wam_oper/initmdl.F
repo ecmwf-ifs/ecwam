@@ -443,15 +443,17 @@
           ENDDO
           CALL FLUSH(IU06)
         ENDIF
+      ENDIF
 
 
 !     1.4 SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
+!         IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
+!         POINT TO THE PARAMETRE WHICH ARE OUTPUT.
 !         ----------------------------------------------------------
-        CALL MPCRTBL
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
-          CALL FLUSH (IU06)
-        ENDIF
+      CALL MPCRTBL
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
+        CALL FLUSH (IU06)
       ENDIF
 
 !     1.5 DETERMINE LAST OUTPUT DATE

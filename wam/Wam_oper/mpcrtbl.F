@@ -35,7 +35,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            IPFGTBL
+     &            NFLAG    ,IPFGTBL
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
@@ -51,7 +51,8 @@
           IPFGTBL(IFLAG)=IR
           IR=IR+1
           IF(IR.GT.NPROC) IR=1
-        ELSEIF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG)) THEN
+        ELSEIF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.
+     &         NFLAG(IFLAG) ) THEN
           IPFGTBL(IFLAG)=IR
           IR=IR+1
           IF(IR.GT.NPROC) IR=1

@@ -25,6 +25,7 @@ SOURCE	=\
               intspec.F        \
               jafu.F           \
               locint.F         \
+              llalloc_grdfld.F \
               mblock.F         \
               mbounc.F         \
               mbounf.F         \

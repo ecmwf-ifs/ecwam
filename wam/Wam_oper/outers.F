@@ -67,8 +67,9 @@
 
 !     WORK ARRAYS
       INTEGER,ALLOCATABLE :: IBUFF(:)
-      REAL,ALLOCATABLE,DIMENSION(:) :: U10,THW,US
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
+      REAL,ALLOCATABLE,DIMENSION(:) :: EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,
+     &                                 USPTS
 
       IU91 = 91                                                         
       IU92 = 92                                                         
@@ -76,7 +77,7 @@
       IF (IG.EQ.1) THEN
         CALL ERSFILE (IU91, IU92, IG, IGL)
 
-        IF(LMESSPASS.AND.NPROC.GT.1) THEN
+        IF(LMESSPASS.AND.NPROC.GT.1.AND.CDTPRO.EQ.CDTERS) THEN
 
 !*  EXCHANGE THE VALUE OF NERS, IERS,IGERS, AND IJERS WITH THE OTHER PE
 
@@ -147,8 +148,6 @@
 
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
-        ALLOCATE(U10(NIBLO),THW(NIBLO),US(NIBLO))
-
         IF(LMESSPASS) THEN
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 
@@ -156,21 +155,20 @@
           ITAG=ITAG+1
           NSPFLD=1
           NSCFLD=6
+
+          ALLOCATE(EMPTS(IERS))
+          ALLOCATE(FMPTS(IERS))
+          ALLOCATE(THQPTS(IERS))
+          ALLOCATE(U10PTS(IERS))
+          ALLOCATE(THWPTS(IERS))
+          ALLOCATE(USPTS(IERS))
+
           ALLOCATE(FLPTS(NSPFLD,IERS,NANG,NFRE))
-          DO IJ = NINF,NSUP
-            U10(IJ)=U10NEW(IJ)
-            THW(IJ)=THWNEW(IJ)
-            US(IJ)=USNEW(IJ)
-          ENDDO
+
           CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
      &                         FL3,FLPTS,
-     &                         EMEAN,FMEAN,THQ,U10,THW,US)
-        ELSE
-          DO IJ = NINF,NSUP
-            U10(IJ)=U10NEW(IJ)
-            THW(IJ)=THWNEW(IJ)
-            US(IJ)=USNEW(IJ)
-          ENDDO
+     &                         U10NEW,THWNEW,USNEW,
+     &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
         ENDIF
 
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
@@ -191,16 +189,23 @@
               ENDIF
               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
      &                    TH(1), FR(1), FRATIO
-              IF (EMEAN(IJ) .GE. 0.0 ) THEN
-                WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     &                      FMEAN(IJ), US(IJ), DEG*THW(IJ),
-     &                      U10(IJ)
-              ELSE
-                WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
-              ENDIF
               IF(LMESSPASS) THEN
+                IF (EMPTS(NGOU) .GT. 0.0 ) THEN
+                  WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),
+     &                      FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),
+     &                      U10PTS(NGOU)
+                ELSE
+                  WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
+                ENDIF
                 WRITE(IU92) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
               ELSE
+                IF (EMEAN(IJ) .GT. 0.0 ) THEN
+                  WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
+     &                      FMEAN(IJ), USNEW(IJ), DEG*THWNEW(IJ),
+     &                      U10NEW(IJ)
+                ELSE
+                  WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
+                ENDIF
                 WRITE(IU92) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
               ENDIF
             ENDIF                                                       
@@ -208,18 +213,23 @@
         ENDIF
       ENDIF                                                             
 
-      IF (IG.EQ.IGL) THEN                                               
-        IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-          CALL ERSFILE (IU91, IU92, -9, -9)
-        ENDIF
+      IF (CDTPRO.EQ.CDTERS) THEN                          
+        IF (IG.EQ.IGL) THEN                                               
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            CALL ERSFILE (IU91, IU92, -9, -9)
+          ENDIF
+        ENDIF                                                             
       ENDIF                                                             
 
       IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
       IF(ALLOCATED(IGERS))  DEALLOCATE (IGERS)
       IF(ALLOCATED (IBUFF)) DEALLOCATE (IBUFF)
-      IF(ALLOCATED (U10))   DEALLOCATE (U10)
-      IF(ALLOCATED (THW))   DEALLOCATE (THW)
-      IF(ALLOCATED (US))    DEALLOCATE (US)
+      IF(ALLOCATED(EMPTS)) DEALLOCATE (EMPTS)
+      IF(ALLOCATED(FMPTS)) DEALLOCATE (FMPTS)
+      IF(ALLOCATED(THQPTS)) DEALLOCATE (THQPTS)
+      IF(ALLOCATED(U10PTS)) DEALLOCATE (U10PTS)
+      IF(ALLOCATED(THWPTS)) DEALLOCATE (THWPTS)
+      IF(ALLOCATED(USPTS)) DEALLOCATE (USPTS)
       IF(ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
 
       RETURN                                                            

@@ -62,7 +62,7 @@
       CHARACTER*12 CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
       CHARACTER*14 CDATE
       PARAMETER(ZERO=' ')
-      LOGICAL EOFD, FLAGGED
+      LOGICAL EOFD, FLAGGED, LLTEST
 
       DATA yofid /'RFL'/
       DATA CDTGEO, CDTGE1 /ZERO, ZERO/
@@ -83,7 +83,8 @@
 !        -----------------------------------------------------
 
       IF (EOFD) THEN
-        CALL confile (iu06, iume, cdtge1, yofid, ifail)
+        LLTEST=.TRUE.
+        CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST)
         IF(IFAIL.NE.0) THEN
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
           WRITE(IU06,*) ' +                                       +'

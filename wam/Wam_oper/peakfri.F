@@ -1,25 +1,29 @@
-      SUBROUTINE PEAKFR (F, IJS, IJL, PEAKF)
+      SUBROUTINE PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF)
 
 ! ----------------------------------------------------------------------
 
-!**** *PEAKFR* - COMPUTATION OF PEAK FREQUENCY AT EACH GRID POINT.
+!**** *PEAKFRI* - COMPUTATION OF INDEX OF THE PEAK FREQUENCY AND
+!                 THE CORRESPONDING VALUE OF THE 1-D SPECTRAM
+!                 AT EACH GRID POINT.
 
-!     H. GUNTHER      ECMWF            DECEMBER 1989
-!     (CODE REMOVED FROM SUB. FEMEAN)
+!     JEAN BIDLOT    ECMWF           MARCH 2000 
 
 !*    PURPOSE.
 !     --------
 
-!       COMPUTE PEAK FREQUENCY AT EACH GRID POINT.
+!       COMPUTE PEAK FREQUENCY INDEX AT EACH GRID POINT.
+!       IF NOT PEAK FOUND THAN EPEAKF WILL BE SET TO 0. AND
+!       IPEAKF TO NFRE
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAKFR (F, IJS, IJL, PEAKF)*
+!       *CALL* *PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF)*
 !          *F*     - SPECTRUM.
 !          *IJS*   - INDEX OF FIRST GRIDPOINT
 !          *IJL*   - INDEX OF LAST GRIDPOINT
-!          *PEAKF* - PEAKFREQUENCY
+!          *IPEAKF - INDEX OF PEAK FREQUENCY 
+!          *EPEAKF* - 1-D SPECTRUM AT PEAK FREQUENCY
 
 !     METHOD.
 !     -------
@@ -38,21 +42,25 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR
+      USE YOWFRED  , ONLY : DELTH    ,FR
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION TEMP1(IJS:IJL), TEMP2(IJS:IJL)
-      DIMENSION F(NINF-1:NSUP,NANG,NFRE), PEAKF(IJS:IJL)
+      IMPLICIT NONE
+
+      INTEGER :: IPEAKF(IJS:IJL) 
+      INTEGER :: IJ,K,M,IJS,IJL
+      REAL, DIMENSION(IJS:IJL) :: TEMP, EPEAKF
+      REAL :: F(NINF-1:NSUP,NANG,NFRE)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------
 
       DO IJ = IJS,IJL
-        TEMP1(IJ) = 0.
-        PEAKF(IJ) = 0.
+        EPEAKF(IJ) = 0.
+        IPEAKF(IJ) = NFRE 
       ENDDO
 
 !*    2. LOOP OVER FREQUENCIES
@@ -64,11 +72,11 @@
 !        -------------------------------------------
 
         DO IJ = IJS,IJL
-          TEMP2(IJ) = 0.
+          TEMP(IJ) = 0.
         ENDDO
         DO K = 1,NANG
           DO IJ = IJS,IJL
-            TEMP2(IJ) = TEMP2(IJ) + F(IJ,K,M)
+            TEMP(IJ) = TEMP(IJ) + F(IJ,K,M)
           ENDDO
         ENDDO
 
@@ -76,13 +84,19 @@
 !         ---------------------
 
         DO IJ = IJS,IJL
-          IF (TEMP1(IJ).LT.TEMP2(IJ)) THEN
-            TEMP1(IJ) = TEMP2(IJ)
-            PEAKF(IJ) = FR(M)
+          IF (EPEAKF(IJ).LT.TEMP(IJ)) THEN
+            EPEAKF(IJ) = TEMP(IJ)
+            IPEAKF(IJ) = M 
           ENDIF
         ENDDO
 
       ENDDO
 
+!     RESCALE EPEAKF TO 1-D SPECTRUM OF WAVE ENERGY
+
+      DO IJ = IJS,IJL
+        EPEAKF(IJ) = EPEAKF(IJ)*DELTH 
+      ENDDO
+
       RETURN
-      END SUBROUTINE PEAKFR
+      END SUBROUTINE PEAKFRI

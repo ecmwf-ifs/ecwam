@@ -167,7 +167,7 @@
         ENDIF
 
         ICOMPTOT=ICOMPTOT+1
-        IF(ICOMPTOT.LE.3) GOTO 200
+        IF(ICOMPTOT.LE.2) GOTO 200
 
         CALL PBCLOSE(IUOUT,KRET)
         STOP

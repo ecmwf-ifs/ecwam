@@ -9,8 +9,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN   ,
-     &            SMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
      &            FCONST   ,FL2      ,FL3      ,SL
       USE YOWWIND  , ONLY : USNEXT   ,DSNEXT 
@@ -36,7 +35,6 @@
       IF(ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)
       IF(ALLOCATED(THQ)) DEALLOCATE(THQ)
       IF(ALLOCATED(AKMEAN)) DEALLOCATE(AKMEAN)
-      IF(ALLOCATED(SMEAN)) DEALLOCATE(SMEAN)
 
 
       RETURN

@@ -48,6 +48,7 @@
 
 ! ----------------------------------------------------------------------
 
+      LOGICAL :: LLEPSMIN
       DIMENSION F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NINF:NSUP) :: ETOI, USOI, USMO, THMO         
       REAL,DIMENSION(NINF:NSUP) :: EWFG, EWOI, EWA,FMWFG, FMWA,
@@ -70,7 +71,8 @@
 !*    1. FIND THE WINDSEA.                                              
 !        -----------------                                              
 
-      CALL SEMEAN (F, IJS, IJL)
+      LLEPSMIN=.TRUE.
+      CALL SEMEAN (F, IJS, IJL, EMEAN(IJS), LLEPSMIN)
 
       CALL FWSEA (F, EWFG, THEW, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
 

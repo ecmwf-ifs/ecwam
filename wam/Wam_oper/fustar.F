@@ -49,9 +49,9 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWMPP   , ONLY : NINF    ,NSUP
       USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV   ,
      &             AFCRV   ,BFCRV
-      USE YOWMPP   , ONLY : NINF    ,NSUP
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -132,8 +132,8 @@
         ENDIF                                                          
       ENDDO
 
-      WRITE(IU06,*) ' WINDSEA / USTAR ASSIMILATION FAILED AT ',
-     &             NNW, ' POINTS'                                       
+      WRITE(IU06,*) '  FUSTAR: WRONG WINDSEA/SWELL RATIO AT ',
+     &             NNW, ' POINTS. NO ASSIMILATION DONE FOR THOSE POINTS'
 
       RETURN                                                            
       END SUBROUTINE FUSTAR
