@@ -1,0 +1,109 @@
+      SUBROUTINE MPGATHEROIFLD(ISEND,ITAG,NSTART,NEND,FIELD) 
+C
+C****  *MPGATHEROIFLD* - GATHER SCALAR GRID DATA FIELD
+C****                    ONTO ALL PROCESSES 
+C
+!     J. BIDLOT    ECMWF   JUNE 1996  MESSAGE PASSING
+C
+C     PURPOSE.
+C     --------
+C
+C     BROADCAST SCALAR GRID DATA CONTAINED IN ARRAY FIELD STORED ON
+C     PROCESS ISEND  ONTO ALL PROCESSES
+C
+C*    INTERFACE.
+C     ----------
+C
+C     CALL *MPGATHEROIFLD*(ISEND,ITAG,NSTART,NEND,FIELD) 
+C
+C     *ISEND*     PROCESS RANK BROADCATING THE GRID FIELD
+C     *ITAG*      TAG ASSOCIATED WITH A PARTICULAR CALL TO SUBROUTINE
+C                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS 
+C                 THE USE OF A SEPARATE TAG FOR EACH SPECIFIC CALL SHOULD
+C                 ENSURE THAT NO CONFLICT ARISES BETWEEN DIFFERENT MESSAGES
+C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+C     *FIELD*     INPUT/OUTPUT ARRAY CONTAINING THE FIRST FIELD
+C
+C     METHOD.
+C     -------
+C     MPE BROADCAST OF ARRAY FIELD TO ALL PROCESSES
+C     
+C     EXTERNALS.
+C     ----------
+C     MPE PACKAGE :
+C         MPE_BROADCAST
+C         MPE_RECV
+C         MPEI_ABORT 
+C
+C     REFERENCES.
+C     -----------
+C         NONE
+C -------------------------------------------------------------------
+C
+#include "param.h"
+C
+#include "comtest.h"
+C
+#include "commpp.h"
+C
+#include "txtmpp.h"
+
+!----------------------------------------------------------------------
+!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+
+      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
+      REAL,DIMENSION(NGX,NGY) :: FIELD
+!----------------------------------------------------------------------
+
+      REAL,DIMENSION(NGX*NGY):: ZCOMBUF
+
+c
+      KCOUNT=NGX*NGY 
+
+      IF(NPROC.EQ.1) THEN
+         RETURN
+
+      ELSE IF(IRANK.EQ.ISEND) THEN
+
+C     1.1 BROADCAST FIELD FROM PROCESS ISEND
+C         ----------------------------------
+C
+C        LOAD COMMUNICATION BUFFER
+          IJ=0
+          DO J=1,NGY
+          DO I=1,NGX
+             IJ=IJ+1
+             ZCOMBUF(IJ)=FIELD(I,J)
+          END DO
+          END DO
+
+          CALL MPE_BROADCAST(ZCOMBUF,KCOUNT,2,ISEND,ITAG,0,1,0,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     1                  ('MPE_BROADCAST ERROR in MPGATHEROIFLD' )
+
+       ELSE 
+C     1.2 RECEIVE FIELD FROM PROCESS ISEND 
+C         --------------------------------- 
+          CALL MPE_RECV(ZCOMBUF,KCOUNT,2,ISEND,ITAG,0,0,0,
+     $                  KRCOUNT,KRFROM,KRTAG,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     1                 ('MPE_RECV ERROR in MPGATHEROIFLD' )
+          IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
+     1    ('MPE_RECV ERROR in MPGATHEROIFLD:MISMATCHED MESSAGE LENGTH')
+          IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     1    ('MPE_RECV ERROR in MPGATHEROIFLD: MISMATCHED TAGS' )
+C
+C      DECODE COMMUNICATION BUFFER
+          IJ=0
+          DO J=1,NGY
+          DO I=1,NGX
+             IJ=IJ+1
+             FIELD(I,J)=ZCOMBUF(IJ)
+          ENDDO
+          ENDDO
+      ENDIF
+
+      RETURN
+      END
+

@@ -1,0 +1,111 @@
+      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W)
+C
+C ----------------------------------------------------------------------
+C
+C**** *WVALLOC* - WAVE MODEL ALLOCATION AND COUPLING TO IFS.
+C
+C     J. DOYLE     ECMWF       NOVEMBER 1996 ATMOSPHERIC COUPLING
+C
+C     MODIFIED BY:   B. HANSEN    APRIL 1997
+C                                 DOCTOR STYLE AND LDWCOU2W
+C
+C ----------------------------------------------------------------------
+C
+      USE WAVE_MODULE
+C
+#include "param.h"
+C
+#include "comcoup.h"
+C
+#include "commesspass.h"
+C
+#include "commpp.h"
+C
+#include "txtmpp.h"
+C
+#include "comstat.h"
+C
+#include "txtstat.h"
+C
+      LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
+C
+C ----------------------------------------------------------------------
+      INTEGER IINITFDB_VPP
+      CHARACTER *3 DBNAME
+      CHARACTER*10 ZERO
+      LOGICAL LDTRMSG,LFDB
+C
+C INITIALIZE LOGICALS FROM IFS
+C
+      LFDB=LFDBOPIFS
+      LMESSPASS=LMESSPIFS
+      LWCOU=LDWCOUIFS
+      LWCOU2W=LDWCOU2W
+C
+
+      IF(.NOT.ALLOCATED(NSTART)) THEN
+        IF(LMESSPASS) THEN
+          IU06=20
+        ELSE
+          IU06=6
+        ENDIF
+C
+        IF(LMESSPASS) THEN
+
+C     0.1 GET RANK AND TOTAL NUMBER OF PROCESSORS  
+C         ---------------------------------------
+
+           IRANK = MPE_MYRANK()
+           NPROC = MPE_NPROC()
+        ELSE
+           IRANK = 1 
+           NPROC = 1 
+	    ENDIF
+
+        NPREVIOUS=IRANK-1
+        IF(IRANK.EQ.NPROC) THEN
+          NNEXT=0
+        ELSE
+          NNEXT=IRANK+1
+        ENDIF
+
+C     0.2 DETERMINE GRID DOMAIN DECOMPOSITION 
+C         -----------------------------------
+        ALLOCATE (NSTART(NPROC),NEND(NPROC),KLENBOT(NPROC),
+     &            KLENTOP(NPROC))
+
+        NPR=NPROC
+        CALL MPDECOMP(NPR,NSTART,NEND,KLENTOP,KLENBOT,MAXLEN)
+        MPMAXLENGTH=MAXLEN
+
+      ENDIF
+
+C     1.  ALLOCATE NECESSARY ARRAYS
+C         -------------------------
+
+      NINF=NSTART(IRANK)-KLENBOT(IRANK)
+      NSUP=NEND(IRANK)+KLENTOP(IRANK)
+      IF(.NOT.LMESSPASS) NSUP=NIBLO 
+
+      IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(U10NEW)) ALLOCATE(U10NEW(NINF:NSUP))
+      IF(.NOT.ALLOCATED(THWNEW)) ALLOCATE(THWNEW(NINF:NSUP))
+      IF(.NOT.ALLOCATED(USNEW)) ALLOCATE(USNEW(NINF:NSUP))
+      IF(.NOT.ALLOCATED(Z0NEW)) ALLOCATE(Z0NEW(NINF:NSUP))
+
+      IF(.NOT.ALLOCATED(FL1)) ALLOCATE(FL1(NINF-1:NSUP,NANG,NFRE))
+      IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
+
+      IF(.NOT.LMESSPASS.AND..NOT.ALLOCATED(FL2))
+     &   ALLOCATE(FL2(NINF-1:NSUP,NANG,NFRE))
+
+      IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
+      IF(.NOT.ALLOCATED(FCONST)) ALLOCATE(FCONST(NINF:NSUP,NFRE))
+
+C
+      RETURN
+      END

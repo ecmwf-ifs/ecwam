@@ -1,0 +1,8 @@
+ &NALINE
+ HEADER=" SWAMP WAVE MODEL RUN                              PRESET VERSION 4.0 "
+ IOPTI= 1,ITEST= 0,ITESTB= 4,ALFA= 1.800000E-02,FM= 0.2000000,GAMMA= 3.000000
+ SA= 7.000000E-02,SB= 9.000000E-02,THETA= 0.0,FETCH= 30000.00,USERID="   "
+ RUNID="swa",PATH="                                                            "
+ CPATH="$STORAGE_PATH",
+ CDATEA="${begofan}",IDELWI= 21600,CLTUNIT="S",LPBIOIN= T,LPBIOOUT= T
+ /

@@ -1,0 +1,34 @@
+C THE PURPOSE OF THIS DUMMY SUBROUTINE PACKAGE IS TO SUPPLEMEMT
+C THE FUJITSU COMPILER WITH A FICTIVE DEFINITION OF SUBROUTINES
+C FOUND IN THE WAM CODE (IE: THERE IS A CALL TO IT) BUT THEIR 
+C DEFINITION RELIES ON THE MESSAGE PASSING LIBRARY TO BE SUPPLEMENTED
+C WHEN AVAILABLE
+C
+C BJORN HANSEN  ECMWF NOVEMBER 1996 
+C
+C -----------------------------------------------------------------
+C
+       SUBROUTINE dummy_mp()
+C
+       ENTRY mpei_abort
+       ENTRY mpe_myrank
+       ENTRY mpe_init
+       ENTRY mpe_nproc
+       ENTRY mpe_end
+       ENTRY mpe_barrier
+       ENTRY mpe_send
+       ENTRY mpe_recv
+       ENTRY mpe_broadcast
+C
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       WRITE(*,*) ' NO MESSAGE PASSING'
+       CALL ABORT
+       END

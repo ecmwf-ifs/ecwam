@@ -1,0 +1,104 @@
+C ----------------------------------------------------------------------
+C
+      SUBROUTINE GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, FILENAME)
+
+C ----------------------------------------------------------------------
+C
+C**** *GRSTNAME* - DETERMINES FILENAME (INCLUDING PATH) FOR RESTART FILES 
+C
+C     J. BIDLOT     ECMWF         NOVEMBER 1996      PARALLEL RUN 
+C     B. HANSEN     ECMWF         APRIL    1996      MOVE CYMPPATH TO
+C                                                    COMTEXT.
+C
+C*    PURPOSE.
+C     --------
+C
+C**   INTERFACE.
+C     ----------
+C
+C       *CALL* *GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, FILENAME)*
+C
+C         *IU06*   INTEGER    UNIT FOR PRINTER MESSAGES.
+C         *CDATE*  CHAR*10    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
+C         *CDATEF* CHAR*10    DATE TIME GROUP OF FORECAST START.
+C         *IREST*  INTEGER    OUTPUT OPTION FLAG FOR RESTART FILES
+C         *FILEID* CHARACTER  FILE ID.
+C         *FILENAME* CHARACTER FILE NAME INCLUDING PATH
+C
+C     EXTERNALS.
+C     ----------
+C
+C       *DIFDATE*   - COMPUTE TIME DIFFERENCES.
+C       *IECF_LEN*  -  LENGTH OF A CHARATER VARIABLE.
+C       *EXPAND_STRING - ADD EXTENTION(S) TO STANDARD NAME WHEN
+C                        THE OUTPUT FILES ARE SPLIT AMONG ALL PE'S.
+C
+C     METHOD.
+C     -------
+C
+C        FILE NAME IS BUILT FROM THE 3 CHARACTER FILEID FOLLOWED
+C        BY YYMMDDHHFFFF WHERE YYMMDDHH IS THE LAST ANALYSIS TIME AND
+C        FFFF IS THE FORCECAST PERIOD IN HOURS.
+C        THESE NUMBERS ARE CONSTRUCTED FROM CDATE AND CDATEF.
+C
+C        THEN IF IREST .NOT.EQ.0
+C        THE PATH NAME IS ADDED. THE PATH IS DETERMINED FROM THE
+C        ENVIRONEMENT VARIABLE STORAGE_PATH THAT NEEDS TO BE DEFINED 
+C        AND EXPORTED BEFORE THE RUN OF THE PROGRAM.
+C
+C     REFERENCES.
+C      -----------
+C
+C       NONE.
+C
+C ----------------------------------------------------------------------
+C
+#include "commesspass.h"
+C
+#include "commpp.h"
+C
+#include "txtmpp.h"
+C
+#include "comtext.h"
+C
+      INTEGER IU06
+      CHARACTER FILEID*3, FILENA*16, FILENAME*80, FILENAM*80
+      CHARACTER CDATE*10, CDATEF*10, CDATEH*8
+C
+C*    1.0  CONSTRUCT FILE NAME ALONE 
+C          -------------------------
+C
+ 1000 CONTINUE
+      FILENA = FILEID
+      IF (CDATE.LE.CDATEF) THEN
+         CDATEH = CDATE(1:8)
+         ISHIFT = 0
+      ELSE
+         CDATEH = CDATEF(1:8)
+         CALL DIFDATE (CDATEF, CDATE, ISHIFT)
+         ISHIFT = ISHIFT/3600
+      ENDIF
+      FILENA(4:11) = CDATEH
+      WRITE (FILENA(12:15),'(I4.4)') ISHIFT
+      LNAME = IECF_LEN(FILENA)
+
+C     2.0   GET PATH AND ADD IT TO FILE NAME
+C           --------------------------------
+C
+      IF(LMESSPASS.AND.(IREST.EQ.2.OR.IREST.EQ.4)) THEN
+        FILENAM=FILENA(1:LNAME)//'_%n.%p'
+        CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAM,1)
+      ELSE
+         FILENAM=FILENA(1:LNAME)
+      ENDIF
+
+      LNAME = IECF_LEN(FILENAM)
+
+      IF(ICPLEN.EQ.0) THEN
+        FILENAME=FILENAM(1:LNAME)
+      ELSE
+        FILENAME=CPATH(1:ICPLEN)//'/'//FILENAM(1:LNAME)
+      ENDIF
+
+      RETURN
+      END

@@ -1,0 +1,99 @@
+      SUBROUTINE MPGATHERSCFLD(IRECV,ITAG,NSTART,NEND,FIELD) 
+C
+C****  *MPGATHERSCFLD* - GATHER SCALAR BLOCK DATA FIELD ONTO A SINGLE 
+C****                    PROCESS 
+C
+!     J. BIDLOT    ECMWF   APRIL 1996  MESSAGE PASSING
+C
+C     PURPOSE.
+C     --------
+C
+C     GATHER SCALAR BLOCK DATA CONTAINED IN ARRAY FIELD DISTRIBUTED ACROSS THE
+C     DIFFERENT PROCESSES ONTO THE SINGLE PROCESS IRECV
+C
+C*    INTERFACE.
+C     ----------
+C
+C     CALL *MPGATHERSCFLD*(IRECV,ITAG,NSTART,NEND,FIELD) 
+C
+C     *IRECV*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
+C     *ITAG*      TAG ASSOCIATED WITH A PARTICULAR CALL TO SUBROUTINE
+C                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS 
+C                 THE USE OF A SEPARATE TAG FOR EACH SPECIFIC CALL SHOULD
+C                 ENSURE THAT NO CONFLICT ARISES BETWEEN DIFFERENT MESSAGES
+C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+C     *FIELD*     INPUT/OUTPUT ARRAY CONTAINING THE FIELD
+C
+C     METHOD.
+C     -------
+C     MPE SEND OF ARRAY FIELD TO PROCESS CORRESPONDING TO IRECV FOR
+C     ALL PROCESS EXCEPT FOR THE PROCESS CORRESPONDING TO IRECV
+C     WHERE IT IS RECEIVED.
+C     
+C     EXTERNALS.
+C     ----------
+C     MPE PACKAGE :
+C         MPE_SEND
+C         MPE_RECV
+C         MPEI_ABORT 
+C
+C     REFERENCES.
+C     -----------
+C         NONE
+C -------------------------------------------------------------------
+C
+#include "param.h"
+C
+#include "comtest.h"
+C
+#include "commpp.h"
+C
+#include "txtmpp.h"
+
+!----------------------------------------------------------------------
+!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+
+      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
+      REAL,DIMENSION(NIBLO) :: FIELD
+!----------------------------------------------------------------------
+
+      REAL,DIMENSION(MPMAXLENGTH) :: ZCOMBUF
+
+c
+      IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
+         RETURN
+      ELSE IF(IRANK.NE.IRECV) THEN
+C     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
+C         ------------------------------------------------
+         KCOUNT=0
+         DO IJ=NSTART(IRANK),NEND(IRANK)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FIELD(IJ)
+         END DO
+         CALL MPE_SEND(ZCOMBUF,MPMAXLENGTH,2,IRECV,ITAG,0,0,0,IERR)
+         IF(IERR.LT.0) CALL MPEI_ABORT
+     1                    ('MPE_SEND ERROR in MPGATHERSCFLD' )
+
+       ELSE
+C     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
+C         ---------------------------------------------------------- 
+         DO IP=1,NPROC-1
+            CALL MPE_RECV(ZCOMBUF,MPMAXLENGTH,2,-1,ITAG,0,0,0,
+     $                    KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT
+     1                       ('MPE_RECV ERROR in MPGATHERSCFLD' )
+            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     1        ('MPE_RECV ERROR in MPGATHERSCFLD MISMATCHED TAGS' )
+
+            KCOUNT=0
+            DO IJ=NSTART(KRFROM),NEND(KRFROM)
+               KCOUNT=KCOUNT+1
+               FIELD(IJ)=ZCOMBUF(KCOUNT)
+            END DO 
+         ENDDO
+      ENDIF
+c
+      RETURN
+      END
+

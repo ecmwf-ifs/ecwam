@@ -1,0 +1,144 @@
+      SUBROUTINE MPGATHERFL(IRECV,ITAG,NSTART,NEND,MINF,MSUP,MI,MS,FL) 
+C
+C****  *MPGATHERFL* - GATHER FL ONTO A SINGLE PROCESS 
+C
+C     J. BIDLOT    ECMWF   APRIL 1996  MESSAGE PASSING
+C     J. BIDLOT    ECMWF   MARCH 1997  add use of MINF AND MSUP
+C
+C     PURPOSE.
+C     --------
+C
+C     GATHER ARRAY FL DISTRIBUTED ACROSS THE
+C     DIFFERENT PROCESSES ONTO THE SINGLE PROCESS IRECV
+C
+C*    INTERFACE.
+C     ----------
+C
+C     CALL *MPGATHERFL*(IRECV,ITAG,NSTART,NEND,MINF,MSUP,MI,MS,FL) 
+C
+C     *IRECV*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
+C     *ITAG*      TAG ASSOCIATED WITH AS A PARTICULAR CALL TO SUBROUTINE
+C                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS 
+C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+C     *MINF*      INDEX OF THE FIRST USEFUL FREQUENCY OF FL
+C     *MSUP*      INDEX OF THE LAST USEFUL FREQUENCY OF FL
+C     *MI*        INDEX OF THE FIRST FREQUENCY OF FL
+C     *MS*        INDEX OF THE LAST FREQUENCY OF FL
+C     *FL*        INPUT/OUTPUT ARRAY CONTAINING THE PART OF THE SPECTRUM 
+C
+C     METHOD.
+C     -------
+C     MPE SEND OF ARRAY FL TO PROCESS CORRESPONDING TO IRECV FOR
+C     ALL PROCESS EXCEPT FOR THE PROCESS CORRESPONDING TO IRECV
+C     WHERE IT IS RECEIVED.
+C     
+C     EXTERNALS.
+C     ----------
+C     MPE PACKAGE :
+C         MPE_SEND
+C         MPE_RECV
+C         MPEI_ABORT 
+C
+C     REFERENCES.
+C     -----------
+C         NONE
+C -------------------------------------------------------------------
+C
+#include "param.h"
+C
+#include "comtest.h"
+C
+#include "commpp.h"
+C
+#include "txtmpp.h"
+
+C----------------------------------------------------------------------
+C     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+
+      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
+      REAL,DIMENSION(0:NIBLO,NANG,MI:MS) :: FL
+C----------------------------------------------------------------------
+
+      REAL,ALLOCATABLE :: ZCOMBUF(:)
+
+c
+      IRTAG=ITAG+NFRE
+
+      IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
+         RETURN
+      ELSE IF(IRANK.NE.IRECV) THEN
+C     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
+C         ------------------------------------------------
+         MPLENGTH=MPMAXLENGTH*NANG*(MSUP-MINF+1)
+         ALLOCATE(ZCOMBUF(MPLENGTH))
+
+         KCOUNT=0
+         DO M=MINF,MSUP
+           DO K=1,NANG
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                 KCOUNT=KCOUNT+1
+                 ZCOMBUF(KCOUNT)=FL(IJ,K,M)
+              END DO
+           END DO
+         END DO
+
+C
+C GET SIGNAL THAT RECEIVING PE IS READY
+C
+            CALL MPE_RECV(IREADY,1,1,IRECV,IRTAG,0,0,0,
+     $                    KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT
+     1                       ('MPE_RECV ERROR in MPGATHERFL IREADY' )
+            IF(KRTAG.NE.IRTAG) CALL MPEI_ABORT
+     1      ('MPE_RECV ERROR in MPGATHERFL MISMATCHED TAGS IRTAG' )
+
+C SEND CONTRIBUTION TO RECEIVING PE
+C
+         CALL MPE_SEND(ZCOMBUF,MPLENGTH,2,IRECV,ITAG,0,0,0,IERR)
+         IF(IERR.LT.0) CALL MPEI_ABORT
+     1                    ('MPE_SEND ERROR in MPGATHERFL' )
+
+       ELSE
+C     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
+C         ---------------------------------------------------------- 
+C
+C SIGNAL TO OTHER PE'S THAT RECEIVING PE IS READY
+         IREADY=ITAG
+         CALL MPE_BROADCAST
+     1              (IREADY,1,1,IRANK,IRTAG,0,0,0,IERR)
+         IF(IERR.LT.0) CALL MPEI_ABORT
+     1                    ('MPE_BROADCAST ERROR in MPGATHERFL IREADY' )
+
+C
+C GET CONTRIBUTION FROM OTHER PE'S
+         MPLENGTH=MPMAXLENGTH*NANG*(MSUP-MINF+1)
+         ALLOCATE(ZCOMBUF(MPLENGTH))
+
+         DO IP=1,NPROC-1
+            CALL MPE_RECV(ZCOMBUF,MPLENGTH,2,-1,ITAG,0,0,0,
+     $                    KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT
+     1                       ('MPE_RECV ERROR in MPGATHERFL' )
+            IF(KRCOUNT.NE.MPLENGTH) CALL MPEI_ABORT
+     1      ('MPE_RECV ERROR in MPGATHERFL:MISMATCHED MESSAGE LENGTH')
+            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     1      ('MPE_RECV ERROR in MPGATHERFL MISMATCHED TAGS' )
+
+            KCOUNT=0
+            DO M=MINF,MSUP
+              DO K=1,NANG
+                DO IJ=NSTART(KRFROM),NEND(KRFROM)
+                  KCOUNT=KCOUNT+1
+                  FL(IJ,K,M)=ZCOMBUF(KCOUNT)
+                END DO
+              END DO 
+            END DO 
+
+         ENDDO
+      ENDIF
+
+      DEALLOCATE(ZCOMBUF)
+c
+      RETURN
+      END
