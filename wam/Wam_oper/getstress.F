@@ -1,81 +1,80 @@
       SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     1                     IREAD)
-C ----------------------------------------------------------------------
-C     J. BIDLOT    ECMWF      SEPTEMBER 1997 
-C
-C*    PURPOSE.
-C     --------
-C     READS RESTART WIND AND STRESS FIELDS FROM DISK OR USE GRIB WIND
-C     AND DRAG COEFFICIENT TO RECONSTRUCT ALL WIND AND STRESS FIELDS.
-C
-C**   INTERFACE.
-C     ----------
-C     *CALL**GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
-C     *U10OLD*    WIND SPEED.
-C     *THWOLD*    WIND DIRECTION (RADIANS).
-C     *USOLD*     FRICTION VELOCITY.
-C     *TAUW*      WAVE STRESS.
-C     *Z0OLD*     ROUGHNESS LENGTH IN.
-C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
-C
-C     METHOD.
-C     -------
-C     USE READSTRESS TO READ IN THE FILE DEPENDING ON THE PBIO
-C     SOFTWARE OR NOT. 
-C     THE READING IS ONLY DONE ON PE 1, THEREFORE
-C     THE RELEVANT INFORMATION IS SENT TO THE OTHER PE'S USING 
-C      MPDISTRIBSCFLD
-C
-C     EXTERNALS.
-C     ----------
-C     BUILDSTRESS
-C     GETENV
-C     GRSTNAME
-C     MPDISTRIBSCFLD
-C     MPE_BARRIER
-C     READSTRESS
-C
-C     REFERENCE.
-C     ----------
-C     NONE
-C ----------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "comcout.h"
-C
-#include "comgrid.h"
-C
-#include "comstat.h"
-C
-#include "comtest.h"
-C
-#include "comtext.h"
-C
-#include "txttext.h"
-C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
-#include "comwind.h"
-C
-      CHARACTER*9 CMBXSIZE
+     &                     IREAD)
+! ----------------------------------------------------------------------
+!     J. BIDLOT    ECMWF      SEPTEMBER 1997 
+
+!*    PURPOSE.
+!     --------
+!     READS RESTART WIND AND STRESS FIELDS FROM DISK OR USE GRIB WIND
+!     AND DRAG COEFFICIENT TO RECONSTRUCT ALL WIND AND STRESS FIELDS.
+
+!**   INTERFACE.
+!     ----------
+!     *CALL**GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
+!     *U10OLD*    WIND SPEED.
+!     *THWOLD*    WIND DIRECTION (RADIANS).
+!     *USOLD*     FRICTION VELOCITY.
+!     *TAUW*      WAVE STRESS.
+!     *Z0OLD*     ROUGHNESS LENGTH IN.
+!     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+
+!     METHOD.
+!     -------
+!     USE READSTRESS TO READ IN THE FILE DEPENDING ON THE PBIO
+!     SOFTWARE OR NOT. 
+!     THE READING IS ONLY DONE ON PE 1, THEREFORE
+!     THE RELEVANT INFORMATION IS SENT TO THE OTHER PE'S USING 
+!     MPDISTRIBSCFLD
+
+!     EXTERNALS.
+!     ----------
+!     BUILDSTRESS
+!     GETENV
+!     GRSTNAME
+!     MPDISTRIBSCFLD
+!     MPE_BARRIER
+!     READSTRESS
+
+!     REFERENCE.
+!     ----------
+!     NONE
+! ----------------------------------------------------------------------
+
+      USE YOWGRID  , ONLY : IGL
+      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
+      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
+
       CHARACTER*12 ZERO
       CHARACTER*80 FILENAME
-C
-C ----------------------------------------------------------------------
+
+! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-C ----------------------------------------------------------------------
-C     define local allocatable arrays
+! ----------------------------------------------------------------------
+!     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
       REAL,ALLOCATABLE,DIMENSION(:,:) :: RU10OLD,RTHWOLD,RUSOLD,
-     1                                   RZ0OLD,RTAUW
+     &                                   RZ0OLD,RTAUW
 
       ZERO = ' '
+
+      IF (ITEST > 3) THEN
+        WRITE(IU06,*) ' SUB: GETSTRESS. '
+        WRITE(IU06,*) ' ABOUT TO READ WIND AND STRESS FILE '
+        WRITE(IU06,*) ' CDTPRO    =', CDTPRO
+        WRITE(IU06,*) ' LMESSPASS =', LMESSPASS
+        WRITE(IU06,*) ' LPBIOIN   =', LPBIOIN
+        WRITE(IU06,*) ' LGRIBIN   =', LGRIBIN
+        WRITE(IU06,*) ' LRESTARTED=', LRESTARTED
+        CALL FLUSH (IU06)
+      ENDIF
 
       IF(LMESSPASS) THEN
 
@@ -83,78 +82,84 @@ C     define local allocatable arrays
         IBUFLENGTH=48
 
         ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
-     1  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO))
+     &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO))
 
         ALLOCATE(IBUF(IBUFLENGTH))
 
+!       READ RESTART FILE FROM PE ISEND (IREAD) 
+
         IF (IRANK.EQ.ISEND) THEN
-           IF (LPBIOIN) THEN
-               CALL GRSTNAME(IU06,CDATEA,CDATEF,0,'LAW',IRANK,NPROC,
-     &                       FILENAME)
-           ELSE 
-               CALL GETREST (IU06, IU12, IU14, IU15, IGL,
-     1                       CDATEA, CDATEF)
-           ENDIF
+
+          IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
+            CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
+     &        NEND(NPROC))
+
+          ELSE
+            IF (LPBIOIN) THEN
+              CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
+            ELSE 
+              IF (ITEST > 3 ) THEN
+                WRITE(IU06,*) ' LAW arranged to ', FILENAME
+                CALL FLUSH (IU06)
+              ENDIF
+              CALL GETREST (IU06, IU12, IU14, IU15, IGL,
+     &         CDATEA, CDATEF)
+            ENDIF
+
+            CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
+     &        FILENAME)
+
+          ENDIF
+
         ENDIF
 
-C       READ RESTART FILE(s) FROM PE ISEND (IREAD) 
-        IF (IRANK.EQ.ISEND) THEN
-           IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
-             CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                        NEND(NPROC))
-           ELSE
-             CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     1                       FILENAME)
-           ENDIF
-        ENDIF
-
-C       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
+!       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
         IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
       
-        ELSE IF(IRANK.EQ.ISEND) THEN
-           KCOUNT=0
-           DO IC=1,12
-              READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-           ENDDO
-           DO IC=1,12
-              READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-           ENDDO
-           DO IC=1,12
-              READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-           ENDDO
-           DO IC=1,12
-              READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-           ENDDO
+        ELSEIF(IRANK.EQ.ISEND) THEN
+          KCOUNT=0
+          DO IC=1,12
+            READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
+          ENDDO
+          DO IC=1,12
+            READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
+          ENDDO
+          DO IC=1,12
+            READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
+          ENDDO
+          DO IC=1,12
+            READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
+          ENDDO
 
-           CALL MPE_BROADCAST
-     1              (IBUF,IBUFLENGTH,1,IRANK,KTAG,0,0,0,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT
-     1                    ('MPE_BROADCAST ERROR in GETSTRESS' )
+          CALL MPE_BROADCAST
+     &     (IBUF,IBUFLENGTH,1,IRANK,KTAG,0,0,0,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     &     ('MPE_BROADCAST ERROR in GETSTRESS' )
 
-            KTAG=KTAG+1
+          KTAG=KTAG+1
         ELSE
 
-           CALL MPE_RECV(IBUF,IBUFLENGTH,1,ISEND,KTAG,0,0,0,
-     $                   KRCOUNT,KRFROM,KRTAG,IERR)
-           IF(IERR.LT.0) CALL MPEI_ABORT
-     1                      ('MPE_RECV ERROR in GETSTRESS' )
-           IF(KRTAG.NE.KTAG) CALL MPEI_ABORT
-     1       ('MPE_RECV ERROR in GETSTRESS MISMATCHED TAGS' )
+          CALL MPE_RECV(IBUF,IBUFLENGTH,1,ISEND,KTAG,0,0,0,
+     &     KRCOUNT,KRFROM,KRTAG,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR in GETSTRESS' )
+          IF(KRTAG.NE.KTAG) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR in GETSTRESS MISMATCHED TAGS' )
 
-            KTAG=KTAG+1
+          KTAG=KTAG+1
 
-            DO IC=1,12
-               WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-            ENDDO
-            DO IC=1,12
-               WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-            ENDDO
-            DO IC=1,12
-               WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-            ENDDO
-            DO IC=1,12
-               WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-            ENDDO
+          DO IC=1,12
+            WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
+          ENDDO
+          DO IC=1,12
+            WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
+          ENDDO
+          DO IC=1,12
+            WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
+          ENDDO
+          DO IC=1,12
+            WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
+          ENDDO
         ENDIF
 
         IF(CDTPRO.EQ.'000000000000') CDTPRO = ZERO
@@ -162,8 +167,7 @@ C       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
         IF(CDAWIFL.EQ.'000000000000')CDAWIFL = ZERO
         IF(CDATEFL.EQ.'000000000000') CDATEFL= ZERO
 
-
-C       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
+!       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
 
         CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RU10OLD)
         KTAG=KTAG+1
@@ -177,30 +181,28 @@ C       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
         KTAG=KTAG+1
 
         IF (ITEST.GE.2)
-     1   WRITE(IU06,*)
-     2   'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
+     &   WRITE(IU06,*)
+     &   'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
 
-C       KEEP CORRESPONDING CONTRIBUTION 
+!       KEEP CORRESPONDING CONTRIBUTION 
         DO IG=1,NBLO
-           DO IJ=NSTART(IRANK),NEND(IRANK)
-              U10OLD(IJ,IG)=RU10OLD(IJ,IG)
-              THWOLD(IJ,IG)=RTHWOLD(IJ,IG)
-              USOLD(IJ,IG)=RUSOLD(IJ,IG)
-              TAUW(IJ,IG)=RTAUW(IJ,IG)
-              Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
-           END DO
-        END DO
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            U10OLD(IJ,IG)=RU10OLD(IJ,IG)
+            THWOLD(IJ,IG)=RTHWOLD(IJ,IG)
+            USOLD(IJ,IG)=RUSOLD(IJ,IG)
+            TAUW(IJ,IG)=RTAUW(IJ,IG)
+            Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
+          ENDDO
+        ENDDO
 
-C
-       DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF)
-C
+        DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF)
+
       ELSE
 
         IF (LPBIOIN) THEN
-          CALL GRSTNAME(IU06,CDATEA,CDATEF,0,'LAW',IRANK,NPROC,FILENAME)
+          CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
         ELSE 
-            CALL GETREST (IU06, IU12, IU14, IU15, IGL,
-     1                    CDATEA, CDATEF)
+          CALL GETREST (IU06, IU12, IU14, IU15, IGL,  CDATEA, CDATEF)
         ENDIF
 
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
@@ -209,12 +211,12 @@ C
           CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,FILENAME)
         ENDIF
 
+      ENDIF
 
-      END IF
-C
       WRITE(IU06,*) ''
       WRITE(IU06,*) ' WIND AND STRESS FILE READ IN........',
-     1              ' CDTPRO  = ', CDTPRO
-C
+     &              ' CDTPRO  = ', CDTPRO
+
+      CALL FLUSH (IU06)
       RETURN
-      END
+      END SUBROUTINE GETSTRESS

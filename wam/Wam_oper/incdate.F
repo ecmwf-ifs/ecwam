@@ -1,72 +1,68 @@
-C ======================================================================
-C
+! ======================================================================
+
       SUBROUTINE INCDATE (CDATE, ISHIFT)
-C
-C ======================================================================
-C
-C**** *INCDATE* - TO UPDATE DATE TIME GROUP
-C
-C     B. HANSEN           ECMWF       JULY    1998
-C
-C**   PURPOSE.
-C     --------
-C       UPDATING DATE TIME GROUP.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *INCDATE (CDATE,ISHIFT)*
-C         *CDATE*  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
-C                  CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS)
-C         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, RESTRICTIONS:
-C                            -2147483648 <= ISHIFT <=  +2147483647
-C
-C     METHOD.
-C     -------
-C
-C       THE DATE AND TIME CAN BE SUPPLIED IN THE Y2K COMPLIANT
-C       14 CHARACTER OR 12 CHARACTER FORMAT. IF THE 10 CHARACTER
-C       FORMAT IS USED, AN ERROR MESSAGE WILL BE ISSUED. 
-C       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN 
-C       THE INPUT ARGUMENT FOR SECINCR. THE UPDATED DATE AND TIME 
-C       IS PUT BACK INTO AN OUTPUT STRING AS USED BY THE CALLING 
-C       ROUTINE.
-C       IF CDATE HAS A LENGHT OF 0 THAN NOTHING IS DONE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       SECINCR (ECLIB).
-C
-C     REFERENCES.
-C     -----------
-C
-C       OD MEMO (6 July 1998) File: O/PRO/90 FROM GROUP 2000.
-C
-C ----------------------------------------------------------------------
-C
+
+! ======================================================================
+
+!**** *INCDATE* - TO UPDATE DATE TIME GROUP
+
+!     B. HANSEN           ECMWF       JULY    1998
+
+!**   PURPOSE.
+!     --------
+!       UPDATING DATE TIME GROUP.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *INCDATE (CDATE,ISHIFT)*
+!         *CDATE*  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
+!                  CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS)
+!         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, RESTRICTIONS:
+!                            -2147483648 <= ISHIFT <=  +2147483647
+
+!     METHOD.
+!     -------
+
+!       THE DATE AND TIME CAN BE SUPPLIED IN THE Y2K COMPLIANT
+!       14 CHARACTER OR 12 CHARACTER FORMAT. IF THE 10 CHARACTER
+!       FORMAT IS USED, AN ERROR MESSAGE WILL BE ISSUED. 
+!       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN 
+!       THE INPUT ARGUMENT FOR SECINCR. THE UPDATED DATE AND TIME 
+!       IS PUT BACK INTO AN OUTPUT STRING AS USED BY THE CALLING 
+!       ROUTINE.
+
+!     EXTERNALS.
+!     ----------
+
+!       SECINCR (ECLIB).
+
+!     REFERENCES.
+!     -----------
+
+!       OD MEMO (6 July 1998) File: O/PRO/90 FROM GROUP 2000.
+
+! ----------------------------------------------------------------------
+
       CHARACTER*(*) CDATE
       CHARACTER* 80 CLFMT
       INTEGER ISHIFT
       LOGICAL LLND
-C
-C ----------------------------------------------------------------------
-C
-C*    1.0 SPLITE DATE TIME GROUP INTO SECOND, MINUTE, HOUR, DAY, MONTH,
-C*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
-C         -----------------------------------------------------------
-C
+
+! ----------------------------------------------------------------------
+
+!*    1.0 SPLITE DATE TIME GROUP INTO SECOND, MINUTE, HOUR, DAY, MONTH,
+!*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
+!         -----------------------------------------------------------
+
       IL = LEN_TRIM(CDATE)
       IF (IL==10) THEN
         WRITE(CLFMT,'(A49, I2.2, A2)')
-     .     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+     &     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE
         WRITE(*, CLFMT ) CDATE
         LLND = .FALSE.
         CALL ABORT
-ccc        READ(CDATE,'(5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
-ccc        IYEAR = IYEAR + 1900
-ccc        ISEC = 0
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE,'(i4, 4i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
@@ -79,19 +75,19 @@ ccc        ISEC = 0
         CALL ABORT
       ELSE
         WRITE(CLFMT,'(A59, I2.2, A2)')
-     .  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
-     .    IL, ' )'
+     &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+     &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE
         STOP
       ENDIF
-C
-C ----------------------------------------------------------------------
-C
-C*    2.0 INCREMENT OR DECREMENT THE DATE AND TIME BY ISHIFT SECONDS.
-C         -----------------------------------------------------------
-C
+
+! ----------------------------------------------------------------------
+
+!*    2.0 INCREMENT OR DECREMENT THE DATE AND TIME BY ISHIFT SECONDS.
+!         -----------------------------------------------------------
+
       CALL SECINCR  (IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC, ISHIFT,
-     .               INYEAR, INMON, INDAY, INHOUR, INMIN, INSEC, IRET)
+     &               INYEAR, INMON, INDAY, INHOUR, INMIN, INSEC, IRET)
 
       IF (IRET/=0) THEN
         WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
@@ -104,20 +100,20 @@ C
         WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
         CALL ABORT
       ENDIF
-C
-C ----------------------------------------------------------------------
-C
-C*    3.0 CREATE OUTPUT STRING OF NEW DATE AND TIME USING THE INPUT
-C*        FORMAT.
-C         ---------------------------------------------------------
-C
+
+! ----------------------------------------------------------------------
+
+!*    3.0 CREATE OUTPUT STRING OF NEW DATE AND TIME USING THE INPUT
+!*        FORMAT.
+!         ---------------------------------------------------------
+
       IF (LLND) THEN
         IF (IL==12) THEN
           WRITE(CDATE,'(i4.4, 4i2.2)')INYEAR, INMON, INDAY, INHOUR,
-     .                                INMIN
+     &                                INMIN
         ELSEIF (IL==14) THEN
           WRITE(CDATE,'(i4.4, 5i2.2)')INYEAR, INMON, INDAY, INHOUR,
-     .                                INMIN, INSEC
+     &                                INMIN, INSEC
         ELSE
           WRITE(6,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
           CALL ABORT
@@ -125,13 +121,15 @@ C
       ELSE
         INYEAR = INYEAR - 1900
         IF (INYEAR >= 100) THEN
-           WRITE(CLFMT,'(A39, I2.2, A2)')
-     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
-           WRITE(6, CLFMT ) CDATE
-           WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
-           CALL ABORT
+          WRITE(CLFMT,'(A39, I2.2, A2)')
+     &     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+          WRITE(6, CLFMT ) CDATE
+          WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
+          CALL ABORT
         ENDIF
         WRITE(CDATE,'(5i2.2)')INYEAR, INMON, INDAY, INHOUR, INMIN
       ENDIF
       RETURN
-      END
+      END SUBROUTINE INCDATE
+
+

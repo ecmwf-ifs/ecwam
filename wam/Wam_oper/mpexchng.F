@@ -1,62 +1,56 @@
       SUBROUTINE MPEXCHNG(FL,NSTART,NEND,KLENBOT,KLENTOP)
-C
-C****  *MPEXCHNG* - EXHANGES MESSAGE BETWEEN THE PROCESS IRANK 
-C****               AND THE PREVIOUS AND NEXT ONE. 
-C
-!     J. BIDLOT    ECMWF   MARCH 1996  MESSAGE PASSING
-C
-C     PURPOSE.
-C     --------
-C     EXHANGE MESSAGE BETWEEN ONE PROCESS AND THE PREVIOUS AND NEXT PROCESS
-C     USING MESSAGE PASSING PROTOCOL. FOR EACH PROCESS THERE ARE 2 SEND
-C     AND 2 RECEIVE TO BE PERFORMED, EXCEPT FOR THE FIRST AND LAST PROCESS
-C     WHICH ONLY NEED 1 OF EACH.
-C
-C*    INTERFACE.
-C     ----------
-C     CALL *MPEXCHNG*(FL,NSTART,NEND,KLENTOP,KLENBOT)
-C
-C      *FL*        FREQUENCY SPECTRUM
-C      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C      *KLENTOP*   LENGTH OF THE MESSAGE SENT BY THE NEXT
-C                  SUB GRID DOMAIN (IN GRID POINT UNIT)
-C      *KLENBOT*   LENGTH OF THE MESSAGE SENT BY THE PREVIOUS
-C                  SUB GRID DOMAIN (IN GRID POINT UNIT)
 
-C     METHOD.
-C     -------
-C
-C     USING NON-BLOCKING SEND, YOU CAN FIRST SEND ALL MESSAGES THEN
-C     CLLECT THEM ACCORDINGLY WITH A BLOCKING RECEIVE.
-C
-C     NB BY DEFAULT THE MPE_SEND IS NON BLOCKING BUT FOR CONSITANCY WE
-C     WILL SET THE APPROPRIATE PARAMETER FOR NON BLOCKING SEND
-C
-C     EXTERNALS.
-C     ----------
-C     MPE PACKAGE :
-C         MPE_SEND
-C         MPE_RECV
-C         MPEI_ABORT 
-C
-C     REFERENCES.
-C     -----------
-C     CHAPTER 4 OF
-C     USING MPI, PORTABLE PARALLEL PROGRAMMING WITH THE MESSAGE PASSING 
-C     INTERFACE. W.CROPP, E LUSK, A SKJELLUM. MIT PRESS 1995 
-C
-C -------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "comtest.h"
-#include "comubuf.h"
-#include "txtubuf.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
+!****  *MPEXCHNG* - EXHANGES MESSAGE BETWEEN THE PROCESS IRANK 
+!****               AND THE PREVIOUS AND NEXT ONE. 
+
+!     J. BIDLOT    ECMWF   MARCH 1996  MESSAGE PASSING
+
+!     PURPOSE.
+!     --------
+!     EXHANGE MESSAGE BETWEEN ONE PROCESS AND THE PREVIOUS AND NEXT PE
+!     USING MESSAGE PASSING PROTOCOL. FOR EACH PROCESS THERE ARE 2 SEND
+!     AND 2 RECEIVE TO BE PERFORMED, EXCEPT FOR THE FIRST AND LAST PE
+!     WHICH ONLY NEED 1 OF EACH.
+
+!*    INTERFACE.
+!     ----------
+!     CALL *MPEXCHNG*(FL,NSTART,NEND,KLENTOP,KLENBOT)
+
+!      *FL*        FREQUENCY SPECTRUM
+!      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!      *KLENTOP*   LENGTH OF THE MESSAGE SENT BY THE NEXT
+!                  SUB GRID DOMAIN (IN GRID POINT UNIT)
+!      *KLENBOT*   LENGTH OF THE MESSAGE SENT BY THE PREVIOUS
+!                  SUB GRID DOMAIN (IN GRID POINT UNIT)
+
+!     METHOD.
+!     -------
+
+!     USING NON-BLOCKING SEND, YOU CAN FIRST SEND ALL MESSAGES THEN
+!     CLLECT THEM ACCORDINGLY WITH A BLOCKING RECEIVE.
+
+!     NB BY DEFAULT THE MPE_SEND IS NON BLOCKING BUT FOR CONSITANCY WE
+!     WILL SET THE APPROPRIATE PARAMETER FOR NON BLOCKING SEND
+
+!     EXTERNALS.
+!     ----------
+!     MPE PACKAGE :
+!         MPE_SEND
+!         MPE_RECV
+!         MPEI_ABORT 
+
+!     REFERENCES.
+!     -----------
+!     CHAPTER 4 OF
+!     USING MPI, PORTABLE PARALLEL PROGRAMMING WITH THE MESSAGE PASSING 
+!     INTERFACE. W.CROPP, E LUSK, A SKJELLUM. MIT PRESS 1995 
+
+! -------------------------------------------------------------------
+
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
+     &            NINF     ,NSUP     ,KTAG
+      USE YOWPARAM , ONLY : NANG     ,NFRE
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -65,128 +59,123 @@ C
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
 
 !----------------------------------------------------------------------
-      logical ldwait,ldflag
  
-      REAL,ALLOCATABLE :: zcombuf(:)
+      REAL,ALLOCATABLE :: ZCOMBUF(:)
 
-c     0.1 find the maximum length of the message buffer
-c         ---------------------------------------------
-      if(nproc.eq.1) then
-        nbufmax=0
-      else if (irank.eq.1) then
-        nbufmax=max(klenbot(irank+1),klenbot(irank),klentop(irank))
-      else if (irank.eq.nproc) then
-        nbufmax=max(klentop(irank-1),klenbot(irank),klentop(irank))
-      else
-        nbufmax=max(klenbot(irank+1),klenbot(irank),klentop(irank),
-     &              klentop(irank-1))
-      endif
-c     0.2 allocate the message buffer space
-c         ---------------------------------
-      nbufmax=nbufmax*nang*nfre
-      allocate(zcombuf(nbufmax))
+!     0.1 FIND THE MAXIMUM LENGTH OF THE MESSAGE BUFFER
+!         ---------------------------------------------
+      IF(NPROC.LE.1) THEN
+        RETURN
+      ELSE IF (IRANK.EQ.1) THEN
+        NBUFMAX=MAX(KLENBOT(IRANK+1),KLENBOT(IRANK),KLENTOP(IRANK))
+      ELSE IF (IRANK.EQ.NPROC) THEN
+        NBUFMAX=MAX(KLENTOP(IRANK-1),KLENBOT(IRANK),KLENTOP(IRANK))
+      ELSE
+        NBUFMAX=MAX(KLENBOT(IRANK+1),KLENBOT(IRANK),KLENTOP(IRANK),
+     &              KLENTOP(IRANK-1))
+      ENDIF
+!     0.2 ALLOCATE THE MESSAGE BUFFER SPACE
+!         ---------------------------------
+      NBUFMAX=NBUFMAX*NANG*NFRE
+      ALLOCATE(ZCOMBUF(NBUFMAX))
 
-c     0.3 find index of the the start or end point of the different messages
-c         ------------------------------------------------------------------
-      ist=nend(irank)-klenbot(irank+1)+1
-      isb=nstart(irank)-klenbot(irank)
-      ieb=nstart(irank)+klentop(irank-1)-1
-      iet=nend(irank)+klentop(irank)
+!     0.3 FIND INDEX OF THE START OR END POINT OF THE DIFFERENT MESSAGES
+!         --------------------------------------------------------------
+      IST=NEND(IRANK)-KLENBOT(IRANK+1)+1
+      ISB=NSTART(IRANK)-KLENBOT(IRANK)
+      IEB=NSTART(IRANK)+KLENTOP(IRANK-1)-1
+      IET=NEND(IRANK)+KLENTOP(IRANK)
  
+!     1.1.1 SEND TO NEXT PROCESS
+!           --------------------
+      IF(NNEXT.NE.0) THEN
 
+!       FILL THE SEND BUFFER
+        KCOUNT=0
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IST,IST+KLENBOT(NNEXT)-1
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
 
-c     1.1.1 send to next process
-c           --------------------
-      if(nnext.ne.0) then
+!       SEND THE BUFFER TO NEXT PROCESS
+        CALL MPE_SEND(ZCOMBUF,KCOUNT,2,NNEXT,KTAG,0,0,1,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT('ERROR in MPE_SEND ')
+      ENDIF
 
-c       fill the send buffer
-        kcount=0
-        do M=1,NFRE
-           do K=1,NANG
-              do IJ=ist,ist+klenbot(nnext)-1
-                 kcount=kcount+1
-                 zcombuf(kcount)=FL(IJ,K,M)
-              end do
-           end do
-        end do
+!     1.2.1 SEND TO PREVIOUS PROCESS
+!           -------------------------
+      IF(NPREVIOUS.NE.0) THEN
 
-c       send the buffer to next process
-        call MPE_SEND(zcombuf,kcount,2,nnext,ktag,0,0,1,ierr)
-        if(ierr.lt.0) call MPEI_ABORT('ERROR in MPE_SEND ')
-      endif
+!       FILL THE SEND BUFFER
+        KCOUNT=0
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=NSTART(IRANK),NSTART(IRANK)+KLENTOP(NPREVIOUS)-1
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
 
-c     1.2.1 send to previous process
-c           -------------------------
-      if(nprevious.ne.0) then
+!       SEND THE BUFFER TO PREVIOUS PROCESS
+        CALL MPE_SEND(ZCOMBUF,KCOUNT,2,NPREVIOUS,KTAG+1,0,0,1,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT('ERROR in MPE_SEND ')
 
-c       fill the send buffer
-        kcount=0
-        do M=1,NFRE
-           do K=1,NANG
-              do IJ=nstart(irank),nstart(irank)+klentop(nprevious)-1
-                 kcount=kcount+1
-                 zcombuf(kcount)=FL(IJ,K,M)
-              end do
-           end do
-        end do
+      ENDIF
 
-c       send the buffer to previous process
-        call MPE_SEND(zcombuf,kcount,2,nprevious,ktag+1,0,0,1,ierr)
-        if(ierr.lt.0) call MPEI_ABORT('ERROR in MPE_SEND ')
+!     1.1.2 RECEIVE FROM PREVIOUS PROCESS
+!           -----------------------------
+      IF(NPREVIOUS.NE.0) THEN
 
-      endif
-c
-c     1.1.2 receive from previous process
-c           -----------------------------
-      if(nprevious.ne.0) then
+!       RECEIVE THE BUFFER FROM PREVIOUS PROCESS
+        KCOUNT=KLENBOT(IRANK)*NANG*NFRE
+        CALL MPE_RECV(ZCOMBUF,KCOUNT,2,NPREVIOUS,KTAG,0,0,0,
+     &                KRCOUNT,KRFROM,KRTAG,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT('ERROR in MPE_RECV ')
 
-c       receive the buffer from previous process
-        kcount=klenbot(irank)*NANG*NFRE
-        call MPE_RECV(zcombuf,kcount,2,nprevious,ktag,0,0,0,
-     $                krcount,krfrom,krtag,ierr)
-        if(ierr.lt.0) call MPEI_ABORT('ERROR in MPE_RECV ')
+!       DECODE THE RECEIVED BUFFER
+        KCOUNT=0
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO ij=ISB,ISB+KLENBOT(IRANK)-1
+              KCOUNT=KCOUNT+1
+              FL(IJ,K,M)=ZCOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+        ENDDO
 
-c       decode the received buffer
-        kcount=0
-        do M=1,NFRE
-           do K=1,NANG
-              do IJ=isb,isb+klenbot(irank)-1
-                 kcount=kcount+1
-                 FL(IJ,K,M)=zcombuf(kcount)
-              end do
-           end do
-        end do
+      ENDIF
 
-      endif
+!     1.1.2 RECEIVE FROM NEXT PROCESS
+!           -------------------------
+      IF(NNEXT.NE.0) THEN
 
-c     1.1.2 receive from next process
-c           -------------------------
-      if(nnext.ne.0) then
+!       RECEIVE THE BUFFER FROM NEXT PROCESS
+        KCOUNT=KLENTOP(IRANK)*NANG*NFRE
+        CALL MPE_RECV(ZCOMBUF,KCOUNT,2,NNEXT,KTAG+1,0,0,0,
+     &                KRCOUNT,KRFROM,KRTAG,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT('ERROR in MPE_RECV ')
 
-c       receive the buffer from next process
-        kcount=klentop(irank)*NANG*NFRE
-        call MPE_RECV(zcombuf,kcount,2,nnext,ktag+1,0,0,0,
-     $                krcount,krfrom,krtag,ierr)
-        if(ierr.lt.0) call MPEI_ABORT('ERROR in MPE_RECV ')
+!       DECODE THE RECEIVED BUFFER
+        KCOUNT=0
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=NEND(IRANK)+1,NEND(IRANK)+KLENTOP(IRANK)
+              KCOUNT=KCOUNT+1
+              FL(IJ,K,M)=ZCOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+        ENDDO
 
-c       decode the received buffer
-        kcount=0
-        do M=1,NFRE
-           do K=1,NANG
-              do IJ=nend(irank)+1,nend(irank)+klentop(irank)
-                 kcount=kcount+1
-                 FL(IJ,K,M)=zcombuf(kcount)
-              end do
-           end do
-        end do
+      ENDIF
 
-      endif
-c
-c
-      ktag=ktag+2
+      KTAG=KTAG+2
 
-      deallocate(zcombuf)
-c
-      return
-      end
+      DEALLOCATE(ZCOMBUF)
 
+      RETURN
+      END SUBROUTINE MPEXCHNG 

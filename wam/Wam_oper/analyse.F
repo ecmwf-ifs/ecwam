@@ -1,86 +1,86 @@
       SUBROUTINE ANALYSE (XM, NOBS, XME, XMO, XOI, IMEAS, JMEAS, I, J,
-     .                    DIST, LMAX, NDIM1, NDIM2) 
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C**** *ANALYSE* - COMPUTE FIELD AT (I,J) BY OPTIMUM INTERPOLATION.      
-C                                                                       
-C     PIERO LIONELLO      ECMWF     JUNE 1990                           
-C                                                                       
-C     PURPOSE.                                                          
-C     --------                                                          
-C                                                                       
-C       COMPUTE THE FIELD IN THE POINT (I,J) BY OPTIMUM INTERPOLATION.  
-C       ANALYSIS IS DONE FOR ONE GRID POINT.                            
-C                                                                       
-C**   INTERFACE.                                                        
-C     ----------                                                        
-C                                                                       
-C       *CALL* *ANALYSE (XM, NOBS, XME, XMO, XOI, IMEAS, JMEAS, I, J)*  
-C                                                                       
-C         *XM*      REAL      INVERSE OF (P+M) : P=MODEL CORRELATION    
-C                             MATRIX , M=MEASUREMENTS CORRELATION MATRIX
-C         *NOBS*    INTEGER   NUMBER OF OBSERVATION IN THE              
-C                             BOX AROUND POINT (I,J)                    
-C         *XME*     REAL      FIELD FROM  MEASUREMENT                   
-C         *XMO*     REAL      FIELD FROM MODEL                          
-C         *XOI*     REAL      RESULT OF O.I.                            
-C         *IMEAS*   INTEGER   X-INDICES OF MEASUREMENTS                 
-C         *JMEAS*   INTEGER   Y-INDICES OF MEASUREMENTS                 
-C         *I*       INTEGER   POINT WHERE O.I.FIELD IS PRODUCED         
-C         *J*       INTEGER                                             
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-#include "param.h"
-C
-#include "parcons.h"
-C
-#include "comgrid.h"
-C
-#include "commap.h"
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
+     &                    DIST, NDIM2) 
+
+! ----------------------------------------------------------------------
+
+!**** *ANALYSE* - COMPUTE FIELD AT (I,J) BY OPTIMUM INTERPOLATION.      
+
+!     PIERO LIONELLO      ECMWF     JUNE 1990                           
+
+!     PURPOSE.                                                          
+!     --------                                                          
+
+!       COMPUTE THE FIELD IN THE POINT (I,J) BY OPTIMUM INTERPOLATION.  
+!       ANALYSIS IS DONE FOR ONE GRID POINT.                            
+
+!**   INTERFACE.                                                        
+!     ----------                                                        
+
+!       *CALL* *ANALYSE (XM, NOBS, XME, XMO, XOI, IMEAS, JMEAS, I, J,
+!                        DIST, NDIM2)*  
+
+!         *XM*      REAL      INVERSE OF (P+M) : P=MODEL CORRELATION    
+!                             MATRIX , M=MEASUREMENTS CORRELATION MATRIX
+!         *NOBS*    INTEGER   NUMBER OF OBSERVATION IN THE              
+!                             BOX AROUND POINT (I,J)                    
+!         *XME*     REAL      FIELD FROM  MEASUREMENT                   
+!         *XMO*     REAL      FIELD FROM MODEL                          
+!         *XOI*     REAL      RESULT OF O.I.                            
+!         *IMEAS*   INTEGER   X-INDICES OF MEASUREMENTS                 
+!         *JMEAS*   INTEGER   Y-INDICES OF MEASUREMENTS                 
+!         *I*       INTEGER   POINT WHERE O.I.FIELD IS PRODUCED         
+!         *J*       INTEGER   POINT WHERE O.I.FIELD IS PRODUCED
+!         *DIST*    REAL      CUTOFF LENGTH OF THE SPREADING FUNCTION
+!         *NDIM2*   INTEGER   DIMENSION OF IMEAS AND JMEAS
+
+! ----------------------------------------------------------------------
+
+      USE YOWGRID  , ONLY : SINPH    ,COSPH
+      USE YOWMAP   , ONLY : ZDELLO
+      USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOWPCONS , ONLY : RAD
+
+! ----------------------------------------------------------------------
+
       DIMENSION XME(NGX,NGY), XMO(NGX,NGY), IMEAS(NDIM2), JMEAS(NDIM2)  
       DIMENSION XM(NOBS,NOBS)                                           
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
+
+! ----------------------------------------------------------------------
+
       DO L=1,NOBS-1                                                
         DO K=L+1,NOBS                                                
-          XM(L,K) = XM(K,L)                                              
+          XM(L,K) = XM(K,L)
         ENDDO
       ENDDO
-C                                                                       
-      XNEW = 0.                                                         
-      DO 1200 IOBS=1,NOBS                                               
-         I1 = I
-         I2 = IMEAS(IOBS)
-         J1 = NGY - J + 1
-         J2 = NGY - JMEAS(IOBS) + 1
-C                  
-         IF((I1.EQ.I2).AND.(J1.EQ.J2)) THEN
-           DOBS = 0.
-           W = 1.
-         ELSE
-           DELLON  = FLOAT(I1-1)*ZDELLO(J1)
-     1               - FLOAT(I2-1)*ZDELLO(J2)
-           COSLON  = COS(DELLON*RAD)
-           DOBS2   = COSLON*COSPH(J1)*COSPH(J2) +
-     1                     SINPH(J1)*SINPH(J2)
-           DOBS    = ACOS(DOBS2)
-           W       = EXP(-DOBS/DIST)
-         ENDIF
 
-         DO 1300 JOBS=1,NOBS                                            
-            IX = IMEAS(JOBS)                                            
-            JX = JMEAS(JOBS)                                            
-            XNEW = XNEW + W*XM(IOBS,JOBS)*(XME(IX,JX)-XMO(IX,JX))       
- 1300    CONTINUE                                                       
- 1200 CONTINUE                                                          
+      XNEW = 0.                                                         
+      DO IOBS=1,NOBS 
+        I1 = I
+        I2 = IMEAS(IOBS)
+        J1 = NGY - J + 1
+        J2 = NGY - JMEAS(IOBS) + 1
+
+        IF((I1.EQ.I2).AND.(J1.EQ.J2)) THEN
+          DOBS = 0.
+          W = 1.
+        ELSE
+          DELLON  = REAL(I1-1)*ZDELLO(J1)
+     &     - REAL(I2-1)*ZDELLO(J2)
+          COSLON  = COS(DELLON*RAD)
+          DOBS2   = COSLON*COSPH(J1)*COSPH(J2) +
+     &     SINPH(J1)*SINPH(J2)
+          DOBS    = ACOS(DOBS2)
+          W       = EXP(-DOBS/DIST)
+        ENDIF
+
+        DO JOBS=1,NOBS                                            
+          IX = IMEAS(JOBS)                                            
+          JX = JMEAS(JOBS)                                            
+          XNEW = XNEW + W*XM(IOBS,JOBS)*(XME(IX,JX)-XMO(IX,JX))       
+        ENDDO
+      ENDDO
                                                                         
       XOI = XMO(I,J) + XNEW                                             
-C                                                                       
+
       RETURN                                                            
-      END                                                               
+      END SUBROUTINE ANALYSE

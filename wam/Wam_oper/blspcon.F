@@ -1,75 +1,78 @@
-C ======================================================================
-C
+! ======================================================================
+
       SUBROUTINE blspcon( kuso, kugrd, kubls, kugrs, cdtask,
-     .  kang, kfre, kgx, kgy, kblo, kiblo, kover, koutp, koutt,
-     .  kmaxc, kmaxf, kbinp, kibl1, kibld, kbld, kiblc, kblc,
-     .  ktaumax, kumax, kustar, kalpha, kdepth, krefra,
-     .  kyear, kmonth, kday, khour, ldoutspp, kspecs, ldlog, ldfdb,
-     .  kfcst, cdclass, cdexpver, cddomain,  ksect1_3 )
-C
-C ======================================================================
-C
-C**** *BLSPCON* CALLS MODIFIED READPRE IN ORDER TO INPUT THE GRID
-C               INFORMATION FILE OF THE WAModel AND INPUTS THEN
-C               BLOCKED WAModel SPECTRA DISTRIBUTE THEM ON A
-C               GRID AND WRITES THIS GRID TO THE OUTPUT FILE
-C               ON UNIT KUGRS..
-CCCC
-C               it's coded the old way, ie for parameter 250
-CCCCC
-C
-C      B. HANSEN         ECMWF          MAY      1993
-C
-C     PURPOSE.
-C     --------
-C
-C          S.O.
-C
-C**   INTERFACE.
-C     ----------
-C          VARIABLES.   PURPOSE.
-C          ----------   --------
-C         I/  * kuso *  unit number for printer output.
-C         I/  * kugrd*  input unit number for grid information file.
-C         I/  * kubls*  input unit number for restart file blsp.
-C         I/  * kugrs*  output unit number for the gridded spctra.
-C         the rest is input to this subroutine descritpion in the
-C         WAModel.
-C
-C     LIBRARIES.
-C     ----------
-C          ALTLIB.
-C
-C     EXTERNALS.
-C     ----------
-C          READPRE.
-C
-C     METHOD.
-C     -------
-C          NONE
-C
-C     REFERENCE.
-C     ----------
-C          NONE
-C
-C ----------------------------------------------------------------------
-C
-C* 0.    DEFINITIONS.
-C  ------------------
-C
-      PARAMETER ( PPMISS = -3.0 )
-C     PARAMETER ( PPMISS = -10.0 )
-C
-C     PPMISS: ALL SPECTRAL VALUES LESS OR EQUAL PPMISS ARE REPLACED
-C             BY THE MISSING DATA INDICATOR FOR THE SECONDARY BIT 
-C             MASK AND HAVE TO BE SET TO ZERE AFTER RETORING FROM
-C             GRIB.
-C
+     &  kang, kfre, kgx, kgy, kblo, kiblo, kover, koutp, koutt,
+     &  kmaxc, kmaxf, kbinp, kibl1, kibld, kbld, kiblc, kblc,
+     &  ktaumax, kumax, kustar, kalpha, kdepth, krefra,
+     &  kyear, kmonth, kday, khour, ldoutspp, kspecs, ldlog, ldfdb,
+     &  kfcst, cdclass, cdexpver, cddomain,  ksect1_3 )
+
+! ======================================================================
+
+!**** *BLSPCON* CALLS MODIFIED READPRE IN ORDER TO INPUT THE GRID
+!               INFORMATION FILE OF THE WAModel AND INPUTS THEN
+!               BLOCKED WAModel SPECTRA DISTRIBUTE THEM ON A
+!               GRID AND WRITES THIS GRID TO THE OUTPUT FILE
+!               ON UNIT KUGRS..
+!CCC
+!               it's coded the old way, ie for parameter 250
+!CCCC
+
+!      B. HANSEN         ECMWF          MAY      1993
+
+!     PURPOSE.
+!     --------
+
+!          S.O.
+
+!**   INTERFACE.
+!     ----------
+!          VARIABLES.   PURPOSE.
+!          ----------   --------
+!         I/  * kuso *  unit number for printer output.
+!         I/  * kugrd*  input unit number for grid information file.
+!         I/  * kubls*  input unit number for restart file blsp.
+!         I/  * kugrs*  output unit number for the gridded spctra.
+!         the rest is input to this subroutine descritpion in the
+!         WAModel.
+
+!     LIBRARIES.
+!     ----------
+!          ALTLIB.
+
+!     EXTERNALS.
+!     ----------
+!          READPRE.
+
+!     METHOD.
+!     -------
+!          NONE
+
+!     REFERENCE.
+!     ----------
+!          NONE
+
+! ----------------------------------------------------------------------
+
+      USE YOWPCONS , ONLY : ZMISS
+
+
+!* 0.    DEFINITIONS.
+!  ------------------
+
+      REAL, PARAMETER :: PPMISS = -3.0
+!     REAL, PARAMETER :: PPMISS = -10.0
+
+!     PPMISS: ALL SPECTRAL VALUES LESS OR EQUAL PPMISS ARE REPLACED
+!             BY THE MISSING DATA INDICATOR FOR THE SECONDARY BIT 
+!             MASK AND HAVE TO BE SET TO ZERE AFTER RETORING FROM
+!             GRIB.
+
       INTEGER ix, iy
       REAL    zx, zy
       REAL zlatitude, zlongitude
       NAMELIST /location/  zlatitude, zlongitude
-C
+
       CHARACTER*  1 clfdbsf, cldomain
       CHARACTER*  2 cdclass, cltype
       CHARACTER*  4 cdexpver
@@ -80,67 +83,65 @@ C
       CHARACTER* 40 clmsg
       CHARACTER*100 cltitl
       LOGICAL ldlog, ldoutspp, ldfdb
-C
+
       CHARACTER* 28 clct
       DATA clct / '__COMPILED_ON__' /
-C
-C ----------------------------------------------------------------------
-C
-      PARAMETER (jplev = 2 )
+
+! ----------------------------------------------------------------------
+
+      INTEGER, PARAMETER :: jplev = 2
       DIMENSION
-     .     fr(kfre), dfim(kfre), gom(kfre), c(kfre),
-     .     th(kang), costh(kang), sinth(kang),
-     .     sinph(kgy), cosph(kgy),
-     .     ijs(kblo), ijl2(kblo), ijls(kblo),
-     .     ijl(kblo), ijlt(kblo),
-     .     ixlg(kiblo,kblo), kxlt(kiblo,kblo),
-     .     ikp(kfre+4), ikp1(kfre+4),
-     .     ikm(kfre+4), ikm1(kfre+4),
-     .     k1w(kang,2), k2w(kang,2), k11w(kang,2),
-     .     k21w(kang,2), af11(kfre+4), fklap(kfre+4),
-     .     fklap1(kfre+4), fklam(kfre+4), fklam1(kfre+4),
-     .     frh(30), igar(koutp), ijar(koutp),
-     .     depth(kiblo, kblo),
-     .     tcgond(kdepth,kfre), tfak(kdepth,kfre),
-     .     tsihkd(kdepth,kfre),
-     .     taut(0:ktaumax,0:kumax,jplev),
-     .     tauhft(0:kustar,0:kalpha),
-     .     u(0:kiblc,kblc), v(0:kiblc,kblc),
-     .     pdello(kgy), dellam(kgy), ilonrgg(kgy), kdomrgg(kgy),
-     .     fl3(0:kiblo,kang,kfre)
-C
+     &     fr(kfre), dfim(kfre), gom(kfre), c(kfre),
+     &     th(kang), costh(kang), sinth(kang),
+     &     sinph(kgy), cosph(kgy),
+     &     ijs(kblo), ijl2(kblo), ijls(kblo),
+     &     ijl(kblo), ijlt(kblo),
+     &     ixlg(kiblo,kblo), kxlt(kiblo,kblo),
+     &     ikp(kfre+4), ikp1(kfre+4),
+     &     ikm(kfre+4), ikm1(kfre+4),
+     &     k1w(kang,2), k2w(kang,2), k11w(kang,2),
+     &     k21w(kang,2), af11(kfre+4), fklap(kfre+4),
+     &     fklap1(kfre+4), fklam(kfre+4), fklam1(kfre+4),
+     &     frh(30), igar(koutp), ijar(koutp),
+     &     depth(kiblo, kblo),
+     &     tcgond(kdepth,kfre), tfak(kdepth,kfre),
+     &     tsihkd(kdepth,kfre),
+     &     taut(0:ktaumax,0:kumax,jplev),
+     &     tauhft(0:kustar,0:kalpha),
+     &     u(0:kiblc,kblc), v(0:kiblc,kblc),
+     &     pdello(kgy), dellam(kgy), ilonrgg(kgy), kdomrgg(kgy),
+     &     fl3(0:kiblo,kang,kfre)
+
       INTEGER ihlp(kgy)
-C
+
       INTEGER ilon(kgy)
-C
+
       REAL zspectrm(kang,kfre)
-C     REAL zsec4(kgx*kgy*kang*kfre)
+!     REAL zsec4(kgx*kgy*kang*kfre)
       REAL, ALLOCATABLE :: zsec4(:)
       REAL X4(2)
-C
+
       CHARACTER*1 cl_bitmap(kgx,kgy)
-C
-C     FOR TIMING:
+
+!     FOR TIMING:
       REAL wam_user_clock,
-     .     time0,           ! start time (reusable).
-     .     time_m           ! time used to put fl3 into psec4.
-     .     time_r           ! time used for reading.
-C
-C ----------------------------------------------------------------------
-C
-C* 0.    COMMON OUTPUT CONTROL.
-C  ----------------------------
-C
-#include "parcons.h"
-C
+     &     time0,           ! start time (reusable).
+     &     time_m           ! time used to put fl3 into psec4.
+     &     time_r           ! time used for reading.
+
+! ----------------------------------------------------------------------
+
+!* 0.    COMMON OUTPUT CONTROL.
+!  ----------------------------
+
+
 #include <outctrl.h>
       DATA csubna /"BLSPCON"/
-C
-C ----------------------------------------------------------------------
-C
-C*    1. INITIALIZATIONS.
-C        ----------------
- 1000 CONTINUE
+
+! ----------------------------------------------------------------------
+
+!*    1. INITIALIZATIONS.
+!        ----------------
       X4=1.
       jpidl = N_PRECISION(X4)
       msub = msub + 1
@@ -149,35 +150,34 @@ C        ----------------
 
       IF (lltest)  THEN
         WRITE(kuso,*)'  llsuvi: ',llsuvi,' lltest: ',lltest,
-     .               ' ldoutspp: ',ldoutspp,' ldlog: ',ldlog,
-     .               ' ldfdb: ',ldfdb
+     &               ' ldoutspp: ',ldoutspp,' ldlog: ',ldlog,
+     &               ' ldfdb: ',ldfdb
         WRITE(kuso,'(10a7)') ctest
       ENDIF
-C
+
       cl_bitmap = 'l'
       clfdbsf = ' '
       itest = 0
-C
-C ----------------------------------------------------------------------
-C
-C* 2.    READ GRID INFORMATION FILE.
-C  ---------------------------------
-C
- 2000 CONTINUE
+
+! ----------------------------------------------------------------------
+
+!* 2.    READ GRID INFORMATION FILE.
+!  ---------------------------------
+
       CALL READPREB (kuso, kugrd, krefra,
-     .     kang, kfre, kgy, kblo, kiblo, koutp, kiblc, kblc,
-     .     kdepth, ktaumax, kumax, kustar, kalpha, jplev,
-     .     fr, dfim, gom, c, delth, deltr, th, costh, sinth,
-     .     delphi, dellam, ilonrgg, sinph, cosph, igl, ijs, ijl2, ijls,
-     .     ijl, ijlt, ixlg, kxlt, nx, ny, iper,
-     .     zmowep, zmosop, zmoeap, zmonop, zdella, zdello, pdello,
-     .     irgg, ikp, ikp1, ikm, ikm1, k1w, k2w, k11w, k21w, af11,
-     .     fklap, fklap1, fklam, fklam1, acl1, acl2,  cl11,
-     .     cl21, dal1, dal2, frh,
-     .     betamax, zalp, alpha, xkappa, xnlev, taut, deltauw,
-     .     delu, tauhft, delust, delalp, ngout, igar, ijar,
-     .     depth, deptha, depthd, tcgond, tfak, tsihkd, u, v)
-C
+     &     kang, kfre, kgy, kblo, kiblo, koutp, kiblc, kblc,
+     &     kdepth, ktaumax, kumax, kustar, kalpha, jplev,
+     &     fr, dfim, gom, c, delth, deltr, th, costh, sinth,
+     &     delphi, dellam, ilonrgg, sinph, cosph, igl, ijs, ijl2, ijls,
+     &     ijl, ijlt, ixlg, kxlt, nx, ny, iper,
+     &     zmowep, zmosop, zmoeap, zmonop, zdella, zdello, pdello,
+     &     irgg, ikp, ikp1, ikm, ikm1, k1w, k2w, k11w, k21w, af11,
+     &     fklap, fklap1, fklam, fklam1, acl1, acl2,  cl11,
+     &     cl21, dal1, dal2, frh,
+     &     betamax, zalp, alpha, xkappa, xnlev, taut, deltauw,
+     &     delu, tauhft, delust, delalp, ngout, igar, ijar,
+     &     depth, deptha, depthd, tcgond, tfak, tsihkd, u, v)
+
       IF (irgg.EQ.1) THEN
         idl=0
         DO jgy = 1, kgy
@@ -187,15 +187,14 @@ C
       ELSE
         idl = kgy * kgx * kfre * kang
       ENDIF
-C
+
       ALLOCATE ( zsec4(idl) )
-C
-C ----------------------------------------------------------------------
-C
-C* 3.    LOOP OVER BLOCKS.
-C  -----------------------
-C
- 3000 CONTINUE
+
+! ----------------------------------------------------------------------
+
+!* 3.    LOOP OVER BLOCKS.
+!  -----------------------
+
       pprec=0.0  ! -3.
       xeps=1.0e-10
       waveht=   2.
@@ -205,23 +204,22 @@ C
       winddir=  6.
       wind10=   7.
       clname= ' LOC '
-C
+
       zsec4=zmiss
-C
+
       IF (llsuvi) WRITE(kuso,*)' WHICH TASK (task):',cdtask
       IF (ldoutspp) iu_locs =  i_get_unit (kuso, 'locs', 's', 'f', 0)
-C
+
       IF ( cdtask .EQ. 'GRID ') THEN
         WRITE (cldate,'(I4.4, 4I2.2)') kyear, kmonth, kday, khour, 0
-        DO 3300 jblock=1,kblo
+        DO jblock=1,kblo
           IF (llsuvi) time0=-wam_user_clock()
           READ (kubls) (((fl3(j1,j2,j3),
-     .                                  j1=0,kiblo),
-     .                                  j2=1,kang),
-     .                                  j3=1,kfre)
-C
- 3010     CONTINUE
-C
+     &                                  j1=0,kiblo),
+     &                                  j2=1,kang),
+     &                                  j3=1,kfre)
+
+
           IF (llsuvi) THEN
             time_r=time0+wam_user_clock()
             time_r=time_r*1E-06
@@ -232,34 +230,33 @@ C
             WRITE (kuso,*) ' +                            +'
             WRITE (kuso,*) ' ++++++++++++++++++++++++++++++'
           ENDIF
-C
+
           IF (lltest) THEN
-            DO 3100 jbl=100, 110
+            DO jbl=100, 110
               WRITE(kuso,*)' SPECTRUM ',jbl
               WRITE(kuso,'(12(x,f7.3))')
-     .        ((FL3(jbl,js1,js2),js1=1,kang),js2=1,kfre)
+     &        ((FL3(jbl,js1,js2),js1=1,kang),js2=1,kfre)
               WRITE(kuso,*)' '
- 3100       CONTINUE
+            ENDDO
           ENDIF
           IF (ldlog) THEN
-            IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,' DO ALOG10'
+            IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,' DO LOG10'
             DO j3=1,kfre
               DO j2=1,kang
                 DO j1=1,kiblo
-                  fl3(j1,j2,j3)=alog10(fl3(j1,j2,j3)+xeps)+abs(pprec)
+                  fl3(j1,j2,j3)=log10(fl3(j1,j2,j3)+xeps)+abs(pprec)
                   IF ( fl3(j1,j2,j3) .LE. ppmiss )
-     .              fl3(j1,j2,j3)=zmiss
-C---------->        fl3(j1,j2,j3)=MAX(fl3(j1,j2,j3),0.)
+     &              fl3(j1,j2,j3)=zmiss
+!---------->        fl3(j1,j2,j3)=MAX(fl3(j1,j2,j3),0.)
                 ENDDO
               ENDDO
             ENDDO
           ENDIF
- 3250     CONTINUE
           IF (llsuvi) time0=-wam_user_clock()
           CALL MAKEGRIDS (kuso, fl3, zsec4, idl,
-     .                    ijs(jblock), ijl(jblock), jblock,
-     .                    ilonrgg, kgx, kgy, kang, kfre, ixlg, kxlt,
-     .                    kblo, kiblo )
+     &                    ijs(jblock), ijl(jblock), jblock,
+     &                    ilonrgg, kgx, kgy, kang, kfre, ixlg, kxlt,
+     &                    kblo, kiblo )
           IF (llsuvi) THEN
             time_m=time0+wam_user_clock()
             time_m=time_m*1E-06
@@ -270,10 +267,10 @@ C---------->        fl3(j1,j2,j3)=MAX(fl3(j1,j2,j3),0.)
             WRITE (kuso,*) ' +                            +'
             WRITE (kuso,*) ' ++++++++++++++++++++++++++++++'
           ENDIF
- 3300   CONTINUE
-C
-C***********************************************************************
-C
+        ENDDO
+
+!***********************************************************************
+
         IF (lltest) THEN
           nx=1
           ny=1
@@ -296,7 +293,7 @@ C
    
           DO j1=1,kgy
             WRITE(kuso,'(132a1)') 
-     .       (cl_bitmap(j2,j1),j2=1,MIN(132,ilonrgg(j1)))
+     &       (cl_bitmap(j2,j1),j2=1,MIN(132,ilonrgg(j1)))
           ENDDO
           IF (kgx.gt.132) THEN
             WRITE(kuso,'(/132a1)') '-'
@@ -305,36 +302,36 @@ C
             ENDDO
           ENDIF
         ENDIF
-C
-C***********************************************************************
-C
+
+!***********************************************************************
+
         IF (llsuvi ) THEN
           WRITE(kuso,*)' ALL BLOCKS DONE, jbl=',jblock
           WRITE(kuso,*)' ANY SPECTRA TO PRINT, ldoutspp=',ldoutspp      
         ENDIF
-C       IF (lltest) WRITE(99) zsec4
+!       IF (lltest) WRITE(99) zsec4
 
         iparam = 250
  
         IF (llsuvi .OR. ldoutspp) THEN
           WRITE(kuso,*)' NUMBER OF SPECTRA TO PRINT, kspecs=',kspecs
-C
-          DO 3700 j1=1,kspecs
+
+          DO j1=1,kspecs
             READ ( iu_locs, location,END=3800)
             zy=zlatitude
             zx=zlongitude
             WRITE(kuso,location)
-C
+
             iy = NINT((zlatitude-zmonop)/(-zdella)) + 1
-C
+
             IF ( iy.GE.1 .AND. iy.LE.kgy ) THEN
               zx = MOD(zlongitude-zmowep+720.,360.)
               zx = zx / pdello(iy)
               ix = NINT(zx) +1
             ENDIF
-C
+
             IF ( ix.LT.1 .OR. ix.GT.ilonrgg(iy) .OR.
-     .           iy.LT.1 .OR. iy.GT.kgy ) THEN
+     &           iy.LT.1 .OR. iy.GT.kgy ) THEN
               WRITE(kuso,*)zlatitude,'X',zlongitude,' IS OUTSIDE GRID'
               WRITE(kuso,*) ' IX=',ix,' KGX=',ilonrgg(iy)
               WRITE(kuso,*) ' IY=',iy,' KGY=',kgy
@@ -344,13 +341,13 @@ C
               WRITE(kuso,*) ' ZDELLA=',zdella
             ELSE
               WRITE( kuso,*)' PRINT SPECTRUM AT IX=',ix,
-     .          ' AND AT IY=',iy
+     &          ' AND AT IY=',iy
               i_off = ispoff(ilonrgg, kgy, kang, kfre, iy-1, ix)
               IF (llsuvi) WRITE(kuso,*) ' OFFSET= ',i_off
               DO j3=1,kfre
                 DO j2=1,kang
                   jx=(j3-1)*kang+1+(j2-1)+i_off
-C
+
                   IF (ZSEC4(jx) .NE. ZMISS) THEN
                     zspectrm(j2,j3) = 10.**(zsec4(jx)-ABS(pprec))- xeps
                   ELSE
@@ -359,11 +356,11 @@ C
                 ENDDO
               ENDDO
               CALL PRSPP (kuso, cldate, zlongitude, zlatitude, clname,
-     1                    waveht, wavedir, wavemfr, windspd, winddir,
-     2                    wind10,
-     3                    fr, th, zspectrm, kang, kfre, kang, kfre)
+     &                    waveht, wavedir, wavemfr, windspd, winddir,
+     &                    wind10,
+     &                    fr, th, zspectrm, kang, kfre, kang, kfre)
             ENDIF
- 3700     CONTINUE
+          ENDDO
         ENDIF
  3800   CONTINUE
         IF ( ldoutspp) THEN
@@ -371,29 +368,29 @@ C
           WRITE(kuso,*) 'LAST RECORD READ:'
           WRITE(kuso,location)
         ENDIF
-C
-C* PACK FULL FIELD.
-C
+
+!* PACK FULL FIELD.
+
         istart=1
         iend  =kgy
-C
+
         IF (cddomain .EQ. 'medite' .OR. cddomain .EQ. 'global' ) THEN
-C
+
           itgrib=0
           DO ji = 1, kgy
             itgrib = itgrib+ilonrgg(ji)
           ENDDO
           cldomain = cddomain(1:1)
           CALL gribpacs
-     .       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
-     .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
-     .         zmowep, zmosop, zmoeap, zmonop, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver, cldomain,ldfdb,
-     .         ksect1_3, ifdb, jpidl)
-C
+     &       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
+     &         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
+     &         zmowep, zmosop, zmoeap, zmonop, ilonrgg, istart, iend,
+     &         zdella, zdello, zmiss, cdclass, cdexpver, cldomain,ldfdb,
+     &         ksect1_3, ifdb, jpidl)
+
         ELSE
-C         IF ( ksect1_3 .GT. 300 .AND. ksect1_3 .LT. 400 .AND.
-C    .         zmosop .LT. 0.0 .AND. zmonop .GE. 0.0 ) THEN
+!         IF ( ksect1_3 .GT. 300 .AND. ksect1_3 .LT. 400 .AND.
+!    .         zmosop .LT. 0.0 .AND. zmonop .GE. 0.0 ) THEN
           IF ((cddomain(1:5) .EQ. 'north' .OR.
      &         cddomain(1:5) .EQ. 'south' .OR.
      &         cddomain(1:4) .EQ. 'both' ) .AND.
@@ -406,43 +403,43 @@ C    .         zmosop .LT. 0.0 .AND. zmonop .GE. 0.0 ) THEN
             zx = MOD(zlongitude-zmowep+720.,360.)
             zx = zx / pdello(iy)
             ix = NINT(zx) +1
-C
+
             itgrib=0
             DO ji = 1, iy
               itgrib = itgrib+ilonrgg(ji)
             ENDDO
             itsp = ispoff(ilonrgg, kgy, kang, kfre, iy-1, ix) +
-     .             (kang*kfre)
-C
+     &             (kang*kfre)
+
             IF (llsuvi) WRITE(*,*) "  ITSP  ", itsp
-C
-C* PACK NORTHERN HEMISPHERE.
+
+!* PACK NORTHERN HEMISPHERE.
 
             IF (cddomain(1:5) .EQ. 'north' .OR.
      &          cddomain(1:4) .EQ. 'both' ) THEN
-C             isect1_3 = 106 ! 304
+!             isect1_3 = 106 ! 304
               zsouth = 0.0
               iend = iy
               cldomain = 'n'
               CALL gribpacs
-     .       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
-     .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
-     .         zmowep, zsouth, zmoeap, zmonop, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
-     .         ksect1_3, ifdb, jpidl)
+     &       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
+     &         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
+     &         zmowep, zsouth, zmoeap, zmonop, ilonrgg, istart, iend,
+     &         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
+     &         ksect1_3, ifdb, jpidl)
             ENDIF
  
-C* PACK SOUTHERN HEMISPHERE.
+!* PACK SOUTHERN HEMISPHERE.
 
             IF (cddomain(1:5) .EQ. 'south' .OR.
      &          cddomain(1:4) .EQ. 'both' ) THEN
-C             isect1_3 =  106 ! 305
+!             isect1_3 =  106 ! 305
               znorth = 0.0 - zdella
               istrt = 1+itsp
               itsp  = itgrib-itsp
               istart = iy + 1
               iend = kgy
-C
+
               itgrib=0
               DO ji = iy+1, kgy
                 itgrib = itgrib+ilonrgg(ji)
@@ -450,11 +447,11 @@ C
               IF (llsuvi) WRITE(kuso,*) " SOUTH: istrt=", istrt
               cldomain = 's'
               CALL gribpacs
-     .       ( kuso, kugrs, zsec4(istrt), itgrib, kgx, kgy, kang, kfre,
-     .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
-     .         zmowep, zmosop, zmoeap, znorth, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
-     .         ksect1_3, ifdb, jpidl)
+     &       ( kuso, kugrs, zsec4(istrt), itgrib, kgx, kgy, kang, kfre,
+     &         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
+     &         zmowep, zmosop, zmoeap, znorth, ilonrgg, istart, iend,
+     &         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
+     &         ksect1_3, ifdb, jpidl)
             ENDIF
           ELSE
             WRITE(kuso,*) ' TRY TO SPLIT A NONGLOBAL FIELD '
@@ -471,9 +468,9 @@ C
           ifre = 0
           IF (llsuvi.OR.lltest) itest=1
           CALL FLD2FDB (kuso, itest, idummy, idummy, idummy, 'close',
-     .                  ierr,
-     .                 cltype, cdclass, cdexpver, clfdbsf, cldomain,
-     .                 idir, ifre,  ifdb)
+     &                  ierr,
+     &                 cltype, cdclass, cdexpver, clfdbsf, cldomain,
+     &                 idir, ifre,  ifdb)
           IF (llsuvi) WRITE(kuso,*) ' FDB ', ifdb, " CLOSED:", ierr
           IF (ierr .NE. 0) THEN
             WRITE(kuso,*) ' ------------------------'
@@ -484,28 +481,27 @@ C
           ENDIF
         ENDIF
 
-C
+
       ELSEIF (cdtask .EQ. 'BLOCK') THEN
-C
-C ----------------------------------------------------------------------
-C
-C* 4.    DECODING AND BLOCKING.
-C  ----------------------------
-C
- 4000   CONTINUE
+
+! ----------------------------------------------------------------------
+
+!* 4.    DECODING AND BLOCKING.
+!  ----------------------------
+
         IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,': CALL INMARSS',
      &    ' - DOMAIN = ', cddomain
         TH=-99.
         FR=-99.
-C
+
         CALL inmarss (kuso, kugrs, kgy, idl, kang, kfre, zmiss,
-     .                cldate, iforp, iparam, krgg, kdomrgg, ingx, ingy,
-     .                zamowep, zamosop, zamoeap, zamonop,
-     .                inang, infre, zsec4, th, fr, kret, clmsg)
+     &                cldate, iforp, iparam, krgg, kdomrgg, ingx, ingy,
+     &                zamowep, zamosop, zamoeap, zamonop,
+     &                inang, infre, zsec4, th, fr, kret, clmsg)
          
         IF (llsuvi.OR.lltest) THEN
-           WRITE(kuso,*) ' SUB: ',csubna,': INMARSS DONE '
-           WRITE(kuso,*) csubna,': GRIBEX RETURN CODE = ',kret, clmsg
+          WRITE(kuso,*) ' SUB: ',csubna,': INMARSS DONE '
+          WRITE(kuso,*) csubna,': GRIBEX RETURN CODE = ',kret, clmsg
         ENDIF  
         IF (lltest) THEN
           WRITE(kuso,*)' SUB: ',csubna,': INMARSS DONE'
@@ -533,14 +529,14 @@ C
           zx = zx / pdello(kgy-iy+1)
           ix = NINT(zx) +1
           itsp = ispoff(ilonrgg, kgy, kang, kfre, iy-1, ix) +
-     .           (kang*kfre)
+     &           (kang*kfre)
           istrt = 1+itsp
 
           IF (llsuvi) WRITE(kuso,*) " SOUTH: istrt=", istrt
           CALL inmarss (kuso, kugrs, kgy, idl-istrt+1, kang, kfre,zmiss,
-     .                  cldate, iforp, iparam, krgg,kdomrgg, ingx, ingy,
-     .                  zamowep, zamosop, zamoeap, zamonop,
-     .                  inang, infre, zsec4(istrt), th, fr, kret, clmsg)
+     &                  cldate, iforp, iparam, krgg,kdomrgg, ingx, ingy,
+     &                  zamowep, zamosop, zamoeap, zamonop,
+     &                  inang, infre, zsec4(istrt), th, fr, kret, clmsg)
           IF (lltest) THEN
             WRITE(kuso,*)' SUB: ',csubna,': INMARSS DONE'
             WRITE(kuso,*)' CLMSG : ', clmsg
@@ -561,17 +557,17 @@ C
           ENDIF
         ENDIF
         IF (ldlog) THEN
-          IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,' : DO ALOG10'
-          DO 4200 jx=1,idl
+          IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,' : DO LOG10'
+          DO jx=1,idl
             IF (zsec4(jx) .NE. zmiss) THEN
-                zsec4(jx) = 10.**(zsec4(jx)-abs(pprec))- xeps
+              zsec4(jx) = 10.**(zsec4(jx)-abs(pprec))- xeps
             ELSE
               zsec4(jx) = 0.0
             ENDIF
- 4200     CONTINUE
+          ENDDO
         ENDIF
         IF (ldoutspp) THEN
-          DO 4400 j1=1,kspecs
+          DO j1=1,kspecs
             READ ( iu_locs, location,END=4500)
             zy=zlatitude
             zx=zlongitude
@@ -586,7 +582,7 @@ C
             ENDIF
 
             IF ( ix.LT.1 .OR. ix.GT.ilonrgg(iy) .OR.
-     .           iy.LT.1 .OR. iy.GT.kgy) THEN
+     &           iy.LT.1 .OR. iy.GT.kgy) THEN
               WRITE(kuso,*)zlatitude,'X',zlongitude,' IS OUTSIDE GRID'
               WRITE(kuso,*) ' IX=',ix,' KGX=',ilonrgg(iy)
               WRITE(kuso,*) ' IY=',iy,' KGY=',kgy
@@ -596,8 +592,8 @@ C
               WRITE(kuso,*) ' ZDELLA=',zdella
             ELSE
               IF (llsuvi) 
-     .        WRITE( kuso,*)' PRINT SPECTRUM AT IX=',ix,
-     .        ' AND AT IY=',iy
+     &        WRITE( kuso,*)' PRINT SPECTRUM AT IX=',ix,
+     &        ' AND AT IY=',iy
               i_off = ispoff(ilonrgg, kgy, kang, kfre, iy-1, ix)
               DO j3=1,kfre
                 DO j2=1,kang
@@ -607,31 +603,32 @@ C
                 ENDDO
               ENDDO
               CALL PRSPP (kuso, cldate, zlongitude,  zlatitude, clname,
-     1                    waveht, wavedir, wavemfr, windspd, winddir,
-     2                    wind10,
-     3                    fr, th, zspectrm, kang, kfre, kang, kfre)
+     &                    waveht, wavedir, wavemfr, windspd, winddir,
+     &                    wind10,
+     &                    fr, th, zspectrm, kang, kfre, kang, kfre)
             ENDIF
- 4400     CONTINUE
+          ENDDO
         ENDIF
  4500   CONTINUE
         fl3=0.
-        DO 4700 jblock=1,kblo
+        DO jblock=1,kblo
           CALL makeblos (fl3, zsec4, idl, 
-     .                   ijs(jblock), ijl(jblock), jblock,
-     .                   ilonrgg, kgx, kgy, kang, kfre, ixlg, kxlt,
-     .                   kblo, kiblo)
+     &                   ijs(jblock), ijl(jblock), jblock,
+     &                   ilonrgg, kgx, kgy, kang, kfre, ixlg, kxlt,
+     &                   kblo, kiblo)
           WRITE(kubls) FL3
- 4700   CONTINUE
+        ENDDO
       ENDIF
       IF (ldoutspp) CLOSE (iu_locs)
-C
-C ----------------------------------------------------------------------
-C
-C* 5.    TERMINATION.
-C  ------------------
-C
- 5000 CONTINUE
-      
+
+! ----------------------------------------------------------------------
+
+!* 5.    TERMINATION.
+!  ------------------
       msub = msub - 1
       RETURN
-      END
+      END SUBROUTINE blspcon
+
+
+
+

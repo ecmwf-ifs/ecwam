@@ -1,89 +1,72 @@
       SUBROUTINE OUTERS (FL3, IG, IGL, CDTPRO, NSTART, NEND,
-     1                   U10NEW,THWNEW,USNEW)
-                                                                        
-C -----------------------------------------------------------------     
-C                                                                       
-C**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.                   
-C                                                                       
-C     H. GUNTHER     GKSS/ECMWF            JULY 1991                    
+     &                   U10NEW,THWNEW,USNEW)
+! -----------------------------------------------------------------     
+
+!**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
+
+!     H. GUNTHER     GKSS/ECMWF            JULY 1991                    
 !     J. BIDLOT      ECMWF           FEBRARY 1996  MESSAGE PASSING
 !     J. BIDLOT      ECMWF           JANUARY 1997  MODIFY DEFINITION
 !                                                  OF TH0 
-C                                                                       
-C*** INTERFACE.                                                         
-C    ----------                                                         
-C                                                                       
-C       *CALL  OUTERS (FL3, IG, IGL, CDTPRO, NSTART, NEND,
-C                      U10NEW,THWNEW,USNEW)* 
-C          *FL3*    -   SPECTRUM.                                       
-C          *IG*     -   BLOCK NUMBER.                                   
-C          *IGL*    -   NUMBER OF BLOCKS.                               
-C          *CDTPRO* -   MODEL PROPAGATION TIME.                         
-C          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C          *U10NEW*    NEW WIND SPEED IN M/S.
-C          *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-C                      NOTATION (POINTING ANGLE OF WIND VECTOR,
-C                      CLOCKWISE FROM NORTH).
-C          *USNEW*     NEW FRICTION VELOCITY IN M/S.
-C                                                                       
-C    EXTERNALS.                                                         
-C    ----------                                                         
-C                                                                       
-C      ERSFILE   - FETCHES COLOCATION INFORMATION DONE BY PREUWA.       
-C                                                                       
-C    METHOD.                                                            
-C    -------                                                            
-C                                                                       
-C      NONE.                                                            
-C                                                                       
-C    REFERENCES.                                                        
-C    -----------                                                        
-C                                                                       
-C      NONE.                                                            
-C                                                                       
-C---------------------------------------------------------------------- 
-C                                                                       
-#include "param.h"
-C                                                                       
-#include "comcoer.h"
-C                                                                       
-#include "comfred.h"
-C                                                                       
-#include "commap.h"
-C                                                                       
-#include "commean.h"
-C                                                                       
-#include "comtest.h"
-C                                                                       
-#include "comwind.h"
-C                                                                       
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
-C ----------------------------------------------------------------------
+
+!*** INTERFACE.                                                         
+!    ----------                                                         
+
+!       *CALL  OUTERS (FL3, IG, IGL, CDTPRO, NSTART, NEND,
+!                      U10NEW,THWNEW,USNEW)* 
+!          *FL3*    -   SPECTRUM.                                       
+!          *IG*     -   BLOCK NUMBER.                                   
+!          *IGL*    -   NUMBER OF BLOCKS.                               
+!          *CDTPRO* -   MODEL PROPAGATION TIME.                         
+!          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!          *U10NEW*    NEW WIND SPEED IN M/S.
+!          *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!                      NOTATION (POINTING ANGLE OF WIND VECTOR,
+!                      CLOCKWISE FROM NORTH).
+!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
+
+!    EXTERNALS.                                                         
+!    ----------                                                         
+
+!      ERSFILE   - FETCHES COLOCATION INFORMATION DONE BY PREUWA.       
+
+!    METHOD.                                                            
+!    -------                                                            
+
+!      NONE.                                                            
+
+!    REFERENCES.                                                        
+!    -----------                                                        
+
+!      NONE.                                                            
+
+!---------------------------------------------------------------------- 
+
+      USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,
+     &            IGERS
+      USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
+     &            XDELLA   ,ZDELLO
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWPCONS , ONLY : DEG      ,ZMISS
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+
+! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
+      CHARACTER CDTPRO*12
 
-C ----------------------------------------------------------------------
-C                                                                       
-#include "parcons.h"
-C                                                                       
-      PARAMETER ( FREI = 1.1)                                  
-C                                                                       
-C                FREI   REAL  FREQUENCY INCREMENT                       
-C                                                                       
-      CHARACTER NAME*20, CDTPRO*12
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C     WORK ARRAYS
-      INTEGER, DIMENSION(2*NERS+1) :: IBUFF
+! ----------------------------------------------------------------------
+
+!     WORK ARRAYS
+      INTEGER,ALLOCATABLE :: IBUFF(:)
       REAL,ALLOCATABLE,DIMENSION(:) :: U10,THW,US
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
 
@@ -93,13 +76,21 @@ C     WORK ARRAYS
       IF (IG.EQ.1) THEN
         CALL ERSFILE (IU91, IU92, IG, IGL)
 
-        IF(LMESSPASS) THEN
-C
-C*  EXCHANGE THE VALUE OF IERS,IGERS, AND IJERS WITH THE OTHER
-C*  PROCESS
-C
+        IF(LMESSPASS.AND.NPROC.GT.1) THEN
+
+!*  EXCHANGE THE VALUE OF NERS, IERS,IGERS, AND IJERS WITH THE OTHER PE
+
           ITAG=92
           IF(IRANK.EQ.1) THEN
+
+            CALL MPE_BROADCAST(NERS,1,1,1,ITAG,0,0,0,IERR)
+            IF(IERR.LT.0) THEN
+              WRITE(IU06,*) 'OUTERS: MPE_BROADCAST NERS RC=',IERR
+              CALL MPEI_ABORT('MPE_BROADCAST NERS ERROR in OUTERS')
+            ENDIF
+            ITAG=ITAG+1
+
+            ALLOCATE(IBUFF(2*NERS+1))
             KCOUNT=0
             DO NGOU=1,NERS
               KCOUNT=KCOUNT+1
@@ -117,12 +108,23 @@ C
               CALL MPEI_ABORT('MPE_BROADCAST ERROR in OUTERS')
             ENDIF
           ELSE
+            CALL MPE_RECV(NERS,1,1,1,ITAG,0,0,0,
+     &                    KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR 1 in OUTERS')
+            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     &            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (0)' )
+            ITAG=ITAG+1
+
+            ALLOCATE(IGERS(NERS))
+            ALLOCATE(IJERS(NERS))
+            ALLOCATE(IBUFF(2*NERS+1))
+
             KBUFRLENGTH=2*NERS+1
             CALL MPE_RECV(IBUFF,KBUFRLENGTH,1,1,ITAG,0,0,0,
-     1                    KRCOUNT,KRFROM,KRTAG,IERR)
+     &                    KRCOUNT,KRFROM,KRTAG,IERR)
             IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR in OUTERS')
             IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     1            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
+     &            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
             KCOUNT=0
             DO NGOU=1,NERS
               KCOUNT=KCOUNT+1
@@ -135,21 +137,21 @@ C
             KCOUNT=KCOUNT+1
             IERS=IBUFF(KCOUNT)
             IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
-     1            ('MPE_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
+     &            ('MPE_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
           ENDIF
         ENDIF
       ENDIF
-C                                                                       
-C*   1. LOOP OVER OUTPUT POINTS.                                        
-C       ------------------------                                        
-C                                                                       
+
+!*   1. LOOP OVER OUTPUT POINTS.                                        
+!       ------------------------                                        
+
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
         ALLOCATE(U10(NIBLO),THW(NIBLO),US(NIBLO))
 
         IF(LMESSPASS) THEN
-C       COLLECT NECESSARY FIELDS TO PROCESS 1
-C
+!       COLLECT NECESSARY FIELDS TO PROCESS 1
+
           IRECV=1
           ITAG=ITAG+1
           NSPFLD=1
@@ -161,8 +163,8 @@ C
             US(IJ)=USNEW(IJ)
           ENDDO
           CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     1                         FL3,FLPTS,
-     2                         EMEAN,FMEAN,THQ,U10,THW,US)
+     &                         FL3,FLPTS,
+     &                         EMEAN,FMEAN,THQ,U10,THW,US)
         ELSE
           DO IJ = NINF,NSUP
             U10(IJ)=U10NEW(IJ)
@@ -174,25 +176,25 @@ C
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
           XANG = REAL(NANG)
           XFRE = REAL(NFRE)
-          DO 1002 NGOU=1,IERS
+          DO NGOU=1,IERS
             IF (IG.EQ.IGERS(NGOU)) THEN
               IJ = IJERS(NGOU)                                         
               XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
               XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
-C                                                                       
-C*    1.1 WRITE INFORMATION TO FILE IU92.                               
-C         -------------------------------                               
-C                                                                       
+
+!*    1.1 WRITE INFORMATION TO FILE IU92.                               
+!         -------------------------------                               
+
               IF (ITEST.GE.3) THEN
                 WRITE(IU06,*)' SUB : outers  LOOP 1002 ngou=', ngou
                 CALL FLUSH (IU06)
               ENDIF
               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
-     1                    TH(1), FR(1), FREI
+     &                    TH(1), FR(1), FRATIO
               IF (EMEAN(IJ) .GE. 0.0 ) THEN
                 WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     1                      FMEAN(IJ), US(IJ), DEG*THW(IJ),
-     2                      U10(IJ)
+     &                      FMEAN(IJ), US(IJ), DEG*THW(IJ),
+     &                      U10(IJ)
               ELSE
                 WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
               ENDIF
@@ -202,20 +204,23 @@ C
                 WRITE(IU92) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
               ENDIF
             ENDIF                                                       
- 1002     CONTINUE
+          ENDDO
         ENDIF
       ENDIF                                                             
-C
+
       IF (IG.EQ.IGL) THEN                                               
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
           CALL ERSFILE (IU91, IU92, -9, -9)
         ENDIF
       ENDIF                                                             
-C
-      IF (ALLOCATED (U10))   DEALLOCATE (U10)
-      IF (ALLOCATED (THW))   DEALLOCATE (THW)
-      IF (ALLOCATED (US))    DEALLOCATE (US)
-      IF (ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
-C
+
+      IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
+      IF(ALLOCATED(IGERS))  DEALLOCATE (IGERS)
+      IF(ALLOCATED (IBUFF)) DEALLOCATE (IBUFF)
+      IF(ALLOCATED (U10))   DEALLOCATE (U10)
+      IF(ALLOCATED (THW))   DEALLOCATE (THW)
+      IF(ALLOCATED (US))    DEALLOCATE (US)
+      IF(ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
+
       RETURN                                                            
-      END                                                               
+      END SUBROUTINE OUTERS

@@ -1,96 +1,190 @@
-      SUBROUTINE OUTINT (IU06, IU20, IU21, IU30, ITEST, Kfdb)
+      SUBROUTINE OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB)
 
-C ----------------------------------------------------------------------
-C
-C**** *OUTINT* - OUTPUT OF INTEGRATED FIELDS IS WRITTEN.
-C
-C     H. GUNTHER       ECMWF  JUNE     1990
-C     A. GUILLAUME     ECMWF  JUNE     1992 HANDLING OF MISSING VALUES,
-C                                           AND FDB OUTPUT.
-C     A. GUILLAUME     ECMWF  JULY     1992 DIRECTIONS.
-C
-C     P.A.E.M. JANSSEN ECMWF  AUGUST   1995
-C
-C     J. BIDLOT        ECMWF  APRIL    1996 MESSAGE PASSING.
-C     J. BIDLOT        ECMWF  OCTOBER  1997 ADD OUTPUT OF U10G.
-C     B. HANSEN        ECMWF  FEBRUARY 1998 INTERFACE TO FDB.
-C
-C*    PURPOSE.
-C     --------
-C
-C       OUTPUT OF WAVE AND WIND FIELDS IN GRIDDED FORMAT
-C       TO DISK ,PRINTER AND FDB.
-C
-C
-C**   INTERFACE.
-C     ----------
-C       *CALL* *OUTINT (IU06, IU20, IU21, IU30, ITEST, Kfdb)
-C          *IU06*   - PRINTER OUTPUT UNIT.
-C          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
-C          *IU21    - OUTPUT UNIT OF SEA AND SWELL PARAMETER.
-C          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
-C                     SPECTRUM.
-C          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
-C          *Kfdb*   - REFERENCE TO THE FDB DATABASE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       *OUTPP*     - PRINTER OUTPUT OF AN ARRAY.
-C       *GRIBPAC*   -
-C       *MPGATHERGRDFLD* - GATHER GRID FIELD ONTO ONE PROCESS
-C
-C     METHOD.
-C     -------
-C
-C       NONE.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C ----------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "parcons.h"
-C
-#include "comcoup.h"
-C
-#include "txtcoup.h"
-C
-#include "comcout.h"
-C
-#include "comgrid.h"
-C
-#include "comintp.h"
-C
-#include "comints.h"
-C
-#include "commap.h"
-C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
-#include "comstat.h"
-C
-C ----------------------------------------------------------------------
-C
-      CHARACTER TITL*100, CLDOMAIN*1
+! ----------------------------------------------------------------------
+
+!**** *OUTINT* - OUTPUT OF INTEGRATED FIELDS IS WRITTEN.
+
+!     H. GUNTHER       ECMWF  JUNE     1990
+!     A. GUILLAUME     ECMWF  JUNE     1992 HANDLING OF MISSING VALUES,
+!                                           AND FDB OUTPUT.
+!     A. GUILLAUME     ECMWF  JULY     1992 DIRECTIONS.
+
+!     P.A.E.M. JANSSEN ECMWF  AUGUST   1995
+
+!     J. BIDLOT        ECMWF  APRIL    1996 MESSAGE PASSING.
+!     J. BIDLOT        ECMWF  OCTOBER  1997 ADD OUTPUT OF U10G.
+!     B. HANSEN        ECMWF  FEBRUARY 1998 INTERFACE TO FDB.
+
+!*    PURPOSE.
+!     --------
+
+!       OUTPUT OF WAVE AND WIND FIELDS IN GRIDDED FORMAT
+!       TO DISK ,PRINTER AND FDB.
+
+
+!**   INTERFACE.
+!     ----------
+!       *CALL* *OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB)
+!          *IU06*   - PRINTER OUTPUT UNIT.
+!          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
+!          *IU21    - OUTPUT UNIT OF SEA AND SWELL PARAMETER.
+!          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
+!                     SPECTRUM.
+!          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
+!          *KFDB*   - REFERENCE TO THE FDB DATABASE.
+
+!     EXTERNALS.
+!     ----------
+
+!       *OUTPP*     - PRINTER OUTPUT OF AN ARRAY.
+!       *GRIBPAC*   -
+!       *MPGATHERGRDFLD* - GATHER GRID FIELD ONTO ONE PROCESS
+
+!     METHOD.
+!     -------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : LWCOU    ,XNLEV
+      USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
+     &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
+     &            LFDB     ,IPFGTBL
+      USE YOWGRIBHD, ONLY : NTENCODE
+      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
+     &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
+     &            U10G
+      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
+     &            WDIRWG   ,WMNFWG
+      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
+     &            AMONOP   ,ZDELLO
+      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
+      USE YOWPCONS , ONLY : DEG      ,ZMISS
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,CDTINTS  ,
+     &            CFDBSF   ,NENSFNB  ,NTOTENS  ,MARSTYPE ,YCLASS   ,
+     &            YEXPVER
+
+! ----------------------------------------------------------------------
+
+      CHARACTER TITL*100
       LOGICAL LGRIBPAC
-C
-C ----------------------------------------------------------------------
-C
+
+! ----------------------------------------------------------------------
+
       LGRIBPAC = .FALSE.
 
-C     0. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON A SPECIFIC PROCESS
-C        --------------------------------------------------------------
-C
+      IF (CDTINTT.EQ.CDTPRO) THEN
+
+!*      0.1 CONVERT TO TOTAL SEA WAVE HEIGHT AND DEGREES.
+!           ---------------------------------------------
+        IF(FFLAG(1).OR.PFLAG(1).OR.GFLAG(1)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(1)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WHGTTG(I,J).NE.ZMISS)
+     &            WHGTTG(I,J) = 4.0 * SQRT(WHGTTG(I,J))
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(2).OR.PFLAG(2).OR.GFLAG(2)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(2)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WDIRTG(I,J).NE.ZMISS)
+     &            WDIRTG(I,J) = MOD(DEG * WDIRTG(I,J) +180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(5).OR.PFLAG(5).OR.GFLAG(5)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(5)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(UDIRG(I,J).NE.ZMISS)
+     &            UDIRG(I,J) = MOD(DEG * UDIRG(I,J) +180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+      ENDIF
+
+
+      IF (CDTINTS.EQ.CDTPRO) THEN
+!*      0.2 CONVERT TO SWELL AND WINDSEA WAVE HEIGHT AND DEGREES.
+!           -----------------------------------------------------
+
+        IF(FFLAG(12).OR.PFLAG(12).OR.GFLAG(12)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(12)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WHGTSG(I,J).NE.ZMISS)
+     &            WHGTSG(I,J) = 4.0 * SQRT(WHGTSG(I,J))
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(14).OR.PFLAG(14).OR.GFLAG(14)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(14)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+              IF(WDIRSG(I,J).NE.ZMISS)
+     &          WDIRSG(I,J) = MOD(DEG * WDIRSG(I,J) + 180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(11).OR.PFLAG(11).OR.GFLAG(11)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(11)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+              IF(WHGTWG(I,J).NE.ZMISS)
+     &          WHGTWG(I,J) = 4.0 * SQRT(WHGTWG(I,J))
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(13).OR.PFLAG(13).OR.GFLAG(13)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(13)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WDIRWG(I,J).NE.ZMISS)
+     &            WDIRWG(I,J) = MOD(DEG * WDIRWG(I,J) + 180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+      ENDIF
+
+!     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON A SPECIFIC PROCESS
+!        --------------------------------------------------------------
+
       IF(LMESSPASS.AND.(FFLAG20.OR.PFLAG20.OR.GFLAG20)) THEN
-C     0.1 COLLECT TOTAL SEA PARAMETER ARRAYS TO PROCESS NPROC 
-C         ---------------------------------------------------
+!       1.1 COLLECT TOTAL SEA PARAMETER ARRAYS TO PROCESS NPROC 
+!           ---------------------------------------------------
         IRECV=NPROC
 
         IF (FFLAG(1)) CALL MPGATHERGRDFLD(IPFGTBL(1),IRECV,1,WHGTTG)
@@ -107,49 +201,49 @@ C         ---------------------------------------------------
       ENDIF
 
       IF(LMESSPASS) THEN
-C     0.2 COLLECT INTEGRATED PARAMETER ARRAYS TO PROCESS 1
-C         ONLY FOR PRINT OUTPUT OR GRIB IF OUTPUT TO FILE
-C         ------------------------------------------------
+!       1.2 COLLECT INTEGRATED PARAMETER ARRAYS TO PROCESS 1
+!           ONLY FOR PRINT OUTPUT OR GRIB IF OUTPUT TO FILE
+!           ------------------------------------------------
         IRECV=1
 
         IF (PFLAG(1).OR.(.NOT.LFDB.AND.GFLAG(1)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(1),IRECV,101,WHGTTG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(1),IRECV,101,WHGTTG)
         IF (PFLAG(2).OR.(.NOT.LFDB.AND.GFLAG(2)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(2),IRECV,102,WDIRTG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(2),IRECV,102,WDIRTG)
         IF (PFLAG(3).OR.(.NOT.LFDB.AND.GFLAG(3)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(3),IRECV,103,WMNFTG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(3),IRECV,103,WMNFTG)
         IF (PFLAG(4).OR.(.NOT.LFDB.AND.GFLAG(4)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(4),IRECV,104,USTARG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(4),IRECV,104,USTARG)
         IF (PFLAG(5).OR.(.NOT.LFDB.AND.GFLAG(5)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(5),IRECV,105,UDIRG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(5),IRECV,105,UDIRG)
         IF (PFLAG(6).OR.(.NOT.LFDB.AND.GFLAG(6)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(6),IRECV,106,WPKFTG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(6),IRECV,106,WPKFTG)
         IF (PFLAG(7).OR.(.NOT.LFDB.AND.GFLAG(7)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(7),IRECV,107,CDG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(7),IRECV,107,CDG)
         IF (PFLAG(8).OR.(.NOT.LFDB.AND.GFLAG(8)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(8),IRECV,108,TAUWG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(8),IRECV,108,TAUWG)
         IF (PFLAG(9).OR.(.NOT.LFDB.AND.GFLAG(9)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(9),IRECV,109,SMEANG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(9),IRECV,109,SMEANG)
         IF (PFLAG(10).OR.(.NOT.LFDB.AND.GFLAG(10)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(10),IRECV,110,U10G)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(10),IRECV,110,U10G)
         IF (PFLAG(11).OR.(.NOT.LFDB.AND.GFLAG(11)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(11),IRECV,111,WHGTWG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(11),IRECV,111,WHGTWG)
         IF (PFLAG(12).OR.(.NOT.LFDB.AND.GFLAG(12)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(12),IRECV,112,WHGTSG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(12),IRECV,112,WHGTSG)
         IF (PFLAG(13).OR.(.NOT.LFDB.AND.GFLAG(13)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(13),IRECV,113,WDIRWG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(13),IRECV,113,WDIRWG)
         IF (PFLAG(14).OR.(.NOT.LFDB.AND.GFLAG(14)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(14),IRECV,114,WDIRSG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(14),IRECV,114,WDIRSG)
         IF (PFLAG(15).OR.(.NOT.LFDB.AND.GFLAG(15)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(15),IRECV,115,WMNFWG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(15),IRECV,115,WMNFWG)
         IF (PFLAG(16).OR.(.NOT.LFDB.AND.GFLAG(16)))
-     1      CALL MPGATHERGRDFLD(IPFGTBL(16),IRECV,116,WMNFSG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(16),IRECV,116,WMNFSG)
 
       ENDIF
-C
+
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
-C     0.3 COLLECT SWELL AND WIND SEA PARAMETER ARRAYS TO PROCESS 2 or 1
-C         -------------------------------------------------------------
+!       1.3 COLLECT SWELL AND WIND SEA PARAMETER ARRAYS TO PROCESS IRECV
+!           ------------------------------------------------------------
         IRECV=MIN(2,NPROC)
 
         IF (FFLAG(11)) CALL MPGATHERGRDFLD(IPFGTBL(11),IRECV,11,WHGTWG)
@@ -162,39 +256,22 @@ C         -------------------------------------------------------------
       ENDIF
 
 
-C*    1. OUTPUT OF INTEGRATED PARAMETERS OF TOTAL SEA.
-C        ---------------------------------------------
-C
-      DNGX = FLOAT(NGX)
-      DNGY = FLOAT(NGY)
+!*    2. OUTPUT OF INTEGRATED PARAMETERS OF TOTAL SEA.
+!        ---------------------------------------------
+
       IF (CDTINTT.EQ.CDTPRO) THEN
-C
-C*    1.1 CONVERT TO WAVE HEIGHT AND DEGREES.
-C         -----------------------------------
-C
-C
-           DO J=1,NGY
-             DO I=1,NGX
-               IF(WHGTTG(I,J).NE.ZMISS) THEN
-                 WHGTTG(I,J) = 4.0 * SQRT(WHGTTG(I,J))
-               ENDIF
-               IF(WDIRTG(I,J).NE.ZMISS) THEN
-                 WDIRTG(I,J) = MOD(DEG * WDIRTG(I,J) +180.,360.)
-               ENDIF
-               IF(UDIRG(I,J).NE.ZMISS) THEN
-                 UDIRG(I,J) = MOD(DEG * UDIRG(I,J) +180.,360.)
-               ENDIF
-             ENDDO
-           ENDDO
-C
-C*    1.2 WRITE PARAMETERS OF TOTAL SEA AND WIND TO FILE.
-C         -----------------------------------------------
-C
-         
-         IF(FFLAG20) THEN
-         IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
+
+!*      2.1 WRITE PARAMETERS OF TOTAL SEA AND WIND TO FILE.
+!           -----------------------------------------------
+
+        IF(FFLAG20) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
+
+            DNGX = REAL(NGX)
+            DNGY = REAL(NGY)
+
             WRITE (IU20) CDTPRO, DNGX, DNGY, AMOWEP,AMOSOP,AMOEAP,
-     1                   AMONOP, ZDELLO
+     &                   AMONOP, ZDELLO
             WRITE (IU20) (FFLAG(J),J=1,9)
             IF (FFLAG(1)) WRITE (IU20) WHGTTG
             IF (FFLAG(2)) WRITE (IU20) WDIRTG
@@ -206,121 +283,103 @@ C
             IF (FFLAG(8)) WRITE (IU20) TAUWG
             IF (FFLAG(9)) WRITE (IU20) SMEANG
             IF (FFLAG(10))WRITE (IU20) U10G
-         ENDIF
-         ENDIF
-C
-C*    1.3 PRINT PARAMETERS OF TOTAL SEA AND WIND.
-C         ---------------------------------------
-C
-         IF (PFLAG(1)) THEN
+          ENDIF
+        ENDIF
+
+!*      2.2 PRINT PARAMETERS OF TOTAL SEA AND WIND.
+!           ---------------------------------------
+
+        IF (PFLAG(1)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SIGNIFICANT WAVE HEIGHT ( 0.1 METRES )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     1                 WHGTTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WHGTTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(2)) THEN
+        ENDIF
+        IF (PFLAG(2)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN WAVE DIRECTION ( DEGREE FROM NORTH TO )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     1                 WDIRTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WDIRTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(3)) THEN
+        ENDIF
+        IF (PFLAG(3)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN WAVE FREQUENCY ( 0.01 HERTZ )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 WMNFTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WMNFTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(4)) THEN
+        ENDIF
+        IF (PFLAG(4)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' FRICTION VELOCITY ( 0.01 METRES/SECOND )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 USTARG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 USTARG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(5)) THEN
+        ENDIF
+        IF (PFLAG(5)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' FRICTION DIRECTION ( DEGREE FROM NORTH TO )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     1                 UDIRG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 UDIRG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(6)) THEN
+        ENDIF
+        IF (PFLAG(6)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' PEAK WAVE FREQUENCY ( 0.01 HERTZ )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 WPKFTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WPKFTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(7)) THEN
+        ENDIF
+        IF (PFLAG(7)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' DRAG COEFFICIENT (IN  0.1 *PROMILLE )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10000.,
-     1                 CDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 CDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(8)) THEN
+        ENDIF
+        IF (PFLAG(8)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' NORMALISED WAVE STRESS (IN % )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 TAUWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 TAUWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(9)) THEN
+        ENDIF
+        IF (PFLAG(9)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN SQUARE SLOPE (IN % )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 SMEANG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 SMEANG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(10)) THEN
+        ENDIF
+        IF (PFLAG(10)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' WIND SPEED ( METRES/SECOND )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     1                 U10G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 U10G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
+        ENDIF
       ENDIF
-C
-C ----------------------------------------------------------------------
-C
-C*    2. OUTPUT OF INTEGRATED PARAMETERS OF SEA AND SWELL.
-C        -------------------------------------------------
-C
+
+! ----------------------------------------------------------------------
+
+!*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA AND SWELL.
+!        -------------------------------------------------
+
       IF (CDTINTS.EQ.CDTPRO) THEN
-C
-C*    2.1 CONVERT TO WAVE HEIGHT AND DEGREES.
-C         -----------------------------------
-C
-C
-           DO J=1,NGY
-             DO I=1,NGX
-               IF(WHGTSG(I,J).NE.ZMISS) THEN
-                 WHGTSG(I,J) = 4.0 * SQRT(WHGTSG(I,J))
-               ENDIF
-               IF(WDIRSG(I,J).NE.ZMISS) THEN
-                 WDIRSG(I,J) = MOD(DEG * WDIRSG(I,J) + 180.,360.)
-               ENDIF
-               IF(WHGTWG(I,J).NE.ZMISS) THEN
-                 WHGTWG(I,J) = 4.0 * SQRT(WHGTWG(I,J))
-               ENDIF
-               IF(WDIRWG(I,J).NE.ZMISS) THEN
-                 WDIRWG(I,J) = MOD(DEG * WDIRWG(I,J) + 180.,360.)
-               ENDIF
-             ENDDO
-           ENDDO
-C
-C
-C*    2.2 WRITE PARAMETERS OF SWELL AND WIND DIRECTION TO FILE.
-C         -----------------------------------------------------
-C
-         IF(FFLAG21) THEN
-         IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
-     $      .OR.(.NOT.LMESSPASS)) THEN
+
+!*      3.1 WRITE PARAMETERS OF SWELL AND WIND DIRECTION TO FILE.
+!           -----------------------------------------------------
+
+        IF(FFLAG21) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+
+            DNGX = REAL(NGX)
+            DNGY = REAL(NGY)
+
             WRITE (IU21) CDTPRO, DNGX, DNGY, AMOWEP,AMOSOP,AMOEAP,
-     1                   AMONOP, ZDELLO
+     &                   AMONOP, ZDELLO
             WRITE (IU21) (FFLAG(J),J=11,16)
             IF (FFLAG(11)) WRITE (IU21) WHGTWG
             IF (FFLAG(13)) WRITE (IU21) WDIRWG
@@ -328,129 +387,115 @@ C
             IF (FFLAG(12)) WRITE (IU21) WHGTSG
             IF (FFLAG(14)) WRITE (IU21) WDIRSG
             IF (FFLAG(16)) WRITE (IU21) WMNFSG
-         ENDIF
-         ENDIF
-C
-C
-C*    2.3 PRINT PARAMETERS OF SWELL AND WIND WAVE DIRECTION.
-C         --------------------------------------------------
-         IF (PFLAG(11)) THEN
+          ENDIF
+        ENDIF
+
+
+!*      3.2 PRINT PARAMETERS OF SWELL AND WIND WAVE DIRECTION.
+!           --------------------------------------------------
+        IF (PFLAG(11)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' WIND SEA WAVE HEIGHT ( 0.1 METRES )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     1                 WHGTWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WHGTWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(13)) THEN
+        ENDIF
+        IF (PFLAG(13)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN SEA DIRECTION ( DEGREE FROM NORTH FROM )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     1                 WDIRWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WDIRWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(15)) THEN
+        ENDIF
+        IF (PFLAG(15)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN WIND SEA FREQUENCY ( 0.01 HERTZ )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 WMNFWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WMNFWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(12)) THEN
+        ENDIF
+        IF (PFLAG(12)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SWELL WAVE HEIGHT ( 0.1 METRES )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     1                 WHGTSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WHGTSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(14)) THEN
+        ENDIF
+        IF (PFLAG(14)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN SWELL DIRECTION ( DEGREE FROM NORTH FROM )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     1                 WDIRSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WDIRSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-         IF (PFLAG(16)) THEN
+        ENDIF
+        IF (PFLAG(16)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN SWELL FREQUENCY ( 0.01 HERTZ )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
-     1                 WMNFSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 WMNFSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
-         ENDIF
-      ENDIF
-C
-C ----------------------------------------------------------------------
-C
-C*    3.  PACK INTEGRATED PARAMETERS INTO GRIB FM94.
-C         ------------------------------------------
-C
-      IF(IRGG.EQ.1) THEN
-        NTGRIB=0
-        DO J=1,NGY
-          NTGRIB=NTGRIB+NLONRGG(J)
-        ENDDO
-      ELSE
-#if region=='g'
-        NTGRIB=(NINT( 180./((AMONOP-AMOSOP)/REAL(NGY-1)) )+1)*NGX
-#elif region=='m'
-        NTGRIB=NGY*NGX
-#endif
+        ENDIF
       ENDIF
 
-      IF (GFLAG20) THEN
+! ----------------------------------------------------------------------
+
+!*    4.  PACK INTEGRATED PARAMETERS INTO GRIB FM94.
+!         ------------------------------------------
+
+      IF (GFLAG20.AND.CDTINTT.EQ.CDTPRO) THEN
+
         IF(CDTPRO.LE.CDATEF) THEN
-C
-C*    3.1.  THIS IS AN ANALYSIS DATE
-C           ------------------------
-C
-           READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
-           IFCST = 0
+
+!*        THIS IS AN ANALYSIS DATE
+
+          READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
+          IFCST = 0
         ELSE
-C
-C*    3.2.  THIS IS A  FORECAST DATE
-C           ------------------------
-C
+
+!*        THIS IS A  FORECAST DATE
+
           READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
           CALL DIFDATE(CDATEF,CDTPRO,IFCST)
           IFCST=IFCST/3600
         ENDIF
-C
-C*       WAVE HEIGHTS.
-C        -------------
-C
+
+!*      WAVE HEIGHTS.
+!       -------------
+
         IF (GFLAG(1)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(1)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=229
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTTG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(1)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=229
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*          WAVE DIRECTION.
-C           ---------------
-C
+
+!*      WAVE DIRECTION.
+!       ---------------
+
         IF (GFLAG(2)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(2)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=230
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRTG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(2)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=230
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*          WAVE MEAN PERIOD.
-C           -----------------
-C
+
+!*      WAVE MEAN PERIOD.
+!       -----------------
+
         IF (GFLAG(3)) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(3)))
-     1      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2      .OR.(.NOT.LMESSPASS)) THEN
+     &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &      .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=232
             DO JY=1,NGY
               DO JX=1,NGX
@@ -465,20 +510,20 @@ C
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFTG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
-C
-C*          WAVE PEAK PERIOD.
-C           -----------------
-C
+
+!*      WAVE PEAK PERIOD.
+!       -----------------
+
         IF (GFLAG(6)) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(6)))
-     1      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2      .OR.(.NOT.LMESSPASS)) THEN
+     &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &      .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=231
             DO JY=1,NGY
               DO JX=1,NGX
@@ -493,124 +538,123 @@ C
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTGRIB,WPKFTG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
-C
-C*          DRAG COEFFICIENT
-C           ----------------
-C
+
+!*      DRAG COEFFICIENT
+!       ----------------
+
         IF (GFLAG(7)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(7)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=233
-          IZLEV=NINT(XNLEV(1))
-          CALL GRIBPAC(IU06,IU30,NTGRIB,CDG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(7)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=233
+            IZLEV=NINT(XNLEV(1))
+            CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*          MEAN SQUARE SLOPE.
-C           ------------------
-C
+
+!*      MEAN SQUARE SLOPE.
+!       ------------------
+
         IF (GFLAG(9)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(9)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=244
-          CALL GRIBPAC(IU06,IU30,NTGRIB,SMEANG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(9)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=244
+            CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*          WIND SPEED .
-C           -----------
-C
+
+!*      WIND SPEED .
+!       -----------
+
         IF (GFLAG(10)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(10)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=245
-          IZLEV=NINT(XNLEV(1))
-          CALL GRIBPAC(IU06,IU30,NTGRIB,U10G,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(10)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=245
+            IZLEV=NINT(XNLEV(1))
+            CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
 
       ENDIF
-C
-C ----------------------------------------------------------------------
-C
-C*    4.  PACK WIND SEA AND SWELL PARAMETERS INTO GRIB FM94.
-C         -------------------------------------------------
-C
-      IF (GFLAG21) THEN
-         IF(CDTPRO.LE.CDATEF) THEN
-C
-C*    4.1.  THIS IS AN ANALYSIS DATE
-C           ------------------------
-C
-           READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
-           IFCST = 0
 
-         ELSE
-C
-C*    4.2.  THIS IS A  FORECAST DATE
-C           ------------------------
-C
+! ----------------------------------------------------------------------
+
+!*    5.  PACK WIND SEA AND SWELL PARAMETERS INTO GRIB FM94.
+!         -------------------------------------------------
+
+      IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
+
+        IF(CDTPRO.LE.CDATEF) THEN
+
+!*        THIS IS AN ANALYSIS DATE
+
+          READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
+          IFCST = 0
+
+        ELSE
+
+!*        THIS IS A  FORECAST DATE
+
           READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
           CALL DIFDATE(CDATEF,CDTPRO,IFCST)
           IFCST=IFCST/3600.
         ENDIF
-C
-C*       WIND SEA WAVE HEIGHTS.
-C        ---------------------
-C
+
+!*      WIND SEA WAVE HEIGHTS.
+!       ---------------------
+
         IF (GFLAG(11)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(11)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=234
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTWG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(11)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=234
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*       WIND SEA WAVE DIRECTION.
-C           ---------------
-C
-C
+
+!*      WIND SEA WAVE DIRECTION.
+!       ------------------------
+
+
         IF (GFLAG(13)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(13)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=235
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRWG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(13)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=235
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*       WIND SEA MEAN PERIOD.
-C        --------------------
-C
+
+!*      WIND SEA MEAN PERIOD.
+!       --------------------
+
         IF (GFLAG(15)) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(15)))
-     1      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2      .OR.(.NOT.LMESSPASS)) THEN
+     &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &      .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=236
             DO JY=1,NGY
               DO JX=1,NGX
@@ -625,51 +669,51 @@ C
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFWG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
-C
-C*       SWELL WAVE HEIGHTS.
-C        -------------------
-C
+
+!*      SWELL WAVE HEIGHTS.
+!       -------------------
+
         IF (GFLAG(12)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(12)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=237
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTSG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(12)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=237
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*       SWELL WAVE DIRECTION.
-C        --------------------
-C
-C
+
+!*      SWELL WAVE DIRECTION.
+!       --------------------
+
+
         IF (GFLAG(14)) THEN
-         IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(14)))
-     1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2   .OR.(.NOT.LMESSPASS)) THEN
-          IPARAM=238
-          CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRSG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
-          LGRIBPAC = .TRUE.
-         ENDIF
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(14)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=238
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
         ENDIF
-C
-C*       SWELL SEA MEAN PERIOD.
-C        ---------------------
-C
+
+!*      SWELL SEA MEAN PERIOD.
+!       ---------------------
+
         IF (GFLAG(16)) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(16)))
-     1      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     2      .OR.(.NOT.LMESSPASS)) THEN
+     &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &      .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=239
             DO JY=1,NGY
               DO JX=1,NGX
@@ -684,13 +728,13 @@ C
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFSG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,IY,IM,
+     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
       ENDIF  
-C
+
       RETURN
-      END
+      END SUBROUTINE OUTINT

@@ -1,0 +1,35 @@
+      MODULE YOWGRID
+
+      IMPLICIT NONE
+
+!*    ** *GRIDPAR*  GENERAL GRID INFORMATION.
+
+      REAL DELPHI 
+      REAL, ALLOCATABLE :: DELLAM(:) 
+      REAL, ALLOCATABLE :: SINPH(:) 
+      REAL, ALLOCATABLE :: COSPH(:) 
+      INTEGER, ALLOCATABLE :: NLONRGG(:) 
+      INTEGER IGL 
+      INTEGER, ALLOCATABLE :: IJS(:) 
+      INTEGER, ALLOCATABLE :: IJL2(:) 
+      INTEGER, ALLOCATABLE :: IJLS(:) 
+      INTEGER, ALLOCATABLE :: IJL(:) 
+      INTEGER, ALLOCATABLE :: IJLT(:) 
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *DELPHI*    REAL      GRID INCREMENT FOR LATITUDE (METRES).
+!      *DELLAM*    REAL      GRID INCREMENT FOR LONGITUDE AT EQUATOR
+!                            IN METRES.
+!      *SINPH*     REAL      SIN OF LATITUDE.
+!      *COSPH*     REAL      COS OF LATITUDE.
+!      *IGL*       INTEGER   NO OF BLOCKS.
+!      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
+!      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
+!      *IJL2*      INTEGER   INDEX OF LAST POINT OF SECOND LAT.
+!      *IJLS*      INTEGER   INDEX OF FIRST POINT OF LAT BEFORE LAST.
+!      *IJL*       INTEGER   INDEX OF LAST POINT OF LAT BEFORE LAST.
+!      *IJLT*      INTEGER   TOTAL NUMBER OF GRIDPOINTS IN A BLOCK.
+
+! ----------------------------------------------------------------------
+      END MODULE YOWGRID

@@ -10,15 +10,17 @@
  PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F
- LFDB= T,LPBIOIN= T,LGRIBIN= ${lgribin},LPBIOOUT= T,
- LFDBIOIN=F,
+ LFDB= T,
+ LPBIOIN= T,
+ LGRIBIN= ${lgribin},
+ LPBIOOUT= T,
+ LGRIBOUT= ${lgribout},
  LFDBIOOUT=F,
- ICASE= 1,ISHALLO= 1,IREFRA= 0,ITEST= 0,ITESTB= 1,IREST= 1,
+ ICASE= 1,ISHALLO= 1,ITEST= 0,ITESTB= 1,IREST= 1,
  IASSI= $AS,
- IFORCA= 1,IBOUNC= 0,IBOUNF= 0,USERID="   ",RUNID="GLO"
- PATH="                                                            ",
+ IFORCA= 1,IBOUNC= 0,IBOUNF= 0,
  YCLASS="$CLASS"
- YEXPVER="$XID",
+ YEXPVER="$expver",
  NENSFNB= $NENS,
  NTOTENS= $TNE,
  LMESSPASS= T,LWCOU= F,NTASKS= 1,NSIZE= 3897,

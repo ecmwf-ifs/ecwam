@@ -1,46 +1,40 @@
       SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W)
-C
-C ----------------------------------------------------------------------
-C
-C**** *WVALLOC* - WAVE MODEL ALLOCATION AND COUPLING TO IFS.
-C
-C     J. DOYLE     ECMWF       NOVEMBER 1996 ATMOSPHERIC COUPLING
-C
-C     MODIFIED BY:   B. HANSEN    APRIL 1997
-C                                 DOCTOR STYLE AND LDWCOU2W
-C
-C ----------------------------------------------------------------------
-C
-      USE WAVE_MODULE
-C
-#include "param.h"
-C
-#include "comcoup.h"
-C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
-C
-#include "comstat.h"
-C
-#include "txtstat.h"
-C
+
+! ----------------------------------------------------------------------
+
+!**** *WVALLOC* - WAVE MODEL ALLOCATION AND COUPLING TO IFS.
+
+!     J. DOYLE     ECMWF       NOVEMBER 1996 ATMOSPHERIC COUPLING
+
+!     MODIFIED BY:   B. HANSEN    APRIL 1997
+!                                 DOCTOR STYLE AND LDWCOU2W
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN   ,
+     &            SMEAN
+      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
+     &            NINF     ,NSUP     ,MPMAXLENGTH
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
+      USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
+     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
+     &            FL1      ,FL2      ,FL3      ,SL
+
+! ----------------------------------------------------------------------
+
       LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
-C
-C ----------------------------------------------------------------------
-      INTEGER IINITFDB_VPP
-      CHARACTER *3 DBNAME
-      LOGICAL LDTRMSG,LFDB
-C
-C INITIALIZE LOGICALS FROM IFS
-C
+      LOGICAL LFDB
+
+! INITIALIZE LOGICALS FROM IFS
+
       LFDB=LFDBOPIFS
       LMESSPASS=LMESSPIFS
       LWCOU=LDWCOUIFS
       LWCOU2W=LDWCOU2W
-C
+
 
       IF(.NOT.ALLOCATED(NSTART)) THEN
         IF(LMESSPASS) THEN
@@ -48,18 +42,18 @@ C
         ELSE
           IU06=6
         ENDIF
-C
+
         IF(LMESSPASS) THEN
 
-C     0.1 GET RANK AND TOTAL NUMBER OF PROCESSORS  
-C         ---------------------------------------
+!     0.1 GET RANK AND TOTAL NUMBER OF PROCESSORS  
+!         ---------------------------------------
 
-           IRANK = MPE_MYRANK()
-           NPROC = MPE_NPROC()
+          IRANK = MPE_MYRANK()
+          NPROC = MPE_NPROC()
         ELSE
-           IRANK = 1 
-           NPROC = 1 
-	    ENDIF
+          IRANK = 1 
+          NPROC = 1 
+        ENDIF
 
         NPREVIOUS=IRANK-1
         IF(IRANK.EQ.NPROC) THEN
@@ -68,8 +62,8 @@ C         ---------------------------------------
           NNEXT=IRANK+1
         ENDIF
 
-C     0.2 DETERMINE GRID DOMAIN DECOMPOSITION 
-C         -----------------------------------
+!     0.2 DETERMINE GRID DOMAIN DECOMPOSITION 
+!         -----------------------------------
         ALLOCATE (NSTART(NPROC),NEND(NPROC),KLENBOT(NPROC),
      &            KLENTOP(NPROC))
 
@@ -79,12 +73,8 @@ C         -----------------------------------
 
       ENDIF
 
-C     1.  ALLOCATE NECESSARY ARRAYS
-C         -------------------------
-
-      NINF=NSTART(IRANK)-KLENBOT(IRANK)
-      NSUP=NEND(IRANK)+KLENTOP(IRANK)
-      IF(.NOT.LMESSPASS) NSUP=NIBLO 
+!     1.  ALLOCATE NECESSARY ARRAYS
+!         -------------------------
 
       IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NINF:NSUP,NBLO))
       IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NINF:NSUP,NBLO))
@@ -105,6 +95,11 @@ C         -------------------------
       IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.ALLOCATED(FCONST)) ALLOCATE(FCONST(NINF:NSUP,NFRE))
 
-C
+      IF(.NOT.ALLOCATED(EMEAN)) ALLOCATE(EMEAN(NIBLO))
+      IF(.NOT.ALLOCATED(FMEAN)) ALLOCATE(FMEAN(NIBLO))
+      IF(.NOT.ALLOCATED(THQ)) ALLOCATE(THQ(NIBLO))
+      IF(.NOT.ALLOCATED(AKMEAN)) ALLOCATE(AKMEAN(NINF:NSUP))
+      IF(.NOT.ALLOCATED(SMEAN)) ALLOCATE(SMEAN(NIBLO))
+
       RETURN
-      END
+      END SUBROUTINE WVALLOC

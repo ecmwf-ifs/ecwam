@@ -1,43 +1,43 @@
       subroutine MYINDEX(ndim, input, index )
-C ----------------------------------------------------------------------
-C
-C**** *MYINDEX* -
-C
-C     B. Hansen  ECMWF March 1996
-C
-C*    PURPOSE.
-C     --------
-C
-C     order the element of integer array input and output solution
-C     in array index 
-C
-C     NOTE: myindex is a simple, not so efficient sort routine that
-C           had to be provided to replace calls to the more general
-C           routine orders which is Cray specific
-C
-C**   INTERFACE.
-C     ----------
-C
-C     *CALL* *myindex (ndim, input, index )
-C         ndim: dimension of array input and index
-C         input: input array to be ordered
-C         index: output array containing the ordered element of input
-C
-C     METHOD.
-C     -------
-C
-C
-C     EXTERNALS.
-C     ----------
-C
-C       NONE.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
+
+!**** *MYINDEX* -
+
+!     B. Hansen  ECMWF March 1996
+
+!*    PURPOSE.
+!     --------
+
+!     order the element of integer array input and output solution
+!     in array index 
+
+!     NOTE: myindex is a simple, not so efficient sort routine that
+!           had to be provided to replace calls to the more general
+!           routine orders which is Cray specific
+
+!**   INTERFACE.
+!     ----------
+
+!     *CALL* *myindex (ndim, input, index )
+!         ndim: dimension of array input and index
+!         input: input array to be ordered
+!         index: output array containing the ordered element of input
+
+!     METHOD.
+!     -------
+
+
+!     EXTERNALS.
+!     ----------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
       integer input(ndim), index(ndim)
       
       DO j11=1,ndim
@@ -82,3 +82,5 @@ C ----------------------------------------------------------------------
       ENDDO
       RETURN
       END
+
+

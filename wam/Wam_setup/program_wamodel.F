@@ -9,8 +9,8 @@
 # # #QSUB -a "tomorrow 4:00am"
 #QSUB -lt 2500
 #QSUB -lT 3000
-#QSUB -lM 1200mb
-# # #QSUB -lM 500mb
+#QSUB -lM 500mb
+# # #QSUB -lM 1200mb
 #QSUB -eo
 #QSUB -mb -mi
 #QSUB
@@ -22,10 +22,11 @@ trap '{ echo "Signal SIGHUP received and trapped" ; }' 1
 trap '{ echo "Signal SIGINT received and trapped" ; }' 2
 set +v
 #.
-#.   Specify whether grib split spectra are provided
-#.   (it's the operstional setting
+#.   Specify whether grib spectra are provided at input and output
 #.
 lgribin=T
+lgribout=T
+
 #.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.   Specify whether input grib CD file is NOT provided
@@ -36,7 +37,7 @@ lnocdin=T
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
-#.  COMONLY FOR ALL JOBS.
+#.  COMMONLY FOR ALL JOBS.
 #.=====================================================================
 #.
 #include "path.h"
@@ -202,322 +203,45 @@ else
   fi
 fi
 #.
-if [ $COMPILE =  1 ] ; then
-  #.
-  cd $LIBS
-  \rm -rf tmpdir || true
-  mkdir tmpdir
-  cd tmpdir
-  #.
-  #.
-  #.======================================================================
-  #. Copy the WAM MODEL to the compiler input.
-  #.======================================================================
-  #.
-  #.
-  cat > wamodel.src <<\EOFPRO
-#endif
-#include "wave_module.F"
-#include "chief.F"
-#include "buildstress.F"
-#include "closend.F"
-#include "airsea.F"
-#include "bouinpt.F"
-#include "dotdc.F"
-#include "femean.F"
-#include "fillbl.F"
-#include "file_transfer.F"
-#include "getspec.F"
-#include "getstress.F"
-#include "getwnd.F"
-#include "gradi.F"
-#include "grstname.F"
-#include "headbc.F"
-#include "igs2grs.F"
-#include "implsch.F"
-#include "incint.F"
-#include "initmdl.F"
-#include "intpol.F"
-#include "locint.F"
-#include "makeblo.F"
-#include "makegrid.F"
-#include "meansqs.F"
-#include "newwind.F"
-#
-#include "mpbcastgrdfld.F"
-#include "mpbcastgrid.F"
-#include "mpbcastscfld.F"
-#include "mpcrtbl.F"
-#include "mpdecomp.F"
-#include "mpdistribfl.F"
-#include "mpdistribintfld.F"
-#include "mpdistribscfld.F"
-#include "mpexchng.F"
-#include "mpgatherersfile.F"
-#include "mpgatherfl.F"
-#include "mpgathergrdfld.F"
-#include "mpgatheroifld.F"
-#include "mpgatherscfld.F"
-#include "mpgatherspp.F"
-#include "mpuserin.F"
-#
-#include "mt_allot.F"
-#
-#include "notim.F"
-C #ifdef 
-C #include "openfil_unicos.F"
-C #endif
-#include "outbeta.F"
-#include "outbc.F"
-#include "outbs.F"
-#include "outers.F"
-#include "outgrid.F"
-#include "outint.F"
-#include "outwnorm.F"
-#include "outspp.F"
-#include "outxt.F"
-#include "peakfr.F"
-#include "phys.F"
-#include "prealloc_file.F"
-#include "prewind.F"
-#include "propags.F"
-#include "propdot.F"
-#include "readbou.F"
-#include "readpre.F"
-#include "readwgrib.F"
-#include "readfl.F"
-#include "readstress.F"
-#include "writefl.F"
-#include "writestress.F"
-
-#if region=='s'
-#ifndef READWND
-#include "readwnd_rswamp2.F"
-#define READWND
-#endif
-#endif
-
-#ifdef SEASAT
-#ifndef READWND
-#include "readwnd_seasat.F"
-#define READWND
-#define READWND
-#endif
-#endif
-
-#ifndef READWND
-#include "readwnd_mars.F"
-#define READWND
-#endif
-
-#include "savstress.F"
-#include "savspec.F"
-#include "sbottom.F"
-#include "sdissip.F"
-#include "semean.F"
-#include "sepwisw.F"
-#include "sinput.F"
-#include "snonlin.F"
-#include "spec2fdb.F"
-#include "splitbl.F"
-#include "spr.F"
-#include "sthq.F"
-#include "stress.F"
-#include "stresso.F"
-#include "timin.F"
-#include "userin.F"
-#include "wamodel.F"
-#include "wamwnd.F"
-#include "wavemdl.F"
-#include "wsmfen.F"
-#include "wposnam.F"
-#include "wvalloc.F"
-#include "wvdealloc.F"
-#include "analyse.F"
-#include "f4spec.F"
-#include "fdur.F"
-#include "fustar.F"
-#include "fwsea.F"
-#include "grdata.F"
-#include "grfield.F"
-#include "gribpac.F"
-#include "oifield.F"
-#include "readice.F"
-#include "micep.F"
-#include "readt.F"
-#include "findb.F"
-#include "confile.F"
-
-#ifdef GEOASAT
-#include "readsat_geosat.F"
-#define READSAT
-#endif
-
-#ifdef SEASAT
-#ifndef READSAT
-#include "readsat_seasat.F"
-#define READSAT
-#endif
-#endif
-
-#ifdef ERS
-#ifndef READSAT
-#include "readsat.F"
-#define READSAT
-#endif
-#endif
-
-#include "setmat.F"
-#include "setice.F"
-#include "update.F"
-#include "upwspec.F"
-#include "wamassi.F"
-#include "wamnorm.F"
-#ifdef JOB
-EOFPRO
-  #.
-  #.======================================================================
-  #. Compile and load the WAM MODEL.
-  #.======================================================================
-  #.
-  #. COMPILE SOURCE CODE
-  #.
-  /home/rd/sth/bin/f90split < wamodel.src
-  #.
-  [ ! -d tmp ] && mkdir tmp
-  #.
-  [ -f ${LIBS}/libwam.f.tar ] && {
-    dd if=${LIBS}/libwam.f.tar of=libwam.f.tar bs=400k
-    cd tmp
-    tar xf ../libwam.f.tar
-    cd ..
-  }
-  #.
-  [ -f ${LIBS}/libwam.a ] && {
-    dd if=${LIBS}/libwam.a of=libwam.a bs=400k
-    ar xv libwam.a wave_module
-  }
-  #.
-  integer frtcnt
-  frtcnt=0
-  export frtcnt
-  print $frtcnt > frtcnt
-  #.
-  (
-    if [ "$REMAKE" != YES ] ; then
-      if [ -f tmp/wave_module.fm ] ; then
-        if cmp wave_module.f tmp/wave_module.fm ] ; then
-          if ar tv libwam.a | grep wave_module ; then
-            exit 9
-          fi
-        fi
-      fi
-    fi
-    frt $rp -Of -M. -Wv,-Of -Pos -Z wave_module.l -X9 \
-        -c wave_module.f
-    (( frtcnt += 1))
-    print $frtcnt > frtcnt
-  )
-  mv wave_module.f wave_module.fm
-  #.
-  i=0
-  atst=0
-  #.
-  for file in $(ls -1 *.f) ; do
-    export file
-    (
-    if [ "$REMAKE" != YES ] ; then
-      if [ -f tmp/$file ] ; then
-        if cmp $file tmp/$file ; then
-          if ar tv libwam.a | grep ${file%.f}.o ; then
-            exit 10
-          fi
-        fi
-      fi
-    fi
-    if [   $file = spec2fdb.f  -a $rp = "-Ad" ] ; then
-      rp="-CcdRR8"
-    elif [   $file = getspec.f  -a $rp = "-Ad" ] ; then
-      rp="-CcdRR8"
-    else
-      rp=$rp
-    fi
-    frt $rp -Of -M. -Wv,-Of -Pos -Z ${file%.f}.l -X9 \
-        -c -o ${file%.f}.o ${file} || print - ${file%.f}.l >> frt_error
-    (( frtcnt += 1))
-    print $frtcnt > frtcnt
-    )&
-    (( i += 1 ))
-    [[ $i -gt $atst ]] && {
-      atst=0
-      i=0
-      wait
-    }
-  done
-  wait
-  print - "compile done"
-  #.
-  #. BUILD LIBRARY
-  #.
-  if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
-  ar rv libwam.a *.o wave_module
-  fi
-  #.
-  tar cf libwam.l.tar *.l
-  tar cf libwam.f.tar *.f *.fm
-  #.
-  #. SAVE LIBRARY
-  #.
-  ############ecp -o libwam.* ec:$DHSPATH/.
-  #.
-  ls -la
-  #.
-  cp libwam.a $LIBS/libwam.a 
-  cp libwam.f.tar $LIBS/libwam.f.tar
-  cp libwam.l.tar $LIBS/libwam.l.tar
-  #.
-  chmod go+rx $LIBS/libwam.*
-  #.
-  if [ -r frt_error ] ; then
-    cat $(cat frt_error)
-    exit 11
-  fi
-  #.
-  if [[ ! -r $LIBCR/lib$WAMCRLIB.a ]] ; then
-    print - "\n\n\t\tWAMCRLIB file was not found\n\n"
-    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit 12
-  fi
-  #.
-  #. LOAD LIBRARY
-  #.
-  ar vx $aux ifssig.o
-  ar vx $dum ishell.o
-  [ ! -a chief.o ] &&  ar xv libwam.a chief.o
-  #.
-  frtcnt=$(cat frtcnt)
-  if [ $frtcnt = 0 -a -f $BIN/chief -a "$REMAKE" != YES  ] ; then
-    print - WAM Model ready
-  else
-    frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
-      -o $BIN/chief  chief.o ishell.o ifssig.o \
-      libwam.a -lwamcr libwam.a \
-       $ECLIB $EMOSLIB $FDBLIB  \
-       -Wl,-dy -lsocket $MPELIB  $MPLIB || {
-      #.
-      #. Check return code.
-      #.
-       print - "\n\n\t\tLOAD FAILED\n\n"
-       print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-       exit 13
-      }
-    #.
-  fi
-  #.
-  ls -ltr
-  cd $LIBS 
-  \rm -rf tmpdir
+#.
+#.
+#.
+#.======================================================================
+#. load the WAM MODEL.
+#.======================================================================
+#.
+if [[ ! -r $LIBS/$WAMLIB.a ]] ; then
+  print - "\n\n\t\tWAMLIB file was not found\n\n"
+  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+  exit 12
 fi
+#.
+#. LOAD LIBRARY
+#.
+ar vx $aux ifssig.o
+ar vx $dum ishell.o
+ar xv $LIBS/$WAMLIB.a chief.o
+#.
+frtcnt=$(cat frtcnt)
+if [ $frtcnt = 0 -a -f $BIN/chief -a "$REMAKE" != YES  ] ; then
+  print - WAM Model ready
+else
+  frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
+    -o $BIN/chief  chief.o ishell.o ifssig.o \
+     -lwam  \
+     $ECLIB $EMOSLIB $FDBLIB  \
+     -Wl,-dy -lsocket $MPELIB  $MPLIB || {
+    #.
+    #. Check return code.
+    #.
+     print - "\n\n\t\tLOAD FAILED\n\n"
+     print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
+     exit 13
+    }
+  #.
+fi
+#.
+ls -ltr
 ###if [[ $NPES -ne 4 && $NPES -ne 8 && $NPES -ne 16 && $NPES -ne 24 ]] ; then
 ###  print - "\n\n\t\tWAVE MODEL IS COMPILED. NOW SET THE -lP TO 4, 8, 16 or 24 AND SUBMIT AGAIN\n\n"
 ###  cd $WDIR

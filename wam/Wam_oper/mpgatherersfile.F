@@ -1,75 +1,70 @@
       SUBROUTINE MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     1                           FL3,FLPTS,
-     2                           EMEAN,FMEAN,THQ,U10,THW,US)
-C
-C****  *MPGATHERERSFILE* - GATHERS	SPECTRUM AND SCALAR FIELDS ONTO A SINGLE
-C****                      PROCESS FOR COLLOCATION FILE IN OUTERS
-C****                      AT SELECTED GRID POINTS
-C
-!     J. BIDLOT    ECMWF   MAY 1996  MESSAGE PASSING
-C
-C     PURPOSE.
-C     --------
-C
-C     GATHER NSPFLD SPECTRUM AND NSCFLD SCALAR FIELDS DISTRIBUTED ACROSS THE
-C     DIFFERENT PROCESSES ONTO THE SINGLE PROCESS IRECV FOR SELECTED GRID
-C     POINTS.
-C
-C*    INTERFACE.
-C     ----------
-C
-C     CALL *MPGATHERSPP*(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD, 
-C    1                   FL1,FLPTS,
-C    2                   EMEAN,FMEAN,THQ,U10,THW,US)
-C
-C
-C     *IRECV*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
-C     *ITAG*      TAG ASSOCIATED WITH A PARTICULAR CALL TO SUBROUTINE
-C                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS 
-C                 THE USE OF A SEPARATE TAG FOR EACH SPECIFIC CALL SHOULD
-C                 ENSURE THAT NO CONFLICT ARISES BETWEEN DIFFERENT MESSAGES
-C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C     *NSPFLD*    NUMBER OF SPECTRUM FIELDS
-C     *NSCFLD*    NUMBER OF SCALAR FIELDS
-C     *FL3*       BLOCK OF SPECTRA.
-C     *FLPTS*     SPECTRA AT THE SELECTED GRID POINTS (OUTPUT) 
-C     *EMEAN*     TOTAL ENERGY.
-C     *FMEAN*     MEAN FREQUENCY (1./MEAN PERIOD).
-C     *THQ*       MEAN WAVE DIRECTION IN RADIANS.
-C     *U10*       WIND SPEED IN M/S.
-C     *THW*       WIND DIRECTION IN RADIANS
-C     *US*        FRICTION VELOCITY IN M/S.
-C
-C     METHOD.
-C     -------
-C     MPE SEND OF A MESSAGE BUFFER CONTAINING ALL THE FIELDS AT ALL SELECTED
-C     GRID POINTS HELD BY THAT PROCESS TO THE PROCESS CORRESPONDING TO IRECV
-C     FOR ALL PROCESS EXCEPT FOR THE PROCESS CORRESPONDING TO IRECV
-C     WHERE THE MESSAGE BUFFERS ARE RECEIVED AND REORDERED.
-C     
-C     EXTERNALS.
-C     ----------
-C     MPE PACKAGE :
-C         MPE_SEND
-C         MPE_RECV
-C         MPEI_ABORT 
-C
-C     REFERENCES.
-C     -----------
-C         NONE
-C -------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "comcoer.h"
-C
-#include "comtest.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
+     &                           FL3,FLPTS,
+     &                           EMEAN,FMEAN,THQ,U10,THW,US)
 
+!****  *MPGATHERERSFILE* - GATHERS SPECTRUM AND SCALAR FIELDS ONTO 
+!****                      A SINGLE PE FOR COLLOCATION FILE IN OUTERS
+!****                      AT SELECTED GRID POINTS
+
+!     J. BIDLOT    ECMWF   MAY 1996  MESSAGE PASSING
+
+!     PURPOSE.
+!     --------
+
+!     GATHER NSPFLD SPECTRUM AND NSCFLD SCALAR FIELDS DISTRIBUTED ACROSS
+!     THE DIFFERENT PROCESSES ONTO THE SINGLE PROCESS IRECV 
+!     FOR SELECTED GRID POINTS.
+
+!*    INTERFACE.
+!     ----------
+
+!     CALL *MPGATHERSPP*(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD, 
+!    1                   FL1,FLPTS,
+!    2                   EMEAN,FMEAN,THQ,U10,THW,US)
+
+
+!     *IRECV*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
+!     *ITAG*      TAG ASSOCIATED WITH A PARTICULAR CALL TO SUBROUTINE
+!                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS
+!                 THE USE OF A SEPARATE TAG FOR EACH SPECIFIC CALL 
+!                 SHOULD  ENSURE THAT NO CONFLICT ARISES BETWEEN 
+!                 DIFFERENT MESSAGES
+!     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *NSPFLD*    NUMBER OF SPECTRUM FIELDS
+!     *NSCFLD*    NUMBER OF SCALAR FIELDS
+!     *FL3*       BLOCK OF SPECTRA.
+!     *FLPTS*     SPECTRA AT THE SELECTED GRID POINTS (OUTPUT) 
+!     *EMEAN*     TOTAL ENERGY.
+!     *FMEAN*     MEAN FREQUENCY (1./MEAN PERIOD).
+!     *THQ*       MEAN WAVE DIRECTION IN RADIANS.
+!     *U10*       WIND SPEED IN M/S.
+!     *THW*       WIND DIRECTION IN RADIANS
+!     *US*        FRICTION VELOCITY IN M/S.
+
+!     METHOD.
+!     -------
+!     MPE SEND OF A MESSAGE BUFFER CONTAINING ALL THE FIELDS AT ALL
+!     SELECTED GRID POINTS HELD BY THAT PROCESS TO THE PROCESS
+!     CORRESPONDING TO IRECV FOR ALL PROCESS EXCEPT FOR THE PROCESS
+!     CORRESPONDING TO IRECV WHERE THE MESSAGE BUFFERS ARE RECEIVED
+!     AND REORDERED.
+
+!     EXTERNALS.
+!     ----------
+!     MPE PACKAGE :
+!         MPE_SEND
+!         MPE_RECV
+!         MPEI_ABORT 
+
+!     REFERENCES.
+!     -----------
+!         NONE
+! -------------------------------------------------------------------
+
+      USE YOWCOER  , ONLY : IERS     ,IJERS
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
@@ -82,132 +77,131 @@ C
 
       REAL,ALLOCATABLE :: ZCOMBUF(:)
 
-c
       MAXLENGTH=(NSCFLD+NSPFLD*NANG*NFRE)*IERS
       ALLOCATE(ZCOMBUF(MAXLENGTH))
 
-C     1.0 DEFAULT ACTION IF NO FIELD GATHERING 
-C         ------------------------------------
+!     1.0 DEFAULT ACTION IF NO FIELD GATHERING 
+!         ------------------------------------
       IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
-         DO NGOU=1,IERS
-           IJ=IJERS(NGOU)
-           DO  M = 1, NFRE
-             DO K = 1, NANG
-                FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
-             END DO
-           END DO
-         END DO
+        DO NGOU=1,IERS
+          IJ=IJERS(NGOU)
+          DO  M = 1, NFRE
+            DO K = 1, NANG
+              FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
 
-      ELSE IF(IRANK.NE.IRECV) THEN
-C     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
-C         ------------------------------------------------
-C
-C     LOAD COMMUNICATION BUFFER
-         KCOUNT=0
-         DO NGOU=1,IERS
+      ELSEIF(IRANK.NE.IRECV) THEN
+!     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
+!         ------------------------------------------------
 
-           IJ=IJERS(NGOU)
-           IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK))) THEN
+!     LOAD COMMUNICATION BUFFER
+        KCOUNT=0
+        DO NGOU=1,IERS
+
+          IJ=IJERS(NGOU)
+          IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK))) THEN
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=EMEAN(IJ)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FMEAN(IJ)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=THQ(IJ)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=U10(IJ)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=THW(IJ)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=US(IJ)
+
+            DO  M = 1, NFRE
+              DO K = 1, NANG
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=FL3(IJ,K,M)
+              ENDDO
+            ENDDO
+
+          ENDIF
+
+        ENDDO
+
+!     SEND BUFFER
+        CALL MPE_SEND(ZCOMBUF,KCOUNT,2,IRECV,ITAG,0,0,0,IERR)
+        IF(IERR.LT.0) THEN
+          WRITE(*,*) ' PE: ', IRANK, ' IERS: ', IERS, ' KCOUNT: ',
+     &     KCOUNT, ' NSTART(IRANK): ', NSTART(IRANK), 
+     &     ' NEND(IRANK): ', NEND(IRANK), ' IJERS(*): ', IJERS
+          CALL MPEI_ABORT ('MPE_SEND ERROR in MPGATHERSPP' )
+        ENDIF
+      ELSE
+!     1.2.1  RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
+!            ---------------------------------------------------------- 
+        DO IP=1,NPROC-1
+          CALL MPE_RECV(ZCOMBUF,MAXLENGTH,2,-1,ITAG,0,0,0,
+     &     KRCOUNT,KRFROM,KRTAG,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR in MPGATHERSPP' )
+          IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR in MPGATHERSPP:  MISMATCHED TAGS' )
+
+!  DECODE BUFFER
+          KCOUNT=0
+
+          DO NGOU=1,IERS
+            IJ=IJERS(NGOU)
+            IF((IJ.GE.NSTART(KRFROM)).AND.(IJ.LE.NEND(KRFROM))) THEN
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=EMEAN(IJ)
+              EMEAN(IJ)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=FMEAN(IJ)
+              FMEAN(IJ)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=THQ(IJ)
+              THQ(IJ)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=U10(IJ)
+              U10(IJ)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=THW(IJ)
+              THW(IJ)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=US(IJ)
+              US(IJ)=ZCOMBUF(KCOUNT)
 
               DO  M = 1, NFRE
                 DO K = 1, NANG
                   KCOUNT=KCOUNT+1
-                  ZCOMBUF(KCOUNT)=FL3(IJ,K,M)
-                END DO
-              END DO
+                  FLPTS(1,NGOU,K,M)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
 
-           ENDIF
-
-         END DO
-
-C     SEND BUFFER
-         CALL MPE_SEND(ZCOMBUF,KCOUNT,2,IRECV,ITAG,0,0,0,IERR)
-         IF(IERR.LT.0) THEN
-           WRITE(*,*) ' PE: ', IRANK, ' IERS: ', IERS, ' KCOUNT: ',
-     1       KCOUNT, ' NSTART(IRANK): ', NSTART(IRANK), 
-     2       ' NEND(IRANK): ', NEND(IRANK), ' IJERS(*): ', IJERS
-           CALL MPEI_ABORT ('MPE_SEND ERROR in MPGATHERSPP' )
-         ENDIF
-       ELSE
-C     1.2.1  RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
-C            ---------------------------------------------------------- 
-         DO IP=1,NPROC-1
-            CALL MPE_RECV(ZCOMBUF,MAXLENGTH,2,-1,ITAG,0,0,0,
-     $                    KRCOUNT,KRFROM,KRTAG,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT
-     1                       ('MPE_RECV ERROR in MPGATHERSPP' )
-            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     1        ('MPE_RECV ERROR in MPGATHERSPP:  MISMATCHED TAGS' )
-
-C  DECODE BUFFER
-            KCOUNT=0
-
-            DO NGOU=1,IERS
-              IJ=IJERS(NGOU)
-              IF((IJ.GE.NSTART(KRFROM)).AND.(IJ.LE.NEND(KRFROM))) THEN
-                KCOUNT=KCOUNT+1
-                EMEAN(IJ)=ZCOMBUF(KCOUNT)
-                KCOUNT=KCOUNT+1
-                FMEAN(IJ)=ZCOMBUF(KCOUNT)
-                KCOUNT=KCOUNT+1
-                THQ(IJ)=ZCOMBUF(KCOUNT)
-                KCOUNT=KCOUNT+1
-                U10(IJ)=ZCOMBUF(KCOUNT)
-                KCOUNT=KCOUNT+1
-                THW(IJ)=ZCOMBUF(KCOUNT)
-                KCOUNT=KCOUNT+1
-                US(IJ)=ZCOMBUF(KCOUNT)
-
-                DO  M = 1, NFRE
-                  DO K = 1, NANG
-                    KCOUNT=KCOUNT+1
-                    FLPTS(1,NGOU,K,M)=ZCOMBUF(KCOUNT)
-                  END DO
-                END DO
-
-              ENDIF
-            END DO
-C
-            IF(KRCOUNT.NE.KCOUNT) THEN
-              WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,
-     1          ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',
-     2           KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),
-     3           ' NEND(KRFROM): ', NEND(KRFROM), ' IJERS(*): ', IJERS
-              CALL MPEI_ABORT
-     1      ('MPE_RECV ERROR in MPGATHERFILE: WRONG LENGTH OF MESSAGE')
             ENDIF
+          ENDDO
 
-         END DO
-C     1.2.2  CONTRIBUTION FROM RECEIVING PROCESS 
-C            ----------------------------------- 
+          IF(KRCOUNT.NE.KCOUNT) THEN
+            WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,
+     &       ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',
+     &       KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),
+     &       ' NEND(KRFROM): ', NEND(KRFROM), ' IJERS(*): ', IJERS
+            CALL MPEI_ABORT
+     &       ('MPE_RECV ERROR in MPGATHERFILE: WRONG LENGTH OF MESSAGE')
+          ENDIF
 
-         DO NGOU=1,IERS
-           IJ=IJERS(NGOU)
-           IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK)))THEN
-             DO  M = 1, NFRE
-               DO K = 1, NANG
-                 FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
-               END DO
-             END DO
-           ENDIF
-         END DO
+        ENDDO
+!     1.2.2  CONTRIBUTION FROM RECEIVING PROCESS 
+!            ----------------------------------- 
+
+        DO NGOU=1,IERS
+          IJ=IJERS(NGOU)
+          IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK)))THEN
+            DO  M = 1, NFRE
+              DO K = 1, NANG
+                FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDDO
 
       ENDIF
 
       DEALLOCATE(ZCOMBUF)
-c
+
       RETURN
-      END
+      END SUBROUTINE MPGATHERERSFILE
 

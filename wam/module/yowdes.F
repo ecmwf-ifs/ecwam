@@ -1,0 +1,12 @@
+      MODULE YOWDES
+
+      IMPLICIT NONE
+
+      INTEGER              :: NXSUP
+      INTEGER              :: NXELE
+      INTEGER, ALLOCATABLE :: NXSUPL(:)
+      INTEGER, ALLOCATABLE :: NTDLST(:)
+      REAL,    ALLOCATABLE :: XSDATA(:)
+      REAL,    ALLOCATABLE :: XODATA(:)
+
+      END MODULE YOWDES

@@ -1,167 +1,162 @@
       SUBROUTINE UPDATE (F, ETOI, USOI, USMO, THMO, IJS, IJL)           
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C**** *UPDATE* - ANALYSE THE WAVE SPECTRUM, PRODUCING A CONSISTENT      
-C****            UPDATE OF WAVE AND WIND FIELD.                         
-C                                                                       
-C     PIERO LIONELLO      ECMWF     JUNE 1990                           
-C                                                                       
-C     PURPOSE.                                                          
-C     --------                                                          
-C                                                                       
-C       TO ANALYSE THE WAVE SPECTRUM, PRODUCING A CONSISTENT            
-C       UPDATE OF WAVE AND WIND FIELD.                                  
-C                                                                       
-C**   INTERFACE.                                                        
-C     ----------                                                        
-C                                                                       
-C       *CALL* *UPDATE (F, ETOI, USOI, USMO, THMO, IJS, IJL)*           
-C                                                                       
-C         *F*       REAL      SPECTRUM ( FIRST GUESS IN INPUT ;         
-C                             ANALYSIS IN OUTPUT ).                     
-C         *ETOI*    REAL      WAVE ENERGY (FROM O.I.).                  
-C         *USOI*    REAL      USTAR ( FROM O.I.).                       
-C         *USMO*    REAL      USTAR ( FIRST GUESS IN INPUT ;            
-C                             ANALYSIS IN OUTPUT ).                     
-C         *THMO*    REAL      WIND DIRECTION.                           
-C         *IJS*     INTEGER   FIRST INDEX IN BLOCK.                     
-C         *IJL*     INTEGER   LAST  INDEX IN BLOCK.                     
-C                                                                       
-C     METHOD.                                                           
-C     -------                                                           
-C                                                                       
-C     EXTERNALS.
-C     ----------
-C     *SEMEAN*
-C     *FWSEA*
-C     *FDUR*
-C     *FUSTAR*
-C     *UPWSPEC*
-C
-C ----------------------------------------------------------------------
-C                                                                       
-#include "param.h"
-C                                                                       
-#include "commean.h"
-C                                                                       
-#include "commpp.h"
-C
-#include "txtmpp.h"
-C
-#include "comtest.h"
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
+
+! ----------------------------------------------------------------------
+
+!**** *UPDATE* - ANALYSE THE WAVE SPECTRUM, PRODUCING A CONSISTENT      
+!****            UPDATE OF WAVE AND WIND FIELD.                         
+
+!     PIERO LIONELLO      ECMWF     JUNE 1990                           
+
+!     PURPOSE.                                                          
+!     --------                                                          
+
+!       TO ANALYSE THE WAVE SPECTRUM, PRODUCING A CONSISTENT            
+!       UPDATE OF WAVE AND WIND FIELD.                                  
+
+!**   INTERFACE.                                                        
+!     ----------                                                        
+
+!       *CALL* *UPDATE (F, ETOI, USOI, USMO, THMO, IJS, IJL)*           
+
+!         *F*       REAL      SPECTRUM ( FIRST GUESS IN INPUT ;         
+!                             ANALYSIS IN OUTPUT ).                     
+!         *ETOI*    REAL      WAVE ENERGY (FROM O.I.).                  
+!         *USOI*    REAL      USTAR ( FROM O.I.).                       
+!         *USMO*    REAL      USTAR ( FIRST GUESS IN INPUT ;            
+!                             ANALYSIS IN OUTPUT ).                     
+!         *THMO*    REAL      WIND DIRECTION.                           
+!         *IJS*     INTEGER   FIRST INDEX IN BLOCK.                     
+!         *IJL*     INTEGER   LAST  INDEX IN BLOCK.                     
+
+!     METHOD.                                                           
+!     -------                                                           
+
+!     EXTERNALS.
+!     ----------
+!     *SEMEAN*
+!     *FWSEA*
+!     *FDUR*
+!     *FUSTAR*
+!     *UPWSPEC*
+
+! ----------------------------------------------------------------------
+
+      USE YOWMEAN  , ONLY : EMEAN
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+
+! ----------------------------------------------------------------------
+
       DIMENSION F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NINF:NSUP) :: ETOI, USOI, USMO, THMO         
       REAL,DIMENSION(NINF:NSUP) :: EWFG, EWOI, EWA,FMWFG, FMWA,
-     1                             THEW, TDUR, USA                       
-C                                                                       
-C       *EWFG*     : WINDSEA ENERGY (FIRST GUESS).                      
-C       *EWOI*     : WINDSEA ENERGY (MEASUREMENT).                      
-C       *EWA*      : WINDSEA ENERGY (ANALYSIS).                         
-C       *ETOI*     : TOTAL ENERGY (FROM O.I ,IDENTICAL WITH ANALYSIS IN 
-C                    THIS METHOD ).                                     
-C       *FMWFG*    : MEAN FREQUENCY OF THE WINDSEA (FIRST GUESS).       
-C       *FMWA*     : MEAN FREQUENCY OF THE WINDSEA (ANALYSIS).          
-C       *THEW*     : DIRECTION OF THE WINDSEA PEAK (FIRST GUESS).       
-C       *TDUR*     : WINDSEA DURATION.                                  
-C       *USA*      : ESTIMATE OF USTAR FROM THE FIRST GUESS ENERGY.     
-C                    AND DURATION (I.E. ANALYSED USTAR).                
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    1. FIND THE WINDSEA.                                              
-C        -----------------                                              
-C                                                                       
+     &                             THEW, TDUR, USA
+
+!       *EWFG*     : WINDSEA ENERGY (FIRST GUESS).                      
+!       *EWOI*     : WINDSEA ENERGY (MEASUREMENT).                      
+!       *EWA*      : WINDSEA ENERGY (ANALYSIS).                         
+!       *ETOI*     : TOTAL ENERGY (FROM O.I ,IDENTICAL WITH ANALYSIS IN 
+!                    THIS METHOD ).                                     
+!       *FMWFG*    : MEAN FREQUENCY OF THE WINDSEA (FIRST GUESS).       
+!       *FMWA*     : MEAN FREQUENCY OF THE WINDSEA (ANALYSIS).          
+!       *THEW*     : DIRECTION OF THE WINDSEA PEAK (FIRST GUESS).       
+!       *TDUR*     : WINDSEA DURATION.                                  
+!       *USA*      : ESTIMATE OF USTAR FROM THE FIRST GUESS ENERGY.     
+!                    AND DURATION (I.E. ANALYSED USTAR).                
+
+! ----------------------------------------------------------------------
+
+!*    1. FIND THE WINDSEA.                                              
+!        -----------------                                              
+
       CALL SEMEAN (F, IJS, IJL)
-C
+
       CALL FWSEA (F, EWFG, THEW, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
-C                                                                       
-C*    2. CORRECT OVERESTIMATE OF FIRST GUESS WINDSEA ENERGY.            
-C        ---------------------------------------------------            
-C                                                                       
-      DO 2001 IJ = IJS,IJL                                              
-         EWFG(IJ) = MIN(EWFG(IJ),EMEAN(IJ))                             
- 2001 CONTINUE                                                          
+
+!*    2. CORRECT OVERESTIMATE OF FIRST GUESS WINDSEA ENERGY.            
+!        ---------------------------------------------------            
+
+      DO IJ = IJS,IJL                                              
+        EWFG(IJ) = MIN(EWFG(IJ),EMEAN(IJ))                             
+      ENDDO
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
-     1   ' WINDSEA ENERGY FIXED IN SUB. FWSEA'                          
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    3. FIND THE DURATION.                                             
-C        ------------------                                             
-C                                                                       
-      CALL FDUR (EWFG, TDUR, USMO, IJS, IJL)                               
+     &   ' WINDSEA ENERGY FIXED IN SUB. FWSEA'                          
+
+! ----------------------------------------------------------------------
+
+!*    3. FIND THE DURATION.                                             
+!        ------------------                                             
+
+      CALL FDUR (EWFG, TDUR, USMO, IJS, IJL)
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
-     1   ' WINDSEA DURATION FIXED IN SUB. FDUR'                         
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    4. THE RATIO WINDSEA/SWELL IS ASSUMED CORRECT.                    
-C        -------------------------------------------                    
-C                                                                       
-      DO 4001 IJ=IJS,IJL                                                
-         IF (EMEAN(IJ).GT.0.) EWOI(IJ) = EWFG(IJ)/EMEAN(IJ)*ETOI(IJ)    
- 4001 CONTINUE                                                          
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    5. FIND THE NEW USTAR AND THE NEW WINDSEA MEAN FREQUENCY.         
-C        ------------------------------------------------------         
-C                                                                       
+     &   ' WINDSEA DURATION FIXED IN SUB. FDUR'                         
+
+! ----------------------------------------------------------------------
+
+!*    4. THE RATIO WINDSEA/SWELL IS ASSUMED CORRECT.                    
+!        -------------------------------------------                    
+
+      DO IJ=IJS,IJL                                                
+        IF (EMEAN(IJ).GT.0.) EWOI(IJ) = EWFG(IJ)/EMEAN(IJ)*ETOI(IJ)    
+      ENDDO
+
+! ----------------------------------------------------------------------
+
+!*    5. FIND THE NEW USTAR AND THE NEW WINDSEA MEAN FREQUENCY.         
+!        ------------------------------------------------------         
+
       CALL FUSTAR (USMO, USA, USOI, EWFG, EWOI, EWA, TDUR, FMWA,
-     1             IJS, IJL) 
-C                                                                       
-      DO 5001 IJ=IJS,IJL                                                
-         IF (USA(IJ).GT.0.) USMO(IJ) = USA(IJ)                          
- 5001 CONTINUE                                                          
+     &             IJS, IJL) 
+
+      DO IJ=IJS,IJL                                                
+        IF (USA(IJ).GT.0.) USMO(IJ) = USA(IJ)                          
+      ENDDO
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
-     1   ' USTAR COMPUTED IN SUB. FUSTAR'                               
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    6. THE ASSIMILATION IS ADJUSTED ON THE DOMINANT PART              
-C*       OF THE SPECTRUM.                                               
-C        -------------------------------------------------              
-C                                                                       
-C        THE FOLLOWING RETURN CODE ARE POSSIBLE :                       
-C          THERE IS NO WINDSEA ->                                       
-C                 EWFG  =  -999.                                        
-C                 FMWFG = -9999.                                        
-C          THE RATIO WINDSEA/SWELL IS NOT CONSISTENT WITH USOI ->       
-C                 EWA   =  -999.                                        
-C                 FMWA  = -9999.                                        
-C                                                                       
-      DO 6001 IJ=IJS,IJL                                                
-         IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.5*ETOI(IJ)) THEN          
-            EWFG(IJ)  =  -999.                                          
-            FMWFG(IJ) = -9999.                                          
-         END IF                                                         
- 6001 CONTINUE                                                          
-C                                                                       
-C     IF THERE WERE WINDSEA BUT THE RATIO WINDSEA SWELL                 
-C     WAS WRONG, DO NOT ASSIMILATE.                                     
-C                                                                       
-      DO 6002 IJ=IJS,IJL                                                
-         IF (EWFG(IJ).GT.0. .AND. EWA(IJ).LT.0.) THEN                   
-            ETOI(IJ)=-999.                                              
-         ENDIF                                                          
- 6002 CONTINUE                                                          
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    7. UPDATE THE SPECTRA.                                            
-C        -------------------                                            
-C                                                                       
-      CALL UPWSPEC (F, EMEAN(IJS), ETOI, FMWFG, FMWA, IJS, IJL)               
+     &   ' USTAR COMPUTED IN SUB. FUSTAR'                               
+
+! ----------------------------------------------------------------------
+
+!*    6. THE ASSIMILATION IS ADJUSTED ON THE DOMINANT PART              
+!*       OF THE SPECTRUM.                                               
+!        -------------------------------------------------              
+
+!        THE FOLLOWING RETURN CODE ARE POSSIBLE :                       
+!          THERE IS NO WINDSEA ->                                       
+!                 EWFG  =  -999.                                        
+!                 FMWFG = -9999.                                        
+!          THE RATIO WINDSEA/SWELL IS NOT CONSISTENT WITH USOI ->       
+!                 EWA   =  -999.                                        
+!                 FMWA  = -9999.                                        
+
+      DO IJ=IJS,IJL                                                
+        IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.5*ETOI(IJ)) THEN          
+          EWFG(IJ)  =  -999.                                          
+          FMWFG(IJ) = -9999.                                          
+        ENDIF                                                         
+      ENDDO
+
+!     IF THERE WERE WINDSEA BUT THE RATIO WINDSEA SWELL     
+!     WAS WRONG, DO NOT ASSIMILATE.                                     
+
+      DO IJ=IJS,IJL                                                
+        IF (EWFG(IJ).GT.0. .AND. EWA(IJ).LT.0.) THEN        
+          ETOI(IJ)=-999.                                              
+        ENDIF                                                          
+      ENDDO
+
+! ----------------------------------------------------------------------
+
+!*    7. UPDATE THE SPECTRA.                                            
+!        -------------------                                            
+
+      CALL UPWSPEC (F, EMEAN(IJS), ETOI, FMWFG, FMWA, IJS, IJL)
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
-     1   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'                         
+     &   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'
                                                                         
       RETURN                                                            
-      END                                                               
+      END SUBROUTINE UPDATE

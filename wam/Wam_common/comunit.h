@@ -1,7 +1,0 @@
-C*    *COMMON*  *UNITS* - INPUT / OUTPUT UNITS.
-C
-      COMMON /UNITS/ IU02, IU08, IU11, IU12, IU13, IU14, IU15, IU16,
-     1               IU17, IU18, IU19, IU20, IU21, IU22, IU23, IU24,
-     2               IU25, IU26, IU27, IU28, IUVELO, IUSCR(NBLO), IU04,
-     3               IU30, IU31, IU32, IU33, IU34, IU35, IU36, IU37,
-     4               IU38, IU70, IU71, IU73

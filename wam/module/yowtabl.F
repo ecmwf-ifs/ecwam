@@ -1,0 +1,34 @@
+      MODULE YOWTABL
+
+      IMPLICIT NONE
+
+!*    ** *TABLE* - TABLE FOR TOTAL STRESS AND HIGH FREQ STRESS.
+
+      INTEGER, PARAMETER :: ITAUMAX=100 
+      INTEGER, PARAMETER :: JUMAX=100 
+      INTEGER, PARAMETER :: IUSTAR=100 
+      INTEGER, PARAMETER :: IALPHA=100 
+      INTEGER, PARAMETER :: JPLEVT=1 
+
+      REAL, ALLOCATABLE :: TAUT(:,:,:) 
+      REAL DELTAUW 
+      REAL DELU 
+      REAL, ALLOCATABLE :: TAUHFT(:,:) 
+      REAL DELUST 
+      REAL DELALP 
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *ITAUMAX*   INTEGER   TABLE DIMENSION.
+!      *JUMAX*     INTEGER   TABLE DIMENSION.
+!      *IUSTAR*    INTEGER   TABLE DIMENSION.
+!      *IALPHA*    INTEGER   TABLE DIMENSION.
+!      *TAUT*      REAL      STRESS TABLE.
+!      *DELTAUW*   REAL      WAVE STRESS INCREMENT.
+!      *DELU*      REAL      WIND INCREMENT.
+!      *TAUHFT*    REAL      HIGH FREQUENCY STRESS TABLE.
+!      *DELUST*    REAL      USTAR INCREMENT.
+!      *DELALP*    REAL      ALPHA INCREMENT.
+
+! ----------------------------------------------------------------------
+      END MODULE YOWTABL

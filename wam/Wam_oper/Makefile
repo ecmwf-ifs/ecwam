@@ -14,6 +14,7 @@ SOURCE	=\
               check.F     \
               chesig.F     \
               chief.F     \
+              class_wgrib.F     \
               closend.F     \
               command.F     \
               confile.F     \
@@ -47,7 +48,6 @@ SOURCE	=\
               grstname.F     \
               gsfile_new.F     \
               headbc.F     \
-              igs2grs.F     \
               implsch.F     \
               incdate.F     \
               incint.F     \
@@ -118,7 +118,6 @@ SOURCE	=\
               peak.F     \
               peakfr.F     \
               phys.F     \
-              prealloc_file.F     \
               preproc.F     \
               preset.F     \
               prewind.F     \
@@ -137,7 +136,7 @@ SOURCE	=\
               readsta.F     \
               readstress.F     \
               readt.F     \
-              readwnd_mars.F     \
+              readwind.F     \
               rfl4wam.F     \
               rotspec.F     \
               savrest.F     \
@@ -148,6 +147,8 @@ SOURCE	=\
               semean.F     \
               sepwisw.F     \
               setice.F     \
+              setwgribhd.F     \
+              setmarstype.F     \
               setmat.F     \
               sinput.F     \
               snonlin.F     \

@@ -1,80 +1,83 @@
-C------------------------------------------------------------------
-C
+!------------------------------------------------------------------
+
       SUBROUTINE READT(IU06,FILNM,ITEST,TEMPG)
-C
-C----------------------------------------------------------------------
-C
-C**** *READT*  READ TEMPERATURE GRID.
-C
-C     R. PORTZ      MPI HAMBURG OCTOBER 1992
-C
-C*    PURPOSE.
-C     --------
-C
-C       INPUT OF GLOBAL TEMPARATURE.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *READT* *(IU06,FILNM,ITEST,TEMPG)*
-C
-C*     VARIABLE.   TYPE.     PURPOSE.
-C      ---------   -------   --------
-C      *IU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
-C      *FILNM*     CHARACTER*24 DATA INPUT FILENAME.
-C      *ITEST*     INTEGER   OUTPUT FLAG IF LE 2 NO EXTRA OUTPUT IS
-C                            GENERATED.
-C      *TEMPG*     REAL      GLOBAL TEMPRERATURES (KELVIN).
-C
-C     METHOD.
-C     -------
-C
-C       FORMATED READ FROM UNIT 1.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       ABORT1
-C       ADJUST
-C       INMARS 
-C       OUTPP
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C-------------------------------------------------------------------
-C
-C*    *PARAMETER*  FOR ARRAY DIMENSIONS.
-C
-#include "param.h"
-#include "commap.h"
-#include "comtemp.h"
-#include "parcons.h"
-C
+
+!----------------------------------------------------------------------
+
+!**** *READT*  READ TEMPERATURE GRID.
+
+!     R. PORTZ      MPI HAMBURG OCTOBER 1992
+
+!*    PURPOSE.
+!     --------
+
+!       INPUT OF GLOBAL TEMPARATURE.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *READT* *(IU06,FILNM,ITEST,TEMPG)*
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *IU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
+!      *FILNM*     CHARACTER*24 DATA INPUT FILENAME.
+!      *ITEST*     INTEGER   OUTPUT FLAG IF LE 2 NO EXTRA OUTPUT IS
+!                            GENERATED.
+!      *TEMPG*     REAL      GLOBAL TEMPRERATURES (KELVIN).
+
+!     METHOD.
+!     -------
+
+!       FORMATED READ FROM UNIT 1.
+
+!     EXTERNALS.
+!     ----------
+
+!       ABORT1
+!       ADJUST
+!       INMARS 
+!       OUTPP
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+!-------------------------------------------------------------------
+
+!*    *PARAMETER*  FOR ARRAY DIMENSIONS.
+
+      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
+     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
+      USE YOWPCONS , ONLY : ZMISS
+      USE YOWTEMP  , ONLY : NXT      ,NYT      ,CTDATE   ,NGXT     ,
+     &            NGYT     ,TMOWEP   ,TMOSOP   ,TMOEAP   ,TMONOP   ,
+     &            DELLA    ,DELLO
+
+!-----------------------------------------------------------------------
+
       REAL,DIMENSION(NXT,NYT) :: TEMPG
       REAL,ALLOCATABLE :: WORK(:,:)
       INTEGER,ALLOCATABLE :: KLONRGG(:)
-C
+
       CHARACTER*24 FILNM
       CHARACTER*40 MSG, TITL*100
-C
-C-----------------------------------------------------------------------
-C
-C*    1. INPUT OF TEMPERATURE DATA.
-C     -----------------------------
-C
- 1000 CONTINUE
-C
+
+!-----------------------------------------------------------------------
+
+!*    1. INPUT OF TEMPERATURE DATA.
+!     -----------------------------
+
       ALLOCATE(KLONRGG(NYT))
-      CALL INMARS  ( FILNM, NXT, NYT, ZMISS, CTDATE, IFORP, IPARAM,
-     .               NGXT, NGYT, TMOWEP, TMOSOP, TMOEAP, TMONOP,
-     .               KRGG,KLONRGG,KZLEV,TEMPG, IERR, MSG)
+      CALL INMARS  ( FILNM, NXT, NYT, ZMISS, NKSEK0, NKSEK1, NKSEK2,
+     &               NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
+     &               CTDATE, IFORP, IPARAM, NGXT, NGYT,
+     &               TMOWEP, TMOSOP, TMOEAP, TMONOP, KRGG, KLONRGG,
+     &               KZLEV,TEMPG, IERR, MSG)
       IF ( IERR .EQ. 0 ) THEN
-        WRITE(IU06,*)'            '
         WRITE(IU06,*)' SUB. READT: ICE BOUNDARY DATE=',CTDATE
-        CALL flush(IU06)
+        CALL FLUSH(IU06)
       ELSE
         WRITE(IU06,*)'   SUB. READT: ICE BOUNDARY IERR=',IERR
         WRITE(IU06,*) MSG
@@ -83,7 +86,7 @@ C
       CALL ADJUST (TMOWEP,TMOEAP)
       DELLA  = (TMONOP - TMOSOP)/REAL(NGYT-1)
       DELLO  = (TMOEAP - TMOWEP)/REAL(NGXT-1)
-C
+
       IF (ITEST.GT.3) THEN
         ALLOCATE(WORK(NXT,NYT))
         WRITE(IU06,*) 'TEMPERATURE GRID:'
@@ -101,40 +104,39 @@ C
      &              TITL, 1.,
      &              WORK, TMOWEP, TMOSOP, TMOEAP, TMONOP)
         DEALLOCATE(WORK)
-        CALL flush(IU06)
+        CALL FLUSH(IU06)
       ENDIF
-C
-C*    1.1 ERROR MESSAGES
-C     ------------------
-C
- 1100 CONTINUE
-C
+
+!*    1.1 ERROR MESSAGES
+!     ------------------
+
+
       IF (NGXT .GT. NXT) THEN
-         WRITE(IU06,*)'********************************'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READT     *'
-         WRITE(IU06,*)'* ========================     *'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* PARAMETER NXT IS TO SMALL    *'
-         WRITE(IU06,*)'* SET NXT = ',NGXT
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'********************************'
-         CALL ABORT1
+        WRITE(IU06,*)'********************************'
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'* FATAL ERROR IN SUB READT     *'
+        WRITE(IU06,*)'* ========================     *'
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'* PARAMETER NXT IS TO SMALL    *'
+        WRITE(IU06,*)'* SET NXT = ',NGXT
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'********************************'
+        CALL ABORT1
       ENDIF
       IF (NGYT .GT. NYT) THEN
-         WRITE(IU06,*)'********************************'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READT     *'
-         WRITE(IU06,*)'* ========================     *'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* PARAMETER NXT IS TO SMALL    *'
-         WRITE(IU06,*)'* SET NYT = ',NGYT
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'********************************'
-         CALL ABORT1
+        WRITE(IU06,*)'********************************'
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'* FATAL ERROR IN SUB READT     *'
+        WRITE(IU06,*)'* ========================     *'
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'* PARAMETER NXT IS TO SMALL    *'
+        WRITE(IU06,*)'* SET NYT = ',NGYT
+        WRITE(IU06,*)'*                              *'
+        WRITE(IU06,*)'********************************'
+        CALL ABORT1
       ENDIF
-C
+
       IF(ALLOCATED(KLONRGG))DEALLOCATE(KLONRGG)
 
       RETURN
-      END
+      END SUBROUTINE READT

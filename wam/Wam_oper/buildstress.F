@@ -1,79 +1,64 @@
       SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD, KEND)
 
-C ----------------------------------------------------------------------
-C     J. BIDLOT    ECMWF     APRIL 1998 
-C
-C*    PURPOSE.
-C     --------
-C     CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND CD.
-C
-C**   INTERFACE.
-C     ----------
-C     CALL *BUILDSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD)
-C     *RU10OLD*   WIND SPEED.
-C     *RTHWOLD*   WIND DIRECTION (RADIANS).
-C     *RUSOLD*    FRICTION VELOCITY.
-C     *RTAUW*     WAVE STRESS.
-C     *RZ0OLD*    ROUGHNESS LENGTH IN M.
-C     *KEND*      USED UPPER LIMIT ON FIRST DIMENSION OF INPUT ARRAYS
-C
-C     METHOD.
-C     -------
-C
-C     EXTERNALS.
-C     ----------
-C     *ABORT1*
-C     *AIRSEA*
-C     *GETWND*
-C     *PBOPEN*
-C     *PBREAD*
-C     *PBCLOSE*
-C     *READWGRIB*
-C
-C     REFERENCE.
-C     ----------
-C     NONE
-C ----------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "parcons.h"
-C
-#include "parameter_wind.h"
-C
-#include "comcoup.h"
-C
-#include "comgrid.h"
-C
-#include "comstat.h"
-C
-#include "comtabl.h"
-C
-#include "comtest.h"
-C
-#include "comunit.h"
-C
-#include "comwind.h"
-C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
+! ----------------------------------------------------------------------
+!     J. BIDLOT    ECMWF     APRIL 1998 
+
+!*    PURPOSE.
+!     --------
+!     CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND CD.
+
+!**   INTERFACE.
+!     ----------
+!     CALL *BUILDSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD)
+!     *RU10OLD*   WIND SPEED.
+!     *RTHWOLD*   WIND DIRECTION (RADIANS).
+!     *RUSOLD*    FRICTION VELOCITY.
+!     *RTAUW*     WAVE STRESS.
+!     *RZ0OLD*    ROUGHNESS LENGTH IN M.
+!     *KEND*      USED UPPER LIMIT ON FIRST DIMENSION OF INPUT ARRAYS
+
+!     METHOD.
+!     -------
+
+!     EXTERNALS.
+!     ----------
+!     *ABORT1*
+!     *AIRSEA*
+!     *GETWND*
+!     *PBOPEN*
+!     *PBREAD*
+!     *PBCLOSE*
+!     *READWGRIB*
+
+!     REFERENCE.
+!     ----------
+!     NONE
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWPCONS , ONLY : G
+      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,UWND     ,VWND
+      USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN
+
+! ----------------------------------------------------------------------
       LOGICAL LWNDFILE, LWAVEWIND, LCLOSEWND
       INTEGER IUGB(1),IVGB(1)
-      REAL, ALLOCATABLE :: UWND(:,:),VWND(:,:)
       REAL, ALLOCATABLE :: CD(:,:), TEMPTAUT(:,:,:)
       CHARACTER*24 FILNM
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
-C ----------------------------------------------------------------------
-C
+! ----------------------------------------------------------------------
+
       CDATEWO = ' '
       CDAWIFL = ' '
       CDATEFL = ' '
       CDTPRO = CDATEA
 
-C
-C     GET ATMOSPHERIC MODEL 10m WINDS
+!     GET ATMOSPHERIC MODEL 10m WINDS
 
       ILEN=1
       LWNDFILE=.TRUE.
@@ -83,33 +68,29 @@ C     GET ATMOSPHERIC MODEL 10m WINDS
       RUSOLD = 0.
       RTAUW = 0.
       RZ0OLD = 0.
-      IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NC,NR))
-      IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NC,NR))
-      CALL GETWND (RU10OLD, RTHWOLD,1,NIBLO, KEND, CDTPRO, UWND, VWND,
-     1              NC, NR, IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      CALL GETWND (RU10OLD, RTHWOLD,1,NIBLO, KEND, CDTPRO,
+     &             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-C
-C     USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
-C     A PREVIOUS WAVE MODEL RUN ON WHICH THIS RESTART IS BASED
-C     IF IT EXISTS, OTHERWISE PRESET WILL USE THE INFORMATION FROM
-C     THE ATMOSPHERIC MODEL WIND SPEED ARCHIVE.
-C
+
+!     USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
+!     A PREVIOUS WAVE MODEL RUN ON WHICH THIS RESTART IS BASED
+!     IF IT EXISTS, OTHERWISE PRESET WILL USE THE INFORMATION FROM
+!     THE ATMOSPHERIC MODEL WIND SPEED ARCHIVE.
+
       LWAVEWIND=.FALSE.
-C
+
       FILNM='uwavein'
       LIU = LEN_TRIM(FILNM)
       FILNM=FILNM(1:LIU)
       INQUIRE(FILE=FILNM,EXIST=LWAVEWIND)
-C
+
       IF(LWAVEWIND) THEN
-C
+
         IPARAM=245
         CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,RU10OLD,1,NIBLO,KEND,
      &                 KZLEVUWAVE)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
-C
+
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
         WRITE(IU06,*) ' AS PROVIDED BY A PREVIOUS WAVE MODEL RUN'
@@ -119,11 +100,12 @@ C
         WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT '
         WRITE(IU06,*) ' ',KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
-C
+
         ILEV=1
-C
+
+
       ELSE
-C
+
         ILEV=1
         KZLEVUWAVE=10
         WRITE(IU06,*) ' '
@@ -140,11 +122,12 @@ C
 
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
       ENDIF
-C
-C     TEST WHETHER THE HEIGHT OF THE INPUT WINDS IS THE SAME AS DEFINED
-C     FOR THE REST OF THE RUN (SEE CALL TO STRESS IN PREPROC). IF NOT
-C     RECOMPUTE THE TABLE. THE ORIGINAL TABLE WILL BE SWAP BACK AT THE
-C     END OF THE ROUTINE.
+ 
+!     TEST WHETHER THE HEIGHT OF THE INPUT WINDS IS THE SAME AS DEFINED
+!     FOR THE REST OF THE RUN (SEE CALL TO STRESS IN PREPROC). IF NOT
+!     RECOMPUTE THE TABLE. THE ORIGINAL TABLE WILL BE SWAP BACK AT THE
+!     END OF THE ROUTINE.
+
       IF (KZLEVUWAVE.NE.NINT(XNLEV(1))) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE REFERENCE HEIGHT TO BE USED IN WAMODEL'
@@ -168,39 +151,39 @@ C     END OF THE ROUTINE.
       ENDIF
 
       IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
-C
-C     INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
-C
+
+!     INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
+
       DO IG=1,IGL
-         IF(LMESSPASS) THEN
-           CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
-     1                  RZ0OLD(1,IG), 1, KEND, ILEV)
-           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
-C
-           DO IJ=1,KEND
-              CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
-              CD(IJ,IG) = 1./CDINV
-           ENDDO
-         ELSE
-           CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
-     1                  RZ0OLD(1,IG), IJS(IG), IJL(IG), ILEV)
-           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
-C
-           DO IJ=IJS(IG),IJL(IG)
-              CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
-              CD(IJ,IG) = 1./CDINV
-           ENDDO
-         ENDIF
+        IF(LMESSPASS) THEN
+          CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
+     &     RZ0OLD(1,IG), 1, KEND, ILEV)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+
+          DO IJ=1,KEND
+            CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+            CD(IJ,IG) = 1./CDINV
+          ENDDO
+        ELSE
+          CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
+     &     RZ0OLD(1,IG), IJS(IG), IJL(IG), ILEV)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+
+          DO IJ=IJS(IG),IJL(IG)
+            CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+            CD(IJ,IG) = 1./CDINV
+          ENDDO
+        ENDIF
       ENDDO
-C
+
       IF(.NOT.LNOCDIN) THEN
         IPARAM=233
         FILNM='cdwavein'
         CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,KZLEVCD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
-C
-C       TEST REFERENCE LEVEL FOR UWAVE AND CD
-C
+
+!       TEST REFERENCE LEVEL FOR UWAVE AND CD
+
         IF(KZLEVUWAVE.NE.0.AND.KZLEVCD.NE.0) THEN
           IF(KZLEVUWAVE.NE.KZLEVCD) THEN
             WRITE(IU06,*)'************************************'
@@ -216,12 +199,11 @@ C
             CALL ABORT1
           ENDIF
         ENDIF
-C
+
+!       COMPUTE TAUW,USOLD AND Z0OLD
+
         ILEV=1
-C
-C
-C       COMPUTE TAUW,USOLD AND Z0OLD
-C
+ 
         DO IG=1,IGL
            IF(LMESSPASS) THEN
              IJSTART=1
@@ -231,22 +213,22 @@ C
              IJSTOP=IJL(IG)
            ENDIF
            DO IJ=IJSTART,IJSTOP
-              CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
-              RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
-cc RUSOLD will first contain its square
-CC the numerical relation between usold and u10old should always be as
-CC in outgrid
-              RUSOLD(IJ,IG) = CD(IJ,IG)*(RU10OLD(IJ,IG)**2+0.01)-0.0001
-              CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
-              CHARNOCK = MAX(CHARNOCK,ALPHA)
-              RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
-              RUSOLD(IJ,IG) = SQRT(RUSOLD(IJ,IG))
-           ENDDO
+            CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
+            RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
+!! RUSOLD will first contain its square
+!! the numerical relation between usold and u10old should always be as
+!! in outgrid
+            RUSOLD(IJ,IG) = CD(IJ,IG)*(RU10OLD(IJ,IG)**2+0.01)-0.0001
+            CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
+            CHARNOCK = MAX(CHARNOCK,ALPHA)
+            RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
+            RUSOLD(IJ,IG) = SQRT(RUSOLD(IJ,IG))
+          ENDDO
         ENDDO
       ENDIF
-C
+
       IF(ALLOCATED(CD)) DEALLOCATE(CD)
-C
+
       IF(ALLOCATED(TEMPTAUT)) THEN
         XNLEV(1)=TEMPXNLEV
         TAUT=TEMPTAUT
@@ -254,7 +236,10 @@ C
       ENDIF
 
       IF (ITEST.GE.2)
-     1    WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
-C
+     &    WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
+
+      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
+      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+
       RETURN
-      END
+      END SUBROUTINE BUILDSTRESS

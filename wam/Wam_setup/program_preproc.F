@@ -1,7 +1,7 @@
 #ifdef JOB
 #.
 #. PREPROC TO GENERATE UNFORMATTED INPUT FILE
-#. FOR USE BY WAMODEL
+#. FOR USE BY PRESET and WAMODEL
 #.
 #QSUB -q vpp700.normal
 #QSUB -eo
@@ -32,6 +32,13 @@ cd $TMPDIR
 #.
 #.  TOPOGRAPHIC DATA.
 #.
+#. Note : the topographic data were obtained from the ETOPO5 data set
+#.        (Data announcement 88-MGG02, digital relief of the surface
+#.         of the earth. National Geophysical data center, Boulder,
+#.         Colorado 1988, http://www.ngdc.noaa.gov/mgg/global/etopos5.HTML)
+#.         It was smoothed out to 0.5 or 0.25 degree and formatted to
+#.         the appropriate format for preproc.
+
 cat > fort.1 << EOF
 #if region=='s'
 #include "/cc/rd/wam/Wam_setup/Topographic_data/Swamp_test/topocat_180"
@@ -53,58 +60,32 @@ EOF
 #.
 #.ecp ec:$DHSPATH/BOUGLOU_${grid} fort.3
 #.
-#.======================================================================
-#.  Copy the source code to the compiler input.
-#.======================================================================
 #.
-cat >preproc.f <<\EOFPRO
-#endif
-#include "preproc.F"
-#include "check.F"
-#include "file_transfer.F"
-#include "findb.F"
-#include "jafu.F"
-#include "locint.F"
-#include "mblock.F"
-#include "mbounc.F"
-#include "mbounf.F"
-#include "mboxb.F"
-#include "mcout.F"
-#include "mfredir.F"
-#include "mgrid.F"
-#include "mintf.F"
-#include "mtabs.F"
-#include "mubuf.F"
-#include "nlweigt.F"
-#include "outcom.F"
-#include "outubuf.F"
-#include "packi.F"
-#include "packr.F"
-#include "readcur.F"
-#include "stress.F"
-#include "tauhf.F"
-#include "topoar.F"
-#include "uiprep.F"
-#include "wamcur.F"
-#ifdef JOB
-EOFPRO
+#.========
+#. LOAD
+#.========
 #.
-#.===================================================================
-#. COMPILE AND LOAD
-#.===================================================================
 #.
-frt $rp -Of -Wv,-Of -Posx -Z preproc.lis -X9 -c -o preproc.o preproc.f
-#.
-if [[ ! -a $LIBCR/lib$WAMCRLIB.a ]] ; then
-  ecp  ec:$DHSLPATH/lib$WAMCRLIB.a $LIBCR/lib$WAMCRLIB.a || {
+if [[ ! -a $LIBS/$WAMLIB.a ]] ; then
+  ecp  ec:$DHSLPATH/$WAMLIB.a $LIBS/$WAMLIB.a || {
       ls -lsa
-      print - "\n\n\t\tWAMCRLIB file was not found\n\n"
+      print - "\n\n\t\tWAMLIB file was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
       exit 2
   }
 fi
 #.
-frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  preproc.o -l$WAMCRLIB \
+#. extract preproc.o
+
+ar xv $LIBS/$WAMLIB.a preproc.o
+
+if [[ ! -a  preproc.o ]] ; then
+      print - "\n\n\t\tpreproc.o file was not found\n\n"
+      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+      exit 3
+fi
+ 
+frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  preproc.o -lwam \
 ${EMOSLIB} ${ECLIB} ${FDBLIB} ${MPELIB} ${MPLIB} || {
    #.
    #. Check return code.
@@ -128,7 +109,7 @@ a.out <<\EOD ||  { print - "\n\n\t\tPREPROC FAILED\n\n" ; ls -ltra ; exit ; }
 #if resolution == 25 
 #include "input_preproc_rmedite25.F"
 #else
-#include "input_preproc_rmedit.F"
+#include "input_preproc_rmedite.F"
 #endif
 #else
 #if resolution == 150
@@ -149,15 +130,15 @@ EOD
 #.
 #. PARWAM FILE
 #.
-cp PARWAM $ADIR/PARWAM_${grid}
+mv PARWAM $ADIR/PARWAM_${grid}
 #.
 #.  GRID FILE.
 #.
-cp fort.7 $ADIR/gridglou_${grid}
+mv fort.7 $ADIR/gridglou_${grid}
 #.
 #.  COMMON UBUF.
 #.
-cp fort.8 $ADIR/ubufglou_${grid}
+mv fort.8 $ADIR/ubufglou_${grid}
 #.
 #.  COARSE GRID INFORMATION, if this is a coarse grid run.
 #.

@@ -1,339 +1,248 @@
-      SUBROUTINE SAVSPEC(FL,NSTART,NEND,LDSTOP,LDWRRE,IREST,
-     1                   CDTPRO,CDATEF,CDATER,CDATES,CDMARS,
-     2                   CDCLASS, CDEXPVER, CDFDB2DSP)
-C ----------------------------------------------------------------------
-C     J. BIDLOT    ECMWF      MARCH 1997
-C     J. BIDLOT    ECMWF      SEPTEMBER 1997 : use PBIO SOFTWARE
-C     B. HANSEN    ECMWF      FEBRUARY  1998 : use FDB SOFTWARE
-C
-C*    PURPOSE.
-C     --------
-C     WRITE THE SPECTRA TO DISK. IN CASE OF MESSAGE PASSING, DIFFERENT
-C     OUTPUT CAN BE GENERATE DEPENDING ON THE VALUE OF IREST.
-C
-C**   INTERFACE.
-C     ----------
-C     *CALL* *SAVSPEC(FL,NSTART,NEND,LDSTOP,LDWRRE,IREST,
-C    1                CDTPRO,CDATEF,CDATER,CDATES)
-C     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
-C     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C     *LDSTOP*    SET .TRUE. IF STOP SIGNAL RECEIVED.
-C     *LDWRRE*    SET .TRUE. IF RESTART SIGNAL RECEIVED.
-C     *IREST*     INTEGER   RESTART FILE SAVE OPTION.
-C                           = 1  RESTART FILES ARE SAVED
-C                           = 2  RESTART FILES ARE SAVED IN SPLIT MODE
-C                           = 3  RESTART FILES ARE SAVED AND
-C                                PREALLOCATION OF THE OUTPUT FILE WHICH
-C                                IS SAVED TO A VFL FILE SYSTEM
-C                           = 4  RESTART FILES ARE SAVED IN SPLIT MODE
-C                                OF THE OUTPUT FILE WHICH IS SAVED TO A
-C                                VFL FILE SYSTEM
-C                           OTHERWISE RESTART FILES ARE NOT SAVED.
-C     *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
-C     *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
-C     *CDATER*    CHAR*12   DATE FOR OUTPUT OF BOTH RESTART FILES
-C     *CDATES*    CHAR*12   LAST DATE FOR OUTPUT OF RESTART FILES
-C                           IF NOT SET IT WILL BE SET BY DEFAULT TO
-C                           CDATEE
-C     *CDMARS*    CHAR*     MARS TYPE OF FIELD.
-C     *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
-C     *CDEXPVER*  CHAR*     EXPERIMENT VERSION IDENTIFIER.
-C     *CDFDB2DSP* CHAR*     ROOT DIRECTORY FOR 2D SPECTRA NON GRIB DATA.
-C
-C     METHOD.
-C     -------
-C     IN CASE OF MESSAGE PASSING, THE OUTPUT IS DIRECTED STRAIGHT TO ITS
-C     PLACE ON DISK, THE CORRESPONDING NAME AND DIRECTORY IS DETERMINED
-C     BY GRSTNAME OR BY THE FDB SOFTWARE IF FDB IS USED. DEPENDING ON
-C     THE IREST VALUE, THE SPACE ON DISK WILL BE PREALLOCATED OR NOT
-C     FROM WITHIN THE MODEL RUN. THE OUTPUT CAN BE SAVED IN ONE SINGLE
-C     FILE OR IN NPROC FILES IF SPLIT MODE WAS SELECTED
-C     ( IREST = 2 OR 4). IN NON SPLIT MODE (IREST = 1 OR 3), THE
-C     CONTRIBUTION FROM ALL PE'S NEED TO BE GATHERED ON THE OUTPUT PE BY
-C     CALLING MPGATHERFL.
-C     IN ORDER NOT TO EXCEED THE MAXIMUN SIZE OF THE MESSAGE MAILBOX,
-C     ONLY PART OF THE SPECTRA WILL BE GATHERED PER CALL TO MPGATHERFL
-C     BY ALLOWING ONLY MDEL FREQUENCIES PER CALL.
-C     IF LDSTOP OR LDWRRE ARE TRUE THEN THE OUTPUT WILL OCCUR AS IF
-C     IREST=1
-C
-C     EXTERNALS.
-C     ----------
-C     GETENV
-C     GRSTNAME
-C     MPGATHERFL
-C     PREALLOC_FILE
-C     SAVREST
-C     WRITEFL
-C
-C     REFERENCE.
-C     ----------
-C     NONE
-C ----------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "comcout.h"
-C
-#include "comgrid.h"
-C
-#include "comtest.h"
-C
-#include "comtext.h"
-C
-#include "txttext.h"
-C
-#include "comunit.h"
-C
-#include "txtunit.h"
-C
-#include "comwind.h"
-C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
+      SUBROUTINE SAVSPEC(FL,NSTART,NEND,CDTPRO,CDATEF,CDATER,
+     &                   CDMARS,CDCLASS, CDEXPVER, CDFDB2DSP)
+! ----------------------------------------------------------------------
+!     J. BIDLOT    ECMWF      MARCH 1997
+!     J. BIDLOT    ECMWF      SEPTEMBER 1997 : use PBIO SOFTWARE
+!     B. HANSEN    ECMWF      FEBRUARY  1998 : use FDB SOFTWARE
+
+!*    PURPOSE.
+!     --------
+!     WRITE BINARY SPECTRA TO DISK.
+
+!**   INTERFACE.
+!     ----------
+!     *CALL* *SAVSPEC(FL,NSTART,NEND,CDTPRO,CDATEF,CDATER,
+!    1                CDMARS,CDCLASS, CDEXPVER, CDFDB2DSP)
+!     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
+!     *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
+!     *CDATER*    CHAR*12   DATE FOR OUTPUT OF BOTH RESTART FILES
+!     *CDMARS*    CHAR*     MARS TYPE OF FIELD.
+!     *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
+!     *CDEXPVER*  CHAR*     EXPERIMENT VERSION IDENTIFIER.
+!     *CDFDB2DSP* CHAR*     ROOT DIRECTORY FOR 2D SPECTRA NON GRIB DATA.
+
+!     METHOD.
+!     -------
+!     IN CASE OF MESSAGE PASSING, THE OUTPUT IS DIRECTED STRAIGHT TO ITS
+!     PLACE ON DISK, THE CORRESPONDING NAME AND DIRECTORY IS DETERMINED
+!     BY GRSTNAME OR BY THE FDB SOFTWARE IF FDB IS USED.
+!     THE CONTRIBUTION FROM ALL PE'S NEED TO BE GATHERED ON THE OUTPUT
+!     PE BY CALLING MPGATHERFL.
+!     IN ORDER NOT TO EXCEED THE MAXIMUN SIZE OF THE MESSAGE MAILBOX,
+!     ONLY PART OF THE SPECTRA WILL BE GATHERED PER CALL TO MPGATHERFL
+!     BY ALLOWING ONLY MDEL FREQUENCIES PER CALL.
+
+!     EXTERNALS.
+!     ----------
+!     GETENV
+!     GRSTNAME
+!     MPGATHERFL
+!     SAVREST
+!     WRITEFL
+
+!     REFERENCE.
+!     ----------
+!     NONE
+! ----------------------------------------------------------------------
+
+      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL
+      USE YOWGRID  , ONLY : IGL
+      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT ,LFDBIOOUT
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+     &            NPRECR
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,IU04
+
+! ----------------------------------------------------------------------
       CHARACTER *2 CDMARS
       CHARACTER *2 CDCLASS
       CHARACTER *4 CDEXPVER
-      CHARACTER*12 CDATE, CDATEWH, CDTPRA, CDRN, ZERO
-      CHARACTER*12 CDTPRO,CDATEF,CDATER,CDATES
+      CHARACTER*12 CDTPRO,CDATEF,CDATER
       CHARACTER*9 CMBXSIZE
       CHARACTER*80 FILENAME
       CHARACTER *(*) CDFDB2DSP
-C
-      LOGICAL LOPENED, LFRSTIME, LPBOPEN, LPBCLOSE, LDSTOP, LDWRRE
-C
-C ----------------------------------------------------------------------
+
+      LOGICAL LFRSTIME, LPBOPEN, LPBCLOSE
+
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
-C ----------------------------------------------------------------------
-C     define local allocatable arrays
+! ----------------------------------------------------------------------
+!     define local allocatable arrays
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
       DATA MDEL, LFRSTIME / 1, .TRUE./
 
       INTEGER IUNIT
       SAVE IUNIT
-C
+
       LPBOPEN = .TRUE.
       LPBCLOSE = .TRUE.
-C
-      IF (LMESSPASS .AND.
-     1    (IREST .EQ. 1 .OR. IREST .EQ. 3 .OR. LDWRRE .OR. LDSTOP))
-     2  THEN
-C
-C OPEN OUPUT FILE
-C
-C FOR OPERATION, THE RESTART FILES SHOULD BE OUTPUT TO A VFL FILE SYSTEM
-C WHERE PREALLOCATION OF THE SPACE CAN BE DONE BEFORE WRITE TO DISK
-C THE IREST = 3 OPTION CAN BE SELECTED IF DONE FROM WITHIN THE MODEL RUN
-C
-        CALL GRSTNAME(IU06,CDTPRO,CDATEF,IREST,'BLS',IRANK,NPROC,
-     &                FILENAME)
-        IF (IRANK.EQ.IPFGTBL(JPPFLAG+1)) THEN
-          IF(IREST.EQ.3) THEN
-            IBLK=(NIBLO*NANG*NFRE*NPRECR)/1000000+1
-            CALL PREALLOC_FILE(IU06,IBLK,FILENAME)
-          ENDIF
-        ENDIF
-C
-C COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
-C SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
-C
-C DETERMINE MAXIMUM NUMBER OF FREQUENCIES WHICH CAN BE USED TO COLLECT
-C SPECTRA ON ONE PE WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE
-C
+
+      IF (LMESSPASS) THEN
+
+! OPEN OUPUT FILE
+
+! FOR OPERATION, THE RESTART FILES SHOULD BE OUTPUT TO A VFL FILE SYSTEM
+! WHERE PREALLOCATION OF THE SPACE CAN BE DONE BEFORE WRITE TO DISK
+
+        CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+
+! COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
+! SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
+
+! DETERMINE MAXIMUM NUMBER OF FREQUENCIES WHICH CAN BE USED TO COLLECT
+! SPECTRA ON ONE PE WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE
+
         IF(LFRSTIME) THEN
-           CALL GETENV('VPP_MBX_SIZE',CMBXSIZE)
-           READ(CMBXSIZE,'(I9)') MBXSIZE
-           MINSIZE=NINT(FLOAT(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
-           IF(MINSIZE.GT.MBXSIZE) THEN
-             WRITE (IU06,*) '***************************************'
-             WRITE (IU06,*) '*                                     *'
-             WRITE (IU06,*) '* MESSAGE MAIL BOX SIZE IS TOO SMALL  *'
-             WRITE (IU06,*) '* TO OUTPUT THE RESTART SPECTRUM FILE *'
-             WRITE (IU06,*) '* THE PRESCRIBED SIZE SIZE IS         *'
-             WRITE (IU06,*) '* ', MBXSIZE,' BYTES                  *'
-             WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
-             WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
-             WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
-             WRITE (IU06,*) '* VPP_MBX_SIZE                        *'
-             WRITE (IU06,*) '*                                     *'
-             WRITE (IU06,*) '***************************************'
-             CALL ABORT1
-           ENDIF
-           MDEL = 1
-CCC           MDEL = NFRE
-CCC           DO WHILE (MINSIZE*MDEL.GE.MBXSIZE.AND.MDEL.GT.1)
-CCC              MDEL=MDEL-1
-CCC           ENDDO
-           WRITE (IU06,*)''
-           WRITE (IU06,*)' IN SAVSPEC :'
-           WRITE (IU06,*)' MESSAGE MAIL BOX SIZE OF ',MBXSIZE,' BYTES'
-           IF (MDEL.EQ.1) THEN
-           WRITE (IU06,*)' ',MDEL,' FREQUENCY IS GATHERED AT ONE TIME'
-           ELSE
-           WRITE (IU06,*)' ',MDEL,'FREQUENCIES ARE GATHERED AT ONE TIME'
-           ENDIF
-           WRITE (IU06,*)' WHICH SHOULD RESULT IN A MAXIMUM USAGE OF'
-           WRITE (IU06,*)' ',MINSIZE*MDEL, 'BYTES FOR EACH CALL TO ',
-     &                      'MPGATHERFL'
-           WRITE (IU06,*)''
+          CALL GETENV('VPP_MBX_SIZE',CMBXSIZE)
+          READ(CMBXSIZE,'(I9)') MBXSIZE
+          MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
+          IF(MINSIZE.GT.MBXSIZE) THEN
+            WRITE (IU06,*) '***************************************'
+            WRITE (IU06,*) '*                                     *'
+            WRITE (IU06,*) '* MESSAGE MAIL BOX SIZE IS TOO SMALL  *'
+            WRITE (IU06,*) '* TO OUTPUT THE RESTART SPECTRUM FILE *'
+            WRITE (IU06,*) '* THE PRESCRIBED SIZE SIZE IS         *'
+            WRITE (IU06,*) '* ', MBXSIZE,' BYTES                  *'
+            WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
+            WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
+            WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
+            WRITE (IU06,*) '* VPP_MBX_SIZE                        *'
+            WRITE (IU06,*) '*                                     *'
+            WRITE (IU06,*) '***************************************'
+            CALL ABORT1
+          ENDIF
+          MDEL = 1
+!!           MDEL = NFRE
+!!           DO WHILE (MINSIZE*MDEL.GE.MBXSIZE.AND.MDEL.GT.1)
+!!              MDEL=MDEL-1
+!!           ENDDO
+          WRITE (IU06,*)''
+          WRITE (IU06,*)' IN SAVSPEC :'
+          WRITE (IU06,*)' MESSAGE MAIL BOX SIZE OF ',MBXSIZE,' BYTES'
+          IF (MDEL.EQ.1) THEN
+            WRITE (IU06,*)' ',MDEL,' FREQUENCY IS GATHERED AT ONE TIME'
+          ELSE
+            WRITE (IU06,*)' ',MDEL,'FREQUENCIES ARE GATHERED AT ONE 
+     &       TIME'
+          ENDIF
+          WRITE (IU06,*)' WHICH SHOULD RESULT IN A MAXIMUM USAGE OF'
+          WRITE (IU06,*)' ',MINSIZE*MDEL, 'BYTES FOR EACH CALL TO ',
+     &     'MPGATHERFL'
+          WRITE (IU06,*)''
 
           LFRSTIME=.FALSE.
         ENDIF
         IF (LPBIOOUT .OR. LFDBIOOUT) THEN
-C use the ability of the PBIO or FDB software to write and append
-c output by frequency bands
+! use the ability of the PBIO or FDB software to write and append
+! output by frequency bands
 
-           DO MLOOP=1,NFRE,MDEL
+          DO MLOOP=1,NFRE,MDEL
 
-             MINF=MLOOP
-             MSUP=MIN(MLOOP+MDEL-1,NFRE)
+            MINF=MLOOP
+            MSUP=MIN(MLOOP+MDEL-1,NFRE)
 
-             LPBOPEN = .FALSE.
-             LPBCLOSE = .FALSE.
-             IF(MINF.EQ.1) LPBOPEN = .TRUE.
-             IF(MSUP.EQ.NFRE) LPBCLOSE = .TRUE.
+            LPBOPEN = .FALSE.
+            LPBCLOSE = .FALSE.
+            IF(MINF.EQ.1) LPBOPEN = .TRUE.
+            IF(MSUP.EQ.NFRE) LPBCLOSE = .TRUE.
 
-             ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
-             RFL=0.
+            ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
+            RFL=0.
 
-             DO M=MINF,MSUP
-               DO K=1,NANG
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    RFL(IJ,K,M) = FL(IJ,K,M)
-                  END DO
-               END DO
-             END DO
-             IRECV=IPFGTBL(JPPFLAG+1)
-             CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
-     1                       MINF,MSUP,RFL)
-             IF (ITEST.GE.2)
-     1       WRITE(IU06,*)
-     2       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
+            DO M=MINF,MSUP
+              DO K=1,NANG
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  RFL(IJ,K,M) = FL(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
+            IRECV=IPFGTBL(JPPFLAG+1)
+            CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
+     &       MINF,MSUP,RFL)
+            IF (ITEST.GE.2)
+     &       WRITE(IU06,*)
+     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
 
-             IF (LFDBIOOUT) THEN
-               ILFN = LEN_TRIM(FILENAME)
-               WRITE(FILENAME(ILFN+1:ILFN+6),'(i6.6)') MLOOP
-             ENDIF
-             IF (IRANK.EQ.IPFGTBL(JPPFLAG+1)) THEN
-               IF (ITEST .GE. 2)
-     1         WRITE(IU06,'(" savspec: CALLS WRITEFL: NIBLO=", I6, 
-     2         " MINF=", I3, " MSUP=", I3, " FILENAME=", A40, " IUNIT=",
-     3         I2, " LPBOPEN=", L1, " LPBCLOSE=", L1)')
-     4         NIBLO,MINF,MSUP,FILENAME(1:40),IUNIT,LPBOPEN,LPBCLOSE
-               CALL WRITEFL(RFL,0,NIBLO,MINF,MSUP,FILENAME,IUNIT,
-     1                      LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
-     2                      CDFDB2DSP)
-             ENDIF
-             DEALLOCATE(RFL)
+            IF (LFDBIOOUT) THEN
+              ILFN = LEN_TRIM(FILENAME)
+              WRITE(FILENAME(ILFN+1:ILFN+6),'(i6.6)') MLOOP
+            ENDIF
+            IF (IRANK.EQ.IPFGTBL(JPPFLAG+1)) THEN
+              IF (ITEST .GE. 2)
+     &         WRITE(IU06,'(" savspec: CALLS WRITEFL: NIBLO=", I6, 
+     &         " MINF=", I3, " MSUP=", I3, " FILENAME=", A40, " IUNIT=",
+     &         I2, " LPBOPEN=", L1, " LPBCLOSE=", L1)')
+     &         NIBLO,MINF,MSUP,FILENAME(1:40),IUNIT,LPBOPEN,LPBCLOSE
+              CALL WRITEFL(RFL,0,NIBLO,MINF,MSUP,FILENAME,IUNIT,
+     &         LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
+     &         CDFDB2DSP)
+            ENDIF
+            DEALLOCATE(RFL)
 
-           END DO
+          ENDDO
 
 
         ELSE
 
-           ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
-           RFL=0.
+          ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
+          RFL=0.
 
-           DO MLOOP=1,NFRE,MDEL
+          DO MLOOP=1,NFRE,MDEL
 
-             MINF=MLOOP
-             MSUP=MIN(MLOOP+MDEL-1,NFRE)
+            MINF=MLOOP
+            MSUP=MIN(MLOOP+MDEL-1,NFRE)
 
-             DO M=MINF,MSUP
-               DO K=1,NANG
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    RFL(IJ,K,M) = FL(IJ,K,M)
-                  END DO
-               END DO
-             END DO
+            DO M=MINF,MSUP
+              DO K=1,NANG
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  RFL(IJ,K,M) = FL(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
 
-             IRECV=IPFGTBL(JPPFLAG+1)
-             CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
-     1                       1,NFRE,RFL)
+            IRECV=IPFGTBL(JPPFLAG+1)
+            CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
+     &       1,NFRE,RFL)
 
-             IF (ITEST.GE.2)
-     1       WRITE(IU06,*)
-     2       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
+            IF (ITEST.GE.2)
+     &       WRITE(IU06,*)
+     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
 
-           END DO
+          ENDDO
 
-           IF (IRANK.EQ.IPFGTBL(JPPFLAG+1))
-     1     CALL WRITEFL(RFL,0,NIBLO,1,NFRE,FILENAME,IUNIT,
-     2                  LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
-     3                  CDFDB2DSP)
+          IF (IRANK.EQ.IPFGTBL(JPPFLAG+1))
+     &     CALL WRITEFL(RFL,0,NIBLO,1,NFRE,FILENAME,IUNIT,
+     &     LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
+     &     CDFDB2DSP)
 
-           DEALLOCATE(RFL)
+          DEALLOCATE(RFL)
 
         ENDIF
-C
-C
-C THE NEXT CALL TO SETEV IS REQUIRED IN THE OPERATIONAL SUITE TO
-C TRIGGER THE NEXT TASK. NAMELLY THE GRIBBING AND TRANSFER TO FDB OF THE
-C SPECTRA
-C
-        IF (IRANK.EQ.IPFGTBL(JPPFLAG+1)) THEN
-CC          IF (CDTPRO.EQ.CDATES) IRET=ISHELL('setev spectra')
-        IF (ITEST.GE.2)
-     1         WRITE(IU06,*) ' SUB. WAMODEL: START OF BLOCK OUTPUT'
-       	ENDIF 
 
 
-      ELSEIF (LMESSPASS.AND.(IREST.EQ.2.OR.IREST.EQ.4)) THEN
-
-C
-        CALL GRSTNAME(IU06,CDTPRO,CDATEF,IREST,'BLS',IRANK,NPROC,
-     &                FILENAME)
-C
-C THE RESTART FILES SHOULD BE OUTPUT TO A VFL FILES SYSTEM
-C WHERE PREALLOCATION OF THE SPACE CAN BE DONE BEFORE WRITE TO DISK
-C THE IREST = 4 OPTION MUST BE SELECTED.
-C
-        IF(IREST.EQ.4) THEN
-          IBLK=((NEND(IRANK)-NSTART(IRANK))*NANG*NFRE*NPRECR)/1000000+1
-          CALL PREALLOC_FILE(IU06,IBLK,FILENAME)
-        ENDIF
-
-        CALL WRITEFL(FL,NINF-1,NSUP,1,NFRE,FILENAME,IUNIT,
-     1               LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
-     2               CDFDB2DSP)
-C
-C THE NEXT CALL TO SETEV IS REQUIRED IN THE OPERATIONAL SUITE TO
-C TRIGGER THE NEXT TASK. NAMELLY THE GRIBBING AND TRANSFER TO FDB OF THE
-C SPECTRA
-        IF ((IRANK.EQ.1).AND.(CDTPRO.EQ.CDATES))
-     1     IRET=ISHELL('setev spectra')
-
-        IF (ITEST.GE.2)
-     1      WRITE(IU06,*) ' SUB. WAMODEL: START OF BLOCK OUTPUT'
-
-
-C       ADD CURRENT TIME TO LIST IN FILE split_table
-        IF(IRANK.EQ.1) WRITE(IU73,*) CDTPRO//'00'
-
-C
-      ELSEIF(.NOT.LMESSPASS) THEN
+      ELSE
 
         IF(LPBIOOUT.OR.LFDBIOOUT) THEN
-           CALL GRSTNAME(IU06,CDTPRO,CDATEF,1,'BLS',
-     &                   IRANK,NPROC,FILENAME)
+          CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
         ENDIF
 
         CALL WRITEFL(FL,0,NIBLO,1,NFRE,FILENAME,IUNIT,
-     1               LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
-     2               CDFDB2DSP)
+     &               LPBOPEN,LPBCLOSE,CDMARS,CDCLASS,CDEXPVER,
+     &               CDFDB2DSP)
 
         IF(.NOT.LPBIOOUT.AND..NOT.LFDBIOOUT)
-     1  CALL SAVREST(IU06, IU04, IU12, IU14, IU15, IGL,
-     2               CDTPRO, CDATEF, CDATER)
+     &  CALL SAVREST(IU06, IU04, IU12, IU14, IU15, IGL,
+     &               CDTPRO, CDATEF, CDATER)
 
-      END IF
-C
+      ENDIF
+
       WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',
-     1                ' CDTPRO  = ', CDTPRO
-C
+     &                ' CDTPRO  = ', CDTPRO
+
       RETURN
-      END
+      END SUBROUTINE SAVSPEC

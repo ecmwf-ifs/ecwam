@@ -83,7 +83,7 @@
 #include "readsat.F"
 #include "readsta.F"
 #include "readt.F"
-#include "readwnd_mars.F"
+#include "readwind.F"
 #include "regroup.F"
 #include "rotspec.F"
 #include "savrest.F"

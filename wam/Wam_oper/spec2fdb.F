@@ -1,172 +1,192 @@
-C
-      SUBROUTINE SPEC2FDB (KU06, KPROC, KRANK, LDWCOU, PTHETA, PFREQ,
-     .                     PSPEC, KINF, KSUP, KANG, KFRE, KGX, KGY,
-     .                     KRGG, KLONRGG, KXLT, KXLG, KIBLO, KBLO,
-     .                     PMISS, PMONOP, PMOWEP, PMOEAP, PMOSOP,
-     .                     PDELLA, PDELLO, KSTART, KEND,
-     .                     CDTPRO, CDATEF, CDATER, CDATES, CDATEA,
-     .                     CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
-     .                     KENSFNB, KTOTENS, LFDBIOOUT, KTEST, KFDB )
-C
-C----------------------------------------------------------------------
-C
-C**** *SPEC2FDB*  ENCODES SPECTRA AS PARAMETER 251
-C                 AND WRITES TO FILE OR TO FDB.
-C
-C     B. HANSEN   ECMWF   FEBRUARY 1998 
-C
-C*    PURPOSE.
-C     --------
-C
-C       ENCODES SPECTRA AND WRITES TO FDB OR TO A FILE.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *SPEC2FDB* (KU06, PSPEC, KINF, KSUP, KANG, KFRE,
-C                          KSTART, KEND,
-C                          CDTPRO, CDATEF, CDATER, CDATES,
-C                          CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
-C                          KENSFNB, KTOTENS, LFDBIOOUT, KTEST, KFDB )
-C
-C*     VARIABLE.   TYPE.     PURPOSE.
-C      ---------   -------   --------
-C      *KU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
-C      *KPROC*     INTEGER   TOTAL NUMBER OF PES.
-C      *KRANK*     INTEGER   CURRENT PE NUMBER.
-C      *LDWCOU*    LOGICAL   TRUE: THIS IS A COUPLED RUN.
-C      *PTHETA*    REAL      DIRECTION VECTOR.
-C      *PFREQ*     REAL      FREQUENCY VECTOR.
-C      *PSPEC*     REAL      LOCAL SPECTRA OF CURRENT PE.
-C      *KINF*      INTEGER   SMALLEST GRID POINT INDEX USED BY THE PE.
-C      *KSUP*      INTEGER   LARGEST GRID POINT INDEX USED BY THE PE.
-C      *KANG*      INTEGER   NUMBER OF ANGLES.
-C      *KFRE*      INTEGER   NUMBER OF FREQUENCIES.
-C      *KGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
-C      *KGY*       INTEGER   NUMBER OF LATITUDES IN GRID.
-C      *KRGG*      INTEGER   GRID CODE: 0 = REGULAR, 1 = IRREGULAR.
-C      *KLONRGG*   INTEGER   NUMBER OF POINTS ALONG A MERIDIAN.
-C      *KXLT*      INTEGER   LAT. GRID INDEX.
-C      *KXLG*      INTEGER   LON. GRID INDEX.
-C      *KIBLO*     INTEGER   NUMBER OF POINTS IN BLOCK.
-C      *KBLO*      INTEGER   NUMBER OF BLOCKS.
-C      *PMISS*     REAL      MISSING DATA VALUE.
-C      *PMONOP*    REAL      MOST NORTHERN LATITUDE IN GRID (DEGREE).
-C      *PMOWEP*    REAL      MOST WESTERN LATITUDE IN GRID (DEGREE).
-C      *PMOEAP*    REAL      MOST EASTERN LATITUDE IN GRID (DEGREE).
-C      *PMOSOP*    REAL      MOST SOUTHERN LATITUDE IN GRID (DEGREE).
-C      *PDELLA*    REAL      DISTANCE BETWEEN LATITUDES.
-C      *PDELLO*    REAL      DISTANCE BETWEEN LONGITUDES.
-C      *KSTART*    INTEGER   FIRST INDICES OF LOCAL BLOCKS OF SPECTRA.
-C      *KEND*      INTEGER   LAST INDICES OF LOCAL BLOCKS OF SPECTRA.
-C      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
-C      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
-C      *CDATER*    CHAR*12   DATE FOR OUTPUT OF BOTH RESTART FILES
-C      *CDATES*    CHAR*12   LAST DATE FOR OUTPUT OF RESTART FILES
-C                            IF NOT SET IT WILL BE SET BY DEFAULT TO
-C                            CDATEE
-C      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
-C      *CDTYPE*    CHAR*     MARS TYPE OF FIELD.
-C      *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
-C      *CDEXPVER*  CHAR*     EXPERIMENT VERSION IDENTIFIER.
-C      *CDFDB2DSP*   CHAR*     ROOT DIRECTORY FOR 2D GRIB SPECTRA.
-C      *KENSFNB*   INTEGER   ENSEMBLE FORECAST NUMBER
-C      *KTOTENS*   INTEGER   TOTAL NUMBER OF ENSEMBLE FORECASTS.
-C      *LFDBIOOUT* LOGICAL   IF TRUE OUTPUT TO FDB OTHERWISE TO FILE
-C      *KTEST*     INTEGER   PRINT DIAGNOSTICS TO STDOUT IF GT 1.
-C
-C     METHOD.
-C     -------
-C
-C	   ENCODE SPECTRA PER FREQUENCY AND DIRECTION
-C      INTO GRIB AND WRITE TO FDB OR TO A SINGLE FILE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C      *ABORT1*
-C      *GRIBEX* 
-C      *FLD2FDB*
-C      *MPGATHERSCFLD*
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C-------------------------------------------------------------------
-C
-      IMPLICIT NONE
-C
-C*  DUMMY ARGUMENTS:
-C   ----------------
-C
-      LOGICAL LDWCOU, LFDBIOOUT, LOUTALL
-C
-      INTEGER KU06, KINF, KSUP, KANG, KFRE, KGX, KGY, KRGG, KIBLO, KBLO,
-     .        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS,
-     .        KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB, KST,
-     .        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN, KDEXS
-      INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
-C
-      REAL    PMISS, PMONOP, PDELLA, PDELLO, PMOEAP, PMOSOP, PMOWEP,
-     .        PSPEC (KINF-1:KSUP, KANG, KFRE),
-     .        PTHETA(KANG),
-     .        PFREQ(KFRE)
-C
-      CHARACTER*1 CMODE
-      CHARACTER*(*) CDTPRO, CDATEF, CDATER, CDATES, CDATEA,
-     .              CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP
-C
-C-----------------------------------------------------------------------
-C
-      INTEGER, ALLOCATABLE :: IOUTGRIB(:), IPOINTER(:)
-C
-      INTEGER ISEC0(2), ISEC1(49+KANG+KFRE), ISEC2(384), ISEC3(2),
-     .        ISEC4(128), JSN, JK, ITOT, JC, IX, ISTEP, IST, IYYYY,
-     .        IY, IMO, ID, IH, IMN, IFCST, itheta(KANG), ifreq(KFRE), 
-     .        J, IJ, JANG, J1, J2, J3, JI, ILENGOUT, IC,
-     .        IRET, IWORD, IERR, ILENP, ITAG, ISTAT
 
-C
+      SUBROUTINE SPEC2FDB (KU06, KPROC, KRANK, LDWCOU, PTHETA, PFREQ,
+     &                     PSPEC, KINF, KSUP, KANG, KFRE, KGX, KGY,
+     &                     KLONRGG, KXLT, KXLG, KIBLO, KBLO,
+     &                     PMONOP, PDELLA, KSTART, KEND,
+     &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
+     &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
+     &                     KSEK4, PSEK2, PSEK3, NTENCODE,
+     &                     PPDEG, PPMISS, PPEPS, PPREC,
+     &                     CDTPRO, CDATEF, CDATEA,
+     &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
+     &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
+     &                     KCPLEN, CPAD, KTEST, KFDB )
+
+!----------------------------------------------------------------------
+
+!**** *SPEC2FDB*  ENCODES SPECTRA AS PARAMETER 251
+!                 AND WRITES TO FILE OR TO FDB.
+
+!     B. HANSEN   ECMWF   FEBRUARY 1998 
+!     J. BIDLOT   ECMWF   NOVEMBER 1998
+
+!*    PURPOSE.
+!     --------
+
+!       ENCODES SPECTRA AND WRITES TO FDB OR TO A FILE.
+
+!**   INTERFACE.
+!     ----------
+
+!     SUBROUTINE SPEC2FDB (KU06, KPROC, KRANK, LDWCOU, PTHETA, PFREQ,
+!    &                     PSPEC, KINF, KSUP, KANG, KFRE, KGX, KGY,
+!    &                     KLONRGG, KXLT, KXLG, KIBLO, KBLO,
+!    &                     PMONOP, PDELLA, KSTART, KEND, 
+!    &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
+!    &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
+!    &                     KSEK4, PSEK2, PSEK3, NTENCODE,
+!    &                     PPDEG, PPMISS, PPEPS, PPREC,
+!    &                     CDTPRO, CDATEF, CDATEA,
+!    &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
+!    &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
+!    &                     KCPLEN, CPAD, KTEST, KFDB )
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *KU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
+!      *KPROC*     INTEGER   TOTAL NUMBER OF PES.
+!      *KRANK*     INTEGER   CURRENT PE NUMBER.
+!      *LDWCOU*    LOGICAL   TRUE: THIS IS A COUPLED RUN.
+!      *PTHETA*    REAL      DIRECTION VECTOR.
+!      *PFREQ*     REAL      FREQUENCY VECTOR.
+!      *PSPEC*     REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *KINF*      INTEGER   SMALLEST GRID POINT INDEX USED BY THE PE.
+!      *KSUP*      INTEGER   LARGEST GRID POINT INDEX USED BY THE PE.
+!      *KANG*      INTEGER   NUMBER OF ANGLES.
+!      *KFRE*      INTEGER   NUMBER OF FREQUENCIES.
+!      *KGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
+!      *KGY*       INTEGER   NUMBER OF LATITUDES IN GRID.
+!      *KLONRGG*   INTEGER   NUMBER OF POINTS ALONG A MERIDIAN.
+!      *KXLT*      INTEGER   LAT. GRID INDEX.
+!      *KXLG*      INTEGER   LON. GRID INDEX.
+!      *KIBLO*     INTEGER   NUMBER OF POINTS IN BLOCK.
+!      *KBLO*      INTEGER   NUMBER OF BLOCKS.
+!      *PMONOP*    REAL      MOST NORTHERN LATITUDE IN GRID (DEGREE).
+!      *PDELLA*    REAL      DISTANCE BETWEEN LATITUDES.
+!      *KSTART*    INTEGER   FIRST INDICES OF LOCAL BLOCKS OF SPECTRA.
+!      *KEND*      INTEGER   LAST INDICES OF LOCAL BLOCKS OF SPECTRA.
+!      *NKSEK0*    INTEGER   SIZE OF KSEK0
+!      *NKSEK1*    INTEGER   SIZE OF KSEK1
+!      *NKSEK2*    INTEGER   SIZE OF KSEK2
+!      *NKSEK3*    INTEGER   SIZE OF KSEK3
+!      *NKSEK4*    INTEGER   SIZE OF KSEK4
+!      *NPSEK2*    INTEGER   SIZE OF PSEK2
+!      *NPSEK3*    INTEGER   SIZE OF PSEK3
+!      *KSEK0*     INTEGER   DEFAULT VALUES FOR GRIB HEADER 0
+!      *KSEK1*     INTEGER   DEFAULT VALUES FOR GRIB HEADER 1
+!      *KSEK2*     INTEGER   DEFAULT VALUES FOR GRIB HEADER 2
+!      *KSEK3*     INTEGER   DEFAULT VALUES FOR GRIB HEADER 3
+!      *KSEK4*     INTEGER   DEFAULT VALUES FOR GRIB HEADER 4
+!      *PSEK2*     REAL      DEFAULT VALUES FOR REAL GRIB HEADER 2
+!      *PSEK3*     REAL      DEFAULT VALUES FOR REAL GRIB HEADER 3
+!      *NTENCODE*  INTEGER   TOTAL NUMBER OF GRID DATA FOR ENCODING
+!      *PPDEG*     REAL      PI/180
+!      *PPMISS*    REAL      MINIMUM VALUE FOR CODING OF LOGARITHMIC
+!                            SPECTRA.
+!      *PPEPS*     REAL      SMALL NUMBER FOR CODING OF SPECTRA
+!      *PPREC*     REAL      REFERENCE VALUE FOR CODING OF SPECTRA
+!      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
+!      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
+!      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
+!      *CDDOMAIN   CHAR*1    GRIB DOMAIN DEFINITION FOR THE FDB
+!      *CDTYPE*    CHAR*     MARS TYPE OF FIELD.
+!      *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
+!      *CDEXPVER*  CHAR*     EXPERIMENT VERSION IDENTIFIER.
+!      *CDFDB2DSP* CHAR*     ROOT DIRECTORY FOR 2D GRIB SPECTRA.
+!      *KENSFNB*   INTEGER   ENSEMBLE FORECAST NUMBER
+!      *KTOTENS*   INTEGER   TOTAL NUMBER OF ENSEMBLE FORECASTS.
+!      *LFDBIOOUT* LOGICAL   IF TRUE OUTPUT TO FDB OTHERWISE TO FILE
+!      *KCPLEN*    INTEGER    LENGTH OF CPAD
+!      *CPAD*      CHARACTER  PATH FOR OUTPUT TO DISK
+!      *KTEST*     INTEGER   PRINT DIAGNOSTICS TO STDOUT IF GT 1.
+!      *KFDB*      INTEGER    DATA BASE REFERENCE
+
+!     METHOD.
+!     -------
+
+!           ENCODE SPECTRA PER FREQUENCY AND DIRECTION
+!      INTO GRIB AND WRITE TO FDB OR TO A SINGLE FILE.
+
+!     EXTERNALS.
+!     ----------
+
+!      *ABORT1*
+!      *GRIBEX* 
+!      *FLD2FDB*
+!      *MPGATHERSCFLD*
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+!-------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+!*  DUMMY ARGUMENTS:
+!   ----------------
+
+      LOGICAL LDWCOU, LFDBIOOUT
+
+      INTEGER KU06, KINF, KSUP, KANG, KFRE, KGX, KGY, KIBLO, KBLO,
+     &        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS,
+     &        KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
+     &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
+     &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
+     &        NTENCODE, KCPLEN
+      INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
+
+      INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
+     &        KSEK3(NKSEK3), KSEK4(NKSEK4)
+
+      REAL    PMONOP, PDELLA,
+     &        PSPEC (KINF-1:KSUP, KANG, KFRE),
+     &        PPDEG, PPMISS, PPEPS, PPREC,
+     &        PTHETA(KANG),
+     &        PFREQ(KFRE)
+      REAL PSEK2(NPSEK2), PSEK3(NPSEK3)
+
+      CHARACTER*(*) CDTPRO, CDATEF, CDATEA, CPAD,
+     &              CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP
+
+!-----------------------------------------------------------------------
+
+      INTEGER, ALLOCATABLE :: IOUTGRIB(:), IPOINTER(:)
+
+      INTEGER ISEC0(NKSEK0), ISEC1(NKSEK1), ISEC2(NKSEK2),
+     &        ISEC3(NKSEK3), ISEC4(NKSEK4)
+      INTEGER JSN, JK, JC, IX, ISTEP, IST, IYYYY,
+     &        IY, IMO, ID, IH, IMN, IFCST, ITHETA(KANG), IFREQ(KFRE),
+     &        IJ, JANG, J1, ILENGOUT, IC,
+     &        IRET, IWORD, IERR, ILENP, ITAG
+
       REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:)
-      REAL ZSEC2(96), ZSEC3(2), ZMONOP, ZMOSOP
+      REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
       REAL , DIMENSION(KANG) :: ZTHETA
       REAL , DIMENSION(KFRE) :: ZFREQ
-C
-      REAL, PARAMETER :: PPDEG = 180.0 / 3.1415927
-      REAL, PARAMETER :: PPMISS = -3.0
-      REAL, PARAMETER :: PPEPS  = 1.0e-10
-      REAL, PARAMETER :: PPREC  = 0.0
-C
-      CHARACTER*  1 CLDOMAIN
+
+      CHARACTER*  1 CDDOMAIN
       CHARACTER* 40 CLMSG
       CHARACTER* 80 OUTFILEN
-C
-      DATA CLDOMAIN  / region /
-C
-      LOGICAL LLFIRST
-      DATA LLFIRST  / .TRUE. /
-C
-C-----------------------------------------------------------------------
-C
-C*    0. FIXED SETTINGS FOR THE GRIB HEADERS.
-C     ---------------------------------------
-C
+
+!-----------------------------------------------------------------------
+
+!*    0. FIXED SETTINGS FOR THE GRIB HEADERS.
+!     ---------------------------------------
+
+      ISEC0 = KSEK0
+
       IF (KTEST.GT.1) THEN
         WRITE(KU06,*) '*      THIS IS SPEC2FDB         *'
         CALL FLUSH (KU06)
       ENDIF
-      ISEC1 = 0
-      ISEC2 = 0
-      ISEC4 = 0
-      ZSEC2 = 0.0
-C
+
       IF(CDTPRO.LE.CDATEF) THEN
-C
-C*    0.1.  THIS IS AN ANALYSIS DATE.
-C           -------------------------
-C
+
+!*    0.1.  THIS IS AN ANALYSIS DATE.
+!           -------------------------
+
         IF (LDWCOU .AND. CDTYPE .EQ. 'fg') THEN
           READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
@@ -176,77 +196,39 @@ C
           IFCST = 0
         ENDIF
       ELSE
-C
-C*    0.2.  THIS IS A  FORECAST DATE.
-C           -------------------------
-C
+
+!*    0.2.  THIS IS A  FORECAST DATE.
+!           -------------------------
+
         READ (CDATEF, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCST = IFCST/3600
       ENDIF
-C
-C    *SECTION 1*  INTEGER  PRODUCT DEFINITION BLOCK.
-C    -----------------------------------------------
-C       WORD        VALUE   CONTENTS.
-C       ----        -----   ---------
-      ISEC1( 1) =   140     ! VERSION NUMBER OF CODE TABLE 2.
-      ISEC1( 2) =    98     ! ORIGINATING CENTRE IDENTIFIER.
-      IF( CLDOMAIN == 'm' ) THEN
-        ISEC1( 3) =   207     ! MODEL IDENTIFICATION.
-      ELSE
-        ISEC1( 3) =   107     ! MODEL IDENTIFICATION.
-      ENDIF
-      ISEC1( 4) =   255     ! GRID DEFINITION.
-      ISEC1( 5) =   192     ! FLAG (WMO CODE TABLE 1)
+
+!    *SECTION 1*  INTEGER  PRODUCT DEFINITION BLOCK.
+!    -----------------------------------------------
+!       WORD        VALUE   CONTENTS.
+!       ----        -----   ---------
+
+      ISEC1 = KSEK1
+
       ISEC1( 6) =   251     ! PARAMETER IDENTIFIER (WMO CODE TABLE 2)
-      ISEC1( 7) =   102     ! TYPE OF LEVEL (WMO CODE TABLE 3)
-      ISEC1( 8) =     0     ! TYPE OF LEVEL (WMO CODE TABLE 3)
-      ISEC1( 9) =     0     ! VALUE(S) OF LEVEL (WMO CODE TABLE 3)
-      ISEC1(10) =   MOD(IYYYY,100)      ! YEAR OF DATA
+      ISEC1(10) = MOD(IYYYY,100)      ! YEAR OF DATA
       IF(ISEC1(10).EQ.0) ISEC1(10) = 100
       ISEC1(11) =   IMO     ! MONTH OF DATA
       ISEC1(12) =   ID      ! DAY OF DATA
       ISEC1(13) =   IH      ! HOUR OF DATA
       ISEC1(14) =   IMN     ! MINUTE OF DATA
-      ISEC1(15) =     1     ! TIME UNIT (WMO CODE TABLE 4)
       ISEC1(16) =  IFCST    ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
-      ISEC1(17) =     0     ! TIME RANGE TWO
       ISEC1(18) =     0     ! TIME RANGE FLAG (WMO CODE TABLE 5)
-      ISEC1(19) =     0     ! NUMBER AVERAGED.
-      ISEC1(20) =     0     ! NUMBER MISSING FROM AVERAGE.
       IF(ISEC1(10).EQ.100) THEN
         ISEC1(21) = IYYYY/100 ! CENTURY OF REFERENCE TIME.
       ELSE
         ISEC1(21) = (IYYYY/100)+1 ! CENTURY OF REFERENCE TIME.
       ENDIF
-      ISEC1(22) =     0     ! 
-      ISEC1(23) =     0     !
-      ISEC1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
-C       25-36                                                  0
       ISEC1(37) =    13     ! INDICATES LABELLING WITH MARS PARAMETERS 
-C                           ! FOR WAVE SPECTRA.
-C        38     INDICATES CLASS 1=OD 2=RD
-C        39     INDICATES TYPE OF FIELD 1=FG 2=AN 9=FC
-C        40     INDICATES STREAM  1045=WAVE
-C        41     INDICATES EXPERIMENT VERSION NUMBER
-C               (4 ASCII characters, righ justified)
-C       42,43                                                  0
-C
-      IF ( CDCLASS .EQ. 'OD' .OR. CDCLASS .EQ. 'od' ) THEN
-        ISEC1(38) = 1
-      ELSEIF (CDCLASS .EQ. 'ER' .OR. CDCLASS .EQ. 'er' ) THEN
-        ISEC1(38) = 3
-      ELSEIF (CDCLASS .EQ. 'E4' .OR. CDCLASS .EQ. 'e4' ) THEN
-        ISEC1(38) = 5
-      ELSEIF (CDCLASS .EQ. 'RD' .OR. CDCLASS .EQ. 'rd' ) THEN
-        ISEC1(38) = 2
-      ELSE
-        WRITE(KU06,*) ' -----------------------------------'
-        WRITE(KU06,*) ' SPEC2FDB: ERROR DETERMINING CLASS  '
-        WRITE(KU06,*) ' THE CODE FOUND IS : ',  CDCLASS
-        WRITE(KU06,*) ' -----------------------------------'
-        CALL ABORT1
-      ENDIF
+!                           ! FOR WAVE SPECTRA.
+!        39     INDICATES TYPE OF FIELD 1=FG 2=AN 9=FC
       IF ( CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 1
       ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
@@ -262,154 +244,93 @@ C
           ENDIF
         ENDIF
       ENDIF
-C* STREAM.
-C  -------
-      IF(CDTYPE .EQ. 'cf' .OR. CDTYPE .EQ. 'pf') THEN
-        ISEC1(40)=1081
-      ELSE
-        ISEC1(40)=1045
-      ENDIF
-C* EXPERIMENT VERSION.
-C  -------------------
-      ISEC1(41) = 0
-      DO JI = 1, 4
-        ISEC1(41) = ISEC1(41)*256 + ICHAR(CDEXPVER(JI:JI))
-      ENDDO
-C* ENSEMBLE LABELS.
-C  ----------------
-      IF(CDTYPE.EQ.'cf'.OR.CDTYPE.EQ.'pf') THEN
-        ISEC1(42) = KENSFNB
-        ISEC1(43) = KTOTENS
-      ELSE
-        ISEC1(42) = 0
-        ISEC1(43) = 0
-      ENDIF
-C* DIRECTION AND FREQUENCY INDEX
-C  -----------------------------
-C
-C     SEE BELOW in LOOP 
-C* TOTAL NUMBER OF DIRECTIONS AND FREQUENCIES
-C  ------------------------------------------
-C
+!* DIRECTION AND FREQUENCY INDEX
+!  -----------------------------
+
+!     SEE BELOW in LOOP 
+!* TOTAL NUMBER OF DIRECTIONS AND FREQUENCIES
+!  ------------------------------------------
+
       ISEC1(46) = KANG
       ISEC1(47) = KFRE
-C
-C* SCALING FACTORS FOR DIRECTION AND FREQUENCY
-C  -------------------------------------------
+
+!* SCALING FACTORS FOR DIRECTION AND FREQUENCY
+!  -------------------------------------------
       ISEC1(48) = 1000
       ISEC1(49) = 1000000
-C
-C* DIRECTIONS
-C  ----------
+
+!* DIRECTIONS
+!  ----------
       DO IC=1,KANG
-         ISEC1(49+IC) = NINT(ISEC1(48)*PTHETA(IC)*PPDEG)
+        ISEC1(49+IC) = NINT(ISEC1(48)*PTHETA(IC)*PPDEG)
       ENDDO
-C
-C* FREQUENCIES
-C  -----------
+
+!* FREQUENCIES
+!  -----------
       DO IC=1,KFRE
-         ISEC1(49+KANG+IC) = NINT(ISEC1(49)*PFREQ(IC))
+        ISEC1(49+KANG+IC) = NINT(ISEC1(49)*PFREQ(IC))
       ENDDO
-C
-C    *SECTION 2*  INTEGER  GRID DEFINITION BLOCK.
-C
-C       WORD        VALUE   CONTENTS.
-C       ----        -----   ---------
-C
-      ISEC2( 1) =       0  ! DATA REPRESENTATION TYPE: WMO CODE TABLE 6
-      ISEC2( 5) =  NINT(PMOWEP*1000) ! LONGITUDE OF ORIGIN (WEST -)
-      ISEC2( 6) =     128  ! RESOLUTION FLAG (WMO CODE TABLE 7)
-      ISEC2( 8) =  NINT(PMOEAP*1000) ! LONGITUDE OF EXTREME POINT (WEST)
-      ISEC2( 9) =  NINT(PDELLO*1000) ! LONGITUDE INCREMENT
-      ISEC2(11) =       0  ! SCANNING MODE FLAGS (WMO CODE TABLE 8)
-      ISEC2(17) =    KRGG  ! GRID TYPE.
-C       12[17]-68                                               56*0
-C
-C    *ISEC3*  INTEGER  BIT MAP SECTION.
-C    ----------------------------------
-C
-      ISEC3(1) = 0
-      ZSEC3(2) = PMISS
-C
-C    *SECTION 4*  INTEGER  DATA SECTION.
-C    -----------------------------------
-C
-C       WORD    CONTENTS                                  VALUE.
-C       ----    --------                                  ------
-C         1     NUMBER OF DATA VALUES IN PSEC4             I1*I2
-C         2     NUMBER OF BITS FOR EACH PACKED DATA           16
-C       3-42                                                40*0
-C
-C
-C ----------------------------------------------------------------------
-C
-      ISEC4=0
- 1000 CONTINUE
-      DO 1001 JANG=1,KANG
+
+!    *SECTION 2* GRID DEFINITION BLOCK. 
+!    -----------------------------------
+
+      ISEC2 = KSEK2
+
+      ZSEC2 = PSEK2 
+
+!    *SECTION 3* BIT MAP SECTION.
+!    ----------------------------
+
+      ISEC3 = KSEK3 
+
+      ZSEC3 = PSEK3 
+
+!    *SECTION 4*  INTEGER  DATA SECTION.
+!    -----------------------------------
+
+      ISEC4=KSEK4
+
+      DO JANG=1,KANG
         ZTHETA(JANG) = PTHETA(JANG)*PPDEG
- 1001 CONTINUE
+      ENDDO
       ZFREQ=PFREQ
-      ilenp = kang*kfre
-C
-      isec4( 1) = ilenp
-      isec4( 2) =  9 ! 9 or 16 or 32 
-                     ! Number of bits used for each encoded value
-      isec4( 3) =  0
-      isec4( 4) =  0
-      isec4( 5) =  0
-      isec4( 6) = 16
-      isec4( 7) =  0
-C SET HEADER TO SINGLE DATUM AT EACH GRID POINT AND NO SECONDARY BITMAPS
-      isec4( 8) =  0
-      isec4( 9) =  0
-      isec4(10) =  0
-      isec4(11) =  0
-      isec4(12) =  0
-      isec4(13) =  0
-      isec4(14) =  0
-      isec4(15) =  0
-      isec4(16) =  0
-      isec4(17) =  0
-      isec4(18) =  0
-      isec4(19) =  0
-      isec4(50) =  1
-      isec4(51) =  1
-      isec4(52) =  0
-      isec4(53) =  KANG 
-      isec4(54) =  0
-      isec4(55) =  KFRE 
-      isec4(56) =  1
-      isec4(57) =  2
-C
-C
-      ij=0
-      DO j = 60, 60-1+kang
-        ij=ij+1
-        itheta(ij) = TRANSFER (ztheta(ij), 1)
-        isec4(j) = itheta(ij)
+      ILENP = KANG*KFRE
+
+      ISEC4( 1) = ILENP
+      ISEC4( 2) =  9 ! 9 or 16 or 32 
+      ! Number of bits used for each encoded value
+      ISEC4( 6) = 16 ! additional flags
+      ISEC4(50) =  1
+      ISEC4(51) =  1
+      ISEC4(53) =  KANG 
+      ISEC4(55) =  KFRE 
+      ISEC4(56) =  1
+      ISEC4(57) =  2
+
+      DO IJ = 1, KANG
+        ITHETA(IJ) = TRANSFER (ZTHETA(IJ), 1)
+        ISEC4(60+IJ-1) = ITHETA(IJ)
       ENDDO
-C
-      ij=0
-      DO j = 60+kang, 60+kang-1+kfre
-        ij=ij+1
-        ifreq(ij)  = TRANSFER (zfreq(ij), 1)
-        isec4(j) = ifreq(ij)
+
+      DO IJ = 1, KFRE
+        IFREQ(IJ)  = TRANSFER (ZFREQ(IJ), 1)
+        ISEC4(60+KANG+IJ-1) = IFREQ(IJ)
       ENDDO
-C-----------------------------------------------------------------------
-C
-C*    2. CALCULATE OFFSETS.
-C     ---------------------
+!-----------------------------------------------------------------------
+
+!*    2. CALCULATE OFFSETS.
+!     ---------------------
       ALLOCATE(IPOINTER(1:KEND(KPROC)))
-C
-      IF(KRGG.EQ.1 .OR. CLDOMAIN == 'm' ) THEN
-       KDEXN = 0
-       KDEXS = 0 
+
+      IF(KSEK2(17).EQ.1 .OR. CDDOMAIN == 'm' ) THEN
+        KDEXN = 0
+      ELSEIF(CDDOMAIN == 's' ) THEN
+        KDEXN = 0
       ELSE
-       KDEXN = (NINT((90. - PMONOP ) / PDELLA))*KGX
-       KDEXS = (NINT((PMOSOP + 90. ) / PDELLA))*KGX
+        KDEXN = (NINT((90. - PMONOP ) / PDELLA))*KGX
       ENDIF
-C
-      IF (KRGG .EQ. 1 ) THEN
+
+      IF (KSEK2(17) .EQ. 1 ) THEN
         DO IJ = 1, KEND(KPROC)
           IX = KXLG(IJ,1)
           IY = KGY- KXLT(IJ,1) +1
@@ -420,60 +341,55 @@ C
           ENDDO
           IPOINTER(IJ) = IPOINTER(IJ) + IX
         ENDDO
-        ITOT=0
-        DO JK=1,KGY
-          JSN=KGY-JK+1
-          ITOT = KLONRGG(JSN) + ITOT 
-        ENDDO
       ELSE
         DO IJ = 1, KEND(KPROC)
           IX = KXLG(IJ,1)
           IY = KGY- KXLT(IJ,1) +1
           IPOINTER(IJ) = (IY-1)*KGX + IX + KDEXN
         ENDDO
-        ITOT = KGY * KGX + KDEXN + KDEXS
       ENDIF
-C
-C
-C-----------------------------------------------------------------------
-C
-C*    3. OUTPUT GRIB DATA 
-C     -------------------
-C
+
+
+!-----------------------------------------------------------------------
+
+!*    3. OUTPUT GRIB DATA 
+!     -------------------
+
       ISTEP=KPROC
       IF (.NOT.LFDBIOOUT) ISTEP=1
-C
-      ALLOCATE(ZSEC4OUT(ITOT))
-C
+
+      ALLOCATE(ZSEC4OUT(NTENCODE))
+
       DO IC=1,KFRE*KANG,ISTEP
-C
+
         IST=ISTEP
         IF(IC+ISTEP.GT.KFRE*KANG ) IST=KFRE*KANG-IC+1
         ZSEC4OUT = 0.0
-C
-C       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
-C       ---------------------------------- than PE's)
+
+!       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
+!       ---------------------------------- than PE's)
         IF(KPROC.GT.1) THEN
           ALLOCATE(WORK(KIBLO))
+
           DO KSEND=1,IST
             IM=(((IC-1)+KSEND-1)/KANG)+1
             IK=(IC-1)+KSEND-(IM-1)*KANG
-C
+
             DO J1=KSTART(KRANK),KEND(KRANK)
               WORK(J1) = PSPEC(J1,IK,IM)
             ENDDO
-C
+
             ITAG=(IM-1)*KANG+IK
             CALL MPGATHERSCFLD(KSEND,ITAG,KSTART,KEND,WORK)
             IF (KTEST.GT.1)
      &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
-C
+
             IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
               CALL MPE_BARRIER(IRET)
               IF(IRET.LT.0)
      &        CALL MPEI_ABORT('MPE_BARRIER  ERROR IN  SPEC2FDB')
             ENDIF
-C
+
             IF(KSEND.EQ.KRANK) THEN
               DO J1=1,KEND(KPROC)
                 ZSEC4OUT(IPOINTER(J1)) = WORK(J1)
@@ -484,59 +400,37 @@ C
         ELSE
           IM=((IC-1)/KANG)+1
           IK=IC-(IM-1)*KANG
-  
+ 
           DO J1=1,KEND(KPROC)
-            ZSEC4OUT(IPOINTER(J1)) = PSPEC(J1,IK,IM) 
+            ZSEC4OUT(IPOINTER(J1)) = PSPEC(J1,IK,IM)
           ENDDO
         ENDIF
-C
-C-----------------------------------------------------------------------
-C
-C       OUTPUT FROM ALL PE's WHICH CONTAIN A CONTRIBUTION
-C       -------------------------------------------------
+
+!-----------------------------------------------------------------------
+
+!       OUTPUT FROM ALL PE's WHICH CONTAIN A CONTRIBUTION
+!       -------------------------------------------------
         IF(KRANK.LE.IST) THEN
           IM=(((IC-1)+KRANK-1)/KANG)+1
           IK=(IC-1)+KRANK-(IM-1)*KANG
-C
-C*        PREPARE FOR ENCODING.
-C         ----------------------
-C
-          DO JC=1,ITOT
+
+!*        PREPARE FOR ENCODING.
+!         ----------------------
+
+          DO JC=1,NTENCODE
             ZSEC4OUT(JC) = LOG10(ZSEC4OUT(JC)+PPEPS)+ABS(PPREC)
-            IF ( ZSEC4OUT(JC) .LE. PPMISS ) ZSEC4OUT(JC)=PMISS
+            IF ( ZSEC4OUT(JC) .LE. PPMISS ) ZSEC4OUT(JC)=ZSEC3(2)
           ENDDO
-C
-          ILENGOUT=KGX*KGY/KIND(KU06)
+
+          ILENGOUT = NINT(NTENCODE*(ISEC4(2)+1.)/(KIND(KU06)*8))+
+     &      NKSEK0+NKSEK1+NKSEK2+NKSEK3+NKSEK4+NPSEK2+NPSEK3
+
           ALLOCATE(IOUTGRIB(ILENGOUT))
-C
+
           ISEC1(44) = IK
           ISEC1(45) = IM
-          ISEC4( 1) = ITOT
-          ISEC2( 2) = KGX
-          IF( CLDOMAIN == 'm' ) THEN
-            ISEC2( 3) =  KGY
-            ISEC2( 4) =  NINT(PMONOP*1000)
-            ISEC2( 7) =  NINT(PMOSOP*1000)
-          ELSE
-            ISEC2( 4) =  90000
-            ISEC2( 7) = -90000
-            ISEC2( 3) =  NINT(180./PDELLA) + 1
-          ENDIF
-C
-          ISEC2(10) = NINT(PDELLA*1000)
-C
-          IF (KRGG .EQ. 1) THEN
-            IF( CLDOMAIN == 'm' ) THEN
-              KST = 0
-            ELSE
-              KST = NINT((90. - PMONOP ) / PDELLA)
-            ENDIF
-              DO JC = 1, KGY
-                JSN=KGY-JC+1
-                ISEC2(22+JC+KST) = KLONRGG(JSN)
-              ENDDO
-          ENDIF
-C
+          ISEC4( 1) = NTENCODE 
+
           IF (KTEST.GT.3) THEN
             WRITE(KU06,'(" I KIND(ztheta) :", I10 )') KIND(ztheta)
             WRITE(KU06,'(" I SECTION 0:", /,80(8x, 8I10,/))') ISEC0
@@ -550,26 +444,25 @@ C
             WRITE(KU06,'(" ZFREQ:      ", /,80(8x, 8F10.5,/))') ZFREQ
             CALL FLUSH (KU06)
           ENDIF
-C
-C         CODING
-C         ------
+
+!         CODING
+!         ------
           CALL GRIBEX (ISEC0, ISEC1, ISEC2, ZSEC2, ISEC3, ZSEC3, ISEC4,
-     &               ZSEC4OUT, ITOT, IOUTGRIB, ILENGOUT ,IWORD,'C',IRET)
+     &          ZSEC4OUT, NTENCODE, IOUTGRIB, ILENGOUT ,IWORD,'C',IRET)
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
-C
-C         OUTPUT
-C         ------
+
+!         OUTPUT
+!         ------
           IF (LFDBIOOUT) THEN
             CALL FLD2FDB (ku06, ktest, isec1, ioutgrib, iword, 'write',
-     .                    ierr,cdtype, cdclass,
-     .                    cdexpver, CDFDB2DSP, cldomain,
-     .                    IK, IM, kfdb)
+     &                    ierr,cdtype, cdclass,
+     &                    cdexpver, CDFDB2DSP, cddomain,
+     &                    IK, IM, kfdb)
           ELSE
-C         output to file should only take place on one PE, thus istep=1
+!         output to file should only take place on one PE, thus istep=1
             IF(IM.EQ.1.AND.IK.EQ.1) THEN
-              CALL GRSTNAME(KU06,CDTPRO,CDATEF,1,'SGS',KRANK,KPROC,
-     &                      OUTFILEN)
+              CALL GRSTNAME(CDTPRO,CDATEF,'SGS',KCPLEN,CPAD,OUTFILEN)
               LFILE=LEN_TRIM(OUTFILEN)
               CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),'w',IRET)
               IF(IRET.LT.0) GOTO 3200
@@ -586,26 +479,26 @@ C         output to file should only take place on one PE, thus istep=1
           ENDIF
 
         ENDIF
-C
-C-----------------------------------------------------------------------
-C
+
+!-----------------------------------------------------------------------
+
         IF(ALLOCATED(IOUTGRIB)) DEALLOCATE(IOUTGRIB)
-C
+
       ENDDO
-C
-C*      5. DEALLOCATION.
-C       ----------------
-C
+
+!*      5. DEALLOCATION.
+!       ----------------
+
       IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
       IF(ALLOCATED(IPOINTER)) DEALLOCATE(IPOINTER)
 
       RETURN
-C
-C-----------------------------------------------------------------------
-C
-C*    6. ERROR MESSAGES.
-C     ------------------
-C
+
+!-----------------------------------------------------------------------
+
+!*    6. ERROR MESSAGES.
+!     ------------------
+
 3200  CONTINUE
       WRITE (KU06,*) '*************************************'
       WRITE (KU06,*) '*                                   *'
@@ -650,5 +543,9 @@ C
       WRITE(KU06,*) '*                                           *'
       WRITE(KU06,*) '*********************************************'
       CALL ABORT1
-C
-      END
+
+      END SUBROUTINE SPEC2FDB
+
+
+
+

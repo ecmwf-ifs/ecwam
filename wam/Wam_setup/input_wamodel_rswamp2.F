@@ -2,7 +2,7 @@
  CLHEADER=" SWAMP2 WAVE MODEL RUN                           MODEL VERSION 4.0",
  CBPLTDT="${begofrn}",
  CEPLTDT="${endofrn}",
- CDATEF="${begofan}",
+ CDATEF="${begoffo}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 43200,
@@ -24,10 +24,12 @@
  GFLAG= F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, F
  LFDB= F,
  LPBIOIN= T,
+ LGRIBIN= ${lgribin},
  LPBIOOUT= T,
+ LGRIBOUT= ${lgribout},
+ LFDBIOOUT=F,
  ICASE= 1,
  ISHALLO= 1,
- IREFRA= 0,
  ITEST= 0,
  ITESTB= 1,
  IREST= 1,
@@ -35,9 +37,6 @@
  IFORCA= 1,
  IBOUNC= 0,
  IBOUNF= 0,
- USERID="   ",
- RUNID="SWA",
- PATH="                                                            ",
  YCLASS="$CLASS",
  YEXPVER="$XID",
  NENSFNB= $NENS,
@@ -49,5 +48,5 @@
  CPATH="$STORAGE_PATH"
  CFDBSF="$cfdbsf"
  CFDB2DSP="$cfdb2dsp"
+ LNOCDIN=${lnocdin}
  /
-C  &NAOT CLOUT="" /

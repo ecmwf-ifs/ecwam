@@ -1,119 +1,110 @@
       SUBROUTINE SAVREST (IU06, IU04, IU12, IU14, IU15, IGL,
-     1                    CDATE, CDATEF, CDATER )
-C
-C ----------------------------------------------------------------------
-C
-C**** *SAVREST* - SAVES RESTART FILES.
-C
-C     HEINZ GUNTHER      GKSS/ECMWF     MAY 1989
-C     J. BIDLOT          ECMWF          NOVEMBER 1996 : ADDED  CDATER
-C     B. HANSEN                         APRIL   1997 : RESTART FACILITY
-C     J. BIDLOT          ECMWF          SEPTEMBER : USE OF PBIO 
-C
-C*    PURPOSE.
-C     --------
-C
-C       COPIES RESTART FILES.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *SAVREST (IU06, IU04, IU12, IU14, IU15, IGL,
-C                        CDATE, CDATEF,CDATER)*
-C         *IU06*   INTEGER   OUTPUT UNIT FOR PRINTER MESSAGES.
-C         *IU04*   INTEGER   OUTPUT UNIT WAMINFO FILE.
-C         *IU12*   INTEGER   OUTPUT UNIT BLOCKS OF SPECTRA.
-C         *IU14*   INTEGER   OUTPUT UNIT SECOND LAT OF BLOCKS.
-C         *IU15*   INTEGER   OUTPUT UNIT LAST WINDFIELDS.
-C         *IGL*    INTEGER   NUMBER OF BLOCKS.
-C         *CDATE*  CHAR*12   DATE/TIME OF LAST FIELD IN FILES.
-C         *CDATEF* CHAR*12   START DATE OF FORECAST PERIOD.
-C         *CDATER* CHAR*12   OUTPUT DATE FOR BOTH RESTART FILES
-C     METHOD.
-C     -------
-C
-C       NONE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       *GSFILE*    - GETS OR SAVES FILES.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C ---------------------------------------------------------------------
-C
-!
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
-C
-#include "comwami.h"
-C
-      CHARACTER*12 CDATE,CDATEF,CDATER
-C
-C ---------------------------------------------------------------------
-C
-C*    1. ANALYSIS OR FORECATS FILES.
-C        ---------------------------
-C
- 1000 CONTINUE
-C
-      ICH = 0
-C            
-      IF (CDATE.LE.CDATEF) THEN
-C
-C*    1.1 ANALYSIS FILES.
-C         ---------------
-C
-C*    1.1.1 SPECTRA FILE.
-C           -------------
+     &                    CDATE, CDATEF, CDATER )
 
-           CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'S')
-C
-C*    1.1.2 SECOND LATITUDE FILE IF MULTIBLOCK.
-C           -----------------------------------
-C
-         IF (IGL.GT.1) THEN
-            CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'S')
-         ENDIF
-C
-C*    1.1.3 LAST WIND FIELDS.
-C           -----------------
-C
-         IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
-           CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
-         ENDIF
+! ----------------------------------------------------------------------
+
+!**** *SAVREST* - SAVES RESTART FILES.
+
+!     HEINZ GUNTHER      GKSS/ECMWF     MAY 1989
+!     J. BIDLOT          ECMWF          NOVEMBER 1996 : ADDED  CDATER
+!     B. HANSEN                         APRIL   1997 : RESTART FACILITY
+!     J. BIDLOT          ECMWF          SEPTEMBER : USE OF PBIO 
+
+!*    PURPOSE.
+!     --------
+
+!       COPIES RESTART FILES.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *SAVREST (IU06, IU04, IU12, IU14, IU15, IGL,
+!                        CDATE, CDATEF,CDATER)*
+!         *IU06*   INTEGER   OUTPUT UNIT FOR PRINTER MESSAGES.
+!         *IU04*   INTEGER   OUTPUT UNIT WAMINFO FILE.
+!         *IU12*   INTEGER   OUTPUT UNIT BLOCKS OF SPECTRA.
+!         *IU14*   INTEGER   OUTPUT UNIT SECOND LAT OF BLOCKS.
+!         *IU15*   INTEGER   OUTPUT UNIT LAST WINDFIELDS.
+!         *IGL*    INTEGER   NUMBER OF BLOCKS.
+!         *CDATE*  CHAR*12   DATE/TIME OF LAST FIELD IN FILES.
+!         *CDATEF* CHAR*12   START DATE OF FORECAST PERIOD.
+!         *CDATER* CHAR*12   OUTPUT DATE FOR BOTH RESTART FILES
+!     METHOD.
+!     -------
+
+!       NONE.
+
+!     EXTERNALS.
+!     ----------
+
+!       *GSFILE*    - GETS OR SAVES FILES.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ---------------------------------------------------------------------
+
+      CHARACTER*12 CDATE,CDATEF,CDATER
+
+! ---------------------------------------------------------------------
+
+!*    1. ANALYSIS OR FORECATS FILES.
+!        ---------------------------
+
+      ICH = 0
+
+      IF (CDATE.LE.CDATEF) THEN
+
+!*    1.1 ANALYSIS FILES.
+!         ---------------
+
+!*    1.1.1 SPECTRA FILE.
+!           -------------
+
+        CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'S')
+
+!*    1.1.2 SECOND LATITUDE FILE IF MULTIBLOCK.
+!           -----------------------------------
+
+        IF (IGL.GT.1) THEN
+          CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'S')
+        ENDIF
+
+!*    1.1.3 LAST WIND FIELDS.
+!           -----------------
+
+        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
+          CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
+        ENDIF
 
       ELSE
-C
-C*    1.1 FORECAST FILES.
-C         ---------------
-C
-C*    1.2.1 SPECTRA FILE.
-C           -------------
-C
-           CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'S')
-C
-C*    1.2.2 SECOND LATITUDE FILE IF MULTIBLOCK.
-C           -----------------------------------
-C
-         IF (IGL.GT.1) THEN
-            CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'S')
-         ENDIF
-C
-C*    1.2.3 LAST WIND FIELDS.
-C           -----------------
-C
-          IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
-            CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
-          ENDIF
+
+!*    1.1 FORECAST FILES.
+!         ---------------
+
+!*    1.2.1 SPECTRA FILE.
+!           -------------
+
+        CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'S')
+
+!*    1.2.2 SECOND LATITUDE FILE IF MULTIBLOCK.
+!           -----------------------------------
+
+        IF (IGL.GT.1) THEN
+          CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'S')
+        ENDIF
+
+!*    1.2.3 LAST WIND FIELDS.
+!           -----------------
+
+        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
+          CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
+        ENDIF
       ENDIF
-C
+
       RETURN
-      END
+      END SUBROUTINE SAVREST
+
+

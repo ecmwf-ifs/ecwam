@@ -1,25 +1,25 @@
       SUBROUTINE BLSP_USAGE (ldhelp)
-C
-C ======================================================================
-C
-C   SEND MESSAGE TO INFORM ABOUT CORRECT USE OF PROGRAM
-C                      AND ABORTS
-C
+
+! ======================================================================
+
+!   SEND MESSAGE TO INFORM ABOUT CORRECT USE OF PROGRAM
+!                      AND ABORTS
+
       LOGICAL ldhelp
-C
+
       IF ( ldhelp ) THEN
-      WRITE(*,*)'   BLS2GRS converts a blsp file into a grsp file '
-      WRITE(*,*)'           ore vice versa depending on which     '
-      WRITE(*,*)'           file is an existing file.             '
-      WRITE(*,*)'           Therefor one file should exist and    '
-      WRITE(*,*)'           one file should not exist             '
-      WRITE(*,*)' '
-      WRITE(*,*)'   blsp2grs -b blsp file  -g grsp file  -C class '
-      WRITE(*,*)'            -V version  -D domain  -f  -m iii -h '
-      WRITE(*,*)' '
+        WRITE(*,*)'   BLS2GRS converts a blsp file into a grsp file '
+        WRITE(*,*)'           ore vice versa depending on which     '
+        WRITE(*,*)'           file is an existing file.             '
+        WRITE(*,*)'           Therefor one file should exist and    '
+        WRITE(*,*)'           one file should not exist             '
+        WRITE(*,*)' '
+        WRITE(*,*)'   blsp2grs -b blsp file  -g grsp file  -C class '
+        WRITE(*,*)'            -V version  -D domain  -f  -m iii -h '
+        WRITE(*,*)' '
       ELSE
-      WRITE(*,*)'   SELECTED OPTION IS INVALID                    '
-      WRITE(*,*)'   CORRECT OPTIONS  AND ARGUMENTS ARE :          '
+        WRITE(*,*)'   SELECTED OPTION IS INVALID                    '
+        WRITE(*,*)'   CORRECT OPTIONS  AND ARGUMENTS ARE :          '
       ENDIF
       WRITE(*,*)' '
       WRITE(*,*)'     -b    filename of blsp file (required)      '
@@ -46,8 +46,10 @@ C
       WRITE(*,*)'               "north", "south" or "both" as arguments'
       WRITE(*,*)'               will split global fields respectively.'
       WRITE(*,*)'   -f fdbaccess (if this option is provided 2d   ',
-     .            ' spectra are written into fdb and not into file)'
+     &            ' spectra are written into fdb and not into file)'
       WRITE (*,*) '      -h help (prints this page) '
       IF ( .NOT. ldhelp ) CALL ABORT
       STOP ' helped? '
-      END
+      END SUBROUTINE BLSP_USAGE
+
+

@@ -59,6 +59,7 @@ SOURCE	=\
               uiprep.F         \
               wam_user_clock.F \
               wamcur.F         \
+              wposnam.F        \
               writsta.F
 
 

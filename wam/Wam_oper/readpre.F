@@ -1,121 +1,178 @@
       SUBROUTINE READPRE (IU07, IREFRA)
 
-C ----------------------------------------------------------------------
-C
-C**** *READPRE*  READ GRID OUTPUT FROM PREPROC.
-C
-C     H. GUNTHER      GKSS/ECMWF     MAY 1990
-C
-C*    PURPOSE.
-C     --------
-C
-C       INPUT OF PREPROC GRID OUTPUT.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *READPRE (IU07, IREFRA)*
-C          *IU07 *  - INPUT UNIT OF PREPROC GRID FILE.
-C          *IREFRA *- REFRACTION OPTION.
-C
-C     METHOD.
-C     -------
-C
-C       UNFORMATED READ FROM UNIT.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       NONE.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C ----------------------------------------------------------------------
-C
-#include "param.h"
-C
-#include "comcoup.h"
-C
-#include "comcurr.h"
-C
-#include "comfred.h"
-C
-#include "comgrid.h"
-C
-#include "comindn.h"
-C
-#include "commap.h"
-C
-#include "comcout.h"
-C
-#include "comshal.h"
-C
-#include "comtabl.h"
-C
-C ----------------------------------------------------------------------
-C
-C*    1. READ COMMON FREDIR (FREQUENCY DIRECTION GRID).
-C        ----------------------------------------------
-C
- 1000 CONTINUE
+! ----------------------------------------------------------------------
+
+!**** *READPRE*  READ GRID OUTPUT FROM PREPROC.
+
+!     H. GUNTHER      GKSS/ECMWF     MAY 1990
+
+!*    PURPOSE.
+!     --------
+
+!       INPUT OF PREPROC GRID OUTPUT.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *READPRE (IU07, IREFRA)*
+!          *IU07 *  - INPUT UNIT OF PREPROC GRID FILE.
+!          *IREFRA *- REFRACTION OPTION.
+
+!     METHOD.
+!     -------
+
+!       UNFORMATED READ FROM UNIT.
+
+!     EXTERNALS.
+!     ----------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
+     &            XNLEV
+      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCURR  , ONLY : U        ,V
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
+     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
+     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,
+     &            IJL      ,IJLT
+      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,
+     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,
+     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,
+     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,
+     &            DAL2     ,FRH
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
+     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
+     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
+     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN 
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
+     &            TCGOND   ,TFAK     ,TSIHKD
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
+     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
+     &            DELUST   ,DELALP
+
+! ----------------------------------------------------------------------
+
+!*    0. READ YOWPARAM (BLOCK SIZES). 
+!        ----------------------------
+
+      READ(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
+     &           NIBL1, IREFRA, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN 
+
+!*    1. READ MODULE YOWFRED (FREQUENCY DIRECTION GRID).
+!        ----------------------------------------------
+
+      IF(.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+      IF(.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+      IF(.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+      IF(.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+      IF(.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+      IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+      IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
+
       READ(IU07) FR, DFIM, GOM, C,
-     1           DELTH, DELTR, TH, COSTH, SINTH
-C
-C*    2. READ COMMON GRIDPAR (GENERAL GRID ORGANISATION).
-C        ------------------------------------------------
-C
- 2000 CONTINUE
+     &           DELTH, DELTR, TH, COSTH, SINTH
+
+!*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
+!        ------------------------------------------------
+
+      IF(.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
+      IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+      IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
+      IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
+      IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
+      IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
+      IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
+      IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
+      IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
+
       READ(IU07) DELPHI, DELLAM, NLONRGG, SINPH, COSPH,
-     1           IGL, IJS, IJL2, IJLS, IJL, IJLT
-C
-C*    3. READ COMMON MAP (LONG. AND LAT. INDICES OF GRID POINTS).
-C        --------------------------------------------------------
-C
- 3000 CONTINUE
+     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+
+!*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
+!        --------------------------------------------------------
+
+      IF(.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
+
       READ(IU07) IXLG, KXLT, NX, NY, IPER,
-     1           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,
-     2           ZDELLO, IRGG
-C
-C*    4. READ COMMON INDNL (NON-LINEAR INTERACTION).
-C       --------------------------------------------
-C
- 4000 CONTINUE
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,
+     &           ZDELLO, IRGG
+
+!*    4. READ MODULE YOWINDNL (NON-LINEAR INTERACTION).
+!       -----------------------------------------------
+
+      IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(NFRE+4))
+      IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(NFRE+4))
+      IF(.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(NFRE+4))
+      IF(.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(NFRE+4))
+      IF(.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
+      IF(.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
+      IF(.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
+      IF(.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
+      IF(.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(NFRE+4))
+      IF(.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(NFRE+4))
+      IF(.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(NFRE+4))
+      IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(NFRE+4))
+      IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(NFRE+4))
+      IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
+
       READ(IU07) IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
-     1           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,
-     2           ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
-C
-C*    5. READ COMMON COUPLE.
-C        -------------------
-C
- 5000 CONTINUE
+     &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,
+     &           ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
+
+!*    5. READ MODULE YOUCOUP.
+!        -------------------
+
       READ(IU07) BETAMAX, ZALP, ALPHA, XKAPPA, XNLEV
-C
-C*    6. READ COMMON TABLE (INDICES OF OUTPUT POINTS).
-C        ---------------------------------------------
-C
- 6000 CONTINUE
+
+!*    6. READ MODULE YOWTABL (INDICES OF OUTPUT POINTS).
+!        ---------------------------------------------
+
+      IF(.NOT.ALLOCATED(TAUT)) ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
+      IF(.NOT.ALLOCATED(TAUHFT)) ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA))
+
       READ(IU07) TAUT, DELTAUW, DELU, TAUHFT, DELUST, DELALP
-C
-C*    7. READ COMMON COUT (INDICES OF OUTPUT POINTS).
-C        --------------------------------------------
-C
- 7000 CONTINUE
-      READ(IU07)  NGOUT, IGAR, IJAR
-C
-C*    8. READ COMMON SHALLO (DEPTH AND SHALLOW WATER TABLES).
-C        ----------------------------------------------------
-C
- 8000 CONTINUE
+
+!*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).
+!        --------------------------------------------
+
+      READ(IU07)  NGOUT
+      IF(NGOUT.GT.0) THEN
+        IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
+        IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
+        READ(IU07)  IGAR, IJAR
+      ENDIF
+
+!*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
+!        ----------------------------------------------------
+
+      IF(.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
+      IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
+      IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
+
       READ(IU07)  DEPTH, DEPTHA, DEPTHD, TCGOND, TFAK, TSIHKD
-C
-C*    9. READ COMMON CURRENT.
-C        --------------------
-C
- 9000 CONTINUE
-      IF (IREFRA.EQ.2) READ(IU07)  U, V
+
+!*    9. READ MODULE YOWCURR.
+!        --------------------
+
+      IF (IREFRA.EQ.2) THEN 
+         IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))
+         IF(.NOT.ALLOCATED(V)) ALLOCATE(V(0:NIBLC,NBLC))
+         READ(IU07)  U, V
+      ENDIF
 
       RETURN
-      END
+      END SUBROUTINE READPRE

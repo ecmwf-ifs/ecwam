@@ -1,6 +1,6 @@
  &NALINE
  HEADER    = " MEDITERRANEN MODEL INITIALISATION                 PRESET VERSION 4.0 "
- IOPTI     = 1
+ IOPTI     = $OPTI 
  ITEST     = 0
  ITESTB    = 4
  ALFA      = 1.800000E-02
@@ -10,22 +10,16 @@
  SB        = 9.000000E-02
  THETA     = 0.0
  FETCH     = 50000.00
- USERID    = "   "
- RUNID     = "GLO"
- PATH      = "                                                            "
  CPATH     = "$STORAGE_PATH"
  CDATEA    = "$begofrn"
  IDELWI    =  21600
  CLTUNIT   = "S"
- LPBIOIN   =  T
  LPBIOOUT  =  T
- LFDBIOIN  =  F
  LFDBIOOUT =  F
- LSPLITIN  =  T
- LSPLITOUT =  T
+ LGRIBIN   = ${lgribin} 
+ LGRIBOUT  =  T 
  MARSTYPE  = "an"
  YCLASS    = "$CLASS"
- YEXPVER   = "$XID"
+ YEXPVER   = "$expver"
  CFDB2DSP  = "$cfdb2dsp"
- C_DOMAIN  = "g"
  /

@@ -10,22 +10,16 @@
  SB        =  9.000000E-02
  THETA     =  0.0
  FETCH     =  150000.0
- USERID    = "   "
- RUNID     = "GLO"
- PATH      = "                                                            "
  CPATH     = "$STORAGE_PATH"
  CDATEA    = "$begofrn"
  IDELWI    =  21600
  CLTUNIT   = "S"
- LPBIOIN   =  T
  LPBIOOUT  =  T
- LFDBIOIN  =  F
  LFDBIOOUT =  F
- LSPLITIN  =  T
- LSPLITOUT =  T
+ LGRIBIN   =  ${lgribin} 
+ LGRIBOUT  =  T
  MARSTYPE  = "an"
  YCLASS    = "$CLASS"
- YEXPVER   = "$XID"
+ YEXPVER   = "$expver"
  CFDB2DSP  = "$cfdb2dsp"
- C_DOMAIN  = "g"
  /

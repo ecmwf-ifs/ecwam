@@ -1,19 +1,23 @@
       SUBROUTINE WVDEALLOC
-C
-C ----------------------------------------------------------------------
-C
-C**** *WVDEALLOC* - WAVE MODEL DEALLOCATION 
-C
-C     J. BIDLOT     ECMWF   JANUARY 1997 ATMOSPHERIC COUPLING
-C
-C
-C ----------------------------------------------------------------------
-C
-      USE WAVE_MODULE
-C
-C ----------------------------------------------------------------------
-C     1.  DEALLOCATE NECESSARY ARRAYS
-C         -------------------------
+
+! ----------------------------------------------------------------------
+
+!**** *WVDEALLOC* - WAVE MODEL DEALLOCATION 
+
+!     J. BIDLOT     ECMWF   JANUARY 1997 ATMOSPHERIC COUPLING
+
+
+! ----------------------------------------------------------------------
+
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN   ,
+     &            SMEAN
+      USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
+     &            FCONST   ,FL2      ,FL3      ,SL
+      USE YOWWIND  , ONLY : USNEXT   ,DSNEXT 
+
+! ----------------------------------------------------------------------
+!     1.  DEALLOCATE NECESSARY ARRAYS
+!         -------------------------
       IF(ALLOCATED(U10NEW)) DEALLOCATE(U10NEW)
       IF(ALLOCATED(THWNEW)) DEALLOCATE(THWNEW)
       IF(ALLOCATED(USNEW)) DEALLOCATE(USNEW)
@@ -25,6 +29,15 @@ C         -------------------------
       IF(ALLOCATED(SL)) DEALLOCATE(SL)
       IF(ALLOCATED(FCONST)) DEALLOCATE(FCONST)
 
-C
+      IF(ALLOCATED(USNEXT)) DEALLOCATE(USNEXT)
+      IF(ALLOCATED(DSNEXT)) DEALLOCATE(DSNEXT)
+
+      IF(ALLOCATED(EMEAN)) DEALLOCATE(EMEAN)
+      IF(ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)
+      IF(ALLOCATED(THQ)) DEALLOCATE(THQ)
+      IF(ALLOCATED(AKMEAN)) DEALLOCATE(AKMEAN)
+      IF(ALLOCATED(SMEAN)) DEALLOCATE(SMEAN)
+
+
       RETURN
-      END
+      END SUBROUTINE WVDEALLOC

@@ -19,18 +19,23 @@
 #QSUB -mb -mi
 #QSUB
 #.
-#!!! set variable COLDSTART !!!. By default it is set to no, if set to no
+#!!! set variable COLDSTART !!!. 
+# COLDSTART will be set to yes most of the time as preset should be used
+# to generate all initial conditions for the wave model.
+# When COLDSTART is set to no,
 # it means that the inital condition will be reconstructed from archived
 # spectra and drag coefficient plus the usual surface winds. In that case,
-# you must also specified the experiment version and class  of the archived
+# you must also specified the experiment version and class of the archived
 # data as well as the grid option regular/irregular grid (irgg=0/1). By default
-# ALL but 0.5 grid should use irgg=0. Note that you can select irgg=0 for
-# the 0.5 irregular grid, but this will result in unnecessary interpolation of
+# ALL but 0.5 and 0.25 grids should use irgg=0. Note that you can select irgg=1
+# for the irregular grid, but this will result in unnecessary interpolation of
 # the grib fields and it is best to retrieve the field on the same grid as
 # created with. YOU must also specify whether the wave spectra are of the
 # new type (specparam=251) or the old type (specparam=250). Finally set 
 # luwave=yes if wind speed analysed by the wave model (parameter 245) is
-# available (for OD, there was none until the coupled model bcame operational)
+# available (for OD, there was none until the coupled global model became
+# operational (29 June 1998) and until the introduction of the new limited
+# area model (27 October 1998).
 #.
 #
 COLDSTART=yes
@@ -41,19 +46,19 @@ specparam=251
 luwave=yes
 #.
 #if region=='m'
-  domain=M
-  #if resolution == 25
-  irgg=1
-  #else
-  irgg=0
-  #endif
+domain=M
+#if resolution == 25
+irgg=1
 #else
-  domain=G
-  #if resolution == 50
-  irgg=1
-  #else
-  irgg=0
-  #endif
+irgg=0
+#endif
+#else
+domain=G
+#if resolution == 50
+irgg=1
+#else
+irgg=0
+#endif
 #endif
 #.
 PATH=$PATH:.
@@ -72,13 +77,13 @@ if [[ $COLDSTART = yes || ($COLDSTART != yes && $specparam = 250) ]] ; then
  print - " PRESET WILL BE RUN "
  lpreset=yes
   #.
-  #. Restore wamcrlib from DHS if lost.
+  #. Restore WAMLIB from DHS if lost.
   #.=====================================================================
   #.
-  if [[ ! -a  $LIBCR/lib$WAMCRLIB.a ]] ; then
-    ecp ec:$DHSLPATH/lib$WAMCRLIB.a $LIBCR/lib$WAMCRLIB.a || {
+  if [[ ! -a  $LIBS/$WAMLIB.a ]] ; then
+    ecp ec:$DHSLPATH/$WAMLIB.a $LIBS/$WAMLIB.a || {
       ls -lsa
-      print - "\n\n\t\tWAMCRLIB file was not found\n\n"
+      print - "\n\n\t\tWAMLIB file was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
       exit 3
     }
@@ -116,16 +121,18 @@ fi
 #.================================
 #
 if [[ "$COLDSTART" = "no" ]] ; then
-### we will need to refine this as -1 should be use for the mediter.
+### we will need to refine this as 1 should be use for the limited area model
 ### and for all OD global field prior to 19961205
    date=`substring $begofrn 1 8`
    if [[ $date -lt 19961205 ]] ; then
-     OPTI="-1"
+     OPTI="1"
    else
-     OPTI="-2"
+     OPTI="2"
    fi
+   lgribin=T
 else
    OPTI=" 1"
+   lgribin=F
 fi
 
 #if region=='s'
@@ -135,18 +142,21 @@ fi
 #.=====================================================================
 #.  Prepare MARS requests for winds. Load and execute program GETINPT.
 #.
-if [ ! -f $LIBS/getinptb_${grid} ] ; then
-  cd $LIBS
-  cat >getinptb.f <<\EOFPRO
-#include "getinptb.F"
-#include "file_transfer.F"
-EOFPRO
-  # compile getinptb
+if [ ! -f $LIBS/getinptb ] ; then
+  # extract
+  ar xv $LIBS/$WAMLIB.a getinptb.o 
+
+  # load
+  frt $rp -Wl,-dy -lsocket -Ps -X9 -o $LIBS/getinptb getinptb.o \
+  -lwam $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB || {
   #.
-  frt $rp -X9 -c -Z getinptb.lis -o getinptb.o getinptb.f
   #.
-  frt $rp -Wl,-dy -lsocket -Ps -X9 -o $LIBS/getinptb_${grid} getinptb.o \
-  -l$WAMCRLIB $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB
+  #. Abort on error.
+  #.
+    print - "\n\n\t\tgetinptb LOAD FAILED\n\n"
+    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
+    exit 2
+  }
   #.
   rm getinptb.*
   cd $WDIR/$WORKDIR 
@@ -169,7 +179,19 @@ DATE FOR OUTPUT OF BOTH RESTART FILES = $outofrf
 LAST DATE FOR SPECTRA FILE OUTPUT = $outof2d
 EOF
 #.
-$LIBS/getinptb_${grid} || {
+# gridglou is used by getinptb
+  if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
+    ecp ec:$DHSPATH/gridglou_${grid} $ADIR/gridglou_${grid} || {
+        ls -lsa
+        print - "\n\n\t\tPREPROC file gridglou was not found\n\n"
+        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+        exit 2
+    }
+  fi
+  rm -f fort.7
+  ln -s  $ADIR/gridglou_${grid} fort.7 
+
+$LIBS/getinptb || {
   #.
   #. Abort on error.
   #.
@@ -358,7 +380,7 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
 
   if [[ $specparam = 250 ]] ; then
 
-    if [[ $OPTI -eq -2 ]] ; then
+    if [[ $OPTI -eq 2 ]] ; then
     cat > myrequest <<-EOF
 		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
 		STREAM=WAVE,
@@ -498,6 +520,9 @@ fi
   mv cdwavein $ADIR/CD${begofrn}_${grid}
 fi
 
+rm -f cdwavein
+ln -s $ADIR/CD${begofrn}_${grid} cdwavein
+
 #
 # Get surface wind speed as modified by the wave model analysis for wam run
 # =============================================================
@@ -560,83 +585,17 @@ fi
 
 if [[ $lpreset = yes ]] ; then
 #.
-#.======================================================================
-#.  Copy the source code to the compiler input.
-#.======================================================================
 #.
-cat >preset.f <<\EOFPRO
-#endif
-#include "wave_module.F"
-#include "preset.F"
-#include "airsea.F"
-#include "file_transfer.F"
-#include "grstname.F"
-#include "getspec.F"
-#include "getwnd.F"
-#include "../Alt/i_get_unit.F"
-#include "inmarssi.F"
-#include "intgrs.F"
-#include "intsgs.F"
-#include "locint.F"
-#include "makeblos.F"
-#include "mpdecomp.F"
-#include "mpdistribfl.F"
-#include "mpdistribscfld.F"
-#include "mpgatherfl.F"
-#include "mpgatherscfld.F"
-#include "mstart.F"
-#include "notim.F"
-C  #ifdef 
-C  #include "openfil_unicos.F"
-C  #endif
-#include "peak.F"
-#include "prealloc_file.F"
-#include "prewind.F"
-#include "readfl.F"
-#include "readgrs.F"
-#include "readpre.F"
-#if region=='s'
-#include "readwnd_rswamp2.F"
-#else
-#include "readwnd_mars.F"
-#endif
-#include "savspec.F"
-#include "savstress.F"
-#include "spectra.F"
-#include "spec2fdb.F"
-#include "splitbl.F"
-#include "splitgrs.F"
-#include "spr.F"
-#include "timin.F"
-#include "../Alt/uraopc.F"
-#include "wamwnd.F"
-#include "writefl.F"
-#include "writestress.F"
-#ifdef JOB
-EOFPRO
+#.===========
+#. LOAD.
+#.===========
 #.
-#.======================================================================
-#. COMPILE AND LOAD.
-#.======================================================================
-#.
-#. COMPILE SOURCE CODE
-#.
-frt $rp -Of -Wv,-Of -Pos -Z preset.lis -X9 -c -o preset.o preset.f || {
-  #.
-  #. Abort on error.
-  #.
-    print - "\n\n\t\tCOMPILE FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    cat preset.lis
-    print - "\n\n\t\tCOMPILE FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    exit 10
-  }
-#.
+  # extract
+  ar xv $LIBS/$WAMLIB.a preset.o 
+  ar vx $dum ishell.o
 
-ar vx $dum ishell.o
 frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  -o preset preset.o ishell.o \
-    -l$WAMCRLIB $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB || {
+    -lwam $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB || {
   #.
   #.
   #. Abort on error.
@@ -678,6 +637,4 @@ cd $WDIR
 #.======================================================================
 #.
 # cd $VPPPATH
-# rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/wamodel.job .
-# vppqsub wamodel.job
 #endif

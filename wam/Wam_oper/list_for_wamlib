@@ -54,7 +54,6 @@ mubuf.F
 nlweigt.F
 notim.F
 oifield.F
-openfil_unicos.F
 outbc.F
 outbs.F
 outcom.F
@@ -82,7 +81,7 @@ readice.F
 readpre.F
 readsta.F
 readt.F
-readwnd.F
+readwind.F
 regroup.F
 rotspec.F
 savrest.F

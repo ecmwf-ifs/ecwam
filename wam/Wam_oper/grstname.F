@@ -1,103 +1,83 @@
-C ----------------------------------------------------------------------
-C
-      SUBROUTINE GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, 
-     &                     IRANK, NPROC, FILENAME)
+! ----------------------------------------------------------------------
 
-C ----------------------------------------------------------------------
-C
-C**** *GRSTNAME*  DETERMINES FILENAME (INCLUDING PATH) FOR RESTART FILES
-C
-C     J. BIDLOT     ECMWF         NOVEMBER 1996      PARALLEL RUN 
-C     B. HANSEN     ECMWF         APRIL    1996      MOVE CYMPPATH TO
-C                                                    COMTEXT.
-C
-C*    PURPOSE.
-C     --------
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID,i
-C                         IRANK, NPROC, FILENAME)*
-C
-C         *IU06*     INTEGER    UNIT FOR PRINTER MESSAGES.
-C         *CDATE*    CHAR*12    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
-C         *CDATEF*   CHAR*12    DATE TIME GROUP OF FORECAST START.
-C         *IREST*    INTEGER    OUTPUT OPTION FLAG FOR RESTART FILES
-C         *FILEID*   CHARACTER  FILE ID.
-C         *IRANK*    INTEGER    RANK OF CURRENT PROCESS (IN MPP MODE)
-C         *NPROC*    INTEGER    TOTAL NUMBER OF PROCESSOR USED
-C         *FILENAME* CHARACTER  FILE NAME INCLUDING PATH
-C
-C     EXTERNALS.
-C     ----------
-C
-C       *DIFDATE*   - COMPUTE TIME DIFFERENCES.
-C       *EXPAND_STRING - ADD EXTENTION(S) TO STANDARD NAME WHEN
-C                        THE OUTPUT FILES ARE SPLIT AMONG ALL PE'S.
-C
-C     METHOD.
-C     -------
-C
-C        FILE NAME IS BUILT FROM THE 3 CHARACTER FILEID FOLLOWED
-C        BY YYMMDDHHFFFF WHERE YYMMDDHH IS THE LAST ANALYSIS TIME AND
-C        FFFF IS THE FORCECAST PERIOD IN HOURS.
-C        THESE NUMBERS ARE CONSTRUCTED FROM CDATE AND CDATEF.
-C
-C        THEN IF IREST .NOT.EQ.0
-C        THE PATH NAME IS ADDED. THE PATH IS DETERMINED FROM THE
-C        ENVIRONEMENT VARIABLE STORAGE_PATH THAT NEEDS TO BE DEFINED 
-C        AND EXPORTED BEFORE THE RUN OF THE PROGRAM.
-C
-C     REFERENCES.
-C      -----------
-C
-C       NONE.
-C
-C ----------------------------------------------------------------------
-C
-#include "txtmpp.h"
-C
-#include "comtext.h"
-C
-      INTEGER IU06
-      CHARACTER FILEID*3, FILENA*17, FILENAME*80, FILENAM*80
+      SUBROUTINE GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,
+     &                     FILENAME)
+
+! ----------------------------------------------------------------------
+
+!**** *GRSTNAME*  DETERMINES FILENAME (INCLUDING PATH) FOR RESTART FILES
+
+!     J. BIDLOT     ECMWF         NOVEMBER 1996      PARALLEL RUN 
+!     B. HANSEN     ECMWF         APRIL    1996      MOVE CYMPPATH TO
+!                                                    COMTEXT.
+
+!*    PURPOSE.
+!     --------
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,
+!                         FILENAME)*
+
+!         *CDATE*    CHAR*12    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
+!         *CDATEF*   CHAR*12    DATE TIME GROUP OF FORECAST START.
+!         *FILEID*   CHARACTER  FILE ID.
+!         *KCPLEN*   INTEGER    LENGTH OF CPAD
+!         *CPAD*     CHARACTER  PATH FOR OUTPUT TO DISK  
+!         *FILENAME* CHARACTER  FILE NAME INCLUDING PATH
+
+!     EXTERNALS.
+!     ----------
+
+!       *DIFDATE*   - COMPUTE TIME DIFFERENCES.
+
+!     METHOD.
+!     -------
+
+!        FILE NAME IS BUILT FROM THE 3 CHARACTER FILEID FOLLOWED
+!        BY YYMMDDHHFFFF WHERE YYMMDDHH IS THE LAST ANALYSIS TIME AND
+!        FFFF IS THE FORCECAST PERIOD IN HOURS.
+!        THESE NUMBERS ARE CONSTRUCTED FROM CDATE AND CDATEF.
+
+!        THEN IF KCPLEN .NOT.EQ.0
+!        THE PATH NAME IS ADDED. THE PATH IS DETERMINED CPAD
+!        IN THE INPUT NAMELIST 
+
+!     REFERENCES.
+!     -----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+
+      CHARACTER FILEID*3, FILENA*17, FILENAME*80, CPAD*80
       CHARACTER CDATE*12, CDATEF*12, CDATEH*10
-C
-C*    1.0  CONSTRUCT FILE NAME ALONE 
-C          -------------------------
-C
- 1000 CONTINUE
+
+!*    1.0  CONSTRUCT FILE NAME ALONE 
+!          -------------------------
+
       FILENA = FILEID
       IF (CDATE.LE.CDATEF) THEN
-         CDATEH = CDATE(1:10)
-         ISHIFT = 0
+        CDATEH = CDATE(1:10)
+        ISHIFT = 0
       ELSE
-         CDATEH = CDATEF(1:10)
-         CALL DIFDATE (CDATEF, CDATE, ISHIFT)
-         ISHIFT = ISHIFT/3600
+        CDATEH = CDATEF(1:10)
+        CALL DIFDATE (CDATEF, CDATE, ISHIFT)
+        ISHIFT = ISHIFT/3600
       ENDIF
       FILENA(4:13) = CDATEH
       WRITE (FILENA(14:17),'(I4.4)') ISHIFT
       LNAME = LEN_TRIM(FILENA)
 
-C     2.0   GET PATH AND ADD IT TO FILE NAME
-C           --------------------------------
-C
-      IF(IREST.EQ.2.OR.IREST.EQ.4) THEN
-        FILENAM=FILENA(1:LNAME)//'_%n.%p'
-        CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAM,1)
-      ELSE
-         FILENAM=FILENA(1:LNAME)
-      ENDIF
+!     2.0   GET PATH AND ADD IT TO FILE NAME
+!           --------------------------------
 
-      LNAME = LEN_TRIM(FILENAM)
-
-      IF(ICPLEN.EQ.0) THEN
-        FILENAME=FILENAM(1:LNAME)
+      IF(KCPLEN.EQ.0) THEN
+        FILENAME=FILENA(1:LNAME)
       ELSE
-        FILENAME=CPATH(1:ICPLEN)//'/'//FILENAM(1:LNAME)
+        FILENAME=CPAD(1:KCPLEN)//'/'//FILENA(1:LNAME)
       ENDIF
 
       RETURN
-      END
+      END SUBROUTINE GRSTNAME

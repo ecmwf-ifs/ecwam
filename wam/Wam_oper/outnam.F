@@ -1,26 +1,26 @@
-C
+
       SUBROUTINE OUTNAM (
-     .  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KMOUTP, KMOUTT,
-     .  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
-     .  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper)
-C
-C
-C ----------------------------------------------------------------------
-C
-C*       PARAMETER NAMELIST AS IN COMMON PARAM OF THE WAM-MODEL.
-C        -------------------------------------------------------
-C
+     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
+     &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper)
+
+
+! ----------------------------------------------------------------------
+
+!*       PARAMETER NAMELIST AS IN COMMON PARAM OF THE WAM-MODEL.
+!        -------------------------------------------------------
+
       LOGICAL llper          !  the land sea mask is periodic (T)
       NAMELIST /PARWAM/
-     .  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
-     .  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
-     .  itaumax, iumax, iustar, ialpha, idepth, irefra, llper
-C
+     &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
+     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
+     &  itaumax, iumax, iustar, ialpha, idepth, irefra, llper
+
       IU06=6
-C
-C***  1.CHECK ON PERIODICITY OF GRID.
-C     -------------------------------
-C
+
+!***  1.CHECK ON PERIODICITY OF GRID.
+!     -------------------------------
+
       IF (IPER.EQ.1) THEN
         llper=.TRUE.
       ELSEIF (IPER.EQ.0) THEN
@@ -38,10 +38,10 @@ C
         WRITE(IU06,*)' ************************************************'
         CALL ABORT1
       ENDIF
-C
-C***  2. DETERMINE PARAMETERS NAMELIST.
-C     ---------------------------------
-C 
+
+!***  2. DETERMINE PARAMETERS NAMELIST.
+!     ---------------------------------
+
       iang    = KNANG
       ifre    = KNFRE
       igx     = KNGX
@@ -49,8 +49,8 @@ C
       iblo    = KNBLO
       iiblo   = KNIBLO
       iover   = KNOVER
-      ioutp   = KMOUTP
-      ioutt   = KMOUTT
+      ioutp   = KNGOUT
+      ioutt   = KNOUTT
       imaxc   = KNMAXC
       imaxf   = KNMAXF
       ibinp   = KNBINP
@@ -65,13 +65,17 @@ C
       ialpha  = KIALPHA
       idepth  = KNDEPTH
       irefra  = KIREFRA
-C
-C***  3. WRITE TO FILE.
-C     -----------------
-C
+
+!***  3. WRITE TO FILE.
+!     -----------------
+
       OPEN(UNIT=91, FILE='PARWAM')
       WRITE (91,PARWAM)
       CLOSE (UNIT=91)
-C      
+
       RETURN
-      END
+      END SUBROUTINE OUTNAM
+
+
+
+

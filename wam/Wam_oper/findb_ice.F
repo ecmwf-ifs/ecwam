@@ -1,52 +1,58 @@
       SUBROUTINE FINDBICE (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB,
-     1                     NSTART,NEND)
-C ----------------------------------------------------------------------
-C
-C**** *FINDBICE* - FIND BLOCK AND GRID POINT NUMBER.
-C
-C     R. PORTZ     MPI         15/01/1991
-C     J. BIDLOT    ECMWF       JUNE 1996  MESSAGE PASSING
-C     ORIGINALLY CALLED FINDB BUT MODIFIED TO ACCOMODATE MPP VERSION
-C
-C*    PURPOSE.
-C     -------
-C
-C       FIND BLOCK AND GRID POINT NUMBER FOR A GIVEN ARRAY
-C       OF LONGITUDES AND LATITUDES.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *FINDBICE (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB)*
-C                         NSTART,NEND)
-C          *NDIM*    - DIMENSION OF ARRAYS.
-C          *NBOUN*   - NUMBER OF POINTS IN ARRAYS.
-C          *BLATB*   - INPUT LATITUDES.
-C          *BLNGB*   - INPUT LONGITUDES.
-C          *IGARB*   - OUTPUT BLOCK NUMBERS.
-C          *IJARB*   - OUTPUT SEA POINT NUMBERS.
-C  MESSAGE PASSING SPECIFIC
-C      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-C      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-C
-C     METHOD.
-C     -------
-C
-C       NONE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       NONE.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C ----------------------------------------------------------------------
-C
-C     THIS IS NOW A DUMMY ROUTINE
-C
+     &                     NSTART,NEND)
+! ----------------------------------------------------------------------
+
+!**** *FINDBICE* - FIND BLOCK AND GRID POINT NUMBER.
+
+!     R. PORTZ     MPI         15/01/1991
+!     J. BIDLOT    ECMWF       JUNE 1996  MESSAGE PASSING
+!     ORIGINALLY CALLED FINDB BUT MODIFIED TO ACCOMODATE MPP VERSION
+
+!*    PURPOSE.
+!     -------
+
+!       FIND BLOCK AND GRID POINT NUMBER FOR A GIVEN ARRAY
+!       OF LONGITUDES AND LATITUDES.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *FINDBICE (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB)*
+!                         NSTART,NEND)
+!          *NDIM*    - DIMENSION OF ARRAYS.
+!          *NBOUN*   - NUMBER OF POINTS IN ARRAYS.
+!          *BLATB*   - INPUT LATITUDES.
+!          *BLNGB*   - INPUT LONGITUDES.
+!          *IGARB*   - OUTPUT BLOCK NUMBERS.
+!          *IJARB*   - OUTPUT SEA POINT NUMBERS.
+!  MESSAGE PASSING SPECIFIC
+!      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+
+!     METHOD.
+!     -------
+
+!       NONE.
+
+!     EXTERNALS.
+!     ----------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+
+!     THIS IS NOW A DUMMY ROUTINE
+
       RETURN
-      END
+      END SUBROUTINE FINDBICE
+
+
+
+
+
+

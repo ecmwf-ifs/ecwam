@@ -1,104 +1,101 @@
       SUBROUTINE GETREST (IU06, IU12, IU14, IU15, IGL,
-     1                    CDATE, CDATEF)
-C ----------------------------------------------------------------------
-C
-C**** *GETREST*  GETS RESTART FILES
-C
-C     HEINZ GUNTHER   GKSS/ECMWF     MAY 1989
-C
-C*    PURPOSE.
-C     --------
-C
-C       FETCHES RESTART FILES.
-C
-C**   INTERFACE.
-C     ----------
-C
-C       *CALL* *GETREST (IU06, IU12, IU14, IU15, IGL,
-C                        CDATE, CDATEF)*
-C
-C         *IU06*    INTEGER    OUTPUT UNIT FOR PRINTER MESSAGES.
-C         *IU12*    INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
-C         *IU14*    INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
-C         *IU15*    INTEGER    OUTPUT UNIT LAST WINDFIELDS.
-C         *IGL*     INTEGER    NUMBER OF BLOCKS.
-C         *CDATE*   CHAR*12    DATE/TIME OF LAST FIELD IN FILES.
-C         *CDATEF*  CHAR*12    START DATE OF FORECAST PERIOD.
-C
-C     METHOD.
-C     -------
-C
-C       NONE.
-C
-C     EXTERNALS.
-C     ----------
-C
-C       *GSFILE*    - GETS OR SAVES FILES.
-C
-C     REFERENCE.
-C     ----------
-C
-C       NONE.
-C
-C      
-C ---------------------------------------------------------------------
-C
-#include "comwami.h"
-C
+     &                    CDATE, CDATEF)
+! ----------------------------------------------------------------------
+
+!**** *GETREST*  GETS RESTART FILES
+
+!     HEINZ GUNTHER   GKSS/ECMWF     MAY 1989
+
+!*    PURPOSE.
+!     --------
+
+!       FETCHES RESTART FILES.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *GETREST (IU06, IU12, IU14, IU15, IGL,
+!                        CDATE, CDATEF)*
+
+!         *IU06*    INTEGER    OUTPUT UNIT FOR PRINTER MESSAGES.
+!         *IU12*    INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
+!         *IU14*    INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
+!         *IU15*    INTEGER    OUTPUT UNIT LAST WINDFIELDS.
+!         *IGL*     INTEGER    NUMBER OF BLOCKS.
+!         *CDATE*   CHAR*12    DATE/TIME OF LAST FIELD IN FILES.
+!         *CDATEF*  CHAR*12    START DATE OF FORECAST PERIOD.
+
+!     METHOD.
+!     -------
+
+!       NONE.
+
+!     EXTERNALS.
+!     ----------
+
+!       *GSFILE*    - GETS OR SAVES FILES.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+! ---------------------------------------------------------------------
+
       CHARACTER*12 CDATE,CDATEF
-C
-C ----------------------------------------------------------------------
-C
-C*    1. ANALYSIS OR FORECATS FILES.
-C        ---------------------------
-C
- 1000 CONTINUE
-C      
+
+! ----------------------------------------------------------------------
+
+!*    1. ANALYSIS OR FORECATS FILES.
+!        ---------------------------
+
+
       ICH = 0
-C
+
       IF (CDATE.LE.CDATEF) THEN
-C
-C*    1.1 ANALYSIS FILES.
-C         ---------------
-C
-C*    1.1.1 SPECTRA FILE.
-C           -------------
-C
-         CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'G')
-C
-C*    1.1.2 SECOND LATITUDE FILE IF MULTIBLOCK VERSION.
-C           -------------------------------------------
-C
-         IF (IGL.GT.1) THEN
-            CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'G')
-         ENDIF
-C
-C*    1.1.3 LAST WIND FIELDS.
-C           -----------------
-C
-         CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'G')
+
+!*    1.1 ANALYSIS FILES.
+!         ---------------
+
+!*    1.1.1 SPECTRA FILE.
+!           -------------
+
+        CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'G')
+
+!*    1.1.2 SECOND LATITUDE FILE IF MULTIBLOCK VERSION.
+!           -------------------------------------------
+
+        IF (IGL.GT.1) THEN
+          CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'G')
+        ENDIF
+
+!*    1.1.3 LAST WIND FIELDS.
+!           -----------------
+
+        CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'G')
       ELSE
-C
-C*    1.2 FORECAST FILES.
-C         ---------------
-C
-C*    1.2.1 SPECTRA FILE.
-C           -------------
-C
-         CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'G')
-C
-C*    1.2.2 SECOND LATITUDE FILE IF MULTIBLOCK VERSION.
-C           -------------------------------------------
-C
-         IF (IGL.GT.1) THEN
-            CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'G')
-         ENDIF
-C
-C*    1.2.3 LAST WIND FIELDS.
-C           -----------------
-C
-         CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'G')
+
+!*    1.2 FORECAST FILES.
+!         ---------------
+
+!*    1.2.1 SPECTRA FILE.
+!           -------------
+
+        CALL GSFILE (IU06, IU12, ICH, CDATE, CDATEF, 'BLS', 'G')
+
+!*    1.2.2 SECOND LATITUDE FILE IF MULTIBLOCK VERSION.
+!           -------------------------------------------
+
+        IF (IGL.GT.1) THEN
+          CALL GSFILE (IU06, IU14, ICH, CDATE, CDATEF, 'SLA', 'G')
+        ENDIF
+
+!*    1.2.3 LAST WIND FIELDS.
+!           -----------------
+
+        CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'G')
       ENDIF
-C
+
       RETURN
-      END
+      END SUBROUTINE GETREST
+
+
