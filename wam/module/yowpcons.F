@@ -20,11 +20,11 @@
       REAL, PARAMETER :: ROWATER = 1000.
       REAL, PARAMETER :: YEPS = ROAIR/ROWATER
       REAL, PARAMETER :: YINVEPS = 1./YEPS
-      REAL, PARAMETER :: EGRCRV = 1736.2
-      REAL, PARAMETER :: AGRCRV = 1.915E+6
-      REAL, PARAMETER :: BGRCRV = 0.907
-      REAL, PARAMETER :: AFCRV = 7.2431E-4
-      REAL, PARAMETER :: BFCRV = -2.8659
+      REAL, PARAMETER :: EGRCRV = 1715.2
+      REAL, PARAMETER :: AGRCRV = 1.074E+6
+      REAL, PARAMETER :: BGRCRV = 0.878
+      REAL, PARAMETER :: AFCRV = 5.158E-4
+      REAL, PARAMETER :: BFCRV = -2.934
       REAL, PARAMETER :: Rconstant = 287.16   ! The gas constant
       REAL, PARAMETER :: EpsWaterVapor = 0.61 ! The mass ratio of 
                                               ! water vapor to dry air

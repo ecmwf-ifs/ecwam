@@ -1,6 +1,6 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE MPUSERIN (IU05, LMESSPASS, LFDB, LWCOU)
+      SUBROUTINE MPUSERIN (IU05, LMESSPASS, LFDB, LWCOU, LL1D)
 
 ! ----------------------------------------------------------------------
 
@@ -57,7 +57,7 @@
       LOGICAL LPBIOIN, LGRIBIN, LGRIBOUT, LPBIOOUT, LMESSPASS, LFDB,
      &        LWCOU, LFDBIOOUT, LNOCDIN, LALTCOR, L4VTYPE, LFRSTFLD,
      &        LALTAS, LSARAS, LSARINV, LALTLRGR, LTURN90,
-     &        LGUST, LADEN
+     &        LGUST, LADEN  ,LL1D
 
 
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
@@ -76,10 +76,11 @@
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
      &   SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
-     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,
+     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN
+     &   LGUST, LADEN,
+     &   NWAM_BLKS, LL1D
 
 ! ----------------------------------------------------------------------
 
@@ -89,6 +90,7 @@
       LFDB =.FALSE.
       LMESSPASS =.TRUE.
       LWCOU=.FALSE.
+      LL1D=.TRUE.
 
 ! ----------------------------------------------------------------------
 

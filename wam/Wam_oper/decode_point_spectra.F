@@ -10,7 +10,7 @@
 !     decodes the grib spectrum for locations as obtained from a mars
 !     request which has limited the area to a few points 
 !     (it will be a little big otherwise) (see example below). 
-!     Input parameter can be 250 (old) or 251 (new).
+!     Input parameter can be 250 (old) or 251 (NEW).
 !     The results will be saved as an ascii text file
 !     containing the location and date and time  and the decoded sprectrum
 !     The 1d frequency spectrum will also be computed
@@ -40,8 +40,8 @@
 !     If the input file contains parameter 251, it must have been obtained
 !     for all directions and frequencies in the default order. Namelly, the
 !     mars request should be done with DIRECTION=1/TO/nang, and
-!     FREQUENCY=1/TO/nfre. At this time nfre=25 and nang=12 for global model
-!     data and 24 for mediterranean data.
+!     FREQUENCY=1/TO/nfre. At this time nfre=30 and nang=24 for global model
+!     and for mediterranean data.
  
  
 !     LIBRARY : FORTRAN90, and EMOSLIB
@@ -74,7 +74,13 @@
 !     ON June 29, 1998, THE "GLOBAL" WAVE MODEL SPECTRA ARE NOW SAVED IN
 !     GRIB AS PARAMETER 251 AND ARE AVAILABLE FOR THE ANALYSIS 
 !     AT 0, 6, 12, 18Z. THE DOMAIN is G for Global. The ATTRIBUTE 
-!     FREQUENCY=1/TO/25 AND DIRECTION=1/TO/12 MUST BE SPECIFIED (see below) 
+!     FREQUENCY=1/TO/nfre AND DIRECTION=1/TO/nang MUST BE SPECIFIED (see below) 
+
+!     From June 28, 1998 18Z until November 20,2000 12Z
+!     nfre=25 and nang=12
+
+!     Since November 20, 2000 18Z
+!     nfre=30 and nang=24 
 
 !     BEFORE THAT TIME, AND FROM February 1995, 26 12z,
 !     PARAMETER 250 IS TO BE USED AND ANALYSIS ARE ONLY AVAILABLE FOR 12Z
@@ -98,9 +104,7 @@
 
 !     REANALYSIS DATA FROM ERA15 WERE ARCHIVED AS PARAMETER 250.
 
-!!!   IT IS OUR LONG TERM INTENTION TO REARCHIVE ALL SPECTRAL DATA AS
-!     PARAMETER 251 TO AVOID CONFUSION AND TO EASE MANIPULATION.
-
+!     REANALYSIS DATA FROM ERA40 WERE ARCHIVED AS PARAMETER 251.
 
 
 !     EXAMPLE:  spectra at (30W,59S) and (29W,59S) from the global model:
@@ -145,7 +149,7 @@
 !      LEVELIST=OFF
 
 
-!     FOR DATA AFTER TO JUNE 29, 1998 0Z:
+!     FOR DATA AFTER TO JUNE 28, 1998 18Z UNTIL NOVEMBER 20, 2000 12Z 
 
 !    RETRIEVE,
 !      DATE=19980704,
@@ -165,9 +169,31 @@
 !      FREQUENCY=1/to/25,
 !      AREA=-59/-30/-59/-29,
 !      LEVELIST=OFF
+
+!    SINCE NOVEMBER 20, 2000 18Z 
+
+!    RETRIEVE,
+!      DATE=20020521,
+!      TIME=0/6/12/18,
+!      FORMAT=PACKED,
+!      TARGET="input_spectra",
+!      PARAM=251,
+!      DOMAIN=G,
+!      REPRES=LL,
+!      STREAM=WV,
+!      CLASS=OD,
+!      EXPVER=1,
+!      TYPE=AN,
+!      LEVTYPE=SFC,
+!      GRID=1.0/1.0,
+!      DIRECTION=1/to/24,
+!      FREQUENCY=1/to/30,
+!      AREA=-59/-30/-59/-29,
+!      LEVELIST=OFF
 ! ----------------------------------------------------------------------
 
       PARAMETER(NANGMAX=24,NFREMAX=25)
+      PARAMETER (NBIT = 50000)
       PARAMETER (G = 9.806, PI = 3.1415927, CIRC = 40000000.,
      1           ZPI = 2.*PI, RAD = PI/180., DEG = 180./PI,
      2           R = CIRC/ZPI, EPSMIN=0.1E-32, ZMISS=-999.0)
@@ -221,6 +247,7 @@
       LWAVEHGT=.FALSE.
       LLASTFRE=.FALSE.
       ITEST=0
+      IU06=6
 
       CMDLINE: DO
         IOPTVAL=GETCLO(CLOPTS,CLARG)
@@ -290,17 +317,57 @@
       ISIZE=(IPLENG+NPRECI-1)/NPRECI
       ISIZEMAX=ISIZE
       ALLOCATE(INGRIB(ISIZE))
+      ISIZE=NBIT
+1111  IPLENG=ISIZE*NPRECI
+      IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+
 
 !     GET FIRST DATA FILE
 
       CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
       IF     (KRET.EQ.-1) THEN
         WRITE (*,*) ' REACHED EOF IN ',FNAMEIN 
+        GOTO 3333 
       ELSEIF (KRET .EQ. -2) THEN
         WRITE (*,*) ' ERROR IN FILE HANDLING IN ',FNAMEIN 
       ELSEIF (KRET .EQ. -3) THEN
-        WRITE (*,*) ' INGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',IPLENG
-        WRITE (*,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
+        DEALLOCATE(INGRIB)
+
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' ***** WARNING IN '
+        WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+        WRITE(IU06,*) ' IT WAS ', ISIZE
+
+        KKRET=0
+
+        ISIZE=(ILENG+KIND(ISIZE)-1)/KIND(ISIZE)
+        WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
+        WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+        WRITE(IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
+        WRITE(IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
+        WRITE(IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
+        WRITE(IU06,*) ' ***** WARNING ****** WARNING *****'
+        WRITE(IU06,*) ' '
+        CALL FLUSH(IU06)
+
+!       RESET THE FILE POINTER TO READ FIELD AGAIN
+        KOFFSET=-ILENG
+        CALL PBSEEK(IUGRS,KOFFSET,1,KKRET)
+        IF(KKRET.EQ.-1) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
+        ENDIF
+        IF(KKRET.EQ.-2) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
+        ENDIF
+
+        GOTO 1111
+
       ENDIF
 
 !*    GET GRIB HEADERS 
@@ -314,7 +381,9 @@
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
      &             PSEC4, ILENP, INGRIB, ILENG , KWORD, 'J', KRET)
       IF (ITEST.GT.1) WRITE(*,*)' GRIBEX DONE status=' , KRET 
-      IF(KRET.GT.0) THEN
+!     the error code 811: 'Cannot handle 2ndary bitmaps for J option'
+!     is actually a warning message and should not cause a failure.
+      IF(KRET.GT.0.and.kret.ne.811) THEN
         MSG = ERRMSG(2)
         CALL GRPRS0 (KSEC0)
         CALL GRPRS1 (KSEC0, KSEC1)
@@ -563,39 +632,62 @@
 !           GET NEXT FIELD
 
             IF(.NOT.(K.EQ.NANG.AND.M.EQ.NFRE)) THEN
-              CALL PBSIZE (IUGRS, IPLENG)
-              ISIZE=(IPLENG+NPRECI-1)/NPRECI
-              ISIZEMAX=MAX(ISIZEMAX,ISIZE)
-              ALLOCATE(INGRIB(ISIZE))
+2222          IPLENG=ISIZE*NPRECI
+              IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
 
               IF (ITEST.gt.1) WRITE (*,*) ' CALLING PBGRIB ' 
               CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
               IF     (KRET.EQ.-1) THEN
                 WRITE (*,*) ' REACHED EOF IN ',FNAMEIN 
-                WRITE (*,*) ' CHECK WHETHER YOU HAVE PROVIDED THE INPUT' 
+                WRITE (*,*) ' CHECK IF YOU HAVE PROVIDED THE INPUT' 
                 WRITE (*,*) ' SPECTRA FOR ALL DIRECTIONS ie: ',NANG
                 WRITE (*,*) ' AND FOR ALL FREQUENCIES ie: ',NFRE 
               ELSEIF (KRET .EQ. -2) THEN
                 WRITE (*,*) ' ERROR IN FILE HANDLING IN ',FNAMEIN 
               ELSEIF (KRET .EQ. -3) THEN
-               WRITE (*,*) ' INGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',
-     &                       IPLENG
-               WRITE (*,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
+                DEALLOCATE(INGRIB)
+
+                WRITE(IU06,*) ' '
+                WRITE(IU06,*) ' ***** WARNING IN '
+                WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+                WRITE(IU06,*) ' IT WAS ', ISIZE
+
+                KKRET=0
+
+                ISIZE=(ILENG+KIND(ISIZE)-1)/KIND(ISIZE)
+                WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
+                WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+                WRITE(IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
+                WRITE(IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
+                WRITE(IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
+                WRITE(IU06,*) ' ***** WARNING ****** WARNING *****'
+                WRITE(IU06,*) ' '
+                CALL FLUSH(IU06)
+
+!               RESET THE FILE POINTER TO READ FIELD AGAIN
+                KOFFSET=-ILENG
+                CALL PBSEEK(IUGRS,KOFFSET,1,KKRET)
+                IF(KKRET.EQ.-1) THEN
+                  WRITE(IU06,*) '***********************************'
+                  WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
+                  WRITE(IU06,*) '***********************************'
+                  CALL ABORT
+                ENDIF
+                IF(KKRET.EQ.-2) THEN
+                  WRITE(IU06,*) '***********************************'
+                  WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
+                  WRITE(IU06,*) '***********************************'
+                  CALL ABORT
+                ENDIF
+
+                GOTO 2222
+
               ENDIF
             ENDIF
 
           ENDDO
         ENDDO
 
-      ENDIF
-
-      CALL PBCLOSE(IUGRS,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (*,*) '************************************'
-        WRITE (*,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (*,*) '* FILE ',FNAMEIN
-        WRITE (*,*) '************************************'
-        CALL ABORT
       ENDIF
 
 !     WRITES OUT THE SPECTRUM IN ASCCII FORMAT 
@@ -666,80 +758,98 @@
 100   FORMAT(13(1X,F8.4))
 110   FORMAT(25(1X,F8.4))
 
+
+      IF(ALLOCATED(KDOMRGG))DEALLOCATE(KDOMRGG)
+      IF(ALLOCATED(TH))DEALLOCATE(TH)
+      IF(ALLOCATED(FR))DEALLOCATE(FR)
+      IF(ALLOCATED(PSEC4)) DEALLOCATE(PSEC4)
+      IF(ALLOCATED(PSEC4OUT)) DEALLOCATE(PSEC4OUT)
+      GOTO 1111
+
+
+3333  CALL PBCLOSE(IUGRS,KRET)
+      IF(KRET.LT.0) THEN
+        WRITE (*,*) '************************************'
+        WRITE (*,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
+        WRITE (*,*) '* FILE ',FNAMEIN
+        WRITE (*,*) '************************************'
+        CALL ABORT
+      ENDIF
+
       CLOSE(10)
       CLOSE(11)
 
       END
 
 !#######################################################################
-!      FUNCTION getclo(yaoptions, yaargument)
-!      INTEGER getclo, getcla, rtb
-!      CHARACTER*   1 yolastarg
-!      CHARACTER* (*) yaoptions, yaargument
-!      CHARACTER* 120 arg
+!z    FUNCTION getclo(yaoptions, yaargument)
+!z    INTEGER getclo, getcla, rtb
+!z    CHARACTER*   1 yolastarg
+!z    CHARACTER* (*) yaoptions, yaargument
+!z    CHARACTER* 120 arg
 
-!      INTEGER here, imorearg, ivarg
-!      DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
-!      DATA yolastarg / " " /
+!z    INTEGER here, imorearg, ivarg
+!z    DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
+!z    DATA yolastarg / " " /
 
-!      arg=' '
-!      CALL getarg(here,arg)
+!z    arg=' '
+!z    CALL getarg(here,arg)
 !-->  PRINT*,'-------------getclo---------------'
 !-->  PRINT*,' ###',arg,'###'
 
-!     iol=rtb(arg)
+!z    iol=rtb(arg)
 !-->  PRINT*,' iol: ', iol
-!     IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
-!       iol = rtb(yaoptions)
+!z    IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
+!z      iol = rtb(yaoptions)
 !-->    PRINT*,' iol 2',iol,' options: ', yaoptions
-!       DO jl=1,iol
-!         getclo = 0
-!         IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
-!           getclo = ichar(arg(2:2))
+!z      DO jl=1,iol
+!z        getclo = 0
+!z        IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
+!z          getclo = ichar(arg(2:2))
 !-->        PRINT *,' FOUND ',yaoptions(jl:jl), ' IN THE COMMAND LINE',
 !--> .               yaoptions(jl+1:jl+1)
-!           IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
+!z          IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
 !-->          PRINT*, yaoptions(jl:jl),' requires arguments'
-!             yolastarg=yaoptions(jl:jl)
-!             ivarg=1
-!           ENDIF
-!           EXIT
-!         ENDIF
-!       ENDDO
-!     ELSEIF ( ivarg .EQ. 1 ) THEN
-!        WRITE(*,*) ' option -', yolastarg, ' requires arguments'
-!        getclo=-1
-!     ELSEIF (iol .EQ. 0) THEN
-!       getclo=0
-!     ELSE
-!        WRITE(*,*) 'illegal option: ',arg(1:iol)
-!        getclo=-1
-!     ENDIF
+!z            yolastarg=yaoptions(jl:jl)
+!z            ivarg=1
+!z          ENDIF
+!z          EXIT
+!z        ENDIF
+!z      ENDDO
+!z    ELSEIF ( ivarg .EQ. 1 ) THEN
+!z       WRITE(*,*) ' option -', yolastarg, ' requires arguments'
+!z       getclo=-1
+!z    ELSEIF (iol .EQ. 0) THEN
+!z      getclo=0
+!z    ELSE
+!z       WRITE(*,*) 'illegal option: ',arg(1:iol)
+!z       getclo=-1
+!z    ENDIF
 !-->  PRINT *,' HERE ins getclo', here
-!     here = here + 1
-!     RETURN
+!z    here = here + 1
+!z    RETURN
 
-!     ENTRY getcla(yaargument)
+!z    ENTRY getcla(yaargument)
 !-->  PRINT*,'-------------getcla--------------'
 !-->  PRINT*, 'HERE ins getcla :', here,' options: ', yaoptions
 
-!     getcla = 1
-!     CALL getarg(here,arg)
+!z    getcla = 1
+!z    CALL getarg(here,arg)
 !-->  PRINT*,' arg in getcla ', arg
-!     IF ( arg (1:1) .NE. '-' ) THEN
-!       here = here + 1
-!       yaargument=arg
-!     ELSE
-!       IF (ivarg.EQ.1) THEN
-!         WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
-!    .    ' the option -',yolastarg
-!         getcla = -1
-!       ELSE
-!         getcla = 0
-!       ENDIF
-!     ENDIF
-!     ivarg=0
+!z    IF ( arg (1:1) .NE. '-' ) THEN
+!z      here = here + 1
+!z      yaargument=arg
+!z    ELSE
+!z      IF (ivarg.EQ.1) THEN
+!z        WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
+!z   .    ' the option -',yolastarg
+!z        getcla = -1
+!z      ELSE
+!z        getcla = 0
+!z      ENDIF
+!z    ENDIF
+!z    ivarg=0
 !-->  PRINT*,' getcla in getcla ', getcla
 
-!     RETURN
-!     END
+!z    RETURN
+!z    END

@@ -190,6 +190,7 @@
         WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
         WRITE (IU06,*) ' '
         WRITE (IU06,*) ' '
+        CALL FLUSH(IU06)
         LFRSTIME=.FALSE.
       ENDIF
 
@@ -212,6 +213,7 @@
           WRITE (IU06,*) ' ADS(IJS - IJS+4): ',(ADS(I,IG),I=IJA,IJE)
           WRITE (IU06,*) ' ZIDL(IJS - IJS+4): ',(ZIDL(I,IG),I=IJA,IJE)
         ENDDO
+        CALL FLUSH(IU06)
       ENDIF
 
       IF(ALLOCATED(UWND)) DEALLOCATE(UWND)

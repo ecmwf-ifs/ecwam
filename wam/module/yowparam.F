@@ -29,6 +29,7 @@
       CHARACTER*1 CLDOMAIN
 
       LOGICAL LTURN90
+      LOGICAL :: LL1D
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
@@ -69,7 +70,9 @@
 !                            HEIGHTS.
 !      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
 !                            FDB and for selection of some variables)
-
+!      *LL1D*      LOGICAL   IF TRUE THEN THE DOMAIN DECOMPOSITION IS ONLY
+!                            DONE IN LATITUNAL BANDS
+!                            (like it used to be done).
 ! ----------------------------------------------------------------------
 
       END MODULE YOWPARAM

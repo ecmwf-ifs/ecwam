@@ -55,6 +55,7 @@
       INTEGER NMFR
       INTEGER NNCEP
       INTEGER NUKM
+      INTEGER NWAM_BLKS
 
       LOGICAL LANAONLY
       LOGICAL LALTCOR
@@ -205,5 +206,10 @@
 !                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
 !                            THE MET OFFICE IS USED IN THE INITIAL
 !                            CONDITIONS.
+!      *NWAM_BLKS* INTEGER   IF OPENMP IS USED THEN NWAM_BLKS WILL BE THE
+!                            NUMBER OF THREADS. OTHERWISE IT CAN BE USED
+!                            TO SPLIT THE GRID POINTS INTO NWAM_BLKS 
+!                            CHUNKS ON EACH PE.
+!
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

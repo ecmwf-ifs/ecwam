@@ -33,8 +33,6 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT
 
 !     REFERENCES.
 !     -----------
@@ -81,909 +79,884 @@
         RETURN
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ------------------------------------------------
-      ELSEIF(IRANK.EQ.ISEND) THEN
-        MIC=20+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
-
-        MZC=25+(4+3*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
-     &    JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+NBLO*NIBLO+
-     &    4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
-        IF(IREFRA.EQ.2) MZC=MZC+2*NBLC*(1+NIBLC)
-
-!  ENCODE BUFFER SIZE MESSAGE
-        ALLOCATE(ICOMBUF(2))
-        ICOMBUF(1)=MIC
-        ICOMBUF(2)=MZC
-
-        CALL MPL_BROADCAST(ICOMBUF,KROOT=IRANK,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID:',LDCOMPAT=.TRUE.)
-        ITAG=ITAG+1
-
-        DEALLOCATE(ICOMBUF)
-
-!  ENCODE MAIN MESSAGE BUFFERS
-
-        ALLOCATE(ICOMBUF(MIC))
-        ALLOCATE(ZCOMBUF(MZC))
-
-
-        KCOUNT=0
-        IKCOUNT=0
-
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NANG
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NFRE
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NGX
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NGY
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NBLO
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NIBLO
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NOVER
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NIBL1
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=IREFRA
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NIBLD
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NBLD
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NIBLC
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NBLC
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=ICHAR(CLDOMAIN)
-
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FR(M)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DFIM(M)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=GOM(M)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=C(M)
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELTH
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELTR
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=TH(K)
-        ENDDO
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=COSTH(K)
-        ENDDO
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=SINTH(K)
-        ENDDO
-
-
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELPHI
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELLAM(J)
-        ENDDO
-        DO J=1,NGY
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NLONRGG(J)
-        ENDDO
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=SINPH(J)
-        ENDDO
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=COSPH(J)
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=IGL
-        DO IG=1,NBLO
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJS(IG)
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJL2(IG)
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJLS(IG)
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJL(IG)
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJLT(IG)
-        ENDDO
-
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IXLG(IJ,IG)
-          ENDDO
-        ENDDO
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=KXLT(IJ,IG)
-          ENDDO
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NX
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NY
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=IPER
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=AMOWEP
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=AMOSOP
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=AMOEAP
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=AMONOP
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=XDELLA
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=XDELLO
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ZDELLO(J)
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=IRGG
-
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IKP(M)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IKP1(M)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IKM(M)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IKM1(M)
-        ENDDO
-        DO IC=1,2
-          DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=K1W(K,IC)
-          ENDDO
-        ENDDO
-        DO IC=1,2
-          DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=K2W(K,IC)
-          ENDDO
-        ENDDO
-        DO IC=1,2
-          DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=K11W(K,IC)
-          ENDDO
-        ENDDO
-        DO IC=1,2
-          DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=K21W(K,IC)
-          ENDDO
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=AF11(M)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FKLAP(M)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FKLAP1(M)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FKLAM(M)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FKLAM1(M)
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=ACL1
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=ACL2
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=CL11
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=CL21
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DAL1
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DAL2
-        DO IC=1,KFRH
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FRH(IC)
-        ENDDO
-
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=BETAMAX
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=ZALP
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=ALPHA
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=XKAPPA
-        DO IC=1,JPLEVC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=XNLEV(IC)
-        ENDDO
-
-        DO ILEV=1,JPLEVT
-          DO J=0,JUMAX
-            DO I=0,ITAUMAX
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=TAUT(I,J,ILEV)
-            ENDDO
-          ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELTAUW
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELU
-        DO L=0,IALPHA
-          DO K=0,IUSTAR
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TAUHFT(K,L)
-          ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELUST
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DELALP
-
-        IKCOUNT=IKCOUNT+1
-        ICOMBUF(IKCOUNT)=NGOUT
-        DO NGOU=1,NGOUT
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IGAR(NGOU)
-        ENDDO
-        DO NGOU=1,NGOUT
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IJAR(NGOU)
-        ENDDO
-
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=DEPTH(IJ,IG)
-          ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DEPTHA
-        KCOUNT=KCOUNT+1
-        ZCOMBUF(KCOUNT)=DEPTHD
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TCGOND(KDEPTH,M)
-          ENDDO
-        ENDDO
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TFAK(KDEPTH,M)
-          ENDDO
-        ENDDO
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TSIHKD(KDEPTH,M)
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FAC0(K1,K2,M1,M2)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FAC1(K1,K2,M1,M2)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FAC2(K1,K2,M1,M2)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FAC3(K1,K2,M1,M2)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M=1,NFREHF
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FAK(M)
-        ENDDO
-
-        DO M=1,NFREHF
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FRHF(M)
-        ENDDO
-
-        DO M=1,NFREHF
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DFIMHF(M)
-        ENDDO
-
-        IF (IREFRA.EQ.2) THEN
-          DO IG=1,NBLC
-            DO IJ=0,NIBLC
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=U(IJ,IG)
-            ENDDO
-          ENDDO
-          DO IG=1,NBLC
-            DO IJ=0,NIBLC
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=V(IJ,IG)
-            ENDDO
-          ENDDO
-        ENDIF
-
-        IF(IKCOUNT.NE.MIC) THEN
-          WRITE (IU06,*) '**************************'
-          WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
-          WRITE (IU06,*) '* IKCOUNT NE MIC PRIOR   *'
-          WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
-          WRITE (IU06,*) '* IKCOUNT =',IKCOUNT
-          WRITE (IU06,*) '* MIC =',MIC
-          WRITE (IU06,*) '**************************'
-          CALL ABORT1
-        ENDIF 
-        IF(KCOUNT.NE.MZC) THEN
-          WRITE (IU06,*) '**************************'
-          WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
-          WRITE (IU06,*) '* KCOUNT NE MZC PRIOR    *'
-          WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
-          WRITE (IU06,*) '* KCOUNT =',KCOUNT
-          WRITE (IU06,*) '* MZC =',MZC
-          WRITE (IU06,*) '**************************'
-          CALL ABORT1
-        ENDIF 
-
-        CALL MPL_BROADCAST(ICOMBUF(1:MIC),KROOT=IRANK,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID 1:',LDCOMPAT=.TRUE.)
-        ITAG=ITAG+1
-        CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=IRANK,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID 2:',LDCOMPAT=.TRUE.)
-        ITAG=ITAG+1
-
-
-!     1.2 RECEIVE ON ALL OTHER PE THAN ISEND
-!         ----------------------------------
       ELSE
-!     BUFFER SIZE MESSAGE
+
+!       BUFFER SIZE MESSAGE
         ALLOCATE(ICOMBUF(2))
-        CALL MPL_RECV(ICOMBUF,KSOURCE=ISEND,KTAG=ITAG,
-     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPBCASTGRID 0:')
-        IF(KRCOUNT.NE.2) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 0 in MPBCASTGRID:MISMATCHED MSG LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 0 in MPBCASTGRID MISMATCHED TAGS' )
+
+        IF(IRANK.EQ.ISEND) THEN
+          MIC=20+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
+          MZC=25+(4+3*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
+     &        JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+
+     &        NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
+          IF(IREFRA.EQ.2) MZC=MZC+2*NBLC*(1+NIBLC)
+
+          ICOMBUF(1)=MIC
+          ICOMBUF(2)=MZC
+        ENDIF
+
+        CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,
+     &   CDSTRING='MPBCASTGRID:')
         ITAG=ITAG+1
 
-        MIC=ICOMBUF(1)
-        MZC=ICOMBUF(2)
+        IF(IRANK.NE.ISEND) THEN
+          MIC=ICOMBUF(1)
+          MZC=ICOMBUF(2)
+        ENDIF
 
         DEALLOCATE(ICOMBUF)
 
-!     MAIN MESSAGES
+
+!       ENCODE MAIN MESSAGE BUFFERS
+
         ALLOCATE(ICOMBUF(MIC))
         ALLOCATE(ZCOMBUF(MZC))
 
-        CALL MPL_RECV(ICOMBUF(1:MIC),KSOURCE=ISEND,KTAG=ITAG,
-     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPBCASTGRID 1:')
-        IF(KRCOUNT.NE.MIC) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 1 in MPBCASTGRID:MISMATCHED MSG LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 1 in MPBCASTGRID MISMATCHED TAGS' )
+        IF(IRANK.EQ.ISEND) THEN
+          KCOUNT=0
+          IKCOUNT=0
 
-        ITAG=ITAG+1
-
-        CALL MPL_RECV(ZCOMBUF(1:MZC),KSOURCE=ISEND,KTAG=ITAG,
-     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPBCASTGRID 2:')
-        IF(KRCOUNT.NE.MZC) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 2 in MPBCASTGRID:MISMATCHED MSG LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 2 in MPBCASTGRID MISMATCHED TAGS' )
-
-        ITAG=ITAG+1
-
-! DECODE MESSAGE BUFFERS
-
-        KCOUNT=0
-        IKCOUNT=0
-
-        IKCOUNT=IKCOUNT+1
-        NANG=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NFRE=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NGX=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NGY=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NBLO=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NIBLO=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NOVER=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NIBL1=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        IREFRA=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NIBLD=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NBLD=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NIBLC=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NBLC=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
-
-        IF(.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
-        IF(.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
-        IF(.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
-        IF(.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
-        IF(.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
-        IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
-        IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
-
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          FR(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          DFIM(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          GOM(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE
-          KCOUNT=KCOUNT+1
-          C(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        KCOUNT=KCOUNT+1
-        DELTH=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DELTR=ZCOMBUF(KCOUNT)
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          TH(K)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          COSTH(K)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO K=1,NANG
-          KCOUNT=KCOUNT+1
-          SINTH(K)=ZCOMBUF(KCOUNT)
-        ENDDO
-
-        IF(.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
-        IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
-        IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
-        IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-        IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-        IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-        IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-        IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-        IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
-
-        KCOUNT=KCOUNT+1
-        DELPHI=ZCOMBUF(KCOUNT)
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          DELLAM(J)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO J=1,NGY
           IKCOUNT=IKCOUNT+1
-          NLONRGG(J)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          SINPH(J)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO J=1,NGY
-          KCOUNT=KCOUNT+1
-          COSPH(J)=ZCOMBUF(KCOUNT)
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        IGL=ICOMBUF(IKCOUNT)
-        DO IG=1,NBLO
+          ICOMBUF(IKCOUNT)=NANG
           IKCOUNT=IKCOUNT+1
-          IJS(IG)=ICOMBUF(IKCOUNT)
+          ICOMBUF(IKCOUNT)=NFRE
           IKCOUNT=IKCOUNT+1
-          IJL2(IG)=ICOMBUF(IKCOUNT)
+          ICOMBUF(IKCOUNT)=NGX
           IKCOUNT=IKCOUNT+1
-          IJLS(IG)=ICOMBUF(IKCOUNT)
+          ICOMBUF(IKCOUNT)=NGY
           IKCOUNT=IKCOUNT+1
-          IJL(IG)=ICOMBUF(IKCOUNT)
+          ICOMBUF(IKCOUNT)=NBLO
           IKCOUNT=IKCOUNT+1
-          IJLT(IG)=ICOMBUF(IKCOUNT)
-        ENDDO
+          ICOMBUF(IKCOUNT)=NIBLO
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NOVER
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NIBL1
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IREFRA
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NIBLD
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NBLD
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NIBLC
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NBLC
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=ICHAR(CLDOMAIN)
 
-        IF(.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
-
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
-            IKCOUNT=IKCOUNT+1
-            IXLG(IJ,IG)=ICOMBUF(IKCOUNT)
+          DO M=1,NFRE
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FR(M)
           ENDDO
-        ENDDO
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
-            IKCOUNT=IKCOUNT+1
-            KXLT(IJ,IG)=ICOMBUF(IKCOUNT)
+          DO M=1,NFRE
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=DFIM(M)
           ENDDO
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        NX=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        NY=ICOMBUF(IKCOUNT)
-        IKCOUNT=IKCOUNT+1
-        IPER=ICOMBUF(IKCOUNT)
-        KCOUNT=KCOUNT+1
-        AMOWEP=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        AMOSOP=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        AMOEAP=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        AMONOP=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        XDELLA=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        XDELLO=ZCOMBUF(KCOUNT)
-        DO J=1,NGY
+          DO M=1,NFRE
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=GOM(M)
+          ENDDO
+          DO M=1,NFRE
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=C(M)
+          ENDDO
           KCOUNT=KCOUNT+1
-          ZDELLO(J)=ZCOMBUF(KCOUNT)
-        ENDDO
-        IKCOUNT=IKCOUNT+1
-        IRGG=ICOMBUF(IKCOUNT)
-
-        IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(NFRE+4))
-        IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(NFRE+4))
-        IF(.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(NFRE+4))
-        IF(.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(NFRE+4))
-        IF(.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
-        IF(.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
-        IF(.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
-        IF(.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
-        IF(.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(NFRE+4))
-        IF(.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(NFRE+4))
-        IF(.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(NFRE+4))
-        IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(NFRE+4))
-        IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(NFRE+4))
-        IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
-
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          IKP(M)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          IKP1(M)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          IKM(M)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          IKCOUNT=IKCOUNT+1
-          IKM1(M)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO IC=1,2
+          ZCOMBUF(KCOUNT)=DELTH
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELTR
           DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            K1W(K,IC)=ICOMBUF(IKCOUNT)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=TH(K)
           ENDDO
-        ENDDO
-        DO IC=1,2
           DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            K2W(K,IC)=ICOMBUF(IKCOUNT)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=COSTH(K)
           ENDDO
-        ENDDO
-        DO IC=1,2
           DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            K11W(K,IC)=ICOMBUF(IKCOUNT)
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=SINTH(K)
           ENDDO
-        ENDDO
-        DO IC=1,2
-          DO K=1,NANG
-            IKCOUNT=IKCOUNT+1
-            K21W(K,IC)=ICOMBUF(IKCOUNT)
+
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELPHI
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=DELLAM(J)
           ENDDO
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          AF11(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          FKLAP(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          FKLAP1(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          FKLAM(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        DO M=1,NFRE+4
-          KCOUNT=KCOUNT+1
-          FKLAM1(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-        KCOUNT=KCOUNT+1
-        ACL1=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        ACL2=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        CL11=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        CL21=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DAL1=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DAL2=ZCOMBUF(KCOUNT)
-        DO IC=1,KFRH
-          KCOUNT=KCOUNT+1
-          FRH(IC)=ZCOMBUF(KCOUNT)
-        ENDDO
+          DO J=1,NGY
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=NLONRGG(J)
+          ENDDO
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=SINPH(J)
+          ENDDO
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=COSPH(J)
+          ENDDO
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IGL
+          DO IG=1,NBLO
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJS(IG)
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJL2(IG)
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJLS(IG)
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJL(IG)
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJLT(IG)
+          ENDDO
 
-        KCOUNT=KCOUNT+1
-        BETAMAX=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        ZALP=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        ALPHA=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        XKAPPA=ZCOMBUF(KCOUNT)
-        DO IC=1,JPLEVC
-          KCOUNT=KCOUNT+1
-          XNLEV(IC)=ZCOMBUF(KCOUNT)
-        ENDDO
-
-        IF(.NOT.ALLOCATED(TAUT))ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-        IF(.NOT.ALLOCATED(TAUHFT))ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA))
-
-        DO ILEV=1,JPLEVT
-          DO J=0,JUMAX
-            DO I=0,ITAUMAX
-              KCOUNT=KCOUNT+1
-              TAUT(I,J,ILEV)=ZCOMBUF(KCOUNT)
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=IXLG(IJ,IG)
             ENDDO
           ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        DELTAUW=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DELU=ZCOMBUF(KCOUNT)
-        DO L=0,IALPHA
-          DO K=0,IUSTAR
-            KCOUNT=KCOUNT+1
-            TAUHFT(K,L)=ZCOMBUF(KCOUNT)
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=KXLT(IJ,IG)
+            ENDDO
           ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        DELUST=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DELALP=ZCOMBUF(KCOUNT)
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NX
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NY
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IPER
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=AMOWEP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=AMOSOP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=AMOEAP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=AMONOP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=XDELLA
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=XDELLO
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=ZDELLO(J)
+          ENDDO
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IRGG
 
-        IKCOUNT=IKCOUNT+1
-        NGOUT=ICOMBUF(IKCOUNT)
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IKP(M)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IKP1(M)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IKM(M)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IKM1(M)
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=K1W(K,IC)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=K2W(K,IC)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=K11W(K,IC)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              ICOMBUF(IKCOUNT)=K21W(K,IC)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=AF11(M)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FKLAP(M)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FKLAP1(M)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FKLAM(M)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FKLAM1(M)
+          ENDDO
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ACL1
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ACL2
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=CL11
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=CL21
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DAL1
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DAL2
+          DO IC=1,KFRH
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FRH(IC)
+          ENDDO
 
-        IF(NGOUT.GT.0) THEN
-          IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
-          IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=BETAMAX
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ZALP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ALPHA
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=XKAPPA
+          DO IC=1,JPLEVC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=XNLEV(IC)
+          ENDDO
+
+          DO ILEV=1,JPLEVT
+            DO J=0,JUMAX
+              DO I=0,ITAUMAX
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=TAUT(I,J,ILEV)
+              ENDDO
+            ENDDO
+          ENDDO
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELTAUW
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELU
+          DO L=0,IALPHA
+            DO K=0,IUSTAR
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=TAUHFT(K,L)
+            ENDDO
+          ENDDO
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELUST
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELALP
+
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NGOUT
+          DO NGOU=1,NGOUT
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IGAR(NGOU)
+          ENDDO
+          DO NGOU=1,NGOUT
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IJAR(NGOU)
+          ENDDO
+
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=DEPTH(IJ,IG)
+            ENDDO
+          ENDDO
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DEPTHA
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DEPTHD
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=TCGOND(KDEPTH,M)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=TFAK(KDEPTH,M)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=TSIHKD(KDEPTH,M)
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=FAC0(K1,K2,M1,M2)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=FAC1(K1,K2,M1,M2)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=FAC2(K1,K2,M1,M2)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=FAC3(K1,K2,M1,M2)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FAK(M)
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=FRHF(M)
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=DFIMHF(M)
+          ENDDO
+
+          IF (IREFRA.EQ.2) THEN
+            DO IG=1,NBLC
+              DO IJ=0,NIBLC
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=U(IJ,IG)
+              ENDDO
+            ENDDO
+            DO IG=1,NBLC
+              DO IJ=0,NIBLC
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=V(IJ,IG)
+              ENDDO
+            ENDDO
+          ENDIF
+
+          IF(IKCOUNT.NE.MIC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* IKCOUNT NE MIC PRIOR   *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* IKCOUNT =',IKCOUNT
+            WRITE (IU06,*) '* MIC =',MIC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF 
+          IF(KCOUNT.NE.MZC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* KCOUNT NE MZC PRIOR    *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* KCOUNT =',KCOUNT
+            WRITE (IU06,*) '* MZC =',MZC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF 
         ENDIF
 
-        DO NGOU=1,NGOUT
+        CALL MPL_BROADCAST(ICOMBUF(1:MIC),KROOT=ISEND,KTAG=ITAG,
+     &   CDSTRING='MPBCASTGRID 1:')
+        ITAG=ITAG+1
+        CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=ISEND,KTAG=ITAG,
+     &   CDSTRING='MPBCASTGRID 2:')
+        ITAG=ITAG+1
+
+        IF(IRANK.NE.ISEND) THEN
+          KCOUNT=0
+          IKCOUNT=0
+
           IKCOUNT=IKCOUNT+1
-          IGAR(NGOU)=ICOMBUF(IKCOUNT)
-        ENDDO
-        DO NGOU=1,NGOUT
+          NANG=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
-          IJAR(NGOU)=ICOMBUF(IKCOUNT)
-        ENDDO
+          NFRE=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NGX=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NGY=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NBLO=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NIBLO=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NOVER=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NIBL1=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          IREFRA=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NIBLD=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NBLD=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NIBLC=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NBLC=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
 
-        IF(.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
-        IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
-        IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
+          IF(.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+          IF(.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+          IF(.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+          IF(.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+          IF(.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+          IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+          IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
 
-        DO IG=1,NBLO
-          DO IJ=1,NIBLO
+          DO M=1,NFRE
             KCOUNT=KCOUNT+1
-            DEPTH(IJ,IG)=ZCOMBUF(KCOUNT)
+            FR(M)=ZCOMBUF(KCOUNT)
           ENDDO
-        ENDDO
-        KCOUNT=KCOUNT+1
-        DEPTHA=ZCOMBUF(KCOUNT)
-        KCOUNT=KCOUNT+1
-        DEPTHD=ZCOMBUF(KCOUNT)
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
+          DO M=1,NFRE
             KCOUNT=KCOUNT+1
-            TCGOND(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            DFIM(M)=ZCOMBUF(KCOUNT)
           ENDDO
-        ENDDO
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
+          DO M=1,NFRE
             KCOUNT=KCOUNT+1
-            TFAK(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            GOM(M)=ZCOMBUF(KCOUNT)
           ENDDO
-        ENDDO
-        DO M=1,NFRE
-          DO KDEPTH=1,NDEPTH
+          DO M=1,NFRE
             KCOUNT=KCOUNT+1
-            TSIHKD(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            C(M)=ZCOMBUF(KCOUNT)
           ENDDO
-        ENDDO
-
-        IF(.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
-        IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
-        IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
-        IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                FAC0(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                FAC1(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                FAC2(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M2=1,NFREHF
-          DO M1=1,NFREHF
-            DO K2=1,NANG
-              DO K1=1,NANG
-                KCOUNT=KCOUNT+1
-                FAC3(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO M=1,NFREHF
           KCOUNT=KCOUNT+1
-          FAK(M)=ZCOMBUF(KCOUNT)
-        ENDDO
-
-        DO M=1,NFREHF
+          DELTH=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
-          FRHF(M)=ZCOMBUF(KCOUNT)
-        ENDDO
+          DELTR=ZCOMBUF(KCOUNT)
+          DO K=1,NANG
+            KCOUNT=KCOUNT+1
+            TH(K)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO K=1,NANG
+            KCOUNT=KCOUNT+1
+            COSTH(K)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO K=1,NANG
+            KCOUNT=KCOUNT+1
+            SINTH(K)=ZCOMBUF(KCOUNT)
+          ENDDO
 
-        DO M=1,NFREHF
+          IF(.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
+          IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+          IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
+          IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
+          IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
+          IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
+          IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
+          IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
+          IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
+
           KCOUNT=KCOUNT+1
-          DFIMHF(M)=ZCOMBUF(KCOUNT)
-        ENDDO
+          DELPHI=ZCOMBUF(KCOUNT)
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            DELLAM(J)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO J=1,NGY
+            IKCOUNT=IKCOUNT+1
+            NLONRGG(J)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            SINPH(J)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            COSPH(J)=ZCOMBUF(KCOUNT)
+          ENDDO
+          IKCOUNT=IKCOUNT+1
+          IGL=ICOMBUF(IKCOUNT)
+          DO IG=1,NBLO
+            IKCOUNT=IKCOUNT+1
+            IJS(IG)=ICOMBUF(IKCOUNT)
+            IKCOUNT=IKCOUNT+1
+            IJL2(IG)=ICOMBUF(IKCOUNT)
+            IKCOUNT=IKCOUNT+1
+            IJLS(IG)=ICOMBUF(IKCOUNT)
+            IKCOUNT=IKCOUNT+1
+            IJL(IG)=ICOMBUF(IKCOUNT)
+            IKCOUNT=IKCOUNT+1
+            IJLT(IG)=ICOMBUF(IKCOUNT)
+          ENDDO
 
-        IF (IREFRA.EQ.2) THEN
-         IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))
-         IF(.NOT.ALLOCATED(V)) ALLOCATE(V(0:NIBLC,NBLC))
-          DO IG=1,NBLC
-            DO IJ=0,NIBLC
+          IF(.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
+          IF(.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
+          IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
+
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+              IKCOUNT=IKCOUNT+1
+              IXLG(IJ,IG)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+              IKCOUNT=IKCOUNT+1
+              KXLT(IJ,IG)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          IKCOUNT=IKCOUNT+1
+          NX=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NY=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          IPER=ICOMBUF(IKCOUNT)
+          KCOUNT=KCOUNT+1
+          AMOWEP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          AMOSOP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          AMOEAP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          AMONOP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          XDELLA=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          XDELLO=ZCOMBUF(KCOUNT)
+          DO J=1,NGY
+            KCOUNT=KCOUNT+1
+            ZDELLO(J)=ZCOMBUF(KCOUNT)
+          ENDDO
+          IKCOUNT=IKCOUNT+1
+          IRGG=ICOMBUF(IKCOUNT)
+
+          IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(NFRE+4))
+          IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(NFRE+4))
+          IF(.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(NFRE+4))
+          IF(.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(NFRE+4))
+          IF(.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
+          IF(.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
+          IF(.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
+          IF(.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
+          IF(.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(NFRE+4))
+          IF(.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(NFRE+4))
+          IF(.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(NFRE+4))
+          IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(NFRE+4))
+          IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(NFRE+4))
+          IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
+
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            IKP(M)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            IKP1(M)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            IKM(M)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            IKCOUNT=IKCOUNT+1
+            IKM1(M)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              K1W(K,IC)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              K2W(K,IC)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              K11W(K,IC)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          DO IC=1,2
+            DO K=1,NANG
+              IKCOUNT=IKCOUNT+1
+              K21W(K,IC)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            AF11(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            FKLAP(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            FKLAP1(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            FKLAM(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+          DO M=1,NFRE+4
+            KCOUNT=KCOUNT+1
+            FKLAM1(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+          KCOUNT=KCOUNT+1
+          ACL1=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ACL2=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          CL11=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          CL21=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DAL1=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DAL2=ZCOMBUF(KCOUNT)
+          DO IC=1,KFRH
+            KCOUNT=KCOUNT+1
+            FRH(IC)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          KCOUNT=KCOUNT+1
+          BETAMAX=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ZALP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ALPHA=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          XKAPPA=ZCOMBUF(KCOUNT)
+          DO IC=1,JPLEVC
+            KCOUNT=KCOUNT+1
+            XNLEV(IC)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          IF(.NOT.ALLOCATED(TAUT))
+     &       ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
+          IF(.NOT.ALLOCATED(TAUHFT))ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA))
+
+          DO ILEV=1,JPLEVT
+            DO J=0,JUMAX
+              DO I=0,ITAUMAX
+                KCOUNT=KCOUNT+1
+                TAUT(I,J,ILEV)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDDO
+          KCOUNT=KCOUNT+1
+          DELTAUW=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DELU=ZCOMBUF(KCOUNT)
+          DO L=0,IALPHA
+            DO K=0,IUSTAR
               KCOUNT=KCOUNT+1
-              U(IJ,IG)=ZCOMBUF(KCOUNT)
+              TAUHFT(K,L)=ZCOMBUF(KCOUNT)
             ENDDO
           ENDDO
-          DO IG=1,NBLC
-            DO IJ=0,NIBLC
+          KCOUNT=KCOUNT+1
+          DELUST=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DELALP=ZCOMBUF(KCOUNT)
+
+          IKCOUNT=IKCOUNT+1
+          NGOUT=ICOMBUF(IKCOUNT)
+
+          IF(NGOUT.GT.0) THEN
+            IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
+            IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
+          ENDIF
+
+          DO NGOU=1,NGOUT
+            IKCOUNT=IKCOUNT+1
+            IGAR(NGOU)=ICOMBUF(IKCOUNT)
+          ENDDO
+          DO NGOU=1,NGOUT
+            IKCOUNT=IKCOUNT+1
+            IJAR(NGOU)=ICOMBUF(IKCOUNT)
+          ENDDO
+
+          IF(.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(NIBLO,NBLO))
+          IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
+          IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
+          IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
+
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
               KCOUNT=KCOUNT+1
-              V(IJ,IG)=ZCOMBUF(KCOUNT)
+              DEPTH(IJ,IG)=ZCOMBUF(KCOUNT)
             ENDDO
           ENDDO
+          KCOUNT=KCOUNT+1
+          DEPTHA=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DEPTHD=ZCOMBUF(KCOUNT)
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              TCGOND(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              TFAK(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+          DO M=1,NFRE
+            DO KDEPTH=1,NDEPTH
+              KCOUNT=KCOUNT+1
+              TSIHKD(KDEPTH,M)=ZCOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+
+          IF(.NOT.ALLOCATED(FAC0))
+     &       ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
+          IF(.NOT.ALLOCATED(FAC1))
+     &       ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
+          IF(.NOT.ALLOCATED(FAC2))
+     &       ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
+          IF(.NOT.ALLOCATED(FAC3))
+     &       ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
+          IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
+          IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
+          IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                    KCOUNT=KCOUNT+1
+                    FAC0(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                    KCOUNT=KCOUNT+1
+                    FAC1(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                    KCOUNT=KCOUNT+1
+                    FAC2(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M2=1,NFREHF
+            DO M1=1,NFREHF
+              DO K2=1,NANG
+                DO K1=1,NANG
+                    KCOUNT=KCOUNT+1
+                    FAC3(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            FAK(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            FRHF(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          DO M=1,NFREHF
+            KCOUNT=KCOUNT+1
+            DFIMHF(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          IF (IREFRA.EQ.2) THEN
+           IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))
+           IF(.NOT.ALLOCATED(V)) ALLOCATE(V(0:NIBLC,NBLC))
+            DO IG=1,NBLC
+              DO IJ=0,NIBLC
+                KCOUNT=KCOUNT+1
+                U(IJ,IG)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+            DO IG=1,NBLC
+              DO IJ=0,NIBLC
+                KCOUNT=KCOUNT+1
+                V(IJ,IG)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDIF
+          IF(IKCOUNT.NE.MIC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* IKCOUNT NE MIC AFTER   *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* IKCOUNT =',IKCOUNT
+            WRITE (IU06,*) '* MIC =',MIC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF 
+          IF(KCOUNT.NE.MZC) THEN
+            WRITE (IU06,*) '**************************'
+            WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
+            WRITE (IU06,*) '* KCOUNT NE MZC AFTER    *'
+            WRITE (IU06,*) '* CALL TO MPL_BROADCAST  *'
+            WRITE (IU06,*) '* KCOUNT =',KCOUNT
+            WRITE (IU06,*) '* MZC =',MZC
+            WRITE (IU06,*) '**************************'
+            CALL ABORT1
+          ENDIF 
         ENDIF
-        IF(IKCOUNT.NE.MIC) THEN
-          WRITE (IU06,*) '**************************'
-          WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
-          WRITE (IU06,*) '* IKCOUNT NE MIC AFTER   *'
-          WRITE (IU06,*) '* CALL TO MPL_RECV       *'
-          WRITE (IU06,*) '* IKCOUNT =',IKCOUNT
-          WRITE (IU06,*) '* MIC =',MIC
-          WRITE (IU06,*) '**************************'
-          CALL ABORT1
-        ENDIF 
-        IF(KCOUNT.NE.MZC) THEN
-          WRITE (IU06,*) '**************************'
-          WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
-          WRITE (IU06,*) '* KCOUNT NE MZC AFTER    *'
-          WRITE (IU06,*) '* CALL TO MPL_RECV       *'
-          WRITE (IU06,*) '* KCOUNT =',KCOUNT
-          WRITE (IU06,*) '* MZC =',MZC
-          WRITE (IU06,*) '**************************'
-          CALL ABORT1
-        ENDIF 
+
+        DEALLOCATE(ICOMBUF,ZCOMBUF)
+
       ENDIF
 
-      DEALLOCATE(ICOMBUF,ZCOMBUF)
       RETURN
       END SUBROUTINE MPBCASTGRID

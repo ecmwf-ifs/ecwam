@@ -241,7 +241,9 @@
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
      &             PSEC4, ILENP, INGRIB, ILENG , KWORD, 'J', KRET)
       IF (ITEST.GT.1) WRITE(*,*)' GRIBEX DONE status=' , KRET 
-      IF(KRET.GT.0) THEN
+!     the error code 811: 'Cannot handle 2ndary bitmaps for J option'
+!     is actually a warning message and should not cause a failure.
+      IF(KRET.GT.0.and.kret.ne.811) THEN
         MSG = ERRMSG(2)
         CALL GRPRS0 (KSEC0)
         CALL GRPRS1 (KSEC0, KSEC1)

@@ -34,8 +34,6 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -58,33 +56,31 @@
 
       REAL,DIMENSION(MPMAXLENGTH) :: ZCOMBUF
 
-
       IF(NPROC.EQ.1) THEN
         RETURN
       ELSE 
-!     1.1 SEND TO ALL PE'S THE RESPECTIVE CONTRIBUTION 
-!         ---------------------------------------------
-        KCOUNT=0
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FIELD(IJ)
-        ENDDO
-        CALL MPL_BROADCAST(ZCOMBUF(1:MPMAXLENGTH),KROOT=IRANK,
-     &    KTAG=ITAG,CDSTRING='MPBCASTSCFLD:',LDCOMPAT=.TRUE.)
+        DO IP=1,NPROC
 
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
-!         ---------------------------------------------------------- 
-        DO IP=1,NPROC-1
-          CALL MPL_RECV(ZCOMBUF(1:MPMAXLENGTH),KTAG=ITAG,
-     &     KRECVTAG=KRTAG,KFROM=KRFROM,CDSTRING='MPBCASTSCFLD:')
-          IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR in MPBCASTSCFLD MISMATCHED TAGS' )
+          IF(IRANK.EQ.IP) THEN
+            KCOUNT=0
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FIELD(IJ)
+            ENDDO
+          ENDIF
 
-          KCOUNT=0
-          DO IJ=NSTART(KRFROM),NEND(KRFROM)
-            KCOUNT=KCOUNT+1
-            FIELD(IJ)=ZCOMBUF(KCOUNT)
-          ENDDO 
+          CALL MPL_BROADCAST(ZCOMBUF(1:MPMAXLENGTH),KROOT=IP,
+     &    KTAG=ITAG,CDSTRING='MPBCASTSCFLD:')
+          ITAG=ITAG+1
+
+          IF(IRANK.NE.IP) THEN
+            KCOUNT=0
+            DO IJ=NSTART(IP),NEND(IP)
+              KCOUNT=KCOUNT+1
+              FIELD(IJ)=ZCOMBUF(KCOUNT)
+            ENDDO 
+          ENDIF
+
         ENDDO
       ENDIF
 

@@ -56,7 +56,7 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
      &            COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPHM1  ,
      &            IGL      ,IJLT
       USE YOWMAP   , ONLY : KXLT
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -157,9 +157,8 @@
 
         DELLA0(NINF-1) = 0.
         DO IJ = NINF,IJLT(IG)
-          JH = KXLT(IJ,IG)
-          DCO(IJ) = 1./COSPH(JH)
-          DELLA0(IJ) = DELPRO/DELLAM(JH)
+          DCO(IJ) = COSPHM1(IJ,IG)
+          DELLA0(IJ) = DELPRO/DELLAM1(IJ,IG)
         ENDDO
 
 !*    0.2.1.2 COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
@@ -206,8 +205,7 @@
 
         DELLA0(NINF-1) = 0.
         DO IJ = NINF,IJLT(IG)
-          JH = KXLT(IJ,IG)
-          DELLA0(IJ) = DELPRO/DELLAM(JH)
+          DELLA0(IJ) = DELPRO/DELLAM1(IJ,IG)
         ENDDO
 
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.
@@ -426,7 +424,7 @@
       DELPH0 = 0.25*DELPRO/DELPHI
       DELTH0 = 0.25*DELPRO/DELTH
       DELLA0 = 0.25*DELLA0
-      DELFR0 = 0.25*DELPRO/((1.-FRATIO)*ZPI)
+      DELFR0 = 0.25*DELPRO/((FRATIO-1)*ZPI)
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -907,7 +905,7 @@
       DELPH0 = 0.25*DELPRO/DELPHI
       DELTH0 = 0.25*DELPRO/DELTH
       DELLA0 = 0.25*DELLA0
-      DELFR0 = 0.25*DELPRO/((1.-FRATIO)*ZPI)
+      DELFR0 = 0.25*DELPRO/((FRATIO-1.)*ZPI)
 
 !*    4.1 LOOP OVER DIRECTIONS.
 !         ---------------------

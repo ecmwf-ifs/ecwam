@@ -80,7 +80,7 @@
           INQUIRE ( UNIT=INUNIT, OPENED=LLOPENED)
           IF ( .NOT. LLOPENED) THEN
             WRITE(IU06,*)
-     &     ' READSARSPEC : TAKES UNIT ',INUNIT,' AS SAR DATA INPUT UNIT'
+     &     '  READSARSPEC: TAKES UNIT ',INUNIT,' AS SAR DATA INPUT UNIT'
             EXIT UNIT 
           ENDIF
         ENDDO UNIT
@@ -162,7 +162,7 @@
           READ(INUNIT)
      &        ((SPEC(ISPEC,IANG,IFRE,2),IANG=1,NANG),IFRE=1,NFRE)
           READ(INUNIT) DUMMY 
-!!! the SAR boundary wave numbers are not yet part of the file input !!! 
+!!!the SAR boundary wave numbers are not yet part of the file input !!! 
           XLLOW  = 1./658.
           XLUP   = 1./65.8
 !!! the cut off wave length is not yet part of the file input !!! 
@@ -181,6 +181,13 @@
 
           XKLOW(ISPEC) = XLLOW
           XKUP(ISPEC) = XLUP
+!!!
+!!!          WRITE(IU06,'(A21,1x,2(1X,F8.3),1X,I4)') 
+!!!     &               'CUT_OFF_WAVE_LENGTH= ',
+!!!     &               LONG(ISPEC,2),LAT(ISPEC,2),
+!!!     &               NINT(SCLWSI)
+!!!          CALL FLUSH(IU06)
+!!!
           XKCUTOFF(ISPEC) = ZPI/SCLWSI
 
 !         CHECK FOR DOUBLE OBSERVATIONS
@@ -205,10 +212,12 @@
       IF( ISPEC.GT.1 ) THEN
         CALL RESIZE_SARINPUT(ISPEC-1)
 
-        WRITE(IU06,*) 'NUMBER OF VALID SPECTRA READ IN , NSPEC = ',NSPEC
-        WRITE(IU06,*) 'NUMBER OF DISCARDED FLAGGED SPECTRA  = ',INOSPEC
+        WRITE(IU06,*) '  NUMBER OF VALID SPECTRA READ IN , NSPEC = ',
+     &  NSPEC
+        WRITE(IU06,*) '  NUMBER OF DISCARDED FLAGGED SPECTRA  = ',
+     &  INOSPEC
         IF(IDOUBLE.GT.0) 
-     &    WRITE(IU06,*) 'NUMBER OF DOUBLE SPECTRA  = ',IDOUBLE
+     &    WRITE(IU06,*) '  NUMBER OF DOUBLE SPECTRA  = ',IDOUBLE
 
 !       SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
 !       (ie FLMIN)
@@ -216,14 +225,14 @@
         DO IFRE = 1,NFRE
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
-              SPEC(ISPEC,IANG,IFRE,2)=MAX(SPEC(ISPEC,IANG,IFRE,2),FLMIN) 
+             SPEC(ISPEC,IANG,IFRE,2)=MAX(SPEC(ISPEC,IANG,IFRE,2),FLMIN) 
             END DO
           END DO
         END DO
       ELSE
         LNODATA=.TRUE.
-        WRITE(IU06,*) 'NO VALID DATA FOR SAR ASSIMILATION !!!'
-        WRITE(IU06,*) 'NOTHING WILL BE DONE. '
+        WRITE(IU06,*) '  NO VALID DATA FOR SAR ASSIMILATION !!!'
+        WRITE(IU06,*) '  NOTHING WILL BE DONE. '
       ENDIF
 
       IF(ALLOCATED(ISARINV)) DEALLOCATE(ISARINV)

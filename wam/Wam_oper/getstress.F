@@ -128,56 +128,52 @@
 !       AS WELL AS LWAVEWIND
         IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
       
-        ELSEIF(IRANK.EQ.ISEND) THEN
-          KCOUNT=0
-          DO IC=1,12
-            READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-          ENDDO
-          DO IC=1,12
-            READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-          ENDDO
-          DO IC=1,12
-            READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-          ENDDO
-          DO IC=1,12
-            READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-          ENDDO
-          IF(LWAVEWIND) THEN
-            IBUF(49)=1
-          ELSE
-            IBUF(49)=0
+        ELSE
+          IF(IRANK.EQ.ISEND) THEN
+            KCOUNT=0
+            DO IC=1,12
+              READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
+            ENDDO
+            DO IC=1,12
+              READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
+            ENDDO
+            DO IC=1,12
+              READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
+            ENDDO
+            DO IC=1,12
+              READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
+            ENDDO
+            IF(LWAVEWIND) THEN
+              IBUF(49)=1
+            ELSE
+              IBUF(49)=0
+            ENDIF
           ENDIF
 
-          CALL MPL_BROADCAST(IBUF(1:IBUFLENGTH),KROOT=IRANK,
-     &     KTAG=KTAG,CDSTRING='GETSTRESS:',LDCOMPAT=.TRUE.)
-
-          KTAG=KTAG+1
-        ELSE
-
-          CALL MPL_RECV(IBUF(1:IBUFLENGTH),KSOURCE=ISEND,KTAG=KTAG,
-     &     KRECVTAG=KRTAG,CDSTRING='GETSTRESS:')
-          IF(KRTAG.NE.KTAG) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR in GETSTRESS MISMATCHED TAGS' )
+          CALL MPL_BROADCAST(IBUF(1:IBUFLENGTH),KROOT=ISEND,
+     &     KTAG=KTAG,CDSTRING='GETSTRESS:')
 
           KTAG=KTAG+1
 
-          DO IC=1,12
-            WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-          ENDDO
-          DO IC=1,12
-            WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-          ENDDO
-          DO IC=1,12
-            WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-          ENDDO
-          DO IC=1,12
-            WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-          ENDDO
+          IF(IRANK.NE.ISEND) THEN
+            DO IC=1,12
+              WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
+            ENDDO
+            DO IC=1,12
+              WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
+            ENDDO
+            DO IC=1,12
+              WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
+            ENDDO
+            DO IC=1,12
+              WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
+            ENDDO
 
-          IF(IBUF(49).EQ.1) THEN
-            LWAVEWIND=.TRUE. 
-          ELSE
-            LWAVEWIND=.FALSE. 
+            IF(IBUF(49).EQ.1) THEN
+              LWAVEWIND=.TRUE. 
+            ELSE
+              LWAVEWIND=.FALSE. 
+            ENDIF
           ENDIF
 
         ENDIF

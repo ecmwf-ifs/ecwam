@@ -126,7 +126,7 @@
         ISTAT = ISETVALFDB (IUNIT(1), 'leve',   cllevel   )
         WRITE (jpuso,'("  copy ",a2, a4, a1, a4, a8, "/", a2, a2,
      &                 " step ", a4, " level ", a4,
-     &                    " to ",a2, a4, a1, a4, a8, "/", a2, a2
+     &                    " to ",a2, a4, a1, a4, a8, "/", a2, a2,
      &                 " step ", a4, " level ", a4)')
      &  cldir(1)( 1: 2), cldir(1)( 3: 6), cldir(1)( 7: 7),
      &  cldir(1)( 8:11), cldir(1)(12:19), cltype(1)(1:2), 

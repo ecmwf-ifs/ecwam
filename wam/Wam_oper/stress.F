@@ -87,7 +87,7 @@
 
         XL=XNLEV(JL)
         IF(ITEST.GE.1) THEN
-          WRITE(IU06,*)''
+          WRITE(IU06,*)' '
           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
 

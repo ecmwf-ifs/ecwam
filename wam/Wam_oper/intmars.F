@@ -70,7 +70,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 180000)
+      PARAMETER (NBIT = 190000)
 
       INTEGER KLONRGG(NGY)                                          
       INTEGER KSEK3(NKSEK3)

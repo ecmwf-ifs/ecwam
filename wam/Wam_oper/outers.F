@@ -83,22 +83,25 @@
 !*  EXCHANGE THE VALUE OF NERS, IERS,IGERS, AND IJERS WITH THE OTHER PE
 
           ITAG=92
-          IF(IRANK.EQ.1) THEN
+          ALLOCATE(IBUFF(2))
 
-            ALLOCATE(IBUFF(2))
+          IF(IRANK.EQ.1) THEN
             IBUFF(1) = NERS
             IBUFF(2) = IERS
-            CALL MPL_BROADCAST(IBUFF,KROOT=1,KTAG=ITAG,KERROR=IERR,
-     &       LDCOMPAT=.TRUE.)
-            IF(IERR.LT.0) THEN
-              WRITE(IU06,*) 'OUTERS: MPL_BROADCAST NERS RC=',IERR
-              CALL MPL_ABORT('MPL_BROADCAST NERS ERROR in OUTERS')
-            ENDIF
-            ITAG=ITAG+1
-            DEALLOCATE(IBUFF)
+          ENDIF
+          CALL MPL_BROADCAST(IBUFF,KROOT=1,KTAG=ITAG,CDSTRING='OUTERS:')
+          ITAG=ITAG+1
+          IF(IRANK.NE.1) THEN
+            NERS = IBUFF(1)
+            IERS = IBUFF(2)
+          ENDIF
+          DEALLOCATE(IBUFF)
 
-            IF(IERS.GT.0.) THEN
-              ALLOCATE(IBUFF(2*NERS))
+          IF(IERS.GT.0.) THEN
+            KBUFRLENGTH=2*NERS
+            ALLOCATE(IBUFF(KBUFRLENGTH))
+
+            IF(IRANK.EQ.1) THEN
               KCOUNT=0
               DO NGOU=1,NERS
                 KCOUNT=KCOUNT+1
@@ -108,34 +111,15 @@
                 KCOUNT=KCOUNT+1
                 IBUFF(KCOUNT)=IJERS(NGOU)
               ENDDO
-              CALL MPL_BROADCAST(IBUFF(1:KCOUNT),KROOT=1,KTAG=ITAG,
-     &         KERROR=IERR,LDCOMPAT=.TRUE.)
-              IF(IERR.LT.0) THEN
-                WRITE(IU06,*) 'OUTERS: MPL_BROADCAST RC=',IERR
-                CALL MPL_ABORT('MPL_BROADCAST ERROR in OUTERS')
-              ENDIF
             ENDIF
-          ELSE
-            ALLOCATE(IBUFF(2))
-            CALL MPL_RECV(IBUFF,KSOURCE=1,KTAG=ITAG,KRECVTAG=KRTAG,
-     &       CDSTRING='OUTERS 1:')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &            ('MPL_RECV ERROR in OUTERS:  MISMATCHED TAGS (0)' )
-            ITAG=ITAG+1
-            NERS = IBUFF(1)
-            IERS = IBUFF(2)
-            DEALLOCATE(IBUFF)
 
-            IF(IERS.GT.0.) THEN
+            CALL MPL_BROADCAST(IBUFF(1:KBUFRLENGTH),KROOT=1,KTAG=ITAG,
+     &       CDSTRING='OUTERS 1:')
+
+            IF(IRANK.NE.1) THEN
               ALLOCATE(IGERS(NERS))
               ALLOCATE(IJERS(NERS))
-              ALLOCATE(IBUFF(2*NERS))
 
-              KBUFRLENGTH=2*NERS
-              CALL MPL_RECV(IBUFF(1:KBUFRLENGTH),KSOURCE=1,KTAG=ITAG,
-     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='OUTERS:')
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &             ('MPL_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
               KCOUNT=0
               DO NGOU=1,NERS
                 KCOUNT=KCOUNT+1
@@ -145,10 +129,11 @@
                 KCOUNT=KCOUNT+1
                 IJERS(NGOU)=IBUFF(KCOUNT)
               ENDDO
-              IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
-     &              ('MPL_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
             ENDIF
+
+            DEALLOCATE(IBUFF)
           ENDIF
+
         ENDIF
       ENDIF
 
@@ -232,7 +217,6 @@
 
       IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
       IF(ALLOCATED(IGERS))  DEALLOCATE (IGERS)
-      IF(ALLOCATED (IBUFF)) DEALLOCATE (IBUFF)
       IF(ALLOCATED(EMPTS)) DEALLOCATE (EMPTS)
       IF(ALLOCATED(FMPTS)) DEALLOCATE (FMPTS)
       IF(ALLOCATED(THQPTS)) DEALLOCATE (THQPTS)

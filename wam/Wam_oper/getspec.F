@@ -358,13 +358,14 @@ C
 !               SEND GRIB DATA TO PE KSEND
 
                 ITAG=(M-1)*NANG+K
-                CALL MPL_SEND(ISIZE,KDEST=KSEND,KTAG=ITAG,KERROR=IERR)
+                CALL MPL_SEND(ISIZE,KDEST=KSEND,KTAG=ITAG,KERROR=IERR,
+     &            CDSTRING='GETSPEC 0:')
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                    ('MPL_SEND ERROR AT 1 in GETSPEC' )
 
                 ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
-     &           KERROR=IERR)
+     &           KERROR=IERR,CDSTRING='GETSPEC 1:')
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
 
@@ -377,7 +378,8 @@ C
 
                 ITAG=(M-1)*NANG+K
                 CALL MPL_RECV(ISIZE,KSOURCE=IREAD,KTAG=ITAG,
-     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR)
+     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
+     &            CDSTRING='GETSPEC 0:')
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                           ('MPL_RECV ERROR AT 1 in GETSPEC' )
                 IF(KRTAG.NE.ITAG) CALL MPL_ABORT
@@ -386,7 +388,8 @@ C
                 ALLOCATE(INGRIB(ISIZE))
                 ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_RECV(INGRIB(1:ISIZE),KSOURCE=IREAD,KTAG=ITAG,
-     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR)
+     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
+     &            CDSTRING='GETSPEC 1:')
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                       ('MPL_RECV ERROR AT 2 in GETSPEC ' )
                 IF(KRCOUNT.NE.ISIZE) CALL MPL_ABORT

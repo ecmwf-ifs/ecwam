@@ -1,4 +1,4 @@
-      SUBROUTINE MPDECOMP(NPR,NSTART,NEND,KLENTOP,KLENBOT,MAXLEN)
+      SUBROUTINE MPDECOMP(NPR,MAXLEN,LLIRANK)
 
 !****  *MPDECOMP* - EVEN DECOMPOSITION OF THE GRID DOMAIN
 !****               AMONG PROCESSES AFTER INPUT OF PREPROC GRID
@@ -10,83 +10,74 @@
 !                                       IU07 AND IU08 
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
+!     J. BIDLOT    ECMWF   FEBRUARY 2002 NEW 2-D DECOMPOSITION
+
 !     PURPOSE.
 !     --------
 !     IT WILL READ IU07 AND IU08 AND IF MESSAGE PASSING IT WILL
 !     DETERMINE AN EVEN DECOMPOSITION OF THE GRID ARRAYS FOR USE ON
 !     A DISTRIBUTED MEMORY COMPUTER USING A MESSAGE PASSING PROTOCOL
-!     FOR THE EXCHANGE OF INFORMATION ACROSS THE DIFFERENT PROCESSES
-!     THE LENGTH OF THE MESSAGES BETWEEN DIFFERENT PROCESS IS ALSO
+!     FOR THE EXCHANGE OF INFORMATION ACROSS THE DIFFERENT PE's
+!     THE LENGTH OF THE MESSAGES BETWEEN DIFFERENT PE's IS ALSO
 !     COMPUTED.
-!     IT IS ASSUMED THAT EACH GRID SUB DOMAIN WILL ONLY SEND OR
-!     RECEIVE MESSAGES FROM THE PREVIOUS AND NEXT PROCESS 
 
 !*    INTERFACE.
 !     ----------
-!     CALL *MPDECOMP*(NPR,NSTART,NEND,KLENTOP,KLENBOT,MAXLEN)
+!     CALL *MPDECOMP*(NPR,MAXLEN,LLIRANK)
 
 !      *NPR*       NUMBER OF SUBDOMAINS (USUALLY THE NUMBER OF PE'S )
-!      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-!      *KLENTOP*   LENGTH OF THE MESSAGE SENT BY THE NEXT
-!                  SUB GRID DOMAIN (IN GRID POINT UNIT)
-!      *KLENBOT*   LENGTH OF THE MESSAGE SENT BY THE PREVIOUS
-!                  SUB GRID DOMAIN (IN GRID POINT UNIT)
 !      *MAXLEN*    MAXIMUM NUMBER OF POINTS IN ANY SUB DOMAIN
+!      *LLIRANK*   IF TRUE THEN SOME OF THE ARRAYS THAT ARE ONLY USED
+!                  IF LMESSPASS IS TRUE ARE GENERATED EVEN IF IT IS NOT
+!                  A MESSAGE PASSING RUN (USED WITH WRITE_MPDECOMP). 
 
 !     METHOD.
 !     -------
-!     SINCE THE GLOBAL GRID DOMAIN IS MAPPED ONTO A 1 DIMENSIONAL ARRAY
-!     FOLLOWING INCREASING LATITUDE LINES, SUB GRID DOMAINS ARE SEGMENTS
-!     OF THAT LONG ARRAY. THE LENGTH OF THOSE SEGMENTS IS DETERMINED BY
-!     DISTRIBUTING AS EVENLY AS POSSIBLE THE TOTAL NUMBER OF POINTS.
 
-!     THE ADVECTION SCHEME IS SUCH THAT IT ONLY USES
-!     NEIGHBORING GRID POINTS IN THE 2D GRID. THEREFORE,(see figure) 
-!     FOR A GIVEN SEGMENT (PROCESS) INFORMATION FROM
-!     PREVIOUS GRID POINTS ARE ONLY NEEDED FROM FEW GRID POINTS
-!     STARTING FROM THE GRID POINT LOCATED, IN THE 2-D GRID,
-!     JUST BELOW (ON THE PREVIOUS LATITUDE LINE) THE STARTING POINT
-!     OF THAT PARTICULAR SEGMENT PROVIDED THIS PREVIOUS GRID POINT
-!     IS A VALID SEA POINT. IF NOT A VALID GRID POINT, FIND THE NEXT ONE
-!     WHICH IS A VALID SEA POINT BUT DOES NOT BELONG TO THE SEGEMENT
-!     IN QUESTION.
-!     NATURALLY, THE FIRST SEGMENT DOES NOT REQUIRE ANY INFORMATION
-!     FROM PREVIOUS SEGMENT. 
+!    THE DOMAIN WILL BE SUBDIVIDED INTO NPR SUBAREAS IN SUCH A WAY
+!    THAT EACH ONE WILL CONTAIN THE SAME NUMBER OF SEA POINTS (+-1).
+!    THE MODEL IS FIRST DIVIDED INTO NYDECOMP LATITUDINAL BANDS
+!    THIS IS REFFERED TO AS THE FIRST 1D DECOMPOSITION AND IS
+!    IDENTICAL TO THE DECOMPOSITION WHICH WAS USED BEFORE. 
+!    THE SECOND 2D DECOMPOSITION USED A SIMILAR PROCEDURE TO SPLIT
+!    EACH BANDS INTO SUBAREAS OF EQUAL NUMBER OF POINTS.
+!    THERE WILL BE NXDECOMP SUBAREAS IN THE FIRST NYCUT LATITUDINAL
+!    BANDS (starting from the southern boundary)
+!    AND (NXDECOMP-1) SUBAREAS IN THE REMAINING (NYDECOMP-NYCUT) BANDS
+!    IN SUCH A WAY THAT 
+!    NPR=NXDECOMP*NYCUT+(NYDECOMP-NYCUT)*(NXDECOMP-1) 
+ 
+!    NXDECOMP and NYDECOMP ARE DETERMINED IN SUCH A WAY THAT THE SUB
+!    AREAS ARE AS SQUARE AS POSSIBLE BY ASSUMING THAT THE GLOBAL
+!    EXTEND OF THE DOMAIN IS TWICE AS LONG IN THE LONGITUDINAL DIRECTION
+!    THAN IN THE LATITUDINAL DIRECTION (as is the case for the globe).
 
-
-
-!     FIGURE: 2-D GRID
-!     -------
-
-!       +    +    +    +    +    +    +    +
-!       +    +    +    +    +    +    +    +
-!       +    +    +    I    I    I    I    I
-!       I    I    I    *    *    *    *    *
-!       *    *    *    *    *    *    *    *
-!       *    *    *    *    *    *    *    *
-!       *    *    *    *    *    *    *    *
-!       *    *    *    *    *    *    *    *
-!       *    *    *    *    *    *    I    I
-!       I    I    I    I    I    I    +    +
-!       +    +    +    +    +    +    +    +
-!       +    +    +    +    +    +    +    +
-
-!     FIGURE LEGEND :
-!     --------------
-!     *  GRID POINTS OF THE SELECTED SEGMENT (PROCESS)
-!     I  GRID POINTS OF THE PREVIOUS/FOLLOWING SEGEMENT FOR WHICH
-!        INFORMATION IS NECESSARY IF THE ADVECTION SCHEME IS ONLY 
-!        COMPUTED AT THE * POINTS
-
-!     +  OTHER GRID POINTS THAT DO NOT AFFECT THE * POINTS 
-
-
-!     SIMILARLY, INFORMATION FROM FOLLOWING GRID POINTS ARE ONLY NEEDED
-!     UP TO THE GRID POINT JUST ABOVE (IN THE 2D GRID) THE LAST POINT
-!     OF THE SELECTED SEGMENT, PROVIDED THIS FOLLOWING GRID POINT IS A
-!     VALID SEA POINT, OTHERWISE, FIND THE FIRST PREVIOUS ONE WHICH IS
-!     A VALID ONE BUT DOES NOT BELONG TO THE SEGMENT IN QUESTION.
+!    BASED ON THE CURRENT ADVECTION SCHEME (SEE PROPAGS),
+!    THE DECOMPOSITION THEN YIELDS FOR EACH PE
+!    NGBTOPE  WHICH GIVES THE TOTAL NUMBER OF NEIGHBOURING PE'S TO
+!    WHICH INFORMATION FROM THE LOCAL PE IS POTENTIALLY NEEDED.
+!    NTOPELST(INGB) INGB=1,NGBTOPE  THE LIST OF NEIGHBOURING PE'S ,
+!    NTOPE(IPROC) IPROC=1,NPR  THE NUMBER OF POINTS FOR WHICH INFORMATION
+!    HAS TO BE SENT TO PE IPROC,
+!    IJTOPE(IH,IPROC) IH=1,NTOPE(IPROC), IPROC=1,NPR THE IJ INDEX OF THOSE
+!    POINTS FOR WHICH INFORMATION HAS TO BE SENT TO PE IPROC,
+!
+!    NGBFROMPE WHICH GIVES THE TOTAL NUMBER OF NEIGHBOURING PE'S FROM
+!    WHICH INFORMATION IS POTENTIALLY NEEDED,
+!    NFROMPELST(KNGB) KNGB=1,NGBFROMPE  THE LIST OF NEIGHBOURING PE'S ,
+!    NFROMPE(IPROC) IPROC=1,NPR  THE NUMBER OF POINTS THE LOCAL PE HAS
+!    TO RECEIVE INFORMATION FROM PE IPROC,
+!    NIJSTART(IPROC) IPROC=1,NPR THE IJ INDEX OF THE FIRST HALO POINT
+!    OBTAINED FROM PE IPROC IN THE BUFFERS THAT PADS BOTH SIDE OF THE
+!    1-D SEA POINT ARRAY OF THE LOCAL PE. THE OTHER POINTS ARE STORED IN
+!    SUCCESSIVE ORDER FROM THAT IJSTART. THE ARRAYS KLON, KLAT, KALT2,
+!    DEPTH, DELLAM1, COSPHM1 ARE LOCALLY REDEFINED
+!    TO CORRECTLY POINT TO THOSE HALO POINTS IN THE PADDING BUFFERS.
+!    BY CONVENTION, CONTRIBUTIONS FROM PE WITH PE NUMBER LESS THAN
+!    THE LOCAL ONE (IRANK) ARE PUT IN THE BOTTOM BUFFER
+!    (I.E. THEIR IJ'S ARE LESS THAN NSTART) AND THOSE CONTRIBUTIONS WITH
+!    PE NUMBER GREATER THAN THE LOCAL ONE (IRANK) ARE PUT IN TOP BUFFER 
+!    (I.E. THEIR IJ'S ARE GREATER THAN NEND).
 
 !     EXTERNALS.
 !     ----------
@@ -99,30 +90,47 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,FR5      ,
+      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,FR5     ,
      &             FRM5     ,COFRM4   ,COEF4
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,
+     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
+     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG 
-      USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO    ,NGY      ,
+     &            LL1D
       USE YOWPCONS , ONLY : G
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : IREFRA 
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
+     &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
+     &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,
+     &            IJ2NEWIJ
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV
       USE YOWUNIT  , ONLY : IU07     ,IU08
       USE MPL_MODULE
 
+
 !----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      INTEGER,DIMENSION(NPR) :: NSTART,NEND,KLENTOP,KLENBOT
-      CHARACTER*80 LOGFILENAME
-
-! ----------------------------------------------------------------------
 
       INTEGER,ALLOCATABLE :: ICOMBUF(:), KDUM(:,:) 
+      INTEGER,ALLOCATABLE, DIMENSION(:) :: INDEX,IJNDEX,NTOTSUB
+      INTEGER,ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
+      INTEGER,ALLOCATABLE, DIMENSION(:) :: NSTART1D,NEND1D
+      INTEGER,ALLOCATABLE, DIMENSION(:) :: KSTART1,KEND1, NLON, ILON
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IXLON
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,KTEMP,NLENHALO,IJHALO
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE,IPROCFROM
+
       REAL,ALLOCATABLE :: RCOMBUF(:), RDUM(:,:)
+
+      CHARACTER*80 LOGFILENAME
+      LOGICAL :: LLIRANK
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
@@ -235,19 +243,12 @@
                 ICOMBUF(KCOUNT)=KLON(IJ,IC)
               ENDDO
             ENDDO
+          ENDIF
 
-            CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IRANK,
-     &       KTAG=ITAG,CDSTRING='MPDECOMP:',LDCOMPAT=.TRUE.)
-          ELSE
+          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,
+     &     KTAG=ITAG,CDSTRING='MPDECOMP:')
 
-            CALL MPL_RECV(ICOMBUF(1:MPLENGTH),KSOURCE=IREAD,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPDECOMP:')
-            IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR in MPDECOMP:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR in MPRECOMP MISMATCHED TAGS' )
-
-
+          IF(IRANK.NE.IREAD) THEN
             KCOUNT=0
             DO IC=1,2
               DO IJ=1,NIBLO
@@ -263,7 +264,6 @@
                 KLON(IJ,IC)=ICOMBUF(KCOUNT)
               ENDDO
             ENDDO
-
           ENDIF
 
           DEALLOCATE(ICOMBUF)
@@ -276,80 +276,764 @@
       ENDIF
 
 
-!*    2. FIND THE NUMBER OF POINTS PER PROCESS, THE START AND END INDEX
+!*    2. FIND THE NUMBER OF POINTS PER PE, THE START AND END INDEX
 !        --------------------------------------------------------------
-      NMEAN=IJL(NBLO)/NPR
-      NREST=IJL(NBLO)-NMEAN*NPR
-      
-      NSTART(1)=1
-      IF(NREST.GT.0) THEN
-        NPTS=NMEAN+1
-        NREST=NREST-1 
-      ELSE
-        NPTS=NMEAN
-      ENDIF
-      NEND(1)=NSTART(1)+NPTS-1
 
-      DO IP=2,NPR
-        NSTART(IP)=NSTART(IP-1)+NPTS
+      ALLOCATE (NSTART(NPR),NEND(NPR),KLENBOT(NPR),KLENTOP(NPR))
+      ALLOCATE (NFROMPE(NPR),NTOPE(NPR),NIJSTART(NPR))
+
+!     DETERMINE THE SRUCTURE OF THE MODEL DECOMPOSITION
+
+      IF(LL1D) THEN
+!     1D DECOMPOSITION ONLY (old)
+        NXDECOMP=1
+        NYDECOMP=NPR
+        NYCUT=NYDECOMP
+	  ELSE
+!     2D DECOMPOSITION (new)
+        IF(NPR.EQ.1) THEN
+          NXDECOMP=1
+          NYDECOMP=1
+          NYCUT=1
+        ELSEIF(NPR.EQ.2) THEN
+          NXDECOMP=2
+          NYDECOMP=1
+          NYCUT=1
+        ELSE
+          IPROC=0
+          ICOUNT=0
+!         find whether NPR can be expressed as 2*i**2 i=1,2,3,...
+!         because in that case
+!         NPR=NXDECOMP*NYCUT+(NYDECOMP-NYCUT)*(NXDECOMP-1)  (1) 
+!         is satisfied with NXDECOMP=2*NYDECOMP and NYCUT=NYDECOMP
+!         which is a perfect subdivision into identical squares 
+!         of a rectangle of dimension 2L by L.
+          DO WHILE (IPROC.LT.NPR)
+            ICOUNT=ICOUNT+1
+            IPROC=2*ICOUNT**2
+          ENDDO
+          IF(IPROC.EQ.NPR) THEN
+            NYDECOMP=INT(SQRT(FLOAT(NPR)/2))
+            NXDECOMP=2*NYDECOMP
+            NYCUT=NYDECOMP
+          ELSE
+!         if the even decomposition into squares is not possible
+!         start with the following approximation for NYDECOMP
+!         found by setting NXDECOMP=2*NYDECOMP into (1) and
+!         play around NXDECOMP=2*NYDECOMP,NYDECOMP,-1 and
+!                     NYCUT=NYDECOMP,1,-1 until a solution to (1)
+!         is reached. 
+            IPROC=0
+            NYDECOMP=INT(SQRT(FLOAT(NPR)/2))+1
+            DO NXDECOMP=2*NYDECOMP,NYDECOMP,-1
+              DO NYCUT=NYDECOMP,1,-1
+                IPROC=NYDECOMP*(NXDECOMP-1)+NYCUT
+                IF(IPROC.EQ.npr) EXIT
+              ENDDO
+              IF(IPROC.EQ.NPR) EXIT
+            ENDDO
+            IF(IPROC.NE.NPR) THEN
+              WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!!'
+              CALL ABORT1
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+
+
+!     FIRST 1-D DECOMPOSITION IN LATITUDINAL BANDS
+
+      ALLOCATE(NSTART1D(NYDECOMP))
+      ALLOCATE(NEND1D(NYDECOMP))
+
+      IF(NYCUT.EQ.NYDECOMP) THEN
+!       if the number of subareas per latitunal bands is the same
+!       in all bands then the number of sea points in each band will
+!       be determined to be as even as possible
+        NMEAN=IJL(NBLO)/NYDECOMP
+        NREST=IJL(NBLO)-NMEAN*NYDECOMP
+     
+        NSTART1D(1)=1
         IF(NREST.GT.0) THEN
           NPTS=NMEAN+1
           NREST=NREST-1 
         ELSE
           NPTS=NMEAN
         ENDIF
-        NEND(IP)=NSTART(IP)+NPTS-1
-      ENDDO
+        NEND1D(1)=NSTART1D(1)+NPTS-1
+
+        DO IP=2,NYDECOMP
+          NSTART1D(IP)=NSTART1D(IP-1)+NPTS
+          IF(NREST.GT.0) THEN
+            NPTS=NMEAN+1
+            NREST=NREST-1 
+          ELSE
+            NPTS=NMEAN
+          ENDIF
+          NEND1D(IP)=NSTART1D(IP)+NPTS-1
+        ENDDO
+      ELSE
+!       if the number of subareas per latitunal bands is not the same
+!       then the number of sea points per latitudinal bands will be
+!       determined in such a way that number of points for the bands with
+!       the least subareas (the top (nydecomp-nycut) bands) will
+!       roughly scale like (nxdecomp-1)/nxdecomp the number of points
+!       in the remaining bottom nycut bands
+
+        NMEAN=NXDECOMP*IJL(NBLO)/((NXDECOMP-1)*NYDECOMP+NYCUT)
+      
+        NSTART1D(1)=1
+        NPTS=NMEAN
+        NEND1D(1)=NSTART1D(1)+NPTS-1
+
+        DO IP=2,NYCUT
+          NSTART1D(IP)=NSTART1D(IP-1)+NPTS
+          NPTS=NMEAN
+          NEND1D(IP)=NSTART1D(IP)+NPTS-1
+        ENDDO
+
+        NMEAN=(IJL(NBLO)-NEND1D(NYCUT))/(NYDECOMP-NYCUT)
+        NREST=(IJL(NBLO)-NEND1D(NYCUT))-NMEAN*(NYDECOMP-NYCUT)
+
+        DO IP=NYCUT+1,NYDECOMP
+          NSTART1D(IP)=NSTART1D(IP-1)+NPTS
+          IF(NREST.GT.0) THEN
+            NPTS=NMEAN+1
+            NREST=NREST-1 
+          ELSE
+            NPTS=NMEAN
+          ENDIF
+          NEND1D(IP)=NSTART1D(IP)+NPTS-1
+        ENDDO
+      ENDIF 
+
+
+!     SECOND 1-D DECOMPOSITION IN EACH LATITUDINAL BAND
+
+      IF(LL1D.OR.NPR.EQ.1) THEN
+!       not needed
+        DO IP=1,NYDECOMP
+          NSTART(IP)=NSTART1D(IP)
+          NEND(IP)=NEND1D(IP)
+        ENDDO
+      ELSE
+
+        ALLOCATE(NEWIJ2IJ(NIBLO))
+        ALLOCATE(IJ2NEWIJ(NIBLO))
+
+        XDELLOINV=1.0/XDELLO
+
+        STAGGER=0.5*(AMOEAP-AMOWEP+IPER*XDELLO)/NXDECOMP
+        STAGGER=FLOAT(NINT(100*STAGGER))/100.
+        ISTAGGER=NINT(STAGGER*XDELLOINV)
+
+        IG=1
+        IPROC=0
+        NIJ=0
+        DO IPR=1,NYDECOMP
+          IPROC=IPROC+1
+          NSTART(IPROC)=NIJ+1
+          NTOT=NEND1D(IPR)-NSTART1D(IPR)+1
+
+!         find number of points per subarea
+          IF(IPR.LE.NYCUT) THEN
+            NAREA=NXDECOMP
+          ELSE
+            NAREA=NXDECOMP-1
+          ENDIF 
+          ALLOCATE(NTOTSUB(NAREA))
+
+          NMEAN=NTOT/NAREA
+          NREST=NTOT-NMEAN*NAREA
+          DO IAR=1,NAREA
+            IF(NREST.GT.0) THEN
+              NTOTSUB(IAR)=NMEAN+1
+              NREST=NREST-1
+            ELSE
+              NTOTSUB(IAR)=NMEAN
+            ENDIF
+          ENDDO
+
+
+!         sort sea points in latitudinal bands by increasing longitudes
+!         and increasing latitude. Note that we use the fact that the
+!         IJ's are already ordered for each latitude 
+!         by determining the array IJNDEX which contain the IJ's with
+!         increasing longitude and latitude.
+
+          KLATBOT=KXLT(NSTART1D(IPR),IG)
+          KLATTOP=KXLT(NEND1D(IPR),IG)
+          ALLOCATE(KSTART1(KLATBOT:KLATTOP))
+          ALLOCATE(KEND1(KLATBOT:KLATTOP))
+          ALLOCATE(NLON(KLATBOT:KLATTOP))
+          KXLAT=KLATBOT
+          KSTART1(KXLAT) = NSTART1D(IPR)
+          DO IJ=NSTART1D(IPR)+1,NEND1D(IPR)
+            IF(KXLAT.LT.KXLT(IJ,IG)) THEN
+              KXLAT = KXLT(IJ,IG)
+              KSTART1(KXLAT) = IJ 
+              KEND1(KXLAT-1) = IJ-1
+            ENDIF
+          ENDDO
+          KEND1(KLATTOP)=NEND1D(IPR)
+
+          NLONGMAX=0
+          DO KXLAT=KLATBOT,KLATTOP
+            NLONGMAX=MAX(KEND1(KXLAT)-KSTART1(KXLAT)+1,NLONGMAX)
+          ENDDO
+
+          ALLOCATE(IXLON(NLONGMAX,KLATBOT:KLATTOP))
+
+          IXLONMAX=INT(AMOWEP*XDELLOINV)-1
+          DO KXLAT=KLATBOT,KLATTOP
+            NLON(KXLAT)=0
+          ENDDO
+          KXLAT=KLATBOT
+          DO IJ=NSTART1D(IPR),NEND1D(IPR)
+            IF(KXLAT.LT.KXLT(IJ,IG)) THEN
+              KXLAT = KXLT(IJ,IG)
+            ENDIF
+            NLON(KXLAT)=NLON(KXLAT)+1
+            IX = IXLG(IJ,IG)
+            JSN= KXLT(IJ,IG)
+            XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
+            XLON=FLOAT(NINT(100*XLON))/100.
+            IXLON(NLON(KXLAT),KXLAT)=NINT(XLON*XDELLOINV)
+            IXLONMAX=MAX(IXLONMAX,IXLON(NLON(KXLAT),KXLAT))
+          ENDDO
+
+          ALLOCATE(IJNDEX(NTOT))
+
+          ALLOCATE(ILON(KLATBOT:KLATTOP))
+          DO KXLAT=KLATBOT,KLATTOP
+            ILON(KXLAT)=1
+          ENDDO
+          JC=0
+          KMIN=KLATBOT
+          DO WHILE(KMIN.GT.0)
+            IXLONMIN=IXLONMAX+1
+            KMIN=0
+            DO KXLAT=KLATBOT,KLATTOP
+              IF(ILON(KXLAT).LE.NLON(KXLAT)) THEN
+                IF(IXLON(ILON(KXLAT),KXLAT).LT.IXLONMIN) THEN
+                  KMIN=KXLAT
+                  IXLONMIN=IXLON(ILON(KXLAT),KXLAT)
+                ENDIF
+              ENDIF
+            ENDDO
+            IF(KMIN.GT.0) THEN
+              IJ=KSTART1(KMIN)+ILON(KMIN)-1 
+              JC=JC+1
+              IJNDEX(JC)=IJ
+              ILON(KMIN)=ILON(KMIN)+1
+            ENDIF
+          ENDDO
+
+!         find which points belong to a subarea
+
+          JCS=1
+          IF(MOD(IPR,2).EQ.0) THEN
+!         staggering
+            JCM=1
+            DO KXLAT=KLATBOT,KLATTOP
+              IIL=1
+              DO WHILE (IXLON(MIN(IIL,NLON(KXLAT)),KXLAT).LT.ISTAGGER
+     &                  .AND.   IIL.LE.NLON(KXLAT)
+     &                  .AND.   NLON(KXLAT).GT.0 )
+                IIL=IIL+1
+                JCM=JCM+1 
+              ENDDO
+            ENDDO
+          ELSE
+            JCM=1
+          ENDIF
+
+          IAR=1
+          IC=0
+          DO JC=JCM,NTOT 
+            NIJ=NIJ+1
+            IC=IC+1 
+            IF(IC.EQ.NTOTSUB(IAR)) THEN
+              NEND(IPROC)=NIJ
+            ELSEIF(IC.GT.NTOTSUB(IAR)) THEN
+              IC=1
+              IAR=IAR+1
+              IPROC=IPROC+1
+              NSTART(IPROC)=NIJ
+            ENDIF
+            IJ=IJNDEX(JC)
+            NEWIJ2IJ(NIJ)=IJ
+            IJ2NEWIJ(IJ)=NIJ
+          ENDDO
+
+          DO JC=JCS,JCM-1
+            NIJ=NIJ+1
+            IC=IC+1 
+            IF(IC.EQ.NTOTSUB(IAR)) THEN
+              NEND(IPROC)=NIJ
+            ELSEIF(IC.GT.NTOTSUB(IAR)) THEN
+              IC=1
+              IAR=IAR+1
+              IPROC=IPROC+1
+              NSTART(IPROC)=NIJ
+            ENDIF
+            IJ=IJNDEX(JC)
+            NEWIJ2IJ(NIJ)=IJ
+            IJ2NEWIJ(IJ)=NIJ
+          ENDDO
+
+
+          DEALLOCATE(KSTART1)
+          DEALLOCATE(KEND1)
+          DEALLOCATE(NLON)
+          DEALLOCATE(ILON)
+          DEALLOCATE(IXLON)
+          DEALLOCATE(IJNDEX)
+          DEALLOCATE(NTOTSUB)
+
+        ENDDO
+
+
+!       RELABELLING OF THE ARRAYS KLAT KLAT2 KLON DEPTH
+!       (also see below for WADV)
+
+        DO IC=1,2
+          DO IJ=NSTART(1),NEND(NPR)
+            IF(KLON(IJ,IC).GT.0 .AND. KLON(IJ,IC).LE.NIBLO)
+     &         KLON(IJ,IC) = IJ2NEWIJ(KLON(IJ,IC))
+            IF(KLAT(IJ,IC).GT.0 .AND. KLAT(IJ,IC).LE.NIBLO)
+     &         KLAT(IJ,IC) = IJ2NEWIJ(KLAT(IJ,IC))
+            IF(KLAT2(IJ,IC).GT.0 .AND. KLAT2(IJ,IC).LE.NIBLO)
+     &         KLAT2(IJ,IC) = IJ2NEWIJ(KLAT2(IJ,IC))
+          ENDDO
+        ENDDO
+
+        ALLOCATE(KDUM(NIBLO,2))
+        DO IC=1,2
+          DO NIJ=NSTART(1),NEND(NPR)
+            KDUM(NIJ,IC)=KLON(NEWIJ2IJ(NIJ),IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KLON(NIJ,IC)=KDUM(NIJ,IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KDUM(NIJ,IC)=KLAT(NEWIJ2IJ(NIJ),IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KLAT(NIJ,IC)=KDUM(NIJ,IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KDUM(NIJ,IC)=KLAT2(NEWIJ2IJ(NIJ),IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KLAT2(NIJ,IC)=KDUM(NIJ,IC)
+          ENDDO
+        ENDDO
+        DEALLOCATE(KDUM)
+
+        ALLOCATE(KDUM(NIBLO,IGL))
+        DO IG=1,IGL
+          DO NIJ=NSTART(1),NEND(NPR)
+            KDUM(NIJ,IG)=IXLG(NEWIJ2IJ(NIJ),IG)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            IXLG(NIJ,IG)=KDUM(NIJ,IG)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KDUM(NIJ,IG)=KXLT(NEWIJ2IJ(NIJ),IG)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            KXLT(NIJ,IG)=KDUM(NIJ,IG)
+          ENDDO
+        ENDDO
+        DEALLOCATE(KDUM)
+
+        ALLOCATE(RDUM(NIBLO,IGL))
+        DO IG=1,IGL
+          DO NIJ=NSTART(1),NEND(NPR)
+            RDUM(NIJ,IG)=DEPTH(NEWIJ2IJ(NIJ),IG)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+            DEPTH(NIJ,IG)=RDUM(NIJ,IG)
+          ENDDO
+        ENDDO
+        DEALLOCATE(RDUM)
+
+        IF (IREFRA.EQ.2) THEN
+!!!       nothing has been done if currents are present
+!!!       they will need to be reordered AND readdressed for the
+!!!       halo points
+          WRITE(IU06,*) 'MPDECOMP :  It is probable that  !!!!'
+          WRITE(IU06,*) 'MPDECOMP :  U and V must be reordered !!!!'
+          WRITE(IU06,*) 'MPDECOMP :  The program has aborted  !!!!'
+          CALL ABORT1
+        ENDIF
+
+      ENDIF
+
+      DEALLOCATE(NSTART1D)
+      DEALLOCATE(NEND1D)
 
 
 !     3. DETERMINE THE LENGTH OF THE MESSAGE THAT WILL BE EXCHANGED 
-!        BETWEEN NEIGHBORING SUB GRID DOMAIN
+!        BETWEEN NEIGHBORING SUB GRID DOMAINS
 !        -----------------------------------------------------------
-
-      KLENBOT(1)=0
-      DO IP=2,NPR
-        I=-1
-20      I=I+1
-        ISB=KLAT(NSTART(IP)+I,1)
-        IF(ISB.LE.0) GOTO 20
-
-        KLENBOT(IP)=MAX(0,NSTART(IP)-ISB)
-
-        I=-1
-22      I=I+1
-        ISB2=KLAT2(NSTART(IP)+I,1)
-        IF(ISB2.LE.0) GOTO 22
-
-        KLENBOT(IP)=MAX(0,NSTART(IP)-ISB,NSTART(IP)-ISB2)
-
-      ENDDO
-
-      KLENTOP(NPR)=0
-      DO IP=1,NPR-1
-        I=-1
-40      I=I+1
-        IET=KLAT(NEND(IP)-I,2)
-        IF(IET.LE.0) GOTO 40
-
-        KLENTOP(IP)=MAX(0,IET-NEND(IP))
-
-        I=-1
-42      I=I+1
-        IET2=KLAT2(NEND(IP)-I,2)
-        IF(IET2.LE.0) GOTO 42
-
-        KLENTOP(IP)=MAX(0,IET-NEND(IP),IET2-NEND(IP))
-
-      ENDDO
 
       MAXLEN=0
       DO IP=1,NPR
         MAXLEN=MAX(MAXLEN,NEND(IP)-NSTART(IP)+1)
       ENDDO
 
+!     FIND INDEX AND PE OF THE POINTS IN THE HALO
+      MAXPERMLEN=2*MAXLEN+10
+      MAXPERMLEN2=2*MAXPERMLEN
 
-!     4. KEEP THE PART OF KLAT AND KLON WHICH IS NECESSARY
-!        -------------------------------------------------
+      ALLOCATE(IJFROMPE(MAXPERMLEN,NPR))
+      ALLOCATE(IPROCFROM(MAXPERMLEN,NPR))
+      ALLOCATE(NLENHALO(NPR))
+
+      ALLOCATE(ITEMP(MAXPERMLEN2))
+
+      DO IP=1,NPR
+        DO IH=1,MAXPERMLEN
+          IPROCFROM(IH,IP)=NPR+1
+        ENDDO
+      ENDDO
+
+!     DETERMINE IJFROMPE
+      DO IP=1,NPR
+        IH=0
+        DO IC=1,2
+          DO IJ=NSTART(IP),NEND(IP)
+            IF(  KLON(IJ,IC).GT.0 .AND. KLON(IJ,IC).LE.NIBLO .AND.
+     &          (KLON(IJ,IC).LT.NSTART(IP).OR.
+     &           KLON(IJ,IC).GT.NEND(IP)       ) ) THEN
+               IH=IH+1
+               IF(IH.GT.MAXPERMLEN2) THEN
+                 WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 CALL ABORT1
+               ENDIF
+               ITEMP(IH)=KLON(IJ,IC)
+            ENDIF
+            IF(  KLAT(IJ,IC).GT.0 .AND. KLAT(IJ,IC).LE.NIBLO .AND.
+     &          (KLAT(IJ,IC).LT.NSTART(IP).OR.
+     &           KLAT(IJ,IC).GT.NEND(IP)       ) ) THEN 
+               IH=IH+1
+               IF(IH.GT.MAXPERMLEN2) THEN
+                 WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 CALL ABORT1
+               ENDIF
+               ITEMP(IH)=KLAT(IJ,IC)
+            ENDIF
+
+            IF(  KLAT2(IJ,IC).GT.0 .AND. KLAT2(IJ,IC).LE.NIBLO .AND.
+     &          (KLAT2(IJ,IC).LT.NSTART(IP).OR.
+     &           KLAT2(IJ,IC).GT.NEND(IP)       ) ) THEN 
+               IH=IH+1
+               IF(IH.GT.MAXPERMLEN2) THEN
+                 WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 CALL ABORT1
+               ENDIF
+               ITEMP(IH)=KLAT2(IJ,IC)
+            ENDIF
+          ENDDO
+        ENDDO
+
+        NH=IH
+        IF(NH.GT.1) THEN
+          ALLOCATE(INDEX(NH))
+          CALL SORTINI(ITEMP,INDEX,NH)
+          CALL SORTI(ITEMP,INDEX,NH)
+          DEALLOCATE(INDEX)
+        ENDIF
+
+        JH=1
+
+        IJFROMPE(1,IP)=ITEMP(1)
+        DO IH=2,NH
+          IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
+            JH=JH+1
+            IF(JH.GT.MAXPERMLEN) THEN
+               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+               WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
+               WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
+               CALL ABORT1
+            ENDIF
+            IJFROMPE(JH,IP)=ITEMP(IH)
+          ENDIF
+        ENDDO
+        NLENHALO(IP)=JH
+
+      ENDDO
+      DEALLOCATE(ITEMP)
+
+!     DETERMINE IPROCFROM, KLENBOT and KLENTOP
+      DO IP=1,NPR
+        KLENBOT(IP)=0
+        KLENTOP(IP)=0
+        DO IH=1,NLENHALO(IP)
+          DO IPROC=1,NPR
+            IF( IJFROMPE(IH,IP).GE.NSTART(IPROC) .AND.
+     &          IJFROMPE(IH,IP).LE. NEND(IPROC) ) THEN
+              IPROCFROM(IH,IP)=IPROC
+              IF(IPROC.LT.IP) THEN
+                KLENBOT(IP)=KLENBOT(IP)+1
+              ELSEIF(IPROC.GT.IP) THEN
+                KLENTOP(IP)=KLENTOP(IP)+1
+              ENDIF
+              EXIT
+            ENDIF
+          ENDDO
+
+        ENDDO
+
+      ENDDO
+
+      NINF=NSTART(IRANK)-KLENBOT(IRANK)
+      NSUP=NEND(IRANK)+KLENTOP(IRANK)
+
+!     FIND THE LOCAL NTOPE
+      DO IP=1,NPR
+        NTOPE(IP)=0
+      ENDDO
+      IF(LMESSPASS .OR. LLIRANK) THEN
+        DO IP=1,NPR
+          DO IH=1,NLENHALO(IP)
+            IF(IPROCFROM(IH,IP).EQ.IRANK) THEN
+              NTOPE(IP)=NTOPE(IP)+1
+            ENDIF
+          ENDDO
+        ENDDO
+
+        NTOPEMAX=0
+        DO IP=1,NPR
+          NTOPEMAX=MAX(NTOPEMAX,NTOPE(IP))
+        ENDDO
+
+      ENDIF
+
+
+!     FIND THE LOCAL NFROMPE
+      DO IP=1,NPR
+        NFROMPE(IP)=0
+      ENDDO
+      IF(LMESSPASS .OR. LLIRANK) THEN
+        DO IH=1,NLENHALO(IRANK)
+          NFROMPE(IPROCFROM(IH,IRANK))=NFROMPE(IPROCFROM(IH,IRANK))+1
+        ENDDO
+
+        NFROMPEMAX=0
+        DO IP=1,NPR
+          NFROMPEMAX=MAX(NFROMPEMAX,NFROMPE(IP))
+        ENDDO
+
+      ENDIF
+
+
+!     FIND NGBTOPE AND CREATE NTOPELST
+
+      NGBTOPE=0
+      DO IP=1,NPR
+        IF(NTOPE(IP).GT.0) NGBTOPE=NGBTOPE+1
+      ENDDO
+
+      ALLOCATE(NTOPELST(NGBTOPE))
+      INBNGH=0
+      DO IP=1,NPR
+        IF(NTOPE(IP).GT.0) THEN 
+          INBNGH=INBNGH+1
+          NTOPELST(INBNGH)=IP
+        ENDIF
+      ENDDO
+
+!     FIND NGBFROMPE AND CREATE NFROMPELST 
+
+      NGBFROMPE=0 
+      DO IP=1,NPR
+        IF(NFROMPE(IP).GT.0) NGBFROMPE=NGBFROMPE+1
+      ENDDO
+
+      ALLOCATE(NFROMPELST(NGBFROMPE))
+      INBNGH=0
+      DO IP=1,NPR
+        IF(NFROMPE(IP).GT.0) THEN 
+          INBNGH=INBNGH+1
+          NFROMPELST(INBNGH)=IP
+        ENDIF
+      ENDDO
+
+
+!     DETERMINE WHICH IJ's NEED TO BE SEND TO THE OTHER PE'S
+      IF(LMESSPASS .OR. LLIRANK) THEN
+        ALLOCATE(IJTOPE(NTOPEMAX,NPR))
+        DO IP=1,NPR
+          DO JH=1,NTOPEMAX
+            IJTOPE(JH,IP)=NINF-1
+          ENDDO
+        ENDDO
+        DO IP=1,NPR
+          JH=0
+          DO IH=1,NLENHALO(IP)
+            IF(IPROCFROM(IH,IP).EQ.IRANK) THEN
+              JH=JH+1
+              IJTOPE(JH,IP)=IJFROMPE(IH,IP)
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDIF
+
+
+      ALLOCATE(IJHALO(NLENHALO(IRANK)))
+      DO IH=1,NLENHALO(IRANK)
+        IF(IPROCFROM(IH,IRANK).LT.IRANK) THEN
+          IJHALO(IH)=NINF+IH-1
+        ELSEIF(IPROCFROM(IH,IRANK).GT.IRANK) THEN
+          IJHALO(IH)=NEND(IRANK)+IH-KLENBOT(IRANK)
+        ENDIF
+      ENDDO
+
+
+!     CHANGE THE LOCAL ADDRESSING OF KLON,KLAT,KLAT2, DEPTH FOR POINTS
+!     IN THE HALO
+!     NOTE THAT THIS IMPLIES THAT THESE ARRAYS ARE LOCAL BECAUSE THEY
+!     ARE DIFFERENT IN THE HALO REGIONS
+      IF((LMESSPASS.AND.NPR.GT.1).OR. LLIRANK) THEN
+        DO IC=1,2
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            DO IH=1,NLENHALO(IRANK)
+              IF(KLON(IJ,IC).EQ.IJFROMPE(IH,IRANK)) THEN
+                KLON(IJ,IC)=IJHALO(IH)
+                EXIT
+              ENDIF
+            ENDDO
+            DO IH=1,NLENHALO(IRANK)
+              IF(KLAT(IJ,IC).EQ.IJFROMPE(IH,IRANK)) THEN
+                KLAT(IJ,IC)=IJHALO(IH)
+                EXIT
+              ENDIF
+            ENDDO
+            DO IH=1,NLENHALO(IRANK)
+              IF(KLAT2(IJ,IC).EQ.IJFROMPE(IH,IRANK)) THEN
+                KLAT2(IJ,IC)=IJHALO(IH)
+                EXIT
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+
+        ALLOCATE(RDUM(NLENHALO(IRANK),IGL))
+        DO IG=1,IGL
+          DO IH=1,NLENHALO(IRANK)
+            IJ=IJFROMPE(IH,IRANK)
+            RDUM(IH,IG)=DEPTH(IJ,IG)
+          ENDDO
+          DO IH=1,NLENHALO(IRANK)
+            IJ=IJHALO(IH)
+            DEPTH(IJ,IG)=RDUM(IH,IG)
+          ENDDO
+        ENDDO
+        DEALLOCATE(RDUM)
+
+      ENDIF
+
+!     FIND NIJSTART
+
+      DO IP=1,NPR
+        NIJSTART(IP)=NINF-1
+      ENDDO
+      IF((LMESSPASS.AND.NPR.GT.1) .OR. LLIRANK) THEN
+        IF(IPROCFROM(1,IRANK).LT.IRANK) THEN
+          NIJSTART(IPROCFROM(1,IRANK))=NINF
+        ELSEIF(IPROCFROM(1,IRANK).GT.IRANK) THEN
+          NIJSTART(IPROCFROM(1,IRANK))=NEND(IRANK)+1
+        ENDIF
+        DO IH=2,NLENHALO(IRANK)
+          IF(IPROCFROM(IH,IRANK).NE.IPROCFROM(IH-1,IRANK))THEN
+            IF(IPROCFROM(IH,IRANK).LT.IRANK) THEN
+              NIJSTART(IPROCFROM(IH,IRANK))=NINF+IH-1
+            ELSEIF(IPROCFROM(IH,IRANK).GT.IRANK) THEN
+              NIJSTART(IPROCFROM(IH,IRANK))=
+     &                NEND(IRANK)+IH-KLENBOT(IRANK)
+            ENDIF
+          ENDIF
+        ENDDO
+      ENDIF
+
+!     DETERMINE DELLAM1 AND COSPHM1 WHICH ARE USED IN PROPAGS.
+!     Note that they will be defined locally for the halo points !!!
+
+      ALLOCATE(DELLAM1(NINF-1:NSUP,IGL))
+      ALLOCATE(COSPHM1(NINF-1:NSUP,IGL))
+      DO IG=1,IGL
+        DELLAM1(NINF-1,IG) = 0.
+        IF((LMESSPASS.AND.NPR.GT.1)) THEN
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            JH = KXLT(IJ,IG)
+!!! see propags it is needed in order to reproduce exactly the same results
+!!! as with the old decomposition. It will be more efficient to have 1./..
+!!! DO not forget to change in propags as well !!!
+!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
+            DELLAM1(IJ,IG) = DELLAM(JH)
+            COSPHM1(IJ,IG) = 1./COSPH(JH)
+          ENDDO 
+          DO IH=1,NLENHALO(IRANK)
+            IJ=IJFROMPE(IH,IRANK)
+            JH = KXLT(IJ,IG)
+            IJ=IJHALO(IH)
+!!! see propags it is needed in order to reproduce exactly the same results
+!!! as with the old decomposition. It will be more efficient to have 1./..
+!!! DO not forget to change in propags as well !!!
+!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
+            DELLAM1(IJ,IG) = DELLAM(JH)
+            COSPHM1(IJ,IG) = 1./COSPH(JH)
+          ENDDO
+        ELSE
+          DO IJ=NINF,NSUP
+            JH = KXLT(IJ,IG)
+!!! see propags it is needed in order to reproduce exactly the same results
+!!! as with the old decomposition. It will be more efficient to have 1./..
+!!! DO not forget to change in propags as well !!!
+!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
+            DELLAM1(IJ,IG) = DELLAM(JH)
+            COSPHM1(IJ,IG) = 1./COSPH(JH)
+          ENDDO 
+        ENDIF
+      ENDDO
+
+      DEALLOCATE(IJFROMPE)
+      DEALLOCATE(IPROCFROM)
+      DEALLOCATE(NLENHALO)
+      DEALLOCATE(IJHALO)
+
+
+!     FIND BOUNDARY POINTS FOR EACH AREA
+!     !!! it hads to run before 5. (see below) 
+
+      ALLOCATE(LLBOUND(NIBLO))
+      DO IJ=1,NIBLO
+        LLBOUND(IJ)=.FALSE.
+      ENDDO
+      DO IP = 1, NPR
+        DO IC=1,2
+          DO IJ=NSTART(IP),NEND(IP)
+            IF( KLON(IJ,IC).GT.0 .AND. KLON(IJ,IC).LE.NIBLO .AND.
+     &         (KLON(IJ,IC).LT.NSTART(IP).OR.
+     &          KLON(IJ,IC).GT.NEND(IP)       ) ) LLBOUND(IJ)=.TRUE.
+           IF(  KLAT(IJ,IC).GT.0 .AND. KLAT(IJ,IC).LE.NIBLO .AND.
+     &         (KLAT(IJ,IC).LT.NSTART(IP).OR.
+     &          KLAT(IJ,IC).GT.NEND(IP)       ) ) LLBOUND(IJ)=.TRUE.
+           IF(  KLAT2(IJ,IC).GT.0 .AND. KLAT2(IJ,IC).LE.NIBLO .AND.
+     &         (KLAT2(IJ,IC).LT.NSTART(IP).OR.
+     &          KLAT2(IJ,IC).GT.NEND(IP)       ) ) LLBOUND(IJ)=.TRUE.
+          ENDDO
+        ENDDO
+      ENDDO
+
+!     4. KEEP THE PART OF KLAT,KLAT2,KLON,DEPTH  WHICH IS NECESSARY
+!        ----------------------------------------------------------
 
       IF(LMESSPASS.AND.NPR.GT.1) THEN
 
@@ -402,14 +1086,27 @@
 
         DEALLOCATE(KDUM)
 
+        ALLOCATE(RDUM(NINF:NSUP,IGL))
+        DO IG=1,IGL
+          DO IJ=NINF,NSUP
+            RDUM(IJ,IG)=DEPTH(IJ,IG)
+          ENDDO
+        ENDDO
+        DEALLOCATE(DEPTH)
+        ALLOCATE(DEPTH(NINF:NSUP,IGL))
+        DO IG=1,IGL
+          DO IJ=NINF,NSUP
+            DEPTH(IJ,IG)=RDUM(IJ,IG)
+          ENDDO
+        ENDDO
+        DEALLOCATE(RDUM)
+
       ENDIF
 
 !     5. MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS
 !        NINF-1.
 !        ---------------------------------------------------------
 
-      NINF=NSTART(IRANK)-KLENBOT(IRANK)
-      NSUP=NEND(IRANK)+KLENTOP(IRANK)
       IF(.NOT.LMESSPASS) NSUP=NIBLO
 
       IF(LMESSPASS) THEN
@@ -426,7 +1123,7 @@
 !*    6. INPUT THE WEIGHT FOR THE ADVECTION SCHEME 
 !        --------------------------------------------
 
-      ALLOCATE(WADV(NIBLO,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
+      ALLOCATE(WADV(NIBLO,2))  ! THE SIZE OF WADV IS READJUSTED SEE BELOW
 
       IF(LMESSPASS) THEN
 
@@ -435,7 +1132,7 @@
           READ (IU08) WADV
         ENDIF
 
-!       SEND KLAT AND KLON TO OTHER PE'S
+!       SEND WADV TO OTHER PE'S
         IF(NPR.GT.1) THEN
           ITAG=KTAG+1
           MPLENGTH=2*NIBLO
@@ -449,19 +1146,12 @@
                 RCOMBUF(KCOUNT)=WADV(IJ,IC)
               ENDDO
             ENDDO
+          ENDIF
 
-            CALL MPL_BROADCAST(RCOMBUF(1:MPLENGTH),KROOT=IRANK,
-     &       KTAG=ITAG,CDSTRING='MPDECOMP 2:',LDCOMPAT=.TRUE.)
-          ELSE
+          CALL MPL_BROADCAST(RCOMBUF(1:MPLENGTH),KROOT=IREAD,
+     &     KTAG=ITAG,CDSTRING='MPDECOMP 1:')
 
-            CALL MPL_RECV(RCOMBUF(1:MPLENGTH),KSOURCE=IREAD,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPDECOMP 3:')
-            IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR IN MPDECOMP:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR IN MPRECOMP MISMATCHED TAGS' )
-
-
+          IF(IRANK.NE.IREAD) THEN
             KCOUNT=0
             DO IC=1,2
               DO IJ=1,NIBLO
@@ -469,7 +1159,6 @@
                 WADV(IJ,IC)=RCOMBUF(KCOUNT)
               ENDDO
             ENDDO
-
           ENDIF
 
           DEALLOCATE(RCOMBUF)
@@ -478,6 +1167,24 @@
 
       ELSEIF(.NOT.LMESSPASS) THEN
         READ (IU08) WADV
+      ENDIF
+
+
+!     RELABELLING OF THE ARRAYS
+
+      IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+        ALLOCATE(RDUM(NIBLO,2))
+        DO IC=1,2
+          DO NIJ=NSTART(1),NEND(NPR)
+            RDUM(NIJ,IC)=WADV(NEWIJ2IJ(NIJ),IC)
+          ENDDO
+          DO NIJ=NSTART(1),NEND(NPR)
+           WADV(NIJ,IC)=RDUM(NIJ,IC)
+          ENDDO
+        ENDDO
+        DEALLOCATE(RDUM)
+
+        DEALLOCATE(NEWIJ2IJ)
       ENDIF
 
 !     KEEP THE PART OF WADV WHICH IS NECESSARY
@@ -505,8 +1212,21 @@
         DEALLOCATE(RDUM)
       ENDIF
 
+!     7. DETERMINE KXLTMIN KXLTMAX
 
-!     7. TEST AND RESET
+      ALLOCATE(KXLTMIN(NPR))
+      ALLOCATE(KXLTMAX(NPR))
+
+      DO IP=1,NPR
+        KXLTMIN(IP)=NGY
+        KXLTMAX(IP)=1
+        DO IJ=NSTART(IP),NEND(IP)
+           KXLTMIN(IP)=MIN(KXLTMIN(IP),KXLT(IJ,1))
+           KXLTMAX(IP)=MAX(KXLTMAX(IP),KXLT(IJ,1))
+        ENDDO
+      ENDDO
+
+!     8. TEST AND RESET
 !        -------------- 
       IF(LMESSPASS) THEN
         IF(IGL.GT.1) THEN

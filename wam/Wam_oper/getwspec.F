@@ -25,7 +25,8 @@
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,IGL      ,IJS      ,
      &            IJL
       USE YOWICE   , ONLY : ICEMASK
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
+     &            IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NGY
@@ -127,8 +128,8 @@
 
         DO JSAR=1,NSPEC
 !         exclude sar point that are obviously outside the sub region
-          IF(KS(JSAR).GE.KXLT(IJS(JBL),JBL)-LLAT .AND.
-     &       KS(JSAR).LE.KXLT(IJL(JBL),JBL)+LLAT .AND.
+          IF(KS(JSAR).GE.KXLTMIN(IRANK)-LLAT .AND.
+     &       KS(JSAR).LE.KXLTMAX(IRANK)+LLAT .AND.
      &       IS(JSAR).GT.0 .AND. KS(JSAR).GT.0 ) THEN
 
             DO JP=IJS(JBL),IJL(JBL)

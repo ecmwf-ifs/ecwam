@@ -63,7 +63,6 @@
 !          "abort1.F"
 !          "adjust.F"
 !          "confile.F"
-!          "cormars.F"
 !          "difdate.F"
 !          "dummy_mp.F"
 !          "expand_string.F"
@@ -100,9 +99,10 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            MPMAXLENGTH,KTAG     ,NPRECR   ,
      &            NPRECI
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
+     &            LL1D
       USE YOWSTAT  , ONLY : CDTPRO   ,IDELALT  ,YCLASS
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT
+      USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
 ! -------------------------------------------------------------------
@@ -120,6 +120,7 @@
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: WHME
       CHARACTER (LEN=12),ALLOCATABLE :: CLDATES(:), CLMD(:)
+      LOGICAL :: LSQRT, LLIRANK
 
 ! ----------------------------------------------------------------------
 
@@ -222,11 +223,11 @@
         NNEXT=IRANK+1
       ENDIF
 
-      ALLOCATE (NSTART(NPROC),NEND(NPROC),KLENBOT(NPROC),KLENTOP(NPROC))
-
       NPR=NPROC
+      LL1D=.FALSE.
+      LLIRANK=.FALSE.
 
-      CALL MPDECOMP(NPR,NSTART,NEND,KLENTOP,KLENBOT,MAXLEN)
+      CALL MPDECOMP(NPR,MAXLEN,LLIRANK)
 
       MPMAXLENGTH=MAXLEN
 
@@ -328,7 +329,6 @@
 ! #include "abort1.F"
 ! #include "adjust.F"
 ! #include "confile.F"
-! #include "cormars.F"
 ! #include "difdate.F"
 ! #include "dummy_mp.F"
 ! #include "expand_string.F"

@@ -137,26 +137,30 @@
           ENDIF
 
 !         SECOND CLOSEST GRID POINT
-          IF(XMIN.LE.FLOAT(IMIN-1)) THEN
-            IF(IMIN.LE.1) THEN
-              IMIN=1
+          IF(IRGG.EQ.1) THEN
+            IF(XMIN.LE.FLOAT(IMIN-1)) THEN
+              IF(IMIN.LE.1) THEN
+                IMIN=1
+              ELSE
+                IMIN=IMIN-1
+              ENDIF
             ELSE
-              IMIN=IMIN-1
+              IF(IMIN.GE.NLONRGG(K-1)) THEN
+                IMIN=NLONRGG(K-1)
+              ELSE
+                IMIN=IMIN+1
+              ENDIF
+            ENDIF
+
+            IF (IA1(IMIN,K-1).GT.-990) THEN
+              DO IH = IP,1,-1
+                IF (IXLG(IH,IG).EQ.IMIN .AND.
+     1              KXLT(IH,IG).EQ.K-1) EXIT
+              ENDDO
+              KLAT2(IP,1) = IH
             ENDIF
           ELSE
-            IF(IMIN.GE.NLONRGG(K-1)) THEN
-              IMIN=NLONRGG(K-1)
-            ELSE
-              IMIN=IMIN+1
-            ENDIF
-          ENDIF
-
-          IF (IA1(IMIN,K-1).GT.-990) THEN
-            DO IH = IP,1,-1
-              IF (IXLG(IH,IG).EQ.IMIN .AND.
-     1            KXLT(IH,IG).EQ.K-1) EXIT
-            ENDDO
-            KLAT2(IP,1) = IH
+            KLAT2(IP,1) = KLAT(IP,1)
           ENDIF
 
         ENDIF
@@ -171,28 +175,32 @@
             ENDDO
             KLAT(IP,2) = IH
           ENDIF
-        ENDIF
 
-        IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
-          IF(IPLUS.LE.1) THEN
-            IPLUS=1
-          ELSE
-            IPLUS=IPLUS-1
-          ENDIF
-        ELSE
-          IF(IPLUS.GE.NLONRGG(K+1)) THEN
-            IPLUS=NLONRGG(K+1)
-          ELSE
-            IPLUS=IPLUS+1
-          ENDIF
-        ENDIF
+          IF(IRGG.EQ.1) THEN
+            IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
+              IF(IPLUS.LE.1) THEN
+                IPLUS=1
+              ELSE
+                IPLUS=IPLUS-1
+              ENDIF
+            ELSE
+              IF(IPLUS.GE.NLONRGG(K+1)) THEN
+                IPLUS=NLONRGG(K+1)
+              ELSE
+                IPLUS=IPLUS+1
+              ENDIF
+            ENDIF
 
-        IF (IA1(IPLUS,K+1).GT.-990) THEN
-          DO IH = IP,IJLT(IG)
-            IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     1          KXLT(IH,IG).EQ.K+1) EXIT
-          ENDDO
-          KLAT2(IP,2) = MIN(IH,IJLT(IG))
+            IF (IA1(IPLUS,K+1).GT.-990) THEN
+              DO IH = IP,IJLT(IG)
+                IF (IXLG(IH,IG).EQ.IPLUS .AND.
+     1              KXLT(IH,IG).EQ.K+1) EXIT
+              ENDDO
+              KLAT2(IP,2) = MIN(IH,IJLT(IG))
+            ENDIF
+          ELSE
+            KLAT2(IP,2) = KLAT(IP,2)
+          ENDIF
         ENDIF
 
       ENDDO

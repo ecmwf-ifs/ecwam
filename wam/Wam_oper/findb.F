@@ -50,11 +50,12 @@
 ! ----------------------------------------------------------------------
 
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,AMOWEP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX   ,
+     &            IPER     ,AMOWEP   ,
      &            AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
 
-      USE YOWPARAM , ONLY : NGX
+      USE YOWPARAM , ONLY : NGY
 
 ! ----------------------------------------------------------------------
 
@@ -67,11 +68,11 @@
 !        --------------------------------------
 
       IF(LMESSPASS) THEN
-        ILATS=KXLT(NSTART(IRANK),1)-1
-        ILATN=KXLT(NEND(IRANK),1)+1
+        ILATS=KXLTMIN(IRANK)-1
+        ILATN=KXLTMAX(IRANK)+1
       ELSE
         ILATS=1
-        ILATN=NGX
+        ILATN=NGY
       ENDIF
 
       DO IO = 1,NBOUN

@@ -16,7 +16,7 @@
 !     CALL *MPEXCHNGSARIN*(NSPECPE,ISPECPE,ITAG)
 
 
-!     *NSPECPE* - NUMBER OF SAD DATA POINT ON THAT PE.
+!     *NSPECPE* - NUMBER OF SAR DATA POINT ON THAT PE.
 !     *ISPECPE* - ARRAY INDEX OF EACH POINT BELONGING TO THAT PE.
 !     *ITAG*    - TAG USED FOR MESSAGE PASSING.  
 !     METHOD.
@@ -26,8 +26,6 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -44,7 +42,7 @@
       IMPLICIT NONE
 
       INTEGER :: NSPECPE, KSPECPE, IP, ISPEC, IFRE, IANG
-      INTEGER :: IERR, ITAG, MZC, KCOUNT, KRCOUNT, KRFROM, KRTAG 
+      INTEGER :: ITAG, MZC, KCOUNT
       INTEGER :: ISPECPE(NSPEC)
       REAL,ALLOCATABLE :: ZCOMBUF(:)
 
@@ -52,89 +50,78 @@
       IF(NPROC.EQ.1) THEN
         RETURN
       ELSE
-!     1.1 SEND TO ALL OTHER PROCESSORS 
-!         -----------------------------
-        MZC=1+NSPECPE*(8+NANG*NFRE)
-        ALLOCATE(ZCOMBUF(MZC))
-
-        KCOUNT=1
-        ZCOMBUF(KCOUNT)=FLOAT(NSPECPE)
-        DO ISPEC = 1,NSPECPE
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FLOAT(ISPECPE(ISPEC))
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FLOAT(IGSAR(ISPECPE(ISPEC)))
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FLOAT(IJSAR(ISPECPE(ISPEC)))
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=LONG(ISPECPE(ISPEC),1) 
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=LAT(ISPECPE(ISPEC),1) 
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=U10(ISPECPE(ISPEC)) 
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=USSAR(ISPECPE(ISPEC)) 
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=THW(ISPECPE(ISPEC)) 
-          DO IFRE = 1,NFRE
-            DO IANG = 1,NANG
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=SPEC(ISPECPE(ISPEC),IANG,IFRE,1)
-            ENDDO 
-          ENDDO 
-        ENDDO 
-
-        CALL MPL_BROADCAST(ZCOMBUF(1:KCOUNT),KROOT=IRANK,KTAG=ITAG,
-     &   CDSTRING='MPEXCHNGSARIN:',LDCOMPAT=.TRUE.)
-
-        DEALLOCATE(ZCOMBUF)
-
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELDS FROM ALL OTHER PE'S
-!         ------------------------------------------------------
         MZC=1+NSPEC*(8+NANG*NFRE)
         ALLOCATE(ZCOMBUF(MZC))
 
-        DO IP=1,NPROC-1
+        DO IP=1,NPROC
 
-          CALL MPL_RECV(ZCOMBUF(1:MZC),KTAG=ITAG,KRECVTAG=KRTAG,
-     &     KOUNT=KRCOUNT,CDSTRING='MPEXCHNGSARIN:')
-          IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR  in MPEXCHNGSARIN MISMATCHED TAGS' )
-
-          KCOUNT=1
-          DO ISPEC = 1,NINT(ZCOMBUF(1))
-            KCOUNT=KCOUNT+1
-            KSPECPE=NINT(ZCOMBUF(KCOUNT))
-            KCOUNT=KCOUNT+1
-            IGSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
-            KCOUNT=KCOUNT+1
-            IJSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
-            KCOUNT=KCOUNT+1
-            LONG(KSPECPE,1)=ZCOMBUF(KCOUNT)
-            KCOUNT=KCOUNT+1
-            LAT(KSPECPE,1)=ZCOMBUF(KCOUNT)
-            KCOUNT=KCOUNT+1
-            U10(KSPECPE)=ZCOMBUF(KCOUNT)
-            KCOUNT=KCOUNT+1
-            USSAR(KSPECPE)=ZCOMBUF(KCOUNT)
-            KCOUNT=KCOUNT+1
-            THW(KSPECPE)=ZCOMBUF(KCOUNT)
-            DO IFRE = 1,NFRE
-              DO IANG = 1,NANG
-                KCOUNT=KCOUNT+1
-                SPEC(KSPECPE,IANG,IFRE,1)=ZCOMBUF(KCOUNT)
+          IF(IRANK.EQ.IP) THEN
+            KCOUNT=1
+            ZCOMBUF(KCOUNT)=FLOAT(NSPECPE)
+            DO ISPEC = 1,NSPECPE
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FLOAT(ISPECPE(ISPEC))
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FLOAT(IGSAR(ISPECPE(ISPEC)))
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FLOAT(IJSAR(ISPECPE(ISPEC)))
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=LONG(ISPECPE(ISPEC),1) 
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=LAT(ISPECPE(ISPEC),1) 
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=U10(ISPECPE(ISPEC)) 
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=USSAR(ISPECPE(ISPEC)) 
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=THW(ISPECPE(ISPEC)) 
+              DO IFRE = 1,NFRE
+                DO IANG = 1,NANG
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=SPEC(ISPECPE(ISPEC),IANG,IFRE,1)
+                ENDDO 
               ENDDO 
             ENDDO 
-          ENDDO 
-          IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR  in MPEXCHNGSARIN MISMATCHED LENGTH' )
+          ENDIF
+
+          CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=IP,KTAG=ITAG,
+     &     CDSTRING='MPEXCHNGSARIN:')
+
+          ITAG=ITAG+1
+
+          IF(IRANK.NE.IP) THEN
+            KCOUNT=1
+            DO ISPEC = 1,NINT(ZCOMBUF(1))
+              KCOUNT=KCOUNT+1
+              KSPECPE=NINT(ZCOMBUF(KCOUNT))
+              KCOUNT=KCOUNT+1
+              IGSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
+              KCOUNT=KCOUNT+1
+              IJSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
+              KCOUNT=KCOUNT+1
+              LONG(KSPECPE,1)=ZCOMBUF(KCOUNT)
+              KCOUNT=KCOUNT+1
+              LAT(KSPECPE,1)=ZCOMBUF(KCOUNT)
+              KCOUNT=KCOUNT+1
+              U10(KSPECPE)=ZCOMBUF(KCOUNT)
+              KCOUNT=KCOUNT+1
+              USSAR(KSPECPE)=ZCOMBUF(KCOUNT)
+              KCOUNT=KCOUNT+1
+              THW(KSPECPE)=ZCOMBUF(KCOUNT)
+              DO IFRE = 1,NFRE
+                DO IANG = 1,NANG
+                  KCOUNT=KCOUNT+1
+                  SPEC(KSPECPE,IANG,IFRE,1)=ZCOMBUF(KCOUNT)
+                ENDDO 
+              ENDDO 
+            ENDDO 
+          ENDIF
         
         ENDDO 
 
-        ITAG=ITAG+1
-      ENDIF
+        DEALLOCATE(ZCOMBUF)
 
-      DEALLOCATE(ZCOMBUF)
+      ENDIF
 
       RETURN
       END SUBROUTINE MPEXCHNGSARIN

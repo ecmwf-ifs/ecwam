@@ -28,8 +28,6 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -46,7 +44,7 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: ISEND, ITAG, MZC, KCOUNT, KRCOUNT, KRTAG 
+      INTEGER :: ISEND, ITAG, MZC, KCOUNT
       INTEGER :: ISPEC, IFRE, IANG
       INTEGER :: BUFFER_SIZE_BCSARIN
       INTEGER :: IBUF(2)
@@ -56,132 +54,116 @@
 
       IF(NPROC.EQ.1) THEN
         RETURN
-!     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
-!         ----------------------------------------
-      ELSEIF(IRANK.EQ.ISEND) THEN
-        IF(LNODATA) THEN
-          IBUF(1) = 1
-        ELSE
-          IBUF(1) = 0
+      ELSE
+        IF(IRANK.EQ.ISEND) THEN
+          IF(LNODATA) THEN
+            IBUF(1) = 1
+          ELSE
+            IBUF(1) = 0
+          ENDIF
+          IBUF(2) = NSPEC
         ENDIF
-        IBUF(2) = NSPEC
+
         CALL MPL_BROADCAST(IBUF,KROOT=ISEND,KTAG=ITAG,
-     &    CDSTRING='MPBCASTSARIN 0:',LDCOMPAT=.TRUE.)
+     &    CDSTRING='MPBCASTSARIN 0:')
         ITAG=ITAG+1
+
+        IF(IRANK.NE.ISEND) THEN
+          IF(IBUF(1).EQ.1) THEN
+            LNODATA = .TRUE.
+          ELSE
+            LNODATA = .FALSE.
+          ENDIF
+          NSPEC=IBUF(2)
+        ENDIF
 
         IF(LNODATA) GOTO 5000
 
         MZC=BUFFER_SIZE_BCSARIN(NSPEC,NANG,NFRE)
         ALLOCATE(ZCOMBUF(MZC))
 
-        KCOUNT=0
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=LONG(ISPEC,2) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=LAT(ISPEC,2) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=XKLOW(ISPEC) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=XKUP(ISPEC) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=XKCUTOFF(ISPEC) 
-        ENDDO 
+        IF(IRANK.EQ.ISEND) THEN
+          KCOUNT=0
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=LONG(ISPEC,2) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=LAT(ISPEC,2) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=XKLOW(ISPEC) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=XKUP(ISPEC) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=XKCUTOFF(ISPEC) 
+          ENDDO 
 !!!  always check that the size of ZCOMBUF is in agreement with the
 !!!  number of entries (see BUFFER_SIZE_BCSARIN) !!!
-        DO IFRE = 1,NFRE
-          DO IANG = 1,NANG
-            DO ISPEC = 0,NSPEC
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=SPEC(ISPEC,IANG,IFRE,2)
+          DO IFRE = 1,NFRE
+            DO IANG = 1,NANG
+              DO ISPEC = 0,NSPEC
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=SPEC(ISPEC,IANG,IFRE,2)
+              ENDDO 
             ENDDO 
           ENDDO 
-        ENDDO 
+        ENDIF
 
         CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=ISEND,KTAG=ITAG,
-     &    CDSTRING='MPBCASTSARIN 1:',LDCOMPAT=.TRUE.)
+     &    CDSTRING='MPBCASTSARIN 1:')
         ITAG=ITAG+1
 
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELDS FROM PE ISEND
-!         ------------------------------------------------
-      ELSE 
-        CALL MPL_RECV(IBUF,KSOURCE=ISEND,KTAG=ITAG,KOUNT=KRCOUNT,
-     &   KRECVTAG=KRTAG,CDSTRING='MPBCASTSARIN:')
-        IF(KRCOUNT.NE.2) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 0 in MPBCASTSARIN:MISMATCHED MSG LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 0 in MPBCASTSARIN MISMATCHED TAGS' )
-        ITAG=ITAG+1
+        IF(IRANK.NE.ISEND) THEN
+          ALLOCATE(SPEC(0:NSPEC,NANG,NFRE,2))
+          SPEC=FLMIN
+          ALLOCATE(LONG(NSPEC,2))
+          ALLOCATE(LAT(NSPEC,2))
+          ALLOCATE(XKLOW(NSPEC))
+          ALLOCATE(XKUP(NSPEC))
+          ALLOCATE(XKCUTOFF(NSPEC))
 
-        IF(IBUF(1).EQ.1) THEN
-          LNODATA = .TRUE.
-        ELSE
-          LNODATA = .FALSE.
-        ENDIF
-        NSPEC=IBUF(2)
 
-        IF(LNODATA) GOTO 5000
-
-        ALLOCATE(SPEC(0:NSPEC,NANG,NFRE,2))
-        SPEC=FLMIN
-        ALLOCATE(LONG(NSPEC,2))
-        ALLOCATE(LAT(NSPEC,2))
-        ALLOCATE(XKLOW(NSPEC))
-        ALLOCATE(XKUP(NSPEC))
-        ALLOCATE(XKCUTOFF(NSPEC))
-
-        MZC=BUFFER_SIZE_BCSARIN(NSPEC,NANG,NFRE)
-        ALLOCATE(ZCOMBUF(MZC))
-
-        CALL MPL_RECV(ZCOMBUF(1:MZC),KSOURCE=ISEND,KTAG=ITAG,
-     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPBCASTSARIN 1:')
-        IF(KRCOUNT.NE.MZC) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 1 in MPBCASTSARIN:MISMATCHED MSG LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR 1 in MPBCASTSARIN MISMATCHED TAGS' )
-        ITAG=ITAG+1
-
-        KCOUNT=0
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          LONG(ISPEC,2)=ZCOMBUF(KCOUNT)
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          LAT(ISPEC,2)=ZCOMBUF(KCOUNT)
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          XKLOW(ISPEC)=ZCOMBUF(KCOUNT) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          XKUP(ISPEC)=ZCOMBUF(KCOUNT) 
-        ENDDO 
-        DO ISPEC = 1,NSPEC
-          KCOUNT=KCOUNT+1
-          XKCUTOFF(ISPEC)=ZCOMBUF(KCOUNT) 
-        ENDDO 
-        DO IFRE = 1,NFRE
-          DO IANG = 1,NANG
-            DO ISPEC = 0,NSPEC
-              KCOUNT=KCOUNT+1
-              SPEC(ISPEC,IANG,IFRE,2)=ZCOMBUF(KCOUNT)
+          KCOUNT=0
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            LONG(ISPEC,2)=ZCOMBUF(KCOUNT)
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            LAT(ISPEC,2)=ZCOMBUF(KCOUNT)
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            XKLOW(ISPEC)=ZCOMBUF(KCOUNT) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            XKUP(ISPEC)=ZCOMBUF(KCOUNT) 
+          ENDDO 
+          DO ISPEC = 1,NSPEC
+            KCOUNT=KCOUNT+1
+            XKCUTOFF(ISPEC)=ZCOMBUF(KCOUNT) 
+          ENDDO 
+          DO IFRE = 1,NFRE
+            DO IANG = 1,NANG
+              DO ISPEC = 0,NSPEC
+                KCOUNT=KCOUNT+1
+                SPEC(ISPEC,IANG,IFRE,2)=ZCOMBUF(KCOUNT)
+              ENDDO 
             ENDDO 
           ENDDO 
-        ENDDO 
+        ENDIF
 
+        DEALLOCATE(ZCOMBUF)
       ENDIF
 
-      DEALLOCATE(ZCOMBUF)
 
 5000  CONTINUE
       RETURN

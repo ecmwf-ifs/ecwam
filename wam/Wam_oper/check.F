@@ -415,7 +415,7 @@
      &           NGOUT, MAX(1,NGOUT), NGOUT 
 
       IF (IGL.EQ.1) THEN
-        WRITE (IU06,'('' 1 BLOCK VERSION           NIBL1 '', 3I10)')
+        WRITE (IU06,'('' 1 BLOCK VERSION            NIBL1 '', 3I10)')
      &   NIBL1, 1, 1
       ELSE
         WRITE (IU06,'('' MULTI BLOCK VERSION        NIBL1 '', 3I10)')

@@ -57,41 +57,31 @@
       IF(NPROC.EQ.1) THEN
         RETURN
 
-      ELSEIF(IRANK.EQ.ISEND) THEN
+      ELSE
 
-!     1.1 BROADCAST FIELD FROM PROCESS ISEND
-!         ----------------------------------
-
-!        LOAD COMMUNICATION BUFFER
-        IJ=0
-        DO J=1,NGY
-          DO I=1,NGX
-            IJ=IJ+1
-            ZCOMBUF(IJ)=FIELD(I,J)
+        IF(IRANK.EQ.ISEND) THEN
+          IJ=0
+          DO J=1,NGY
+            DO I=1,NGX
+              IJ=IJ+1
+              ZCOMBUF(IJ)=FIELD(I,J)
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
 
         CALL MPL_BROADCAST(ZCOMBUF(1:KCOUNT),KROOT=ISEND,KTAG=ITAG,
-     &   CDSTRING='MPGATHEROIFLD:',LDCOMPAT=.TRUE.)
+     &   CDSTRING='MPGATHEROIFLD:')
 
-      ELSE 
-!     1.2 RECEIVE FIELD FROM PROCESS ISEND 
-!         --------------------------------- 
-        CALL MPL_RECV(ZCOMBUF(1:KCOUNT),KSOURCE=ISEND,KTAG=ITAG,
-     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPGATHEROIFLD:')
-        IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR in MPGATHEROIFLD:MISMATCHED MESSAGE LENGTH')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR in MPGATHEROIFLD: MISMATCHED TAGS' )
-
-!      DECODE COMMUNICATION BUFFER
-        IJ=0
-        DO J=1,NGY
-          DO I=1,NGX
-            IJ=IJ+1
-            FIELD(I,J)=ZCOMBUF(IJ)
+        IF(IRANK.NE.ISEND) THEN
+          IJ=0
+          DO J=1,NGY
+            DO I=1,NGX
+              IJ=IJ+1
+              FIELD(I,J)=ZCOMBUF(IJ)
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
+
       ENDIF
 
       RETURN

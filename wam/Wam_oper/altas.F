@@ -55,7 +55,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX ,NOBSPE
+      USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX  ,NOBSPE
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
       USE YOWMAP   , ONLY : XDELLA   ,KXLT
@@ -98,6 +98,8 @@
 
       LOGICAL :: LLAK
 
+      WRITE(IU06,*)'  -----ALT DATA ASSIMILATION BEGINS--------'
+
 !    1. GET MODEL WAVE HEIGHT 
 !       ---------------------
 
@@ -138,55 +140,26 @@
 
       DISTMAX = SQRT(2.) * 2.*DIST
 
-      LMAX = NINT(DEG*DISTMAX/XDELLA)
-
 !     specify the model error
 !     note that the observation error is now specified in rfl4wam
       SIGMOD=0.5
 
 !     DETERMINE THE TABLE WHICH TELLS WHICH PE POTENTIALLY SHARES 
 !     ALTIMETER DATA WITH OTHER PE'S.
-
       IF(.NOT. ALLOCATED(INTLMAX) ) THEN
         ALLOCATE(INTLMAX(NPROC,NPROC))
         ALLOCATE(KMINLMAX(NPROC))
         ALLOCATE(KMAXLMAX(NPROC))
-        DO IR = 1, NPROC
-          IJ=NSTART(IR)
-          KMINLMAX(IR) = MAX(1,KXLT(IJ,1)-LMAX)
 
-          IJ=NEND(IR)
-          KMAXLMAX(IR) = MIN(NGY,KXLT(IJ,1)+LMAX)
+        CALL MPPEWITHINDIST(DISTMAX,INTLMAX,KMINLMAX,KMAXLMAX)
 
-          DO JR = 1, IR-1
-            INTLMAX(JR,IR)=0
-
-            IJ=NSTART(JR)
-            IF(KXLT(IJ,1) .GE. KMINLMAX(IR) .AND.
-     &         KXLT(IJ,1) .LE. KMAXLMAX(IR) ) THEN
-              INTLMAX(JR,IR)=1
-            ENDIF 
-
-            IJ=NEND(JR)
-            IF(KXLT(IJ,1) .GE. KMINLMAX(IR) .AND.
-     &         KXLT(IJ,1) .LE. KMAXLMAX(IR) ) THEN
-              INTLMAX(JR,IR)=1
-            ENDIF 
-
-            INTLMAX(IR,JR) = INTLMAX(JR,IR)
-          ENDDO
-          INTLMAX(IR,IR)=1
-
-        ENDDO
-          
       ENDIF
-
 
 !*    2.1 THINNED MEASUREMENTS ARE READ IN
 !         --------------------------------
 
       ALLOCATE (NOBSPE(NPROC))
-      CALL GRFIELD
+      CALL GRFIELD(WHMOD,SIGMOD,DISTMAX)
 
       IF (ITEST.GE.2)
      &   WRITE(IU06,*) '   SUB. ALTAS: MEASUREMENTS READ IN'
@@ -254,6 +227,10 @@
       ENDIF
 
       DEALLOCATE (NOBSPE)
+
+      WRITE(IU06,*) '  ALTAS ENDS NORMALLY'
+      WRITE(IU06,*) ' '
+      CALL FLUSH(IU06)
 
       RETURN 
       END SUBROUTINE ALTAS

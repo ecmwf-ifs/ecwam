@@ -30,7 +30,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,INTLMAX  ,
-     &            KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTDATA
+     &            NOBSPE   ,ALTDATA
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,NLONRGG  ,IGL      ,
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,XDELLA   ,

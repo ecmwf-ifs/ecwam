@@ -322,14 +322,14 @@
 
           XDUMP=OUTLAT
           DEALLOCATE(OUTLAT)
-          ALLOCATE(OUTLAT(IOUTANEW))
+          ALLOCATE(OUTLAT(MOUTPNEW))
           DO IDUM=1,MOUTP
             OUTLAT(IDUM)=XDUMP(IDUM)
           ENDDO
 
           XDUMP=OUTLONG
           DEALLOCATE(OUTLONG)
-          ALLOCATE(OUTLONG(IOUTANEW))
+          ALLOCATE(OUTLONG(MOUTPNEW))
           DO IDUM=1,MOUTP
             OUTLONG(IDUM)=XDUMP(IDUM)
           ENDDO
@@ -350,6 +350,27 @@
         DO I=1,NGOUT
           WRITE (IU06,'(3X,I5,2F8.2)') I,OUTLAT(I),OUTLONG(I)
         ENDDO
+
+        ALLOCATE(XDUMP(NGOUT))
+        MOUTPNEW=NGOUT
+        DO IDUM=1,MOUTPNEW
+          XDUMP(IDUM)=OUTLAT(IDUM)
+        ENDDO
+        DEALLOCATE(OUTLAT)
+        ALLOCATE(OUTLAT(MOUTPNEW))
+        DO IDUM=1,MOUTPNEW
+          OUTLAT(IDUM)=XDUMP(IDUM)
+        ENDDO
+
+        DO IDUM=1,MOUTPNEW
+          XDUMP(IDUM)=OUTLONG(IDUM)
+        ENDDO
+        DEALLOCATE(OUTLONG)
+        ALLOCATE(OUTLONG(MOUTPNEW))
+        DO IDUM=1,MOUTPNEW
+          OUTLONG(IDUM)=XDUMP(IDUM)
+        ENDDO
+        DEALLOCATE(XDUMP)
       ENDIF
 
 ! ----------------------------------------------------------------------

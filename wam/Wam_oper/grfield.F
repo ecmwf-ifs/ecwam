@@ -1,4 +1,4 @@
-      SUBROUTINE GRFIELD
+      SUBROUTINE GRFIELD(WHMOD,SIGMOD,DISTMAX)
 
 !--------------------------------------------------------------------
 
@@ -18,7 +18,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRFIELD*
+!       *CALL* *GRFIELD(WHMOD,SIGMOD,DISTMAX)*
+
+!          *WHMOD*      REAL     MODEL WAVE HEIGHT (FIRST GUESS).
+!          *SIGMOD*     REAL     MODEL ERROR. 
+!          *DISTMAX*    REAL     MAXIMUM SPREADING DISTANCE IN RADIAN !!
 
 !     METHOD.
 !     -------
@@ -41,19 +45,23 @@
 !-----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,INTLMAX  ,
-     &            KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTDATA
+     &            KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTSDTHRSH,
+     &           ALTBGTHRSH,HSALTCUT ,ALTDATA
       USE YOWCOUT  , ONLY : IPFGTBL
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWGRIBHD, ONLY : KSEK1
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,SINPH    ,
+     &            COSPH
       USE YOWICE   , ONLY : ICEMASK  ,FLMIN
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
-     &            XDELLA   ,ZDELLO
+     &            XDELLA   ,ZDELLO   ,LLBOUND
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NIBLO    ,XKAPPA2  ,HSCOEFCOR,HSCONSCOR
-      USE YOWPCONS , ONLY : ZMISS
-      USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR  ,LALTLRGR
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1
+     &            NIBLO    ,XKAPPA2  ,HSCOEFCOR,HSCONSCOR,CLDOMAIN ,
+     &            LL1D
+      USE YOWPCONS , ONLY : RAD      ,ZMISS
+      USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR  ,LALTLRGR,YEXPVER
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1      ,IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWINTP  , ONLY : WHGTTG   ,WHGTAG   ,CWHTAG   , RANGAG
       USE MPL_MODULE
@@ -63,15 +71,22 @@
       LOGICAL LLOPENED, LLTEST
       INTEGER IREAD
       CHARACTER* 3 CLFID
+      CHARACTER*4 CSTRM
       CHARACTER*12 CTIME
+      REAL :: DISTMAX, COSDISTMAX
+      REAL :: DELLON, COSLON, DIS2, XLONGKJ
+      REAL, ALLOCATABLE :: XLONG(:)
       REAL,ALLOCATABLE :: XKAPPA1(:), DELH_ALT(:)
       REAL,ALLOCATABLE :: FALT(:,:,:)
-      INTEGER,ALLOCATABLE, DIMENSION(:) :: ICOMBUF, IKALT
+      INTEGER,ALLOCATABLE,DIMENSION(:) :: ICOMBUF
       INTEGER,ALLOCATABLE,DIMENSION(:,:) :: IJALTPE, ITEMP
       REAL,ALLOCATABLE, DIMENSION(:) :: ZCOMBUF, TEMP
       REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB
       REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
+      REAL :: NFRPEALT
+      REAL :: WHMOD(NIBLO)
       LOGICAL :: LSQRT
+      LOGICAL,ALLOCATABLE, DIMENSION(:) :: LLWITHIN 
 
 
 !*     VARIABLE     TYPE      PURPOSE.
@@ -116,13 +131,21 @@
           IF(IFAIL.EQ.0) THEN
             READ (IUME,ERR=9000) CTIME, NOBS
             IF(NOBS.GT.0) THEN
-!             the size of the second dimension of IJALT is increased by 1
+!             the size of the 2nd dimension of IJALT is increased by 1
 !             to keep track of the input order (see below).
               ALLOCATE(IJALT(NOBS,NIJALT+1))
               ALLOCATE(ALTDATA(NOBS,NALTDT))
               READ (IUME,ERR=9000) ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS),
      &                                                IIJALT = 1,NIJALT)
               READ (IUME,ERR=9000) ALTDATA
+
+!             REORGANISE THE IJ INDEX WHEN 2-D DECOMPOSITION
+              IF(.NOT.LL1D .AND. NPROC.GT.1) THEN
+                DO IOBS = 1, NOBS
+                  IJALT(IOBS,1) = IJ2NEWIJ(IJALT(IOBS,1))
+                ENDDO
+              ENDIF
+
               DO IOBS = 1, NOBS
                 IJALT(IOBS,NIJALT+1) = IOBS
               ENDDO
@@ -149,7 +172,7 @@
 9001    CONTINUE
       ENDIF
 
-!     SEND NOBS TO THE OTHER PE'S TO LET THEM KNOW WETHER THERE ARE
+!     SEND NOBS TO THE OTHER PE'S TO LET THEM KNOW WHETHER THERE ARE
 !     DATA OR NOT.
       IF(LMESSPASS) THEN
         CALL MPBCASTINTFLD(IREAD,KTAG,1,1,NOBS)
@@ -164,6 +187,11 @@
         NOBSPE = 0
         RETURN
       ENDIF
+
+!     add a small number to DISTMAX as a safety precaution
+!     i.e each PE will get slightly more data that they should
+!     strictly have.
+      COSDISTMAX=COS(DISTMAX+0.1)
 
 ! ----------------------------------------------------------------------
 
@@ -186,31 +214,44 @@
         CALL MPBCASTINTFLD(IREAD,KTAG,NPROC,1,NOBSPE)
         KTAG=KTAG+1
 
+
+!       DETERMINE THE NUMBER PF PE'S EACH PE WILL NEED TO GET DATA
+!       FROM
+        IR=IRANK
+        NFRPEALT = 0 
+        NOBSPEMAX = 0
+        DO JR = 1, IR-1
+          IF(INTLMAX(IR,JR).EQ.1 .AND. NOBSPE(JR).GT.0) THEN
+            NFRPEALT = NFRPEALT + 1
+            NOBSPEMAX=MAX(NOBSPEMAX,NOBSPE(JR))
+          ENDIF
+        ENDDO
+        DO JR = IR+1,NPROC
+          IF(INTLMAX(IR,JR).EQ.1 .AND. NOBSPE(JR).GT.0) THEN
+            NFRPEALT = NFRPEALT + 1
+            NOBSPEMAX=MAX(NOBSPEMAX,NOBSPE(JR))
+          ENDIF
+        ENDDO
+
+
 !       DISTRIBUTE THE DATA FOR EACH PE.
         IF(IRANK .EQ. IREAD) THEN
 !         EXTRACT THE DATA THAT ARE ON EACH PE.
           DO IR = 1, NPROC
             IF(NOBSPE(IR) .GT. 0 .AND. IR.NE.IREAD ) THEN
 
-              IICOMLEN = (NIJALT+1) * NOBSPE(IR)
-              ALLOCATE(ICOMBUF(IICOMLEN))
+              IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IR)
+              ALLOCATE(ZCOMBUF(IZCOMLEN))
               ICOUNT = 0
               DO IIJALT = 1, NIJALT+1
                 DO IOBS = 1, NOBS
                   IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
      &                IJALT(IOBS,1) .LE. NEND(IR) ) THEN
                     ICOUNT = ICOUNT + 1
-                    ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                    ZCOMBUF(ICOUNT) = FLOAT(IJALT(IOBS,IIJALT))
                   ENDIF
                 ENDDO
               ENDDO
-              CALL MPL_SEND(ICOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
-     &                      CDSTRING='GRFIELD 1:')
-              DEALLOCATE(ICOMBUF)
-
-              IZCOMLEN = NALTDT * NOBSPE(IR)
-              ALLOCATE(ZCOMBUF(IZCOMLEN))
-              ICOUNT = 0
               DO IALTDT = 1, NALTDT
                 DO IOBS = 1, NOBS
                   IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
@@ -220,8 +261,8 @@
                   ENDIF
                 ENDDO
               ENDDO
-              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG+1,
-     &                      CDSTRING='GRFIELD 2:')
+              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
+     &                      CDSTRING='GRFIELD 1:')
               DEALLOCATE(ZCOMBUF)
 
             ENDIF
@@ -230,22 +271,18 @@
 !         only keep the contribution that are on PE IREAD
           IR=IREAD
           IF(NOBSPE(IR).GT.0) THEN
-            IICOMLEN = (NIJALT+1) * NOBSPE(IR)
-            ALLOCATE(ICOMBUF(IICOMLEN))
+            IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IR)
+            ALLOCATE(ZCOMBUF(IZCOMLEN))
             ICOUNT = 0
             DO IIJALT = 1, NIJALT+1
               DO IOBS = 1, NOBS
                 IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
      &              IJALT(IOBS,1) .LE. NEND(IR) ) THEN
                   ICOUNT = ICOUNT + 1
-                  ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                  ZCOMBUF(ICOUNT) = FLOAT(IJALT(IOBS,IIJALT))
                 ENDIF
               ENDDO
             ENDDO
-
-            IZCOMLEN = NALTDT * NOBSPE(IR)
-            ALLOCATE(ZCOMBUF(IZCOMLEN))
-            ICOUNT = 0
             DO IALTDT = 1, NALTDT
               DO IOBS = 1, NOBS
                 IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
@@ -262,43 +299,29 @@
 
         ELSE
           IF(NOBSPE(IRANK) .GT. 0 ) THEN
-            IICOMLEN = (NIJALT+1) * NOBSPE(IRANK)
-            ALLOCATE(ICOMBUF(IICOMLEN))
-            CALL MPL_RECV(ICOMBUF(1:IICOMLEN),KSOURCE=IREAD,KTAG=KTAG,
+            IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IRANK)
+            ALLOCATE(ZCOMBUF(IZCOMLEN))
+            CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KSOURCE=IREAD,KTAG=KTAG,
      &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 1:')
-            IF(KRCOUNT.NE.IICOMLEN) CALL MPL_ABORT
+            IF(KRCOUNT.NE.IZCOMLEN) CALL MPL_ABORT
      &        ('MPL_RECV ERROR in GRFIELD 1 :MISMATCHED MSG LENGTH')
             IF(KRTAG.NE.KTAG) CALL MPL_ABORT
      &        ('MPL_RECV ERROR in GRFIELD 1 : MISMATCHED TAGS' )
-
-
-            IZCOMLEN = NALTDT * NOBSPE(IRANK)
-            ALLOCATE(ZCOMBUF(IZCOMLEN))
-            CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KSOURCE=IREAD,KTAG=KTAG+1,
-     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 2:')
-            IF(KRCOUNT.NE.IZCOMLEN) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 2 :MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.KTAG+1) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 2 : MISMATCHED TAGS' )
-
           ENDIF
         ENDIF
-        KTAG = KTAG + 2
+        KTAG = KTAG + 1
 
 !       KEEP THE DATA ON EACH PE.
         IF(NOBSPE(IRANK).GT.0) THEN
           ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+          ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
           ICOUNT = 0
           DO IIJALT = 1, NIJALT+1
             DO IOBS = 1, NOBSPE(IRANK)
               ICOUNT = ICOUNT + 1
-              IJALT(IOBS,IIJALT) = ICOMBUF(ICOUNT) 
+              IJALT(IOBS,IIJALT) = NINT(ZCOMBUF(ICOUNT)) 
             ENDDO
           ENDDO
-          DEALLOCATE(ICOMBUF)
-
-          ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
-          ICOUNT = 0
           DO IALTDT = 1, NALTDT
             DO IOBS = 1, NOBSPE(IRANK)
               ICOUNT = ICOUNT + 1
@@ -318,14 +341,132 @@
 !     3. APPLY SCREENING OF DATA BASED ON MODEL FIELD
 !        --------------------------------------------
 
-!        EXCLUDE POINTS WHICH ARE ON MODEL ICE
+!     EXCLUDE POINTS WHICH ARE ON MODEL SEA ICE
 
+      NREJICE=0
       DO IOBS = 1, NOBSPE(IRANK)
         IJ=IJALT(IOBS,1)
         IF (ICEMASK(IJ,1).EQ.0) THEN
           ALTDATA(IOBS,1)=-3.
+          NREJICE=NREJICE+1
         ENDIF
       ENDDO
+
+!     BACKGROUND CHECK (remove data that deviate too much from the 
+!                         first guess)
+
+      IF(ALTSDTHRSH.LT.0.) THEN
+        IF(XDELLA.LT.0.5) THEN
+          ALTSDTHRSH = 0.75
+        ELSE
+          ALTSDTHRSH = 0.6
+        ENDIF
+      ENDIF
+
+      NREJSD=0
+      DO IOBS = 1, NOBSPE(IRANK)
+        IJ=IJALT(IOBS,1)
+        IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
+          THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJ))/WHMOD(IJ)
+          IF(THRSHLD.GE.ALTSDTHRSH) THEN
+            NREJSD=NREJSD+1
+          ENDIF
+        ENDIF
+      ENDDO
+
+      NREJBG=0
+      DO IOBS = 1, NOBSPE(IRANK)
+        IJ=IJALT(IOBS,1)
+        IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
+          THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)*
+     &            (ALTDATA(IOBS,1)-WHMOD(IJ))**2/
+     &            (ALTDATA(IOBS,1)*WHMOD(IJ))
+          HSCUT=MIN(HSALTCUT,ALTDATA(IOBS,2))
+          IF(THRSHLD.GE.ALTBGTHRSH) THEN
+            ALTDATA(IOBS,1)=-3.
+            NREJBG=NREJBG+1
+          ELSE IF(ALTDATA(IOBS,1).LE.HSCUT.OR.WHMOD(IJ).LE.HSCUT) THEN
+            ALTDATA(IOBS,1)=-3.
+            NREJBG=NREJBG+1
+          ENDIF
+        ENDIF
+      ENDDO
+
+      NTOTREJICE=NREJICE
+      NTOTREJSD=NREJSD
+      NTOTREJBG=NREJBG
+
+      IF(NPROC.GT.1) THEN
+!       SEND NREJICE, NREJSD AND  NREJBG TO ALL OTHER PE's
+        MPLENGTH=3
+        ALLOCATE(ICOMBUF(MPLENGTH))
+
+        DO IP=1,NPROC
+          IF(IRANK.EQ.IP) THEN
+            ICOMBUF(1)=NREJICE
+            ICOMBUF(2)=NREJSD
+            ICOMBUF(3)=NREJBG
+          ENDIF
+
+          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IP,
+     &     KTAG=KTAG,CDSTRING='GRFIELD 2:')
+
+          IF(IRANK.NE.IP) THEN
+            NTOTREJICE=NTOTREJICE+ICOMBUF(1)
+            NTOTREJSD=NTOTREJSD+ICOMBUF(2)
+            NTOTREJBG=NTOTREJBG+ICOMBUF(3)
+          ENDIF
+
+          KTAG = KTAG + 1
+        ENDDO
+
+        DEALLOCATE(ICOMBUF)
+      ENDIF
+
+      WRITE(IU06,*)' '
+      WRITE(IU06,*)'   NUMBER OF GRIDDED ALTIMETER WAVE HEIGHTS= ',NOBS
+      WRITE(IU06,*)'   NUMBER OVER MODEL SEA ICE= ',NTOTREJICE 
+      WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA= ',NTOTREJSD
+      WRITE(IU06,*)'   NUMBER REJECTED BY THE BACKGROUND CHECK= ',
+     &                 NTOTREJBG
+      WRITE(IU06,*)' '
+
+ 
+      IF(XDELLA.LT.0.5) THEN
+        REJECT=0.75
+      ELSE
+        REJECT=0.5
+      ENDIF
+
+      REJRATIO=FLOAT(NTOTREJSD)/FLOAT(NOBS)
+
+      IF(REJRATIO.GT.REJECT) THEN
+        WRITE(IU06,*)'*************************************************'
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)'  THE NUMBER OF SUSPICIOUS ALT DATA IS OVER ',
+     &               REJECT*100,' %'
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)'  THEY ARE ALL REJECTED AS A PRECAUTION !' 
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)'*************************************************'
+        DO IOBS = 1, NOBSPE(IRANK)
+          ALTDATA(IOBS,1)=-3.
+        ENDDO
+        IF(IRANK.EQ.1) THEN
+          IUMAIL=I_GET_UNIT(IU06,'MM','S','F',0)
+          WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
+          WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS ALTIMETER DATA IS OVER',
+     &                     REJECT*100,' % ',REJRATIO*100,' %'
+          WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER 
+          CALL WSTREAM_STRG(KSEK1(40),CSTRM)
+          WRITE(IUMAIL,*)' STREAM        ',CSTRM
+          WRITE(IUMAIL,*)' DOMAIN        ',CLDOMAIN
+          WRITE(IUMAIL,*)' AT TIME       ',CDTPRO
+          WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
+          CLOSE(IUMAIL)
+          CALL SYSTEM (' mail wab < MM ' )
+        ENDIF
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -471,158 +612,157 @@
         DO IR = 1, NPROC
           IF(INTLMAX(IR,IRANK).EQ.1 .AND. IR.NE.IRANK) THEN
             IF(NOBSPE(IRANK) .GT. 0 ) THEN
-              IICOMLEN = (NIJALT+1) * NOBSPE(IRANK)
-              ALLOCATE(ICOMBUF(IICOMLEN))
+              IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IRANK)
+              ALLOCATE(ZCOMBUF(IZCOMLEN))
               ICOUNT = 0
               DO IIJALT = 1, NIJALT+1
                 DO IOBS = 1, NOBSPE(IRANK)
                   ICOUNT = ICOUNT + 1
-                  ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                  ZCOMBUF(ICOUNT) = FLOAT(IJALT(IOBS,IIJALT))
                 ENDDO
               ENDDO
-              CALL MPL_SEND(ICOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
-     &                      CDSTRING='GRFIELD 3:')
-
-              DEALLOCATE(ICOMBUF)
-
-              IZCOMLEN = NALTDT * NOBSPE(IRANK)
-              ALLOCATE(ZCOMBUF(IZCOMLEN))
-              ICOUNT = 0
               DO IALTDT = 1, NALTDT
                 DO IOBS = 1, NOBSPE(IRANK)
                   ICOUNT = ICOUNT + 1
                   ZCOMBUF(ICOUNT) = ALTDATA(IOBS,IALTDT)
                 ENDDO
               ENDDO
-              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG+1,
-     &                      CDSTRING='GRFIELD 4:')
+              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
+     &                      CDSTRING='GRFIELD 3:')
               DEALLOCATE(ZCOMBUF)
             ENDIF
           ENDIF
+        ENDDO
+
+        ALLOCATE(XLONG(NSTART(IRANK):NEND(IRANK)))
+        DO IJ=NSTART(IRANK),NEND(IRANK)
+          XLONG(IJ) = REAL(IXLG(IJ,1)-1)*ZDELLO(KXLT(IJ,1))
         ENDDO
 
 !       RECEIVING THE CONTRIBUTIONS WHICH MIGHT BE COMMON
-        DO IR = 1, NPROC
-          IF(INTLMAX(IR,IRANK).EQ.1 .AND. IR.NE.IRANK) THEN
-            IF(NOBSPE(IR) .GT. 0 ) THEN
 
-              IICOMLEN = (NIJALT+1) * NOBSPE(IR)
-              ALLOCATE(ICOMBUF(IICOMLEN))
+        DO IPR = 1, NFRPEALT
 
-              CALL MPL_RECV(ICOMBUF(1:IICOMLEN),KSOURCE=IR,
-     &           KTAG=KTAG, KOUNT=KRCOUNT,
-     &           KRECVTAG=KRTAG,CDSTRING='GRFIELD 3:')
-              IF(KRCOUNT.NE.IICOMLEN) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 3 :MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.KTAG) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 3 : MISMATCHED TAGS' )
+          IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPEMAX
+          ALLOCATE(ZCOMBUF(IZCOMLEN))
 
-              ALLOCATE(IJALTPE(NOBSPE(IR),NIJALT+1))
-              ICOUNT = 0
-              DO IIJALT = 1, NIJALT+1
-                DO IOBS = 1, NOBSPE(IR)
-                  ICOUNT = ICOUNT + 1
-                  IJALTPE(IOBS,IIJALT) = ICOMBUF(ICOUNT) 
-                ENDDO
-              ENDDO
-              DEALLOCATE(ICOMBUF)
-
-              IZCOMLEN = NALTDT * NOBSPE(IR)
-              ALLOCATE(ZCOMBUF(IZCOMLEN))
-              CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KSOURCE=IR,KTAG=KTAG+1,
+          CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KFROM=IR,KTAG=KTAG,
      &           KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 4:')
-              IF(KRCOUNT.NE.IZCOMLEN) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 4 :MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.KTAG+1) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in GRFIELD 4 : MISMATCHED TAGS' )
+          IF(KRTAG.NE.KTAG) CALL MPL_ABORT
+     &    ('MPL_RECV ERROR in GRFIELD 3 : MISMATCHED TAGS' )
 
-              ALLOCATE(ALTDATAPE(NOBSPE(IR),NALTDT))
-              ICOUNT = 0
-              DO IALTDT = 1, NALTDT
-                DO IOBS = 1, NOBSPE(IR)
-                  ICOUNT = ICOUNT + 1
-                  ALTDATAPE(IOBS,IALTDT) = ZCOMBUF(ICOUNT) 
-                ENDDO
-              ENDDO
-              DEALLOCATE(ZCOMBUF)
 
-!             how many observations are actually relevant to PE IRANK
-              NOBSIN=0
-              ALLOCATE(IKALT(NOBSPE(IR)))
-              DO IOBS = 1, NOBSPE(IR)
-                IJ=IJALTPE(IOBS,1)
-                IKALT(IOBS) = KXLT(IJ,1)
-                IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
-     &             IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
-                  NOBSIN=NOBSIN+1
-                ENDIF
-              ENDDO
+          ALLOCATE(IJALTPE(NOBSPE(IR),NIJALT+1))
+          ICOUNT = 0
+          DO IIJALT = 1, NIJALT+1
+            DO IOBS = 1, NOBSPE(IR)
+              ICOUNT = ICOUNT + 1
+              IJALTPE(IOBS,IIJALT) = NINT(ZCOMBUF(ICOUNT)) 
+            ENDDO
+          ENDDO
 
-              IF(NOBSIN.GT.0) THEN
-                NOBSPEOLD = NOBSPE(IRANK)
-                NOBSPE(IRANK) = NOBSPE(IRANK) + NOBSIN
+          ALLOCATE(ALTDATAPE(NOBSPE(IR),NALTDT))
+          DO IALTDT = 1, NALTDT
+            DO IOBS = 1, NOBSPE(IR)
+              ICOUNT = ICOUNT + 1
+              ALTDATAPE(IOBS,IALTDT) = ZCOMBUF(ICOUNT) 
+            ENDDO
+          ENDDO
 
-                IF(NOBSPEOLD.GT.0) THEN
-                  ALLOCATE(ITEMP(NOBSPEOLD,NIJALT+1))
-                  ITEMP = IJALT
-                  DEALLOCATE(IJALT)
-                  ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
-                  DO IIJALT = 1, NIJALT+1
-                    DO IOBS = 1, NOBSPEOLD
-                      IJALT(IOBS,IIJALT) = ITEMP(IOBS,IIJALT)
-                    ENDDO
-                  ENDDO
-                  DEALLOCATE(ITEMP)
+          DEALLOCATE(ZCOMBUF)
 
-                  ALLOCATE(ZTEMP(NOBSPEOLD,NALTDT))
-                  ZTEMP = ALTDATA
-                  DEALLOCATE(ALTDATA)
-                  ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
-                  DO IALTDT = 1, NALTDT 
-                    DO IOBS = 1, NOBSPEOLD
-                     ALTDATA(IOBS,IALTDT) = ZTEMP(IOBS,IALTDT) 
-                    ENDDO
-                  ENDDO
-                  DEALLOCATE(ZTEMP)
-                ELSE
-                  ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
-                  ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
-                ENDIF
+!         how many observations are actually relevant to PE IRANK
+          NOBSIN=0
+          ALLOCATE(LLWITHIN(NOBSPE(IR)))
+          DO IOBS = 1, NOBSPE(IR)
+            IJJ=IJALTPE(IOBS,1)
+            KJ = KXLT(IJJ,1)
+            XLONGKJ = REAL(IXLG(IJJ,1)-1)*ZDELLO(KJ)
+            LLWITHIN(IOBS) = .FALSE.
+            IF(KJ .GE. KMINLMAX(IRANK) .AND.
+     &         KJ .LE. KMAXLMAX(IRANK) ) THEN
 
-                DO IIJALT = 1, NIJALT+1
-                  ICOUNT = 0
-                  DO IOBS = 1, NOBSPE(IR)
-                    IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
-     &                 IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
-                      ICOUNT = ICOUNT + 1
-                      IJALT(NOBSPEOLD+ICOUNT,IIJALT) =
-     &                      IJALTPE(IOBS,IIJALT)
-                    ENDIF
-                  ENDDO
-                ENDDO
-
-                DO IALTDT = 1, NALTDT 
-                  ICOUNT = 0
-                  DO IOBS = 1, NOBSPE(IR)
-                    IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
-     &                 IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
-                      ICOUNT = ICOUNT + 1
-                      ALTDATA(NOBSPEOLD+ICOUNT,IALTDT) =
-     &                        ALTDATAPE(IOBS,IALTDT)
-                    ENDIF
-                  ENDDO
-                ENDDO
- 
-              ENDIF
-              DEALLOCATE(IKALT)
-              DEALLOCATE(IJALTPE)
-              DEALLOCATE(ALTDATAPE)
+               DO IJ=NSTART(IRANK),NEND(IRANK)
+                 IF(LLBOUND(IJ)) THEN
+                   KI = KXLT(IJ,1)
+                   DELLON = XLONGKJ-XLONG(IJ)
+                   COSLON = COS(DELLON*RAD)
+                   DIS2 = COSLON*COSPH(KJ)*COSPH(KI)+
+     &                    SINPH(KJ)*SINPH(KI)
+                   IF(DIS2.GE.COSDISTMAX) THEN
+                     NOBSIN=NOBSIN+1
+                     LLWITHIN(IOBS) = .TRUE.
+                     EXIT
+                   ENDIF
+                 ENDIF
+               ENDDO
 
             ENDIF
+          ENDDO
+
+          IF(NOBSIN.GT.0) THEN
+            NOBSPEOLD = NOBSPE(IRANK)
+            NOBSPE(IRANK) = NOBSPE(IRANK) + NOBSIN
+
+            IF(NOBSPEOLD.GT.0) THEN
+              ALLOCATE(ITEMP(NOBSPEOLD,NIJALT+1))
+              ITEMP = IJALT
+              DEALLOCATE(IJALT)
+              ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+              DO IIJALT = 1, NIJALT+1
+                DO IOBS = 1, NOBSPEOLD
+                  IJALT(IOBS,IIJALT) = ITEMP(IOBS,IIJALT)
+                ENDDO
+              ENDDO
+              DEALLOCATE(ITEMP)
+
+              ALLOCATE(ZTEMP(NOBSPEOLD,NALTDT))
+              ZTEMP = ALTDATA
+              DEALLOCATE(ALTDATA)
+              ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
+              DO IALTDT = 1, NALTDT 
+                DO IOBS = 1, NOBSPEOLD
+                  ALTDATA(IOBS,IALTDT) = ZTEMP(IOBS,IALTDT) 
+                ENDDO
+              ENDDO
+              DEALLOCATE(ZTEMP)
+            ELSE
+              ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+              ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
+            ENDIF
+
+            DO IIJALT = 1, NIJALT+1
+              ICOUNT = 0
+              DO IOBS = 1, NOBSPE(IR)
+                IF(LLWITHIN(IOBS)) THEN
+                  ICOUNT = ICOUNT + 1
+                  IJALT(NOBSPEOLD+ICOUNT,IIJALT) =
+     &                  IJALTPE(IOBS,IIJALT)
+                ENDIF
+              ENDDO
+            ENDDO
+
+            DO IALTDT = 1, NALTDT 
+              ICOUNT = 0
+              DO IOBS = 1, NOBSPE(IR)
+                IF(LLWITHIN(IOBS)) THEN
+                  ICOUNT = ICOUNT + 1
+                  ALTDATA(NOBSPEOLD+ICOUNT,IALTDT) =
+     &                    ALTDATAPE(IOBS,IALTDT)
+                ENDIF
+              ENDDO
+            ENDDO
+ 
           ENDIF
+          DEALLOCATE(LLWITHIN)
+          DEALLOCATE(IJALTPE)
+          DEALLOCATE(ALTDATAPE)
+
         ENDDO
 
-        KTAG = KTAG + 2
+        DEALLOCATE(XLONG)
+
+        KTAG = KTAG + 1
 
       ENDIF
 

@@ -94,7 +94,7 @@
 !     1. COMBINE PARTITIONINGS IF PEAKS ARE ONLY ONE GRID POINT APART 
 !     -----------------------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE ONESTEPAPART'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE ONESTEPAPART'
       CALL ONESTEPAPART( 
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,
@@ -117,7 +117,7 @@
 !     3. COMPUTE MEAN ENERGY OF PARTITIONINGS.
 !     ----------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE SUMENERGY'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE SUMENERGY'
       CALL SUMENERGY( 
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,
@@ -128,7 +128,7 @@
 !               WORK SPACE
      &            SUM0 , SUMX0 , SUMY0 , SUMXX0 , SUMYY0 )
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE MEANS'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE MEANS'
       CALL MEANS(
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,
@@ -142,7 +142,7 @@
 !     4. ALL WINDSEA PEAKS ARE COMBINED TO ONE.
 !     -----------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE WINDSEA'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE WINDSEA'
       CALL WINDSEA( 
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,
@@ -157,7 +157,7 @@
 !     5. COMBINE IF THE PEAK LIES IN LAST TWO FREQUENCY BINS.
 !     -------------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE LASTTWOBINS'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE LASTTWOBINS'
       CALL LASTTWOBINS( 
 !                DIMENSIONS
      &             NSPEC , MPART , NPART , NANG , NFRE ,
@@ -170,7 +170,7 @@
 !         THE SPREAD OF THE PARTITIONINGS. 
 !     ---------------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE HALFSPREAD'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE HALFSPREAD'
       CALL HALFSPREAD( 
 !                 DIMENSIONS
      &              NSPEC , MPART , NPART , NANG , NFRE ,
@@ -186,7 +186,7 @@
 !        THAN LEVEL * MINIMUM PEAK ENERGY.
 !     -----------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE THRESHHOLD'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE THRESHHOLD'
       CALL THRESHHOLD( 
 !                 DIMENSIONS
      &              NSPEC , MPART , NPART , NANG , NFRE ,
@@ -200,7 +200,7 @@
 !     6. LOW ENERGY PARTITIONINGS ARE COMBINED WITH CLOSEST PARTITIONING
 !     ------------------------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE LOWENERGY'
+      IF( CONTROL ) WRITE(IU06,*) '  CALLING SUBROUTINE LOWENERGY'
       CALL LOWENERGY( 
 !                 DIMENSIONS.
      &              NSPEC , MPART , NPART , NANG , NFRE ,
@@ -217,9 +217,9 @@
       DO ISPEC = 1,NSPEC
         MAXNPARTRE=MAX(MAXNPARTRE,NPART(ISPEC))
       ENDDO
-      WRITE(IU06,*) 'AT THE END OF SUBROUTINE COMBINEPEAKS'
-      WRITE(IU06,*) 'THE MAXIMUN NUMBER OF PARTITIONS WAS REDUCED TO'
-      WRITE(IU06,*) 'MAXNPARTRE = ',MAXNPARTRE
+      WRITE(IU06,*) '  AT THE END OF SUBROUTINE COMBINEPEAKS'
+      WRITE(IU06,*) '  THE MAXIMUN NUMBER OF PARTITIONS WAS REDUCED TO'
+      WRITE(IU06,*) '  MAXNPARTRE = ',MAXNPARTRE
 
       RETURN
 

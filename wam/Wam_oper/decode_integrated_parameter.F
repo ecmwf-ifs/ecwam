@@ -8,8 +8,10 @@
 !     PURPOSE.
 !     --------
 !     decodes the grib integrated parameters as obtained from a mars request
-!     Input parameter can be any integrated parameter as output from WAM
-!     The results will be saved as a binary 2d matrix.
+!     Input parameter can be any integrated parameter as output from WAM.
+!     The results will be saved as in ascii as a header and 2d matrix.
+!     If more than one field is present, they will written out in the
+!     same output file.
 
 !     USAGE : decode_integrated_parameter [-i input_filename]
 !                                         [-o output_filename]
@@ -50,7 +52,7 @@
 !      TIME=12,
 !      FORMAT=PACKED,
 !      TARGET="input",
-!      PARAM=229, !!!! could 229 --> 245
+!      PARAM=229, !!!! could 220 --> 245
 !      DOMAIN=G,    !!! could be M
 !      REPRES=LL,
 !      STREAM=WV,
@@ -80,7 +82,7 @@
 
       INTEGER I4
       INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(51+NFREMAX),KSEC2(1024),
+      INTEGER :: KSEC0(2),KSEC1(51+NANGMAX+NFREMAX),KSEC2(1024),
      &           KSEC3(2),KSEC4(128)
       INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
       REAL :: ONE,ZTHETA,ZFRE
@@ -93,7 +95,7 @@
       CHARACTER* 12 CLFMT
       CHARACTER*40 ERRMSG(-4:6), MSG
       CHARACTER*128 CLARG, FNAMEIN, FNAMEOUT
-      LOGICAL LLEXIST, LINTEGRATE, LWAVEHGT, LLASTFRE
+      LOGICAL LLEXIST, LINTEGRATE, LWAVEHGT, LLASTFRE, llfrst
 
       DATA CLOPTS/'i;o;t;'/
       DATA ERRMSG/
@@ -124,6 +126,7 @@
       LWAVEHGT=.FALSE.
       LLASTFRE=.FALSE.
       ITEST=0
+      llfrst=.true.
 
       CMDLINE: DO
         IOPTVAL=GETCLO(CLOPTS,CLARG)
@@ -188,22 +191,54 @@
       ENDIF
  
 !     GET SIZE OF INGRIB
- 
+
+
       CALL PBSIZE (IUGRS, IPLENG)
       ISIZE=(IPLENG+NPRECI-1)/NPRECI
-      ISIZEMAX=ISIZE
-      ALLOCATE(INGRIB(ISIZE))
+1111  IPLENG=ISIZE*NPRECI
+      IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
 
 !     GET DATA FILE
 
       CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
       IF     (KRET.EQ.-1) THEN
         WRITE (*,*) ' REACHED EOF IN ',FNAMEIN 
+        GOTO 2222
       ELSEIF (KRET .EQ. -2) THEN
         WRITE (*,*) ' ERROR IN FILE HANDLING IN ',FNAMEIN 
       ELSEIF (KRET .EQ. -3) THEN
-        WRITE (*,*) ' INGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',IPLENG
-        WRITE (*,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
+        DEALLOCATE(INGRIB)
+
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+        WRITE(IU06,*) ' IT WAS ', ISIZE
+
+        KKRET=0
+
+        ISIZE=(ILENG+KIND(ISIZE)-1)/KIND(ISIZE)
+        WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
+        WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+        WRITE(IU06,*) ' '
+        CALL FLUSH(IU06)
+
+!       RESET THE FILE POINTER TO READ FIELD AGAIN
+        KOFFSET=-ILENG
+        CALL PBSEEK(IUGRS,KOFFSET,1,KKRET)
+        IF(KKRET.EQ.-1) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
+        ENDIF
+        IF(KKRET.EQ.-2) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
+        ENDIF
+
+        GOTO 1111
+
       ENDIF
 
 !*    GET GRIB HEADERS 
@@ -267,7 +302,6 @@
         ENDDO
       ENDIF
 
-
 !     DECODE INPUT GRIB DATA
 !     ----------------------
 
@@ -313,8 +347,70 @@
         CALL ABORT
       ENDIF
 
-      IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
 
+!     WRITES OUT DECODED DATA IN FORMATTED FORMAT
+!     *******************************************
+
+      ALLOCATE(FIELD(NGX,NGY))
+      FIELD=ZMISS
+      L=0
+      DO K=1,NGY
+        JSN=NGY-K+1
+        DO I=1,KDOMRGG(JSN)
+          L = L+1
+          FIELD(I,K) = PSEC4OUT(L)
+        ENDDO
+      ENDDO
+
+      if(llfrst) then
+        LFILE=0
+        IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
+        OPEN(10,FILE=FNAMEOUT(1:LFILE),STATUS='UNKNOWN',
+     &       FORM='FORMATTED')
+        llfrst=.false.
+        WRITE(*,*) ' '
+        WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
+        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI
+        WRITE(*,*) ' '
+        WRITE(*,*) ' OUTPUT MATRIX DIMENSION : ',NGX,NGY
+        WRITE(*,*) ' '
+        WRITE(*,*) ' AMONOP = ',AMONOP
+        WRITE(*,*) ' AMOWEP = ',AMOWEP
+        WRITE(*,*) ' AMOSOP = ',AMOSOP
+        WRITE(*,*) ' AMOEAP = ',AMOEAP
+        IF(IRGG.EQ.0) THEN
+          WRITE(*,*) ' REGULAR LAT LON GRID '
+          WRITE(*,*) ' XDELLO = ',XDELLO
+          WRITE(*,*) ' XDELLA = ',XDELLA
+        ELSE
+          WRITE(*,*) ' IRREGULAR LAT LON GRID '
+          WRITE(*,*) ' XDELLA = ',XDELLA
+        ENDIF
+      else
+        WRITE(*,*) ' '
+        WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
+        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI
+      endif
+
+      WRITE(10,'(I3,1X,I4.4,3(I2.2),1x,I3,1x,I3,4(F7.2,1x))')
+     &    IPARAM,IYYYY,IMM,IDD,IHH,NGX,NGY,XDELLO,XDELLA,AMONOP,AMOWEP
+
+      NBY=15
+      DO II=1,INT(NGX/NBY)+1
+        DO K=1,NGY
+          WRITE(10,110) (FIELD(I,K),I=(II-1)*NBY+1,MIN(NGX,II*NBY))
+        ENDDO 
+      ENDDO 
+
+110   FORMAT(15(F7.2))
+
+      DEALLOCATE(PSEC4OUT)
+      DEALLOCATE(KDOMRGG)
+      DEALLOCATE(FIELD)
+      GOTO 1111
+
+
+2222  CONTINUE
       CALL PBCLOSE(IUGRS,KRET)
       IF(KRET.LT.0) THEN
         WRITE (*,*) '************************************'
@@ -324,117 +420,79 @@
         CALL ABORT
       ENDIF
 
-!     WRITES OUT DECODED DATA IN BINARY FORMAT 
-!     ****************************************
-
-      ALLOCATE(FIELD(NGX,NGY))
-      FIELD=ZMISS
-      DO K=1,NGY
-        JSN=NGY-K+1
-        DO I=1,KDOMRGG(JSN)
-          L = L+1
-          FIELD(I,K) = PSEC4OUT(L)
-        ENDDO
-      ENDDO
-
-      DEALLOCATE(PSEC4OUT)
-
-      LFILE=0
-      IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
-      OPEN(10,FILE=FNAMEOUT(1:LFILE),STATUS='UNKNOWN',
-     &     FORM='UNFORMATTED')
-      WRITE(10) FIELD 
       CLOSE(10)
-
-      DEALLOCATE(FIELD)
-
-!     PRINT INFORMATION ON GRID
-!     *************************
-
-      WRITE(*,*) ' '
-      WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-      WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI
-      WRITE(*,*) ' '
-      WRITE(*,*) ' OUTPUT MATRIX DIMENSION : ',NGX,NGY
-      WRITE(*,*) ' '
-      WRITE(*,*) ' AMONOP = ',AMONOP
-      WRITE(*,*) ' AMOWEP = ',AMOWEP
-      WRITE(*,*) ' AMOSOP = ',AMOSOP
-      WRITE(*,*) ' AMOEAP = ',AMOEAP
-      IF(IRGG.EQ.0) THEN
-        WRITE(*,*) ' REGULAR LAT LON GRID '
-        WRITE(*,*) ' XDELLO = ',XDELLO
-        WRITE(*,*) ' XDELLA = ',XDELLA
-      ELSE
-        WRITE(*,*) ' IRREGULAR LAT LON GRID '
-        WRITE(*,*) ' XDELLA = ',XDELLA
-      ENDIF
 
       END
 
 !#######################################################################
-!     FUNCTION getclo(yaoptions, yaargument)
-!     INTEGER getclo, getcla, rtb
-!     CHARACTER*   1 yolastarg
-!     CHARACTER* (*) yaoptions, yaargument
-!     CHARACTER* 120 arg
-!     INTEGER here, imorearg, ivarg
-!     DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
-!     DATA yolastarg / " " /
-!     arg=' '
-!     CALL getarg(here,arg)
-!!-->  PRINT*,'-------------getclo---------------'
-!!-->  PRINT*,' ###',arg,'###'
-!     iol=rtb(arg)
-!!-->  PRINT*,' iol: ', iol
-!     IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
-!       iol = rtb(yaoptions)
-!!-->    PRINT*,' iol 2',iol,' options: ', yaoptions
-!       DO jl=1,iol
-!         getclo = 0
-!         IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
-!           getclo = ichar(arg(2:2))
-!!-->        PRINT *,' FOUND ',yaoptions(jl:jl), ' IN THE COMMAND LINE',
-!!--> .               yaoptions(jl+1:jl+1)
-!           IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
+!z    FUNCTION getclo(yaoptions, yaargument)
+!z    INTEGER getclo, getcla, rtb
+!z    CHARACTER*   1 yolastarg
+!z    CHARACTER* (*) yaoptions, yaargument
+!z    CHARACTER* 120 arg
+
+!z    INTEGER here, imorearg, ivarg
+!z    DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
+!z    DATA yolastarg / " " /
+
+!z    arg=' '
+!z    CALL getarg(here,arg)
+!-->  PRINT*,'-------------getclo---------------'
+!-->  PRINT*,' ###',arg,'###'
+
+!z    iol=rtb(arg)
+!-->  PRINT*,' iol: ', iol
+!z    IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
+!z      iol = rtb(yaoptions)
+!-->    PRINT*,' iol 2',iol,' options: ', yaoptions
+!z      DO jl=1,iol
+!z        getclo = 0
+!z        IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
+!z          getclo = ichar(arg(2:2))
+!-->        PRINT *,' FOUND ',yaoptions(jl:jl), ' IN THE COMMAND LINE',
+!--> .               yaoptions(jl+1:jl+1)
+!z          IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
 !-->          PRINT*, yaoptions(jl:jl),' requires arguments'
-!             yolastarg=yaoptions(jl:jl)
-!             ivarg=1
-!           ENDIF
-!           EXIT
-!         ENDIF
-!       ENDDO
-!     ELSEIF ( ivarg .EQ. 1 ) THEN
-!        WRITE(*,*) ' option -', yolastarg, ' requires arguments'
-!        getclo=-1
-!     ELSEIF (iol .EQ. 0) THEN
-!       getclo=0
-!     ELSE
-!        WRITE(*,*) 'illegal option: ',arg(1:iol)
-!        getclo=-1
-!     ENDIF
-!!-->  PRINT *,' HERE ins getclo', here
-!      here = here + 1
-!     RETURN
-!      ENTRY getcla(yaargument)
-!!-->  PRINT*,'-------------getcla--------------'
-!!-->  PRINT*, 'HERE ins getcla :', here,' options: ', yaoptions
-!      getcla = 1
-!      CALL getarg(here,arg)
+!z            yolastarg=yaoptions(jl:jl)
+!z            ivarg=1
+!z          ENDIF
+!z          EXIT
+!z        ENDIF
+!z      ENDDO
+!z    ELSEIF ( ivarg .EQ. 1 ) THEN
+!z       WRITE(*,*) ' option -', yolastarg, ' requires arguments'
+!z       getclo=-1
+!z    ELSEIF (iol .EQ. 0) THEN
+!z      getclo=0
+!z    ELSE
+!z       WRITE(*,*) 'illegal option: ',arg(1:iol)
+!z       getclo=-1
+!z    ENDIF
+!-->  PRINT *,' HERE ins getclo', here
+!z    here = here + 1
+!z    RETURN
+
+!z    ENTRY getcla(yaargument)
+!-->  PRINT*,'-------------getcla--------------'
+!-->  PRINT*, 'HERE ins getcla :', here,' options: ', yaoptions
+
+!z    getcla = 1
+!z    CALL getarg(here,arg)
 !-->  PRINT*,' arg in getcla ', arg
-!     IF ( arg (1:1) .NE. '-' ) THEN
-!       here = here + 1
-!       yaargument=arg
-!     ELSE
-!       IF (ivarg.EQ.1) THEN
-!         WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
-!    .    ' the option -',yolastarg
-!         getcla = -1
-!       ELSE
-!         getcla = 0
-!       ENDIF
-!     ENDIF
-!     ivarg=0
+!z    IF ( arg (1:1) .NE. '-' ) THEN
+!z      here = here + 1
+!z      yaargument=arg
+!z    ELSE
+!z      IF (ivarg.EQ.1) THEN
+!z        WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
+!z   .    ' the option -',yolastarg
+!z        getcla = -1
+!z      ELSE
+!z        getcla = 0
+!z      ENDIF
+!z    ENDIF
+!z    ivarg=0
 !-->  PRINT*,' getcla in getcla ', getcla
-!     RETURN
-!     END
+
+!z    RETURN
+!z    END

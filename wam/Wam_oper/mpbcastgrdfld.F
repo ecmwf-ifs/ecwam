@@ -31,19 +31,14 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
 !         NONE
 ! -------------------------------------------------------------------
 
-
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
-
-
 
 !----------------------------------------------------------------------
 
@@ -52,46 +47,35 @@
       REAL,ALLOCATABLE :: ZCOMBUF(:)
       MPLENGTH=NXF*NYF
 
-
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
         RETURN
-      ELSEIF(IRANK.EQ.ISEND) THEN
+      ELSE
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ----------------------------------------
         ALLOCATE(ZCOMBUF(MPLENGTH))
 
-        KCOUNT=0
-        DO J=1,NYF
-          DO I=1,NXF
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FIELD(I,J)
+        IF(IRANK.EQ.ISEND) THEN
+          KCOUNT=0
+          DO J=1,NYF
+            DO I=1,NXF
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=FIELD(I,J)
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
 
-        CALL MPL_BROADCAST(ZCOMBUF(1:MPLENGTH),KROOT=IRANK,
-     &   KTAG=ITAG,CDSTRING='MPBCASTGRDFLD:',LDCOMPAT=.TRUE.)
+        CALL MPL_BROADCAST(ZCOMBUF(1:MPLENGTH),KROOT=ISEND,
+     &   KTAG=ITAG,CDSTRING='MPBCASTGRDFLD:')
 
-        DEALLOCATE(ZCOMBUF)
-
-      ELSE
-
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM PE ISEND
-!         ------------------------------------------------
-
-        ALLOCATE(ZCOMBUF(MPLENGTH))
-
-        CALL MPL_RECV(ZCOMBUF(1:MPLENGTH),KSOURCE=ISEND,
-     &   KTAG=ITAG,KRECVTAG=KRTAG,CDSTRING='MPBCASTGRDFLD:')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR in MPBCASTGRDFLD MISMATCHED TAGS' )
-
-        KCOUNT=0
-        DO J=1,NYF
-          DO I=1,NXF
-            KCOUNT=KCOUNT+1
-            FIELD(I,J)=ZCOMBUF(KCOUNT)
+        IF(IRANK.NE.ISEND) THEN
+          KCOUNT=0
+          DO J=1,NYF
+            DO I=1,NXF
+              KCOUNT=KCOUNT+1
+              FIELD(I,J)=ZCOMBUF(KCOUNT)
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
 
         DEALLOCATE(ZCOMBUF)
 

@@ -1,6 +1,6 @@
       SUBROUTINE JONSWAP (ALPHAJ, GAMMA, SA, SB, FP, IJS, IJL, ET)
 
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------
 
 !**** *JONSWAP* - ROUTINE TO COMPUTE THE 1-D JONSWAP SPECTRUM.
 
@@ -45,44 +45,39 @@
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER :: M, IJ, IJS, IJL
 
-      REAL :: GAMMA, SA, SB
-      REAL :: FRH, EARG, FJON, FMPF, FJONH, PIRHF, F, ALF 
+      REAL :: GAMMA, SA, SB, SIGMA, G2ZPI4, G2ZPI4FRH5M
+      REAL :: FRH, EARG, FJON, FMPF, FJONH
 
-      REAL :: SIGMA(IJS:IJL,NFRE) 
       REAL :: ALPHAJ(IJS:IJL), FP(IJS:IJL)
       REAL :: ET(IJS:IJL,NFRE)
 
 ! ----------------------------------------------------------------------
-      PIRHF(F,ALF)=ALF*G**2/(ZPI**4*F**5)
 
-! ----------------------------------------------------------------------
-
-      DO M=1,NFRE
-        FRH = FR(M)
-        DO IJ=IJS,IJL
-          SIGMA(IJ,M) = SA
-          IF (FRH.GT.FP(IJ)) SIGMA(IJ,M) = SB
-        ENDDO
-      ENDDO
+      G2ZPI4=G**2/ZPI**4
 
       DO M=1,NFRE
         FRH = FR(M)
+        G2ZPI4FRH5M=G2ZPI4/FRH**5
         DO IJ=IJS,IJL
           IF (FP(IJ).NE.0.) THEN
-            EARG = .5*((FRH-FP(IJ)) / (SIGMA(IJ,M)*FP(IJ)))**2
+            IF (FRH.GT.FP(IJ)) THEN
+              SIGMA = SB
+            ELSE
+              SIGMA = SA
+            ENDIF
+            EARG = .5*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
             EARG = MIN(EARG,20.)
             FJON = GAMMA**EXP(-EARG)
             FMPF = 1.25*(FP(IJ)/FRH)**4
             FMPF = MIN(FMPF,20.)
             FJONH = EXP(-FMPF)
-            ET(IJ,M) = PIRHF(FRH,ALPHAJ(IJ))*FJONH*FJON
+            ET(IJ,M) = ALPHAJ(IJ)*G2ZPI4FRH5M*FJONH*FJON
           ELSE
             ET(IJ,M) = 0.
           ENDIF
@@ -90,4 +85,4 @@
       ENDDO
 
       RETURN
-      END SUBROUTINE JONSWAP 
+      END SUBROUTINE JONSWAP

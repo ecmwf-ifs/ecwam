@@ -18,8 +18,9 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
-      USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
+     &            LL1D
+      USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
@@ -30,6 +31,26 @@
 
       LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
       LOGICAL LFDB
+      LOGICAL :: LLIRANK 
+      LOGICAL LFRST
+
+      DATA LFRST /.TRUE./
+
+
+!     READ FIRST THE WAVE MODEL NAMELIST TO GET THE WAVE MODEL
+!     DECOMPOSITION (LL1D).
+
+!!!!! INPUT UNIT FOR THE USER FILE IS NOW 26 (see also *INITMDL*) 
+      IU05 = 26
+
+      IF(LFRST) THEN
+        CALL MPUSERIN(IU05,LMESSPASS,LFDB,LWCOU,LL1D)
+        LFRST=.FALSE.
+      ENDIF
+
+!!!   LMESSPASS,LFDB and LWCOU will take the values provided by the IFS
+!!!   see below.
+
 
 ! INITIALIZE LOGICALS FROM IFS
 
@@ -67,11 +88,9 @@
 
 !     0.2 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------
-        ALLOCATE (NSTART(NPROC),NEND(NPROC),KLENBOT(NPROC),
-     &            KLENTOP(NPROC))
-
         NPR=NPROC
-        CALL MPDECOMP(NPR,NSTART,NEND,KLENTOP,KLENBOT,MAXLEN)
+        LLIRANK=.FALSE.
+        CALL MPDECOMP(NPR,MAXLEN,LLIRANK)
         MPMAXLENGTH=MAXLEN
 
       ENDIF

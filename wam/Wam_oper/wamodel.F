@@ -87,6 +87,10 @@
 !          LDWRRE* - SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !     S. ABDALLA  ECMWF  OCTOBER 2000  INCLUDE AIR DENSITY & Zi/L
 !                                      & CALL OUTBETA MOVED TO WAVEMDL
+!     J. BIDLOT ECMWF MAY 2002 INTRODUCTION OF NWAM_BLKS TO SPLIT THE 
+!                              LENGTH OF THE IJ LOOP OR TO BE THE
+!                              NUMBER OF THREADS IF OPEMMP IS USED.
+!
 
 !SHALLOW
 !          DIFFERENCES FOR SHALLOW WATER RUNS TO DEEP WATER RUNS
@@ -319,8 +323,10 @@
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LANAONLY ,LALTCOR  ,LFRSTFLD
-      USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
+     &            LANAONLY ,LALTCOR  ,LFRSTFLD ,NWAM_BLKS
+      USE YOWSPEC, ONLY : NSTART   ,NEND     ,
+     &            NTOPE  ,NTOPEMAX ,IJTOPE   ,NGBTOPE  ,NTOPELST   ,
+     &            NFROMPE,NFROMPEMAX,NIJSTART,NGBFROMPE,NFROMPELST ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
@@ -352,6 +358,10 @@
 
       INTEGER ITSKCA(9,NTASKS)
       EXTERNAL PHYS
+
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
 
       LOGICAL NEWREAD, NEWFILE
       DATA NEWFILE / .FALSE. /
@@ -687,33 +697,61 @@
 ! TO OBTAIN INFORMATION AT NEIGHBORING GRID POINTS LOCATED ON ADJACENT
 ! PROCESSES.
               IF(CDATE.EQ.CDTPRA) THEN
-                CALL MPEXCHNG(FL1,NSTART,NEND,KLENBOT,KLENTOP)
+                CALL MPEXCHNG(FL1,NSTART,NEND,
+     &                        NTOPE,NTOPEMAX,IJTOPE,NGBTOPE,NTOPELST,
+     &                        NFROMPE,NFROMPEMAX,NIJSTART,NGBFROMPE,
+     &                        NFROMPELST)
+
                 IF (ITEST.GE.2) THEN
                   WRITE(IU06,*) '   SUB. WAMODEL: MPEXCHNG CALLED' 
                   CALL FLUSH (IU06)
                 ENDIF
               ENDIF
 
-              IF (CDATE.EQ.CDTPRA) THEN
-                IF(NIBLO.GT.1) THEN
-                  CALL PROPAGS(FL1,FL3,IJS(IG),IJL(IG),IG,SL,FCONST)
-                  IF (ITEST.GE.2) THEN
-                    WRITE(IU06,*) '   SUB. WAMODEL: PROPAGS CALLED' 
-                    CALL FLUSH (IU06)
-                  ENDIF
-                ELSE
-                  FL3 = FL1
-                ENDIF
-              ENDIF
-              CALL IMPLSCH (FL3, FL1, IJS(IG), IJL(IG), IG,
-     &                      THWOLD,USOLD,TAUW,Z0OLD,   ROAIRO,ZIDLOLD,
-     &                      U10NEW,THWNEW,USNEW,Z0NEW, ROAIRN,ZIDLNEW,
-     &                      SL,FCONST)
+! Mod for OPENMP
+! If NWAM_BLKS=1 then the code will be as before
 
-              IF (ITEST.GE.2) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED' 
-                CALL FLUSH (IU06)
+              NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+
+              IF (CDATE.EQ.CDTPRA) THEN
+!$OMP           PARALLEL PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP           DO
+                DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  IF(NIBLO.GT.1) THEN
+                    CALL PROPAGS(FL1,FL3,KIJS,KIJL,IG,SL,FCONST)
+                    IF (ITEST.GE.2) THEN
+                      WRITE(IU06,*) '   SUB. WAMODEL: PROPAGS CALLED'
+                      CALL FLUSH (IU06)
+                    ENDIF
+                  ELSE
+                    FL3 = FL1
+                  ENDIF
+                ENDDO
+!$OMP           END DO
+!$OMP           END PARALLEL
               ENDIF
+
+!$OMP         PARALLEL PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP         DO
+              DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                CALL IMPLSCH (FL3, FL1, KIJS, KIJL, IG,
+     &                        THWOLD,USOLD,TAUW,Z0OLD,   ROAIRO,ZIDLOLD,
+     &                        U10NEW,THWNEW,USNEW,Z0NEW, ROAIRN,ZIDLNEW,
+     &                        SL,FCONST)
+                IF (ITEST.GE.2) THEN
+                  WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED'
+                  CALL FLUSH (IU06)
+                ENDIF
+
+              ENDDO
+!$OMP         END DO
+!$OMP         END PARALLEL
+! End Mod for OPENMP
+
             ELSE
               WRITE (IU06,*) '**************************************'
               WRITE (IU06,*) '*                                    *'
@@ -953,8 +991,8 @@
                 FL1(IJ,K,M) = FL3(IJ,K,M)
 !!!   note in case of Alt and SAR assimilation both FL1 and FL3
 !!!   are needed since FL1 will be first modified by the altimeter
-!!!   data assimilation and FL3 is needed to keep the fisrt guess
-!!!   (unaltered by the alt data assimilation) for the calcualtion
+!!!   data assimilation and FL3 is needed to keep the first guess
+!!!   (unaltered by the alt data assimilation) for the calculation
 !!!   of the difference between SAR data and model values
 !!!   (see rearrangsar)
               ENDDO
@@ -1211,7 +1249,8 @@ C
      &   (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &   (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
           ISTAT = IFLUSHFDB (MFDBSF)
-          WRITE(IU06,*) ' DB ', MFDBSF , ' FLUSHED AT ',
+          WRITE(IU06,*) ' ' 
+          WRITE(IU06,*) '  DB ', MFDBSF , ' FLUSHED AT ',
      &     CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
         ENDIF

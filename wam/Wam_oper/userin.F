@@ -56,6 +56,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : ALTSDTHRSH,ALTBGTHRSH,HSALTCUT
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
@@ -66,7 +67,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : XKAPPA2  ,SWAMPWIND,HSCOEFCOR,HSCONSCOR,
-     &            SWAMPWIND2,DTNEWWIND,LTURN90
+     &            SWAMPWIND2,DTNEWWIND,LTURN90 ,LL1D
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
@@ -76,7 +77,7 @@
      &            YEXPVER  ,LALTCOR  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
      &            LSARAS   ,LSARINV  ,LALTLRGR ,ISTREAM  ,NLOCGRB  ,
      &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM     ,
-     &            LGUST    ,LADEN           
+     &            LGUST    ,LADEN    ,NWAM_BLKS           
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -116,10 +117,11 @@
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
      &   SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
-     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,
+     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN 
+     &   LGUST, LADEN,
+     &   NWAM_BLKS, LL1D 
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -262,6 +264,10 @@
 !                ALTIMETER WAVE HEIGHTS.
 !     HSCONSCOR: CONSTANT OF THE CORRECTIVE LINEAR REGRESSION FOR
 !                ALTIMETER WAVE HEIGHTS.
+!     ALTSDTHRSH:THRESHOLD FOR SUSPICIOUS DATA (SEE GRFIELD).
+!     ALTBGTHRSH:THRESHOLD FOR BACKGROUND CHECK (SEE GRFIELD).
+!     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
+!              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
 !     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
@@ -276,6 +282,10 @@
 !           RUNS
 !     NUKM: IF 1 MET OFFICE ANALYSES ARE USED IN THE MULTI-ANALYSIS
 !           ENSEMBLE RUNS
+!     NWAM_BLKS: IF OPENMP IS USED THEN NWAM_BLKS WILL BE THE NUMBER OF
+!                THREADS. OTHERWISE IT CAN BE USED TO SPLIT THE GRID 
+!                POINTS INTO NWAM_BLKS CHUNKS (SEE WAMODEL).
+!     LL1D: IF TRUE THEN THE DOMAIN IS ONLY DIVIDED INTO LATITUDINAL BANDS
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -369,6 +379,16 @@
       HSCOEFCOR = 1.
       HSCONSCOR = 0.
 
+      ALTBGTHRSH = 1.
+!     if no value is provided in the namelist ALTSDTHRSH will
+!     be set in grfield.
+      ALTSDTHRSH = -1.
+
+!     HSALTCUT is used in combination with the error estimate of
+!     the altimeter data to determine the minimum Hs allowed for altimeter
+!     data.
+      HSALTCUT = 999999.
+
       L4VTYPE   = .FALSE. 
 
       LFRSTFLD  = .FALSE.
@@ -400,6 +420,10 @@
 
       LGUST = .FALSE.
       LADEN = .FALSE.
+
+      NWAM_BLKS = 1
+
+      LL1D = .TRUE.
 
 ! ----------------------------------------------------------------------
 
@@ -802,6 +826,11 @@
       ELSE
         WRITE(IU06,*) ' PROPAGATION GRID CARTESIAN COORDINATES'
       ENDIF
+      IF(LL1D) THEN
+        WRITE(IU06,*) ' 1D DECOMPOSITION OF THE DOMAIN ' 
+      ELSE
+        WRITE(IU06,*) ' 2D DECOMPOSITION OF THE DOMAIN ' 
+      ENDIF
       IF (ISHALLO.EQ.1) THEN
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
       ELSE
@@ -838,6 +867,7 @@
           WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
      &     ' (FINE GRID)'
         ENDIF
+        WRITE(IU06,*) ' '
         IF (IFORCA.EQ.1) THEN
           WRITE(IU06,*) ' MODEL STARTS FROM ANALYSIS FIELDS'
         ELSE
@@ -845,6 +875,7 @@
         ENDIF
       ENDIF
       IF (IASSI.EQ.1) THEN
+        WRITE(IU06,*) ' '
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
         IF(NASS.GT.0) THEN
           WRITE(IU06,*) ' AT DATE(S) '
@@ -873,6 +904,13 @@
             WRITE(IU06,*) ' THE ALTIMETER DATA WILL BE CORRECTED ' 
             WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
           ENDIF
+          WRITE(IU06,*) '  '
+          WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',
+     &                    ALTBGTHRSH
+          WRITE(IU06,*) ' AND '
+          WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',
+     &                    HSALTCUT
+          WRITE(IU06,*) '  '
         ENDIF
         IF(LSARAS) THEN
           WRITE(IU06,*) ' '
@@ -1119,6 +1157,7 @@
       CALL FLUSH(IU06)
 
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
+      WRITE(IU06,*) '  '
       WRITE(IU06,'("  CURRENT RUN:")')
       WRITE(IU06,'("  CLASS......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT.: ", A4)') YEXPVER

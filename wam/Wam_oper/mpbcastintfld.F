@@ -32,8 +32,6 @@
 !     ----------
 !     MPL PACKAGE :
 !         MPL_BROADCAST
-!         MPL_RECV
-!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -52,43 +50,32 @@
 
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
         RETURN
-      ELSEIF(IRANK.EQ.ISEND) THEN
-!     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
-!         ----------------------------------------
-        ALLOCATE(ICOMBUF(MPLENGTH))
-
-        KCOUNT=0
-        DO J=1,NYF
-          DO I=1,NXF
-            KCOUNT=KCOUNT+1
-            ICOMBUF(KCOUNT)=IFIELD(I,J)
-          ENDDO
-        ENDDO
-
-        CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IRANK,
-     &   KTAG=ITAG,CDSTRING='MPBCASTINTFLD:',LDCOMPAT=.TRUE.)
-
-        DEALLOCATE(ICOMBUF)
-
       ELSE
-
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM PE ISEND
-!         ------------------------------------------------
-
         ALLOCATE(ICOMBUF(MPLENGTH))
 
-        CALL MPL_RECV(ICOMBUF(1:MPLENGTH),KSOURCE=ISEND,
-     &   KRECVTAG=KRTAG,CDSTRING='MPBCASTINTFLD:')
-        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &   ('MPL_RECV ERROR in MPBCASTINTFLD MISMATCHED TAGS' )
-
-        KCOUNT=0
-        DO J=1,NYF
-          DO I=1,NXF
-            KCOUNT=KCOUNT+1
-            IFIELD(I,J)=ICOMBUF(KCOUNT)
+        IF(IRANK.EQ.ISEND) THEN
+          KCOUNT=0
+          DO J=1,NYF
+            DO I=1,NXF
+              KCOUNT=KCOUNT+1
+              ICOMBUF(KCOUNT)=IFIELD(I,J)
+            ENDDO
           ENDDO
-        ENDDO
+        ENDIF
+
+        CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=ISEND,
+     &   KTAG=ITAG,CDSTRING='MPBCASTINTFLD:')
+
+
+        IF(IRANK.NE.ISEND) THEN
+          KCOUNT=0
+          DO J=1,NYF
+            DO I=1,NXF
+              KCOUNT=KCOUNT+1
+              IFIELD(I,J)=ICOMBUF(KCOUNT)
+            ENDDO
+          ENDDO
+        ENDIF
 
         DEALLOCATE(ICOMBUF)
 

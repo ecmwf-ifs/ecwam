@@ -275,7 +275,9 @@
      &                       .or. ksec1(40).eq.1081 .or.
      &        cdtype.eq.'sf' .or. ksec1(40).eq.1082
      &                       .or. ksec1(40).eq.1095) then
-            istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+            if ( ksec1(42).gt.0 ) then
+              istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+            endif
           endif
 
           IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,

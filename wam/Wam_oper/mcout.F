@@ -62,7 +62,7 @@
 !*    2. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
 
-      CALL FINDB (NIBLO, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,
+      CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,
      &            1, ISTART,IEND,1)
 
 ! ----------------------------------------------------------------------
@@ -104,7 +104,7 @@
         ENDIF
         IF (IJAR(IO).EQ.0) NG = NG+1
       ENDDO
-      NGOUT = NGOUT-NG
+      NGOUTNEW = NGOUT-NG
       IF (NG.GT.0) THEN
         WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
         WRITE (IU06,*) ' +                                       +'
@@ -114,27 +114,28 @@
         WRITE (IU06,*) ' + NO SEAPOINT FOUND FOR NG = ',NG
         WRITE (IU06,*) ' + OUTPUT POINT REQUESTS (SEE ABOVE LIST)+'
         WRITE (IU06,*) ' + THESE POINTS WILL NOT BE TAKEN.       +'
-        WRITE (IU06,*) ' + NUMBER OF OUTPUT POINTS IS NGOUT = ', NGOUT
+        WRITE (IU06,*) ' + NUMBER OF OUTPUT POINTS IS NGOUT = ',NGOUTNEW
         WRITE (IU06,*) ' +                                       +'
         WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
-        ALLOCATE(IDUM(NGOUT))
-        DO IO=1,NGOUT
+        ALLOCATE(IDUM(NGOUTNEW))
+        DO IO=1,NGOUTNEW
            IDUM(IO) = IJAR(IO)
         ENDDO
         DEALLOCATE(IJAR)
-        ALLOCATE(IJAR(NGOUT))
-        DO IO=1,NGOUT
+        ALLOCATE(IJAR(NGOUTNEW))
+        DO IO=1,NGOUTNEW
            IJAR(IO) = IDUM(IO)
         ENDDO
-        DO IO=1,NGOUT
+        DO IO=1,NGOUTNEW
            IDUM(IO) = IGAR(IO)
         ENDDO
         DEALLOCATE(IGAR)
-        ALLOCATE(IGAR(NGOUT))
-        DO IO=1,NGOUT
+        ALLOCATE(IGAR(NGOUTNEW))
+        DO IO=1,NGOUTNEW
            IGAR(IO) = IDUM(IO)
         ENDDO
         DEALLOCATE(IDUM)
+        NGOUT = NGOUTNEW
       ENDIF
 
       RETURN
