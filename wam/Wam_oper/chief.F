@@ -116,8 +116,8 @@ C
       time0=-wam_user_clock()
       IU06=6
       WRITE(IU06,'("
-     . WAM Cycle4 Release8 CI 4 (common with IFS CY18R6)
-     .    CC=wam_sth_CY18R5_oam_for_18r6")')
+     . WAM Cycle4 Release11 CI 1 (common with IFS CY19R2)
+     .    CC=wam_CY19R2")')
 C
 C   0.0 GET MACHINE ARCHTECTURE TYPE AND FDB OPTION FLAG
 C       ------------------------------------------------

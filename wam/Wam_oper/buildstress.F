@@ -47,6 +47,8 @@ C
 C
 #include "comstat.h"
 C
+#include "comtabl.h"
+C
 #include "comtest.h"
 C
 #include "comunit.h"
@@ -60,7 +62,7 @@ C
       LOGICAL LWNDFILE, LWAVEWIND, LCLOSEWND
       INTEGER IUGB(1),IVGB(1)
       REAL, ALLOCATABLE :: UWND(:,:),VWND(:,:)
-      REAL, ALLOCATABLE :: CD(:,:)
+      REAL, ALLOCATABLE :: CD(:,:), TEMPTAUT(:,:,:)
       CHARACTER*24 FILNM
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
 C ----------------------------------------------------------------------
@@ -109,37 +111,16 @@ C
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 C
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) 'A DATA FILE CONTAINING WIND SPEED INFORMATION'
-        WRITE(IU06,*) 'AS PROVIDED BY A PREVIOUS WAVE MODEL RUN'
-        WRITE(IU06,*) 'WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
+        WRITE(IU06,*) ' A DATA FILE CONTAINING WIND SPEED INFORMATION'
+        WRITE(IU06,*) ' AS PROVIDED BY A PREVIOUS WAVE MODEL RUN'
+        WRITE(IU06,*) ' WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) 'THE WINDS AND DRAG COEFFICIENT ARE ASSUMED TO'
-        IF(LWCOU) THEN
-          WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR THE LOWEST LEVEL OF '
-          WRITE(IU06,*) 'THE ATMOSPHERIC MODEL AT HEIGHT OF '
-        ELSE
-          WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR HEIGHT AT '
-        ENDIF
-        WRITE(IU06,*) KZLEVUWAVE,' m'
+        WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT '
+        WRITE(IU06,*) ' ',KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
 C
-        IF (KZLEVUWAVE.EQ.INT(XNLEV(1))) THEN
-          ILEV=1
-        ELSE IF (KZLEVUWAVE.EQ.INT(XNLEV(2))) THEN
-          ILEV=2
-        ELSE
-          WRITE(IU06,*)'**************************************'
-          WRITE(IU06,*)'*                                    *'
-          WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS     *'
-          WRITE(IU06,*)'* ==============================     *'
-          WRITE(IU06,*)'* REFERENCE LEVEL FOR UWAVE          *'
-          WRITE(IU06,*)'* ARE NOT RECOGNISED AS THOSE IN USE *'
-          WRITE(IU06,*)'* PROGRAM WILL ABORT                 *'
-          WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
-          WRITE(IU06,*)'*                                    *'
-          WRITE(IU06,*)'**************************************'
-          CALL ABORT1
-        ENDIF
+        ILEV=1
 C
       ELSE
 C
@@ -148,17 +129,44 @@ C
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '          !!!! NOTE !!!!'
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) 'NO INFORMATION ON WIND SPEEDS FROM THE'
-        WRITE(IU06,*) 'WAVE MODEL WAS PROVIDED'
-        WRITE(IU06,*) 'NO UPDATE OF THE INPUT ATMOSPHERIC WINDS'
-        WRITE(IU06,*) 'WAS POSSIBLE'
+        WRITE(IU06,*) ' NO INFORMATION ON WIND SPEEDS FROM THE'
+        WRITE(IU06,*) ' WAVE MODEL WAS PROVIDED'
+        WRITE(IU06,*) ' NO UPDATE OF THE INPUT ATMOSPHERIC WINDS'
+        WRITE(IU06,*) ' WAS POSSIBLE'
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) 'THE WINDS AND DRAG COEFFICIENT ARE ASSUMED TO'
-        WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR HEIGHT AT '
-        WRITE(IU06,*)  XNLEV(ILEV),' m'
+        WRITE(IU06,*) ' THE INPUT WIND AND DRAG COEFFICIENT ARE ASSUMED'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT '
+        WRITE(IU06,*) ' ',KZLEVUWAVE,' m'
+
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
       ENDIF
 C
+C     TEST WHETHER THE HEIGHT OF THE INPUT WINDS IS THE SAME AS DEFINED
+C     FOR THE REST OF THE RUN (SEE CALL TO STRESS IN PREPROC). IF NOT
+C     RECOMPUTE THE TABLE. THE ORIGINAL TABLE WILL BE SWAP BACK AT THE
+C     END OF THE ROUTINE.
+      IF (KZLEVUWAVE.NE.NINT(XNLEV(1))) THEN
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' THE REFERENCE HEIGHT TO BE USED IN WAMODEL'
+        WRITE(IU06,*) ' ',XNLEV(1) 
+        WRITE(IU06,*) ' IS DIFFERENT THAN THE INPUT FIELDS HEIGHT'
+        WRITE(IU06,*) ' ',FLOAT(KZLEVUWAVE)
+        WRITE(IU06,*) ' THE NECESSARY ADJUSTMENTS WILL BE MADE'
+        WRITE(IU06,*) ' TO DETERMINE THE INITIAL FIELDS.'
+        WRITE(IU06,*) ' '
+        IF (ITEST.GT.0) CALL FLUSH(IU06) 
+
+        ALLOCATE(TEMPTAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
+        TEMPTAUT=TAUT
+        TEMPXNLEV=XNLEV(1)
+        XNLEV(1)=KZLEVUWAVE
+
+        CALL STRESS(IU06,ITEST)
+        IF (ITEST.GE.2)
+     1    WRITE(IU06,*) ' SUB. BUILDSTRESS: CALL STRESS DONE'
+        IF (ITEST.GT.0) CALL FLUSH(IU06) 
+      ENDIF
+
       IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
 C
 C     INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
@@ -206,33 +214,23 @@ C
             WRITE(IU06,*)'*                                  *'
             WRITE(IU06,*)'************************************'
             CALL ABORT1
-          ELSE
-            IF (KZLEVCD.EQ.INT(XNLEV(1))) THEN
-              ILEV=1
-            ELSE IF (KZLEVCD.EQ.INT(XNLEV(2))) THEN
-              ILEV=2
-            ELSE
-              WRITE(IU06,*)'**************************************'
-              WRITE(IU06,*)'*                                    *'
-              WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS     *'
-              WRITE(IU06,*)'* ==============================     *'
-              WRITE(IU06,*)'* REFERENCE LEVEL FOR CD AND UWAVE   *'
-              WRITE(IU06,*)'* ARE NOT RECOGNISED AS THOSE IN USE *'
-              WRITE(IU06,*)'* PROGRAM WILL ABORT                 *'
-              WRITE(IU06,*)'* REF. LEVEL CD = ',KZLEVCD
-              WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
-              WRITE(IU06,*)'*                                    *'
-              WRITE(IU06,*)'**************************************'
-              CALL ABORT1
-            ENDIF
           ENDIF
         ENDIF
+C
+        ILEV=1
 C
 C
 C       COMPUTE TAUW,USOLD AND Z0OLD
 C
         DO IG=1,IGL
-           DO IJ=1,KEND
+           IF(LMESSPASS) THEN
+             IJSTART=1
+             IJSTOP=KEND
+           ELSE
+             IJSTART=IJS(IG)
+             IJSTOP=IJL(IG)
+           ENDIF
+           DO IJ=IJSTART,IJSTOP
               CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
               RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 cc RUSOLD will first contain its square
@@ -249,6 +247,12 @@ CC in outgrid
 C
       IF(ALLOCATED(CD)) DEALLOCATE(CD)
 C
+      IF(ALLOCATED(TEMPTAUT)) THEN
+        XNLEV(1)=TEMPXNLEV
+        TAUT=TEMPTAUT
+        DEALLOCATE(TEMPTAUT)
+      ENDIF
+
       IF (ITEST.GE.2)
      1    WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
 C

@@ -284,6 +284,8 @@ C
         isec1(38) = 2
       ELSEIF ( cdclass .EQ. 'ER' ) THEN
         isec1(38) = 3
+      ELSEIF ( cdclass .EQ. 'E4' ) THEN
+        isec1(38) = 5
       ELSE
         WRITE(kuso,*)' CLASS ', cdclass ,' NOT SUPPORTED '
         WRITE(kuso,*)' PROGRAM ABORTS '

@@ -236,6 +236,8 @@ C
         ISEC1(38) = 1
       ELSEIF (CDCLASS .EQ. 'ER' .OR. CDCLASS .EQ. 'er' ) THEN
         ISEC1(38) = 3
+      ELSEIF (CDCLASS .EQ. 'E4' .OR. CDCLASS .EQ. 'e4' ) THEN
+        ISEC1(38) = 5
       ELSEIF (CDCLASS .EQ. 'RD' .OR. CDCLASS .EQ. 'rd' ) THEN
         ISEC1(38) = 2
       ELSE
@@ -445,39 +447,48 @@ C
 C
       DO IC=1,KFRE*KANG,ISTEP
 C
-        ALLOCATE(WORK(KIBLO))
         IST=ISTEP
         IF(IC+ISTEP.GT.KFRE*KANG ) IST=KFRE*KANG-IC+1
         ZSEC4OUT = 0.0
 C
 C       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
 C       ---------------------------------- than PE's)
-        DO KSEND=1,IST
-          IM=(((IC-1)+KSEND-1)/KANG)+1
-          IK=(IC-1)+KSEND-(IM-1)*KANG
+        IF(KPROC.GT.1) THEN
+          ALLOCATE(WORK(KIBLO))
+          DO KSEND=1,IST
+            IM=(((IC-1)+KSEND-1)/KANG)+1
+            IK=(IC-1)+KSEND-(IM-1)*KANG
 C
-          DO J1=KSTART(KRANK),KEND(KRANK)
-            WORK(J1) = PSPEC(J1,IK,IM)
-          ENDDO
-C
-          ITAG=(IM-1)*KANG+IK
-          CALL MPGATHERSCFLD(KSEND,ITAG,KSTART,KEND,WORK)
-          IF (KTEST.GT.1)
-     &        WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
-C
-          IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
-            CALL MPE_BARRIER(IRET)
-            IF(IRET.LT.0)
-     &      CALL MPEI_ABORT('MPE_BARRIER  ERROR IN  SPEC2FDB')
-          ENDIF
-C
-          IF(KSEND.EQ.KRANK) THEN
-            DO J1=1,KEND(KPROC)
-              ZSEC4OUT(IPOINTER(J1)) = WORK(J1)
+            DO J1=KSTART(KRANK),KEND(KRANK)
+              WORK(J1) = PSPEC(J1,IK,IM)
             ENDDO
-          ENDIF
-        ENDDO 
-        IF(ALLOCATED(WORK)) DEALLOCATE(WORK)
+C
+            ITAG=(IM-1)*KANG+IK
+            CALL MPGATHERSCFLD(KSEND,ITAG,KSTART,KEND,WORK)
+            IF (KTEST.GT.1)
+     &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
+C
+            IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
+              CALL MPE_BARRIER(IRET)
+              IF(IRET.LT.0)
+     &        CALL MPEI_ABORT('MPE_BARRIER  ERROR IN  SPEC2FDB')
+            ENDIF
+C
+            IF(KSEND.EQ.KRANK) THEN
+              DO J1=1,KEND(KPROC)
+                ZSEC4OUT(IPOINTER(J1)) = WORK(J1)
+              ENDDO
+            ENDIF
+          ENDDO 
+          IF(ALLOCATED(WORK)) DEALLOCATE(WORK)
+        ELSE
+          IM=((IC-1)/KANG)+1
+          IK=IC-(IM-1)*KANG
+  
+          DO J1=1,KEND(KPROC)
+            ZSEC4OUT(IPOINTER(J1)) = PSPEC(J1,IK,IM) 
+          ENDDO
+        ENDIF
 C
 C-----------------------------------------------------------------------
 C
@@ -556,18 +567,22 @@ C         ------
      .                    IK, IM, kfdb)
           ELSE
 C         output to file should only take place on one PE, thus istep=1
-            CMODE='a'
-            IF(IM.EQ.1.AND.IK.EQ.1) CMODE='w'
-            CALL GRSTNAME(KU06,CDTPRO,CDATEF,1,'SGS',KRANK,KPROC,
-     &                    OUTFILEN)
-            LFILE=LEN_TRIM(OUTFILEN)
-            CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),CMODE,IRET)
-            IF(IRET.LT.0) GOTO 3200
+            IF(IM.EQ.1.AND.IK.EQ.1) THEN
+              CALL GRSTNAME(KU06,CDTPRO,CDATEF,1,'SGS',KRANK,KPROC,
+     &                      OUTFILEN)
+              LFILE=LEN_TRIM(OUTFILEN)
+              CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),'w',IRET)
+              IF(IRET.LT.0) GOTO 3200
+            ENDIF
+
             KOUNT=IWORD*KIND(IWORD)
             CALL PBWRITE(IUOUT,IOUTGRIB,KOUNT,IRET)
             IF(IRET.LT.0) GOTO 3300
-            CALL PBCLOSE(IUOUT,IRET)
-            IF(IRET.LT.0) GOTO 3400
+
+            IF(IM.EQ.KFRE.AND.IK.EQ.KANG) THEN
+              CALL PBCLOSE(IUOUT,IRET)
+              IF(IRET.LT.0) GOTO 3400
+            ENDIF
           ENDIF
 
         ENDIF

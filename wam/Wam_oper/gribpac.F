@@ -192,6 +192,8 @@ C
         KSEC1(38) = 2
       ELSEIF ( YCLASS .EQ. 'er' ) THEN
         KSEC1(38) = 3
+      ELSEIF ( YCLASS .EQ. 'e4' ) THEN
+        KSEC1(38) = 5
       ELSE
         WRITE(IU06,*) ' -------------------------'
         WRITE(IU06,*) ' ERROR DETERMINING CLASS  '
@@ -260,7 +262,7 @@ C
 C*    2. CHECK ERROR CODE.
 C        ----------------
 C
-      WRITE(IU06,*) '    SUB. GRIBPAC :  GRIBEX ERROR CODE ',KRET,
+      WRITE(IU06,*) '    SUB. GRIBPAC :  GRIBEX STATUS CODE ',KRET,
      .              ' FOR PARAMETER ', IPARAM
  2000 CONTINUE
 C 

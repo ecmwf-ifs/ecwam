@@ -74,6 +74,7 @@ C
       IF ( IERR .EQ. 0 ) THEN
         WRITE(IU06,*)'            '
         WRITE(IU06,*)' SUB. READT: ICE BOUNDARY DATE=',CTDATE
+        CALL flush(IU06)
       ELSE
         WRITE(IU06,*)'   SUB. READT: ICE BOUNDARY IERR=',IERR
         WRITE(IU06,*) MSG
@@ -100,6 +101,7 @@ C
      &              TITL, 1.,
      &              WORK, TMOWEP, TMOSOP, TMOEAP, TMONOP)
         DEALLOCATE(WORK)
+        CALL flush(IU06)
       ENDIF
 C
 C*    1.1 ERROR MESSAGES

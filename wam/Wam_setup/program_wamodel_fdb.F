@@ -222,6 +222,7 @@ cat >WAVEMDL.f <<\EOFPRO
 #include "userin.h"
 #include "wamodel.h"
 #include "wamwnd.h"
+#include "wposnam.h"
 #ifdef 
 #include "wavemdl_massi.h"
 #include "analyse.h"

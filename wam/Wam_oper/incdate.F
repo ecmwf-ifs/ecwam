@@ -31,6 +31,7 @@ C       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN
 C       THE INPUT ARGUMENT FOR SECINCR. THE UPDATED DATE AND TIME 
 C       IS PUT BACK INTO AN OUTPUT STRING AS USED BY THE CALLING 
 C       ROUTINE.
+C       IF CDATE HAS A LENGHT OF 0 THAN NOTHING IS DONE.
 C
 C     EXTERNALS.
 C     ----------
@@ -57,7 +58,7 @@ C         -----------------------------------------------------------
 C
       IL = LEN_TRIM(CDATE)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A39, I2.2, A2)')
+        WRITE(CLFMT,'(A49, I2.2, A2)')
      .     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE
         WRITE(*, CLFMT ) CDATE
@@ -73,8 +74,11 @@ ccc        ISEC = 0
       ELSEIF (IL==14) THEN
         LLND = .TRUE.
         READ(CDATE,'(i4, 5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
+      ELSEIF (IL==0) THEN
+        WRITE(6, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
+        CALL ABORT
       ELSE
-        WRITE(CLFMT,'(A58, I2.2, A2)')
+        WRITE(CLFMT,'(A59, I2.2, A2)')
      .  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
      .    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE

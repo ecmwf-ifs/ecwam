@@ -371,7 +371,7 @@ C
      1              "......:", I8)') ICOUNTQCF
       WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE ICE IS........",
      1              "......:", I8)') ICOUNTICE
-      WRITE (iu06,'("         NUMBER OF DATA ACCEPTED BY \'GRDATA\' IS",
+      WRITE (iu06,'("         NUMBER OF DATA ACCEPTED BY ''GRDATA'' IS",
      1              " FOR wh :", I8, /, 
      2"                                            AND FOR us :", I8)')
      3    nuwh, nuus

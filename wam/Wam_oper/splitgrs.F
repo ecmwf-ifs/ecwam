@@ -247,6 +247,8 @@ C
         WRITE(IU06,*) "CDCLASS='RD'"
       ELSEIF(KSEC1(38).EQ.3) THEN
         WRITE(IU06,*) "CDCLASS='ER'"
+      ELSEIF(KSEC1(38).EQ.5) THEN
+        WRITE(IU06,*) "CDCLASS='E4'"
       ELSE
         WRITE(IU06,*)' CLASS ', KSEC1(38) ,' NOT SUPPORTED '
         WRITE(IU06,*)' PROGRAM ABORTS '
@@ -291,6 +293,8 @@ C
         ISEC1(38) = 1
       ELSEIF (CDCLASS .EQ. 'ER' .OR. CDCLASS .EQ. 'er' ) THEN
         ISEC1(38) = 3
+      ELSEIF (CDCLASS .EQ. 'E4' .OR. CDCLASS .EQ. 'e4' ) THEN
+        ISEC1(38) = 5
       ELSE
         ISEC1(38) = 2
       ENDIF

@@ -427,6 +427,10 @@ C --------------------
         LOGFILENAME='logfile.%p'
         CALL EXPAND_STRING(IRANK,NPROC,0,0,LOGFILENAME,1) 
         OPEN(IU06,FILE=LOGFILENAME,STATUS='UNKNOWN')
+        WRITE(*,*) ' STDOUT FILE ', LOGFILENAME, ' OPENED ON PE ', IRANK
+        WRITE(IU06,*) ' STDOUT OF PE ', IRANK
+        WRITE(IU06,*) ' ============ '
+        CALL FLUSH (IU06)
       ELSE
         IU06=6
       ENDIF
@@ -512,7 +516,7 @@ C TABLE CONTAINING DECOMPOSITION LIMITS UNIT
 C -----------------------------------------
 CLMESSPASS
 C NOTE : THIS UNIT IS ONLY NEEDED IF THE RESTART FILE OPTION IS SET TO
-C        IREST = 2 or 4
+C        IREST = 2 OR 4
       IF(LMESSPASS.AND.LWCOU) THEN
         IU73 = 28
       ELSE IF (LMESSPASS.AND..NOT.LWCOU) THEN
@@ -532,6 +536,7 @@ CICE
 
       IF (ITEST.GE.2) THEN
          WRITE(IU06,*) '   SUB. INITMDL: UNITS DEFINED'
+         CALL FLUSH (IU06)
       ENDIF
 C
 C*    1.2 INPUT OF USER PARAMETER.
@@ -540,6 +545,7 @@ C
       CALL USERIN (IU05, IBOUNC, IBOUNF, IFORCA)
       IF (ITEST.GE.2) THEN
          WRITE(IU06,*) '    SUB. INITMDL: USERIN DONE'
+         CALL FLUSH (IU06)
       ENDIF
 
       IF(LMESSPASS) THEN
@@ -561,10 +567,11 @@ C          ----------------------------------
             WRITE(IU06,*) ' KLENTOP: ',KLENTOP(IP)
             WRITE(IU06,*) ' ----------------------- '
           END DO
+          CALL FLUSH (IU06)
         ENDIF
 C
 C
-C      1.4 SAVE TABLE CONTAINING DECOMPOSITION LIMITS (IF needed)
+C      1.4 SAVE TABLE CONTAINING DECOMPOSITION LIMITS (IF NEEDED)
 C          ------------------------------------------------------
         IF(IREST.EQ.2.OR.IREST.EQ.4) THEN
           IF(IRANK.EQ.1) THEN
@@ -587,6 +594,7 @@ C         ----------------------------------------------------------
         CALL MPCRTBL
         IF (ITEST.GE.2) THEN
            WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
+           CALL FLUSH (IU06)
         ENDIF
       ENDIF
 C
@@ -636,6 +644,7 @@ C
            WRITE(IU06,'(2a,a3)') '    SUB. INITMDL: PREPROC OUTPUT ',
      1                   'READ AND FILE CLOSE UNIT IU07 = ', IU07
          ENDIF
+         CALL FLUSH (IU06)
       ENDIF
       ITESTB = MIN(ITESTB,IGL)
       IF (NGOUT.EQ.0.AND.(PFLAG25.OR.FFLAG25.OR.PFLAG26.OR.FFLAG26))THEN
@@ -690,6 +699,7 @@ C
          IF (ITEST.GE.2) THEN
             WRITE(IU06,*)'    SUB. INITMDL: BOUNDARY POINTS READ ',
      1           ' AND FILES CLOSED '
+            CALL FLUSH (IU06)
          ENDIF
       ENDIF
 CNEST
@@ -715,6 +725,7 @@ C
         WRITE(IU06,*)'    SUB. INITMDL: NO ICE MASK WILL BE USED '
         WRITE(IU06,*)'    ********************************************'
         WRITE(IU06,*)' '
+        CALL FLUSH(IU06)
       ENDIF
 C
 CICE
@@ -764,6 +775,7 @@ C
  3002 FORMAT(3x,a,f8.2,a)
  3003 FORMAT(3x,a,i6,  a)
 CNEST
+        CALL FLUSH (IU06)
         IF (IBOUNC .EQ. 1) THEN
            WRITE(IU06,*)
            WRITE(IU06,*) ' COARSE GRID: BOUNDARY OUTPUT POINTS :'
@@ -792,17 +804,19 @@ C        ---------------------------------------------------------------
 C
  4000 CONTINUE
       IF (ITEST.GE.2)CALL FLUSH(IU06)
-
-
-      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
-
 C
-C***  THIS IS SUSPECT!  PETER JANSSEN*********
+      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
 C
        IF (LWCOU) THEN
          IDELWO = KDELWI
          IDELWI = KDELWI
        ENDIF
+C
+      CDA = CDTPRO
+      IF (CDTPRO.NE.ZERO .OR. LRESTARTED) THEN
+C
+C*    4.1 MODEL STARTS FROM FILES OUT OF A PREVIOUS MODEL RUN.
+C         ----------------------------------------------------
 C
          CDATEWO = CDTPRO
          IF (IDELT.LT.IDELWO) CALL INCDATE(CDATEWO,IDELWO/2)
@@ -811,12 +825,6 @@ C
          CALL INCDATE(CDAWIFL,IDELWH)
          CDATEFL = CDATEWO
 
-      CDA = CDTPRO
-      IF (CDTPRO.NE.ZERO .OR. LRESTARTED) THEN
-C
-C*    4.1 MODEL STARTS FROM FILES OUT OF A PREVIOUS MODEL RUN.
-C         ----------------------------------------------------
-C
          IF (CDTPRO.LT.CDATEA.OR.CDTPRO.GE.CDATEE.OR.
      1      (IFORCA.EQ.1.AND.CDTPRO.GT.CDATEF) .OR.
      2      (IFORCA.NE.1.AND.CDTPRO.LE.CDATEF)) THEN
@@ -866,6 +874,7 @@ C
      1                  'CDATEFL = ',CDATEFL
          WRITE(IU06,*) '      NEXT WIND FILE NAME IS FROM        ',
      1                  'CDAWIFL = ',CDAWIFL
+         CALL FLUSH(IU06)
       ENDIF
 C
 C ----------------------------------------------------------------------
@@ -916,6 +925,7 @@ C
       CALL INCDATE(CDTRES, IDELRES)
       IF (ITEST.GE.2) THEN
          WRITE(IU06,*) '    SUB. INITMDL: TIME COUNTER INITIALIZED'
+         CALL FLUSH(IU06)
       ENDIF
 C
 C ----------------------------------------------------------------------
@@ -958,6 +968,7 @@ C
          WRITE(IU06,*) '    SUB. INITMDL: NUMBER OF PROPAGATION STEPS'
          WRITE(IU06,*) '                  IN ONE CALL OF SUB WAVEMDL'
          WRITE(IU06,*) '                  WILL BE NADV = ', NADV
+         CALL FLUSH(IU06)
       ENDIF
 C
 C ----------------------------------------------------------------------

@@ -697,6 +697,8 @@ C
         isec1(38)=2
       elseif(cdclass.eq.'er') then
         isec1(38)=3
+      elseif(cdclass.eq.'e4') then
+        isec1(38)=5
       else
         write(iu06,*) ' PROGRAM IGS2GRS '
         write(iu06,*) ' class not supported ',isec1(38)
@@ -806,6 +808,8 @@ C
           isec1(38)=2
         elseif(cdclass.eq.'er') then
           isec1(38)=3
+        elseif(cdclass.eq.'e4') then
+          isec1(38)=5
         else
           write(iu06,*) ' PROGRAM IGS2GRS '
           write(iu06,*) ' class not supported ',isec1(38)
@@ -871,6 +875,8 @@ C
             cdclass='RD'
           elseif(isec1(38).eq.3) then
             cdclass='ER'
+          elseif(isec1(38).eq.5) then
+            cdclass='E4'
           else
             write(iu06,*) ' PROGRAM IGS2GRS '
             write(iu06,*) ' class not supported ',isec1(38)

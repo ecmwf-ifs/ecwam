@@ -573,8 +573,7 @@ C
          IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTINT DONE'
       ENDIF
 C                                                                       
-      IF (CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER.OR.
-     &    LDWRRE) THEN
+      IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
 C                                                                       
 C*    3.5.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,                  
 C           INTEGRATED PARAMETERS OF ENTIRE GRID.                       
@@ -618,6 +617,11 @@ C
             CALL GSFILE (IU06, IU28, 0, CDTPRO, CDATEF, 'ASW', 'S')
           ENDIF
          ENDIF
+      ENDIF
+C
+      IF (CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER.OR.
+     &    LDWRRE) THEN
+C                                                                       
 C                                                                       
 C*    3.5.4 SAVE RESTART FIELDS.                                        
 C           --------------------                                        

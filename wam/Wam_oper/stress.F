@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS(IU06)
+      SUBROUTINE STRESS(IU06,ITEST)
 
 C ----------------------------------------------------------------------
 C
@@ -19,8 +19,9 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *STRESS(IU06)*
+C       *CALL* *STRESS(IU06,ITEST)*
 C          *IU06*  -  LOGICAL UNIT FOR PRINTER OUTPUT UNIT.
+C          *ITEST* -  OUTPUT FLAG IF LE 0 NO EXTRA OUTPUT IS GENERATED
 C
 C     METHOD.
 C     -------
@@ -81,21 +82,24 @@ C         -----------------
 C
       DO 1300 JL=1,MIN(JPLEVT,JPLEVC)
          XL=XNLEV(JL)
-         WRITE(IU06,*)' STRESS FOR LEVEL ',XL
+         IF(ITEST.GE.1) THEN
+           WRITE(IU06,*)''
+           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
+         ENDIF
+
+         CDRAG = 0.0012875
+         WCD = SQRT(CDRAG) 
+
          DO 1200 I=0,ITAUMAX
+            ZTAUW   = FLOAT(I)*DELTAUW
             DO 1100 J=0,JUMAX
-               ZTAUW   = FLOAT(I)*DELTAUW
                UTOP    = FLOAT(J)*DELU
-               CDRAG   = 0.0012875
-               WCD     = SQRT(CDRAG)
                USTOLD  = UTOP*WCD
                TAUOLD  = MAX(USTOLD**2, ZTAUW+EPS1)
                DO 1000 ITER=1,NITER
                   X      = ZTAUW/TAUOLD
                   UST    = SQRT(TAUOLD)
-                  Z0     = ALPHA*UST**2/(G)/(1.-X)**XM
-ccc               ZNU    = 0.1*XNU/UST
-ccc               Z0     = MAX(ZNU,Z0)
+                  Z0     = ALPHA*TAUOLD/(G)/(1.-X)**XM
                   F      = UST-XKAPPA*UTOP/(ALOG(XL/Z0))
                   DELF   = 1.-XKAPPA*UTOP/(ALOG(XL/Z0))**2*2./UST*
      *                     (1.-(XM+1)*X)/(1.-X)
@@ -104,6 +108,7 @@ ccc               Z0     = MAX(ZNU,Z0)
  1000          CONTINUE
                TAUT(I,J,JL)  = TAUOLD
  1100       CONTINUE
+
 C
 C*    END DO LOOP OVER INDICES OF TAU-TABLE
 C

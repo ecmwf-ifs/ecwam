@@ -11,6 +11,8 @@ C                                               restarted/normal
 C     B. HANSEN      ECMWF          JULY  1997  COUPLED AND ANALYSIS
 C                                               (IE. PREPAN)
 C     B. HANSEN      ECMWF          JANUARY 1998 NAMELIST INPUT.
+C     B. HANSEN      ECMWF          NOVEMBER 1998 WPOSNAM USED TO POSITION
+C                                                 NAMLIST FOR READING.
 C
 C*    PURPOSE.
 C     --------
@@ -42,7 +44,8 @@ C
 C       *ABORT1*    - TERMINATES PROCESSING.
 C       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
 C       *IINITFDB*  - INITIALISE DATA BASE.
-
+C       *WPOSNAM*   - POSITION NAMELIST FOR READING AND CONTROLLED
+C                     TRAPPING OF EOF.
 C
 C     REFERENCE.
 C     ----------
@@ -75,7 +78,7 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      LOGICAL LERROR, LMESSPIFS
+      LOGICAL LERROR, LMESSPIFS, LLEOF
       CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
@@ -189,7 +192,8 @@ C        ---------------------
 C
       REWIND(IU05)
 C
-      READ (IU05, NALINE)
+      CALL WPOSNAM (IU05, 'NALINE', LLEOF)
+      IF (.NOT. LLEOF) READ (IU05, NALINE)
 C
       IF(LWCOU) LMESSPASS = LMESSPIFS
 C
@@ -223,6 +227,8 @@ C           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
 C           **** OUTPUT TIME AT SPECIFIED TIMES ****
       REWIND(IU05)
       SPT: DO
+        CALL WPOSNAM (IU05, 'NAOT', LLEOF)
+        IF (LLEOF) EXIT SPT
         READ (IU05, NAOT, END=1900)
         NOUTT = NOUTT+1
         IF (NOUTT.GT.MOUTT) EXIT SPT
@@ -232,6 +238,8 @@ C           **** OUTPUT TIME AT SPECIFIED TIMES ****
 C           **** SPECTRA OUTPUT TIME AT SPECIFIED TIMES ****
       REWIND(IU05)
       SPS: DO
+        CALL WPOSNAM (IU05, 'NAOS', LLEOF)
+        IF (LLEOF) EXIT SPS
         READ (IU05, NAOS, END=1901)
         NOUTS = NOUTS+1
         IF (NOUTS.GT.MOUTS) EXIT SPS
@@ -241,6 +249,8 @@ C           **** SPECTRA OUTPUT TIME AT SPECIFIED TIMES ****
 C           **** ASSIMILATION AT SPECIFIED TIMES ****
       REWIND(IU05)
       SPA: DO
+        CALL WPOSNAM (IU05, 'NAAT', LLEOF)
+        IF (LLEOF) EXIT SPA
         READ (IU05, NAAT, END=1902)
         NASS = NASS+1
         IF (NASS.GT.MASS) EXIT SPA
@@ -682,6 +692,7 @@ C
           WRITE(IU06,CLFORM) CFDBSF(1:ILCFDBSF)
         ENDIF
         WRITE(IU06,*) '  '
+        CALL FLUSH(iu06)
 
 
       IF ( LFDB .AND. .NOT. (GFLAG20.OR.GFLAG21))
@@ -817,6 +828,7 @@ C
      1                  ITESTB
         WRITE(IU06,*) '  '
 C
+        CALL FLUSH(iu06)
         IF (.NOT. LWCOU .AND.
      .    (  (LFDB .OR. LGRIBIN .OR. LFDBIOIN .OR. LFDBIOOUT ))) THEN
           WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
@@ -838,6 +850,8 @@ C
              CALL ABORT1
           ENDIF
         ENDIF
+C
+        CALL FLUSH(iu06)
 C
 C ----------------------------------------------------------------------
 C

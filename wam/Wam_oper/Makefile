@@ -180,6 +180,7 @@ SOURCE	=\
               wamwnd.F     \
               wavemdl.F     \
               writefl.F     \
+              wposnam.F     \
               writestress.F     \
               writsta.F     \
               wsmfen.F     \

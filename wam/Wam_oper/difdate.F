@@ -74,8 +74,8 @@ C*        SPLIT CDATE1.
 C
       IL = LEN_TRIM(CDATE1)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A39, I2.2, A2)')
-     .     '(" DIFDATE: NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(CLFMT,'(A49, I2.2, A2)')
+     .     '(" DIFDATE : NON-Y2K COMPLIANT DATE1 IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE1
         WRITE(*, CLFMT ) CDATE1
         LLND = .FALSE.
@@ -115,9 +115,12 @@ C       to 60. One needs to increment the date properly.
              CALL ABORT
            ENDIF
         ENDIF
+      ELSEIF (IL==0) THEN
+        WRITE(6, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
+        CALL ABORT
       ELSE
-        WRITE(CLFMT,'(A58, I2.2, A2)')
-     .  '(" DIFDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+        WRITE(CLFMT,'(A61, I2.2, A2)')
+     .  '(" DIFDATE :  FATAL@! DATE1 IS ",I2," CHARACTERS LONG!!= ",A',
      .    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE1
         STOP
@@ -127,8 +130,8 @@ C*        SPLIT CDATE2.
 C
       IL = LEN_TRIM(CDATE2)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A39, I2.2, A2)')
-     .     '(" DIFDATE: NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(CLFMT,'(A49, I2.2, A2)')
+     .     '(" DIFDATE : NON-Y2K COMPLIANT DATE2 IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE2
         WRITE(*, CLFMT ) CDATE2
         LLND = .FALSE.
@@ -168,9 +171,12 @@ C       to 60. One needs to increment the date properly.
              CALL ABORT
            ENDIF
         ENDIF
+      ELSEIF (IL==0) THEN
+        WRITE(6, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
+        CALL ABORT
       ELSE
-        WRITE(CLFMT,'(A58, I2.2, A2)')
-     .  '(" DIFDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+        WRITE(CLFMT,'(A61, I2.2, A2)')
+     .  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A',
      .    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
         STOP

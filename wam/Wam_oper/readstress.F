@@ -38,6 +38,11 @@ C
 C     REFERENCE.
 C     ----------
 C     NONE
+C
+C     MODIFICATIONS.
+C     --------------
+C     B. HANSEN    ECMWF      NOVEMBER 1998  KOUNT IS 12 FOR Y2K.
+C
 C ----------------------------------------------------------------------
 C
 #include "param.h"
@@ -61,6 +66,12 @@ C ----------------------------------------------------------------------
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
 C ----------------------------------------------------------------------
 
+      IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) ' SUB. READSTRESS: ABOUT TO INPUT RESTART FILES'
+          WRITE(IU06,*) ' LPBIOIN=', LPBIOIN
+          CALL FLUSH (IU06)
+      ENDIF
+
       IF(LPBIOIN) THEN
 
         MODE = 'r'
@@ -80,7 +91,7 @@ C ----------------------------------------------------------------------
         ENDIF
 
 
-        KOUNT = 10 
+        KOUNT = 12
         CALL PBREAD(IUNIT,CDTPRO,KOUNT,KRET)
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 
@@ -162,8 +173,10 @@ C ----------------------------------------------------------------------
 
       ENDIF
 
-      IF (ITEST.GE.2)
-     1    WRITE(IU06,*) ' SUB. READSTRESS: INPUT OF RESTART FILES DONE'
+      IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) ' SUB. READSTRESS: INPUT OF RESTART FILES DONE'
+          CALL FLUSH (IU06)
+      ENDIF
 C
       RETURN
       END

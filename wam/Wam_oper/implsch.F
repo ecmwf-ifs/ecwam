@@ -163,11 +163,7 @@ C
 C*    2.1 CALCULATE ROUGHNESS LENGTH AND FRICTION VELOCITIES.
 C         ---------------------------------------------------
 C
-          IF (LWCOU) THEN
-            ILEV=2
-          ELSE
-            ILEV=1
-          ENDIF
+         ILEV=1
 C
          CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
      1                IJS, IJL, ILEV)

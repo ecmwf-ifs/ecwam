@@ -6,7 +6,7 @@
 #.  Define pathes for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY19_y2k
+VERSION=CY19R1_U10
 #.
 DHSROOT=/$USER/vpp700/wam_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_$VERSION
@@ -85,15 +85,15 @@ export COMPILE=1
 #.=====================================================================
 #.
 ASSIMILATION=NO
-typeset -Z12 begofrn=199808081200      # BEGin date OF RUn 
-typeset -Z12 endofrn=199808081800      # END   date OF RUn 
-typeset -Z12 begoffo=199808081800      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=199810251200      # BEGin date OF RUn 
+typeset -Z12 endofrn=199810251800      # END   date OF RUn 
+typeset -Z12 begoffo=199810251800      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=199808081800      # Date to output restart files.
+typeset -Z12 outofrf=199810251800      # Date to output restart files.
                                        # Set to 0000000000 if determined
                                        # on uerinput.
-typeset -Z12 outof2d=199808081800      # Date up to which 2D-spectra are
+typeset -Z12 outof2d=199810251800      # Date up to which 2D-spectra are
                                        # saved. Set to 0000000000 if not
                                        # required.
 typeset -Z7 antime=21600               # Length of analysis in seconds.

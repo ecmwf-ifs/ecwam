@@ -508,12 +508,7 @@ C
      1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=233
-          IF (LWCOU) THEN
-            ILEV=2
-          ELSE
-            ILEV=1
-          ENDIF
-          IZLEV=INT(XNLEV(ILEV))
+          IZLEV=NINT(XNLEV(1))
           CALL GRIBPAC(IU06,IU30,NTGRIB,CDG,NGX,NGY,IPARAM,IY,IM,
      1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
@@ -544,12 +539,7 @@ C
      1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=245
-          IF (LWCOU) THEN
-            ILEV=2
-          ELSE
-            ILEV=1
-          ENDIF
-          IZLEV=INT(XNLEV(ILEV))
+          IZLEV=NINT(XNLEV(1))
           CALL GRIBPAC(IU06,IU30,NTGRIB,U10G,NGX,NGY,IPARAM,IY,IM,
      1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)

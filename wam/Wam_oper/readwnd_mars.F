@@ -293,10 +293,15 @@ C
           WRITE(IU06,*) ' ********************************************' 
           CALL ABORT1
         END IF                               
-        RLATN=.001*FLOAT(KSEC2(4))
-        RLONL=.001*FLOAT(KSEC2(5))
-        RLATS=.001*FLOAT(KSEC2(7))
-        RLONR=.001*FLOAT(KSEC2(8))
+        RLATN = FLOAT(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+     &           0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
+        RLONL = FLOAT(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
+     &           0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
+        RLATS = FLOAT(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
+     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
+        RLONR = FLOAT(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
+     &           0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+
 #if region=='m'
         IF (RLONL.GT.RLONR)RLONL=RLONL-360.
 #endif

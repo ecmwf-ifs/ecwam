@@ -109,11 +109,11 @@ C
       LCLOSEWND=.FALSE.
       IF (LWCOU) THEN
         LWNDFILE=.FALSE.
-        ILEV=2
       ELSE
         LWNDFILE=.TRUE.
-        ILEV=1
       ENDIF
+
+      ILEV=1
 C
       IF (CDA.EQ.ZERO) THEN
          CDA = CDTWIS

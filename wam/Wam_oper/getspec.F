@@ -110,6 +110,24 @@ C
 C
       DATA MDEL, LFRSTIME, ONE / 1, .TRUE., 1.0/
 C
+      CHARACTER* 28 clct
+      DATA clct / __COMPILED_ON__ /
+C
+C ----------------------------------------------------------------------
+C
+      IF (ITEST > 3 ) THEN
+        WRITE(IU06,*) ' SUB. GETSPEC:', clct
+        WRITE(IU06,*) ' ABOUT TO READ SPECTRUM IN........'
+        WRITE(IU06,*) ' CDTPRO    =', CDTPRO
+        WRITE(IU06,*) ' LGRIBIN   =', LGRIBIN
+        WRITE(IU06,*) ' LPBIOIN   =', LPBIOIN
+        WRITE(IU06,*) ' LFDBIOIN  =', LFDBIOIN
+        WRITE(IU06,*) ' LRESTARTED=', LRESTARTED
+        WRITE(IU06,*) ' IRANK=', IRANK
+        WRITE(IU06,*) ' IREAD=', IREAD
+        CALL FLUSH(IU06)
+      ENDIF
+C
       LPBOPEN = .TRUE.
       LPBCLOSE = .TRUE.
       ONE=1.0
@@ -698,7 +716,7 @@ C
           ENDIF
 C
 C
-          IF(LPBIOIN.AND..NOT.LRESTARTED) THEN
+          IF(LPBIOIN) THEN
 C
 C           INPUT SPECTRA ARE IN A BINARY FILE AND WILL BE READ
 C           USING THE PBIO SOFTWARE
@@ -762,6 +780,12 @@ C
 C
 C           READ RESTART SPECTRA FROM PE ISEND (IREAD)
             IF (IRANK.EQ.ISEND) THEN
+              CALL GRSTNAME(IU06,CDTPRO,CDATEF,0,'BLS',IRANK,NPROC,
+     1                      FILENAME)
+              IF (ITEST > 3 ) THEN
+                 WRITE(IU06,*) ' BLS arranged to ', FILENAME
+                 CALL FLUSH (IU06)
+              ENDIF
               CALL READFL(RFL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
             ENDIF
 
@@ -817,8 +841,9 @@ C
 C
       END IF
 C
-        WRITE(IU06,*) ' SPECTRUM FILE READ IN........',
-     1                ' CDTPRO  = ', CDTPRO
+      WRITE(IU06,*) ' SPECTRUM FILE READ IN........',
+     1              ' CDTPRO  = ', CDTPRO
+      CALL     FLUSH (IU06)
 C
       RETURN
       END

@@ -339,12 +339,11 @@ C
 C*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
 C
       XNLEV(1)= 10.0
-      XNLEV(2)= 31.0
 C
 C*    4.4 COMMON TABLE (STRESS TABLES).
 C         -----------------------------
 C
-      CALL STRESS(IU06)
+      CALL STRESS(IU06,ITEST)
       CALL TAUHF (FR(ML))
 C
 C ----------------------------------------------------------------------
