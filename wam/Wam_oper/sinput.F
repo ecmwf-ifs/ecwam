@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN,ZIDLNEW, SL)
+     &                   ROAIRN,ZIDLNEW, SL, LLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -41,7 +41,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,ZIDLNEW, SL)
+!    &                   ROAIRN,ZIDLNEW, SL, LLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -55,6 +55,7 @@
 !      *ZIDLNEW* - Zi/L  USED FOR GUSTINESS.
 !                  (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
+!         *LLWS* - TRUE WHERE SINPUT IS POSITIVE
 
 !     METHOD.
 !     -------
@@ -106,6 +107,7 @@
       REAL, DIMENSION(IJS:IJL) :: SIG_N
       REAL, DIMENSION(IJS:IJL) :: CNSN
       REAL, DIMENSION(NFRE) :: FAC, CONST
+      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
       PARAMETER (A = 0.8/1000. , B = 0.08/1000.)
 
 ! ----------------------------------------------------------------------
@@ -178,8 +180,10 @@
               IF (ZLOG.LT.0.) THEN
                 ZLOG2X=ZLOG*ZLOG*X
                 UFAC2(IJ,K) = CNSN(IJ)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                LLWS(IJ,K,M)=.TRUE.
               ELSE
                 UFAC2(IJ,K) = 0.
+                LLWS(IJ,K,M)=.FALSE.
               ENDIF
 
               X    = TEMP1(IJ,K)*UCN2(IJ)
@@ -188,9 +192,11 @@
                 ZLOG2X=ZLOG*ZLOG*X
                 UFAC2(IJ,K) = UFAC2(IJ,K)+
      &                        CNSN(IJ)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                LLWS(IJ,K,M)=.TRUE.
               ENDIF
             ELSE
               UFAC2(IJ,K) = 0.
+              LLWS(IJ,K,M)=.FALSE.
             ENDIF
           ENDDO
         ENDDO

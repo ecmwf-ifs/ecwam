@@ -40,7 +40,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WP2TAIL
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFFR2   ,DELTH  ,WP2TAIL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
@@ -52,16 +52,12 @@
       INTEGER :: IJ,K,M,IJS,IJL
       REAL :: F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: TEMP, MEANWP2, EMEAN
-      REAL :: FD(NFRE), COEF_FR
+      REAL :: COEF_FR
 
 ! ----------------------------------------------------------------------
 
       DO IJ=IJS,IJL
         MEANWP2(IJ) = 0.
-      ENDDO
-
-      DO M=1,NFRE
-        FD(M) = FR(M)**2*DFIM(M)
       ENDDO
 
       DO M=1,NFRE
@@ -74,7 +70,7 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          MEANWP2(IJ) = MEANWP2(IJ)+FD(M)*TEMP(IJ)
+          MEANWP2(IJ) = MEANWP2(IJ)+DFFR2(M)*TEMP(IJ)
         ENDDO
       ENDDO
 

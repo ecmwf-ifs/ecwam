@@ -212,7 +212,8 @@
 
       IFORP = JCONS*KSEC1(16)                                           
 
-      IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11) THEN
+      IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.6.OR.
+     &   KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11) THEN
         CALL INCDATE (CDATE,IFORP)
       ENDIF
 

@@ -10,6 +10,9 @@
 !                                   ZERO WIND.     
 !     BJORN HANSEN        ECMWF     MAY 1997
 !                                   STRESS FOR MORE THAN ONE LEVEL.
+!     J. BIDLOT           ECMWF     OCTOBER 2004: USE QUADRATIC STEPPING
+!                                                 FOR TAUW. COMPUTE THE
+!                                                 SQRT OF TAUT HERE.
 
 !*    PURPOSE.
 !     ---------
@@ -96,7 +99,7 @@
 
         DO I=0,ITAUMAX
 
-          ZTAUW   = REAL(I)*DELTAUW
+          ZTAUW   = (REAL(I)*DELTAUW)**2
 
           DO J=0,JUMAX
             UTOP    = REAL(J)*DELU
@@ -112,7 +115,7 @@
               UST    = UST-F/DELF
               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
             ENDDO
-            TAUT(I,J,JL)  = TAUOLD
+            TAUT(I,J,JL)  = SQRT(TAUOLD)
           ENDDO
 
         ENDDO

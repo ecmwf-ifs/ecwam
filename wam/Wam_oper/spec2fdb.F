@@ -5,11 +5,12 @@
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                     PPDEG, PPMISS, PPEPS, PPREC, NGRBRESS,
+     &                     PPDEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
      &                     CDFDB2DSP, KENSFNB, KTOTENS, KSYSNB, KMETNB,
-     &                     LFDBIOOUT, KCPLEN, CPAD, KTEST, KFDB )
+     &                     KREFDATE, LFDBIOOUT, KCPLEN, CPAD, KTEST,
+     &                     KFDB )
 
 !----------------------------------------------------------------------
 
@@ -35,7 +36,7 @@
 !    &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
 !    &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
 !    &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-!    &                     PPDEG, PPMISS, PPEPS, PPREC, NGRBRESS,
+!    &                     PPDEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
 !    &                     CDTPRO, CDATEF, CDATEA,
 !    &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
 !    &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
@@ -87,6 +88,7 @@
 !      *PPEPS*     REAL      SMALL NUMBER FOR CODING OF SPECTRA
 !      *PPREC*     REAL      REFERENCE VALUE FOR CODING OF SPECTRA
 !      *NGRBRESS*  INTEGER   NUMBER OF BITS USED TO ENCODE.
+!      *PPRESOL*   REAL      MAXIMUM RESOLUTION FOR SPECTRAL PACKING.
 !      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
 !      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
 !      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
@@ -97,6 +99,7 @@
 !      *CDFDB2DSP* CHAR*     ROOT DIRECTORY FOR 2D GRIB SPECTRA.
 !      *KENSFNB*   INTEGER   ENSEMBLE FORECAST NUMBER
 !      *KTOTENS*   INTEGER   TOTAL NUMBER OF ENSEMBLE FORECASTS.
+!      *KREFDATE*  INTEGER   REFERENCE DATE FOR MONTHLY FCAST HINDCAST.
 !      *LFDBIOOUT* LOGICAL   IF TRUE OUTPUT TO FDB OTHERWISE TO FILE
 !      *KCPLEN*    INTEGER    LENGTH OF CPAD
 !      *CPAD*      CHARACTER  PATH FOR OUTPUT TO DISK
@@ -139,7 +142,7 @@
      &        KMETNB, KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
      &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
      &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
-     &        NTENCODE, KCPLEN, NGRBRESS
+     &        NTENCODE, KCPLEN, NGRBRESS, KREFDATE
       INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
 
       INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
@@ -147,7 +150,7 @@
 
       REAL    PMONOP, PDELLA,
      &        PSPEC (KINF-1:KSUP, KANG, KFRE),
-     &        PPDEG, PPMISS, PPEPS, PPREC,
+     &        PPDEG, PPMISS, PPEPS, PPREC, PPRESOL,
      &        PTHETA(KANG),
      &        PFREQ(KFRE)
       REAL PSEK2(NPSEK2), PSEK3(NPSEK3)
@@ -166,6 +169,7 @@
      &        IJ, JANG, J1, ILENGOUT, IC,
      &        IRET, IWORD, IERR, ILENP, ITAG
 
+      REAL :: PPMAX, PPMIN, DELTAPP
       REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:)
       REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
       REAL , DIMENSION(KANG) :: ZTHETA
@@ -178,6 +182,8 @@
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
 
       ILOCAL=0
+
+      DELTAPP=(2**NGRBRESS-1)*PPRESOL
 
 !-----------------------------------------------------------------------
 
@@ -197,6 +203,10 @@
 !           -------------------------
 
         IF (LDWCOU .AND. CDTYPE .EQ. 'fg') THEN
+          READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
+          CALL DIFDATE (CDATEA, CDTPRO, IFCST)
+          IFCST = IFCST/3600
+        ELSEIF (LDWCOU .AND. CDTYPE .EQ. '4v') THEN
           READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
@@ -264,11 +274,13 @@
       ENDIF
       ISEC1(37) =    13     ! INDICATES LABELLING WITH MARS PARAMETERS 
 !                           ! FOR WAVE SPECTRA.
-!        39     INDICATES TYPE OF FIELD 1=FG 2=AN 9=FC
+!        39     INDICATES TYPE OF FIELD 1=FG 2=AN 6=4V 9=FC
       IF ( CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 1
       ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 2
+      ELSEIF ( CDTYPE .EQ. '4v') THEN
+        ISEC1(39) = 6
       ELSEIF ( CDTYPE .EQ. 'sf' ) THEN
         IF(KTOTENS .EQ. 0) THEN
           ISEC1(39) = 9
@@ -317,16 +329,26 @@
         ISEC1(49+KANG+IC) = NINT(ISEC1(49)*PFREQ(IC))
       ENDDO
 
-!* SYSTEM AND METHOD (for seasonal forecast only)
+!* SYSTEM AND METHOD (for seasonal or monthly forecast only)
 !  -----------------
       IF ( CDTYPE .EQ. 'sf' .OR. ISEC1(40) .EQ. 1082
-     &                      .OR. ISEC1(40) .EQ. 1095 ) THEN
+     &                      .OR. ISEC1(40) .EQ. 1095
+     &                      .OR. ISEC1(40) .EQ. 1203
+     &                      .OR. ISEC1(40) .EQ. 1204 ) THEN
         ISEC1(50+KANG+KFRE) = KSYSNB 
         ISEC1(51+KANG+KFRE) = KMETNB 
       ELSE
         ISEC1(50+KANG+KFRE) = 65535
         ISEC1(51+KANG+KFRE) = 65535
       ENDIF
+
+!     monthly forecast hindcasts need a reference date
+      IF(ISEC1(40) == 1204 ) THEN
+        ISEC1(52+KANG+KFRE) =  KREFDATE
+      ELSE
+        ISEC1(52+KANG+KFRE) = 0
+      ENDIF
+
 
 !    *SECTION 2* GRID DEFINITION BLOCK. 
 !    -----------------------------------
@@ -477,7 +499,16 @@
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
           DO JC=1,NTENCODE
             ZSEC4OUT(JC) = LOG10(ZSEC4OUT(JC)+PPEPS)+ABS(PPREC)
-            IF ( ZSEC4OUT(JC) .LE. PPMISS ) ZSEC4OUT(JC)=ZSEC3(2)
+          ENDDO
+!$OMP END PARALLEL DO
+          PPMAX=ZSEC4OUT(1)
+          DO JC=2,NTENCODE
+            PPMAX=MAX(PPMAX,ZSEC4OUT(JC))
+          ENDDO
+          PPMIN=MIN(PPMISS,PPMAX-DELTAPP)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
+          DO JC=1,NTENCODE
+            IF ( ZSEC4OUT(JC) .LE. PPMIN ) ZSEC4OUT(JC)=ZSEC3(2)
           ENDDO
 !$OMP END PARALLEL DO
           CALL GSTATS(1433,1)

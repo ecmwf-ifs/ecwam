@@ -56,6 +56,7 @@
       INTEGER NNCEP
       INTEGER NUKM
       INTEGER NWAM_BLKS
+      INTEGER IREFDATE
 
       LOGICAL LANAONLY
       LOGICAL L4VTYPE
@@ -202,6 +203,8 @@
 !                            NUMBER OF THREADS. OTHERWISE IT CAN BE USED
 !                            TO SPLIT THE GRID POINTS INTO NWAM_BLKS 
 !                            CHUNKS ON EACH PE.
+!      *IREFDATE*  INTEGER   REFERENCE DATE FOR MONTHLY FORECAST
+!                            HINDCAST RUNS. 
 !
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

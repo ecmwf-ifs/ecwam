@@ -108,21 +108,11 @@
 !***  1. DETERMINE ONE-D SPECTRUM AND PEAK WAVE NUMBER.
 !     ------------------------------------------------
 
-      DO IJ=IJS,IJL
-         C4(IJ)    = 0.
-         BF(IJ)    = 0.
-         QP(IJ)    = 0.
-         ETA2(IJ)  = 0.
-         MMAX(IJ)  = 0
-         XMAX(IJ)  = 0.
-         SUM4(IJ)  = 0.
-      ENDDO
       DO M=1,NFRE
          DO IJ=IJS,IJL   
             F1D(IJ,M) = 0.
          ENDDO   
       ENDDO
-      
       DO M=1,NFRE
          DO K=1,NANG
             DO IJ=IJS,IJL
@@ -131,7 +121,11 @@
          ENDDO
       ENDDO 
  
-      DO M=1,NFRE
+      DO IJ=IJS,IJL
+        MMAX(IJ) = 1
+        XMAX(IJ) = F1D(IJ,1)
+      ENDDO
+      DO M=2,NFRE
          DO IJ=IJS,IJL
             IF (F1D(IJ,M).GT.XMAX(IJ)) THEN
               MMAX(IJ) = M
@@ -152,6 +146,11 @@
          FAC4(M) = 2.*FR(M)*DFIM(M)/DELTH
       ENDDO
 
+      DO IJ=IJS,IJL
+         ETA2(IJ)  = 0.
+         SUM4(IJ)  = 0.
+      ENDDO
+
       DO M=1,NFRE
          DO IJ=IJS,IJL
             ETA2(IJ) = ETA2(IJ)+F1D(IJ,M)*DFIM(M)/DELTH
@@ -165,6 +164,10 @@
             S_SIG = XKM(IJ)*SQRT(ETA2(IJ))
             BF(IJ) = ZPISQRT*S_SIG*QP(IJ)
             C4(IJ) = BF(IJ)**2*ZSUM3
+         ELSE
+            C4(IJ) = 0.
+            BF(IJ) = 0.
+            QP(IJ) = 0.
          ENDIF
       ENDDO
             

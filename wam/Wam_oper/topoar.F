@@ -24,7 +24,7 @@
 !                      THE MERIDIONAL DIRECTION (0.1%).
 !          *IOBSLON* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
 !                      THE ZONAL DIRECTION (0.1%).
-!          *ML*    -  NUMBER OF FREQUENCIES (30)
+!          *ML*    -  NUMBER OF FREQUENCIES (36)
 
 !     METHOD.
 !     -------
@@ -167,13 +167,13 @@
 !       READ IN REDUCTION FACTORS
 
         READ (IU01,'(I4)') NFREMAX
-!!!     NFREMAX can only be 30 
+!!!     NFREMAX can only be 36 
 
-        IF(NFREMAX.NE.30 ) THEN
+        IF(NFREMAX.NE.36 ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
-          WRITE (IU06,*) ' * NFREMAX MUST BE = 30                    *'
+          WRITE (IU06,*) ' * NFREMAX MUST BE = 36                    *'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
           WRITE (IU06,*) ' *                                         *'
@@ -181,11 +181,11 @@
           CALL ABORT1
         ENDIF
 
-        IF(ML.NE.30 .AND. ML.NE.25 ) THEN
+        IF(ML.NE.36 .AND. ML.NE.30 .AND. ML.NE.25) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
-          WRITE (IU06,*) ' * NUMBER OF FREQUENCIES MUST BE 30 OR 25  *'
+          WRITE (IU06,*) ' * NUMBER OF FREQUENCIES MUST BE 36,30,25  *'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
           WRITE (IU06,*) ' *                                         *'
@@ -193,7 +193,7 @@
           CALL ABORT1
         ENDIF
 
-        IF (ML.EQ.25) ALLOCATE(IDUM(NGX,NGY))
+        IF (ML.EQ.25 .OR. ML.EQ.30) ALLOCATE(IDUM(NGX,NGY))
 
         IF(ML.EQ.NFREMAX) THEN
           DO M=1,NFREMAX
@@ -243,6 +243,46 @@
               ENDDO
             ELSE
               M=IFRE-2
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ENDIF
+          ENDDO
+        ELSE IF (ML.EQ.30) THEN
+          DO IFRE=1,NFREMAX
+            IF(IFRE.GT.30) THEN
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ELSE
+              M=IFRE
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ENDIF
+
+            IF(IFRE.GT.30) THEN
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ELSE
+              M=IFRE
               DO IS=1,2
                 DO K=1,NY
                   WRITE(CX,'(I4.4)') NLONRGG(K)

@@ -34,7 +34,7 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : FLMIN
+      USE YOWICE   , ONLY : FLMINFR
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,LONG     ,LAT     ,
@@ -122,7 +122,14 @@
 
         IF(IRANK.NE.ISEND) THEN
           ALLOCATE(SPEC(0:NSPEC,NANG,NFRE,2))
-          SPEC=FLMIN
+          DO IFRE = 1,NFRE
+            DO IANG = 1,NANG
+              DO ISPEC = 0,NSPEC
+                KCOUNT=KCOUNT+1
+                SPEC(ISPEC,IANG,IFRE,1)=0.25*FLMINFR(1,IFRE)
+              ENDDO 
+            ENDDO 
+          ENDDO 
           ALLOCATE(LONG(NSPEC,2))
           ALLOCATE(LAT(NSPEC,2))
           ALLOCATE(XKLOW(NSPEC))

@@ -142,6 +142,7 @@
       CHARACTER*4  cdorigin
 
       CHARACTER*8  cldate
+      CHARACTER*8  cdateref
 
 !     HELPS TO CALL IOPENFDB ONLY ONCE.
 !     ---------------------------------
@@ -198,7 +199,32 @@
         IF ( cltype .EQ. 'fg' .and. ksec1(16) .EQ. 0 ) then
           clstep = '000006'
         ELSE
-          WRITE(clstep, '( i6.6 )' ) ksec1(16)
+!         make sure the step is in hours
+          if(ksec1(15).eq.1) then
+            istep=ksec1(16)
+          else if(ksec1(15).eq.2) then
+            istep=ksec1(16)*24
+          else if(ksec1(15).eq.12) then
+            istep=ksec1(16)*12
+          else if(ksec1(15).eq.11) then
+            istep=ksec1(16)*6
+          else if(ksec1(15).eq.10) then
+            istep=ksec1(16)*3
+          else if(ksec1(15).eq.0) then
+            if(mod(ksec1(16),60).ne.0) then
+              WRITE(kuso,'("Error\ /Fld2fdb/step not multiple of hours",
+     &        I6)') ksec1(16) 
+              kerr = 1
+              RETURN
+            endif
+            istep=ksec1(16)/60
+          else
+            WRITE(kuso,'("Error\ /Fld2fdb/doesnot know how to use step",
+     &      I3)') ksec1(15) 
+            kerr = 1
+            RETURN
+          endif
+          WRITE(clstep, '( i6.6 )' ) istep 
         ENDIF
 
         WRITE( clparam, '(i3.3)' ) ksec1(6)
@@ -226,7 +252,9 @@
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
         IF ( .NOT. lopenfdb )  THEN
           if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095) then
+     &                       .or. ksec1(40).eq.1095
+     &                       .or. ksec1(40).eq.1203
+     &                       .or. ksec1(40).eq.1204) then
             istat = iopenfdbsubs( 'seas', iaddr1, cdfun(1:1) )
           else
             istat = iopenfdbsubs( 'fdb', iaddr1, cdfun(1:1) )
@@ -282,8 +310,12 @@
             if ( ksec1(42).gt.0 ) then
               istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
             endif
+          else if(ksec1(40).eq.1203 .or. ksec1(40).eq.1204) then
+            if ( ksec1(42).gt.0 .or. ksec1(39).eq.2) then
+              istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+            endif
           else if(cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095) then
+     &                           .or. ksec1(40).eq.1095) then
               istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
           endif
 
@@ -293,7 +325,9 @@
 !         system and method
 
           if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095) then
+     &                       .or. ksec1(40).eq.1095
+     &                       .or. ksec1(40).eq.1203
+     &                       .or. ksec1(40).eq.1204) then
             if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
      &          clparam .EQ. '251' ) THEN
               ndir=ksec1(46)
@@ -327,7 +361,7 @@
      &                      " method ", a5)') clsystem,clmethod 
           endif
 
-!         multi-analysis ensemble runs (see setwgribhd)
+!         centre origin 
           if (ksec1(40) == 1083) then
             if(KSEK1(46) == 0 ) then
               if(KSEK1(44) == 78) then
@@ -347,6 +381,31 @@
               istat = isetvalfdbsubs( iaddr1,  'origin', cdorigin )
             else
               istat = isetvalfdbsubs( iaddr1,  'origin', 'consensus' )
+            endif
+          else if(ksec1(40).eq.1203 .or. ksec1(40).eq.1204) then
+            if(ksec1(2).eq.98) then
+              cdorigin = 'ecmf'
+            else
+              WRITE(kuso,'( "Error\ /Fld2fdb/ origin unknown ", i4)' )
+     &              ksec1(2)
+              kerr = 1
+              return
+            endif
+            istat = isetvalfdb( iaddr1,  'origin', cdorigin )
+          endif
+
+!         monthly forecast hindcast reference date
+          if(ksec1(37) == 23 ) then
+            if(ksec1(40) == 1204) then
+              write( cdateref, '(i8.8)' ) ksec1(49) 
+              istat = isetvalfdb( iaddr1, 'refdate', cdateref)
+            endif
+          elseif(ksec1(37) == 13 ) then
+            ndir=ksec1(46)
+            nfre=ksec1(47)
+            if(ksec1(40) == 1204) then
+              write( cdateref, '(i8.8)' ) ksec1(52+ndir+nfre)
+              istat = isetvalfdb(iaddr1,'refdate',cdateref)
             endif
           endif
 
@@ -407,7 +466,9 @@
         istat = isetvalfdbsubs( iaddr1,   'frequency', clfre )
       ELSE
         if (cdtype.ne.'sf' .and. ksec1(40).ne.1082
-     &                     .and. ksec1(40).ne.1095) then
+     &                     .and. ksec1(40).ne.1095
+     &                     .and. ksec1(40).ne.1203
+     &                     .and. ksec1(40).ne.1204) then
           cldir="00"
           clfre="00"
           istat = isetvalfdbsubs( iaddr1,   'direction', cldir )

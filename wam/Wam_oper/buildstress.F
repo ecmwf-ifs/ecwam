@@ -175,17 +175,6 @@
      1    WRITE(IU06,*) ' SUB. BUILDSTRESS: CALL STRESS DONE'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
-!       TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
-!       OF THE INPUT VALUES !!!!!!!
-
-        DO ILV = 1,JPLEVT
-          DO J = 0,JUMAX
-            DO I = 0,ITAUMAX
-              TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
-            ENDDO
-          ENDDO
-        ENDDO
-
       ENDIF
 
 

@@ -72,10 +72,10 @@
               SIGMA = SA
             ENDIF
             EARG = .5*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
-            EARG = MIN(EARG,20.)
+            EARG = MIN(EARG,50.)
             FJON = GAMMA**EXP(-EARG)
             FMPF = 1.25*(FP(IJ)/FRH)**4
-            FMPF = MIN(FMPF,20.)
+            FMPF = MIN(FMPF,50.)
             FJONH = EXP(-FMPF)
             ET(IJ,M) = ALPHAJ(IJ)*G2ZPI4FRH5M*FJONH*FJON
           ELSE

@@ -7,6 +7,8 @@
 !     P.A.E.M. JANSSEN    KNMI      AUGUST    1990
 !     JEAN BIDLOT         ECMWF     FEBRUARY 1999 : TAUT is already
 !                                                   SQRT(TAUT)
+!     JEAN BIDLOT         ECMWF     OCTOBER 2004: QUADRATIC STEP FOR
+!                                                 TAUW
 
 !*    PURPOSE.
 !     --------
@@ -64,7 +66,7 @@
 !        ----------------------------------
 
       DO IJ=IJS,IJL
-        XI      = TAUW(IJ)/DELTAUW
+        XI      = SQRT(TAUW(IJ))/DELTAUW
         I       = MIN ( ITAUMAX-1, INT(XI) )
         DELI1   = MIN(1.,XI - REAL(I))
         DELI2   = 1. - DELI1

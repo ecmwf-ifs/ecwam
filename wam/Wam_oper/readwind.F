@@ -172,7 +172,7 @@
 !       1.0 INITIALISE VALUES. 
 !           ------------------ 
 
-        NBIT=175000
+        NBIT=430000
 
         ICOORD = 1
 

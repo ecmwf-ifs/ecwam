@@ -115,12 +115,15 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
-     &            FRM5     ,COFRM4   ,FRATIO   ,WETAIL
-      USE YOWICE   , ONLY : FLMIN
+     &            FRM5     ,COFRM4   ,FRATIO   ,WETAIL   ,TH       ,
+     &            C        ,FRIC
+      USE YOWICE   , ONLY : FLMINFR
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
+      USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -137,8 +140,13 @@
 ! ----------------------------------------------------------------------
 
       INTEGER :: MIJ(IJS:IJL)
+      INTEGER :: JU(IJS:IJL)
       REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), DELFL(NFRE)
-      LOGICAL :: LLAK
+      REAL :: SPRD(IJS:IJL,NANG)
+      REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN 
+      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
+      REAL :: THRESHOLD(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -157,10 +165,21 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !         ------------------------
 
-      LLAK=.TRUE.
-      CALL FEMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &            AKMEAN(IJS), LLAK)
 
+      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &            F1MEAN, AKMEAN(IJS), XKMEAN)
+
+
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+        ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+        XJ=U10NEW(IJ)/DELU
+        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
+      ENDDO
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
@@ -183,7 +202,7 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW,USNEW,Z0NEW,
-     &             ROAIRN,ZIDLNEW, SL)
+     &             ROAIRN,ZIDLNEW, SL, LLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
@@ -203,6 +222,30 @@
         CALL FLUSH (IU06)
       ENDIF
 
+!!! adding bins to windsea sector if they are found to be windsea
+!!! by the empirical relationship
+!!! I have relaxed the condition by removing the factor 1.2
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          THRESHOLD(IJ) = USNEW(IJ)*COS(TH(K)-THWNEW(IJ))
+        ENDDO
+        DO M=1,NFRE
+          CM = FRIC/C(M)
+          DO IJ=IJS,IJL
+            CHECKTA = CM*THRESHOLD(IJ)
+            IF (CHECKTA.GE.1.) THEN
+              LLWS(IJ,K,M)=.TRUE.
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
+
+!     MEAN CHARACTERISTICS FOR WIND SEA
+!     ---------------------------------
+      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, LLWS)
+
+
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL)
@@ -210,7 +253,7 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL)
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN)
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
 !SHALLOW
@@ -231,7 +274,8 @@
       ENDDO
       DO M=1,NFRE
         DO IJ=IJS,IJL
-          TEMP(IJ,M) = USNEW(IJ)*FMEAN(IJ)*DELFL(M)
+          FM = MAX(FMEANWS(IJ),FMEAN(IJ))
+          TEMP(IJ,M) = USNEW(IJ)*FM*DELFL(M)
         ENDDO
       ENDDO
       DO K=1,NANG
@@ -242,7 +286,8 @@
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLMIN)
+            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
+            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
           ENDDO
         ENDDO
       ENDDO
@@ -256,23 +301,28 @@
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
 
-      CALL FEMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &            AKMEAN(IJS), LLAK)
+      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &            F1MEAN, AKMEAN(IJS), XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, LLWS)
+
 
 !*    2.5.2 COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!*          FREQUENCIES LE 2.5*FMEAN.
+!*          FREQUENCIES LE 2.5*MAX(FMEANWS,FMEAN).
 !           ------------------------------------------------------------
 
-      FPMH = 2.5/FR(1)
+      TAILFACTOR=2.5
+      FPMH = TAILFACTOR/FR(1)
       FLOGSPRDM1=1./LOG10(FRATIO)
      
       DO IJ=IJS,IJL
-        FPM4 = FMEAN(IJ)*FPMH
-
+        FM = MAX(FMEANWS(IJ),FMEAN(IJ))
+        FPM4 = FM*FPMH
         MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
+
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
@@ -280,6 +330,7 @@
       DO IJ=IJS,IJL
         GADIAG(IJ) = FR5(MIJ(IJ))
       ENDDO
+
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
@@ -295,26 +346,26 @@
         ENDDO
       ENDDO
 
+
       DO K=1,NANG
         DO IJ=IJS,IJL
           GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
+            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)
-     &       + FL3(IJ,K,M)*FCONST(IJ,M)
-
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLMIN)
-
+     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
           ENDDO
         ENDDO
       ENDDO
+
 
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
 !           --------------------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN,ZIDLNEW, SL)
+     &             ROAIRN,ZIDLNEW, SL, LLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)

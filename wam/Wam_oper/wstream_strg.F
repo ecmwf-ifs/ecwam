@@ -23,6 +23,8 @@
 
       IF(ISTREAM.EQ.1045) THEN
         CSTREAM = 'wave'
+      ELSE IF(ISTREAM.EQ.1080) THEN
+        CSTREAM = 'wamo'
       ELSE IF(ISTREAM.EQ.1081) THEN
         CSTREAM = 'waef'
       ELSE IF(ISTREAM.EQ.1082) THEN
@@ -33,8 +35,24 @@
         CSTREAM = 'scwv'
       ELSE IF(ISTREAM.EQ.1029) THEN
         CSTREAM = 'dcwv'
+      ELSE IF(ISTREAM.EQ.1092) THEN
+        CSTREAM = 'swmm'
       ELSE IF(ISTREAM.EQ.1095) THEN
         CSTREAM = 'wamf'
+      ELSE IF(ISTREAM.EQ.1096) THEN
+        CSTREAM = 'wmfm'
+      ELSE IF(ISTREAM.EQ.1203) THEN
+        CSTREAM = 'mnfw'
+      ELSE IF(ISTREAM.EQ.1204) THEN
+        CSTREAM = 'mfhw'
+      ELSE IF(ISTREAM.EQ.1205) THEN
+        CSTREAM = 'mfaw'
+      ELSE IF(ISTREAM.EQ.1209) THEN
+        CSTREAM = 'mfwm'
+      ELSE IF(ISTREAM.EQ.1210) THEN
+        CSTREAM = 'mhwm'
+      ELSE IF(ISTREAM.EQ.1211) THEN
+        CSTREAM = 'mawm'
       ELSE
         CSTREAM='****'
       ENDIF

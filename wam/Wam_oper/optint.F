@@ -37,7 +37,6 @@
 !     MODULES:
 !     --------
 
-      USE YOWICE   , ONLY : FLMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,R        ,RAD      ,ZPI
       USE YOWSARAS , ONLY : NSPEC    ,NSPECW   ,JPSIW    ,MPARTSW  ,

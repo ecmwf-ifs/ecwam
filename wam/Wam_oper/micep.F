@@ -97,7 +97,8 @@
               ICEMASK(IJ,IG) = 0
             ENDIF
           ELSEIF (IPARAM.EQ.31) THEN
-            IF (FIELD(IX,IY) .GT. 0.3) THEN
+!           sea ice fraction is only defined between 0 and 1
+            IF (FIELD(IX,IY) .GT. 0.3 .AND. FIELD(IX,IY) .LE. 1.01) THEN
               NICE = NICE + 1
               ICEMASK(IJ,IG) = 0
             ENDIF

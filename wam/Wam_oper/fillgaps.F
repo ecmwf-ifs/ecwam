@@ -37,7 +37,6 @@
 !     MODULE :
 !     --------
 
-      USE YOWICE   , ONLY : FLMIN
       USE YOWGAP   , ONLY : MGAP     ,LANG     ,HANG     ,LFRE     ,
      &            HFRE     ,EQUIGAP 
 
@@ -147,7 +146,7 @@
         DO IANG = 1,NANG
           DO IFRE = 1,NFRE
             DO ISPEC = ISPECS ,ISPECE 
-              SPEC(ISPEC,IANG,IFRE) = MAX(SPEC(ISPEC,IANG,IFRE),FLMIN)
+              SPEC(ISPEC,IANG,IFRE) = MAX(SPEC(ISPEC,IANG,IFRE),0.)
             END DO
           END DO
         END DO

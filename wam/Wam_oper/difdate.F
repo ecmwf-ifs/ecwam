@@ -113,14 +113,18 @@
           ENDIF
         ENDIF
       ELSEIF (IL==0) THEN
+        WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
+        WRITE(6, *) ' '
         CALL ABORT
       ELSE
+        WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
      &  '(" DIFDATE :  FATAL@! DATE1 IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE1
-        STOP
+        WRITE(6, *) ' '
+        CALL ABORT
       ENDIF
 
 !*        SPLIT CDATE2.
@@ -166,14 +170,18 @@
           ENDIF
         ENDIF
       ELSEIF (IL==0) THEN
+        WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
+        WRITE(6, *) ' '
         CALL ABORT
       ELSE
+        WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
      &  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
-        STOP
+        WRITE(6, *) ' '
+        CALL ABORT
       ENDIF
 
 ! ----------------------------------------------------------------------

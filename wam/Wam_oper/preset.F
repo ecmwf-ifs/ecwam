@@ -31,7 +31,6 @@
 !                                     INTERPOLATE TO OUTPUT GRID.
 !                                     NO LAW FILE IS PRODUCED THEN.
 !     J. BIDLOT    ECMWF   OCTOBER 1998   MODULES.
-!     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
 !*    PURPOSE.
 !     --------
@@ -109,7 +108,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS
+     &            HOPERS   ,PPRESOL
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
      &            SB       ,THETAQ
@@ -126,11 +125,11 @@
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS,
+     &            IREFDATE
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
      &            ROAIRO   ,ZIDLOLD
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
      &            CPATH
@@ -317,23 +316,13 @@
       NENSFNB = 0  
       NSYSNB  = -1
       NMETNB  = -1
+      IREFDATE= 0
 ! ----------------------------------------------------------------------
 
 !*    3. READ PREPROC OUTPUT.
 !        --------------------
 
       CALL READPRE (IU07, IREFRA)
-
-!     TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
-!     OF THE INPUT VALUES !!!!!!!
-
-      DO ILV = 1,JPLEVT
-        DO J = 0,JUMAX
-          DO I = 0,ITAUMAX
-            TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
-          ENDDO
-        ENDDO
-      ENDDO
 
       NINF=1
       NSUP=NIBLO
@@ -598,11 +587,12 @@
      &                 NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                 NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS, 
-     &                 DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
+     &                 DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                 CDATEA, CDATEF, CDATEA,
      &                 CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                 CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                 LFDBIOOUT,ICPLEN, CPATH, ITEST, IFDB)
+     &                 IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
+     &                 IFDB)
 
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPEC2FDB DONE'
       ELSEIF (.NOT.LGRIBOUT) THEN

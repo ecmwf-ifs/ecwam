@@ -136,7 +136,7 @@
       KRET  = 1
 !     CALL GRSDBG(1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     &             PSEC4, KLENP, KGRIB, KLENG , KWORD, 'I', KRET)
+     &             PSEC4, KLENP, KGRIB, KLENG , KWORD, 'J', KRET)
       IF(KRET.GT.0) THEN                                                
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
@@ -195,12 +195,6 @@
         LLNONWAVE=.FALSE.
       ELSE
         LLNONWAVE=.TRUE.
-      ENDIF
-
-      IF(.NOT. LLNONWAVE .OR. KSEC4(1).NE.KSEC4(34) ) THEN 
-        LLNEAREST=.TRUE.
-      ELSE
-        LLNEAREST=.FALSE.
       ENDIF
 
       IREPR=KSEC2(1)
@@ -538,6 +532,26 @@
           CALL ABORT1
         ENDIF
 
+        IF(.NOT. LLNONWAVE) THEN 
+!         FOR WAVE DATA ALWAYS USE THE CLOSEST GRID POINT IF
+!         CORNER DATA ARE MISSING.
+          LLNEAREST=.TRUE.
+        ELSE
+!         FOR NON WAVE DATA USE THE CLOSEST GRID POINT IF
+!         CORNER DATA ARE FOUND TO BE MISSING.
+          NDECODED=ABS(KSEC4(1))
+          L=1
+          DO WHILE(PSEC4(L).NE.PMISS .AND. L.LE.NDECODED) 
+            L=L+1
+          ENDDO
+          IF(L.GT.NDECODED) THEN
+            LLNEAREST=.FALSE.
+          ELSE
+            LLNEAREST=.TRUE.
+          ENDIF
+        ENDIF
+
+
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' THE FIELD WITH GRIB PARAMETER ',IPARAM
@@ -551,6 +565,14 @@
             WRITE(IU06,*) ' ON A REDUCED GAUSSIAN GRID '
           ENDIF
           WRITE(IU06,*) ' IS INTERPOLATED ONTO THE WAVE MODEL GRID '
+            IF(LLNEAREST) THEN
+              WRITE(IU06,*) ' USING THE CLOSEST GRID POINT '
+              WRITE(IU06,*) ' IF MISSING DATA ARE PRESENT '
+              WRITE(IU06,*) ' OTHERWISE USING A BILINEAR INTERPOLATION '
+            ELSE
+              WRITE(IU06,*) ' USING A BILINEAR INTERPOLATION '
+            ENDIF
+          WRITE(IU06,*) ' '
           WRITE(IU06,*) ' '
         ENDIF
 
@@ -665,8 +687,6 @@
                     ENDIF
                     IF(NCOUNT.GT.0) THEN
                       FIELD(I,K)=FIELD(I,K)/NCOUNT
-                    ELSE
-                      FIELD(I,K)=WORK(ICL,KCL)
                     ENDIF
                   ENDIF
                 ENDIF

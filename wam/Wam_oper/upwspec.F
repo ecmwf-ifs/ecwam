@@ -67,7 +67,6 @@
 !-----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,FRATIO
-      USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
@@ -89,7 +88,7 @@
 
       XL11 = LOG(FRATIO)
 
-      IF(NFRE.EQ.30) THEN
+      IF(NFRE.EQ.30 .OR. NFRE.EQ.36) THEN
          NFREINF=4
       ELSE
          NFREINF=2
@@ -151,12 +150,6 @@
 
         IF (ETFG(IJ).GT.0.001.AND.ETA(IJ).GT.0.001) THEN
 
-          DO K=1,NANG
-            DO M=NFREINF,NFRE
-              IF(F(IJ,K,M).EQ.FLMIN) F(IJ,K,M) = 0.
-            ENDDO
-          ENDDO
-
 !*        LOOP OVER NEW FREQUENCIES.
 
           DO M=NFREINF,NFRE
@@ -169,11 +162,7 @@
             IF (M1(M).GE.NFRE) THEN
 !             A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
               DO K=1,NANG
-                IF(F(IJ,K,NFRE).GT.FLMIN) THEN
-                  FTEMP(K,M) = XR(IJ)*F(IJ,K,NFRE)*(FR(NFRE)/FU(M))**5 
-                ELSE
-                  FTEMP(K,M) = F(IJ,K,NFRE) 
-                ENDIF
+                FTEMP(K,M) = XR(IJ)*F(IJ,K,NFRE)*(FR(NFRE)/FU(M))**5 
               ENDDO
 
             ELSEIF (M1(M).LT.1) THEN
@@ -187,7 +176,7 @@
                 F1 = F(IJ,K,M1(M))
                 F2 = F(IJ,K,M1(M)+1)
                 DE = (F2-F1)*WEIGHT
-                FTEMP(K,M) = MAX(XR(IJ)*(F1+DE),FLMIN)
+                FTEMP(K,M) = MAX(XR(IJ)*(F1+DE),0.)
               ENDDO
             ENDIF
 

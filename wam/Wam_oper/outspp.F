@@ -180,7 +180,7 @@
                   WRITE(IU25,110) dum,(TH(K)*DEG,K=1,NANG)
                   DO M=1,NFRE
                     WRITE(IU25,110) FR(M),
-     &                 (FL3(IJ,K,M),K=1,NANG)
+     &                 (MIN(FL3(IJ,K,M),999.9999),K=1,NANG)
                   ENDDO
 110               FORMAT(25(1X,F8.4))
                 ELSE

@@ -288,14 +288,15 @@
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
-     &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS
+     &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
+     &            CASS     ,NASS
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS
+     &            HOPERS   ,PPRESOL
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
      &            IJL      ,IJLT
       USE YOWICE   , ONLY : LICERUN
@@ -324,7 +325,7 @@
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS
+     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS,IREFDATE
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            NTOPE  ,NTOPEMAX ,IJTOPE   ,NGBTOPE  ,NTOPELST   ,
      &            NFROMPE,NFROMPEMAX,NIJSTART,NGBFROMPE,NFROMPELST ,
@@ -348,9 +349,10 @@
       CHARACTER*2 MARSTYPEBAK
       CHARACTER*12 CDATE, CDATEWH, CDTPRA, ZERO
       CHARACTER*12 CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
+      CHARACTER*14 CDATE_14
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
       LOGICAL GFLAGBAK(JPPFLAG)
-      LOGICAL :: LSV, LRST, LOUT, LFDBIOOUT_OLD, L1STCALL 
+      LOGICAL :: LSV, LRST, LOUT, LFDBIOOUT_OLD, L1STCALL , L4VOUT
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
@@ -674,8 +676,8 @@
 
 !*    1.5.5 SET TIME COUNTER.
 !           -----------------
-
           CDATE   = CDTPRA
+          CDATE_14= CDATE//'00'
           CDATEWH = CDATEWO    
           NEWREAD = .FALSE.
 
@@ -797,7 +799,6 @@
               ITSKCA(5,JROC) = NSTKSZ
               ITSKCA(6,JROC) = 1 ! !!!! JUST TO GET PAST COMP 'STACKINW'
               ITSKCA(7,JROC) = NSTKINC
-
               IF(IGH1.NE.IG) THEN
                 CALL TSKSTART(ITSKCA(1,JROC),PHYS,FL3,FL1,FL4,IJS(IG),
      &                        IJL(IG),IG,NSIZE,NWORK,CDATE,CDTPRA)
@@ -848,7 +849,8 @@
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
 
-          CALL INCDATE(CDATE,IDELT)   
+          CALL INCDATE(CDATE_14,IDELT)   
+          CDATE=CDATE_14(1:12)
           IF (CDATE.LT.CDTPRO) GO TO 1550
 
 !        END OF TIME LOOP ALL TIME STEPS DONE
@@ -1189,7 +1191,22 @@
      &            .AND.
      &             LSV
 
-          IF ( (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF)
+!         CHECK WHETHER OUTPUT IS NECESSARY DESPITE BEING IN
+!         ASSIMILATION MODE.
+          IF(IASSI.EQ.1 .AND. CDTPRO.LE.CDATEF .AND. NASS.GT.0) THEN
+            L4VOUT = .TRUE.
+            DO J=1,NASS
+              IF(CDTPRO.EQ.CASS(J)) THEN
+                L4VOUT = .FALSE. 
+                EXIT
+              ENDIF
+            ENDDO
+          ELSE
+            L4VOUT = .FALSE.
+          ENDIF
+
+
+          IF ( (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF .OR. L4VOUT )
      &         .AND.
      &         ( LOUT .OR. LRST )  
      &       ) THEN
@@ -1227,11 +1244,12 @@
      &                       NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                       NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                       KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                       DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
+     &                       DEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
      &                       CDTPRO, CDATEF, CDATEA,
      &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                       LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
+     &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
+     &                       MFDBSF)
               IF (LFDB) THEN
                 CALL GSTATS(1976,0)
                 ISTAT = IFLUSHFDBSUBS (MFDBSF)

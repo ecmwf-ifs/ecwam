@@ -10,7 +10,11 @@
 !     L.ZAMBRESKY    NOVEMBER 87   GKSS/ECMWF   OPTIMIZED SUB.
 !     J. BIDLOT      FEBRARY 1996       ECMWF   MESSAGE PASSING
 !     J. BIDLOT      MAY     1999       ECMWF   ADD HIGH FREQUENCY TAIL
-!     J. BIDLOT      APRIL   200        ECMWF   ADD  EXTRA PARAMETERS
+!     J. BIDLOT      APRIL   2000       ECMWF   ADD  EXTRA PARAMETERS
+!     J. BIDLOT      DECEMBER2003       ECMWF   MOVE ALL ALLOCATION TO
+!                                               *OUTBS*
+!                                               TO MAKE IT CALLABLE IN AN
+!                                               OPENMP LOOP.
 
 !*    PURPOSE.
 !     --------
@@ -49,7 +53,7 @@
 
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
-     &            TH       ,COSTH    ,SINTH
+     &            TH       ,COSTH    ,SINTH    ,FRIC
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
@@ -58,8 +62,6 @@
      &            P1SEA    ,P2SEA    ,SPRDSEA
 
 ! ----------------------------------------------------------------------
-
-      REAL, PARAMETER :: FRIC=28.
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE)  :: FL1,FL3
       REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD
@@ -74,14 +76,6 @@
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            FL1(IJ,K,M) = 0.
-          ENDDO
-        ENDDO
-      ENDDO
-
       ALLOCATE(THRESHOLD(IJS:IJL))
       DO K=1,NANG
         DO IJ=IJS,IJL
@@ -93,6 +87,8 @@
             CHECKTA = CM*THRESHOLD(IJ)
             IF (CHECKTA.LT.1.) THEN
               FL1(IJ,K,M)=1.
+            ELSE
+              FL1(IJ,K,M)=0.
             ENDIF
           ENDDO
         ENDDO
@@ -112,51 +108,43 @@
       ENDDO
   
       IF(IPFGTBL(16).NE.0) THEN
-        IF(.NOT.ALLOCATED(ESWELL)) ALLOCATE(ESWELL(IJS:IJL))
-        IF(.NOT.ALLOCATED(FSWELL)) ALLOCATE(FSWELL(IJS:IJL))
         LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL, FSWELL, LLAK)
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS),
+     &              FSWELL(IJS), LLAK)
       ENDIF
 
 !     femean must be called before semean since LLEPSMIN is false
       IF(IPFGTBL(12).NE.0) THEN
-        IF(.NOT.ALLOCATED(ESWELL)) ALLOCATE(ESWELL(IJS:IJL))
         LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
+        CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
         DO IJ=IJS,IJL
           IF (USNEW(IJ).EQ.0.) ESWELL(IJ) = EMEAN(IJ)
         ENDDO
       ENDIF
       
       IF(IPFGTBL(14).NE.0) THEN
-        IF(.NOT.ALLOCATED(THSWELL)) ALLOCATE(THSWELL(IJS:IJL))
-        CALL STHQ   (FL1, IJS, IJL, THSWELL)
+        CALL STHQ   (FL1, IJS, IJL, THSWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(29).NE.0) THEN
-        IF(.NOT.ALLOCATED(P1SWELL)) ALLOCATE(P1SWELL(IJS:IJL))
-        IF(.NOT.ALLOCATED(ESWELL)) THEN
-          ALLOCATE(ESWELL(IJS:IJL))
+        IF(IPFGTBL(12).EQ.0) THEN
           LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
+          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
         ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESWELL, P1SWELL)
+        CALL MWP1 (FL1, IJS, IJL, ESWELL(IJS), P1SWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(31).NE.0) THEN
-        IF(.NOT.ALLOCATED(P2SWELL)) ALLOCATE(P2SWELL(IJS:IJL))
-        IF(.NOT.ALLOCATED(ESWELL)) THEN
-          ALLOCATE(ESWELL(IJS:IJL))
+        IF(IPFGTBL(12).EQ.0) THEN
           LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL, LLEPSMIN)
+          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
         ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESWELL, P2SWELL)
+        CALL MWP2 (FL1, IJS, IJL, ESWELL(IJS), P2SWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(33).NE.0) THEN
         LLPEAKF = .TRUE.
-        IF(.NOT.ALLOCATED(SPRDSWELL)) ALLOCATE(SPRDSWELL(IJS:IJL))
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL(IJS))
       ENDIF
 
 
@@ -173,50 +161,47 @@
       ENDDO
   
       IF(IPFGTBL(15).NE.0) THEN
-        IF(.NOT.ALLOCATED(ESEA)) ALLOCATE(ESEA(IJS:IJL))
-        IF(.NOT.ALLOCATED(FSEA)) ALLOCATE(FSEA(IJS:IJL))
         LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA, FSEA, LLAK)
+        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), FSEA(IJS),LLAK)
       ENDIF
 
 !     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(11).NE.0) THEN
-        IF(.NOT.ALLOCATED(ESEA)) ALLOCATE(ESEA(IJS:IJL))
+      IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0) THEN
         LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+        CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
       ENDIF
       
       IF(IPFGTBL(13).NE.0) THEN
-        IF(.NOT.ALLOCATED(THWISEA)) ALLOCATE(THWISEA(IJS:IJL))
-        CALL STHQ   (FL1, IJS, IJL, THWISEA)
+        CALL STHQ   (FL1, IJS, IJL, THWISEA(IJS))
+!       if there isn't any windsea energy, set the windsea mean direction
+!       to the wind direction.
+        DO IJ=IJS,IJL
+          IF(ESEA(IJ).LE.0.) THEN
+            THWISEA(IJ)=THWOLD(IJ,IG)
+          ENDIF
+        ENDDO
       ENDIF
 
       IF(IPFGTBL(28).NE.0) THEN
-        IF(.NOT.ALLOCATED(P1SEA)) ALLOCATE(P1SEA(IJS:IJL))
-        IF(.NOT.ALLOCATED(ESEA)) THEN
-          ALLOCATE(ESEA(IJS:IJL))
+        IF(IPFGTBL(11).EQ.0) THEN
           LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
         ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESEA, P1SEA)
+        CALL MWP1 (FL1, IJS, IJL, ESEA(IJS), P1SEA(IJS))
       ENDIF
 
       IF(IPFGTBL(30).NE.0) THEN
-        IF(.NOT.ALLOCATED(P2SEA)) ALLOCATE(P2SEA(IJS:IJL))
-        IF(.NOT.ALLOCATED(ESEA)) THEN
-          ALLOCATE(ESEA(IJS:IJL))
+        IF(IPFGTBL(11).EQ.0) THEN
           LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA, LLEPSMIN)
+          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
         ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESEA, P2SEA)
+        CALL MWP2 (FL1, IJS, IJL, ESEA(IJS), P2SEA(IJS))
       ENDIF
 
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
-        IF(.NOT.ALLOCATED(SPRDSEA)) ALLOCATE(SPRDSEA(IJS:IJL))
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA)
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
       ENDIF
-
 
       RETURN
       END SUBROUTINE SEPWISW

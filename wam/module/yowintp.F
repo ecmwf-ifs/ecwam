@@ -23,6 +23,7 @@
       REAL, ALLOCATABLE :: C4G(:,:) 
       REAL, ALLOCATABLE :: BFG(:,:) 
       REAL, ALLOCATABLE :: PFG(:,:) 
+      REAL, ALLOCATABLE :: DEPTHG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -52,6 +53,7 @@
 !      *C4G*       REAL      GRIDDED SPECTRAL KURTOSIS (-). 
 !      *BFG*       REAL      GRIDDED BENJAMIN-FEIR INDEX (-). 
 !      *PFG*       REAL      GRIDDED SPECTRAL PEAKEDNESS (-). 
+!      *DEPTHG*    REAL      GRIDDED MODEL DEPTH.
 
 
 ! ----------------------------------------------------------------------

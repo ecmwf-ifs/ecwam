@@ -80,7 +80,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS
+     &            HOPERS   ,PPRESOL
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
@@ -105,7 +105,8 @@
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,MARSTYPE ,
-     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,LSARINV
+     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,LSARINV  ,
+     &            IREFDATE
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -327,11 +328,12 @@
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                     DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
+     &                     DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                     LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
+     &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
+     &                     MFDBSF)
             CALL GSTATS(1976,0)
             ISTAT = IFLUSHFDBSUBS (MFDBSF)
             CALL MPL_BARRIER(CDSTRING='WAMASSI:')

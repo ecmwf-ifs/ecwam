@@ -40,7 +40,7 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESI ,
+     &            PPEPS    ,PPREC    ,NTENCODE ,NGRBRESI ,
      &            NGRBRESS ,HOPERI   ,HOPERS 
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
@@ -114,7 +114,7 @@
       KTAG=100
 
       NANGMAX=24
-      NFREMAX=30
+      NFREMAX=36
 
       ALLOCATE (NSTART(NPROC),NEND(NPROC))
 
@@ -134,7 +134,7 @@
 !     SET GRIB HEADERS FOR INPUTS/OUTPUTS
       CALL SETWGRIBHD
 
-      NKSEK1= 51+NANGMAX+NFREMAX
+      NKSEK1= 54+NANGMAX+NFREMAX
       IF(NANG .GT. NANGMAX) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*  NANG > NANGMAX !!! '
@@ -446,7 +446,11 @@
            IF(KFRE.EQ.NFRE ) THEN
              WRITE(IU06,*) ' BUT NO FREQUENCY INTERPOLATION REQUIRED.'
            ELSEIF((KFRE.EQ.25 .AND. NFRE.EQ.30) .OR.
-     &            (KFRE.EQ.30 .AND. NFRE.EQ.25) ) THEN
+     &            (KFRE.EQ.25 .AND. NFRE.EQ.36) .OR.
+     &            (KFRE.EQ.30 .AND. NFRE.EQ.25) .OR.
+     &            (KFRE.EQ.30 .AND. NFRE.EQ.36) .OR.
+     &            (KFRE.EQ.36 .AND. NFRE.EQ.25) .OR.
+     &            (KFRE.EQ.36 .AND. NFRE.EQ.30) ) THEN
              WRITE(IU06,*) ' AND FREQUENCY INTERPOLATION ALSO REQUIRED.'
              WRITE(IU06,*) ' INPUT NUMBER OF FREQUENCIES: ',KFRE
              WRITE(IU06,*) ' MODEL NUMBER OF FREQUENCIES: ',NFRE
@@ -463,7 +467,11 @@
          ELSEIF( KANG.EQ.NANG .AND. KFRE.NE.NFRE) THEN
            WRITE(IU06,*) ' NO DIRECTIONAL INTERPOLATION REQUIRED.'
            IF((KFRE.EQ.25 .AND. NFRE.EQ.30) .OR.
-     &        (KFRE.EQ.30 .AND. NFRE.EQ.25) ) THEN
+     &        (KFRE.EQ.25 .AND. NFRE.EQ.36) .OR.
+     &        (KFRE.EQ.30 .AND. NFRE.EQ.25) .OR.
+     &        (KFRE.EQ.30 .AND. NFRE.EQ.36) .OR.
+     &        (KFRE.EQ.36 .AND. NFRE.EQ.25) .OR.
+     &        (KFRE.EQ.36 .AND. NFRE.EQ.30) ) THEN
              WRITE(IU06,*) ' BUT FREQUENCY INTERPOLATION IS REQUIRED.'
              WRITE(IU06,*) ' INPUT NUMBER OF FREQUENCIES: ',KFRE
              WRITE(IU06,*) ' MODEL NUMBER OF FREQUENCIES: ',NFRE
@@ -497,8 +505,8 @@
 
          KKKPR=0
 
-         IF(KFRE.EQ.25 .AND. NFRE.EQ.30) THEN
-!          BY DEFINITION THE FIRST FREQUENCY FOR THE 30 FREQUENCIES
+         IF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
+!          BY DEFINITION THE FIRST FREQUENCY FOR THE 30/36 FREQUENCIES
 !          CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
 !          CASES.
            FIELD=PSEK3(2)
@@ -527,14 +535,19 @@
 
            IF(KFRE.EQ.NFRE) THEN
              M=MMM
-           ELSEIF(KFRE.EQ.25 .AND. NFRE.EQ.30) THEN
-!            BY DEFINITION THE FIRST FREQUENCY FOR THE 30 FREQUENCIES
+           ELSEIF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
+!            BY DEFINITION THE FIRST FREQUENCY FOR THE 30/36 FREQUENCIES
 !            CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
 !            CASES.
              M=MMM+2
-           ELSEIF(KFRE.EQ.30 .AND. NFRE.EQ.25) THEN
+           ELSEIF((KFRE.EQ.30.OR.KFRE.EQ.36) .AND. NFRE.EQ.25) THEN
              M=MMM-2
              IF(MMM.LT.3 .OR. MMM.GT.27) GOTO 2000
+           ELSEIF(KFRE.EQ.30 .AND. NFRE.EQ.36) THEN
+             M=MMM
+           ELSEIF(KFRE.EQ.36 .AND. NFRE.EQ.30) THEN
+             M=MMM
+             IF(MMM.GT.30) GOTO 2000
            ELSE
              WRITE(IU06,*) '************************************'
              WRITE(IU06,*) ' NOT READY FOR THIS TYPE OF'
@@ -644,12 +657,19 @@
 
          ENDDO
 
-         IF(KFRE.EQ.25 .AND. NFRE.EQ.30) THEN
+         IF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
 !          BY DEFINITION THE FIRST FREQUENCY FOR THE 30 FREQUENCIES
 !          CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
 !          CASES.
            FIELD=PSEK3(2)
-           DO M=28,30
+           DO M=28,NFRE
+             DO K=1,NANG
+               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+             ENDDO
+           ENDDO
+         ELSEIF(KFRE.EQ.30 .AND. NFRE.EQ.36 ) THEN
+           FIELD=PSEK3(2)
+           DO M=31,NFRE
              DO K=1,NANG
                CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
              ENDDO

@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, SL)
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -8,6 +8,8 @@
 !     MODIFIED TO SHALLOW WATER : G. KOMEN , P. JANSSEN
 !     OPTIMIZATION : L. ZAMBRESKY
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
+!     J. BIDLOT   ECMWF  NOVEMBER 2004  REFORMULATION BASED ON XKMEAN
+!                                       AND F1MEAN.
 
 !*    PURPOSE.
 !     --------
@@ -18,12 +20,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN)*
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
+!          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
+!          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
 
 !     METHOD.
 !     -------
@@ -44,7 +48,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
+      USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
@@ -58,7 +62,10 @@
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
-      PARAMETER (CDIS = 4.5)
+      REAL,DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN
+
+      PARAMETER (CDIS = 2.1)
+      PARAMETER (DELTA = 0.6)
 
 ! ----------------------------------------------------------------------
 
@@ -66,18 +73,15 @@
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
 
-      CONSD = -0.5*CDIS*ZPI**9/G**4
-      CONSS = -0.5*CDIS*ZPI
-
       IF (ISHALLO.EQ.1) THEN
+        CONSD = -CDIS*ZPI**9/G**4
         DO IJ=IJS,IJL
-          SDS(IJ) = CONSD*EMEAN(IJ)**2*FMEAN(IJ)**9
+          SDS(IJ) = CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
         ENDDO
-
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            X         = (FR(M)/FMEAN(IJ))**2
-            TEMP1(IJ) = SDS(IJ)*( X + X**2)
+            X         = (FR(M)/F1MEAN(IJ))**2
+            TEMP1(IJ) = SDS(IJ)*( (1.-DELTA)*X + DELTA*X**2)
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -88,14 +92,15 @@
         ENDDO
       ELSE
 !SHALLOW
+        CONSS = -CDIS*ZPI
         DO IJ=IJS,IJL
-          SDS(IJ) = CONSS*FMEAN(IJ)*EMEAN(IJ)**2*AKMEAN(IJ)**4
+          SDS(IJ) = CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
         ENDDO
 
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            X         = TFAK(INDEP(IJ),M)/AKMEAN(IJ)
-            TEMP1(IJ) = SDS(IJ)*( X + X**2)
+            X         = TFAK(INDEP(IJ),M)/XKMEAN(IJ)
+            TEMP1(IJ) = SDS(IJ)*( (1.-DELTA)*X + DELTA*X**2)
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL

@@ -90,6 +90,7 @@
         ELSEIF(IPARAM.EQ.31) THEN
           WRITE(IU06,*) 'SEA ICE FRACTION GRID:'
           TITL=  'SEA ICE FRACTION '
+          WORK=FIELD*100
         ELSE
           WRITE(IU06,*) 'PARAMETER ',IPARAM
           TITL=  'UNKNOW FIELD '

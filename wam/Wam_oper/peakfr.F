@@ -52,13 +52,13 @@
 
       DO IJ = IJS,IJL
         TEMP1(IJ) = 0.
-        PEAKF(IJ) = 0.
+        PEAKF(IJ) = FR(NFRE)
       ENDDO
 
 !*    2. LOOP OVER FREQUENCIES
 !        ---------------------
 
-      DO M = 1,NFRE
+      DO M = NFRE,1,-1
 
 !*    2.1 COMPUTE 1-D SPECTRUM (WITHOUT DELTA THETA)
 !        -------------------------------------------

@@ -58,11 +58,12 @@
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
      &            LFDB     ,IPFGTBL
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
-      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
-     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,PFG
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,PFG      ,
+     &            DEPTHG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -106,8 +107,8 @@
      &     allocated(tauwg).and.
      &     allocated(wpkftg).and.
      &     allocated(wmnftg) ) then
+          i=max(1,ngx/2)
           do j=1,ngy
-          do i=1,ngx
             if(whgttg(i,j).ne.zmiss) then
 !             take the definiton from the model for the relation
 !             between ustar and u10g (see buildstress)
@@ -124,12 +125,38 @@
               charnock=max(g*z0/ustar2,alpha)
               X=min(tauwg(i,j),0.99999999)
               charnock2=alpha/sqrt(1.-X)
-              write(iu06,*) 'grow ',tstar,estar,ustar,whgttg(i,j)**2/16,
+              distance=(ngy-j+1)*DELPHI
+              fetch=g*distance/ustar2
+              write(iu06,*) 'grow ',ngy-j+1,
+     &                      tstar,estar,ustar,whgttg(i,j)**2/16,
      &                      cdg(i,j),u10g(i,j),anfit,fmstar,fmfit,
-     &                      wpkftg(i,j),charnock,charnock2
+     &                      wpkftg(i,j),charnock,charnock2,fetch
+              write(iu06,*) ' '
+!!! alternative scaling on u10
+              u10=u10g(i,j)
+              ustar2=max(cdg(i,j)*max(u10g(i,j)**2,epsu10),epsus)
+              ustar=sqrt(ustar2)
+              tstar=itime*g/u10
+              estar=(whgttg(i,j)**2/16)*g**2/(u10**4)
+              anfit=EGRCRV*(tstar/(AGRCRV+tstar))**BGRCRV
+              fmstar=u10/(mwp1g(i,j)*g)
+
+              fmstar1=u10*wmnftg(i,j)/g
+
+              fmfit=AFCRV*fmstar**BFCRV
+              cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
+              z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
+              charnock=max(g*z0/ustar2,alpha)
+              X=min(tauwg(i,j),0.99999999)
+              charnock2=alpha/sqrt(1.-X)
+              distance=(ngy-j+1)*DELPHI
+              fetch=g*distance/(u10**2)
+              write(iu06,*) 'u10scaling ',ngy-j+1,
+     &                      tstar,estar,ustar,whgttg(i,j)**2/16,
+     &                      cdg(i,j),u10g(i,j),anfit,fmstar1,fmfit,
+     &                      wpkftg(i,j),charnock,charnock2,fetch
               write(iu06,*) ' '
             endif
-          enddo
           enddo
         endif
 
@@ -220,6 +247,7 @@
         IF (FFLAG(34))CALL MPGATHERGRDFLD(IPFGTBL(34),IRECV,34,C4G)
         IF (FFLAG(35))CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,35,BFG)
         IF (FFLAG(36))CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,36,PFG)
+        IF (FFLAG(37))CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,37,DEPTHG)
 
       ENDIF
 
@@ -285,6 +313,8 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,135,BFG)
         IF (PFLAG(36).OR.(.NOT.LFDB.AND.GFLAG(36)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,136,PFG)
+        IF (PFLAG(37).OR.(.NOT.LFDB.AND.GFLAG(37)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,136,DEPTHG)
 
       ENDIF
 
@@ -342,6 +372,7 @@
             IF (FFLAG(34))WRITE (IU20) C4G
             IF (FFLAG(35))WRITE (IU20) BFG
             IF (FFLAG(36))WRITE (IU20) PFG
+            IF (FFLAG(37))WRITE (IU20) DEPTHG
           ENDIF
         ENDIF
 
@@ -480,6 +511,14 @@
             TITL = ' SPECTRAL PEAKEDNESS (0.1 Hz)'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
      &                 PFG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
+        IF (PFLAG(37)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MODEL BATHYMETRY (m)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 DEPTHG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
 
@@ -930,6 +969,25 @@
             ilocal=ilocal+1
             IPARAM=254
             CALL GRIBPAC(IU06,IU30,NTENCODE,PFG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      MODEL BATHYMETRY.
+!       -----------------
+
+        IF (GFLAG(37).AND.
+     &                    ( (MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) .OR.
+     &                      (MARSTYPE.NE.'fg'.AND.IFCST.EQ.0) )
+     &     ) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(37)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=219
+            CALL GRIBPAC(IU06,IU30,NTENCODE,DEPTHG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF

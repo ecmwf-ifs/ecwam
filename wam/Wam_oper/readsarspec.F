@@ -20,7 +20,7 @@
 ! ----------------------------------------------------------------------
 !     MODULES:
 !     --------
-      USE YOWICE   , ONLY : FLMIN
+      USE YOWICE   , ONLY : FLMINFR
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : ZPI     ,RAD
       USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG     ,LAT      ,
@@ -34,7 +34,7 @@
       IMPLICIT NONE
 
       INTEGER :: INUNIT, IFL300, INOSPEC
-      INTEGER :: ISPEC, IANG, IFRE, IC, IDOUBLE, ISAR, KCOUNT
+      INTEGER :: ISPEC, IANG, IFRE, IC, IDOUBLE, ISAR, KCOUNT, IC, ISS
       INTEGER :: INTDUMMY,JQUAL, IFAIL
 
       REAL :: TRACK, ZCOST, USTAR, THW, ZCORWA, ZCORFG, ZCORBE, SCLWSI
@@ -64,7 +64,15 @@
       ISPEC = 1
       INOSPEC = 0
       IDOUBLE = 0
-      SPEC=FLMIN
+      DO IC=1,2
+        DO IANG=1,NANG
+          DO IFRE=1,NFRE
+            DO ISS=0,NSPEC
+            SPEC(ISS,IANG,IFRE,IC) = 0.25*FLMINFR(1,IFRE) 
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDDO
       LONG=0.
       LAT=0.
       XKLOW=0.
@@ -226,12 +234,12 @@
      &    WRITE(IU06,*) '  NUMBER OF DOUBLE SPECTRA  = ',IDOUBLE
 
 !       SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
-!       (ie FLMIN)
 
         DO IFRE = 1,NFRE
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
-             SPEC(ISPEC,IANG,IFRE,2)=MAX(SPEC(ISPEC,IANG,IFRE,2),FLMIN) 
+             SPEC(ISPEC,IANG,IFRE,2)=
+     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25*FLMINFR(1,IFRE)) 
             END DO
           END DO
         END DO

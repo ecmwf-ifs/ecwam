@@ -151,30 +151,6 @@
 
       IF(LMESSPASS) THEN
 
-!     0.01 INITIALISE FDB SERVER FOR DISTRIBUTED MEMORY ARCHITECHTURE
-!          ----------------------------------------------------------
-        IF(LFDB) THEN
-          DBNAME='fdb'
-          IFDBST = IINITFDB_VPP(DBNAME)
-
-          IF(IFDBST.LT.0) THEN 
-            IU06=6
-            WRITE (IU06,*) ' *********************************'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * PROBLEM WITH IINITFDB_VPP:    *'
-            WRITE (IU06,*) ' * =========================     *'
-            WRITE (IU06,*) ' *                               *'
-            IF(IFDBST.EQ.-1)
-     &       WRITE (IU06,*) ' * USER ERROR                    *'
-            IF(IFDBST.EQ.-2)
-     &       WRITE (IU06,*) ' * TCP/IP ERROR                  *'
-            IF(IFDBST.EQ.-3)
-     &       WRITE (IU06,*) ' * MEMORY ERROR                  *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *********************************'
-          ENDIF
-        ENDIF
-
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
 !         -----------------------------------
 

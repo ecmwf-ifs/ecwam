@@ -9,6 +9,7 @@
 !     J. BIDLOT    ECMWF   OCTOBER 1998 COMPLETE READING OF
 !                                       IU07 AND IU08 
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
+!     J. BIDLOT    ECMWF   OCTOBER 2000 NOW READING SQRT(TAUT)
 
 !     J. BIDLOT    ECMWF   FEBRUARY 2002 NEW 2-D DECOMPOSITION
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -101,9 +102,12 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,FR5     ,
-     &             FRM5     ,COFRM4   ,COEF4
+     &             FRM5     ,COFRM4   ,COEF4    ,DFFR     ,DFFR2
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,
-     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1
+     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1,
+     &            DELPHI
+      USE YOWICE   , ONLY : FLMIN    ,FLMINFR
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,
@@ -115,7 +119,7 @@
       USE YOWPCONS , ONLY : G
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : IREFRA 
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
+      USE YOWTABL  , ONLY : JUMAX    ,UMAX     ,DELU
       USE YOWTEST  , ONLY : IU06
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
@@ -189,21 +193,14 @@
 
       WRITE(IU06,*) ' PREPROC GRID INFORMATION READ IN '
 
-!     TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
-!     OF THE INPUT VALUES !!!!!!!
-
-      DO ILV = 1,JPLEVT
-        DO J = 0,JUMAX
-          DO I = 0,ITAUMAX
-            TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
-          ENDDO
-        ENDDO
-      ENDDO
-
-!     DEFINE COEFFICIENT FOR MEAN PERIOD (-1) CALCULATION
+!     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
       ALLOCATE(DFIMOFR(NFRE))
+      ALLOCATE(DFFR(NFRE))
+      ALLOCATE(DFFR2(NFRE))
       DO M=1,NFRE
         DFIMOFR(M) = DFIM(M)/FR(M)
+        DFFR(M) = DFIM(M)*FR(M)
+        DFFR2(M) = DFIM(M)*FR(M)**2
       ENDDO
 
 !     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
@@ -225,6 +222,45 @@
         DO IJ = IJS(IG),IJL(IG)
           KMNOP=MAX(KXLT(IJ,IG),KMNOP)
           KMSOP=MIN(KXLT(IJ,IG),KMSOP)
+        ENDDO
+      ENDDO
+
+
+!     MINIMUM ENERGY IN SPECTRAL BINS 
+
+      ALLOCATE(FLMINFR(JUMAX,NFRE))
+
+      GAMMA=3.000000
+      SA=7.000000E-02
+      SB=9.000000E-02
+      FETCH=MIN(0.5*DELPHI,25000.)
+      GX = G * FETCH
+
+!     THE ACTUAL VALUE OF ALPHJO IS NOT IMPORTANT. IT IS RESCALED
+      ALPHJO = 1.
+
+      DO J = 1,JUMAX
+        U10=REAL(J)*DELU
+!       find peak period  from fetch law
+!       the same formulation as in subroutine peak is used.
+        GXU = GX/(U10*U10)
+        UG = G/U10
+        FPK = AJONS * GXU ** DJONS
+        FPK = MAX(0.13, FPK)
+        FPK = FPK*UG
+        FPK = MIN(FR(NFRE), FPK)
+        CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, FLMINFR(J,:))
+      ENDDO
+!     RESCALE SPECTRUM SUCH THE MAX IS ALWAYS EQUAL to 4*FLMIN
+!     (factor 4 because of the cos square spreading)
+      DO J = 1,JUMAX
+        FLMAX=0.
+        DO M = 1,NFRE
+          FLMAX=MAX(FLMAX,FLMINFR(J,M))
+        ENDDO
+        RSCALE=4*FLMIN/FLMAX
+        DO M = 1,NFRE
+          FLMINFR(J,M)=RSCALE*FLMINFR(J,M)
         ENDDO
       ENDDO
 

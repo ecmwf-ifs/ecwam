@@ -55,7 +55,7 @@
      &            NTENCODE ,PPEPS    ,PPREC
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
-      USE YOWICE   , ONLY : FLMIN    ,ICEMASK
+      USE YOWICE   , ONLY : FLMINFR  ,ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOSOP   ,
      &            AMONOP   ,XDELLA
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LFDBIOIN ,LGRIBIN
@@ -67,6 +67,7 @@
      &            EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CFDB2DSP ,YCLASS   ,
      &            YEXPVER
+      USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
@@ -438,7 +439,8 @@ C
               WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                                     KSEC1(13),KSEC1(14)
 
-              IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11)
+              IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.6.OR.
+     &           KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11)
      &        THEN
                 IF (KSEC1(15).EQ.0) THEN
                   JCONS = 60
@@ -580,7 +582,7 @@ C
                 IF (WORK(IJ) .NE. ZMISS) THEN
                   WORK(IJ) = 10.**(WORK(IJ)-ABS(PPREC))- PPEPS
                 ELSE
-                  WORK(IJ) = FLMIN
+                  WORK(IJ) = EPSMIN
                 ENDIF
               ENDDO
               CALL GSTATS(1886,1)
@@ -821,7 +823,7 @@ C
 
       ENDIF
 
-      IF(.NOT.LRESTARTED) THEN
+      IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
 !       TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
 !       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
 !       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
@@ -829,7 +831,7 @@ C
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=NSTART(IRANK),NEND(IRANK)
-               IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = 0. 
+               IF(FL(IJ,K,M) .LE. EPSMIN) FL(IJ,K,M) = 0. 
             ENDDO
           ENDDO
         ENDDO
@@ -886,7 +888,10 @@ C
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=NSTART(IRANK),NEND(IRANK)
-               IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = FLMIN 
+               XJ=U10OLD(IJ,1)/DELU
+               JU=MIN(JUMAX, MAX(NINT(XJ),1))
+               FLLOWEST=FLMINFR(JU,M)*MAX(0.,COS(TH(K)-THWOLD(IJ,1)))**2
+               IF(FL(IJ,K,M) .LE. FLLOWEST) FL(IJ,K,M) = FLLOWEST
             ENDDO
           ENDDO
         ENDDO

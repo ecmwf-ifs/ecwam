@@ -44,7 +44,8 @@
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,NLOCGRB  ,
-     &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM
+     &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM     ,
+     &            IREFDATE
       USE YOWTEST  , ONLY : IU06     ,ITEST 
 
       IMPLICIT NONE
@@ -55,7 +56,7 @@
 
 !-------------------------------------------------------------------
 
-      NKSEK1 = 51+NANG+NFRE
+      NKSEK1 = 55+NANG+NFRE
 
       ALLOCATE(KSEK0(NKSEK0))
       ALLOCATE(KSEK1(NKSEK1))
@@ -116,6 +117,9 @@
         IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
      &                        .OR. ISTREAM .EQ. 1095 ) THEN
           KSEK1(37) =    15
+        ELSE IF(ISTREAM .EQ. 1203 .OR.
+     &          ISTREAM .EQ. 1204 ) THEN
+          KSEK1(37) =    23
         ELSE
           KSEK1(37) =     1
         ENDIF
@@ -128,7 +132,9 @@
       ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
         KSEK1(40)=1082      ! STREAM 1082=SEASONAL WAVE (WASF) 
 !                             note that for monthly fc you must
-!                             specify it with ISTREAM=1095
+!                             specify it with ISTREAM=1095 (old)
+!                             or 1203 for new monthly forecast
+!                             or 1204 for new monthly forecast hindcast
       ELSE IF(NLOCGRB == 18 ) THEN
         KSEK1(40)=1083      ! STREAM 1083 for multi analysis ensemble
       ELSE
@@ -195,7 +201,10 @@
         KSEK1(45) = 0
       ELSE IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
      &                           .OR. ISTREAM .EQ. 1095
-     &                           .OR. NLOCGRB == 15 ) THEN
+     &                           .OR. ISTREAM .EQ. 1203
+     &                           .OR. ISTREAM .EQ. 1204
+     &                           .OR. NLOCGRB == 15
+     &                           .OR. NLOCGRB == 23 ) THEN
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
                             ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
@@ -206,6 +215,13 @@
         KSEK1(43) = 0
         KSEK1(44) = 0
         KSEK1(45) = 0
+      ENDIF
+
+!     monthly forecast hindcasts need a reference date
+      IF(KSEK1(40) == 1204 ) THEN
+        KSEK1(49) = IREFDATE 
+      ELSE
+        KSEK1(49) = 0
       ENDIF
 
 !    *SECTION 2*  INTEGER  GRID DEFINITION BLOCK.

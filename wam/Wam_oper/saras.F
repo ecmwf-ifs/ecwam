@@ -45,8 +45,6 @@
 !                  SPECTRA TO ANALYSED MEAN VALUES
 !                  AND COMBINES ANALYSED PARTITIONINGS
 !                  TO ONE SPECTRUM.
-!     WINDCOR    - COMPUTES ANALYSED WINDS FROM WIND-SEA
-!                  PARTITIONING.
 
 !     FILES:
 !     ------

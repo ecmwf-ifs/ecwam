@@ -305,7 +305,7 @@
 
       BETAMAX = 1.20
       ZALP    = 0.0110
-      ALPHA   = 0.0100
+      ALPHA   = 0.0095
       XKAPPA  = 0.40
 
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.

@@ -71,6 +71,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSLAT,IOBSLON
       INTEGER :: LEVEL(NREF),NDEPTH(NREF)
 
+      REAL, PARAMETER :: OLDPI = 3.1415927
       REAL, ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
       REAL, ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL, ALLOCATABLE, DIMENSION(:) :: FR
@@ -91,17 +92,18 @@
 
       PI=4.*ATAN(1.)
       RAD=PI/180.
+      OLDRAD=OLDPI/180.
       G=9.806
 
 !     FIRST OR THIRD FREQUENCY IN WAM
       FR1= 4.177248E-02
       FRATIO=1.1
-!!!   the obstructions will be produced for 30 frequencies
-!!!   if 25 frequencies are used then the irrelevant
+!!!   the obstructions will be produced for 36 frequencies
+!!!   if 30 or 25 frequencies are used then the irrelevant
 !!!   frequencies will be skipped (see topoar). Any other
 !!!   number will not work.
 
-      NFRE=30
+      NFRE=36
 
 
 !     READ INPUT SELECTION
@@ -177,7 +179,14 @@
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF(.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            NLONRGG(K) = NINT(NX*COSPH(K))
+            IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
+     &         AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
+!         the old value for pi has to be taken in order to reproduce
+!         exactly the irregular grid of the operational LAW model 0.25
+              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
+            ELSE
+              NLONRGG(K) = NINT(NX*COSPH(K))
+            ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX
@@ -193,7 +202,7 @@
       ENDDO
 
       ALLOCATE(FR(NFRE))
-      IF(NFRE.EQ.30) THEN
+      IF(NFRE.EQ.30 .OR. NFRE.EQ.36) THEN
         FR(3)=FR1
         FR(2)=FR(3)/FRATIO
         FR(1)=FR(2)/FRATIO

@@ -66,6 +66,7 @@
       REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW, U10NEW,
      &                             ROAIRN,ZIDLNEW
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1,SL
+      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
 
 ! ----------------------------------------------------------------------
 
@@ -85,7 +86,7 @@
       ENDIF
 
       CALL SINPUT (FL1, SL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL)
+     &             ROAIRN, ZIDLNEW, SL, LLWS)
 
 !!!   SL is used twice which means that according to SINPUT it will
 !!!   be at the end the wind input source function which is the part
