@@ -324,10 +324,10 @@
                 kerr = 1
                 return
               endif
+              istat = isetvalfdb( iaddr1,  'origin', cdorigin )
             else
-              cdorigin = 'cons'
+              istat = isetvalfdb( iaddr1,  'origin', 'consensus' )
             endif
-            istat = isetvalfdb( iaddr1,  'origin', cdorigin )
           endif
 
         ENDIF

@@ -44,7 +44,7 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
+      USE YOWMPP   , ONLY : IRANK     ,NPROC
       USE YOWPARAM , ONLY : NIBLO
       USE MPL_MODULE
 
@@ -55,36 +55,26 @@
       REAL,DIMENSION(NIBLO) :: FIELD
 !----------------------------------------------------------------------
 
-      REAL,DIMENSION(MPMAXLENGTH) :: ZCOMBUF
+      INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
 
       IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
+
         RETURN
-      ELSEIF(IRANK.NE.IRECV) THEN
-!     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
-!         ------------------------------------------------
-        KCOUNT=0
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=FIELD(IJ)
-        ENDDO
-        CALL MPL_SEND(ZCOMBUF(1:MPMAXLENGTH),KDEST=IRECV,KTAG=ITAG,
-     &   CDSTRING='MPGATHERSCFLD:')
 
       ELSE
-!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
-!         ---------------------------------------------------------- 
-        DO IP=1,NPROC-1
-          CALL MPL_RECV(ZCOMBUF(1:MPMAXLENGTH),KTAG=ITAG,
-     &     KRECVTAG=KRTAG,KFROM=KRFROM,CDSTRING='MPGATHERSCFLD:')
-          IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR in MPGATHERSCFLD MISMATCHED TAGS' )
 
-          KCOUNT=0
-          DO IJ=NSTART(KRFROM),NEND(KRFROM)
-            KCOUNT=KCOUNT+1
-            FIELD(IJ)=ZCOMBUF(KCOUNT)
-          ENDDO 
+        DO IP=1,NPROC
+
+         KRECVCOUNTS(IP)=NEND(IP) - NSTART(IP)+1
+
         ENDDO
+
+        CALL MPL_GATHERV(FIELD(NSTART(IRANK):NEND(IRANK)),
+     &                   KRECVCOUNTS=KRECVCOUNTS,
+     &                   PRECVBUF=FIELD(1:NIBLO),
+     &                   KROOT=IRECV,
+     &                   CDSTRING='MPGATHERSCFLD:')
+
       ENDIF
 
       RETURN

@@ -70,6 +70,8 @@
 
       LOGICAL LLOPENED, LLTEST
       INTEGER IREAD
+      INTEGER,DIMENSION(NPROC) :: ISENDLEN
+      INTEGER,ALLOCATABLE :: ISENDREQ(:)
       CHARACTER* 3 CLFID
       CHARACTER*4 CSTRM
       CHARACTER*12 CTIME
@@ -81,11 +83,14 @@
       INTEGER,ALLOCATABLE,DIMENSION(:) :: ICOMBUF
       INTEGER,ALLOCATABLE,DIMENSION(:,:) :: IJALTPE, ITEMP
       REAL,ALLOCATABLE, DIMENSION(:) :: ZCOMBUF, TEMP
+      REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
+      REAL,ALLOCATABLE :: ZCOMBUFR(:)
       REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB
       REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
       REAL :: NFRPEALT
       REAL :: WHMOD(NIBLO)
       LOGICAL :: LSQRT
+      LOGICAL :: LLCOMMON(NPROC)
       LOGICAL,ALLOCATABLE, DIMENSION(:) :: LLWITHIN 
 
 
@@ -608,31 +613,64 @@
 !     BY DISTRIBUTING THEM ONTO THE DIFFERENT PE'S
 
       IF(LMESSPASS .AND. NPROC.GT. 1) THEN
-!       SENDING THE CONTRIBUTION WHICH MIGHT BE COMMON
+        IZCOMLENMAX=(NIJALT+1+NALTDT) * NOBSPE(IRANK)
+        NDISPE=0
         DO IR = 1, NPROC
           IF(INTLMAX(IR,IRANK).EQ.1 .AND. IR.NE.IRANK) THEN
             IF(NOBSPE(IRANK) .GT. 0 ) THEN
-              IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IRANK)
-              ALLOCATE(ZCOMBUF(IZCOMLEN))
+              LLCOMMON(IR)=.TRUE.
+              NDISPE=NDISPE+1
+            ELSE
+              LLCOMMON(IR)=.FALSE.
+            ENDIF
+          ELSE
+            LLCOMMON(IR)=.FALSE.
+          ENDIF
+        ENDDO
+
+        IF(IZCOMLENMAX.GT.0) THEN
+!         PACKING THE CONTRIBUTION WHICH MIGHT BE COMMON
+          ALLOCATE(ZCOMBUFS(IZCOMLENMAX,NDISPE))
+          ALLOCATE(ISENDREQ(NDISPE))
+          IDISPE=0
+          DO IR = 1, NPROC
+            IF(LLCOMMON(IR)) THEN
+              IDISPE=IDISPE+1
               ICOUNT = 0
               DO IIJALT = 1, NIJALT+1
                 DO IOBS = 1, NOBSPE(IRANK)
                   ICOUNT = ICOUNT + 1
-                  ZCOMBUF(ICOUNT) = FLOAT(IJALT(IOBS,IIJALT))
+                  ZCOMBUFS(ICOUNT,IDISPE) = FLOAT(IJALT(IOBS,IIJALT))
                 ENDDO
               ENDDO
               DO IALTDT = 1, NALTDT
                 DO IOBS = 1, NOBSPE(IRANK)
                   ICOUNT = ICOUNT + 1
-                  ZCOMBUF(ICOUNT) = ALTDATA(IOBS,IALTDT)
+                  ZCOMBUFS(ICOUNT,IDISPE) = ALTDATA(IOBS,IALTDT)
                 ENDDO
               ENDDO
-              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
-     &                      CDSTRING='GRFIELD 3:')
-              DEALLOCATE(ZCOMBUF)
+              ISENDLEN(IR)=ICOUNT
+            ELSE
+              ISENDLEN(IR)=0
             ENDIF
-          ENDIF
-        ENDDO
+          ENDDO
+
+!         SENDING THE CONTRIBUTION WHICH MIGHT BE COMMON
+!         SEND NON BLOCKING THE BUFFERS
+
+          IDISPE=0
+          DO IR = 1, NPROC
+            IF(LLCOMMON(IR)) THEN
+              IDISPE=IDISPE+1
+              ICOUNT = ISENDLEN(IR) 
+              CALL MPL_SEND(ZCOMBUFS(1:ICOUNT,IDISPE),
+     &                      KDEST=IR,KTAG=KTAG,
+     &                      KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                      KREQUEST=ISENDREQ(IDISPE),
+     &                      CDSTRING='GRFIELD 3:')
+            ENDIF
+          ENDDO
+        ENDIF
 
         ALLOCATE(XLONG(NSTART(IRANK):NEND(IRANK)))
         DO IJ=NSTART(IRANK),NEND(IRANK)
@@ -644,9 +682,9 @@
         DO IPR = 1, NFRPEALT
 
           IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPEMAX
-          ALLOCATE(ZCOMBUF(IZCOMLEN))
+          ALLOCATE(ZCOMBUFR(IZCOMLEN))
 
-          CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KFROM=IR,KTAG=KTAG,
+          CALL MPL_RECV(ZCOMBUFR(1:IZCOMLEN),KFROM=IR,KTAG=KTAG,
      &           KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 4:')
           IF(KRTAG.NE.KTAG) CALL MPL_ABORT
      &    ('MPL_RECV ERROR in GRFIELD 3 : MISMATCHED TAGS' )
@@ -657,7 +695,7 @@
           DO IIJALT = 1, NIJALT+1
             DO IOBS = 1, NOBSPE(IR)
               ICOUNT = ICOUNT + 1
-              IJALTPE(IOBS,IIJALT) = NINT(ZCOMBUF(ICOUNT)) 
+              IJALTPE(IOBS,IIJALT) = NINT(ZCOMBUFR(ICOUNT)) 
             ENDDO
           ENDDO
 
@@ -665,11 +703,11 @@
           DO IALTDT = 1, NALTDT
             DO IOBS = 1, NOBSPE(IR)
               ICOUNT = ICOUNT + 1
-              ALTDATAPE(IOBS,IALTDT) = ZCOMBUF(ICOUNT) 
+              ALTDATAPE(IOBS,IALTDT) = ZCOMBUFR(ICOUNT) 
             ENDDO
           ENDDO
 
-          DEALLOCATE(ZCOMBUF)
+          DEALLOCATE(ZCOMBUFR)
 
 !         how many observations are actually relevant to PE IRANK
           NOBSIN=0
@@ -762,7 +800,17 @@
 
         DEALLOCATE(XLONG)
 
+! Wait any outstanding sends to complete
+
+        IF(IZCOMLENMAX.GT.0) THEN
+          CALL MPL_WAIT(ZCOMBUFS(1:IZCOMLENMAX,1),KREQUEST=ISENDREQ,
+     &                  CDSTRING='GRFIELD')
+        ENDIF
+        IF(ALLOCATED(ISENDREQ)) DEALLOCATE(ISENDREQ)
+
         KTAG = KTAG + 1
+
+        IF(ALLOCATED(ZCOMBUFS)) DEALLOCATE(ZCOMBUFS)
 
       ENDIF
 
