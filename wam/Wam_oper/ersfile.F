@@ -125,7 +125,6 @@
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
       IF(LMESSPASS.AND.(IRANK.NE.1)) RETURN
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IF(.NOT.ALLOCATED(IJERS)) ALLOCATE(IJERS(NERS))
       IF(.NOT.ALLOCATED(IGERS)) ALLOCATE(IGERS(NERS))

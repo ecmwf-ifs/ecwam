@@ -50,6 +50,12 @@
       INTEGER MFDB2DSP 
       INTEGER NCALL 
       INTEGER ISTREAM
+      INTEGER NLOCGRB
+      INTEGER NCONSENSUS 
+      INTEGER NDWD
+      INTEGER NMFR
+      INTEGER NNCEP
+      INTEGER NUKM
 
       LOGICAL LANAONLY
       LOGICAL LALTCOR
@@ -175,5 +181,24 @@
 !                            IF SET TO 0 IT WILL NOT BE USED AND
 !                            INSTEAD MARSTYPE WILL BVE USED TO DETERMINE
 !                            THE STREAM.
+!      *NLOCGRB*   INTEGER   LOCAL GRIB TABLE NUMBER.
+!      *NCONCENSUS*INTEGER   ONLY USED IN THE CONTEXT OF MULTI-ANALYSIS
+!                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
+!                            ONE (NCONCENSUS=0) OR MORE ANALYSES ARE
+!                            USED IN THE INITIAL CONDITIONS.
+!      *NDWD*      INTEGER   ONLY USED IN THE CONTEXT OF MULTI-ANALYSIS
+!                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
+!                            DWD IS USED IN THE INITIAL CONDITIONS.
+!      *NMFR*      INTEGER   ONLY USED IN THE CONTEXT OF MULTI-ANALYSIS
+!                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
+!                            METEO FRANCE IS USED IN THE INITIAL
+!                            CONDITIONS.
+!      *NNCEP*     INTEGER   ONLY USED IN THE CONTEXT OF MULTI-ANALYSIS
+!                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
+!                            NCEP IS USED IN THE INITIAL CONDITIONS.
+!      *NUKM*      INTEGER   ONLY USED IN THE CONTEXT OF MULTI-ANALYSIS
+!                            ENSEMBLE FORECASTS. IT SPECIFIED WHETHER
+!                            THE MET OFFICE IS USED IN THE INITIAL
+!                            CONDITIONS.
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

@@ -188,7 +188,7 @@
 !        --------------------------------------------------------------
 
       IF(LMESSPASS.AND.(FFLAG20.OR.PFLAG20.OR.GFLAG20)) THEN
-!       1.1 COLLECT TOTAL SEA PARAMETER ARRAYS TO PROCESS NPROC 
+!       1.1 COLLECT TOTAL SEA PARAMETER ARRAYS TO PROCESS NPROC
 !           ---------------------------------------------------
         IRECV=NPROC
 
@@ -252,6 +252,18 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(26),IRECV,126,MWP2G)
         IF (PFLAG(27).OR.(.NOT.LFDB.AND.GFLAG(27)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(27),IRECV,127,WSPRDG)
+        IF (PFLAG(28).OR.(.NOT.LFDB.AND.GFLAG(28)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(28),IRECV,128,MWP1WG)
+        IF (PFLAG(29).OR.(.NOT.LFDB.AND.GFLAG(29)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(29),IRECV,129,MWP1SG)
+        IF (PFLAG(30).OR.(.NOT.LFDB.AND.GFLAG(30)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(30),IRECV,130,MWP2WG)
+        IF (PFLAG(31).OR.(.NOT.LFDB.AND.GFLAG(31)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(31),IRECV,131,MWP2SG)
+        IF (PFLAG(32).OR.(.NOT.LFDB.AND.GFLAG(32)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(32),IRECV,132,WSPRDWG)
+        IF (PFLAG(33).OR.(.NOT.LFDB.AND.GFLAG(33)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(33),IRECV,133,WSPRDSG)
 
       ENDIF
 
@@ -303,8 +315,8 @@
             IF (FFLAG(8)) WRITE (IU20) TAUWG
             IF (FFLAG(9)) WRITE (IU20) SMEANG
             IF (FFLAG(10))WRITE (IU20) U10G
-            IF (FFLAG(25))WRITE (IU20) MWP1G 
-            IF (FFLAG(26))WRITE (IU20) MWP2G 
+            IF (FFLAG(25))WRITE (IU20) MWP1G
+            IF (FFLAG(26))WRITE (IU20) MWP2G
             IF (FFLAG(27))WRITE (IU20) WSPRDG
           ENDIF
         ENDIF
@@ -783,7 +795,7 @@
           ENDIF
         ENDIF
 
-!*      MEAN DIRECTIONAL SPREAD. 
+!*      MEAN DIRECTIONAL SPREAD.
 !       -----------------------
 
         IF (GFLAG(27)) THEN
@@ -947,7 +959,7 @@
           ENDIF
         ENDIF
 
-!*      MEAN WIND SEA DIRECTIONAL SPREAD. 
+!*      MEAN WIND SEA DIRECTIONAL SPREAD.
 !       ---------------------------------
 
         IF (GFLAG(32)) THEN
@@ -961,7 +973,7 @@
           ENDIF
         ENDIF
 
-      ENDIF  
+      ENDIF
 
 !*      MEAN SWELL PERIOD 1.
 !       --------------------
@@ -991,7 +1003,7 @@
           ENDIF
         ENDIF
 
-!*      MEAN SWELL DIRECTIONAL SPREAD. 
+!*      MEAN SWELL DIRECTIONAL SPREAD.
 !       ------------------------------
 
         IF (GFLAG(33)) THEN

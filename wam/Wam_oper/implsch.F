@@ -20,12 +20,14 @@
 !                                                  (FLMIN).
 !     J. BIDLOT ECMWF               FEBRUARY 1996 MESSAGE PASSING
 !     J. BIDLOT ECMWF               FEBRUARY 1997 MESSAGE PASSING
+!     J. BIDLOT ECMWF               FEBRUARY 2001 MODIFY CALLING ORDER
+!                                   BETWEEN SINPUT-STRESSO-AIRSEA
 
 !*    PURPOSE.
 !     --------
 
 !       THE IMPLICIT SCHEME ENABLES THE USE OF A TIMESTEP WHICH IS
-!       LARGE YOWPARED WITH THE CHARACTERISTIC DYNAMIC TIME SCALE.
+!       LARGE COMPARED WITH THE CHARACTERISTIC DYNAMIC TIME SCALE.
 !       THE SCHEME IS REQUIRED FOR THE HIGH FREQUENCIES WHICH
 !       RAPIDLY ADJUST TO A QUASI-EQUILIBRIUM.
 
@@ -125,8 +127,7 @@
 ! ----------------------------------------------------------------------
 
       INTEGER :: MIJ(IJS:IJL)
-      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), DELFL(NFRE),
-     &        EDIFF(IJS:IJL) , EDIAGC(IJS:IJL)
+      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), DELFL(NFRE)
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
@@ -155,25 +156,25 @@
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
 !         --------------------------------
 
+!*    2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
+!           ------------------------------------------------
+
+!!          FL and SL are initialised in sinput
+
+      ILEV=1
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+     &   IJS, IJL, ILEV)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
+        CALL FLUSH (IU06)
+      ENDIF
+      
       DO ICALL=1,NCALL
-
-!*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
-!             ------------------------------------------------
-
-!!            FL and SL are initialised in sinput
-
+      
 !*      2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !             -------------------------------------
-        ILEV=1
-        CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
-     &   IJS, IJL, ILEV)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
 
-        CALL SINPUT (FL3, FL, IJS, IJL, IG,THWOLD,USOLD,Z0OLD,
-     &   THWNEW,USNEW,Z0NEW,SL,ICALL,NCALL)
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, SL)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
           CALL FLUSH (IU06)
@@ -185,6 +186,13 @@
           CALL FLUSH (IU06)
         ENDIF
 
+        CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+     &   IJS, IJL, ILEV)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+        
       ENDDO
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
@@ -253,7 +261,7 @@
       DO IJ=IJS,IJL
         FPM4 = FMEAN(IJ)*FPMH
 
-        MIJ(IJ) = INT(ALOG10(FPM4)*FLOGSPRDM1)+1
+        MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
 
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
@@ -295,6 +303,28 @@
           ENDDO
         ENDDO
       ENDDO
+
+!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
+!           --------------------------------------------------
+
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, SL)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+     & IJS, IJL, ILEV)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
+        CALL FLUSH (IU06)
+      ENDIF
 
 ! ----------------------------------------------------------------------
 

@@ -82,7 +82,7 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS
+     &            CDTSPS   ,MARSTYPE
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
@@ -335,13 +335,15 @@
 !*    5. OUTPUT OF SPECTRA FOR SATELLITE COLLOCATION.
 !        --------------------------------------------
 
-      IF (CDTPRO.NE.CDATEA) THEN
-        CALL OUTERS (FL3, IG, IGL, CDTPRO,
-     &   NSTART,NEND,U10NEW,THWNEW,USNEW)
-        IF (ITEST.GE.3) THEN
-          IF (ITESTB.GE.IG) THEN
-            WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
-     &       ' FOR SATELLITE COLOCATION DONE FOR ', CDTPRO
+      IF (MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'4v') THEN
+        IF (CDTPRO.NE.CDATEA) THEN
+          CALL OUTERS (FL3, IG, IGL, CDTPRO,
+     &     NSTART,NEND,U10NEW,THWNEW,USNEW)
+          IF (ITEST.GE.3) THEN
+            IF (ITESTB.GE.IG) THEN
+              WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
+     &         ' FOR SATELLITE COLLOCATION DONE FOR ', CDTPRO
+            ENDIF
           ENDIF
         ENDIF
       ENDIF

@@ -65,6 +65,7 @@
       CHARACTER*14 CDATE
       PARAMETER(ZERO=' ')
       LOGICAL EOFD, FLAGGED, LLTEST
+      LOGICAL:: LLONG=.TRUE.
 
       DATA yofid /'RFL'/
       DATA CDTGEO, CDTGE1 /ZERO, ZERO/
@@ -115,7 +116,36 @@
 !*    3. READ THE MEASUREMENT.
 !        ---------------------
 
-      READ(IUME,END=4000) CDATE, pvalu, iflag
+      IF (LLONG) THEN
+        READ(IUME,END=4000,IOSTAT=IRS) CDATE,
+     &                                (pvalu(j),j=1,jpelem),
+     &                                (iflag(j),j=1,jpflan)
+        IF (IRS /= 0 ) THEN
+          PVALU=1.7E38
+          BACKSPACE (IUME)
+          READ(IUME,END=4000,IOSTAT=JRS) CDATE,
+     &                                  (pvalu(j),j=1,28),
+     &                                  (iflag(j),j=1,jpflan)
+          LLONG = .FALSE.
+          IF (JRS /= 0 ) THEN
+            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) ' +                               +'
+            WRITE(IU06,*) ' +    ERROR IN --READSAT--       +'
+            WRITE(IU06,*) ' +    ==================         +'
+            WRITE(IU06,*) ' +                               +'
+            WRITE(IU06,*) ' +  INPUT DATA FORMAT UNKNOWN    +'
+            WRITE(IU06,*) ' +  JRS = ',JRS 
+            WRITE(IU06,*) ' +  PROGRAM WILL ABORT           +'
+            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+      ELSE
+        READ(IUME,END=4000           ) CDATE,
+     &                                (pvalu(j),j=1,28),
+     &                                (iflag(j),j=1,jpflan)
+      ENDIF
+
       rlat = pvalu(10)
       rlon = pvalu(11)
       ws   = pvalu(13)

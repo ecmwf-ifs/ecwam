@@ -133,6 +133,7 @@
       CHARACTER*5  clmethod
       CHARACTER*6  clstep
       CHARACTER*4  clstream
+      CHARACTER*4  cdorigin
 
       CHARACTER*8  cldate
 
@@ -175,7 +176,15 @@
           cltype   = cdtype
         ENDIF
         if(cdtype.eq.'sf') then
-          cltype   = 'fc'
+          if(ksec1(43).ne.0) then
+            if(ksec1(42).ne.0) then
+              cltype   = 'fc'
+            else
+              cltype   = 'cf'
+            endif
+          else
+            cltype   = 'fc'
+          endif
         endif
 
         cldomain = cddomain
@@ -286,6 +295,29 @@
 
             IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ system:", a5,
      &                      " method ", a5)') clsystem,clmethod 
+          endif
+
+!         multi-analysis ensemble runs (see setwgribhd)
+          if (ksec1(40) == 1083) then
+            if(ksec1(46) == 0 ) then
+              if(ksec1(44) == 78) then
+                cdorigin = 'edzw'
+              else if(ksec1(44) == 85) then
+                cdorigin = 'lfpw'
+              else if(ksec1(44) == 7) then
+                cdorigin = 'kwbc'
+              else if(ksec1(44) == 74) then
+                cdorigin = 'egrr'
+              else
+                WRITE(kuso,'( "Error\ /Fld2fdb/ origin unknown ", i4)' )
+     &                ksec1(44) 
+                kerr = 1
+                return
+              endif
+            else
+              cdorigin = 'cons'
+            endif
+            istat = isetvalfdb( iaddr1,  'origin', cdorigin )
           endif
 
         ENDIF

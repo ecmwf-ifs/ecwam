@@ -101,13 +101,6 @@
       AMONOC =-100.0
       AMOWEC =   0.0
       AMOEAC =   0.0
-      XOUTS  =-100.0
-      XOUTN  =-100.0
-      XOUTW  =   0.0
-      XOUTE  =   0.0
-      NOUTD  =   0
-      OUTLAT =-100.0
-      OUTLONG=   0.0
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
@@ -133,9 +126,9 @@
 
       WRITE (IU06,'(
      &   " PROGRAM PREPROC:  ",
-     &   " WAM Cycle4 (common with IFS CY22R3)",
+     &   " WAM Cycle4 (common with IFS CY23R4)",
      &/, "                   ",
-     &   " clearcase:  wam_wab_CY22R3_NEW_adv_fit_tbl",
+     &   " clearcase:  wam_wab_CY22R4_sinput",
      &  /,"  USER INPUT:",/)')
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
@@ -215,6 +208,11 @@
       ALLOCATE(XOUTE(IOUTA))
       ALLOCATE(XOUTN(IOUTA))
       ALLOCATE(NOUTD(IOUTA))
+      XOUTS  =-100.0
+      XOUTN  =-100.0
+      XOUTW  =   0.0
+      XOUTE  =   0.0
+      NOUTD  =   0
       CORR: DO
         READ(IU05, NACORR, ERR=3000, IOSTAT=IOS, END=2300)
         NOUT=NOUT+1
@@ -309,6 +307,8 @@
       MOUTP = 100 
       ALLOCATE(OUTLAT(MOUTP))
       ALLOCATE(OUTLONG(MOUTP))
+      OUTLAT =-100.0
+      OUTLONG=   0.0
       NGOUT = 0
       OUTPP: DO
         READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)

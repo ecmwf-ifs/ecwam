@@ -237,7 +237,15 @@
       ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 2
       ELSEIF ( CDTYPE .EQ. 'sf' ) THEN
-        ISEC1(39) = 9
+        IF(KTOTENS .EQ. 0) THEN
+          ISEC1(39) = 9
+        ELSE
+          IF(KENSFNB .EQ. 0) THEN
+            ISEC1(39) = 10
+          ELSE
+            ISEC1(39) = 9
+          ENDIF
+        ENDIF
       ELSE
         IF (KTOTENS .EQ. 0) THEN
           ISEC1(39) = 9

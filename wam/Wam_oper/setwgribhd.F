@@ -44,12 +44,15 @@
      &             CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
-     &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM
+     &            MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,NLOCGRB  ,
+     &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM
       USE YOWTEST  , ONLY : IU06     ,ITEST 
 
       IMPLICIT NONE
 
-      INTEGER JC, KST, JSN, CLASS_WGRIB, ICLASS
+      INTEGER JC, KST, JSN, CLASS_WGRIB, ICLASS, ICENTRE
+
+      CHARACTER*8 CLWORD
 
 !-------------------------------------------------------------------
 
@@ -106,10 +109,14 @@
       KSEK1(23) =     0     !
       KSEK1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
 !       25-36                                                  0
-      IF(MARSTYPE .EQ. 'sf' ) THEN
-        KSEK1(37) =    15   ! INDICATES LABELLING WITH MARS PARAMETERS 
+      IF(NLOCGRB .GT. 0 ) THEN
+        KSEK1(37) = NLOCGRB ! INDICATES LOCAL MARS TABLE USED.
       ELSE
-        KSEK1(37) =     1   ! INDICATES LABELLING WITH MARS PARAMETERS 
+        IF(MARSTYPE .EQ. 'sf' ) THEN
+          KSEK1(37) =    15
+        ELSE
+          KSEK1(37) =     1
+        ENDIF
       ENDIF
       ICLASS=CLASS_WGRIB(YCLASS,IU06)
       KSEK1(38) = ICLASS    ! INDICATES CLASS
@@ -118,6 +125,8 @@
         KSEK1(40)= ISTREAM  ! STREAM
       ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
         KSEK1(40)=1082      ! STREAM 1082=SEASONAL WAVE (WASF) 
+      ELSE IF(NLOCGRB == 18 ) THEN
+        KSEK1(40)=1083      ! STREAM 1083 for multi analysis ensemble
       ELSE
         IF(MARSTYPE .EQ. 'cf' .OR. MARSTYPE .EQ. 'pf') THEN
           KSEK1(40)=1081      ! STREAM 1081=ENSEMBLE WAVE 
@@ -129,14 +138,61 @@
       DO JC = 1, 4
         KSEK1(41) = KSEK1(41)*256 + ICHAR(YEXPVER(JC:JC))
       ENDDO
-      IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf') THEN
+      IF(NLOCGRB == 18 ) THEN
+        ! multi analysis ensemble runs
+        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+        CLWORD='    ECMF'
+        READ(CLWORD,'(A8)') KSEK1(45)
+        IF(NCONSENSUS == 0) THEN
+        !   Data from one centre (check also fld2fdb)
+          KSEK1(46)=0
+          IF(NDWD == 1) THEN
+            KSEK1(44)=78
+          ELSEIF(NMFR == 1) THEN
+            KSEK1(44)=85
+          ELSEIF(NNCEP == 1) THEN
+            KSEK1(44)=7
+          ELSEIF(NUKM == 1) THEN
+            KSEK1(44)=74
+          ENDIF
+        ELSE
+        ! Consensus analysis (always includes ECMWF)
+          KSEK1(44)=255
+          ICENTRE=1
+          CLWORD='    ECMF'
+          READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+          IF(NDWD == 1) THEN
+            ICENTRE=ICENTRE+1
+            CLWORD='    EDZW'
+            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+          ENDIF
+          IF(NMFR == 1) THEN  
+            ICENTRE=ICENTRE+1
+            CLWORD='    LFPW'
+            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+          ENDIF
+          IF(NNCEP == 1) THEN 
+            ICENTRE=ICENTRE+1
+            CLWORD='    KWBC'
+            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+          ENDIF     
+          IF(NUKM == 1) THEN
+            ICENTRE=ICENTRE+1
+            CLWORD='    EGRR'
+            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+          ENDIF 
+          KSEK1(46)=ICENTRE
+        ENDIF
+      ELSE IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf') THEN
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
         KSEK1(44) = 0
         KSEK1(45) = 0
-      ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
+      ELSE IF(MARSTYPE .EQ. 'sf' .OR. NLOCGRB == 15 ) THEN
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = 0
+        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
         KSEK1(44) = NSYSNB ! SYSTEM NUMBER
         KSEK1(45) = NMETNB ! METHOD NUMBER
       ELSE

@@ -162,15 +162,23 @@
       ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 2
       ELSEIF ( MARSTYPE .EQ. 'sf' ) THEN
-        KSEC1(39) = 9
-      ELSE
-        IF(NTOTENS.EQ.0) THEN 
+        IF(NTOTENS.EQ.0) THEN
           KSEC1(39) = 9
         ELSE
           IF(NENSFNB.EQ.0) THEN
             KSEC1(39) = 10 
           ELSE
-            KSEC1(39) = 11 
+            KSEC1(39) = 9 
+          ENDIF
+        ENDIF
+      ELSE
+        IF(NTOTENS.EQ.0) THEN
+          KSEC1(39) = 9
+        ELSE
+          IF(NENSFNB.EQ.0) THEN
+            KSEC1(39) = 10
+          ELSE
+            KSEC1(39) = 11
           ENDIF
         ENDIF
       ENDIF

@@ -27,8 +27,12 @@
         CSTREAM = 'waef'
       ELSE IF(ISTREAM.EQ.1082) THEN
         CSTREAM = 'wasf'
+      ELSE IF(ISTREAM.EQ.1083) THEN
+        CSTREAM = 'mawv'
       ELSE IF(ISTREAM.EQ.1027) THEN
         CSTREAM = 'scwv'
+      ELSE IF(ISTREAM.EQ.1095) THEN
+        CSTREAM = 'wamf'
       ELSE
         CSTREAM='****'
       ENDIF

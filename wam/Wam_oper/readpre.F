@@ -62,6 +62,7 @@
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
      &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
       INTEGER :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
