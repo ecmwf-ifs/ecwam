@@ -1,10 +1,11 @@
 C ----------------------------------------------------------------------
 C
-      SUBROUTINE GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, FILENAME)
+      SUBROUTINE GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, 
+     &                     IRANK, NPROC, FILENAME)
 
 C ----------------------------------------------------------------------
 C
-C**** *GRSTNAME* - DETERMINES FILENAME (INCLUDING PATH) FOR RESTART FILES 
+C**** *GRSTNAME*  DETERMINES FILENAME (INCLUDING PATH) FOR RESTART FILES
 C
 C     J. BIDLOT     ECMWF         NOVEMBER 1996      PARALLEL RUN 
 C     B. HANSEN     ECMWF         APRIL    1996      MOVE CYMPPATH TO
@@ -16,14 +17,17 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID, FILENAME)*
+C       *CALL* *GRSTNAME (IU06, CDATE, CDATEF, IREST, FILEID,i
+C                         IRANK, NPROC, FILENAME)*
 C
-C         *IU06*   INTEGER    UNIT FOR PRINTER MESSAGES.
-C         *CDATE*  CHAR*10    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
-C         *CDATEF* CHAR*10    DATE TIME GROUP OF FORECAST START.
-C         *IREST*  INTEGER    OUTPUT OPTION FLAG FOR RESTART FILES
-C         *FILEID* CHARACTER  FILE ID.
-C         *FILENAME* CHARACTER FILE NAME INCLUDING PATH
+C         *IU06*     INTEGER    UNIT FOR PRINTER MESSAGES.
+C         *CDATE*    CHAR*10    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
+C         *CDATEF*   CHAR*10    DATE TIME GROUP OF FORECAST START.
+C         *IREST*    INTEGER    OUTPUT OPTION FLAG FOR RESTART FILES
+C         *FILEID*   CHARACTER  FILE ID.
+C         *IRANK*    INTEGER    RANK OF CURRENT PROCESS (IN MPP MODE)
+C         *NPROC*    INTEGER    TOTAL NUMBER OF PROCESSOR USED
+C         *FILENAME* CHARACTER  FILE NAME INCLUDING PATH
 C
 C     EXTERNALS.
 C     ----------
@@ -53,10 +57,6 @@ C       NONE.
 C
 C ----------------------------------------------------------------------
 C
-#include "commesspass.h"
-C
-#include "commpp.h"
-C
 #include "txtmpp.h"
 C
 #include "comtext.h"
@@ -85,7 +85,7 @@ C
 C     2.0   GET PATH AND ADD IT TO FILE NAME
 C           --------------------------------
 C
-      IF(LMESSPASS.AND.(IREST.EQ.2.OR.IREST.EQ.4)) THEN
+      IF(IREST.EQ.2.OR.IREST.EQ.4) THEN
         FILENAM=FILENA(1:LNAME)//'_%n.%p'
         CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAM,1)
       ELSE

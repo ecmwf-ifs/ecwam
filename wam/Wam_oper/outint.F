@@ -4,16 +4,16 @@ C ----------------------------------------------------------------------
 C
 C**** *OUTINT* - OUTPUT OF INTEGRATED FIELDS IS WRITTEN.
 C
-C     H. GUNTHER          ECMWF            JUNE 1990
-C     A. GUILLAUME        ECMWF            JUNE 1992
-C                                     (HANDLING OF MISSING VALUES,
-C                                      AND FDB OUTPUT)
-C     A. GUILLAUME        ECMWF             03/07/92 (DIRECTIONS) 
+C     H. GUNTHER       ECMWF  JUNE     1990
+C     A. GUILLAUME     ECMWF  JUNE     1992 HANDLING OF MISSING VALUES,
+C                                           AND FDB OUTPUT.
+C     A. GUILLAUME     ECMWF  JULY     1992 DIRECTIONS.
 C
-C     P.A.E.M. JANSSEN    ECMWF             AUGUST 1995 
+C     P.A.E.M. JANSSEN ECMWF  AUGUST   1995
 C
-C     J. BIDLOT           ECMWF             APRIL 1996  MESSAGE PASSING
-C     J. BIDLOT           ECMWF             OCTOBER 1997 ADD OUTPUT OF U10G 
+C     J. BIDLOT        ECMWF  APRIL    1996 MESSAGE PASSING.
+C     J. BIDLOT        ECMWF  OCTOBER  1997 ADD OUTPUT OF U10G.
+C     B. HANSEN        ECMWF  FEBRUARY 1998 INTERFACE TO FDB.
 C
 C*    PURPOSE.
 C     --------
@@ -78,7 +78,7 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      CHARACTER TITL*100
+      CHARACTER TITL*100, CLDOMAIN*1
       LOGICAL LGRIBPAC
 C
 C ----------------------------------------------------------------------
@@ -397,22 +397,14 @@ C
       ENDIF
 
       IF (GFLAG20) THEN
-         IF(CDTPRO.LE.CDATEF) THEN
+        IF(CDTPRO.LE.CDATEF) THEN
 C
 C*    3.1.  THIS IS AN ANALYSIS DATE
 C           ------------------------
 C
-
-          IF(LWCOU.AND.MARSTYPE.EQ.'fg') THEN
-            READ(CDATEA,'(5I2)') IY, IM, ID, IH, IMN
-            CALL DIFDATE(CDATEA,CDTPRO,IFCST)
-            IFCST=IFCST/3600
-          ELSE
-            READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
-            IFCST = 0
-          ENDIF 
-
-         ELSE
+           READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
+           IFCST = 0
+        ELSE
 C
 C*    3.2.  THIS IS A  FORECAST DATE
 C           ------------------------
@@ -431,7 +423,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=229
           CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTTG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -446,7 +438,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=230
           CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRTG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -474,8 +466,8 @@ C
               ENDDO
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFTG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                   CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
@@ -502,23 +494,29 @@ C
               ENDDO
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTGRIB,WPKFTG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                   CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 C
-C*          DRAG COEFFICIENT/CHARNOCK PARAMETER
-C           ------------------------------------
+C*          DRAG COEFFICIENT
+C           ----------------
 C
         IF (GFLAG(7)) THEN
          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(7)))
      1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=233
+          IF (LWCOU) THEN
+            ILEV=2
+          ELSE
+            ILEV=1
+          ENDIF
+          IZLEV=INT(XNLEV(ILEV))
           CALL GRIBPAC(IU06,IU30,NTGRIB,CDG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
         ENDIF
@@ -532,7 +530,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=244
           CALL GRIBPAC(IU06,IU30,NTGRIB,SMEANG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -546,9 +544,15 @@ C
      1   .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=245
+          IF (LWCOU) THEN
+            ILEV=2
+          ELSE
+            ILEV=1
+          ENDIF
+          IZLEV=INT(XNLEV(ILEV))
           CALL GRIBPAC(IU06,IU30,NTGRIB,U10G,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                 ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                 YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
         ENDIF
@@ -566,15 +570,8 @@ C
 C*    4.1.  THIS IS AN ANALYSIS DATE
 C           ------------------------
 C
-          IF(LWCOU.AND.MARSTYPE.EQ.'fg') THEN
-            READ(CDATEA,'(5I2)') IY, IM, ID, IH, IMN
-            CALL DIFDATE(CDATEA,CDTPRO,IFCST)
-            IFCST=IFCST/3600
-          ELSE
-            READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
-            IFCST = 0
-          ENDIF 
-
+           READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
+           IFCST = 0
 
          ELSE
 C
@@ -595,7 +592,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=234
           CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTWG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -611,7 +608,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=235
           CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRWG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -639,8 +636,8 @@ C
               ENDDO
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFWG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                   CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
@@ -654,7 +651,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=237
           CALL GRIBPAC(IU06,IU30,NTGRIB,WHGTSG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -670,7 +667,7 @@ C
      2   .OR.(.NOT.LMESSPASS)) THEN
           IPARAM=238
           CALL GRIBPAC(IU06,IU30,NTGRIB,WDIRSG,NGX,NGY,IPARAM,IY,IM,
-     1                 ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     1                 ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      2                 CFDBSF,NENSFNB,NTOTENS,Kfdb)
           LGRIBPAC = .TRUE.
          ENDIF
@@ -698,29 +695,12 @@ C
               ENDDO
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTGRIB,WMNFSG,NGX,NGY,IPARAM,IY,IM,
-     1                   ID,IH,IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     2                   CFDBSF,NENSFNB,NTOTENS,Kfdb)
+     1                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     2                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,Kfdb)
             LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
       ENDIF  
-
-C    5.0 CLOSE FDB IF IT HAS BEEN ACCESSED
-C        ---------------------------------
-      IF(LFDB.AND.(GFLAG20.OR.GFLAG21)) THEN
-
-        IF(CDTPRO.GE.COUTLST.AND.MARSTYPE.NE.'fg') THEN
-          IF(LGRIBPAC) THEN
-            CALL FLD2FDB(IU06, KDUMMY, KDUMMY, KDUMMY, KDUMMY,'close',
-     1                   KERR, MARSTYPE, YCLASS, YEXPVER, CFDBSF, KFDB)
-            WRITE(IU06,*) ' '
-            WRITE(IU06,*) 'FLD2FDB CALLED IN OUTINT TO CLOSE ACCESS TO'
-            WRITE(IU06,*) 'THE FIELD DATA BASE FOR WAVES from PE ',IRANK
-            WRITE(IU06,*) 'AT DATE : ',COUTLST
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-      ENDIF
-
+C
       RETURN
       END

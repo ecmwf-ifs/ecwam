@@ -62,7 +62,7 @@ C
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: SL
       REAL,DIMENSION(NIBLO,NFRE):: FCONST
 C
-C -----------------------------------------------------------------------
+C ----------------------------------------------------------------------
 C
       CHARACTER*30 FILENAME
 

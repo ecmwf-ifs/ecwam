@@ -1,10 +1,10 @@
       SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,PSEC4,I1,I2,IPARAM,IY,IM,ID,IH,
-     &                    IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &                    IFCST,KLEV,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &                    CDFDBSF,NENSFNB,NTOTENS,Kfdb)
 C
 C ----------------------------------------------------------------------
 C
-C****  *GRIBPAC*  PACKS WAM MODEL FIELDS INTO GRIB CODE.
+C****  *GRIBPAC*  PACKS WAM MODEL INTEGRATED FIELDS INTO GRIB CODE.
 C
 C       L. ZAMBRESKY (GKSS/ECMWF)  JUNE 1987
 C       H. GUNTHER   (GKSS/ECMWF)  JUNE 1991   GRIB EDITION 1.
@@ -21,8 +21,8 @@ C                 SPECIFY 'region' AS FOLLOWS:
 C                 -Dregion=\'g\' IF THE DOMAIN SHOULD BE GLOBAL.
 C                 -Dregion=\'m\' IF THE DOMAIN SHOULD BE MEDITE.
 C
-C       J. BIDLOT    ECMWF NOVEMBER 1997 ADD NENSFNB,NTOTENS FOR GRIBBING
-C                                        OF ENSEMBLE WAVE DATA. 
+C       J. BIDLOT    ECMWF NOVEMBER 1997 ADD NENSFNB,NTOTENS FOR
+C                                        GRIBBING OF ENSEMBLE WAVE DATA.
 C       PURPOSE.
 C       --------
 C         SUBROUTINE PACKS WAVE FIELDS INTO THE WMO GRIB CODE
@@ -46,9 +46,11 @@ C          *IM*      MONTH OF LAST ANALYSIS.
 C          *ID*      DAY OF LAST ANALYSIS.
 C          *IH*      HOUR OF LAST ANALYSIS.
 C          *IFCST*   FORECAST TIME FROM BASE DATE-TIME-GROUP.
+C          *KLEV*   - REFERENCE LEVEL IN full METER
+C                     (SHOULD BE 0 EXCEPT FOR 233 AND 245)
 C          *LFDB*   - LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
 C                     .T. TO ACTIVATE, .F. TO IGNORE
-C          *ITEST*  - TEST OUTPUT GIVEN IF ITEST LT 2.
+C          *ITEST*  - TEST OUTPUT GIVEN IF ITEST GT 2.
 C          *MARSTYPE* TYPE OF CURRENT FILED ( FG, AN, OR FC )
 C          *YCLASS* - CLASS OF THE CURRENT RUN.
 C          *YEXPVER*- EXPERIMENT VERSION NUMBER OF THE CURRENT RUN.
@@ -108,7 +110,6 @@ C
       ZWORK=ZMISS
       IF(IRGG.EQ.1 .OR. CLDOMAIN == 'm' ) THEN
        INDEX=1
-       ISTART=1
       ELSE
        INDEX = (NINT((90. - AMONOP ) / XDELLA))*NGX + 1
       ENDIF
@@ -125,6 +126,12 @@ C        -----------------------------
 C
  1000 CONTINUE
       KSEC1(6)  = IPARAM
+      IF(KLEV.NE.0) THEN
+       KSEC1(7)=105
+      ELSE
+       KSEC1(7)=102
+      ENDIF
+      KSEC1( 8) = KLEV
       KSEC1(10) = IY
       KSEC1(11) = IM
       KSEC1(12) = ID
@@ -138,6 +145,7 @@ C
         KSEC2(6) = 128
         KSEC2(9) = 0
         KSEC2(17) = 1
+        ISTART=0
         IF (CLDOMAIN == 'g' ) ISTART = NINT((90. - AMONOP ) / XDELLA)
         DO J=1,NGY
            JSN=NGY-J+1
@@ -172,10 +180,18 @@ C
         KSEC1(j)=0
  1002 CONTINUE
       KSEC1(37) = 1
-      IF ( YCLASS .EQ. 'OD' ) THEN
+      IF ( YCLASS .EQ. 'od' ) THEN
         KSEC1(38) = 1
-      ELSE
+      ELSEIF ( YCLASS .EQ. 'rd' ) THEN
         KSEC1(38) = 2
+      ELSEIF ( YCLASS .EQ. 'er' ) THEN
+        KSEC1(38) = 3
+      ELSE
+        WRITE(IU06,*) ' -------------------------'
+        WRITE(IU06,*) ' ERROR DETERMINING CLASS  '
+        WRITE(IU06,*) ' THE CODE FOUND IS : ',  YCLASS
+        WRITE(IU06,*) ' -------------------------'
+        CALL ABORT1
       ENDIF
       IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 1
@@ -248,8 +264,12 @@ C
 C*       2.1 WRITE Field to FDB
 C            ------------------
 C
-            CALL FLD2FDB(IU06,KSEC1,KSEC2,KGRIB,KWORD,'WRITE',IERR,
-     .                   MARSTYPE, YCLASS, YEXPVER, CDFDBSF, KFDB)
+            IDIR=0
+            IFRE=0
+            CALL FLD2FDB (IU06, ITEST, KSEC1, KGRIB, KWORD, 'WRITE',
+     .                    IERR,
+     .                    MARSTYPE, YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
+     .                    IDIR, IFRE , KFDB)
             WRITE(IU06,*) '    SUB. GRIBPAC:  PACKED FIELD LENGTH ',
      .                    KWORD, ' WRITTEN TO FDB ',
      .                    '(REFERENCE=',Kfdb,')'
@@ -325,7 +345,7 @@ C*    3. PRINT GRIB SECTION 1 AND 2.
 C         --------------------------
 C
  3000 CONTINUE
-      IF (ITEST.GT.1) THEN
+      IF (ITEST.GT.2) THEN
         CALL GRPRS1 (KSEC0, KSEC1)
         CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
       ENDIF

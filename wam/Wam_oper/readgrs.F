@@ -354,36 +354,39 @@ C
            WRITE(IU06,*)'**********************************'
            CALL ABORT1
         ENDIF
-        IF (INT(100*ZTH(1)).NE.INT(100*TH(1))) THEN
-           WRITE(IU06,*)'****************************************'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB READGRS           *'
-           WRITE(IU06,*)'* ===========================          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* THE INITIAL DIRECTIONS ARE DIFFERENT *'
-           WRITE(IU06,*)'* TH(1)  = ',TH(1)
-           WRITE(IU06,*)'* ZTH(1)  = ',ZTH(1)
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
-           WRITE(IU06,*)'* DIRECTION IS YET IN PLACE !          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'****************************************'
-           CALL ABORT1
-        ENDIF
-        IF (INT(1000*ZFR(1)).NE.INT(1000*FR(1))) THEN
-           WRITE(IU06,*)'****************************************'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB READGRS           *'
-           WRITE(IU06,*)'* ===========================          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* THE INITIAL FREQUENCY ARE DIFFERENT  *'
-           WRITE(IU06,*)'* FR(1)  = ',FR(1)
-           WRITE(IU06,*)'* ZFR(1)  = ',ZFR(1)
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
-           WRITE(IU06,*)'* FREQUECIES IS YET IN PLACE !         *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'****************************************'
-           CALL ABORT1
-        ENDIF
+cccc
+cccc  not yet in place
+cccc
+C       IF (INT(100*ZTH(1)).NE.INT(100*TH(1))) THEN
+c          WRITE(IU06,*)'****************************************'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'* FATAL ERROR IN SUB READGRS           *'
+c          WRITE(IU06,*)'* ===========================          *'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'* THE INITIAL DIRECTIONS ARE DIFFERENT *'
+c          WRITE(IU06,*)'* TH(1)  = ',TH(1)
+c          WRITE(IU06,*)'* ZTH(1)  = ',ZTH(1)
+c          WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
+c          WRITE(IU06,*)'* DIRECTION IS YET IN PLACE !          *'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'****************************************'
+c          CALL ABORT1
+c       ENDIF
+c       IF (INT(1000*ZFR(1)).NE.INT(1000*FR(1))) THEN
+c          WRITE(IU06,*)'****************************************'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'* FATAL ERROR IN SUB READGRS           *'
+c          WRITE(IU06,*)'* ===========================          *'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'* THE INITIAL FREQUENCY ARE DIFFERENT  *'
+c          WRITE(IU06,*)'* FR(1)  = ',FR(1)
+c          WRITE(IU06,*)'* ZFR(1)  = ',ZFR(1)
+c          WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
+c          WRITE(IU06,*)'* FREQUECIES IS YET IN PLACE !         *'
+c          WRITE(IU06,*)'*                                      *'
+c          WRITE(IU06,*)'****************************************'
+c          CALL ABORT1
+c       ENDIF
 
       ENDDO
 C

@@ -1,6 +1,6 @@
 C------------------------------------------------------------------
 C
-      SUBROUTINE READT(IU06,IU90,ITEST,TEMPG)
+      SUBROUTINE READT(IU06,FILNM,ITEST,TEMPG)
 C
 C----------------------------------------------------------------------
 C
@@ -16,12 +16,12 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *READT* *(IU90)*
+C       *CALL* *READT* *(IU06,FILNM,ITEST,TEMPG)*
 C
 C*     VARIABLE.   TYPE.     PURPOSE.
 C      ---------   -------   --------
 C      *IU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
-C      *IU90*      INTEGER   OUTPUT UNIT FOR GRIBBED SST'S.
+C      *FILNM*     CHARACTER*24 DATA INPUT FILENAME.
 C      *ITEST*     INTEGER   OUTPUT FLAG IF LE 2 NO EXTRA OUTPUT IS
 C                            GENERATED.
 C      *TEMPG*     REAL      GLOBAL TEMPRERATURES (KELVIN).
@@ -54,6 +54,7 @@ C
       REAL,ALLOCATABLE :: WORK(:,:)
       INTEGER,ALLOCATABLE :: KLONRGG(:)
 C
+      CHARACTER*24 FILNM
       CHARACTER*40 MSG, TITL*100
 C
 C-----------------------------------------------------------------------
@@ -64,9 +65,9 @@ C
  1000 CONTINUE
 C
       ALLOCATE(KLONRGG(NYT))
-      CALL INMARS  ( IU90, NXT, NYT, ZMISS, CTDATE, IFORP, IPARAM,
+      CALL INMARS  ( FILNM, NXT, NYT, ZMISS, CTDATE, IFORP, IPARAM,
      .               NGXT, NGYT, TMOWEP, TMOSOP, TMOEAP, TMONOP,
-     .               KRGG,KLONRGG,TEMPG, IERR, MSG)
+     .               KRGG,KLONRGG,KZLEV,TEMPG, IERR, MSG)
       IF ( IERR .EQ. 0 ) THEN
         WRITE(IU06,*)'            '
         WRITE(IU06,*)' SUB. READT: ICE BOUNDARY DATE=',CTDATE
@@ -78,7 +79,7 @@ C
       DELLA  = (TMONOP - TMOSOP)/REAL(NGYT-1)
       DELLO  = (TMOEAP - TMOWEP)/REAL(NGXT-1)
 C
-      IF (ITEST.GT.2) THEN
+      IF (ITEST.GT.3) THEN
         ALLOCATE(WORK(NXT,NYT))
         WRITE(IU06,*) 'TEMPERATURE GRID:'
         WRITE(IU06,*) '-----------------'

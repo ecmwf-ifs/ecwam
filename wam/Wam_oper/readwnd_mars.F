@@ -1,5 +1,5 @@
       SUBROUTINE READWND_MARS (CDTWIR, UWND, VWND, NC, NR,
-     1                         IUGB, IVGB, ILEN)
+     1                         IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
 C                                                                       
 C***  *READWND* - PROGRAM TO REFORMAT WIND FIELDS FROM MARS             
 C                                                                       
@@ -40,11 +40,18 @@ C     INTERFACE
 C     ---------                                                         
 C                                                                       
 C     *CALL* *READWND_MARS (CDTWIR, UWND, VWND, NC, NR)*
+C    1                      IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
 C        *CDTWIR* - DATE/TIME OF THE DATA READ                          
 C        *UWND*   - HORIZONTAL WIND COMPONENT                           
 C        *VWND*   - VERTICAL WIND COMPONENT                             
 C        *NC*     - NUMBER OF COLUMNS IN INPUT WIND ARRAY (DIMENSION)   
 C        *NR*     - NUMBER OF ROWS    IN INPUT WIND ARRAY (DIMENSION)   
+C        *IUGB*   - ARRAY CONTAINING THE GRIB U COMPONENT
+C        *IVGB*   - ARRAY CONTAINING THE GRIB V COMPONENT
+C        *ILEN*   - SIZE OF IUGB AND IVGB
+C        *LWNDFILE*  IF TRUE DATA ARE ACCESSED FROM THE INPUT FILE sfcwindin
+C                    ELSE THE DATA WILL BE SUPPLIED IN IUGB AND IVGB
+C        *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND THE UNIT RESET
 C                                                                       
 C     UNIT             DESCRIPTION                                      
 C     ----             -----------                                      
@@ -57,17 +64,18 @@ C
 C     EXTERNALS                                                         
 C     ---------                                                         
 C                                                                       
-C     *ABORT1*          TERMINATES PROCESSING
+C     *ABORT1*         TERMINATES PROCESSING
 C     *GRIBEX*         UNPACKS MARS WINDS                               
 C     *GRPRS1*         PRINTS PRODUCT DEFINITION BLOCK                  
 C     *GRPRS2*         PRINTS GRID  DEFINITION BLOCK                    
 C     *INCDATE*        INCREMENTS DATE                                  
+C     *PBCLOSE*
+C     *PBGRIB*
+C     *PBOPEN*
 C                                                                       
 C --------------------------------------------------------------------- 
 C                                                                       
 #include "comtest.h"
-C
-#include "comcoup.h"
 C
 #include "comwndg.h"
 C                                                                       
@@ -75,6 +83,8 @@ C
 C --------------------------------------------------------------------- 
 C                                                                       
 #if   region=='g' && resolution==50
+      PARAMETER (NBIT = 520000)
+#elif region=='m' && resolution==25
       PARAMETER (NBIT = 520000)
 #else
       PARAMETER (NBIT = 210000)
@@ -90,14 +100,14 @@ C ---------------------------------------------------------------------
       DIMENSION PSEC2(10), PSEC3(2), PSEC4(NC*NR)                       
       CHARACTER HOPER*1, FILNM*24
       CHARACTER*10 CDTWIR
-      LOGICAL FRSTIME
+      LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
       DATA IFIL, HOPER, FRSTIME / 63, 'R', .TRUE. /
       SAVE IUNIT1      
 C                                                                       
 C --------------------------------------------------------------------  
 C                                                                       
 
-      IF(.NOT.LWCOU) THEN
+      IF(LWNDFILE) THEN
 
 
 C       1.0 INITIALISE VALUES. 
@@ -107,8 +117,21 @@ C
         ICOORD = 1
 C                                                      
         IF (FRSTIME) THEN
-           WRITE(FILNM,'(A,I2)') 'fort.',IFIL                   
+           FILNM='sfcwindin'
            CALL PBOPEN(IUNIT1,FILNM,'r',KRET)
+           IF(KRET.LT.0) THEN
+             WRITE (IU06,*) '****************************************'
+             WRITE (IU06,*) '*                                      *'
+             WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBOPEN      *'
+             WRITE (IU06,*) '*  IN READWND_MARS                     *'
+             IF(KRET.EQ.-1)
+     1       WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILNM
+             IF(KRET.EQ.-2) WRITE (IU06,*) 'INVALID FILENAME ',FILNM
+             IF(KRET.EQ.-3) WRITE (IU06,*) 'INVALID OPEN MODE SPECIFIED'
+             WRITE (IU06,*) '*                                      *'
+             WRITE (IU06,*) '****************************************'
+             CALL ABORT1
+           ENDIF
            FRSTIME = .FALSE.
         END IF  
 C
@@ -130,7 +153,7 @@ C
         IF (KRET.EQ.-2) GO TO 5100
         IF (KRET.EQ.-3) GO TO 5300
         IF (ITEST.GT.1) THEN
-           WRITE(IU06,*) ' SUB. READWND - READ UNIT ',IFIL            
+           WRITE(IU06,*) ' SUB. READWND - READ FROM ',FILNM            
         ENDIF              
  2100   CONTINUE
 C                                                                       
@@ -151,7 +174,7 @@ C
 C*      3.1 PRODUCT DEFINITION BLOCK.
 C           -------------------------
 C                                                                       
-        IF (ITEST.GT.1)  CALL GRPRS1 (KSEC0, KSEC1)
+        IF (ITEST.GT.2)  CALL GRPRS1 (KSEC0, KSEC1)
 C                                                                       
 C*      3.1.1 DETERMINE DATE OF WIND FIELD FROM KSEC1(10)-KSEC1(14).
 C                                                                       
@@ -211,7 +234,7 @@ C
 C*      3.2 GRID DEFINITION BLOCK.
 C           ---------------------
 C                                                                       
-        IF (ITEST.GT.1) CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
+        IF (ITEST.GT.2) CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
 C                                                                       
 C*      3.2.1 DETERMINE GRID PARAMETERS.                
 C             -------------------------- 
@@ -274,7 +297,7 @@ C
 C*      5. WRITE TEST OUTPUT.
 C          ------------------
 C                                                                       
-        IF (ITEST.GT.1) THEN
+        IF (ITEST.GT.2) THEN
            WRITE(IU06,*) ' READWND -  WIND FIELD FOR THE CDTWIR = ',
      1                    CDTWIR
            WRITE(IU06,66) ((UWND(I,J),I=1,24),J=1,5)
@@ -285,6 +308,22 @@ C
 C --------------------------------------------------------------------  
                                                                         
         DEALLOCATE(KGRIB)
+C
+        IF (LCLOSEWND) THEN
+           CALL PBCLOSE(IUNIT1,KRET)
+           IF(KRET.LT.0) THEN
+             WRITE (IU06,*) '****************************************'
+             WRITE (IU06,*) '*                                      *'
+             WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE     *'
+             WRITE (IU06,*) '*  IN READWND_MARS                     *'
+             WRITE (IU06,*) '*                                      *'
+             WRITE (IU06,*) '****************************************'
+             CALL ABORT1
+           ENDIF
+           FRSTIME = .TRUE.
+           IF (ITEST.GT.1)
+     &        WRITE(IU06,*) ' SUB. READWND - PBCLOSE ON ',FILNM            
+        ENDIF  
 
         RETURN
 C                                                                       
@@ -298,7 +337,7 @@ C
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *         FATAL ERROR IN SUB. READWND       *' 
         WRITE(IU06,*) ' *         ===========================       *' 
-        WRITE(IU06,*) ' * PBGRIB EOF ON UNIT ',IFIL                  
+        WRITE(IU06,*) ' * PBGRIB EOF ON FILE ',FILNM                  
         WRITE(IU06,*) ' *         NO MORE WINDS                     *' 
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *    PROGRAM ABORTS     PROGRAM ABORTS      *' 
@@ -311,7 +350,7 @@ C
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *         FATAL ERROR IN SUB. READWND       *' 
         WRITE(IU06,*) ' *         ===========================       *' 
-        WRITE(IU06,*) ' * PBGRIB ERROR ON UNIT = ',IFIL              
+        WRITE(IU06,*) ' * PBGRIB ERROR ON FILE ',FILNM              
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *    PROGRAM ABORTS     PROGRAM ABORTS      *' 
         WRITE(IU06,*) ' *                                           *' 
@@ -340,10 +379,9 @@ C
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *********************************************' 
         CALL ABORT1                                                     
-
-
+C
+C
       ELSE
-
 C
 C*      3.0 READ ATMOS. MODEL GRIB FILES FOR COUPLED MODEL
 C           ----------------------------------------------
@@ -364,7 +402,7 @@ C
 C*      3.1 PRODUCT DEFINITION BLOCK.
 C           -------------------------
 C
-          IF (ITEST.GT.1)  CALL GRPRS1 (KSEC0, KSEC1)
+          IF (ITEST.GT.2)  CALL GRPRS1 (KSEC0, KSEC1)
 C
 C*        3.1.1 DETERMINE DATE OF WIND FIELD FROM KSEC1(10)-KSEC1(14).
 C
@@ -425,7 +463,7 @@ C
 C*      3.2 GRID DEFINITION BLOCK.
 C           ---------------------
 C
-          IF (ITEST.GT.1) CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
+          IF (ITEST.GT.2) CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
 C
 C*        3.2.1 DETERMINE GRID PARAMETERS.
 C               --------------------------

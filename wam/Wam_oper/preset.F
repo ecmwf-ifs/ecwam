@@ -2,7 +2,7 @@
 C
 C ----------------------------------------------------------------------
 C
-C**** *PRESET* - GENERATES ALL FILES REQUIRED FOR A WAMODEL COLD START.
+C**** *PRESET* - GENERATES ALL FILES REQUIRED FOR A WAMODEL START.
 C
 C     SUSANNE HASSELMANN  MPI     JULY 1986.
 C
@@ -23,10 +23,14 @@ C
 C     H. GUNTHER  GKSS/ECMWF  DECEMBER 1990
 C
 C     J. BIDLOT    ECMWF   FEBRUARY 1996  MESSAGE PASSING
-C     J. BIDLOT    ECMWF   MARCH 1997  MODIFY ROUTINES FOR OUTPUT OF RESTART
-C                                      FILE 
+C     J. BIDLOT    ECMWF   MARCH 1997  MODIFY ROUTINES FOR OUTPUT OF
+C                          RESTART FILE 
 C     B. HANSEN    ECMWF   APRIL    1997  RESTART FACILITY.
 C     B. HANSEN    ECMWF   JANUARY  1998  NAMELIST INPUT.
+C     B. HANSEN    ECMWF   FEBRUARY 1998  WRITE 2DSP TO FDB.
+C     J. BIDLOT    ECMWF   MARCH 1998 PRODUCE SPLIT GRIB SPECTRA AND
+C                                     INTERPOLATE TO OUTPUT GRID.
+C                                     NO LAW FILE IS PRODUCED THEN.
 C
 C*    PURPOSE.
 C     --------
@@ -66,9 +70,7 @@ C     EXTERNALS.
 C     ----------
 C
 C       *ABORT1*     - TERMINATES PROCESSING.
-C       *AIRSEA*    - TOTAL STRESS IN SURFACE LAYER.
 C       *CREWFN*    - CREATES A WIND FILE NAME.
-C       *GETWND*    - GETS A WIND FIELD.
 C       *GRSTNAME*  - BUILD NAME FOR INPUT/OUTPUT FILES 
 C       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
 C       *iecf_len*  - LENGTH OF A CHARACTER ARRAY.
@@ -80,17 +82,16 @@ C       *NOTIM*     - CONTROLS WIND GENERATION (NO TIME INTERPOLATION).
 C       *OPENFIL*   - OPENS A FILE.
 C       *PEAK*      - COMPUTES PARAMETERS BY FETCH LAWS.
 C       *PREWIND*   - PREPARES WINDS.
-C       *READGRIB*  - READS GRIB WAVE FIELS
 C       *SAVSPEC*   - SAVES THE RESTART SPECTRA.
 C       *SAVSTRESS* - SAVES THE RESTART WIND AND STRESS FIELDS.
 C       *SPECTRA*   - COMPUTES SPECTRA FROM PARAMETERS.
 C       *SPLITBL*   - SAVES SECOND TO LAST LATITUDES.
+C       *SPLITGRS*  - PERFORMS SPLITTING OF SPECTRA ON SUB DOMAINS 
 C       *SPR*       - DIRECTIONAL DISTRIBUTION.
 C       *READGRS*   - READS GRIBBED SPECTRUM DATA
 C       *READPRE*   - READS PREPROC OUTPUT.
 C       *READWND*   - READS A WIND FIELD.
 C       *TIMIN*     - CONTROLS WIND GENERATION (TIME INTERPOLATION).
-C       *WAMWND*    - CONVERTS INPUT WIND TO WAM WINDS.
 C
 C     REFERENCES
 C     ----------
@@ -192,36 +193,43 @@ C
 C
 #include "txtmpp.h"
 C
+C* 0.    COMMON OUTPUT CONTROL.
+C  ----------------------------
+#include <outctrl.h>
+      DATA csubna /"PRESET "/
+C
 C ----------------------------------------------------------------------
-      INTEGER,ALLOCATABLE :: NSTARTWAM(:),NENDWAM(:)
-      INTEGER,ALLOCATABLE :: KLENTOPWAM(:),KLENBOTWAM(:)
       REAL X4(2)
-      CHARACTER LINE*72, HEADER*70, CLTUNIT*1
-      CHARACTER*10 ZERO,CDUM,FILENAME
-      CHARACTER*80 SFILENAME, ISFILENAME
-      PARAMETER(ZERO=' ',CDUM='0000000000')
+      INTEGER I4(2)
+C
+      CHARACTER*  1 CLTUNIT, C_DOMAIN, CMODE
+      CHARACTER* 10 ZERO, CDUM, FILENAME
+      CHARACTER* 70 HEADER
+      CHARACTER* 72 LINE
+      CHARACTER* 80 SFILENAME, ISFILENAME
+C
+      PARAMETER (ZERO=' ', CDUM='0000000000')
+C
       LOGICAL LDSTOP, LDWRRE, LWAVEWIND, LINTGRS
+      LOGICAL LSPLITIN, LSPLITOUT
       DATA LDSTOP, LDWRRE / 2*.FALSE. /
 C
 C DIMENSION DUMMY COUPLED VARIABLES
 C
       INTEGER IUGB(1),IVGB(1)
 C
-C     WIND INPUT READ ARRAY
-      REAL, ALLOCATABLE :: UWND(:,:),VWND(:,:)
-C     DRAG COCEFFICIENT ARRAY
-      REAL, ALLOCATABLE :: CD(:,:)
 C
 C ----------------------------------------------------------------------
 C
       NAMELIST /NALINE/ HEADER,
-     1          IOPTI, ITEST, ITESTB, NPRWAM,
+     1          IOPTI, ITEST, ITESTB,
      1          ALFA, FM, GAMMA, SA, SB, THETA,
      1          FETCH,
      1          USERID, RUNID, PATH, CPATH,
      1          CDATEA, IDELWI, CLTUNIT,
      1          LPBIOIN, LPBIOOUT, LFDBIOIN, LFDBIOOUT,
-     1          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP
+     1          LSPLITIN,LSPLITOUT,
+     1          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP, C_DOMAIN
 C
 C ----------------------------------------------------------------------
 C
@@ -229,11 +237,16 @@ C
 C*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 C        ---------------------------------------------
 C
+      msub = 0
+      csuvi = ' '
+      ctest = ' '
+      mtest = 0
+      msuvi = 0
+C
       HEADER = ZERO
       IOPTI  =   -9
       ITEST  =   -9
       ITESTB =   -9
-      NPRWAM =    0
       ALFA   =    0.0
       FM     =    0.0
       GAMMA  =    0.0
@@ -249,16 +262,20 @@ C
       CLTUNIT= ZERO
       IDELWI =    0
 C
-      LMESSPASS=.FALSE.
+      LMESSPASS = .FALSE.
 C
-      LPBIOIN=.FALSE.
-      LPBIOOUT=.FALSE.
+      LPBIOIN   = .FALSE.
+      LPBIOOUT  = .FALSE.
+      LGRIBIN   = .FALSE.
       LFDBIOIN  = .FALSE. 
       LFDBIOOUT = .FALSE. 
+      LSPLITIN  = .FALSE.
+      LSPLITOUT = .FALSE.
 C
-      MARSTYPE= 'an'
-      YCLASS  = 'rd'
-      YEXPVER = USERID//'a'
+      MARSTYPE = 'an'
+      YCLASS   = 'rd'
+      YEXPVER  = USERID//'a'
+      C_DOMAIN = 'g'
 C
 C*    1. DEFINE UNIT NAMES.
 C        ------------------
@@ -272,12 +289,6 @@ C
       IU14 = 14
       IU15 = 15
 C
-C     DEFINE UNIT USED BY THE GRIB CD FIELD (IF USED)
-      IUCD = 91
-C
-C     DEFINE UNIT USED BY THE GRIB WAVE MODEL WIND SPEED FIELD (IF USED)
-      IUWND = 92
-C
 C     1.1 INITIALISATION OF MPP VARIABLES WITH DEFAULT VALUES
 C         ---------------------------------------------------
 C
@@ -286,7 +297,10 @@ C
        NINF=1
        NSUP=NIBLO
        X4=1.
-       NPRECI = N_PRECISION(X4)
+       NPRECR = N_PRECISION(X4)
+       I4=1
+       NPRECI = N_PRECISION(I4)
+       KTAG=100
 C
 C
 C ----------------------------------------------------------------------
@@ -302,6 +316,10 @@ C
 C*    2. READ NAMELIST NALINE.
 C        ---------------------
 C
+      CDATEWO = ' '
+      CDAWIFL = ' '
+      CDATEFL = ' '
+
       READ (IU05, NALINE)
 C
       IF (CLTUNIT .EQ. 'H') IDELWI = IDELWI*3600
@@ -318,13 +336,19 @@ C
 C
       CALL READPRE (IU07, 0)
 C
+      NEND=IJL(1)
+C
 C ----------------------------------------------------------------------
 C
 C*    4. PRINTER PROTOCOL OF INPUT.
 C        --------------------------
 C
  4000 CONTINUE
-      WRITE (IU06,'(1H1,'' PROGRAM PRESET:'',//,'' USER INPUT:'')')
+      WRITE (IU06,'(" PROGRAM PRESET:", / , "
+     . WAM Cycle4 Release8 CI 4 (common with IFS CY18R6)
+     .    CC=wam_sth_CY18R5_oam_for_18r6", /,
+     . "  USER INPUT:" )')
+
       WRITE (IU06,'(A70)') HEADER
       WRITE (IU06,'('' MODEL OPTIONS  :'',/)')
       IF (IOPTI.EQ.0) THEN
@@ -339,7 +363,7 @@ C
      1                 '' LOCAL WIND.'')')
          WRITE (IU06,'('' PARAMETERS USED IN CALM WIND AREAS.'')')
       ELSE IF (IOPTI.EQ.-1.OR.IOPTI.EQ.-2) THEN
-         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
+         WRITE (IU06,'('' INITIAL SPECTRAL VALUES ARE COMPUTED FROM'',
      1                 '' ARCHIVED SPECTRUM AND DRAG COEF. FIELDS.'')')
          WRITE (IU06,'('' AND ARCHIVED WAVE MODEL ANALYSED WIND SPEED'',
      1                 '' IF AVAILABLE.'')')
@@ -368,27 +392,40 @@ C
       ENDIF
 C
       IF (IOPTI.EQ.-1.OR.IOPTI.EQ.-2) THEN
+        IF(LSPLITIN) THEN
+          WRITE (IU06,*)'  '
+          WRITE (IU06,*)' ******************************************'
+          WRITE (IU06,*)' THE INPUT SPECTRA ARE GRIB SPLIT FILES '
+          WRITE (IU06,*)' ******************************************'
+          WRITE (IU06,*)'  '
+        ELSE
+          WRITE (IU06,*)'  '
+          WRITE (IU06,*)' ******************************************'
+          WRITE (IU06,*)' INPUT SPECTRA ARE OLDFASHION GRIB FILES '
+          WRITE (IU06,*)' ******************************************'
+          WRITE (IU06,*)'  '
+        ENDIF
         WRITE (IU06,*)'  '
-        WRITE (IU06,*)' ****************************************** '
-        IF(NPRWAM.GT.0) THEN
+        WRITE (IU06,*)' ******************************************'
+        IF(LSPLITOUT) THEN
           WRITE (IU06,*)' THE OUTPUT OF SPECTRA WILL BE GRIBBED '
-          WRITE (IU06,*)' AND SPLIT INTO ',NPRWAM,' SUB DOMAINS.'
+          WRITE (IU06,*)' AND SPLIT INTO ',NFRE*NANG,' FILES'
         ELSE
           WRITE (IU06,*)' THE OUTPUT OF SPECTRA WILL BE BINARY  '
         ENDIF
-        WRITE (IU06,*)' ****************************************** '
+        WRITE (IU06,*)' ******************************************'
         WRITE (IU06,*)'  '
       ENDIF
       WRITE (IU06,*) ' TEST OUTPUT LEVEL IS .......... ITEST = ', ITEST
       WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
 C
       IF (IOPTI.NE.-1.AND.IOPTI.NE.-2) THEN
-      WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
-      WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',
-     1          F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')
-     2          ALFA, FM, GAMMA, SA, SB
-      WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,
-     1           '' DEGREE'')')  THETA
+        WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
+        WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',
+     1                F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')
+     2                ALFA, FM, GAMMA, SA, SB
+        WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,
+     1                '' DEGREE'')')  THETA
       ENDIF
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' MODEL FILE NAMES:'
@@ -401,6 +438,27 @@ C
       WRITE (IU06,*) ' END OF USER INPUT PROTOCOLL'
       WRITE (IU06,'(''  NUMBER OF DIRECTION BINS  NANG = '',I4)') NANG
       WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE = '',I4)') NFRE
+C
+      IF (LFDBIOOUT .OR. LFDBIOIN) THEN
+        WRITE(IU06,*) ' ACCESS TO FIELDS DATA BASE REQUESTED '
+        WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
+        INITFDB_STAT = IINITFDB()
+        IF (INITFDB_STAT .NE. 0) THEN
+           WRITE(IU06,'("****************************************")')
+           WRITE(IU06,'("*                                      *")')
+           WRITE(IU06,'("*    FATAL ERROR IN SUB. USERIN        *")')
+           WRITE(IU06,'("*    ==========================        *")')
+           WRITE(IU06,'("*    INITIALIZATIO OF THE              *")')
+           WRITE(IU06,'("*    FIELDS DATA BASE                  *")')
+           WRITE(IU06,'("*     F A I L E D .                    *")')
+           WRITE(IU06,'("*                                      *")')
+           WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')
+     .     INITFDB_STAT
+           WRITE(IU06,'("*                                      *")')
+           WRITE(IU06,'("****************************************")')
+           CALL ABORT1
+        ENDIF
+      ENDIF
 C
 C ----------------------------------------------------------------------
 C
@@ -447,142 +505,32 @@ C
           ISPLIT=2
         ENDIF
 C
-        CALL GRSTNAME (IU06,CDTPRO,CDATEF,0,'GRS',SFILENAME)
+        CALL GRSTNAME(IU06,CDTPRO,CDATEF,0,'GRS',IRANK,NPROC,
+     &                SFILENAME)
+        CALL GRSTNAME(IU06,CDTPRO,CDATEF,0,'IGS',IRANK,NPROC,
+     &                ISFILENAME)
 C
-        CALL GRSTNAME (IU06,CDTPRO,CDATEF,0,'IGS',ISFILENAME)
-C
-C       INTERPOLATE THE GLOBAL FIELD IS IT IS NECESSARY
+C       INTERPOLATE THE GLOBAL FIELD IF IT IS NECESSARY
 C
         LINTGRS=.FALSE. 
-CCC!!!!!        CALL INTGRS (IU06,SFILENAME,ISPLIT,CDTPRO,LINTGRS,ISFILENAME)
+        CALL INTGRS (IU06,SFILENAME,ISPLIT,CDTPRO,LINTGRS,ISFILENAME)
 
         IF(LINTGRS) SFILENAME=ISFILENAME 
 
-        IF(NPRWAM.LE.0) THEN
+        IF(.NOT.LSPLITOUT) THEN
+C         THE SPECTRA WILL BE SAVED AS A BINARY FILE
 CCCC      note !! FL1 is allocated in readgrs !!!!
           CALL READGRS(IU06,SFILENAME,ISPLIT,CDTPRO)
           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READGRS DONE'
-
         ELSE
 C
-C         DETERMINE GRID DOMAIN DECOMPOSITION OF THE NPRWAM SUB DOMAINS
+C         SPLIT SPECTRA INTO NFRE*NANG GRIB FILES
 C
-          ALLOCATE (NSTARTWAM(NPRWAM))
-          ALLOCATE (NENDWAM(NPRWAM))
-          ALLOCATE (KLENBOTWAM(NPRWAM))
-          ALLOCATE (KLENTOPWAM(NPRWAM))
-C
-          CALL MPDECOMP(NPRWAM,NSTARTWAM,NENDWAM,KLENTOPWAM,
-     &                  KLENBOTWAM,MAXLEN)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MPDECOMP DONE'
+          CALL SPLITGRS (IU06,SFILENAME,ISPLIT,CDTPRO,ITEST,LFDBIOOUT,
+     &                   MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,C_DOMAIN)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPLITGRS DONE'
 
         ENDIF
-
-C
-C
-C       GET ATMOSPHERIC MODEL WINDS
-C
-        IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
-        U10OLD = 0.
-        THWOLD = 0.
-        USOLD = 0.
-        TAUW = 0.
-        Z0OLD = 0.
-        IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NC,NR))
-        IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NC,NR))
-        CALL GETWND (U10OLD, THWOLD, CDTPRO, UWND, VWND, NC, NR,
-     1               IUGB, IVGB, ILEN)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
-        IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-        IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-C
-C
-C       USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
-C       A PREVIOUS WAVE MODEL RUN ON WHICH THIS RESTART IS BASED 
-C       IF IT EXISTS, OTHERWISE PRESET WILL USE THE INFORMATION FROM
-C       THE ATMOSPHERIC MODEL WIND SPEED ARCHIVE.
-C       
-        LWAVEWIND=.FALSE.
-C
-        IF ((IUWND.GT.0) .AND. (IUWND.LT.10)) THEN
-           WRITE(FILENAME,'(A,I1)') 'fort.',IUWND
-        ELSE IF ((IUWND.GT.9) .AND. (IUWND.LT.100)) THEN
-           WRITE(FILENAME,'(A,I2)') 'fort.',IUWND
-        ELSE
-           WRITE(FILENAME,'(A8)') IUWND
-        ENDIF
-        LIU   = IECF_LEN(FILENAME)
-        FILENAME=FILENAME(1:LIU)
-        INQUIRE(FILE=FILENAME,EXIST=LWAVEWIND)
-C
-        IF(LWAVEWIND) THEN
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) 'A DATA FILE CONTAINING WIND SPEED INFORMATION'
-          WRITE(IU06,*) 'AS PROVIDED BY A PREVIOUS WAVE MODEL RUN'
-          WRITE(IU06,*) 'WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
-          WRITE(IU06,*) ' '
-C
-          IPARAM=245
-          CALL READGRIB(IU06,IUWND,IPARAM,CDTPRO,U10OLD)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READGRIB DONE'
-C
-        ELSE
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) '          !!!! NOTE !!!!'
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) 'NO INFORMATION ON WIND SPEEDS FROM THE' 
-          WRITE(IU06,*) 'WAVE MODEL WAS PROVIDED'
-          WRITE(IU06,*) 'NO UPDATE OF THE INPUT ATMOSPHERIC WINDS'
-          WRITE(IU06,*) 'WAS POSSIBLE'
-          WRITE(IU06,*) ' '
-        ENDIF
-C
-        IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
-C
-C       INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
-C
-        DO IG=1,IGL
-           CALL AIRSEA (U10OLD(IJS(IG),IG), TAUW(IJS(IG),IG),
-     1                  USOLD(IJS(IG),IG), Z0OLD(IJS(IG),IG),
-     2                  IJS(IG), IJL(IG))
-           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
-C
-           DO IJ=IJS(IG),IJL(IG)
-              CDINV = (MIN(U10OLD(IJ,IG)/USOLD(IJ,IG),100.0))**2
-              CD(IJ,IG) = 1./CDINV 
-           ENDDO
-        ENDDO
-C
-        IPARAM=233
-        CALL READGRIB(IU06,IUCD,IPARAM,CDTPRO,CD)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READGRIB DONE'
-C
-C       COMPUTE TAUW,USOLD AND Z0OLD
-C
-        IF (LWCOU) THEN
-          ILEV=2
-        ELSE
-          ILEV=1
-        ENDIF
-C
-        DO IG=1,IGL
-           DO IJ=IJS(IG),IJL(IG)
-              CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
-              Z0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
-cc USOLD will first contain its square
-              USOLD(IJ,IG) = CD(IJ,IG)*(U10OLD(IJ,IG)**2+0.01)
-              CHARNOCK = G*Z0OLD(IJ,IG)/USOLD(IJ,IG)
-              CHARNOCK = MAX(CHARNOCK,ALPHA)
-              TAUW(IJ,IG) = USOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
-              USOLD(IJ,IG) = SQRT(USOLD(IJ,IG))
-           ENDDO
-        ENDDO
-C
-        IF(ALLOCATED(CD)) DEALLOCATE(CD)
       ELSE
          IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
       END IF
@@ -623,15 +571,37 @@ C        --------------------
 C
  8000 CONTINUE
 C
-      CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     1               LDSTOP,LDWRRE,1,CDATEA,CDATEA)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
+      IF (IOPTI .NE. -1 .AND. IOPTI .NE. -2  ) THEN
+        CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
+     1                 LDSTOP,LDWRRE,1,CDATEA,CDATEA)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
+        IF (LSPLITOUT.AND..NOT.LPBIOOUT)
+     &     CALL GSFILE (IU06, IU15, 0, CDATEA, CDATEA, 'LAW', 'S')
+      ENDIF
+
+
+      IF (IOPTI .NE. -1 .AND. IOPTI .NE. -2 .AND.
+     .    LSPLITOUT) THEN
+
+C       THE SPECTRA WILL BE SAVED AS GRIB FILES IN THE FDB.
+
+        NTOTENS = 0
+        CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+     1                 FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,IRGG,
+     2                 NLONRGG, KXLT, IXLG, NIBLO, NBLO, ZMISS,
+     3                 AMONOP, AMOWEP, AMOEAP, AMOSOP, XDELLA,
+     4                 XDELLO, NSTART,NEND,
+     5                 CDATEA, CDATEF, CDATER, CDATES, CDATEA,
+     6                 MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
+     7                 NENSFNB, NTOTENS, LFDBIOOUT, ITEST, IFDB)
+      ELSEIF (.NOT.LSPLITOUT) THEN
+        CALL SAVSPEC(FL1,NSTART,NEND,LDSTOP,LDWRRE,1,
+     1               CDATEA,CDATEA,CDUM,CDUM, MARSTYPE,
+     2               YCLASS, YEXPVER, CFDB2DSP)
+
+      ENDIF
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
 C
-      CALL SAVSPEC(FL1,NSTART,NEND,LDSTOP,LDWRRE,1,
-     1             CDATEA,CDATEA,CDUM,CDUM, MARSTYPE,
-     2             YCLASS, YEXPVER, CFDB2DSP)
-C
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
 C
 C ----------------------------------------------------------------------
 C

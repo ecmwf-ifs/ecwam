@@ -5,7 +5,7 @@
 #.
 #QSUB -q vpp700.normal
 #QSUB -eo
-#QSUB -r preproc_pre_release
+#QSUB -r preproc_$LABEL$NAME
 #QSUB -lP 0
 #QSUB -lT 300
 #QSUB -lV 10mb
@@ -23,6 +23,7 @@ cd $TMPDIR
 set +v
 #.
 #include "path.h"
+cd $TMPDIR
 #.
 #.===================================================================
 #.  INPUT FILES.
@@ -36,7 +37,7 @@ cat > fort.1 << EOF
 #elif region=='m' && resolution==50
 #include "/cc/rd/wam/Wam_setup/Topographic_data/Medite/topomed"
 #elif region=='m' && resolution==25
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Medite/topomed_25"
+#include "/cc/rd/wam/Wam_setup/Topographic_data/Global/topoglo_25"
 #else
 #include "/cc/rd/wam/Wam_setup/Topographic_data/Global/topoglo_50"
 #endif
@@ -49,7 +50,7 @@ EOF
 #.
 #.  UNFORMATED NEST FILE from coarse grid, if this is a fine grid run.
 #.
-#.ecp ec:$DHSPATH/BOUGLOU fort.3
+#.ecp ec:$DHSPATH/BOUGLOU_${grid} fort.3
 #.
 #.======================================================================
 #.  Copy the source code to the compiler input.
@@ -198,4 +199,7 @@ ecp -o $VPPPATH/ubufglou ec:$DHSPATH/ubufglou
 #.
 ls -l
 #.
+cd $VPPPATH
+rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/preset.job .
+vppqsub preset.job
 #endif

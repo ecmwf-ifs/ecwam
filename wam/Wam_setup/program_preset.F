@@ -1,13 +1,16 @@
 #ifdef JOB
 #.
-#. PRESET TO GENERATE START FILES
+#. PRESET TO GENERATE and/or RETRIEVE  START FILES
 #. FOR USE BY WAMODEL.
 #.
 #. HEINZ GUNTHER        ECMWF         JUNE 1990
 #. B HANSEN             ECMWF         NOVEMBER 1995 MIRAGTION TO CLEARCASE
-#.
-#QSUB -r preset_CY18R4_test
-#QSUB -q vpp700.normal
+#. J. BIDLOT            ECMWF         1998 : use of grib spectra
+#.                                           all data retrieval for wam run
+#.                                           must be done here.
+#. 
+#QSUB -q vpp700.rdx04_io
+#QSUB -r preset_$LABLE$NAME
 #QSUB -lP 0
 #QSUB -lt 3000
 #QSUB -lV 0mb
@@ -16,109 +19,94 @@
 #QSUB -mb -me -mi
 #QSUB
 #.
-######################################################################
-# MAKE USE OF MEMORY RESIDENT FILE SYSTEM for TMPDIR
-# TMPDIR=$MRFSDIR
-######################################################################
-#.
-#!!! set variable COLDSTART !!!. By default it is set to yes, if set to no
+#!!! set variable COLDSTART !!!. By default it is set to no, if set to no
 # it means that the inital condition will be reconstructed from archived
-# spectra and drag coefficient plus the usual surface wind. In that case,
+# spectra and drag coefficient plus the usual surface winds. In that case,
 # you must also specified the experiment version and class  of the archived
 # data as well as the grid option regular/irregular grid (irgg=0/1). By default
 # ALL but 0.5 grid should use irgg=0. Note that you can select irgg=0 for
 # the 0.5 irregular grid, but this will result in unnecessary interpolation of
 # the grib fields and it is best to retrieve the field on the same grid as
-# created with.
-#.
+# created with. YOU must also specify whether the wave spectra are of the
+# new type (specparam=251) or the old type (specparam=250). Finally set 
+# luwave=yes if wind speed analysed by the wave model (parameter 245) is
+# available (for OD, there was none until the coupled model bcame operational)
 #.
 COLDSTART=yes
 expver_archive=1
 class_archive=OD
+specparam=250
+luwave=no
+#.
 #if resolution == 50
 irgg=1
 #else
 irgg=0
 #endif
-
 #.
 PATH=$PATH:.
-cd $TMPDIR
-set +v
 #.
 #include "path.h"
 #.
-if [ $PRECISION = SINGLE ] ; then
-  export rp=-AD
-  libselect -r 32 -d 64
-  MPLIB=/opt/tools/lib/libmp2x.a
-  MPELIB=/usr/local/lib/libmpe32.a
-  #. !!!! MPELIB is selected for 32 bit real !!!!!!
-  #################################################
-elif [ $PRECISION = DOUBLE ] ; then
-  libselect -r 64
-  export rp=-Ad
-  MPLIB=/opt/tools/lib/libmp2x.a
-  MPELIB=/usr/local/lib/libmpe2.a
-  #. !!!! MPELIB is selected for 64 bit real !!!!!!
-  #################################################
-else
-  ls -lsa
-  print - "\n\n\t\tPRECISION $PRECISION not valid\n\n"
-  print - "\n\n\t\tUSE SINGLE or DOUBLE \n\n"
-  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-  exit 1
-fi
-#.
-#.=====================================================================
-#. Restore wamcrlib from DHS if lost.
-#.=====================================================================
-#.
-if [[ ! -a  $VPPLPATH/lib$WAMCRLIB.a ]] ; then
-  ecp ec:$DHSLPATH/lib$WAMCRLIB.a $VPPLPATH/lib$WAMCRLIB.a || {
-    ls -lsa
-    print - "\n\n\t\tWAMCRLIB file was not found\n\n"
-    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit 3
-  }
-fi
-#.
-#.=====================================================================
-#. General grid information and model constants.
-#.=====================================================================
-#.
-if [[ ! -r $VPPPATH/gridglou ]] ; then
-  ecp ec:$DHSPATH/gridglou $VPPPATH/gridglou || {
+# move to working directiory
+############################
+cd $WDIR
+mkdir $WORKDIR 
+cd $WORKDIR 
+
+#. determine if preset has to be run or only data retrieval is necessary
+#. 
+if [[ COLDSTART = no || (COLDSTART != no && $specparam = 250) ]] ; then
+ print - " PRESET WILL BE RUN "
+ lpreset=yes
+  #.
+  #. Restore wamcrlib from DHS if lost.
+  #.=====================================================================
+  #.
+  if [[ ! -a  $LIBCR/lib$WAMCRLIB.a ]] ; then
+    ecp ec:$DHSLPATH/lib$WAMCRLIB.a $LIBCR/lib$WAMCRLIB.a || {
       ls -lsa
-      print - "\n\n\t\tPREPROC file gridglou was not found\n\n"
+      print - "\n\n\t\tWAMCRLIB file was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 2
-  }
-fi
-cp $VPPPATH/gridglou fort.7 
-#.
-#. Common UBUF.
-#.
-if [[ "$COLDSTART" = "no" ]] ; then
-  if [[ ! -r $VPPPATH/ubufglou ]] ; then
-    ecp ec:$DHSPATH/ubufglou $VPPPATH/ubufglou || {
+      exit 3
+    }
+  fi
+  #.
+  #.=====================================================================
+  #. General grid information and model constants.
+  #.=====================================================================
+  #.
+  if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
+    ecp ec:$DHSPATH/gridglou_${grid} $ADIR/gridglou_${grid} || {
+        ls -lsa
+        print - "\n\n\t\tPREPROC file gridglou was not found\n\n"
+        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+        exit 2
+    }
+  fi
+  ln -s  $ADIR/gridglou_${grid} fort.7 
+  #.
+  #. Common UBUF.
+  #.
+  if [[ ! -r $ADIR/ubufglou_${grid} ]] ; then
+    ecp ec:$DHSPATH/ubufglou_${grid} $ADIR/ubufglou_${grid} || {
       ls -lsa
       print - "\n\n\t\tPREPROC file ubufglou was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
       exit
     }
   fi
-  ln -s $VPPPATH/ubufglou fort.8
-fi
+  ln -s $ADIR/ubufglou_${grid} fort.8
 
+fi
+#.
 # set restart file creation option
-#
-#.=====================================================================
+#.================================
 #
 if [[ "$COLDSTART" = "no" ]] ; then
 ### we will need to refine this as -1 should be use for the mediter.
 ### and for all OD global field prior to 961205
-   date=`substring $begofan 1 6`
+   date=`substring $begofrn 1 6`
    if [[ $date -lt 961205 ]] ; then
      OPTI="-1"
    else
@@ -133,27 +121,33 @@ fi
 #else
 #.
 #.=====================================================================
-#.  Prepare MARS requests. Load and execute program GETINPT.
+#.  Prepare MARS requests for winds. Load and execute program GETINPT.
 #.
-cat >getinptb.f <<\EOFPRO
+if [ ! -f $LIBS/getinptb_${grid} ] ; then
+  cd $LIBS
+  cat >getinptb.f <<\EOFPRO
 #include "getinptb.F"
 #include "file_transfer.F"
 EOFPRO
-# compile getinptb
-#.
-frt $rp -X9 -c -Z getinptb.lis -o getinptb.o getinptb.f
-#.
-frt $rp -Wl,-dy -lsocket -Ps -X9 -o getinptb getinptb.o -l$WAMCRLIB \
-$EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB
+  # compile getinptb
+  #.
+  frt $rp -X9 -c -Z getinptb.lis -o getinptb.o getinptb.f
+  #.
+  frt $rp -Wl,-dy -lsocket -Ps -X9 -o $LIBS/getinptb_${grid} getinptb.o \
+  -l$WAMCRLIB $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB
+  #.
+  rm getinptb.*
+  cd $WDIR/$WORKDIR 
+fi
 #.
 cat > fort.4 <<- EOF
-RUN MODEL FROM $begofan TO $endoffo 
-PARAM=10U/10V,
+RUN MODEL FROM $begofrn TO $endofrn 
+PARAM=10U/10V, CLASS=OD,
 REPRES=GG,
 ANALYSIS PERIOD = $antime
 FORECAST PERIOD = $fctime
 WIND TIME STEP IN SECONDS = 21600
-ANALYSIS FROM $begofan TO $endofan 
+ANALYSIS FROM $begofrn TO $begoffo 
 ASSIMILATION NO
 NEW FORECAST YES
 STATUS STORM1= UNFINISHED
@@ -163,21 +157,18 @@ DATE FOR OUTPUT OF BOTH RESTART FILES = $outofrf
 LAST DATE FOR SPECTRA FILE OUTPUT = $outof2d
 EOF
 #.
-getinptb || {
+$LIBS/getinptb_${grid} || {
   #.
   #. Abort on error.
   #.
    ls -lsa
    print - "\n\n\t\tGETINPT FAILED\n\n"
    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-   cat getinptb.lis
    exit 6
   }
 #.
 print - "\n\n\t\tSTART POSSIBLE MARS RETRIEVAL\n\n"
 #.
-rm tempout
-rm getinptb.*
 #.
 #.=====================================================================
 #.  MARS retrieval.
@@ -186,13 +177,13 @@ rm getinptb.*
 #.
 #.create filename for mars retrieval output
 #.
-wind_filename=`awk '{print$1}' windfilename`
+wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
 #.
 print - $wind_filename
 #.
 #.check if mars retieval needed
 #.
-if [[ ! -r $VPPPATH/$wind_filename ]] ; then
+if [[ ! -r $WDIR/$wind_filename ]] ; then
    print -  "mars wind file NOT online, start mars retrieval"
    mars fort.22 || {
     #.
@@ -203,48 +194,123 @@ if [[ ! -r $VPPPATH/$wind_filename ]] ; then
      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
      exit 7
    }
-   mv fort.80 fort.63
-   cp fort.63 $VPPPATH/$wind_filename
+   mv fort.80 sfcwindin 
+   cp sfcwindin $WDIR/$wind_filename
    print - "\n\n\t\tSTART WAVE MODEL \n\n"
 else
  print - "mars wind file already online"
- cp  $VPPPATH/$wind_filename fort.63
+ ln -s $WDIR/$wind_filename sfcwindin 
  print - "\n\n\t\tSTART PRESET MODEL \n\n"
 fi
 #.
 rm fort.22
 #.
 #endif
+#.
+#.
+#.check if need SST for ice boundaries (!!!! we are still using the OD SST!!!)
+#######################################
+#if iceedge=='y'
+#.
+#.check if SST file does exist
+#.
+if [[ !  -r $ADIR/kelv${begofrn}_${grid} ]] ; then
+  # in case file is not there do a mars request
+  # GET SURFACE TEMPERATURES FROM MARS
+  #===================================
+  ICEDATE=`substring $begofrn 1 6`
+  cat > myrequest <<-EOF
+	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+	CLASS=OD,
+	EXPVER=1,
+	LEVEL=OFF,
+	PARAM=ST,
+	REPRES=GG,
+	STEP=0,
+	TIME=12,
+	DATE=$ICEDATE,
+	GRID=$GRID,
+	AR=$AREA,
+	TARGET="sfctempin"
+	EOF
+  #.
+  #.DO THE MARS REQUEST.
+  #=====================
+  mars myrequest || {
+    print - "\n\n\t\t NO SURFACE TEMPS FROM MARS, NOTHING IS DONE \n\n"
+    exit 19
+  }
+  mv sfctempin $ADIR/kelv${begofrn}_${grid}
+fi
+#endif
+#.
+if [[ $ASSIMILATION = "YES" ]] ; then
+  #.
+  #.====================================================================
+  #.
+  #. Get quality controlled ERS-2 altimeter data if assimilation is
+  #. required
+  #.
+  #. Note the location of the data in CFS is liable to change !!!!
+  #.
+  #. as well as the way day are kept in the archive (see Bjorn)
+  #.
+  #.====================================================================
+  ##
+  AS=1
+  CFSALT=/emos/wave/0012/ers2_b/alt/global
+  CFSALT=/emos/wave/0001/ers2_s/alt/global
+  #
+  # get 64 bit decoder from prepifs since the operational one is 32 bit
+   if [ $PRECISION = DOUBLE ] ; then
+      ALTLIB=/home/rd/rdx/lib/16r4/libalt.a
+      ar xv $ALTLIB enderac.o
+      frt -Ad -o enderac enderac.o $ALTLIB $EMOSLIB $ECLIB
+   fi
+  #
+  CURRENT_DATE=$begofrn
+  CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
+  ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
+  ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
+  LAST_ANALYSIS_DATE=$endofrn
+  LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
+  until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
+    if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
+      # in case file is not there do a ecfile request
+      ecfile -p $CFSALT/BFL${ANALYSIS_DATE}00 \
+             -en get BFL${ANALYSIS_DATE}00
+  # use appropriate decoder
+      if [ $PRECISION = SINGLE ] ; then
+         /home/ma/emos/wave/bin/enderac \
+         -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
+      else
+         ./enderac -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
+      fi
+
+      rm -f BFL${ANALYSIS_DATE}00
+      mv RFL${ANALYSIS_DATE}00 ${ADIR}/RFL${ANALYSIS_DATE}00
+    fi
+    CURRENT_DATE=$ANALYSIS_DATE
+    CURRENT_DATE=`substring $CURRENT_DATE 1 8`
+    ANALYSIS_DATE=`newdate 19${CURRENT_DATE} 6`
+    ANALYSIS_DATE=`substring $ANALYSIS_DATE 3 10`
+  done
+else
+  AS=0
+fi
+
+if [[ "$COLDSTART" = "no" ]] ; then
 #
 # Retrieve the drag coefficient if the initial data are contructed
 # from known archive spectra , drag coefficient and surface wind speed
 # as analysed by the wave model (if available, new parameter245)
-# and link an existing BLS file to fort.12. This will change once we
-# retrieve the spectra straight out of the archive.
 #################################################################### 
-
-if [[ "$COLDSTART" = "no" ]] ; then
-
-#if resolution == 150
-  GRID="1.5/1.5"
-  AREA="81./ 0./ -81./358.5"
-#elif region == 'g' &&  resolution == 50
-  GRID="0.5/0.5"
-  AREA="81./ 0./ -81./359.5"
-#elif region == 'g' &&  resolution == 300 
-  GRID="3.0/3.0"
-  AREA="72./ 0./ -69./357.0"
-#elif region == 'm' && resolution == 25
-  GRID="0.25/0.25"
-  AREA="66./ -6./ 30./42."
-#endif
-
 #
 # Get the WAVE spectra 
 # ====================
 #
-SPECDATE=`substring $begofan 1 6`
-SPECTIME=`substring $begofan 7 8`
+SPECDATE=`substring $begofrn 1 6`
+SPECTIME=`substring $begofrn 7 8`
 if [[ $SPECTIME -ne 12 && $SPECDATE -lt 980120 ]] ; then
    echo 'THERE IS NO SPECTRA IN THE ARCHIVE OUTSIDE 12Z'
    echo 'PLEASE CHANGE INITIAL DATE ACCORDINGLY'
@@ -261,71 +327,117 @@ if [[ "$irgg" = "1" && $SPECDATE -lt 961205 ]] ; then
    echo 'INTERPOLATION WILL BE USED TO CREATE ONE.'
 fi
 
-sfilename=GRS${begofan}00
+if [[ $specparam = 250 ]] ; then
+  sfilename=GRS${begofrn}00
+else
+  sfilename=SGS${begofrn}00
+fi
 
-if [[ !  -r $VPPPATH/${sfilename} ]] ; then
+if [[ !  -r $WDIR/${sfilename} ]] ; then
   # in case file is not there do a mars request
   # GET WAVE SPECTRA 
   #=================
-  SPECDATE=`substring $begofan 1 6`
-  SPECTIME=`substring $begofan 7 8`
+  SPECDATE=`substring $begofrn 1 6`
+  SPECTIME=`substring $begofrn 7 8`
 
-  if [[ $OPTI -eq -2 ]] ; then
-  cat > myrequest <<-EOF
-	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
-	STREAM=WAVE,
-	CLASS=$class_archive,
-	EXPVER=$expver_archive,
-	LEVEL=OFF,
-	PARAM=250,
-	REPRES=LL,
-	STEP=0,
-	TIME=$SPECTIME,
-	DATE=$SPECDATE,
-	DOMAIN=N,
-	TARGET="${sfilename}"
+  if [[ $specparam = 250 ]] ; then
 
-	RETRIEVE,
-	DOMAIN=S
+    if [[ $OPTI -eq -2 ]] ; then
+    cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=250,
+		REPRES=LL,
+		STEP=0,
+		TIME=$SPECTIME,
+		DATE=$SPECDATE,
+		DOMAIN=N,
+		TARGET="${sfilename}"
 
-	EOF
+		RETRIEVE,
+		DOMAIN=S
+
+		EOF
+    else
+    cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=250,
+		REPRES=LL,
+		STEP=0,
+		TIME=$SPECTIME,
+		DATE=$SPECDATE,
+		DOMAIN=G,
+		TARGET="${sfilename}"
+		EOF
+    fi
   else
-  cat > myrequest <<-EOF
-	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
-	STREAM=WAVE,
-	CLASS=$class_archive,
-	EXPVER=$expver_archive,
-	LEVEL=OFF,
-	PARAM=250,
-	REPRES=LL,
-	STEP=0,
-	TIME=$SPECTIME,
-	DATE=$SPECDATE,
-	DOMAIN=G,
-	TARGET="${sfilename}"
-	EOF
+    if [[ "$irgg" = "1" ]] ; then
+      cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=251,
+		REPRES=LL,
+		STEP=0,
+		TIME=$SPECTIME,
+		DATE=$SPECDATE,
+		DIRECTION=1/to/${nang},
+		FREQUENCY=1/to/${nfre},
+		DOMAIN=G,
+		TARGET="${sfilename}"
+		EOF
+    else
+      cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=251,
+		REPRES=LL,
+		STEP=0,
+		TIME=$SPECTIME,
+		DATE=$SPECDATE,
+		DIRECTION=1/to/${nang},
+		FREQUENCY=1/to/${nfre},
+		DOMAIN=G,
+		GRID=$GRID,
+		AR=$AREA,
+		TARGET="${sfilename}"
+		EOF
+     fi
   fi
   #.
   #.DO THE MARS REQUEST.
   #=====================
   mars myrequest || {
-    print - "\n\n\t\t NO WAVE SPECTRA 250 FROM MARS, NOTHING IS DONE \n\n"
+    print - "\n\n\t\t NO WAVE SPECTRA FROM MARS, NOTHING IS DONE \n\n"
     exit 9
   }
-  cp ${sfilename} $VPPPATH/${sfilename}
+  mv ${sfilename} $WDIR/${sfilename}
+  ln -s $WDIR/${sfilename} ${sfilename}
 else
-  ln -s $VPPPATH/${sfilename} ${sfilename}
+  ln -s $WDIR/${sfilename} ${sfilename}
 fi
 #
-# Get drag coefficient with waves 
+# Get drag coefficient with waves for wam model run 
 # ===============================
 #
-if [[ !  -r $VPPPATH/CD$begofan ]] ; then
+if [[ !  -r $ADIR/CD${begofrn}_${grid} ]] ; then
   # in case file is not there do a mars request
   # GET DRAG COEFFICIENT WITH WAVE FROM MARS
   #i========================================
-  CDDATE=`substring $begofan 1 6`
-  CDTIME=`substring $begofan 7 8`
+  CDDATE=`substring $begofrn 1 6`
+  CDTIME=`substring $begofrn 7 8`
 if [[ "$irgg" = "1" ]] ; then
   cat > myrequest <<-EOF
 	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
@@ -338,8 +450,7 @@ if [[ "$irgg" = "1" ]] ; then
 	STEP=0,
 	TIME=$CDTIME,
 	DATE=$CDDATE,
-	AR=$AREA,
-	TARGET="fort.91"
+	TARGET="cdwavein"
 	EOF
 else
   cat > myrequest <<-EOF
@@ -355,7 +466,7 @@ else
 	DATE=$CDDATE,
 	GRID=$GRID,
 	AR=$AREA,
-	TARGET="fort.91"
+	TARGET="cdwavein"
 	EOF
 fi
   #.
@@ -365,74 +476,68 @@ fi
     print - "\n\n\t\t NO DRAG COEFFICIENT 233 FROM MARS, NOTHING IS DONE \n\n"
     exit 8
   }
-  cp fort.91 $VPPPATH/CD$begofan
-else
-  ln -s $VPPPATH/CD$begofan fort.91
+  mv cdwavein $ADIR/CD${begofrn}_${grid}
 fi
 
 #
-# Get surface wind speed as modified by the wave model analysis
+# Get surface wind speed as modified by the wave model analysis for wam run
 # =============================================================
 #
-if [[ !  -r $VPPPATH/U10$begofan ]] ; then
-  # in case file is not there do a mars request
-  # GET SURFACE WIND WITH WAVE FROM MARS
-  #i=====================================
-  CDDATE=`substring $begofan 1 6`
-  CDTIME=`substring $begofan 7 8`
-if [[ "$irgg" = "1" ]] ; then
-  cat > myrequest <<-EOF
-	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
-	STREAM=WAVE,
-	CLASS=$class_archive,
-	EXPVER=$expver_archive,
-	LEVEL=OFF,
-	PARAM=245,
-	REPRES=LL,
-	STEP=0,
-	TIME=$CDTIME,
-	DATE=$CDDATE,
-	AR=$AREA,
-	TARGET="fort.92"
-	EOF
-else
-  cat > myrequest <<-EOF
-	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
-	STREAM=WAVE,
-	CLASS=$class_archive,
-	EXPVER=$expver_archive,
-	LEVEL=OFF,
-	PARAM=245,
-	REPRES=LL,
-	STEP=0,
-	TIME=$CDTIME,
-	DATE=$CDDATE,
-	GRID=$GRID,
-	AR=$AREA,
-	TARGET="fort.92"
-	EOF
-fi
-  #.
-  #.DO THE MARS REQUEST.
-  #=====================
-  mars myrequest || {
-    print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
-    print - "NO WIND SPEED 245 FROM MARS, program will continue "
-    print - "and will use the atmospheric model winds instead   "
-    print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
-    \rm fort.92
-  }
-  if [[ -r $VPPPATH/U10$begofan ]] ; then
-    cp fort.92 $VPPPATH/U10$begofan
+if [[ !  -r $ADIR/U10${begofrn}_${grid} ]] ; then
+  if [[ $luwave  = yes ]] ; then
+    # in case file is not there do a mars request
+    # GET SURFACE WIND WITH WAVE FROM MARS
+    #i=====================================
+    CDDATE=`substring $begofrn 1 6`
+    CDTIME=`substring $begofrn 7 8`
+    if [[ "$irgg" = "1" ]] ; then
+      cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=245,
+		REPRES=LL,
+		STEP=0,
+		TIME=$CDTIME,
+		DATE=$CDDATE,
+		TARGET="uwavein"
+		EOF
+    else
+      cat > myrequest <<-EOF
+		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
+		STREAM=WAVE,
+		CLASS=$class_archive,
+		EXPVER=$expver_archive,
+		LEVEL=OFF,
+		PARAM=245,
+		REPRES=LL,
+		STEP=0,
+		TIME=$CDTIME,
+		DATE=$CDDATE,
+		GRID=$GRID,
+		AR=$AREA,
+		TARGET="uwavein"
+		EOF
+    fi
+    #.
+    #.DO THE MARS REQUEST.
+    #=====================
+    mars myrequest || {
+      print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+      print - "NO WIND SPEED 245 FROM MARS, program will continue "
+      print - "and will use the atmospheric model winds instead   "
+      print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+    }
   fi
-else
-  ln -s $VPPPATH/U10$begofan fort.92
+  cp uwavein $ADIR/U10${begofrn}_${grid}
 fi
-
-
+#.
 # end coldstart=no
 fi
 
+if [[ $lpreset = yes ]] ; then
 #.
 #.======================================================================
 #.  Copy the source code to the compiler input.
@@ -448,10 +553,14 @@ cat >preset.f <<\EOFPRO
 #include "getspec.F"
 #include "getwnd.F"
 #include "../Alt/i_get_unit.F"
+#include "inmarssi.F"
+#include "intgrs.F"
+#include "intsgs.F"
 #include "locint.F"
 #include "makeblos.F"
 #include "mpdecomp.F"
 #include "mpdistribfl.F"
+#include "mpdistribscfld.F"
 #include "mpgatherfl.F"
 #include "mpgatherscfld.F"
 #include "mstart.F"
@@ -463,7 +572,6 @@ C  #endif
 #include "prealloc_file.F"
 #include "prewind.F"
 #include "readfl.F"
-#include "readgrib.F"
 #include "readgrs.F"
 #include "readpre.F"
 #if region=='s'
@@ -474,7 +582,9 @@ C  #endif
 #include "savspec.F"
 #include "savstress.F"
 #include "spectra.F"
+#include "spec2fdb.F"
 #include "splitbl.F"
+#include "splitgrs.F"
 #include "spr.F"
 #include "timin.F"
 #include "../Alt/uraopc.F"
@@ -502,6 +612,7 @@ frt $rp -Of -Wv,-Of -Pos -Z preset.lis -X9 -c -o preset.o preset.f || {
     exit 10
   }
 #.
+
 ar vx $dum ishell.o
 frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  -o preset preset.o ishell.o \
     -l$WAMCRLIB $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB || {
@@ -531,32 +642,21 @@ EOD_for_preset
 /bin/rm fort.4
 #.
 ls -la
-nobls=0
-nolaw=0
-[[ ! -f $VPPPATH/BLS${begofan}00 ]] && nobls=1
-[[ ! -f $VPPPATH/LAW${begofan}00 ]] && nolaw=1
-
-if [[ -f fort.15 ]] ; then
-  ecp fort.15 ec:$DHSPATH/.
-  [[ $nolaw = 1 ]] && cp fort.15 $VPPPATH/LAW${begofan}00
-elif [[ -f LAW${begofan}00 ]] ; then
-  ecp -o LAW${begofan}00 ec:$DHSPATH/.
-  [[ $nolaw = 1 ]] && cp LAW${begofan}00 $VPPPATH/.
-endif
 #.
-if [[ -f fort.12 ]] ; then
-  ecp fort.12 ec:$DHSPATH/.
-  [[ $nobls = 1 ]] && cp fort.12 $VPPPATH/BLS${begofan}00
-elif [[ -f BLS${begofan}00 ]] ; then
-  ecp -o BLS${begofan}00 ec:$DHSPATH/.
-  [[ $nobls = 1 ]] && cp BLS${begofan}00 $VPPPATH/.
-endif
+# end on lpreset
+fi
 #.
 print - "\n\n\t\tPRESET ALL DONE\n\n"
+#.
+cd $WDIR
+\rm -rf $WORKDIR 
 #.
 #.======================================================================
 #. START FIELDS GENERATED AND SAVED.
 #. END OF JOB PRESET.
 #.======================================================================
 #.
+# cd $VPPPATH
+# rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/wamodel.job .
+# vppqsub wamodel.job
 #endif

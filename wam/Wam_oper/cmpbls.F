@@ -231,7 +231,7 @@ C        ----------------
 C
       CTEST(1)='       '
       ZG=-9999.
-      NPRECI = N_PRECISION(X4)
+      NPRECR = N_PRECISION(X4)
 C
 C ----------------------------------------------------------------------
 C
@@ -288,10 +288,10 @@ C
                  CALL abort
                ENDIF
              ENDDO
-             IOUNT = (NIBLO+1)*NANG*NFRE*NPRECI
+             IOUNT = (NIBLO+1)*NANG*NFRE*NPRECR
              WRITE(kuso,'("blscomp: IOUNT =", i8, " NIBLO=", i6, 
-     .       " NANG=", i3, "NFRE=", i3, "NPRECI", i3)')
-     .         IOUNT, NIBLO, NANG, NFRE, NPRECI
+     .       " NANG=", i3, "NFRE=", i3, "NPRECR", i3)')
+     .         IOUNT, NIBLO, NANG, NFRE, NPRECR
            ENDIF
            CALL PBREAD(kubls(1),FL3,IOUNT,IRET3)
            CALL PBREAD(kubls(2),FL2,IOUNT,IRET2)
@@ -334,7 +334,7 @@ c
 C          compute wave height
 c
          WRITE (kuso,*) ' compute wave height'
-         CALL flush (kuso)
+         IF (llsuvi.OR.lltest) CALL flush (kuso)
          EMEAN3=0.
          EMEAN2=0.
          DO J3=1,NFRE

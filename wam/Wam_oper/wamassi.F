@@ -65,6 +65,7 @@ C        *UPDATE*   - ANALYSES THE WAM MODEL SPECTRA.
 C        *UPWSPEC*  - PRODUCES THE UPDATED SPECTRUM.                    
 C        *WSMFEN*   - UTILITY OF FWSEA , COMPUTING  WINDSEA ENERGY AND  
 C                     DURATION IN EACH GRID POINT.                      
+C        *WAMNORM*  - COMPUTES A FEW NORMS OF GRIDDED FIELDS
 C                                                                       
 C     REFERENCES.                                                       
 C     -----------                                                       
@@ -186,12 +187,14 @@ C ----------------------------------------------------------------------
       REAL BETAG(NLONW,NLATW)
 C ----------------------------------------------------------------------
 C
+      CHARACTER*1 CMODE
       CHARACTER*80 FILENAME
-      LOGICAL LOPENED, LDSTOP, LDWRRE, LLFAILED
+      LOGICAL LOPENED, LDSTOP, LDWRRE, LLFAILED, LLFLUSH
       WRITE (IU06,*) '  '                                               
       WRITE (IU06,*)                                                    
      1   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO        
 
+      LLFLUSH = .TRUE.
       ALLOCATE(WHME(NGX,NGY), USME(NGX,NGY))
       ALLOCATE(WHOI(NGX,NGY), USOI(NGX,NGY))
       ALLOCATE(WHOIB(NINF:NSUP),USOIB(NINF:NSUP),ETOIB(NINF:NSUP))
@@ -556,8 +559,61 @@ C           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 C           --------------------------------------------                
 C                                                                       
       IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN                
-         CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, Ifdb)
-
+C
+C       WRITE OUT NORMS FOR WAVE ENERGY, PEAK FREQUENCY AND WIND SPEED
+C
+        IF(GFLAG(1)) THEN
+          CALL WAMNORM(WHGTTG,NGX,NGY,ZMISS,EPSMIN,WHGTAVG,WHGTMIN,
+     &                 WHGTMAX,LMESSPASS,IRANK,IPFGTBL(1),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) ' '
+            WRITE(IU06,*) '   WAMMORM FOR WAVE ENERGY ON ',CDTPRO
+            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+     &                    '           MAXIMUM'
+            WRITE(IU06,*) '  ',WHGTAVG,WHGTMIN,WHGTMAX
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+        IF(GFLAG(6)) THEN
+          CALL WAMNORM(WPKFTG,NGX,NGY,ZMISS,0.,WPKFAVG,WPKFMIN,WPKFMAX,
+     &                 LMESSPASS,IRANK,IPFGTBL(6),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) ' '
+            WRITE(IU06,*) '   WAMNORM FOR WAVE PEAK FREQUENCY: '
+            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+     &                    '           MAXIMUM'
+            WRITE(IU06,*) '  ',WPKFAVG,WPKFMIN,WPKFMAX
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+        IF(GFLAG(7)) THEN
+          CALL WAMNORM(CDG,NGX,NGY,ZMISS,0.,CDAVG,CDMIN,CDMAX,
+     &                 LMESSPASS,IRANK,IPFGTBL(7),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM FOR DRAG COEFFICIENT: '
+            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+     &                    '           MAXIMUM'
+            WRITE(IU06,*) '  ',CDAVG,CDMIN,CDMAX
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+        IF(GFLAG(10)) THEN
+          CALL WAMNORM(U10G,NGX,NGY,ZMISS,0.,U10AVG,U10MIN,U10MAX,
+     &                 LMESSPASS,IRANK,IPFGTBL(10),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM FOR WAVE WIND SPEED: '
+            WRITE(IU06,*) '          AVERAGE          MINIMUM  ',
+     &                    '      MAXIMUM'
+            WRITE(IU06,*) '  ',U10AVG,U10MIN,U10MAX
+          ENDIF
+        ENDIF
+C
+         CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, MFDBSF)
+C
         IF(LMESSPASS) THEN
           CALL MPE_BARRIER(IERR)
           IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR in WAMASSI')
@@ -565,7 +621,8 @@ C
          IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTINT DONE'
       ENDIF
 C                                                                       
-      IF (CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
+      IF (CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER.OR.
+     &    LDWRRE) THEN
 C                                                                       
 C*    3.5.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,                  
 C           INTEGRATED PARAMETERS OF ENTIRE GRID.                       
@@ -625,24 +682,40 @@ C           NOTE :
 C           STRESS FIELD IS DUMPED FOR RESTART
 C           ONLY IF CURRENT TIME CORRESPONDS TO CDATER
 
-          IF((CDTPRO .EQ. CDATER ).OR.(CDATER .EQ. '0000000000').OR.
-     1       LDWRRE) THEN
+          IF((CDTPRO .EQ. CDATER  ).OR.
+     &       (CDATER .EQ. '0000000000' ).OR.
+     &        LDWRRE) THEN
 C
-            CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     1                     LDSTOP, LDWRRE, IREST,CDTPRO,CDATEF)
-
+            IF ( .NOT.LGRIBIN ) THEN
+              CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
+     1                       LDSTOP, LDWRRE, IREST,CDTPRO,CDATEF)
+            ENDIF
+C
           ENDIF
 C
 C           SAVE SPECTRUM
 C           -------------
 C
-          CALL SAVSPEC(FL1,NSTART,NEND,LDSTOP,LDWRRE,IREST,
-     1                 CDTPRO,CDATEF,CDATER,CDATES,MARSTYPE,
+          IF ( LGRIBIN .AND. LMESSPASS ) THEN
+            CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+     1                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,IRGG,
+     2                     NLONRGG, KXLT, IXLG, NIBLO, NBLO, ZMISS,
+     3                     AMONOP, AMOWEP, AMOEAP, AMOSOP, XDELLA,
+     4                     XDELLO, NSTART, NEND,
+     5                     CDTPRO, CDATEF, CDATER, CDATES, CDATEA,
+     6                     MARSTYPE, YCLASS, YEXPVER, CFDBSF,
+     7                     NENSFNB, NTOTENS, LFDBIOOUT, ITEST, MFDBSF)
+            ISTAT = IFLUSHFDB (MFDBSF)
+            LLFLUSH = .FALSE.
+          ELSE
+            CALL SAVSPEC(FL1,NSTART,NEND,LDSTOP,LDWRRE,IREST,
+     1                   CDTPRO,CDATEF,CDATER,CDATES,MARSTYPE,
      2                   YCLASS, YEXPVER, CFDB2DSP)
-
-C
-          WRITE(IU06,*) ' RECOVERY FILES DISPOSED AT........',
+          ENDIF
+          WRITE(IU06,*) ' '
+          WRITE(IU06,*) '  WAVE SPECTRA FILES DISPOSED AT........',
      1                  ' CDTPRO  = ', CDTPRO
+          WRITE(IU06,*) ' '
 C
 C
 C*    3.5.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
@@ -685,6 +758,13 @@ C
           IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR IN  WAMASSI')
         ENDIF
       END IF                                                            
+      IF (LFDB .AND. LLFLUSH .AND. (
+     .  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
+        ISTAT = IFLUSHFDB (MFDBSF)
+        WRITE(IU06) ' DB ', MFDBSF , ' FLUSHED AT ',
+     .    CDTPRO, ' FROM WAMASSI. '
+        CALL FLUSH (IU06)
+      ENDIF
 C
       RETURN                                                            
       END                                                               

@@ -53,6 +53,8 @@ C ----------------------------------------------------------------------
 C
 #include "param.h"
 C
+#include "comcoup.h"
+C
 #include "comgrid.h"
 C
 #include "commpp.h"
@@ -68,12 +70,13 @@ C
 #include "comwind.h"
 C
       CHARACTER*10 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
+      LOGICAL LWNDFILE, LCLOSEWND
 C
 C ----------------------------------------------------------------------
       INTEGER IUGB(ILEN), IVGB(ILEN)
 C ----------------------------------------------------------------------
 C
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+C     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
 C ----------------------------------------------------------------------
@@ -102,10 +105,20 @@ C
       IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NC,NR))
  
       ZERO= ' '
+C
+      LCLOSEWND=.FALSE.
+      IF (LWCOU) THEN
+        LWNDFILE=.FALSE.
+        ILEV=2
+      ELSE
+        LWNDFILE=.TRUE.
+        ILEV=1
+      ENDIF
+C
       IF (CDA.EQ.ZERO) THEN
          CDT1 = CDTWIS
-         CALL GETWND (US, DS, CDT1, UWND, VWND, NC, NR,
-     1                IUGB, IVGB, ILEN)
+         CALL GETWND (US, DS, NINF, NSUP, NSUP, CDT1, UWND, VWND, NC,NR,
+     1                IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
          DO IG=1,IGL
            DO IJ=IJS(IG),IJL(IG)
              U10OLD(IJ,IG) = US(IJ,IG)
@@ -115,7 +128,7 @@ C
          DO 1002 IG = 1,IGL
             CALL AIRSEA (U10OLD(IJS(IG),IG), TAUW(IJS(IG),IG),
      1                   USOLD(IJS(IG),IG), Z0OLD(IJS(IG),IG),
-     2                   IJS(IG), IJL(IG))
+     2                   IJS(IG), IJL(IG), ILEV)
 
  1002    CONTINUE
          IF (ITEST.GE.3) THEN
@@ -171,8 +184,8 @@ C         -------------------------------------------
 C
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, CDT2, UWND, VWND, NC, NR,
-     1                IUGB, IVGB, ILEN)
+      CALL GETWND (US2, DS2, NINF, NSUP, NSUP, CDT2, UWND, VWND, NC, NR,
+     1             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
 C
 C*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.
 C         -----------------------------------------

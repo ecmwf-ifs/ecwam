@@ -1,4 +1,4 @@
-      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL)
+      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV)
 
 C ----------------------------------------------------------------------
 C
@@ -21,6 +21,7 @@ C          *US*   - OUTPUT BLOCK OF SURFACE STRESSES.
 C          *ZO*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 C          *IJS*  - INDEX OF FIRST GRIDPOINT.
 C          *IJL*  - INDEX OF LAST GRIDPOINT.
+C          *KLEV* - LEVEL HEIGHT INDEX
 C
 C     METHOD.
 C     -------
@@ -47,7 +48,6 @@ C
 C
 C ----------------------------------------------------------------------
 C
-!
       REAL,DIMENSION(IJS:IJL) ::  U10,TAUW,US,Z0
 C
 C ----------------------------------------------------------------------
@@ -59,11 +59,7 @@ C
 C*    1. SELECT TABLE ACCORDING TO WIND LEVEL.
 C        -------------------------------------
 C
-      IF (LWCOU) THEN
-        ILEV=2
-      ELSE
-        ILEV=1
-      ENDIF
+      ILEV=KLEV
 C
 C
 C*    2. DETERMINE TOTAL STRESS FROM TABLE.
@@ -73,11 +69,11 @@ C
       DO 2001 IJ=IJS,IJL
          XI      = TAUW(IJ)/DELTAUW
          I       = MIN ( ITAUMAX-1, INT(XI) )
-         DELI1   = XI - FLOAT(I)
+         DELI1   = MIN(1.,XI - FLOAT(I))
          DELI2   = 1. - DELI1
          XJ      = U10(IJ)/DELU
          J       = MIN ( JUMAX-1, INT(XJ) )
-         DELJ1   = XJ - FLOAT(J)
+         DELJ1   = MIN(1.,XJ - FLOAT(J))
          DELJ2   = 1. - DELJ1
          US(IJ)  = (SQRT(TAUT(I,J,ILEV))*DELI2
      1              + SQRT(TAUT(I+1,J,ILEV))*DELI1)*DELJ2

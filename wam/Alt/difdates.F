@@ -114,28 +114,37 @@ C
 C
 C      4.2.1 START AND END MONTH ARE IN DIFFERENT YEARS.
 C
-         DO 4211 jm=i_mm_1,12
+        DO WHILE (i_yy_2 .GT. i_yy_1)
+          DO 4211 jm=i_mm_1,12
             kshift = kshift + i_mon(jm)*24*60
- 4211    CONTINUE
-         IF (i_mm_2.GT.1) THEN
-            IF (MOD(i_yy_2,4).EQ.0) THEN
-               i_mon(2) = 29
-            ELSE
-               i_mon(2) = 28
-            ENDIF
-            DO 4212 jm=1,i_mm_2-1
-               kshift = kshift + i_mon(jm)*24*60
- 4212       CONTINUE
-         ENDIF
+ 4211     CONTINUE
+          i_mm_1 = 1
+          i_yy_1 = i_yy_1 + 1
+          IF (MOD(i_yy_1,4).EQ.0) THEN
+            i_mon(2) = 29
+          ELSE
+            i_mon(2) = 28
+          ENDIF
+        ENDDO
+        IF (i_mm_2.GT.1) THEN
+          IF (MOD(i_yy_2,4).EQ.0) THEN
+             i_mon(2) = 29
+          ELSE
+             i_mon(2) = 28
+          ENDIF
+          DO 4212 jm=1,i_mm_2-1
+             kshift = kshift + i_mon(jm)*24*60
+ 4212     CONTINUE
+        ENDIF
       ELSE
 C
 C      4.2.2 START AND END MONTH ARE IN THE SAME YEAR.
 C
-         IF (i_mm_2.GT.i_mm_1) THEN
-            DO 4221 jm=i_mm_1,i_mm_2-1
-               kshift = kshift + i_mon(jm)*24*60
- 4221       CONTINUE
-         ENDIF
+        IF (i_mm_2.GT.i_mm_1) THEN
+          DO 4221 jm=i_mm_1,i_mm_2-1
+            kshift = kshift + i_mon(jm)*24*60
+ 4221     CONTINUE
+        ENDIF
       ENDIF
 C
 C ---------------------------------------------------------------------

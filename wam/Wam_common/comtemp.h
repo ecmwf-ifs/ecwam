@@ -3,6 +3,8 @@ C*    *COMMON* *TEMP* TEMPERATURE GRID
 C
 #if resolution==50
       PARAMETER (NXT =  720, NYT  =  325)
+#elif resolution==25 && region=='m'
+      PARAMETER (NXT =  561, NYT  =  289)
 #else
       PARAMETER (NXT =  240, NYT  =  145)
 #endif

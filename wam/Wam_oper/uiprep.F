@@ -124,7 +124,13 @@ C
       READ (IU05, NALINE)
       FR(1) = FR1
 C
-      WRITE (IU06,'(" PROGRAM PREPROC:",//,"  USER INPUT:",/)')
+      WRITE (IU06,'(
+     .   " PROGRAM PREPROC:  ",
+     .   " WAM Cycle4 Release8 CI 4 (common with IFS CY18R6)",
+     ./, "                   ",
+     .   " clearcase:  wam_sth_CY18R5_oam_for_18r6",
+     .  /,"  USER INPUT:",/)')
+C
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
 C
 C ----------------------------------------------------------------------
@@ -173,7 +179,7 @@ C
 C      
       CALL ADJUST (AMOWEP, AMOEAP)
       IPER = 0
-      IF (MOD(AMOEAP-AMOWEP+XDELLA+720., 360.).EQ.0.) IPER = 1
+      IF (MOD(AMOEAP-AMOWEP+XDELLO+720., 360.).EQ.0.) IPER = 1
 
       WRITE (IU06,'("   RESOLUTION LAT-LON ",2F8.3)') XDELLA, XDELLO
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",

@@ -136,6 +136,7 @@ C
             IF (ITESTB.GE.IG) THEN
                WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF ',
      1                       'INTEGRATED PARAMETERS DONE'
+               CALL FLUSH(IU06)
             ENDIF
          ENDIF
       ENDIF

@@ -165,10 +165,12 @@ C
       CHARACTER     CLOPTLET
       DATA CLOPTS/'d;i;a;'/
 C
-      CHARACTER*10 ZERO, FILENAME, CDUM
+      CHARACTER*10 ZERO, CDUM
+      CHARACTER*24 FILNM
       CHARACTER*80 LOGFILENAME 
 C
       REAL Z4(2)
+      INTEGER I4(2)
 C
       CHARACTER (LEN=10) , ALLOCATABLE :: CLDATES(:), CLMD(:)
 C
@@ -257,7 +259,9 @@ C
 C DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS.
 C ------------------------------------------------------
       Z4=1.
-      NPRECI = N_PRECISION(Z4)
+      NPRECR = N_PRECISION(Z4)
+      I4=1
+      NPRECI = N_PRECISION(I4)
 
       IF(LMESSPASS) THEN
        CALL MPE_INIT(LDTRMSG,KERROR)
@@ -332,7 +336,7 @@ C ----------------------------------
       ENDIF
 C
       IF (ITEST.GE.2) THEN
-         WRITE(IU06,*) '   SUB. INITMDL: UNITS DEFINED'
+         WRITE(IU06,*) '   PRG. RFL4WAM: UNITS DEFINED'
       ENDIF
 C
 C ----------------------------------------------------------------------
@@ -348,10 +352,10 @@ C
 
       IF (ITEST.GE.2) THEN
          IF (IU07 .LT. 111) THEN
-           WRITE(IU06,*) '    SUB. INITMDL: PREPROC OUTPUT READ ',
+           WRITE(IU06,*) '    PRG. RFL4WAM: PREPROC OUTPUT READ ',
      1                   'AND FILE CLOSE UNIT IU07 = ', IU07
          ELSE
-           WRITE(IU06,'(2a,a3)') '    SUB. INITMDL: PREPROC OUTPUT ',
+           WRITE(IU06,'(2a,a3)') '    PRG. RFL4WAM: PREPROC OUTPUT ',
      1                   'READ AND FILE CLOSE UNIT IU07 = ', IU07
          ENDIF
       ENDIF
@@ -387,23 +391,17 @@ C        ----------------
 C
       LICERUN=.FALSE.
 C
-      IF ((IU90.GT.0) .AND. (IU90.LT.10)) THEN
-         WRITE(FILENAME,'(A,I1)') 'fort.',IU90
-      ELSE IF ((IU90.GT.9) .AND. (IU90.LT.100)) THEN
-         WRITE(FILENAME,'(A,I2)') 'fort.',IU90
-      ELSE
-         WRITE(FILENAME,'(A8)') IU90
-      ENDIF
-      LIU   = IECF_LEN(FILENAME)
-      FILENAME=FILENAME(1:LIU)
-      INQUIRE(FILE=FILENAME,EXIST=LICERUN)
+      FILNM = 'sfctempin'
+      LIU   = IECF_LEN(FILNM)
+      FILNM=FILNM(1:LIU)
+      INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
       IF (LICERUN) THEN
-        CALL READICE (IU06,IU90,ITEST,NSTART,NEND,IREAD,KTAG)
+        CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
       ELSE
         ICEMASK=1
-        WRITE(IU06,*)'    SUB. INITMDL: FILE ',FILENAME,' NOT FOUND '
-        WRITE(IU06,*)'    SUB. INITMDL: NO ICE SHEET USED '
+        WRITE(IU06,*)'    PRG. RFL4WAM: FILE ',FILNM,' NOT FOUND '
+        WRITE(IU06,*)'    PRG. RFL4WAM: NO ICE SHEET USED '
       ENDIF
 C
 C ----------------------------------------------------------------------

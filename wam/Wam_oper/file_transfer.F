@@ -122,9 +122,9 @@ C
 C allocate KARRAY, could tune this in function of what file has to be
 C moved !!
 #if resolution==50
-        KLENG=((NSUP-NINF+1)*NANG*NFRE*NPRECI)/9+8+1
+        KLENG=((NSUP-NINF+1)*NANG*NFRE*NPRECR)/9+8+1
 #else
-        KLENG=(NSUP-NINF+1)*NANG*NFRE*NPRECI+8+1
+        KLENG=(NSUP-NINF+1)*NANG*NFRE*NPRECR+8+1
 #endif
         ALLOCATE(KARRAY(KLENG)) 
 C

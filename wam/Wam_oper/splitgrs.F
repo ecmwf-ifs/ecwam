@@ -1,24 +1,29 @@
 C----------------------------------------------------------------------
 C
-      SUBROUTINE SPLITGRS(IU06,INFILEN,KSPLIT,CDATE)
+      SUBROUTINE SPLITGRS(IU06, INFILEN, KSPLIT, CDATE, ITEST,
+     &                    LFDBIOOUT,
+     &                    CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
+     &                    CDDOMAIN)
 C
 C----------------------------------------------------------------------
 C
 C**** *SPLITGRS*  PERFORMS THE SPLITTING OF GRIBBED WAVE MODEL SPECTRA 
-C                 INTO SUB DOMAINS
+C                 INTO NFRE*NANG FILES. 
 C
-C     J. BIDLOT   ECMWF   JANUARY 1998 
+C     J. BIDLOT   ECMWF   MARCH 1998 
 C
 C*    PURPOSE.
 C     --------
 C
-C       PERFORMS THE SPLITTING OF GRIBBED WAVE SPECTRA INTO SUB DOMAINS
-C       AND OUTPUT THE GRIB FILES 
+C       PERFORMS THE SPLITTING OF GRIBBED WAVE SPECTRA INTO NFRE*NANG FILES
 C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *SPLITGRS*(IU06,INFILEN,KSPLIT,CDATE)
+C       *CALL* *SPLITGRS*(IU06,INFILEN,KSPLIT,CDATE,ITEST,
+C                         LFDBIOOUT,
+C                         CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
+C                         CDDOMAIN)
 C
 C*     VARIABLE.   TYPE.     PURPOSE.
 C      ---------   -------   --------
@@ -32,19 +37,30 @@ C                            THE EQUATOR, AND THE SECOND DOMAIN THE
 C                            SOUTHERN HEMISPHERE WIHTOUT THE EQUATOR.
 C                            THE WHOLE REQUEST BEING SAVED IN FILENAME.
 C      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD
+C      *ITEST*     INTEGER   TEST OUTPUT LEVEL
+C      *LFDBIOOUT* LOGICAL   SELECT TYPE OF OUTPUT OF SPLIT FILES 
+C                            IF TRUE THE FDB SOFTWARE WILL BE USED FOR
+C                            OUTPUT.
+C      *CDTYPE*    CHARACTER TYPE OF FIELD ( FG, AN OR FC).
+C      *CDCLASS*   CHARACTER CLASS OF CURRENT RUN.
+C      *CDEXPVER*  CHARACTER EXPERIMENT VERSION NUMBER.
+C      *CDDOMAIN*  CHARACTER FDB DOMAIN IDENTIFIER.
 C
 C     METHOD.
 C     -------
+C
+C	   GET THE GRIB SPECTRA, DECODE IT AND SPLIT IT INTO NFRE*NANG FILES 
+C      BY GRIBBING. ALSO ADJUST HEADERS TO BE CONSISTENT WITH WHAT IS
+C      EXPECTED AS OUTPUT
 C
 C     EXTERNALS.
 C     ----------
 C
 C      *ABORT1*
-C      *INMARSSI*
-C      *INTF*
-C      *INTOUT*
-C      *ISPOFF*
+C      *GRIBEX* 
+C      *GRSTNAME* 
 C      *PBCLOSE*
+C      *PBGRIB*
 C      *PBOPEN*
 C      *PBSIZE*
 C      *PBWRITE*
@@ -72,30 +88,41 @@ C
 C
 C-----------------------------------------------------------------------
 C
-      INTEGER,ALLOCATABLE :: KDOMRGG(:), KPTS(:)
-      INTEGER INTV(4), IDUMMY, OUTLEN, OUTGRIBSIZE, OUTLENG
-      REAL, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),ZTH(:),ZFR(:),PLATS(:)
-      REAL REALV(4)
+      INTEGER :: OUTGRIBSIZE
+      INTEGER :: KSEC0(2),KSEC1(49+NANG+NFRE),KSEC2(384),
+     &           KSEC3(2),KSEC4(128)
+      INTEGER :: ISEC0(2),ISEC1(49+NANG+NFRE),ISEC2(384),
+     &           ISEC3(2),ISEC4(128)
+      INTEGER, ALLOCATABLE :: INGRIBN(:),INGRIBS(:),OUTGRIB(:)
+
+      REAL, ALLOCATABLE :: PSEC4(:),PSEC4OUT(:)
+      REAL :: PSEC2(96),PSEC3(2)
+      REAL :: ZSEC2(96),ZSEC3(2)
 C
       CHARACTER*1 MODE
-      CHARACTER*10 CZDATE,CDATE 
-      CHARACTER*20 CHARV(4) 
+      CHARACTER*10 CDATE 
       CHARACTER*40 CLMSG
       CHARACTER*80 INFILEN,OUTFILEN
-      LOGICAL LINTGRS, LNEWAREA, LNINT, LLEXIST
+      LOGICAL LLEXIST,LDFDB, LFDBIOOUT
+C
+      CHARACTER *(*) CDFDB2DSP, CDTYPE, CDCLASS, CDEXPVER, CDDOMAIN
 C-----------------------------------------------------------------------
 C
-C*    0. INITIALISTION 
-C     -----------------
+C*    0. INITIALISATION 
+C     ------------------
 C
-      IPARAM=250
+      IF(KSPLIT.EQ.2) THEN
+        SPLITLAT=0.0
+      ELSE
+        SPLITLAT=-90.0
+      ENDIF
 
-      ALLOCATE(ZTH(NANG),ZFR(NFRE))
-      ALLOCATE(KDOMRGG(NGY),KPTS(NGY),PLATS(NGY))
+      KSEC1=0
+      KSEC3(1)=0
+      KSEC3(2)=0
+      PSEC3(2)=0.
+      PSEC3(2)=ZMISS
 
-      LINTGRS=.FALSE.
-      LNINT=.FALSE.
-      LNEWAREA=.FALSE.
 C
 C*    1. INPUT OF GRIB DATA 
 C     ----------------------
@@ -111,7 +138,7 @@ C
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
           WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN     *'
-          WRITE (IU06,*) '*   IN INTGRS                          *'
+          WRITE (IU06,*) '*   IN SPLITGRS                        *'
           IF(KRET.EQ.-1)
      &      WRITE (IU06,*) 'COULD NOT OPEN FILE ',INFILEN
           IF(KRET.EQ.-2)
@@ -122,503 +149,339 @@ C
           CALL ABORT1
         ENDIF
       ELSE
-        WRITE(IU06,*)'*********************************************'
-        WRITE(IU06,*)'*                                           *'
-        WRITE(IU06,*)'*SUB. INTGRS : GRIBBED SPECTRA NOT FOUND IN *'
+        WRITE(IU06,*)'***********************************************'
+        WRITE(IU06,*)'*                                             *'
+        WRITE(IU06,*)'*SUB. SPLITGRS : GRIBBED SPECTRA NOT FOUND IN *'
         WRITE(IU06,*)  INFILEN
-        WRITE(IU06,*)'*PROGRAM WILL ABORT                         *'
-        WRITE(IU06,*)'*                                           *'
-        WRITE(IU06,*)'*********************************************'
+        WRITE(IU06,*)'*PROGRAM WILL ABORT                           *'
+        WRITE(IU06,*)'*                                             *'
+        WRITE(IU06,*)'***********************************************'
         CALL ABORT1
       ENDIF
 
 
       DO ISPLIT=1,KSPLIT
-
-        ZLATITUDE=0.0
-
         IF(ISPLIT.EQ.1) THEN
-          ISTRT=1
-          IF(KSPLIT.EQ.1) THEN
-            SMOSOP=AMOSOP
-            SMONOP=AMONOP
-            KNGY=NGY
-            KST=1
-            KND=NGY
-          ELSE
-            SMOSOP=ZLATITUDE
-            SMONOP=AMONOP
-            KNGY=NGY/2+1
-            KST=1
-            KND=NGY/2+1
-          ENDIF
+          CALL PBSIZE (IUGRS, IPLENGN)
+          ISIZEN=(IPLENGN+NPRECI-1)/NPRECI
+          ALLOCATE(INGRIBN(ISIZEN))
+          CALL PBGRIB(IUGRS,INGRIBN,IPLENGN,ILENGN,IRET)
 
         ELSE
-          ZLONGITUDE=AMOEAP
-          IY = NINT((AMONOP-ZLATITUDE)/XDELLA) + 1
-          ZX = MOD(ZLONGITUDE-AMOWEP+720.,360.)
-          ZX = ZX / ZDELLO(NGY-IY+1)
-          IX = NINT(ZX) +1
-          ITSP = ISPOFF(NLONRGG, NGY, NANG, NFRE, IY-1, IX) +
-     &           (NANG*NFRE)
-          ISTRT = 1+ITSP
-
-          SMOSOP=AMOSOP
-          SMONOP=ZLATITUDE-XDELLA
-          KNGY=NGY/2
-          KST=NGY/2+2
-          KND=NGY
+          CALL PBSIZE (IUGRS, IPLENGS)
+          ISIZES=(IPLENGS+NPRECI-1)/NPRECI
+          ALLOCATE(INGRIBS(ISIZES))
+          CALL PBGRIB(IUGRS,INGRIBS,IPLENGS,ILENGS,IRET)
         ENDIF
-C
-C       GET SIZE OF INGRIB
-C
-        CALL PBSIZE (IUGRS, INLENG)
-
-        ALLOCATE(INGRIB(INLENG))
-C
-C       GET GRIB HEADER AND UNPACKED GRIB DATA
-C
-        CALL INMARSSI (IU06, IUGRS, NGY, NANG, NFRE, ZMISS,
-     &                CZDATE, IFORP, KPARAM, KRGG, KDOMRGG,
-     &                INGX, INGY, ZMOWEP, ZMOSOP, ZMOEAP, ZMONOP, 
-     &                INANG, INFRE, ZTH, ZFR, INLENG, INGRIB,KRET,CLMSG)
-        IF ( KRET .LE. 0 ) THEN
-          WRITE(IU06,*)'            '
-          WRITE(IU06,*)'SUB. INTGRS : DATE=',CDATE,' IPARAM= ',IPARAM
-          WRITE(IU06,*)'INMARSSI PART ',ISPLIT,' DONE'
-          WRITE(IU06,*)'            '
-        ELSE
-          WRITE(IU06,*)'SUB. INTGRS : KRET=',KRET,' IPARAM= ',IPARAM
-          WRITE(IU06,*)'INMARSSI PART ',ISPLIT
-          WRITE(IU06,*) CLMSG
-          WRITE(IU06,*)'            '
+        IF (IRET.EQ.-1) THEN
+          WRITE (IU06,*) ' SUB. SPLITGRS : '
+          WRITE (IU06,*) ' REACHED EOF ON UNIT ',IUGRS
+          CALL ABORT1
+        ELSEIF (iret .EQ. -2) THEN
+          WRITE (IU06,*) ' SUB. SPLITGRS : '
+          WRITE (IU06,*) ' ERROR IN FILE HANDLING ON UNIT ',IUGRS
+          CALL ABORT1
+        ELSEIF (iret .EQ. -3) THEN
+          WRITE (IU06,*) ' SUB. SPLITGRS : '
+          WRITE (IU06,*) ' INGRIB IS NOT BIG ENOUGH.'
+          CALL ABORT1
         ENDIF
-C
-C*    1.1 ERROR MESSAGES
-C     ------------------
-C
-        IF (KPARAM.NE.IPARAM) THEN
-           WRITE(IU06,*)'********************************'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS    *'
-           WRITE(IU06,*)'* ===========================  *'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* GRIB PARAMETER  ',KPARAM
-           WRITE(IU06,*)'* WAS READ INSTEAD OF ',IPARAM
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'********************************'
-           CALL ABORT1
-        ENDIF
-        IF (CZDATE.NE.CDATE) THEN
-           WRITE(IU06,*)'**********************************'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS      *'
-           WRITE(IU06,*)'* ===========================    *'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* REQUESTED DATE IS NOT EQUAL TO *' 
-           WRITE(IU06,*)'* RETRIEVED DATE.                *' 
-           WRITE(IU06,*)'* CZDATE = ',CZDATE
-           WRITE(IU06,*)'* CDATE = ',CDATE
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'**********************************'
-           CALL ABORT1
-        ENDIF
-        IF (INANG .NE. NANG) THEN
-           WRITE(IU06,*)'**********************************'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS      *'
-           WRITE(IU06,*)'* ===========================    *'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* INANG SHOULD BE EQUAL TO NANG  *'
-           WRITE(IU06,*)'* NANG  = ',NANG
-           WRITE(IU06,*)'* INANG  = ',INANG
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL   *'
-           WRITE(IU06,*)'* DIRECTIONS IS YET IN PLACE !   *'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'**********************************'
-           CALL ABORT1
-        ENDIF
-        IF (INFRE .NE. NFRE) THEN
-           WRITE(IU06,*)'**********************************'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS      *'
-           WRITE(IU06,*)'* ===========================    *'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'* INFRE SHOULD BE EQUAL TO NFRE  *'
-           WRITE(IU06,*)'* NFRE  = ',NFRE
-           WRITE(IU06,*)'* INFRE  = ',INFRE
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL   *'
-           WRITE(IU06,*)'* FREQUECIES IS YET IN PLACE !   *'
-           WRITE(IU06,*)'*                                *'
-           WRITE(IU06,*)'**********************************'
-           CALL ABORT1
-        ENDIF
-        IF (INT(100*ZTH(1)).NE.INT(100*TH(1))) THEN
-           WRITE(IU06,*)'****************************************'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS            *'
-           WRITE(IU06,*)'* ===========================          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* THE INITIAL DIRECTIONS ARE DIFFERENT *'
-           WRITE(IU06,*)'* TH(1)  = ',TH(1)
-           WRITE(IU06,*)'* ZTH(1)  = ',ZTH(1)
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
-           WRITE(IU06,*)'* DIRECTION IS YET IN PLACE !          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'****************************************'
-           CALL ABORT1
-        ENDIF
-        IF (INT(1000*ZFR(1)).NE.INT(1000*FR(1))) THEN
-           WRITE(IU06,*)'****************************************'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* FATAL ERROR IN SUB INTGRS            *'
-           WRITE(IU06,*)'* ===========================          *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'* THE INITIAL FREQUENCY ARE DIFFERENT  *'
-           WRITE(IU06,*)'* FR(1)  = ',FR(1)
-           WRITE(IU06,*)'* ZFR(1)  = ',ZFR(1)
-           WRITE(IU06,*)'* NO INTERPOLATION ON SPECTRAL         *'
-           WRITE(IU06,*)'* FREQUECIES IS YET IN PLACE !         *'
-           WRITE(IU06,*)'*                                      *'
-           WRITE(IU06,*)'****************************************'
-           CALL ABORT1
-        ENDIF
-C
-C*    1.2 CHECK WHETHER INTERPOLATION IS NECESSARY 
-C     ---------------------------------------------
-C
-        IF (AMOWEP.NE.ZMOWEP .OR. AMOEAP.NE.ZMOEAP .OR.
-     +      SMONOP.NE.ZMONOP .OR. SMOSOP.NE.ZMOSOP) THEN
-            WRITE(IU06,*) '***********************************'
-            WRITE(IU06,*) '*                                 *'
-            WRITE(IU06,*) '*  INTERPOLATION IS NECESSARY     *' 
-            WRITE(IU06,*) '*  ==========================     *'
-            WRITE(IU06,*) '*                                 *'
-            WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID AREA *'
-            WRITE(IU06,*) '*  AS DELARED                     *'
-            WRITE(IU06,*) '*                                 *'
-            WRITE(IU06,*) '*  AMOSOP: ', SMOSOP, 'ZMOSOP : ',ZMOSOP
-            WRITE(IU06,*) '*  AMONOP: ', SMONOP, 'ZMONOP : ',ZMONOP
-            WRITE(IU06,*) '*  AMOWEP: ', AMOWEP, 'ZMOWEP : ',ZMOWEP
-            WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'ZMOEAP : ',ZMOEAP
-            WRITE(IU06,*) '*                                 *'
-            WRITE(IU06,*) '***********************************'
-
-            LINTGRS=.TRUE.
-            LNEWAREA=.TRUE.
-        ENDIF
-        IF (INGX .NE. NGX) THEN
-           WRITE(IU06,*)'********************************'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'*  INTERPOLATION IS NECESSARY  *' 
-           WRITE(IU06,*)'* ===========================  *'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* INGX IS NOT EQUAL TO NGX     *'
-           WRITE(IU06,*)'* NGX  = ',NGX
-           WRITE(IU06,*)'* INGX  = ',INGX
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'********************************'
-
-           LINTGRS=.TRUE.
-        ENDIF
-        IF (INGY .NE. KNGY) THEN
-           WRITE(IU06,*)'********************************'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'*  INTERPOLATION IS NECESSARY  *' 
-           WRITE(IU06,*)'* ===========================  *'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* INGY IS NOT EQUAL TO KNGY    *'
-           WRITE(IU06,*)'* KNGY  = ',KNGY
-           WRITE(IU06,*)'* INGY  = ',INGY
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'********************************'
-
-           LINTGRS=.TRUE.
-        ENDIF
-        IF (KRGG.NE.IRGG) THEN
-           WRITE(IU06,*)'********************************'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* INTERPOLATION IS NECESSARY   *' 
-           WRITE(IU06,*)'* ==========================   *'
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'* KRGG IS NOT EQUAL TO IRGG    *'
-           WRITE(IU06,*)'* KRGG  = ',KRGG
-           WRITE(IU06,*)'* IRGG  = ',IRGG
-           WRITE(IU06,*)'*                              *'
-           WRITE(IU06,*)'********************************'
-
-           LINTGRS=.TRUE.
-        ENDIF
-        IF (KRGG.EQ.1) THEN
-          IC=0
-          DO J=KST,KND
-            JSN=NGY-J+1
-            IC=IC+1
-            IF(KDOMRGG(INGY+1-IC).NE.NLONRGG(JSN)) THEN
-               WRITE(IU06,*)'***********************************'
-               WRITE(IU06,*)'*                                 *'
-               WRITE(IU06,*)'* INTERPOLATION IS NECESSARY      *' 
-               WRITE(IU06,*)'* ==========================      *'
-               WRITE(IU06,*)'*                                 *'
-               WRITE(IU06,*)'* THE IRREGULAR GRID DEFINITIONS  *'
-               WRITE(IU06,*)'* OF THE INPUT FILE DO NOT MATCH  *'
-               WRITE(IU06,*)'* WITH THE MODEL ONE.             *'
-               WRITE(IU06,*)'* KDOMRGG IS NOT EQUAL TO NLONRGG *'
-               IIC=0
-               DO JJ=KST,KND
-                 JSN=NGY-JJ+1
-                 IIC=IIC+1
-                 WRITE(IU06,*)'* JSN = ',JSN
-                 WRITE(IU06,*)'* KDOMRGG  = ',KDOMRGG(INGY+1-IIC)
-                 WRITE(IU06,*)'* NLONRGG  = ',NLONRGG(JSN)
-               ENDDO
-               WRITE(IU06,*)'*                                 *'
-               WRITE(IU06,*)'***********************************'
-
-               LINTGRS=.TRUE.
-            ENDIF
-          ENDDO
-        ENDIF
-
-C
-C      2.0 INTERPOLATION 
-C          -------------
-        IF(LINTGRS) THEN
-
-          IF (IRGG.EQ.0) THEN
-C
-C         DEFINE THE INTERPOLATION PARAMETERS FOR A REGULAR LAT LON GRID
-C         --------------------------------------------------------------
-
-            REALV(1)=XDELLO
-            REALV(2)=XDELLA
-
-            IRET = INTOUT('grid', INTV, REALV, CHARV)
-            IF ( IRET .NE. 0 ) THEN
-              WRITE(IU06,*)'*******************************************'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*INTOUT regular grid CALL FAILED IN INTGRS*'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*******************************************'
-              CALL ABORT1
-            ENDIF
-
-          ELSE
-C
-C         DEFINE THE INTERPOLATION PARAMETERS FOR A REDUCED LAT LON GRID
-C         --------------------------------------------------------------
-
-            REALV(1)=XDELLO
-            REALV(2)=XDELLA
-            IRET = INTOUT('grid', INTV, REALV, CHARV)
-            IF ( IRET .NE. 0 ) THEN
-              WRITE(IU06,*)'*******************************************'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*INTOUT reduced grid CALL FAILED IN INTGRS*'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*******************************************'
-              CALL ABORT1
-            ENDIF
-
-            INTV(1) = KNGY
-            IRET = INTOUT('user_reduced_latlon', INTV, REALV, CHARV)
-            IF ( IRET .NE. 0 ) THEN
-              WRITE(IU06,*)'*******************************************'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*INTOUT user_reduced CALL FAILED IN INTGRS*'
-              WRITE(IU06,*)'*                                         *'
-              WRITE(IU06,*)'*******************************************'
-              CALL ABORT1
-            ENDIF
-
-            IC=0
-            DO J=KST,KND
-              JSN=NGY-J+1
-              IC=IC+1
-              KPTS(IC) = NLONRGG(JSN)
-            ENDDO
-            IRET = INTOUT('ll_pnts', KPTS, REALV, CHARV)
-            IF ( IRET .NE. 0 ) THEN
-              WRITE(IU06,*)'****************************************'
-              WRITE(IU06,*)'*                                      *'
-              WRITE(IU06,*)'* INTOUT ll_pnts CALL FAILED IN INTGRS *'
-              WRITE(IU06,*)'*                                      *'
-              WRITE(IU06,*)'****************************************'
-              CALL ABORT1
-            ENDIF
-
-            IC=0
-            DO J=KST,KND
-              IC=IC+1
-              PLATS(IC) = SMONOP-(IC-1)*XDELLA 
-            ENDDO
-            IRET = INTOUT('ll_lats', INTV, PLATS, CHARV)
-            IF ( IRET .NE. 0 ) THEN
-              WRITE(IU06,*)'****************************************'
-              WRITE(IU06,*)'*                                      *'
-              WRITE(IU06,*)'* INTOUT ll_lats CALL FAILED IN INTGRS *'
-              WRITE(IU06,*)'*                                      *'
-              WRITE(IU06,*)'****************************************'
-              CALL ABORT1
-            ENDIF
-
-          ENDIF
-
-C
-C         DEFINE AREA RESOLUTION 
-C         ----------------------
-          IF(LNEWAREA) THEN
-            REALV(1) = SMONOP 
-            REALV(2) = AMOWEP 
-            REALV(3) = SMOSOP 
-            REALV(4) = AMOEAP 
-          ELSE
-            REALV(1) = 0. 
-            REALV(2) = 0. 
-            REALV(3) = 0. 
-            REALV(4) = 0. 
-          ENDIF
-          IRET = INTOUT('area', INTV, REALV, CHARV)
-          IF ( IRET .NE. 0 ) THEN
-            WRITE(IU06,*)'*************************************'
-            WRITE(IU06,*)'*                                   *'
-            WRITE(IU06,*)'* INTOUT area CALL FAILED IN INTGRS *'
-            WRITE(IU06,*)'*                                   *'
-            WRITE(IU06,*)'*************************************'
-            CALL ABORT1
-          ENDIF
-C
-C         INTERPOLATE
-C         -----------
-
-          INLEN=(INLENG+(NPRECI-1))/NPRECI
-
-          SCALE=(FLOAT(INGX)/FLOAT(NGX))*(FLOAT(INGY)/FLOAT(KNGY))
-          OUTGRIBSIZE=MAX(INLENG,(NINT(FLOAT(INLEN)*SCALE)+1))
-          ALLOCATE(OUTGRIB(OUTGRIBSIZE*NPRECI))
- 
-          IRET = INTF(INGRIB,INLEN,IDUMMY,OUTGRIB,OUTLEN,IDUMMY)
-          IF ( IRET .NE. 0 ) THEN
-            WRITE(IU06,*)'******************************'
-            WRITE(IU06,*)'*                            *'
-            WRITE(IU06,*)'* INTF CALL FAILED IN INTGRS *'
-            WRITE(IU06,*)'* RETURN CODE = ',IRET 
-            WRITE(IU06,*)'* INLEN = ', INLEN 
-            WRITE(IU06,*)'* OUTGRIBSIZE = ', OUTGRIBSIZE 
-            WRITE(IU06,*)'* OUTLEN = ', OUTLEN 
-            WRITE(IU06,*)'*                            *'
-            WRITE(IU06,*)'*******************************'
-            CALL ABORT1
-          ENDIF
-
-          IF(IRET.EQ.0.AND.OUTLEN.EQ.0) THEN
-            WRITE(IU06,*)'********************************************'
-            WRITE(IU06,*)'*                                          *'
-            WRITE(IU06,*)'* NO INTERPOLATION WAS NECESSARY           *'
-            WRITE(IU06,*)'* GRIB DATA CAN BE FOUND IN THE INPUT FILE *'
-            WRITE(IU06,*)'* ',INFILEN
-            WRITE(IU06,*)'*                                          *'
-            WRITE(IU06,*)'********************************************'
-            LNINT=.TRUE.
-
-          ELSE
-
-C           OUTPUT INTERPOLATED DATA FILE
-          
-            WRITE(IU06,*)'**********************************'
-            WRITE(IU06,*)'*                                *'
-            WRITE(IU06,*)'* INTERPOLATION WAS CARRIED OUT  *'
-            WRITE(IU06,*)'* GRIB DATA CAN BE FOUND IN FILE *'
-            WRITE(IU06,*)'* ', OUTFILEN
-            WRITE(IU06,*)'*                                *'
-            WRITE(IU06,*)'**********************************'
-
-            IF(ISPLIT.EQ.1) THEN
-              LFILE=IECF_LEN(OUTFILEN)
-              MODE='w'
-              CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),MODE,KRET)
-              IF(KRET.LT.0) THEN
-                WRITE (IU06,*) '*************************************'
-                WRITE (IU06,*) '*                                   *'
-                WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN  *'
-                WRITE (IU06,*) '*   IN INTGRS                       *'
-                IF(KRET.EQ.-1)
-     &            WRITE (IU06,*) ' COULD NOT OPEN FILE ',OUTFILEN
-                IF(KRET.EQ.-2)
-     &            WRITE (IU06,*) ' INVALID FILENAME ',OUTFILEN
-                IF(KRET.EQ.-3) 
-     &            WRITE (IU06,*)' INVALID OPEN MODE SPECIFIED'
-                WRITE (IU06,*) '*                                   *'
-                WRITE (IU06,*) '*************************************'
-                CALL ABORT1
-              ENDIF
-            ENDIF
-
-            OUTLENG=OUTLEN*NPRECI
-            CALL PBWRITE(IUOUT,OUTGRIB,OUTLENG,KRET)
-            IF(KRET.LT.0) THEN
-              WRITE (IU06,*) '**************************************'
-              WRITE (IU06,*) '*                                    *'
-              WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBWRITE   *'
-              WRITE (IU06,*) '*  IN INTGRS                         *'
-              WRITE (IU06,*) '*  FILE ',OUTFILEN
-              WRITE (IU06,*) '*                                    *'
-              WRITE (IU06,*) '**************************************'
-              CALL ABORT1
-            ENDIF
-
-          ENDIF
-
-        ELSE
-          WRITE(IU06,*)'********************************************'
-          WRITE(IU06,*)'*                                          *'
-          WRITE(IU06,*)'* NO INTERPOLATION WAS NECESSARY           *'
-          WRITE(IU06,*)'* GRIB DATA CAN BE FOUND IN THE INPUT FILE *'
-          WRITE(IU06,*)'* ',INFILEN
-          WRITE(IU06,*)'*                                          *'
-          WRITE(IU06,*)'********************************************'
-          LNINT=.TRUE.
-        ENDIF
-
-        IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
-        IF(ALLOCATED(OUTGRIB)) DEALLOCATE(OUTGRIB)
 
       ENDDO
 
-      IF(LNINT) LINTGRS=.FALSE.
+      K=1
+      DO WHILE (AMONOP-(K-1)*XDELLA.GT.SPLITLAT)
+        K=K+1
+      ENDDO
+      IKSPLIT=K
+
+      IF (IRGG.EQ.1) THEN
+        KLENP=0
+        DO K=1,NGY
+          JSN=NGY-K+1
+          KLENP = NLONRGG(JSN) + KLENP 
+        ENDDO
+         KLENP = KLENP * NANG * NFRE
+      ELSE
+        KLENP = NGY * NGX * NFRE * NANG
+      ENDIF
+
+      ALLOCATE(PSEC4(KLENP))
+      PSEC4=ZMISS
+      IF(ITEST.GT.3) CALL GRSDBG(1)
+      CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
+     &           PSEC4, KLENP, INGRIBN, ISIZEN , KWORD, 'D', KRET)
+      CLMSG='DECODING INGRIBN'
+      IF(KRET.GT.0) GOTO 3500 
+
+      IF(KSPLIT.EQ.2) THEN
+        IF (IRGG.EQ.1) THEN
+          NOFF=0
+          DO K=1,IKSPLIT
+             JSN=NGY-K+1
+             NOFF=NOFF+NLONRGG(JSN)
+          ENDDO
+          NOFF=NOFF* NANG * NFRE
+
+          KLENPS=0
+          DO K=IKSPLIT+1,NGY
+            JSN=NGY-K+1
+            KLENPS = NLONRGG(JSN) + KLENPS 
+          ENDDO
+            KLENPS = KLENPS * NANG * NFRE
+        ELSE
+           NOFF= IKSPLIT *  NGX * NFRE * NANG
+           KLENPS = (NGY-IKSPLIT) * NGX * NFRE * NANG
+        ENDIF
+        CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
+     &  PSEC4(NOFF+1), KLENPS, INGRIBS, ISIZES , KWORD, 'D', KRET)
+        CLMSG='DECODING INGRIBS'
+        IF(KRET.GT.0) GOTO 3500 
+      ENDIF
+C
+      IF(ALLOCATED(INGRIBN)) DEALLOCATE(INGRIBN)
+      IF(ALLOCATED(INGRIBS)) DEALLOCATE(INGRIBS)
+      IF(KSEC1(38).EQ.1) THEN
+        WRITE(IU06,*) "CDCLASS='OD'"
+      ELSEIF(KSEC1(38).EQ.2) THEN
+        WRITE(IU06,*) "CDCLASS='RD'"
+      ELSEIF(KSEC1(38).EQ.3) THEN
+        WRITE(IU06,*) "CDCLASS='ER'"
+      ELSE
+        WRITE(IU06,*)' CLASS ', KSEC1(38) ,' NOT SUPPORTED '
+        WRITE(IU06,*)' PROGRAM ABORTS '
+        CALL ABORT1
+      ENDIF
+      IF (ITEST .GT. 0) CALL FLUSH (IU06)
+C
+C    2.0 SPLITTING 
+C        ---------
+      IF (IRGG.EQ.1) THEN
+        NTOT=0
+        DO K=1,NGY
+          JSN=NGY-K+1
+          NTOT = NLONRGG(JSN) + NTOT 
+        ENDDO
+        NTOT = NTOT
+        NGRIBTOT = NTOT
+      ELSE
+        NTOT = NGY * NGX
+        NGRIBTOT = NGX * (NINT(180./XDELLA) + 1 )
+      ENDIF
+C
+      ALLOCATE(PSEC4OUT(NGRIBTOT))
+C
+      NFRANG=NANG*NFRE
+      ILENGOUT=NGX*NGY/NPRECI
+      ALLOCATE(OUTGRIB(ILENGOUT))
+C
+      ISEC0 = KSEC0
+      ISEC1 = KSEC1
+      ISEC2 = KSEC2
+      ISEC3 = KSEC3
+      ISEC4 = KSEC4
+      ZSEC2 = PSEC2
+      ZSEC3 = PSEC3
+C
+      ISEC1( 6) =  251 
+C
+      ISEC1(37) = 13
+C 
+      IF ( CDCLASS .EQ. 'OD' .OR. CDCLASS .EQ. 'od' ) THEN
+        ISEC1(38) = 1
+      ELSEIF (CDCLASS .EQ. 'ER' .OR. CDCLASS .EQ. 'er' ) THEN
+        ISEC1(38) = 3
+      ELSE
+        ISEC1(38) = 2
+      ENDIF
+C
+      ISEC1(41) = 0
+      DO JI = 1, 4
+        ISEC1(41) = ISEC1(41)*256 + ICHAR(CDEXPVER(JI:JI))
+      ENDDO
+C
+      ISEC1(44) = K 
+      ISEC1(45) = M 
+C
+      ISEC1(46) = NANG
+      ISEC1(47) = NFRE
+C
+      ISEC1(48) = 1000
+      ISEC1(49) = 1000000
+C
+      DO IC=1,NANG
+         ISEC1(49+IC) = INT(ISEC1(48)*TH(IC)*DEG)
+      ENDDO 
+
+      DO IC=1,NFRE
+         ISEC1(49+NANG+IC) = INT(ISEC1(49)*FR(IC))
+      ENDDO 
+C
+      IF( CDDOMAIN == 'm' ) THEN
+        ISEC2( 3) =  NGY
+        ISEC2( 4) =  NINT(AMONOP*1000)
+        ISEC2( 7) =  NINT(AMOSOP*1000)
+      ELSE
+        ISEC2( 4) =  90000 
+        ISEC2( 7) = -90000 
+        ISEC2( 3) =  NINT(180./XDELLA) + 1 
+      ENDIF
+      ISEC2( 5) =  NINT(AMOWEP*1000)
+      ISEC2( 8) =  NINT(AMOEAP*1000)
+C
+      IF (IRGG.EQ.1) THEN
+        IF( CDDOMAIN == 'm' ) THEN
+          DO IC=1,NGY
+          JSN=NGY-IC+1
+          ISEC2(22+IC) = NLONRGG(JSN)
+          ENDDO
+        ELSE
+          ISTART = NINT((90. - AMONOP ) / XDELLA)
+          DO IC=1,ISTART
+            JSN=NGY-IC+1
+            ISEC2(22+IC) = 0
+          ENDDO
+          DO IC=1,NGY
+            JSN=NGY-IC+1
+            ISEC2(22+IC+ISTART) = NLONRGG(JSN)
+          ENDDO
+        ENDIF
+      ENDIF
+C
+      ISEC4(1) = NGRIBTOT
+C  
+C   SET HEADER TO SINGLE DATUM AT EACH GRID POINT AND NO SECONDARY BITMAPS !!
+      ISEC4( 8) = 0
+      ISEC4( 9) = 0
+      ISEC4(50) = 1
+      ISEC4(51) = 1
+C
+      IF (LFDBIOOUT) THEN
+        CONTINUE
+      ELSE
+        CALL GRSTNAME(IU06,CDATE,CDATE,1,'SGS',IRANK,NPROC,OUTFILEN)
+        LFILE=IECF_LEN(OUTFILEN)
+        CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),'w',KRET)
+        IF(KRET.LT.0) GOTO 3200
+      ENDIF
+C
+      DO M=1,NFRE
+        DO K=1,NANG
+C
+          ISEC1(44) = K
+          ISEC1(45) = M
+C
+          IF(IRGG.EQ.1 .OR. CDDOMAIN == 'm' ) THEN
+            INDEX=0
+          ELSE
+            INDEX = (NINT((90. - AMONOP ) / XDELLA))*NGX
+            PSEC4OUT = ZMISS
+          ENDIF
+C
+          DO IJ=1,NTOT
+            PSEC4OUT(IJ+INDEX)=PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG)
+          ENDDO
+C
+          IF (ITEST.GT.0)
+     .      WRITE(IU06,*) ' CALL TO GRIBEX, ILENGOUT=', ILENGOUT
+          CALL GRIBEX (ISEC0, ISEC1, ISEC2, ZSEC2, ISEC3, ZSEC3, ISEC4,
+     &                 PSEC4OUT, NGRIBTOT,OUTGRIB, ILENGOUT ,KWORD,'C',
+     &                 KRET)
+          CLMSG='ENCODING PSEC4OUT'
+          IF(KRET.GT.0) GOTO 3500
+C
+          IF (LFDBIOOUT) THEN
+            CALL FLD2FDB (IU06, itest, isec1, outgrib, kword, 'write',
+     .                    ierr,
+     .                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,
+     .                    k, m, kfdb)
+            ISTAT = iflushfdb (kfdb)
+            CALL FLD2FDB (IU06, itest, isec1, outgrib, kount, 'close',
+     .                    kerr,
+     .                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,
+     .                    k, m, kfdb)
+          ELSE
+            KOUNT=KWORD*NPRECI
+            CALL PBWRITE(IUOUT,OUTGRIB,KOUNT,KRET)
+            IF(KRET.LT.0) GOTO 3300
+          ENDIF
+
+        ENDDO
+      ENDDO
+C
+      IF (.NOT.LFDBIOOUT) THEN
+        CALL PBCLOSE(IUOUT,KRET)
+        IF(KRET.LT.0) GOTO 3400 
+      ENDIF
+C
+      IF(ALLOCATED(OUTGRIB)) DEALLOCATE(OUTGRIB)
+      IF(ALLOCATED(PSEC4OUT)) DEALLOCATE(PSEC4OUT)
 C
 C      4.0 DEALLOCATION
 C          ------------
  
-      IF(ALLOCATED(ZFR))DEALLOCATE(ZFR)
-      IF(ALLOCATED(ZTH))DEALLOCATE(ZTH)
-      IF(ALLOCATED(KDOMRGG))DEALLOCATE(KDOMRGG)
-      IF(ALLOCATED(KPTS))DEALLOCATE(KPTS)
-      IF(ALLOCATED(PLATS))DEALLOCATE(PLATS)
-
+      IF(ALLOCATED(PSEC4)) DEALLOCATE(PSEC4)
+C     
       CALL PBCLOSE(IUGRS,KRET)
       IF(KRET.LT.0) THEN
         WRITE (IU06,*) '************************************'
         WRITE (IU06,*) '*                                  *'
         WRITE (IU06,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (IU06,*) '* IN INTGRS                        *'
+        WRITE (IU06,*) '* IN SPLITGRS                      *'
         WRITE (IU06,*) '* FILE ',INFILEN
         WRITE (IU06,*) '*                                  *'
         WRITE (IU06,*) '************************************'
         CALL ABORT1
       ENDIF
 
-      CALL PBCLOSE(IUOUT,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (IU06,*) '************************************'
-        WRITE (IU06,*) '*                                  *'
-        WRITE (IU06,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (IU06,*) '* IN INTGRS                        *'
-        WRITE (IU06,*) '* FILE ',OUTFILEN
-        WRITE (IU06,*) '*                                  *'
-        WRITE (IU06,*) '************************************'
-        CALL ABORT1
-      ENDIF
 
       RETURN
+C
+C*    ERROR MESSAGES
+C
+3200  CONTINUE
+      WRITE (IU06,*) '*************************************'
+      WRITE (IU06,*) '*                                   *'
+      WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN  *'
+      WRITE (IU06,*) '*   IN SPLITGRS                     *'
+      IF(KRET.EQ.-1)
+     &        WRITE (IU06,*) ' COULD NOT OPEN FILE ',OUTFILEN
+      IF(KRET.EQ.-2)
+     &        WRITE (IU06,*) ' INVALID FILENAME ',OUTFILEN
+      IF(KRET.EQ.-3) 
+     &        WRITE (IU06,*)' INVALID OPEN MODE SPECIFIED'
+      WRITE (IU06,*) '*                                   *'
+      WRITE (IU06,*) '*************************************'
+      CALL ABORT1
+3300  CONTINUE
+      WRITE (IU06,*) '**************************************'
+      WRITE (IU06,*) '*                                    *'
+      WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBWRITE   *'
+      WRITE (IU06,*) '*  IN SPLITGRS                       *'
+      WRITE (IU06,*) '*  FILE ',OUTFILEN
+      WRITE (IU06,*) '*                                    *'
+      WRITE (IU06,*) '**************************************'
+      CALL ABORT1
+3400  CONTINUE
+      WRITE (IU06,*) '************************************'
+      WRITE (IU06,*) '*                                  *'
+      WRITE (IU06,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
+      WRITE (IU06,*) '* IN SPLITGRS                      *'
+      WRITE (IU06,*) '* FILE ',OUTFILEN
+      WRITE (IU06,*) '*                                  *'
+      WRITE (IU06,*) '************************************'
+      CALL ABORT1
+3500  CONTINUE
+      WRITE(IU06,*) '*********************************************'
+      WRITE(IU06,*) '*                                           *'
+      WRITE(IU06,*) '*         FATAL ERROR IN SUB. SPLITGRS      *'
+      WRITE(IU06,*) '*         ============================      *'
+      WRITE(IU06,*) '* GRIBEX ERROR - KRET = ',KRET
+      WRITE(IU06,*) '* WHILE ',CLMSG
+      WRITE(IU06,*) '*                                           *'
+      WRITE(IU06,*) '*    PROGRAM ABORTS     PROGRAM ABORTS      *'
+      WRITE(IU06,*) '*                                           *'
+      WRITE(IU06,*) '*********************************************'
+      CALL ABORT1
+
       END

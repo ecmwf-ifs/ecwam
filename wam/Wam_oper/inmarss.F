@@ -82,7 +82,7 @@ C
       EQUIVALENCE (KSEC4(1),ZKSEC4(1))
 C
       INTEGER, ALLOCATABLE :: KGRIB(:)
-
+      INTEGER I4(2)
       CHARACTER HOPER*1
       CHARACTER CLMSG*40
       DATA HOPER / 'D' /
@@ -126,12 +126,15 @@ C
       KSEC4=-99
       PSEC3(2) = PMISS
       IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
-C 
+C
+      I4=1
+      NPRECI = N_PRECISION(I4)
+C
 C     GET SIZE OF KGRIB
 C
       CALL PBSIZE (IUNIT, IPLENG)
-    
-      ALLOCATE(KGRIB(IPLENG))
+      ISIZE=(IPLENG+NPRECI-1)/NPRECI 
+      ALLOCATE (KGRIB(ISIZE))
 C
 C
 C ----------------------------------------------------------------------
@@ -161,7 +164,7 @@ C
       KRET  = 1
       IF (lltest) CALL GRSDBG (1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     1             PSEC4, IDL,   KGRIB, ileng , KWORD, HOPER, KRET)
+     1             PSEC4, IDL,   KGRIB, ISIZE , KWORD, HOPER, KRET)
       IF (llsuvi) WRITE(kuso,*)' GRIBEX DONE'
 
       DEALLOCATE(KGRIB)

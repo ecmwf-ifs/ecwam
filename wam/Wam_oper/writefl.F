@@ -52,7 +52,6 @@ C     *PBOPEN*
 C     *PBWRITE*
 C     *PBCLOSE*
 C     *ABORT1*
-C     *IINITFDB*    - INITIALISE DATA BASE ELSEWHERE(!).
 C     *IOPENFDB*    - OPEN       DATA BASE.
 C     *ISETVALFDB*  - SET PARAMETERS ( CLASS, TYPE, DATE ETC )
 C     *IWRITEFDB*   - WRITE FIELD INTO DATA BASE..
@@ -84,13 +83,8 @@ C
 C
 #include "commpp.h"
 C
-C     HELPS TO CALL IINITFDB ONLY ONCE.
-C     ---------------------------------
-C
-      LOGICAL       LINITFDB
       CHARACTER*  1 CLMODE
-      DATA          LINITFDB /.TRUE./,
-     1              CLMODE   / "w" /
+      DATA          CLMODE   / "w" /
 C
 C ----------------------------------------------------------------------
 C
@@ -103,7 +97,7 @@ C
       CHARACTER *4 CDEXPVER
       CHARACTER *6 CLDATE
       CHARACTER *2 CLTIME
-      CHARACTER *4 CLSTEP
+      CHARACTER *6 CLSTEP
       CHARACTER *4 CLFREQ
       CHARACTER *4 CLSTREAM
       CHARACTER *(*) CDFDB2DSP
@@ -132,7 +126,7 @@ C ----------------------------------------------------------------------
           CALL ABORT1
           ENDIF
         ENDIF
-        KOUNT = (IJSUP-IJINF+1)*NANG*(MSUP-MINF+1)*NPRECI
+        KOUNT = (IJSUP-IJINF+1)*NANG*(MSUP-MINF+1)*NPRECR
         CALL PBWRITE(IUNIT,FL,KOUNT,KRET)
         IF(KRET.LT.0) THEN
           WRITE (IU06,*) '*****************************************'
@@ -158,10 +152,6 @@ C ----------------------------------------------------------------------
           ENDIF
         ENDIF
       ELSEIF(LFDBIOOUT) THEN
-        IF (LINITFDB) THEN
-          ISTAT=IINITFDB()
-          LINITFDB = .FALSE.
-        ENDIF
 C
         IF(LPBOPEN) THEN
           ICDFDB2DSP = LEN_TRIM(CDFDB2DSP)
@@ -172,7 +162,7 @@ C
             WRITE(IU06,'("Error\ /writefl/ iopenfdb return status:",
      .      I3)') ISTAT
             CALL ABORT1
-          ELSE
+          ELSEIF (ITEST .GE. 2 ) THEN
             WRITE(IU06,'(" OPEN FDB ON ROOT ",a)')
      1            CDFDB2DSP(1:ICDFDB2DSP)
             CALL FLUSH(IU06)
@@ -195,12 +185,12 @@ C
         IL2 = IL1 + 5
         CLDATE = FILENAME(IL1:IL2)
         CLTIME = FILENAME(IL2+1: IL2+2)
-        CLSTEP = FILENAME(IL2+3: IL2+6)
+        CLSTEP = '00'//FILENAME(IL2+3: IL2+6)
         WRITE(CLFREQ,'(I4.4)') MINF
 
         IF (ITEST .GE. 2)  THEN
           WRITE(IU06,'(" WRITEFL TO FDB: date=", a6, ". time=", a2, 
-     .                 ". step=", a4, ". type=", a2, ". freq=", a4,
+     .                 ". step=", a6, ". type=", a2, ". freq=", a4,
      .                 ". il1=", i2, ". il2=", i2, ".")')
      .    CLDATE, CLTIME, CLSTEP, CDMARS, CLFREQ, IL1, IL2
           CALL FLUSH (IU06)
@@ -224,7 +214,7 @@ C
         ISTAT = ISETVALFDB (IUNIT, 'step',   CLSTEP   )
         ISTAT = ISETVALFDB (IUNIT, 'leve',   CLFREQ   )
 C
-        KOUNT = (IJSUP-IJINF+1)*NANG*(MSUP-MINF+1) * NPRECI / 4
+        KOUNT = (IJSUP-IJINF+1)*NANG*(MSUP-MINF+1) * NPRECR / 4
 C
 C       KOUNT should be number of values;
 C

@@ -1,7 +1,7 @@
 C ======================================================================
 C
       SUBROUTINE USERIN (kuso, kuin, kpar, kareas, pba, pwo, pwa, ppo,
-     .                   cdreg, cdoption, cdmode, ldmesy)
+     .                   cdreg, cdoption, cdmode, ldmesy, ldtitle)
 C
 C ======================================================================
 C
@@ -28,6 +28,7 @@ C                   AREA (ARRAY ).
 C      /O  cdoption IF SET TO 'C' PLOT WILL BE IN COLOUR; ELSE B&W
 C      /O  cdmode   IF SET TO 'C' PLOT IS DONE BY COUNTOURING; 
 C                   ELSE SQARED BOXES
+C      /O  lltitle  TEITLE TEXT WILL BE PLOTTED IF SET TO TRUE.
 C
 C**   LIBRARIES.
 C     ----------
@@ -57,7 +58,7 @@ C
       CHARACTER* 60 cdreg(kpar)
       CHARACTER*120 cluser
 C
-      LOGICAL ldmesy
+      LOGICAL ldmesy, ldtitle
 C
 C ----------------------------------------------------------------------
 C
@@ -95,6 +96,7 @@ C
           cdmode=cluser(22:22)
           WRITE(kuso,*) '  PLOT MODE IS ', cdmode
           IF (cluser(30:30) .EQ. 'N' ) ldmesy = .FALSE.
+          ldtitle = .NOT.(cluser(34:34).eq.'F')
         ELSEIF (cluser(1:5) .EQ. 'AREAS') THEN
           READ  (cluser(8:9),'(i2)') kareas
           WRITE(kuso,*) ' NO. OF AREAS: ',kareas

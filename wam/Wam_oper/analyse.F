@@ -1,4 +1,4 @@
-      SUBROUTINE ANALYSE (XM, NOBS, XME, XMO, XOI, IMEAS, JMEAS, I, J,  Baae
+      SUBROUTINE ANALYSE (XM, NOBS, XME, XMO, XOI, IMEAS, JMEAS, I, J,
      .                    DIST, LMAX, NDIM1, NDIM2) 
 C                                                                       
 C ----------------------------------------------------------------------

@@ -66,6 +66,7 @@ C
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
+      CHARACTER * 2 CLH       ! HELPER STRING TO STORE HOUR.            
       CHARACTER *13 FNAME                                               
       CHARACTER *10 CL_DATE
       CHARACTER *14 CL_TIME
@@ -86,6 +87,7 @@ C        DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
              WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
      1                          IU92, '  CLOSED    '
              WRITE (IU06,*) '                                      '
+             CALL FLUSH (IU06)
            ENDIF
          ENDIF
          IERS = 0
@@ -102,7 +104,17 @@ C
          IERS = 0                                                       
          IDELERS = 21600                                                
          CDTERS  = CDATEA                                               
+         CLH=CDATEA(7:8)
+         IF (CLH.EQ.'09'.OR.CLH.EQ.'15'.OR.
+     1       CLH.EQ.'21'.OR.CLH.EQ.'03') THEN
+            CALL INCDATE (CDTERS, -10800)
+         ENDIF
          FRSTIME = .FALSE.                                              
+         IF (ITEST.GE.3) THEN
+           WRITE(IU06,*) " SUB: ERSFILE (for the first time) "//
+     1       " CDATEA=", CDATEA, " CDTERS=", CDTERS, " CDATEF=", CDATEF
+           CALL FLUSH (IU06)
+         ENDIF
       ENDIF                                                             
       IF (CDTERS.LT.CDTPRO) THEN                                        
  1001   CONTINUE                                                        
@@ -121,7 +133,7 @@ C     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
       IF(LMESSPASS.AND.(IRANK.NE.1)) RETURN
 
       IERS = 0                                                          
-      IF (CDTERS.LE.CDATEF) THEN                                        
+      IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg') THEN
          WRITE(FNAME,'(''COL'',A10)') CDTERS                            
          OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD', 
      1         IOSTAT=IERR)                                             
@@ -151,6 +163,7 @@ C
              IF(ITEST.GT.0) THEN
                WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
      1                         FNAME, ' OPENED'
+               CALL FLUSH (IU06)
              ENDIF
            WRITE(IU92) CDTPRO                                    
          ENDIF
@@ -170,7 +183,7 @@ C
             IERS = NERS                                                 
             RETURN                                                      
          ENDIF                                                          
-         READ (IU91, END=3002, ERR=3002) CL_TIME, DUMLE, DUMPE,           
+         READ (IU91, END=3002, ERR=3002) CL_TIME, DUMLE, DUMPE,
      1        DUMLM, DUMPM, IGERS(IERS), IJERS(IERS)                    
          IF (IGERS(IERS).EQ.0) THEN                                     
             IERS = IERS-1                                               
@@ -193,9 +206,10 @@ C
             IF(ITEST.GT.0) THEN
               WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',
      1                   ' POINTS FOR ERS_1 IERS = ', IERS
+              CALL FLUSH (IU06)
             ENDIF
          ENDIF
       ENDIF                                                             
-                                                                        
+C
       RETURN                                                            
       END                                                               

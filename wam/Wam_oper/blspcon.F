@@ -14,6 +14,9 @@ C               INFORMATION FILE OF THE WAModel AND INPUTS THEN
 C               BLOCKED WAModel SPECTRA DISTRIBUTE THEM ON A
 C               GRID AND WRITES THIS GRID TO THE OUTPUT FILE
 C               ON UNIT KUGRS..
+CCCC
+C               it's coded the old way, ie for parameter 250
+CCCCC
 C
 C      B. HANSEN         ECMWF          MAY      1993
 C
@@ -67,6 +70,7 @@ C
       REAL zlatitude, zlongitude
       NAMELIST /location/  zlatitude, zlongitude
 C
+      CHARACTER*  1 clfdbsf, cldomain
       CHARACTER*  2 cdclass, cltype
       CHARACTER*  4 cdexpver
       CHARACTER*  5 cdtask
@@ -112,6 +116,7 @@ C
       REAL zspectrm(kang,kfre)
 C     REAL zsec4(kgx*kgy*kang*kfre)
       REAL, ALLOCATABLE :: zsec4(:)
+      REAL X4(2)
 C
       CHARACTER*1 cl_bitmap(kgx,kgy)
 C
@@ -136,6 +141,8 @@ C
 C*    1. INITIALIZATIONS.
 C        ----------------
  1000 CONTINUE
+      X4=1.
+      jpidl = N_PRECISION(X4)
       msub = msub + 1
       CALL  uraopc (csubna, msub, llsuvi, lltest)
       WRITE(kuso,*)' ',csubna,'        ', clct
@@ -148,6 +155,8 @@ C        ----------------
       ENDIF
 C
       cl_bitmap = 'l'
+      clfdbsf = ' '
+      itest = 0
 C
 C ----------------------------------------------------------------------
 C
@@ -375,12 +384,13 @@ C
           DO ji = 1, kgy
             itgrib = itgrib+ilonrgg(ji)
           ENDDO
+          cldomain = cddomain(1:1)
           CALL gribpacs
      .       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
      .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
      .         zmowep, zmosop, zmoeap, zmonop, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver, ldfdb,
-     .         ksect1_3, ifdb)
+     .         zdella, zdello, zmiss, cdclass, cdexpver, cldomain,ldfdb,
+     .         ksect1_3, ifdb, jpidl)
 C
         ELSE
 C         IF ( ksect1_3 .GT. 300 .AND. ksect1_3 .LT. 400 .AND.
@@ -414,12 +424,13 @@ C* PACK NORTHERN HEMISPHERE.
 C             isect1_3 = 106 ! 304
               zsouth = 0.0
               iend = iy
+              cldomain = 'n'
               CALL gribpacs
      .       ( kuso, kugrs, zsec4, itgrib, kgx, kgy, kang, kfre,
      .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
      .         zmowep, zsouth, zmoeap, zmonop, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver, ldfdb,
-     .         ksect1_3, ifdb)
+     .         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
+     .         ksect1_3, ifdb, jpidl)
             ENDIF
  
 C* PACK SOUTHERN HEMISPHERE.
@@ -438,12 +449,13 @@ C
                 itgrib = itgrib+ilonrgg(ji)
               ENDDO
               IF (llsuvi) WRITE(kuso,*) " SOUTH: istrt=", istrt
+              cldomain = 's'
               CALL gribpacs
      .       ( kuso, kugrs, zsec4(istrt), itgrib, kgx, kgy, kang, kfre,
      .         irgg, th, fr, iparam, kyear, kmonth, kday, khour, kfcst,
      .         zmowep, zmosop, zmoeap, znorth, ilonrgg, istart, iend,
-     .         zdella, zdello, zmiss, cdclass, cdexpver, ldfdb,
-     .         ksect1_3, ifdb)
+     .         zdella, zdello, zmiss, cdclass, cdexpver,cldomain, ldfdb,
+     .         ksect1_3, ifdb, jpidl)
             ENDIF
           ELSE
             WRITE(kuso,*) ' TRY TO SPLIT A NONGLOBAL FIELD '
@@ -456,8 +468,13 @@ C
           ELSE
             cltype='fc'
           ENDIF
-          CALL FLD2FDB(kuso, idummy, idummy, idummy, idummy, 'close',
-     &                 ierr, cltype, cdclass, cdexpver, ifdb)
+          idir = 0
+          ifre = 0
+          IF (llsuvi.OR.lltest) itest=1
+          CALL FLD2FDB (kuso, itest, idummy, idummy, idummy, 'close',
+     .                  ierr,
+     .                 cltype, cdclass, cdexpver, clfdbsf, cldomain,
+     .                 idir, ifre,  ifdb)
           IF (llsuvi) WRITE(kuso,*) ' FDB ', ifdb, " CLOSED:", ierr
           IF (ierr .NE. 0) THEN
             WRITE(kuso,*) ' ------------------------'

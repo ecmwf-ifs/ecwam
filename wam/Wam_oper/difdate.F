@@ -103,9 +103,19 @@ C
 C
 C      4.2.1 START AND END MONTH ARE IN DIFFERENT YEARS.
 C
-         DO 4211 M=MONTH1,12
-            ISHIFT = ISHIFT + INT(MON(M)*24*60)
- 4211    CONTINUE
+         DO WHILE (IYEAR2 .GT. IYEAR1)
+            DO 4211 M=MONTH1,12
+               ISHIFT = ISHIFT + INT(MON(M)*24*60)
+ 4211       CONTINUE
+            MONTH1 = 1
+            IYEAR1 = IYEAR1 + 1
+            IF (MOD(IYEAR1,4).EQ.0) THEN
+               MON(2) = 29
+            ELSE
+               MON(2) = 28
+            ENDIF
+
+         ENDDO
          IF (MONTH2.GT.1) THEN
             IF (MOD(IYEAR2,4).EQ.0) THEN
                MON(2) = 29

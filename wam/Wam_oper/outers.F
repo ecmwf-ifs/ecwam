@@ -7,7 +7,8 @@ C**** *OUTERS* -  OUTPUT OF ERS_1 COLOCATION SPECTRA.
 C                                                                       
 C     H. GUNTHER     GKSS/ECMWF            JULY 1991                    
 !     J. BIDLOT      ECMWF           FEBRARY 1996  MESSAGE PASSING
-!     J. BIDLOT      ECMWF           JANUARY 1997  MODIFY DEFINITION OF TH0 
+!     J. BIDLOT      ECMWF           JANUARY 1997  MODIFY DEFINITION
+!                                                  OF TH0 
 C                                                                       
 C*** INTERFACE.                                                         
 C    ----------                                                         
@@ -77,7 +78,7 @@ C
 C                                                                       
 C                FREI   REAL  FREQUENCY INCREMENT                       
 C                                                                       
-      CHARACTER NAME*20, CDTPRO*10                                                 
+      CHARACTER NAME*20, CDTPRO*10
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
@@ -90,50 +91,53 @@ C     WORK ARRAYS
       IU92 = 92                                                         
 
       IF (IG.EQ.1) THEN
-         CALL ERSFILE (IU91, IU92, IG, IGL)
+        CALL ERSFILE (IU91, IU92, IG, IGL)
 
-       IF(LMESSPASS) THEN
-C      EXCHANGE THE VALUE OF IERS,IGERS, AND IJERS WITH THE OTHER PROCESS
+        IF(LMESSPASS) THEN
+C
+C*  EXCHANGE THE VALUE OF IERS,IGERS, AND IJERS WITH THE OTHER
+C*  PROCESS
+C
           ITAG=92
-        IF(IRANK.EQ.1) THEN
-          KCOUNT=0
-          DO NGOU=1,NERS
-             KCOUNT=KCOUNT+1
-             IBUFF(KCOUNT)=IGERS(NGOU)
-          ENDDO
-          DO NGOU=1,NERS
-             KCOUNT=KCOUNT+1
-             IBUFF(KCOUNT)=IJERS(NGOU)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          IBUFF(KCOUNT)=IERS
-          CALL MPE_BROADCAST(IBUFF,KCOUNT,1,1,ITAG,0,0,0,IERR)
-          IF(IERR.LT.0) THEN
-            WRITE(IU06,*) 'OUTERS: MPE_BROADCAST RC=',IERR
-            CALL MPEI_ABORT('MPE_BROADCAST ERROR in OUTERS')
+          IF(IRANK.EQ.1) THEN
+            KCOUNT=0
+            DO NGOU=1,NERS
+              KCOUNT=KCOUNT+1
+              IBUFF(KCOUNT)=IGERS(NGOU)
+            ENDDO
+            DO NGOU=1,NERS
+              KCOUNT=KCOUNT+1
+              IBUFF(KCOUNT)=IJERS(NGOU)
+            ENDDO
+            KCOUNT=KCOUNT+1
+            IBUFF(KCOUNT)=IERS
+            CALL MPE_BROADCAST(IBUFF,KCOUNT,1,1,ITAG,0,0,0,IERR)
+            IF(IERR.LT.0) THEN
+              WRITE(IU06,*) 'OUTERS: MPE_BROADCAST RC=',IERR
+              CALL MPEI_ABORT('MPE_BROADCAST ERROR in OUTERS')
+            ENDIF
+          ELSE
+            KBUFRLENGTH=2*NERS+1
+            CALL MPE_RECV(IBUFF,KBUFRLENGTH,1,1,ITAG,0,0,0,
+     1                    KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR in OUTERS')
+            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     1            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
+            KCOUNT=0
+            DO NGOU=1,NERS
+              KCOUNT=KCOUNT+1
+              IGERS(NGOU)=IBUFF(KCOUNT)
+            ENDDO
+            DO NGOU=1,NERS
+              KCOUNT=KCOUNT+1
+              IJERS(NGOU)=IBUFF(KCOUNT)
+            ENDDO
+            KCOUNT=KCOUNT+1
+            IERS=IBUFF(KCOUNT)
+            IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
+     1            ('MPE_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
           ENDIF
-        ELSE
-          KBUFRLENGTH=2*NERS+1
-          CALL MPE_RECV(IBUFF,KBUFRLENGTH,1,1,ITAG,0,0,0,
-     1                  KRCOUNT,KRFROM,KRTAG,IERR)
-          IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR in OUTERS')
-          IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     1        ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
-          KCOUNT=0
-          DO NGOU=1,NERS
-             KCOUNT=KCOUNT+1
-             IGERS(NGOU)=IBUFF(KCOUNT)
-          ENDDO
-          DO NGOU=1,NERS
-             KCOUNT=KCOUNT+1
-             IJERS(NGOU)=IBUFF(KCOUNT)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          IERS=IBUFF(KCOUNT)
-          IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
-     1        ('MPE_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
         ENDIF
-       ENDIF
       ENDIF
 C                                                                       
 C*   1. LOOP OVER OUTPUT POINTS.                                        
@@ -168,42 +172,50 @@ C
         ENDIF
 
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-         XANG = REAL(NANG)                                              
-         XFRE = REAL(NFRE)                                              
-         DO 1002 NGOU=1,IERS                                            
-            IF (IG.EQ.IGERS(NGOU)) THEN                                 
-               IJ = IJERS(NGOU)                                         
-               XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
-               XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
+          XANG = REAL(NANG)
+          XFRE = REAL(NFRE)
+          DO 1002 NGOU=1,IERS
+            IF (IG.EQ.IGERS(NGOU)) THEN
+              IJ = IJERS(NGOU)                                         
+              XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
+              XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
 C                                                                       
 C*    1.1 WRITE INFORMATION TO FILE IU92.                               
 C         -------------------------------                               
 C                                                                       
-               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
-     1                     TH(1), FR(1), FREI                             
-               WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),             
-     1                     FMEAN(IJ), US(IJ), DEG*THW(IJ),        
-     2                     U10(IJ)                                   
-               IF(LMESSPASS) THEN
-                 WRITE(IU92) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
-               ELSE
-                 WRITE(IU92) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
-               ENDIF
+              IF (ITEST.GE.3) THEN
+                WRITE(IU06,*)' SUB : outers  LOOP 1002 ngou=', ngou
+                CALL FLUSH (IU06)
+              ENDIF
+              WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
+     1                    TH(1), FR(1), FREI
+              IF (EMEAN(IJ) .GE. 0.0 ) THEN
+                WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
+     1                      FMEAN(IJ), US(IJ), DEG*THW(IJ),
+     2                      U10(IJ)
+              ELSE
+                WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
+              ENDIF
+              IF(LMESSPASS) THEN
+                WRITE(IU92) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
+              ELSE
+                WRITE(IU92) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
+              ENDIF
             ENDIF                                                       
- 1002    CONTINUE                                                       
+ 1002     CONTINUE
         ENDIF
       ENDIF                                                             
-                                                                        
+C
       IF (IG.EQ.IGL) THEN                                               
-       IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-         CALL ERSFILE (IU91, IU92, -9, -9)                              
-       ENDIF
+        IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+          CALL ERSFILE (IU91, IU92, -9, -9)
+        ENDIF
       ENDIF                                                             
-
-      IF( ALLOCATED(U10) ) DEALLOCATE(U10)
-      IF( ALLOCATED(THW) ) DEALLOCATE(THW)
-      IF( ALLOCATED(US) ) DEALLOCATE(US)
-      IF( ALLOCATED(FLPTS) ) DEALLOCATE(FLPTS)
-
+C
+      IF (ALLOCATED (U10))   DEALLOCATE (U10)
+      IF (ALLOCATED (THW))   DEALLOCATE (THW)
+      IF (ALLOCATED (US))    DEALLOCATE (US)
+      IF (ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
+C
       RETURN                                                            
       END                                                               

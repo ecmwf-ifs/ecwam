@@ -11,12 +11,12 @@
 #. J BIDLOT          ECMWF         MAY 1996 MESSAGE PASSING 
 #. B HANSEN          ECMWF         APRIL 1997 RESTART FACILITY
 #.
-#QSUB -r wamodel_CY18R4_test
+#QSUB -r wamodel_$LABEL$NAME
 #QSUB -q vpp700.normal
 #QSUB -lP 1
 # # #QSUB -a "tomorrow 4:00am"
-#QSUB -lt 1800
-#QSUB -lT 2000
+#QSUB -lt 2500
+#QSUB -lT 3000
 #QSUB -lM 700mb
 #QSUB -eo
 #QSUB -mb -me -mi
@@ -27,10 +27,18 @@
 PATH=$PATH:.
 trap '{ echo "Signal SIGHUP received and trapped" ; }' 1
 trap '{ echo "Signal SIGINT received and trapped" ; }' 2
-cd $TMPDIR
 set +v
 #.
-ASSIMILATION=YES
+#.   Specify whether grib split spectra are provided
+#.
+lgribin=T
+#.
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#.   Specify whether input CD file is NOT provided
+#.   It should only be the case for cold start !!!!!!!!!!!!!!!
+#.
+lnocdin=T
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
@@ -39,138 +47,59 @@ ASSIMILATION=YES
 #.
 #include "path.h"
 #.
-CLASS=RD
-NENS=000
-TNE=000
-typeset -l XID=${USER}a
-#.
-#.
-#.====================================================================
-# DEFINE FBD SERVER ON VPP-700
-#.=====================================================================
-#
-#.export FDB_CONFIG_FILE=/vpp700/mrfs/fdb/FDbConfig_vpp700
-export FDB_ROOT=/vpp700/fdb18           # /vpp700/fdb22
-export FDB_CONFIG_MODE=async            # eps
-export FDB_SERVER_HOST=vpp700-x18       # vpp700-x22   vpp700-x08  == wavefdb
-export FDB_SIGNALS=no
+# move to working directiory
+############################
+cd $WDIR
+mkdir $WORKDIR
+cd $WORKDIR
 #.
 #.=====================================================================
 #. General grid information and model constants.
 #.=====================================================================
 #.
-if [[ ! -r $VPPPATH/gridglou ]] ; then
-  ecp ec:$DHSPATH/gridglou $VPPPATH/gridglou || {
-    ls -lsa
-    echo "\n\n\t\tPREPROC file gridglou was not found\n\n"
-    echo "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit
-  }
+if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
+  ls -lsa
+  echo "\n\n\t\tPREPROC file gridglou was not found\n\n"
+  echo "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+  exit 1
+else
+  ln -s $ADIR/gridglou_${grid} fort.7
 fi
-ln -s $VPPPATH/gridglou fort.7
 #if region=='s'
 #.
 #. THE SWAMP CASE DOES NOT NEED EXTERNAL WINDS.
 #.
 #else
 #.
-#######################################
-#.check if need SST for ice boundaries 
 #.
 #if iceedge=='y'
-#if resolution == 150
-  GRID="1.5/1.5"
-  AREA="81./ 0./ -81./358.5"
-#elif region == 'g' &&  resolution == 50
-  GRID="0.5/0.5"
-  AREA="81./ 0./ -81./359.5"
-#elif region == 'm' && resolution == 25
-  GRID="0.25/0.25"
-  AREA="66./ -6./ 30./42."
-#endif
-#.
 #.check if SST file does exist
 #.
-if [[ !  -r $VPPPATH/kelv$begofan ]] ; then
-  # in case file is not there do a mars request
-  # GET SURFACE TEMPERATURES FROM MARS
-  #===================================
-  ICEDATE=`substring $begofan 1 6`
-  cat > myrequest <<-EOF
-	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
-	CLASS=OD,
-	EXPVER=1,
-	LEVEL=OFF,
-	PARAM=ST,
-	REPRES=GG,
-	STEP=0,
-	TIME=12,
-	DATE=$ICEDATE,
-	GRID=$GRID,
-	AR=$AREA,
-	TARGET="fort.90"
-	END
-	EOF
-  #.
-  #.DO THE MARS REQUEST.
-  #=====================
-  mars myrequest || {
-    print - "\n\n\t\t NO SURFACE TEMPS FROM MARS, NOTHING IS DONE \n\n"
-    exit 19
-  }
-  cp fort.90 $VPPPATH/kelv$begofan
+if [[ ! -r $ADIR/kelv${begofrn}_${grid} ]] ; then
+  print - "\n\n\t\t NO SURFACE TEMPS , NOTHING IS DONE \n\n"
+  exit 2
 else
-  ln -s $VPPPATH/kelv$begofan fort.90
+  ln -s $ADIR/kelv${begofrn}_${grid} sfctempin
 fi
 #endif
 #.
+# ALTIMETER DATA IF NEEDED
+############################
 if [[ $ASSIMILATION = "YES" ]] ; then
-  #.
-  #.====================================================================
-  #.
-  #. Get quality controlled ERS-2 altimeter data if assimilation is
-  #. required
-  #.
-  #. Note the location of the data in CFS is liable to change !!!!
-  #.
-  #. as well as the way day are kept in the archive (see Bjorn)
-  #.
-  #.====================================================================
-  ##
   AS=1
-  CFSALT=/emos/wave/0012/ers2_b/alt/global
-  CFSALT=/emos/wave/0001/ers2_s/alt/global
-  #
-  # get 64 bit decoder from prepifs since the operational one is 32 bit
-   if [ $PRECISION = DOUBLE ] ; then
-      ALTLIB=/home/rd/rdx/lib/16r4/libalt.a
-      ar xv $ALTLIB enderac.o
-      frt -Ad -o enderac enderac.o $ALTLIB $EMOSLIB $ECLIB
-   fi
-  #
-  CURRENT_DATE=$begofan
+  CURRENT_DATE=$begofrn
   CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
   ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
   ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
-  LAST_ANALYSIS_DATE=$endofan
+  LAST_ANALYSIS_DATE=$begoffo
   LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
-    if [[ !  -r ${VPPPATH}/RFL${ANALYSIS_DATE}00 ]] ; then
-      # in case file is not there do a ecfile request
-      ecfile -p $CFSALT/BFL${ANALYSIS_DATE}00 \
-             -en get BFL${ANALYSIS_DATE}00
-  # use appropriate decoder
-      if [ $PRECISION = SINGLE ] ; then
-         /home/ma/emos/wave/bin/enderac \
-         -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
-      else
-         ./enderac -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
-      fi
-
-      /bin/rm BFL${ANALYSIS_DATE}00
-      cp RFL${ANALYSIS_DATE}00 ${VPPPATH}/RFL${ANALYSIS_DATE}00
+    if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
+      print - "\n\n\t\t SATELLITE DATA NOT ONLINE  \n\n"
+      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+      exit 3
     else
-      ln -s ${VPPPATH}/RFL${ANALYSIS_DATE}00 .
+      ln -s ${ADIR}/RFL${ANALYSIS_DATE}00 .
     fi
     CURRENT_DATE=$ANALYSIS_DATE
     CURRENT_DATE=`substring $CURRENT_DATE 1 8`
@@ -181,90 +110,17 @@ else
   AS=0
 fi
 #.
-#.=====================================================================
-#.  Prepare MARS requests. Load and execute program GETINPT.
-#.
-# use MRFS for compilation
-# cd $MRFSDIR
-#.
-cat >getinptb.f <<\EOFPRO
-#include "getinptb.F"
-#include "file_transfer.F"
-EOFPRO
-#.
-#.compile getinptb
-#.
-frt $rp -X9 -c -Ps -o getinptb.o getinptb.f || exit
-#.
-frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9 -o getinptb  getinptb.o \
-    -l$WAMCRLIB $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB
-#.
-cat > fort.4 << EOF
-RUN MODEL FROM $begofan TO $endoffo
-PARAM=10U/10V,
-REPRES=GG,
-ANALYSIS PERIOD = $antime
-FORECAST PERIOD = $fctime
-WIND TIME STEP IN SECONDS = 0021600
-ASSIMILATION FROM $begofan TO $endofan
-ASSIMILATION YES
-NEW FORECAST YES
-STATUS STORM1= UNFINISHED
-STATUS STORM2= UNFINISHED
-STATUS STORM3= UNFINISHED
-DATE FOR OUTPUT OF BOTH RESTART FILES = 0000000000
-LAST DATE FOR SPECTRA FILE OUTPUT = 0000000000
-EOF
-#.
-getinptb || {
-  #.
-  #. Abort on error.
-  #.
-   ls -lsa
-   print - "\n\n\t\tGETINPT FAILED\n\n"
-   print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-   exit 6
-}
-/bin/rm fort.4
-#.
-echo "\n\n\t\tSTART POSSIBLE MARS RETRIEVAL\n\n"
-#.
-rm tempout getinptb.* || true
-#.
-#.=====================================================================
-#.  MARS retrieval.
-#.=====================================================================
-#.
-#. Create filename for mars retrieval output
-wind_filename=`awk '{print$1}' windfilename`
-#.
-echo $wind_filename
-#.
-#.check if mars retieval needed
-#.
-if [[ ! -r $VPPPATH/$wind_filename ]] ; then
-  echo "mars wind file NOT online, start mars retrieval"
-  mars fort.22 || {
-    #.
-    #. Abort on error.
-    #.
-      ls -lsa
-      print - "\n\n\t\tMARS FAILED\n\n"
-      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 7
-  }
-  mv fort.80 fort.63
-  cp fort.63 $VPPPATH/$wind_filename
-  print - "\n\n\t\tSTART WAVE MODEL \n\n"
+# SURFACE WINDS
+################
+wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
+if [[ ! -r $WDIR/$wind_filename ]] ; then
+  print - "\n\n\t\tWIND DATA NOT ONLINE\n\n"
+  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+  exit 4
 else
-  print - "mars wind file already online"
-  ln -s $VPPPATH/$wind_filename fort.63
+  ln -s $WDIR/$wind_filename sfcwindin
   print - "\n\n\t\tSTART WAVE MODEL \n\n"
 fi
-#.
-rm fort.22
-#.
-# cp $VPPPATH/WAMINFO fort.4
 #endif
 #.
 #.
@@ -274,72 +130,105 @@ rm fort.22
 #.
 #. Common UBUF.
 #.
-if [[ ! -r $VPPPATH/ubufglou ]] ; then
-  ecp ec:$DHSPATH/ubufglou $VPPPATH/ubufglou || {
-    ls -lsa
-    print - "\n\n\t\tPREPROC file ubufglou was not found\n\n"
-    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit
-  }
+if [[ ! -r $ADIR/ubufglou_${grid} ]] ; then
+  print - "\n\n\t\tPREPROC file ubufglou was not found\n\n"
+  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+  exit 5
+else
+  ln -s $ADIR/ubufglou_${grid} fort.8 
 fi
-ln -s $VPPPATH/ubufglou fort.8 
 #.
 #. Coarse grid output points, if this is a coarse grid run.
 #.
-#. assign -a $VPPPATH/bouccatu fort.9
+#. assign -a $ADIR/bouccatu_${grid} fort.9
 #.
 #. Fine grid input points, if this is a fine grid run.
 #.
-#. assign -a $VPPPAT1/boufcatu fort.10
+#. assign -a $ADIR/boufcatu_${grid} fort.10
 #.
 #.======================================================================
 #. GET RESTART FILES
 #.======================================================================
 #. !!!! at this time we assume that the restart files have been saved
-#. on disk in directory $VPPPATH
+#. on disk in directory $WDIR and $ADIR
 #.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.
+# Get last wind.
+################
 #.
-#. Get last wind.
-#.
-if [[ !  -r $VPPPATH/LAW${begofan}00 ]] ; then
-  ecp ec:$DHSPATH/LAW${begofan}00 $VPPPATH/LAW${begofan}00
-  if [[ !  -r $VPPPATH/LAW${begofan}00 ]] ; then
+if [[ $lgribin != "T" ]] ; then
+  if [[ -r $WDIR/LAW${begofrn}00 ]] ; then
+    ln -s $WDIR/LAW${begofrn}00 LAW${begofrn}00 
+  else
     ls -lsa
-    print - "LAW"${begofan}"00 file was not found"
+    print - "LAW"${begofrn}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit
+    exit 5
+  fi
+else
+  if [[  -r $ADIR/CD${begofrn}_${grid} ]] ; then
+    ln -s $ADIR/CD${begofrn}_${grid} cdwavein
+  elif [[ $lnocdin = "T" ]] ; then
+    print - "##################################################"
+    print - " "
+    print - "the program should start wihtout an input CD file"
+    print - "as none is provided !!!!!"
+    print - " "
+    print - "##################################################"
+  else
+    ls -lsa
+    print - "CD${begofrn}_${grid}" file was not found"
+    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+    exit 5
+  fi
+  if [[  -r $ADIR/U10${begofrn}_${grid} ]] ; then
+    ln -s $ADIR/U10${begofrn}_${grid} uwavein
+  else
+    print - "U10${begofrn}" file was not found"
+    print - "\n\n\t\tPROGRAM will continue as this can happen\n\n"
   fi
 fi
-ln -s $VPPPATH/LAW${begofan}00 fort.15
-ln -s $VPPPATH/LAW${begofan}00 LAW${begofan}00 
 #.
-#. Get initial spectrum.
+# Get initial spectrum.
+#######################
 #.
-if [[ ! -r $VPPPATH/BLS${begofan}00 ]] ; then
-  ecp ec:$DHSPATH/BLS${begofan}00 $VPPPATH/BLS${begofan}00
-  if [[ ! -r $VPPPATH/BLS${begofan}00 ]] ; then
+if [[ $lgribin != "T" ]] ; then
+  if [[ -r $WDIR/BLS${begofrn}00 ]] ; then
+    ln -s $WDIR/BLS${begofrn}00 BLS${begofrn}00 
+  else
     ls -ls
-    print - "BLS"${begofan}"00 file was not found"
+    print - "BLS"${begofrn}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit
+    exit 7
+  fi
+else
+  if [[ -r $WDIR/SGS${begofrn}00 ]] ; then
+    ln -s $WDIR/SGS${begofrn}00 SGS${begofrn}00 
+  else
+    ls -ls
+    print - "SGS"${begofrn}"00 file was not found"
+    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+    exit 8
   fi
 fi
-ln -s $VPPPATH/BLS${begofan}00 fort.12
-ln -s $VPPPATH/BLS${begofan}00 BLS${begofan}00 
 #.
-#.======================================================================
-#. Copy the WAM MODEL to the compiler input.
-#.======================================================================
-#.
-#. Use MRFS for compilation.
-#.
-# cd $MRFSDIR
-#.
-cat > wamodel.src <<\EOFPRO
+if [ $COMPILE =  1 ] ; then
+  #.
+  cd $LIBS
+  mkdir tmpdir
+  cd tmpdir
+  #.
+  #.
+  #.======================================================================
+  #. Copy the WAM MODEL to the compiler input.
+  #.======================================================================
+  #.
+  #.
+  cat > wamodel.src <<\EOFPRO
 #endif
 #include "wave_module.F"
 #include "chief.F"
+#include "buildstress.F"
 #include "closend.F"
 #include "airsea.F"
 #include "bouinpt.F"
@@ -353,6 +242,7 @@ cat > wamodel.src <<\EOFPRO
 #include "gradi.F"
 #include "grstname.F"
 #include "headbc.F"
+#include "igs2grs.F"
 #include "implsch.F"
 #include "incint.F"
 #include "initmdl.F"
@@ -402,6 +292,7 @@ C #endif
 #include "propdot.F"
 #include "readbou.F"
 #include "readpre.F"
+#include "readwgrib.F"
 #include "readfl.F"
 #include "readstress.F"
 #include "writefl.F"
@@ -435,6 +326,7 @@ C #endif
 #include "sepwisw.F"
 #include "sinput.F"
 #include "snonlin.F"
+#include "spec2fdb.F"
 #include "splitbl.F"
 #include "spr.F"
 #include "sthq.F"
@@ -486,147 +378,164 @@ C #endif
 #include "update.F"
 #include "upwspec.F"
 #include "wamassi.F"
+#include "wamnorm.F"
 #ifdef JOB
 EOFPRO
-#.
-#.======================================================================
-#. Compile and load the WAM MODEL.
-#.======================================================================
-#.
-#. COMPILE SOURCE CODE
-#.
-/home/rd/sth/bin/f90split < wamodel.src
-#.
-[ ! -d tmp ] && mkdir tmp
-#.
-[ -f ${VPPPATH}/libwam.f.tar ] && {
-  dd if=${VPPPATH}/libwam.f.tar of=libwam.f.tar bs=400k
-  cd tmp
-  tar xf ../libwam.f.tar
-  cd ..
-}
-#.
-[ -f ${VPPPATH}/libwam.a ] && {
-  dd if=${VPPPATH}/libwam.a of=libwam.a bs=400k
-  ar xv libwam.a wave_module
-}
-#.
-export frtcntr=0
-#.
-(
-  if [ "$REMAKE" != YES ] ; then
-    if [ -f tmp/wave_module.fm ] ; then
-      if cmp wave_module.f tmp/wave_module.fm ] ; then
-        if ar tv libwam.a | grep wave_module ; then
-          exit
-        fi
-      fi
-    fi
-  fi
-  frt $rp -Of -M. -Wv,-Of -Pos -Z wave_module.l -X9 \
-      -c wave_module.f
-  mv wave_module.f wave_module.fm
-  (( frtcnt += 1))
-)
-#.
-i=0
-atst=0
-#.
-for file in $(ls -1 *.f) ; do
-  export file
-  (
-  if [ "$REMAKE" != YES ] ; then
-    if [ -f tmp/$file ] ; then
-      if cmp $file tmp/$file ; then
-        if ar tv libwam.a | grep ${file%.f}.o ; then
-          exit
-        fi
-      fi
-    fi
-  fi
-  frt $rp -Of -M. -Wv,-Of -Pos -Z ${file%.f}.l -X9 \
-      -c -o ${file%.f}.o ${file} || print - ${file%.f}.l >> frt_error
-  (( frtcnt += 1))
-  )&
-  (( i += 1 ))
-  [[ $i -gt $atst ]] && {
-    atst=0
-    i=0
-    wait
+  #.
+  #.======================================================================
+  #. Compile and load the WAM MODEL.
+  #.======================================================================
+  #.
+  #. COMPILE SOURCE CODE
+  #.
+  /home/rd/sth/bin/f90split < wamodel.src
+  #.
+  [ ! -d tmp ] && mkdir tmp
+  #.
+  [ -f ${LIBS}/libwam.f.tar ] && {
+    dd if=${LIBS}/libwam.f.tar of=libwam.f.tar bs=400k
+    cd tmp
+    tar xf ../libwam.f.tar
+    cd ..
   }
-done
-wait
-print - "compile done"
-#.
-#. BUILD LIBRARY
-#.
-if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
+  #.
+  [ -f ${LIBS}/libwam.a ] && {
+    dd if=${LIBS}/libwam.a of=libwam.a bs=400k
+    ar xv libwam.a wave_module
+  }
+  #.
+  integer frtcnt
+  frtcnt=0
+  export frtcnt
+  print $frtcnt > frtcnt
+  #.
+  (
+    if [ "$REMAKE" != YES ] ; then
+      if [ -f tmp/wave_module.fm ] ; then
+        if cmp wave_module.f tmp/wave_module.fm ] ; then
+          if ar tv libwam.a | grep wave_module ; then
+            exit 9
+          fi
+        fi
+      fi
+    fi
+    frt $rp -Of -M. -Wv,-Of -Pos -Z wave_module.l -X9 \
+        -c wave_module.f
+    (( frtcnt += 1))
+    print $frtcnt > frtcnt
+  )
+  mv wave_module.f wave_module.fm
+  #.
+  i=0
+  atst=0
+  #.
+  for file in $(ls -1 *.f) ; do
+    export file
+    (
+    if [ "$REMAKE" != YES ] ; then
+      if [ -f tmp/$file ] ; then
+        if cmp $file tmp/$file ; then
+          if ar tv libwam.a | grep ${file%.f}.o ; then
+            exit 10
+          fi
+        fi
+      fi
+    fi
+    if [   $file = spec2fdb.f  -a $rp = "-Ad" ] ; then
+      rp="-CcdRR8"
+    elif [   $file = getspec.f  -a $rp = "-Ad" ] ; then
+      rp="-CcdRR8"
+    else
+      rp=$rp
+    fi
+    frt $rp -Of -M. -Wv,-Of -Pos -Z ${file%.f}.l -X9 \
+        -c -o ${file%.f}.o ${file} || print - ${file%.f}.l >> frt_error
+    (( frtcnt += 1))
+    print $frtcnt > frtcnt
+    )&
+    (( i += 1 ))
+    [[ $i -gt $atst ]] && {
+      atst=0
+      i=0
+      wait
+    }
+  done
+  wait
+  print - "compile done"
+  #.
+  #. BUILD LIBRARY
+  #.
+  if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
   ar rv libwam.a *.o wave_module
-fi
-#.
-tar cf libwam.l.tar *.l
-tar cf libwam.f.tar *.f *.fm
-#.
-#. SAVE LIBRARY
-#.
-ecp -o libwam.* ec:$DHSPATH/.
-#.
-ls -la
-#.
-dd if=libwam.a     of=$VPPPATH/libwam.a     bs=400k
-dd if=libwam.f.tar of=$VPPPATH/libwam.f.tar bs=400k
-dd if=libwam.l.tar of=$VPPPATH/libwam.l.tar bs=400k
-#.
-chmod go+rx $VPPPATH/libwam.*
-#.
-if [ -r frt_error ] ; then
-  cat $(cat frt_error)
-  exit
-fi
-#.
-if [[ ! -r $VPPLPATH/lib$WAMCRLIB.a ]] ; then
-  ecp ec:$DHSLPATH/lib$WAMCRLIB.a $VPPLPATH/lib$WAMCRLIB.a || {
-    ls -lsa
+  fi
+  #.
+  tar cf libwam.l.tar *.l
+  tar cf libwam.f.tar *.f *.fm
+  #.
+  #. SAVE LIBRARY
+  #.
+  ############ecp -o libwam.* ec:$DHSPATH/.
+  #.
+  ls -la
+  #.
+  cp libwam.a $LIBS/libwam.a 
+  cp libwam.f.tar $LIBS/libwam.f.tar
+  cp libwam.l.tar $LIBS/libwam.l.tar
+  #.
+  chmod go+rx $LIBS/libwam.*
+  #.
+  if [ -r frt_error ] ; then
+    cat $(cat frt_error)
+    exit 11
+  fi
+  #.
+  if [[ ! -r $LIBCR/lib$WAMCRLIB.a ]] ; then
     print - "\n\n\t\tWAMCRLIB file was not found\n\n"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit 3
-  }
-fi
-#.
-#. LOAD LIBRARY
-#.
-ar vx $aux ifssig.o
-ar vx $dum ishell.o
-[ ! -a chief.o ] &&  ar xv libwam.a chief.o
-#.
-if [ $frtcntr = 0 -a -f $LTEMP/chief.coupled -a "$REMAKE" != YES  ] ; then
-  ln -s  $LTEMP/chief.coupled chief
-else
-  frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
-    -o chief  chief.o ishell.o ifssig.o \
-    libwam.a -lwamcr libwam.a \
-     $ECLIB $EMOSLIB $FDBLIB  \
-     -Wl,-dy -lsocket $MPELIB  $MPLIB || {
-    #.
-    #. Check return code.
-    #.
-     print - "\n\n\t\tLOAD FAILED\n\n"
-     print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-     exit 4
-    }
+    exit 12
+  fi
   #.
-  cp chief $LTEMP/chief.coupled
+  #. LOAD LIBRARY
+  #.
+  ar vx $aux ifssig.o
+  ar vx $dum ishell.o
+  [ ! -a chief.o ] &&  ar xv libwam.a chief.o
+  #.
+  frtcnt=$(cat frtcnt)
+  if [ $frtcnt = 0 -a -f $BIN/chief -a "$REMAKE" != YES  ] ; then
+    print - WAM Model ready
+  else
+    frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
+      -o $BIN/chief  chief.o ishell.o ifssig.o \
+      libwam.a -lwamcr libwam.a \
+       $ECLIB $EMOSLIB $FDBLIB  \
+       -Wl,-dy -lsocket $MPELIB  $MPLIB || {
+      #.
+      #. Check return code.
+      #.
+       print - "\n\n\t\tLOAD FAILED\n\n"
+       print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
+       exit 13
+      }
+    #.
+  fi
+  #.
+  ls -ltr
+  cd $LIBS 
+  \rm -rf tmpdir
+fi
+if [[ $NPES -ne 4 && $NPES -ne 8 && $NPES -ne 16 && $NPES -ne 24 ]] ; then
+  print - "\n\n\t\tWAVE MODEL IS COMPILED. NOW SET THE -lP TO 4, 8, 16 or 24 AND SUBMIT AGAIN\n\n"
+  cd $WDIR
+  \rm -rf $WORKDIR
+  exit
+else
+  print - "\n\n\t\tWAVE MODEL WILL START\n\n"
 fi
 #.
-print - "\n\n\t\tWAVE MODEL WILL START\n\n"
-#. Move executable back to disk.
-# mv chief $TMPDIR 
-# cd $TMPDIR 
+cd ${WDIR}/${WORKDIR}
 #.
-##################################################
-# !!! the user input file has been moved to unit 3
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-##################################################
+#. User input file
 #.
 cat > fort.3 << EOD
 #if region=='s'
@@ -660,14 +569,16 @@ VPP_MBX_SIZE=16000000 ; export VPP_MBX_SIZE
 #####VPP_STATS=8 ; export VPP_STATS 
 #####VPP_DETAIL=-1 ; export VPP_DETAIL
 #.
-#modify runtime buffers
-#######################
-fu12bf=4096 ; export fu12bf
-fu15bf=344 ; export fu15bf
-fu63bf=524 ; export fu63bf
-fu90bf=53 ; export fu90bf
+if [[ $lgribin != "T" ]] ; then
+  #modify runtime buffers
+  #######################
+  fu12bf=4096 ; export fu12bf
+  fu15bf=344 ; export fu15bf
+  fu63bf=524 ; export fu63bf
+  fu90bf=53 ; export fu90bf
+fi
 #.
-chief || {
+$BIN/chief 1> stdout 2>stderr || {
   #.
   #.  Abort on wave model failure.
   #.
@@ -676,28 +587,31 @@ chief || {
   #.
    echo $?
    print - "\n\n\t\tWAVE MODEL FAILED\n\n"
+   print - "\n\n\t\tOUTPUTS CAN BE FOUND ON\n\n"
+   print - $WDIR"/"$WORKDIR
    ls -l
-   more logfile.*
-   test -r split_table
-   if [[ $? = 0 ]] ; then
-     cp split_table $VPPPATH/split_table 
-   fi
-   exit
-}
+   ls -l  logfile.*
+   exit 14
+  }
 ls -lsa
-cp fort.2* $VPPPATH/.
-#.
-#. Save split_table.
-####################
-#.
-if [[ -r split_table ]] ; then
-  cp split_table $VPPPATH/split_table 
-fi
 #.
 #. Dump logfiles.
 #################
 #.
-more logfile.*
+ls -l  logfile.*
+#.
+# stdout
+########
+cat stdout
+# stderr
+########
+cat stderr
+# logfile.1
+############
+cat logfile.1
+#.
+cd $WDIR
+\rm -rf $WORKDIR
 #.
 #.
 #.======================================================================

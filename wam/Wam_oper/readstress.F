@@ -93,7 +93,7 @@ C ----------------------------------------------------------------------
         CALL PBREAD(IUNIT,CDATEFL,KOUNT,KRET)
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 
-        KOUNT = NIBLO*NBLO*NPRECI
+        KOUNT = NIBLO*NBLO*NPRECR
         CALL PBREAD(IUNIT,RU10OLD,KOUNT,KRET)
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 

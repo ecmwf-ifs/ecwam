@@ -135,6 +135,7 @@ C
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 C
       IF (FRSTIME) THEN                                                 
+         MFDBSF = -5
          IF(LWCOU) THEN
            IU06=20
            CDATEA(1:10) = CBEGDAT(1:10)
@@ -246,7 +247,7 @@ C          ---------------------------------------------
 C                                                                       
       IF ((.NOT.LWCOU .AND. CDTPRO.LE.CDATEF .AND. IASSI.EQ.1) 
      1    .OR. 
-     2    (LWCOU .AND. CDTPRO.EQ.CDATEF .AND. IASSI.EQ.1)) THEN                       
+     2    (LWCOU .AND. CDTPRO.EQ.CDATEF .AND. IASSI.EQ.1)) THEN
          marstype = 'an'                                                
 
          CALL WAMASSI (BETAG, NLONW, NLATW, LDSTOP, LDWRRE)
@@ -261,6 +262,13 @@ C PUT ZDELLO IN ZDELATM FOR THE ATMOSPHERIC COUPLING
          DO K=1,NLATW
             ZDELATM(K) = ZDELLO(K)
          ENDDO
+      ENDIF
+      IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
+        ISTAT = ICLOSEFDB (MFDBSF)
+        IF (ITEST.GE.1) THEN                                           
+          WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
+          CALL FLUSH(IU06)
+        ENDIF                                                          
       ENDIF
 C
       RETURN                                                            

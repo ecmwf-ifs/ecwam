@@ -364,22 +364,28 @@ C
 #include "comwami.h"
 
 
-      CHARACTER*10 ZERO,FILENAME,CDUM
+      CHARACTER*10 ZERO,CDUM
+      CHARACTER*24 FILNM
       CHARACTER*80 LOGFILENAME 
 C
 C----------------------------------------------------------------------
       REAL X4(2)
+      INTEGER I4(2)
       INTEGER,ALLOCATABLE :: KWORK(:,:)
 C
 C     0. DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 C        -----------------------------------------------------
 C
       X4=1.
-      NPRECI = N_PRECISION(X4)
+      NPRECR = N_PRECISION(X4)
+      I4=1
+      NPRECI = N_PRECISION(I4)
 C
 C     0.1 SET IREAD TO THE PROCESSOR WHICH WILL READ THE INPUT FILES
 C         ----------------------------------------------------------
       IREAD=1
+C
+      IF(NPROC.EQ.1) IREAD=1
 C
 C*    1. DEFINITION OF MODEL PARAMETERS.
 C        -------------------------------
@@ -543,18 +549,20 @@ C
 C
 C      1.3 OUTPUT MODEL DECOMPOSITION DETAILS 
 C          ----------------------------------
-        WRITE(IU06,*)  ' MODEL DOMAIN DECOMPOSITION  : '
-        WRITE(IU06,*)  ' =========================='
-        DO IP=1,NPROC
-          WRITE(IU06,*)
-          WRITE(IU06,*) ' PROCESS NUMBER : ',IP
-          WRITE(IU06,*) ' NSTART : ',NSTART(IP)
-          WRITE(IU06,*) ' NEND   : ',NEND(IP)
-          WRITE(IU06,*) ' N      : ',NEND(IP)-NSTART(IP)+1
-          WRITE(IU06,*) ' KLENBOT: ',KLENBOT(IP)
-          WRITE(IU06,*) ' KLENTOP: ',KLENTOP(IP)
-          WRITE(IU06,*) ' ----------------------- '
-        END DO
+        IF (ITEST.GE.1) THEN
+          WRITE(IU06,*)  ' MODEL DOMAIN DECOMPOSITION  : '
+          WRITE(IU06,*)  ' =========================='
+          DO IP=1,NPROC
+            WRITE(IU06,*)
+            WRITE(IU06,*) ' PROCESS NUMBER : ',IP
+            WRITE(IU06,*) ' NSTART : ',NSTART(IP)
+            WRITE(IU06,*) ' NEND   : ',NEND(IP)
+            WRITE(IU06,*) ' N      : ',NEND(IP)-NSTART(IP)+1
+            WRITE(IU06,*) ' KLENBOT: ',KLENBOT(IP)
+            WRITE(IU06,*) ' KLENTOP: ',KLENTOP(IP)
+            WRITE(IU06,*) ' ----------------------- '
+          END DO
+        ENDIF
 C
 C
 C      1.4 SAVE TABLE CONTAINING DECOMPOSITION LIMITS (IF needed)
@@ -693,22 +701,16 @@ C     --------------------
 C
       LICERUN=.FALSE.
 C
-      IF ((IU90.GT.0) .AND. (IU90.LT.10)) THEN
-         WRITE(FILENAME,'(A,I1)') 'fort.',IU90
-      ELSE IF ((IU90.GT.9) .AND. (IU90.LT.100)) THEN
-         WRITE(FILENAME,'(A,I2)') 'fort.',IU90
-      ELSE
-         WRITE(FILENAME,'(A8)') IU90
-      ENDIF
-      LIU   = IECF_LEN(FILENAME)
-      FILENAME=FILENAME(1:LIU)
-      INQUIRE(FILE=FILENAME,EXIST=LICERUN)
+      FILNM = 'sfctempin'
+      LIU   = IECF_LEN(FILNM)
+      FILNM=FILNM(1:LIU)
+      INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
       IF (LICERUN) THEN
-        CALL READICE (IU06,IU90,ITEST,NSTART,NEND,IREAD,KTAG)
+        CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
       ELSE
         ICEMASK=1
-        WRITE(IU06,*)'    SUB. INITMDL: FILE ',FILENAME,' NOT FOUND '
+        WRITE(IU06,*)'    SUB. INITMDL: FILE ',FILNM,' NOT FOUND '
         WRITE(IU06,*)'    SUB. INITMDL: NO ICE SHEET USED '
       ENDIF
 C
@@ -781,12 +783,12 @@ CNEST
 C
 C ----------------------------------------------------------------------
 C
-C*    4. CONNECT RESTART FIELDS TO OUTPUT UNITS (IF PBIO SOFTWARE NOT USED).
-C        AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
-C        --------------------------------------------------------------------
+C*    4. CONNECT RESTART FIELDS TO OUTPUT UNITS (IF PBIO SOFTWARE NOT
+C        USED). AND READ IN LAST WINDFIELDS FROM RESTARTFILE.
+C        ---------------------------------------------------------------
 C
  4000 CONTINUE
-      CALL FLUSH(IU06)
+      IF (ITEST.GE.2)CALL FLUSH(IU06)
 
 
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
@@ -967,10 +969,12 @@ C*    8.1 READ BLOCK OF SPECTRA.
 C         ----------------------
 C
          CALL GETSPEC(FL1,NSTART,NEND,IREAD)
-
-         IF (ITEST.GE.2)
-     1      WRITE(IU06,*) '    SUB. INITMDL: READ',
+C
+         IF (ITEST.GE.2) THEN
+            WRITE(IU06,*) '    SUB. INITMDL: READ',
      2                    ' BLOCK OF SPECTRA'
+            CALL FLUSH (IU06)
+          ENDIF
 C
 C*    8.2.1 INPUT NEIGHBOURING GRID POINT INDICES (COMMON BLOCK UBUF).
 C           ----------------------------------------------------------
@@ -993,8 +997,9 @@ C
            READ (IU08) KLAT, KLON
         ENDIF
 C
-C     8.2.2 MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS NINF-1
-C           ------------------------------------------------------------ --
+C     8.2.2 MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS
+C           NINF-1.
+C           ---------------------------------------------------------
         IF(LMESSPASS) THEN
            DO IC=1,2
              DO IJ = NSTART(IRANK),NEND(IRANK)

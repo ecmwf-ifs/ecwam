@@ -1,6 +1,6 @@
-      SUBROUTINE INMARS (IUNIT, ID1, ID2, PMISS, CDATE, IFORP, IPARAM,
+      SUBROUTINE INMARS (FILNM, ID1, ID2, PMISS, CDATE, IFORP, IPARAM,
      1                   NGX, NGY, AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     2                   KRGG,KLONRGG,FIELD, KRET, MSG) 
+     2                   KRGG,KLONRGG,KZLEV,FIELD, KRET, MSG) 
 C
 C -----------------------------------------------------------------     
 C                                                                       
@@ -10,7 +10,10 @@ C
 C      H. GUNTHER   ECMWF/GKSS    JANUARY 1990                          
 C                                 JUNE    1991  GRIB EDITION 1.         
 C      J. BIDLOT    ECMWF         1996    MIGRATION TO FUJITSU
-C      J. BIDLOT    ECMWF         1997    ADD READ OF IRREGULAR GRID DATA
+C      J. BIDLOT    ECMWF         1997   ADD READ OF IRREGULAR GRID DATA
+C
+C      J. BIDLOT    ECMWF         1998   REMOVE THE INTERCHANGE 
+C                                        NORTH AND SOUTH FOR OLD DATA
 C                                                                       
 C     PURPOSE.                                                          
 C     --------                                                          
@@ -26,7 +29,7 @@ C     ----------
 C                                                                       
 C      *CALL INMARS*                                                    
 C                                                                       
-C        *IUNIT*  - DATA INPUT UNIT.                                    
+C        *FILNM*  - DATA INPUT FILENAME. 
 C        *ID1  *  - NUMBER OF COLUMNS IN ARRAY FIELD (1 DIMENSION).     
 C        *ID2  *  - NUMBER OF ROWS    IN ARRAY FIELD (2 DIMENSION).     
 C        *PMISS*  - REAL VALUE USED TO INDICATE MISSING DATA IN FIELD.
@@ -36,7 +39,7 @@ C        *IPARAM* - DATA CODE: 229 = WAVE HEIGHT    (METRES).
 C                              230 = WAVE DIRECTION (DEGREE).           
 C                              231 = PEAK PERIOD    (SECONDS)           
 C                              232 = MEAN PERIOD    (SECONDS).          
-C                              139 = SURFACE TEMPERATURE (DEGREE CELCIUS)
+C                              139 = SURFACE TEMPERATURE(DEGREE CELCIUS)
 C        *NGX  *  - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
 C        *NGY  *  - NUMBER OF ROWS    IN ARRAY FIELD USED.              
 C        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
@@ -45,11 +48,17 @@ C        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).
 C        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
 C        *KLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE
 C        *AMONOP* - MOST NORTHERN LATITUDE IN GRID ( ? , 1 ).           
+C        *KZLEV*  - REFERENCE LEVEL IN full METER
+C                   SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
+C                   MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
+C                   CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
 C        *FIELD*  - UNPACKED DATA.                                      
 C        *KRET*   - ERROR NUMBER.                                       
 C        *MSG*    _ ERROR MESSAGE.                                      
 C                                                                       
-C       WAVE DATA ARCHIVED BEFORE 3. APRIL 1990 12.00 ARE CORRECTED,         
+C
+C       THIS FEATURE HAS BEEN REMOVED :
+C       WAVE DATA ARCHIVED BEFORE 3. APRIL 1990 12.00 ARE CORRECTED,
 C       THAT MEANS..                                                    
 C            - NORTH AND SOUTH ARE INTERCHANGED                         
 C            - NUMBER OF LONGITUDES IS SET TO 120                       
@@ -69,14 +78,14 @@ C     *GRPRS2*         PRINTS GRID  DEFINITION BLOCK.
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
-      PARAMETER (NBIT = 470000)                                          
+      PARAMETER (NBIT = 470000)
       DIMENSION FIELD(ID1,ID2)                                          
       DIMENSION KLONRGG(ID2)                                          
       INTEGER   KSEC1(60), KSEC2(22+361), KSEC3(2), KSEC4(42), KSEC0(2)
       INTEGER, ALLOCATABLE ::  KGRIB(:)
-      DIMENSION PSEC2(10+ID2), PSEC3(2), PSEC4(ID1*ID2)                 
-      CHARACTER*40 ERRMSG(-5:4), MSG                                     
-      CHARACTER HOPER*1, CDATE*10, FILNM*24                                                 
+      DIMENSION PSEC2(10+ID2), PSEC3(2), PSEC4(ID1*ID2)
+      CHARACTER*40 ERRMSG(-5:4), MSG
+      CHARACTER HOPER*1, CDATE*10, FILNM*24
                                                                         
       DATA HOPER / 'D' /                                                
       DATA KSEC3 /0,     0 /
@@ -98,19 +107,19 @@ C*    1.0 READ MARS DATA IN GRIB CODE FORMAT.
 C         -----------------------------------                           
 C                                                                       
 C
-      IF (IUNIT.LT.10) THEN                                                  
-         WRITE(FILNM,'(A,I1)') 'fort.',IUNIT                  
-      ELSE
-         WRITE(FILNM,'(A,I2)') 'fort.',IUNIT                  
-      ENDIF
-C             
       CALL PBOPEN(IUNIT1,FILNM,'r',KRET)                            
+      IF(KRET.LT.0) THEN
+        IF(KRET.EQ.-1) MSG=' COULD NOT OPEN '//FILNM
+        IF(KRET.EQ.-2) MSG='INVALID FILENAME'//FILNM
+        RETURN 
+      ENDIF
+
 C
       IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(NBIT))
       CALL PBGRIB(IUNIT1,KGRIB,NBIT,KLEN,KRET)
-      IF(KRET.EQ.-1) GOTO 6000                                           
-      IF(KRET.EQ.-2) GOTO 6000                                           
-      IF(KRET.EQ.-3) GOTO 6000                                           
+      IF(KRET.EQ.-1) GOTO 6000
+      IF(KRET.EQ.-2) GOTO 6000
+      IF(KRET.EQ.-3) GOTO 6000
 C
       CALL PBCLOSE(IUNIT1,KRET)      
 C           
@@ -172,6 +181,12 @@ C*    3.3 DETERMINE CODE FOR DATA FIELD TYPE.
 C         -----------------------------------                           
 C                                                                       
       IPARAM = KSEC1(6)                                                 
+
+      IF(KSEC1(7).EQ.105) THEN
+        KZLEV=KSEC1(8)
+      ELSE
+        KZLEV=0
+      ENDIF
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
@@ -237,7 +252,7 @@ C
      &         0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
 
       ELSE IF(KRGG.EQ.0) THEN
-        NGX = KSEC2(2)                                                    
+        NGX = KSEC2(2)
         KLONRGG=NGX
       ELSE
         WRITE(*,*) ' SUB INMARS : REPRESENTATION OF THE FIELD NOT KNOWN'
@@ -255,26 +270,6 @@ C
 C*    5.0 REARANGE DATA FIELD.                                          
 C         --------------------                                          
 C                                                                       
-      IF (CDATE.LE.'9004031200'.AND.IPARAM.NE.139) THEN
-C                                                                       
-C*    5.1 INTERCHANGE NORTH AND SOUTH FOR OLD DATA.                     
-C         -----------------------------------------                     
-C                                                                       
-         L = 0                                                          
-         DO K=NGY,1,-1                                             
-           DO I=1,NGX                                                
-             L = L+1                                                     
-             FIELD(I,K) = PSEC4(L)                                       
-           ENDDO
-         ENDDO
-         IF (CDATE.LE.'9001071200'.AND.CDATE.GE.'8910041800') THEN          
-            CALL CORMARS (FIELD, ID1, ID2, NGX, NGY, IPARAM)            
-         ENDIF                                                          
-         NGX = 120                                                      
-         AMONOP = .001*FLOAT(KSEC2(7))                                  
-         AMOSOP = .001*FLOAT(KSEC2(4))                                  
-      ELSE                                                              
-C                                                                       
 C*    5.2 NEW DATA.                                                     
 C         ---------                                                     
 C                                                                       
@@ -286,21 +281,19 @@ C
             FIELD(I,K) = PSEC4(L)                                       
            ENDDO
          ENDDO
-      ENDIF                                                             
-                                                                        
+C
       MSG = ERRMSG(KRET)                                                
-                                                                        
-      RETURN                                                            
+C
+      RETURN 
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
 C*    6. END OF FILE BUFFER IN.                                         
 C        ----------------------                                         
 C                                                                       
- 6000 CONTINUE                                                          
-      KRET = 1                                                          
-      MSG = ERRMSG(KRET)                                                
+ 6000 CONTINUE 
+      KRET = 1
+      MSG = ERRMSG(KRET)
+      RETURN
                                                                         
-      RETURN                                                            
-                                                                        
-      END                                                               
+      END 

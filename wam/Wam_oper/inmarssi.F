@@ -1,12 +1,14 @@
       SUBROUTINE INMARSSI (KUSO, IUNIT, IDY, ISX, ISY, PMISS,
-     .                     CDATE, IFORP, IPARAM, IRGG, IDOMRGG,
+     .                     CDATE, IFORP, IPARAM, IRGG, IDOMRGG, KK, KM,
      .                     NGX, NGY, AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     .                     NSX, NSY, PX, PY, IPLENG, IGRIB, KRET, MSG)
+     .                     NSX, NSY, PX, PY, IPLENG, ISIZE, IGRIB,
+     .                     KRET, MSG)
 C
 C ======================================================================
 C
-C***  *INMARSSI* - READS IN GRIB HEADERS FOR  GRIB FORMATTED SPECTRA.
-C                  AND RETURNS THE UNPACKED GRIB FIELD.
+C***  *INMARSSI* - READS IN GRIB HEADERS FOR GRIB FORMATTED SPECTRA.
+C                  AND RETURNS THE NECESSARY INFORMATION AND
+C                  THE UNPACKED GRIB FIELD.
 C
 C      J. BIDLOT    ECMWF   JANUARY 1998. 
 C
@@ -23,10 +25,10 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C      *CALL INMARSSI* *(KUSO, IUNIT, ISX, ISY,
-C                       CDATE, IFORP, IPARAM,
-C                       NGX, NGY, AMOWEP, AMOSOP, AMOEAP, AMONOP,
-C                       NSX, NSY, PX, PY, IPLENG, IGRIB, KRET, MSG)*
+C      *CALL *INMARSSI* *(KUSO, IUNIT, ISX, ISY,
+C                         CDATE, IFORP, IPARAM,
+C                         NGX, NGY, AMOWEP, AMOSOP, AMOEAP, AMONOP,
+C                         NSX, NSY, PX, PY, ISIZE, IGRIB, KRET, MSG)*
 C   I/   *KUSO*   - STANDARD OUTPUT UNIT.
 C   I/   *IUNIT*  - DATA INPUT UNIT.
 C   I/   *IDY  *  - THE LENGTH OF THE DATA ARRAY 'IDOMRGG'.
@@ -38,6 +40,8 @@ C    /O  *IFORP*  - FORCAST PERIOD IN SECONDS.
 C    /O  *IPARAM* - DATA CODE: 250 = SPECTRAL DENSITY (METRES**2*SEC/RAD.)
 C    /O  *IRGG*   - GRID CODE: 0 = REGULAR, 1 = IRREGULAR.
 C    /O  *IDOMRGG*- NUMBER OF GRID POINTS FOR EACH LATITUDE FOR THE DOMAIN. 
+C    /O  *KK*     - 1ST INDEX OF THE READ SPECTRA IF PARAM 251, ELSE = NSX
+C    /O  *KM*     - 2ND INDEX OF THE READ SPECTRA IF PARAM 251, ELSE = NSY
 C    /O  *NGX  *  - NUMBER OF COLUMNS IN DATA ARRAY AS FROM MARS.
 C    /O  *NGY  *  - NUMBER OF ROWS    IN DATA ARRAY AS FROM MARS.
 C    /O  *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).
@@ -48,7 +52,8 @@ C    /O  *NSX*    - LENGTH OF MATRIX DESCRIPTION ARRAY PX AS FROM MARS.
 C    /O  *NSY*    - LENGTH OF MATRIX DESCRIPTION ARRAY PY AS FROM MARS.
 C    /O  *PX*     - MATRIX DESCRIPTION ARRAY PX FIRST INDEX OF MATRIX.
 C    /O  *PY*     - MATRIX DESCRIPTION ARRAY PY SEC. INDEX OF MATRIX.
-C    /O  *IPLENG* - LENGTH OF THE UNPACKED GRIB DATA ARRAY IGRIB.
+C   I/   *IPLENG* - LENGTH OF THE UNPACKED GRIB DATA ARRAY IGRIB.
+C   I/   *ISIZE*  - SIZE IN BYTES OF THE UNPACKED GRIB DATA.
 C    /O  *IGRIB*  - UNPACKED GRIB DATA ARRAY.
 C    /O  *KRET*   - ERROR NUMBER.
 C    /O  *MSG*    _ ERROR MESSAGE.
@@ -66,7 +71,7 @@ C
 C ----------------------------------------------------------------------
 C
       INTEGER   KSEC0(2),
-     .          KSEC1(43),
+     .          KSEC1(49+ISX+ISY),
      .          KSEC2(384),
      .          KSEC3(2),
      .          KSEC4(128)
@@ -76,15 +81,13 @@ C
      .          PSEC4(1),
      .          PX(ISX),
      .          PY(ISY),
-     .          ZKSEC4(128),
      .          IDOMRGG(IDY)
-      EQUIVALENCE (KSEC4(1),ZKSEC4(1))
 C
-      INTEGER :: IGRIB(IPLENG)
-
+      INTEGER :: IGRIB(ISIZE)
+      REAL :: ONE,ZTHETA,ZFRE
       CHARACTER HOPER*1
       CHARACTER CLMSG*40
-      DATA HOPER / 'D' /
+      DATA HOPER / 'J' /
       DATA KSEC3 /0,     0 /
       DATA PSEC3 /0., -999./
       CHARACTER*40 ERRMSG(-4:6), MSG
@@ -120,7 +123,7 @@ C        ----------------
  1000 CONTINUE
       msub = msub + 1
       CALL  uraopc (csubna, msub, llsuvi, lltest)
-      IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
+      IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': isize=', isize
 C
       KSEC4=-99
       PSEC3(2) = PMISS
@@ -142,7 +145,13 @@ C
         WRITE (kuso,*) ' SUB. INMARSSI : ' 
         WRITE (kuso,*) ' IGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',IPLENG
         WRITE (kuso,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
+      ELSE 
+        WRITE (kuso,*) ' SUB. INMARSSI : '
+        WRITE (kuso,*) ' Allocated ', ISIZE, ' WORDS, SUFFICIANT FOR ',
+     .                 IPLENG, ' bytes for IGRIB. Read ',
+     .                 ILENG, ' bytes from file. Status= ', IRET
       ENDIF
+      IF (LLTEST.OR.LLSUVI) CALL FLUSH (KUSO)
       IF(iret .LT. -1) CALL abort
 C
 C ----------------------------------------------------------------------
@@ -155,9 +164,10 @@ C
       IF (lltest) CALL GRSDBG (1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
      1             PSEC4, ILENP,   IGRIB, ileng , KWORD, HOPER, KRET)
-      IF (llsuvi) WRITE(kuso,*)' GRIBEX DONE'
-
-
+      IF (llsuvi) THEN
+         WRITE(kuso,*)' GRIBEX DONE status=' , KRET
+         CALL flush (kuso)
+      ENDIF
       IF(KRET.GT.0) THEN
         MSG = ERRMSG(2)
         CALL GRPRS0 (KSEC0)
@@ -166,7 +176,8 @@ C
         WRITE (kuso,*) MSG 
         CALL abort
       ENDIF
-      IF(KSEC4(8).NE.64) THEN
+      IF((KSEC4(8).NE.64.AND.KSEC1(6).EQ.250).OR.
+     &   (KSEC4(8).NE.0.AND.KSEC1(6).EQ.251)) THEN
         MSG = ERRMSG(5)
         CALL GRPRS0 (KSEC0)
         CALL GRPRS1 (KSEC0, KSEC1)
@@ -243,65 +254,127 @@ C
 
       AMOEAP = FLOAT(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
      &         0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
-
-      NSX = KSEC4(50)
-      NSY = KSEC4(51)
-
+C
       NGY = KSEC2(3)
-
+C
       IRGG = KSEC2(17)
-
+C
       IF(IRGG.EQ.1) THEN
-
+C
+        IF(NGY.GT.IDY) THEN
+          WRITE(kuso,*) 'INMARSSI: IDY is not big enough to accomodate' 
+          WRITE(kuso,*) '          the value found in grib header (NGY)' 
+          call abort
+        ENDIF
+C
+        ISTART=0
+        DO WHILE(KSEC2(23+ISTART).EQ.0)
+           ISTART=ISTART+1
+        ENDDO
+C
+        ISTOP=0
+        DO WHILE(KSEC2(23+NGY-1-ISTOP).EQ.0)
+           ISTOP=ISTOP+1
+        ENDDO
+C
+        IC=0
+        DO J=1,NGY
+          IF(KSEC2(22+J).NE.0) IC=IC+1
+        ENDDO
+        NGY=IC
+C
         NGX = 0
-        NTOT=0
         DO J=1,NGY
            JSN=NGY-J+1
-           IDOMRGG(JSN) = KSEC2(22+J)
+           IDOMRGG(JSN) = KSEC2(22+J+ISTART)
            NGX = MAX(NGX,IDOMRGG(JSN))
-           NTOT=NTOT+KSEC2(22+J)
         ENDDO
-
+C
+        IDUM = KSEC2(4)-ISTART*KSEC2(10)
+        AMONOP = FLOAT(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+     &           0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
+C
+        IDUM = KSEC2(7)+ISTOP*KSEC2(10)
+        AMOSOP = FLOAT(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+     &         0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
+C
       ELSE IF(IRGG.EQ.0) THEN
         NGX = KSEC2(2)
-        NTOT=NGX*NGY
         IDOMRGG=NGX
       ELSE
         WRITE(kuso,*) 'INMARSSI: REPRESENTATION OF THE FIELD NOT KNOWN'
         CALL abort
       ENDIF
-
 C
-      NSXL=NSX
-      IF (NSX.GT.ISX) THEN
-         KRET = 6
-         MSG = ERRMSG(KRET)
-         WRITE (kuso,*) MSG 
-         msub = msub - 1
-         NSXL=ISX
-      ENDIF
-
-      NSYL=NSY
-      IF (NSY.GT.ISY) THEN
-         KRET = 6
-         MSG = ERRMSG(KRET)
-         WRITE (kuso,*) MSG 
-         msub = msub - 1
-         NSYL=ISY
-      ENDIF
+      IF(IPARAM.EQ.250) THEN
+        NSX = KSEC4(53)
+        NSY = KSEC4(55)
 C
-      IPX=0
-C     ZKSEC4 = TRANSFER(KSEC4, 1, 128)
-      DO 4305 J1 = 60, 59+NSXL
-        IPX=IPX+1
-        PX(IPX) = ZKSEC4(J1)/DEG
- 4305 CONTINUE
-
-      IPY=0
-      DO 4310 J1 = 60+NSX, 59+NSX+NSYL
-        IPY=IPY+1
-        PY(IPY) = ZKSEC4(J1)
- 4310 CONTINUE
+        NSXL=NSX
+        IF (NSX.GT.ISX) THEN
+           KRET = 6
+           MSG = ERRMSG(KRET)
+           WRITE (kuso,*) MSG 
+           msub = msub - 1
+           NSXL=ISX
+        ENDIF
+C
+        NSYL=NSY
+        IF (NSY.GT.ISY) THEN
+           KRET = 6
+           MSG = ERRMSG(KRET)
+           WRITE (kuso,*) MSG 
+           msub = msub - 1
+           NSYL=ISY
+        ENDIF
+C
+        KK=NSX
+        KM=NSY
+        IPX=0
+        DO 4305 J1 = 60, 59+NSXL
+          IPX=IPX+1
+          ZTHETA = TRANSFER(KSEC4(J1),ONE)
+          PX(IPX) = ZTHETA/DEG
+ 4305   CONTINUE
+C
+        IPY=0
+        DO 4310 J1 = 60+NSX, 59+NSX+NSYL
+          IPY=IPY+1
+          ZFRE = TRANSFER(KSEC4(J1),ONE)
+          PY(IPY) = ZFRE 
+ 4310   CONTINUE
+C
+      ELSE
+        NSX = KSEC1(46)
+        NSXL=NSX
+        IF (NSX.GT.ISX) THEN
+           KRET = 6
+           MSG = ERRMSG(KRET)
+           WRITE (kuso,*) MSG 
+           msub = msub - 1
+           NSXL=ISX
+        ENDIF
+C
+        NSY = KSEC1(47)
+        NSYL=NSY
+        IF (NSY.GT.ISY) THEN
+           KRET = 6
+           MSG = ERRMSG(KRET)
+           WRITE (kuso,*) MSG 
+           msub = msub - 1
+           NSYL=ISY
+        ENDIF
+C
+        KK=KSEC1(44)
+        KM=KSEC1(45)
+C
+        DO J1=1,NSXL
+          PX(J1) = (FLOAT(KSEC1(49+J1))/KSEC1(48))/DEG
+        ENDDO
+        DO J1=1,NSYL
+          PY(J1) = FLOAT(KSEC1(49+NSX+J1))/KSEC1(49) 
+        ENDDO
+      ENDIF
 
       IF (lltest) THEN
         WRITE(kuso,*) '  J1  KSEC4: '
@@ -312,9 +385,9 @@ C     ZKSEC4 = TRANSFER(KSEC4, 1, 128)
         DO 4330 J1=1,300
           WRITE(kuso,'(I5,x,f10.4)') J1, PSEC4(J1)
  4330   CONTINUE
-        WRITE(kuso,*) '  J1  ZKSEC4: '
-        DO 4340 J1=1,100
-          WRITE(kuso,'(I5,x,f10.4)') J1, ZKSEC4(J1)
+        WRITE(kuso,*) '  J1  KSEC4: '
+        DO 4340 J1=1,128
+          WRITE(kuso,'(I5,x,f10.4)') J1, KSEC4(J1)
  4340   CONTINUE
       ENDIF
 C

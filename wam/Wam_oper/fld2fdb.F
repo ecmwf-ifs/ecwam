@@ -1,7 +1,8 @@
 C=======================================================================
 C
-      SUBROUTINE FLD2FDB (kuso, ksec1, ksec2, kfield, klen, cdfun, kerr,
-     .                    cdtype, cdclass, cdexpver, cdfdbsf, kfdb)
+      SUBROUTINE FLD2FDB (kuso, ktest, ksec1, kfield, klen, cdfun, kerr,
+     .                    cdtype, cdclass, cdexpver, cdfdbsf, cddomain,
+     .                    kdir, kfre, kfdb)
 C
 C=======================================================================
 C
@@ -11,19 +12,22 @@ C**** ----
 C**
 C**   PURPOSE
 C**   -------
-C**      WRITE/READ FIELD TO/FROM THE FIELDS DATA BASE.
+C**      WRITE/READ FIELD TO/FROM THE FIELD DATA BASE.
 C**
 C**   INTERFACE
 C**   ---------
 C**      INPUT: KUSO      - LOGICAL UNIT FOR STANDARD OUTPUT.
+C**             KTEST     - SWITCH DIAGNOSTICS OUTPUT ON IF KTEST GT 1.
 C**             KSEC1     - GRIB SECTION 1 OF THE KFIELD.
-C**             KSEC2     - GRIB SECTION 2 OF THE KFIELD.
 C**             CDFUN     - FUNCTION: 'WRITE' - WRITE KFIELD INTO FDB.
 C**                                   'READ'  - READ FDB FIELD.
 C**                                   'CLOSE' - CLOSE FDB.
 C**             CDTYPE    - TYPE OF FIELD ( FG, AN OR FC).
 C**             CDCLASS   - CLASS OF CURRENT RUN.
 C**             CDEXPVER  - EXPERIMENT VERSION NUMBER.
+C**             CDDOMAIN  - FDB DOMAIN IDENTIFIER.
+C**             KDIR      - CURRENT DIRECTION IF PARAM=251, OTHERWISE SET TO 0 
+C**             KFRE      - CURRENT FREQUENCY IF PARAM=251, OTHERWISE SET TO 0 
 C**
 C**      INPUT FOR THE CDFUN = 'WRITE':
 C**
@@ -41,9 +45,9 @@ C**                                KFDB - DATA BASE REFERENCE
 C**
 C**   METHOD
 C**   ------
-C**      FIELDS DATA BASE ROUTINES ARE USED TO OPEN THE FIELDS
+C**      FIELD DATA BASE ROUTINES ARE USED TO OPEN THE FIELD
 C**      DATA BASE AND FILE, AND TO WRITE/READ THE FIELD INTO/
-C**      FROM THE FIELDS DATA BASE.
+C**      FROM THE FIELD DATA BASE.
 C**
 C**              DATABASE NAME:'ODXXTYYYMMDDTT', WHERE
 C**                             TY     - DATA TYPE ('AN','FC')
@@ -51,8 +55,8 @@ C**                             YYMMDD - DATE (YEAR,MONTH,DAY)
 C**                             TT     - BASE TIME
 C**
 C**              FILE NAMES:   'REXXX0TTT00', WHERE
-C**                             RE  - DATA REPRESENTATION 'LL'
-C**                             TTT - TIME STEP
+C**                             RE     - DATA REPRESENTATION 'LL'
+C**                             TTTTTT - TIME STEP
 C**
 C**              FIELD NAMES:  'PNNNLLLLHHHHXX', WHERE
 C**                             NNN  - PARAMTER NUMBER
@@ -61,7 +65,6 @@ C**                             HHHH - LEVEL HIGHT '0000'
 C**
 C**   EXTERNALS  $FDBLIB
 C**   ---------
-C**      * IINITFDB   *  -  INITIALISE DATA BASE
 C**      * IOPENFDB   *  -  OPEN       DATA BASE
 C**      * ICLOSEFDB  *  -  CLOSE      DATA BASE
 C**      * ISETVALFDB *  -  SET PARAMETERS ( CLASS, TYPE, DATE ETC )
@@ -89,8 +92,11 @@ C**      B. HANSEN,  ECMWF, NOV-1996
 C**        A) TUNING (DO FUNCTION CALLS ONLY WHEN NEEDED).
 C**        B) CATER FOR TWO NEW DOMAINS 'N' FOR NORTHER HEMISPHERE
 C**                                     's' for Southern Hemisphere
-C        J. BIDLOT ECMWF NOV 1997 : allow new stream waef and type cf or pf
-C                                   from ensemble runs.
+C        J. BIDLOT ECMWF NOV 1997 : allow new stream waef and type
+C                                   cf or pf from ensemble runs.
+C
+C        B. HANSEN,  ECMWF, FEB-1998
+C          MOVE INITIALIZATION TO USERIN AT THE BOTTOM OF SECTION 1.4. 
 C
 C     ------------------------------------------------------------------
 C
@@ -98,12 +104,13 @@ C*        1. VARIABLE DECLARATIONS
 C
 C     ------------------------------------------------------------------
 C
-      DIMENSION ksec1(*), ksec2(*), kfield(*)
+      DIMENSION ksec1(*), kfield(*)
 C
-      INTEGER       klen
+      INTEGER       klen, kdir, kfre 
 C
       CHARACTER*(*) cdfun
       CHARACTER*(*) cdfdbsf
+      CHARACTER*(*) cddomain
 C
       CHARACTER*1  cldomain
 C
@@ -112,13 +119,16 @@ C
       CHARACTER*2  cltype
       CHARACTER*2  cdclass
       CHARACTER*2  clclass
+      CHARACTER*2  cldir
+      CHARACTER*2  clfre
 C
       CHARACTER*3  clparam
       CHARACTER*3  clnumber
 C
       CHARACTER*4  cdexpver
       CHARACTER*4  clexpver
-      CHARACTER*4  clstep
+      CHARACTER*6  clstep
+      CHARACTER*4  clstream
 C
       CHARACTER*6  cldate
 C
@@ -128,18 +138,11 @@ C
       CHARACTER*2  cl_p_class
       CHARACTER*3  cl_p_param
       CHARACTER*4  cl_p_expver
-      CHARACTER*4  cl_p_step
+      CHARACTER*6  cl_p_step
       CHARACTER*6  cl_p_date
 C
       DATA cl_p_domain, cl_p_time, cl_p_type, cl_p_class, cl_p_param,
      .     cl_p_expver, cl_p_step, cl_p_date / 8*"  " /
-C
-C     HELPS TO CALL IINITFDB ONLY ONCE.
-C     ---------------------------------
-C
-      LOGICAL     linitfdb 
-      DATA        linitfdb /.FALSE./
-      SAVE        linitfdb
 C
 C     HELPS TO CALL IOPENFDB ONLY ONCE.
 C     ---------------------------------
@@ -156,7 +159,7 @@ C
 C
 C     ------------------------------------------------------------------
 C
-C*        1.   DERIVE FIELDS DATA BASE VARIABLES FROM ARGUMENT LIST.
+C*        1.   DERIVE FIELD DATA BASE VARIABLES FROM ARGUMENT LIST.
 C
 C     ------------------------------------------------------------------
 C
@@ -180,22 +183,12 @@ C
           cltype   = cdtype
         ENDIF
 C
-        IF ( ksec1(3).ge.204 ) THEN
-          cldomain = 'm'
-        ELSE
-          IF ( ksec2(7) .GE. 0 ) THEN
-            cldomain = 'n'
-          ELSEIF ( ksec2(4) .LT. 0 ) THEN
-            cldomain = 's'
-          ELSE
-            cldomain = 'g'
-          ENDIF
-        ENDIF
+        cldomain = cddomain
 C
         IF ( cltype .EQ. 'fg' .and. ksec1(16) .EQ. 0 ) then
-          clstep = '0006'
+          clstep = '000006'
         ELSE
-          WRITE(clstep, '( i4.4 )' ) ksec1(16)
+          WRITE(clstep, '( i6.6 )' ) ksec1(16)
         ENDIF
 C
         WRITE( clparam, '(i3.3)' ) ksec1(6)
@@ -215,14 +208,9 @@ C
 C
 C     ------------------------------------------------------------------
 C
-C*        2.   INITIALISE - OPEN - CLOSE - CHECK ACTION REQUESTED
+C*        2.   OPEN - CLOSE - CHECK ACTION REQUESTED
 C
 C     ------------------------------------------------------------------
-C
-      IF ( .NOT. linitfdb )  THEN
-        istat = iinitfdb()
-        Linitfdb = .TRUE.
-      ENDIF
 C
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
         IF ( .NOT. lopenfdb )  THEN
@@ -234,36 +222,45 @@ C
      .      I3)') istat
             kerr = 1
             RETURN
+          ELSEIF (KTEST .GT. 1) THEN
+            WRITE(kuso,'("\ /Fld2fdb/ iopenfdb status:", i3)') istat
           ENDIF
 C
           icdfdbsf = LEN_TRIM(cdfdbsf)
-          istat = iset_fdb_root(iaddr1,    cdfdbsf(1:icdfdbsf) )
-          IF ( istat .NE. 0 ) THEN
-            WRITE(kuso,'("Error\ /Fld2fdb/ Root dir specified: ",a)')
-     .      cdfdbsf(1:icdfdbsf)
-            WRITE(kuso,'("Error\ /Fld2fdb/ iopenfdb return status:",
-     .      I3)') istat
-            kerr = 1
-            RETURN
+          IF (icdfdbsf .GT. 0 ) THEN
+            istat = iset_fdb_root(iaddr1,    cdfdbsf(1:icdfdbsf) )
+            IF ( istat .NE. 0 ) THEN
+              WRITE(kuso,'("Error\ /Fld2fdb/ Root dir specified: ",a)')
+     .        cdfdbsf(1:icdfdbsf)
+              WRITE(kuso,'("Error\ /Fld2fdb/ iopenfdb return status:",
+     .        I3)') istat
+              kerr = 1
+              RETURN
+            ELSEIF (KTEST .GT. 1) THEN
+              WRITE(kuso,'("\ /Fld2fdb/ iset_fdb_root status:", i3,
+     .        " Root: ", a25)') istat, cdfdbsf(1:icdfdbsf)
+            ENDIF
           ENDIF
 C
           lopenfdb = .TRUE.
 C
           if(cltype.eq.'cf'.or.cltype.eq.'pf') then
-            istat = isetvalfdb( iaddr1,   'STREAM', 'waef' )
+            clstream = 'waef'
           else
-            istat = isetvalfdb( iaddr1,   'STREAM', 'wave' )
+            clstream = 'wave'
           endif
-
-          istat = isetvalfdb( iaddr1,   'LEVTY',   's' )
-          istat = isetvalfdb( iaddr1,   'LEVEL',   '0000' )
+C
+          istat = isetvalfdb( iaddr1,   'STREAM', clstream )
+C
           istat = isetvalfdb( iaddr1,   'REPR',    'll' )
 C
-c
-c         ensemble number
-c
+C         ensemble number
+C
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
           istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+C
+          IF (KTEST.GT.1) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
+     .                    " NUMBER ", a3)') clstream, clnumber
 
         ENDIF
       ELSEIF ( cdfun .EQ. 'close' ) THEN
@@ -276,7 +273,8 @@ c
           kerr = 1
           RETURN
         ELSE
-          WRITE(kuso, '( "/Fld2fdb/ Closed FDB and DB: " )' )
+          IF (KTEST.GT.1)
+     .     WRITE(kuso, '( "/Fld2fdb/ Closed FDB and DB: " )' )
           kerr = 0
           lopenfdb = .FALSE.
           RETURN
@@ -300,53 +298,76 @@ C           DATE - TIME - STEP
 C
 C     ------------------------------------------------------------------
 C
-c      WRITE(*,'(2a8)') cl_p_class, clclass
-c      WRITE(*,'(2a8)') cl_p_expver, clexpver
-c      WRITE(*,'(2a8)') cl_p_domain, cldomain
-c      WRITE(*,'(2a8)') cl_p_type, cltype
-c      WRITE(*,'(2a8)') cl_p_param, clparam
-c      WRITE(*,'(2a8)') cl_p_date, cldate
-c      WRITE(*,'(2a8)') cl_p_time, cltime
-c      WRITE(*,'(2a8)') cl_p_step, clstep
-C
       IF ( cl_p_class .NE. clclass ) THEN
-        istat = isetvalfdb( iaddr1,   'CLASS',   clclass )
         cl_p_class=clclass
       ENDIF
 C
       IF ( cl_p_expver .NE. clexpver ) THEN
-        istat = isetvalfdb( iaddr1,   'expver',  clexpver )
         cl_p_expver=clexpver
       ENDIF
 C
       IF ( cl_p_domain .NE. cldomain ) THEN
-        istat = isetvalfdb( iaddr1, 'domain', cldomain )
         cl_p_domain=cldomain
       ENDIF
 C
       IF ( cl_p_type .NE. cltype ) THEN
-        istat = isetvalfdb( iaddr1, 'TY',     cltype )
         cl_p_type=cltype
       ENDIF
 C
       IF ( cl_p_param .NE. clparam ) THEN
-        istat = isetvalfdb( iaddr1, 'PARAM',  clparam )
         cl_p_param=clparam
       ENDIF
 C
       IF ( cl_p_date .NE. cldate ) THEN
-        istat = isetvalfdb( iaddr1, 'date',   cldate )
         cl_p_date=cldate
       ENDIF
 C
       IF ( cl_p_time .NE. cltime ) THEN
-        istat = isetvalfdb( iaddr1, 'time',   cltime )
         cl_p_time=cltime
       ENDIF
 C
       IF ( cl_p_step .NE. clstep ) THEN
-        istat = isetvalfdb(iaddr1,  'step',   clstep )
         cl_p_step=clstep
+      ENDIF
+C
+      istat = isetvalfdb( iaddr1, 'class',  cl_p_class  )
+      istat = isetvalfdb( iaddr1, 'expver', cl_p_expver )
+      istat = isetvalfdb( iaddr1, 'domain', cl_p_domain )
+      istat = isetvalfdb( iaddr1, 'type',   cl_p_type   )
+      istat = isetvalfdb( iaddr1, 'param',  cl_p_param  )
+      istat = isetvalfdb( iaddr1, 'date',   cl_p_date   )
+      istat = isetvalfdb( iaddr1, 'time',   cl_p_time   )
+      istat = isetvalfdb( iaddr1, 'step',   cl_p_step   )
+      istat = isetvalfdb( iaddr1, 'levty',   's'        )
+C     istat = isetvalfdb( iaddr1, 'level',   '0000'     )
+C     istat = isetvalfdb( iaddr1, 'fstep',  '000000'    )
+C
+      IF (kdir.NE.0 .AND. kfre.NE.0 .AND. cl_p_param .EQ. '251' ) THEN
+          idir = kdir 
+          ifre = kfre 
+          WRITE( cldir, '(i2.2)' ) idir 
+          WRITE( clfre, '(i2.2)' ) ifre 
+          istat = isetvalfdb( iaddr1,   'direction', cldir )
+          istat = isetvalfdb( iaddr1,   'frequency', clfre )
+      ELSE
+          cldir="00"
+          clfre="00"
+          istat = isetvalfdb( iaddr1,   'direction', cldir )
+          istat = isetvalfdb( iaddr1,   'frequency', clfre )
+      ENDIF
+C
+      IF (KTEST.GT.1) THEN
+        WRITE(kuso,'("\ /Fld2fdb/ CLASS: ", a8)') cl_p_class
+        WRITE(kuso,'("\ /Fld2fdb/ EXPVER:", a8)') cl_p_expver
+        WRITE(kuso,'("\ /Fld2fdb/ DOMAIN:", a8)') cl_p_domain
+        WRITE(kuso,'("\ /Fld2fdb/ TY:    ", a8)') cl_p_type
+        WRITE(kuso,'("\ /Fld2fdb/ PARAM: ", a8)') cl_p_param
+        WRITE(kuso,'("\ /Fld2fdb/ DATE:  ", a8)') cl_p_date
+        WRITE(kuso,'("\ /Fld2fdb/ TIME:  ", a8)') cl_p_time
+        WRITE(kuso,'("\ /Fld2fdb/ STEP:  ", a8)') cl_p_step
+        WRITE(kuso,'("\ /Fld2fdb/ DIR:   ", a8)') cldir
+        WRITE(kuso,'("\ /Fld2fdb/ FREQ:  ", a8)') clfre
+        CALL flush (kuso)
       ENDIF
 C
 C     ------------------------------------------------------------------
@@ -363,6 +384,8 @@ C
           kerr = 1
           RETURN
         ENDIF
+        IF (KTEST.GT.1) WRITE(kuso,'("\ /Fld2fdb/ iwritefdb klen:", i10,
+     .                  " status:", i4)') klen, istat
       ELSEIF ( cdfun .EQ. 'read' )  THEN
         istat = ireadfdb( iaddr1, kfield, klen )
         IF ( istat .NE. 0 ) THEN

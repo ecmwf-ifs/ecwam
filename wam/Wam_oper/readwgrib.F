@@ -1,10 +1,11 @@
 C------------------------------------------------------------------
 C
-      SUBROUTINE READGRIB(IU06,IUNIT,IPARAM,CDATE,FIELD)
+      SUBROUTINE READWGRIB(IU06,FILNM,IPARAM,CDATE,FIELD,KINF,KSUP,
+     &                     KEND, KZLEV)
 C
 C----------------------------------------------------------------------
 C
-C**** *READGRIB*  READS FROM GRIB WAVE MODEL FIELD
+C**** *READWGRIB*  READS FROM GRIB WAVE MODEL FIELD
 C
 C     J. BIDLOT   ECMWF   OCTOBER 1997 
 C
@@ -16,27 +17,36 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *READGRIB*(IU06,IUNIT,IPARAM,CDATE,FIELD)
+C       *CALL* *READWGRIB*(IU06,FILNM,IPARAM,CDATE,FIELD)
 C
 C*     VARIABLE.   TYPE.     PURPOSE.
 C      ---------   -------   --------
 C      *IU06*      INTEGER   OUTPUT UNIT FOR STANDARD OUTPUT.
-C      *IUNIT*     INTEGER   FORTRAN UNIT FOR GRIBBED DATA FILE. 
+C      *FILNM*     DATA INPUT FILENAME.
 C      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
 C      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
 C      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
+C      *KINF*      INTEGER   LOWER BOUND ON FIRST DIEMENSION OF FIELD
+C      *KSUP*      INTEGER   UPPER BOUND ON FIRST DIEMENSION OF FIELD
+C      *KEND*      INTEGER   USED UPPER LIMIT ON 1st DIMENSION OF FIELD
+C      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
+C                           (SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
+C                           MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
+C                           CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
 C
 C     METHOD.
 C     -------
 C      READS GRIB DATA USING INMARS, CHECK WHETHER GRID DEFINITION ARE 
-C      COMPATIBLE. IN CASE THE INPUT DATA IS DEFINED ON A REGULAR LAT-LONG
-C      GRID, BUT THE MODEL USES AN IRREGULAR GRID, THE DATA WILL BE 
-C      INTERPOLATED TO THE IRREGULAR GRID BY TAKING THE NEAREST GRID POINT.
-C      THE GRID DATA ARE PUT INTO BLOCK FORMAT PROVIDED THEY AREi DIFFERENT 
-C      THAN ZMISS TO AVOID THE USE OF MISSING DATA INDICATOR FOR LAND POINT
-C      FOLLOWING A POSSIBLE CHANGE IN THE LAND-SEA MASK . FOR THAT REASON, 
-C      THE BLOCK VALUE OF FIELD SHOUD BE INITIALISED PRIOR TO THE CALL TO THIS
-C      ROUTINE.
+C      COMPATIBLE. IN CASE THE INPUT DATA IS DEFINED ON A REGULAR LAT-
+C      LON GRID, BUT THE MODEL USES AN IRREGULAR GRID, THE DATA WILL BE 
+C      INTERPOLATED TO THE IRREGULAR GRID BY TAKING THE NEAREST GRID
+C      POINTS.
+C      THE GRID DATA ARE PUT INTO BLOCK FORMAT PROVIDED THEY ARE
+C      DIFFERENT THAN ZMISS TO AVOID THE USE OF MISSING DATA INDICATOR
+C      FOR LAND POINT FOLLOWING A POSSIBLE CHANGE IN THE LAND-SEA
+C      MASK . FOR THAT REASON, 
+C      THE BLOCK VALUE OF FIELD SHOUD BE INITIALISED PRIOR TO THE CALL
+C      TO THIS ROUTINE.
 C      
 C     EXTERNALS.
 C     ----------
@@ -67,13 +77,14 @@ C
 C
 C
 C     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: FIELD 
+      REAL,DIMENSION(KINF:KSUP,NBLO) :: FIELD 
 C
 C-----------------------------------------------------------------------
       REAL,ALLOCATABLE ::  WORK(:,:)
       INTEGER,ALLOCATABLE :: KLONRGG(:)
 C
       CHARACTER*10 CCDDATE,CDATE 
+      CHARACTER*24 FILNM
       CHARACTER*40 MSG, TITL*100
 C-----------------------------------------------------------------------
 C
@@ -85,15 +96,16 @@ C
 C
       ALLOCATE(WORK(NGX,NGY),KLONRGG(NGY))
 
-      CALL INMARS  ( IUNIT, NGX, NGY, ZMISS, CCDDATE, IFORP, KPARAM,
+      CALL INMARS  ( FILNM, NGX, NGY, ZMISS, CCDDATE, IFORP, KPARAM,
      .               NGXCD, NGYCD, CDMOWEP, CDMOSOP, CDMOEAP, CDMONOP,
-     .               KRGG, KLONRGG, WORK, IERR, MSG)
+     .               KRGG, KLONRGG, KZLEV,WORK, IERR, MSG)
       IF ( IERR .LE. 0 ) THEN
         WRITE(IU06,*)'            '
-        WRITE(IU06,*)'SUB. READGRIB: DATE=',CCDDATE,' IPARAM= ',IPARAM
+        WRITE(IU06,*)'SUB. READWGRIB: DATE=',CCDDATE,' IPARAM= ',IPARAM
       ELSE
-        WRITE(IU06,*)'SUB. READGRIB: IERR=',IERR,' IPARAM= ',IPARAM
+        WRITE(IU06,*)'SUB. READWGRIB: IERR=',IERR,' IPARAM= ',IPARAM
         WRITE(IU06,*) MSG
+        CALL ABORT1
       ENDIF
 C
 C
@@ -105,11 +117,12 @@ C
       IF (KPARAM.NE.IPARAM) THEN
          WRITE(IU06,*)'********************************'
          WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READGRIB  *'
+         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
          WRITE(IU06,*)'* ===========================  *'
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'* GRIB PARAMETER  ',KPARAM
          WRITE(IU06,*)'* WAS READ INSTEAD OF ',IPARAM
+         WRITE(IU06,*)'* IN FILE: ',FILNM 
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'********************************'
          CALL ABORT1
@@ -117,11 +130,12 @@ C
       IF (CCDDATE.NE.CDATE) THEN
          WRITE(IU06,*)'**********************************'
          WRITE(IU06,*)'*                                *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READGRIB    *'
+         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB   *'
          WRITE(IU06,*)'* ===========================    *'
          WRITE(IU06,*)'*                                *'
          WRITE(IU06,*)'* REQUESTED DATE IS NOT EQUAL TO *' 
          WRITE(IU06,*)'* RETRIEVED DATE.                *' 
+         WRITE(IU06,*)'* IN FILE: ',FILNM 
          WRITE(IU06,*)'* CCDDATE = ',CCDDATE
          WRITE(IU06,*)'* CDATE = ',CDATE
          WRITE(IU06,*)'*                                *'
@@ -132,12 +146,13 @@ C
      +    AMONOP.NE.CDMONOP .OR. AMOSOP.NE.CDMOSOP) THEN
           WRITE(IU06,*) '***********************************'
           WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. READGRIB   *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. READWGRIB  *'
           WRITE(IU06,*) '*  ============================   *'
           WRITE(IU06,*) '*                                 *'
           WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID AREA *'
           WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
           WRITE(IU06,*) '*  COURSE MODEL GRID              *'
+          WRITE(IU06,*) '* IN FILE: ',FILNM 
           WRITE(IU06,*) '*                                 *'
           WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'CDMOSOP : ',CDMOSOP
           WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'CDMONOP : ',CDMONOP
@@ -151,10 +166,11 @@ C
       IF (NGXCD .NE. NGX) THEN
          WRITE(IU06,*)'********************************'
          WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READGRIB  *'
+         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
          WRITE(IU06,*)'* ===========================  *'
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'* NGXCD SHOULD BE EQUAL TO NGX *'
+         WRITE(IU06,*)'* IN FILE: ',FILNM 
          WRITE(IU06,*)'* NGX  = ',NGX
          WRITE(IU06,*)'* NGXCD  = ',NGXCD
          WRITE(IU06,*)'*                              *'
@@ -164,10 +180,11 @@ C
       IF (NGYCD .NE. NGY) THEN
          WRITE(IU06,*)'********************************'
          WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READGRIB  *'
+         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
          WRITE(IU06,*)'* ===========================  *'
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'* NGYCD SHOULD BE EQUAL TO NGY *'
+         WRITE(IU06,*)'* IN FILE: ',FILNM 
          WRITE(IU06,*)'* NGY  = ',NGY
          WRITE(IU06,*)'* NGYCD  = ',NGYCD
          WRITE(IU06,*)'*                              *'
@@ -177,7 +194,7 @@ C
       IF (KRGG.NE.IRGG) THEN
          WRITE(IU06,*)'********************************'
          WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* ERROR IN SUB READGRIB        *'
+         WRITE(IU06,*)'* ERROR IN SUB READWGRIB       *'
          WRITE(IU06,*)'* =====================        *'
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'* KRGG IS NOT EQUAL TO IRGG    *'
@@ -204,7 +221,7 @@ C
           IF(KLONRGG(J).NE.NLONRGG(J)) THEN
              WRITE(IU06,*)'***********************************'
              WRITE(IU06,*)'*                                 *'
-             WRITE(IU06,*)'* ERROR IN SUB READGRIB           *'
+             WRITE(IU06,*)'* ERROR IN SUB READWGRIB          *'
              WRITE(IU06,*)'* =====================           *'
              WRITE(IU06,*)'*                                 *'
              WRITE(IU06,*)'* THE IRREGULAR GRID DEFINITION   *'
@@ -224,48 +241,63 @@ C
       ENDIF
 C
 C TRANSFORM GRID DATA TO BLOCK DATA
-
+C
       IF(KRGG.EQ.0.AND.IRGG.EQ.1) THEN
 C   INTERPOLATION IS REQUIRED : TAKE CLOSEST GRID POINT
         DELLO=XDELLO
         DELLA=XDELLA
-        DO IG=1,IGL
-           DO IJ = IJS(IG),IJL(IG)
-              IX = IXLG(IJ,IG)
-              KX = KXLT(IJ,IG)
-              XI = AMOWEP + REAL(IX-1)*ZDELLO(KX)-CDMOWEP
-              XI = MOD(XI+720.,360.)
-              XI = XI/DELLO+1.00001
-
-              XJ = CDMONOP - AMOSOP - REAL(KX-1)*XDELLA
-              XJ = XJ/DELLA+1.00001
- 
-              I  = NINT(XI)
-              J  = NINT(XJ)
-
-              IF(WORK(I,J).NE.ZMISS) THEN
-                 FIELD(IJ,IG)=WORK(I,J)
-              ENDIF
-
-           ENDDO
-        ENDDO
+        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO) THEN
+          IG=1
+             DO IJ = 1,KEND 
+                IX = IXLG(IJ,IG)
+                KX = KXLT(IJ,IG)
+                XI = AMOWEP + REAL(IX-1)*ZDELLO(KX)-CDMOWEP
+                XI = MOD(XI+720.,360.)
+                XI = XI/DELLO+1.00001
+                XJ = CDMONOP - AMOSOP - REAL(KX-1)*XDELLA
+                XJ = XJ/DELLA+1.00001
+                I  = NINT(XI)
+                J  = NINT(XJ)
+                IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+             ENDDO
+        ELSE
+          DO IG=1,IGL
+             DO IJ = IJS(IG),IJL(IG)
+                IX = IXLG(IJ,IG)
+                KX = KXLT(IJ,IG)
+                XI = AMOWEP + REAL(IX-1)*ZDELLO(KX)-CDMOWEP
+                XI = MOD(XI+720.,360.)
+                XI = XI/DELLO+1.00001
+                XJ = CDMONOP - AMOSOP - REAL(KX-1)*XDELLA
+                XJ = XJ/DELLA+1.00001
+                I  = NINT(XI)
+                J  = NINT(XJ)
+                IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+             ENDDO
+          ENDDO
+        ENDIF
       ELSE
 C   NO INTERPOLATION IS REQUIRED
-        DO IG=1,IGL
-           DO IJ = IJS(IG),IJL(IG)
-              IX = IXLG(IJ,IG)
-              IY = NGY- KXLT(IJ,IG) +1
-
-              IF(WORK(IX,IY).NE.ZMISS) THEN
-                 FIELD(IJ,IG)=WORK(IX,IY)
-              ENDIF
-
-           ENDDO
-        ENDDO
+        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO) THEN
+          IG=1
+             DO IJ = 1,KEND 
+                IX = IXLG(IJ,IG)
+                IY = NGY- KXLT(IJ,IG) +1
+                IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+             ENDDO
+        ELSE
+          DO IG=1,IGL
+             DO IJ = IJS(IG),IJL(IG)
+                IX = IXLG(IJ,IG)
+                IY = NGY- KXLT(IJ,IG) +1
+                IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+             ENDDO
+          ENDDO
+        ENDIF
       ENDIF
-
+C
       IF(ALLOCATED(WORK))DEALLOCATE(WORK)
       IF(ALLOCATED(KLONRGG))DEALLOCATE(KLONRGG)
-
+C
       RETURN
       END

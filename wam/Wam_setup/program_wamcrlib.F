@@ -3,7 +3,7 @@
 #. CREATES THE WAMCRLIB
 #QSUB -q vpp700.normal
 #QSUB -eo
-#QSUB -r wamcrlib_pre_release
+#QSUB -r wamcrlib_$LABEL$NAME
 #QSUB -lt 200
 #QSUB -lP 0
 #QSUB -lV 20mb
@@ -16,11 +16,14 @@ TMPDIR=$MRFSDIR
 
 #.
 PATH=$PATH:.
-cd $TMPDIR
 set -v
 set -e
 #.
 #include "path.h"
+#.
+cd $LIBCR
+mkdir tmp$$
+cd tmp$$
 #.
 cat >wamcrlib.src <<\EOFPRO
 #endif
@@ -84,7 +87,6 @@ cat >wamcrlib.src <<\EOFPRO
 #include "dummy_cray.F"
 #include "uraopc.F"
 #include "makegrids.F"
-#include "gribpacs.F"
 #include "i_get_unit.F"
 #ifdef JOB
 EOFPRO
@@ -97,15 +99,15 @@ if [ -f WAMINFOT.f -a -f WRITSTA.f ] ; then
 fi
 #.
 [ ! -d tmp ] && mkdir tmp
-[ -f ${VPPPATH}/lib$WAMCRLIB.f.tar ] && {
-  dd if=${VPPPATH}/lib$WAMCRLIB.f.tar of=lib$WAMCRLIB.f.tar bs=400k
+[ -f ${LIBCR}/lib$WAMCRLIB.f.tar ] && {
+  dd if=${LIBCR}/lib$WAMCRLIB.f.tar of=lib$WAMCRLIB.f.tar bs=400k
   cd tmp
   tar xf ../lib$WAMCRLIB.f.tar
   cd ..
 }
 #.
-[ -f ${VPPPATH}/lib$WAMCRLIB.a ] && {
-  dd if=${VPPPATH}/lib$WAMCRLIB.a of=lib$WAMCRLIB.a bs=400k
+[ -f ${LIBCR}/lib$WAMCRLIB.a ] && {
+  dd if=${LIBCR}/lib$WAMCRLIB.a of=lib$WAMCRLIB.a bs=400k
 }
 #.
 i=0
@@ -148,13 +150,17 @@ ecp -o lib$WAMCRLIB.* ec:$DHSPATH/.
 #.
 ls -la
 #.
-dd if=lib$WAMCRLIB.a     of=$VPPPATH/lib$WAMCRLIB.a       bs=400k
-dd if=lib$WAMCRLIB.f.tar of=${VPPPATH}/lib$WAMCRLIB.f.tar bs=400k
-dd if=lib$WAMCRLIB.l.tar of=${VPPPATH}/lib$WAMCRLIB.l.tar bs=400k
+mv lib$WAMCRLIB.a  $LIBCR/lib$WAMCRLIB.a
+mv lib$WAMCRLIB.f.tar ${LIBCR}/lib$WAMCRLIB.f.tar
+mv lib$WAMCRLIB.l.tar ${LIBCR}/lib$WAMCRLIB.l.tar
 #.
-chmod go+rx $VPPPATH/lib$WAMCRLIB.*
+chmod go+rx $LIBCR/lib$WAMCRLIB.*
 #.
 cat *.l
+
+cd ..
+\rm -rf tmp$$
+
 #.
 #.END OF JOB
 #.

@@ -101,7 +101,7 @@ C         -------------------------------------------------
 C
       IF(LMESSPASS) THEN
 
-        CALL MPBCASTSCFLD(10,NSTART,NEND,BETA)
+        CALL MPBCASTSCFLD(20,NSTART,NEND,BETA)
 
         CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG)
 

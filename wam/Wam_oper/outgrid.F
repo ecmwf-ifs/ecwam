@@ -125,6 +125,9 @@ C
          DO 1200 IJ = IJS,IJL
             TAU = USNEW(IJ)**2 +0.0001
             WVSTR(IJ) = TAUW(IJ,IG)/TAU
+CC       if the numerical computation of TAU and CD change, a similar
+CC       modification has to be put in buildstress where the friction
+cc       velocity is determined from U10 and CD.
             CD(IJ) = TAU/(U10NEW(IJ)**2+0.01)
  1200    CONTINUE
 C
@@ -205,6 +208,7 @@ C
               U10 = 0.
               DO IJ = IJS,IJL
                 U10(IJ) = U10NEW(IJ)
+                IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) U10(IJ)=ZMISS
               ENDDO
            ENDIF
            CALL MPGATHERSCFLD(IPFGTBL(10),10,NSTART,NEND,U10)
@@ -290,6 +294,11 @@ C --------------------------
       IF(ALLOCATED(PEAKF)) DEALLOCATE (PEAKF)
       IF(ALLOCATED(CD)) DEALLOCATE(CD)
       IF(ALLOCATED(WVSTR)) DEALLOCATE(WVSTR)
+C
+      IF(LMESSPASS) THEN
+        CALL MPE_BARRIER(IERR)
+        IF(IERR.LT.0)CALL MPEI_ABORT('MPE_BARRIER ERROR in OUTGRID')
+      ENDIF
 
       RETURN
       END

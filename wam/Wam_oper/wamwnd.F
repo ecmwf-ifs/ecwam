@@ -1,4 +1,4 @@
-      SUBROUTINE WAMWND (US, DS, UWND, VWND, NC, NR)
+      SUBROUTINE WAMWND (US, DS, KINF, KSUP , KEND, UWND, VWND, NC, NR)
 
 C ----------------------------------------------------------------------
 C
@@ -17,6 +17,9 @@ C
 C       *CALL WAMWND (US, DS, UWND, VWND, NC, NR)*
 C          *US*   - INTERPOLATED WINDS IN ALL POINTS AND BLOCKS.
 C          *DS*   - INTERPOLATED WIND DIRECTION IN ALL POINTS.
+C          *KINF* - LOWER BOUND ON FIRST DIMENSION OF FIELD
+C          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF FIELD
+C          *KEND* - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
 C          *UWND* - INPUT WIND : U COMPONENT.
 C          *VWND* - INPUT WIND : V COMPONENT.
 C          *NC*   - DIMENSION OF IN INPUT WIND ARRAYS (COLUMNS).
@@ -29,7 +32,7 @@ C
 C       THE INPUT WINDS ARE INTERPOLATED TO THE WAVE MODEL GRID POINTS
 C       IN BLOCKED FORMAT. THE INTERPOLATED VALUES ARE TRANSFORMED TO
 C       MAGNITUDE AND DIRECTION. INPUT MAY BE WIND IN 10M HEIGHT ,
-C       SURFACE WINDS OR FRICTION VELOCETIES. THE INPUT GRID HAS TO BE
+C       SURFACE WINDS OR FRICTION VELOCITIES. THE INPUT GRID HAS TO BE
 C       A LATITUDE/LONGITUDE GRID EITHER PERIODIC OR NON PERIODIC.
 C
 C     EXTERNALS.
@@ -43,11 +46,9 @@ C
 C
 #include "comgrid.h"
 C
+#include "commesspass.h"
+C
 #include "comtest.h"
-C
-#include "commpp.h"
-C
-#include "txtmpp.h"
 C
 #include "comwndg.h"
 C
@@ -58,7 +59,7 @@ C
       PARAMETER (ROAIR = 1.225)
       PARAMETER (XKAPPA = 0.41, ALPHACH = 0.0185)
 C
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS
+      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS
       DIMENSION UWND(NC,NR), VWND(NC,NR)
       LOGICAL LFRSTIME
 C
@@ -84,10 +85,15 @@ C
 C*    2.1 INTERPOLATE ONE BLOCK IN SPACE.
 C         ------------------------------
 C
-!
-         CALL LOCINT (IG, IJS(IG), IJL(IG), NC, NR, KCOL, KROW, IWPER,
+        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
+          CALL LOCINT (IG, 1, KEND, NC, NR, KCOL, KROW, IWPER,
+     1         DLAM, DPHI, RLONL, RLATS, UWND, VWND, US(1,IG),
+     2         DS(1,IG))
+        ELSE
+          CALL LOCINT (IG, IJS(IG), IJL(IG), NC, NR, KCOL, KROW, IWPER,
      1         DLAM, DPHI, RLONL, RLATS, UWND, VWND, US(IJS(IG),IG),
      2         DS(IJS(IG),IG))
+        ENDIF
  2001 CONTINUE
 C
 C ----------------------------------------------------------------------
@@ -101,51 +107,85 @@ C
 C*    3.1 TRANSFORM TO MAGNITUDE AND DIRECTION.
 C         -------------------------------------
 C
-      DO 3101 IG = 1,IGL
-         DO 3102 IJ = IJS(IG),IJL(IG)
+      DO IG = 1,IGL
+        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
+          DO  IJ = 1,KEND
             UU = US(IJ,IG)
             VV = DS(IJ,IG)
             US(IJ,IG) = SQRT(UU**2 + VV**2)
             IF (US(IJ,IG).NE.0.) DS(IJ,IG) = ATAN2(UU,VV)
             IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
- 3102    CONTINUE
- 3101 CONTINUE
+          ENDDO
+        ELSE
+          DO  IJ = IJS(IG),IJL(IG)
+            UU = US(IJ,IG)
+            VV = DS(IJ,IG)
+            US(IJ,IG) = SQRT(UU**2 + VV**2)
+            IF (US(IJ,IG).NE.0.) DS(IJ,IG) = ATAN2(UU,VV)
+            IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
+          ENDDO
+        ENDIF
+      ENDDO 
 C
       IF (ICODE.EQ.1) THEN
 C
 C*    3.2  INPUT IS FRICTION VELOCITY.
 C          ---------------------------
 C
-         DO 3201 IG = 1,IGL
-            DO 3202 IJ = IJS(IG),IJL(IG)
+         DO IG = 1,IGL
+           IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
+             DO IJ = 1,KEND
                USTAR = MAX(0.01,US(IJ,IG))
                Z0  = ALPHACH/G*USTAR**2
                CD  = XKAPPA/ALOG(10./Z0)
                US(IJ,IG) = USTAR/CD
- 3202       CONTINUE
- 3201    CONTINUE
+             ENDDO
+           ELSE
+             DO IJ = IJS(IG),IJL(IG)
+               USTAR = MAX(0.01,US(IJ,IG))
+               Z0  = ALPHACH/G*USTAR**2
+               CD  = XKAPPA/ALOG(10./Z0)
+               US(IJ,IG) = USTAR/CD
+             ENDDO
+           ENDIF
+         ENDDO
 C
       ELSE IF (ICODE.EQ.2) THEN
 C
 C*    3.3 INPUT WINDS ARE SURFACE STRESSES.
 C         ---------------------------------
 C
-         DO 3301 IG = 1,IGL
-            DO 3302 IJ = IJS(IG),IJL(IG)
+         DO IG = 1,IGL
+           IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
+             DO IJ = 1,KEND
                USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
                Z0  = ALPHACH/G*USTAR**2
                CD  = XKAPPA/ALOG(10./Z0)
                US(IJ,IG) = USTAR/CD
- 3302       CONTINUE
- 3301    CONTINUE
+             ENDDO
+           ELSE
+             DO IJ = IJS(IG),IJL(IG)
+               USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
+               Z0  = ALPHACH/G*USTAR**2
+               CD  = XKAPPA/ALOG(10./Z0)
+               US(IJ,IG) = USTAR/CD
+             ENDDO
+           ENDIF
+         ENDDO
       ENDIF
 C
 C     3.4 SET LOWER THEN 1.0 M/S  WIND SPEED TO 1.0 M/S
 C         ---------------------------------------------
       DO IG = 1,IGL
-        DO IJ = IJS(IG),IJL(IG)
-          US(IJ,IG) = MAX(US(IJ,IG),1.0)
-        ENDDO
+        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
+          DO IJ = 1,KEND
+            US(IJ,IG) = MAX(US(IJ,IG),1.0)
+          ENDDO
+        ELSE
+          DO IJ = IJS(IG),IJL(IG)
+            US(IJ,IG) = MAX(US(IJ,IG),1.0)
+          ENDDO
+        ENDIF
       ENDDO
       IF(LFRSTIME) THEN
       WRITE (IU06,*) ' '

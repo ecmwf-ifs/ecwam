@@ -139,7 +139,7 @@ C
        CGRID='050'
 #elif resolution==25 && region=='m'
        WRITE(MARS(5),'("GRID=0.25/0.25,FORMAT=PACKED,")')
-       WRITE(MARS(6),'("AREA=66./-6./30./42.,")')
+       WRITE(MARS(6),'("AREA=81./-98./9./42.,")')
        CGRID='025'
 #elif resolution==900 && region=='g'
        WRITE(MARS(5),'("GRID=9.0/9.0,FORMAT=PACKED,")')
@@ -147,7 +147,7 @@ C
        CGRID='900'
 #elif resolution==300 && region=='g'
        WRITE(MARS(5),'("GRID=3.0/3.0,FORMAT=PACKED,")')
-       WRITE(MARS(6),'("AREA=81./0./-81./358.5,")')
+       WRITE(MARS(6),'("AREA=72./0./-63./357.0,")')
        CGRID='300'
 #elif resolution==150 && region=='g'
        WRITE(MARS(5),'("GRID=1.5/1.5,FORMAT=PACKED,")')
@@ -159,7 +159,7 @@ C
        CGRID='050'
 #elif resolution==25 && region=='g'
        WRITE(MARS(5),'("GRID=0.25/0.25,FORMAT=PACKED,")')
-       WRITE(MARS(6),'("AREA=81./0./-81./358.5,")')
+       WRITE(MARS(6),'("AREA=81./0./-81./359.75,")')
        CGRID='025'
 #else
 C  NO PARAMETER FILE SELECTED

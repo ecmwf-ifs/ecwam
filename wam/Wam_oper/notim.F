@@ -21,6 +21,14 @@ C          *CDTWIS* - DATE OF FIRST WIND FIELD.
 C          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 C          *NC*     - FIRST DIMENSION OF INPUT WIND FIELD.
 C          *NR*     - SECOND DIMENSION OF INPUT WIND FIELD.
+C          *U10OLD* - WIND SPEED.
+C          *THWOLD* - WIND DIRECTION (RADIANS).
+C          *USOLD*  - FRICTION VELOCITY.
+C          *TAUW*   - WAVE STRESS.
+C          *Z0OLD*  - ROUGHNESS LENGTH IN.
+C          *IUGB*   - INPUT GRIB WIND FIELD U COMPONENT.
+C          *IVGB*   - INPUT GRIB WIND FIELD U COMPONENT.
+C          *ILEN*   - LENGTH OG IUGB AND IVGB
 C
 C     METHOD.
 C     -------
@@ -48,6 +56,8 @@ C ----------------------------------------------------------------------
 C
 #include "param.h"
 C
+#include "comcoup.h"
+C
 #include "comgrid.h"
 C
 #include "commpp.h"
@@ -63,12 +73,13 @@ C
 #include "comwind.h"
 C
       CHARACTER*10 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
+      LOGICAL LWNDFILE, LCLOSEWND
 C
 C ----------------------------------------------------------------------
       INTEGER IUGB(ILEN), IVGB(ILEN)
 C ----------------------------------------------------------------------
 C
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+C     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
 C ----------------------------------------------------------------------
@@ -94,14 +105,25 @@ C
 
       ZERO = ' '
       CDTWIH = CDTWIS
+C
+      LCLOSEWND=.FALSE.
+      IF (LWCOU) THEN
+        LWNDFILE=.FALSE.
+        ILEV=2
+      ELSE
+        LWNDFILE=.TRUE.
+        ILEV=1
+      ENDIF
+C
       IF (CDA.EQ.ZERO) THEN
          CDA = CDTWIS
-         CALL GETWND (U10OLD, THWOLD, CDA, UWND, VWND, NC, NR,
-     1                IUGB, IVGB, ILEN)
+         CALL GETWND (U10OLD, THWOLD, NINF, NSUP, NSUP, CDA, UWND, VWND,
+     1                NC, NR, IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+C
          DO 1001 IG = 1,IGL
             CALL AIRSEA (U10OLD(IJS(IG),IG), TAUW(IJS(IG),IG),
      1                   USOLD(IJS(IG),IG), Z0OLD(IJS(IG),IG),
-     2                   IJS(IG), IJL(IG))
+     2                   IJS(IG), IJL(IG), ILEV)
  1001    CONTINUE
          IF (ITEST.GE.3) THEN
             WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',
@@ -141,8 +163,8 @@ C*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 C         --------------------------------------------
 C
  3100 CONTINUE
-      CALL GETWND (US, DS, CDTWIH, UWND, VWND, NC, NR,
-     1             IUGB, IVGB, ILEN)
+      CALL GETWND (US, DS, NINF, NSUP, NSUP, CDTWIH, UWND, VWND, NC, NR,
+     1             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
       MP = MP + 1
 C
 C*    3.2 SAVE BLOCKED WIND FIELD.

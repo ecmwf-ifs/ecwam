@@ -85,7 +85,7 @@ C ----------------------------------------------------------------------
           ENDIF
         ENDIF
 
-        KOUNT = (NIBLO+1)*NANG*(MSUP-MINF+1)*NPRECI
+        KOUNT = (NIBLO+1)*NANG*(MSUP-MINF+1)*NPRECR
         CALL PBREAD(IUNIT,FL,KOUNT,KRET)
         IF(KRET.LT.0) THEN
            WRITE (IU06,*) '*****************************************'

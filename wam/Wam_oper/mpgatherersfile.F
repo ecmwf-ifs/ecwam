@@ -134,10 +134,12 @@ C     LOAD COMMUNICATION BUFFER
 
 C     SEND BUFFER
          CALL MPE_SEND(ZCOMBUF,KCOUNT,2,IRECV,ITAG,0,0,0,IERR)
-         IF(IERR.LT.0) CALL MPEI_ABORT
-     1                    ('MPE_SEND ERROR in MPGATHERSPP' )
-
-
+         IF(IERR.LT.0) THEN
+           WRITE(*,*) ' PE: ', IRANK, ' IERS: ', IERS, ' KCOUNT: ',
+     1       KCOUNT, ' NSTART(IRANK): ', NSTART(IRANK), 
+     2       ' NEND(IRANK): ', NEND(IRANK), ' IJERS(*): ', IJERS
+           CALL MPEI_ABORT ('MPE_SEND ERROR in MPGATHERSPP' )
+         ENDIF
        ELSE
 C     1.2.1  RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
 C            ---------------------------------------------------------- 
@@ -177,8 +179,15 @@ C  DECODE BUFFER
 
               ENDIF
             END DO
-                IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
+C
+            IF(KRCOUNT.NE.KCOUNT) THEN
+              WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,
+     1          ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',
+     2           KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),
+     3           ' NEND(KRFROM): ', NEND(KRFROM), ' IJERS(*): ', IJERS
+              CALL MPEI_ABORT
      1      ('MPE_RECV ERROR in MPGATHERFILE: WRONG LENGTH OF MESSAGE')
+            ENDIF
 
          END DO
 C     1.2.2  CONTRIBUTION FROM RECEIVING PROCESS 

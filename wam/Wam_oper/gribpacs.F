@@ -2,12 +2,13 @@
      .          ( kuso, kugrs, psec4, ktgrib, kgx, kgy, kang, kfre,
      .            krgg, ptheta, pfreq, kparam, ky, km, kd, kh, kfcst,
      .            pmowep, pmosop, pmoeap, pmonop, klonrgg, kst, knd,
-     .            pdella, pdello, pmiss, cdclass, cdexpver, ldfdb,
-     .            ksect1_3, kfdb)
+     .            pdella, pdello, pmiss, cdclass, cdexpver, cddomain,
+     .            ldfdb, ksect1_3, krank, jpidl, kfdb)
 C
 C ======================================================================
 C
-C****  *GRIBPACS*  PACKS WAM MODEL 2D SPECTRA INTO GRIB CODE.
+C****  *GRIBPACS*  PACKS WAM MODEL 2D SPECTRA INTO GRIB CODE . 
+C                  if it's of the old type, i.e param=250
 C
 C       L. ZAMBRESKY (GKSS/ECMWF)  JUNE 1987
 C       H. GUNTHER   (GKSS/ECMWF)  JUNE 1991   GRIB EDITION 1.
@@ -15,6 +16,8 @@ C       B. HANSEN    (MPIfM/ECMWF)  OCTOBER 1992
 C                   USED SUBROUTINE GRIBPAC AS A BASE FOR GRIBPACS.
 C                   WHICH IS AN INTERFACE TO GRIBEX IN ORDER TO
 C                   CODE 2D SPECTRA.
+C       J BIDLOT    jpidl will be passed as an input parametre 
+C                   jpmap1 is computed locally (common block removed)
 C
 C       PURPOSE.
 C       --------
@@ -62,6 +65,7 @@ C          *CDEXPVER*  EXPERIMENT VERSION.
 C          *LDFDB*     IF TRUE WRITE GRIB TO FDB. OTHERWISE TO FILE.
 C          *KSECT1_3*  MODEL VERSION NUMBER.
 C          *KFDB*      FDB REFERENCE.
+C          *JPIDL*     NUMBER OF BYTES USED TO REPRESENT REAL NUMBERS
 C
 C      METHOD.
 C      -------
@@ -87,20 +91,11 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      PARAMETER ( jpidl = 4 )
-      COMMON /MAPSIZE/ jpmap1, jpmap2
-C
-#ifndef _NANG
-#error " _NANG NOT DEFINED "
-#endif
-#ifndef _NFRE
-#error " _NFRE NOT DEFINED "
-#endif
-      PARAMETER ( jpang = _NANG, jpfre = _NFRE )
+C ----------------------------------------------------------------------
 C
       INTEGER   isec0(2), isec1(43), isec2(384), isec3(2)
       INTEGER   isec4(59+kang+kfre),
-     1          igrib(kang*kfre*kgx*kgy/jpidl)
+     1          igrib(kgx*kgy*kang*kfre/jpidl)
 C
       DIMENSION zsec2(96), zsec3(2), psec4(ktgrib*kang*kfre)
 C
@@ -196,9 +191,14 @@ C
       INTEGER   klonrgg(kgy)
 C
       DIMENSION ptheta(kang), pfreq(kfre)
-      DIMENSION ztheta(kang), zfreq(kfre)
+C
+      REAL :: ONE 
+      REAL , DIMENSION(KANG) :: ZTHETA
+      REAL , DIMENSION(KFRE) :: ZFREQ
+C
       DIMENSION itheta(kang), ifreq(kfre)
 C
+      CHARACTER*1 cddomain, clfdbsf
       CHARACTER*2 cltype
       CHARACTER*2 cdclass
       CHARACTER*4 cdexpver
@@ -219,23 +219,26 @@ C
 C*    1. FIX PARAMETERS AND PACK DATA.
 C        -----------------------------
 C
+      ONE=1.0
       msub = msub + 1
       CALL  uraopc (csubna, msub, llsuvi, lltest)
-      IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
+      IF (llsuvi .OR. lltest) THEN
+        WRITE(kuso,*)' ',csubna,': '
+        itest = 2
+      ELSE
+        itest = 0
+      ENDIF
 C
       ibts = n_precision(ipr)  ! ECMWF UTILITY RETURN NUMBER OF BYTES
 C                              ! PER INTEGER IN THIS CASE.
 C
-      IF (kang .NE. kang .OR. kfre .NE. kfre ) THEN
+      IF (lltest ) THEN
         WRITE(kuso,*) ' SUBROUTINE: GRIBPACKS'
-        WRITE(kuso,*) ' KANG .NE kang .OR. kfre .NE. kfre'
         WRITE(kuso,*) ' KANG  =', kang
-        WRITE(kuso,*) ' kang =', kang
         WRITE(kuso,*) ' KFRE  =', kfre
-        WRITE(kuso,*) ' kfre =', kfre
-        WRITE(kuso,*) ' CHANGE PARAMETER STATEMENT TO kang AND kfre'
-        WRITE(kuso,*) ' CALL ABORT TO TERMINATE TASK: '
-        CALL abort
+        WRITE(kuso,*) ' KGX   =', kgx
+        WRITE(kuso,*) ' KGY   =', kgy
+        WRITE(kuso,*) ' KTGRIB=', ktgrib
       ENDIF
 C
 C     Parameters for section 1.
@@ -289,15 +292,15 @@ C
         cltype='fc'
       ENDIF
       isec1(40) = 1045
-
+C
 C     clexpverhlp(5:8)=cdexpver
 C     READ(clexpverhlp,'(A8)') isec1(41)
-
+C
       isec1(41) = 0
       DO ji = 1, 4
         isec1(41) = isec1(41)*256 + ICHAR(cdexpver(ji:ji))
       ENDDO
-
+C
       isec1(42) = 0
       isec1(43) = 1
       IF (llsuvi) THEN
@@ -353,7 +356,7 @@ C         ipadding = NINT((-90. - pmosop ) / (pdella * (-1.))) -1
 C         isec2( 7) =  -90000
 C       ENDIF
 CC
-
+C
         isec2( 3) =  knd - kst +1 +istart +ipadding
 C
         IF (lltest) WRITE(kuso,*)'  jy, isn, isec2(22-kst+1+jy+istart),'
@@ -412,29 +415,20 @@ C
       isec4(57) =  2
       iret  = 1
 C
-C     ztheta = TRANSFER (isec4(60),      1.0, kang)
-C     zfreq  = TRANSFER (isec4(60+kang), 1.0, kfre)
-
-      itheta = TRANSFER (ztheta, 1, kang)
-      ifreq  = TRANSFER (zfreq,  1, kfre)
-
-C     isec4(60)      = TRANSFER (ztheta, 1, kang)
       ij=0
       DO j = 60, 60-1+kang
         ij=ij+1
+        itheta(ij) = TRANSFER (ztheta(ij), 1)
         isec4(j) = itheta(ij)
       ENDDO
-
-C     isec4(60+kang) = TRANSFER (zfreq,  1, kfre)
+C
       ij=0
       DO j = 60+kang, 60+kang-1+kfre
         ij=ij+1
+        ifreq(ij)  = TRANSFER (zfreq(ij),  1)
         isec4(j) = ifreq(ij)
       ENDDO
 C
-C     EQUIVALENCE ( ztheta,isec4(60) )
-C     EQUIVALENCE ( zfreq,isec4(60+kang) )
-
       IF (lltest) THEN
         WRITE(kuso,*) ' ISEC4'
         DO 1332 j1=1,59+kang+kfre
@@ -512,8 +506,12 @@ C*       2.1.1 WRITE FIELD TO FDB.
 C              -------------------
 C
           IF (llsuvi) time0=-wam_user_clock()
-          CALL FLD2FDB (kuso, isec1, isec2, igrib, iword, 'WRITE', ierr,
-     .                  cltype, cdclass, cdexpver, kfdb)
+          idir = 0
+          ifre = 0
+          clfdbsf = ' '
+          CALL FLD2FDB (kuso, itest, isec1, igrib, iword, 'WRITE', ierr,
+     .                  cltype, cdclass, cdexpver, clfdbsf, cddomain,
+     .                  idir, ifre, kfdb)
           IF (llsuvi) THEN
             time_w=time0+wam_user_clock()
             time_w=time_w*1E-06

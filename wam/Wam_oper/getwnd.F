@@ -1,6 +1,6 @@
-      SUBROUTINE GETWND (US, DS, CDTWIS, UWND, VWND, NC, NR,
-     1                   IUGB, IVGB, ILEN)
-
+      SUBROUTINE GETWND (US, DS, KINF, KSUP, KEND, CDTWIS, UWND, VWND,
+     1                   NC, NR, IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+C
 C ----------------------------------------------------------------------
 C
 C**** *GETWND* - ROUTINE TO READ AND PROCESS ONE WINDFIELD.
@@ -15,14 +15,24 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *GETWND (US, DS, CDTWIS, UWND, VWND, NC, NR)*
+C       *CALL* *GETWND (US, DS, CDTWIS, UWND, VWND, NC, NR,
+C                       IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)*
 C         *US*     - MAGNITUDE OF USTAR IN EACH POINT AND BLOCK.
 C         *DS*     - DIRECTION OF USTAR IN EACH POINT AND BLOCK.
+C         *KINF*   - LOWER BOUND ON FIRST DIEMENSION OF FIELD
+C         *KSUP*   - UPPER BOUND ON FIRST DIEMENSION OF FIELD
+C         *KEND*   - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
 C         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 C         *UWND*   - INPUT WIND FIELD U COMPONENT.
 C         *VWND*   - INPUT WIND FIELD V COMPONENT.
 C         *NC*     - DIMENSION OF WIND INPUT ARRAYS NUMBER OF COLUMNES.
 C         *NR*     - DIMENSION OF WIND INPUT ARRAYS NUMBER OF ROWS.
+C         *IUGB*   - INPUT GRIB WIND FIELD U COMPONENT.
+C         *IVGB*   - INPUT GRIB WIND FIELD U COMPONENT.
+C         *ILEN*   - LENGTH OG IUGB AND IVGB
+C         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
+C                     FILE OR PASSED AS ARGUMENTS IN IUGB AND IVGB
+C         *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND THE UNIT RESET
 C
 C     METHOD.
 C     -------
@@ -51,9 +61,6 @@ C ----------------------------------------------------------------------
 C
 #include "param.h"
 C
-C
-#include "commpp.h"
-C
 #include "comcoup.h"
 C
 #include "txtmpp.h"
@@ -65,7 +72,8 @@ C ----------------------------------------------------------------------
 C ----------------------------------------------------------------------
 C
       DIMENSION UWND(NC,NR), VWND(NC,NR)
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS
+      REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS
+      LOGICAL LWNDFILE, LCLOSEWND
 C
       CHARACTER*10 CDTWIS, CDTWIR
 C
@@ -81,7 +89,7 @@ C
       CALL READWND_RSWAMP2 (CDTWIR, UWND, VWND, NC, NR)
 #elif region=='g'  || region=='m'
       CALL READWND_MARS (CDTWIR, UWND, VWND, NC, NR,
-     1                   IUGB, IVGB, ILEN)
+     1                   IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
 #else
       WRITE(0,*) ' GETWND: NO CALL TO READWND FOUND. '
       CALL ABORT1
@@ -95,7 +103,22 @@ C
 C     2.1 DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
 C         TRY AGAIN
 C         --------------------------------------------
-         IF(.NOT.LWCOU) THEN
+         IF(LWNDFILE) THEN
+C
+           IF(LCLOSEWND) THEN
+             WRITE (IU06,*) ' ***************************************'
+             WRITE (IU06,*) ' *                                     *'
+             WRITE (IU06,*) ' *    FATAL ERROR SUB. GETWND          *'
+             WRITE (IU06,*) ' *    =======================          *'
+             WRITE (IU06,*) ' *                                     *'
+             WRITE (IU06,*) ' *  THE INPUT FILE HAS BEEN CLOSED     *'
+             WRITE (IU06,*) ' *  IT CANNOT BE ACCESSED AGAIN !      *'
+             WRITE (IU06,*) ' *  PROGRAM ABORTS  PROGRAM ABORTS     *'
+             WRITE (IU06,*) ' *                                     *'
+             WRITE (IU06,*) ' ***************************************'
+             CALL ABORT1
+           ENDIF
+C
            GOTO 1000
 C         --------------------------------------------
          ELSE
@@ -135,7 +158,7 @@ C
 C*    3. INTERPOLATE AND BLOCK WINDFIELD
 C        -------------------------------
 C
-      CALL WAMWND (US, DS, UWND, VWND, NC, NR)
+      CALL WAMWND (US, DS, KINF, KSUP, KEND, UWND, VWND, NC, NR)
 
       RETURN
       END

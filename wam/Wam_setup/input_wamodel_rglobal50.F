@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" GLOBAL WAVE MODEL RUN                             MODEL VERSION 4.0",
- CBPLTDT="${begofan}",
- CEPLTDT="${endofan}",
- CDATEF="${endofan}",
+ CLHEADER=" GLOBAL WAVE MODEL RUN                            MODEL VERSION 4.0",
+ CBPLTDT="${begofrn}",
+ CEPLTDT="${endofrn}",
+ CDATEF="${begoffo}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 21600,
@@ -23,8 +23,11 @@
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F
  LFDB= T,
- LPBIOIN= F,
- LPBIOOUT= F,
+ LPBIOIN= T,
+ LGRIBIN= ${lgribin},
+ LPBIOOUT= T,
+ LFDBIOIN=F,
+ LFDBIOOUT=T,
  ICASE= 1,
  ISHALLO= 0,
  IREFRA= 0,
@@ -46,6 +49,8 @@
  LWCOU= F,
  NTASKS= 0
  NSIZE= 0,
- CPATH="$STORAGE_PATH"
+ CPATH="$STORAGE_PATH",
+ CFDBSF   = "$cfdbsf",
+ CFDB2DSP = "$cfdb2dsp"
  /
 C &NAOT CLOUT="YYMMDDHHMM" /

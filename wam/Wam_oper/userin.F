@@ -39,8 +39,10 @@ C
 C     EXTERNALS.
 C     ----------
 C
-C       *ABORT1*     - TERMINATES PROCESSING.
+C       *ABORT1*    - TERMINATES PROCESSING.
 C       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
+C       *IINITFDB*  - INITIALISE DATA BASE.
+
 C
 C     REFERENCE.
 C     ----------
@@ -74,10 +76,9 @@ C
 C ----------------------------------------------------------------------
 C
       LOGICAL LERROR
-      CHARACTER CLHEADER*70
-      CHARACTER*10 ZERO
-      PARAMETER(ZERO=' ')
-
+      CHARACTER (LEN=  10), PARAMETER :: ZERO = ' '
+      CHARACTER (LEN=  70)            :: CLHEADER
+      CHARACTER (LEN= 256)            :: CLFORM
 C
 C ----------------------------------------------------------------------
 C
@@ -88,12 +89,12 @@ C
      3   IDELINT, IDELINS, IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES,
      4   CLOTSU, CDATER, CDATES,
      5   PFLAG,  FFLAG,  GFLAG,
-     6   LFDB,  LPBIOIN, LPBIOOUT, LFDBIOIN, LFDBIOOUT,
+     6   LFDB,  LPBIOIN, LGRIBIN, LPBIOOUT, LFDBIOIN, LFDBIOOUT,
      7   ICASE, ISHALLO, IREFRA, ITEST, ITESTB, IREST, IASSI, IFORCA,
      8   IBOUNC, IBOUNF,
      9   USERID, RUNID,  PATH,   YCLASS, YEXPVER, CPATH,
      x   NENSFNB, NTOTENS,
-     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP
+     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN
 C
       CHARACTER* 10 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -128,6 +129,7 @@ C
       GFLAG     = .FALSE. 
       LFDB      = .FALSE. 
       LPBIOIN   = .FALSE. 
+      LGRIBIN   = .FALSE. 
       LPBIOOUT  = .FALSE. 
       LFDBIOIN  = .FALSE. 
       LFDBIOOUT = .FALSE. 
@@ -158,6 +160,7 @@ C
 C
       CFDBSF    = "/vpp700/fdb18"
       CFDB2DSP  = ""
+      LNOCDIN   = .FALSE. 
 C
 C ----------------------------------------------------------------------
 C
@@ -174,6 +177,8 @@ C
         CBPLTDT = CDATEA
         CEPLTDT = CDATEF
       ENDIF
+      CALL u2l1cr( YCLASS )
+      CFDB2DSP  = ""
 C
 C           **** MODEL TIME STEPS ****
       IF (CLMTSU(1) .EQ. 'H') IDELPRO = IDELPRO*3600
@@ -237,6 +242,28 @@ C
           WRITE(IU06,*) ' NOT IMPLEMENTED IN ROUTINE OUTINT ' 
           WRITE(IU06,*) ' '
       ENDIF
+      IF (IREST.GT.0.AND.LGRIBIN.AND..NOT.GFLAG(7)) THEN
+        GFLAG(7) = .TRUE.
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
+        WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
+        WRITE(IU06,*) ' BUT FAILED TO ASK FOR OUTPUT OF THE DRAG COEF.'
+        WRITE(IU06,*) ' THE MODEL WILL RESET THE OUTPUT OPTION TO GET ' 
+        WRITE(IU06,*) ' CD OUT AT TIME PRESCRIBED BY THE OUTPUT OF ALL'
+        WRITE(IU06,*) ' OTHER INTEGRATED PARAMETERS.'
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
+        WRITE(IU06,*) ' '
+      ENDIF
+      IF (IREST.GT.0.AND.LGRIBIN.AND..NOT.GFLAG(10)) THEN
+        GFLAG(10) = .TRUE.
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
+        WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
+        WRITE(IU06,*) ' BUT FAILED TO ASK FOR OUTPUT OF U10wave'
+        WRITE(IU06,*) ' THE MODEL WILL RESET THE OUTPUT OPTION TO GET ' 
+        WRITE(IU06,*) ' u10 OUT AT TIME PRESCRIBED BY THE OUTPUT OF ALL'
+        WRITE(IU06,*) ' OTHER INTEGRATED PARAMETERS.'
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
+        WRITE(IU06,*) ' '
+      ENDIF
       FFLAG20 = FFLAG( 1).OR.FFLAG( 2).OR.FFLAG( 3).OR.FFLAG( 4).OR.
      1          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
      2          FFLAG( 9).OR.FFLAG(10)
@@ -290,8 +317,6 @@ C
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
 C
-        CDATEF = CBEGDT
-        CALL INCDATE (CDATEF,IANALPD)
         CDATEF = CEPLTDT
         IF (.NOT. LWCOU) THEN
           CDATEA = CBEGDT
@@ -344,6 +369,17 @@ C
             CALL ABORT1
           ENDIF
         ENDIF
+C
+        IF(LFDBIOIN) THEN
+          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*)'+                                          +'
+          WRITE(IU06,*)'+ LFDBIOIN HAS BEEN RESET TO FALSE         +'
+          WRITE(IU06,*)'+ IN ORDER TO READ RESTART FILES FROM DISK +'
+          WRITE(IU06,*)'+                                          +'
+          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+          LFDBIOIN  = .FALSE. 
+        ENDIF
+C
       ENDIF
 C
 
@@ -450,9 +486,9 @@ C          -------------------------
          WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
         ENDIF
         IF (IDELWO.GE.IDELWI) THEN
-           WRITE(IU06,*) ' WIND FIELD ARE NOT INTERPOLATED IN TIME'
+           WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME'
         ELSE
-           WRITE(IU06,*) ' WIND FIELD ARE INTERPOLATED IN TIME'
+           WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME'
         ENDIF
         IF (IBOUNC.EQ.1) THEN
          WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (COURSE GRID)'
@@ -560,10 +596,14 @@ C
 
         WRITE(IU06,*) '  '
 
-        WRITE(IU06,*) ' ACCESS TO THE FIELDS DATA BASE: '
+        WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '
      1             ,'    F = DISABLED   T = ENABLED    ', LFDB
-        IF (LFDB ) WRITE(IU06,'("  ITS ROOT DIRECTORY IS," A)') 
-     2             CFDBSF(1:LEN_TRIM(CFDBSF))
+        IF (LFDB) THEN
+          ILCFDBSF = LEN_TRIM(CFDBSF)
+          CLFORM='("  IT''s ROOT DIRECTORY IS ", A256)'
+          WRITE (CLFORM(32:34), '(I3.3)') ILCFDBSF
+          WRITE(IU06,CLFORM) CFDBSF(1:ILCFDBSF)
+        ENDIF
         WRITE(IU06,*) '  '
 
 
@@ -571,7 +611,7 @@ C
      1  THEN
         WRITE(IU06,*)' ************************************************'
         WRITE(IU06,*)' *                                              *'
-        WRITE(IU06,*)' * ACCESS TO THE FIELDS DATA BASE REQUIRES GRIB *'
+        WRITE(IU06,*)' * ACCESS TO THE FIELD DATA BASE REQUIRES GRIB  *'
         WRITE(IU06,*)' * CODED DATA BUT NO GFLAG WAS SET TO TRUE      *'
         WRITE(IU06,*)' * THIS IS CHANGED AUTOMATICALLY AND THE        *'
         WRITE(IU06,*)' * STANDARD SET OF PARAMETERS IS ENABLED        *'
@@ -595,7 +635,7 @@ C
       ENDIF
       IF (LFDB) THEN
             WRITE(IU06,*) ' OUTPUT OF GRIBBED PARAMETERS REDIRECTED '
-     .                   ,' TO FIELDS DATA BASE'
+     .                   ,' TO FIELD DATA BASE'
             WRITE(IU06,*) '                    '
       ENDIF
 
@@ -636,6 +676,18 @@ C
            WRITE (IU06,*)
      1     ' PBIO SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
         ENDIF
+        IF(LNOCDIN) THEN
+           WRITE(IU06,*) '  '
+           WRITE (IU06,*) 
+     1     ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
+           WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
+           WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
+        ENDIF
+        IF(LGRIBIN) THEN
+           WRITE(IU06,*) '  '
+           WRITE (IU06,*)
+     1     ' SPLITTED GRIB SPECTRA FIELD ARE USED AS INPUT' 
+        ENDIF
         WRITE(IU06,*) '  '
         IF(LPBIOOUT) THEN
            WRITE (IU06,*)
@@ -651,8 +703,16 @@ C
      1     ' FDB SOFTWARE IS USED TO WRITE TO SELECTED OUTPUT FILES' 
         ENDIF
         IF (LFDBIOIN.OR.LFDBIOOUT) THEN
-          WRITE(IU06,'(" IT''s ROOT DIRECTORY IS", A)') CFDB2DSP(1:
-     1    LEN_TRIM(CFDB2DSP))
+          CLFORM='("  IT''s ROOT DIRECTORY IS ", A256)'
+          ILCFDB2DSP = LEN_TRIM(CFDB2DSP)
+          IF ( ILCFDB2DSP .EQ. 0 ) THEN
+            ILCFDBSF = LEN_TRIM(CFDBSF)
+            WRITE (CLFORM(32:34), '(I3.3)') ILCFDBSF
+            WRITE(IU06,CLFORM) CFDBSF(1:ILCFDBSF)
+          ELSE
+            WRITE (CLFORM(32:34), '(I3.3)') ILCFDB2DSP
+            WRITE(IU06,CLFORM) CFDB2DSP(1:ILCFDB2DSP)
+          ENDIF
         ENDIF
         WRITE(IU06,*) '  '
 
@@ -672,6 +732,28 @@ C
         WRITE(IU06,*) ' TEST OUTPUT OF IN BLOCK LOOPS UPTO ITESTB = ',
      1                  ITESTB
         WRITE(IU06,*) '  '
+C
+        IF (.NOT. LWCOU .AND.
+     .    (  (LFDB .OR. LGRIBIN .OR. LFDBIOIN .OR. LFDBIOOUT ))) THEN
+          WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
+          WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
+          INITFDB_STAT = IINITFDB()
+          IF (INITFDB_STAT .NE. 0) THEN
+             WRITE(IU06,'("****************************************")')
+             WRITE(IU06,'("*                                      *")')
+             WRITE(IU06,'("*    FATAL ERROR IN SUB. USERIN        *")')
+             WRITE(IU06,'("*    ==========================        *")')
+             WRITE(IU06,'("*    INITIALIZATIO OF THE              *")')
+             WRITE(IU06,'("*    FIELD DATA BASE                   *")')
+             WRITE(IU06,'("*     F A I L E D .                    *")')
+             WRITE(IU06,'("*                                      *")')
+             WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')
+     .       INITFDB_STAT
+             WRITE(IU06,'("*                                      *")')
+             WRITE(IU06,'("****************************************")')
+             CALL ABORT1
+          ENDIF
+        ENDIF
 C
 C ----------------------------------------------------------------------
 C

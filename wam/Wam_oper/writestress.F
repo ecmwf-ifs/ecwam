@@ -105,7 +105,7 @@ C ----------------------------------------------------------------------
         CALL PBWRITE(IUNIT,CDATEFL,10,KRET)
         IF(KRET.LT.0) GOTO 1099
 
-        KOUNT = (IJSUP-IJINF+1)*NBLO*NPRECI
+        KOUNT = (IJSUP-IJINF+1)*NBLO*NPRECR
         CALL PBWRITE(IUNIT,U10OLD,KOUNT,KRET)
         IF(KRET.LT.0) GOTO 1099
         CALL PBWRITE(IUNIT,THWOLD,KOUNT,KRET)
