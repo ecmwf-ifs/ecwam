@@ -183,9 +183,6 @@
      &            MEANE , SPREAD ,
      &            SUMX , SUMY , SUMXX , SUMYY ,
      &            FR , CONTROL, IU06 )
-              IF( CONTROL ) WRITE(IU06,*) ' REASON: ',
-     &            'MINIMUM ENERGY BETWEEN THEM IS HIGHER THAN ',
-     &            LEVEL,' OF THE MINIMUM PEAK ENERGY'
               IPART = 0
             ELSE
               JPART = JPART + 1

@@ -196,7 +196,7 @@
 !  -----------------------
 
       pprec=0.0  ! -3.
-      xeps=1.0e-10
+      ppeps=1.0e-10
       waveht=   2.
       wavedir=  3.
       wavemfr=  4.
@@ -244,7 +244,7 @@
             DO j3=1,kfre
               DO j2=1,kang
                 DO j1=1,kiblo
-                  fl3(j1,j2,j3)=log10(fl3(j1,j2,j3)+xeps)+abs(pprec)
+                  fl3(j1,j2,j3)=log10(fl3(j1,j2,j3)+ppeps)+abs(pprec)
                   IF ( fl3(j1,j2,j3) .LE. ppmiss )
      &              fl3(j1,j2,j3)=zmiss
 !---------->        fl3(j1,j2,j3)=MAX(fl3(j1,j2,j3),0.)
@@ -349,7 +349,7 @@
                   jx=(j3-1)*kang+1+(j2-1)+i_off
 
                   IF (ZSEC4(jx) .NE. ZMISS) THEN
-                    zspectrm(j2,j3) = 10.**(zsec4(jx)-ABS(pprec))- xeps
+                    zspectrm(j2,j3) = 10.**(zsec4(jx)-ABS(pprec))- ppeps
                   ELSE
                     zspectrm(j2,j3) = 0.0
                   ENDIF
@@ -560,7 +560,7 @@
           IF (llsuvi) WRITE(kuso,*)' SUB: ',csubna,' : DO LOG10'
           DO jx=1,idl
             IF (zsec4(jx) .NE. zmiss) THEN
-              zsec4(jx) = 10.**(zsec4(jx)-abs(pprec))- xeps
+              zsec4(jx) = 10.**(zsec4(jx)-abs(pprec))- ppeps
             ELSE
               zsec4(jx) = 0.0
             ENDIF

@@ -47,8 +47,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL    ,
-     &                FRTAIL
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
+     &                WETAIL    ,FRTAIL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
@@ -63,7 +63,6 @@
       REAL :: DELT25, DELT2, DEL2
       REAL :: F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM, AK
-      REAL :: FD(NFRE)
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
@@ -82,10 +81,6 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
 
-      DO M=1,NFRE
-        FD(M) = DFIM(M)/FR(M)
-      ENDDO
-
       IF (ISHALLO.EQ.1 .OR. .NOT.LLAK) THEN
 
 !*    2.1 DEEP WATER INTEGRATION.
@@ -102,7 +97,7 @@
           ENDDO
           DO IJ=IJS,IJL
             EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
-            FM(IJ) = FM(IJ)+FD(M)*TEMP2(IJ)
+            FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 
@@ -126,7 +121,7 @@
           ENDDO
           DO IJ=IJS,IJL
             EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
-            FM(IJ) = FM(IJ)+FD(M)*TEMP2(IJ)
+            FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
             AK(IJ) = AK(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO

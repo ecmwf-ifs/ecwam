@@ -56,7 +56,7 @@
 
 
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWPCONS , ONLY : G
+      USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWICE   , ONLY : LICERUN  ,ICEMASK
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
@@ -82,9 +82,9 @@
 
       DO IJ = IJS,IJL
         IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-          BETA(IJ) = 0.0
+          BETA(IJ) = 0.
         ELSE
-          BETA(IJ) = G*Z0NEW(IJ)/(USNEW(IJ)**2 +0.0001)
+          BETA(IJ) = G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
         ENDIF
       ENDDO
 

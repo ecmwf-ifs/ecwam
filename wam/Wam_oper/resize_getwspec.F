@@ -110,7 +110,7 @@
           NSIW1D(I,J)=I2DUM(I,J)
         ENDDO
         DO I = NSPECW+1,NEWNSPECW
-          NSIW1D(I,J)=0
+          NSIW1D(I,J)=NSIW1D0
         ENDDO
       ENDDO
 
@@ -188,6 +188,11 @@
       DO J = 1,MIN(JPSIW,NEWJPSIW)
         DO I = 1,NSPECW
           NSIW1D(I,J)=I2DUM(I,J)
+        ENDDO
+      ENDDO
+      DO J = JPSIW+1,NEWJPSIW
+        DO I = 1,NSPECW
+          NSIW1D(I,J)=NSIW1D0
         ENDDO
       ENDDO
 

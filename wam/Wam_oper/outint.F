@@ -70,10 +70,9 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
-      USE YOWPCONS , ONLY : DEG      ,ZMISS
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EGRCRV   ,
-     &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV
-
+     &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV    ,EPSUS    ,
+     &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CDTINTS  ,CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,
      &            MARSTYPE ,YCLASS   ,YEXPVER
@@ -96,25 +95,30 @@
      &     allocated(cdg).and.
      &     allocated(u10g).and.
      &     allocated(mwp1g).and.
-     &     allocated(wpkftg) ) then
+     &     allocated(tauwg).and.
+     &     allocated(wpkftg).and.
+     &     allocated(wmnftg) ) then
           do j=1,ngy
           do i=1,ngx
             if(whgttg(i,j).ne.zmiss) then
 !             take the definiton from the model for the relation
 !             between ustar and u10g (see buildstress)
-              ustar2=cdg(i,j)*(u10g(i,j)**2+0.01)-0.0001
+              ustar2=max(cdg(i,j)*max(u10g(i,j)**2,epsu10),epsus)
               ustar=sqrt(ustar2)
               tstar=itime*g/ustar
               estar=(whgttg(i,j)**2/16)*g**2/(ustar**4)
               anfit=EGRCRV*(tstar/(AGRCRV+tstar))**BGRCRV
               fmstar=ustar/(mwp1g(i,j)*g)
+              fmstar1=ustar*wmnftg(i,j)/g
               fmfit=AFCRV*fmstar**BFCRV
               cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
               z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
               charnock=max(g*z0/ustar2,alpha)
+              X=min(tauwg(i,j),0.99999999)
+              charnock2=alpha/sqrt(1.-X)
               write(iu06,*) 'grow ',tstar,estar,ustar,whgttg(i,j)**2/16,
      &                      cdg(i,j),u10g(i,j),anfit,fmstar,fmfit,
-     &                      wpkftg(i,j),charnock
+     &                      wpkftg(i,j),charnock,charnock2
               write(iu06,*) ' '
             endif
           enddo
@@ -324,6 +328,7 @@
 !*      2.2 PRINT PARAMETERS OF TOTAL SEA AND WIND.
 !           ---------------------------------------
 
+        IF(CLDOMAIN.NE.'s') THEN
         IF (PFLAG(1)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SIGNIFICANT WAVE HEIGHT ( 0.1 METRES )'
@@ -436,6 +441,7 @@
      &                 WSPRDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -476,6 +482,7 @@
 
 !*      3.2 PRINT PARAMETERS OF SWELL AND WIND WAVE DIRECTION.
 !           --------------------------------------------------
+        IF(CLDOMAIN.NE.'s') THEN
         IF (PFLAG(11)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' WIND SEA WAVE HEIGHT ( 0.1 METRES )'
@@ -559,6 +566,7 @@
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
      &                 WSPRDSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
+        ENDIF
         ENDIF
       ENDIF
 

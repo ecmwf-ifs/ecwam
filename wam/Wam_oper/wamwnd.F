@@ -1,6 +1,8 @@
-      SUBROUTINE WAMWND (US, DS, KINF, KSUP , KEND)
+      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND)
 
 ! ----------------------------------------------------------------------
+
+!     MODIFIED  S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
 
 !**** *WAMWND* - TRANSFORMS INPUT WINDS TO BLOCKED WAM POINTS.
 
@@ -14,9 +16,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, KINF, KSUP , KEND)*
-!          *US*   - INTERPOLATED WINDS IN ALL POINTS AND BLOCKS.
-!          *DS*   - INTERPOLATED WIND DIRECTION IN ALL POINTS.
+!       *CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND)*
+!          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
+!          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
+!          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
+!          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
+!                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *KINF* - LOWER BOUND ON FIRST DIMENSION OF FIELD
 !          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF FIELD
 !          *KEND* - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
@@ -33,8 +38,6 @@
 !     EXTERNALS.
 !     ----------
 
-!       *LOCINT*    - LOCATES WAM POINT IN INPUT GRID AND INTERPOLATES.
-
 ! ----------------------------------------------------------------------
 
       USE YOWPARAM , ONLY : NGY      ,NBLO     ,NIBLO
@@ -47,7 +50,7 @@
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
      &            KCOL     ,KROW     ,ICODE    ,IWPER
       USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,UWND     ,
-     &            VWND
+     &            VWND     ,AIRD     ,PZIDL
 
 ! ----------------------------------------------------------------------
 
@@ -55,7 +58,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS
+      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS , ADS,ZIDL
       LOGICAL LFRSTIME
 
       DATA LFRSTIME /.TRUE./
@@ -72,6 +75,8 @@
             JY = NGY-KXLT(IJ,IG) + 1
             US(IJ,IG) = UWND(IX,JY)
             DS(IJ,IG) = VWND(IX,JY)
+            ADS(IJ,IG) = AIRD(IX,JY)
+            ZIDL(IJ,IG) = PZIDL(IX,JY)
           ENDDO
         ELSE
           DO IJ = IJS(IG),IJL(IG)
@@ -79,6 +84,8 @@
             JY = NGY-KXLT(IJ,IG) + 1
             US(IJ,IG) = UWND(IX,JY)
             DS(IJ,IG) = VWND(IX,JY)
+            ADS(IJ,IG) = AIRD(IX,JY)
+            ZIDL(IJ,IG) = PZIDL(IX,JY)
           ENDDO
         ENDIF
       ENDDO
@@ -144,14 +151,16 @@
         DO IG = 1,IGL
           IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
             DO IJ = 1,KEND
-              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
+!!!!!!!!!!!!  USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
+              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
               Z0  = ALPHACH/G*USTAR**2
               CD  = XKAPPA/LOG(10./Z0)
               US(IJ,IG) = USTAR/CD
             ENDDO
           ELSE
             DO IJ = IJS(IG),IJL(IG)
-              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
+!!!!!!!!!!!!  USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
+              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
               Z0  = ALPHACH/G*USTAR**2
               CD  = XKAPPA/LOG(10./Z0)
               US(IJ,IG) = USTAR/CD
@@ -198,13 +207,17 @@
           IJE = IJS(IG)+4
           WRITE (IU06,*) ' BLOCK= ',IG
           WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' US(IJS - IJS+4): ',(US(I,IG),I=IJA,IJE)
-          WRITE (IU06,*) ' DS(IJS - IJS+4): ',(DS(I,IG),I=IJA,IJE)
+          WRITE (IU06,*) ' US (IJS - IJS+4): ',(US(I,IG),I=IJA,IJE)
+          WRITE (IU06,*) ' DS (IJS - IJS+4): ',(DS(I,IG),I=IJA,IJE)
+          WRITE (IU06,*) ' ADS(IJS - IJS+4): ',(ADS(I,IG),I=IJA,IJE)
+          WRITE (IU06,*) ' ZIDL(IJS - IJS+4): ',(ZIDL(I,IG),I=IJA,IJE)
         ENDDO
       ENDIF
 
       IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
       IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
+      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
       END SUBROUTINE WAMWND

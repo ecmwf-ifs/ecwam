@@ -1,6 +1,7 @@
       SUBROUTINE PHYS (FL3,FL1,FL,IJS,IJL,IG,NSIZE,NWORK,CDATE,CDTPRA,
-     &                 U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                 U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &                 U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
+     &                 U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+     &                 SL,FCONST)
 
 ! ----------------------------------------------------------------------
 
@@ -8,6 +9,7 @@
 
 !     P.A.E.M. JANSSEN K.N.M.I./E.C.M.W.F. SEPTEMBER 1994
 !     J. BIDLOT ECMWF FEBRUARY 1996-97 MESSAGE PASSING
+!     S. ABDALLA  ECMWF  OCTOBER 2001  INCLUSION OF AIR DENSITY AND Zi/L.
 
 !*    PURPOSE.
 !     --------
@@ -19,8 +21,9 @@
 !     ----------
 
 !       *CALL* *PHYS (FL3,FL,IJS,IJL,IG,NSIZE,NWORK,CDATE,CDTPRA,
-!    1                 U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    2                 U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)*
+!    1                U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
+!    2                U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+!    3                SL,FCONST)*
 !      *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !      *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !      *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -45,6 +48,10 @@
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
 !      *TAUW*      WAVE STRESS IN (M/S)**2
+!      *ROAIRN*    AIR DENSITY IN KG/M3.
+!      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
+!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
 !      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
 !                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
@@ -82,7 +89,9 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL,FL3,FL1,SL
       REAL,DIMENSION(NINF:NSUP,NFRE) :: FCONST
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+     &                                 ,ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW,Z0NEW
+     &                            ,ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
@@ -104,8 +113,9 @@
           ENDIF
         ENDIF
         CALL IMPLSCH (FL3, FL, IJS, IJL, IG,
-     &   THWOLD,USOLD,TAUW,Z0OLD,
-     &   U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &   THWOLD,USOLD,TAUW,Z0OLD,    ROAIRO,ZIDLOLD,
+     &   U10NEW,THWNEW,USNEW,Z0NEW,  ROAIRN,ZIDLNEW,
+     &   SL,FCONST)
 
       ELSE
 
@@ -127,8 +137,9 @@
             ENDIF
           ENDIF
           CALL IMPLSCH (FL3, FL, MIJS, MIJL, IG,
-     &     THWOLD,USOLD,TAUW,Z0OLD,
-     &     U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &     THWOLD,USOLD,TAUW,Z0OLD,    ROAIRO,ZIDLOLD,
+     &     U10NEW,THWNEW,USNEW,Z0NEW,  ROAIRN,ZIDLNEW,
+     &     SL,FCONST)
           GO TO 1000
         ENDIF
 

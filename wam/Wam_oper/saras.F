@@ -129,19 +129,19 @@
 
       USE YOWSARAS , ONLY : NSPEC    ,NSPECW   ,JPSIW    ,MPARTSW  ,
      &            MAXMPART ,IGSAR    ,IJSAR    ,SPEC     ,LONG     ,
-     &            LAT      ,U10      ,THW      ,
+     &            LAT      ,XKCUTOFF ,XKLOW    ,XKUP     ,U10      ,
+     &            USSAR    ,THW      ,
      &            NW1D     ,NTOSIW1D ,NSIW1D   ,SPECW    ,DIST     ,
-     &            UW10     ,THWW     ,COSSARLAT,SINSARLAT
+     &            SARCORDIA,
+     &            UW10     ,USW      ,THWW     ,COSSARLAT,SINSARLAT
 
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : WSPMIN
 
 !     VARIABLES:
 !     ----------
  
       IMPLICIT NONE
-
       INTEGER :: IU11,IU12,IU13, IU14
       INTEGER, ALLOCATABLE :: PART(:,:,:,:)
 !                   TO SPEC CORRESPONDING ARRAY OF PARTITIONING
@@ -160,7 +160,8 @@
 !                   WAVE SYSTEMS OF  WAVE HEIGHT LESS THAN LOWEST
 !                   ARE COMBINED WITH NEXT WAVE SYSTEM.
 !
-      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: MEANE, MEANANG, MEANFRE 
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: MEANE, MEANANG, MEANFRE,
+     &                                       PKFRE 
 !                   MEAN ENERGY,MEAN DIRECTION, MEAN FREQUENCY FOR
 !                   ALL PARTITIONIGS AND ALL SPECTRA. LAST INDEX
 !                   DENOTES WAM IF EQUAL TO 1 AND SAR IF EQUAL TO 2.
@@ -177,8 +178,6 @@
      &      LODBG
 !     FLAGS TO OUTPUT ON UNIT 6
 
-      REAL :: SARCORLEN ! CORRELATION LENGTH.
-      
       REAL, ALLOCATABLE, DIMENSION(:,:) :: EA, XFREA, XANGA 
 !         ANALYSED MEAN PARAMETERS.
 
@@ -191,9 +190,8 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: NIPARTINFW, CORRELTABW
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: NIPARTW
 
-      REAL, ALLOCATABLE, DIMENSION(:) :: DELUW10, DUU, DUV
       REAL, ALLOCATABLE, DIMENSION(:,:) :: XMEANEW, XMEANANGW,XMEANFREW,
-     &                                     EW, XKW, YKW 
+     &                                     PKFREW, EW, XKW, YKW 
 !         CHARACTERISTIC PARAMETERS (ENERGY,WAVE NUMBERS) OF WAM
 !         FIRST GUESS SPECTRA.
 
@@ -228,6 +226,13 @@
       FRE1=FR(1)
       TH0=TH(1)
 
+      IF(XDELLA.LT.0.5) THEN
+        SARCORDIA = 200000.
+      ELSE
+        SARCORDIA = 300000.
+      ENDIF
+
+
 !-------------------------------------------------------------------
 
 !     1.1 INPUT OF SAR RETRIEVED AND WAM FIRST GUESS
@@ -243,8 +248,6 @@
       IF((LMESSPASS.AND.IRANK.EQ.IREAD).OR.(.NOT.LMESSPASS)) THEN
         CALL READSARSPEC(LNODATA)
       ENDIF
-
-      IF(LNODATA) GOTO 5000
  
       IF(LCONTROL) THEN
         WRITE(IU06,*)'-----------READ SAR SPECTRA DONE------------'
@@ -257,13 +260,14 @@
       IF(LMESSPASS) THEN
         IF(LCONTROL)
      &  WRITE(IU06,*)'----------BROADCAST SAR SPECTRA BEGINS-----------'
-        CALL MPBCASTSARIN(IREAD, KTAG)
+        CALL MPBCASTSARIN(IREAD, KTAG, LNODATA)
         IF(LCONTROL) THEN
           WRITE(IU06,*)'----------BROADCAST SAR SPECTRA DONE-----------'
           WRITE(IU06,*)' '
         ENDIF
       ENDIF
 
+      IF(LNODATA) GOTO 5000
 
 !     ROTATE INVERTED SAR SPECTRA TO THE FIRST DIRECTION OF WAM (TH0)
 !     AND GET WAM SPECTRA AT OBSERVATION LOCATION
@@ -288,6 +292,7 @@
       ALLOCATE(MEANE(NSPEC,MPARTSW,2))
       ALLOCATE(MEANANG(NSPEC,MPARTSW,2))
       ALLOCATE(MEANFRE(NSPEC,MPARTSW,2))
+      ALLOCATE(PKFRE(NSPEC,MPARTSW,2))
       ALLOCATE(ED(NSPEC,0:MPARTSW))
       ALLOCATE(XKD(NSPEC,0:MPARTSW))
       ALLOCATE(YKD(NSPEC,0:MPARTSW))
@@ -297,8 +302,8 @@
       ALLOCATE(COSSARLAT(NSPEC))
       ALLOCATE(SINSARLAT(NSPEC))
       DO ISPEC = 1,NSPEC
-        COSSARLAT(ISPEC) = COS(RAD*LAT(ISPEC,1))
-        SINSARLAT(ISPEC) = SIN(RAD*LAT(ISPEC,1))
+        COSSARLAT(ISPEC) = COS(RAD*LAT(ISPEC,2))
+        SINSARLAT(ISPEC) = SIN(RAD*LAT(ISPEC,2))
       ENDDO
 
 
@@ -308,15 +313,19 @@
       IF(LCONTROL)
      &WRITE(IU06,*)'-------------- PARTITIONING OF WAM BEGINS ---'
 
-      LOWEST=0.2
-      ALEVEL=0.85
+      LOWEST=0.1
+      ALEVEL=0.75
+
+!!!      IF(NANG.GT.12) THEN
+        CALL SMOOTHSARSPEC(NSPEC,NANG,NFRE,SPEC(0,1,1,1))
+!!!      ENDIF
 
       CALL SWELLSEP(
      &       NSPEC , MPARTSW ,  NANG , NFRE ,
-     &       SPEC(0,1,1,1), U10, THW, TH0 , FR , COSTH , SINTH,
+     &       SPEC(0,1,1,1), USSAR, THW, TH0 , FR , COSTH , SINTH,
      &       ALEVEL, LCONTROL, LOWEST,
      &       NPART(1,1) , PART(1,1,1,1), PARTINFO(1,1,1) , MAXMPART, 
-     &       MEANE(1,1,1) , MEANANG(1,1,1) , MEANFRE(1,1,1) )
+     &       MEANE(1,1,1), MEANANG(1,1,1), MEANFRE(1,1,1), PKFRE(1,1,1))
 
 
       IF(LCONTROL) THEN
@@ -329,14 +338,18 @@
 
       IF(LCONTROL)
      &WRITE(IU06,*)'-------------- PARTITIONING OF SAR BEGINS ---'
-      ALEVEL=0.85
+      ALEVEL=0.75
+
+!!!      IF(NANG.GT.12) THEN
+        CALL SMOOTHSARSPEC(NSPEC,NANG,NFRE,SPEC(0,1,1,2))
+!!!      ENDIF
 
       CALL SWELLSEP(
      &       NSPEC , MPARTSW ,  NANG , NFRE ,
-     &       SPEC(0,1,1,2), U10, THW, TH0 , FR , COSTH , SINTH,
+     &       SPEC(0,1,1,2), USSAR, THW, TH0 , FR , COSTH , SINTH,
      &       ALEVEL, LCONTROL, LOWEST,
      &       NPART(1,2) , PART(1,1,1,2) , PARTINFO(1,1,2) , MAXMPART,
-     &       MEANE(1,1,2) ,MEANANG(1,1,2) , MEANFRE(1,1,2) )
+     &       MEANE(1,1,2), MEANANG(1,1,2), MEANFRE(1,1,2), PKFRE(1,1,2))
 
       IF(LCONTROL) THEN
         WRITE(IU06,*)'-------------- PARTITIONING OF SAR DONE ---'
@@ -346,7 +359,8 @@
 !     1.5 CROSS ASSIGN WAM AND SAR WAVE SYSTEMS.
 !     ------------------------------------------
 
-      DISMIN=0.75
+      DISMIN=1.5
+
       IF(LCONTROL)
      &WRITE(IU06,*)'------CROSSAS BEGINS -------------------------'
 
@@ -376,9 +390,11 @@
      &          NSPEC , MPARTSW ,
      &          NPART(1,1), NPART(1,2) ,
 !             INPUT
-     &          CORRELTAB,
+     &          CORRELTAB, XKLOW, XKUP, XKCUTOFF,
      &          MEANE(1,1,1) , MEANANG(1,1,1) , MEANFRE(1,1,1) ,
+     &          PKFRE(1,1,1) ,PARTINFO(1,1,1) ,
      &          MEANE(1,1,2) , MEANANG(1,1,2) , MEANFRE(1,1,2) ,
+     &          PKFRE(1,1,2) , PARTINFO(1,1,2),
      &          LCONTROL,
 !             OUTPUT
      &          ED,XKD,YKD)
@@ -401,11 +417,21 @@
       IF(LCONTROL)
      &WRITE(IU06,*)'-------SELECT WAM SPECTRA FOR THE ANALYSIS --'
 
-      CALL GETWSPEC(SARCORLEN)
+      CALL GETWSPEC
 
       IF(LCONTROL) THEN
         WRITE(IU06,*)'-------GETWSPEC DONE ----------------------- ' 
         CALL FLUSH(IU06)
+      ENDIF
+
+      IF(NSPECW.LE.0) THEN
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)' !!! NO SAR DATA INFLUENCING THIS PE        !!! '
+        WRITE(IU06,*)' !!! NO NEED OF SAR ASSIMILATION ON THIS PE !!! '
+        WRITE(IU06,*)' !!! IRANK = ',IRANK 
+        WRITE(IU06,*)' '
+        CALL FLUSH(IU06)
+        GOTO 4000
       ENDIF
 
 !     ALLOCATE RELEVANT ARRAYS
@@ -427,9 +453,8 @@
       ALLOCATE(XMEANEW(NSPECW,MPARTSW))
       ALLOCATE(XMEANANGW(NSPECW,MPARTSW))
       ALLOCATE(XMEANFREW (NSPECW,MPARTSW))
-      ALLOCATE(DELUW10(NSPECW))
-      ALLOCATE(DUU(NSPECW))
-      ALLOCATE(DUV(NSPECW))
+!!!   PKFREW will be deallocated after call to swellspec !!!
+      ALLOCATE(PKFREW (NSPECW,MPARTSW))
       ALLOCATE(EW(NSPECW,MPARTSW))
       ALLOCATE(XKW(NSPECW,MPARTSW))
       ALLOCATE(YKW(NSPECW,MPARTSW))
@@ -443,14 +468,19 @@
       IF(LCONTROL)
      &WRITE(IU06,*)'-------PARTITIONING OF WAM SPECTRA BEGINS --'
 
-      ALEVEL=0.85
+!!!      IF(NANG.GT.12) THEN
+        CALL SMOOTHSARSPEC(NSPECW,NANG,NFRE,SPECW)
+!!!      ENDIF
+
+      ALEVEL=0.75
       CALL SWELLSEP(
      &         NSPECW , MPARTSW ,  NANG , NFRE ,
-     &         SPECW, UW10, THWW, TH0 ,  FR , COSTH , SINTH,
+     &         SPECW, USW, THWW, TH0 ,  FR , COSTH , SINTH,
      &         ALEVEL, LCONTROL, LOWEST,
      &         NPARTW , NIPARTW , NIPARTINFW , MAXMPART,
-     &         XMEANEW , XMEANANGW , XMEANFREW )
+     &         XMEANEW , XMEANANGW , XMEANFREW, PKFREW )
 
+      DEALLOCATE(PKFREW)
 
 !     COMPUTED INDEX OF WINDSEA PARTITIONING
 !     ---------------------------------------
@@ -500,9 +530,9 @@
 !           INPUT
      &        NPARTW,NPASC2W,
      &        EW,XKW,YKW,
-     &        ED,XKD,YKD,SARCORLEN,
-     &        SPEC(0,1,1,1),SPEC(0,1,1,2),CORRELTAS,
-     &        PART(1,1,1,2),NPART(1,2),
+     &        ED,XKD,YKD,
+     &        SPEC(0,1,1,2),CORRELTAS,
+     &        PART(1,1,1,2),
 !            OUTPUT
      &        EA,XANGA,XFREA)
 
@@ -529,7 +559,7 @@
       CALL TUSTREAS(
 !          DIMENSIONS
      &            NSPECW , MPARTSW , NPARTW , NANG , NFRE ,
-     &            SPECW , NIPARTW , CORRELTABW ,
+     &            SPECW , NW1D, NIPARTW , CORRELTABW ,
      &            XMEANEW, XMEANANGW, XMEANFREW,
      &            EA , XANGA , XFREA,
      &            MEANTEU , MEANTANGU , MEANTFREU ,
@@ -543,22 +573,18 @@
 
 !--------------------------------------------------------------------
 
-!     3. CORRECTION OF LOCAL WIND FROM WINDSEA PARTITIONINGS.
+!     3. CORRECTION OF LOCAL USTAR FROM WINDSEA PARTITIONINGS.
 !     -------------------------------------------------------
 
-      CALL WINDCOR(
-     &       NSPECW , MPARTSW ,
-     &       XMEANEW, XMEANFREW, XMEANANGW,
-     &       EA ,  XFREA, XANGA ,
-     &       NINTW, WSPMIN, LOTEST, IU06,
-     &       UW10,THWW,DELUW10,DUU,DUV)
-
+!     no longer used !!!
 
 !     4. MERGE ANALYSED SPECTRA INTO BLOCKED FIELDS.
 !        AND ANALYSED WINDS INTO WIND ARRAYS.
 !     -----------------------------------------------
 
-       CALL MERGESARCOR
+4000  CONTINUE
+      CALL MERGESARCOR
+
 
 !     5. DEALLOCATION OF ARRAYS
 !     -------------------------
@@ -571,9 +597,13 @@
       IF(ALLOCATED(SPEC)) DEALLOCATE(SPEC)
       IF(ALLOCATED(LONG)) DEALLOCATE(LONG)
       IF(ALLOCATED(LAT)) DEALLOCATE(LAT)
+      IF(ALLOCATED(XKLOW)) DEALLOCATE(XKLOW)
+      IF(ALLOCATED(XKUP)) DEALLOCATE(XKUP)
+      IF(ALLOCATED(XKCUTOFF)) DEALLOCATE(XKCUTOFF)
       IF(ALLOCATED(COSSARLAT)) DEALLOCATE(COSSARLAT)
       IF(ALLOCATED(SINSARLAT)) DEALLOCATE(SINSARLAT)
       IF(ALLOCATED(U10)) DEALLOCATE(U10)
+      IF(ALLOCATED(USSAR)) DEALLOCATE(USSAR)
       IF(ALLOCATED(THW)) DEALLOCATE(THW)
       IF(ALLOCATED(PART)) DEALLOCATE(PART)
       IF(ALLOCATED(NPART)) DEALLOCATE(NPART)
@@ -582,6 +612,7 @@
       IF(ALLOCATED(MEANE)) DEALLOCATE(MEANE)
       IF(ALLOCATED(MEANANG)) DEALLOCATE(MEANANG)
       IF(ALLOCATED(MEANFRE)) DEALLOCATE(MEANFRE)
+      IF(ALLOCATED(PKFRE)) DEALLOCATE(PKFRE)
       IF(ALLOCATED(ED)) DEALLOCATE(ED)
       IF(ALLOCATED(XKD)) DEALLOCATE(XKD)
       IF(ALLOCATED(YKD)) DEALLOCATE(YKD)
@@ -591,6 +622,7 @@
       IF(ALLOCATED(SPECW)) DEALLOCATE(SPECW)
       IF(ALLOCATED(DIST)) DEALLOCATE(DIST)
       IF(ALLOCATED(UW10)) DEALLOCATE(UW10)
+      IF(ALLOCATED(USW)) DEALLOCATE(USW)
       IF(ALLOCATED(THWW)) DEALLOCATE(THWW)
 
       IF(ALLOCATED(EA)) DEALLOCATE(EA)
@@ -610,9 +642,6 @@
       IF(ALLOCATED(XMEANEW)) DEALLOCATE(XMEANEW)
       IF(ALLOCATED(XMEANANGW)) DEALLOCATE(XMEANANGW)
       IF(ALLOCATED(XMEANFREW)) DEALLOCATE(XMEANFREW)
-      IF(ALLOCATED(DELUW10)) DEALLOCATE(DELUW10)
-      IF(ALLOCATED(DUU)) DEALLOCATE(DUU)
-      IF(ALLOCATED(DUV)) DEALLOCATE(DUV)
       IF(ALLOCATED(EW)) DEALLOCATE(EW)
       IF(ALLOCATED(XKW)) DEALLOCATE(XKW)
       IF(ALLOCATED(YKW)) DEALLOCATE(YKW)

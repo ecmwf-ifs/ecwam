@@ -2,11 +2,11 @@
 !             DIMENSIONS 
      &          NSPEC , MPART , NANG , NFRE ,
 !             INPUT  
-     &          SPEC , U10 , THW , TH0 , FR , COSTH , SINTH,
+     &          SPEC , US , THW , TH0 , FR , COSTH , SINTH,
      &          LEVEL , CONTROL, LOWEST,
 !             OUTPUT
      &          NPART , PART , PARTINFO , MAXMPART,
-     &          MEANE , MEANANG , MEANFRE)
+     &          MEANE , MEANANG , MEANFRE, PKFRE)
 
 
 !-------------------------------------------------------------------
@@ -154,7 +154,9 @@
 !                      MEAN DIRECTIONS IN RADIAN, LIKE ABOVE
       REAL MEANFRE(NSPEC,MPART)
 !                      MEAN FREQUENCIES IN HZ, LIKE ABOVE
-      REAL U10(NSPEC) ! U10, WHERE U10(ISPEC) IS U10OF SPECTRUM ISPEC
+      REAL PKFRE(NSPEC,MPART)
+!                      PEAK FREQUENCIES IN HZ, LIKE ABOVE
+      REAL US(NSPEC)  ! USTAR
       REAL THW(NSPEC) ! WIND DIRECTION IN DEGREE
       REAL TH0        ! FIRST DIRECTION IN SPECTRUM.
       REAL LEVEL
@@ -171,10 +173,6 @@
 !     VARIABLES:
 !     ----------
 
-      INTEGER EQUIPART( NSPEC , NANG*NFRE/2 )
-!                      CROSSASSIGNS SIDE TRAILS BELONGING TO THE 
-!                      SAME MAIN TRAIL IN THE PARTITIONING 
-!                      TECHNIQUE. ONLY USED IN SUBROUTINE PARTITION.
       INTEGER PEAKANG( NSPEC , NANG*NFRE/2 )
 !                      CONTAINS DIRECTIONAL INDICES OF PEAKS.
       INTEGER PEAKFRE( NSPEC , NANG*NFRE/2 )
@@ -197,10 +195,11 @@
 
 !     1. PARTITION SPECTRA.
 !     ---------------------
+      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE PARTITIONING'
       CALL PARTITIONING( 
      &               NSPEC , MPART , NPART , NANG , NFRE ,
      &               SPEC , FLMIN, IU06,
-     &               PART , EQUIPART , PEAKANG , PEAKFRE, MAXMPART )
+     &               PART , PEAKANG , PEAKFRE, MAXMPART )
 
 !     2. COMBINE PEAKS.
 !     -----------------
@@ -218,6 +217,7 @@
       ALLOCATE(SUMY0(NSPEC,MPART))
       ALLOCATE(SUMYY0(NSPEC,MPART))
 
+      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE COMBINEPEAKS'
       CALL COMBINEPEAKS(
 !                  DIMENSIONS
      &               NSPEC ,MPART , NPART , NANG , NFRE ,
@@ -226,25 +226,26 @@
 !                  INPUT AND OUTPUT 
      &               PART , PARTINFO , PEAKANG, PEAKFRE, FX, FY,
      &               LOWEST,MEANE , SPREAD , 
-     &               MEANANG, MEANFRE ,
+     &               MEANANG, MEANFRE , PKFRE ,
 !                  WORK SPACE
      &               SUMX , SUMY , 
      &               SUMXX , SUMYY ,
      &               SUM0 , SUMX0 , SUMY0 , SUMXX0 , SUMYY0 ,
 !                  INPUT OF PRECOMPUTED TABLES.
-     &               U10 , THW , TH0 , FR , COSTH , SINTH ,
+     &               US , THW , TH0 , FR , COSTH , SINTH ,
      &               LEVEL , CONTROL, IU06 )
 
 !     3. COMPUTE INTEGRATED VALUES HS,MEAN FREQUENCY,MEAN DIRECTION.
 !     --------------------------------------------------------------
 
+      IF( CONTROL ) WRITE(IU06,*) 'CALLING SUBROUTINE MEANS'
       CALL MEANS(
 !                   DIMENSIONS
      &                NSPEC , MPART , NPART , NANG , NFRE ,
 !                   INPUT
      &                SPEC , PART ,
 !                   OUTPUT
-     &                MEANE , MEANANG , MEANFRE ,
+     &                MEANE , MEANANG , MEANFRE , PKFRE ,
 !                   WORKSPACE
      &                SUM0 , SUMX0 , SUMY0 )
 

@@ -80,8 +80,8 @@
 !        ---------------------------
 
       DO IJ=IJS,IJL
-        SQRTCD  = MIN(U10(IJ)/US(IJ),100.0)
-        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCD)
+        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
+        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
       ENDDO
 
       RETURN

@@ -32,7 +32,8 @@
 !     MODULES:
 !     --------
       USE YOWPARAM , ONLY : NANG    ,NFRE
-      USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG    ,LAT
+      USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG    ,LAT     ,
+     &            XKLOW    ,XKUP    ,XKCUTOFF
       USE YOWTEST  , ONLY : IU06    ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -40,6 +41,7 @@
 
       REAL, ALLOCATABLE :: R4DUM(:,:,:,:)
       REAL, ALLOCATABLE :: R2DUM(:,:)
+      REAL, ALLOCATABLE :: R1DUM(:)
 
       INTEGER :: KSPEC
 !                FUTURE DIMENSION OF RESIZABLE ARRAYS  
@@ -102,6 +104,31 @@
       ENDDO
 
       DEALLOCATE(R2DUM)
+
+      ALLOCATE(R1DUM(NSPEC))
+
+      R1DUM=XKLOW
+      DEALLOCATE(XKLOW)
+      ALLOCATE(XKLOW(NEWNSPEC))
+      DO ISPEC=1,MIN(NSPEC,NEWNSPEC)
+        XKLOW(ISPEC)=R1DUM(ISPEC)
+      ENDDO
+
+      R1DUM=XKUP
+      DEALLOCATE(XKUP)
+      ALLOCATE(XKUP(NEWNSPEC))
+      DO ISPEC=1,MIN(NSPEC,NEWNSPEC)
+        XKUP(ISPEC)=R1DUM(ISPEC)
+      ENDDO
+
+      R1DUM=XKCUTOFF
+      DEALLOCATE(XKCUTOFF)
+      ALLOCATE(XKCUTOFF(NEWNSPEC))
+      DO ISPEC=1,MIN(NSPEC,NEWNSPEC)
+        XKCUTOFF(ISPEC)=R1DUM(ISPEC)
+      ENDDO
+
+      DEALLOCATE(R1DUM)
 
 !     RESET SIZE
 

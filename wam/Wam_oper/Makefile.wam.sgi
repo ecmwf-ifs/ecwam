@@ -9,23 +9,24 @@ SOURCE	=\
               aki.F            \
               check.F          \
               convert_grbspec.F\
-              crewfn.F         \
               difdate.F        \
               dummy_mp.F       \
               ersfile.F        \
               expand_string.F  \
               findb.F          \
               fld2fdb.F        \
+              fldinter.F       \
               getrest.F        \
               grb2wgrd.F       \
               gsfile_new.F     \
               incdate.F        \
               inmars.F         \
+              initialint.F     \
               iniwcst.F        \
               intmars.F        \
-              intwaminput.F    \
               intspec.F        \
               jafu.F           \
+              jonswap.F        \
               kgribsize.F      \
               llalloc_grdfld.F \
               locint.F         \

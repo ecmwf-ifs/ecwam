@@ -79,7 +79,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
-      USE YOWPCONS , ONLY : ZMISS
+      USE YOWPCONS , ONLY : ZMISS    ,EPSUS    ,EPSU10
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
@@ -110,12 +110,12 @@
         ALLOCATE (CD(IJS:IJL))
         IF(IPFGTBL(8).NE.0) ALLOCATE(WVSTR(IJS:IJL))
         DO IJ = IJS,IJL
-          TAU = USNEW(IJ)**2 +0.0001
+          TAU = MAX(USNEW(IJ)**2,EPSUS)
           IF(IPFGTBL(8).NE.0) WVSTR(IJ) = TAUW(IJ,IG)/TAU
 !!       if the numerical computation of TAU and CD change, a similar
 !!       modification has to be put in buildstress where the friction
 !!       velocity is determined from U10 and CD.
-          CD(IJ) = TAU/(U10NEW(IJ)**2+0.01)
+          CD(IJ) = TAU/MAX(U10NEW(IJ)**2,EPSU10)
         ENDDO
 
 !*    1.3 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.

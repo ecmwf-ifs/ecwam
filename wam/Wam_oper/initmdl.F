@@ -11,6 +11,8 @@
 !                    J. DOYLE      SEPTEMBER 1996
 !                    J. BIDLOT     APRIL 1997
 !                    J. BIDLOT     SEPTEMBER : MODIFY PARALLEL INPUT 
+!                    S. ABDALLA    OCTOBER 2001: INCLUSION OF AIR 
+!                                                DENSITY AND Zi/L
 
 !SHALLOW
 !          DIFFERENCES FOR SHALLOW WATER RUNS TO DEEP WATER RUNS
@@ -35,10 +37,10 @@
 
 !          ---- FORMAL PARAMETERS ----
 
-!    *CALL* *INITMDL (KDELWI,NADV)
-!      *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
+!    *CALL* *INITMDL (KDELWI,NADV)*
+!       *NADV*     INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                            PER CALL OF WAMODEL, OUTPUT PARAMETER.
-!      *KDELWI*              WIND INPUT TIME STEP IN SECONDS IF
+!      *KDELWI*    INTEGER   WIND INPUT TIME STEP IN SECONDS IF
 !                            COUPLED WITH THE IFS.
 
 !          ---- INPUT/OUTPUT UNITS ---
@@ -253,6 +255,7 @@
      &            INDEP
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,
+     &            ROAIRO   ,ZIDLOLD  ,
      &            FL1      ,SL
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,IDELPRO  ,
@@ -657,7 +660,9 @@
 
       IF (ITEST.GE.2)CALL FLUSH(IU06)
 
-      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,IREAD)
+      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &               ROAIRO,ZIDLOLD,
+     &               NSTART,NEND,IREAD)
 
       IF (LWCOU) THEN
         IDELWO = KDELWI
@@ -867,7 +872,7 @@
 !*    8.1 READ BLOCK OF SPECTRA.
 !         ----------------------
 
-        CALL GETSPEC(FL1,NSTART,NEND,IREAD)
+        CALL GETSPEC(FL1,NSTART,NEND,IREAD,U10OLD,THWOLD)
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '    SUB. INITMDL: READ',

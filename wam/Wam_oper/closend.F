@@ -1,5 +1,6 @@
       SUBROUTINE CLOSEND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
-     &                    U10OLD,THWOLD,U10NEW,THWNEW) 
+     &                    U10OLD,THWOLD,ROAIRO,ZIDLOLD,
+     &                    U10NEW,THWNEW,ROAIRN,ZIDLNEW) 
 
 ! ----------------------------------------------------------------------
 
@@ -7,6 +8,7 @@
 
 !     P.A.E.M. JANSSEN  KNMI/ECMWF  SEPTEMBER 1994
 !     J. BIDLOT         ECMWF       FEBRUARY  1996  MESSAGE PASSING
+!     S. ABDALLA        ECMWF       OCTOBER   1996  AIR DENSITY AND Zi/L
 
 !*    PURPOSE.
 !     --------
@@ -16,8 +18,9 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *CLOSEND*(IJS, IJL, IG, IGL, CDATE,CDATEWH,NEWREAD,NEWFILE)
-!    1                  U10OLD,THWOLD,U10NEW,THWNEW) 
+!     *CALL* *CLOSEND*(IJS, IJL, IG, IGL, CDATE,CDATEWH,NEWREAD,NEWFILE,
+!    1                 U10OLD,THWOLD,ROAIRO,ZIDLOLD,U10NEW,THWNEW,
+!    2                 ROAIRN,ZIDLNEW) 
 !      *IJS*    - INDEX OF FIRST GRIDPOINT
 !      *IJL*    - INDEX OF LAST GRIDPOINT
 !      *IG*     - BLOCK NUMBER
@@ -32,6 +35,10 @@
 !                  CLOCKWISE FROM NORTH).
 !      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
+!      *ROAIRN*    AIR DENSITY IN KG/M3.
+!      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
+!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
 
 !     METHOD.
 !     -------
@@ -67,8 +74,8 @@
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD, ROAIRO,ZIDLOLD
+      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW     , ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
@@ -85,6 +92,8 @@
         DO IJ=IJS,IJL
           U10OLD(IJ,IG) = U10NEW(IJ)
           THWOLD(IJ,IG) = THWNEW(IJ)
+          ROAIRO(IJ,IG) = ROAIRN(IJ)
+          ZIDLOLD(IJ,IG) = ZIDLNEW(IJ)
         ENDDO
         NEWREAD = .FALSE.
         IF (ITEST.GE.2) THEN

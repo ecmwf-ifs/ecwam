@@ -1,5 +1,7 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    IUGB, IVGB, ILEN)
+     &                    ROAIRO, ZIDLOLD,
+     &                    NFIELDS, NGPTOTG, NC, NR, 
+     &                    ISEC1, ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
 
@@ -20,6 +22,8 @@
 
 !     J. BIDLOT       ECMWF    FEBRUARY 1996 MESSAGE PASSING
 
+!     S. ABDALLA      ECMWF    OCTOBER 2001  AIR DENSITY AND Zi/L
+
 !*    PURPOSE.
 !     --------
 
@@ -29,7 +33,9 @@
 !     ----------
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 IUGB, IVGB, ILEN)*
+!    &                 ROAIRO, ZIDLOLD,
+!    &                 NFIELDS, NGPTOTG, NC, NR,
+!    &                 ISEC1, ISEC2, FIELDS)*
 
 !      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                            VELOCITY.
@@ -41,10 +47,16 @@
 !      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                            M.
 !      *TAUW*      REAL      WAVE STRESS IN (M/S)**2
-!      *IUGB*      INTEGER   INPUT GRIB WIND FIELD U COMPONENT (coupled)
-!      *IVGB*      INTEGER   INPUT GRIB WIND FIELD V COMPONENT (coupled)
-!      *ILEN*      INTEGER   LENGTH OF IUGB AND IVGB
-
+!      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
+!      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
+!                                   L: MONIN-OBUKHOV LENGTH).
+!      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
+!      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
+!      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
+!      *ISEC1*     INTEGER   GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
+!      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
+!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
 
 !       *UNIT* *DESCRIPTION*
 
@@ -109,6 +121,9 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL
 
+      INTEGER NFIELDS, NGPTOTG, NC, NR
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
 
       CHARACTER*12 CDTWIE, CDTWIS, ZERO
 
@@ -119,9 +134,8 @@
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+     &                                 ,ROAIRO,ZIDLOLD
 
-! ----------------------------------------------------------------------
-      INTEGER IUGB(ILEN), IVGB(ILEN)
 ! ----------------------------------------------------------------------
 
 
@@ -153,7 +167,6 @@
       ENDIF
 
 ! ----------------------------------------------------------------------
-
 !*    2. PROCESS WIND FIELDS.
 !        --------------------
 
@@ -169,9 +182,11 @@
           WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
           WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
+          CALL FLUSH (IU06)
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              IUGB, IVGB, ILEN)
+     &              ROAIRO, ZIDLOLD,
+     &              NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
       ELSE
 
 !*    2.2 TIME INTERPOLATION.
@@ -184,9 +199,11 @@
           WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
           WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
+          CALL FLUSH (IU06)
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              IUGB, IVGB, ILEN)
+     &              ROAIRO, ZIDLOLD,
+     &              NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
       ENDIF
 
       RETURN

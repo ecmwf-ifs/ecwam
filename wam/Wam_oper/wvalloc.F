@@ -8,6 +8,8 @@
 
 !     MODIFIED BY:   B. HANSEN    APRIL 1997
 !                                 DOCTOR STYLE AND LDWCOU2W
+!                    S. ABDALLA   ECMWF  OCTOBER  2001
+!                                 INCLUSION OF AIR DENSITY & Zi/L
 
 ! ----------------------------------------------------------------------
 
@@ -20,6 +22,7 @@
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE MPL_MODULE
 
@@ -85,6 +88,11 @@
       IF(.NOT.ALLOCATED(THWNEW)) ALLOCATE(THWNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(USNEW)) ALLOCATE(USNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(Z0NEW)) ALLOCATE(Z0NEW(NINF:NSUP))
+
+      IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(ROAIRN)) ALLOCATE(ROAIRN(NINF:NSUP))
+      IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NINF:NSUP,NBLO))
+      IF(.NOT.ALLOCATED(ZIDLNEW)) ALLOCATE(ZIDLNEW(NINF:NSUP))
 
       IF(.NOT.ALLOCATED(FL1)) ALLOCATE(FL1(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))

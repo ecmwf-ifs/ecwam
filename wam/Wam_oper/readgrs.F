@@ -55,6 +55,7 @@
 
 !-------------------------------------------------------------------
 
+      USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,ZDELLO
@@ -385,12 +386,9 @@
 !         TO ITS NORMAL ONE.
 !         ----------------------------------------------------------------
 
-      pprec=0.0
-      xeps=1.0e-10
-
       DO JX=1,IDL
         IF (ZSEC4(JX) .NE. ZMISS) THEN
-          ZSEC4(JX) = 10.**(ZSEC4(JX)-abs(pprec))- xeps
+          ZSEC4(JX) = 10.**(ZSEC4(JX)-ABS(PPREC))- PPEPS 
         ELSE
           ZSEC4(JX) = 0.0
         ENDIF

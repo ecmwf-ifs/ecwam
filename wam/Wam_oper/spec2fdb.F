@@ -286,7 +286,8 @@
 
 !* SYSTEM AND METHOD (for seasonal forecast only)
 !  -----------------
-      IF ( CDTYPE .EQ. 'sf' ) THEN
+      IF ( CDTYPE .EQ. 'sf' .OR. ISEC1(40) .EQ. 1082
+     &                      .OR. ISEC1(40) .EQ. 1095 ) THEN
         ISEC1(50+KANG+KFRE) = KSYSNB 
         ISEC1(51+KANG+KFRE) = KMETNB 
       ELSE

@@ -1,5 +1,5 @@
       SUBROUTINE READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                      FILENAME)
+     &                      RADOLD,RZIDLOLD,FILENAME)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -10,12 +10,15 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *READSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,FILENAME)
+!     CALL *READSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
+!                       RADOLD,RZIDLOLD,FILENAME)
 !     *RU10OLD*   WIND SPEED.
 !     *RTHWOLD*   WIND DIRECTION (RADIANS).
 !     *RUSOLD*    FRICTION VELOCITY.
 !     *RTAUW*     WAVE STRESS.
 !     *RZ0OLD*    ROUGHNESS LENGTH IN.
+!     *RADOLD*    AIR/WATER DENSITY RATIO.
+!     *RZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE (ONLY IF 
 !                MESSAGE PASSING IS USED)
 
@@ -57,7 +60,8 @@
       CHARACTER*1 MODE
       CHARACTER*120 FILENAME
 
-      REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
+      REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,
+     &                              RADOLD,RZIDLOLD
 ! ----------------------------------------------------------------------
 
       IF (ITEST.GE.2) THEN
@@ -114,6 +118,12 @@
         CALL PBREAD(IUNIT,RZ0OLD,KOUNT,KRET)
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 
+        CALL PBREAD(IUNIT,RADOLD,KOUNT,KRET)
+        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+
+        CALL PBREAD(IUNIT,RZIDLOLD,KOUNT,KRET)
+        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+
 1099    CONTINUE
         IF(KRET.LT.0) THEN
           WRITE (IU06,*) '*****************************************'
@@ -160,6 +170,8 @@
         READ(IU15) RUSOLD
         READ(IU15) RTAUW
         READ(IU15) RZ0OLD
+        READ(IU15) RADOLD
+        READ(IU15) RZIDLOLD 
 
         CLOSE(IU15)
 

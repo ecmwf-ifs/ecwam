@@ -26,7 +26,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER(NANGMAX=12,NFREMAX=25)
+      PARAMETER(NANGMAX=24,NFREMAX=30)
 !     PARAMETER(Nxymax=100*50)
       PARAMETER(Nxymax=300*80)
       PARAMETER(IPLENG=10000)

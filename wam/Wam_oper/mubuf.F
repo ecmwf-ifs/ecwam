@@ -192,7 +192,7 @@
             IF (IXLG(IH,IG).EQ.IPLUS .AND.
      1          KXLT(IH,IG).EQ.K+1) EXIT
           ENDDO
-          KLAT2(IP,2) = IH
+          KLAT2(IP,2) = MIN(IH,IJLT(IG))
         ENDIF
 
       ENDDO

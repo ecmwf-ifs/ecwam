@@ -1,4 +1,4 @@
-      SUBROUTINE GRDATA (WHME, USME, NSTART, NEND)
+      SUBROUTINE GRDATA(NWH, NSTART, NEND)
 
 !--------------------------------------------------------------------
 
@@ -15,13 +15,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRDATA (WHME, USME)*
-
-!        *WHME*   REAL    OUTPUT FIELD OF MEASURED WAVE HEIGHTS.
-!        *USME*   REAL    OUTPUT FIELD OF MEASURED WIND SPEEDS.
+!       *CALL* *GRDATA(NWH NSTART, NEND)*
+!        *NWH*  NUMBER OF RELEVANT GRIDDED OBSERVATIONS.
 !        *NSTART* INTEGER INDEX OF THE FIRST POINT OF SUB GRID DOMAIN
 !        *NEND*   INTEGER INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-
 
 !     METHOD.
 !     -------
@@ -62,11 +59,28 @@
 !                 SST field to determine whether an observation which
 !                 falls on a model sea point.
 
+!          May 01 Jean Bidlot : do not use wind speed observations
+
+!                 Jean Bidlot : only use grid information to thin
+!                               and smooth the data.
+
+!          J. BIDLOT       *ECMWF*       SEP 2001
+!            INTRODUCE THE CONCEPT OF A BLACKLIST TO REMOVE DATA FROM
+!            BEING PROCESSED. IT IS TRIGGERED IF THE FILE
+!            wave_data_blacklist IS PRESENT.
+!            THE BLACKLIST WILL CONTAIN THE FOLLOWING INFORMATION
+!            STATID : THE SATELLITE IDENTIFICATION NUMBER (AS IN BUFR)
+!            SENSOR : THE INSTRUMENT IDENTIFICATION NUMBER (AS IN BUFR)
+!            THE DATA WILL BE BLACKLISTED BETWEEN THE DATE CDATESTART
+!            AND CDATEEND AND BETWEEN LATMI<= LATITUDE <= LATMA
+!            AND BETWEEN LONGMI <= LONGITUDE <= LONGMA
+!            FOR the OBSERVED PARAMETER PRESCRIBED BY PARAM (AS IN BUFR)
+!            PROVIDED IT IS BETWEEN THE VALUES VALUE_MIN AND VALUE_MAX
+
 !-----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,ALTDATA 
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : ICEMASK
-      USE YOWINTP  , ONLY : CDG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,AMOWEP   ,
      &            AMOSOP   ,XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -77,12 +91,11 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL EOFD
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: NUMBWH, NR
+      REAL, ALLOCATABLE, DIMENSION(:,:) ::  WHME, WHSE
       CHARACTER*12 CBEGINDT, CENDDT
       CHARACTER*14 CDATE,CDATEO
-      DIMENSION WHME(NGX,NGY), USME(NGX,NGY),
-     &          WHSE(NGX,NGY), USSE(NGX,NGY),
-     &          NUMBWH(NGX,NGY), NUMBUS(NGX,NGY),NR(NGX,NGY)
+      LOGICAL EOFD
 
 !*     VARIABLE     TYPE     PURPOSE.
 !      --------     ----     --------
@@ -92,22 +105,22 @@
 !     *CENDDT*      CHAR*12  END DATE OF THE TIME WINDOW
 !                            DURING WHICH DATA ARE SAVE FOR ANALYSIS.
 !     *WHME*        REAL     GRID WAVE HEIGHT.
-!     *USME*        REAL     GRID WIND SPEED.
 !     *WHSE*        REAL     WAVE HEIGHT ROOT MEAN SQUARE ERROR.
-!     *USSE*        REAL     WIND SPEED ROOT MEAN SQUARE ERROR.
 !     *NUMBWH*      INTEGER  NUMBER OF HS MEASUREMENTS INSIDE A BOX.
-!     *NUMBUS*      INTEGER  NUMBER OF US MEASUREMENTS INSIDE A BOX.
 
 ! ----------------------------------------------------------------------
 
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-! ----------------------------------------------------------------------
-      INTEGER,ALLOCATABLE :: ICEMASKG(:,:)
+      INTEGER,ALLOCATABLE,DIMENSION(:) :: STATID, SENSOR, PARAM
 
-      INTEGER, PARAMETER :: jpice=1000
+      REAL,ALLOCATABLE,DIMENSION(:) :: LATMI, LONGMI, LATMA, LONGMA
+      REAL,ALLOCATABLE,DIMENSION(:) :: VALUE_MIN, VALUE_MAX, DLON
 
-      REAL,ALLOCATABLE :: RLAICE(:),RLOICE(:),SWHICE(:),WSICE(:)
-      CHARACTER*12,ALLOCATABLE :: CDAICE(:)
+      CHARACTER*19 YOFILE
+      CHARACTER*100 CDUM
+      CHARACTER (LEN=12),ALLOCATABLE :: CDATESTART(:), CDATEEND(:)
+
+      LOGICAL :: LLBLEXIST
       LOGICAL flagged, opened
 
 ! ----------------------------------------------------------------------
@@ -141,52 +154,25 @@
 !*    2. INITIALIZE ARRAYS, counters and units.
 !        --------------------------------------
 
-      ALLOCATE(RLAICE(JPICE),RLOICE(JPICE),SWHICE(JPICE),WSICE(JPICE))
-      ALLOCATE(CDAICE(JPICE))
       ICOUNT=0
       ICOUNTT=0
       ICOUNTD=0
       icountf=0
       icountb=0
-      icountice=0
       icountqcf=0
+      icountbl=0
+      ALLOCATE(WHME(NGX,NGY))
+      ALLOCATE(WHSE(NGX,NGY))
+      ALLOCATE(NUMBWH(NGX,NGY))
+      ALLOCATE(NR(NGX,NGY))
       DO J=1,NGY
         DO I=1,NGX
           WHME(I,J) = 0.
-          USME(I,J) = 0.
           WHSE(I,J) = 0.
-          USSE(I,J) = 0.
           NUMBWH(I,J) = 0
-          NUMBUS(I,J) = 0
           NR(I,J)=0
         ENDDO
       ENDDO
-
-!     INITIALISE THE ICE MASK ARRAY
-
-      ALLOCATE(ICEMASKG(NGX,NGY))
-
-      ICEMASKG=1
-
-      IF(LMESSPASS) THEN
-        DO IJ = NSTART(1), NEND(NPROC)
-          IF (ICEMASK(IJ,1).EQ.0) THEN
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            ICEMASKG(IX,IY)=0
-          ENDIF
-        ENDDO
-      ELSE
-        DO IG = 1, IGL 
-          DO IJ = IJS(IG),IJL(IG) 
-            IF (ICEMASK(IJ,IG).EQ.0) THEN
-              IX = IXLG(IJ,IG)
-              IY = NGY- KXLT(IJ,IG) +1
-              ICEMASKG(IX,IY)=0
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDIF
 
       IOLD = 0
       JOLD = 0
@@ -197,9 +183,82 @@
         IF ( .NOT. opened) THEN
           WRITE(iu06,*)
      &     ' GRDATA : TAKES UNIT ',iume,' AS ALTIMETER DATA INPUT UNIT'
-          GOTO 3000
+          GOTO 2000
         ENDIF
       ENDDO
+
+!     CHECK IF BLACKLISTING FILE IS PRESENT
+2000  CONTINUE
+      NBL=0
+      YOFILE='wave_data_blacklist'
+      INQUIRE (FILE=YOFILE,EXIST=LLBLEXIST)
+      IF(LLBLEXIST) THEN
+        IOBL = I_GET_UNIT(IU06, YOFILE, 'r', 'f', 0)
+        WRITE(IU06,*) '   GRDATA : READING BLACKLISTING FILE ', YOFILE
+        WRITE(IU06,*) ' '
+
+        DO IC=1,21
+          READ(IOBL,'(A100)') CDUM
+        ENDDO
+
+        DO WHILE(.TRUE.)
+          READ(IOBL,'(A100)',END=100,ERR=100) CDUM
+          NBL=NBL+1
+        ENDDO
+100     WRITE(IU06,*) '            TOTAL NUMBER OF ENTRIES :',NBL
+        REWIND(IOBL)
+
+        IF(NBL.GT.0) THEN
+          ALLOCATE(STATID(NBL))
+          ALLOCATE(SENSOR(NBL))
+          ALLOCATE(CDATESTART(NBL))
+          ALLOCATE(CDATEEND(NBL))
+          ALLOCATE(LATMI(NBL))
+          ALLOCATE(LONGMI(NBL))
+          ALLOCATE(LATMA(NBL))
+          ALLOCATE(LONGMA(NBL))
+          ALLOCATE(DLON(NBL))
+          ALLOCATE(PARAM(NBL))
+          ALLOCATE(VALUE_MIN(NBL))
+          ALLOCATE(VALUE_MAX(NBL))
+        ENDIF
+
+        DO IC=1,21
+          READ(IOBL,'(A100)') CDUM
+        ENDDO
+
+        DO IBL=1,NBL
+          READ(IOBL,111,ERR=200) STATID(IBL), SENSOR(IBL),
+     &         CDATESTART(IBL), CDATEEND(IBL), LATMI(IBL), LONGMI(IBL),
+     &         LATMA(IBL), LONGMA(IBL), PARAM(IBL), VALUE_MIN(IBL),
+     &         VALUE_MAX(IBL)
+        ENDDO
+        GOTO 300
+200     CONTINUE
+        WRITE(IU06,*) '************************************************'
+        WRITE(IU06,*) '   GRDATA : ERROR READING ', YOFILE
+        WRITE(IU06,*) '   THE PROGRAM WILL ABORT !!!!'
+        WRITE(IU06,*) '************************************************'
+        CALL ABORT
+
+300     CLOSE(IOBL)
+        DO IBL=1,NBL
+          IF(ABS(LONGMI(IBL)-LONGMA(IBL)) .NE. 360.) THEN
+            LONGMI(IBL) = MOD(LONGMI(IBL)+720.,360.)
+            LONGMA(IBL) = MOD(LONGMA(IBL)+720.,360.)
+          ENDIF
+          IF(LONGMI(IBL).GE.LONGMA(IBL)) LONGMI(IBL)=LONGMI(IBL)-360.
+          DLON(IBL) =  LONGMA(IBL) - LONGMI(IBL)
+
+        ENDDO
+      ELSE
+        WRITE(IU06,*) '************************************************'
+        WRITE(IU06,*) '   GRDATA : THE BLACK LISTING FILE ',YOFILE
+        WRITE(IU06,*) '   WAS NOT FOUND !!!'
+        WRITE(IU06,*) '   THE PROCESSING WILL CONTINUE WITHOUT IT !!!!'
+        WRITE(IU06,*) '************************************************'
+      ENDIF
+111   FORMAT(2(I8,1x),2(A12,1x),2(f5.1,1x,f6.1,1x),I6,1x,2(f9.3,1x))
 
 ! ----------------------------------------------------------------------
 
@@ -208,8 +267,11 @@
 
  3000 CONTINUE
       flagged = .TRUE.
-      CALL READSAT (IU06, iume, CDTPRO,
-     &              CDATE, RLAT, RLON, SWH, WS, flagged, EOFD)
+      CALL READSAT (IU06, iume, CDTPRO, IDENTI, ISENSOR,
+     &              CDATE, RLAT, RLON, IDES_HS, SWH,
+     &              IDES_WS, WS, flagged, EOFD)
+!!! note this will need to be adapted when there is more than one 
+!!! satellite
       IF (EOFD) GOTO 4000
       ICOUNTD = ICOUNTD+1
 
@@ -229,8 +291,32 @@
           GOTO 3000
         ENDIF
 
-!     DATE IS INSIDE THE TIME WINDOW and record flagged as reliable.
-!     THE INDECES ARE COMPUTED
+!       BLACKLISTING
+
+        IF(LLBLEXIST) THEN
+          DO IBL=1,NBL
+            IF(STATID(IBL).EQ.IDENTI .AND.
+     &         SENSOR(IBL).EQ.ISENSOR .AND.
+     &         CDATESTART(IBL).LE.CDATE(1:12) .AND. 
+     &         CDATEEND(IBL).GE.CDATE(1:12) .AND. 
+!           BLACKLISTING OF WAVE HEIGHT ONLY !!!
+     &         PARAM(IBL).EQ.IDES_HS .AND. 
+     &         LATMI(IBL).LE.RLAT .AND.
+     &         LATMA(IBL).GE.RLAT .AND.
+     &         VALUE_MIN(IBL).LE.SWH .AND.
+     &         VALUE_MAX(IBL).GE.SWH
+     &        ) THEN
+              DX = MOD(RLON-LONGMI(IBL)+720.,360.)
+              IF(DX.LE.DLON(IBL)) THEN
+                icountbl=icountbl+1
+                GOTO 3000
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+
+!       DATE IS INSIDE THE TIME WINDOW AND RECORD FLAGGED AS RELIABLE.
+!       THE INDICES ARE COMPUTED
 
         ICOUNTT = ICOUNTT+1
         J       = NGY-NINT((RLAT-AMOSOP)/XDELLA)
@@ -245,32 +331,6 @@
 !     IF THE INDICES ARE INSIDE THE GRID THE MEASUREMENT IS CUMULATED
 
         IF((I.LE.NRGG).AND.(I.GE.1) .AND. (J.LE.NGY).AND.(J.GE.1)) THEN
-
-!     IF THE GRID POINT IS SET TO BE ICE TAKE NEXT MEASUREMENT.
-
-          IF (ICEMASKG(I,J).EQ.0) THEN
-            icountice = icountice + 1
-            if (icountice .le. jpice) then
-              cdaice(icountice)=cdate(1:12)
-              rlaice(icountice)=rlat
-              rloice(icountice)=rlon
-              swhice(icountice)=swh
-              wsice(icountice)=ws
-            endif
-            GOTO 3000
-          ENDIF
-
-!     SOME MEASURENTS ARE VERY CLOSE TO LAND, PASSED THE QC AS
-!     BEING ON SEA BUT REGARDED AS BEING ON LAND BY GRDATA.
-!     THESE ARE ELIMINATED QUIETLY HERE.
-!     NOTE: CDG CAN BE = 0.0 FOR SEA POINTS WHEN GRDATA IS USED 
-!     BY *RFL4WAM*
-
-          IF (CDG(I,J).LT.0.000) THEN
-            icountQCF = icountQCF + 1
-            GOTO 3000
-          ENDIF
-
 
           ICOUNT=ICOUNT+1
           IF (I.NE.IOLD .OR. J.NE.JOLD) THEN
@@ -287,7 +347,6 @@
             IOLD = I
             JOLD = J
             SWHO = SWH
-            WSO  = WS
           ELSE
 
 !     SUDDEN POSITVE STEPS ARE REFUSED.
@@ -302,11 +361,6 @@
             WHME(I,J) = WHME(I,J) + SWH
             WHSE (I,J) = WHSE(I,J) + SWH**2
             NUMBWH(I,J) = NUMBWH(I,J) + 1
-            IF (WS.GE.0.) THEN
-              USME(I,J) = USME(I,J) + WS
-              USSE (I,J) = USSE(I,J) + WS**2
-              NUMBUS(I,J) = NUMBUS(I,J) + 1
-            ENDIF
           ENDIF
 
 !     A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
@@ -316,15 +370,9 @@
             WHME(I,J) = WHME(I,J) - SWHO
             WHSE (I,J) = WHSE(I,J) - SWHO**2
             NUMBWH(I,J) = NUMBWH(I,J) - 1
-            IF (WSO.GE.0.) THEN
-              USME(I,J) = USME(I,J) - WSO
-              USSE (I,J) = USSE(I,J) - WSO**2
-              NUMBUS(I,J) = NUMBUS(I,J) - 1
-            ENDIF
           ENDIF
 
           SWHO = SWH
-          WSO = WS
           CDATEO = CDATE
         ENDIF
 !*
@@ -341,12 +389,10 @@
 
  4000 CONTINUE
       nuwh=0
-      nuus=0
       DO j2=1,ngy
         j2sn = ngy-j2+1     
         DO j1=1,nlonrgg(j2sn)
           nuwh=nuwh+numbwh(j1,j2)
-          nuus=nuus+numbus(j1,j2)
         ENDDO
       ENDDO
 
@@ -355,6 +401,8 @@
      &              "......:", I8)') ICOUNTD
       WRITE (IU06,'("         THEREOF NUMBER OF RECORDS WITH FLAGS IS ",
      &              "......:", I8)') ICOUNTF
+      WRITE (IU06,'("         THEREOF NUMBER OF BLACKLISTED RECORDS IS",
+     &              "......:", I8)') ICOUNTBL
       WRITE (IU06,'("         NUMBER OF DATA IN SELECTED PERIOD IS ...",
      &              "......:", I8)') ICOUNTT
       WRITE (IU06,'("         NUMBER OF DATA BEFORE SELECTED PERIOD IS",
@@ -363,29 +411,8 @@
      &              "S IS..:", I8)') ICOUNT
       WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE LAND IS.......",
      &              "......:", I8)') ICOUNTQCF
-      WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE ICE IS........",
-     &              "......:", I8)') ICOUNTICE
       WRITE (iu06,'("         NUMBER OF DATA ACCEPTED BY ''GRDATA'' IS",
-     &              " FOR wh :", I8, /, 
-     &"                                            AND FOR us :", I8)')
-     &    nuwh, nuus
-
-      DO iubl=30,99,1
-        INQUIRE ( UNIT=iubl, OPENED=opened)
-        IF ( .NOT. opened.and.ITEST.GT.0.and.ITEST.GT.0) THEN
-          WRITE(IU06,*)
-     &     ' GRDATA: TAKES UNIT ',iubl,' AS BLACKLIST OUTPUT UNIT'
-          CALL FLUSH(IU06)
-          GOTO 4160
-        ENDIF
-      ENDDO
- 4160 CONTINUE
-      OPEN (IUBL,FILE='BLL'//CDTPRO)
-      WRITE(IUBL,'(A12)') CDTPRO
-      DO j=1,MIN(icountice,jpice)
-        WRITE(IUBL,'(a12,4f8.2)') cdaice(j),rlaice(j),rloice(j),
-     &                            swhice(j),wsice(j)
-      ENDDO
+     &              " FOR wh :", I8)') nuwh
 
       DO J=1,NGY
         JSN = NGY-J+1
@@ -406,108 +433,90 @@
         ENDDO
       ENDDO
 
-      DO J=1,NGY
-        JSN = NGY-J+1
-        DO I=1,NLONRGG(JSN)
-          NN = NUMBUS(I,J)
-          IF (NN.GE.NNMIN) THEN
-
-!           MEAN VALUES
-
-            USME(I,J) = USME(I,J)/REAL(NN)
-
-!           COMPUTE THE STANDARD DEVIATION.
-
-            USSE2 =  (USSE(I,J)-USME(I,J)**2*REAL(NN))
-     &       / (REAL(NN)-1.)
-            USSE(I,J) = SQRT( MAX(USSE2,0.))
-          ENDIF
-        ENDDO
-      ENDDO
-
 ! ----------------------------------------------------------------------
 
 !*    5. FLAG GRID POINTS, IF THERE ARE FEW OR STRONGLY SCATTERED DATA.
 !        --------------------------------------------------------------
 
+!     ONLY KEEP THE RELEVANT INFORMATION
+!     ALL DATA THAT ARE NOT OVER SEA ARE DISCARDED HERE !
+
       NWH = 0
-      DO J=1,NGY
-        JSN = NGY-J+1
-        DO I=1,NLONRGG(JSN)
-          NN = NUMBWH(I,J)
-          IF (NN.EQ.0) THEN
+      DO IJ = NSTART(1), NEND(NPROC)
+        I = IXLG(IJ,1)
+        J = NGY- KXLT(IJ,1) +1
+        NN = NUMBWH(I,J)
+        IF (NN.EQ.0) THEN
 
-!           IF THERE ARE NO MEASUREMENTS
+!         IF THERE ARE NO MEASUREMENTS
 
-            WHME(I,J)=-3.
-          ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
+          WHME(I,J)=-3.
+        ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
 
-!           IF THERE ARE FEW MEASUREMENTS.
+!         IF THERE ARE FEW MEASUREMENTS.
 
-            WHME(I,J)=-2.
-          ELSEIF (NN.GE.NNMIN) THEN
+          WHME(I,J)=-2.
+        ELSEIF (NN.GE.NNMIN) THEN
 
-!           IF THE VARIANCE IS TOO LARGE.
-!           OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
+!         IF THE VARIANCE IS TOO LARGE.
+!         OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
 
-            XX = REAL(NR(I,J))/REAL(NN)
-            RFWM = MAX(0.5,0.25*WHME(I,J))
-            IF (WHSE(I,J).GT.RFWM .OR. WHME(I,J).LT.0.50 .OR.
-     &       XX.GT.0.1) THEN
-              WHME(I,J) = -WHME(i,j)
-            ELSE
-              NWH = NWH+1
-            ENDIF
+          XX = REAL(NR(I,J))/REAL(NN)
+          RFWM = MAX(0.5,0.25*WHME(I,J))
+          IF (WHSE(I,J).GT.RFWM .OR. WHME(I,J).LT.0.50 .OR.
+     &     XX.GT.0.1) THEN
+            WHME(I,J) = -WHME(i,j)
+          ELSE
+            NWH = NWH+1
           ENDIF
-        ENDDO
-      ENDDO
-
-      NUS = 0
-      DO J=1,NGY
-        JSN = NGY-J+1
-        DO I=1,NLONRGG(JSN)
-          NN = NUMBUS(I,J)
-          IF (NN.EQ.0) THEN
-
-!           IF THERE ARE NO MEASUREMENTS
-
-            USME(I,J)=-3.
-          ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
-
-!           IF THERE ARE FEW MEASUREMENTS.
-
-            USME(I,J)=-2.
-          ELSEIF (NN.GE.NNMIN)THEN
-
-!           IF THE VARIANCE IS TOO LARGE.
-!           OR THERE IS NO CORRESPONDING SWH
-
-            RFU = 0.0
-            IF (USME(I,J).GT.0.0001) RFU = USSE(I,J)/USME(I,J)
-            IF (RFU.GE.0.5.OR.WHME(I,J).LE.0.) THEN
-              USME(I,J) = -USME(I,J)
-            ELSE
-              NUS = NUS + 1
-            ENDIF
-          ENDIF
-        ENDDO
+        ENDIF
       ENDDO
 
 !*
+      DEALLOCATE(WHSE)
+      DEALLOCATE(NUMBWH)
+      DEALLOCATE(NR)
+
+      IF(NWH.GT.0) THEN
+        ALLOCATE(IJALT(NWH,NIJALT))
+        ALLOCATE(ALTDATA(NWH,NALTDT))
+
+        IOBS=0
+        DO IJ = NSTART(1), NEND(NPROC)
+          IX = IXLG(IJ,1)
+          IY = NGY- KXLT(IJ,1) +1
+          IF(WHME(IX,IY) .GT. 0. ) THEN
+            IOBS=IOBS+1
+            ALTDATA(IOBS,1) = WHME(IX,IY)
+            IJALT(IOBS,1) = IJ
+            IJALT(IOBS,2) = IDENTI 
+          ENDIF
+        ENDDO
+      ENDIF
+
+      DEALLOCATE(WHME)
+
+      IF(NBL.GT.0) THEN
+        DEALLOCATE(STATID)
+        DEALLOCATE(SENSOR)
+        DEALLOCATE(CDATESTART)
+        DEALLOCATE(CDATEEND)
+        DEALLOCATE(LATMI)
+        DEALLOCATE(LONGMI)
+        DEALLOCATE(LATMA)
+        DEALLOCATE(LONGMA)
+        DEALLOCATE(DLON)
+        DEALLOCATE(PARAM)
+        DEALLOCATE(VALUE_MIN)
+        DEALLOCATE(VALUE_MAX)
+      ENDIF
 
       WRITE (IU06,*) ' GRDATA: GRIDDED MEASUREMENTS ARE SELECTED:'
       WRITE (IU06,*) '         WAVE HEIGHT AT NWH = ', NWH,' GRIDPOINTS'
-      WRITE (IU06,*) '         WIND SPEED  AT NUS = ', NUS,' GRIDPOINTS'
 
       CLOSE (iume,IOSTAT=ioszx)
       IF(ITEST.GT.0)
      & WRITE(iu06,*) ' UNIT ',iume,' CLOSED WITH IOSTAT= ',ioszx
-      CLOSE (iubl,IOSTAT=ioszx)
-      IF(ITEST.GT.0)
-     & WRITE(iu06,*) ' UNIT ',iubl,' CLOSED WITH IOSTAT= ',ioszx
-
-      IF(ALLOCATED(ICEMASKG)) DEALLOCATE(ICEMASKG)
-      DEALLOCATE(RLAICE,RLOICE,SWHICE,WSICE,CDAICE)
 
       RETURN
       END SUBROUTINE GRDATA

@@ -1,47 +1,48 @@
 #.
 #.               USER DEPENDENT SETTINGS.
-#.               TO BE MODIFIED AS NESSECARY.
+#.               TO BE MODIFIED AS NECESSARY.
 #.
 #.=====================================================================
-#.  Define paths for ECFS and VPP
+#.  Define paths 
 #.=====================================================================
 #.
-VERSION=CY22R3_new_adv_fit
+#. Top directories on VPP
+VPPROOT=${TEMP}/wam_${USER}_$VERSION
+TMPROOT=${TEMP}/wam_${USER}_$VERSION
 #.
-DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
-VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
-TMPROOT=/vpp700/wavedir44/${USER}/wam_${USER}_$VERSION
-#.
-DHSLPATH=$DHSROOT/${VERSION}
+#. Location of the compiled WAM library on VPP
 LIBS=$TMPROOT/lib
+#. Location of the compiled WAM library on workstation
+WKLIBS=/ws/scratch/rd/${USER}/lib
+#. 
 WORKDIR=tmp$$
 #.
+#. Different directories on VPP
 #ifndef region
 #define region 'z'
 #endif
 #.
 #if region=='s'
-DHSPATH=$DHSROOT/swamp2/coarse
 ADIR=$TMPROOT/swamp2/coarse
 BIN=$TMPROOT/swamp2/coarse/bin
 ROOTWDIR=$VPPROOT/swamp2/coarse
 #elif  region=='m'
-DHSPATH=$DHSROOT/medite
 ADIR=$TMPROOT/medite
 BIN=$TMPROOT/medite/bin
 ROOTWDIR=$VPPROOT/medite
 #elif region=='g'
-DHSPATH=$DHSROOT/global
 ADIR=$TMPROOT/global
 BIN=$TMPROOT/global/bin
 ROOTWDIR=$VPPROOT/global
 #else
-DHSPATH=$DHSROOT
 ADIR=$TMPROOT
 BIN=$LIBS
 ROOTWDIR=$VPPROOT
 #endif
 #.
+#.=====================================================================
+#.  Define grid characteristics
+#.=====================================================================
 #if resolution==150
 GRID="1.5/1.5"
 AREA="81./ 0./ -81./358.5"
@@ -68,7 +69,7 @@ nang=12
 nfre=25
 #elif region=='m' && resolution==25
 GRID="0.25/0.25"
-AREA="81./ -98./ 9./42."
+AREA="48./ -6./ 30./42."
 grid="025"
 nang=24
 nfre=25
@@ -102,92 +103,123 @@ WDIR=${ROOTWDIR}/${grid}
 #.  Define user input 
 #.=====================================================================
 #.
-#if region=='s'
-ASSIMILATION=NO                        # altimeter data assimilation 
-laltas=F
-lsaras=F
-#else
-ASSIMILATION=NO                        # altimeter data assimilation 
-#. Specify what type of data will be used for the assimilation
-laltas=T
-lsaras=F
-#endif
-#
-typeset -Z12 begofrn=200008150600      # BEGin date OF RUn
-typeset -Z12 endofrn=200008151200      # END   date OF RUn
-typeset -Z12 begoffo=200008151200      # BEGin date OF FOrcast.
+#.
+# This example runs 24 hrs with forecast winds
+typeset -Z10 start_date=2002010112     # starting date (YYYYMMDDHH)
+typeset -i anlength=0                  # Length of analysis in hours
+typeset -i fclength=24                 # Length of forcast in hours
+#.
+#.
+typeset -i anlen=anlength*3600
+typeset -Z7 antime=$anlen
+typeset -i fclen=fclength*3600
+typeset -Z7 fctime=$fclen
+beginfcdt=$(newdate $start_date $anlength)
+enddt=$(newdate $beginfcdt $fclength)
+typeset -Z12 begofrn=${start_date}00   # BEGin date OF RUn
+typeset -Z12 endofrn=${enddt}00        # END   date OF RUn
+typeset -Z12 begoffo=${beginfcdt}00    # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=200008151200      # Date to output restart file(s).
-                                       # Set to 0000000000 if determined
-                                       # on userinput.
-typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are
-                                       # saved. Set to 0000000000 if not
-                                       # required.
-typeset -Z7 antime=21600               # Length of analysis in seconds.
-typeset -Z7 fctime=0                   # Length of forcast in seconds.
+typeset -Z12 outofrf=${endofrn}        # Date to output restart binary files
+                                       # or the gribbed spectra if grib output
+                                       # was requested. This date is on top of
+                                       # all other dates that might be set by
+                                       # cycling from the initial date with
+                                       # step given by IDELRES.
+                                       # Set it to 0000000000 if determined
+                                       # by namelist NAOS (not used in 
+                                       # this example)
 #.
-CLASS=RD                               # user class
-NENS=000                               # only used for ensemble run.
-TNE=000                                # only used for ensemble run.
-
+CLASS=RD                               # user class (used when gribbing data)
 #.! expver is the experiment id. It is used when gribbing the output data. 
-typeset -l expver=waba
+typeset -l expver=wave
+#.
+#if region=='s'
+ASSIMILATION=NO                        # data assimilation 
+iassi=0
+laltas=F
+laltcor=T
+lsarinv=F
+lsaras=F
+#else
+ASSIMILATION=NO                        # data assimilation 
+#. Specify what type of data will be used for the assimilation
+iassi=0
+laltas=T                               # altimeter
+laltcor=T                              # altimeter data correction
+lsarinv=F                              # SAR inversion
+lsaras=F                               # SAR
+#endif
 #.
 #.define file storage directory, as needed for output destination
+##################################################################
 #.
 export STORAGE_PATH=$WDIR
+#.
 #.
 #. define fbd server on vpp-700
 #. ============================
 #
-#.export FDB_CONFIG_FILE=/vpp700/mrfs/fdb/FDbConfig_vpp700
-export FDB_ROOT=/vpp700/fdb48
+export FDB_ROOT=/vpp700/fdb4c
 export FDB_CONFIG_MODE=async
-export FDB_SERVER_HOST=vpp700-x18
+export FDB_SERVER_HOST=vpp700-x4c
 export FDB_SIGNALS=no
 export FDB_DEBUG=no
 #.
-cfdb2dsp=$FDB_ROOT                      # fdb for 2d spectra.
-cfdbsf=$FDB_ROOT                        # fdb for scalar fields.
-#.
-#
 # ====================================================================
 # DEFINE PRECISION OF REALS (SINGLE or DOUBLE).
 # FORCE REMAKE OF LIBWAM (default NO).
 # =====================================================================
 #.
 export PRECISION=DOUBLE
-export REMAKE=NO
+export REMAKE=YES
 #.
 #.======================
 #.  Define libraries.
 #.======================
 #.
-aux=/home/rd/rdx/lib/18r3/libifsaux.a
-dum=/home/rd/rdx/lib/18r3/libdummy.a
-WAMLIB=libwam
 LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:$LIBS
 wam=$LIBS/$WAMLIB.a
-FDBLIB=-lifsio
 #.
 #.     END OF    USER DEPENDENT SETTINGS:
 #.
 #.
 if [ $PRECISION = SINGLE ] ; then
-  export rp=-AD
-  libselect -r 32 -d 64
-  MPLIB=/opt/tools/lib/libmp2x.a
-  MPELIB=/usr/local/lib/libmpe32.a
-  #. !!!! MPELIB is selected for 32 bit real !!!!!!
-  #################################################
+#. not currently used
+  exit 1
 elif [ $PRECISION = DOUBLE ] ; then
   libselect -r 64
   export rp=-Ad
-  MPLIB=/opt/tools/lib/libmp2x.a
-  MPELIB=/usr/local/lib/libmpe2.a
-  #. !!!! MPELIB is selected for 64 bit real !!!!!!
-  #################################################
+#.
+#.the ECMWF message passing interface is part of auxiliary ifs library 
+#.We use the defaults version corresponding to the extracted cycle
+#.(see ifs_cycle)
+#.If you are using WAM outside ECMWF you will need to get the
+#.appropriate version.
+  mpllib=/vpp700/rdx_dir04/xroot_rd/lib/${ifs_cycle}/libifsaux.a
+#. Associated to the mpl routines are the MPI libraries
+  mpilib=/usr/lang/mpi2/lib/libmpi.a
+  mp2lib=/opt/tools/lib/libmp2.2.1x.a
+#.The library EMOSLIB is used for coding and decoding data in GRIB and BUFR
+ emoslib=$EMOSLIB
+#.The library ECLIB is used for the routine syminv and date and time
+#.operations
+ eclib=$ECLIB
+#.The library FDBLIB is used for writing grib data to the ECMWF field data
+#.base 
+ fdblib=$FDBLIB
+#.NAGLIB and LAPACKLIB and BLASLIB are only used by code specific 
+#.to SAR assimilation and to insure everything compile on VPP
+#.The SAR assimilation software should not be used since it was not
+#.yet operational.
+ naglib=$NAGLIB
+ lapacklib=/usr/local/lib/liblapack.a
+ blaslib=/usr/local/lib/libblas.a
+#. CVPLIB is only needed because the vpp will not load without a definition
+#. for routines
+ cvplib=/usr/lang/lib/libcvp.a
+#.
 else
   ls -lsa
   print - "\n\n\t\tPRECISION $PRECISION not valid\n\n"

@@ -1,7 +1,10 @@
-      SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     &                     IREAD)
+      SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                     ROAIRO, ZIDLOLD,
+     &                     NSTART,NEND, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
+
+!     S. ABDALLA   ECMWF      OCTOBER 2001  AIR DENSITY & Zi/L
 
 !*    PURPOSE.
 !     --------
@@ -15,7 +18,9 @@
 !     *THWOLD*    WIND DIRECTION (RADIANS).
 !     *USOLD*     FRICTION VELOCITY.
 !     *TAUW*      WAVE STRESS.
-!     *Z0OLD*     ROUGHNESS LENGTH IN.
+!     *Z0OLD*     ROUGHNESS LENGTH IN M.
+!     *ROAIRO*    AIR DENSITY IN KG/M3.
+!     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -57,12 +62,14 @@
 
 ! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
+     &                                  ROAIRO, ZIDLOLD 
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
       REAL,ALLOCATABLE,DIMENSION(:,:) :: RU10OLD,RTHWOLD,RUSOLD,
      &                                   RZ0OLD,RTAUW
+     &                                  ,RADOLD, RZIDLOLD
 
       ZERO = ' '
 
@@ -83,7 +90,9 @@
         IBUFLENGTH=48+1
 
         ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
-     &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO))
+     &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO)
+     &                    ,RADOLD(NIBLO,NBLO),RZIDLOLD(NIBLO,NBLO)
+     &                                       )
 
         ALLOCATE(IBUF(IBUFLENGTH))
 
@@ -93,7 +102,8 @@
 
           IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
             CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &        NEND(NPROC))
+     &                       RADOLD, RZIDLOLD, 
+     &                       NEND(NPROC))
 
           ELSE
             IF (LPBIOIN) THEN
@@ -108,7 +118,7 @@
             ENDIF
 
             CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &        FILENAME)
+     &                      RADOLD,RZIDLOLD,FILENAME)
 
           ENDIF
 
@@ -190,6 +200,11 @@
         CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZ0OLD)
         KTAG=KTAG+1
 
+        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RADOLD)
+        KTAG=KTAG+1
+        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZIDLOLD)
+        KTAG=KTAG+1
+
         IF (ITEST.GE.2)
      &   WRITE(IU06,*)
      &   'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
@@ -202,10 +217,14 @@
             USOLD(IJ,IG)=RUSOLD(IJ,IG)
             TAUW(IJ,IG)=RTAUW(IJ,IG)
             Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
+
+            ROAIRO(IJ,IG)=RADOLD(IJ,IG)
+            ZIDLOLD(IJ,IG)=RZIDLOLD(IJ,IG)
           ENDDO
         ENDDO
 
-        DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF)
+        DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF,
+     &             RADOLD,RZIDLOLD)
 
       ELSE
 
@@ -216,9 +235,11 @@
         ENDIF
 
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
-          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NIBLO)
+          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                     ROAIRO,ZIDLOLD,NIBLO)
         ELSE
-          CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,FILENAME)
+          CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                    ROAIRO,ZIDLOLD,FILENAME)
         ENDIF
 
       ENDIF

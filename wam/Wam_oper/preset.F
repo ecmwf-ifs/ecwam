@@ -121,13 +121,15 @@
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,SWAMPWIND,CLDOMAIN
-      USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS
+      USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,
+     &            ROAIR
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
-     &            USOLD    ,Z0OLD    ,TAUW     ,FL1
+     &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
+     &            ROAIRO   ,ZIDLOLD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
@@ -157,7 +159,15 @@
 
 ! DIMENSION DUMMY COUPLED VARIABLES
 
-      INTEGER IUGB(1),IVGB(1)
+      INTEGER, PARAMETER :: NC=1
+      INTEGER, PARAMETER :: NR=1
+      INTEGER, PARAMETER :: NGPTOTG=NC*NR
+      INTEGER, PARAMETER :: NFIELDS=1
+
+! ----------------------------------------------------------------------
+
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
 
 ! ----------------------------------------------------------------------
 
@@ -327,18 +337,11 @@
 
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
-      IF(LGRIBIN.OR.LGRIBOUT) THEN
-        CALL SETWGRIBHD
-      ENDIF
+      CALL SETWGRIBHD
 ! ----------------------------------------------------------------------
 
 !*    4. PRINTER PROTOCOL OF INPUT.
 !        --------------------------
-
-      WRITE (IU06,'(" PROGRAM PRESET:", / , "
-     & WAM Cycle4 Release9 CI 4 (common with IFS CY21)
-     &    CC=wam_wab_CY19R2_modules", /,
-     & "  USER INPUT:" )')
 
       WRITE (IU06,'(A70)') HEADER
       WRITE (IU06,'('' MODEL OPTIONS  :'',/)')
@@ -478,16 +481,22 @@
         IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
         IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
         IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
+        IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
+        IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
         U10OLD = 0.
         THWOLD = 0.
         USOLD = 0.
         TAUW = 0.
         Z0OLD = 0.
+        ROAIRO = ROAIR      
+        ZIDLOLD = 0.
       ENDIF
 
       IF (.NOT.LGRIBIN.AND.IOPTI.GT.0) THEN
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &   IUGB, IVGB, ILEN)
+     &                ROAIRO, ZIDLOLD,
+     &                NFIELDS, NGPTOTG, NC, NR,
+     &                ISEC1, ISEC2, FIELDS)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSEIF (LGRIBIN) THEN
@@ -561,8 +570,8 @@
 
 !     STRESS RELATED FIELDS :
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     &                 CDATEA,CDATEA)
+        CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+     &                 ZIDLOLD,NSTART,NEND,CDATEA,CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
         IF (.NOT.LPBIOOUT)
      &     CALL GSFILE (IU06, IU15, 0, CDATEA, CDATEA, 'LAW', 'S')
@@ -605,6 +614,8 @@
       IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
       IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
       IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
+      IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
+      IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
       IF(ALLOCATED(FL1)) DEALLOCATE(FL1)
       IF(ALLOCATED(NSTART)) DEALLOCATE(NSTART)
       IF(ALLOCATED(NEND)) DEALLOCATE(NEND)

@@ -9,6 +9,10 @@
 !     J.BIDLOT        ECMWF         APRIL 2000 ADD f-5 TAIL WHEN
 !                                   UPDATED SPECTRUM SWIFTS TO LOWER
 !                                   FREQUENCIES
+!     J.BIDLOT        ECMWF         CHECK IF UPDATED SPECTRUM IS 
+!                                   IN AGREEMENT WITH ENERGY INCREMENT.
+!                                   DO NOT ALLOW ANY UPDATES FOR THE
+!                                   VERY LOW FREQUENCIES.
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -62,14 +66,14 @@
 
 !-----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,FRATIO
       USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
 ! ----------------------------------------------------------------------
 
-	  INTEGER :: M1(NFRE)
+      INTEGER :: M1(NFRE)
       REAL :: F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NINF:NSUP) :: ETA, FMWFG, FMWA
 !cc note ETFG corresponds to EMEAN which is module yowmean in UPDATE
@@ -78,10 +82,18 @@
 
       REAL :: XL11
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
+      REAL :: ESPFG(IJS:IJL), ESPFG_1D(IJS:IJL) 
+      REAL :: DELLOW(IJS:IJL), DELHIGH(IJS:IJL) 
 
 ! ----------------------------------------------------------------------
 
       XL11 = LOG(FRATIO)
+
+      IF(NFRE.EQ.30) THEN
+         NFREINF=4
+      ELSE
+         NFREINF=2
+      ENDIF
 
       DO M=1,NFRE                                               
         DFRE(M) = FR(M)*(FRATIO-1.)
@@ -107,10 +119,31 @@
 !*          THE SPECTRUM IS MAINLY WINDSEA.
             XR(IJ) = (HNEW/HOLD)**2*FOLD/FNEW
             XB(IJ) = FOLD/FNEW
-            ENDIF
           ENDIF
+
+          DELET=ABS(ETA(IJ)-ETFG(IJ))
+          DELLOW(IJ)=0.8*DELET
+          DELHIGH(IJ)=1.2*DELET 
+        ENDIF
       ENDDO
 
+      DO IJ=IJS,IJL                                                
+        ESPFG(IJ)=0.
+      ENDDO
+
+      DO M=NFREINF,NFRE
+        DO IJ=IJS,IJL                                                
+          ESPFG_1D(IJ)=0.
+        ENDDO
+        DO K=1,NANG
+          DO IJ=IJS,IJL                                                
+            ESPFG_1D(IJ)=ESPFG_1D(IJ)+F(IJ,K,M)
+          ENDDO
+        ENDDO
+        DO IJ=IJS,IJL                                                
+          ESPFG(IJ)=ESPFG(IJ)+DFIM(M)*ESPFG_1D(IJ)
+        ENDDO
+      ENDDO
 
       DO IJ=IJS,IJL                                                
 
@@ -118,14 +151,20 @@
 
         IF (ETFG(IJ).GT.0.001.AND.ETA(IJ).GT.0.001) THEN
 
+          DO K=1,NANG
+            DO M=NFREINF,NFRE
+              IF(F(IJ,K,M).EQ.FLMIN) F(IJ,K,M) = 0.
+            ENDDO
+          ENDDO
+
 !*        LOOP OVER NEW FREQUENCIES.
 
-          DO M=1,NFRE
+          DO M=NFREINF,NFRE
             FU(M) = FR(M)*XB(IJ)
             M1(M) = INT(LOG(FU(M)/FR(1))/XL11)+1
           ENDDO
 
-          DO M=1,NFRE
+          DO M=NFREINF,NFRE
 
             IF (M1(M).GE.NFRE) THEN
 !             A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
@@ -143,24 +182,37 @@
               ENDDO
 
             ELSE
+              WEIGHT=(FU(M)-FR(M1(M)))/DFRE(M1(M))
               DO K=1,NANG
                 F1 = F(IJ,K,M1(M))
                 F2 = F(IJ,K,M1(M)+1)
-                DE = (F2-F1)/DFRE(M1(M)) * (FU(M)-FR(M1(M)))
-                FTEMP(K,M) = XR(IJ)*MAX(0.,F1+DE)
+                DE = (F2-F1)*WEIGHT
+                FTEMP(K,M) = MAX(XR(IJ)*(F1+DE),FLMIN)
               ENDDO
             ENDIF
 
           ENDDO
 
-!*       THE UPDATED SPECTRUM IS STORED.
-
-          DO K=1,NANG
-            DO M=1,NFRE
-              F(IJ,K,M) = FTEMP(K,M)
+!*        THE UPDATED SPECTRUM IS STORED. (provided it agrees with
+!                                          the energy increment)
+          ESPAN=0.
+          DO M=NFREINF,NFRE
+            ESPAN_1D=0.
+            DO K=1,NANG
+              ESPAN_1D=ESPAN_1D+FTEMP(K,M) 
             ENDDO
+            ESPAN=ESPAN+DFIM(M)*ESPAN_1D
           ENDDO
 
+          IF(ABS(ESPAN-ESPFG(IJ)).LT.DELHIGH(IJ) .AND.
+     &       ABS(ESPAN-ESPFG(IJ)).GT.DELLOW(IJ) ) THEN
+            DO K=1,NANG
+              DO M=NFREINF,NFRE
+                F(IJ,K,M) = FTEMP(K,M)
+              ENDDO
+            ENDDO
+          ENDIF
+   
         ENDIF
       ENDDO
 

@@ -1,4 +1,4 @@
-      SUBROUTINE WAMASSI(BETAG,NLONW,NLATW,LDSTOP,LDWRRE)
+      SUBROUTINE WAMASSI(LDSTOP,LDWRRE)
 
 ! ----------------------------------------------------------------------
 
@@ -12,6 +12,8 @@
 !      J. BIDLOT       ECMWF     MARCH   1997  ADD SAVSTRESS AND SAVSPEC
 !      B. HANSEN       ECMWF     APRIL   1997  SIGNAL HANDLING.
 !      B. HANSEN       ECMWF     JANUARY 1998  1.1 OUTSOURCED.
+!      S. ABDALLA      ECMWF     OCTOBER 2000 INCLUDE AIR DENSITY & Zi/L
+!                                             CALL OUTBETA MOVED TO WAVEMDL
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -23,11 +25,7 @@
 !*    INTERFACE.                                                        
 !     ----------                                                        
 
-!     *CALL* *WAMASSI(BETAG,NLONW,NLATW,LDSTOP,LDWRRE)
-!        *BETAG*     REAL      CHARNOCK PARAMETER TO BE PASSED BACK TO
-!                              THE ATMOSPHERIC MODEL
-!        *NLONW*     INTEGER   FIRST DIMENSION OF BETAG
-!        *NLATW*     INTEGER   SECOND DIMENSION OF BETAG
+!     *CALL* *WAMASSI(LDSTOP,LDWRRE)*
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
 
@@ -99,13 +97,15 @@
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,U10NEW   ,U10OLD   ,
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
-     &            Z0OLD    ,TAUW     ,FL1      ,FL2      ,FL3
+     &            Z0OLD    ,TAUW     ,
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
+     &            FL1      ,FL2      ,FL3
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,MARSTYPE ,
-     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS
+     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,LSARINV
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -115,8 +115,6 @@
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
-      REAL BETAG(NLONW,NLATW)
-! ----------------------------------------------------------------------
 
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
 
@@ -125,21 +123,29 @@
      &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       LLFLUSH = .TRUE.
 
-      IF(.NOT.ALLOCATED(WHGTAG)) ALLOCATE(WHGTAG(NGX,NGY))
-      IF(.NOT.ALLOCATED(CWHTAG)) ALLOCATE(CWHTAG(NGX,NGY))
-      IF(.NOT.ALLOCATED(RANGAG)) ALLOCATE(RANGAG(NGX,NGY))
+      IF(.NOT.ALLOCATED(WHGTAG) .AND. IRANK.EQ.IPFGTBL(22))
+     &  ALLOCATE(WHGTAG(NGX,NGY))
+      IF(.NOT.ALLOCATED(CWHTAG) .AND. IRANK.EQ.IPFGTBL(23))
+     &  ALLOCATE(CWHTAG(NGX,NGY))
+      IF(.NOT.ALLOCATED(RANGAG) .AND. IRANK.EQ.IPFGTBL(24))
+     &  ALLOCATE(RANGAG(NGX,NGY))
 
 !     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
 !        ------------------------------------------
 
-      IF(LALTAS) THEN
-        CALL ALTAS
-        IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: ALTAS DONE'
+      IF(LSARINV) THEN
+        CALL SARINVERT
+        IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: SARINVERT DONE'
       ENDIF
 
       IF(LSARAS) THEN
         CALL SARAS
         IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: SARAS DONE'
+      ENDIF
+
+      IF(LALTAS) THEN
+        CALL ALTAS
+        IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: ALTAS DONE'
       ENDIF
 
 
@@ -179,6 +185,8 @@
           U10NEW(IJ) = U10OLD(IJ,IG)
           THWNEW(IJ) = THWOLD(IJ,IG)
           USNEW(IJ) = USOLD(IJ,IG)
+          ROAIRN(IJ) = ROAIRO(IJ,IG)
+          ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
         ENDDO
 
 
@@ -204,13 +212,6 @@
               WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
             ENDIF
           ENDIF
-        ENDIF
-
-!       UPDATING THE CHARNOCK PARAMETER FIELD.
-!       -------------------------------------
-        IF(LWCOU) THEN
-          CALL OUTBETA ( IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
-     &     NSTART, NEND, BETAG, NLONW, NLATW)
         ENDIF
 
 !     BRANCHING BACK TO 2.1 FOR NEXT BLOCK OF LATITUDES
@@ -304,8 +305,8 @@
      &        LDWRRE) THEN
 
             IF ( .NOT.LGRIBOUT ) THEN
-              CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,NEND,
-     &                       CDTPRO,CDATEF)
+              CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+     &                       ZIDLOLD,NSTART,NEND,CDTPRO,CDATEF)
             ENDIF
 
           ENDIF
@@ -380,7 +381,7 @@
       IF (LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. (
      &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
         ISTAT = IFLUSHFDB (MFDBSF)
-        WRITE(IU06,*) ' DB ', MFDBSF , ' FLUSHED AT ',
+        WRITE(IU06,*) '   DB ', MFDBSF , ' FLUSHED AT ',
      &    CDTPRO, ' FROM WAMASSI. '
         CALL FLUSH (IU06)
       ENDIF

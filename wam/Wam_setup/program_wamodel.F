@@ -1,21 +1,23 @@
 #ifdef JOB
 #.
-#. THIS JOB EXECUTES THE SUBROUTINE VERSION OF THE WAMODEL,
-#. DRIVEN BY WINDS REQUESTED FROM MARS.
+#. THIS SCRIPT EXECUTES THE WAMODEL,
+#.
+#. All necessary input initial data and forcing wind fields
+#. must have been retrieved before hand with the preset task
+#. All grid informations and tables must also have been created with
+#. task preproc.
+#. 
 #.
 #QSUB -r wamodel
 #QSUB -q vpp700.normal
-#QSUB -lP 1
-# # #QSUB -a "tomorrow 4:00am"
-#######QSUB -lt 2500
-########QSUB -lT 3000
-#QSUB -lt 500
-#QSUB -lT 500
-#QSUB -lM 500mb
-# # #QSUB -lM 1000mb
+#QSUB -lPv 8
+#QSUB -lt 1000
+#QSUB -lT 1000
+#QSUB -lM 700mb
 #QSUB -eo
 #QSUB -mb -mi
-#QSUB
+#QSUB -lV 10Mb
+#QSUB -ls 100Mb
 #.
 ######################################################################
 #.
@@ -24,32 +26,35 @@ trap '{ echo "Signal SIGHUP received and trapped" ; }' 1
 trap '{ echo "Signal SIGINT received and trapped" ; }' 2
 set +v
 #.
-#.   Specify whether grib spectra are provided at input and output
+#.   Specify whether grib spectra are provided at input (see preset)
 #.
 lgribin=T
+#.
+#.   Specify whether spectra are output in grib format (or binary) 
+#.
 lgribout=T
-
+#.
+#.   Specify whether output is directed to the FDB or to files.
+#.   when lfdb=F then grib output of integrated parameters will end up in
+#.   fort.30 and the grib spectra in SGSYYYYMMDDHH00 in directory specified
+#.   by $STORAGE_PATH. In the case of binary file outputs, the integrated
+#.   will end up in fort.20 and the restart files (stress and spectra) in
+#.   LAWYYYYMMDDHH00 and BLSYYYYMMDDHH00 in directory specified by
+#.   $STORAGE_PATH.
+#.   If lfdb=T you also need to specify FDB_ROOT (see below)
+#.
+lfdb=F
 #.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.   Specify whether input grib CD file is NOT provided
-#.   It should only be the case for cold start !!!!!!!!!!!!!!!
+#.   It should only be the case for cold start (i.e. when preset has created
+#.   the spectra) 
 #.
-lnocdin=T
+lnocdin=F
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#.   specify whether the altimeter data will be corrected
-#. The following setting applies to ers2 data only !!!!
-#.
-laltcor=T
-laltlrgr=F
-hscoefcor=1.
-hsconscor=0.
 
 #.
-#.=====================================================================
-#.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
-#.  COMMONLY FOR ALL JOBS.
-#.=====================================================================
-#.
+#include "wkstation_vpp_share.h"
 #include "path.h"
 #.
 # move to working directiory
@@ -70,85 +75,6 @@ if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
 else
   ln -s $ADIR/gridglou_${grid} fort.7
 fi
-#if region=='s'
-#.
-#. THE SWAMP CASE DOES NOT NEED EXTERNAL WINDS.
-#.
-#else
-#.
-#.
-#if iceedge=='y'
-#.check if SST file does exist
-#.
-if [[ ! -r $ADIR/kelv${begofrn}_${grid} ]] ; then
-  print - "\n\n\t\t NO SURFACE TEMPS , NOTHING IS DONE \n\n"
-  exit 2
-else
-  ln -s $ADIR/kelv${begofrn}_${grid} sfctempin
-fi
-#endif
-#.
-# ALTIMETER DATA IF NEEDED
-############################
-if [[ $ASSIMILATION = "YES" ]] ; then
-  AS=1
-  #
-  if [[ $begofrn = $endofrn && $begofrn = $begoffo ]] ; then
-    ANALYSIS_DATE=$(substring $begofrn 1 10)
-  else
-    ANALYSIS_DATE=$(substring $begofrn 1 10)
-    ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
-  fi
-
-  LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
-  #
-  until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
-
-    if [[ $laltas = "T" ]] ; then
-      if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
-        print - "\n\n\t\t ALTIMETER DATA NOT ONLINE  \n\n"
-        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-        exit 3
-      else
-        ln -s ${ADIR}/RFL${ANALYSIS_DATE}00 .
-      fi
-    fi
-
-    if [[ $lsaras = "T" ]] ; then
-      if [[ !  -r ${ADIR}/INV${ANALYSIS_DATE}00 ]] ; then
-        print - "\n\n\t\t SAR DATA NOT ONLINE  \n\n"
-        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-        exit 3
-      else
-        ln -s ${ADIR}/INV${ANALYSIS_DATE}00 . 
-      fi
-    fi
-
-    ANALYSIS_DATE=`newdate ${ANALYSIS_DATE} 6`
-  done
-else
-  AS=0
-fi
-#.
-# SURFACE WINDS
-################
-wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
-if [[ ! -r $WDIR/$wind_filename ]] ; then
-  print - "\n\n\t\tWIND DATA NOT ONLINE\n\n"
-  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-  exit 4
-else
-  ln -s $WDIR/$wind_filename sfcwindin
-  print - "\n\n\t\tSTART WAVE MODEL \n\n"
-fi
-#endif
-#.
-#.
-#.=====================================================================
-#.  WAVE MODEL execution.
-#.=====================================================================
-#.
-#. Common UBUF.
 #.
 if [[ ! -r $ADIR/ubufglou_${grid} ]] ; then
   print - "\n\n\t\tPREPROC file ubufglou was not found\n\n"
@@ -158,14 +84,6 @@ else
   ln -s $ADIR/ubufglou_${grid} fort.8 
 fi
 #.
-#. Coarse grid output points, if this is a coarse grid run.
-#.
-#. assign -a $ADIR/bouccatu_${grid} fort.9
-#.
-#. Fine grid input points, if this is a fine grid run.
-#.
-#. assign -a $ADIR/boufcatu_${grid} fort.10
-#.
 #.======================================================================
 #. GET RESTART FILES
 #.======================================================================
@@ -173,12 +91,14 @@ fi
 #. on disk in directory $WDIR and $ADIR
 #.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.
-# Get last wind.
-################
+# Get last stress.
+##################
 #.
 if [[ $lgribin != "T" ]] ; then
+  #. if binary files are used as input
   if [[ -r $WDIR/LAW${begofrn}00 ]] ; then
     ln -s $WDIR/LAW${begofrn}00 LAW${begofrn}00 
+    ln -s $WDIR/LAW${begofrn}00 fort.15
   else
     ls -lsa
     print - "LAW"${begofrn}"00 file was not found"
@@ -186,6 +106,7 @@ if [[ $lgribin != "T" ]] ; then
     exit 5
   fi
 else
+  #. if grib files are used as input
   if [[  -r $ADIR/CD${begofrn}_${grid} ]] ; then
     ln -s $ADIR/CD${begofrn}_${grid} cdwavein
   elif [[ $lnocdin = "T" ]] ; then
@@ -203,9 +124,18 @@ else
   fi
   if [[  -r $ADIR/U10${begofrn}_${grid} ]] ; then
     ln -s $ADIR/U10${begofrn}_${grid} uwavein
+  elif [[ $lnocdin = "T" ]] ; then
+    print - "##################################################"
+    print - " "
+    print - "the program should start wihtout an input CD file"
+    print - "as none is provided !!!!!"
+    print - " "
+    print - "##################################################"
   else
-    print - "U10"${begofrn}" file was not found"
-    print - "\n\n\t\tPROGRAM will continue as this can happen\n\n"
+    ls -lsa
+    print - "U10"${begofrn}_${grid}" file was not found"
+    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+    exit 5
   fi
 fi
 #.
@@ -213,8 +143,10 @@ fi
 #######################
 #.
 if [[ $lgribin != "T" ]] ; then
+  #. if binary files are used as input
   if [[ -r $WDIR/BLS${begofrn}00 ]] ; then
     ln -s $WDIR/BLS${begofrn}00 BLS${begofrn}00 
+    ln -s $WDIR/BLS${begofrn}00 fort.12
   else
     ls -ls
     print - "BLS"${begofrn}"00 file was not found"
@@ -222,6 +154,7 @@ if [[ $lgribin != "T" ]] ; then
     exit 7
   fi
 else
+  #. if grib files are used as input
   if [[ -r $WDIR/SGS${begofrn}00 ]] ; then
     ln -s $WDIR/SGS${begofrn}00 specwavein 
   else
@@ -232,13 +165,51 @@ else
   fi
 fi
 #.
+#.=====================================================================
+# SURFACE WINDS
+#.=====================================================================
 #.
+#if region=='s'
+#.
+#. THE SWAMP CASE DOES NOT NEED EXTERNAL WINDS.
+#.
+#else
+#.
+wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
+if [[ ! -r $WDIR/$wind_filename ]] ; then
+  print - "\n\n\t\tWIND DATA NOT ONLINE\n\n"
+  print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+  exit 4
+else
+  ln -s $WDIR/$wind_filename sfcwindin
+  print - "\n\n\t\tSTART WAVE MODEL \n\n"
+fi
+#endif
+#.
+
+#if iceedge=='y'
+#.=====================================================================
+# SST for sea ice mask 
+#.=====================================================================
+#.check if SST file does exist
+#.
+if [[ ! -r $ADIR/SSTDATA${begofrn}_${grid} ]] ; then
+  print - "\n\n\t\t NO SURFACE TEMPS , NOTHING IS DONE \n\n"
+  exit 2
+else
+  ln -s $ADIR/SSTDATA${begofrn}_${grid} sfctempin
+fi
+#endif
 #.
 #.
 #.======================================================================
 #. load the WAM MODEL.
 #.======================================================================
 #.
+#. copy library from workstation
+
+cp $WKLIBS/$WAMLIB.a $LIBS/$WAMLIB.a
+
 if [[ ! -r $LIBS/$WAMLIB.a ]] ; then
   print - "\n\n\t\tWAMLIB file was not found\n\n"
   print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
@@ -247,24 +218,18 @@ fi
 #.
 #. LOAD LIBRARY
 #.
-#!!! the use of ifssig.o is specific to ECMWF. Please refer to the source
-#!!! and comments out its use.
-ar vx $aux ifssig.o
-#!!! the use of ishell.o is specific to ECMWF. Please refer to the source
-#!!! and replace its use by call to fortran 90 SYSTEM.
-ar vx $dum ishell.o
-#
 ar xv $LIBS/$WAMLIB.a chief.o
 #.
 frtcnt=$(cat frtcnt)
 if [ $frtcnt = 0 -a -f $BIN/chief -a "$REMAKE" != YES  ] ; then
   print - WAM Model ready
 else
+#.
   frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
-    -o $BIN/chief  chief.o ishell.o ifssig.o \
+    -o $BIN/chief  chief.o \
      -lwam  \
-     $ECLIB $EMOSLIB $FDBLIB $NAGLIB  \
-     -Wl,-dy -lsocket $MPELIB  $MPLIB || {
+     ${mpllib} ${emoslib} ${eclib} ${fdblib} ${naglib} ${lapacklib} \
+     -Wl,-dy -lsocket ${blaslib} ${mpilib} ${cvplib} ${mp2lib} || {
     #.
     #. Check return code.
     #.
@@ -276,18 +241,17 @@ else
 fi
 #.
 ls -ltr
-###if [[ $NPES -ne 4 && $NPES -ne 8 && $NPES -ne 16 && $NPES -ne 24 ]] ; then
-###  print - "\n\n\t\tWAVE MODEL IS COMPILED. NOW SET THE -lP TO 4, 8, 16 or 24 AND SUBMIT AGAIN\n\n"
-###  cd $WDIR
-###  \rm -rf $WORKDIR
-###  exit
-###else
-  print - "\n\n\t\tWAVE MODEL WILL START\n\n"
-###fi
 #.
+#. !!! the model is run in WORKDIR !!!
 cd ${WDIR}/${WORKDIR}
 #.
-#. User input file
+#. User input file (SEE SUBROUTINE USERIN FOR A DESCRIPTION OF THE NAMELISTS)
+#.
+if [[ $lgribout != "T" ]] ; then
+  lfdbioout=F
+else
+  lfdbioout=$lfdb
+fi
 #.
 cat > fort.3 << EOD
 #if region=='s'
@@ -301,8 +265,6 @@ cat > fort.3 << EOD
 #else
 #if resolution == 150
 #include "input_wamodel_rglobal150.F"
-#elif resolution == 100
-#include "input_wamodel_rglobal50.F"
 #elif resolution == 50
 #include "input_wamodel_rglobal50.F"
 #else
@@ -315,29 +277,8 @@ EOD
 #.
 #. Increase size of the mail box.
 #.
-# specify mail box size:
-VPP_MBX_SIZE=16000000 ; export VPP_MBX_SIZE
-#.
-#. Need to define those 2 variables for PARALLEL profiling : 
-#. and link with /usr/local/lib/libmp_hybrid.a
-#####VPP_STATS=8 ; export VPP_STATS 
-#####VPP_DETAIL=-1 ; export VPP_DETAIL
-
-### for SERIAL profiling, define the following 2 lines before running
-### the excecutable
-###FJSAMP=file:data1,type:vtime,routine:system
-###export FJSAMP
-### then after the run excecute fjsamp $BIN/chief
-
-#.
-if [[ $lgribin != "T" ]] ; then
-  #modify runtime buffers
-  #######################
-  fu12bf=4096 ; export fu12bf
-  fu15bf=344 ; export fu15bf
-  fu63bf=524 ; export fu63bf
-  fu90bf=53 ; export fu90bf
-fi
+# specify mail box size (for message passing):
+VPP_MBX_SIZE=64000000 ; export VPP_MBX_SIZE
 #.
 $BIN/chief 1> stdout 2>stderr || {
   #.

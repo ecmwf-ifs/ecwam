@@ -1,9 +1,8 @@
       SUBROUTINE AVOIDPEAKS( 
 !                   DIMENSIONS
-     &                 NSPEC, MGAP ,NGAP, MPART, NANG, NFRE,
+     &                 NSPEC,ISPECS,ISPECE,MGAP,NGAP,MPART,NANG,NFRE,
 !                   INPUT 
      &                 SPEC ,
-     &                 NPEAK , PEAKANG , PEAKFRE ,
 !                   ARRAYS TO BE ADJUSTED
      &                 LANG, HANG , LFRE , HFRE )
 
@@ -32,21 +31,17 @@
 
 !     INTERFACE:
 !     ----------
-      INTEGER NSPEC, MGAP, NGAP(NSPEC), MPART, NANG, NFRE
+      INTEGER :: NGAP(ISPECS:ISPECE)
+      INTEGER NSPEC, ISPECS, ISPECE, MGAP, MPART, NANG, NFRE
 !                 DIMENSIONS.
       REAL SPEC(0:NSPEC,NANG,NFRE)
 !                 2D SPECTRUM.
-      INTEGER LANG(NSPEC,MGAP), 
-     &        HANG(NSPEC,MGAP),
-     &        LFRE(NSPEC,MGAP),
-     &        HFRE(NSPEC,MGAP)
+      INTEGER LANG(ISPECS:ISPECE,MGAP), 
+     &        HANG(ISPECS:ISPECE,MGAP),
+     &        LFRE(ISPECS:ISPECE,MGAP),
+     &        HFRE(ISPECS:ISPECE,MGAP)
 !                 THE LEFT LOWER AND RIGHT UPPER CORNER OF THE FRAME
 !                 IN ANG AND FRE, WILL BE ADJUSTED.
-      INTEGER NPEAK(NSPEC)
-!                 NUMBER OF PEAKS
-      INTEGER PEAKANG(NSPEC,MPART),
-     &        PEAKFRE(NSPEC,MPART)
-!                 THE DIRECTIONAL AND FREQUENCY INDICES OF THE PEAK
  
 !     LOCAL  VARIABLES:
 !     -----------------
@@ -55,6 +50,8 @@
 !                  LOOP INDICES.
       INTEGER IANGP1, IANGM1, IFREP1, IFREM1
 !                  LOOP INDICES + OR - 1
+!     LOWER AND UPPER LIMIT ON FIRST DIMENSION POINTINF TO NUMBER OF 
+!     SPECTRA.
       REAL SPEC0
 !                  TEMPORARY STORAGE
 !-------------------------------------------------------------------
@@ -62,7 +59,7 @@
 !     IF PEAK FOUND IN FRAME BOUNDARY MOVED TO PEAK.
 !     ----------------------------------------------
 
-      DO ISPEC=1,NSPEC
+      DO ISPEC=ISPECS ,ISPECE
         DO IGAP=1,NGAP(ISPEC)
           DO IANG=LANG(ISPEC,IGAP),HANG(ISPEC,IGAP)
             DO IFRE=LFRE(ISPEC,IGAP),HFRE(ISPEC,IGAP)

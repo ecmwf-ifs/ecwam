@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (IJS, IJL, IG, FETCH, FPMAX,U10OLD)
+      SUBROUTINE PEAK (IJS, IJL, IG, FETCH, FPMAX, U10OLD)
 
 ! ----------------------------------------------------------------------
 
@@ -51,7 +51,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWJONS  , ONLY : FP       ,ALPHJ
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,
+     &            FP       ,ALPHJ
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G
@@ -64,12 +65,6 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER  (A = 2.84, B = 0.033, D = -(3./10.), E = 2./3.)
-
-!           FETCH LAW CONSTANTS.
-
-! ----------------------------------------------------------------------
-
 !*    1. COMPUTE VALUES FROM FETCH LAWS.
 !        -------------------------------
 
@@ -79,10 +74,10 @@
           U10 = U10OLD(IJ,IG)
           GXU = GX/(U10*U10)
           UG = G/U10
-          FP(IJ) = A * GXU ** D
+          FP(IJ) = AJONS * GXU ** DJONS
           FP(IJ) = MAX(0.13, FP(IJ))
           FP(IJ) = MIN(FP(IJ), FPMAX/UG)
-          ALPHJ(IJ) = B * FP(IJ)** E
+          ALPHJ(IJ) = BJONS * FP(IJ)** EJONS
           ALPHJ(IJ) = MAX(ALPHJ(IJ), 0.0081)
           FP(IJ) = FP(IJ)*UG
         ELSE

@@ -2,7 +2,7 @@
 !                    DIMENSIONS
      &                 NSPEC , MPART , NPARTW ,NANG , NFRE ,
 !                    INPUT/OUTPUT
-     &                 SPECW , 
+     &                 SPECW , NW1D, 
 !                    WORK SPACE
      &                 SPECT , 
 !                    INPUT
@@ -33,6 +33,9 @@
 
       USE YOWFRED  , ONLY : DELTH
       USE YOWGAP   , ONLY : GAPVAL 
+      USE YOWGRID  , ONLY : IJS      ,IJL
+      USE YOWSPEC,   ONLY : FL1
+      USE YOWMPP   , ONLY : NINF     ,NSUP
 
 !-------------------------------------------------------------------
 
@@ -47,6 +50,9 @@
      &     SPECT(NSPEC,NANG,NFRE)
 !                   WAM SPECTRM BEFORE AND AFTER CORRECTION 
 !                   AND WORK SPACE.
+
+      INTEGER :: NW1D(NINF-1:NSUP,1)
+
       INTEGER PARTW(NSPEC,NANG,NFRE)
 !                   ASSIGNMENT OF A PARTITIONING NUMBER TO EACH 
 !                   DIRECTIONAL-FREQUENCY BIN.
@@ -76,7 +82,7 @@
 !     LOCAL VARIABLES:
 !     ----------------
 
-      INTEGER ISPEC, IPARTW, IPARTS, IANG, IFRE
+      INTEGER ISPEC, IPARTW, IPARTS, IANG, IFRE, JP, JBL
 !                    LOOP INDICES.
       INTEGER JANG, JANGP1, JFRE, JFREP1
 !                    GRIDPOINT INDICES AFTER INTERPOLATED
@@ -130,11 +136,22 @@
 !     IN ONE STEP AND ADD THEM TO ARRAY SPECT:
 !     ------------------------------------------------------------
 
+!     restore the unsmoothed model spectra
+!!!  will not work if multi block !!!
+      JBL=1
+      DO JANG = 1,NANG
+        DO JFRE = 1,NFRE
+          DO JP = IJS(JBL),IJL(JBL)
+            IF(NW1D(JP,JBL).GT.0) THEN
+              SPECW(NW1D(JP,JBL),JANG,JFRE)=FL1(JP,JANG,JFRE)
+            ENDIF
+          ENDDO
+        END DO
+      END DO
+
       DO JANG = 1,NANG
         DO JFRE = 1,NFRE
           DO ISPEC = 1,NSPEC
-            SPECW(ISPEC,JANG,JFRE) = MAX(SPECW(ISPEC,JANG,JFRE),
-     &                                   0.1e-15)
             SPECT(ISPEC,JANG,JFRE) = GAPVAL
           END DO
         END DO
@@ -198,6 +215,11 @@
           END DO
         END DO
       END DO
+
+!     ADD UNASSIGNED SAR PARTITIONS
+!     -----------------------------
+
+!!    no longer in use
 
       RETURN
 

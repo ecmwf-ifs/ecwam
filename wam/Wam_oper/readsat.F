@@ -1,5 +1,6 @@
-      SUBROUTINE READSAT (IU06, IUME, CDTPRO,
-     &                    CDATE, RLAT, RLON, SWH, WS, flagged, EOFD)
+      SUBROUTINE READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
+     &                    CDATE, RLAT, RLON, IDES_HS, SWH,
+     &                    IDES_WS, WS, FLAGGED, EOFD)
 
 !--------------------------------------------------------------------
 
@@ -16,15 +17,18 @@
 !**   INTERFACE.
 !     ----------
 
-!      *CALL* *READSAT (IU06, CDTPRO, CDATE, RLAT, RLON, SWH, WS, EOFD)*
-
 !          *IU06*     - PRINTER UNIT.
 !          *IUME*     - INPUT UNIT FOR MEASUREMENTS.
 !          *CDTPRO*   - MODEL TIME (YYYYMMDDHHMM).
+!          *IDENTI*   - SATELLITE IDENTIFIER.
+!          *ISENSOR*  - SENSOR IDENTIFIER.
 !          *CDATE*    - DATE OF MEASUREMENT (YYYYMMDDHHMMSS).
+!          *IDENTI*   - SATELLITE IDENTIFIER.
 !          *RLAT*     - LATITUDE OF MEASUREMENT (DEGREE).
 !          *RLON*     - LONGITUDE OF MEASUREMENT (DEGREES).
+!          *IDES_HS*  - DATA DESCRIPTOR FOR WAVE HEIGHT.
 !          *SWH*      - WAVE HEIGHT.
+!          *IDES_WS*  - DATA DESCRIPTOR FOR WIND SPEED.
 !          *WS*       - WIND SPEED.
 !          *FLAGGED*  - DATA QC-FLAG (.F.: PASSEDQC, .T.:REJECTED BY QC)
 !          *EOFD*     - END OF DATA. (.TRUE. , .FALSE.)
@@ -146,9 +150,13 @@
      &                                (iflag(j),j=1,jpflan)
       ENDIF
 
+      identi = INT(pvalu(1))
+      isensor = INT(pvalu(3))
       rlat = pvalu(10)
       rlon = pvalu(11)
+      ides_ws = 11012
       ws   = pvalu(13)
+      ides_hs = 22021
       swh  = pvalu(15)
       ifl=0
       DO j=1,jpflan

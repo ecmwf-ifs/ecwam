@@ -48,7 +48,7 @@
 !                  WORK SPACE.
       REAL FR(NFRE)
 !                  TABLE OF FREQUENCIES.
-      LOGICAL CONTROL
+      LOGICAL CONTROL, LALLOUTPUT
       INTEGER IU06
 
 !     LOCAL VARIABLES:
@@ -58,9 +58,11 @@
 
 !-----------------------------------------------------------------------
 
+      LALLOUTPUT = .FALSE.
+
       IF( IPART.EQ.JPART ) RETURN
 
-      IF( CONTROL )THEN
+      IF( CONTROL .AND. LALLOUTPUT )THEN
         WRITE(IU06,*) ' COMBINING IN SPECTRA NUMBER ',ISPEC,' THE PEAKS'
         WRITE(IU06,'(''  FREQUENCY='',E8.2,'' ANGLE='',I3)')
      &      FR(PEAKFRE(ISPEC,IPART)),

@@ -99,8 +99,8 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,FR5      ,FRM5     ,COFRM4   ,
-     &             COEF4
+      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,FR5      ,
+     &             FRM5     ,COFRM4   ,COEF4
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG 
@@ -177,6 +177,12 @@
             TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
           ENDDO
         ENDDO
+      ENDDO
+
+!     DEFINE COEFFICIENT FOR MEAN PERIOD (-1) CALCULATION
+      ALLOCATE(DFIMOFR(NFRE))
+      DO M=1,NFRE
+        DFIMOFR(M) = DFIM(M)/FR(M)
       ENDDO
 
 !     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH

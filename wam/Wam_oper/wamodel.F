@@ -1,4 +1,4 @@
-      SUBROUTINE WAMODEL (NADV, BETAG, NLONW, NLATW, LDSTOP, LDWRRE)
+      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 ! ----------------------------------------------------------------------
 
@@ -85,6 +85,8 @@
 !     B. HANSEN ECMWF MARCH 1997  SIGNAL HANDLING.
 !          LDSTOP* - SET .TRUE. IF STOP SIGNAL RECEIVED.
 !          LDWRRE* - SET .TRUE. IF RESTART SIGNAL RECEIVED.
+!     S. ABDALLA  ECMWF  OCTOBER 2000  INCLUDE AIR DENSITY & Zi/L
+!                                      & CALL OUTBETA MOVED TO WAVEMDL
 
 !SHALLOW
 !          DIFFERENCES FOR SHALLOW WATER RUNS TO DEEP WATER RUNS
@@ -109,13 +111,11 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WAMODEL (NADV,BETAG,NLONW,NLATW)
+!     *CALL* *WAMODEL (NADV, LDSTOP, LDWRRE)*
 !        *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                              PER CALL OF WAMODEL, OUTPUT PARAMETER.
-!        *BETAG*     REAL      CHARNOCK PARAMETER TO BE PASSED BACK TO
-!                              THE ATMOSPHERIC MODEL
-!        *NLONW*     INTEGER   FIRST DIMENSION OF BETAG
-!        *NLATW*     INTEGER   SECOND DIMENSION OF BETAG
+!        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
+!        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
 
 !     METHOD.
 !     -------
@@ -323,6 +323,7 @@
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
@@ -345,8 +346,6 @@
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
 
-! ----------------------------------------------------------------------
-      REAL BETAG(NLONW,NLATW)
 ! ----------------------------------------------------------------------
 
 !*    *ADDITIONAL PARAMETERS FOR MULTITASKING
@@ -391,6 +390,8 @@
             U10NEW(IJ) = U10OLD(IJ,IG)
             THWNEW(IJ) = THWOLD(IJ,IG)
             USNEW(IJ) = USOLD(IJ,IG)
+            ROAIRN(IJ) = ROAIRO(IJ,IG)
+            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
           ENDDO
 
           IF (IGH1.EQ.IG) THEN
@@ -484,10 +485,10 @@
         IF(ALLOCATED(WDIRTG)) DEALLOCATE(WDIRTG)
         IF(ALLOCATED(WPKFTG)) DEALLOCATE(WPKFTG)
         IF(ALLOCATED(WMNFTG)) DEALLOCATE(WMNFTG)
-        IF(.NOT.LANAONLY.AND.ALLOCATED(USTARG)) DEALLOCATE(USTARG)
+        IF(ALLOCATED(USTARG)) DEALLOCATE(USTARG)
         IF(ALLOCATED(UDIRG)) DEALLOCATE(UDIRG)
         IF(ALLOCATED(TAUWG)) DEALLOCATE(TAUWG)
-        IF(.NOT.LANAONLY.AND.ALLOCATED(CDG)) DEALLOCATE(CDG)
+        IF(ALLOCATED(CDG)) DEALLOCATE(CDG)
         IF(ALLOCATED(SMEANG)) DEALLOCATE(SMEANG)
         IF(ALLOCATED(U10G)) DEALLOCATE(U10G)
 
@@ -663,7 +664,8 @@
 !             -------------------------------
 
           CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDATE,CDATEWH,
-     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW)
+     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW
+     &               , ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW)
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
@@ -704,8 +706,9 @@
                 ENDIF
               ENDIF
               CALL IMPLSCH (FL3, FL1, IJS(IG), IJL(IG), IG,
-     &                      THWOLD,USOLD,TAUW,Z0OLD,
-     &                      U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &                      THWOLD,USOLD,TAUW,Z0OLD,   ROAIRO,ZIDLOLD,
+     &                      U10NEW,THWNEW,USNEW,Z0NEW, ROAIRN,ZIDLNEW,
+     &                      SL,FCONST)
 
               IF (ITEST.GE.2) THEN
                 WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED' 
@@ -756,11 +759,15 @@
             IF(IGH1.NE.IG) THEN
               CALL PHYS (FL3,FL1,FL4,IJS(IG),IJL(IG),IG,NSIZE,NWORK,
      &                   CDATE, CDTPRA,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &                   ROAIRO, ZIDLOLD,
+     &                   U10NEW,THWNEW,USNEW,Z0NEW,
+     &                   ROAIRN, ZIDLNEW, SL,FCONST)
             ELSE
               CALL PHYS (FL3,FL2,FL4,IJS(IG),IJL(IG),IG,NSIZE, NWORK,
      &                   CDATE, CDTPRA,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &                   ROAIRO, ZIDLOLD,
+     &                   U10NEW,THWNEW,USNEW,Z0NEW,
+     &                   ROAIRN, ZIDLNEW, SL,FCONST)
             ENDIF
 
             DO JROC=1,NTASKS-1
@@ -775,7 +782,8 @@
 !             -------------------------------
 
           CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDATE,CDATEWH,
-     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW)
+     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,
+     &                                 U10NEW,THWNEW,ROAIRN,ZIDLNEW)
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: CLOSEND CALLED' 
@@ -868,12 +876,12 @@
             ENDIF
           ENDIF
 
-          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
+!!          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
 !!!!      specific to running WAM at ECMWF, it can be ignored when
 !!!!      WAM is not run at ECMWF.
-            CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
-          ENDIF
+!!            CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
+!!          ENDIF
 
           IF(LDWRRE) THEN
             WRITE(IU06,*) ' '
@@ -931,16 +939,6 @@
             ENDIF
           ENDIF
 
-
-!*    1.5.11 STORE CHARNOCK CONSTANT FOR ATMOSPHERIC MODEL.
-!            ----------------------------------------------
-
-          IF(LWCOU.AND.(KADV.EQ.NADV)) THEN
-            CALL OUTBETA (IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
-     &                    NSTART, NEND, BETAG, NLONW, NLATW)
-          ENDIF
-
-
 !*    BRANCHING BACK TO 1.5 FOR NEXT BLOCK OF LATITUDES
 
         ENDDO BLOCK
@@ -953,6 +951,12 @@
             DO K=1,NANG
               DO IJ=NINF-1,NSUP
                 FL1(IJ,K,M) = FL3(IJ,K,M)
+!!!   note in case of Alt and SAR assimilation both FL1 and FL3
+!!!   are needed since FL1 will be first modified by the altimeter
+!!!   data assimilation and FL3 is needed to keep the fisrt guess
+!!!   (unaltered by the alt data assimilation) for the calcualtion
+!!!   of the difference between SAR data and model values
+!!!   (see rearrangsar)
               ENDDO
             ENDDO
           ENDDO
@@ -988,10 +992,10 @@
      &  THEN
           IF(IASSI.NE.1) THEN
             IF(ALLOCATED(WHGTTG)) DEALLOCATE(WHGTTG)
-            IF(ALLOCATED(USTARG)) DEALLOCATE(USTARG)
-            IF(ALLOCATED(CDG)) DEALLOCATE(CDG)
           ENDIF
 
+          IF(ALLOCATED(USTARG)) DEALLOCATE(USTARG)
+          IF(ALLOCATED(CDG)) DEALLOCATE(CDG)
           IF(ALLOCATED(WDIRTG)) DEALLOCATE(WDIRTG)
           IF(ALLOCATED(WPKFTG)) DEALLOCATE(WPKFTG)
           IF(ALLOCATED(WMNFTG)) DEALLOCATE(WMNFTG)
@@ -1131,8 +1135,8 @@ C
      &       (LDWRRE)) THEN
 
               IF ( .NOT.LGRIBOUT ) THEN
-                CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NSTART,
-     &                         NEND,CDTPRO,CDATEF)
+                CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+     &                         ZIDLOLD,NSTART,NEND,CDTPRO,CDATEF)
               ENDIF
 
             ENDIF

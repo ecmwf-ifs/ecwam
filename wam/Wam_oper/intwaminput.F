@@ -88,12 +88,12 @@
 
 ! ----------------------------------------------------------------------
 
+      IU06 = 6
+      IU07 = 7
+
       WRITE(IU06,*) ' INTWAMINPUT STARTED '
 
       CALL INIWCST
-
-      IU06 = 6
-      IU07 = 7
 
 !     1.1 INITIALISATION OF VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------

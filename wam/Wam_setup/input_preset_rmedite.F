@@ -14,12 +14,10 @@
  CDATEA    = "$begofrn"
  IDELWI    =  21600
  CLTUNIT   = "S"
- LPBIOOUT  =  T
- LFDBIOOUT =  F
  LGRIBIN   =  F
  LGRIBOUT  =  T 
+ LPBIOOUT  =  F
  MARSTYPE  = "an"
  YCLASS    = "$CLASS"
  YEXPVER   = "$expver"
- CFDB2DSP  = "$cfdb2dsp"
  /

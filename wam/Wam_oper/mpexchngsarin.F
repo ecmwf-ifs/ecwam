@@ -37,7 +37,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,IGSAR    ,IJSAR    ,
-     &            LONG     ,LAT      ,U10      ,THW
+     &            LONG     ,LAT      ,U10      ,USSAR    ,THW
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -54,7 +54,7 @@
       ELSE
 !     1.1 SEND TO ALL OTHER PROCESSORS 
 !         -----------------------------
-        MZC=1+NSPECPE*(7+NANG*NFRE)
+        MZC=1+NSPECPE*(8+NANG*NFRE)
         ALLOCATE(ZCOMBUF(MZC))
 
         KCOUNT=1
@@ -73,6 +73,8 @@
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=U10(ISPECPE(ISPEC)) 
           KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=USSAR(ISPECPE(ISPEC)) 
+          KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=THW(ISPECPE(ISPEC)) 
           DO IFRE = 1,NFRE
             DO IANG = 1,NANG
@@ -89,7 +91,7 @@
 
 !     1.2 RECEIVE CONTRIBUTION TO THE FIELDS FROM ALL OTHER PE'S
 !         ------------------------------------------------------
-        MZC=1+NSPEC*(7+NANG*NFRE)
+        MZC=1+NSPEC*(8+NANG*NFRE)
         ALLOCATE(ZCOMBUF(MZC))
 
         DO IP=1,NPROC-1
@@ -113,6 +115,8 @@
             LAT(KSPECPE,1)=ZCOMBUF(KCOUNT)
             KCOUNT=KCOUNT+1
             U10(KSPECPE)=ZCOMBUF(KCOUNT)
+            KCOUNT=KCOUNT+1
+            USSAR(KSPECPE)=ZCOMBUF(KCOUNT)
             KCOUNT=KCOUNT+1
             THW(KSPECPE)=ZCOMBUF(KCOUNT)
             DO IFRE = 1,NFRE

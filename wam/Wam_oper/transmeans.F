@@ -20,8 +20,8 @@
 !     MODULE :
 !     --------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,
-     &           SINTH     ,FRTAIL   ,WETAIL
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
+     &           COSTH    ,SINTH     ,FRTAIL   ,WETAIL
       USE YOWPCONS , ONLY : EPSMIN
 
 !-------------------------------------------------------------------
@@ -46,7 +46,7 @@
 
       INTEGER ISPEC, IANG, IFRE
 !                     LOOP VARIABLES.
-      REAL FACTOR
+      REAL :: FACTOR
 
 !-------------------------------------------------------------------
 !     INITIALIZE:
@@ -126,9 +126,8 @@
             SUM0(ISPEC) = SUM0(ISPEC) + SPECW(ISPEC,IANG,IFRE)
           END DO
         END DO
-        FACTOR = DFIM(IFRE) / FR(IFRE)
         DO ISPEC = 1,NSPEC
-          MEANTFRE(ISPEC) = MEANTFRE(ISPEC) + FACTOR * SUM0(ISPEC)
+          MEANTFRE(ISPEC) = MEANTFRE(ISPEC) + DFIMOFR(IFRE)*SUM0(ISPEC)
         END DO
       END DO
 

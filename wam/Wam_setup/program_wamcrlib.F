@@ -1,33 +1,40 @@
 #ifdef JOB
 #.
 #. This version of WAM was extracted from the ECMWF software data base
-#. from cycle 22R1 (June 2000).
+#. from branch wam_${VERSION}
 #.
 #.
-#. CREATES THE WAVE MODEL LIBRARY (WAMLIB)
-#QSUB -q vpp700.normal
+#. THIS IS USED TO CREATE THE WAVE MODEL LIBRARY (libwam.a)
+#. using the VPP crosscompiler on workstation
+#. Note that you will need to have available (i.e already compiled)
+#. the modules from the MPL library (see ifsaux). In this job,
+#. we assume that we can use those that were already created for
+#. the default cycle (see ifs_cycle)
+#.
+#QSUB -q normal
 #QSUB -eo
 #QSUB -r WAMLIB
 #QSUB -lt 1000
-#QSUB -lP 0
 #QSUB -lV 20mb
 #QSUB -lM 64mb
-#QSUB -mb -mi
+#QSUB -s  /bin/ksh
+#QSUB -me
 #QSUB
-
 #.
 PATH=$PATH:.
 set -v
 set -e
 #.
-#include "path.h"
+#include "wkstation_vpp_share.h"
 #.
-cd $LIBS
+mkdir $WKLIBS || true
+cd $WKLIBS
 mkdir tmp$$
 cd tmp$$
 #.
 cat >WAMLIB.src <<\EOFPRO
 #endif
+#include "/cc/rd/wam/module/yowaltas.F"
 #include "/cc/rd/wam/module/yowcard.F"
 #include "/cc/rd/wam/module/yowcbou.F"
 #include "/cc/rd/wam/module/yowcinp.F"
@@ -37,11 +44,12 @@ cat >WAMLIB.src <<\EOFPRO
 #include "/cc/rd/wam/module/yowcpbo.F"
 #include "/cc/rd/wam/module/yowcurg.F"
 #include "/cc/rd/wam/module/yowcurr.F"
+#include "/cc/rd/wam/module/yowdes.F"
 #include "/cc/rd/wam/module/yowfbou.F"
 #include "/cc/rd/wam/module/yowfpbo.F"
 #include "/cc/rd/wam/module/yowfred.F"
-#include "/cc/rd/wam/module/yowgribhd.F"
 #include "/cc/rd/wam/module/yowgap.F"
+#include "/cc/rd/wam/module/yowgribhd.F"
 #include "/cc/rd/wam/module/yowgrid.F"
 #include "/cc/rd/wam/module/yowice.F"
 #include "/cc/rd/wam/module/yowindn.F"
@@ -58,8 +66,8 @@ cat >WAMLIB.src <<\EOFPRO
 #include "/cc/rd/wam/module/yowpcons.F"
 #include "/cc/rd/wam/module/yowprproc.F"
 #include "/cc/rd/wam/module/yowrefd.F"
-#include "/cc/rd/wam/module/yowshal.F"
 #include "/cc/rd/wam/module/yowsaras.F"
+#include "/cc/rd/wam/module/yowshal.F"
 #include "/cc/rd/wam/module/yowspec.F"
 #include "/cc/rd/wam/module/yowstat.F"
 #include "/cc/rd/wam/module/yowswel.F"
@@ -109,6 +117,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "fillgaps.F"
 #include "findb.F"
 #include "fld2fdb.F"
+#include "fldinter.F"
 #include "fustar.F"
 #include "fwsea.F"
 #include "gapinterpol.F"
@@ -130,6 +139,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "implsch.F"
 #include "incdate.F"
 #include "incint.F"
+#include "initialint.F"
 #include "initmdl.F"
 #include "iniwcst.F"
 #include "inmars.F"
@@ -139,8 +149,11 @@ cat >WAMLIB.src <<\EOFPRO
 #include "intmars.F"
 #include "intpol.F"
 #include "intspec.F"
+#include "intwaminput.F"
 #include "ispoff.F"
 #include "jafu.F"
+#include "jonswap.F"
+#include "kgribsize.F"
 #include "lasttwobins.F"
 #include "llalloc_grdfld.F"
 #include "loc2glo.F"
@@ -163,6 +176,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "micep.F"
 #include "mintf.F"
 #include "mnintw.F"
+#include "mpabort.F"
 #include "mpbcastgrdfld.F"
 #include "mpbcastgrid.F"
 #include "mpbcastintfld.F"
@@ -207,6 +221,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "outpp.F"
 #include "outspp.F"
 #include "outubuf.F"
+#include "outwaminput.F"
 #include "outwnorm.F"
 #include "outxt.F"
 #include "packi.F"
@@ -258,6 +273,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "setmat.F"
 #include "sinput.F"
 #include "skewness.F"
+#include "smoothsarspec.F"
 #include "snonlin.F"
 #include "spec2fdb.F"
 #include "spectra.F"
@@ -285,6 +301,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "u10cor.F"
 #include "uiprep.F"
 #include "update.F"
+#include "updatewd.F"
 #include "upwspec.F"
 #include "userin.F"
 #include "vmin.F"
@@ -306,11 +323,46 @@ cat >WAMLIB.src <<\EOFPRO
 #include "wvalloc.F"
 #include "wvdealloc.F"
 #include "wdirspread.F"
+#include "wstream_strg.F"
 #include "../Alt/i_get_unit.F"
 #include "../Alt/uraopc.F"
+#include "../Sar/accuwa.F"
+#include "../Sar/aftfft.F"
+#include "../Sar/calibra.F"
+#include "../Sar/chasar.F"
+#include "../Sar/chpar.F"
+#include "../Sar/compoutpar.F"
+#include "../Sar/costp.F"
+#include "../Sar/fftsub.F"
+#include "../Sar/fimagep.F"
+#include "../Sar/findbb.F"
+#include "../Sar/fttok.F"
+#include "../Sar/fullmap.F"
+#include "../Sar/getsarpar.F"
+#include "../Sar/iners1.F"
+#include "../Sar/isoplot.F"
+#include "../Sar/mpgathersarinv.F"
+#include "../Sar/newspec.F"
+#include "../Sar/prepfft.F"
+#include "../Sar/rarmtf.F"
+#include "../Sar/readwsp.F"
+#include "../Sar/sarinv.F"
+#include "../Sar/sarinvert.F"
+#include "../Sar/sarpc.F"
+#include "../Sar/sarpol.F"
+#include "../Sar/select.F"
+#include "../Sar/subs_check.F"
+#include "../Sar/usage_sar.F"
+#include "../Sar/uwaror.F"
+#include "../Sar/vbmtf.F"
+#include "../Sar/waven.F"
+#include "../Sar/wrires.F"
+#include "../Sar/wtail.F"
+
 #ifdef JOB
 EOFPRO
 #.
+######################################################################
 #.create utility which will be used to split the source code into its
 #.components
 ######################################################################
@@ -319,91 +371,58 @@ cat > f90split.f90 <<EOF
 #include "/cc/rd/wam/Wam_setup/f90split.f90"
 EOF
 #.
-frt -o f90split f90split.f90
+f90 -o f90split f90split.f90
 #.
 #.
 ./f90split < WAMLIB.src
-if [ -f WAMINFOT.f -a -f WRITSTA.f ] ; then
-  cat WAMINFOT.f >> WRITSTA.f
-fi
+rm -f f90split.f90 f90split
 #.
 #.
 # COMPILE SOURCE CODE
 #####################
 #.
 [ ! -d tmp ] && mkdir tmp
-[ -f ${LIBS}/$WAMLIB.f.tar ] && {
-  cp ${LIBS}/$WAMLIB.f.tar $WAMLIB.f.tar
-  cd tmp
-  tar xf ../$WAMLIB.f.tar
-  cd ..
-}
 #.
-[ -f ${LIBS}/$WAMLIB.a ] && {
-  cp ${LIBS}/$WAMLIB.a $WAMLIB.a
-  [ ! -d wamlib_tmp ] && mkdir wamlib_tmp
-  cd wamlib_tmp
-  ar x ../$WAMLIB.a
-  mv yow* ..
-  cd ..
-  \rm -rf wamlib_tmp
-}
-#. compile modules
-##################
+#. compile WAM modules
+#######################
+use sgi_vpp
 integer frtcnt
 frtcnt=0
 export frtcnt
 print $frtcnt > frtcnt
-export file WAMLIB
+export file
 for file in $(ls -1 yow*.f) ; do
   (
-  if [ "$REMAKE" != YES ] ; then
-    if [ -f tmp/${file%.f}.fm ] ; then
-      if cmp $file tmp/${file%.f}.fm ] ; then
-        if ar tv ${WAMLIB}.a | grep ${file%.f} ; then
-          exit
-        fi
-      fi
-    fi
-  fi
-  frt $rp -Of -M. -Wv,-Of -Pos -Z ${file%.f}.l -X9   -c $file
+  frtpx -CcdRR8 -Karraystack1 -AoQm -Oe,-e,-u,-p -Pstao -Wv,-m3 -X9 -c -v9 -M. -AD -Z ${file%.f}.l -c $file
   (( frtcnt += 1))
   print $frtcnt > frtcnt
   )
   mv $file ${file%.f}.fm
 done
 #.
-# compile regular fortran file
+#. Get MPL modules
+###################
+#. !!! we will need the module definition for the MPL routines
+#. !!! we assumed that they were compiled by default. If you are using this
+#. !!! outside ECMWF you need to get the mpl software (i.e. the ECMWF
+#. !!! interface to the message passing software (MPI,...)).
+#.
+export file ifs_cycle
+for file in $(ls -1 /cc/rd/module/frt/${ifs_cycle}/ifsaux/) ; do
+   cp /cc/rd/module/frt/${ifs_cycle}/ifsaux/${file} .
+done
+
+#.
+#.compile regular fortran file
 ##############################
 i=0
-export file WAMLIB
+export file
 for file in $(ls -1 *.f) ; do
-  (
-  if [ "$REMAKE" != YES ] ; then
-    if [ -f tmp/$file ] ; then
-      if cmp $file tmp/$file ; then
-        if ar tv ${WAMLIB}.a | grep ${file%.f}.o ; then
-          exit
-        fi
-      fi
-    fi
-  fi
-  if [   $file = spec2fdb.f  -a $rp = "-Ad" ] ; then
-    rp="-CcdRR8"
-  elif [   $file = getspec.f  -a $rp = "-Ad" ] ; then
-    rp="-CcdRR8"
-  else
-    rp=$rp
-  fi
-  frt $rp -Of -M. -Wv,-Of -Pos -Z ${file%.f}.l -X9  -c -o ${file%.f}.o ${file}
-  )&
-  (( i += 1 ))
-  [[ $i -gt 5 ]] && {
-    i=0
-    wait
-  }
+  frtpx -CcdRR8 -Karraystack1 -AoQm -Oe,-e,-u,-p -Pstao -Wv,-m3 -X9 -c -v9  -M. -AD -Z ${file%.f}.l -c -o ${file%.f}.o ${file}
 done
-wait
+#. View compile listing
+cat *.l
+
 print - "compile done"
 #.
 #. BUILD LIBRARY
@@ -411,28 +430,26 @@ print - "compile done"
 #.
 if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
   for file in $(ls -1 yow*.fm) ; do
-    ar rv ${LIBS}/$WAMLIB.a ${file%.fm}
+    ar rv ${WKLIBS}/${WAMLIB}.a ${file%.fm}.mod
   done
-  ar rv ${LIBS}/$WAMLIB.a *.o 
+  ar rv ${WKLIBS}/${WAMLIB}.a *.o 
 fi
 #.
-if [[ -f ${LIBS}/$WAMLIB.l.tar ]] ; then
-  tar uf ${LIBS}/$WAMLIB.l.tar *.l
+if [[ -f ${WKLIBS}/${WAMLIB}.l.tar ]] ; then
+  tar uf ${WKLIBS}/${WAMLIB}.l.tar *.l
 else
-  tar cf ${LIBS}/$WAMLIB.l.tar *.l
+  tar cf ${WKLIBS}/${WAMLIB}.l.tar *.l
 fi
 
-tar cf ${LIBS}/$WAMLIB.f.tar *.f
-tar uf ${LIBS}/$WAMLIB.f.tar *.fm
+tar cf ${WKLIBS}/${WAMLIB}.f.tar *.f
+tar uf ${WKLIBS}/${WAMLIB}.f.tar *.fm
 
-chmod go+rx ${LIBS}/$WAMLIB.*
+chmod go+rx ${WKLIBS}/${WAMLIB}.*
 #.
 ls -la
 #.
 #.
 #.
-cat *.l
-
 cd ..
 \rm -rf tmp$$
 

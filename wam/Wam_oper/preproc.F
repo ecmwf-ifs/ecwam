@@ -120,7 +120,6 @@
 !     EXTERNALS.
 !     ----------
 
-!       *ABORT1*    - TERMINATES PROCESSING.
 !       *ADJUST*    - CORRECTS LONGITUDE INPUT.
 !       *AKI*       - COMPUTES WAVE NUMBER.
 !       *CHECK*     - CHECKS CONSISTENCY OF BLOCK OVERLAPS.
@@ -194,7 +193,7 @@
       IU01  = 1
       IU02  = 2
       IU03  = 3
-      IU05  = 5
+      IU05  = 4
       IU06  = 6
       IU07  = 7
       IU08  = 8

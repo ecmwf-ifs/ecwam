@@ -1,4 +1,4 @@
-      SUBROUTINE UPDATE (F, ETOI, USOI, USMO, THMO, IJS, IJL)           
+      SUBROUTINE UPDATE (F, ETOI, USMO, THMO, IJS, IJL)           
 
 ! ----------------------------------------------------------------------
 
@@ -16,12 +16,11 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!       *CALL* *UPDATE (F, ETOI, USOI, USMO, THMO, IJS, IJL)*           
+!       *CALL* *UPDATE (F, ETOI, USMO, THMO, IJS, IJL)*           
 
 !         *F*       REAL      SPECTRUM ( FIRST GUESS IN INPUT ;         
 !                             ANALYSIS IN OUTPUT ).                     
 !         *ETOI*    REAL      WAVE ENERGY (FROM O.I.).                  
-!         *USOI*    REAL      USTAR ( FROM O.I.).                       
 !         *USMO*    REAL      USTAR ( FIRST GUESS IN INPUT ;            
 !                             ANALYSIS IN OUTPUT ).                     
 !         *THMO*    REAL      WIND DIRECTION.                           
@@ -50,9 +49,9 @@
 
       LOGICAL :: LLEPSMIN
       DIMENSION F(NINF-1:NSUP,NANG,NFRE)
-      REAL,DIMENSION(NINF:NSUP) :: ETOI, USOI, USMO, THMO         
+      REAL,DIMENSION(NINF:NSUP) :: ETOI, USMO, THMO         
       REAL,DIMENSION(NINF:NSUP) :: EWFG, EWOI, EWA,FMWFG, FMWA,
-     &                             THEW, TDUR, USA
+     &                             TDUR, USA
 
 !       *EWFG*     : WINDSEA ENERGY (FIRST GUESS).                      
 !       *EWOI*     : WINDSEA ENERGY (MEASUREMENT).                      
@@ -61,7 +60,6 @@
 !                    THIS METHOD ).                                     
 !       *FMWFG*    : MEAN FREQUENCY OF THE WINDSEA (FIRST GUESS).       
 !       *FMWA*     : MEAN FREQUENCY OF THE WINDSEA (ANALYSIS).          
-!       *THEW*     : DIRECTION OF THE WINDSEA PEAK (FIRST GUESS).       
 !       *TDUR*     : WINDSEA DURATION.                                  
 !       *USA*      : ESTIMATE OF USTAR FROM THE FIRST GUESS ENERGY.     
 !                    AND DURATION (I.E. ANALYSED USTAR).                
@@ -74,7 +72,7 @@
       LLEPSMIN=.TRUE.
       CALL SEMEAN (F, IJS, IJL, EMEAN(IJS), LLEPSMIN)
 
-      CALL FWSEA (F, EWFG, THEW, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
+      CALL FWSEA (F, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
 
 !*    2. CORRECT OVERESTIMATE OF FIRST GUESS WINDSEA ENERGY.            
 !        ---------------------------------------------------            
@@ -110,13 +108,8 @@
 !*    5. FIND THE NEW USTAR AND THE NEW WINDSEA MEAN FREQUENCY.         
 !        ------------------------------------------------------         
 
-      CALL FUSTAR (USMO, USA, USOI, EWFG, EWOI, EWA, TDUR, FMWA,
-     &             IJS, IJL) 
+      CALL FUSTAR (USMO, USA, EWFG, EWOI, EWA, TDUR, FMWA, IJS, IJL)
 
-      DO IJ=IJS,IJL                                                
-        IF (USA(IJ).GT.0.) USMO(IJ) = USA(IJ)                          
-      ENDDO
-                                                                        
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
      &   ' USTAR COMPUTED IN SUB. FUSTAR'                               
 
@@ -130,26 +123,33 @@
 !          THERE IS NO WINDSEA ->                                       
 !                 EWFG  =  -999.                                        
 !                 FMWFG = -9999.                                        
-!          THE RATIO WINDSEA/SWELL IS NOT CONSISTENT WITH USOI ->       
-!                 EWA   =  -999.                                        
-!                 FMWA  = -9999.                                        
 
       DO IJ=IJS,IJL                                                
-        IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.75*ETOI(IJ)) THEN          
+        IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.6*ETOI(IJ)) THEN          
           EWFG(IJ)  =  -999.                                          
           FMWFG(IJ) = -9999.                                          
         ENDIF                                                         
       ENDDO
 
-!     IF THERE WERE WINDSEA BUT THE RATIO WINDSEA SWELL     
-!     WAS WRONG, DO NOT ASSIMILATE.                                     
 
+!     IF THERE WAS A PROBLEM IN DETERMINING USTAR THEN
+!     NO WINDSEA UPDATE SHOULD BE MADE
       DO IJ=IJS,IJL                                                
-        IF (EWFG(IJ).GT.0. .AND. EWA(IJ).LT.0.) THEN        
-          ETOI(IJ)=-999.                                              
+        IF (USA(IJ).LT.0.) THEN        
+          EWFG(IJ)  =  -999.                                          
+          FMWFG(IJ) = -9999.                                          
         ENDIF                                                          
       ENDDO
 
+!     UPDATE USTAR ONLY WHEN THE MEAN WINDSEA FREQUENCY AND
+!     ANALYSED WAVE ENERGY ARE POSITIVE
+!     I.E. WHEN THE UPDATE ON SPECTRA WILL ASSUME IT IS MAINLY WINDSEA
+
+      DO IJ=IJS,IJL
+        IF (USA(IJ).GT.0. .AND. FMWFG(IJ) .GT. 0. .AND.
+     &      ETOI(IJ) .GT. 0.) USMO(IJ) = USA(IJ)
+      ENDDO
+                                                                        
 ! ----------------------------------------------------------------------
 
 !*    7. UPDATE THE SPECTRA.                                            

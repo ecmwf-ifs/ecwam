@@ -11,6 +11,8 @@
 !     J. BIDLOT            ECMWF       APRIL 97 ADD ZDELATM TO CALL TO
 !                                               WAVEMDL
 !     B. HANSEN            ECMWF       APRIL 97 SIGNAL HANDLING.
+!     S. ABDALLA           ECMWF       OCTOBER 2001 MODIFICATION OF THE
+!                                                   CALL TO WAVEMDL
 
 !*    PURPOSE.
 !     --------
@@ -90,6 +92,7 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE MPL_MODULE
 
@@ -101,8 +104,16 @@
 
       INTEGER, PARAMETER:: NLONW=1
       INTEGER, PARAMETER :: NLATW=1
-      INTEGER IUGB(1),IVGB(1)
-      REAL BETAG(NLONW,NLATW), ZDELATM(NLATW)
+      INTEGER, PARAMETER :: NWVFIELDS=1
+      INTEGER, PARAMETER :: NC=1
+      INTEGER, PARAMETER :: NR=1
+      INTEGER, PARAMETER :: NGPTOTG=NC*NR
+      INTEGER, PARAMETER :: NFIELDS=1
+! ----------------------------------------------------------------------
+      REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
+
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
 ! ----------------------------------------------------------------------
 
       INTEGER IINITFDB_VPP
@@ -113,9 +124,6 @@
 
       time0=-wam_user_clock()
       IU06=6
-      WRITE(IU06,'("
-     & WAM Cycle4 (common with IFS CY23R1)
-     &    CC=wam_wab_CY23R1_new_adv_fit")')
 
 !   0.0 GET MACHINE ARCHTECTURE TYPE AND FDB OPTION FLAG
 !       ------------------------------------------------
@@ -233,6 +241,9 @@
      &          Z0OLD(NINF:NSUP,NBLO),Z0NEW(NINF:NSUP),
      &          TAUW(NINF:NSUP,NBLO))
 
+      ALLOCATE (ROAIRN(NINF:NSUP),ROAIRO(NINF:NSUP,NBLO),
+     &          ZIDLNEW(NINF:NSUP),ZIDLOLD(NINF:NSUP,NBLO))
+ 
       ALLOCATE (FL1(NINF-1:NSUP,NANG,NFRE),FL3(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.LMESSPASS) ALLOCATE (FL2(NINF-1:NSUP,NANG,NFRE))
       ALLOCATE (SL(NINF-1:NSUP,NANG,NFRE))
@@ -252,9 +263,11 @@
 !!!!  the call to IFSSIG is specific to signal handling for runs at
 !!!!  ECMWF, it can be commented out for other configuration.
 
-      WRITE(IU06,*) ' INITIALIZE SIGNAL HANDLER on PE ', IRANK 
-      CALL IFSSIG (ISIGHUP, ISIGINT, IRANK)
-      WRITE(IU06,*) ' SIGNAL HANDLER on PE ', IRANK, ' OK'
+      IF(LMESSPASS) THEN
+        WRITE(IU06,*) ' INITIALIZE SIGNAL HANDLER on PE ', IRANK 
+        CALL IFSSIG (ISIGHUP, ISIGINT, IRANK)
+        WRITE(IU06,*) ' SIGNAL HANDLER on PE ', IRANK, ' OK'
+      ENDIF  
 
 !     ------------------------------------------------------------------
 
@@ -277,8 +290,11 @@
 
  20   CONTINUE
 
-      CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, IUGB, IVGB, ILEN,
-     &             BETAG, NLONW, NLATW, LLSTOP, LLWRRE,
+      CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
+     &             NFIELDS, NGPTOTG, NC, NR,
+     &             ISEC1, ISEC2, FIELDS,
+     &             NWVFIELDS, WVFLDG,
+     &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM)
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
@@ -289,6 +305,7 @@
 
       DEALLOCATE (U10OLD,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &            Z0OLD,Z0NEW,TAUW,FL1,FL3,SL,FCONST,
+     &            ROAIRN,ROAIRO,ZIDLNEW,ZIDLOLD,
      &            NSTART,NEND,KLENTOP,KLENBOT)
       IF(ALLOCATED(FL2)) DEALLOCATE(FL2)
 

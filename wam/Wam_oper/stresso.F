@@ -1,4 +1,5 @@
-      SUBROUTINE STRESSO (F,IJS, IJL, IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
+      SUBROUTINE STRESSO (F,IJS, IJL, IG,THWNEW,USNEW,Z0NEW,
+     &                    ROAIRN, TAUW,SL)
 
 ! ----------------------------------------------------------------------
 
@@ -7,6 +8,8 @@
 !     H. GUNTHER      GKSS/ECMWF  NOVEMBER  1989 CODE MOVED FROM SINPUT.
 !     P.A.E.M. JANSSEN      KNMI  AUGUST    1990
 !     J. BIDLOT             ECMWF FEBRUARY  1996-97
+!     S. ABDALLA            ECMWF OCTOBER   2001 INTRODUCTION OF VARIABLE
+!                                                AIR DENSITY
 
 !*    PURPOSE.
 !     --------
@@ -16,18 +19,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STRESSO (F,IJS, IJL, IG,THWNEW,USNEW,Z0NEW,TAUW,SL)*
-!          *F*   - WAVE SPECTRUM.
-!          *IJS* - INDEX OF FIRST GRIDPOINT.
-!          *IJL* - INDEX OF LAST GRIDPOINT.
-!          *IG*  - ACTUAL BLOCK NUMBER.
-!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!      *Z0NEW*     ROUGHNESS LENGTH IN M.
-!      *TAUW*      WAVE STRESS IN (M/S)**2
-!      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
+!       *CALL* *STRESSO (F,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,ROAIRN,TAUW,SL)*
+!         *F*       - WAVE SPECTRUM.
+!         *IJS*     - INDEX OF FIRST GRIDPOINT.
+!         *IJL*     - INDEX OF LAST GRIDPOINT.
+!         *IG*      - ACTUAL BLOCK NUMBER.
+!         *THWNEW*  - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!                     NOTATION (POINTING ANGLE OF WIND VECTOR,
+!                     CLOCKWISE FROM NORTH).
+!         *USNEW*   - NEW FRICTION VELOCITY IN M/S.
+!         *Z0NEW*   - ROUGHNESS LENGTH IN M.
+!         *ROAIRN*  - AIR DENSITY IN KG/M3.
+!         *TAUW*    - WAVE STRESS IN (M/S)**2
+!         *SL*      - TOTAL SOURCE FUNCTION ARRAY.
 
 !     METHOD.
 !     -------
@@ -57,9 +61,9 @@
      &            COSTH    ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,YINVEPS
-      USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,TAUHFT   ,DELUST   ,
-     &            DELALP
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
+      USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,EPS1     ,TAUHFT   ,
+     &            DELUST   ,DELALP
 
 ! ----------------------------------------------------------------------
 
@@ -68,11 +72,12 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,SL
       REAL,DIMENSION(NINF:NSUP,NBLO) :: TAUW
       REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW,Z0NEW
+     &                           , ROAIRN
 
 ! ----------------------------------------------------------------------
 
       DIMENSION CONSTF(NFRE), TAUHF(IJS:IJL), TEMP(IJS:IJL),
-     &          XSTRESS(IJS:IJL), YSTRESS(IJS:IJL)
+     &          XSTRESS(IJS:IJL), YSTRESS(IJS:IJL), UST2(IJS:IJL)
 ! ----------------------------------------------------------------------
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
@@ -81,7 +86,7 @@
       CONST0  = DELTH*(ZPI)**4*FR(NFRE)**5/G**2
 
       DO M=1,NFRE
-        CONSTF(M) =ZPI*YINVEPS*FR(M)*DFIM(M)
+        CONSTF(M) =ZPI*ROWATER*FR(M)*DFIM(M)
       ENDDO
 
 !*    2. COMPUTE WAVE STRESS OF ACTUEL BLOCK.
@@ -104,7 +109,9 @@
           CONST2=CONSTF(M)*COSTH(K)
           DO IJ=IJS,IJL
             XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K,M)*CONST1
+     &                    /MAX(ROAIRN(IJ),1.)
             YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K,M)*CONST2
+     &                    /MAX(ROAIRN(IJ),1.)
           ENDDO
         ENDDO
       ENDDO
@@ -126,6 +133,7 @@
 
       DO IJ=IJS,IJL
         UST   = MAX(USNEW(IJ),0.000001)
+        UST2(IJ) = UST**2
         XI    = UST / DELUST
         XI    = MIN(REAL(IUSTAR),XI)
         I     = MIN (IUSTAR-1, INT(XI))
@@ -133,7 +141,7 @@
         DELI1 = MIN (1. ,XI-REAL(I))
         DELI2   = 1. - DELI1
 
-        XJ    = (G*Z0NEW(IJ)/UST**2-ALPHA) / DELALP
+        XJ    = (G*Z0NEW(IJ)/UST2(IJ)-ALPHA) / DELALP
         XJ    = MIN(REAL(IALPHA),XJ)
         J     = MIN (IALPHA-1, INT(XJ))
         J     = MAX (0, J)
@@ -143,13 +151,16 @@
         TAU1 = (TAUHFT(I,J  )*DELI2 + TAUHFT(I+1,J  )*DELI1)*DELJ2
      &   + (TAUHFT(I,J+1)*DELI2 + TAUHFT(I+1,J+1)*DELI1)*DELJ1
 
-        TAUHF(IJ) = CONST0*TEMP(IJ)*UST**2*TAU1
+        TAUHF(IJ) = CONST0*TEMP(IJ)*UST2(IJ)*TAU1
       ENDDO
 
       DO IJ=IJS,IJL
         XSTRESS(IJ) = XSTRESS(IJ)+TAUHF(IJ)*SIN(THWNEW(IJ))
         YSTRESS(IJ) = YSTRESS(IJ)+TAUHF(IJ)*COS(THWNEW(IJ))
         TAUW(IJ,IG) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
+
+        TAUW(IJ,IG) = MIN(TAUW(IJ,IG),UST2(IJ)-EPS1)
+        TAUW(IJ,IG) = MAX(TAUW(IJ,IG),0.)
       ENDDO
 
       RETURN

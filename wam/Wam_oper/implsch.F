@@ -1,6 +1,7 @@
       SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG,
-     &                    THWOLD,USOLD,TAUW,Z0OLD,
-     &                    U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+     &                    THWOLD,USOLD,TAUW,Z0OLD,   ROAIRO,ZIDLOLD,
+     &                    U10NEW,THWNEW,USNEW,Z0NEW, ROAIRN,ZIDLNEW,
+     &                    SL,FCONST)
 
 ! ----------------------------------------------------------------------
 
@@ -22,6 +23,8 @@
 !     J. BIDLOT ECMWF               FEBRUARY 1997 MESSAGE PASSING
 !     J. BIDLOT ECMWF               FEBRUARY 2001 MODIFY CALLING ORDER
 !                                   BETWEEN SINPUT-STRESSO-AIRSEA
+!     S. ABDALLA       ECMWF        OCTOBER 2001
+!                                   INCLUSION OF AIR DENSITY AND Zi/L.
 
 !*    PURPOSE.
 !     --------
@@ -35,8 +38,9 @@
 !     ----------
 
 !       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
-!    1                    THWOLD,USOLD,TAUW,Z0OLD,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,SL,FCONST)
+!    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+!    3                    SL,FCONST)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -55,6 +59,10 @@
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
 !      *TAUW*      WAVE STRESS IN (M/S)**2
+!      *ROAIRN*    AIR DENSITY IN KG/M3.
+!      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
+!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
 !      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
 !                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
@@ -112,7 +120,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,NCALL
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -122,7 +130,9 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL,FL3,SL
       REAL,DIMENSION(NINF:NSUP,NFRE) :: FCONST 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD,Z0OLD,TAUW
+     &                                , ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW,Z0NEW
+     &                           , ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
@@ -156,10 +166,10 @@
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
 !         --------------------------------
 
-!*    2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
-!           ------------------------------------------------
+!*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
+!             ------------------------------------------------
 
-!!          FL and SL are initialised in sinput
+!!            FL and SL are initialised in sinput
 
       ILEV=1
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
@@ -168,32 +178,30 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
-      
-      DO ICALL=1,NCALL
-      
-!*      2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
-!             -------------------------------------
 
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, SL)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
+!*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
+!           -------------------------------------
 
-        CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW,USNEW,Z0NEW,
+     &             ROAIRN,ZIDLNEW, SL)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
 
-        CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
-     &   IJS, IJL, ILEV)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
-        
-      ENDDO
+      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
+     &              ROAIRN, TAUW,SL)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+     &             IJS, IJL, ILEV)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
@@ -226,8 +234,8 @@
           TEMP(IJ,M) = USNEW(IJ)*FMEAN(IJ)*DELFL(M)
         ENDDO
       ENDDO
-      DO M=1,NFRE
-        DO K=1,NANG
+      DO K=1,NANG
+        DO M=1,NFRE
           DO IJ=IJS,IJL
             GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
@@ -307,13 +315,15 @@
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
 !           --------------------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, SL)
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN,ZIDLNEW, SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
+      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
+     &              ROAIRN, TAUW,SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -334,6 +344,8 @@
       DO IJ=IJS,IJL
         USOLD(IJ,IG) = USNEW(IJ)
         Z0OLD(IJ,IG) = Z0NEW(IJ)
+        ROAIRO(IJ,IG) = ROAIRN(IJ)
+        ZIDLOLD(IJ,IG) = ZIDLNEW(IJ)
       ENDDO
 
 ! ----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #ifdef JOB
 #.
-#. PREPROC TO GENERATE UNFORMATTED INPUT FILE
+#. PREPROC TO GENERATE UNFORMATTED INPUT FILES (bathymetry, grid and tables)
 #. FOR USE BY PRESET and WAMODEL
 #.
 #QSUB -q vpp700.normal
@@ -13,14 +13,10 @@
 #QSUB -mb -mi
 #QSUB
 #.
-######################################################################
-# MAKE USE OF MEMORY RESIDENT FILE SYSTEM for TMPDIR
-TMPDIR=$MRFSDIR
-######################################################################
-#.
 PATH=$PATH:.
 set +v
 #.
+#include "wkstation_vpp_share.h"
 #include "path.h"
 #.
 #.
@@ -50,29 +46,21 @@ cat > fort.1 << EOF
 #include "/cc/rd/wam/Wam_setup/Topographic_data/Global/topoglo_50"
 #endif
 EOF
-#.  ecp ec:$DHSPATH/topoglo2 fort.1
-#.
-#.  CURRENT DATA if refraction option in input is 2.
-#.
-#.ecp ec:$
-#.
-#.  UNFORMATED NEST FILE from coarse grid, if this is a fine grid run.
-#.
-#.ecp ec:$DHSPATH/BOUGLOU_${grid} fort.3
-#.
 #.
 #.========
 #. LOAD
 #.========
 #.
 #.
+#. copy library from workstation
+
+cp $WKLIBS/$WAMLIB.a $LIBS/$WAMLIB.a
+
 if [[ ! -a $LIBS/$WAMLIB.a ]] ; then
-  ecp  ec:$DHSLPATH/$WAMLIB.a $LIBS/$WAMLIB.a || {
-      ls -lsa
-      print - "\n\n\t\tWAMLIB file was not found\n\n"
-      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 2
-  }
+    ls -lsa
+    print - "\n\n\t\tWAMLIB file was not found\n\n"
+    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+    exit 2
 fi
 #.
 #. extract preproc.o
@@ -84,9 +72,9 @@ if [[ ! -a  preproc.o ]] ; then
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
       exit 3
 fi
- 
+#.
 frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  preproc.o -lwam \
-${EMOSLIB} ${ECLIB} ${FDBLIB} ${MPELIB} ${MPLIB} || {
+${mpllib} ${emoslib} ${eclib} ${fdblib} ${mpilib} ${mp2lib} || {
    #.
    #. Check return code.
    #.
@@ -141,40 +129,6 @@ mv fort.7 $ADIR/gridglou_${grid}
 #.  COMMON UBUF.
 #.
 mv fort.8 $ADIR/ubufglou_${grid}
-#.
-#.  COARSE GRID INFORMATION, if this is a coarse grid run.
-#.
-#.cp fort.9 $ADIR/boucglou${grid}
-#.
-#.  FINE GRID INFORMATION, if this is a fine grid run.
-#.
-#.cp fort.10 $ADIR/boufglou$_grid}
-#.
-#.
-#.===================================================================
-#.SAVE BACK-UP FILES IN ECFS 
-#.===================================================================
-#.
-#.  Namelist-file parameter.
-#.
-####ecp -o $ADIR/PARWAM_${grid} ec:$DHSPATH/PARWAM_${grid}
-#.
-#.
-#.  GRID FILE.
-#.
-#####ecp -o $ADIR/gridglou_${grid} ec:$DHSPATH/gridglou_${grid}
-#.
-#.  COMMON UBUF.
-#.
-#####ecp -o $ADIR/ubufglou_${grid} ec:$DHSPATH/ubufglou_${grid}
-#.
-#.  COARSE GRID INFORMATION, if this is a coarse grid run.
-#.
-#.ecp -o $ADIR/boucglou_${grid} ec:$DHSPATH/BOUCGLOU_${grid}
-#.
-#.  FINE GRID INFORMATION, if this is a fine grid run.
-#.
-#.ecp -o $ADIR/boufglou_${grid} ec:$ECPAT1/BOUFGLOU_${grid}
 #.
 #.===================================================================
 #. GRID FILES HAVE BEEN CREATED AND SAVED.

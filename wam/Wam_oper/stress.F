@@ -50,20 +50,18 @@
       USE YOWCOUP  , ONLY : JPLEVC   ,ALPHA    ,XKAPPA   ,XNLEV
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
-     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT
+     &            JPLEVT   ,EPS1     ,UMAX     ,TAUWMAX  ,TAUT     ,
+     &            DELTAUW  ,DELU     ,TAUHFT
 
 ! ----------------------------------------------------------------------
 
       REAL, PARAMETER :: XM=0.50
       INTEGER, PARAMETER :: NITER=10
-      REAL, PARAMETER :: EPS1=0.00001
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
 !      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
-!      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
-!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
 
 ! ----------------------------------------------------------------------
 
@@ -79,8 +77,6 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
-      UMAX    = 50.
-      TAUWMAX = 5.
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 

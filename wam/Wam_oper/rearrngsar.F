@@ -28,11 +28,12 @@
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI
-      USE YOWSPEC,   ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
-     &            FL1      ,FL2
+      USE YOWSPEC,   ONLY : NSTART   ,NEND     ,U10OLD   ,USOLD    ,
+     &            THWOLD   ,FL1      ,FL2
       USE YOWSARAS , ONLY : NSPEC    ,IGSAR    ,IJSAR    ,SPEC     ,
-     &            LONG     ,LAT      ,U10      ,THW
-      USE YOWTEST  , ONLY : IU06
+     &            LONG     ,LAT      ,U10      ,USSAR    ,THW
+      USE YOWSTAT  , ONLY : LALTAS
+      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU11
 
 !----------------------------------------------------------------------
@@ -47,7 +48,7 @@
       REAL, ALLOCATABLE :: FL(:,:)
       REAL :: FTH, ADIF, BDIF
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ISPECPE 
-      INTEGER :: ISPEC, I, K, M, KC, KC1, INC
+      INTEGER :: ISPEC, K, M, KC, KC1, INC
       INTEGER :: JBL,JP,JFRE,JANG,NSPECPE
 
 !     ROTATE INVERTED SAR SPECTRA TO THE FIRST DIRECTION OF WAM (TH0)
@@ -159,7 +160,7 @@
                 LONG(ISPEC,1)=AMOWEP+
      &                        REAL(IXLG(JP,JBL)-1)*ZDELLO(KXLT(JP,JBL))
                 NSPECPE=NSPECPE+1
-                ISPECPE(NSPECPE)=IJSAR(ISPEC)
+                ISPECPE(NSPECPE)=ISPEC
               ENDIF
             ELSE
               DO JFRE=1,NFRE
@@ -177,6 +178,7 @@
 ! REPLACE WINDS FROM SAR INPUT BY MODEL WINDS
 
       ALLOCATE(U10(NSPEC))
+      ALLOCATE(USSAR(NSPEC))
       ALLOCATE(THW(NSPEC))
 
       DO JBL=1,IGL
@@ -184,9 +186,11 @@
           JP=IJSAR(ISPEC)
           IF(IGSAR(ISPEC).EQ.JBL) THEN
             U10(ISPEC) = U10OLD(JP,JBL)
+            USSAR(ISPEC) = USOLD(JP,JBL)
             THW(ISPEC) = THWOLD(JP,JBL)
           ELSE
             U10(ISPEC) = 0.
+            USSAR(ISPEC) = 0.
             THW(ISPEC) = 0.
           ENDIF
         ENDDO
@@ -196,9 +200,11 @@
 !     LOCATION WITH ALL THE OTHER PE'S.
 
       IF(LMESSPASS) THEN
-        WRITE(IU06,*)'-----------MPEXCHNGSARIN BEGINS------------'
+        IF(ITEST.GT.0)
+     &  WRITE(IU06,*)'-----------MPEXCHNGSARIN BEGINS------------'
         CALL MPEXCHNGSARIN(NSPECPE,ISPECPE,KTAG)
-        WRITE(IU06,*)'-----------MPEXCHNGSARIN ENDS------------'
+        IF(ITEST.GT.0)
+     &  WRITE(IU06,*)'-----------MPEXCHNGSARIN ENDS------------'
       ENDIF
 
       DEALLOCATE(ISPECPE)

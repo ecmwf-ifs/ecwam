@@ -3,9 +3,11 @@
      &          NSPEC , MPART,
      &          NPARTW, NPARTS , 
 !             INPUT
-     &          NCORRELTAB,
+     &          NCORRELTAB, XKLOW, XKUP, XKCUTOFF,
      &          XMEANEW , XMEANANGW, XMEANFREW ,
+     &          PKFREW, PARTINFOW,
      &          XMEANES , XMEANANGS, XMEANFRES ,
+     &          PKFRES, PARTINFOS,
      &          CONTROL,
 !             OUTPUT
      &          ED,XKD,YKD) 
@@ -55,6 +57,15 @@
 !         MEAN DIRECTIONS 
      & XMEANFREW(NSPEC,MPART),XMEANFRES(NSPEC,MPART)
 !         MEAN FREQUENCIES OF PARTITIONINGS
+      REAL :: PKFREW(NSPEC,MPART),PKFRES(NSPEC,MPART)
+!         PEAK FREQUENCIES OF PARTITIONINGS
+      INTEGER, DIMENSION (NSPEC,MPART) :: PARTINFOW, PARTINFOS
+!                   INFORMATION FOR WINDSEA-SWELL:
+!                   WINDSEA (=1), MIXED (=2), OR SWELL (=0)
+      REAL :: XKLOW(NSPEC), XKUP(NSPEC)
+!     LOWER AND UPPER SAR WAVE NUMBER. 
+      REAL :: XKCUTOFF(NSPEC)
+!     CUT OFF WAVE LENGHT FROM THE SAR INVERSION.
       INTEGER 
      & NCORRELTAB(NSPEC,MPART)
 !         INDEX OF PARTITIONING MPART IN WAM SPECTRUM NSPEC
@@ -76,12 +87,13 @@
 
       INTEGER JJPARTW, JJPARTS, JSPEC, IDSAR
 !             COUNTERS
+      REAL :: COEF, AKA
       REAL 
      & FWX(MPART,NSPEC), FWY(MPART,NSPEC),
 !        MEAN WAVE NUMBERS OF WAM PARTITIONINGS.
      & FSX(MPART,NSPEC), FSY(MPART,NSPEC)
 !        MEAN WAVE NUMBERS OF SAR PARTITIONINGS.
-      REAL AKABS
+      REAL AKAW(MPART,NSPEC), AKAS(MPART,NSPEC)
 !        INTERMEDIATE STORAGE.
 
 !-------------------------------------------------------------------
@@ -91,20 +103,25 @@
 !     1. COMPUTE WAVE NUMBER ARRAYS.
 !     ------------------------------
 
+      COEF = ZPI**2/G
       DO JSPEC = 1,NSPEC
         DO JJPARTW = 1,NPARTW(JSPEC)
-          AKABS=(ZPI*XMEANFREW(JSPEC,JJPARTW))**2/G
+          AKA=COEF * XMEANFREW(JSPEC,JJPARTW)**2
           FWX(JJPARTW,JSPEC)
-     &         = AKABS * COS( XMEANANGW(JSPEC,JJPARTW) )
+     &         = AKA * COS( XMEANANGW(JSPEC,JJPARTW) )
           FWY(JJPARTW,JSPEC)
-     &         = AKABS * SIN( XMEANANGW(JSPEC,JJPARTW) )
+     &         = AKA * SIN( XMEANANGW(JSPEC,JJPARTW) )
+
+          AKAW(JSPEC,JJPARTW)=COEF * PKFREW(JSPEC,JJPARTW)**2
         END DO
         DO JJPARTS = 1,NPARTS(JSPEC)
-          AKABS=(ZPI*XMEANFRES(JSPEC,JJPARTS))**2/G
+          AKA=COEF * XMEANFRES(JSPEC,JJPARTS)**2
           FSX(JJPARTS,JSPEC)
-     &         = AKABS * COS( XMEANANGS(JSPEC,JJPARTS) )
+     &         = AKA * COS( XMEANANGS(JSPEC,JJPARTS) )
           FSY(JJPARTS,JSPEC)
-     &         = AKABS * SIN( XMEANANGS(JSPEC,JJPARTS) )
+     &         = AKA * SIN( XMEANANGS(JSPEC,JJPARTS) )
+
+          AKAS(JSPEC,JJPARTS)=COEF * PKFRES(JSPEC,JJPARTS)**2
         END DO
       END DO
 
@@ -124,12 +141,24 @@
         DO JJPARTW = 1,NPARTW(JSPEC)
           IDSAR=NCORRELTAB(JSPEC,JJPARTW)
           IF (IDSAR.NE.0) THEN
-            ED(JSPEC,IDSAR)=
-     &       XMEANES(JSPEC,IDSAR)-XMEANEW(JSPEC,JJPARTW)
-            XKD(JSPEC,IDSAR)=
-     &       FSX(IDSAR,JSPEC)-FWX(JJPARTW,JSPEC)
-            YKD(JSPEC,IDSAR)=
-     &       FSY(IDSAR,JSPEC)-FWY(JJPARTW,JSPEC)
+
+!!!! take only innovation if swell in both systems
+!!!! and peak wave number less than cutoff wave number in SAR systems
+!!!! and peak wave number less than upper SAR wave number 
+!!!! and peak wave number greater than lower SAR wave number 
+
+            IF( PARTINFOW(JSPEC,JJPARTW).EQ.0          .AND.
+     &          PARTINFOS(JSPEC,IDSAR).EQ.0            .AND.
+     &          AKAS(JSPEC,IDSAR).LT.XKCUTOFF(JSPEC)   .AND.
+     &          AKAS(JSPEC,IDSAR).LT.XKUP(JSPEC)       .AND.
+     &          AKAS(JSPEC,IDSAR).GT.XKLOW(JSPEC)   ) THEN 
+              ED(JSPEC,IDSAR)=
+     &          XMEANES(JSPEC,IDSAR)-XMEANEW(JSPEC,JJPARTW)
+              XKD(JSPEC,IDSAR)=
+     &          FSX(IDSAR,JSPEC)-FWX(JJPARTW,JSPEC)
+              YKD(JSPEC,IDSAR)=
+     &          FSY(IDSAR,JSPEC)-FWY(JJPARTW,JSPEC)
+            ENDIF
           END IF
         END DO
       END DO

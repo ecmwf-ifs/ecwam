@@ -1,4 +1,4 @@
-       SUBROUTINE GETWSPEC(SARCORLEN)
+       SUBROUTINE GETWSPEC
  
 !---------------------------------------------------------------------
 
@@ -30,12 +30,13 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NGY
       USE YOWPCONS , ONLY : RAD      ,DEG      ,R
-      USE YOWSPEC,   ONLY : U10OLD   ,THWOLD   ,FL1      ,FL2
-      USE YOWSARAS , ONLY : PPSARCF  ,SARCORDIS,NSPEC    ,NSPECW   ,
-     &            JPSIW    ,NW1D     ,NTOSIW1D ,IGSAR    ,IJSAR    ,     
-     &            LONG     ,LAT      ,COSSARLAT,SINSARLAT,
+      USE YOWSPEC,   ONLY : U10OLD   ,USOLD    ,THWOLD   ,FL1      ,
+     &            FL2
+      USE YOWSARAS , ONLY : PPSARCF  ,SARCORDIA,NSPEC    ,
+     &            NSPECW   ,JPSIW    ,NW1D     ,NTOSIW1D ,IGSAR    ,
+     &            IJSAR    ,LONG     ,LAT      ,COSSARLAT,SINSARLAT,
      &            NSIW1D   ,SPECW    ,DIST     ,
-     &            UW10     ,THWW
+     &            UW10     ,USW      ,THWW
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
       USE YOWUNIT  , ONLY : IU11
@@ -53,8 +54,8 @@
       INTEGER,DIMENSION(NSPEC) :: IS,KS 
       INTEGER,ALLOCATABLE :: INDEX(:)
 
-      REAL :: DELLON
-      REAL :: SARCORLEN, XMAX, DEFAULT_DIST
+      REAL :: DELLON, XI
+      REAL :: XMAX, DEFAULT_DIST
       REAL,ALLOCATABLE,DIMENSION(:) :: ADS
      
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LOSAR 
@@ -63,10 +64,15 @@
 !     1.0 ALLOCATE ARRAYS FROM MODULE
 !     --------------------------------
 
-      ALLOCATE(NW1D(NINF:NSUP,NBLO))
+      ALLOCATE(NW1D(NINF-1:NSUP,NBLO))
 
-      NSPECW=INT((1.5/XDELLA)**2*4400./NPROC)
-      JPSIW=10
+      IF(XDELLA.LT.0.5) THEN
+        NSPECW=20000/NPROC
+      ELSE
+        NSPECW=INT((1.5/XDELLA)**2*9000./NPROC)
+      ENDIF
+
+      JPSIW=12
       NSIW1D0=0
 
       ALLOCATE(NTOSIW1D(NSPECW))
@@ -77,15 +83,18 @@
              
 !     2.0 LABEL WAM SPECTRA THAT ARE INFLUENCED BY THE SAR 
 !         OBSERVATIONS AND ASSOCIATE THEM TO SAR WITHIN A 
-!         SARCORLEN DISTANCE (in radian).
-
-      SARCORLEN=SARCORDIS/R
-      XMAX=PPSARCF*SARCORLEN
+!         XMAX DISTANCE (in radian).
 
 !     MAXIMUN EXTEND OF XMAX IN NUMBER OF GRID POINTS 
+      XMAX=PPSARCF*SARCORDIA/R
+
       LLAT = NINT(DEG*XMAX/XDELLA)+1
 
-      DEFAULT_DIST=10*XMAX
+      IF(XMAX.GT.0.0) THEN
+        DEFAULT_DIST=10*XMAX
+      ELSE
+        DEFAULT_DIST=10.
+      ENDIF
 
       DIST=DEFAULT_DIST
       NTOSIW1D=0
@@ -126,8 +135,8 @@
               IF(ICEMASK(JP,JBL).NE.0 .AND.
      &           ABS(KS(JSAR)-KXLT(JP,JBL)).LE.LLAT) THEN
 
-                DELLON=RAD*(LONG(JSAR,2)
-     &                     -REAL(IXLG(JP,JBL)-1)*ZDELLO(KXLT(JP,JBL)))
+                XI = AMOWEP + REAL(IXLG(JP,JBL)-1)*ZDELLO(KXLT(JP,JBL))
+                DELLON=RAD*(LONG(JSAR,2) - XI)
                 ADS(JP)=COS(DELLON)*COSSARLAT(JSAR)*COSPH(KXLT(JP,JBL))+
      &                              SINSARLAT(JSAR)*SINPH(KXLT(JP,JBL))
                 ADS(JP)=ACOS(MAX(MIN(ADS(JP),1.),-1.))
@@ -136,6 +145,8 @@
               ENDIF
             ENDDO
 
+!           the point is already influences by an observation,
+!           increment its number by 1.
             IC=0
             DO JP=IJS(JBL),IJL(JBL)
               IF(ADS(JP).LE.XMAX.AND.LOSAR(JP))THEN
@@ -153,6 +164,8 @@
               ENDIF
             ENDDO
 
+!           the point is not yet influenced by an observation
+!           add it to the list
             IC=0
             DO JP=IJS(JBL),IJL(JBL)
               IF(ADS(JP).LE.XMAX.AND..NOT.LOSAR(JP))THEN
@@ -186,17 +199,28 @@
 
           ENDIF
         ENDDO
+
         DEALLOCATE(ADS)
         DEALLOCATE(LOSAR)
+
+        DO JP=IJS(JBL),IJL(JBL)
+           IF(NW1D(JP,JBL).GT.0) THEN
+             MAXJPSIW=MAX(MAXJPSIW,NTOSIW1D(NW1D(JP,JBL)))
+           ENDIF
+        ENDDO
       ENDDO
 
       DEALLOCATE(INDEX)
 
-      CALL RESIZE_GETWSPEC(ICOUNT, MAXJPSIW, DEFAULT_DIST, NSIW1D0)
+      IF(ICOUNT.LE.0 .OR. MAXJPSIW.LE. 0 ) THEN
+        NSPECW = 0
+      ELSE 
+        CALL RESIZE_GETWSPEC(ICOUNT, MAXJPSIW, DEFAULT_DIST, NSIW1D0)
+      ENDIF
       WRITE(IU06,*)' '
       WRITE(IU06,*)'  IN GETWSPEC: '
       WRITE(IU06,*)'  NUMBER OF MODEL PTS INFLUENCED BY SAR PTS ',NSPECW
-      WRITE(IU06,*)'  MAX NUMBER OF SAR PTS INFLUENCING A MODEL PTS ',
+      WRITE(IU06,*)'  MAX NUMBER OF SAR PTS INFLUENCING A MODEL POINT ',
      &             MAXJPSIW
       WRITE(IU06,*)' '
 
@@ -204,56 +228,60 @@
 !      3. COLLECTING THE WAM SPECTRA INFLUENCED BY SAR DATA POINTS.
 !      ------------------------------------------------------------
 
-      ALLOCATE(SPECW(0:NSPECW,NANG,NFRE))
+      IF(NSPECW .GT. 0 ) THEN
+       ALLOCATE(SPECW(0:NSPECW,NANG,NFRE))
 
-!     READ FIRST BLOCK
-      IF(IGL.GT.1) THEN
-        REWIND IU11
-        READ(IU11) FL1
-      ENDIF
-      DO JBL=1,IGL
-!       ODD BLOCKS
-        IF(MOD(JBL,2).EQ.1) THEN
-          IF(JBL.NE.IGL) READ(IU11) FL2
-            DO JFRE=1,NFRE
-              DO JANG=1,NANG
-                DO JP = IJS(JBL),IJL(JBL)
-                  IF(NW1D(JP,JBL).GT.0) THEN
-                    SPECW(NW1D(JP,JBL),JANG,JFRE)=FL1(JP,JANG,JFRE)
-                  ENDIF
-                ENDDO
-              ENDDO
-            ENDDO
-!       EVEN BLOCKS
-        ELSE
-          IF(JBL.NE.IGL) READ(IU11) FL1
-            DO JFRE=1,NFRE
-              DO JANG=1,NANG
-                DO JP = IJS(JBL),IJL(JBL)
-                  IF(NW1D(JP,JBL).GT.0) THEN
-                    SPECW(NW1D(JP,JBL),JANG,JFRE)=FL2(JP,JANG,JFRE)
-                  ENDIF
-                ENDDO
-              ENDDO
-            ENDDO
+!       READ FIRST BLOCK
+        IF(IGL.GT.1) THEN
+          REWIND IU11
+          READ(IU11) FL1
         ENDIF
-      ENDDO
+        DO JBL=1,IGL
+!         ODD BLOCKS
+          IF(MOD(JBL,2).EQ.1) THEN
+            IF(JBL.NE.IGL) READ(IU11) FL2
+              DO JFRE=1,NFRE
+                DO JANG=1,NANG
+                  DO JP = IJS(JBL),IJL(JBL)
+                    IF(NW1D(JP,JBL).GT.0) THEN
+                      SPECW(NW1D(JP,JBL),JANG,JFRE)=FL1(JP,JANG,JFRE)
+                    ENDIF
+                  ENDDO
+                ENDDO
+              ENDDO
+!         EVEN BLOCKS
+          ELSE
+            IF(JBL.NE.IGL) READ(IU11) FL1
+              DO JFRE=1,NFRE
+                DO JANG=1,NANG
+                  DO JP = IJS(JBL),IJL(JBL)
+                    IF(NW1D(JP,JBL).GT.0) THEN
+                      SPECW(NW1D(JP,JBL),JANG,JFRE)=FL2(JP,JANG,JFRE)
+                    ENDIF
+                  ENDDO
+                ENDDO
+              ENDDO
+          ENDIF
+        ENDDO
 
-!     4. READ U10 WINDS AND DEFINE U10 AND THW FROM WAM SPECTRA
-!     --------------------------------------------------------
+!       4. READ U10 WINDS AND DEFINE U10 AND THW FROM WAM SPECTRA
+!       --------------------------------------------------------
 
-      ALLOCATE(UW10(NSPECW))
-      ALLOCATE(THWW(NSPECW))
+        ALLOCATE(UW10(NSPECW))
+        ALLOCATE(USW(NSPECW))
+        ALLOCATE(THWW(NSPECW))
 
-      DO JBL=1,IGL
-         DO JP = IJS(JBL),IJL(JBL)
-           IF(NW1D(JP,JBL).GT.0) THEN
-             UW10(NW1D(JP,JBL)) = U10OLD(JP,JBL)       
-             THWW(NW1D(JP,JBL)) = THWOLD(JP,JBL)       
-           ENDIF
-         ENDDO
-      ENDDO
+        DO JBL=1,IGL
+           DO JP = IJS(JBL),IJL(JBL)
+             IF(NW1D(JP,JBL).GT.0) THEN
+               UW10(NW1D(JP,JBL)) = U10OLD(JP,JBL)       
+               USW(NW1D(JP,JBL)) = USOLD(JP,JBL)       
+               THWW(NW1D(JP,JBL)) = THWOLD(JP,JBL)       
+             ENDIF
+           ENDDO
+        ENDDO
 
+      ENDIF
 
       RETURN
       END SUBROUTINE GETWSPEC

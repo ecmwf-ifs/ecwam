@@ -6,13 +6,18 @@
 
 !     J. BIDLOT     ECMWF   JANUARY 1997 ATMOSPHERIC COUPLING
 
+!     MODIFICATION.
+!     -------------
+!     S. ABDALLA    ECMWF   OCTOBER 2001 INCLUSION OF AIR DENSITY & Zi/L
+
 
 ! ----------------------------------------------------------------------
 
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
-     &            FCONST   ,FL2      ,FL3      ,SL
-      USE YOWWIND  , ONLY : USNEXT   ,DSNEXT 
+     &            FCONST   ,ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,
+     &            SL
+      USE YOWWIND  , ONLY : USNEXT   ,DSNEXT   ,ADSNEXT  ,ZIDLNEXT
 
 ! ----------------------------------------------------------------------
 !     1.  DEALLOCATE NECESSARY ARRAYS
@@ -22,6 +27,9 @@
       IF(ALLOCATED(USNEW)) DEALLOCATE(USNEW)
       IF(ALLOCATED(Z0NEW)) DEALLOCATE(Z0NEW)
 
+      IF(ALLOCATED(ROAIRN)) DEALLOCATE(ROAIRN)
+      IF(ALLOCATED(ZIDLNEW)) DEALLOCATE(ZIDLNEW)
+
       IF(ALLOCATED(FL2)) DEALLOCATE(FL2)
       IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
@@ -30,6 +38,7 @@
 
       IF(ALLOCATED(USNEXT)) DEALLOCATE(USNEXT)
       IF(ALLOCATED(DSNEXT)) DEALLOCATE(DSNEXT)
+      IF(ALLOCATED(ADSNEXT)) DEALLOCATE(ADSNEXT)
 
       IF(ALLOCATED(EMEAN)) DEALLOCATE(EMEAN)
       IF(ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)

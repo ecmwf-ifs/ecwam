@@ -1,8 +1,10 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  IUGB, IVGB, ILEN)
+     &                  ROAIRO, ZIDLOLD, 
+     &                  NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
+!               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
 
 
 !**** *TIMIN* - STEERING MODULE IF TIME INTERPOLATION IS WANTED.
@@ -19,17 +21,25 @@
 !     ----------
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 IUGB, IVGB, ILEN)*
+!    &                 ROAIRO, ZIDLOLD,
+!    &                 NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
 !          *THWOLD* - WIND DIRECTION (RADIANS).
 !          *USOLD*  - FRICTION VELOCITY.
 !          *TAUW*   - WAVE STRESS.
-!          *Z0OLD*  - ROUGHNESS LENGTH IN.
-!          *IUGB*   - INPUT GRIB WIND FIELD U COMPONENT.
-!          *IVGB*   - INPUT GRIB WIND FIELD U COMPONENT.
-!          *ILEN*   - LENGTH OG IUGB AND IVGB
+!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
+!          *ROAIRO* - AIR DENSITY IN KG/M3.
+!          *ZIDLOLD*- Zi/L
+!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
+!          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
+!          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!          *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!          *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
+!          *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
+!          *FIELDS* - ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
 
 !     METHOD.
 !     -------
@@ -65,21 +75,27 @@
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
-      USE YOWWIND  , ONLY : CDA      ,UWND     ,VWND
+      USE YOWWIND  , ONLY : CDA      ,UWND     ,VWND    ,AIRD
+     &                     ,PZIDL
 
 ! ----------------------------------------------------------------------
 
       CHARACTER*12 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
-      INTEGER IUGB(ILEN), IVGB(ILEN)
+
+      INTEGER NFIELDS, NGPTOTG, NC, NR
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
+
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+     &                                , ROAIRO,ZIDLOLD
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2,DS2
-      REAL,DIMENSION(NINF:NSUP) :: US3,DS3
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS   , ADS , ZIDL
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2,DS2 , ADS2, ZIDL2
+      REAL,DIMENSION(NINF:NSUP) :: US3,DS3      , ADS3, ZIDL3
 
 !        *US*     REAL   OUTPUT WIND FIELD (FRICTION VELOCITIES).
 !        *DS*     REAL   OUTPUT WIND FIELD (DIRECTIONS).
@@ -101,12 +117,15 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (US, DS, NINF, NSUP, NSUP, CDT1,
-     &   IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+        CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDT1,
+     &               NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &               LWNDFILE, LCLOSEWND)
         DO IG=1,IGL
           DO IJ=IJS(IG),IJL(IG)
             U10OLD(IJ,IG) = US(IJ,IG)
             THWOLD(IJ,IG) = DS(IJ,IG)
+            ROAIRO(IJ,IG) = ADS(IJ,IG)
+            ZIDLOLD(IJ,IG)= ZIDL(IJ,IG)
           ENDDO
         ENDDO
         DO IG = 1,IGL
@@ -126,6 +145,8 @@
           DO IJ=IJS(IG),IJL(IG)
             US(IJ,IG) = U10OLD(IJ,IG)
             DS(IJ,IG) = THWOLD(IJ,IG)
+            ADS(IJ,IG) = ROAIRO(IJ,IG)
+            ZIDL(IJ,IG)= ZIDLOLD(IJ,IG)
           ENDDO
         ENDDO
         CDTH = CDT1
@@ -169,8 +190,9 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, NINF, NSUP, NSUP, CDT2,
-     &             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      CALL GETWND (US2, DS2, ADS2, ZIDL2, NINF, NSUP, NSUP, CDT2,
+     &             NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &             LWNDFILE, LCLOSEWND)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.
 !         -----------------------------------------
@@ -186,14 +208,21 @@
             IF (ABS(D).GT.PI) D = D-ZPI*SIGN(1.,D)
             D = DS(IJ,IG)+REAL(N)*DEL*D
             DS3(IJ) = MOD(D+ZPI,ZPI)
+            ADS3(IJ) = ADS(IJ,IG)+REAL(N)*DEL*(ADS2(IJ,IG)-ADS(IJ,IG))
+            ZIDL3(IJ) = ZIDL(IJ,IG)+REAL(N)*DEL*(ZIDL2(IJ,IG)-
+     &                                                    ZIDL(IJ,IG))
           ENDDO
           WRITE (IUNIT,ERR=6100,IOSTAT=IOS)
      &     CDTH, IG, (US3(I),I=IJS(IG),IJL(IG)),
      &     (DS3(I),I=IJS(IG),IJL(IG))
+     &     , (ADS3(I),I=IJS(IG),IJL(IG))
+     &     , (ZIDL3(I),I=IJS(IG),IJL(IG))
         ENDDO
         DO IJ=IJS(IG),IJL(IG)
           US(IJ,IG) = US2(IJ,IG)
           DS(IJ,IG) = DS2(IJ,IG)
+          ADS(IJ,IG) = ADS2(IJ,IG)
+          ZIDL(IJ,IG) = ZIDL2(IJ,IG)
         ENDDO
       ENDDO
       CDT1 = CDT2
@@ -244,10 +273,14 @@
             READ (IUNIT,END=6200,IOSTAT=IOS)
      &       CDTH, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
             IF (CDTH.GE.CDTWIS)
      &       WRITE (IUVELO,ERR=6300,IOSTAT=IOS)
      &       CDTH, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
           ENDDO
         ENDDO
       ENDDO
@@ -262,6 +295,8 @@
 
       IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
       IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
+      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
 

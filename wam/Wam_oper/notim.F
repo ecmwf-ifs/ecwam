@@ -1,9 +1,11 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   IUGB, IVGB, ILEN)
+     &                   ROAIRO, ZIDLOLD,
+     &                   NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
 
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
+!               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
 
 !**** *NOTIM* - STEERING MODULE IF NO TIME INTERPOLATION WANTED.
 
@@ -16,17 +18,25 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 IUGB, IVGB, ILEN)*
+!    &                 ROAIRO, ZIDLOLD,
+!    &                 NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
 !          *THWOLD* - WIND DIRECTION (RADIANS).
 !          *USOLD*  - FRICTION VELOCITY.
 !          *TAUW*   - WAVE STRESS.
-!          *Z0OLD*  - ROUGHNESS LENGTH IN.
-!          *IUGB*   - INPUT GRIB WIND FIELD U COMPONENT.
-!          *IVGB*   - INPUT GRIB WIND FIELD U COMPONENT.
-!          *ILEN*   - LENGTH OG IUGB AND IVGB
+!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
+!          *ROAIRO* - AIR DENSITY IN KG/M3.
+!          *ZIDLOLD*- Zi/L 
+!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
+!          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
+!          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!          *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!          *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
+!          *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
+!          *FIELDS* - ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
 
 !     METHOD.
 !     -------
@@ -60,20 +70,25 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,UWND     ,VWND     ,
-     &            USNEXT   ,DSNEXT
+     &            AIRD    , PZIDL    ,USNEXT   ,DSNEXT   , ADSNEXT ,
+     &            ZIDLNEXT
 
 ! ----------------------------------------------------------------------
       CHARACTER*12 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
-      INTEGER IUGB(ILEN), IVGB(ILEN)
+
+      INTEGER NFIELDS, NGPTOTG, NC, NR
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
 ! ----------------------------------------------------------------------
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+     &                                , ROAIRO,ZIDLOLD
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS, ADS, ZIDL
 
 !        *US*      REAL   OUTPUT WIND FIELD ARRAY (FRICTION VELOCITY).
 !        *DS*      REAL   OUTPUT WIND FIELD ARRAY (DIRECTION).
@@ -83,7 +98,6 @@
 !*    1. INITIALISE WIND REQUEST DATE AND PROCESS FIRST WINDFIELD
 !*       IF COLD START.
 !        --------------------------------------------------------
-
 
       ZERO = ' '
       CDTWIH = CDTWIS
@@ -99,8 +113,11 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
-        CALL GETWND (U10OLD, THWOLD, NINF, NSUP, NSUP, CDA,
-     &               IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+
+        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD,
+     &               NINF, NSUP, NSUP, CDA,
+     &               NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &               LWNDFILE, LCLOSEWND)
 
         DO IG = 1,IGL
           CALL AIRSEA (U10OLD(IJS(IG),IG), TAUW(IJS(IG),IG),
@@ -114,6 +131,8 @@
         IF (CDA.EQ.CDTWIE) THEN
           IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
           IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+          IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
+          IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
           RETURN
         ENDIF
         CALL INCDATE (CDTWIH,IDELWO)
@@ -143,8 +162,9 @@
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
-      CALL GETWND (US, DS, NINF, NSUP, NSUP, CDTWIH,
-     &             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDTWIH,
+     &             NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &             LWNDFILE, LCLOSEWND)
       MP = MP + 1
 
 !*    3.2 SAVE BLOCKED WIND FIELD.
@@ -160,6 +180,8 @@
           WRITE (IUNIT,ERR=6100,IOSTAT=IOS)
      &     CDTWIH, IG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &     (DS(I,IG),I=IJS(IG),IJL(IG))
+     &    , (ADS(I,IG),I=IJS(IG),IJL(IG))
+     &    , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
         ENDDO
         IF (ITEST.GE.3) THEN
           WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILES AT ',
@@ -182,6 +204,8 @@
 
         IF(.NOT.ALLOCATED(USNEXT)) ALLOCATE(USNEXT(NIBLO,NBLO))
         IF(.NOT.ALLOCATED(DSNEXT)) ALLOCATE(DSNEXT(NIBLO,NBLO))
+        IF(.NOT.ALLOCATED(ADSNEXT)) ALLOCATE(ADSNEXT(NIBLO,NBLO))
+        IF(.NOT.ALLOCATED(ZIDLNEXT)) ALLOCATE(ZIDLNEXT(NIBLO,NBLO))
 
         DO IG=1,IGL
 
@@ -194,6 +218,8 @@
           DO I=IJS(IG),IJL(IG)
             USNEXT(I,IG)=US(I,IG)
             DSNEXT(I,IG)=DS(I,IG)
+            ADSNEXT(I,IG)=ADS(I,IG)
+            ZIDLNEXT(I,IG)=ZIDL(I,IG)
           ENDDO
 
         ENDDO
@@ -218,6 +244,8 @@
 
         IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
         IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+        IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
+        IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
         RETURN
 
@@ -240,10 +268,14 @@
             READ (IUNIT,ERR=6200,IOSTAT=IOS)
      &       CDT,IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
 
             WRITE (IUVELO,ERR=6300,IOSTAT=IOS)
      &       CDT, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
           ENDDO
         ENDDO
       ENDDO
@@ -259,6 +291,8 @@
 
       IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
       IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
+      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
 

@@ -23,7 +23,6 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,
      &           SINTH     ,WETAIL
-      USE YOWPCONS , ONLY : EPSMIN
 
 !-----------------------------------------------------------------------
 
@@ -66,7 +65,7 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          MEANE(ISPEC,IPART) = EPSMIN 
+          MEANE(ISPEC,IPART) = 0.
           SUMX(ISPEC,IPART) = 0.
           SUMY(ISPEC,IPART) = 0.
           SUMXX(ISPEC,IPART) = 0.
@@ -141,12 +140,16 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          SPREAD(ISPEC,IPART) = MAX
-     &        ( SUMXX(ISPEC,IPART)/MEANE(ISPEC,IPART)
-     &        + SUMYY(ISPEC,IPART)/MEANE(ISPEC,IPART)
-     &        - (SUMX(ISPEC,IPART)/MEANE(ISPEC,IPART))**2
-     &        - (SUMY(ISPEC,IPART)/MEANE(ISPEC,IPART))**2
-     &        , 0. )
+          IF(MEANE(ISPEC,IPART).GT.0.) THEN
+            SPREAD(ISPEC,IPART) = MAX
+     &          ( SUMXX(ISPEC,IPART)/MEANE(ISPEC,IPART)
+     &          + SUMYY(ISPEC,IPART)/MEANE(ISPEC,IPART)
+     &          - (SUMX(ISPEC,IPART)/MEANE(ISPEC,IPART))**2
+     &          - (SUMY(ISPEC,IPART)/MEANE(ISPEC,IPART))**2
+     &          , 0. )
+          ELSE
+            SPREAD(ISPEC,IPART) = 0.0
+          ENDIF
         END DO
       END DO
 

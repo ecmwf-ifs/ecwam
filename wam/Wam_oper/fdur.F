@@ -53,7 +53,7 @@
 !        --------------------------
 
       DO IJ=IJS,IJL
-        IF (EWFG(IJ).GT.0.01) THEN
+        IF (EWFG(IJ).GT.0.) THEN
 
 !         DETERMINE THE EFFECTIVE DURATION OF THE WINDSEA ACCORDING TO
 !         THE WAM MODEL GROWTH CURVE, IF WINDSEA IS PRESENT.

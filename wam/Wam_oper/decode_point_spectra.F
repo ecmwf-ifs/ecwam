@@ -464,10 +464,10 @@
         IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
 
         PPREC=0.0
-        XEPS=1.0e-10
+        PPEPS=1.0e-10
         DO IJ=1,ILENP
           IF (PSEC4(IJ) .NE. ZMISS) THEN
-            PSEC4(IJ) = 10.**(PSEC4(IJ)-ABS(PPREC))- XEPS
+            PSEC4(IJ) = 10.**(PSEC4(IJ)-ABS(PPREC))- PPEPS
           ELSE
             PSEC4(IJ) = 0.
           ENDIF
@@ -547,10 +547,10 @@
             ENDIF
 
             PPREC=0.0
-            XEPS=1.0e-10
+            PPEPS=1.0e-10
             DO IJ=1,ILEN1
               IF (PSEC4OUT(IJ) .NE. ZMISS) THEN
-                PSEC4OUT(IJ) = 10.**(PSEC4OUT(IJ)-ABS(PPREC))- XEPS
+                PSEC4OUT(IJ) = 10.**(PSEC4OUT(IJ)-ABS(PPREC))- PPEPS
               ELSE
                 PSEC4OUT(IJ) = 0.0
               ENDIF

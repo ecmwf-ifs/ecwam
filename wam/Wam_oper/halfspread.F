@@ -83,8 +83,6 @@
      &                  MEANE , SPREAD ,
      &                  SUMX , SUMY , SUMXX , SUMYY ,
      &                  FR , CONTROL, IU06 )
-              IF( CONTROL ) WRITE(IU06,*) ' REASON: ',
-     &            'DISTANCE IS LESS THAN HALF OF MINIMAL SPREAD'
               IPART = 0
             ELSE
               JPART = JPART + 1

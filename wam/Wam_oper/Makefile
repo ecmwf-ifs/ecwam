@@ -44,6 +44,7 @@ SOURCE	=\
               fillgaps.F \
               findb.F \
               fld2fdb.F \
+              fldinter.F \
               fustar.F \
               fwsea.F \
               gapinterpol.F \
@@ -65,6 +66,7 @@ SOURCE	=\
               implsch.F \
               incdate.F \
               incint.F \
+              initialint.F \
               initmdl.F \
               iniwcst.F \
               inmars.F \
@@ -77,6 +79,7 @@ SOURCE	=\
               intwaminput.F \
               ispoff.F \
               jafu.F \
+              jonswap.F \
               kgribsize.F \
               lasttwobins.F \
               llalloc_grdfld.F \
@@ -100,6 +103,7 @@ SOURCE	=\
               micep.F \
               mintf.F \
               mnintw.F \
+              mpabort.F \
               mpbcastgrdfld.F \
               mpbcastgrid.F \
               mpbcastintfld.F \
@@ -196,6 +200,7 @@ SOURCE	=\
               setmat.F \
               sinput.F \
               skewness.F \
+              smoothsarspec.F \
               snonlin.F \
               spec2fdb.F \
               spectra.F \
@@ -223,6 +228,7 @@ SOURCE	=\
               u10cor.F \
               uiprep.F \
               update.F \
+              updatewd.F \
               upwspec.F \
               userin.F \
               vmin.F \

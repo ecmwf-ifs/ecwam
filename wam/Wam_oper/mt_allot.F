@@ -1,4 +1,4 @@
-      SUBROUTINE MT_ALLOT (F,ETOI, USOI, USMO, THMO,IJS,IJL,NSIZE,NWORK)
+      SUBROUTINE MT_ALLOT (F,ETOI, USMO, THMO,IJS,IJL,NSIZE,NWORK)
 
 ! ----------------------------------------------------------------------
 
@@ -17,12 +17,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MT_ALLOT (F,ETOI, USOI, USMO, THMO, IJS,IJL,IG,NSIZE,
+!       *CALL* *MT_ALLOT (F,ETOI, USMO, THMO, IJS,IJL,IG,NSIZE,
 !                         NWORK)*
 !          *F*      -  REAL      SPECTRUM ( FIRST GUESS IN INPUT ;
 !                                ANALYSIS IN OUTPUT ).
 !          *ETOI*   -  REAL      WAVE ENERGY (FROM O.I.).
-!          *USOI*   -  REAL      USTAR ( FROM O.I.).
 !          *USMO*   -  REAL      USTAR ( FIRST GUESS IN INPUT ;
 !                                ANALYSIS IN OUTPUT ).
 !          *THMO*   -  REAL      WIND DIRECTION.
@@ -61,7 +60,7 @@
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F
-      REAL,DIMENSION(NINF:NSUP) :: ETOI,USOI,USMO,THMO
+      REAL,DIMENSION(NINF:NSUP) :: ETOI,USMO,THMO
 
 ! ----------------------------------------------------------------------
 
@@ -77,7 +76,7 @@
         MIJS = MIN(MIJS,IJL)
         MIJL = MIN(MIJL,IJL)
 
-        CALL UPDATE (F, ETOI, USOI, USMO, THMO, MIJS, MIJL)
+        CALL UPDATE (F, ETOI, USMO, THMO, MIJS, MIJL)
         GO TO 1000
       ENDIF
 

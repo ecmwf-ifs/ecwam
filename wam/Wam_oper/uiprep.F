@@ -124,13 +124,6 @@
         FR(1) = FR1
       ENDIF
 
-      WRITE (IU06,'(
-     &   " PROGRAM PREPROC:  ",
-     &   " WAM Cycle4 (common with IFS CY23R4)",
-     &/, "                   ",
-     &   " clearcase:  wam_wab_CY22R4_sinput",
-     &  /,"  USER INPUT:",/)')
-
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
 
 ! ----------------------------------------------------------------------

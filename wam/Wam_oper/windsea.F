@@ -12,7 +12,7 @@
 !                  WORK SPACE
      &               SUMX , SUMY , SUMXX , SUMYY ,
 !                  INPUT TABLES
-     &               U10 , THW ,TH0 , CONTROL, IU06 )
+     &               US , THW ,TH0 , CONTROL, IU06 )
 
 !-----------------------------------------------------------------------
 
@@ -66,8 +66,8 @@
      &     SUMX(NSPEC,MPART), SUMY(NSPEC,MPART),
      &     SUMXX(NSPEC,MPART), SUMYY(NSPEC,MPART)
 !                  WORK SPACE.
-      REAL U10(NSPEC) , THW(NSPEC)
-!                  U10, WIND DIRECTION.
+      REAL US(NSPEC) , THW(NSPEC)
+!                  USTAR, WIND DIRECTION.
       REAL TH0
 !                      FIRST DIRECTION IN SPECTRUM.
       LOGICAL CONTROL
@@ -78,10 +78,10 @@
 
       INTEGER  ISPEC, IPART, JPART
 !                   LOOP INDEXES.
-      REAL TWEG, THWQ, CM, CT, THQP, CTE, CMP, CTP,
+      REAL TWEG, TWEGO, THWQ, CM, CT, THQP, CTE, CMP, CTP,
      &     SQF, THQPP, THQPM, CTEP, CTEM, SQSPREAD, CTETWO
 
-      LOGICAL LWINDSEA
+      LOGICAL, DIMENSION(NSPEC) ::  LWINDSEA
 
 !---------------------------------------------------------------------
 
@@ -97,32 +97,37 @@
 !     2. FIND ALL WINDSEA AND MIXED PEAKS.
 !     ------------------------------------
 
-      TWEG = 1.3 * ZPI / G
+      TWEG = 28. * ZPI / G
+      TWEGO = 1.2 * TWEG 
 
       DO ISPEC = 1,NSPEC
         THWQ = THW(ISPEC)
-        LWINDSEA=.FALSE.
+        LWINDSEA(ISPEC)=.FALSE.
         DO IPART = 1,NPART(ISPEC)
           THQP = TH0 + DELTH * (PEAKANG(ISPEC,IPART)-1)
-          CM = TWEG * FR(PEAKFRE(ISPEC,IPART))
-          CT = CM * U10(ISPEC)
-          CTE = CT * COS(THQP-THWQ) - 1.
-            CTETWO = (2. / 1.3) * CT * COS(THQP-THWQ) - 1.
+          CT = US(ISPEC) * FR(PEAKFRE(ISPEC,IPART))
+          CT = CT * COS(THQP-THWQ)
+          CTE = TWEG * CT  - 1.
+          CTETWO = TWEGO * CT - 1.
           IF( CTE.GT.0 )THEN
-            LWINDSEA=.TRUE.
+            LWINDSEA(ISPEC)=.TRUE.
             PARTINFO(ISPEC,IPART) = 1
-            ELSE IF ( CTETWO.GT.0 ) THEN
-               LWINDSEA=.TRUE.
-               PARTINFO(ISPEC,IPART) = 3
+          ELSE IF ( CTETWO.GT.0 ) THEN
+            LWINDSEA(ISPEC)=.TRUE.
+            PARTINFO(ISPEC,IPART) = 3
           ENDIF
         END DO
-        IF(.NOT.LWINDSEA) THEN
+      END DO
+
+      DO ISPEC = 1,NSPEC
+        IF(.NOT.LWINDSEA(ISPEC)) THEN
+          THWQ = THW(ISPEC)
           DO IPART = 1,NPART(ISPEC)
             SQSPREAD = SQRT(SPREAD(ISPEC,IPART)/2.)
             THQP = MEANANG(ISPEC,IPART)
             CM = TWEG * MEANFRE(ISPEC,IPART)
             CMP = CM + TWEG * SQSPREAD
-            CTP = CMP * U10(ISPEC)
+            CTP = CMP * US(ISPEC)
             SQF = SQSPREAD/(MEANFRE(ISPEC,IPART))
             THQPP = THQP + SQF
             THQPM = THQP - SQF
@@ -159,8 +164,6 @@
      &                   SUMX , SUMY , SUMXX , SUMYY ,
 !                      TABLES.
      &                   FR , CONTROL, IU06 )
-                IF( CONTROL )
-     &              WRITE(IU06,*) ' REASON: BOTH ARE WINDSEA PEAKS'
               END DO
             END IF
           END IF

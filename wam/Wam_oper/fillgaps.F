@@ -62,116 +62,108 @@
 !     LOCAL VARIABLES:
 !     ----------------
 
-      INTEGER NGAP(NSPEC)
+      INTEGER, ALLOCATABLE :: NGAP(:)
 !                       THE NUMBER OF GAPS
-      INTEGER NPEAK(NSPEC)
-!               NUMBER PF PARTITIONINGS IN A SPECTRUM.
-      INTEGER PEAKANG(NSPEC,MPART), 
-     &        PEAKFRE(NSPEC,MPART)
-!               FREQ-DIRECT. INDEX OF PEAKS
       INTEGER ISPEC, IGAP, IANG, IFRE
 !                LOOP INDICES
-
-!-------------------------------------------------------------------
-!     
-!!!! the default value of MGAP was found to be 2*MPART but I don't
-!!!  see the reason. Is there a better values ?? 
-
-      MGAP=2*MPART
-
-      ALLOCATE(LANG(NSPEC,MGAP)) 
-      ALLOCATE(HANG(NSPEC,MGAP))
-      ALLOCATE(LFRE(NSPEC,MGAP))
-      ALLOCATE(HFRE(NSPEC,MGAP))
-      ALLOCATE(EQUIGAP(NSPEC,MGAP,MGAP))
-
-!     1.1 BUILD FRAMES AROUND GAPS.
-!     ----------------------------
-
-      CALL MAKEFRAMES( 
-!          DIMENSIONS
-     &             NSPEC , NGAP , NANG , NFRE ,
-!          INPUT
-     &             SPEC )
-
-      IF( CONTROL )THEN
-        DO ISPEC = 1,NSPEC
-          WRITE(IU06,*) 'SPECTRA NUMBER ',ISPEC,':'
-          WRITE(IU06,*) NGAP(ISPEC),' GAPS before avoidpeaks '
-          IF( NGAP(ISPEC).GT.0 ) WRITE(IU06,*) 'CORNERS OF FRAMES:'
-          DO IGAP = 1,NGAP(ISPEC)
-            WRITE(IU06,'(''  FREQUENCIES = '',E8.2,'' , '',E8.2,
-     &                ''  ANGLES 
-     &= '',I3,'' , '',I3)')
-     &          FR(LFRE(ISPEC,IGAP)),FR(HFRE(ISPEC,IGAP)),
-     &          NINT((LANG(ISPEC,IGAP)-1.)/NANG*360.),
-     &          NINT((HANG(ISPEC,IGAP)-1.)/NANG*360.)
-          END DO
-        END DO
-      END IF
-
-!     1.2 REDUCE SIZE OF FRAMES IF PEAKS ARE CONTAINED.
-!     -------------------------------------------------
-
-      CALL AVOIDPEAKS( 
-!          DIMENSIONS
-     &             NSPEC, MGAP ,NGAP, MPART, NANG, NFRE,
-!          INPUT
-     &             SPEC ,
-     &             NPEAK , PEAKANG , PEAKFRE ,
-!          ARRAYS TO BE ADJUSTED
-     &             LANG, HANG , LFRE , HFRE )
-
-      IF( CONTROL )THEN
-        DO ISPEC = 1,NSPEC
-          WRITE(IU06,*) 'SPECTRA NUMBER ',ISPEC,':'
-          WRITE(IU06,*) NGAP(ISPEC),' GAPS'
-          IF( NGAP(ISPEC).GT.0 ) WRITE(IU06,*) 'CORNERS OF FRAMES:'
-          DO IGAP = 1,NGAP(ISPEC)
-            WRITE(IU06,'(''  FREQUENCIES = '',E8.2,'' , '',E8.2,
-     &                ''  ANGLES 
-     &= '',I3,'' , '',I3)')
-     &          FR(LFRE(ISPEC,IGAP)),FR(HFRE(ISPEC,IGAP)),
-     &          NINT((LANG(ISPEC,IGAP)-1.)/NANG*360.),
-     &          NINT((HANG(ISPEC,IGAP)-1.)/NANG*360.)
-          END DO
-        END DO
-      END IF
+      INTEGER :: NSPECSPLIT, ILOOP, NLOOP, ISPECS, ISPECE 
 
 !-------------------------------------------------------------------
 
-!     2. INTERPOLATE FRAMES WITH 2D PARABOLA FIT.
-!     -------------------------------------------
+      MGAP=MPART+1
+
+!     INTRODUCE NLOOP TO LIMIT THE MEMORY USED BY FILLGAPS WITHOUT
+!     DISTROYING TOO MUCH THE VECTORISATION
+      NSPECSPLIT=2000
+      IF(NSPEC.LT.INT(1.1*NSPECSPLIT)) NSPECSPLIT=NSPEC
+      NLOOP=((NSPEC-1)/NSPECSPLIT)+1
+
+      IF( CONTROL ) THEN
+         WRITE(IU06,*) 'NUMBER OF LOOPS IN FILLGAPS = ',NLOOP
+         CALL FLUSH(IU06)
+      ENDIF
+
+      DO ILOOP = 1,NLOOP
+
+        ISPECS=(ILOOP-1)*NSPECSPLIT+1
+        ISPECE=MIN(NSPEC,ILOOP*NSPECSPLIT)
+ 
+        ALLOCATE(NGAP(ISPECS:ISPECE)) 
+        ALLOCATE(LANG(ISPECS:ISPECE,MGAP)) 
+        ALLOCATE(HANG(ISPECS:ISPECE,MGAP))
+        ALLOCATE(LFRE(ISPECS:ISPECE,MGAP))
+        ALLOCATE(HFRE(ISPECS:ISPECE,MGAP))
+        ALLOCATE(EQUIGAP(ISPECS:ISPECE,MGAP,MGAP))
+
+!       1.1 BUILD FRAMES AROUND GAPS.
+!       ----------------------------
+
+        IF( CONTROL ) THEN
+           WRITE(IU06,*) 'CALLING SUBROUTINE MAKEFRAMES, ILOOP= ',ILOOP
+           CALL FLUSH(IU06)
+        ENDIF
+        CALL MAKEFRAMES( 
+!            DIMENSIONS
+     &               NSPEC ,ISPECS ,ISPECE , NGAP , NANG , NFRE ,
+!            INPUT
+     &               SPEC )
+
+!       1.2 REDUCE SIZE OF FRAMES IF PEAKS ARE CONTAINED.
+!       -------------------------------------------------
+
+        IF( CONTROL ) THEN
+           WRITE(IU06,*) 'CALLING SUBROUTINE AVOIDPEAKS, ILOOP= ',ILOOP
+          CALL FLUSH(IU06)
+        ENDIF
+        CALL AVOIDPEAKS( 
+!            DIMENSIONS
+     &               NSPEC,ISPECS ,ISPECE , MGAP ,NGAP, MPART,NANG,NFRE,
+!            INPUT
+     &               SPEC ,
+!            ARRAYS TO BE ADJUSTED
+     &               LANG, HANG , LFRE , HFRE )
+
+!-------------------------------------------------------------------
+
+!       2. INTERPOLATE FRAMES WITH 2D PARABOLA FIT.
+!       -------------------------------------------
 
 
-      CALL GAPINTERPOL( 
-!          DIMENSIONS
-     &             NSPEC , MGAP , NGAP , NANG , NFRE,
-!          INPUT ( SPEC ALSO OUTPUT)
-     &             SPEC ,
-     &             FX , FY , LANG, HANG , LFRE , HFRE ,
-     &             IU06 )
+        IF( CONTROL ) THEN
+           WRITE(IU06,*) 'CALLING SUBROUTINE GAPINTERPOL, ILOOP= ',ILOOP
+           CALL FLUSH(IU06)
+        ENDIF
+        CALL GAPINTERPOL( 
+!            DIMENSIONS
+     &               NSPEC , ISPECS ,ISPECE, MGAP , NGAP , NANG , NFRE,
+!            INPUT ( SPEC ALSO OUTPUT)
+     &               SPEC ,
+     &               FX , FY , LANG, HANG , LFRE , HFRE ,
+     &               IU06 )
 
-!     3. IMPOSE MINIMUM SPECTRAL VALUE
-!     --------------------------------
+!       3. IMPOSE MINIMUM SPECTRAL VALUE
+!       --------------------------------
 
-      DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
-          DO ISPEC = 1,NSPEC
-            SPEC(ISPEC,IANG,IFRE) = MAX(SPEC(ISPEC,IANG,IFRE),FLMIN)
+        DO IANG = 1,NANG
+          DO IFRE = 1,NFRE
+            DO ISPEC = ISPECS ,ISPECE 
+              SPEC(ISPEC,IANG,IFRE) = MAX(SPEC(ISPEC,IANG,IFRE),FLMIN)
+            END DO
           END DO
         END DO
-      END DO
 
 
-!     4. DEALLOCATE ARRAYS
-!     --------------------
+!       4. DEALLOCATE ARRAYS
+!       --------------------
 
-      IF(ALLOCATED(LANG)) DEALLOCATE(LANG) 
-      IF(ALLOCATED(HANG)) DEALLOCATE(HANG)
-      IF(ALLOCATED(LFRE)) DEALLOCATE(LFRE)
-      IF(ALLOCATED(HFRE)) DEALLOCATE(HFRE)
-      IF(ALLOCATED(EQUIGAP)) DEALLOCATE(EQUIGAP)     
+        IF(ALLOCATED(NGAP)) DEALLOCATE(NGAP) 
+        IF(ALLOCATED(LANG)) DEALLOCATE(LANG) 
+        IF(ALLOCATED(HANG)) DEALLOCATE(HANG)
+        IF(ALLOCATED(LFRE)) DEALLOCATE(LFRE)
+        IF(ALLOCATED(HFRE)) DEALLOCATE(HFRE)
+        IF(ALLOCATED(EQUIGAP)) DEALLOCATE(EQUIGAP)     
+
+      ENDDO
 
       RETURN
 

@@ -219,7 +219,8 @@
 
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
         IF ( .NOT. lopenfdb )  THEN
-          if (cdtype.eq.'sf') then
+          if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
+     &                       .or. ksec1(40).eq.1095) then
             istat = iopenfdb( 'seas', iaddr1, cdfun(1:1) )
           else
             istat = iopenfdb( 'fdb', iaddr1, cdfun(1:1) )
@@ -266,17 +267,24 @@
 
           istat = isetvalfdb( iaddr1,   'REPR',    'll' )
 
-!         ensemble number
+!         ensemble number (only set when needed)
 
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
-          istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+
+          if (cdtype.eq.'cf' .or. cdtype.eq.'pf'
+     &                       .or. ksec1(40).eq.1081 .or.
+     &        cdtype.eq.'sf' .or. ksec1(40).eq.1082
+     &                       .or. ksec1(40).eq.1095) then
+            istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+          endif
 
           IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
      &                    " NUMBER ", a3)') clstream, clnumber
 
 !         system and method
 
-          if (cdtype.eq.'sf') then
+          if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
+     &                       .or. ksec1(40).eq.1095) then
             if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
      &          clparam .EQ. '251' ) THEN
               ndir=ksec1(44)
@@ -374,7 +382,8 @@
         istat = isetvalfdb( iaddr1,   'direction', cldir )
         istat = isetvalfdb( iaddr1,   'frequency', clfre )
       ELSE
-        if (cdtype.ne.'sf') then
+        if (cdtype.ne.'sf' .and. ksec1(40).ne.1082
+     &                     .and. ksec1(40).ne.1095) then
           cldir="00"
           clfre="00"
           istat = isetvalfdb( iaddr1,   'direction', cldir )

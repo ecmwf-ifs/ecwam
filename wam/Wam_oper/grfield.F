@@ -1,4 +1,4 @@
-      SUBROUTINE GRFIELD (WHME, USME)
+      SUBROUTINE GRFIELD
 
 !--------------------------------------------------------------------
 
@@ -18,11 +18,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRFIELD (WHME, USME, LDFAILD)*
-
-!       *WHME*   REAL    OUTPUT FIELD OF MEASURED WAVE HEIGHTS.
-!       *USME*   REAL    OUTPUT FIELD OF MEASURED SURFACE WINDS.
-
+!       *CALL* *GRFIELD*
 
 !     METHOD.
 !     -------
@@ -44,38 +40,43 @@
 
 !-----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,INTLMAX  ,
+     &            KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTDATA
+      USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : ICEMASK
+      USE YOWICE   , ONLY : ICEMASK  ,FLMIN
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
      &            XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR
+     &            NIBLO    ,XKAPPA2  ,HSCOEFCOR,HSCONSCOR
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR  ,LALTLRGR
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWINTP  , ONLY : WHGTTG   ,CDG      ,WHGTAG   ,CWHTAG   ,
-     &            RANGAG
+      USE YOWINTP  , ONLY : WHGTTG   ,WHGTAG   ,CWHTAG   , RANGAG
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LLFAILED, LLOPENED, LLTEST
+      LOGICAL LLOPENED, LLTEST
       INTEGER IREAD
-      INTEGER,ALLOCATABLE :: IJALT(:,:), IJKAP(:)
       CHARACTER* 3 CLFID
       CHARACTER*12 CTIME
-      REAL, DIMENSION(NGX,NGY) :: WHME, USME
-      REAL,ALLOCATABLE :: XKAPPA1(:), XKAP(:), DELH_ALT(:), DELH(:)
+      REAL,ALLOCATABLE :: XKAPPA1(:), DELH_ALT(:)
       REAL,ALLOCATABLE :: FALT(:,:,:)
+      INTEGER,ALLOCATABLE, DIMENSION(:) :: ICOMBUF, IKALT
+      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: IJALTPE, ITEMP
+      REAL,ALLOCATABLE, DIMENSION(:) :: ZCOMBUF, TEMP
+      REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
+      LOGICAL :: LSQRT
 
 
 !*     VARIABLE     TYPE      PURPOSE.
 !      --------     ----      --------
 
-!     *WHME*        REAL      GRID WAVE HEIGHT.
-!     *USME*        REAL      GRID FRICTION VELOCITY.
 !     *IREAD*       INTGER    PROCESSOR WHICH WILL READ THE INPUT FILES.
 !     *CLFID        CHARACTER THREE CHARACTER FILE IDENTIFIER.
 
@@ -86,9 +87,10 @@
 !*    1. OPEN FILE AND READ.
 !        -------------------
 
-      IF(LMESSPASS .AND. IRANK .EQ. IREAD .OR. .NOT.LMESSPASS) THEN
+      NOBS=0
+
+      IF((LMESSPASS .AND. IRANK .EQ. IREAD) .OR. .NOT.LMESSPASS) THEN
         IFIELD = 0
-        LLFAILED = .FALSE.
         IFAIL = 1
 
 !*       FIND SPARE UNIT TO ATTACH INPUT FILE.
@@ -112,39 +114,55 @@
           IF(ITEST.GT.0) LLTEST=.TRUE.
           CALL CONFILE (IU06, IUME, CDTPRO, CLFID, IFAIL, LLTEST)
           IF(IFAIL.EQ.0) THEN
-            READ (IUME,ERR=9000) CTIME, IFIELD
-            READ (IUME,ERR=9000) WHME, USME
+            READ (IUME,ERR=9000) CTIME, NOBS
+            IF(NOBS.GT.0) THEN
+!             the size of the second dimension of IJALT is increased by 1
+!             to keep track of the input order (see below).
+              ALLOCATE(IJALT(NOBS,NIJALT+1))
+              ALLOCATE(ALTDATA(NOBS,NALTDT))
+              READ (IUME,ERR=9000) ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS),
+     &                                                IIJALT = 1,NIJALT)
+              READ (IUME,ERR=9000) ALTDATA
+              DO IOBS = 1, NOBS
+                IJALT(IOBS,NIJALT+1) = IOBS
+              ENDDO
+            ENDIF
             CLOSE (IUME)
           ELSE
-            LLFAILED = .TRUE.
             WRITE(IU06,'("WARNING IN GRFIELD:  W A R N I N G  !!!!!!")')
             WRITE(IU06,'("NO FILES FOUND"                            )')
             WRITE(IU06,'("WARNING IN GRFIELD:  W A R N I N G  !!!!!!")')
             CALL FLUSH(IU06)
+            NOBS=0
           ENDIF
         ELSE
-
 !*       IF NOT FOUND: ISSUE WARNING MESSAGE.
-
-          LLFAILED = .TRUE.
           WRITE(IU06,'("WARNING IN GRFIELD:  W A R N I N G  !!!!!!!!")')
           WRITE(IU06,'("NO SPARE UNIT TO READ SATELLITE DATA FOUND"  )')
           WRITE(IU06,'("WARNING IN GRFIELD:  W A R N I N G  !!!!!!!!")')
           CALL FLUSH(IU06)
+          NOBS=0
         ENDIF
+        GOTO 9001
+9000    WRITE(IU06,'("READING ERROR IN GRFIELD:  ABORT !!!!!!!!")')
+        CALL ABORT1  
+9001    CONTINUE
+      ENDIF
 
-!*       IF ALL ATTEMPTS OF THE NEW METHOD FAILED TRY THE OLD CALL TO
-!*       GRDATA.
+!     SEND NOBS TO THE OTHER PE'S TO LET THEM KNOW WETHER THERE ARE
+!     DATA OR NOT.
+      IF(LMESSPASS) THEN
+        CALL MPBCASTINTFLD(IREAD,KTAG,1,1,NOBS)
+        KTAG=KTAG+1
+      ENDIF
 
- 9000   IF ( LLFAILED .OR. IFIELD .EQ. 0 ) THEN
-          WRITE(IU06,'("WARNING IN GRFIELD:    W A R N I N G  !!!!!!")')
-          WRITE(IU06,'("NO GRIDDED FIELDS FOUND IN FILE"             )')
-          WRITE(IU06,'("TRY THE OLD CALL TO GRDATA                  ")')
-          WRITE(IU06,'("WARNING IN GRFIELD:    W A R N I N G  !!!!!!")')
-          CALL FLUSH(IU06)
-          IF (IFAIL .EQ. 0) CLOSE (IUME)
-          CALL GRDATA (WHME, USME, NSTART, NEND) 
-        ENDIF
+!     IF NO DATA, NOTHING TO BE DONE
+      IF (NOBS.LE.0) THEN
+        IF(ALLOCATED(WHGTAG)) WHGTAG = ZMISS
+        IF(ALLOCATED(CWHTAG)) CWHTAG = ZMISS
+        IF(ALLOCATED(RANGAG)) RANGAG = ZMISS
+        NOBSPE = 0
+        RETURN
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -152,12 +170,148 @@
 !*    2. SEND FIELDS TO ALL OTHER PES.
 !        -----------------------------
 
-      IF(LMESSPASS) THEN
-        CALL MPBCASTGRDFLD(IREAD,KTAG,NGX,NGY,WHME)
+      IF(LMESSPASS .AND. NPROC.GT.1) THEN
+!       GET THE NUMBER OF DATA PER PE.
+        IF(IRANK .EQ. IREAD) THEN
+          NOBSPE = 0
+          DO IR = 1, NPROC
+            DO IOBS = 1, NOBS
+              IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
+     &            IJALT(IOBS,1) .LE. NEND(IR) ) THEN
+                NOBSPE(IR) = NOBSPE(IR) + 1
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDIF
+        CALL MPBCASTINTFLD(IREAD,KTAG,NPROC,1,NOBSPE)
         KTAG=KTAG+1
-        CALL MPBCASTGRDFLD(IREAD,KTAG,NGX,NGY,USME)
-        KTAG=KTAG+1
+
+!       DISTRIBUTE THE DATA FOR EACH PE.
+        IF(IRANK .EQ. IREAD) THEN
+!         EXTRACT THE DATA THAT ARE ON EACH PE.
+          DO IR = 1, NPROC
+            IF(NOBSPE(IR) .GT. 0 .AND. IR.NE.IREAD ) THEN
+
+              IICOMLEN = (NIJALT+1) * NOBSPE(IR)
+              ALLOCATE(ICOMBUF(IICOMLEN))
+              ICOUNT = 0
+              DO IIJALT = 1, NIJALT+1
+                DO IOBS = 1, NOBS
+                  IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
+     &                IJALT(IOBS,1) .LE. NEND(IR) ) THEN
+                    ICOUNT = ICOUNT + 1
+                    ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                  ENDIF
+                ENDDO
+              ENDDO
+              CALL MPL_SEND(ICOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
+     &                      CDSTRING='GRFIELD 1:')
+              DEALLOCATE(ICOMBUF)
+
+              IZCOMLEN = NALTDT * NOBSPE(IR)
+              ALLOCATE(ZCOMBUF(IZCOMLEN))
+              ICOUNT = 0
+              DO IALTDT = 1, NALTDT
+                DO IOBS = 1, NOBS
+                  IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
+     &                IJALT(IOBS,1) .LE. NEND(IR) ) THEN
+                    ICOUNT = ICOUNT + 1
+                    ZCOMBUF(ICOUNT) = ALTDATA(IOBS,IALTDT)
+                  ENDIF
+                ENDDO
+              ENDDO
+              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG+1,
+     &                      CDSTRING='GRFIELD 2:')
+              DEALLOCATE(ZCOMBUF)
+
+            ENDIF
+          ENDDO
+
+!         only keep the contribution that are on PE IREAD
+          IR=IREAD
+          IF(NOBSPE(IR).GT.0) THEN
+            IICOMLEN = (NIJALT+1) * NOBSPE(IR)
+            ALLOCATE(ICOMBUF(IICOMLEN))
+            ICOUNT = 0
+            DO IIJALT = 1, NIJALT+1
+              DO IOBS = 1, NOBS
+                IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
+     &              IJALT(IOBS,1) .LE. NEND(IR) ) THEN
+                  ICOUNT = ICOUNT + 1
+                  ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                ENDIF
+              ENDDO
+            ENDDO
+
+            IZCOMLEN = NALTDT * NOBSPE(IR)
+            ALLOCATE(ZCOMBUF(IZCOMLEN))
+            ICOUNT = 0
+            DO IALTDT = 1, NALTDT
+              DO IOBS = 1, NOBS
+                IF( IJALT(IOBS,1) .GE. NSTART(IR) .AND.
+     &            IJALT(IOBS,1) .LE. NEND(IR) ) THEN
+                  ICOUNT = ICOUNT + 1
+                  ZCOMBUF(ICOUNT) = ALTDATA(IOBS,IALTDT)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDIF
+
+          DEALLOCATE(IJALT)
+          DEALLOCATE(ALTDATA)
+
+        ELSE
+          IF(NOBSPE(IRANK) .GT. 0 ) THEN
+            IICOMLEN = (NIJALT+1) * NOBSPE(IRANK)
+            ALLOCATE(ICOMBUF(IICOMLEN))
+            CALL MPL_RECV(ICOMBUF(1:IICOMLEN),KSOURCE=IREAD,KTAG=KTAG,
+     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 1:')
+            IF(KRCOUNT.NE.IICOMLEN) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 1 :MISMATCHED MSG LENGTH')
+            IF(KRTAG.NE.KTAG) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 1 : MISMATCHED TAGS' )
+
+
+            IZCOMLEN = NALTDT * NOBSPE(IRANK)
+            ALLOCATE(ZCOMBUF(IZCOMLEN))
+            CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KSOURCE=IREAD,KTAG=KTAG+1,
+     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 2:')
+            IF(KRCOUNT.NE.IZCOMLEN) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 2 :MISMATCHED MSG LENGTH')
+            IF(KRTAG.NE.KTAG+1) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 2 : MISMATCHED TAGS' )
+
+          ENDIF
+        ENDIF
+        KTAG = KTAG + 2
+
+!       KEEP THE DATA ON EACH PE.
+        IF(NOBSPE(IRANK).GT.0) THEN
+          ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+          ICOUNT = 0
+          DO IIJALT = 1, NIJALT+1
+            DO IOBS = 1, NOBSPE(IRANK)
+              ICOUNT = ICOUNT + 1
+              IJALT(IOBS,IIJALT) = ICOMBUF(ICOUNT) 
+            ENDDO
+          ENDDO
+          DEALLOCATE(ICOMBUF)
+
+          ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
+          ICOUNT = 0
+          DO IALTDT = 1, NALTDT
+            DO IOBS = 1, NOBSPE(IRANK)
+              ICOUNT = ICOUNT + 1
+              ALTDATA(IOBS,IALTDT) = ZCOMBUF(ICOUNT) 
+            ENDDO
+          ENDDO
+          DEALLOCATE(ZCOMBUF)
+        ENDIF
+
+      ELSE
+        NOBSPE = NOBS
       ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -166,36 +320,11 @@
 
 !        EXCLUDE POINTS WHICH ARE ON MODEL ICE
 
-      IF(LMESSPASS) THEN
-        DO IJ = NSTART(1), NEND(NPROC)
-          IF (ICEMASK(IJ,1).EQ.0) THEN
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            USME(IX,IY)=-3.
-            WHME(IX,IY)=-3.
-          ENDIF
-        ENDDO
-      ELSE
-        DO IG = 1, IGL
-          DO IJ = IJS(IG),IJL(IG)
-            IF (ICEMASK(IJ,IG).EQ.0) THEN
-              IX = IXLG(IJ,IG)
-              IY = NGY- KXLT(IJ,IG) +1
-              USME(IX,IY)=-3.
-              WHME(IX,IY)=-3.
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDIF
-
-!     SCREEN DATA WHICH ARE NOT OVER MODEL SEA POINTS
-      DO J=1,NGY
-        DO I=1,NGX
-          IF (CDG(I,J) .LT. 0.000) THEN
-            USME(I,J)=-3.
-            WHME(I,J)=-3.
-          ENDIF
-        ENDDO
+      DO IOBS = 1, NOBSPE(IRANK)
+        IJ=IJALT(IOBS,1)
+        IF (ICEMASK(IJ,1).EQ.0) THEN
+          ALTDATA(IOBS,1)=-3.
+        ENDIF
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -203,24 +332,12 @@
 !*    4. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO 
 !        SUPPLIED LINEAR REGRESSION COEFFICIENTS
 !        --------------------------------------------------
+!??????? multi-satellite issues
       IF(LALTLRGR) THEN
-        IF(LMESSPASS) THEN
-          DO IJ = NSTART(1), NEND(NPROC)
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            IF (WHME(IX,IY).GT.0.)
-     &          WHME(IX,IY) = HSCOEFCOR*WHME(IX,IY)+HSCONSCOR
-          ENDDO
-        ELSE
-          DO IG = 1, IGL
-            DO IJ = IJS(IG),IJL(IG)
-              IX = IXLG(IJ,IG)
-              IY = NGY- KXLT(IJ,IG) +1
-              IF (WHME(IX,IY).GT.0.)
-     &            WHME(IX,IY) = HSCOEFCOR*WHME(IX,IY)+HSCONSCOR
-            ENDDO
-          ENDDO
-        ENDIF
+        DO IOBS = 1, NOBSPE(IRANK)
+          IF (ALTDATA(IOBS,1).GT.0.)
+     &        ALTDATA(IOBS,1) = HSCOEFCOR*ALTDATA(IOBS,1)+HSCONSCOR
+        ENDDO
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*)' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
           WRITE(IU06,*)'           Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR
@@ -232,188 +349,332 @@
 !*    5. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO SROKOSZ.
 !        ---------------------------------------------------------
 
-      NERS = 0
-
-!     5.1 DETERMINE NUMBER OF OBSERVATIONS ON ONE PE.
-!         ------------------------------------------
-      
-      IF(LMESSPASS) THEN
-        DO IJ = NSTART(IRANK), NEND(IRANK)
-          IX = IXLG(IJ,1)
-          IY = NGY- KXLT(IJ,1) +1
-          IF (WHME(IX,IY).GT.0.) NERS = NERS+1
-        ENDDO
-      ELSE
-        DO IG = 1, IGL
-          DO IJ = IJS(IG),IJL(IG)
-            IX = IXLG(IJ,IG)
-            IY = NGY- KXLT(IJ,IG) +1
-            IF (WHME(IX,IY).GT.0.) NERS = NERS+1
-          ENDDO
-        ENDDO
-      ENDIF
-      
-!     5.2 COLLOCATE WAMSPECTRA WITH ALT-HS OBSERVATIONS.
+!     5.1 COLLOCATE WAMSPECTRA WITH ALT-HS OBSERVATIONS.
 !         ---------------------------------------------
-      
-      IF (NERS.GT.0) THEN
-        ALLOCATE( XKAPPA1(NERS),IJALT(NERS,IGL),DELH_ALT(NERS),
-     1            FALT(NERS,NANG,NFRE) )
-      
-        IERS = 0
-        IF(LMESSPASS) THEN
-          DO IJ = NSTART(IRANK), NEND(IRANK)
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            IF (WHME(IX,IY).GT.0.) THEN
-              IERS = IERS+1
-              IJALT(IERS,1)=IJ
-            ENDIF   
-          ENDDO
-          DO IERS = 1, NERS
-            FALT(IERS,:,:)=FL1(IJALT(IERS,1),:,:)
-          ENDDO
-        ELSE
-          DO IG = 1, IGL
-            DO IJ = IJS(IG),IJL(IG)
-              IX = IXLG(IJ,IG)
-              IY = NGY- KXLT(IJ,IG) +1
-              IF (WHME(IX,IY).GT.0.) THEN
-                IERS = IERS+1
-                IJALT(IERS,IG)=IJ
-                FALT(IERS,:,:)=FL1(IJ,:,:)
-              ENDIF   
+
+      IF(ALLOCATED(WHGTAG)) WHGTAG = ZMISS
+      IF(ALLOCATED(CWHTAG)) CWHTAG = ZMISS
+      IF(ALLOCATED(RANGAG)) RANGAG = ZMISS
+      ALLOCATE(WHGTAGB(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE(CWHTAGB(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE(RANGAGB(NSTART(IRANK):NEND(IRANK)))
+      WHGTAGB=ZMISS
+      CWHTAGB=ZMISS
+      RANGAGB=ZMISS
+ 
+      IF(NOBSPE(IRANK).GT.0) THEN
+        NERS=NOBSPE(IRANK)
+        ALLOCATE(XKAPPA1(NERS))
+        ALLOCATE(DELH_ALT(NERS))
+        ALLOCATE(FALT(NERS,NANG,NFRE))
+         
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IOBS = 1, NOBSPE(IRANK)
+              IF (ALTDATA(IOBS,1).GT.0.) THEN
+                IJ=IJALT(IOBS,1)
+                FALT(IOBS,K,M)=FL1(IJ,K,M)
+              ELSE
+                FALT(IOBS,K,M)=FLMIN
+              ENDIF
             ENDDO
           ENDDO
-        ENDIF
+        ENDDO
       
         CALL SKEWNESS(IU06,FALT,NERS,XKAPPA1,DELH_ALT)
-      
-      ENDIF
 
-!     5.3 APPLY SROKOSZ CORRECTION.
-!         -------------------------
+!       5.3 APPLY SROKOSZ CORRECTION.
+!           -------------------------
      
-      WHGTAG = ZMISS
-      CWHTAG = ZMISS
-      RANGAG = ZMISS
- 
-      IF(LALTCOR.AND.ITEST.GT.0) THEN
-        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-        WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT CORRECTION '
-        WRITE(IU06,*) ' -------------------------------- ' 
-        WRITE(IU06,*) ' '
-      ENDIF
+        IF(LALTCOR.AND.ITEST.GT.0) THEN
+          WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
+          WRITE(IU06,*) ' '
+        ENDIF
 
-      IF(LMESSPASS) THEN
-        DO IR = 1, NPROC
-          IF(IR.EQ.IRANK) KERS=NERS
-          CALL MPBCASTINTFLD(IR,KTAG,1,1,KERS)
-          KTAG=KTAG+1
-          IF(KERS.GT.0) THEN
-            ALLOCATE(XKAP(KERS))
-            IF(IR.EQ.IRANK) XKAP=XKAPPA1
-            CALL MPBCASTGRDFLD(IR,KTAG,KERS,1,XKAP)
-            KTAG=KTAG+1
-            ALLOCATE(DELH(KERS))
-            IF(IR.EQ.IRANK) DELH=DELH_ALT
-            CALL MPBCASTGRDFLD(IR,KTAG,KERS,1,DELH)
-            KTAG=KTAG+1
-            ALLOCATE(IJKAP(KERS))
-            IF(IR.EQ.IRANK) IJKAP=IJALT(:,1)
-            CALL MPBCASTINTFLD(IR,KTAG,KERS,1,IJKAP)
-            KTAG=KTAG+1
-            DO IERS = 1, KERS 
-              IJ = IJKAP(IERS)
-              IX = IXLG(IJ,1)
-              IY = NGY- KXLT(IJ,1) +1
-              XK = XKAP(IERS)
-              RCOR = DELH(IERS) 
-              HS = WHME(IX,IY)
-              HS_NEW = SWH_NEW(HS,XK,XKAPPA2)
-              
-              IF(HS.GT.0.) THEN
-                IF(ALLOCATED(WHGTAG)) WHGTAG(IX,IY) = HS 
-                IF(ALLOCATED(CWHTAG)) CWHTAG(IX,IY) = HS_NEW
-                IF(ALLOCATED(RANGAG)) RANGAG(IX,IY) = RCOR 
-              ENDIF
+        DO IOBS = 1, NOBSPE(IRANK)
+          IF (ALTDATA(IOBS,1).GT.0.) THEN
+            RCOR = DELH_ALT(IOBS)
 
-              IF(LALTCOR) THEN
-                WHME(IX,IY) = HS_NEW 
-                IF(ITEST.GT.0) THEN
-                  XLON = AMOWEP + REAL(IX-1)*ZDELLO(KXLT(IJ,1))
-                  XLAT = AMONOP - REAL(IY-1)*XDELLA
-                  WRITE(IU06,*) XLON, XLAT, XK, HS, WHME(IX,IY),
-     &                        WHGTTG(IX,IY), USME(IX,IY)
-                ENDIF
-              ENDIF
-            ENDDO
-            DEALLOCATE(XKAP)
-            DEALLOCATE(DELH)
-            DEALLOCATE(IJKAP)
+            HS = ALTDATA(IOBS,1) 
+            XN = HS**2/16. + XKAPPA2
+            HS_NEW = 16.*(XKAPPA1(IOBS)*XN - XKAPPA2)
+            IF ( HS_NEW >  0.0 ) THEN
+              HS_NEW = SQRT(HS_NEW)
+            ELSE
+              HS_NEW = 0.0
+            ENDIF
+
+!??????? multi-satellite issues
+! we should only do it for one satellite !!!
+
+            IJ=IJALT(IOBS,1)
+            IF(HS.GT.0..AND.
+     &         IJ.GE.NSTART(IRANK) .AND. IJ.LE.NEND(IRANK)) THEN
+              WHGTAGB(IJ) = HS 
+              CWHTAGB(IJ) = HS_NEW
+              RANGAGB(IJ) = RCOR 
+            ENDIF
+!???????
+            IF(LALTCOR .AND. HS_NEW >  0.0 ) ALTDATA(IOBS,1) = HS_NEW
           ENDIF
         ENDDO
-      ELSE
-        DO IG = 1, IGL
-          DO IERS = 1, NERS 
-            IJ = IJALT(IERS,IG)
-            IF(IJ.GE.IJS(IG).AND.IJ.LE.IJL(IG)) THEN
-              XK = XKAPPA1(IERS)
-              RCOR = DELH_ALT(IERS)
-              IX = IXLG(IJ,1)
-              IY = NGY- KXLT(IJ,1) +1
-              HS = WHME(IX,IY)
-              HS_NEW = SWH_NEW(HS,XK,XKAPPA2)
 
-              IF(HS.GT.0.) THEN
-                IF(ALLOCATED(WHGTAG)) WHGTAG(IX,IY) = HS 
-                IF(ALLOCATED(CWHTAG)) CWHTAG(IX,IY) = HS_NEW 
-                IF(ALLOCATED(RANGAG)) RANGAG(IX,IY) = RCOR 
-              ENDIF
-
-              IF(LALTCOR) WHME(IX,IY) = HS_NEW 
-            ENDIF
-          ENDDO
-        ENDDO
       ENDIF
 
-   
       IF( ALLOCATED(XKAPPA1) ) DEALLOCATE(XKAPPA1)
-      IF( ALLOCATED(IJALT) ) DEALLOCATE(IJALT)
       IF( ALLOCATED(DELH_ALT) ) DEALLOCATE(DELH_ALT)
       IF( ALLOCATED(FALT) ) DEALLOCATE(FALT)
+
+!     COLLECT THE OUTPUT OF THE ALTIMETER CORRECTIONS ONTO THE OUTPUT PE
+      ALLOCATE(TEMP(NIBLO))
+      DO IJ = NSTART(IRANK), NEND(IRANK)
+        TEMP(IJ) = WHGTAGB(IJ)
+      ENDDO
+      CALL MPGATHERSCFLD(IPFGTBL(22),KTAG,NSTART,NEND,TEMP)
+      KTAG=KTAG+1
+      IF(ALLOCATED(WHGTAG).AND.IPFGTBL(22).EQ.IRANK) THEN
+        LSQRT=.FALSE.
+        CALL MAKEGRID (TEMP , WHGTAG, 1, NEND(NPROC), 1, LSQRT)
+      ENDIF
+
+      DO IJ = NSTART(IRANK), NEND(IRANK)
+        TEMP(IJ) = CWHTAGB(IJ)
+      ENDDO
+      CALL MPGATHERSCFLD(IPFGTBL(23),KTAG,NSTART,NEND,TEMP)
+      KTAG=KTAG+1
+      IF(ALLOCATED(CWHTAG).AND.IPFGTBL(23).EQ.IRANK) THEN
+        LSQRT=.FALSE.
+        CALL MAKEGRID (TEMP , CWHTAG, 1, NEND(NPROC), 1, LSQRT)
+      ENDIF
+
+      DO IJ = NSTART(IRANK), NEND(IRANK)
+        TEMP(IJ) = RANGAGB(IJ)
+      ENDDO
+      CALL MPGATHERSCFLD(IPFGTBL(24),KTAG,NSTART,NEND,TEMP)
+      KTAG=KTAG+1
+      IF(ALLOCATED(RANGAG).AND.IPFGTBL(24).EQ.IRANK) THEN
+        LSQRT=.FALSE.
+        CALL MAKEGRID (TEMP , RANGAG, 1, NEND(NPROC), 1, LSQRT)
+      ENDIF
+      DEALLOCATE(TEMP)
+
+      DEALLOCATE(WHGTAGB)
+      DEALLOCATE(CWHTAGB)
+      DEALLOCATE(RANGAGB)
+
       
+!     GET ALL RELEVANT DATA ON EACH PE.
+!     BY DISTRIBUTING THEM ONTO THE DIFFERENT PE'S
 
-!*    6. OBTAIN FRICTION VELOCITIES FROM OBSERVED WINDS AND THE DRAG.
-!        ------------------------------------------------------------
+      IF(LMESSPASS .AND. NPROC.GT. 1) THEN
+!       SENDING THE CONTRIBUTION WHICH MIGHT BE COMMON
+        DO IR = 1, NPROC
+          IF(INTLMAX(IR,IRANK).EQ.1 .AND. IR.NE.IRANK) THEN
+            IF(NOBSPE(IRANK) .GT. 0 ) THEN
+              IICOMLEN = (NIJALT+1) * NOBSPE(IRANK)
+              ALLOCATE(ICOMBUF(IICOMLEN))
+              ICOUNT = 0
+              DO IIJALT = 1, NIJALT+1
+                DO IOBS = 1, NOBSPE(IRANK)
+                  ICOUNT = ICOUNT + 1
+                  ICOMBUF(ICOUNT) = IJALT(IOBS,IIJALT)
+                ENDDO
+              ENDDO
+              CALL MPL_SEND(ICOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
+     &                      CDSTRING='GRFIELD 3:')
 
-      FV: DO J=1,NGY
-        DO I=1,NGX
-          IF (USME(I,J) .GT. 0) USME(I,J) = SQRT(CDG(I,J)) * USME(I,J)
-          IF (CDG(I,J) .LT. 0.000) THEN
-            USME(I,J)=-3.
-            WHME(I,J)=-3.
+              DEALLOCATE(ICOMBUF)
+
+              IZCOMLEN = NALTDT * NOBSPE(IRANK)
+              ALLOCATE(ZCOMBUF(IZCOMLEN))
+              ICOUNT = 0
+              DO IALTDT = 1, NALTDT
+                DO IOBS = 1, NOBSPE(IRANK)
+                  ICOUNT = ICOUNT + 1
+                  ZCOMBUF(ICOUNT) = ALTDATA(IOBS,IALTDT)
+                ENDDO
+              ENDDO
+              CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG+1,
+     &                      CDSTRING='GRFIELD 4:')
+              DEALLOCATE(ZCOMBUF)
+            ENDIF
           ENDIF
         ENDDO
-      ENDDO FV
+
+!       RECEIVING THE CONTRIBUTIONS WHICH MIGHT BE COMMON
+        DO IR = 1, NPROC
+          IF(INTLMAX(IR,IRANK).EQ.1 .AND. IR.NE.IRANK) THEN
+            IF(NOBSPE(IR) .GT. 0 ) THEN
+
+              IICOMLEN = (NIJALT+1) * NOBSPE(IR)
+              ALLOCATE(ICOMBUF(IICOMLEN))
+
+              CALL MPL_RECV(ICOMBUF(1:IICOMLEN),KSOURCE=IR,
+     &           KTAG=KTAG, KOUNT=KRCOUNT,
+     &           KRECVTAG=KRTAG,CDSTRING='GRFIELD 3:')
+              IF(KRCOUNT.NE.IICOMLEN) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 3 :MISMATCHED MSG LENGTH')
+              IF(KRTAG.NE.KTAG) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 3 : MISMATCHED TAGS' )
+
+              ALLOCATE(IJALTPE(NOBSPE(IR),NIJALT+1))
+              ICOUNT = 0
+              DO IIJALT = 1, NIJALT+1
+                DO IOBS = 1, NOBSPE(IR)
+                  ICOUNT = ICOUNT + 1
+                  IJALTPE(IOBS,IIJALT) = ICOMBUF(ICOUNT) 
+                ENDDO
+              ENDDO
+              DEALLOCATE(ICOMBUF)
+
+              IZCOMLEN = NALTDT * NOBSPE(IR)
+              ALLOCATE(ZCOMBUF(IZCOMLEN))
+              CALL MPL_RECV(ZCOMBUF(1:IZCOMLEN),KSOURCE=IR,KTAG=KTAG+1,
+     &           KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 4:')
+              IF(KRCOUNT.NE.IZCOMLEN) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 4 :MISMATCHED MSG LENGTH')
+              IF(KRTAG.NE.KTAG+1) CALL MPL_ABORT
+     &        ('MPL_RECV ERROR in GRFIELD 4 : MISMATCHED TAGS' )
+
+              ALLOCATE(ALTDATAPE(NOBSPE(IR),NALTDT))
+              ICOUNT = 0
+              DO IALTDT = 1, NALTDT
+                DO IOBS = 1, NOBSPE(IR)
+                  ICOUNT = ICOUNT + 1
+                  ALTDATAPE(IOBS,IALTDT) = ZCOMBUF(ICOUNT) 
+                ENDDO
+              ENDDO
+              DEALLOCATE(ZCOMBUF)
+
+!             how many observations are actually relevant to PE IRANK
+              NOBSIN=0
+              ALLOCATE(IKALT(NOBSPE(IR)))
+              DO IOBS = 1, NOBSPE(IR)
+                IJ=IJALTPE(IOBS,1)
+                IKALT(IOBS) = KXLT(IJ,1)
+                IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
+     &             IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
+                  NOBSIN=NOBSIN+1
+                ENDIF
+              ENDDO
+
+              IF(NOBSIN.GT.0) THEN
+                NOBSPEOLD = NOBSPE(IRANK)
+                NOBSPE(IRANK) = NOBSPE(IRANK) + NOBSIN
+
+                IF(NOBSPEOLD.GT.0) THEN
+                  ALLOCATE(ITEMP(NOBSPEOLD,NIJALT+1))
+                  ITEMP = IJALT
+                  DEALLOCATE(IJALT)
+                  ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+                  DO IIJALT = 1, NIJALT+1
+                    DO IOBS = 1, NOBSPEOLD
+                      IJALT(IOBS,IIJALT) = ITEMP(IOBS,IIJALT)
+                    ENDDO
+                  ENDDO
+                  DEALLOCATE(ITEMP)
+
+                  ALLOCATE(ZTEMP(NOBSPEOLD,NALTDT))
+                  ZTEMP = ALTDATA
+                  DEALLOCATE(ALTDATA)
+                  ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
+                  DO IALTDT = 1, NALTDT 
+                    DO IOBS = 1, NOBSPEOLD
+                     ALTDATA(IOBS,IALTDT) = ZTEMP(IOBS,IALTDT) 
+                    ENDDO
+                  ENDDO
+                  DEALLOCATE(ZTEMP)
+                ELSE
+                  ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
+                  ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
+                ENDIF
+
+                DO IIJALT = 1, NIJALT+1
+                  ICOUNT = 0
+                  DO IOBS = 1, NOBSPE(IR)
+                    IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
+     &                 IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
+                      ICOUNT = ICOUNT + 1
+                      IJALT(NOBSPEOLD+ICOUNT,IIJALT) =
+     &                      IJALTPE(IOBS,IIJALT)
+                    ENDIF
+                  ENDDO
+                ENDDO
+
+                DO IALTDT = 1, NALTDT 
+                  ICOUNT = 0
+                  DO IOBS = 1, NOBSPE(IR)
+                    IF(IKALT(IOBS) .GE. KMINLMAX(IRANK) .AND.
+     &                 IKALT(IOBS) .LE. KMAXLMAX(IRANK) ) THEN
+                      ICOUNT = ICOUNT + 1
+                      ALTDATA(NOBSPEOLD+ICOUNT,IALTDT) =
+     &                        ALTDATAPE(IOBS,IALTDT)
+                    ENDIF
+                  ENDDO
+                ENDDO
+ 
+              ENDIF
+              DEALLOCATE(IKALT)
+              DEALLOCATE(IJALTPE)
+              DEALLOCATE(ALTDATAPE)
+
+            ENDIF
+          ENDIF
+        ENDDO
+
+        KTAG = KTAG + 2
+
+      ENDIF
+
+!     REORDER THE DATA (to insure that the results are the same
+!                       on any number of PE's)
+      IF(NOBSPE(IRANK).GT.0) THEN
+        ALLOCATE(ITEMP(NOBS,1))
+        ITEMP=0
+        DO IOBS = 1, NOBSPE(IRANK)
+            ITEMP(IJALT(IOBS,NIJALT+1),1)=IJALT(IOBS,NIJALT+1)
+        ENDDO
+        ICOUNT=0
+        DO IOBS = 1, NOBS
+          IF(ITEMP(IOBS,1).GT.0) THEN
+            ICOUNT=ICOUNT+1
+            ITEMP(IOBS,1)=ICOUNT
+          ENDIF
+        ENDDO
+        DO IOBS = 1, NOBSPE(IRANK)
+          IJALT(IOBS,NIJALT+1)=ITEMP(IJALT(IOBS,NIJALT+1),1)
+        ENDDO
+        DEALLOCATE(ITEMP)
+
+        ALLOCATE(ITEMP(NOBSPE(IRANK),NIJALT))
+        DO IIJALT = 1, NIJALT
+            DO IOBS = 1, NOBSPE(IRANK)
+              ITEMP(IJALT(IOBS,NIJALT+1),IIJALT)=IJALT(IOBS,IIJALT)
+            ENDDO
+        ENDDO
+        ALLOCATE(ZTEMP(NOBSPE(IRANK),NALTDT))
+        DO IALTDT = 1, NALTDT 
+          DO IOBS = 1, NOBSPE(IRANK)
+            ZTEMP(IJALT(IOBS,NIJALT+1),IALTDT) = ALTDATA(IOBS,IALTDT)
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(IJALT)
+        ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT))
+        DO IIJALT = 1, NIJALT
+          DO IOBS = 1, NOBSPE(IRANK)
+            IJALT(IOBS,IIJALT) = ITEMP(IOBS,IIJALT)
+          ENDDO
+        ENDDO
+        DEALLOCATE(ITEMP)
+        DO IALTDT = 1, NALTDT 
+          DO IOBS = 1, NOBSPE(IRANK)
+            ALTDATA(IOBS,IALTDT) = ZTEMP(IOBS,IALTDT)
+          ENDDO
+        ENDDO
+        DEALLOCATE(ZTEMP)
+
+      ENDIF
 
       RETURN
       END SUBROUTINE GRFIELD
-      
-      FUNCTION SWH_NEW(SWH,XKAPPA1,K2)
-      
-      REAL:: SWH, SWH_NEW, XN, XKAPPA1, K2
-      
-      XN = SWH**2/16. + K2
-      
-      SWH_NEW = 16.*(XKAPPA1*XN - K2)
-      
-      IF ( SWH_NEW >  0.0 ) THEN
-        SWH_NEW = SQRT(SWH_NEW)
-      ELSE
-        SWH_NEW = 0.0
-      ENDIF
-
-      RETURN
-      END FUNCTION SWH_NEW

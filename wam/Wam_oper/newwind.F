@@ -1,11 +1,14 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
-     &                    U10OLD,THWOLD,U10NEW,THWNEW)
+     &                    U10OLD,THWOLD,U10NEW,THWNEW
+     &                  , ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
 
 !     P.A.E.M. JANSSEN  KNMI/ECMWF  SEPTEMBER 1994
-!     J. BIDLOT ECMWF FEBRUARY 1996 MESSAGE PASSING 
+!     J. BIDLOT         ECMWF       FEBRUARY 1996  MESSAGE PASSING 
+!     S. ABDALLA        ECMWF       OCTOBER 2001   INCLUSION OF AIR
+!                                                  DENSITY AND Zi/L
 
 !*    PURPOSE.
 !     --------
@@ -15,8 +18,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE,NEWREAD, NEWFILE)
-!     1                    U10OLD,THWOLD,U10NEW,THWNEW)*
+!       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
+!     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
+!     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW)*
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -24,14 +28,18 @@
 !      *CDATE*   - START DATE OF SOURCE FUNCTION INTEGRATION
 !      *NEWREAD* - TRUE IF NEW WINDS HAVE BEEN READ
 !      *NEWFILE* - TRUE IF NEW WIND FILE HAS BEEN OPENED
-!      *U10NEW*    REAL      NEW WIND SPEED IN M/S.
-!      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                            VELOCITY.
-!      *THWNEW*    REAL      WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                            NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                            CLOCKWISE FROM NORTH).
-!      *THWOLD*    REAL      INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                            WIND VELOCITY.
+!      *U10NEW*  - NEW WIND SPEED IN M/S.
+!      *U10OLD*  - INTERMEDIATE STORAGE OF MODULUS OF WIND
+!                  VELOCITY.
+!      *THWNEW*  - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
+!                  CLOCKWISE FROM NORTH).
+!      *THWOLD*  - INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
+!                  WIND VELOCITY.
+!      *ROAIRN*  - AIR DENSITY IN KG/M3.
+!      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
+!      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
 
 !     METHOD.
 !     -------
@@ -59,13 +67,12 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNIT  , ONLY : IU17     ,IU18
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
-     &            IIG      ,USNEXT   ,DSNEXT
+     &            IIG      ,USNEXT   ,DSNEXT   ,ADSNEXT  ,ZIDLNEXT
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD, ROAIRO,ZIDLOLD
+      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW     , ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
@@ -91,6 +98,8 @@
         DO IJ=IJS,IJL
           U10NEW(IJ) = U10OLD(IJ,IG)
           THWNEW(IJ) = THWOLD(IJ,IG)
+          ROAIRN(IJ) = ROAIRO(IJ,IG)
+          ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
         ENDDO
       ENDIF
 
@@ -143,12 +152,13 @@
 !!!!
 !!!! read from file instead
 
-
         CDA=CDTNEXT
         IIG=IG
         DO L=IJS,IJL
           U10NEW(L)=USNEXT(L,IIG)
           THWNEW(L)=DSNEXT(L,IIG)
+          ROAIRN(L)=ADSNEXT(L,IIG)
+          ZIDLNEW(L)=ZIDLNEXT(L,IIG)
         ENDDO
 
 

@@ -178,31 +178,30 @@
 
       DO ISPEC = 1,NSPEC
         DO IPARTS=1,NPARTS(ISPEC)
-         FLAG (IPARTS)=-1
-         MINDIS(IPARTS)=100.
+          FLAG (IPARTS)=-1
+          MINDIS(IPARTS)=100.
         END DO
         DO IPARTW = 1,NPARTW(ISPEC)
           CORRELTAB(ISPEC,IPARTW)=0
           MINDIST=100.
           DO IPARTS = 1,NPARTS(ISPEC)
             IF( DIST(ISPEC,IPARTW,IPARTS).LT.DISMIN )THEN
-               IF(DIST(ISPEC,IPARTW,IPARTS).LT.MINDIST) THEN
+              IF(DIST(ISPEC,IPARTW,IPARTS).LT.MINDIST) THEN
                 IF( FLAG (IPARTS).LT.0 ) THEN
-                   IF(CORRELTAB(ISPEC,IPARTW).GT.0) THEN
+                  IF(CORRELTAB(ISPEC,IPARTW).GT.0) THEN
                     FLAG (CORRELTAB(ISPEC,IPARTW))=-1
                     MINDIS(CORRELTAB(ISPEC,IPARTW))=100.
-                   END IF
-                   MINDIST=DIST(ISPEC,IPARTW,IPARTS)
-                   CORRELTAB(ISPEC,IPARTW) = IPARTS
-                   FLAG(IPARTS)=ipartw
-                   MINDIS(IPARTS)=MINDIST
-                 ELSEIF(DIST(ISPEC,IPARTW,IPARTS).LT.MINDIS(IPARTS))
-     &                         THEN
-                   MINDIST=DIST(ISPEC,IPARTW,IPARTS)
-                   CORRELTAB(ISPEC,IPARTW) = IPARTS
+                  END IF
+                  MINDIST=DIST(ISPEC,IPARTW,IPARTS)
+                  CORRELTAB(ISPEC,IPARTW) = IPARTS
+                  FLAG(IPARTS)=IPARTW
+                  MINDIS(IPARTS)=MINDIST
+                ELSEIF(DIST(ISPEC,IPARTW,IPARTS).LT.MINDIS(IPARTS)) THEN
+                  MINDIST=DIST(ISPEC,IPARTW,IPARTS)
+                  CORRELTAB(ISPEC,IPARTW) = IPARTS
 
-                   IF ( FLAG(IPARTS) .NE. IPARTW .AND.
-     &                 FLAG (IPARTS) .GT. 0) THEN
+                  IF ( FLAG(IPARTS) .NE. IPARTW .AND.
+     &              FLAG (IPARTS) .GT. 0) THEN
                     CORRELTAB(ISPEC, FLAG(IPARTS)) = 0
                     MINDISH=DISMIN
                     IPARWH= FLAG(IPARTS)
@@ -210,29 +209,32 @@
                     IPARWH1=-1
 
                     DO IPARSH=1,NPARTS(ISPEC)
-                     IF ( FLAG(IPARSH) .LT. 0 .AND.
+                      IF ( FLAG(IPARSH) .LT. 0 .AND.
      &                   DIST(ISPEC,IPARWH,IPARSH) .LT.  MINDISH .AND.
      &                   IPARSH .NE. IPARTS) THEN
-                      MINDISH=DIST(ISPEC,IPARWH,IPARSH)
-                      IPSH=IPARSH
-                      IPARWH1=IPARWH
-                     END IF
+                        MINDISH=DIST(ISPEC,IPARWH,IPARSH)
+                        IPSH=IPARSH
+                        IPARWH1=IPARWH
+                      END IF
                     END DO
+
                     IF(IPSH.GT.0) THEN
-                     CORRELTAB(ISPEC,IPARWH1) = IPSH
-                     FLAG(IPSH)=IPARWH1
-                     MINDIS(IPSH)=MINDISH
+                      CORRELTAB(ISPEC,IPARWH1) = IPSH
+                      FLAG(IPSH)=IPARWH1
+                      MINDIS(IPSH)=MINDISH
                     END IF
-                   END IF
-                   FLAG(IPARTS)=IPARTW
-!                 ELSE
-!                   CORRELTAB(ISPEC,IPARTW) = 0
-                 END IF
-               END IF
+                  END IF
+
+                  FLAG(IPARTS)=IPARTW
+
+!               ELSE
+!                 CORRELTAB(ISPEC,IPARTW) = 0
+                END IF
+              END IF
             ELSEIF(MINDIST.EQ.100.) THEN
                 CORRELTAB(ISPEC,IPARTW) = 0
             END IF
-           END DO
+          END DO
         END DO
        END DO
 

@@ -2,7 +2,7 @@
 !           DIMENSIONS
      &            NSPEC, MPART, NPARTW, NANG, NFRE,
 !           INPUT (FOR SPECTRUM ALSO OUTPUT)
-     &            SPECW, PARTW, CORRELTAW,
+     &            SPECW, NW1D, PARTW, CORRELTAW,
      &            MEANWE, MEANWANG, MEANWFRE,
      &            MEANSE, MEANSANG, MEANSFRE,
 !           OUTPUT
@@ -10,6 +10,12 @@
 !           INPUT PARAMETERS 
      &            FRATIO , FR , COSTH , SINTH, CONTROL,
      &            IU06)
+
+!-------------------------------------------------------------------
+!     MODULE :
+!     --------
+
+      USE YOWMPP   , ONLY : NINF     ,NSUP
 
 !-------------------------------------------------------------------
 
@@ -77,6 +83,8 @@
 !                     (INPUT,OUTPUT) AT INPUT: WAM FIRST GUESS 
 !                     SPECTRA.
 !                     AT OUTPUT: CORRECTED WAM SPECTRA
+      INTEGER :: NW1D(NINF-1:NSUP,1)
+
       INTEGER PARTW(NSPEC,NANG,NFRE)
 !                     (INPUT) PARTITIONINGS OF WAM FIRST GUESS 
 !                     SPECTRA, WHERE PARTW(ISPEC,IANG,IFRE) IS 
@@ -230,11 +238,15 @@
 !        INVERTED SPECTRA.
 !     ------------------------------------------------------
 
-       CALL TRANSPART( 
+      IF( CONTROL ) THEN
+        WRITE(IU06,*) 'CALLING SUBROUTINE TRANSPART'
+        CALL FLUSH(IU06)
+      ENDIF
+      CALL TRANSPART( 
 !                    DIMENSIONS
      &                 NSPEC , MPART , NPARTW , NANG , NFRE,
 !                    INPUT/OUTPUT
-     &                 SPECW , 
+     &                 SPECW , NW1D, 
 !                    WORK SPACE
      &                 SPECT , 
 !                    INPUT
@@ -246,12 +258,17 @@
      &                 STRETCH , INTLOGSTRETCH ,
      &                 COPO , COPODIFF  )
 
+
 !-------------------------------------------------------------------
 
 !     4. INTERPOLATE GAPS BETWEEN SUPERIMPOSED PARTITIONINGS BY 
 !        2D PARABOLIC INTERPOLATION.
 !     ---------------------------------------------------------
 
+      IF( CONTROL ) THEN
+        WRITE(IU06,*) 'CALLING SUBROUTINE FILLGAPS'
+        CALL FLUSH(IU06)
+      ENDIF
       CALL FILLGAPS( 
 !                  DIMENSIONS
      &               NSPEC , MPART , NANG , NFRE ,
@@ -264,6 +281,10 @@
 !     5. COMPUTE MEAN PARAMETERS OF TOTAL CORRECTED SPECTRA.
 !     ------------------------------------------------------
 
+      IF( CONTROL ) THEN
+        WRITE(IU06,*) 'CALLING SUBROUTINE TRANSMEANS'
+        CALL FLUSH(IU06)
+      ENDIF
       CALL TRANSMEANS(
 !                  DIMENSIONS
      &                   NSPEC ,  NANG , NFRE ,
@@ -274,8 +295,10 @@
 !                  WORK ARRAYS
      &                   SUM0 , SUMX0 , SUMY0 )
 
-      IF( CONTROL ) WRITE(IU06,*) 'END OF SUBROUTINE TUSTREAS'
-      IF( CONTROL ) CALL FLUSH(IU06)
+      IF( CONTROL ) THEN
+        WRITE(IU06,*) 'END OF SUBROUTINE TUSTREAS'
+        CALL FLUSH(IU06)
+      ENDIF
 
       RETURN
 

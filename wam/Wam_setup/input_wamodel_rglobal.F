@@ -3,35 +3,32 @@
  ",CBPLTDT="${begofrn}",CEPLTDT="${endofrn}",CDATEF="${begoffo}",
  IDELPRO= 1200, IDELT= 1200,IDELWO= 21600,IDELWI= 21600
  CLMTSU="S","S","S","S"
- IDELALT= 21600,IDELINT= 21600,IDELINS= 21600,IDELAGI= 21600,IDELSPT= 21600
- IDELSPS= 21600,IDELAGS= 21600,IDELRES= 86400
+ IDELINT= 21600,IDELINS= 21600,IDELSPT= 21600
+ IDELSPS= 21600,IDELRES= 86400
  CLOTSU="S","S","S","S","S","S","S"
  CDATER="${outofrf}",CDATES="${outof2d}"
  PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= T, T, T, F, T, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T
- LFDB= T,
- LPBIOIN= T,
+ GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T
+ LFDB= ${lfdb},
+ CFDBSF   ="${FDB_ROOT}",
+ CFDB2DSP ="${FDB_ROOT}",
  LGRIBIN= ${lgribin},
- LPBIOOUT= T,
+ LPBIOIN= T,
  LGRIBOUT= ${lgribout},
- LFDBIOOUT=T,
+ LPBIOOUT= T,
+ LFDBIOOUT=${lfdbioout},
+ LNOCDIN=${lnocdin}
  ICASE= 1,ISHALLO= 1,ITEST= 0,ITESTB= 1,IREST= 1,
- IASSI= $AS,
+ IASSI= ${iassi},
+ LALTAS=${laltas},
+ LALTCOR=${laltcor}
+ LSARINV=${lsarinv},
+ LSARAS=${lsaras},
  IFORCA= 1,IBOUNC= 0,IBOUNF= 0,
- YCLASS="$CLASS"
+ YCLASS="$CLASS",
  YEXPVER="$expver",
- NENSFNB= $NENS,
- NTOTENS= $TNE,
  LMESSPASS= T,LWCOU= F,NTASKS= 1,NSIZE= 3897,
  CPATH="$STORAGE_PATH",
- CFDBSF   = "$cfdbsf",
- CFDB2DSP = "$cfdb2dsp"
- LNOCDIN=${lnocdin}
- LALTCOR=${laltcor}
- LALTLRGR = ${laltlrgr},
- HSCOEFCOR = ${hscoefcor},
- HSCONSCOR = ${hsconscor},
  LFRSTFLD=F
- NCALL=2
  /

@@ -62,9 +62,6 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1
 
 ! ----------------------------------------------------------------------
-      PIRHF(F,ALF)=ALF*G**2/(ZPI**4*F**5)
-
-! ----------------------------------------------------------------------
 
       ALLOCATE(ST(IJS:IJL,NANG))
       ALLOCATE(ET(IJS:IJL,NFRE))
@@ -73,24 +70,7 @@
 !*    1. COMPUTE JONSWAP SPECTRUM.
 !        -------------------------
 
-      DO M=1,NFRE
-        DO IJ=IJS,IJL
-          IF (FP(IJ).NE.0.) THEN
-            FRH = FR(M)
-            SIGMA = SA
-            IF (FRH.GT.FP(IJ)) SIGMA = SB
-            EARG = .5*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
-            FJON = 1
-            IF (EARG.LT.99.) FJON = GAMMA**EXP(-EARG)
-            FMPF = 1.25*(FP(IJ)/FRH)**4
-            FJONH = 0.
-            IF (FMPF.LT.99.) FJONH = EXP(-FMPF)
-            ET(IJ,M) = PIRHF(FRH,ALPHJ(IJ))*FJONH*FJON
-          ELSE
-            ET(IJ,M) = 0.
-          ENDIF
-        ENDDO
-      ENDDO
+      CALL JONSWAP (ALPHJ(IJS), GAMMA, SA, SB, FP(IJS), IJS, IJL, ET) 
 
 ! ----------------------------------------------------------------------
 

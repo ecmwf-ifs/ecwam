@@ -99,8 +99,6 @@
      &                 SUMX , SUMY , SUMXX , SUMYY ,
 !                    INPUT TABLE
      &                 FR , CONTROL, IU06 )
-              IF( CONTROL) WRITE(IU06,*) ' REASON: MEAN ENERGY ',
-     &            MEANE(ISPEC,IPART),' IS LOWER THAN ',(LOWEST/4)**2
             END IF
           END DO
         END DO

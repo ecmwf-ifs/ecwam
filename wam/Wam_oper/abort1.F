@@ -9,7 +9,7 @@
 
 !*    PURPOSE.
 !     --------
-!     CALL ABORT AFTER CLOSING OPENED UNITS 
+!     TO ABORT AFTER CLOSING OPENED UNITS 
 
 !**   INTERFACE.
 !     ----------
@@ -21,10 +21,9 @@
 
 !     EXTERNALS.
 !     ----------
-!       MPCLOSE_UNIT
-!       MPL_ABORT
-
+!       MPABORT
 !       ABORT
+
 !     REFERENCE.
 !     ----------
 !       NONE.
@@ -32,12 +31,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       IF(LMESSPASS) THEN
-        CALL MPCLOSE_UNIT
-        CALL MPL_ABORT('MPL_ABORT was called to terminate run')
+        CALL MPABORT
       ELSE
         CALL ABORT
       ENDIF

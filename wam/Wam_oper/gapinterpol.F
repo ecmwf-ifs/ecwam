@@ -1,6 +1,6 @@
       SUBROUTINE GAPINTERPOL( 
 !              DIMENSIONS
-     &             NSPEC, MGAP ,NGAP, NANG, NFRE,
+     &             NSPEC, ISPECS ,ISPECE, MGAP ,NGAP, NANG, NFRE,
 !              INPUT ( SPEC ALSO OUTPUT)
      &             SPEC ,
      &             FX , FY , LANG, HANG , LFRE , HFRE ,
@@ -40,17 +40,19 @@
 !     INTERFACE:
 !     ----------
 
-      INTEGER NSPEC, MGAP, NGAP(NSPEC), NANG, NFRE
+
+      INTEGER :: NGAP(ISPECS:ISPECE)
+      INTEGER NSPEC, ISPECS, ISPECE, MGAP, NANG, NFRE
 !                 DIMENSIONS.
       REAL SPEC(0:NSPEC,NANG,NFRE)
 !                 2D SPECTRUM.
       REAL FX(NANG,NFRE), 
      &     FY(NANG,NFRE)
 !                 POLAR COORDINATES.
-      INTEGER LANG(NSPEC,MGAP), 
-     &        HANG(NSPEC,MGAP),
-     &        LFRE(NSPEC,MGAP),
-     &        HFRE(NSPEC,MGAP)
+      INTEGER LANG(ISPECS:ISPECE,MGAP), 
+     &        HANG(ISPECS:ISPECE,MGAP),
+     &        LFRE(ISPECS:ISPECE,MGAP),
+     &        HFRE(ISPECS:ISPECE,MGAP)
 !                 LOWER LEFT AND UPPER RIGHT CORNER OF GAP.
       INTEGER IU06
 !     STANDARD OUTPUT UNIT
@@ -78,7 +80,7 @@
 !     ------------------------------------------------------
 
 !     LOOP OVER SPECTRA.
-      DO ISPEC = 1,NSPEC
+      DO ISPEC = ISPECS,ISPECE 
         DO IGAP = 1,NGAP(ISPEC)
 !     LOOP OVER GAPS.
           IF( LANG(ISPEC,IGAP).EQ.1.AND.HANG(ISPEC,IGAP).EQ.NANG.OR.

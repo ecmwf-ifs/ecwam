@@ -74,7 +74,7 @@
 !           SAR AND WAM WAVESYSTEMS ARE CROSS ASSIGNED IF THEIR 
 !           DISTANCE IN WAVE NUMBER SPACE IS LESS THAN DISMIN.
 
-      LOGICAL CONTROL
+      LOGICAL CONTROL, LALLOUTPUT
 !                     (INPUT) WRITE CONTROL MESSAGES ON UNIT 6 ?
 !                     .TRUE. = YES , .FALSE. = NO
       INTEGER   
@@ -105,9 +105,11 @@
 
 !---------------------------------------------------------------------
 
-      IF( CONTROL ) WRITE(IU06,*) 'CALL OF SUBROUTINE CORREL'
+      IF( CONTROL ) WRITE(IU06,*) 'CALL OF SUBROUTINE CROSSW'
 
 !     INITIALISATION
+
+      LALLOUTPUT = .FALSE.
 
       CORRELTAS=0
 
@@ -187,23 +189,22 @@
           MINDIST=100.
           DO JPARTS = 1,NPARTS(IDSAR)
             IF( DIST(JPARTW,JPARTS).LT.DISMIN )THEN
-               IF(DIST(JPARTW,JPARTS).LT.MINDIST) THEN
+              IF(DIST(JPARTW,JPARTS).LT.MINDIST) THEN
                 IF(CORRELTAS(JSPEC,JPARTS,JSAR).LT.0 ) THEN
-                   IF(NPASC2W(JSPEC,JPARTW,JSAR).GT.0) THEN
+                  IF(NPASC2W(JSPEC,JPARTW,JSAR).GT.0) THEN
                     CORRELTAS(JSPEC,NPASC2W(JSPEC,JPARTW,JSAR),
      &                        JSAR)=-1
                     MINDIS(NPASC2W(JSPEC,JPARTW,JSAR))=100.
-                   END IF
-                   MINDIST=DIST(JPARTW,JPARTS)
-                   NPASC2W(JSPEC,JPARTW,JSAR) = JPARTS
-                   CORRELTAS(JSPEC,JPARTS,JSAR)=JPARTW
-                   MINDIS(JPARTS)=MINDIST
-                 ELSEIF(DIST(JPARTW,JPARTS).LT.MINDIS(JPARTS))
-     &                         THEN
-                   MINDIST=DIST(JPARTW,JPARTS)
-                   NPASC2W(JSPEC,JPARTW,JSAR) = JPARTS
-                   IF(CORRELTAS(JSPEC,JPARTS,JSAR).NE.JPARTW.AND.
-     &                CORRELTAS(JSPEC,JPARTS,JSAR).GT.0)THEN
+                  END IF
+                  MINDIST=DIST(JPARTW,JPARTS)
+                  NPASC2W(JSPEC,JPARTW,JSAR) = JPARTS
+                  CORRELTAS(JSPEC,JPARTS,JSAR)=JPARTW
+                  MINDIS(JPARTS)=MINDIST
+                ELSEIF(DIST(JPARTW,JPARTS).LT.MINDIS(JPARTS)) THEN
+                  MINDIST=DIST(JPARTW,JPARTS)
+                  NPASC2W(JSPEC,JPARTW,JSAR) = JPARTS
+                  IF(CORRELTAS(JSPEC,JPARTS,JSAR).NE.JPARTW.AND.
+     &               CORRELTAS(JSPEC,JPARTS,JSAR).GT.0) THEN
                     NPASC2W(JSPEC,CORRELTAS(JSPEC,JPARTS,JSAR),
      &                      JSAR) = 0
                     MINDISH=DISMIN
@@ -211,32 +212,32 @@
                     IPSH=0
                     JPARWH1=-1
                     DO JPARSH=1,NPARTS(IDSAR)
-                     IF(CORRELTAS(JSPEC,JPARSH,JSAR).LT.0.AND.
+                      IF(CORRELTAS(JSPEC,JPARSH,JSAR).LT.0.AND.
      &                  DIST(JPARWH,JPARSH).
      &                  LT.MINDISH.AND.JPARSH.NE.JPARTS) THEN
-                      MINDISH=DIST(JPARWH,JPARSH)
-                      IPSH=JPARSH
-                      JPARWH1=JPARWH
-                     END IF
+                        MINDISH=DIST(JPARWH,JPARSH)
+                        IPSH=JPARSH
+                        JPARWH1=JPARWH
+                      END IF
                     END DO
                     IF(IPSH.GT.0) THEN
-                     CORRELTAS(JSPEC,IPSH,JSAR)=JPARWH1
-                     NPASC2W(JSPEC,JPARWH1,JSAR)=IPSH
-                     MINDIS(IPSH)=MINDISH
+                      CORRELTAS(JSPEC,IPSH,JSAR)=JPARWH1
+                      NPASC2W(JSPEC,JPARWH1,JSAR)=IPSH
+                      MINDIS(IPSH)=MINDISH
                     END IF
-                   END IF
-                   CORRELTAS(JSPEC,JPARTS,JSAR)=JPARTW
-                 END IF
-               END IF
+                  END IF
+                  CORRELTAS(JSPEC,JPARTS,JSAR)=JPARTW
+                END IF
+              END IF
             ELSEIF(MINDIST.EQ.100.) THEN
-               NPASC2W(JSPEC,JPARTW,JSAR) = 0
+              NPASC2W(JSPEC,JPARTW,JSAR) = 0
             END IF
 !         END LOOP OVER SAR PARTITIONINGS.
           END DO
 !       END LOOP OVER WAM PARTITIONINGS.
         END DO
 
-         IF(CONTROL)THEN
+         IF(CONTROL .AND. LALLOUTPUT )THEN
             WRITE(IU06,*)' NPARTS ',NPARTS(IDSAR),' NPARTW ',
      &             NPARTW(JSPEC)
             WRITE(IU06,*)' NCORR.. ',(NPASC2W(JSPEC,JPARTW,JSAR),

@@ -1,9 +1,13 @@
-      SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD, KEND)
+      SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD
+     &                              ,RADOLD, RZIDLOLD
+     &                              ,KEND)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF   APRIL 1998 
 
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
+
+!     S. ABDALLA   ECMWF   OCTOBER 1999 MODIFICATION THE CALL TO GETWND
 
 !*    PURPOSE.
 !     --------
@@ -11,12 +15,15 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *BUILDSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD)
+!     CALL *BUILDSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,RADOLD,
+!                                                      RZIDLOLD,KEND)
 !     *RU10OLD*   WIND SPEED.
 !     *RTHWOLD*   WIND DIRECTION (RADIANS).
 !     *RUSOLD*    FRICTION VELOCITY.
 !     *RTAUW*     WAVE STRESS.
 !     *RZ0OLD*    ROUGHNESS LENGTH IN M.
+!     *RAD0OLD*   AIR DENSITY IN KG/M3.
+!     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *KEND*      USED UPPER LIMIT ON FIRST DIMENSION OF INPUT ARRAYS
 
 !     METHOD.
@@ -40,19 +47,26 @@
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
-      USE YOWPCONS , ONLY : G
+      USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,UWND     ,VWND
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,UWND     ,
+     &            VWND     ,AIRD     ,PZIDL
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
 
 ! ----------------------------------------------------------------------
       LOGICAL LWNDFILE, LCLOSEWND
-      INTEGER IUGB(1),IVGB(1)
       REAL, ALLOCATABLE :: CD(:,:), TEMPTAUT(:,:,:)
       CHARACTER*24 FILNM
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
+     &                             ,RADOLD, RZIDLOLD
+! ----------------------------------------------------------------------
+! "Dummy" arrays and parameters for compatability purposes:
+      INTEGER NFIELDS, NGPTOTG, NCA, NRA
+      PARAMETER (NFIELDS=1, NGPTOTG=1, NCA=1, NRA=1)
+      INTEGER ISEC1(255), ISEC2(22+NRA)
+      REAL FIELDS(1)
 ! ----------------------------------------------------------------------
 
       CDATEWO = ' '
@@ -70,8 +84,14 @@
       RUSOLD = 0.
       RTAUW = 0.
       RZ0OLD = 0.
-      CALL GETWND (RU10OLD, RTHWOLD,1,NIBLO, KEND, CDTPRO,
-     &             IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      RADOLD = ROAIR
+      RZIDLOLD = 0.
+      CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD,
+     &             1, NIBLO, KEND, CDTPRO,
+!------------------ dummy parameters & arrays
+     &             NFIELDS, NGPTOTG, NCA, NRA, ISEC1, ISEC2, FIELDS, 
+!---------------------------------------------
+     &             LWNDFILE, LCLOSEWND)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
 
 !     USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
@@ -176,7 +196,11 @@
           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
 
           DO IJ=1,KEND
-            CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+!! the numerical relation between usold and u10old should always be as
+!! in outgrid
+            CDINV = MAX(RU10OLD(IJ,IG)**2,EPSU10)/
+     &              MAX(RUSOLD(IJ,IG)**2,EPSUS)
+            CDINV = MIN(CDINV,10000.) 
             CD(IJ,IG) = 1./CDINV
           ENDDO
         ELSE
@@ -185,7 +209,11 @@
           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
 
           DO IJ=IJS(IG),IJL(IG)
-            CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+!! the numerical relation between usold and u10old should always be as
+!! in outgrid
+            CDINV = MAX(RU10OLD(IJ,IG)**2,EPSU10)/
+     &              MAX(RUSOLD(IJ,IG)**2,EPSUS)
+            CDINV = MIN(CDINV,10000.) 
             CD(IJ,IG) = 1./CDINV
           ENDDO
         ENDIF
@@ -218,7 +246,7 @@
 !       COMPUTE TAUW,USOLD AND Z0OLD
 
         ILEV=1
- 
+
         DO IG=1,IGL
            IF(LMESSPASS) THEN
              IJSTART=1
@@ -233,7 +261,8 @@
 !! RUSOLD will first contain its square
 !! the numerical relation between usold and u10old should always be as
 !! in outgrid
-            RUSOLD(IJ,IG) = CD(IJ,IG)*(RU10OLD(IJ,IG)**2+0.01)-0.0001
+            RUSOLD(IJ,IG) = CD(IJ,IG)*MAX(RU10OLD(IJ,IG)**2,EPSU10)
+            RUSOLD(IJ,IG) = MAX(RUSOLD(IJ,IG),EPSUS)
             CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
             CHARNOCK = MAX(CHARNOCK,ALPHA)
             RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
@@ -255,6 +284,8 @@
 
       IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
       IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
+      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)     !???
+      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)   !???
 
       RETURN
       END SUBROUTINE BUILDSTRESS

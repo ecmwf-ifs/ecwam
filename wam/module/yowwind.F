@@ -18,9 +18,13 @@
 
       REAL, ALLOCATABLE :: UWND(:,:)
       REAL, ALLOCATABLE :: VWND(:,:)
+      REAL, ALLOCATABLE :: AIRD(:,:)
+      REAL, ALLOCATABLE :: PZIDL(:,:)
 
       REAL, ALLOCATABLE :: USNEXT(:,:)
       REAL, ALLOCATABLE :: DSNEXT(:,:)
+      REAL, ALLOCATABLE :: ADSNEXT(:,:)
+      REAL, ALLOCATABLE :: ZIDLNEXT(:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -34,8 +38,10 @@
 !      *NR*        INTEGER   NUMBER OF ROWS    IN INPUT WIND ARRAY
 !      *UWND*      REAL      INPUT U WIND GRID COMPONENT
 !      *VWND*      REAL      INPUT V WIND GRID COMPONENT
+!      *AIRD*      REAL      INPUT AIR DENSITY GRID
 !      *USNEXT*    REAL      TEMPORARY STORAGE OF WIND SPEED
 !      *DSNEXT*    REAL      TEMPORARY STORAGE OF WIND DIRECTION
+!      *ROAIRNEXT* REAL      TEMPORARY STORAGE OF AIR DENSITY 
 
 ! ----------------------------------------------------------------------
 

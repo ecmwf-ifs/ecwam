@@ -1,4 +1,4 @@
-      SUBROUTINE GETSPEC(FL,NSTART,NEND,IREAD)
+      SUBROUTINE GETSPEC(FL,NSTART,NEND,IREAD,U10OLD,THWOLD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 
@@ -8,11 +8,15 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL,NSTART,NEND,IREAD)
+!     *CALL* *GETSPEC(FL,NSTART,NEND,IREAD,U10OLD,THWOLD)
 !     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK 
+!     *U10OLD*    WIND SPEED. (used with fetch law to fill empty 
+!                 sea points)
+!     *THWOLD*    WIND DIRECTION (RADIANS).
+
 
 !     METHOD.
 !     -------
@@ -49,16 +53,18 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3  , 
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3   ,
      &            NTENCODE ,PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : NLONRGG
-      USE YOWICE   , ONLY : FLMIN
+      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
+      USE YOWICE   , ONLY : FLMIN    ,ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOSOP   ,
      &            AMONOP   ,XDELLA
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LFDBIOIN ,LGRIBIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NIBLO    ,CLDOMAIN
-      USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS
+     &            NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
+     &            EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CFDB2DSP ,YCLASS   ,
      &            YEXPVER
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -87,6 +93,7 @@
 
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
 
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
@@ -97,7 +104,10 @@
       REAL, ALLOCATABLE,DIMENSION(:) :: PSEC2,PSEC3,PSEC4,WORK,WORKRCV
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
+      REAL,ALLOCATABLE :: EM(:), ET(:,:), STK(:)
       REAL :: ONE,ZTHETA,ZFRE
+
+      LOGICAL :: LLEPSMIN
 
       DATA MDEL, LFRSTIME, ONE / 1, .TRUE., 1.0/
 
@@ -352,7 +362,7 @@ C
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                    ('MPL_SEND ERROR AT 1 in GETSPEC' )
 
-                ITAG=((M-1)*NANG+K)*2
+                ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
      &           KERROR=IERR)
                 IF(IERR.LT.0) CALL MPL_ABORT
@@ -374,7 +384,7 @@ C
      &          ('MPL_RECV ERROR AT 1 in GETSPEC:  MISMATCHED TAGS' )
 
                 ALLOCATE(INGRIB(ISIZE))
-                ITAG=((M-1)*NANG+K)*2
+                ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_RECV(INGRIB(1:ISIZE),KSOURCE=IREAD,KTAG=ITAG,
      &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR)
                 IF(IERR.LT.0) CALL MPL_ABORT
@@ -572,7 +582,8 @@ C
             M=(((IC-1)+IDUM-1)/NANG)+1
             K=(IC-1)+IDUM-(M-1)*NANG
 
-            ITAG=((M-1)*NANG+K)*3
+            ITAG=2*NFRE*NANG+(M-1)*NANG+K
+
             IF(IRANK.EQ.KSEND) THEN
               CALL MPDISTRIBSCFLD(KSEND,ITAG,NSTART,NEND,WORK)
               DO IJ = NSTART(IRANK),NEND(IRANK) 
@@ -753,16 +764,16 @@ C
             ENDDO
 
 !           KEEP CORRESPONDING CONTRIBUTION TO FL
-            DO M=1,NFRE
-              DO K=1,NANG
+            DO K=1,NANG
+              DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   FL(IJ,K,M) = RFL(IJ,K,M)
                 ENDDO
               ENDDO
             ENDDO
 
-            DO M=1,NFRE
-              DO K=1,NANG
+            DO K=1,NANG
+              DO M=1,NFRE
                 FL(NINF-1,K,M) = 0. 
               ENDDO
             ENDDO
@@ -789,6 +800,80 @@ C
         ENDIF
 
       ENDIF
+
+!     TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
+!     PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
+!     THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
+!     AND HAVE AN ICEMASK = 1.
+      DO K=1,NANG
+        DO M=1,NFRE
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+             IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = 0. 
+          ENDDO
+        ENDDO
+      ENDDO
+
+      LLEPSMIN=.FALSE.
+
+      ALLOCATE(EM(NSTART(IRANK):NEND(IRANK)))
+      ALLOCATE(ET(1,NFRE))
+      ALLOCATE(STK(NANG))
+
+      CALL SEMEAN(FL,NSTART(IRANK),NEND(IRANK),EM,LLEPSMIN)
+
+      GAMMA=3.000000
+      SA=7.000000E-02
+      SB=9.000000E-02
+      FETCH=MIN(5*DELPHI,250000.)
+      GX = G * FETCH
+      FPMAX=FR(NFRE-1)
+
+      DO IJ=NSTART(IRANK),NEND(IRANK)
+         IF(EM(IJ).LE.EPSMIN .AND. ICEMASK(IJ,1).EQ.1 ) THEN
+!          find peak period and energy level from fetch law
+!          the same formulation as in subroutine peak is used.
+           IF (U10OLD(IJ,1) .GT. 0.1E-08) THEN
+             U10 = U10OLD(IJ,1)
+             GXU = GX/(U10*U10)
+             UG = G/U10
+             FPK = AJONS * GXU ** DJONS
+             FPK = MAX(0.13, FPK)
+             FPK = MIN(FPK, FPMAX/UG)
+             ALPHJO = BJONS * FPK** EJONS
+             ALPHJO = MAX(ALPHJO, 0.0081)
+             FPK = FPK*UG
+           ELSE
+             FPK = 0.
+             ALPHJO = 0.
+           ENDIF
+
+           CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
+
+           THESK=THWOLD(IJ,1)
+
+           CALL SPR (NANG, NANG, THESK, TH, STK)
+
+           DO K=1,NANG
+             DO M=1,NFRE
+               FL(IJ,K,M) = ET(1,M)*STK(K)
+             ENDDO
+           ENDDO
+
+         ENDIF
+      ENDDO
+
+      DO K=1,NANG
+        DO M=1,NFRE
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+             IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = FLMIN 
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DEALLOCATE(EM)
+      DEALLOCATE(ET)
+      DEALLOCATE(STK)
+
 
       WRITE(IU06,*) ' SPECTRUM FILE READ IN...............',
      & ' CDTPRO  = ', CDTPRO

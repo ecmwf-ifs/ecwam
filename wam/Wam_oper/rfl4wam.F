@@ -8,12 +8,11 @@
 
 !     B. HANSEN      ECMWF         DECEMBER 1997
 
-!     MODIFIED BY:    NONE.
-
 !*    PURPOSE.
 !     --------
 
 !       SPEED UP ASSIMILATION BY TUNING THE I/O OF OBSERVATIONS.
+!       AND PEFORMS BLACKLISTING AND CORRECTION OF THE DATA.
 
 !**   INTERFACE.
 !     ----------
@@ -24,6 +23,8 @@
 !      *date*      STRING   DATE/TIME GROUP YYYYMMDDHHMM.
 !      *itest*     INTEGER  TEST OUTPUT LEVEL (*COMMON* *TESTO*).
 !      *idelalt*   INTEGER  LENGTH OF ASSIMILATION PERIOD (SECONDS).
+!      if the file wave_data_blacklist is present, information from it
+!      will be used to blacklist data.
 
 !          ---- INPUT/OUTPUT UNITS ---
 
@@ -47,14 +48,13 @@
 !          READ SATELLITE DATA AND DISTRIBUTE ONTO MODEL GRID.
 !          FOR EACH COMMAND LINE OPTION '-d date' A CORRESPONDING FILE
 !          NAMED RFL$DATE IS EXPECTED TO BE ON CURRENT WORKING
-!          DIRECTORY. IF ICE INFORMATION IS SUPPLIED TO THE WAVE MODEL 
-!          IT HAS ALSO TO BE PRESENT HERE IN JUST THE SAME WAY!  THE TWO
+!          DIRECTORY. THE TWO
 !          OUTPUT FILES FROM PREPROC WILL BE ATTACHED TO IU07 AND IU08.
 !          NO FURTHER USER INPUT IS REQUIRED. FOR EACH FILE RFL$DATE ONE
 !          CORRESPONDING FILE rfl$DATE WILL BE GENERATED CONTAINING ONLY
-!          TWO RECORDS:
+!          RECORDS:
 !          A) THE CHARACTER STRING "CDTPRO"
-!          B) THE TWO ARRAYS WHME AND USME 
+!          B) THE ARRAYS IJALT and ALTDATA
 
 !     EXTERNALS.
 !     ----------
@@ -74,13 +74,11 @@
 !          "inmars.F"
 !          "iniwcst.F"
 !          "makegrid.F"
-!          "micep.F"
 !          "mpbcastgrdfld.F"
 !          "mpbcastgrid.F"
 !          "mpclose_unit.F"
 !          "mpdecomp.F"
 !          "outpp.F"
-!          "readice.F"
 !          "readpre.F"
 !          "readsat.F"
 !          "readt.F"
@@ -92,11 +90,10 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : IJALT    ,ALTDATA
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCURR  , ONLY : U
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
-      USE YOWINTP  , ONLY : CDG
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
      &            XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -118,17 +115,11 @@
       CHARACTER     CLOPTLET
       DATA CLOPTS/'d;i;a;'/
 
-      CHARACTER*24 FILNM
-
       REAL Z4(2)
       INTEGER I4(2)
 
-      CHARACTER (LEN=12) , ALLOCATABLE :: CLDATES(:), CLMD(:)
-
-      LOGICAL :: LSQRT
-
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: USME, WHME
-      REAL, ALLOCATABLE :: CD(:,:)
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: WHME
+      CHARACTER (LEN=12),ALLOCATABLE :: CLDATES(:), CLMD(:)
 
 ! ----------------------------------------------------------------------
 
@@ -141,6 +132,7 @@
       IDATES  =     0
       IMO     =    10
       IDELALT = 21600
+      IU06 = 6
 
       ALLOCATE (CLDATES(IMO))
 
@@ -255,9 +247,6 @@
         IU90 = 90
       ENDIF
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   PRG. RFL4WAM: UNITS DEFINED'
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -267,30 +256,6 @@
 !     IT IS NOW DONE IN CALL TO MPDECOMP
 
       ITESTB = MIN(ITESTB,IGL)
-
-! ----------------------------------------------------------------------
-
-!*    4. READ COMMON ICE.
-!        ----------------
-
-      LICERUN=.FALSE.
-
-      FILNM = 'sfctempin'
-      LIU   = LEN_TRIM(FILNM)
-      FILNM=FILNM(1:LIU)
-      INQUIRE(FILE=FILNM,EXIST=LICERUN)
-
-      ALLOCATE(ICEMASK(NIBLO,NBLO))
-
-      IF (LICERUN) THEN
-        YCLASS = 'od'
-        CALL SETWGRIBHD
-        CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
-      ELSE
-        ICEMASK=1
-        WRITE(IU06,*)'    PRG. RFL4WAM: FILE ',FILNM,' NOT FOUND '
-        WRITE(IU06,*)'    PRG. RFL4WAM: NO ICE SHEET USED '
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -322,32 +287,38 @@
  3003   FORMAT(3x,a,i6,  a)
       ENDIF
 
-      ALLOCATE(WHME(NGX,NGY), USME(NGX,NGY))
-      ALLOCATE(CDG(NGX,NGY))
-      CDG     =   0.0
-
-
-!     DEFINE CDG AS A LAND SEA MASK AS USED BY GRDATA
-
-      IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
-      CD = 0.0
-      LSQRT = .FALSE.
-      IF(LMESSPASS) THEN
-        IG=1
-        CALL MAKEGRID (CD, CDG, 1, NEND(NPROC), IG, LSQRT)
-      ELSE
-        DO IG=1,IGL
-          CALL MAKEGRID (CD, CDG, IJS(IG), IJL(IG), IG, LSQRT)
-        ENDDO
-      ENDIF
-      DEALLOCATE(CD)
+      ALLOCATE(WHME(NGX,NGY))
 
       DO JLD = 1, IDATES
         CDTPRO = CLDATES(JLD)
         io = i_get_unit(IU06, 'rfl'//CDTPRO, 'w', 'u', 0)
-        WRITE(io)CDTPRO, 2
-        CALL GRDATA (WHME, USME, NSTART, NEND)
-        WRITE (io) WHME, USME
+
+        CALL GRDATA (NOBS, NSTART, NEND)
+
+        WRITE(io) CDTPRO, NOBS
+
+        IF(NOBS.GT.0) THEN
+        
+!         DEFINE COEFFICIENT FOR THE ALT DATA ERROR
+!!! it will need to be adapted for other satellite !!!
+          SIGOBS=0.5
+          A=SIGOBS
+          B=-LOG(0.001)
+          HSMIN=1.
+
+
+          DO IOBS=1,NOBS
+            ALTDATA(IOBS,2) = SIGOBS+A*EXP(-B*(ALTDATA(IOBS,1)-HSMIN))
+          ENDDO
+!!! we will have to adapt for the linear regression correctio
+!!!
+
+          WRITE (io) IJALT 
+          WRITE (io) ALTDATA
+
+          DEALLOCATE(IJALT)
+          DEALLOCATE(ALTDATA)
+        ENDIF
         CLOSE (io)
       ENDDO
 
@@ -368,14 +339,11 @@
 ! #include "inmars.F"
 ! #include "iniwcst.F"
 ! #include "makegrid.F"
-! #include "micep.F"
 ! #include "mpbcastgrdfld.F"
 ! #include "mpbcastgrid.F"
 ! #include "mpclose_unit.F"
 ! #include "mpdecomp.F"
 ! #include "outpp.F"
-! #include "readice.F"
 ! #include "readpre.F"
 ! #include "readsat.F"
-! #include "readt.F"
 ! #include "setwgribhd.F"

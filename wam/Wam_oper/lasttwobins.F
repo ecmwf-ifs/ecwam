@@ -18,6 +18,7 @@
 
 !     IF PEAK LIES IN LAST TWO FREQUENCY BINS AND IS NOT WINDSEA,
 !     COMBINE WITH NEAREST NOT WINDSEA PEAK
+!!    IF THE NUMBER OF FREQUENCY IF 30 THEN DO THE SAME FOR THE LAST 5.
 
 !     EXERNALS:
 !     ---------
@@ -53,7 +54,7 @@
 !     VARIABLES:
 !     ----------
 
-      INTEGER ISPEC, IPART, JPART, KPART, KANG, KFRE
+      INTEGER ISPEC, IPART, JPART, KPART, KANG, KFRE, NBINEXC
 !                   LOOP INDEXES.
       REAL F0, FX0, FY0
 !                   WORK SPACE.
@@ -62,12 +63,18 @@
 
 !-----------------------------------------------------------------------
 
+      IF ( NFRE . LT. 30 ) THEN
+        NBINEXC=2
+      ELSE
+        NBINEXC=5
+      ENDIF
+
 !     1. FIND NEAREST NEIGHBOUR.
 !     ---------------------------
       DO ISPEC = 1,NSPEC
         DO IPART = 1,NPART(ISPEC)
           KPART = -1
-          DO WHILE( PEAKFRE(ISPEC,IPART).GT.NFRE-2
+          DO WHILE( PEAKFRE(ISPEC,IPART).GT.NFRE-NBINEXC
      &        .AND. PARTINFO(ISPEC,IPART).EQ.0
      &        .AND. IPART.LE.NPART(ISPEC) .AND. KPART.NE.0 )
 !           COMBINE WITH NEAREST NOT WINDSEA PEAK
@@ -76,7 +83,7 @@
             DIST = 0
             DO JPART = 1,NPART(ISPEC)
               IF( JPART.NE.IPART .AND. PARTINFO(ISPEC,JPART).EQ.0 
-     &            .AND. PEAKFRE(ISPEC,JPART).LE.NFRE-2 )THEN
+     &            .AND. PEAKFRE(ISPEC,JPART).LE.NFRE-NBINEXC )THEN
                 DIST0 = (FX(ISPEC,IPART)-FX(ISPEC,JPART))**2
      &              + (FY(ISPEC,IPART)-FY(ISPEC,JPART))**2
                 IF( KPART.EQ.0 .OR. DIST0.LT.DIST )THEN
@@ -102,8 +109,6 @@
      &            MEANE , SPREAD ,
      &            SUMX , SUMY , SUMXX , SUMYY ,
      &            FR , CONTROL, IU06 )
-              IF( CONTROL) WRITE(IU06,*) ' REASON: FREQUENCY ',F0,
-     &            ' IS IN LAST TWO FREQUENCY BINS'
 !             THE PEAK IN THE LAST TWO BINS IS UNBELIEVABLE,
 !             SO THE COMBINED PART IS SAID TO HAVE 
 !             THE PEAK WHERE THE OTHER PART HAS ITS PEAK

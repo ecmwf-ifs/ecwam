@@ -1,6 +1,6 @@
       SUBROUTINE MAKEFRAMES( 
 !                  DIMENSIONS
-     &               NSPEC , NGAP ,  NANG , NFRE,
+     &               NSPEC ,ISPECS ,ISPECE,  NGAP ,  NANG , NFRE,
 !                  INPUT
      &               SPEC )
 
@@ -35,7 +35,8 @@
 !     INTERFACE:
 !     ----------
 
-      INTEGER NSPEC, NGAP(NSPEC), NANG, NFRE
+      INTEGER :: NGAP(ISPECS:ISPECE)
+      INTEGER NSPEC, ISPECS, ISPECE, NANG, NFRE
 !                  ARRAY DIMENSIONS.
       REAL SPEC(0:NSPEC,NANG,NFRE)
 !                   2D SPECTRUM.
@@ -43,7 +44,7 @@
 !     LOCAL VARIABLES:
 !     ----------------
 
-      INTEGER GAP(NSPEC,NANG,NFRE)
+      INTEGER, ALLOCATABLE ::  GAP(:,:,:)
 !                   ASSIGNMENT OF A GAP NUMBER TO A 
 !                   FREQUENCY-DIRECTIONAL BIN.
       INTEGER ISPEC, IGAP, JGAP, KGAP, IANG, IFRE
@@ -57,7 +58,7 @@
 !                    SPECTRUM.
       INTEGER GAP0
 !                    TEMPORARILY USE.
-      LOGICAL :: NEWGAP(NSPEC)
+      LOGICAL :: NEWGAP(ISPECS:ISPECE)
       LOGICAL WRAPI, WRAPJ
 !                    FLAG INDICATING IF GAPI RESP. GAPJ WRAPP 
 !                    AROUND 0 DEGREE ?
@@ -66,20 +67,21 @@
 
 !     1. INITIALIZATION OF ARRAYS:
 !     ----------------------------
+      ALLOCATE(GAP(ISPECS:ISPECE,NANG,NFRE))
 
       DO IANG = 1,NANG
         DO IFRE = 1,NFRE
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE
             GAP(ISPEC,IANG,IFRE) = 0
           END DO
         END DO
       END DO
-      DO ISPEC = 1,NSPEC
+      DO ISPEC = ISPECS,ISPECE
         NGAP(ISPEC) = 0
       END DO
       DO IGAP = 1,MGAP
         DO JGAP = 1,MGAP
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             EQUIGAP(ISPEC,IGAP,JGAP) = .FALSE.
           END DO
         END DO
@@ -103,7 +105,7 @@
         END IF
         DO IFRE = 1,NFRE
           NEWGAP = .FALSE.
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             IF( SPEC(ISPEC,IANG,IFRE).EQ.GAPVAL )THEN
               NEWGAP(ISPEC) = .TRUE.
               IF( IFRE.GT.1 )THEN
@@ -147,18 +149,20 @@
             END IF
           END DO
 
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             IF( NEWGAP(ISPEC) )THEN
               NGAP(ISPEC) = NGAP(ISPEC) + 1
-              IF( NGAP(ISPEC).GT.MGAP ) CALL RESIZE_GAP_ARRAY 
+              IF( NGAP(ISPEC).GT.MGAP ) THEN
+                CALL RESIZE_GAP_ARRAY(ISPECS,ISPECE)
+              ENDIF
             END IF
           END DO
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             IF( NEWGAP(ISPEC) )THEN
               GAP(ISPEC,IANG,IFRE) = NGAP(ISPEC)
             END IF
           END DO
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             IF( NEWGAP(ISPEC) )THEN
               GAP0 = NGAP(ISPEC)
               LANG(ISPEC,GAP0) = IANG
@@ -171,8 +175,10 @@
         END DO
       END DO
 
+      DEALLOCATE(GAP)
+
       MAXNGAP = 0
-      DO ISPEC = 1,NSPEC
+      DO ISPEC = ISPECS,ISPECE 
         MAXNGAP = MAX(MAXNGAP,NGAP(ISPEC))
       END DO
 
@@ -185,7 +191,7 @@
       DO IGAP = 1,MAXNGAP
         DO JGAP = 1,MAXNGAP
 
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = ISPECS,ISPECE 
             IF( EQUIGAP(ISPEC,IGAP,JGAP).AND.IGAP.NE.JGAP )THEN
               IF( HANG(ISPEC,IGAP)+1.EQ.LANG(ISPEC,IGAP) )THEN
                 LANG(ISPEC,IGAP) = 1
@@ -277,11 +283,10 @@
         END DO
       END DO
 
-
 !     2.2 REDUCE INDICES OF FRAMES :
 !     ------------------------------
 
-      DO ISPEC = 1,NSPEC
+      DO ISPEC = ISPECS,ISPECE 
         DO IGAP = 1,NGAP(ISPEC)-1
           JGAP = IGAP+1
           DO WHILE( JGAP.LE.NGAP(ISPEC) )

@@ -62,8 +62,8 @@
 !     If the input file contains parameter 251, it must have been obtained
 !     for all directions and frequencies in the default order. Namelly, the
 !     mars request should be done with DIRECTION=1/TO/nang, and
-!     FREQUENCY=1/TO/nfre. At this time nfre=25 and nang=12 for global model
-!     data and 24 for mediterranean data.
+!     FREQUENCY=1/TO/nfre. At this time nfre=25 or 30 and nang=12 or 24
+!     for global model data and 24 for mediterranean data.
 
 !     RUNNING RUN :
 !     ------------
@@ -73,7 +73,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER(NANGMAX=24,NFREMAX=25)
+      PARAMETER(NANGMAX=24,NFREMAX=30)
       PARAMETER (G = 9.806, PI = 3.1415927, CIRC = 40000000.,
      1           ZPI = 2.*PI, RAD = PI/180., DEG = 180./PI,
      2           R = CIRC/ZPI, EPSMIN=0.1E-32, ZMISS=-999.0)
@@ -431,10 +431,10 @@
         ENDIF
 
         PPREC=0.0
-        XEPS=1.0e-10
+        PPEPS=1.0e-10
         DO IJ=1,ILENP
           IF (PSEC4(IJ) .NE. ZMISS) THEN
-            PSEC4(IJ) = 10.**(PSEC4(IJ)-ABS(PPREC))- XEPS
+            PSEC4(IJ) = 10.**(PSEC4(IJ)-ABS(PPREC))- PPEPS
           ENDIF
         ENDDO
 
@@ -512,10 +512,10 @@
             ENDIF
 
             PPREC=0.0
-            XEPS=1.0e-10
+            PPEPS=1.0e-10
             DO IJ=1,ILEN1
               IF (PSEC4OUT(IJ) .NE. ZMISS) THEN
-                PSEC4OUT(IJ) = 10.**(PSEC4OUT(IJ)-ABS(PPREC))- XEPS
+                PSEC4OUT(IJ) = 10.**(PSEC4OUT(IJ)-ABS(PPREC))- PPEPS
               ELSE
                 PSEC4OUT(IJ) = 0.0
               ENDIF

@@ -6,6 +6,7 @@
 
       REAL, ALLOCATABLE :: FR(:)
       REAL, ALLOCATABLE :: DFIM(:) 
+      REAL, ALLOCATABLE :: DFIMOFR(:) 
       REAL, ALLOCATABLE :: GOM(:) 
       REAL, ALLOCATABLE :: C(:) 
       REAL :: DELTH 
@@ -28,6 +29,7 @@
 !      ---------   -------   --------
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
 !      *DFIM*      REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
+!      *DFIMOFR*   REAL      DFIM/FR
 !      *GOM*       REAL      DEEP WATER GROUP VELOCITIES (M/S).
 !      *C*         REAL      DEEP WATER PHASE VELOCITIES (M/S).
 !      *DELTH*     REAL      ANGULAR INCREMENT OF SPECTRUM (RADIANS).

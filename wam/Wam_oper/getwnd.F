@@ -1,5 +1,6 @@
-      SUBROUTINE GETWND (US, DS, KINF, KSUP, KEND, CDTWIS,
-     &                   IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      SUBROUTINE GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
+     &                   NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &                   LWNDFILE, LCLOSEWND)
 
 ! ----------------------------------------------------------------------
 
@@ -15,17 +16,24 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (US, DS, KINF, KSUP, KEND, CDTWIS,
-!                       IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)*
+!       *CALL* *GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
+!                       NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+!                       LWNDFILE, LCLOSEWND)*
 !         *US*     - MAGNITUDE OF USTAR IN EACH POINT AND BLOCK.
 !         *DS*     - DIRECTION OF USTAR IN EACH POINT AND BLOCK.
+!         *ADS*    - AIR DENSITY IN EACH POINT AND BLOCK.
+!         *ZIDL*   - Zi/L  IN EACH POINT AND BLOCK.
 !         *KINF*   - LOWER BOUND ON FIRST DIEMENSION OF FIELD
 !         *KSUP*   - UPPER BOUND ON FIRST DIEMENSION OF FIELD
 !         *KEND*   - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
-!         *IUGB*   - INPUT GRIB WIND FIELD U COMPONENT.
-!         *IVGB*   - INPUT GRIB WIND FIELD V COMPONENT.
-!         *ILEN*   - LENGTH OF IUGB AND IVGB
+!         *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
+!         *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
+!         *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!         *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!         *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
+!         *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
+!         *FIELDS* - ATMOSPHERIC FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR PASSED AS ARGUMENTS IN IUGB AND IVGB
 !         *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND
@@ -53,17 +61,22 @@
 !    ------------
 !    B. HANSEN    ECMWF 1997
 !                 RESTRUCTURE CALL TO READWIND.
-
+!
+!    S. ABDALLA   ECMWF OCTOBER 2001
+!                 MODIFICATION THE CALL TO READWIND WAMWND; AND 
+!                 INCLUSION OF AIR DENSITY AND Zi/L.
 ! ----------------------------------------------------------------------
 
       USE YOWPARAM , ONLY : NBLO
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
-      INTEGER IUGB(ILEN), IVGB(ILEN)
+      INTEGER NFIELDS, NGPTOTG, NC, NR
+      INTEGER ISEC1(255), ISEC2(22+NR)
+      REAL FIELDS(NGPTOTG,NFIELDS)
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS
+      REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS, ADS, ZIDL
       LOGICAL LWNDFILE, LCLOSEWND
 
       CHARACTER*12 CDTWIS, CDTWIR
@@ -77,7 +90,9 @@
 
  1000 CONTINUE
 
-      CALL READWIND (CDTWIR, IUGB, IVGB, ILEN, LWNDFILE, LCLOSEWND)
+      CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, 
+     &               ISEC1, ISEC2, FIELDS,
+     &               LWNDFILE, LCLOSEWND)
 
 !*    2. CHECK WIND FIELD DATE
 !        ----------------------
@@ -146,7 +161,7 @@
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
-      CALL WAMWND (US, DS, KINF, KSUP, KEND)
+      CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND)
 
       RETURN
       END SUBROUTINE GETWND

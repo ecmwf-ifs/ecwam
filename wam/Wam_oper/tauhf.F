@@ -36,8 +36,8 @@
 
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA
-      USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,TAUHFT   ,DELUST   ,
-     &            DELALP
+      USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,USTARM   ,TAUHFT   ,
+     &            DELUST   ,DELALP
 
 ! ----------------------------------------------------------------------
 
@@ -48,7 +48,6 @@
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
 
-      USTARM = 5.
       ALPHAM = 10.*ALPHA
       DELUST = USTARM/REAL(IUSTAR)
       DELALP = ALPHAM/REAL(IALPHA)

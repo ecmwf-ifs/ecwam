@@ -1,4 +1,3 @@
-
       SUBROUTINE SETWGRIBHD 
 
 !----------------------------------------------------------------------
@@ -112,7 +111,8 @@
       IF(NLOCGRB .GT. 0 ) THEN
         KSEK1(37) = NLOCGRB ! INDICATES LOCAL MARS TABLE USED.
       ELSE
-        IF(MARSTYPE .EQ. 'sf' ) THEN
+        IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
+     &                        .OR. ISTREAM .EQ. 1095 ) THEN
           KSEK1(37) =    15
         ELSE
           KSEK1(37) =     1
@@ -125,6 +125,8 @@
         KSEK1(40)= ISTREAM  ! STREAM
       ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
         KSEK1(40)=1082      ! STREAM 1082=SEASONAL WAVE (WASF) 
+!                             note that for monthly fc you must
+!                             specify it with ISTREAM=1095
       ELSE IF(NLOCGRB == 18 ) THEN
         KSEK1(40)=1083      ! STREAM 1083 for multi analysis ensemble
       ELSE
@@ -189,7 +191,9 @@
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
         KSEK1(44) = 0
         KSEK1(45) = 0
-      ELSE IF(MARSTYPE .EQ. 'sf' .OR. NLOCGRB == 15 ) THEN
+      ELSE IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
+     &                           .OR. ISTREAM .EQ. 1095
+     &                           .OR. NLOCGRB == 15 ) THEN
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
                             ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
@@ -222,7 +226,13 @@
         KSEK2( 4) =  NINT(AMONOP*1000) 
       ENDIF
       KSEK2( 5) =  NINT(AMOWEP*1000) ! LONGITUDE OF ORIGIN (WEST -)
-      KSEK2( 6) =     128  ! RESOLUTION FLAG (WMO CODE TABLE 7)
+      IF (IRGG .EQ. 0) THEN
+        KSEK2( 6) =     128  ! RESOLUTION FLAG (WMO CODE TABLE 7)
+      ELSE
+!!!!! until there is a fix in gribex, we will still code with
+!!!!! 128 !!!!!
+        KSEK2( 6) =     128 
+      ENDIF
                            ! LATITUDE OF THE LAST GRID POINT
       IF( CLDOMAIN == 'g' ) THEN 
         KSEK2( 7) = -90000  

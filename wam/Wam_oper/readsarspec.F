@@ -21,10 +21,12 @@
 !     MODULES:
 !     --------
       USE YOWICE   , ONLY : FLMIN
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : RAD
-      USE YOWSTAT  , ONLY : CDTPRO
-      USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,LONG    ,LAT
+      USE YOWPARAM , ONLY : NANG    ,NFRE
+      USE YOWPCONS , ONLY : ZPI     ,RAD
+      USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG     ,LAT      ,
+     &            XKLOW    ,XKUP    ,XKCUTOFF ,NSARINVI ,NSARINVR ,
+     &            NSAR     ,ISARINV ,RSARINV
+      USE YOWSTAT  , ONLY : CDTPRO  ,LSARINV
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -32,17 +34,17 @@
       IMPLICIT NONE
 
       INTEGER :: INUNIT, IFL300, INOSPEC
-      INTEGER :: ISPEC, IANG, IFRE, IC, IDOUBLE
-      INTEGER :: IANGP1, IANGM1, IFREP1, IFREM1
+      INTEGER :: ISPEC, IANG, IFRE, IC, IDOUBLE, ISAR, KCOUNT
       INTEGER :: INTDUMMY,JQUAL, IFAIL
 
-      REAL :: TRACK, COST
+      REAL :: TRACK, ZCOST, USTAR, THW, ZCORWA, ZCORFG, ZCORBE, SCLWSI
+      REAL :: XLLOW, XLUP
       REAL :: DUMMY
 
       CHARACTER* 3 :: YOFID
       CHARACTER*12 :: CDT
 
-      LOGICAL :: ZERO2, LLOPENED, LNODATA, LLTEST
+      LOGICAL :: LLOPENED, LNODATA, LLTEST
 
       DATA YOFID /'INV'/
  
@@ -55,6 +57,9 @@
       ALLOCATE(SPEC(0:NSPEC,NANG,NFRE,2))
       ALLOCATE(LONG(NSPEC,2))
       ALLOCATE(LAT(NSPEC,2))
+      ALLOCATE(XKLOW(NSPEC))
+      ALLOCATE(XKUP(NSPEC))
+      ALLOCATE(XKCUTOFF(NSPEC))
 
       ISPEC = 1
       INOSPEC = 0
@@ -62,74 +67,121 @@
       SPEC=FLMIN
       LONG=0.
       LAT=0.
+      XKLOW=0.
+      XKUP=0.
+      XKCUTOFF=0.
       LNODATA=.FALSE.
 
-!     OPEN INPUT FILE UNIT
+      IF(.NOT.LSARINV) THEN
 
-      UNIT: DO INUNIT=34,99,1
-        INQUIRE ( UNIT=INUNIT, OPENED=LLOPENED)
-        IF ( .NOT. LLOPENED) THEN
-          WRITE(IU06,*)
+!       OPEN INPUT FILE UNIT (if data are not inverted within WAM)
+
+        UNIT: DO INUNIT=34,99,1
+          INQUIRE ( UNIT=INUNIT, OPENED=LLOPENED)
+          IF ( .NOT. LLOPENED) THEN
+            WRITE(IU06,*)
      &     ' READSARSPEC : TAKES UNIT ',INUNIT,' AS SAR DATA INPUT UNIT'
-          EXIT UNIT 
+            EXIT UNIT 
+          ENDIF
+        ENDDO UNIT
+        IF(INUNIT.GT.99) THEN
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' +                                        +'
+          WRITE(IU06,*) ' + ERROR IN --READSARSPEC--               +'
+          WRITE(IU06,*) ' + =========================              +'
+          WRITE(IU06,*) ' + RUN OUT OF UNIT TO OPEN SAR DATA INPUT +' 
+          WRITE(IU06,*) ' + PROGRAM WILL ABORT                     +' 
+          WRITE(IU06,*) ' +                                        +'
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+          CALL ABORT1
         ENDIF
-      ENDDO UNIT
-      IF(INUNIT.GT.99) THEN
-        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) ' +                                        +'
-        WRITE(IU06,*) ' + ERROR IN --READSARSPEC--               +'
-        WRITE(IU06,*) ' + =========================              +'
-        WRITE(IU06,*) ' + RUN OUT OF UNIT TO OPEN SAR DATA INPUT +' 
-        WRITE(IU06,*) ' + PROGRAM WILL ABORT                     +' 
-        WRITE(IU06,*) ' +                                        +'
-        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
-        CALL ABORT1
-      ENDIF
 
-      LLTEST=.TRUE.
-      CALL CONFILE (IU06, INUNIT, CDTPRO, YOFID, IFAIL, LLTEST)
-      IF(IFAIL.NE.0) THEN
-        WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) ' +                                     +'
-        WRITE(IU06,*) ' + WARNING ERROR IN --READSARSPEC--    +'
-        WRITE(IU06,*) ' + ===============================     +'
-        WRITE(IU06,*) ' +                                     +'
-        WRITE(IU06,*) ' +      NO SAR MEASUREMENTS            +'
-        WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
-        WRITE(IU06,*) ' + IFAIL = ', IFAIL
-        WRITE(IU06,*) ' + PROCESSING WILL BE CONTINUED        +'
-        WRITE(IU06,*) ' +                                     +'
-        WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
-        LNODATA=.TRUE.
-        CALL FLUSH(IU06)
-        GOTO 5000
+        LLTEST=.TRUE.
+        CALL CONFILE (IU06, INUNIT, CDTPRO, YOFID, IFAIL, LLTEST)
+        IF(IFAIL.NE.0) THEN
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' +                                     +'
+          WRITE(IU06,*) ' + WARNING ERROR IN --READSARSPEC--    +'
+          WRITE(IU06,*) ' + ===============================     +'
+          WRITE(IU06,*) ' +                                     +'
+          WRITE(IU06,*) ' +      NO SAR MEASUREMENTS            +'
+          WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
+          WRITE(IU06,*) ' + IFAIL = ', IFAIL
+          WRITE(IU06,*) ' + PROCESSING WILL BE CONTINUED        +'
+          WRITE(IU06,*) ' +                                     +'
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
+          LNODATA=.TRUE.
+          CALL FLUSH(IU06)
+          GOTO 5000
+        ENDIF
       ENDIF
 
 
 !     READ INPUT FROM SAR INVERSION PROGRAM UNTIL END OF FILE IS 
 !     REACHED.
 
-      READ(INUNIT,END=1) CDT
-      DO WHILE( .TRUE. )
-        READ(INUNIT,END=1) DUMMY 
-        READ(INUNIT) DUMMY
-        READ(INUNIT) LONG(ISPEC,2),LAT(ISPEC,2)
-        READ(INUNIT) DUMMY
-        READ(INUNIT) DUMMY
-        READ(INUNIT) DUMMY
-        READ(INUNIT) DUMMY
-        READ(INUNIT) DUMMY
-        READ(INUNIT) INTDUMMY, INTDUMMY,JQUAL,INTDUMMY,IFL300
-        READ(INUNIT) DUMMY
-        READ(INUNIT)
-     &      ((SPEC(ISPEC,IANG,IFRE,2),IANG=1,NANG),IFRE=1,NFRE)
-        READ(INUNIT) DUMMY 
+      IF(.NOT.LSARINV) THEN
+        READ(INUNIT,END=1) CDT 
+        NSAR=99999999
+      ENDIF
 
-!       DO NOT KEEP SPECTRA THAT WERE FLAGGED DURING THE INVERSION.
-!       -----------------------------------------------------------
-        IF(IFL300.LT.10) THEN
+      DO ISAR = 1, NSAR 
+        IF(LSARINV) THEN
+          JQUAL = ISARINV(1,ISAR) 
+          IFL300 = ISARINV(2,ISAR)
+
+          LONG(ISPEC,2) = RSARINV(1,ISAR)
+          LAT(ISPEC,2) =  RSARINV(2,ISAR)
+          ZCOST = RSARINV(3,ISAR)
+          ZCORWA = RSARINV(4,ISAR)
+          ZCORFG = RSARINV(5,ISAR)
+          ZCORBE = RSARINV(6,ISAR)
+          SCLWSI = RSARINV(7,ISAR)
+          XLLOW  = RSARINV(8,ISAR)
+          XLUP   = RSARINV(9,ISAR)
+
+          KCOUNT=0
+          DO IANG=1,NANG
+            DO IFRE=1,NFRE
+              KCOUNT=KCOUNT+1
+              SPEC(ISPEC,IANG,IFRE,2) = RSARINV(NSARINVR+KCOUNT,ISAR)
+            ENDDO
+          ENDDO
+
+        ELSE
+          READ(INUNIT,END=1) DUMMY 
+          READ(INUNIT) DUMMY
+          READ(INUNIT) LONG(ISPEC,2),LAT(ISPEC,2)
+          READ(INUNIT) DUMMY
+          READ(INUNIT) DUMMY
+          READ(INUNIT) DUMMY
+          READ(INUNIT) DUMMY
+          READ(INUNIT) TRACK,ZCOST,USTAR,THW,ZCORWA,ZCORFG,ZCORBE
+          READ(INUNIT) INTDUMMY, INTDUMMY,JQUAL,INTDUMMY,IFL300
+          READ(INUNIT) DUMMY
+          READ(INUNIT)
+     &        ((SPEC(ISPEC,IANG,IFRE,2),IANG=1,NANG),IFRE=1,NFRE)
+          READ(INUNIT) DUMMY 
+!!! the SAR boundary wave numbers are not yet part of the file input !!! 
+          XLLOW  = 1./658.
+          XLUP   = 1./65.8
+!!! the cut off wave length is not yet part of the file input !!! 
+          SCLWSI = 100. 
+        ENDIF
+
+!       DO NOT KEEP SPECTRA THAT WERE FLAGGED DURING THE INVERSION
+!       OR WHICH MIGHT BE DOUBTFUL
+!       OR FOR WHICH THE CUT OFF WAVE LENGHT COULD NOT BE DETERMINED.
+!       -------------------------------------------------------------
+        IF(IFL300.LT.10 .AND. ZCOST.LE.0.5 .AND.
+     &     ZCORFG.GE.0.5 .AND. ZCORBE.GE.0.8 .AND. ZCORWA.LE.0.99 .AND.
+     &     JQUAL.NE. 7 ) THEN
           LONG(ISPEC,2) = MOD(LONG(ISPEC,2),360.)
           IF( LONG(ISPEC,2).LT.0 ) LONG(ISPEC,2) = LONG(ISPEC,2) + 360.
+
+          XKLOW(ISPEC) = XLLOW
+          XKUP(ISPEC) = XLUP
+          XKCUTOFF(ISPEC) = ZPI/SCLWSI
 
 !         CHECK FOR DOUBLE OBSERVATIONS
           DO IC=1,ISPEC-1
@@ -149,69 +201,35 @@
 
       END DO
 
-1     CALL RESIZE_SARINPUT(ISPEC-1)
+1     CONTINUE 
+      IF( ISPEC.GT.1 ) THEN
+        CALL RESIZE_SARINPUT(ISPEC-1)
 
-      WRITE(IU06,*) 'NUMBER OF VALID SPECTRA READ IN , NSPEC = ',NSPEC
-      WRITE(IU06,*) 'NUMBER OF DISCARDED FLAGGED SPECTRA  = ',INOSPEC
-      IF(IDOUBLE.GT.0) 
-     & WRITE(IU06,*) 'NUMBER OF DOUBLE SPECTRA  = ',IDOUBLE
+        WRITE(IU06,*) 'NUMBER OF VALID SPECTRA READ IN , NSPEC = ',NSPEC
+        WRITE(IU06,*) 'NUMBER OF DISCARDED FLAGGED SPECTRA  = ',INOSPEC
+        IF(IDOUBLE.GT.0) 
+     &    WRITE(IU06,*) 'NUMBER OF DOUBLE SPECTRA  = ',IDOUBLE
 
-!     SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
-!     (ie FLMIN)
+!       SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
+!       (ie FLMIN)
 
-      DO IFRE = 1,NFRE
-        DO IANG = 1,NANG
-          DO ISPEC = 1,NSPEC
-            SPEC(ISPEC,IANG,IFRE,2) = MAX(SPEC(ISPEC,IANG,IFRE,2),FLMIN) 
-          END DO
-        END DO
-      END DO
-
-!     SET CUT OFF VALUES CAUSED BY CODING AND DECODING TO ZERO.
-
-      DO IANG = 1,NANG
-        IF( IANG.LT.NANG )THEN
-          IANGP1 = IANG + 1
-        ELSE
-          IANGP1 = 1
-        END IF
-        IF( IANG.GT.1 )THEN
-          IANGM1 = IANG - 1
-        ELSE
-          IANGM1 = NANG
-        END IF
         DO IFRE = 1,NFRE
-          IFREP1 = MIN(IFRE+1,NFRE)         
-          IFREM1 = MAX(IFRE-1,1)
-          DO ISPEC = 1,NSPEC
-            IF( SPEC(ISPEC,IANGP1,IFRE,2).LE.0.1E-2.AND.
-     &          SPEC(ISPEC,IANGM1,IFRE,2).LE.0.1E-2.AND.
-     &          SPEC(ISPEC,IANG,IFREP1,2).LE.0.1E-2.AND.
-     &          SPEC(ISPEC,IANG,IFREM1,2).LE.0.1E-2
-     &          ) SPEC(ISPEC,IANG,IFRE,2) = FLMIN 
+          DO IANG = 1,NANG
+            DO ISPEC = 1,NSPEC
+              SPEC(ISPEC,IANG,IFRE,2)=MAX(SPEC(ISPEC,IANG,IFRE,2),FLMIN) 
+            END DO
           END DO
         END DO
-      END DO
+      ELSE
+        LNODATA=.TRUE.
+        WRITE(IU06,*) 'NO VALID DATA FOR SAR ASSIMILATION !!!'
+        WRITE(IU06,*) 'NOTHING WILL BE DONE. '
+      ENDIF
 
+      IF(ALLOCATED(ISARINV)) DEALLOCATE(ISARINV)
+      IF(ALLOCATED(RSARINV)) DEALLOCATE(RSARINV)
 
-!     SMOOTH SAR SPECTRA AROUND 100M WAVE LENGTH CUT OFF.
-
-      DO ISPEC = 1,NSPEC
-        ZERO2 = .TRUE.
-        IANG = 1
-        DO WHILE( IANG.LE.NANG.AND.ZERO2 )
-          IFRE = 1
-          DO WHILE( IFRE.LE.NFRE.AND.ZERO2 )
-            IF( SPEC(ISPEC,IANG,IFRE,2).NE.FLMIN ) ZERO2 = .FALSE.
-            IFRE = IFRE + 1
-          END DO
-          IANG = IANG + 1
-        END DO
-        IF( ZERO2 ) WRITE(IU06,*) 'WARNING!',
-     &    ' INVERTED SAR SPECTRUM NUMBER ',ISPEC,' IS ZERO!'
-      END DO
-
-      CLOSE(INUNIT)
+      IF(.NOT.LSARINV) CLOSE(INUNIT)
 
 5000  CONTINUE
 
