@@ -302,6 +302,7 @@ if [[ $ASSIMILATION = "YES" ]] ; then
    else
       echo 'the following decoder does not work '
       echo '/home/ma/emos/wave/bin/enderac'
+      echo 'or I have not built a 32 bit decoder for sar data'
       exit 1
    fi
   #
@@ -314,29 +315,62 @@ if [[ $ASSIMILATION = "YES" ]] ; then
 
   LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
   #
+
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
-    if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
-      # in case file is not there do a ecfs request
-      yyyymm=$(substring ${ANALYSIS_DATE} 1 6)
-      ddhh=$(substring ${ANALYSIS_DATE} 7 10)
-      ecp ec:$DHSWAVE/$yyyymm/$ddhh/BFL BFL${ANALYSIS_DATE}00 
-  #
-  # use appropriate decoder
-  #
+
+#   GET ALTIMETER DATA
+    if [[ $laltas = "T" ]] ; then
+      if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
+        # in case file is not there do a ecfs request
+        yyyymm=$(substring ${ANALYSIS_DATE} 1 6)
+        ddhh=$(substring ${ANALYSIS_DATE} 7 10)
+        ecp ec:$DHSWAVE/$yyyymm/$ddhh/BFL BFL${ANALYSIS_DATE}00 
+      #
+      # use appropriate decoder
+      #
       if [ $PRECISION = SINGLE ] ; then
-           echo 'the following decoder does not work '
-           echo '/home/ma/emos/wave/bin/enderac'
-           exit 1
+          echo 'the following decoder does not work '
+          echo '/home/ma/emos/wave/bin/enderac'
+          exit 1
 ##         /home/ma/emos/wave/bin/enderac \
 ##         -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
       else
-         ./enderac -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
+           ./enderac -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
       fi
 
-      rm -f BFL${ANALYSIS_DATE}00
-      mv RFL${ANALYSIS_DATE}00 ${ADIR}/RFL${ANALYSIS_DATE}00
+        rm -f BFL${ANALYSIS_DATE}00
+        mv RFL${ANALYSIS_DATE}00 ${ADIR}/RFL${ANALYSIS_DATE}00
+
+      fi
     fi
+
+#   GET SAR DATA
+    if [[ $lsaras = "T" ]] ; then
+      if [[ !  -r ${ADIR}/INV${ANALYSIS_DATE}00 ]] ; then
+        # in case file is not there do a ecfs request
+        yyyymm=$(substring ${ANALYSIS_DATE} 1 6)
+        ddhh=$(substring ${ANALYSIS_DATE} 7 10)
+        ecp ec:$DHSWAVE/$yyyymm/$ddhh/BNVFG BNV${ANALYSIS_DATE}00 
+        #
+        # use appropriate decoder
+        #
+        if [ $PRECISION = SINGLE ] ; then
+           echo ' I have not created a 32 bit endeinv'
+           exit 1
+        else
+### I built endeinv using a prepifs run using CY19R2_more_mods
+### on 05.03/1999. !!!!!!!!!!
+        /home/rd/wab/bin/endeinv -i INV${ANALYSIS_DATE}00 -b BNV${ANALYSIS_DATE}00
+        fi
+
+        rm -f BNV${ANALYSIS_DATE}00
+        mv INV${ANALYSIS_DATE}00 ${ADIR}/INV${ANALYSIS_DATE}00
+      fi
+
+    fi
+
     ANALYSIS_DATE=`newdate ${ANALYSIS_DATE} 6`
+
   done
 else
   AS=0

@@ -50,9 +50,10 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
-     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN
+     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
      &            XNLEV
       USE YOWCPBO  , ONLY : NBOUNC
@@ -86,6 +87,14 @@
   999 FORMAT(5E16.7)
 
 ! ----------------------------------------------------------------------
+!        WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
+!        ANYTHING TO THE MODEL). 
+      IF (IFORM.NE.2) THEN
+        WRITE(IU07) IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
+      ENDIF
+      IF (IFORM.NE.1) THEN
+        WRITE(IU17,998) IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
+      ENDIF
 !*    0. WRITE YOWPARAM (BLOCK SIZES).
 !        ----------------------------
 

@@ -47,18 +47,20 @@
 
       IF(NFLAGALL) THEN
 
-        WRITE(IU06,*) '' 
+        WRITE(IU06,*) ' ' 
         WRITE(IU06,*) '   WAMNORM ON ',CDTPRO
         WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
      &   '           MAXIMUM      NUMBER OF SEA POINTS' 
-        WRITE(IU06,*) ' '
 
         IF(NFLAG(1).AND.(GFLAG(1).OR.FFLAG(1).OR.PFLAG(1))) THEN
           CALL WAMNORM(WHGTTG,NGX,NGY,ZMISS,EPSMIN,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(1),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM FOR WAVE ENERGY'
+            FAVG=4*SQRT(MAX(0.,FAVG))
+            FMIN=4*SQRT(MAX(0.,FMIN))
+            FMAX=4*SQRT(MAX(0.,FMAX))
+            WRITE(IU06,*) '   4*SQRT OF WAMNORM FOR WAVE ENERGY:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF
@@ -168,6 +170,9 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(11),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
+            FAVG=4*SQRT(MAX(0.,FAVG))
+            FMIN=4*SQRT(MAX(0.,FMIN))
+            FMAX=4*SQRT(MAX(0.,FMAX))
             WRITE(IU06,*) '   WAMNORM FOR WIND SEA WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
@@ -179,6 +184,9 @@
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(12),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
+            FAVG=4*SQRT(MAX(0.,FAVG))
+            FMIN=4*SQRT(MAX(0.,FMIN))
+            FMAX=4*SQRT(MAX(0.,FMAX))
             WRITE(IU06,*) '   WAMNORM FOR SWELL WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '

@@ -41,6 +41,7 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
      &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,
      &            IJL      ,IJLT
@@ -54,7 +55,7 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
-     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN 
+     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID 
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
@@ -63,6 +64,30 @@
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
 
 ! ----------------------------------------------------------------------
+      INTEGER :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+
+!     READ MODEL IDENTIFIERS
+      READ(IU07) KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+      IF(KMDLGRDID.NE.IMDLGRDID .OR.
+     &   KMDLGRBID_G.NE.IMDLGRBID_G .OR.
+     &   KMDLGRBID_M.NE.IMDLGRBID_M) THEN
+         WRITE(IU06,*) '*****************************************'
+         WRITE(IU06,*) '*                                       *'
+         WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+         WRITE(IU06,*) '*  ==============================       *'
+         WRITE(IU06,*) '*                                       *'
+         WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+         WRITE(IU06,*) '* MODEL IDENTIFIERS. MAKE SURE YOU HAVE *' 
+         WRITE(IU06,*) '* RUN PREPROC !!!!                      *'
+         WRITE(IU06,*) KMDLGRDID, IMDLGRDID
+         WRITE(IU06,*) KMDLGRBID_G, IMDLGRBID_G
+         WRITE(IU06,*) KMDLGRBID_M, IMDLGRBID_M
+         WRITE(IU06,*) '*                                       *'
+         WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+         WRITE(IU06,*) '* ---------------   --------------      *'
+         WRITE(IU06,*) '*****************************************'
+         CALL ABORT1
+      ENDIF
 
 !*    0. READ YOWPARAM (BLOCK SIZES). 
 !        ----------------------------

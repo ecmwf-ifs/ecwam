@@ -30,12 +30,18 @@
  LFDBIOOUT=T,
  LNOCDIN=${lnocdin},
  LALTCOR=${laltcor},
+ LALTLRGR = ${laltlrgr},
+ HSCOEFCOR = ${hscoefcor},
+ HSCONSCOR = ${hsconscor},
+ LFRSTFLD=F,
  ICASE= 1,
  ISHALLO= 1,
  ITEST= 0,
  ITESTB= 1,
  IREST= 1,
  IASSI= $AS,
+ LALTAS=${laltas},
+ LSARAS=${lsaras},
  IFORCA= 1,
  IBOUNC= 0,
  IBOUNF= 0,
@@ -49,5 +55,6 @@
  CPATH="$STORAGE_PATH"
  CFDBSF="$cfdbsf"
  CFDB2DSP="$cfdb2dsp"
+ NCALL=2
  /
 C  &NAOT CLOUT="" /

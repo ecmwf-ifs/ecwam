@@ -8,8 +8,8 @@
 !     PURPOSE.
 !     --------
 
-!     TRANSMIT GRID (2-D) DATA CONTAINED IN THE ARRAY FIELD THAT MIGHT BE 
-!     ON A DIFFERENT PROCESS TO THE RECEIVING PROCESS
+!     TRANSMIT GRID (2-D) DATA CONTAINED IN THE ARRAY FIELD THAT MIGHT
+!     BE ON A DIFFERENT PROCESS TO THE RECEIVING PROCESS
 
 !*    INTERFACE.
 !     ----------
@@ -18,7 +18,7 @@
 
 !     *ISEND*     PROCESS RANK SENDING THE GRID FIELD 
 !     *IRECV*     PROCESS RANK RECEIVING THE GRID FIELD 
-!     *ITAG*      TAG USED TO DIFFERENTIATE THE CALLS TO THIS SUBROUTINE 
+!     *ITAG*      TAG USED TO DIFFERENTIATE THE CALLS TO THIS SUBROUTINE
 !     *FIELD*     INPUT/OUTPUT ARRAY CONTAINING THE FIELD
 
 !     METHOD.
@@ -37,11 +37,8 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-
-
+      USE YOWPARAM , ONLY : NGX      ,NGY
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -50,7 +47,6 @@
 !----------------------------------------------------------------------
 
       REAL,DIMENSION(NGX*NGY):: ZCOMBUF
-
 
       KCOUNT=NGX*NGY 
 

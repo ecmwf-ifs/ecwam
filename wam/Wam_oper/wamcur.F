@@ -36,16 +36,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NIBLC    ,NBLC
       USE YOWCURR  , ONLY : U        ,V
       USE YOWCURG  , ONLY : DUCLO    ,DUCLA    ,UCLO     ,UCLW     ,
      &            UCUR     ,VCUR     ,KRCI     ,KCCI     ,IPCUR
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJLT
+      USE YOWPARAM , ONLY : NIBLC    ,NBLC
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-
-! ----------------------------------------------------------------------
-
-      CHARACTER*12 CDTCUR
 
 ! ----------------------------------------------------------------------
 

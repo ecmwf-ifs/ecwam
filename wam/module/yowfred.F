@@ -8,12 +8,14 @@
       REAL, ALLOCATABLE :: DFIM(:) 
       REAL, ALLOCATABLE :: GOM(:) 
       REAL, ALLOCATABLE :: C(:) 
-      REAL DELTH 
-      REAL DELTR 
+      REAL :: DELTH 
+      REAL :: DELTR 
       REAL, ALLOCATABLE :: TH(:) 
       REAL, ALLOCATABLE :: COSTH(:) 
       REAL, ALLOCATABLE :: SINTH(:) 
+
       REAL, PARAMETER :: FRATIO = 1.1
+      REAL, PARAMETER :: WETAIL = 0.25
       REAL, PARAMETER :: FRTAIL = 0.2
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -28,6 +30,7 @@
 !      *COSTH*     REAL      COS OF DIRECTION.
 !      *SINTH*     REAL      SIN OF DIRECTION.
 !      *FRATIO*    REAL      FREQUENCY RATIO.
+!      *WETAIL*    REAL      WAVE ENERGY TAIL CONSTANT FACTOR.
 !      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.
 
 ! ----------------------------------------------------------------------

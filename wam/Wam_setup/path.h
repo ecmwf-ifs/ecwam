@@ -6,7 +6,7 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY21R2_to_CY21R3
+VERSION=CY21R4_old_tables
 #.
 DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
@@ -96,20 +96,29 @@ WDIR=${ROOTWDIR}/${grid}
 #.  Define user input 
 #.=====================================================================
 #.
+#if region=='s'
 ASSIMILATION=NO                        # altimeter data assimilation 
+laltas=F
+lsaras=F
+#else
+ASSIMILATION=YES                        # altimeter data assimilation 
+#. Specify what type of data will be used for the assimilation
+laltas=T
+lsaras=F
+#endif
 #
-typeset -Z12 begofrn=199907051200      # BEGin date OF RUn
-typeset -Z12 endofrn=199907051800      # END   date OF RUn
-typeset -Z12 begoffo=199907051800      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=199912210600      # BEGin date OF RUn
+typeset -Z12 endofrn=199912310600      # END   date OF RUn
+typeset -Z12 begoffo=199912310600      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=199907051800      # Date to output restart file(s).
+typeset -Z12 outofrf=199912310600      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
 typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are
                                        # saved. Set to 0000000000 if not
                                        # required.
-typeset -Z7 antime=21600               # Length of analysis in seconds.
+typeset -Z7 antime=864000               # Length of analysis in seconds.
 typeset -Z7 fctime=0                   # Length of forcast in seconds.
 #.
 CLASS=RD                               # user class

@@ -29,4 +29,9 @@
  CFDB2DSP = "$cfdb2dsp"
  LNOCDIN=${lnocdin}
  LALTCOR=${laltcor}
+ LALTLRGR = ${laltlrgr},
+ HSCOEFCOR = ${hscoefcor},
+ HSCONSCOR = ${hsconscor},
+ LFRSTFLD=F
+ NCALL=2
  /

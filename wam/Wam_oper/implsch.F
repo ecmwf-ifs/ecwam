@@ -105,12 +105,12 @@
 
       USE YOWPCONS , ONLY : G
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR
+      USE YOWFRED  , ONLY : FR       ,FRATIO
       USE YOWICE   , ONLY : FLMIN
       USE YOWMEAN  , ONLY : FMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,NCALL
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -124,7 +124,7 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION MIJ(IJS:IJL), MFMF(IJS:IJL), GADIAG(IJS:IJL),
+      DIMENSION MIJ(IJS:IJL), GADIAG(IJS:IJL),
      &          TEMP(IJS:IJL,NFRE), DELFL(NFRE)
 
 ! ----------------------------------------------------------------------
@@ -151,8 +151,6 @@
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
 !         --------------------------------
-!!!! we will limit ourselves to 1 iteration for now !!!
-      NCALL=1
 
       DO ICALL=1,NCALL
 
@@ -242,9 +240,13 @@
 !           ------------------------------------------------------------
 
       FPMH = 2.5/FR(1)
+      FLOGSPRDM1=1./LOG10(FRATIO)
+      
       DO IJ=IJS,IJL
         FPM4 = FMEAN(IJ)*FPMH
-        MIJ(IJ) = ALOG10(FPM4)*24.1589+1.
+           
+        MIJ(IJ) = INT(ALOG10(FPM4)*FLOGSPRDM1)+1
+
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
 
@@ -283,6 +285,9 @@
           DO IJ=IJS,IJL
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)
      &       + FL3(IJ,K,M)*FCONST(IJ,M)
+
+            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLMIN)
+
           ENDDO
         ENDDO
       ENDDO

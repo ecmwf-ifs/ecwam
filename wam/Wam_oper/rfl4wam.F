@@ -119,7 +119,6 @@
       DATA CLOPTS/'d;i;a;'/
 
       CHARACTER*24 FILNM
-      CHARACTER*80 LOGFILENAME 
 
       REAL Z4(2)
       INTEGER I4(2)

@@ -137,7 +137,7 @@
         XJ    = MIN(REAL(IALPHA),XJ)
         J     = MIN (IALPHA-1, INT(XJ))
         J     = MAX (0, J)
-        DELJ1 = MIN (1. ,XJ-REAL(J))
+        DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
         DELJ2   = 1. - DELJ1
 
         TAU1 = (TAUHFT(I,J  )*DELI2 + TAUHFT(I+1,J  )*DELI1)*DELJ2

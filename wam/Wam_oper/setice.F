@@ -54,7 +54,10 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS,IJL
-            FL3(IJ,K,M) = ICEMASK(IJ,IG)*FL3(IJ,K,M)
+            IF(ICEMASK(IJ,IG).EQ.0) THEN
+!!!            FL3(IJ,K,M) = ICEMASK(IJ,IG)*FL3(IJ,K,M)
+              FL3(IJ,K,M) = 0.
+            ENDIF
           ENDDO
         ENDDO
       ENDDO

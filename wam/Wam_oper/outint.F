@@ -52,7 +52,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,XNLEV
+      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
      &            LFDB     ,IPFGTBL
@@ -69,6 +69,9 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,ZMISS
+      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EGRCRV   ,
+     &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV
+
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CDTINTS  ,CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,
      &            MARSTYPE ,YCLASS   ,YEXPVER
@@ -76,11 +79,40 @@
 ! ----------------------------------------------------------------------
 
       CHARACTER TITL*100
-      LOGICAL LGRIBPAC
 
 ! ----------------------------------------------------------------------
 
-      LGRIBPAC = .FALSE.
+      IF(CLDOMAIN.EQ.'s') THEN
+!     the swamp case has been reduced to a one grid point model
+!     the necessary paramters for the study of the non dimensional
+!     growth curves are output
+!!!!  MAKE SURE that whgttg(i,j) is the wave energy and not wave height.
+
+
+        call difdate(cdatea,cdtpro,itime)
+        do j=1,ngy
+          do i=1,ngx
+            if(whgttg(i,j).ne.zmiss) then
+!             take the definiton from the model for the relation
+!             between ustar and u10g (see buildstress)
+              ustar2=cdg(i,j)*(u10g(i,j)**2+0.01)-0.0001
+              ustar=sqrt(ustar2)
+              tstar=itime*g/ustar
+              estar=whgttg(i,j)*g**2/(ustar**4)
+              anfit=EGRCRV*tanh(AGRCRV*tstar**BGRCRV)
+              fmstar=ustar*wmnftg(i,j)/g
+              fmfit=AFCRV*fmstar**BFCRV
+              cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
+              z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
+              charnock=max(g*z0/ustar2,alpha)
+              write(iu06,*) 'grow ',tstar,estar,ustar,whgttg(i,j),
+     &                      cdg(i,j),u10g(i,j),anfit,fmstar,fmfit,
+     &                      wpkftg(i,j),charnock
+            endif
+          enddo
+        enddo
+
+      ENDIF
 
       IF (CDTINTT.EQ.CDTPRO) THEN
 
@@ -496,7 +528,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -511,7 +542,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -539,7 +569,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -567,7 +596,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -583,7 +611,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -598,7 +625,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -614,14 +640,13 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
       ENDIF
 
 !*      ALTIMETER WAVE HEIGHT.
-!       -----i---------------
+!       ---------------------
 
         IF (GFLAG(22).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(22)))
@@ -631,7 +656,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -646,12 +670,11 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
 !*      ALTIMETER RANGE RELATIVE CORRECTION.
-!       -----i-----------------------------
+!       -----------------------------------
 
         IF (GFLAG(24).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(24)))
@@ -661,7 +684,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -683,7 +705,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -699,7 +720,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -727,7 +747,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -742,7 +761,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -758,7 +776,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
 
@@ -786,7 +803,6 @@
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
-            LGRIBPAC = .TRUE.
           ENDIF
         ENDIF
       ENDIF  

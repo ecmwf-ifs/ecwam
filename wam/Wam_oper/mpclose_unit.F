@@ -6,7 +6,6 @@
 
 !     J. BIDLOT     ECMWF    MAY 1996    MESSAGE PASSING
 
-
 !*    PURPOSE.
 !     --------
 !     CLOSE ALL OPENED UNIT
@@ -17,7 +16,8 @@
 
 !     METHOD.
 !     -------
-!     LOOP ON ALL UNIT NUMBER AND INQUIRE IF UNIT IS OPENED AND THEN CLOSE IT
+!     LOOPS ON ALL UNIT NUMBER AND INQUIRES IF UNIT IS OPENED 
+!     AND THEN CLOSES IT
 
 !     EXTERNALS.
 !     ----------
@@ -38,7 +38,3 @@
         ENDIF
       ENDDO 
       END SUBROUTINE MPCLOSE_UNIT
-
-
-
-

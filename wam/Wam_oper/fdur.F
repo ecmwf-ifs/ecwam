@@ -25,50 +25,46 @@
 !     METHOD.                                                           
 !     -------                                                           
 
-!        THE DURATION IS DERIVED BY THE GROWTH CURVE                    
-!                ESTAR=EO*TANH(A*TSTAR**B).                             
+!        THE DURATION IS DERIVED BY THE NON DIMENSIONAL GROWTH CURVE
+
+!        ESTAR=EGRCRV*TANH(AGRCRV*TSTAR**BGRCRV).
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G
-      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV
+      USE YOWMPP   , ONLY : NINF    ,NSUP
+
+! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF:NSUP) :: EWFG, T, USMO 
 
-! ----------------------------------------------------------------------
-
-      PARAMETER (EO = 955., A = 6.02*10.**(-5), B = 0.695)              
-
-!       *EO*      REAL    PARAMETER OF THE ENERGY GROWTH CURVE.         
-!       *A*       REAL    PARAMETER OF THE ENERGY GROWTH CURVE.         
-!       *B*       REAL    PARAMETER OF THE ENERGY GROWTH CURVE.         
-!       *G*       REAL    ACCELLERATION OF GRAVITY.                     
-
-! ----------------------------------------------------------------------
 
 !*    1. INITIALIZE DURATION.                                           
 !        -------------------                                            
 
-      DO IJ=IJS,IJL                                                
-        T(IJ) = -9.                                                    
+      DO IJ=IJS,IJL
+        T(IJ) = -9.
       ENDDO
 
-!*    2. LOOP OVER POINTS IN BLOCK.                                     
-!        --------------------------                                     
+      G2=G*G
+      BGRCRV_INV=1./BGRCRV
 
-      DO IJ=IJS,IJL                                                
-        IF (EWFG(IJ).GT.0.01) THEN                                     
+!*    2. LOOP OVER POINTS IN BLOCK.
+!        --------------------------
 
-!        DETERMINE THE EFFECTIVE DURATION OF THE WINDSEA ACCORDING TO   
-!        THE WAM MODEL GROWTH CURVE, IF THERE WINDSEA IS PRESENT.       
+      DO IJ=IJS,IJL
+        IF (EWFG(IJ).GT.0.01) THEN
 
-          TSTAR = EWFG(IJ)*G**2/USMO(IJ)**4                           
-          TSTAR = MIN (TSTAR/EO, .999999)                             
-          TSTAR = (1.+TSTAR)/(1.-TSTAR)                               
-          TSTAR = (LOG(TSTAR)/(2.*A))**(1./B)                        
-          T(IJ) = USMO(IJ)/G*TSTAR                                    
-        ENDIF                                                          
+!         DETERMINE THE EFFECTIVE DURATION OF THE WINDSEA ACCORDING TO
+!         THE WAM MODEL GROWTH CURVE, IF THERE WINDSEA IS PRESENT.
+
+          TSTAR = EWFG(IJ)*G2/USMO(IJ)**4
+          TSTAR = MIN (TSTAR/EGRCRV, .999999)
+          TSTAR = (1.+TSTAR)/(1.-TSTAR)
+          TSTAR = (LOG(TSTAR)/(2.*AGRCRV))**BGRCRV_INV
+          T(IJ) = USMO(IJ)/G*TSTAR
+        ENDIF
       ENDDO
                                                                         
-      RETURN                                                            
+      RETURN
       END SUBROUTINE FDUR

@@ -45,7 +45,8 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
      &            KCOL     ,KROW     ,ICODE    ,IWPER
-      USE YOWWIND  , ONLY : NC       ,NR       ,UWND     ,VWND
+      USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,UWND     ,
+     &            VWND
 
 ! ----------------------------------------------------------------------
 
@@ -164,27 +165,26 @@
         ENDDO
       ENDIF
 
-!     3.4 SET LOWER THEN 1.0 M/S  WIND SPEED TO 1.0 M/S
-!         ---------------------------------------------
+!     3.4 SET LOWER WIND SPEED TO WSPMIN m/s
+!         ----------------------------------
       DO IG = 1,IGL
         IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
           DO IJ = 1,KEND
-            US(IJ,IG) = MAX(US(IJ,IG),1.0)
+            US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
           ENDDO
         ELSE
           DO IJ = IJS(IG),IJL(IG)
-            US(IJ,IG) = MAX(US(IJ,IG),1.0)
+            US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
           ENDDO
         ENDIF
       ENDDO
       IF(LFRSTIME) THEN
         WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' ****************************************'
         WRITE (IU06,*) ' SUB. WAMWND : '
         WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' WIND SPEEDS < 1 M/S WERE RESET TO 1 M/S'
+        WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
+        WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
         WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' *****************************************'
         WRITE (IU06,*) ' '
         LFRSTIME=.FALSE.
       ENDIF

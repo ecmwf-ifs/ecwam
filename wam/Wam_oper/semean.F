@@ -37,19 +37,15 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : EPSMIN
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
-
-
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : EPSMIN
 
 ! ----------------------------------------------------------------------
 
       DIMENSION F3(NINF-1:NSUP,NANG,NFRE), TEMP(IJS:IJL)
-
 
 ! ----------------------------------------------------------------------
 
@@ -84,7 +80,7 @@
 !*    3. ADD TAIL ENERGY.
 !        ----------------
 
-      DELT25 = FR(NFRE)/4.*DELTH
+      DELT25 = WETAIL*FR(NFRE)*DELTH
       DO IJ=IJS,IJL
         EMEAN(IJ) = EMEAN(IJ)+DELT25*TEMP(IJ)
       ENDDO

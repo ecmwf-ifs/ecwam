@@ -51,9 +51,9 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            XKAPPA2
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR
+      USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR  ,LALTLRGR
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWINTP  , ONLY : WHGTTG   ,CDG      ,WHGTAG   ,CWHTAG   ,
@@ -196,12 +196,39 @@
 
 ! ----------------------------------------------------------------------
 
-!*    4. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO SROKOSZ.
+!*    4. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO 
+!        SUPPLIED LINEAR REGRESSION COEFFICIENTS
+!        --------------------------------------------------
+      IF(LALTLRGR) THEN
+        IF(LMESSPASS) THEN
+          DO IJ = NSTART(IRANK), NEND(IRANK)
+            IX = IXLG(IJ,1)
+            IY = NGY- KXLT(IJ,1) +1
+            IF (WHME(IX,IY).GT.0.)
+     &          WHME(IX,IY) = HSCOEFCOR*WHME(IX,IY)+HSCONSCOR
+          ENDDO
+        ELSE
+          DO IG = 1, IGL
+            DO IJ = IJS(IG),IJL(IG)
+              IX = IXLG(IJ,IG)
+              IY = NGY- KXLT(IJ,IG) +1
+              IF (WHME(IX,IY).GT.0.)
+     &            WHME(IX,IY) = HSCOEFCOR*WHME(IX,IY)+HSCONSCOR
+            ENDDO
+          ENDDO
+        ENDIF
+        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
+        WRITE(IU06,*) '           Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR
+        WRITE(IU06,*) ' '
+      ENDIF
+
+
+!*    5. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO SROKOSZ.
 !        ---------------------------------------------------------
 
       NERS = 0
 
-!     4.1 DETERMINE NUMBER OF OBSERVATIONS ON ONE PE.
+!     5.1 DETERMINE NUMBER OF OBSERVATIONS ON ONE PE.
 !         ------------------------------------------
       
       IF(LMESSPASS) THEN
@@ -220,7 +247,7 @@
         ENDDO
       ENDIF
       
-!     4.2 COLLOCATE WAMSPECTRA WITH ALT-HS OBSERVATIONS.
+!     5.2 COLLOCATE WAMSPECTRA WITH ALT-HS OBSERVATIONS.
 !         ---------------------------------------------
       
       IF (NERS.GT.0) THEN
@@ -258,15 +285,18 @@
       
       ENDIF
 
-!     4.3 APPLY SROKOSZ CORRECTION.
+!     5.3 APPLY SROKOSZ CORRECTION.
 !         -------------------------
      
       WHGTAG = ZMISS
       CWHTAG = ZMISS
       RANGAG = ZMISS
  
-      WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-      WRITE(IU06,*) ' '
+      IF(LALTCOR) THEN
+        WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
+        WRITE(IU06,*) ' '
+      ENDIF
+
       IF(LALTCOR.AND.ITEST.GT.0) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT CORRECTION '
@@ -353,7 +383,7 @@
       IF( ALLOCATED(FALT) ) DEALLOCATE(FALT)
       
 
-!*    5. OBTAIN FRICTION VELOCITIES FROM OBSERVED WINDS AND THE DRAG.
+!*    6. OBTAIN FRICTION VELOCITIES FROM OBSERVED WINDS AND THE DRAG.
 !        ------------------------------------------------------------
 
       FV: DO J=1,NGY

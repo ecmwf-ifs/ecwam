@@ -76,7 +76,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,  
      &            XDELLA
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,SWAMPWIND,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI 
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
@@ -689,6 +689,8 @@
 !     SWAMP CASE : CREATE YOUR OWN WIND FIELD
 
 8000  CONTINUE
+      WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
+     &                SWAMPWIND 
 
 !     THE DIMENSIONS ARE HARD CODED !!
       NC=NGX
@@ -733,7 +735,7 @@
       ENDDO
       DO J=1,NR
         DO I=1,NC
-         VWND(I,J)=18.45
+         VWND(I,J)=SWAMPWIND
         ENDDO
       ENDDO
 

@@ -26,8 +26,8 @@
 !**             CDCLASS   - CLASS OF CURRENT RUN.
 !**             CDEXPVER  - EXPERIMENT VERSION NUMBER.
 !**             CDDOMAIN  - FDB DOMAIN IDENTIFIER.
-!**             KDIR      - CURRENT DIRECTION IF PARAM=251, OTHERWISE SET TO 0 
-!**             KFRE      - CURRENT FREQUENCY IF PARAM=251, OTHERWISE SET TO 0 
+!**             KDIR      - CURRENT DIRECTION IF PARAM=251, ELSE  = 0 
+!**             KFRE      - CURRENT FREQUENCY IF PARAM=251, ELSE = 0 
 !**
 !**      INPUT FOR THE CDFUN = 'WRITE':
 !**
@@ -131,18 +131,6 @@
       CHARACTER*4  clstream
 
       CHARACTER*8  cldate
-
-      CHARACTER*1  cl_p_domain
-      CHARACTER*2  cl_p_time
-      CHARACTER*2  cl_p_type
-      CHARACTER*2  cl_p_class
-      CHARACTER*3  cl_p_param
-      CHARACTER*4  cl_p_expver
-      CHARACTER*6  cl_p_step
-      CHARACTER*8  cl_p_date
-
-      DATA cl_p_domain, cl_p_time, cl_p_type, cl_p_class, cl_p_param,
-     &     cl_p_expver, cl_p_step, cl_p_date / 8*"  " /
 
 !     HELPS TO CALL IOPENFDB ONLY ONCE.
 !     ---------------------------------
@@ -287,8 +275,6 @@
         RETURN
       ENDIF
 
-
-
 !     ------------------------------------------------------------------
 
 !*    3. MAKE DATA BASE NAME.
@@ -299,51 +285,19 @@
 
 !     ------------------------------------------------------------------
 
-      IF ( cl_p_class .NE. clclass ) THEN
-        cl_p_class=clclass
-      ENDIF
-
-      IF ( cl_p_expver .NE. clexpver ) THEN
-        cl_p_expver=clexpver
-      ENDIF
-
-      IF ( cl_p_domain .NE. cldomain ) THEN
-        cl_p_domain=cldomain
-      ENDIF
-
-      IF ( cl_p_type .NE. cltype ) THEN
-        cl_p_type=cltype
-      ENDIF
-
-      IF ( cl_p_param .NE. clparam ) THEN
-        cl_p_param=clparam
-      ENDIF
-
-      IF ( cl_p_date .NE. cldate ) THEN
-        cl_p_date=cldate
-      ENDIF
-
-      IF ( cl_p_time .NE. cltime ) THEN
-        cl_p_time=cltime
-      ENDIF
-
-      IF ( cl_p_step .NE. clstep ) THEN
-        cl_p_step=clstep
-      ENDIF
-
-      istat = isetvalfdb( iaddr1, 'class',  cl_p_class  )
-      istat = isetvalfdb( iaddr1, 'expver', cl_p_expver )
-      istat = isetvalfdb( iaddr1, 'domain', cl_p_domain )
-      istat = isetvalfdb( iaddr1, 'type',   cl_p_type   )
-      istat = isetvalfdb( iaddr1, 'param',  cl_p_param  )
-      istat = isetvalfdb( iaddr1, 'date',   cl_p_date   )
-      istat = isetvalfdb( iaddr1, 'time',   cl_p_time   )
-      istat = isetvalfdb( iaddr1, 'step',   cl_p_step   )
+      istat = isetvalfdb( iaddr1, 'class',  clclass  )
+      istat = isetvalfdb( iaddr1, 'expver', clexpver )
+      istat = isetvalfdb( iaddr1, 'domain', cldomain )
+      istat = isetvalfdb( iaddr1, 'type',   cltype   )
+      istat = isetvalfdb( iaddr1, 'param',  clparam  )
+      istat = isetvalfdb( iaddr1, 'date',   cldate   )
+      istat = isetvalfdb( iaddr1, 'time',   cltime   )
+      istat = isetvalfdb( iaddr1, 'step',   clstep   )
       istat = isetvalfdb( iaddr1, 'levty',   's'        )
 !     istat = isetvalfdb( iaddr1, 'level',   '0000'     )
 !     istat = isetvalfdb( iaddr1, 'fstep',  '000000'    )
 
-      IF (kdir.NE.0 .AND. kfre.NE.0 .AND. cl_p_param .EQ. '251' ) THEN
+      IF (kdir.NE.0 .AND. kfre.NE.0 .AND. clparam .EQ. '251' ) THEN
         idir = kdir 
         ifre = kfre 
         WRITE( cldir, '(i2.2)' ) idir 
@@ -358,14 +312,14 @@
       ENDIF
 
       IF (KTEST.GT.1) THEN
-        WRITE(kuso,'("\ /Fld2fdb/ CLASS: ", a8)') cl_p_class
-        WRITE(kuso,'("\ /Fld2fdb/ EXPVER:", a8)') cl_p_expver
-        WRITE(kuso,'("\ /Fld2fdb/ DOMAIN:", a8)') cl_p_domain
-        WRITE(kuso,'("\ /Fld2fdb/ TY:    ", a8)') cl_p_type
-        WRITE(kuso,'("\ /Fld2fdb/ PARAM: ", a8)') cl_p_param
-        WRITE(kuso,'("\ /Fld2fdb/ DATE:  ", a8)') cl_p_date
-        WRITE(kuso,'("\ /Fld2fdb/ TIME:  ", a8)') cl_p_time
-        WRITE(kuso,'("\ /Fld2fdb/ STEP:  ", a8)') cl_p_step
+        WRITE(kuso,'("\ /Fld2fdb/ CLASS: ", a8)') clclass
+        WRITE(kuso,'("\ /Fld2fdb/ EXPVER:", a8)') clexpver
+        WRITE(kuso,'("\ /Fld2fdb/ DOMAIN:", a8)') cldomain
+        WRITE(kuso,'("\ /Fld2fdb/ TY:    ", a8)') cltype
+        WRITE(kuso,'("\ /Fld2fdb/ PARAM: ", a8)') clparam
+        WRITE(kuso,'("\ /Fld2fdb/ DATE:  ", a8)') cldate
+        WRITE(kuso,'("\ /Fld2fdb/ TIME:  ", a8)') cltime
+        WRITE(kuso,'("\ /Fld2fdb/ STEP:  ", a8)') clstep
         WRITE(kuso,'("\ /Fld2fdb/ DIR:   ", a8)') cldir
         WRITE(kuso,'("\ /Fld2fdb/ FREQ:  ", a8)') clfre
         CALL flush (kuso)

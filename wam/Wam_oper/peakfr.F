@@ -38,17 +38,14 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWFRED  , ONLY : FR
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
 
-
+! ----------------------------------------------------------------------
 
       DIMENSION TEMP1(NINF:NSUP), TEMP2(NINF:NSUP)
       DIMENSION F(NINF-1:NSUP,NANG,NFRE), PEAKF(NIBLO)
-
-! ----------------------------------------------------------------------
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------

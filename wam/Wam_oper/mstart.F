@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-     &                   FL1,U10OLD,THWOLD,USOLD,Z0OLD,TAUW)
+     &                   FL1,U10OLD,THWOLD,USOLD,Z0OLD)
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -7,7 +7,8 @@
 !      H. GUNTHER    ECMWF    MAY 1990
 !      H. GUNTHER    ECMWF    DECEMBER 90  MODIFIED FOR CYCLE_4.
 !      J. BIDLOT     ECMWF    FEBRUARY 96  MESSAGE PASSING
-!      J. BIDLOT     ECMWF    MARCH 97     REMOVE ALL OUTPUT TO IU12 and IU15 
+!      J. BIDLOT     ECMWF    MARCH 97     REMOVE ALL OUTPUT TO IU12
+!                                          and IU15 
 
 !*    PURPOSE.
 !     --------
@@ -18,7 +19,7 @@
 !     ----------
 
 !   *CALL* *MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-!    1              FL1,U10OLD,THWOLD,USOLD,Z0OLD,TAUW)*
+!    1              FL1,U10OLD,THWOLD,USOLD,Z0OLD)*
 !      *IU12*   INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
 !      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
@@ -42,8 +43,6 @@
 !                  VELOCITY.
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
-!      *TAUW*      WAVE STRESS IN (M/S)**2
-
 
 !     METHOD.
 !     -------
@@ -79,14 +78,12 @@
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1 
 
 ! ----------------------------------------------------------------------
 
-
       CHARACTER*12 ZERO
-      CHARACTER FILENA*16,CYMPPATH*80,FILENAME*80,MODE*1
       PARAMETER(ZERO=' ')
 
 ! ----------------------------------------------------------------------

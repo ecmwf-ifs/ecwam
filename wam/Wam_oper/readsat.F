@@ -3,14 +3,14 @@
 
 !--------------------------------------------------------------------
 
-!**** *READSAT* - READ RADAR ALTIMETER DATA. (ERS_1)
+!**** *READSAT* - READ RADAR ALTIMETER DATA.
 
 !     H. GUNTHER     GKSS/ECMWF       AUGUST 1991
 
 !     PURPOSE.
 !     --------
 
-!       ACCESS ERS1 FLAGGED DATA FILES IN ECFILE AND
+!       ACCESS ERS1 FLAGGED DATA FILES AND
 !       READ ONE MEASUREMENT.
 
 !**   INTERFACE.
@@ -90,7 +90,7 @@
           WRITE(IU06,*) ' +      WARNING ERROR IN --READSAT--     +'
           WRITE(IU06,*) ' +      ==========================       +'
           WRITE(IU06,*) ' +                                       +'
-          WRITE(IU06,*) ' +      NO SATELLITE MEASUREMENTS        +'
+          WRITE(IU06,*) ' +      NO ALTIMETER MEASUREMENTS        +'
           WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
           WRITE(IU06,*) ' + FILE DATES ARE CDTGEO = ', CDTGEO
           WRITE(IU06,*) ' +                CDTGE1 = ', CDTGE1

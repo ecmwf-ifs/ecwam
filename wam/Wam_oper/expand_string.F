@@ -22,16 +22,17 @@
 !     *MYPROC*       INTEGER  PROCESS NUMBER (PE)
 !     *NPROC*        INTEGER  TOTAL NUMBER OF PE'S
 !     *TIMESTEP*     INTEGER  TIME STEP NUMBER (OR ANY OTHER INDEX)
-!     *MAX_TIMESTEP* INTEGER  MAXIMUM TIME STEP NUMBER (OR ANY OTHER INDEX)
+!     *MAX_TIMESTEP* INTEGER  MAXIMUM TIME STEP NUMBER (OR ANY OTHER
+!                             INDEX)
 !     *S*            CHARACTER OR CHARACTER ARRAY THAT WILL BE EXPANDED
 !     *N*            INTEGER  DIMENSION OF S 
 
 
 !     METHOD.
 !     -------
-!     THE STRING S MUST CONTAIN THE FOLLOWING SUB-STRING THAT WILL THAN BE
-!     SUBSTITUTED BY THE CORRESPONDING EXPANDED SUB STRING, THAT STARTS WITH
-!     % AND p, n, t, or s
+!     THE STRING S MUST CONTAIN THE FOLLOWING SUB-STRING THAT WILL BE
+!     SUBSTITUTED BY THE CORRESPONDING EXPANDED SUB STRING, THAT STARTS
+!     WITH % AND p, n, t, or s
 
 !     %p   -->  myproc in character mode, left justified
 !     %n   -->  nproc  in character mode, left justified
@@ -62,7 +63,7 @@
 
 !       NONE
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------
       implicit none
       integer, intent(in)          :: myproc, nproc
       integer, intent(in)          :: timestep, max_timestep

@@ -55,14 +55,12 @@
 ! ----------------------------------------------------------------------
 
       REAL, PARAMETER :: XM=0.50
-      REAL, PARAMETER :: XNU=0.00001
       INTEGER, PARAMETER :: NITER=10
       REAL, PARAMETER :: EPS1=0.00001
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
-!      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
 !      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
 !      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
 !                            IS OBTAINED IN ITERATION WITH TAU>TAUW.

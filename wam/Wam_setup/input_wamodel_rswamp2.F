@@ -3,13 +3,13 @@
  CBPLTDT="${begofrn}",
  CEPLTDT="${endofrn}",
  CDATEF="${begoffo}",
- IDELPRO= 1200
- IDELT= 1200,
+ IDELPRO= 600
+ IDELT= 600,
  IDELWO= 21600,
  IDELWI= 21600,
  CLMTSU="S", "S", "S", "S"
  IDELALT= 0,
- IDELINT= 10800,
+ IDELINT= 3600,
  IDELINS= 21600,
  IDELAGI= 21600,
  IDELSPT= 21600,
@@ -19,9 +19,10 @@
  CLOTSU="S", "S", "S", "S", "S", "S", "S"
  CDATER="${outofrf}",
  CDATES="${outof2d}"
- PFLAG= T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ PFLAG= T, F, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ NFLAG= F, F, F, F, F, F, T, T, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  LFDB= F,
  LPBIOIN= T,
  LGRIBIN= ${lgribin},
@@ -32,7 +33,7 @@
  ISHALLO= 1,
  ITEST= 0,
  ITESTB= 1,
- IREST= 1,
+ IREST= 0,
  IASSI= $AS,
  IFORCA= 1,
  IBOUNC= 0,
@@ -49,4 +50,6 @@
  CFDBSF="$cfdbsf"
  CFDB2DSP="$cfdb2dsp"
  LNOCDIN=${lnocdin}
+ SWAMPWIND=18.45
+ NCALL=2
  /

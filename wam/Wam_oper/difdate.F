@@ -33,8 +33,8 @@
 !       12 or 14 CHARACTER FORMAT. IF THE 10 CHARACTER FORMAT IS
 !       USED AN ERROR MESSAGE WILL BE ISSUED. 
 !       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN
-!       THE INPUT ARGUMENT FOR SECDIFF. THE DIFFERENCE IN SECONDES BETWEEN
-!       THE TWO INPUT DATES IS RETURNED BACK AS KSHIFT.
+!       THE INPUT ARGUMENT FOR SECDIFF. THE DIFFERENCE IN SECONDES
+!       BETWEEN THE TWO INPUT DATES IS RETURNED BACK AS KSHIFT.
 
 
 !     EXTERNALS.
@@ -87,8 +87,8 @@
       ELSEIF (IL==14) THEN
         LLND = .TRUE.
         READ(CDATE1,'(i4, 5i2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
-!       with satellite data it might happen that the seconds were rounded
-!       to 60. One needs to increment the date properly.
+!       with satellite data it might happen that the seconds were
+!       rounded to 60. One needs to increment the date properly.
         IF(ISEC1==60) THEN
           IYEAR=IYEAR1
           IMON=IMON1
@@ -140,8 +140,8 @@
       ELSEIF (IL==14) THEN
         LLND = .TRUE.
         READ(CDATE2,'(i4, 5i2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
-!       with satellite data it might happen that the seconds were rounded
-!       to 60. One needs to increment the date properly.
+!       with satellite data it might happen that the seconds were
+!       rounded to 60. One needs to increment the date properly.
         IF(ISEC2==60) THEN
           IYEAR=IYEAR2
           IMON=IMON2

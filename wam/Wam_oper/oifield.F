@@ -1,4 +1,4 @@
-      SUBROUTINE OIFIELD (XME, XMO, XOI, SIGOBS, SIGMOD, 
+      SUBROUTINE OIFIELD (XME, XMO, XOI, SIGOBS, LWAVE, SIGMOD, 
      &                    LMAX, NDIM2)            
 
 !**** *OIFIELD* - OPTIMUM INTERPOLATION.                                
@@ -26,6 +26,8 @@
 !         *XMO*     REAL     FIELD FROM MODEL (FIRST GUESS).            
 !         *XOI*     REAL     FIELD FROM O.I.                            
 !         *SIGOBS*  REAL     MEASUREMENT SCATTER.                       
+!         *LWAVE*   LOGICAL  TRUE IF ASSIMILATION FOR WAVE HEIGHTS WITH
+!                            ADJUSTED OBSERVATIONAL ERRORS.
 !         *SIGMOD*  REAL     MODEL SCATTER.                             
 
 ! ----------------------------------------------------------------------
@@ -40,9 +42,14 @@
 ! ----------------------------------------------------------------------
 
       DIMENSION XMO(NGX,NGY), XME(NGX,NGY), XOI(NGX,NGY)                
-      DIMENSION IMEAS(NDIM2), JMEAS(NDIM2), XM(NDIM2,NDIM2),            
-     &          D(NDIM2,NDIM2), P(NDIM2,NDIM2), V(NDIM2)                
+      INTEGER, DIMENSION(NDIM2) :: IMEAS, JMEAS
+      REAL :: SIGMAOBS(NDIM2)
+      REAL, ALLOCATABLE, DIMENSION(:) :: V
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
+
       DIMENSION LLON(NGY)
+ 
+      LOGICAL LWAVE
 
 !   LMAX = MAXIMUM NUMBER OF GRID STEPS TO SPREAD MEASURED HS AND USTAR 
 
@@ -58,6 +65,18 @@
         DIST  = 300000./R
       ENDIF
       DIST2 = 2.*DIST
+
+!     DEFINE COEFFICIENT FOR THE ALT DATA ERROR
+      IF(LWAVE) THEN
+        A=SIGOBS
+        B=-LOG(0.001)
+        HSMIN=1.
+      ELSE
+        A=0.
+        B=0.
+        HSMIN=1.
+      ENDIF
+
                                                                     
 !       THE MEASUREMENTS ARE STORED IN THE O.I. FIELD.                  
 !       NEGATIVE VALUES WILL REMAIN WHERE O.I. WILL PRODUCE NO RESULTS  
@@ -66,19 +85,6 @@
         DO I=1,NGX                                                
           XOI(I,J) = XME(I,J)                                         
         ENDDO
-      ENDDO
-
-!       DETERMINE OBSERVATION CORRELATION MATRIX  D                     
-
-      DO J=1,NDIM2                                                 
-        DO I=1,NDIM2                                              
-          D(I,J) = 0.                                                 
-        ENDDO
-      ENDDO
-
-      DO J=1,NDIM2                                                 
-        D(J,J) = (SIGOBS/SIGMOD)**2                                    
-        V(J) = 0.                                                      
       ENDDO
 
       DO JSN=1,NGY
@@ -128,6 +134,7 @@
               IF (XME(IX,JX).GT.0.) THEN
                 IF (XMO(IX,JX).GE.0.01) THEN
                   NOBS = NOBS+1
+                  SIGMAOBS(NOBS)=SIGOBS+A*EXP(-B*(XME(IX,JX)-HSMIN))
                   IMEAS(NOBS) = IX
                   JMEAS(NOBS) = JX
                 ENDIF
@@ -141,6 +148,7 @@
                 IF (XME(IX,JX).GT.0.) THEN
                   IF (XMO(IX,JX).GE.0.01) THEN
                     NOBS = NOBS+1
+                    SIGMAOBS(NOBS)=SIGOBS+A*EXP(-B*(XME(IX,JX)-HSMIN))
                     IMEAS(NOBS) = IX
                     JMEAS(NOBS) = JX
                   ENDIF
@@ -153,6 +161,7 @@
                 IF (XME(IX,JX).GT.0.) THEN
                   IF (XMO(IX,JX).GE.0.01) THEN
                     NOBS = NOBS+1
+                    SIGMAOBS(NOBS)=SIGOBS+A*EXP(-B*(XME(IX,JX)-HSMIN))
                     IMEAS(NOBS) = IX
                     JMEAS(NOBS) = JX
                   ENDIF
@@ -165,9 +174,22 @@
 
 
           IF (NOBS.EQ.0) GOTO 2001                                    
+
+          ALLOCATE(D(NOBS,NOBS))            
+          ALLOCATE(P(NOBS,NOBS))            
+          ALLOCATE(XM(NOBS,NOBS))            
+
+!         DETERMINE OBSERVATION CORRELATION MATRIX  D                     
+
+          D = 0.                                                 
+
+          DO IOBS=1,NOBS                                         
+            D(IOBS,IOBS) = (SIGMAOBS(IOBS)/SIGMOD)**2
+          ENDDO
+
                                                                         
-!     DETERMINE MODEL CORRELATION MATRIX AT OBSERVATION                 
-!     POINTS.                                                           
+!         DETERMINE MODEL CORRELATION MATRIX AT OBSERVATION                 
+!         POINTS.                                                           
                                                                         
           DO IOBS=1,NOBS                                         
             DO JOBS=IOBS+1,NOBS                                      
@@ -189,22 +211,31 @@
             P(IOBS,IOBS) = 1.
           ENDDO
                                                                         
-!   DETERMINE M=P+D                                                     
-                                                                        
-          CALL SETMAT(XM,NOBS,P,D,NDIM2)                              
-                                                                        
-!   INVERSE MATRIX M                                                    
-                                                                        
-          COND=0.                                                     
-          EPS=0.                                                      
-                                                                        
-          CALL SYMINV(XM,NOBS,NOBS,COND,V,EPS)                        
-                                                                        
-!   PRODUCE FIELD AT POINT I,J ACCORDING TO OPTIMUM INTERPOLATION       
+          XM=P+D
+
+          DEALLOCATE(D)            
+          DEALLOCATE(P)            
+
+!         INVERSE MATRIX XM
+
+          COND=0.
+          EPS=0. 
+          ALLOCATE(V(NOBS))            
+          V = 0.
+
+          CALL SYMINV(XM,NOBS,NOBS,COND,V,EPS)
+
+          DEALLOCATE(V)            
+
+!         PRODUCE FIELD AT POINT I,J ACCORDING TO OPTIMUM INTERPOLATION
                                                                         
           CALL ANALYSE (XM, NOBS, XME, XMO, XOI(I,J),
-     &     IMEAS, JMEAS, I, J, DIST, NDIM2)
- 2001     continue
+     &                  IMEAS, JMEAS, I, J, DIST, NDIM2)
+
+          DEALLOCATE(XM)            
+
+ 2001     CONTINUE
+
         ENDDO
       ENDDO
                                                                         

@@ -34,6 +34,8 @@
  ITESTB= 1,
  IREST= 1,
  IASSI= $AS,
+ LALTAS=${laltas},
+ LSARAS=${lsaras},
  IFORCA= 1,
  IBOUNC= 0,
  IBOUNF= 0,
@@ -50,5 +52,10 @@
  CFDB2DSP="$cfdb2dsp",
  LNOCDIN=${lnocdin}
  LALTCOR=${laltcor}
+ LALTLRGR = ${laltlrgr},
+ HSCOEFCOR = ${hscoefcor},
+ HSCONSCOR = ${hsconscor},
+ LFRSTFLD=F
+ NCALL=2
  /
 C  &NAOT CLOUT="" /

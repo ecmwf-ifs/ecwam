@@ -13,13 +13,14 @@
 
 !**   Interface.
 !     ----------
-!        IGRIB=CLASS_WGRIB(CDCLASS)
+!       IGRIB=CLASS_WGRIB(CDCLASS)
 
-!        Explicit arguments : CDCLASS - CLASS code - 2 characters (input)
-!        --------------------           can be either upper or lower case
-!                             CLASS_WGRIB return value is the integer GRIB code
-!                                   for ECMWF local GRIB usage of KSEC1(38)
-!                             IU06 - PRINTER OUTPUT UNIT.
+!       Explicit arguments : CDCLASS - CLASS code - 2 characters (input)
+!       --------------------           can be either upper or lower case
+!                            CLASS_WGRIB returns value is the integer
+!                                        GRIB code
+!                                for ECMWF local GRIB usage of KSEC1(38)
+!                            IU06 - PRINTER OUTPUT UNIT.
 
 
 !        Implicit arguments :  

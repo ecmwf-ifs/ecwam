@@ -20,6 +20,11 @@
       REAL, PARAMETER :: ROWATER = 1000.
       REAL, PARAMETER :: YEPS = ROAIR/ROWATER
       REAL, PARAMETER :: YINVEPS = 1./YEPS
+      REAL, PARAMETER :: EGRCRV = 955.
+      REAL, PARAMETER :: AGRCRV = 6.02E-5
+      REAL, PARAMETER :: BGRCRV = 0.695
+      REAL, PARAMETER :: AFCRV = 0.000168
+      REAL, PARAMETER :: BFCRV = - 3.27
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
@@ -37,8 +42,19 @@
 !     *ROAIR*     REAL      AIR DENSITY.
 !     *ROWATER*   REAL      WATER DENSITY.
 !     *YEPS*      REAL      ROAIR/ROWATER.
-!     *YINVEPS    REAL      1./YEPS.
-!
+!     *YINVEPS*   REAL      1./YEPS.
+!     *EGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!                           ESTAR=EGRCRV*TANH(AGRCRV*TSTAR**BGRCRV)
+!     *AGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!     *BGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!     *AFCRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY 
+!                           GROWTH CURVE.
+!                           FSTAR=(EGRCRV/AFCRV)**(1/BFCRV)
+!     *BFCRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY
+!                           GROWTH CURVE.
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

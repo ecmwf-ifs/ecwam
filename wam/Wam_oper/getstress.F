@@ -43,7 +43,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWGRID  , ONLY : IGL
-      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN
+      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO
@@ -79,7 +79,7 @@
       IF(LMESSPASS) THEN
 
         ISEND=IREAD
-        IBUFLENGTH=48
+        IBUFLENGTH=48+1
 
         ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
      &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO))
@@ -114,6 +114,7 @@
         ENDIF
 
 !       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
+!       AS WELL AS LWAVEWIND
         IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
       
         ELSEIF(IRANK.EQ.ISEND) THEN
@@ -130,6 +131,11 @@
           DO IC=1,12
             READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
           ENDDO
+          IF(LWAVEWIND) THEN
+            IBUF(49)=1
+          ELSE
+            IBUF(49)=0
+          ENDIF
 
           CALL MPE_BROADCAST
      &     (IBUF,IBUFLENGTH,1,IRANK,KTAG,0,0,0,IERR)
@@ -160,6 +166,13 @@
           DO IC=1,12
             WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
           ENDDO
+
+          IF(IBUF(49).EQ.1) THEN
+            LWAVEWIND=.TRUE. 
+          ELSE
+            LWAVEWIND=.FALSE. 
+          ENDIF
+
         ENDIF
 
         IF(CDTPRO.EQ.'000000000000') CDTPRO = ZERO

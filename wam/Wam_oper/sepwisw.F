@@ -46,12 +46,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,C        ,
-     &            TH       ,COSTH    ,SINTH    ,FRTAIL
+     &            TH       ,COSTH    ,SINTH    ,WETAIL   ,FRTAIL
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPCONS , ONLY : EPSMIN
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA
 
@@ -79,7 +79,7 @@
       ALLOCATE(SF3SW(IJS:IJL)) 
       ALLOCATE(SF3WIS(IJS:IJL)) 
 
-      DELTWH = 0.25*FR(NFRE)*DELTH
+      DELTWH = WETAIL*FR(NFRE)*DELTH
       DELTMF = FRTAIL*DELTH
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.

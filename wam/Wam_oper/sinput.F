@@ -70,16 +70,13 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,YEPS
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,XKAPPA
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPCONS , ONLY : G        ,ZPI      ,YEPS
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
-
-
 
 ! ----------------------------------------------------------------------
 
@@ -89,60 +86,58 @@
       REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD,Z0OLD
       REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW,Z0NEW
 
-
 ! ----------------------------------------------------------------------
 
-      DIMENSION TEMP(IJS:IJL,NANG), TEMP1(IJS:IJL,NANG),
-     &          UCO(IJS:IJL), ZCO(IJS:IJL), UCN(IJS:IJL), ZCN(IJS:IJL),
-     &          UFAC2(IJS:IJL), CM(IJS:IJL)
+      REAL, DIMENSION(IJS:IJL,NANG) :: TEMP, TEMP1, UFAC2
+      REAL, DIMENSION(IJS:IJL) :: UCO, ZCO, UCN, ZCN, CM
+      REAL, DIMENSION(NFRE) :: FAC, CONST
 
 ! ----------------------------------------------------------------------
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
 
-      DO K=1,NANG
-        TKD=TH(K)
-        IF(ICALL.EQ.1) THEN
+!!! temp and temp1 will be reused further down and will no contain
+!!! the cosine of directional difference
+      IF(ICALL.EQ.1) THEN
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            TEMP (IJ,K) = COS(TKD-THWOLD(IJ,IG))
+            TEMP (IJ,K) = COS(TH(K)-THWOLD(IJ,IG))
+            TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
           ENDDO
-        ENDIF
-        DO IJ=IJS,IJL
-          TEMP1(IJ,K) = COS(TKD-THWNEW(IJ))
         ENDDO
-      ENDDO
+      ELSE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
+          ENDDO
+        ENDDO
+
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
 
-      IF(ICALL.EQ.1) THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              FL(IJ,K,M) = 0.
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
-
       CONST1  = YEPS*BETAMAX/XKAPPA**2
       DO M=1,NFRE
-        FAC = ZPI*FR(M)
-        CONST=FAC*CONST1
+        FAC(M) = ZPI*FR(M)
+        CONST(M)=FAC(M)*CONST1
+      ENDDO
+
+      DO M=1,NFRE
 
 !*      INVERSE OF PHASE VELOCITIES.
 !       ----------------------------
 
         IF (ISHALLO.EQ.1) THEN
           DO IJ=IJS,IJL
-            CM(IJ) = FAC/G
+            CM(IJ) = FAC(M)/G
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            CM(IJ) = TFAK(INDEP(IJ),M)/FAC
+            CM(IJ) = TFAK(INDEP(IJ),M)/FAC(M)
           ENDDO
         ENDIF
 
@@ -164,52 +159,59 @@
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
-        DO K=1,NANG
-
-          IF(ICALL.EQ.1) THEN
+        IF(ICALL.EQ.1) THEN
+          DO K=1,NANG
             DO IJ=IJS,IJL
               IF (TEMP(IJ,K).GT.0.01) THEN
-                X    = TEMP(IJ,K)*UCO(IJ)
-                ZARG = XKAPPA/X
-                ZLOG = ZCO(IJ) + ZARG
+                X  = TEMP(IJ,K)*UCO(IJ)
+                ZLOG = ZCO(IJ) + XKAPPA/X
                 IF (ZLOG.LT.0.) THEN
                   ZLOG2X=ZLOG*ZLOG*X
-                  FL(IJ,K,M) = CONST*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  FL(IJ,K,M) = CONST(M)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                ELSE
+                  FL(IJ,K,M) = 0.
                 ENDIF
+              ELSE
+                FL(IJ,K,M) = 0.
               ENDIF
             ENDDO
-          ENDIF
-
-          DO IJ=IJS,IJL
-            UFAC2(IJ) = 0.
           ENDDO
+        ENDIF
 
+        DO K=1,NANG
           DO IJ=IJS,IJL
             IF (TEMP1(IJ,K).GT.0.01) THEN
               X    = TEMP1(IJ,K)*UCN(IJ)
-              ZARG = XKAPPA/X
-              ZLOG = ZCN(IJ) + ZARG
+              ZLOG = ZCN(IJ) + XKAPPA/X
               IF (ZLOG.LT.0.) THEN
                 ZLOG2X=ZLOG*ZLOG*X
-                UFAC2(IJ) = CONST*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                UFAC2(IJ,K) = CONST(M)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+              ELSE
+                UFAC2(IJ,K) = 0.
               ENDIF
+            ELSE
+              UFAC2(IJ,K) = 0.
             ENDIF
           ENDDO
+        ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ------------------------------------------------
 
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            SL(IJ,K,M) = 0.5*(FL(IJ,K,M)+UFAC2(IJ))*F(IJ,K,M)
+            SL(IJ,K,M) = 0.5*(FL(IJ,K,M)+UFAC2(IJ,K))*F(IJ,K,M)
           ENDDO
-
-          IF(ICALL.EQ.NCALL) THEN
-            DO IJ=IJS,IJL
-              FL(IJ,K,M) = UFAC2(IJ)
-            ENDDO
-          ENDIF
-
         ENDDO
+
+        IF(ICALL.EQ.NCALL) THEN
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              FL(IJ,K,M) = UFAC2(IJ,K) 
+            ENDDO
+          ENDDO
+        ENDIF
+
       ENDDO
 
       RETURN

@@ -36,8 +36,8 @@
 !     -------
 
 !     COMPUTES THE AVERAGE, MINIMUM AND MAXIMUM OF FIELD FOR ALL VALUES
-!     DIFFERENT THAN ZMISS. FIELD IS SUPPOSED TO BE ON PE ISEND, THE NORM
-!     WILL BE PE IRECV. 
+!     DIFFERENT THAN ZMISS. FIELD IS SUPPOSED TO BE ON PE ISEND, THE 
+!     NORM WILL BE ON PE IRECV. 
 
 !     EXTERNALS.
 !     ----------
@@ -64,18 +64,25 @@
       FMAX=-9999999.
       IF(LMESSPASS) THEN
         IF(IRANK.EQ.ISEND) THEN
-          DO J=1,NY
-            DO I=1,NX
-              IF(FIELD(I,J).NE.ZMISS) THEN
-                NTOT=NTOT+1
-                FAVG=FAVG+FIELD(I,J)
-                IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
-                FMAX=MAX(FMAX,FIELD(I,J))
-              ENDIF
+          IF(NX.EQ.1.AND.NY.EQ.1) THEN
+            FAVG=FIELD(1,1)
+            FMIN=FIELD(1,1)
+            FMAX=FIELD(1,1)
+            NAVG=1
+          ELSE
+            DO J=1,NY
+              DO I=1,NX
+                IF(FIELD(I,J).NE.ZMISS) THEN
+                  NTOT=NTOT+1
+                  FAVG=FAVG+FIELD(I,J)
+                  IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
+                  FMAX=MAX(FMAX,FIELD(I,J))
+                ENDIF
+              ENDDO
             ENDDO
-          ENDDO
-          IF(NTOT.GT.0) FAVG=FAVG/NTOT
-          NAVG=NTOT
+            IF(NTOT.GT.0) FAVG=FAVG/NTOT
+            NAVG=NTOT
+          ENDIF
         ENDIF
         IF(ISEND.NE.IRECV) THEN
           IF(IRANK.EQ.ISEND) THEN
@@ -104,23 +111,26 @@
         ENDIF
 
       ELSE
-        DO J=1,NY
-          DO I=1,NX
-            IF(FIELD(I,J).NE.ZMISS) THEN
-              NTOT=NTOT+1
-              FAVG=FAVG+FIELD(I,J)
-              IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
-              FMAX=MAX(FMAX,FIELD(I,J))
-            ENDIF
+        IF(NX.EQ.1.AND.NY.EQ.1) THEN
+          FAVG=FIELD(1,1)
+          FMIN=FIELD(1,1)
+          FMAX=FIELD(1,1)
+          NAVG=1
+        ELSE
+          DO J=1,NY
+            DO I=1,NX
+              IF(FIELD(I,J).NE.ZMISS) THEN
+                NTOT=NTOT+1
+                FAVG=FAVG+FIELD(I,J)
+                IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
+                FMAX=MAX(FMAX,FIELD(I,J))
+              ENDIF
+            ENDDO
           ENDDO
-        ENDDO
-        IF(NTOT.GT.0) FAVG=FAVG/NTOT
-        NAVG=NTOT
+          IF(NTOT.GT.0) FAVG=FAVG/NTOT
+          NAVG=NTOT
+        ENDIF
       ENDIF
 
       RETURN
       END SUBROUTINE WAMNORM
-
-
-
-

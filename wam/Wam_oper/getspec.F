@@ -124,38 +124,11 @@ C
 
 !       INPUT SPECTRA ARE IN GRIB FORMAT
 
-        IF(IRGG.EQ.1 .OR. CLDOMAIN == 'm') THEN
-          KDEXN = 0
-        ELSEIF(CLDOMAIN == 's') THEN
-          KDEXN = 0
-        ELSE
-          KDEXN = (NINT((90. - AMONOP ) / XDELLA))*NGX
-        ENDIF
-
         ALLOCATE(KSEC0(NKSEK0),KSEC1(NKSEK1))
         ALLOCATE(KSEC2(NKSEK2),KSEC3(NKSEK3),KSEC4(NKSEK4))
         ALLOCATE(PSEC2(NPSEK2),PSEC3(NPSEK3))
         ALLOCATE(IPOINTER(1:NEND(NPROC)))
         ALLOCATE(WORK(NIBLO))
-
-        IF (IRGG.EQ.1) THEN
-          DO IJ = 1,NEND(NPROC) 
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            IPOINTER(IJ)=0
-            DO IC=1,IY-1
-              JSN=NGY-IC+1
-              IPOINTER(IJ) = NLONRGG(JSN) + IPOINTER(IJ)
-            ENDDO
-            IPOINTER(IJ) = IPOINTER(IJ) + IX 
-          ENDDO
-        ELSE
-          DO IJ = 1,NEND(NPROC)
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
-            IPOINTER(IJ) = (IY-1)*NGX + IX + KDEXN
-          ENDDO
-        ENDIF
 
         IF (IRANK.EQ.IREAD) THEN
           IF (.NOT.LFDBIOIN) THEN
@@ -349,10 +322,12 @@ C
               IF (KRET.EQ.-1) THEN
                 WRITE (IU06,*) ' SUB. GETSPEC : '
                 WRITE (IU06,*) ' REACHED EOF ON UNIT ',IUGRS
+                WRITE (IU06,*) ' PROGRAM WILL ABORT '
                 CALL ABORT1
               ELSEIF (KRET .EQ. -2) THEN
                 WRITE (IU06,*) ' SUB. GETSPEC : '
                 WRITE (IU06,*) ' FILE HANDLING ERROR ON UNIT ',IUGRS
+                WRITE (IU06,*) ' PROGRAM WILL ABORT '
                 CALL ABORT1
               ELSEIF (KRET .EQ. -3) THEN
                 WRITE (IU06,*) ' '
@@ -383,6 +358,7 @@ C
                 ELSEIF (KRET .EQ. -2) THEN
                   WRITE (IU06,*) ' SUB. GETSPEC : '
                   WRITE (IU06,*) ' FILE HANDLING ERROR ON UNIT ',IUGRS
+                  WRITE (IU06,*) ' PROGRAM WILL ABORT '
                   CALL ABORT1
                 ENDIF
 
@@ -542,6 +518,7 @@ C
                 CALL ABORT1
               ENDIF
 
+
               ZFRE = REAL(KSEC1(49+NANG+M))/KSEC1(49) 
               IF(ABS(ZFRE-FR(M)).GT.0.01*FR(M)) THEN
                 WRITE(IU06,*) '************************************'
@@ -555,6 +532,39 @@ C
                 WRITE(IU06,*) '*                                  *'
                 WRITE(IU06,*) '************************************'
                 CALL ABORT1
+              ENDIF
+
+              IF(LFRSTIME) THEN
+                RMONOP=REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+     &               0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
+
+                IF(IRGG.EQ.1 .OR. CLDOMAIN == 'm') THEN
+                  KDEXN = 0
+                ELSEIF(CLDOMAIN == 's') THEN
+                  KDEXN = 0
+                ELSE
+                  KDEXN = (NINT((RMONOP - AMONOP ) / XDELLA))*NGX
+                ENDIF
+
+                IF (IRGG.EQ.1) THEN
+                  DO IJ = 1,NEND(NPROC) 
+                    IX = IXLG(IJ,1)
+                    IY = NGY- KXLT(IJ,1) +1
+                    IPOINTER(IJ)=0
+                    DO ICC=1,IY-1
+                      JSN=NGY-ICC+1
+                      IPOINTER(IJ) = NLONRGG(JSN) + IPOINTER(IJ)
+                    ENDDO
+                    IPOINTER(IJ) = IPOINTER(IJ) + IX 
+                  ENDDO
+                ELSE
+                  DO IJ = 1,NEND(NPROC)
+                    IX = IXLG(IJ,1)
+                    IY = NGY- KXLT(IJ,1) +1
+                    IPOINTER(IJ) = (IY-1)*NGX + IX + KDEXN
+                  ENDDO
+                ENDIF
+                LFRSTIME=.FALSE.
               ENDIF
 
               IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)

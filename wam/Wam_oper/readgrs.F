@@ -55,29 +55,22 @@
 
 !-------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NBLO     ,NIBLO
-      USE YOWPCONS , ONLY : R        ,ZMISS
       USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,ZDELLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
+     &            NBLO     ,NIBLO
+      USE YOWPCONS , ONLY : R        ,ZMISS
       USE YOWSPEC, ONLY : FL1
  
 ! -------------------------------------------------------------------
-
-!*    *PARAMETER*  FOR ARRAY DIMENSIONS.
-
-
-
-
-!-----------------------------------------------------------------------
 
       INTEGER,ALLOCATABLE :: KDOMRGG(:)
       REAL, ALLOCATABLE :: ZSEC4(:),ZTH(:),ZFR(:)
 
       CHARACTER*1 MODE
       CHARACTER*12 CZDATE,CDATE 
-      CHARACTER*40 CLMSG, TITL*100
+      CHARACTER*40 CLMSG
       CHARACTER*80 FILENAME
       LOGICAL LLEXIST
 !-----------------------------------------------------------------------

@@ -2,6 +2,8 @@
 
       IMPLICIT NONE
 
+      INTEGER, PARAMETER :: IMDLGRDID=214
+
 !*    ** *PARAM*  GENERAL GRID SIZE INFORMATION.
 
       INTEGER NANG 
@@ -18,11 +20,16 @@
       INTEGER NBLC 
 
       REAL    XKAPPA2
+      REAL    SWAMPWIND 
+      REAL    HSCOEFCOR
+      REAL    HSCONSCOR
 
       CHARACTER*1 CLDOMAIN
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
+!      *IMDLGRDID* INTEGER   MODEL IDENTIFICATION NUMBER.
+!                            IT SHOULD BE UPDATED FOR EACH NEW CYCLE!!!!
 !      *NANG*      INTEGER   NUMBER OF ANGLES.
 !      *NFRE*      INTEGER   NUMBER OF FREQUENCIES.
 !      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
@@ -43,10 +50,15 @@
 !                            = 1     ELSE.
 !      *XKAPPA2*   REAL      KAPPA2 PARAMETER USED IN THE DETERMINATION
 !                            OF ALTIMETER WAVE HEIGHTS (SEE GRFIELD)
+!      *SWAMPWIND* REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
+!      *HSCOEFCOR* REAL      COEFFICIENT OF THE CORRECTIVE LINEAR
+!                            REGRESSION FOR ALTIMETER WAVE HEIGHTS.
+!      *HSCONSCOR* REAL      CONSTANT COEFFICIE$NT  OF THE CORRECTIVE
+!                            LINEAR REGRESSION FOR ALTIMETER WAVE
+!                            HEIGHTS.
 !      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
 !                            FDB and for selection of some variables)
 
-C ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
 
       END MODULE YOWPARAM
-

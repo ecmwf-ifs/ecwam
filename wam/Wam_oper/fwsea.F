@@ -51,15 +51,10 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (CGAM = 0.00608, ESTARM = 955.,                         
-     &           A = 6.02*10.**(-5), B = 0.695,                         
-     &           AF = 0.000168, BF = - 3.27, EGAM = 1.439, ESAO = 2.338)
+      PARAMETER (CGAM = 0.00608,EGAM = 1.439, ESAO = 2.338)
       PARAMETER (XL11 = 0.0953101 )                                     
 
 !     CGAM       : P.M. FREQUENCY IN THE WAM MODEL                      
-!     ESTARM,A,B : PARAMETERS OF THE ENERGY GROWTH CURVE                
-!     AF,BF      : PARAMETERS IN THE RELATION BETWEEN ENERGY            
-!                  AND MEAN FREQUENCY                                   
 !     EGAM,ESAO  : PARAMETERS IN THE WINDSEA SPECTRUM SHAPE             
 
 ! ----------------------------------------------------------------------
@@ -74,14 +69,6 @@
 !     PEAK EXTENSION AS FUNCTION OF DIMENSIONLESS ENERGY.               
 
       SAO(X) = MAX (.02,.02+.16*(1-(CGAM/X)**ESAO))                     
-
-!     DIMENSIONLESS ENERGY AS FUNCTION OF DIMENSIONLESS FREQUENCY.      
-
-      EN(X) = AF*X**BF                                                  
-
-!     DIMENSIONLESS FREQUENCY AS FUNCTION OF DIMENSIONLESS ENERGY.      
-
-      YNU(X) = (X/AF)**(1./BF)                                          
 
 !-----------------------------------------------------------------------
 

@@ -36,7 +36,7 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3,
-     &            NTENCODE
+     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP,
      &            AMONOP   ,XDELLA   ,XDELLO
@@ -81,9 +81,9 @@
       KSEK1( 1) =   140     ! VERSION NUMBER OF CODE TABLE 2.
       KSEK1( 2) =    98     ! ORIGINATING CENTRE IDENTIFIER.
       IF( CLDOMAIN == 'g' ) THEN
-        KSEK1( 3) =   109   ! MODEL IDENTIFICATION.
+        KSEK1( 3) = IMDLGRBID_G   ! MODEL IDENTIFICATION.
       ELSE
-        KSEK1( 3) =   209   ! MODEL IDENTIFICATION.
+        KSEK1( 3) = IMDLGRBID_M   ! MODEL IDENTIFICATION.
       ENDIF
       KSEK1( 4) =   255     ! GRID DEFINITION.
       KSEK1( 5) =   192     ! FLAG (WMO CODE TABLE 1)

@@ -119,7 +119,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+     &            NBLO     ,NIBLO    ,SWAMPWIND,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
@@ -162,7 +162,7 @@
 
       NAMELIST /NALINE/ HEADER,
      &          IOPTI, ITEST, ITESTB,
-     &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH,
+     &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,
      &          USERID, RUNID, PATH, CPATH,
      &          CDATEA, IDELWI, CLTUNIT,
      &          LPBIOOUT, LFDBIOOUT, LGRIBIN, LGRIBOUT,
@@ -175,6 +175,7 @@
 !     ITEST, ITESTB : TEST OUTPUT LEVEL SEE MODULE YOWTEST
 !     ALFA, FM, GAMMA, SA, SB, THETA, FETCH : JONSWAP PARAMETERS
 !                                             SEE MODULE YOWINTS
+!     SWAMPWIND : CONSTANT WIND SPEED USED BY SWAMP CASE.
 !     USERID, RUNID, PATH : OUT OF DATE, SHOULD ONLY BE USED WHENEVER 
 !                           USER WANTS TO WRITE OUTPUT DIRECTLY TO ECFS
 !                           WHICH IS HIGHLY NOT RECOMMENDATED ON THE VPP
@@ -220,6 +221,7 @@
       SB     =    0.0
       THETA  =    0.0
       FETCH  =    0.0
+      SWAMPWIND = 18.45
       USERID = ZERO
       RUNID  = ZERO
       PATH   = ZERO
@@ -544,7 +546,7 @@
       IF (.NOT.LGRIBIN) THEN
         THETAQ = THETA * RAD
         CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-     &              FL1,U10OLD,THWOLD,USOLD,Z0OLD,TAUW)
+     &              FL1,U10OLD,THWOLD,USOLD,Z0OLD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
       ENDIF
 

@@ -25,13 +25,19 @@
  LFDBIOOUT=T,
  LNOCDIN=${lnocdin},
  LALTCOR=${laltcor},
+ LALTLRGR = ${laltlrgr},
+ HSCOEFCOR = ${hscoefcor},
+ HSCONSCOR = ${hsconscor},
  L4VTYPE=F,
+ LFRSTFLD=F,
  ICASE= 1,
  ISHALLO= 1,
  ITEST= 0,
  ITESTB= 3,
  IREST= 1,
  IASSI= ${AS},
+ LALTAS=${laltas},
+ LSARAS=${lsaras},
  IFORCA= 1,
  IBOUNC= 0,
  IBOUNF= 0,
@@ -49,4 +55,5 @@
  PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F
+ NCALL=2
  /

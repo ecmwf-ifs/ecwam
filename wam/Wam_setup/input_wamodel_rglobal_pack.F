@@ -48,5 +48,6 @@
  NTASKS= 0
  NSIZE= 0,
  CPATH="$STORAGE_PATH"
+ NCALL=2
  /
 C   &NAOT CLOUT="" /

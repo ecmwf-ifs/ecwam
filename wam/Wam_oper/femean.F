@@ -39,24 +39,19 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FRTAIL
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
 
-
-
 ! ----------------------------------------------------------------------
 
-      DIMENSION F(NINF-1:NSUP,NANG,NFRE)
-
-! ----------------------------------------------------------------------
-
-      DIMENSION TEMP1(IJS:IJL), TEMP2(IJS:IJL)
+      REAL :: F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: TEMP1(IJS:IJL), TEMP2(IJS:IJL)
+      REAL :: FD(NFRE)
 
 ! ----------------------------------------------------------------------
 
@@ -72,6 +67,9 @@
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
+      DO M=1,NFRE
+        FD(M) = DFIM(M)/FR(M)
+      ENDDO
 
       IF (ISHALLO.EQ.1) THEN
 
@@ -79,7 +77,6 @@
 !         -----------------------
 
         DO M=1,NFRE
-          FD = DFIM(M)/FR(M)
           DO IJ=IJS,IJL
             TEMP2(IJ) = 0.
           ENDDO
@@ -89,7 +86,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            FMEAN(IJ) = FMEAN(IJ)+FD*TEMP2(IJ)
+            FMEAN(IJ) = FMEAN(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 !SHALLOW
@@ -102,7 +99,6 @@
           AKMEAN(IJ) = EPSMIN
         ENDDO
         DO M=1,NFRE
-          FD=DFIM(M)/FR(M)
           DO IJ=IJS,IJL
             TEMP1(IJ) = DFIM(M)/SQRT(TFAK(INDEP(IJ),M))
             TEMP2(IJ) = 0.
@@ -113,7 +109,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            FMEAN(IJ) = FMEAN(IJ)+FD*TEMP2(IJ)
+            FMEAN(IJ) = FMEAN(IJ)+FD(M)*TEMP2(IJ)
             AKMEAN(IJ) = AKMEAN(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO

@@ -89,6 +89,11 @@
 !*    3. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
 
+      write(*,*) 'the call the findb has changed. It must be adapted'
+      write(IU06,*) 'the call the findb has changed. It must be adapted'
+      call flush(IU06)
+      call abort1
+     
       CALL FINDB (NBMAX, NBOUNC, BLATC, BLNGC, IGARC, IJARC)
 
 ! ----------------------------------------------------------------------

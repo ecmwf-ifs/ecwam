@@ -53,8 +53,8 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,COSTH    ,
-     &            SINTH
+      USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
+     &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
      &            IGL      ,IJLT
       USE YOWMAP   , ONLY : KXLT
@@ -401,7 +401,7 @@
       DELPH0 = 0.25*DELPRO/DELPHI
       DELTH0 = 0.25*DELPRO/DELTH
       DELLA0 = 0.25*DELLA0
-      DELFR0 = 0.25*DELPRO/(0.1*ZPI)
+      DELFR0 = 0.25*DELPRO/((1.-FRATIO)*ZPI)
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -443,7 +443,7 @@
 
             MP1 = MIN(NFRE,M+1)
             MM1 = MAX(1,M-1)
-            DFP = PI*2.1*DELFR0
+            DFP = PI*(1.+FRATIO)*DELFR0
 
 !*    2.1.3.1.1 GROUP VELOCITIES.
 !               -----------------
@@ -481,8 +481,8 @@
 
               DTHP    = SL(IJ,K,NFRE) * DFP
               DTC(IJ) = DTC(IJ) + 2.* ABS(DTHP)
-              DOP(IJ) = (-DTHP+ABS(DTHP))/1.1
-              DOM(IJ) = ( DTHP+ABS(DTHP))*1.1
+              DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
+              DOM(IJ) = ( DTHP+ABS(DTHP))*FRATIO
             ENDDO
           ELSE
 !SHALLOW
@@ -527,8 +527,8 @@
               DTHP = (SL(IJ,K,M) + SL(IJ,K,MP1))*DFP
               DTHM = (SL(IJ,K,M) + SL(IJ,K,MM1))*DFM
               DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-              DOP(IJ) = (-DTHP+ABS(DTHP))/1.1
-              DOM(IJ) = ( DTHM+ABS(DTHM))*1.1
+              DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
+              DOM(IJ) = ( DTHM+ABS(DTHM))*FRATIO
             ENDDO
 !SHALLOW
           ENDIF
@@ -842,7 +842,7 @@
       DELPH0 = 0.25*DELPRO/DELPHI
       DELTH0 = 0.25*DELPRO/DELTH
       DELLA0 = 0.25*DELLA0
-      DELFR0 = 0.25*DELPRO/(0.1*ZPI)
+      DELFR0 = 0.25*DELPRO/((1.-FRATIO)*ZPI)
 
 !*    4.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -899,7 +899,7 @@
 !*    4.1.4.1.1 GROUP VELOCITIES.
 !               -----------------
 
-            DFP = PI*2.1*DELFR0
+            DFP = PI*(1.+FRATIO)*DELFR0
             CGS = GOM(M)*SD
             CGC = GOM(M)*CD
 
@@ -933,8 +933,8 @@
 
               DTHP =  SL(IJ,K,NFRE) * DFP
               DTC(IJ) =  DTC(IJ) + 2. * ABS(DTHP)
-              DOP(IJ) = (-DTHP+ABS(DTHP))/1.1
-              DOM(IJ) = ( DTHP+ABS(DTHP))*1.1
+              DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
+              DOM(IJ) = ( DTHP+ABS(DTHP))*FRATIO
             ENDDO
           ELSE
 !SHALLOW
@@ -980,8 +980,8 @@
               DTHP = (SL(IJ,K,M) + SL(IJ,K,MP1))*DFP
               DTHM = (SL(IJ,K,M) + SL(IJ,K,MM1))*DFM
               DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
-              DOP(IJ) = (-DTHP+ABS(DTHP))/1.1
-              DOM(IJ) = ( DTHM+ABS(DTHM))*1.1
+              DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
+              DOM(IJ) = ( DTHM+ABS(DTHM))*FRATIO
             ENDDO
 !SHALLOW
           ENDIF

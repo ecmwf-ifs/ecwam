@@ -1,0 +1,127 @@
+      SUBROUTINE DOCOMBINE( 
+!                 DIMENSIONS
+     &              IPART , JPART , ISPEC ,
+     &              NSPEC , MPART , NPART , NANG , NFRE ,
+!                 INPUT/OUTPUT
+     &              SPEC , PART , PARTINFO , PEAKANG , PEAKFRE , FX, FY,
+     &              MEANE , SPREAD , SUMX , SUMY , SUMXX , SUMYY ,
+!                 PRECOMPUTED TABLES FOR FREQUENCIES.
+     &              FR , CONTROL, IU06 )
+
+!-----------------------------------------------------------------------
+
+!     PURPOSE:
+!     --------
+
+!     COMBINE PARTITIONS IPART AND JPART OF SPECTRA ISPEC
+!     (THE PART-INDEX OF THE COMBINED PEAK IS MIN(IPART,JPART),
+!     THE PART-INDEX NPART(ISPEC) IS CHANGED TO MAX(IPART,JPART))
+
+!----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+!     INTERFACE:
+!     ----------
+
+      INTEGER IPART, JPART, ISPEC
+!                  LOOP INDEXES.
+      INTEGER NSPEC, MPART, NPART(NSPEC), NANG , NFRE
+!                  DIMENSIONS.
+      REAL SPEC(0:NSPEC,NANG,NFRE)
+!                  2D SPECTRUA.
+      INTEGER PART(NSPEC,NANG,NFRE),
+     &        PARTINFO(NSPEC,MPART),
+     &        PEAKANG(NSPEC,NANG*NFRE/2),
+     &        PEAKFRE(NSPEC,NANG*NFRE/2)
+!     PART(..) GIVES NUMBER OF PARTITIONING FOR EACH SPECTRAL BIN.
+!     partinfo =1 -> wind sea, =2 -> mixed wind sea-swell, =0 -> swell.
+!      , 3=old windsea
+!     INDEX OF PEAK DIRECTION AND PEAK FREQUENCY OF PARTITIONINGS.
+      REAL FX(NSPEC,MPART), FY(NSPEC,MPART),
+     &     MEANE(NSPEC,MPART),
+     &     SPREAD(NSPEC,MPART),
+!                  mean wave numbers, mean energy and
+!                  spread of partitionings.
+     &     SUMX(NSPEC,MPART), SUMY(NSPEC,MPART),
+     &     SUMXX(NSPEC,MPART), SUMYY(NSPEC,MPART)
+!                  WORK SPACE.
+      REAL FR(NFRE)
+!                  TABLE OF FREQUENCIES.
+      LOGICAL CONTROL
+      INTEGER IU06
+
+!     LOCAL VARIABLES:
+
+      INTEGER LPART, HPART, IANG, IFRE
+!                  LOOP INDEXES.
+
+!-----------------------------------------------------------------------
+
+      IF( IPART.EQ.JPART ) RETURN
+
+      IF( CONTROL )THEN
+        WRITE(IU06,*) ' COMBINING IN SPECTRA NUMBER ',ISPEC,' THE PEAKS'
+        WRITE(IU06,'(''  FREQUENCY='',E8.2,'' ANGLE='',I3)')
+     &      FR(PEAKFRE(ISPEC,IPART)),
+     &      NINT((PEAKANG(ISPEC,IPART)-1.)/NANG*360.)
+        WRITE(IU06,'(''  FREQUENCY='',E8.2,'' ANGLE='',I3)')
+     &      FR(PEAKFRE(ISPEC,JPART)),
+     &      NINT((PEAKANG(ISPEC,JPART)-1.)/NANG*360.)
+      END IF
+
+      LPART = MIN(IPART,JPART)
+      HPART = MAX(IPART,JPART)
+
+!     CHANGE HPART TO LPART AND NPART(ISPEC) TO HPART
+!     -----------------------------------------------
+
+      DO IANG = 1,NANG
+        DO IFRE = 1,NFRE
+          IF( PART(ISPEC,IANG,IFRE).EQ.HPART )THEN
+            PART(ISPEC,IANG,IFRE) =LPART
+          ELSE IF( PART(ISPEC,IANG,IFRE).EQ.NPART(ISPEC) )THEN
+            PART(ISPEC,IANG,IFRE) = HPART
+          END IF
+        END DO
+      END DO
+
+      IF( SPEC(ISPEC,PEAKANG(ISPEC,HPART),PEAKFRE(ISPEC,HPART)).GT.
+     &    SPEC(ISPEC,PEAKANG(ISPEC,LPART),PEAKFRE(ISPEC,LPART)) )THEN
+        PEAKANG(ISPEC,LPART) = PEAKANG(ISPEC,HPART)
+        PEAKFRE(ISPEC,LPART) = PEAKFRE(ISPEC,HPART)
+        FX(ISPEC,LPART) = FX(ISPEC,HPART)
+        FY(ISPEC,LPART) = FY(ISPEC,HPART)
+      ENDIF
+      PEAKANG(ISPEC,HPART) = PEAKANG(ISPEC,NPART(ISPEC))
+      PEAKFRE(ISPEC,HPART) = PEAKFRE(ISPEC,NPART(ISPEC))
+      FX(ISPEC,HPART) = FX(ISPEC,NPART(ISPEC))
+      FY(ISPEC,HPART) = FY(ISPEC,NPART(ISPEC))
+
+      IF(MEANE(ISPEC,HPART).GT.MEANE(ISPEC,LPART)) 
+     &  PARTINFO(ISPEC,LPART)=PARTINFO(ISPEC,HPART)
+      PARTINFO(ISPEC,HPART) = PARTINFO(ISPEC,NPART(ISPEC))
+
+      MEANE(ISPEC,LPART) 
+     &  = MEANE(ISPEC,LPART) + MEANE(ISPEC,HPART)
+      MEANE(ISPEC,HPART) = MEANE(ISPEC,NPART(ISPEC))
+
+      SUMX(ISPEC,LPART) = SUMX(ISPEC,LPART) + SUMX(ISPEC,HPART)
+      SUMX(ISPEC,HPART) = SUMX(ISPEC,NPART(ISPEC))
+      SUMY(ISPEC,LPART) = SUMY(ISPEC,LPART) + SUMY(ISPEC,HPART)
+      SUMY(ISPEC,HPART) = SUMY(ISPEC,NPART(ISPEC))
+      SUMXX(ISPEC,LPART) = SUMXX(ISPEC,LPART) + SUMXX(ISPEC,HPART)
+      SUMXX(ISPEC,HPART) = SUMXX(ISPEC,NPART(ISPEC))
+      SPREAD(ISPEC,LPART) = MAX
+     &    ( SUMXX(ISPEC,LPART)/MEANE(ISPEC,LPART)
+     &    + SUMYY(ISPEC,LPART)/MEANE(ISPEC,LPART)
+     &    - (SUMX(ISPEC,LPART)/MEANE(ISPEC,LPART))**2
+     &    - (SUMY(ISPEC,LPART)/MEANE(ISPEC,LPART))**2
+     &    , 0. )
+      SPREAD(ISPEC,HPART) = SPREAD(ISPEC,NPART(ISPEC))
+
+      NPART(ISPEC) = NPART(ISPEC) - 1
+
+      RETURN
+
+      END SUBROUTINE DOCOMBINE

@@ -1,0 +1,139 @@
+      SUBROUTINE MPEXCHNGSARIN(NSPECPE,ISPECPE,ITAG) 
+
+!****  *MPEXCHNGSARIN* - EXCHANGES MODEL DATA AT SAR DATA POINTS. 
+
+!     J. BIDLOT    ECMWF   NOVEMBER 1999
+
+!     PURPOSE.
+!     --------
+
+!     BROADCASTS MODEL DATA AT SAR DATA POINTS FROM ALL PE'S TO
+!     ALL PE'S 
+
+!*    INTERFACE.
+!     ----------
+
+!     CALL *MPEXCHNGSARIN*(NSPECPE,ISPECPE,ITAG)
+
+
+!     *NSPECPE* - NUMBER OF SAD DATA POINT ON THAT PE.
+!     *ISPECPE* - ARRAY INDEX OF EACH POINT BELONGING TO THAT PE.
+!     *ITAG*    - TAG USED FOR MESSAGE PASSING.  
+!     METHOD.
+!     -------
+
+!     EXTERNALS.
+!     ----------
+!     MPE PACKAGE :
+!         MPE_BROADCAST
+!         MPE_RECV
+!         MPEI_ABORT 
+
+!     REFERENCES.
+!     -----------
+!         NONE
+! -------------------------------------------------------------------
+
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,IGSAR    ,IJSAR    ,
+     &            LONG     ,LAT      ,U10      ,THW
+
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER :: NSPECPE, KSPECPE, IP, ISPEC, IFRE, IANG
+      INTEGER :: IERR, ITAG, MZC, KCOUNT, KRCOUNT, KRFROM, KRTAG 
+      INTEGER :: ISPECPE(NSPEC)
+      REAL,ALLOCATABLE :: ZCOMBUF(:)
+
+
+      IF(NPROC.EQ.1) THEN
+        RETURN
+      ELSE
+!     1.1 SEND TO ALL OTHER PROCESSORS 
+!         -----------------------------
+        MZC=1+NSPECPE*(7+NANG*NFRE)
+        ALLOCATE(ZCOMBUF(MZC))
+
+        KCOUNT=1
+        ZCOMBUF(KCOUNT)=FLOAT(NSPECPE)
+        DO ISPEC = 1,NSPECPE
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=FLOAT(ISPECPE(ISPEC))
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=FLOAT(IGSAR(ISPECPE(ISPEC)))
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=FLOAT(IJSAR(ISPECPE(ISPEC)))
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=LONG(ISPECPE(ISPEC),1) 
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=LAT(ISPECPE(ISPEC),1) 
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=U10(ISPECPE(ISPEC)) 
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=THW(ISPECPE(ISPEC)) 
+          DO IFRE = 1,NFRE
+            DO IANG = 1,NANG
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=SPEC(ISPECPE(ISPEC),IANG,IFRE,1)
+            ENDDO 
+          ENDDO 
+        ENDDO 
+
+        CALL MPE_BROADCAST
+     &   (ZCOMBUF,KCOUNT,2,IRANK,ITAG,0,0,0,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT
+     &   ('MPE_BROADCAST ERROR in MPEXCHNGSARIN' )
+
+        DEALLOCATE(ZCOMBUF)
+
+!     1.2 RECEIVE CONTRIBUTION TO THE FIELDS FROM ALL OTHER PE'S
+!         ------------------------------------------------------
+        MZC=1+NSPEC*(7+NANG*NFRE)
+        ALLOCATE(ZCOMBUF(MZC))
+
+        DO IP=1,NPROC-1
+
+          CALL MPE_RECV(ZCOMBUF,MZC,2,-1,ITAG,0,0,0,
+     &     KRCOUNT,KRFROM,KRTAG,IERR)
+          IF(IERR.LT.0) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN' )
+          IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN MISMATCHED TAGS' )
+
+          KCOUNT=1
+          DO ISPEC = 1,NINT(ZCOMBUF(1))
+            KCOUNT=KCOUNT+1
+            KSPECPE=NINT(ZCOMBUF(KCOUNT))
+            KCOUNT=KCOUNT+1
+            IGSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
+            KCOUNT=KCOUNT+1
+            IJSAR(KSPECPE)=NINT(ZCOMBUF(KCOUNT))
+            KCOUNT=KCOUNT+1
+            LONG(KSPECPE,1)=ZCOMBUF(KCOUNT)
+            KCOUNT=KCOUNT+1
+            LAT(KSPECPE,1)=ZCOMBUF(KCOUNT)
+            KCOUNT=KCOUNT+1
+            U10(KSPECPE)=ZCOMBUF(KCOUNT)
+            KCOUNT=KCOUNT+1
+            THW(KSPECPE)=ZCOMBUF(KCOUNT)
+            DO IFRE = 1,NFRE
+              DO IANG = 1,NANG
+                KCOUNT=KCOUNT+1
+                SPEC(KSPECPE,IANG,IFRE,1)=ZCOMBUF(KCOUNT)
+              ENDDO 
+            ENDDO 
+          ENDDO 
+          IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
+     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN MISMATCHED LENGTH' )
+        
+        ENDDO 
+
+        ITAG=ITAG+1
+      ENDIF
+
+      DEALLOCATE(ZCOMBUF)
+
+      RETURN
+      END SUBROUTINE MPEXCHNGSARIN

@@ -13,12 +13,15 @@
 !     Input parameter can be 250 (old) or 251 (new).
 !     The results will be saved as an ascii text file
 !     containing the location and date and time  and the decoded sprectrum
+!     The 1d frequency spectrum will also be computed
 
 !     USAGE : decode_point_spectra [-i input_filename] [-o output_filename]
 !     ------                       [-t itest] 
 !    
 !             default value for input_filename : input_spectra 
 !                               output_filename : output_spectra 
+!                               the 1d spectrum will be saved in 
+!                               output_spectra.1d
 !                               itest : 0 (no diagnostics)
 !                               itest : 0 (no diagnostics)
 !                               itest : 1 (some diagnostics)
@@ -73,8 +76,9 @@
 !     AT 0, 6, 12, 18Z. THE DOMAIN is G for Global. The ATTRIBUTE 
 !     FREQUENCY=1/TO/25 AND DIRECTION=1/TO/12 MUST BE SPECIFIED (see below) 
 
-!     BEFORE THAT TIME, PARAMETER 250 IS TO BE USED AND ANALYSIS ARE ONLY
-!     AVAILABLE FOR 12Z (except after January 20 1998 12Z when WAVE MODEL
+!     BEFORE THAT TIME, AND FROM February 1995, 26 12z,
+!     PARAMETER 250 IS TO BE USED AND ANALYSIS ARE ONLY AVAILABLE FOR 12Z
+!     (except after January 20 1998 12Z when WAVE MODEL
 !     ANALYSIS SPECTRA BECAME AVAILABLE AT 0, 6, 12, 18Z). FOR SPECTRAL
 !     DATA BETWEEN December 4, 1996, 18Z and June 28, 1998 18z, the DOMAIN
 !     WAS SPLIT BETWEEN NORTH AND SOUTH HEMISPHERES (DOMAIN=N OR DOMAIN=S).
@@ -83,8 +87,9 @@
 !     CAN BE QUITE CUMBERSOM IF RETRIEVED FOR THE ALL GLOBE.
 
 !     THE DATA FROM THE MEDITERRANEAN/BALTIC SEA MODEL ARE ARCHIVED AS
-!     PARAMETER 250 UNTIL THE INTRODUCTION OF THE NEW MODEL (
-!     on October 27 1998) where IT WILL BECOME 251 AS WELL.
+!     PARAMETER 250 FROM February 1995, 26 12z,
+!     UNTIL THE INTRODUCTION OF THE NEW MODEL (on October 27 1998)
+!     where IT BECAME 251 AS WELL.
 
 !!!   NOTE: THE DISCRETISED DIRECTION STARTING POINT WAS 0 DEGREE BEFORE
 !     May 14 1997 12Z. After THAT DATE, IT IS 15 DEGREES FOR THE GLOBAL
@@ -593,12 +598,13 @@
         CALL ABORT
       ENDIF
 
-!     WRITES OUT THE SPECTRUM IN ASSCII FORMAT 
+!     WRITES OUT THE SPECTRUM IN ASCCII FORMAT 
 !     ****************************************
 
       LFILE=0
       IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
       OPEN(10,FILE=FNAMEOUT(1:LFILE))
+      OPEN(11,FILE=FNAMEOUT(1:LFILE)//'.1d')
  
       dum=0.
       ilon=0
@@ -624,18 +630,32 @@
 
         WRITE(10,'(2(1x,F8.4),1x,i4.4,4(i2.2))')
      &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI 
+        WRITE(11,'(2(1x,F8.4),1x,i4.4,4(i2.2))')
+     &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI 
 
         IF(NANG.EQ.12) THEN
           WRITE(10,100) dum,(TH(K),K=1,NANG)
           DO M=1,NFRE
             WRITE(10,100) FR(M),
      &         (PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG),K=1,NANG)
+            SUM=0.
+            DO K=1,NANG
+               SUM=SUM+PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG)
+            ENDDO
+            SUM=SUM*DELTH
+            WRITE(11,*) FR(M),SUM
           ENDDO
         ELSE IF(NANG.EQ.24) THEN
           WRITE(10,110) FR(M),(TH(K),K=1,NANG)
           DO M=1,NFRE
             WRITE(10,110) FR(M),
      &         (PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG),K=1,NANG)
+            SUM=0.
+            DO K=1,NANG
+               SUM=SUM+PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG)
+            ENDDO
+            SUM=SUM*DELTH
+            WRITE(11,*) FR(M),SUM
           ENDDO
         ELSE
           WRITE(*,*) 'NO FORMAT WRITE POSSIBLE'
@@ -647,6 +667,7 @@
 110   FORMAT(25(1X,F8.4))
 
       CLOSE(10)
+      CLOSE(11)
 
       END
 

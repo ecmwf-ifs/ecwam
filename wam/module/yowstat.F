@@ -46,10 +46,15 @@
       INTEGER NTOTENS 
       INTEGER MFDBSF 
       INTEGER MFDB2DSP 
+      INTEGER NCALL 
 
       LOGICAL LANAONLY
       LOGICAL LALTCOR
+      LOGICAL LALTLRGR 
       LOGICAL L4VTYPE
+      LOGICAL LFRSTFLD 
+      LOGICAL LALTAS
+      LOGICAL LSARAS
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -138,10 +143,26 @@
 !      *NTOTENS*   INTEGER   TOTAL ENSEMBLE FORECAST MEMBERS (DEFAULT=0)
 !      *LANAONLY*  LOGICAL   CONTROLS WHETHER ANALYSIS IS RUN WITHOUT
 !                            PRIOR ADVECTION STEPS
+!      *LALTLRGR*  LOGICAL   CONTROLS WHETHER THE ALTIMETER WAVE HEIGHT
+!                            OBSERVATION IS CORRECTED USING A PRESCRIBED
+!                            LINEAR REGRESSION.
 !      *LALTCOR*   LOGICAL   CONTROLS WHETHER THE ALTIMETER WAVE HEIGHT
-!                            OBSERVATION IS CORRECTED PRIOR TO ITS
-!                            ASSIMILATION. 
+!                            OBSERVATION IS CORRECTED USING THE WAVE
+!                            SEA STATE PRIOR TO ITS ASSIMILATION.
 !      *L4VTYPE*   LOGICAL   CONTROLS WHETHER MARS TYPE 4V IS USED
 !                            INSTEAD OF TYPE FG.
+!      *LFRSTFLD*  LOGICAL   CONTROLS WHETHER INITIAL OUTPUT INTEGRATED
+!                            PARAMETERS ARE PRODUCED BASED ON THE INITIAL
+!                            CONDITIONS. IT WILL ONLY OUTPUT PARAMETERS
+!                            THAT ARE NOT USED AS INPUT (233, 245, 251)
+!                            OR CONNECTED TO THE ALTIMETER WAVE HEIGHT
+!                            CORRECTION (246, 247, 248).
+!      *LALTAS*    LOGICAL   CONTROLS WHETHER ALTAS IS CALLED FOR THE
+!                            ASSIMILATION.
+!      *LSARAS*    LOGICAL   CONTROLS WHETHER SARAS IS CALLED FOR THE
+!                            ASSIMILATION.
+!      *NCALL*     INTEGER   NUMBER OF TIME AIRSEA-SINPUT-STRESSO ARE
+!                            CALLED FOR EACH CALL TO IMPLSCH. 
+!                            = 1 BY DEFAULT.
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

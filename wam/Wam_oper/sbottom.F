@@ -57,15 +57,19 @@
 
       DO M=1,NFRE
         DO IJ=IJS,IJL
-          ARG = 2.* DEPTH(IJ,IG)*TFAK(INDEP(IJ),M)
-          ARG = MIN(ARG,50.)
-          SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
+          IF(DEPTH(IJ,IG).LT.999) THEN
+            ARG = 2.* DEPTH(IJ,IG)*TFAK(INDEP(IJ),M)
+            ARG = MIN(ARG,50.)
+            SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
+          ENDIF
         ENDDO
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*F(IJ,K,M)
-            FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ)
+            IF(DEPTH(IJ,IG).LT.999) THEN
+              SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*F(IJ,K,M)
+              FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ)
+            ENDIF
           ENDDO
         ENDDO
       ENDDO

@@ -49,8 +49,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G
-      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV   ,
+     &             AFCRV   ,BFCRV
+      USE YOWMPP   , ONLY : NINF    ,NSUP
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -60,22 +61,12 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (EO = 955., A = 6.02*10.**(-5), B = 0.695,              
-     &           AF = 0.000168, BF = -3.27)                             
-
-!       *EO,A,B* : PARAMETERS OF THE ENERGY GROWTH CURVE                
-!                  ESTAR = EO*TANH(A*TSTAR**B).                         
-!       *AF,BF*  : PARAMETERS IN  MEAN FREQUENCY - ENERGY RELATION      
-!                  YNU(X) = (ESTAR/AF)**(1/BF).                         
-
-! ----------------------------------------------------------------------
-
 !     INLINE FUNCTION.                                                  
 !     ----------------                                                  
 
 !     DIMENSIONLESS FREQUENCY AS FUNCTION OF DIMENSIONLESS ENERGY       
 
-      YNU(X) = (X/AF)**(1./BF)                                          
+      YNU(X) = (X/AFCRV)**(1./BFCRV)                                          
 
 ! ----------------------------------------------------------------------
 
@@ -92,6 +83,7 @@
 !*    2. LOOP OVER GRID POINTS.                                         
 !        ----------------------                                         
 
+      G2=G*G
       DO IJ=IJS,IJL                                                
         IF (EWFG(IJ).GT.0.01) THEN                                     
 
@@ -105,14 +97,14 @@
           TX = T(IJ)                                                  
           DO ITER=1,5                                            
             TSTAR = G*TX/USTANAL                                     
-            XX = A*TSTAR**B                                          
+            XX = AGRCRV*TSTAR**BGRCRV
             IF (XX.GE.2.) THEN                                       
-              USTANAL = (EWSR*G**2/EO)**(0.25)                      
+              USTANAL = (EWSR*G2/EGRCRV)**(0.25)                      
             ELSE                                                     
               TT = TANH(XX)                                         
-              RKSI = EWSR*G**2/USTANAL**4/EO                        
+              RKSI = EWSR*G2/USTANAL**4/EGRCRV
               USTANAL = USTANAL*(1.-(RKSI-TT)                       
-     &         /(B*XX*(1.-TT**2)-4.*TT))               
+     &         /(BGRCRV*XX*(1.-TT**2)-4.*TT))               
             ENDIF                                                   
           ENDDO
 
@@ -130,12 +122,12 @@
             ELSE                                                     
               USA(IJ) = USTANAL                                     
               EWA(IJ) = EWSR                                        
-              FMWA(IJ) = YNU(EWSR*G**2/USTANAL**4)*G/USTANAL        
+              FMWA(IJ) = YNU(EWSR*G2/USTANAL**4)*G/USTANAL        
             ENDIF                                                   
           ELSE                                                        
             USA(IJ) = USTANAL                                        
             EWA(IJ) = EWSR                                           
-            FMWA(IJ) = YNU(EWSR*G**2/USTANAL**4)*G/USTANAL           
+            FMWA(IJ) = YNU(EWSR*G2/USTANAL**4)*G/USTANAL           
           ENDIF                                                       
         ENDIF                                                          
       ENDDO

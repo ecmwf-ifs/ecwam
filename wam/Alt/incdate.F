@@ -16,8 +16,7 @@ C**   INTERFACE.
 C     ----------
 C
 C       *CALL* *INCDATE (CDATE,ISHIFT)*
-C         *CDATE*  CHAR*10 - DATE TIME GROUP (YYMMDDHHMM) OR
-C                  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
+C         *CDATE*  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
 C                  CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS)
 C         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, RESTRICTIONS:
 C                            -2147483648 <= ISHIFT <=  +2147483647
@@ -25,13 +24,14 @@ C
 C     METHOD.
 C     -------
 C
-C       THE DATE AND TIME CAN BE SUPPLIED IN THE OLD 10 CHARACTER
-C       WAM FORMAT OR IN THE Y2K COMPLIANT 14 CHARACTER OR 12 
-C       CHARACTER FORMAT.
+C       THE DATE AND TIME CAN BE SUPPLIED IN THE Y2K COMPLIANT
+C       14 CHARACTER OR 12 CHARACTER FORMAT. IF THE 10 CHARACTER
+C       FORMAT IS USED, AN ERROR MESSAGE WILL BE ISSUED. 
 C       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN 
 C       THE INPUT ARGUMENT FOR SECINCR. THE UPDATED DATE AND TIME 
 C       IS PUT BACK INTO AN OUTPUT STRING AS USED BY THE CALLING 
 C       ROUTINE.
+C       IF CDATE HAS A LENGHT OF 0 THAN NOTHING IS DONE.
 C
 C     EXTERNALS.
 C     ----------
@@ -58,13 +58,15 @@ C         -----------------------------------------------------------
 C
       IL = LEN_TRIM(CDATE)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A39, I2.2, A2)')
-     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(CLFMT,'(A49, I2.2, A2)')
+     .     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE
+        WRITE(*, CLFMT ) CDATE
         LLND = .FALSE.
-        READ(CDATE,'(5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
-        IYEAR = IYEAR + 1900
-        ISEC = 0
+        CALL ABORT
+ccc        READ(CDATE,'(5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
+ccc        IYEAR = IYEAR + 1900
+ccc        ISEC = 0
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE,'(i4, 4i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
@@ -72,8 +74,11 @@ C
       ELSEIF (IL==14) THEN
         LLND = .TRUE.
         READ(CDATE,'(i4, 5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
+      ELSEIF (IL==0) THEN
+        WRITE(6, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
+        CALL ABORT
       ELSE
-        WRITE(CLFMT,'(A58, I2.2, A2)')
+        WRITE(CLFMT,'(A59, I2.2, A2)')
      .  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
      .    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE
@@ -90,6 +95,13 @@ C
 
       IF (IRET/=0) THEN
         WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(6, '("           IYEAR ", I4 )') IYEAR
+        WRITE(6, '("           IMON ", I2 )') IMON
+        WRITE(6, '("           IDAY ", I2 )') IDAY
+        WRITE(6, '("           IHOUR ", I2 )') IHOUR
+        WRITE(6, '("           IMIN ", I2 )') IMIN
+        WRITE(6, '("           ISEC ", I2 )') ISEC
+        WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
         CALL ABORT
       ENDIF
 C

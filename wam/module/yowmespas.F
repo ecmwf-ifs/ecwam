@@ -4,14 +4,15 @@
 
 !*    **  *YOWMESPAS* - SELECTS MACHINE SPECIFIC PART OF THE CODE 
 !                    AND SOME LATER CONTROL SWITCHES
-      LOGICAL LMESSPASS 
-      LOGICAL LPBIOIN 
-      LOGICAL LPBIOOUT 
-      LOGICAL LFDBIOIN 
-      LOGICAL LFDBIOOUT 
-      LOGICAL LGRIBIN 
-      LOGICAL LGRIBOUT 
-      LOGICAL LNOCDIN 
+      LOGICAL :: LMESSPASS 
+      LOGICAL :: LPBIOIN 
+      LOGICAL :: LPBIOOUT 
+      LOGICAL :: LFDBIOIN 
+      LOGICAL :: LFDBIOOUT 
+      LOGICAL :: LGRIBIN 
+      LOGICAL :: LGRIBOUT 
+      LOGICAL :: LNOCDIN 
+      LOGICAL :: LWAVEWIND=.FALSE. 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      --------    ----      -------
@@ -38,6 +39,8 @@
 !                            ARE EXPECTED AS OUTPUTS. EXCEPT IN preset
 !                            WHERE GRIB SPECTRA ARE ONLY EXPECTED.
 !      *LNOCDIN    LOGICAL   SELECTS WHETHER A DRAG COEFFICIENT FILE IS
+!                            SUPPLIED AS INPUT. 
+!      *LWAVEWIND  LOGICAL   TELLS WHETHER A WAVE 10M WIND FILE IS 
 !                            SUPPLIED AS INPUT. 
 ! ----------------------------------------------------------------------
       END MODULE YOWMESPAS

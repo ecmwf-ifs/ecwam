@@ -56,11 +56,6 @@
 !        A POSITIVE ICH INDICATES THAT THE FILE NAME HAS TO BE
 !        TAKE OUT OF ARRAY NAME(ICH)
 
-! !!!!
-!        THE PATH NAME FOR ECFS IS
-!            PATH/FILENAME
-! !!!!
-
 !        IN PARTICULAR THESE SUB DOES THE FOLLOWING STEPS:
 !               - CLOSES THE UNIT.
 !               - CONSTRUCTS THE FILE NAME.
@@ -85,8 +80,7 @@
       PARAMETER (QQNAME =  7)
       CHARACTER NAME(QQNAME)*17,
      &          FILENA*17, IU*8, PLIST*110,
-     &          CDATE*12, CDATEF*12, CDATEH*10, FILENAME*72,
-     &          MODE*1
+     &          CDATE*12, CDATEF*12, CDATEH*10
 
 ! ----------------------------------------------------------------------
 

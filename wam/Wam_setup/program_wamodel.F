@@ -7,8 +7,10 @@
 #QSUB -q vpp700.normal
 #QSUB -lP 1
 # # #QSUB -a "tomorrow 4:00am"
-#QSUB -lt 2500
-#QSUB -lT 3000
+#######QSUB -lt 2500
+########QSUB -lT 3000
+#QSUB -lt 500
+#QSUB -lT 500
 #QSUB -lM 500mb
 # # #QSUB -lM 1000mb
 #QSUB -eo
@@ -35,8 +37,13 @@ lgribout=T
 lnocdin=T
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.   specify whether the altimeter data will be corrected
+#. The following setting applies to ers2 data only !!!!
 #.
 laltcor=T
+laltlrgr=F
+hscoefcor=1.
+hsconscor=0.
+
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
@@ -96,13 +103,27 @@ if [[ $ASSIMILATION = "YES" ]] ; then
   LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
   #
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
-    if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
-      print - "\n\n\t\t SATELLITE DATA NOT ONLINE  \n\n"
-      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 3
-    else
-      ln -s ${ADIR}/RFL${ANALYSIS_DATE}00 .
+
+    if [[ $laltas = "T" ]] ; then
+      if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
+        print - "\n\n\t\t ALTIMETER DATA NOT ONLINE  \n\n"
+        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+        exit 3
+      else
+        ln -s ${ADIR}/RFL${ANALYSIS_DATE}00 .
+      fi
     fi
+
+    if [[ $lsaras = "T" ]] ; then
+      if [[ !  -r ${ADIR}/INV${ANALYSIS_DATE}00 ]] ; then
+        print - "\n\n\t\t SAR DATA NOT ONLINE  \n\n"
+        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+        exit 3
+      else
+        ln -s ${ADIR}/INV${ANALYSIS_DATE}00 . 
+      fi
+    fi
+
     ANALYSIS_DATE=`newdate ${ANALYSIS_DATE} 6`
   done
 else
@@ -242,7 +263,7 @@ else
   frt $rp -Wl,-m,-P,-uMAIN__ -X9 \
     -o $BIN/chief  chief.o ishell.o ifssig.o \
      -lwam  \
-     $ECLIB $EMOSLIB $FDBLIB  \
+     $ECLIB $EMOSLIB $FDBLIB $NAGLIB  \
      -Wl,-dy -lsocket $MPELIB  $MPLIB || {
     #.
     #. Check return code.
@@ -295,10 +316,17 @@ EOD
 # specify mail box size:
 VPP_MBX_SIZE=16000000 ; export VPP_MBX_SIZE
 #.
-#. Need to define those 2 variables for profiling : 
-#. and link with libmp_hybrid.a
+#. Need to define those 2 variables for PARALLEL profiling : 
+#. and link with /usr/local/lib/libmp_hybrid.a
 #####VPP_STATS=8 ; export VPP_STATS 
 #####VPP_DETAIL=-1 ; export VPP_DETAIL
+
+### for SERIAL profiling, define the following 2 lines before running
+### the excecutable
+###FJSAMP=file:data1,type:vtime,routine:system
+###export FJSAMP
+### then after the run excecute fjsamp $BIN/chief
+
 #.
 if [[ $lgribin != "T" ]] ; then
   #modify runtime buffers

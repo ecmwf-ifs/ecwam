@@ -59,7 +59,7 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER*30 FILENAME
+      CHARACTER*30 FILENAME(1)
 
 !*    1. READ COMMON REFDOT.
 !        -------------------
@@ -77,9 +77,9 @@
         ENDIF
       ELSE
         IF(LMESSPASS) THEN
-          FILENAME='fort.16.%p'
+          FILENAME(1)='fort.16.%p'
           CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
-          OPEN(IU16,FILE=FILENAME,STATUS='UNKNOWN')
+          OPEN(IU16,FILE=FILENAME(1),STATUS='UNKNOWN')
 
           READ(IU16) SL
           CLOSE(IU16)

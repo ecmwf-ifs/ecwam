@@ -118,6 +118,7 @@
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
       IF (FRSTIME) THEN                                                 
+!       if you change the -5 value, do the same in wamodel
         MFDBSF = -5
         IF(LWCOU) THEN
           IU06=20

@@ -91,8 +91,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
-      USE YOWMLTSK , ONLY : NCHUNK
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS    ,DEG
@@ -104,7 +103,7 @@
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LALTCOR
+     &            LALTAS   ,LSARAS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -113,414 +112,115 @@
      &            IDELWIN  ,NFCST    ,ISTAT
 
 ! ----------------------------------------------------------------------
-
-!*    *ADDITIONAL PARAMETERS FOR MULTITASKING
-
-      INTEGER ITSKCA(9,NTASKS)
-      EXTERNAL MT_ALLOT
-
-! ----------------------------------------------------------------------
-!     DEFINE ALLOCATABLE ARRAYS
-
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: USOI, USME, WHOI, WHME
-      REAL,ALLOCATABLE,DIMENSION(:) :: WHOIB, USOIB, ETOIB 
-
-
-!*    VARIABLE.     TYPE.        PURPOSE.                               
-!     ---------     -----        --------                               
-!      *USOI*        REAL        USTAR FIELD FROM O.I.                  
-!      *USME*        REAL        USTAR FIELD FROM MEASUREMENTS          
-!      *WHOI*        REAL        WAVE HEIGHT FIELD FROM O.I.            
-!      *WHME*        REAL        WAVE HEIGHT FIELD FROM MEASUREMENTS    
-!      *WHOIB*       REAL        WAVE HEIGHT FROM O.I. (BLOCKED)        
-!      *USOIB*       REAL        USTAR FROM O.I. (BLOCKED)              
-!      *ETOIB*       REAL        TOTAL ENERGY FROM O.I.                 
-
-!-----------------------------------------------------------------------
-
-      NAMELIST /OIP/ LMAX, SIGOBS, SIGMOD
-
-!*    *NAMELIST* *OIP* PARAMETERS FOR THE OPTIMUM INTERPOLARTION.
-
-      LOGICAL LOIP
-
-!*     VARIABLE.   TYPE.     PURPOSE.
-!      ---------   -------   --------
-!      *LMAX*      INTEGER   MAXIMUM NUMBER OF GRID STEPS TO SPREAD
-!                            MEASURED HS AND USTAR
-!      *SIGOBS*    REAL      MEASUREMENT SCATTER.
-!      *SIGMOD*    REAL      MODEL SCATTER.
-!      *LOIP*      LOGICAL   TRUE IF INQUIRE ON FILE 'WTR' SUCCESSFULL.
-
-! ----------------------------------------------------------------------
       REAL BETAG(NLONW,NLATW)
 ! ----------------------------------------------------------------------
 
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
-      WRITE (IU06,*) '  '                                               
-      WRITE (IU06,*)                                                    
-     &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO        
 
+      WRITE (IU06,*) '  '
+      WRITE (IU06,*)
+     &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       LLFLUSH = .TRUE.
-      ALLOCATE(WHME(NGX,NGY), USME(NGX,NGY))
-      ALLOCATE(WHOI(NGX,NGY), USOI(NGX,NGY))
-      ALLOCATE(WHOIB(NINF:NSUP),USOIB(NINF:NSUP),ETOIB(NINF:NSUP))
+
       IF(.NOT.ALLOCATED(WHGTAG)) ALLOCATE(WHGTAG(NGX,NGY))
       IF(.NOT.ALLOCATED(CWHTAG)) ALLOCATE(CWHTAG(NGX,NGY))
       IF(.NOT.ALLOCATED(RANGAG)) ALLOCATE(RANGAG(NGX,NGY))
 
-!    0. COLLECT GRIDDED FIELDS USED BY THE ASSIMILATION
-!       -----------------------------------------------
+!     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
+!        ------------------------------------------
 
-      IF(LMESSPASS) THEN
-        KTAG=KTAG+1
-        CALL MPGATHEROIFLD(IPFGTBL(1),KTAG,WHGTTG)
-        KTAG=KTAG+1
-        CALL MPGATHEROIFLD(IPFGTBL(4),KTAG,USTARG)
-        KTAG=KTAG+1
-        CALL MPGATHEROIFLD(IPFGTBL(7),KTAG,CDG)
+      IF(LALTAS) THEN
+        CALL ALTAS
+        IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: ALTAS DONE'
+      ENDIF
+
+      IF(LSARAS) THEN
+        CALL SARAS
+        IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: SARAS DONE'
       ENDIF
 
 
-!*    1. MEASUREMENT ARE TRANSFERRED TO THE MODEL GRID.                 
-!        ----------------------------------------------                 
+!*    2. PREPARING OUTPUT AND UPDATE TO CHARNOCK PARAMETER
+!        -------------------------------------------------
 
-      CALL GRFIELD (WHME, USME)
-                                                                        
-      IF (ITEST.GE.2)                                                   
-     &   WRITE(IU06,*) '   SUB. WAMASSI: MEASUREMENTS ---> GRID'        
-
-!*    2. MEASUREMENTS AND MODEL ARE MERGED BY OPTIMUM INTERPOLATION.    
-!        -----------------------------------------------------------    
-
-!*    2.1 GET PARAMETERS FROM NAMELIST OIP IF PRESENT.
-!         --------------------------------------------
-      LMAX=11
-      IF(XDELLA.LT.0.5) LMAX=22
-      SIGOBS=0.5
-      SIGMOD=0.5
-
-      LOIP=.FALSE.
-      INQUIRE(FILE='oip',EXIST=LOIP)
-      IF (LOIP) THEN 
-
-        OPEN(UNIT=92,FILE='oip')
-        READ (92,OIP)
-        CLOSE(UNIT=92)
-
-        IF ( LMAX .GT. 22 .OR. SIGOBS .GT. 1.0 .OR. SIGMOD .GT. 1.0
-     &       .OR. LMAX .LT. 1 .OR. SIGOBS .LT. 0.1 .OR. SIGMOD .LT.
-     &       0.1 ) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. WAMASSI          *'
-          WRITE(IU06,*) '*    ===========================          *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '* CONSTRAINTS:                            *'
-          WRITE(IU06,*) '* 0 < LMAX < 23        CURRENT SETTING: ',
-     &                     LMAX,'*'
-          WRITE(IU06,*) '* 0.1 < SIGOBS <= 1.0  CURRENT SETTING: ',
-     &                     SIGOBS,'*'
-          WRITE(IU06,*) '* 0.1 < SIGMOD <= 1.0  CURRENT SETTING: ',
-     &                     SIGMOD,'*'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
-          WRITE(IU06,*) '* ---------------   --------------        *'
-          WRITE(IU06,*) '*******************************************'
-          CALL ABORT1
+      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
+     &    CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
+        IF(.NOT.LMESSPASS) THEN
+          REWIND IU12
+          IF (IGL.NE.1) THEN
+            REWIND IU11
+            REWIND IU12
+            REWIND IU13
+            REWIND IU14
+            IFIL=IU11
+            IU11=IU12
+            IU12=IFIL
+            IFIL=IU13
+            IU13=IU14
+            IU14=IFIL
+            READ(IU11) FL1
+            IF (ITEST.GE.2)
+     &       WRITE(IU06,*) '   SUB. WAMASSI: START OF READING',
+     &       ' FIRST BLOCK OF SPECTRA'
+          ENDIF
         ENDIF
       ENDIF
-      NDIM1 = 2*LMAX+1
-      NDIM2 = NDIM1*NDIM1
-      IF(ITEST.GT.0) THEN
-        WRITE(IU06,*) ' PARAMETER FOR OI: '
-        WRITE(IU06,OIP)
-        WRITE(IU06,*)
-      ENDIF
 
-!*    2.2 OI.
-!         ---
-
-      CALL OIFIELD (USME, USTARG, USOI, SIGOBS, SIGMOD, 
-     &              LMAX, NDIM2)
-
-      IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '   SUB. WAMASSI: OIFIELD DONE FOR WINDS'
-
-      CALL OIFIELD (WHME, WHGTTG, WHOI, SIGOBS, SIGMOD, 
-     &              LMAX, NDIM2)
-
-      IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '   SUB. WAMASSI: OIFIELD DONE FOR WAVE HEIGHTS'
-
-
-!*    3. ANALYSING THE SPECTRA.                                         
-!        ----------------------                                         
-
-
-!*    3.1 UNITS ARE PREPARED.                                           
-!         -------------------                                           
-
-      IF(.NOT.LMESSPASS) REWIND IU12
-      IF (IGL.NE.1) THEN                                                
-        REWIND IU11                                                    
-        REWIND IU12                                                    
-        REWIND IU13                                                    
-        REWIND IU14                                                    
-
-!*    3.2 CHANGE WORKING FILE UNITS.                                    
-!         --------------------------                                    
-
-        IFIL=IU11                                                      
-        IU11=IU12                                                      
-        IU12=IFIL                                                      
-        IFIL=IU13                                                      
-        IU13=IU14                                                      
-        IU14=IFIL                                                      
-
-!*    3.3 THE FIRST BLOCK IS READ IN.                                   
-!         ---------------------------                                   
-
-        READ(IU11) FL1             
-        IF (ITEST.GE.2)                                                
-     &   WRITE(IU06,*) '   SUB. WAMASSI: START OF READING',         
-     &   ' FIRST BLOCK OF SPECTRA'                     
-      ENDIF
-
-!*    3.4 LOOP OVER THE BLOCKS.                                         
-!         ---------------------                                         
-
+!*    2.1 LOOP OVER THE BLOCKS.
+!         ---------------------
       BLOCK : DO IG=1,IGL
 
-!*    3.4.1 TRANSFERS RESULTS OF OPTIMAL INT TO BLOCKS.                 
-!           -------------------------------------------                 
-
-        CALL MAKEBLO (USOIB(IJS(IG)), USOI, IJS(IG), IJL(IG), IG)
-        CALL MAKEBLO (WHOIB(IJS(IG)), WHOI, IJS(IG), IJL(IG), IG)
-
-        DO IJ=IJS(IG),IJL(IG)                                     
-          USNEW(IJ) = USOLD(IJ,IG)                                    
-          THWNEW(IJ)   = THWOLD(IJ,IG)                                
-        ENDDO
-        DO IJ=IJS(IG),IJL(IG)                                     
-          ETOIB(IJ) = -99.                                            
-          IF (WHOIB(IJ).GT.0.) ETOIB(IJ) = WHOIB(IJ)**2/16.           
+!       UPDATE U10NEW,THWNEW,USNEW
+!       --------------------------
+        DO IJ=IJS(IG),IJL(IG)
+          U10NEW(IJ) = U10OLD(IJ,IG)
+          THWNEW(IJ) = THWOLD(IJ,IG)
+          USNEW(IJ) = USOLD(IJ,IG)
         ENDDO
 
-        IF (ITEST.GE.2) THEN
-          IF (IG.LE.ITESTB) WRITE(IU06,*)                             
-     &     '   SUB. WAMASSI: FIELDS BLOCKED FOR IG = ', IG             
-        ENDIF
 
-!*    3.4.2 CHECK UNITS.                                                
-!           ------------                                                
+!       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
+!       --------------------------------------------------
+        IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
+     &      CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
 
-        IF (MOD(IG,2).EQ.1) THEN                                       
-
-!*    3.4.2.1  ODD  BLOCKS.                                             
-!              ------------                                             
-          IF (LMESSPASS) THEN
-
-            CALL UPDATE (FL1, ETOIB, USOIB, USNEW, THWNEW,
-     &                   IJS(IG), IJL(IG))
-
-            IF (ITEST.GE.2) THEN
-              IF (IG.LE.ITESTB) WRITE(IU06,*)                          
-     &         '   SUB. WAMASSI: SPECTRA UPDATED '   
+          IF (MOD(IG,2).EQ.1) THEN
+            IF (.NOT.LMESSPASS.AND.IG.NE.IGL) READ(IU11) FL2
+            CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
+     &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
+     &        NSTART,NEND)
+            IF (ITEST.GE.2.AND.ITESTB.GE.IG) THEN
+              WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
             ENDIF
-
           ELSE
-
-!*             START READING FOR NEXT BLOCK.                           
-
-            IF (IG.NE.IGL)                                              
-     &         READ(IU11) FL2       
-
-!              UPDATE SPECTRA AND USTAR.                                
-!              (PARALLEL PROCESSING - HENCE MT_ALLOT).
-
-            NCHUNK = 0
-            NLENGTH = (IJL(IG)-IJS(IG)+1)
-            NWORK   = NLENGTH/NSIZE
-            IF (MOD(NLENGTH,NSIZE).NE.0) NWORK = NWORK + 1
-
-            NTSKCAP = 3
-            NSTKSZ  = 1
-            NSTKINC = 1
-            DO JROC=1,NTASKS-1
-              ITSKCA(1,JROC) = NTSKCAP
-              ITSKCA(3,JROC) = JROC
-              ITSKCA(4,JROC) = 1 !  JUST TO GET PAST COMP 'STACKSZW'
-              ITSKCA(5,JROC) = NSTKSZ
-              ITSKCA(6,JROC) = 1 !  JUST TO GET PAST COMP 'STACKINW'
-              ITSKCA(7,JROC) = NSTKINC
-
-              CALL TSKSTART(ITSKCA(1,JROC), MT_ALLOT, FL1, ETOIB,
-     &         USOIB, USNEW, THWNEW, IJS(IG), IJL(IG),
-     &         NSIZE,NWORK)
-            ENDDO
-
-            CALL MT_ALLOT (FL1, ETOIB, USOIB, USNEW, THWNEW,
-     &       IJS(IG), IJL(IG), NSIZE,NWORK)
-
-            DO JROC=1,NTASKS-1
-              CALL TSKWAIT(ITSKCA(1,JROC))
-            ENDDO
-
-
-            IF (ITEST.GE.2) THEN
-              IF (IG.LE.ITESTB) WRITE(IU06,*)                          
-     &         '   SUB. WAMASSI: SPECTRA UPDATED FOR BLOCK IG = ', IG   
-            ENDIF
-
-!              OUTPUT OF OVERLAPPING LATITUDES AND                      
-!              START OF OUTPUT OF ALL SPECTRA IN BLOCK.                 
-
-            IF (IGL.NE.1) THEN                                          
-              IF (IG.NE.1) CALL SPLITBL(FL1, IJS(IG), IJL2(IG), IU14)  
-              WRITE(IU12) FL1      
-              IF (ITEST.GE.2) THEN
-                IF (ITESTB.GE.IG) WRITE(IU06,*)                       
-     &           '   SUB. WAMASSI: OVERLAPPING LATITUDES',          
-     &           ' SAVED AND START OF BLOCK OUTPUT.'                
-              ENDIF
-            ENDIF
-          ENDIF
-
-!           THE WIND FIELD CURRENTLY USED IS UPDATED.                   
-
-          DO IJ=IJS(IG),IJL(IG)                                     
-            U10OLD(IJ,IG) = USNEW(IJ)*U10OLD(IJ,IG)/USOLD(IJ,IG)        
-            U10NEW(IJ) = U10OLD(IJ,IG)                                  
-          ENDDO
-          IF (ITEST.GE.2) THEN
-            IF (IG.LE.ITESTB) WRITE(IU06,*)                             
-     &      '   SUB. WAMASSI: WIND REPLACED FOR BLOCK IG = ', IG        
-          ENDIF
-
-!              MODEL OUTPUT INTEGRATED DATA ARE SAVED IN COMMON.        
-!              SPECTRA ARE SAVED ON DISK AND PRINTED.                   
-
-          IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.           
-     &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
-            CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,         
-     &       IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
-     &       NSTART,NEND)
-            IF (ITEST.GE.2) THEN
-              IF (ITEST.GE.2) WRITE(IU06,*)                         
-     &         '   SUB. WAMASSI: MODEL OUTPUT DONE IN SUB OUTBS'
-            ENDIF
-          ENDIF
-        ELSE                                                           
-
-!*    3.4.2.2  EVEN BLOCKS.                                             
-!              ------------                                             
-
-!              START READING FOR NEXT BLOCK.                           
-
-          IF (IG.NE.IGL)                                              
-     &     READ(IU11) FL1       
-
-!              UPDATE SPECTRA AND USTAR.                                
-
-!              (PARALLEL PROCESSING - HENCE MT_ALLOT).
-
-
-          NCHUNK = 0
-          NLENGTH = (IJL(IG)-IJS(IG)+1)
-          NWORK   = NLENGTH/NSIZE
-          IF (MOD(NLENGTH,NSIZE).NE.0) NWORK = NWORK + 1
-
-          NTSKCAP = 3
-          NSTKSZ  = 1
-          NSTKINC = 1
-          DO JROC=1,NTASKS-1
-            ITSKCA(1,JROC) = NTSKCAP
-            ITSKCA(3,JROC) = JROC
-            ITSKCA(4,JROC) = 1 !  JUST TO GET PAST COMP 'STACKSZW'
-            ITSKCA(5,JROC) = NSTKSZ
-            ITSKCA(6,JROC) = 1 !  JUST TO GET PAST COMP 'STACKINW'
-            ITSKCA(7,JROC) = NSTKINC
-
-            CALL TSKSTART(ITSKCA(1,JROC), MT_ALLOT, FL2, ETOIB,
-     &       USOIB, USNEW, THWNEW, IJS(IG), IJL(IG),
-     &       NSIZE,NWORK)
-          ENDDO
-
-          CALL MT_ALLOT (FL2, ETOIB, USOIB, USNEW, THWNEW,
-     &     IJS(IG), IJL(IG), NSIZE, NWORK)
-
-          DO JROC=1,NTASKS-1
-            CALL TSKWAIT(ITSKCA(1,JROC))
-          ENDDO
-
-          IF (ITEST.GE.2) THEN
-            IF (IG.LE.ITESTB) WRITE(IU06,*)                          
-     &       '   SUB. WAMASSI: SPECTRA UPDATED FOR BLOCK IG = ', IG   
-          ENDIF
-
-!           THE WIND FIELD CURRENTLY USED IS UPDATED.                   
-
-          DO IJ=IJS(IG),IJL(IG)                                     
-            U10OLD(IJ,IG) = USNEW(IJ)*U10OLD(IJ,IG)/USOLD(IJ,IG)        
-            U10NEW(IJ) = U10OLD(IJ,IG)                                  
-          ENDDO
-          IF (ITEST.GE.2) THEN
-            IF (IG.LE.ITESTB) WRITE(IU06,*)                             
-     &      '   SUB. WAMASSI: WIND REPLACED FOR BLOCK IG = ', IG        
-          ENDIF
-
-!              OUTPUT OF OVERLAPPING LATITUDES AND                      
-!              START OF OUTPUT OF ALL SPECTRA IN BLOCK.                 
-
-          IF (IGL.NE.1) THEN                                          
-            IF (IG.NE.1) CALL SPLITBL(FL2, IJS(IG), IJL2(IG), IU14)  
-            WRITE(IU12) FL2      
-            IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*)                       
-     &         '   SUB. WAMASSI: OVERLAPPING LATITUDES',          
-     &         ' SAVED AND START OF BLOCK OUTPUT.'                
-            ENDIF
-          ENDIF
-
-!              MODEL OUTPUT INTEGRATED DATA ARE SAVED IN COMMON.        
-!              SPECTRA ARE SAVED ON DISK AND PRINTED.                   
-
-          IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.           
-     &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
-            CALL OUTBS (FL2, FL3, IJS(IG), IJL(IG), IG, IGL,         
-     &       IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
-     &       NSTART,NEND)
-
-            IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*)                       
-     &         '   SUB. WAMASSI: MODEL OUTPUT DONE IN SUB OUTBS'  
+            IF (IG.NE.IGL) READ(IU11) FL1
+            CALL OUTBS (FL2, FL3, IJS(IG), IJL(IG), IG, IGL,
+     &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
+     &        NSTART,NEND)
+            IF (ITEST.GE.2.AND.ITESTB.GE.IG) THEN
+              WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
             ENDIF
           ENDIF
         ENDIF
 
-!*    BRANCHING BACK TO 3.4 FOR NEXT BLOCK OF LATITUDES                 
-
+!       UPDATING THE CHARNOCK PARAMETER FIELD.
+!       -------------------------------------
         IF(LWCOU) THEN
           CALL OUTBETA ( IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
      &     NSTART, NEND, BETAG, NLONW, NLATW)
         ENDIF
 
-
+!     BRANCHING BACK TO 2.1 FOR NEXT BLOCK OF LATITUDES
       ENDDO BLOCK
 
-!     FREE UP SOME MEMORY
+!*    3.1 SAVE FILES.
+!         -----------
 
-      DEALLOCATE(USOI,USME,WHOI,WHME,WHOIB,USOIB,ETOIB)
+!     3.1.1 WRITE INTEGRATED DATA TO FILE AND/OR PRINTER
+!           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
+!           --------------------------------------------
 
-!*    3.5 SAVE FILES.                                                   
-!         -----------                                                   
-
-!     3.5.1 WRITE INTEGRATED DATA TO FILE AND/OR PRINTER                
-!           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.                  
-!           --------------------------------------------                
-
-      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN                
+      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
 
 !       PRINTS OUT NORMS
         CALL OUTWNORM
@@ -535,27 +235,26 @@
       ENDIF
 
       IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
-C                                                                       
 
-!*    3.5.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,                  
-!           INTEGRATED PARAMETERS OF ENTIRE GRID.                       
-!           ------------------------------------------                  
+!*    3.1.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
+!           INTEGRATED PARAMETERS OF ENTIRE GRID.
+!           -------------------------------------
 
-!           SAVE INTEGRATED DATA FILE.                                  
+!           SAVE INTEGRATED DATA FILE.
 
-        IF (GFLAG20 .AND. .NOT. LFDB) THEN                             
+        IF (GFLAG20 .AND. .NOT. LFDB) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
           ENDIF
         ENDIF
-        IF (FFLAG20) THEN                                              
+        IF (FFLAG20) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
           ENDIF
         ENDIF
 
-!           SAVE INTEGRATED SWELL AND SEA DATA FILE.                    
-!           ----------------------------------------                    
+!           SAVE INTEGRATED SWELL AND SEA DATA FILE.
+!           ----------------------------------------
 
         IF (FFLAG21) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
@@ -564,7 +263,7 @@ C
           ENDIF
         ENDIF
 
-!           SAVE SPECTRA FILE.                                          
+!           SAVE SPECTRA FILE.
 
         IF (FFLAG25) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
@@ -572,7 +271,7 @@ C
           ENDIF
         ENDIF
 
-!           SAVE SWELL SPECTRA FILE.                                    
+!           SAVE SWELL SPECTRA FILE. 
 
         IF (FFLAG26) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
@@ -585,8 +284,8 @@ C
      &    LDWRRE) THEN
 
 
-!*    3.5.4 SAVE RESTART FIELDS.                                        
-!           --------------------                                        
+!*    3.1.4 SAVE RESTART FIELDS.
+!           --------------------
 
         IF ( (IREST.EQ.1.AND.(CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
      &       .OR.
@@ -637,7 +336,7 @@ C
           WRITE(IU06,*) ' '
 
 
-!*    3.5.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
+!*    3.1.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
           IF (LDSTOP .AND. 
@@ -676,8 +375,8 @@ C
           CALL MPE_BARRIER(IERR)
           IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR IN  WAMASSI')
         ENDIF
-      ENDIF                                                            
-      IF (LFDB .AND. LLFLUSH .AND. (
+      ENDIF
+      IF (LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. (
      &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
         ISTAT = IFLUSHFDB (MFDBSF)
         WRITE(IU06,*) ' DB ', MFDBSF , ' FLUSHED AT ',
@@ -708,5 +407,5 @@ C
       IF(ALLOCATED(WDIRWG)) DEALLOCATE(WDIRWG)
       IF(ALLOCATED(WMNFWG)) DEALLOCATE(WMNFWG)
 
-      RETURN                                                            
+      RETURN
       END SUBROUTINE WAMASSI

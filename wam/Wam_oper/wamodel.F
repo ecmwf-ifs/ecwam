@@ -275,7 +275,7 @@
 !       K. HASSELMANN: TRANSPORT EQUATION OF FINITE DEPTH SURFACE
 !          WAVE SPECTRUM IN TIME DPENDANT CURRENT AND DEPTH FIELD USING
 !          NONCANONICAL SPACIAL (SPHERICAL) AND WAVE NUMBER (FRQUENCY-
-!          DIRECTION) COORDINATES. WAM REPROT 1988.
+!          DIRECTION) COORDINATES. WAM REPORT 1988.
 
 ! -------------------------------------------------------------------
 
@@ -284,7 +284,7 @@
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
-     &            LFDB     ,NOUTT    ,NOUTS
+     &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
@@ -301,7 +301,8 @@
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
+      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
+     &            LWAVEWIND
       USE YOWMLTSK , ONLY : NCHUNK
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
@@ -316,7 +317,8 @@
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,CDATEA   ,
-     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LANAONLY ,LALTCOR
+     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LANAONLY ,LALTCOR  ,
+     &            LFRSTFLD
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
@@ -332,10 +334,11 @@
       USE YOWWIND  , ONLY : CDATEWO
 
 ! ----------------------------------------------------------------------
-
+      CHARACTER*2 MARSTYPEBAK
       CHARACTER*12 CDATE, CDATEWH, CDTPRA, ZERO
       CHARACTER*12 CDTINTTBAK,CDTINTSBAK
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
+      LOGICAL GFLAGBAK(JPPFLAG)
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
@@ -429,17 +432,37 @@
 
         CALL OUTWNORM
 
-!*    0.1 SAVE INITIAL INTEGRATED FIELDS FOR FC OR 4V FIELDS
-!         --------------------------------------------------
+!*    0.1 SAVE INITIAL INTEGRATED FIELDS
+!         ------------------------------
         IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc'.OR.
-     &     MARSTYPE.EQ.'4v'.OR.LANAONLY)THEN
+     &     MARSTYPE.EQ.'4v'.OR.LANAONLY.OR.LFRSTFLD)THEN
+
+          IF(LFRSTFLD) THEN
+            GFLAGBAK=GFLAG
+            MARSTYPEBAK=MARSTYPE
+            IF(MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'an') THEN
+              IF(.NOT.LNOCDIN) GFLAG(7)=.FALSE.
+              IF(LWAVEWIND) GFLAG(10)=.FALSE.
+              GFLAG(22)=.FALSE.
+              GFLAG(23)=.FALSE.
+              GFLAG(24)=.FALSE.
+              MARSTYPE='an'
+            ENDIF
+          ENDIF
 
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
 
-          IF (LFDB) ISTAT = IFLUSHFDB (MFDBSF)
+          IF (MFDBSF.NE.-5.AND.LFDB) ISTAT = IFLUSHFDB (MFDBSF)
+
+          IF(LFRSTFLD) THEN
+            MARSTYPE=MARSTYPEBAK
+            GFLAG=GFLAGBAK
+            LFRSTFLD=.FALSE.
+          ENDIF
 
           CDTINTT=CDTINTTBAK
           CDTINTS=CDTINTSBAK
+
           IF (ITEST .GE. 2) THEN
             WRITE(IU06,*)
             WRITE(IU06,*) '   SUB. WAMODEL: INITIAL FIELDS SAVED '
@@ -966,7 +989,8 @@
           IF(ALLOCATED(TAUWG)) DEALLOCATE(TAUWG)
           IF(IASSI.NE.1.AND.ALLOCATED(CDG)) DEALLOCATE(CDG)
           IF(ALLOCATED(SMEANG)) DEALLOCATE(SMEANG)
-          IF(IASSI.NE.1.AND.ALLOCATED(U10G)) DEALLOCATE(U10G)
+          IF((IASSI.NE.1.OR.(IASSI.EQ.1.AND..NOT.LALTCOR))
+     &       .AND.ALLOCATED(U10G)) DEALLOCATE(U10G)
 
           IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
           IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)
@@ -1168,7 +1192,7 @@ C
             ENDIF
           ENDIF
         ENDIF
-        IF ( LFDB .AND. LLFLUSH .AND. 
+        IF ( LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. 
      &   (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &   (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
           ISTAT = IFLUSHFDB (MFDBSF)

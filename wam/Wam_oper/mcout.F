@@ -38,6 +38,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
       USE YOWPARAM , ONLY : NIBLO
+      USE YOWSPEC,   ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -61,7 +62,8 @@
 !*    2. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
 
-      CALL FINDB (NIBLO, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR)
+      CALL FINDB (NIBLO, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,
+     &            1, ISTART,IEND,1)
 
 ! ----------------------------------------------------------------------
 
