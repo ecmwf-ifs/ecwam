@@ -97,27 +97,49 @@ C
       LWAVEWIND=.FALSE.
 C
       FILNM='uwavein'
-      LIU = IECF_LEN(FILNM)
+      LIU = LEN_TRIM(FILNM)
       FILNM=FILNM(1:LIU)
       INQUIRE(FILE=FILNM,EXIST=LWAVEWIND)
 C
       IF(LWAVEWIND) THEN
 C
-        ILEV=2
+        IPARAM=245
+        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,RU10OLD,1,NIBLO,KEND,
+     &                 KZLEVUWAVE)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
+C
         WRITE(IU06,*) ' '
         WRITE(IU06,*) 'A DATA FILE CONTAINING WIND SPEED INFORMATION'
         WRITE(IU06,*) 'AS PROVIDED BY A PREVIOUS WAVE MODEL RUN'
         WRITE(IU06,*) 'WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) 'THE WINDS AND DRAG COEFFICIENT ARE ASSUMED TO'
-        WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR THE LOWEST LEVEL OF '
-        WRITE(IU06,*) 'THE ATMOSPHERIC MODEL AT HEIGHT OF '
-        WRITE(IU06,*) XNLEV(ILEV),' m'
+        IF(LWCOU) THEN
+          WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR THE LOWEST LEVEL OF '
+          WRITE(IU06,*) 'THE ATMOSPHERIC MODEL AT HEIGHT OF '
+        ELSE
+          WRITE(IU06,*) 'HAVE BEEN DETERMINED FOR HEIGHT AT '
+        ENDIF
+        WRITE(IU06,*) KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
-        IPARAM=245
-        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,RU10OLD,1,NIBLO,KEND,
-     &                 KZLEVUWAVE)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
+C
+        IF (KZLEVUWAVE.EQ.INT(XNLEV(1))) THEN
+          ILEV=1
+        ELSE IF (KZLEVUWAVE.EQ.INT(XNLEV(2))) THEN
+          ILEV=2
+        ELSE
+          WRITE(IU06,*)'**************************************'
+          WRITE(IU06,*)'*                                    *'
+          WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS     *'
+          WRITE(IU06,*)'* ==============================     *'
+          WRITE(IU06,*)'* REFERENCE LEVEL FOR UWAVE          *'
+          WRITE(IU06,*)'* ARE NOT RECOGNISED AS THOSE IN USE *'
+          WRITE(IU06,*)'* PROGRAM WILL ABORT                 *'
+          WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
+          WRITE(IU06,*)'*                                    *'
+          WRITE(IU06,*)'**************************************'
+          CALL ABORT1
+        ENDIF
 C
       ELSE
 C
@@ -142,75 +164,88 @@ C
 C     INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
 C
       DO IG=1,IGL
-         CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
-     1                RZ0OLD(1,IG), 1, KEND, ILEV)
-         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+         IF(LMESSPASS) THEN
+           CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
+     1                  RZ0OLD(1,IG), 1, KEND, ILEV)
+           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
 C
-         DO IJ=1,KEND
-            CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
-            CD(IJ,IG) = 1./CDINV
-         ENDDO
+           DO IJ=1,KEND
+              CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+              CD(IJ,IG) = 1./CDINV
+           ENDDO
+         ELSE
+           CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
+     1                  RZ0OLD(1,IG), IJS(IG), IJL(IG), ILEV)
+           IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+C
+           DO IJ=IJS(IG),IJL(IG)
+              CDINV = (MIN(RU10OLD(IJ,IG)/RUSOLD(IJ,IG),100.0))**2
+              CD(IJ,IG) = 1./CDINV
+           ENDDO
+         ENDIF
       ENDDO
 C
-      IPARAM=233
-      FILNM='cdwavein'
-      CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,KZLEVCD)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
+      IF(.NOT.LNOCDIN) THEN
+        IPARAM=233
+        FILNM='cdwavein'
+        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,KZLEVCD)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 C
-C     TEST REFERENCE LEVEL FOR UWAVE AND CD
+C       TEST REFERENCE LEVEL FOR UWAVE AND CD
 C
-      IF(KZLEVUWAVE.NE.0.AND.KZLEVCD.NE.0) THEN
-        IF(KZLEVUWAVE.NE.KZLEVCD) THEN
-          WRITE(IU06,*)'************************************'
-          WRITE(IU06,*)'*                                  *'
-          WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS   *'
-          WRITE(IU06,*)'* ==============================   *'
-          WRITE(IU06,*)'* REFERENCE LEVEL FOR CD AND UWAVE *'
-          WRITE(IU06,*)'* DIFFER. PROGRAM WILL ABORT       *'
-          WRITE(IU06,*)'* REF. LEVEL CD = ',KZLEVCD
-          WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
-          WRITE(IU06,*)'*                                  *'
-          WRITE(IU06,*)'************************************'
-          CALL ABORT1
-        ELSE
-          IF (KZLEVCD.EQ.INT(XNLEV(1))) THEN
-            ILEV=1
-          ELSE IF (KZLEVCD.EQ.INT(XNLEV(2))) THEN
-            ILEV=2
-          ELSE
-            WRITE(IU06,*)'**************************************'
-            WRITE(IU06,*)'*                                    *'
-            WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS     *'
-            WRITE(IU06,*)'* ==============================     *'
-            WRITE(IU06,*)'* REFERENCE LEVEL FOR CD AND UWAVE   *'
-            WRITE(IU06,*)'* ARE NOT RECOGNISED AS THOSE IN USE *'
-            WRITE(IU06,*)'* PROGRAM WILL ABORT                 *'
+        IF(KZLEVUWAVE.NE.0.AND.KZLEVCD.NE.0) THEN
+          IF(KZLEVUWAVE.NE.KZLEVCD) THEN
+            WRITE(IU06,*)'************************************'
+            WRITE(IU06,*)'*                                  *'
+            WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS   *'
+            WRITE(IU06,*)'* ==============================   *'
+            WRITE(IU06,*)'* REFERENCE LEVEL FOR CD AND UWAVE *'
+            WRITE(IU06,*)'* DIFFER. PROGRAM WILL ABORT       *'
             WRITE(IU06,*)'* REF. LEVEL CD = ',KZLEVCD
             WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
-            WRITE(IU06,*)'*                                    *'
-            WRITE(IU06,*)'**************************************'
+            WRITE(IU06,*)'*                                  *'
+            WRITE(IU06,*)'************************************'
             CALL ABORT1
+          ELSE
+            IF (KZLEVCD.EQ.INT(XNLEV(1))) THEN
+              ILEV=1
+            ELSE IF (KZLEVCD.EQ.INT(XNLEV(2))) THEN
+              ILEV=2
+            ELSE
+              WRITE(IU06,*)'**************************************'
+              WRITE(IU06,*)'*                                    *'
+              WRITE(IU06,*)'* FATAL ERROR IN SUB BUILDSTRESS     *'
+              WRITE(IU06,*)'* ==============================     *'
+              WRITE(IU06,*)'* REFERENCE LEVEL FOR CD AND UWAVE   *'
+              WRITE(IU06,*)'* ARE NOT RECOGNISED AS THOSE IN USE *'
+              WRITE(IU06,*)'* PROGRAM WILL ABORT                 *'
+              WRITE(IU06,*)'* REF. LEVEL CD = ',KZLEVCD
+              WRITE(IU06,*)'* REF. LEVEL UWAVE = ',KZLEVUWAVE
+              WRITE(IU06,*)'*                                    *'
+              WRITE(IU06,*)'**************************************'
+              CALL ABORT1
+            ENDIF
           ENDIF
         ENDIF
-      ENDIF
 C
 C
-C     COMPUTE TAUW,USOLD AND Z0OLD
+C       COMPUTE TAUW,USOLD AND Z0OLD
 C
-      DO IG=1,IGL
-         DO IJ=1,KEND
-            CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
-            RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
+        DO IG=1,IGL
+           DO IJ=1,KEND
+              CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
+              RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 cc RUSOLD will first contain its square
 CC the numerical relation between usold and u10old should always be as
 CC in outgrid
-            RUSOLD(IJ,IG) = CD(IJ,IG)*(RU10OLD(IJ,IG)**2+0.01)-0.0001
-            CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
-            CHARNOCK = MAX(CHARNOCK,ALPHA)
-            RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
-            RUSOLD(IJ,IG) = SQRT(RUSOLD(IJ,IG))
-         ENDDO
-      ENDDO
+              RUSOLD(IJ,IG) = CD(IJ,IG)*(RU10OLD(IJ,IG)**2+0.01)-0.0001
+              CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
+              CHARNOCK = MAX(CHARNOCK,ALPHA)
+              RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
+              RUSOLD(IJ,IG) = SQRT(RUSOLD(IJ,IG))
+           ENDDO
+        ENDDO
+      ENDIF
 C
       IF(ALLOCATED(CD)) DEALLOCATE(CD)
 C

@@ -1,5 +1,5 @@
       SUBROUTINE INITMDL (KDELWI,NADV)
-
+C
 C ----------------------------------------------------------------------
 C
 C**** *INITMDL* - INITIALIZES THE WAM MODEL.
@@ -222,7 +222,6 @@ C       *GSFILE*    - ROUTINE TO DYNAMICALLY FETCH OR DISPOSE FILES.
 C       *GETSPEC*   - READS SPECTRA
 C       *GETSTRESS  - READS RESTART STRESS/WIND FILE
 C       *HEADBC*    - WRITE BOUNDARY OUTPUT FILE HEADER.
-C       *iecf_len*  - LENGTH OF A CHARACTER ARRAY.
 C       *INCDATE*   - UPDATE DATE TIME GROUP.
 C       *MPDISTRIBINTFLD* - DISTRIBUTE INTEGER ARRAY ACROSS PE'S
 C       *GETSTRESS  - READS RESTART STRESS/WIND FILE
@@ -364,7 +363,7 @@ C
 #include "comwami.h"
 
 
-      CHARACTER*10 ZERO,CDUM
+      CHARACTER*12 ZERO,CDUM
       CHARACTER*24 FILNM
       CHARACTER*80 LOGFILENAME 
 C
@@ -702,7 +701,7 @@ C
       LICERUN=.FALSE.
 C
       FILNM = 'sfctempin'
-      LIU   = IECF_LEN(FILNM)
+      LIU   = LEN_TRIM(FILNM)
       FILNM=FILNM(1:LIU)
       INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
@@ -710,8 +709,12 @@ C
         CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
       ELSE
         ICEMASK=1
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)'    ********************************************'
         WRITE(IU06,*)'    SUB. INITMDL: FILE ',FILNM,' NOT FOUND '
-        WRITE(IU06,*)'    SUB. INITMDL: NO ICE SHEET USED '
+        WRITE(IU06,*)'    SUB. INITMDL: NO ICE MASK WILL BE USED '
+        WRITE(IU06,*)'    ********************************************'
+        WRITE(IU06,*)' '
       ENDIF
 C
 CICE

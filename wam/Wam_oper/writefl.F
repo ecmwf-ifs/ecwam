@@ -88,7 +88,7 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      CHARACTER*10 CDTPRO,CDATEF,CDATER,CDATES
+      CHARACTER*12 CDTPRO,CDATEF,CDATER,CDATES
       CHARACTER*80 FILENAME
       LOGICAL LPBOPEN,LPBCLOSE
       CHARACTER *1 CLDOMAIN

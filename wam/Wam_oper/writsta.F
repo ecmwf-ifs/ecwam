@@ -18,15 +18,15 @@ C     INTERFACE.
 C     ----------                                                        
 C                                                                       
 C         *IDIN*     INTEGER     UNIT NUMBER.                           
-C         *CBDT*     CHAR*10     BEGIN DATE TIME GROUP.                 
-C         *CEDT*     CHAR*10     END DATE TIME GROUP.                   
+C         *CBDT*     CHAR*12     BEGIN DATE TIME GROUP.                 
+C         *CEDT*     CHAR*12     END DATE TIME GROUP.                   
 C         *ANALPD*   INTEGER     ANALYSIS PERIOD IN SECONDS.
 C         *FOREPD*   INTEGER     FORECAST PERIOD IN SECONDS.
 C         *IS*       INTEGER     WIND INPUT TIME STEP IN SECONDS.
-C         *CRSDT*    CHAR*10     DATE FOR RESTART FILES OUTPUT
-C         *CLSDT*    CHAR*10     LAST DATE FOR SPECTRUM FILE OUTPUT
-C         *CABDT*    CHAR*10     BEGIN ANALYSIS DATE TIME GROUP.            
-C         *CAEDT*    CHAR*10     END ANALYSIS DATE TIME GROUP.              
+C         *CRSDT*    CHAR*12     DATE FOR RESTART FILES OUTPUT
+C         *CLSDT*    CHAR*12     LAST DATE FOR SPECTRUM FILE OUTPUT
+C         *CABDT*    CHAR*12     BEGIN ANALYSIS DATE TIME GROUP.            
+C         *CAEDT*    CHAR*12     END ANALYSIS DATE TIME GROUP.              
 C         *IASS*     INTEGER     ASSIMILATION CONDITION.                
 C         *NF*       INTEGER     NEW FORECAST CONDITION.                
 C         *ISTAT*    INTEGER     JOB STATUS INDICATORS.                 
@@ -51,7 +51,7 @@ C----------------------------------------------------------------------
 C                                                                       
       INTEGER ANALPD, FOREPD                      
       INTEGER ISTAT(3)                                                  
-      CHARACTER*10 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+      CHARACTER*12 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
 C
 #include "comcard.h"
 C                                                                       
@@ -61,7 +61,7 @@ C*    1.0  FILL CARD ARRAY.
 C          ----------------                                             
 C                                                                       
       WRITE(CARD(1), 1) CBDT, CEDT
-    1 FORMAT('RUN MODEL FROM ',A10,' TO ',A10)                          
+    1 FORMAT('RUN MODEL FROM ',A12,' TO ',A12)                          
                                                                         
       WRITE(CARD(4), 2) ANALPD                                          
     2 FORMAT('ANALYSIS PERIOD = ',I7)                                   
@@ -73,7 +73,7 @@ C
     4 FORMAT('WIND TIME STEP IN SECONDS = ',I7)                           
                                                                         
       WRITE(CARD(7), 5) CABDT, CAEDT
-    5 FORMAT('ANALYSIS FROM ',A10,' TO ',A10)                               
+    5 FORMAT('ANALYSIS FROM ',A12,' TO ',A12)                               
                                                                         
       IF (IASS.EQ.0) THEN                                               
          CARD(8) = 'ASSIMILATION NO'                                    
@@ -96,8 +96,8 @@ C
     7       FORMAT('STATUS STORM',I1,'= FINISHED')                      
          END IF                                                         
  1000 CONTINUE                                                          
-      CARD(13)(41:50) = CRSDT
-      CARD(14)(37:46) = CLSDT
+      CARD(13)(41:52) = CRSDT
+      CARD(14)(37:48) = CLSDT
 C                                                                       
 C*    2.0  WRITE CARD TO IDIN.                                          
 C          -------------------                                          
@@ -113,19 +113,19 @@ C
 #include "comcard.h"
 C
         DATA CARD /
-     1'RUN MODEL FROM YYMMDDHHMM TO YYMMDDHHMM                        ',
+     1'RUN MODEL FROM YYYYMMDDHHMM TO YYYYMMDDHHMM                    ',
      2'PARAM=10U/10V,                                                 ',
      3'REPRES=GG,                                                     ',
      4'ANALYSIS PERIOD = hhhhhhh                                      ',
      5'FORECAST PERIOD = hhhhhhh                                      ',
      6'WIND TIME STEP IN SECONDS = hhhhhhh                            ',
-     7'ANALYSIS FROM YYMMDDHHMM TO YYMMDDHHMM                         ',
+     7'ANALYSIS FROM YYYYMMDDHHMM TO YYYYMMDDHHMM                     ',
      8'ASSIMILATION [y|n]                                             ',
      9'NEW FORECAST [y|n]                                             ',
      A'STATUS STORM1= [unfinished|finished]                           ',
      1'STATUS STORM2= [unfinished|finished]                           ',
      2'STATUS STORM3= [unfinished|finished]                           ',
-     3'DATE FOR OUTPUT OF BOTH RESTART FILES = YYMMDDHHMM             ',
-     4'LAST DATE FOR SPECTRA FILE OUTPUT = YYMMDDHHMM                 '/
+     3'DATE FOR OUTPUT OF BOTH RESTART FILES = YYYYMMDDHHMM           ',
+     4'LAST DATE FOR SPECTRA FILE OUTPUT = YYYYMMDDHHMM               '/
       END BLOCK DATA WAMINFOT
 

@@ -3,10 +3,10 @@
 #.               TO BE MODIFIED AS NESSECARY.
 #.
 #.=====================================================================
-#.  Define paths for DHS and VPP
+#.  Define pathes for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=18r6
+VERSION=CY19_y2k
 #.
 DHSROOT=/$USER/vpp700/wam_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_$VERSION
@@ -85,17 +85,19 @@ export COMPILE=1
 #.=====================================================================
 #.
 ASSIMILATION=NO
-typeset -Z10 begofan=9804161200      # BEGin date OF ANalysis.
-typeset -Z10 endofan=9804161800      # END   date OF ANalysis.
-typeset -Z10 endoffo=9804161800      # END   date OF FOrcast.
-typeset -Z10 outofrf=9804161800      # Date to output restart files.
-                                     # Set to 0000000000 if determined
-                                     # on uerinput.
-typeset -Z10 outof2d=0000000000      # Date up to which 2D-spectra are
-                                     # saved. Set to 0000000000 if not
-                                     # required.
-typeset -Z7 antime=21600             # Length of analysis in seconds.
-typeset -Z7 fctime=0             # Length of forcast in seconds.
+typeset -Z12 begofrn=199808081200      # BEGin date OF RUn 
+typeset -Z12 endofrn=199808081800      # END   date OF RUn 
+typeset -Z12 begoffo=199808081800      # BEGin date OF FOrcast.
+#                                        This date must equal to endofrn
+#                                        when analysis is only required
+typeset -Z12 outofrf=199808081800      # Date to output restart files.
+                                       # Set to 0000000000 if determined
+                                       # on uerinput.
+typeset -Z12 outof2d=199808081800      # Date up to which 2D-spectra are
+                                       # saved. Set to 0000000000 if not
+                                       # required.
+typeset -Z7 antime=21600               # Length of analysis in seconds.
+typeset -Z7 fctime=0                   # Length of forcast in seconds.
 #.
 #.=====================================================================
 #.  Define auxiliary and dummy libraries.
@@ -134,7 +136,7 @@ fi
 CLASS=RD
 NENS=000
 TNE=000
-typeset -l XID=${USER}b
+typeset -l XID=${USER}a
 #.
 #.
 #.====================================================================
@@ -165,11 +167,11 @@ FDBLIB=-lifsio
   grid="050"
 #elif region=='g' &&  resolution==300
   GRID="3.0/3.0"
-  AREA="72./ 0./ -69./357.0"
+  AREA="72./ 0./ -63./357.0"
   grid="300"
 #elif region=='m' && resolution==25
   GRID="0.25/0.25"
-  AREA="66./ -6./ 30./42."
+  AREA="81./ -98./ 9./42."
   grid="025"
 #elif region=='g' && resolution==900
   GRID="9.0/9.0"
@@ -178,4 +180,3 @@ FDBLIB=-lifsio
 #else
    banner QUATSCH
 #endif
-

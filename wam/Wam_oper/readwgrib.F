@@ -83,7 +83,7 @@ C-----------------------------------------------------------------------
       REAL,ALLOCATABLE ::  WORK(:,:)
       INTEGER,ALLOCATABLE :: KLONRGG(:)
 C
-      CHARACTER*10 CCDDATE,CDATE 
+      CHARACTER*12 CCDDATE,CDATE 
       CHARACTER*24 FILNM
       CHARACTER*40 MSG, TITL*100
 C-----------------------------------------------------------------------
@@ -99,7 +99,7 @@ C
       CALL INMARS  ( FILNM, NGX, NGY, ZMISS, CCDDATE, IFORP, KPARAM,
      .               NGXCD, NGYCD, CDMOWEP, CDMOSOP, CDMOEAP, CDMONOP,
      .               KRGG, KLONRGG, KZLEV,WORK, IERR, MSG)
-      IF ( IERR .LE. 0 ) THEN
+      IF ( IERR .EQ. 0 ) THEN
         WRITE(IU06,*)'            '
         WRITE(IU06,*)'SUB. READWGRIB: DATE=',CCDDATE,' IPARAM= ',IPARAM
       ELSE
@@ -142,6 +142,7 @@ C
          WRITE(IU06,*)'**********************************'
          CALL ABORT1
       ENDIF
+      CALL ADJUST (CDMOWEP, CDMOEAP)
       IF (AMOWEP.NE.CDMOWEP .OR. AMOEAP.NE.CDMOEAP .OR.
      +    AMONOP.NE.CDMONOP .OR. AMOSOP.NE.CDMOSOP) THEN
           WRITE(IU06,*) '***********************************'
@@ -163,19 +164,21 @@ C
           WRITE(IU06,*) '***********************************'
           CALL ABORT1
       ENDIF
-      IF (NGXCD .NE. NGX) THEN
-         WRITE(IU06,*)'********************************'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
-         WRITE(IU06,*)'* ===========================  *'
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'* NGXCD SHOULD BE EQUAL TO NGX *'
-         WRITE(IU06,*)'* IN FILE: ',FILNM 
-         WRITE(IU06,*)'* NGX  = ',NGX
-         WRITE(IU06,*)'* NGXCD  = ',NGXCD
-         WRITE(IU06,*)'*                              *'
-         WRITE(IU06,*)'********************************'
-         CALL ABORT1
+      IF (KRGG.EQ.0) THEN
+        IF (NGXCD .NE. NGX) THEN
+           WRITE(IU06,*)'********************************'
+           WRITE(IU06,*)'*                              *'
+           WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
+           WRITE(IU06,*)'* ===========================  *'
+           WRITE(IU06,*)'*                              *'
+           WRITE(IU06,*)'* NGXCD SHOULD BE EQUAL TO NGX *'
+           WRITE(IU06,*)'* IN FILE: ',FILNM
+           WRITE(IU06,*)'* NGX  = ',NGX
+           WRITE(IU06,*)'* NGXCD  = ',NGXCD
+           WRITE(IU06,*)'*                              *'
+           WRITE(IU06,*)'********************************'
+           CALL ABORT1
+        ENDIF
       ENDIF
       IF (NGYCD .NE. NGY) THEN
          WRITE(IU06,*)'********************************'
@@ -184,7 +187,7 @@ C
          WRITE(IU06,*)'* ===========================  *'
          WRITE(IU06,*)'*                              *'
          WRITE(IU06,*)'* NGYCD SHOULD BE EQUAL TO NGY *'
-         WRITE(IU06,*)'* IN FILE: ',FILNM 
+         WRITE(IU06,*)'* IN FILE: ',FILNM
          WRITE(IU06,*)'* NGY  = ',NGY
          WRITE(IU06,*)'* NGYCD  = ',NGYCD
          WRITE(IU06,*)'*                              *'

@@ -3,23 +3,14 @@
 #. THIS JOB EXECUTES THE SUBROUTINE VERSION OF THE WAMODEL,
 #. DRIVEN BY WINDS REQUESTED FROM MARS.
 #.
-#. LIANA ZAMBRESKY   GKSS/ECMWF    JUNE  1989
-#. HEINZ GUNTHER     GKSS/ECMWF    JUNE  1990
-#. PETER JANSSEN     KNMI          OCT   1990   (MIGRATION TO UNICOS)
-#. HEINZ GUNTHER     GKSS/ECMWF    APRIL 1991   (CYCLE_3.5)
-#. B HANSEN          ECMWF         NOVEMBER 1995 MIGRATION TO CLEARCASE
-#. J BIDLOT          ECMWF         MAY 1996 MESSAGE PASSING 
-#. B HANSEN          ECMWF         APRIL 1997 RESTART FACILITY
-#. J BIDLOT          ECMWF         1998 : all data retrieval MUST have been
-#.                                        done in preset job !!!
-#.
 #QSUB -r wamodel
 #QSUB -q vpp700.normal
-#QSUB -lP 8
+#QSUB -lP 1
 # # #QSUB -a "tomorrow 4:00am"
-#QSUB -lt 1500
-#QSUB -lT 2000
-#QSUB -lM 700mb
+#QSUB -lt 2500
+#QSUB -lT 3000
+#QSUB -lM 1200mb
+# # #QSUB -lM 500mb
 #QSUB -eo
 #QSUB -mb -mi
 #QSUB
@@ -32,9 +23,16 @@ trap '{ echo "Signal SIGINT received and trapped" ; }' 2
 set +v
 #.
 #.   Specify whether grib split spectra are provided
+#.   (it's the operstional setting
 #.
 lgribin=T
 #.
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#.   Specify whether input grib CD file is NOT provided
+#.   It should only be the case for cold start !!!!!!!!!!!!!!!
+#.
+lnocdin=T
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
@@ -71,11 +69,11 @@ fi
 #if iceedge=='y'
 #.check if SST file does exist
 #.
-if [[ ! -r $ADIR/kelv${begofan}_${grid} ]] ; then
+if [[ ! -r $ADIR/kelv${begofrn}_${grid} ]] ; then
   print - "\n\n\t\t NO SURFACE TEMPS , NOTHING IS DONE \n\n"
   exit 2
 else
-  ln -s $ADIR/kelv${begofan}_${grid} sfctempin
+  ln -s $ADIR/kelv${begofrn}_${grid} sfctempin
 fi
 #endif
 #.
@@ -83,12 +81,11 @@ fi
 ############################
 if [[ $ASSIMILATION = "YES" ]] ; then
   AS=1
-  CURRENT_DATE=$begofan
-  CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
-  ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
-  ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
-  LAST_ANALYSIS_DATE=$endofan
-  LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
+  #
+  ANALYSIS_DATE=$(substring $begofrn 1 10)
+  ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
+  #
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
     if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
       print - "\n\n\t\t SATELLITE DATA NOT ONLINE  \n\n"
@@ -97,10 +94,7 @@ if [[ $ASSIMILATION = "YES" ]] ; then
     else
       ln -s ${ADIR}/RFL${ANALYSIS_DATE}00 .
     fi
-    CURRENT_DATE=$ANALYSIS_DATE
-    CURRENT_DATE=`substring $CURRENT_DATE 1 8`
-    ANALYSIS_DATE=`newdate 19${CURRENT_DATE} 6`
-    ANALYSIS_DATE=`substring $ANALYSIS_DATE 3 10`
+    ANALYSIS_DATE=`newdate ${ANALYSIS_DATE} 6`
   done
 else
   AS=0
@@ -108,7 +102,7 @@ fi
 #.
 # SURFACE WINDS
 ################
-wind_filename=sfcwind_${grid}_${begofan}_${endofan}_${endoffo}
+wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
 if [[ ! -r $WDIR/$wind_filename ]] ; then
   print - "\n\n\t\tWIND DATA NOT ONLINE\n\n"
   print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
@@ -153,27 +147,34 @@ fi
 ################
 #.
 if [[ $lgribin != "T" ]] ; then
-  if [[ -r $WDIR/LAW${begofan}00 ]] ; then
-    ln -s $WDIR/LAW${begofan}00 LAW${begofan}00 
+  if [[ -r $WDIR/LAW${begofrn}00 ]] ; then
+    ln -s $WDIR/LAW${begofrn}00 LAW${begofrn}00 
   else
     ls -lsa
-    print - "LAW"${begofan}"00 file was not found"
+    print - "LAW"${begofrn}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 5
   fi
 else
-  if [[  -r $ADIR/CD${begofan}_${grid} ]] ; then
-    ln -s $ADIR/CD${begofan}_${grid} cdwavein
+  if [[  -r $ADIR/CD${begofrn}_${grid} ]] ; then
+    ln -s $ADIR/CD${begofrn}_${grid} cdwavein
+  elif [[ $lnocdin = "T" ]] ; then
+    print - "##################################################"
+    print - " "
+    print - "the program should start wihtout an input CD file"
+    print - "as none is provided !!!!!"
+    print - " "
+    print - "##################################################"
   else
     ls -lsa
-    print - "CD${begofan}_${grid}" file was not found"
+    print - "CD"${begofrn}_${grid}" file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 5
   fi
-  if [[  -r $ADIR/U10${begofan}_${grid} ]] ; then
-    ln -s $ADIR/U10${begofan}_${grid} uwavein
+  if [[  -r $ADIR/U10${begofrn}_${grid} ]] ; then
+    ln -s $ADIR/U10${begofrn}_${grid} uwavein
   else
-    print - "U10${begofan}" file was not found"
+    print - "U10"${begofrn}" file was not found"
     print - "\n\n\t\tPROGRAM will continue as this can happen\n\n"
   fi
 fi
@@ -182,20 +183,20 @@ fi
 #######################
 #.
 if [[ $lgribin != "T" ]] ; then
-  if [[ -r $WDIR/BLS${begofan}00 ]] ; then
-    ln -s $WDIR/BLS${begofan}00 BLS${begofan}00 
+  if [[ -r $WDIR/BLS${begofrn}00 ]] ; then
+    ln -s $WDIR/BLS${begofrn}00 BLS${begofrn}00 
   else
     ls -ls
-    print - "BLS"${begofan}"00 file was not found"
+    print - "BLS"${begofrn}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 7
   fi
 else
-  if [[ -r $WDIR/SGS${begofan}00 ]] ; then
-    ln -s $WDIR/SGS${begofan}00 SGS${begofan}00 
+  if [[ -r $WDIR/SGS${begofrn}00 ]] ; then
+    ln -s $WDIR/SGS${begofrn}00 specwavein 
   else
     ls -ls
-    print - "SGS"${begofan}"00 file was not found"
+    print - "SGS"${begofrn}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 8
   fi
@@ -204,6 +205,7 @@ fi
 if [ $COMPILE =  1 ] ; then
   #.
   cd $LIBS
+  \rm -rf tmpdir || true
   mkdir tmpdir
   cd tmpdir
   #.
@@ -271,6 +273,7 @@ C #endif
 #include "outers.F"
 #include "outgrid.F"
 #include "outint.F"
+#include "outwnorm.F"
 #include "outspp.F"
 #include "outxt.F"
 #include "peakfr.F"
@@ -513,14 +516,14 @@ EOFPRO
   cd $LIBS 
   \rm -rf tmpdir
 fi
-if [[ $NPES -ne 4 && $NPES -ne 8 && $NPES -ne 16 && $NPES -ne 24 ]] ; then
-  print - "\n\n\t\tWAVE MODEL IS COMPILED. NOW SET THE -lP TO 4, 8, 16 or 24 AND SUBMIT AGAIN\n\n"
-  cd $WDIR
-  \rm -rf $WORKDIR
-  exit
-else
+###if [[ $NPES -ne 4 && $NPES -ne 8 && $NPES -ne 16 && $NPES -ne 24 ]] ; then
+###  print - "\n\n\t\tWAVE MODEL IS COMPILED. NOW SET THE -lP TO 4, 8, 16 or 24 AND SUBMIT AGAIN\n\n"
+###  cd $WDIR
+###  \rm -rf $WORKDIR
+###  exit
+###else
   print - "\n\n\t\tWAVE MODEL WILL START\n\n"
-fi
+###fi
 #.
 cd ${WDIR}/${WORKDIR}
 #.

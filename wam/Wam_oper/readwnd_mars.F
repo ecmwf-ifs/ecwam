@@ -83,11 +83,13 @@ C
 C --------------------------------------------------------------------- 
 C                                                                       
 #if   region=='g' && resolution==50
-      PARAMETER (NBIT = 520000)
+      PARAMETER (NBIT = 130000)
+#elif region=='m' && resolution==25
+      PARAMETER (NBIT = 130000)
 #else
-      PARAMETER (NBIT = 210000)
+      PARAMETER (NBIT = 60000)
 #endif
-CT106 PARAMETER (NBIT = 52000)
+CT106 PARAMETER (NBIT = 13000)
 CT63  PARAMETER (NBIT = 14000)
       DIMENSION UWND(NC,NR), VWND(NC,NR)                                
       INTEGER   KSEC1(60), KSEC2(22+NR), KSEC3(2), KSEC4(42), KSEC0(2)
@@ -97,7 +99,7 @@ C ---------------------------------------------------------------------
 C ---------------------------------------------------------------------
       DIMENSION PSEC2(10), PSEC3(2), PSEC4(NC*NR)                       
       CHARACTER HOPER*1, FILNM*24
-      CHARACTER*10 CDTWIR
+      CHARACTER*12 CDTWIR
       LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
       DATA IFIL, HOPER, FRSTIME / 63, 'R', .TRUE. /
       SAVE IUNIT1      
@@ -133,23 +135,58 @@ C
            FRSTIME = .FALSE.
         END IF  
 C
-C       ALLOCATE KGRIB 
-C
-        ALLOCATE(KGRIB(NBIT))
 C                                                                       
 C --------------------------------------------------------------------  
 C                                                                       
 C*      2.0 READ MARS WINDS IN GRIB CODE FORMAT.
 C           ------------------------------------
 C                                                                       
+        ISIZE=NBIT
 C             
  2000 CONTINUE   
 C                                                        
-        CALL PBGRIB(IUNIT1,KGRIB,NBIT,KLEN,KRET)
+2001    KPLENG=ISIZE*KIND(ISIZE)
+        IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+C
+        CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
 C  
         IF (KRET.EQ.-1) GO TO 5000 
         IF (KRET.EQ.-2) GO TO 5100
-        IF (KRET.EQ.-3) GO TO 5300
+        IF (KRET.EQ.-3) THEN
+          WRITE (IU06,*) ' '
+          WRITE (IU06,*) ' ***** WARNING ****** WARNING *****'
+          WRITE (IU06,*) ' SUB. READWND_MARS : '
+          WRITE (IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+          WRITE (IU06,*) ' IT WAS ', ISIZE
+C
+          DEALLOCATE(KGRIB)
+          ISIZE=(KLEN+KIND(ISIZE)-1)/KIND(ISIZE)
+C
+          WRITE (IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
+          WRITE (IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+          WRITE (IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
+          WRITE (IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
+          WRITE (IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
+          WRITE (IU06,*) ' ***** WARNING ****** WARNING *****'
+          WRITE (IU06,*) ' '
+          CALL FLUSH(IU06)
+C
+C         RESET THE FILE POINTER TO READ FIELD AGAIN
+          KOFFSET=-KLEN
+          CALL PBSEEK(IUNIT1,KOFFSET,1,KRET)
+          IF (KRET.EQ.-1) THEN
+            WRITE (IU06,*) ' SUB. READWND_MARS : '
+            WRITE (IU06,*) ' PBSEEK REACHED EOF ON UNIT ',IUNIT1
+            CALL ABORT1
+          ELSEIF (KRET .EQ. -2) THEN
+            WRITE (IU06,*) ' SUB. READWND_MARS  : '
+            WRITE (IU06,*) ' FILE HANDLING ERROR ON UNIT ',IUNIT1
+            CALL ABORT1
+          ENDIF
+C
+          GOTO 2001
+        ENDIF
+
         IF (ITEST.GT.1) THEN
            WRITE(IU06,*) ' SUB. READWND - READ FROM ',FILNM            
         ENDIF              
@@ -178,8 +215,9 @@ C*      3.1.1 DETERMINE DATE OF WIND FIELD FROM KSEC1(10)-KSEC1(14).
 C                                                                       
 C       START DATE
 C                                                                       
-        WRITE(CDTWIR,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),KSEC1(13),
-     1                          KSEC1(14)                               
+        IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+        WRITE(CDTWIR,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+     1                               KSEC1(13),KSEC1(14)
 C                                                                       
 C       DETERMINE TIME UNIT
 C                                                                       
@@ -279,6 +317,7 @@ C
               UWND(I,NR1-J)=PSEC4(L)
             ENDDO
           ENDDO
+CC!!!     go get the other wind component
           GOTO 2000
         ELSE IF (KSEC1(6).EQ.166 .OR. KSEC1(6).EQ.181) THEN
           L = 0                                           
@@ -365,18 +404,6 @@ C
         WRITE(IU06,*) ' *                                           *' 
         WRITE(IU06,*) ' *********************************************' 
         CALL ABORT1                                                     
- 5300   CONTINUE
-        WRITE(IU06,*) ' *********************************************' 
-        WRITE(IU06,*) ' *                                           *' 
-        WRITE(IU06,*) ' *         FATAL ERROR IN SUB. READWND       *' 
-        WRITE(IU06,*) ' *         ===========================       *' 
-        WRITE(IU06,*) ' * PBGRIB ERROR - KRET = ',KRET                 
-        WRITE(IU06,*) ' *      ARRAY TOO SMALL                      *' 
-        WRITE(IU06,*) ' *                                           *' 
-        WRITE(IU06,*) ' *    PROGRAM ABORTS     PROGRAM ABORTS      *' 
-        WRITE(IU06,*) ' *                                           *' 
-        WRITE(IU06,*) ' *********************************************' 
-        CALL ABORT1                                                     
 C
 C
       ELSE
@@ -406,8 +433,9 @@ C*        3.1.1 DETERMINE DATE OF WIND FIELD FROM KSEC1(10)-KSEC1(14).
 C
 C         START DATE
 C
-          WRITE(CDTWIR,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),
-     1                 KSEC1(13),KSEC1(14)
+          IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+          WRITE(CDTWIR,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+     1                                 KSEC1(13),KSEC1(14)
 C
 C         DETERMINE TIME UNIT
 C

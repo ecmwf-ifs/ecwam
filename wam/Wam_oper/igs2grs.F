@@ -80,7 +80,7 @@ C
       CHARACTER*3 INPREFIX, OUTPREFIX 
       CHARACTER*4 CLEVEL, CDEXPVER
       CHARACTER*6 CLSTEP
-      CHARACTER*10 ZERO, CDTPRO, CDATEF, CDATE, ZDATE 
+      CHARACTER*12 ZERO, CDTPRO, CDATEF, CDATE, ZDATE 
       CHARACTER*80 CLMSG
       CHARACTER*256 FILENAME, INPATH, OUTPATH, CDFDB2DSP
 C
@@ -239,12 +239,12 @@ C
 C
           IF ( kfcst .EQ. 0 ) THEN
             cdtype='an'
-            istat = isetvalfdb (ifdb, 'date', '19'//cdtpro(1:6))
-            istat = isetvalfdb (ifdb, 'time',   cdtpro(7:8)  )
+            istat = isetvalfdb (ifdb, 'date', cdtpro(1:8))
+            istat = isetvalfdb (ifdb, 'time', cdtpro(9:10))
           ELSE
             cdtype='fc'
-            istat = isetvalfdb (ifdb, 'date', '19'//cdatef(1:6))
-            istat = isetvalfdb (ifdb, 'time',   cdatef(7:8)  )
+            istat = isetvalfdb (ifdb, 'date', cdatef(1:8))
+            istat = isetvalfdb (ifdb, 'time', cdatef(9:10))
           ENDIF
 C
           CALL u2l1cr( cdtype )
@@ -268,8 +268,8 @@ C         istat = isetrankfdb (ifdb, ipe)
           WRITE(IU06,'("\ /igs2grs/ EXPVER:", a8)') cdexpver
           WRITE(IU06,'("\ /igs2grs/ DOMAIN:", a8)') cddomain
           WRITE(IU06,'("\ /igs2grs/ TY:    ", a8)') cdtype
-          WRITE(IU06,'("\ /igs2grs/ DATE:  ", a8)') cdtpro(1:6)
-          WRITE(IU06,'("\ /igs2grs/ TIME:  ", a8)') cdtpro(7:8)
+          WRITE(IU06,'("\ /igs2grs/ DATE:  ", a8)') cdtpro(1:8)
+          WRITE(IU06,'("\ /igs2grs/ TIME:  ", a8)') cdtpro(9:10)
           WRITE(IU06,'("\ /igs2grs/ LEVEL: ", a8)') clevel
 C
 C* try to estimate the size of the next product:
@@ -307,7 +307,7 @@ C***********************************************************************
         ELSE
           CALL GRSTNAME(IU06,CDTPRO,CDATEF,2,INPREFIX,IPR,NPRWAM,
      &                  FILENAME)
-          LFILE=IECF_LEN(FILENAME)
+          LFILE=LEN_TRIM(FILENAME)
           INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
           IF(LLEXIST) THEN
             CALL PBOPEN(IUGRS,FILENAME(1:LFILE),'r',KRET)
@@ -426,8 +426,9 @@ C
            CALL ABORT1
         ENDIF
 
-        WRITE (ZDATE,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),
-     .                          KSEC1(13),KSEC1(14)
+        IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+        WRITE (ZDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+     .                               KSEC1(13),KSEC1(14)
         IF(CDTPRO.GT.CDATEF) THEN 
           CDATE=CDATEF
         ELSE
@@ -642,7 +643,7 @@ C
       CPATH=OUTPATH
       ICPLEN=LEN_TRIM(CPATH)
       CALL GRSTNAME(IU06,CDTPRO,CDATEF,1,OUTPREFIX,0,0,FILENAME)
-      LFILE=IECF_LEN(FILENAME)
+      LFILE=LEN_TRIM(FILENAME)
 
       IF (LFDBIOOUT) THEN
         CONTINUE

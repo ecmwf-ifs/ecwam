@@ -32,7 +32,6 @@ C
 C ----------------------------------------------------------------------
       INTEGER IINITFDB_VPP
       CHARACTER *3 DBNAME
-      CHARACTER*10 ZERO
       LOGICAL LDTRMSG,LFDB
 C
 C INITIALIZE LOGICALS FROM IFS

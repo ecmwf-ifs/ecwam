@@ -1,4 +1,4 @@
-      SUBROUTINE WAMNORM(FIELD,NX,NY,ZMISS,ZMIN,FAVG,FMIN,FMAX, 
+      SUBROUTINE WAMNORM(FIELD,NX,NY,ZMISS,ZMIN,FAVG,FMIN,FMAX,NAVG, 
      &                   LMESSPASS,IRANK,ISEND,IRECV,ITAG)
 C
 C ----------------------------------------------------------------------
@@ -25,6 +25,7 @@ C                              CONSIDERED IN THE NORM COMPUTATION
 C          *FAVG*      REAL    AVERAGE VALUE OF FIELD
 C          *FMIN*      REAL    MINIMUM VALUE OF FIELD
 C          *FMAX*      REAL    MAXIMUM VALUE OF FIELD
+C          *NAVG       INTEGER NUMBER OF POINTS USED TO COMPUTE FAVG
 C          *LMESSPASS* LOGICAL MESSAGE PASSING SWITCH
 C          *IRANK*     INTEGER CURRENT PE 
 C          *ISEND*     INTEGER PE WHERE FIELD IS DEFINED
@@ -50,7 +51,7 @@ C       NONE.
 C
 C ----------------------------------------------------------------------
 C
-      REAL :: FIELD(NX,NY), ZCOMBUF(3)
+      REAL :: FIELD(NX,NY), ZCOMBUF(4)
       LOGICAL :: LMESSPASS
 C
 C ----------------------------------------------------------------------
@@ -74,21 +75,23 @@ C
             ENDDO
           ENDDO
           IF(NTOT.GT.0) FAVG=FAVG/NTOT
+          NAVG=NTOT
         ENDIF
         IF(ISEND.NE.IRECV) THEN
           IF(IRANK.EQ.ISEND) THEN
             ZCOMBUF(1)=FAVG
             ZCOMBUF(2)=FMIN
             ZCOMBUF(3)=FMAX
-            CALL MPE_SEND(ZCOMBUF,3,2,IRECV,ITAG,0,0,0,IERR)
+            ZCOMBUF(4)=FLOAT(NAVG)
+            CALL MPE_SEND(ZCOMBUF,4,2,IRECV,ITAG,0,0,0,IERR)
             IF(IERR.LT.0) CALL MPEI_ABORT
      &                    ('MPE_SEND ERROR in WAMNORM' )
           ELSE IF(IRANK.EQ.IRECV) THEN
-            CALL MPE_RECV(ZCOMBUF,3,2,ISEND,ITAG,0,0,0,
+            CALL MPE_RECV(ZCOMBUF,4,2,ISEND,ITAG,0,0,0,
      &                    KRCOUNT,KRFROM,KRTAG,IERR)
             IF(IERR.LT.0) CALL MPEI_ABORT
      &                       ('MPE_RECV ERROR in WAMNORM' )
-            IF(KRCOUNT.NE.3) CALL MPEI_ABORT
+            IF(KRCOUNT.NE.4) CALL MPEI_ABORT
      &      ('MPE_RECV ERROR in WAMNORM:MISMATCHED MSG LENGTH')
             IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
      &      ('MPE_RECV ERROR in WAMNORM MISMATCHED TAGS' )
@@ -96,6 +99,7 @@ C
             FAVG=ZCOMBUF(1)
             FMIN=ZCOMBUF(2)
             FMAX=ZCOMBUF(3)
+            NAVG=INT(ZCOMBUF(4))
           ENDIF
         ENDIF
 C
@@ -111,6 +115,7 @@ C
           ENDDO
         ENDDO
         IF(NTOT.GT.0) FAVG=FAVG/NTOT
+        NAVG=NTOT
       ENDIF
 C
       RETURN

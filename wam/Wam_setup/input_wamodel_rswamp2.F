@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" SWAMP2 WAVE MODEL RUN                             MODEL VERSION 4.0",
- CBPLTDT="${begofan}",
- CEPLTDT="${endofan}",
- CDATEF="${endofan}",
+ CLHEADER=" SWAMP2 WAVE MODEL RUN                           MODEL VERSION 4.0",
+ CBPLTDT="${begofrn}",
+ CEPLTDT="${endofrn}",
+ CDATEF="${begofan}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 43200,
@@ -44,8 +44,8 @@
  NTOTENS= $TNE,
  LMESSPASS= T,
  LWCOU= F,
- NTASKS= 0
- NSIZE= 0,
+ NTASKS= 1,
+ NSIZE= 1000,
  CPATH="$STORAGE_PATH"
  CFDBSF="$cfdbsf"
  CFDB2DSP="$cfdb2dsp"

@@ -72,7 +72,7 @@ C ---------------------------------------------------------------------
       INTEGER IUGB(ILEN), IVGB(ILEN)
 C ---------------------------------------------------------------------
       DIMENSION PSEC2(10), PSEC3(2), PSEC4(NC*NR)
-      CHARACTER*10 CDTWIR
+      CHARACTER*12 CDTWIR
       CHARACTER HOPER*1, FILNM*24
 C
       DATA IFIL, HOPER / 63, 'R' /
@@ -367,8 +367,9 @@ C*    3.1.1 DETERMINE DATE OF WIND FIELD FROM KSEC1(10)-KSEC1(14).
 C
 C     START DATE
 C
-      WRITE(CDTWIR,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),KSEC1(13),
-     1                       KSEC1(14)
+      IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+      WRITE(CDTWIR,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),KSEC1(13),
+     1                             KSEC1(14)
 C
 C     DETERMINE TIME UNIT
 C

@@ -63,7 +63,7 @@ C
       LOGICAL LLFAILED, LLOPENED
       INTEGER IREAD
       CHARACTER* 3 CLFID
-      CHARACTER*10 CTIME
+      CHARACTER*12 CTIME
       REAL,   DIMENSION(NGX,NGY) :: WHME, USME
       INTEGER,DIMENSION(NPROC)   :: NSTART, NEND
 
@@ -129,7 +129,8 @@ C*       GRDATA.
 C
  9000   IF ( LLFAILED .OR. IFIELD .EQ. 0 ) THEN
           WRITE(IU06,'("WARNING IN GRFIELD:    W A R N I N G  !!!!!!")')
-          WRITE(IU06,'("NO FIELDS FOUND IN FILE"                     )')
+          WRITE(IU06,'("NO GRIDDED FIELDS FOUND IN FILE"             )')
+          WRITE(IU06,'("TRY THE OLD CALL TO GRDATA                  ")')
           WRITE(IU06,'("WARNING IN GRFIELD:    W A R N I N G  !!!!!!")')
           IF (IFAIL .EQ. 0) CLOSE (IUME)
           CALL GRDATA (WHME, USME, NSTART, NEND) 

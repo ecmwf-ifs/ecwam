@@ -28,15 +28,15 @@ C**   INTERFACE.
 C     ----------                                                        
 C                                                                       
 C          IUIN     INTEGER    DISC UNIT FOR WAMINFO.                   
-C          CBDT     CHAR*10    BEGIN DATE-TIME-GROUP.                   
-C          CEDT     CHAR*10    END DATE-TIME-GROUP.                     
+C          CBDT     CHAR*12    BEGIN DATE-TIME-GROUP.                   
+C          CEDT     CHAR*12    END DATE-TIME-GROUP.                     
 C          ANALPD   INTEGER    ANALYSIS PERIOD IN SECONDS.
 C          FOREPD   INTEGER    FORECAST PERIOD IN SECONDS.
 C          IS       INTEGER    WIND INPUT TIME STEP IN SECONDS.           
-C          CRSDT    CHAR*10    DATE FOR RESTART FILES OUTPUT
-C          CLSDT    CHAR*10    LAST DATE FOR SPECTRUM FILE OUTPUT
-C          CABDT    CHAR*10    BEGIN ANALYSIS DATE.                         
-C          CAEDT    CHAR*10    END ANALYSIS DATE.                           
+C          CRSDT    CHAR*12    DATE FOR RESTART FILES OUTPUT
+C          CLSDT    CHAR*12    LAST DATE FOR SPECTRUM FILE OUTPUT
+C          CABDT    CHAR*12    BEGIN ANALYSIS DATE.                         
+C          CAEDT    CHAR*12    END ANALYSIS DATE.                           
 C          IASS     INTEGER    ASSIMILATION CONDITION.                  
 C          NF       INTEGER    NEW FORECAST CONDITION.                  
 C          ISTAT    INTEGER    STATUS FLAGS FOR JOBS.                   
@@ -60,7 +60,7 @@ C----------------------------------------------------------------------
                                                                         
       INTEGER ANALPD, FOREPD                      
       INTEGER ISTAT(3)                                                  
-      CHARACTER*10 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+      CHARACTER*12 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
 C
 #include "comcard.h"
 C                                                                       
@@ -78,11 +78,11 @@ C
 C*    2.0  CONVERT CHARACTER TO INTEGER.                                
 C          -----------------------------                                
 C                                                                       
-      READ (CARD(1), '(15X,A10,4X,A10)') CBDT, CEDT                       
+      READ (CARD(1), '(15X,A12,4X,A12)') CBDT, CEDT                       
       READ (CARD(4), '(18X,I7)') ANALPD                                 
       READ (CARD(5), '(18X,I7)') FOREPD                                 
       READ (CARD(6), '(28X,I7)') IS                                     
-      READ (CARD(7), '(14X,A10,4X,A10)') CABDT, CAEDT                     
+      READ (CARD(7), '(14X,A12,4X,A12)') CABDT, CAEDT                     
       IASS=0                                                            
       IF (CARD(8)(14:14).EQ.'Y') IASS=1                                 
       NF=0                                                              
@@ -95,13 +95,13 @@ C
       IF (CARD(12)(16:16).EQ.'F') ISTAT(3)=1                            
                   
       IF(CARD(13).NE.' ') THEN
-         READ (CARD(13), '(40X,A10)') CRSDT
+         READ (CARD(13), '(40X,A12)') CRSDT
       ELSE
-         CRSDT = '0000000000'
+         CRSDT = '000000000000'
       ENDIF
 
       IF(CARD(14).NE.' ') THEN
-         READ (CARD(14), '(36X,A10)') CLSDT
+         READ (CARD(14), '(36X,A12)') CLSDT
       ELSE
          CLSDT = CEDT
       ENDIF

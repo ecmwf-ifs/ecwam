@@ -81,7 +81,7 @@ C
       REAL REALV(4)
 C
       CHARACTER*1 MODE
-      CHARACTER*10 CZDATE,CDATE 
+      CHARACTER*12 CZDATE,CDATE 
       CHARACTER*20 CHARV(4) 
       CHARACTER*40 CLMSG
       CHARACTER*80 INFILEN,OUTFILEN
@@ -110,7 +110,7 @@ C     ----------------------
 C
       LFILE=0
       LLEXIST=.FALSE.
-      IF (INFILEN.NE. ' ') LFILE=IECF_LEN(INFILEN)
+      IF (INFILEN.NE. ' ') LFILE=LEN_TRIM(INFILEN)
       INQUIRE(FILE=INFILEN(1:LFILE),EXIST=LLEXIST)
       IF(LLEXIST) THEN
         MODE='r'
@@ -512,7 +512,7 @@ C           OUTPUT INTERPOLATED DATA FILE
             WRITE(IU06,*)'**********************************'
 C
             IF(ISPLIT.EQ.1) THEN
-              LFILE=IECF_LEN(OUTFILEN)
+              LFILE=LEN_TRIM(OUTFILEN)
               MODE='w'
               CALL PBOPEN(IUOUT,OUTFILEN(1:LFILE),MODE,KRET)
               IF(KRET.LT.0) THEN

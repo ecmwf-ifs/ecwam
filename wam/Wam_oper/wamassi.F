@@ -65,7 +65,7 @@ C        *UPDATE*   - ANALYSES THE WAM MODEL SPECTRA.
 C        *UPWSPEC*  - PRODUCES THE UPDATED SPECTRUM.                    
 C        *WSMFEN*   - UTILITY OF FWSEA , COMPUTING  WINDSEA ENERGY AND  
 C                     DURATION IN EACH GRID POINT.                      
-C        *WAMNORM*  - COMPUTES A FEW NORMS OF GRIDDED FIELDS
+C        *OUTWNORM* - COMPUTES A FEW NORMS OF GRIDDED FIELDS
 C                                                                       
 C     REFERENCES.                                                       
 C     -----------                                                       
@@ -225,6 +225,11 @@ C        -----------------------------------------------------------
 C                                                                       
 C*    2.1 GET PARAMETERS FROM NAMELIST OIP IF PRESENT.
 C         --------------------------------------------
+      LMAX=11
+      IF(XDELLA.LT.0.5) LMAX=22
+      SIGOBS=0.5
+      SIGMOD=0.5
+C
       LOIP=.FALSE.
       INQUIRE(FILE='oip',EXIST=LOIP)
       IF (LOIP) THEN 
@@ -233,7 +238,7 @@ C
         READ (92,OIP)
         CLOSE(UNIT=92)
 C
-        IF ( LMAX .GT. 11 .OR. SIGOBS .GT. 1.0 .OR. SIGMOD .GT. 1.0
+        IF ( LMAX .GT. 22 .OR. SIGOBS .GT. 1.0 .OR. SIGMOD .GT. 1.0
      .       .OR. LMAX .LT. 1 .OR. SIGOBS .LT. 0.1 .OR. SIGMOD .LT.
      .       0.1 ) THEN
           WRITE(IU06,*) '*******************************************'
@@ -242,7 +247,7 @@ C
           WRITE(IU06,*) '*    ===========================          *'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '* CONSTRAINTS:                            *'
-          WRITE(IU06,*) '* 0 < LMAX < 12        CURRENT SETTING: ',
+          WRITE(IU06,*) '* 0 < LMAX < 23        CURRENT SETTING: ',
      .                     LMAX,'*'
           WRITE(IU06,*) '* 0.1 < SIGOBS <= 1.0  CURRENT SETTING: ',
      .                     SIGOBS,'*'
@@ -254,10 +259,6 @@ C
           WRITE(IU06,*) '*******************************************'
           CALL ABORT1
         ENDIF
-      ELSE
-        LMAX=11
-        SIGOBS=0.5
-        SIGMOD=0.5
       ENDIF
       NDIM1 = 2*LMAX+1
       NDIM2 = NDIM1*NDIM1
@@ -560,47 +561,10 @@ C           --------------------------------------------
 C                                                                       
       IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN                
 C
-C       WRITE OUT NORMS FOR WAVE ENERGY, PEAK FREQUENCY AND WIND SPEED
+C       PRINTS OUT NORMS
+        CALL OUTWNORM
 C
-        IF(GFLAG(1)) THEN
-          CALL WAMNORM(WHGTTG,NGX,NGY,ZMISS,EPSMIN,WHGTAVG,WHGTMIN,
-     &                 WHGTMAX,LMESSPASS,IRANK,IPFGTBL(1),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) ' '
-            WRITE(IU06,*) '   WAMMORM FOR WAVE ENERGY ON ',CDTPRO
-            WRITE(IU06,*) '          AVERAGE            MIMIMUM  ',
-     &                    '           MAXIMUM'
-            WRITE(IU06,*) '  ',WHGTAVG,WHGTMIN,WHGTMAX
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-        IF(GFLAG(6)) THEN
-          CALL WAMNORM(WPKFTG,NGX,NGY,ZMISS,0.,WPKFAVG,WPKFMIN,WPKFMAX,
-     &                 LMESSPASS,IRANK,IPFGTBL(6),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) ' '
-            WRITE(IU06,*) '   WAMNORM FOR WAVE PEAK FREQUENCY: '
-            WRITE(IU06,*) '          AVERAGE            MIMIMUM  ',
-     &                    '           MAXIMUM'
-            WRITE(IU06,*) '  ',WPKFAVG,WPKFMIN,WPKFMAX
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-        IF(GFLAG(10)) THEN
-          CALL WAMNORM(U10G,NGX,NGY,ZMISS,0.,U10AVG,U10MIN,U10MAX,
-     &                 LMESSPASS,IRANK,IPFGTBL(10),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM FOR WAVE WIND SPEED: '
-            WRITE(IU06,*) '          AVERAGE          MIMIMUM  ',
-     &                    '      MAXIMUM'
-            WRITE(IU06,*) '  ',U10AVG,U10MIN,U10MAX
-          ENDIF
-        ENDIF
-C
-         CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, MFDBSF)
+        CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, MFDBSF)
 C
         IF(LMESSPASS) THEN
           CALL MPE_BARRIER(IERR)
@@ -671,7 +635,7 @@ C           STRESS FIELD IS DUMPED FOR RESTART
 C           ONLY IF CURRENT TIME CORRESPONDS TO CDATER
 
           IF((CDTPRO .EQ. CDATER  ).OR.
-     &       (CDATER .EQ. '0000000000' ).OR.
+     &       (CDATER .EQ. '000000000000' ).OR.
      &        LDWRRE) THEN
 C
             IF ( .NOT.LGRIBIN ) THEN
@@ -684,7 +648,7 @@ C
 C           SAVE SPECTRUM
 C           -------------
 C
-          IF ( LGRIBIN .AND. LMESSPASS ) THEN
+          IF ( LGRIBIN ) THEN
             CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      1                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,IRGG,
      2                     NLONRGG, KXLT, IXLG, NIBLO, NBLO, ZMISS,
@@ -749,7 +713,7 @@ C
       IF (LFDB .AND. LLFLUSH .AND. (
      .  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
         ISTAT = IFLUSHFDB (MFDBSF)
-        WRITE(IU06) ' DB ', MFDBSF , ' FLUSHED AT ',
+        WRITE(IU06,*) ' DB ', MFDBSF , ' FLUSHED AT ',
      .    CDTPRO, ' FROM WAMASSI. '
         CALL FLUSH (IU06)
       ENDIF

@@ -326,7 +326,7 @@ C
 
       TITL = 'WATER DEPTH IN METERS. '//
      1       '(DEPTH DEEPER THAN 999M ARE PRINTED AS 999)'
-      CALL OUTPP ('0000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
+      CALL OUTPP ('000000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
      1            AMOWEP, AMOSOP, AMOEAP, AMONOP)
 C
 C ----------------------------------------------------------------------
@@ -352,7 +352,7 @@ C
  4002 CONTINUE
 
       TITL = 'CURRENT SPEED IN 0.01 METRES/SECOND '
-      CALL OUTPP ('0000000000',IU06, NGX, NGY, NX, NY, TITL, 100., GRID,
+      CALL OUTPP ('000000000000',IU06, NGX, NGY,NX,NY,TITL, 100., GRID,
      1            AMOWEP, AMOSOP, AMOEAP, AMONOP)
 
       DO K=1,NY
@@ -369,7 +369,7 @@ C
  4102 CONTINUE
 
       TITL = 'CURRENT DIRECTIOM IN DEGREES (CLOCKWISE FROM NORTH)'
-      CALL OUTPP ('0000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
+      CALL OUTPP ('000000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
      1            AMOWEP, AMOSOP, AMOEAP, AMONOP)
 C
 C ----------------------------------------------------------------------

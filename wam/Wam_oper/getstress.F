@@ -63,7 +63,7 @@ C
 #include "comwind.h"
 C
       CHARACTER*9 CMBXSIZE
-      CHARACTER*10 ZERO
+      CHARACTER*12 ZERO
       CHARACTER*80 FILENAME
 C
 C ----------------------------------------------------------------------
@@ -80,7 +80,7 @@ C     define local allocatable arrays
       IF(LMESSPASS) THEN
 
         ISEND=IREAD
-        IBUFLENGTH=40
+        IBUFLENGTH=48
 
         ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
      1  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO))
@@ -99,7 +99,7 @@ C     define local allocatable arrays
 
 C       READ RESTART FILE(s) FROM PE ISEND (IREAD) 
         IF (IRANK.EQ.ISEND) THEN
-           IF(LGRIBIN) THEN
+           IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
              CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
      &                        NEND(NPROC))
            ELSE
@@ -113,17 +113,17 @@ C       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
       
         ELSE IF(IRANK.EQ.ISEND) THEN
            KCOUNT=0
-           DO IC=1,10
+           DO IC=1,12
               READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
            ENDDO
-           DO IC=1,10
-              READ(CDATEWO(IC:IC),'(I1)') IBUF(10+IC)
+           DO IC=1,12
+              READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
            ENDDO
-           DO IC=1,10
-              READ(CDAWIFL(IC:IC),'(I1)') IBUF(20+IC)
+           DO IC=1,12
+              READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
            ENDDO
-           DO IC=1,10
-              READ(CDATEFL(IC:IC),'(I1)') IBUF(30+IC)
+           DO IC=1,12
+              READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
            ENDDO
 
            CALL MPE_BROADCAST
@@ -143,24 +143,24 @@ C       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
 
             KTAG=KTAG+1
 
-            DO IC=1,10
+            DO IC=1,12
                WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
             ENDDO
-            DO IC=1,10
-               WRITE(CDATEWO(IC:IC),'(I1)') IBUF(10+IC)
+            DO IC=1,12
+               WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
             ENDDO
-            DO IC=1,10
-               WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(20+IC)
+            DO IC=1,12
+               WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
             ENDDO
-            DO IC=1,10
-               WRITE(CDATEFL(IC:IC),'(I1)') IBUF(30+IC)
+            DO IC=1,12
+               WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
             ENDDO
         ENDIF
 
-        IF(CDTPRO.EQ.'0000000000') CDTPRO = ZERO
-        IF(CDATEWO.EQ.'0000000000')CDATEWO = ZERO
-        IF(CDAWIFL.EQ.'0000000000')CDAWIFL = ZERO
-        IF(CDATEFL.EQ.'0000000000') CDATEFL= ZERO
+        IF(CDTPRO.EQ.'000000000000') CDTPRO = ZERO
+        IF(CDATEWO.EQ.'000000000000')CDATEWO = ZERO
+        IF(CDAWIFL.EQ.'000000000000')CDAWIFL = ZERO
+        IF(CDATEFL.EQ.'000000000000') CDATEFL= ZERO
 
 
 C       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
@@ -203,7 +203,7 @@ C
      1                    CDATEA, CDATEF)
         ENDIF
 
-        IF(LGRIBIN) THEN
+        IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NIBLO)
         ELSE
           CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,FILENAME)

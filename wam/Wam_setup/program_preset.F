@@ -8,9 +8,9 @@
 #. J. BIDLOT            ECMWF         1998 : use of grib spectra
 #.                                           all data retrieval for wam run
 #.                                           must be done here.
-#.
-#QSUB -r preset 
+#. 
 #QSUB -q vpp700.rdx04_io
+#QSUB -r preset
 #QSUB -lP 0
 #QSUB -lt 3000
 #QSUB -lV 0mb
@@ -32,16 +32,28 @@
 # luwave=yes if wind speed analysed by the wave model (parameter 245) is
 # available (for OD, there was none until the coupled model bcame operational)
 #.
-COLDSTART=no
-expver_archive=1
+#
+COLDSTART=yes
+#
+expver_archive=0001
 class_archive=OD
-specparam=250
-luwave=no
+specparam=251
+luwave=yes
 #.
-#if resolution == 50
-irgg=1
+#if region=='m'
+  domain=M
+  #if resolution == 25
+  irgg=1
+  #else
+  irgg=0
+  #endif
 #else
-irgg=0
+  domain=G
+  #if resolution == 50
+  irgg=1
+  #else
+  irgg=0
+  #endif
 #endif
 #.
 PATH=$PATH:.
@@ -56,7 +68,7 @@ cd $WORKDIR
 
 #. determine if preset has to be run or only data retrieval is necessary
 #. 
-if [[ COLDSTART = no || (COLDSTART != no && $specparam = 250) ]] ; then
+if [[ $COLDSTART = yes || ($COLDSTART != yes && $specparam = 250) ]] ; then
  print - " PRESET WILL BE RUN "
  lpreset=yes
   #.
@@ -105,9 +117,9 @@ fi
 #
 if [[ "$COLDSTART" = "no" ]] ; then
 ### we will need to refine this as -1 should be use for the mediter.
-### and for all OD global field prior to 961205
-   date=`substring $begofan 1 6`
-   if [[ $date -lt 961205 ]] ; then
+### and for all OD global field prior to 19961205
+   date=`substring $begofrn 1 8`
+   if [[ $date -lt 19961205 ]] ; then
      OPTI="-1"
    else
      OPTI="-2"
@@ -141,13 +153,13 @@ EOFPRO
 fi
 #.
 cat > fort.4 <<- EOF
-RUN MODEL FROM $begofan TO $endoffo 
-PARAM=10U/10V,
+RUN MODEL FROM $begofrn TO $endofrn 
+PARAM=10U/10V, CLASS=OD,
 REPRES=GG,
 ANALYSIS PERIOD = $antime
 FORECAST PERIOD = $fctime
 WIND TIME STEP IN SECONDS = 21600
-ANALYSIS FROM $begofan TO $endofan 
+ANALYSIS FROM $begofrn TO $begoffo 
 ASSIMILATION NO
 NEW FORECAST YES
 STATUS STORM1= UNFINISHED
@@ -177,7 +189,7 @@ print - "\n\n\t\tSTART POSSIBLE MARS RETRIEVAL\n\n"
 #.
 #.create filename for mars retrieval output
 #.
-wind_filename=sfcwind_${grid}_${begofan}_${endofan}_${endoffo}
+wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
 #.
 print - $wind_filename
 #.
@@ -214,11 +226,11 @@ rm fort.22
 #.
 #.check if SST file does exist
 #.
-if [[ !  -r $ADIR/kelv${begofan}_${grid} ]] ; then
+if [[ !  -r $ADIR/kelv${begofrn}_${grid} ]] ; then
   # in case file is not there do a mars request
   # GET SURFACE TEMPERATURES FROM MARS
   #===================================
-  ICEDATE=`substring $begofan 1 6`
+  ICEDATE=`substring $begofrn 1 8`
   cat > myrequest <<-EOF
 	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
 	CLASS=OD,
@@ -240,7 +252,7 @@ if [[ !  -r $ADIR/kelv${begofan}_${grid} ]] ; then
     print - "\n\n\t\t NO SURFACE TEMPS FROM MARS, NOTHING IS DONE \n\n"
     exit 19
   }
-  mv sfctempin $ADIR/kelv${begofan}_${grid}
+  mv sfctempin $ADIR/kelv${begofrn}_${grid}
 fi
 #endif
 #.
@@ -251,38 +263,45 @@ if [[ $ASSIMILATION = "YES" ]] ; then
   #. Get quality controlled ERS-2 altimeter data if assimilation is
   #. required
   #.
-  #. Note the location of the data in CFS is liable to change !!!!
+  #. Note the location of the data in ECFS has recently changed (June 1998) 
   #.
-  #. as well as the way day are kept in the archive (see Bjorn)
+  #. as well as the way they are kept in the archive (see Bjorn)
   #.
   #.====================================================================
   ##
   AS=1
-  CFSALT=/emos/wave/0012/ers2_b/alt/global
-  CFSALT=/emos/wave/0001/ers2_s/alt/global
+  DHSWAVE=/emos/0001/wave
   #
-  # get 64 bit decoder from prepifs since the operational one is 32 bit
+  # get 64 bit decoder from ops ( there is not one readily available
+  # for 32 bit)
+  #
    if [ $PRECISION = DOUBLE ] ; then
-      ALTLIB=/home/rd/rdx/lib/16r4/libalt.a
-      ar xv $ALTLIB enderac.o
-      frt -Ad -o enderac enderac.o $ALTLIB $EMOSLIB $ECLIB
+      cp /vpp700/emos_data/0001/bin/global50/enderac .
+   else
+      echo 'the following decoder does not work '
+      echo '/home/ma/emos/wave/bin/enderac'
+      exit 1
    fi
   #
-  CURRENT_DATE=$begofan
-  CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
-  ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
-  ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
-  LAST_ANALYSIS_DATE=$endofan
-  LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
+  ANALYSIS_DATE=$(substring $begofrn 1 10)
+  ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
+  #
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
     if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
-      # in case file is not there do a ecfile request
-      ecfile -p $CFSALT/BFL${ANALYSIS_DATE}00 \
-             -en get BFL${ANALYSIS_DATE}00
+      # in case file is not there do a ecfs request
+      yyyymm=$(substring ${ANALYSIS_DATE} 1 6)
+      ddhh=$(substring ${ANALYSIS_DATE} 7 10)
+      ecp ec:$DHSWAVE/$yyyymm/$ddhh/BFL BFL${ANALYSIS_DATE}00 
+  #
   # use appropriate decoder
+  #
       if [ $PRECISION = SINGLE ] ; then
-         /home/ma/emos/wave/bin/enderac \
-         -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
+           echo 'the following decoder does not work '
+           echo '/home/ma/emos/wave/bin/enderac'
+           exit 1
+##         /home/ma/emos/wave/bin/enderac \
+##         -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
       else
          ./enderac -i RFL${ANALYSIS_DATE}00 -b BFL${ANALYSIS_DATE}00
       fi
@@ -290,10 +309,7 @@ if [[ $ASSIMILATION = "YES" ]] ; then
       rm -f BFL${ANALYSIS_DATE}00
       mv RFL${ANALYSIS_DATE}00 ${ADIR}/RFL${ANALYSIS_DATE}00
     fi
-    CURRENT_DATE=$ANALYSIS_DATE
-    CURRENT_DATE=`substring $CURRENT_DATE 1 8`
-    ANALYSIS_DATE=`newdate 19${CURRENT_DATE} 6`
-    ANALYSIS_DATE=`substring $ANALYSIS_DATE 3 10`
+    ANALYSIS_DATE=`newdate ${ANALYSIS_DATE} 6`
   done
 else
   AS=0
@@ -309,36 +325,36 @@ if [[ "$COLDSTART" = "no" ]] ; then
 # Get the WAVE spectra 
 # ====================
 #
-SPECDATE=`substring $begofan 1 6`
-SPECTIME=`substring $begofan 7 8`
-if [[ $SPECTIME -ne 12 && $SPECDATE -lt 980120 ]] ; then
+SPECDATE=`substring $begofrn 1 8`
+SPECTIME=`substring $begofrn 9 10`
+if [[ $SPECTIME -ne 12 && $SPECDATE -lt 19980120 ]] ; then
    echo 'THERE IS NO SPECTRA IN THE ARCHIVE OUTSIDE 12Z'
    echo 'PLEASE CHANGE INITIAL DATE ACCORDINGLY'
    exit 8
 fi
-if [[ "$irgg" = "0" && $SPECDATE -ge 961205 ]] ; then
+if [[ "$irgg" = "0" && $SPECDATE -ge 19961205 ]] ; then
    echo 'THERE IS NO SPECTRA IN THE ARCHIVE ON A REGULAR GRID  '
-   echo 'AFTER 961205'
+   echo 'AFTER 19961205'
    echo 'INTERPOLATION WILL BE USED TO CREATE ONE.'
 fi
-if [[ "$irgg" = "1" && $SPECDATE -lt 961205 ]] ; then
+if [[ "$irgg" = "1" && $SPECDATE -lt 19961205 ]] ; then
    echo 'THERE IS NO SPECTRA IN THE ARCHIVE ON AN IRREGULAR GRID  '
-   echo 'BEFORE 961205'
+   echo 'BEFORE 19961205'
    echo 'INTERPOLATION WILL BE USED TO CREATE ONE.'
 fi
 
 if [[ $specparam = 250 ]] ; then
-  sfilename=GRS${begofan}00
+  sfilename=GRS${begofrn}00
 else
-  sfilename=SGS${begofan}00
+  sfilename=SGS${begofrn}00
 fi
 
 if [[ !  -r $WDIR/${sfilename} ]] ; then
   # in case file is not there do a mars request
   # GET WAVE SPECTRA 
   #=================
-  SPECDATE=`substring $begofan 1 6`
-  SPECTIME=`substring $begofan 7 8`
+  SPECDATE=`substring $begofrn 1 8`
+  SPECTIME=`substring $begofrn 9 10`
 
   if [[ $specparam = 250 ]] ; then
 
@@ -370,10 +386,11 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
 		LEVEL=OFF,
 		PARAM=250,
 		REPRES=LL,
+		DOMAIN=${domain},
 		STEP=0,
 		TIME=$SPECTIME,
 		DATE=$SPECDATE,
-		DOMAIN=G,
+		DOMAIN=${domain},
 		TARGET="${sfilename}"
 		EOF
     fi
@@ -387,12 +404,12 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
 		LEVEL=OFF,
 		PARAM=251,
 		REPRES=LL,
+		DOMAIN=${domain},
 		STEP=0,
 		TIME=$SPECTIME,
 		DATE=$SPECDATE,
 		DIRECTION=1/to/${nang},
 		FREQUENCY=1/to/${nfre},
-		DOMAIN=G,
 		TARGET="${sfilename}"
 		EOF
     else
@@ -404,12 +421,12 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
 		LEVEL=OFF,
 		PARAM=251,
 		REPRES=LL,
+		DOMAIN=${domain},
 		STEP=0,
 		TIME=$SPECTIME,
 		DATE=$SPECDATE,
 		DIRECTION=1/to/${nang},
 		FREQUENCY=1/to/${nfre},
-		DOMAIN=G,
 		GRID=$GRID,
 		AR=$AREA,
 		TARGET="${sfilename}"
@@ -432,12 +449,12 @@ fi
 # Get drag coefficient with waves for wam model run 
 # ===============================
 #
-if [[ !  -r $ADIR/CD${begofan}_${grid} ]] ; then
+if [[ !  -r $ADIR/CD${begofrn}_${grid} ]] ; then
   # in case file is not there do a mars request
   # GET DRAG COEFFICIENT WITH WAVE FROM MARS
   #i========================================
-  CDDATE=`substring $begofan 1 6`
-  CDTIME=`substring $begofan 7 8`
+  CDDATE=`substring $begofrn 1 8`
+  CDTIME=`substring $begofrn 9 10`
 if [[ "$irgg" = "1" ]] ; then
   cat > myrequest <<-EOF
 	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
@@ -447,6 +464,7 @@ if [[ "$irgg" = "1" ]] ; then
 	LEVEL=OFF,
 	PARAM=233,
 	REPRES=LL,
+	DOMAIN=${domain},
 	STEP=0,
 	TIME=$CDTIME,
 	DATE=$CDDATE,
@@ -461,6 +479,7 @@ else
 	LEVEL=OFF,
 	PARAM=233,
 	REPRES=LL,
+	DOMAIN=${domain},
 	STEP=0,
 	TIME=$CDTIME,
 	DATE=$CDDATE,
@@ -476,20 +495,20 @@ fi
     print - "\n\n\t\t NO DRAG COEFFICIENT 233 FROM MARS, NOTHING IS DONE \n\n"
     exit 8
   }
-  mv cdwavein $ADIR/CD${begofan}_${grid}
+  mv cdwavein $ADIR/CD${begofrn}_${grid}
 fi
 
 #
 # Get surface wind speed as modified by the wave model analysis for wam run
 # =============================================================
 #
-if [[ !  -r $ADIR/U10${begofan}_${grid} ]] ; then
+if [[ !  -r $ADIR/U10${begofrn}_${grid} ]] ; then
   if [[ $luwave  = yes ]] ; then
     # in case file is not there do a mars request
     # GET SURFACE WIND WITH WAVE FROM MARS
     #i=====================================
-    CDDATE=`substring $begofan 1 6`
-    CDTIME=`substring $begofan 7 8`
+    CDDATE=`substring $begofrn 1 8`
+    CDTIME=`substring $begofrn 9 10`
     if [[ "$irgg" = "1" ]] ; then
       cat > myrequest <<-EOF
 		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
@@ -499,6 +518,7 @@ if [[ !  -r $ADIR/U10${begofan}_${grid} ]] ; then
 		LEVEL=OFF,
 		PARAM=245,
 		REPRES=LL,
+		DOMAIN=${domain},
 		STEP=0,
 		TIME=$CDTIME,
 		DATE=$CDDATE,
@@ -513,6 +533,7 @@ if [[ !  -r $ADIR/U10${begofan}_${grid} ]] ; then
 		LEVEL=OFF,
 		PARAM=245,
 		REPRES=LL,
+		DOMAIN=${domain},
 		STEP=0,
 		TIME=$CDTIME,
 		DATE=$CDDATE,
@@ -531,7 +552,7 @@ if [[ !  -r $ADIR/U10${begofan}_${grid} ]] ; then
       print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
     }
   fi
-  cp uwavein $ADIR/U10${begofan}_${grid}
+  cp uwavein $ADIR/U10${begofrn}_${grid}
 fi
 #.
 # end coldstart=no
@@ -656,4 +677,7 @@ cd $WDIR
 #. END OF JOB PRESET.
 #.======================================================================
 #.
+# cd $VPPPATH
+# rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/wamodel.job .
+# vppqsub wamodel.job
 #endif

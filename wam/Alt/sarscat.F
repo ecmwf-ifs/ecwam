@@ -40,7 +40,7 @@ C**   EXTERNALS.
 C     ----------
 C          POPEN      INITIATES MAGISC.
 C          PSETC      SINGLE CHARACTER PARAMETER SETTING.
-C          USERIN     READS AND EVALUATES THE USERINPUT.
+C          SCATIN     READS AND EVALUATES THE USERINPUT.
 C          ABORT      TERMINATION ROUTINE IN ERROR CASE.
 C          INDLOLE    CONVERTS CORNER COORDINATIONS TO GRID INDICES.
 C          INDSEEK    CONVERTS LAT/LONG COORDINATES TO GRID INDICES.
@@ -276,7 +276,7 @@ C        ----------------
 C
  2000 CONTINUE
       loabort = .FALSE.
-      CALL userin (jpuso, jpuin, iareas, ppa, pwo, pwa, ppo, yoregion,
+      CALL scatin (jpuso, jpuin, iareas, ppa, pwo, pwa, ppo, yoregion,
      .             yooption)
 C
 C ----------------------------------------------------------------------

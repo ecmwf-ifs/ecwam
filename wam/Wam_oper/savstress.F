@@ -36,7 +36,7 @@ C                           = 4  RESTART FILES ARE SAVED IN SPLIT MODE
 C                                OF THE OUTPUT FILE WHICH IS SAVED TO A VFL
 C                                FILE SYSTEM
 C                           OTHERWISE RESTART FILES ARE NOT SAVED.
-C     *CDTPRO*    CHAR*10   END DATE OF PROPAGATION.
+C     *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
 C
 C
 C     METHOD.
@@ -85,7 +85,7 @@ C
 #include "commpp.h"
 
       CHARACTER*80 FILENAME
-      CHARACTER*10 CDTPRO,CDATEF
+      CHARACTER*12 CDTPRO,CDATEF
       LOGICAL LPBOPEN, LPBCLOSE
       LOGICAL LDSTOP, LDWRRE
 C

@@ -14,13 +14,13 @@
  RUNID     = "GLO"
  PATH      = "                                                            "
  CPATH     = "$STORAGE_PATH"
- CDATEA    = "$begofan"
+ CDATEA    = "$begofrn"
  IDELWI    =  21600
  CLTUNIT   = "S"
  LPBIOIN   =  T
  LPBIOOUT  =  T
  LFDBIOIN  =  F
- LFDBIOOUT =  T
+ LFDBIOOUT =  F
  LSPLITIN  =  T
  LSPLITOUT =  T
  MARSTYPE  = "an"

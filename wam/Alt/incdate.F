@@ -1,126 +1,125 @@
+C ======================================================================
+C
       SUBROUTINE INCDATE (CDATE, ISHIFT)
-
-C ----------------------------------------------------------------------
+C
+C ======================================================================
 C
 C**** *INCDATE* - TO UPDATE DATE TIME GROUP
 C
-C     L. BERTOTTI, P.JANSSEN.
+C     B. HANSEN           ECMWF       JULY    1998
 C
-C     H. GUNTHER   ECMWF  NOVEMBER 1989    NEGATIVE INCREMENTS.
-C
-C*    PURPOSE.
+C**   PURPOSE.
 C     --------
-C
 C       UPDATING DATE TIME GROUP.
 C
 C**   INTERFACE.
 C     ----------
 C
 C       *CALL* *INCDATE (CDATE,ISHIFT)*
-C         *CDATE*  CHAR*10 - DATE TIME GROUP (YYMMDDHHMM)
-C         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, WHERE
-C                            ABS (ISHIFT) HAS TO BE LESS THEN 1 YEAR
+C         *CDATE*  CHAR*10 - DATE TIME GROUP (YYMMDDHHMM) OR
+C                  CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
+C                  CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS)
+C         *ISHIFT* INTEGER - TIME INCREMENT IN SECONDS, RESTRICTIONS:
+C                            -2147483648 <= ISHIFT <=  +2147483647
 C
 C     METHOD.
 C     -------
 C
-C       NONE.
+C       THE DATE AND TIME CAN BE SUPPLIED IN THE OLD 10 CHARACTER
+C       WAM FORMAT OR IN THE Y2K COMPLIANT 14 CHARACTER OR 12 
+C       CHARACTER FORMAT.
+C       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN 
+C       THE INPUT ARGUMENT FOR SECINCR. THE UPDATED DATE AND TIME 
+C       IS PUT BACK INTO AN OUTPUT STRING AS USED BY THE CALLING 
+C       ROUTINE.
 C
 C     EXTERNALS.
 C     ----------
 C
-C       NONE.
+C       SECINCR (ECLIB).
 C
 C     REFERENCES.
 C     -----------
 C
-C       NONE.
+C       OD MEMO (6 July 1998) File: O/PRO/90 FROM GROUP 2000.
 C
 C ----------------------------------------------------------------------
 C
-      DIMENSION MON(12)
-      CHARACTER*10 CDATE
-C
-      DATA MON /31,28,31,30,31,30,31,31,30,31,30,31/
+      CHARACTER*(*) CDATE
+      CHARACTER* 80 CLFMT
+      INTEGER ISHIFT
+      LOGICAL LLND
 C
 C ----------------------------------------------------------------------
 C
-C*    1.0 SPLITE DATE TIME GROUP INTO MINUTE, HOUR, DAY, MONTH, YEAR.
+C*    1.0 SPLITE DATE TIME GROUP INTO SECOND, MINUTE, HOUR, DAY, MONTH,
+C*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
 C         -----------------------------------------------------------
 C
- 1000 CONTINUE
-C 
-      READ(CDATE,5) IYEAR,MONTH,IDAY,IHOUR,MINUT
-      IF(MOD(IYEAR,4).EQ.0) MON(2)=29
+      IL = LEN_TRIM(CDATE)
+      IF (IL==10) THEN
+        WRITE(CLFMT,'(A39, I2.2, A2)')
+     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(6, CLFMT ) CDATE
+        LLND = .FALSE.
+        READ(CDATE,'(5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
+        IYEAR = IYEAR + 1900
+        ISEC = 0
+      ELSEIF (IL==12) THEN
+        LLND = .TRUE.
+        READ(CDATE,'(i4, 4i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
+        ISEC = 0
+      ELSEIF (IL==14) THEN
+        LLND = .TRUE.
+        READ(CDATE,'(i4, 5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
+      ELSE
+        WRITE(CLFMT,'(A58, I2.2, A2)')
+     .  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+     .    IL, ' )'
+        WRITE(6, CLFMT) IL, CDATE
+        STOP
+      ENDIF
 C
 C ----------------------------------------------------------------------
 C
-C*    2.0 ADD SECONDS AND UPDATE DATE AND TIME.
-C         -------------------------------------
+C*    2.0 INCREMENT OR DECREMENT THE DATE AND TIME BY ISHIFT SECONDS.
+C         -----------------------------------------------------------
 C
- 2000 CONTINUE
-      MINUT=MINUT+ISHIFT/60
-C
-C     2.1 POSITIVE SHIFT GREATER THAN 1 MINUTE.
-C
-      IF (MINUT.GE.60) THEN
-         IHOUR = IHOUR + MINUT/60
-         MINUT = MINUT - (MINUT/60)*60
-         IF (IHOUR.GE.24) THEN
-            IDAY = IDAY + IHOUR/24
-            IHOUR = IHOUR - (IHOUR/24)*24
-            IF (IDAY.GT.MON(MONTH)) THEN
- 1300          CONTINUE
-               IDAY=IDAY-MON(MONTH)
-               MONTH=MONTH+1
-               IF(MONTH.EQ.13) THEN
-                  MONTH = 1
-                  IYEAR=MOD(IYEAR+1,100)
-                  IF (MOD(IYEAR,4).EQ.0) THEN
-                     MON(2)=29
-                  ELSE
-                     MON(2)=28
-                  ENDIF
-               END IF
-               IF(IDAY.GT.MON(MONTH)) GO TO 1300
-            END IF
-         END IF
-      ELSE IF (MINUT.LT.0) THEN
-C
-C     2.2 NEGATIVE SHIFT.
-C
-         IHOUR = IHOUR + (MINUT-59)/60
-         MINUT = MINUT - ((MINUT-59)/60)*60
-         IF (IHOUR.LT.0) THEN
-            IDAY = IDAY + (IHOUR-23)/24
-            IHOUR = IHOUR - ((IHOUR-23)/24)*24
-            IF (IDAY.LT.1) THEN
- 1400          CONTINUE
-               MONTH=MONTH-1
-               IF(MONTH.EQ.0) THEN
-                  MONTH = 12
-                  IYEAR=MOD(IYEAR+99,100)
-                  IF (MOD(IYEAR,4).EQ.0) THEN
-                     MON(2)=29
-                  ELSE
-                     MON(2)=28
-                  ENDIF
-               END IF
-               IDAY=IDAY+MON(MONTH)
-               IF(IDAY.LT.1) GO TO 1400
-            END IF
-         END IF
-      END IF
+      CALL SECINCR  (IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC, ISHIFT,
+     .               INYEAR, INMON, INDAY, INHOUR, INMIN, INSEC, IRET)
+
+      IF (IRET/=0) THEN
+        WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
+        CALL ABORT
+      ENDIF
 C
 C ----------------------------------------------------------------------
 C
-C*    3.0 COMPOSE NEW DATE TIME GROUP.
-C         ----------------------------
+C*    3.0 CREATE OUTPUT STRING OF NEW DATE AND TIME USING THE INPUT
+C*        FORMAT.
+C         ---------------------------------------------------------
 C
- 3000 CONTINUE
-      WRITE(CDATE,5) IYEAR,MONTH,IDAY,IHOUR,MINUT
-C
-    5 FORMAT(5I2.2)
-C
+      IF (LLND) THEN
+        IF (IL==12) THEN
+          WRITE(CDATE,'(i4.4, 4i2.2)')INYEAR, INMON, INDAY, INHOUR,
+     .                                INMIN
+        ELSEIF (IL==14) THEN
+          WRITE(CDATE,'(i4.4, 5i2.2)')INYEAR, INMON, INDAY, INHOUR,
+     .                                INMIN, INSEC
+        ELSE
+          WRITE(6,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
+          CALL ABORT
+        ENDIF
+      ELSE
+        INYEAR = INYEAR - 1900
+        IF (INYEAR >= 100) THEN
+           WRITE(CLFMT,'(A39, I2.2, A2)')
+     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+           WRITE(6, CLFMT ) CDATE
+           WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
+           CALL ABORT
+        ENDIF
+        WRITE(CDATE,'(5i2.2)')INYEAR, INMON, INDAY, INHOUR, INMIN
+      ENDIF
       RETURN
       END

@@ -4,7 +4,7 @@
  SA= 7.000000E-02,SB= 9.000000E-02,THETA= 0.0,FETCH= 30000.00,USERID="   "
  RUNID="swa",PATH="                                                            "
  CPATH="$STORAGE_PATH",
- CDATEA="${begofan}",IDELWI= 21600,CLTUNIT="S",LPBIOIN= T,LPBIOOUT= T, LFDBIOOUT = T
+ CDATEA="${begofrn}",IDELWI= 21600,CLTUNIT="S",LPBIOIN= T,LPBIOOUT= T, LFDBIOOUT = T
  MARSTYPE = "an"
  YCLASS   = "$CLASS",
  YEXPVER  = "$XID",

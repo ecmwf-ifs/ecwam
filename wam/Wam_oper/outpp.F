@@ -17,7 +17,7 @@ C     ---------
 C
 C       *CALL* *OUTPP (CDATE, IUOUT, ID1, ID2, NGX, NGY, TITL, CONST,
 C                      ARRAY, AMOWEP, AMOSOP, AMOEAP, AMONOP)*
-C          *CDATE*    INTEGER   DATE (YYMMDDHHMM).
+C          *CDATE*    INTEGER   DATE (YYYYMMDDHHMM).
 C          *IUOUT*    INTEGER   OUTPUT UNIT.
 C          *ID1*      INTEGER   FIRST DIMENSION.
 C          *ID2*      INTEGER   SECOND DIMENSION.
@@ -50,7 +50,7 @@ C
 C ----------------------------------------------------------------------
 
       CHARACTER TITL*100
-      CHARACTER*10 CDATE
+      CHARACTER*12 CDATE
       DIMENSION IARRAY(ID1,ID2),ARRAY(ID1,ID2),ILON(NGX),YLAT(NGY)
 C
 C ----------------------------------------------------------------------
@@ -93,7 +93,7 @@ C
  220     CONTINUE
  200  CONTINUE
 
- 300  FORMAT('1',6X,A10,2X,A100,5X,'PAGE ',I2,/)
+ 300  FORMAT('1',6X,A12,2X,A100,5X,'PAGE ',I2,/)
  302  FORMAT(7X,'I=',30I4)
  303  FORMAT(5X,'LON=',30I4)
  304  FORMAT('   J LAT',/)

@@ -294,8 +294,13 @@ C
          ELSE
             NLONRGG(K) = NX
          END IF      
-         PLONS=(AMOEAP-AMOWEP) + XDELLO
-         ZDELLO(K)  = PLONS/FLOAT(NLONRGG(K))
+C
+         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
+         IF(IPER.EQ.1) THEN
+           ZDELLO(K)  = PLONS/FLOAT(NLONRGG(K))
+         ELSE
+           ZDELLO(K)  = PLONS/FLOAT(NLONRGG(K)-1)
+         ENDIF
          DELLAM(K)  = ZDELLO(K)*CIRC/360.
  3001 CONTINUE
 C

@@ -59,13 +59,13 @@ C      *PDELLA*    REAL      DISTANCE BETWEEN LATITUDES.
 C      *PDELLO*    REAL      DISTANCE BETWEEN LONGITUDES.
 C      *KSTART*    INTEGER   FIRST INDICES OF LOCAL BLOCKS OF SPECTRA.
 C      *KEND*      INTEGER   LAST INDICES OF LOCAL BLOCKS OF SPECTRA.
-C      *CDTPRO*    CHAR*10   END DATE OF PROPAGATION.
-C      *CDATEF*    CHAR*10   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
-C      *CDATER*    CHAR*10   DATE FOR OUTPUT OF BOTH RESTART FILES
-C      *CDATES*    CHAR*10   LAST DATE FOR OUTPUT OF RESTART FILES
+C      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
+C      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
+C      *CDATER*    CHAR*12   DATE FOR OUTPUT OF BOTH RESTART FILES
+C      *CDATES*    CHAR*12   LAST DATE FOR OUTPUT OF RESTART FILES
 C                            IF NOT SET IT WILL BE SET BY DEFAULT TO
 C                            CDATEE
-C      *CDATEA*    CHAR*10   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
+C      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
 C      *CDTYPE*    CHAR*     MARS TYPE OF FIELD.
 C      *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
 C      *CDEXPVER*  CHAR*     EXPERIMENT VERSION IDENTIFIER.
@@ -123,7 +123,7 @@ C
       INTEGER, ALLOCATABLE :: IOUTGRIB(:), IPOINTER(:)
 C
       INTEGER ISEC0(2), ISEC1(49+KANG+KFRE), ISEC2(384), ISEC3(2),
-     .        ISEC4(128), JSN, JK, ITOT, JC, IX, ISTEP, IST,
+     .        ISEC4(128), JSN, JK, ITOT, JC, IX, ISTEP, IST, IYYYY,
      .        IY, IMO, ID, IH, IMN, IFCST, itheta(KANG), ifreq(KFRE), 
      .        J, IJ, JANG, J1, J2, J3, JI, ILENGOUT, IC,
      .        IRET, IWORD, IERR, ILENP, ITAG, ISTAT
@@ -154,9 +154,7 @@ C*    0. FIXED SETTINGS FOR THE GRIB HEADERS.
 C     ---------------------------------------
 C
       IF (KTEST.GT.1) THEN
-        WRITE(KU06,*) '*********************************'
         WRITE(KU06,*) '*      THIS IS SPEC2FDB         *'
-        WRITE(KU06,*) '*********************************'
         CALL FLUSH (KU06)
       ENDIF
       ISEC1 = 0
@@ -170,11 +168,11 @@ C*    0.1.  THIS IS AN ANALYSIS DATE.
 C           -------------------------
 C
         IF (LDWCOU .AND. CDTYPE .EQ. 'fg') THEN
-          READ (CDATEA, '(5I2)') IY, IMO, ID, IH, IMN
+          READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
         ELSE
-          READ (CDTPRO, '(5I2)') IY, IMO, ID, IH, IMN
+          READ (CDTPRO, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
           IFCST = 0
         ENDIF
       ELSE
@@ -182,7 +180,7 @@ C
 C*    0.2.  THIS IS A  FORECAST DATE.
 C           -------------------------
 C
-        READ (CDATEF, '(5I2)') IY, IMO, ID, IH, IMN
+        READ (CDATEF, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCST = IFCST/3600
       ENDIF
@@ -193,14 +191,19 @@ C       WORD        VALUE   CONTENTS.
 C       ----        -----   ---------
       ISEC1( 1) =   140     ! VERSION NUMBER OF CODE TABLE 2.
       ISEC1( 2) =    98     ! ORIGINATING CENTRE IDENTIFIER.
-      ISEC1( 3) =   108     ! MODEL IDENTIFICATION.
+      IF( CLDOMAIN == 'm' ) THEN
+        ISEC1( 3) =   207     ! MODEL IDENTIFICATION.
+      ELSE
+        ISEC1( 3) =   107     ! MODEL IDENTIFICATION.
+      ENDIF
       ISEC1( 4) =   255     ! GRID DEFINITION.
       ISEC1( 5) =   192     ! FLAG (WMO CODE TABLE 1)
       ISEC1( 6) =   251     ! PARAMETER IDENTIFIER (WMO CODE TABLE 2)
       ISEC1( 7) =   102     ! TYPE OF LEVEL (WMO CODE TABLE 3)
       ISEC1( 8) =     0     ! TYPE OF LEVEL (WMO CODE TABLE 3)
       ISEC1( 9) =     0     ! VALUE(S) OF LEVEL (WMO CODE TABLE 3)
-      ISEC1(10) =   IY      ! YEAR OF DATA
+      ISEC1(10) =   MOD(IYYYY,100)      ! YEAR OF DATA
+      IF(ISEC1(10).EQ.0) ISEC1(10) = 100
       ISEC1(11) =   IMO     ! MONTH OF DATA
       ISEC1(12) =   ID      ! DAY OF DATA
       ISEC1(13) =   IH      ! HOUR OF DATA
@@ -211,7 +214,11 @@ C       ----        -----   ---------
       ISEC1(18) =     0     ! TIME RANGE FLAG (WMO CODE TABLE 5)
       ISEC1(19) =     0     ! NUMBER AVERAGED.
       ISEC1(20) =     0     ! NUMBER MISSING FROM AVERAGE.
-      ISEC1(21) =    20     ! CENTURY OF REFERENCE TIME.
+      IF(ISEC1(10).EQ.100) THEN
+        ISEC1(21) = IYYYY/100 ! CENTURY OF REFERENCE TIME.
+      ELSE
+        ISEC1(21) = (IYYYY/100)+1 ! CENTURY OF REFERENCE TIME.
+      ENDIF
       ISEC1(22) =     0     ! 
       ISEC1(23) =     0     !
       ISEC1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
@@ -311,7 +318,7 @@ C
       ISEC2( 5) =  NINT(PMOWEP*1000) ! LONGITUDE OF ORIGIN (WEST -)
       ISEC2( 6) =     128  ! RESOLUTION FLAG (WMO CODE TABLE 7)
       ISEC2( 8) =  NINT(PMOEAP*1000) ! LONGITUDE OF EXTREME POINT (WEST)
-      ISEC2(10) =  NINT(PDELLO*1000) ! LONGITUDE INCREMENT
+      ISEC2( 9) =  NINT(PDELLO*1000) ! LONGITUDE INCREMENT
       ISEC2(11) =       0  ! SCANNING MODE FLAGS (WMO CODE TABLE 8)
       ISEC2(17) =    KRGG  ! GRID TYPE.
 C       12[17]-68                                               56*0
@@ -505,7 +512,7 @@ C
             ISEC2( 3) =  NINT(180./PDELLA) + 1
           ENDIF
 C
-          ISEC2( 9) = NINT(PDELLA*1000)
+          ISEC2(10) = NINT(PDELLA*1000)
 C
           IF (KRGG .EQ. 1) THEN
             IF( CLDOMAIN == 'm' ) THEN
@@ -519,7 +526,7 @@ C
               ENDDO
           ENDIF
 C
-          IF (KTEST.GT.1) THEN
+          IF (KTEST.GT.3) THEN
             WRITE(KU06,'(" I KIND(ztheta) :", I10 )') KIND(ztheta)
             WRITE(KU06,'(" I SECTION 0:", /,80(8x, 8I10,/))') ISEC0
             WRITE(KU06,'(" I SECTION 1:", /,80(8x, 8I10,/))') ISEC1

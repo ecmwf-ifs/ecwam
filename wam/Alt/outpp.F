@@ -1,7 +1,7 @@
 C ======================================================================
 C
-      SUBROUTINE OUTPP (cdate, kuout, kd1, kd2, kgx, kgy, cdtitl, pconst,
-     1                  zfield, amowep, pmosop, pmoeap, pmonop)
+      SUBROUTINE OUTPP (cdate, kuout, kd1, kd2, kgx, kgy, cdtitl,
+     .                  pconst, zfield, pmowep, pmosop, pmoeap, pmonop)
 C
 C ======================================================================
 C
@@ -20,7 +20,7 @@ C
 C       *CALL* *OUTPP (CDATE, kUOUT, kd1, kd2, kgx, kgy, cdtitl, pconst,
 C                      zfield, pmowep, pmosop, pmoeap, pmonop)*
 C          ALL VARIABLES ARE INPUT.
-C          *CDATE*    CHARACTER DATE (YYMMDDHHMM).
+C          *CDATE*    CHARACTER DATE (YYYYMMDDHHMM).
 C          *kUOUT*    INTEGER   OUTPUT UNIT.
 C          *kd1*      INTEGER   FIRST DIMENSION.
 C          *kd2*      INTEGER   SECOND DIMENSION.
@@ -53,7 +53,7 @@ C
 C ----------------------------------------------------------------------
 C
       CHARACTER cdtitl*100
-      CHARACTER*10 CDATE
+      CHARACTER*12 CDATE
       DIMENSION iarray(kd1,kd2),zfield(kd1,kd2),ilon(kgx),zlat(kgy)
 C
 C ----------------------------------------------------------------------
@@ -98,7 +98,7 @@ C
      .      j220,zlat(j220),(iarray(ji,j220),ji=istart,iend)
  220     CONTINUE
  200  CONTINUE
- 300  FORMAT(1H1,6X,A10,2X,A100,5X,'PAGE ',I2,/)
+ 300  FORMAT(1H1,6X,A12,2X,A100,5X,'PAGE ',I2,/)
  302  FORMAT(7X,'I=',30I4)
  303  FORMAT(5X,'LON=',30I4)
  304  FORMAT('   J LAT',/)

@@ -46,7 +46,7 @@ C
 C ----------------------------------------------------------------------
 C
       DIMENSION UCUR(NCC,NRC), VCUR(NCC,NRC)
-      CHARACTER*10 CDTCR, ZERO
+      CHARACTER*12 CDTCR, ZERO
       PARAMETER(ZERO=' ') 
 C
 C ----------------------------------------------------------------------

@@ -2,14 +2,14 @@
                                                                         
 C -------------------------------------------------------------------   
 C                                                                       
-C**** *ERSFILE* - FIILE MANAGEMENT OF ERS_1 FILES.                      
+C**** *ERSFILE* - FILE MANAGEMENT OF ERS FILES.                      
 C                                                                       
 C     H. GUNTHER               ECMWF         JULY 1991                  
 C                                                                       
 C     PURPOSE.                                                          
 C     --------                                                          
 C                                                                       
-C       CONTROL INPUT AND OUTPUT FILES OF ERS_1 SPECTRAL DATA.          
+C       CONTROL INPUT AND OUTPUT FILES OF ERS SPECTRAL DATA.          
 C                                                                       
 C                                                                       
 C*** INTERFACE.                                                         
@@ -67,8 +67,8 @@ C
 C ----------------------------------------------------------------------
 C                                                                       
       CHARACTER * 2 CLH       ! HELPER STRING TO STORE HOUR.            
-      CHARACTER *13 FNAME                                               
-      CHARACTER *10 CL_DATE
+      CHARACTER *15 FNAME                                               
+      CHARACTER *12 CL_DATE
       CHARACTER *14 CL_TIME
       LOGICAL FRSTIME                                                   
       DATA FRSTIME / .TRUE./                                            
@@ -104,7 +104,7 @@ C
          IERS = 0                                                       
          IDELERS = 21600                                                
          CDTERS  = CDATEA                                               
-         CLH=CDATEA(7:8)
+         CLH=CDATEA(9:10)
          IF (CLH.EQ.'09'.OR.CLH.EQ.'15'.OR.
      1       CLH.EQ.'21'.OR.CLH.EQ.'03') THEN
             CALL INCDATE (CDTERS, -10800)
@@ -134,7 +134,7 @@ C     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
 
       IERS = 0                                                          
       IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg') THEN
-         WRITE(FNAME,'(''COL'',A10)') CDTERS                            
+         WRITE(FNAME,'(''COL'',A12)') CDTERS                            
          OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD', 
      1         IOSTAT=IERR)                                             
          IF (IERR.NE.0) THEN                                            
@@ -157,8 +157,8 @@ C     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
              ENDIF
            ENDIF
 C                                                                       
-           WRITE(FNAME,'(''COS'',A10)') CDTERS                         
-           OPEN (UNIT=IU92, FILE=FNAME(1:IECF_LEN(FNAME))//MARSTYPE,   
+           WRITE(FNAME,'(''COS'',A12)') CDTERS                         
+           OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,   
      1           FORM='UNFORMATTED', STATUS='UNKNOWN')                 
              IF(ITEST.GT.0) THEN
                WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
@@ -183,8 +183,8 @@ C
             IERS = NERS                                                 
             RETURN                                                      
          ENDIF                                                          
-         READ (IU91, END=3002, ERR=3002) CL_TIME, DUMLE, DUMPE,
-     1        DUMLM, DUMPM, IGERS(IERS), IJERS(IERS)                    
+         READ (IU91, END=3002, ERR=3002, IOSTAT=IOS) CL_TIME,
+     1        ZLATIS, ZLONGS, ZLATIW, ZLONGW, IGERS(IERS), IJERS(IERS)
          IF (IGERS(IERS).EQ.0) THEN                                     
             IERS = IERS-1                                               
             GOTO 3001                                                   
@@ -205,7 +205,8 @@ C
          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             IF(ITEST.GT.0) THEN
               WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',
-     1                   ' POINTS FOR ERS_1 IERS = ', IERS
+     1        ' POINTS FOR SATELLITE COLOCATION.  IERS = ', IERS,
+     2        ' LAST READ STATUS = ', IOS
               CALL FLUSH (IU06)
             ENDIF
          ENDIF

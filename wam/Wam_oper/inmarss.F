@@ -89,7 +89,7 @@ C
       DATA KSEC3 /0,     0 /
       DATA PSEC3 /0., -999./
       CHARACTER*40 ERRMSG(-4:6), MSG
-      CHARACTER*10 CDATE
+      CHARACTER*12 CDATE
 C
       DATA ERRMSG/
      4            ' DECODED WITH BIT MAP                  *',
@@ -206,8 +206,9 @@ C         ----------------------------------------
 C
 C         START DATE.
 C
-      WRITE (CDATE,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),KSEC1(13),
-     .                        KSEC1(14)
+      IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+      WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+     .                             KSEC1(13),KSEC1(14)
 C
 C*         DETERMINE TIME UNIT.
 C

@@ -179,7 +179,7 @@ C
 C      
       CALL ADJUST (AMOWEP, AMOEAP)
       IPER = 0
-      IF (MOD(AMOEAP-AMOWEP+XDELLA+720., 360.).EQ.0.) IPER = 1
+      IF (MOD(AMOEAP-AMOWEP+XDELLO+720., 360.).EQ.0.) IPER = 1
 
       WRITE (IU06,'("   RESOLUTION LAT-LON ",2F8.3)') XDELLA, XDELLO
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",
@@ -215,8 +215,9 @@ C         --------------------------------------------------
 C
       REWIND (IU05)
       NOUT=0
+      IOS=-9
       CORR: DO
-         READ(IU05, NACORR, END=2300)
+         READ(IU05, NACORR, ERR=3000, IOSTAT=IOS, END=2300)
          NOUT=NOUT+1
          IF (NOUT.GT.IOUTA) THEN
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++'
@@ -260,7 +261,7 @@ C
       REWIND (IU05)
       NGOUT = 0
       OUTPP: DO
-         READ(IU05, NAOUTP, END=2400)
+         READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)
          NGOUT = NGOUT + 1
          IF (NGOUT.GT.MOUTP) THEN
             WRITE (IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
@@ -401,4 +402,21 @@ C
       WRITE (IU06,'(" END OF USER INPUT PROTOCOL",/)')
 C
       RETURN
+C
+C ----------------------------------------------------------------------
+C
+C
+C*    3. ERROR HANDLING.
+C        ---------------
+C
+ 3000 CONTINUE
+      WRITE (IU06,*) '**********************************************'
+      WRITE (IU06,*) '*                                            *'
+      WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+      WRITE (IU06,*) '*       ==========================           *'
+      WRITE (IU06,*) '*                                            *'
+      WRITE (IU06,*) '*  ERROR WHILE READING NAMELIST  STATUS=', IOS
+      WRITE (IU06,*) '*                                            *'
+      WRITE (IU06,*) '**********************************************'
+      CALL ABORT1 
       END

@@ -34,7 +34,6 @@ C       *PBOPEN*
 C       *PBREAD2*
 C       *PBWRITE*
 C       *PBCLOSE* 
-C       *IECF_LEN*  -  LENGTH OF A CHARACTER VARIABLE.
 C       *EXPRAND_STRING - ADD EXTENSION TO FILENAME FUNCTION OF THE PE 
 C
 C     METHOD.
@@ -64,7 +63,7 @@ C
       INTEGER IU06, IUNIT
       CHARACTER*  1 MODE,
      1              CDOPT
-      CHARACTER* 16 FILENA
+      CHARACTER* 17 FILENA
       CHARACTER* 80 FILENAM,
      1              FILENAMEF, 
      2              FILENAMET 
@@ -101,7 +100,7 @@ C
            FILENAM=FILENA
         ENDIF
 
-        LNAME = IECF_LEN(FILENAM)
+        LNAME = LEN_TRIM(FILENAM)
 
         IF(ICPLEN.EQ.0) THEN
           FILENAMET=FILENAM(1:LNAME)
@@ -116,8 +115,8 @@ C
         ENDIF
 C
         WRITE(IU06,*) 'FILE_TRANSFER: COPY FILE ',
-     1                 FILENAMEF(1:IECF_LEN(FILENAMEF)), ' TO ',
-     2                 FILENAMET(1:IECF_LEN(FILENAMET))
+     1                 FILENAMEF(1:LEN_TRIM(FILENAMEF)), ' TO ',
+     2                 FILENAMET(1:LEN_TRIM(FILENAMET))
 
 C allocate KARRAY, could tune this in function of what file has to be
 C moved !!

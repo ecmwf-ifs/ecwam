@@ -133,8 +133,7 @@ C
 C
 #include "comtext.h"
 C
-!
-      CHARACTER*10 CDTWIE, CDTWIS, ZERO
+      CHARACTER*12 CDTWIE, CDTWIS, ZERO
 
       LOGICAL LLFRST
       DATA LLFRST / .TRUE. /

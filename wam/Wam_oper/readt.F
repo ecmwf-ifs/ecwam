@@ -34,7 +34,10 @@ C
 C     EXTERNALS.
 C     ----------
 C
-C       NONE.
+C       ABORT1
+C       ADJUST
+C       INMARS 
+C       OUTPP
 C
 C     REFERENCE.
 C     ----------
@@ -74,6 +77,7 @@ C
       ELSE
         WRITE(IU06,*)'   SUB. READT: ICE BOUNDARY IERR=',IERR
         WRITE(IU06,*) MSG
+        CALL ABORT1
       ENDIF
       CALL ADJUST (TMOWEP,TMOEAP)
       DELLA  = (TMONOP - TMOSOP)/REAL(NGYT-1)

@@ -14,15 +14,16 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C       *CALL* *GETREST (IU06, IU12, IU14, IU15, IGL, IFORCA)*
+C       *CALL* *GETREST (IU06, IU12, IU14, IU15, IGL,
+C                        CDATE, CDATEF)*
 C
 C         *IU06*    INTEGER    OUTPUT UNIT FOR PRINTER MESSAGES.
 C         *IU12*    INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
 C         *IU14*    INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 C         *IU15*    INTEGER    OUTPUT UNIT LAST WINDFIELDS.
 C         *IGL*     INTEGER    NUMBER OF BLOCKS.
-C         *CDATE*  CHAR*10    DATE/TIME OF LAST FIELD IN FILES.
-C         *CDATEF* CHAR*10    START DATE OF FORECAST PERIOD.
+C         *CDATE*   CHAR*12    DATE/TIME OF LAST FIELD IN FILES.
+C         *CDATEF*  CHAR*12    START DATE OF FORECAST PERIOD.
 C
 C     METHOD.
 C     -------
@@ -44,7 +45,7 @@ C ---------------------------------------------------------------------
 C
 #include "comwami.h"
 C
-      CHARACTER*10 CDATE,CDATEF
+      CHARACTER*12 CDATE,CDATEF
 C
 C ----------------------------------------------------------------------
 C

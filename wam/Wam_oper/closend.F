@@ -76,7 +76,7 @@ C ----------------------------------------------------------------------
 C
       LOGICAL NEWREAD, NEWFILE
 C
-      CHARACTER*10 CDATEWH, CDATE
+      CHARACTER*12 CDATEWH, CDATE
 C
 C
 C ----------------------------------------------------------------------
@@ -115,7 +115,7 @@ C
             CLOSE (UNIT=IU17, STATUS='DELETE')
             IF (ITEST.GE.2)
      1         WRITE(IU06,'(7X,''SUB. CLOSEND: CLOSED IU17 = '',
-     2                      I8,'' AT CDATE = '',A10)') IU17, CDATE
+     2                      I8,'' AT CDATE = '',A12)') IU17, CDATE
 C
 C*    2.1.2 UPDATE WIND FILE TIME COUNTER AND UNITS.
 C           ----------------------------------------

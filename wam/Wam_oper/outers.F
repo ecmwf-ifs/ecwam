@@ -3,7 +3,7 @@
                                                                         
 C -----------------------------------------------------------------     
 C                                                                       
-C**** *OUTERS* -  OUTPUT OF ERS_1 COLOCATION SPECTRA.                   
+C**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.                   
 C                                                                       
 C     H. GUNTHER     GKSS/ECMWF            JULY 1991                    
 !     J. BIDLOT      ECMWF           FEBRARY 1996  MESSAGE PASSING
@@ -78,7 +78,7 @@ C
 C                                                                       
 C                FREI   REAL  FREQUENCY INCREMENT                       
 C                                                                       
-      CHARACTER NAME*20, CDTPRO*10
+      CHARACTER NAME*20, CDTPRO*12
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       

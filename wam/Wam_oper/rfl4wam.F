@@ -23,7 +23,7 @@ C
 C          ---- FORMAL PARAMETERS ----
 C
 C    *rfl4wam*  -d date [ -d date ... ] [ -i itest ] [ -w idelalt ]
-C      *date*      STRING   DATE/TIME GROUP YYMMDDHHMM.
+C      *date*      STRING   DATE/TIME GROUP YYYYMMDDHHMM.
 C      *itest*     INTEGER  TEST OUTPUT LEVEL (*COMMON* *TESTO*).
 C      *idelalt*   INTEGER  LENGTH OF ASSIMILATION PERIOD (SECONDS).
 C
@@ -72,7 +72,6 @@ C          "expand_string.F"
 C          "getclo.F"
 C          "grdata.F"
 C          "i_get_unit.F"
-C          "iecf_len.F"
 C          "incdate.F"
 C          "inmars.F"
 C          "makegrid.F"
@@ -165,14 +164,13 @@ C
       CHARACTER     CLOPTLET
       DATA CLOPTS/'d;i;a;'/
 C
-      CHARACTER*10 ZERO, CDUM
       CHARACTER*24 FILNM
       CHARACTER*80 LOGFILENAME 
 C
       REAL Z4(2)
       INTEGER I4(2)
 C
-      CHARACTER (LEN=10) , ALLOCATABLE :: CLDATES(:), CLMD(:)
+      CHARACTER (LEN=12) , ALLOCATABLE :: CLDATES(:), CLMD(:)
 C
       REAL,ALLOCATABLE,DIMENSION(:,:) :: USME, WHME
       REAL, ALLOCATABLE :: CD(:,:)
@@ -241,7 +239,7 @@ C ------------
       ENDDO CMDLINE
       IF (ITEST.GE.1) THEN
         WRITE(*,'("NUMBER OF FILES TO PROCESS: ",I2)') IDATES
-        WRITE(*,'(5a11)') (CLDATES(JL),JL=1,IDATES)
+        WRITE(*,'(5a13)') (CLDATES(JL),JL=1,IDATES)
       ENDIF
       IF (IDATES .EQ. 0 ) THEN
         WRITE(*,*) 'NOTHING TO DO?'
@@ -300,7 +298,6 @@ C
 C DEFINITION OF MODEL PARAMETERS.
 C -------------------------------
 C
-      ZERO = ' '
       LMESSPASS = .FALSE.
       LWCOU = .FALSE.
 C
@@ -392,7 +389,7 @@ C
       LICERUN=.FALSE.
 C
       FILNM = 'sfctempin'
-      LIU   = IECF_LEN(FILNM)
+      LIU   = LEN_TRIM(FILNM)
       FILNM=FILNM(1:LIU)
       INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
@@ -472,7 +469,6 @@ C #include "expand_string.F"
 C #include "getclo.F"
 C #include "grdata.F"
 C #include "i_get_unit.F"
-C #include "iecf_len.F"
 C #include "incdate.F"
 C #include "inmars.F"
 C #include "makegrid.F"

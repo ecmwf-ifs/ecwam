@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" MEDITERRANEAN WAVE MODEL RUN                         MODEL VERSION 4.",
- CBPLTDT="${begofan}",
- CEPLTDT="${endofan}",
- CDATEF="${endofan}",
+ CLHEADER=" MEDITERRANEAN WAVE MODEL RUN                      MODEL VERSION 4.",
+ CBPLTDT="${begofrn}",
+ CEPLTDT="${endofrn}",
+ CDATEF="${begoffo}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 21600,
@@ -44,8 +44,8 @@
  NTOTENS= $TNE,
  LMESSPASS= T,
  LWCOU= F,
- NTASKS= 0
- NSIZE= 0,
+ NTASKS= 1,
+ NSIZE= 930,
  CPATH="$STORAGE_PATH"
  CFDBSF="$cfdbsf"
  CFDB2DSP="$cfdb2dsp"

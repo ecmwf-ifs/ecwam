@@ -53,7 +53,11 @@ C
 C*    1. INITIALISE SEARCH DISTANCE AND CORRELATION LENGTH.
 C     -----------------------------------------------------
 C
-      DIST  = 300000./R
+      IF(XDELLA.LT.0.5) THEN
+        DIST  = 150000./R
+      ELSE
+        DIST  = 300000./R
+      ENDIF
       DIST2 = 2.*DIST
                                                                     
 C       THE MEASUREMENTS ARE STORED IN THE O.I. FIELD.                  

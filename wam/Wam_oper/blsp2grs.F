@@ -42,7 +42,7 @@ C
      . cpupar =  'PARWAM'  ! input unit for WAModel parameter file.
      .          )
 C
-      INTEGER GETCLO, GETCLA, OPTVAL, RTB, system
+      INTEGER GETCLO, GETCLA, OPTVAL, system
       CHARACTER*  2 clclass
       CHARACTER*  3 cll1
       CHARACTER*  4 clexpver
@@ -159,14 +159,14 @@ C       GETS VARIABLE ARGUMENT FOR OPTION
                  CALL  uraopc (csubna, msub, llsuvi, lltest)
               ENDIF
            ELSEIF ( cloptlet .EQ. 'k' ) THEN
-              l1=rtb(clarg)
+              l1=len_trim(clarg)
               WRITE(cll1,'(i3)')l1
               clfmt='(i'//cll1//')'
               READ(clarg(1:l1),FMT=clfmt)msuvi
               CALL  uraopc (csubna, msub, llsuvi, lltest)
               IF (llsuvi) WRITE(jpuso,*)'      ',csubna,': '
            ELSEIF ( cloptlet .EQ. 'l' ) THEN
-              l1=rtb(clarg)
+              l1=len_trim(clarg)
               WRITE(cll1,'(i3)')l1
               clfmt='(i'//cll1//')'
               READ(clarg(1:l1),FMT=clfmt)mtest
@@ -177,17 +177,17 @@ C       GETS VARIABLE ARGUMENT FOR OPTION
               clfile(2)=clarg
            ELSEIF ( cloptlet .EQ. 's' ) THEN
               lloutspp=.TRUE.
-              l1=rtb(clarg)
+              l1=len_trim(clarg)
               WRITE(cll1,'(i3)')l1
               clfmt='(i'//cll1//')'
               READ(clarg(1:l1),FMT=clfmt)ispecs
            ELSEIF ( cloptlet .EQ. 'C' ) THEN
               clclass=clarg
            ELSEIF ( cloptlet .EQ. 'V' ) THEN
-              largmnt=rtb(clarg)
+              largmnt=len_trim(clarg)
               clexpver(5-largmnt:4)=clarg
            ELSEIF ( cloptlet .EQ. 'm' ) THEN
-              l1=rtb(clarg)
+              l1=len_trim(clarg)
               WRITE(cll1,'(i3)')l1
               clfmt='(i'//cll1//')'
               READ(clarg(1:l1),FMT=clfmt)isect1_3
@@ -247,19 +247,19 @@ C                isect1_3=306
 C
       l1=0
       l2=0
-      IF ( clfile(1) .NE. ' ') l1=rtb(clfile(1))
-      IF ( clfile(2) .NE. ' ') l2=rtb(clfile(2))
+      IF ( clfile(1) .NE. ' ') l1=len_trim(clfile(1))
+      IF ( clfile(2) .NE. ' ') l2=len_trim(clfile(2))
       IF ( l1 .EQ. 0 .OR. l2 .EQ. 0 ) THEN
          WRITE(jpuso,*)'      FILENAMES MISSING:'
-         WRITE(jpuso,*)'      clfile(1) : "',clfile(1)(1:15),'"'
-         WRITE(jpuso,*)'      clfile(2) : "',clfile(2)(1:15),'"'
+         WRITE(jpuso,*)'      clfile(1) : "',clfile(1)(1:17),'"'
+         WRITE(jpuso,*)'      clfile(2) : "',clfile(2)(1:17),'"'
          WRITE(jpuso,*)'              '
          CALL BLSP_USAGE (llhelp)
       ELSEIF ( l1 .LT. 15 .OR. l2 .LT. 15 ) THEN
          WRITE(jpuso,*)'      FILENAMES PROPABLY',
      .                 ' NOT ACCORDING CONVENTION'
-         WRITE(jpuso,*)'      clfile(1) : "',clfile(1)(1:15),'"'
-         WRITE(jpuso,*)'      clfile(2) : "',clfile(2)(1:15),'"'
+         WRITE(jpuso,*)'      clfile(1) : "',clfile(1)(1:17),'"'
+         WRITE(jpuso,*)'      clfile(2) : "',clfile(2)(1:17),'"'
          WRITE(jpuso,*)'              '
          CALL BLSP_USAGE (llhelp)
       ENDIF
@@ -272,12 +272,12 @@ C
         IF ( ifu1 .EQ. 0 ) THEN
           clstat='OLD'
           cltask='GRID'
-          READ (clfile(1)(4:15),'(4i2,i4)') iy, im, id, ih, ifcst
+          READ (clfile(1)(4:17),'(i4,3i2,i4)') iyyyy, im, id, ih, ifcst
           IF (llsuvi) THEN
-            WRITE(jpuso,   *)'IY, IM, ID, IH, IFCST'
-            WRITE(jpuso,2200) iy, im, id, ih, ifcst 
+            WRITE(jpuso,   *)'IYYYY, IM, ID, IH, IFCST'
+            WRITE(jpuso,2200) iyyyy, im, id, ih, ifcst 
           ENDIF
- 2200     FORMAT(i3, 3i4, i7)
+ 2200     FORMAT(i5, 3i4, i7)
         ELSE
           clstat='UNKNOWN'
           llexist = .FALSE.
@@ -356,7 +356,7 @@ C
      .  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
      .  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc,
      .  itaumax, iumax, iustar, ialpha, idepth, irefra,
-     .  iy, im, id, ih, lloutspp, ispecs, lllog, llfdb,
+     .  iyyyy, im, id, ih, lloutspp, ispecs, lllog, llfdb,
      .  ifcst, clclass, clexpver, cldomain, isect1_3 )
  4000 CONTINUE
 C

@@ -20,8 +20,8 @@ C      *CALL* *READSAT (IU06, CDTPRO, CDATE, RLAT, RLON, SWH, WS, EOFD)*
 C
 C          *IU06*     - PRINTER UNIT.
 C          *IUME*     - INPUT UNIT FOR MEASUREMENTS.
-C          *CDTPRO*   - MODEL TIME (YYMMDDHHMM).
-C          *CDATE*    - DATE OF MEASUREMENT (YYMMDDHHMM).
+C          *CDTPRO*   - MODEL TIME (YYYYMMDDHHMM).
+C          *CDATE*    - DATE OF MEASUREMENT (YYYYMMDDHHMMSS).
 C          *RLAT*     - LATITUDE OF MEASUREMENT (DEGREE).
 C          *RLON*     - LONGITUDE OF MEASUREMENT (DEGREES).
 C          *SWH*      - WAVE HEIGHT.
@@ -49,6 +49,8 @@ C                file identifier and 10 digit DATE/TIME group rather
 C                than 4 character file identifier and 9 digit ops like
 C                DATE/TYPE group.
 C
+C        JULY 1998 : changed to 12 digit DATE/TIME group
+C
 C-----------------------------------------------------------------------
 
       PARAMETER ( jpv=42, jpf=6)
@@ -57,8 +59,8 @@ C
       INTEGER iflag(jpf)
 C
       CHARACTER* 3 yofid
-      CHARACTER*10 CDATE, CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
-      CHARACTER*14 C14
+      CHARACTER*12 CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
+      CHARACTER*14 CDATE
       PARAMETER(ZERO=' ')
       LOGICAL EOFD, FLAGGED
 
@@ -112,8 +114,7 @@ C*    3. READ THE MEASUREMENT.
 C        ---------------------
 C
  3000 CONTINUE
-cccc      READ(IUME,END=4000) C14, (pvalu(j),j=1,jpv), (iflag(j),j=1,jpf)
-      READ(IUME,END=4000) C14, pvalu, iflag
+      READ(IUME,END=4000) CDATE, pvalu, iflag
       rlat = pvalu(10)
       rlon = pvalu(11)
       ws   = pvalu(13)
@@ -123,8 +124,7 @@ cccc      READ(IUME,END=4000) C14, (pvalu(j),j=1,jpv), (iflag(j),j=1,jpf)
         ifl=ifl+iflag(j)
  3100 CONTINUE
       IF ( ifl .EQ. 0 ) flagged = .FALSE.
-      CDATE = C14(3:12)
-      IF (CDATE.LT.'9111110901') SWH = SWH*1.25
+      IF (CDATE.LT.'19911111090100') SWH = SWH*1.25
 
       RETURN
 C

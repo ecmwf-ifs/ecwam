@@ -49,9 +49,9 @@ C**      FIELD DATA BASE ROUTINES ARE USED TO OPEN THE FIELD
 C**      DATA BASE AND FILE, AND TO WRITE/READ THE FIELD INTO/
 C**      FROM THE FIELD DATA BASE.
 C**
-C**              DATABASE NAME:'ODXXTYYYMMDDTT', WHERE
+C**              DATABASE NAME:'ODXXTYYYYYMMDDTT', WHERE
 C**                             TY     - DATA TYPE ('AN','FC')
-C**                             YYMMDD - DATE (YEAR,MONTH,DAY)
+C**                             YYYYMMDD - DATE (YEAR,MONTH,DAY)
 C**                             TT     - BASE TIME
 C**
 C**              FILE NAMES:   'REXXX0TTT00', WHERE
@@ -130,7 +130,7 @@ C
       CHARACTER*6  clstep
       CHARACTER*4  clstream
 C
-      CHARACTER*6  cldate
+      CHARACTER*8  cldate
 C
       CHARACTER*1  cl_p_domain
       CHARACTER*2  cl_p_time
@@ -139,7 +139,7 @@ C
       CHARACTER*3  cl_p_param
       CHARACTER*4  cl_p_expver
       CHARACTER*6  cl_p_step
-      CHARACTER*6  cl_p_date
+      CHARACTER*8  cl_p_date
 C
       DATA cl_p_domain, cl_p_time, cl_p_type, cl_p_class, cl_p_param,
      .     cl_p_expver, cl_p_step, cl_p_date / 8*"  " /
@@ -192,9 +192,10 @@ C
         ENDIF
 C
         WRITE( clparam, '(i3.3)' ) ksec1(6)
-        WRITE( cldate(01:02), '(i2.2)' ) ksec1(10)
-        WRITE( cldate(03:04), '(i2.2)' ) ksec1(11)
-        WRITE( cldate(05:06), '(i2.2)' ) ksec1(12)
+        iyyyy=(ksec1(21)-1)*100+ksec1(10)
+        WRITE( cldate(01:04), '(i4.4)' ) iyyyy 
+        WRITE( cldate(05:06), '(i2.2)' ) ksec1(11)
+        WRITE( cldate(07:08), '(i2.2)' ) ksec1(12)
         WRITE( cltime, '(i2.2)' ) ksec1(13)
 C
         clclass  = cdclass

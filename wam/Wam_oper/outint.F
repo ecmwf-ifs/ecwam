@@ -402,14 +402,14 @@ C
 C*    3.1.  THIS IS AN ANALYSIS DATE
 C           ------------------------
 C
-           READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
+           READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
            IFCST = 0
         ELSE
 C
 C*    3.2.  THIS IS A  FORECAST DATE
 C           ------------------------
 C
-          READ(CDATEF,'(5I2)')IY,IM,ID,IH,IMN
+          READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
           CALL DIFDATE(CDATEF,CDTPRO,IFCST)
           IFCST=IFCST/3600
         ENDIF
@@ -570,7 +570,7 @@ C
 C*    4.1.  THIS IS AN ANALYSIS DATE
 C           ------------------------
 C
-           READ(CDTPRO,'(5I2)') IY, IM, ID, IH, IMN
+           READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
            IFCST = 0
 
          ELSE
@@ -578,7 +578,7 @@ C
 C*    4.2.  THIS IS A  FORECAST DATE
 C           ------------------------
 C
-          READ(CDATEF,'(5I2)')IY,IM,ID,IH,IMN
+          READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
           CALL DIFDATE(CDATEF,CDTPRO,IFCST)
           IFCST=IFCST/3600.
         ENDIF

@@ -77,13 +77,13 @@ C      *THQ1*      REAL      MEAN DIRECTIONS FROM COARSE GRID (RAD).
 C      *NBOINP*    REAL      NUMBER OF INPUT SPECTRA.
 C      *FL*        REAL      INTERPOLATED SPECTRUM.
 C
-      CHARACTER*10 CDTLAST, CDATE1, ZERO
-      DATA IJAF, CDTLAST /0, '0000000000'/  
+      CHARACTER*12 CDTLAST, CDATE1, ZERO
+      DATA IJAF, CDTLAST /0, '000000000000'/  
 C
 C*     VARIABLE.   TYPE.     PURPOSE.
 C      ---------   -------   --------
 C      *IJFA*      REAL      NUMBER OF FIRST INPUT POINT IN BLOCK.
-C      *CDTLAST*   CHAR*10   DATE OF LAST FETCH FILE.
+C      *CDTLAST*   CHAR*12   DATE OF LAST FETCH FILE.
 C
 C
 C ----------------------------------------------------------------------

@@ -47,7 +47,6 @@ SOURCE	=\
               grstname.F     \
               gsfile_new.F     \
               headbc.F     \
-              iecf_len.F     \
               igs2grs.F     \
               implsch.F     \
               incdate.F     \
@@ -112,6 +111,7 @@ SOURCE	=\
               outpp.F     \
               outspp.F     \
               outubuf.F     \
+              outwnorm.F     \
               outxt.F     \
               packi.F     \
               packr.F     \

@@ -34,7 +34,6 @@ C     ----------
 C
 C       *ABORT*     - TERMINATES PROCESSING.
 C       *DIFDATE*   - COMPUTE TIME DIFFERENCES.
-C       *IECF_LEN*  - LENGTH OF CHARACTER STRING.
 C
 C     METHOD.
 C     -------
@@ -58,9 +57,9 @@ C
 C ----------------------------------------------------------------------
 C
       INTEGER IU06, IUNIT, IFAIL
-      CHARACTER FILEID*3, STAT*3, USERID*3, RUNID*3, PATH*60, CDATE*10
+      CHARACTER FILEID*3, STAT*3, USERID*3, RUNID*3, PATH*60, CDATE*12
 
-      CHARACTER FILENA*14, IU*8, FNAME*128
+      CHARACTER FILENA*15, IU*8, FNAME*128
 C
 C        *FILENA*  CHARACTER   GENERATED FILE NAME.
 C        *IU*      CHARACTER   UNIT ALIAS FILE NAME.
@@ -73,7 +72,7 @@ C        ----------------
 C
  1000 CONTINUE
       FILENA = FILEID
-      FILENA(4:14) = CDATE(1:10)
+      FILENA(4:15) = CDATE(1:12)
 C
 C ----------------------------------------------------------------------
 C
@@ -81,8 +80,8 @@ C*    2. CONSTRUCTED FULL PATH.
 C        ----------------------
 C
  2000 CONTINUE
-      ILEN  = IECF_LEN(PATH)
-      LNAME = IECF_LEN(FILENA)
+      ILEN  = LEN_TRIM(PATH)
+      LNAME = LEN_TRIM(FILENA)
       FNAME = ' '
       FNAME = PATH(1:ILEN)//'/'//FILENA(1:LNAME)
 C
@@ -90,7 +89,7 @@ C*    3. OPEN FILE AND RETURN.
 C        ---------------------
 C
  3000 CONTINUE
-      ILEN = IECF_LEN(FNAME)
+      ILEN = LEN_TRIM(FNAME)
       OPEN (UNIT=IUNIT, FILE=FNAME, STATUS=STAT, FORM='UNFORMATTED',
      1      ERR=4000)
 

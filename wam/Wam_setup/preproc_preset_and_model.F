@@ -63,6 +63,7 @@
 #include "outpp.F"
 #include "outspp.F"
 #include "outubuf.F"
+#include "outwnorm.F"
 #include "outxt.F"
 #include "packi.F"
 #include "packr.F"

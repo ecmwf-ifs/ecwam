@@ -95,7 +95,7 @@ C ----------------------------------------------------------------------
 C
 #include "parcons.h"
 C
-      CHARACTER*10 ZERO
+      CHARACTER*12 ZERO
       CHARACTER FILENA*16,CYMPPATH*80,FILENAME*80,MODE*1
       PARAMETER(ZERO=' ')
 C

@@ -30,8 +30,8 @@ C
 C     VARIABLE    TYPE      PURPOSE
 C     --------    ----      -------
 C
-C     CDAT1       CHAR*10   BEGINDATE OF RUN
-C     CDAT2       CHAR*10   ENDDATE OF RUN
+C     CDAT1       CHAR*12   BEGINDATE OF RUN
+C     CDAT2       CHAR*12   ENDDATE OF RUN
 C     IDATEFC     INTEGER   START DATE FORECAST RUN
 C     IANALPD     INTEGER   PERIOD OF ANALYSIS
 C     IFOREPD     INTEGER   FORECAST PERIOD
@@ -46,11 +46,11 @@ C     *READSTA*  -  READ WAMINFO FILE.
 C
 C----------------------------------------------------------------------
 
-      CHARACTER*10 CDAT1, CDAT2, CPBDT, CPEDT , CDATF, CRSDT, CLSDT
-      CHARACTER*10 CDUMMY
-      CHARACTER CDATS*6,CDATEFC*6,CDE*6,CGRID*3,CHOUS*2,CHOUE*2
+      CHARACTER*12 CDAT1, CDAT2, CPBDT, CPEDT , CDATF, CRSDT, CLSDT
+      CHARACTER*12 CDUMMY
+      CHARACTER CDATS*8,CDATEFC*8,CDE*8,CGRID*3,CHOUS*2,CHOUE*2
       CHARACTER CANPERIOD*3,CFCPERIOD*3,CSHIFT*2
-      CHARACTER MARS(21)*80,CFILENAME*42
+      CHARACTER MARS(21)*80,CFILENAME*44
       INTEGER ISTAT(3)
 C
 #include "comcard.h"
@@ -78,9 +78,9 @@ C
 C*    2. DETERMINE DATES AND HOURS.
 C        --------------------------
 C
-      CDATS=CDAT1(1:6)
-      READ(CDATS,'(I6)') IDATS
-      CHOUS=CDAT1(7:8)
+      CDATS=CDAT1(1:8)
+      READ(CDATS,'(I8)') IDATS
+      CHOUS=CDAT1(9:10)
       READ(CHOUS,'(I2)') IHOUS
       IF      (IHOUS.GE.0  .AND. IHOUS.LT. 6) THEN
          IHOUS = 0
@@ -94,9 +94,9 @@ C
 
       CDATF=CDAT1
       CALL INCDATE(CDATF,IANALPD)
-      CDATEFC=CDATF(1:6)
-      READ(CDATEFC,'(I6)') IDATEFC
-      CHOUE=CDATF(7:8)
+      CDATEFC=CDATF(1:8)
+      READ(CDATEFC,'(I8)') IDATEFC
+      CHOUE=CDATF(9:10)
       READ(CHOUE,'(I2)') IHOUE
       IF      (IHOUE.GT.0  .AND. IHOUE.LE. 6) THEN
          IHOUE = 6
@@ -108,8 +108,8 @@ C
          IHOUE = 0
          CDUMMY=CDATEFC//'0000'
          CALL INCDATE (CDUMMY, 24*3600)
-         CDATEFC = CDUMMY(1:6)
-         READ(CDATEFC,'(I6)') IDATEFC
+         CDATEFC = CDUMMY(1:8)
+         READ(CDATEFC,'(I8)') IDATEFC
       ENDIF
 C
 C ---------------------------------------------------------------------
@@ -139,7 +139,7 @@ C
        CGRID='050'
 #elif resolution==25 && region=='m'
        WRITE(MARS(5),'("GRID=0.25/0.25,FORMAT=PACKED,")')
-       WRITE(MARS(6),'("AREA=66./-6./30./42.,")')
+       WRITE(MARS(6),'("AREA=81./-98./9./42.,")')
        CGRID='025'
 #elif resolution==900 && region=='g'
        WRITE(MARS(5),'("GRID=9.0/9.0,FORMAT=PACKED,")')
@@ -182,11 +182,11 @@ C    ALL FIELDS ARE ON ONE DAY.
             ILINE = ILINE + 1
             IF (ILINE.EQ.1) THEN
                IF (IHOUS.EQ.IHOUE) THEN
-                  WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                  WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=",I2.2,",")')
      2                                  IDATS, IHOUS
                ELSE
-                  WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                  WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=",I2.2,"/TO/",I2.2,",")')
      2                                  IDATS, IHOUS, IHOUE
                ENDIF
@@ -194,11 +194,11 @@ C    ALL FIELDS ARE ON ONE DAY.
                ILINE = 7
             ELSE
                IF (IHOUS.EQ.IHOUE) THEN
-                  WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                  WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=",I2.2)')
      2                                  IDATS, IHOUS
                ELSE
-                  WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                  WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=",I2.2,"/TO/",I2.2)')
      2                                  IDATS, IHOUS, IHOUE
                ENDIF
@@ -211,11 +211,11 @@ C    MORE THAN ONE DAY
                ILINE = ILINE + 1
                IF (ILINE.EQ.1) THEN
                   IF (IHOUS.EQ.24-ISHIFT) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=",I2.2,",")')
      2                                     IDATS, IHOUS
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                          ",TIME=",I2.2,"/TO/",I2.2,",")')
      2                                     IDATS, IHOUS, 24-ISHIFT
                   ENDIF
@@ -224,25 +224,25 @@ C    MORE THAN ONE DAY
      1                               IUNIT
                ELSE
                   IF (IHOUS.EQ.24-ISHIFT) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=",I2.2)')
      2                                     IDATS, IHOUS
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                          ",TIME=",I2.2,"/TO/",I2.2)')
      2                                     IDATS, IHOUS, 24-ISHIFT
                   ENDIF
                ENDIF
                 CDUMMY=CDATS//'0000'
                 CALL INCDATE (CDUMMY, 24*3600)
-                CDATS = CDUMMY(1:6)
-                READ(CDATS,'(I6)') IDATS
+                CDATS = CDUMMY(1:8)
+                READ(CDATS,'(I8)') IDATS
             ENDIF
             IF (IHOUE.NE.24-ISHIFT) THEN
                CDUMMY=CDATEFC//'0000'
                CALL INCDATE(CDUMMY,-24*3600)
-               CDE = CDUMMY(1:6)
-               READ(CDE,'(I6)') IDE
+               CDE = CDUMMY(1:8)
+               READ(CDE,'(I8)') IDE
             ELSE
                IDE = IDATEFC
             ENDIF
@@ -250,11 +250,11 @@ C    MORE THAN ONE DAY
                ILINE = ILINE + 1
                IF (ILINE.EQ.1) THEN
                   IF (IDATS.LT.IDE) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,"/TO/",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,"/TO/",I8.8,
      1                                ",TIME=00/TO/18,")')
      2                                  IDATS, IDE
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=00/TO/18,")')
      2                                  IDATS
                   ENDIF
@@ -263,11 +263,11 @@ C    MORE THAN ONE DAY
      1                               IUNIT
                ELSE
                   IF (IDATS.LT.IDE) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,"/TO/",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,"/TO/",I8.8,
      1                                ",TIME=00/TO/18")')
      2                                  IDATS, IDE
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                ",TIME=00/TO/18")')
      2                                  IDATS
                   ENDIF
@@ -277,10 +277,10 @@ C    MORE THAN ONE DAY
                ILINE = ILINE + 1
                IF (ILINE.EQ.1) THEN
                   IF (IHOUE.EQ.0) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=00,")') IDATEFC
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=00/TO/",I2.2,",")')
      2                                    IDATEFC, IHOUE
                   ENDIF
@@ -289,10 +289,10 @@ C    MORE THAN ONE DAY
      1                   IUNIT
                ELSE
                   IF (IHOUE.EQ.0) THEN
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=00")') IDATEFC
                   ELSE
-                     WRITE(MARS(ILINE),'("RET,DATE=",I6.6,
+                     WRITE(MARS(ILINE),'("RET,DATE=",I8.8,
      1                                   ",TIME=00/TO/",I2.2)')
      2                                    IDATEFC, IHOUE
                   ENDIF
@@ -306,7 +306,7 @@ C         -------------------------------
 C
       IF (IFOREPD.GT.0) THEN
          ILINE = ILINE + 1
-         WRITE(MARS(ILINE),'("RET,DATE=",I6,",STEP=6/TO/",I3,
+         WRITE(MARS(ILINE),'("RET,DATE=",I8,",STEP=6/TO/",I3,
      1                       "/BY/",I2,",")') IDATEFC,IFOREPD/3600,
      2                        ISHIFT
          IF (ILINE.EQ.1) THEN
@@ -344,7 +344,7 @@ C     ------------------------------------------------------------
       WRITE(CFCPERIOD,'(I3.3)') IFOREPD/3600
       WRITE(CSHIFT,'(I2.2)') ISHIFT
 
-      CFILENAME='windfile_'//CGRID//'_'//CDAT1(1:8)//'_'//CDAT2(1:8)
+      CFILENAME='windfile_'//CGRID//'_'//CDAT1(1:10)//'_'//CDAT2(1:10)
      &//'_'//CANPERIOD//'_'//CFCPERIOD//'_'//CSHIFT 
 
       open(17,file='windfilename')

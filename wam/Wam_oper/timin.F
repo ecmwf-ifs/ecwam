@@ -69,7 +69,7 @@ C
 C
 #include "comwind.h"
 C
-      CHARACTER*10 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
+      CHARACTER*12 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
 C
 C ----------------------------------------------------------------------

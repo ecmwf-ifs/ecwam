@@ -12,9 +12,9 @@ C     PURPOSE.
 C     --------
 C     Opens data file unformatted for the use of a program.
 C     handling of files following the naming convention
-C     XXXYYMMDDHHMM
+C     XXXYYYYMMDDHHMM
 C     where XXX is the yafileid
-C           YY  is the year
+C           YYYY  is the year
 C           MM  is the month
 C           DD  is the day
 C           HH  is the hour
@@ -26,7 +26,7 @@ C        CALL  confile (kuso, kunit, cdate, yafileid, kfail)
 C
 C        *kuso*       INTEGER       FORTRAN UNIT FOR THE PRINTER OUTPUT.
 C        *kunit*      INTEGER       FORTRAN UNIT FOR THE REQUESTED FILE.
-C        *cdate*      CHAR*10       DATE TIME GROUP (YYMMDDHHMM).
+C        *cdate*      CHAR*12       DATE TIME GROUP (YYYYMMDDHHMM).
 C        *yafileid*   CHARACTER*3   FILE ID.
 C        *kfail*      INTEGER       = 0 NO ERROR.
 C                                   > 0 ERROR.
@@ -55,8 +55,8 @@ C
       CHARACTER* 3 yafileid
 C
       CHARACTER*130 younitnam
-      CHARACTER* 13 yoname
-      CHARACTER*10 cdate
+      CHARACTER* 15 yoname
+      CHARACTER*12 cdate
       LOGICAL   ex, od
 C
 C-------------------------------------------------------------------------------
@@ -81,11 +81,10 @@ C* 2.    CONSTRUCT FILE NAME.
 C  --------------------------
 C
       IF (losuvi) THEN
-CCC        WRITE(kuso,'(1h1,a2)')   ' '
         WRITE(kuso,*) ' FILE INQUIRY FOR ',yafileid,cdate
       ENDIF
       yoname = yafileid
-      yoname(4:13) = cdate
+      yoname(4:15) = cdate
 C
 C-------------------------------------------------------------------------------
 C
@@ -94,8 +93,8 @@ C  ---------------------------
 C
       INQUIRE ( UNIT=kunit, OPENED=od, NAME=younitnam, ERR=8200)
       IF (od) THEN
-        IF (iecf_len(younitnam) .EQ. 13 ) THEN
-          IF ( younitnam(1:13) .EQ. yoname ) THEN
+        IF (len_trim(younitnam) .EQ. 15 ) THEN
+          IF ( younitnam(1:15) .EQ. yoname ) THEN
             REWIND kunit
             RETURN
           ENDIF

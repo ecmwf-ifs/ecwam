@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" GLOBAL WAVE MODEL RUN                             MODEL VERSION 4.0",
- CBPLTDT="${begofan}",
- CEPLTDT="${endofan}",
- CDATEF="${endofan}",
+ CLHEADER=" GLOBAL WAVE MODEL RUN                            MODEL VERSION 4.0",
+ CBPLTDT="${begofrn}",
+ CEPLTDT="${endofrn}",
+ CDATEF="${begoffo}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 21600,
@@ -28,6 +28,7 @@
  LPBIOOUT= T,
  LFDBIOIN=F,
  LFDBIOOUT=T,
+ LNOCDIN=${lnocdin},
  ICASE= 1,
  ISHALLO= 0,
  IREFRA= 0,
@@ -47,8 +48,8 @@
  NTOTENS= $TNE,
  LMESSPASS= T,
  LWCOU= F,
- NTASKS= 0
- NSIZE= 0,
+ NTASKS= 1
+ NSIZE= 116483,
  CPATH="$STORAGE_PATH",
  CFDBSF   = "$cfdbsf",
  CFDB2DSP = "$cfdb2dsp"

@@ -132,8 +132,13 @@ C
          ENDIF
  2100 CONTINUE         
 C
-      WRITE(IU06,*)'   NUMBER OF POINTS (TEMP < 271.5 KELVIN):',NICE
-      WRITE(IU06,*)'   FOR THAT PE.' 
+      IF(IASSI.EQ.1) THEN
+        WRITE(IU06,*)'   POINTS WITH TEMP < 271.5 K:',NICE,
+     &             ' ON ALL ',NPROC, 'PEs'
+      ELSE
+        WRITE(IU06,*)'   POINTS WITH TEMP < 271.5 K:',NICE,
+     &             ' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
+      ENDIF
 C
       RETURN
       END

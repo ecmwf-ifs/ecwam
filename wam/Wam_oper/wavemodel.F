@@ -109,7 +109,7 @@ C
 C ----------------------------------------------------------------------
       INTEGER IINITFDB_VPP
       CHARACTER *3 DBNAME
-      CHARACTER*10 ZERO
+      CHARACTER*12 ZERO
       LOGICAL LDTRMSG,LFDB
 C COUPLING ARRAYS
       REAL BETAG(NLONW,NLATW)

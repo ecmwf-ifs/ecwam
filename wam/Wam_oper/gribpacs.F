@@ -45,7 +45,7 @@ C          *KRGG*      GRID REPESENTATION (0=REGULAR, 1=REDUCED).
 C          *PTHETA*    DIRECTION VECTOR.
 C          *PFREQ*     FREQUENCY VECTOR.
 C          *KPARAM*    PARAMETER IDENTIFIER.
-C          *KY*        YEAR OF LAST ANALYSIS.
+C          *KY*        YEAR OF LAST ANALYSIS (format yyyy).
 C          *KM*        MONTH OF LAST ANALYSIS.
 C          *KD*        DAY OF LAST ANALYSIS.
 C          *KH*        HOUR OF LAST ANALYSIS.
@@ -254,7 +254,8 @@ C
       isec1( 7) = 102
       isec1( 8) = 0
       isec1( 9) = 0
-      isec1(10) = ky
+      isec1(10) = MOD(ky,100)
+      if(isec1(10).eq.0) isec1(10) = 100
       isec1(11) = km
       isec1(12) = kd
       isec1(13) = kh
@@ -265,7 +266,11 @@ C
       isec1(18) = 0
       isec1(19) = 0
       isec1(20) = 0
-      isec1(21) = 20
+      if(isec1(10).eq.100) then
+        isec1(21) = (ky/100)
+      else
+        isec1(21) = (ky/100)+1
+      endif
       isec1(22) = 0
       isec1(23) = 0
       isec1(24) = 1

@@ -48,7 +48,6 @@ C
 C
 C ----------------------------------------------------------------------
 C
-!
       REAL,DIMENSION(IJS:IJL) ::  U10,TAUW,US,Z0
 C
 C ----------------------------------------------------------------------
@@ -70,11 +69,11 @@ C
       DO 2001 IJ=IJS,IJL
          XI      = TAUW(IJ)/DELTAUW
          I       = MIN ( ITAUMAX-1, INT(XI) )
-         DELI1   = XI - FLOAT(I)
+         DELI1   = MIN(1.,XI - FLOAT(I))
          DELI2   = 1. - DELI1
          XJ      = U10(IJ)/DELU
          J       = MIN ( JUMAX-1, INT(XJ) )
-         DELJ1   = XJ - FLOAT(J)
+         DELJ1   = MIN(1.,XJ - FLOAT(J))
          DELJ2   = 1. - DELJ1
          US(IJ)  = (SQRT(TAUT(I,J,ILEV))*DELI2
      1              + SQRT(TAUT(I+1,J,ILEV))*DELI1)*DELJ2

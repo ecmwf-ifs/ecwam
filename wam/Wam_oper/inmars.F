@@ -11,6 +11,9 @@ C      H. GUNTHER   ECMWF/GKSS    JANUARY 1990
 C                                 JUNE    1991  GRIB EDITION 1.         
 C      J. BIDLOT    ECMWF         1996    MIGRATION TO FUJITSU
 C      J. BIDLOT    ECMWF         1997   ADD READ OF IRREGULAR GRID DATA
+C
+C      J. BIDLOT    ECMWF         1998   REMOVE THE INTERCHANGE 
+C                                        NORTH AND SOUTH FOR OLD DATA
 C                                                                       
 C     PURPOSE.                                                          
 C     --------                                                          
@@ -30,7 +33,7 @@ C        *FILNM*  - DATA INPUT FILENAME.
 C        *ID1  *  - NUMBER OF COLUMNS IN ARRAY FIELD (1 DIMENSION).     
 C        *ID2  *  - NUMBER OF ROWS    IN ARRAY FIELD (2 DIMENSION).     
 C        *PMISS*  - REAL VALUE USED TO INDICATE MISSING DATA IN FIELD.
-C        *CDATE*  - DATE/TIME OF THE DATA READ (ANALYSIS DATE).         
+C        *CDATE*  - DATE/TIME OF THE DATA READ.         
 C        *IFORP*  - FORCAST PERIOD IN SECONDS.                          
 C        *IPARAM* - DATA CODE: 229 = WAVE HEIGHT    (METRES).           
 C                              230 = WAVE DIRECTION (DEGREE).           
@@ -49,10 +52,12 @@ C        *KZLEV*  - REFERENCE LEVEL IN full METER
 C                   SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
 C                   MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
 C                   CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
-C        *FIELD*  - UNPACKED DATA.                                      
-C        *KRET*   - ERROR NUMBER.                                       
-C        *MSG*    _ ERROR MESSAGE.                                      
+C        *FIELD*  - UNPACKED DATA.
+C        *KRET*   - ERROR NUMBER (0 = NO ERROR).
+C        *MSG*    _ ERROR MESSAGE.
 C                                                                       
+C
+C       THIS FEATURE HAS BEEN REMOVED :
 C       WAVE DATA ARCHIVED BEFORE 3. APRIL 1990 12.00 ARE CORRECTED,
 C       THAT MEANS..                                                    
 C            - NORTH AND SOUTH ARE INTERCHANGED                         
@@ -73,14 +78,14 @@ C     *GRPRS2*         PRINTS GRID  DEFINITION BLOCK.
 C                                                                       
 C ----------------------------------------------------------------------
 C                                                                       
-      PARAMETER (NBIT = 470000)
+      PARAMETER (NBIT = 120000)
       DIMENSION FIELD(ID1,ID2)                                          
       DIMENSION KLONRGG(ID2)                                          
       INTEGER   KSEC1(60), KSEC2(22+361), KSEC3(2), KSEC4(42), KSEC0(2)
       INTEGER, ALLOCATABLE ::  KGRIB(:)
       DIMENSION PSEC2(10+ID2), PSEC3(2), PSEC4(ID1*ID2)
       CHARACTER*40 ERRMSG(-5:4), MSG
-      CHARACTER HOPER*1, CDATE*10, FILNM*24
+      CHARACTER HOPER*1, CDATE*12, FILNM*24
                                                                         
       DATA HOPER / 'D' /                                                
       DATA KSEC3 /0,     0 /
@@ -100,7 +105,6 @@ C ----------------------------------------------------------------------
 C                                                                       
 C*    1.0 READ MARS DATA IN GRIB CODE FORMAT.                           
 C         -----------------------------------                           
-C                                                                       
 C
       CALL PBOPEN(IUNIT1,FILNM,'r',KRET)                            
       IF(KRET.LT.0) THEN
@@ -108,16 +112,47 @@ C
         IF(KRET.EQ.-2) MSG='INVALID FILENAME'//FILNM
         RETURN 
       ENDIF
-
 C
-      IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(NBIT))
-      CALL PBGRIB(IUNIT1,KGRIB,NBIT,KLEN,KRET)
-      IF(KRET.EQ.-1) GOTO 6000
-      IF(KRET.EQ.-2) GOTO 6000
-      IF(KRET.EQ.-3) GOTO 6000
+      ISIZE=NBIT
+1001  KPLENG=ISIZE*KIND(ISIZE)
+      IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+      CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
+      IF(KRET.EQ.-1) MSG='PBGRIB : END OF FILE ENCOUNTED'
+      IF(KRET.EQ.-2) MSG='PBGRIB : FILE HANDLING ERROR'
+      IF(KRET.EQ.-3) THEN 
+        WRITE (*,*) ' '
+        WRITE (*,*) ' ***** WARNING ****** WARNING *****'
+        WRITE (*,*) ' SUB. INMARS : '
+        WRITE (*,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+        WRITE (*,*) ' IT WAS ', ISIZE
 C
-      CALL PBCLOSE(IUNIT1,KRET)      
+        KRET=0
+        DEALLOCATE(KGRIB)
+        ISIZE=(KLEN+KIND(ISIZE)-1)/KIND(ISIZE)
+C
+        WRITE (*,*) ' IT SHOULD AT LEAST BE ', ISIZE
+        WRITE (*,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+        WRITE (*,*) ' AND THE FIELD READ WITH THE NEW SIZE'
+        WRITE (*,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
+        WRITE (*,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
+        WRITE (*,*) ' ***** WARNING ****** WARNING *****'
+        WRITE (*,*) ' '
+C
+C       RESET THE FILE POINTER TO READ FIELD AGAIN
+        KOFFSET=-KLEN
+        CALL PBSEEK(IUNIT1,KOFFSET,1,KRET)
+        IF(KRET.EQ.-1) MSG='PBSEEK : END OF FILE ENCOUNTED'
+        IF(KRET.EQ.-2) MSG='PBSEEK : FILE HANDLING ERROR'
+        IF(KRET.LT.0) RETURN
+C
+        GOTO 1001
+      ENDIF
+      IF(KRET.LT.0) RETURN
 C           
+      CALL PBCLOSE(IUNIT1,KRET)
+      IF(KRET.EQ.-1) MSG='PBCLOSE :FILE HANDLING ERROR'
+      IF(KRET.LT.0) RETURN
+C
  1100 CONTINUE                                                          
 C                                                                       
 C ----------------------------------------------------------------------
@@ -152,8 +187,9 @@ C         ----------------------------------------
 C                                                                       
 C         START DATE.                                                   
 C                                                                       
-      WRITE(CDATE,'(5I2.2)') KSEC1(10),KSEC1(11),KSEC1(12),KSEC1(13),
-     1                       KSEC1(14)                               
+      IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
+      WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+     .                             KSEC1(13),KSEC1(14)
 C                                                                       
 C*         DETERMINE TIME UNIT.                                         
 C                                                                       
@@ -171,6 +207,10 @@ C
 C         DETERMINE FORECAST PERIOD.                                    
 C                                                                       
       IFORP = JCONS*KSEC1(16)                                           
+C
+      IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11) THEN
+         CALL INCDATE (CDATE,IFORP)
+      ENDIF
 C                                                                       
 C*    3.3 DETERMINE CODE FOR DATA FIELD TYPE.                           
 C         -----------------------------------                           
@@ -265,26 +305,6 @@ C
 C*    5.0 REARANGE DATA FIELD.                                          
 C         --------------------                                          
 C                                                                       
-      IF (CDATE.LE.'9004031200'.AND.IPARAM.NE.139) THEN
-C                                                                       
-C*    5.1 INTERCHANGE NORTH AND SOUTH FOR OLD DATA.                     
-C         -----------------------------------------                     
-C                                                                       
-         L = 0                                                          
-         DO K=NGY,1,-1                                             
-           DO I=1,NGX                                                
-             L = L+1
-             FIELD(I,K) = PSEC4(L)
-           ENDDO
-         ENDDO
-         IF (CDATE.LE.'9001071200'.AND.CDATE.GE.'8910041800') THEN
-            CALL CORMARS (FIELD, ID1, ID2, NGX, NGY, IPARAM)            
-         ENDIF                                                          
-         NGX = 120                                                      
-         AMONOP = .001*FLOAT(KSEC2(7))                                  
-         AMOSOP = .001*FLOAT(KSEC2(4))                                  
-      ELSE                                                              
-C                                                                       
 C*    5.2 NEW DATA.                                                     
 C         ---------                                                     
 C                                                                       
@@ -292,24 +312,13 @@ C
          DO K=1,NGY                                                
            JSN=NGY-K+1
            DO I=1,KLONRGG(JSN)
-            L = L+1                                                     
-            FIELD(I,K) = PSEC4(L)                                       
+             L = L+1                                                     
+             FIELD(I,K) = PSEC4(L)                                       
            ENDDO
          ENDDO
-      ENDIF                                                             
 C
       MSG = ERRMSG(KRET)                                                
+      IF(KRET.LE.0) KRET=0
 C
-      RETURN 
-C                                                                       
-C ----------------------------------------------------------------------
-C                                                                       
-C*    6. END OF FILE BUFFER IN.                                         
-C        ----------------------                                         
-C                                                                       
- 6000 CONTINUE 
-      KRET = 1
-      MSG = ERRMSG(KRET)
       RETURN
-                                                                        
       END 

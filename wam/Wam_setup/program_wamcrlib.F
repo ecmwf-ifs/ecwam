@@ -3,7 +3,7 @@
 #. CREATES THE WAMCRLIB
 #QSUB -q vpp700.normal
 #QSUB -eo
-#QSUB -r wamcrlib 
+#QSUB -r wamcrlib
 #QSUB -lt 200
 #QSUB -lP 0
 #QSUB -lV 20mb
@@ -46,7 +46,6 @@ cat >wamcrlib.src <<\EOFPRO
 #include "fld2fdb.F"
 #include "getrest.F"
 #include "gsfile_new.F"
-#include "iecf_len.F"
 #include "incdate.F"
 #include "ingrid.F"
 #include "ingrids.F"

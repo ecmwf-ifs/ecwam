@@ -81,7 +81,7 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      CHARACTER*10 CDATE, CDTPRA
+      CHARACTER*12 CDATE, CDTPRA
 C     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL,FL3,FL1,SL

@@ -86,6 +86,8 @@ C
 C                                                                       
 #include "txtpara_wind.h"
 C                                                                       
+#include "comcout.h"
+C                                                                       
 #include "comcoup.h"
 C                                                                       
 #include "comstat.h"
@@ -108,7 +110,7 @@ C
 C     COUPLING ARRAYS
       REAL BETAG(NLONW,NLATW), ZDELATM(NLATW)
       INTEGER IUGB(ILEN),IVGB(ILEN)
-      CHARACTER CBEGDAT*10
+      CHARACTER CBEGDAT*12, CDTASS*12
 C
       LOGICAL FRSTIME, LDSTOP, LDWRRE, LDRESTARTED
 C
@@ -128,9 +130,8 @@ C
  1013 FORMAT ('  *    ========================================    *')
  1014 FORMAT ('  *    TWO-WAY INTERACTION WIND AND WAVES          *')
  1015 FORMAT ('  *    ONE-WAY INTERACTION WIND AND WAVES          *')
- 1016 FORMAT ('  * START DATE OF RUN      ', A10,  ' (CDATEA)     *')
- 1017 FORMAT ('  * START DATE OF FORECAST ', A10,  ' (CDATEF)     *')
- 1018 FORMAT ('  * END DATE OF RUN        ', A10,  ' (CDATEE)     *')
+ 1016 FORMAT ('  * START DATE OF RUN      ', A12,  ' (CDATEA)   *')
+ 1018 FORMAT ('  * END DATE OF RUN        ', A12,  ' (CDATEE)   *')
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 C
@@ -138,9 +139,17 @@ C
          MFDBSF = -5
          IF(LWCOU) THEN
            IU06=20
-           CDATEA(1:10) = CBEGDAT(1:10)
-           CDATEF(1:10) = CDATEA(1:10)
-           CDATEE(1:10) = CDATEA(1:10)
+           IL = LEN_TRIM(CBEGDAT)
+           IF(IL.NE.12) THEN
+             WRITE (IU06,*) ' NON-Y2K COMPLIANT DATE IN CALLING WAVEMDL'
+             WRITE (IU06,*) ' CBEGDAT =  ',CBEGDAT
+             WRITE (IU06,*) ' PROGRAM WILL ABORT '
+             CALL FLUSH(IU06)
+             CALL ABORT1
+           ENDIF
+           CDATEA = CBEGDAT
+           CDATEF = CDATEA
+           CDATEE = CDATEA
            IDURAT = KDURAT*60
            CALL INCDATE (CDATEE,IDURAT)
            WRITE (IU06,1010)
@@ -154,7 +163,6 @@ C
            ENDIF
            WRITE (IU06,1011)
            WRITE (IU06,1016) CDATEA
-           WRITE (IU06,1017) CDATEF
            WRITE (IU06,1018) CDATEE
            WRITE (IU06,1019) KDURAT/60
            WRITE (IU06,1020) KDELWI
@@ -221,7 +229,7 @@ C
         marstype = 'fg'                                                 
       ENDIF                                                             
                                                                         
-      IF (CDTPRO.GT.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
+      IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
 
         IF(NTOTENS.EQ.0) THEN
           marstype = 'fc'
@@ -245,16 +253,34 @@ C*    2.3  DATA ASSIMILATION.
 C*         IF REQUESTED AND MODEL IS IN ANALYSIS PERIOD.                
 C          ---------------------------------------------                
 C                                                                       
-      IF ((.NOT.LWCOU .AND. CDTPRO.LE.CDATEF .AND. IASSI.EQ.1) 
-     1    .OR. 
-     2    (LWCOU .AND. CDTPRO.EQ.CDATEF .AND. IASSI.EQ.1)) THEN
-         marstype = 'an'                                                
-
-         CALL WAMASSI (BETAG, NLONW, NLATW, LDSTOP, LDWRRE)
+      IF (IASSI.EQ.1) THEN
 C
-         IF (ITEST.GE.1) THEN                                           
+C       UPDATE ANALYSIS TIME
+        DO J=1,NASS
+          IF(CDTPRO.EQ.CASS(J)) THEN
+            CDTASS=CDTPRO
+            EXIT
+          ENDIF
+        ENDDO
+C
+        IF (NASS.GT.0 ) THEN
+          IF ( CDTPRO.EQ.CDTASS ) THEN
+            marstype = 'an'                                                
+            CALL WAMASSI (BETAG, NLONW, NLATW, LDSTOP, LDWRRE)
+            IF (ITEST.GE.1) THEN                                           
+              WRITE(IU06,*) ' SUB. WAVEMDL : WAMASSI DONE'                 
+            ENDIF                                                          
+          ENDIF                                                          
+        ELSEIF ((.NOT.LWCOU .AND. CDTPRO.LE.CDATEF ) 
+     1      .OR. 
+     2      (LWCOU .AND. CDTPRO.EQ.CDATEF)) THEN
+          marstype = 'an'                                                
+          CALL WAMASSI (BETAG, NLONW, NLATW, LDSTOP, LDWRRE)
+          IF (ITEST.GE.1) THEN                                           
             WRITE(IU06,*) ' SUB. WAVEMDL: WAMASSI DONE'                 
-         ENDIF                                                          
+          ENDIF                                                          
+        ENDIF                                                             
+C
       ENDIF                                                             
 C
 C PUT ZDELLO IN ZDELATM FOR THE ATMOSPHERIC COUPLING

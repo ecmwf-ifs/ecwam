@@ -109,8 +109,8 @@ C ----------------------------------------------------------------------
 C
       INTEGER IINITFDB_VPP
       CHARACTER *3 DBNAME
-      CHARACTER*10 ZERO,CBEGDAT
-      LOGICAL LDTRMSG, LFDB, LLSTOP, LLWRRE
+      CHARACTER*12 ZERO,CBEGDAT
+      LOGICAL LDTRMSG, LFDB, LLSTOP, LLWRRE, LLRESTARTED
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
 C
       time0=-wam_user_clock()
@@ -209,7 +209,7 @@ C
       ELSE
          IRANK = 1 
          NPROC = 1 
-	  ENDIF
+      ENDIF
 C
       NPREVIOUS=IRANK-1
       IF(IRANK.EQ.NPROC) THEN
@@ -270,13 +270,15 @@ C
       IUGB=0
       IVGB=0
       ILEN=1
-      CBEGDAT='9999999999'
+      CBEGDAT='999999999999'
+      IDUM=0
       IDURAT=-99
 C
  20   CONTINUE
 C
-      CALL WAVEMDL(CBEGDAT,IDURAT,IUGB,IVGB,ILEN,BETAG,NLONW,NLATW,
-     .             LLSTOP, LLWRRE, ZDELATM)
+      CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, IUGB, IVGB, ILEN,
+     &             BETAG, NLONW, NLATW, LLSTOP, LLWRRE,
+     &             LLRESTARTED, ZDELATM)
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 C

@@ -75,8 +75,8 @@ C
 C
 C ----------------------------------------------------------------------
 C
-      LOGICAL LERROR
-      CHARACTER (LEN=  10), PARAMETER :: ZERO = ' '
+      LOGICAL LERROR, LMESSPIFS
+      CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
 C
@@ -88,16 +88,22 @@ C
      2   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,
      3   IDELINT, IDELINS, IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES,
      4   CLOTSU, CDATER, CDATES,
-     5   PFLAG,  FFLAG,  GFLAG,
+     5   PFLAG,  FFLAG,  GFLAG, NFLAG,
      6   LFDB,  LPBIOIN, LGRIBIN, LPBIOOUT, LFDBIOIN, LFDBIOOUT,
      7   ICASE, ISHALLO, IREFRA, ITEST, ITESTB, IREST, IASSI, IFORCA,
      8   IBOUNC, IBOUNF,
      9   USERID, RUNID,  PATH,   YCLASS, YEXPVER, CPATH,
      x   NENSFNB, NTOTENS,
-     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP
+     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN
 C
-      CHARACTER* 10 CLOUT
+      CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
+C
+      CHARACTER* 12 CLSOUT
+      NAMELIST /NAOS/ CLSOUT
+C
+      CHARACTER* 12 CLAOUT
+      NAMELIST /NAAT/ CLAOUT
 C
 C ----------------------------------------------------------------------
 C
@@ -127,6 +133,11 @@ C
       PFLAG     = .FALSE. 
       FFLAG     = .FALSE. 
       GFLAG     = .FALSE. 
+      NFLAG     = .FALSE. 
+      NFLAG(1)  = .TRUE. 
+      NFLAG(6)  = .TRUE. 
+      NFLAG(7)  = .TRUE. 
+      NFLAG(10) = .TRUE. 
       LFDB      = .FALSE. 
       LPBIOIN   = .FALSE. 
       LGRIBIN   = .FALSE. 
@@ -151,6 +162,9 @@ C
       YEXPVER   = ZERO
       NENSFNB   = 0
       NTOTENS   = 0
+C  SAVE THE VALUE OF LMESSPASS IN LMESSPIFS AS LMESSPASS SHOULD BE
+C  DETERMINED BY THE IFS WHEN COUPLED TO IT, SEE WVALLOC
+      LMESSPIFS = LMESSPASS
       LMESSPASS = .TRUE.
       NTASKS    = 0
       NSIZE     = 0
@@ -160,6 +174,13 @@ C
 C
       CFDBSF    = "/vpp700/fdb18"
       CFDB2DSP  = ""
+      LNOCDIN   = .FALSE. 
+C
+      COUTS     = ZERO
+      NOUTS     = 0
+C
+      CASS      = ZERO
+      NASS      = 0
 C
 C ----------------------------------------------------------------------
 C
@@ -169,6 +190,9 @@ C
       REWIND(IU05)
 C
       READ (IU05, NALINE)
+C
+      IF(LWCOU) LMESSPASS = LMESSPIFS
+C
       IF(.NOT.LWCOU) THEN
         CDATEA = CBPLTDT
         CDATEE = CEPLTDT
@@ -193,7 +217,7 @@ C           **** OUTPUT TIME IN FIXED INTERVALS ****
       IF (CLOTSU(6) .EQ. 'H') IDELAGS = IDELAGS*3600
       IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
 C           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
-      LYEP=IECF_LEN(YEXPVER)
+      LYEP=LEN_TRIM(YEXPVER)
       YEXPVER(5-LYEP:4)=YEXPVER(1:LYEP)
       YEXPVER(1:4-LYEP)='0000'
 C           **** OUTPUT TIME AT SPECIFIED TIMES ****
@@ -204,7 +228,26 @@ C           **** OUTPUT TIME AT SPECIFIED TIMES ****
         IF (NOUTT.GT.MOUTT) EXIT SPT
         COUTT(NOUTT) = CLOUT
       ENDDO SPT
-
+1900  CONTINUE
+C           **** SPECTRA OUTPUT TIME AT SPECIFIED TIMES ****
+      REWIND(IU05)
+      SPS: DO
+        READ (IU05, NAOS, END=1901)
+        NOUTS = NOUTS+1
+        IF (NOUTS.GT.MOUTS) EXIT SPS
+        COUTS(NOUTS) = CLSOUT
+      ENDDO SPS
+1901  CONTINUE
+C           **** ASSIMILATION AT SPECIFIED TIMES ****
+      REWIND(IU05)
+      SPA: DO
+        READ (IU05, NAAT, END=1902)
+        NASS = NASS+1
+        IF (NASS.GT.MASS) EXIT SPA
+        CASS(NASS) = CLAOUT
+      ENDDO SPA
+1902  CONTINUE
+C
       IF(LWCOU) THEN
 C     IF COUPLED MODEL
 C     SET TEMPORARILY IDELWO and IDELWI TO IDELPRO
@@ -219,7 +262,7 @@ C
 C* CHECK FLAG FOR GRIBING AS SOME OPTION ARE NOT IMPLEMENTED
 C* IN ROUTINE OUTINT
 C
- 1900 IF (GFLAG(4)) THEN
+      IF (GFLAG(4)) THEN
           GFLAG(4) = .FALSE.
           WRITE(IU06,*) ' ******************* NOTE ********************'
           WRITE(IU06,*) ' NO GRIB OUTPUT POSSIBLE FOR FRICTION VELOCITY'
@@ -284,8 +327,12 @@ C
       FFLAG26 = FFLAG(18)
       PFLAG26 = PFLAG(18)
       GFLAG26 = GFLAG(18)
+      NFLAGALL= NFLAG( 1).OR.NFLAG( 2).OR.NFLAG( 3).OR.NFLAG( 4).OR.
+     1          NFLAG( 5).OR.NFLAG( 6).OR.NFLAG( 7).OR.NFLAG( 8).OR.
+     2          NFLAG( 9).OR.NFLAG(10).OR.NFLAG(11).OR.NFLAG(12).OR.
+     3          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16)
 C
-      ICPLEN=IECF_LEN(CPATH)
+      ICPLEN=LEN_TRIM(CPATH)
       CWI=CPATH(1:ICPLEN)//'/waminfo'
 C
 C*    1.1  READ THE WAMINFO FILE AND OVERWRITE INPUT.
@@ -316,8 +363,6 @@ C
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
 C
-        CDATEF = CBEGDT
-        CALL INCDATE (CDATEF,IANALPD)
         CDATEF = CEPLTDT
         IF (.NOT. LWCOU) THEN
           CDATEA = CBEGDT
@@ -370,6 +415,17 @@ C
             CALL ABORT1
           ENDIF
         ENDIF
+C
+        IF(LFDBIOIN) THEN
+          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*)'+                                          +'
+          WRITE(IU06,*)'+ LFDBIOIN HAS BEEN RESET TO FALSE         +'
+          WRITE(IU06,*)'+ IN ORDER TO READ RESTART FILES FROM DISK +'
+          WRITE(IU06,*)'+                                          +'
+          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+          LFDBIOIN  = .FALSE. 
+        ENDIF
+C
       ENDIF
 C
 
@@ -387,7 +443,7 @@ C
          CBPLTDT=CDATEA
       ENDIF
 
-      IF(CDATER .NE. '0000000000') THEN
+      IF(CDATER .NE. '000000000000') THEN
         IF(CDATER .LT. CDATEA) CDATER = CDATEE 
         IF(CDATER .GT. CDATEE) CDATER = CDATEE 
       ENDIF
@@ -398,17 +454,45 @@ C*    1.2 CHECK NUMBER OF OUTPUT TIMES.
 C         -----------------------------
 C
       IF (NOUTT.GT.MOUTT) THEN
-         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-         WRITE(IU06,*) '+                                           +'
-         WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN           +'
-         WRITE(IU06,*) '+    ============================           +'
-         WRITE(IU06,*) '+ NUMBER OF OUTPUT TIMES IN INPUT EXCEEDS   +'
-         WRITE(IU06,*) '+ DIMENSION MOUTT                = ', MOUTT
-         WRITE(IU06,*) '+ NUMBER OF TIMES INPUT IS NOUTT = ', NOUTT
-         WRITE(IU06,*) '+ PROGRAM WILL IGNORE THE LAST OUTPUT TIMES +'
-         WRITE(IU06,*) '+                                           +'
-         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN           +'
+        WRITE(IU06,*) '+    ============================           +'
+        WRITE(IU06,*) '+ NUMBER OF OUTPUT TIMES IN INPUT EXCEEDS   +'
+        WRITE(IU06,*) '+ DIMENSION MOUTT                = ', MOUTT
+        WRITE(IU06,*) '+ NUMBER OF TIMES INPUT IS NOUTT = ', NOUTT
+        WRITE(IU06,*) '+ PROGRAM WILL IGNORE THE LAST OUTPUT TIMES +'
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
         NOUTT = MOUTT
+      END IF
+C
+      IF (NOUTS.GT.MOUTS) THEN
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN           +'
+        WRITE(IU06,*) '+    ============================           +'
+        WRITE(IU06,*) '+ NUMBER OF OUTPUT SPECTRA TIMES  EXCEEDS   +'
+        WRITE(IU06,*) '+ DIMENSION MOUTS                = ', MOUTS
+        WRITE(IU06,*) '+ NUMBER OF TIMES INPUT IS NOUTS = ', NOUTS
+        WRITE(IU06,*) '+ PROGRAM WILL IGNORE THE LAST OUTPUT TIMES +'
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        NOUTS = MOUTS
+      END IF
+C
+      IF (NASS.GT.MASS) THEN
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+    FATAL ERROR IN SUB. USERIN             +'
+        WRITE(IU06,*) '+    ============================           +'
+        WRITE(IU06,*) '+ NUMBER OF ASSIMILATION TIMES  EXCEEDS     +'
+        WRITE(IU06,*) '+ DIMENSION MASS                = ', MASS
+        WRITE(IU06,*) '+ NUMBER OF TIMES INPUT IS NASS = ', NASS
+        WRITE(IU06,*) '+ PROGRAM WILL ABORT ' 
+        WRITE(IU06,*) '+                                           +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
       END IF
 C
 C     1.3 CHECK IF IDELALT WAS SET ELSE SET IT TO IDELWO
@@ -442,7 +526,7 @@ C          -------------------------
         ENDIF
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' STARTING  DATE (FORMAT:YYMMDDHHMM) : ',CDATEA,
-     1                ' END DATE :',CDATEE
+     1                ' END DATE : ',CDATEE
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' MODEL TIME STEPS:'
         WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ',
@@ -499,16 +583,20 @@ C          -------------------------
         ENDIF
         IF (IASSI.EQ.1) THEN
            WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
-           IF(LWCOU) THEN
-           WRITE(IU06,*) ' AT DATE ', CDATEF
+           IF(NASS.GT.0) THEN
+             WRITE(IU06,*) ' AT DATE(S) '
+             WRITE(IU06,'(2X,A12)') (CASS(I),I=1,NASS)
            ELSE
-           WRITE(IU06,*) ' UNTIL THE END OF THE ANALYSIS PERIOD'
-           WRITE(IU06,*) ' AT DATE ', CDATEF
+             IF(LWCOU) THEN
+               WRITE(IU06,*) ' AT DATE ', CDATEF
+             ELSE
+               WRITE(IU06,*) ' UNTIL THE END OF THE ANALYSIS PERIOD'
+               WRITE(IU06,*) ' AT DATE ', CDATEF
+             ENDIF
            ENDIF
            WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF ' 
            WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
            WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
-
         ELSE
            WRITE(IU06,*) ' DATA ASSIMILATION IS NOT CARRIED OUT'
         ENDIF
@@ -518,13 +606,12 @@ C          -------------------------
         IF (NOUTT.GT.0) THEN
            WRITE(IU06,*) ' NUMBER OF OUTPUT TIMES IS NOUTT = ', NOUTT
            WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT:'
-           WRITE(IU06,'(6(2X,A10))') (COUTT(I),I=1,NOUTT)
+           WRITE(IU06,'(6(2X,A12))') (COUTT(I),I=1,NOUTT)
            WRITE(IU06,*) '  '
         ENDIF
-
          IF(FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,
      1                 NOUTT,'IU20','IU30','IU20','IU32')
-
+C
         WRITE(IU06,*) '    F = FALSE   T = TRUE '
         WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
         WRITE(IU06,*) ' SIGNIFICANT WAVE HEIGHT ..', PFLAG( 1),
@@ -628,11 +715,18 @@ C
      .                   ,' TO FIELD DATA BASE'
             WRITE(IU06,*) '                    '
       ENDIF
-
+C
         WRITE(IU06,*) '  '
-        IF (IREST.EQ.1.OR.IREST.EQ.3) THEN
-        WRITE(IU06,*) ' OUTPUT AND RESTART FILES WILL BE DISPOSED EVERY'
-     1               ,'...', IDELRES, ' SECONDS'
+        IF (NOUTS.GT.0.AND.IREST.GE.1.AND.IREST.LE.4) THEN
+           WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ',
+     &                     NOUTS
+           WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
+           WRITE(IU06,'(6(2X,A12))') (COUTS(I),I=1,NOUTS)
+           WRITE(IU06,*) '  '
+C
+        ELSEIF (IREST.EQ.1.OR.IREST.EQ.3) THEN
+          WRITE(IU06,*) ' OUTPUT AND RESTART FILES WILL BE DISPOSED '
+     1               ,'EVERY ...', IDELRES, ' SECONDS'
           IF(CDATER.LT.CDATEE) WRITE(IU06,*)
      1              ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',
      2              ' AT ...', CDATER 
@@ -644,9 +738,9 @@ C
              WRITE(IU06,*) ' MAKE SURE WE ARE USING A VFL FILE SYSTEM'
           ENDIF
         ELSEIF (IREST.EQ.2.OR.IREST.EQ.4) THEN
-        WRITE(IU06,*) ' OUTPUT AND RESTART FILES WILL BE DISPOSED EVERY'
-     1               ,'...', IDELRES, ' SECONDS'
-        WRITE(IU06,*) ' !!!! RESTART FILES ARE SAVED IN SPLIT MODE'
+          WRITE(IU06,*) ' OUTPUT AND RESTART FILES WILL BE DISPOSED '
+     1               ,'EVERY...', IDELRES, ' SECONDS'
+          WRITE(IU06,*) ' !!!! RESTART FILES ARE SAVED IN SPLIT MODE'
           IF(CDATER.LT.CDATEE) WRITE(IU06,*)
      1              '!!! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',
      2              ' AT ...', CDATER 
@@ -658,13 +752,20 @@ C
              WRITE(IU06,*) ' MAKE SURE WE ARE USING A VFL FILE SYSTEM'
           ENDIF
         ELSE
-        WRITE(IU06,*) ' OUTPUT FILES WILL BE DISPOSED EVERY ...........'
-     1               ,'...', IDELRES, ' SECONDS'
+          WRITE(IU06,*) ' SPECTRA FILES WILL NOT BE DISPOSED '
         ENDIF
+C
         WRITE(IU06,*) '  '
         IF(LPBIOIN) THEN
            WRITE (IU06,*)
      1     ' PBIO SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
+        ENDIF
+        IF(LNOCDIN) THEN
+           WRITE(IU06,*) '  '
+           WRITE (IU06,*) 
+     1     ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
+           WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
+           WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
         ENDIF
         IF(LGRIBIN) THEN
            WRITE(IU06,*) '  '
@@ -945,6 +1046,43 @@ C
             WRITE(IU06,*) '*******************************************'
             LERROR = .TRUE.
          ENDIF
+      ENDIF
+C
+      IF (NOUTS.GT.0) THEN
+        DO J=1,NOUTS
+          CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
+          IF (ISHIFT.LE.0 .OR. MOD(ISHIFT,IDELPRO).NE.0) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+            WRITE(IU06,*) '+    ============================       +'
+            WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
+            WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
+            WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
+            WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME  +'
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+          ENDIF
+        ENDDO
+      ENDIF
+C
+      IF (NASS.GT.0.AND.IASSI.EQ.1) THEN
+        DO J=1,NASS
+          CALL DIFDATE (CDATEA, CASS(J), ISHIFT)
+          IF (ISHIFT.LE.0 .OR. MOD(ISHIFT,IDELPRO).NE.0) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+            WRITE(IU06,*) '+    ============================       +'
+            WRITE(IU06,*) '+ ASSIMILATION DATE IS NOT AT THE END   +'
+            WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
+            WRITE(IU06,*) '+ DATE IS : ', CASS(J)
+            WRITE(IU06,*) '+ PROGRAM WILL ABORT ' 
+            WRITE(IU06,*) '+                                       +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+            CALL ABORT1
+          ENDIF
+        ENDDO
       ENDIF
 C
 C ----------------------------------------------------------------------

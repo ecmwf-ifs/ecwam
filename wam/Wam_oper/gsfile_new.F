@@ -27,8 +27,8 @@ C         *IU06*   INTEGER    UNIT FOR PRINTER MESSAGES.
 C         *IUNIT*  INTEGER    FORTRAN UNIT.
 C         *ICH*    INTEGER    IF ICH = 0 THEN FILE WITH DTG IS SAVED,
 C                             ELSE FILE FROM A LIST IS SAVED.
-C         *CDATE*  CHAR*10    DATE (YYMMDDHHMM) OF FILE TO BE SAVED.
-C         *CDATEF* CHAR*10    DATE TIME GROUP OF FORECAST START.
+C         *CDATE*  CHAR*12    DATE (YYYYMMDDHHMM) OF FILE TO BE SAVED.
+C         *CDATEF* CHAR*12    DATE TIME GROUP OF FORECAST START.
 C         *FILEID* CHARACTER  FILE ID.
 C         *OPT*    CHARACTER  OPTION
 C                             = 'S' SAVE FILE CONNECTED TO IUNIT
@@ -39,7 +39,6 @@ C     ----------
 C
 C       *ABORT1*     - TERMINATES PROCESSING.
 C       *DIFDATE*   - COMPUTE TIME DIFFERENCES.
-C       *IECF_LEN*  -  LENGTH OF A CHARATER VARIABLE.
 C
 C     METHOD.
 C     -------
@@ -84,9 +83,9 @@ C
 
       INTEGER QQNAME
       PARAMETER (QQNAME =  7)
-      CHARACTER NAME(QQNAME)*16,
-     1          FILENA*16, IU*8, PLIST*110,
-     2          CDATE*10, CDATEF*10, CDATEH*8, FILENAME*72,
+      CHARACTER NAME(QQNAME)*17,
+     1          FILENA*17, IU*8, PLIST*110,
+     2          CDATE*12, CDATEF*12, CDATEH*10, FILENAME*72,
      3          MODE*1
 C
 C ----------------------------------------------------------------------
@@ -131,15 +130,15 @@ C
       IF (ICH.EQ.0) THEN
          FILENA = FILEID
          IF (CDATE.LE.CDATEF) THEN
-            CDATEH = CDATE(1:8)
+            CDATEH = CDATE(1:10)
             ISHIFT = 0
          ELSE
-            CDATEH = CDATEF(1:8)
+            CDATEH = CDATEF(1:10)
             CALL DIFDATE (CDATEF, CDATE, ISHIFT)
             ISHIFT = ISHIFT/3600
          ENDIF
-         FILENA(4:11) = CDATEH
-         WRITE (FILENA(12:15),'(I4.4)') ISHIFT
+         FILENA(4:13) = CDATEH
+         WRITE (FILENA(14:17),'(I4.4)') ISHIFT
       ELSE
          IF (INDEX.GT.QQNAME) THEN
             WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
@@ -156,7 +155,7 @@ C
          ENDIF
          FILENA = NAME(INDEX)
       ENDIF
-      LNAME = IECF_LEN(FILENA)
+      LNAME = LEN_TRIM(FILENA)
 C
 C ----------------------------------------------------------------------
 C
@@ -171,7 +170,7 @@ C
       ELSE
          WRITE(IU,'(A8)') IUNIT
       ENDIF
-      LIU   = IECF_LEN(IU)
+      LIU   = LEN_TRIM(IU)
 C
 C ----------------------------------------------------------------------
 C
@@ -179,8 +178,8 @@ C*    5. CONSTRUCTED ECFS PARAMETER LIST.
 C        ----------------------------------
 C
  5000 CONTINUE
-      LIP   = IECF_LEN(PATH)
-      LUSI = IECF_LEN(USERID)
+      LIP   = LEN_TRIM(PATH)
+      LUSI = LEN_TRIM(USERID)
       IF (OPT.EQ.'S' .AND. LIP .GT.0 ) THEN
 C
 C     5.1 SAVE FILE.

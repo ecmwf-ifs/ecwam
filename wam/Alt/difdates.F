@@ -1,18 +1,16 @@
 C ======================================================================
 C
-      SUBROUTINE DIFDATES (cd_date1, cd_date2, kshift)
+      SUBROUTINE DIFDATES (CDATE1, CDATE2, KSHIFT)
 C
 C ======================================================================
 C
-C****     *DIFDATE* - TO COMPUTE TIME DIFFERENCE.
+C****     *DIFDATES* - TO COMPUTE TIME DIFFERENCE.
 C
-C          PROGRAMMER:
-C          -----------
+C     B. HANSEN           ECMWF       JULY    1998
 C
-C          H. GUNTHER   ECMWF  NOVEMBER 1989
 C
-C          PURPOSE.
-C          ________
+C**   PURPOSE.
+C     --------
 C
 C          COMPUTE THE SECONDS BETWEEN THE INPUT DATES.
 C          DATES HAVE TO BE IN CONSECUTIVE YEARS.
@@ -20,141 +18,124 @@ C
 C**   INTERFACE.
 C     ----------
 C
-C         *CALL* *DIFDATE (cd_date1, cd_date2, kshift)*
+C         *CALL* *DIFDATES (CDATE1, CDATE2, KSHIFT)*
 C
-C     I/   *cd_date1* INTEGER - DATE TIME GROUP (YYMMDDHHMM).
-C     I/   *cd_date2* INTEGER - DATE TIME GROUP (YYMMDDHHMM).
-C      /O  *kshift* INTEGER - DIFFERENCE IN SECONDS (cd_date2-cd_date1).
+C     I/   *CDATE1* CHAR*10 - DATE TIME GROUP (YYMMDDHHMM) OR
+C                   CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
+C                   CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS).
+C     I/   *CDATE2* CHAR*10 - DATE TIME GROUP (YYMMDDHHMM) OR
+C                   CHAR*12 - DATE TIME GROUP (YYYYMMDDHHMM) OR
+C                   CHAR*14 - DATE TIME GROUP (YYYYMMDDHHMMSS).
+C      /O  *KSHIFT* INTEGER - DIFFERENCE IN SECONDS (CDATE2-CDATE1).
 C
-C      METHOD.
-C      -------
-C          NONE.
+C     METHOD.
+C     -------
 C
-C      EXTERNALS.
-C      ----------
-C          NONE.
+C       THE DATE AND TIME CAN BE SUPPLIED IN THE OLD 10 CHARACTER
+C       WAM FORMAT OR IN THE Y2K COMPLIANT 14 CHARACTER FORMAT.
+C       THE CHARACTER STRING IS BROKEN INTO INTEGERS TO OBTAIN
+C       THE INPUT ARGUMENT FOR SECDIFF. THE DIFFERENCE IN SECONDES BETWEEN
+C       THE TWO INPUT DATES IS RETURNED BACK AS KSHIFT.
 C
-C      REFERENCES.
-C      -----------
-C          NONE.
+C
+C     EXTERNALS.
+C     ----------
+C
+C       SECINCR (ECLIB).
+C
+C
+C     REFERENCES.
+C     -----------
+C
+C       OD MEMO (6 July 1998) File: O/PRO/90 FROM GROUP 2000.
+C
 C
 C      MODIFIKATIONS
 C      -----------
-C          NEW FORMAT FOR THE INPUT VARIABLES cd_date1 AND cd_date2
-C         *cd_date1* INTEGER - DATE TIME GROUP (YYYYMMDDhhhhss).
-C         *cd_date2* INTEGER - DATE TIME GROUP (YYYYMMDDhhmmss).
 C
-C
+C       NONE.
 C
 C
 C
 C ---------------------------------------------------------------------
 C
-      CHARACTER*14 cd_date1, cd_date2
-      CHARACTER*14 cldt1, cldt2, cldat
-      INTEGER i_sec_1, i_sec_2, isi
+      CHARACTER*(*) CDATE1, CDATE2
+      INTEGER       KSHIFT
 C
-      DIMENSION i_mon(12)
+      CHARACTER* 80 CLFMT
+      LOGICAL LLND
 C
-      DATA i_mon /31,28,31,30,31,30,31,31,30,31,30,31/
+C ----------------------------------------------------------------------
 C
-C ---------------------------------------------------------------------
+C*    1.0 SPLITE DATE TIME GROUPS INTO SECOND, MINUTE, HOUR, DAY, MONTH,
+C*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
+C         -----------------------------------------------------------
 C
-C*    1.0 CHANGE DATE TIME GROUPS TO ENSURE THAT THE SECOND IS LARGER.
-C         ------------------------------------------------------------
+C*        SPLIT CDATE1.
 C
- 1000 CONTINUE
-C
-      cldt1 = cd_date1
-      cldt2 = cd_date2
-      IF (cldt1 .GT. cldt2) THEN
-         cldt1 = cd_date2
-         cldt2 = cd_date1
-         isi  = -60
+      IL = LEN_TRIM(CDATE1)
+      IF (IL==10) THEN
+        WRITE(CLFMT,'(A39, I2.2, A2)')
+     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(6, CLFMT ) CDATE1
+        LLND = .FALSE.
+        READ(CDATE1,'(5i2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1
+        IYEAR1 = IYEAR1 + 1900
+        ISEC1 = 0
+      ELSEIF (IL==12) THEN
+        LLND = .TRUE.
+        READ(CDATE1,'(i4, 5i2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1
+        ISEC1 = 0
+      ELSEIF (IL==14) THEN
+        LLND = .TRUE.
+        READ(CDATE1,'(i4, 5i2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
       ELSE
-         isi  =  60
+        WRITE(CLFMT,'(A58, I2.2, A2)')
+     .  '(" DIFDATES:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+     .    IL, ' )'
+        WRITE(6, CLFMT) IL, CDATE1
+        STOP
       ENDIF
 C
-C ---------------------------------------------------------------------
+C*        SPLIT CDATE2.
 C
-C*    2.0 SPLITE DATE TIME GROUPS INTO MINUTE, HOUR, DAY, MONTH, YEAR.
-C         ------------------------------------------------------------
-C
- 2000 CONTINUE
-      READ(cldt1,2100) i_yy_1,i_mm_1,i_dd_1,i_hh_1,i_min_1,i_sec_1
-      READ(cldt2,2100) i_yy_2,i_mm_2,i_dd_2,i_hh_2,i_min_2,i_sec_2
- 2100 FORMAT(i4.4,5I2.2)
-C
-C ---------------------------------------------------------------------
-C
-C*    3.0 CORRECT DAYS IN FEBRUARY OF FIRST YEAR FOR LEAP-YEAR.
-C         -----------------------------------------------------
-C
- 3000 CONTINUE
-      IF (MOD(i_yy_1,4).EQ.0) THEN
-         i_mon(2) = 29
+      IL = LEN_TRIM(CDATE2)
+      IF (IL==10) THEN
+        WRITE(CLFMT,'(A39, I2.2, A2)')
+     .     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
+        WRITE(6, CLFMT ) CDATE2
+        LLND = .FALSE.
+        READ(CDATE2,'(5i2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2
+        IYEAR2 = IYEAR2 + 1900
+        ISEC2 = 0
+      ELSEIF (IL==12) THEN
+        LLND = .TRUE.
+        READ(CDATE2,'(i4, 5i2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2
+        ISEC2 = 0
+      ELSEIF (IL==14) THEN
+        LLND = .TRUE.
+        READ(CDATE2,'(i4, 5i2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
       ELSE
-         i_mon(2) = 28
+        WRITE(CLFMT,'(A58, I2.2, A2)')
+     .  '(" DIFDATES:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+     .    IL, ' )'
+        WRITE(6, CLFMT) IL, CDATE2
+        STOP
       ENDIF
 C
-C ---------------------------------------------------------------------
+C ----------------------------------------------------------------------
 C
-C*    4.0 COMPUTE TIME DIFFERENCE IN MINUTES.
-C         -----------------------------------
+C*    2.0 DETERMINE DIFFERENCE IN SECONDES.
+C         ---------------------------------
 C
- 4000 CONTINUE
-C
-C     4.1 DIFFERENCE BETWEEN DAY, HOUR ,MINITE.
-C
-      kshift = ((i_dd_2-i_dd_1)*24+i_hh_2-i_hh_1)*60+i_min_2-i_min_1
-C
-C      4.2 ADD DIFFERENCE FROM MONTH.
-C
-      IF (i_yy_2 .GT. i_yy_1) THEN
-C
-C      4.2.1 START AND END MONTH ARE IN DIFFERENT YEARS.
-C
-        DO WHILE (i_yy_2 .GT. i_yy_1)
-          DO 4211 jm=i_mm_1,12
-            kshift = kshift + i_mon(jm)*24*60
- 4211     CONTINUE
-          i_mm_1 = 1
-          i_yy_1 = i_yy_1 + 1
-          IF (MOD(i_yy_1,4).EQ.0) THEN
-            i_mon(2) = 29
-          ELSE
-            i_mon(2) = 28
-          ENDIF
-        ENDDO
-        IF (i_mm_2.GT.1) THEN
-          IF (MOD(i_yy_2,4).EQ.0) THEN
-             i_mon(2) = 29
-          ELSE
-             i_mon(2) = 28
-          ENDIF
-          DO 4212 jm=1,i_mm_2-1
-             kshift = kshift + i_mon(jm)*24*60
- 4212     CONTINUE
-        ENDIF
-      ELSE
-C
-C      4.2.2 START AND END MONTH ARE IN THE SAME YEAR.
-C
-        IF (i_mm_2.GT.i_mm_1) THEN
-          DO 4221 jm=i_mm_1,i_mm_2-1
-            kshift = kshift + i_mon(jm)*24*60
- 4221     CONTINUE
-        ENDIF
+      CALL SECDIFF  (IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2,
+     .               IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1,
+     .               KSHIFT,IRET)
+
+      IF (IRET/=0) THEN
+        WRITE(6, '(" DIFFDATES:  FATAL@! IRET= ", I3 )') IRET
+        CALL ABORT
       ENDIF
-C
-C ---------------------------------------------------------------------
-C
-C*    5.0 CHANGE SIGN OF DIFFERENCE IF DATES HAVE BEEN EXCHANGED
-C*        AND CONVERT TO SECONDS.
-C         ------------------------------------------------------
-C
- 5000 CONTINUE
-      kshift = kshift * isi - i_sec_1 + i_sec_2
 C
       RETURN
       END
