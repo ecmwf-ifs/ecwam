@@ -126,6 +126,7 @@
 
       USE MPL_MODULE
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
 
       IMPLICIT NONE
 
@@ -176,8 +177,6 @@
       CHARACTER* 120 OUTFILEN
 !
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
-      INTEGER ISETFIELDCOUNTFDB
-      EXTERNAL ISETFIELDCOUNTFDB
 
       ILOCAL=0
 
@@ -531,7 +530,7 @@
 
       IF(LFDBIOOUT.and.ILOCAL.gt.0) THEN
         IGLOBAL = KANG*KFRE
-        IERR = ISETFIELDCOUNTFDB(KFDB,IGLOBAL,ILOCAL)
+        IERR = ISETFIELDCOUNTFDBSUBS(KFDB,IGLOBAL,ILOCAL)
           IF(IERR.NE.0)THEN
             WRITE(KU06,*) ' ------------------------'
             WRITE(KU06,*) ' ERROR setting fdb field count '

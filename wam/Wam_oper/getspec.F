@@ -71,6 +71,7 @@
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
 
 ! ----------------------------------------------------------------------
 
@@ -185,13 +186,13 @@ C
 
 !           INITIALIZE AND OPEN FDB.
 
-            istat = iopenfdb ('fdb', ifdb, 'r')
+            istat = iopenfdbsubs ('fdb', ifdb, 'r')
             IF (ITEST.GE.2)WRITE(iu06,'("  FDB OPENED status=",I3,
      &         " Reference=", I2)') istat, ifdb
 
             ICFDB2DSP = LEN_TRIM(CFDB2DSP)
             IF (ICFDB2DSP .GT. 0 ) THEN
-              ISTAT = ISET_FDB_ROOT(IFDB, CFDB2DSP(1:ICFDB2DSP) )
+              ISTAT = ISET_FDBSUBS_ROOT(IFDB, CFDB2DSP(1:ICFDB2DSP) )
               IF ( ISTAT .NE. 0 ) THEN
                 WRITE(IU06,'("Error\ /Getspec/ Root dir specified:
      &                       ",A)') CFDB2DSP(1:ICFDB2DSP)
@@ -208,12 +209,12 @@ C
 
 !           SET FIXED PARAMETERS FOR FDB.
 
-            istat = isetvalfdb (ifdb, 'levty',  's'      )
-            istat = isetvalfdb (ifdb, 'param',  '251'    )
-            istat = isetvalfdb (ifdb, 'repres', 'll'     )
-            istat = isetvalfdb (ifdb, 'stream', 'wave'   )
-            istat = isetvalfdb (ifdb, 'step',   '000000' )
-!---<       istat = isetvalfdb (ifdb, 'fstep',  '000000' )
+            istat = isetvalfdbsubs (ifdb, 'levty',  's'      )
+            istat = isetvalfdbsubs (ifdb, 'param',  '251'    )
+            istat = isetvalfdbsubs (ifdb, 'repres', 'll'     )
+            istat = isetvalfdbsubs (ifdb, 'stream', 'wave'   )
+            istat = isetvalfdbsubs (ifdb, 'step',   '000000' )
+!---<       istat = isetvalfdbsubs (ifdb, 'fstep',  '000000' )
 
             kfcst = 0
             IF ( kfcst .EQ. 0 ) THEN
@@ -229,12 +230,12 @@ C
             CALL u2l1cr( clclass )
             CALL u2l1cr( clexpver )
 
-            istat = isetvalfdb (ifdb, 'expver', clexpver    )
-            istat = isetvalfdb (ifdb, 'date',   cdtpro(1:8))
-            istat = isetvalfdb (ifdb, 'type',   cltype     )
-            istat = isetvalfdb (ifdb, 'time',   cdtpro(9:10))
-            istat = isetvalfdb (ifdb, 'domain', cldomain )
-!---<       istat = isetrankfdb (ifdb, ipe)
+            istat = isetvalfdbsubs (ifdb, 'expver', clexpver    )
+            istat = isetvalfdbsubs (ifdb, 'date',   cdtpro(1:8))
+            istat = isetvalfdbsubs (ifdb, 'type',   cltype     )
+            istat = isetvalfdbsubs (ifdb, 'time',   cdtpro(9:10))
+            istat = isetvalfdbsubs (ifdb, 'domain', cldomain )
+!---<       istat = isetrankfdbsubs (ifdb, ipe)
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,'("\ /getspec/ PARAM: ", a8)') '251'
@@ -283,10 +284,10 @@ C
 !             SET VARIABLE PARAMETERS FOR FDB.
 
               WRITE( cldir, '(i2.2)' ) K 
-              istat = isetvalfdb( ifdb, 'direction', cldir )
+              istat = isetvalfdbsubs( ifdb, 'direction', cldir )
               WRITE( clfre, '(i2.2)' ) M
-              istat = isetvalfdb( ifdb, 'frequency', clfre )
-              istat = isetvalfdb (ifdb, 'class',  clclass       )
+              istat = isetvalfdbsubs( ifdb, 'frequency', clfre )
+              istat = isetvalfdbsubs (ifdb, 'class',  clclass       )
               IF (ITEST.GE.2) THEN
                 WRITE(IU06,'("\ /getspec/ DIR:   ", a8)') cldir
                 WRITE(IU06,'("\ /getspec/ FREQ:  ", a8)') clfre
@@ -300,7 +301,7 @@ C
      &          " words for ingrib", " nstart=", i8, " nend=", i8,
      &          " spectrum=" , i4) ')icount,nstart(irank),nend(irank),
      &          nang*nfre
-              irstat = ireadfdb (ifdb, ingrib, icount      )
+              irstat = ireadfdbsubs (ifdb, ingrib, icount      )
               IF (irstat.NE.0 .OR. icount.LE.0) THEN
                 WRITE (IU06,'("***********************************")')
                 WRITE (IU06,'("*                                 *")')
@@ -318,7 +319,7 @@ C
 
               IF(M.EQ.NFRE.AND.K.EQ.NANG) THEN 
                 IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
-                istat = iclosefdb(ifdb)
+                istat = iclosefdbsubs(ifdb)
                 IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
                 IF (ISTAT .NE. 0) CALL ABORT1
               ENDIF

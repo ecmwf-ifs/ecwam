@@ -70,6 +70,8 @@
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT ,LFDBIOOUT
       USE YOWMPP   , ONLY : NPRECR
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
+      USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -90,6 +92,8 @@
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(IJINF:IJSUP,NANG,MINF:MSUP) :: FL
+      INTEGER, EXTERNAL :: IWRITEFDB
+      REAL(8) :: ZHOOK_HANDLE_IWRITEFDB
 
 ! ----------------------------------------------------------------------
       IF(LPBIOOUT .AND. .NOT. LFDBIOOUT) THEN
@@ -148,7 +152,7 @@
 
         IF(LPBOPEN) THEN
           ICDFDB2DSP = LEN_TRIM(CDFDB2DSP)
-          ISTAT = IOPENFDB ('fdb', IUNIT, CLMODE   )
+          ISTAT = IOPENFDBSUBS ('fdb', IUNIT, CLMODE   )
           IF (ISTAT .NE. 0) THEN
             WRITE(IU06,'("Error\ /writefl/ Action specified: ",a)')
      &      "open"
@@ -161,17 +165,17 @@
             CALL FLUSH(IU06)
           ENDIF
 
-          ISTAT = ISET_FDB_ROOT(IUNIT,    CDFDB2DSP(1:ICDFDB2DSP) )
+          ISTAT = ISET_FDBSUBS_ROOT(IUNIT,    CDFDB2DSP(1:ICDFDB2DSP) )
 
           IF (ISTAT .NE. 0) THEN
             WRITE (IU06,'("ERROR FOLLOWING CALL TO SET_FDB_ROOT status",
      &                    I3)') ISTAT
             CALL ABORT1
           ENDIF
-          ISTAT = ISETVALFDB (IUNIT, 'levt',   's'        )
-          ISTAT = ISETVALFDB (IUNIT, 'level',  '0000'     )
-          ISTAT = ISETVALFDB (IUNIT, 'param',  '250'      )
-          ISTAT = ISETVALFDB (IUNIT, 'repres', 'll'       )
+          ISTAT = ISETVALFDBSUBS (IUNIT, 'levt',   's'        )
+          ISTAT = ISETVALFDBSUBS (IUNIT, 'level',  '0000'     )
+          ISTAT = ISETVALFDBSUBS (IUNIT, 'param',  '250'      )
+          ISTAT = ISETVALFDBSUBS (IUNIT, 'repres', 'll'       )
         ENDIF
 
         IL1 = INDEX(FILENAME,'BLS',.TRUE.) + 3
@@ -195,24 +199,26 @@
           CLSTREAM = 'wave'
         ENDIF
 
-        ISTAT = ISETVALFDB (IUNIT, 'STREAM', CLSTREAM )
-        ISTAT = ISETVALFDB (IUNIT, 'class',  CDCLASS  )
-        ISTAT = ISETVALFDB (IUNIT, 'stream', 'wave'   )
-        ISTAT = ISETVALFDB (IUNIT, 'domain', CLDOMAIN )
-        ISTAT = ISETVALFDB (IUNIT, 'expver', CDEXPVER )
-        ISTAT = ISETVALFDB (IUNIT, 'date',   CLDATE   )
-        ISTAT = ISETVALFDB (IUNIT, 'type',   CDMARS   )
-        ISTAT = ISETVALFDB (IUNIT, 'time',   CLTIME   )
-        ISTAT = ISETVALFDB (IUNIT, 'fstep',  'spectr' )
-        ISTAT = ISETVALFDB (IUNIT, 'step',   CLSTEP   )
-        ISTAT = ISETVALFDB (IUNIT, 'leve',   CLFREQ   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'STREAM', CLSTREAM )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'class',  CDCLASS  )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'stream', 'wave'   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'domain', CLDOMAIN )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'expver', CDEXPVER )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'date',   CLDATE   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'type',   CDMARS   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'time',   CLTIME   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'fstep',  'spectr' )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'step',   CLSTEP   )
+        ISTAT = ISETVALFDBSUBS (IUNIT, 'leve',   CLFREQ   )
 
         KOUNT = (IJSUP-IJINF+1)*NANG*(MSUP-MINF+1) * NPRECR / 4
 
 !       KOUNT should be number of values;
 
-!       ISTAT = IWRITEFDB (IUNIT, FL(IOFFSET),KOUNT)
+!       ISTAT = IWRITEFDBSUBS (IUNIT, FL(IOFFSET),KOUNT)
+        IF (LHOOK) CALL DR_HOOK('IWRITEFDB',0,ZHOOK_HANDLE_IWRITEFDB)
         ISTAT = IWRITEFDB (IUNIT, FL, KOUNT)
+        IF (LHOOK) CALL DR_HOOK('IWRITEFDB',1,ZHOOK_HANDLE_IWRITEFDB)
 
         IF (ISTAT .NE. 0) THEN
           WRITE (IU06,'("ERROR FOLLOWING CALL TO IWRITEFDB status ",
@@ -221,7 +227,7 @@
         ENDIF
 
         IF(LPBCLOSE) THEN
-          ISTAT=ICLOSEFDB(IUNIT)
+          ISTAT=ICLOSEFDBSUBS(IUNIT)
           IF (ISTAT .NE. 0) THEN
             WRITE (IU06,'("ERROR FOLLOWING CALL TO ICLOSEFDB status "
      &                    , I4)') ISTAT

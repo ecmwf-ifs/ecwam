@@ -90,6 +90,7 @@
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
+      USE FDBSUBS
 
 ! ----------------------------------------------------------------------
 
@@ -1258,7 +1259,7 @@
         WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
         WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
         WRITE(IU06,*) ' '
-        INITFDB_STAT = IINITFDB()
+        INITFDB_STAT = IINITFDBSUBS()
         IF (INITFDB_STAT .NE. 0) THEN
           WRITE(IU06,'("****************************************")')
           WRITE(IU06,'("*                                      *")')

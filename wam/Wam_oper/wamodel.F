@@ -343,6 +343,7 @@
       USE YOWWIND  , ONLY : CDATEWO
       USE MPL_MODULE
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
 
 ! ----------------------------------------------------------------------
       CHARACTER*2 MARSTYPEBAK
@@ -475,7 +476,7 @@
 
           IF (MFDBSF.NE.-5.AND.LFDB) THEN
              IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
-             ISTAT = IFLUSHFDB (MFDBSF)
+             ISTAT = IFLUSHFDBSUBS (MFDBSF)
              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
              IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
           ELSE
@@ -1234,7 +1235,7 @@
      &                       LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
               IF (LFDB) THEN
                 IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
-                ISTAT = IFLUSHFDB (MFDBSF)
+                ISTAT = IFLUSHFDBSUBS (MFDBSF)
                 CALL MPL_BARRIER(CDSTRING='WAMODEL:')
                 IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
               ELSE
@@ -1309,7 +1310,7 @@
      &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
           IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
-          ISTAT = IFLUSHFDB (MFDBSF)
+          ISTAT = IFLUSHFDBSUBS (MFDBSF)
           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
           IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 

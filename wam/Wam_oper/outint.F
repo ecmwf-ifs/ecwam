@@ -77,6 +77,7 @@
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CDTINTS  ,CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,
      &            MARSTYPE ,YCLASS   ,YEXPVER
+      USE FDBSUBS
 
 ! ----------------------------------------------------------------------
 
@@ -85,9 +86,7 @@
 ! ----------------------------------------------------------------------
 !
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
-      INTEGER ISETFIELDCOUNTFDB
       INTEGER IERR
-      EXTERNAL ISETFIELDCOUNTFDB
 
       IGLOBAL=0
       ILOCAL=0
@@ -1169,7 +1168,7 @@
         ENDIF
 
       IF(LFDB.and.ILOCAL.gt.0) THEN
-         IERR = ISETFIELDCOUNTFDB(KFDB,IGLOBAL,ILOCAL)
+         IERR = ISETFIELDCOUNTFDBSUBS(KFDB,IGLOBAL,ILOCAL)
          IF(IERR.NE.0)THEN
             WRITE(IU06,*) ' ------------------------'
             WRITE(IU06,*) ' ERROR setting fdb field count '

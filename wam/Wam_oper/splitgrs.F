@@ -85,6 +85,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY
       USE YOWPCONS , ONLY : DEG      ,R        ,ZMISS
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
+      USE FDBSUBS
 
 !-----------------------------------------------------------------------
 
@@ -391,7 +392,7 @@
      &                    ierr,
      &                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,
      &                    k, m, kfdb)
-            ISTAT = iflushfdb (kfdb)
+            ISTAT = iflushfdbsubs (kfdb)
             CALL FLD2FDB (IU06, itest, isec1, outgrib, kount, 'close',
      &                    kerr,
      &                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,

@@ -114,6 +114,7 @@
      &            IDELWIN  ,NFCST    ,ISTAT
       USE MPL_MODULE
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
 
 ! ----------------------------------------------------------------------
 
@@ -333,7 +334,7 @@
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
-            ISTAT = IFLUSHFDB (MFDBSF)
+            ISTAT = IFLUSHFDBSUBS (MFDBSF)
             CALL MPL_BARRIER(CDSTRING='WAMASSI:')
             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
             LLFLUSH = .FALSE.
@@ -402,7 +403,7 @@
       IF (LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. (
      &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
         IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
-        ISTAT = IFLUSHFDB (MFDBSF)
+        ISTAT = IFLUSHFDBSUBS (MFDBSF)
         CALL MPL_BARRIER(CDSTRING='WAMASSI:')
         IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
         WRITE(IU06,*) '   DB ', MFDBSF , ' FLUSHED AT ',

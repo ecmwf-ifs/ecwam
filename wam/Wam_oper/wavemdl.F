@@ -99,6 +99,7 @@
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWWIND  , ONLY : CDAWIFL
       USE YOMGSTATS, ONLY : LSYNCSTATS
+      USE FDBSUBS
 
 ! --------------------------------------------------------------------- 
 
@@ -406,7 +407,7 @@
       ENDIF
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
-        ISTAT = ICLOSEFDB (MFDBSF)
+        ISTAT = ICLOSEFDBSUBS (MFDBSF)
         IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
