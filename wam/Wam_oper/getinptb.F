@@ -139,7 +139,7 @@ C
        CGRID='050'
 #elif resolution==25 && region=='m'
        WRITE(MARS(5),'("GRID=0.25/0.25,FORMAT=PACKED,")')
-       WRITE(MARS(6),'("AREA=81./-98./9./42.,")')
+       WRITE(MARS(6),'("AREA=66./-6./30./42.,")')
        CGRID='025'
 #elif resolution==900 && region=='g'
        WRITE(MARS(5),'("GRID=9.0/9.0,FORMAT=PACKED,")')

@@ -193,7 +193,7 @@ C       WORD        VALUE   CONTENTS.
 C       ----        -----   ---------
       ISEC1( 1) =   140     ! VERSION NUMBER OF CODE TABLE 2.
       ISEC1( 2) =    98     ! ORIGINATING CENTRE IDENTIFIER.
-      ISEC1( 3) =   107     ! MODEL IDENTIFICATION.
+      ISEC1( 3) =   108     ! MODEL IDENTIFICATION.
       ISEC1( 4) =   255     ! GRID DEFINITION.
       ISEC1( 5) =   192     ! FLAG (WMO CODE TABLE 1)
       ISEC1( 6) =   251     ! PARAMETER IDENTIFIER (WMO CODE TABLE 2)
@@ -311,7 +311,7 @@ C
       ISEC2( 5) =  NINT(PMOWEP*1000) ! LONGITUDE OF ORIGIN (WEST -)
       ISEC2( 6) =     128  ! RESOLUTION FLAG (WMO CODE TABLE 7)
       ISEC2( 8) =  NINT(PMOEAP*1000) ! LONGITUDE OF EXTREME POINT (WEST)
-      ISEC2( 9) =  NINT(PDELLO*1000) ! LONGITUDE INCREMENT
+      ISEC2(10) =  NINT(PDELLO*1000) ! LONGITUDE INCREMENT
       ISEC2(11) =       0  ! SCANNING MODE FLAGS (WMO CODE TABLE 8)
       ISEC2(17) =    KRGG  ! GRID TYPE.
 C       12[17]-68                                               56*0
@@ -505,7 +505,7 @@ C
             ISEC2( 3) =  NINT(180./PDELLA) + 1
           ENDIF
 C
-          ISEC2(10) = NINT(PDELLA*1000)
+          ISEC2( 9) = NINT(PDELLA*1000)
 C
           IF (KRGG .EQ. 1) THEN
             IF( CLDOMAIN == 'm' ) THEN

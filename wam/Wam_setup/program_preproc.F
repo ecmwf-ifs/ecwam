@@ -5,12 +5,12 @@
 #.
 #QSUB -q vpp700.normal
 #QSUB -eo
-#QSUB -r preproc_$LABEL$NAME
+#QSUB -r preproc 
 #QSUB -lP 0
 #QSUB -lT 300
 #QSUB -lV 10mb
 #QSUB -lM 60mb
-#QSUB -mb -me -mi
+#QSUB -mb -mi
 #QSUB
 #.
 ######################################################################
@@ -19,10 +19,11 @@ TMPDIR=$MRFSDIR
 ######################################################################
 #.
 PATH=$PATH:.
-cd $TMPDIR
 set +v
 #.
 #include "path.h"
+#.
+#.
 cd $TMPDIR
 #.
 #.===================================================================
@@ -94,8 +95,8 @@ EOFPRO
 #.
 frt $rp -Of -Wv,-Of -Posx -Z preproc.lis -X9 -c -o preproc.o preproc.f
 #.
-if [[ ! -a $VPPLPATH/lib$WAMCRLIB.a ]] ; then
-  ecp  ec:$DHSLPATH/lib$WAMCRLIB.a $VPPLPATH/lib$WAMCRLIB.a || {
+if [[ ! -a $LIBCR/lib$WAMCRLIB.a ]] ; then
+  ecp  ec:$DHSLPATH/lib$WAMCRLIB.a $LIBCR/lib$WAMCRLIB.a || {
       ls -lsa
       print - "\n\n\t\tWAMCRLIB file was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
@@ -148,23 +149,23 @@ EOD
 #.
 #. PARWAM FILE
 #.
-cp PARWAM $VPPPATH/PARWAM
+cp PARWAM $ADIR/PARWAM_${grid}
 #.
 #.  GRID FILE.
 #.
-cp fort.7 $VPPPATH/gridglou
+cp fort.7 $ADIR/gridglou_${grid}
 #.
 #.  COMMON UBUF.
 #.
-cp fort.8 $VPPPATH/ubufglou
+cp fort.8 $ADIR/ubufglou_${grid}
 #.
 #.  COARSE GRID INFORMATION, if this is a coarse grid run.
 #.
-#.cp fort.9 $VPPPATH/boucglou
+#.cp fort.9 $ADIR/boucglou${grid}
 #.
 #.  FINE GRID INFORMATION, if this is a fine grid run.
 #.
-#.cp fort.10 $VPPPAT1/boufglou
+#.cp fort.10 $ADIR/boufglou$_grid}
 #.
 #.
 #.===================================================================
@@ -173,24 +174,24 @@ cp fort.8 $VPPPATH/ubufglou
 #.
 #.  Namelist-file parameter.
 #.
-ecp -o $VPPPATH/PARWAM ec:$DHSPATH/PARWAM
+####ecp -o $ADIR/PARWAM_${grid} ec:$DHSPATH/PARWAM_${grid}
 #.
 #.
 #.  GRID FILE.
 #.
-ecp -o $VPPPATH/gridglou ec:$DHSPATH/gridglou
+#####ecp -o $ADIR/gridglou_${grid} ec:$DHSPATH/gridglou_${grid}
 #.
 #.  COMMON UBUF.
 #.
-ecp -o $VPPPATH/ubufglou ec:$DHSPATH/ubufglou
+#####ecp -o $ADIR/ubufglou_${grid} ec:$DHSPATH/ubufglou_${grid}
 #.
 #.  COARSE GRID INFORMATION, if this is a coarse grid run.
 #.
-#.ecp -o $VPPPATH/boucglou ec:$DHSPATH/BOUCGLOU
+#.ecp -o $ADIR/boucglou_${grid} ec:$DHSPATH/BOUCGLOU_${grid}
 #.
 #.  FINE GRID INFORMATION, if this is a fine grid run.
 #.
-#.ecp -o $VPPPAT1/boufglou ec:$ECPAT1/BOUFGLOU
+#.ecp -o $ADIR/boufglou_${grid} ec:$ECPAT1/BOUFGLOU_${grid}
 #.
 #.===================================================================
 #. GRID FILES HAVE BEEN CREATED AND SAVED.
@@ -199,7 +200,4 @@ ecp -o $VPPPATH/ubufglou ec:$DHSPATH/ubufglou
 #.
 ls -l
 #.
-cd $VPPPATH
-rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/preset.job .
-vppqsub preset.job
 #endif

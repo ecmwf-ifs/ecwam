@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" MEDITERRANEAN WAVE MODEL RUN                      MODEL VERSION 4.",
- CBPLTDT="${begofrn}",
- CEPLTDT="${endofrn}",
- CDATEF="${begoffo}",
+ CLHEADER=" MEDITERRANEAN WAVE MODEL RUN                         MODEL VERSION 4.",
+ CBPLTDT="${begofan}",
+ CEPLTDT="${endofan}",
+ CDATEF="${endofan}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 21600,

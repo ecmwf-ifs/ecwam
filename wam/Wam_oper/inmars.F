@@ -11,9 +11,6 @@ C      H. GUNTHER   ECMWF/GKSS    JANUARY 1990
 C                                 JUNE    1991  GRIB EDITION 1.         
 C      J. BIDLOT    ECMWF         1996    MIGRATION TO FUJITSU
 C      J. BIDLOT    ECMWF         1997   ADD READ OF IRREGULAR GRID DATA
-C
-C      J. BIDLOT    ECMWF         1998   REMOVE THE INTERCHANGE 
-C                                        NORTH AND SOUTH FOR OLD DATA
 C                                                                       
 C     PURPOSE.                                                          
 C     --------                                                          
@@ -56,8 +53,6 @@ C        *FIELD*  - UNPACKED DATA.
 C        *KRET*   - ERROR NUMBER.                                       
 C        *MSG*    _ ERROR MESSAGE.                                      
 C                                                                       
-C
-C       THIS FEATURE HAS BEEN REMOVED :
 C       WAVE DATA ARCHIVED BEFORE 3. APRIL 1990 12.00 ARE CORRECTED,
 C       THAT MEANS..                                                    
 C            - NORTH AND SOUTH ARE INTERCHANGED                         
@@ -270,6 +265,26 @@ C
 C*    5.0 REARANGE DATA FIELD.                                          
 C         --------------------                                          
 C                                                                       
+      IF (CDATE.LE.'9004031200'.AND.IPARAM.NE.139) THEN
+C                                                                       
+C*    5.1 INTERCHANGE NORTH AND SOUTH FOR OLD DATA.                     
+C         -----------------------------------------                     
+C                                                                       
+         L = 0                                                          
+         DO K=NGY,1,-1                                             
+           DO I=1,NGX                                                
+             L = L+1
+             FIELD(I,K) = PSEC4(L)
+           ENDDO
+         ENDDO
+         IF (CDATE.LE.'9001071200'.AND.CDATE.GE.'8910041800') THEN
+            CALL CORMARS (FIELD, ID1, ID2, NGX, NGY, IPARAM)            
+         ENDIF                                                          
+         NGX = 120                                                      
+         AMONOP = .001*FLOAT(KSEC2(7))                                  
+         AMOSOP = .001*FLOAT(KSEC2(4))                                  
+      ELSE                                                              
+C                                                                       
 C*    5.2 NEW DATA.                                                     
 C         ---------                                                     
 C                                                                       
@@ -281,6 +296,7 @@ C
             FIELD(I,K) = PSEC4(L)                                       
            ENDDO
          ENDDO
+      ENDIF                                                             
 C
       MSG = ERRMSG(KRET)                                                
 C

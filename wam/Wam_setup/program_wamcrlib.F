@@ -3,12 +3,12 @@
 #. CREATES THE WAMCRLIB
 #QSUB -q vpp700.normal
 #QSUB -eo
-#QSUB -r wamcrlib_$LABEL$NAME
+#QSUB -r wamcrlib 
 #QSUB -lt 200
 #QSUB -lP 0
 #QSUB -lV 20mb
 #QSUB -lM 64mb
-#QSUB -mb -me -mi
+#QSUB -mb -mi
 #QSUB
 
 # MAKE USE OF MEMORY RESIDENT FILE SYSTEM for TMPDIR

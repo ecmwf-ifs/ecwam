@@ -10,16 +10,18 @@
 #. B HANSEN          ECMWF         NOVEMBER 1995 MIGRATION TO CLEARCASE
 #. J BIDLOT          ECMWF         MAY 1996 MESSAGE PASSING 
 #. B HANSEN          ECMWF         APRIL 1997 RESTART FACILITY
+#. J BIDLOT          ECMWF         1998 : all data retrieval MUST have been
+#.                                        done in preset job !!!
 #.
-#QSUB -r wamodel_$LABEL$NAME
+#QSUB -r wamodel
 #QSUB -q vpp700.normal
-#QSUB -lP 1
+#QSUB -lP 8
 # # #QSUB -a "tomorrow 4:00am"
-#QSUB -lt 2500
-#QSUB -lT 3000
+#QSUB -lt 1500
+#QSUB -lT 2000
 #QSUB -lM 700mb
 #QSUB -eo
-#QSUB -mb -me -mi
+#QSUB -mb -mi
 #QSUB
 #.
 ######################################################################
@@ -33,12 +35,6 @@ set +v
 #.
 lgribin=T
 #.
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#.   Specify whether input CD file is NOT provided
-#.   It should only be the case for cold start !!!!!!!!!!!!!!!
-#.
-lnocdin=T
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
@@ -75,11 +71,11 @@ fi
 #if iceedge=='y'
 #.check if SST file does exist
 #.
-if [[ ! -r $ADIR/kelv${begofrn}_${grid} ]] ; then
+if [[ ! -r $ADIR/kelv${begofan}_${grid} ]] ; then
   print - "\n\n\t\t NO SURFACE TEMPS , NOTHING IS DONE \n\n"
   exit 2
 else
-  ln -s $ADIR/kelv${begofrn}_${grid} sfctempin
+  ln -s $ADIR/kelv${begofan}_${grid} sfctempin
 fi
 #endif
 #.
@@ -87,11 +83,11 @@ fi
 ############################
 if [[ $ASSIMILATION = "YES" ]] ; then
   AS=1
-  CURRENT_DATE=$begofrn
+  CURRENT_DATE=$begofan
   CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
   ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
   ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
-  LAST_ANALYSIS_DATE=$begoffo
+  LAST_ANALYSIS_DATE=$endofan
   LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
     if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
@@ -112,7 +108,7 @@ fi
 #.
 # SURFACE WINDS
 ################
-wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
+wind_filename=sfcwind_${grid}_${begofan}_${endofan}_${endoffo}
 if [[ ! -r $WDIR/$wind_filename ]] ; then
   print - "\n\n\t\tWIND DATA NOT ONLINE\n\n"
   print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
@@ -157,34 +153,27 @@ fi
 ################
 #.
 if [[ $lgribin != "T" ]] ; then
-  if [[ -r $WDIR/LAW${begofrn}00 ]] ; then
-    ln -s $WDIR/LAW${begofrn}00 LAW${begofrn}00 
+  if [[ -r $WDIR/LAW${begofan}00 ]] ; then
+    ln -s $WDIR/LAW${begofan}00 LAW${begofan}00 
   else
     ls -lsa
-    print - "LAW"${begofrn}"00 file was not found"
+    print - "LAW"${begofan}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 5
   fi
 else
-  if [[  -r $ADIR/CD${begofrn}_${grid} ]] ; then
-    ln -s $ADIR/CD${begofrn}_${grid} cdwavein
-  elif [[ $lnocdin = "T" ]] ; then
-    print - "##################################################"
-    print - " "
-    print - "the program should start wihtout an input CD file"
-    print - "as none is provided !!!!!"
-    print - " "
-    print - "##################################################"
+  if [[  -r $ADIR/CD${begofan}_${grid} ]] ; then
+    ln -s $ADIR/CD${begofan}_${grid} cdwavein
   else
     ls -lsa
-    print - "CD${begofrn}_${grid}" file was not found"
+    print - "CD${begofan}_${grid}" file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 5
   fi
-  if [[  -r $ADIR/U10${begofrn}_${grid} ]] ; then
-    ln -s $ADIR/U10${begofrn}_${grid} uwavein
+  if [[  -r $ADIR/U10${begofan}_${grid} ]] ; then
+    ln -s $ADIR/U10${begofan}_${grid} uwavein
   else
-    print - "U10${begofrn}" file was not found"
+    print - "U10${begofan}" file was not found"
     print - "\n\n\t\tPROGRAM will continue as this can happen\n\n"
   fi
 fi
@@ -193,20 +182,20 @@ fi
 #######################
 #.
 if [[ $lgribin != "T" ]] ; then
-  if [[ -r $WDIR/BLS${begofrn}00 ]] ; then
-    ln -s $WDIR/BLS${begofrn}00 BLS${begofrn}00 
+  if [[ -r $WDIR/BLS${begofan}00 ]] ; then
+    ln -s $WDIR/BLS${begofan}00 BLS${begofan}00 
   else
     ls -ls
-    print - "BLS"${begofrn}"00 file was not found"
+    print - "BLS"${begofan}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 7
   fi
 else
-  if [[ -r $WDIR/SGS${begofrn}00 ]] ; then
-    ln -s $WDIR/SGS${begofrn}00 SGS${begofrn}00 
+  if [[ -r $WDIR/SGS${begofan}00 ]] ; then
+    ln -s $WDIR/SGS${begofan}00 SGS${begofan}00 
   else
     ls -ls
-    print - "SGS"${begofrn}"00 file was not found"
+    print - "SGS"${begofan}"00 file was not found"
     print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
     exit 8
   fi

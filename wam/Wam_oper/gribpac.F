@@ -110,6 +110,7 @@ C
       ZWORK=ZMISS
       IF(IRGG.EQ.1 .OR. CLDOMAIN == 'm' ) THEN
        INDEX=1
+       ISTART=1
       ELSE
        INDEX = (NINT((90. - AMONOP ) / XDELLA))*NGX + 1
       ENDIF
@@ -128,10 +129,8 @@ C
       KSEC1(6)  = IPARAM
       IF(KLEV.NE.0) THEN
        KSEC1(7)=105
-      ELSE
-       KSEC1(7)=102
+       KSEC1(8)=KLEV
       ENDIF
-      KSEC1( 8) = KLEV
       KSEC1(10) = IY
       KSEC1(11) = IM
       KSEC1(12) = ID
@@ -145,7 +144,6 @@ C
         KSEC2(6) = 128
         KSEC2(9) = 0
         KSEC2(17) = 1
-        ISTART=0
         IF (CLDOMAIN == 'g' ) ISTART = NINT((90. - AMONOP ) / XDELLA)
         DO J=1,NGY
            JSN=NGY-J+1

@@ -104,21 +104,6 @@ C     2.1 DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
 C         TRY AGAIN
 C         --------------------------------------------
          IF(LWNDFILE) THEN
-C
-           IF(LCLOSEWND) THEN
-             WRITE (IU06,*) ' ***************************************'
-             WRITE (IU06,*) ' *                                     *'
-             WRITE (IU06,*) ' *    FATAL ERROR SUB. GETWND          *'
-             WRITE (IU06,*) ' *    =======================          *'
-             WRITE (IU06,*) ' *                                     *'
-             WRITE (IU06,*) ' *  THE INPUT FILE HAS BEEN CLOSED     *'
-             WRITE (IU06,*) ' *  IT CANNOT BE ACCESSED AGAIN !      *'
-             WRITE (IU06,*) ' *  PROGRAM ABORTS  PROGRAM ABORTS     *'
-             WRITE (IU06,*) ' *                                     *'
-             WRITE (IU06,*) ' ***************************************'
-             CALL ABORT1
-           ENDIF
-C
            GOTO 1000
 C         --------------------------------------------
          ELSE

@@ -569,7 +569,7 @@ C
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) '   WAMMORM FOR WAVE ENERGY ON ',CDTPRO
-            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+            WRITE(IU06,*) '          AVERAGE            MIMIMUM  ',
      &                    '           MAXIMUM'
             WRITE(IU06,*) '  ',WHGTAVG,WHGTMIN,WHGTMAX
             WRITE(IU06,*) ' '
@@ -582,21 +582,9 @@ C
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) ' '
             WRITE(IU06,*) '   WAMNORM FOR WAVE PEAK FREQUENCY: '
-            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+            WRITE(IU06,*) '          AVERAGE            MIMIMUM  ',
      &                    '           MAXIMUM'
             WRITE(IU06,*) '  ',WPKFAVG,WPKFMIN,WPKFMAX
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-        IF(GFLAG(7)) THEN
-          CALL WAMNORM(CDG,NGX,NGY,ZMISS,0.,CDAVG,CDMIN,CDMAX,
-     &                 LMESSPASS,IRANK,IPFGTBL(7),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM FOR DRAG COEFFICIENT: '
-            WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
-     &                    '           MAXIMUM'
-            WRITE(IU06,*) '  ',CDAVG,CDMIN,CDMAX
             WRITE(IU06,*) ' '
           ENDIF
         ENDIF
@@ -606,7 +594,7 @@ C
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE WIND SPEED: '
-            WRITE(IU06,*) '          AVERAGE          MINIMUM  ',
+            WRITE(IU06,*) '          AVERAGE          MIMIMUM  ',
      &                    '      MAXIMUM'
             WRITE(IU06,*) '  ',U10AVG,U10MIN,U10MAX
           ENDIF

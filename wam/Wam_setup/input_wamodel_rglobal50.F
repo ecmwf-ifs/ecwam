@@ -1,8 +1,8 @@
  &NALINE
- CLHEADER=" GLOBAL WAVE MODEL RUN                            MODEL VERSION 4.0",
- CBPLTDT="${begofrn}",
- CEPLTDT="${endofrn}",
- CDATEF="${begoffo}",
+ CLHEADER=" GLOBAL WAVE MODEL RUN                             MODEL VERSION 4.0",
+ CBPLTDT="${begofan}",
+ CEPLTDT="${endofan}",
+ CDATEF="${endofan}",
  IDELPRO= 1200
  IDELT= 1200,
  IDELWO= 21600,

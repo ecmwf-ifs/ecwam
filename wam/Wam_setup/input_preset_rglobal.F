@@ -14,7 +14,7 @@
  RUNID     = "GLO"
  PATH      = "                                                            "
  CPATH     = "$STORAGE_PATH"
- CDATEA    = "$begofrn"
+ CDATEA    = "$begofan"
  IDELWI    =  21600
  CLTUNIT   = "S"
  LPBIOIN   =  T

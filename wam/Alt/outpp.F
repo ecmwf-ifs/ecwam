@@ -1,7 +1,7 @@
 C ======================================================================
 C
       SUBROUTINE OUTPP (cdate, kuout, kd1, kd2, kgx, kgy, cdtitl, pconst,
-     1                  zfield, pmowep, pmosop, pmoeap, pmonop)
+     1                  zfield, amowep, pmosop, pmoeap, pmonop)
 C
 C ======================================================================
 C

@@ -99,7 +99,7 @@ C     define local allocatable arrays
 
 C       READ RESTART FILE(s) FROM PE ISEND (IREAD) 
         IF (IRANK.EQ.ISEND) THEN
-           IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
+           IF(LGRIBIN) THEN
              CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
      &                        NEND(NPROC))
            ELSE
@@ -203,7 +203,7 @@ C
      1                    CDATEA, CDATEF)
         ENDIF
 
-        IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
+        IF(LGRIBIN) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NIBLO)
         ELSE
           CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,FILENAME)

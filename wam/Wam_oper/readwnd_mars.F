@@ -84,8 +84,6 @@ C ---------------------------------------------------------------------
 C                                                                       
 #if   region=='g' && resolution==50
       PARAMETER (NBIT = 520000)
-#elif region=='m' && resolution==25
-      PARAMETER (NBIT = 520000)
 #else
       PARAMETER (NBIT = 210000)
 #endif

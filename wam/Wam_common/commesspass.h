@@ -2,10 +2,9 @@ C
 C*    *COMMON*  *MESSPASS* - SELECT MACHINE SPECIFIC PART OF THE CODE 
 
       LOGICAL LMESSPASS,LPBIOIN,LPBIOOUT,LFDBIOIN,LFDBIOOUT,LGRIBIN
-      LOGICAL LNOCDIN
 
       COMMON /MESSPASS/ LMESSPASS,LPBIOIN, LPBIOOUT, LFDBIOIN,LFDBIOOUT,
-     &                  LGRIBIN, LNOCDIN
+     &                  LGRIBIN
 C
 C*     VARIABLE.   TYPE.     PURPOSE.
 C      --------    ----      -------
@@ -29,7 +28,5 @@ C                            OUTPUT.
 C      *LGRIBIN    LOGICAL   SELECT TYPE OF INPUT OF SPECTRA FILES
 C                            IF TRUE INPUT GRIB SPECTRA , CD, WINDS
 C                            ARE EXPECTED AS INPUTS.
-C      *LNOCDIN    LOGICAL   SELECT WHETHER A DRAG COEFFICIENT FILE IS
-C                            SUPPLIED AS INPUT. 
 C ----------------------------------------------------------------------
 

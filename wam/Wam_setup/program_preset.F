@@ -8,15 +8,15 @@
 #. J. BIDLOT            ECMWF         1998 : use of grib spectra
 #.                                           all data retrieval for wam run
 #.                                           must be done here.
-#. 
+#.
+#QSUB -r preset 
 #QSUB -q vpp700.rdx04_io
-#QSUB -r preset_$LABLE$NAME
 #QSUB -lP 0
 #QSUB -lt 3000
 #QSUB -lV 0mb
 #QSUB -lM 700mb
 #QSUB -eo
-#QSUB -mb -me -mi
+#QSUB -mb -mi
 #QSUB
 #.
 #!!! set variable COLDSTART !!!. By default it is set to no, if set to no
@@ -32,7 +32,7 @@
 # luwave=yes if wind speed analysed by the wave model (parameter 245) is
 # available (for OD, there was none until the coupled model bcame operational)
 #.
-COLDSTART=yes
+COLDSTART=no
 expver_archive=1
 class_archive=OD
 specparam=250
@@ -106,7 +106,7 @@ fi
 if [[ "$COLDSTART" = "no" ]] ; then
 ### we will need to refine this as -1 should be use for the mediter.
 ### and for all OD global field prior to 961205
-   date=`substring $begofrn 1 6`
+   date=`substring $begofan 1 6`
    if [[ $date -lt 961205 ]] ; then
      OPTI="-1"
    else
@@ -141,13 +141,13 @@ EOFPRO
 fi
 #.
 cat > fort.4 <<- EOF
-RUN MODEL FROM $begofrn TO $endofrn 
-PARAM=10U/10V, CLASS=OD,
+RUN MODEL FROM $begofan TO $endoffo 
+PARAM=10U/10V,
 REPRES=GG,
 ANALYSIS PERIOD = $antime
 FORECAST PERIOD = $fctime
 WIND TIME STEP IN SECONDS = 21600
-ANALYSIS FROM $begofrn TO $begoffo 
+ANALYSIS FROM $begofan TO $endofan 
 ASSIMILATION NO
 NEW FORECAST YES
 STATUS STORM1= UNFINISHED
@@ -177,7 +177,7 @@ print - "\n\n\t\tSTART POSSIBLE MARS RETRIEVAL\n\n"
 #.
 #.create filename for mars retrieval output
 #.
-wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
+wind_filename=sfcwind_${grid}_${begofan}_${endofan}_${endoffo}
 #.
 print - $wind_filename
 #.
@@ -214,11 +214,11 @@ rm fort.22
 #.
 #.check if SST file does exist
 #.
-if [[ !  -r $ADIR/kelv${begofrn}_${grid} ]] ; then
+if [[ !  -r $ADIR/kelv${begofan}_${grid} ]] ; then
   # in case file is not there do a mars request
   # GET SURFACE TEMPERATURES FROM MARS
   #===================================
-  ICEDATE=`substring $begofrn 1 6`
+  ICEDATE=`substring $begofan 1 6`
   cat > myrequest <<-EOF
 	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
 	CLASS=OD,
@@ -240,7 +240,7 @@ if [[ !  -r $ADIR/kelv${begofrn}_${grid} ]] ; then
     print - "\n\n\t\t NO SURFACE TEMPS FROM MARS, NOTHING IS DONE \n\n"
     exit 19
   }
-  mv sfctempin $ADIR/kelv${begofrn}_${grid}
+  mv sfctempin $ADIR/kelv${begofan}_${grid}
 fi
 #endif
 #.
@@ -268,11 +268,11 @@ if [[ $ASSIMILATION = "YES" ]] ; then
       frt -Ad -o enderac enderac.o $ALTLIB $EMOSLIB $ECLIB
    fi
   #
-  CURRENT_DATE=$begofrn
+  CURRENT_DATE=$begofan
   CURRENT_DATE=$(substring $CURRENT_DATE 1 8)
   ANALYSIS_DATE=$(newdate 19${CURRENT_DATE} 6)
   ANALYSIS_DATE=$(substring $ANALYSIS_DATE 3 10)
-  LAST_ANALYSIS_DATE=$endofrn
+  LAST_ANALYSIS_DATE=$endofan
   LAST_ANALYSIS_DATE=`substring $LAST_ANALYSIS_DATE 1 8`
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
     if [[ !  -r ${ADIR}/RFL${ANALYSIS_DATE}00 ]] ; then
@@ -309,8 +309,8 @@ if [[ "$COLDSTART" = "no" ]] ; then
 # Get the WAVE spectra 
 # ====================
 #
-SPECDATE=`substring $begofrn 1 6`
-SPECTIME=`substring $begofrn 7 8`
+SPECDATE=`substring $begofan 1 6`
+SPECTIME=`substring $begofan 7 8`
 if [[ $SPECTIME -ne 12 && $SPECDATE -lt 980120 ]] ; then
    echo 'THERE IS NO SPECTRA IN THE ARCHIVE OUTSIDE 12Z'
    echo 'PLEASE CHANGE INITIAL DATE ACCORDINGLY'
@@ -328,17 +328,17 @@ if [[ "$irgg" = "1" && $SPECDATE -lt 961205 ]] ; then
 fi
 
 if [[ $specparam = 250 ]] ; then
-  sfilename=GRS${begofrn}00
+  sfilename=GRS${begofan}00
 else
-  sfilename=SGS${begofrn}00
+  sfilename=SGS${begofan}00
 fi
 
 if [[ !  -r $WDIR/${sfilename} ]] ; then
   # in case file is not there do a mars request
   # GET WAVE SPECTRA 
   #=================
-  SPECDATE=`substring $begofrn 1 6`
-  SPECTIME=`substring $begofrn 7 8`
+  SPECDATE=`substring $begofan 1 6`
+  SPECTIME=`substring $begofan 7 8`
 
   if [[ $specparam = 250 ]] ; then
 
@@ -432,12 +432,12 @@ fi
 # Get drag coefficient with waves for wam model run 
 # ===============================
 #
-if [[ !  -r $ADIR/CD${begofrn}_${grid} ]] ; then
+if [[ !  -r $ADIR/CD${begofan}_${grid} ]] ; then
   # in case file is not there do a mars request
   # GET DRAG COEFFICIENT WITH WAVE FROM MARS
   #i========================================
-  CDDATE=`substring $begofrn 1 6`
-  CDTIME=`substring $begofrn 7 8`
+  CDDATE=`substring $begofan 1 6`
+  CDTIME=`substring $begofan 7 8`
 if [[ "$irgg" = "1" ]] ; then
   cat > myrequest <<-EOF
 	RETRIEVE,LEVTYPE=SFC,TYPE=AN,
@@ -476,20 +476,20 @@ fi
     print - "\n\n\t\t NO DRAG COEFFICIENT 233 FROM MARS, NOTHING IS DONE \n\n"
     exit 8
   }
-  mv cdwavein $ADIR/CD${begofrn}_${grid}
+  mv cdwavein $ADIR/CD${begofan}_${grid}
 fi
 
 #
 # Get surface wind speed as modified by the wave model analysis for wam run
 # =============================================================
 #
-if [[ !  -r $ADIR/U10${begofrn}_${grid} ]] ; then
+if [[ !  -r $ADIR/U10${begofan}_${grid} ]] ; then
   if [[ $luwave  = yes ]] ; then
     # in case file is not there do a mars request
     # GET SURFACE WIND WITH WAVE FROM MARS
     #i=====================================
-    CDDATE=`substring $begofrn 1 6`
-    CDTIME=`substring $begofrn 7 8`
+    CDDATE=`substring $begofan 1 6`
+    CDTIME=`substring $begofan 7 8`
     if [[ "$irgg" = "1" ]] ; then
       cat > myrequest <<-EOF
 		RETRIEVE,LEVTYPE=SFC,TYPE=AN,
@@ -531,7 +531,7 @@ if [[ !  -r $ADIR/U10${begofrn}_${grid} ]] ; then
       print - "+++++++++++++++++++++++++++++++++++++++++++++++++++"
     }
   fi
-  cp uwavein $ADIR/U10${begofrn}_${grid}
+  cp uwavein $ADIR/U10${begofan}_${grid}
 fi
 #.
 # end coldstart=no
@@ -656,7 +656,4 @@ cd $WDIR
 #. END OF JOB PRESET.
 #.======================================================================
 #.
-# cd $VPPPATH
-# rcp thokk:/ws/home/rd/sth/Wam/$VIEW$RESOLUTION$REAL_precision/wamodel.job .
-# vppqsub wamodel.job
 #endif

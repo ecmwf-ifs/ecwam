@@ -3,10 +3,10 @@
 #.               TO BE MODIFIED AS NESSECARY.
 #.
 #.=====================================================================
-#.  Define pathes for ECFS and VPP
+#.  Define paths for DHS and VPP
 #.=====================================================================
 #.
-VERSION=CY18R6_BUGFIX
+VERSION=18r6
 #.
 DHSROOT=/$USER/vpp700/wam_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_$VERSION
@@ -76,7 +76,7 @@ export STORAGE_PATH=$WDIR
 # COMPILE=0 
 # =====================================================================
 #.
-export PRECISION=SINGLE
+export PRECISION=DOUBLE
 export REMAKE=NO
 export COMPILE=1
 #.
@@ -85,18 +85,16 @@ export COMPILE=1
 #.=====================================================================
 #.
 ASSIMILATION=NO
-typeset -Z10 begofrn=9806201200      # BEGin date OF RUn 
-typeset -Z10 endofrn=9806211200      # END   date OF RUn 
-typeset -Z10 begoffo=9806211200      # BEGin date OF FOrcast.
-#                                      This date must equal to endofrn
-#                                      when analysis is only required
-typeset -Z10 outofrf=9806211200      # Date to output restart files.
+typeset -Z10 begofan=9804161200      # BEGin date OF ANalysis.
+typeset -Z10 endofan=9804161800      # END   date OF ANalysis.
+typeset -Z10 endoffo=9804161800      # END   date OF FOrcast.
+typeset -Z10 outofrf=9804161800      # Date to output restart files.
                                      # Set to 0000000000 if determined
                                      # on uerinput.
-typeset -Z10 outof2d=9806211200      # Date up to which 2D-spectra are
+typeset -Z10 outof2d=0000000000      # Date up to which 2D-spectra are
                                      # saved. Set to 0000000000 if not
                                      # required.
-typeset -Z7 antime=86400             # Length of analysis in seconds.
+typeset -Z7 antime=21600             # Length of analysis in seconds.
 typeset -Z7 fctime=0             # Length of forcast in seconds.
 #.
 #.=====================================================================
@@ -171,7 +169,7 @@ FDBLIB=-lifsio
   grid="300"
 #elif region=='m' && resolution==25
   GRID="0.25/0.25"
-  AREA="81./ -98./ 9./42."
+  AREA="66./ -6./ 30./42."
   grid="025"
 #elif region=='g' && resolution==900
   GRID="9.0/9.0"
@@ -181,56 +179,3 @@ FDBLIB=-lifsio
    banner QUATSCH
 #endif
 
-    cat > ecdf <<-\EOF
-      function ecdf {
-      trap 'set +f' EXIT INT 
-      set -f
-      $ECFS_SYS_PATH/ecd.p "$@"
-      rc=$?
-      . /tmp/ECD.$$
-      \rm -f /tmp/ECD.$$
-      return $rc
-    }
-	EOF
-    
-    unset -f ecdf || true
-    fpath_old=${FPATH}
-    FPATH=.:${FPATH}
-    
-    /usr/sbin/ping dartagnan 1 2 2>&1 1>/dev/null
-    ECFS=$?
-    
-    set +e
-    if [ $ECFS = 0 ] ; then
-      ecd ${ecfspath}
-      dhs_dir=$?
-    fi
-    /bin/rm ecdf
-    unset -f ecdf
-    FPATH=${fpath_old}
-    unset fpath_old
-    set -e
-    
-    
-    if [ $ECFS = 0 ] ; then
-      if els | grep $l.'[0-9][0-9][0-9][0-9].a' | awk '{print $9}' > lol ; then
-        for i in $(cat lol) ; do
-          if [ ! -f $i ]; then
-            touch $i
-          fi
-        done
-        rm lol
-      fi
-    fi
-    
-    while ls $l.$lfd.a  ; do
-      (( lfd += 1 ))
-    done
-    /bin/rm $l.*.a || true
-    print - Next Version: $lfd
-    [ $ecfspath = $DHSROOT/${VERSION} ] && {  lc=$lfd ; (( lcc = lc - 1 )) ; }
-    [ $DHSROOT/${VERSION} =  ${DHSPATH} ] && break
-    [ $ecfspath = ${DHSPATH} ] && { lw=$lfd ; (( lwc = lw - 1 )) ; }
-    l=libwam
-  done
-  set +f

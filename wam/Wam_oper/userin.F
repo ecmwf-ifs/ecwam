@@ -94,7 +94,7 @@ C
      8   IBOUNC, IBOUNF,
      9   USERID, RUNID,  PATH,   YCLASS, YEXPVER, CPATH,
      x   NENSFNB, NTOTENS,
-     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN
+     1   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP
 C
       CHARACTER* 10 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -160,7 +160,6 @@ C
 C
       CFDBSF    = "/vpp700/fdb18"
       CFDB2DSP  = ""
-      LNOCDIN   = .FALSE. 
 C
 C ----------------------------------------------------------------------
 C
@@ -317,6 +316,8 @@ C
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
 C
+        CDATEF = CBEGDT
+        CALL INCDATE (CDATEF,IANALPD)
         CDATEF = CEPLTDT
         IF (.NOT. LWCOU) THEN
           CDATEA = CBEGDT
@@ -369,17 +370,6 @@ C
             CALL ABORT1
           ENDIF
         ENDIF
-C
-        IF(LFDBIOIN) THEN
-          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-          WRITE(IU06,*)'+                                          +'
-          WRITE(IU06,*)'+ LFDBIOIN HAS BEEN RESET TO FALSE         +'
-          WRITE(IU06,*)'+ IN ORDER TO READ RESTART FILES FROM DISK +'
-          WRITE(IU06,*)'+                                          +'
-          WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
-          LFDBIOIN  = .FALSE. 
-        ENDIF
-C
       ENDIF
 C
 
@@ -675,13 +665,6 @@ C
         IF(LPBIOIN) THEN
            WRITE (IU06,*)
      1     ' PBIO SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
-        ENDIF
-        IF(LNOCDIN) THEN
-           WRITE(IU06,*) '  '
-           WRITE (IU06,*) 
-     1     ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
-           WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
-           WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
         ENDIF
         IF(LGRIBIN) THEN
            WRITE(IU06,*) '  '

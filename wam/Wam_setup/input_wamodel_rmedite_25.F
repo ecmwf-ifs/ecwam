@@ -1,10 +1,10 @@
  &NALINE
- CLHEADER=" EUROPEAN SHELFS WAVE MODEL RUN                    MODEL VERSION 4.",
- CBPLTDT="${begofrn}",
- CEPLTDT="${endofrn}",
- CDATEF="${begoffo}",
- IDELPRO= 900
- IDELT= 900,
+ CLHEADER=" MEDITERRANEAN WAVE MODEL RUN                         MODEL VERSION 4.",
+ CBPLTDT="${begofan}",
+ CEPLTDT="${endofan}",
+ CDATEF="${endofan}",
+ IDELPRO= 600
+ IDELT= 600,
  IDELWO= 21600,
  IDELWI= 21600
  CLMTSU="S", "S", "S", "S"
@@ -24,12 +24,9 @@
  GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F
  LFDB= T,
  LPBIOIN= T,
- LGRIBIN= ${lgribin},
  LPBIOOUT= T,
- LFDBIOIN=F,
- LFDBIOOUT=T,
  ICASE= 1,
- ISHALLO= 0,
+ ISHALLO= 1,
  IREFRA= 0,
  ITEST= 0,
  ITESTB= 1,
@@ -51,7 +48,6 @@
  NSIZE= 0,
  CPATH="$STORAGE_PATH"
  CFDBSF="$cfdbsf"
- CFDB2DSP="$cfdb2dsp",
- LNOCDIN=${lnocdin}
+ CFDB2DSP="$cfdb2dsp"
  /
 C  &NAOT CLOUT="" /
