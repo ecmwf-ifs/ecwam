@@ -3,14 +3,17 @@
 !--------------------------------------------------------------------
 
 !**** *READICE* *DEFINES SEA POINTS AS ICE IF THE CORRESPONDING
-!                SST IS LT 271.5 KELVIN.
+!                SST IS LT 271.5 KELVIN (IF SST IS USED AS INPUT)
+!                OR
+!                SEA ICE FRACTION GT 0.3 (IF IT IS USED AS INPUT)
 
-!     B. HANSEN    MPIFM/ECMWF     NOVEMBER 92
-!     J. BIDLOT    ECMWF           JUNE 1996  MESSAGE PASSING
-!     P. JANSSEN   ECMWF           OCTOBER 1997 SIMPLIFY BY INTRODUCING
-!                                               ICEMASK
-!     J. BIDLOT    ECMWF           JANURAY 1998 : CORRECT THRESHOLD FOR
-!                                                 ICE TO BE LT 271.50 
+!     B. HANSEN    MPIFM/ECMWF   NOVEMBER 92
+!     J. BIDLOT    ECMWF         JUNE 1996  MESSAGE PASSING
+!     P. JANSSEN   ECMWF         OCTOBER 1997 SIMPLIFY BY INTRODUCING
+!                                             ICEMASK
+!     J. BIDLOT    ECMWF         JANUARY 1998 : CORRECT THRESHOLD FOR
+!                                               ICE TO BE LT 271.50 
+!     J. BIDLOT    ECMWF         FEBRUARY 2000 : USE OF SEA ICE FRACTION
 
 !     PURPOSE.
 !     --------
@@ -31,12 +34,14 @@
 
 !     METHOD.
 !     -------
-!            READ GLOBAL TEMPRERATURES (UNIT 99).
-!            DEFINE BLOCK(IG) AND INDEX(IJ) FOR EACH POINT
+!            READS GLOBAL TEMPRERATURES (UNIT 99).
+!            DEFINES BLOCK(IG) AND INDEX(IJ) FOR EACH POINT
 !            WITH TEMPERATURE < 271.50 K  -->  ICE.
 !            EXTRACT WATER POINTS.
-!            SORT ICE POINTS ACCORDING TO BLOCK AND INDEX IN A BLOCK.
-!            KEEP INFORMATION IN COMMON COMICE FOR LATER USE.
+!            OR
+!            DOES THE SAME BUT WITH THE SEA ICE FRACTION WHERE
+!            ANY POINT WITH SEA ICE FRACTION > 0.3 IS CONSIDERED ICE.
+!          
 
 
 !    EXTERNAL.
@@ -50,8 +55,7 @@
 
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWTEMP  , ONLY : NXT      ,NYT      ,TMOWEP   ,TMOSOP   ,
-     &            TMOEAP   ,TMONOP   ,DELLA    ,DELLO
+      USE YOWPARAM , ONLY : NGX      ,NGY
 
 !-----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -61,62 +65,41 @@
 !-----------------------------------------------------------------------
 
       CHARACTER*24 FILNM
-      REAL,ALLOCATABLE :: TEMPG(:,:), WORK(:)
+      REAL,ALLOCATABLE :: FIELD(:,:)
 
 !*    1. READ SST FROM UNIT 90.
 !        ----------------------
 
-
-      ALLOCATE(TEMPG(NXT,NYT),WORK(6))
-      TEMPG=273.15
+      ALLOCATE(FIELD(NGX,NGY))
 
       IF (LMESSPASS) THEN
 
 !        READ SST FIELD ON PE IREAD
 
-        IF (IRANK.EQ.IREAD) CALL READT(IU06,FILNM,ITEST,TEMPG)
+        IF (IRANK.EQ.IREAD) CALL READT(IU06,FILNM,ITEST,FIELD,IPARAM)
 
-!        BROADCAST  SST FIELD ARRAY INFORMATION TO OTHER PE'S
+!       BROADCAST FIELD TO OTHER PE'S
 
-        IF (IRANK.EQ.IREAD) THEN
-          WORK(1)=TMOWEP
-          WORK(2)=TMOSOP
-          WORK(3)=TMOEAP
-          WORK(4)=TMONOP
-          WORK(5)=DELLA
-          WORK(6)=DELLO
-        ENDIF
-
-        CALL MPBCASTGRDFLD(IREAD,ITAG,6,1,WORK)
+        CALL MPBCASTGRDFLD(IREAD,ITAG,NGX,NGY,FIELD)
         ITAG=ITAG+1
 
-        IF (IRANK.NE.IREAD) THEN
-          TMOWEP=WORK(1)
-          TMOSOP=WORK(2)
-          TMOEAP=WORK(3)
-          TMONOP=WORK(4)
-          DELLA=WORK(5)
-          DELLO=WORK(6)
-        ENDIF
+!       BROADCAST IPARAM TO OTHER PE'S
 
-!        BROADCAST  SST FIELD TO OTHER PE'S
-
-        CALL MPBCASTGRDFLD(IREAD,ITAG,NXT,NYT,TEMPG)
+        CALL MPBCASTINTFLD(IREAD,ITAG,1,1,IPARAM)
         ITAG=ITAG+1
 
       ELSE
-        CALL READT(IU06,FILNM,ITEST,TEMPG)
+        CALL READT(IU06,FILNM,ITEST,FIELD,IPARAM)
       ENDIF
 
 !-------------------------------------------------------------------
 
-!*    2. DEFINE ICE POINTS AND COMPUTE ICEFLAG AND WRITE COMMON BLOCK
-!        COMICE.
-!        ----------------------------------------------
+!*    2. DEFINE ICE POINTS AND COMPUTE ICEMASK
+!        -------------------------------------
 
-      CALL MICEP (IU06, NSTART, NEND, TEMPG)
+      CALL MICEP (IU06, NSTART, NEND, FIELD, IPARAM)
 
-      DEALLOCATE(TEMPG,WORK)
+      DEALLOCATE(FIELD)
 
       RETURN
       END SUBROUTINE READICE

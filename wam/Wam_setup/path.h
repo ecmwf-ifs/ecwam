@@ -6,7 +6,7 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY21R4_old_tables
+VERSION=CY22_sea_ice_fraction
 #.
 DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
@@ -107,18 +107,18 @@ laltas=T
 lsaras=F
 #endif
 #
-typeset -Z12 begofrn=199912210600      # BEGin date OF RUn
-typeset -Z12 endofrn=199912310600      # END   date OF RUn
-typeset -Z12 begoffo=199912310600      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=200001300600      # BEGin date OF RUn
+typeset -Z12 endofrn=200001301200      # END   date OF RUn
+typeset -Z12 begoffo=200001301200      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=199912310600      # Date to output restart file(s).
+typeset -Z12 outofrf=200001301200      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
 typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are
                                        # saved. Set to 0000000000 if not
                                        # required.
-typeset -Z7 antime=864000               # Length of analysis in seconds.
+typeset -Z7 antime=21600               # Length of analysis in seconds.
 typeset -Z7 fctime=0                   # Length of forcast in seconds.
 #.
 CLASS=RD                               # user class

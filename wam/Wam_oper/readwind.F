@@ -254,6 +254,12 @@
           ENDIF
 
           IF(KSEC2(17).EQ.1) THEN
+!           the size of the decoded data array will be bigger than
+!           the size given by KSEC2(2) and KSEC2(3) BECAUSE we are
+!           decoding the grib data with option HOPER=R which means
+!           that the data will be produced on a regular lat lon grid.
+!           Nevertheless, the size of the data array can be estimated 
+!           as follows
             NC=KSEC2(3)*2
             NR=KSEC2(3)+1
           ELSE

@@ -53,6 +53,7 @@ SOURCE	=\
               getwnd.F \
               getwspec.F \
               gradi.F \
+              grb2wgrd.F \
               grdata.F \
               grfield.F \
               gribpac.F \
@@ -69,6 +70,7 @@ SOURCE	=\
               inmarss.F \
               inmarssi.F \
               intgrs.F \
+              intmars.F \
               intpol.F \
               intspec.F \
               ispoff.F \

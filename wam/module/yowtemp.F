@@ -1,6 +1,9 @@
       MODULE YOWTEMP
 
       IMPLICIT NONE
+!!!!
+!!!! this module should now be obsolete !!!!!
+!!!!
 
 !*    ** *TEMP* TEMPERATURE GRID
 

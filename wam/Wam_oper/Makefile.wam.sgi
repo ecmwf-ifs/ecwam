@@ -16,10 +16,12 @@ SOURCE	=\
               findb.F          \
               fld2fdb.F        \
               getrest.F        \
+              grb2wgrd.F       \
               gsfile_new.F     \
               incdate.F        \
               inmars.F         \
               iniwcst.F        \
+              intmars.F        \
               intspec.F        \
               jafu.F           \
               locint.F         \
