@@ -33,18 +33,15 @@
  LALTCOR=${laltcor},
  LSARINV=${lsarinv},
  LSARAS=${lsaras},
- IFORCA= 1,
- IBOUNC= 0,
- IBOUNF= 0,
  YCLASS="$CLASS",
  YEXPVER="$expver",
- LMESSPASS= T,
- LWCOU= F,
- NTASKS= 1,
- NSIZE= 17784,
+ NWAM_BLKS=32,
+ LL1D=F,
  CPATH="$STORAGE_PATH",
- PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T
- LFRSTFLD=F
+ PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
+ FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= T, T, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
  /

@@ -148,6 +148,8 @@
 
       IF(XDELLA.GE.0.5) THEN
         NNMIN=4
+      ELSEIF(XDELLA.GT.0.25) THEN
+        NNMIN=3
       ELSE
         NNMIN=2
       ENDIF

@@ -87,10 +87,11 @@
 !         -----------------------
 
         DO M=1,NFRE
+          K=1
           DO IJ=IJS,IJL
-            TEMP2(IJ) = 0.
+            TEMP2(IJ) = F(IJ,K,M)
           ENDDO
-          DO K=1,NANG
+          DO K=2,NANG
             DO IJ=IJS,IJL
               TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
             ENDDO
@@ -110,11 +111,12 @@
           AK(IJ) = EPSMIN
         ENDDO
         DO M=1,NFRE
+          K=1
           DO IJ=IJS,IJL
             TEMP1(IJ) = DFIM(M)/SQRT(TFAK(INDEP(IJ),M))
-            TEMP2(IJ) = 0.
+            TEMP2(IJ) = F(IJ,K,M) 
           ENDDO
-          DO K=1,NANG
+          DO K=2,NANG
             DO IJ=IJS,IJL
               TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
             ENDDO

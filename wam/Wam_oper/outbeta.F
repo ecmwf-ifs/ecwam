@@ -80,9 +80,11 @@
 !*    1. COMPUTE CHARNOCK 'CONSTANT' BETA.
 !        ---------------------------------
 
+      RCHAR=0.018
+
       DO IJ = IJS,IJL
         IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-          BETA(IJ) = 0.
+          BETA(IJ) = RCHAR
         ELSE
           BETA(IJ) = G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
         ENDIF
@@ -95,27 +97,9 @@
 
       IF(LMESSPASS) THEN
         CALL MPBCASTSCFLD(20,NSTART,NEND,BETA)
-        CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG, LSQRT)
+        CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG, LSQRT, RCHAR)
       ELSE
-        CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG, LSQRT)
-      ENDIF
-
-
-!*    1.2 SET LANDVALUES TO CHARNOCK CONSTANT.
-!         ------------------------------------
-
-      IF (IG.EQ.IGL) THEN
-      CALL GSTATS(1436,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(J,I)
-        DO J=1,NGY
-          DO I=1,NGX
-            IF (BETAG(I,J).LE.0.0) THEN
-              BETAG(I,J) = 0.018
-            ENDIF
-          ENDDO
-        ENDDO
-!$OMP END PARALLEL DO
-      CALL GSTATS(1436,1)
+        CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG, LSQRT, RCHAR)
       ENDIF
 
 ! ----------------------------------------------------------------------

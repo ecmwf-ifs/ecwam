@@ -16,9 +16,12 @@
  CLOTSU="S", "S", "S", "S", "S", "S", "S"
  CDATER="${outofrf}",
  CDATES="${outof2d}"
- PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T
+ PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
+ FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= T, T, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F,
+F, F, F, F, F, F, F, F, F, F, F, F
  LFDB= ${lfdb},
  CFDBSF   ="${FDB_ROOT}",
  CFDB2DSP ="${FDB_ROOT}",
@@ -35,18 +38,11 @@
  IREST= 1,
  IASSI= ${iassi},
  LALTAS=${laltas},
- LALTCOR=${laltcor},
  LSARINV=${lsarinv},
  LSARAS=${lsaras},
- IFORCA= 1,
- IBOUNC= 0,
- IBOUNF= 0,
  YEXPVER="$expver",
- LMESSPASS= T,
- LWCOU= F,
- NTASKS= 1,
- NSIZE= 930,
+ NWAM_BLKS=32,
+ LL1D=F,
  CPATH="$STORAGE_PATH"
- LFRSTFLD=F
  /
 C  &NAOT CLOUT="" /

@@ -1,4 +1,4 @@
-      SUBROUTINE MAKEGRID (BLOCK, GRID, IJS, IJL, IG, LSQRT)
+      SUBROUTINE MAKEGRID (BLOCK, GRID, IJS, IJL, IG, LSQRT, PMISS)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +22,8 @@
 !           *IG*      INTEGER BLOCK NUMBER
 !           *LSQRT*   LOGICAL IF TRUE THE 4*SQUARE ROOT OF BLOCK IS
 !                     COMPUTED WHEN TRANSFERRING TO GRID EXCEPT IF
-!                     BLOCK EQUALS ZMISS.
+!                     BLOCK EQUALS PMISS.
+!           *PMISS*   REAL  VALUE GIVEN FOR ALL NON SEA POINTS. 
 
 !     METHOD.
 !     -------
@@ -30,7 +31,7 @@
 !       THE PARAMETER, WHICH IS GIVEN IN BLOCKED FORMAT, IS
 !       DISTRIBUTED IN GRID FORMAT. ONE BLOCK IS DONE IN ONE
 !       CALL. BEFORE THE FIRST BLOCK IS TRANSFORMED THE GRID ARRAY IS
-!       INITIALISED WITH ZMISS.
+!       INITIALISED WITH PMISS.
 
 !     EXTERNALS.
 !     ----------
@@ -46,7 +47,6 @@
 
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWPCONS , ONLY : ZMISS
       USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
@@ -57,11 +57,11 @@
 !*    1. INITIALIZATION
 !     -----------------
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1912,0)
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1996,0)
       IF (IG.EQ.1) THEN
         DO J = 1,NGY
           DO I = 1,NGX
-            GRID(I,J) = ZMISS
+            GRID(I,J) = PMISS
           ENDDO
         ENDDO
       ENDIF
@@ -71,7 +71,7 @@
 
       IF(LSQRT) THEN
         DO IJ = IJS,IJL
-          IF(BLOCK(IJ).NE.ZMISS) THEN
+          IF(BLOCK(IJ).NE.PMISS) THEN
             IX = IXLG(IJ,IG)
             IY = NGY- KXLT(IJ,IG) +1
             GRID(IX,IY) = 4.*SQRT(BLOCK(IJ))
@@ -84,7 +84,7 @@
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1912,1)
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1996,1)
 
       RETURN
       END SUBROUTINE MAKEGRID

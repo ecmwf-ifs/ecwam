@@ -30,8 +30,9 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
-!      *IMDLGRDID* INTEGER   MODEL IDENTIFICATION NUMBER.
-!                            IT SHOULD BE UPDATED FOR EACH NEW CYCLE!!!!
+!      *IMDLGRDID* INTEGER   MODEL GRID IDENTIFICATION NUMBER.
+!                            IT SHOULD BE UPDATED ONLY IF NEW gridglou
+!                            AND ubufglou FILES ARE PRODUCED!!!!
 !      *NANG*      INTEGER   NUMBER OF ANGLES.
 !      *NFRE*      INTEGER   NUMBER OF FREQUENCIES.
 !      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.

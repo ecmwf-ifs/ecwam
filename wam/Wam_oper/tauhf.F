@@ -41,14 +41,17 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (JTOT = 50)
+      INTEGER, PARAMETER :: JTOT=250
+
+      REAL, ALLOCATABLE :: W(:)
 
 ! ----------------------------------------------------------------------
 
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
 
-      ALPHAM = 10.*ALPHA
+      ALPHAMCOEF = 20.
+      ALPHAM = ALPHAMCOEF*ALPHA
       DELUST = USTARM/REAL(IUSTAR)
       DELALP = ALPHAM/REAL(IALPHA)
 
@@ -63,6 +66,11 @@
 
 !*    2. CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !        ------------------------------------------------
+
+      ALLOCATE(W(JTOT))
+      W=1.
+      W(1)=0.5
+      W(JTOT)=0.5
 
       X0 = 0.05
       DO L=0,IALPHA
@@ -82,10 +90,12 @@
 
             ZLOG         = MIN(LOG(ZMU),0.)
             ZBETA        = CONST1*ZMU*ZLOG**4
-            TAUHFT(K,L)  = TAUHFT(K,L)+ZBETA/Y*DELY
+            TAUHFT(K,L)  = TAUHFT(K,L)+W(J)*ZBETA/Y*DELY
           ENDDO
         ENDDO
       ENDDO
+
+      DEALLOCATE(W)
 
       RETURN
       END SUBROUTINE TAUHF

@@ -80,6 +80,7 @@
       USE YOWPARAM , ONLY : CLDOMAIN
       USE YOWPCONS , ONLY : G        ,ZMISS
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -98,6 +99,7 @@
       DATA FRSTIME32 / .TRUE. /
 
 ! ----------------------------------------------------------------------
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1709,0)
 
 !*    0. PUT FIELD INTO GLOBAL MATRIX ZWORK.
 !        -----------------------------------
@@ -321,6 +323,8 @@
         CALL GRPRS1 (KSEC0, KSEC1)
         CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
       ENDIF
+
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1709,1)
 
       RETURN
       END SUBROUTINE GRIBPAC

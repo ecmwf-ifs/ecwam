@@ -126,7 +126,7 @@
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
      &            ROAIRO   ,ZIDLOLD
@@ -177,7 +177,8 @@
      &          USERID, RUNID, PATH, CPATH,
      &          CDATEA, IDELWI, CLTUNIT,
      &          LPBIOOUT, LFDBIOOUT, LGRIBIN, LGRIBOUT,
-     &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP
+     &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
+     &          NWAM_BLKS
 
 !     IOPTI : WHEN LGRIBIN = FALSE, IT SELECTS COLD START SPECTRAL FORM
 !             (0, 1, or 2 see MSTART)
@@ -207,6 +208,12 @@
 !     YCLASS   : DATA CLASS USED TO CODE DATA IN GRIB.
 !     YEXPVER : EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
 !     CFDB2DSP : FDB ROOT USED TO WRITE GRIB OUTPUT TO FDB.
+!     NWAM_BLKS: IF OPENMP IS USED THEN NWAM_BLKS WILL BE THE NUMBER
+!                USED TO SPLIT THE GRID POINTS INTO NWAM_BLKS CHUNKS
+!                THAT ARE DISTRIBUTED TO THE DIFFERENT THREADS. 
+!                OTHERWISE IT IS STILL USED TO SPLIT THE INNER LOOPS
+!                INTO CHUNKS (SEE GETWND).
+
 
 ! ----------------------------------------------------------------------
 
@@ -255,7 +262,9 @@
       MARSTYPE = 'an'
       YCLASS   = 'rd'
       YEXPVER  = USERID//'a'
-      CFDB2DSP = "/vpp700/fdb18"
+      CFDB2DSP = "/hpca/fdb"
+
+      NWAM_BLKS = 1
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------

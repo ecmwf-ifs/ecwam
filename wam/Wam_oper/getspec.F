@@ -74,7 +74,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 50000)
+      PARAMETER (NBIT = 69000)
 
       CHARACTER*  9 CMBXSIZE
       CHARACTER* 12 CDATE 
@@ -136,29 +136,25 @@ C
 
 !       INPUT SPECTRA ARE IN GRIB FORMAT
 
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
         ALLOCATE(KSEC0(NKSEK0),KSEC1(NKSEK1))
         ALLOCATE(KSEC2(NKSEK2),KSEC3(NKSEK3),KSEC4(NKSEK4))
         ALLOCATE(PSEC2(NPSEK2),PSEC3(NPSEK3))
         ALLOCATE(IPOINTER(1:NEND(NPROC)))
         ALLOCATE(WORK(NIBLO))
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
         IF (IRANK.EQ.IREAD) THEN
           IF (.NOT.LFDBIOIN) THEN
 
 !           CONNECT INPUT PE (IREAD) WITH INPUT FILE
 
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(1888,0)
             FILENAME='specwavein'
             LFILE=LEN_TRIM(FILENAME)
             INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(1888,1)
             IF(LLEXIST) THEN
 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1771,0)
               CALL PBOPEN(IUGRS,FILENAME(1:LFILE),'r',KRET)
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1771,1)
               IF(KRET.LT.0) THEN 
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '*                                 *'
@@ -286,7 +282,6 @@ C
 !             READ GRIB DATA FROM FDB (IF REQUESTED)
 !             SET VARIABLE PARAMETERS FOR FDB.
 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
               WRITE( cldir, '(i2.2)' ) K 
               istat = isetvalfdb( ifdb, 'direction', cldir )
               WRITE( clfre, '(i2.2)' ) M
@@ -320,12 +315,11 @@ C
                 WRITE(IU06,'(" GETSPEC: readfdb read ",i10,
      &          " words (status:", i3, ")" )')icount, irstat
               ENDIF
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
               IF(M.EQ.NFRE.AND.K.EQ.NANG) THEN 
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,0)
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
                 istat = iclosefdb(ifdb)
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,1)
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
                 IF (ISTAT .NE. 0) CALL ABORT1
               ENDIF
 
@@ -427,7 +421,7 @@ C
               CALL GRIBEX (KSEC0,KSEC1,KSEC2,PSEC2,KSEC3,PSEC3,KSEC4,
      &                     PSEC4, NTENCODE,INGRIB,ISIZE,KWORD,'D',KRET)
               IF (.NOT.LSYNCSTATS) CALL GSTATS(1703,1)
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(1886,0)
               IF(KRET.GT.0) THEN 
                 WRITE(IU06,*) '************************************'
                 WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
@@ -583,7 +577,7 @@ C
                   WORK(IJ) = FLMIN
                 ENDIF
               ENDDO
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(1886,1)
 
             ENDIF
 
@@ -626,9 +620,7 @@ C
         ENDDO ALL_FILE
 
         IF (.NOT.LFDBIOIN.AND.IRANK.EQ.IREAD) THEN
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1773,0)
           CALL PBCLOSE(IUGRS,KRET)
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1773,1)
           IF(KRET.LT.0) THEN 
             WRITE (IU06,*) '**********************************'
             WRITE (IU06,*) '*                                *'
@@ -662,7 +654,6 @@ C
 !         TO SEND SPECTRA FROM ONE PE  TO THE OTHERS
 !         WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE 
 
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
             CALL GETENV('MBX_SIZE',CMBXSIZE)
             READ(CMBXSIZE,'(I9)') MBXSIZE
             MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
@@ -705,7 +696,6 @@ C
      &                     ' BYTES FOR EACH MPDISTRIBFL CALL'
               WRITE(IU06,*)''
             ENDIF
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
           ENDIF
 
 
@@ -714,10 +704,8 @@ C
 !           INPUT SPECTRA ARE IN A BINARY FILE AND WILL BE READ
 !           USING THE PBIO SOFTWARE
 
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
             IF (IRANK.EQ.ISEND)
      &          CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
             DO MLOOP=1,NFRE,MDEL
 
@@ -725,7 +713,6 @@ C
               MSUP=MIN(MLOOP+MDEL-1,NFRE)
               ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
 !              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
               IF (IRANK.EQ.ISEND) THEN
 
                 LPBOPEN = .FALSE.
@@ -736,11 +723,8 @@ C
                 CALL READFL(RFL,MINF,MSUP,FILENAME,IUNIT,
      &           LPBOPEN,LPBCLOSE)
               ENDIF
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 !              PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(749,0)
               CALL MPL_BARRIER(CDSTRING='GETSPEC:')
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(749,1)
 
               CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
      &         MINF,MSUP,RFL)
@@ -750,7 +734,6 @@ C
      &         'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
 
 !              KEEP CORRESPONDING CONTRIBUTION TO FL
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
               DO M=MINF,MSUP
                 DO K=1,NANG
                   DO IJ=NSTART(IRANK),NEND(IRANK)
@@ -764,7 +747,6 @@ C
                   FL(NINF-1,K,M) = 0. 
                 ENDDO
               ENDDO
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
               IF(ALLOCATED(RFL)) DEALLOCATE(RFL)
 
@@ -777,7 +759,6 @@ C
             ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
 
 !           READ RESTART SPECTRA FROM PE ISEND (IREAD)
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
             IF (IRANK.EQ.ISEND) THEN
               CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
               IF (ITEST > 3 ) THEN
@@ -786,15 +767,12 @@ C
               ENDIF
               CALL READFL(RFL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
             ENDIF
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
             DO MLOOP=1,NFRE,MDEL
               MINF=MLOOP
               MSUP=MIN(MLOOP+MDEL-1,NFRE)
 !             PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(749,0)
               CALL MPL_BARRIER(CDSTRING='GETSPEC 2:')
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(749,1)
 
               CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
      &                         1,NFRE,RFL)
@@ -802,7 +780,6 @@ C
             ENDDO
 
 !           KEEP CORRESPONDING CONTRIBUTION TO FL
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,0)
             DO K=1,NANG
               DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
@@ -816,7 +793,6 @@ C
                 FL(NINF-1,K,M) = 0. 
               ENDDO
             ENDDO
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1891,1)
 
             IF (ITEST.GE.2)
      &      WRITE(IU06,*)

@@ -193,7 +193,6 @@
         CALL FLUSH (KU06)
       ENDIF
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,0)
       IF(CDTPRO.LE.CDATEF) THEN
 
 !*    0.1.  THIS IS AN ANALYSIS DATE.
@@ -322,6 +321,7 @@
 
       ISEC4=KSEK4
 
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1987,0)
       DO JANG=1,KANG
         ZTHETA(JANG) = PTHETA(JANG)*PPDEG
       ENDDO
@@ -379,7 +379,7 @@
           IPOINTER(IJ) = (IY-1)*KGX + IX + KDEXN
         ENDDO
       ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,1)
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1987,1)
 
 
 !-----------------------------------------------------------------------
@@ -396,9 +396,7 @@
 
         IST=ISTEP
         IF(IC+ISTEP.GT.KFRE*KANG ) IST=KFRE*KANG-IC+1
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,0)
         ZSEC4OUT = 0.0
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,1)
 
 !       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
 !       ---------------------------------- than PE's)
@@ -419,9 +417,7 @@
      &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
 
             IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(751,0)
               CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(751,1)
             ENDIF
 
             IF(KSEND.EQ.KRANK) THEN
@@ -542,6 +538,7 @@
             WRITE(KU06,*) ' in routine SPEC2FDB '
             WRITE(KU06,*) ' FDB ERROR CODE IS ',IERR
             WRITE(KU06,*) ' ------------------------'
+            CALL FLUSH(KU06)
             CALL ABORT1
           ENDIF
       ENDIF

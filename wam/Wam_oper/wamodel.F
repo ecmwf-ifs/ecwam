@@ -350,7 +350,7 @@
       CHARACTER*12 CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
       LOGICAL GFLAGBAK(JPPFLAG)
-      LOGICAL :: LSV, LRST, LOUT, LFDBIOOUT_OLD 
+      LOGICAL :: LSV, LRST, LOUT, LFDBIOOUT_OLD, L1STCALL 
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
@@ -367,7 +367,7 @@
 ! End Mod for OPENMP
 
       LOGICAL NEWREAD, NEWFILE
-      DATA NEWFILE / .FALSE. /
+      DATA NEWFILE, L1STCALL / .FALSE.,.TRUE. /
       ZERO = ' '
 
 ! ----------------------------------------------------------------------
@@ -732,7 +732,8 @@
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
                   IF(NIBLO.GT.1) THEN
-                    CALL PROPAGS(FL1,FL3,KIJS,KIJL,IG,SL,FCONST)
+                    CALL PROPAGS(FL1,FL3,KIJS,KIJL,IG,SL,FCONST,
+     &                           L1STCALL)
                     IF (ITEST.GE.2) THEN
                       WRITE(IU06,*) '   SUB. WAMODEL: PROPAGS CALLED'
                       CALL FLUSH (IU06)
@@ -743,6 +744,7 @@
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1430,1)
+                L1STCALL=.FALSE.
               ENDIF
 
               CALL GSTATS(1431,0)
@@ -811,18 +813,20 @@
      &                   CDATE, CDTPRA,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                   ROAIRO, ZIDLOLD,
      &                   U10NEW,THWNEW,USNEW,Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL,FCONST)
+     &                   ROAIRN, ZIDLNEW, SL,FCONST, L1STCALL)
             ELSE
               CALL PHYS (FL3,FL2,FL4,IJS(IG),IJL(IG),IG,NSIZE, NWORK,
      &                   CDATE, CDTPRA,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                   ROAIRO, ZIDLOLD,
      &                   U10NEW,THWNEW,USNEW,Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL,FCONST)
+     &                   ROAIRN, ZIDLNEW, SL,FCONST, L1STCALL)
             ENDIF
 
             DO JROC=1,NTASKS-1
               CALL TSKWAIT(ITSKCA(1,JROC))
             ENDDO
+
+            L1STCALL=.FALSE.
 
           ENDIF
 
@@ -830,7 +834,6 @@
 
 !*    1.5.5.3 COPY AND CLOSE FILES IF NEEDED.
 !             -------------------------------
-          CALL GSTATS(1908,0)
 
           CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDATE,CDATEWH,
      &                 NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,
@@ -846,12 +849,10 @@
 !             ---------------------------------------------
 
           CALL INCDATE(CDATE,IDELT)   
-          CALL GSTATS(1908,1)
           IF (CDATE.LT.CDTPRO) GO TO 1550
 
 !        END OF TIME LOOP ALL TIME STEPS DONE
 
-          CALL GSTATS(1908,0)
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
@@ -868,7 +869,15 @@
               WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT',
      &         ' ICEPOINTS'
             ENDIF
-            CALL SETICE(FL3,IJS(IG),IJL(IG),IG)
+            CALL GSTATS(1439,0)
+!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              CALL SETICE(FL3,KIJS,KIJL,IG)
+            ENDDO
+!$OMP       END PARALLEL DO
+            CALL GSTATS(1439,1)
           ENDIF
 
 !ICE
@@ -877,6 +886,7 @@
 !*    1.5.7 INPUT OF BOUNDARY VALUES.
 !           -------------------------
 
+          CALL GSTATS(1909,0)
           IF (IBOUNF.EQ.1) THEN
             CALL BOUINPT (FL3, IG, IU02)
             IF (ITEST.GE.2) THEN
@@ -949,7 +959,7 @@
             WRITE(IU06,*) ' '
             CALL FLUSH (IU06)
           ENDIF
-          CALL GSTATS(1908,1)
+          CALL GSTATS(1909,1)
 
           IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
      &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO .OR.
@@ -960,9 +970,7 @@
             IF (IGH1.EQ.IG) THEN
 !REFRA
               IF (IREFRA.EQ.2) THEN
-                CALL GSTATS(1908,0)
                 CALL INTPOL (FL3, SL, IJS(IG), IJL(IG), IG)
-                CALL GSTATS(1908,1)
                 CALL OUTBS (SL, FL2, IJS(IG), IJL(IG), IG, IGL,
      &                      IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                      TAUW, NSTART,NEND)
@@ -976,9 +984,7 @@
             ELSE
 !REFRA
               IF (IREFRA.EQ.2) THEN
-                CALL GSTATS(1908,0)
                 CALL INTPOL (FL3, SL, IJS(IG), IJL(IG), IG)
-                CALL GSTATS(1908,1)
                 CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
      &                      IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                      TAUW, NSTART,NEND)

@@ -298,7 +298,7 @@
      &             ISEC1, ISEC2, FIELDS,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
-     &             LLRESTARTED, ZDELATM)
+     &             LLRESTARTED, ZDELATM, KQGAUSS)
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 

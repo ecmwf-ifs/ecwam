@@ -55,7 +55,7 @@
      &            DAL2     ,FRH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
@@ -85,7 +85,7 @@
         ALLOCATE(ICOMBUF(2))
 
         IF(IRANK.EQ.ISEND) THEN
-          MIC=20+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
+          MIC=21+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
           MZC=25+(4+3*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
      &        JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+
      &        NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
@@ -247,6 +247,8 @@
           ENDDO
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=IRGG
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IQGAUSS
 
           DO M=1,NFRE+4
             IKCOUNT=IKCOUNT+1
@@ -661,6 +663,8 @@
           ENDDO
           IKCOUNT=IKCOUNT+1
           IRGG=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          IQGAUSS=ICOMBUF(IKCOUNT)
 
           IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(NFRE+4))
           IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(NFRE+4))

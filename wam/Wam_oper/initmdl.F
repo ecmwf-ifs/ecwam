@@ -244,13 +244,14 @@
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT
       USE YOWICE   , ONLY : LICERUN  ,ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
-     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
+     &            KMNOP    ,KMSOP
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,KTAG     ,
      &            NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGY      ,NBLO     ,
      &            NIBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,RAD
+      USE YOWPCONS , ONLY : G        ,CIRC     ,ZPI      ,RAD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            INDEP
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
@@ -286,7 +287,6 @@
       REAL X4(2)
       INTEGER I4(2)
 
-      CALL GSTATS(1962,0)
       CALL INIWCST
 
 !     0. DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
@@ -567,7 +567,6 @@
       INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
       ALLOCATE(ICEMASK(NIBLO,NBLO))
-      CALL GSTATS(1962,1)
 
       IF (LICERUN) THEN
         CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
@@ -588,7 +587,6 @@
 !*    3. PRINT INITIAL CONDITIONS AS READ FROM PERPROCESSING.
 !        ----------------------------------------------------
 
-      CALL GSTATS(1962,0)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' WAVE MODEL GRID ORGANISATION:'
       WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ',
@@ -631,7 +629,7 @@
      &     IGAR(I), IJAR(I), XLO, XLA
         ENDDO
       ENDIF
- 3002 FORMAT(3x,a,f8.2,a)
+ 3002 FORMAT(3x,a,f9.3,a)
  3003 FORMAT(3x,a,i6,  a)
 !NEST
       CALL FLUSH (IU06)
@@ -663,11 +661,9 @@
 
       IF (ITEST.GE.2)CALL FLUSH(IU06)
 
-      CALL GSTATS(1962,1)
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &               ROAIRO,ZIDLOLD,
      &               NSTART,NEND,IREAD)
-      CALL GSTATS(1962,0)
 
       IF (LWCOU) THEN
         IDELWO = KDELWI
@@ -819,7 +815,14 @@
       ELSE
         CFLP= IDELPRO*GVE/DPH
       ENDIF
-      DLH = DELLAM(NGY)*COS(AMONOP*RAD)
+      DLH = CIRC 
+!     FIND THE SMALLEST DLH
+      DO KX=KMSOP,KMNOP
+        XLA = AMOSOP+REAL(KX-1)*XDELLA
+        DLH_KX = DELLAM(KX)*COS(XLA*RAD)
+        DLH = MIN(DLH_KX,DLH)
+      ENDDO
+
       IF(DLH.EQ.0.0) THEN
         CFLL= 0.
       ELSE
@@ -866,7 +869,6 @@
         WRITE(IU06,*) '                  WILL BE NADV = ', NADV
         CALL FLUSH(IU06)
       ENDIF
-      CALL GSTATS(1962,1)
 
 ! ----------------------------------------------------------------------
 
@@ -935,7 +937,6 @@
 !*    9. PRECOMPUTE REFRACTION TERMS.
 !        ----------------------------
 
-      CALL GSTATS(1962,0)
       IF (IREFRA.NE.0) THEN
         CALL PROPDOT(SL)
         IF (ITEST.GE.2)
@@ -993,7 +994,6 @@
       IF (ITEST.GE.2)
      1   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
 
-      CALL GSTATS(1962,1)
 
       RETURN
       END SUBROUTINE INITMDL

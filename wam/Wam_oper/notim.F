@@ -65,13 +65,14 @@
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,UWND     ,VWND     ,
-     &            AIRD    , PZIDL    ,USNEXT   ,DSNEXT   , ADSNEXT ,
-     &            ZIDLNEXT
+      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
+     &            UWND     ,VWND     ,AIRD    , PZIDL    ,
+     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT
 
 ! ----------------------------------------------------------------------
       CHARACTER*12 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
@@ -202,10 +203,27 @@
 !*        WRITE TO OUTPUT.
 !         -----------------------------------------------------
 
-        IF(.NOT.ALLOCATED(USNEXT)) ALLOCATE(USNEXT(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(DSNEXT)) ALLOCATE(DSNEXT(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ADSNEXT)) ALLOCATE(ADSNEXT(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ZIDLNEXT)) ALLOCATE(ZIDLNEXT(NIBLO,NBLO))
+        NSTORE=1
+        IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
+        IF(LMESSPASS) THEN
+          IF(.NOT.ALLOCATED(USNEXT))
+     &            ALLOCATE(USNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(DSNEXT))
+     &            ALLOCATE(DSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ADSNEXT))
+     &            ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ZIDLNEXT))
+     &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        ELSE
+          IF(.NOT.ALLOCATED(USNEXT))
+     &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(DSNEXT))
+     &            ALLOCATE(DSNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ADSNEXT))
+     &            ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ZIDLNEXT))
+     &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
+        ENDIF
 
         DO IG=1,IGL
 
@@ -214,12 +232,12 @@
 !!     2            (DS(I,IG),I=IJS(IG),IJL(IG))
 !! 
 !!save to array instead
-          CDTNEXT=CDTWIH
+          CDTNEXT(1)=CDTWIH
           DO I=IJS(IG),IJL(IG)
-            USNEXT(I,IG)=US(I,IG)
-            DSNEXT(I,IG)=DS(I,IG)
-            ADSNEXT(I,IG)=ADS(I,IG)
-            ZIDLNEXT(I,IG)=ZIDL(I,IG)
+            USNEXT(I,1,IG)=US(I,IG)
+            DSNEXT(I,1,IG)=DS(I,IG)
+            ADSNEXT(I,1,IG)=ADS(I,IG)
+            ZIDLNEXT(I,1,IG)=ZIDL(I,IG)
           ENDDO
 
         ENDDO

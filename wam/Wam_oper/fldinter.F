@@ -1,9 +1,9 @@
-      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, FLDIN,
+      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS,
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-     &                     IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
+     &                     IXLG, KXLT, NIBLO, IGL, IJS, IJL,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                     RLONRGG, FLDOUT,  
-     &                     LLINTERPOL,
+     &                     RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
+     &                     LADEN, ROAIR, LGUST,LLINTERPOL,
      &                     DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
 ! ----------------------------------------------------------------------    
 
@@ -16,7 +16,7 @@
 !     PURPOSE.                                                          
 !     --------                                                          
 
-!     IT INTERPOLATES AN ATMOSPHERIC DATA FIELD TO PRODUCE A FIELD 
+!     IT INTERPOLATES ATMOSPHERIC DATA FIELDS TO PRODUCE A FIELD 
 !     ON THE WAVE MODEL GRID USING BILINEAR INTERPOLATION.
 !     IT MAKES USE OF THE INTERPOLATION COEFFICIENTS PRODUCED BY 
 !     SUBROUTINE "INITIALINT" WHICH SHOULD BE CALLED BEFORE ANY
@@ -27,11 +27,12 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FLDIN,
+!      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FIELDS,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
+!    &                    IXLG, KXLT, NIBLO, IGL, IJS, IJL, 
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-!    &                    RLONRGG, FLDOUT, LLINTERPOL,
+!    &                    RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
+!    &                    LADEN, ROAIR, LGUST,LLINTERPOL,
 !    &                    DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
 !
 !        *IU06*   - OUTPUT UNIT.
@@ -41,7 +42,13 @@
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
 !        *RLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (INPUT FIELD)
-!        *FLDIN*  - INPUT ATMOSPHERIC FIELD WHICH WILL BE INTERPOLATED
+!        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
+!                   FIELDS(:,1) = U COMPONENT OF NEUTRAL WIND SPEED (U10)
+!                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
+!                   FIELDS(:,3) = AIR DENSITY
+!                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
+!                   FIELDS(:,5) = RESERVED FOR ICE BOUNDARY
+
 !        WAVE MODEL GRID SPECIFICATION (INPUT):
 !        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
 !        *NGY*    - NUMBER OF ROWS    IN ARRAY FIELD USED.              
@@ -53,14 +60,15 @@
 !        *KXLT*   - INTEGER  LAT. GRID INDEX.
 !        *NIBLO*  - FIRST DIMENSION OF IXLG AND KXLT.
 !        *IGL*    - SECOND DIMENSION OF IXLG AND KXLT.
-!        *KINF*   - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
-!        *KSUP*   - LARGEST WAM GRID POINT INDEX USED BY THE PE.
+!        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
+!        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
 !        *AMONOP* - MOST NORTHERN LATITUDE IN GRID ( ? , 1 ).           
 !        *IPERIODIC* - SPECIFIES IF WAM GRID IS PERIODIC (=1) OR NOT (=0)
 !        INTERPOLATION COEFFICIENTS & INDECES (INPUT):
+!        *IKBLOCK* - BLOCK INDEX FOR THE ATMOSPHERIC FIELDS.
 !        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
 !        *DK1M*   - COEFFICIENT
 !        *DII1M*  - COEFFICIENT
@@ -69,7 +77,11 @@
 !        *IIM*    - INDEX
 !        *IIPM*   - INDEX
 !        OUTPUT:
-!        *FLDOUT* - INTERPOLATED FIELD
+!        *UWND*   - INTERPOLATED FIELD
+!        *VWND*   - INTERPOLATED FIELD
+!        *AIRD*   - INTERPOLATED FIELD
+!        *PZIDL*  - INTERPOLATED FIELD
+
 
 !     EXTERNALS.                                                        
 !     ----------                                                        
@@ -78,15 +90,17 @@
 
       INTEGER KLONRGG(NGY)
 
-      INTEGER NGPTOTG, NC, NR, NIBLO, IGL, KINF, KSUP
+      INTEGER NGPTOTG, NC, NR, NIBLO, IGL, IJS, IJL 
       INTEGER, DIMENSION(NIBLO,IGL) :: IXLG, KXLT
       INTEGER RLONRGG(NR)
-      REAL FLDIN(NGPTOTG)
-      LOGICAL LLINTERPOL
+      INTEGER :: IKBLOCK(0:NC+1,NR)
+      REAL :: ROAIR
+      REAL FIELDS(NGPTOTG,NFIELDS)
+      LOGICAL:: LADEN, LGUST, LLINTERPOL
       
-      REAL FLDOUT(NGX,NGY)                            
+      REAL, DIMENSION(NGX,NGY) :: UWND, VWND, AIRD, PZIDL
+
       REAL ZDELLO(NGY)
-      REAL, ALLOCATABLE :: WORK(:,:)
 
       INTEGER  KKM(NGY), IIM(NGX,NGY), IIPM(NGX,NGY)
       REAL DK1M(NGY), DII1M(NGX,NGY), DIIP1M(NGX,NGY)
@@ -97,12 +111,26 @@
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-        L = 0                                                          
-        DO K=1,NGY                                                
-          JSN=NGY-K+1
-          DO I=1,KLONRGG(JSN)
-            L = L+1                                                     
-            FLDOUT(I,K) = FLDIN(L) 
+        DO IG=1,IGL
+          DO IJ = IJS,IJL
+            I = IXLG(IJ,IG)
+            K = NGY-KXLT(IJ,IG) + 1
+
+            UWND(I,K) = FIELDS(IKBLOCK(I,K),1) 
+            VWND(I,K) = FIELDS(IKBLOCK(I,K),2) 
+            IF (LADEN) THEN
+              AIRD(I,K) = FIELDS(IKBLOCK(I,K),3) 
+            ELSE
+              AIRD(I,K) = ROAIR
+            ENDIF
+            IF (LGUST) THEN
+              PZIDL(I,K) = FIELDS(IKBLOCK(I,K),4) 
+            ELSE
+              PZIDL(I,K) = 0.
+            ENDIF
+
+!!! nothing is done for the ice boundary !!!
+
           ENDDO
         ENDDO
 
@@ -111,46 +139,8 @@
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-        IF (IPERIODIC.EQ.1) THEN
-          ALLOCATE(WORK(0:NC+1, NR))
-        ELSE
-          ALLOCATE(WORK(NC,NR))
-        ENDIF
-
-        L = 0                                                          
-        DO KK=1,NR                                                
-          JSN=NR-KK+1
-          DO II=1,RLONRGG(JSN)
-            L = L+1                                                     
-            WORK(II,KK) = FLDIN(L)                                       
-          ENDDO
-        ENDDO
-        IF(NGPTOTG.NE.L)THEN
-          WRITE(IU06,*)' ######################################'
-          WRITE(IU06,*)' ####  WARNING   WARNING   WARNING  ###'
-          WRITE(IU06,*)' ######################################'
-          WRITE(IU06,*)' ##  NGPTOTG  IS  NOT  EQUAL TO  L  ###'
-          WRITE(IU06,*)' ##  NGPTOTG = ', NGPTOTG 
-          WRITE(IU06,*)' ##        L = ', L 
-          WRITE(IU06,*)' ######################################'
-          WRITE(IU06,*)' ##  NC = ', NC, '   NR = ', NR
-          WRITE(IU06,*)' ##  SUM RLONRGG = ',SUM(RLONRGG(1:NR))
-          WRITE(IU06,*)' ##  RLONRGG = ', RLONRGG(1:NR)
-          WRITE(IU06,*)' ######################################'
-          WRITE(IU06,*)' ######################################'
-          WRITE(IU06,*)' ######################################'
-          CALL FLUSH(IU06)
-        ENDIF
-        IF(IPERIODIC.EQ.1) THEN
-          DO KK=1,NR                                                
-          JSN=NR-KK+1
-          WORK(0,KK)= WORK(RLONRGG(JSN),KK)
-          WORK(RLONRGG(JSN)+1,KK)= WORK(1,KK)
-          ENDDO
-        ENDIF
-
         DO IG=1,IGL
-          DO IJ = KINF,KSUP
+          DO IJ = IJS,IJL 
             I = IXLG(IJ,IG)
             K = NGY-KXLT(IJ,IG) + 1
 
@@ -171,12 +161,39 @@
             DIIP1= DIIP1M(I,K) 
             DIIP2=1.-DIIP1
 
-            FLDOUT(I,K)=DK2*(DII2*WORK(II,KK)+DII1*WORK(II1,KK)) +
-     &             DK1*(DIIP2*WORK(IIP,KK1)+DIIP1*WORK(IIP1,KK1))
+            UWND(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),1) +
+     &                      DII1*FIELDS(IKBLOCK(II1,KK),1) ) +
+     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),1) +
+     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),1) )
+
+            VWND(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),2) +
+     &                      DII1*FIELDS(IKBLOCK(II1,KK),2) ) +
+     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),2) +
+     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),2) )
+
+            IF (LADEN) THEN
+              AIRD(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),3) +
+     &                        DII1*FIELDS(IKBLOCK(II1,KK),3) ) +
+     &                  DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),3) +
+     &                        DIIP1*FIELDS(IKBLOCK(IIP1,KK1),3) )
+            ELSE
+              AIRD(I,K) = ROAIR
+            ENDIF
+            IF (LGUST) THEN
+              PZIDL(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),4) +
+     &                         DII1*FIELDS(IKBLOCK(II1,KK),4) ) +
+     &                   DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),4) +
+     &                         DIIP1*FIELDS(IKBLOCK(IIP1,KK1),4) )
+            ELSE
+              PZIDL(I,K) = 0.
+            ENDIF
+
+!!! nothing is done for the ice boundary !!!
+
+
           ENDDO
         ENDDO
 
-        DEALLOCATE(WORK)
       ENDIF
 
       RETURN

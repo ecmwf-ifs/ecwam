@@ -28,10 +28,12 @@
 !     IT UNPACKS A GRIB DATA FIELD INCLUDING THE INFORMATION ON
 !     ITS GRID AND USE IT TO PRODUCE A FIELD ON THE WAVE MODEL GRID
 !     USING BILINEAR INTERPOLATION IF THE 2 GRIDS DO NOT MATCH.
-!     THE CLOSEST GRID POINT IS USED INSTEAD IF WAVE FIELDS ARE
+!     THE CLOSEST GRID POINT IS USED INSTEAD IF FIELDS ARE
 !     ARE ENCOUNTERED WITH MISSING DATA POINTS.
 !     WAVE FIELDS ARE RECOGNISED BY THEIR VALUES OF KSEC1(40)
 !     SEE WSTREAM_STRG
+!     FOR NON WAVE FIELDS IF THE CLOSEST VALUE IS STILL MISSING THEN
+!     THE AVERAGE OF THE NEIGHBORING NON MISSING POINTS IS TAKEN.
 !     IT ONLY WORKS IF THE INPUT AND OUTPUT GRIDS ARE LATITUDE/LONGITUDE
 !     (REGULAR OR IRREGULAR) OR GAUSSIAN GRIDS (FULL OR REDUCED) !!!!
 
@@ -114,7 +116,9 @@
       CHARACTER CSTREAM*4
       CHARACTER CDATE*12
 
-      LOGICAL LLINTERPOL, LLNEAREST
+      LOGICAL LLINTERPOL, LLNEAREST, LLNONWAVE
+
+      DATA KPARFRSTT,KPARFRSTB /0,0/
                                                                         
 ! ----------------------------------------------------------------------
 
@@ -188,6 +192,12 @@
       ISTREAM=KSEC1(40)
       CALL WSTREAM_STRG(ISTREAM,CSTREAM)
       IF(CSTREAM.NE.'****') THEN 
+        LLNONWAVE=.FALSE.
+      ELSE
+        LLNONWAVE=.TRUE.
+      ENDIF
+
+      IF(.NOT. LLNONWAVE .OR. KSEC4(1).NE.KSEC4(34) ) THEN 
         LLNEAREST=.TRUE.
       ELSE
         LLNEAREST=.FALSE.
@@ -305,7 +315,7 @@
 !!! THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!! A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!! RMOEAP IS IMPLICITLY KNOWN.
-      IF(IREPR.EQ.4 .AND. .NOT. LLNEAREST) THEN
+      IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
         DELLO = 360./MAX(1,NC)
         RMOEAP = RMOWEP+360. - DELLO
         IPERIODIC = 1
@@ -358,6 +368,15 @@
 
       DELLA=(RMONOP-RMOSOP)/MAX(1,NR-1)
 
+      KAMOWEP=NINT(AMOWEP*100.)
+      KAMOEAP=NINT(AMOEAP*100.)
+      KAMONOP=NINT(AMONOP*100.)
+      KAMOSOP=NINT(AMOSOP*100.)
+      KRMOWEP=NINT(RMOWEP*100.)
+      KRMOEAP=NINT(RMOEAP*100.)
+      KRMONOP=NINT(RMONOP*100.)
+      KRMOSOP=NINT(RMOSOP*100.)
+
       IF(IPERIODIC.EQ.1) THEN
         DELLO=360./MAX(1,NC)
         DO J=1,NR
@@ -372,13 +391,48 @@
         ENDDO
       ENDIF
 
+      ITOP=0
+      IF(KAMONOP.GT.KRMONOP) THEN
+        IF(KPARFRSTT.NE.IPARAM) THEN
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  THE MODEL NORTHERN BOUNDARY IS OUTSIDE *'
+          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
+          WRITE(IU06,*) '  ',IPARAM 
+          WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
+          WRITE(IU06,*) '*  AREA IN BETWEEN.'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
+          KPARFRSTT=IPARAM
+        ENDIF
+        ITOP=INT((AMONOP-RMONOP)/DELLA)+2
+      ENDIF
+      IBOT=0
+      IF (KAMOSOP.LT.KRMOSOP) THEN
+        IF(KPARFRSTB.NE.IPARAM) THEN
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  THE MODEL SOUTHERN BOUNDARY IS OUTSIDE *'
+          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
+          WRITE(IU06,*) '  ',IPARAM 
+          WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
+          WRITE(IU06,*) '*  AREA IN BETWEEN.'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
+          WRITE(IU06,*) '*                                         *'
+          KPARFRSTB=IPARAM
+        ENDIF
+        IBOT=INT((RMOSOP-AMOSOP)/DELLA)+2
+      ENDIF
 
-      IF(AMONOP.GT.RMONOP.OR.AMONOP.LT.RMOSOP.OR.
-     &   AMOSOP.LT.RMOSOP.OR.AMOSOP.GT.RMONOP.OR.
+      IF(KAMONOP.LT.KRMOSOP.OR.
+     &   KAMOSOP.GT.KRMONOP.OR.
      &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
-     &    .AND.AMOWEP.LT.RMOWEP).OR.
+     &    .AND.KAMOWEP.LT.KRMOWEP).OR.
      &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
-     &    .AND.AMOEAP.GT.RMOEAP+DELLO) ) THEN
+     &    .AND.KAMOEAP.GT.NINT((RMOEAP+DELLO)*100.)) ) THEN
 
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'
@@ -402,8 +456,8 @@
 
       LLINTERPOL=.TRUE.
 
-      IF(AMONOP.EQ.RMONOP.AND.AMOSOP.EQ.RMOSOP.AND.
-     &   AMOWEP.EQ.RMOWEP.AND.AMOEAP.EQ.RMOEAP ) THEN
+      IF(KAMONOP.EQ.KRMONOP.AND.KAMOSOP.EQ.KRMOSOP.AND.
+     &   KAMOWEP.EQ.KRMOWEP.AND.KAMOEAP.EQ.KRMOEAP ) THEN
          IF(JRGG.EQ.KRGG.AND.
      &      NC.EQ.NGX.AND.NR.EQ.NGY) THEN
 
@@ -495,11 +549,21 @@
         ENDIF
 
 
-        IF(IPERIODIC.EQ.1) THEN
-          ALLOCATE(WORK(0:NC+1,NR))
-        ELSE
-          ALLOCATE(WORK(NC,NR))
-        ENDIF
+        KKMIN=1-ITOP
+        KKMAX=NR+IBOT
+        ALLOCATE(WORK(1-IPERIODIC:NC+IPERIODIC,KKMIN:KKMAX))
+
+        DO KK=KKMIN,0
+          DO II=1-IPERIODIC,NC+IPERIODIC
+            WORK(II,KK) = PMISS
+          ENDDO
+        ENDDO
+
+        DO KK=NR+1,KKMAX
+          DO II=1-IPERIODIC,NC+IPERIODIC
+            WORK(II,KK) = PMISS
+          ENDDO
+        ENDDO
 
         L = 0                                                          
         DO KK=1,NR                                                
@@ -525,9 +589,9 @@
 
           XK = RMONOP - (AMOSOP + (JSN-1)*XDELLA)
           XK = XK/DELLA+1.
-          KK = MAX(1,INT(XK))
+          KK = MAX(KKMIN,INT(XK))
           KSN= NR-KK+1
-          KK1=MIN(KK+1,NR)
+          KK1=MIN(KK+1,KKMAX)
           KSN1=NR-KK1+1
           DK1=XK-REAL(KK)
           DK2=1.-DK1
@@ -538,17 +602,19 @@
             XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP
             XI = MOD(XI+720.,360.)
 
-            XII = XI/RDELLO(KSN)+1.
+            KSNLIM=MIN(MAX(KSN,1),NR)
+            XII = XI/RDELLO(KSNLIM)+1.
             II = MAX(1-IPERIODIC,INT(XII))
-            II = MIN(II,RLONRGG(KSN))
-            II1 = MIN(II+1,RLONRGG(KSN)+IPERIODIC)
+            II = MIN(II,RLONRGG(KSNLIM))
+            II1 = MIN(II+1,RLONRGG(KSNLIM)+IPERIODIC)
             DII1=XII-REAL(II)
             DII2=1.-DII1
 
-            XIIP = XI/RDELLO(KSN1)+1.
+            KSN1LIM=MIN(MAX(KSN1,1),NR)
+            XIIP = XI/RDELLO(KSN1LIM)+1.
             IIP = MAX(1-IPERIODIC,INT(XIIP))
-            IIP = MIN(IIP,RLONRGG(KSN1)) 
-            IIP1 = MIN(IIP+1,RLONRGG(KSN1)+IPERIODIC) 
+            IIP = MIN(IIP,RLONRGG(KSN1LIM)) 
+            IIP1 = MIN(IIP+1,RLONRGG(KSN1LIM)+IPERIODIC) 
             DIIP1=XIIP-REAL(IIP)
             DIIP2=1.-DIIP1
 
@@ -569,6 +635,36 @@
                   IF(DIIP1.LE.0.5) ICL=IIP
                 ENDIF
                 FIELD(I,K)=WORK(ICL,KCL)
+
+!               FOR NON WAVE FIELD, NON MISSING VALUE OVER SEA IS NEEDED
+                IF(LLNONWAVE) THEN
+                  IF(FIELD(I,K).EQ.PMISS) THEN
+                    NCOUNT=0
+                    FIELD(I,K)=0.
+                    IF(WORK(II,KK).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(II,KK)
+                      NCOUNT=NCOUNT+1
+                    ENDIF
+                    IF(WORK(II1,KK).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(II1,KK)
+                      NCOUNT=NCOUNT+1
+                    ENDIF
+                    IF(WORK(IIP,KK1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(IIP,KK1)
+                      NCOUNT=NCOUNT+1
+                    ENDIF
+                    IF(WORK(IIP1,KK1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(IIP1,KK1)
+                      NCOUNT=NCOUNT+1
+                    ENDIF
+                    IF(NCOUNT.GT.0) THEN
+                      FIELD(I,K)=FIELD(I,K)/NCOUNT
+                    ELSE
+                      FIELD(I,K)=WORK(ICL,KCL)
+                    ENDIF
+                  ENDIF
+                ENDIF
+
               ELSE
                 FIELD(I,K)=DK2*(DII2*WORK(II,KK)+DII1*WORK(II1,KK)) +
      &                  DK1*(DIIP2*WORK(IIP,KK1)+DIIP1*WORK(IIP1,KK1))

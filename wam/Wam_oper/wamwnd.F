@@ -1,4 +1,4 @@
-      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND)
+      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, KINF, KSUP,IJS, IJL, IG)
 
 ! ----------------------------------------------------------------------
 
@@ -16,7 +16,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND)*
+!       *CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP,IJS, IJL, IG)*
 !          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
@@ -24,7 +24,9 @@
 !                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *KINF* - LOWER BOUND ON FIRST DIMENSION OF FIELD
 !          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF FIELD
-!          *KEND* - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
+!          *IJS*    - INDEX OF FIRST GRIDPOINT
+!          *IJL*    - INDEX OF LAST GRIDPOINT
+!          *IG*     - BLOCK NUMBER
 
 !     METHOD.
 !     -------
@@ -40,10 +42,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NGY      ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NGY      ,NBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR
       USE YOWCOUP  , ONLY : XKAPPA
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -58,36 +59,32 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS , ADS,ZIDL
-      LOGICAL LFRSTIME
-
-      DATA LFRSTIME /.TRUE./
+      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS,ADS,ZIDL
 
 ! ----------------------------------------------------------------------
 
 !*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
+!*       AND TRANSFORM TO MAGNITUDE AND DIRECTION.
+!*       AND SET LOWER WIND SPEED TO WSPMIN m/s
 !        ----------------------------------------
 
-      DO IG=1,IGL
-        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-          DO IJ = KINF,KSUP
-            IX = IXLG(IJ,IG)
-            JY = NGY-KXLT(IJ,IG) + 1
-            US(IJ,IG) = UWND(IX,JY)
-            DS(IJ,IG) = VWND(IX,JY)
-            ADS(IJ,IG) = AIRD(IX,JY)
-            ZIDL(IJ,IG) = PZIDL(IX,JY)
-          ENDDO
+      DO IJ = IJS,IJL
+        IX = IXLG(IJ,IG)
+        JY = NGY-KXLT(IJ,IG) + 1
+
+        UU = UWND(IX,JY)
+        VV = VWND(IX,JY)
+        US(IJ,IG) = SQRT(UU**2 + VV**2)
+        IF (US(IJ,IG).NE.0.) THEN 
+          DS(IJ,IG) = ATAN2(UU,VV)
         ELSE
-          DO IJ = IJS(IG),IJL(IG)
-            IX = IXLG(IJ,IG)
-            JY = NGY-KXLT(IJ,IG) + 1
-            US(IJ,IG) = UWND(IX,JY)
-            DS(IJ,IG) = VWND(IX,JY)
-            ADS(IJ,IG) = AIRD(IX,JY)
-            ZIDL(IJ,IG) = PZIDL(IX,JY)
-          ENDDO
+          DS(IJ,IG) = 0.
         ENDIF
+        IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
+        US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
+
+        ADS(IJ,IG) = AIRD(IX,JY)
+        ZIDL(IJ,IG) = PZIDL(IX,JY)
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -96,51 +93,17 @@
 !        NOTHING TO DO FOR WIND SPEED U10 (ICODE = 3).
 !        ---------------------------------------------
 
-
-!*    3.1 TRANSFORM TO MAGNITUDE AND DIRECTION.
-!         -------------------------------------
-
-      DO IG = 1,IGL
-        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-          DO  IJ = 1,KEND
-            UU = US(IJ,IG)
-            VV = DS(IJ,IG)
-            US(IJ,IG) = SQRT(UU**2 + VV**2)
-            IF (US(IJ,IG).NE.0.) DS(IJ,IG) = ATAN2(UU,VV)
-            IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
-          ENDDO
-        ELSE
-          DO  IJ = IJS(IG),IJL(IG)
-            UU = US(IJ,IG)
-            VV = DS(IJ,IG)
-            US(IJ,IG) = SQRT(UU**2 + VV**2)
-            IF (US(IJ,IG).NE.0.) DS(IJ,IG) = ATAN2(UU,VV)
-            IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
-          ENDDO
-        ENDIF
-      ENDDO 
-
       IF (ICODE.EQ.1) THEN
 
 !*    3.2  INPUT IS FRICTION VELOCITY.
 !          ---------------------------
 
-        DO IG = 1,IGL
-          IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-            DO IJ = 1,KEND
-              USTAR = MAX(0.01,US(IJ,IG))
-              Z0  = ALPHACH/G*USTAR**2
-              CD  = XKAPPA/LOG(10./Z0)
-              US(IJ,IG) = USTAR/CD
-            ENDDO
-          ELSE
-            DO IJ = IJS(IG),IJL(IG)
-              USTAR = MAX(0.01,US(IJ,IG))
-              Z0  = ALPHACH/G*USTAR**2
-              CD  = XKAPPA/LOG(10./Z0)
-              US(IJ,IG) = USTAR/CD
-            ENDDO
-          ENDIF
+        DO IJ = IJS,IJL
+          USTAR = MAX(0.01,US(IJ,IG))
+          Z0  = ALPHACH/G*USTAR**2
+          CD  = XKAPPA/LOG(10./Z0)
+          US(IJ,IG) = USTAR/CD
+          US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
         ENDDO
 
       ELSEIF (ICODE.EQ.2) THEN
@@ -148,52 +111,14 @@
 !*    3.3 INPUT WINDS ARE SURFACE STRESSES.
 !         ---------------------------------
 
-        DO IG = 1,IGL
-          IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-            DO IJ = 1,KEND
-!!!!!!!!!!!!  USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
-              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
-              Z0  = ALPHACH/G*USTAR**2
-              CD  = XKAPPA/LOG(10./Z0)
-              US(IJ,IG) = USTAR/CD
-            ENDDO
-          ELSE
-            DO IJ = IJS(IG),IJL(IG)
-!!!!!!!!!!!!  USTAR = MAX (0.01, SQRT(US(IJ,IG)/ROAIR))
-              USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
-              Z0  = ALPHACH/G*USTAR**2
-              CD  = XKAPPA/LOG(10./Z0)
-              US(IJ,IG) = USTAR/CD
-            ENDDO
-          ENDIF
+        DO IJ = IJS,IJL
+          USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
+          Z0  = ALPHACH/G*USTAR**2
+          CD  = XKAPPA/LOG(10./Z0)
+          US(IJ,IG) = USTAR/CD
+          US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
         ENDDO
       ENDIF
-
-!     3.4 SET LOWER WIND SPEED TO WSPMIN m/s
-!         ----------------------------------
-      DO IG = 1,IGL
-        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-          DO IJ = 1,KEND
-            US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
-          ENDDO
-        ELSE
-          DO IJ = IJS(IG),IJL(IG)
-            US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
-          ENDDO
-        ENDIF
-      ENDDO
-      IF(LFRSTIME) THEN
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' SUB. WAMWND : '
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
-        WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' '
-        CALL FLUSH(IU06)
-        LFRSTIME=.FALSE.
-      ENDIF
-
 
 !*    4. TEST OUTPUT OF WAVE MODEL BLOCKS
 !        ---------------------------------
@@ -203,23 +128,16 @@
         WRITE (IU06,*) '      SUB. WAMWND:',
      &   ' WINDFIELDS CONVERTED TO BLOCKS'
         WRITE (IU06,*) ' '
-        DO IG = 1,MIN(ITESTB,NBLO)
-          IJA = IJS(IG)
-          IJE = IJS(IG)+4
-          WRITE (IU06,*) ' BLOCK= ',IG
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' US (IJS - IJS+4): ',(US(I,IG),I=IJA,IJE)
-          WRITE (IU06,*) ' DS (IJS - IJS+4): ',(DS(I,IG),I=IJA,IJE)
-          WRITE (IU06,*) ' ADS(IJS - IJS+4): ',(ADS(I,IG),I=IJA,IJE)
-          WRITE (IU06,*) ' ZIDL(IJS - IJS+4): ',(ZIDL(I,IG),I=IJA,IJE)
-        ENDDO
+        IJA = IJS
+        IJE = MIN(IJS+4,IJL)
+        WRITE (IU06,*) ' BLOCK= ',IG
+        WRITE (IU06,*) ' '
+        WRITE (IU06,*) ' US (IJS - IJS+4): ',(US(I,IG),I=IJA,IJE)
+        WRITE (IU06,*) ' DS (IJS - IJS+4): ',(DS(I,IG),I=IJA,IJE)
+        WRITE (IU06,*) ' ADS(IJS - IJS+4): ',(ADS(I,IG),I=IJA,IJE)
+        WRITE (IU06,*) ' ZIDL(IJS - IJS+4): ',(ZIDL(I,IG),I=IJA,IJE)
         CALL FLUSH(IU06)
       ENDIF
-
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
       END SUBROUTINE WAMWND

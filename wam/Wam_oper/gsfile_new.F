@@ -83,7 +83,6 @@
      &          CDATE*12, CDATEF*12, CDATEH*10
 
 ! ----------------------------------------------------------------------
-      CALL GSTATS(1907,0)
 
 !*    1. DEFINE RESTART FILENAMES AND OPTIONS.
 !        -------------------------------------
@@ -267,8 +266,6 @@
         ENDIF
 
       ENDIF
-
-      CALL GSTATS(1907,1)
 
       RETURN
       END SUBROUTINE GSFILE

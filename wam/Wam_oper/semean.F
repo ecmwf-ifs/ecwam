@@ -75,10 +75,11 @@
 !        -----------------------------------------
 
       DO M=1,NFRE
+        K=1
         DO IJ=IJS,IJL
-          TEMP(IJ) = 0.
+          TEMP(IJ) = F3(IJ,K,M)
         ENDDO
-        DO K=1,NANG
+        DO K=2,NANG
           DO IJ=IJS,IJL
             TEMP(IJ) = TEMP(IJ)+F3(IJ,K,M)
           ENDDO

@@ -119,14 +119,15 @@
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !     ----------------------------------------------------
 
+      K=1
       DO IJ=IJS,IJL
-        TEMP(IJ) = 0.
+        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
+        TEMP(IJ) = F(IJ,K,NFRE)*COSW**3
       ENDDO
 
-      DO K=1,NANG
-        TKD = TH(K)
+      DO K=2,NANG
         DO IJ=IJS,IJL
-          COSW     = MAX(COS(TKD-THWNEW(IJ)),0.)
+          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
           TEMP(IJ) = TEMP(IJ)+F(IJ,K,NFRE)*COSW**3
         ENDDO
       ENDDO

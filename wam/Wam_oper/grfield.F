@@ -114,7 +114,6 @@
       NOBS=0
       NOBSPSAT=0
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,0)
       IF((LMESSPASS .AND. IRANK .EQ. IREAD) .OR. .NOT.LMESSPASS) THEN
         IFIELD = 0
         IFAIL = 1
@@ -218,7 +217,6 @@
         CALL ABORT1  
 9001    CONTINUE
       ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,1)
 
 !     SEND NOBS TO THE OTHER PE'S TO LET THEM KNOW WHETHER THERE ARE
 !     DATA OR NOT.
@@ -287,7 +285,6 @@
 
 
 !       DISTRIBUTE THE DATA FOR EACH PE.
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
         IF(IRANK .EQ. IREAD) THEN
 !         EXTRACT THE DATA THAT ARE ON EACH PE.
           DO IR = 1, NPROC
@@ -314,8 +311,10 @@
                   ENDIF
                 ENDDO
               ENDDO
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
               CALL MPL_SEND(ZCOMBUF(1:ICOUNT),KDEST=IR,KTAG=KTAG,
      &                      CDSTRING='GRFIELD 1:')
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
               DEALLOCATE(ZCOMBUF)
 
             ENDIF
@@ -351,6 +350,7 @@
           DEALLOCATE(ALTDATA)
 
         ELSE
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
           IF(NOBSPE(IRANK) .GT. 0 ) THEN
             IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPE(IRANK)
             ALLOCATE(ZCOMBUF(IZCOMLEN))
@@ -361,12 +361,11 @@
             IF(KRTAG.NE.KTAG) CALL MPL_ABORT
      &        ('MPL_RECV ERROR in GRFIELD 1 : MISMATCHED TAGS' )
           ENDIF
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
         ENDIF
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
         KTAG = KTAG + 1
 
 !       KEEP THE DATA ON EACH PE.
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,0)
         IF(NOBSPE(IRANK).GT.0) THEN
           ALLOCATE(IJALT(NOBSPE(IRANK),NIJALT+1))
           ALLOCATE(ALTDATA(NOBSPE(IRANK),NALTDT))
@@ -385,7 +384,6 @@
           ENDDO
           DEALLOCATE(ZCOMBUF)
         ENDIF
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,1)
 
       ELSE
         NOBSPE = NOBS
@@ -441,13 +439,13 @@
         NSAT=0
 
         IF(ALTSDTHRSH(ISAT).LT.0.) THEN
-          IF(XDELLA.LT.0.5) THEN
+          IF(XDELLA.LT.0.3) THEN
             ALTSDTHRSH(ISAT) = 0.75
           ELSE
             ALTSDTHRSH(ISAT) = 0.6
           ENDIF
           WRITE(IU06,'(A,I3,A,F6.2,A)')
-     &        'BG CHECK THRESHOLD FOR ALTIMETER OF SATELLITE:',
+     &        'SUSPICIOUS DATA CHECK THRESHOLD FOR ALTIMETER :',
      &         IBUFRSAT(ISAT), ' IS NOT PROVIDED. IT IS ASSUMED AS ',
      &         ALTSDTHRSH(ISAT)*100.,'%.'
         ENDIF
@@ -466,15 +464,16 @@
                 NREJICE=NREJICE+1
               ENDIF
 
-!              BACKGROUND CHECK (remove data that deviate too much
-!                                from the first guess)
-
+!              LOOK FOR SUSPICIOUS DATA
               IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
                 THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJ))/WHMOD(IJ)
                 IF(THRSHLD.GE.ALTSDTHRSH(ISAT)) THEN
                   NREJSD=NREJSD+1
                 ENDIF
               ENDIF
+
+!              BACKGROUND CHECK (remove data that deviate too much
+!                                from the first guess)
 
               IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
                 THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)*
@@ -518,8 +517,10 @@
               ICOMBUF(4)=NSAT
             ENDIF
 
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
             CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IP,
      &        KTAG=KTAG,CDSTRING='GRFIELD 2:')
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
 
             IF(IRANK.NE.IP) THEN
               NTOTREJICE=NTOTREJICE+ICOMBUF(1)
@@ -548,7 +549,7 @@
 
         IF(NTOTSAT.GT.0) THEN
  
-          IF(XDELLA.LT.0.5) THEN
+          IF(XDELLA.LT.0.3) THEN
             REJECT=0.75
           ELSE
             REJECT=0.5
@@ -689,7 +690,7 @@
       KTAG=KTAG+1
       IF(ALLOCATED(WHGTAG).AND.IPFGTBL(22).EQ.IRANK) THEN
         LSQRT=.FALSE.
-        CALL MAKEGRID (TEMP , WHGTAG, 1, NEND(NPROC), 1, LSQRT)
+        CALL MAKEGRID (TEMP , WHGTAG, 1, NEND(NPROC), 1, LSQRT, ZMISS)
       ENDIF
 
       DO IJ = NSTART(IRANK), NEND(IRANK)
@@ -699,7 +700,7 @@
       KTAG=KTAG+1
       IF(ALLOCATED(CWHTAG).AND.IPFGTBL(23).EQ.IRANK) THEN
         LSQRT=.FALSE.
-        CALL MAKEGRID (TEMP , CWHTAG, 1, NEND(NPROC), 1, LSQRT)
+        CALL MAKEGRID (TEMP , CWHTAG, 1, NEND(NPROC), 1, LSQRT, ZMISS)
       ENDIF
 
       DO IJ = NSTART(IRANK), NEND(IRANK)
@@ -709,7 +710,7 @@
       KTAG=KTAG+1
       IF(ALLOCATED(RANGAG).AND.IPFGTBL(24).EQ.IRANK) THEN
         LSQRT=.FALSE.
-        CALL MAKEGRID (TEMP , RANGAG, 1, NEND(NPROC), 1, LSQRT)
+        CALL MAKEGRID (TEMP , RANGAG, 1, NEND(NPROC), 1, LSQRT, ZMISS)
       ENDIF
       DEALLOCATE(TEMP)
 
@@ -722,7 +723,6 @@
 !     BY DISTRIBUTING THEM ONTO THE DIFFERENT PE'S
 
       IF(LMESSPASS .AND. NPROC.GT. 1) THEN
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
         IZCOMLENMAX=(NIJALT+1+NALTDT) * NOBSPE(IRANK)
         NDISPE=0
         DO IR = 1, NPROC
@@ -769,6 +769,7 @@
 !         SEND NON BLOCKING THE BUFFERS
 
           IDISPE=0
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
           DO IR = 1, NPROC
             IF(LLCOMMON(IR)) THEN
               IDISPE=IDISPE+1
@@ -780,6 +781,7 @@
      &                      CDSTRING='GRFIELD 3:')
             ENDIF
           ENDDO
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
         ENDIF
 
         ALLOCATE(XLONG(NSTART(IRANK):NEND(IRANK)))
@@ -794,8 +796,10 @@
           IZCOMLEN = (NIJALT+1+NALTDT) * NOBSPEMAX
           ALLOCATE(ZCOMBUFR(IZCOMLEN))
 
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
           CALL MPL_RECV(ZCOMBUFR(1:IZCOMLEN),KFROM=IR,KTAG=KTAG,
      &           KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='GRFIELD 4:')
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
           IF(KRTAG.NE.KTAG) CALL MPL_ABORT
      &    ('MPL_RECV ERROR in GRFIELD 3 : MISMATCHED TAGS' )
 
@@ -912,16 +916,17 @@
 
 ! Wait any outstanding sends to complete
 
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,0)
         IF(IZCOMLENMAX.GT.0) THEN
           CALL MPL_WAIT(ZCOMBUFS(1:IZCOMLENMAX,1),KREQUEST=ISENDREQ,
      &                  CDSTRING='GRFIELD')
         ENDIF
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
         IF(ALLOCATED(ISENDREQ)) DEALLOCATE(ISENDREQ)
 
         KTAG = KTAG + 1
 
         IF(ALLOCATED(ZCOMBUFS)) DEALLOCATE(ZCOMBUFS)
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(618,1)
 
       ENDIF
 

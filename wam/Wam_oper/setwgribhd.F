@@ -37,8 +37,8 @@
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3,
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP,
-     &            AMONOP   ,XDELLA   ,XDELLO
+      USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY,
      &             CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS
@@ -214,13 +214,13 @@
       KSEK2( 1) =       0  ! DATA REPRESENTATION TYPE: WMO CODE TABLE 6
       KSEK2( 2) =     NGX  ! NUMBER OF POINTS ALONG A PARALLEL 
                            ! NUMBER OF POINTS ALONG A MERIDIAN
-      IF( CLDOMAIN == 'g' ) THEN 
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
         KSEK2( 3) =  NINT(180./XDELLA) + 1
       ELSE
         KSEK2( 3) =     NGY
       ENDIF
                            ! LATITUDE OF THE FIRST GRID POINT
-      IF( CLDOMAIN == 'g' ) THEN 
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
         KSEK2( 4) =  90000  
       ELSE
         KSEK2( 4) =  NINT(AMONOP*1000) 
@@ -234,7 +234,7 @@
         KSEK2( 6) =     128 
       ENDIF
                            ! LATITUDE OF THE LAST GRID POINT
-      IF( CLDOMAIN == 'g' ) THEN 
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
         KSEK2( 7) = -90000  
       ELSE
         KSEK2( 7) =  NINT(AMOSOP*1000) 
@@ -246,7 +246,7 @@
 !       12[17]-22                                               0
       KSEK2(17) =    IRGG  ! GRID TYPE.
       IF (IRGG .EQ. 1) THEN
-        IF( CLDOMAIN == 'g' ) THEN
+        IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
           KST = NINT((90. - AMONOP ) / XDELLA)
         ELSE
           KST = 0

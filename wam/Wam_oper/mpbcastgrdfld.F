@@ -53,7 +53,6 @@
       ELSE
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ----------------------------------------
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,0)
         ALLOCATE(ZCOMBUF(MPLENGTH))
 
         IF(IRANK.EQ.ISEND) THEN
@@ -66,8 +65,10 @@
           ENDDO
         ENDIF
 
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,0)
         CALL MPL_BROADCAST(ZCOMBUF(1:MPLENGTH),KROOT=ISEND,
      &   KTAG=ITAG,CDSTRING='MPBCASTGRDFLD:')
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,1)
 
         IF(IRANK.NE.ISEND) THEN
           KCOUNT=0
@@ -78,9 +79,7 @@
             ENDDO
           ENDDO
         ENDIF
-
         DEALLOCATE(ZCOMBUF)
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,1)
 
       ENDIF
 

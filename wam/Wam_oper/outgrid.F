@@ -130,7 +130,7 @@
             LSQRT=.TRUE.
             CALL MPGATHERSCFLD(IPFGTBL(1),1,NSTART,NEND,TEMP)
             IF(IPFGTBL(1).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP , WHGTTG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WHGTTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(2).NE.0) THEN 
@@ -138,7 +138,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(2),2,NSTART,NEND,TEMP)
             IF(IPFGTBL(2).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP , WDIRTG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WDIRTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(3).NE.0) THEN 
@@ -146,7 +146,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(3),3,NSTART,NEND,TEMP)
             IF(IPFGTBL(3).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP , WMNFTG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WMNFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(4).NE.0) THEN
@@ -163,23 +163,18 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(4),4,NSTART,NEND,TEMP)
             IF(IPFGTBL(4).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP, USTARG, 1, NEND(NPROC), IG, LSQRT)
+     &        CALL MAKEGRID (TEMP,USTARG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(5).NE.0) THEN 
             DO IJ = IJS,IJL
-!             cannot set THWNEW to ZMISS since it can still be used
-!             in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-                TEMP(IJ)=ZMISS
-              ELSE
-                TEMP(IJ) = THWNEW(IJ) 
-              ENDIF
+!             The wind direction is NOT set to missing over ice 
+              TEMP(IJ) = THWNEW(IJ) 
             ENDDO
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(5),5,NSTART,NEND,TEMP)
             IF(IPFGTBL(5).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP, UDIRG, 1, NEND(NPROC), IG, LSQRT)
+     &        CALL MAKEGRID (TEMP,UDIRG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(6).NE.0) THEN
@@ -189,7 +184,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(6),6,NSTART,NEND,TEMP)
             IF(IPFGTBL(6).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP , WPKFTG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WPKFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
             DEALLOCATE(PEAKF)
           ENDIF
 
@@ -198,7 +193,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(7),7,NSTART,NEND,TEMP)
             IF(IPFGTBL(7).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP ,  CDG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,CDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
             IF(ALLOCATED(CD)) DEALLOCATE(CD)
           ENDIF
 
@@ -207,7 +202,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(8),8,NSTART,NEND,TEMP)
             IF(IPFGTBL(8).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,  TAUWG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,TAUWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
             DEALLOCATE(WVSTR)
           ENDIF
 
@@ -216,23 +211,18 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(9),9,NSTART,NEND,TEMP)
             IF(IPFGTBL(9).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP , SMEANG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,SMEANG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(10).NE.0) THEN
             DO IJ = IJS,IJL
-!             cannot set U10NEW to ZMISS since it can still be used
-!             in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-                TEMP(IJ)=ZMISS
-              ELSE
-                TEMP(IJ) = U10NEW(IJ)
-              ENDIF
+!             The wind speed is NOT set to missing over ice. 
+              TEMP(IJ) = U10NEW(IJ)
             ENDDO
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(10),10,NSTART,NEND,TEMP)
             IF(IPFGTBL(10).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP, U10G, 1, NEND(NPROC), IG, LSQRT)
+     &        CALL MAKEGRID (TEMP,U10G,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(25).NE.0) THEN
@@ -240,7 +230,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(25),25,NSTART,NEND,TEMP)
             IF(IPFGTBL(25).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,  MWP1G, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(26).NE.0) THEN
@@ -248,7 +238,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(26),26,NSTART,NEND,TEMP)
             IF(IPFGTBL(26).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,  MWP2G, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(27).NE.0) THEN
@@ -256,7 +246,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(27),27,NSTART,NEND,TEMP)
             IF(IPFGTBL(27).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,  WSPRDG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WSPRDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(34).NE.0) THEN
@@ -264,7 +254,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(34),34,NSTART,NEND,TEMP)
             IF(IPFGTBL(34).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP, C4G, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,C4G,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(35).NE.0) THEN
@@ -272,7 +262,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(35),35,NSTART,NEND,TEMP)
             IF(IPFGTBL(35).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP, BFG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,BFG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(36).NE.0) THEN
@@ -280,7 +270,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(36),36,NSTART,NEND,TEMP)
             IF(IPFGTBL(36).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP, PFG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,PFG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
         ELSE
@@ -288,48 +278,44 @@
           IF(IPFGTBL(1).NE.0) THEN
             CALL LOC2GLO(EMEAN(IJS),TEMP,IJS,IJL,IG)
             LSQRT=.TRUE.
-            CALL MAKEGRID (TEMP , WHGTTG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WHGTTG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(2).NE.0) THEN
             CALL LOC2GLO(THQ(IJS),TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP , WDIRTG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WDIRTG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(3).NE.0) THEN
             CALL LOC2GLO(FMEAN(IJS),TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP , WMNFTG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WMNFTG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(4).NE.0) THEN
             DO IJ = IJS,IJL
               TEMP(IJ) = USNEW(IJ)
-!             cannot set USNEW to ZMISS since it can still be used
+!             cannot set USNEW to 0. since it can still be used
 !             in the next time step
               IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-                TEMP(IJ)=ZMISS
+                TEMP(IJ)=0.
               ELSE
                 TEMP(IJ) = USNEW(IJ)
               ENDIF
             ENDDO
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  USTARG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,USTARG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(5).NE.0) THEN
             DO IJ = IJS,IJL
-!           cannot set THWNEW to ZMISS since it can still be used
+!           cannot set THWNEW to 0. since it can still be used
 !           in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-                TEMP(IJ)=ZMISS
-              ELSE
-                TEMP(IJ) = THWNEW(IJ) 
-              ENDIF
+              TEMP(IJ) = THWNEW(IJ) 
             ENDDO
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, UDIRG , IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,UDIRG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(6).NE.0) THEN
@@ -337,78 +323,74 @@
             CALL PEAKFR (FL3, IJS, IJL, PEAKF)
             CALL LOC2GLO(PEAKF,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP , WPKFTG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WPKFTG,IJS,IJL,IG,LSQRT,ZMISS)
             DEALLOCATE (PEAKF)
           ENDIF
 
           IF(IPFGTBL(7).NE.0) THEN
             CALL LOC2GLO(CD,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP ,  CDG   , IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,CDG,IJS,IJL,IG,LSQRT,ZMISS)
             IF(ALLOCATED(CD)) DEALLOCATE(CD)
           ENDIF
 
           IF(IPFGTBL(8).NE.0) THEN
             CALL LOC2GLO(WVSTR,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  TAUWG , IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,TAUWG,IJS,IJL,IG,LSQRT,ZMISS)
             DEALLOCATE(WVSTR)
           ENDIF
 
           IF(IPFGTBL(9).NE.0) THEN
             CALL LOC2GLO(SMEAN(IJS),TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP , SMEANG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,SMEANG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(10).NE.0) THEN
             DO IJ = IJS,IJL
-!           cannot set U10NEW to ZMISS since it can still be used
+!           cannot set U10NEW to 0. since it can still be used
 !           in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
-                TEMP(IJ)=ZMISS
-              ELSE
-                TEMP(IJ) = U10NEW(IJ)
-              ENDIF
+              TEMP(IJ) = U10NEW(IJ)
             ENDDO
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, U10G  , IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,U10G,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(25).NE.0) THEN
             CALL LOC2GLO(P1MEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  MWP1G, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP1G,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(26).NE.0) THEN
             CALL LOC2GLO(P2MEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  MWP2G, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP2G,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(27).NE.0) THEN
             CALL LOC2GLO(SPRDMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, WSPRDG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WSPRDG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(34).NE.0) THEN
             CALL LOC2GLO(C4MEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, C4G, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,C4G,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(35).NE.0) THEN
             CALL LOC2GLO(BFMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  BFG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,BFG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(36).NE.0) THEN
             CALL LOC2GLO(PFMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, PFG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,PFG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
         ENDIF
@@ -429,7 +411,7 @@
             LSQRT=.TRUE.
             CALL MPGATHERSCFLD(IPFGTBL(11),11,NSTART,NEND,TEMP)
             IF(IPFGTBL(11).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,   WHGTWG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WHGTWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(12).NE.0) THEN
@@ -437,7 +419,7 @@
             LSQRT=.TRUE.
             CALL MPGATHERSCFLD(IPFGTBL(12),12,NSTART,NEND,TEMP)
             IF(IPFGTBL(12).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, WHGTSG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WHGTSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(13).NE.0) THEN
@@ -445,7 +427,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(13),13,NSTART,NEND,TEMP)
             IF(IPFGTBL(13).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRWG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WDIRWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(14).NE.0) THEN
@@ -453,7 +435,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(14),14,NSTART,NEND,TEMP)
             IF(IPFGTBL(14).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRSG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WDIRSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(15).NE.0) THEN
@@ -461,7 +443,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(15),15,NSTART,NEND,TEMP)
             IF(IPFGTBL(15).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WMNFWG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WMNFWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(16).NE.0) THEN
@@ -469,7 +451,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(16),16,NSTART,NEND,TEMP)
             IF(IPFGTBL(16).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, WMNFSG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WMNFSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(28).NE.0) THEN
@@ -477,7 +459,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(28),28,NSTART,NEND,TEMP)
             IF(IPFGTBL(28).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, MWP1WG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP1WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(29).NE.0) THEN
@@ -485,7 +467,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(29),29,NSTART,NEND,TEMP)
             IF(IPFGTBL(29).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, MWP1SG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP1SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(30).NE.0) THEN
@@ -493,7 +475,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(30),30,NSTART,NEND,TEMP)
             IF(IPFGTBL(30).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, MWP2WG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP2WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(31).NE.0) THEN
@@ -501,7 +483,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(31),31,NSTART,NEND,TEMP)
             IF(IPFGTBL(31).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, MWP2SG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,MWP2SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(32).NE.0) THEN
@@ -509,7 +491,7 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(32),32,NSTART,NEND,TEMP)
             IF(IPFGTBL(32).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, WSPRDWG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WSPRDWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(33).NE.0) THEN
@@ -517,80 +499,80 @@
             LSQRT=.FALSE.
             CALL MPGATHERSCFLD(IPFGTBL(33),33,NSTART,NEND,TEMP)
             IF(IPFGTBL(33).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP, WSPRDSG, 1, NEND(NPROC), IG, LSQRT)
+     &      CALL MAKEGRID (TEMP,WSPRDSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
         ELSE
           IF(IPFGTBL(12).NE.0) THEN
             CALL LOC2GLO(ESWELL,TEMP,IJS,IJL,IG)
             LSQRT=.TRUE.
-            CALL MAKEGRID(TEMP, WHGTSG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WHGTSG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(14).NE.0) THEN
             CALL LOC2GLO(THSWELL,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID(TEMP,WDIRSG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WDIRSG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(16).NE.0) THEN
             CALL LOC2GLO(FSWELL,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID(TEMP, WMNFSG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WMNFSG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(11).NE.0) THEN
             CALL LOC2GLO(ESEA,TEMP,IJS,IJL,IG)
             LSQRT=.TRUE.
-            CALL MAKEGRID(TEMP, WHGTWG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WHGTWG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(13).NE.0) THEN
             CALL LOC2GLO(THWISEA,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID(TEMP,WDIRWG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WDIRWG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(13).NE.0) THEN
             CALL LOC2GLO(FSEA,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID(TEMP, WMNFWG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID(TEMP,WMNFWG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(28).NE.0) THEN
             CALL LOC2GLO(P1SEA,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, MWP1WG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP1WG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(29).NE.0) THEN
             CALL LOC2GLO(P1SWELL,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, MWP1SG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP1SG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(30).NE.0) THEN
             CALL LOC2GLO(P2SEA,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, MWP2WG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP2WG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(31).NE.0) THEN
             CALL LOC2GLO(P2SWELL,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, MWP2SG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,MWP2SG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(32).NE.0) THEN
             CALL LOC2GLO(SPRDSEA,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, WSPRDWG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WSPRDWG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
           IF(IPFGTBL(33).NE.0) THEN
             CALL LOC2GLO(SPRDSWELL,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP, WSPRDSG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP,WSPRDSG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
         ENDIF
       ENDIF

@@ -1,7 +1,7 @@
       SUBROUTINE PHYS (FL3,FL1,FL,IJS,IJL,IG,NSIZE,NWORK,CDATE,CDTPRA,
      &                 U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
      &                 U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
-     &                 SL,FCONST)
+     &                 SL,FCONST,L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -23,7 +23,7 @@
 !       *CALL* *PHYS (FL3,FL,IJS,IJL,IG,NSIZE,NWORK,CDATE,CDTPRA,
 !    1                U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
 !    2                U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
-!    3                SL,FCONST)*
+!    3                SL,FCONST,L1STCALL)*
 !      *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !      *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !      *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -55,6 +55,7 @@
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
 !      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
 !                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
+!      *L1STCALL*  LOGICAL  SHOULD BE FA:SE AFTER FIRST CALL TO PROPAGS.
 
 !     METHOD.
 !     -------
@@ -93,6 +94,8 @@
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW,Z0NEW
      &                            ,ROAIRN,ZIDLNEW
 
+      LOGICAL :: L1STCALL
+
 ! ----------------------------------------------------------------------
 
 
@@ -107,7 +110,7 @@
 
         IF (CDATE.EQ.CDTPRA) THEN
           IF(NIBLO.GT.1) THEN
-            CALL PROPAGS(FL1, FL3, IJS, IJL, IG, SL, FCONST)
+            CALL PROPAGS(FL1, FL3, IJS, IJL, IG, SL, FCONST, L1STCALL)
           ELSE
             FL3 = FL1
           ENDIF

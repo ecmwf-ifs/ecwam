@@ -35,7 +35,12 @@
 !                      (OUTPUT OF PREPROC). fort.7 must be there !
 !           *IU08*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC). fort.8 must be there !
-!           *IUOUT*  - ASCII TEXT FILE grid_decomposition.xxxx
+!           *IUOUT*  - ASCII TEXT FILE grid_decomposition_xxxx
+!           *IUDPT*  - ASCII TEXT FILE grid_point_depth_xxxx
+!            22      - ASCII TEXT FILE obstructions_S_N_xxxx
+!            23      - ASCII TEXT FILE obstructions_N_S_xxxx
+!            24      - ASCII TEXT FILE obstructions_W_E_xxxx
+!            25      - ASCII TEXT FILE obstructions_E_W_xxxx
 !            where xxxx=nproc 
 
 !          MESSAGE PASSING NOT CATERED FOR YET.
@@ -66,7 +71,8 @@
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,OBSLAT   ,
+     &            OBSLON
 
 ! -------------------------------------------------------------------
 
@@ -202,6 +208,50 @@
       WRITE(IUDPT,'(a11)') '#FORMAT LLV'
       WRITE(IUDPT,'(a5)') '#DATA'
 
+      FILENAME='obstructions_S_N_'
+      WRITE (FILENAME(18:21),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(22:22)='.'
+        WRITE (FILENAME(23:26),'(I4.4)') IRANK
+      ENDIF
+      OPEN(22,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(22,'(a4)') '#GEO'
+      WRITE(22,'(a11)') '#FORMAT LLV'
+      WRITE(22,'(a5)') '#DATA'
+
+      FILENAME='obstructions_N_S_'
+      WRITE (FILENAME(18:21),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(22:22)='.'
+        WRITE (FILENAME(23:26),'(I4.4)') IRANK
+      ENDIF
+      OPEN(23,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(23,'(a4)') '#GEO'
+      WRITE(23,'(a11)') '#FORMAT LLV'
+      WRITE(23,'(a5)') '#DATA'
+
+      FILENAME='obstructions_W_E_'
+      WRITE (FILENAME(18:21),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(22:22)='.'
+        WRITE (FILENAME(23:26),'(I4.4)') IRANK
+      ENDIF
+      OPEN(24,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(24,'(a4)') '#GEO'
+      WRITE(24,'(a11)') '#FORMAT LLV'
+      WRITE(24,'(a5)') '#DATA'
+
+      FILENAME='obstructions_E_W_'
+      WRITE (FILENAME(18:21),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(22:22)='.'
+        WRITE (FILENAME(23:26),'(I4.4)') IRANK
+      ENDIF
+      OPEN(25,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(25,'(a4)') '#GEO'
+      WRITE(25,'(a11)') '#FORMAT LLV'
+      WRITE(25,'(a5)') '#DATA'
+
 
       FILENAME='subarea_depth_'
       WRITE (FILENAME(15:18),'(I4.4)') NPROC
@@ -234,11 +284,26 @@
           isymbol=mod(IPROC,9)
           if(isymbol.eq.0) isymbol=9
 
-          IF(LLALLPTS) THEN
-            WRITE(IUOUT,'(2(1X,F8.3),1X,I4)') XLON,XLAT,isymbol
-            WRITE(IUDPT,'(2(1X,F8.3),1X,I4)')XLON,XLAT,NINT(DEPTH(IJ,1))
+          IF(LLALLPTS .OR. LLBOUND(IJ) ) THEN
 
-! subareas for which I need the depth as in WAM
+!!!1 which frequency to output  ???
+          M=3
+!!!!
+            WRITE(IUOUT,'(2(1X,F8.3),1X,I4)') XLON,XLAT,isymbol
+            IF(DEPTH(IJ,1).LT.999.) THEN
+              WRITE(IUDPT,'(2(1X,F8.3),1X,I4)')
+     &              XLON,XLAT,NINT(DEPTH(IJ,1))
+              WRITE(22,'(2(1X,F8.3),1X,I4)') 
+     &              XLON,XLAT-0.25*XDELLA,NINT(1000*OBSLAT(IJ,M,1))
+              WRITE(23,'(2(1X,F8.3),1X,I4)') 
+     &              XLON,XLAT+0.25*XDELLA,NINT(1000*OBSLAT(IJ,M,2))
+              WRITE(24,'(2(1X,F8.3),1X,I4)') 
+     &              XLON-0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,1))
+              WRITE(25,'(2(1X,F8.3),1X,I4)') 
+     &              XLON+0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,2))
+            ENDIF
+
+! subareas for which I need the depth as in the old WAM
 !           lake Lagoda area
             if(( 30.0.le.xlon .and. xlon.le.37.0 .and.
      &           60.0.le.xlat .and. xlat.le.63.0 )    .or.
@@ -252,19 +317,17 @@
               WRITE(IUSPT,'(2(1X,F8.3),1X,3(1X,I4))')
      &              XLON,XLAT,IX,JSN,NINT(DEPTH(IJ,1))
             endif
-          ELSE
-            IF(LLBOUND(IJ)) THEN
-              WRITE(IUOUT,'(2(1X,F8.3),1X,I4)')XLON,XLAT,isymbol
-              WRITE(IUDPT,'(2(1X,F8.3),1X,I4)')
-     &              XLON,XLAT,NINT(DEPTH(IJ,1))
-            ENDIF
+
           ENDIF
         ENDDO
       ENDDO
 
       CLOSE(IUOUT)
       CLOSE(IUDPT)
-      CLOSE(IUSPT)
+      CLOSE(22)
+      CLOSE(23)
+      CLOSE(24)
+      CLOSE(25)
 
       DO IPROC=1,NPROC
         DO IJ=NSTART(IPROC),NEND(IPROC)
@@ -357,6 +420,6 @@
       DEALLOCATE(NEIGHBOUR)
       DEALLOCATE(NPE)
 
-      CLOSE(IUOUT)
+      CLOSE(IUOUN)
 
       END

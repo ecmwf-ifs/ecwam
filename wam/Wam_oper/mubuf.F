@@ -1,4 +1,4 @@
-      SUBROUTINE MUBUF (IA1, IG, IU08, IU18, IFORM)
+      SUBROUTINE MUBUF (IA1, IOBSLAT, IOBSLON, IG, ML, IU08, IU18,IFORM)
 
 ! ----------------------------------------------------------------------
 
@@ -16,9 +16,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MUBUF (IA1, IG, IU08, IU18, IFORM)*
+!       *CALL* *MUBUF (IA1, IOBSLAT, IOBSLON,IG,ML,IU08, IU18, IFORM)*
 !          *IA1*     - TOPOGRAPHIC DATA.
+!          *IOBSLAT* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
+!                      THE MERIDIONAL DIRECTION (0.1%).
+!          *IOBSLON* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
+!                      THE ZONAL DIRECTION (0.1%).
 !          *IG*      - BLOCK NUMBER.
+!          *ML*      - NUMBER OF FREQUENCIES.
 !          *IU08*    - LOGICAL UNIT FOR OUTPUT OF GRID BLOCKING
 !                      COMMON UBUF (UNFORMATED)
 !          *IU18*    - LOGICAL UNIT FOR OUTPUT OF GRID BLOCKING
@@ -56,8 +61,10 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IG,IU08,IU18,IFORM,IJ,IJP,I,K,IP,IH,IMIN,IPLUS
+      INTEGER :: IG,IU08,IU18,IFORM,IJ,IJP,I,K,IP,IH,IMIN,IPLUS,IS,ML,M
       INTEGER ::  IA1(NGX, NGY)
+      INTEGER, DIMENSION(NGX, NGY, ML, 2) :: IOBSLAT, IOBSLON
+      INTEGER, DIMENSION(NIBLO,ML,2) :: KOBSLON, KOBSLAT
       REAL :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
 
 ! ----------------------------------------------------------------------
@@ -80,6 +87,12 @@
            KLAT2(IJ,IJP) = 0
            KLON(IJ,IJP) = 0
            WADV(IJ,IJP)=1.
+        ENDDO
+        DO M=1,ML
+          DO IJ=1,NIBLO
+             KOBSLAT(IJ,M,IJP)=1000
+             KOBSLON(IJ,M,IJP)=1000
+          ENDDO
         ENDDO
       ENDDO
 
@@ -276,11 +289,24 @@
         ENDDO
       ENDIF
 
+!     DETERMINE THE REAL REDUCTION FACTORS TO BE USED IN THE PROPAGATION
+
+      DO IS=1,2
+        DO M=1,ML
+          DO IP = 1,IJLT(IG)
+            I = IXLG(IP,IG)
+            K = KXLT(IP,IG)
+            KOBSLAT(IP,M,IS)=IOBSLAT(I,K,M,IS)
+            KOBSLON(IP,M,IS)=IOBSLON(I,K,M,IS)
+          ENDDO
+        ENDDO
+      ENDDO
+
 ! ----------------------------------------------------------------------
 
 !*    3. OUTPUT OF COMMON UBUF FOR ONE BLOCK.
 !        ------------------------------------
-      CALL OUTUBUF (IU08, IU18, IFORM)
+      CALL OUTUBUF (IU08, IU18, IFORM,NIBLO,ML,KOBSLAT,KOBSLON)
 
       RETURN
       END SUBROUTINE MUBUF

@@ -61,6 +61,7 @@
       CHARACTER*24 FILNM
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
      &                             ,RADOLD, RZIDLOLD
+      LOGICAL :: LLONLYPOS
 ! ----------------------------------------------------------------------
 ! "Dummy" arrays and parameters for compatability purposes:
       INTEGER NFIELDS, NGPTOTG, NCA, NRA
@@ -109,8 +110,9 @@
       IF(LWAVEWIND) THEN
 
         IPARAM=245
+        LLONLYPOS=.FALSE.
         CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,RU10OLD,1,NIBLO,KEND,
-     &                 KZLEVUWAVE)
+     &                 KZLEVUWAVE, LLONLYPOS)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
         WRITE(IU06,*) ' '
@@ -221,8 +223,10 @@
 
       IF(.NOT.LNOCDIN) THEN
         IPARAM=233
+        LLONLYPOS=.TRUE.
         FILNM='cdwavein'
-        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,KZLEVCD)
+        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,
+     &                 KZLEVCD, LLONLYPOS)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD

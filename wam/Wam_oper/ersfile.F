@@ -82,10 +82,12 @@
 !       DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
           CLOSE (IU92,STATUS='KEEP')
+          IF(ITEST.GT.0) THEN
           WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
      &     IU92, '  CLOSED    '
           WRITE (IU06,*) '                                      '
           CALL FLUSH (IU06)
+          ENDIF
         ENDIF
         IERS = 0
         RETURN
@@ -143,11 +145,13 @@
      &   IOSTAT=IERR)                                             
         IF (IERR.NE.0) THEN                                            
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            IF(ITEST.GT.0) THEN
             WRITE (IU06,*) '                                     '
             WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
      &       FNAME, ' NOT OPENED'
             WRITE (IU06,*) '                                     ' 
             CALL FLUSH (IU06)
+            ENDIF
           ENDIF
           RETURN                                                      
         ELSE                                                           

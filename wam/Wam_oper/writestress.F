@@ -63,6 +63,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU15
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -73,7 +74,6 @@
      &                                    Z0OLD,TAUW,ROAIRO,ZIDLOLD
 ! ----------------------------------------------------------------------
 
-      CALL GSTATS(1709,0)
       IF(LPBIOOUT) THEN
 
         IF(LPBOPEN) THEN
@@ -177,7 +177,6 @@
 
         ENDIF
       ENDIF
-      CALL GSTATS(1709,1)
       IF (ITEST.GE.2)
      &    WRITE(IU06,*) ' SUB. WRITESTRESS: OUTPUT DONE'
 

@@ -284,16 +284,14 @@
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
 
-      DO M=1,NFRE
-        DO IJ=IJS,IJL
-          FCONST(IJ,M) = 0.
-          TEMP(IJ,M) = GADIAG(IJ)*FRM5(M)
-        ENDDO
-      ENDDO
       DO IJ=IJS,IJL
         DO M=1,MIJ(IJ)
           FCONST(IJ,M) = 1.
           TEMP(IJ,M) = 0.
+        ENDDO
+        DO M=MIJ(IJ)+1,NFRE
+          FCONST(IJ,M) = 0.
+          TEMP(IJ,M) = GADIAG(IJ)*FRM5(M)
         ENDDO
       ENDDO
 

@@ -8,6 +8,16 @@
 
 !     J. BIDLOT            ECMWF       10/1998.
 !!!!!!                     COMMON BLOCKS HAVE BEEN CONVERTED TO MODULES
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     J. BIDLOT            ECMWF       11/2003
+!                          IF YOUR ARE RUNNING AT ECMWF:
+!                          BE AWARE THAT IF YOU CHANGE ANYTHING TO THE
+!                          STRUCTURE OF THE OUTPUT FILE YOU WILL HAVE TO
+!                          MAKE SURE THAT IT IS CREATED FOR YOUR RUN, 
+!                          OTHERWISE IT MIGHT PICK UP THE DEFAULT ONE
+!                          THAT IS ALREADY ON DISK.
+!                          YOU ALSO HAVE TO CHANGE READPRE.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
 !     -------

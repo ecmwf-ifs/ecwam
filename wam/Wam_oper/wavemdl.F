@@ -3,7 +3,7 @@
      &                    ISEC1, ISEC2, FIELDS,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
-     &                    LDRESTARTED, ZDELATM)
+     &                    LDRESTARTED, ZDELATM, KQGAUSS)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -91,7 +91,7 @@
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
      &            MFDBSF   ,LSARINV
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWMAP   , ONLY : ZDELLO
+      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
@@ -172,6 +172,7 @@
 
         ENDIF
         CALL INITMDL (KDELWI,NADV)
+        KQGAUSS=IQGAUSS
         FRSTIME = .FALSE.                                              
 
         IF (ITEST.GE.1) THEN
@@ -234,6 +235,9 @@
             CALL ABORT1
           ENDIF
         ENDIF
+
+!       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
+        KQGAUSS=IQGAUSS
 
       ENDIF
 
@@ -401,9 +405,9 @@
 
       ENDIF
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,0)
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDB (MFDBSF)
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,1)
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
           CALL FLUSH(IU06)

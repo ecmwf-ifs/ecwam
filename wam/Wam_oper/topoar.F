@@ -1,4 +1,4 @@
-      SUBROUTINE TOPOAR (IU01, IA2)
+      SUBROUTINE TOPOAR (IU01, IA2, IOBSLAT, IOBSLON, ML)
 
 ! ----------------------------------------------------------------------
 
@@ -7,7 +7,8 @@
 !     S. HASSELMANN     MPIFM           1/6/86.
 
 !     MODIFIED BY       H. GUNTHER      1/4/90  -  REARANGEMENT OF CODE.
-
+!                       J. BIDLOT    FEB 2003 - 
+!                                    INTRODUCE OBSTRUCTION COEFFICIENTS
 !*    PURPOSE.
 !     --------
 
@@ -16,13 +17,19 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TOPOAR (IU01, IA2)*
+!       *CALL* *TOPOAR (IU01, IA2, IOBSLAT, IOBSLON, ML)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
 !          *IA2*   -  TOPOGRAPHIC DATA IN OUTPUT GRID.
+!          *IOBSLAT* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
+!                      THE MERIDIONAL DIRECTION (0.1%).
+!          *IOBSLON* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
+!                      THE ZONAL DIRECTION (0.1%).
+!          *ML*    -  NUMBER OF FREQUENCIES (30)
 
 !     METHOD.
 !     -------
 
+!       IF OLD TOPAGRAPHY INPUT:
 !       THE TOPOGRAPHY MUST BE ON A REGULAR LATITUDE-LONGITUDE
 !       GRID ARRANGED FROM SOUTH TO NORTH, AND FROM WEST TO EAST.
 !       IT IS ASSUMED THAT NEGATIVE VALUES ARE SEA DEPTHS (WHICH
@@ -38,6 +45,10 @@
 !       FINALLY THE SUBGRID TOPOGRAPHY MAY BE MANUALLY ADJUSTED BY
 !       MEANS OF THE CARD INPUT AND A PRINTER OUTPUT IS DONE.
 
+!       FOR NEW TOPOGRAPHY INPUT:
+!       THE INPUT IS ALREADY ON THE DESIRED GRID AND THE REDUCTION
+!       FACTORS DUR TO OBSTRUCTIONS ARE GIVEN AS WELL
+
 !     EXTERNALS.
 !     ----------
 
@@ -51,18 +62,24 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,
      &            XOUTN    ,NOUTD
       USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,
-     &            AMOEAP   ,AMONOP   ,XDELLA   ,ZDELLO
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
+     &            LLOBSTRCT
+      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION IA2(NGX, NGY)
+      INTEGER, DIMENSION(NGX, NGY, ML, 2) :: IOBSLAT, IOBSLON 
+      INTEGER, DIMENSION(NGX, NGY) :: IA2(NGX, NGY)
+      INTEGER, ALLOCATABLE :: IDUM(:,:)
 
       CHARACTER*1, ALLOCATABLE :: AX(:), AXX(:)
+      CHARACTER*4 :: CX
+      CHARACTER*10 :: FORMAT
       INTEGER, ALLOCATABLE :: IA2H(:), IA1(:,:)
 
 ! ----------------------------------------------------------------------
@@ -87,11 +104,166 @@
      &                 '' WESTERN LONG '','' EASTERN LONG'',
      &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
 
+      IA2 = 999
+      ALLOCATE(AXX(NGX))
+
+      IF(LLOBSTRCT) THEN
+!     NEW TREATMENT OF BATHYMETRY INPUT
+!     ---------------------------------
+        WRITE (IU06,*) '  NEW TREATMENT OF BATHYMETRY INPUT '
+        WRITE (IU06,*) ' '
+!       TEST DOMAIN
+        IF(NINT(10000*XDELA).NE.NINT(10000*XDELLA) .OR.
+     &     NINT(10000*XDELO).NE.NINT(10000*XDELLO) .OR.
+     &     NINT(10000*XLAS).NE.NINT(10000*AMOSOP) .OR.
+     &     NINT(10000*XLAN).NE.NINT(10000*AMONOP) .OR.
+     &     NINT(10000*XLOW).NE.NINT(10000*AMOWEP) .OR.
+     &     NINT(10000*XLOE).NE.NINT(10000*AMOEAP) ) THEN
+          WRITE (IU06,*) ' *******************************************'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
+          WRITE (IU06,*) ' *      ===========================        *'
+          WRITE (IU06,*) ' * THE INPUT AND COMPUTED DOMAIN DEFINITION*'
+          WRITE (IU06,*) ' * DO NOT AGREE :'
+          WRITE (IU06,*) ' * XDELLA ',XDELA,XDELLA
+          WRITE (IU06,*) ' * XDELLO ',XDELO,XDELLO
+          WRITE (IU06,*) ' * AMOSOP ',XLAS,AMOSOP
+          WRITE (IU06,*) ' * AMONOP ',XLAN,AMONOP
+          WRITE (IU06,*) ' * AMOWEP ',XLOW,AMOWEP
+          WRITE (IU06,*) ' * AMOEAP ',XLOE,AMOEAP
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
+          WRITE (IU06,*) ' *******************************************'
+          CALL ABORT1
+        ENDIF
+
+        DO K=1,NY
+!       READ THE NUMBER OF POINTS PER LATITUDE
+          READ (IU01,'(I4.4)') KLONRGG  
+          IF(KLONRGG.NE.NLONRGG(K)) THEN
+            WRITE (IU06,*) ' ******************************************'
+            WRITE (IU06,*) ' *                                        *'
+            WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR       *'
+            WRITE (IU06,*) ' *      ===========================       *'
+            WRITE (IU06,*) ' *                                        *'
+            WRITE (IU06,*) ' * THE INPUT NUMBER OF POINTS PER LATITUDE '
+            WRITE (IU06,*) ' * IS NOT THE SAME AS THE COMPUTED ONE !!  '
+            WRITE (IU06,*) ' * KLONRGG = ',KLONRGG,K 
+            WRITE (IU06,*) ' * NLONRGG = ',NLONRGG(K),K 
+            WRITE (IU06,*) ' *                                        *'
+            WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                *'
+            WRITE (IU06,*) ' ******************************************'
+            CALL ABORT1
+          ENDIF
+        ENDDO
+
+!       READ THE BATHYMETRY DATA
+        DO K=1,NY
+          WRITE(CX,'(I4.4)') NLONRGG(K)
+          FORMAT='('//CX//'I4)'
+          READ (IU01,FORMAT) (IA2(IX,K),IX=1,NLONRGG(K))
+        ENDDO
+  
+!       READ IN REDUCTION FACTORS
+
+        READ (IU01,'(I4)') NFREMAX
+!!!     NFREMAX can only be 30 
+
+        IF(NFREMAX.NE.30 ) THEN
+          WRITE (IU06,*) ' *******************************************'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
+          WRITE (IU06,*) ' * NFREMAX MUST BE = 30                    *'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' *******************************************'
+          CALL ABORT1
+        ENDIF
+
+        IF(ML.NE.30 .AND. ML.NE.25 ) THEN
+          WRITE (IU06,*) ' *******************************************'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
+          WRITE (IU06,*) ' * NUMBER OF FREQUENCIES MUST BE 30 OR 25  *'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
+          WRITE (IU06,*) ' *                                         *'
+          WRITE (IU06,*) ' *******************************************'
+          CALL ABORT1
+        ENDIF
+
+        IF (ML.EQ.25) ALLOCATE(IDUM(NGX,NGY))
+
+        IF(ML.EQ.NFREMAX) THEN
+          DO M=1,NFREMAX
+            DO IS=1,2
+              DO K=1,NY
+                WRITE(CX,'(I4.4)') NLONRGG(K)
+                FORMAT='('//CX//'I4)'
+                READ (IU01,FORMAT) (IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
+              ENDDO
+            ENDDO
+            DO IS=1,2
+              DO K=1,NY
+                WRITE(CX,'(I4.4)') NLONRGG(K)
+                FORMAT='('//CX//'I4)'
+                READ (IU01,FORMAT) (IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
+              ENDDO
+            ENDDO
+          ENDDO
+        ELSE IF (ML.EQ.25) THEN
+          DO IFRE=1,NFREMAX
+            IF(IFRE.LE.2 .OR. IFRE.GT.27) THEN
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ELSE
+              M=IFRE-2
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ENDIF
+
+            IF(IFRE.LE.2 .OR. IFRE.GT.27) THEN
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ELSE
+              M=IFRE-2
+              DO IS=1,2
+                DO K=1,NY
+                  WRITE(CX,'(I4.4)') NLONRGG(K)
+                  FORMAT='('//CX//'I4)'
+                  READ (IU01,FORMAT)(IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
+                ENDDO
+              ENDDO
+            ENDIF
+          ENDDO
+        ENDIF
+  
+        IF(ALLOCATED(IDUM)) DEALLOCATE(IDUM)
+
+      ELSE
+!     OLD TREATMENT OF BATHYMETRY INPUT
+!     ---------------------------------
       MLON = NINT((XLOE-XLOW)/XDELO+1.0)
 
       NLATMAX=NINT((XLAN-XLAS)/XDELA+1.0)
 
-      ALLOCATE(AX(MLON), AXX(NGX))
+      ALLOCATE(AX(MLON))
       ALLOCATE(IA2H(MLON), IA1(MLON,NLATMAX))
 
       KMAX=(MLON+11)/12
@@ -188,7 +360,7 @@
       XLA=AMOSOP
       XLAG=XLAG-XDELA
       NJ=0
-      IA2 = 999
+      JJ=0
 
 !  LOOP THROUGH LATITUDES
 
@@ -206,7 +378,9 @@
           WRITE (IU06,*) ' * NUMBER OF LATITUDES IN OUTPUT GRID     *'
           WRITE (IU06,*) ' * EXCEEDS DIMENSION.                     *'
           WRITE (IU06,*) ' * DIMENSION IS            NGY = ', NGY
+          WRITE (IU06,*) ' *                         NJ  = ', NJ
           WRITE (IU06,*) ' * LAST LATITUDE USED IS   XLA = ', XLA
+          WRITE (IU06,*) ' *                         XLAG= ', XLAG
           WRITE (IU06,*) ' *                                        *'
           WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                *'
           WRITE (IU06,*) ' ******************************************'
@@ -249,13 +423,17 @@
             IA2(NL,NJ)=IA1(I,J)
             JRGG = 1 +NINT((XLA-AMOSOP)/XDELLA)
             XLO = AMOWEP + REAL(NL)*ZDELLO(JRGG)
-            IF (XLO.LE.AMOEAP) THEN
+            KXLO=NINT(XLO*100.)
+            KAMOEAP=NINT(AMOEAP*100.)
+            IF (KXLO.LE.KAMOEAP) THEN
               XLO = MOD(XLO+720.,360.)
               GOTO 3030
             ENDIF
           ENDIF
         ENDDO
-        XLA=XLA+XDELLA
+
+        JJ=JJ+1
+        XLA=AMOSOP+REAL(JJ)*XDELLA
 
         IF((XLA-0.5*XDELA).GT.AMONOP) THEN
           GOTO 3080
@@ -282,6 +460,13 @@
         WRITE (IU06,*) ' *****************************************'
         CALL ABORT1
       ENDIF
+
+!       THERE NO OBSTRUCTIONS IN THE OLD BATHYMETRY APPROACH:
+        IOBSLAT=1000
+        IOBSLON=1000
+
+      ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -377,8 +562,10 @@
         WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
       ENDDO
 
-      DEALLOCATE(AX, AXX)
-      DEALLOCATE(IA2H, IA1)
+      IF(ALLOCATED(AX)) DEALLOCATE(AX)
+      IF(ALLOCATED(AXX)) DEALLOCATE(AXX)
+      IF(ALLOCATED(IA2H)) DEALLOCATE(IA2H)
+      IF(ALLOCATED(IA1)) DEALLOCATE(IA1)
 
       RETURN
       END SUBROUTINE TOPOAR

@@ -1,26 +1,46 @@
 #ifdef JOB
+# @ shell = /usr/bin/ksh
+# @ core_limit = 4096
+# @ notification = error
+# @ restart = no
+# @ cpu_limit = 2200,200
+# @ job_cpu_limit = 5800,3800
+# @ class = any
+# @ job_name = wam_preproc
+# @ output = /scratch/rd/wab/wam_preproc.$(jobid).out
+# @ error  = /scratch/rd/wab/wam_preproc.$(jobid).err
+# @ account_no = ecrmwa
+# @ job_type = parallel
+# @ total_tasks = 1
+# @ queue
 #.
-#. PREPROC TO GENERATE UNFORMATTED INPUT FILES (bathymetry, grid and tables)
+#. PREPROC GENERATES UNFORMATTED INPUT FILES (bathymetry, grid and tables)
 #. FOR USE BY PRESET and WAMODEL
+#. This example runs as a batch job on the ECMWF IBM servers.
 #.
-#QSUB -q vpp700.normal
-#QSUB -eo
-#QSUB -r preproc 
-#QSUB -lP 0
-#QSUB -lT 300
-#QSUB -lV 60mb
-#QSUB -lM 190mb
-#QSUB -mb -mi
-#QSUB
 #.
 PATH=$PATH:.
 set +v
 #.
 #include "wkstation_vpp_share.h"
-#include "path.h"
+
+# necessary directories
+[[ ! -d $ROOTWDIR  ]] && mkdir -p $ROOTWDIR
+[[ ! -d $WDIR  ]] && mkdir -p $WDIR
+
 #.
-#.
-cd $TMPDIR
+cd $WDIR
+mkdir tmp$$
+cd tmp$$
+
+# check if excutable is available
+#################################
+if [[ ! -a  ${BINS}/preproc ]] ; then
+      print - "\n\n\t\tpreproc was not found\n\n"
+      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
+      exit 3
+fi
+
 #.
 #.===================================================================
 #.  INPUT FILES.
@@ -37,60 +57,24 @@ cd $TMPDIR
 
 cat > fort.1 << EOF
 #if region=='s'
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Swamp_test/topocat_999"
+#include "/ccvobs/wam/Wam_setup/Topographic_data/Swamp_test/topocat_999"
 #elif region=='m' && resolution==50
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Medite/topomed"
+#include "/ccvobs/wam/Wam_setup/Topographic_data/Medite/topomed"
 #elif region=='m' && resolution==25
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Global/topoglo_25"
+#include "/ccvobs/wam/Wam_setup/Topographic_data/Global/topoglo_25"
 #else
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Global/topoglo_50"
+#include "/ccvobs/wam/Wam_setup/Topographic_data/Global/topoglo_50"
 #endif
 EOF
 #.
-#.========
-#. LOAD
-#.========
-#.
-#.
-#. copy library from workstation
-
-cp $WKLIBS/$WAMLIB.a $LIBS/$WAMLIB.a
-
-if [[ ! -a $LIBS/$WAMLIB.a ]] ; then
-    ls -lsa
-    print - "\n\n\t\tWAMLIB file was not found\n\n"
-    print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-    exit 2
-fi
-#.
-#. extract preproc.o
-
-ar xv $LIBS/$WAMLIB.a preproc.o
-
-if [[ ! -a  preproc.o ]] ; then
-      print - "\n\n\t\tpreproc.o file was not found\n\n"
-      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 3
-fi
-#.
-frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  preproc.o -lwam \
-${mpllib} ${emoslib} ${eclib} ${fdblib} ${mpilib} ${mp2lib} || {
-   #.
-   #. Check return code.
-   #.
-    print - "\n\n\t\tCOMPILE FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    cat preproc.lis
-    print - "\n\n\t\tCOMPILE FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    exit 3
-   }
 #.
 #.===================================================================
 #. RUN THE PROGRAM AND FORMAT THE OUTPUT.
 #.===================================================================
 #.
-a.out <<\EOD ||  { print - "\n\n\t\tPREPROC FAILED\n\n" ; ls -ltra ; exit ; }
+# input namelist for preproc (used to specify domain and resolutions
+#                             as well as manual bathymetric corrections)
+cat > fort.4 <<\EOD
 #if region=='s'
 #include "input_preproc_rswamp2.F"
 #elif region=='m'
@@ -113,6 +97,9 @@ a.out <<\EOD ||  { print - "\n\n\t\tPREPROC FAILED\n\n" ; ls -ltra ; exit ; }
 #endif
 #endif
 EOD
+
+# run preproc:
+${BINS}/preproc || { print - "PREPROC FAILED" ; ls -ltra ; exit ; }
 #.
 #.===================================================================
 #. STORE TEMPORARILY THE UNFORMATED OUTPUT FILES.
@@ -120,15 +107,15 @@ EOD
 #.
 #. PARWAM FILE
 #.
-mv PARWAM $ADIR/PARWAM_${grid}
+mv PARWAM $WDIR/PARWAM_${grid}
 #.
 #.  GRID FILE.
 #.
-mv fort.7 $ADIR/gridglou_${grid}
+mv fort.7 $WDIR/gridglou_${grid}
 #.
 #.  COMMON UBUF.
 #.
-mv fort.8 $ADIR/ubufglou_${grid}
+mv fort.8 $WDIR/ubufglou_${grid}
 #.
 #.===================================================================
 #. GRID FILES HAVE BEEN CREATED AND SAVED.
@@ -136,5 +123,8 @@ mv fort.8 $ADIR/ubufglou_${grid}
 #.===================================================================
 #.
 ls -l
-#.
+
+cd ..
+\rm -rf tmp$$
+
 #endif

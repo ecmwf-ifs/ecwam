@@ -105,7 +105,6 @@
 !       ---------------------
 
       IF(LMESSPASS) THEN
-        CALL GSTATS(1897,0)
         LLAK=.FALSE.
         CALL FEMEAN (FL1, NSTART(IRANK), NEND(IRANK), EMEAN, FMEAN,
      &               AKMEAN, LLAK)
@@ -119,7 +118,6 @@
             WHMOD(IJ)=0.
           ENDIF
         ENDDO
-        CALL GSTATS(1897,1)
 
 !       make WHMOD a global array
         KTAG=KTAG+1
@@ -135,7 +133,7 @@
 
 !     specify the correlation distance (DIST) and the maximum spreading
 !     distance (DISTMAX)
-      IF(XDELLA.LT.0.5) THEN
+      IF(XDELLA.LT.0.3) THEN
         DIST  = 150000./R
       ELSE
         DIST  = 300000./R
@@ -149,7 +147,6 @@
 
 !     DETERMINE THE TABLE WHICH TELLS WHICH PE POTENTIALLY SHARES 
 !     ALTIMETER DATA WITH OTHER PE'S.
-      CALL GSTATS(1897,0)
       IF(.NOT. ALLOCATED(INTLMAX) ) THEN
         ALLOCATE(INTLMAX(NPROC,NPROC))
         ALLOCATE(KMINLMAX(NPROC))
@@ -158,7 +155,6 @@
         CALL MPPEWITHINDIST(DISTMAX,INTLMAX,KMINLMAX,KMAXLMAX)
 
       ENDIF
-      CALL GSTATS(1897,1)
 
 !*    2.1 THINNED MEASUREMENTS ARE READ IN
 !         --------------------------------

@@ -5,6 +5,16 @@
 !**** *READPRE*  READ GRID OUTPUT FROM PREPROC.
 
 !     H. GUNTHER      GKSS/ECMWF     MAY 1990
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     J. BIDLOT            ECMWF       11/2003
+!                          IF YOUR ARE RUNNING AT ECMWF:
+!                          BE AWARE THAT IF YOU CHANGE ANYTHING TO THE
+!                          STRUCTURE OF THE OUTPUT FILE YOU WILL HAVE TO
+!                          MAKE SURE THAT IT IS CREATED FOR YOUR RUN,
+!                          OTHERWISE IT MIGHT PICK UP THE DEFAULT ONE
+!                          THAT IS ALREADY ON DISK.
+!                          YOU ALSO HAVE TO CHANGE OUTCOM.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
 !     --------
@@ -41,7 +51,6 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
      &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,
      &            IJL      ,IJLT
@@ -52,7 +61,7 @@
      &            DAL2     ,FRH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID 
@@ -69,20 +78,16 @@
 
 !     READ MODEL IDENTIFIERS
       READ(IU07) KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
-      IF(KMDLGRDID.NE.IMDLGRDID .OR.
-     &   KMDLGRBID_G.NE.IMDLGRBID_G .OR.
-     &   KMDLGRBID_M.NE.IMDLGRBID_M) THEN
+      IF(KMDLGRDID.NE.IMDLGRDID) THEN
          WRITE(IU06,*) '*****************************************'
          WRITE(IU06,*) '*                                       *'
          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
          WRITE(IU06,*) '*  ==============================       *'
          WRITE(IU06,*) '*                                       *'
          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-         WRITE(IU06,*) '* MODEL IDENTIFIERS. MAKE SURE YOU HAVE *' 
-         WRITE(IU06,*) '* RUN PREPROC !!!!                      *'
-         WRITE(IU06,*) KMDLGRDID, IMDLGRDID
-         WRITE(IU06,*) KMDLGRBID_G, IMDLGRBID_G
-         WRITE(IU06,*) KMDLGRBID_M, IMDLGRBID_M
+         WRITE(IU06,*) '* MODEL GRID IDENTIFIER.                *' 
+         WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
+         WRITE(IU06,*)    KMDLGRDID, IMDLGRDID
          WRITE(IU06,*) '*                                       *'
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
          WRITE(IU06,*) '* ---------------   --------------      *'
@@ -136,6 +141,16 @@
       READ(IU07) IXLG, KXLT, NX, NY, IPER,
      &           AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,
      &           ZDELLO, IRGG
+
+!     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
+!     LAT-LONG GRID (REGULAR OR IRREGULAR).
+
+      IF(IPER.EQ.1 .AND. AMONOP.EQ.ABS(AMOSOP) .AND.
+     &   MOD(NY,2).EQ.0 .AND. IRGG.EQ.1 ) THEN
+        IQGAUSS=1
+      ELSE
+        IQGAUSS=0
+      ENDIF
 
 !*    4. READ MODULE YOWINDNL (NON-LINEAR INTERACTION).
 !       -----------------------------------------------

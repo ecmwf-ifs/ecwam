@@ -1,7 +1,7 @@
 !ICE
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (FL3,IJS,IJL,IG)
+      SUBROUTINE SETICE (FL3,MIJS,MIJL,IG)
 
 !-----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@
 
       DO M = 1, NFRE
         DO K = 1, NANG
-          DO IJ = IJS,IJL
+          DO IJ = MIJS,MIJL
             IF(ICEMASK(IJ,IG).EQ.0) THEN
 !!!            FL3(IJ,K,M) = ICEMASK(IJ,IG)*FL3(IJ,K,M)
               FL3(IJ,K,M) = 0.

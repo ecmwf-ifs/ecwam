@@ -1,4 +1,4 @@
-      SUBROUTINE UIPREP (IU05, IFORM, IREFRA, ML, KL)
+      SUBROUTINE UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -14,7 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IU05, IFORM, IREFRA, ML, KL)*
+!       *CALL* *UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)*
 !          *IU05*    - LOGICAL INPUT UNIT.
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
@@ -23,6 +23,8 @@
 !                                        OTHERWISE NOTHING.
 !          *ML*      - NUMBER OF FREQUENCIES.
 !          *KL*      - NUMBER OF DIRECTIONS.
+!          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
+!                      IN INPUT FILE grid_description
 
 !     METHOD.
 !     -------
@@ -56,21 +58,25 @@
       USE YOWCOUT  , ONLY : NGOUT
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWGRID  , ONLY : NLONRGG
+
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
-     &            XDELLO
+     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
+     &            XDELLA   ,XDELLO   ,LLOBSTRCT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
 ! ----------------------------------------------------------------------
 
       CHARACTER* 70 CLINE
+      CHARACTER* 70 :: FILENAME
       REAL, ALLOCATABLE :: XDUMP(:)
       INTEGER, ALLOCATABLE :: NDUMP(:)
+      LOGICAL :: LLGRID
       NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,
      &                  IFORM, IREFRA, ITEST, ITESTB,
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC,
-     &                  NBLO, NIBLO, CLDOMAIN
+     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
 
@@ -101,6 +107,7 @@
       AMONOC =-100.0
       AMOWEC =   0.0
       AMOEAC =   0.0
+      LLOBSTRCT = .TRUE.
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
@@ -125,6 +132,26 @@
       ENDIF
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
+
+
+!     1.1 CHECK IF FILE grid_description IS PRESENT
+!         IF IT IS THERE IT WILL SUPERSEDE THE NAMLIST DEFINITION
+
+      FILENAME='grid_description'
+      INQUIRE(FILE=FILENAME,EXIST=LLGRID)
+      IF(LLGRID) THEN
+        IU=I_GET_UNIT(IU06,FILENAME,'S','F',0)
+        OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
+        READ (IU,'(I4)') ISPECTRUNC 
+        READ (IU,'(F8.3)') AMONOP
+        READ (IU,'(F8.3)') AMOSOP
+        READ (IU,'(F8.3)') AMOWEP
+        READ (IU,'(F8.3)') AMOEAP
+        READ (IU,'(I4)') IPER
+        READ (IU,'(I4)') IRGG
+        READ (IU,'(I4)') NY
+      ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -159,13 +186,49 @@
       ELSE
         WRITE(IU06,'("   USE A REGULAR LON LAT GRID")')
       ENDIF      
-
+      IF(LLOBSTRCT) THEN
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) '   THE NEW FORM OF BATHYMETRY INPUT IS USED IN'
+        WRITE(IU06,*) '   CONJUNCTION WITH THE OBSTRUCTION COEFFICIENT'
+        WRITE(IU06,*) ' '
+      ENDIF
 
       CALL ADJUST (AMOWEP, AMOEAP)
-      IPER = 0
-      IF (MOD(AMOEAP-AMOWEP+XDELLO+720., 360.).EQ.0.) IPER = 1
 
-      WRITE (IU06,'("   RESOLUTION LAT-LON ",2F8.3)') XDELLA, XDELLO
+!*    SET DIMENSIONS.
+
+      IF(LLGRID) THEN
+        XDELLA = (AMONOP-AMOSOP)/(NY-1)
+        ALLOCATE(NLONRGG(NY))
+
+        NX = 0
+        DO K=1,NY
+          KSN=NY-K+1
+          READ(IU,'(I4)') NLONRGG(KSN)
+          NX = MAX(NX,NLONRGG(KSN))
+        ENDDO
+
+        XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+
+        NGX = NX
+        NGY = NY
+
+        CLOSE(IU)
+
+      ELSE
+        IPER = 0
+        IF (ABS(AMOEAP-AMOWEP+1.5*XDELLO) .GE. 360. ) IPER = 1
+        NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
+        NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+
+        NGX = NX
+        NGY = NY
+
+        ALLOCATE(NLONRGG(NY))
+
+      ENDIF
+
+      WRITE (IU06,'("   RESOLUTION LAT-LON ",2F12.7)') XDELLA, XDELLO
       WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",
      &  " WESTERN LONG "," EASTERN LONG",
      &  /,2X,4F14.3)') AMOSOP, AMONOP, AMOWEP, AMOEAP
@@ -179,19 +242,17 @@
         ENDIF 
       ENDIF 
 
-!*    SET DIMENSIONS.
-
-      NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
-      NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
-
-      NGX = NX
-      NGY = NY
-
 ! ----------------------------------------------------------------------
 
 !*    2.3 OUTPUT GRID CORRECTIONS READ FROM NAMELIST NACORR.
 !         --------------------------------------------------
 
+      IF(LLOBSTRCT) THEN
+!     when the new bathymetry used, it is assumed that there is not
+!     any need for manual correction of the data since it should have
+!     been taken care when creating the file. 
+        NOUT=0
+      ELSE
       REWIND (IU05)
       NOUT=0
       IOS=-9
@@ -279,6 +340,7 @@
           NOUTD(NOUT) = IOUTD
         ENDIF
       ENDDO CORR
+      ENDIF
  2300 IF (NOUT.GT.0) THEN
         WRITE (IU06,'(/4X," AREAS TO BE CORRECTED IN OUTPUT GRID",
      &   /,4X,"  NO.   SOUTHERN LAT ",

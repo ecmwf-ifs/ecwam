@@ -67,7 +67,8 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNIT  , ONLY : IU17     ,IU18
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
-     &            IIG      ,USNEXT   ,DSNEXT   ,ADSNEXT  ,ZIDLNEXT
+     &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
+     &            ZIDLNEXT
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
@@ -79,6 +80,8 @@
       LOGICAL NEWREAD, NEWFILE
 
       CHARACTER*12 CDATEWH, CDATE
+
+      DATA ISTORE /0/
 
 ! ----------------------------------------------------------------------
 
@@ -128,6 +131,7 @@
 
 !!!               CALL CREWFN (IU18, CDAWIFL)
             NEWFILE = .TRUE.
+            ISTORE=1
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND FILE',
      &         ' AT CDATE = ', CDATE
@@ -148,18 +152,32 @@
           ENDIF
         ENDIF
 !!!!         READ(IDNIN) CDA, IIG, (U10NEW(L),L=IJS,IJL),
-!!!!     1                         (THWNEW(L),L=IJS,IJL)
+!!!!     1                         (THWNEW(L),L=IJS,IJL),
+!!!!     2                         (ROAIRN(L),L=IJS,IJL),
+!!!!     3                         (ZIDLNEW(L),L=IJS,IJL)
 !!!!
 !!!! read from file instead
 
-        CDA=CDTNEXT
+        IF(ISTORE.GT.NSTORE) THEN
+          WRITE(IU06,*) ' ********************************************'
+          WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
+          WRITE(IU06,*) '      ISTORE > NSTORE !!!                    '
+          WRITE(IU06,*) '      ISTORE = ',ISTORE 
+          WRITE(IU06,*) '      NSTORE = ',NSTORE 
+          WRITE(IU06,*) ' ********************************************'
+          CALL ABORT1
+        ENDIF
+
+        CDA=CDTNEXT(ISTORE)
         IIG=IG
         DO L=IJS,IJL
-          U10NEW(L)=USNEXT(L,IIG)
-          THWNEW(L)=DSNEXT(L,IIG)
-          ROAIRN(L)=ADSNEXT(L,IIG)
-          ZIDLNEW(L)=ZIDLNEXT(L,IIG)
+          U10NEW(L)=USNEXT(L,ISTORE,IIG)
+          THWNEW(L)=DSNEXT(L,ISTORE,IIG)
+          ROAIRN(L)=ADSNEXT(L,ISTORE,IIG)
+          ZIDLNEW(L)=ZIDLNEXT(L,ISTORE,IIG)
         ENDDO
+
+        ISTORE=ISTORE+1
 
 
         CALL INCDATE(CDATEWH,IDELWO)

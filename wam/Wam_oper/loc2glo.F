@@ -39,14 +39,16 @@
       IF (LICERUN) THEN
         DO IJ = IJS,IJL
           IF (ICEMASK(IJ,IG).EQ.0) THEN
-             ALOC(IJ) = ZMISS
+             GLO(IJ) = ZMISS
+          ELSE
+             GLO(IJ) = ALOC(IJ)
           ENDIF
         ENDDO
+      ELSE
+        DO IJ = IJS,IJL
+          GLO(IJ) = ALOC(IJ)
+        ENDDO
       ENDIF
-
-      DO IJ = IJS,IJL
-        GLO(IJ) =  ALOC(IJ)
-      ENDDO
 
       RETURN
       END SUBROUTINE LOC2GLO

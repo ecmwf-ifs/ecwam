@@ -138,12 +138,11 @@
 !        ----------------------
 
       CONST1  = BETAMAX/XKAPPA**2 /ROWATER
-      DO M=1,NFRE
-        FAC(M) = ZPI*FR(M)
-        CONST(M)=FAC(M)*CONST1
-      ENDDO
 
       DO M=1,NFRE
+
+        FAC(M) = ZPI*FR(M)
+        CONST(M)=FAC(M)*CONST1
 
 !*      INVERSE OF PHASE VELOCITIES.
 !       ----------------------------

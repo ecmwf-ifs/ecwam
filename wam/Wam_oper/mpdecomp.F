@@ -11,6 +11,16 @@
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
 !     J. BIDLOT    ECMWF   FEBRUARY 2002 NEW 2-D DECOMPOSITION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     J. BIDLOT    ECMWF       11/2003
+!                  IF YOUR ARE RUNNING AT ECMWF:
+!                  BE AWARE THAT IF YOU CHANGE ANYTHING TO THE
+!                  STRUCTURE OF THE UBUF FILE YOU WILL HAVE TO
+!                  MAKE SURE THAT IT IS CREATED FOR YOUR RUN,
+!                  OTHERWISE IT MIGHT PICK UP THE DEFAULT ONE
+!                  THAT IS ALREADY ON DISK.
+!                  YOU ALSO HAVE TO CHANGE OUTUBUF.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !     PURPOSE.
 !     --------
@@ -96,7 +106,8 @@
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,
+     &            KMNOP    ,KMSOP
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG 
       USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO    ,NGY      ,
@@ -110,7 +121,8 @@
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
      &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,
      &            IJ2NEWIJ
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV     ,
+     &            OBSLAT   ,OBSLON
       USE YOWUNIT  , ONLY : IU07     ,IU08
       USE MPL_MODULE
 
@@ -126,6 +138,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IXLON
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,KTEMP,NLENHALO,IJHALO
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE,IPROCFROM
+      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
 
       REAL,ALLOCATABLE :: RCOMBUF(:), RDUM(:,:)
 
@@ -203,6 +216,16 @@
         FR5(M) = FR(M)**5.
         FRM5(M) = (1./FR(M))**5.
         COFRM4(M) = COEF4*G*FR(M)**(-4.)
+      ENDDO
+
+!     FIND KNMOP AND KMSOP
+      KMNOP=1
+      KMSOP=NGY
+      DO IG=1,IGL
+        DO IJ = IJS(IG),IJL(IG)
+          KMNOP=MAX(KXLT(IJ,IG),KMNOP)
+          KMSOP=MIN(KXLT(IJ,IG),KMSOP)
+        ENDDO
       ENDDO
 
 
@@ -972,32 +995,20 @@
         IF((LMESSPASS.AND.NPR.GT.1)) THEN
           DO IJ=NSTART(IRANK),NEND(IRANK)
             JH = KXLT(IJ,IG)
-!!! see propags it is needed in order to reproduce exactly the same results
-!!! as with the old decomposition. It will be more efficient to have 1./..
-!!! DO not forget to change in propags as well !!!
-!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
-            DELLAM1(IJ,IG) = DELLAM(JH)
+            DELLAM1(IJ,IG) = 1./DELLAM(JH)
             COSPHM1(IJ,IG) = 1./COSPH(JH)
           ENDDO 
           DO IH=1,NLENHALO(IRANK)
             IJ=IJFROMPE(IH,IRANK)
             JH = KXLT(IJ,IG)
             IJ=IJHALO(IH)
-!!! see propags it is needed in order to reproduce exactly the same results
-!!! as with the old decomposition. It will be more efficient to have 1./..
-!!! DO not forget to change in propags as well !!!
-!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
-            DELLAM1(IJ,IG) = DELLAM(JH)
+            DELLAM1(IJ,IG) = 1./DELLAM(JH)
             COSPHM1(IJ,IG) = 1./COSPH(JH)
           ENDDO
         ELSE
           DO IJ=NINF,NSUP
             JH = KXLT(IJ,IG)
-!!! see propags it is needed in order to reproduce exactly the same results
-!!! as with the old decomposition. It will be more efficient to have 1./..
-!!! DO not forget to change in propags as well !!!
-!!!!!!!!!!!            DELLAM1(IJ,IG) = 1./DELLAM(JH)
-            DELLAM1(IJ,IG) = DELLAM(JH)
+            DELLAM1(IJ,IG) = 1./DELLAM(JH)
             COSPHM1(IJ,IG) = 1./COSPH(JH)
           ENDDO 
         ENDIF
@@ -1123,13 +1134,17 @@
 !*    6. INPUT THE WEIGHT FOR THE ADVECTION SCHEME 
 !        --------------------------------------------
 
-      ALLOCATE(WADV(NIBLO,2))  ! THE SIZE OF WADV IS READJUSTED SEE BELOW
+      ALLOCATE(WADV(NIBLO,2))   ! THE SIZE OF IS READJUSTED SEE BELOW
+      ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
+      ALLOCATE(KOBSLON(NIBLO,NFRE,2))
 
       IF(LMESSPASS) THEN
 
 !       READ IOU8 ON PE IREAD
         IF(IRANK.EQ.IREAD) THEN
           READ (IU08) WADV
+          READ (IU08) KOBSLAT
+          READ (IU08) KOBSLON
         ENDIF
 
 !       SEND WADV TO OTHER PE'S
@@ -1162,11 +1177,57 @@
           ENDIF
 
           DEALLOCATE(RCOMBUF)
+        ENDIF
+
+!       SEND KOBSLAT AND KOBSLON TO OTHER PE'S
+        IF(NPR.GT.1) THEN
+          ITAG=KTAG+2
+          MPLENGTH=4*NFRE*NIBLO
+          ALLOCATE(ICOMBUF(MPLENGTH))
+
+          IF(IRANK.EQ.IREAD) THEN
+            KCOUNT=0
+            DO IC=1,2
+              DO M=1,NFRE
+                DO IJ=1,NIBLO
+                  KCOUNT=KCOUNT+1
+                  ICOMBUF(KCOUNT)=KOBSLAT(IJ,M,IC)
+                ENDDO
+                DO IJ=1,NIBLO
+                  KCOUNT=KCOUNT+1
+                  ICOMBUF(KCOUNT)=KOBSLON(IJ,M,IC)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDIF
+
+          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,
+     &     KTAG=ITAG,CDSTRING='MPDECOMP 2:')
+
+          IF(IRANK.NE.IREAD) THEN
+            KCOUNT=0
+            DO IC=1,2
+              DO M=1,NFRE
+                DO IJ=1,NIBLO
+                  KCOUNT=KCOUNT+1
+                  KOBSLAT(IJ,M,IC)=ICOMBUF(KCOUNT)
+                ENDDO
+                DO IJ=1,NIBLO
+                  KCOUNT=KCOUNT+1
+                  KOBSLON(IJ,M,IC)=ICOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDIF
+
+          DEALLOCATE(ICOMBUF)
 
         ENDIF
 
       ELSEIF(.NOT.LMESSPASS) THEN
         READ (IU08) WADV
+        READ (IU08) KOBSLAT
+        READ (IU08) KOBSLON
       ENDIF
 
 
@@ -1184,11 +1245,34 @@
         ENDDO
         DEALLOCATE(RDUM)
 
+        ALLOCATE(KDUM(NIBLO,2))
+        DO IC=1,2
+          DO M=1,NFRE
+            DO NIJ=NSTART(1),NEND(NPR)
+              KDUM(NIJ,IC)=KOBSLAT(NEWIJ2IJ(NIJ),M,IC)
+            ENDDO
+            DO NIJ=NSTART(1),NEND(NPR)
+              KOBSLAT(NIJ,M,IC)=KDUM(NIJ,IC)
+            ENDDO
+          ENDDO
+        ENDDO
+        DO IC=1,2
+          DO M=1,NFRE
+            DO NIJ=NSTART(1),NEND(NPR)
+              KDUM(NIJ,IC)=KOBSLON(NEWIJ2IJ(NIJ),M,IC)
+            ENDDO
+            DO NIJ=NSTART(1),NEND(NPR)
+              KOBSLON(NIJ,M,IC)=KDUM(NIJ,IC)
+            ENDDO
+          ENDDO
+        ENDDO
+        DEALLOCATE(KDUM)
+
         DEALLOCATE(NEWIJ2IJ)
       ENDIF
 
-!     KEEP THE PART OF WADV WHICH IS NECESSARY
-!     -----------------------------------------
+!     KEEP THE PART OF WADV, OBSLAT AND OBSLON WHICH ARE NECESSARY
+!     ------------------------------------------------------------
 
       IF(LMESSPASS.AND.NPR.GT.1) THEN
 
@@ -1199,10 +1283,8 @@
             RDUM(IJ,IC)=WADV(IJ,IC)
           ENDDO
         ENDDO
-
         DEALLOCATE(WADV)
         ALLOCATE(WADV(NSTART(IRANK):NEND(IRANK),2))
-
         DO IC=1,2
           DO IJ=NSTART(IRANK),NEND(IRANK)
             WADV(IJ,IC)=RDUM(IJ,IC)
@@ -1210,7 +1292,49 @@
         ENDDO
 
         DEALLOCATE(RDUM)
+
       ENDIF
+
+!     NOTE: OBSLON THE VALUE OF OBSLON WILL BE RESET IN THE FIRST
+!     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
+!     VELOCITY At THE INTERFACE !!!!!!!!
+      ALLOCATE(OBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+
+      DO IC=1,2
+        DO M=1,NFRE
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            IF(KOBSLON(IJ,M,IC).EQ.0) THEN
+              OBSLON(IJ,M,IC)=0.0
+            ELSEIF(MOD(KOBSLON(IJ,M,IC),1000).EQ.0) THEN
+              OBSLON(IJ,M,IC)=1.0
+            ELSE
+              OBSLON(IJ,M,IC)=FLOAT(KOBSLON(IJ,M,IC))*0.001
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+      DEALLOCATE(KOBSLON)
+
+!     NOTE: OBSLON THE VALUE OF OBSLAT WILL BE RESET IN THE FIRST
+!     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
+!     VELOCITY At THE INTERFACE !!!!!!!!
+      ALLOCATE(OBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+      DO IC=1,2
+        DO M=1,NFRE
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            IF(KOBSLAT(IJ,M,IC).EQ.0) THEN
+              OBSLAT(IJ,M,IC)=0.0
+            ELSEIF(MOD(KOBSLAT(IJ,M,IC),1000).EQ.0) THEN
+              OBSLAT(IJ,M,IC)=1.0
+            ELSE
+              OBSLAT(IJ,M,IC)=FLOAT(KOBSLAT(IJ,M,IC))*0.001
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+      DEALLOCATE(KOBSLAT)
+
+
 
 !     7. DETERMINE KXLTMIN KXLTMAX
 

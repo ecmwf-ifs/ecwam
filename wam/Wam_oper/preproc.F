@@ -1,4 +1,4 @@
-      PROGRAM preproc 
+       PROGRAM preproc 
 
 ! ----------------------------------------------------------------------
 
@@ -178,10 +178,13 @@
 ! ----------------------------------------------------------------------
 
       INTEGER, ALLOCATABLE :: IA1(:,:)
+      INTEGER, ALLOCATABLE, DIMENSION(:,:,:,:) :: IOBSLAT, IOBSLON 
 
 !          *IA1*   INTEGER  TOPOGRAPHIC DATA IN MODEL GRID.
 
 ! ----------------------------------------------------------------------
+      LOGICAL :: LLGRID
+
 
       LMESSPASS=.FALSE.
 
@@ -209,7 +212,7 @@
 !*    2. USER INPUT AND LINEPRINTER PROTOCOL.
 !        ------------------------------------
 
-      CALL UIPREP (IU05, IFORM, IREFRA, ML, KL)
+      CALL UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -229,7 +232,7 @@
       ALLOCATE(DELLAM(NY)) 
       ALLOCATE(SINPH(NY)) 
       ALLOCATE(COSPH(NY)) 
-      ALLOCATE(NLONRGG(NY)) 
+!     NLONRGG IS ALLOCATED IN UIPREP
       ALLOCATE(ZDELLO(NY))
 
 ! ----------------------------------------------------------------------
@@ -245,18 +248,20 @@
         XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         SINPH(K)   = SIN(XLAT)
         COSPH(K)   = COS(XLAT)
-        IF (IRGG.EQ.1) THEN
-          IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
-     &       AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
+        IF(.NOT.LLGRID) THEN
+          IF (IRGG.EQ.1) THEN
+            IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
+     &         AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
 !         the old value for pi has to be taken in order to reproduce
 !         exactly the irregular grid of the operational LAW model 0.25
-            NLONRGG(K) = NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
+              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
+            ELSE
+              NLONRGG(K) = NINT(NX*COSPH(K))
+            ENDIF
+            IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
-            NLONRGG(K) = NINT(NX*COSPH(K))
-          ENDIF
-          IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
-        ELSE
-          NLONRGG(K) = NX
+            NLONRGG(K) = NX
+          ENDIF      
         ENDIF      
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
@@ -267,7 +272,7 @@
           EXIT
         ENDIF
         IF(IPER.EQ.1) THEN
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K))
+          ZDELLO(K)  = 360./REAL(NLONRGG(K))
         ELSE
           ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
         ENDIF
@@ -328,7 +333,9 @@
 !*        REQUESTED RESOLUTION.
 !         ---------------------------------------------------------
 
-      CALL TOPOAR (IU01, IA1)
+      ALLOCATE(IOBSLAT(NX, NY, ML, 2))
+      ALLOCATE(IOBSLON(NX, NY, ML, 2))
+      CALL TOPOAR (IU01, IA1, IOBSLAT, IOBSLON, ML)
 
 !*    5.2 COMPUTATION OF BLOCKS.
 !         ----------------------
@@ -402,7 +409,7 @@
 !        -------------------------------
 
       DO IG=1,IGL
-        CALL MUBUF (IA1, IG, IU08, IU18, IFORM)
+        CALL MUBUF (IA1, IOBSLAT, IOBSLON, IG, ML, IU08, IU18, IFORM)
         IF (ITEST.GT.0) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*)
      &     ' SUB MUBUF DONE FOR BLOCK ',IG

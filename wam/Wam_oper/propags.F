@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, IG, SL, FCONST)
+      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, IG, SL, FCONST, L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -18,6 +18,7 @@
 
 !     J. BIDLOT    ECMWF   FEBRUARY 1997    - ADD SL AND FCONST
 !     J. BIDLOT    ECMWF   APRIL 1997       - MODIFIED ADVECTION SCHEME 
+!     J. BIDLOT    ECMWF   2003             - OBSTRUCTION COEFFICIENTS  
 
 !*    PURPOSE.
 !     --------
@@ -27,7 +28,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, IG, SL, FCONST)*
+!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, IG, SL, FCONST,L1STCALL)*
 !          *F1*   - SPECTRUM AT TIME T.
 !          *F3*   - SPECTRUM AT TIME T+DELT.
 !          *MIJS* - INDEX OF FIRST POINT
@@ -35,6 +36,7 @@
 !          *IG*   - BLOCK NUMBER.
 !          *SL*   - SIGMA DOT 
 !          *FCONST* - SIGMA/SINH(2KD)
+!          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
 
 !     METHOD.
 !     -------
@@ -58,7 +60,7 @@
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPHM1  ,
      &            IGL      ,IJLT
-      USE YOWMAP   , ONLY : KXLT
+      USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NIBLD    ,
      &            NIBLC
@@ -67,7 +69,7 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV     ,
-     &            LSAMEDEPTH
+     &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
 
 ! ----------------------------------------------------------------------
 
@@ -79,9 +81,12 @@
       REAL,ALLOCATABLE,DIMENSION(:) :: DTP,DTM,DTC,DRGP,DRGM
       REAL,ALLOCATABLE,DIMENSION(:) :: DOP,DOM,DRCP,DRCM
       REAL,ALLOCATABLE,DIMENSION(:) :: DRDP,DRDM
+      REAL,ALLOCATABLE,DIMENSION(:) :: DLADCO
       REAL,ALLOCATABLE,DIMENSION(:,:) :: CGOND
       REAL,ALLOCATABLE,DIMENSION(:,:) :: WADVM1
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CGKLON, CGKLAT, CGKLAT2
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CGKLON, CGKLAT
+
+      LOGICAL :: L1STCALL
 
 ! ----------------------------------------------------------------------
 
@@ -115,20 +120,6 @@
           ENDDO
         ENDDO
 
-        ALLOCATE(CGKLON(MIJS:MIJL,NFRE,2))
-        ALLOCATE(CGKLAT(MIJS:MIJL,NFRE,2))
-        ALLOCATE(CGKLAT2(MIJS:MIJL,NFRE,2))
-
-        DO IC=1,2
-          DO M=1,NFRE
-            DO IJ=MIJS,MIJL
-              CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M)
-              CGKLAT(IJ,M,IC) = CGOND(KLAT(IJ,IC),M)
-              CGKLAT2(IJ,M,IC) = CGOND(KLAT2(IJ,IC),M)
-            ENDDO
-          ENDDO
-        ENDDO
-
       ENDIF
 
 
@@ -158,7 +149,7 @@
         DELLA0(NINF-1) = 0.
         DO IJ = NINF,IJLT(IG)
           DCO(IJ) = COSPHM1(IJ,IG)
-          DELLA0(IJ) = DELPRO/DELLAM1(IJ,IG)
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
         ENDDO
 
 !*    0.2.1.2 COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
@@ -179,12 +170,6 @@
           ENDIF
         ENDDO
 
-        ALLOCATE(WADVM1(MIJS:MIJL,2))
-        DO IC=1,2
-          DO IJ = MIJS,MIJL
-            WADVM1(IJ,IC) = 1. - WADV(IJ,IC)
-          ENDDO
-        ENDDO
         IF (IREFRA.NE.2) THEN
 
 !*       BRANCH TO 3. IF WITHOUT REFRACTION OR DEPTH.
@@ -205,7 +190,7 @@
 
         DELLA0(NINF-1) = 0.
         DO IJ = NINF,IJLT(IG)
-          DELLA0(IJ) = DELPRO/DELLAM1(IJ,IG)
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
         ENDDO
 
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.
@@ -604,7 +589,7 @@
 ! ----------------------------------------------------------------------
 
 !*    3. PROPAGATION FOR SPHERICAL LATITUDE/LONGITUDE GRID
-!*       WITHOUT OR DEPTH REFRACTION.
+!*       WITHOUT CURRENT OR DEPTH REFRACTION.
 !        -------------------------------------------------
 
  3000 CONTINUE
@@ -614,6 +599,7 @@
       ALLOCATE(DLE(MIJS:MIJL))
       ALLOCATE(DRGP(MIJS:MIJL))
       ALLOCATE(DRGM(MIJS:MIJL))
+      ALLOCATE(DLADCO(MIJS:MIJL))
 
       IF (ISHALLO.NE.1.AND.IREFRA.EQ.1) THEN
         ALLOCATE(DRDP(NIBLD))
@@ -622,6 +608,75 @@
 
       DELTH0 = 0.25*DELPRO/DELTH
       DELPH0 = 0.5*DELPRO/DELPHI
+
+      ALLOCATE(WADVM1(MIJS:MIJL,2))
+      DO IC=1,2
+        DO IJ = MIJS,MIJL
+          WADVM1(IJ,IC) = 1. - WADV(IJ,IC)
+        ENDDO
+      ENDDO
+
+
+      IF (ISHALLO.NE.1) THEN
+        ALLOCATE(CGKLON(MIJS:MIJL,NFRE,2))
+        ALLOCATE(CGKLAT(MIJS:MIJL,NFRE,2))
+
+        DO IC=1,2
+          DO M=1,NFRE
+            DO IJ=MIJS,MIJL
+              IF(LSAMEDEPTH(IJ)) THEN
+                CGKLON(IJ,M,IC) = 2*CGOND(IJ,M)
+              ELSE
+                CGKLON(IJ,M,IC) = CGOND(KLON(IJ,IC),M) + CGOND(IJ,M)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+        IC=1
+          DO M=1,NFRE
+            DO IJ=MIJS,MIJL
+              IF(LSAMEDEPTH(IJ)) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.)
+              ELSE
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*
+     &                            (WADV(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
+     &                             WADVM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+              ENDIF
+            ENDDO
+          ENDDO
+        IC=2
+          DO M=1,NFRE
+            DO IJ=MIJS,MIJL
+              IF(LSAMEDEPTH(IJ)) THEN
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.)
+              ELSE
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*
+     &                            (WADV(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
+     &                             WADVM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+              ENDIF
+            ENDDO
+          ENDDO
+
+
+!!!!!!!!!
+        IF (L1STCALL) THEN
+!         THE OBSTRUCTION COEFFICIENTS ARE RESET TO BE THE PRODUCT
+!         OF THE OBSTRUCTION BY THE GROUP VELOCITY AT MIDPOINT
+          DO IC=1,2
+            DO M=1,NFRE
+              DO IJ=MIJS,MIJL
+                OBSLON(IJ,M,IC) = OBSLON(IJ,M,IC) * CGKLON(IJ,M,IC)
+                OBSLAT(IJ,M,IC) = OBSLAT(IJ,M,IC) * CGKLAT(IJ,M,IC)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+!!!!!!!!
+      ENDIF
+
+      DO IJ=MIJS,MIJL
+        DLADCO(IJ) = DCO(IJ)*DELLA0(IJ)
+      ENDDO
 
 !*    3.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -673,12 +728,12 @@
 !             -----------------------------------------
 
           DO IJ=MIJS,MIJL
-            DLE(IJ) = DCO(IJ)*SDA*DELLA0(IJ)
+            DLE(IJ) = SDA*DLADCO(IJ)
           ENDDO
           IF (CD.GT.0.) THEN
             DO IJ=MIJS,MIJL
               DTC(IJ) = DLE(IJ) + DELPH0_CDA*(DP2(IJ) + 1.)
-              DPN(IJ) = DELPH0*CDA*(DP1(IJ) + 1.)
+              DPN(IJ) = DELPH0_CDA*(DP1(IJ) + 1.)
             ENDDO
           ELSE
             DO IJ=MIJS,MIJL
@@ -706,15 +761,32 @@
 !*    3.1.3.3.1 LOOP OVER GRIDPOINTS.
 !               ---------------------
 
-            DO IJ = MIJS,MIJL
-              DTT = 1. - DTC(IJ)*GOM(M)
-              F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &          (DPN(IJ) * WADV(IJ,IJPH) * F1(KLAT(IJ,IJPH),K  ,M)
-     &         + DPN(IJ) * WADVM1(IJ,IJPH) * F1(KLAT2(IJ,IJPH),K,M)
-     &         + DLE(IJ) * F1(KLON(IJ,IJLA),K  ,M)
-     &         + DTP(IJ) * F1(IJ           ,KP1,M)
-     &         + DTM(IJ) * F1(IJ           ,KM1,M))
-            ENDDO
+!           IRREGULAR GRID
+            IF(IRGG.EQ.1) THEN
+              DO IJ = MIJS,MIJL
+                DTT = 1. - DTC(IJ)*GOM(M)
+                YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
+                XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
+                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
+     &            (YY * WADV(IJ,IJPH) * F1(KLAT(IJ,IJPH),K  ,M)
+     &           + YY * WADVM1(IJ,IJPH) * F1(KLAT2(IJ,IJPH),K,M)
+     &           + XX * F1(KLON(IJ,IJLA),K  ,M)
+     &           + DTP(IJ) * F1(IJ           ,KP1,M)
+     &           + DTM(IJ) * F1(IJ           ,KM1,M))
+              ENDDO
+            ELSE
+!           REGULAR GRID
+              DO IJ = MIJS,MIJL
+                DTT = 1. - DTC(IJ)*GOM(M)
+                YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
+                XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
+                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
+     &            (YY * F1(KLAT(IJ,IJPH),K  ,M)
+     &           + XX * F1(KLON(IJ,IJLA),K  ,M)
+     &           + DTP(IJ) * F1(IJ           ,KP1,M)
+     &           + DTM(IJ) * F1(IJ           ,KM1,M))
+              ENDDO
+            ENDIF
 
 !*    BRANCH BACK TO 3.1.3.3 FOR NEXT FREQUENCY.
 
@@ -747,64 +819,35 @@
 
             IF (SD.GT.0.) THEN
               DO IJ=MIJS,MIJL
-                IF(LSAMEDEPTH(IJ)) THEN
-                  DTC(IJ) = 1. - DCO(IJ)*SDA*DELLA0(IJ)*CGOND(IJ,M)
-                  DLE(IJ) = DCO(IJ)*SDA*DELLA0(IJ)*CGOND(IJ,M)
-                ELSE
-                  DTC(IJ) = 1. - DCO(IJ)*SDA2*DELLA0(IJ)*
-     &             (CGKLON(IJ,M,2) + CGOND(IJ,M))
-                  DLE(IJ) = DCO(IJ)*SDA2*DELLA0(IJ)*
-     &             (CGKLON(IJ,M,1) + CGOND(IJ,M))
-                ENDIF
+                XX=SDA2*DLADCO(IJ)
+                DTC(IJ) = 1. - XX*CGKLON(IJ,M,2)
+                DLE(IJ) = XX*OBSLON(IJ,M,1)
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
-                IF(LSAMEDEPTH(IJ)) THEN
-                  DTC(IJ) = 1. - DCO(IJ)*SDA*DELLA0(IJ)*CGOND(IJ,M)
-                  DLE(IJ) = DCO(IJ)*SDA*DELLA0(IJ)*CGOND(IJ,M)
-                ELSE
-                  DTC(IJ) = 1. - DCO(IJ)*SDA2*DELLA0(IJ)*
-     &             (CGKLON(IJ,M,1) + CGOND(IJ,M))
-                  DLE(IJ) = DCO(IJ)*SDA2*DELLA0(IJ)*
-     &             (CGKLON(IJ,M,2) + CGOND(IJ,M))
-                ENDIF
+                XX=SDA2*DLADCO(IJ)
+                DTC(IJ) = 1. - XX*CGKLON(IJ,M,1)
+                DLE(IJ) = XX*OBSLON(IJ,M,2)
               ENDDO
             ENDIF
+
             IF (CD.GT.0.) THEN
               DO IJ=MIJS,MIJL
-                IF(LSAMEDEPTH(IJ)) THEN
-                  DTC(IJ) = DTC(IJ)-DELPH0_CDA*CGOND(IJ,M)*(DP2(IJ)+1.)
-                  DPN(IJ) = DELPH0_CDA*CGOND(IJ,M)*(DP1(IJ)+1.)
-                  DPN2(IJ)= WADVM1(IJ,1)*DPN(IJ)
-                  DPN(IJ) = WADV(IJ,1)*DPN(IJ)
-                ELSE
-                  DTC(IJ) = DTC(IJ) - DELPH0_CDA*( DP2(IJ)*
-     &                  (  WADV(IJ,2)*CGKLAT(IJ,M,2)
-     &                   + WADVM1(IJ,2)*CGKLAT2(IJ,M,2) )
-     &                   + CGOND(IJ,M) )
-                  DPN(IJ) = DELPH0_CDA*WADV(IJ,1)*
-     &                      (CGKLAT(IJ,M,1)*DP1(IJ) + CGOND(IJ,M))
-                  DPN2(IJ) = DELPH0_CDA*WADVM1(IJ,1)*
-     &                      (CGKLAT2(IJ,M,1)*DP1(IJ) + CGOND(IJ,M))
-                ENDIF
+                DTC(IJ) = DTC(IJ) - DELPH0_CDA*CGKLAT(IJ,M,2)
+              ENDDO
+              DO IJ=MIJS,MIJL
+                XX = DELPH0_CDA*OBSLAT(IJ,M,1)
+                DPN(IJ) = WADV(IJ,1)*XX
+                DPN2(IJ) = WADVM1(IJ,1)*XX
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
-                IF(LSAMEDEPTH(IJ)) THEN
-                  DTC(IJ) = DTC(IJ)-DELPH0_CDA*CGOND(IJ,M)*(DP1(IJ)+1.)
-                  DPN(IJ) = DELPH0_CDA*CGOND(IJ,M)*(DP2(IJ)+1.)
-                  DPN2(IJ)= WADVM1(IJ,2)*DPN(IJ)
-                  DPN(IJ) = WADV(IJ,2)*DPN(IJ)
-                ELSE
-                  DTC(IJ) = DTC(IJ) - DELPH0_CDA*( DP1(IJ)*
-     &                  (  WADV(IJ,1)*CGKLAT(IJ,M,1)
-     &                   + WADVM1(IJ,1)*CGKLAT2(IJ,M,1))
-     &                   + CGOND(IJ,M))
-                  DPN(IJ) = DELPH0_CDA*WADV(IJ,2)*
-     &                     (CGKLAT(IJ,M,2)*DP2(IJ) + CGOND(IJ,M))
-                  DPN2(IJ) = DELPH0_CDA*WADVM1(IJ,2)*
-     &                     (CGKLAT2(IJ,M,2)*DP2(IJ) + CGOND(IJ,M))
-                ENDIF
+                DTC(IJ) = DTC(IJ) - DELPH0_CDA*CGKLAT(IJ,M,1)
+              ENDDO
+              DO IJ=MIJS,MIJL
+                XX = DELPH0_CDA*OBSLAT(IJ,M,2)
+                DPN(IJ) = WADV(IJ,2)*XX
+                DPN2(IJ) = WADVM1(IJ,2)*XX
               ENDDO
             ENDIF
 
@@ -855,14 +898,13 @@
 !*        WITHOUT REFRACTION OR DEPTH REFRACTION, RETURN.
 !         -----------------------------------------------
 
-      DEALLOCATE(DELLA0,DCO,DP1,DP2,DPN,DPN2)
+      DEALLOCATE(DELLA0,DCO,DLADCO,DP1,DP2,DPN,DPN2)
       DEALLOCATE(DLE,DPH,DLA)
       DEALLOCATE(DTP,DTM,DRGP,DRGM,DTC)
       DEALLOCATE(WADVM1)
       IF (ISHALLO.NE.1) THEN
         DEALLOCATE(CGKLON)
         DEALLOCATE(CGKLAT)
-        DEALLOCATE(CGKLAT2)
       ENDIF
       IF (ISHALLO.NE.1) DEALLOCATE(CGOND)
       IF (ISHALLO.NE.1.AND.IREFRA.EQ.1) THEN
@@ -1079,7 +1121,6 @@
       DEALLOCATE(DELLA0,DCO,DP1,DP2,DPN,DPS)
       DEALLOCATE(DLE,DLW,DPH,DLA)
       DEALLOCATE(DTP,DTM,DRGP,DRGM,DTC)
-      DEALLOCATE(WADVM1)
       IF (ISHALLO.NE.1) DEALLOCATE(CGOND)
 
       DEALLOCATE(DOP,DOM,DRCP,DRCM)

@@ -94,7 +94,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 180000)
+      PARAMETER (NBIT = 190000)
 
       INTEGER KLONRGG(ID2)                                          
       INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1), KSEC2(NKSEK2),

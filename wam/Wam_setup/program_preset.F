@@ -1,25 +1,29 @@
 #ifdef JOB
+# @ shell = /usr/bin/ksh
+# @ core_limit = 4096
+# @ notification = error
+# @ restart = no
+# @ cpu_limit = 2200,200
+# @ job_cpu_limit = 5800,3800
+# @ class = any
+# @ job_name = wam_preset
+# @ output = /scratch/rd/wab/wam_preset.$(jobid).out
+# @ error  = /scratch/rd/wab/wam_preset.$(jobid).err
+# @ account_no = ecrmwa
+# @ job_type = parallel
+# @ total_tasks = 1
+# @ queue
 #.
 #. PRESET IS USED TO GENERATE AND/OR RETRIEVE START FILES
 #. FOR USE BY WAMODEL.
-#.
-#QSUB -q vpp700.normal
-#QSUB -r preset
-#QSUB -lP 0
-#QSUB -lt 3000
-#QSUB -lV 0mb
-#QSUB -lM 700mb
-#QSUB -eo
-#QSUB -mb -mi
-#QSUB
 #.
 #!!! set variable COLDSTART !!!. 
 #################################
 #.
 COLDSTART=no
 #.
-# when COLDSTART is set to yes, preset will be used to generate all
-# initial conditions for a run (usually used when first starting a set
+# when COLDSTART is set to yes, preset will be used to generate
+# initial spectra for a run (usually used when first starting a set
 # of runs with WAM). The initial spectra are obtained from the Jonswap
 # parametrisation. The input namelist NALINE (see below) determines how
 # the parameters for the Jonswap parametrisation are determined. When
@@ -27,8 +31,13 @@ COLDSTART=no
 # the local wind provided as input as well. When IOPTI is 0 then the
 # parameters are as specified in the namelist (see ALFA, FM, GAMMA, SA, SB,
 # THETA). The fetch used is also specified as input (FETCH). The difference
-# between IOPTI=1 and IOPTI=2 is no longer inforced since there is a 
+# between IOPTI=1 and IOPTI=2 is no longer enforced since there is a 
 # requirement that the minimum wind speed is 1m/s.
+#.In case of a cold start the initial drag coefficient and the initial
+#.wind speed fields are NOT produced by preset if the grib output option
+#.is selected. WAM can however start wihtout them by setting lnocdin=T
+#.in wamodel. Do not forget to reset lnocdin if you are not starting
+#.from a cold start. 
 #.
 # When COLDSTART is set to no and LGRIBOUT to T (see below),
 # it means that the inital condition will be reconstructed from archived
@@ -82,42 +91,36 @@ PATH=$PATH:.
 # move to working directiory
 ############################
 cd $WDIR
-mkdir $WORKDIR 
-cd $WORKDIR 
+mkdir tmp$$
+cd tmp$$
 
-#. Get initial data files for preset if it is run 
-#. ###############################################
+#. Verify that the contant files produced by preproc are available
+#. in case preset has to run (cold start)
+#. ###############################################################
 #. 
 if [[ $COLDSTART = yes ]] ; then
+#.
   print - " PRESET WILL BE RUN "
 
-  #. check is library is present
-  if [[ ! -a  $LIBS/$WAMLIB.a ]] ; then
-      ls -lsa
-      print - "\n\n\t\tWAMLIB file was not found\n\n"
-      print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
-      exit 3
-  fi
-  #.
   #. General grid information and model constants.
   #.
-  if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
+  if [[ ! -r $WDIR/gridglou_${grid} ]] ; then
        ls -lsa
        print - "\n\n\t\tPREPROC file gridglou was not found\n\n"
        print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
        exit 2
   fi
-  ln -s  $ADIR/gridglou_${grid} fort.7 
+  ln -s  $WDIR/gridglou_${grid} fort.7 
   #.
   #. Advection tables.
   #.
-  if [[ ! -r $ADIR/ubufglou_${grid} ]] ; then
+  if [[ ! -r $WDIR/ubufglou_${grid} ]] ; then
       ls -lsa
       print - "\n\n\t\tPREPROC file ubufglou was not found\n\n"
       print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
       exit
   fi
-  ln -s $ADIR/ubufglou_${grid} fort.8
+  ln -s $WDIR/ubufglou_${grid} fort.8
 fi
 #.
 
@@ -126,38 +129,13 @@ fi
 #else
 #.
 #.=====================================================================
-#.  Prepare MARS requests for winds. Load and execute program GETINPT.
+#.  Prepare MARS requests for winds.
 #.  GETINPT is intended to be quite general and can be replaced
 #.  by a mars request if the latter is always the same
 #.
-#. copy library from workstation
-
-cp $WKLIBS/$WAMLIB.a $LIBS/$WAMLIB.a
-
-
-if [ ! -f $LIBS/getinptb ] ; then
-  # extract
-  ar xv $LIBS/$WAMLIB.a getinptb.o 
-
-  # load
-
-  frt $rp -Wl,-dy -lsocket -Ps -X9 -o $LIBS/getinptb getinptb.o \
-  -lwam ${mpllib} ${emoslib} ${eclib} ${fdblib} \
-  ${mpilib} ${mp2lib} || {
-  #.
-  #.
-  #. Abort on error.
-  #.
-    print - "\n\n\t\tgetinptb LOAD FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    exit 2
-  }
-  #.
-  rm getinptb.*
-  cd $WDIR/$WORKDIR 
-fi
+#. input for GETINPT which is used to determined the mars request
+#. based on the information provided by the user input
 #.
-#. input for GETINPT which is uded to determined the mars request
 cat > fort.4 <<- EOF
 RUN MODEL FROM $begofrn TO $endofrn 
 PARAM=10U/10V, CLASS=OD,
@@ -176,16 +154,16 @@ LAST DATE FOR SPECTRA FILE OUTPUT = $outof2d
 EOF
 #.
 # gridglou is used by getinptb
-  if [[ ! -r $ADIR/gridglou_${grid} ]] ; then
+  if [[ ! -r $WDIR/gridglou_${grid} ]] ; then
         ls -lsa
         print - "\n\n\t\tPREPROC file gridglou was not found\n\n"
         print - "\n\n\t\tPROGRAM IS TERMINATED\n\n"
         exit 2
   fi
   rm -f fort.7
-  ln -s  $ADIR/gridglou_${grid} fort.7 
+  ln -s  $WDIR/gridglou_${grid} fort.7 
 
-$LIBS/getinptb || {
+${BINS}/getinptb || {
   #.
   #. Abort on error.
   #.
@@ -199,18 +177,21 @@ print - "\n\n\t\tSTART POSSIBLE MARS RETRIEVAL\n\n"
 #.
 #.
 #.=====================================================================
-#.  MARS retrieval.
+#.  MARS retrieval and/or production of the initial wave data by preset
 #.=====================================================================
 #.
 #.
-#.create filename for mars retrieval output
+################
+#. WIND FIELD:
+################
 #.
 wind_filename=sfcwind_${grid}_${begofrn}_${begoffo}_${endofrn}
 #.
-print - $wind_filename
-#.
 #.check if mars retieval needed
 #.
+#### !!!!! you might want to remove all test on the presence of
+#### !!!!! mars requested file to insure that the new request
+#### !!!!! is always done !!!! 
 if [[ ! -r $WDIR/$wind_filename ]] ; then
    print -  "mars wind file NOT online, start mars retrieval"
    mars fort.22 || {
@@ -235,10 +216,14 @@ rm fort.22
 #.
 #endif
 #.
-#. Retrieve sea ice fraction or sea surface temperature field
-#. for sea ice mask
+#.
+########################################################
+#. SEA ICE FRACTION or SEA SURFACE TEMPERATURE field
+#. for sea ice mask (for areas where is not needed just
+#. do not provide a file).
+########################################################
 ciparam=CI
-if [[ ! -r $ADIR/SSTDATA${begofrn}_${grid} ]] ; then
+if [[ ! -r $WDIR/SSTDATA${begofrn}_${grid} ]] ; then
     CIDATE=`substring $begoffo 1 8`
     CITIME=`substring $begoffo 9 10`
     cat > myrequest <<-EOF
@@ -261,38 +246,24 @@ if [[ ! -r $ADIR/SSTDATA${begofrn}_${grid} ]] ; then
     print - "\n\n\t\t NO SEA ICE FRACTION FROM MARS, NOTHING IS DONE \n\n"
     exit 8
     }
-    mv sfctempin $ADIR/SSTDATA${begofrn}_${grid}
+    mv sfctempin $WDIR/SSTDATA${begofrn}_${grid}
 else
-  ln -s $ADIR/SSTDATA${begofrn}_${grid} sfctempin
+  ln -s $WDIR/SSTDATA${begofrn}_${grid} sfctempin
 fi
+
+
 
 if [[ "$COLDSTART" = "yes" ]] ; then
   #.
-  #. Run preset
-  #.
-  # extract preset and load preset
-  ar xv $LIBS/$WAMLIB.a preset.o 
-
-
-  frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  -o preset preset.o \
-    -lwam ${mpllib} ${emoslib} ${eclib} ${fdblib} \
-    ${mpilib} ${cvplib} ${mp2lib} || {
+  #. Run preset to generate the initial wave data
+  #. #############################################
   #.
   #.
-  #. Abort on error.
+  #. run the program and format the output.
   #.
-    print - "\n\n\t\tLOAD FAILED\n\n"
-    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
-    exit 11
-  }
+  #. the description of the input namelist is described in program preset
   #.
-  #.====================================================================
-  #. RUN THE PROGRAM AND FORMAT THE OUTPUT.
-  #.====================================================================
-  #.
-  #. THE DESCRIPTION OF THE INPUT NAMELIST IS DESCRIBED IN PROGRAM PRESET
-  #.
-  preset <<EOD_for_preset || { print - "\n\n\t\tPRESET FAILED\n\n" ; ls -ltra ; exit ; }
+  cat > PREINFO <<EOD_for_preset
 #if region=='s'
 #include "input_preset_rswamp2.F"
 #elif region=='m'
@@ -301,7 +272,10 @@ if [[ "$COLDSTART" = "yes" ]] ; then
 #include "input_preset_rglobal.F"
 #endif
 EOD_for_preset
+
   #.
+  ${BINS}/preset <PREINFO || { print - "PRESET FAILED" ; ls -ltra ; exit ; }
+
   /bin/rm fort.4
   #.
   ls -la
@@ -309,19 +283,18 @@ EOD_for_preset
 
 else
   #.
-  #.
-  #. GET DATA FROM A PREVIOUS RUN
+  #. get data from a previous run
   #. ############################
   #.
-  #. it it only set up to run with grib data which are available with
+  #. it only sets up to run with grib data which are available with
   #  a mars request (archived data or data still on ther FDB).
   #. If one wants to use input/output of binary
   #. restart files (the LAW and BLS files) then the user
   #. will have to properly administrate those files from the previous
   #. run.
   #.
-  # Get the WAVE spectra 
-  # ====================
+  # Get the WAVE SPECTRA 
+  #.##################### 
   #.
   SPECDATE=`substring $begofrn 1 8`
   SPECTIME=`substring $begofrn 9 10`
@@ -329,8 +302,6 @@ else
 
   if [[ !  -r $WDIR/${sfilename} ]] ; then
     # in case file is not there do a mars request
-    # GET WAVE SPECTRA 
-    #=================
     SPECDATE=`substring $begofrn 1 8`
     SPECTIME=`substring $begofrn 9 10`
  
@@ -376,8 +347,6 @@ else
 		EOF
     fi
     #.
-    #.DO THE MARS REQUEST.
-    #=====================
     mars myrequest || {
     print - "\n\n\t\t NO WAVE SPECTRA FROM MARS, NOTHING IS DONE \n\n"
     exit 9
@@ -388,13 +357,11 @@ else
     ln -s $WDIR/${sfilename} ${sfilename}
   fi
   #.
-  # Get drag coefficient with waves for wam model run 
+  # Get DRAG COEFFICIENT with waves for wam model run 
   # ===============================
   #.
-  if [[ !  -r $ADIR/CD${begofrn}_${grid} ]] ; then
+  if [[ !  -r $WDIR/CD${begofrn}_${grid} ]] ; then
     # in case file is not there do a mars request
-    # GET DRAG COEFFICIENT WITH WAVE FROM MARS
-    #=========================================
     CDDATE=`substring $begofrn 1 8`
     CDTIME=`substring $begofrn 9 10`
     if [[ $grid -eq 050 ]] ; then
@@ -435,23 +402,21 @@ else
 	EOF
     fi
     #.
-    #.DO THE MARS REQUEST.
-    #=====================
     mars myrequest || {
     print - "\n\n\t\t NO DRAG COEFFICIENT 233 FROM MARS, NOTHING IS DONE \n\n"
     exit 8
     }
-    mv cdwavein $ADIR/CD${begofrn}_${grid}
+    mv cdwavein $WDIR/CD${begofrn}_${grid}
   fi
 
   rm -f cdwavein
-  ln -s $ADIR/CD${begofrn}_${grid} cdwavein
+  ln -s $WDIR/CD${begofrn}_${grid} cdwavein
 
   #.
-  # Get wind speed with waves for wam model run 
+  # Get WIND SPEED with waves for wam model run 
   # ===============================
   #.
-  if [[ !  -r $ADIR/U10${begofrn}_${grid} ]] ; then
+  if [[ !  -r $WDIR/U10${begofrn}_${grid} ]] ; then
     # in case file is not there do a mars request
     # GET U10 WITH WAVE FROM MARS
     #=============================
@@ -495,17 +460,15 @@ else
 	EOF
     fi
     #.
-    #.DO THE MARS REQUEST.
-    #=====================
     mars myrequest || {
     print - "\n\n\t\t U10 NO 245 FROM MARS, NOTHING IS DONE \n\n"
     exit 8
     }
-    mv uwavein $ADIR/U10${begofrn}_${grid}
+    mv uwavein $WDIR/U10${begofrn}_${grid}
   fi
 
   rm -f uwavein
-  ln -s $ADIR/U10${begofrn}_${grid} uwavein
+  ln -s $WDIR/U10${begofrn}_${grid} uwavein
 
 # end test on COLDSTART
 fi
@@ -514,12 +477,12 @@ fi
 print - "\n\n\t\tPRESET ALL DONE\n\n"
 #.
 cd $WDIR
-\rm -rf $WORKDIR 
+
+\rm -rf tmp$$
 #.
 #.======================================================================
 #. START FIELDS GENERATED AND SAVED.
 #. END OF JOB PRESET.
 #.======================================================================
 #.
-# cd $VPPPATH
 #endif

@@ -1,9 +1,9 @@
-!------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06,FILNM,IPARAM,CDATE,FIELD,KINF,KSUP,
-     &                     KEND, KZLEV)
+      SUBROUTINE READWGRIB(IU06,FILNM,IPARAM,CDATE,FIELD,KINF,KSUP,KEND,
+     &                     KZLEV, LLONLYPOS )
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
 !**** *READWGRIB*  READS FROM GRIB WAVE MODEL FIELD
 
@@ -17,7 +17,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06,FILNM,IPARAM,CDATE,FIELD)
+!       *CALL* *READWGRIB*(IU06,FILNM,IPARAM,CDATE,FIELD,KINF,KSUP,KEND,
+!    &                     KZLEV, LLONLYPOS )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -33,6 +34,7 @@
 !                           (SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
 !                           MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
 !                           CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
+!      *LLONLYPOS* LOGICAL   TAKE ONLY THE POSITIVE VALUES
 
 !     METHOD.
 !     -------
@@ -84,6 +86,7 @@
       CHARACTER*12 CCDDATE,CDATE 
       CHARACTER*24 FILNM
       CHARACTER*40 MSG
+      LOGICAL :: LLONLYPOS
 !-----------------------------------------------------------------------
 
 !*    1. INPUT OF GRIB DATA.
@@ -138,8 +141,16 @@
         CALL ABORT1
       ENDIF
       CALL ADJUST (CDMOWEP, CDMOEAP)
-      IF (AMOWEP.NE.CDMOWEP .OR. AMOEAP.NE.CDMOEAP .OR.
-     &    AMONOP.NE.CDMONOP .OR. AMOSOP.NE.CDMOSOP) THEN
+      KAMOWEP=NINT(AMOWEP*100.)
+      KAMOEAP=NINT(AMOEAP*100.)
+      KAMONOP=NINT(AMONOP*100.)
+      KAMOSOP=NINT(AMOSOP*100.)
+      KCDMOWEP=NINT(CDMOWEP*100.)
+      KCDMOEAP=NINT(CDMOEAP*100.)
+      KCDMONOP=NINT(CDMONOP*100.)
+      KCDMOSOP=NINT(CDMOSOP*100.)
+      IF (KAMOWEP.NE.KCDMOWEP .OR. KAMOEAP.NE.KCDMOEAP .OR.
+     &    KAMONOP.NE.KCDMONOP .OR. KAMOSOP.NE.KCDMOSOP) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. READWGRIB  *'
@@ -256,7 +267,12 @@
             XJ = XJ/DELLA+1.00001
             I  = NINT(XI)
             J  = NINT(XJ)
-            IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+            IF(LLONLYPOS) THEN
+              IF(WORK(I,J).NE.ZMISS .AND. WORK(I,J) .GT. 0.)
+     &           FIELD(IJ,IG)=WORK(I,J)
+            ELSE
+              IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+            ENDIF
           ENDDO
         ELSE
           DO IG=1,IGL
@@ -270,7 +286,12 @@
               XJ = XJ/DELLA+1.00001
               I  = NINT(XI)
               J  = NINT(XJ)
-              IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+              IF(LLONLYPOS) THEN
+                IF(WORK(I,J).NE.ZMISS .AND. WORK(I,J) .GT. 0.)
+     &             FIELD(IJ,IG)=WORK(I,J)
+              ELSE
+                IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
+              ENDIF
             ENDDO
           ENDDO
         ENDIF
@@ -281,14 +302,24 @@
           DO IJ = 1,KEND 
             IX = IXLG(IJ,IG)
             IY = NGY- KXLT(IJ,IG) +1
-            IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+            IF(LLONLYPOS) THEN
+              IF(WORK(IX,IY).NE.ZMISS .AND. WORK(IX,IY) .GT. 0.)
+     &             FIELD(IJ,IG)=WORK(IX,IY)
+            ELSE
+              IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+            ENDIF
           ENDDO
         ELSE
           DO IG=1,IGL
             DO IJ = IJS(IG),IJL(IG)
               IX = IXLG(IJ,IG)
               IY = NGY- KXLT(IJ,IG) +1
-              IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+              IF(LLONLYPOS) THEN
+                IF(WORK(IX,IY).NE.ZMISS .AND. WORK(IX,IY) .GT. 0.)
+     &               FIELD(IJ,IG)=WORK(IX,IY)
+              ELSE
+                IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+              ENDIF
             ENDDO
           ENDDO
         ENDIF

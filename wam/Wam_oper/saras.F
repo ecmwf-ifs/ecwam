@@ -226,12 +226,13 @@
       FRE1=FR(1)
       TH0=TH(1)
 
-      IF(XDELLA.LT.0.5) THEN
+      IF(XDELLA.LT.0.3) THEN
         SARCORDIA = 200000.
       ELSE
         SARCORDIA = 300000.
       ENDIF
 
+      CALL GSTATS(1883,0)
 
 !-------------------------------------------------------------------
 
@@ -586,6 +587,7 @@
 4000  CONTINUE
       CALL MERGESARCOR
 
+      CALL GSTATS(1883,1)
 
 !     5. DEALLOCATION OF ARRAYS
 !     -------------------------
