@@ -84,6 +84,7 @@
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
@@ -551,8 +552,7 @@
       ENDIF
 
       IF(LMESSPASS) THEN
-        CALL MPE_BARRIER(IERR)
-        IF(IERR.LT.0)CALL MPEI_ABORT('MPE_BARRIER ERROR in OUTGRID')
+        CALL MPL_BARRIER(CDSTRING='OUTGRID:')
       ENDIF
 
       RETURN

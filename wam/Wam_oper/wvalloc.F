@@ -21,6 +21,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
      &            FL1      ,FL2      ,FL3      ,SL
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
@@ -47,8 +48,8 @@
 !     0.1 GET RANK AND TOTAL NUMBER OF PROCESSORS  
 !         ---------------------------------------
 
-          IRANK = MPE_MYRANK()
-          NPROC = MPE_NPROC()
+          IRANK = MPL_MYRANK()
+          NPROC = MPL_NPROC()
         ELSE
           IRANK = 1 
           NPROC = 1 

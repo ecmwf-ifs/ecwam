@@ -333,6 +333,7 @@
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       CHARACTER*2 MARSTYPEBAK
@@ -974,8 +975,7 @@
 
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
           IF(LMESSPASS) THEN
-            CALL MPE_BARRIER(IERR)
-            IF(IERR.LT.0)CALL MPEI_ABORT('MPE_BARRIER ERROR in WAMODEL')
+            CALL MPL_BARRIER(CDSTRING='WAMODEL:')
           ENDIF
 
         ENDIF

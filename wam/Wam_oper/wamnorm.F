@@ -51,6 +51,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE MPL_MODULE
+
       REAL :: FIELD(NX,NY), ZCOMBUF(4)
       LOGICAL :: LMESSPASS
 
@@ -90,18 +92,15 @@
             ZCOMBUF(2)=FMIN
             ZCOMBUF(3)=FMAX
             ZCOMBUF(4)=REAL(NAVG)
-            CALL MPE_SEND(ZCOMBUF,4,2,IRECV,ITAG,0,0,0,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT
-     &                    ('MPE_SEND ERROR in WAMNORM' )
+            CALL MPL_SEND(ZCOMBUF,KDEST=IRECV,KTAG=ITAG,
+     &       CDSTRING='WAMNORM:')
           ELSEIF(IRANK.EQ.IRECV) THEN
-            CALL MPE_RECV(ZCOMBUF,4,2,ISEND,ITAG,0,0,0,
-     &                    KRCOUNT,KRFROM,KRTAG,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT
-     &                       ('MPE_RECV ERROR in WAMNORM' )
-            IF(KRCOUNT.NE.4) CALL MPEI_ABORT
-     &      ('MPE_RECV ERROR in WAMNORM:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &      ('MPE_RECV ERROR in WAMNORM MISMATCHED TAGS' )
+            CALL MPL_RECV(ZCOMBUF,KSOURCE=ISEND,KTAG=ITAG,
+     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='WAMNORM:')
+            IF(KRCOUNT.NE.4) CALL MPL_ABORT
+     &      ('MPL_RECV ERROR in WAMNORM:MISMATCHED MSG LENGTH')
+            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &      ('MPL_RECV ERROR in WAMNORM MISMATCHED TAGS' )
 
             FAVG=ZCOMBUF(1)
             FMIN=ZCOMBUF(2)

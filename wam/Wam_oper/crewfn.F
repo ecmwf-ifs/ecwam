@@ -44,6 +44,7 @@
 
 
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE MPL_MODULE
 
 
       CHARACTER WDATE*12, WFN*16, CTAG*3
@@ -53,7 +54,7 @@
       WFN(2:13) = WDATE(1:12)
       IF(LMESSPASS) THEN
         ILEN=16
-        IRANK=MPE_MYRANK()
+        IRANK=MPL_MYRANK()
         WRITE(CTAG,'(I3.3)') IRANK
         WFN(14:16) = CTAG 
       ENDIF

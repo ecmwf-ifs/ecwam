@@ -66,6 +66,7 @@
       INTEGER :: IFORP, KZLEV, K, M, KKK, MMM, JPARAM, KKKPR, NGYFULL
       INTEGER :: IPERIODIC, NRFULL, JSTREAM, ISTART, ISTOP, IDUM
       INTEGER :: IU07
+      INTEGER :: NFREMAX, NANGMAX
       INTEGER :: KSEC0(NKSEK0), KSEC2(NKSEK2),
      &           KSEC3(NKSEK3), KSEC4(NKSEK4)
 
@@ -94,7 +95,7 @@
       IU06 = 6
       IU07 = 7
 
-!     1.1 INITIALISATION OFVARIABLES WITH DEFAULT VALUES
+!     1.1 INITIALISATION OF VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------
       ITEST  =   0 
       LMESSPASS = .FALSE.
@@ -109,6 +110,9 @@
       I4=1
       NPRECI = KIND(I4)
       KTAG=100
+
+      NANGMAX=24
+      NFREMAX=30
 
       ALLOCATE (NSTART(NPROC),NEND(NPROC))
 
@@ -127,6 +131,25 @@
 
 !     SET GRIB HEADERS FOR INPUTS/OUTPUTS
       CALL SETWGRIBHD
+
+      NKSEK1= 51+NANGMAX+NFREMAX
+      IF(NANG .GT. NANGMAX) THEN
+        WRITE(IU06,*) '***********************************'
+        WRITE(IU06,*) '*  NANG > NANGMAX !!! '
+        WRITE(IU06,*) '*  NANG = ',NANG
+        WRITE(IU06,*) '*  NANGMAX = ',NANGMAX
+        WRITE(IU06,*) '***********************************'
+        CALL ABORT1
+      ENDIF
+      IF(NFRE .GT. NFREMAX) THEN
+        WRITE(IU06,*) '***********************************'
+        WRITE(IU06,*) '*  NFRE > NFREMAX !!! '
+        WRITE(IU06,*) '*  NFRE = ',NFRE
+        WRITE(IU06,*) '*  NFREMAX = ',NFREMAX
+        WRITE(IU06,*) '***********************************'
+        CALL ABORT1
+      ENDIF
+
 
       ALLOCATE(KSEC1(NKSEK1))
 

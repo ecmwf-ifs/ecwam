@@ -112,6 +112,7 @@
      &            IU22     ,IU23     ,IU27     ,IU28     ,IU04     ,IU32
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       REAL BETAG(NLONW,NLATW)
@@ -230,8 +231,7 @@
         CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, MFDBSF)
 
         IF(LMESSPASS) THEN
-          CALL MPE_BARRIER(IERR)
-          IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR in WAMASSI')
+          CALL MPL_BARRIER(CDSTRING='WAMASSI:')
         ENDIF
         IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTINT DONE'
       ENDIF
@@ -374,8 +374,7 @@
         ENDIF
 
         IF(LMESSPASS) THEN
-          CALL MPE_BARRIER(IERR)
-          IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR IN  WAMASSI')
+          CALL MPL_BARRIER(CDSTRING='WAMASSI:')
         ENDIF
       ENDIF
       IF (LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. (

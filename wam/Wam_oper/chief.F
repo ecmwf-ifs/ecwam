@@ -91,6 +91,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
      &            FL1      ,FL2      ,FL3      ,SL
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
@@ -107,7 +108,7 @@
       INTEGER IINITFDB_VPP
       CHARACTER *3 DBNAME
       CHARACTER*12 ZERO,CBEGDAT
-      LOGICAL LDTRMSG, LFDB, LLSTOP, LLWRRE, LLRESTARTED
+      LOGICAL LFDB, LLSTOP, LLWRRE, LLRESTARTED
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
 
       time0=-wam_user_clock()
@@ -166,7 +167,7 @@
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
 !         -----------------------------------
 
-        CALL MPE_INIT(LDTRMSG,KERROR)
+        CALL MPL_INIT(KERROR=KERROR)
         IF(KERROR.LT.0) THEN 
           IU06=6
           WRITE (IU06,*) ' ******************************************'
@@ -186,8 +187,8 @@
 !     0.2 GET RANK AND TOTAL NUMBER OF PROCESSORS  
 !         ---------------------------------------
 
-          IRANK = MPE_MYRANK()
-          NPROC = MPE_NPROC()
+          IRANK = MPL_MYRANK()
+          NPROC = MPL_NPROC()
           IF (IRANK .EQ. 1) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'
@@ -307,7 +308,7 @@
 
       IF(LMESSPASS) THEN
         CALL MPCLOSE_UNIT
-        CALL MPE_END(KERROR)
+        CALL MPL_END
       ENDIF
 
       STOP

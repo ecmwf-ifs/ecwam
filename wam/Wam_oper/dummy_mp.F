@@ -10,15 +10,17 @@ C -----------------------------------------------------------------
 C
        SUBROUTINE dummy_mp()
 C
-       ENTRY mpei_abort
-       ENTRY mpe_myrank
-       ENTRY mpe_init
-       ENTRY mpe_nproc
-       ENTRY mpe_end
-       ENTRY mpe_barrier
-       ENTRY mpe_send
-       ENTRY mpe_recv
-       ENTRY mpe_broadcast
+      USE MPL_MODULE
+
+       ENTRY mpl_abort
+       ENTRY mpl_myrank
+       ENTRY mpl_init
+       ENTRY mpl_nproc
+       ENTRY mpl_end
+       ENTRY mpl_barrier
+       ENTRY mpl_send
+       ENTRY mpl_recv
+       ENTRY mpl_broadcast
 C
        WRITE(*,*) ' NO MESSAGE PASSING'
        WRITE(*,*) ' NO MESSAGE PASSING'

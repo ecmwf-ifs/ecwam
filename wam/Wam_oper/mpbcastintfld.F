@@ -25,15 +25,15 @@
 
 !     METHOD.
 !     -------
-!     MPE BROADCAST OF ARRAY FIELD FROM ISEND
+!     MPL BROADCAST OF ARRAY FIELD FROM ISEND
 !     AND RECEIVE OF THE CONTRIBUTION ON THE OTHER PE's.
 
 !     EXTERNALS.
 !     ----------
-!     MPE PACKAGE :
-!         MPE_BROADCAST
-!         MPE_RECV
-!         MPEI_ABORT 
+!     MPL PACKAGE :
+!         MPL_BROADCAST
+!         MPL_RECV
+!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -41,6 +41,7 @@
 ! -------------------------------------------------------------------
  
       USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE MPL_MODULE
 
 !----------------------------------------------------------------------
 
@@ -64,10 +65,8 @@
           ENDDO
         ENDDO
 
-        CALL MPE_BROADCAST
-     &   (ICOMBUF,MPLENGTH,1,IRANK,ITAG,0,0,0,IERR)
-        IF(IERR.LT.0) CALL MPEI_ABORT
-     &   ('MPE_BROADCAST ERROR in MPBCASTINTFLD' )
+        CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IRANK,
+     &   KTAG=ITAG,CDSTRING='MPBCASTINTFLD:')
 
         DEALLOCATE(ICOMBUF)
 
@@ -78,12 +77,10 @@
 
         ALLOCATE(ICOMBUF(MPLENGTH))
 
-        CALL MPE_RECV(ICOMBUF,MPLENGTH,1,ISEND,ITAG,0,0,0,
-     &   KRCOUNT,KRFROM,KRTAG,IERR)
-        IF(IERR.LT.0) CALL MPEI_ABORT
-     &   ('MPE_RECV ERROR in MPBCASTINTFLD' )
-        IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &   ('MPE_RECV ERROR in MPBCASTINTFLD MISMATCHED TAGS' )
+        CALL MPL_RECV(ICOMBUF(1:MPLENGTH),KSOURCE=ISEND,
+     &   KRECVTAG=KRTAG,CDSTRING='MPBCASTINTFLD:')
+        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &   ('MPL_RECV ERROR in MPBCASTINTFLD MISMATCHED TAGS' )
 
         KCOUNT=0
         DO J=1,NYF

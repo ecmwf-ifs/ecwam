@@ -27,7 +27,8 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESI ,
-     &            NGRBRESS ,HOPERI   ,HOPERS 
+     &            IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESS ,HOPERI   ,
+     &            HOPERS 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOSOP   ,AMONOP   ,XDELLA
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
@@ -113,6 +114,12 @@
       ELSE
          INDEX = (NINT((90. - AMONOP ) / XDELLA))*NGX + 1
          KLENP=NTENCODE
+      ENDIF
+
+      IF( CLDOMAIN == 'g' ) THEN
+        KSEC1( 3) = IMDLGRBID_G   ! MODEL IDENTIFICATION.
+      ELSE
+        KSEC1( 3) = IMDLGRBID_M   ! MODEL IDENTIFICATION.
       ENDIF
 
       IF(KKK.NE.0 .AND. MMM.NE.0 ) THEN

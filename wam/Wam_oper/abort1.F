@@ -22,7 +22,7 @@
 !     EXTERNALS.
 !     ----------
 !       MPCLOSE_UNIT
-!       MPEI_ABORT
+!       MPL_ABORT
 
 !       ABORT
 !     REFERENCE.
@@ -32,11 +32,12 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       IF(LMESSPASS) THEN
         CALL MPCLOSE_UNIT
-        CALL MPEI_ABORT('MPEI_ABORT was called to terminate run')
+        CALL MPL_ABORT('MPL_ABORT was called to terminate run')
       ELSE
         CALL ABORT
       ENDIF

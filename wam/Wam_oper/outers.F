@@ -54,6 +54,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
@@ -84,10 +85,10 @@
           ITAG=92
           IF(IRANK.EQ.1) THEN
 
-            CALL MPE_BROADCAST(NERS,1,1,1,ITAG,0,0,0,IERR)
+            CALL MPL_BROADCAST(NERS,KROOT=1,KTAG=ITAG,KERROR=IERR)
             IF(IERR.LT.0) THEN
-              WRITE(IU06,*) 'OUTERS: MPE_BROADCAST NERS RC=',IERR
-              CALL MPEI_ABORT('MPE_BROADCAST NERS ERROR in OUTERS')
+              WRITE(IU06,*) 'OUTERS: MPL_BROADCAST NERS RC=',IERR
+              CALL MPL_ABORT('MPL_BROADCAST NERS ERROR in OUTERS')
             ENDIF
             ITAG=ITAG+1
 
@@ -103,17 +104,17 @@
             ENDDO
             KCOUNT=KCOUNT+1
             IBUFF(KCOUNT)=IERS
-            CALL MPE_BROADCAST(IBUFF,KCOUNT,1,1,ITAG,0,0,0,IERR)
+            CALL MPL_BROADCAST(IBUFF(1:KCOUNT),KROOT=1,KTAG=ITAG,
+     &       KERROR=IERR)
             IF(IERR.LT.0) THEN
-              WRITE(IU06,*) 'OUTERS: MPE_BROADCAST RC=',IERR
-              CALL MPEI_ABORT('MPE_BROADCAST ERROR in OUTERS')
+              WRITE(IU06,*) 'OUTERS: MPL_BROADCAST RC=',IERR
+              CALL MPL_ABORT('MPL_BROADCAST ERROR in OUTERS')
             ENDIF
           ELSE
-            CALL MPE_RECV(NERS,1,1,1,ITAG,0,0,0,
-     &                    KRCOUNT,KRFROM,KRTAG,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR 1 in OUTERS')
-            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (0)' )
+            CALL MPL_RECV(NERS,KSOURCE=1,KTAG=ITAG,KRECVTAG=KRTAG,
+     &       CDSTRING='OUTERS 1:')
+            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &            ('MPL_RECV ERROR in OUTERS:  MISMATCHED TAGS (0)' )
             ITAG=ITAG+1
 
             ALLOCATE(IGERS(NERS))
@@ -121,11 +122,10 @@
             ALLOCATE(IBUFF(2*NERS+1))
 
             KBUFRLENGTH=2*NERS+1
-            CALL MPE_RECV(IBUFF,KBUFRLENGTH,1,1,ITAG,0,0,0,
-     &                    KRCOUNT,KRFROM,KRTAG,IERR)
-            IF(IERR.LT.0) CALL MPEI_ABORT('MPE_RECV ERROR in OUTERS')
-            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &            ('MPE_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
+            CALL MPL_RECV(IBUFF(1:KBUFRLENGTH),KSOURCE=1,KTAG=ITAG,
+     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='OUTERS:')
+            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &            ('MPL_RECV ERROR in OUTERS:  MISMATCHED TAGS (1)' )
             KCOUNT=0
             DO NGOU=1,NERS
               KCOUNT=KCOUNT+1
@@ -137,8 +137,8 @@
             ENDDO
             KCOUNT=KCOUNT+1
             IERS=IBUFF(KCOUNT)
-            IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
-     &            ('MPE_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
+            IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
+     &            ('MPL_RECV ERROR in OUTERS: WRONG MESSAGE LENGTH')
           ENDIF
         ENDIF
       ENDIF

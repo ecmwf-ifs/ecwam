@@ -24,10 +24,10 @@
 
 !     EXTERNALS.
 !     ----------
-!     MPE PACKAGE :
-!         MPE_BROADCAST
-!         MPE_RECV
-!         MPEI_ABORT 
+!     MPL PACKAGE :
+!         MPL_BROADCAST
+!         MPL_RECV
+!         MPL_ABORT 
 
 !     REFERENCES.
 !     -----------
@@ -38,6 +38,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,IGSAR    ,IJSAR    ,
      &            LONG     ,LAT      ,U10      ,THW
+      USE MPL_MODULE
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
@@ -81,10 +82,8 @@
           ENDDO 
         ENDDO 
 
-        CALL MPE_BROADCAST
-     &   (ZCOMBUF,KCOUNT,2,IRANK,ITAG,0,0,0,IERR)
-        IF(IERR.LT.0) CALL MPEI_ABORT
-     &   ('MPE_BROADCAST ERROR in MPEXCHNGSARIN' )
+        CALL MPL_BROADCAST(ZCOMBUF(1:KCOUNT),KROOT=IRANK,KTAG=ITAG,
+     &   CDSTRING='MPEXCHNGSARIN:')
 
         DEALLOCATE(ZCOMBUF)
 
@@ -95,12 +94,10 @@
 
         DO IP=1,NPROC-1
 
-          CALL MPE_RECV(ZCOMBUF,MZC,2,-1,ITAG,0,0,0,
-     &     KRCOUNT,KRFROM,KRTAG,IERR)
-          IF(IERR.LT.0) CALL MPEI_ABORT
-     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN' )
-          IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN MISMATCHED TAGS' )
+          CALL MPL_RECV(ZCOMBUF(1:MZC),KTAG=ITAG,KRECVTAG=KRTAG,
+     &     KOUNT=KRCOUNT,CDSTRING='MPEXCHNGSARIN:')
+          IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &     ('MPL_RECV ERROR  in MPEXCHNGSARIN MISMATCHED TAGS' )
 
           KCOUNT=1
           DO ISPEC = 1,NINT(ZCOMBUF(1))
@@ -125,8 +122,8 @@
               ENDDO 
             ENDDO 
           ENDDO 
-          IF(KRCOUNT.NE.KCOUNT) CALL MPEI_ABORT
-     &     ('MPE_RECV ERROR  in MPEXCHNGSARIN MISMATCHED LENGTH' )
+          IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
+     &     ('MPL_RECV ERROR  in MPEXCHNGSARIN MISMATCHED LENGTH' )
         
         ENDDO 
 

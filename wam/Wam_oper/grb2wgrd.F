@@ -375,8 +375,10 @@
 
       IF(AMONOP.GT.RMONOP.OR.AMONOP.LT.RMOSOP.OR.
      &   AMOSOP.LT.RMOSOP.OR.AMOSOP.GT.RMONOP.OR.
-     &   (JRGG.EQ.0.AND.AMOWEP.LT.RMOWEP).OR.
-     &   (JRGG.EQ.0.AND.AMOEAP.GT.RMOEAP+DELLO) ) THEN
+     &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
+     &    .AND.AMOWEP.LT.RMOWEP).OR.
+     &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
+     &    .AND.AMOEAP.GT.RMOEAP+DELLO) ) THEN
 
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'

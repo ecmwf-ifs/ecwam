@@ -1,4 +1,3 @@
-
       SUBROUTINE SPEC2FDB (KU06, KPROC, KRANK, LDWCOU, PTHETA, PFREQ,
      &                     PSPEC, KINF, KSUP, KANG, KFRE, KGX, KGY,
      &                     KLONRGG, KXLT, KXLG, KIBLO, KBLO,
@@ -123,6 +122,8 @@
 !       NONE.
 
 !-------------------------------------------------------------------
+
+      USE MPL_MODULE
 
       IMPLICIT NONE
 
@@ -398,9 +399,7 @@
      &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
 
             IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
-              CALL MPE_BARRIER(IRET)
-              IF(IRET.LT.0)
-     &        CALL MPEI_ABORT('MPE_BARRIER  ERROR IN  SPEC2FDB')
+              CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
             ENDIF
 
             IF(KSEND.EQ.KRANK) THEN

@@ -31,9 +31,9 @@
 !     EXTERNALS.  
 !     ----------
 !       IFSSIGB
-!       MPE_SEND
-!       MPE_RECV
-!       MPE_BARRIER
+!       MPL_SEND
+!       MPL_RECV
+!       MPL_BARRIER
 !       FLUSH
 
 !     REFERENCE.
@@ -52,6 +52,7 @@
 
 
       USE YOWSTAT  , ONLY : ISIGHUP  ,ISIGINT
+      USE MPL_MODULE
 
 
       IMPLICIT LOGICAL (L)
@@ -84,15 +85,14 @@
       IF (KRANK .EQ. 1) THEN
         DO JE=2, KPROC
           ITAG=JPSIGTAG+JE
-          CALL MPE_SEND(ISIGHUP, 2, JPICODE, JE, ITAG, 0, 0, 0, IERR)
+          CALL MPL_SEND(ISIGHUP,KDEST=JE,KTAG=ITAG,KERROR=IERR)
           IF (KTST.GE.2)
      &    WRITE(KU06,*)' SEND STATUS TO PE ', JE, ' R-CODE= ', IERR
         ENDDO
       ELSE
         ITAG=JPSIGTAG+KRANK
         IPROC=1
-        CALL MPE_RECV(ISIGHUP,2,JPICODE,IPROC,ITAG,
-     &                0,0,0,ILREC,IRECD,ITAG,IERR)
+        CALL MPL_RECV(ISIGHUP,KSOURCE=IPROC,KTAG=ITAG,KERROR=IERR)
         IF (KTST.GE.2)
      &  WRITE(KU06,*)' RECEIVED STATUS ON PE ',KRANK, 'R-CODE= ', IERR,
      &               'STOP= ',ISIGHUP, 'RESTART= ',ISIGINT
@@ -101,8 +101,7 @@
       IF (ISIGINT.NE.0) LDSIGREST=.TRUE.
       ISIGINT=0
       IF (KPROC .GT. 1) THEN
-        CALL MPE_BARRIER(IERR)
-        IF(IERR.LT.0) CALL MPEI_ABORT('MPE_BARRIER ERROR in CHESIG')
+        CALL MPL_BARRIER(CDSTRING='CHESIG:')
       ENDIF
 
       IF (KTST.GE.2) THEN

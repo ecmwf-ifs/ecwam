@@ -33,7 +33,7 @@
 !     GRSTNAME
 !     MPDISTRIBFL
 !     MPDISTRIBSCFLD
-!     MPE_BARRIER
+!     MPL_BARRIER
 !     PBOPEN
 !     PBGRIB
 !     PBCLOSE 
@@ -63,6 +63,7 @@
      &            YEXPVER
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
@@ -347,14 +348,15 @@ C
 !               SEND GRIB DATA TO PE KSEND
 
                 ITAG=(M-1)*NANG+K
-                CALL MPE_SEND(ISIZE,1,1,KSEND,ITAG,0,0,0,IERR)
-                IF(IERR.LT.0) CALL MPEI_ABORT
-     &                    ('MPE_SEND ERROR AT 1 in GETSPEC' )
+                CALL MPL_SEND(ISIZE,KDEST=KSEND,KTAG=ITAG,KERROR=IERR)
+                IF(IERR.LT.0) CALL MPL_ABORT
+     &                    ('MPL_SEND ERROR AT 1 in GETSPEC' )
 
                 ITAG=((M-1)*NANG+K)*2
-                CALL MPE_SEND(INGRIB,ISIZE,1,KSEND,ITAG,0,0,0,IERR)
-                IF(IERR.LT.0) CALL MPEI_ABORT
-     &                      ('MPE_SEND ERROR AT 2 in GETSPEC' )
+                CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
+     &           KERROR=IERR)
+                IF(IERR.LT.0) CALL MPL_ABORT
+     &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
 
                 IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
               ENDIF
@@ -364,23 +366,23 @@ C
 !               RECEIVED DATA FROM PE IREAD
 
                 ITAG=(M-1)*NANG+K
-                CALL MPE_RECV(ISIZE,1,1,IREAD,ITAG,0,0,0,
-     &                        KRCOUNT,KRFROM,KRTAG,IERR)
-                IF(IERR.LT.0) CALL MPEI_ABORT
-     &                           ('MPE_RECV ERROR AT 1 in GETSPEC' )
-                IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &          ('MPE_RECV ERROR AT 1 in GETSPEC:  MISMATCHED TAGS' )
+                CALL MPL_RECV(ISIZE,KSOURCE=IREAD,KTAG=ITAG,
+     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR)
+                IF(IERR.LT.0) CALL MPL_ABORT
+     &                           ('MPL_RECV ERROR AT 1 in GETSPEC' )
+                IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &          ('MPL_RECV ERROR AT 1 in GETSPEC:  MISMATCHED TAGS' )
 
                 ALLOCATE(INGRIB(ISIZE))
                 ITAG=((M-1)*NANG+K)*2
-                CALL MPE_RECV(INGRIB,ISIZE,1,IREAD,ITAG,0,0,0,
-     &                        KRCOUNT,KRFROM,KRTAG,IERR)
-                IF(IERR.LT.0) CALL MPEI_ABORT
-     &                       ('MPE_RECV ERROR AT 2 in GETSPEC ' )
-                IF(KRCOUNT.NE.ISIZE) CALL MPEI_ABORT
-     &          ('MPE_RECV ERROR in 2 in GETSPEC:MISMATCHED MSG LENGTH')
-                IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
-     &          ('MPE_RECV ERROR in 2 in GETSPEC:MISMATCHED TAGS' )
+                CALL MPL_RECV(INGRIB(1:ISIZE),KSOURCE=IREAD,KTAG=ITAG,
+     &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR)
+                IF(IERR.LT.0) CALL MPL_ABORT
+     &                       ('MPL_RECV ERROR AT 2 in GETSPEC ' )
+                IF(KRCOUNT.NE.ISIZE) CALL MPL_ABORT
+     &          ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED MSG LENGTH')
+                IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &          ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED TAGS' )
 
               ENDIF
             ENDIF
@@ -695,9 +697,7 @@ C
      &           LPBOPEN,LPBCLOSE)
               ENDIF
 !              PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              CALL MPE_BARRIER(IERR)
-              IF(IERR.LT.0) 
-     &         CALL MPEI_ABORT('MPE_BARRIER ERROR in GETSPEC')
+              CALL MPL_BARRIER(CDSTRING='GETSPEC:')
 
               CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
      &         MINF,MSUP,RFL)
@@ -745,9 +745,7 @@ C
               MINF=MLOOP
               MSUP=MIN(MLOOP+MDEL-1,NFRE)
 !             PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              CALL MPE_BARRIER(IERR)
-              IF(IERR.LT.0) 
-     &        CALL MPEI_ABORT('MPE_BARRIER ERROR in GETSPEC 2')
+              CALL MPL_BARRIER(CDSTRING='GETSPEC 2:')
 
               CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
      &                         1,NFRE,RFL)
