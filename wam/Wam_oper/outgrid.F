@@ -87,7 +87,6 @@
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -578,9 +577,9 @@
       ENDIF
 
       IF(LMESSPASS) THEN
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(750,0)
+        CALL GSTATS(750,0)
         CALL MPL_BARRIER(CDSTRING='OUTGRID:')
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(750,1)
+        CALL GSTATS(750,1)
       ENDIF
 
       RETURN

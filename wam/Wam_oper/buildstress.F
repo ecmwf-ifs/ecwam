@@ -87,10 +87,12 @@
       RZ0OLD = 0.
       RADOLD = ROAIR
       RZIDLOLD = 0.
+      FCRANGE = 0.
       CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD,
      &             1, NIBLO, KEND, CDTPRO,
 !------------------ dummy parameters & arrays
-     &             NFIELDS, NGPTOTG, NCA, NRA, ISEC1, ISEC2, FIELDS, 
+     &             NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
+     &             ISEC1, ISEC2, FIELDS, 
 !---------------------------------------------
      &             LWNDFILE, LCLOSEWND)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'

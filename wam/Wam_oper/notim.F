@@ -1,6 +1,7 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                   ROAIRO, ZIDLOLD,
-     &                   NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
+     &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &                   ISEC1, ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
 
@@ -19,7 +20,8 @@
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD,
-!    &                 NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)*
+!    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+!    &                 ISEC1, ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -34,6 +36,7 @@
 !          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !          *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!          *FCRANGE*- FORECAST RANGE IN SECONDS
 !          *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !          *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !          *FIELDS* - ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
@@ -117,7 +120,8 @@
 
         CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD,
      &               NINF, NSUP, NSUP, CDA,
-     &               NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &               ISEC1, ISEC2, FIELDS,
      &               LWNDFILE, LCLOSEWND)
 
         DO IG = 1,IGL
@@ -164,7 +168,8 @@
 !         --------------------------------------------
 
       CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDTWIH,
-     &             NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &             ISEC1, ISEC2, FIELDS,
      &             LWNDFILE, LCLOSEWND)
       MP = MP + 1
 

@@ -29,7 +29,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,INTLMAX  ,
+      USE YOWALTAS , ONLY : NALTAVLB ,IJALT    ,INTLMAX  ,
      &            NOBSPE   ,ALTDATA
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,NLONRGG  ,IGL      ,
      &            IJS      ,IJL
@@ -63,8 +63,7 @@
 
       LMAX = NINT(DEG*DISTMAX/XDELLA)
 
-! ??? should be adapted if more than one satellite !!!
-      NDIM2 = 5*(2*LMAX+1)
+      NDIM2 = (5+2*(NALTAVLB-1))*(2*LMAX+1)
 
 !     THE MEASUREMENTS ARE STORED IN THE O.I. FIELD.                  
 !     NEGATIVE VALUES WILL REMAIN WHERE O.I. WILL PRODUCE NO RESULTS  
@@ -151,7 +150,7 @@
         WRITE(*,*) '**********************'
         WRITE(*,*) 'IN OIFIELD : THE MAXIMUM NUMBER OF OBSERVATIONS'
         WRITE(*,*) '             INFLUENCING A POINT WAS RESET !!!'
-        WRITE(*,*) 'IF THAT HAPPEN OFTEN, YOU SHOULD CHANGE NDIM2 !!'
+        WRITE(*,*) 'IF THAT HAPPENS OFTEN, YOU SHOULD CHANGE NDIM2 !!'
         WRITE(*,*) 'IRANK = ',IRANK
         WRITE(*,*) 'NDIM2 = ',NDIM2
         WRITE(*,*) 'LMAX = ',LMAX
@@ -160,7 +159,7 @@
         WRITE(IU06,*) ''
         WRITE(IU06,*) 'IN OIFIELD : THE MAXIMUM NUMBER OF OBSERVATIONS'
         WRITE(IU06,*) '             INFLUENCING A POINT WAS RESET !!!'
-        WRITE(IU06,*) 'IF THAT HAPPEN OFTEN, YOU SHOULD CHANGE NDIM2 !!'
+        WRITE(IU06,*) 'IF THAT HAPPENS OFTEN, YOU SHOULD CHANGE NDIM2 !'
         WRITE(IU06,*) 'NDIM2 = ',NDIM2
         WRITE(IU06,*) 'LMAX = ',LMAX
         WRITE(IU06,*) 'NOBSMAX = ',NOBSMAX

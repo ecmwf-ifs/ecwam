@@ -107,20 +107,9 @@
      &                       NEND(NPROC))
 
           ELSE
-            IF (LPBIOIN) THEN
-              CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-            ELSE 
-              IF (ITEST > 3 ) THEN
-                WRITE(IU06,*) ' LAW arranged to ', FILENAME
-                CALL FLUSH (IU06)
-              ENDIF
-              CALL GETREST (IU06, IU12, IU14, IU15, IGL,
-     &         CDATEA, CDATEF)
-            ENDIF
-
+            CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
             CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
      &                      RADOLD,RZIDLOLD,FILENAME)
-
           ENDIF
 
         ENDIF
@@ -227,21 +216,14 @@
      &             RADOLD,RZIDLOLD)
 
       ELSE
-
-        IF (LPBIOIN) THEN
-          CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-        ELSE 
-          CALL GETREST (IU06, IU12, IU14, IU15, IGL,  CDATEA, CDATEF)
-        ENDIF
-
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                     ROAIRO,ZIDLOLD,NIBLO)
         ELSE
+          CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
           CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO,ZIDLOLD,FILENAME)
         ENDIF
-
       ENDIF
 
       WRITE(IU06,*) ''

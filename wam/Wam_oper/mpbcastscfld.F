@@ -42,7 +42,6 @@
       USE YOWPARAM , ONLY : NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
@@ -62,11 +61,11 @@
 
         ENDDO
 
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(616,0)
+        CALL GSTATS(616,0)
         CALL MPL_ALLGATHERV(FIELD(NSTART(IRANK):NEND(IRANK)),
      &                     FIELD(1:NIBLO),KRECVCOUNTS,
      &                     CDSTRING='MPBCASTSCFLD:')
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(616,1)
+        CALL GSTATS(616,1)
 
       ENDIF
 

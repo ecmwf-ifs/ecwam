@@ -1,6 +1,6 @@
       SUBROUTINE READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &                    CDATE, RLAT, RLON, IDES_HS, SWH,
-     &                    IDES_WS, WS, EOFD)
+     &                    IDES_WS, WS, EOFD, YOFID)
 
 !--------------------------------------------------------------------
 
@@ -31,6 +31,8 @@
 !          *IDES_WS*  - DATA DESCRIPTOR FOR WIND SPEED.
 !          *WS*       - WIND SPEED.
 !          *EOFD*     - END OF DATA. (.TRUE. , .FALSE.)
+!          *YOFID*    - CHARACTER*3   FILE ID.
+
 
 !     METHOD.
 !     -------
@@ -70,7 +72,6 @@
       LOGICAL EOFD, LLTEST
       LOGICAL:: LLONG=.TRUE.
 
-      DATA YOFID /'QCP'/
       DATA CDTGEO, CDTGE1 /ZERO, ZERO/
 
 ! ----------------------------------------------------------------------

@@ -42,6 +42,7 @@
 !          *ID*      DAY OF LAST ANALYSIS.
 !          *IH*      HOUR OF LAST ANALYSIS.
 !          *IFCST*   FORECAST TIME FROM BASE DATE-TIME-GROUP.
+!                    SPECIFIED IN HOURS.
 !          *KLEV*   - REFERENCE LEVEL IN full METER
 !                     (SHOULD BE 0 EXCEPT FOR 233 AND 245)
 !          *LFDB*   - LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
@@ -80,7 +81,6 @@
       USE YOWPARAM , ONLY : CLDOMAIN
       USE YOWPCONS , ONLY : G        ,ZMISS
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -99,7 +99,7 @@
       DATA FRSTIME32 / .TRUE. /
 
 ! ----------------------------------------------------------------------
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1709,0)
+      CALL GSTATS(1709,0)
 
 !*    0. PUT FIELD INTO GLOBAL MATRIX ZWORK.
 !        -----------------------------------
@@ -154,7 +154,32 @@
       KSEC1(11) = IM
       KSEC1(12) = ID
       KSEC1(13) = IH
-      KSEC1(16) = IFCST
+      IF(IFCST >= (2**16-1)) THEN
+!     the number of hours is too large, use coding in days or
+!     multiple of hours instead
+        IF(MOD(IFCST,24) == 0 ) THEN
+          KSEC1(15)= 2 
+          KSEC1(16) = IFCST/24
+        ELSEIF(MOD(IFCST,12) == 0 ) THEN
+          KSEC1(15)= 12 
+          KSEC1(16) = IFCST/12
+        ELSEIF(MOD(IFCST,6) == 0 ) THEN
+          KSEC1(15)= 11 
+          KSEC1(16) = IFCST/6
+        ELSEIF(MOD(IFCST,3) == 0 ) THEN
+          KSEC1(15)= 10 
+          KSEC1(16) = IFCST/3
+        ELSE
+          WRITE(IU06,*)' SUB: GRIBPAC: THE FORECAST IS TOO LONG'
+          WRITE(IU06,*)' IT CANNOT BE CODED IN GRIB'
+          WRITE(IU06,*)' IFCST = ',IFCST
+          WRITE(IU06,*)' CALL ABORT1 '
+          WRITE(IU06,*)'  '
+        ENDIF 
+      ELSE
+        KSEC1(15)= 1 
+        KSEC1(16) = IFCST
+      ENDIF
 
 
       IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
@@ -324,7 +349,7 @@
         CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
       ENDIF
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1709,1)
+      CALL GSTATS(1709,1)
 
       RETURN
       END SUBROUTINE GRIBPAC

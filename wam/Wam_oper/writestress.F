@@ -63,7 +63,6 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU15
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 

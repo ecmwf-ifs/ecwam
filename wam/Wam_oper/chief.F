@@ -294,7 +294,7 @@
  20   CONTINUE
 
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
-     &             NFIELDS, NGPTOTG, NC, NR,
+     &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &             ISEC1, ISEC2, FIELDS,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,

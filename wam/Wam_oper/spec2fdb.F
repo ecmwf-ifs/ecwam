@@ -125,7 +125,6 @@
 !-------------------------------------------------------------------
 
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
       USE FDBSUBS
 
       IMPLICIT NONE
@@ -229,7 +228,35 @@
       ISEC1(12) =   ID      ! DAY OF DATA
       ISEC1(13) =   IH      ! HOUR OF DATA
       ISEC1(14) =   IMN     ! MINUTE OF DATA
-      ISEC1(16) =  IFCST    ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
+      ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
+      IF(IFCST >= (2**16-1)) THEN
+!     the number of hours is too large, use coding in days or
+!     multiple of hours instead
+        IF(MOD(IFCST,24) == 0 ) THEN
+          ISEC1(15)= 2
+          ISEC1(16) = IFCST/24
+        ELSEIF(MOD(IFCST,12) == 0 ) THEN
+          ISEC1(15)= 12
+          ISEC1(16) = IFCST/12
+        ELSEIF(MOD(IFCST,6) == 0 ) THEN
+          ISEC1(15)= 11
+          ISEC1(16) = IFCST/6
+        ELSEIF(MOD(IFCST,3) == 0 ) THEN
+          ISEC1(15)= 10
+          ISEC1(16) = IFCST/3
+        ELSE
+          WRITE(KU06,*)' SUB: SPEC2FDB: THE FORECAST IS TOO LONG'
+          WRITE(KU06,*)' IT CANNOT BE CODED IN GRIB'
+          WRITE(KU06,*)' IFCST = ',IFCST
+          WRITE(KU06,*)' CALL ABORT1 '
+          WRITE(KU06,*)'  '
+        ENDIF
+      ELSE
+        ISEC1(15)= 1
+        ISEC1(16) = IFCST
+      ENDIF
+
+
       IF(ISEC1(10).EQ.100) THEN
         ISEC1(21) = IYYYY/100 ! CENTURY OF REFERENCE TIME.
       ELSE
@@ -320,7 +347,7 @@
 
       ISEC4=KSEK4
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1987,0)
+      CALL GSTATS(1987,0)
       DO JANG=1,KANG
         ZTHETA(JANG) = PTHETA(JANG)*PPDEG
       ENDDO
@@ -378,7 +405,7 @@
           IPOINTER(IJ) = (IY-1)*KGX + IX + KDEXN
         ENDDO
       ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1987,1)
+      CALL GSTATS(1987,1)
 
 
 !-----------------------------------------------------------------------
@@ -446,14 +473,14 @@
 !*        PREPARE FOR ENCODING.
 !         ----------------------
 
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1433,0)
+          CALL GSTATS(1433,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
           DO JC=1,NTENCODE
             ZSEC4OUT(JC) = LOG10(ZSEC4OUT(JC)+PPEPS)+ABS(PPREC)
             IF ( ZSEC4OUT(JC) .LE. PPMISS ) ZSEC4OUT(JC)=ZSEC3(2)
           ENDDO
 !$OMP END PARALLEL DO
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1433,1)
+          CALL GSTATS(1433,1)
 
           ILENGOUT = NINT(NTENCODE*(ISEC4(2)+1.)/(KIND(KU06)*8))+
      &      NKSEK0+NKSEK1+NKSEK2+NKSEK3+NKSEK4+NPSEK2+NPSEK3
@@ -480,10 +507,10 @@
 
 !         CODING
 !         ------
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,0)
+          CALL GSTATS(1704,0)
           CALL GRIBEX (ISEC0, ISEC1, ISEC2, ZSEC2, ISEC3, ZSEC3, ISEC4,
      &       ZSEC4OUT, NTENCODE, IOUTGRIB, ILENGOUT ,IWORD, HOPERS,IRET)
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,1)
+          CALL GSTATS(1704,1)
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
 

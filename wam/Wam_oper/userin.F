@@ -930,7 +930,6 @@
              WRITE(IU06,*) ' THE ALTIMETER DATA FROM SATELLITE ',
      &                       IBUFRSAT(ISAT) 
             IF(LALTLRGR(ISAT)) THEN
-              WRITE(IU06,*) '  '
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
               WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',
@@ -943,7 +942,6 @@
             ENDIF
             WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',
      &                      ALTBGTHRSH(ISAT)
-            WRITE(IU06,*) ' AND '
             IF(HSALTCUT(ISAT).LT.999999.) THEN
               WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',
      &                        HSALTCUT(ISAT)
@@ -952,7 +950,6 @@
      &                      ' THE OBSERVATION ERROR.'
             ENDIF
             IF(LALTGRDOUT(ISAT)) THEN
-              WRITE(IU06,*) '  '
               WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE' 
               WRITE(IU06,*) ' PRODUCED FOR THIS ALTIMETER.' 
               LLNALTGO = .FALSE.

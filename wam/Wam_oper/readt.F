@@ -54,7 +54,6 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !-----------------------------------------------------------------------
 
@@ -70,7 +69,7 @@
 !*    1. INPUT OF TEMPERATURE DATA.
 !     -----------------------------
 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1770,0)
+      CALL GSTATS(1770,0)
       CALL INTMARS ( IU06, ITEST, FILNM, NKSEK0, NKSEK1, NKSEK2,
      &               NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &               NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
@@ -109,7 +108,7 @@
         DEALLOCATE(WORK)
         CALL FLUSH(IU06)
       ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1770,1)
+      CALL GSTATS(1770,1)
 
       RETURN
       END SUBROUTINE READT

@@ -42,7 +42,6 @@
       USE YOWMPP   , ONLY : IRANK     ,NPROC
       USE YOWPARAM , ONLY : NIBLO
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -59,7 +58,7 @@
 
       ELSE
 
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(674,0)
+        CALL GSTATS(674,0)
         DO IP=1,NPROC
 
          KRECVCOUNTS(IP)=NEND(IP) - NSTART(IP)+1
@@ -71,7 +70,7 @@
      &                   PRECVBUF=FIELD(1:NIBLO),
      &                   KROOT=IRECV,
      &                   CDSTRING='MPGATHERSCFLD:')
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(674,1)
+        CALL GSTATS(674,1)
 
       ENDIF
 

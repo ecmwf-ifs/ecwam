@@ -70,7 +70,7 @@
     2 FORMAT('ANALYSIS PERIOD = ',I7)        
                                                                         
       WRITE(CARD(5), 3) FOREPD                                          
-    3 FORMAT('FORECAST PERIOD = ',I7)         
+    3 FORMAT('FORECAST PERIOD = ',I10)         
                                                                         
       WRITE(CARD(6), 4) IS                                              
     4 FORMAT('WIND TIME STEP IN SECONDS = ',I7)

@@ -1,4 +1,4 @@
-      SUBROUTINE GRDATA(NWH, NSTART, NEND)
+      SUBROUTINE GRDATA(NWH, NSTART, NEND, LAVERAGE)
 
 !--------------------------------------------------------------------
 
@@ -19,6 +19,8 @@
 !        *NWH*  NUMBER OF RELEVANT GRIDDED OBSERVATIONS.
 !        *NSTART* INTEGER INDEX OF THE FIRST POINT OF SUB GRID DOMAIN
 !        *NEND*   INTEGER INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!        *LAVERAGE* LOGICAL TRUE IF SUPER-OBSERVATIONS ARE TO BE 
+!                                   ASSIMILATED
 
 !     METHOD.
 !     -------
@@ -92,6 +94,8 @@
 
 ! ----------------------------------------------------------------------
 
+      LOGICAL LAVERAGE
+
       INTEGER, DIMENSION(NUMALT) :: ICOUNT, ICOUNTT, ICOUNTD,
      &                              ICOUNTB, ICOUNTQCF,
      &                              ICOUNTBL, IOLD, JOLD
@@ -129,6 +133,16 @@
       LOGICAL :: LLBLEXIST
       LOGICAL :: OPENED
 
+      PARAMETER (MAXSATBC=10)
+      INTEGER, DIMENSION(MAXSATBC) :: ISATBC, NBCT
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: BCINC
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: BCTABLE
+      CHARACTER (LEN=12),ALLOCATABLE,DIMENSION(:,:) :: CBCDATESTART
+      CHARACTER (LEN=12),ALLOCATABLE,DIMENSION(:,:) :: CBCDATEEND
+      LOGICAL :: LLBCTEXIST, LLDOBC, LNEW
+
+      CHARACTER* 3 YOFID
+
 ! ----------------------------------------------------------------------
 
 
@@ -146,7 +160,11 @@
 !     FIX THE MINIMUM NUMBER OF OBSERVATIONS PER GRID BOX REQUIRED
 !     IN ORDER TO ACCEPT THE DATA AT THE GRIB POINTS
 
-      IF(XDELLA.GE.0.5) THEN
+      IF (LAVERAGE) THEN
+!       if superobservations fall within the same grid box, 
+!       they will be averaged.
+        NNMIN=1
+      ELSEIF(XDELLA.GE.0.5) THEN
         NNMIN=4
       ELSEIF(XDELLA.GT.0.25) THEN
         NNMIN=3
@@ -157,6 +175,11 @@
       WRITE(IU06,*) '   OBSERVATIONS PER GRID BOX IS LARGER THAN ',
      &  NNMIN-1
 
+      IF (LAVERAGE) THEN
+        YOFID='AFA'
+      ELSE 
+        YOFID='QCP'
+      ENDIF
 ! ----------------------------------------------------------------------
 
 !*    2. INITIALIZE ARRAYS, counters and units.
@@ -209,7 +232,7 @@
         WRITE(IU06,*) ' '
 
         DO IC=1,21
-          READ(IOBL,'(A100)') CDUM
+          READ(IOBL,'(A100)',END=200,ERR=200) CDUM
         ENDDO
 
         DO WHILE(.TRUE.)
@@ -235,7 +258,7 @@
         ENDIF
 
         DO IC=1,21
-          READ(IOBL,'(A100)') CDUM
+          READ(IOBL,'(A100)',END=200,ERR=200) CDUM
         ENDDO
 
         DO IBL=1,NBL
@@ -272,6 +295,124 @@
 111   FORMAT(2(I8,1x),2(A12,1x),2(f5.1,1x,f6.1,1x),I6,1x,2(f9.3,1x))
 
 ! ----------------------------------------------------------------------
+!     CHECK IF THE FILE WITH "BIAS CORRECTION TABLES" IS PRESENT
+2500  CONTINUE
+      NBCT=0
+      YOFILE='biascorrection.swh'
+      INQUIRE (FILE=YOFILE,EXIST=LLBCTEXIST)
+      IF(LLBCTEXIST) THEN
+        IOBCT = I_GET_UNIT(IU06, YOFILE, 'r', 'f', 0)
+        WRITE(IU06,*) '   GRDATA : READING FILE WITH BIAS CORRECTION '
+     &                    //'TABLES  ', YOFILE
+
+        WRITE(IU06,*) ' '
+
+        DO IC=1,21
+          READ(IOBCT,'(A)',END=2800,ERR=2800) CDUM
+        ENDDO
+
+        NSATBC=0
+        MAXNBCINC=0
+        DO WHILE(.TRUE.)
+          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F5.2)',END=2600,ERR=2600)
+     &             ISAT, IDUM, CDUM, NBCINC, BCINC0
+          MAXNBCINC=MAX(MAXNBCINC,NBCINC)
+          LNEW=.TRUE.
+          DO IBCT=1, NSATBC
+            IF (ISAT.EQ.ISATBC(IBCT)) THEN
+              LNEW=.FALSE.
+              NBCT(IBCT) = NBCT(IBCT) + 1
+              EXIT
+            ENDIF
+          ENDDO
+          IF (LNEW) THEN
+            NSATBC=NSATBC+1
+            IF (NSATBC.GT.MAXSATBC) THEN
+              WRITE(IU06,*) '******************************************'
+              WRITE(IU06,*) '   GRDATA : ERROR:  NUMBER OF SATELLITES '
+     &             //'IN BIAS CORRECTION FILE EXCEEDS MAXSATBC =', 
+     &                                                MAXSATBC 
+              WRITE(IU06,*) '       INCREASE MAXSATBC IN GRDATA'
+              WRITE(IU06,*) '   THE PROGRAM WILL ABORT !!!!'
+              WRITE(IU06,*) '******************************************'
+              CALL ABORT
+            ENDIF
+            ISATBC(NSATBC)=ISAT
+            NBCT(NSATBC) = 1
+          ENDIF
+          READ(IOBCT,'(A)',END=2800,ERR=2800) CDUM
+        ENDDO
+2600    WRITE(IU06,*) '            NUMBER OF SATELLITE ENTRIES :',NSATBC
+        MAXBCT=NBCT(1)
+        DO IBCT=1, NSATBC
+          WRITE(IU06,*) '              SATELLITE ',ISATBC(IBCT),
+     &                                  ' HAS ', NBCT(IBCT), ' TABLES'
+          MAXBCT=MAX(MAXBCT,NBCT(IBCT))
+        ENDDO
+        REWIND(IOBCT)
+
+        IF(NSATBC.GT.0) THEN
+          ALLOCATE(BCINC(NSATBC,MAXBCT))
+          ALLOCATE(BCTABLE(NSATBC,MAXBCT,MAXNBCINC))
+          ALLOCATE(CBCDATESTART(NSATBC,MAXBCT))
+          ALLOCATE(CBCDATEEND(NSATBC,MAXBCT))
+        ENDIF
+
+        DO IC=1,21
+          READ(IOBCT,'(A)',END=2800,ERR=2800) CDUM
+        ENDDO
+
+        DO IBCT=1, NSATBC
+          NBCT(IBCT) = 0
+        ENDDO
+        DO WHILE(.TRUE.)
+          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F5.2)',END=2900,ERR=2900)
+     &          ISAT, IDUM, CDUM, NBCINC, BCINC0
+          DO IBCT=1, NSATBC
+            IF (ISAT.EQ.ISATBC(IBCT)) THEN
+              NBCT(IBCT) = NBCT(IBCT) + 1
+              BCINC(IBCT,NBCT(IBCT))=BCINC0
+              CBCDATESTART(IBCT,NBCT(IBCT))=CDUM(2:13)
+              CBCDATEEND  (IBCT,NBCT(IBCT))=CDUM(15:26)
+              READ(IOBCT,'(9999F5.2)',END=2800,ERR=2800)
+     &             (BCTABLE(IBCT,NBCT(IBCT),I),I=1,NBCINC)
+              IF (ITEST.GE.1) THEN
+                WRITE(IU06,'(A,I4,A)') 'BIAS CORRECTION TABLE FOR '//
+     &             'SATELLITE ',ISAT, ' BETWEEN '//
+     &             CBCDATESTART(IBCT,NBCT(IBCT))//' AND '//
+     &             CBCDATEEND(IBCT,NBCT(IBCT))//' IS:'
+                WRITE(IU06,'(5X,A)') 'WAVE HEIGHT     BIAS CORRECTION'
+                DO I=1,NBCINC
+                  WRITE(IU06,'(5X,F5.2,11X,F5.2)') (I-1.)*BCINC0, 
+     &                                    BCTABLE(IBCT,NBCT(IBCT),I)
+                ENDDO
+                WRITE(IU06,'(A/)') 'END OF TABLE'
+              ENDIF
+              EXIT
+            ENDIF
+          ENDDO
+        ENDDO
+
+2800    CONTINUE
+        WRITE(IU06,*) '************************************************'
+        WRITE(IU06,*) '   GRDATA : ERROR READING ', YOFILE
+        WRITE(IU06,*) '   THE PROGRAM WILL ABORT !!!!'
+        WRITE(IU06,*) '************************************************'
+        CALL ABORT
+
+2900    CONTINUE
+        CLOSE (IOBCT)
+        WRITE(IU06,*) '            BIAS CORRECTION TABLES READ IN'
+
+      ELSE
+        WRITE(IU06,*) '************************************************'
+        WRITE(IU06,*) '   GRDATA : FILE WITH BIAS CORRECTION TABLES ',
+     &                                                           YOFILE
+        WRITE(IU06,*) '   WAS NOT FOUND !!!'
+        WRITE(IU06,*) '   THE PROCESSING WILL CONTINUE WITHOUT IT !!!!'
+        WRITE(IU06,*) '************************************************'
+      ENDIF
+! ----------------------------------------------------------------------
 
 !*    3. READ THE MEASUREMENT TAPE AND CUMULATE THE DATA ON GRID POINTS.
 !        ---------------------------------------------------------------
@@ -279,7 +420,7 @@
  3000 CONTINUE
       CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &              CDATE, RLAT, RLON, IDES_HS, SWH,
-     &              IDES_WS, WS, EOFD)
+     &              IDES_WS, WS, EOFD, YOFID)
 
       IF(ITEST.GE.2)
      & WRITE(IU06,'(A,A,2I6,2(I6,F6.2))') 
@@ -361,47 +502,55 @@
         IF((I.LE.NRGG).AND.(I.GE.1) .AND. (J.LE.NGY).AND.(J.GE.1)) THEN
 
           ICOUNT(KSAT)=ICOUNT(KSAT)+1
-          IF (I.NE.IOLD(KSAT) .OR. J.NE.JOLD(KSAT)) THEN
+          IF (LAVERAGE) THEN
+!           the superobservation is assigned to the closest grid point.
+            IF (SWH.GE.0.) THEN
+              WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
+              NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
+            ENDIF
+          ELSE
+            IF (I.NE.IOLD(KSAT) .OR. J.NE.JOLD(KSAT)) THEN
 
 !               NEW BOX
 
-            CALL DIFDATE(CDATEO(KSAT),CDATE,ISHIFT)
-            IF (ISHIFT.LT.3.AND.ICOUNT(KSAT).GT.1) THEN
-              IF (SWH-SWHO(KSAT).GT.2.0) THEN
-                NR(I,J,KSAT)=NR(I,J,KSAT)+1
+              CALL DIFDATE(CDATEO(KSAT),CDATE,ISHIFT)
+              IF (ISHIFT.LT.3.AND.ICOUNT(KSAT).GT.1) THEN
+                IF (SWH-SWHO(KSAT).GT.2.0) THEN
+                  NR(I,J,KSAT)=NR(I,J,KSAT)+1
+                  GO TO 3000
+                ENDIF
+              ENDIF
+              IOLD(KSAT) = I
+              JOLD(KSAT) = J
+              SWHO(KSAT) = SWH
+            ELSE
+
+!             SUDDEN POSITVE STEPS ARE REFUSED.
+
+              IF (SWH-SWHO(KSAT).GT.1.0) THEN
+                NR(I,J,KSAT) = NR(I,J,KSAT)+1
                 GO TO 3000
               ENDIF
             ENDIF
-            IOLD(KSAT) = I
-            JOLD(KSAT) = J
-            SWHO(KSAT) = SWH
-          ELSE
 
-!       SUDDEN POSITVE STEPS ARE REFUSED.
-
-            IF (SWH-SWHO(KSAT).GT.1.0) THEN
-              NR(I,J,KSAT) = NR(I,J,KSAT)+1
-              GO TO 3000
+            IF (SWH.GE.0.) THEN
+              WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
+              WHSE (I,J,KSAT) = WHSE(I,J,KSAT) + SWH**2
+              NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
             ENDIF
+
+!           A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
+
+            IF (SWHO(KSAT)-SWH.GT.2.0) THEN
+              NR(I,J,KSAT) = NR(I,J,KSAT)+1
+              WHME(I,J,KSAT) = WHME(I,J,KSAT) - SWHO(KSAT)
+              WHSE (I,J,KSAT) = WHSE(I,J,KSAT) - SWHO(KSAT)**2
+              NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) - 1
+            ENDIF
+
+            SWHO(KSAT) = SWH
+            CDATEO(KSAT) = CDATE
           ENDIF
-
-          IF (SWH.GE.0.) THEN
-            WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
-            WHSE (I,J,KSAT) = WHSE(I,J,KSAT) + SWH**2
-            NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
-          ENDIF
-
-!       A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
-
-          IF (SWHO(KSAT)-SWH.GT.2.0) THEN
-            NR(I,J,KSAT) = NR(I,J,KSAT)+1
-            WHME(I,J,KSAT) = WHME(I,J,KSAT) - SWHO(KSAT)
-            WHSE (I,J,KSAT) = WHSE(I,J,KSAT) - SWHO(KSAT)**2
-            NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) - 1
-          ENDIF
-
-          SWHO(KSAT) = SWH
-          CDATEO(KSAT) = CDATE
         ENDIF
 !*
 
@@ -455,9 +604,11 @@
 !               MEAN VALUES
                 WHME(I,J,ISAT) = WHME(I,J,ISAT)/REAL(NN)
 !               COMPUTE THE STANDARD DEVIATION.
-                WHSE2 =  (WHSE(I,J,ISAT)-WHME(I,J,ISAT)**2*REAL(NN))
-     &                   / (REAL(NN)-1.)
-                WHSE(I,J,ISAT) = SQRT( MAX(WHSE2,0.))
+                IF (.NOT. LAVERAGE) THEN
+                  WHSE2 =  (WHSE(I,J,ISAT)-WHME(I,J,ISAT)**2*REAL(NN))
+     &                     / (REAL(NN)-1.)
+                  WHSE(I,J,ISAT) = SQRT( MAX(WHSE2,0.))
+                ENDIF
               ENDIF
             ENDDO
           ENDDO
@@ -470,7 +621,23 @@
 !         ONLY KEEP THE RELEVANT INFORMATION
 !         ALL DATA THAT ARE NOT OVER SEA ARE DISCARDED HERE !
 
-          DO IJ = NSTART(1), NEND(NPROC)
+          IF (LAVERAGE) THEN
+            DO IJ = NSTART(1), NEND(NPROC)
+              I = IXLG(IJ,1)
+              J = NGY- KXLT(IJ,1) +1
+              NN = NUMBWH(I,J,ISAT)
+              IF (NN.EQ.0) THEN
+!               IF THERE ARE NO MEASUREMENTS
+                WHME(I,J,ISAT)=-3.
+              ELSEIF (WHME(I,J,ISAT).LT.0.50) THEN
+                WHME(I,J,ISAT) = -WHME(I,J,ISAT)
+              ELSE
+                NWH = NWH+1
+              ENDIF
+            ENDDO
+          ELSE
+
+           DO IJ = NSTART(1), NEND(NPROC)
             I = IXLG(IJ,1)
             J = NGY- KXLT(IJ,1) +1
             NN = NUMBWH(I,J,ISAT)
@@ -493,8 +660,9 @@
                 NWH = NWH+1
               ENDIF
             ENDIF
-          ENDDO
+           ENDDO
 
+          ENDIF
         ENDIF
       ENDDO  ! ON ISAT
 
@@ -507,17 +675,52 @@
         ALLOCATE(IJALT(NWH,NIJALT))
         ALLOCATE(ALTDATA(NWH,NALTDT))
 
+        IF(ITEST.GE.2)
+     &     WRITE(IU06,'(A)') 'S.ID. ORIG. CORR. INCR.'
         IOBS=0
         DO ISAT=1,NUMALT
+          LLDOBC=.FALSE.
           IF(IBUFRSAT(ISAT).NE.0) THEN
+            IF(LLBCTEXIST) THEN
+              DO IBCS=1, NSATBC
+                IF (IBUFRSAT(ISAT).EQ.ISATBC(IBCS)) THEN
+                  DO IBCT=1,NBCT(IBCS)
+                    IF (CDTPRO.GE.CBCDATESTART(IBCS,IBCT) .AND. 
+     &                  CDTPRO.LE.CBCDATEEND  (IBCS,IBCT)      ) THEN
+                      LLDOBC=.TRUE.
+                      EXIT
+                    ENDIF
+                  ENDDO
+                  EXIT
+                ENDIF
+              ENDDO
+            ENDIF
+
             DO IJ = NSTART(1), NEND(NPROC)
               IX = IXLG(IJ,1)
               IY = NGY- KXLT(IJ,1) +1
               IF(WHME(IX,IY,ISAT) .GT. 0. ) THEN
                 IOBS=IOBS+1
-                ALTDATA(IOBS,1) = WHME(IX,IY,ISAT)
+                ALTDATA(IOBS,3) = WHME(IX,IY,ISAT)  !  1 REPLACED BY 3
                 IJALT(IOBS,1) = IJ
                 IJALT(IOBS,2) = IBUFRSAT(ISAT)
+
+                ! BIAS CORRECTION IS DONE IF NEEDED
+                IF(LLDOBC) THEN
+                  ZI=MIN(FLOAT(MAXNBCINC), WHME(IX,IY,ISAT)/
+     &                                             BCINC(IBCS,IBCT))
+                  I=INT(ZI)+1
+                  IP1=MIN(MAXNBCINC, I+1)
+                  BCIV=(I+1-ZI)*BCTABLE(IBCS,IBCT,I)+
+     &                 (ZI-I)  *BCTABLE(IBCS,IBCT,IP1) 
+                  ALTDATA(IOBS,1)=WHME(IX,IY,ISAT)-BCIV
+                  IF(ITEST.GE.2)
+     &              WRITE(IU06,'(I5,3(1X,F5.2))') ISAT,
+     &                     ALTDATA(IOBS,3), ALTDATA(IOBS,1), BCIV
+                ELSE
+                  ALTDATA(IOBS,1)=WHME(IX,IY,ISAT)
+                ENDIF
+
               ENDIF
             ENDDO
           ENDIF

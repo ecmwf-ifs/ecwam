@@ -70,7 +70,6 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
       USE FDBSUBS
 
 ! ----------------------------------------------------------------------
@@ -148,11 +147,11 @@ C
 
 !           CONNECT INPUT PE (IREAD) WITH INPUT FILE
 
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1888,0)
+            CALL GSTATS(1888,0)
             FILENAME='specwavein'
             LFILE=LEN_TRIM(FILENAME)
             INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(1888,1)
+            CALL GSTATS(1888,1)
             IF(LLEXIST) THEN
 
               CALL PBOPEN(IUGRS,FILENAME(1:LFILE),'r',KRET)
@@ -318,9 +317,9 @@ C
               ENDIF
 
               IF(M.EQ.NFRE.AND.K.EQ.NANG) THEN 
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
+                CALL GSTATS(1787,0)
                 istat = iclosefdbsubs(ifdb)
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
+                CALL GSTATS(1787,1)
                 IF (ISTAT .NE. 0) CALL ABORT1
               ENDIF
 
@@ -335,9 +334,9 @@ C
 1000          IPLENG=ISIZE*NPRECI
               IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1772,0)
+              CALL GSTATS(1772,0)
               CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1772,1)
+              CALL GSTATS(1772,1)
               IF (KRET.EQ.-1) THEN
                 WRITE (IU06,*) ' SUB. GETSPEC : '
                 WRITE (IU06,*) ' REACHED EOF ON UNIT ',IUGRS
@@ -361,7 +360,7 @@ C
 
 !             IN CASE OF MESSAGE PASSING THE DECODING OCCURS ON KSEND
 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(623,0)
+              CALL GSTATS(623,0)
               IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
 
 !               SEND GRIB DATA TO PE KSEND
@@ -407,7 +406,7 @@ C
      &          ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED TAGS' )
 
               ENDIF
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(623,1)
+              CALL GSTATS(623,1)
             ENDIF
 
             IF (IRANK.EQ.KSEND.OR.NPROC.EQ.1) THEN
@@ -418,11 +417,11 @@ C
               PSEC3=PSEK3
               ALLOCATE(PSEC4(NTENCODE))
 
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1703,0)
+              CALL GSTATS(1703,0)
               CALL GRIBEX (KSEC0,KSEC1,KSEC2,PSEC2,KSEC3,PSEC3,KSEC4,
      &                     PSEC4, NTENCODE,INGRIB,ISIZE,KWORD,'D',KRET)
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1703,1)
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1886,0)
+              CALL GSTATS(1703,1)
+              CALL GSTATS(1886,0)
               IF(KRET.GT.0) THEN 
                 WRITE(IU06,*) '************************************'
                 WRITE(IU06,*) '* FATAL ERROR IN SUB. GETSPEC      *'
@@ -447,6 +446,12 @@ C
                   JCONS = 3600
                 ELSEIF (KSEC1(15).EQ.2) THEN
                   JCONS = 86400
+                ELSEIF (KSEC1(15).EQ.10) THEN
+                  JCONS = 10800
+                ELSEIF (KSEC1(15).EQ.11) THEN
+                  JCONS = 21600
+                ELSEIF (KSEC1(15).EQ.12) THEN
+                  JCONS = 43200
                 ELSE
                   WRITE(IU06,*)'**********************************'
                   WRITE(IU06,*)'* FATAL ERROR IN SUB GETSPEC     *'
@@ -578,7 +583,7 @@ C
                   WORK(IJ) = FLMIN
                 ENDIF
               ENDDO
-              IF (.NOT.LSYNCSTATS) CALL GSTATS(1886,1)
+              CALL GSTATS(1886,1)
 
             ENDIF
 
@@ -807,11 +812,9 @@ C
 
 !         NON MESSAGE PASSING READ OF SPECTRA
 
-          IF(LPBIOIN) THEN
-            CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-            LPBOPEN = .TRUE.
-            LPBCLOSE = .TRUE.
-          ENDIF
+          CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+          LPBOPEN = .TRUE.
+          LPBCLOSE = .TRUE.
 
           CALL READFL(FL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
         ENDIF

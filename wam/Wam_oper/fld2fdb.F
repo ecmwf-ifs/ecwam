@@ -109,7 +109,6 @@
 !     the module is needed in order to resolve the problem with the 
 !     output of 251 for the multi-analysis problem.
       USE YOWGRIBHD , ONLY : KSEK1
-      USE YOMGSTATS, ONLY : LSYNCSTATS
       USE FDBSUBS
 
       INTEGER       klen
@@ -353,9 +352,9 @@
 
         ENDIF
       ELSEIF ( cdfun .EQ. 'close' ) THEN
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
+        CALL GSTATS(1787,0)
         istat = iclosefdbsubs( iaddr1 )
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
+        CALL GSTATS(1787,1)
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso,'( "Error\ /Fld2fdb/ Action specified: ", a)' )
      &    cdfun
@@ -440,9 +439,9 @@
         istat = iwritefdbsubs( iaddr1, kfield, klen ) 
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso, '( "Error\ /Fld2fdb/ Failed to write to fdb")' )
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
+          CALL GSTATS(1787,0)
           istat = iclosefdbsubs( iaddr1 )
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
+          CALL GSTATS(1787,1)
           kerr = 1
           RETURN
         ENDIF
@@ -452,9 +451,9 @@
         istat = ireadfdbsubs( iaddr1, kfield, klen )
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso, '( "Error\ /Fld2fdb/ Failed to read from fdb")' )
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
+          CALL GSTATS(1787,0)
           istat = iclosefdbsubs( iaddr1 )
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
+          CALL GSTATS(1787,1)
           kerr = 1
           RETURN
         ENDIF

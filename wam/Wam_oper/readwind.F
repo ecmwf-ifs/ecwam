@@ -1,4 +1,4 @@
-      SUBROUTINE READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, 
+      SUBROUTINE READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
      &                     ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
      &                     KINF, KSUP,
      &                     IUNIT1, FILNM, FRSTIME )
@@ -59,7 +59,7 @@
 !     INTERFACE                                                         
 !     ---------                                                         
 
-!     *CALL* *READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, 
+!     *CALL* *READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
 !    &                  ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
 !    &                  KINF, KSUP,
 !    &                  IUNIT1, FILNM, FRSTIME )*
@@ -69,6 +69,7 @@
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
+!        *FCRANGE*- FORECAST RANGE IN SECONDS
 !        *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !        *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
@@ -123,7 +124,6 @@
      &            AIRD     ,PZIDL
 
       USE YOWPCONS , ONLY : ROAIR, Rconstant, EpsWaterVapor
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! --------------------------------------------------------------------- 
 
@@ -459,7 +459,7 @@
 
 !       COMPUTATION OF THE NORMS OF INPUT FIELDS
         WRITE(IU06,*) ' NORM OF INPUT ATMOSPHERIC FIELDS : ' 
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1436,0)
+        CALL GSTATS(1436,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,I)
         DO IFLD=1,NFIELDS
           JF=IFLD
@@ -474,7 +474,7 @@
           FAVG(JF)=FAVG(JF)/NGPTOTG
         ENDDO
 !$OMP   END PARALLEL DO
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1436,1)
+        CALL GSTATS(1436,1)
         DO IFLD=1,NFIELDS
           WRITE(IU06,*) AFLABEL(IFLD),
      &                  FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NGPTOTG
@@ -492,7 +492,7 @@
 
 ! Mod for OPENMP
         NPROMA=(KSUP-KINF+1)/NWAM_BLKS+1
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1437,0)
+        CALL GSTATS(1437,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=KINF, KSUP,NPROMA
           KIJS=JKGLO
@@ -507,7 +507,7 @@
      &                   DK1, DII1, DIIP1, KK, II, IIP)
         ENDDO
 !$OMP   END PARALLEL DO
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1437,1)
+        CALL GSTATS(1437,1)
 
         IF (LADEN) THEN 
           IF (ITEST.GT.1)
@@ -532,29 +532,10 @@
         WRITE(CDTWIR,'(I4.4,4I2.2)') IYYYY,ISEC1(11),ISEC1(12),
      &                             ISEC1(13),ISEC1(14)
 
-!*      DETERMINE TIME UNIT.
 
-        IF (ISEC1(15).EQ.0) THEN
-          JCONS = 60
-        ELSEIF (ISEC1(15).EQ.1) THEN
-          JCONS = 3600
-        ELSEIF (ISEC1(15).EQ.2) THEN
-          JCONS = 86400
-        ELSE
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*    PROBLEM IN SUB. READWIND     *'
-          WRITE(IU06,*) '*    =========================    *'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  UNABLE TO DECODE THE TIME UNIT *'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '***********************************'
-          CALL FLUSH(IU06)
-        ENDIF
+!       DETERMINE FORECAST PERIOD
 
-!       DETERMINE FORECAST PERIOD.
-
-        IFORP = JCONS*ISEC1(16)
+        IFORP = NINT(FCRANGE)
 
 !       GET DATE OF THE FORECAST INSTEAD OF STARTING DATE
 

@@ -19,10 +19,15 @@
 
 !          ---- FORMAL PARAMETERS ----
 
-!    *rfl4wam*  -d date [ -d date ... ] [ -i itest ] [ -w idelalt ]
+!    *rfl4wam*  -d date [ -d date ... ] [ -i itest ] [ -a idelalt ]
+!                   [ -e satID:weight [ -e ... ] ]
+!                   [ -t type ]
 !      *date*      STRING   DATE/TIME GROUP YYYYMMDDHHMM.
 !      *itest*     INTEGER  TEST OUTPUT LEVEL (*COMMON* *TESTO*).
 !      *idelalt*   INTEGER  LENGTH OF ASSIMILATION PERIOD (SECONDS).
+!      *satID*     INTEGER  SATELLITE BUFR ID.
+!      *weight*    REAL     ERROR WEIGHT FOR CORRESPONDING ALTIMETER
+!      *type*      STRING*1 OBSERVATION TYPE (i: INDIVIDUAL, a: AVERAGED)
 !      if the file wave_data_blacklist is present, information from it
 !      will be used to blacklist data.
 
@@ -109,11 +114,11 @@
 
       INTEGER GETCLO, GETCLA, IOPTVAL
       CHARACTER*  3 CLL1
-      CHARACTER*  6 CLOPTS
+      CHARACTER* 10 CLOPTS
       CHARACTER* 12 CLFMT
       CHARACTER*128 CLARG
       CHARACTER     CLOPTLET
-      DATA CLOPTS/'d;i;a;'/
+      DATA CLOPTS/'d;i;a;e;t;'/
 
       REAL Z4(2)
       INTEGER I4(2)
@@ -121,6 +126,12 @@
       REAL,ALLOCATABLE,DIMENSION(:,:) :: WHME
       CHARACTER (LEN=12),ALLOCATABLE :: CLDATES(:), CLMD(:)
       LOGICAL :: LSQRT, LLIRANK
+
+      LOGICAL :: LAVERAGE 
+      DATA LAVERAGE /.FALSE./
+
+      INTEGER,ALLOCATABLE :: IOESATID(:), IOERDUM(:)
+      REAL,ALLOCATABLE :: OERR(:), OERRDUM(:)
 
 ! ----------------------------------------------------------------------
 
@@ -131,11 +142,14 @@
 
       ITEST   =     0
       IDATES  =     0
+      IOBSER  =     0
       IMO     =    10
+      IOEMAX  =    10
       IDELALT = 21600
       IU06 = 6
 
       ALLOCATE (CLDATES(IMO))
+      ALLOCATE (IOESATID(IOEMAX), OERR(IOEMAX))
 
       CMDLINE: DO
         IOPTVAL=GETCLO(clopts,clarg)
@@ -167,6 +181,47 @@
             WRITE (CLL1,'(I3)') I1
             CLFMT = '(I'//CLL1//')'
             READ (CLARG(1:I1),FMT=CLFMT) IDELALT
+          ELSEIF ( CLOPTLET .EQ. 't' ) THEN
+
+! TYPE: INDIVIDUAL OR AVERAGED.
+! -----------------------------
+            IF (CLARG(1:1).EQ.'a' .OR. CLARG(1:1).EQ.'A')
+     &           LAVERAGE=.TRUE. 
+          ELSEIF ( CLOPTLET .EQ. 'e' ) THEN
+
+! OBSERVATION ERROR ARRAY.
+! ------------------------
+            IOBSER = IOBSER + 1
+            IF (IOBSER.GT.IOEMAX) THEN
+              ALLOCATE(IOERDUM(IOEMAX), OERRDUM(IOEMAX))
+              IOERDUM = IOESATID
+              OERRDUM = OERR
+              DEALLOCATE(IOESATID, OERR)
+              IOEMAX = IOEMAX + 10
+              ALLOCATE (IOESATID(IOEMAX), OERR(IOEMAX))
+              DO JL = 1, IOEMAX-10
+                OERR(JL) = OERRDUM(JL)
+                IOESATID(JL) = IOERDUM(JL)
+              ENDDO
+              DEALLOCATE(IOERDUM, OERRDUM)
+            ENDIF
+            LEN1=LEN_TRIM(CLARG)
+            IND1=INDEX(CLARG, ':')
+            IF (IND1.LE.1) THEN
+              IDATES = 0
+              EXIT CMDLINE
+            ENDIF
+            WRITE (CLL1,'(I3)') IND1-1
+            CLFMT = '(I'//CLL1//')'
+            READ (CLARG(1:IND1-1),FMT=CLFMT) IOESATID(IOBSER)
+            WRITE (CLL1,'(I3)') LEN1-IND1
+            CLFMT = '(F'//CLL1//'.0)'
+            READ (CLARG(IND1+1:LEN1),FMT=CLFMT) OERR(IOBSER)
+            IF (ITEST .GE. 1) THEN
+              WRITE(IU06,*) 'OBSERVATION ERROR WEIGHT FOR SAT. ',
+     &            IOESATID(IOBSER), ' IS ', OERR(IOBSER)
+            ENDIF
+
           ELSEIF ( CLOPTLET .EQ. 'd' ) THEN
 
 ! DATES ARRAY.
@@ -190,13 +245,21 @@
       IF (ITEST.GE.1) THEN
         WRITE(*,'("NUMBER OF FILES TO PROCESS: ",I2)') IDATES
         WRITE(*,'(5a13)') (CLDATES(JL),JL=1,IDATES)
+        IF (LAVERAGE) THEN
+          WRITE(*,*) '(AVERAGED) SUPER-OBSERVATIONS ARE USED.'
+        ELSE
+          WRITE(*,*) 'INDIVIDUAL OBSERVATIONS ARE USED.'
+        ENDIF
       ENDIF
       IF (IDATES .EQ. 0 ) THEN
         WRITE(*,*) 'NOTHING TO DO?'
         WRITE(*,*) 'YOU MAY HAVE GIVEN THE WRONG COMMAND LINE OPTIONS:'
         WRITE(*,*) 'USAGE: rfl4wam -d date [ -d date [ ... ] ] ',
-     &             '[ -i itest ] [ -w idelalt ] '
-        STOP
+     &             '[ -i itest ] [ -t type ] [ -a idelalt ] '
+     &           , '[ -e satID:weight [ -e ... ] ]'
+        WRITE(*,*) '       type is either: i  for individual (default)'
+        WRITE(*,*) '                   or: a  for averaged super-obs.'
+        CALL EXIT (1)
       ENDIF
 
 ! ---------------------------------------------------------------------
@@ -294,7 +357,7 @@
         CDTPRO = CLDATES(JLD)
         io = i_get_unit(IU06, 'rfl'//CDTPRO, 'w', 'u', 0)
 
-        CALL GRDATA (NOBS, NSTART, NEND)
+        CALL GRDATA (NOBS, NSTART, NEND, LAVERAGE)
 
         WRITE(io) CDTPRO, NOBS
 
@@ -309,11 +372,20 @@
 
 
           DO IOBS=1,NOBS
-            IF (IJALT(IOBS,2) .LE. 2) THEN
-!             ** FOR ERS-1/2:
+            DO IES=1, IOBSER
+              IF (IJALT(IOBS,2) .EQ. IOESATID(IES)) EXIT
+            ENDDO
+            IF (IES .LE. IOBSER) THEN
+              ALTDATA(IOBS,2) = OERR(IES)
+              IF (ITEST .GE. 1) THEN
+                WRITE(IU06,*) 'WEIGHT: ',IOBS, IJALT(IOBS,2), 
+     &                                           IES, OERR(IES)
+              ENDIF
+            ELSEIF (IJALT(IOBS,2) .LE. 2) THEN
+!             ** FOR ERS-1/2 (IF NOT PROVIDED ON COMMANDLINE):
               ALTDATA(IOBS,2) = SIGOBS+A*EXP(-B*(ALTDATA(IOBS,1)-HSMIN))
             ELSE
-!             ** FOR OTHER SATELLITES (ENVISAT,...):
+!             ** FOR OTHER SATELLITES (IF NOT PROVIDED ON COMMANDLINE):
               ALTDATA(IOBS,2) = 0.5
             ENDIF
           ENDDO

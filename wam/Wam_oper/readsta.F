@@ -84,7 +84,7 @@
 
       READ (CARD(1), '(15X,A12,4X,A12)') CBDT, CEDT
       READ (CARD(4), '(18X,I7)') ANALPD
-      READ (CARD(5), '(18X,I7)') FOREPD
+      READ (CARD(5), '(18X,I10)') FOREPD
       READ (CARD(6), '(28X,I7)') IS
       READ (CARD(7), '(14X,A12,4X,A12)') CABDT, CAEDT
       IASS=0

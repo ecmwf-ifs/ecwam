@@ -169,6 +169,7 @@
 
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL :: FCRANGE
 
 ! ----------------------------------------------------------------------
 
@@ -505,7 +506,7 @@
       IF (.NOT.LGRIBIN.AND.IOPTI.GT.0) THEN
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD,
-     &                NFIELDS, NGPTOTG, NC, NR,
+     &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                ISEC1, ISEC2, FIELDS)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 

@@ -14,7 +14,6 @@ SOURCE	=\
               ersfile.F        \
               expand_string.F  \
               findb.F          \
-              fld2fdb.F        \
               fldinter.F       \
               getrest.F        \
               grb2wgrd.F       \

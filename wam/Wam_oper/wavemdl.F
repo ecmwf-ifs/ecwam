@@ -1,5 +1,5 @@
       SUBROUTINE WAVEMDL (CBEGDAT, KDELWI, KDURAT,
-     &                    NFIELDS, NGPTOTG, NC, NR,
+     &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                    ISEC1, ISEC2, FIELDS,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
@@ -98,7 +98,6 @@
      &            NSTART ,NEND
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWWIND  , ONLY : CDAWIFL
-      USE YOMGSTATS, ONLY : LSYNCSTATS
       USE FDBSUBS
 
 ! --------------------------------------------------------------------- 
@@ -109,6 +108,7 @@
       REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
+      REAL FCRANGE
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       
@@ -253,7 +253,7 @@
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
-     &              NFIELDS, NGPTOTG, NC, NR, 
+     &              NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &              ISEC1, ISEC2, FIELDS)
 
       IF (ITEST.GE.1) THEN
@@ -406,9 +406,9 @@
 
       ENDIF
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,0)
+        CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDBSUBS (MFDBSF)
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(1787,1)
+        CALL GSTATS(1787,1)
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
           CALL FLUSH(IU06)

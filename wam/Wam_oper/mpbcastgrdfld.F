@@ -39,7 +39,6 @@
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 
@@ -65,10 +64,10 @@
           ENDDO
         ENDIF
 
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,0)
+        CALL GSTATS(620,0)
         CALL MPL_BROADCAST(ZCOMBUF(1:MPLENGTH),KROOT=ISEND,
      &   KTAG=ITAG,CDSTRING='MPBCASTGRDFLD:')
-        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,1)
+        CALL GSTATS(620,1)
 
         IF(IRANK.NE.ISEND) THEN
           KCOUNT=0

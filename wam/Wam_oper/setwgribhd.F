@@ -98,6 +98,8 @@
       KSEK1(13) =     0     ! HOUR OF DATA
       KSEK1(14) =     0     ! MINUTE OF DATA
       KSEK1(15) =     1     ! TIME UNIT (WMO CODE TABLE 4)
+                            ! 1 = HOURS (if the number of hours > 2**16-1
+                            ! MULTIPLE OF HOURS OR DAYS WILL BE USED.
       KSEK1(16) =     0     ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
       KSEK1(17) =     0     ! TIME RANGE TWO
       KSEK1(18) =    10     ! TIME RANGE FLAG (WMO CODE TABLE 5)

@@ -1,5 +1,6 @@
       SUBROUTINE GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
-     &                   NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &                   ISEC1, ISEC2, FIELDS,
      &                   LWNDFILE, LCLOSEWND)
 
 ! ----------------------------------------------------------------------
@@ -17,7 +18,8 @@
 !     ----------
 
 !       *CALL* *GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
-!                       NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+!                       NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+!                       ISEC1, ISEC2, FIELDS,
 !                       LWNDFILE, LCLOSEWND)*
 !         *US*     - MAGNITUDE OF USTAR IN EACH POINT AND BLOCK.
 !         *DS*     - DIRECTION OF USTAR IN EACH POINT AND BLOCK.
@@ -31,6 +33,7 @@
 !         *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !         *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !         *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!         *FCRANGE*- FORECAST RANGE IN SECONDS
 !         *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !         *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !         *FIELDS* - ATMOSPHERIC FIELDS (U10, V10, AIR DENSITY, Zi/L)
@@ -107,7 +110,7 @@
 
  1000 CONTINUE
 
-      CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, 
+      CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &               ISEC1, ISEC2, FIELDS,LWNDFILE, LCLOSEWND,
      &               KINF, KSUP,
      &               IUNIT1, FILNM, FRSTIME )

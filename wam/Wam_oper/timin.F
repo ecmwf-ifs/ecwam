@@ -1,6 +1,7 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                  ROAIRO, ZIDLOLD, 
-     &                  NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
+     &                  NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &                  ISEC1, ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
@@ -22,7 +23,8 @@
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD,
-!    &                 NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)*
+!    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+!    &                 ISEC1, ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -37,6 +39,7 @@
 !          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !          *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
+!          *FCRANGE*- FORECAST RANGE IN SECONDS
 !          *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !          *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !          *FIELDS* - ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
@@ -122,7 +125,8 @@
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
         CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDT1,
-     &               NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &               ISEC1, ISEC2, FIELDS,
      &               LWNDFILE, LCLOSEWND)
         DO IG=1,IGL
           DO IJ=IJS(IG),IJL(IG)
@@ -198,7 +202,8 @@
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
       CALL GETWND (US2, DS2, ADS2, ZIDL2, NINF, NSUP, NSUP, CDT2,
-     &             NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS,
+     &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &             ISEC1, ISEC2, FIELDS,
      &             LWNDFILE, LCLOSEWND)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.

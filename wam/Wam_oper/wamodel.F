@@ -342,7 +342,6 @@
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
       USE MPL_MODULE
-      USE YOMGSTATS, ONLY : LSYNCSTATS
       USE FDBSUBS
 
 ! ----------------------------------------------------------------------
@@ -475,14 +474,14 @@
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
 
           IF (MFDBSF.NE.-5.AND.LFDB) THEN
-             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+             CALL GSTATS(1976,0)
              ISTAT = IFLUSHFDBSUBS (MFDBSF)
              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+             CALL GSTATS(1976,1)
           ELSE
-             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+             CALL GSTATS(1976,0)
              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+             CALL GSTATS(1976,1)
           ENDIF
 
           IF(LFRSTFLD) THEN
@@ -1048,9 +1047,9 @@
 
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
           IF(LMESSPASS) THEN
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(753,0)
+            CALL GSTATS(753,0)
             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-            IF (.NOT.LSYNCSTATS) CALL GSTATS(753,1)
+            CALL GSTATS(753,1)
           ENDIF
 
         ENDIF
@@ -1234,14 +1233,14 @@
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                       LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
               IF (LFDB) THEN
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+                CALL GSTATS(1976,0)
                 ISTAT = IFLUSHFDBSUBS (MFDBSF)
                 CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+                CALL GSTATS(1976,1)
               ELSE
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+                CALL GSTATS(1976,0)
                 CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+                CALL GSTATS(1976,1)
               ENDIF
               LLFLUSH = .FALSE.
             ENDIF  
@@ -1309,18 +1308,18 @@
         IF( LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. 
      &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+          CALL GSTATS(1976,0)
           ISTAT = IFLUSHFDBSUBS (MFDBSF)
           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+          CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '  DB ', MFDBSF , ' FLUSHED AT ',
      &    CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
         ELSE
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+          CALL GSTATS(1976,0)
           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+          CALL GSTATS(1976,1)
         ENDIF
 
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.

@@ -83,7 +83,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : DEG 
-      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 #include <outctrl.h>
       DATA csubna /"GRIBPAC"/

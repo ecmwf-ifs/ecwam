@@ -1,6 +1,6 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO, ZIDLOLD,
-     &                    NFIELDS, NGPTOTG, NC, NR, 
+     &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                    ISEC1, ISEC2, FIELDS)
 
 ! ----------------------------------------------------------------------
@@ -34,7 +34,7 @@
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD,
-!    &                 NFIELDS, NGPTOTG, NC, NR,
+!    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
 !    &                 ISEC1, ISEC2, FIELDS)*
 
 !      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
@@ -54,6 +54,7 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
+!      *FCRANGE*   REAL      FORECAST RANGE IN SECONDS
 !      *ISEC1*     INTEGER   GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L)
@@ -122,6 +123,7 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
+      REAL FCRANGE
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
 
@@ -186,7 +188,8 @@
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
-     &              NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
+     &              NFIELDS,NGPTOTG, NC,NR, FCRANGE,
+     &              ISEC1,ISEC2, FIELDS)
       ELSE
 
 !*    2.2 TIME INTERPOLATION.
@@ -203,7 +206,8 @@
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
-     &              NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
+     &              NFIELDS,NGPTOTG, NC,NR, FCRANGE, 
+     &              ISEC1,ISEC2, FIELDS)
       ENDIF
       CALL GSTATS(1968,1)
 

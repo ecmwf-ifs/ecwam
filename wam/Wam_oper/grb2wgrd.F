@@ -265,6 +265,12 @@
         JCONS = 3600                                                   
       ELSEIF (KSEC1(15).EQ.2) THEN                                     
         JCONS = 86400                                                  
+      ELSEIF (KSEC1(15).EQ.10) THEN                                     
+        JCONS = 10800 
+      ELSEIF (KSEC1(15).EQ.11) THEN                                     
+        JCONS = 21600 
+      ELSEIF (KSEC1(15).EQ.12) THEN                                     
+        JCONS = 43200 
       ELSE                                                              
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
