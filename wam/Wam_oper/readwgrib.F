@@ -95,7 +95,7 @@
      &               NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &               CCDDATE, IFORP, KPARAM, NGXCD, NGYCD,
      &               CDMOWEP, CDMOSOP, CDMOEAP, CDMONOP, KRGG, KLONRGG,
-     &               KZLEV,WORK, IERR, MSG)
+     &               KZLEV,WORK, IERR, MSG, IU06)
       IF ( IERR .EQ. 0 ) THEN
         WRITE(IU06,*)'            '
         WRITE(IU06,*)'SUB. READWGRIB: DATE=',CCDDATE,' IPARAM= ',IPARAM

@@ -85,8 +85,7 @@
 !*    1.1 TRANSFORM WAM COORDINATE TO INPUT GRID.
 !         ---------------------------------------
 
-        KX = KXLT(IJ,IG)
-        XI = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KX)-RLONL
+        XI = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))-RLONL
         XI = MOD(XI+720.,360.)
         XI = XI*DLAMM1+1.00001
         XJ = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA-RLATS
@@ -95,17 +94,17 @@
 !*    1.2 COMPUTE CORNER POINT INDICES OF INPUT GRID.
 !         -------------------------------------------
 
-        I1  = XI
-        J1  = XJ
+        I1  = INT(XI)
+        J1  = INT(XJ)
         J2  = MIN(KROW,J1+1)
         I2  = I1+1
 
 !*    1.3 DISTANCES OF INTERPOLATION POINT FROM CORNER POINTS.
 !         ----------------------------------------------------
 
-        DI1 = XI-I1
+        DI1 = XI-REAL(I1)
         DI2 = 1.-DI1
-        DJ1 = XJ-J1
+        DJ1 = XJ-REAL(J1)
         DJ2 = 1.-DJ1
 
 !*    1.4. CORRECTIONS FOR FIRST AND LAST GRID LINES
@@ -137,17 +136,18 @@
           WRITE(IU06,*) ' *                                         *'
           WRITE(IU06,*) ' *******************************************'
           CALL ABORT1
-        ENDIF
+        ELSE
 
 !*    1.6 LINEAR INTERPOLATION.
 !         ---------------------
 
-        U1 = U(I1,J1)*DI2 + U(I2,J1)*DI1
-        U2 = U(I1,J2)*DI2 + U(I2,J2)*DI1
-        US(IJ) = U1*DJ2 + U2*DJ1
-        V1 = V(I1,J1)*DI2 + V(I2,J1)*DI1
-        V2 = V(I1,J2)*DI2 + V(I2,J2)*DI1
-        DS(IJ) = V1*DJ2 + V2*DJ1
+          U1 = U(I1,J1)*DI2 + U(I2,J1)*DI1
+          U2 = U(I1,J2)*DI2 + U(I2,J2)*DI1
+          US(IJ) = U1*DJ2 + U2*DJ1
+          V1 = V(I1,J1)*DI2 + V(I2,J1)*DI1
+          V2 = V(I1,J2)*DI2 + V(I2,J2)*DI1
+          DS(IJ) = V1*DJ2 + V2*DJ1
+        ENDIF
       ENDDO
 
       RETURN

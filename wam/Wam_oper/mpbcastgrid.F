@@ -66,7 +66,8 @@
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
-     &            DELUST   ,DELALP
+     &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
+     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -83,7 +84,8 @@
         MIC=20+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
 
         MZC=25+(4+3*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
-     &    JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+NBLO*NIBLO
+     &    JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+NBLO*NIBLO+
+     &    4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
         IF(IREFRA.EQ.2) MZC=MZC+2*NBLC*(1+NIBLC)
 
 !  ENCODE BUFFER SIZE MESSAGE
@@ -391,6 +393,65 @@
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=TSIHKD(KDEPTH,M)
           ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=FAC0(K1,K2,M1,M2)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=FAC1(K1,K2,M1,M2)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=FAC2(K1,K2,M1,M2)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                ZCOMBUF(KCOUNT)=FAC3(K1,K2,M1,M2)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=FAK(M)
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=FRHF(M)
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DFIMHF(M)
         ENDDO
 
         IF (IREFRA.EQ.2) THEN
@@ -824,6 +885,73 @@
             KCOUNT=KCOUNT+1
             TSIHKD(KDEPTH,M)=ZCOMBUF(KCOUNT)
           ENDDO
+        ENDDO
+
+        IF(.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
+        IF(.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
+        IF(.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
+        IF(.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
+        IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
+        IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
+        IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                FAC0(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                FAC1(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                FAC2(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M2=1,NFREHF
+          DO M1=1,NFREHF
+            DO K2=1,NANG
+              DO K1=1,NANG
+                KCOUNT=KCOUNT+1
+                FAC3(K1,K2,M1,M2)=ZCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          FAK(M)=ZCOMBUF(KCOUNT)
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          FRHF(M)=ZCOMBUF(KCOUNT)
+        ENDDO
+
+        DO M=1,NFREHF
+          KCOUNT=KCOUNT+1
+          DFIMHF(M)=ZCOMBUF(KCOUNT)
         ENDDO
 
         IF (IREFRA.EQ.2) THEN

@@ -32,7 +32,7 @@
 
 !       TO ARRANGE A GRID FOR THE WAM WAVE MODEL AND COMPUTE
 !       ALL FIXED MODEL PARAMETERS WHICH ARE STORED IN DIFFERENT
-!       COMMON BLOCKS.
+!       MODULE.
 
 !     METHOD.
 !     -------
@@ -83,7 +83,7 @@
 !       *IU02*   - LOGICAL UNIT FOR INPUT OF CURRENTS.
 !                  (SEE SUB READCUR).
 !       *IU03*   - LOGICAL UNIT FOR INPUT OF COARSE GRID
-!                  BOUNDARY ORGANISATION (COMMON CBOUND).
+!                  BOUNDARY ORGANISATION (MODULE CBOUND).
 !                  IF THIS IS A FINE GRID PREPROC.
 !                  FORMATED IF IFORM = 2 OTHERWISE UNFORMATED.
 !                  (SEE SUB MBOUNF).
@@ -92,14 +92,14 @@
 !       *IU07*   - LOGICAL UNIT FOR OUTPUT OF GRID ORGANISATION
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
 !                  (SEE SUB OUTCOM).
-!       *IU08*   - LOGICAL UNIT FOR OUTPUT OF COMMON UBUF.
+!       *IU08*   - LOGICAL UNIT FOR OUTPUT OF MODULE UBUF.
 !                  (UNFORMATED) (SEE SUB OUTUBUF).
 !       *IU09*   - LOGICAL UNIT FOR UNFORMATED OUTPUT OF COARSE
-!                  GRID BOUNDARY ORGANISATION (COMMON CBOUND),
+!                  GRID BOUNDARY ORGANISATION (MODULE CBOUND),
 !                  IF THIS IS A COARSE GRID PREPROC.
 !                  (SEE SUB MBOUNC).
 !       *IU10*   - LOGICAl UNIT FOR UNFORMATED OUTPUT OF FINE
-!                  GRID BOUNDARY ORGANISATION (COMMON CBOUND).
+!                  GRID BOUNDARY ORGANISATION (MODULE CBOUND).
 !                  IF THIS IS A FINE GRID PREPROC.
 !                  (SEE SUB MBOUNF).
 !       *IU17*   - SAME AS IU07 BUT FORMATED.
@@ -120,30 +120,32 @@
 !     EXTERNALS.
 !     ----------
 
-!       *ABORT*     - TERMINATES PROCESSING.
+!       *ABORT1*    - TERMINATES PROCESSING.
 !       *ADJUST*    - CORRECTS LONGITUDE INPUT.
 !       *AKI*       - COMPUTES WAVE NUMBER.
 !       *CHECK*     - CHECKS CONSISTENCY OF BLOCK OVERLAPS.
 !       *FINDB*     - FIND BLOCK AND GRID POINT NUMBERS.
 !       *JAFU*      - ANGULAR INDEX OF NON LINEAR INTERACTION
+!       *INIWCST*   - SETS GLOBAL CONSTANTS.
 !       *LOCINT*    - INTERPOLATE TO BLOCKS.
 !       *MBLOCK*    - PREPARES ONE BLOCK
 !       *MBOUNC*    - MAKE COARSE GRID BOUNDARY.
 !       *MBOUNF*    - MAKE FINE   GRID BOUNDARY.
 !       *MBOXB*     - MAKE BOX FOR FINE GRID IN COARSE GRID.
-!       *MCOUT*     - PREPARES OUTPUT COMMON COUT
-!       *MFREDIR*   - COMPUTES FREQUENCY/DIRECTION COMMON FREDIR
+!       *MCOUT*     - PREPARES OUTPUT MODULE COUT
+!       *MFREDIR*   - COMPUTES FREQUENCY/DIRECTION MODULE FREDIR
 !       *MGRID*     - ARRANGES GRID FOR MODEL.
 !       *MINTF*     - MAKE INTERPOLATION TABLES FOR BOUNDARY INPUT.
 !       *MTABS*     - COMPUTES TABLES USED FOR SHALLOW WATER
-!       *MUBUF*     - COMPUTES COMMON UBUF.
-!       *NLWEIGT*   - COMPUTES NON LINEAR WEIGHTS IN COMMON INDNL
-!       *OUTCOM*    - OUTPUT OF COMPUTED COMMONS
+!       *MUBUF*     - COMPUTES MODULE UBUF.
+!       *NLWEIGT*   - COMPUTES NON LINEAR WEIGHTS IN MODULE INDNL
+!       *OUTCOM*    - OUTPUT OF COMPUTED MODULES
 !       *OUTPP*     - OUTPUT OF GRID.
-!       *OUTUBUF*   - OUTPUT OF BLOCK COMMON UBUF
+!       *OUTUBUF*   - OUTPUT OF BLOCK MODULE UBUF
 !       *PACKI*     - PACKS AN INTEGER ARRAY.
 !       *PACKR*     - PACKS A REAL ARRAY.
 !       *READCUR*   - READ A CURRENT FIELD.
+!       *SECONDHH*  - COMPUTES TABLES FOR SECOND HARMONICS EVALUATION
 !       *STRESS*    - STRESS TABLE.
 !       *TAUHF*     - HIGH FREQUENCY STRESS TABLE.
 !       *TOPOAR*    - PREPARE TOPOGRAPHY FOR GRID.
@@ -169,10 +171,10 @@
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
      &            NLONRGG  ,IGL
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,XDELLA   ,XDELLO   ,
-     &            ZDELLO
+     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
+     &            XDELLO   ,ZDELLO
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWPCONS , ONLY : CIRC     ,RAD
+      USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
 
 ! ----------------------------------------------------------------------
 
@@ -183,6 +185,8 @@
 ! ----------------------------------------------------------------------
 
       LMESSPASS=.FALSE.
+
+      CALL INIWCST
 
 !*    1. INITIALISATION OF INPUT/OUTPUT UNITS.
 !        -------------------------------------
@@ -237,13 +241,21 @@
 
       IGL=0
       DELPHI = XDELLA*CIRC/360.
+      OLDRAD=OLDPI/180.
       DO K=1,NY
         XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         SINPH(K)   = SIN(XLAT)
         COSPH(K)   = COS(XLAT)
         IF (IRGG.EQ.1) THEN
-          NLONRGG(K) = NINT(NX*COSPH(K))
-          IF(MOD(NLONRGG(K),2).eq.1) NLONRGG(K) = NLONRGG(K)+1
+          IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
+     &       AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
+!         the old value for pi has to be taken in order to reproduce
+!         exactly the irregular grid of the operational LAW model 0.25
+            NLONRGG(K) = NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
+          ELSE
+            NLONRGG(K) = NINT(NX*COSPH(K))
+          ENDIF
+          IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
         ELSE
           NLONRGG(K) = NX
         ENDIF      
@@ -265,26 +277,26 @@
 
 ! ----------------------------------------------------------------------
 
-!*    4. COMPUTE GRID INDEPENDENT COMMON BLOCKS.
-!        ---------------------------------------
+!*    4. COMPUTE GRID INDEPENDENT MODULE.
+!        -------------------------------
 
 
-!*    4.1 COMMON FREDIR (FREQUENCY/DIRECTION CONST).
+!*    4.1 MODULE FREDIR (FREQUENCY/DIRECTION CONST).
 !         ------------------------------------------
 
       CALL MFREDIR (ML, KL)
 
-!*    4.2 COMMON INDNL (WEIGHT OF NON-LINEAR INTERACTION).
+!*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
 !         ------------------------------------------------
 
       CALL NLWEIGT (ML, KL)
 
-!*    4.3 COMMON SHALLOW (SHALLOW WATER TABLES).
+!*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
 !         --------------------------------------
 
       CALL MTABS (ML, KL)
 
-!*    4.4 COMMON COUPLE.
+!*    4.4 MODULE COUPLE.
 !         --------------
 
       BETAMAX = 1.20
@@ -296,11 +308,16 @@
 
       XNLEV(1)= 10.0
 
-!*    4.4 COMMON TABLE (STRESS TABLES).
+!*    4.4 MODULE TABLE (STRESS TABLES).
 !         -----------------------------
 
       CALL STRESS(IU06,ITEST)
       CALL TAUHF (FR(ML))
+
+!*    4.5 HIGHER HARMONICS TABLES
+!         -----------------------
+
+      CALL SECONDHH
 
 ! ----------------------------------------------------------------------
 
@@ -338,7 +355,7 @@
       ENDIF
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
-!         -------------------------------------------
+!         ----------------------------------------------
 
       CALL MCOUT
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MCOUT DONE'
@@ -382,7 +399,7 @@
 
 ! ----------------------------------------------------------------------
 
-!*    8. GENERATE AND WRITE COMMON UBUF.
+!*    8. GENERATE AND WRITE MODULE UBUF.
 !        -------------------------------
 
       DO IG=1,IGL
@@ -395,8 +412,8 @@
 
 ! ----------------------------------------------------------------------
 
-!*    9. OUTPUT OF COMMON BLOCKS.
-!        ------------------------
+!*    9. OUTPUT OF MODULES.
+!        ------------------
 
       CALL OUTCOM (IU07, IU17, IFORM, IREFRA, ML, KL)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB OUTCOM DONE'

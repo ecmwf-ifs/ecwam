@@ -69,9 +69,9 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,ZMISS
-      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,CDTINTS  ,
-     &            CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,MARSTYPE ,
-     &            YCLASS   ,YEXPVER
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
+     &            CDTINTS  ,CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,
+     &            MARSTYPE ,YCLASS   ,YEXPVER
 
 ! ----------------------------------------------------------------------
 
@@ -467,22 +467,23 @@
 !*    4.  PACK INTEGRATED PARAMETERS INTO GRIB FM94.
 !         ------------------------------------------
 
+      IF(MARSTYPE.EQ.'4v') THEN
+!*      THIS IS A 4V CASE
+        READ(CDATEA,'(I4,4I2)')IY,IM,ID,IH,IMN
+        CALL DIFDATE(CDATEA,CDTPRO,IFCST)
+        IFCST=IFCST/3600
+      ELSEIF(CDTPRO.LE.CDATEF) THEN
+!*      THIS IS AN ANALYSIS DATE
+        READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
+        IFCST = 0
+      ELSE
+!*      THIS IS A  FORECAST DATE
+        READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
+        CALL DIFDATE(CDATEF,CDTPRO,IFCST)
+        IFCST=IFCST/3600
+      ENDIF
+
       IF (GFLAG20.AND.CDTINTT.EQ.CDTPRO) THEN
-
-        IF(CDTPRO.LE.CDATEF) THEN
-
-!*        THIS IS AN ANALYSIS DATE
-
-          READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
-          IFCST = 0
-        ELSE
-
-!*        THIS IS A  FORECAST DATE
-
-          READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
-          CALL DIFDATE(CDATEF,CDTPRO,IFCST)
-          IFCST=IFCST/3600
-        ENDIF
 
 !*      WAVE HEIGHTS.
 !       -------------
@@ -670,22 +671,6 @@
 !         -------------------------------------------------
 
       IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
-
-        IF(CDTPRO.LE.CDATEF) THEN
-
-!*        THIS IS AN ANALYSIS DATE
-
-          READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
-          IFCST = 0
-
-        ELSE
-
-!*        THIS IS A  FORECAST DATE
-
-          READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
-          CALL DIFDATE(CDATEF,CDTPRO,IFCST)
-          IFCST=IFCST/3600.
-        ENDIF
 
 !*      WIND SEA WAVE HEIGHTS.
 !       ---------------------

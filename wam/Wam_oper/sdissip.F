@@ -43,16 +43,13 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
-
-
 
 ! ----------------------------------------------------------------------
 
@@ -60,17 +57,17 @@
 
 ! ----------------------------------------------------------------------
 
-
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
       PARAMETER (CDIS = 4.5)
-      PARAMETER (CONSD = -0.5*CDIS*ZPI**9/G**4)
-      PARAMETER (CONSS = -0.5*CDIS*ZPI)
 
 ! ----------------------------------------------------------------------
 
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
+
+      CONSD = -0.5*CDIS*ZPI**9/G**4
+      CONSS = -0.5*CDIS*ZPI
 
       IF (ISHALLO.EQ.1) THEN
         DO IJ=IJS,IJL

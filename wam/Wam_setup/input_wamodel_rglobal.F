@@ -28,4 +28,5 @@
  CFDBSF   = "$cfdbsf",
  CFDB2DSP = "$cfdb2dsp"
  LNOCDIN=${lnocdin}
+ LALTCOR=${laltcor}
  /

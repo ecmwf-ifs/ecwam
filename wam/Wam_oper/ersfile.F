@@ -129,7 +129,8 @@
       IF(LMESSPASS.AND.(IRANK.NE.1)) RETURN
 
       IERS = 0                                                          
-      IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg') THEN
+      IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'
+     &    .OR.MARSTYPE.EQ.'4v') THEN
         WRITE(FNAME,'(''COL'',A12)') CDTERS                            
         OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD', 
      &   IOSTAT=IERR)                                             

@@ -76,7 +76,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTT  ,CDTINTS
+      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA
 
@@ -97,8 +97,6 @@
 
 !*    1. INTEGRATED PARAMETERS OF TOTAL SEA.
 !        -----------------------------------
-
-      IF (CDTINTT.EQ.CDTPRO) THEN
 
 !*    1.1 COMPUTE PEAK FREQUENCY.
 !         -----------------------
@@ -218,7 +216,6 @@
           CALL MAKEGRID (WVSTR,  TAUWG , IJS, IJL, IG)
           CALL MAKEGRID (U10NEW, U10G  , IJS, IJL, IG)
         ENDIF
-      ENDIF
 
 ! ----------------------------------------------------------------------
 

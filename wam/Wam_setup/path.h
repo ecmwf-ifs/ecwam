@@ -6,7 +6,7 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY21R2_bug_fix
+VERSION=CY21R2_to_CY21R3
 #.
 DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
@@ -98,12 +98,12 @@ WDIR=${ROOTWDIR}/${grid}
 #.
 ASSIMILATION=NO                        # altimeter data assimilation 
 #
-typeset -Z12 begofrn=199906151200      # BEGin date OF RUn
-typeset -Z12 endofrn=199906151800      # END   date OF RUn
-typeset -Z12 begoffo=199906151800      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=199907051200      # BEGin date OF RUn
+typeset -Z12 endofrn=199907051800      # END   date OF RUn
+typeset -Z12 begoffo=199907051800      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=199906151800      # Date to output restart file(s).
+typeset -Z12 outofrf=199907051800      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
 typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are

@@ -66,14 +66,14 @@
 !*    2. COMPUTE TOBA SPECTRUM.                                         
 !        ----------------------                                         
 
-      FAK = ALFA*G*USTAR/(ZPI**3)                                       
+      FAKAL = ALFA*G*USTAR/(ZPI**3)                                       
       DO M=1,ML                                                    
         FRH = FR(M)                                                    
         EARG = (.5*((FRH-FM)/(SA*FM))**2)                              
         FJON = GAMMA**EXP(-EARG)                                       
         FMPF = 4./6.*(FM/FRH)**6                                       
         FJONH = EXP(-FMPF)                                             
-        ET(M) = FAK*FJONH*FJON/FRH**4                                  
+        ET(M) = FAKAL*FJONH*FJON/FRH**4                                  
       ENDDO
 
 !---------------------------------------------------------------------- 

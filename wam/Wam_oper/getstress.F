@@ -214,9 +214,9 @@
       ENDIF
 
       WRITE(IU06,*) ''
-      WRITE(IU06,*) ' WIND AND STRESS FILE READ IN........',
+      WRITE(IU06,*) ' WIND AND STRESS FILES READ IN.......',
      &              ' CDTPRO  = ', CDTPRO
 
-      CALL FLUSH (IU06)
+      IF (ITEST > 0) CALL FLUSH (IU06)
       RETURN
       END SUBROUTINE GETSTRESS

@@ -29,6 +29,7 @@
  LGRIBOUT= ${lgribout},
  LFDBIOOUT=T,
  LNOCDIN=${lnocdin},
+ LALTCOR=${laltcor},
  ICASE= 1,
  ISHALLO= 1,
  ITEST= 0,

@@ -52,7 +52,6 @@
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3,F1
-      REAL, PARAMETER :: PI2G = ZPI/G 
 
       DIMENSION FNEF(NIBLC), NEWF(NIBLC), NEWF1(NIBLC), KNEW(NIBLC),
      &          GWP(NIBLC), GWM(NIBLC), WAVN(NIBLC)
@@ -62,6 +61,7 @@
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
 !        -------------------------------
 
+      PI2G = ZPI/G 
       FRE0 = FRATIO-1.
       ALN00 = 1. / LOG10(FRATIO)
       F1 = 0.0

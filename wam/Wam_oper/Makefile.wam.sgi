@@ -19,6 +19,7 @@ SOURCE	=\
               gsfile_new.F     \
               incdate.F        \
               inmars.F         \
+              iniwcst.F        \
               intspec.F        \
               jafu.F           \
               locint.F         \

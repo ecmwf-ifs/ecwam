@@ -74,7 +74,7 @@
      &               NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &               CTDATE, IFORP, IPARAM, NGXT, NGYT,
      &               TMOWEP, TMOSOP, TMOEAP, TMONOP, KRGG, KLONRGG,
-     &               KZLEV,TEMPG, IERR, MSG)
+     &               KZLEV,TEMPG, IERR, MSG, IU06)
       IF ( IERR .EQ. 0 ) THEN
         WRITE(IU06,*)' SUB. READT: ICE BOUNDARY DATE=',CTDATE
         CALL FLUSH(IU06)

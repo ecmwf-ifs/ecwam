@@ -47,9 +47,10 @@
 
       IF(NFLAGALL) THEN
 
+        WRITE(IU06,*) '' 
         WRITE(IU06,*) '   WAMNORM ON ',CDTPRO
         WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
-     &   '           MAXIMUM,   NUMBER OF SEA POINTS' 
+     &   '           MAXIMUM      NUMBER OF SEA POINTS' 
         WRITE(IU06,*) ' '
 
         IF(NFLAG(1).AND.(GFLAG(1).OR.FFLAG(1).OR.PFLAG(1))) THEN

@@ -18,11 +18,13 @@
       REAL, ALLOCATABLE :: TAUHFT(:,:) 
       REAL DELUST 
       REAL DELALP 
-      REAL, ALLOCATABLE :: A(:,:,:,:) 
-      REAL, ALLOCATABLE :: B(:,:,:,:) 
+      REAL, ALLOCATABLE :: FAC0(:,:,:,:) 
       REAL, ALLOCATABLE :: FAC1(:,:,:,:) 
       REAL, ALLOCATABLE :: FAC2(:,:,:,:) 
       REAL, ALLOCATABLE :: FAC3(:,:,:,:) 
+      REAL, ALLOCATABLE :: FAK(:) 
+      REAL, ALLOCATABLE :: FRHF(:) 
+      REAL, ALLOCATABLE :: DFIMHF(:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -37,10 +39,13 @@
 !      *TAUHFT*    REAL      HIGH FREQUENCY STRESS TABLE.
 !      *DELUST*    REAL      USTAR INCREMENT.
 !      *DELALP*    REAL      ALPHA INCREMENT.
-!      *A*         REAL      TABLE FOR HIGHER MOMENT CALCULATION 
-!      *B*         REAL      TABLE FOR HIGHER MOMENT CALCULATION 
-!      *FAC1*      REAL      TABLE FOR HIGHER MOMENT CALCULATION 
-!      *FAC2*      REAL      TABLE FOR HIGHER MOMENT CALCULATION 
-!      *FAC3*      REAL      TABLE FOR HIGHER MOMENT CALCULATION 
+!      *FAC0*      REAL      TABLE FOR HIGHER MOMENT CALCULATION. 
+!      *FAC1*      REAL      TABLE FOR HIGHER MOMENT CALCULATION. 
+!      *FAC2*      REAL      TABLE FOR HIGHER MOMENT CALCULATION. 
+!      *FAC3*      REAL      TABLE FOR HIGHER MOMENT CALCULATION. 
+!      *FAK*       REAL      WAVE NUMBERS FOR HIGHER MOMENT CALCULATION.
+!      *FRHF*      REAL      FREQUENCIES FOR HIGHER MOMENT CALCULATION.
+!      *DFIMHF*    REAL      FREQUENCY DIRECTION AREA FOR HIGHER
+!                            MOMENT CALCULATION.
 ! ----------------------------------------------------------------------
       END MODULE YOWTABL

@@ -80,6 +80,7 @@
 !       *GRSTNAME*  - BUILD NAME FOR INPUT/OUTPUT FILES 
 !       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
 !       *INCDATE*   - UPDATES A DATE TINE GROUP.
+!       *INIWCST*   - SETS GLOBAL CONSTANTS.
 !       *INTGRS*    - PERFORMS INTERPOLATIONS OF INPUT SPECTRA 
 !       *LOCINT*    - INTERPOLATES TO MODEL GRID.
 !       *MSTART*    - GENERATES THE RESTART FILES.
@@ -197,6 +198,7 @@
 
 ! ----------------------------------------------------------------------
 
+      CALL INIWCST
 
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
@@ -223,19 +225,19 @@
       PATH   = ZERO
       CPATH  = ZERO
       CDATEA = ZERO
-      CLTUNIT= ZERO
+      CLTUNIT= 'H' 
       IDELWI =    0
 
       LMESSPASS = .FALSE.
 
       LPBIOIN   = .FALSE.
-      LPBIOOUT  = .FALSE.
+      LPBIOOUT  = .TRUE.
 !     LFDBIOIN : obsolete, was used to read directly from fdb
 !                it should not be used
       LFDBIOIN  = .FALSE. 
       LFDBIOOUT = .FALSE. 
       LGRIBIN  = .FALSE.
-      LGRIBOUT = .FALSE.
+      LGRIBOUT = .TRUE.
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
@@ -513,7 +515,7 @@
 !         SPECTRA WILL BE SAVED AS A GRIB DATA (parameter 251) 
           CALL SPLITGRS (IU06,SFILENAME,ISPLIT,CDTPRO,ITEST,LFDBIOOUT,
      &                   MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,CLDOMAIN)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPLITGRS DONE'
+          IF (ITEST.GT.0.OR.LINTGRS) WRITE (IU06,*)' SUB. SPLITGRS DONE'
         ENDIF
       ELSE
         IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'

@@ -1,4 +1,3 @@
-
 !----------------------------------------------------------------
 
 !***  *REAL FUNCTION* *VPLUS(XI,XJ,XK,THI,THJ,THK,OI,OJ,OK)
@@ -35,13 +34,12 @@
 
 !-----------------------------------------------------------------------
 
+      USE YOWPCONS , ONLY : ZCONST
+
+      REAL, PARAMETER :: DEL1=1.0E-10
 
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
-
-      DEL1=10.**(-12)
-      PI=4.*ATAN(1.)
-      ZCONST=1./(8.*PI*SQRT(2.))
 
       RI=ABS(XI)+DEL1
       RJ=ABS(XJ)+DEL1
@@ -54,5 +52,6 @@
       SQJKI=SQRT(OJ*OK*RI/(OI*RJ*RK))
       VPLUS=ZCONST*( (XIJ+RI*RJ)*SQIJK + (XIK+RI*RK)*SQIKJ
      &               + (XJK+RJ*RK)*SQJKI )
+
       RETURN
       END FUNCTION VPLUS

@@ -34,6 +34,9 @@ lgribout=T
 #.
 lnocdin=T
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#.   specify whether the altimeter data will be corrected
+#.
+laltcor=T
 #.
 #.=====================================================================
 #.  ALL PATHES, TIMES AND THE PRECISION CAN BE DEFINED IN path.h
@@ -83,8 +86,13 @@ fi
 if [[ $ASSIMILATION = "YES" ]] ; then
   AS=1
   #
-  ANALYSIS_DATE=$(substring $begofrn 1 10)
-  ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  if [[ $begofrn = $endofrn && $begofrn = $begoffo ]] ; then
+    ANALYSIS_DATE=$(substring $begofrn 1 10)
+  else
+    ANALYSIS_DATE=$(substring $begofrn 1 10)
+    ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  fi
+
   LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
   #
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do

@@ -8,8 +8,8 @@
 #QSUB -r preproc 
 #QSUB -lP 0
 #QSUB -lT 300
-#QSUB -lV 10mb
-#QSUB -lM 60mb
+#QSUB -lV 60mb
+#QSUB -lM 190mb
 #QSUB -mb -mi
 #QSUB
 #.

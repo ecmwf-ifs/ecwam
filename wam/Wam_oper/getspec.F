@@ -356,7 +356,7 @@ C
                 CALL ABORT1
               ELSEIF (KRET .EQ. -3) THEN
                 WRITE (IU06,*) ' '
-                WRITE (IU06,*) ' ***** WARNING ****** WARNING *****'
+                WRITE (IU06,*) ' ***** WARNING IN MODEL FOR WAVES *****'
                 WRITE (IU06,*) ' SUB. GETSPEC : '
                 WRITE (IU06,*) ' SIZE  OF INGRIB IS NOT BIG ENOUGH.'
                 WRITE (IU06,*) ' IT WAS ', ISIZE
@@ -813,8 +813,9 @@ C
 
       ENDIF
 
-      WRITE(IU06,*) ' SPECTRUM FILE READ IN........',
+      WRITE(IU06,*) ' SPECTRUM FILE READ IN...............',
      & ' CDTPRO  = ', CDTPRO
+      WRITE(IU06,*) ' '
       CALL FLUSH (IU06)
 
       RETURN

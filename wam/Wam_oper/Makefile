@@ -52,6 +52,7 @@ SOURCE	=\
               incdate.F     \
               incint.F     \
               initmdl.F     \
+              iniwcst.F     \
               inmars.F     \
               inmarss.F     \
               inmarssi.F     \

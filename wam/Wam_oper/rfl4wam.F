@@ -72,6 +72,7 @@
 !          "i_get_unit.F"
 !          "incdate.F"
 !          "inmars.F"
+!          "iniwcst.F"
 !          "makegrid.F"
 !          "micep.F"
 !          "mpbcastgrdfld.F"
@@ -132,6 +133,9 @@
 
 !*    1. INITIAL VALUES SET AND CRACK COMMAND LINE.
 !        -----------------------------------------
+
+      CALL INIWCST
+
       ITEST   =     0
       IDATES  =     0
       IMO     =    10
@@ -360,6 +364,7 @@
 ! #include "i_get_unit.F"
 ! #include "incdate.F"
 ! #include "inmars.F"
+! #include "iniwcst.F"
 ! #include "makegrid.F"
 ! #include "micep.F"
 ! #include "mpbcastgrdfld.F"

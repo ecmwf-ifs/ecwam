@@ -169,7 +169,7 @@
       CALL u2l1cr( cdfun )
 
       IF ( cdfun .NE. 'close' ) THEN
-        IF ( ksec1(16) .NE. 0 )  THEN
+        IF ( ksec1(16) .NE. 0 .and. cdtype.ne.'4v' )  THEN
           if(ksec1(43).ne.0) then
             if(ksec1(42).ne.0) then
               cltype   = 'pf'

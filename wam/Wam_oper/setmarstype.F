@@ -26,14 +26,18 @@
 
 ! ----------------------------------------------------------------------
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,
-     &            IASSI    ,NENSFNB  ,NTOTENS  ,LANAONLY
+     &            IASSI    ,NENSFNB  ,NTOTENS  ,LANAONLY ,L4VTYPE
 
 ! ----------------------------------------------------------------------
 
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
       ELSE
-        MARSTYPE = 'fg'
+        IF(L4VTYPE) THEN
+          MARSTYPE = '4v'
+        ELSE
+          MARSTYPE = 'fg'
+        ENDIF
       ENDIF
 
       IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN

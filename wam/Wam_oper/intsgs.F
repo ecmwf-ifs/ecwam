@@ -503,8 +503,6 @@
             WRITE(IU06,*)'**********************************'
             WRITE(IU06,*)'*                                *'
             WRITE(IU06,*)'* INTERPOLATION WAS CARRIED OUT  *'
-            WRITE(IU06,*)'* GRIB DATA CAN BE FOUND IN FILE *'
-            WRITE(IU06,*)'* ', OUTFILEN
             WRITE(IU06,*)'*                                *'
             WRITE(IU06,*)'**********************************'
 

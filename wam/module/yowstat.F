@@ -49,6 +49,7 @@
 
       LOGICAL LANAONLY
       LOGICAL LALTCOR
+      LOGICAL L4VTYPE
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -140,5 +141,7 @@
 !      *LALTCOR*   LOGICAL   CONTROLS WHETHER THE ALTIMETER WAVE HEIGHT
 !                            OBSERVATION IS CORRECTED PRIOR TO ITS
 !                            ASSIMILATION. 
+!      *L4VTYPE*   LOGICAL   CONTROLS WHETHER MARS TYPE 4V IS USED
+!                            INSTEAD OF TYPE FG.
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

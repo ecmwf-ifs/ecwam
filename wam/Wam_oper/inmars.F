@@ -2,7 +2,7 @@
      &                   NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &                   CDATE, IFORP, IPARAM, NGX, NGY,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, KRGG, KLONRGG,
-     &                   KZLEV, FIELD, KRET, MSG) 
+     &                   KZLEV, FIELD, KRET, MSG, IU06) 
 
 ! -----------------------------------------------------------------     
 
@@ -33,7 +33,7 @@
 !    &                NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
 !    &                CDATE, IFORP, IPARAM, NGX, NGY,
 !    &                AMOWEP, AMOSOP, AMOEAP, AMONOP, KRGG, KLONRGG,
-!    &                KZLEV, FIELD, KRET, MSG) 
+!    &                KZLEV, FIELD, KRET, MSG, IU06) 
 
 !        *FILNM*  - DATA INPUT FILENAME. 
 !        *ID1  *  - NUMBER OF COLUMNS IN ARRAY FIELD (1 DIMENSION).     
@@ -70,6 +70,7 @@
 !        *FIELD*  - UNPACKED DATA.
 !        *KRET*   - ERROR NUMBER (0 = NO ERROR).
 !        *MSG*    _ ERROR MESSAGE.
+!        *IU06*   _ OUTPUT UNIT.
 
 
 !       THIS FEATURE HAS BEEN REMOVED :
@@ -93,7 +94,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 120000)
+      PARAMETER (NBIT = 180000)
 
       INTEGER KLONRGG(ID2)                                          
       INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1), KSEC2(NKSEK2),
@@ -142,23 +143,23 @@
       IF(KRET.EQ.-1) MSG='PBGRIB : END OF FILE ENCOUNTED'
       IF(KRET.EQ.-2) MSG='PBGRIB : FILE HANDLING ERROR'
       IF(KRET.EQ.-3) THEN 
-        WRITE (*,*) ' '
-        WRITE (*,*) ' ***** WARNING ****** WARNING *****'
-        WRITE (*,*) ' SUB. INMARS : '
-        WRITE (*,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
-        WRITE (*,*) ' IT WAS ', ISIZE
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' ***** WARNING IN MODEL FOR WAVES *****'
+        WRITE(IU06,*) ' SUB. INMARS : '
+        WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+        WRITE(IU06,*) ' IT WAS ', ISIZE
 
         KRET=0
         DEALLOCATE(KGRIB)
         ISIZE=(KLEN+KIND(ISIZE)-1)/KIND(ISIZE)
 
-        WRITE (*,*) ' IT SHOULD AT LEAST BE ', ISIZE
-        WRITE (*,*) ' THE SIZE WAS RESET AUTOMATICALLY'
-        WRITE (*,*) ' AND THE FIELD READ WITH THE NEW SIZE'
-        WRITE (*,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
-        WRITE (*,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
-        WRITE (*,*) ' ***** WARNING ****** WARNING *****'
-        WRITE (*,*) ' '
+        WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
+        WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
+        WRITE(IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
+        WRITE(IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
+        WRITE(IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
+        WRITE(IU06,*) ' ***** WARNING ****** WARNING *****'
+        WRITE(IU06,*) ' '
 
 !       RESET THE FILE POINTER TO READ FIELD AGAIN
         KOFFSET=-KLEN
@@ -208,7 +209,7 @@
 !         START DATE.                                                   
 
       IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-      WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+      WRITE(CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                             KSEC1(13),KSEC1(14)
 
 !*         DETERMINE TIME UNIT.                                         
@@ -310,8 +311,9 @@
         NGX = KSEC2(2)
         KLONRGG=NGX
       ELSE
-        WRITE(*,*) ' SUB INMARS : REPRESENTATION OF THE FIELD NOT KNOWN'
-        CALL abort
+        WRITE(IU06,*)
+     &  ' SUB INMARS : REPRESENTATION OF THE FIELD NOT KNOWN'
+        CALL ABORT1
       ENDIF
 
       IF ((NGX.GT.ID1).OR.(NGY.GT.ID2)) THEN                            

@@ -47,7 +47,7 @@
 !          *LFDB*   - LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
 !                     .T. TO ACTIVATE, .F. TO IGNORE
 !          *ITEST*  - TEST OUTPUT GIVEN IF ITEST GT 2.
-!          *MARSTYPE* TYPE OF CURRENT FILED ( FG, AN, OR FC )
+!          *MARSTYPE* TYPE OF CURRENT FIELD ( FG, 4v, AN, OR FC )
 !          *YCLASS* - CLASS OF THE CURRENT RUN.
 !          *YEXPVER*- EXPERIMENT VERSION NUMBER OF THE CURRENT RUN.
 !          *NENSFNB*- ENSEMBLE FORECAST NUMBER
@@ -156,6 +156,8 @@
 
       IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 1
+      ELSEIF ( MARSTYPE .EQ. '4v' ) THEN
+        KSEC1(39) = 6
       ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 2
       ELSE
@@ -169,8 +171,8 @@
           ENDIF
         ENDIF
       ENDIF
-      IF ((KSEC1(39).NE.9.AND.KSEC1(39).NE.10.AND.KSEC1(39).NE.11)
-     &   .AND.IFCST.GT.0) THEN
+      IF (KSEC1(39).NE.9.AND.KSEC1(39).NE.10.AND.KSEC1(39).NE.11
+     &   .AND.KSEC1(39).NE.6.AND.IFCST.GT.0) THEN
         WRITE(IU06,*)' SUB: GRIBPAC: THIS IS A FORECAST'
         WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
         WRITE(IU06,*)'  '
@@ -188,7 +190,7 @@
       ALLOCATE(KGRIB(KLENG))
 
       WRITE(IU06,*)'  '
-      WRITE(IU06,*)'    SUB: GRIBPAC - EXPERIMENT VERSION=',YEXPVER,
+      WRITE(IU06,*)'   SUB. GRIBPAC : EXPERIMENT VERSION=',YEXPVER,
      &                           '   TYPE OF MARS DATA = ',MARSTYPE
 
       KRET  = 1
@@ -201,7 +203,7 @@
 !*    2. CHECK ERROR CODE.
 !        ----------------
 
-      WRITE(IU06,*) '    SUB. GRIBPAC :  GRIBEX STATUS CODE ',KRET,
+      WRITE(IU06,*) '   SUB. GRIBPAC : GRIBEX STATUS CODE ',KRET,
      &              ' FOR PARAMETER ', IPARAM
 
       IF(KRET.EQ.0) THEN
@@ -216,7 +218,7 @@
      &     IERR,
      &     MARSTYPE, YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
      &     IDIR, IFRE , KFDB)
-          WRITE(IU06,*) '    SUB. GRIBPAC:  PACKED FIELD LENGTH ',
+          WRITE(IU06,*) '   SUB. GRIBPAC:  PACKED FIELD LENGTH ',
      &     KWORD, ' WRITTEN TO FDB ',
      &     '(REFERENCE=',Kfdb,')'
 
@@ -262,13 +264,15 @@
           IF(KRET.LT.0) WRITE(IU06,*) 'PBWRITE FAILED, UNIT ',IU,
      &     ' CORRUPTED'
 
-          IF (IU.GT.111) THEN
-            WRITE(IU06,2200)'    SUB. GRIBPAC:  PACKED FIELD LENGTH ',
-     &       KWORD, '    WRITTEN TO UNIT IU = ',IU
- 2200       FORMAT(' ',a,i6,a,a3)
-          ELSE
-            WRITE(IU06,*) '    SUB. GRIBPAC:  PACKED FIELD LENGTH ',
-     &       KWORD, '    WRITTEN TO UNIT IU = ',IU
+          IF (ITEST.GT.2) THEN
+            IF (IU.GT.111) THEN
+              WRITE(IU06,2200)'   SUB. GRIBPAC : PACKED FIELD LENGTH ',
+     &         KWORD, '    WRITTEN TO UNIT IU = ',IU
+ 2200         FORMAT(' ',a,i6,a,a3)
+            ELSE
+              WRITE(IU06,*) '   SUB. GRIBPAC : PACKED FIELD LENGTH ',
+     &         KWORD, '    WRITTEN TO UNIT IU = ',IU
+            ENDIF
           ENDIF
           CALL PBCLOSE(IUNIT,KRET)
           IF(KRET.LT.0) WRITE(IU06,*)

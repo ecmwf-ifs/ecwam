@@ -105,7 +105,7 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
-     &            IDELWO
+     &            IDELWO   ,LANAONLY
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL
 
@@ -130,7 +130,7 @@
 
       ZERO = ' '
 
-      IF (CDA.EQ.ZERO) THEN
+      IF (CDA.EQ.ZERO.OR.LANAONLY) THEN
 
 !        IF START FROM PRESET FIELDS DO FIRST FIELD IN ADDITION.
 

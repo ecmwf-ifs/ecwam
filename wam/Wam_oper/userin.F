@@ -68,7 +68,8 @@
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
      &            IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,CDATEA   ,YCLASS   ,YEXPVER  ,LALTCOR
+     &            NTOTENS  ,CDATEA   ,YCLASS   ,YEXPVER  ,LALTCOR  ,
+     &            L4VTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -92,6 +93,7 @@
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
 
 !     caution : if you change NALINE, also change it in mpuserin
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       NAMELIST /NALINE/ CLHEADER,
      &   CBPLTDT, CEPLTDT, CDATEF,
@@ -105,7 +107,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   NENSFNB, NTOTENS,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
-     &   LALTCOR, XKAPPA2
+     &   LALTCOR, L4VTYPE, XKAPPA2
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -188,8 +190,9 @@
 !              NOT REQUIRED.  
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !              SEE GRFIELD. 
-!     XKAPPA2: KAPPA2 PARAMETER USED IN THE FORMULA FOR THE DETERNMINATION
-!              OF ALTIMETER WAVE HEIGHT.
+!     L4VTYPE: IF TRUE THEN MARS TYPE 4V IS USED INSTEAD OF FG.
+!     XKAPPA2: KAPPA2 PARAMETER USED IN THE FORMULA FOR THE
+!              DETERNMINATION OF ALTIMETER WAVE HEIGHT.
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -209,7 +212,7 @@
 !        ---------------------------------------------
 
       CLMTSU    = 'S'
-      CLOTSU    = 'S'
+      CLOTSU    = 'H'
       CLHEADER  = ZERO
       CBPLTDT   =  ZERO
       CEPLTDT   =  ZERO
@@ -218,7 +221,7 @@
       IDELT     =  0
       IDELWO    =  0
       IDELWI    =  0
-      IDELALT   =  0
+      IDELALT   =  21600 
       IDELINT   =  0
       IDELINS   =  0
       IDELAGI   =  0
@@ -245,13 +248,13 @@
       LPBIOOUT  = .TRUE. 
       LGRIBOUT  = .TRUE. 
       LFDBIOOUT = .TRUE. 
-      ICASE     = 0 
+      ICASE     = 1 
       ISHALLO   = 0 
       ITEST     = 0 
       ITESTB    = 0 
       IREST     = 0 
       IASSI     = 0 
-      IFORCA    = 0 
+      IFORCA    = 1 
       IBOUNC    = 0 
       IBOUNF    = 0 
       USERID    = ZERO
@@ -277,6 +280,8 @@
       LNOCDIN   = .FALSE. 
 
       LALTCOR   = .FALSE. 
+
+      L4VTYPE   = .FALSE. 
 
       XKAPPA2   = 0.0700
 
@@ -472,7 +477,7 @@
      &          NFLAG( 5).OR.NFLAG( 6).OR.NFLAG( 7).OR.NFLAG( 8).OR.
      &          NFLAG( 9).OR.NFLAG(10).OR.NFLAG(11).OR.NFLAG(12).OR.
      &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16).OR.
-     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(34)
+     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24)
 
       ICPLEN=LEN_TRIM(CPATH)
       IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
@@ -637,9 +642,11 @@
         WRITE(IU06,*) ' WITH A WORKLOAD OF ',NSIZE,' PER PROCESSOR'
       ENDIF
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' STARTING DATE (FORMAT:YYMMDDHHMM) : ',CDATEA,
-     & ' END DATE : ',CDATEE
-      WRITE(IU06,*) ' FORECAST STARTING DATE : ',CDATEF
+      WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
+      WRITE(IU06,*) ' END DATE ................ : ',CDATEE
+      IF(CDATEF.LT.CDATEE) THEN
+        WRITE(IU06,*) ' FORECAST STARTING DATE    : ',CDATEF
+      ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL TIME STEPS:'
       WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ',
@@ -677,22 +684,24 @@
       ELSE
         WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME'
       ENDIF
-      IF (IBOUNC.EQ.1) THEN
-        WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (COURSE GRID)'
-      ELSE
-        WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
-     &   ' (COURSE GRID)'
-      ENDIF
-      IF (IBOUNF.EQ.1) THEN
-        WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (FINE GRID)'
-      ELSE
-        WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
-     &   ' (FINE GRID)'
-      ENDIF
-      IF (IFORCA.EQ.1) THEN
-        WRITE(IU06,*) ' MODEL STARTS FROM ANALYSIS FIELDS'
-      ELSE
-        WRITE(IU06,*) ' MODEL STARTS FROM FORECAST FIELDS'
+      IF(.NOT.LWCOU) THEN
+        IF (IBOUNC.EQ.1) THEN
+          WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (COURSE GRID)'
+        ELSE
+          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
+     &     ' (COURSE GRID)'
+        ENDIF
+        IF (IBOUNF.EQ.1) THEN
+          WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (FINE GRID)'
+        ELSE
+          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
+     &     ' (FINE GRID)'
+        ENDIF
+        IF (IFORCA.EQ.1) THEN
+          WRITE(IU06,*) ' MODEL STARTS FROM ANALYSIS FIELDS'
+        ELSE
+          WRITE(IU06,*) ' MODEL STARTS FROM FORECAST FIELDS'
+        ENDIF
       ENDIF
       IF (IASSI.EQ.1) THEN
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
@@ -776,8 +785,6 @@
      & '......', FFLAG(14),'.....',GFLAG(14)
       WRITE(IU06,*) ' SWELL MEAN FREQUENCY ......', PFLAG(16),
      & '......', FFLAG(16),'.....',GFLAG(16)
-      WRITE(IU06,*) ' PACKING UNDER TESTING !!!'
-      WRITE(IU06,*) '  '
 
       IF(FFLAG25) CALL OUTXT(IU06,IU25,IU35,IU27,IU37,IDELSPT,IASSI,
      & NOUTT,'IU25','IU35','IU27','IU37')
@@ -939,6 +946,7 @@
      & (  (LFDB .OR. LFDBIOIN .OR. LFDBIOOUT ))) THEN
         WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
         WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
+        WRITE(IU06,*) ' '
         INITFDB_STAT = IINITFDB()
         IF (INITFDB_STAT .NE. 0) THEN
           WRITE(IU06,'("****************************************")')

@@ -100,6 +100,7 @@
 
 !*    1. INITIALIZATIONS.
 !        ----------------
+      CALL INIWCST
       time0=-wam_user_clock()
       WRITE(0,*)' BLSP2GRS v3.0  ', clct
       msub = 1

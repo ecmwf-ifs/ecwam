@@ -59,7 +59,8 @@
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
-     &            DELUST   ,DELALP
+     &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
+     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
 
 ! ----------------------------------------------------------------------
 
@@ -165,8 +166,21 @@
 
       READ(IU07)  DEPTH, DEPTHA, DEPTHD, TCGOND, TFAK, TSIHKD
 
-!*    9. READ MODULE YOWCURR.
-!        --------------------
+!*    9. READ MODULE YOWTABL (2nd part).
+!        -------------------
+
+      IF(.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
+      IF(.NOT.ALLOCATED(FAC1)) ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
+      IF(.NOT.ALLOCATED(FAC2)) ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
+      IF(.NOT.ALLOCATED(FAC3)) ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
+      IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
+      IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
+      IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+
+      READ(IU07) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF
+
+!*    10. READ MODULE YOWCURR.
+!         --------------------
 
       IF (IREFRA.EQ.2) THEN 
          IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))

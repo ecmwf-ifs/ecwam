@@ -44,7 +44,6 @@
 
 !-----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
@@ -57,8 +56,8 @@
       USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWINTP  , ONLY : WHGTTG   ,CDG      ,U10G     ,WHGTAG   ,
-     &            CWHTAG   ,RANGAG
+      USE YOWINTP  , ONLY : WHGTTG   ,CDG      ,WHGTAG   ,CWHTAG   ,
+     &            RANGAG
 
 ! ----------------------------------------------------------------------
 
@@ -255,8 +254,7 @@
           ENDDO
         ENDIF
       
-        CALL SKEWNESS(IU06,FALT,NERS,NANG,NFRE,FR(1),TH,COSTH,SINTH,
-     1                XKAPPA1,DELH_ALT)
+        CALL SKEWNESS(IU06,FALT,NERS,XKAPPA1,DELH_ALT)
       
       ENDIF
 
@@ -267,6 +265,8 @@
       CWHTAG = ZMISS
       RANGAG = ZMISS
  
+      WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
+      WRITE(IU06,*) ' '
       IF(LALTCOR.AND.ITEST.GT.0) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT CORRECTION '
@@ -313,7 +313,7 @@
                   XLON = AMOWEP + REAL(IX-1)*ZDELLO(KXLT(IJ,1))
                   XLAT = AMONOP - REAL(IY-1)*XDELLA
                   WRITE(IU06,*) XLON, XLAT, XK, HS, WHME(IX,IY),
-     &                        WHGTTG(IX,IY), USME(IX,IY), U10G(IX,IY)
+     &                        WHGTTG(IX,IY), USME(IX,IY)
                 ENDIF
               ENDIF
             ENDDO

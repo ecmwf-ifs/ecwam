@@ -76,7 +76,8 @@
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,DELUST   ,
-     &            DELALP
+     &            DELALP   ,FAC0     ,FAC1     ,FAC2     ,FAC3     ,
+     &            FAK      ,FRHF     ,DFIMHF
 
 ! ----------------------------------------------------------------------
 
@@ -190,7 +191,7 @@
 
 ! ----------------------------------------------------------------------
 
-!*    6. WRITE MODULE YOWTABL.
+!*    6. WRITE MODULE YOWTABL (1st part).
 !        ---------------------
 
       IF (IFORM.NE.2) THEN
@@ -234,8 +235,20 @@
 
 ! ----------------------------------------------------------------------
 
-!*    9. WRITE MODULE YOWCURR.
+!*    9. WRITE MODULE YOWTABL (2nd part).
 !        ---------------------
+
+      IF (IFORM.NE.2) THEN
+        WRITE (IU07) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF 
+      ENDIF
+      IF (IFORM.NE.1) THEN
+        WRITE (IU17,999) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF 
+      ENDIF
+
+! ----------------------------------------------------------------------
+
+!*    10. WRITE MODULE YOWCURR.
+!         ---------------------
 
       IF (IREFRA.EQ.2) THEN
         IF (IFORM.NE.2) WRITE (IU07) U, V
@@ -244,7 +257,7 @@
 
 ! ----------------------------------------------------------------------
 
-!*   10. WRITE NAMELIST PARWAM.
+!*   11. WRITE NAMELIST PARWAM.
 !        ----------------------
 !     NBINP NOUTT have no meaning here since the size of the arrays
 !     will be determined at input.
@@ -255,7 +268,7 @@
       CALL OUTNAM
      & (NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC ,
-     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IREFRA, iper)
+     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IREFRA, IPER)
 
       RETURN
       END SUBROUTINE OUTCOM

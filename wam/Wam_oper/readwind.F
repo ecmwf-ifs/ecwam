@@ -187,7 +187,7 @@
           CALL ABORT1
         ELSE IF (KRET.EQ.-3) THEN
           WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' ***** WARNING ****** WARNING *****'
+          WRITE (IU06,*) ' ***** WARNING IN MODEL FOR WAVES *****'
           WRITE (IU06,*) ' SUB. READWIND : '
           WRITE (IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
           WRITE (IU06,*) ' IT WAS ', ISIZE

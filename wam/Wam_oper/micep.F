@@ -122,10 +122,10 @@
       ENDDO
 
       IF(IASSI.EQ.1) THEN
-        WRITE(IU06,*)'   POINTS WITH TEMP < 271.5 K:',NICE,
+        WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K : ',NICE,
      &             ' ON ALL ',NPROC, 'PEs'
       ELSE
-        WRITE(IU06,*)'   POINTS WITH TEMP < 271.5 K:',NICE,
+        WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K :',NICE,
      &             ' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
       ENDIF
 

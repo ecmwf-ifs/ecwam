@@ -103,7 +103,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR
       USE YOWICE   , ONLY : FLMIN
@@ -123,8 +123,6 @@
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW,Z0NEW
 
 ! ----------------------------------------------------------------------
-
-      PARAMETER (GZPI28 = G/28./ZPI)
 
       DIMENSION MIJ(IJS:IJL), MFMF(IJS:IJL), GADIAG(IJS:IJL),
      &          TEMP(IJS:IJL,NFRE), DELFL(NFRE)
@@ -211,8 +209,9 @@
       DELT = IDELT
       XIMP = 1.0
       DELT5 = XIMP*DELT
+      COEF4 = 5.E-07*G
       DO M=1,NFRE
-        DELFL(M) = 5.E-07*G*FR(M)**(-4.)*DELT
+        DELFL(M) = COEF4*FR(M)**(-4.)*DELT
         DO K=1,NANG
           DO IJ=IJS,IJL
             GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)

@@ -73,8 +73,8 @@
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NIBLO    ,NBLO
-      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTT  ,CDTINTS  ,
-     &            CDTSPT   ,CDTSPS
+      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
+     &            CDTSPS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -161,15 +161,13 @@
 !*    4. OUTPUT OF INTEGRATED PARAMETERS.
 !        --------------------------------
 
-      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
-        CALL OUTGRID (FL3, IJS, IJL, IG,U10NEW,THWNEW,USNEW,TAUW,
-     &   NSTART,NEND)
-        IF (ITEST.GE.3) THEN
-          IF (ITESTB.GE.IG) THEN
-            WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF ',
-     &       'INTEGRATED PARAMETERS DONE'
-            CALL FLUSH(IU06)
-          ENDIF
+      CALL OUTGRID (FL3, IJS, IJL, IG,U10NEW,THWNEW,USNEW,TAUW,
+     &              NSTART,NEND)
+      IF (ITEST.GE.3) THEN
+        IF (ITESTB.GE.IG) THEN
+          WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF ',
+     &     'INTEGRATED PARAMETERS DONE'
+          CALL FLUSH(IU06)
         ENDIF
       ENDIF
 
@@ -180,10 +178,12 @@
         DEALLOCATE(ESEA)
         DEALLOCATE(FSEA)
         DEALLOCATE(THWISEA)
-        IF (ITESTB.GE.IG) THEN
-          WRITE(IU06,*) '      SUB. OUTBS: DEALLOCATE OF ARRAYS FOR',
-     &     ' INTEGRATED PARAMETERS DONE'
-          CALL FLUSH(IU06)
+        IF (ITEST.GE.3) THEN
+          IF (ITESTB.GE.IG) THEN
+            WRITE(IU06,*) '      SUB. OUTBS: DEALLOCATE OF ARRAYS FOR',
+     &       ' INTEGRATED PARAMETERS DONE'
+            CALL FLUSH(IU06)
+          ENDIF
         ENDIF
       ENDIF
 

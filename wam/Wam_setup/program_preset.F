@@ -305,8 +305,13 @@ if [[ $ASSIMILATION = "YES" ]] ; then
       exit 1
    fi
   #
-  ANALYSIS_DATE=$(substring $begofrn 1 10)
-  ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  if [[ $begofrn = $endofrn && $begofrn = $begoffo ]] ; then
+    ANALYSIS_DATE=$(substring $begofrn 1 10)
+  else
+    ANALYSIS_DATE=$(substring $begofrn 1 10)
+    ANALYSIS_DATE=$(newdate ${ANALYSIS_DATE} 6)
+  fi
+
   LAST_ANALYSIS_DATE=`substring $endofrn 1 10`
   #
   until [[ $ANALYSIS_DATE -gt $LAST_ANALYSIS_DATE ]] ; do
