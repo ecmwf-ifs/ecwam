@@ -14,6 +14,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
+      USE YOWCOUT  , ONLY : LFDB
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
@@ -30,7 +31,6 @@
 ! ----------------------------------------------------------------------
 
       LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
-      LOGICAL LFDB
       LOGICAL :: LLIRANK 
       LOGICAL LFRST
 

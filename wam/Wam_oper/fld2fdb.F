@@ -106,6 +106,11 @@
 
 !     ------------------------------------------------------------------
 
+!     the module is needed in order to resolve the problem with the 
+!     output of 251 for the multi-analysis problem.
+      USE YOWGRIBHD , ONLY : KSEK1
+
+
       DIMENSION ksec1(*), kfield(*)
 
       INTEGER       klen, kdir, kfre, ndir, nfre 
@@ -272,12 +277,13 @@
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
 
           if (cdtype.eq.'cf' .or. cdtype.eq.'pf'
-     &                       .or. ksec1(40).eq.1081 .or.
-     &        cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095) then
+     &                       .or. ksec1(40).eq.1081) then
             if ( ksec1(42).gt.0 ) then
               istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
             endif
+          else if(cdtype.eq.'sf' .or. ksec1(40).eq.1082
+     &                       .or. ksec1(40).eq.1095) then
+              istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
           endif
 
           IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
@@ -289,15 +295,28 @@
      &                       .or. ksec1(40).eq.1095) then
             if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
      &          clparam .EQ. '251' ) THEN
-              ndir=ksec1(44)
-              nfre=ksec1(45)
-              write( clsystem, '(i5.5)' ) ksec1(50+ndir+nfre)
+              ndir=ksec1(46)
+              nfre=ksec1(47)
+
+!!            if the class is not od then system is set to off
+              if(ksec1(38).ne.1 ) then
+                clsystem='off'
+              else
+                write( clsystem, '(i5.5)' ) ksec1(50+ndir+nfre)
+              endif
               istat = isetvalfdb( iaddr1,   'system',  clsystem)
+
               write( clmethod, '(i5.5)' ) ksec1(51+ndir+nfre)
               istat = isetvalfdb( iaddr1,   'method',  clmethod)
             else
-              write( clsystem, '(i5.5)' ) ksec1(44)
+!!            if the class is not od then system is set to off
+              if(ksec1(38).ne.1 ) then
+                clsystem='off'
+              else
+                write( clsystem, '(i5.5)' ) ksec1(44)
+              endif
               istat = isetvalfdb( iaddr1,   'system',  clsystem)
+
               write( clmethod, '(i5.5)' ) ksec1(45)
               istat = isetvalfdb( iaddr1,   'method',  clmethod)
               istat = isetvalfdb( iaddr1, 'level','0000')
@@ -309,18 +328,18 @@
 
 !         multi-analysis ensemble runs (see setwgribhd)
           if (ksec1(40) == 1083) then
-            if(ksec1(46) == 0 ) then
-              if(ksec1(44) == 78) then
+            if(KSEK1(46) == 0 ) then
+              if(KSEK1(44) == 78) then
                 cdorigin = 'edzw'
-              else if(ksec1(44) == 85) then
+              else if(KSEK1(44) == 85) then
                 cdorigin = 'lfpw'
-              else if(ksec1(44) == 7) then
+              else if(KSEK1(44) == 7) then
                 cdorigin = 'kwbc'
-              else if(ksec1(44) == 74) then
+              else if(KSEK1(44) == 74) then
                 cdorigin = 'egrr'
               else
                 WRITE(kuso,'( "Error\ /Fld2fdb/ origin unknown ", i4)' )
-     &                ksec1(44) 
+     &                KSEK1(44)
                 kerr = 1
                 return
               endif

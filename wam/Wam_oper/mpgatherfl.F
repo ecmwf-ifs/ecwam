@@ -4,6 +4,7 @@
 
 !     J. BIDLOT    ECMWF   APRIL 1996  MESSAGE PASSING
 !     J. BIDLOT    ECMWF   MARCH 1997  add use of MINF AND MSUP
+!     J. BIDLOT    ECMWF   JANUARY 2003 use of MPL_GATHERV
 
 !     PURPOSE.
 !     --------
@@ -36,6 +37,8 @@
 !     EXTERNALS.
 !     ----------
 !     MPL PACKAGE :
+!         MPL_GATHERV
+!         or
 !         MPL_SEND
 !         MPL_RECV
 !         MPL_ABORT 
@@ -45,27 +48,77 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE MPL_MODULE
-
-
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(0:NIBLO,NANG,MI:MS) :: FL
+
 !----------------------------------------------------------------------
 
-      REAL,ALLOCATABLE :: ZCOMBUF(:)
+      REAL,ALLOCATABLE,DIMENSION(:) :: ZCOMBUF,PSENDBUF,PRECVBUF
 
+      INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
 
       IRTAG=ITAG+NFRE
 
       IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
         RETURN
+
+      ELSEIF(MINF.EQ.MSUP .AND. MI.EQ.MS) THEN
+!     if the FL array is essentially 2-dimensional then use 
+!     a call to MPL_GATHERV which should be more efficient then 
+!     a send and a loop on receive
+
+        ILEN=(NEND(IRANK)-NSTART(IRANK)+1)*NANG
+        ALLOCATE(PSENDBUF(ILEN))
+        IF(IRANK.NE.IRECV) THEN
+          KCOUNT=0
+          DO K=1,NANG
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              KCOUNT=KCOUNT+1
+              PSENDBUF(KCOUNT)=FL(IJ,K,MINF)
+            ENDDO
+          ENDDO
+        ENDIF
+
+        ILENR=0
+        DO IP=1,NPROC
+         KRECVCOUNTS(IP)=(NEND(IP)-NSTART(IP)+1)*NANG
+         ILENR=ILENR+KRECVCOUNTS(IP)
+        ENDDO
+        ALLOCATE(PRECVBUF(ILENR))
+
+        CALL MPL_GATHERV(PSENDBUF=PSENDBUF,
+     &                   KRECVCOUNTS=KRECVCOUNTS,
+     &                   PRECVBUF=PRECVBUF,
+     &                   KROOT=IRECV,
+     &                   CDSTRING='MPGATHERFL:')
+
+        IF(IRANK.EQ.IRECV) THEN
+          KCOUNT=0
+          DO IP=1,NPROC
+            IF(IP.NE.IRECV) THEN
+              DO K=1,NANG
+                DO IJ=NSTART(IP),NEND(IP)
+                  KCOUNT=KCOUNT+1
+                  FL(IJ,K,MINF)=PRECVBUF(KCOUNT)
+                ENDDO
+              ENDDO 
+            ELSE
+              KCOUNT=KCOUNT+(NEND(IP)-NSTART(IP)+1)*NANG
+            ENDIF
+          ENDDO 
+        ENDIF
+
+        DEALLOCATE(PSENDBUF)
+        DEALLOCATE(PRECVBUF)
+
+!! the old way is below
       ELSEIF(IRANK.NE.IRECV) THEN
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
@@ -82,25 +135,23 @@
           ENDDO
         ENDDO
 
-! GET SIGNAL THAT RECEIVING PE IS READY
+!       synchronisation
 
-        IREADY=ITAG
-        CALL MPL_BROADCAST(IREADY,KROOT=IRECV,KTAG=IRTAG,
-     &   CDSTRING='MPGATHERFL:')
+        CALL MPL_BARRIER(CDSTRING='MPGATHERFL:')
 
 ! SEND CONTRIBUTION TO RECEIVING PE
 
         CALL MPL_SEND(ZCOMBUF(1:MPLENGTH),KDEST=IRECV,KTAG=ITAG,
      &   CDSTRING='MPGATHERFL:')
 
+        DEALLOCATE(ZCOMBUF)
       ELSE
 !     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
 !         ---------------------------------------------------------- 
 
-! SIGNAL TO OTHER PE'S THAT RECEIVING PE IS READY
-        IREADY=ITAG
-        CALL MPL_BROADCAST(IREADY,KROOT=IRANK,KTAG=IRTAG,
-     &   CDSTRING='MPGATHERFL:')
+!       synchronisation
+
+        CALL MPL_BARRIER(CDSTRING='MPGATHERFL:')
 
 ! GET CONTRIBUTION FROM OTHER PE'S
         MPLENGTH=MPMAXLENGTH*NANG*(MSUP-MINF+1)
@@ -125,9 +176,10 @@
           ENDDO 
 
         ENDDO
+
+        DEALLOCATE(ZCOMBUF)
       ENDIF
 
-      DEALLOCATE(ZCOMBUF)
 
       RETURN
       END SUBROUTINE MPGATHERFL

@@ -124,6 +124,8 @@
       INTEGER, ALLOCATABLE, SAVE :: KK(:), II(:,:), IIP(:,:)
       REAL, ALLOCATABLE, SAVE :: DK1(:), DII1(:,:), DIIP1(:,:)
 
+      REAL, DIMENSION(NFIELDS) :: FAVG,FMIN,FMAX
+
       CHARACTER FILNM*24
       CHARACTER*12 CDTWIR, CDTTURN
       LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
@@ -420,6 +422,23 @@
      &                 AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                 RLONRGG, VWND,
      &                 LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
+
+!       computation of the norms of input fields
+        WRITE(IU06,*) ' NORM OF INPUT ATMOSPHERIC FIELDS : ' 
+        DO IFLD=1,NFIELDS
+          FAVG(IFLD)=0.
+          FMIN(IFLD)=999999999999.
+          FMAX(IFLD)=-99999999999.
+          DO I=1,NGPTOTG 
+            FAVG(IFLD)=FAVG(IFLD)+FIELDS(I,IFLD)
+            FMIN(IFLD)=MIN(FMIN(IFLD),FIELDS(I,IFLD))
+            FMAX(IFLD)=MAX(FMAX(IFLD),FIELDS(I,IFLD))
+          ENDDO
+          FAVG(IFLD)=FAVG(IFLD)/NGPTOTG
+          WRITE(IU06,*) ' ',FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NGPTOTG
+        ENDDO
+        WRITE(IU06,*) ' '
+        IF(ITEST.GT.0) CALL FLUSH(IU06)
 
 ! Computations of the Air Density:
         IF (LADEN) THEN 

@@ -117,6 +117,7 @@
 ! ----------------------------------------------------------------------
 
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
+      LOGICAL :: LSV, LOUT, LFDBIOOUT_OLD
 
       WRITE (IU06,*) '  '
       WRITE (IU06,*) '  '
@@ -285,16 +286,15 @@
         ENDIF
       ENDIF
 
-      IF (CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER.OR.
-     &    LDWRRE) THEN
 
+      LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
+
+      IF (LSV.OR.LDWRRE) THEN
 
 !*    3.1.4 SAVE RESTART FIELDS.
 !           --------------------
-
-        IF ( (IREST.EQ.1.AND.(CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
-     &       .OR.
-     &        LDWRRE ) THEN 
+        LOUT=(IREST.EQ.1.AND.(CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
+        IF ( LOUT .OR. LDWRRE ) THEN 
 
 !*          STRESS FIELD IS DUMPED FOR RESTART.
 !           -----------------------------------
@@ -306,7 +306,7 @@
      &       (CDATER .EQ. '000000000000' ).OR.
      &        LDWRRE) THEN
 
-            IF ( .NOT.LGRIBOUT ) THEN
+            IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
               CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
      &                       ZIDLOLD,NSTART,NEND,CDTPRO,CDATEF)
             ENDIF
@@ -316,7 +316,7 @@
 !           SAVE SPECTRUM
 !           -------------
 
-          IF ( LGRIBOUT ) THEN
+          IF ( LOUT.AND.LGRIBOUT ) THEN
             CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                     NLONRGG, KXLT, IXLG, NIBLO, NBLO,
@@ -331,10 +331,21 @@
      &                     LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
             ISTAT = IFLUSHFDB (MFDBSF)
             LLFLUSH = .FALSE.
-          ELSE
+          ENDIF
+
+          IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
+
+            IF(LDWRRE.AND.LFDBIOOUT) THEN
+              LFDBIOOUT_OLD=LFDBIOOUT
+              LFDBIOOUT=.FALSE.
+            ENDIF
+
             CALL SAVSPEC(FL1,NSTART,NEND,CDTPRO,CDATEF,CDATER,
      &                   MARSTYPE,YCLASS, YEXPVER, CFDB2DSP)
+            IF(LDWRRE) LFDBIOOUT=LFDBIOOUT_OLD
+
           ENDIF
+
           WRITE(IU06,*) ' '
           WRITE(IU06,*) '  WAVE SPECTRA FIELDS DISPOSED AT........',
      &                  ' CDTPRO  = ', CDTPRO
@@ -344,7 +355,7 @@
 !*    3.1.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
-          IF (LDSTOP .AND. 
+          IF ((LDSTOP.OR.LDWRRE) .AND. 
      &        (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
             ICH = 7
             CALL DIFDATE (CDATEF,CDATEE,IFOREPD)

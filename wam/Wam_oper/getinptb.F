@@ -299,10 +299,11 @@
           WRITE(MARS(4),'("LEVTYPE=SFC,LEVELIST=OFF,")')
           ILINE = 7
           WRITE(MARS(ILINE),
-     &     '("TIME=12,TYPE=FC,TARGET=""fort.",I2,"""")') IUNIT
+     &     '("TIME=",I2.2,",TYPE=FC,TARGET=""fort.",I2,"""")')
+     &        IHOUE,IUNIT
         ELSE
           ILINE = ILINE + 1
-          WRITE(MARS(ILINE),'("TIME=12,TYPE=FC")')
+          WRITE(MARS(ILINE),'("TIME=",I2.2,",TYPE=FC")')IHOUE
         ENDIF
       ENDIF
 

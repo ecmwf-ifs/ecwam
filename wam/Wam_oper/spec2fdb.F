@@ -480,6 +480,13 @@
      &                    ierr,cdtype, cdclass,
      &                    cdexpver, CDFDB2DSP, cddomain,
      &                    IK, IM, kfdb)
+            IF(IERR.NE.0)THEN
+              WRITE(KU06,*) ' ------------------------------'
+              WRITE(KU06,*) ' SPEC2FDB: ERROR ACCESSING FDB '
+              WRITE(KU06,*) ' FDB ERROR CODE IS ',IERR
+              WRITE(KU06,*) ' ------------------------------'
+              CALL ABORT1
+            ENDIF
           ELSE
 !         output to file should only take place on one PE, thus istep=1
             IF(IM.EQ.1.AND.IK.EQ.1) THEN

@@ -98,7 +98,7 @@
 ! SPECTRA ON ONE PE WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE
 
         IF(LFRSTIME) THEN
-          CALL GETENV('VPP_MBX_SIZE',CMBXSIZE)
+          CALL GETENV('MBX_SIZE',CMBXSIZE)
           READ(CMBXSIZE,'(I9)') MBXSIZE
           MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
           IF(MINSIZE.GT.MBXSIZE) THEN
@@ -111,7 +111,7 @@
             WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
             WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
             WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
-            WRITE (IU06,*) '* VPP_MBX_SIZE                        *'
+            WRITE (IU06,*) '* MBX_SIZE                            *'
             WRITE (IU06,*) '*                                     *'
             WRITE (IU06,*) '***************************************'
             CALL ABORT1

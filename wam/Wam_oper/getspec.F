@@ -641,7 +641,7 @@ C
 !         TO SEND SPECTRA FROM ONE PE  TO THE OTHERS
 !         WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE 
 
-            CALL GETENV('VPP_MBX_SIZE',CMBXSIZE)
+            CALL GETENV('MBX_SIZE',CMBXSIZE)
             READ(CMBXSIZE,'(I9)') MBXSIZE
             MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
             IF(MINSIZE.GT.MBXSIZE) THEN
@@ -655,7 +655,7 @@ C
               WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
               WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
               WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
-              WRITE (IU06,*) '* VPP_MBX_SIZE                        *' 
+              WRITE (IU06,*) '* MBX_SIZE                            *' 
               WRITE (IU06,*) '*                                     *'
               WRITE (IU06,*) '***************************************'
               CALL ABORT1
@@ -804,78 +804,81 @@ C
 
       ENDIF
 
-!     TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
-!     PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
-!     THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
-!     AND HAVE AN ICEMASK = 1.
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-             IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = 0. 
+      IF(.NOT.LRESTARTED) THEN
+!       TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
+!       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
+!       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
+!       AND HAVE AN ICEMASK = 1.
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+               IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = 0. 
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
 
-      LLEPSMIN=.FALSE.
+        LLEPSMIN=.FALSE.
 
-      ALLOCATE(EM(NSTART(IRANK):NEND(IRANK)))
-      ALLOCATE(ET(1,NFRE))
-      ALLOCATE(STK(NANG))
+        ALLOCATE(EM(NSTART(IRANK):NEND(IRANK)))
+        ALLOCATE(ET(1,NFRE))
+        ALLOCATE(STK(NANG))
 
-      CALL SEMEAN(FL,NSTART(IRANK),NEND(IRANK),EM,LLEPSMIN)
+        CALL SEMEAN(FL,NSTART(IRANK),NEND(IRANK),EM,LLEPSMIN)
 
-      GAMMA=3.000000
-      SA=7.000000E-02
-      SB=9.000000E-02
-      FETCH=MIN(5*DELPHI,250000.)
-      GX = G * FETCH
-      FPMAX=FR(NFRE-1)
+        GAMMA=3.000000
+        SA=7.000000E-02
+        SB=9.000000E-02
+        FETCH=MIN(5*DELPHI,250000.)
+        GX = G * FETCH
+        FPMAX=FR(NFRE-1)
 
-      DO IJ=NSTART(IRANK),NEND(IRANK)
-         IF(EM(IJ).LE.EPSMIN .AND. ICEMASK(IJ,1).EQ.1 ) THEN
-!          find peak period and energy level from fetch law
-!          the same formulation as in subroutine peak is used.
-           IF (U10OLD(IJ,1) .GT. 0.1E-08) THEN
-             U10 = U10OLD(IJ,1)
-             GXU = GX/(U10*U10)
-             UG = G/U10
-             FPK = AJONS * GXU ** DJONS
-             FPK = MAX(0.13, FPK)
-             FPK = MIN(FPK, FPMAX/UG)
-             ALPHJO = BJONS * FPK** EJONS
-             ALPHJO = MAX(ALPHJO, 0.0081)
-             FPK = FPK*UG
-           ELSE
-             FPK = 0.
-             ALPHJO = 0.
-           ENDIF
+        DO IJ=NSTART(IRANK),NEND(IRANK)
+           IF(EM(IJ).LE.EPSMIN .AND. ICEMASK(IJ,1).EQ.1 ) THEN
+!            find peak period and energy level from fetch law
+!            the same formulation as in subroutine peak is used.
+             IF (U10OLD(IJ,1) .GT. 0.1E-08) THEN
+               U10 = U10OLD(IJ,1)
+               GXU = GX/(U10*U10)
+               UG = G/U10
+               FPK = AJONS * GXU ** DJONS
+               FPK = MAX(0.13, FPK)
+               FPK = MIN(FPK, FPMAX/UG)
+               ALPHJO = BJONS * FPK** EJONS
+               ALPHJO = MAX(ALPHJO, 0.0081)
+               FPK = FPK*UG
+             ELSE
+               FPK = 0.
+               ALPHJO = 0.
+             ENDIF
 
-           CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
+             CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
 
-           THESK=THWOLD(IJ,1)
+             THESK=THWOLD(IJ,1)
 
-           CALL SPR (NANG, NANG, THESK, TH, STK)
+             CALL SPR (NANG, NANG, THESK, TH, STK)
 
-           DO K=1,NANG
-             DO M=1,NFRE
-               FL(IJ,K,M) = ET(1,M)*STK(K)
+             DO K=1,NANG
+               DO M=1,NFRE
+                 FL(IJ,K,M) = ET(1,M)*STK(K)
+               ENDDO
              ENDDO
-           ENDDO
 
-         ENDIF
-      ENDDO
+           ENDIF
+        ENDDO
 
-      DO K=1,NANG
-        DO M=1,NFRE
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-             IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = FLMIN 
+        DO K=1,NANG
+          DO M=1,NFRE
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+               IF(FL(IJ,K,M) .LE. FLMIN) FL(IJ,K,M) = FLMIN 
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
 
-      DEALLOCATE(EM)
-      DEALLOCATE(ET)
-      DEALLOCATE(STK)
+        DEALLOCATE(EM)
+        DEALLOCATE(ET)
+        DEALLOCATE(STK)
+
+      ENDIF
 
 
       WRITE(IU06,*) ' SPECTRUM FILE READ IN...............',
