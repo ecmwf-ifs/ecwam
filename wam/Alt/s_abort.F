@@ -17,7 +17,7 @@ C
       ENDIF
 C
       DO 2000 j=1,klen
-         WRITE(*,'(i10,2(xx,E20.12))')j,pvalus(j), pvalus(j+klen)
+         WRITE(*,'(i10,2(2x,E20.12))')j,pvalus(j), pvalus(j+klen)
  2000 CONTINUE
 C
       CALL ABORT
