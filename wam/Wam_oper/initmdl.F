@@ -286,6 +286,7 @@
       REAL X4(2)
       INTEGER I4(2)
 
+      CALL GSTATS(1962,0)
       CALL INIWCST
 
 !     0. DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
@@ -566,6 +567,7 @@
       INQUIRE(FILE=FILNM,EXIST=LICERUN)
 
       ALLOCATE(ICEMASK(NIBLO,NBLO))
+      CALL GSTATS(1962,1)
 
       IF (LICERUN) THEN
         CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
@@ -586,6 +588,7 @@
 !*    3. PRINT INITIAL CONDITIONS AS READ FROM PERPROCESSING.
 !        ----------------------------------------------------
 
+      CALL GSTATS(1962,0)
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' WAVE MODEL GRID ORGANISATION:'
       WRITE(IU06,3002) ' SOUTHERNMOST LATITUDE IN GRID IS .......: ',
@@ -660,9 +663,11 @@
 
       IF (ITEST.GE.2)CALL FLUSH(IU06)
 
+      CALL GSTATS(1962,1)
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &               ROAIRO,ZIDLOLD,
      &               NSTART,NEND,IREAD)
+      CALL GSTATS(1962,0)
 
       IF (LWCOU) THEN
         IDELWO = KDELWI
@@ -861,6 +866,7 @@
         WRITE(IU06,*) '                  WILL BE NADV = ', NADV
         CALL FLUSH(IU06)
       ENDIF
+      CALL GSTATS(1962,1)
 
 ! ----------------------------------------------------------------------
 
@@ -929,6 +935,7 @@
 !*    9. PRECOMPUTE REFRACTION TERMS.
 !        ----------------------------
 
+      CALL GSTATS(1962,0)
       IF (IREFRA.NE.0) THEN
         CALL PROPDOT(SL)
         IF (ITEST.GE.2)
@@ -985,6 +992,8 @@
 
       IF (ITEST.GE.2)
      1   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
+
+      CALL GSTATS(1962,1)
 
       RETURN
       END SUBROUTINE INITMDL

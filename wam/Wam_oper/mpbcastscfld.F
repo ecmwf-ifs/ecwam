@@ -44,7 +44,7 @@
       USE YOWPARAM , ONLY : NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE MPL_MODULE
-
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 
 !----------------------------------------------------------------------
@@ -66,9 +66,11 @@
 
         ENDDO
 
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(616,0)
         CALL MPL_ALLGATHERV(FIELD(NSTART(IRANK):NEND(IRANK)),
      &                     FIELD(1:NIBLO),KRECVCOUNTS,
      &                     CDSTRING='MPBCASTSCFLD:')
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(616,1)
 
       ENDIF
 

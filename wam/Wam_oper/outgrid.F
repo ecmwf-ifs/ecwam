@@ -85,6 +85,7 @@
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -547,12 +548,13 @@
             LSQRT=.FALSE.
             CALL MAKEGRID (TEMP, WSPRDSG, IJS, IJL, IG, LSQRT)
           ENDIF
-
         ENDIF
       ENDIF
 
       IF(LMESSPASS) THEN
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(750,0)
         CALL MPL_BARRIER(CDSTRING='OUTGRID:')
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(750,1)
       ENDIF
 
       RETURN

@@ -47,6 +47,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
 
@@ -56,6 +57,7 @@
 !*    1. INITIALIZATION
 !     -----------------
 
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1912,0)
       IF (IG.EQ.1) THEN
         DO J = 1,NGY
           DO I = 1,NGX
@@ -82,6 +84,7 @@
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1912,1)
 
       RETURN
       END SUBROUTINE MAKEGRID

@@ -14,6 +14,7 @@
 !     J. BIDLOT        ECMWF  APRIL    1996 MESSAGE PASSING.
 !     J. BIDLOT        ECMWF  OCTOBER  1997 ADD OUTPUT OF U10G.
 !     B. HANSEN        ECMWF  FEBRUARY 1998 INTERFACE TO FDB.
+!     P. TOWERS        ECMWF  APRIL    2003 ISETFIELDCOUNTFDB
 
 !*    PURPOSE.
 !     --------
@@ -82,6 +83,14 @@
       CHARACTER TITL*100
 
 ! ----------------------------------------------------------------------
+!
+      INTEGER IGLOBAL,ILOCAL      ! FDB field counters
+      INTEGER ISETFIELDCOUNTFDB
+      INTEGER IERR
+      EXTERNAL ISETFIELDCOUNTFDB
+
+      IGLOBAL=0
+      ILOCAL=0
 
       IF(CLDOMAIN.EQ.'s') THEN
 !     the swamp case has been reduced to a one grid point model
@@ -597,9 +606,11 @@
 !       -------------
 
         IF (GFLAG(1)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(1)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=229
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -611,9 +622,11 @@
 !       ---------------
 
         IF (GFLAG(2)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(2)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=230
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -625,9 +638,11 @@
 !       -----------------
 
         IF (GFLAG(3)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(3)))
      &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &      .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=232
             DO JY=1,NGY
               DO JX=1,NGX
@@ -652,9 +667,11 @@
 !       ---------------
 
         IF (GFLAG(5)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(5)))
      &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &      .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=249
             CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -666,9 +683,11 @@
 !       -----------------
 
         IF (GFLAG(6)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(6)))
      &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &      .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=231
             DO JY=1,NGY
               DO JX=1,NGX
@@ -693,9 +712,11 @@
 !       ----------------
 
         IF (GFLAG(7)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(7)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=233
             IZLEV=NINT(XNLEV(1))
             CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,IY,IM,
@@ -708,9 +729,11 @@
 !       ------------------
 
         IF (GFLAG(9)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(9)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=244
             CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -722,9 +745,11 @@
 !       ----------
 
         IF (GFLAG(10)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(10)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=245
             IZLEV=NINT(XNLEV(1))
             CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,IY,IM,
@@ -737,9 +762,11 @@
 !       ---------------------
 
         IF (GFLAG(22).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(22)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=246
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -751,9 +778,11 @@
 !       -------------------------------
 
         IF (GFLAG(23).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(23)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=247
             CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -765,9 +794,11 @@
 !       -----------------------------------
 
         IF (GFLAG(24).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(24)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=248
             CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -779,9 +810,11 @@
 !       -------------
 
         IF (GFLAG(25)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(25)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=220
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -793,9 +826,11 @@
 !       -------------
 
         IF (GFLAG(26)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(26)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=221
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -807,9 +842,11 @@
 !       -----------------------
 
         IF (GFLAG(27)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(27)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=222
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -831,9 +868,11 @@
 !       ---------------------
 
         IF (GFLAG(11)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(11)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=234
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -846,9 +885,11 @@
 
 
         IF (GFLAG(13)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(13)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=235
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -860,9 +901,11 @@
 !       --------------------
 
         IF (GFLAG(15)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(15)))
      &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &      .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=236
             DO JY=1,NGY
               DO JX=1,NGX
@@ -887,9 +930,11 @@
 !       -------------------
 
         IF (GFLAG(12)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(12)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=237
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -902,9 +947,11 @@
 
 
         IF (GFLAG(14)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(14)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=238
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
@@ -916,9 +963,11 @@
 !       ---------------------
 
         IF (GFLAG(16)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(16)))
      &      .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &      .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=239
             DO JY=1,NGY
               DO JX=1,NGX
@@ -943,9 +992,11 @@
 !       -----------------------
 
         IF (GFLAG(28)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(28)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=223
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -957,9 +1008,11 @@
 !       -----------------------
 
         IF (GFLAG(30)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(30)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=224
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -971,9 +1024,11 @@
 !       ---------------------------------
 
         IF (GFLAG(32)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(32)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=225
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
      &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -987,9 +1042,11 @@
 !       --------------------
 
         IF (GFLAG(29)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(29)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=226
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -1001,9 +1058,11 @@
 !       --------------------
 
         IF (GFLAG(31)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(31)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=227
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
@@ -1015,15 +1074,29 @@
 !       ------------------------------
 
         IF (GFLAG(33)) THEN
+          iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(33)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
             IPARAM=228
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
      &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
+
+      IF(LFDB.and.ILOCAL.gt.0) THEN
+         IERR = ISETFIELDCOUNTFDB(KFDB,IGLOBAL,ILOCAL)
+         IF(IERR.NE.0)THEN
+            WRITE(IU06,*) ' ------------------------'
+            WRITE(IU06,*) ' ERROR setting fdb field count '
+            WRITE(IU06,*) ' in routine OUTINT '
+            WRITE(IU06,*) ' FDB ERROR CODE IS ',IERR
+            WRITE(IU06,*) ' ------------------------'
+            CALL ABORT1
+         ENDIF
+      ENDIF
 
       RETURN
       END SUBROUTINE OUTINT

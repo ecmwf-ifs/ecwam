@@ -96,6 +96,7 @@
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
      &            NSTART ,NEND
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! --------------------------------------------------------------------- 
 
@@ -344,7 +345,9 @@
 
       ENDIF
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,0)
         ISTAT = ICLOSEFDB (MFDBSF)
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1957,1)
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
           CALL FLUSH(IU06)

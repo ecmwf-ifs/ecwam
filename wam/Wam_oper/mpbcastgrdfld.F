@@ -39,6 +39,7 @@
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 
@@ -52,6 +53,7 @@
       ELSE
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ----------------------------------------
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,0)
         ALLOCATE(ZCOMBUF(MPLENGTH))
 
         IF(IRANK.EQ.ISEND) THEN
@@ -78,6 +80,7 @@
         ENDIF
 
         DEALLOCATE(ZCOMBUF)
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(620,1)
 
       ENDIF
 

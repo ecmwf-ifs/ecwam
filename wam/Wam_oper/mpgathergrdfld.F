@@ -40,6 +40,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -55,6 +56,8 @@
         RETURN
 
       ELSEIF(IRANK.EQ.ISEND) THEN 
+
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(672,0)
 !     1.1 SEND FIELD FROM PROCESS ISEND TO PROCESS IRECV
 !         -----------------------------------------------
 
@@ -69,10 +72,12 @@
 
         CALL MPL_SEND(ZCOMBUF(1:KCOUNT),KDEST=IRECV,KTAG=ITAG,
      &   CDSTRING='MPGATHERGRDFLD:')
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(672,1)
 
       ELSEIF(IRANK.EQ.IRECV) THEN
 !     1.2 RECEIVE FIELD FROM PROCESS ISEND ON PROCESS IRECV
 !         ------------------------------------------------- 
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(672,0)
         CALL MPL_RECV(ZCOMBUF(1:KCOUNT),KSOURCE=ISEND,KTAG=ITAG,
      &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPGATHERGRDFLD:')
         IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
@@ -88,6 +93,7 @@
             FIELD(I,J)=ZCOMBUF(IJ)
           ENDDO
         ENDDO
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(672,1)
       ENDIF
 
       RETURN

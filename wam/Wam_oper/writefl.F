@@ -91,6 +91,7 @@
       REAL,DIMENSION(IJINF:IJSUP,NANG,MINF:MSUP) :: FL
 
 ! ----------------------------------------------------------------------
+      CALL GSTATS(1710,0)
       IF(LPBIOOUT .AND. .NOT. LFDBIOOUT) THEN
         IF(LPBOPEN) THEN
           CALL PBOPEN(IUNIT,FILENAME,CLMODE,KRET)
@@ -248,6 +249,7 @@
           ENDIF
         ENDIF
       ENDIF
+      CALL GSTATS(1710,1)
 
       RETURN
       END SUBROUTINE WRITEFL

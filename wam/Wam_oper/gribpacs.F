@@ -83,6 +83,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : DEG 
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 #include <outctrl.h>
       DATA csubna /"GRIBPAC"/
@@ -470,9 +471,11 @@
       IF (lltest) WRITE(kuso,*) (isec2(jsec2),jsec2=1,50)
       time0=-wam_user_clock()
       IF (lltest.OR.llsuvi) CALL FLUSH(kuso)
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,0)
       CALL gribex (isec0, isec1, isec2, zsec2, isec3, zsec3, isec4,
      &             psec4, ilenp, igrib, kang*kfre*kgx*kgy/jpidl, iword,
      &             cloper, iret)
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,1)
 
       IF (llsuvi) THEN
         time_g=time0+wam_user_clock()

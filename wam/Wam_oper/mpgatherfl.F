@@ -51,6 +51,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -120,6 +121,7 @@
 
 !! the old way is below
       ELSEIF(IRANK.NE.IRECV) THEN
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(677,0)
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
         MPLENGTH=MPMAXLENGTH*NANG*(MSUP-MINF+1)
@@ -176,6 +178,7 @@
           ENDDO 
 
         ENDDO
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(677,1)
 
         DEALLOCATE(ZCOMBUF)
       ENDIF

@@ -67,6 +67,8 @@
 ! ----------------------------------------------------------------------
       LMORE=.TRUE.
 
+      CALL GSTATS(1708,0)
+
       IF (IUNIT.LT.10) THEN
         WRITE(FILENAMEF,'(A,I1)') 'fort.',IUNIT
       ELSE
@@ -194,6 +196,8 @@
       ENDIF
 
       DEALLOCATE(KARRAY)
+
+      CALL GSTATS(1708,1)
 
       RETURN
       END SUBROUTINE FILE_TRANSFER

@@ -62,6 +62,8 @@
      &        ISETVALFDB, ILEN, IREAD, IREADFDB, ICLOSEFDB,
      &        ISET_FDB_ROOT, IWRITEFDB, IRANK, ISETRANKFDB
 
+      INTEGER KFIELD
+
       INTEGER,             DIMENSION(2)     :: IUNIT, ILCR
       INTEGER,             DIMENSION(JPNIB) :: INGRIB
 
@@ -106,6 +108,7 @@
       ilcr(1)   = LEN_TRIM(clroot(1))
       ilcr(2)   = LEN_TRIM(clroot(2))
       ISTAT = IINITFDB()
+      KFIELD=0
       DO JLEVEL = 1, ILEVEL
         ISTAT = IOPENFDB   ('fdb', IUNIT(1), 'r'   )
         IF (ilcr(1) .GT. 1) ISTAT = ISET_FDB_ROOT(IUNIT(1),
@@ -163,6 +166,7 @@
         IRANK = ISETRANKFDB(IUNIT(2), jlevel)
 
         ISTAT = IWRITEFDB  (IUNIT(2), INGRIB, ILEN)
+        KFIELD=KFIELD+1
         IF (ISTAT .NE. 0) CALL abort
         ISTAT = ICLOSEFDB  (IUNIT(2))
 
@@ -171,5 +175,3 @@
       WRITE(jpuso,'(" NORMAL END")')
 
       END
-
-

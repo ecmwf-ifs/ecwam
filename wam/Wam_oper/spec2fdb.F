@@ -18,6 +18,7 @@
 
 !     B. HANSEN   ECMWF   FEBRUARY 1998 
 !     J. BIDLOT   ECMWF   NOVEMBER 1998
+!     P. TOWERS   ECMWF   APRIL    2003
 
 !*    PURPOSE.
 !     --------
@@ -124,6 +125,7 @@
 !-------------------------------------------------------------------
 
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
       IMPLICIT NONE
 
@@ -172,6 +174,12 @@
       CHARACTER*  1 CDDOMAIN
       CHARACTER* 40 CLMSG
       CHARACTER* 120 OUTFILEN
+!
+      INTEGER IGLOBAL,ILOCAL      ! FDB field counters
+      INTEGER ISETFIELDCOUNTFDB
+      EXTERNAL ISETFIELDCOUNTFDB
+
+      ILOCAL=0
 
 !-----------------------------------------------------------------------
 
@@ -185,6 +193,7 @@
         CALL FLUSH (KU06)
       ENDIF
 
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,0)
       IF(CDTPRO.LE.CDATEF) THEN
 
 !*    0.1.  THIS IS AN ANALYSIS DATE.
@@ -371,6 +380,7 @@
           IPOINTER(IJ) = (IY-1)*KGX + IX + KDEXN
         ENDDO
       ENDIF
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,1)
 
 
 !-----------------------------------------------------------------------
@@ -387,7 +397,9 @@
 
         IST=ISTEP
         IF(IC+ISTEP.GT.KFRE*KANG ) IST=KFRE*KANG-IC+1
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,0)
         ZSEC4OUT = 0.0
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(1984,1)
 
 !       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
 !       ---------------------------------- than PE's)
@@ -408,7 +420,9 @@
      &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
 
             IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(751,0)
               CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
+              IF (.NOT.LSYNCSTATS) CALL GSTATS(751,1)
             ENDIF
 
             IF(KSEND.EQ.KRANK) THEN
@@ -438,10 +452,14 @@
 !*        PREPARE FOR ENCODING.
 !         ----------------------
 
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1433,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
           DO JC=1,NTENCODE
             ZSEC4OUT(JC) = LOG10(ZSEC4OUT(JC)+PPEPS)+ABS(PPREC)
             IF ( ZSEC4OUT(JC) .LE. PPMISS ) ZSEC4OUT(JC)=ZSEC3(2)
           ENDDO
+!$OMP END PARALLEL DO
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1433,1)
 
           ILENGOUT = NINT(NTENCODE*(ISEC4(2)+1.)/(KIND(KU06)*8))+
      &      NKSEK0+NKSEK1+NKSEK2+NKSEK3+NKSEK4+NPSEK2+NPSEK3
@@ -468,25 +486,21 @@
 
 !         CODING
 !         ------
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,0)
           CALL GRIBEX (ISEC0, ISEC1, ISEC2, ZSEC2, ISEC3, ZSEC3, ISEC4,
      &       ZSEC4OUT, NTENCODE, IOUTGRIB, ILENGOUT ,IWORD, HOPERS,IRET)
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1704,1)
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
 
 !         OUTPUT
 !         ------
           IF (LFDBIOOUT) THEN
+            ILOCAL=ILOCAL+1
             CALL FLD2FDB (ku06, ktest, isec1, ioutgrib, iword, 'write',
      &                    ierr,cdtype, cdclass,
      &                    cdexpver, CDFDB2DSP, cddomain,
      &                    IK, IM, kfdb)
-            IF(IERR.NE.0)THEN
-              WRITE(KU06,*) ' ------------------------------'
-              WRITE(KU06,*) ' SPEC2FDB: ERROR ACCESSING FDB '
-              WRITE(KU06,*) ' FDB ERROR CODE IS ',IERR
-              WRITE(KU06,*) ' ------------------------------'
-              CALL ABORT1
-            ENDIF
           ELSE
 !         output to file should only take place on one PE, thus istep=1
             IF(IM.EQ.1.AND.IK.EQ.1) THEN
@@ -519,6 +533,19 @@
 
       IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
       IF(ALLOCATED(IPOINTER)) DEALLOCATE(IPOINTER)
+
+      IF(LFDBIOOUT.and.ILOCAL.gt.0) THEN
+        IGLOBAL = KANG*KFRE
+        IERR = ISETFIELDCOUNTFDB(KFDB,IGLOBAL,ILOCAL)
+          IF(IERR.NE.0)THEN
+            WRITE(KU06,*) ' ------------------------'
+            WRITE(KU06,*) ' ERROR setting fdb field count '
+            WRITE(KU06,*) ' in routine SPEC2FDB '
+            WRITE(KU06,*) ' FDB ERROR CODE IS ',IERR
+            WRITE(KU06,*) ' ------------------------'
+            CALL ABORT1
+          ENDIF
+      ENDIF
 
       RETURN
 

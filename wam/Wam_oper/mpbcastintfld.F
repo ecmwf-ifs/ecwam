@@ -40,6 +40,7 @@
  
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 
@@ -51,6 +52,7 @@
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
         RETURN
       ELSE
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(617,0)
         ALLOCATE(ICOMBUF(MPLENGTH))
 
         IF(IRANK.EQ.ISEND) THEN
@@ -78,6 +80,7 @@
         ENDIF
 
         DEALLOCATE(ICOMBUF)
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(617,1)
 
       ENDIF
 

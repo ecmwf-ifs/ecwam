@@ -138,7 +138,7 @@
 
 ! ----------------------------------------------------------------------
 
-
+      CALL GSTATS(1968,0)
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
 
@@ -205,6 +205,7 @@
      &              ROAIRO, ZIDLOLD,
      &              NFIELDS,NGPTOTG, NC,NR, ISEC1,ISEC2, FIELDS)
       ENDIF
+      CALL GSTATS(1968,1)
 
       RETURN
 

@@ -341,6 +341,7 @@
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! ----------------------------------------------------------------------
       CHARACTER*2 MARSTYPEBAK
@@ -471,7 +472,16 @@
 
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
 
-          IF (MFDBSF.NE.-5.AND.LFDB) ISTAT = IFLUSHFDB (MFDBSF)
+          IF (MFDBSF.NE.-5.AND.LFDB) THEN
+             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+             ISTAT = IFLUSHFDB (MFDBSF)
+             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+          ELSE
+             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+             IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+          ENDIF
 
           IF(LFRSTFLD) THEN
             MARSTYPE=MARSTYPEBAK
@@ -715,8 +725,8 @@
               NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
               IF (CDATE.EQ.CDTPRA) THEN
-!$OMP           PARALLEL PRIVATE(JKGLO,KIJS,KIJL)
-!$OMP           DO
+                CALL GSTATS(1430,0)
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
                 DO JKGLO=IJS(IG),IJL(IG),NPROMA
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -730,12 +740,12 @@
                     FL3 = FL1
                   ENDIF
                 ENDDO
-!$OMP           END DO
-!$OMP           END PARALLEL
+!$OMP           END PARALLEL DO
+                CALL GSTATS(1430,1)
               ENDIF
 
-!$OMP         PARALLEL PRIVATE(JKGLO,KIJS,KIJL)
-!$OMP         DO
+              CALL GSTATS(1431,0)
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -749,8 +759,8 @@
                 ENDIF
 
               ENDDO
-!$OMP         END DO
-!$OMP         END PARALLEL
+!$OMP         END PARALLEL DO
+              CALL GSTATS(1431,1)
 ! End Mod for OPENMP
 
             ELSE
@@ -819,6 +829,7 @@
 
 !*    1.5.5.3 COPY AND CLOSE FILES IF NEEDED.
 !             -------------------------------
+          CALL GSTATS(1908,0)
 
           CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDATE,CDATEWH,
      &                 NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,
@@ -834,10 +845,12 @@
 !             ---------------------------------------------
 
           CALL INCDATE(CDATE,IDELT)   
+          CALL GSTATS(1908,1)
           IF (CDATE.LT.CDTPRO) GO TO 1550
 
 !        END OF TIME LOOP ALL TIME STEPS DONE
 
+          CALL GSTATS(1908,0)
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
@@ -935,6 +948,7 @@
             WRITE(IU06,*) ' '
             CALL FLUSH (IU06)
           ENDIF
+          CALL GSTATS(1908,1)
 
           IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
      &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO .OR.
@@ -945,7 +959,9 @@
             IF (IGH1.EQ.IG) THEN
 !REFRA
               IF (IREFRA.EQ.2) THEN
+                CALL GSTATS(1908,0)
                 CALL INTPOL (FL3, SL, IJS(IG), IJL(IG), IG)
+                CALL GSTATS(1908,1)
                 CALL OUTBS (SL, FL2, IJS(IG), IJL(IG), IG, IGL,
      &                      IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                      TAUW, NSTART,NEND)
@@ -959,7 +975,9 @@
             ELSE
 !REFRA
               IF (IREFRA.EQ.2) THEN
+                CALL GSTATS(1908,0)
                 CALL INTPOL (FL3, SL, IJS(IG), IJL(IG), IG)
+                CALL GSTATS(1908,1)
                 CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
      &                      IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                      TAUW, NSTART,NEND)
@@ -986,6 +1004,8 @@
 !         ----------------------------------
 
         IF (IGL.EQ.1) THEN
+          CALL GSTATS(1432,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(M,K,IJ)
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=NINF-1,NSUP
@@ -999,6 +1019,8 @@
               ENDDO
             ENDDO
           ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1432,1)
           IF (ITEST.GE.2)
      &     WRITE(IU06,*) '   SUB. WAMODEL: BLOCK COPIED'
         ENDIF
@@ -1018,7 +1040,9 @@
 
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
           IF(LMESSPASS) THEN
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(753,0)
             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+            IF (.NOT.LSYNCSTATS) CALL GSTATS(753,1)
           ENDIF
 
         ENDIF
@@ -1198,7 +1222,16 @@
      &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                       LFDBIOOUT,ICPLEN, CPATH, ITEST, MFDBSF)
-              IF (LFDB) ISTAT = IFLUSHFDB (MFDBSF)
+              IF (LFDB) THEN
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+                ISTAT = IFLUSHFDB (MFDBSF)
+                CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+              ELSE
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+                CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+                IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
+              ENDIF
               LLFLUSH = .FALSE.
             ENDIF  
 
@@ -1265,11 +1298,18 @@
         IF( LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. 
      &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
           ISTAT = IFLUSHFDB (MFDBSF)
+          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '  DB ', MFDBSF , ' FLUSHED AT ',
      &    CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
+        ELSE
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,0)
+          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+          IF (.NOT.LSYNCSTATS) CALL GSTATS(1976,1)
         ENDIF
 
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.

@@ -64,6 +64,7 @@
       FAVG=0.
       FMIN=9999999.
       FMAX=-9999999.
+      CALL GSTATS(675,0)
       IF(LMESSPASS) THEN
         IF(IRANK.EQ.ISEND) THEN
           IF(NX.EQ.1.AND.NY.EQ.1) THEN
@@ -130,6 +131,7 @@
           NAVG=NTOT
         ENDIF
       ENDIF
+      CALL GSTATS(675,1)
 
       RETURN
       END SUBROUTINE WAMNORM

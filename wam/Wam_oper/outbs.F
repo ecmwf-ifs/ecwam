@@ -104,6 +104,7 @@
 !        ------------------------
 
       LLAK=.FALSE.
+      CALL GSTATS(1951,0)
       CALL FEMEAN (FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
      &             AKMEAN(IJS), LLAK)
 
@@ -150,6 +151,7 @@
         ENDIF
       ENDIF
 
+      CALL GSTATS(1951,1)
 !*    3. OUTPUT OF SPECTRA AT SELECTED GRID POINTS.
 !        ------------------------------------------
 

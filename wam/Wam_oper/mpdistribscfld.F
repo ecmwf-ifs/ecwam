@@ -43,6 +43,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE YOWPARAM , ONLY : NIBLO
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -58,6 +59,7 @@
       ELSEIF(IRANK.EQ.ISEND) THEN
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ------------------------------------------------
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(624,0)
         MPLENGTH=MPMAXLENGTH
         ALLOCATE(ZCOMBUF(MPLENGTH))
 
@@ -80,12 +82,14 @@
           CALL MPL_SEND(ZCOMBUF(1:MPLENGTH),KDEST=IP,KTAG=ITAG,
      &     CDSTRING='MPDISTRIBSCFLD 2:')
         ENDDO
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(624,1)
 
       ELSE
 
 !     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM PE ISEND 
 !         ------------------------------------------------ 
 
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(624,0)
         MPLENGTH=MPMAXLENGTH
         ALLOCATE(ZCOMBUF(MPLENGTH))
 
@@ -101,6 +105,7 @@
           KCOUNT=KCOUNT+1
           FIELD(IJ)=ZCOMBUF(KCOUNT)
         ENDDO
+        IF (.NOT.LSYNCSTATS) CALL GSTATS(624,1)
 
       ENDIF
 

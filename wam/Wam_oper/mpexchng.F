@@ -70,6 +70,7 @@
      &            NINF     ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE MPL_MODULE
+      USE YOMGSTATS, ONLY : LSYNCSTATS
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -94,6 +95,8 @@
       IF(NPROC.LE.1) THEN
         RETURN
       ENDIF
+
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(676,0)
 
       NBUFMAX=MAX(NTOPEMAX,NFROMPEMAX)*NANG*NFRE
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
@@ -173,6 +176,8 @@
      &              CDSTRING='MPEXCHNG:')
 
       KTAG=KTAG+1
+
+      IF (.NOT.LSYNCSTATS) CALL GSTATS(676,1)
 
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)

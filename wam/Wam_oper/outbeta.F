@@ -105,6 +105,8 @@
 !         ------------------------------------
 
       IF (IG.EQ.IGL) THEN
+      CALL GSTATS(1436,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(J,I)
         DO J=1,NGY
           DO I=1,NGX
             IF (BETAG(I,J).LE.0.0) THEN
@@ -112,6 +114,8 @@
             ENDIF
           ENDDO
         ENDDO
+!$OMP END PARALLEL DO
+      CALL GSTATS(1436,1)
       ENDIF
 
 ! ----------------------------------------------------------------------
