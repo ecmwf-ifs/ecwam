@@ -54,8 +54,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS,IJL
-            ZICE = REAL(ICEMASK(IJ,IG))
-            FL3(IJ,K,M) = ZICE*FL3(IJ,K,M)
+            FL3(IJ,K,M) = ICEMASK(IJ,IG)*FL3(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO

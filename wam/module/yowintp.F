@@ -14,13 +14,17 @@
       REAL, ALLOCATABLE :: CDG(:,:) 
       REAL, ALLOCATABLE :: SMEANG(:,:) 
       REAL, ALLOCATABLE :: U10G(:,:) 
+      REAL, ALLOCATABLE :: WHGTAG(:,:) 
+      REAL, ALLOCATABLE :: CWHTAG(:,:) 
+      REAL, ALLOCATABLE :: RANGAG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *WHGTTG*    REAL      GRIDDED MEAN ENERGY (M*M) CHANGED TO
 !                            WAVE HEIGHT (M) IN SUB OUTINT.
 !      *WDIRTG*    REAL      GRIDDED MEAN DIRECTION (RAD) CHANGED TO
-!                            DEGREE IN SUB OUTINT.
+!                            DEGREE AND METEOROLOGICAL DEFINITION
+!                            IN SUB OUTINT.
 !      *WPKFTG*    REAL      GRIDDED PEAK FREQUENCY (HZ) until gribbing
 !                            where it is transformed into PERIOD.
 !      *WMNFTG*    REAL      GRIDDED MEAN FREQUENCY (HZ) until gribbing
@@ -32,6 +36,10 @@
 !      *CDG*       REAL      GRIDDED DRAG COEFFICENT.
 !      *SMEANG*    REAL      GRIDDED MEAN SQUARE SLOPE.
 !      *U10G*      REAL      GRIDDED WIND SPEED (M/S).
+!      *WHGTAG*    REAL      GRIDDED ALTIMETER WAVE HEIGHT (M).
+!      *CWHTAG*    REAL      GRIDDED CORRECTED ALTIMETER WAVE HEIGHT (M) 
+!      *RANGAG     REAL      GRIDDED RELATIVE CORRECTION TO THE
+!                            ALTIMETER RANGE.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWINTP

@@ -69,13 +69,10 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWMLTSK , ONLY : NCHUNK
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMLTSK , ONLY : NCHUNK
       USE YOWMPP   , ONLY : NINF     ,NSUP
-
-
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
 
 ! ----------------------------------------------------------------------
 
@@ -100,7 +97,11 @@
       IF(LMESSPASS) THEN
 
         IF (CDATE.EQ.CDTPRA) THEN
-          CALL PROPAGS(FL1, FL3, IJS, IJL, IG, SL, FCONST)
+          IF(NIBLO.GT.1) THEN
+            CALL PROPAGS(FL1, FL3, IJS, IJL, IG, SL, FCONST)
+          ELSE
+            FL3 = FL1
+          ENDIF
         ENDIF
         CALL IMPLSCH (FL3, FL, IJS, IJL, IG,
      &   THWOLD,USOLD,TAUW,Z0OLD,
@@ -119,7 +120,11 @@
 
 
           IF (CDATE.EQ.CDTPRA) THEN
-            CALL PROPAGS(FL1, FL3, MIJS, MIJL, IG, SL, FCONST)
+            IF(NIBLO.GT.1) THEN
+              CALL PROPAGS(FL1, FL3, MIJS, MIJL, IG, SL, FCONST)
+            ELSE
+              FL3 = FL1
+            ENDIF
           ENDIF
           CALL IMPLSCH (FL3, FL, MIJS, MIJL, IG,
      &     THWOLD,USOLD,TAUW,Z0OLD,

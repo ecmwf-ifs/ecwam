@@ -39,19 +39,13 @@
 
 ! ----------------------------------------------------------------------
 
-!*    *PARAMETER*  FOR ARRAY DIMENSIONS.
-
-
-      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWMEAN  , ONLY : FMEAN    ,SMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
-
-
-
 
 ! ----------------------------------------------------------------------
 
@@ -63,7 +57,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (XLAMBDAC=0.005,SURFT=0.000075)
+      PARAMETER (XLAMBDAC=0.0628,SURFT=0.000075)
 
       DIMENSION TEMP1(IJS:IJL), TEMP2(IJS:IJL)
 
@@ -135,9 +129,10 @@
         CONST1    = LOG(FC/FS)  
         CP        = G/(ZPI*FMEAN(IJ))
         XI        = CP/USNEW(IJ)
-        ALPHAP    = MAX(0.21/XI,0.0010)
-        CONST3    = MAX(CONST2*DELTH*TEMP2(IJ),ALPHAP)
-        CONST3    = CONST2*DELTH*TEMP2(IJ)+ALPHAP 
+        ALPHAP    = MAX(0.21/XI,0.0040)
+!        CONST3    = MAX(CONST2*DELTH*TEMP2(IJ),ALPHAP)
+!        CONST3    = CONST2*DELTH*TEMP2(IJ)+ALPHAP
+        CONST3    = CONST2*DELTH*TEMP2(IJ)
         SMEAN(IJ) = SMEAN(IJ)+CONST1*CONST3
       ENDDO
 

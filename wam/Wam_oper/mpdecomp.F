@@ -8,6 +8,7 @@
 !     J. BIDLOT    ECMWF   JANUARY 1998 introduce NPR 
 !     J. BIDLOT    ECMWF   OCTOBER 1998 COMPLETE READING OF
 !                                       IU07 AND IU08 
+!     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
 !     PURPOSE.
 !     --------
@@ -103,6 +104,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG 
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
       USE YOWSTAT  , ONLY : IREFRA 
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON
       USE YOWUNIT  , ONLY : IU07     ,IU08
@@ -155,11 +157,22 @@
         CALL READPRE (IU07, IREFRA)
         CLOSE (UNIT=IU07, STATUS='KEEP')
       ENDIF
+
 !     SEND INFORMATION FROM READPRE TO ALL PE's
       IF(LMESSPASS) CALL MPBCASTGRID(IU06,IREAD,KTAG,IREFRA)
 
       WRITE(IU06,*) '  PREPROC GRID INFORMATION READ IN '
 
+!     TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
+!     OF THE INPUT VALUES !!!!!!!
+
+      DO ILV = 1,JPLEVT
+        DO J = 0,JUMAX
+          DO I = 0,ITAUMAX
+            TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
+          ENDDO
+        ENDDO
+      ENDDO
 
 !*    1. INPUT NEIGHBOURING GRID POINT INDICES (UBUF) 
 !        --------------------------------------------

@@ -62,12 +62,13 @@
      &            NFLAGALL ,LFDB     ,NOUTT    ,NOUTS    ,NASS
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWPARAM , ONLY : XKAPPA2
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
      &            IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,CDATEA   ,YCLASS   ,YEXPVER
+     &            NTOTENS  ,CDATEA   ,YCLASS   ,YEXPVER  ,LALTCOR
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -103,7 +104,8 @@
      &   IBOUNC, IBOUNF,
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   NENSFNB, NTOTENS,
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP,  LNOCDIN
+     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
+     &   LALTCOR, XKAPPA2
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -184,6 +186,10 @@
 !     CFDB2DSP : FDB ROOT DIRECTORY FOR 2D SPECTRA. 
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
+!     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
+!              SEE GRFIELD. 
+!     XKAPPA2: KAPPA2 PARAMETER USED IN THE FORMULA FOR THE DETERNMINATION
+!              OF ALTIMETER WAVE HEIGHT.
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -269,6 +275,10 @@
       CFDB2DSP  = ""
 
       LNOCDIN   = .FALSE. 
+
+      LALTCOR   = .FALSE. 
+
+      XKAPPA2   = 0.0700
 
       NOUTS     = 0
 
@@ -425,15 +435,27 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
+      IF (GFLAG(22).AND.IASSI.NE.1) THEN
+        GFLAG(22) = .FALSE.
+      ENDIF
+      IF (GFLAG(23).AND.IASSI.NE.1) THEN
+        GFLAG(23) = .FALSE.
+      ENDIF
+      IF (GFLAG(24).AND.IASSI.NE.1) THEN
+        GFLAG(24) = .FALSE.
+      ENDIF
       FFLAG20 = FFLAG( 1).OR.FFLAG( 2).OR.FFLAG( 3).OR.FFLAG( 4).OR.
      &          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
-     &          FFLAG( 9).OR.FFLAG(10)
+     &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
+     &          FFLAG(24)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
-     &          PFLAG( 9).OR.PFLAG(10)
+     &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
+     &          PFLAG(24)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
-     &          GFLAG( 9).OR.GFLAG(10)
+     &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
+     &          GFLAG(24)
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
      &          FFLAG(15).OR.FFLAG(16) 
       PFLAG21 = PFLAG(11).OR.PFLAG(12).OR.PFLAG(13).OR.PFLAG(14).OR.
@@ -449,7 +471,8 @@
       NFLAGALL= NFLAG( 1).OR.NFLAG( 2).OR.NFLAG( 3).OR.NFLAG( 4).OR.
      &          NFLAG( 5).OR.NFLAG( 6).OR.NFLAG( 7).OR.NFLAG( 8).OR.
      &          NFLAG( 9).OR.NFLAG(10).OR.NFLAG(11).OR.NFLAG(12).OR.
-     &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16)
+     &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16).OR.
+     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(34)
 
       ICPLEN=LEN_TRIM(CPATH)
       IF(ICPLEN.GT.0.AND.CPATH(ICPLEN:ICPLEN).EQ.'/') THEN
@@ -688,6 +711,11 @@
         WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF ' 
         WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
         WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
+        IF(LALTCOR) THEN
+          WRITE(IU06,*) '  '
+          WRITE(IU06,*) ' THE ALTIMETER DATA WILL BE CORRECTED ' 
+          WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
+        ENDIF
       ELSE
         WRITE(IU06,*) ' DATA ASSIMILATION IS NOT CARRIED OUT'
       ENDIF
@@ -705,42 +733,48 @@
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
       WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' SIGNIFICANT WAVE HEIGHT ..', PFLAG( 1),
+      WRITE(IU06,*) ' SIGNIFICANT WAVE HEIGHT ...', PFLAG( 1),
      & '......', FFLAG( 1),'.....',GFLAG( 1)
-      WRITE(IU06,*) ' MEAN WAVE DIRECTION ......', PFLAG( 2),
+      WRITE(IU06,*) ' MEAN WAVE DIRECTION .......', PFLAG( 2),
      & '......', FFLAG( 2),'.....',GFLAG( 2)
-      WRITE(IU06,*) ' WAVE MEAN FREQUENCY ......', PFLAG( 3),
+      WRITE(IU06,*) ' WAVE MEAN FREQUENCY .......', PFLAG( 3),
      & '......', FFLAG( 3),'.....',GFLAG( 3)
-      WRITE(IU06,*) ' FRICTION VELOCITY ........', PFLAG( 4),
+      WRITE(IU06,*) ' FRICTION VELOCITY .........', PFLAG( 4),
      & '......', FFLAG( 4),'.....',GFLAG( 4)
-      WRITE(IU06,*) ' WIND DIRECTION ...........', PFLAG( 5),
+      WRITE(IU06,*) ' WIND DIRECTION ............', PFLAG( 5),
      & '......', FFLAG( 5),'.....',GFLAG( 5)
-      WRITE(IU06,*) ' WAVE PEAK FREQUENCY ......', PFLAG( 6),
+      WRITE(IU06,*) ' WAVE PEAK FREQUENCY .......', PFLAG( 6),
      & '......', FFLAG( 6),'.....',GFLAG( 6)
-      WRITE(IU06,*) ' DRAG COEFFICIENT .........', PFLAG( 7),
+      WRITE(IU06,*) ' DRAG COEFFICIENT ..........', PFLAG( 7),
      & '......', FFLAG( 7),'.....',GFLAG( 7)
-      WRITE(IU06,*) ' NORMALISED WAVE STRESS ...', PFLAG( 8),
+      WRITE(IU06,*) ' NORMALISED WAVE STRESS ....', PFLAG( 8),
      & '......', FFLAG( 8),'.....',GFLAG( 8)
-      WRITE(IU06,*) ' MEAN SQUARE SLOPE.........', PFLAG( 9),
+      WRITE(IU06,*) ' MEAN SQUARE SLOPE..........', PFLAG( 9),
      & '......', FFLAG( 9),'.....',GFLAG( 9)
-      WRITE(IU06,*) ' WAVE MODEL WIND SPEED.....', PFLAG(10),
+      WRITE(IU06,*) ' WAVE MODEL WIND SPEED......', PFLAG(10),
      & '......', FFLAG(10),'.....',GFLAG(10)
+      WRITE(IU06,*) ' ALTIMETER WAVE HEIGHT......', PFLAG(22),
+     & '......', FFLAG(22),'.....',GFLAG(22)
+      WRITE(IU06,*) ' CORRECTED ALT WAVE HEIGHT..', PFLAG(23),
+     & '......', FFLAG(23),'.....',GFLAG(23)
+      WRITE(IU06,*) ' ALTIMETER RANGE CORRECTION.', PFLAG(23),
+     & '......', FFLAG(23),'.....',GFLAG(23)
       WRITE(IU06,*) '  '
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
       WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
-      WRITE(IU06,*) ' WIND SEA WAVE HEIGHT......', PFLAG(11),
+      WRITE(IU06,*) ' WIND SEA WAVE HEIGHT.......', PFLAG(11),
      & '......', FFLAG(11),'.....',GFLAG(11)
-      WRITE(IU06,*) ' WIND SEA DIRECTION........', PFLAG(13),
+      WRITE(IU06,*) ' WIND SEA DIRECTION.........', PFLAG(13),
      & '......', FFLAG(12),'.....',GFLAG(13)
-      WRITE(IU06,*) ' WIND SEA MEAN FREQUENCY...', PFLAG(15),
+      WRITE(IU06,*) ' WIND SEA MEAN FREQUENCY....', PFLAG(15),
      & '......', FFLAG(15),'.....',GFLAG(15)
-      WRITE(IU06,*) ' SWELL WAVE HEIGHT.........', PFLAG(12),
+      WRITE(IU06,*) ' SWELL WAVE HEIGHT..........', PFLAG(12),
      & '......', FFLAG(12),'.....',GFLAG(12)
-      WRITE(IU06,*) ' SWELL WAVE DIRECTION......', PFLAG(14),
+      WRITE(IU06,*) ' SWELL WAVE DIRECTION.......', PFLAG(14),
      & '......', FFLAG(14),'.....',GFLAG(14)
-      WRITE(IU06,*) ' SWELL MEAN FREQUENCY .....', PFLAG(16),
+      WRITE(IU06,*) ' SWELL MEAN FREQUENCY ......', PFLAG(16),
      & '......', FFLAG(16),'.....',GFLAG(16)
       WRITE(IU06,*) ' PACKING UNDER TESTING !!!'
       WRITE(IU06,*) '  '

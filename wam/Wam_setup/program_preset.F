@@ -450,7 +450,6 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
 		DIRECTION=1/to/${nang},
 		FREQUENCY=1/to/${nfre},
 		GRID=$GRID,
-		AR=$AREA,
 		TARGET="${sfilename}"
 		EOF
      fi

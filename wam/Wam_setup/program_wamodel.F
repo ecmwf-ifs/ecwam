@@ -10,7 +10,7 @@
 #QSUB -lt 2500
 #QSUB -lT 3000
 #QSUB -lM 500mb
-# # #QSUB -lM 1200mb
+# # #QSUB -lM 1000mb
 #QSUB -eo
 #QSUB -mb -mi
 #QSUB
@@ -218,8 +218,13 @@ fi
 #.
 #. LOAD LIBRARY
 #.
+#!!! the use of ifssig.o is specific to ECMWF. Please refer to the source
+#!!! and comments out its use.
 ar vx $aux ifssig.o
+#!!! the use of ishell.o is specific to ECMWF. Please refer to the source
+#!!! and replace its use by call to fortran 90 SYSTEM.
 ar vx $dum ishell.o
+#
 ar xv $LIBS/$WAMLIB.a chief.o
 #.
 frtcnt=$(cat frtcnt)

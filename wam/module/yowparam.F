@@ -17,6 +17,8 @@
       INTEGER NIBLC 
       INTEGER NBLC 
 
+      REAL    XKAPPA2
+
       CHARACTER*1 CLDOMAIN
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -39,6 +41,8 @@
 !                            = 1     ELSE.
 !      *NBLC*      INTEGER   = NBLO  IF CURRENT REFRACTION.
 !                            = 1     ELSE.
+!      *XKAPPA2*   REAL      KAPPA2 PARAMETER USED IN THE DETERMINATION
+!                            OF ALTIMETER WAVE HEIGHTS (SEE GRFIELD)
 !      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
 !                            FDB and for selection of some variables)
 

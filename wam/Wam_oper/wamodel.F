@@ -316,7 +316,7 @@
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,CDATEA   ,
-     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LANAONLY
+     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LANAONLY ,LALTCOR
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
@@ -411,6 +411,17 @@
      &                    TAUW, NSTART,NEND)
             ENDIF
           ENDIF
+
+!         SET FL1 ON ICE POINTS TO ZERO
+
+          IF (LICERUN) THEN
+            IF (ITEST.GE.1) THEN
+              WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT',
+     &         ' ICEPOINTS'
+            ENDIF
+            CALL SETICE(FL1,IJS(IG),IJL(IG),IG)
+          ENDIF
+
 
         ENDDO
 
@@ -651,10 +662,14 @@
               ENDIF
 
               IF (CDATE.EQ.CDTPRA) THEN
-                CALL PROPAGS(FL1,FL3,IJS(IG),IJL(IG),IG,SL,FCONST)
-                IF (ITEST.GE.2) THEN
-                  WRITE(IU06,*) '   SUB. WAMODEL: PROPAGS CALLED' 
-                  CALL FLUSH (IU06)
+                IF(NIBLO.GT.1) THEN
+                  CALL PROPAGS(FL1,FL3,IJS(IG),IJL(IG),IG,SL,FCONST)
+                  IF (ITEST.GE.2) THEN
+                    WRITE(IU06,*) '   SUB. WAMODEL: PROPAGS CALLED' 
+                    CALL FLUSH (IU06)
+                  ENDIF
+                ELSE
+                  FL3 = FL1
                 ENDIF
               ENDIF
               CALL IMPLSCH (FL3, FL1, IJS(IG), IJL(IG), IG,
@@ -889,12 +904,7 @@
 !*    1.5.11 STORE CHARNOCK CONSTANT FOR ATMOSPHERIC MODEL.
 !            ----------------------------------------------
 
-          IF(LWCOU
-     &     .AND.
-     &     (KADV.EQ.NADV)
-     &     .AND.
-     &     ((CDTPRO.NE.CDATEF).OR.((CDTPRO.EQ.CDATEF).AND.(IASSI.NE.1)))
-     &     ) THEN
+          IF(LWCOU.AND.(KADV.EQ.NADV)) THEN
             CALL OUTBETA (IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
      &                    NSTART, NEND, BETAG, NLONW, NLATW)
           ENDIF
@@ -955,7 +965,8 @@
           IF(ALLOCATED(TAUWG)) DEALLOCATE(TAUWG)
           IF(IASSI.NE.1.AND.ALLOCATED(CDG)) DEALLOCATE(CDG)
           IF(ALLOCATED(SMEANG)) DEALLOCATE(SMEANG)
-          IF(ALLOCATED(U10G)) DEALLOCATE(U10G)
+          IF((IASSI.NE.1.OR.(IASSI.EQ.1.AND..NOT.LALTCOR))
+     &       .AND.ALLOCATED(U10G)) DEALLOCATE(U10G)
 
           IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
           IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

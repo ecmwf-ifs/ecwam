@@ -59,12 +59,20 @@
 !*    1. INITIALIZATION
 !     -----------------
 
-      DLAMA = (AMOEAP-AMOWEP)/REAL(NGX-1)
+      IF(NGX.NE.1) THEN
+        DLAMA = (AMOEAP-AMOWEP)/REAL(NGX-1)
+      ELSE
+        DLAMA = 0
+      ENDIF
       DO I=1,NGX
         ILON(I)=NINT(AMOWEP + (I-1)*DLAMA)
       ENDDO
 
-      DPHIA = (AMOSOP-AMONOP)/REAL(NGY-1)
+      IF(NGY.NE.1) THEN
+        DPHIA = (AMOSOP-AMONOP)/REAL(NGY-1)
+      ELSE
+        DPHIA = 0
+      ENDIF
       DO J=1,NGY
         YLAT(J)=AMONOP + (J-1)*DPHIA
       ENDDO

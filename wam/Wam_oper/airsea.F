@@ -5,6 +5,8 @@
 !**** *AIRSEA* - DETERMINE TOTAL STRESS IN SURFACE LAYER.
 
 !     P.A.E.M. JANSSEN    KNMI      AUGUST    1990
+!     JEAN BIDLOT         ECMWF     FEBRUARY 1999 : TAUT is already
+!                                                   SQRT(TAUT)
 
 !*    PURPOSE.
 !     --------
@@ -70,10 +72,8 @@
         J       = MIN ( JUMAX-1, INT(XJ) )
         DELJ1   = MIN(1.,XJ - REAL(J))
         DELJ2   = 1. - DELJ1
-        US(IJ)  = (SQRT(TAUT(I,J,ILEV))*DELI2
-     &   + SQRT(TAUT(I+1,J,ILEV))*DELI1)*DELJ2
-     &   +(SQRT(TAUT(I,J+1,ILEV))*DELI2
-     &   + SQRT(TAUT(I+1,J+1,ILEV))*DELI1)*DELJ1
+        US(IJ)  = (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2
+     &       +(TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
       ENDDO
 
 !*    3. DETERMINE ROUGHNESS LENGTH.

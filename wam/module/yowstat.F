@@ -48,6 +48,7 @@
       INTEGER MFDB2DSP 
 
       LOGICAL LANAONLY
+      LOGICAL LALTCOR
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -136,5 +137,8 @@
 !      *NTOTENS*   INTEGER   TOTAL ENSEMBLE FORECAST MEMBERS (DEFAULT=0)
 !      *LANAONLY*  LOGICAL   CONTROLS WHETHER ANALYSIS IS RUN WITHOUT
 !                            PRIOR ADVECTION STEPS
+!      *LALTCOR*   LOGICAL   CONTROLS WHETHER THE ALTIMETER WAVE HEIGHT
+!                            OBSERVATION IS CORRECTED PRIOR TO ITS
+!                            ASSIMILATION. 
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

@@ -60,7 +60,7 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
@@ -70,8 +70,8 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,ZMISS
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTINTT  ,CDTINTS  ,
-     &            CFDBSF   ,NENSFNB  ,NTOTENS  ,MARSTYPE ,YCLASS   ,
-     &            YEXPVER
+     &            CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,MARSTYPE ,
+     &            YCLASS   ,YEXPVER
 
 ! ----------------------------------------------------------------------
 
@@ -84,8 +84,8 @@
 
       IF (CDTINTT.EQ.CDTPRO) THEN
 
-!*      0.1 CONVERT TO TOTAL SEA WAVE HEIGHT AND DEGREES.
-!           ---------------------------------------------
+!*      0.1 CONVERT TO TOTAL SEA WAVE HEIGHT
+!           --------------------------------
         IF(FFLAG(1).OR.PFLAG(1).OR.GFLAG(1)) THEN
           IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(1)))
      &     .OR.(.NOT.LMESSPASS)) THEN
@@ -98,6 +98,8 @@
           ENDIF
         ENDIF
 
+!*      0.2 CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+!           -----------------------------------------------------------
         IF(FFLAG(2).OR.PFLAG(2).OR.GFLAG(2)) THEN
           IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(2)))
      &     .OR.(.NOT.LMESSPASS)) THEN
@@ -126,7 +128,7 @@
 
 
       IF (CDTINTS.EQ.CDTPRO) THEN
-!*      0.2 CONVERT TO SWELL AND WINDSEA WAVE HEIGHT AND DEGREES.
+!*      0.3 CONVERT TO SWELL AND WINDSEA WAVE HEIGHT AND DEGREES.
 !           -----------------------------------------------------
 
         IF(FFLAG(12).OR.PFLAG(12).OR.GFLAG(12)) THEN
@@ -141,6 +143,8 @@
           ENDIF
         ENDIF
 
+!*      0.4 CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+!           -----------------------------------------------------------
         IF(FFLAG(14).OR.PFLAG(14).OR.GFLAG(14)) THEN
           IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(14)))
      &     .OR.(.NOT.LMESSPASS)) THEN
@@ -357,6 +361,27 @@
             TITL = ' WIND SPEED ( METRES/SECOND )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
      &                 U10G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(22).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' ALTIMETER WAVE HEIGHT ( 0.1 METRES )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 WHGTAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(23).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' CORRECTED ALTIMETER WAVE HEIGHT (0.1 METRES)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 CWHTAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(24).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' ALTIMETER RANGE RELATIVE CORRECTION (1000)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 0.001,
+     &                 RANGAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
       ENDIF
@@ -593,6 +618,51 @@
         ENDIF
 
       ENDIF
+
+!*      ALTIMETER WAVE HEIGHT.
+!       -----i---------------
+
+        IF (GFLAG(22).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(22)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=246
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
+        ENDIF
+
+!*      CORRECTED ALTIMETER WAVE HEIGHT
+!       -------------------------------
+
+        IF (GFLAG(23).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(23)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=247
+            CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
+        ENDIF
+
+!*      ALTIMETER RANGE RELATIVE CORRECTION.
+!       -----i-----------------------------
+
+        IF (GFLAG(24).AND.MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) THEN
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(24)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            IPARAM=248
+            CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+            LGRIBPAC = .TRUE.
+          ENDIF
+        ENDIF
 
 ! ----------------------------------------------------------------------
 

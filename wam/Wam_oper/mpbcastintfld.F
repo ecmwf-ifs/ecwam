@@ -1,0 +1,101 @@
+      SUBROUTINE MPBCASTINTFLD(ISEND,ITAG,NXF,NYF,IFIELD) 
+
+!****  *MPBCASTINTFLD* - BROADCAST 2-D INTEGER DATA FIELD FROM 1 PE 
+!                        TO ALL OTHERS.
+
+!     J. BIDLOT    ECMWF   FEBRUARY 1999. 
+
+!     PURPOSE.
+!     --------
+
+!     BROADCAST DATA CONTAINED IN 2-D ARRAY IFIELD FROM PE ISEND 
+!     TO ALL OTHER PE's.
+
+!*    INTERFACE.
+!     ----------
+
+!     CALL *MPBCASTINTFLD*(ITAG,NSTART,NEND,IFIELD) 
+
+!     *ISEND*     RANK OF THE PROCESS FROM WHICH THE FIELD IS
+!                 BROADCASTED
+!     *ITAG*      TAG ASSOCIATED WITH A PARTICULAR CALL TO SUBROUTINE
+!     *NXF*       FIRST DIMENSION OF IFIELD
+!     *NYF*       SECOND DIMENSION OF IFIELD
+!     *IFIELD*    INPUT/OUTPUT ARRAY CONTAINING THE FIELD
+
+!     METHOD.
+!     -------
+!     MPE BROADCAST OF ARRAY FIELD FROM ISEND
+!     AND RECEIVE OF THE CONTRIBUTION ON THE OTHER PE's.
+
+!     EXTERNALS.
+!     ----------
+!     MPE PACKAGE :
+!         MPE_BROADCAST
+!         MPE_RECV
+!         MPEI_ABORT 
+
+!     REFERENCES.
+!     -----------
+!         NONE
+! -------------------------------------------------------------------
+ 
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+
+!----------------------------------------------------------------------
+
+      INTEGER,DIMENSION(NXF,NYF) :: IFIELD
+
+      INTEGER,ALLOCATABLE :: ICOMBUF(:)
+      MPLENGTH=NXF*NYF
+
+      IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
+        RETURN
+      ELSEIF(IRANK.EQ.ISEND) THEN
+!     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
+!         ----------------------------------------
+        ALLOCATE(ICOMBUF(MPLENGTH))
+
+        KCOUNT=0
+        DO J=1,NYF
+          DO I=1,NXF
+            KCOUNT=KCOUNT+1
+            ICOMBUF(KCOUNT)=IFIELD(I,J)
+          ENDDO
+        ENDDO
+
+        CALL MPE_BROADCAST
+     &   (ICOMBUF,MPLENGTH,1,IRANK,ITAG,0,0,0,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT
+     &   ('MPE_BROADCAST ERROR in MPBCASTINTFLD' )
+
+        DEALLOCATE(ICOMBUF)
+
+      ELSE
+
+!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM PE ISEND
+!         ------------------------------------------------
+
+        ALLOCATE(ICOMBUF(MPLENGTH))
+
+        CALL MPE_RECV(ICOMBUF,MPLENGTH,1,ISEND,ITAG,0,0,0,
+     &   KRCOUNT,KRFROM,KRTAG,IERR)
+        IF(IERR.LT.0) CALL MPEI_ABORT
+     &   ('MPE_RECV ERROR in MPBCASTINTFLD' )
+        IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     &   ('MPE_RECV ERROR in MPBCASTINTFLD MISMATCHED TAGS' )
+
+        KCOUNT=0
+        DO J=1,NYF
+          DO I=1,NXF
+            KCOUNT=KCOUNT+1
+            IFIELD(I,J)=ICOMBUF(KCOUNT)
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(ICOMBUF)
+
+      ENDIF
+
+      RETURN
+      END SUBROUTINE MPBCASTINTFLD

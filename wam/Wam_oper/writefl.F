@@ -135,6 +135,16 @@
         ENDIF
       ELSEIF(LFDBIOOUT) THEN
 
+        WRITE (IU06,*) '************************************'
+        WRITE (IU06,*) '*                                  *'
+        WRITE (IU06,*) '* IN WRITEFL                       *'
+        WRITE (IU06,*) '* THE OPTION TO WRITE BINARY FILE  *'
+        WRITE (IU06,*) '* TO FDB IS OBSOLETE               *'
+        WRITE (IU06,*) '* PROGRAM WILL ABORT               *'
+        WRITE (IU06,*) '*                                  *'
+        WRITE (IU06,*) '************************************'
+        CALL ABORT1
+
         IF(LPBOPEN) THEN
           ICDFDB2DSP = LEN_TRIM(CDFDB2DSP)
           ISTAT = IOPENFDB ('fdb', IUNIT, CLMODE   )

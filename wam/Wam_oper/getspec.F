@@ -50,6 +50,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3   ,
      &            NTENCODE ,PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NLONRGG
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOSOP   ,
      &            AMONOP   ,XDELLA
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LFDBIOIN ,LGRIBIN
@@ -567,7 +568,7 @@ C
                 IF (WORK(IJ) .NE. ZMISS) THEN
                   WORK(IJ) = 10.**(WORK(IJ)-ABS(PPREC))- PPEPS
                 ELSE
-                  WORK(IJ) = 0.0
+                  WORK(IJ) = FLMIN
                 ENDIF
               ENDDO
 

@@ -633,8 +633,16 @@
      &             0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
           CALL ADJUST (RLONL, RLONR)
 
-          DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
-          DPHI  = (RLATN-RLATS)/REAL(KROW-1)
+          IF(KCOL.NE.1) THEN
+            DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
+          ELSE
+            DLAM  = 0.
+          ENDIF
+          IF(KROW.NE.1) THEN
+            DPHI  = (RLATN-RLATS)/REAL(KROW-1)
+          ELSE
+            DPHI  = 0.
+          ENDIF
 
 ! --------------------------------------------------------------------
 
@@ -703,8 +711,16 @@
          KROW = NR
          IWPER = 0
          ICOORD = 1
-         DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
-         DPHI  = (RLATN-RLATS)/REAL(KROW-1)
+         IF(KCOL.NE.1) THEN
+           DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
+         ELSE
+           DLAM  = 0.
+         ENDIF
+         IF(KROW.NE.1) THEN
+           DPHI  = (RLATN-RLATS)/REAL(KROW-1)
+         ELSE
+           DPHI  = 0.
+         ENDIF
          FRSTIME = .FALSE.
       ENDIF
 

@@ -85,7 +85,7 @@
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -103,7 +103,8 @@
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER
+     &            NTOTENS  ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
+     &            LALTCOR
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -164,6 +165,9 @@
       ALLOCATE(WHME(NGX,NGY), USME(NGX,NGY))
       ALLOCATE(WHOI(NGX,NGY), USOI(NGX,NGY))
       ALLOCATE(WHOIB(NINF:NSUP),USOIB(NINF:NSUP),ETOIB(NINF:NSUP))
+      IF(.NOT.ALLOCATED(WHGTAG)) ALLOCATE(WHGTAG(NGX,NGY))
+      IF(.NOT.ALLOCATED(CWHTAG)) ALLOCATE(CWHTAG(NGX,NGY))
+      IF(.NOT.ALLOCATED(RANGAG)) ALLOCATE(RANGAG(NGX,NGY))
 
 !    0. COLLECT GRIDDED FIELDS USED BY THE ASSIMILATION
 !       -----------------------------------------------
@@ -175,13 +179,17 @@
         CALL MPGATHEROIFLD(IPFGTBL(4),KTAG,USTARG)
         KTAG=KTAG+1
         CALL MPGATHEROIFLD(IPFGTBL(7),KTAG,CDG)
+        IF(LALTCOR.AND.ITEST.GT.0) THEN
+          KTAG=KTAG+1
+          CALL MPGATHEROIFLD(IPFGTBL(10),KTAG,U10G)
+        ENDIF
       ENDIF
 
 
 !*    1. MEASUREMENT ARE TRANSFERRED TO THE MODEL GRID.                 
 !        ----------------------------------------------                 
 
-      CALL GRFIELD (WHME, USME, NSTART, NEND)
+      CALL GRFIELD (WHME, USME)
                                                                         
       IF (ITEST.GE.2)                                                   
      &   WRITE(IU06,*) '   SUB. WAMASSI: MEASUREMENTS ---> GRID'        
@@ -693,6 +701,9 @@ C
       IF(ALLOCATED(CDG)) DEALLOCATE(CDG)
       IF(ALLOCATED(SMEANG)) DEALLOCATE(SMEANG)
       IF(ALLOCATED(U10G)) DEALLOCATE(U10G)
+      IF(ALLOCATED(WHGTAG)) DEALLOCATE(WHGTAG)
+      IF(ALLOCATED(CWHTAG)) DEALLOCATE(CWHTAG)
+      IF(ALLOCATED(RANGAG)) DEALLOCATE(RANGAG)
 
       IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
       IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

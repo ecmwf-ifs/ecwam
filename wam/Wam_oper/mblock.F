@@ -225,14 +225,20 @@
 !*       ALL OTHER BLOCKS MORE  THAN 3 LATITUDES.
 !        -------------------------------------------------
 
-      IF ((KE.EQ.1) .OR. (KA.EQ.NY) .OR.
+      IF( KA.EQ.1 .AND. KE.EQ.1 .AND. NY.EQ.1 ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '* ALLOWS FOR THE 1 GRID POINT MODEL          *'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '**********************************************'
+      ELSE IF ((KE.EQ.1) .OR. (KA.EQ.NY) .OR.
      &    ((KA.NE.1) .AND. (KE.EQ.NY) .AND. (KE-KA.LT.2))) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*        FATAL ERROR IN SUB. MBLOCK          *'
         WRITE (IU06,*) '*        ==========================          *'
         WRITE (IU06,*) '*                                            *'
-        WRITE (IU06,*) '* BLOCK LENGTH IS TO SHORT.                  *'
+        WRITE (IU06,*) '* BLOCK LENGTH IS TOO SHORT.                 *'
         WRITE (IU06,*) '* LESS THAN 2 LATITUDES IN FIRST OR LAST, OR *'
         WRITE (IU06,*) '* LESS THAN 3 LATITUDES IN OTHER BLOCKS.     *'
         WRITE (IU06,*) '* BLOCK NUMBER IS               IGL = ', IGL

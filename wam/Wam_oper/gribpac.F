@@ -60,6 +60,7 @@
 
 !      EXTERNALS.
 !      ----------
+!       *ABORT1*         ABORTS ON ERROR FROM GRIBEX
 !       *PBOPEN*         OPEN FILE TO BE READ BY PBGRIB
 !       *PBGRIB*         READ GRIB FILE
 !       *PBCLOSE*        CLOSE FILE
@@ -280,8 +281,15 @@
 
         WRITE(IU06,*) ' -----------------------------------------'
         WRITE(IU06,*) ' ERROR PACKING FIELD BY SUB GRIBEX. '
+        WRITE(IU06,*) ' PARAMETER : ',IPARAM 
         WRITE(IU06,*) ' GRIBEX ERROR CODE IS ',KRET
         WRITE(IU06,*) ' -----------------------------------------'
+        WRITE(*,*) ' -----------------------------------------'
+        WRITE(*,*) ' ERROR PACKING FIELD BY SUB GRIBEX. '
+        WRITE(*,*) ' PARAMETER : ',IPARAM 
+        WRITE(*,*) ' GRIBEX ERROR CODE IS ',KRET
+        WRITE(*,*) ' -----------------------------------------'
+        CALL ABORT1
       ENDIF
 
       DEALLOCATE(KGRIB)

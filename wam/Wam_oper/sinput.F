@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (F, FL, IJS, IJL, IG,THWOLD,USOLD,Z0OLD,
-     &                   THWNEW,USNEW,Z0NEW,SL)
+     &                   THWNEW,USNEW,Z0NEW,SL,ICALL,NCALL)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -10,19 +10,22 @@
 
 !     MODIFIED BY : J-R BIDLOT NOVEMBER 1995
 !                   J-R BIDLOT FEBRUARY 1996-97
+!                   J-R BIDLOT FEBRUARY 1999 : INTRODUCE ICALL AND NCALL
 
 !*    PURPOSE.
 !     ---------
 
 !       COMPUTE INPUT SOURCE FUNCTION AND STORE ADDITIVELY INTO NET
 !       SOURCE FUNCTION ARRAY, ALSO COMPUTE FUNCTIONAL DERIVATIVE OF
-!       INPUT SOURCE FUNCTION.
+!       INPUT SOURCE FUNCTION. 	SPECIAL FEATURES WERE ADDED TO ALLOW
+!       FOR MORE THAN ONE CALL OF SINPUT PER TIME STEP IN ORDER TO
+!       LIMIT MEMORY USAGE (SEE ICALL).
 
 !**   INTERFACE.
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, IG,THWOLD,USOLD,Z0OLD,
-!    1                   THWNEW,USNEW,Z0NEW,SL)
+!    1                   THWNEW,USNEW,Z0NEW,SL,ICALL,NCALL)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -40,6 +43,8 @@
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
+!      *ICALL*     CALLING INDEX 1<= ICALL <= NCALL.
+!      *NCALL*     TOTAL NUMBER OF CALLS PER TIME STEP.
 
 !     METHOD.
 !     -------
@@ -89,7 +94,7 @@
 
       DIMENSION TEMP(IJS:IJL,NANG), TEMP1(IJS:IJL,NANG),
      &          UCO(IJS:IJL), ZCO(IJS:IJL), UCN(IJS:IJL), ZCN(IJS:IJL),
-     &          UFAC1(IJS:IJL), UFAC2(IJS:IJL), CM(IJS:IJL)
+     &          UFAC2(IJS:IJL), CM(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -98,8 +103,12 @@
 
       DO K=1,NANG
         TKD=TH(K)
+        IF(ICALL.EQ.1) THEN
+          DO IJ=IJS,IJL
+            TEMP (IJ,K) = COS(TKD-THWOLD(IJ,IG))
+          ENDDO
+        ENDIF
         DO IJ=IJS,IJL
-          TEMP (IJ,K) = COS(TKD-THWOLD(IJ,IG))
           TEMP1(IJ,K) = COS(TKD-THWNEW(IJ))
         ENDDO
       ENDDO
@@ -108,6 +117,16 @@
 
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
+
+      IF(ICALL.EQ.1) THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              FL(IJ,K,M) = 0.
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
       CONST1  = YEPS*BETAMAX/XKAPPA**2
       DO M=1,NFRE
@@ -130,9 +149,14 @@
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
+        IF(ICALL.EQ.1) THEN
+          DO IJ=IJS,IJL
+            UCO(IJ) = USOLD(IJ,IG)*CM(IJ) + ZALP
+            ZCO(IJ) = LOG(G*Z0OLD(IJ,IG)*CM(IJ)**2)
+          ENDDO
+        ENDIF
+
         DO IJ=IJS,IJL
-          UCO(IJ) = USOLD(IJ,IG)*CM(IJ) + ZALP
-          ZCO(IJ) = LOG(G*Z0OLD(IJ,IG)*CM(IJ)**2)
           UCN(IJ) = USNEW(IJ)*CM(IJ) + ZALP
           ZCN(IJ) = LOG(G*Z0NEW(IJ)*CM(IJ)**2)
         ENDDO
@@ -141,20 +165,23 @@
 !         ---------------------
 
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            UFAC1(IJ) = 0.
-            UFAC2(IJ) = 0.
-          ENDDO
-          DO IJ=IJS,IJL
-            IF (TEMP(IJ,K).GT.0.01) THEN
-              X    = TEMP(IJ,K)*UCO(IJ)
-              ZARG = XKAPPA/X
-              ZLOG = ZCO(IJ) + ZARG
-              IF (ZLOG.LT.0.) THEN
-                ZLOG2X=ZLOG*ZLOG*X
-                UFAC1(IJ) = CONST*EXP(ZLOG)*ZLOG2X*ZLOG2X
+
+          IF(ICALL.EQ.1) THEN
+            DO IJ=IJS,IJL
+              IF (TEMP(IJ,K).GT.0.01) THEN
+                X    = TEMP(IJ,K)*UCO(IJ)
+                ZARG = XKAPPA/X
+                ZLOG = ZCO(IJ) + ZARG
+                IF (ZLOG.LT.0.) THEN
+                  ZLOG2X=ZLOG*ZLOG*X
+                  FL(IJ,K,M) = CONST*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                ENDIF
               ENDIF
-            ENDIF
+            ENDDO
+          ENDIF
+
+          DO IJ=IJS,IJL
+            UFAC2(IJ) = 0.
           ENDDO
 
           DO IJ=IJS,IJL
@@ -173,9 +200,15 @@
 !         ------------------------------------------------
 
           DO IJ=IJS,IJL
-            SL(IJ,K,M) = 0.5*(UFAC1(IJ)+UFAC2(IJ))*F(IJ,K,M)
-            FL(IJ,K,M) = UFAC2(IJ)
+            SL(IJ,K,M) = 0.5*(FL(IJ,K,M)+UFAC2(IJ))*F(IJ,K,M)
           ENDDO
+
+          IF(ICALL.EQ.NCALL) THEN
+            DO IJ=IJS,IJL
+              FL(IJ,K,M) = UFAC2(IJ)
+            ENDDO
+          ENDIF
+
         ENDDO
       ENDDO
 

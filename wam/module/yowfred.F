@@ -14,6 +14,7 @@
       REAL, ALLOCATABLE :: COSTH(:) 
       REAL, ALLOCATABLE :: SINTH(:) 
       REAL, PARAMETER :: FRATIO = 1.1
+      REAL, PARAMETER :: FRTAIL = 0.2
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -27,6 +28,7 @@
 !      *COSTH*     REAL      COS OF DIRECTION.
 !      *SINTH*     REAL      SIN OF DIRECTION.
 !      *FRATIO*    REAL      FREQUENCY RATIO.
+!      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWFRED

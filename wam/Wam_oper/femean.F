@@ -42,7 +42,7 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FRTAIL
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : ISHALLO
@@ -56,7 +56,6 @@
 
 ! ----------------------------------------------------------------------
 
-
       DIMENSION TEMP1(IJS:IJL), TEMP2(IJS:IJL)
 
 ! ----------------------------------------------------------------------
@@ -67,7 +66,7 @@
       DO IJ=IJS,IJL
         FMEAN(IJ) = EPSMIN
       ENDDO
-      DELT25 = 0.20*DELTH
+      DELT25 = FRTAIL*DELTH
 
 ! ----------------------------------------------------------------------
 

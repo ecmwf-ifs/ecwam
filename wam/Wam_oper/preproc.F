@@ -249,6 +249,12 @@
         ENDIF      
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
+        IF(NX.EQ.1.AND.NY.EQ.1) THEN
+          NLONRGG(K) = NX
+          ZDELLO(K)  = XDELLO
+          DELLAM(K)  = ZDELLO(K)*CIRC/360.
+          EXIT
+        ENDIF
         IF(IPER.EQ.1) THEN
           ZDELLO(K)  = PLONS/REAL(NLONRGG(K))
         ELSE
@@ -283,7 +289,7 @@
 
       BETAMAX = 1.20
       ZALP    = 0.0110
-      ALPHA   = 0.0090
+      ALPHA   = 0.0100
       XKAPPA  = 0.40
 
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.

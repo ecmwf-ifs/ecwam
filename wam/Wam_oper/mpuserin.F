@@ -41,7 +41,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG
+      USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG
       USE YOWTEST  , ONLY : ITEST    ,ITESTB
 
 ! ----------------------------------------------------------------------
@@ -55,22 +55,26 @@
       CHARACTER*80 CPATH
       CHARACTER*256 CFDBSF, CFDB2DSP
       LOGICAL LPBIOIN, LGRIBIN, LGRIBOUT, LPBIOOUT, LMESSPASS, LFDB,
-     &        LWCOU, LFDBIOOUT, LNOCDIN
+     &        LWCOU, LFDBIOOUT, LNOCDIN, LALTCOR
 
 
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
+
       NAMELIST /NALINE/ CLHEADER,
      &   CBPLTDT, CEPLTDT, CDATEF,
      &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,
      &   IDELINT, IDELINS, IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES,
      &   CLOTSU, CDATER, CDATES,
-     &   PFLAG,  FFLAG,  GFLAG,
+     &   PFLAG,  FFLAG,  GFLAG, NFLAG,
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
-     &   ICASE, ISHALLO, IREFRA, ITEST, ITESTB, IREST, IASSI, IFORCA,
+     &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
      &   IBOUNC, IBOUNF,
-     &   USERID, RUNID,  PATH,   YCLASS, YEXPVER, CPATH,
+     &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   NENSFNB, NTOTENS,
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN
+     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
+     &   LALTCOR, XKAPPA2
+
+
 
 ! ----------------------------------------------------------------------
 

@@ -68,6 +68,18 @@
 !*    1. LOOP OVER POINTS IN WAMODEL BLOCKS.
 !        -----------------------------------
 
+      IF(DLAM == 0.) THEN
+        DLAMM1 = 1.
+      ELSE
+        DLAMM1 = 1./DLAM
+      ENDIF
+
+      IF(DPHI == 0.) THEN
+        DPHIM1 = 1.
+      ELSE
+        DPHIM1 = 1./DPHI
+      ENDIF
+
       DO IJ=IJS,IJL
 
 !*    1.1 TRANSFORM WAM COORDINATE TO INPUT GRID.
@@ -76,9 +88,9 @@
         KX = KXLT(IJ,IG)
         XI = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KX)-RLONL
         XI = MOD(XI+720.,360.)
-        XI = XI/DLAM+1.00001
+        XI = XI*DLAMM1+1.00001
         XJ = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA-RLATS
-        XJ = XJ/DPHI+1.00001
+        XJ = XJ*DPHIM1+1.00001
 
 !*    1.2 COMPUTE CORNER POINT INDICES OF INPUT GRID.
 !         -------------------------------------------

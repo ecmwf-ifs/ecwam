@@ -31,6 +31,8 @@
 !                                     INTERPOLATE TO OUTPUT GRID.
 !                                     NO LAW FILE IS PRODUCED THEN.
 !     J. BIDLOT    ECMWF   OCTOBER 1998   MODULES.
+!     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
+
 !*    PURPOSE.
 !     --------
 !       TO INITIALISE ALL FILES REQUESTED BY THE WAMODEL.
@@ -107,8 +109,8 @@
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE 
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
-      USE YOWJONS  , ONLY : FM       ,GAMMA    ,SA       ,SB       ,
-     &            THETAQ
+      USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
+     &            SB       ,THETAQ
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
@@ -124,6 +126,7 @@
      &            NENSFNB  ,NTOTENS
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
      &            CPATH
@@ -292,6 +295,17 @@
 
       CALL READPRE (IU07, IREFRA)
 
+!     TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
+!     OF THE INPUT VALUES !!!!!!!
+
+      DO ILV = 1,JPLEVT
+        DO J = 0,JUMAX
+          DO I = 0,ITAUMAX
+            TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
+          ENDDO
+        ENDDO
+      ENDDO
+
       NINF=1
       NSUP=NIBLO
 
@@ -314,8 +328,8 @@
 !        --------------------------
 
       WRITE (IU06,'(" PROGRAM PRESET:", / , "
-     & WAM Cycle4 Release8 CI 4 (common with IFS CY19R2)
-     &    CC=wam_wab_CY19R1_modules", /,
+     & WAM Cycle4 Release9 CI 4 (common with IFS CY21)
+     &    CC=wam_wab_CY19R2_modules", /,
      & "  USER INPUT:" )')
 
       WRITE (IU06,'(A70)') HEADER

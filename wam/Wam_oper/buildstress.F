@@ -1,7 +1,9 @@
       SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD, KEND)
 
 ! ----------------------------------------------------------------------
-!     J. BIDLOT    ECMWF     APRIL 1998 
+!     J. BIDLOT    ECMWF   APRIL 1998 
+
+!     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
 !*    PURPOSE.
 !     --------
@@ -148,7 +150,20 @@
         IF (ITEST.GE.2)
      1    WRITE(IU06,*) ' SUB. BUILDSTRESS: CALL STRESS DONE'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
+
+!       TRANSFORM THE STRESS TABLE USED BY AIRSEA TO CONTAIN THE SQRT
+!       OF THE INPUT VALUES !!!!!!!
+
+        DO ILV = 1,JPLEVT
+          DO J = 0,JUMAX
+            DO I = 0,ITAUMAX
+              TAUT(I,J,ILV) = SQRT(TAUT(I,J,ILV))
+            ENDDO
+          ENDDO
+        ENDDO
+
       ENDIF
+
 
       IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
 

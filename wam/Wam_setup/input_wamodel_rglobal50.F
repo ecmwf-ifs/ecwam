@@ -18,10 +18,10 @@
  IDELRES= 864000
  CLOTSU="S", "S", "S", "S", "S", "S", "S"
  CDATER="${outofrf}",
+ PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F, F, F, F
  CDATES="${outof2d}"
- PFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
- GFLAG= T, T, T, F, F, T, T, F, T, T, T, T, T, T, T, T, F, F, F, F, F
  LFDB= T,
  LPBIOIN= T,
  LGRIBIN= ${lgribin},

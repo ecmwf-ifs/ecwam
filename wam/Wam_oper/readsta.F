@@ -72,6 +72,9 @@
       CRSDT = ' '
       REWIND IUIN                                                       
       DO I=1,JPCL                                                    
+!!!
+        write(*,*) I
+!!!!
         READ(IUIN,'(A72)', END=3000, ERR=3000) CARD(I)                 
       ENDDO
       REWIND IUIN                                                       

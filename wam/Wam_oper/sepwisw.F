@@ -9,11 +9,12 @@
 
 !     L.ZAMBRESKY    NOVEMBER 87   GKSS/ECMWF   OPTIMIZED SUB.
 !     J. BIDLOT      FEBRARY 1996       ECMWF   MESSAGE PASSING
+!     J. BIDLOT      MAY     1999       ECMWF   ADD HIGH FREQUENCY TAIL
 
 !*    PURPOSE.
 !     --------
 
-!       TO SEPARATE THE SWELL FROM THE WIND INTERACTING SEE
+!       TO SEPARATE THE SWELL FROM THE WIND INTERACTING SEA
 
 !**   INTERFACE.
 !     ----------
@@ -47,8 +48,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,TH       ,
-     &            COSTH    ,SINTH
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,C        ,
+     &            TH       ,COSTH    ,SINTH    ,FRTAIL
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
@@ -65,10 +66,21 @@
 
 ! ----------------------------------------------------------------------
       PARAMETER (FRIC = 28.)
-      REAL,DIMENSION(IJS:IJL) :: CIS, SIS, CIWS, SIWS, SF3SW, SF3WIS
 
+      REAL,ALLOCATABLE,DIMENSION(:) :: CIS,SIS,CIWS,SIWS,SF3SW,SF3WIS
+      REAL,ALLOCATABLE,DIMENSION(:) :: TEMP
 
 ! ----------------------------------------------------------------------
+
+      ALLOCATE(CIS(IJS:IJL)) 
+      ALLOCATE(SIS(IJS:IJL)) 
+      ALLOCATE(CIWS(IJS:IJL)) 
+      ALLOCATE(SIWS(IJS:IJL)) 
+      ALLOCATE(SF3SW(IJS:IJL)) 
+      ALLOCATE(SF3WIS(IJS:IJL)) 
+
+      DELTWH = 0.25*FR(NFRE)*DELTH
+      DELTMF = FRTAIL*DELTH
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
@@ -140,6 +152,34 @@
         ENDDO
       ENDDO
 
+      DEALLOCATE(SF3SW) 
+      DEALLOCATE(SF3WIS) 
+
+!     ADD HIGH FREQUENCY TAIL
+
+      ALLOCATE(TEMP(IJS:IJL)) 
+
+      TEMP=0.
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          TEMP(IJ) = TEMP(IJ) + FL3(IJ,K,NFRE)
+        ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+        IF (ESEA(IJ).EQ.0.) THEN
+          ESWELL(IJ) = ESWELL(IJ) + DELTWH*TEMP(IJ)
+          FSWELL(IJ) = FSWELL(IJ) + DELTMF*TEMP(IJ)
+        ELSE
+          ESEA(IJ) = ESEA(IJ) + DELTWH*TEMP(IJ)
+          FSEA(IJ) = FSEA(IJ) + DELTMF*TEMP(IJ)
+        ENDIF
+      ENDDO
+
+      DEALLOCATE(TEMP) 
+
+!     COMPUTE MEAN FREQUENCIES AND DIRECTIONS
+
       DO IJ=IJS,IJL
         IF (CIWS(IJ).EQ.0.) CIWS(IJ) = EPSMIN
         IF (CIS(IJ).EQ.0.) CIS(IJ) = EPSMIN
@@ -154,6 +194,11 @@
         FSWELL(IJ)  = ESWELL(IJ)/(FSWELL(IJ))
         FSEA(IJ)    = ESEA(IJ)/(FSEA(IJ))
       ENDDO
+
+      DEALLOCATE(CIS) 
+      DEALLOCATE(SIS) 
+      DEALLOCATE(CIWS) 
+      DEALLOCATE(SIWS) 
 
       RETURN
       END SUBROUTINE SEPWISW

@@ -762,9 +762,17 @@
 
       GVE = G/(ZPI*FR(1)*2.)
       DPH = DELPHI
-      CFLP= IDELPRO*GVE/DPH
+      IF(DPH.EQ.0.0) THEN
+        CFLP= 0.
+      ELSE
+        CFLP= IDELPRO*GVE/DPH
+      ENDIF
       DLH = DELLAM(NGY)*COS(AMONOP*RAD)
-      CFLL= IDELPRO*GVE/DLH
+      IF(DLH.EQ.0.0) THEN
+        CFLL= 0.
+      ELSE
+        CFLL= IDELPRO*GVE/DLH
+      ENDIF
       IF (CFLP.GT.1. .OR. CFLL.GT.1.) THEN
         WRITE(IU06,*) ' **********************************************'
         WRITE(IU06,*) ' *                                            *'

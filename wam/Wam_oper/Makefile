@@ -76,6 +76,7 @@ SOURCE	=\
               mintf.F     \
               mpbcastgrdfld.F     \
               mpbcastgrid.F     \
+              mpbcastintfld.F     \
               mpbcastscfld.F     \
               mpclose_unit.F     \
               mpcrtbl.F     \
@@ -144,6 +145,7 @@ SOURCE	=\
               savstress.F     \
               sbottom.F     \
               sdissip.F     \
+              secondhh.F   \
               semean.F     \
               sepwisw.F     \
               setice.F     \
@@ -151,6 +153,7 @@ SOURCE	=\
               setmarstype.F     \
               setmat.F     \
               sinput.F     \
+              skewness.F   \
               snonlin.F     \
               spec2fdb.F     \
               spectra.F     \
@@ -173,6 +176,8 @@ SOURCE	=\
               update.F     \
               upwspec.F     \
               userin.F     \
+              vmin.F       \
+              vplus.F      \
               wam_user_clock.F     \
               wamassi.F     \
               wamcur.F     \

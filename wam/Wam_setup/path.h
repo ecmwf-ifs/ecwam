@@ -6,11 +6,11 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY19R2_modules
+VERSION=CY21R2_bug_fix
 #.
-DHSROOT=/$USER/vpp700/wam_$VERSION
-VPPROOT=/vpp700/wavedata44/${USER}/wam_$VERSION
-TMPROOT=/vpp700/wavedir44/${USER}/wam_$VERSION
+DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
+VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
+TMPROOT=/vpp700/wavedir44/${USER}/wam_${USER}_$VERSION
 #.
 DHSLPATH=$DHSROOT/${VERSION}
 LIBS=$TMPROOT/lib
@@ -98,26 +98,26 @@ WDIR=${ROOTWDIR}/${grid}
 #.
 ASSIMILATION=NO                        # altimeter data assimilation 
 #
-typeset -Z12 begofrn=199901011200      # BEGin date OF RUn 
-typeset -Z12 endofrn=199901071200      # END   date OF RUn 
-typeset -Z12 begoffo=199901021200      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=199906151200      # BEGin date OF RUn
+typeset -Z12 endofrn=199906151800      # END   date OF RUn
+typeset -Z12 begoffo=199906151800      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=199901021200      # Date to output restart file(s).
+typeset -Z12 outofrf=199906151800      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
-typeset -Z12 outof2d=199901021200      # Date up to which 2D-spectra are
+typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are
                                        # saved. Set to 0000000000 if not
                                        # required.
-typeset -Z7 antime=86400               # Length of analysis in seconds.
-typeset -Z7 fctime=432000              # Length of forcast in seconds.
+typeset -Z7 antime=21600               # Length of analysis in seconds.
+typeset -Z7 fctime=0                   # Length of forcast in seconds.
 #.
 CLASS=RD                               # user class
 NENS=000                               # only used for ensemble run.
 TNE=000                                # only used for ensemble run.
 
 #.! expver is the experiment id. It is used when gribbing the output data. 
-typeset -l expver=${USER}a
+typeset -l expver=sara
 #.
 #.define file storage directory, as needed for output destination
 #.
@@ -142,7 +142,7 @@ cfdbsf=$FDB_ROOT                        # fdb for scalar fields.
 # FORCE REMAKE OF LIBWAM (default NO).
 # =====================================================================
 #.
-export PRECISION=SINGLE
+export PRECISION=DOUBLE
 export REMAKE=NO
 #.
 #.======================
@@ -168,7 +168,7 @@ if [ $PRECISION = SINGLE ] ; then
   #################################################
 elif [ $PRECISION = DOUBLE ] ; then
   libselect -r 64
-  export rp=-CcdRR8
+  export rp=-Ad
   MPLIB=/opt/tools/lib/libmp2x.a
   MPELIB=/usr/local/lib/libmpe2.a
   #. !!!! MPELIB is selected for 64 bit real !!!!!!

@@ -17,7 +17,7 @@
 !                                                  DIAG- AND PROGNOSTIC
 !                                                  PART OF SPECTRUM.
 !     P.A.E.M. JANSSEN ECMWF        FEBRUARY 1995  ADD MINIMUM VALUE
-!                                                  (FMIN).
+!                                                  (FLMIN).
 !     J. BIDLOT ECMWF               FEBRUARY 1996 MESSAGE PASSING
 !     J. BIDLOT ECMWF               FEBRUARY 1997 MESSAGE PASSING
 
@@ -106,10 +106,12 @@
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMEAN  , ONLY : FMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
+      USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
@@ -132,9 +134,6 @@
 !*    1. INITIALISATION.
 !        ---------------
 
-
-      FMIN  = 0.0001   ! THIS MAKES HS=3cm WHEN U10 = 0.0
-
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -143,16 +142,6 @@
 !         INTEGRATION IS DONE FROM CDATE UNTIL CDTPRO FOR A BLOCK
 !         OF LATITUDES BETWEEN PROPAGATION CALLS.
 
-
-!*    2.1 CALCULATE ROUGHNESS LENGTH AND FRICTION VELOCITIES.
-!         ---------------------------------------------------
-
-      ILEV=1
-
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
-     & IJS, IJL, ILEV)
-
-! ----------------------------------------------------------------------
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !         ------------------------
@@ -164,27 +153,48 @@
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
 !         --------------------------------
+!!!! we will limit ourselves to 1 iteration for now !!!
+      NCALL=1
 
+      DO ICALL=1,NCALL
 
-!*    2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
-!           ------------------------------------------------
+!*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
+!             ------------------------------------------------
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            SL(IJ,K,M) = 0.
-            FL(IJ,K,M) = 0.
-          ENDDO
-        ENDDO
+!!            FL and SL are initialised in sinput
+
+!*      2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
+!             -------------------------------------
+        ILEV=1
+        CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+     &   IJS, IJL, ILEV)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+
+        CALL SINPUT (FL3, FL, IJS, IJL, IG,THWOLD,USOLD,Z0OLD,
+     &   THWNEW,USNEW,Z0NEW,SL,ICALL,NCALL)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+
+        CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+
       ENDDO
 
-!*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
-!           -------------------------------------
-
-      CALL SINPUT (FL3, FL, IJS, IJL, IG,THWOLD,USOLD,Z0OLD,
-     & THWNEW,USNEW,Z0NEW,SL)
-      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,TAUW,SL)
+!     2.3.3 ADD THE OTHER SOURCE TERMS.
+!           ---------------------------
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
       CALL SDISSIP (FL3 ,FL, IJS, IJL, SL)
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
@@ -211,7 +221,7 @@
             FAC   = USNEW(IJ)*FMEAN(IJ)*DELFL(M)
             FLHAB = MIN(FLHAB,FAC)
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FMIN)
+            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLMIN)
           ENDDO
         ENDDO
       ENDDO
@@ -229,19 +239,13 @@
       CALL FEMEAN(FL3, IJS, IJL)
 
 !*    2.5.2 COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!*          FREQUENCIES LE MAX(4*F(PM) , 2.5*FMEAN).
+!*          FREQUENCIES LE 2.5*FMEAN.
 !           ------------------------------------------------------------
 
       FPMH = 2.5/FR(1)
-      FPM = 4.*GZPI28/FR(1)
       DO IJ=IJS,IJL
-        FPM4 = FPM/(USNEW(IJ)+EPSMIN)
-        MIJ(IJ) = LOG10(FPM4)*24.1589+2.
         FPM4 = FMEAN(IJ)*FPMH
-        MFMF(IJ) = LOG10(FPM4)*24.1589+1.
-      ENDDO
-      DO IJ=IJS,IJL
-        MIJ(IJ) = MAX(MFMF(IJ),MIJ(IJ))
+        MIJ(IJ) = ALOG10(FPM4)*24.1589+1.
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
 
