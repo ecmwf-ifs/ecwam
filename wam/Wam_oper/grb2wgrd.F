@@ -3,12 +3,14 @@
      &                     KGRIB, ISIZE,
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                     CDATE, IFORP, IPARAM, KZLEV, FIELD )
+     &                     PPREC, PPEPS,
+     &                     CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 ! ----------------------------------------------------------------------    
 
 !!!!!
 !     As it stands, it
 !!!   should not be use to interpolate a directional field !!!!
+!!!   see condition below which forces the program to abort !!!
 
 
 
@@ -28,8 +30,8 @@
 !     USING BILINEAR INTERPOLATION IF THE 2 GRIDS DO NOT MATCH.
 !     THE CLOSEST GRID POINT IS USED INSTEAD IF WAVE FIELDS ARE
 !     ARE ENCOUNTERED WITH MISSING DATA POINTS.
-!     WAVE FIELDS ARE RECOGNISED BY THEIR VALUES OF KSEC1(40)=1045 OR
-!     1081 OR 1082 OR 1027.
+!     WAVE FIELDS ARE RECOGNISED BY THEIR VALUES OF KSEC1(40)
+!     SEE WSTREAM_STRG
 !     IT ONLY WORKS IF THE INPUT AND OUTPUT GRIDS ARE LATITUDE/LONGITUDE
 !     (REGULAR OR IRREGULAR) OR GAUSSIAN GRIDS (FULL OR REDUCED) !!!!
 
@@ -41,7 +43,8 @@
 !    &                  KGRIB, ISIZE,
 !    &                  NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
 !    &                  AMOWEP, AMOSOP, AMOEAP, AMONOP,
-!    &                  CDATE, IFORP, IPARAM, KZLEV, FIELD )
+!    &                  PPREC, PPEPS,
+!    &                  CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD)
 
 !        *IU06*   - OUTPUT UNIT.
 !        *ITEST*  - TEST MESSAGE LEVEL.
@@ -67,6 +70,10 @@
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
 !        *AMONOP* - MOST NORTHERN LATITUDE IN GRID ( ? , 1 ).           
+!        *PPREC*  - ONLY USED FOR WAVE SPECTRAL FIELD.
+!                   SMALL NUMBER USED IN SPECTRAL PACKING OF 251.
+!        *PPEPS*  - ONLY USED FOR WAVE SPECTRAL FIELD.
+!                   REFERENCE VALUE FOR SPECTRAL PACKING OF 251.
 !        OUTPUT:
 !        *CDATE*  - DATE/TIME OF THE DATA READ.         
 !        *IFORP*  - FORCAST PERIOD IN SECONDS.                          
@@ -75,6 +82,8 @@
 !                   SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
 !                   MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
 !                   CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
+!        *KKK*    - ONLY USED FOR WAVE SPECTRAL FIELD: DIRECTION NUMBER.
+!        *MMM*    - ONLY USED FOR WAVE SPECTRAL FIELD: FREQUENCY NUMBER.
 !        *FIELD*  - UNPACKED DATA ON WAVE MODEL GRID.
 
 !     EXTERNALS.                                                        
@@ -102,12 +111,14 @@
       REAL ZDELLO(NGY)
       REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), WORK(:,:)
 
+      CHARACTER CSTREAM*4
       CHARACTER CDATE*12
 
       LOGICAL LLINTERPOL, LLNEAREST
                                                                         
 ! ----------------------------------------------------------------------
 
+      CSTREAM='****'
       KSEC3 = KSEK3 
       PSEC3 = PSEK3 
 
@@ -135,6 +146,7 @@
       ENDIF                                                             
 
       NR=KSEC2(3)
+      NRFULL=NR
       IF(NR.GT.NKSEK2-22) THEN
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
@@ -173,9 +185,9 @@
         CALL ABORT1
       ENDIF
 
-      ISTREAM=KSEC2(40)
-      IF(ISTREAM.EQ.1045.OR.ISTREAM.EQ.1081.OR.
-     &   ISTREAM.EQ.1082.OR.ISTREAM.EQ.1027) THEN
+      ISTREAM=KSEC1(40)
+      CALL WSTREAM_STRG(ISTREAM,CSTREAM)
+      IF(CSTREAM.NE.'****') THEN 
         LLNEAREST=.TRUE.
       ELSE
         LLNEAREST=.FALSE.
@@ -202,7 +214,8 @@
 
 !     GET THE DATA
 
-
+      KSEC3 = KSEK3 
+      PSEC3 = PSEK3 
       KLENG = ISIZE 
       KLENP = KLEN
       ALLOCATE(PSEC4(KLENP))
@@ -228,13 +241,13 @@
 !*    DETERMINE INFORMATION ABOUT THE DECODED DATA 
 !     --------------------------------------------
 
-!         START DATE. 
+!     START DATE. 
 
       IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
       WRITE(CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                             KSEC1(13),KSEC1(14)
 
-!*         DETERMINE TIME UNIT.
+!*    DETERMINE TIME UNIT.
 
       IF (KSEC1(15).EQ.0) THEN                                          
         JCONS = 60                                                     
@@ -254,14 +267,13 @@
         CALL FLUSH(IU06)
       ENDIF                                                             
 
-!         DETERMINE FORECAST PERIOD.
+!     DETERMINE FORECAST PERIOD.
 
       IFORP = JCONS*KSEC1(16)
 
 !     GET DATE OF THE FORECAST INSTEAD OF STARTING DATE
-      IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11) THEN
-        CALL INCDATE (CDATE,IFORP)
-      ENDIF
+
+      CALL INCDATE (CDATE,IFORP)
 
 !*    DETERMINE CODE FOR DATA FIELD TYPE.                           
 
@@ -272,7 +284,6 @@
       ELSE
         KZLEV=0
       ENDIF
-
 
 !*    DETERMINE GRID PARAMETERS.                                    
 !     --------------------------                                    
@@ -290,8 +301,22 @@
       RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
      &         0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
 
-      RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
-     &         0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+!!! THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
+!!! THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
+!!! A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
+!!! RMOEAP IS IMPLICITLY KNOWN.
+      IF(IREPR.EQ.4 .AND. .NOT. LLNEAREST) THEN
+        DELLO = 360./MAX(1,NC)
+        RMOEAP = RMOWEP+360. - DELLO
+        IPERIODIC = 1
+      ELSE
+        RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
+     &           0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+        IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
+        IPERIODIC = 0
+        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+        IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+      ENDIF
 
 
       IF(JRGG.EQ.1) THEN
@@ -302,15 +327,9 @@
         ENDDO
 
         ISTOP=0
-        DO WHILE(KSEC2(23+NR-1-ISTOP).EQ.0)
+        DO WHILE(KSEC2(23+NRFULL-1-ISTOP).EQ.0)
           ISTOP=ISTOP+1 
         ENDDO
-
-        IR=0
-        DO J=1,NR
-          IF(KSEC2(22+J).NE.0) IR=IR+1
-        ENDDO
-        NR=IR
 
         DO J=1,NR
           JSN=NR-J+1
@@ -337,19 +356,13 @@
 
 !     FIND WHETHER INTERPOLATION IS NEEDED
 
-      IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
-
-      IPERIODIC = 0
-      DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-      IF (RMOEAP-RMOWEP+DELLO.GE.360.) IPERIODIC = 1
-
       DELLA=(RMONOP-RMOSOP)/MAX(1,NR-1)
 
       IF(IPERIODIC.EQ.1) THEN
-        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC)
+        DELLO=360./MAX(1,NC)
         DO J=1,NR
           JSN=NR-J+1
-          RDELLO(JSN) = (RMOEAP-RMOWEP+DELLO)/MAX(1,RLONRGG(JSN)) 
+          RDELLO(JSN) = 360./MAX(1,RLONRGG(JSN)) 
         ENDDO
       ELSE
         DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
@@ -406,6 +419,21 @@
          ENDIF
       ENDIF
 
+!     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
+      KKK=0
+      MMM=0
+      IF(IPARAM.EQ.251 .AND. CSTREAM.NE.'****') THEN
+        KKK=KSEC1(44)
+        MMM=KSEC1(45)
+        DO L=1,KLENP
+          IF(PSEC4(L).NE.PMISS) THEN
+            PSEC4(L) = 10.**(PSEC4(L)-ABS(PPREC))- PPEPS
+          ELSE
+            PSEC4(L) = PMISS
+          ENDIF
+        ENDDO
+      ENDIF
+
 
       IF(.NOT.LLINTERPOL) THEN
 
@@ -418,7 +446,6 @@
           WRITE(IU06,*) ' IS TRANSFERRED ONTO THE WAVE MODEL GRID '
           WRITE(IU06,*) ' '
         ENDIF
-
         L = 0                                                          
         DO K=1,NGY                                                
           JSN=NGY-K+1
@@ -433,6 +460,21 @@
 
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
+
+        IF((IPARAM.EQ.230 .OR. IPARAM.EQ.235 .OR. IPARAM.EQ.238 .OR.
+     &      IPARAM.EQ.242 .OR. IPARAM.EQ.249) .AND.
+     &      CSTREAM.NE.'****') THEN
+          WRITE(IU06,*) '****************************************'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. GRB2WGRD      *'
+          WRITE(IU06,*) '*    ============================      *'
+          WRITE(IU06,*) '*                                      *'
+          WRITE(IU06,*) '* GRB2WGRD NOT YET READY TO INTERPOLATE*' 
+          WRITE(IU06,*) '* DIRECTIONAL FIELDS !!                *'
+          WRITE(IU06,*) '*                                      *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS               *'
+          WRITE(IU06,*) '****************************************'
+          CALL ABORT1
+        ENDIF
 
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' '
@@ -449,6 +491,7 @@
           WRITE(IU06,*) ' IS INTERPOLATED ONTO THE WAVE MODEL GRID '
           WRITE(IU06,*) ' '
         ENDIF
+
 
         IF(IPERIODIC.EQ.1) THEN
           ALLOCATE(WORK(0:NC+1,NR))
@@ -514,7 +557,16 @@
      &           WORK(II1,KK).EQ.PMISS.OR.
      &           WORK(IIP,KK1).EQ.PMISS.OR.
      &           WORK(IIP1,KK1).EQ.PMISS) THEN
-                FIELD(I,K)=WORK(II,KK)
+                IF(DK1.LE.0.5) THEN
+                  KCL=KK
+                  ICL=II1
+                  IF(DII1.LE.0.5) ICL=II
+                ELSE
+                  KCL=KK1
+                  ICL=IIP1
+                  IF(DIIP1.LE.0.5) ICL=IIP
+                ENDIF
+                FIELD(I,K)=WORK(ICL,KCL)
               ELSE
                 FIELD(I,K)=DK2*(DII2*WORK(II,KK)+DII1*WORK(II1,KK)) +
      &                  DK1*(DIIP2*WORK(IIP,KK1)+DIIP1*WORK(IIP1,KK1))

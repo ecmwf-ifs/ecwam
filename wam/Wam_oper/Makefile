@@ -22,6 +22,7 @@ SOURCE	=\
               combinepeaks.F \
               command.F \
               confile.F \
+              convert_grbspec.F \
               cormars.F \
               crossas.F \
               crossw.F \
@@ -73,8 +74,10 @@ SOURCE	=\
               intmars.F \
               intpol.F \
               intspec.F \
+              intwaminput.F \
               ispoff.F \
               jafu.F \
+              kgribsize.F \
               lasttwobins.F \
               llalloc_grdfld.F \
               loc2glo.F \
@@ -141,6 +144,7 @@ SOURCE	=\
               outpp.F \
               outspp.F \
               outubuf.F \
+              outwaminput.F \
               outwnorm.F \
               outxt.F \
               packi.F \
@@ -239,7 +243,8 @@ SOURCE	=\
               wsmfen.F \
               wvalloc.F \
               wvdealloc.F \
-              wdirspread.F
+              wdirspread.F \
+              wstream_strg.F
 
 OBJECTS	=	$(SOURCE:.F=.o)
 

@@ -205,7 +205,7 @@
 !        --------------------------------------------------
       IF(LALTLRGR) THEN
         IF(LMESSPASS) THEN
-          DO IJ = NSTART(IRANK), NEND(IRANK)
+          DO IJ = NSTART(1), NEND(NPROC)
             IX = IXLG(IJ,1)
             IY = NGY- KXLT(IJ,1) +1
             IF (WHME(IX,IY).GT.0.)

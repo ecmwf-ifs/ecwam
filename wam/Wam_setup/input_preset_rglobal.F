@@ -1,6 +1,6 @@
  &NALINE
  HEADER    = " GLOBAL WAVE MODEL INITIALISATION                  PRESET VERSION 4.0 "
- IOPTI     = $OPTI
+ IOPTI     =  1
  ITEST     =  0
  ITESTB    =  4
  ALFA      =  1.800000E-02
@@ -16,7 +16,7 @@
  CLTUNIT   = "S"
  LPBIOOUT  =  T
  LFDBIOOUT =  F
- LGRIBIN   =  ${lgribin} 
+ LGRIBIN   =  F
  LGRIBOUT  =  T
  MARSTYPE  = "an"
  YCLASS    = "$CLASS"

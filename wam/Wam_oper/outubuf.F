@@ -37,15 +37,12 @@
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWUBUF  , ONLY : KLAT     ,KLON
-
-
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV
 
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
-  999 FORMAT(5E16.7)
+  999 FORMAT(10E6.3)
 
 ! ----------------------------------------------------------------------
 
@@ -53,6 +50,8 @@
 !        -----------------------------
 
       IF (IFORM.NE.2) WRITE (IU08) KLAT, KLON
+      IF (IFORM.NE.2) WRITE (IU08) KLAT2
+      IF (IFORM.NE.2) WRITE (IU08) WADV
 
 ! ----------------------------------------------------------------------
 
@@ -60,5 +59,7 @@
 !        ---------------------------
 
       IF (IFORM.NE.1) WRITE (IU18,998) KLAT, KLON
+      IF (IFORM.NE.1) WRITE (IU18,998) KLAT2
+      IF (IFORM.NE.1) WRITE (IU18,999) WADV
       RETURN
       END SUBROUTINE OUTUBUF

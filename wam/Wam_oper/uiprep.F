@@ -55,7 +55,7 @@
      &            XOUTN    ,NOUTD    ,OUTLONG  ,OUTLAT
       USE YOWCOUT  , ONLY : NGOUT
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : FR
+      USE YOWFRED  , ONLY : FR       ,FRATIO
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
      &            XDELLO
@@ -123,13 +123,19 @@
       READ (IU05, NALINE)
 
       ALLOCATE(FR(ML))
-      FR(1) = FR1
+
+      IF(ML.EQ.30) THEN
+        FR(1) = (FR1/FRATIO)/FRATIO
+        FR1 = FR(1)
+      ELSE
+        FR(1) = FR1
+      ENDIF
 
       WRITE (IU06,'(
      &   " PROGRAM PREPROC:  ",
-     &   " WAM Cycle4 Release8 CI 4 (common with IFS CY19R2)",
+     &   " WAM Cycle4 (common with IFS CY22R3)",
      &/, "                   ",
-     &   " clearcase:  wam_wab_CY19R1_modules",
+     &   " clearcase:  wam_wab_CY22R3_NEW_adv_fit_tbl",
      &  /,"  USER INPUT:",/)')
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
@@ -144,7 +150,12 @@
 
       WRITE (IU06,'("   FREQUENCY / DIRECTION GRID"/)')
       WRITE (IU06,'("   NUMBER OF FREQUENCIES IS ML = ",I6)') ML
-      WRITE (IU06,'("   MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
+      IF(ML.EQ.30) THEN
+        WRITE (IU06,'("!!SINCE THE NUMBER OF FREQUENCIES IS",I6)')ML
+        WRITE (IU06,'("!!MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
+      ELSE
+        WRITE (IU06,'("   MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
+      ENDIF
       WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS KL = ",I6)') KL
 
 !     SET DIMENSIONS.
@@ -402,7 +413,7 @@
           IBOUNC = 0
         ENDIF
 
-!*    2.6.1.2 INCLUDES THE COURSE GRID THE NEST GRID?
+!*    2.6.1.2 INCLUDES THE COARSE GRID THE NEST GRID?
 !             ---------------------------------------
 
         IF ((IPER.NE.1) .AND.

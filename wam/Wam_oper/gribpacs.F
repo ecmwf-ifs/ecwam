@@ -227,8 +227,7 @@
         itest = 0
       ENDIF
 
-      ibts = n_precision(ipr)  ! ECMWF UTILITY RETURN NUMBER OF BYTES
-!                              ! PER INTEGER IN THIS CASE.
+      ibts = KIND(ipr)
 
       IF (lltest ) THEN
         WRITE(kuso,*) ' SUBROUTINE: GRIBPACKS'

@@ -77,6 +77,10 @@
 
       XL11 = LOG(FRATIO)
 
+      IPM = NINT(ZPI/(4.*DELTH))
+      IPM = MAX(2,IPM)
+      IPM1 = IPM-1
+
       FR1=FR(1)                                                         
       NWP=0                                                             
       DO IJ=IJS,IJL                                                
@@ -115,7 +119,7 @@
         FSMAX = 0.                                                     
         MP=1                                                           
         KP=1                                                           
-        DO II=IDW-1,IDW+1                                         
+        DO II=IDW-IPM1,IDW+IPM1                                         
           K = II                                                      
           IF (K.GT.NANG) K = K-NANG                                   
           IF (K.LE.0) K = K+NANG                                      
@@ -141,10 +145,10 @@
 !           A BETTER ESTIMATE OF THE PEAK IN THE 1-DIM SPECTRUM.        
 !           ----------------------------------------------------        
 
-          DO I=-1,1                                              
+          DO I=-IPM1,IPM1                                              
             KPP=KP+I                                                 
-            IF (KPP.EQ.NANG+1) KPP = 1                               
-            IF (KPP.EQ.0) KPP = NANG                                 
+            IF (KPP.GT.NANG) KPP = KPP-NANG                                   
+            IF (KPP.LE.0) KPP = KPP+NANG                                      
             FMOD  = F(IJ,KPP,MP  )+FMOD                              
             FMOD3 = F(IJ,KPP,MP+1)+FMOD3                             
             FMOD1 = F(IJ,KPP,MP-1)+FMOD1                             
@@ -212,7 +216,7 @@
 !          ------------------------------------------------------------ 
 
             IDW = NINT(MOD(THE-TH(1),ZPI)/DELTH)+1
-            DO II=IDW-2,IDW+2                                   
+            DO II=IDW-IPM,IDW+IPM                                   
               K = MOD(II,NANG)                                      
               IF (K.LE.0)  K=K+NANG                                 
               FSH1 = COS(THE-TH(K))                                 

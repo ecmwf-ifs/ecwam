@@ -108,7 +108,8 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE 
+     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
+     &            HOPERS
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
      &            SB       ,THETAQ
@@ -263,9 +264,9 @@
       IRANK=1
       NPROC=1
       X4=1.
-      NPRECR = N_PRECISION(X4)
+      NPRECR = KIND(X4)
       I4=1
-      NPRECI = N_PRECISION(I4)
+      NPRECI = KIND(I4)
       KTAG=100
 
 ! ----------------------------------------------------------------------
@@ -576,8 +577,8 @@
      &                 AMONOP, XDELLA, NSTART, NEND,
      &                 NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                 NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                 KSEK4, PSEK2, PSEK3, NTENCODE, 
-     &                 DEG, PPMISS, PPEPS, PPREC,
+     &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS, 
+     &                 DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
      &                 CDATEA, CDATEF, CDATEA,
      &                 CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                 CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,

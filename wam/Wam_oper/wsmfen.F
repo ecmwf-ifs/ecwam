@@ -35,21 +35,13 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,EPSMIN   ,AFCRV   ,BFCRV
 
 ! ----------------------------------------------------------------------
 
       REAL :: FSEA(NANG,NFRE)
-
-! ----------------------------------------------------------------------
-
-      REAL, PARAMETER :: AF = 0.000168
-      REAL, PARAMETER :: BF = -3.27                             
-
-!       *AF*   REAL   PARAMETER OF THE ENERGY - MEAN FREQUENCY RELATION.
-!       *BF*   REAL   PARAMETER OF THE ENERGY - MEAN FREQUENCY RELATION.
 
 ! ----------------------------------------------------------------------
 
@@ -58,11 +50,11 @@
 
 !     ENERGY AS FUNCTION OF MEAN FREQUENCY.                             
 
-      EN(X)=AF*X**BF                                                    
+      EN(X)=AFCRV*X**BFCRV                                                    
 
 !     MEAN FREQUENCY AS FUNCTION OF ENERGY.                             
 
-      YNU(X)=(X/AF)**(1./BF)                                            
+      YNU(X)=(X/AFCRV)**(1./BFCRV)                                            
 
 ! ----------------------------------------------------------------------
 

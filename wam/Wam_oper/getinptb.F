@@ -147,10 +147,11 @@
       MARS(3) = CARD(3)
       WRITE(MARS(4),'("TYPE=AN,LEVTYPE=SFC,LEVELIST=OFF,")')
 
-      WRITE(MARS(5),'("GRID=",F5.2,"/",F5.2,",FORMAT=PACKED,")')
-     &      XDELLO, XDELLA
-      WRITE(MARS(6),'("AREA=",f7.2,"/",f7.2,"/",f7.2,"/",f7.2,",")')
-     &      AMONOP, AMOWEP, AMOSOP, AMOEAP
+!!! also see when writting mars() out
+!!!      WRITE(MARS(5),'("GRID=",F5.2,"/",F5.2,",FORMAT=PACKED,")')
+!!!     &      XDELLO, XDELLA
+!!!      WRITE(MARS(6),'("AREA=",f7.2,"/",f7.2,"/",f7.2,"/",f7.2,",")')
+!!!     &      AMONOP, AMOWEP, AMOSOP, AMOEAP
 
       IGRID=INT(100*XDELLA) 
       WRITE(CGRID,'(I3.3)') IGRID
@@ -312,7 +313,12 @@
       WRITE(IU06,*) ' THE MARS INPUT CARDS ARE AS FOLLOWS --'
       WRITE(IU06,*) '  '
 
-      DO I=1,ILINE
+      DO I=1,4
+        WRITE(IU22,'(A80)') MARS(I)
+        WRITE(IU06,*) MARS(I)
+      ENDDO
+!!! mars(5) and mars(6) are no longer needed
+      DO I=7,ILINE
         WRITE(IU22,'(A80)') MARS(I)
         WRITE(IU06,*) MARS(I)
       ENDDO

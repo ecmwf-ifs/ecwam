@@ -139,50 +139,8 @@
         CALL ABORT1
       ENDIF
       IF(KRET.EQ.-3) THEN 
-        WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' ***** WARNING IN MODEL FOR WAVES *****'
-        WRITE(IU06,*) ' SUB. INTMARS : '
-        WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
-        WRITE(IU06,*) ' IT WAS ', ISIZE
-
-        KRET=0
         DEALLOCATE(KGRIB)
-        ISIZE=(KLEN+KIND(ISIZE)-1)/KIND(ISIZE)
-
-        WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
-        WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
-        WRITE(IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
-        WRITE(IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
-        WRITE(IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
-        WRITE(IU06,*) ' ***** WARNING ****** WARNING *****'
-        WRITE(IU06,*) ' '
-
-!       RESET THE FILE POINTER TO READ FIELD AGAIN
-        KOFFSET=-KLEN
-        CALL PBSEEK(IUNIT1,KOFFSET,1,KRET)
-        IF(KRET.EQ.-1) THEN 
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. INTMARS    *'
-          WRITE(IU06,*) '*  ============================   *'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED' 
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-        IF(KRET.EQ.-2) THEN 
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  FATAL ERROR IN SUB. INTMARS    *'
-          WRITE(IU06,*) '*  ============================   *'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
-          WRITE(IU06,*) '*                                 *'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-
+        CALL KGRIBSIZE(IU06, IUNIT1, KLEN, ISIZE, 'INTMARS')
         GOTO 1001
       ENDIF
 
@@ -206,12 +164,14 @@
 !         ------------------------------------------------------
 
       KTEST=ITEST+1
+      ZDUM =0.
       CALL GRB2WGRD (IU06, KTEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
      &               NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &               KGRIB, ISIZE,
      &               NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
      &               AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &               CDATE, IFORP, IPARAM, KZLEV, FIELD )
+     &               ZDUM, ZDUM, 
+     &               CDATE, IFORP, IPARAM, KZLEV, IDUM, IDUM, FIELD )
 
 
       DEALLOCATE(KGRIB)

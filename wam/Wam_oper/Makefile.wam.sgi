@@ -8,6 +8,7 @@ SOURCE	=\
               adjust.F         \
               aki.F            \
               check.F          \
+              convert_grbspec.F\
               crewfn.F         \
               difdate.F        \
               dummy_mp.F       \
@@ -22,10 +23,12 @@ SOURCE	=\
               inmars.F         \
               iniwcst.F        \
               intmars.F        \
+              intwaminput.F    \
               intspec.F        \
               jafu.F           \
-              locint.F         \
+              kgribsize.F      \
               llalloc_grdfld.F \
+              locint.F         \
               mblock.F         \
               mbounc.F         \
               mbounf.F         \
@@ -43,6 +46,7 @@ SOURCE	=\
               outcom.F         \
               outnam.F         \
               outubuf.F        \
+              outwaminput.F    \
               packi.F          \
               packr.F          \
               preproc.F        \
@@ -64,7 +68,8 @@ SOURCE	=\
               wam_user_clock.F \
               wamcur.F         \
               wposnam.F        \
-              writsta.F
+              writsta.F        \
+              wstream_strg.F
 
 
 OBJECTS	=	$(SOURCE:.F=.o)

@@ -216,7 +216,7 @@
 !*    3. COMPUTE TAIL FREQUENCY RATIOS.
 !        ------------------------------
 
-      IE = MIN(30,ML+3)
+      IE = MIN(KFRH,ML+3)
       DO I=1,IE
         M = ML+I-1
         FRH(I) = (FRLON(ML)/FRLON(M))**5
@@ -252,7 +252,7 @@
      &   K21W(K,KH),KH=1,2)
       ENDDO
       WRITE(IU06,'(1H0,'' COMMON INDNL: TAIL ARRAY FRH'')')
-      WRITE(IU06,'(1X,8F10.7)') (FRH(M),M=1,30)
+      WRITE(IU06,'(1X,8F10.7)') (FRH(M),M=1,KFRH)
 
 !     5. DEALLOCATE LOCAL ARRAYS
 !        -----------------------

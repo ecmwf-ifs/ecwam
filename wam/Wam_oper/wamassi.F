@@ -81,7 +81,8 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE
+     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
+     &            HOPERS
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
@@ -319,8 +320,8 @@
      &                     AMONOP, XDELLA, NSTART, NEND,
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                     KSEK4, PSEK2, PSEK3, NTENCODE,
-     &                     DEG, PPMISS, PPEPS, PPREC,
+     &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,

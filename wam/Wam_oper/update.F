@@ -135,7 +135,7 @@
 !                 FMWA  = -9999.                                        
 
       DO IJ=IJS,IJL                                                
-        IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.5*ETOI(IJ)) THEN          
+        IF (EWA(IJ).GT.0. .AND. EWA(IJ).LT.0.75*ETOI(IJ)) THEN          
           EWFG(IJ)  =  -999.                                          
           FMWFG(IJ) = -9999.                                          
         ENDIF                                                         

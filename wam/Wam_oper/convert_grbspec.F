@@ -1,7 +1,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PROGRAM CONVERT_GRBSPEC
+      PROGRAM convert_grbspec
 
 !     J BIDLOT ECMWF      MAY 1998
 

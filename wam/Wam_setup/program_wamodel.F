@@ -301,6 +301,8 @@ cat > fort.3 << EOD
 #else
 #if resolution == 150
 #include "input_wamodel_rglobal150.F"
+#elif resolution == 100
+#include "input_wamodel_rglobal50.F"
 #elif resolution == 50
 #include "input_wamodel_rglobal50.F"
 #else

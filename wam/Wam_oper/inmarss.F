@@ -126,7 +126,7 @@
       IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
 
       I4=1
-      NPRECI = N_PRECISION(I4)
+      NPRECI = KIND(I4)
 
 !     GET SIZE OF KGRIB
 

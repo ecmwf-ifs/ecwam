@@ -6,6 +6,9 @@
 
 !     P.LIONELLO      ECMWF         APRIL 1990                          
 !     J.BIDLOT        ECMWF         JUNE 1997 UPSPEC >> UPWSPEC 
+!     J.BIDLOT        ECMWF         APRIL 2000 ADD f-5 TAIL WHEN
+!                                   UPDATED SPECTRUM SWIFTS TO LOWER
+!                                   FREQUENCIES
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -59,115 +62,107 @@
 
 !-----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR
+      USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION F(NINF-1:NSUP,NANG,NFRE)
+	  INTEGER :: M1(NFRE)
+      REAL :: F(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NINF:NSUP) :: ETA, FMWFG, FMWA
 !cc note ETFG corresponds to EMEAN which is module yowmean in UPDATE
 !cc therefore it has to have a different definition as the other arrays
-      REAL,DIMENSION(IJS:IJL) :: ETFG
+      REAL,DIMENSION(IJS:IJL) :: ETFG, XR, XB 
+
+      REAL :: XL11
+      REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
 
 ! ----------------------------------------------------------------------
 
-      REAL, PARAMETER :: XL11 = 0.0953101
-      REAL, ALLOCATABLE :: FTEMP(:,:)
+      XL11 = LOG(FRATIO)
 
-!          *XL11*   REAL     ALOG(1.1)                                  
-!          *FTEMP*  REAL     TEMPORAR STORAGE OF THE SPECTRUM.          
+      DO M=1,NFRE                                               
+        DFRE(M) = FR(M)*(FRATIO-1.)
+      ENDDO
 
-! ----------------------------------------------------------------------
+      DO IJ=IJS,IJL                                                
+!*      SKIP LAND POINTS AND POINTS WHERE THERE ARE NO RELIABLE DATA.
+        IF (ETFG(IJ).GT.0.001.AND.ETA(IJ).GT.0.001) THEN
+          HNEW = 4.*SQRT(ETA(IJ))
+          FNEW = FMWA(IJ)
+          HOLD = 4.*SQRT(ETFG(IJ))
+          FOLD = FMWFG(IJ)
 
-      ALLOCATE(FTEMP(NANG,NFRE))                                        
+!*        COMPUTE SCALING AND STRETCHING FACTORS. 
 
-      FR1=FR(1)                                                         
+          IF (FOLD.LE.0.) THEN
+!*          THE SPECTRUM IS MAINLY SWELL (THE WINDSEA MEAN FREQUENCY
+!*          OF THE FIRST GUESS SPECTRUM IS NEGATIVE).
+            XDELTA = 1.-0.006*(HNEW-HOLD)
+            XR(IJ) = XDELTA*(HNEW/HOLD)**2.5
+            XB(IJ) = XDELTA* SQRT(HNEW/HOLD)
+          ELSE 
+!*          THE SPECTRUM IS MAINLY WINDSEA.
+            XR(IJ) = (HNEW/HOLD)**2*FOLD/FNEW
+            XB(IJ) = FOLD/FNEW
+            ENDIF
+          ENDIF
+      ENDDO
 
-!*    1. LOOP OVER GRID POINTS.                                         
-!        ---------------------                                          
 
       DO IJ=IJS,IJL                                                
 
-!*    1.1 SKIP LAND POINTS AND POINTS WHERE THERE ARE NO RELIABLE DATA. 
-!         ------------------------------------------------------------- 
+!*      SKIP LAND POINTS AND POINTS WHERE THERE ARE NO RELIABLE DATA.
 
-        IF (ETFG(IJ).LE.0.001.OR.ETA(IJ).LE.0.001) GOTO 1001           
-        FNEW = FMWA(IJ)                                                
-        HNEW = 4.*SQRT(ETA(IJ))                                        
-        HOLD = 4.*SQRT(ETFG(IJ))                                       
-        FOLD = FMWFG(IJ)                                               
+        IF (ETFG(IJ).GT.0.001.AND.ETA(IJ).GT.0.001) THEN
 
-!*    1.2 COMPUTE SCALING AND STRETCHING FACTORS.                       
-!         ---------------------------------------                       
+!*        LOOP OVER NEW FREQUENCIES.
 
-        IF (FOLD.LE.0.) THEN                                           
-
-!*    1.2.1 THE SPECTRUM IS MAINLY SWELL (THE WINDSEA MEAN FREQUENCY    
-!*          OF THE FIRST GUESS SPECTRUM IS NEGATIVE).                   
-!           --------------------------------------------------------    
-
-          XDELTA = 1.-0.006*(HNEW-HOLD)                               
-          XR = XDELTA*(HNEW/HOLD)**2.5                                
-          XB = XDELTA* SQRT(HNEW/HOLD)                                
-        ELSE                                                           
-
-!*    1.2.2 THE SPECTRUM IS MAINLY WINDSEA.                             
-!           -------------------------------                             
-
-          XR = (HNEW/HOLD)**2*FOLD/FNEW                               
-          XB = FOLD/FNEW                                              
-        ENDIF                                                         
-
-!*    1.3 LOOP OVER NEW FREQUENCIES.                                    
-!         --------------------------                                    
-
-        DO M=1,NFRE                                               
-          FU = FR(M)*XB                                               
-          M1 = INT(LOG(FU/FR1)/XL11)+1                               
-          IF (M1.GE.NFRE.OR.M1.LT.1) THEN                             
-
-!*    1.3.1 LOOP OVER DIRECTIONS FOR FREQUENCIES GETTING ENERGY FORM    
-!*          FREQUENCIES OUT OF RANGE.                                   
-!           ---------------------------------------------------------   
-
-            DO K=1,NANG                                         
-              FTEMP(K,M) = 0.                                       
-            ENDDO
-          ELSE                                                        
-
-!*    1.3.2 LOOP OVER DIRECTIONS FOR FREQUENCIES GETTING ENERGY.        
-!           ----------------------------------------------------        
-            M2 = M1+1                                                
-            DFRE = FR(M1)*.1                                         
-            DO K=1,NANG                                         
-              F1 = F(IJ,K,M1)                                       
-              F2 = F(IJ,K,M2)                                       
-              DE = (F2-F1)/DFRE * (FU-FR(M1))                       
-              FTEMP(K,M) = XR*MAX(0.,F1+DE)                         
-            ENDDO
-          ENDIF                                                      
-
-!*    BRANCH BACK TO 1.3 FOR NEXT FREQUENCY.                            
-
-        ENDDO
-
-!*    1.4 THE UPDATED SPECTRUM IS STORED.                               
-!         -------------------------------                               
-
-        DO K=1,NANG                                               
-          DO M=1,NFRE                                            
-            F(IJ,K,M) = FTEMP(K,M)                                   
+          DO M=1,NFRE
+            FU(M) = FR(M)*XB(IJ)
+            M1(M) = INT(LOG(FU(M)/FR(1))/XL11)+1
           ENDDO
-        ENDDO
 
-!*    BRANCH BACK TO 1. FOR NEXT GRIDPOINT.                             
+          DO M=1,NFRE
 
- 1001   continue
+            IF (M1(M).GE.NFRE) THEN
+!             A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
+              DO K=1,NANG
+                IF(F(IJ,K,NFRE).GT.FLMIN) THEN
+                  FTEMP(K,M) = XR(IJ)*F(IJ,K,NFRE)*(FR(NFRE)/FU(M))**5 
+                ELSE
+                  FTEMP(K,M) = F(IJ,K,NFRE) 
+                ENDIF
+              ENDDO
+
+            ELSEIF (M1(M).LT.1) THEN
+              DO K=1,NANG
+                FTEMP(K,M) = 0.
+              ENDDO
+
+            ELSE
+              DO K=1,NANG
+                F1 = F(IJ,K,M1(M))
+                F2 = F(IJ,K,M1(M)+1)
+                DE = (F2-F1)/DFRE(M1(M)) * (FU(M)-FR(M1(M)))
+                FTEMP(K,M) = XR(IJ)*MAX(0.,F1+DE)
+              ENDDO
+            ENDIF
+
+          ENDDO
+
+!*       THE UPDATED SPECTRUM IS STORED.
+
+          DO K=1,NANG
+            DO M=1,NFRE
+              F(IJ,K,M) = FTEMP(K,M)
+            ENDDO
+          ENDDO
+
+        ENDIF
       ENDDO
-                                                                        
-      DEALLOCATE(FTEMP)                                        
 
-      RETURN                                                            
+      RETURN
       END SUBROUTINE UPWSPEC

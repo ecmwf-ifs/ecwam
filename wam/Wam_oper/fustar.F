@@ -15,7 +15,7 @@
 !     PURPOSE.                                                          
 !     --------                                                          
 
-!        ESTIMATE THE ANALYSED FRICTION VELOCITY FROM THE URATION AND   
+!        ESTIMATE THE ANALYSED FRICTION VELOCITY FROM THE DURATION AND   
 !        THE "MEASURED" WINDSEA ENERGY. ESTIMATE THE ANALYSED WINDSEA   
 !        MEAN FREQUENCY FROM THE "MEASURED" WINDSEA ENERGY.             
 
@@ -56,8 +56,9 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF:NSUP) :: USMO, USA, USOI, EWOI,      
-     &                             EWA, T, FMWA, EWFG          
+      INTEGER, PARAMETER :: NITER=5
+      REAL,DIMENSION(NINF:NSUP) :: USMO, USA, USOI, EWOI, EWA, T, FMWA,
+     &                             EWFG, USTANAL , USTANAL0
 
 ! ----------------------------------------------------------------------
 
@@ -84,56 +85,73 @@
 !        ----------------------                                         
 
       G2=G*G
-      DO IJ=IJS,IJL                                                
-        IF (EWFG(IJ).GT.0.01) THEN                                     
+      BGRCRVM1=BGRCRV-1.
 
 !*    2.1  DETERMINE FRICTION VELOCITY FROM DURATION GROWTH CURVE       
 !          IF WINDSEA IS PRESENT.                                       
 !           ------------------------------------------------------      
+      DO IJ=IJS,IJL                                                
+        IF (EWFG(IJ).GT.0.01.AND.T(IJ).GT.0.) THEN
+          USTANAL0(IJ) = ABS(USMO(IJ))
+          USTANAL(IJ) = USTANAL0(IJ) 
+        ENDIF                                                          
+      ENDDO
 
-          UMODEL = USMO(IJ)                                           
-          USTANAL = UMODEL                                            
-          EWSR = EWOI(IJ)                                             
-          TX = T(IJ)                                                  
-          DO ITER=1,5                                            
-            TSTAR = G*TX/USTANAL                                     
-            XX = AGRCRV*TSTAR**BGRCRV
-            IF (XX.GE.2.) THEN                                       
-              USTANAL = (EWSR*G2/EGRCRV)**(0.25)                      
-            ELSE                                                     
-              TT = TANH(XX)                                         
-              RKSI = EWSR*G2/USTANAL**4/EGRCRV
-              USTANAL = USTANAL*(1.-(RKSI-TT)                       
-     &         /(BGRCRV*XX*(1.-TT**2)-4.*TT))               
-            ENDIF                                                   
-          ENDDO
+!     SOLVE ITERATIVELY THE RELATION FOR USTAR
+!        ESTAR=EGRCRV*(TSTAR/(AGRCRV+TSTAR))**BGRCRV
+!     USING THE 1 ORDER NEWTON METHOD Xn+1 = Xn - f(Xn)/f'(Xn)
+!     WHERE f  = 0 IS A FUNCTION OBTAINED FROM THE PREVIOUS
+!     RELATION IN TERM OF USTAR ONLY.
+
+      DO ITER=1,NITER
+        DO IJ=IJS,IJL
+          IF (EWFG(IJ).GT.0.01.AND.T(IJ).GT.0.) THEN
+            TSTAR = G*T(IJ)/USTANAL(IJ)
+            XX = AGRCRV/TSTAR
+            YY = 1.+XX
+            ERATIO = (EWOI(IJ)*G2/USTANAL(IJ)**4)/EGRCRV
+
+            USTANAL(IJ) = USTANAL(IJ)*(1.-(1.-ERATIO*YY**BGRCRV)
+     &       /(4. - ERATIO*BGRCRV*XX*YY**BGRCRVM1))
+
+            IF(USTANAL(IJ).LE.0.) THEN
+              USTANAL0(IJ)=2.*USTANAL0(IJ)
+              USTANAL(IJ)=USTANAL0(IJ)
+            ENDIF
+          ENDIF                                                          
+        ENDDO
+      ENDDO
 
 !*    2.2  IF SIGNS OF (USA-USMO) AND (USOI-USMO) DIFFER, THEN          
 !          THE MODEL IS WRONG ABOUT THE CORRECT RATIO BETWEEN           
 !          WINDSEA AND SWELL. THEREFORE NO ASSIMILATION IS DONE.        
 !          -----------------------------------------------------        
+      DO IJ=IJS,IJL                                                
+        IF (EWFG(IJ).GT.0.01.AND.T(IJ).GT.0.) THEN
 
           IF (USOI(IJ).GT.0.) THEN                                    
-            SIGNR  = SIGN(1.,(USTANAL-UMODEL))                       
-            SIGNM2 = SIGN(1.,(0.8*USOI(IJ)-UMODEL))                  
-            SIGNM1 = SIGN(1.,(1.2*USOI(IJ)-UMODEL))                  
+            SIGNR  = SIGN(1.,(USTANAL(IJ)-USMO(IJ)))                       
+            SIGNM2 = SIGN(1.,(0.8*USOI(IJ)-USMO(IJ)))                  
+            SIGNM1 = SIGN(1.,(1.2*USOI(IJ)-USMO(IJ)))                  
             IF (SIGNR.NE.SIGNM1.AND.SIGNR.NE.SIGNM2) THEN            
               NNW = NNW+1                                           
             ELSE                                                     
-              USA(IJ) = USTANAL                                     
-              EWA(IJ) = EWSR                                        
-              FMWA(IJ) = YNU(EWSR*G2/USTANAL**4)*G/USTANAL        
+              USA(IJ) = USTANAL(IJ)                                     
+              EWA(IJ) = EWOI(IJ)                                        
+              FMWA(IJ) = YNU(EWOI(IJ)*G2/USTANAL(IJ)**4)*G/USTANAL(IJ)        
             ENDIF                                                   
           ELSE                                                        
-            USA(IJ) = USTANAL                                        
-            EWA(IJ) = EWSR                                           
-            FMWA(IJ) = YNU(EWSR*G2/USTANAL**4)*G/USTANAL           
+            USA(IJ) = USTANAL(IJ)                                        
+            EWA(IJ) = EWOI(IJ)                                           
+            FMWA(IJ) = YNU(EWOI(IJ)*G2/USTANAL(IJ)**4)*G/USTANAL(IJ)           
           ENDIF                                                       
         ENDIF                                                          
       ENDDO
 
-      WRITE(IU06,*) '  FUSTAR: WRONG WINDSEA/SWELL RATIO AT ',
+      IF(NNW.GT.0) THEN
+        WRITE(IU06,*) '  FUSTAR: WRONG WINDSEA/SWELL RATIO AT ',
      &             NNW, ' POINTS. NO ASSIMILATION DONE FOR THOSE POINTS'
+      ENDIF
 
       RETURN                                                            
       END SUBROUTINE FUSTAR

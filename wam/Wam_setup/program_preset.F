@@ -71,11 +71,6 @@ cd $WDIR
 mkdir $WORKDIR 
 cd $WORKDIR 
 
-#. determine if preset has to be run or only data retrieval is necessary
-#. 
-if [[ $COLDSTART = yes || ($COLDSTART != yes && $specparam = 250) ]] ; then
- print - " PRESET WILL BE RUN "
- lpreset=yes
   #.
   #. Restore WAMLIB from DHS if lost.
   #.=====================================================================
@@ -114,26 +109,10 @@ if [[ $COLDSTART = yes || ($COLDSTART != yes && $specparam = 250) ]] ; then
     }
   fi
   ln -s $ADIR/ubufglou_${grid} fort.8
-
-fi
 #.
 # set restart file creation option
 #.================================
 #
-if [[ "$COLDSTART" = "no" ]] ; then
-### we will need to refine this as 1 should be use for the limited area model
-### and for all OD global field prior to 19961205
-   date=`substring $begofrn 1 8`
-   if [[ $date -lt 19961205 ]] ; then
-     OPTI="1"
-   else
-     OPTI="2"
-   fi
-   lgribin=T
-else
-   OPTI=" 1"
-   lgribin=F
-fi
 
 #if region=='s'
 #. THE SWAMP CASE DOES NOT NEED EXTERNAL WINDS.
@@ -381,7 +360,26 @@ if [[ "$COLDSTART" = "no" ]] ; then
 # Retrieve the drag coefficient if the initial data are contructed
 # from known archive spectra , drag coefficient and surface wind speed
 # as analysed by the wave model (if available, new parameter245)
+# and use intwaminput to put it on the proper resolution as precribed in
+# gridglou
 #################################################################### 
+
+  # extract intwaminput
+
+  ar xv $LIBS/$WAMLIB.a intwaminput.o 
+
+frt $rp -Wl,-dy -lsocket -Of -Wv,-Of -Ps -X9  -o intwaminput intwaminput.o \
+    -lwam $EMOSLIB $ECLIB $FDBLIB $MPELIB $MPLIB || {
+  #.
+  #.
+  #. Abort on error.
+  #.
+    print - "\n\n\t\tLOAD FAILED\n\n"
+    print - "\n\n\t\tPROGRAM WILL TERMINATE\n\n"
+    exit 12
+  }
+#.
+
 #
 # Get the WAVE spectra 
 # ====================
@@ -500,7 +498,11 @@ if [[ !  -r $WDIR/${sfilename} ]] ; then
     print - "\n\n\t\t NO WAVE SPECTRA FROM MARS, NOTHING IS DONE \n\n"
     exit 9
   }
-  mv ${sfilename} $WDIR/${sfilename}
+
+  mv ${sfilename} input_field
+  ./intwaminput
+  mv output_field $WDIR/${sfilename}
+
   ln -s $WDIR/${sfilename} ${sfilename}
 else
   ln -s $WDIR/${sfilename} ${sfilename}
@@ -621,7 +623,8 @@ fi
 # end coldstart=no
 fi
 
-if [[ $lpreset = yes ]] ; then
+if [[ $COLDSTART = yes ]] ; then
+ print - " PRESET WILL BE RUN "
 #.
 #.
 #.===========
@@ -661,7 +664,7 @@ EOD_for_preset
 #.
 ls -la
 #.
-# end on lpreset
+# end on COLDSTART 
 fi
 #.
 print - "\n\n\t\tPRESET ALL DONE\n\n"

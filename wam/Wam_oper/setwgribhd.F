@@ -36,7 +36,7 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3,
-     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M
+     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP,
      &            AMONOP   ,XDELLA   ,XDELLO
@@ -202,7 +202,7 @@
 !    *SECTION 4*  INTEGER  DATA SECTION.
 !    -----------------------------------
                            ! Number of bits used for each encoded value
-      KSEK4( 2) = 16 ! 9 or 16 or 32 
+      KSEK4( 2) = NGRBRESI
 
 !    *TOTAL NUMBER OF GRID POINTS FOR ENCODING.
 !    ------------------------------------------

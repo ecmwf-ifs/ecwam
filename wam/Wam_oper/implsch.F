@@ -103,9 +103,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
+     &            FRM5     ,COFRM4   ,FRATIO   ,WETAIL
       USE YOWICE   , ONLY : FLMIN
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -124,8 +124,9 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL :: MIJ(IJS:IJL), GADIAG(IJS:IJL),
-     &          TEMP(IJS:IJL,NFRE), DELFL(NFRE)
+      INTEGER :: MIJ(IJS:IJL)
+      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), DELFL(NFRE),
+     &        EDIFF(IJS:IJL) , EDIAGC(IJS:IJL)
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
@@ -209,17 +210,22 @@
       DELT = IDELT
       XIMP = 1.0
       DELT5 = XIMP*DELT
-      COEF4 = 5.E-07*G
       DO M=1,NFRE
-        DELFL(M) = COEF4*FR(M)**(-4.)*DELT
+        DELFL(M) = COFRM4(M)*DELT
+      ENDDO
+      DO M=1,NFRE
+        DO IJ=IJS,IJL
+          TEMP(IJ,M) = USNEW(IJ)*FMEAN(IJ)*DELFL(M)
+        ENDDO
+      ENDDO
+      DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
             GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
-            FAC   = USNEW(IJ)*FMEAN(IJ)*DELFL(M)
-            FLHAB = MIN(FLHAB,FAC)
-            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
+            FLHAB = MIN(FLHAB,TEMP(IJ,M))
+            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
             FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLMIN)
           ENDDO
         ENDDO
@@ -243,10 +249,10 @@
 
       FPMH = 2.5/FR(1)
       FLOGSPRDM1=1./LOG10(FRATIO)
-      
+     
       DO IJ=IJS,IJL
         FPM4 = FMEAN(IJ)*FPMH
-           
+
         MIJ(IJ) = INT(ALOG10(FPM4)*FLOGSPRDM1)+1
 
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
@@ -255,11 +261,8 @@
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
 
-      DO M=1,NFRE
-        DELFL(M) = (1./FR(M))**5.
-      ENDDO
       DO IJ=IJS,IJL
-        GADIAG(IJ) = FR(MIJ(IJ))**5.
+        GADIAG(IJ) = FR5(MIJ(IJ))
       ENDDO
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
@@ -268,12 +271,11 @@
       DO M=1,NFRE
         DO IJ=IJS,IJL
           FCONST(IJ,M) = 0.
-          TEMP(IJ,M) = GADIAG(IJ)*DELFL(M)
+          TEMP(IJ,M) = GADIAG(IJ)*FRM5(M)
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
-        J = MIJ(IJ)
-        DO M=1,J
+        DO M=1,MIJ(IJ)
           FCONST(IJ,M) = 1.
           TEMP(IJ,M) = 0.
         ENDDO

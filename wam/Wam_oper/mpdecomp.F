@@ -12,7 +12,7 @@
 
 !     PURPOSE.
 !     --------
-!     IT WILL READ IU07 AND IU08 AND IF MESSAGE PASSASING IT WILL
+!     IT WILL READ IU07 AND IU08 AND IF MESSAGE PASSING IT WILL
 !     DETERMINE AN EVEN DECOMPOSITION OF THE GRID ARRAYS FOR USE ON
 !     A DISTRIBUTED MEMORY COMPUTER USING A MESSAGE PASSING PROTOCOL
 !     FOR THE EXCHANGE OF INFORMATION ACROSS THE DIFFERENT PROCESSES
@@ -99,25 +99,29 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWFRED  , ONLY : FR       ,FR5      ,FRM5     ,COFRM4   ,
+     &             COEF4
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG 
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO
+      USE YOWPCONS , ONLY : G
       USE YOWSTAT  , ONLY : IREFRA 
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV
       USE YOWUNIT  , ONLY : IU07     ,IU08
 
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
       INTEGER,DIMENSION(NPR) :: NSTART,NEND,KLENTOP,KLENBOT
-      CHARACTER*80 LOGFILENAME(1)
+      CHARACTER*80 LOGFILENAME
 
 ! ----------------------------------------------------------------------
 
       INTEGER,ALLOCATABLE :: ICOMBUF(:), KDUM(:,:) 
+      REAL,ALLOCATABLE :: RCOMBUF(:), RDUM(:,:)
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
@@ -125,11 +129,10 @@
         IU06=20
       ELSEIF (LMESSPASS.AND..NOT.LWCOU) THEN
         IU06=66
-        LOGFILENAME(1)='logfile.%p'
+        LOGFILENAME='logfile.%p'
         CALL EXPAND_STRING(IRANK,NPR,0,0,LOGFILENAME,1)
-        OPEN(IU06,FILE=LOGFILENAME(1),STATUS='UNKNOWN')
-        WRITE(*,*) ' STDOUT FILE ', LOGFILENAME(1), ' OPENED ON PE ',
-     &             IRANK
+        OPEN(IU06,FILE=LOGFILENAME,STATUS='UNKNOWN')
+        WRITE(*,*) ' STDOUT FILE ', LOGFILENAME, ' OPENED ON PE ', IRANK
         WRITE(IU06,*) ' STDOUT OF PE ', IRANK
         WRITE(IU06,*) ' ============ '
         CALL FLUSH (IU06)
@@ -175,23 +178,38 @@
         ENDDO
       ENDDO
 
+!     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
+
+      ALLOCATE(FR5(NFRE))
+      ALLOCATE(FRM5(NFRE))
+      ALLOCATE(COFRM4(NFRE))
+
+      DO M=1,NFRE
+        FR5(M) = FR(M)**5.
+        FRM5(M) = (1./FR(M))**5.
+        COFRM4(M) = COEF4*G*FR(M)**(-4.)
+      ENDDO
+
+
 !*    1. INPUT NEIGHBOURING GRID POINT INDICES (UBUF) 
 !        --------------------------------------------
 
-      ALLOCATE(KLAT(NIBLO,2)) ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
-      ALLOCATE(KLON(NIBLO,2)) ! THE SIZE OF KLON IS READJUSTED SEE BELOW
+      ALLOCATE(KLAT(NIBLO,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
+      ALLOCATE(KLON(NIBLO,2))  ! THE SIZE OF KLON IS READJUSTED SEE BELOW
+      ALLOCATE(KLAT2(NIBLO,2)) ! THE SIZE OF KLAT2 IS READJUSTED SEE BELOW
 
       IF(LMESSPASS) THEN
 
 !       READ IOU8 ON PE IREAD
         IF(IRANK.EQ.IREAD) THEN
           READ (IU08) KLAT, KLON
+          READ (IU08) KLAT2
         ENDIF
 
 !       SEND KLAT AND KLON TO OTHER PE'S
         IF(NPR.GT.1) THEN
           ITAG=KTAG
-          MPLENGTH=4*NIBLO
+          MPLENGTH=6*NIBLO
           ALLOCATE(ICOMBUF(MPLENGTH))
 
           IF(IRANK.EQ.IREAD) THEN
@@ -200,6 +218,8 @@
               DO IJ=1,NIBLO
                 KCOUNT=KCOUNT+1
                 ICOMBUF(KCOUNT)=KLAT(IJ,IC)
+                KCOUNT=KCOUNT+1
+                ICOMBUF(KCOUNT)=KLAT2(IJ,IC)
               ENDDO
             ENDDO
             DO IC=1,2
@@ -230,6 +250,8 @@
               DO IJ=1,NIBLO
                 KCOUNT=KCOUNT+1
                 KLAT(IJ,IC)=ICOMBUF(KCOUNT)
+                KCOUNT=KCOUNT+1
+                KLAT2(IJ,IC)=ICOMBUF(KCOUNT)
               ENDDO
             ENDDO
             DO IC=1,2
@@ -247,6 +269,7 @@
 
       ELSEIF(.NOT.LMESSPASS) THEN
         READ (IU08) KLAT, KLON
+        READ (IU08) KLAT2
       ENDIF
 
 
@@ -288,6 +311,14 @@
         IF(ISB.LE.0) GOTO 20
 
         KLENBOT(IP)=MAX(0,NSTART(IP)-ISB)
+
+        I=-1
+22      I=I+1
+        ISB2=KLAT2(NSTART(IP)+I,1)
+        IF(ISB2.LE.0) GOTO 22
+
+        KLENBOT(IP)=MAX(0,NSTART(IP)-ISB,NSTART(IP)-ISB2)
+
       ENDDO
 
       KLENTOP(NPR)=0
@@ -298,6 +329,14 @@
         IF(IET.LE.0) GOTO 40
 
         KLENTOP(IP)=MAX(0,IET-NEND(IP))
+
+        I=-1
+42      I=I+1
+        IET2=KLAT2(NEND(IP)-I,2)
+        IF(IET2.LE.0) GOTO 42
+
+        KLENTOP(IP)=MAX(0,IET-NEND(IP),IET2-NEND(IP))
+
       ENDDO
 
       MAXLEN=0
@@ -343,6 +382,21 @@
           ENDDO
         ENDDO
 
+        DO IC=1,2
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            KDUM(IJ,IC)=KLAT2(IJ,IC)
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(KLAT2)
+        ALLOCATE(KLAT2(NSTART(IRANK):NEND(IRANK),2))
+
+        DO IC=1,2
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            KLAT2(IJ,IC)=KDUM(IJ,IC)
+          ENDDO
+        ENDDO
+
         DEALLOCATE(KDUM)
 
       ENDIF
@@ -359,12 +413,101 @@
         DO IC=1,2
           DO IJ = NSTART(IRANK),NEND(IRANK)
             IF(KLAT(IJ,IC).EQ.0) KLAT(IJ,IC) = NINF-1
+            IF(KLAT2(IJ,IC).EQ.0) KLAT2(IJ,IC) = NINF-1
             IF(KLON(IJ,IC).EQ.0) KLON(IJ,IC) = NINF-1
           ENDDO
         ENDDO
       ENDIF
 
-!     6. TEST AND RESET
+
+!*    6. INPUT THE WEIGHT FOR THE ADVECTION SCHEME 
+!        --------------------------------------------
+
+      ALLOCATE(WADV(NIBLO,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
+
+      IF(LMESSPASS) THEN
+
+!       READ IOU8 ON PE IREAD
+        IF(IRANK.EQ.IREAD) THEN
+          READ (IU08) WADV
+        ENDIF
+
+!       SEND KLAT AND KLON TO OTHER PE'S
+        IF(NPR.GT.1) THEN
+          ITAG=KTAG+1
+          MPLENGTH=2*NIBLO
+          ALLOCATE(RCOMBUF(MPLENGTH))
+
+          IF(IRANK.EQ.IREAD) THEN
+            KCOUNT=0
+            DO IC=1,2
+              DO IJ=1,NIBLO
+                KCOUNT=KCOUNT+1
+                RCOMBUF(KCOUNT)=WADV(IJ,IC)
+              ENDDO
+            ENDDO
+
+            CALL MPE_BROADCAST(RCOMBUF,MPLENGTH,2,IRANK,
+     &       ITAG,0,0,0,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT
+     &       ('MPE_BROADCAST ERROR in MPDECOMP 2' )
+          ELSE
+
+            CALL MPE_RECV(RCOMBUF,MPLENGTH,2,IREAD,ITAG,0,0,0,
+     &       KRCOUNT,KRFROM,KRTAG,IERR)
+            IF(IERR.LT.0) CALL MPEI_ABORT
+     &       ('MPE_RECV ERROR IN MPDECOMP 3' )
+            IF(KRCOUNT.NE.MPLENGTH) CALL MPEI_ABORT
+     &       ('MPE_RECV ERROR IN MPDECOMP:MISMATCHED MSG LENGTH')
+            IF(KRTAG.NE.ITAG) CALL MPEI_ABORT
+     &       ('MPE_RECV ERROR IN MPRECOMP MISMATCHED TAGS' )
+
+
+            KCOUNT=0
+            DO IC=1,2
+              DO IJ=1,NIBLO
+                KCOUNT=KCOUNT+1
+                WADV(IJ,IC)=RCOMBUF(KCOUNT)
+              ENDDO
+            ENDDO
+
+          ENDIF
+
+          DEALLOCATE(RCOMBUF)
+
+        ENDIF
+
+      ELSEIF(.NOT.LMESSPASS) THEN
+        READ (IU08) WADV
+      ENDIF
+
+!     KEEP THE PART OF WADV WHICH IS NECESSARY
+!     -----------------------------------------
+
+      IF(LMESSPASS.AND.NPR.GT.1) THEN
+
+        ALLOCATE(RDUM(NSTART(IRANK):NEND(IRANK),2))
+
+        DO IC=1,2
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            RDUM(IJ,IC)=WADV(IJ,IC)
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(WADV)
+        ALLOCATE(WADV(NSTART(IRANK):NEND(IRANK),2))
+
+        DO IC=1,2
+          DO IJ=NSTART(IRANK),NEND(IRANK)
+            WADV(IJ,IC)=RDUM(IJ,IC)
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(RDUM)
+      ENDIF
+
+
+!     7. TEST AND RESET
 !        -------------- 
       IF(LMESSPASS) THEN
         IF(IGL.GT.1) THEN

@@ -3,8 +3,8 @@
  CBPLTDT="${begofrn}",
  CEPLTDT="${endofrn}",
  CDATEF="${begoffo}",
- IDELPRO= 600
- IDELT= 600,
+ IDELPRO= 60
+ IDELT= 60,
  IDELWO= 21600,
  IDELWI= 21600,
  CLMTSU="S", "S", "S", "S"
@@ -19,7 +19,7 @@
  CLOTSU="S", "S", "S", "S", "S", "S", "S"
  CDATER="${outofrf}",
  CDATES="${outof2d}"
- PFLAG= T, F, T, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
+ PFLAG= T, F, F, F, F, T, T, F, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F
  FFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  GFLAG= F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
  NFLAG= F, F, F, F, F, F, T, T, F, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F
@@ -51,5 +51,5 @@
  CFDB2DSP="$cfdb2dsp"
  LNOCDIN=${lnocdin}
  SWAMPWIND=18.45
- NCALL=2
+ NCALL=1
  /

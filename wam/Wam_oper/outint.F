@@ -56,7 +56,7 @@
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
      &            LFDB     ,IPFGTBL
-      USE YOWGRIBHD, ONLY : NTENCODE
+      USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
@@ -95,7 +95,7 @@
         if(allocated(whgttg).and.
      &     allocated(cdg).and.
      &     allocated(u10g).and.
-     &     allocated(wmnftg).and.
+     &     allocated(mwp1g).and.
      &     allocated(wpkftg) ) then
           do j=1,ngy
           do i=1,ngx
@@ -106,8 +106,8 @@
               ustar=sqrt(ustar2)
               tstar=itime*g/ustar
               estar=(whgttg(i,j)**2/16)*g**2/(ustar**4)
-              anfit=EGRCRV*tanh(AGRCRV*tstar**BGRCRV)
-              fmstar=ustar*wmnftg(i,j)/g
+              anfit=EGRCRV*(tstar/(AGRCRV+tstar))**BGRCRV
+              fmstar=ustar/(mwp1g(i,j)*g)
               fmfit=AFCRV*fmstar**BFCRV
               cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
               z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
@@ -582,7 +582,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=229
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -596,7 +596,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=230
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -624,7 +624,7 @@
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -638,7 +638,7 @@
             IPARAM=249
             CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -665,7 +665,7 @@
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -680,7 +680,7 @@
             IZLEV=NINT(XNLEV(1))
             CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -693,7 +693,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=244
             CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -709,7 +709,7 @@
             IZLEV=NINT(XNLEV(1))
             CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -723,7 +723,7 @@
             IPARAM=246
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -737,7 +737,7 @@
             IPARAM=247
             CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -751,7 +751,7 @@
             IPARAM=248
             CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -765,7 +765,7 @@
             IPARAM=220
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -779,7 +779,7 @@
             IPARAM=221
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -793,7 +793,7 @@
             IPARAM=222
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &       YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -816,7 +816,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=234
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -831,7 +831,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=235
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -859,7 +859,7 @@
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -872,7 +872,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=237
             CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -887,7 +887,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             IPARAM=238
             CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
@@ -915,7 +915,7 @@
             ENDDO
             CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -929,7 +929,7 @@
             IPARAM=223
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -943,7 +943,7 @@
             IPARAM=224
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -957,7 +957,7 @@
             IPARAM=225
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
      &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -973,7 +973,7 @@
             IPARAM=226
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -987,7 +987,7 @@
             IPARAM=227
             CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,IY,IM,
      &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 
@@ -1001,7 +1001,7 @@
             IPARAM=228
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
      &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                   YEXPVER,CFDBSF,NENSFNB,NTOTENS,KFDB)
+     &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF
         ENDIF
 

@@ -233,7 +233,7 @@
           WRITE(IU06,*) '*                                 *'
           WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID AREA *'
           WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
-          WRITE(IU06,*) '*  COURSE MODEL GRID              *'
+          WRITE(IU06,*) '*  COARSE MODEL GRID              *'
           WRITE(IU06,*) '*                                 *'
           WRITE(IU06,*) '*  AMOSOP: ', SMOSOP, 'ZMOSOP : ',ZMOSOP
           WRITE(IU06,*) '*  AMONOP: ', SMONOP, 'ZMONOP : ',ZMONOP

@@ -53,10 +53,12 @@
 
 !-----------------------------------------------------------------------
 
-      PARAMETER ( jpv=42, jpf=6)
+! make sure that the size of the arrays are consistent with what is used
+! in the altiemter data preprocessing
+#include <parameters.h>
 
-      REAL pvalu(jpv)
-      INTEGER iflag(jpf)
+      REAL pvalu(jpelem)
+      INTEGER iflag(jpflan)
 
       CHARACTER* 3 yofid
       CHARACTER*12 CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
@@ -119,11 +121,10 @@
       ws   = pvalu(13)
       swh  = pvalu(15)
       ifl=0
-      DO j=1,6
+      DO j=1,jpflan
         ifl=ifl+iflag(j)
       ENDDO
       IF ( ifl .EQ. 0 ) flagged = .FALSE.
-      IF (CDATE.LT.'19911111090100') SWH = SWH*1.25
 
       RETURN
 

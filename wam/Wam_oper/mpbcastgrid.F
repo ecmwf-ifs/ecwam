@@ -344,10 +344,10 @@
         ZCOMBUF(KCOUNT)=DELTAUW
         KCOUNT=KCOUNT+1
         ZCOMBUF(KCOUNT)=DELU
-        DO J=0,IUSTAR
-          DO I=0,IALPHA
+        DO L=0,IALPHA
+          DO K=0,IUSTAR
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=TAUHFT(I,J)
+            ZCOMBUF(KCOUNT)=TAUHFT(K,L)
           ENDDO
         ENDDO
         KCOUNT=KCOUNT+1
@@ -825,10 +825,10 @@
         DELTAUW=ZCOMBUF(KCOUNT)
         KCOUNT=KCOUNT+1
         DELU=ZCOMBUF(KCOUNT)
-        DO J=0,IUSTAR
-          DO I=0,IALPHA
+        DO L=0,IALPHA
+          DO K=0,IUSTAR
             KCOUNT=KCOUNT+1
-            TAUHFT(I,J)=ZCOMBUF(KCOUNT)
+            TAUHFT(K,L)=ZCOMBUF(KCOUNT)
           ENDDO
         ENDDO
         KCOUNT=KCOUNT+1

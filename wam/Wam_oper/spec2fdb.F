@@ -5,8 +5,8 @@
      &                     PMONOP, PDELLA, KSTART, KEND,
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                     KSEK4, PSEK2, PSEK3, NTENCODE,
-     &                     PPDEG, PPMISS, PPEPS, PPREC,
+     &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     PPDEG, PPMISS, PPEPS, PPREC, NGRBRESS,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
      &                     CDFDB2DSP, KENSFNB, KTOTENS, KSYSNB, KMETNB,
@@ -34,8 +34,8 @@
 !    &                     PMONOP, PDELLA, KSTART, KEND, 
 !    &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
 !    &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-!    &                     KSEK4, PSEK2, PSEK3, NTENCODE,
-!    &                     PPDEG, PPMISS, PPEPS, PPREC,
+!    &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+!    &                     PPDEG, PPMISS, PPEPS, PPREC, NGRBRESS,
 !    &                     CDTPRO, CDATEF, CDATEA,
 !    &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
 !    &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
@@ -80,11 +80,13 @@
 !      *PSEK2*     REAL      DEFAULT VALUES FOR REAL GRIB HEADER 2
 !      *PSEK3*     REAL      DEFAULT VALUES FOR REAL GRIB HEADER 3
 !      *NTENCODE*  INTEGER   TOTAL NUMBER OF GRID DATA FOR ENCODING
+!      *HOPERS*    CHAR*1    ENCODING ACTION OPTION
 !      *PPDEG*     REAL      PI/180
 !      *PPMISS*    REAL      MINIMUM VALUE FOR CODING OF LOGARITHMIC
 !                            SPECTRA.
 !      *PPEPS*     REAL      SMALL NUMBER FOR CODING OF SPECTRA
 !      *PPREC*     REAL      REFERENCE VALUE FOR CODING OF SPECTRA
+!      *NGRBRESS*  INTEGER   NUMBER OF BITS USED TO ENCODE.
 !      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
 !      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
 !      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
@@ -134,7 +136,7 @@
      &        KMETNB, KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
      &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
      &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
-     &        NTENCODE, KCPLEN
+     &        NTENCODE, KCPLEN, NGRBRESS
       INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
 
       INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
@@ -147,7 +149,7 @@
      &        PFREQ(KFRE)
       REAL PSEK2(NPSEK2), PSEK3(NPSEK3)
 
-      CHARACTER*(*) CDTPRO, CDATEF, CDATEA, CPAD,
+      CHARACTER*(*) CDTPRO, CDATEF, CDATEA, CPAD, HOPERS,
      &              CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP
 
 !-----------------------------------------------------------------------
@@ -309,8 +311,7 @@
       ILENP = KANG*KFRE
 
       ISEC4( 1) = ILENP
-      ISEC4( 2) =  9 ! 9 or 16 or 32 
-      ! Number of bits used for each encoded value
+      ISEC4( 2) = NGRBRESS 
       ISEC4( 6) = 16 ! additional flags
       ISEC4(50) =  1
       ISEC4(51) =  1
@@ -460,7 +461,7 @@
 !         CODING
 !         ------
           CALL GRIBEX (ISEC0, ISEC1, ISEC2, ZSEC2, ISEC3, ZSEC3, ISEC4,
-     &          ZSEC4OUT, NTENCODE, IOUTGRIB, ILENGOUT ,IWORD,'C',IRET)
+     &       ZSEC4OUT, NTENCODE, IOUTGRIB, ILENGOUT ,IWORD, HOPERS,IRET)
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
 

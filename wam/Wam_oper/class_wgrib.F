@@ -78,6 +78,7 @@
         CLASS_WGRIB=ICODE
       ELSE
         WRITE(IU06,*) ' -------------------------'
+        WRITE(IU06,*) ' CLASS_WGRIB: ' 
         WRITE(IU06,*) ' ERROR DETERMINING CLASS  '
         WRITE(IU06,*) ' THE CODE FOUND IS : ', CDCLASS 
         WRITE(IU06,*) ' -------------------------'

@@ -41,7 +41,7 @@ cd $TMPDIR
 
 cat > fort.1 << EOF
 #if region=='s'
-#include "/cc/rd/wam/Wam_setup/Topographic_data/Swamp_test/topocat_180"
+#include "/cc/rd/wam/Wam_setup/Topographic_data/Swamp_test/topocat_999"
 #elif region=='m' && resolution==50
 #include "/cc/rd/wam/Wam_setup/Topographic_data/Medite/topomed"
 #elif region=='m' && resolution==25
@@ -114,6 +114,8 @@ a.out <<\EOD ||  { print - "\n\n\t\tPREPROC FAILED\n\n" ; ls -ltra ; exit ; }
 #else
 #if resolution == 150
 #include "input_preproc_rglobal150.F"
+#elif resolution == 100
+#include "input_preproc_rglobal100.F"
 #elif resolution == 50
 #include "input_preproc_rglobal50.F"
 #elif resolution == 900

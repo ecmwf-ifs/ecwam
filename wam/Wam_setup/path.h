@@ -6,7 +6,7 @@
 #.  Define paths for ECFS and VPP
 #.=====================================================================
 #.
-VERSION=CY22R2_seasonal
+VERSION=CY22R3_new_adv_fit
 #.
 DHSROOT=/$USER/vpp700/wam_${USER}_$VERSION
 VPPROOT=/vpp700/wavedata44/${USER}/wam_${USER}_$VERSION
@@ -51,9 +51,15 @@ nfre=25
 #elif region=='g' &&  resolution==50
 GRID="0.5/0.5"
 AREA="81./ 0./ -81./359.5"
+nang=24
+nfre=30
+grid="050"
+#elif region=='g' &&  resolution==100
+GRID="1.0/1.0"
+AREA="81./ 0./ -78./359.0"
 nang=12
 nfre=25
-grid="050"
+grid="100"
 #elif region=='g' &&  resolution==300
 GRID="3.0/3.0"
 AREA="81./ 0./ -78./357.0"
@@ -101,18 +107,18 @@ ASSIMILATION=NO                        # altimeter data assimilation
 laltas=F
 lsaras=F
 #else
-ASSIMILATION=YES                        # altimeter data assimilation 
+ASSIMILATION=NO                        # altimeter data assimilation 
 #. Specify what type of data will be used for the assimilation
 laltas=T
 lsaras=F
 #endif
 #
-typeset -Z12 begofrn=200006160600      # BEGin date OF RUn
-typeset -Z12 endofrn=200006161200      # END   date OF RUn
-typeset -Z12 begoffo=200006161200      # BEGin date OF FOrcast.
+typeset -Z12 begofrn=200008150600      # BEGin date OF RUn
+typeset -Z12 endofrn=200008151200      # END   date OF RUn
+typeset -Z12 begoffo=200008151200      # BEGin date OF FOrcast.
 #                                        This date must equal to endofrn
 #                                        when analysis is only required
-typeset -Z12 outofrf=200006161200      # Date to output restart file(s).
+typeset -Z12 outofrf=200008151200      # Date to output restart file(s).
                                        # Set to 0000000000 if determined
                                        # on userinput.
 typeset -Z12 outof2d=000000000000      # Date up to which 2D-spectra are
@@ -126,7 +132,7 @@ NENS=000                               # only used for ensemble run.
 TNE=000                                # only used for ensemble run.
 
 #.! expver is the experiment id. It is used when gribbing the output data. 
-typeset -l expver=sara
+typeset -l expver=waba
 #.
 #.define file storage directory, as needed for output destination
 #.

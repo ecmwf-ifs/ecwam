@@ -290,7 +290,8 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE
+     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
+     &            HOPERS
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
      &            IJL      ,IJLT
       USE YOWICE   , ONLY : LICERUN
@@ -846,7 +847,7 @@
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*)
      &         '   SUB. WAMODEL: BOUNDARY OUTP',
-     &         'UT (COURSE GRID) DONE IN SUB OUTBC'
+     &         'UT (COARSE GRID) DONE IN SUB OUTBC'
             ENDIF
           ENDIF
 !NEST
@@ -1146,8 +1147,8 @@ C
      &                       AMONOP, XDELLA, NSTART, NEND,
      &                       NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                       NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                       KSEK4, PSEK2, PSEK3, NTENCODE,
-     &                       DEG, PPMISS, PPEPS, PPREC,
+     &                       KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                       DEG, PPMISS, PPEPS, PPREC, NGRBRESS,
      &                       CDTPRO, CDATEF, CDATEA,
      &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,

@@ -143,7 +143,7 @@
 !*    1. INITIALIZATIONS.
 !        ----------------
       X4=1.
-      jpidl = N_PRECISION(X4)
+      jpidl = KIND(X4)
       msub = msub + 1
       CALL  uraopc (csubna, msub, llsuvi, lltest)
       WRITE(kuso,*)' ',csubna,'        ', clct

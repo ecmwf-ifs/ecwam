@@ -244,15 +244,9 @@
 
           lopenfdb = .TRUE.
 
-          if(ksec1(40).eq.1045) then
-            clstream = 'wave'
-          else if(ksec1(40).eq.1081) then
-            clstream = 'waef'
-          else if(ksec1(40).eq.1082) then
-            clstream = 'wasf'
-          else if(ksec1(40).eq.1027) then
-            clstream = 'scwv'
-          else
+          call WSTREAM_STRG(ksec1(40),clstream)
+
+          if(clstream.eq.'****') then 
             WRITE(kuso,'( "Error\ /Fld2fdb/ stream unknown ", i4)' )
      &      ksec1(40) 
             kerr = 1
@@ -348,10 +342,12 @@
         istat = isetvalfdb( iaddr1,   'direction', cldir )
         istat = isetvalfdb( iaddr1,   'frequency', clfre )
       ELSE
-        cldir="00"
-        clfre="00"
-        istat = isetvalfdb( iaddr1,   'direction', cldir )
-        istat = isetvalfdb( iaddr1,   'frequency', clfre )
+        if (cdtype.ne.'sf') then
+          cldir="00"
+          clfre="00"
+          istat = isetvalfdb( iaddr1,   'direction', cldir )
+          istat = isetvalfdb( iaddr1,   'frequency', clfre )
+        endif
       ENDIF
 
       IF (KTEST.GT.3) THEN

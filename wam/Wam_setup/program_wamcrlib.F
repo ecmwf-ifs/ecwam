@@ -1,5 +1,9 @@
 #ifdef JOB
 #.
+#. This version of WAM was extracted from the ECMWF software data base
+#. from cycle 22R1 (June 2000).
+#.
+#.
 #. CREATES THE WAVE MODEL LIBRARY (WAMLIB)
 #QSUB -q vpp700.normal
 #QSUB -eo
@@ -10,9 +14,6 @@
 #QSUB -lM 64mb
 #QSUB -mb -mi
 #QSUB
-
-# MAKE USE OF MEMORY RESIDENT FILE SYSTEM for TMPDIR
-TMPDIR=$MRFSDIR
 
 #.
 PATH=$PATH:.
@@ -40,6 +41,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "/cc/rd/wam/module/yowfpbo.F"
 #include "/cc/rd/wam/module/yowfred.F"
 #include "/cc/rd/wam/module/yowgribhd.F"
+#include "/cc/rd/wam/module/yowgap.F"
 #include "/cc/rd/wam/module/yowgrid.F"
 #include "/cc/rd/wam/module/yowice.F"
 #include "/cc/rd/wam/module/yowindn.F"
@@ -57,6 +59,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "/cc/rd/wam/module/yowprproc.F"
 #include "/cc/rd/wam/module/yowrefd.F"
 #include "/cc/rd/wam/module/yowshal.F"
+#include "/cc/rd/wam/module/yowsaras.F"
 #include "/cc/rd/wam/module/yowspec.F"
 #include "/cc/rd/wam/module/yowstat.F"
 #include "/cc/rd/wam/module/yowswel.F"
@@ -74,83 +77,96 @@ cat >WAMLIB.src <<\EOFPRO
 #include "airsea.F"
 #include "aki.F"
 #include "analyse.F"
+#include "altas.F"
+#include "avoidpeaks.F"
 #include "bouinpt.F"
 #include "buildstress.F"
 #include "check.F"
-#include "chesig.F"
 #include "chief.F"
 #include "class_wgrib.F"
 #include "closend.F"
+#include "combinepeaks.F"
+#include "command.F"
 #include "confile.F"
 #include "cormars.F"
+#include "crossas.F"
+#include "crossw.F"
+#include "cpfdb.F"
 #include "crewfn.F"
+#include "dev.F"
 #include "difdate.F"
-#include "distc.F"
-#include "distn.F"
-#include "distpi.F"
-#include "distpr.F"
-#include "dists.F"
+#include "docombine.F"
 #include "dotdc.F"
+#include "dummy_alt.F"
 #include "dummy_cray.F"
 #include "ersfile.F"
 #include "expand_string.F"
-#include "expoint.F"
-#include "extra.F"
 #include "f4spec.F"
 #include "fdur.F"
 #include "femean.F"
 #include "file_transfer.F"
 #include "fillbl.F"
+#include "fillgaps.F"
 #include "findb.F"
 #include "fld2fdb.F"
 #include "fustar.F"
 #include "fwsea.F"
+#include "gapinterpol.F"
 #include "getinptb.F"
 #include "getrest.F"
 #include "getspec.F"
 #include "getstress.F"
 #include "getwnd.F"
+#include "getwspec.F"
 #include "gradi.F"
+#include "grb2wgrd.F"
 #include "grdata.F"
 #include "grfield.F"
 #include "gribpac.F"
 #include "grstname.F"
 #include "gsfile_new.F"
+#include "halfspread.F"
 #include "headbc.F"
-#include "i_get_unit.F"
 #include "implsch.F"
 #include "incdate.F"
 #include "incint.F"
-#include "ingrid.F"
-#include "ingrids.F"
 #include "initmdl.F"
+#include "iniwcst.F"
 #include "inmars.F"
 #include "inmarss.F"
 #include "inmarssi.F"
 #include "intgrs.F"
+#include "intmars.F"
 #include "intpol.F"
-#include "intsgs.F"
 #include "intspec.F"
 #include "ispoff.F"
 #include "jafu.F"
+#include "lasttwobins.F"
+#include "llalloc_grdfld.F"
+#include "loc2glo.F"
 #include "locint.F"
+#include "lowenergy.F"
 #include "makeblo.F"
 #include "makeblos.F"
+#include "makeframes.F"
 #include "makegrid.F"
-#include "makegrids.F"
-#include "maskl.F"
 #include "mblock.F"
 #include "mbounc.F"
 #include "mbounf.F"
 #include "mboxb.F"
 #include "mcout.F"
+#include "means.F"
 #include "meansqs.F"
+#include "mergesarcor.F"
 #include "mfredir.F"
 #include "mgrid.F"
 #include "micep.F"
 #include "mintf.F"
+#include "mnintw.F"
 #include "mpbcastgrdfld.F"
 #include "mpbcastgrid.F"
+#include "mpbcastintfld.F"
+#include "mpbcastsarin.F"
 #include "mpbcastscfld.F"
 #include "mpclose_unit.F"
 #include "mpcrtbl.F"
@@ -159,6 +175,7 @@ cat >WAMLIB.src <<\EOFPRO
 #include "mpdistribintfld.F"
 #include "mpdistribscfld.F"
 #include "mpexchng.F"
+#include "mpexchngsarin.F"
 #include "mpgatherersfile.F"
 #include "mpgatherfl.F"
 #include "mpgathergrdfld.F"
@@ -171,10 +188,14 @@ cat >WAMLIB.src <<\EOFPRO
 #include "mtabs.F"
 #include "mubuf.F"
 #include "myindex.F"
+#include "mwp1.F"
+#include "mwp2.F"
 #include "newwind.F"
 #include "nlweigt.F"
 #include "notim.F"
 #include "oifield.F"
+#include "onestepapart.F"
+#include "optint.F"
 #include "outbc.F"
 #include "outbeta.F"
 #include "outbs.F"
@@ -188,11 +209,12 @@ cat >WAMLIB.src <<\EOFPRO
 #include "outubuf.F"
 #include "outwnorm.F"
 #include "outxt.F"
-#include "packd.F"
 #include "packi.F"
 #include "packr.F"
+#include "partitioning.F"
 #include "peak.F"
 #include "peakfr.F"
+#include "peakfri.F"
 #include "phys.F"
 #include "preproc.F"
 #include "preset.F"
@@ -204,35 +226,39 @@ cat >WAMLIB.src <<\EOFPRO
 #include "readbou.F"
 #include "readcur.F"
 #include "readfl.F"
+#include "readwgrib.F"
 #include "readgrs.F"
 #include "readice.F"
 #include "readpre.F"
 #include "readsat.F"
+#include "readsarspec.F"
 #include "readsta.F"
 #include "readstress.F"
 #include "readt.F"
-#include "readwgrib.F"
 #include "readwind.F"
-#include "rotate.F"
+#include "rearrngsar.F"
+#include "resize_gap_array.F"
+#include "resize_getwspec.F"
+#include "resize_sarinput.F"
+#include "rfl4wam.F"
 #include "rotspec.F"
+#include "saras.F"
 #include "savrest.F"
 #include "savspec.F"
 #include "savstress.F"
 #include "sbottom.F"
 #include "sdissip.F"
+#include "scosfl.F"
+#include "secondhh.F"
 #include "semean.F"
 #include "sepwisw.F"
 #include "setice.F"
-#include "setmat.F"
-#include "setmarstype.F"
 #include "setwgribhd.F"
+#include "setmarstype.F"
+#include "setmat.F"
 #include "sinput.F"
+#include "skewness.F"
 #include "snonlin.F"
-#include "sortc.F"
-#include "sorti.F"
-#include "sortini.F"
-#include "sortinr.F"
-#include "sortr.F"
 #include "spec2fdb.F"
 #include "spectra.F"
 #include "splitbl.F"
@@ -247,15 +273,22 @@ cat >WAMLIB.src <<\EOFPRO
 #include "stress.F"
 #include "stresso.F"
 #include "strspec.F"
+#include "sumenergy.F"
+#include "swellsep.F"
 #include "tauhf.F"
+#include "threshhold.F"
 #include "timin.F"
 #include "topoar.F"
+#include "transmeans.F"
+#include "transpart.F"
+#include "tustreas.F"
+#include "u10cor.F"
 #include "uiprep.F"
 #include "update.F"
 #include "upwspec.F"
-#include "uraopc.F"
 #include "userin.F"
-#include "ustru10.F"
+#include "vmin.F"
+#include "vplus.F"
 #include "wam_user_clock.F"
 #include "wamassi.F"
 #include "wamcur.F"
@@ -263,13 +296,16 @@ cat >WAMLIB.src <<\EOFPRO
 #include "wamodel.F"
 #include "wamwnd.F"
 #include "wavemdl.F"
-#include "wposnam.F"
+#include "windcor.F"
+#include "windsea.F"
 #include "writefl.F"
+#include "wposnam.F"
 #include "writestress.F"
 #include "writsta.F"
 #include "wsmfen.F"
 #include "wvalloc.F"
 #include "wvdealloc.F"
+#include "wdirspread.F"
 #include "../Alt/i_get_unit.F"
 #include "../Alt/uraopc.F"
 #ifdef JOB
@@ -277,6 +313,7 @@ EOFPRO
 #.
 #.create utility which will be used to split the source code into its
 #.components
+######################################################################
 #.
 cat > f90split.f90 <<EOF
 #include "/cc/rd/wam/Wam_setup/f90split.f90"
@@ -284,11 +321,15 @@ EOF
 #.
 frt -o f90split f90split.f90
 #.
-# COMPILE SOURCE CODE
+#.
 ./f90split < WAMLIB.src
 if [ -f WAMINFOT.f -a -f WRITSTA.f ] ; then
   cat WAMINFOT.f >> WRITSTA.f
 fi
+#.
+#.
+# COMPILE SOURCE CODE
+#####################
 #.
 [ ! -d tmp ] && mkdir tmp
 [ -f ${LIBS}/$WAMLIB.f.tar ] && {
@@ -366,6 +407,7 @@ wait
 print - "compile done"
 #.
 #. BUILD LIBRARY
+#################
 #.
 if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
   for file in $(ls -1 yow*.fm) ; do
@@ -384,10 +426,6 @@ tar cf ${LIBS}/$WAMLIB.f.tar *.f
 tar uf ${LIBS}/$WAMLIB.f.tar *.fm
 
 chmod go+rx ${LIBS}/$WAMLIB.*
-#.
-#. SAVE LIBRARY
-#.
-#####ecp -o ${LIBS}/$WAMLIB.* ec:$DHSPATH/.
 #.
 ls -la
 #.

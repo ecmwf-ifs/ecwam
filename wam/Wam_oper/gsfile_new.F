@@ -176,15 +176,9 @@
 !         ----------
 
         IF (INDEX.EQ.7) THEN
-          IRET=ISHELL('chmod go+rw '// IU(1:LIU))
-!!!!    if WAM is not run in the ECMWF environement the use of ISHELL
-!!!!    can be replaced by a standard F90 call to SYSTEM as shown below
-!           CALL SYSTEM('chmod go+rw '// IU(1:LIU))
+          CALL SYSTEM('chmod go+rw '// IU(1:LIU))
         ELSE
-          IRET=ISHELL('chmod go+r '// IU(1:LIU))
-!!!!    if WAM is not run in the ECMWF environement the use of ISHELL
-!!!!    can be replaced by a standard F90 call to SYSTEM as shown below
-!           CALL SYSTEM('chmod go+r '// IU(1:LIU))
+          CALL SYSTEM('chmod go+r '// IU(1:LIU))
         ENDIF
         PLIST = '-o '//IU(1:LIU)//' ec:'
      &   //PATH(1:LIP)//'/'//FILENA(1:LNAME)
@@ -233,10 +227,7 @@
         WRITE(IU06,*) '  ',PLIST
  
         IFAIL = 0
-!!!!    if WAM is not run in the ECMWF environement the use of ISHELL
-!!!!    can be replaced by a standard F90 call to SYSTEM as shown below
-        IRET=ISHELL ('ksh ecp '//PLIST)
-!       CALL SYSTEM ('ksh ecp '//PLIST)
+        CALL SYSTEM ('ksh ecp '//PLIST)
 
 ! ----------------------------------------------------------------------
 

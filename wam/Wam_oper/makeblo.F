@@ -14,19 +14,16 @@
 
 !       *CALL* *MAKEBLO (BLOCK, GRID, IJS, IJL, IG)*                    
 
-!         *BLOCK*   REAL      BLOCKED DATA.                             
-!         *GRID*    REAL      GRIDDED DATA.                             
-!         *IJS*     INTEGER   INDEX OF FIRST POINT IN BLOCK.            
-!         *IJL*     INTEGER   INDEX OF LAST POINT IN BLOCK.             
-!         *IG*      INTEGER   BLOCK NUMBER.                             
+!         *BLOCK*   REAL      BLOCKED DATA.
+!         *GRID*    REAL      GRIDDED DATA.
+!         *IJS*     INTEGER   INDEX OF FIRST POINT IN BLOCK.
+!         *IJL*     INTEGER   INDEX OF LAST POINT IN BLOCK.
+!         *IG*      INTEGER   BLOCK NUMBER.
 
 ! ----------------------------------------------------------------------
 
-
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMAP   , ONLY : IXLG     ,KXLT
-
-
+      USE YOWPARAM , ONLY : NGX      ,NGY
 
 ! ----------------------------------------------------------------------
 
@@ -34,11 +31,11 @@
 
 ! ----------------------------------------------------------------------
 
-      DO IJ = IJS,IJL                                              
-        IX = IXLG(IJ,IG)                                               
-        JY = NGY-KXLT(IJ,IG) + 1                                       
-        BLOCK(IJ) = GRID(IX,JY)                                        
+      DO IJ = IJS,IJL
+        IX = IXLG(IJ,IG)
+        JY = NGY-KXLT(IJ,IG) + 1
+        BLOCK(IJ) = GRID(IX,JY)
       ENDDO
                                                                         
-      RETURN                                                            
+      RETURN
       END SUBROUTINE MAKEBLO

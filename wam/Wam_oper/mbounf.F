@@ -118,7 +118,7 @@
 !*    3. CHECK THE INPUT
 !     ------------------
 
-!     IS THE FINE GRID THE SAME AS IN THE COURSE GRID ?
+!     IS THE FINE GRID THE SAME AS IN THE COARSE GRID ?
 
       IF (AMOWEP.NE.AMOWEA .OR. AMOEAP.NE.AMOEAA .OR.
      &    AMONOP.NE.AMONOA .OR. AMOSOP.NE.AMOSOA) THEN
@@ -129,7 +129,7 @@
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID      *'
         WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
-        WRITE(IU06,*) '*  COURSE GRID                    *'
+        WRITE(IU06,*) '*  COARSE GRID                    *'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, ' AMOSOA: ', AMOSOA
         WRITE(IU06,*) '*  AMONOP: ', AMONOP, ' AMONOA: ', AMONOA
@@ -142,7 +142,7 @@
       ENDIF
 
 !     IS THE STEP OF LAT. AND LONG. OF THE FINE GRID A MULTIPLE
-!              OF THE COURSE GRID ?
+!              OF THE COARSE GRID ?
 
       IF (MOD(DPHIAC,XDELLA).NE.0.) THEN
         WRITE(IU06,*) '***********************************'
@@ -152,7 +152,7 @@
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  THE STEP OF THE LAT. OF THE    *'
         WRITE(IU06,*) '*  FINE GRID IS NOT A MULTIPLE    *'
-        WRITE(IU06,*) '*  OF THE COURSE GRID             *'
+        WRITE(IU06,*) '*  OF THE COARSE GRID             *'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FINE GRID XDELLA: ', XDELLA
         WRITE(IU06,*) '*  COARSE GRID DPHIAC: ', DPHIAC
@@ -170,7 +170,7 @@
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  THE STEP OF THE LON. OF THE    *'
         WRITE(IU06,*) '*  FINE GRID IS NOT A MULTIPLE    *'
-        WRITE(IU06,*) '*  OF THE COURSE GRID             *'
+        WRITE(IU06,*) '*  OF THE COARSE GRID             *'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FINE GRID   XDELLO: ', XDELLO
         WRITE(IU06,*) '*  COARSE GRID DLAMAC: ', DLAMAC
@@ -227,7 +227,7 @@
       WRITE (IU06,*) '===================================='
       WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNF = ', NBOUNF
       WRITE (IU06,*) '        |-----FINE GRID INPUT POINTS-----|',
-     &              '-RELATED COURSE GRID INDICES--|'
+     &              '-RELATED COARSE GRID INDICES--|'
       WRITE (IU06,*) '      NO.    LAT.   LONG.  BLOCK.  POINT. ',
      &              '   LEFT   RIGHT   WEIGHT '
 

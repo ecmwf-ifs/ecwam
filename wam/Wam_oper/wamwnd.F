@@ -37,11 +37,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NGY      ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR
       USE YOWCOUP  , ONLY : XKAPPA
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
      &            KCOL     ,KROW     ,ICODE    ,IWPER
@@ -61,30 +62,24 @@
 
 ! ----------------------------------------------------------------------
 
-!*    1. INITIALISE WIND ARRAYS WITH ZERO
-!        --------------------------------
-
-      US = 0.
-      DS = 0.
-
-! ----------------------------------------------------------------------
-
-!*    2. INTERPOLATE INPUT WINDS TO WAVEMODEL GRID.
-!        ------------------------------------------
+!*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
+!        ----------------------------------------
 
       DO IG=1,IGL
-
-!*    2.1 INTERPOLATE ONE BLOCK IN SPACE.
-!         ------------------------------
-
         IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-          CALL LOCINT (IG, 1, KEND, NC, NR, KCOL, KROW, IWPER,
-     &         DLAM, DPHI, RLONL, RLATS, UWND, VWND, US(1,IG),
-     &         DS(1,IG))
+          DO IJ = KINF,KSUP
+            IX = IXLG(IJ,IG)
+            JY = NGY-KXLT(IJ,IG) + 1
+            US(IJ,IG) = UWND(IX,JY)
+            DS(IJ,IG) = VWND(IX,JY)
+          ENDDO
         ELSE
-          CALL LOCINT (IG, IJS(IG), IJL(IG), NC, NR, KCOL, KROW, IWPER,
-     &         DLAM, DPHI, RLONL, RLATS, UWND, VWND, US(IJS(IG),IG),
-     &         DS(IJS(IG),IG))
+          DO IJ = IJS(IG),IJL(IG)
+            IX = IXLG(IJ,IG)
+            JY = NGY-KXLT(IJ,IG) + 1
+            US(IJ,IG) = UWND(IX,JY)
+            DS(IJ,IG) = VWND(IX,JY)
+          ENDDO
         ENDIF
       ENDDO
 

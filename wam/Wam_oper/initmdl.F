@@ -263,6 +263,7 @@
      &            FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,LSAMEDEPTH
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
      &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
@@ -288,9 +289,9 @@
 !        -----------------------------------------------------
 
       X4=1.
-      NPRECR = N_PRECISION(X4)
+      NPRECR = KIND(X4)
       I4=1
-      NPRECI = N_PRECISION(I4)
+      NPRECI = KIND(I4)
 
 !     0.1 SET IREAD TO THE PROCESSOR WHICH WILL READ THE INPUT FILES
 !         ----------------------------------------------------------
@@ -601,6 +602,12 @@
      & IGL
       WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ',
      & NIBLO
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
+      WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ',
+     & NANG 
+      WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES ............: ',
+     & NFRE 
       IF(FFLAG25.OR.PFLAG25.OR.GFLAG25.OR.
      & FFLAG26.OR.PFLAG26.OR.GFLAG26) THEN
         WRITE(IU06,*) '  '
@@ -874,13 +881,37 @@
 !         ------------------------------------
 
         IF (ISHALLO.NE.1) THEN
-          IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF:IJLT(IGL)))
+
+          IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:IJLT(IGL)))
+          INDEP(NINF-1)=NDEPTH
           DO IJ=NINF,IJLT(IGL)
             XD = LOG(DEPTH(IJ,IGL)/DEPTHA)/LOG(DEPTHD)+1.
             ID = NINT(XD)
             ID = MAX(ID,1)
             INDEP(IJ) = MIN(ID,NDEPTH)
           ENDDO
+
+!     8.4 DETERMINE WHETHER A GRID POINT IS SURROUNDED BY
+!         POINTS WITH THE SAME DEPTH INDEX (EXCLUDING LAND POINTS).
+!         ---------------------------------------------------------
+
+          IF(.NOT.ALLOCATED(LSAMEDEPTH)) 
+     &        ALLOCATE(LSAMEDEPTH(NSTART(IRANK):NEND(IRANK)))
+
+          DO IJ = NSTART(IRANK),NEND(IRANK)
+            IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
+     &          INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
+     &          INDEP(IJ).EQ.INDEP(KLAT(IJ,1)) .AND.
+     &          INDEP(IJ).EQ.INDEP(KLAT(IJ,2)) .AND.
+     &          INDEP(IJ).EQ.INDEP(KLAT2(IJ,1)).AND.
+     &          INDEP(IJ).EQ.INDEP(KLAT2(IJ,2)) ) THEN
+              LSAMEDEPTH(IJ) = .TRUE.
+            ELSE
+              LSAMEDEPTH(IJ) = .FALSE.
+            ENDIF
+
+          ENDDO
+
         ENDIF
 !SHALLOW
         IF (ITEST.GE.2)

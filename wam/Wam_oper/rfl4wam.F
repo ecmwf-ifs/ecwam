@@ -216,9 +216,9 @@
 ! DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS.
 ! ------------------------------------------------------
       Z4=1.
-      NPRECR = N_PRECISION(Z4)
+      NPRECR = KIND(Z4)
       I4=1
-      NPRECI = N_PRECISION(I4)
+      NPRECI = KIND(I4)
 
       IRANK = 1
       NPROC = 1

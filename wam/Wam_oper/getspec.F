@@ -330,40 +330,9 @@ C
                 WRITE (IU06,*) ' PROGRAM WILL ABORT '
                 CALL ABORT1
               ELSEIF (KRET .EQ. -3) THEN
-                WRITE (IU06,*) ' '
-                WRITE (IU06,*) ' ***** WARNING IN MODEL FOR WAVES *****'
-                WRITE (IU06,*) ' SUB. GETSPEC : '
-                WRITE (IU06,*) ' SIZE  OF INGRIB IS NOT BIG ENOUGH.'
-                WRITE (IU06,*) ' IT WAS ', ISIZE
-
                 DEALLOCATE(INGRIB)
-                ISIZE=(ILENG+NPRECI-1)/NPRECI
-
-                WRITE (IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
-                WRITE (IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
-                WRITE (IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
-                WRITE (IU06,*) ' IF THIS PROBLEM OCCURS TOO OFTEN'
-                WRITE (IU06,*) ' MODIFY THE VALUE OF NBIT IN SOURCE'
-                WRITE (IU06,*) ' ***** WARNING ****** WARNING *****'
-                WRITE (IU06,*) ' '
-                CALL FLUSH(IU06)
-
-!               RESET THE FILE POINTER TO READ FIELD AGAIN
-                KOFFSET=-ILENG
-                CALL PBSEEK(IUGRS,KOFFSET,1,kret)
-                IF (KRET.EQ.-1) THEN
-                  WRITE (IU06,*) ' SUB. GETSPEC : '
-                  WRITE (IU06,*) ' PBSEEK REACHED EOF ON UNIT ',IUGRS
-                  CALL ABORT1
-                ELSEIF (KRET .EQ. -2) THEN
-                  WRITE (IU06,*) ' SUB. GETSPEC : '
-                  WRITE (IU06,*) ' FILE HANDLING ERROR ON UNIT ',IUGRS
-                  WRITE (IU06,*) ' PROGRAM WILL ABORT '
-                  CALL ABORT1
-                ENDIF
-
+                CALL KGRIBSIZE(IU06, IUGRS, ILENG, ISIZE, 'GETSPEC')
                 GOTO 1000
-
               ENDIF
 
             ENDIF

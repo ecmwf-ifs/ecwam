@@ -1,6 +1,6 @@
-      SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,PSEC4,I1,I2,IPARAM,IY,IM,ID,IH,
+      SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
      &                    IFCST,KLEV,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     &                    CDFDBSF,NENSFNB,NTOTENS,Kfdb)
+     &                    HOPERI, CDFDBSF,NENSFNB,NTOTENS,Kfdb)
 
 ! ----------------------------------------------------------------------
 
@@ -27,13 +27,13 @@
 
 !**    INTERFACE.
 !      ----------
-!        *CALL* *GRIBPAC (IU06,IU,NTGRIB,PSEC4,I1,I2,IPARAM,IY,IM,ID,IH,
+!        *CALL* *GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
 !                         IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
 !                         NENSFNB,NTOTENS,Kfdb)
 !          *IU06*    PRINTER OUTPUT UNIT.
 !          *IU*      LOGICAL UNIT FOR PACKED FIELD DATA.
 !          *NTGRIB*  TOTAL NUMBER OF GRID POINTS PACKED INTO GRIB 
-!          *PSEC4*   FIELD TO BE PACKED.
+!          *FIELD*   FIELD TO BE PACKED.
 !          *I1*      FIRST DIMENSION OF FIELD.
 !          *I2*      SECOND DIMENSION OF FIELD.
 !          *IPARAM*  PARAMETER IDENTIFIER.
@@ -79,6 +79,7 @@
       USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,XDELLA
       USE YOWPARAM , ONLY : CLDOMAIN
       USE YOWPCONS , ONLY : G        ,ZMISS
+      USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
 
 ! ----------------------------------------------------------------------
 
@@ -86,13 +87,13 @@
      &        KSEC3(NKSEK3), KSEC4(NKSEK4)
       INTEGER, ALLOCATABLE :: KGRIB(:)
 
-      REAL PSEC2(NPSEK2), PSEC3(NPSEK3), PSEC4(I1,I2), ZWORK(NTGRIB)
+      REAL PSEC2(NPSEK2), PSEC3(NPSEK3), FIELD(I1,I2), ZWORK(NTGRIB)
       LOGICAL LFDB, FRSTIME30, FRSTIME32
       CHARACTER*2 MARSTYPE
       CHARACTER*2 YCLASS
       CHARACTER*4 YEXPVER, CSTREAM
       CHARACTER*24 FILNM
-      CHARACTER*(*) CDFDBSF
+      CHARACTER*(*) CDFDBSF, HOPERI
       DATA FRSTIME30 / .TRUE. /
       DATA FRSTIME32 / .TRUE. /
 
@@ -112,7 +113,7 @@
       DO J=1,I2
         JSN=I2-J+1
         DO I=1,NLONRGG(JSN)
-          ZWORK(INDEX)=PSEC4(I,J)
+          ZWORK(INDEX)=FIELD(I,J)
           INDEX=INDEX+1
         ENDDO
       ENDDO
@@ -194,24 +195,14 @@
       KRET  = 1
       IF (ITEST .GT. 8 ) CALL GRSDBG (1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     &             ZWORK, KLENP, KGRIB, KLENG, KWORD, 'M', KRET)
+     &             ZWORK, KLENP, KGRIB, KLENG, KWORD, HOPERI, KRET)
 
 ! ----------------------------------------------------------------------
 
 !*    2. CHECK ERROR CODE.
 !        ----------------
 
-      IF(KSEC1(40).eq.1045) THEN
-        CSTREAM='wave'
-      ELSE IF(KSEC1(40).eq.1081) THEN
-        CSTREAM='waef'
-      ELSE IF(KSEC1(40).eq.1082) THEN
-        CSTREAM='wasf'
-      ELSE IF(KSEC1(40).eq.1027) THEN
-        CSTREAM='scwv'
-      ELSE
-        CSTREAM='****'
-      ENDIF
+      CALL WSTREAM_STRG(KSEC1(40),CSTREAM)
 
       WRITE(IU06,*)'  '
       WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,
@@ -253,19 +244,19 @@
 !           --------------
           IF (FRSTIME30.AND.(IU.EQ.30)) THEN
             WRITE(FILNM,'(A,I2)') 'fort.',IU
-            CALL PBOPEN(IUNIT,FILNM,'w',KRET)
+            CALL PBOPEN(IUNIT,CPATH(1:ICPLEN)//'/'//FILNM,'w',KRET)
             FRSTIME30=.FALSE.
             IF(KRET.LT.0) WRITE(IU06,*)
      &       'PBOPEN (30) IN GRIBPAC FAILED, UNIT ',IU, 'KRET =',KRET
           ELSEIF (FRSTIME32.AND.(IU.EQ.32)) THEN
             WRITE(FILNM,'(A,I2)') 'fort.',IU
-            CALL PBOPEN(IUNIT,FILNM,'w',KRET)
+            CALL PBOPEN(IUNIT,CPATH(1:ICPLEN)//'/'//FILNM,'w',KRET)
             FRSTIME32=.FALSE.
             IF(KRET.LT.0) WRITE(IU06,*)
      &       'PBOPEN (32) IN GRIBPAC FAILED, UNIT ',IU, 'KRET =',KRET
           ELSE
             WRITE(FILNM,'(A,I2)') 'fort.',IU
-            CALL PBOPEN(IUNIT,FILNM,'a',KRET)
+            CALL PBOPEN(IUNIT,CPATH(1:ICPLEN)//'/'//FILNM,'a',KRET)
             IF(KRET.LT.0) WRITE(IU06,*)
      &       'PBOPEN (a) IN GRIBPAC FAILED, UNIT ',IU, 'KRET =',KRET
           ENDIF
