@@ -64,13 +64,13 @@
 !                 CORNERS OF FRAMES FOR TEMPORARILY USE
       REAL X, Y
 !                 FREQUENCY VALUES IN CARTHESIAN COORDINATES
-      REAL A(6,6), B(6), T(6), WORK(24)
-      LOGICAL DUMMY1
-      REAL DUMMY2
-      INTEGER DUMMY3
-      INTEGER FAIL
-!                 CONTAINS AN ERROR FLSG AFTER CALLING THE NAG 
-!                 routine f04jgf
+      REAL Z_REAL
+      DOUBLE PRECISION DL_DOUBLE
+!                 USED TO CHOOSE BETWEEN SGELSS OR DGELSS (LAPACK)
+      REAL A(6,6), B(6), T(6), S(6), WORK(1000), RCOND
+      INTEGER IRANK, INFO
+!                 INFO CONTAINS AN ERROR FLAG AFTER CALLING THE
+!                 LAPACK ROUTINE SGELSS
 
 !-------------------------------------------------------------------
 
@@ -144,24 +144,34 @@
               END DO
             END DO
           END DO
-          FAIL = 0
 
 !      1.3 SOLVE SYSTEM OF EQUATIONS WITH RESPECT TO COEFFICIENTS 
 !          FOR 2D PARABOLA FIT.
+!          (TRY TO BE SMART AND DETECT COMPILER-FLAG PROMOTION OF REALS.
+!           THIS ASSUMES THAT DOUBLE PRECISION IS NOT ALSO PROMOTED.)
 !      ------------------------------------------------------------
 
-          CALL F04JGF(6,6,A,6,B,5.E-4,DUMMY1,DUMMY2,DUMMY3,WORK,24,
-     &                FAIL)
-!         SEE NAG LIBARY DOCUMENTATION ROUTINE F04JGF (!)
-          IF( FAIL.EQ.1 )THEN
+
+          INFO  = 0
+          RCOND = 5.E-4
+          IF (KIND(Z_REAL) == KIND(DL_DOUBLE)) THEN
+            CALL DGELSS (6,6,1,A,6,B,6,S,RCOND,IRANK,WORK,SIZE(WORK),
+     &                   INFO)
+          ELSE
+            CALL SGELSS (6,6,1,A,6,B,6,S,RCOND,IRANK,WORK,SIZE(WORK),
+     &                   INFO)
+          ENDIF
+
+          IF( INFO < 0 )THEN
             WRITE(IU06,*) 'ERROR! SUBROUTINE GAPINTERPOL:'
-            WRITE(IU06,*) 'SOMEBODY MADE A MISTAKE WHILE CHANGING'
-            WRITE(IU06,*) 'THIS ROUTINE.'
-            WRITE(IU06,*) 'SEE NAG LIBARY DOCUMENTATION ROUTINE F04JGF'
-            WRITE(IU06,*) 'TO FIND AND CORRECT THIS MISTAKE! SORRFY!'
+            WRITE(IU06,*) 'SGELSS RETURNED EXIT CODE INFO=',INFO
+            WRITE(IU06,*) 'INFO<0 MEANS INFO''TH ARGUMENT IS INVALID'
+            WRITE(IU06,*) 'SEE DOCUMENTATION FOR LAPACK LIBRARY'
+            WRITE(IU06,*) 'FOR MORE INFORMATION.'
             CALL ABORT1
           END IF
-          IF( FAIL.EQ.0 )THEN
+
+          IF( INFO.EQ.0 )THEN
             B(1) = MAX(B(1),0.)
             DO I12 = 1,2
               DO IANG = LANG0(I12),HANG0(I12)
