@@ -33,7 +33,8 @@
      &            NFLAGALL ,IPFGTBL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG
+     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
+     &            BFG      ,PFG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -328,6 +329,39 @@
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN SWELL DIRECTIONAL SPREAD:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(34).AND.(GFLAG(34).OR.FFLAG(34).OR.PFLAG(34))) THEN
+          CALL WAMNORM(C4G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(34),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM WAVE SPECTRAL KURTOSIS:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(35).AND.(GFLAG(35).OR.FFLAG(35).OR.PFLAG(35))) THEN
+          CALL WAMNORM(BFG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(35),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM BENJAMIN-FEIR INSTABILITY:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(36).AND.(GFLAG(36).OR.FFLAG(36).OR.PFLAG(36))) THEN
+          CALL WAMNORM(PFG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(36),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM WAVE SPECTRAL PEAKEDNESS:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF

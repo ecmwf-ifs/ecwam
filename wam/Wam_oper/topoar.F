@@ -256,7 +256,8 @@
           ENDIF
         ENDDO
         XLA=XLA+XDELLA
-        IF(XLA.GT.AMONOP) THEN
+
+        IF((XLA-0.5*XDELA).GT.AMONOP) THEN
           GOTO 3080
         ELSE
           GOTO 3010

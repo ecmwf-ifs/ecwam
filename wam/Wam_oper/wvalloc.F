@@ -98,6 +98,9 @@
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
+!     !!!! NOTE THAT THIS ROUTINE IS ONLY USED FOR COUPLED RUNS !!!
+!     !!!! SEE PROGRAM chief FOR UNCOUPLED RUNS !
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NINF:NSUP,NBLO))
       IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NINF:NSUP,NBLO))
       IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NINF:NSUP,NBLO))

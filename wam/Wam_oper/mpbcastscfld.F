@@ -28,7 +28,6 @@
 !     METHOD.
 !     -------
 !     MPL ALLGATHER OF ARRAY FIELD TO ALL PE's
-!     FOLLOWED BY RECEIVE OF THE DIFFERENT CONTRIBUTION.
 
 !     EXTERNALS.
 !     ----------
@@ -40,13 +39,10 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-
       USE YOWPARAM , ONLY : NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE MPL_MODULE
       USE YOMGSTATS, ONLY : LSYNCSTATS
-
-
 !----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 

@@ -309,7 +309,13 @@
 
 
           DO IOBS=1,NOBS
-            ALTDATA(IOBS,2) = SIGOBS+A*EXP(-B*(ALTDATA(IOBS,1)-HSMIN))
+            IF (IJALT(IOBS,2) .LE. 2) THEN
+!             ** FOR ERS-1/2:
+              ALTDATA(IOBS,2) = SIGOBS+A*EXP(-B*(ALTDATA(IOBS,1)-HSMIN))
+            ELSE
+!             ** FOR OTHER SATELLITES (ENVISAT,...):
+              ALTDATA(IOBS,2) = 0.5
+            ENDIF
           ENDDO
 !!! we will have to adapt for the linear regression correctio
 !!!

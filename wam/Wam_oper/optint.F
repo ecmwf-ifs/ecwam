@@ -1,6 +1,7 @@
        SUBROUTINE OPTINT(
 !           INPUT
      &        NPARTW,NPASC2W,
+     &        XMEANEW,
      &        EW,XKW,YKW,
      &        ED,XKD,YKD,
      &        SPECSA,CORRELTAS,
@@ -76,6 +77,8 @@
 !           (ENERGY AND MEAN WAVE NUMBER IN LAT AND LON DIRECTION).
 !           MEAN FREQUENCY OF SAR WAVE SYSTEMS.
 
+      REAL :: XMEANEW(NSPEC,MPARTSW)
+!         MODEL FG  MEAN ENERGIES OF PARTITIONINGS AT SAR LOCATIONS
       REAL
      & EA(NSPECW,MPARTSW),
      & XKA(NSPECW,MPARTSW),
@@ -104,6 +107,9 @@
 !            INTERMEDIATE STORAGE SPACE.
       REAL :: SIGMASAR(NSPEC,NSPEC)
 !     CORRELATION FUNCTION BETWEEN SAR OBS.
+
+      REAL :: CORDIST,STRETCHCOR,YY
+
       INTEGER :: ISPEC,JSAR,KSAR,IPARTSAR,JPARTSAR,NJS,K,J,KK,JJ
 !            LOOP INDICES.
       INTEGER :: NJSAR
@@ -145,11 +151,22 @@
         DO IPARTS=1,MAXMPARTPE
           DO ISPEC=1,NSPECW
             IF(IPARTS.LE.NPARTW(ISPEC).AND.JSAR.LE.NTOSIW1D(ISPEC))THEN
-              PHI(ISPEC,IPARTS,JSAR) = EXP(-DIST(ISPEC,JSAR)/SARCORLEN) 
+              STRETCHCOR=1.
+              IPARTSAR = NPASC2W(ISPEC,IPARTS,JSAR)
+              IF(IPARTSAR.GT.0 ) THEN
+                YY=XMEANEW(NSIW1D(ISPEC,JSAR),IPARTSAR)
+                IF(YY.GT.0.) THEN
+                  STRETCHCOR = ABS(EW(ISPEC,IPARTS)-YY)/YY
+                  STRETCHCOR = MAX(EXP(-STRETCHCOR),0.1) 
+                ENDIF
+              ENDIF
+              CORDIST=STRETCHCOR*SARCORLEN
+              PHI(ISPEC,IPARTS,JSAR) = EXP(-DIST(ISPEC,JSAR)/CORDIST)
             ENDIF
           END DO
         END DO
       END DO
+
 
 !-------------------------------------------------------------------
 

@@ -61,8 +61,8 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,
-     &            MWP1G    ,MWP2G    ,WSPRDG
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,PFG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -218,6 +218,9 @@
         IF (FFLAG(25))CALL MPGATHERGRDFLD(IPFGTBL(25),IRECV,25,MWP1G)
         IF (FFLAG(26))CALL MPGATHERGRDFLD(IPFGTBL(26),IRECV,26,MWP2G)
         IF (FFLAG(27))CALL MPGATHERGRDFLD(IPFGTBL(27),IRECV,27,WSPRDG)
+        IF (FFLAG(34))CALL MPGATHERGRDFLD(IPFGTBL(34),IRECV,34,C4G)
+        IF (FFLAG(35))CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,35,BFG)
+        IF (FFLAG(36))CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,36,PFG)
 
       ENDIF
 
@@ -277,6 +280,12 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(32),IRECV,132,WSPRDWG)
         IF (PFLAG(33).OR.(.NOT.LFDB.AND.GFLAG(33)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(33),IRECV,133,WSPRDSG)
+        IF (PFLAG(34).OR.(.NOT.LFDB.AND.GFLAG(34)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(34),IRECV,134,C4G)
+        IF (PFLAG(35).OR.(.NOT.LFDB.AND.GFLAG(35)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,135,BFG)
+        IF (PFLAG(36).OR.(.NOT.LFDB.AND.GFLAG(36)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,136,PFG)
 
       ENDIF
 
@@ -331,6 +340,9 @@
             IF (FFLAG(25))WRITE (IU20) MWP1G
             IF (FFLAG(26))WRITE (IU20) MWP2G
             IF (FFLAG(27))WRITE (IU20) WSPRDG
+            IF (FFLAG(34))WRITE (IU20) C4G
+            IF (FFLAG(35))WRITE (IU20) BFG
+            IF (FFLAG(36))WRITE (IU20) PFG
           ENDIF
         ENDIF
 
@@ -450,6 +462,28 @@
      &                 WSPRDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        IF (PFLAG(34)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SPECTRAL KURTOSIS (x10)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 C4G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(35)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' BENJAMIN-FEIR INDEX (x10)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 BFG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(36)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SPECTRAL PEAKEDNESS (0.1 Hz)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 PFG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
@@ -849,6 +883,54 @@
             ilocal=ilocal+1
             IPARAM=222
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      SPECTRAL KURTOSIS.
+!       ------------------
+
+        IF (GFLAG(34)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(34)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=252
+            CALL GRIBPAC(IU06,IU30,NTENCODE,C4G,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      BENJAMIN-FEIR INDEX.
+!       --------------------
+
+        IF (GFLAG(35)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(35)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=253
+            CALL GRIBPAC(IU06,IU30,NTENCODE,BFG,NGX,NGY,IPARAM,IY,IM,
+     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
+          ENDIF
+        ENDIF
+
+!*      PEAKEDNESS FACTOR.
+!       -----------------
+
+        IF (GFLAG(36)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(36)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=254
+            CALL GRIBPAC(IU06,IU30,NTENCODE,PFG,NGX,NGY,IPARAM,IY,IM,
      &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB)
           ENDIF

@@ -75,7 +75,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER(NANGMAX=24,NFREMAX=25)
+      PARAMETER(NANGMAX=24,NFREMAX=30)
       PARAMETER (G = 9.806, PI = 3.1415927, CIRC = 40000000.,
      1           ZPI = 2.*PI, RAD = PI/180., DEG = 180./PI,
      2           R = CIRC/ZPI, EPSMIN=0.1E-32, ZMISS=-999.0)

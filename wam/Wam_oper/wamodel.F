@@ -301,7 +301,8 @@
       USE YOWICE   , ONLY : LICERUN
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG
+     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
+     &            BFG      ,PFG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -323,7 +324,7 @@
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LANAONLY ,LALTCOR  ,LFRSTFLD ,NWAM_BLKS
+     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            NTOPE  ,NTOPEMAX ,IJTOPE   ,NGBTOPE  ,NTOPELST   ,
      &            NFROMPE,NFROMPEMAX,NIJSTART,NGBFROMPE,NFROMPELST ,
@@ -1069,6 +1070,9 @@
           IF(ALLOCATED(MWP1G)) DEALLOCATE(MWP1G)
           IF(ALLOCATED(MWP2G)) DEALLOCATE(MWP2G)
           IF(ALLOCATED(WSPRDG)) DEALLOCATE(WSPRDG)
+          IF(ALLOCATED(C4G)) DEALLOCATE(C4G)
+          IF(ALLOCATED(BFG)) DEALLOCATE(BFG)
+          IF(ALLOCATED(PFG)) DEALLOCATE(PFG)
 
           IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
           IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

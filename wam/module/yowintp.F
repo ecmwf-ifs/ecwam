@@ -20,6 +20,9 @@
       REAL, ALLOCATABLE :: MWP1G(:,:) 
       REAL, ALLOCATABLE :: MWP2G(:,:) 
       REAL, ALLOCATABLE :: WSPRDG(:,:) 
+      REAL, ALLOCATABLE :: C4G(:,:) 
+      REAL, ALLOCATABLE :: BFG(:,:) 
+      REAL, ALLOCATABLE :: PFG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -46,6 +49,10 @@
 !      *MWP1G*     REAL      GRIDDED MEAN WAVE PERIOD 1 (S.).
 !      *MWP2G*     REAL      GRIDDED MEAN WAVE PERIOD 2 (S.).
 !      *WSPRDG*    REAL      GRIDDED DIRECTIONAL SPREAD (-). 
+!      *C4G*       REAL      GRIDDED SPECTRAL KURTOSIS (-). 
+!      *BFG*       REAL      GRIDDED BENJAMIN-FEIR INDEX (-). 
+!      *PFG*       REAL      GRIDDED SPECTRAL PEAKEDNESS (-). 
+
 
 ! ----------------------------------------------------------------------
       END MODULE YOWINTP

@@ -619,6 +619,8 @@
           WRITE(kubls) FL3
         ENDDO
       ENDIF
+      IF (ALLOCATED(ZSEC4)) DEALLOCATE(ZSEC4)
+
       IF (ldoutspp) CLOSE (iu_locs)
 
 ! ----------------------------------------------------------------------
@@ -628,7 +630,3 @@
       msub = msub - 1
       RETURN
       END SUBROUTINE blspcon
-
-
-
-

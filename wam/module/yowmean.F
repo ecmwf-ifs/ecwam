@@ -12,6 +12,9 @@
       REAL,ALLOCATABLE :: P1MEAN(:) 
       REAL,ALLOCATABLE :: P2MEAN(:) 
       REAL,ALLOCATABLE :: SPRDMEAN(:) 
+      REAL,ALLOCATABLE :: C4MEAN(:) 
+      REAL,ALLOCATABLE :: BFMEAN(:) 
+      REAL,ALLOCATABLE :: PFMEAN(:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -23,6 +26,9 @@
 !      *P1MEAN*    REAL      MEAN PERIOD (1).
 !      *P2MEAN*    REAL      MEAN PERIOD (2).
 !      *SPRDMEAN*  REAL      MEAN DIRECTIONAl SPREAD.
+!      *C4MEAN*    REAL      SPECTRAL KURTOSIS.
+!      *BFMEAN*    REAL      BENJANIN-FEIR INDEX.
+!      *PFMEAN*    REAL      SPECTRAL PEAKEDNESS.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

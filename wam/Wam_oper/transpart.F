@@ -118,7 +118,9 @@
             INTLOGSTRETCH(ISPEC,IPARTW) = 0
           ELSE
             ADJUST(ISPEC,IPARTW)
-     &        = MEANSE(ISPEC,IPARTS) / MEANWE(ISPEC,IPARTW)
+     &        = (MEANSE(ISPEC,IPARTS) * MEANWFRE(ISPEC,IPARTW)) /
+     &          (MEANWE(ISPEC,IPARTW) * MEANSFRE(ISPEC,IPARTS))
+!!!!! ??????
             ROTATE
      &        = ( MEANSANG(ISPEC,IPARTS) - MEANWANG(ISPEC,IPARTW) )
             ROTATE=ROTATE/ DELTH
@@ -174,7 +176,8 @@
             IF( JANGP1.LT.1 ) JANGP1 = JANGP1 + NANG
             JFRE = IFRE + INTLOGSTRETCH(ISPEC,IPARTW)
             IF(JFRE.LT.1) THEN
-              JFRE=1
+!!!!              JFRE=1
+!!! it will artificially put energy in the lowest bins otherwise
               STRETCHFAC=1.
             ELSE
               STRETCHFAC=STRETCH(ISPEC,IPARTW)

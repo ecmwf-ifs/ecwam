@@ -98,6 +98,7 @@
 
       LOGICAL :: LLAK
 
+      WRITE(IU06,*)' '
       WRITE(IU06,*)'  -----ALT DATA ASSIMILATION BEGINS--------'
 
 !    1. GET MODEL WAVE HEIGHT 

@@ -88,7 +88,8 @@
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
-     &            CDTPRO   ,IASSI    ,MFDBSF   ,LSARINV
+     &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
+     &            MFDBSF   ,LSARINV
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWMAP   , ONLY : ZDELLO
       USE YOWTEXT  , ONLY : LRESTARTED
@@ -96,6 +97,7 @@
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
      &            NSTART ,NEND
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWWIND  , ONLY : CDAWIFL
       USE YOMGSTATS, ONLY : LSYNCSTATS
 
 ! --------------------------------------------------------------------- 
@@ -103,12 +105,14 @@
 
 !     COUPLING ARRAYS
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
+      REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       
       CHARACTER CBEGDAT*12, CDTASS*12
+      CHARACTER*12 :: FLABEL(NWVFIELDS)
 
       LOGICAL FRSTIME, LDSTOP, LDWRRE, LDRESTARTED
 
@@ -197,6 +201,37 @@
 !            RETURN
           ELSE
             LDRESTARTED = .FALSE.
+          ENDIF
+        ENDIF
+
+      ELSE
+!       CHECK IF THE INTERACTION TIME STEP HAS NOT CHANGED
+!       OTHERWISE RESET NADV
+        IF(IDELWI.NE.KDELWI .AND. LWCOU) THEN
+          IDELWO = KDELWI
+          IDELWI = KDELWI
+          NADV = IDELWI/IDELPRO
+          CDAWIFL=CDTPRO
+          CALL INCDATE(CDAWIFL,IDELWI)
+          WRITE (IU06,*) ' ***********************************'
+          WRITE (IU06,*) ' *                                 *'
+          WRITE (IU06,*) ' * IN WAVEMDL :                    *'
+          WRITE (IU06,*) ' * INTERACTION TIME STEP WAS RESET *' 
+          WRITE (IU06,*) ' * KDELWI = ', KDELWI 
+          WRITE (IU06,*) ' *                                 *'
+          WRITE (IU06,*) ' ***********************************'
+          CALL FLUSH(IU06)
+          IF(IDELPRO*NADV.NE.IDELWI) THEN
+            WRITE (IU06,*) ' ****************************************'
+            WRITE (IU06,*) ' *                                      *'
+            WRITE (IU06,*) ' * PROBLEM IN WAVEMDL :                 *'
+            WRITE (IU06,*) ' * THE NEW INTERACTION TIME STEP IS NOT *'
+            WRITE (IU06,*) ' * A MULTIPLE OF IDELPRO  !!!           *'
+            WRITE (IU06,*) ' * KDELWI = ', KDELWI 
+            WRITE (IU06,*) ' * IDELPRO = ', IDELPRO 
+            WRITE (IU06,*) ' *                                      *'
+            WRITE (IU06,*) ' ****************************************'
+            CALL ABORT1
           ENDIF
         ENDIF
 
@@ -296,6 +331,7 @@
 
 ! Fields to be passed to the atmospheric model are:
 !  1. Charnock field
+        FLABEL(1)='Charnock'
         DO IG=1,IGL
           DO IJ=IJS(IG),IJL(IG) 
             USNEW(IJ) = USOLD(IJ,IG)
@@ -341,7 +377,27 @@
 !RMIT!  ENDIF
 !------------------------------------------------------
 
-
+!       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' NORM OF FIELDS RETURNED TO THE ATM. MODEL : '
+        NTOT=NLATW*NLONW
+        DO IFLD=1,NWVFIELDS
+          FAVG(IFLD)=0.
+          FMIN(IFLD)=999999999999.
+          FMAX(IFLD)=-99999999999.
+          DO J=1,NLATW
+            DO I=1,NLONW
+              FAVG(IFLD)=FAVG(IFLD)+WVFLDG(I,J,IFLD)
+              FMIN(IFLD)=MIN(FMIN(IFLD),WVFLDG(I,J,IFLD))
+              FMAX(IFLD)=MAX(FMAX(IFLD),WVFLDG(I,J,IFLD))
+            ENDDO
+          ENDDO
+          FAVG(IFLD)=FAVG(IFLD)/NTOT
+          WRITE(IU06,*) FLABEL(IFLD),
+     *                  FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT
+        ENDDO
+        WRITE(IU06,*) ' '
+        IF(ITEST.GT.0) CALL FLUSH(IU06)
 
       ENDIF
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN

@@ -19,12 +19,9 @@
       INTEGER NIBLC 
       INTEGER NBLC 
 
-      REAL    XKAPPA2
       REAL    SWAMPWIND 
       REAL    SWAMPWIND2 
       REAL    DTNEWWIND
-      REAL    HSCOEFCOR
-      REAL    HSCONSCOR
 
       CHARACTER*1 CLDOMAIN
 
@@ -53,8 +50,6 @@
 !                            = 1     ELSE.
 !      *NBLC*      INTEGER   = NBLO  IF CURRENT REFRACTION.
 !                            = 1     ELSE.
-!      *XKAPPA2*   REAL      KAPPA2 PARAMETER USED IN THE DETERMINATION
-!                            OF ALTIMETER WAVE HEIGHTS (SEE GRFIELD)
 !      *SWAMPWIND* REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
 !                            FIRST VALUE
 !      *SWAMPWIND2*REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
@@ -63,11 +58,6 @@
 !                            IN HOURS
 !      *LTURN90*   LOGICAL   IF TRUE THE NEW SWAMP WIND WILL BE TURNED
 !                            BY 90 DEGREES.
-!      *HSCOEFCOR* REAL      COEFFICIENT OF THE CORRECTIVE LINEAR
-!                            REGRESSION FOR ALTIMETER WAVE HEIGHTS.
-!      *HSCONSCOR* REAL      CONSTANT COEFFICIE$NT  OF THE CORRECTIVE
-!                            LINEAR REGRESSION FOR ALTIMETER WAVE
-!                            HEIGHTS.
 !      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
 !                            FDB and for selection of some variables)
 !      *LL1D*      LOGICAL   IF TRUE THEN THE DOMAIN DECOMPOSITION IS ONLY

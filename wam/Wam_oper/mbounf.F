@@ -237,6 +237,9 @@
      &   IBFL(IO), IBFR(IO), BFW(IO)
       ENDDO
 
+      IF (ALLOCATED(BLATF)) DEALLOCATE(BLATF)
+      IF (ALLOCATED(BLNGF)) DEALLOCATE(BLNGF)
+
 ! ----------------------------------------------------------------------
 
 !*    9. WRITE COMMON FBOUND

@@ -44,9 +44,11 @@
 
 !-----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,INTLMAX  ,
-     &            KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTSDTHRSH,
-     &           ALTBGTHRSH,HSALTCUT ,ALTDATA
+      USE YOWALTAS , ONLY : NUMALT   ,NIJALT   ,NALTDT   ,IJALT    ,
+     &            INTLMAX  ,KMINLMAX ,KMAXLMAX ,NOBSPE   ,ALTSDTHRSH,
+     &            ALTBGTHRSH,HSALTCUT,ALTDATA  ,IBUFRSAT ,
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,
+     &            LALTGRDOUT
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWGRIBHD, ONLY : KSEK1
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,SINPH    ,
@@ -57,10 +59,9 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NIBLO    ,XKAPPA2  ,HSCOEFCOR,HSCONSCOR,CLDOMAIN ,
-     &            LL1D
+     &            NIBLO    ,CLDOMAIN ,LL1D
       USE YOWPCONS , ONLY : RAD      ,ZMISS
-      USE YOWSTAT  , ONLY : CDTPRO   ,LALTCOR  ,LALTLRGR,YEXPVER
+      USE YOWSTAT  , ONLY : CDTPRO   ,YEXPVER
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FL1      ,IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWINTP  , ONLY : WHGTTG   ,WHGTAG   ,CWHTAG   , RANGAG
@@ -83,6 +84,7 @@
       REAL,ALLOCATABLE :: FALT(:,:,:)
       INTEGER,ALLOCATABLE,DIMENSION(:) :: ICOMBUF
       INTEGER,ALLOCATABLE,DIMENSION(:,:) :: IJALTPE, ITEMP
+      INTEGER :: NOBSPSAT(NUMALT)
       REAL,ALLOCATABLE, DIMENSION(:) :: ZCOMBUF, TEMP
       REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
       REAL,ALLOCATABLE :: ZCOMBUFR(:)
@@ -93,6 +95,7 @@
       LOGICAL :: LSQRT
       LOGICAL :: LLCOMMON(NPROC)
       LOGICAL,ALLOCATABLE, DIMENSION(:) :: LLWITHIN 
+      LOGICAL :: LLALT(NUMALT)
 
 
 !*     VARIABLE     TYPE      PURPOSE.
@@ -109,6 +112,7 @@
 !        -------------------
 
       NOBS=0
+      NOBSPSAT=0
 
       IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,0)
       IF((LMESSPASS .AND. IRANK .EQ. IREAD) .OR. .NOT.LMESSPASS) THEN
@@ -136,15 +140,16 @@
           IF(ITEST.GT.0) LLTEST=.TRUE.
           CALL CONFILE (IU06, IUME, CDTPRO, CLFID, IFAIL, LLTEST)
           IF(IFAIL.EQ.0) THEN
-            READ (IUME,ERR=9000) CTIME, NOBS
+            READ (IUME,ERR=9000,IOSTAT=IOS) CTIME, NOBS
             IF(NOBS.GT.0) THEN
 !             the size of the 2nd dimension of IJALT is increased by 1
 !             to keep track of the input order (see below).
               ALLOCATE(IJALT(NOBS,NIJALT+1))
               ALLOCATE(ALTDATA(NOBS,NALTDT))
-              READ (IUME,ERR=9000) ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS),
+              READ (IUME,ERR=9000,IOSTAT=IOS) 
+     &                             ((IJALT(IOBS,IIJALT),IOBS = 1,NOBS),
      &                                                IIJALT = 1,NIJALT)
-              READ (IUME,ERR=9000) ALTDATA
+              READ (IUME,ERR=9000,IOSTAT=IOS) ALTDATA
 
 !             REORGANISE THE IJ INDEX WHEN 2-D DECOMPOSITION
               IF(.NOT.LL1D .AND. NPROC.GT.1) THEN
@@ -156,6 +161,39 @@
               DO IOBS = 1, NOBS
                 IJALT(IOBS,NIJALT+1) = IOBS
               ENDDO
+
+              DO ISAT=1,NUMALT
+                DO IOBS = 1, NOBS
+!             take only points that belong to the satellite
+                  IF(IJALT(IOBS,2).EQ.IBUFRSAT(ISAT))
+     &              NOBSPSAT(ISAT)=NOBSPSAT(ISAT)+1
+                ENDDO
+              ENDDO
+!             check whether sum(NOBSPSAT)=NOBS
+              NOBSDUM=0
+              DO ISAT=1,NUMALT
+                NOBSDUM=NOBSDUM+NOBSPSAT(ISAT)
+              ENDDO
+              IF(NOBSDUM.NE.NOBS) THEN
+                WRITE(IU06,*) ' '
+                WRITE(IU06,'("IN GRFIELD:  W A R N I N G  !!!!!!")')
+                WRITE(IU06,*) 'THE TOTAL NUMBER OF ALT DATA DOES NOT '
+                WRITE(IU06,*) 'CORRESPOND TO THE SUM OF THE DIFFERENT '
+                WRITE(IU06,*) 'CONTRIBUTION '
+                WRITE(IU06,*) 'NOBS = ',NOBS
+                DO ISAT=1,NUMALT
+                  WRITE(IU06,*) 'NOBSPSAT = ',NOBSPSAT(ISAT),ISAT
+                ENDDO
+                WRITE(IU06,*) ' '
+                WRITE(IU06,*) 'NO DATA ASSIMILATION WILL TAKE PLACE !!!'
+                WRITE(IU06,*) ' '
+                WRITE(IU06,'("IN GRFIELD:  W A R N I N G  !!!!!!")')
+                WRITE(IU06,*) ' '
+                DO ISAT=1,NUMALT
+                  NOBSPSAT(ISAT)=0
+                ENDDO
+                CALL FLUSH(IU06)
+              ENDIF
             ENDIF
             CLOSE (IUME)
           ELSE
@@ -174,7 +212,9 @@
           NOBS=0
         ENDIF
         GOTO 9001
-9000    WRITE(IU06,'("READING ERROR IN GRFIELD:  ABORT !!!!!!!!")')
+9000    WRITE(IU06,'("READING ERROR IN GRFIELD: ")')
+        WRITE(IU06,'(25X,"I/O STATUS IS",I8)') IOS
+        WRITE(IU06,'(25X," ABORT !!!!!!!!")')
         CALL ABORT1  
 9001    CONTINUE
       ENDIF
@@ -183,9 +223,13 @@
 !     SEND NOBS TO THE OTHER PE'S TO LET THEM KNOW WHETHER THERE ARE
 !     DATA OR NOT.
       IF(LMESSPASS) THEN
-        CALL MPBCASTINTFLD(IREAD,KTAG,1,1,NOBS)
+        CALL MPBCASTINTFLD(IREAD,KTAG,NUMALT,1,NOBSPSAT)
         KTAG=KTAG+1
       ENDIF
+      NOBS=0
+      DO ISAT=1,NUMALT
+        NOBS=NOBS+NOBSPSAT(ISAT)
+      ENDDO
 
 !     IF NO DATA, NOTHING TO BE DONE
       IF (NOBS.LE.0) THEN
@@ -347,160 +391,205 @@
         NOBSPE = NOBS
       ENDIF
 
-
-! ----------------------------------------------------------------------
-
-!     3. APPLY SCREENING OF DATA BASED ON MODEL FIELD
-!        --------------------------------------------
-
-!     EXCLUDE POINTS WHICH ARE ON MODEL SEA ICE
-
-      NREJICE=0
-      DO IOBS = 1, NOBSPE(IRANK)
-        IJ=IJALT(IOBS,1)
-        IF (ICEMASK(IJ,1).EQ.0) THEN
-          ALTDATA(IOBS,1)=-3.
-          NREJICE=NREJICE+1
-        ENDIF
-      ENDDO
-
-!     BACKGROUND CHECK (remove data that deviate too much from the 
-!                         first guess)
-
-      IF(ALTSDTHRSH.LT.0.) THEN
-        IF(XDELLA.LT.0.5) THEN
-          ALTSDTHRSH = 0.75
+!     FIND OUT WHICH SATELLITE IS PRESENT
+      DO ISAT=1,NUMALT
+        IF(NOBSPSAT(ISAT).GT.0) THEN
+          LLALT(ISAT)=.TRUE.
         ELSE
-          ALTSDTHRSH = 0.6
+          LLALT(ISAT)=.FALSE.
         ENDIF
-      ENDIF
-
-      NREJSD=0
-      DO IOBS = 1, NOBSPE(IRANK)
-        IJ=IJALT(IOBS,1)
-        IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
-          THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJ))/WHMOD(IJ)
-          IF(THRSHLD.GE.ALTSDTHRSH) THEN
-            NREJSD=NREJSD+1
-          ENDIF
-        ENDIF
+        WRITE(IU06,'(I2,A,I3,A,I7,A,L7)')
+     &        ISAT,'. SATELLITE:',IBUFRSAT(ISAT),
+     &     '  ... NOBSPSAT=',NOBSPSAT(ISAT),
+     &     '  ... LLALT=',LLALT(ISAT)
       ENDDO
-
-      NREJBG=0
-      DO IOBS = 1, NOBSPE(IRANK)
-        IJ=IJALT(IOBS,1)
-        IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
-          THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)*
-     &            (ALTDATA(IOBS,1)-WHMOD(IJ))**2/
-     &            (ALTDATA(IOBS,1)*WHMOD(IJ))
-          HSCUT=MIN(HSALTCUT,ALTDATA(IOBS,2))
-          IF(THRSHLD.GE.ALTBGTHRSH) THEN
-            ALTDATA(IOBS,1)=-3.
-            NREJBG=NREJBG+1
-          ELSE IF(ALTDATA(IOBS,1).LE.HSCUT.OR.WHMOD(IJ).LE.HSCUT) THEN
-            ALTDATA(IOBS,1)=-3.
-            NREJBG=NREJBG+1
-          ENDIF
-        ENDIF
-      ENDDO
-
-      NTOTREJICE=NREJICE
-      NTOTREJSD=NREJSD
-      NTOTREJBG=NREJBG
-
-      IF(NPROC.GT.1) THEN
-!       SEND NREJICE, NREJSD AND  NREJBG TO ALL OTHER PE's
-        MPLENGTH=3
-        ALLOCATE(ICOMBUF(MPLENGTH))
-
-        DO IP=1,NPROC
-          IF(IRANK.EQ.IP) THEN
-            ICOMBUF(1)=NREJICE
-            ICOMBUF(2)=NREJSD
-            ICOMBUF(3)=NREJBG
-          ENDIF
-
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(619,0)
-          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IP,
-     &     KTAG=KTAG,CDSTRING='GRFIELD 2:')
-          IF (.NOT.LSYNCSTATS) CALL GSTATS(619,1)
-
-          IF(IRANK.NE.IP) THEN
-            NTOTREJICE=NTOTREJICE+ICOMBUF(1)
-            NTOTREJSD=NTOTREJSD+ICOMBUF(2)
-            NTOTREJBG=NTOTREJBG+ICOMBUF(3)
-          ENDIF
-
-          KTAG = KTAG + 1
-        ENDDO
-
-        DEALLOCATE(ICOMBUF)
-      ENDIF
-
-      WRITE(IU06,*)' '
-      WRITE(IU06,*)'   NUMBER OF GRIDDED ALTIMETER WAVE HEIGHTS= ',NOBS
-      WRITE(IU06,*)'   NUMBER OVER MODEL SEA ICE= ',NTOTREJICE 
-      WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA= ',NTOTREJSD
-      WRITE(IU06,*)'   NUMBER REJECTED BY THE BACKGROUND CHECK= ',
-     &                 NTOTREJBG
-      WRITE(IU06,*)' '
-
- 
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,0)
-      IF(XDELLA.LT.0.5) THEN
-        REJECT=0.75
-      ELSE
-        REJECT=0.5
-      ENDIF
-
-      REJRATIO=FLOAT(NTOTREJSD)/FLOAT(NOBS)
-
-      IF(REJRATIO.GT.REJECT) THEN
-        WRITE(IU06,*)'*************************************************'
-        WRITE(IU06,*)' '
-        WRITE(IU06,*)'  THE NUMBER OF SUSPICIOUS ALT DATA IS OVER ',
-     &               REJECT*100,' %'
-        WRITE(IU06,*)' '
-        WRITE(IU06,*)'  THEY ARE ALL REJECTED AS A PRECAUTION !' 
-        WRITE(IU06,*)' '
-        WRITE(IU06,*)'*************************************************'
-        DO IOBS = 1, NOBSPE(IRANK)
-          ALTDATA(IOBS,1)=-3.
-        ENDDO
-        IF(IRANK.EQ.1) THEN
-          IUMAIL=I_GET_UNIT(IU06,'MM','S','F',0)
-          WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
-          WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS ALTIMETER DATA IS OVER',
-     &                     REJECT*100,' % ',REJRATIO*100,' %'
-          WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER 
-          CALL WSTREAM_STRG(KSEK1(40),CSTRM)
-          WRITE(IUMAIL,*)' STREAM        ',CSTRM
-          WRITE(IUMAIL,*)' DOMAIN        ',CLDOMAIN
-          WRITE(IUMAIL,*)' AT TIME       ',CDTPRO
-          WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
-          CLOSE(IUMAIL)
-          CALL SYSTEM (' mail wab < MM ' )
-        ENDIF
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
-!*    4. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO 
+!*    3. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO 
 !        SUPPLIED LINEAR REGRESSION COEFFICIENTS
 !        --------------------------------------------------
-!??????? multi-satellite issues
-      IF(LALTLRGR) THEN
-        DO IOBS = 1, NOBSPE(IRANK)
-          IF (ALTDATA(IOBS,1).GT.0.)
-     &        ALTDATA(IOBS,1) = HSCOEFCOR*ALTDATA(IOBS,1)+HSCONSCOR
-        ENDDO
-        IF(ITEST.GT.0) THEN
-          WRITE(IU06,*)' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-          WRITE(IU06,*)'           Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR
-          WRITE(IU06,*)' '
+      DO ISAT=1,NUMALT
+        IF(LALTLRGR(ISAT) .AND. LLALT(ISAT)) THEN
+          DO IOBS = 1, NOBSPE(IRANK)
+            IF (ALTDATA(IOBS,1).GT.0. .AND. 
+     &          IJALT(IOBS,2).EQ.IBUFRSAT(ISAT) ) THEN
+              ALTDATA(IOBS,1) = 
+     &        HSCOEFCOR(ISAT)*ALTDATA(IOBS,1)+HSCONSCOR(ISAT)
+            ENDIF
+          ENDDO
+          IF(ITEST.GT.0) THEN
+            WRITE(IU06,*)' GRFIELD : ALTIMETER ',IBUFRSAT(ISAT) 
+            WRITE(IU06,*)'           ALTIMETER WAVE HEIGHTS CORRECTED '
+            WRITE(IU06,*)'           Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',
+     &                                        HSCONSCOR(ISAT)
+            WRITE(IU06,*)' '
+          ENDIF
         ENDIF
-      ENDIF
+      ENDDO
 
+! ----------------------------------------------------------------------
+
+!     4. APPLY SCREENING OF DATA BASED ON MODEL FIELD
+!        --------------------------------------------
+
+      DO ISAT=1,NUMALT
+
+        NREJICE=0
+        NREJSD=0
+        NREJBG=0
+        NSAT=0
+
+        IF(ALTSDTHRSH(ISAT).LT.0.) THEN
+          IF(XDELLA.LT.0.5) THEN
+            ALTSDTHRSH(ISAT) = 0.75
+          ELSE
+            ALTSDTHRSH(ISAT) = 0.6
+          ENDIF
+          WRITE(IU06,'(A,I3,A,F6.2,A)')
+     &        'BG CHECK THRESHOLD FOR ALTIMETER OF SATELLITE:',
+     &         IBUFRSAT(ISAT), ' IS NOT PROVIDED. IT IS ASSUMED AS ',
+     &         ALTSDTHRSH(ISAT)*100.,'%.'
+        ENDIF
+
+        IF(LLALT(ISAT)) THEN
+
+          DO IOBS = 1, NOBSPE(IRANK)
+!           take only points that belong to the satellite
+            IF(IJALT(IOBS,2).EQ.IBUFRSAT(ISAT)) THEN
+
+!             EXCLUDE POINTS WHICH ARE ON MODEL SEA ICE
+
+              IJ=IJALT(IOBS,1)
+              IF (ICEMASK(IJ,1).EQ.0) THEN
+                ALTDATA(IOBS,1)=-3.
+                NREJICE=NREJICE+1
+              ENDIF
+
+!              BACKGROUND CHECK (remove data that deviate too much
+!                                from the first guess)
+
+              IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
+                THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJ))/WHMOD(IJ)
+                IF(THRSHLD.GE.ALTSDTHRSH(ISAT)) THEN
+                  NREJSD=NREJSD+1
+                ENDIF
+              ENDIF
+
+              IF (ALTDATA(IOBS,1).GT.0. .AND. WHMOD(IJ).GT.0. ) THEN
+                THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)*
+     &                  (ALTDATA(IOBS,1)-WHMOD(IJ))**2/
+     &                  (ALTDATA(IOBS,1)*WHMOD(IJ))
+                HSCUT=MIN(HSALTCUT(ISAT),ALTDATA(IOBS,2))
+                IF(THRSHLD.GE.ALTBGTHRSH(ISAT)) THEN
+                  ALTDATA(IOBS,1)=-3.
+                  NREJBG=NREJBG+1
+                ELSE IF(ALTDATA(IOBS,1).LE.HSCUT .OR.
+     &                  WHMOD(IJ).LE.HSCUT ) THEN
+                  ALTDATA(IOBS,1)=-3.
+                  NREJBG=NREJBG+1
+                ENDIF
+              ENDIF
+            ENDIF
+          ENDDO
+          NSAT=1
+        ENDIF
+
+        NTOTREJICE=NREJICE
+        NTOTREJSD=NREJSD
+        NTOTREJBG=NREJBG
+        NTOTSAT=NSAT
+
+        IF(NPROC.GT.1) THEN
+!         SEND NREJICE, NREJSD AND  NREJBG TO ALL OTHER PE's
+          MPLENGTH=4
+          ALLOCATE(ICOMBUF(MPLENGTH))
+
+          DO IP=1,NPROC
+            IF(IRANK.EQ.IP) THEN
+              ICOMBUF(1)=NREJICE
+              ICOMBUF(2)=NREJSD
+              ICOMBUF(3)=NREJBG
+              IF(LLALT(ISAT)) THEN
+                NSAT=1
+              ELSE
+                NSAT=0
+              ENDIF
+              ICOMBUF(4)=NSAT
+            ENDIF
+
+            CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IP,
+     &        KTAG=KTAG,CDSTRING='GRFIELD 2:')
+
+            IF(IRANK.NE.IP) THEN
+              NTOTREJICE=NTOTREJICE+ICOMBUF(1)
+              NTOTREJSD=NTOTREJSD+ICOMBUF(2)
+              NTOTREJBG=NTOTREJBG+ICOMBUF(3)
+              NTOTSAT=NTOTSAT+ICOMBUF(4)
+            ENDIF
+
+            KTAG = KTAG + 1
+          ENDDO
+
+          DEALLOCATE(ICOMBUF)
+        ENDIF
+
+        !IF(NTOTSAT.GT.0) THEN
+          WRITE(IU06,*)' '
+          WRITE(IU06,*)'   ALTIMETER ',IBUFRSAT(ISAT)
+          WRITE(IU06,*)'   NUMBER OF GRIDDED WAVE HEIGHTS= ',
+     &                     NOBSPSAT(ISAT)
+          WRITE(IU06,*)'   NUMBER OF SUBAREA WITH DATA= ',NTOTSAT 
+          WRITE(IU06,*)'   NUMBER OVER MODEL SEA ICE= ',NTOTREJICE 
+          WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA= ',NTOTREJSD
+          WRITE(IU06,*)'   NUMBER REJECTED BY THE BACKGROUND CHECK= ',
+     &                   NTOTREJBG
+          WRITE(IU06,*)' '
+
+        IF(NTOTSAT.GT.0) THEN
+ 
+          IF(XDELLA.LT.0.5) THEN
+            REJECT=0.75
+          ELSE
+            REJECT=0.5
+          ENDIF
+
+          REJRATIO=FLOAT(NTOTREJSD)/FLOAT(NOBS)
+
+          IF(REJRATIO.GT.REJECT) THEN
+            WRITE(IU06,*)'*********************************************'
+            WRITE(IU06,*)' '
+            WRITE(IU06,*)'   ALTIMETER ',IBUFRSAT(ISAT)
+            WRITE(IU06,*)'  THE NUMBER OF SUSPICIOUS ALT DATA IS OVER ',
+     &                   REJECT*100,' %'
+            WRITE(IU06,*)' '
+            WRITE(IU06,*)'  THEY ARE ALL REJECTED AS A PRECAUTION !' 
+            WRITE(IU06,*)' '
+            WRITE(IU06,*)'*********************************************'
+            DO IOBS = 1, NOBSPE(IRANK)
+              IF(IJALT(IOBS,2).EQ.IBUFRSAT(ISAT)) ALTDATA(IOBS,1)=-3.
+            ENDDO
+            IF(IRANK.EQ.1) THEN
+              IUMAIL=I_GET_UNIT(IU06,'MM','S','F',0)
+              WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
+              WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS DATA IS OVER',
+     &                       REJECT*100,' % ',REJRATIO*100,' %'
+              WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER 
+              CALL WSTREAM_STRG(KSEK1(40),CSTRM)
+              WRITE(IUMAIL,*)' STREAM        ',CSTRM
+              WRITE(IUMAIL,*)' DOMAIN        ',CLDOMAIN
+              WRITE(IUMAIL,*)' AT TIME       ',CDTPRO
+              WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
+              CLOSE(IUMAIL)
+              CALL SYSTEM (' mail wab < MM ' )
+            ENDIF
+          ENDIF
+
+        ENDIF
+
+      ENDDO ! END LOOP ON SATELLITE
+
+! ----------------------------------------------------------------------
 
 !*    5. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO SROKOSZ.
 !        ---------------------------------------------------------
@@ -542,45 +631,54 @@
 !       5.3 APPLY SROKOSZ CORRECTION.
 !           -------------------------
      
-        IF(LALTCOR.AND.ITEST.GT.0) THEN
-          WRITE(IU06,*) ' GRFIELD : ALTIMETER WAVE HEIGHTS CORRECTED '
-          WRITE(IU06,*) ' '
-        ENDIF
+        DO ISAT=1,NUMALT
+          IF(LLALT(ISAT)) THEN
 
-        DO IOBS = 1, NOBSPE(IRANK)
-          IF (ALTDATA(IOBS,1).GT.0.) THEN
-            RCOR = DELH_ALT(IOBS)
-
-            HS = ALTDATA(IOBS,1) 
-            XN = HS**2/16. + XKAPPA2
-            HS_NEW = 16.*(XKAPPA1(IOBS)*XN - XKAPPA2)
-            IF ( HS_NEW >  0.0 ) THEN
-              HS_NEW = SQRT(HS_NEW)
-            ELSE
-              HS_NEW = 0.0
+            IF(LALTCOR(ISAT).AND.ITEST.GT.0) THEN
+              WRITE(IU06,*) ' GRFIELD : ALTIMETER ',IBUFRSAT(ISAT)
+              WRITE(IU06,*) '           WAVE HEIGHTS CORRECTED '
+              WRITE(IU06,*) ' '
             ENDIF
 
-!??????? multi-satellite issues
-! we should only do it for one satellite !!!
+            DO IOBS = 1, NOBSPE(IRANK)
+              IF (ALTDATA(IOBS,1).GT.0. .AND.
+     &            IJALT(IOBS,2).EQ.IBUFRSAT(ISAT)) THEN
+                RCOR = DELH_ALT(IOBS)
+                HS = ALTDATA(IOBS,1) 
+                IF (LALTCOR(ISAT)) THEN
+                  XN = HS**2/16. + XKAPPA2(ISAT)
+                  HS_NEW = 16.*(XKAPPA1(IOBS)*XN - XKAPPA2(ISAT))
+                  IF ( HS_NEW >  0.0 ) THEN
+                    HS_NEW = SQRT(HS_NEW)
+                    ALTDATA(IOBS,1) = HS_NEW
+                  ELSE
+                    HS_NEW = 0.0
+                  ENDIF
+                ELSE
+                  HS_NEW = HS
+                ENDIF
 
-            IJ=IJALT(IOBS,1)
-            IF(HS.GT.0..AND.
-     &         IJ.GE.NSTART(IRANK) .AND. IJ.LE.NEND(IRANK)) THEN
-              WHGTAGB(IJ) = HS 
-              CWHTAGB(IJ) = HS_NEW
-              RANGAGB(IJ) = RCOR 
-            ENDIF
-!???????
-            IF(LALTCOR .AND. HS_NEW >  0.0 ) ALTDATA(IOBS,1) = HS_NEW
+!!! ??? we have assumed that the last satellite will have predominance
+!!!     on the others when determining the output gridded altimeter
+!!!     data for common locations.
+!!! ??????????
+                IF (LALTGRDOUT(ISAT)) THEN
+                  IJ=IJALT(IOBS,1)
+                  IF (IJ.GE.NSTART(IRANK) .AND. IJ.LE.NEND(IRANK)) THEN
+                    WHGTAGB(IJ) = HS 
+                    CWHTAGB(IJ) = HS_NEW
+                    RANGAGB(IJ) = RCOR 
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDDO
           ENDIF
         ENDDO
+        IF( ALLOCATED(XKAPPA1) ) DEALLOCATE(XKAPPA1)
+        IF( ALLOCATED(DELH_ALT) ) DEALLOCATE(DELH_ALT)
+        IF( ALLOCATED(FALT) ) DEALLOCATE(FALT)
+      ENDIF ! ON NOBSPE
 
-      ENDIF
-      IF (.NOT.LSYNCSTATS) CALL GSTATS(1898,1)
-
-      IF( ALLOCATED(XKAPPA1) ) DEALLOCATE(XKAPPA1)
-      IF( ALLOCATED(DELH_ALT) ) DEALLOCATE(DELH_ALT)
-      IF( ALLOCATED(FALT) ) DEALLOCATE(FALT)
 
 !     COLLECT THE OUTPUT OF THE ALTIMETER CORRECTIONS ONTO THE OUTPUT PE
       ALLOCATE(TEMP(NIBLO))

@@ -67,7 +67,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,EPSMIN
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTSPT   ,CDTSPS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,THWISEA
@@ -172,18 +172,31 @@
 !           --------------------
 
               IF (FFLAG(17)) THEN
-                XANG = REAL(NANG)
-                XFRE = REAL(NFRE)
-                TH0 = TH(1)*DEG
-                WRITE(IU25) XLON, XLAT, CDTPRO, XANG, XFRE,
-     &           TH0, FR(1), FRATIO 
-                WRITE(IU25) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     &           FMEAN(IJ), US(IJ), DEG*THW(IJ),
-     &           U10(IJ)
-                IF(LMESSPASS) THEN
-                  WRITE(IU25) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
+!               use a formatted output for swamp cases
+                IF(CLDOMAIN.EQ.'s') THEN
+                  WRITE(IU25,'(1X,f7.3,1x,f8.3,1x,a12,3(1x,F8.4))') 
+     &              XLAT,XLON,CDTPRO,U10NEW(IJ),THWNEW(IJ),USNEW(IJ)
+                  dum=0.
+                  WRITE(IU25,110) dum,(TH(K)*DEG,K=1,NANG)
+                  DO M=1,NFRE
+                    WRITE(IU25,110) FR(M),
+     &                 (FL3(IJ,K,M),K=1,NANG)
+                  ENDDO
+110               FORMAT(25(1X,F8.4))
                 ELSE
-                  WRITE(IU25) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
+                  XANG = REAL(NANG)
+                  XFRE = REAL(NFRE)
+                  TH0 = TH(1)*DEG
+                  WRITE(IU25) XLON, XLAT, CDTPRO, XANG, XFRE,
+     &             TH0, FR(1), FRATIO 
+                  WRITE(IU25) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
+     &             FMEAN(IJ), US(IJ), DEG*THW(IJ),
+     &             U10(IJ)
+                  IF(LMESSPASS) THEN
+                    WRITE(IU25) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
+                  ELSE
+                    WRITE(IU25) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
+                  ENDIF
                 ENDIF
               ENDIF
 

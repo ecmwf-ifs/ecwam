@@ -529,6 +529,7 @@
       CALL OPTINT(
 !           INPUT
      &        NPARTW,NPASC2W,
+     &        MEANE(1,1,1),
      &        EW,XKW,YKW,
      &        ED,XKD,YKD,
      &        SPEC(0,1,1,2),CORRELTAS,

@@ -56,7 +56,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : ALTSDTHRSH,ALTBGTHRSH,HSALTCUT
+      USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
+     &            HSALTCUT, LALTGRDOUT,
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
@@ -66,17 +68,17 @@
      &            NASS
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
-      USE YOWPARAM , ONLY : XKAPPA2  ,SWAMPWIND,HSCOEFCOR,HSCONSCOR,
-     &            SWAMPWIND2,DTNEWWIND,LTURN90 ,LL1D
+      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
+     &            LL1D
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
      &            IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,YCLASS   ,
-     &            YEXPVER  ,LALTCOR  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
-     &            LSARAS   ,LSARINV  ,LALTLRGR ,ISTREAM  ,NLOCGRB  ,
-     &            NCONSENSUS,NDWD    ,NMFR     ,NNCEP    ,NUKM     ,
+     &            YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,LSARAS   ,
+     &            LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,NDWD    ,
+     &            NMFR     ,NNCEP    ,NUKM     ,
      &            LGUST    ,LADEN    ,NWAM_BLKS           
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
@@ -92,6 +94,7 @@
 ! ----------------------------------------------------------------------
 
       LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF
+      LOGICAL LLNALTGO
       CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
@@ -116,11 +119,11 @@
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
-     &   SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
+     &   IBUFRSAT, SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN,
+     &   LGUST, LADEN, LALTGRDOUT,
      &   NWAM_BLKS, LL1D 
 
       CHARACTER* 12 CLOUT
@@ -200,6 +203,9 @@
 !     31 : SWELL MEAN PERIOD BASED ON f**2 * F INTEGRATION OF F (s.) 
 !     32 : WINDSEA MEAN DIRECTIONAL SPREAD (-) 
 !     33 : SWELL MEAN DIRECTIONAL SPREAD (-) 
+!     34 : KURTOSIS DERIVED FROM WAVE SPECTRA (-)
+!     35 : BENJAMIN-FEIR INDEX (-) 
+!     36 : PEAKEDNESS FACTOR OR GODA QUALITY FACTOR (-) 
 
 !     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
 !     LPBIOIN: IF TRUE THE PBIO SOFTWARE IS USED FOR BINARY INPUT
@@ -269,6 +275,9 @@
 !     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
 !              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
+!     LALTGRDOUT: FLAG USED TO CONTROL THE OUTPUT OF GRIDDED ALTIMETER
+!                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT) 
+!                (SEE GRFIELD). 
 !     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
 !     NLOCGRB: LOCAL GRIB TABLE NUMBER
@@ -384,20 +393,25 @@
 
       LNOCDIN   = .FALSE. 
 
-      LALTCOR   = .FALSE. 
-      LALTLRGR  = .FALSE.
-      HSCOEFCOR = 1.
-      HSCONSCOR = 0.
+      DO ISAT=1,NUMALT
+        IBUFRSAT(ISAT) = 0
+        LALTCOR(ISAT)   = .FALSE. 
+        XKAPPA2(ISAT)   = 0.0700
+        LALTLRGR(ISAT)  = .FALSE.
+        HSCOEFCOR(ISAT) = 1.
+        HSCONSCOR(ISAT) = 0.
 
-      ALTBGTHRSH = 1.
-!     if no value is provided in the namelist ALTSDTHRSH will
-!     be set in grfield.
-      ALTSDTHRSH = -1.
+        ALTBGTHRSH(ISAT) = 1.
+!       if no value is provided in the namelist ALTSDTHRSH will
+!       be set in grfield.
+        ALTSDTHRSH(ISAT) = -1.
 
-!     HSALTCUT is used in combination with the error estimate of
-!     the altimeter data to determine the minimum Hs allowed for altimeter
-!     data.
-      HSALTCUT = 999999.
+!       HSALTCUT is used in combination with the error estimate of
+!       the altimeter data to determine the minimum Hs allowed for
+!       altimeter data.
+        HSALTCUT(ISAT) = 999999.
+        LALTGRDOUT(ISAT)  = .FALSE.
+      ENDDO
 
       L4VTYPE   = .FALSE. 
 
@@ -407,7 +421,6 @@
       LSARAS    = .FALSE. 
       LSARINV   = .FALSE. 
 
-      XKAPPA2   = 0.0700
 
       SWAMPWIND = 18.45
       SWAMPWIND2 = 0.
@@ -601,15 +614,18 @@
       FFLAG20 = FFLAG( 1).OR.FFLAG( 2).OR.FFLAG( 3).OR.FFLAG( 4).OR.
      &          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
      &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
-     &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27)
+     &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27).OR.
+     &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
      &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
-     &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27)
+     &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27).OR.
+     &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
      &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
-     &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27)
+     &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27).OR.
+     &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36)
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
      &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
      &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
@@ -631,7 +647,8 @@
      &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16).OR.
      &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24).OR.NFLAG(25).OR.
      &          NFLAG(26).OR.NFLAG(27).OR.NFLAG(28).OR.NFLAG(29).OR.
-     &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33)
+     &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
+     &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36)
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -904,24 +921,48 @@
           WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF ' 
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
           WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
-          IF(LALTLRGR) THEN
+          LLNALTGO = .TRUE.
+          DO ISAT=1,NUMALT
+             WRITE(IU06,*) '  '
+             WRITE(IU06,*) ' THE ALTIMETER DATA FROM SATELLITE ',
+     &                       IBUFRSAT(ISAT) 
+            IF(LALTLRGR(ISAT)) THEN
+              WRITE(IU06,*) '  '
+              WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
+              WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
+              WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',
+     &                                 HSCONSCOR(ISAT) 
+            ENDIF
+            IF(LALTCOR(ISAT)) THEN
+              WRITE(IU06,*) '  '
+              WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
+              WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
+            ENDIF
+            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',
+     &                      ALTBGTHRSH(ISAT)
+            WRITE(IU06,*) ' AND '
+            IF(HSALTCUT(ISAT).LT.999999.) THEN
+              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',
+     &                        HSALTCUT(ISAT)
+            ELSE
+              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',
+     &                      ' THE OBSERVATION ERROR.'
+            ENDIF
+            IF(LALTGRDOUT(ISAT)) THEN
+              WRITE(IU06,*) '  '
+              WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL BE' 
+              WRITE(IU06,*) ' PRODUCED FOR THIS ALTIMETER.' 
+              LLNALTGO = .FALSE.
+            ENDIF
             WRITE(IU06,*) '  '
-            WRITE(IU06,*) ' THE ALTIMETER DATA WILL BE CORRECTED ' 
-            WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
-            WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR,' Hs + ',HSCONSCOR 
-          ENDIF
-          IF(LALTCOR) THEN
+          ENDDO
+          IF (LLNALTGO) THEN
             WRITE(IU06,*) '  '
-            WRITE(IU06,*) ' THE ALTIMETER DATA WILL BE CORRECTED ' 
-            WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
+            WRITE(IU06,*) ' WARNING   WARNING   WARNING   WARNING'
+            WRITE(IU06,*) ' GRIDDED ALTIMETER FIELDS WILL NOT BE' 
+            WRITE(IU06,*) ' PRODUCED FOR ANY INSTRUMENT.'
+            WRITE(IU06,*) '  '
           ENDIF
-          WRITE(IU06,*) '  '
-          WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',
-     &                    ALTBGTHRSH
-          WRITE(IU06,*) ' AND '
-          WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',
-     &                    HSALTCUT
-          WRITE(IU06,*) '  '
         ENDIF
         IF(LSARAS) THEN
           WRITE(IU06,*) ' '
@@ -1009,6 +1050,12 @@
      & '......', FFLAG(32),'.....',GFLAG(32)
       WRITE(IU06,*) '33 SWELL DIRECTIONAL SPREAD ..', PFLAG(33),
      & '......', FFLAG(33),'.....',GFLAG(33)
+      WRITE(IU06,*) '34 WAVE SPECTRAL KURTOSIS.....', PFLAG(34),
+     & '......', FFLAG(34),'.....',GFLAG(34)
+      WRITE(IU06,*) '35 BENJAMIN-FEIR INDEX   .....', PFLAG(35),
+     & '......', FFLAG(35),'.....',GFLAG(35)
+      WRITE(IU06,*) '36 WAVE SPECTRAL PEAKEDNESS...', PFLAG(36),
+     & '......', FFLAG(36),'.....',GFLAG(36)
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
@@ -1362,6 +1409,19 @@
           ENDIF
         ENDDO
       ELSE
+        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (TOTAL SEA)   *'
+          WRITE(IU06,*) '* IS REQUESTED.                           *'
+          WRITE(IU06,*) '* OUTPUT TIME STEP IDELINT                *'
+          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
         IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND.
      &   MOD(IDELINT,IDELPRO).NE.0) THEN
           WRITE(IU06,*) '*******************************************'
@@ -1376,6 +1436,19 @@
      &     IDELINT
           WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
      &     IDELPRO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
+        IF ((FFLAG21.OR.PFLAG21.OR.GFLAG21) .AND. IDELINS.EQ.0 ) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (SEA + SWELL) *'
+          WRITE(IU06,*) '* IS REQUESTED.                           *'
+          WRITE(IU06,*) '* OUTPUT TIME STEP IDELINS                *'
+          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
@@ -1398,6 +1471,19 @@
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
+        IF ((FFLAG25.OR.PFLAG25.OR.GFLAG25) .AND. IDELSPT.EQ.0) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* OUTPUT OF SPECTRA (TOTAL SEA)           *'
+          WRITE(IU06,*) '* IS REQUESTED.                           *'
+          WRITE(IU06,*) '* OUTPUT TIME STEP IDELSPT                *'
+          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
         IF ((FFLAG25.OR.PFLAG25.OR.GFLAG25) .AND.
      &   MOD(IDELSPT,IDELPRO).NE.0) THEN
           WRITE(IU06,*) '*******************************************'
@@ -1412,6 +1498,19 @@
      &     IDELSPT
           WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
      &     IDELPRO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
+        IF ((FFLAG26.OR.PFLAG26.OR.GFLAG26) .AND. IDELSPS.EQ.0) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* OUTPUT OF SPECTRA (SEA + SWELL)         *'
+          WRITE(IU06,*) '* IS REQUESTED.                           *'
+          WRITE(IU06,*) '* OUTPUT TIME STEP IDELSPS                *'
+          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.

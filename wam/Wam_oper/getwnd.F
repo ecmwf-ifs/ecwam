@@ -67,8 +67,8 @@
 !                 INCLUSION OF AIR DENSITY AND Zi/L.
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NBLO
-      USE YOWTEST  , ONLY : IU06
+      USE YOWPARAM , ONLY : NBLO     ,CLDOMAIN
+      USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
       INTEGER NFIELDS, NGPTOTG, NC, NR
@@ -77,11 +77,16 @@
 ! ----------------------------------------------------------------------
 
       REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS, ADS, ZIDL
-      LOGICAL LWNDFILE, LCLOSEWND
+      INTEGER :: IUNIT1
+      LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
 
       CHARACTER*12 CDTWIS, CDTWIR
+      CHARACTER*24 :: FILNM
+
+      DATA FRSTIME / .TRUE. /
 
       SAVE CDTWIR
+      SAVE IUNIT1
 
 ! ----------------------------------------------------------------------
 
@@ -91,8 +96,9 @@
  1000 CONTINUE
 
       CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, 
-     &               ISEC1, ISEC2, FIELDS,
-     &               LWNDFILE, LCLOSEWND)
+     &               ISEC1, ISEC2, FIELDS,LWNDFILE, LCLOSEWND,
+     &               KINF, KSUP,
+     &               IUNIT1, FILNM, FRSTIME )
 
 !*    2. CHECK WIND FIELD DATE
 !        ----------------------
@@ -103,23 +109,7 @@
 !         TRY AGAIN
 !         --------------------------------------------
         IF(LWNDFILE) THEN
-
-          IF(LCLOSEWND) THEN
-            WRITE (IU06,*) ' ***************************************'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *    FATAL ERROR SUB. GETWND          *'
-            WRITE (IU06,*) ' *    =======================          *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' *  THE INPUT FILE HAS BEEN CLOSED     *'
-            WRITE (IU06,*) ' *  IT CANNOT BE ACCESSED AGAIN !      *'
-            WRITE (IU06,*) ' *  PROGRAM ABORTS  PROGRAM ABORTS     *'
-            WRITE (IU06,*) ' *                                     *'
-            WRITE (IU06,*) ' ***************************************'
-            CALL ABORT1
-          ENDIF
-
           GOTO 1000
-
         ELSE
           WRITE (IU06,*) ' ******************************************'
           WRITE (IU06,*) ' *                                         *'
@@ -155,6 +145,24 @@
         WRITE (IU06,*) ' ******************************************'
         CALL ABORT1
       ENDIF
+
+
+      IF (LCLOSEWND .AND. LWNDFILE .AND. (CLDOMAIN.NE.'s') ) THEN
+        CALL PBCLOSE(IUNIT1,KRET)
+        IF(KRET.LT.0) THEN
+          WRITE (IU06,*) '****************************************'
+          WRITE (IU06,*) '*                                      *'
+          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE     *'
+          WRITE (IU06,*) '*  IN GETWND                           *'
+          WRITE (IU06,*) '*                                      *'
+          WRITE (IU06,*) '****************************************'
+          CALL ABORT1
+        ENDIF
+        FRSTIME = .TRUE.
+        IF (ITEST.GT.1)
+     &    WRITE(IU06,*) ' SUB. GETWND - PBCLOSE ON ',FILNM
+      ENDIF
+
 
 ! ----------------------------------------------------------------------
 

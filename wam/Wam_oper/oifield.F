@@ -64,7 +64,7 @@
       LMAX = NINT(DEG*DISTMAX/XDELLA)
 
 ! ??? should be adapted if more than one satellite !!!
-      NDIM2 = 4*(2*LMAX+1)
+      NDIM2 = 5*(2*LMAX+1)
 
 !     THE MEASUREMENTS ARE STORED IN THE O.I. FIELD.                  
 !     NEGATIVE VALUES WILL REMAIN WHERE O.I. WILL PRODUCE NO RESULTS  
@@ -134,7 +134,7 @@
                     IOBS4IJ(IJ,NOBS(IJ))=IOBS
                     W(IJ,NOBS(IJ)) = EXP(-DOBS/DIST)
                   ELSE
-                    NOBSMAX=NOBS(IJ)
+                    NOBSMAX=MAX(NOBSMAX,NOBS(IJ))
                   ENDIF
                 ENDIF
               ENDIF
@@ -152,8 +152,10 @@
         WRITE(*,*) 'IN OIFIELD : THE MAXIMUM NUMBER OF OBSERVATIONS'
         WRITE(*,*) '             INFLUENCING A POINT WAS RESET !!!'
         WRITE(*,*) 'IF THAT HAPPEN OFTEN, YOU SHOULD CHANGE NDIM2 !!'
+        WRITE(*,*) 'IRANK = ',IRANK
         WRITE(*,*) 'NDIM2 = ',NDIM2
         WRITE(*,*) 'LMAX = ',LMAX
+        WRITE(*,*) 'NOBSMAX = ',NOBSMAX
         WRITE(*,*) ''
         WRITE(IU06,*) ''
         WRITE(IU06,*) 'IN OIFIELD : THE MAXIMUM NUMBER OF OBSERVATIONS'
@@ -161,6 +163,7 @@
         WRITE(IU06,*) 'IF THAT HAPPEN OFTEN, YOU SHOULD CHANGE NDIM2 !!'
         WRITE(IU06,*) 'NDIM2 = ',NDIM2
         WRITE(IU06,*) 'LMAX = ',LMAX
+        WRITE(IU06,*) 'NOBSMAX = ',NOBSMAX
         WRITE(IU06,*) ''
         CALL FLUSH(IU06)
         NDIM2=MIN(2*NDIM2,NOBSPE(IRANK))

@@ -67,15 +67,17 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
+     &            BFG      ,PFG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN    ,
-     &            P1MEAN   ,P2MEAN   ,SPRDMEAN
+     &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,BFMEAN   ,
+     &            PFMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
@@ -257,6 +259,30 @@
      &      CALL MAKEGRID (TEMP,  WSPRDG, 1, NEND(NPROC), IG, LSQRT)
           ENDIF
 
+          IF(IPFGTBL(34).NE.0) THEN
+            CALL LOC2GLO(C4MEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(34),34,NSTART,NEND,TEMP)
+            IF(IPFGTBL(34).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP, C4G, 1, NEND(NPROC), IG, LSQRT)
+          ENDIF
+
+          IF(IPFGTBL(35).NE.0) THEN
+            CALL LOC2GLO(BFMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(35),35,NSTART,NEND,TEMP)
+            IF(IPFGTBL(35).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP, BFG, 1, NEND(NPROC), IG, LSQRT)
+          ENDIF
+
+          IF(IPFGTBL(36).NE.0) THEN
+            CALL LOC2GLO(PFMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(36),36,NSTART,NEND,TEMP)
+            IF(IPFGTBL(36).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP, PFG, 1, NEND(NPROC), IG, LSQRT)
+          ENDIF
+
         ELSE
 
           IF(IPFGTBL(1).NE.0) THEN
@@ -364,7 +390,25 @@
           IF(IPFGTBL(27).NE.0) THEN
             CALL LOC2GLO(SPRDMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
-            CALL MAKEGRID (TEMP,  WSPRDG, IJS, IJL, IG, LSQRT)
+            CALL MAKEGRID (TEMP, WSPRDG, IJS, IJL, IG, LSQRT)
+          ENDIF
+
+          IF(IPFGTBL(34).NE.0) THEN
+            CALL LOC2GLO(C4MEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP, C4G, IJS, IJL, IG, LSQRT)
+          ENDIF
+
+          IF(IPFGTBL(35).NE.0) THEN
+            CALL LOC2GLO(BFMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,  BFG, IJS, IJL, IG, LSQRT)
+          ENDIF
+
+          IF(IPFGTBL(36).NE.0) THEN
+            CALL LOC2GLO(PFMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP, PFG, IJS, IJL, IG, LSQRT)
           ENDIF
 
         ENDIF

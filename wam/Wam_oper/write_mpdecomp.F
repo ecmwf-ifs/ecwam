@@ -7,6 +7,8 @@
 !**** *WRITE_MPDECOMP* - WRITES AN ASCII TEXT FILE TO PLOT
 !                        THE MODEL DECOMPOSITION FOR A GIVEN
 !                        NUMBER OF PE and other stats etc..
+!                        there is also a file which contains the water
+!                        depth for each grid point.
 
 !**   INTERFACE.
 !     ----------
@@ -61,6 +63,7 @@
      &            NPRECI
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
      &            LL1D
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2
@@ -186,6 +189,29 @@
       WRITE(IUOUT,'(a11)') '#FORMAT LLV'
       WRITE(IUOUT,'(a5)') '#DATA'
 
+      FILENAME='grid_point_depth_'
+      WRITE (FILENAME(18:21),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(22:22)='.'
+        WRITE (FILENAME(23:26),'(I4.4)') IRANK
+      ENDIF
+      IUDPT=11
+      OPEN(IUDPT,FILE=FILENAME,FORM='FORMATTED')
+
+      WRITE(IUDPT,'(a4)') '#GEO'
+      WRITE(IUDPT,'(a11)') '#FORMAT LLV'
+      WRITE(IUDPT,'(a5)') '#DATA'
+
+
+      FILENAME='subarea_depth_'
+      WRITE (FILENAME(15:18),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(19:19)='.'
+        WRITE (FILENAME(20:23),'(I4.4)') IRANK
+      ENDIF
+      IUSPT=12
+      OPEN(IUSPT,FILE=FILENAME,FORM='FORMATTED')
+
       IG=1
       IPROC=0
 
@@ -210,14 +236,35 @@
 
           IF(LLALLPTS) THEN
             WRITE(IUOUT,'(2(1X,F8.3),1X,I4)') XLON,XLAT,isymbol
+            WRITE(IUDPT,'(2(1X,F8.3),1X,I4)')XLON,XLAT,NINT(DEPTH(IJ,1))
+
+! subareas for which I need the depth as in WAM
+!           lake Lagoda area
+            if(( 30.0.le.xlon .and. xlon.le.37.0 .and.
+     &           60.0.le.xlat .and. xlat.le.63.0 )    .or.
+!           Caspian Sea
+     &         ( 46.0.le.xlon .and. xlon.le.55.0 .and.
+     &           36.0.le.xlat .and. xlat.le.47.0 )    .or.
+!           US Great Lakes
+     &         (268.0.le.xlon .and. xlon.le.284.0 .and.
+     &           41.0.le.xlat. and. xlat.le. 49.0 ) ) then
+
+              WRITE(IUSPT,'(2(1X,F8.3),1X,3(1X,I4))')
+     &              XLON,XLAT,IX,JSN,NINT(DEPTH(IJ,1))
+            endif
           ELSE
-            IF(LLBOUND(IJ))
-     &        WRITE(IUOUT,'(2(1X,F8.3),1X,I4)') XLON,XLAT,isymbol
+            IF(LLBOUND(IJ)) THEN
+              WRITE(IUOUT,'(2(1X,F8.3),1X,I4)')XLON,XLAT,isymbol
+              WRITE(IUDPT,'(2(1X,F8.3),1X,I4)')
+     &              XLON,XLAT,NINT(DEPTH(IJ,1))
+            ENDIF
           ENDIF
         ENDDO
       ENDDO
 
       CLOSE(IUOUT)
+      CLOSE(IUDPT)
+      CLOSE(IUSPT)
 
       DO IPROC=1,NPROC
         DO IJ=NSTART(IPROC),NEND(IPROC)

@@ -1,6 +1,6 @@
       SUBROUTINE READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &                    CDATE, RLAT, RLON, IDES_HS, SWH,
-     &                    IDES_WS, WS, FLAGGED, EOFD)
+     &                    IDES_WS, WS, EOFD)
 
 !--------------------------------------------------------------------
 
@@ -11,8 +11,8 @@
 !     PURPOSE.
 !     --------
 
-!       ACCESS ERS1 FLAGGED DATA FILES AND
-!       READ ONE MEASUREMENT.
+!       ACCESS RADAR ALTIMETER REDUCED QUALITY-CONTROL PASSED
+!       DATA FILE (QCPYYYYMMDDHH0000) AND READ ONE MEASUREMENT.
 
 !**   INTERFACE.
 !     ----------
@@ -30,7 +30,6 @@
 !          *SWH*      - WAVE HEIGHT.
 !          *IDES_WS*  - DATA DESCRIPTOR FOR WIND SPEED.
 !          *WS*       - WIND SPEED.
-!          *FLAGGED*  - DATA QC-FLAG (.F.: PASSEDQC, .T.:REJECTED BY QC)
 !          *EOFD*     - END OF DATA. (.TRUE. , .FALSE.)
 
 !     METHOD.
@@ -55,23 +54,23 @@
 
 !        JULY 1998 : changed to 12 digit DATE/TIME group
 
+!        FEB 2003: JEAN BIDLOT
+!                  ALLOW MORE THAN ONE ALTIMETER
+
+!        JUL 2003: SALEH ABDALLA
+!                  CHANGE INPUT FILE FROM FLAGGED ALTIMETER DATA (RFL)
+!                  TO REDUCED QUALITY-CONTROL PASSED DATA (QCP)
+
 !-----------------------------------------------------------------------
 
-! make sure that the size of the arrays are consistent with what is used
-! in the altiemter data preprocessing
-#include <parameters.h>
-
-      REAL pvalu(jpelem)
-      INTEGER iflag(jpflan)
-
-      CHARACTER* 3 yofid
+      CHARACTER* 3 YOFID
       CHARACTER*12 CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
       CHARACTER*14 CDATE
       PARAMETER(ZERO=' ')
-      LOGICAL EOFD, FLAGGED, LLTEST
+      LOGICAL EOFD, LLTEST
       LOGICAL:: LLONG=.TRUE.
 
-      DATA yofid /'RFL'/
+      DATA YOFID /'QCP'/
       DATA CDTGEO, CDTGE1 /ZERO, ZERO/
 
 ! ----------------------------------------------------------------------
@@ -112,7 +111,7 @@
           RETURN
         ENDIF
         EOFD = .FALSE.
-        READ (iume,END=4000) ctime
+        READ (IUME,END=4000) CTIME
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -120,49 +119,31 @@
 !*    3. READ THE MEASUREMENT.
 !        ---------------------
 
-      IF (LLONG) THEN
-        READ(IUME,END=4000,IOSTAT=IRS) CDATE,
-     &                                (pvalu(j),j=1,jpelem),
-     &                                (iflag(j),j=1,jpflan)
-        IF (IRS /= 0 ) THEN
-          PVALU=1.7E38
-          BACKSPACE (IUME)
-          READ(IUME,END=4000,IOSTAT=JRS) CDATE,
-     &                                  (pvalu(j),j=1,28),
-     &                                  (iflag(j),j=1,jpflan)
-          LLONG = .FALSE.
-          IF (JRS /= 0 ) THEN
-            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
-            WRITE(IU06,*) ' +                               +'
-            WRITE(IU06,*) ' +    ERROR IN --READSAT--       +'
-            WRITE(IU06,*) ' +    ==================         +'
-            WRITE(IU06,*) ' +                               +'
-            WRITE(IU06,*) ' +  INPUT DATA FORMAT UNKNOWN    +'
-            WRITE(IU06,*) ' +  JRS = ',JRS 
-            WRITE(IU06,*) ' +  PROGRAM WILL ABORT           +'
-            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
-            CALL ABORT1
-          ENDIF
+3000  CONTINUE
+      READ(IUME,END=4000,IOSTAT=IRS) CDATE,
+     &                               IDENTI, ISENSOR,
+     &                               RLAT, RLON,
+     &                               IDES_WS, WS,
+     &                               IDES_HS, SWH
+      IF (IRS /= 0 ) THEN
+        BACKSPACE (IUME)
+        READ(IUME,END=4000,IOSTAT=JRS) CTIME
+        IF (JRS /= 0 ) THEN
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' +                               +'
+          WRITE(IU06,*) ' +    ERROR IN --READSAT--       +'
+          WRITE(IU06,*) ' +    ==================         +'
+          WRITE(IU06,*) ' +                               +'
+          WRITE(IU06,*) ' +  INPUT DATA FORMAT UNKNOWN    +'
+          WRITE(IU06,*) ' +  IRS = ',IRS 
+          WRITE(IU06,*) ' +  PROGRAM WILL ABORT           +'
+          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
+          CALL ABORT1
+        ELSE
+!         THERE IS MORE THAN ONE ALTIMETER
+          GOTO 3000
         ENDIF
-      ELSE
-        READ(IUME,END=4000           ) CDATE,
-     &                                (pvalu(j),j=1,28),
-     &                                (iflag(j),j=1,jpflan)
       ENDIF
-
-      identi = INT(pvalu(1))
-      isensor = INT(pvalu(3))
-      rlat = pvalu(10)
-      rlon = pvalu(11)
-      ides_ws = 11012
-      ws   = pvalu(13)
-      ides_hs = 22021
-      swh  = pvalu(15)
-      ifl=0
-      DO j=1,jpflan
-        ifl=ifl+iflag(j)
-      ENDDO
-      IF ( ifl .EQ. 0 ) flagged = .FALSE.
 
       RETURN
 

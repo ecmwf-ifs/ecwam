@@ -1,5 +1,6 @@
       SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, FLDIN,
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
+     &                     IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                     RLONRGG, FLDOUT,  
      &                     LLINTERPOL,
@@ -28,6 +29,7 @@
 
 !      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FLDIN,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
+!    &                    IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    RLONRGG, FLDOUT, LLINTERPOL,
 !    &                    DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
@@ -47,6 +49,12 @@
 !        *KLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (OUTPUT FIELD)
 !        *XDELLA* - GRID POINT SPACING BETWEEN LATITUDES.
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
+!        *IXLG*   - INTEGER  LONG. GRID INDEX.
+!        *KXLT*   - INTEGER  LAT. GRID INDEX.
+!        *NIBLO*  - FIRST DIMENSION OF IXLG AND KXLT.
+!        *IGL*    - SECOND DIMENSION OF IXLG AND KXLT.
+!        *KINF*   - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
+!        *KSUP*   - LARGEST WAM GRID POINT INDEX USED BY THE PE.
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
 !        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
@@ -70,7 +78,8 @@
 
       INTEGER KLONRGG(NGY)
 
-      INTEGER NGPTOTG, NC, NR
+      INTEGER NGPTOTG, NC, NR, NIBLO, IGL, KINF, KSUP
+      INTEGER, DIMENSION(NIBLO,IGL) :: IXLG, KXLT
       INTEGER RLONRGG(NR)
       REAL FLDIN(NGPTOTG)
       LOGICAL LLINTERPOL
@@ -140,19 +149,17 @@
           ENDDO
         ENDIF
 
-        DO K=1,NGY                                                
+        DO IG=1,IGL
+          DO IJ = KINF,KSUP
+            I = IXLG(IJ,IG)
+            K = NGY-KXLT(IJ,IG) + 1
 
-          JSN=NGY-K+1
-
-          KK = KKM(K)
-          KSN= NR-KK+1
-          KK1= MIN(KK+1,NR)
-          KSN1=NR-KK1+1
-          DK1= DK1M(K) 
-          DK2=1.-DK1
-
-
-          DO I=1,KLONRGG(JSN)
+            KK = KKM(K)
+            KSN= NR-KK+1
+            KK1= MIN(KK+1,NR)
+            KSN1=NR-KK1+1
+            DK1= DK1M(K) 
+            DK2=1.-DK1
 
             II = IIM(I,K)
             II1 = MIN(II+1,RLONRGG(KSN)+IPERIODIC)

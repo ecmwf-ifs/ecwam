@@ -79,7 +79,8 @@
 
 !-----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : NIJALT   ,NALTDT   ,IJALT    ,ALTDATA 
+      USE YOWALTAS , ONLY : NUMALT, NIJALT   ,NALTDT   ,IJALT    ,
+     &              ALTDATA,IBUFRSAT 
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,AMOWEP   ,
      &            AMOSOP   ,XDELLA   ,ZDELLO
@@ -91,10 +92,15 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: NUMBWH, NR
-      REAL, ALLOCATABLE, DIMENSION(:,:) ::  WHME, WHSE
+      INTEGER, DIMENSION(NUMALT) :: ICOUNT, ICOUNTT, ICOUNTD,
+     &                              ICOUNTB, ICOUNTQCF,
+     &                              ICOUNTBL, IOLD, JOLD
+      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: NUMBWH, NR
+      REAL, DIMENSION(NUMALT) :: SWHO
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) ::  WHME, WHSE
       CHARACTER*12 CBEGINDT, CENDDT
-      CHARACTER*14 CDATE,CDATEO
+      CHARACTER*14 CDATE
+      CHARACTER*14 :: CDATEO(NUMALT)
       LOGICAL EOFD
 
 !*     VARIABLE     TYPE     PURPOSE.
@@ -121,7 +127,7 @@
       CHARACTER (LEN=12),ALLOCATABLE :: CDATESTART(:), CDATEEND(:)
 
       LOGICAL :: LLBLEXIST
-      LOGICAL flagged, opened
+      LOGICAL :: OPENED
 
 ! ----------------------------------------------------------------------
 
@@ -154,32 +160,35 @@
 !*    2. INITIALIZE ARRAYS, counters and units.
 !        --------------------------------------
 
-      ICOUNT=0
-      ICOUNTT=0
-      ICOUNTD=0
-      icountf=0
-      icountb=0
-      icountqcf=0
-      icountbl=0
-      ALLOCATE(WHME(NGX,NGY))
-      ALLOCATE(WHSE(NGX,NGY))
-      ALLOCATE(NUMBWH(NGX,NGY))
-      ALLOCATE(NR(NGX,NGY))
-      DO J=1,NGY
-        DO I=1,NGX
-          WHME(I,J) = 0.
-          WHSE(I,J) = 0.
-          NUMBWH(I,J) = 0
-          NR(I,J)=0
+      ALLOCATE(WHME(NGX,NGY,NUMALT))
+      ALLOCATE(WHSE(NGX,NGY,NUMALT))
+      ALLOCATE(NUMBWH(NGX,NGY,NUMALT))
+      ALLOCATE(NR(NGX,NGY,NUMALT))
+
+      DO ISAT=1,NUMALT
+        DO J=1,NGY
+          DO I=1,NGX
+            WHME(I,J,ISAT) = 0.
+            WHSE(I,J,ISAT) = 0.
+            NUMBWH(I,J,ISAT) = 0
+            NR(I,J,ISAT)=0
+          ENDDO
         ENDDO
+        ICOUNT(ISAT)=0
+        ICOUNTT(ISAT)=0
+        ICOUNTD(ISAT)=0
+        ICOUNTB(ISAT)=0
+        ICOUNTQCF(ISAT)=0
+        ICOUNTBL(ISAT)=0
+        IOLD(ISAT) = 0
+        JOLD(ISAT) = 0
+        IBUFRSAT(ISAT)=0 
+        CDATEO(ISAT) = CBEGINDT(1:12)//'00'
       ENDDO
 
-      IOLD = 0
-      JOLD = 0
-      CDATEO = CBEGINDT(1:12)//'00'
 
-      DO iume=33,99,1
-        INQUIRE ( UNIT=iume, OPENED=opened)
+      DO IUME=33,99,1
+        INQUIRE ( UNIT=IUME, OPENED=opened)
         IF ( .NOT. opened) THEN
           WRITE(iu06,*)
      &     ' GRDATA : TAKES UNIT ',iume,' AS ALTIMETER DATA INPUT UNIT'
@@ -266,30 +275,47 @@
 !        ---------------------------------------------------------------
 
  3000 CONTINUE
-      flagged = .TRUE.
-      CALL READSAT (IU06, iume, CDTPRO, IDENTI, ISENSOR,
+      CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &              CDATE, RLAT, RLON, IDES_HS, SWH,
-     &              IDES_WS, WS, flagged, EOFD)
-!!! note this will need to be adapted when there is more than one 
-!!! satellite
+     &              IDES_WS, WS, EOFD)
+
+      IF(ITEST.GE.2)
+     & WRITE(IU06,'(A,A,2I6,2(I6,F6.2))') 
+     &  'READSAT READ: ', CDATE,IDENTI,ISENSOR,
+     &  IDES_WS, WS, IDES_HS, SWH
+!     which satellite is it
+      DO ISAT=1,NUMALT
+        IF(IBUFRSAT(ISAT).EQ.0) THEN
+          IF(ITEST.GE.1)
+     &      WRITE(IU06,*) 'NEW SATELLITE DETECTED WITH ID ', IDENTI
+          IBUFRSAT(ISAT)=IDENTI
+          KSAT=ISAT
+          EXIT
+        ENDIF
+        IF(IBUFRSAT(ISAT).EQ.IDENTI) THEN
+          KSAT=ISAT
+          EXIT
+        ENDIF
+      ENDDO
+      IF(ISAT.GT.NUMALT) THEN
+        WRITE(IU06,*) ' GRDATA : WARNING MORE SATELLITE IN INPUT'
+        WRITE(IU06,*) '          THAN ALLOWED BY NUMALT !!!! '
+        WRITE(IU06,*) '          THE SATELLITE IS ',IDENTI
+        WRITE(IU06,*) '          NEW DATA WILL NOT BE ALLOWED IN ' 
+        GOTO 3000
+      ENDIF
+
       IF (EOFD) GOTO 4000
-      ICOUNTD = ICOUNTD+1
+      ICOUNTD(KSAT) = ICOUNTD(KSAT)+1
 
 !     CHECK DATE.
 
       IF (CDATE(1:12).LT.CBEGINDT)  then
-        icountb = icountb + 1
+        ICOUNTB(KSAT) = ICOUNTB(KSAT) + 1
         GOTO 3000
-      endif
+      ENDIF
 
       IF (CDATE(1:12).LE.CENDDT) THEN
-
-!     CHECK QUALITY.
-
-        IF (flagged) THEN
-          icountf=icountf+1
-          GOTO 3000
-        ENDIF
 
 !       BLACKLISTING
 
@@ -308,7 +334,7 @@
      &        ) THEN
               DX = MOD(RLON-LONGMI(IBL)+720.,360.)
               IF(DX.LE.DLON(IBL)) THEN
-                icountbl=icountbl+1
+                ICOUNTBL(KSAT)=ICOUNTBL(KSAT)+1
                 GOTO 3000
               ENDIF
             ENDIF
@@ -318,7 +344,7 @@
 !       DATE IS INSIDE THE TIME WINDOW AND RECORD FLAGGED AS RELIABLE.
 !       THE INDICES ARE COMPUTED
 
-        ICOUNTT = ICOUNTT+1
+        ICOUNTT(KSAT) = ICOUNTT(KSAT)+1
         J       = NGY-NINT((RLAT-AMOSOP)/XDELLA)
         XI      = MOD(RLON-AMOWEP+720.,360.)
 
@@ -328,52 +354,52 @@
         I       = NINT(XI/ZDELLO(JSN)) + 1
         IF (IPER.EQ.1.AND.I.EQ.NRGG+1) I = 1
 
-!     IF THE INDICES ARE INSIDE THE GRID THE MEASUREMENT IS CUMULATED
+!       IF THE INDICES ARE INSIDE THE GRID THE MEASUREMENT IS CUMULATED
 
         IF((I.LE.NRGG).AND.(I.GE.1) .AND. (J.LE.NGY).AND.(J.GE.1)) THEN
 
-          ICOUNT=ICOUNT+1
-          IF (I.NE.IOLD .OR. J.NE.JOLD) THEN
+          ICOUNT(KSAT)=ICOUNT(KSAT)+1
+          IF (I.NE.IOLD(KSAT) .OR. J.NE.JOLD(KSAT)) THEN
 
 !               NEW BOX
 
-            CALL DIFDATE(CDATEO,CDATE,ISHIFT)
-            IF (ISHIFT.LT.3.AND.ICOUNT.GT.1) THEN
-              IF (SWH-SWHO.gt.2.0) THEN
-                NR(I,J)=NR(I,J)+1
+            CALL DIFDATE(CDATEO(KSAT),CDATE,ISHIFT)
+            IF (ISHIFT.LT.3.AND.ICOUNT(KSAT).GT.1) THEN
+              IF (SWH-SWHO(KSAT).GT.2.0) THEN
+                NR(I,J,KSAT)=NR(I,J,KSAT)+1
                 GO TO 3000
               ENDIF
             ENDIF
-            IOLD = I
-            JOLD = J
-            SWHO = SWH
+            IOLD(KSAT) = I
+            JOLD(KSAT) = J
+            SWHO(KSAT) = SWH
           ELSE
 
-!     SUDDEN POSITVE STEPS ARE REFUSED.
+!       SUDDEN POSITVE STEPS ARE REFUSED.
 
-            IF (SWH-SWHO.GT.1.0) THEN
-              NR(I,J) = NR(I,J)+1
+            IF (SWH-SWHO(KSAT).GT.1.0) THEN
+              NR(I,J,KSAT) = NR(I,J,KSAT)+1
               GO TO 3000
             ENDIF
           ENDIF
 
           IF (SWH.GE.0.) THEN
-            WHME(I,J) = WHME(I,J) + SWH
-            WHSE (I,J) = WHSE(I,J) + SWH**2
-            NUMBWH(I,J) = NUMBWH(I,J) + 1
+            WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
+            WHSE (I,J,KSAT) = WHSE(I,J,KSAT) + SWH**2
+            NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
           ENDIF
 
-!     A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
+!       A PREVIOUS SUDDEN NEGATIVE STEP IS COMPENSATED.
 
-          IF (SWHO-SWH.GT.2.0) then
-            NR(I,J) = NR(I,J)+1
-            WHME(I,J) = WHME(I,J) - SWHO
-            WHSE (I,J) = WHSE(I,J) - SWHO**2
-            NUMBWH(I,J) = NUMBWH(I,J) - 1
+          IF (SWHO(KSAT)-SWH.GT.2.0) THEN
+            NR(I,J,KSAT) = NR(I,J,KSAT)+1
+            WHME(I,J,KSAT) = WHME(I,J,KSAT) - SWHO(KSAT)
+            WHSE (I,J,KSAT) = WHSE(I,J,KSAT) - SWHO(KSAT)**2
+            NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) - 1
           ENDIF
 
-          SWHO = SWH
-          CDATEO = CDATE
+          SWHO(KSAT) = SWH
+          CDATEO(KSAT) = CDATE
         ENDIF
 !*
 
@@ -388,89 +414,87 @@
 !        ------------------------------------------------------------
 
  4000 CONTINUE
-      nuwh=0
-      DO j2=1,ngy
-        j2sn = ngy-j2+1     
-        DO j1=1,nlonrgg(j2sn)
-          nuwh=nuwh+numbwh(j1,j2)
-        ENDDO
-      ENDDO
 
-      WRITE (IU06,'(" GRDATA: INPUT STATISTICS:")')
-      WRITE (IU06,'("         NUMBER OF RECORDS READ FROM DATA FILE IS",
-     &              "......:", I8)') ICOUNTD
-      WRITE (IU06,'("         THEREOF NUMBER OF RECORDS WITH FLAGS IS ",
-     &              "......:", I8)') ICOUNTF
-      WRITE (IU06,'("         THEREOF NUMBER OF BLACKLISTED RECORDS IS",
-     &              "......:", I8)') ICOUNTBL
-      WRITE (IU06,'("         NUMBER OF DATA IN SELECTED PERIOD IS ...",
-     &              "......:", I8)') ICOUNTT
-      WRITE (IU06,'("         NUMBER OF DATA BEFORE SELECTED PERIOD IS",
-     &              "......:", I8)') ICOUNTB
-      WRITE (IU06,'("         NUMBER OF DATA IN BOXES AROUND SEA POINT",
-     &              "S IS..:", I8)') ICOUNT
-      WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE LAND IS.......",
-     &              "......:", I8)') ICOUNTQCF
-      WRITE (iu06,'("         NUMBER OF DATA ACCEPTED BY ''GRDATA'' IS",
-     &              " FOR wh :", I8)') nuwh
+      NWH = 0
 
-      DO J=1,NGY
-        JSN = NGY-J+1
-        DO I=1,NLONRGG(JSN)
-          NN = NUMBWH(I,J)
-          IF (NN.GE.NNMIN) THEN
+      DO ISAT=1,NUMALT
+        IF(IBUFRSAT(ISAT).NE.0) THEN
+          NUWH=0
+          DO J2=1,NGY
+            J2SN = NGY-J2+1     
+            DO J1=1,NLONRGG(J2SN)
+              NUWH=NUWH+NUMBWH(J1,J2,ISAT)
+            ENDDO
+          ENDDO
 
-!           MEAN VALUES
+          WRITE (IU06,'(" GRDATA: INPUT STATISTICS:")')
+          WRITE (IU06,'("         THE SATELLITE IS",
+     &                  " ......:", I8)') IBUFRSAT(ISAT)
+          WRITE (IU06,'("         NUMBER OF RECORDS READ FROM DATA ",
+     &                  "FILE IS ......:", I8)') ICOUNTD(ISAT)
+          WRITE (IU06,'("         THEREOF NUMBER OF BLACKLISTED ",
+     &                  "RECORDS IS ......:", I8)') ICOUNTBL(ISAT)
+          WRITE (IU06,'("         NUMBER OF DATA IN SELECTED PERIOD ",
+     &                  "IS ..........:", I8)') ICOUNTT(ISAT)
+          WRITE (IU06,'("         NUMBER OF DATA BEFORE SELECTED ",
+     &                  "PERIOD IS .....:", I8)') ICOUNTB(ISAT)
+          WRITE (IU06,'("         NUMBER OF DATA IN BOXES AROUND ",
+     &                  "SEA POINTS IS ..:", I8)') ICOUNT(ISAT)
+          WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE LAND IS ",
+     &                  ".............:", I8)') ICOUNTQCF(ISAT)
+          WRITE (iu06,'("         NUMBER OF DATA ACCEPTED BY ",
+     &                  "''GRDATA'' IS FOR HS :", I8)') NUWH
 
-            WHME(I,J) = WHME(I,J)/REAL(NN)
-
-!           COMPUTE THE STANDARD DEVIATION.
-
-            WHSE2 =  (WHSE(I,J)-WHME(I,J)**2*REAL(NN))
-     &       / (REAL(NN)-1.)
-            WHSE(I,J) = SQRT( MAX(WHSE2,0.))
-          ENDIF
-        ENDDO
-      ENDDO
+          DO J=1,NGY
+            JSN = NGY-J+1
+            DO I=1,NLONRGG(JSN)
+              NN = NUMBWH(I,J,ISAT)
+              IF (NN.GE.NNMIN) THEN
+!               MEAN VALUES
+                WHME(I,J,ISAT) = WHME(I,J,ISAT)/REAL(NN)
+!               COMPUTE THE STANDARD DEVIATION.
+                WHSE2 =  (WHSE(I,J,ISAT)-WHME(I,J,ISAT)**2*REAL(NN))
+     &                   / (REAL(NN)-1.)
+                WHSE(I,J,ISAT) = SQRT( MAX(WHSE2,0.))
+              ENDIF
+            ENDDO
+          ENDDO
 
 ! ----------------------------------------------------------------------
 
 !*    5. FLAG GRID POINTS, IF THERE ARE FEW OR STRONGLY SCATTERED DATA.
 !        --------------------------------------------------------------
 
-!     ONLY KEEP THE RELEVANT INFORMATION
-!     ALL DATA THAT ARE NOT OVER SEA ARE DISCARDED HERE !
+!         ONLY KEEP THE RELEVANT INFORMATION
+!         ALL DATA THAT ARE NOT OVER SEA ARE DISCARDED HERE !
 
-      NWH = 0
-      DO IJ = NSTART(1), NEND(NPROC)
-        I = IXLG(IJ,1)
-        J = NGY- KXLT(IJ,1) +1
-        NN = NUMBWH(I,J)
-        IF (NN.EQ.0) THEN
+          DO IJ = NSTART(1), NEND(NPROC)
+            I = IXLG(IJ,1)
+            J = NGY- KXLT(IJ,1) +1
+            NN = NUMBWH(I,J,ISAT)
+            IF (NN.EQ.0) THEN
+!             IF THERE ARE NO MEASUREMENTS
+              WHME(I,J,ISAT)=-3.
+            ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
+!             IF THERE ARE FEW MEASUREMENTS.
+              WHME(I,J,ISAT)=-2.
+            ELSEIF (NN.GE.NNMIN) THEN
+!             IF THE VARIANCE IS TOO LARGE.
+!             OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
+              XX = REAL(NR(I,J,ISAT))/REAL(NN)
+              RFWM = MAX(0.5,0.25*WHME(I,J,ISAT))
+              IF (WHSE(I,J,ISAT).GT.RFWM .OR.
+     &            WHME(I,J,ISAT).LT.0.50 .OR.
+     &            XX.GT.0.1) THEN
+                WHME(I,J,ISAT) = -WHME(I,J,ISAT)
+              ELSE
+                NWH = NWH+1
+              ENDIF
+            ENDIF
+          ENDDO
 
-!         IF THERE ARE NO MEASUREMENTS
-
-          WHME(I,J)=-3.
-        ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
-
-!         IF THERE ARE FEW MEASUREMENTS.
-
-          WHME(I,J)=-2.
-        ELSEIF (NN.GE.NNMIN) THEN
-
-!         IF THE VARIANCE IS TOO LARGE.
-!         OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
-
-          XX = REAL(NR(I,J))/REAL(NN)
-          RFWM = MAX(0.5,0.25*WHME(I,J))
-          IF (WHSE(I,J).GT.RFWM .OR. WHME(I,J).LT.0.50 .OR.
-     &     XX.GT.0.1) THEN
-            WHME(I,J) = -WHME(i,j)
-          ELSE
-            NWH = NWH+1
-          ENDIF
         ENDIF
-      ENDDO
+      ENDDO  ! ON ISAT
 
 !*
       DEALLOCATE(WHSE)
@@ -482,14 +506,18 @@
         ALLOCATE(ALTDATA(NWH,NALTDT))
 
         IOBS=0
-        DO IJ = NSTART(1), NEND(NPROC)
-          IX = IXLG(IJ,1)
-          IY = NGY- KXLT(IJ,1) +1
-          IF(WHME(IX,IY) .GT. 0. ) THEN
-            IOBS=IOBS+1
-            ALTDATA(IOBS,1) = WHME(IX,IY)
-            IJALT(IOBS,1) = IJ
-            IJALT(IOBS,2) = IDENTI 
+        DO ISAT=1,NUMALT
+          IF(IBUFRSAT(ISAT).NE.0) THEN
+            DO IJ = NSTART(1), NEND(NPROC)
+              IX = IXLG(IJ,1)
+              IY = NGY- KXLT(IJ,1) +1
+              IF(WHME(IX,IY,ISAT) .GT. 0. ) THEN
+                IOBS=IOBS+1
+                ALTDATA(IOBS,1) = WHME(IX,IY,ISAT)
+                IJALT(IOBS,1) = IJ
+                IJALT(IOBS,2) = IBUFRSAT(ISAT)
+              ENDIF
+            ENDDO
           ENDIF
         ENDDO
       ENDIF

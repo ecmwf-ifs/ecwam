@@ -1,6 +1,7 @@
-
       SUBROUTINE READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, 
-     &                     ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND)
+     &                     ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
+     &                     KINF, KSUP,
+     &                     IUNIT1, FILNM, FRSTIME )
 
 !***  *READWIND* - PROGRAM TO REFORMAT WIND FIELDS FROM MARS 
 !                 EITHER FROM A FILE OR 
@@ -55,7 +56,9 @@
 !     ---------                                                         
 
 !     *CALL* *READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, 
-!    &                  ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND)*
+!    &                  ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
+!    &                  KINF, KSUP,
+!    &                  IUNIT1, FILNM, FRSTIME )*
 !
 !        *CDTWIR* - DATE/TIME OF THE DATA READ                          
 !        *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
@@ -77,6 +80,11 @@
 !                    ELSE THE DATA WILL BE SUPPLIED VIA  "FIELDS"
 !        *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND THE UNIT 
 !                    RESET
+!        *KINF*   - SMALLEST WAM GRID POINT INDEX USED BY THE PE 
+!        *KSUP*   - LARGEST WAM GRID POINT INDEX USED BY THE PE 
+!        *IUNIT1*   UNIT OF OPEN INPUT FILE
+!        *FILNM*    FILENAME OF INPUT FILE
+!        *FRSTIME*  TRUE IF THE INPUT FILE HAS TO BE OPEN
 
 !     EXTERNALS                                                         
 !     ---------                                                         
@@ -96,11 +104,12 @@
 
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
-      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,SWAMPWIND,CLDOMAIN ,
-     &            SWAMPWIND2,DTNEWWIND,LTURN90
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     ,
+     &            KXLT
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
@@ -133,11 +142,9 @@
       LOGICAL FRSTMATM
       REAL, ALLOCATABLE :: AirDenLocal (:)
 
-      DATA FRSTIME / .TRUE. /
       DATA FRSTMATM / .TRUE. /
-      SAVE IUNIT1, IPERIODIC
-      SAVE FRSTIME, FRSTMATM
-
+      SAVE IPERIODIC
+      SAVE FRSTMATM
 ! --------------------------------------------------------------------  
 
 !     for the swamp case create your own wind fields
@@ -273,6 +280,8 @@
 
           IF (IPARAM.EQ.165 .OR. IPARAM.EQ.166) THEN
             ICODE = 3
+          ELSEIF (IPARAM.EQ.33 .OR. IPARAM.EQ.34) THEN
+            ICODE = 3
           ELSEIF (IPARAM.EQ.180 .OR. IPARAM.EQ.181) THEN
             ICODE = 2
           ELSE
@@ -330,23 +339,6 @@
                                                                         
         DEALLOCATE(KGRIB)
 
-        IF (LCLOSEWND) THEN
-          CALL PBCLOSE(IUNIT1,KRET)
-          IF(KRET.LT.0) THEN
-            WRITE (IU06,*) '****************************************'
-            WRITE (IU06,*) '*                                      *'
-            WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE     *'
-            WRITE (IU06,*) '*  IN READWIND                         *'
-            WRITE (IU06,*) '*                                      *'
-            WRITE (IU06,*) '****************************************'
-            CALL FLUSH(IU06)
-            CALL ABORT1
-          ENDIF
-          FRSTIME = .TRUE.
-          IF (ITEST.GT.1)
-     &     WRITE(IU06,*) ' SUB. READWIND - PBCLOSE ON ',FILNM
-        ENDIF  
-
       ELSE
 
 
@@ -403,27 +395,7 @@
           ENDIF
         ENDIF
      
-        IWPER = 1
-        ICOORD = 1
-
-        IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NGX,NGY)) 
-        IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NGX,NGY))
-        IF(.NOT.ALLOCATED(AIRD)) ALLOCATE(AIRD(NGX,NGY))
-        IF(.NOT.ALLOCATED(PZIDL)) ALLOCATE(PZIDL(NGX,NGY))
-
-        CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,1), 
-     &                 NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                 AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                 RLONRGG, UWND, 
-     &                 LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
-
-        CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,2),
-     &                 NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                 AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                 RLONRGG, VWND,
-     &                 LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
-
-!       computation of the norms of input fields
+!       COMPUTATION OF THE NORMS OF INPUT FIELDS
         WRITE(IU06,*) ' NORM OF INPUT ATMOSPHERIC FIELDS : ' 
         DO IFLD=1,NFIELDS
           FAVG(IFLD)=0.
@@ -439,6 +411,28 @@
         ENDDO
         WRITE(IU06,*) ' '
         IF(ITEST.GT.0) CALL FLUSH(IU06)
+
+        IWPER = 1
+        ICOORD = 1
+
+        IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NGX,NGY)) 
+        IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NGX,NGY))
+        IF(.NOT.ALLOCATED(AIRD)) ALLOCATE(AIRD(NGX,NGY))
+        IF(.NOT.ALLOCATED(PZIDL)) ALLOCATE(PZIDL(NGX,NGY))
+
+        CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,1), 
+     &                 NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                 IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
+     &                 AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
+     &                 RLONRGG, UWND, 
+     &                 LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
+
+        CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,2),
+     &                 NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                 IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
+     &                 AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
+     &                 RLONRGG, VWND,
+     &                 LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
 
 ! Computations of the Air Density:
         IF (LADEN) THEN 
@@ -458,6 +452,7 @@
           ENDDO
           CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, AirDenLocal,
      &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                   IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                   RLONRGG, AIRD,
      &                   LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
@@ -479,6 +474,7 @@
 !       IF (NFIELDS.GE.6) THEN
 !         CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,6),
 !    &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+!    &                    IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    RLONRGG, ICEBND,
 !    &                    LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
@@ -490,6 +486,7 @@
         IF (LGUST) THEN 
           CALL FLDINTER (IU06, ITEST, NGPTOTG, NCA, NRA, FIELDS(:,7),
      &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                   IXLG, KXLT, NIBLO, IGL, KINF, KSUP,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                   RLONRGG, PZIDL,
      &                   LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
@@ -546,6 +543,8 @@
 
         IF (IPARAMU.EQ.165 .AND. IPARAMV.EQ.166) THEN
           ICODE = 3
+        ELSEIF (IPARAMU.EQ.33 .AND. IPARAMV.EQ.34) THEN
+          ICODE = 3
         ELSEIF (IPARAMU.EQ.180 .AND. IPARAMV.EQ.181) THEN
           ICODE = 2
         ELSE
@@ -591,18 +590,18 @@
 !            ------------------
 
         IF (ITEST.GT.2) THEN
-          WRITE(IU06,*) ' READWIND -  WIND FIELD FOR THE CDTWIR = ',
+          WRITE(IU06,*) ' READWIND -  FIELDS FOR THE CDTWIR = ',
      &     CDTWIR
-          WRITE(IU06,63) ((UWND(I,J),I=1,24),J=51,55)
-          WRITE(IU06,63) ((VWND(I,J),I=1,24),J=51,55)
-          WRITE(IU06,*)' READWIND - AIR DENSITY FIELD FOR THE CDTWIR= ',
-     &     CDTWIR
-          WRITE(IU06,63) ((AIRD(I,J),I=1,24),J=51,55)
-          WRITE(IU06,*) ' READWIND - ZI/L FIELD FOR THE CDTWIR = ',
-     &     CDTWIR
-          WRITE(IU06,63) ((PZIDL(I,J),I=1,24),J=51,55)
+          DO IG=1,IGL
+            DO IJ = KINF,KSUP
+              I = IXLG(IJ,IG)
+              K = NGY-KXLT(IJ,IG) + 1
+              WRITE(IU06,63) I,K,
+     &                       UWND(I,K),VWND(I,K),AIRD(I,K),PZIDL(I,K)
+            ENDDO
+          ENDDO
           CALL FLUSH(IU06)
- 63       FORMAT(1X,24F5.2)
+ 63       FORMAT(1X,2I4,1X,4F5.2)
         ENDIF
 
       ENDIF
