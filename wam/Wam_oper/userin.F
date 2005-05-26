@@ -59,7 +59,7 @@
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
      &            HSALTCUT, LALTGRDOUT,
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
@@ -96,6 +96,7 @@
 
       LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF
       LOGICAL LLNALTGO
+      CHARACTER*4 :: CSTREAM, MARSFCTYPE
       CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
@@ -125,7 +126,7 @@
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D 
+     &   NWAM_BLKS, LL1D, LWCOUNORMS
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -277,6 +278,7 @@
 !     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
 !              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
+!                     IT MUST BE SPECIFIED ! 
 !     LALTGRDOUT: FLAG USED TO CONTROL THE OUTPUT OF GRIDDED ALTIMETER
 !                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT) 
 !                (SEE GRFIELD). 
@@ -300,6 +302,10 @@
 !                OTHERWISE IT IS STILL USED TO SPLIT THE INNER LOOPS
 !                INTO CHUNKS (SEE WAMODEL).
 !     LL1D: IF TRUE THEN THE DOMAIN IS ONLY DIVIDED INTO LATITUDINAL BANDS
+!     LWCOUNORMS : FLAG THAT CONTROLS WHETHER OR NOT GLOBAL NORMS
+!                  ARE PRODUCED FOR THE DIFFERENT FIELDS EXCHANGED 
+!                  BETWEEN WAM AND THE COUPLED ATMOSPHERIC MODEL.
+!                  IT IS FALSE BY DEFAULT.
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -434,7 +440,7 @@
 
       ISTREAM   = 0
 
-      NLOCGRB   = 0
+      NLOCGRB   = 1
 
       IREFDATE  = 0
 
@@ -455,6 +461,8 @@
 
       LL1D = .TRUE.
 
+      LWCOUNORMS = .FALSE.
+
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -468,6 +476,18 @@
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
         WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+
+      IF(ISTREAM.LE.0) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ ISTREAM MUST BE SPECIFIED > 0 !!!!       +' 
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
@@ -1220,17 +1240,17 @@
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
 
+      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE)
+
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
       WRITE(IU06,*) '  '
       WRITE(IU06,'("  CURRENT RUN:")')
       WRITE(IU06,'("  GRIB TABLE : ", I4)') NLOCGRB
+      WRITE(IU06,'("  STREAM ....: ", A4)') CSTREAM 
       WRITE(IU06,'("  CLASS......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT.: ", A4)') YEXPVER
-      IF(ISTREAM.NE.0) THEN
-        WRITE(IU06,'("  STREAM....: ", I4)') ISTREAM
-      ENDIF
-      IF ((NSYSNB.GE.0 .AND. NMETNB.GT.0) .OR.
-     &     ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.
+
+      IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.
      &     ISTREAM .EQ. 1203 .OR. ISTREAM .EQ. 1204 ) THEN
         WRITE(IU06,*) '  '
         IF(ISTREAM.EQ.1095 .OR. ISTREAM.EQ.1203 ) THEN
@@ -1247,6 +1267,21 @@
         WRITE(IU06,'("  SYSTEM NUMBER:           ", I4  )') NSYSNB
         WRITE(IU06,'("  METHOD NUMBER:           ", I4  )') NMETNB 
         WRITE(IU06,*) '  '
+      ELSE IF ( ISTREAM .EQ. 1083 ) THEN
+        WRITE(IU06,'("  MULTI ANALYSIS FORECAST HINDCAST RUN : ")')
+        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
+        WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
+      ELSE IF ( ISTREAM .EQ. 1084 ) THEN
+        WRITE(IU06,'("  ENSEMBLE FORECAST HINDCAST RUN : ")')
+        WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
+        WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
+        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
+        WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
+      ELSE IF ( ISTREAM .EQ. 1085 ) THEN
+        WRITE(IU06,'("  FORECAST HINDCAST RUN : ")')
+        WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
       ELSE
         IF (NENSFNB.NE.0.OR.NTOTENS.NE.0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
@@ -1255,6 +1290,7 @@
           WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
         ENDIF
       ENDIF
+
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' TEST OUTPUT LEVEL IS .............. ITEST = ',
      & ITEST

@@ -91,7 +91,6 @@
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(IJINF:IJSUP,NANG,MINF:MSUP) :: FL
-      INTEGER, EXTERNAL :: IWRITEFDB
       REAL(8) :: ZHOOK_HANDLE_IWRITEFDB
 
 ! ----------------------------------------------------------------------

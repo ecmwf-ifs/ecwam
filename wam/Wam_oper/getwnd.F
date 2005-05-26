@@ -1,6 +1,6 @@
       SUBROUTINE GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
      &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                   ISEC1, ISEC2, FIELDS,
+     &                   ISEC1, ISEC2, FIELDS, MASK_IN,
      &                   LWNDFILE, LCLOSEWND)
 
 ! ----------------------------------------------------------------------
@@ -84,6 +84,7 @@
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------
 
       REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS, ADS, ZIDL
@@ -111,7 +112,8 @@
  1000 CONTINUE
 
       CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS,LWNDFILE, LCLOSEWND,
+     &               ISEC1, ISEC2, FIELDS, MASK_IN,
+     &               LWNDFILE, LCLOSEWND,
      &               KINF, KSUP,
      &               IUNIT1, FILNM, FRSTIME )
 

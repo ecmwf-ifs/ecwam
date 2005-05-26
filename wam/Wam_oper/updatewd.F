@@ -66,6 +66,7 @@
       REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW, U10NEW,
      &                             ROAIRN,ZIDLNEW
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1,SL
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: DUMMYFL
       LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
 
 ! ----------------------------------------------------------------------
@@ -85,14 +86,9 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL SINPUT (FL1, SL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+      CALL SINPUT (FL1, DUMMYFL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, ZIDLNEW, SL, LLWS)
 
-!!!   SL is used twice which means that according to SINPUT it will
-!!!   be at the end the wind input source function which is the part
-!!!   needed by STRESSO 
-!!!   Note that it is only possible because in SINPUT FL is determined
-!!!   before SL.
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: SINPUT CALLED'
         CALL FLUSH (IU06)

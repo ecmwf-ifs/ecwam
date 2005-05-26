@@ -1,7 +1,7 @@
 !=======================================================================
 
       SUBROUTINE FLD2FDB (kuso, ktest, ksec1, kfield, klen, cdfun, kerr,
-     &                    cdtype, cdclass, cdexpver, cdfdbsf, cddomain,
+     &                    cdclass, cdexpver, cdfdbsf, cddomain,
      &                    kdir, kfre, kfdb)
 
 !=======================================================================
@@ -22,7 +22,6 @@
 !**             CDFUN     - FUNCTION: 'WRITE' - WRITE KFIELD INTO FDB.
 !**                                   'READ'  - READ FDB FIELD.
 !**                                   'CLOSE' - CLOSE FDB.
-!**             CDTYPE    - TYPE OF FIELD
 !**             CDCLASS   - CLASS OF CURRENT RUN.
 !**             CDEXPVER  - EXPERIMENT VERSION NUMBER.
 !**             CDDOMAIN  - FDB DOMAIN IDENTIFIER.
@@ -123,12 +122,12 @@
       CHARACTER*1  cldomain
 
       CHARACTER*2  cltime
-      CHARACTER*2  cdtype
       CHARACTER*2  cltype
       CHARACTER*2  cdclass
       CHARACTER*2  clclass
       CHARACTER*2  cldir
       CHARACTER*2  clfre
+      CHARACTER*2  cdum
 
       CHARACTER*3  clparam
       CHARACTER*3  clnumber
@@ -169,30 +168,22 @@
       CALL u2l1cr( cdfun )
 
       IF ( cdfun .NE. 'close' ) THEN
-        IF ( ksec1(16) .NE. 0 .and. cdtype.ne.'4v' )  THEN
-          if(ksec1(43).ne.0) then
-            if(ksec1(42).ne.0) then
-              cltype   = 'pf'
-            else
-              cltype   = 'cf'
-            endif
-          else
-            cltype   = 'fc'
-          endif
+        IF (ksec1(39) .EQ. 9 ) THEN
+          cltype='fc'
+        ELSE IF  (ksec1(39) .EQ. 10 ) THEN
+          cltype='cf'
+        ELSE IF  (ksec1(39) .EQ. 11 ) THEN
+          cltype='pf'
+        ELSE IF  (ksec1(39) .EQ. 6 ) THEN
+          cltype='4v'
+        ELSE IF  (ksec1(39) .EQ. 2 ) THEN
+          cltype='an'
+        ELSE IF  (ksec1(39) .EQ. 1 ) THEN
+          cltype='fg'
         ELSE
-          cltype   = cdtype
+          WRITE(kuso,'("Error\ /Fld2fdb/type in grib header not known",
+     &    I6)') ksec1(39) 
         ENDIF
-        if(cdtype.eq.'sf') then
-          if(ksec1(43).ne.0) then
-            if(ksec1(42).ne.0) then
-              cltype   = 'fc'
-            else
-              cltype   = 'cf'
-            endif
-          else
-            cltype   = 'fc'
-          endif
-        endif
 
         cldomain = cddomain
 
@@ -251,10 +242,11 @@
 
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
         IF ( .NOT. lopenfdb )  THEN
-          if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095
-     &                       .or. ksec1(40).eq.1203
-     &                       .or. ksec1(40).eq.1204) then
+          if (ksec1(40).eq.1082 .or.
+     &        ksec1(40).eq.1222 .or.
+     &        ksec1(40).eq.1095 .or.
+     &        ksec1(40).eq.1203 .or.
+     &        ksec1(40).eq.1204) then
             istat = iopenfdbsubs( 'seas', iaddr1, cdfun(1:1) )
           else
             istat = iopenfdbsubs( 'fdb', iaddr1, cdfun(1:1) )
@@ -288,7 +280,8 @@
 
           lopenfdb = .TRUE.
 
-          call WSTREAM_STRG(ksec1(40),clstream)
+          idum=0
+          call WSTREAM_STRG(ksec1(40),clstream,idum,idum,cdum)
 
           if(clstream.eq.'****') then 
             WRITE(kuso,'( "Error\ /Fld2fdb/ stream unknown ", i4)' )
@@ -305,8 +298,10 @@
 
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
 
-          if (cdtype.eq.'cf' .or. cdtype.eq.'pf'
-     &                       .or. ksec1(40).eq.1081) then
+          if ( ksec1(40).eq.1081 .OR.
+     &         ksec1(40).eq.1083 .OR.
+     &         ksec1(40).eq.1084 .OR.
+     &         ksec1(40).eq.1086 ) then
             if ( ksec1(42).gt.0 ) then
               istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
             endif
@@ -314,8 +309,9 @@
             if ( ksec1(42).gt.0 .or. ksec1(39).eq.2) then
               istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
             endif
-          else if(cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                           .or. ksec1(40).eq.1095) then
+          else if(ksec1(40).eq.1082 .OR.
+     &            ksec1(40).eq.1095 .OR.
+     &            ksec1(40).eq.1222) then
               istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
           endif
 
@@ -324,10 +320,11 @@
 
 !         system and method
 
-          if (cdtype.eq.'sf' .or. ksec1(40).eq.1082
-     &                       .or. ksec1(40).eq.1095
-     &                       .or. ksec1(40).eq.1203
-     &                       .or. ksec1(40).eq.1204) then
+          if (ksec1(40).eq.1082 .or.
+     &        ksec1(40).eq.1095 .or.
+     &        ksec1(40).eq.1222 .or.
+     &        ksec1(40).eq.1203 .or.
+     &        ksec1(40).eq.1204) then
             if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
      &          clparam .EQ. '251' ) THEN
               ndir=ksec1(46)
@@ -362,7 +359,7 @@
           endif
 
 !         centre origin 
-          if (ksec1(40) == 1083) then
+          if (ksec1(37) == 18) then
             if(KSEK1(46) == 0 ) then
               if(KSEK1(44) == 78) then
                 cdorigin = 'edzw'
@@ -382,7 +379,7 @@
             else
               istat = isetvalfdbsubs( iaddr1,  'origin', 'consensus' )
             endif
-          else if(ksec1(40).eq.1203 .or. ksec1(40).eq.1204) then
+          else if(ksec1(37) == 23) then
             if(ksec1(2).eq.98) then
               cdorigin = 'ecmf'
             else
@@ -394,12 +391,15 @@
             istat = isetvalfdb( iaddr1,  'origin', cdorigin )
           endif
 
-!         monthly forecast hindcast reference date
+!         hindcast reference date
           if(ksec1(37) == 23 ) then
             if(ksec1(40) == 1204) then
               write( cdateref, '(i8.8)' ) ksec1(49) 
               istat = isetvalfdb( iaddr1, 'refdate', cdateref)
             endif
+          elseif(ksec1(37) == 26 ) then
+            write( cdateref, '(i8.8)' ) ksec1(44) 
+            istat = isetvalfdb( iaddr1, 'refdate', cdateref)
           elseif(ksec1(37) == 13 ) then
             ndir=ksec1(46)
             nfre=ksec1(47)
@@ -465,10 +465,11 @@
         istat = isetvalfdbsubs( iaddr1,   'direction', cldir )
         istat = isetvalfdbsubs( iaddr1,   'frequency', clfre )
       ELSE
-        if (cdtype.ne.'sf' .and. ksec1(40).ne.1082
-     &                     .and. ksec1(40).ne.1095
-     &                     .and. ksec1(40).ne.1203
-     &                     .and. ksec1(40).ne.1204) then
+        if (ksec1(40).ne.1082 .and.
+     &      ksec1(40).ne.1095 .and.
+     &      ksec1(40).ne.1203 .and.
+     &      ksec1(40).ne.1204 .and.
+     &      ksec1(40).ne.1222) then
           cldir="00"
           clfre="00"
           istat = isetvalfdbsubs( iaddr1,   'direction', cldir )

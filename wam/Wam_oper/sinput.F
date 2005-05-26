@@ -206,10 +206,8 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            TEMPORARY  = 0.5*UFAC2(IJ,K)
-!!!      see UPDATEWD FL must be determined before SL !!!
-            FL(IJ,K,M) = TEMPORARY 
-            SL(IJ,K,M) = TEMPORARY*F(IJ,K,M)
+            FL(IJ,K,M) = 0.5*UFAC2(IJ,K)
+            SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO
 

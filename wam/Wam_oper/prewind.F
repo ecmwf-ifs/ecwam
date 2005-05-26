@@ -1,7 +1,7 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO, ZIDLOLD,
      &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, FIELDS)
+     &                    ISEC1, ISEC2, FIELDS, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -126,6 +126,7 @@
       REAL FCRANGE
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
 
       CHARACTER*12 CDTWIE, CDTWIS, ZERO
 
@@ -189,7 +190,7 @@
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              NFIELDS,NGPTOTG, NC,NR, FCRANGE,
-     &              ISEC1,ISEC2, FIELDS)
+     &              ISEC1,ISEC2, FIELDS, MASK_IN)
       ELSE
 
 !*    2.2 TIME INTERPOLATION.
@@ -207,7 +208,7 @@
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              NFIELDS,NGPTOTG, NC,NR, FCRANGE, 
-     &              ISEC1,ISEC2, FIELDS)
+     &              ISEC1,ISEC2, FIELDS, MASK_IN)
       ENDIF
       CALL GSTATS(1968,1)
 

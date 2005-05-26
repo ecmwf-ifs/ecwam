@@ -3,7 +3,8 @@
      &                    ISEC1, ISEC2, FIELDS,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
-     &                    LDRESTARTED, ZDELATM, KQGAUSS)
+     &                    LDRESTARTED, ZDELATM, KQGAUSS,
+     &                    LDWCOUNORMS, MASK_IN, MASK_OUT)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -26,6 +27,7 @@
 !         S. ABDALLA   ECMWF  OCTOBER  2001  INCLUSION OF AIR DENSITY & Zi/L
 !                                            GENERALIZE THE INTERFACE WITH
 !                                            THE ATMOSPHERIC MODEL
+!         G.Mozdzynski ECMWF  January  2005  OPTIMISE COUPLING COMMS
 !                                            
 
 !     PURPOSE.                                                          
@@ -86,7 +88,7 @@
 
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCOUT  , ONLY : CASS     ,NASS
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
      &            MFDBSF   ,LSARINV
@@ -107,6 +109,9 @@
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
 
+      INTEGER MASK_IN(NGPTOTG)
+      INTEGER MASK_OUT(NLONW,NLATW)
+
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FCRANGE
       INTEGER ISEC1(255), ISEC2(22+NR)
@@ -115,7 +120,7 @@
       CHARACTER CBEGDAT*12, CDTASS*12
       CHARACTER*12 :: FLABEL(NWVFIELDS)
 
-      LOGICAL FRSTIME, LDSTOP, LDWRRE, LDRESTARTED
+      LOGICAL FRSTIME, LDSTOP, LDWRRE, LDRESTARTED, LDWCOUNORMS
 
       DATA FRSTIME, NADV /.TRUE., 0 /
 
@@ -254,7 +259,10 @@
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &              ISEC1, ISEC2, FIELDS)
+     &              ISEC1, ISEC2, FIELDS, MASK_IN)
+
+!     WRITE(IU06,*) ' WAVEMDL: AFTER PREWIND, NGPTOTG=', NGPTOTG,
+!    & ' SUM(MASK_IN)=', SUM(MASK_IN)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
@@ -383,28 +391,32 @@
 !------------------------------------------------------
 
 !       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
-        WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' NORM OF FIELDS RETURNED TO THE ATM. MODEL : '
-        NTOT=NLATW*NLONW
-        DO IFLD=1,NWVFIELDS
-          FAVG(IFLD)=0.
-          FMIN(IFLD)=999999999999.
-          FMAX(IFLD)=-99999999999.
-          DO J=1,NLATW
-            DO I=1,NLONW
-              FAVG(IFLD)=FAVG(IFLD)+WVFLDG(I,J,IFLD)
-              FMIN(IFLD)=MIN(FMIN(IFLD),WVFLDG(I,J,IFLD))
-              FMAX(IFLD)=MAX(FMAX(IFLD),WVFLDG(I,J,IFLD))
+        IF( LWCOUNORMS )THEN
+          WRITE(IU06,*) ' '
+          WRITE(IU06,*) ' NORM OF FIELDS RETURNED TO THE ATM. MODEL : '
+          NTOT=NLATW*NLONW
+          DO IFLD=1,NWVFIELDS
+            FAVG(IFLD)=0.
+            FMIN(IFLD)=999999999999.
+            FMAX(IFLD)=-99999999999.
+            DO J=1,NLATW
+              DO I=1,NLONW
+                FAVG(IFLD)=FAVG(IFLD)+WVFLDG(I,J,IFLD)
+                FMIN(IFLD)=MIN(FMIN(IFLD),WVFLDG(I,J,IFLD))
+                FMAX(IFLD)=MAX(FMAX(IFLD),WVFLDG(I,J,IFLD))
+              ENDDO
             ENDDO
+            FAVG(IFLD)=FAVG(IFLD)/NTOT
+            WRITE(IU06,*) FLABEL(IFLD),
+     *                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT
           ENDDO
-          FAVG(IFLD)=FAVG(IFLD)/NTOT
-          WRITE(IU06,*) FLABEL(IFLD),
-     *                  FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT
-        ENDDO
-        WRITE(IU06,*) ' '
-        IF(ITEST.GT.0) CALL FLUSH(IU06)
-
+          WRITE(IU06,*) ' '
+          IF(ITEST.GT.0) CALL FLUSH(IU06)
+        ENDIF
+!       TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
+        LDWCOUNORMS=LWCOUNORMS
       ENDIF
+
       IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDBSUBS (MFDBSF)

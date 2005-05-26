@@ -62,7 +62,7 @@
 !        STRETCHING IS ACTING AND THE STRECHED FREQUENCIES.
 !        ---------------------------------------------------
 
-      INC = IFIX(LOG10(GAMS)/ALO)
+      INC = INT(LOG10(GAMS)/ALO)
       Z = ABS(1.1**INC - GAMS)
       DO M=1,ML
         AR2(M) = FR(M) * GAMS
@@ -113,7 +113,7 @@
 !           ---------------------------
 
           DO M=1,ML-INC-1
-            IFR = IFIX(LOG10(AR2(M)/FR(1))/ALO+1.)
+            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.)
             IFRP1 = IFR+1
             MC = M + INC
             ADIF = (FR(IFRP1)-AR2(M)) / (FR(IFRP1)-FR(IFR))
@@ -128,7 +128,7 @@
 !            ----------------------------
 
           DO M = 2-INC,ML
-            IFR = IFIX(LOG10(AR2(M)/FR(1))/ALO+1.)
+            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.)
             IFRP1 = IFR+1
             MC = M + INC - 1
             ADIF = (FR(IFRP1)-AR2(M)) / (FR(IFRP1)-FR(IFR))

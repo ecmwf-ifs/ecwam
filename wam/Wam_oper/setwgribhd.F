@@ -56,7 +56,7 @@
 
 !-------------------------------------------------------------------
 
-      NKSEK1 = 55+NANG+NFRE
+      NKSEK1 = 255
 
       ALLOCATE(KSEK0(NKSEK0))
       ALLOCATE(KSEK1(NKSEK1))
@@ -111,45 +111,33 @@
       KSEK1(23) =     0     !
       KSEK1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
 !       25-36                                                  0
-      IF(NLOCGRB .GT. 0 ) THEN
-        KSEK1(37) = NLOCGRB ! INDICATES LOCAL MARS TABLE USED.
-      ELSE
-        IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
-     &                        .OR. ISTREAM .EQ. 1095 ) THEN
-          KSEK1(37) =    15
-        ELSE IF(ISTREAM .EQ. 1203 .OR.
-     &          ISTREAM .EQ. 1204 ) THEN
-          KSEK1(37) =    23
-        ELSE
-          KSEK1(37) =     1
-        ENDIF
-      ENDIF
+
+      KSEK1(37) = NLOCGRB ! INDICATES LOCAL MARS TABLE USED.
+
       ICLASS=CLASS_WGRIB(YCLASS,IU06)
       KSEK1(38) = ICLASS    ! INDICATES CLASS
       KSEK1(39) =     2     ! TYPE OF FIELD 1=FG 2=AN 9=FC 10=F 11=PF
-      IF(ISTREAM.NE.0) THEN
+
+      IF(ISTREAM.GT.0) THEN
         KSEK1(40)= ISTREAM  ! STREAM
-      ELSE IF(MARSTYPE .EQ. 'sf' ) THEN
-        KSEK1(40)=1082      ! STREAM 1082=SEASONAL WAVE (WASF) 
-!                             note that for monthly fc you must
-!                             specify it with ISTREAM=1095 (old)
-!                             or 1203 for new monthly forecast
-!                             or 1204 for new monthly forecast hindcast
-      ELSE IF(NLOCGRB == 18 ) THEN
-        KSEK1(40)=1083      ! STREAM 1083 for multi analysis ensemble
       ELSE
-        IF(MARSTYPE .EQ. 'cf' .OR. MARSTYPE .EQ. 'pf') THEN
-          KSEK1(40)=1081      ! STREAM 1081=ENSEMBLE WAVE 
-        ELSE
-          KSEK1(40)=1045      ! STREAM 1045=WAVE
-        ENDIF
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) '*******************************************'
+        WRITE(IU06,*) ' ERROR IN SETWGRIBHD !!!!! '
+        WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!' 
+        WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input' 
+        WRITE(IU06,*) '*******************************************'
+        WRITE(IU06,*) ''
+        CALL ABORT1
       ENDIF
+
       KSEK1(41) =     0     ! EXPERIMENT VERSION
       DO JC = 1, 4
         KSEK1(41) = KSEK1(41)*256 + ICHAR(YEXPVER(JC:JC))
       ENDDO
+
       IF(NLOCGRB == 18 ) THEN
-        ! multi analysis ensemble runs
+        ! MULTI ANALYSIS ENSEMBLE RUNS
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
         CLWORD='    ECMF'
@@ -194,34 +182,35 @@
           ENDIF 
           KSEK1(46)=ICENTRE
         ENDIF
-      ELSE IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf') THEN
-        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
-        KSEK1(44) = 0
-        KSEK1(45) = 0
-      ELSE IF(MARSTYPE .EQ. 'sf' .OR. ISTREAM .EQ. 1082
-     &                           .OR. ISTREAM .EQ. 1095
-     &                           .OR. ISTREAM .EQ. 1203
-     &                           .OR. ISTREAM .EQ. 1204
-     &                           .OR. NLOCGRB == 15
-     &                           .OR. NLOCGRB == 23 ) THEN
+      ELSE IF(NLOCGRB == 15 .OR.
+     &        NLOCGRB == 23 ) THEN
+!       seasonal and monthly forecasts
         KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
         KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
                             ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
         KSEK1(44) = NSYSNB ! SYSTEM NUMBER
         KSEK1(45) = NMETNB ! METHOD NUMBER
+
+!       monthly forecast hindcasts need a reference date
+        IF(KSEK1(40) == 1204 ) THEN
+           KSEK1(49) = IREFDATE 
+        ELSE
+          KSEK1(49) = 0
+        ENDIF
+      ELSE IF(NLOCGRB == 26 ) THEN
+!       EPS or DETERMINISTIC HINDCASTS
+        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
+        KSEK1(44) = IREFDATE ! HINDCASTS NEED A REFERENCE DATE
+        KSEK1(45) = 0
       ELSE
-        KSEK1(42) = 0
-        KSEK1(43) = 0
+!       DETERMINISTIC OR EPS  
+        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
         KSEK1(44) = 0
         KSEK1(45) = 0
-      ENDIF
-
-!     monthly forecast hindcasts need a reference date
-      IF(KSEK1(40) == 1204 ) THEN
-        KSEK1(49) = IREFDATE 
-      ELSE
-        KSEK1(49) = 0
       ENDIF
 
 !    *SECTION 2*  INTEGER  GRID DEFINITION BLOCK.

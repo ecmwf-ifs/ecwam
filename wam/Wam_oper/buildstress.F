@@ -68,6 +68,7 @@
       PARAMETER (NFIELDS=1, NGPTOTG=1, NCA=1, NRA=1)
       INTEGER ISEC1(255), ISEC2(22+NRA)
       REAL FIELDS(1)
+      INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------
 
       CDATEWO = ' '
@@ -92,7 +93,7 @@
      &             1, NIBLO, KEND, CDTPRO,
 !------------------ dummy parameters & arrays
      &             NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS, 
+     &             ISEC1, ISEC2, FIELDS, MASK_IN,
 !---------------------------------------------
      &             LWNDFILE, LCLOSEWND)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'

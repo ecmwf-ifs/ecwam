@@ -277,31 +277,18 @@
 !        39     INDICATES TYPE OF FIELD 1=FG 2=AN 6=4V 9=FC
       IF ( CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
         ISEC1(39) = 1
-      ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
-        ISEC1(39) = 2
       ELSEIF ( CDTYPE .EQ. '4v') THEN
         ISEC1(39) = 6
-      ELSEIF ( CDTYPE .EQ. 'sf' ) THEN
-        IF(KTOTENS .EQ. 0) THEN
-          ISEC1(39) = 9
-        ELSE
-          IF(KENSFNB .EQ. 0) THEN
-            ISEC1(39) = 10
-          ELSE
-            ISEC1(39) = 9
-          ENDIF
-        ENDIF
+      ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
+        ISEC1(39) = 2
+      ELSEIF ( CDTYPE .EQ. 'cf' ) THEN
+        ISEC1(39) = 10
+      ELSEIF ( CDTYPE .EQ. 'pf' ) THEN
+        ISEC1(39) = 11
       ELSE
-        IF (KTOTENS .EQ. 0) THEN
-          ISEC1(39) = 9
-        ELSE
-          IF(KENSFNB .EQ. 0) THEN
-            ISEC1(39) = 10
-          ELSE
-            ISEC1(39) = 11
-          ENDIF
-        ENDIF
+        ISEC1(39) = 9
       ENDIF
+
 !* DIRECTION AND FREQUENCY INDEX
 !  -----------------------------
 
@@ -331,10 +318,10 @@
 
 !* SYSTEM AND METHOD (for seasonal or monthly forecast only)
 !  -----------------
-      IF ( CDTYPE .EQ. 'sf' .OR. ISEC1(40) .EQ. 1082
-     &                      .OR. ISEC1(40) .EQ. 1095
-     &                      .OR. ISEC1(40) .EQ. 1203
-     &                      .OR. ISEC1(40) .EQ. 1204 ) THEN
+      IF ( ISEC1(40) .EQ. 1082 .OR.
+     &     ISEC1(40) .EQ. 1095 .OR.
+     &     ISEC1(40) .EQ. 1203 .OR.
+     &     ISEC1(40) .EQ. 1204 ) THEN
         ISEC1(50+KANG+KFRE) = KSYSNB 
         ISEC1(51+KANG+KFRE) = KMETNB 
       ELSE
@@ -342,8 +329,11 @@
         ISEC1(51+KANG+KFRE) = 65535
       ENDIF
 
-!     monthly forecast hindcasts need a reference date
-      IF(ISEC1(40) == 1204 ) THEN
+!     hindcasts need a reference date
+      IF(ISEC1(40) == 1204 .OR.
+     &   ISEC1(40) == 1084 .OR.
+     &   ISEC1(40) == 1085
+     &    ) THEN
         ISEC1(52+KANG+KFRE) =  KREFDATE
       ELSE
         ISEC1(52+KANG+KFRE) = 0
@@ -550,8 +540,8 @@
           IF (LFDBIOOUT) THEN
             ILOCAL=ILOCAL+1
             CALL FLD2FDB (ku06, ktest, isec1, ioutgrib, iword, 'write',
-     &                    ierr,cdtype, cdclass,
-     &                    cdexpver, CDFDB2DSP, cddomain,
+     &                    ierr,
+     &                    cdclass, cdexpver, CDFDB2DSP, cddomain,
      &                    IK, IM, kfdb)
           ELSE
 !         output to file should only take place on one PE, thus istep=1

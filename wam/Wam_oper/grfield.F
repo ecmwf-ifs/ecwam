@@ -70,9 +70,10 @@
 ! ----------------------------------------------------------------------
 
       LOGICAL LLOPENED, LLTEST
-      INTEGER IREAD
+      INTEGER IREAD, IDUM
       INTEGER,DIMENSION(NPROC) :: ISENDLEN
       INTEGER,ALLOCATABLE :: ISENDREQ(:)
+      CHARACTER*2 :: CDUM
       CHARACTER* 3 CLFID
       CHARACTER*4 CSTRM
       CHARACTER*12 CTIME
@@ -89,7 +90,7 @@
       REAL,ALLOCATABLE :: ZCOMBUFR(:)
       REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB
       REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
-      REAL :: NFRPEALT
+      INTEGER :: NFRPEALT
       REAL :: WHMOD(NIBLO)
       LOGICAL :: LSQRT
       LOGICAL :: LLCOMMON(NPROC)
@@ -110,6 +111,7 @@
 !*    1. OPEN FILE AND READ.
 !        -------------------
 
+      IDUM=0
       NOBS=0
       NOBSPSAT=0
 
@@ -577,7 +579,7 @@
               WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS DATA IS OVER',
      &                       REJECT*100,' % ',REJRATIO*100,' %'
               WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER 
-              CALL WSTREAM_STRG(KSEK1(40),CSTRM)
+              CALL WSTREAM_STRG(KSEK1(40),CSTRM,IDUM,IDUM,CDUM)
               WRITE(IUMAIL,*)' STREAM        ',CSTRM
               WRITE(IUMAIL,*)' DOMAIN        ',CLDOMAIN
               WRITE(IUMAIL,*)' AT TIME       ',CDTPRO

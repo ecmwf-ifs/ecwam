@@ -197,7 +197,6 @@
       DIMENSION itheta(kang), ifreq(kfre)
 
       CHARACTER*1 cddomain, clfdbsf
-      CHARACTER*2 cltype
       CHARACTER*2 cdclass
       CHARACTER*4 cdexpver
       CHARACTER*8 clexpverhlp
@@ -287,13 +286,6 @@
         WRITE(kuso,*)' CLASS ', cdclass ,' NOT SUPPORTED '
         WRITE(kuso,*)' PROGRAM ABORTS '
         CALL abort1
-      ENDIF
-      IF ( kfcst .EQ. 0 ) THEN
-        isec1(39) = 2
-        cltype='an'
-      ELSE
-        isec1(39) = 9
-        cltype='fc'
       ENDIF
       isec1(40) = 1045
 
@@ -512,7 +504,7 @@
           ifre = 0
           clfdbsf = ' '
           CALL FLD2FDB (kuso, itest, isec1, igrib, iword, 'WRITE', ierr,
-     &                  cltype, cdclass, cdexpver, clfdbsf, cddomain,
+     &                  cdclass, cdexpver, clfdbsf, cddomain,
      &                  idir, ifre, kfdb)
           IF (llsuvi) THEN
             time_w=time0+wam_user_clock()

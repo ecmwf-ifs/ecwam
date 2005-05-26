@@ -46,6 +46,7 @@
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG
       USE YOWTEST  , ONLY : ITEST    ,ITESTB
+      USE YOWCOUP  , ONLY : LWCOUNORMS
 
 ! ----------------------------------------------------------------------
 
@@ -83,7 +84,7 @@
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D
+     &   NWAM_BLKS, LL1D, LWCOUNORMS
 
 ! ----------------------------------------------------------------------
 
@@ -94,6 +95,7 @@
       LMESSPASS =.TRUE.
       LWCOU=.FALSE.
       LL1D=.TRUE.
+      LWCOUNORMS = .FALSE.
 
 ! ----------------------------------------------------------------------
 
@@ -110,6 +112,7 @@
       WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
       WRITE(6,*) '*** LFDB = ',LFDB
       WRITE(6,*) '*** LWCOU= ',LWCOU
+      WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
       WRITE(6,*) '==============================================='
 
       RETURN

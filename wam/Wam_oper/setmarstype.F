@@ -27,9 +27,12 @@
 ! ----------------------------------------------------------------------
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,
      &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
-     &            LANAONLY ,L4VTYPE
+     &            LANAONLY ,L4VTYPE  ,ISTREAM
+      USE YOWTEST  , ONLY : IU06 
 
 ! ----------------------------------------------------------------------
+
+      CHARACTER*4 :: CSTREAM
 
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
@@ -42,19 +45,18 @@
       ENDIF
 
       IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
-
-        IF( NSYSNB.GE.0 .AND. NMETNB.GE.0 ) THEN
-          MARSTYPE = 'sf'
-        ELSE IF(NTOTENS.EQ.0) THEN
-          MARSTYPE = 'fc'
-        ELSE
-          IF(NENSFNB.EQ.0) THEN
-            MARSTYPE = 'cf'
-          ELSE
-            MARSTYPE = 'pf'
-          ENDIF
+        CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE)
+        IF(CSTREAM.EQ.'****') THEN
+          WRITE(IU06,*) '*****************************************' 
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' ERROR IN SETMARSTYPE !!!!' 
+          WRITE(IU06,*) ' FORECAST STREAM UNKNOWN '
+          WRITE(IU06,*) ' INPUT ISTREAM = ', ISTREAM
+          WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*****************************************' 
+          CALL ABORT1
         ENDIF
-
       ENDIF
 
       IF(LANAONLY) THEN

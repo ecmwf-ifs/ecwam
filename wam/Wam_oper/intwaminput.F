@@ -50,7 +50,8 @@
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,CLDOMAIN
-      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,IREFRA
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,
+     &            IREFRA   ,NENSFNB  ,NTOTENS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
@@ -66,7 +67,6 @@
       INTEGER :: IFORP, KZLEV, K, M, KKK, MMM, JPARAM, KKKPR, NGYFULL
       INTEGER :: IPERIODIC, NRFULL, JSTREAM, ISTART, ISTOP, IDUM
       INTEGER :: IU07
-      INTEGER :: NFREMAX, NANGMAX
       INTEGER :: KAMONOP, KAMOEAP, KAMOSOP, KAMOWEP
       INTEGER :: KRMONOP, KRMOEAP, KRMOSOP, KRMOWEP 
       INTEGER :: KSEC0(NKSEK0), KSEC2(NKSEK2),
@@ -104,6 +104,9 @@
       MARSTYPE = 'an'
       YCLASS   = 'od'
       YEXPVER  = '0001' 
+      NENSFNB = 0
+      NTOTENS = 0
+      ISTREAM = 1045
 
       IRANK=1
       NPROC=1
@@ -112,9 +115,6 @@
       I4=1
       NPRECI = KIND(I4)
       KTAG=100
-
-      NANGMAX=24
-      NFREMAX=36
 
       ALLOCATE (NSTART(NPROC),NEND(NPROC))
 
@@ -133,25 +133,6 @@
 
 !     SET GRIB HEADERS FOR INPUTS/OUTPUTS
       CALL SETWGRIBHD
-
-      NKSEK1= 54+NANGMAX+NFREMAX
-      IF(NANG .GT. NANGMAX) THEN
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*  NANG > NANGMAX !!! '
-        WRITE(IU06,*) '*  NANG = ',NANG
-        WRITE(IU06,*) '*  NANGMAX = ',NANGMAX
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT1
-      ENDIF
-      IF(NFRE .GT. NFREMAX) THEN
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*  NFRE > NFREMAX !!! '
-        WRITE(IU06,*) '*  NFRE = ',NFRE
-        WRITE(IU06,*) '*  NFREMAX = ',NFREMAX
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT1
-      ENDIF
-
 
       ALLOCATE(KSEC1(NKSEK1))
 
@@ -301,7 +282,7 @@
 !!! RMOEAP IS IMPLICITLY KNOWN.
        CSTREAM='****'
        JSTREAM=KSEC1(40)
-       CALL WSTREAM_STRG(JSTREAM,CSTREAM)
+       CALL WSTREAM_STRG(JSTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE)
        IF(IREPR.EQ.4 .AND. CSTREAM.EQ.'****') THEN
          DELLO = 360./MAX(1,NC)
          RMOEAP = RMOWEP+360. - DELLO

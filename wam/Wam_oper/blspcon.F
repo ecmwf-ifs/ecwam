@@ -469,7 +469,7 @@
           IF (llsuvi.OR.lltest) itest=1
           CALL FLD2FDB (kuso, itest, idummy, idummy, idummy, 'close',
      &                  ierr,
-     &                 cltype, cdclass, cdexpver, clfdbsf, cldomain,
+     &                 cdclass, cdexpver, clfdbsf, cldomain,
      &                 idir, ifre,  ifdb)
           IF (llsuvi) WRITE(kuso,*) ' FDB ', ifdb, " CLOSED:", ierr
           IF (ierr .NE. 0) THEN

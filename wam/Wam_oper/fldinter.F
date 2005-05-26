@@ -4,7 +4,7 @@
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                     RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
      &                     LADEN, ROAIR, LGUST,LLINTERPOL,
-     &                     DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
+     &                     DK1M, DII1M, DIIP1M, KKM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
 !***  *FLDINTER* - INTERPOLATION OF ATMOSPHERIC FIELDS OVER
@@ -96,6 +96,7 @@
       INTEGER :: IKBLOCK(0:NC+1,NR)
       REAL :: ROAIR
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
       LOGICAL:: LADEN, LGUST, LLINTERPOL
       
       REAL, DIMENSION(NGX,NGY) :: UWND, VWND, AIRD, PZIDL
@@ -115,6 +116,8 @@
           DO IJ = IJS,IJL
             I = IXLG(IJ,IG)
             K = NGY-KXLT(IJ,IG) + 1
+
+            MASK_IN(IKBLOCK(I,K))=1
 
             UWND(I,K) = FIELDS(IKBLOCK(I,K),1) 
             VWND(I,K) = FIELDS(IKBLOCK(I,K),2) 
@@ -160,6 +163,11 @@
             IIP1 = MIN(IIP+1,RLONRGG(KSN1)+IPERIODIC)
             DIIP1= DIIP1M(I,K) 
             DIIP2=1.-DIIP1
+
+            MASK_IN(IKBLOCK(II,KK))=1
+            MASK_IN(IKBLOCK(II1,KK))=1
+            MASK_IN(IKBLOCK(IIP,KK1))=1
+            MASK_IN(IKBLOCK(IIP1,KK1))=1
 
             UWND(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),1) +
      &                      DII1*FIELDS(IKBLOCK(II1,KK),1) ) +

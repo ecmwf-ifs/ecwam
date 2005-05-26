@@ -53,7 +53,7 @@
       USE YOWCOUP  , ONLY : JPLEVC   ,ALPHA    ,XKAPPA   ,XNLEV
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
-     &            JPLEVT   ,EPS1     ,UMAX     ,TAUWMAX  ,TAUT     ,
+     &            JPLEVT   ,EPS1     ,UMAX     ,TAUT     ,
      &            DELTAUW  ,DELU     ,TAUHFT
 
 ! ----------------------------------------------------------------------
@@ -80,6 +80,8 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
+      TAUWMAX = SQRT(5.)
+      
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 

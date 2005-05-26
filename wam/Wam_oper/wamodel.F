@@ -457,7 +457,7 @@
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
         IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc'.OR.
-     &     MARSTYPE.EQ.'sf'.OR.MARSTYPE.EQ.'4v'.OR.
+     &     MARSTYPE.EQ.'4v'.OR.
      &     LANAONLY.OR.LFRSTFLD) THEN
 
           IF(LFRSTFLD) THEN

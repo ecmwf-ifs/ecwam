@@ -1,7 +1,7 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                  ROAIRO, ZIDLOLD, 
      &                  NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                  ISEC1, ISEC2, FIELDS)
+     &                  ISEC1, ISEC2, FIELDS, MASK_IN)
 
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
@@ -91,6 +91,7 @@
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
@@ -126,7 +127,7 @@
         CDT1 = CDTWIS
         CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDT1,
      &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS,
+     &               ISEC1, ISEC2, FIELDS, MASK_IN,
      &               LWNDFILE, LCLOSEWND)
         DO IG=1,IGL
           DO IJ=IJS(IG),IJL(IG)
@@ -203,7 +204,7 @@
       CALL INCDATE(CDT2,IDELWI)
       CALL GETWND (US2, DS2, ADS2, ZIDL2, NINF, NSUP, NSUP, CDT2,
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS,
+     &             ISEC1, ISEC2, FIELDS, MASK_IN,
      &             LWNDFILE, LCLOSEWND)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.

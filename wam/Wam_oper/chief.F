@@ -117,6 +117,8 @@
 
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
+      INTEGER MASK_OUT(NLONW,NLATW)
 ! ----------------------------------------------------------------------
 
       INTEGER IINITFDB_VPP
@@ -274,7 +276,8 @@
      &             ISEC1, ISEC2, FIELDS,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
-     &             LLRESTARTED, ZDELATM, KQGAUSS)
+     &             LLRESTARTED, ZDELATM, KQGAUSS,
+     &             MASK_IN, MASK_OUT)
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 

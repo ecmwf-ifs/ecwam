@@ -52,7 +52,7 @@
 !        *ITEST*  - TEST MESSAGE LEVEL.
 !        *NKSEK0* - SIZE OF KSEC0
 !        *NKSEK1* - SIZE OF KSEC1
-!        *NKSEK2* - SIZE OF KSEC2
+!        *NKSEK2* - DEFAULT SIZE OF KSEC2
 !        *NKSEK3* - SIZE OF KSEC3
 !        *NKSEK4* - SIZE OF KSEC4
 !        *NPSEK2* - SIZE OF PSEC2
@@ -100,8 +100,9 @@
       INTEGER KLONRGG(NGY)
       INTEGER,ALLOCATABLE :: RLONRGG(:)
 
-      INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1), KSEC2(NKSEK2),
+      INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1),
      &        KSEC3(NKSEK3), KSEC4(NKSEK4)
+      INTEGER, ALLOCATABLE :: KSEC2(:)
       INTEGER KSEK3(NKSEK3)
 
       INTEGER KGRIB(ISIZE)
@@ -113,6 +114,7 @@
       REAL ZDELLO(NGY)
       REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), WORK(:,:)
 
+      CHARACTER*2 :: CDUM 
       CHARACTER CSTREAM*4
       CHARACTER CDATE*12
 
@@ -130,8 +132,10 @@
 !     -------------------                                           
 
 !     GET SIZE OF THE UNPACKED DATA
+      KSEC2_SIZE=NKSEK2
+      ALLOCATE(KSEC2(KSEC2_SIZE))
       ALLOCATE(PSEC4(1))
-      KLENG = ISIZE 
+1000  KLENG = ISIZE
       KLENP = 1
       KRET  = 1
 !     CALL GRSDBG(1)
@@ -151,17 +155,24 @@
 
       NR=KSEC2(3)
       NRFULL=NR
-      IF(NR.GT.NKSEK2-22) THEN
-        WRITE(IU06,*) '***************************************'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRB2WGRD       *'
-        WRITE(IU06,*) '*                                     *'
+      IF(NR.GT.KSEC2_SIZE-22) THEN
+        WRITE(IU06,*) '********************************************'
+        WRITE(IU06,*) '*                                          *'
+        WRITE(IU06,*) '*        ERROR IN SUB. GRB2WGRD            *'
+        WRITE(IU06,*) '*        WHILE DECODING ',KSEC1(6)  
+        WRITE(IU06,*) '*                                          *'
         WRITE(IU06,*) '*  THE DIMENSION FOR KSEC2 ',NR+22
         WRITE(IU06,*) '*  IS LARGER THAN THE PRESCRIBED ONE ',NKSEK2
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-        WRITE(IU06,*) '***************************************'
-        CALL ABORT1
+        WRITE(IU06,*) '*                                          *'
+        WRITE(IU06,*) '*  SIZE WAS ADAPTED AUTOMATICALLY          *'
+        WRITE(IU06,*) '*  TO AVOID THIS MESSAGE CHANGE NKSEK2     *'
+        WRITE(IU06,*) '*  TO AT LEAST ',NR+22
+        WRITE(IU06,*) '*  IN YOWGRIBHD '    
+        WRITE(IU06,*) '********************************************'
+        DEALLOCATE(KSEC2)
+        KSEC2_SIZE=NR+22
+        ALLOCATE(KSEC2(KSEC2_SIZE))
+        GOTO 1000
       ENDIF
 
       JRGG = KSEC2(17)
@@ -190,7 +201,8 @@
       ENDIF
 
       ISTREAM=KSEC1(40)
-      CALL WSTREAM_STRG(ISTREAM,CSTREAM)
+      IDUM=0
+      CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM)
       IF(CSTREAM.NE.'****') THEN 
         LLNONWAVE=.FALSE.
       ELSE

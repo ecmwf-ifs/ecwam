@@ -1,5 +1,6 @@
       SUBROUTINE READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
-     &                     ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
+     &                     ISEC1, ISEC2, FIELDS, MASK_IN,
+     &                     LWNDFILE,LCLOSEWND,
      &                     KINF, KSUP,
      &                     IUNIT1, FILNM, FRSTIME )
 
@@ -122,6 +123,7 @@
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NC       ,NR       ,UWND     ,VWND     ,
      &            AIRD     ,PZIDL
+      USE YOWCOUP  , ONLY : LWCOUNORMS
 
       USE YOWPCONS , ONLY : ROAIR, Rconstant, EpsWaterVapor
 
@@ -137,6 +139,7 @@
 ! End Mod for OPENMP
 
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
       LOGICAL, SAVE :: LLINTERPOL
 
       INTEGER, ALLOCATABLE, SAVE :: KK(:), II(:,:), IIP(:,:)
@@ -458,29 +461,31 @@
         IF (NFIELDS.GE.5) AFLABEL(5)='sea ice fraction'
 
 !       COMPUTATION OF THE NORMS OF INPUT FIELDS
-        WRITE(IU06,*) ' NORM OF INPUT ATMOSPHERIC FIELDS : ' 
-        CALL GSTATS(1436,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,I)
-        DO IFLD=1,NFIELDS
-          JF=IFLD
-          FAVG(JF)=FIELDS(1,JF)
-          FMIN(JF)=FIELDS(1,JF)
-          FMAX(JF)=FIELDS(1,JF)
-          DO I=2,NGPTOTG 
-            FAVG(JF)=FAVG(JF)+FIELDS(I,JF)
-            FMIN(JF)=MIN(FMIN(JF),FIELDS(I,JF))
-            FMAX(JF)=MAX(FMAX(JF),FIELDS(I,JF))
+        IF( LWCOUNORMS )THEN
+          WRITE(IU06,*) ' NORM OF INPUT ATMOSPHERIC FIELDS : ' 
+          CALL GSTATS(1436,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,I)
+          DO IFLD=1,NFIELDS
+            JF=IFLD
+            FAVG(JF)=FIELDS(1,JF)
+            FMIN(JF)=FIELDS(1,JF)
+            FMAX(JF)=FIELDS(1,JF)
+            DO I=2,NGPTOTG 
+              FAVG(JF)=FAVG(JF)+FIELDS(I,JF)
+              FMIN(JF)=MIN(FMIN(JF),FIELDS(I,JF))
+              FMAX(JF)=MAX(FMAX(JF),FIELDS(I,JF))
+            ENDDO
+            FAVG(JF)=FAVG(JF)/NGPTOTG
           ENDDO
-          FAVG(JF)=FAVG(JF)/NGPTOTG
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1436,1)
-        DO IFLD=1,NFIELDS
-          WRITE(IU06,*) AFLABEL(IFLD),
-     &                  FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NGPTOTG
-        ENDDO
-        WRITE(IU06,*) ' '
-        IF(ITEST.GT.0) CALL FLUSH(IU06)
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1436,1)
+          DO IFLD=1,NFIELDS
+            WRITE(IU06,*) AFLABEL(IFLD),
+     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NGPTOTG
+          ENDDO
+          WRITE(IU06,*) ' '
+          IF(ITEST.GT.0) CALL FLUSH(IU06)
+        ENDIF
 
         IWPER = 1
         ICOORD = 1
@@ -504,7 +509,7 @@
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                   RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL, 
      &                   LADEN, ROAIR, LGUST,LLINTERPOL,
-     &                   DK1, DII1, DIIP1, KK, II, IIP)
+     &                   DK1, DII1, DIIP1, KK, II, IIP, MASK_IN)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1437,1)

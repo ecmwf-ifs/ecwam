@@ -1,7 +1,7 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                   ROAIRO, ZIDLOLD,
      &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                   ISEC1, ISEC2, FIELDS)
+     &                   ISEC1, ISEC2, FIELDS,  MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -84,6 +84,7 @@
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
@@ -121,7 +122,7 @@
         CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD,
      &               NINF, NSUP, NSUP, CDA,
      &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS,
+     &               ISEC1, ISEC2, FIELDS, MASK_IN,
      &               LWNDFILE, LCLOSEWND)
 
         DO IG = 1,IGL
@@ -169,7 +170,7 @@
 
       CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDTWIH,
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS,
+     &             ISEC1, ISEC2, FIELDS, MASK_IN,
      &             LWNDFILE, LCLOSEWND)
       MP = MP + 1
 

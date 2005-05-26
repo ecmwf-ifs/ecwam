@@ -156,6 +156,8 @@
 
       ENDIF
 
+
+
 !*    2.1 THINNED MEASUREMENTS ARE READ IN
 !         --------------------------------
 
@@ -174,6 +176,7 @@
       CALL OIFIELD (WHMOD, ETOIB, SIGMOD, DIST, DISTMAX)
 
       DEALLOCATE(WHMOD)
+
 
       IF (ITEST.GE.2)
      &   WRITE(IU06,*) '   SUB. ALTAS: OIFIELD DONE FOR WAVE HEIGHTS'
@@ -207,6 +210,7 @@
       CALL UPDATE (FL1, ETOIB, USNEW, THWNEW, IJS(IG), IJL(IG))
 
       DEALLOCATE(ETOIB)
+
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. ALTAS: SPECTRA UPDATED '

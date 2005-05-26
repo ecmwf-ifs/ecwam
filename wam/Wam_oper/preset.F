@@ -126,7 +126,7 @@
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS,
-     &            IREFDATE
+     &            IREFDATE ,ISTREAM
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
      &            ROAIRO   ,ZIDLOLD
@@ -168,6 +168,7 @@
 
       INTEGER ISEC1(255), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      INTEGER MASK_IN(NGPTOTG)
       REAL :: FCRANGE
 
 ! ----------------------------------------------------------------------
@@ -314,6 +315,7 @@
 
       NTOTENS = 0
       NENSFNB = 0  
+      ISTREAM =1045
       NSYSNB  = -1
       NMETNB  = -1
       IREFDATE= 0
@@ -496,7 +498,7 @@
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD,
      &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                ISEC1, ISEC2, FIELDS)
+     &                ISEC1, ISEC2, FIELDS, MASK_IN)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSEIF (LGRIBIN) THEN
@@ -529,7 +531,7 @@
         ELSE
 !         SPECTRA WILL BE SAVED AS A GRIB DATA (parameter 251) 
           CALL SPLITGRS (IU06,SFILENAME,ISPLIT,CDTPRO,ITEST,LFDBIOOUT,
-     &                   MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,CLDOMAIN)
+     &                   YCLASS, YEXPVER, CFDB2DSP,CLDOMAIN)
           IF (ITEST.GT.0.OR.LINTGRS) WRITE (IU06,*)' SUB. SPLITGRS DONE'
         ENDIF
       ELSE

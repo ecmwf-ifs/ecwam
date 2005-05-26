@@ -49,7 +49,7 @@
 
       FTH = MOD(RTHET+ZPI,ZPI)
       FTH = FTH * REAL(KL) / ZPI
-      INC = IFIX(FTH)
+      INC = INT(FTH)
       ADIF = FTH - INC
       BDIF = 1. - ADIF
 

@@ -2,7 +2,7 @@
 
       SUBROUTINE SPLITGRS(IU06, INFILEN, KSPLIT, CDATE, ITEST,
      &                    LFDBIOOUT,
-     &                    CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
+     &                    CDCLASS, CDEXPVER, CDFDB2DSP,
      &                    CDDOMAIN)
 
 !----------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 !       *CALL* *SPLITGRS*(IU06,INFILEN,KSPLIT,CDATE,ITEST,
 !                         LFDBIOOUT,
-!                         CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP,
+!                         CDCLASS, CDEXPVER, CDFDB2DSP,
 !                         CDDOMAIN)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -43,7 +43,6 @@
 !      *LFDBIOOUT* LOGICAL   SELECT TYPE OF OUTPUT OF SPLIT FILES 
 !                            IF TRUE THE FDB SOFTWARE WILL BE USED FOR
 !                            OUTPUT.
-!      *CDTYPE*    CHARACTER TYPE OF FIELD ( FG, AN OR FC).
 !      *CDCLASS*   CHARACTER CLASS OF CURRENT RUN.
 !      *CDEXPVER*  CHARACTER EXPERIMENT VERSION NUMBER.
 !      *CDDOMAIN*  CHARACTER FDB DOMAIN IDENTIFIER.
@@ -106,7 +105,7 @@
       CHARACTER*120 INFILEN,OUTFILEN
       LOGICAL LLEXIST, LFDBIOOUT
 
-      CHARACTER *(*) CDFDB2DSP, CDTYPE, CDCLASS, CDEXPVER, CDDOMAIN
+      CHARACTER *(*) CDFDB2DSP, CDCLASS, CDEXPVER, CDDOMAIN
 !-----------------------------------------------------------------------
 
 !*    0. INITIALISATION 
@@ -390,12 +389,12 @@
           IF (LFDBIOOUT) THEN
             CALL FLD2FDB (IU06, itest, isec1, outgrib, kword, 'write',
      &                    ierr,
-     &                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,
+     &                    cdclass,cdexpver,cdfdb2dsp,cddomain,
      &                    k, m, kfdb)
             ISTAT = iflushfdbsubs (kfdb)
             CALL FLD2FDB (IU06, itest, isec1, outgrib, kount, 'close',
      &                    kerr,
-     &                    cdtype, cdclass,cdexpver,cdfdb2dsp,cddomain,
+     &                    cdclass,cdexpver,cdfdb2dsp,cddomain,
      &                    k, m, kfdb)
           ELSE
             KOUNT=KWORD*NPRECI

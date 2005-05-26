@@ -73,7 +73,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER(NANGMAX=24,NFREMAX=36)
+      PARAMETER(NFREMAX=36)
       PARAMETER (G = 9.806, PI = 3.1415927, CIRC = 40000000.,
      1           ZPI = 2.*PI, RAD = PI/180., DEG = 180./PI,
      2           R = CIRC/ZPI, EPSMIN=0.1E-32, ZMISS=-999.0)
@@ -81,9 +81,9 @@
 
       INTEGER I4
       INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(54+NANGMAX+NFREMAX),KSEC2(384),
+      INTEGER :: KSEC0(2),KSEC1(255),KSEC2(2060),
      &           KSEC3(2),KSEC4(128)
-      INTEGER :: ISEC0(2),ISEC1(54+NANGMAX+NFREMAX),ISEC2(384),
+      INTEGER :: ISEC0(2),ISEC1(255),ISEC2(2060),
      &           ISEC3(2),ISEC4(128)
       INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
       REAL :: ONE,ZTHETA,ZFRE

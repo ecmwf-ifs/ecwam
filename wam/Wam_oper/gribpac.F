@@ -90,7 +90,7 @@
 
       REAL PSEC2(NPSEK2), PSEC3(NPSEK3), FIELD(I1,I2), ZWORK(NTGRIB)
       LOGICAL LFDB, FRSTIME30, FRSTIME32
-      CHARACTER*2 MARSTYPE
+      CHARACTER*2 MARSTYPE, MARSFCTYPE
       CHARACTER*2 YCLASS
       CHARACTER*4 YEXPVER, CSTREAM
       CHARACTER*24 FILNM
@@ -188,27 +188,14 @@
         KSEC1(39) = 6
       ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
         KSEC1(39) = 2
-      ELSEIF ( MARSTYPE .EQ. 'sf' ) THEN
-        IF(NTOTENS.EQ.0) THEN
-          KSEC1(39) = 9
-        ELSE
-          IF(NENSFNB.EQ.0) THEN
-            KSEC1(39) = 10 
-          ELSE
-            KSEC1(39) = 9 
-          ENDIF
-        ENDIF
+      ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
+        KSEC1(39) = 10 
+      ELSEIF ( MARSTYPE .EQ. 'pf' ) THEN
+        KSEC1(39) = 11 
       ELSE
-        IF(NTOTENS.EQ.0) THEN
-          KSEC1(39) = 9
-        ELSE
-          IF(NENSFNB.EQ.0) THEN
-            KSEC1(39) = 10
-          ELSE
-            KSEC1(39) = 11
-          ENDIF
-        ENDIF
+        KSEC1(39) = 9
       ENDIF
+
       IF (KSEC1(39).NE.9.AND.KSEC1(39).NE.10.AND.KSEC1(39).NE.11
      &   .AND.KSEC1(39).NE.6.AND.IFCST.GT.0) THEN
         WRITE(IU06,*)' SUB: GRIBPAC: THIS IS A FORECAST'
@@ -237,7 +224,7 @@
 !*    2. CHECK ERROR CODE.
 !        ----------------
 
-      CALL WSTREAM_STRG(KSEC1(40),CSTREAM)
+      CALL WSTREAM_STRG(KSEC1(40),CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE)
 
       WRITE(IU06,*)'  '
       WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,
@@ -255,7 +242,7 @@
           IFRE=0
           CALL FLD2FDB (IU06, ITEST, KSEC1, KGRIB, KWORD, 'WRITE',
      &     IERR,
-     &     MARSTYPE, YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
+     &     YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
      &     IDIR, IFRE , KFDB)
           IF(ITEST.GT.0) THEN
             WRITE(IU06,*) '   SUB. GRIBPAC:  GRIB FIELD LENGTH ',
