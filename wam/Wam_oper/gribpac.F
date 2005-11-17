@@ -1,6 +1,6 @@
       SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
      &                    IFCST,KLEV,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-     &                    HOPERI, CDFDBSF,NENSFNB,NTOTENS,Kfdb)
+     &                    HOPERI, CDFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
 
 ! ----------------------------------------------------------------------
 
@@ -29,7 +29,7 @@
 !      ----------
 !        *CALL* *GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
 !                         IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
-!                         NENSFNB,NTOTENS,Kfdb)
+!                         NENSFNB,NTOTENS,KFDB,LFDBOPEN)
 !          *IU06*    PRINTER OUTPUT UNIT.
 !          *IU*      LOGICAL UNIT FOR PACKED FIELD DATA.
 !          *NTGRIB*  TOTAL NUMBER OF GRID POINTS PACKED INTO GRIB 
@@ -53,7 +53,8 @@
 !          *YEXPVER*- EXPERIMENT VERSION NUMBER OF THE CURRENT RUN.
 !          *NENSFNB*- ENSEMBLE FORECAST NUMBER
 !          *NTOTENS*- TOTAL NUMBER OF ENSEMBLE FORECASTS.
-!          *Kfdb*   - Reference to the FDB database.
+!          *KFDB*   - Reference to the FDB database.
+!          *LFDBOPEN*  LOGICAL TRUE IF THE DATA BASE HAS BEEN OPEN
 
 !      METHOD.
 !      -------
@@ -75,7 +76,8 @@
 
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
-     &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3
+     &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
+     &            IFS_KSEC1,LGRHDIFS ,LNEWLVTP 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,XDELLA
       USE YOWPARAM , ONLY : CLDOMAIN
@@ -89,12 +91,13 @@
       INTEGER, ALLOCATABLE :: KGRIB(:)
 
       REAL PSEC2(NPSEK2), PSEC3(NPSEK3), FIELD(I1,I2), ZWORK(NTGRIB)
-      LOGICAL LFDB, FRSTIME30, FRSTIME32
+      LOGICAL LFDB, FRSTIME30, FRSTIME32, LASTREAM
       CHARACTER*2 MARSTYPE, MARSFCTYPE
       CHARACTER*2 YCLASS
       CHARACTER*4 YEXPVER, CSTREAM
       CHARACTER*24 FILNM
       CHARACTER*(*) CDFDBSF, HOPERI
+      LOGICAL LFDBOPEN
       DATA FRSTIME30 / .TRUE. /
       DATA FRSTIME32 / .TRUE. /
 
@@ -138,73 +141,109 @@
 !     SPECIFIC VALUES :
 
       KSEC1(6)  = IPARAM
-      IF(KLEV.NE.0) THEN
-        KSEC1(7)=105
-      ELSE
-        KSEC1(7)=102
-      ENDIF
-      KSEC1( 8) = KLEV
-      KSEC1(10) = MOD(IY,100) 
-      IF(KSEC1(10).EQ.0) THEN
-        KSEC1(21) = IY/100
-        KSEC1(10) = 100
-      ELSE
-        KSEC1(21) = (IY/100)+1
-      ENDIF
-      KSEC1(11) = IM
-      KSEC1(12) = ID
-      KSEC1(13) = IH
-      IF(IFCST >= (2**16-1)) THEN
-!     the number of hours is too large, use coding in days or
-!     multiple of hours instead
-        IF(MOD(IFCST,24) == 0 ) THEN
-          KSEC1(15)= 2 
-          KSEC1(16) = IFCST/24
-        ELSEIF(MOD(IFCST,12) == 0 ) THEN
-          KSEC1(15)= 12 
-          KSEC1(16) = IFCST/12
-        ELSEIF(MOD(IFCST,6) == 0 ) THEN
-          KSEC1(15)= 11 
-          KSEC1(16) = IFCST/6
-        ELSEIF(MOD(IFCST,3) == 0 ) THEN
-          KSEC1(15)= 10 
-          KSEC1(16) = IFCST/3
+
+      IF(.NOT.LNEWLVTP) THEN
+        IF(KLEV.NE.0) THEN
+          KSEC1(7)=105
         ELSE
-          WRITE(IU06,*)' SUB: GRIBPAC: THE FORECAST IS TOO LONG'
-          WRITE(IU06,*)' IT CANNOT BE CODED IN GRIB'
-          WRITE(IU06,*)' IFCST = ',IFCST
+          KSEC1(7)=102
+        ENDIF
+      ENDIF
+
+      KSEC1( 8) = KLEV
+
+!     DEFINE ALL KSEC1 IN WAM 
+      IF(.NOT. LGRHDIFS .OR. 
+     &   (MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR.
+     &   (MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
+
+        KSEC1(10) = MOD(IY,100) 
+        IF(KSEC1(10).EQ.0) THEN
+          KSEC1(21) = IY/100
+          KSEC1(10) = 100
+        ELSE
+          KSEC1(21) = (IY/100)+1
+        ENDIF
+        KSEC1(11) = IM
+        KSEC1(12) = ID
+        KSEC1(13) = IH
+        IF(IFCST >= (2**16-1)) THEN
+!       the number of hours is too large, use coding in days or
+!       multiple of hours instead
+          IF(MOD(IFCST,24) == 0 ) THEN
+            KSEC1(15)= 2 
+            KSEC1(16) = IFCST/24
+          ELSEIF(MOD(IFCST,12) == 0 ) THEN
+            KSEC1(15)= 12 
+            KSEC1(16) = IFCST/12
+          ELSEIF(MOD(IFCST,6) == 0 ) THEN
+            KSEC1(15)= 11 
+            KSEC1(16) = IFCST/6
+          ELSEIF(MOD(IFCST,3) == 0 ) THEN
+            KSEC1(15)= 10 
+            KSEC1(16) = IFCST/3
+          ELSE
+            WRITE(IU06,*)' SUB: GRIBPAC: THE FORECAST IS TOO LONG'
+            WRITE(IU06,*)' IT CANNOT BE CODED IN GRIB'
+            WRITE(IU06,*)' IFCST = ',IFCST
+            WRITE(IU06,*)' CALL ABORT1 '
+            WRITE(IU06,*)'  '
+          ENDIF 
+        ELSE
+          KSEC1(15)= 1 
+          KSEC1(16) = IFCST
+        ENDIF
+
+        IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
+          KSEC1(39) = 1
+        ELSEIF ( MARSTYPE .EQ. '4v' ) THEN
+          KSEC1(39) = 6
+        ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
+          KSEC1(39) = 2
+        ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
+          KSEC1(39) = 10 
+        ELSEIF ( MARSTYPE .EQ. 'pf' ) THEN
+          KSEC1(39) = 11 
+        ELSE
+          KSEC1(39) = 9
+        ENDIF
+
+        IF (KSEC1(39).NE.9.AND.KSEC1(39).NE.10.AND.KSEC1(39).NE.11
+     &     .AND.KSEC1(39).NE.6.AND.IFCST.GT.0) THEN
+          WRITE(IU06,*)' SUB: GRIBPAC: THIS IS A FORECAST'
+          WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
+          WRITE(IU06,*)'  '
           WRITE(IU06,*)' CALL ABORT1 '
           WRITE(IU06,*)'  '
-        ENDIF 
+          CALL ABORT1
+        ENDIF
       ELSE
-        KSEC1(15)= 1 
-        KSEC1(16) = IFCST
+!       TAKE THE COMMON INFORMATION FROM THE IFS
+        DO IC=10,NKSEK1
+          KSEC1(IC) = IFS_KSEC1(IC)
+        ENDDO
+
+!       RESET STREAM IF NEEDED
+        IFS_STREAM=IFS_KSEC1(40)
+        IF(.NOT.LNEWLVTP) THEN
+!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,
+     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
+          IF(CSTREAM.EQ.'****') THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) ' ERROR IN GRIBPAC !!!!'
+            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
+            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+          KSEC1(40)= ISTREAM
+        ENDIF
       ENDIF
 
-
-      IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
-        KSEC1(39) = 1
-      ELSEIF ( MARSTYPE .EQ. '4v' ) THEN
-        KSEC1(39) = 6
-      ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
-        KSEC1(39) = 2
-      ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
-        KSEC1(39) = 10 
-      ELSEIF ( MARSTYPE .EQ. 'pf' ) THEN
-        KSEC1(39) = 11 
-      ELSE
-        KSEC1(39) = 9
-      ENDIF
-
-      IF (KSEC1(39).NE.9.AND.KSEC1(39).NE.10.AND.KSEC1(39).NE.11
-     &   .AND.KSEC1(39).NE.6.AND.IFCST.GT.0) THEN
-        WRITE(IU06,*)' SUB: GRIBPAC: THIS IS A FORECAST'
-        WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
-        WRITE(IU06,*)'  '
-        WRITE(IU06,*)' CALL ABORT1 '
-        WRITE(IU06,*)'  '
-        CALL ABORT1
-      ENDIF
 
       KLENP = NTGRIB 
       KSEC4(1) = KLENP
@@ -224,7 +263,8 @@
 !*    2. CHECK ERROR CODE.
 !        ----------------
 
-      CALL WSTREAM_STRG(KSEC1(40),CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE)
+      CALL WSTREAM_STRG(KSEC1(40),CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
+     &                  KSTREAM,LASTREAM)
 
       WRITE(IU06,*)'  '
       WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,
@@ -243,11 +283,11 @@
           CALL FLD2FDB (IU06, ITEST, KSEC1, KGRIB, KWORD, 'WRITE',
      &     IERR,
      &     YCLASS, YEXPVER, CDFDBSF, CLDOMAIN,
-     &     IDIR, IFRE , KFDB)
+     &     IDIR, IFRE , KFDB, LFDBOPEN)
           IF(ITEST.GT.0) THEN
             WRITE(IU06,*) '   SUB. GRIBPAC:  GRIB FIELD LENGTH ',
      &       KWORD, ' WRITTEN TO FDB ',
-     &       '(REFERENCE=',Kfdb,')'
+     &       '(REFERENCE=',KFDB,')'
           ENDIF
 
 !*       2.2 PRINT ERROR CODE.

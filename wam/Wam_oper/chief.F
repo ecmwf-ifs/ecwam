@@ -83,6 +83,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
@@ -115,7 +116,7 @@
 ! ----------------------------------------------------------------------
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
 
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
@@ -126,7 +127,6 @@
       CHARACTER*12 ZERO,CBEGDAT
       LOGICAL LFDB, LLSTOP, LLWRRE, LLRESTARTED, LLIRANK
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
-
       time0=-wam_user_clock()
       IU06=6
 
@@ -268,6 +268,7 @@
       CBEGDAT='999999999999'
       IDUM=0
       IDURAT=-99
+      NFDBREF=0  ! only used in coupled model
 
  20   CONTINUE
 
@@ -277,7 +278,8 @@
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM, KQGAUSS,
-     &             MASK_IN, MASK_OUT)
+     &             MASK_IN, MASK_OUT,
+     &             NFDBREF)
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 

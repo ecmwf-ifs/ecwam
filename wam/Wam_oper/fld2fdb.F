@@ -2,7 +2,7 @@
 
       SUBROUTINE FLD2FDB (kuso, ktest, ksec1, kfield, klen, cdfun, kerr,
      &                    cdclass, cdexpver, cdfdbsf, cddomain,
-     &                    kdir, kfre, kfdb)
+     &                    kdir, kfre, kfdb, lfdbopen)
 
 !=======================================================================
 
@@ -107,6 +107,8 @@
 
 !     the module is needed in order to resolve the problem with the 
 !     output of 251 for the multi-analysis problem.
+!     because 251 does not contain the origin in the grib header
+!     it is not very clean !!!!!
       USE YOWGRIBHD , ONLY : KSEK1
       USE FDBSUBS
 
@@ -143,18 +145,8 @@
       CHARACTER*8  cldate
       CHARACTER*8  cdateref
 
-!     HELPS TO CALL IOPENFDB ONLY ONCE.
-!     ---------------------------------
-
-      LOGICAL     lopenfdb 
-      DATA        lopenfdb /.FALSE./
-      SAVE        lopenfdb
-
-
-!     KEEP THE VALUES OF the FDB REFERENCE
-
-      INTEGER IADDR1
-      SAVE IADDR1 
+      LOGICAL :: LASTREAM 
+      LOGICAL :: lfdbopen 
 
 !     ------------------------------------------------------------------
 
@@ -168,6 +160,15 @@
       CALL u2l1cr( cdfun )
 
       IF ( cdfun .NE. 'close' ) THEN
+        idum=0
+        call WSTREAM_STRG(ksec1(40),clstream,idum,idum,cdum,
+     &                    idum,lastream)
+        if(clstream.eq.'****') then 
+          WRITE(kuso,'( "Error\ /Fld2fdb/ stream unknown ", i4)' )
+     &    ksec1(40) 
+          kerr = 1
+          return
+        endif
         IF (ksec1(39) .EQ. 9 ) THEN
           cltype='fc'
         ELSE IF  (ksec1(39) .EQ. 10 ) THEN
@@ -241,15 +242,15 @@
 !     ------------------------------------------------------------------
 
       IF ( cdfun .EQ. 'write' .OR. cdfun .EQ. 'read' ) THEN
-        IF ( .NOT. lopenfdb )  THEN
+        IF ( .NOT. lfdbopen )  THEN
           if (ksec1(40).eq.1082 .or.
      &        ksec1(40).eq.1222 .or.
      &        ksec1(40).eq.1095 .or.
      &        ksec1(40).eq.1203 .or.
      &        ksec1(40).eq.1204) then
-            istat = iopenfdbsubs( 'seas', iaddr1, cdfun(1:1) )
+            istat = iopenfdbsubs( 'seas', kfdb, cdfun(1:1) )
           else
-            istat = iopenfdbsubs( 'fdb', iaddr1, cdfun(1:1) )
+            istat = iopenfdbsubs( 'fdb', kfdb, cdfun(1:1) )
           endif
           IF ( istat .NE. 0 ) THEN
             WRITE(kuso,'("Error\ /Fld2fdb/ Action specified: ",a)')
@@ -264,7 +265,7 @@
 
           icdfdbsf = LEN_TRIM(cdfdbsf)
           IF (icdfdbsf .GT. 0 ) THEN
-            istat = iset_fdbsubs_root(iaddr1,    cdfdbsf(1:icdfdbsf) )
+            istat = iset_fdbsubs_root(kfdb,    cdfdbsf(1:icdfdbsf) )
             IF ( istat .NE. 0 ) THEN
               WRITE(kuso,'("Error\ /Fld2fdb/ Root dir specified: ",a)')
      &        cdfdbsf(1:icdfdbsf)
@@ -278,10 +279,11 @@
             ENDIF
           ENDIF
 
-          lopenfdb = .TRUE.
+          lfdbopen = .TRUE.
 
           idum=0
-          call WSTREAM_STRG(ksec1(40),clstream,idum,idum,cdum)
+          call WSTREAM_STRG(ksec1(40),clstream,idum,idum,cdum,
+     &                    idum,lastream)
 
           if(clstream.eq.'****') then 
             WRITE(kuso,'( "Error\ /Fld2fdb/ stream unknown ", i4)' )
@@ -290,12 +292,11 @@
             return
           endif
 
-          istat = isetvalfdbsubs( iaddr1,   'STREAM', clstream )
+          istat = isetvalfdbsubs( kfdb,   'STREAM', clstream )
 
-          istat = isetvalfdbsubs( iaddr1,   'REPR',    'll' )
+          istat = isetvalfdbsubs( kfdb,   'REPR',    'll' )
 
 !         ensemble number (only set when needed)
-
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
 
           if ( ksec1(40).eq.1081 .OR.
@@ -303,20 +304,17 @@
      &         ksec1(40).eq.1084 .OR.
      &         ksec1(40).eq.1086 ) then
             if ( ksec1(42).gt.0 ) then
-              istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
+              istat = isetvalfdbsubs( kfdb,   'NUMBER',  clnumber)
             endif
           else if(ksec1(40).eq.1203 .or. ksec1(40).eq.1204) then
             if ( ksec1(42).gt.0 .or. ksec1(39).eq.2) then
-              istat = isetvalfdb( iaddr1,   'NUMBER',  clnumber)
+              istat = isetvalfdb( kfdb,   'NUMBER',  clnumber)
             endif
           else if(ksec1(40).eq.1082 .OR.
      &            ksec1(40).eq.1095 .OR.
      &            ksec1(40).eq.1222) then
-              istat = isetvalfdbsubs( iaddr1,   'NUMBER',  clnumber)
+              istat = isetvalfdbsubs( kfdb,   'NUMBER',  clnumber)
           endif
-
-          IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ STREAM:", a5,
-     &                    " NUMBER ", a3)') clstream, clnumber
 
 !         system and method
 
@@ -326,7 +324,7 @@
      &        ksec1(40).eq.1203 .or.
      &        ksec1(40).eq.1204) then
             if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
-     &          clparam .EQ. '251' ) THEN
+     &         (clparam .EQ. '251' .OR. ksec1(7).eq.212) ) THEN
               ndir=ksec1(46)
               nfre=ksec1(47)
 
@@ -336,10 +334,10 @@
               else
                 write( clsystem, '(i5.5)' ) ksec1(50+ndir+nfre)
               endif
-              istat = isetvalfdbsubs( iaddr1,   'system',  clsystem)
+              istat = isetvalfdbsubs( kfdb,   'system',  clsystem)
 
               write( clmethod, '(i5.5)' ) ksec1(51+ndir+nfre)
-              istat = isetvalfdbsubs( iaddr1,   'method',  clmethod)
+              istat = isetvalfdbsubs( kfdb,   'method',  clmethod)
             else
 !!            if the class is not od then system is set to off
               if(ksec1(38).ne.1 ) then
@@ -347,11 +345,11 @@
               else
                 write( clsystem, '(i5.5)' ) ksec1(44)
               endif
-              istat = isetvalfdbsubs( iaddr1,   'system',  clsystem)
+              istat = isetvalfdbsubs( kfdb,   'system',  clsystem)
 
               write( clmethod, '(i5.5)' ) ksec1(45)
-              istat = isetvalfdbsubs( iaddr1,   'method',  clmethod)
-              istat = isetvalfdbsubs( iaddr1, 'level','0000')
+              istat = isetvalfdbsubs( kfdb,   'method',  clmethod)
+              istat = isetvalfdbsubs( kfdb, 'level','0000')
             endif
 
             IF (KTEST.GT.3) WRITE(kuso,'("\ /Fld2fdb/ system:", a5,
@@ -375,9 +373,9 @@
                 kerr = 1
                 return
               endif
-              istat = isetvalfdbsubs( iaddr1,  'origin', cdorigin )
+              istat = isetvalfdbsubs( kfdb,  'origin', cdorigin )
             else
-              istat = isetvalfdbsubs( iaddr1,  'origin', 'consensus' )
+              istat = isetvalfdbsubs( kfdb,  'origin', 'consensus' )
             endif
           else if(ksec1(37) == 23) then
             if(ksec1(2).eq.98) then
@@ -388,31 +386,41 @@
               kerr = 1
               return
             endif
-            istat = isetvalfdb( iaddr1,  'origin', cdorigin )
+            istat = isetvalfdb( kfdb,  'origin', cdorigin )
           endif
 
 !         hindcast reference date
           if(ksec1(37) == 23 ) then
             if(ksec1(40) == 1204) then
               write( cdateref, '(i8.8)' ) ksec1(49) 
-              istat = isetvalfdb( iaddr1, 'refdate', cdateref)
+              istat = isetvalfdb( kfdb, 'refdate', cdateref)
             endif
           elseif(ksec1(37) == 26 ) then
             write( cdateref, '(i8.8)' ) ksec1(44) 
-            istat = isetvalfdb( iaddr1, 'refdate', cdateref)
+            istat = isetvalfdb( kfdb, 'refdate', cdateref)
+          elseif(ksec1(37) == 27 ) then
+            if(ksec1(49).gt.0) then
+              write( cdateref, '(i8.8)' ) ksec1(49) 
+              istat = isetvalfdb( kfdb, 'refdate', cdateref)
+            endif
+          elseif(ksec1(37) == 26 ) then
+            write( cdateref, '(i8.8)' ) ksec1(44) 
+            istat = isetvalfdb( kfdb, 'refdate', cdateref)
           elseif(ksec1(37) == 13 ) then
             ndir=ksec1(46)
             nfre=ksec1(47)
-            if(ksec1(40) == 1204) then
+            if(ksec1(40) == 1084 .or.
+     &         ksec1(40) == 1085 .or.
+     &         ksec1(40) == 1204 ) then
               write( cdateref, '(i8.8)' ) ksec1(52+ndir+nfre)
-              istat = isetvalfdb(iaddr1,'refdate',cdateref)
+              istat = isetvalfdb(kfdb,'refdate',cdateref)
             endif
           endif
 
         ENDIF
       ELSEIF ( cdfun .EQ. 'close' ) THEN
         CALL GSTATS(1787,0)
-        istat = iclosefdbsubs( iaddr1 )
+        istat = iclosefdbsubs( kfdb )
         CALL GSTATS(1787,1)
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso,'( "Error\ /Fld2fdb/ Action specified: ", a)' )
@@ -425,7 +433,7 @@
           IF (KTEST.GT.1)
      &     WRITE(kuso, '( "/Fld2fdb/ Closed FDB and DB: " )' )
           kerr = 0
-          lopenfdb = .FALSE.
+          lfdbopen = .FALSE.
           RETURN
         ENDIF
       ELSE
@@ -444,26 +452,32 @@
 !           DATE - TIME - STEP
 
 !     ------------------------------------------------------------------
+      istat = isetvalfdbsubs( kfdb, 'stream', clstream )
+      istat = isetvalfdbsubs( kfdb, 'class',  clclass  )
+      istat = isetvalfdbsubs( kfdb, 'expver', clexpver )
+      istat = isetvalfdbsubs( kfdb, 'domain', cldomain )
+      istat = isetvalfdbsubs( kfdb, 'repr',    'll' )
+      istat = isetvalfdbsubs( kfdb, 'type',   cltype   )
+      istat = isetvalfdbsubs( kfdb, 'param',  clparam  )
+      istat = isetvalfdbsubs( kfdb, 'date',   cldate   )
+      istat = isetvalfdbsubs( kfdb, 'time',   cltime   )
+      istat = isetvalfdbsubs( kfdb, 'step',   clstep   )
+      if(ksec1(7).eq.209) then
+        istat = isetvalfdbsubs( kfdb, 'levty',   'wv'     )
+      else if(ksec1(7).eq.212) then
+        istat = isetvalfdbsubs( kfdb, 'levty',   'ws'     )
+      else
+        istat = isetvalfdbsubs( kfdb, 'levty',   's'     )
+      endif 
 
-      istat = isetvalfdbsubs( iaddr1, 'class',  clclass  )
-      istat = isetvalfdbsubs( iaddr1, 'expver', clexpver )
-      istat = isetvalfdbsubs( iaddr1, 'domain', cldomain )
-      istat = isetvalfdbsubs( iaddr1, 'type',   cltype   )
-      istat = isetvalfdbsubs( iaddr1, 'param',  clparam  )
-      istat = isetvalfdbsubs( iaddr1, 'date',   cldate   )
-      istat = isetvalfdbsubs( iaddr1, 'time',   cltime   )
-      istat = isetvalfdbsubs( iaddr1, 'step',   clstep   )
-      istat = isetvalfdbsubs( iaddr1, 'levty',   's'        )
-!     istat = isetvalfdbsubs( iaddr1, 'level',   '0000'     )
-!     istat = isetvalfdbsubs( iaddr1, 'fstep',  '000000'    )
-
-      IF (kdir.NE.0 .AND. kfre.NE.0 .AND. clparam .EQ. '251' ) THEN
+      IF (kdir.NE.0 .AND. kfre.NE.0 .AND. 
+     &    (clparam .EQ. '251' .OR. ksec1(7).eq.212) ) THEN
         idir = kdir 
         ifre = kfre 
         WRITE( cldir, '(i2.2)' ) idir 
         WRITE( clfre, '(i2.2)' ) ifre 
-        istat = isetvalfdbsubs( iaddr1,   'direction', cldir )
-        istat = isetvalfdbsubs( iaddr1,   'frequency', clfre )
+        istat = isetvalfdbsubs( kfdb,   'direction', cldir )
+        istat = isetvalfdbsubs( kfdb,   'frequency', clfre )
       ELSE
         if (ksec1(40).ne.1082 .and.
      &      ksec1(40).ne.1095 .and.
@@ -472,8 +486,8 @@
      &      ksec1(40).ne.1222) then
           cldir="00"
           clfre="00"
-          istat = isetvalfdbsubs( iaddr1,   'direction', cldir )
-          istat = isetvalfdbsubs( iaddr1,   'frequency', clfre )
+          istat = isetvalfdbsubs( kfdb,   'direction', cldir )
+          istat = isetvalfdbsubs( kfdb,   'frequency', clfre )
         endif
       ENDIF
 
@@ -498,11 +512,11 @@
 !     ------------------------------------------------------------------
 
       IF ( cdfun .EQ. 'write' )      THEN
-        istat = iwritefdbsubs( iaddr1, kfield, klen ) 
+        istat = iwritefdbsubs( kfdb, kfield, klen ) 
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso, '( "Error\ /Fld2fdb/ Failed to write to fdb")' )
           CALL GSTATS(1787,0)
-          istat = iclosefdbsubs( iaddr1 )
+          istat = iclosefdbsubs( kfdb )
           CALL GSTATS(1787,1)
           kerr = 1
           RETURN
@@ -510,11 +524,11 @@
         IF (KTEST.GT.1) WRITE(kuso,'("\ /Fld2fdb/ iwritefdb klen:", i10,
      &                  " status:", i4)') klen, istat
       ELSEIF ( cdfun .EQ. 'read' )  THEN
-        istat = ireadfdbsubs( iaddr1, kfield, klen )
+        istat = ireadfdbsubs( kfdb, kfield, klen )
         IF ( istat .NE. 0 ) THEN
           WRITE(kuso, '( "Error\ /Fld2fdb/ Failed to read from fdb")' )
           CALL GSTATS(1787,0)
-          istat = iclosefdbsubs( iaddr1 )
+          istat = iclosefdbsubs( kfdb )
           CALL GSTATS(1787,1)
           kerr = 1
           RETURN
@@ -533,7 +547,6 @@
 
 !     ------------------------------------------------------------------
 
-      kfdb = iaddr1
       RETURN
       END SUBROUTINE FLD2FDB
 

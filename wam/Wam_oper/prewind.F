@@ -115,6 +115,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
@@ -124,7 +125,7 @@
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FCRANGE
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
 

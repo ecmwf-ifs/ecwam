@@ -48,6 +48,7 @@
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
       USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
+      USE YOWGRIBHD, ONLY : NKSEK1 
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -66,7 +67,7 @@
 ! "Dummy" arrays and parameters for compatability purposes:
       INTEGER NFIELDS, NGPTOTG, NCA, NRA
       PARAMETER (NFIELDS=1, NGPTOTG=1, NCA=1, NRA=1)
-      INTEGER ISEC1(255), ISEC2(22+NRA)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NRA)
       REAL FIELDS(1)
       INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------

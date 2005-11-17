@@ -103,7 +103,7 @@
       CHARACTER*12 CDATE 
       CHARACTER*40 CLMSG
       CHARACTER*120 INFILEN,OUTFILEN
-      LOGICAL LLEXIST, LFDBIOOUT
+      LOGICAL LLEXIST, LFDBIOOUT, LFDBOPEN
 
       CHARACTER *(*) CDFDB2DSP, CDCLASS, CDEXPVER, CDDOMAIN
 !-----------------------------------------------------------------------
@@ -390,12 +390,12 @@
             CALL FLD2FDB (IU06, itest, isec1, outgrib, kword, 'write',
      &                    ierr,
      &                    cdclass,cdexpver,cdfdb2dsp,cddomain,
-     &                    k, m, kfdb)
+     &                    k, m, kfdb,lfdbopen)
             ISTAT = iflushfdbsubs (kfdb)
             CALL FLD2FDB (IU06, itest, isec1, outgrib, kount, 'close',
      &                    kerr,
      &                    cdclass,cdexpver,cdfdb2dsp,cddomain,
-     &                    k, m, kfdb)
+     &                    k, m, kfdb,lfdbopen)
           ELSE
             KOUNT=KWORD*NPRECI
             CALL PBWRITE(IUOUT,OUTGRIB,KOUNT,KRET)

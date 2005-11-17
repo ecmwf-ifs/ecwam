@@ -43,8 +43,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWGRID  , ONLY : SINPH    ,COSPH
-      USE YOWMAP   , ONLY : XDELLA   ,IXLG    ,KXLT    ,ZDELLO   ,
-     &              LLBOUND
+      USE YOWMAP   , ONLY : XDELLA   ,IXLG    ,KXLT    ,ZDELLO
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NGY      ,NIBLO   ,LL1D
       USE YOWPCONS , ONLY : DEG      ,RAD
@@ -145,13 +144,9 @@
           DO JR = 1, IR-1
 
             OUTER : DO IJJ=NSTART(JR),NEND(JR)
-!             limit search to boundary points
-              IF(LLBOUND(IJJ)) THEN
                 KJ = KXLT(IJJ,1)
                 IF(KJ.GE.KMINLMAX(IR) .AND. KJ.LE.KMAXLMAX(IR) ) THEN
                   DO IJ=NEND(IR), NSTART(IR), -1
-!                   limit search to boundary points
-                    IF(LLBOUND(IJ)) THEN
                       KI = KXLT(IJ,1)
                       COSLON = COS(XLONG(IJJ)-XLONG(IJ))
                       DIS2 = COSLON*CPH2(KJ,KI)+SPH2(KJ,KI)
@@ -160,10 +155,8 @@
                         INTLMAX(JR,IR)=1
                         EXIT OUTER 
                       ENDIF
-                    ENDIF
                   ENDDO
                 ENDIF 
-              ENDIF 
             ENDDO OUTER 
 
             INTLMAX(IR,JR) = INTLMAX(JR,IR)

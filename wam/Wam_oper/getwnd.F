@@ -73,6 +73,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPARAM , ONLY : NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWGRIBHD, ONLY : NKSEK1 
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : NWAM_BLKS
@@ -82,7 +83,7 @@
 
 ! ----------------------------------------------------------------------
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------

@@ -108,7 +108,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS   ,PPRESOL
+     &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
      &            SB       ,THETAQ
@@ -156,6 +156,7 @@
       PARAMETER (ZERO=' ', CDUM='000000000000')
 
       LOGICAL LINTGRS
+      LOGICAL LFDBOPEN
 
 ! DIMENSION DUMMY COUPLED VARIABLES
 
@@ -166,7 +167,7 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       REAL :: FCRANGE
@@ -315,10 +316,14 @@
 
       NTOTENS = 0
       NENSFNB = 0  
-      ISTREAM =1045
+      ISTREAM =1045 !! if changed to an ifs stream also change LNEWLVTP
       NSYSNB  = -1
       NMETNB  = -1
       IREFDATE= 0
+
+      LGRHDIFS=.FALSE.
+      LNEWLVTP=.FALSE.
+
 ! ----------------------------------------------------------------------
 
 !*    3. READ PREPROC OUTPUT.
@@ -339,6 +344,7 @@
 
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
+
       CALL SETWGRIBHD
 ! ----------------------------------------------------------------------
 
@@ -589,12 +595,13 @@
      &                 NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                 NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS, 
+     &                 LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                 DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                 CDATEA, CDATEF, CDATEA,
      &                 CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                 CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                 IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                 IFDB)
+     &                 IFDB, LFDBOPEN)
 
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPEC2FDB DONE'
       ELSEIF (.NOT.LGRIBOUT) THEN

@@ -61,7 +61,7 @@
       LOGICAL LPBIOIN, LGRIBIN, LGRIBOUT, LPBIOOUT, LMESSPASS, LFDB,
      &        LWCOU, LFDBIOOUT, LNOCDIN, L4VTYPE, LFRSTFLD,
      &        LALTAS, LSARAS, LSARINV, LTURN90,
-     &        LGUST, LADEN  ,LL1D
+     &        LGUST, LADEN  ,LL1D, LGRHDIFS ,LNEWLVTP
 
 
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
@@ -84,7 +84,7 @@
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D, LWCOUNORMS
+     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP
 
 ! ----------------------------------------------------------------------
 

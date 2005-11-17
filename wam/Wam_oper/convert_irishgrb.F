@@ -12,7 +12,9 @@
 
 !     USAGE :
 !     ------  
-!            input_filename : input.dat
+!            input_filenames : input.dat1
+!                              input.dat2
+!                              input.dat3
 !            output_filename : output.dat
 
 !     LIBRARY : EMOSLIB
@@ -23,7 +25,25 @@
 !           IF OTHER PARAMETERS ARE PRESENT IN THE INPUT FILE, THEY
 !           WILL BE UNTOUCHED AND WILL BE WRITTEN OUT TO THE OUTPUT
 !           FILE FIRST. 
-
+!
+!     MODIFICATIONS:
+!     -------------
+!       1. (17 Nov. 2000): Irish file arrangement changed from only
+!                          one file into three files.  Program and
+!                          SMS script changed accordingly.
+!
+!       2. (21 Nov. 2000): To correct the problem of having spectra
+!                          of higher waves at higher frequencies and
+!                          vice versa, the parameter 250 is stored
+!                          in reverse order with respect to frequency
+!                          (See Important Note below).
+!----------------------------------------------------------------
+!     IMPORTANT NOTE (Saleh):
+!     -----------------------
+!          Frequency bins of the spectrum are saved in reverse order,
+!          i.e. from high frequency to low frequency, in order to plot
+!          the 2D spectra correctly on the map.
+!
 ! ----------------------------------------------------------------------
 
       PARAMETER(NANGMAX=24,NFREMAX=36)
@@ -42,7 +62,19 @@
       REAL ZSEC2(96),ZSEC3(2)
       REAL PSEC4(Nxymax), PSEC4OUT(Nxymax*NFREMAX*NANGMAX)
 
+      character Num*1     ! Saleh
 ! ----------------------------------------------------------------------
+
+
+!------------------------------------------------------------
+        WRITE(*,*)' IMPORTANT NOTE (Saleh):'
+        WRITE(*,*)' -----------------------'
+        WRITE(*,*)'   Frequency bins of the spectrum '//
+     &                       'are saved in reverse order,'
+        WRITE(*,*)'   i.e. from high frequency to low '//
+     &                       'frequency, in order to plot'
+        WRITE(*,*)'   the 2D spectra correctly on the map.'
+!------------------------------------------------------------
 
       ZMISS=-999.
       I4=1
@@ -74,15 +106,20 @@
       PSEC3(2)=ZMISS
       PSEC4OUT=ZMISS
 
-      CALL PBOPEN(IUGRS,'input.dat','r',KRET)
+      write(Num,'(I1)')ICOMPTOT                      ! Saleh
+      CALL PBOPEN(IUGRS,'input.dat'//Num,'r',KRET)   ! Saleh
+
+!     CALL PBOPEN(IUGRS,'input.dat','r',KRET)
       IF(KRET.LT.0) THEN
         IF(KRET.EQ.-1)
-     &   WRITE (*,*) ' ERROR; COULD NOT OPEN FILE ','input.dat'
+     &   WRITE (*,*) ' ERROR; COULD NOT OPEN FILE ','input.dat' //Num
         IF(KRET.EQ.-2)
-     &   WRITE (*,*) ' ERROR; INVALID FILENAME ','input.dat'
+     &   WRITE (*,*) ' ERROR; INVALID FILENAME ','input.dat'   //Num
         IF(KRET.EQ.-3)
      &   WRITE (*,*) ' ERROR; INVALID OPEN MODE SPECIFIED'
         CALL ABORT
+      ELSE
+       WRITE (*,'(A)') ' ***** FILE OPENED: '//'input.dat' //Num  ! Saleh
       ENDIF
 
       ICOMPE=0
@@ -94,8 +131,19 @@
       CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
 
       IF (KRET.EQ.-1) THEN
-        WRITE (*,*) ' REACHED EOF IN ','input.dat' 
+        WRITE (*,*) ' REACHED EOF IN ','input.dat'  //Num
         CALL PBCLOSE(IUGRS,KRET)
+
+        IF (ICOMPE.EQ.0) THEN               ! Saleh
+          ICOMPTOT=ICOMPTOT+1               ! Saleh
+          IF(ICOMPTOT.LE.3) GOTO 200        ! Saleh
+          STOP                              ! Saleh
+        ENDIF                               ! Saleh
+
+        WRITE (*,*) ' Processing .....'  ! Saleh
+        WRITE (*,*) ' NANG =  ', NANG  ! Saleh
+        WRITE (*,*) ' NFRE =  ', NFRE  ! Saleh
+        WRITE (*,*) ' ICOMPE =  ', ICOMPE  ! Saleh
 
         IF(ICOMPE.NE.NANG*NFRE) THEN
           WRITE (*,*) 'ERROR  THE NUMBER OF PARAMETER 251 FIELDS' 
@@ -170,10 +218,21 @@
         IF(ICOMPTOT.LE.2) GOTO 200
 
         CALL PBCLOSE(IUOUT,KRET)
+
+!------------------------------------------------------------
+        WRITE(*,*)' IMPORTANT NOTE (Saleh):'
+        WRITE(*,*)' -----------------------'
+        WRITE(*,*)'   Frequency bins of the spectrum '//
+     &                       'are saved in reverse order,'
+        WRITE(*,*)'   i.e. from high frequency to low '//
+     &                       'frequency, in order to plot'
+        WRITE(*,*)'   the 2D spectra correctly on the map.'
+!------------------------------------------------------------
+
         STOP
 
       ELSEIF (KRET .EQ. -2) THEN
-        WRITE (*,*) ' ERROR IN FILE HANDLING IN ','input.dat' 
+        WRITE (*,*) ' ERROR IN FILE HANDLING IN ','input.dat' //Num
       ELSEIF (KRET .EQ. -3) THEN
         WRITE (*,*) ' INGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',IPLENG
         WRITE (*,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
@@ -190,6 +249,8 @@
         WRITE (*,*) ' DECODING ERROR SEE GRIBEX DESCRIPTION *' 
         CALL ABORT
       ENDIF
+
+      WRITE (*,'(A,I4,A)') ' Parameter ',KSEC1(6), ' read!'! Saleh
 
       IF (KSEC1(6).ne.251) THEN
         IF (ICOMPTOT.EQ.1) THEN
@@ -230,6 +291,9 @@
           CALL ABORT()
         ENDIF
       ELSEIF (ICOMPTOT.EQ.3.AND.ICOMPE.EQ.0) THEN
+!!!!        WRITE(*,*) '   KSEC2(4)=', KSEC2(4), '    KSEC2(5)=', KSEC2(5) 
+!!!!        WRITE(*,*) '   IAREA(3)=', IAREA(3), '    IAREA(4)=', IAREA(4)
+!!!!        WRITE(*,*) '   IAREA(5)=', IAREA(5), '    IAREA(6)=', IAREA(6)
         IF(KSEC2(4).EQ.IAREA(3).AND.KSEC2(5).EQ.IAREA(4)) GOTO 100
         IF(KSEC2(4).EQ.IAREA(5).AND.KSEC2(5).EQ.IAREA(6)) GOTO 100
         print*,'SUBDOMAIN :'
@@ -258,8 +322,23 @@
         NANG = KSEC1(46)
         NFRE = KSEC1(47)
         NFRANG = NANG*NFRE
+
+        WRITE (*,*) ' .... ICOMPE =  ', ICOMPE  ! Saleh
+
         DO IJ=1,Nxy
-          PSEC4OUT(KK+(MM-1)*NANG+(IJ-1)*NFRANG) =  PSEC4(IJ)
+!----------------------------------------------------------------
+!  IMPORTANT NOTE (Saleh):
+!    Frequency bins of the spectrum are saved in reverse order,
+!    i.e. from high frequency to low frequency, in order to plot
+!    the 2D spectra correctly on the map.
+!  The original (CORRECT) statement is:
+!
+!         PSEC4OUT(KK+(MM-1)*NANG+(IJ-1)*NFRANG) =  PSEC4(IJ)
+!
+!  is replaced by the following (reversed spectral bins):
+!
+          PSEC4OUT(KK+(NFRE-MM)*NANG+(IJ-1)*NFRANG) =  PSEC4(IJ)
+!----------------------------------------------------------------
         ENDDO
       ENDIF
 

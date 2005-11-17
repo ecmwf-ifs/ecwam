@@ -80,7 +80,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS   ,PPRESOL
+     &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJL
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
@@ -102,11 +102,11 @@
      &            FL1      ,FL2      ,FL3
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,MFDBSF   ,IDELWI   ,
+     &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
      &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
      &            NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,MARSTYPE ,
      &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,LSARINV  ,
-     &            IREFDATE
+     &            IREFDATE ,LFDBOPEN
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -234,7 +234,7 @@
 !       PRINTS OUT NORMS
         CALL OUTWNORM
 
-        CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, MFDBSF)
+        CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, NWFDBREF, LFDBOPEN)
 
         IF(LMESSPASS) THEN
           CALL GSTATS(752,0)
@@ -328,14 +328,15 @@
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                     DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                     MFDBSF)
+     &                     NWFDBREF, LFDBOPEN)
             CALL GSTATS(1976,0)
-            ISTAT = IFLUSHFDBSUBS (MFDBSF)
+            ISTAT = IFLUSHFDBSUBS (NWFDBREF)
             CALL MPL_BARRIER(CDSTRING='WAMASSI:')
             CALL GSTATS(1976,1)
             LLFLUSH = .FALSE.
@@ -401,13 +402,13 @@
           CALL GSTATS(752,1)
         ENDIF
       ENDIF
-      IF (LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. (
+      IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. (
      &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
         CALL GSTATS(1976,0)
-        ISTAT = IFLUSHFDBSUBS (MFDBSF)
+        ISTAT = IFLUSHFDBSUBS (NWFDBREF)
         CALL MPL_BARRIER(CDSTRING='WAMASSI:')
         CALL GSTATS(1976,1)
-        WRITE(IU06,*) '   DB ', MFDBSF , ' FLUSHED AT ',
+        WRITE(IU06,*) '   DB ', NWFDBREF , ' FLUSHED AT ',
      &    CDTPRO, ' FROM WAMASSI. '
         CALL FLUSH (IU06)
       ELSE

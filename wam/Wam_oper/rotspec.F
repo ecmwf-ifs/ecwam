@@ -41,11 +41,14 @@
 
 ! -------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : ZPI
+!     USE YOWPCONS , ONLY : ZPI  ! Does NOT work for stand-alone SAR inversion!
+                                 ! defined explicitly below (SA)!
 
       DIMENSION FL1(NANG,NFRE), FL3(NANG,NFRE)
 
 ! --------------------------------------------------------------------
+
+      ZPI=8.*ATAN(1.)
 
       FTH = MOD(RTHET+ZPI,ZPI)
       FTH = FTH * REAL(KL) / ZPI

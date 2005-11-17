@@ -71,6 +71,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -89,7 +90,7 @@
       LOGICAL LWNDFILE, LCLOSEWND
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
 

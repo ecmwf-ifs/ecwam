@@ -55,7 +55,7 @@
      &            COSPH
       USE YOWICE   , ONLY : ICEMASK  ,FLMIN
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
-     &            XDELLA   ,ZDELLO   ,LLBOUND
+     &            XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
@@ -92,7 +92,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
       INTEGER :: NFRPEALT
       REAL :: WHMOD(NIBLO)
-      LOGICAL :: LSQRT
+      LOGICAL :: LSQRT, LDUM
       LOGICAL :: LLCOMMON(NPROC)
       LOGICAL,ALLOCATABLE, DIMENSION(:) :: LLWITHIN 
       LOGICAL :: LLALT(NUMALT)
@@ -579,7 +579,8 @@
               WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS DATA IS OVER',
      &                       REJECT*100,' % ',REJRATIO*100,' %'
               WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER 
-              CALL WSTREAM_STRG(KSEK1(40),CSTRM,IDUM,IDUM,CDUM)
+              CALL WSTREAM_STRG(KSEK1(40),CSTRM,IDUM,IDUM,CDUM,IDUM,
+     &                          LDUM)
               WRITE(IUMAIL,*)' STREAM        ',CSTRM
               WRITE(IUMAIL,*)' DOMAIN        ',CLDOMAIN
               WRITE(IUMAIL,*)' AT TIME       ',CDTPRO
@@ -835,7 +836,6 @@
      &         KJ .LE. KMAXLMAX(IRANK) ) THEN
 
                DO IJ=NSTART(IRANK),NEND(IRANK)
-                 IF(LLBOUND(IJ)) THEN
                    KI = KXLT(IJ,1)
                    DELLON = XLONGKJ-XLONG(IJ)
                    COSLON = COS(DELLON*RAD)
@@ -846,7 +846,6 @@
                      LLWITHIN(IOBS) = .TRUE.
                      EXIT
                    ENDIF
-                 ENDIF
                ENDDO
 
             ENDIF

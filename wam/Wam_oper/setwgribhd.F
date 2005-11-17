@@ -35,7 +35,8 @@
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3,
-     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI
+     &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,
+     &            IFS_KSEC1,LGRHDIFS ,LNEWLVTP 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
@@ -50,13 +51,15 @@
 
       IMPLICIT NONE
 
-      INTEGER JC, KST, JSN, CLASS_WGRIB, ICLASS, ICENTRE
+      INTEGER IC, JC, KST, JSN, CLASS_WGRIB, ICLASS, ICENTRE, IFS_STREAM
 
+      CHARACTER*2 MARSFCTYPE
+      CHARACTER*4 CSTREAM
       CHARACTER*8 CLWORD
 
-!-------------------------------------------------------------------
+      LOGICAL :: LASTREAM
 
-      NKSEK1 = 255
+!-------------------------------------------------------------------
 
       ALLOCATE(KSEK0(NKSEK0))
       ALLOCATE(KSEK1(NKSEK1))
@@ -90,7 +93,12 @@
       KSEK1( 4) =   255     ! GRID DEFINITION.
       KSEK1( 5) =   192     ! FLAG (WMO CODE TABLE 1)
       KSEK1( 6) =     0     ! PARAMETER IDENTIFIER (WMO CODE TABLE 2)
-      KSEK1( 7) =   102     ! TYPE OF LEVEL (WMO CODE TABLE 3)
+      IF(.NOT.LNEWLVTP) THEN
+        KSEK1( 7) =   102     ! TYPE OF LEVEL (WMO CODE TABLE 3)
+      ELSE
+        KSEK1( 7) =   209   ! if this change check fld2fdb, grb2wgrd  
+      ENDIF                 ! spec2fdb and intwaminput.
+                            ! for spectra it will be reset to 212
       KSEK1( 8) =     0     ! TYPE OF LEVEL (WMO CODE TABLE 3)
       KSEK1( 9) =     0     ! VALUE(S) OF LEVEL (WMO CODE TABLE 3)
       KSEK1(10) =     0     ! YEAR OF DATA
@@ -110,111 +118,138 @@
       KSEK1(22) =     0     ! 
       KSEK1(23) =     0     !
       KSEK1(24) =     1     ! INDICATES LOCAL USE OF SECTION 1.
+!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
 !       25-36                                                  0
 
+!     DEFINE YOUR OWN LOCAL HEADER
+      IF(.NOT. LGRHDIFS) THEN
       KSEK1(37) = NLOCGRB ! INDICATES LOCAL MARS TABLE USED.
 
-      ICLASS=CLASS_WGRIB(YCLASS,IU06)
-      KSEK1(38) = ICLASS    ! INDICATES CLASS
-      KSEK1(39) =     2     ! TYPE OF FIELD 1=FG 2=AN 9=FC 10=F 11=PF
+        ICLASS=CLASS_WGRIB(YCLASS,IU06)
+        KSEK1(38) = ICLASS    ! INDICATES CLASS
+        KSEK1(39) =     2     ! TYPE OF FIELD 1=FG 2=AN 9=FC 10=F 11=PF
 
-      IF(ISTREAM.GT.0) THEN
-        KSEK1(40)= ISTREAM  ! STREAM
-      ELSE
-        WRITE(IU06,*) ''
-        WRITE(IU06,*) '*******************************************'
-        WRITE(IU06,*) ' ERROR IN SETWGRIBHD !!!!! '
-        WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!' 
-        WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input' 
-        WRITE(IU06,*) '*******************************************'
-        WRITE(IU06,*) ''
-        CALL ABORT1
-      ENDIF
-
-      KSEK1(41) =     0     ! EXPERIMENT VERSION
-      DO JC = 1, 4
-        KSEK1(41) = KSEK1(41)*256 + ICHAR(YEXPVER(JC:JC))
-      ENDDO
-
-      IF(NLOCGRB == 18 ) THEN
-        ! MULTI ANALYSIS ENSEMBLE RUNS
-        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
-        CLWORD='    ECMF'
-        READ(CLWORD,'(A8)') KSEK1(45)
-        IF(NCONSENSUS == 0) THEN
-        !   Data from one centre (check also fld2fdb)
-          KSEK1(46)=0
-          IF(NDWD == 1) THEN
-            KSEK1(44)=78
-          ELSEIF(NMFR == 1) THEN
-            KSEK1(44)=85
-          ELSEIF(NNCEP == 1) THEN
-            KSEK1(44)=7
-          ELSEIF(NUKM == 1) THEN
-            KSEK1(44)=74
-          ENDIF
+        IF(ISTREAM.GT.0) THEN
+          KSEK1(40)= ISTREAM  ! STREAM
         ELSE
-        ! Consensus analysis (always includes ECMWF)
-          KSEK1(44)=255
-          ICENTRE=1
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ' ERROR IN SETWGRIBHD !!!!! '
+          WRITE(IU06,*) ' ISTREAM MUST ALWAYS BE SPECIFIED > 0 !!!' 
+          WRITE(IU06,*) ' SEE INPUT NAMELIST wam_input' 
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) ''
+          CALL ABORT1
+        ENDIF
+
+        KSEK1(41) =     0     ! EXPERIMENT VERSION
+        DO JC = 1, 4
+          KSEK1(41) = KSEK1(41)*256 + ICHAR(YEXPVER(JC:JC))
+        ENDDO
+
+        IF(NLOCGRB == 18 ) THEN
+          ! MULTI ANALYSIS ENSEMBLE RUNS
+          KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+          KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
           CLWORD='    ECMF'
-          READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
-          IF(NDWD == 1) THEN
-            ICENTRE=ICENTRE+1
-            CLWORD='    EDZW'
+          READ(CLWORD,'(A8)') KSEK1(45)
+          IF(NCONSENSUS == 0) THEN
+          !   Data from one centre (check also fld2fdb)
+            KSEK1(46)=0
+            IF(NDWD == 1) THEN
+              KSEK1(44)=78
+            ELSEIF(NMFR == 1) THEN
+              KSEK1(44)=85
+            ELSEIF(NNCEP == 1) THEN
+              KSEK1(44)=7
+            ELSEIF(NUKM == 1) THEN
+              KSEK1(44)=74
+            ENDIF
+          ELSE
+          ! Consensus analysis (always includes ECMWF)
+            KSEK1(44)=255
+            ICENTRE=1
+            CLWORD='    ECMF'
             READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+            IF(NDWD == 1) THEN
+              ICENTRE=ICENTRE+1
+              CLWORD='    EDZW'
+              READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+            ENDIF
+            IF(NMFR == 1) THEN  
+              ICENTRE=ICENTRE+1
+              CLWORD='    LFPW'
+              READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+            ENDIF
+            IF(NNCEP == 1) THEN 
+              ICENTRE=ICENTRE+1
+              CLWORD='    KWBC'
+              READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+            ENDIF     
+            IF(NUKM == 1) THEN
+              ICENTRE=ICENTRE+1
+              CLWORD='    EGRR'
+              READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
+            ENDIF 
+            KSEK1(46)=ICENTRE
           ENDIF
-          IF(NMFR == 1) THEN  
-            ICENTRE=ICENTRE+1
-            CLWORD='    LFPW'
-            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
-          ENDIF
-          IF(NNCEP == 1) THEN 
-            ICENTRE=ICENTRE+1
-            CLWORD='    KWBC'
-            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
-          ENDIF     
-          IF(NUKM == 1) THEN
-            ICENTRE=ICENTRE+1
-            CLWORD='    EGRR'
-            READ(CLWORD,'(A8)') KSEK1(46+ICENTRE)
-          ENDIF 
-          KSEK1(46)=ICENTRE
-        ENDIF
-      ELSE IF(NLOCGRB == 15 .OR.
-     &        NLOCGRB == 23 ) THEN
-!       seasonal and monthly forecasts
-        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
-                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
-        KSEK1(44) = NSYSNB ! SYSTEM NUMBER
-        KSEK1(45) = NMETNB ! METHOD NUMBER
+        ELSE IF(NLOCGRB == 15 .OR.
+     &          NLOCGRB == 23 ) THEN
+!         seasonal and monthly forecasts
+          KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+          KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                              ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
+          KSEK1(44) = NSYSNB ! SYSTEM NUMBER
+          KSEK1(45) = NMETNB ! METHOD NUMBER
 
-!       monthly forecast hindcasts need a reference date
-        IF(KSEK1(40) == 1204 ) THEN
-           KSEK1(49) = IREFDATE 
+!         monthly forecast hindcasts need a reference date
+          IF(KSEK1(40) == 1204 ) THEN
+             KSEK1(49) = IREFDATE 
+          ELSE
+            KSEK1(49) = 0
+          ENDIF
+        ELSE IF(NLOCGRB == 26 ) THEN
+!         EPS or DETERMINISTIC HINDCASTS
+          KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+          KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                              ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
+          KSEK1(44) = IREFDATE ! HINDCASTS NEED A REFERENCE DATE
+          KSEK1(45) = 0
         ELSE
-          KSEK1(49) = 0
+!         DETERMINISTIC OR EPS  
+          KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
+          KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
+                              ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
+          KSEK1(44) = 0
+          KSEK1(45) = 0
         ENDIF
-      ELSE IF(NLOCGRB == 26 ) THEN
-!       EPS or DETERMINISTIC HINDCASTS
-        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
-                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
-        KSEK1(44) = IREFDATE ! HINDCASTS NEED A REFERENCE DATE
-        KSEK1(45) = 0
+
       ELSE
-!       DETERMINISTIC OR EPS  
-        KSEK1(42) = NENSFNB ! ENSEMBLE FORECAST NUMBER
-        KSEK1(43) = NTOTENS ! TOTAL ENSEMBLE FORECAST NUMBER
-                            ! SHOULD BE 0 EXCEPT FOR ENSEMBLE RUNS ! 
-        KSEK1(44) = 0
-        KSEK1(45) = 0
+!     USES GRIB HEADER INFORMATION FROM THE IFS COUPLING
+        DO IC=24,NKSEK1
+          KSEK1(IC) = IFS_KSEC1(IC)
+        ENDDO
+        IFS_STREAM=IFS_KSEC1(40)
+        IF(.NOT.LNEWLVTP) THEN
+!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,
+     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
+          IF(CSTREAM.EQ.'****') THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) ' ERROR IN SETWGRIBHD !!!!'
+            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
+            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+          KSEK1(40)= ISTREAM
+        ELSE
+          ISTREAM=IFS_STREAM
+        ENDIF
       ENDIF
-
-!    *SECTION 2*  INTEGER  GRID DEFINITION BLOCK.
-
 !       WORD        VALUE   CONTENTS.
 !       ----        -----   ---------
 

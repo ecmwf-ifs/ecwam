@@ -66,6 +66,7 @@
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS
+      USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
@@ -94,9 +95,10 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF
+      LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF, LASTREAM
       LOGICAL LLNALTGO
-      CHARACTER*4 :: CSTREAM, MARSFCTYPE
+      CHARACTER*2 :: MARSFCTYPE
+      CHARACTER*4 :: CSTREAM
       CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
@@ -126,7 +128,7 @@
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D, LWCOUNORMS
+     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP
 
       CHARACTER* 12 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -278,7 +280,7 @@
 !     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
 !              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
-!                     IT MUST BE SPECIFIED ! 
+!                     IT MUST BE SPECIFIED EXCEPT IF LGRHDIFS IS TRUE ! 
 !     LALTGRDOUT: FLAG USED TO CONTROL THE OUTPUT OF GRIDDED ALTIMETER
 !                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT) 
 !                (SEE GRFIELD). 
@@ -306,7 +308,11 @@
 !                  ARE PRODUCED FOR THE DIFFERENT FIELDS EXCHANGED 
 !                  BETWEEN WAM AND THE COUPLED ATMOSPHERIC MODEL.
 !                  IT IS FALSE BY DEFAULT.
-
+!     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
+!                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
+!                COUPLED TO THE IFS).
+!     LNEWLVTP : FLAGS CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
+!                DEFINITIONS ARE USED.
 !     NAMELIST NAOT : 
 !     ===============
 !     CLOUT : LIST OF OUTPUT TIME FOR INTEGRATED PARAMETERS.
@@ -461,8 +467,13 @@
 
       LL1D = .TRUE.
 
+      LWCOU = .FALSE.
+
       LWCOUNORMS = .FALSE.
 
+      LGRHDIFS = .FALSE.
+
+      LNEWLVTP = .FALSE.
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -476,6 +487,38 @@
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
         WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+      IF(.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
+      IF(LGRHDIFS) THEN
+!       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
+        IFS_STREAM=IFS_KSEC1(40)
+        IF(.NOT.LNEWLVTP) THEN
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,
+     &                      MARSFCTYPE, ISTREAM, LASTREAM)
+          IF(CSTREAM.EQ.'****') THEN
+            WRITE(IU06,*) '*****************************************'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) ' ERROR IN USERIN !!!!'
+            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
+            WRITE(IU06,*) ' IFS STREAM = ', IFS_STREAM
+            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
+            WRITE(IU06,*) ''
+            WRITE(IU06,*) '*****************************************'
+            CALL ABORT1
+          ENDIF
+        ELSE
+          ISTREAM=IFS_STREAM
+        ENDIF
+      ELSEIF(ISTREAM.LE.0) THEN
+        WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*)'+                                          +'
+        WRITE(IU06,*)'+ SUBROUTINE USERIN :                      +'
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ ISTREAM MUST BE SPECIFIED > 0 !!!!       +' 
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
@@ -1199,7 +1242,7 @@
      &   ' GRIB SPECTRA FIELD ARE USED AS INPUT' 
       ENDIF
       IF(LPBIOOUT.AND..NOT.LGRIBOUT) THEN
-        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' SP '
         WRITE (IU06,*)
      &   ' PBIO SOFTWARE IS USED TO WRITE TO SELECTED OUTPUT FILES' 
       ENDIF
@@ -1240,7 +1283,8 @@
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
 
-      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE)
+      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
+     &                  KSTREAM, LASTREAM)
 
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
       WRITE(IU06,*) '  '
@@ -1249,6 +1293,12 @@
       WRITE(IU06,'("  STREAM ....: ", A4)') CSTREAM 
       WRITE(IU06,'("  CLASS......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT.: ", A4)') YEXPVER
+
+      IF(LGRHDIFS) THEN
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) ' !!  KSEC1 HEADERS ARE SET BY IFS !! ' 
+        WRITE(IU06,*) ' '
+      ENDIF
 
       IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.
      &     ISTREAM .EQ. 1203 .OR. ISTREAM .EQ. 1204 ) THEN

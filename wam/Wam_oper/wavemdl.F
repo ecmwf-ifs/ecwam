@@ -4,7 +4,8 @@
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
-     &                    LDWCOUNORMS, MASK_IN, MASK_OUT)
+     &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
+     &                    NFDBREF)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -88,10 +89,11 @@
 
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCOUT  , ONLY : CASS     ,NASS
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS,KCOUSTEP
+      USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
-     &            MFDBSF   ,LSARINV
+     &            NWFDBREF ,LFDBOPEN ,LSARINV
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWTEXT  , ONLY : LRESTARTED
@@ -114,7 +116,7 @@
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FCRANGE
-      INTEGER ISEC1(255), ISEC2(22+NR)
+      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       
       CHARACTER CBEGDAT*12, CDTASS*12
@@ -141,9 +143,22 @@
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
+!     KEEP GRIB HEADER KSEC1 FROM THE IFS
+      IF(LWCOU) THEN
+        IF (ITEST.GE.1) THEN
+            WRITE (IU06,*) ' WAVEMDL: KSEC1 FROM IFS'
+        ENDIF
+        DO IC=1,NKSEK1
+          IFS_KSEC1(IC)=ISEC1(IC)
+          IF (ITEST.GE.1) THEN
+            WRITE (IU06,*) 'KSEC1(',IC,')', ISEC1(IC)
+          ENDIF
+        ENDDO
+      ENDIF
+
+      KCOUSTEP=KDELWI
+
       IF (FRSTIME) THEN                                                 
-!       if you change the -5 value, do the same in wamodel
-        MFDBSF = -5
         IF(LWCOU) THEN
           IU06=20
           IL = LEN_TRIM(CBEGDAT)
@@ -179,6 +194,23 @@
         ENDIF
         CALL INITMDL (KDELWI,NADV)
         KQGAUSS=IQGAUSS
+!       if new levtype is used in coupled run than it assumed
+!       that WAM and IFS will be sharing the same stream, therefore
+!       the FDB should be open on the IFS side.
+        IF(LWCOU .AND. LNEWLVTP) THEN
+          IF(NFDBREF .GT. 0) THEN
+            NWFDBREF=NFDBREF 
+            LFDBOPEN=.TRUE.
+          ELSE
+            NWFDBREF = -5
+            LFDBOPEN=.FALSE.
+          ENDIF          
+        ELSE
+!       if you change the -5 value, do the same in wamodel
+          NWFDBREF = -5
+          LFDBOPEN=.FALSE.
+        ENDIF
+
         FRSTIME = .FALSE.                                              
 
         IF (ITEST.GE.1) THEN
@@ -245,6 +277,10 @@
 !       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
         KQGAUSS=IQGAUSS
 
+        IF(LWCOU .AND. LNEWLVTP .AND. NFDBREF .GT. 0) THEN
+          NWFDBREF=NFDBREF 
+          LFDBOPEN=.TRUE.
+        ENDIF
       ENDIF
 
 ! --------------------------------------------------------------------  
@@ -417,13 +453,21 @@
         LDWCOUNORMS=LWCOUNORMS
       ENDIF
 
-      IF ( MFDBSF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
+      IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
+        IF(LWCOU .AND. LNEWLVTP) THEN
+!         the fdb should be closed by IFS
+          IF (ITEST.GE.1) THEN
+            WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
+            CALL FLUSH(IU06)
+          ENDIF
+        ELSE
         CALL GSTATS(1787,0)
-        ISTAT = ICLOSEFDBSUBS (MFDBSF)
+        ISTAT = ICLOSEFDBSUBS (NWFDBREF)
         CALL GSTATS(1787,1)
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
-          CALL FLUSH(IU06)
+          IF (ITEST.GE.1) THEN
+            WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
+            CALL FLUSH(IU06)
+          ENDIF
         ENDIF
       ENDIF
 

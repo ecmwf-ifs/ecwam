@@ -33,7 +33,7 @@
 ! ----------------------------------------------------------------------
 
       CHARACTER*4 :: CSTREAM
-
+      LOGICAL :: LASTREAM
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
       ELSE
@@ -45,7 +45,8 @@
       ENDIF
 
       IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
-        CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE)
+        CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE,
+     &                    KSTREAM, LASTREAM)
         IF(CSTREAM.EQ.'****') THEN
           WRITE(IU06,*) '*****************************************' 
           WRITE(IU06,*) ''

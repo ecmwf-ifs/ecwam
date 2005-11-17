@@ -284,7 +284,7 @@
 ! -------------------------------------------------------------------
 
       USE YOWCBOU  , ONLY : IBOUNC   ,NBOUNC
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
@@ -296,7 +296,7 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS   ,PPRESOL
+     &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
      &            IJL      ,IJLT
       USE YOWICE   , ONLY : LICERUN
@@ -320,12 +320,12 @@
      &            INDEP
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDB2DSP ,MFDBSF   ,IDELPRO  ,IDELT    ,
+     &            CDTSPS   ,CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS,IREFDATE
+     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS,IREFDATE ,LFDBOPEN
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            NTOPE  ,NTOPEMAX ,IJTOPE   ,NGBTOPE  ,NTOPELST   ,
      &            NFROMPE,NFROMPEMAX,NIJSTART,NGBFROMPE,NFROMPELST ,
@@ -346,6 +346,7 @@
       USE FDBSUBS
 
 ! ----------------------------------------------------------------------
+      INTEGER :: IFS_KSEC1_BAK(NKSEK1)
       CHARACTER*2 MARSTYPEBAK
       CHARACTER*12 CDATE, CDATEWH, CDTPRA, ZERO
       CHARACTER*12 CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
@@ -473,11 +474,44 @@
             ENDIF
           ENDIF
 
-          CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
+!         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
+!         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
+!         THE START OF THE RUN.
+          IF(LGRHDIFS) THEN
+             IFS_KSEC1_BAK(16)=IFS_KSEC1(16)  ! value to reset after output
+             IF(IFS_KSEC1(16).GT.0) THEN
+               IF(IFS_KSEC1(15).EQ.0) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/60) 
+               ELSEIF(IFS_KSEC1(15).EQ.1) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/3600) 
+               ELSEIF(IFS_KSEC1(15).EQ.10) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(3*3600)) 
+               ELSEIF(IFS_KSEC1(15).EQ.11) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(6*3600)) 
+               ELSEIF(IFS_KSEC1(15).EQ.12) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(12*3600)) 
+               ELSEIF(IFS_KSEC1(15).EQ.2) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(24*3600)) 
+               ELSEIF(IFS_KSEC1(15).EQ.254) THEN
+                 IFS_KSEC1(16)=IFS_KSEC1(16)-KCOUSTEP 
+               ENDIF
+             ENDIF
+!            IN VAREPS THE FC STEP 0 IS ALWAYS AN OVERLAP FOR LEG 2
+!            AND ABOVE
+             IFS_KSEC1_BAK(40)=IFS_KSEC1(40)  ! value to reset after output
+             IINDAT=IFS_KSEC1(46)
+             IHHMM=IFS_KSEC1(47)
+             NLEG=IFS_KSEC1(48)
+             IF(NLEG.GE.2 .AND. IINDAT.NE.0 .AND. IHHMM.NE.0 ) THEN
+               IFS_KSEC1(40)=1034
+             ENDIF
+          ENDIF 
 
-          IF (MFDBSF.NE.-5.AND.LFDB) THEN
+          CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, NWFDBREF,LFDBOPEN)
+
+          IF (NWFDBREF.NE.-5.AND.LFDB) THEN
              CALL GSTATS(1976,0)
-             ISTAT = IFLUSHFDBSUBS (MFDBSF)
+             ISTAT = IFLUSHFDBSUBS (NWFDBREF)
              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
              CALL GSTATS(1976,1)
           ELSE
@@ -494,6 +528,10 @@
 
           CDTINTT=CDTINTTBAK
           CDTINTS=CDTINTSBAK
+          IF(LGRHDIFS) THEN
+            IFS_KSEC1(16)=IFS_KSEC1_BAK(16)
+            IFS_KSEC1(40)=IFS_KSEC1_BAK(40)
+          ENDIF
 
           IF (ITEST .GE. 2) THEN
             WRITE(IU06,*)
@@ -573,6 +611,9 @@
 
 !       UPDATE SPECTRA OUTPUT DATE
         IF (NOUTS.GT.0) THEN
+!         reset CDATES to insure that spectra output is only controlled
+!         by list COUTS
+          CDATES='000000000000'
           DO J=1,NOUTS
             IF (CDTPRO.EQ.COUTS(J)) THEN
               CDTRES=CDTPRO
@@ -1047,7 +1088,7 @@
 
           CALL OUTWNORM
 
-          CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, MFDBSF)
+          CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, NWFDBREF,LFDBOPEN)
           IF(LMESSPASS) THEN
             CALL GSTATS(753,0)
             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
@@ -1244,15 +1285,16 @@
      &                       NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                       NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                       KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                       LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                       DEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
      &                       CDTPRO, CDATEF, CDATEA,
      &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                       MFDBSF)
+     &                       NWFDBREF, LFDBOPEN)
               IF (LFDB) THEN
                 CALL GSTATS(1976,0)
-                ISTAT = IFLUSHFDBSUBS (MFDBSF)
+                ISTAT = IFLUSHFDBSUBS (NWFDBREF)
                 CALL MPL_BARRIER(CDSTRING='WAMODEL:')
                 CALL GSTATS(1976,1)
               ELSE
@@ -1323,15 +1365,15 @@
 
         ENDIF  ! END SAVE
 
-        IF( LFDB .AND. LLFLUSH .AND. MFDBSF.NE.-5 .AND. 
+        IF( LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. 
      &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
      &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
           CALL GSTATS(1976,0)
-          ISTAT = IFLUSHFDBSUBS (MFDBSF)
+          ISTAT = IFLUSHFDBSUBS (NWFDBREF)
           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
           CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
-          WRITE(IU06,*) '  DB ', MFDBSF , ' FLUSHED AT ',
+          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ',
      &    CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
         ELSE

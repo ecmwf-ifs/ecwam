@@ -5,12 +5,13 @@
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                     PPDEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
      &                     CDFDB2DSP, KENSFNB, KTOTENS, KSYSNB, KMETNB,
      &                     KREFDATE, LFDBIOOUT, KCPLEN, CPAD, KTEST,
-     &                     KFDB )
+     &                     KFDB, LFDBOPEN )
 
 !----------------------------------------------------------------------
 
@@ -36,11 +37,12 @@
 !    &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
 !    &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
 !    &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+!    &                     LGRHDIFS, LNEWLVTP, IFS_KSEC1,
 !    &                     PPDEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
 !    &                     CDTPRO, CDATEF, CDATEA,
 !    &                     CDDOMAIN, CDTYPE, CDCLASS, CDEXPVER,
 !    &                     CDFDB2DSP, KENSFNB, KTOTENS, LFDBIOOUT,
-!    &                     KCPLEN, CPAD, KTEST, KFDB )
+!    &                     KCPLEN, CPAD, KTEST, KFDB, LFDBOPEN )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -82,6 +84,9 @@
 !      *PSEK3*     REAL      DEFAULT VALUES FOR REAL GRIB HEADER 3
 !      *NTENCODE*  INTEGER   TOTAL NUMBER OF GRID DATA FOR ENCODING
 !      *HOPERS*    CHAR*1    ENCODING ACTION OPTION
+!      *LGRHDIFS*  LOGICAL   IF TRUE INFORMATION FROM IFS_KSEC1 ARE USED
+!      *LNEWLVTP*  LOGICAL   IF TRUE THE NEW LEVTYPE DEFINITION IS USED.
+!      *IFS_KSEC1* INTEGER   KSEC1 FROM THE IFS FIELDS.
 !      *PPDEG*     REAL      PI/180
 !      *PPMISS*    REAL      MINIMUM VALUE FOR CODING OF LOGARITHMIC
 !                            SPECTRA.
@@ -105,6 +110,7 @@
 !      *CPAD*      CHARACTER  PATH FOR OUTPUT TO DISK
 !      *KTEST*     INTEGER   PRINT DIAGNOSTICS TO STDOUT IF GT 1.
 !      *KFDB*      INTEGER    DATA BASE REFERENCE
+!      *LFDBOPEN*  LOGICAL    TRUE IF THE DATA BASE HAS BEEN OPEN
 
 !     METHOD.
 !     -------
@@ -135,7 +141,7 @@
 !*  DUMMY ARGUMENTS:
 !   ----------------
 
-      LOGICAL LDWCOU, LFDBIOOUT
+      LOGICAL LDWCOU, LFDBIOOUT, LGRHDIFS,LNEWLVTP 
 
       INTEGER KU06, KINF, KSUP, KANG, KFRE, KGX, KGY, KIBLO, KBLO,
      &        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS, KSYSNB,
@@ -146,7 +152,7 @@
       INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
 
       INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
-     &        KSEK3(NKSEK3), KSEK4(NKSEK4)
+     &        KSEK3(NKSEK3), KSEK4(NKSEK4), IFS_KSEC1(NKSEK1)
 
       REAL    PMONOP, PDELLA,
      &        PSPEC (KINF-1:KSUP, KANG, KFRE),
@@ -158,6 +164,8 @@
       CHARACTER*(*) CDTPRO, CDATEF, CDATEA, CPAD, HOPERS,
      &              CDTYPE, CDCLASS, CDEXPVER, CDFDB2DSP
 
+       LOGICAL LFDBOPEN
+
 !-----------------------------------------------------------------------
 
       INTEGER, ALLOCATABLE :: IOUTGRIB(:), IPOINTER(:)
@@ -167,8 +175,8 @@
       INTEGER JSN, JK, JC, IX, ISTEP, IST, IYYYY,
      &        IY, IMO, ID, IH, IMN, IFCST, ITHETA(KANG), IFREQ(KFRE),
      &        IJ, JANG, J1, ILENGOUT, IC,
-     &        IRET, IWORD, IERR, ILENP, ITAG
-
+     &        IRET, IWORD, IERR, ILENP, ITAG, KSTREAM, IFS_STREAM,
+     &        IINDAT,IHHMM,NLEG,IOCCPL
       REAL :: PPMAX, PPMIN, DELTAPP
       REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:)
       REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
@@ -176,8 +184,12 @@
       REAL , DIMENSION(KFRE) :: ZFREQ
 
       CHARACTER*  1 CDDOMAIN
+      CHARACTER*  2 CDUM
+      CHARACTER*  4 CSTREAM
       CHARACTER* 40 CLMSG
       CHARACTER* 120 OUTFILEN
+
+      LOGICAL :: LASTREAM
 !
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
 
@@ -232,62 +244,87 @@
       ISEC1 = KSEK1
 
       ISEC1( 6) =   251     ! PARAMETER IDENTIFIER (WMO CODE TABLE 2)
-      ISEC1(10) = MOD(IYYYY,100)      ! YEAR OF DATA
-      IF(ISEC1(10).EQ.0) ISEC1(10) = 100
-      ISEC1(11) =   IMO     ! MONTH OF DATA
-      ISEC1(12) =   ID      ! DAY OF DATA
-      ISEC1(13) =   IH      ! HOUR OF DATA
-      ISEC1(14) =   IMN     ! MINUTE OF DATA
-      ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
-      IF(IFCST >= (2**16-1)) THEN
-!     the number of hours is too large, use coding in days or
-!     multiple of hours instead
-        IF(MOD(IFCST,24) == 0 ) THEN
-          ISEC1(15)= 2
-          ISEC1(16) = IFCST/24
-        ELSEIF(MOD(IFCST,12) == 0 ) THEN
-          ISEC1(15)= 12
-          ISEC1(16) = IFCST/12
-        ELSEIF(MOD(IFCST,6) == 0 ) THEN
-          ISEC1(15)= 11
-          ISEC1(16) = IFCST/6
-        ELSEIF(MOD(IFCST,3) == 0 ) THEN
-          ISEC1(15)= 10
-          ISEC1(16) = IFCST/3
+
+      IF(LNEWLVTP) ISEC1( 7) = 212     ! NEW LEVTYPE FOR OCEAN SPECTRA 
+      
+!     DEFINE ALL KSEC1 IN WAM 
+      IF(.NOT. LGRHDIFS .OR.
+     &   (CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR.
+     &   (CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
+
+        ISEC1(10) = MOD(IYYYY,100)      ! YEAR OF DATA
+        IF(ISEC1(10).EQ.0) ISEC1(10) = 100
+        ISEC1(11) =   IMO     ! MONTH OF DATA
+        ISEC1(12) =   ID      ! DAY OF DATA
+        ISEC1(13) =   IH      ! HOUR OF DATA
+        ISEC1(14) =   IMN     ! MINUTE OF DATA
+        ! TIME RANGE ONE (FCST TIME FROM BASE DTG)
+        IF(IFCST >= (2**16-1)) THEN
+!       the number of hours is too large, use coding in days or
+!       multiple of hours instead
+          IF(MOD(IFCST,24) == 0 ) THEN
+            ISEC1(15)= 2
+            ISEC1(16) = IFCST/24
+          ELSEIF(MOD(IFCST,12) == 0 ) THEN
+            ISEC1(15)= 12
+            ISEC1(16) = IFCST/12
+          ELSEIF(MOD(IFCST,6) == 0 ) THEN
+            ISEC1(15)= 11
+            ISEC1(16) = IFCST/6
+          ELSEIF(MOD(IFCST,3) == 0 ) THEN
+            ISEC1(15)= 10
+            ISEC1(16) = IFCST/3
+          ELSE
+            WRITE(KU06,*)' SUB: SPEC2FDB: THE FORECAST IS TOO LONG'
+            WRITE(KU06,*)' IT CANNOT BE CODED IN GRIB'
+            WRITE(KU06,*)' IFCST = ',IFCST
+            WRITE(KU06,*)' CALL ABORT1 '
+            WRITE(KU06,*)'  '
+          ENDIF
         ELSE
-          WRITE(KU06,*)' SUB: SPEC2FDB: THE FORECAST IS TOO LONG'
-          WRITE(KU06,*)' IT CANNOT BE CODED IN GRIB'
-          WRITE(KU06,*)' IFCST = ',IFCST
-          WRITE(KU06,*)' CALL ABORT1 '
-          WRITE(KU06,*)'  '
+          ISEC1(15)= 1
+          ISEC1(16) = IFCST
+        ENDIF
+
+        IF(ISEC1(10).EQ.100) THEN
+          ISEC1(21) = IYYYY/100 ! CENTURY OF REFERENCE TIME.
+        ELSE
+          ISEC1(21) = (IYYYY/100)+1 ! CENTURY OF REFERENCE TIME.
+        ENDIF
+!        39     INDICATES TYPE OF FIELD 1=FG 2=AN 6=4V 9=FC
+        IF ( CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
+          ISEC1(39) = 1
+        ELSEIF ( CDTYPE .EQ. '4v') THEN
+          ISEC1(39) = 6
+        ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
+          ISEC1(39) = 2
+        ELSEIF ( CDTYPE .EQ. 'cf' ) THEN
+          ISEC1(39) = 10
+        ELSEIF ( CDTYPE .EQ. 'pf' ) THEN
+          ISEC1(39) = 11
+        ELSE
+          ISEC1(39) = 9
         ENDIF
       ELSE
-        ISEC1(15)= 1
-        ISEC1(16) = IFCST
-      ENDIF
+!       TAKE THE COMMON INFORMATION FROM THE IFS
+        DO IC=10,43
+          ISEC1(IC) = IFS_KSEC1(IC)
+        ENDDO
 
-
-      IF(ISEC1(10).EQ.100) THEN
-        ISEC1(21) = IYYYY/100 ! CENTURY OF REFERENCE TIME.
-      ELSE
-        ISEC1(21) = (IYYYY/100)+1 ! CENTURY OF REFERENCE TIME.
+!       RESET STREAM IF NEEDED
+        IFS_STREAM=IFS_KSEC1(40)
+        IF(.NOT.LNEWLVTP) THEN
+!         GET KSTREAM THAT CORRESPONDS TO IFS_STREAM
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, KENSFNB, KTOTENS,
+     &                      CDUM, KSTREAM, LASTREAM) 
+          ISEC1(40)= KSTREAM
+        ENDIF
       ENDIF
+!!!   IT NEEDS TO BE RESET
+!!!   SPECTRA USE THEIR OWN GRIB TABLE !!!
       ISEC1(37) =    13     ! INDICATES LABELLING WITH MARS PARAMETERS 
 !                           ! FOR WAVE SPECTRA.
-!        39     INDICATES TYPE OF FIELD 1=FG 2=AN 6=4V 9=FC
-      IF ( CDTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
-        ISEC1(39) = 1
-      ELSEIF ( CDTYPE .EQ. '4v') THEN
-        ISEC1(39) = 6
-      ELSEIF ( CDTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
-        ISEC1(39) = 2
-      ELSEIF ( CDTYPE .EQ. 'cf' ) THEN
-        ISEC1(39) = 10
-      ELSEIF ( CDTYPE .EQ. 'pf' ) THEN
-        ISEC1(39) = 11
-      ELSE
-        ISEC1(39) = 9
-      ENDIF
+
 
 !* DIRECTION AND FREQUENCY INDEX
 !  -----------------------------
@@ -330,15 +367,26 @@
       ENDIF
 
 !     hindcasts need a reference date
-      IF(ISEC1(40) == 1204 .OR.
-     &   ISEC1(40) == 1084 .OR.
-     &   ISEC1(40) == 1085
+      IF(KSTREAM == 1204 .OR.
+     &   KSTREAM == 1084 .OR.
+     &   KSTREAM == 1085
      &    ) THEN
         ISEC1(52+KANG+KFRE) =  KREFDATE
       ELSE
         ISEC1(52+KANG+KFRE) = 0
       ENDIF
 
+!     VAREPS EXTRA INFORMATION FOR VAREPS
+      IF(LGRHDIFS) THEN
+        IINDAT=IFS_KSEC1(46)
+        IHHMM=IFS_KSEC1(47)
+        NLEG=IFS_KSEC1(48)
+        IOCCPL=IFS_KSEC1(44)
+        ISEC1(55+KANG+KFRE) = IINDAT
+        ISEC1(56+KANG+KFRE) = IHHMM 
+        ISEC1(57+KANG+KFRE) = NLEG 
+        ISEC1(58+KANG+KFRE) = IOCCPL 
+      ENDIF
 
 !    *SECTION 2* GRID DEFINITION BLOCK. 
 !    -----------------------------------
@@ -542,7 +590,7 @@
             CALL FLD2FDB (ku06, ktest, isec1, ioutgrib, iword, 'write',
      &                    ierr,
      &                    cdclass, cdexpver, CDFDB2DSP, cddomain,
-     &                    IK, IM, kfdb)
+     &                    IK, IM, kfdb, lfdbopen)
           ELSE
 !         output to file should only take place on one PE, thus istep=1
             IF(IM.EQ.1.AND.IK.EQ.1) THEN
