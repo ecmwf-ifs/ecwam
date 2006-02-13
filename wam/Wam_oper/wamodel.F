@@ -289,7 +289,7 @@
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
-     &            CASS     ,NASS
+     &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
@@ -1154,7 +1154,7 @@
      &     " CDATES=", CDATES, "IREST=", IREST
         ENDIF
 
-        IF (CDATEE.EQ.CDTPRO.AND.LDWRRE) THEN
+        IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
 
 !*    1.8.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
 !           INTEGRATED PARAMETERS OF ENTIRE GRID.
@@ -1162,13 +1162,13 @@
 
 !           SAVE INTEGRATED DATA FILE.
 
-          IF (GFLAG20 .AND. .NOT. LFDB) THEN
+          IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.1))
      &       .OR.(.NOT.LMESSPASS)) THEN
               CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
             ENDIF
           ENDIF
-          IF (FFLAG20) THEN
+          IF (FFLAG20 .AND. LOUTINT) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) 
      &       THEN
               CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
@@ -1178,7 +1178,7 @@
 !           SAVE INTEGRATED SWELL AND SEA DATA FILE.
 !           ----------------------------------------
 
-          IF (FFLAG21) THEN
+          IF (FFLAG21 .AND. LOUTINT) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
      &         .OR.(.NOT.LMESSPASS)) THEN
               CALL GSFILE (IU06, IU21, 0, CDTPRO, CDATEF, 'SWE', 'S')
@@ -1187,7 +1187,7 @@
 
 !           SAVE SPECTRA FILE.
 
-          IF (FFLAG25) THEN
+          IF (FFLAG25 .AND. LOUTSPP) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
               CALL GSFILE (IU06, IU25, 0, CDTPRO, CDATEF, 'OUT', 'S')
             ENDIF
@@ -1195,7 +1195,7 @@
 
 !           SAVE SWELL SPECTRA FILE.
 
-          IF (FFLAG26) THEN
+          IF (FFLAG26 .AND. LOUTSPP) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
               CALL GSFILE (IU06, IU26, 0, CDTPRO, CDATEF, 'SWS', 'S')
             ENDIF

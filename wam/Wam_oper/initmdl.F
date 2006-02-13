@@ -238,7 +238,8 @@
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
-     &            NGOUT    ,IGAR     ,IJAR     ,NOUTT
+     &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
+     &            LOUTSPP
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT
@@ -417,6 +418,9 @@
         WRITE(IU06,*) '   SUB. INITMDL: UNITS DEFINED'
         CALL FLUSH (IU06)
       ENDIF
+
+      LOUTINT=.FALSE.
+      LOUTSPP=.FALSE.
 
 !*    1.2 INPUT OF USER PARAMETER.
 !         ------------------------

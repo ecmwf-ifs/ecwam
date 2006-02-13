@@ -88,7 +88,7 @@
       REAL,ALLOCATABLE, DIMENSION(:) :: ZCOMBUF, TEMP
       REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
       REAL,ALLOCATABLE :: ZCOMBUFR(:)
-      REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB
+      REAL,ALLOCATABLE,DIMENSION(:) :: WHGTAGB, CWHTAGB, RANGAGB, AVGWGT
       REAL,ALLOCATABLE,DIMENSION(:,:) :: ALTDATAPE, ZTEMP
       INTEGER :: NFRPEALT
       REAL :: WHMOD(NIBLO)
@@ -436,6 +436,9 @@
 
       DO ISAT=1,NUMALT
 
+        WRITE(IU06,*)' '
+        WRITE(IU06,*)'   ALTIMETER ',IBUFRSAT(ISAT)
+
         NREJICE=0
         NREJSD=0
         NREJBG=0
@@ -447,9 +450,8 @@
           ELSE
             ALTSDTHRSH(ISAT) = 0.6
           ENDIF
-          WRITE(IU06,'(A,I3,A,F6.2,A)')
-     &        '    SUSPICIOUS DATA CHECK THRESHOLD FOR ALTIMETER :',
-     &         IBUFRSAT(ISAT), ' IS NOT PROVIDED. IT IS ASSUMED AS ',
+          WRITE(IU06,'(A,F6.2,A)')
+     &        '    SUSPICIOUS DATA THRESHOLD NOT GIVEN. IT IS SET TO ',
      &         ALTSDTHRSH(ISAT)*100.,'%.'
         ENDIF
 
@@ -538,8 +540,6 @@
           DEALLOCATE(ICOMBUF)
         ENDIF
 
-        WRITE(IU06,*)' '
-        WRITE(IU06,*)'   ALTIMETER ',IBUFRSAT(ISAT)
         WRITE(IU06,*)'   NUMBER OF GRIDDED WAVE HEIGHTS= ',
      &                   NOBSPSAT(ISAT)
         IF(NOBSPSAT(ISAT).GT.0) THEN
@@ -598,6 +598,9 @@
 
 !*    5. APPLY CORRECTION TO WAVE HEIGHT DATA ACCORDING TO SROKOSZ.
 !        ---------------------------------------------------------
+!        SEE ECMWF TECH MEMO 269 or JANSSEN 2000: ECMWF wave modelling
+!        and satellite altimeter wave data, Satellites, Oceanography and
+!        Society, ed. D Halpern, Elsevier: Amsterdam. pp 35-56.
 
 !     5.1 COLLOCATE WAMSPECTRA WITH ALT-HS OBSERVATIONS.
 !         ---------------------------------------------
@@ -608,9 +611,11 @@
       ALLOCATE(WHGTAGB(NSTART(IRANK):NEND(IRANK)))
       ALLOCATE(CWHTAGB(NSTART(IRANK):NEND(IRANK)))
       ALLOCATE(RANGAGB(NSTART(IRANK):NEND(IRANK)))
-      WHGTAGB=ZMISS
-      CWHTAGB=ZMISS
-      RANGAGB=ZMISS
+      ALLOCATE(AVGWGT(NSTART(IRANK):NEND(IRANK)))
+      WHGTAGB=0.
+      CWHTAGB=0.
+      RANGAGB=0.
+      AVGWGT=0.
  
       IF(NOBSPE(IRANK).GT.0) THEN
         NERS=NOBSPE(IRANK)
@@ -663,19 +668,40 @@
                   HS_NEW = HS
                 ENDIF
 
+!               SAVE ALTIMETER DATA TO GRIB
                 IF (LALTGRDOUT(ISAT)) THEN
                   IJ=IJALT(IOBS,1)
                   IF (IJ.GE.NSTART(IRANK) .AND. IJ.LE.NEND(IRANK)) THEN
-!                   WHGTAGB contains the original data
-                    WHGTAGB(IJ) = ALTDATA(IOBS,3)
-                    CWHTAGB(IJ) = HS_NEW
-                    RANGAGB(IJ) = RCOR 
+!                   WHGTAGB CONTAINS THE ORIGINAL DATA
+!                   A WEIGHTED AVERAGE IS COMPUTED IF MORE THAN ONE SATELLITE
+                    IF(HS_NEW.GT.0.) THEN
+                      WGT=1./ALTDATA(IOBS,2)**2
+                      WHGTAGB(IJ) = WHGTAGB(IJ) + WGT*ALTDATA(IOBS,3)
+                      CWHTAGB(IJ) = CWHTAGB(IJ) + WGT*HS_NEW
+                      RANGAGB(IJ) = RANGAGB(IJ) + WGT*HS_NEW*RCOR 
+                      AVGWGT(IJ) = AVGWGT(IJ) + WGT
+                    ENDIF
                   ENDIF
                 ENDIF
               ENDIF
             ENDDO
           ENDIF
         ENDDO
+
+        DO IJ = NSTART(IRANK), NEND(IRANK)
+          IF(WHGTAGB(IJ).GT.0.) THEN
+            WHGTAGB(IJ) = WHGTAGB(IJ)/AVGWGT(IJ)
+            CWHTAGB(IJ) = CWHTAGB(IJ)/AVGWGT(IJ)
+            RANGAGB(IJ) = RANGAGB(IJ)/AVGWGT(IJ)
+            RANGAGB(IJ) = RANGAGB(IJ)/CWHTAGB(IJ)
+          ELSE
+            WHGTAGB(IJ) = ZMISS 
+            CWHTAGB(IJ) = ZMISS 
+            RANGAGB(IJ) = ZMISS 
+            RANGAGB(IJ) = ZMISS 
+          ENDIF
+        ENDDO
+
         IF( ALLOCATED(XKAPPA1) ) DEALLOCATE(XKAPPA1)
         IF( ALLOCATED(DELH_ALT) ) DEALLOCATE(DELH_ALT)
         IF( ALLOCATED(FALT) ) DEALLOCATE(FALT)
@@ -718,6 +744,7 @@
       DEALLOCATE(WHGTAGB)
       DEALLOCATE(CWHTAGB)
       DEALLOCATE(RANGAGB)
+      DEALLOCATE(AVGWGT)
 
       
 !     GET ALL RELEVANT DATA ON EACH PE.

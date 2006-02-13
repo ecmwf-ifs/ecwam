@@ -209,6 +209,8 @@
 
 !--------------------------------------------------------------------
 
+      CALL GSTATS(1883,0)
+
       LOTEST=.FALSE.
       LOTIME=.TRUE.
       LODBG=.FALSE.
@@ -230,7 +232,6 @@
         SARCORDIA = 300000.
       ENDIF
 
-      CALL GSTATS(1883,0)
 
 !-------------------------------------------------------------------
 
@@ -585,7 +586,6 @@
 4000  CONTINUE
       CALL MERGESARCOR
 
-      CALL GSTATS(1883,1)
 
 !     5. DEALLOCATION OF ARRAYS
 !     -------------------------
@@ -652,6 +652,8 @@
 
       WRITE(IU06,*) '  SARAS ENDS NORMALLY'
       CALL FLUSH(IU06)
+
+      CALL GSTATS(1883,1)
 
       RETURN
 

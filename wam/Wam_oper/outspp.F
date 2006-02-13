@@ -60,7 +60,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,NGOUT    ,IGAR     ,
+     &            IJAR     ,LOUTSPP
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
@@ -92,6 +93,8 @@
 
 !     0. GATHER THE FIELDS ON PROCESS 1 
 !        ------------------------------
+
+      LOUTSPP=.TRUE.
 
       ALLOCATE(SPEC(NANG,NFRE))
       IF(NGOUT.GE.1) THEN 

@@ -74,7 +74,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,IPFGTBL
+     &            GFLAG20  ,LFDB     ,IPFGTBL  ,LOUTINT  ,LOUTSPP
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
@@ -252,12 +252,12 @@
 
 !           SAVE INTEGRATED DATA FILE.
 
-        IF (GFLAG20 .AND. .NOT. LFDB) THEN
+        IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
           ENDIF
         ENDIF
-        IF (FFLAG20) THEN
+        IF (FFLAG20 .AND. LOUTINT) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
           ENDIF
@@ -266,7 +266,7 @@
 !           SAVE INTEGRATED SWELL AND SEA DATA FILE.
 !           ----------------------------------------
 
-        IF (FFLAG21) THEN
+        IF (FFLAG21 .AND. LOUTINT) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
      &     .OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU23, 0, CDTPRO, CDATEF, 'ASS', 'S')
@@ -275,7 +275,7 @@
 
 !           SAVE SPECTRA FILE.
 
-        IF (FFLAG25) THEN
+        IF (FFLAG25 .AND. LOUTSPP) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU27, 0, CDTPRO, CDATEF, 'AUT', 'S')
           ENDIF
@@ -283,7 +283,7 @@
 
 !           SAVE SWELL SPECTRA FILE. 
 
-        IF (FFLAG26) THEN
+        IF (FFLAG26 .AND. LOUTSPP) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             CALL GSFILE (IU06, IU28, 0, CDTPRO, CDATEF, 'ASW', 'S')
           ENDIF

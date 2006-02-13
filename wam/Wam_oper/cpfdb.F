@@ -62,6 +62,7 @@
       INTEGER ISTAT, JLEVEL, IERR, ILEVEL,
      &        ILEN, IREAD,
      &        IRANK
+      INTEGER jlevel_temp
 
       INTEGER KFIELD
 
@@ -164,7 +165,8 @@
         ISTAT = ISETVALFDBSUBS (IUNIT(2), 'step',   clstep(2) )
         ISTAT = ISETVALFDBSUBS (IUNIT(2), 'leve',   cllevel   )
         ISTAT = ISETVALFDBSUBS (IUNIT(2), 'frank',  cllevel(2:4)   )
-        IRANK = ISETRANKFDBSUBS(IUNIT(2), jlevel)
+        jlevel_temp=jlevel
+        IRANK = ISETRANKFDBSUBS(IUNIT(2), jlevel_temp)
 
         ISTAT = IWRITEFDBSUBS  (IUNIT(2), INGRIB, ILEN)
         KFIELD=KFIELD+1

@@ -57,7 +57,7 @@
       CHARACTER*  1 MODE,
      &              CDOPT
       CHARACTER* 17 FILENA
-      CHARACTER* 80 FILENAM,
+      CHARACTER* 160 FILENAM,
      &              FILENAMEF, 
      &              FILENAMET 
 
@@ -72,11 +72,14 @@
       ELSE
         WRITE(FILENAMEF,'(A,I2)') 'fort.',IUNIT
       ENDIF
+      FILENAM=FILENAMEF
+      LNAME = LEN_TRIM(FILENAM)
+      IF(ICPLEN.GT.0) THEN
+        FILENAMEF=CPATH(1:ICPLEN)//'/'//FILENAM(1:LNAME)
+      ENDIF
 
       FILENAM=FILENA
-
       LNAME = LEN_TRIM(FILENAM)
-
       IF(ICPLEN.EQ.0) THEN
         FILENAMET=FILENAM(1:LNAME)
       ELSE

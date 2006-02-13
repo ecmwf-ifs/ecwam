@@ -179,6 +179,8 @@
           cltype='4v'
         ELSE IF  (ksec1(39) .EQ. 2 ) THEN
           cltype='an'
+        ELSE IF  (ksec1(39) .EQ. 65 ) THEN
+          cltype='cv'
         ELSE IF  (ksec1(39) .EQ. 1 ) THEN
           cltype='fg'
         ELSE

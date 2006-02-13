@@ -182,6 +182,8 @@
       REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
       REAL , DIMENSION(KANG) :: ZTHETA
       REAL , DIMENSION(KFRE) :: ZFREQ
+! The following must NOT be changed from a 4 byte real
+      REAL*4 REAL4
 
       CHARACTER*  1 CDDOMAIN
       CHARACTER*  2 CDUM
@@ -425,12 +427,14 @@
       ISEC4(57) =  2
 
       DO IJ = 1, KANG
-        ITHETA(IJ) = TRANSFER (ZTHETA(IJ), 1)
+        REAL4 = ZTHETA(IJ)
+        ITHETA(IJ) = TRANSFER (REAL4, 1)
         ISEC4(60+IJ-1) = ITHETA(IJ)
       ENDDO
 
       DO IJ = 1, KFRE
-        IFREQ(IJ)  = TRANSFER (ZFREQ(IJ), 1)
+        REAL4 = ZFREQ(IJ)
+        IFREQ(IJ)  = TRANSFER (REAL4, 1)
         ISEC4(60+KANG+IJ-1) = IFREQ(IJ)
       ENDDO
 !-----------------------------------------------------------------------
