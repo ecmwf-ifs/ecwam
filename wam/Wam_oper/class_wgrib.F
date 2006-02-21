@@ -52,7 +52,7 @@
       CHARACTER*2 CLASSES(56)
       DATA CLASSES/'OD','RD','ER','CS','E4','AT','BE','HR','DK','FI',
      &             'FR','DE','GR','HU','IS','IE','IT','NL','NO','PT',
-     &             'SI','ES','SE','CH','TR','UK','TE',
+     &             'SI','ES','SE','CH','TR','UK','TE','EI',
      &             'od','rd','er','cs','e4','at','be','hr','dk','fi',
      &             'fr','de','gr','hu','is','ie','it','nl','no','pt',
      &             'si','es','se','ch','tr','uk','te','ei'/
