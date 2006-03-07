@@ -56,7 +56,7 @@
      &             'od','rd','er','cs','e4','at','be','hr','dk','fi',
      &             'fr','de','gr','hu','is','ie','it','nl','no','pt',
      &             'si','es','se','ch','tr','uk','te','ei'/
-      INTEGER GRIBCODES(27)
+      INTEGER GRIBCODES(28)
       DATA GRIBCODES/ 1,   2,   3,   4,   5, 100, 101, 102, 103, 104,
      &              105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
      &              115, 116, 117, 118, 119, 120, 99, 14/
