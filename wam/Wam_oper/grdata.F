@@ -135,6 +135,7 @@
 
       PARAMETER (MAXSATBC=10)
       INTEGER, DIMENSION(MAXSATBC) :: ISATBC, NBCT
+      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: NBCINCMAX
       REAL,ALLOCATABLE,DIMENSION(:,:) :: BCINC
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: BCTABLE
       CHARACTER (LEN=12),ALLOCATABLE,DIMENSION(:,:) :: CBCDATESTART
@@ -314,14 +315,14 @@
         NSATBC=0
         MAXNBCINC=0
         DO WHILE(.TRUE.)
-          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F5.2)',END=2600,ERR=2600)
+          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F6.3)',END=2600,ERR=2600)
      &             ISAT, IDUM, CDUM, NBCINC, BCINC0
           MAXNBCINC=MAX(MAXNBCINC,NBCINC)
           LNEW=.TRUE.
-          DO IBCT=1, NSATBC
-            IF (ISAT.EQ.ISATBC(IBCT)) THEN
+          DO IBCS=1, NSATBC
+            IF (ISAT.EQ.ISATBC(IBCS)) THEN
               LNEW=.FALSE.
-              NBCT(IBCT) = NBCT(IBCT) + 1
+              NBCT(IBCS) = NBCT(IBCS) + 1
               EXIT
             ENDIF
           ENDDO
@@ -344,14 +345,15 @@
         ENDDO
 2600    WRITE(IU06,*) '            NUMBER OF SATELLITE ENTRIES :',NSATBC
         MAXBCT=NBCT(1)
-        DO IBCT=1, NSATBC
-          WRITE(IU06,*) '              SATELLITE ',ISATBC(IBCT),
-     &                                  ' HAS ', NBCT(IBCT), ' TABLES'
-          MAXBCT=MAX(MAXBCT,NBCT(IBCT))
+        DO IBCS=1, NSATBC
+          WRITE(IU06,*) '              SATELLITE ',ISATBC(IBCS),
+     &                                  ' HAS ', NBCT(IBCS), ' TABLES'
+          MAXBCT=MAX(MAXBCT,NBCT(IBCS))
         ENDDO
         REWIND(IOBCT)
 
         IF(NSATBC.GT.0) THEN
+          ALLOCATE(NBCINCMAX(NSATBC,MAXBCT))
           ALLOCATE(BCINC(NSATBC,MAXBCT))
           ALLOCATE(BCTABLE(NSATBC,MAXBCT,MAXNBCINC))
           ALLOCATE(CBCDATESTART(NSATBC,MAXBCT))
@@ -362,29 +364,30 @@
           READ(IOBCT,'(A)',END=2800,ERR=2800) CDUM
         ENDDO
 
-        DO IBCT=1, NSATBC
-          NBCT(IBCT) = 0
+        DO IBCS=1, NSATBC
+          NBCT(IBCS) = 0
         ENDDO
         DO WHILE(.TRUE.)
-          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F5.2)',END=2900,ERR=2900)
+          READ(IOBCT,'(I4,1X,I4,A27,I4,1X,F6.3)',END=2900,ERR=2900)
      &          ISAT, IDUM, CDUM, NBCINC, BCINC0
-          DO IBCT=1, NSATBC
-            IF (ISAT.EQ.ISATBC(IBCT)) THEN
-              NBCT(IBCT) = NBCT(IBCT) + 1
-              BCINC(IBCT,NBCT(IBCT))=BCINC0
-              CBCDATESTART(IBCT,NBCT(IBCT))=CDUM(2:13)
-              CBCDATEEND  (IBCT,NBCT(IBCT))=CDUM(15:26)
-              READ(IOBCT,'(9999F5.2)',END=2800,ERR=2800)
-     &             (BCTABLE(IBCT,NBCT(IBCT),I),I=1,NBCINC)
+          DO IBCS=1, NSATBC
+            IF (ISAT.EQ.ISATBC(IBCS)) THEN
+              NBCT(IBCS) = NBCT(IBCS) + 1
+              NBCINCMAX(IBCS,NBCT(IBCS))=NBCINC
+              BCINC(IBCS,NBCT(IBCS))=BCINC0
+              CBCDATESTART(IBCS,NBCT(IBCS))=CDUM(2:13)
+              CBCDATEEND  (IBCS,NBCT(IBCS))=CDUM(15:26)
+              READ(IOBCT,'(9999F6.3)',END=2800,ERR=2800)
+     &             (BCTABLE(IBCS,NBCT(IBCS),I),I=1,NBCINC)
               IF (ITEST.GE.1) THEN
                 WRITE(IU06,'(A,I4,A)') 'BIAS CORRECTION TABLE FOR '//
      &             'SATELLITE ',ISAT, ' BETWEEN '//
-     &             CBCDATESTART(IBCT,NBCT(IBCT))//' AND '//
-     &             CBCDATEEND(IBCT,NBCT(IBCT))//' IS:'
+     &             CBCDATESTART(IBCS,NBCT(IBCS))//' AND '//
+     &             CBCDATEEND(IBCS,NBCT(IBCS))//' IS:'
                 WRITE(IU06,'(5X,A)') 'WAVE HEIGHT     BIAS CORRECTION'
                 DO I=1,NBCINC
-                  WRITE(IU06,'(5X,F5.2,11X,F5.2)') (I-1.)*BCINC0, 
-     &                                    BCTABLE(IBCT,NBCT(IBCT),I)
+                  WRITE(IU06,'(5X,F6.3,11X,F6.3)') (I-1.)*BCINC0, 
+     &                                    BCTABLE(IBCS,NBCT(IBCS),I)
                 ENDDO
                 WRITE(IU06,'(A/)') 'END OF TABLE'
               ENDIF
@@ -707,15 +710,20 @@
 
                 ! BIAS CORRECTION IS DONE IF NEEDED
                 IF(LLDOBC) THEN
-                  ZI=MIN(FLOAT(MAXNBCINC), WHME(IX,IY,ISAT)/
-     &                                             BCINC(IBCS,IBCT))
+                  ZI=MIN(FLOAT(NBCINCMAX(IBCS,IBCT)), WHME(IX,IY,ISAT)/
+     &                                                BCINC(IBCS,IBCT))
                   I=INT(ZI)+1
-                  IP1=MIN(MAXNBCINC, I+1)
-                  BCIV=(I+1-ZI)*BCTABLE(IBCS,IBCT,I)+
-     &                 (ZI-I)  *BCTABLE(IBCS,IBCT,IP1) 
+                  I=MIN(NBCINCMAX(IBCS,IBCT), I)
+                  IP1=MIN(NBCINCMAX(IBCS,IBCT), I+1)
+                  IF(I.EQ.NBCINCMAX(IBCS,IBCT)) THEN
+                    BCIV=BCTABLE(IBCS,IBCT,I)
+                  ELSE
+                    BCIV=(I-ZI)*BCTABLE(IBCS,IBCT,I)+
+     &                   (ZI-I+1)  *BCTABLE(IBCS,IBCT,IP1) 
+                  ENDIF
                   ALTDATA(IOBS,1)=WHME(IX,IY,ISAT)-BCIV
                   IF(ITEST.GE.2)
-     &              WRITE(IU06,'(I5,3(1X,F5.2))') ISAT,
+     &              WRITE(IU06,'(I5,3(1X,F6.3))') IBUFRSAT(ISAT),
      &                     ALTDATA(IOBS,3), ALTDATA(IOBS,1), BCIV
                 ELSE
                   ALTDATA(IOBS,1)=WHME(IX,IY,ISAT)
