@@ -19,6 +19,11 @@
      &            SL
       USE YOWWIND  , ONLY : CDTNEXT  ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
      &            ZIDLNEXT
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('WVDEALLOC',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 !     1.  DEALLOCATE NECESSARY ARRAYS
@@ -48,6 +53,7 @@
       IF(ALLOCATED(THQ)) DEALLOCATE(THQ)
       IF(ALLOCATED(AKMEAN)) DEALLOCATE(AKMEAN)
 
+      IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE WVDEALLOC

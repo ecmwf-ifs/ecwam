@@ -75,7 +75,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 69000)
+      PARAMETER (NBIT = 100000)
 
       CHARACTER*  9 CMBXSIZE
       CHARACTER* 12 CDATE 
@@ -108,6 +108,8 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
       REAL,ALLOCATABLE :: EM(:), ET(:,:), STK(:)
       REAL :: ONE,ZTHETA,ZFRE
+
+      INTEGER :: ISENDREQ
 
       LOGICAL :: LLEPSMIN
 
@@ -296,6 +298,7 @@ C
 !* try to estimate the size of the next product:
 
               icount = 1129120
+              IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
               ALLOCATE (ingrib(icount))
               IF (ITEST.GE.2) WRITE(IU06,'(" GETSPEC: allocate", I10,
      &          " words for ingrib", " nstart=", i8, " nend=", i8,
@@ -362,9 +365,10 @@ C
 !             IN CASE OF MESSAGE PASSING THE DECODING OCCURS ON KSEND
 
               CALL GSTATS(623,0)
+
               IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
 
-!               SEND GRIB DATA TO PE KSEND
+!               SEND GRIB DATA SIZE TO PE KSEND
 
                 ITAG=(M-1)*NANG+K
                 CALL MPL_SEND(ISIZE,KDEST=KSEND,KTAG=ITAG,KERROR=IERR,
@@ -372,18 +376,11 @@ C
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                    ('MPL_SEND ERROR AT 1 in GETSPEC' )
 
-                ITAG=NFRE*NANG+(M-1)*NANG+K
-                CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
-     &           KERROR=IERR,CDSTRING='GETSPEC 1:')
-                IF(IERR.LT.0) CALL MPL_ABORT
-     &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
-
-                IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
               ENDIF
 
               IF (IRANK.EQ.KSEND.AND.NPROC.NE.1) THEN
 
-!               RECEIVED DATA FROM PE IREAD
+!               RECEIVE GRIB DATA SIZE FROM PE IREAD
 
                 ITAG=(M-1)*NANG+K
                 CALL MPL_RECV(ISIZE,KSOURCE=IREAD,KTAG=ITAG,
@@ -394,7 +391,30 @@ C
                 IF(KRTAG.NE.ITAG) CALL MPL_ABORT
      &          ('MPL_RECV ERROR AT 1 in GETSPEC:  MISMATCHED TAGS' )
 
+                IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
                 ALLOCATE(INGRIB(ISIZE))
+
+              ENDIF
+
+              IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
+
+!               SEND GRIB DATA TO PE KSEND
+
+                ITAG=NFRE*NANG+(M-1)*NANG+K
+                CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
+     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ,
+     &           KERROR=IERR,CDSTRING='GETSPEC 1:')
+                IF(IERR.LT.0) CALL MPL_ABORT
+     &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
+
+                IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+
+              ENDIF
+
+              IF (IRANK.EQ.KSEND.AND.NPROC.NE.1) THEN
+
+!               RECEIVED GRIB DATA FROM PE IREAD
+
                 ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_RECV(INGRIB(1:ISIZE),KSOURCE=IREAD,KTAG=ITAG,
      &            KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
@@ -407,6 +427,12 @@ C
      &          ('MPL_RECV ERROR in 2 in GETSPEC:MISMATCHED TAGS' )
 
               ENDIF
+
+              IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
+                CALL MPL_WAIT(INGRIB(1:ISIZE),KREQUEST=ISENDREQ, 
+     &           CDSTRING='GETSPEC: WAIT FOR SEND')
+              ENDIF
+
               CALL GSTATS(623,1)
             ENDIF
 

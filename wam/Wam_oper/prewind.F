@@ -122,6 +122,7 @@
      &            IDELWO   ,LANAONLY
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FCRANGE
@@ -139,8 +140,10 @@
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
      &                                 ,ROAIRO,ZIDLOLD
+      REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
       CALL GSTATS(1968,0)
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
@@ -212,6 +215,7 @@
      &              ISEC1,ISEC2, FIELDS, MASK_IN)
       ENDIF
       CALL GSTATS(1968,1)
+      IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
 
       RETURN
 

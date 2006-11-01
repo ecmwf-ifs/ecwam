@@ -43,6 +43,7 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -53,6 +54,10 @@
       REAL :: F3(NINF-1:NSUP,NANG,NFRE)
       REAL, DIMENSION(IJS:IJL) ::  EM, TEMP
       LOGICAL :: LLEPSMIN
+
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('SEMEAN',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -98,6 +103,8 @@
       DO IJ=IJS,IJL
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('SEMEAN',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SEMEAN

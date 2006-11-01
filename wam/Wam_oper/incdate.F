@@ -43,11 +43,15 @@
 !       OD MEMO (6 July 1998) File: O/PRO/90 FROM GROUP 2000.
 
 ! ----------------------------------------------------------------------
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
       CHARACTER*(*) CDATE
       CHARACTER* 80 CLFMT
       INTEGER ISHIFT
       LOGICAL LLND
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('INCDATE',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -129,6 +133,7 @@
         ENDIF
         WRITE(CDATE,'(5i2.2)')INYEAR, INMON, INDAY, INHOUR, INMIN
       ENDIF
+      IF (LHOOK) CALL DR_HOOK('INCDATE',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE INCDATE
 

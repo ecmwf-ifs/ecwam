@@ -344,6 +344,7 @@
       USE YOWWIND  , ONLY : CDATEWO
       USE MPL_MODULE
       USE FDBSUBS
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       INTEGER :: IFS_KSEC1_BAK(NKSEK1)
@@ -357,6 +358,7 @@
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
+      REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
@@ -372,6 +374,7 @@
       LOGICAL NEWREAD, NEWFILE
       DATA NEWFILE, L1STCALL / .FALSE.,.TRUE. /
       ZERO = ' '
+      IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -512,11 +515,11 @@
           IF (NWFDBREF.NE.-5.AND.LFDB) THEN
              CALL GSTATS(1976,0)
              ISTAT = IFLUSHFDBSUBS (NWFDBREF)
-             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
              CALL GSTATS(1976,1)
           ELSE
              CALL GSTATS(1976,0)
-             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
              CALL GSTATS(1976,1)
           ENDIF
 
@@ -1295,11 +1298,11 @@
               IF (LFDB) THEN
                 CALL GSTATS(1976,0)
                 ISTAT = IFLUSHFDBSUBS (NWFDBREF)
-                CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
                 CALL GSTATS(1976,1)
               ELSE
                 CALL GSTATS(1976,0)
-                CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
                 CALL GSTATS(1976,1)
               ENDIF
               LLFLUSH = .FALSE.
@@ -1370,7 +1373,7 @@
      &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
           CALL GSTATS(1976,0)
           ISTAT = IFLUSHFDBSUBS (NWFDBREF)
-          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J        CALL MPL_BARRIER(CDSTRING='WAMODEL:')
           CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ',
@@ -1378,7 +1381,7 @@
           CALL FLUSH (IU06)
         ELSE
           CALL GSTATS(1976,0)
-          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+!J        CALL MPL_BARRIER(CDSTRING='WAMODEL:')
           CALL GSTATS(1976,1)
         ENDIF
 
@@ -1387,6 +1390,8 @@
       ENDDO ADVECTION
 
       IF(ALLOCATED(FL4)) DEALLOCATE(FL4)
+
+      IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE WAMODEL

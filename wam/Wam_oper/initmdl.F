@@ -278,6 +278,7 @@
      &            IU38
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -------------------------------------------------------------------
 
@@ -287,6 +288,9 @@
 !----------------------------------------------------------------------
       REAL X4(2)
       INTEGER I4(2)
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       CALL INIWCST
 
@@ -998,6 +1002,7 @@
       IF (ITEST.GE.2)
      1   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
 
+      IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE INITMDL

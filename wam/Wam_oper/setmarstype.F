@@ -29,11 +29,14 @@
      &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
      &            LANAONLY ,L4VTYPE  ,ISTREAM
       USE YOWTEST  , ONLY : IU06 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       CHARACTER*4 :: CSTREAM
       LOGICAL :: LASTREAM
+      REAL ZHOOK_HANDLE
+      IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
       ELSE
@@ -67,6 +70,8 @@
           MARSTYPE = 'fg'
         ENDIF
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SETMARSTYPE

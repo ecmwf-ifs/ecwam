@@ -60,6 +60,7 @@
       USE YOWICE   , ONLY : LICERUN  ,ICEMASK
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -67,6 +68,7 @@
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NINF:NSUP) :: USNEW,Z0NEW
+      REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
       DIMENSION BETAG(NLONW,NLATW)
@@ -76,6 +78,8 @@
       DIMENSION BETA(NIBLO)
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
 !*    1. COMPUTE CHARNOCK 'CONSTANT' BETA.
 !        ---------------------------------
@@ -101,6 +105,8 @@
       ELSE
         CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG, LSQRT, RCHAR)
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
       RETURN

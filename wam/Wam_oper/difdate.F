@@ -54,7 +54,7 @@
 
 !       NONE.
 
-
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ---------------------------------------------------------------------
 
@@ -63,6 +63,10 @@
 
       CHARACTER* 80 CLFMT
       LOGICAL LLND
+
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('DIFDATE',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -210,6 +214,8 @@
         WRITE(6, '("           KSHIFT ", I12 )') KSHIFT 
         CALL ABORT
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('DIFDATE',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE DIFDATE

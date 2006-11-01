@@ -103,6 +103,7 @@
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWWIND  , ONLY : CDAWIFL
       USE FDBSUBS
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! --------------------------------------------------------------------- 
 
@@ -110,6 +111,7 @@
 !     COUPLING ARRAYS
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
+      REAL  ZHOOK_HANDLE
 
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
@@ -144,6 +146,7 @@
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
 !     KEEP GRIB HEADER KSEC1 FROM THE IFS
+      IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
       IF(LWCOU) THEN
         IF (ITEST.GE.1) THEN
             WRITE (IU06,*) ' WAVEMDL: KSEC1 FROM IFS'
@@ -470,6 +473,8 @@
           ENDIF
         ENDIF
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)
 
       RETURN                                                            
       END SUBROUTINE WAVEMDL

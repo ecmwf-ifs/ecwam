@@ -129,6 +129,7 @@
      &            OBSLAT   ,OBSLON
       USE YOWUNIT  , ONLY : IU07     ,IU08
       USE MPL_MODULE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 
 !----------------------------------------------------------------------
@@ -145,9 +146,12 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
 
       REAL,ALLOCATABLE :: RCOMBUF(:), RDUM(:,:)
+      REAL ZHOOK_HANDLE
 
       CHARACTER*80 LOGFILENAME
       LOGICAL :: LLIRANK
+
+      IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 
 !     STANDARD OUTPUT UNIT
 !     --------------------
@@ -184,12 +188,16 @@
       KTAG=1
 
       IF((LMESSPASS.AND.IRANK.EQ.IREAD).OR.(.NOT.LMESSPASS)) THEN
+        CALL GSTATS(1771,0)
         CALL READPRE (IU07, IREFRA)
         CLOSE (UNIT=IU07, STATUS='KEEP')
+        CALL GSTATS(1771,1)
       ENDIF
 
 !     SEND INFORMATION FROM READPRE TO ALL PE's
+      CALL GSTATS(694,0)
       IF(LMESSPASS) CALL MPBCASTGRID(IU06,IREAD,KTAG,IREFRA)
+      CALL GSTATS(694,1)
 
       WRITE(IU06,*) ' PREPROC GRID INFORMATION READ IN '
 
@@ -268,6 +276,7 @@
 !*    1. INPUT NEIGHBOURING GRID POINT INDICES (UBUF) 
 !        --------------------------------------------
 
+
       ALLOCATE(KLAT(NIBLO,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
       ALLOCATE(KLON(NIBLO,2))  ! THE SIZE OF KLON IS READJUSTED SEE BELOW
       ALLOCATE(KLAT2(NIBLO,2)) ! THE SIZE OF KLAT2 IS READJUSTED SEE BELOW
@@ -304,8 +313,10 @@
             ENDDO
           ENDIF
 
+          CALL GSTATS(694,0)
           CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,
      &     KTAG=ITAG,CDSTRING='MPDECOMP:')
+          CALL GSTATS(694,1)
 
           IF(IRANK.NE.IREAD) THEN
             KCOUNT=0
@@ -337,6 +348,7 @@
 
 !*    2. FIND THE NUMBER OF POINTS PER PE, THE START AND END INDEX
 !        --------------------------------------------------------------
+
 
       ALLOCATE (NSTART(NPR),NEND(NPR),KLENBOT(NPR),KLENTOP(NPR))
       ALLOCATE (NFROMPE(NPR),NTOPE(NPR),NIJSTART(NPR))
@@ -738,6 +750,7 @@
 !        BETWEEN NEIGHBORING SUB GRID DOMAINS
 !        -----------------------------------------------------------
 
+
       MAXLEN=0
       DO IP=1,NPR
         MAXLEN=MAX(MAXLEN,NEND(IP)-NSTART(IP)+1)
@@ -1079,8 +1092,10 @@
         ENDDO
       ENDDO
 
+
 !     4. KEEP THE PART OF KLAT,KLAT2,KLON,DEPTH  WHICH IS NECESSARY
 !        ----------------------------------------------------------
+
 
       IF(LMESSPASS.AND.NPR.GT.1) THEN
 
@@ -1150,9 +1165,11 @@
 
       ENDIF
 
+
 !     5. MODIFY KLAT AND KLON SUCH THAT POINT INDICES FOR LAND IS
 !        NINF-1.
 !        ---------------------------------------------------------
+
 
       IF(.NOT.LMESSPASS) NSUP=NIBLO
 
@@ -1167,8 +1184,10 @@
       ENDIF
 
 
+
 !*    6. INPUT THE WEIGHT FOR THE ADVECTION SCHEME 
 !        --------------------------------------------
+
 
       ALLOCATE(WADV(NIBLO,2))   ! THE SIZE OF IS READJUSTED SEE BELOW
       ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
@@ -1178,9 +1197,11 @@
 
 !       READ IOU8 ON PE IREAD
         IF(IRANK.EQ.IREAD) THEN
+          CALL GSTATS(1771,0)
           READ (IU08) WADV
           READ (IU08) KOBSLAT
           READ (IU08) KOBSLON
+          CALL GSTATS(1771,1)
         ENDIF
 
 !       SEND WADV TO OTHER PE'S
@@ -1199,8 +1220,10 @@
             ENDDO
           ENDIF
 
+          CALL GSTATS(694,0)
           CALL MPL_BROADCAST(RCOMBUF(1:MPLENGTH),KROOT=IREAD,
      &     KTAG=ITAG,CDSTRING='MPDECOMP 1:')
+          CALL GSTATS(694,1)
 
           IF(IRANK.NE.IREAD) THEN
             KCOUNT=0
@@ -1237,8 +1260,10 @@
             ENDDO
           ENDIF
 
+          CALL GSTATS(694,0)
           CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,
      &     KTAG=ITAG,CDSTRING='MPDECOMP 2:')
+          CALL GSTATS(694,1)
 
           IF(IRANK.NE.IREAD) THEN
             KCOUNT=0
@@ -1261,9 +1286,11 @@
         ENDIF
 
       ELSEIF(.NOT.LMESSPASS) THEN
+        CALL GSTATS(1771,0)
         READ (IU08) WADV
         READ (IU08) KOBSLAT
         READ (IU08) KOBSLON
+        CALL GSTATS(1771,1)
       ENDIF
 
 
@@ -1302,8 +1329,8 @@
             ENDDO
           ENDDO
         ENDDO
-        DEALLOCATE(KDUM)
 
+        DEALLOCATE(KDUM)
         DEALLOCATE(NEWIJ2IJ)
       ENDIF
 
@@ -1371,8 +1398,8 @@
       DEALLOCATE(KOBSLAT)
 
 
-
 !     7. DETERMINE KXLTMIN KXLTMAX
+
 
       ALLOCATE(KXLTMIN(NPR))
       ALLOCATE(KXLTMAX(NPR))
@@ -1386,8 +1413,11 @@
         ENDDO
       ENDDO
 
+
 !     8. TEST AND RESET
 !        -------------- 
+
+
       IF(LMESSPASS) THEN
         IF(IGL.GT.1) THEN
           WRITE (IU06,*) '******************************************'
@@ -1409,6 +1439,9 @@
           IJLT(1)=NSUP
         ENDIF
       ENDIF
+
+
+      IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE MPDECOMP

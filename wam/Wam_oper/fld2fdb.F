@@ -122,6 +122,7 @@
       CHARACTER*(*) cddomain
 
       CHARACTER*1  cldomain
+      CHARACTER*1  cleg
 
       CHARACTER*2  cltime
       CHARACTER*2  cltype
@@ -298,7 +299,7 @@
 
           istat = isetvalfdbsubs( kfdb,   'REPR',    'll' )
 
-!         ensemble number (only set when needed)
+!         ensemble number and leg (only set when needed)
           WRITE( clnumber, '(i3.3)' ) ksec1(42)
 
           if ( ksec1(40).eq.1081 .OR.
@@ -307,6 +308,20 @@
      &         ksec1(40).eq.1086 ) then
             if ( ksec1(42).gt.0 ) then
               istat = isetvalfdbsubs( kfdb,   'NUMBER',  clnumber)
+            endif
+            if (kdir.NE.0 .AND. kfre.NE.0 .AND. 
+     &         (clparam .EQ. '251' .OR. ksec1(7).eq.212) ) THEN
+              ndir=ksec1(46)
+              nfre=ksec1(47)
+              if( ksec1(57+ndir+nfre).gt.0 ) then
+                WRITE( cleg, '(i1.1)' ) ksec1(57+ndir+nfre)
+                istat = isetvalfdbsubs( kfdb,   'LEG',  cleg)
+              endif
+            else
+              if( ksec1(48).gt.0 ) then
+                WRITE( cleg, '(i1.1)' ) ksec1(48)
+                istat = isetvalfdbsubs( kfdb,   'LEG',  cleg)
+              endif
             endif
           else if(ksec1(40).eq.1203 .or. ksec1(40).eq.1204) then
             if ( ksec1(42).gt.0 .or. ksec1(39).eq.2) then
@@ -400,7 +415,7 @@
           elseif(ksec1(37) == 26 ) then
             write( cdateref, '(i8.8)' ) ksec1(44) 
             istat = isetvalfdb( kfdb, 'refdate', cdateref)
-          elseif(ksec1(37) == 27 ) then
+          elseif(ksec1(37) == 27 .or. ksec1(37) == 30) then
             if(ksec1(49).gt.0) then
               write( cdateref, '(i8.8)' ) ksec1(49) 
               istat = isetvalfdb( kfdb, 'refdate', cdateref)
