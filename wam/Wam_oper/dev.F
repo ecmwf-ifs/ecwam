@@ -93,7 +93,7 @@
 !        MEAN WAVE NUMBERS OF WAM PARTITIONINGS.
      & FSX(MPART,NSPEC), FSY(MPART,NSPEC)
 !        MEAN WAVE NUMBERS OF SAR PARTITIONINGS.
-      REAL AKAW(MPART,NSPEC), AKAS(MPART,NSPEC)
+      REAL AKAW(NSPEC,MPART), AKAS(NSPEC,MPART)
 !        INTERMEDIATE STORAGE.
 
 !-------------------------------------------------------------------

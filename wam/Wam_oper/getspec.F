@@ -407,8 +407,6 @@ C
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
 
-                IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
-
               ENDIF
 
               IF (IRANK.EQ.KSEND.AND.NPROC.NE.1) THEN
@@ -431,6 +429,9 @@ C
               IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
                 CALL MPL_WAIT(INGRIB(1:ISIZE),KREQUEST=ISENDREQ, 
      &           CDSTRING='GETSPEC: WAIT FOR SEND')
+
+                IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+
               ENDIF
 
               CALL GSTATS(623,1)

@@ -50,7 +50,7 @@
  
 !------------------------------------------------------------------
  
-      NSPEC = 500
+      NSPEC = 1000
 
 !     note that in parallel run spec, long and lat will be allocated
 !     for the other PE's in mpbcastsarin.
