@@ -79,7 +79,7 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL NEWREAD, NEWFILE
+      LOGICAL NEWREAD, NEWFILE, LLEX
 
       CHARACTER*12 CDATEWH, CDATE
 
@@ -118,7 +118,10 @@
 !*    2.1.1 CLOSE WIND FILES SO THEY DO NOT ACCUMULATE.
 !           -------------------------------------------
 
-          CLOSE (UNIT=IU17, STATUS='DELETE')
+          INQUIRE(UNIT=IU17,OPENED=LLEX)
+
+          IF(LLEX) CLOSE (UNIT=IU17, STATUS='DELETE')
+
           IF (ITEST.GE.2)
      &     WRITE(IU06,'(7X,''SUB. CLOSEND: CLOSED IU17 = '',
      &     I8,'' AT CDATE = '',A12)') IU17, CDATE
