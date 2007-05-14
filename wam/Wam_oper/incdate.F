@@ -63,7 +63,6 @@
       IF (IL==10) THEN
         WRITE(CLFMT,'(A49, I2.2, A2)')
      &     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
-        WRITE(6, CLFMT ) CDATE
         WRITE(*, CLFMT ) CDATE
         LLND = .FALSE.
         CALL ABORT
@@ -75,13 +74,13 @@
         LLND = .TRUE.
         READ(CDATE,'(i4, 5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
       ELSEIF (IL==0) THEN
-        WRITE(6, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
+        WRITE(*, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
         CALL ABORT
       ELSE
         WRITE(CLFMT,'(A59, I2.2, A2)')
      &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
-        WRITE(6, CLFMT) IL, CDATE
+        WRITE(*, CLFMT) IL, CDATE
         STOP
       ENDIF
 
@@ -94,14 +93,14 @@
      &               INYEAR, INMON, INDAY, INHOUR, INMIN, INSEC, IRET)
 
       IF (IRET/=0) THEN
-        WRITE(6, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
-        WRITE(6, '("           IYEAR ", I4 )') IYEAR
-        WRITE(6, '("           IMON ", I2 )') IMON
-        WRITE(6, '("           IDAY ", I2 )') IDAY
-        WRITE(6, '("           IHOUR ", I2 )') IHOUR
-        WRITE(6, '("           IMIN ", I2 )') IMIN
-        WRITE(6, '("           ISEC ", I2 )') ISEC
-        WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
+        WRITE(*, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(*, '("           IYEAR ", I4 )') IYEAR
+        WRITE(*, '("           IMON ", I2 )') IMON
+        WRITE(*, '("           IDAY ", I2 )') IDAY
+        WRITE(*, '("           IHOUR ", I2 )') IHOUR
+        WRITE(*, '("           IMIN ", I2 )') IMIN
+        WRITE(*, '("           ISEC ", I2 )') ISEC
+        WRITE(*, '("           ISHIFT ", I12 )') ISHIFT
         CALL ABORT
       ENDIF
 
@@ -119,7 +118,7 @@
           WRITE(CDATE,'(i4.4, 5i2.2)')INYEAR, INMON, INDAY, INHOUR,
      &                                INMIN, INSEC
         ELSE
-          WRITE(6,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
+          WRITE(*,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
           CALL ABORT
         ENDIF
       ELSE
@@ -127,8 +126,8 @@
         IF (INYEAR >= 100) THEN
           WRITE(CLFMT,'(A39, I2.2, A2)')
      &     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
-          WRITE(6, CLFMT ) CDATE
-          WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
+          WRITE(*, CLFMT ) CDATE
+          WRITE(*,'(" THIS CANNOT BE DONE ANY LONGER")')
           CALL ABORT
         ENDIF
         WRITE(CDATE,'(5i2.2)')INYEAR, INMON, INDAY, INHOUR, INMIN

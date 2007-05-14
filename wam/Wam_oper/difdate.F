@@ -80,7 +80,6 @@
       IF (IL==10) THEN
         WRITE(CLFMT,'(A49, I2.2, A2)')
      &     '(" DIFDATE : NON-Y2K COMPLIANT DATE1 IN USE ", A', IL, ' )'
-        WRITE(6, CLFMT ) CDATE1
         WRITE(*, CLFMT ) CDATE1
         LLND = .FALSE.
         CALL ABORT
@@ -104,30 +103,30 @@
           CALL SECINCR  (IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC, ISHIFT,
      &     IYEAR1, IMON1, IDAY1, IHOUR1, IMIN1, ISEC1, IRET)
           IF (IRET/=0) THEN
-            WRITE(6, '(" DIFDATE:  ERROR CALLING SECINCR FOR ISEC1" )')
-            WRITE(6, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
-            WRITE(6, '("           IYEAR ", I4 )') IYEAR
-            WRITE(6, '("           IMON ", I2 )') IMON
-            WRITE(6, '("           IDAY ", I2 )') IDAY
-            WRITE(6, '("           IHOUR ", I2 )') IHOUR
-            WRITE(6, '("           IMIN ", I2 )') IMIN
-            WRITE(6, '("           ISEC ", I2 )') ISEC
-            WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
+            WRITE(*, '(" DIFDATE:  ERROR CALLING SECINCR FOR ISEC1" )')
+            WRITE(*, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
+            WRITE(*, '("           IYEAR ", I4 )') IYEAR
+            WRITE(*, '("           IMON ", I2 )') IMON
+            WRITE(*, '("           IDAY ", I2 )') IDAY
+            WRITE(*, '("           IHOUR ", I2 )') IHOUR
+            WRITE(*, '("           IMIN ", I2 )') IMIN
+            WRITE(*, '("           ISEC ", I2 )') ISEC
+            WRITE(*, '("           ISHIFT ", I12 )') ISHIFT
             CALL ABORT
           ENDIF
         ENDIF
       ELSEIF (IL==0) THEN
-        WRITE(6, *) ' '
-        WRITE(6, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
-        WRITE(6, *) ' '
+        WRITE(*, *) ' '
+        WRITE(*, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
+        WRITE(*, *) ' '
         CALL ABORT
       ELSE
-        WRITE(6, *) ' '
+        WRITE(*, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
      &  '(" DIFDATE :  FATAL@! DATE1 IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
-        WRITE(6, CLFMT) IL, CDATE1
-        WRITE(6, *) ' '
+        WRITE(*, CLFMT) IL, CDATE1
+        WRITE(*, *) ' '
         CALL ABORT
       ENDIF
 
@@ -137,7 +136,6 @@
       IF (IL==10) THEN
         WRITE(CLFMT,'(A49, I2.2, A2)')
      &     '(" DIFDATE : NON-Y2K COMPLIANT DATE2 IN USE ", A', IL, ' )'
-        WRITE(6, CLFMT ) CDATE2
         WRITE(*, CLFMT ) CDATE2
         LLND = .FALSE.
         CALL ABORT
@@ -161,30 +159,30 @@
           CALL SECINCR  (IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC, ISHIFT,
      &     IYEAR2, IMON2, IDAY2, IHOUR2, IMIN2, ISEC2, IRET)
           IF (IRET/=0) THEN
-            WRITE(6, '(" DIFDATE:  ERROR CALLING SECINCR FOR ISEC2" )')
-            WRITE(6, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
-            WRITE(6, '("           IYEAR ", I4 )') IYEAR
-            WRITE(6, '("           IMON ", I2 )') IMON
-            WRITE(6, '("           IDAY ", I2 )') IDAY
-            WRITE(6, '("           IHOUR ", I2 )') IHOUR
-            WRITE(6, '("           IMIN ", I2 )') IMIN
-            WRITE(6, '("           ISEC ", I2 )') ISEC
-            WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
+            WRITE(*, '(" DIFDATE:  ERROR CALLING SECINCR FOR ISEC2" )')
+            WRITE(*, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
+            WRITE(*, '("           IYEAR ", I4 )') IYEAR
+            WRITE(*, '("           IMON ", I2 )') IMON
+            WRITE(*, '("           IDAY ", I2 )') IDAY
+            WRITE(*, '("           IHOUR ", I2 )') IHOUR
+            WRITE(*, '("           IMIN ", I2 )') IMIN
+            WRITE(*, '("           ISEC ", I2 )') ISEC
+            WRITE(*, '("           ISHIFT ", I12 )') ISHIFT
             CALL ABORT
           ENDIF
         ENDIF
       ELSEIF (IL==0) THEN
-        WRITE(6, *) ' '
-        WRITE(6, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
-        WRITE(6, *) ' '
+        WRITE(*, *) ' '
+        WRITE(*, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
+        WRITE(*, *) ' '
         CALL ABORT
       ELSE
-        WRITE(6, *) ' '
+        WRITE(*, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
      &  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
-        WRITE(6, CLFMT) IL, CDATE2
-        WRITE(6, *) ' '
+        WRITE(*, CLFMT) IL, CDATE2
+        WRITE(*, *) ' '
         CALL ABORT
       ENDIF
 
@@ -198,20 +196,20 @@
      &               KSHIFT,IRET)
 
       IF (IRET/=0) THEN
-        WRITE(6, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
-        WRITE(6, '("           IYEAR1 ", I4 )') IYEAR1 
-        WRITE(6, '("           IMON1 ", I2 )') IMON1 
-        WRITE(6, '("           IDAY1 ", I2 )') IDAY1 
-        WRITE(6, '("           IHOUR1 ", I2 )') IHOUR1 
-        WRITE(6, '("           IMIN1 ", I2 )') IMIN1 
-        WRITE(6, '("           ISEC1 ", I2 )') ISEC1 
-        WRITE(6, '("           IYEAR2 ", I4 )') IYEAR2 
-        WRITE(6, '("           IMON2 ", I2 )') IMON2 
-        WRITE(6, '("           IDAY2 ", I2 )') IDAY2 
-        WRITE(6, '("           IHOUR2 ", I2 )') IHOUR2 
-        WRITE(6, '("           IMIN2 ", I2 )') IMIN2 
-        WRITE(6, '("           ISEC2 ", I2 )') ISEC2 
-        WRITE(6, '("           KSHIFT ", I12 )') KSHIFT 
+        WRITE(*, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(*, '("           IYEAR1 ", I4 )') IYEAR1 
+        WRITE(*, '("           IMON1 ", I2 )') IMON1 
+        WRITE(*, '("           IDAY1 ", I2 )') IDAY1 
+        WRITE(*, '("           IHOUR1 ", I2 )') IHOUR1 
+        WRITE(*, '("           IMIN1 ", I2 )') IMIN1 
+        WRITE(*, '("           ISEC1 ", I2 )') ISEC1 
+        WRITE(*, '("           IYEAR2 ", I4 )') IYEAR2 
+        WRITE(*, '("           IMON2 ", I2 )') IMON2 
+        WRITE(*, '("           IDAY2 ", I2 )') IDAY2 
+        WRITE(*, '("           IHOUR2 ", I2 )') IHOUR2 
+        WRITE(*, '("           IMIN2 ", I2 )') IMIN2 
+        WRITE(*, '("           ISEC2 ", I2 )') ISEC2 
+        WRITE(*, '("           KSHIFT ", I12 )') KSHIFT 
         CALL ABORT
       ENDIF
 

@@ -107,13 +107,13 @@
       CLOSE(IU05)
 
 
-      WRITE(6,*) '==============================================='
-      WRITE(6,*) '*** MPUSERIN has read the following settings'
-      WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
-      WRITE(6,*) '*** LFDB = ',LFDB
-      WRITE(6,*) '*** LWCOU= ',LWCOU
-      WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
-      WRITE(6,*) '==============================================='
+      WRITE(*,*) '==============================================='
+      WRITE(*,*) '*** MPUSERIN has read the following settings'
+      WRITE(*,*) '*** LMESSPASS = ',LMESSPASS
+      WRITE(*,*) '*** LFDB = ',LFDB
+      WRITE(*,*) '*** LWCOU= ',LWCOU
+      WRITE(*,*) '*** LWCOUNORMS= ',LWCOUNORMS
+      WRITE(*,*) '==============================================='
 
       RETURN
       END SUBROUTINE MPUSERIN

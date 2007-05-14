@@ -1332,6 +1332,20 @@
       ELSE IF ( ISTREAM .EQ. 1085 ) THEN
         WRITE(IU06,'("  FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
+      ELSE IF ( ISTREAM .EQ. 1078 ) THEN
+        WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN OVERLAP: ")')
+        WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
+        WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
+        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
+        WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
+      ELSE IF ( ISTREAM .EQ. 1079 ) THEN
+        WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN : ")')
+        WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
+        WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
+        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
+        WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE
         IF (NENSFNB.NE.0.OR.NTOTENS.NE.0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')

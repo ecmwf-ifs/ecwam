@@ -144,6 +144,7 @@
       CHARACTER*4  cdorigin
 
       CHARACTER*8  cldate
+      CHARACTER*8  hdate
       CHARACTER*8  cdateref
 
       LOGICAL :: LASTREAM 
@@ -229,6 +230,28 @@
         WRITE( cldate(07:08), '(i2.2)' ) ksec1(12)
         WRITE( cltime, '(i2.2)' ) ksec1(13)
 
+!
+! For VAREPS hindcast we use a different logic 
+!
+
+        hdate=cldate
+        if (ksec1(37) == 27 .or. ksec1(37) == 30) then
+          NREFERENCE=ksec1(49)
+          if(NREFERENCE.gt.0) then
+              write( cldate, '(i8.8)' )  NREFERENCE
+          endif
+        elseif(ksec1(37) == 13 ) then
+            if (ksec1(40) == 1078 .or.
+     &          ksec1(40) == 1079 ) then
+                   ndir=ksec1(46)
+                   nfre=ksec1(47)
+                   NREFERENCE=ksec1(52+ndir+nfre)
+                   if(NREFERENCE.gt.0) then
+                      write( cldate, '(i8.8)' )  NREFERENCE
+                   endif
+            endif
+        endif
+
         clclass  = cdclass
         clexpver = cdexpver
 
@@ -305,6 +328,8 @@
           if ( ksec1(40).eq.1081 .OR.
      &         ksec1(40).eq.1083 .OR.
      &         ksec1(40).eq.1084 .OR.
+     &         ksec1(40).eq.1078 .OR.
+     &         ksec1(40).eq.1079 .OR.
      &         ksec1(40).eq.1086 ) then
             if ( ksec1(42).gt.0 ) then
               istat = isetvalfdbsubs( kfdb,   'NUMBER',  clnumber)
@@ -415,10 +440,9 @@
           elseif(ksec1(37) == 26 ) then
             write( cdateref, '(i8.8)' ) ksec1(44) 
             istat = isetvalfdb( kfdb, 'refdate', cdateref)
-          elseif(ksec1(37) == 27 .or. ksec1(37) == 30) then
-            if(ksec1(49).gt.0) then
-              write( cdateref, '(i8.8)' ) ksec1(49) 
-              istat = isetvalfdb( kfdb, 'refdate', cdateref)
+          elseif(ksec1(37) == 27 .or. ksec1(37) == 30 ) then
+            if(ksec1(40) == 1078.or.ksec1(40) == 1079) then
+              istat = isetvalfdb( kfdb, 'hdate', hdate)
             endif
           elseif(ksec1(37) == 26 ) then
             write( cdateref, '(i8.8)' ) ksec1(44) 
@@ -431,6 +455,9 @@
      &         ksec1(40) == 1204 ) then
               write( cdateref, '(i8.8)' ) ksec1(52+ndir+nfre)
               istat = isetvalfdb(kfdb,'refdate',cdateref)
+            elseif (ksec1(40) == 1078 .or.
+     &              ksec1(40) == 1079 ) then
+               istat = isetvalfdb(kfdb,'hdate', hdate)
             endif
           endif
 

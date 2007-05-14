@@ -370,6 +370,8 @@
 
 !     hindcasts need a reference date
       IF(KSTREAM == 1204 .OR.
+     &   KSTREAM == 1078 .OR.
+     &   KSTREAM == 1079 .OR.
      &   KSTREAM == 1084 .OR.
      &   KSTREAM == 1085
      &    ) THEN

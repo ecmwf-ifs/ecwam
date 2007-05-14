@@ -36,6 +36,19 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1025
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1079) THEN
+!       ENSEMBLE FORECAST WAVE HINDCAST
+        CSTREAM = 'enwh'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1033
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1080) THEN
 !       DETERMINISTIC WAVE MONTHLY MEANS AND CLIMATOLOGY
         CSTREAM = 'wamo'
@@ -96,6 +109,18 @@
         CSTREAM = 'wvhc'
         MARSFCTYPE = 'fc'
         KSTREAM = 1085
+        LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1078) THEN
+!       Ensemble Forecast Wave Hindcast Overlap 
+        CSTREAM = 'ewho'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1032
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1086) THEN
 !       WAVE ENSEMBLE FORECAST OVERLAP 
@@ -289,6 +314,19 @@
         ENDIF
         KSTREAM = 1082
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1033) THEN
+!       Ensemble Forecast Wave Hindcasts 
+        CSTREAM = 'enfh'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1079
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1037) THEN
 !       WAVE MULTI ANALYSIS
         CSTREAM = 'maed'
@@ -319,6 +357,18 @@
         CSTREAM = 'wvhc'
         MARSFCTYPE = 'fc'
         KSTREAM = 1024
+        LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1032) THEN
+!       WAVE ENSEMBLE FORECAST OVERLAP 
+        CSTREAM = 'efho'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1078
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1034) THEN
 !       WAVE ENSEMBLE FORECAST OVERLAP 
