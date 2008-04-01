@@ -47,16 +47,16 @@
       USE MPL_MODULE
 
 
-      CHARACTER WDATE*12, WFN*16, CTAG*3
+      CHARACTER WDATE*14, WFN*18, CTAG*3
 
-      ILEN=13
+      ILEN=15
       WFN(1:1) = 'W'
-      WFN(2:13) = WDATE(1:12)
+      WFN(2:15) = WDATE(1:14)
       IF(LMESSPASS) THEN
-        ILEN=16
+        ILEN=18
         IRANK=MPL_MYRANK()
         WRITE(CTAG,'(I3.3)') IRANK
-        WFN(14:16) = CTAG 
+        WFN(16:18) = CTAG 
       ENDIF
       OPEN (UNIT=IUNIT, FILE=WFN(1:ILEN), FORM='UNFORMATTED',
      &      STATUS='UNKNOWN')

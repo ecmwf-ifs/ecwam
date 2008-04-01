@@ -1,4 +1,4 @@
-      SUBROUTINE TOPOAR (IU01, IA2, IOBSLAT, IOBSLON, ML)
+      SUBROUTINE TOPOAR (IU01, BATHY, ML)
 
 ! ----------------------------------------------------------------------
 
@@ -9,6 +9,11 @@
 !     MODIFIED BY       H. GUNTHER      1/4/90  -  REARANGEMENT OF CODE.
 !                       J. BIDLOT    FEB 2003 - 
 !                                    INTRODUCE OBSTRUCTION COEFFICIENTS
+!                                    MOVED TO MUBUF NOW !
+!                       J. BIDLOT    NOV 2005 - 
+!                                    INTRODUCE NEW INPUT FORMAT FOR
+!                                    BATHYMETRY (the old format can still
+!                                    be used).
 !*    PURPOSE.
 !     --------
 
@@ -17,13 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TOPOAR (IU01, IA2, IOBSLAT, IOBSLON, ML)*
+!       *CALL* *TOPOAR (IU01,BATHY,ML)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
-!          *IA2*   -  TOPOGRAPHIC DATA IN OUTPUT GRID.
-!          *IOBSLAT* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
-!                      THE MERIDIONAL DIRECTION (0.1%).
-!          *IOBSLON* - REDUCTION FACTOR DUE TO OBSTRUCTIONS IN
-!                      THE ZONAL DIRECTION (0.1%).
+!          *BATHY*   -  BATHYMETRY DATA IN OUTPUT GRID.
 !          *ML*    -  NUMBER OF FREQUENCIES (36)
 
 !     METHOD.
@@ -47,7 +48,8 @@
 
 !       FOR NEW TOPOGRAPHY INPUT:
 !       THE INPUT IS ALREADY ON THE DESIRED GRID AND THE REDUCTION
-!       FACTORS DUR TO OBSTRUCTIONS ARE GIVEN AS WELL
+!       FACTORS DUE TO OBSTRUCTIONS ARE GIVEN AS WELL
+!       !!! THE REDUCTION FACTORS ARE READ AND PROCESSED IN MUBUF!
 
 !     EXTERNALS.
 !     ----------
@@ -69,18 +71,22 @@
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
-      INTEGER, DIMENSION(NGX, NGY, ML, 2) :: IOBSLAT, IOBSLON 
-      INTEGER, DIMENSION(NGX, NGY) :: IA2(NGX, NGY)
-      INTEGER, ALLOCATABLE :: IDUM(:,:)
+      INTEGER, ALLOCATABLE :: IDUM(:)
+
+      REAL, DIMENSION(NGX, NGY) :: BATHY
 
       CHARACTER*1, ALLOCATABLE :: AX(:), AXX(:)
       CHARACTER*4 :: CX
       CHARACTER*10 :: FORMAT
+      CHARACTER*14 :: CHEADER 
       INTEGER, ALLOCATABLE :: IA2H(:), IA1(:,:)
+      REAL, ALLOCATABLE :: XA2H(:), XA1(:,:)
+      LOGICAL :: LLREALIN
 
 ! ----------------------------------------------------------------------
 
@@ -95,7 +101,25 @@
 !       XLAG - LATITUDE OF FIRST GRID LATITUDE STORED.
 
       REWIND (UNIT=IU01)
-      READ (IU01,'(8F10.5)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+!     DETERMINE WHICH TYPE OF FILE IS USED
+      READ (IU01,'(a14)') CHEADER 
+      IF(CHEADER.EQ.'WAM BATHYMETRY') THEN
+!       REAL BATHYMETRY INPUT
+        LLREALIN=.TRUE.
+        WRITE (IU06,*) ' BATHYMETRY FROM REAL INPUT DATA' 
+      ELSE
+!       INTEGER BATHYMETRY INPUT
+        LLREALIN=.FALSE.
+        WRITE (IU06,*) ' BATHYMETRY FROM INTEGER INPUT DATA' 
+      ENDIF
+      REWIND (UNIT=IU01)
+
+      IF(LLREALIN) THEN
+        READ (IU01,'(a14)') CHEADER 
+        READ (IU01,'(8F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+      ELSE
+        READ (IU01,'(8F10.5)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+      ENDIF
       CALL ADJUST (XLOW, XLOE)
 
       WRITE (IU06,'(1H1,'' INPUT GRID''/)')
@@ -104,8 +128,7 @@
      &                 '' WESTERN LONG '','' EASTERN LONG'',
      &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
 
-      IA2 = 999
-      ALLOCATE(AXX(NGX))
+      BATHY = 999.
 
       IF(LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
@@ -158,143 +181,24 @@
         ENDDO
 
 !       READ THE BATHYMETRY DATA
+
+        ALLOCATE(IDUM(NGX))
         DO K=1,NY
           WRITE(CX,'(I4.4)') NLONRGG(K)
-          FORMAT='('//CX//'I4)'
-          READ (IU01,FORMAT) (IA2(IX,K),IX=1,NLONRGG(K))
+          IF(LLREALIN) THEN
+            FORMAT='('//CX//'F9.2)'
+            READ (IU01,FORMAT) (BATHY(IX,K),IX=1,NLONRGG(K))
+          ELSE
+            FORMAT='('//CX//'I4)'
+            READ (IU01,FORMAT) (IDUM(IX),IX=1,NLONRGG(K))
+            DO IX=1,NLONRGG(K)
+              BATHY(IX,K)=REAL(IDUM(IX))
+            ENDDO
+          ENDIF
         ENDDO
+        DEALLOCATE(IDUM)
   
-!       READ IN REDUCTION FACTORS
-
-        READ (IU01,'(I4)') NFREMAX
-!!!     NFREMAX can only be 36 
-
-        IF(NFREMAX.NE.36 ) THEN
-          WRITE (IU06,*) ' *******************************************'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
-          WRITE (IU06,*) ' * NFREMAX MUST BE = 36                    *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *******************************************'
-          CALL ABORT1
-        ENDIF
-
-        IF(ML.NE.36 .AND. ML.NE.30 .AND. ML.NE.25) THEN
-          WRITE (IU06,*) ' *******************************************'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
-          WRITE (IU06,*) ' * NUMBER OF FREQUENCIES MUST BE 36,30,25  *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *******************************************'
-          CALL ABORT1
-        ENDIF
-
-        IF (ML.EQ.25 .OR. ML.EQ.30) ALLOCATE(IDUM(NGX,NGY))
-
-        IF(ML.EQ.NFREMAX) THEN
-          DO M=1,NFREMAX
-            DO IS=1,2
-              DO K=1,NY
-                WRITE(CX,'(I4.4)') NLONRGG(K)
-                FORMAT='('//CX//'I4)'
-                READ (IU01,FORMAT) (IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
-              ENDDO
-            ENDDO
-            DO IS=1,2
-              DO K=1,NY
-                WRITE(CX,'(I4.4)') NLONRGG(K)
-                FORMAT='('//CX//'I4)'
-                READ (IU01,FORMAT) (IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
-              ENDDO
-            ENDDO
-          ENDDO
-        ELSE IF (ML.EQ.25) THEN
-          DO IFRE=1,NFREMAX
-            IF(IFRE.LE.2 .OR. IFRE.GT.27) THEN
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ELSE
-              M=IFRE-2
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ENDIF
-
-            IF(IFRE.LE.2 .OR. IFRE.GT.27) THEN
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ELSE
-              M=IFRE-2
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ENDIF
-          ENDDO
-        ELSE IF (ML.EQ.30) THEN
-          DO IFRE=1,NFREMAX
-            IF(IFRE.GT.30) THEN
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ELSE
-              M=IFRE
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IOBSLAT(IX,K,M,IS),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ENDIF
-
-            IF(IFRE.GT.30) THEN
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ELSE
-              M=IFRE
-              DO IS=1,2
-                DO K=1,NY
-                  WRITE(CX,'(I4.4)') NLONRGG(K)
-                  FORMAT='('//CX//'I4)'
-                  READ (IU01,FORMAT)(IOBSLON(IX,K,M,IS),IX=1,NLONRGG(K))
-                ENDDO
-              ENDDO
-            ENDIF
-          ENDDO
-        ENDIF
-  
-        IF(ALLOCATED(IDUM)) DEALLOCATE(IDUM)
+!       THE REDUCTION FACTORS ARE NOW READ IN MUBUF (the rest of IU01)
 
       ELSE
 !     OLD TREATMENT OF BATHYMETRY INPUT
@@ -305,6 +209,7 @@
 
       ALLOCATE(AX(MLON))
       ALLOCATE(IA2H(MLON), IA1(MLON,NLATMAX))
+      ALLOCATE(XA2H(MLON), XA1(MLON,NLATMAX))
 
       KMAX=(MLON+11)/12
 
@@ -332,19 +237,26 @@
       DO K=1,KMAX
         N1 = 12*(K-1)+1
         N2 = MIN(12*K,MLON)
-        READ (IU01, '(12(I5,A1))', END=1017)
-     &   (IA1(IAA,NLAT),AX(IAA),IAA=N1,N2)
+        IF(LLREALIN) THEN
+          READ (IU01, '(12(F9.2))', END=1017)
+     &     (XA1(IAA,NLAT),IAA=N1,N2)
+        ELSE
+          READ (IU01, '(12(I5,A1))', END=1017)
+     &     (IA1(IAA,NLAT),AX(IAA),IAA=N1,N2)
+        ENDIF
       ENDDO
 
       IF (XLAT+0.5*XDELA.LE.AMOSOP) GO TO 1010
       IF(NLAT.EQ.1) XLAG=XLAT
+      IF(.NOT.LLREALIN) THEN
       DO I=1,MLON
-        IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).LT.0)
-     &   IA1(I,NLAT)=-IA1(I,NLAT)
-        IF (AX(I).EQ.'D'.AND.IA1(I,NLAT).GT.0)
-     &   IA1(I,NLAT)=-IA1(I,NLAT)
-        IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).EQ.0) IA1(I,NLAT)=1
-      ENDDO
+          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).LT.0)
+     &     IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I).EQ.'D'.AND.IA1(I,NLAT).GT.0)
+     &     IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).EQ.0) IA1(I,NLAT)=1
+        ENDDO
+      ENDIF
       IF(XLAT+0.5*XDELA.GT.AMONOP) GO TO 1020
       GO TO 1005
 1017  CONTINUE
@@ -372,7 +284,9 @@
 
 
       XLW= MOD(AMOWEP-XLOW+720.,360.)
-      ILW= NINT(XLW/XDELO-0.0001)
+!!!!      ILW= NINT(XLW/XDELO-0.0001)
+      ILW= NINT(XLW/XDELO)
+
       NLON=NINT((AMOEAP-AMOWEP)/XDELO+1.0)
       DO J=1,NLAT
         IH=ILW
@@ -380,10 +294,18 @@
           IH=IH+1
           IF(IH.LE.0) IH=IH+MLON
           IF(IH.GT.MLON) IH=IH-MLON
-          IA2H(I) =IA1(IH,J)
+          IF(LLREALIN) THEN
+            XA2H(I) =XA1(IH,J)
+          ELSE
+            IA2H(I) =IA1(IH,J)
+          ENDIF
         ENDDO
         DO I=1,NLON
-          IA1(I,J)=IA2H(I)
+          IF(LLREALIN) THEN
+            XA1(I,J)=XA2H(I)
+          ELSE
+            XA1(I,J)=REAL(IA2H(I))
+          ENDIF
         ENDDO
       ENDDO
 
@@ -460,7 +382,7 @@
               WRITE (IU06,*) ' **************************************'
               CALL ABORT1
             ENDIF
-            IA2(NL,NJ)=IA1(I,J)
+            BATHY(NL,NJ)=XA1(I,J)
             JRGG = 1 +NINT((XLA-AMOSOP)/XDELLA)
             XLO = AMOWEP + REAL(NL)*ZDELLO(JRGG)
             KXLO=NINT(XLO*100.)
@@ -501,11 +423,7 @@
         CALL ABORT1
       ENDIF
 
-!       THERE NO OBSTRUCTIONS IN THE OLD BATHYMETRY APPROACH:
-        IOBSLAT=1000
-        IOBSLON=1000
-
-      ENDIF
+      ENDIF  ! end on new vs old type bathymetry
 
 
 ! ----------------------------------------------------------------------
@@ -516,16 +434,62 @@
 
       DO J=1,NY
         DO I=1,NX
-
-!PETER CHANGED LE TO LT
-
-          IF (IA2(I,J).LT.0) THEN
-            IA2(I,J) = -IA2(I,J)
+          IF (BATHY(I,J).LT.0.) THEN
+            BATHY(I,J) = -BATHY(I,J)
           ELSE
-            IA2(I,J) = -999
+            BATHY(I,J) = -999.
           ENDIF
         ENDDO
       ENDDO
+
+!     CHECK THAT MINIMUM DEPTH USED IN TABLES IS MET. 
+      NMINADJT=0
+      DO J=1,NY
+        DO I=1,NX
+          IF (BATHY(I,J).GT.0. .AND. BATHY(I,J).LT. DEPTHA ) THEN
+            BATHY(I,J) = DEPTHA 
+            NMINADJT=NMINADJT+1
+          ENDIF
+        ENDDO
+      ENDDO
+      IF(NMINADJT.GT.0) THEN
+        WRITE (IU06,*) ' ' 
+        WRITE (IU06,*) ' *******************************************'
+        WRITE (IU06,*) ' *                                         *'
+        WRITE (IU06,*) ' *      WARNING IN SUB. TOPOAR             *'
+        WRITE (IU06,*) ' *      ============================       *'
+        WRITE (IU06,*) ' *                                         *'
+        WRITE (IU06,*) ' * THE DEPTH AT SOME GRID POINTS WAS RESET *' 
+        WRITE (IU06,*) ' * TO THE MINIMUM DEPTH IN TABLES ',DEPTHA
+        WRITE (IU06,*) ' * NUMBER OF AFFECTED GRID POINTS: ',NMINADJT
+        WRITE (IU06,*) ' *                                         *'
+        WRITE (IU06,*) ' *******************************************'
+        WRITE (IU06,*) ' ' 
+      ENDIF
+!     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
+      BATHYMAX=-999.
+      DO J=1,NY
+        DO I=1,NX
+          BATHYMAX=MAX(BATHY(I,J),BATHYMAX)
+        ENDDO
+      ENDDO
+      TABLEMAX=DEPTHA*DEPTHD**(NDEPTH-1)
+      IF(BATHYMAX.GT.TABLEMAX) THEN
+        WRITE (IU06,*) ' ******************************************'
+        WRITE (IU06,*) ' *                                        *'
+        WRITE (IU06,*) ' *      WARNING ERROR IN SUB. TOPOAR      *'
+        WRITE (IU06,*) ' *      ============================      *'
+        WRITE (IU06,*) ' *                                        *'
+        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX 
+        WRITE (IU06,*) ' *  IS LARGER THAN '
+        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH IN TABLES ',TABLEMAX 
+        WRITE (IU06,*) ' *  ADJUST DEPTHA, DEPTHD, NDEPTH !       *'
+        WRITE (IU06,*) ' *  (SEE INPUT NAMELIST)                  *'
+        WRITE (IU06,*) ' *                                        *'
+        WRITE (IU06,*) ' ******************************************'
+        CALL ABORT1
+      ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -546,7 +510,7 @@
               IF (XLON.GT.XOUTE(JH)) XLON=XLON-360.
               IF (XLON.GE.XOUTW(JH) .AND. XLAT.GE.XOUTS(JH) .AND.
      &         XLON.LE.XOUTE(JH) .AND. XLAT.LE.XOUTN(JH))
-     &         IA2(I,J) = NOUTD(JH)
+     &         BATHY(I,J) = REAL(NOUTD(JH))
             ENDDO
           ENDDO
         ENDDO
@@ -582,6 +546,9 @@
           IPAGE = (NX+ILEN-1)/ILEN
         ENDIF
       ENDIF
+
+      ALLOCATE(AXX(NGX))
+
       DO L=1,IPAGE
         IA = (L-1)*ILEN
         IE = MIN(IA+ILEN,NX)
@@ -593,8 +560,8 @@
         WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
         DO JH =NY,1,-1
           DO I=IA,IE
-            IF (IA2(I,JH).EQ.-999) AXX(I)='L'
-            IF (IA2(I,JH).NE.-999) AXX(I)='S'
+            IF (BATHY(I,JH).EQ.-999) AXX(I)='L'
+            IF (BATHY(I,JH).NE.-999) AXX(I)='S'
           ENDDO
           WRITE (IU06,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
           WRITE (54,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
@@ -605,7 +572,9 @@
       IF(ALLOCATED(AX)) DEALLOCATE(AX)
       IF(ALLOCATED(AXX)) DEALLOCATE(AXX)
       IF(ALLOCATED(IA2H)) DEALLOCATE(IA2H)
+      IF(ALLOCATED(XA2H)) DEALLOCATE(XA2H)
       IF(ALLOCATED(IA1)) DEALLOCATE(IA1)
+      IF(ALLOCATED(XA1)) DEALLOCATE(XA1)
 
       RETURN
       END SUBROUTINE TOPOAR

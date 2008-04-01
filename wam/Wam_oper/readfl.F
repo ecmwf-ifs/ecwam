@@ -45,8 +45,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMESPAS, ONLY : LPBIOIN
-      USE YOWMPP   , ONLY : NPRECR
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWMPP   , ONLY : NPROC    ,NPRECR
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO     ,LL1D
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU12
 
@@ -57,6 +58,7 @@
       LOGICAL LPBOPEN,LPBCLOSE
 
       REAL,DIMENSION(0:NIBLO,NANG,MINF:MSUP) :: FL
+      REAL,ALLOCATABLE :: RFL(:,:,:)
 ! ----------------------------------------------------------------------
 
       IF(LPBIOIN) THEN
@@ -80,7 +82,22 @@
         ENDIF
 
         KOUNT = (NIBLO+1)*NANG*(MSUP-MINF+1)*NPRECR
-        CALL PBREAD(IUNIT,FL,KOUNT,KRET)
+        IF(LL1D .OR. NPROC.EQ.1) THEN
+          CALL PBREAD(IUNIT,FL,KOUNT,KRET)
+        ELSE
+!         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
+!         BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
+          ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
+          CALL PBREAD(IUNIT,RFL,KOUNT,KRET)
+          DO M=MINF,MSUP
+            DO K=1,NANG
+              DO IJ=0,NIBLO
+                FL(IJ2NEWIJ(IJ),K,M)=RFL(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+          DEALLOCATE(RFL)
+        ENDIF
         IF(KRET.LT.0) THEN
           WRITE (IU06,*) '*****************************************'
           WRITE (IU06,*) '*                                       *'
@@ -136,7 +153,14 @@
           CALL ABORT1
         ENDIF
 
-        READ(IU12) FL
+        IF(LL1D .OR. NPROC.EQ.1) THEN
+          READ(IU12) FL
+        ELSE
+!         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
+!         BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
+          READ(IU12) (((FL(IJ2NEWIJ(IJ),K,M),IJ=0,NIBLO),
+     &                  K=1,NANG),M=MINF,MSUP)
+        ENDIF
         CLOSE(IU12)
 
       ENDIF

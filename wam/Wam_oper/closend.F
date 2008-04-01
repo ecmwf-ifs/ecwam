@@ -81,7 +81,7 @@
 
       LOGICAL NEWREAD, NEWFILE, LLEX
 
-      CHARACTER*12 CDATEWH, CDATE
+      CHARACTER*14 CDATEWH, CDATE
 
 ! ----------------------------------------------------------------------
 
@@ -124,7 +124,7 @@
 
           IF (ITEST.GE.2)
      &     WRITE(IU06,'(7X,''SUB. CLOSEND: CLOSED IU17 = '',
-     &     I8,'' AT CDATE = '',A12)') IU17, CDATE
+     &     I8,'' AT CDATE = '',A14)') IU17, CDATE
 
 !*    2.1.2 UPDATE WIND FILE TIME COUNTER AND UNITS.
 !           ----------------------------------------

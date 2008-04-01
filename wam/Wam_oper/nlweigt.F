@@ -48,15 +48,16 @@
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
      &            FRH      ,KFRH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : DEG
+      USE YOWPCONS , ONLY : PI       ,DEG
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
-
+!
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
-
-      PARAMETER (ALAMD=0.25, CON=3000., DELPHI1=-11.48, DELPHI2=33.56)
-
+!
+!      DEFAULTS: ALAMD=0.25 => DELPHI1=-11.48, DELPHI2=33.56
+!                CON=3000.
+!
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *ALAMD*     REAL      LAMBDA
@@ -97,6 +98,18 @@
 
 !*    1. COMPUTATION FOR ANGULAR GRID.
 !        -----------------------------
+!
+!*    1.1 DETERMINE ANGLES DELPHI USING RESONANCE CONDITION.
+!         --------------------------------------------------
+!     
+      ALAMD   = 0.25
+
+      XF      = ((1.+ALAMD)/(1.-ALAMD))**4
+      COSTH3  = (1.+2.*ALAMD+2.*ALAMD**3)/(1.+ALAMD)**2
+      DELPHI1 = -180./PI*ACOS(COSTH3)
+      COSTH4  = SQRT(1.-XF+XF*COSTH3**2)
+      DELPHI2 = 180./PI*ACOS(COSTH4)
+      CON     = 3000.
 
       DELTHA = DELTH*DEG
       CL1 = DELPHI1/DELTHA

@@ -94,7 +94,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 190000)
+      PARAMETER (NBIT = 420000)
 
       INTEGER KLONRGG(ID2)                                          
       INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1), KSEC2(NKSEK2),
@@ -107,7 +107,7 @@
       REAL PSEK3(NPSEK3)
 
       CHARACTER*40 ERRMSG(-5:4), MSG
-      CHARACTER HOPER*1, CDATE*12, FILNM*24
+      CHARACTER HOPER*1, CDATE*14, FILNM*24
                                                                         
       DATA HOPER / 'D' /                                                
       DATA ERRMSG/' -5                                    *',
@@ -119,7 +119,7 @@
      &            ' END OF FILE ENCOUNTED                 *',
      &            ' DECODING ERROR SEE GRIBEX DESCRIPTION *',
      &            ' SUSPICIOUS TIME UNIT IN BLOCK 1       *',
-     &            ' DIMENSIONS ID1 OR ID2 ARE TO SMALL    *'/
+     &            ' DIMENSIONS ID1 OR ID2 ARE TOO SMALL   *'/
 
 ! ----------------------------------------------------------------------
 
@@ -165,10 +165,6 @@
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,     
      &             PSEC4, KLENP, KGRIB, KLENG, KWORD, HOPER, KRET)      
       IF(ALLOCATED(KGRIB)) DEALLOCATE(KGRIB)
-      IF(KRET.GT.0) THEN                                                
-        MSG = ERRMSG(2)                                                
-        RETURN                                                         
-      ENDIF                                                             
 
 ! ----------------------------------------------------------------------
 
@@ -186,8 +182,9 @@
 !         START DATE.                                                   
 
       IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-      WRITE(CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+      WRITE(CDATE(1:12),'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                             KSEC1(13),KSEC1(14)
+      CDATE(13:14)='00'
 
 !*         DETERMINE TIME UNIT.                                         
 

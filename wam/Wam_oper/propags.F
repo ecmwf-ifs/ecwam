@@ -1,5 +1,4 @@
-      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, IG, SL, FCONST, L1STCALL)
-
+      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, IG, FCONST, L1STCALL)
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS* - COMPUTATION OF A PROPAGATION TIME STEP.
@@ -16,7 +15,7 @@
 
 !     H. GUNTHER   GKSS/ECMWF   17/01/91    -   MODIFIED FOR CYCLE_4
 
-!     J. BIDLOT    ECMWF   FEBRUARY 1997    - ADD SL AND FCONST
+!     J. BIDLOT    ECMWF   FEBRUARY 1997    - ADD FCONST
 !     J. BIDLOT    ECMWF   APRIL 1997       - MODIFIED ADVECTION SCHEME 
 !     J. BIDLOT    ECMWF   2003             - OBSTRUCTION COEFFICIENTS  
 
@@ -28,13 +27,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, IG, SL, FCONST,L1STCALL)*
+!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, IG, FCONST,L1STCALL)*
 !          *F1*   - SPECTRUM AT TIME T.
 !          *F3*   - SPECTRUM AT TIME T+DELT.
 !          *MIJS* - INDEX OF FIRST POINT
 !          *MIJL* - INDEX OF LAST POINT
 !          *IG*   - BLOCK NUMBER.
-!          *SL*   - SIGMA DOT 
 !          *FCONST* - SIGMA/SINH(2KD)
 !          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
 
@@ -46,7 +44,7 @@
 !     EXTERNALS.
 !     ----------
 
-!       *DOTDC*     - READ DOT TERMS FOR REFRACTION AND SCATTER TABLE.
+!       *DOTDC*     - GET SCATTER TABLE.
 
 !     REFERENCE.
 !     ----------
@@ -55,37 +53,39 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCURR  , ONLY : U        ,V
+      USE YOWCURR  , ONLY : U        ,V        ,LLCHKCFL
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPHM1  ,
      &            IGL      ,IJLT
       USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NIBLD    ,
-     &            NIBLC
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
-      USE YOWREFD  , ONLY : THDD     ,THDC
-      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
+      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV     ,
+      USE YOWTEST  , ONLY : IU06
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WLAT     ,
      &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F1,F3,SL
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F1,F3
       REAL,DIMENSION(NINF:NSUP,NFRE):: FCONST
 
-      REAL,ALLOCATABLE,DIMENSION(:) :: DELLA0,DCO,DP1,DP2,DPN,DPN2,DPS
+      REAL,ALLOCATABLE,DIMENSION(:) :: DELLA0,DCO,DP1,DP2
+      REAL,ALLOCATABLE,DIMENSION(:) :: DPN,DPN2,DPS,DPS2
       REAL,ALLOCATABLE,DIMENSION(:) :: DEA,DLE,DLW,DPH,DLA
       REAL,ALLOCATABLE,DIMENSION(:) :: DTP,DTM,DTC,DRGP,DRGM
       REAL,ALLOCATABLE,DIMENSION(:) :: DOP,DOM,DRCP,DRCM
       REAL,ALLOCATABLE,DIMENSION(:) :: DRDP,DRDM
       REAL,ALLOCATABLE,DIMENSION(:) :: DLADCO
       REAL,ALLOCATABLE,DIMENSION(:,:) :: CGOND
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: WADVM1
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: WLATM1
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CGKLON, CGKLAT
-
+      REAL,ALLOCATABLE,DIMENSION(:) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
+      REAL,ALLOCATABLE,DIMENSION(:) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
       LOGICAL :: L1STCALL
 
 ! ----------------------------------------------------------------------
@@ -97,9 +97,9 @@
       ALLOCATE(DTM(MIJS:MIJL))
       ALLOCATE(DTC(MIJS:MIJL))
 
-
 !*    0. SPECTRUM AT LAND TO ZERO.
 !        -------------------------
+
 
       DO M=1,NFRE
         DO K=1,NANG
@@ -123,13 +123,11 @@
       ENDIF
 
 
-!*    0.1 READ REFRACTION DOT TERMS.
-!         --------------------------
+!*    0.1 GET SCATTER SIGMA/ SINH (2*K*D) TABLE 
+!         -------------------------------------
 
       IF (IREFRA.NE.0) THEN
-        IF(.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(NIBLC,NANG))
-        IF(.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(NIBLD,NANG))
-        CALL DOTDC (MIJS, MIJL, IG, IGL, ISHALLO, IREFRA, SL, FCONST)
+        CALL DOTDC (MIJS, MIJL, ISHALLO, FCONST)
       ENDIF
 
 !*    0.2 SPHERICAL OR CARTESIAN GRID?
@@ -170,7 +168,7 @@
           ENDIF
         ENDDO
 
-        IF (IREFRA.NE.2) THEN
+        IF (IREFRA.NE.2 .AND. IREFRA.NE.3 ) THEN
 
 !*       BRANCH TO 3. IF WITHOUT REFRACTION OR DEPTH.
 !        --------------------------------------------
@@ -196,7 +194,7 @@
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.
 !             ---------------------------------------------
 
-        IF (IREFRA.EQ.2) GOTO 2000
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) GOTO 2000
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -211,8 +209,8 @@
       IF (ISHALLO.EQ.1) ALLOCATE(DEA(MIJS:MIJL))
 
       IF (ISHALLO.NE.1.AND.IREFRA.EQ.1) THEN
-        ALLOCATE(DRDP(NIBLD))
-        ALLOCATE(DRDM(NIBLD))
+        ALLOCATE(DRDP(MIJS:MIJL))
+        ALLOCATE(DRDM(MIJS:MIJL))
       ENDIF
 
 !*    1.1 LOOP OVER DIRECTIONS.
@@ -377,10 +375,6 @@
         DEALLOCATE(DRDP)
         DEALLOCATE(DRDM)
       ENDIF
-      IF (IGL.NE.1) THEN
-        IF(ALLOCATED(THDC))DEALLOCATE(THDC)
-        IF(ALLOCATED(THDD))DEALLOCATE(THDD)
-      ENDIF
 
       RETURN
 
@@ -397,13 +391,13 @@
       ALLOCATE(DLE(MIJS:MIJL))
       ALLOCATE(DLW(MIJS:MIJL))
 
-      ALLOCATE(DOP(NIBLC))
-      ALLOCATE(DOM(NIBLC))
-      ALLOCATE(DRCP(NIBLC))
-      ALLOCATE(DRCM(NIBLC))
+      ALLOCATE(DOP(MIJS:MIJL))
+      ALLOCATE(DOM(MIJS:MIJL))
+      ALLOCATE(DRCP(MIJS:MIJL))
+      ALLOCATE(DRCM(MIJS:MIJL))
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(DRDP(NIBLD))
-        ALLOCATE(DRDM(NIBLD))
+        ALLOCATE(DRDP(MIJS:MIJL))
+        ALLOCATE(DRDM(MIJS:MIJL))
       ENDIF
 
       DELPH0 = 0.25*DELPRO/DELPHI
@@ -462,7 +456,7 @@
 !*    2.1.3.1.2 WEIGHTS IN INTEGRATION SCHEME.
 !               ------------------------------
 
-            DLA(NINF-1) = CGS*DELLA0(NINF-1)
+            DLA(NINF-1) = CGS*DELLA0(NINF)
             DPH(NINF-1) = CGC*DELPH0
             DO IJ=NINF,IJLT(IG)
               DLA(IJ) = (U(IJ,IG) + CGS)*DELLA0(IJ)
@@ -487,7 +481,7 @@
               DTM(IJ) =  DTHM+ABS(DTHM)
               DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
 
-              DTHP    = SL(IJ,K,NFRE) * DFP
+              DTHP    = SDOT(IJ,K,NFRE) * DFP
               DTC(IJ) = DTC(IJ) + 2.* ABS(DTHP)
               DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
               DOM(IJ) = ( DTHP+ABS(DTHP))*FRATIO
@@ -507,7 +501,7 @@
 !*    2.1.3.2.2 WEIGHTS IN INTEGRATION SCHEME.
 !               ------------------------------
 
-            DLA(NINF-1) = SD*CGOND(NINF-1,M)*DELLA0(NINF-1)
+            DLA(NINF-1) = SD*CGOND(NINF-1,M)*DELLA0(NINF)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
             DO IJ=NINF,IJLT(IG)
               DLA(IJ) = (U(IJ,IG) + SD*CGOND(IJ,M))*DELLA0(IJ)
@@ -532,8 +526,8 @@
               DTP(IJ) = -DTHP+ABS(DTHP)
               DTM(IJ) =  DTHM+ABS(DTHM)
 
-              DTHP = (SL(IJ,K,M) + SL(IJ,K,MP1))*DFP
-              DTHM = (SL(IJ,K,M) + SL(IJ,K,MM1))*DFM
+              DTHP = (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
+              DTHM = (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
               DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
               DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
               DOM(IJ) = ( DTHM+ABS(DTHM))*FRATIO
@@ -579,11 +573,6 @@
         DEALLOCATE(DRDM)
       ENDIF
 
-      IF (IGL.NE.1) THEN
-        IF(ALLOCATED(THDC))DEALLOCATE(THDC)
-        IF(ALLOCATED(THDD))DEALLOCATE(THDD)
-      ENDIF
-
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -601,18 +590,23 @@
       ALLOCATE(DRGM(MIJS:MIJL))
       ALLOCATE(DLADCO(MIJS:MIJL))
 
+      ALLOCATE(CFLEA(MIJS:MIJL))
+      ALLOCATE(CFLNO(MIJS:MIJL))
+      ALLOCATE(CFLTP(MIJS:MIJL))
+      ALLOCATE(CFLTM(MIJS:MIJL))
+
       IF (ISHALLO.NE.1.AND.IREFRA.EQ.1) THEN
-        ALLOCATE(DRDP(NIBLD))
-        ALLOCATE(DRDM(NIBLD))
+        ALLOCATE(DRDP(MIJS:MIJL))
+        ALLOCATE(DRDM(MIJS:MIJL))
       ENDIF
 
       DELTH0 = 0.25*DELPRO/DELTH
       DELPH0 = 0.5*DELPRO/DELPHI
 
-      ALLOCATE(WADVM1(MIJS:MIJL,2))
+      ALLOCATE(WLATM1(MIJS:MIJL,2))
       DO IC=1,2
         DO IJ = MIJS,MIJL
-          WADVM1(IJ,IC) = 1. - WADV(IJ,IC)
+          WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
         ENDDO
       ENDDO
 
@@ -639,8 +633,8 @@
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.)
               ELSE
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*
-     &                            (WADV(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
-     &                             WADVM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
+     &                             WLATM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
               ENDIF
             ENDDO
           ENDDO
@@ -651,8 +645,8 @@
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.)
               ELSE
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*
-     &                            (WADV(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
-     &                             WADVM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
+     &                             WLATM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
               ENDIF
             ENDDO
           ENDDO
@@ -732,12 +726,14 @@
           ENDDO
           IF (CD.GT.0.) THEN
             DO IJ=MIJS,MIJL
-              DTC(IJ) = DLE(IJ) + DELPH0_CDA*(DP2(IJ) + 1.)
+              CFLNO(IJ) =  DELPH0_CDA*(DP2(IJ) + 1.)
+              DTC(IJ) = DLE(IJ) + CFLNO(IJ)
               DPN(IJ) = DELPH0_CDA*(DP1(IJ) + 1.)
             ENDDO
           ELSE
             DO IJ=MIJS,MIJL
-              DTC(IJ) = DLE(IJ) + DELPH0_CDA*(DP1(IJ) + 1.)
+              CFLNO(IJ) =  DELPH0_CDA*(DP1(IJ) + 1.)
+              DTC(IJ) = DLE(IJ) + CFLNO(IJ)
               DPN(IJ) = DELPH0_CDA*(DP2(IJ) + 1.)
             ENDDO
           ENDIF
@@ -748,7 +744,9 @@
           DO IJ=MIJS,MIJL
             DTHP = DRGP(IJ)
             DTHM = DRGM(IJ)
-            DTC(IJ) = DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+            CFLTP(IJ) = DTHP+ABS(DTHP)
+            CFLTM(IJ) = -DTHM+ABS(DTHM) 
+            DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
             DTP(IJ) = -DTHP+ABS(DTHP)
             DTM(IJ) =  DTHM+ABS(DTHM)
           ENDDO
@@ -768,8 +766,8 @@
                 YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
                 XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
                 F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &            (YY * WADV(IJ,IJPH) * F1(KLAT(IJ,IJPH),K  ,M)
-     &           + YY * WADVM1(IJ,IJPH) * F1(KLAT2(IJ,IJPH),K,M)
+     &            (YY * WLAT(IJ,IJPH) * F1(KLAT(IJ,IJPH),K  ,M)
+     &           + YY * WLATM1(IJ,IJPH) * F1(KLAT2(IJ,IJPH),K,M)
      &           + XX * F1(KLON(IJ,IJLA),K  ,M)
      &           + DTP(IJ) * F1(IJ           ,KP1,M)
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
@@ -787,11 +785,30 @@
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
               ENDDO
             ENDIF
-
 !*    BRANCH BACK TO 3.1.3.3 FOR NEXT FREQUENCY.
 
           ENDDO
+
+!         TEST THE STABILITY OF THE ADVECTION SCHEME
+!         ------------------------------------------
+!         it has to be after the loop on frequency since
+!         we artificially modify the coefficients  !!!!
+          IF(LLCHKCFL) THEN
+            M=1
+            DO IJ = MIJS,MIJL
+               CFLEA(IJ) = DLE(IJ)*GOM(M)
+               CFLNO(IJ) = CFLNO(IJ)*GOM(M)
+               CFLTP(IJ) = CFLTP(IJ)*GOM(M)
+               CFLTM(IJ) = CFLTM(IJ)*GOM(M)
+               DTC(IJ) = DTC(IJ)*GOM(M)
+            ENDDO
+            CALL CHECKCFL (MIJS, MIJL, DTC,
+     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO, 
+     &                     CFLTP,CFLTM,CFLTP,CFLTM)
+          ENDIF
+
         ELSE
+
 !SHALLOW
 
 !*    3.1.4 SHALLOW WATER.
@@ -820,34 +837,38 @@
             IF (SD.GT.0.) THEN
               DO IJ=MIJS,MIJL
                 XX=SDA2*DLADCO(IJ)
-                DTC(IJ) = 1. - XX*CGKLON(IJ,M,2)
+                CFLEA(IJ) = XX*CGKLON(IJ,M,2)
+                DTC(IJ) = CFLEA(IJ)  
                 DLE(IJ) = XX*OBSLON(IJ,M,1)
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
                 XX=SDA2*DLADCO(IJ)
-                DTC(IJ) = 1. - XX*CGKLON(IJ,M,1)
+                CFLEA(IJ) = XX*CGKLON(IJ,M,1)
+                DTC(IJ) = CFLEA(IJ)  
                 DLE(IJ) = XX*OBSLON(IJ,M,2)
               ENDDO
             ENDIF
 
             IF (CD.GT.0.) THEN
               DO IJ=MIJS,MIJL
-                DTC(IJ) = DTC(IJ) - DELPH0_CDA*CGKLAT(IJ,M,2)
+                CFLNO(IJ) = DELPH0_CDA*CGKLAT(IJ,M,2)
+                DTC(IJ) = DTC(IJ) + CFLNO(IJ)
               ENDDO
               DO IJ=MIJS,MIJL
                 XX = DELPH0_CDA*OBSLAT(IJ,M,1)
-                DPN(IJ) = WADV(IJ,1)*XX
-                DPN2(IJ) = WADVM1(IJ,1)*XX
+                DPN(IJ) = WLAT(IJ,1)*XX
+                DPN2(IJ) = WLATM1(IJ,1)*XX
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
-                DTC(IJ) = DTC(IJ) - DELPH0_CDA*CGKLAT(IJ,M,1)
+                CFLNO(IJ) = DELPH0_CDA*CGKLAT(IJ,M,1)
+                DTC(IJ) = DTC(IJ) + CFLNO(IJ)
               ENDDO
               DO IJ=MIJS,MIJL
                 XX = DELPH0_CDA*OBSLAT(IJ,M,2)
-                DPN(IJ) = WADV(IJ,2)*XX
-                DPN2(IJ) = WADVM1(IJ,2)*XX
+                DPN(IJ) = WLAT(IJ,2)*XX
+                DPN2(IJ) = WLATM1(IJ,2)*XX
               ENDDO
             ENDIF
 
@@ -858,7 +879,9 @@
               DO IJ=MIJS,MIJL
                 DTHP = DRGP(IJ)*CGOND(IJ,M)
                 DTHM = DRGM(IJ)*CGOND(IJ,M)
-                DTC(IJ) = DTC(IJ) - DTHP-ABS(DTHP)+DTHM-ABS(DTHM)
+                CFLTP(IJ) = DTHP+ABS(DTHP)
+                CFLTM(IJ) = -DTHM+ABS(DTHM) 
+                DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
                 DTP(IJ) = -DTHP+ABS(DTHP)
                 DTM(IJ) =  DTHM+ABS(DTHM)
               ENDDO
@@ -866,7 +889,9 @@
               DO IJ=MIJS,MIJL
                 DTHP = DRGP(IJ)*CGOND(IJ,M)+FCONST(IJ,M)*DRDP(IJ)
                 DTHM = DRGM(IJ)*CGOND(IJ,M)+FCONST(IJ,M)*DRDM(IJ)
-                DTC(IJ) = DTC(IJ) - DTHP-ABS(DTHP)+DTHM-ABS(DTHM)
+                CFLTP(IJ) = DTHP+ABS(DTHP)
+                CFLTM(IJ) = -DTHM+ABS(DTHM) 
+                DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
                 DTP(IJ) = -DTHP+ABS(DTHP)
                 DTM(IJ) =  DTHM+ABS(DTHM)
               ENDDO
@@ -876,13 +901,21 @@
 !               ---------------------
 
             DO IJ = MIJS,MIJL
-              F3(IJ,K,M) = DTC(IJ)*F1(IJ,K,M )
+              F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
      &         + DPN(IJ) * F1(KLAT(IJ,IJPH),K  ,M)
      &         + DPN2(IJ)* F1(KLAT2(IJ,IJPH),K  ,M)
      &         + DLE(IJ) * F1(KLON(IJ,IJLA),K  ,M)
      &         + DTP(IJ) * F1(IJ           ,KP1,M)
      &         + DTM(IJ) * F1(IJ           ,KM1,M)
             ENDDO
+
+!         TEST THE STABILITY OF THE ADVECTION SCHEME
+!         ------------------------------------------
+          IF(LLCHKCFL .AND. M.EQ.1) THEN
+            CALL CHECKCFL (MIJS, MIJL, DTC,
+     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO, 
+     &                     CFLTP,CFLTM,CFLTP,CFLTM)
+          ENDIF
 
 !*    BRANCH BACK TO 3.1.4.2 FOR NEXT FREQUENCY.
 
@@ -901,7 +934,7 @@
       DEALLOCATE(DELLA0,DCO,DLADCO,DP1,DP2,DPN,DPN2)
       DEALLOCATE(DLE,DPH,DLA)
       DEALLOCATE(DTP,DTM,DRGP,DRGM,DTC)
-      DEALLOCATE(WADVM1)
+      DEALLOCATE(WLATM1)
       IF (ISHALLO.NE.1) THEN
         DEALLOCATE(CGKLON)
         DEALLOCATE(CGKLAT)
@@ -911,10 +944,11 @@
         DEALLOCATE(DRDP)
         DEALLOCATE(DRDM)
       ENDIF
-      IF (IGL.NE.1) THEN
-        IF(ALLOCATED(THDC))DEALLOCATE(THDC)
-        IF(ALLOCATED(THDD))DEALLOCATE(THDD)
-      ENDIF
+
+      DEALLOCATE(CFLEA)
+      DEALLOCATE(CFLNO)
+      DEALLOCATE(CFLTP)
+      DEALLOCATE(CFLTM)
 
       RETURN
 
@@ -927,27 +961,49 @@
  4000 CONTINUE
 
       ALLOCATE(DPN(MIJS:MIJL))
+      ALLOCATE(DPN2(MIJS:MIJL))
       ALLOCATE(DPS(MIJS:MIJL))
+      ALLOCATE(DPS2(MIJS:MIJL))
       ALLOCATE(DLE(MIJS:MIJL))
       ALLOCATE(DLW(MIJS:MIJL))
 
-      ALLOCATE(DOP(NIBLC))
-      ALLOCATE(DOM(NIBLC))
-      ALLOCATE(DRCP(NIBLC))
-      ALLOCATE(DRCM(NIBLC))
+      ALLOCATE(DOP(MIJS:MIJL))
+      ALLOCATE(DOM(MIJS:MIJL))
+      ALLOCATE(DRCP(MIJS:MIJL))
+      ALLOCATE(DRCM(MIJS:MIJL))
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(DRDP(NIBLD))
-        ALLOCATE(DRDM(NIBLD))
+        ALLOCATE(DRDP(MIJS:MIJL))
+        ALLOCATE(DRDM(MIJS:MIJL))
       ENDIF
 
 
       ALLOCATE(DRGP(MIJS:MIJL))
       ALLOCATE(DRGM(MIJS:MIJL))
 
+      ALLOCATE(CFLEA(MIJS:MIJL))
+      ALLOCATE(CFLWE(MIJS:MIJL))
+      ALLOCATE(CFLNO(MIJS:MIJL))
+      ALLOCATE(CFLSO(MIJS:MIJL))
+      ALLOCATE(CFLNO2(MIJS:MIJL))
+      ALLOCATE(CFLSO2(MIJS:MIJL))
+      ALLOCATE(CFLTP(MIJS:MIJL))
+      ALLOCATE(CFLTM(MIJS:MIJL))
+      ALLOCATE(CFLOP(MIJS:MIJL))
+      ALLOCATE(CFLOM(MIJS:MIJL))
+
       DELPH0 = 0.25*DELPRO/DELPHI
       DELTH0 = 0.25*DELPRO/DELTH
       DELLA0 = 0.25*DELLA0
       DELFR0 = 0.25*DELPRO/((FRATIO-1.)*ZPI)
+
+      ALLOCATE(WLATM1(MIJS:MIJL,2))
+      DO IC=1,2
+        DO IJ = MIJS,MIJL
+          WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+        ENDDO
+      ENDDO
+
+
 
 !*    4.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -996,6 +1052,7 @@
         DO M=1,NFRE
           MP1 = MIN(NFRE,M+1)
           MM1 = MAX(1,M-1)
+
           IF (ISHALLO.EQ.1) THEN
 
 !*    4.1.4.1 DEEP WATER.
@@ -1011,36 +1068,68 @@
 !*    4.1.4.1.2 WEIGHTS IN INTEGRATION SCHEME.
 !               ------------------------------
 
-            DLA(NINF-1) = CGS*DELLA0(NINF-1)
+            DLA(NINF-1) = CGS
             DPH(NINF-1) = CGC*DELPH0
             DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + CGS)*DELLA0(IJ)*DCO(IJ)
+              DLA(IJ) = (U(IJ,IG) + CGS)
               DPH(IJ) = (V(IJ,IG) + CGC)*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
-              DLWE = DLA(IJ) + DLA(KLON(IJ,1))
-              DLEA = DLA(IJ) + DLA(KLON(IJ,2))
-              DLE(IJ) = -DLEA+ABS(DLEA)
-              DLW(IJ) =  DLWE+ABS(DLWE)
-              DTC(IJ) =  DLEA+ABS(DLEA)-DLWE+ABS(DLWE)
+              DLEA = (DLA(IJ) + DLA(KLON(IJ,2)))*DELLA0(IJ)*DCO(IJ)
+              DLE(IJ) = (-DLEA+ABS(DLEA))*OBSLON(IJ,M,2)
+              DLWE = (DLA(IJ) + DLA(KLON(IJ,1)))*DELLA0(IJ)*DCO(IJ)
+              DLW(IJ) = ( DLWE+ABS(DLWE))*OBSLON(IJ,M,1)
+              CFLEA(IJ) =  DLEA+ABS(DLEA)
+              CFLWE(IJ) =  -DLWE+ABS(DLWE)
+              DTC(IJ) =  CFLEA(IJ)+CFLWE(IJ)
 
-              DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
-              DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
-              DPN(IJ) = -DPNO+ABS(DPNO)
-              DPS(IJ) =  DPSO+ABS(DPSO)
-              DTC(IJ) = DTC(IJ) + DPNO+ABS(DPNO)-DPSO+ABS(DPSO)
+!             IRREGULAR GRID
+              IF(IRGG.EQ.1) THEN
+                DPNO = (DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ))*WLAT(IJ,2)
+                DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
+                DPNO2= (DPH(IJ) + DPH(KLAT2(IJ,2))*DP2(IJ))*WLATM1(IJ,2)
+                DPN2(IJ)= (-DPNO2+ABS(DPNO2))*OBSLAT(IJ,M,2)
+
+                DPSO = (DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ))*WLAT(IJ,1)
+                DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
+                DPSO2= (DPH(IJ) + DPH(KLAT2(IJ,1))*DP1(IJ))*WLATM1(IJ,1)
+                DPS2(IJ)= ( DPSO2+ABS(DPSO2))*OBSLAT(IJ,M,1)
+
+                CFLNO(IJ) =  DPNO+ABS(DPNO)
+                CFLSO(IJ) =  -DPSO+ABS(DPSO)
+                CFLNO2(IJ) =  DPNO2+ABS(DPNO2)
+                CFLSO2(IJ) = -DPSO2+ABS(DPSO2)
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+
+     &                               CFLNO2(IJ) + CFLSO2(IJ)
+              ELSE
+!             REGULAR GRID
+                DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
+                DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
+                DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
+                DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
+                CFLNO(IJ) =  DPNO+ABS(DPNO)
+                CFLSO(IJ) =  -DPSO+ABS(DPSO)
+                CFLNO2(IJ) = 0.0 
+                CFLSO2(IJ) = 0.0
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)
+              ENDIF
 
               DTHP = DRGP(IJ)*GOM(M) + DRCP(IJ)
               DTHM = DRGM(IJ)*GOM(M) + DRCM(IJ)
-              DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+              CFLTP(IJ) = DTHP+ABS(DTHP)
+              CFLTM(IJ) = -DTHM+ABS(DTHM) 
+              DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
+
               DTP(IJ) = -DTHP+ABS(DTHP)
               DTM(IJ) =  DTHM+ABS(DTHM)
-
-              DTHP =  SL(IJ,K,NFRE) * DFP
-              DTC(IJ) =  DTC(IJ) + 2. * ABS(DTHP)
+              DTHP =  SDOT(IJ,K,NFRE) * DFP
+              CFLOP(IJ) = DTHP+ABS(DTHP)
+              CFLOM(IJ) = -DTHP+ABS(DTHP) 
+              DTC(IJ) =  DTC(IJ) + CFLOP(IJ) + CFLOM(IJ)
               DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
               DOM(IJ) = ( DTHP+ABS(DTHP))*FRATIO
             ENDDO
+
           ELSE
 !SHALLOW
 
@@ -1053,60 +1142,115 @@
 !*    4.1.4.2.2 LON/LAT/DIR WEIGHTS IN INTEGRATION SCHEME.
 !               ------------------------------------------
 
-            DLA(0) = SD*CGOND(0,M)*DELLA0(NINF-1)
-            DPH(0) = CD*CGOND(0,M)*DELPH0
-            DLA(NINF-1) = SD*CGOND(NINF-1,M)*DELLA0(NINF-1)
+            DLA(NINF-1) = SD*CGOND(NINF-1,M)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
             DO IJ=NINF,IJLT(IG)
-              DLA(IJ) =(U(IJ,IG)+SD*CGOND(IJ,M))*DELLA0(IJ)*DCO(IJ)
+              DLA(IJ) = U(IJ,IG)+SD*CGOND(IJ,M)
               DPH(IJ) =(V(IJ,IG)+CD*CGOND(IJ,M))*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
-              DLWE = DLA(IJ) + DLA(KLON(IJ,1))
-              DLEA = DLA(IJ) + DLA(KLON(IJ,2))
-              DLE(IJ) = -DLEA+ABS(DLEA)
-              DLW(IJ) =  DLWE+ABS(DLWE)
-              DTC(IJ) =  DLEA+ABS(DLEA)-DLWE+ABS(DLWE)
+              DLWE = (DLA(IJ) + DLA(KLON(IJ,1)))*DELLA0(IJ)*DCO(IJ)
+              DLEA = (DLA(IJ) + DLA(KLON(IJ,2)))*DELLA0(IJ)*DCO(IJ)
+              DLE(IJ) = (-DLEA+ABS(DLEA))*OBSLON(IJ,M,2)
+              DLW(IJ) = ( DLWE+ABS(DLWE))*OBSLON(IJ,M,1)
+              CFLEA(IJ) =  DLEA+ABS(DLEA)
+              CFLWE(IJ) =  -DLWE+ABS(DLWE)
+              DTC(IJ) =  CFLEA(IJ) + CFLWE(IJ)
 
-              DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
-              DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
-              DPN(IJ) = -DPNO+ABS(DPNO)
-              DPS(IJ) =  DPSO+ABS(DPSO)
-              DTC(IJ) = DTC(IJ) + DPNO+ABS(DPNO)-DPSO+ABS(DPSO)
+!             IRREGULAR GRID
+              IF(IRGG.EQ.1) THEN
+                DPNO = (DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ))*WLAT(IJ,2)
+                DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
+                DPNO2= (DPH(IJ) + DPH(KLAT2(IJ,2))*DP2(IJ))*WLATM1(IJ,2)
+                DPN2(IJ)= (-DPNO2+ABS(DPNO2))*OBSLAT(IJ,M,2)
+
+                DPSO = (DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ))*WLAT(IJ,1)
+                DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
+                DPSO2= (DPH(IJ) + DPH(KLAT2(IJ,1))*DP1(IJ))*WLATM1(IJ,1)
+                DPS2(IJ)= ( DPSO2+ABS(DPSO2))*OBSLAT(IJ,M,1)
+                CFLNO(IJ) =  DPNO+ABS(DPNO)
+                CFLSO(IJ) =  -DPSO+ABS(DPSO)
+                CFLNO2(IJ) =  DPNO2+ABS(DPNO2)
+                CFLSO2(IJ) = -DPSO2+ABS(DPSO2)
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+
+     &                               CFLNO2(IJ) + CFLSO2(IJ)
+              ELSE
+!             REGULAR GRID
+                DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
+                DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
+                DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
+                DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
+                CFLNO(IJ) = DPNO+ABS(DPNO)
+                CFLSO(IJ) = -DPSO+ABS(DPSO)
+                CFLNO2(IJ) = 0.0 
+                CFLSO2(IJ) = 0.0
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)
+              ENDIF
 
               DTHP=DRGP(IJ)*CGOND(IJ,M)
      &         +FCONST(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM=DRGM(IJ)*CGOND(IJ,M)
      &         +FCONST(IJ,M)*DRDM(IJ)+DRCM(IJ)
-              DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+              CFLTP(IJ) = DTHP+ABS(DTHP)
+              CFLTM(IJ) = -DTHM+ABS(DTHM) 
+              DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
+
               DTP(IJ) = -DTHP+ABS(DTHP)
               DTM(IJ) =  DTHM+ABS(DTHM)
 
-              DTHP = (SL(IJ,K,M) + SL(IJ,K,MP1))*DFP
-              DTHM = (SL(IJ,K,M) + SL(IJ,K,MM1))*DFM
-              DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+              DTHP = (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
+              DTHM = (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
+              CFLOP(IJ) = DTHP+ABS(DTHP)
+              CFLOM(IJ) = -DTHM+ABS(DTHM) 
+              DTC(IJ) =  DTC(IJ) + CFLOP(IJ) + CFLOM(IJ)
               DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
               DOM(IJ) = ( DTHM+ABS(DTHM))*FRATIO
             ENDDO
 !SHALLOW
           ENDIF
 
+!         TEST THE STABILITY OF THE ADVECTION SCHEME
+!         ------------------------------------------
+          IF(LLCHKCFL .AND. M.EQ.1) THEN
+            CALL CHECKCFL (MIJS, MIJL, DTC,
+     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2, 
+     &                     CFLTP,CFLTM,CFLOP,CFLOM)
+          ENDIF
+
 !*    4.1.4.3 LOOP OVER GRIDPOINTS.
 !             ---------------------
 
-          DO IJ = MIJS,MIJL
-            F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &       + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
-     &       + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
-     &       + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
-     &       + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
-     &       + DTP(IJ) * F1(IJ        ,KP1,M)
-     &       + DTM(IJ) * F1(IJ        ,KM1,M)
-     &       + DOP(IJ) * F1(IJ        ,K  ,MP1)
-     &       + DOM(IJ) * F1(IJ        ,K  ,MM1)
-          ENDDO
+!         IRREGULAR GRID
+          IF(IRGG.EQ.1) THEN
+            DO IJ = MIJS,MIJL
+              F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
+     &         + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
+     &         + DPN2(IJ)* F1(KLAT2(IJ,2),K  ,M)
+     &         + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
+     &         + DPS2(IJ)* F1(KLAT2(IJ,1),K  ,M)
+     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
+     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
+     &         + DTP(IJ) * F1(IJ        ,KP1,M)
+     &         + DTM(IJ) * F1(IJ        ,KM1,M)
+     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)
+     &         + DOM(IJ) * F1(IJ        ,K  ,MM1)
+            ENDDO
+          ELSE
+!           REGULAR GRID
+            DO IJ = MIJS,MIJL
+              F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
+     &         + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
+     &         + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
+     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
+     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
+     &         + DTP(IJ) * F1(IJ        ,KP1,M)
+     &         + DTM(IJ) * F1(IJ        ,KM1,M)
+     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)
+     &         + DOM(IJ) * F1(IJ        ,K  ,MM1)
+            ENDDO
+          ENDIF
 
-!*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
+*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
 
         ENDDO
 
@@ -1118,10 +1262,11 @@
 !*        WITH DEPTH AND CURRENT REFRACTION, RETURN.
 !         ------------------------------------------
 
-      DEALLOCATE(DELLA0,DCO,DP1,DP2,DPN,DPS)
+      DEALLOCATE(DELLA0,DCO,DP1,DP2,DPN,DPN2,DPS,DPS2)
       DEALLOCATE(DLE,DLW,DPH,DLA)
       DEALLOCATE(DTP,DTM,DRGP,DRGM,DTC)
       IF (ISHALLO.NE.1) DEALLOCATE(CGOND)
+      DEALLOCATE(WLATM1)
 
       DEALLOCATE(DOP,DOM,DRCP,DRCM)
 
@@ -1130,10 +1275,16 @@
         DEALLOCATE(DRDM)
       ENDIF
 
-      IF (IGL.NE.1) THEN
-        IF(ALLOCATED(THDC))DEALLOCATE(THDC)
-        IF(ALLOCATED(THDD))DEALLOCATE(THDD)
-      ENDIF
+      DEALLOCATE(CFLEA)
+      DEALLOCATE(CFLWE)
+      DEALLOCATE(CFLNO)
+      DEALLOCATE(CFLSO)
+      DEALLOCATE(CFLNO2)
+      DEALLOCATE(CFLSO2)
+      DEALLOCATE(CFLTP)
+      DEALLOCATE(CFLTM)
+      DEALLOCATE(CFLOP)
+      DEALLOCATE(CFLOM)
 
       RETURN
       END SUBROUTINE PROPAGS

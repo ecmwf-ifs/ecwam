@@ -1,6 +1,7 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
-     &                    U10OLD,THWOLD,U10NEW,THWNEW
-     &                  , ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW)
+     &                    U10OLD,THWOLD,U10NEW,THWNEW,
+     &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
+     &                    ICEMASK)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -20,7 +21,8 @@
 
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
 !     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
-!     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW)*
+!     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
+!     3                  ICEMASK)*
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -40,11 +42,12 @@
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
+!      *ICEMASK* - SEA ICE MASK
 
 !     METHOD.
 !     -------
 
-!       READ NEW WINDS WHEN NEEDED.
+!       READ NEW WINDS AND ASSOCIATED FIELDS WHEN NEEDED.
 
 !     EXTERNALS.
 !     ---------
@@ -68,18 +71,19 @@
       USE YOWUNIT  , ONLY : IU17     ,IU18
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
      &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
-     &            ZIDLNEXT
+     &            ZIDLNEXT ,ICEMASKNEXT
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD, ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW     , ROAIRN,ZIDLNEW
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
 
 ! ----------------------------------------------------------------------
 
       LOGICAL NEWREAD, NEWFILE
 
-      CHARACTER*12 CDATEWH, CDATE
+      CHARACTER*14 CDATEWH, CDATE
 
       DATA ISTORE /0/
 
@@ -154,7 +158,8 @@
 !!!!         READ(IDNIN) CDA, IIG, (U10NEW(L),L=IJS,IJL),
 !!!!     1                         (THWNEW(L),L=IJS,IJL),
 !!!!     2                         (ROAIRN(L),L=IJS,IJL),
-!!!!     3                         (ZIDLNEW(L),L=IJS,IJL)
+!!!!     3                         (ZIDLNEW(L),L=IJS,IJL),
+!!!!     4                        (ICEMASK(L,1),L=IJS,IJL)
 !!!!
 !!!! read from file instead
 
@@ -175,6 +180,7 @@
           THWNEW(L)=DSNEXT(L,ISTORE,IIG)
           ROAIRN(L)=ADSNEXT(L,ISTORE,IIG)
           ZIDLNEW(L)=ZIDLNEXT(L,ISTORE,IIG)
+          ICEMASK(L,IG)=ICEMASKNEXT(L,ISTORE,IG)
         ENDDO
 
         ISTORE=ISTORE+1

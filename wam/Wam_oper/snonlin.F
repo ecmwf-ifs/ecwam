@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (F, FL, IJS, IJL, IG, SL)
+      SUBROUTINE SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -13,6 +13,13 @@
 !     H. GUENTHER       GKSS/ECMWF  JUNE 1991 INTERACTIONS BETWEEN DIAG-
 !                                             AND PROGNOSTIC PART.
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
+!     P. JANSSEN  ECMWF  JUNE 2005       IMPROVED SCALING IN SHALLOW
+!                                        WATER
+!     J. BIDLOT   ECMWF  AUGUST 2006     KEEP THE OLD FORMULATION
+!                                        UNDER A SWITCH (ISNONLIN = 0 for OLD
+!                                                                 = 1 for NEW
+!                                        BE AWARE THAT THE OLD FORMULATION
+!                                        REQUIRES THE MEAN WAVE NUMBER AKMEAN.
 
 !*    PURPOSE.
 !     --------
@@ -51,37 +58,42 @@
       USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,
-     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,FRH
-      USE YOWMEAN  , ONLY : AKMEAN
+     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
+     &            FRH      ,ENH
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWSHAL  , ONLY : DEPTH
-      USE YOWSTAT  , ONLY : ISHALLO
-
+      USE YOWSHAL  , ONLY : DEPTH    ,TFAK,    INDEP 
+      USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
 
       DIMENSION FTEMP(IJS:IJL), AD(IJS:IJL), DELAD(IJS:IJL), 
      &          DELAP(IJS:IJL), DELAM(IJS:IJL)
-!SHALLOW
-      DIMENSION ENH(IJS:IJL)
+
+      REAL :: AKMEAN(IJS:IJL)
+      REAL :: ENHFR(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
-!*    1. SHALLOW WATER INITIALISATION.
-!        -----------------------------
+!*    1. SHALLOW WATER INITIALISATION (ONLY FOR THE OLD FORMULATION).
+!        ----------------------------- SEE INITMDL FOR THE NEW ONE
 
       IF (ISHALLO.NE.1) THEN
-        DO IJ=IJS,IJL
-          ENH(IJ) = 0.75*DEPTH(IJ,IG)*AKMEAN(IJ)
-          ENH(IJ) = MAX(ENH(IJ),.5)
-          ENH(IJ) = 1.+(5.5/ENH(IJ))*(1.-.833*ENH(IJ)) *
-     &              EXP(-1.25*ENH(IJ))
-        ENDDO
+        IF (ISNONLIN.EQ.0) THEN
+          DO IJ=IJS,IJL
+            ENHFR(IJ) = 0.75*DEPTH(IJ,IG)*AKMEAN(IJ)
+            ENHFR(IJ) = MAX(ENHFR(IJ),.5)
+            ENHFR(IJ) = 1.+(5.5/ENHFR(IJ))*(1.-.833*ENHFR(IJ)) *
+     &            EXP(-1.25*ENHFR(IJ))
+          ENDDO
+          DO MC=1,NFRE+4
+            DO IJ=IJS,IJL
+              ENH(IJ,MC,IG) = ENHFR(IJ) 
+            ENDDO
+          ENDDO
+        ENDIF
       ENDIF
-!SHALLOW
 
-! ----------------------------------------------------------------------
 
 !*    2. FREQUENCY LOOP.
 !        ---------------
@@ -157,12 +169,12 @@
         ELSE
 !SHALLOW
           DO IJ=IJS,IJL
-            FTEMP(IJ) = AF11(MC)*ENH(IJ)
+            FTEMP(IJ) = AF11(MC)*ENH(IJ,MC,IG)
           ENDDO
 !SHALLOW
         ENDIF
 
-!*    2.1 LOOP FOR ANLULAR SYMMETRY.
+!*    2.1 LOOP FOR ANGULAR SYMMETRY.
 !         -------------------------
 
         DO KH=1,2

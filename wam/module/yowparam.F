@@ -3,6 +3,7 @@
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: IMDLGRDID=215
+      INTEGER, PARAMETER :: KWAMVER=1
 
 !*    ** *PARAM*  GENERAL GRID SIZE INFORMATION.
 
@@ -27,12 +28,14 @@
 
       LOGICAL LTURN90
       LOGICAL :: LL1D
+      LOGICAL :: LWDINTS
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !       ---------   -------   --------
 !      *IMDLGRDID* INTEGER   MODEL GRID IDENTIFICATION NUMBER.
 !                            IT SHOULD BE UPDATED ONLY IF NEW gridglou
 !                            AND ubufglou FILES ARE PRODUCED!!!!
+!      *KWAMVER*   INTEGER   WAM SOFTWARE VERSION NUMBER.
 !      *NANG*      INTEGER   NUMBER OF ANGLES.
 !      *NFRE*      INTEGER   NUMBER OF FREQUENCIES.
 !      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
@@ -59,6 +62,12 @@
 !                            IN HOURS
 !      *LTURN90*   LOGICAL   IF TRUE THE NEW SWAMP WIND WILL BE TURNED
 !                            BY 90 DEGREES.
+!      *LWDINTS*   LOGICAL   IF TRUE A FILE CONTAINING WIND SPEED (m/s) AND DIRECTION
+!                            (in degrees following the meteorological convention)
+!                            TIME SERIES WILL BY USED TO SET THE WIND FORCING
+!                            OVER THE ALL DOMAIN.
+!                            THE PRESENCE OF THE FILE, windforcing_time_series
+!                            WILL DETERMINE WHETHER OR NOT LWDINTS IS TRUE OR NOT
 !      *CLDOMAIN*  CHARACTER DEFINES THE DOMAIN OF THE MODEL (for the
 !                            FDB and for selection of some variables)
 !      *LL1D*      LOGICAL   IF TRUE THEN THE DOMAIN DECOMPOSITION IS ONLY

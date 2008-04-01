@@ -1,4 +1,4 @@
-      SUBROUTINE CHECK (IREFRA, ML, KL, IINPC)
+      SUBROUTINE CHECK (ML, KL, IINPC)
 
 ! ----------------------------------------------------------------------
 
@@ -14,8 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CHECK (IREFRA, ML, KL, IINPC)*
-!          *IREFRA*  - REFRACTION OPTION.
+!       *CALL* *CHECK (ML, KL, IINPC)*
 !          *ML*      - NUMBER OF FREQUENCIES.
 !          *KL*      - NUMBER OF DIRECTIONS.
 !          *IINPC*   - NUMBER INPUT POINTS FROM A PREVIOUS COARSE GRID.
@@ -51,6 +50,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH
+      USE YOWSTAT  , ONLY : IREFRA
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -315,7 +315,7 @@
 
       TITL = 'WATER DEPTH IN METERS. '//
      &       '(DEPTH DEEPER THAN 999M ARE PRINTED AS 999)'
-      CALL OUTPP ('000000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
+      CALL OUTPP ('00000000000000',IU06, NGX, NGY, NX, NY, TITL,1.,GRID,
      &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
 
 ! ----------------------------------------------------------------------
@@ -324,7 +324,7 @@
 !        ------------------------
 
 
-      IF (IREFRA.LT.2) GOTO 5000
+      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 
       DO K=1,NY
         DO I=1,NX
@@ -340,7 +340,7 @@
       ENDDO
 
       TITL = 'CURRENT SPEED IN 0.01 METRES/SECOND '
-      CALL OUTPP ('000000000000',IU06, NGX, NGY,NX,NY,TITL, 100., GRID,
+      CALL OUTPP ('00000000000000',IU06, NGX, NGY,NX,NY,TITL,100.,GRID,
      &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
 
       DO K=1,NY
@@ -357,8 +357,10 @@
       ENDDO
 
       TITL = 'CURRENT DIRECTIOM IN DEGREES (CLOCKWISE FROM NORTH)'
-      CALL OUTPP ('000000000000',IU06, NGX, NGY, NX, NY, TITL, 1., GRID,
+      CALL OUTPP ('00000000000000',IU06, NGX, NGY, NX, NY, TITL,1.,GRID,
      &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
+
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -420,34 +422,6 @@
       ELSE
         WRITE (IU06,'('' MULTI BLOCK VERSION        NIBL1 '', 3I10)')
      &   NIBL1, IJMAX, NIBLO
-      ENDIF
-      IF (IREFRA.EQ.0) THEN
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK LENGTH NIBLD '', 3I10)')
-     &   NIBLD, 1, 1
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK NUMBER  NBLD '', 3I10)')
-     &   NBLD, 1, 1
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK LENGTH NIBLC '', 3I10)')
-     &   NIBLC, 1, 1
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK NUMBER  NBLC '', 3I10)')
-     &   NBLC, 1, 1
-      ELSEIF (IREFRA.EQ.1) THEN
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK LENGTH NIBLD '', 3I10)')
-     &   NIBLD, IJMAX, NIBLO
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK NUMBER  NBLD '', 3I10)')
-     &   NBLD, IGL, NBLO
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK LENGTH NIBLC '', 3I10)')
-     &   NIBLC, 1, 1
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK NUMBER  NBLC '', 3I10)')
-     &   NBLC, 1, 1
-      ELSEIF (IREFRA.EQ.2) THEN
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK LENGTH NIBLD '', 3I10)')
-     &   NIBLD, IJMAX, NIBLO
-        WRITE (IU06,'('' DEPTH REFRAC. BLOCK NUMBER  NBLD '', 3I10)')
-     &   NBLD, IGL, NBLO
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK LENGTH NIBLC '', 3I10)')
-     &   NIBLC, IJMAX, NIBLO
-        WRITE (IU06,'('' CURR. REFRAC. BLOCK NUMBER  NBLC '', 3I10)')
-     &   NBLC, IGL, NBLO
       ENDIF
 
       WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')

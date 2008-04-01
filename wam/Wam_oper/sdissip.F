@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN)
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
 !     J. BIDLOT   ECMWF  NOVEMBER 2004  REFORMULATION BASED ON XKMEAN
 !                                       AND F1MEAN.
+!     P. JANSSEN  ECMWF  JANUARY 2006   ADD BOTTOM-INDUCED DISSIPATION.
 
 !*    PURPOSE.
 !     --------
@@ -25,6 +26,7 @@
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
+!          *IG*  - BLOCK NUMBER
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
@@ -52,8 +54,8 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
+      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
+      USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
 
 ! ----------------------------------------------------------------------
 
@@ -66,6 +68,9 @@
 
       PARAMETER (CDIS = 2.1)
       PARAMETER (DELTA = 0.6)
+      PARAMETER (ALPH_B_J = 1.0)
+      PARAMETER (GAM_B_J = 0.6)
+      PARAMETER (COEF_B_J=2*ALPH_B_J)
 
 ! ----------------------------------------------------------------------
 
@@ -109,6 +114,43 @@
             ENDDO
           ENDDO
         ENDDO
+!
+!*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
+!        ----------- -- -------------- -----------------------
+!
+!        (FOLLOWING BATTJES-JANSSEN AND BEJI)
+        DEPTHTRS=50.
+        IF(LBIWBK) THEN
+          DO IJ=IJS,IJL
+             IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
+               EMAX = (GAM_B_J*DEPTH(IJ,IG))**2/16.
+               ALPH = 2.*EMAX/(EMEAN(IJ))
+               ARG  = MIN(ALPH,50.)
+!!!!!!!! test an iterative scheme
+!!!!!!!! if it works we might want to introduce a table
+               Q_OLD = EXP(-ARG)
+               DO IC=1,15
+                 Q = EXP(-ARG*(1.-Q_OLD))
+                 REL_ERR=ABS(Q-Q_OLD)/Q_OLD
+                 IF(REL_ERR.LT.0.01) EXIT
+                 Q_OLD = Q
+               ENDDO
+               SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
+             ENDIF
+          ENDDO 
+      
+          DO M=1,NFRE
+             DO K=1,NANG
+                DO IJ=IJS,IJL
+                  IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
+                    SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
+                    FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
+                  ENDIF
+                ENDDO
+             ENDDO
+          ENDDO
+        ENDIF
+     
 !SHALLOW
       ENDIF
 

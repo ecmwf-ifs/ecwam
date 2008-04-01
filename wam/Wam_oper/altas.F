@@ -56,10 +56,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX  ,NOBSPE
-      USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
       USE YOWMAP   , ONLY : XDELLA   ,KXLT
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    , NINF     ,NSUP     ,
      &            KTAG
@@ -107,7 +106,7 @@
       IF(LMESSPASS) THEN
         LLAK=.FALSE.
         CALL FEMEAN (FL1, NSTART(IRANK), NEND(IRANK), EMEAN, FMEAN,
-     &               AKMEAN, LLAK)
+     &               LLAK)
 
         ALLOCATE(WHMOD(NIBLO))
 

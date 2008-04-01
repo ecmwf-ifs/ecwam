@@ -1,4 +1,4 @@
-      SUBROUTINE MPABORT 
+      SUBROUTINE MPABORT(CDMESSAGE) 
 
 ! ----------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL MPABORT*
+!     *CALL MPABORT(CDMESSAGE)*
 
 !     METHOD.
 !     -------
@@ -22,7 +22,7 @@
 !     EXTERNALS.
 !     ----------
 !       MPCLOSE_UNIT
-!       MPL_ABORT
+!       ABOR1
 
 !       ABORT
 !     REFERENCE.
@@ -31,10 +31,44 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWCOU  
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
+      USE SDL_MODULE
 
 ! ----------------------------------------------------------------------
+      CHARACTER*(*),INTENT(IN) :: CDMESSAGE
+
+      INTEGER :: IERROR
+      LOGICAL :: LLABORT=.TRUE.
+
+      IERROR=-1
+
+!     FLUSH UNITS
       CALL MPCLOSE_UNIT
-      CALL MPL_ABORT('MPL_ABORT was called to terminate run')
+
+
+      IF(LWCOU) THEN
+!       USE THE SAME ABORT AS THE IFS.
+!        IF(PRESENT(CDMESSAGE)) THEN
+          CALL ABOR1(CDMESSAGE)
+!        ELSE
+!          CALL ABOR1('!!!! THE WAVE MODEL HAS ABORTED !!!!')
+!        ENDIF
+      ELSEIF (NPROC > 1) THEN
+!        IF(PRESENT(CDMESSAGE)) THEN
+          CALL MPL_MESSAGE(KERROR=IERROR,CDMESSAGE=CDMESSAGE,
+     &                     LDABORT=LLABORT)
+!        ELSE
+!          CALL MPL_MESSAGE(KERROR=IERROR,
+!     &                     CDMESSAGE='!!! THE MODEL HAS ABORTED !!!',
+!     &                     LDABORT=LLABORT)
+!        ENDIF
+      ELSE
+        CALL SDL_TRACEBACK
+        CALL FLUSH(0)
+        CALL SDL_SRLABORT
+      ENDIF
+
       RETURN
       END SUBROUTINE MPABORT

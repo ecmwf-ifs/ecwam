@@ -57,6 +57,7 @@
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *LLWS* - TRUE WHERE SINPUT IS POSITIVE
 
+
 !     METHOD.
 !     -------
 
@@ -108,12 +109,15 @@
       REAL, DIMENSION(IJS:IJL) :: CNSN
       REAL, DIMENSION(NFRE) :: FAC, CONST
       LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
+      LOGICAL L1,L2,LZ(IJS:IJL,NANG)
+      REAL X1,X2,X1D,X2D,ZLOG1,ZLOG2
+      REAL TEMPD(IJS:IJL,NANG),UCN1D(IJS:IJL),UCN2D(IJS:IJL)
       PARAMETER (A = 0.8/1000. , B = 0.08/1000.)
 
 ! ----------------------------------------------------------------------
 
       ONETHIRD = 1./3.
-      BG_GUST  = 0.        ! No background gustiness (so 12. is not used)
+      BG_GUST  = 0.        ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
@@ -121,11 +125,20 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
+          TEMPD(IJ,K) = 1.D0/TEMP1(IJ,K)
+          IF(TEMP1(IJ,K) .GT. 0.01) THEN
+            LZ(IJ,K) = .TRUE.
+          ELSE
+            LZ(IJ,K) = .FALSE.
+          ENDIF
         ENDDO
       ENDDO
 
       DO IJ=IJS,IJL
-!       In the following U10 is estimated assuming everything is based on u*
+!
+!       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
+!       BASED ON U*
+!
         U10 = USNEW(IJ)/XKAPPA*LOG(10./Z0NEW(IJ))
         C_D = A+B*U10
         DC_DDU = B
@@ -165,6 +178,8 @@
         DO IJ=IJS,IJL
           UCN1(IJ) = USNEW(IJ)*(1.+SIG_N(IJ))*CM(IJ) + ZALP
           UCN2(IJ) = USNEW(IJ)*(1.-SIG_N(IJ))*CM(IJ) + ZALP
+          UCN1D(IJ) = 1.D0/ UCN1(IJ)
+          UCN2D(IJ) = 1.D0/ UCN2(IJ)
           ZCN(IJ) = LOG(G*Z0NEW(IJ)*CM(IJ)**2)
           CNSN(IJ) = CONST(M) * ROAIRN(IJ)
         ENDDO
@@ -174,24 +189,27 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF (TEMP1(IJ,K).GT.0.01) THEN
-              X    = TEMP1(IJ,K)*UCN1(IJ)
-              ZLOG = ZCN(IJ) + XKAPPA/X
-              IF (ZLOG.LT.0.) THEN
-                ZLOG2X=ZLOG*ZLOG*X
-                UFAC2(IJ,K) = CNSN(IJ)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+            IF (LZ(IJ,K)) THEN
+              X1    = TEMP1(IJ,K)*UCN1(IJ)
+              X1D   = TEMPD(IJ,K)*UCN1D(IJ)
+              ZLOG1 = ZCN(IJ) + XKAPPA*X1D
+              L1    = ZLOG1.LT.0.
+              X2    = TEMP1(IJ,K)*UCN2(IJ)
+              X2D   = TEMPD(IJ,K)*UCN2D(IJ)
+              ZLOG2 = ZCN(IJ) + XKAPPA*X2D
+              L2    = ZLOG2.LT.0.
+              IF (L1) THEN
+                ZLOG2X=ZLOG1*ZLOG1*X1
+                UFAC2(IJ,K) = CNSN(IJ)*EXP(ZLOG1)*ZLOG2X*ZLOG2X
                 LLWS(IJ,K,M)=.TRUE.
               ELSE
                 UFAC2(IJ,K) = 0.
                 LLWS(IJ,K,M)=.FALSE.
               ENDIF
-
-              X    = TEMP1(IJ,K)*UCN2(IJ)
-              ZLOG = ZCN(IJ) + XKAPPA/X
-              IF (ZLOG.LT.0.) THEN
-                ZLOG2X=ZLOG*ZLOG*X
+              IF (L2) THEN
+                ZLOG2X=ZLOG2*ZLOG2*X2
                 UFAC2(IJ,K) = UFAC2(IJ,K)+
-     &                        CNSN(IJ)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+     &                        CNSN(IJ)*EXP(ZLOG2)*ZLOG2X*ZLOG2X
                 LLWS(IJ,K,M)=.TRUE.
               ENDIF
             ELSE

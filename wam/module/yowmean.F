@@ -7,28 +7,33 @@
       REAL,ALLOCATABLE :: EMEAN(:) 
       REAL,ALLOCATABLE :: FMEAN(:) 
       REAL,ALLOCATABLE :: THQ(:) 
-      REAL,ALLOCATABLE :: AKMEAN(:) 
       REAL,ALLOCATABLE :: SMEAN(:) 
       REAL,ALLOCATABLE :: P1MEAN(:) 
       REAL,ALLOCATABLE :: P2MEAN(:) 
       REAL,ALLOCATABLE :: SPRDMEAN(:) 
       REAL,ALLOCATABLE :: C4MEAN(:) 
       REAL,ALLOCATABLE :: BFMEAN(:) 
-      REAL,ALLOCATABLE :: PFMEAN(:) 
+      REAL,ALLOCATABLE :: QPMEAN(:) 
+      REAL,ALLOCATABLE :: HMAXMEAN(:) 
+      REAL,ALLOCATABLE :: FPMEAN(:) 
+      REAL,ALLOCATABLE :: TMAXMEAN(:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *EMEAN*     REAL      TOTAL ENERGY.
 !      *FMEAN*     REAL      MEAN FREQUENCY (1./MEAN PERIOD).
 !      *THQ*       REAL      MEAN WAVE DIRECTION IN RADIANS.
-!      *AKMEAN*    REAL      MEAN WAVE NUMBER.
 !      *SMEAN*     REAL      MEAN SQUARE SLOPE.
 !      *P1MEAN*    REAL      MEAN PERIOD (1).
 !      *P2MEAN*    REAL      MEAN PERIOD (2).
 !      *SPRDMEAN*  REAL      MEAN DIRECTIONAl SPREAD.
-!      *C4MEAN*    REAL      SPECTRAL KURTOSIS.
-!      *BFMEAN*    REAL      BENJANIN-FEIR INDEX.
-!      *PFMEAN*    REAL      SPECTRAL PEAKEDNESS.
+!      *C4MEAN*    REAL      SURFACE ELEVATION KURTOSIS.
+!      *BFMEAN*    REAL      BENJAMIN-FEIR INDEX.
+!      *QPMEAN*    REAL      SPECTRAL PEAKEDNESS.
+!      *HMAXMEAN*  REAL      MAXIMUM WAVE HEIGHT.
+!      *FPMEAN*    REAL      PEAK FREQUENCY FROM 1D SPECTRUM.
+!      *TMAXMEAN*  REAL      MAXIMUM PERIOD CORRESPONDING TO MAXIMUM
+!                            WAVE HEIGHT.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

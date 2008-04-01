@@ -118,10 +118,11 @@
      &            FRM5     ,COFRM4   ,FRATIO   ,WETAIL   ,TH       ,
      &            C        ,FRIC
       USE YOWICE   , ONLY : FLMINFR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,AKMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -141,12 +142,13 @@
 
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
-      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), DELFL(NFRE)
+      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), TEMP2(IJS:IJL,NFRE), 
+     &        DELFL(NFRE)
       REAL :: SPRD(IJS:IJL,NANG)
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL, DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN 
+      REAL, DIMENSION(IJS:IJL) :: USFM
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
-      REAL :: THRESHOLD(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -167,7 +169,7 @@
 
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &            F1MEAN, AKMEAN(IJS), XKMEAN)
+     &            F1MEAN, AKMEAN, XKMEAN)
 
 
       DO K=1,NANG
@@ -188,7 +190,7 @@
 !*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
 !             ------------------------------------------------
 
-!!            FL and SL are initialised in sinput
+!!            FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
@@ -222,38 +224,19 @@
         CALL FLUSH (IU06)
       ENDIF
 
-!!! adding bins to windsea sector if they are found to be windsea
-!!! by the empirical relationship
-!!! I have relaxed the condition by removing the factor 1.2
-      DO K=1,NANG
-        DO IJ=IJS,IJL
-          THRESHOLD(IJ) = USNEW(IJ)*COS(TH(K)-THWNEW(IJ))
-        ENDDO
-        DO M=1,NFRE
-          CM = FRIC/C(M)
-          DO IJ=IJS,IJL
-            CHECKTA = CM*THRESHOLD(IJ)
-            IF (CHECKTA.GE.1.) THEN
-              LLWS(IJ,K,M)=.TRUE.
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-
-
 !     MEAN CHARACTERISTICS FOR WIND SEA
 !     ---------------------------------
-      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, LLWS)
+      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
 
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL)
+      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN)
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN)
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
 !SHALLOW
@@ -269,15 +252,34 @@
       DELT = IDELT
       XIMP = 1.0
       DELT5 = XIMP*DELT
+
       DO M=1,NFRE
+!!      warning COFRM4 is different for deep or shallow !!
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
-      DO M=1,NFRE
-        DO IJ=IJS,IJL
-          FM = MAX(FMEANWS(IJ),FMEAN(IJ))
-          TEMP(IJ,M) = USNEW(IJ)*FM*DELFL(M)
-        ENDDO
+      DO IJ=IJS,IJL
+        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
       ENDDO
+
+      IF(ISHALLO.EQ.1) THEN
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            TEMP(IJ,M) = USFM(IJ)*DELFL(M)
+            TEMP2(IJ,M) = FRM5(M)
+          ENDDO
+        ENDDO
+      ELSE
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            AKM1 = 1./TFAK(INDEP(IJ),M)
+            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
+            DELFL2 = DELFL(M)*SQRT(AKM1)*AK2VGM1
+            TEMP(IJ,M) = USFM(IJ)*DELFL2
+            TEMP2(IJ,M) = AKM1*AK2VGM1
+          ENDDO
+        ENDDO
+      ENDIF
+
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -302,11 +304,10 @@
 !           ------------------------
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &            F1MEAN, AKMEAN(IJS), XKMEAN)
+     &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, LLWS)
-
+      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
 
 !*    2.5.2 COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !*          FREQUENCIES LE 2.5*MAX(FMEANWS,FMEAN).
@@ -323,12 +324,11 @@
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
 
-
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
 
       DO IJ=IJS,IJL
-        GADIAG(IJ) = FR5(MIJ(IJ))
+        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
       ENDDO
 
 
@@ -342,7 +342,7 @@
         ENDDO
         DO M=MIJ(IJ)+1,NFRE
           FCONST(IJ,M) = 0.
-          TEMP(IJ,M) = GADIAG(IJ)*FRM5(M)
+          TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
         ENDDO
       ENDDO
 

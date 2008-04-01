@@ -4,8 +4,7 @@
 
 !*    ** *SHALLOW*   SHALLOW WATER TABLES.
 
-      INTEGER,PARAMETER :: NDEPTH=52 
-
+      INTEGER :: NDEPTH
       REAL, ALLOCATABLE :: DEPTH(:,:) 
       REAL DEPTHA 
       REAL DEPTHD 
@@ -16,7 +15,7 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *NDEPTH*    INTEGER   LENGTH OF SHALLOW WATER TABLES.
+!      *NDEPTH*    INTEGER   LENGTH OF SHALLOW WATER TABLES (see MTABS).
 !      *DEPTH*     REAL      WATER DEPTH IN METRES.
 !      *DEPTHA*    REAL      MINIMUM DEPTH FOR TABLES (METRES).
 !      *DEPTHD*    REAL      DEPTH INCREMENT (METRES).

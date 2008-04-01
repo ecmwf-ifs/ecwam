@@ -15,7 +15,7 @@
 !     PURPOSE.
 !     -------
 
-!          *READICE* SET ICE SPECTRA (FL3) TO ZERO
+!          *SETICE* SET ICE SPECTRA (FL3) TO ZERO
 
 !**   INTERFACE.
 !     ----------

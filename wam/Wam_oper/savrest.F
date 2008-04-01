@@ -26,9 +26,9 @@
 !         *IU14*   INTEGER   OUTPUT UNIT SECOND LAT OF BLOCKS.
 !         *IU15*   INTEGER   OUTPUT UNIT LAST WINDFIELDS.
 !         *IGL*    INTEGER   NUMBER OF BLOCKS.
-!         *CDATE*  CHAR*12   DATE/TIME OF LAST FIELD IN FILES.
-!         *CDATEF* CHAR*12   START DATE OF FORECAST PERIOD.
-!         *CDATER* CHAR*12   OUTPUT DATE FOR BOTH RESTART FILES
+!         *CDATE*  CHAR*14   DATE/TIME OF LAST FIELD IN FILES.
+!         *CDATEF* CHAR*14   START DATE OF FORECAST PERIOD.
+!         *CDATER* CHAR*14   OUTPUT DATE FOR BOTH RESTART FILES
 !     METHOD.
 !     -------
 
@@ -46,7 +46,7 @@
 
 ! ---------------------------------------------------------------------
 
-      CHARACTER*12 CDATE,CDATEF,CDATER
+      CHARACTER*14 CDATE,CDATEF,CDATER
 
 ! ---------------------------------------------------------------------
 
@@ -75,7 +75,7 @@
 !*    1.1.3 LAST WIND FIELDS.
 !           -----------------
 
-        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
+        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '00000000000000')) THEN
           CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
         ENDIF
 
@@ -99,7 +99,7 @@
 !*    1.2.3 LAST WIND FIELDS.
 !           -----------------
 
-        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '000000000000')) THEN
+        IF((CDATE .EQ. CDATER ).OR.(CDATER .EQ. '00000000000000')) THEN
           CALL GSFILE (IU06, IU15, ICH, CDATE, CDATEF, 'LAW', 'S')
         ENDIF
       ENDIF

@@ -1,6 +1,6 @@
       SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO, ZIDLOLD,
-     &                     NSTART,NEND, IREAD)
+     &                     ROAIRO, ZIDLOLD, ICEMASK,
+     &                     NSTART, NEND, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 
@@ -21,6 +21,7 @@
 !     *Z0OLD*     ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR DENSITY IN KG/M3.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!     *ICEMASK*   SEA ICE MASK
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -51,25 +52,31 @@
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
-      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
       USE MPL_MODULE
 
-      CHARACTER*12 ZERO
+      CHARACTER*14 ZERO
       CHARACTER*120 FILENAME
 
 ! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
      &                                  ROAIRO, ZIDLOLD 
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
       REAL,ALLOCATABLE,DIMENSION(:,:) :: RU10OLD,RTHWOLD,RUSOLD,
      &                                   RZ0OLD,RTAUW
      &                                  ,RADOLD, RZIDLOLD
+      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: KICEMASK
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
 
       ZERO = ' '
 
@@ -87,12 +94,12 @@
       IF(LMESSPASS) THEN
 
         ISEND=IREAD
-        IBUFLENGTH=48+1
+        IBUFLENGTH=57+1
 
         ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
      &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO)
-     &                    ,RADOLD(NIBLO,NBLO),RZIDLOLD(NIBLO,NBLO)
-     &                                       )
+     &                    ,RADOLD(NIBLO,NBLO),RZIDLOLD(NIBLO,NBLO),
+     &                     KICEMASK(NIBLO,NBLO))
 
         ALLOCATE(IBUF(IBUFLENGTH))
 
@@ -103,13 +110,13 @@
 
           IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
             CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                       RADOLD, RZIDLOLD, 
-     &                       NEND(NPROC))
+     &                       RADOLD, RZIDLOLD, KICEMASK,  
+     &                       NEND(NPROC))  
 
           ELSE
             CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
             CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                      RADOLD,RZIDLOLD,FILENAME)
+     &                      RADOLD,RZIDLOLD,KICEMASK,FILENAME)
           ENDIF
 
         ENDIF
@@ -121,24 +128,41 @@
       
         ELSE
           IF(IRANK.EQ.ISEND) THEN
-            KCOUNT=0
-            DO IC=1,12
-              READ(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-            ENDDO
-            DO IC=1,12
-              READ(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-            ENDDO
-            DO IC=1,12
-              READ(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-            ENDDO
-            DO IC=1,12
-              READ(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-            ENDDO
             IF(LWAVEWIND) THEN
-              IBUF(49)=1
+              IBUF(1)=1
             ELSE
-              IBUF(49)=0
+              IBUF(1)=0
             ENDIF
+            KCOUNT=1
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              READ(CDTPRO(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              READ(CDATEWO(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              READ(CDAWIFL(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              READ(CDATEFL(IC:IC),'(I1)') IBUF(KCOUNT)
+              IF(KCOUNT.GT.IBUFLENGTH) THEN
+                WRITE (IU06,*) ' '
+                WRITE (IU06,*) ' **************************************'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' *   FATAL ERROR IN SUB. GETSTRESS:   *'
+                WRITE (IU06,*) ' *   ==============================   *'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' * IBUFLENGTH TOO SMALL !!!           *'
+                WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS   *'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' **************************************'
+                CALL ABORT1
+              ENDIF
+            ENDDO
           ENDIF
 
           CALL GSTATS(621,0)
@@ -149,32 +173,49 @@
           KTAG=KTAG+1
 
           IF(IRANK.NE.ISEND) THEN
-            DO IC=1,12
-              WRITE(CDTPRO(IC:IC),'(I1)') IBUF(IC)
-            ENDDO
-            DO IC=1,12
-              WRITE(CDATEWO(IC:IC),'(I1)') IBUF(12+IC)
-            ENDDO
-            DO IC=1,12
-              WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(24+IC)
-            ENDDO
-            DO IC=1,12
-              WRITE(CDATEFL(IC:IC),'(I1)') IBUF(36+IC)
-            ENDDO
-
-            IF(IBUF(49).EQ.1) THEN
+            IF(IBUF(1).EQ.1) THEN
               LWAVEWIND=.TRUE. 
             ELSE
               LWAVEWIND=.FALSE. 
             ENDIF
+            KCOUNT=1
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              WRITE(CDTPRO(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              WRITE(CDATEWO(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              WRITE(CDAWIFL(IC:IC),'(I1)') IBUF(KCOUNT)
+            ENDDO
+            DO IC=1,14
+              KCOUNT=KCOUNT+1
+              WRITE(CDATEFL(IC:IC),'(I1)') IBUF(KCOUNT)
+              IF(KCOUNT.GT.IBUFLENGTH) THEN
+                WRITE (IU06,*) ' '
+                WRITE (IU06,*) ' **************************************'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' *   FATAL ERROR IN SUB. GETSTRESS:   *'
+                WRITE (IU06,*) ' *   ==============================   *'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' * IBUFLENGTH TOO SMALL !!!           *'
+                WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS   *'
+                WRITE (IU06,*) ' *                                    *'
+                WRITE (IU06,*) ' **************************************'
+                CALL ABORT1
+              ENDIF
+            ENDDO
           ENDIF
 
         ENDIF
 
-        IF(CDTPRO.EQ.'000000000000') CDTPRO = ZERO
-        IF(CDATEWO.EQ.'000000000000')CDATEWO = ZERO
-        IF(CDAWIFL.EQ.'000000000000')CDAWIFL = ZERO
-        IF(CDATEFL.EQ.'000000000000') CDATEFL= ZERO
+        IF(CDTPRO.EQ.'00000000000000') CDTPRO = ZERO
+        IF(CDATEWO.EQ.'00000000000000')CDATEWO = ZERO
+        IF(CDAWIFL.EQ.'00000000000000')CDAWIFL = ZERO
+        IF(CDATEFL.EQ.'00000000000000') CDATEFL= ZERO
 
 !       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
 
@@ -188,10 +229,11 @@
         KTAG=KTAG+1
         CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZ0OLD)
         KTAG=KTAG+1
-
         CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RADOLD)
         KTAG=KTAG+1
         CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZIDLOLD)
+        KTAG=KTAG+1
+        CALL MPDISTRIBINTFLD(ISEND,KTAG,NSTART,NEND,KICEMASK)
         KTAG=KTAG+1
 
         IF (ITEST.GE.2)
@@ -200,36 +242,43 @@
 
 !       KEEP CORRESPONDING CONTRIBUTION 
         DO IG=1,NBLO
-          DO IJ=NSTART(IRANK),NEND(IRANK)
-            U10OLD(IJ,IG)=RU10OLD(IJ,IG)
-            THWOLD(IJ,IG)=RTHWOLD(IJ,IG)
-            USOLD(IJ,IG)=RUSOLD(IJ,IG)
-            TAUW(IJ,IG)=RTAUW(IJ,IG)
-            Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
-
-            ROAIRO(IJ,IG)=RADOLD(IJ,IG)
-            ZIDLOLD(IJ,IG)=RZIDLOLD(IJ,IG)
+          NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+            DO IJ=KIJS,KIJL
+              U10OLD(IJ,IG)=RU10OLD(IJ,IG)
+              THWOLD(IJ,IG)=RTHWOLD(IJ,IG)
+              USOLD(IJ,IG)=RUSOLD(IJ,IG)
+              TAUW(IJ,IG)=RTAUW(IJ,IG)
+              Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
+              ROAIRO(IJ,IG)=RADOLD(IJ,IG)
+              ZIDLOLD(IJ,IG)=RZIDLOLD(IJ,IG)
+              ICEMASK(IJ,IG)=KICEMASK(IJ,IG)
+            ENDDO
           ENDDO
+!$OMP     END PARALLEL DO
         ENDDO
 
         DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF,
-     &             RADOLD,RZIDLOLD)
+     &             RADOLD,RZIDLOLD,KICEMASK)
 
       ELSE
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,NIBLO)
+     &                     ROAIRO,ZIDLOLD,ICEMASK,NIBLO)
         ELSE
           CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
           CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    ROAIRO,ZIDLOLD,FILENAME)
+     &                    ROAIRO,ZIDLOLD,ICEMASK,FILENAME)
         ENDIF
       ENDIF
 
       WRITE(IU06,*) ''
       WRITE(IU06,*) ' WIND AND STRESS FILES READ IN.......',
      &              ' CDTPRO  = ', CDTPRO
+      CALL FLUSH (IU06)
 
-      IF (ITEST > 0) CALL FLUSH (IU06)
       RETURN
       END SUBROUTINE GETSTRESS

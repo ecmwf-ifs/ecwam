@@ -66,13 +66,14 @@
 !-----------------------------------------------------------------------
 
       CHARACTER* 3 YOFID
-      CHARACTER*12 CDTPRO, CDTGEO, CDTGE1, ZERO, CTIME
+      CHARACTER*12 CTIME
+      CHARACTER*14 CDTPRO, CDTGE1, ZERO
       CHARACTER*14 CDATE
       PARAMETER(ZERO=' ')
       LOGICAL EOFD, LLTEST
       LOGICAL:: LLONG=.TRUE.
 
-      DATA CDTGEO, CDTGE1 /ZERO, ZERO/
+      DATA CDTGE1 /ZERO/
 
 ! ----------------------------------------------------------------------
 
@@ -100,7 +101,6 @@
           WRITE(IU06,*) ' +                                       +'
           WRITE(IU06,*) ' +      NO ALTIMETER MEASUREMENTS        +'
           WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
-          WRITE(IU06,*) ' + FILE DATES ARE CDTGEO = ', CDTGEO
           WRITE(IU06,*) ' +                CDTGE1 = ', CDTGE1
           WRITE(IU06,*) ' + IFAIL = ', IFAIL
           WRITE(IU06,*) ' + EOFD  = ', EOFD

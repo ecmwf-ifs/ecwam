@@ -38,16 +38,12 @@
 
 ! ----------------------------------------------------------------------
 
-
+      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-
-
 
 ! ----------------------------------------------------------------------
-
 
       PARAMETER (CONST = -2.0*0.038/G)
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL

@@ -6,6 +6,13 @@
 
 !**** *FILE_TRANSFER* - COPY FORTRAN UNIT FILE TO A FILE 
 
+!     THIS IS QUITE OLD FASHIONED. ALL WRITES TO FILE SHOULD BE
+!     REWRITTEN !!! AT ECMWF, WE NORMALLY DO NOT USE THIS OPTION
+!     AS WE WRITE IN GRIB FORMAT DIRECTLY INTO THE FIELD DATA
+!     BASE !!! (SORRY).
+!     THE USE OF THE PBIO SOFTWARE WAS MOTIVATED BY EFFICIENCY ISSUES
+!     ON ONE OF ECMWF SUPERCOMPUTERS. IT IS NOT LONGER THE CASE !!!
+
 !     J. BIDLOT     ECMWF JUNE  1996  MESSAGE PASSING
 !     B. HANSEN     ECMWF APRIL 1996  MOVE CYMPPATH TO COMTEXT AND ADD 
 !                                     CDOPT.
@@ -46,7 +53,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            NPRECR
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -63,9 +70,11 @@
 
       INTEGER, ALLOCATABLE :: KARRAY(:) 
       LOGICAL LMORE
+      LOGICAL LLEXIST
 
 ! ----------------------------------------------------------------------
       LMORE=.TRUE.
+      LLEXIST=.FALSE.
 
       IF (IUNIT.LT.10) THEN
         WRITE(FILENAMEF,'(A,I1)') 'fort.',IUNIT
@@ -74,8 +83,25 @@
       ENDIF
       FILENAM=FILENAMEF
       LNAME = LEN_TRIM(FILENAM)
-      IF(ICPLEN.GT.0) THEN
-        FILENAMEF=CPATH(1:ICPLEN)//'/'//FILENAM(1:LNAME)
+      INQUIRE(FILE=FILENAM(1:LNAME),EXIST=LLEXIST)
+      IF(.NOT. LLEXIST) THEN
+        IF(ICPLEN.GT.0 ) THEN
+          FILENAMEF=CPATH(1:ICPLEN)//'/'//FILENAM(1:LNAME)
+        ENDIF
+      ENDIF
+
+      LNF = LEN_TRIM(FILENAMEF)
+      LLEXIST=.FALSE.
+      INQUIRE(FILE=FILENAMEF(1:LNF),EXIST=LLEXIST)
+      IF(.NOT.LLEXIST .AND. CDOPT.NE.'G') THEN
+        WRITE (IU06,*) '******************************************'
+        WRITE (IU06,*) '*                                        *'
+        WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO INQUIRE      *'
+        WRITE (IU06,*) '*   IN FILE_TRANSFER                     *'
+        WRITE (IU06,*) '*   COULD NOT FIND FILE ',FILENAMEF
+        WRITE (IU06,*) '*                                        *'
+        WRITE (IU06,*) '******************************************'
+        CALL ABORT1
       ENDIF
 
       FILENAM=FILENA
@@ -96,6 +122,7 @@
      & FILENAMEF(1:LEN_TRIM(FILENAMEF)), ' TO ',
      & FILENAMET(1:LEN_TRIM(FILENAMET))
 
+      IF(LPBIOOUT) THEN
       KLENG=((NSUP-NINF+1)*NANG*NFRE*NPRECR)/9+8+1
       ALLOCATE(KARRAY(KLENG)) 
 
@@ -197,6 +224,12 @@
       ENDIF
 
       DEALLOCATE(KARRAY)
+
+      ELSE
+        LNF = LEN_TRIM(FILENAMEF)
+        LNT = LEN_TRIM(FILENAMET)
+        CALL SYSTEM('mv '//FILENAMEF(1:LNF)//' '//FILENAMET(1:LNT))
+      ENDIF
 
       RETURN
       END SUBROUTINE FILE_TRANSFER

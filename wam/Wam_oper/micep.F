@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-      SUBROUTINE MICEP (IU06, NSTART, NEND, FIELD, IPARAM)
+      SUBROUTINE MICEP (FIELD, IPARAM, ICMSK, KINF,KSUP,IJS,IJL,IG)
 
 !-------------------------------------------------------------------
 
@@ -13,6 +13,7 @@
 !     J. BIDLOT    ECMWF         JANUARY 1998 : CORRECT THRESHOLD FOR
 !                                               ICE TO BE LT 271.50
 !     J. BIDLOT    ECMWF         FEBRUARY 2000 : USE OF SEA ICE FRACTION
+!     J. BIDLOT    ECMWF         AUG 2006 :  
 
 
 !     PURPOSE.
@@ -24,15 +25,19 @@
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *( IU06, NSTART, NEND, FIELD, IPARAM)*
+!             *CALL MICEP* *(FIELD, IPARAM, ICMSK, KINF,KSUP,IJS,IJL,IG)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *IU06*      INTEGER   PRINTER OUTPUT UNIT.
-!      *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!      *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !      *FIELD*     REAL      GLOBAL FIELD USED TO DETERMINE THE ICE MASK
 !      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELD
+!      *ICMSK*     INTEGER   ICE MASK 
+!      *KINF*      LOWER BOUND ON FIRST DIMENSION OF ICMSK 
+!      *KSUP*      UPPER BOUND ON FIRST DIMENSION OF ICMSK 
+!      *IJS*       INDEX OF FIRST GRIDPOINT
+!      *IJL*       INDEX OF LAST GRIDPOINT
+!      *IG*        BLOCK NUMBER
+
 
 !     METHOD.
 !     -------
@@ -44,19 +49,17 @@
 
 !---------------------------------------------------------------------
 
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWSTAT  , ONLY : IASSI
+      USE YOWPARAM , ONLY : NGX      ,NGY     ,NBLO
+      USE YOWPCONS , ONLY : ZMISS
+      USE YOWTEST  , ONLY : IU06     ,ITEST 
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NGX,NGY) :: FIELD
+      INTEGER, DIMENSION (KINF:KSUP,NBLO) :: ICMSK 
 
 ! ----------------------------------------------------------------------
 
@@ -67,71 +70,49 @@
 
 !*    2. WE DEFINE ICE FOR THOSE POINTS WHERE SST < 271.5 KELVIN). 
 !        OR WITH SEA ICE FRACTION > 0.3.
-!        AT THOSE POINTS ICEMASK = 0
+!        AT THOSE POINTS ICE MASK = 0
 !        -------------------------------------------------------
 
       NICE = 0
-      ICEMASK = 1
 
-      DO IG=1,IGL
-        IF (LMESSPASS) THEN
-!           ICEMASK FOR ALL SEAPOINTS IS NEEDED IN GRDATA
-          IF(IASSI.EQ.1) THEN
-            IJSTART=NSTART(1)
-            IJEND=NEND(NPROC)
-          ELSE
-            IJSTART=NSTART(IRANK)
-            IJEND=NEND(IRANK)
-          ENDIF
-        ELSE
-          IJSTART=IJS(IG)
-          IJEND=IJL(IG)
-        ENDIF
-
-        DO IJ = IJSTART, IJEND 
+      IF (IPARAM.EQ.31) THEN
+!       sea ice fraction is only defined between 0 and 1
+        DO IJ = IJS, IJL 
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
-          IF(IPARAM.EQ.139) THEN
+          IF (FIELD(IX,IY) .GT. 0.3 .AND. FIELD(IX,IY) .LE. 1.01  .AND.
+     &        FIELD(IX,IY) .NE. ZMISS ) THEN
+            NICE = NICE + 1
+            ICMSK(IJ,IG) = 0
+          ELSE
+            ICMSK(IJ,IG) = 1
+          ENDIF
+        ENDDO
+      ELSE IF(IPARAM.EQ.139) THEN
+        DO IJ = IJS, IJL 
+          IX = IXLG(IJ,IG)
+          IY = NGY- KXLT(IJ,IG) +1
             IF (FIELD(IX,IY) .LT. 271.5) THEN
               NICE = NICE + 1
-              ICEMASK(IJ,IG) = 0
+              ICMSK(IJ,IG) = 0
+            ELSE
+              ICMSK(IJ,IG) = 1
             ENDIF
-          ELSEIF (IPARAM.EQ.31) THEN
-!           sea ice fraction is only defined between 0 and 1
-            IF (FIELD(IX,IY) .GT. 0.3 .AND. FIELD(IX,IY) .LE. 1.01) THEN
-              NICE = NICE + 1
-              ICEMASK(IJ,IG) = 0
-            ENDIF
-          ENDIF 
         ENDDO
-      ENDDO
+      ENDIF 
 
-      IF(IASSI.EQ.1) THEN
-        IF(IPARAM.EQ.139) THEN
-          WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K : ',
-     &             NICE,' ON ALL ',NPROC, 'PEs'
-        ELSEIF (IPARAM.EQ.31) THEN
-          WRITE(IU06,*)' SUB. MICEP: ',
-     &             'POINTS WITH SEA ICE FRACTION > 0.3: ',
-     &             NICE,' ON ALL ',NPROC, 'PEs'
-        ELSE
-          WRITE(IU06,*)' ********************************************'
-          WRITE(IU06,*)' SUB. MICEP: PARAMETER FOR ICE MASK NOT KNOWN'
-          WRITE(IU06,*)' SUB. MICEP: NO ICEMASK WAS SET UP'
-          WRITE(IU06,*)' ********************************************'
-        ENDIF
-      ELSE
+      IF(ITEST.GE.1) THEN
         IF(IPARAM.EQ.139) THEN
           WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K :',
-     &       NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
+     &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
         ELSEIF (IPARAM.EQ.31) THEN
           WRITE(IU06,*)' SUB. MICEP: ',
-     &             'POINTS WITH SEA ICE FRACTION > 0.3: ',
-     &       NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
+     &           'POINTS WITH SEA ICE FRACTION > 0.3: ',
+     &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
         ELSE
           WRITE(IU06,*)' ********************************************'
           WRITE(IU06,*)' SUB. MICEP: PARAMETER FOR ICE MASK NOT KNOWN'
-          WRITE(IU06,*)' SUB. MICEP: NO ICEMASK WAS SET UP'
+          WRITE(IU06,*)' SUB. MICEP: NO ICE MASK WAS SET UP'
           WRITE(IU06,*)' ********************************************'
         ENDIF
       ENDIF

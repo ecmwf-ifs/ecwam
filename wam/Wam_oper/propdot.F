@@ -1,4 +1,4 @@
-      SUBROUTINE PROPDOT(SL)
+      SUBROUTINE PROPDOT
 
 ! ----------------------------------------------------------------------
 
@@ -6,6 +6,7 @@
 
 !     H. GUNTHER   GKSS/ECMWF   17/02/91
 !     J. BIDLOT    ECMWF        FEBRUARY 97 MESSAGE PASSING
+!     J. BIDLOT    ECMWF        JANUARY 2004 REMOVE MULTI-BLOCK OPTION.
 
 !*    PURPOSE.
 !     --------
@@ -23,9 +24,9 @@
 !       IN A LOOP OVER THE BLOCKS THE COMMON UBUF IS READ,
 !       THE DEPTH AND CURRENT GRADIENTS ARE COMPUTED,
 !       COMMON REFDOT (DEPTH AND CURRENT REFRACTION FOR THETA DOT)
-!       IS COMPUTED AND WRITTEN TO MASS STORAGE (IU16).
+!       IS COMPUTED AND WRITTEN TO MASS STORAGE (IU16) (if multiblock).
 !       IN CASE OF CURRENT REFRACTION THE COMPLETE SIGMA DOT TERM
-!       IS COMPUTED AND WRITTEN TO IU16 ADDITIONALLY.
+!       IS COMPUTED AND WRITTEN TO IU16 ADDITIONALLY (if multiblock).
 !       WRITE OPERATIONS ARE NOT DONE FOR COMMON UBUF AND REFDOT
 !       IF THIS IS A ONE BLOCK MODEL.
 
@@ -43,102 +44,89 @@
 
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-      USE YOWGRID  , ONLY : COSPH    ,IGL      ,IJS      ,IJL      ,IJLT
-      USE YOWMAP   , ONLY : KXLT
+      USE YOWGRID  , ONLY : COSPHM1   ,IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLD    ,NIBLC
-      USE YOWREFD  , ONLY : THDD     ,THDC
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            TCGOND   ,TFAK     ,TSIHKD   ,INDEP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
+      USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,TSIHKD   ,INDEP 
       USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
-      USE YOWUBUF  , ONLY : KLAT     ,KLON
-      USE YOWUNIT  , ONLY : IU08     ,IU16
-
-! ----------------------------------------------------------------------
-
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: SL
+      USE YOWSPEC  , ONLY : NSTART   ,NEND
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
       REAL, ALLOCATABLE, DIMENSION(:) :: DDPHI, DDLAM, DUPHI, DULAM
       REAL, ALLOCATABLE, DIMENSION(:) :: DVPHI, DVLAM, DCO, OMDD
 
-      CHARACTER*30 FILENAME(1)
-
 ! ----------------------------------------------------------------------
 
-      ALLOCATE(DDPHI(NIBLD), DDLAM(NIBLD), DUPHI(NIBLC), DULAM(NIBLC))
-      ALLOCATE(DVPHI(NIBLC), DVLAM(NIBLC), DCO(NIBLD), OMDD(NIBLC))
+!     ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
+!     AND SIGMA DOT
+      IF(.NOT.ALLOCATED(THDC))
+     &     ALLOCATE(THDC(NSTART(IRANK):NEND(IRANK),NANG))
+      IF(.NOT.ALLOCATED(THDD))
+     &    ALLOCATE(THDD(NSTART(IRANK):NEND(IRANK),NANG))
+      IF(.NOT.ALLOCATED(SDOT))
+     &    ALLOCATE(SDOT(NSTART(IRANK):NEND(IRANK),NANG,NFRE))
 
-      IF(.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(NIBLC,NANG))
-      IF(.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(NIBLD,NANG))
 
-!*    1. IF CARTESIAN PROPAGATION SET COSINE OF LAT TO 1.
-!         -----------------------------------------------
-
-      IF (ICASE.NE.1) THEN
-        DO IJ = 1,NIBLD
-          DCO(IJ) = 1.
-        ENDDO
-      ENDIF
 
 !*    2. LOOP OVER BLOCKS.
 !        -----------------
 
-      IF (IGL.NE.1) REWIND IU08
+      IF (IGL.NE.1) THEN
+        write(*,*) 'PROPDOT DOES NOT WORK FOR THIS CONFIGURATION !!!'
+        WRITE(IU06,*) 'PROPDOT DOES NOT WORK FOR THIS CONFIGURATION !!!'
+        CALL ABORT1
+      ENDIF
+
       DO IG = 1,IGL
 
-!*    2.1 IF MULTI BLOCK VERSION.
-!         -----------------------
+!       WORK ARRAY
+        ALLOCATE(DDPHI(IJS(IG):IJL(IG)))
+        ALLOCATE(DDLAM(IJS(IG):IJL(IG)))
+        ALLOCATE(DUPHI(IJS(IG):IJL(IG)))
+        ALLOCATE(DULAM(IJS(IG):IJL(IG)))
+        ALLOCATE(DVPHI(IJS(IG):IJL(IG)))
+        ALLOCATE(DVLAM(IJS(IG):IJL(IG)))
 
-        IF (IGL.NE.1) THEN
+        ALLOCATE(DCO(IJS(IG):IJL(IG)))
+        ALLOCATE(OMDD(IJS(IG):IJL(IG)))
 
-!*    2.1.1 READ COMMON BLOCK UBUF.
-!           -----------------------
-
-          READ (IU08) KLAT, KLON
-!SHALLOW
-
-!*    2.1.2 COMPUTE SHALLOW WATER TABLE INDICES.
-!           ------------------------------------
-
-          IF (ISHALLO.NE.1) THEN
-            DO IJ=NINF,IJLT(IG)
-              XD = LOG(DEPTH(IJ,IG)/DEPTHA)/LOG(DEPTHD)+1.
-              ID = NINT(XD)
-              ID = MAX(ID,1)
-              INDEP(IJ) = MIN(ID,NDEPTH)
-            ENDDO
-          ENDIF
-!SHALLOW
-        ENDIF
 
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
 
-        CALL GRADI (IG, IREFRA, DDPHI, DDLAM, DUPHI,
-     &   DULAM, DVPHI, DVLAM)
+        CALL GRADI (IG, IJS(IG),IJL(IG),IREFRA, DDPHI, DDLAM, DUPHI,
+     &              DULAM, DVPHI, DVLAM)
 
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
 
         IF (ICASE.EQ.1) THEN
           DO IJ = IJS(IG),IJL(IG)
-            JH = KXLT(IJ,IG)
-            DCO(IJ) = 1./COSPH(JH)
+            DCO(IJ) = COSPHM1(IJ,IG)
+          ENDDO
+        ELSE
+          DO IJ = IJS(IG),IJL(IG)
+            DCO(IJ) = 1.
           ENDDO
         ENDIF
 
 !*    2.4 DEPTH GRADIENT PART OF SIGMA DOT.
 !         ---------------------------------
 
-        IF (ISHALLO.NE.1 .AND. IREFRA.EQ.2) THEN
-          DO IJ = IJS(IG),IJL(IG)
-            OMDD(IJ) = V(IJ,IG)*DDPHI(IJ) +
-     &       U(IJ,IG)*DDLAM(IJ)*DCO(IJ)
-          ENDDO
+        IF (ISHALLO.NE.1 ) THEN
+          IF (IREFRA.EQ.3) THEN
+            DO IJ = IJS(IG),IJL(IG)
+              OMDD(IJ) = V(IJ,IG)*DDPHI(IJ) + U(IJ,IG)*DDLAM(IJ)*DCO(IJ)
+            ENDDO
+          ELSEIF (IREFRA.EQ.2) THEN
+            DO IJ = IJS(IG),IJL(IG)
+              OMDD(IJ) = 0.0
+            ENDDO
+          ENDIF
         ENDIF
 
 !*    2.5. LOOP OVER DIRECTIONS.
@@ -152,23 +140,29 @@
 !            ----------------------------
 
           IF (ISHALLO.NE.1) THEN
-            DO IJ = IJS(IG),IJL(IG)
-              THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
-            ENDDO
+            IF (IREFRA.EQ.1 .OR. IREFRA.EQ.3) THEN
+              DO IJ = IJS(IG),IJL(IG)
+                THDD(IJ,K) = SD*DDPHI(IJ) - CD*DDLAM(IJ)*DCO(IJ)
+              ENDDO
+            ELSE
+              DO IJ = IJS(IG),IJL(IG)
+                THDD(IJ,K) = 0.0
+              ENDDO
+            ENDIF
           ENDIF
 
 !*    2.5.2 SIGMA DOT AND THETA DOT PART FROM CURRENT GRADIENT.
 !           ---------------------------------------------------
 
-          IF (IREFRA.EQ.2) THEN
+          IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
             SS  = SD**2
             SC  = SD*CD
             CC  = CD**2
             DO IJ = IJS(IG),IJL(IG)
-              SL(IJ,K,NFRE) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)
-     &         - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
+              SDOT(IJ,K,NFRE) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)
+     &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
               THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)
-     &         - (SC*DULAM(IJ) + CC*DVLAM(IJ))*DCO(IJ)
+     &                    - (SC*DULAM(IJ) + CC*DVLAM(IJ))*DCO(IJ)
             ENDDO
 
 !*    2.5.3 LOOP OVER FREQUENCIES.
@@ -177,7 +171,7 @@
             IF (ISHALLO.NE.1) THEN
               DO M=1,NFRE
                 DO IJ=IJS(IG),IJL(IG)
-                  SL(IJ,K,M) = (SL(IJ,K,NFRE)*TCGOND(INDEP(IJ),M)
+                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE)*TCGOND(INDEP(IJ),M)
      &             + OMDD(IJ)*TSIHKD(INDEP(IJ),M))
      &             * TFAK(INDEP(IJ),M)
                 ENDDO
@@ -192,48 +186,12 @@
 
         ENDDO
 
-!*    2.6. WRITE COMPUTED DOT TERMS.
-!           ------------------------
-
-        IF (IGL.NE.1) THEN
-          IF (ISHALLO.NE.1) THEN
-            IF (IREFRA.EQ.1) THEN
-              WRITE(IU16) THDD
-            ELSE
-              WRITE(IU16) THDD, THDC, SL
-            ENDIF
-          ELSE
-            WRITE(IU16) THDC, ((SL(IJ,K,NFRE),IJ=1,NIBLC),K=1,NANG)
-          ENDIF
-        ELSE
-          IF(LMESSPASS) THEN
-            FILENAME(1)='fort.16.%p'
-            CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
-            OPEN(IU16,FILE=FILENAME(1),STATUS='UNKNOWN')
-
-            WRITE(IU16) SL
-            CLOSE(IU16)
-          ELSE
-            IF (ISHALLO.NE.1) THEN
-              IF (IREFRA.EQ.2) THEN
-                WRITE(IU16) SL
-              ENDIF
-            ELSE
-              WRITE(IU16) ((SL(IJ,K,NFRE),IJ=1,NIBLC),K=1,NANG)
-            ENDIF
-          ENDIF
-        ENDIF
+        DEALLOCATE(DDPHI, DDLAM, DUPHI, DULAM)
+        DEALLOCATE(DVPHI, DVLAM, DCO, OMDD)
 
 !*    BRANCH BACK TO 2. FOR NEXT BLOCK.
-
       ENDDO
 
-      DEALLOCATE(DDPHI, DDLAM, DUPHI, DULAM)
-      DEALLOCATE(DVPHI, DVLAM, DCO, OMDD)
-      IF (IGL.NE.1) THEN
-        DEALLOCATE(THDC)
-        DEALLOCATE(THDD)
-      ENDIF
 
       RETURN
       END SUBROUTINE PROPDOT

@@ -110,7 +110,7 @@
       IF(IPFGTBL(16).NE.0) THEN
         LLAK=.FALSE.
         CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS),
-     &              FSWELL(IJS), LLAK)
+     &              LLAK)
       ENDIF
 
 !     femean must be called before semean since LLEPSMIN is false
@@ -162,7 +162,7 @@
   
       IF(IPFGTBL(15).NE.0) THEN
         LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), FSEA(IJS),LLAK)
+        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), LLAK)
       ENDIF
 
 !     femean must be called before semean since LLEPSMIN is false

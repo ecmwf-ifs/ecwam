@@ -79,7 +79,7 @@
 !       *PROGRAM* *PREPROC*
 
 !       *IU01*   - LOGICAL UNIT FOR INPUT OF TOPOGRAPHIC DATA.
-!                  (SEE SUB TOPOAR).
+!                  (SEE SUB TOPOAR AND MUBUF).
 !       *IU02*   - LOGICAL UNIT FOR INPUT OF CURRENTS.
 !                  (SEE SUB READCUR).
 !       *IU03*   - LOGICAL UNIT FOR INPUT OF COARSE GRID
@@ -177,10 +177,9 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER, ALLOCATABLE :: IA1(:,:)
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:,:) :: IOBSLAT, IOBSLON 
+      REAL, ALLOCATABLE :: BATHY(:,:)
 
-!          *IA1*   INTEGER  TOPOGRAPHIC DATA IN MODEL GRID.
+!     *BATHY* REAL  BATHYMETRY ON MODEL GRID.
 
 ! ----------------------------------------------------------------------
       LOGICAL :: LLGRID
@@ -212,14 +211,15 @@
 !*    2. USER INPUT AND LINEPRINTER PROTOCOL.
 !        ------------------------------------
 
-      CALL UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)
+      CALL UIPREP (IU05, IFORM, ML, KL, LLGRID)
+
 
 ! ----------------------------------------------------------------------
 
 !*    2.1 ALLOCATE NECESSARY ARRAYS
 !     -----------------------------
 
-      ALLOCATE(IA1(NX, NY))
+      ALLOCATE(BATHY(NX, NY))
 
 !     FR(KL) IS ALLOCATED IN UIPREP 
       ALLOCATE(DFIM(ML)) 
@@ -333,32 +333,25 @@
 !*        REQUESTED RESOLUTION.
 !         ---------------------------------------------------------
 
-      ALLOCATE(IOBSLAT(NX, NY, ML, 2))
-      ALLOCATE(IOBSLON(NX, NY, ML, 2))
-      CALL TOPOAR (IU01, IA1, IOBSLAT, IOBSLON, ML)
+      CALL TOPOAR (IU01, BATHY, ML)
+      IF (ITEST.GT.0) THEN
+        WRITE (IU06,*) ' SUB TOPOAR DONE'
+        CALL FLUSH(IU06)
+      ENDIF
 
 !*    5.2 COMPUTATION OF BLOCKS.
 !         ----------------------
 
-      CALL MGRID (IA1)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MGRID DONE'
-
-      IF(IREFRA.EQ.2) THEN
-        NIBLD=NIBLO
-        NBLD=NBLO
-        NIBLC=NIBLO
-        NBLC=NBLO
-      ELSEIF(IREFRA.EQ.1) THEN
-        NIBLD=NIBLO
-        NBLD=NBLO
-        NIBLC=1
-        NBLC=1
-      ELSE
-        NIBLD=1
-        NBLD=1
-        NIBLC=1
-        NBLC=1
+      CALL MGRID (BATHY)
+      IF (ITEST.GT.0) THEN 
+        WRITE (IU06,*) ' SUB MGRID DONE'
+        CALL FLUSH(IU06)
       ENDIF
+
+      NIBLD=O
+      NBLD=0
+      NIBLC=0
+      NBLC=0
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------
@@ -398,10 +391,7 @@
 !*    7. GENERATE CURRENT FIELD.
 !        -----------------------
 
-      IF (IREFRA.EQ.2) THEN
-        CALL WAMCUR (IU02)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB WAMCUR DONE'
-      ENDIF
+!     THE READING OF THE INPUT CURRENTS IN NOW DONE IN INITMDL 
 
 ! ----------------------------------------------------------------------
 
@@ -409,7 +399,7 @@
 !        -------------------------------
 
       DO IG=1,IGL
-        CALL MUBUF (IA1, IOBSLAT, IOBSLON, IG, ML, IU08, IU18, IFORM)
+        CALL MUBUF (IU01, BATHY, IG, ML, IU08, IU18, IFORM)
         IF (ITEST.GT.0) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*)
      &     ' SUB MUBUF DONE FOR BLOCK ',IG
@@ -421,7 +411,7 @@
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, IU17, IFORM, IREFRA, ML, KL)
+      CALL OUTCOM (IU07, IU17, IFORM, ML, KL)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB OUTCOM DONE'
 
 ! ----------------------------------------------------------------------
@@ -430,7 +420,7 @@
 !*        OUTPUT OF NECESSARY DIMENSIONS.
 !         --------------------------------------------------
 
-      CALL CHECK (IREFRA, ML, KL, IINPC)
+      CALL CHECK (ML, KL, IINPC)
 
       STOP
       END

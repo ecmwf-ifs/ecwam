@@ -183,13 +183,6 @@
 !     VARIABLES:
 !     ----------
 
-      REAL COPO(NFRE),
-     &     COPODIFF(NFRE)
-!                       POWERS OF FRATIO AND DIFFERENCES OF POWERS OF 
-!                       FRATIO, ONLY USED IN SUBROUTINE TRANSFORM.
-      REAL SPECT(NSPEC,NANG,NFRE)
-!                       WORKING ARRAY FOR TRANSFORMATION OF 
-!                       SPECTRA, ONLY USED IN SUBROUTINE TRANSFORM.
       REAL ADJUST(NSPEC,MPART)
 !                       ENERGY ADJUSTMENT PARAMETER.
       INTEGER INTROTATE(NSPEC,MPART)
@@ -247,16 +240,13 @@
      &                 NSPEC , MPART , NPARTW , NANG , NFRE,
 !                    INPUT/OUTPUT
      &                 SPECW , NW1D, 
-!                    WORK SPACE
-     &                 SPECT , 
 !                    INPUT
      &                 PARTW ,CORRELTAW ,MEANWE,MEANWANG,MEANWFRE, 
      &                 MEANSE , MEANSANG , MEANSFRE ,
      &                 FRATIO,
 !                    OUTPUT
      &                 ADJUST , INTROTATE , FRACROTATE , 
-     &                 STRETCH , INTLOGSTRETCH ,
-     &                 COPO , COPODIFF  )
+     &                 STRETCH , INTLOGSTRETCH )
 
 
 !-------------------------------------------------------------------

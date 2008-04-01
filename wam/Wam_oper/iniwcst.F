@@ -24,12 +24,14 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,
-     &            RAD      ,DEG      ,R
+     &            RAD      ,DEG      ,R        ,ZPISQRT
 
 ! ----------------------------------------------------------------------
 
       PI = 4.*ATAN(1.)
       ZPI= 2.*PI
+      ZPISQRT = SQRT(PI)
+
       ZCONST=1./(8.*PI*SQRT(2.))
       RAD = PI/180.
       DEG = 180./PI

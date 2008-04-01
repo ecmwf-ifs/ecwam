@@ -84,13 +84,15 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRIBHD, ONLY : NKSEK1
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
+      USE YOWICE   , ONLY : ICEMASK
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
      &            LL1D
-      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT 
+      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,
+     &            IPROPAGS ,LSUBGRID 
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,
      &            NFROMPELST,
@@ -123,33 +125,24 @@
 ! ----------------------------------------------------------------------
 
       INTEGER IINITFDB_VPP
+      INTEGER :: NADV
       CHARACTER *3 DBNAME
-      CHARACTER*12 ZERO,CBEGDAT
+      CHARACTER*14 ZERO,CBEGDAT
       LOGICAL LFDB, LLSTOP, LLWRRE, LLRESTARTED, LLIRANK
+      LOGICAL :: LDWCOUNORMS
+      LOGICAL :: FRSTIME
+      LOGICAL :: LMESSPASS_NL
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
       time0=-wam_user_clock()
       IU06=6
 
-!   0.0 GET MACHINE ARCHTECTURE TYPE AND FDB OPTION FLAG
-!       ------------------------------------------------
-!!!!! INPUT UNIT FOR THE USER FILE IS NOW 3
-      IU05 = 3
+!   0.0 SET MACHINE ARCHTECTURE TYPE
+!       ----------------------------
+!!!!! BECAUSE SOME MPI ENVIRONMENT REQUIRES THAT THE VERY FIRST CALL IS TO
+!!!!! BE TO MPI_INIT, WE NEED TO ASSUME THAT THE CODE IS RUN UNDER MPI
+!!!!! IF IT IS NOT THE CASE CHANGE LMESSPASS TO FALSE.
 
-      CALL MPUSERIN(IU05,LMESSPASS,LFDB,LWCOU,LL1D)
-
-      IF(LWCOU) THEN
-        IU06=6
-        WRITE (IU06,*) ' *********************************'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' * PROBLEM IN CHIEF              *'
-        WRITE (IU06,*) ' * ============================= *'
-        WRITE (IU06,*) ' * LWCOU=TRUE WITH NO ATM. MODEL *'
-        WRITE (IU06,*) ' *            TO COUPLE TO       *'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' *********************************'
-        CALL ABORT1
-      ENDIF
+      LMESSPASS=.TRUE.
 
       IF(LMESSPASS) THEN
 
@@ -198,6 +191,44 @@
         NPROC = 1 
       ENDIF
 
+!     GET CONTROLLING FLAG FROM INPUT NAMELIST 
+!     (the rest will be read in userin)
+!!!!! INPUT UNIT FOR THE USER FILE IS NOW 3
+      IU05 = 3
+      CALL MPUSERIN(IU05,LMESSPASS_NL,LFDB,LWCOU,LL1D,LSUBGRID,
+     &              IPROPAGS)
+
+      IF(LMESSPASS_NL.NEQV.LMESSPASS) THEN
+        WRITE (IU06,*) ' *********************************'
+        WRITE (IU06,*) ' *                               *'
+        WRITE (IU06,*) ' *       PROBLEM IN CHIEF        *'
+        WRITE (IU06,*) ' * ============================= *'
+        WRITE (IU06,*) ' * LMESSPASS AND LMESSPASS_NL    *'
+        WRITE (IU06,*) ' *     SHOULD BE THE SAME        *'
+        WRITE (IU06,*) ' * LMESPASS    =',LMESSPASS
+        WRITE (IU06,*) ' * LMESPASS_NL =',LMESSPASS_NL
+        WRITE (IU06,*) ' * LMESPASS_NL IS HARD CODED,    *'
+        WRITE (IU06,*) ' * YOU MIGHT HAVE TO CHANGE IT !!*'
+        WRITE (IU06,*) ' *                               *'
+        WRITE (IU06,*) ' *********************************'
+        CALL ABORT1
+      ENDIF
+
+      IF(LWCOU) THEN
+        IU06=6
+        WRITE (IU06,*) ' *********************************'
+        WRITE (IU06,*) ' *                               *'
+        WRITE (IU06,*) ' * PROBLEM IN CHIEF              *'
+        WRITE (IU06,*) ' * ============================= *'
+        WRITE (IU06,*) ' * LWCOU=TRUE WITH NO ATM. MODEL *'
+        WRITE (IU06,*) ' *            TO COUPLE TO       *'
+        WRITE (IU06,*) ' *                               *'
+        WRITE (IU06,*) ' *                               *'
+        WRITE (IU06,*) ' *********************************'
+        CALL ABORT1
+      ENDIF
+
+
       NPREVIOUS=IRANK-1
       IF(IRANK.EQ.NPROC) THEN
         NNEXT=0
@@ -207,6 +238,11 @@
 
 !     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------
+
+      NADV=0
+      FRSTIME=.TRUE.
+
+      CALL INIWCST
 
       NPR=NPROC
       LLIRANK=.FALSE.
@@ -225,6 +261,8 @@
       ALLOCATE (ROAIRN(NINF:NSUP),ROAIRO(NINF:NSUP,NBLO),
      &          ZIDLNEW(NINF:NSUP),ZIDLOLD(NINF:NSUP,NBLO))
  
+      ALLOCATE (ICEMASK(NINF:NSUP,NBLO))
+
       ALLOCATE (FL1(NINF-1:NSUP,NANG,NFRE),FL3(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.LMESSPASS) ALLOCATE (FL2(NINF-1:NSUP,NANG,NFRE))
       ALLOCATE (SL(NINF-1:NSUP,NANG,NFRE))
@@ -233,7 +271,6 @@
       ALLOCATE (EMEAN(NSTART(IRANK):NEND(IRANK)))
       ALLOCATE (FMEAN(NSTART(IRANK):NEND(IRANK)))
       ALLOCATE (THQ(NSTART(IRANK):NEND(IRANK)))
-      ALLOCATE (AKMEAN(NSTART(IRANK):NEND(IRANK)))
 
 !     0.4 INITIALIZE SIGNAL HANDLER.
 !         --------------------------
@@ -265,21 +302,25 @@
       IUGB=0
       IVGB=0
       ILEN=1
-      CBEGDAT='999999999999'
+      CBEGDAT='99999999999999'
       IDUM=0
       IDURAT=-99
       NFDBREF=0  ! only used in coupled model
+
+      RMISS=-999. ! missing data indicator
 
  20   CONTINUE
 
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS,
+     &             ISEC1, ISEC2, RMISS, FIELDS,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM, KQGAUSS,
-     &             MASK_IN, MASK_OUT,
-     &             NFDBREF)
+     &             LDWCOUNORMS, MASK_IN, MASK_OUT,
+     &             NFDBREF,
+     &             FRSTIME, NADV)
+
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 
@@ -288,11 +329,16 @@
  30   CONTINUE
 
       DEALLOCATE (U10OLD,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &            Z0OLD,Z0NEW,TAUW,FL1,FL3,SL,FCONST,
+     &            Z0OLD,Z0NEW,TAUW,ICEMASK,FL1,FL3,SL,FCONST,
      &            ROAIRN,ROAIRO,ZIDLNEW,ZIDLOLD,
      &            NSTART,NEND,KLENTOP,KLENBOT,NFROMPE,NTOPE,
      &            NIJSTART,IJTOPE,NTOPELST,NFROMPELST)
       IF(ALLOCATED(FL2)) DEALLOCATE(FL2)
+
+      DEALLOCATE (EMEAN)
+      DEALLOCATE (FMEAN)
+      DEALLOCATE (THQ)
+
 
 !    3.  TERMINATE MESSAGE PASSING PROTOCOL 
 !        -----------------------------------

@@ -27,6 +27,7 @@
       REAL DAL1 
       REAL DAL2 
       REAL, ALLOCATABLE :: FRH(:)
+      REAL, ALLOCATABLE :: ENH(:,:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   -------
@@ -60,6 +61,7 @@
 !      *DAL1*      REAL      1./ACL1.
 !      *DAL2*      REAL      1./ACL2.
 !      *FRH*       REAL      TAIL FREQUENCY RATION **5
+!      *ENH*       REAL      TRANSFER FUNCTION COEFFICIENT.     
 
 ! ----------------------------------------------------------------------
       END MODULE YOWINDN

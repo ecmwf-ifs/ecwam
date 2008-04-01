@@ -1,6 +1,7 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE MPUSERIN (IU05, LMESSPASS, LFDB, LWCOU, LL1D)
+      SUBROUTINE MPUSERIN (IU05, LMESSPASS, LFDB, LWCOU, LL1D, LSUBGRID,
+     &                     IPROPAGS)
 
 ! ----------------------------------------------------------------------
 
@@ -25,6 +26,7 @@
 !        *LMESSPASS* - LOGICAL USED TO SET PROGRAM TO COMPUTER
 !                      ARCHITECHTURE
 !        *LFDB*      - LOGICAL USED TO TOGGLE ACCESS TO FDB
+!        *IPROPAGS*  - CONTROLS WHICH PROPAGATION SCHEME IS USED.
 
 !     METHOD.
 !     -------
@@ -42,7 +44,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
-     &            HSALTCUT, LALTGRDOUT,
+     &            HSALTCUT, LALTGRDOUT, LALTPAS,
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG
       USE YOWTEST  , ONLY : ITEST    ,ITESTB
@@ -53,7 +55,7 @@
       CHARACTER *2 YCLASS
       CHARACTER *3 USERID, RUNID
       CHARACTER *4 YEXPVER
-      CHARACTER*12 CDATEF, CDATER, CDATES, CBPLTDT, CEPLTDT
+      CHARACTER*14 CDATEF,CDATER,CDATES,CBPLTDT,CEPLTDT,CDATECURA
       CHARACTER*60 PATH
       CHARACTER*70 CLHEADER
       CHARACTER*80 CPATH
@@ -61,8 +63,9 @@
       LOGICAL LPBIOIN, LGRIBIN, LGRIBOUT, LPBIOOUT, LMESSPASS, LFDB,
      &        LWCOU, LFDBIOOUT, LNOCDIN, L4VTYPE, LFRSTFLD,
      &        LALTAS, LSARAS, LSARINV, LTURN90,
-     &        LGUST, LADEN  ,LL1D, LGRHDIFS ,LNEWLVTP
-
+     &        LGUST, LADEN  ,LL1D, LSUBGRID, LGRHDIFS ,LNEWLVTP, LICERUN
+      LOGICAL LBIWBK 
+      LOGICAL LLSOURCE
 
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
 
@@ -70,10 +73,15 @@
      &   CBPLTDT, CEPLTDT, CDATEF,
      &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,
      &   IDELINT, IDELINS, IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES,
+     &   IDELCUR, CDATECURA,
      &   CLOTSU, CDATER, CDATES,
      &   PFLAG,  FFLAG,  GFLAG, NFLAG,
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
+     &   IPROPAGS,
+     &   IREFRA  ,
+     &   ISNONLIN,
+     &   LBIWBK  ,
      &   IBOUNC, IBOUNF,
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
@@ -83,8 +91,9 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP
+     &   LGUST, LADEN, LALTGRDOUT, LSUBGRID, LALTPAS,
+     &   LLSOURCE,
+     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
 
 ! ----------------------------------------------------------------------
 
@@ -95,7 +104,10 @@
       LMESSPASS =.TRUE.
       LWCOU=.FALSE.
       LL1D=.TRUE.
+      LSUBGRID=.TRUE.
       LWCOUNORMS = .FALSE.
+
+      IPROPAGS=0
 
 ! ----------------------------------------------------------------------
 
@@ -107,13 +119,15 @@
       CLOSE(IU05)
 
 
-      WRITE(*,*) '==============================================='
-      WRITE(*,*) '*** MPUSERIN has read the following settings'
-      WRITE(*,*) '*** LMESSPASS = ',LMESSPASS
-      WRITE(*,*) '*** LFDB = ',LFDB
-      WRITE(*,*) '*** LWCOU= ',LWCOU
-      WRITE(*,*) '*** LWCOUNORMS= ',LWCOUNORMS
-      WRITE(*,*) '==============================================='
+      WRITE(6,*) '==============================================='
+      WRITE(6,*) '*** MPUSERIN has read the following settings'
+      WRITE(6,*) '*** LMESSPASS = ',LMESSPASS
+      WRITE(6,*) '*** LFDB = ',LFDB
+      WRITE(6,*) '*** LWCOU= ',LWCOU
+      WRITE(6,*) '*** LSUBGRID= ',LSUBGRID
+      WRITE(6,*) '*** IPROPAGS= ',IPROPAGS
+      WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
+      WRITE(6,*) '==============================================='
 
       RETURN
       END SUBROUTINE MPUSERIN

@@ -5,6 +5,7 @@
 !**** *MPCLOSE_UNIT* -
 
 !     J. BIDLOT     ECMWF    MAY 1996    MESSAGE PASSING
+!                            2007   ONLY USE IT TO FLUSH ALL UNITS.
 
 !*    PURPOSE.
 !     --------
@@ -34,7 +35,7 @@
         INQUIRE(UNIT=IU,OPENED=LOPENED)
         IF(LOPENED) THEN 
           CALL FLUSH(IU)
-          CLOSE(IU)
+!!!!          CLOSE(IU)
         ENDIF
       ENDDO 
       END SUBROUTINE MPCLOSE_UNIT

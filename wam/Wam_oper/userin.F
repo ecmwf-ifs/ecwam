@@ -57,30 +57,34 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
-     &            HSALTCUT, LALTGRDOUT,
+     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS
+      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
       USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP
+      USE YOWICE   , ONLY : LICERUN
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
-     &            LL1D
+     &            LWDINTS  ,LL1D
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
-     &            IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,YCLASS   ,
-     &            YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,LSARAS   ,
-     &            LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,NDWD    ,
-     &            NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
-     &            LGUST    ,LADEN    ,NWAM_BLKS           
+     &            ISNONLIN ,
+     &            LBIWBK   ,
+     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,
+     &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
+     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
+     &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
+     &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -91,6 +95,7 @@
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
+      USE YOWWIND  , ONLY : CWDFILE
       USE FDBSUBS
 
 ! ----------------------------------------------------------------------
@@ -99,7 +104,7 @@
       LOGICAL LLNALTGO
       CHARACTER*2 :: MARSFCTYPE
       CHARACTER*4 :: CSTREAM
-      CHARACTER (LEN=  12), PARAMETER :: ZERO = ' '
+      CHARACTER (LEN=  14), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
       CHARACTER (LEN= 256)            :: CLFORM
 
@@ -114,10 +119,15 @@
      &   CBPLTDT, CEPLTDT, CDATEF,
      &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,
      &   IDELINT, IDELINS, IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES,
+     &   IDELCUR, CDATECURA,
      &   CLOTSU, CDATER, CDATES,
      &   PFLAG,  FFLAG,  GFLAG, NFLAG,
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
+     &   ISNONLIN,
+     &   LBIWBK  ,
+     &   IPROPAGS,
+     &   IREFRA,
      &   IBOUNC, IBOUNF,
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
@@ -127,16 +137,17 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN, LALTGRDOUT,
-     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP
+     &   LGUST, LADEN, LALTGRDOUT, LSUBGRID, LALTPAS,
+     &   LLSOURCE,
+     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
 
-      CHARACTER* 12 CLOUT
+      CHARACTER* 14 CLOUT
       NAMELIST /NAOT/ CLOUT
 
-      CHARACTER* 12 CLSOUT
+      CHARACTER* 14 CLSOUT
       NAMELIST /NAOS/ CLSOUT
 
-      CHARACTER* 12 CLAOUT
+      CHARACTER* 14 CLAOUT
       NAMELIST /NAAT/ CLAOUT
 
 !     NAMELIST NALINE : 
@@ -145,7 +156,13 @@
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
 !     IDELPRO: PROPAGATION TIME STEP.
+!              IF COUPLED TO IFS, THE INPUT VALUE OF IDELPRO WILL BE
+!              THE UPPER BOUND ON THE TIME STEP, WHICH WOULD OTHERWISE
+!              BE SET TO THE COUPLING TIME STEP.
 !     IDELT: SOURCE TERM INTEGRATION TIME STEP.
+!              IF COUPLED TO IFS, THE INPUT VALUE OF IDELT WILL BE
+!              THE UPPER BOUND ON THE TIME STEP, WHICH WOULD OTHERWISE
+!              BE SET TO THE COUPLING TIME STEP.
 !     IDELWO: WIND OUTPUT TIME STEP.
 !     IDELWI: WIND INPUT TIME STEP.
 !     CLMTSU: STEP UNIT (S : seconds or H : hours).
@@ -162,6 +179,8 @@
 !     IDELAGS: TIME STEP NOT IN USE.
 !     IDELRES: OUTPUT TIME STEP for RESTART SPECTRA (if output times
 !              are not specified by namelist NAOS).
+!     IDELCUR: CURRENTS INPUT TIME STEP IN HOURS !!!!!
+!     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
 !     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT, IDELINS,
 !             IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
@@ -211,6 +230,8 @@
 !     35 : BENJAMIN-FEIR INDEX (-) 
 !     36 : PEAKEDNESS FACTOR OR GODA QUALITY FACTOR (-) 
 !     37 : MODEL BATHYMETRY (m)
+!     38 : MAXIMUM WAVE HEIGHT (m)
+!     39 : MAXIMUM WAVE PERIOD (S)
 
 !     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
 !     LPBIOIN: IF TRUE THE PBIO SOFTWARE IS USED FOR BINARY INPUT
@@ -224,11 +245,16 @@
 !     LFDBIOOUT : IF TRUE THE GRIB SPECTRA OUTPUT IS SENT TO THE FDB.
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
 !     ISHALLO: 1 FOR DEEP WATER MODE ELSE SHALLOW WATER MODEL.
+!     IREFRA: 0 MODEL RUNS WITHOUT REFRACTION.
+!             1 MODEL RUNS WITH DEPTH REFRACTION ONLY.
+!             2 MODEL RUNS WITH CURRENT REFRACTION ONLY.
+!             3 MODEL RUNS WITH DEPTH AND CURRENT REFRACTION.
 !     ITEST: TEST OUTPUT LEVEL.
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
 !     IFORCA: 1 FOR START RUN WITH ANALYSIS FIELD (OBSOLETE). 
+!     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
 !     USERID, RUNID, PATH : OUT OF DATE, SHOULD ONLY BE USED WHENEVER
@@ -284,6 +310,8 @@
 !     LALTGRDOUT: FLAG USED TO CONTROL THE OUTPUT OF GRIDDED ALTIMETER
 !                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT) 
 !                (SEE GRFIELD). 
+!     LALTPAS: FLAG USED TO CONTROL FEED THROUGH ALT DATA PASSIVELY. 
+!                (SEE GRFIELD). 
 !     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
 !     NLOCGRB: LOCAL GRIB TABLE NUMBER
@@ -311,8 +339,14 @@
 !     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
 !                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
 !                COUPLED TO THE IFS).
-!     LNEWLVTP : FLAGS CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
+!     LNEWLVTP : FLAG CONTROLLING WHETHER OR NOT THE NEW GRIB LEVTYPE
 !                DEFINITIONS ARE USED.
+!     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
+!               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
+!               SEA ICE MASK (TRUE BY DEFAULT). 
+!     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
+!                IS COMPUTED.
+
 !     NAMELIST NAOT : 
 !     ===============
 !     CLOUT : LIST OF OUTPUT TIME FOR INTEGRATED PARAMETERS.
@@ -348,6 +382,8 @@
       IDELSPS   =  0
       IDELAGS   =  0
       IDELRES   =  0
+      IDELCUR   =  0
+      CDATECURA = ZERO
       CDATER    = ZERO
       CDATES    = ZERO
       PFLAG     = .FALSE. 
@@ -355,12 +391,13 @@
 !     note: if IREST>0 then GFLAG(7) and GFLAG(10) will always be reset
 !     true if grib restart files are requested (LGRIBOUT=.true.).
 !     see below.
-      GFLAG     = .FALSE. 
+      GFLAG     = .FALSE.
       NFLAG     = .FALSE. 
       NFLAG(1)  = .TRUE. 
       NFLAG(6)  = .TRUE. 
       NFLAG(7)  = .TRUE. 
       NFLAG(10) = .TRUE. 
+
 !  SAVE THE VALUE OF LFDB IN LFDBOPIFS AS LFDB SHOULD HAVE BEEN
 !  DETERMINED BY THE IFS WHEN COUPLED TO IT, SEE WVALLOC.
 !  AFTER READING THE NAMELIST LFDB WILL BE RESET TO LFDBOPIFS IF
@@ -377,6 +414,9 @@
       LFDBIOOUT = .TRUE. 
       ICASE     = 1 
       ISHALLO   = 0 
+      ISNONLIN  = 1 
+      IPROPAGS  = 0 
+      IREFRA    = 0 
       ITEST     = 0 
       ITESTB    = 0 
       IREST     = 0 
@@ -412,6 +452,7 @@
 
       DO ISAT=1,NUMALT
         IBUFRSAT(ISAT) = 0
+        LALTPAS(ISAT)   = .FALSE. 
         LALTCOR(ISAT)   = .FALSE. 
         XKAPPA2(ISAT)   = 0.0700
         LALTLRGR(ISAT)  = .FALSE.
@@ -434,7 +475,7 @@
 
       LFRSTFLD  = .FALSE.
 
-      LALTAS    = .TRUE. 
+      LALTAS    = .FALSE. 
       LSARAS    = .FALSE. 
       LSARINV   = .FALSE. 
 
@@ -463,6 +504,8 @@
       LGUST = .FALSE.
       LADEN = .FALSE.
 
+      LSUBGRID = .TRUE.
+
       NWAM_BLKS = 1
 
       LL1D = .TRUE.
@@ -474,6 +517,13 @@
       LGRHDIFS = .FALSE.
 
       LNEWLVTP = .FALSE.
+
+      LBIWBK = .TRUE.
+
+      LICERUN = .TRUE.
+
+      LLSOURCE = .TRUE.
+
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -492,6 +542,7 @@
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         CALL ABORT1
       ENDIF
+
       IF(.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
       IF(LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
@@ -576,7 +627,9 @@
       ENDDO SPT0
 1900  CONTINUE
       REWIND(IU05)
-      ALLOCATE(COUTT(NOUTT))
+      IF (.NOT.ALLOCATED(COUTT)) THEN
+        ALLOCATE(COUTT(NOUTT))
+      ENDIF
       SPT: DO IC=1,NOUTT
         CALL WPOSNAM (IU05, 'NAOT', LLEOF)
         IF (LLEOF) EXIT SPT
@@ -594,7 +647,9 @@
       ENDDO SPS0
 1901  CONTINUE
       REWIND(IU05)
-      ALLOCATE(COUTS(NOUTS))
+      IF (.NOT.ALLOCATED(COUTS)) THEN
+        ALLOCATE(COUTS(NOUTS))
+      ENDIF
       SPS: DO IC=1,NOUTS
         CALL WPOSNAM (IU05, 'NAOS', LLEOF)
         IF (LLEOF) EXIT SPS
@@ -612,7 +667,9 @@
       ENDDO SPA0
 1902  CONTINUE
       REWIND(IU05)
-      ALLOCATE(CASS(NASS))
+      IF (.NOT.ALLOCATED(CASS)) THEN
+        ALLOCATE(CASS(NASS))
+      ENDIF
       SPA: DO IC=1,NASS
         CALL WPOSNAM (IU05, 'NAAT', LLEOF)
         IF (LLEOF) EXIT SPA
@@ -622,9 +679,61 @@
 1912  CONTINUE
 
       IF(LWCOU) THEN
-!     IF COUPLED MODEL
-!     SET TEMPORARILY IDELWO and IDELWI TO IDELPRO
-!     to AVOID ALL THE CHECKS. SEE IN INITMDL WHERE THEY ARE RESET
+!       TIME STEP SELECTION: 
+        IF(KCOUSTEP.LE.IDELPRO .AND. KCOUSTEP.LE.IDELT) THEN
+!         TIGHT COUPLING
+          IDELPRO=KCOUSTEP
+          IDELT=KCOUSTEP
+        ELSE IF(KCOUSTEP.GE.IDELPRO .AND. KCOUSTEP.LE.IDELT) THEN
+!         IDELT IS SET BY COUPLING
+          IDELT=KCOUSTEP
+          DO IC=1,IDELT
+            IDELPRO_NEW=IDELT/IC
+            IF(IDELPRO_NEW*IC.EQ.IDELT.AND.IDELPRO_NEW.LE.IDELPRO )EXIT
+          ENDDO
+          IDELPRO=IDELPRO_NEW
+        ELSE IF(KCOUSTEP.LE.IDELPRO.AND.KCOUSTEP.GE.IDELT) THEN
+!         IDELPRO IS SET BY COUPLING
+          IDELPRO=KCOUSTEP
+          DO IC=1,IDELPRO
+            IDELT_NEW=IDELPRO/IC
+            IF(IDELT_NEW*IC.EQ.IDELPRO.AND.IDELT_NEW.LE.IDELT) EXIT
+          ENDDO
+          IDELT=IDELT_NEW
+        ELSE
+          IF(IDELPRO.LE.IDELT) THEN
+            DO IC=1,KCOUSTEP
+              IDELT_NEW=KCOUSTEP/IC
+              IF(IDELT_NEW*IC.EQ.KCOUSTEP.AND.IDELT_NEW.LE.IDELT) EXIT
+            ENDDO
+            IDELT=IDELT_NEW
+  
+            DO IC=1,IDELT
+            IDELPRO_NEW=IDELT/IC
+              IF(IDELPRO_NEW*IC.EQ.IDELT .AND.
+     &           IDELPRO_NEW.LE.IDELPRO) EXIT
+            ENDDO
+            IDELPRO=IDELPRO_NEW
+
+          ELSE
+            DO IC=1,KCOUSTEP
+            IDELPRO_NEW=KCOUSTEP/IC
+              IF(IDELPRO_NEW*IC.EQ.KCOUSTEP .AND.
+     &           IDELPRO_NEW.LE.IDELPRO) EXIT
+            ENDDO
+            IDELPRO=IDELPRO_NEW
+
+            DO IC=1,IDELPRO
+              IDELT_NEW=IDELPRO/IC
+              IF(IDELT_NEW*IC.EQ.IDELPRO.AND.IDELT_NEW.LE.IDELT) EXIT
+            ENDDO
+            IDELT=IDELT_NEW
+          ENDIF
+        ENDIF
+
+!       IF COUPLED MODEL
+!       SET TEMPORARILY IDELWO and IDELWI TO IDELPRO
+!       TO AVOID ALL THE CHECKS. SEE IN INITMDL WHERE THEY ARE RESET
         IDELWO=IDELPRO
         IDELWI=IDELPRO
       ENDIF
@@ -685,17 +794,20 @@
      &          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
      &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
      &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27).OR.
-     &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36).OR.FFLAG(37)
+     &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36).OR.FFLAG(37).OR.
+     &          FFLAG(38).OR.FFLAG(39)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
      &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
      &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27).OR.
-     &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36).OR.PFLAG(37)
+     &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36).OR.PFLAG(37).OR.
+     &          PFLAG(38).OR.PFLAG(39)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
      &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
      &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27).OR.
-     &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36).OR.GFLAG(37)
+     &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36).OR.GFLAG(37).OR.
+     &          GFLAG(38).OR.GFLAG(39) 
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
      &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
      &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
@@ -718,7 +830,8 @@
      &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24).OR.NFLAG(25).OR.
      &          NFLAG(26).OR.NFLAG(27).OR.NFLAG(28).OR.NFLAG(29).OR.
      &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
-     &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36).OR.NFLAG(37)
+     &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36).OR.NFLAG(37).OR.
+     &          NFLAG(38).OR.NFLAG(39) 
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -861,12 +974,12 @@
         CBPLTDT=CDATEA
       ENDIF
 
-      IF(CDATER .NE. '000000000000') THEN
-        IF(CDATER .LT. CDATEA) CDATER = CDATEE 
-        IF(CDATER .GT. CDATEE) CDATER = CDATEE 
+      IF(CDATER .NE. '00000000000000') THEN
+        IF(CDATER .LT. CDATEA) CDATER = CDATEE
+        IF(CDATER .GT. CDATEE) CDATER = CDATEE
       ENDIF
-      IF(CDATES .LT. CDATEA) CDATES = CDATEE 
-      IF(CDATES .GT. CDATEE) CDATES = CDATEE 
+      IF(CDATES .LT. CDATEA) CDATES = CDATEE
+      IF(CDATES .GT. CDATEE) CDATES = CDATEE
 
 !     1.3 CHECK IF IDELALT WAS SET ELSE SET IT TO IDELWO
 !         ----------------------------------------------
@@ -915,6 +1028,9 @@
      &   IDELWI,' SECS'
         WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ',
      &   IDELWO,' SECS'
+      ELSE
+        WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ',
+     & KCOUSTEP,' SECS'
       ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL OPTIONS:'
@@ -933,37 +1049,101 @@
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
       ELSE
         WRITE(IU06,*) ' THIS IS A SHALLOW WATER RUN '
+        IF(ISNONLIN.EQ.0) THEN
+          WRITE(IU06,*) ' THE OLD SNONLIN IS USED ' 
+        ELSE
+          WRITE(IU06,*) ' THE NEW SNONLIN IS USED ' 
+        ENDIF
+        IF(LBIWBK) THEN
+          WRITE(IU06,*) ' BOTTOM INDUCED WAVE BREAKING IS USED'
+        ENDIF
+      ENDIF
+      IF (IPROPAGS.EQ.1) THEN
+        WRITE(IU06,*) ' THE PROPAGATION SCHEME IS BASED ON '
+        WRITE(IU06,*) ' THE DUAL ROTATED QUADRANTS'
+!!!! PROPAGS1 has not yet been adapted for anything else then
+!!! propgation on a spherical coordinates without currents.
+        IF(ICASE.NE.1 .OR.
+     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IFREFRA.EQ.3))
+     &    ) THEN
+          WRITE(IU06,*) ' !!!! WARNING: '
+          WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
+          WRITE(IU06,*) ' !!!! IT WILL BE AS IF IPROPAGS=0 ' 
+          WRITE(IU06,*) ' '
+        ENDIF
+      ELSE IF (IPROPAGS.EQ.2) THEN
+        WRITE(IU06,*) ' THE PROPAGATION SCHEME IS BASED ON '
+        WRITE(IU06,*) ' CORNER TRANSPORT UPSTREAM SCHEME'
+!!!! PROPAGS2 has not yet been adapted for anything else then
+!!! propgation on a spherical coordinates without currents.
+        IF(ICASE.NE.1 .OR.
+     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IFREFRA.EQ.3))
+     &    ) THEN
+          WRITE(IU06,*) ' !!!! WARNING: '
+          WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
+          WRITE(IU06,*) ' '
+          CALL ABORT1
+        ENDIF
+      ELSE
+        WRITE(IU06,*) ' THE PROPAGATION SCHEME IS BASED ON '
+        WRITE(IU06,*) ' THE SINGLE QUADRANT'
+      ENDIF
+      IF (LSUBGRID) THEN
+        WRITE(IU06,*) ' WITH SUB-GRID PARAMETRISATION '
+      ELSE
+        WRITE(IU06,*) ' WITHOUT SUB-GRID PARAMETRISATION !!! '
       ENDIF
       IF (IREFRA.EQ.0) THEN
         WRITE(IU06,*) ' MODEL RUNS WITHOUT REFRACTION'
       ELSEIF (IREFRA.EQ.1) THEN
-        WRITE(IU06,*) ' MODEL RUNS WITH DEPTH REFRACTION'
+        WRITE(IU06,*) ' MODEL RUNS WITH DEPTH REFRACTION ONLY'
       ELSEIF (IREFRA.EQ.2) THEN
+        WRITE(IU06,*) ' MODEL RUNS WITH CURRENT REFRACTION ONLY'
+        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
+     &                ' HOURS.'
+        WRITE(IU06,*) ' STARTING FROM ',CDATECURA
+      ELSEIF (IREFRA.EQ.3) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
+        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
+     &                ' HOURS.'
+        WRITE(IU06,*) ' STARTING FROM ',CDATECURA
       ENDIF
-      IF (IDELWO.GE.IDELWI) THEN
-        WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME'
+
+      IF (LLSOURCE) THEN
+        IF (IDELWO.GE.IDELWI) THEN
+          WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME'
+        ELSE
+          WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME'
+        ENDIF
+        IF (LGUST) THEN
+          WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
+        ENDIF
+        IF (LADEN) THEN
+          WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
+        ENDIF
       ELSE
-        WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME'
+        WRITE(IU06,*) ' ADVECTION ONLY RUN '
+        WRITE(IU06,*) ' NO CONTRIBUTION FROM SOURCE TERMS'
       ENDIF
-      IF (LGUST) THEN
-        WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
-      ENDIF
-      IF (LADEN) THEN
-        WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
+      IF (LICERUN) THEN
+        WRITE(IU06,*) ' VARYING SEA ICE BOUNDARY WILL BE DETERMINED.'
       ENDIF
       IF(.NOT.LWCOU) THEN
         IF (IBOUNC.EQ.1) THEN
           WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (COARSE GRID)'
         ELSE
+          IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
      &     ' (COARSE GRID)'
+          ENDIF
         ENDIF
         IF (IBOUNF.EQ.1) THEN
           WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (FINE GRID)'
         ELSE
+          IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
      &     ' (FINE GRID)'
+          ENDIF
         ENDIF
         WRITE(IU06,*) ' '
         IF (IFORCA.EQ.1) THEN
@@ -977,7 +1157,7 @@
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
         IF(NASS.GT.0) THEN
           WRITE(IU06,*) ' AT DATE(S) '
-          WRITE(IU06,'(2X,A12)') (CASS(I),I=1,NASS)
+          WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
         ELSE
           IF(LWCOU) THEN
             WRITE(IU06,*) ' AT DATE ', CDATEF
@@ -992,10 +1172,28 @@
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
           WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
           LLNALTGO = .TRUE.
+
+          MINBUFRSAT=IBUFRSAT(ISAT)
+          MAXBUFRSAT=IBUFRSAT(ISAT)
+          DO ISAT=2,NUMALT
+            MINBUFRSAT=MIN(IBUFRSAT(ISAT),MINBUFRSAT)
+            MAXBUFRSAT=MAX(IBUFRSAT(ISAT),MAXBUFRSAT)
+          ENDDO
+          IF(ALLOCATED(LALTPASSIV)) DEALLOCATE(LALTPASSIV)
+          ALLOCATE(LALTPASSIV(MINBUFRSAT:MAXBUFRSAT))
+          LALTPASSIV=.FALSE.
+          DO ISAT=1,NUMALT
+            LALTPASSIV(IBUFRSAT(ISAT))=LALTPAS(ISAT)
+          ENDDO
+
           DO ISAT=1,NUMALT
              WRITE(IU06,*) '  '
              WRITE(IU06,*) ' THE ALTIMETER DATA FROM SATELLITE ',
      &                       IBUFRSAT(ISAT) 
+            IF(LALTPAS(ISAT)) THEN
+              WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! ' 
+              WRITE(IU06,*) '  '
+            ENDIF
             IF(LALTLRGR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
@@ -1051,7 +1249,7 @@
       IF (NOUTT.GT.0) THEN
         WRITE(IU06,*) ' NUMBER OF OUTPUT TIMES IS NOUTT = ', NOUTT
         WRITE(IU06,*) ' OUTPUT WILL BE PROCESSED AT:'
-        WRITE(IU06,'(6(2X,A12))') (COUTT(I),I=1,NOUTT)
+        WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
         WRITE(IU06,*) '  '
       ENDIF
       IF(FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,
@@ -1125,6 +1323,10 @@
      & '......', FFLAG(36),'.....',GFLAG(36)
       WRITE(IU06,*) '37 BATHYMETRY (an & fc step 0)', PFLAG(37),
      & '......', FFLAG(37),'.....',GFLAG(37)
+      WRITE(IU06,*) '38 MAXIMUM WAVE HEIGHT........', PFLAG(38),
+     & '......', FFLAG(38),'.....',GFLAG(38)
+      WRITE(IU06,*) '39 MAXIMUM WAVE PERIOD........', PFLAG(39),
+     & '......', FFLAG(39),'.....',GFLAG(39)
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
@@ -1203,7 +1405,7 @@
         WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ',
      &   NOUTS
         WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
-        WRITE(IU06,'(6(2X,A12))') (COUTS(I),I=1,NOUTS)
+        WRITE(IU06,'(6(2X,A14))') (COUTS(I),I=1,NOUTS)
         WRITE(IU06,*) '  '
 
       ELSEIF (IREST.EQ.1) THEN
@@ -1413,15 +1615,13 @@
 !*    2.2 SOURCE FUNCTION AND PROPAGATION TIMESTEP.
 !         -----------------------------------------
 
-      IF (IDELT.GT.IDELPRO.OR.MOD(IDELPRO,IDELT).NE.0) THEN
+      IF (MOD(IDELPRO,IDELT).NE.0 .AND. MOD(IDELT,IDELPRO).NE.0 ) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
         WRITE(IU06,*) '*    ==========================           *'
         WRITE(IU06,*) '* SOURCE FUNCTION  AND PROPAGATION        *'
-        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
-        WRITE(IU06,*) '* SOURCE FUNCTION TIMESTEP IS GREATER     *'
-        WRITE(IU06,*) '* THEN PROPAGATION TIMESTEP.              *'
+        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO     *'
         WRITE(IU06,*) '* SOURCE FUNCTION TIMESTEP IDELT = ', IDELT
         WRITE(IU06,*) '* PROPAGATION TIMESTEP   IDELPRO = ', IDELPRO
         WRITE(IU06,*) '*                                         *'
@@ -1437,8 +1637,9 @@
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
         WRITE(IU06,*) '*    ==========================           *'
-        WRITE(IU06,*) '* SOURCE FUNCTION  AND WIND OUTPUT        *'
-        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
+        WRITE(IU06,*) '* THE SOURCE FUNCTION TIME STEP IS NOT    *'
+        WRITE(IU06,*) '* AN INTEGER MULTIPLE OF THE WIND OUTPUT  *'
+        WRITE(IU06,*) '* TIME STEP !                             *'
         WRITE(IU06,*) '* SOURCE FUNCTION TIMESTEP IDELT = ', IDELT
         WRITE(IU06,*) '* WIND OUTPUT TIMESTEP    IDELWO = ', IDELWO
         WRITE(IU06,*) '*                                         *'
@@ -1481,6 +1682,45 @@
         LERROR = .TRUE.
       ENDIF
 
+      CWDFILE='wind_forcing_time_series'
+      INQUIRE(FILE=CWDFILE,EXIST=LWDINTS)
+      IF(LWDINTS) THEN
+        LEN=LEN_TRIM(CWDFILE)
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) '  FILE ',CWDFILE(1:LEN),' WAS FOUND.'
+        WRITE(IU06,*) '  WIND INPUT WILL BE SET BY IT.'
+        WRITE(IU06,*) ' '
+!       CHECK THAT THE FILE CONTAINS WINDS GIVEN EVERY IDELWI 
+!       (also see readwind)
+        IUWDFILE=I_GET_UNIT(IU06,CWDFILE, 'r', 'f', 0)
+        OPEN(IUWDFILE,FILE=CWDFILE,FORM='FORMATTED')
+        READ(IUWDFILE,100,END=110) IWTIME,WSPEED,WTHETA
+        IWTIME_old=IWTIME
+        DO WHILE (.TRUE.)
+          READ(IUWDFILE,100,END=110) IWTIME,WSPEED,WTHETA
+          IF((IWTIME-IWTIME_old).NE.IDELWI) THEN
+            WRITE(IU06,*) '****************************************'
+            WRITE(IU06,*) '*                                      *'
+            WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN        *'
+            WRITE(IU06,*) '*    ==========================        *'
+            WRITE(IU06,*) '*   THE WIND INPUT FILE DOES NOT HAVE  *'
+            WRITE(IU06,*) '*   THE SAME INPUT TIME STEP AS MODEL  *' 
+            WRITE(IU06,*) '*   IWTIME-IWTIME_old =',IWTIME-IWTIME_old
+            WRITE(IU06,*) '*   IDELWI= ',IDELWI 
+            WRITE(IU06,*) '*                                      *'
+            WRITE(IU06,*) '****************************************'
+            LERROR = .TRUE.
+            EXIT 
+          ENDIF
+          IWTIME_old=IWTIME
+        ENDDO
+100     FORMAT(i8,1x,f6.2,1x,f6.1)
+110     CLOSE(IUWDFILE)
+
+!       FORCE NO TIME INTERPOLATION
+        IDELWO=IDELWI
+      ENDIF
+
 !*    2.5 FILE DISPOSE TIMESTEP.
 !         ----------------------
 
@@ -1506,7 +1746,17 @@
       IF (NOUTT.GT.0) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
-          IF (ISHIFT.LE.0 .OR. MOD(ISHIFT,IDELPRO).NE.0) THEN
+          IF (ISHIFT.LE.0) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                         +'
+            WRITE(IU06,*) '+    WARNING INFO IN SUB. USERIN          +'
+            WRITE(IU06,*) '+    ============================         +'
+            WRITE(IU06,*) '+ OUTPUT DATE IS BEFORE THE STARTING DATE +'
+            WRITE(IU06,*) '+ DATE IS : ', COUTT(J)
+            WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME    +'
+            WRITE(IU06,*) '+                                         +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+          ELSE IF (MOD(ISHIFT,IDELPRO).NE.0) THEN
             WRITE(IU06,*) '++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                      +'
             WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN      +'

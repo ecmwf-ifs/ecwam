@@ -1,5 +1,5 @@
       SUBROUTINE READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                      RADOLD,RZIDLOLD,FILENAME)
+     &                      RADOLD,RZIDLOLD,KICEMASK,FILENAME)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -11,14 +11,15 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *READSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-!                       RADOLD,RZIDLOLD,FILENAME)
+!                       RADOLD,RZIDLOLD,KICEMASK,FILENAME)
 !     *RU10OLD*   WIND SPEED.
 !     *RTHWOLD*   WIND DIRECTION (RADIANS).
 !     *RUSOLD*    FRICTION VELOCITY.
 !     *RTAUW*     WAVE STRESS.
 !     *RZ0OLD*    ROUGHNESS LENGTH IN.
 !     *RADOLD*    AIR/WATER DENSITY RATIO.
-!     *RZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!     *RZIDLOLD*  Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!     *KICEMASK*  SEA ICE MASK.
 !     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE (ONLY IF 
 !                MESSAGE PASSING IS USED)
 
@@ -45,9 +46,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMESPAS, ONLY : LPBIOIN
-      USE YOWMPP   , ONLY : NPRECR
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWMPP   , ONLY : NPROC    ,NPRECR   ,NPRECI
+      USE YOWPARAM , ONLY : NBLO     ,NIBLO    ,LL1D
       USE YOWSTAT  , ONLY : CDTPRO
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU15
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
@@ -62,6 +64,9 @@
 
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,
      &                              RADOLD,RZIDLOLD
+      REAL, ALLOCATABLE :: RDUM(:,:)
+      INTEGER,DIMENSION(NIBLO,NBLO) :: KICEMASK 
+      INTEGER, ALLOCATABLE :: IDUM(:,:)
 ! ----------------------------------------------------------------------
 
       IF (ITEST.GE.2) THEN
@@ -89,7 +94,7 @@
         ENDIF
 
 
-        KOUNT = 12 
+        KOUNT = 14 
         CALL PBREAD(IUNIT,CDTPRO,KOUNT,KRET)
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 
@@ -103,52 +108,90 @@
         IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
 
         KOUNT = NIBLO*NBLO*NPRECR
-        CALL PBREAD(IUNIT,RU10OLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+        IOUNT = NIBLO*NBLO*NPRECI
+        IF(LL1D .OR. NPROC.EQ.1 ) THEN
+          CALL PBREAD(IUNIT,RU10OLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RTHWOLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RUSOLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RTAUW,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RZ0OLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RADOLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,RZIDLOLD,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          CALL PBREAD(IUNIT,KICEMASK,IOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.IOUNT) GOTO 1098
+        ELSE
+          ALLOCATE(RDUM(NIBLO,NBLO))
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RU10OLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RTHWOLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RUSOLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RTAUW(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RZ0OLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RADOLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
+          CALL PBREAD(IUNIT,RDUM,KOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               RZIDLOLD(IJ2NEWIJ(IJ),IG)=RDUM(IJ,IG)
+            ENDDO
+          ENDDO
 
-        CALL PBREAD(IUNIT,RTHWOLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          DEALLOCATE(RDUM)
 
-        CALL PBREAD(IUNIT,RUSOLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
+          ALLOCATE(IDUM(NIBLO,NBLO))
+          CALL PBREAD(IUNIT,IDUM,IOUNT,KRET)
+          IF(KRET.LT.0.OR.KRET.NE.IOUNT) GOTO 1098
+          DO IG=1,NBLO
+            DO IJ=1,NIBLO
+               KICEMASK(IJ2NEWIJ(IJ),IG)=IDUM(IJ,IG)
+            ENDDO
+          ENDDO
 
-        CALL PBREAD(IUNIT,RTAUW,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
-
-        CALL PBREAD(IUNIT,RZ0OLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
-
-        CALL PBREAD(IUNIT,RADOLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
-
-        CALL PBREAD(IUNIT,RZIDLOLD,KOUNT,KRET)
-        IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
-
-1099    CONTINUE
-        IF(KRET.LT.0) THEN
-          WRITE (IU06,*) '*****************************************'
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
-          WRITE (IU06,*) '*    IN READSTRESS                      *'
-          WRITE (IU06,*) '*    FILE ',FILENAME
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*    KRET = ', KRET
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*****************************************'
-          CALL ABORT1
-        ELSEIF(KRET.NE.KOUNT) THEN
-          WRITE (IU06,*) '*****************************************'
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
-          WRITE (IU06,*) '*    IN READSTRESS                      *'
-          WRITE (IU06,*) '*    FILE ',FILENAME
-          WRITE (IU06,*) '*    NUMBER OF BYTES READ : ',KRET
-          WRITE (IU06,*) '*    IS NOT EQUAL TO THE NUMBER OF BYTES*'
-          WRITE (IU06,*) '*    REQUESTED : ',KOUNT
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*****************************************'
-          CALL ABORT1
+          DEALLOCATE(IDUM)
         ENDIF
+
 
         CALL PBCLOSE(IUNIT,KRET)
         IF(KRET.LT.0) THEN
@@ -165,13 +208,27 @@
       ELSE
 
         READ(IU15) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
-        READ(IU15) RU10OLD
-        READ(IU15) RTHWOLD
-        READ(IU15) RUSOLD
-        READ(IU15) RTAUW
-        READ(IU15) RZ0OLD
-        READ(IU15) RADOLD
-        READ(IU15) RZIDLOLD 
+        IF(LL1D .OR. NPROC.EQ.1 ) THEN
+          READ(IU15) RU10OLD
+          READ(IU15) RTHWOLD
+          READ(IU15) RUSOLD
+          READ(IU15) RTAUW
+          READ(IU15) RZ0OLD
+          READ(IU15) RADOLD
+          READ(IU15) RZIDLOLD 
+          READ(IU15) KICEMASK
+        ELSE
+!       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE
+!       RE-LABELLED BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
+          READ(IU15) ((RU10OLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RTHWOLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RUSOLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RTAUW(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RZ0OLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RADOLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((RZIDLOLD(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+          READ(IU15) ((KICEMASK(IJ2NEWIJ(IJ),IG),IJ=1,NIBLO),IG=1,NBLO)
+        ENDIF
 
         CLOSE(IU15)
 
@@ -183,4 +240,60 @@
       ENDIF
 
       RETURN
+
+1098  CONTINUE
+      IF(KRET.LT.0) THEN
+        WRITE (IU06,*) '*****************************************'
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
+        WRITE (IU06,*) '*    IN READSTRESS                      *'
+        WRITE (IU06,*) '*    FILE ',FILENAME
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    KRET = ', KRET
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*****************************************'
+        CALL ABORT1
+      ELSEIF(KRET.NE.KOUNT) THEN
+        WRITE (IU06,*) '*****************************************'
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
+        WRITE (IU06,*) '*    IN READSTRESS                      *'
+        WRITE (IU06,*) '*    FILE ',FILENAME
+        WRITE (IU06,*) '*    NUMBER OF BYTES READ : ',KRET
+        WRITE (IU06,*) '*    IS NOT EQUAL TO THE NUMBER OF BYTES*'
+        WRITE (IU06,*) '*    REQUESTED : ',KOUNT
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*****************************************'
+        CALL ABORT1
+      ENDIF
+      RETURN
+
+1099  CONTINUE
+      IF(KRET.LT.0) THEN
+        WRITE (IU06,*) '*****************************************'
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
+        WRITE (IU06,*) '*    IN READSTRESS                      *'
+        WRITE (IU06,*) '*    FILE ',FILENAME
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    KRET = ', KRET
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*****************************************'
+        CALL ABORT1
+      ELSEIF(KRET.NE.KOUNT) THEN
+        WRITE (IU06,*) '*****************************************'
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
+        WRITE (IU06,*) '*    IN READSTRESS                      *'
+        WRITE (IU06,*) '*    FILE ',FILENAME
+        WRITE (IU06,*) '*    NUMBER OF BYTES READ : ',KRET
+        WRITE (IU06,*) '*    IS NOT EQUAL TO THE NUMBER OF BYTES*'
+        WRITE (IU06,*) '*    REQUESTED : ',KOUNT
+        WRITE (IU06,*) '*                                       *'
+        WRITE (IU06,*) '*****************************************'
+        CALL ABORT1
+      ENDIF
+
+      RETURN
+
       END SUBROUTINE READSTRESS

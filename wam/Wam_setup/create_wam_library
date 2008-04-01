@@ -1,0 +1,526 @@
+#!/bin/ksh
+# @ shell = /usr/bin/ksh
+# @ job_type = serial 
+# @ class = ns 
+# @ core_limit = 4096
+# @ notification = always 
+# @ restart = no
+
+# @ job_name = libwam_wam
+# @ output = /home/rd/wab/libwam.$(jobid).out
+# @ error  = /home/rd/wab/libwam.$(jobid).err
+
+# @ notify_user = wab@ecmwf.int 
+# @ account_no = ecrmwa
+
+#@ resources = ConsumableCpus(1) ConsumableMemory(100mb) 
+
+# @ queue 
+
+#.===========================================================================
+#. THIS SCRIPT IS USED TO CREATE THE WAVE MODEL LIBRARY (libwam.a)
+#. AND THE EXCECUTABLES PROVIDED YOU HAVE THE NECESSARY LIBRARIES.
+#. The source code can be found in the tar file provided with this script
+#. and is called wam_code.tar, it needs 
+#. TO BE COPIED TO the directory specified by SOURCE= (see below).
+#. In the current configuration you will need
+#. the EMOSLIB library from ECMWF.
+#. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#.
+#. This is a parallel version of WAM, hence you will need to have access to the
+#. message passing library MPI for your computer (it might already be included
+# in your fortran compiler). Note that in order to
+# properly setup the MPI environement you need to specify the location of
+# your version of mpif.h file such that it can be included in the necessary files.
+# See MPIF_PATH=
+#.
+#. This version of WAM was extracted from the ECMWF software data base
+#. from perforce branch wab_CY31R2_extract_WAM
+#. Note that we have tried to remove much of the extra features that were
+#. introduced when both WAM and the atmospheric models were coupled.
+#. Some features do however remain. As much as possible, we have replaced
+#. those with dummy defintions (to insure compilation) and set the values
+#. of the controlling flags such that they should not be accessed
+#.
+#.===========================================================================
+#.
+#. This job ran on the ECMWF IBM HPC supercomputer. See the config.* and options.*
+#. files below for the compiler options (those are the flags used at ECMWF
+#. Note that the WAM code is still in fortran fixed format, however the
+#. message passing code (MPL routines) comes from the ifsaux library,
+#. which is in free format and a few c-routines.  
+#.
+#. General information on the wave model at ECMWF can obtained at
+#. http://www.ecmwf.int/research/ifsdocs/
+#. Then pick the latest cycle
+#.
+set +ve
+#.
+# location of the source code (where wam_code.tar should be copied)
+# ###########################
+SOURCE=/home/rd/${USER}
+
+# Necessary directories
+# #####################
+#. Top directory
+TMPROOT=${TEMP}/wam
+
+#. Location of the compiled WAM library
+LIBS=${TMPROOT}/lib
+
+#. Location of the excecutables
+BINS=${TMPROOT}/bin
+
+#. location of the mpif.h file (please adapt !)
+#.#############################################
+MPIF_PATH=/home/rd/rdx/module/xlf90/31r2/ifsaux
+
+#. Start compilation
+
+[[ ! -d $TMPROOT  ]] && mkdir $TMPROOT
+[[ ! -d $LIBS  ]] && mkdir $LIBS
+[[ ! -d $BINS  ]] && mkdir $BINS
+
+cd $LIBS
+
+[[ ! -d build  ]] && mkdir build
+
+\rm -rf module
+mkdir module
+
+\rm -rf include 
+mkdir include 
+
+# temporary work directory
+WORKDIR=${LIBS}/tmp$$
+mkdir $WORKDIR 
+cd $WORKDIR 
+
+# Get source codes
+# ################
+cp $SOURCE/wam_code.tar .
+tar xvf wam_code.tar
+rm wam_code.tar
+
+
+if [[ ! -r ${MPIF_PATH}/mpif.h ]] ; then
+  echo 'You will need to specify the location of the mpif.h file'
+  exit
+else
+  cp ${MPIF_PATH}/mpif.h ../include/.
+fi
+
+# Files to be included
+for file in $(ls *.h)
+do
+  cp $file ../include/.
+done
+
+
+#####################################################################
+# configuration and options files for IBM hpc's
+# as used by ALL ECMWF projects.
+# So they are quite extensive (WAM might actually need a lot less !)
+# !!!!!!!!!!! PLEASE ADAPT ACCORDINGLY !!!!!!!!!!
+# (i.e. use as few as possible options)
+# These options are mostly used to make the code extremely efficient
+# on the IBM hpc's, therefore they are very specific.
+# Note that it is currently compiled in 64bit precision
+# (32 bit can also be used but make sure everything is compiled that
+#  way).
+#####################################################################
+
+cat >../build/config.free <<EOFPRO
+FC        = xlf_omp
+FFLAGS    = -c -q64=largetype -qextname -I../module -I../include  -qarch=pwr5 -g  \
+-O3 -qstrict -qmoddir=../module -qfree=F90 -qsuffix=cpp=F90 -NS32648
+CC        = xlc_r
+CCFLAGS = -O2 -qarch=pwr5 -g -q64 -qmaxmem=-1 -DINTEGER_IS_INT
+EOFPRO
+
+cat >../build/config.fixed <<EOFPRO
+FC        = xlf_omp
+FFLAGS    = -c -q64=largetype -qextname -I../module -I../include -qarch=pwr5 -g  \
+-O3 -qstrict -qmoddir=../module -qfixed -qsuffix=cpp=F -qautodbl=dbl4 -qdpc=e -NS32648
+CC        = xlc_r
+CCFLAGS = -O2 -qarch=pwr5 -g -q64 -qmaxmem=-1
+EOFPRO
+
+# C preprocessor options
+cat >../build/options <<EOFPRO
+CP_OPT = -WF,-DRS6K
+EOFPRO
+
+# THIS IS A QUICK LIST OF THE MAN PAGES FOR THOSE COMPILER OPTIONS
+# ################################################################
+# (this is only given as a reference).
+#
+#         -q64[=<suboption>]
+#                Indicates the 64-bit compilation bit mode and,
+#                together with the -qarch option, determines the
+#                target machines on which the 64-bit executable will
+#                run. The -q64 option indicates that the object
+#                module will be created in 64-bit object format and
+#                that the 64-bit instruction set will be generated.
+#                Note that you may compile in a 32-bit environment
+#                to create 64-bit objects, but you must link them in
+#                a 64-bit environment with the -q64 option.
+#
+#                largetype
+#                     The object file will use the new 64-bit Large
+#                     Data Type (LDT) ABI.  This object file may
+#                     only be used on versions of AIX greater than
+#                     or equal to 5.0.
+#                nolargetype
+#                     The object file will use the old 64-bit non-
+#                     LDT ABI.  This object file may only be used on
+#                     versions of AIX less than 5.0.
+#
+#        -qextname[=<name1>[:...<namen>]] | -qnoextname
+#                Adds a trailing underscore to the names of the
+#                specified global entities (external names).  If no
+#                names are specified, -qextname adds an underscore
+#                to the names of all global entities except for main
+#                program names.  The default is -qnoextname.
+#
+#         -I<dir>
+#                Adds a directory to the search path for include
+#                files and .mod files.  Searches in directory <dir>
+#                for #include files that do not start with an
+#                absolute path, and for the .mod files of any
+#                modules used.  Default: The following directories
+#                are searched, in the following order:
+#                1) The current directory
+#                2) The directory where the source file is located
+#                3) /usr/include.
+#
+#
+#         -qarch=<suboption>
+#                Specifies which instructions the compiler can
+#                generate.  Suboptions include:
+#
+#                auto
+#                     Automatically detects the specific
+#                     architecture of the compiling machine.  It
+#                     assumes that the execution environment will be
+#                     the same as the compilation environment.
+#                pwr5
+#                     Produces an object that contains instructions
+#                     that run on the POWER5 hardware platforms.
+#
+#
+#         -g     Generates debug information for use by a symbolic
+#                debugger.
+#
+#         -O2    Optimizes code
+#
+#         -O3    Performs the -O level optimizations and performs
+#                additional optimizations that are memory or
+#                compile-time intensive.
+#
+#         -qstrict | -qnostrict
+#                Ensures that optimizations done by the -O3, -O4,
+#                -O5, -qhot, and -qipa options, and optionally with
+#                the -O2 option, do not alter the semantics of a
+#                program.  For -O3, -O4, -O5, -qhot, and -qipa, the
+#                default is -qnostrict. For -O2, the default is
+#                -qstrict. This option is ignored for -qnoopt.
+#
+#         -qmoddir=<directory>
+#                Specifies the location for any .mod files that the
+#                compiler writes. By default .mod files are placed
+#                in the current directory.
+#
+#         -qfree[=f90|ibm]
+#                States that Fortran code is in either Fortran 90
+#                free source form (-qfree or -qfree=f90) or IBM free
+#                source form (-qfree=ibm).
+#
+#                For the xlf, xlf_r, xlf_r7, f77, and fort77
+#                commands, the default is -qfixed=72.  For the
+#                xlf90, xlf90_r, f90, xlf95, xlf95_r, xlf90_r7,
+#                xlf95_r7 and f95 commands, the default is
+#                -qfree=f90.
+#
+#         -qfixed[=<num>]
+#                States that Fortran code is in free source form,
+#                and optionally specifies the maximum line length.
+#
+#                For the xlf, xlf_r, xlf_r7, f77, and fort77
+#                commands, the default is -qfixed=72.  For the
+#                xlf90, xlf90_r, f90, xlf95, xlf95_r and f95
+#                commands, the default is -qfixed=f90.
+#
+#
+#         -qsuffix=<option>=<suffix>
+#                Specifies the source-file suffix on the command
+#                line instead of in the .cfg file.  Options include:
+#
+#                f=<suffix>
+#                     Where <suffix> is the new source-file suffix.
+#                o=<suffix>
+#                     Where <suffix> is the new object-file suffix.
+#                s=<suffix>
+#                     Where <suffix> is the new assembler source-
+#                     file suffix.
+#                cpp=<suffix>
+#                     Where <suffix> is the new preprocessor
+#                     source-file suffix.
+#
+#         -qsource | -qnosource
+#                Determines whether to produce the source section of
+#                the listing.  The default is -qnosource.
+#
+#
+#         -NS<bytes>
+#                Specifies the size of internal program storage
+#                areas, in bytes.  The default is -NS512.
+#
+#         -qautodbl=<setting>
+#               Converts single-precision floating-point
+#                calculations to double-precision or converts
+#                double-precision calculations to extended-
+#                precision.  Settings include:
+#
+#                none
+#                     Does not promote or pad any objects that share
+#                     storage.
+#                dbl4
+#                     Promotes floating-point objects that are
+#                     single precision or are composed of such
+#                     objects.
+#
+#         -qdpc[=e] | -qnodpc
+#                Increases the precision of real constants, for
+#                maximum accuracy when assigning real constants to
+#                DOUBLE PRECISION variables. -qdpc=e also promotes
+#                constants with an e exponent.  The default is
+#                -qnodpc.
+#
+#
+#         -qmaxmem=<kbytes>
+#                Limits the amount of memory that the compiler
+#                allocates while performing specific, memory-
+#                intensive optimizations to the specified number of
+#                kilobytes. A value of -1 allows optimization to
+#                take as much memory as it needs without checking
+#                for limits.
+#
+#         -b64   The option is only available on AIX 4.3 and above.
+#                In 64-bit mode, the -b64 linker option is used to
+#                instruct the ld command to bind with 64-bit
+#                objects.
+#
+#         -bmaxstack:<bytes>
+#                Specifies the maximum amount of space to reserve
+#                for the program stack segment for programs where
+#                the size of these regions is a constraint.
+#
+#
+#         -qsmp[=<suboption1>[:...:<suboptionN>]] | -qnosmp
+#                Specifies that code should be produced for an SMP
+#                system.  Suboptions include:
+#
+#                auto | noauto
+#                     This suboption controls automatic
+#                     parallelization. The default is auto.
+#                nested_par | nonested_par
+#                     If nested_par is specified, prescriptive
+#                     nested parallel constructs are parallelized by
+#                     the compiler. The default is nonested_par.
+#                omp | noomp
+#                     If you specify -qsmp=omp, the compiler
+#                     enforces compliance with the OpenMP Fortran
+#                     API. The default is noomp.
+#
+#         -W<component>,<option1>[,<option2>[,
+#         Sends <option> to component <component>, where <component>
+#         can be one of the following:
+#
+#         Component                <x>           Program Name
+#         C preprocessor            F               cpp
+#
+
+
+
+
+#######################
+#. compile MPL modules
+#######################
+
+# The makefile for the mpl modules (my own version)
+####################################################
+cat >makefile_mpl <<\EOFPRO
+include ../build/config.free
+include ../build/options
+SOURCE	= parkind1.F90 \
+parkind2.F90 \
+mpl_mpif.F90 \
+yomhook.F90 \
+yomoml.F90 \
+mpl_data_module.F90 \
+yomabrt.F90 \
+sdl_module.F90 \
+mpl_abort_mod.F90 \
+mpl_message_mod.F90 \
+mpl_myrank_mod.F90 \
+mpl_send_mod.F90 \
+mpl_recv_mod.F90 \
+mpl_barrier_mod.F90 \
+mpl_broadcast_mod.F90 \
+mpl_ioinit_mod.F90 \
+mpl_tour_table_mod.F90 \
+mpl_locomm_create_mod.F90 \
+mpl_wait_mod.F90 \
+mpl_probe_mod.F90 \
+mpl_allgather_mod.F90 \
+mpl_allgatherv_mod.F90 \
+mpl_allreduce_mod.F90 \
+mpl_alltoallv_mod.F90 \
+mpl_arg_mod.F90 \
+mpl_buffer_method_mod.F90 \
+mpl_close_mod.F90 \
+mpl_comm_create_mod.F90 \
+mpl_end_mod.F90 \
+mpl_gatherv_mod.F90 \
+mpl_groups.F90 \
+mpl_init_mod.F90 \
+mpl_mygatherv_mod.F90 \
+mpl_nproc_mod.F90 \
+mpl_open_mod.F90 \
+mpl_read_mod.F90 \
+mpl_scatterv_mod.F90 \
+mpl_setdflt_comm_mod.F90 \
+mpl_write_mod.F90 \
+mpl_module.F90 \
+yomgstats.F90 \
+fdbsubs.F90 \
+cmpl_binding.F90 \
+convin.F90 \
+convout.F90 \
+endian.c \
+env.c \
+cargs.c
+OBJECTS1	=	$(SOURCE:.F=.o)
+OBJECTS2	=	$(SOURCE:.F90=.o)
+OBJECTS3	=	$(SOURCE:.c=.o)
+OBJECTS = $(OBJECTS1) $(OBJECTS2) $(OBJECTS3)
+.SUFFIXES:
+.SUFFIXES:	.o .F .F90 .c
+.F.o :
+	$(FC) -c $(FFLAGS) $(CP_OPT) $*.F
+.F90.o :
+	$(FC) -c $(FFLAGS) $(CP_OPT) $*.F90
+.c.o :
+	$(CC) -c $(CCFLAGS) $*.c
+all:	$(OBJECTS)
+	touch module.a
+clean:
+	 \rm -f $(OBJECTS)
+#
+EOFPRO
+
+
+gmake -f makefile_mpl
+
+#.
+# The makefile for the wam code 
+################################
+cat >makefile_wam <<\EOFPRO
+include ../build/config.fixed
+include ../build/options
+OBJECTS	=	$(SOURCE:.F=.o)
+.SUFFIXES:
+.SUFFIXES:	.o .F .f
+.F.o :
+	$(FC) -c $(FFLAGS) $(CP_OPT) $*.F
+all:	$(OBJECTS)
+	touch module.a
+clean:
+	 \rm -f $(OBJECTS)
+#
+EOFPRO
+
+
+#######################
+# compile wam modules
+#######################
+for file in $(ls -1 yow*.F)
+do
+  echo 'compiling '$file
+  \rm -f ${file%.F}.o
+  gmake -f makefile_wam ${file%.F}.o
+  if [[ ! -r ${file%.F}.o ]] ; then
+    echo 'Compilation has failed !!!!'
+    exit
+  fi
+done
+
+
+#######################
+# compile wam routines
+#######################
+for file in $(ls -1 *.F)
+do
+  echo 'compiling '$file
+  gmake -f makefile_wam ${file%.F}.o
+  if [[ ! -r ${file%.F}.o ]] ; then
+    echo 'Compilation has failed !!!!'
+    exit
+  fi
+done
+
+#################
+#. build library
+#################
+#.
+\rm -f ${LIBS}/libwam.a
+if [[ $(ls -1 *.o | wc -l ) -gt 0 ]] ; then
+  ar rv ${LIBS}/libwam.a *.o 
+fi
+
+chmod go+rx ${LIBS}/libwam.a
+
+
+######################
+# create excecutables
+######################
+
+### necessary libraries ###
+###########################
+
+# EMOSLIB: needed for grib coding/decoding and manipulation of binary data. WAM can in
+#          principle be run without grib access using pure fortran binary files. If it is
+#          the case just create extra dummy routines for the definition of the emoslib
+#          routines and refer to the run example to switch the appropriate flags to have
+#          pure binary input/output.
+#          As an example we are using the 64-bit version of emoslib. WAM can also be run with
+#          32-bit BUT make sure you compile both wam and the emoslib witht the same precission !!!
+
+\rm -f ${LIBS}/libemos.a 
+#          We are using cycle 300 of emoslib but in principle it should
+#          also run with any recent cycle.
+ln -s /home/ma/emos/lib/000300/libemos.R64.D64.I32.a ${LIBS}/libemos.a
+
+# IMPORTANT NOTE: you will also need the message passing library (mpi). In the ECMWF setup
+#                 the mpi library is automatically loaded by using the mpxlf90_r command.
+#                 If you are running outside ECMWF you will need to get your own version.
+#                 Note also that you might have to modify the content of mpl_mpif.F90 
+#                 which contains information on how the compile mpi.
+
+cd ${BINS}
+
+for file in chief preproc preset create_wam_bathymetry
+do
+  echo 'create executable for '$file
+  ar xv ${LIBS}/libwam.a ${file}.o
+  mpxlf90_r -o ${file} -b64 -bbigtoc -bmaxstack:0x8000000000 -qsmp=omp ${file}.o \
+  -L${LIBS} -lwam -lemos
+  \rm ${file}.o
+done
+
+echo ' '
+echo ' **** ALL DONE **** '
+
+cd ..
+\rm -rf $WORKDIR 

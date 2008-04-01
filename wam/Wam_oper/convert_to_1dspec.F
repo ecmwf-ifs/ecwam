@@ -8,7 +8,7 @@
 !     PURPOSE.
 !     --------
 !     CONVERTS GRIB WAVE SPECTRA FROM PARAMETER DEFINITION 251
-!     TO 1-D SPECTRA (252 : this is my own definition for now).
+!     TO 1-D SPECTRA (218 : this is my own definition for now).
 !     NOTE: IT CAN ALSO DO 250 IF IT'S PROVIDED AS ARCHIVED.
 !     FOR EACH INDIVIDUAL FREQUENCY BIN OR INTEGRATED BETWEEN TWO
 !     FREQUENCIES. IF THE  1-D SPECTRA IS INTEGRATED BETWEEN TWO
@@ -62,8 +62,8 @@
 !     If the input file contains parameter 251, it must have been obtained
 !     for all directions and frequencies in the default order. Namelly, the
 !     mars request should be done with DIRECTION=1/TO/nang, and
-!     FREQUENCY=1/TO/nfre. At this time nfre=25,30 or 36 and nang=12 or 24
-!     for global model data and 24 for mediterranean data.
+!     FREQUENCY=1/TO/nfre. At this time nfre=25,30 or 36
+!     and nang=12 or 24 for global model data and 24 for mediterranean data.
 
 !     RUNNING RUN :
 !     ------------
@@ -81,9 +81,9 @@
 
       INTEGER I4
       INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(255),KSEC2(2060),
+      INTEGER :: KSEC0(2),KSEC1(2048),KSEC2(2060),
      &           KSEC3(2),KSEC4(128)
-      INTEGER :: ISEC0(2),ISEC1(255),ISEC2(2060),
+      INTEGER :: ISEC0(2),ISEC1(2048),ISEC2(2060),
      &           ISEC3(2),ISEC4(128)
       INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
       REAL :: ONE,ZTHETA,ZFRE
@@ -98,6 +98,7 @@
       CHARACTER*40 ERRMSG(-4:6), MSG
       CHARACTER*128 CLARG, FNAMEIN, FNAMEOUT
       LOGICAL LLEXIST, LINTEGRATE, LWAVEHGT, LLASTFRE
+      LOGICAL LLOUTOPENED
 
       DATA CLOPTS/'i;o;f:l;s;h;t;'/
       DATA ERRMSG/
@@ -128,6 +129,7 @@
       LWAVEHGT=.FALSE.
       LLASTFRE=.FALSE.
       ITEST=0
+      LLOUTOPENED=.FALSE.
 
       CMDLINE: DO
         IOPTVAL=GETCLO(CLOPTS,CLARG)
@@ -211,6 +213,9 @@
         CALL ABORT
       ENDIF
 
+!     cycle on all input
+      DO WHILE (.TRUE.)
+
 !     GET SIZE OF INGRIB
 
       CALL PBSIZE (IUGRS, IPLENG)
@@ -223,11 +228,14 @@
       CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
       IF     (KRET.EQ.-1) THEN
         WRITE (*,*) ' REACHED EOF IN ',FNAMEIN 
+        GOTO 1111
       ELSEIF (KRET .EQ. -2) THEN
         WRITE (*,*) ' ERROR IN FILE HANDLING IN ',FNAMEIN 
+        GOTO 1111
       ELSEIF (KRET .EQ. -3) THEN
         WRITE (*,*) ' INGRIB IS NOT BIG ENOUGH. CURRENT SIZE: ',IPLENG
         WRITE (*,*) ' REQUIRED SIZE SHOULD BE: ',ILENG
+        GOTO 1111
       ENDIF
 
 !*    GET GRIB HEADERS 
@@ -298,6 +306,7 @@
       IF(.NOT.LLASTFRE) IFRE_LAST=NFRE
 
       ALLOCATE(KDOMRGG(NGYMAX))
+      KDOMRGG=0
       NFRANG=NANG*NFRE
       IF(IRGG.EQ.0) THEN
         NGX = KSEC2(2)
@@ -555,33 +564,28 @@
 
       ENDIF
 
-      CALL PBCLOSE(IUGRS,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (*,*) '************************************'
-        WRITE (*,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (*,*) '* FILE ',FNAMEIN
-        WRITE (*,*) '************************************'
-        CALL ABORT
-      ENDIF
 
 !     DETERMINE THE 1-D SPECTRA 
 !     *************************
 
       LFILE=0
+      IF(.NOT.LLOUTOPENED) THEN
       IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
-      CALL PBOPEN(IUOUT,FNAMEOUT(1:LFILE),'w',KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (*,*) '****************************************'
-        WRITE (*,*) '*                                      *'
-        WRITE (*,*) '*   ERROR FOLLOWING CALL TO PBOPEN     *'
-        IF(KRET.EQ.-1)
-     &    WRITE (*,*) 'COULD NOT OPEN FILE ',FNAMEOUT
-        IF(KRET.EQ.-2)
-     &    WRITE (*,*) 'INVALID FILENAME ',FNAMEOUT
-        IF(KRET.EQ.-3) WRITE (*,*) 'INVALID OPEN MODE SPECIFIED'
-        WRITE (*,*) '*                                      *'
-        WRITE (*,*) '****************************************'
-        CALL ABORT
+        CALL PBOPEN(IUOUT,FNAMEOUT(1:LFILE),'w',KRET)
+        LLOUTOPENED=.TRUE.
+        IF(KRET.LT.0) THEN
+          WRITE (*,*) '****************************************'
+          WRITE (*,*) '*                                      *'
+          WRITE (*,*) '*   ERROR FOLLOWING CALL TO PBOPEN     *'
+          IF(KRET.EQ.-1)
+     &      WRITE (*,*) 'COULD NOT OPEN FILE ',FNAMEOUT
+          IF(KRET.EQ.-2)
+     &      WRITE (*,*) 'INVALID FILENAME ',FNAMEOUT
+          IF(KRET.EQ.-3) WRITE (*,*) 'INVALID OPEN MODE SPECIFIED'
+          WRITE (*,*) '*                                      *'
+          WRITE (*,*) '****************************************'
+          CALL ABORT
+        ENDIF
       ENDIF
 
 !     COMPUTE FREQUENCY SPACING IF NEEDED
@@ -611,7 +615,7 @@
         ZSEC2 = PSEC2
         ZSEC3 = PSEC3
 
-        ISEC1( 6) = 252
+        ISEC1( 6) = 218
 
         ISEC1(37) = 13
 
@@ -869,7 +873,7 @@
         ZSEC2 = PSEC2
         ZSEC3 = PSEC3
 
-        ISEC1( 6) =  252
+        ISEC1( 6) =  218
 
         ISEC1(46) = 0 
 
@@ -1029,6 +1033,21 @@
 
       ENDIF
 
+
+      ENDDO
+!     end cycling on input
+1111  CONTINUE
+
+
+      CALL PBCLOSE(IUGRS,KRET)
+      IF(KRET.LT.0) THEN
+        WRITE (*,*) '************************************'
+        WRITE (*,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
+        WRITE (*,*) '* FILE ',FNAMEIN
+        WRITE (*,*) '************************************'
+        CALL ABORT
+      ENDIF
+
       CALL PBCLOSE(IUOUT,KRET)
       IF(KRET.LT.0) THEN 
         WRITE (*,*) '************************************'
@@ -1044,13 +1063,13 @@
 !     CHARACTER*   1 yolastarg
 !     CHARACTER* (*) yaoptions, yaargument
 !     CHARACTER* 120 arg
-!
+ 
 !     INTEGER here, imorearg, ivarg
 !     DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
 !     DATA yolastarg / " " /
 !     arg=' '
 !     CALL getarg(here,arg)
-!
+ 
 !     iol=rtb(arg)
 !     IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
 !       iol = rtb(yaoptions)

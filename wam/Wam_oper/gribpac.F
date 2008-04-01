@@ -1,4 +1,5 @@
-      SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
+      SUBROUTINE GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,
+     &                    IY,IM,ID,IH,IMN,
      &                    IFCST,KLEV,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
      &                    HOPERI, CDFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
 
@@ -27,7 +28,8 @@
 
 !**    INTERFACE.
 !      ----------
-!        *CALL* *GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,IY,IM,ID,IH,
+!        *CALL* *GRIBPAC (IU06,IU,NTGRIB,FIELD,I1,I2,IPARAM,
+!                         IY,IM,ID,IH,IMN,
 !                         IFCST,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,
 !                         NENSFNB,NTOTENS,KFDB,LFDBOPEN)
 !          *IU06*    PRINTER OUTPUT UNIT.
@@ -41,6 +43,7 @@
 !          *IM*      MONTH OF LAST ANALYSIS.
 !          *ID*      DAY OF LAST ANALYSIS.
 !          *IH*      HOUR OF LAST ANALYSIS.
+!          *IMN*     MINUTE OF LAST ANALYSIS.
 !          *IFCST*   FORECAST TIME FROM BASE DATE-TIME-GROUP.
 !                    SPECIFIED IN HOURS.
 !          *KLEV*   - REFERENCE LEVEL IN full METER
@@ -167,6 +170,7 @@
         KSEC1(11) = IM
         KSEC1(12) = ID
         KSEC1(13) = IH
+        KSEC1(14) = IMN
         IF(IFCST >= (2**16-1)) THEN
 !       the number of hours is too large, use coding in days or
 !       multiple of hours instead

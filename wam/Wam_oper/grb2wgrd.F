@@ -21,6 +21,8 @@
 !                  INTERPOLATION IF NECESSARY.
 
 !      J. BIDLOT  ECMWF  FEBRUARY 2000. 
+!      J. BIDLOT  ECMWF  NOVEMBER 2002  : ADD INTERPOLATION OF OCEAN
+!                                         MODEL DATA.
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -84,6 +86,8 @@
 !                   SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
 !                   MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
 !                   CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
+!                   OR FOR THE OCEAN DATA WHERE IT WILL BE THE 
+!                   REFERENCE DEPTH. 
 !        *KKK*    - ONLY USED FOR WAVE SPECTRAL FIELD: DIRECTION NUMBER.
 !        *MMM*    - ONLY USED FOR WAVE SPECTRAL FIELD: FREQUENCY NUMBER.
 !        *FIELD*  - UNPACKED DATA ON WAVE MODEL GRID.
@@ -114,12 +118,13 @@
       REAL FIELD(NGX,NGY)                                          
       REAL ZDELLO(NGY)
       REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), WORK(:,:)
+      REAL, ALLOCATABLE :: YLAT(:)
 
       CHARACTER*2 :: CDUM 
       CHARACTER CSTREAM*4
-      CHARACTER CDATE*12
+      CHARACTER CDATE*14
 
-      LOGICAL LLINTERPOL, LLNEAREST, LLNONWAVE, LASTREAM
+      LOGICAL LLINTERPOL, LLNEAREST, LLNONWAVE, LLOCEAN, LASTREAM
 
       DATA KPARFRSTT,KPARFRSTB /0,0/
                                                                         
@@ -176,6 +181,81 @@
         GOTO 1000
       ENDIF
 
+!     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
+      IF(KSEC1(37).EQ.4) THEN
+
+        WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',KSEC1(6)
+        IF(ITEST.GT.0) CALL FLUSH(IU06)
+
+        LLOCEAN=.TRUE.
+
+        IF(KSEC1(69).NE.1 .AND. KSEC1(69).NE.0) THEN 
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRB2WGRD       *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
+          WRITE(IU06,*) '*  IS NORMAL OR STAGGERED             *' 
+          WRITE(IU06,*) '*  THIS IS NOT THE CASE !!!           *'
+          WRITE(IU06,*) '*  KSEC1(69) SHOULD BE 1 or 2         * '
+          WRITE(IU06,*) '*  BUT IT IS ',KSEC1(69)
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
+
+        KSKIP=74+KSEC1(71)+KSEC1(72)+KSEC1(69)
+        NKSEK1M=KSKIP+KSEC1(74)
+
+        IF(NKSEK1.LT.NKSEK1M) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRB2WGRD       *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  THE REQUIRED DIMENSION FOR KSEC1 ',NKSEK1M
+          WRITE(IU06,*) '*  IS LARGER THAN THE PRESCRIBED ONE ',NKSEK1
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
+        IF(KSEC1(68).NE.2) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRB2WGRD       *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
+          WRITE(IU06,*) '*  COULD ONLY BE IRREGULAR IN THE Y-  *' 
+          WRITE(IU06,*) '*  DIRECTION.                         *'
+          WRITE(IU06,*) '*  KSEC1(68) = ',KSEC1(68) 
+          WRITE(IU06,*) '*  IT SHOULD BE = 2                   *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
+        IF(KSEC1(60).NE.3.OR.KSEC1(61).NE.4) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. GRB2WGRD       *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  IT WAS ASSUMED THAT THE OCEAN GRID *' 
+          WRITE(IU06,*) '*  WAS FOR AN HORIZONTAL SECTION ONLY *' 
+          WRITE(IU06,*) '*  THIS IS NOT THE CASE !!!           *' 
+          WRITE(IU06,*) '*  KSEC1(60) SHOULD BE 3 BUT IS ',KSEC1(60)
+          WRITE(IU06,*) '*  KSEC1(61) SHOULD BE 4 BUT IS ',KSEC1(61)
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
+
+      ELSE
+        LLOCEAN=.FALSE.
+        KSKIP=0
+      ENDIF
+
       JRGG = KSEC2(17)
 
       IF(JRGG.EQ.1) THEN
@@ -206,8 +286,9 @@
       IDUM=0
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
-      IF(CSTREAM.EQ.'****' .OR. 
-     &  (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212) ) THEN 
+      IF(CSTREAM.EQ.'****' .OR.
+     &  (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212 .AND.
+     &   .NOT.LLOCEAN) ) THEN 
         LLNONWAVE=.TRUE.
       ELSE
         LLNONWAVE=.FALSE.
@@ -264,8 +345,9 @@
 !     START DATE. 
 
       IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-      WRITE(CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+      WRITE(CDATE(1:12),'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                             KSEC1(13),KSEC1(14)
+      CDATE(13:14)='00'
 
 !*    DETERMINE TIME UNIT.
 
@@ -307,6 +389,8 @@
 
       IF(KSEC1(7).EQ.105) THEN
         KZLEV=KSEC1(8)
+      ELSEIF(KSEC1(7).EQ.160) THEN
+        KZLEV=KSEC1(8)
       ELSE
         KZLEV=0
       ENDIF
@@ -317,33 +401,47 @@
       ALLOCATE(RLONRGG(NR))
       RLONRGG=0
       ALLOCATE(RDELLO(NR))
+      ALLOCATE(YLAT(NR))
 
-      RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
-     &         0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
+      IF(.NOT.LLOCEAN) THEN
+        RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+     &           0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
 
-      RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
-     &         0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
+        RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
+     &           0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
 
-      RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
-     &         0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
+        RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
+     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
 
-!!! THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
-!!! THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
-!!! A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
-!!! RMOEAP IS IMPLICITLY KNOWN.
-      IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
-        DELLO = 360./MAX(1,NC)
-        RMOEAP = RMOWEP+360. - DELLO
-        IPERIODIC = 1
+!!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
+!!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
+!!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
+!!!   RMOEAP IS IMPLICITLY KNOWN.
+        IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
+          DELLO = 360./MAX(1,NC)
+          RMOEAP = RMOWEP+360. - DELLO
+          IPERIODIC = 1
+        ELSE
+          RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
+     &             0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+          CALL ADJUST (RMOWEP, RMOEAP)
+          IPERIODIC = 0
+          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+          IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+        ENDIF
+
       ELSE
-        RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
-     &           0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
-        IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
-        IPERIODIC = 0
-        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-        IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+!       the ocean data are implicitly global 
+        IPERIODIC = 1
+        DELLO = KSEC1(66)*1.E-6 
+        DO KK=1,NR
+          YLAT(KK)=KSEC1(KK+KSKIP)*1.E-6
+        ENDDO
+        RMONOP = YLAT(1) 
+        RMOSOP = YLAT(NR) 
+        RMOWEP = KSEC1(63)*1.E-6 
+        RMOEAP = KSEC1(65)*1.E-6
       ENDIF
-
 
       IF(JRGG.EQ.1) THEN
 
@@ -557,9 +655,35 @@
 !         CORNER DATA ARE FOUND TO BE MISSING.
           NDECODED=ABS(KSEC4(1))
           L=1
-          DO WHILE(PSEC4(L).NE.PMISS .AND. L.LE.NDECODED) 
-            L=L+1
-          ENDDO
+          IF(L.LE.NDECODED)THEN
+            DO WHILE(PSEC4(L).NE.PMISS)
+              L=L+1
+              IF(L.GT.NDECODED)EXIT
+            ENDDO
+          ENDIF
+          IF(L.GT.NDECODED) THEN
+            LLNEAREST=.FALSE.
+          ELSE
+            LLNEAREST=.TRUE.
+          ENDIF
+        ENDIF
+
+
+        IF(.NOT. LLNONWAVE) THEN 
+!         FOR WAVE DATA ALWAYS USE THE CLOSEST GRID POINT IF
+!         CORNER DATA ARE MISSING.
+          LLNEAREST=.TRUE.
+        ELSE
+!         FOR NON WAVE DATA USE THE CLOSEST GRID POINT IF
+!         CORNER DATA ARE FOUND TO BE MISSING.
+          NDECODED=ABS(KSEC4(1))
+          L=1
+          IF(L.LE.NDECODED)THEN
+            DO WHILE(PSEC4(L).NE.PMISS)
+              L=L+1
+              IF(L.GT.NDECODED)EXIT
+            ENDDO
+          ENDIF
           IF(L.GT.NDECODED) THEN
             LLNEAREST=.FALSE.
           ELSE
@@ -571,7 +695,11 @@
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' THE FIELD WITH GRIB PARAMETER ',IPARAM
-          IF(IREPR.EQ.0.AND.JRGG.EQ.0) THEN
+          IF(LLOCEAN.AND.KSEC1(69).EQ.0) THEN
+            WRITE(IU06,*) ' ON NORMAL OCEAN LATITUDE/LONGITUDE GRID '
+          ELSEIF(LLOCEAN.AND.KSEC1(69).EQ.1) THEN
+            WRITE(IU06,*) ' ON STAGGERED OCEAN LATITUDE/LONGITUDE GRID '
+          ELSEIF(IREPR.EQ.0.AND.JRGG.EQ.0) THEN
             WRITE(IU06,*) ' ON A REGULAR LATITUDE/LONGITUDE GRID '
           ELSEIF(IREPR.EQ.0.AND.JRGG.EQ.1) THEN
             WRITE(IU06,*) ' ON A REDUCED LATITUDE/LONGITUDE GRID '
@@ -588,7 +716,6 @@
             ELSE
               WRITE(IU06,*) ' USING A BILINEAR INTERPOLATION '
             ENDIF
-          WRITE(IU06,*) ' '
           WRITE(IU06,*) ' '
         ENDIF
 
@@ -627,23 +754,46 @@
           ENDDO
         ENDIF
 
+!       loop over all wave model latitudes.
         DO K=1,NGY                                                
 
           JSN=NGY-K+1
 
-          XK = RMONOP - (AMOSOP + (JSN-1)*XDELLA)
-          XK = XK/DELLA+1.
-          KK = MAX(KKMIN,INT(XK))
-          KSN= NR-KK+1
-          KK1=MIN(KK+1,KKMAX)
-          KSN1=NR-KK1+1
-          DK1=XK-REAL(KK)
-          DK2=1.-DK1
+          IF(.NOT.LLOCEAN) THEN
+            XK = RMONOP - (AMOSOP + (JSN-1)*XDELLA)
+            XK = XK/DELLA+1.
+            KK = MAX(KKMIN,INT(XK))
+            KSN= NR-KK+1
+            KK1=MIN(KK+1,KKMAX)
+            KSN1=NR-KK1+1
+            DK1=XK-REAL(KK)
+            DK2=1.-DK1
+          ELSE
+            KK=1
+            XK = AMOSOP + (JSN-1)*XDELLA
+            DO WHILE (YLAT(KK).GT.XK.AND.KK.LE.NR) 
+              KK=KK+1
+            ENDDO
+            KK=MAX(KK-1,1)
+
+            KSN= NR-KK+1
+            KK1=MIN(KK+1,NR)
+            KSN1=NR-KK1+1
+            DK1=YLAT(KK)-XK
+            DK2=1.-DK1
+          ENDIF
 
 
+!         loop over all wave model grid points on each latitude.
           DO I=1,KLONRGG(JSN)
 
-            XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP
+            IF(.NOT.LLOCEAN) THEN
+              XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP
+            ELSE
+              RMOWEP_KK=RMOWEP-0.5*DELLO*KSEC1(69)*MOD(KK,2)
+              XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP_KK 
+            ENDIF
+
             XI = MOD(XI+720.,360.)
 
             KSNLIM=MIN(MAX(KSN,1),NR)
@@ -653,6 +803,12 @@
             II1 = MIN(II+1,RLONRGG(KSNLIM)+IPERIODIC)
             DII1=XII-REAL(II)
             DII2=1.-DII1
+
+            IF(LLOCEAN) THEN
+!             when the grid is staggered RMOWEP_KK varies
+              RMOWEP_KK=RMOWEP-0.5*DELLO*KSEC1(69)*MOD(KK1,2)
+              XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP_KK 
+            ENDIF
 
             KSN1LIM=MIN(MAX(KSN1,1),NR)
             XIIP = XI/RDELLO(KSN1LIM)+1.
@@ -725,6 +881,7 @@
 
       DEALLOCATE(RLONRGG)
       DEALLOCATE(RDELLO)
+      DEALLOCATE(YLAT)
 
       RETURN
       END SUBROUTINE GRB2WGRD

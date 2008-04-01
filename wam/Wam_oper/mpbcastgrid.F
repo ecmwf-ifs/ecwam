@@ -1,4 +1,4 @@
-      SUBROUTINE MPBCASTGRID(IU06,ISEND,ITAG,IREFRA)
+      SUBROUTINE MPBCASTGRID(IU06,ISEND,ITAG)
 
 ! ----------------------------------------------------------------------
 !**** *MPBCASTGRID* - BROADCAST THE CONTENT OF THE GRID FILE READ BY
@@ -16,13 +16,12 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *MPBCASTGRID*(IU06,ISEND,ITAG,IREFRA)
+!     CALL *MPBCASTGRID*(IU06,ISEND,ITAG)
 
 !     *IU06*      UNIT FOR PRINTER MESSAGES.
 !     *ISEND*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED
 !     *ITAG*      TAG ASSOCIATED WITH AS A PARTICULAR CALL TO SUBROUTINE
 !                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS
-!     *IREFRA*    REFRACTION OPTION.
 
 !     METHOD.
 !     -------
@@ -42,7 +41,6 @@
       USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,
      &            XKAPPA   ,XNLEV
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
@@ -56,10 +54,10 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,
+     &              MBXSIZE
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
-     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN
+     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
@@ -85,11 +83,10 @@
         ALLOCATE(ICOMBUF(2))
 
         IF(IRANK.EQ.ISEND) THEN
-          MIC=21+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
+          MIC=17+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
           MZC=25+(4+3*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
      &        JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)+
      &        NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
-          IF(IREFRA.EQ.2) MZC=MZC+2*NBLC*(1+NIBLC)
 
           ICOMBUF(1)=MIC
           ICOMBUF(2)=MZC
@@ -105,6 +102,8 @@
         ENDIF
 
         DEALLOCATE(ICOMBUF)
+
+
 
 
 !       ENCODE MAIN MESSAGE BUFFERS
@@ -132,16 +131,6 @@
           ICOMBUF(IKCOUNT)=NOVER
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NIBL1
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IREFRA
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NIBLD
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NBLD
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NIBLC
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NBLC
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=ICHAR(CLDOMAIN)
 
@@ -374,6 +363,8 @@
             ICOMBUF(IKCOUNT)=IJAR(NGOU)
           ENDDO
 
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NDEPTH
           DO IG=1,NBLO
             DO IJ=1,NIBLO
               KCOUNT=KCOUNT+1
@@ -462,21 +453,6 @@
             ZCOMBUF(KCOUNT)=DFIMHF(M)
           ENDDO
 
-          IF (IREFRA.EQ.2) THEN
-            DO IG=1,NBLC
-              DO IJ=0,NIBLC
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=U(IJ,IG)
-              ENDDO
-            ENDDO
-            DO IG=1,NBLC
-              DO IJ=0,NIBLC
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=V(IJ,IG)
-              ENDDO
-            ENDDO
-          ENDIF
-
           IF(IKCOUNT.NE.MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
@@ -499,12 +475,27 @@
           ENDIF 
         ENDIF
 
-        CALL MPL_BROADCAST(ICOMBUF(1:MIC),KROOT=ISEND,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID 1:')
-        ITAG=ITAG+1
-        CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=ISEND,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID 2:')
-        ITAG=ITAG+1
+        NLOOP=(MIC/MBXSIZE)+1
+        DO ILOOP=1,NLOOP
+          ILOW=1+(ILOOP-1)*(MIC/NLOOP)
+          IUP=MIN(ILOW+(MIC/NLOOP)-1,MIC)
+          CALL MPL_BROADCAST(ICOMBUF(ILOW:IUP),KROOT=ISEND,KTAG=ITAG,
+     &     CDSTRING='MPBCASTGRID 1:')
+          ITAG=ITAG+1
+!         PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
+          CALL MPL_BARRIER(CDSTRING='MPBCASTGRID 2:')
+        ENDDO
+
+        NLOOP=(MZC/MBXSIZE)+1
+        DO ILOOP=1,NLOOP
+          ILOW=1+(ILOOP-1)*(MZC/NLOOP)
+          IUP=MIN(ILOW+(MZC/NLOOP)-1,MZC)
+          CALL MPL_BROADCAST(ZCOMBUF(ILOW:IUP),KROOT=ISEND,KTAG=ITAG,
+     &     CDSTRING='MPBCASTGRID 2:')
+          ITAG=ITAG+1
+!         PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
+          CALL MPL_BARRIER(CDSTRING='MPBCASTGRID 2:')
+        ENDDO
 
         IF(IRANK.NE.ISEND) THEN
           KCOUNT=0
@@ -526,16 +517,6 @@
           NOVER=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NIBL1=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          IREFRA=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NIBLD=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NBLD=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NIBLC=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          NBLC=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           CLDOMAIN=CHAR(ICOMBUF(IKCOUNT))
 
@@ -815,7 +796,12 @@
             IJAR(NGOU)=ICOMBUF(IKCOUNT)
           ENDDO
 
-          IF(.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(NIBLO,NBLO))
+          IKCOUNT=IKCOUNT+1
+          NDEPTH=ICOMBUF(IKCOUNT)
+
+          IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
+          ALLOCATE(DEPTH(NIBLO,NBLO))
+
           IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
           IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
           IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
@@ -920,22 +906,6 @@
             DFIMHF(M)=ZCOMBUF(KCOUNT)
           ENDDO
 
-          IF (IREFRA.EQ.2) THEN
-           IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))
-           IF(.NOT.ALLOCATED(V)) ALLOCATE(V(0:NIBLC,NBLC))
-            DO IG=1,NBLC
-              DO IJ=0,NIBLC
-                KCOUNT=KCOUNT+1
-                U(IJ,IG)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-            DO IG=1,NBLC
-              DO IJ=0,NIBLC
-                KCOUNT=KCOUNT+1
-                V(IJ,IG)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDIF
           IF(IKCOUNT.NE.MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'

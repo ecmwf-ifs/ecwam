@@ -1,6 +1,6 @@
-      SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD
-     &                              ,RADOLD, RZIDLOLD
-     &                              ,KEND)
+      SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
+     &                       RADOLD, RZIDLOLD, KICEMASK,
+     &                       KEND)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF   APRIL 1998 
@@ -52,8 +52,7 @@
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,UWND     ,
-     &            VWND     ,AIRD     ,PZIDL
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
 
 ! ----------------------------------------------------------------------
@@ -62,6 +61,7 @@
       CHARACTER*24 FILNM
       REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
      &                             ,RADOLD, RZIDLOLD
+      INTEGER,DIMENSION(NIBLO,NBLO) :: KICEMASK 
       LOGICAL :: LLONLYPOS
 ! ----------------------------------------------------------------------
 ! "Dummy" arrays and parameters for compatability purposes:
@@ -90,8 +90,8 @@
       RADOLD = ROAIR
       RZIDLOLD = 0.
       FCRANGE = 0.
-      CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD,
-     &             1, NIBLO, KEND, CDTPRO,
+      CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD, KICEMASK,
+     &             1, NIBLO, CDTPRO,
 !------------------ dummy parameters & arrays
      &             NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
      &             ISEC1, ISEC2, FIELDS, MASK_IN,
@@ -278,11 +278,6 @@
 
       IF (ITEST.GE.2)
      &    WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
-
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)     !???
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)   !???
 
       RETURN
       END SUBROUTINE BUILDSTRESS

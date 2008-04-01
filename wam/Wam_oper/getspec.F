@@ -54,8 +54,6 @@
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3   ,
      &            NTENCODE ,PPEPS    ,PPREC
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG
-      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
-      USE YOWICE   , ONLY : FLMINFR  ,ICEMASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOSOP   ,
      &            AMONOP   ,XDELLA
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LFDBIOIN ,LGRIBIN
@@ -66,8 +64,7 @@
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
      &            EPSMIN
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CFDB2DSP ,YCLASS   ,
-     &            YEXPVER
-      USE YOWTABL  , ONLY : JUMAX    ,DELU
+     &            YEXPVER  ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
@@ -75,10 +72,10 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 100000)
+      PARAMETER (NBIT = 126000)
 
       CHARACTER*  9 CMBXSIZE
-      CHARACTER* 12 CDATE 
+      CHARACTER* 14 CDATE 
       CHARACTER* 120 FILENAME
 
 !* fdb variables.
@@ -86,7 +83,7 @@
       CHARACTER*  4 CLEXPVER
       CHARACTER*  2 CLTYPE, CLCLASS, CLDIR, CLFRE
 
-      LOGICAL LFRSTIME, LPBOPEN, LPBCLOSE, LLEXIST
+      LOGICAL LFRSDECODE, LPBOPEN, LPBCLOSE, LLEXIST
 
       INTEGER ifdb
       SAVE ifdb
@@ -106,16 +103,21 @@
       REAL, ALLOCATABLE,DIMENSION(:) :: PSEC2,PSEC3,PSEC4,WORK,WORKRCV
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
-      REAL,ALLOCATABLE :: EM(:), ET(:,:), STK(:)
       REAL :: ONE,ZTHETA,ZFRE
+
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
 
       INTEGER :: ISENDREQ
 
       LOGICAL :: LLEPSMIN
 
-      DATA MDEL, LFRSTIME, ONE / 1, .TRUE., 1.0/
+      DATA MDEL, ONE / 1, 1.0/
 
 ! ----------------------------------------------------------------------
+
+      LFRSDECODE=.TRUE.
 
       IF (ITEST > 3 ) THEN
         WRITE(IU06,*) ' SUB. GETSPEC:'
@@ -139,11 +141,18 @@ C
 
 !       INPUT SPECTRA ARE IN GRIB FORMAT
 
-        ALLOCATE(KSEC0(NKSEK0),KSEC1(NKSEK1))
-        ALLOCATE(KSEC2(NKSEK2),KSEC3(NKSEK3),KSEC4(NKSEK4))
-        ALLOCATE(PSEC2(NPSEK2),PSEC3(NPSEK3))
-        ALLOCATE(IPOINTER(1:NEND(NPROC)))
-        ALLOCATE(WORK(NIBLO))
+        IF (.NOT.ALLOCATED(KSEC0)) ALLOCATE(KSEC0(NKSEK0))
+        IF (.NOT.ALLOCATED(KSEC1)) ALLOCATE(KSEC1(NKSEK1))
+        IF (.NOT.ALLOCATED(KSEC2)) ALLOCATE(KSEC2(NKSEK2))
+        IF (.NOT.ALLOCATED(KSEC3)) ALLOCATE(KSEC3(NKSEK3))
+        IF (.NOT.ALLOCATED(KSEC4)) ALLOCATE(KSEC4(NKSEK4))
+
+        IF (.NOT.ALLOCATED(PSEC2)) ALLOCATE(PSEC2(NPSEK2))
+        IF (.NOT.ALLOCATED(PSEC3)) ALLOCATE(PSEC3(NPSEK3))
+
+        IF (.NOT.ALLOCATED(IPOINTER)) ALLOCATE(IPOINTER(1:NEND(NPROC)))
+
+        IF (.NOT.ALLOCATED(WORK)) ALLOCATE(WORK(NIBLO))
 
         IF (IRANK.EQ.IREAD) THEN
           IF (.NOT.LFDBIOIN) THEN
@@ -463,8 +472,9 @@ C
               ENDIF
 
               IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-              WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
-     &                                     KSEC1(13),KSEC1(14)
+              WRITE (CDATE(1:12),'(I4.4,4I2.2)') IYYYY,KSEC1(11),
+     &                                 KSEC1(12), KSEC1(13),KSEC1(14)
+              CDATE(13:14)='00'
 
               IF(KSEC1(39).EQ.9.OR.KSEC1(39).EQ.6.OR.
      &           KSEC1(39).EQ.10.OR.KSEC1(39).EQ.11)
@@ -565,7 +575,7 @@ C
                 CALL ABORT1
               ENDIF
 
-              IF(LFRSTIME) THEN
+              IF(LFRSDECODE) THEN
                 RMONOP=REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
      &               0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
 
@@ -595,7 +605,7 @@ C
                     IPOINTER(IJ) = (IY-1)*NGX + IX + KDEXN
                   ENDDO
                 ENDIF
-                LFRSTIME=.FALSE.
+                LFRSDECODE=.FALSE.
               ENDIF
 
               IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
@@ -605,13 +615,23 @@ C
               ENDDO
               IF(ALLOCATED(PSEC4)) DEALLOCATE(PSEC4)
 
-              DO IJ = 1,NEND(NPROC) 
-                IF (WORK(IJ) .NE. ZMISS) THEN
-                  WORK(IJ) = 10.**(WORK(IJ)-ABS(PPREC))- PPEPS
-                ELSE
-                  WORK(IJ) = EPSMIN
-                ENDIF
+
+              NPROMA=NEND(NPROC)/NWAM_BLKS+1
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+              DO JKGLO=1,NEND(NPROC),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,NEND(NPROC))
+                DO IJ=KIJS,KIJL
+                  IF (WORK(IJ) .NE. ZMISS) THEN
+                    WORK(IJ) = 10.**(WORK(IJ)-ABS(PPREC))- PPEPS
+                  ELSE
+                    WORK(IJ) = EPSMIN
+                  ENDIF
+                ENDDO
               ENDDO
+!$OMP     END PARALLEL DO
+
+
               CALL GSTATS(1886,1)
 
             ENDIF
@@ -683,7 +703,7 @@ C
 
         IF(LMESSPASS) THEN
 
-          IF(LFRSTIME) THEN
+          IF(LFRSDECODE) THEN
 
 !         DETERMINE MAXIMUM NUMBER OF FREQUENCIES WHICH CAN BE USED
 !         TO SEND SPECTRA FROM ONE PE  TO THE OTHERS
@@ -791,7 +811,7 @@ C
 
 !           BINARY SPECTRA ARE READ USING FORTRAN READ
 
-            ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
+            IF(.NOT.ALLOCATED(RFL)) ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
 
 !           READ RESTART SPECTRA FROM PE ISEND (IREAD)
             IF (IRANK.EQ.ISEND) THEN
@@ -849,86 +869,6 @@ C
         ENDIF
 
       ENDIF
-
-      IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
-!       TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
-!       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
-!       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
-!       AND HAVE AN ICEMASK = 1.
-        DO K=1,NANG
-          DO M=1,NFRE
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-               IF(FL(IJ,K,M) .LE. EPSMIN) FL(IJ,K,M) = 0. 
-            ENDDO
-          ENDDO
-        ENDDO
-
-        LLEPSMIN=.FALSE.
-
-        ALLOCATE(EM(NSTART(IRANK):NEND(IRANK)))
-        ALLOCATE(ET(1,NFRE))
-        ALLOCATE(STK(NANG))
-
-        CALL SEMEAN(FL,NSTART(IRANK),NEND(IRANK),EM,LLEPSMIN)
-
-        GAMMA=3.000000
-        SA=7.000000E-02
-        SB=9.000000E-02
-        FETCH=MIN(5*DELPHI,250000.)
-        GX = G * FETCH
-        FPMAX=FR(NFRE-1)
-
-        DO IJ=NSTART(IRANK),NEND(IRANK)
-           IF(EM(IJ).LE.EPSMIN .AND. ICEMASK(IJ,1).EQ.1 ) THEN
-!            find peak period and energy level from fetch law
-!            the same formulation as in subroutine peak is used.
-             IF (U10OLD(IJ,1) .GT. 0.1E-08) THEN
-               U10 = U10OLD(IJ,1)
-               GXU = GX/(U10*U10)
-               UG = G/U10
-               FPK = AJONS * GXU ** DJONS
-               FPK = MAX(0.13, FPK)
-               FPK = MIN(FPK, FPMAX/UG)
-               ALPHJO = BJONS * FPK** EJONS
-               ALPHJO = MAX(ALPHJO, 0.0081)
-               FPK = FPK*UG
-             ELSE
-               FPK = 0.
-               ALPHJO = 0.
-             ENDIF
-
-             CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
-
-             THESK=THWOLD(IJ,1)
-
-             CALL SPR (NANG, NANG, THESK, TH, STK)
-
-             DO K=1,NANG
-               DO M=1,NFRE
-                 FL(IJ,K,M) = ET(1,M)*STK(K)
-               ENDDO
-             ENDDO
-
-           ENDIF
-        ENDDO
-
-        DO K=1,NANG
-          DO M=1,NFRE
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-               XJ=U10OLD(IJ,1)/DELU
-               JU=MIN(JUMAX, MAX(NINT(XJ),1))
-               FLLOWEST=FLMINFR(JU,M)*MAX(0.,COS(TH(K)-THWOLD(IJ,1)))**2
-               IF(FL(IJ,K,M) .LE. FLLOWEST) FL(IJ,K,M) = FLLOWEST
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DEALLOCATE(EM)
-        DEALLOCATE(ET)
-        DEALLOCATE(STK)
-
-      ENDIF
-
 
       WRITE(IU06,*) ' SPECTRUM FILE READ IN...............',
      & ' CDTPRO  = ', CDTPRO

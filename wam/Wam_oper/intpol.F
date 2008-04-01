@@ -1,4 +1,4 @@
-      SUBROUTINE INTPOL (F3, F1, IJS, IJL, IG)
+      SUBROUTINE INTPOL (F3, F1, IJS, IJL, IG, IRA)
 
 ! ----------------------------------------------------------------------
 
@@ -16,12 +16,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (F3, F1, IJS, IJL, IG)*
-!         *F3*   - BLOCK OF SPECTRA (INPUT).
-!         *F1*   - BLOCK OF SPECTRA (OUTPUT).
+!       *CALL* *INTPOL (F3, F1, IJS, IJL, IG, IRA)*
+!         *F3*   - SPECTRA (INPUT).
+!         *F1*   - SPECTRA (OUTPUT).
 !         *IJS*  - INDEX OF FIRST GRIDPOINT.
 !         *IJL*  - INDEX OF LAST GRIDPOINT.
 !         *IG*   - BLOCK NUMBER.
+!         *IRA*  - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
+!                  =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
 
 !     METHOD.
 !     -------
@@ -43,18 +45,19 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
      &         FRATIO
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLC
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3,F1
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
 
-      DIMENSION FNEF(NIBLC), NEWF(NIBLC), NEWF1(NIBLC), KNEW(NIBLC),
-     &          GWP(NIBLC), GWM(NIBLC), WAVN(NIBLC)
+      REAL,DIMENSION(IJS:IJL) :: FNEF,NEWF,NEWF1,KNEW,GWP,GWM,WAVN
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +67,25 @@
       PI2G = ZPI/G 
       FRE0 = FRATIO-1.
       ALN00 = 1. / LOG10(FRATIO)
-      F1 = 0.0
+      IF(ABS(IRA).NE.1) THEN
+        WRITE (IU06,*) '**************************************'
+        WRITE (IU06,*) '* SUBROUTINE INTPOL:                  '
+        WRITE (IU06,*) '* IRA MUST BE = 1 OR -1               '
+        WRITE (IU06,*) '* IRA = ',IRA 
+        WRITE (IU06,*) '*                                    *'
+        WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
+        WRITE (IU06,*) '*                                    *'
+        WRITE (IU06,*) '**************************************'
+        CALL ABORT1
+      ENDIF
+
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = IJS, IJL
+            F1(IJ,K,M) = 0.0
+          ENDDO
+        ENDDO
+      ENDDO
 
 !*    1. LOOP OVER FREQUENCIES.
 !        ----------------------
@@ -90,7 +111,7 @@
 
           DO IJ = IJS, IJL
             FNEF(IJ) = FR(M)
-     &       + WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
+     &       + IRA*WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
             IF (FNEF(IJ).GT.0.) THEN
               KNEW(IJ) = K
             ELSE
@@ -156,6 +177,29 @@
 
 !*    BRANCH BACK TO 1. FOR NEXT FREQUENCY.
 
+      ENDDO
+
+!     A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
+!     SO IF THE SPECTRUM WAS SHIFTED DOWN THEN THE F**-5 LAW
+!     HAS TO BE RESTABLISHED PROVIDED THERE WAS SOME ENERGY THERE.
+      DO K = 1, NANG
+        DO IJ = IJS, IJL
+          IF(F3(IJ,K,NFRE).LE.FLMIN ) THEN
+            NEWF(IJ)=NFRE
+          ELSE
+            DO M = NFRE, 1, -1
+              IF(F1(IJ,K,M).GT.0.0 .OR. M.EQ.1 ) THEN 
+                NEWF(IJ)=M
+                EXIT
+              ENDIF
+            ENDDO
+          ENDIF
+        ENDDO
+        DO IJ = IJS, IJL
+          DO M = NEWF(IJ)+1,NFRE
+            F1(IJ,K,M)=F1(IJ,K,NEWF(IJ))*(FR(NEWF(IJ))/FR(M))**5
+          ENDDO
+        ENDDO
       ENDDO
 
       RETURN

@@ -1,5 +1,5 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    ROAIRO, ZIDLOLD,
+     &                    ROAIRO, ZIDLOLD, ICEMASK,
      &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                    ISEC1, ISEC2, FIELDS, MASK_IN)
 
@@ -33,7 +33,7 @@
 !     ----------
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD,
+!    &                 ROAIRO, ZIDLOLD, ICEMASK,
 !    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
 !    &                 ISEC1, ISEC2, FIELDS)*
 
@@ -50,6 +50,7 @@
 !      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
 !      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
 !                                   L: MONIN-OBUKHOV LENGTH).
+!      *ICEMASK*   INTEGER   SEA ICE MASK.
 !      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -130,7 +131,7 @@
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
 
-      CHARACTER*12 CDTWIE, CDTWIS, ZERO
+      CHARACTER*14 CDTWIE, CDTWIS, ZERO
 
       LOGICAL LLFRST
       DATA LLFRST / .TRUE. /
@@ -140,6 +141,7 @@
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
      &                                 ,ROAIRO,ZIDLOLD
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
       REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -192,7 +194,7 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD,
+     &              ROAIRO, ZIDLOLD, ICEMASK,
      &              NFIELDS,NGPTOTG, NC,NR, FCRANGE,
      &              ISEC1,ISEC2, FIELDS, MASK_IN)
       ELSE
@@ -210,7 +212,7 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD,
+     &              ROAIRO, ZIDLOLD, ICEMASK,
      &              NFIELDS,NGPTOTG, NC,NR, FCRANGE, 
      &              ISEC1,ISEC2, FIELDS, MASK_IN)
       ENDIF

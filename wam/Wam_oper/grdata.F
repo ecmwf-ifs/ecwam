@@ -102,7 +102,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: NUMBWH, NR
       REAL, DIMENSION(NUMALT) :: SWHO
       REAL, ALLOCATABLE, DIMENSION(:,:,:) ::  WHME, WHSE
-      CHARACTER*12 CBEGINDT, CENDDT
+      CHARACTER*14 CBEGINDT, CENDDT
       CHARACTER*14 CDATE
       CHARACTER*14 :: CDATEO(NUMALT)
       LOGICAL EOFD
@@ -110,9 +110,9 @@
 !*     VARIABLE     TYPE     PURPOSE.
 !      --------     ----     --------
 
-!     *CBEGINDT*    CHAR*12  BEGINNING DATE OF THE TIME WINDOW
+!     *CBEGINDT*    CHAR*14  BEGINNING DATE OF THE TIME WINDOW
 !                            DURING WHICH DATA ARE USED FOR ANALYSIS.
-!     *CENDDT*      CHAR*12  END DATE OF THE TIME WINDOW
+!     *CENDDT*      CHAR*14  END DATE OF THE TIME WINDOW
 !                            DURING WHICH DATA ARE SAVE FOR ANALYSIS.
 !     *WHME*        REAL     GRID WAVE HEIGHT.
 !     *WHSE*        REAL     WAVE HEIGHT ROOT MEAN SQUARE ERROR.
@@ -209,7 +209,7 @@
         IOLD(ISAT) = 0
         JOLD(ISAT) = 0
         IBUFRSAT(ISAT)=0 
-        CDATEO(ISAT) = CBEGINDT(1:12)//'00'
+        CDATEO(ISAT) = CBEGINDT
       ENDDO
 
 
@@ -456,12 +456,12 @@
 
 !     CHECK DATE.
 
-      IF (CDATE(1:12).LT.CBEGINDT)  then
+      IF (CDATE.LT.CBEGINDT)  then
         ICOUNTB(KSAT) = ICOUNTB(KSAT) + 1
         GOTO 3000
       ENDIF
 
-      IF (CDATE(1:12).LE.CENDDT) THEN
+      IF (CDATE.LE.CENDDT) THEN
 
 !       BLACKLISTING
 
@@ -688,8 +688,8 @@
               DO IBCS=1, NSATBC
                 IF (IBUFRSAT(ISAT).EQ.ISATBC(IBCS)) THEN
                   DO IBCT=1,NBCT(IBCS)
-                    IF (CDTPRO.GE.CBCDATESTART(IBCS,IBCT) .AND. 
-     &                  CDTPRO.LE.CBCDATEEND  (IBCS,IBCT)      ) THEN
+                    IF (CDTPRO(1:12).GE.CBCDATESTART(IBCS,IBCT) .AND.
+     &                  CDTPRO(1:12).LE.CBCDATEEND  (IBCS,IBCT)) THEN
                       LLDOBC=.TRUE.
                       EXIT
                     ENDIF

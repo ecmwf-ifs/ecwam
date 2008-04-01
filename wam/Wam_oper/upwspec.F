@@ -88,7 +88,7 @@
 
       XL11 = LOG(FRATIO)
 
-      IF(NFRE.EQ.30 .OR. NFRE.EQ.36) THEN
+      IF(FR(1).LE.0.04) THEN
          NFREINF=4
       ELSE
          NFREINF=2

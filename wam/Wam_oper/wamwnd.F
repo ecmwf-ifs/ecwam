@@ -42,16 +42,18 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : XKAPPA
+      USE YOWCURR  , ONLY : U        ,V
+      USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWPARAM , ONLY : NGY      ,NBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR
-      USE YOWCOUP  , ONLY : XKAPPA
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWSTAT  , ONLY : IREFRA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
-     &            KCOL     ,KROW     ,ICODE    ,IWPER
       USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,UWND     ,
      &            VWND     ,AIRD     ,PZIDL
+      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
+     &            KCOL     ,KROW     ,ICODE    ,IWPER
 
 ! ----------------------------------------------------------------------
 
@@ -72,8 +74,17 @@
         IX = IXLG(IJ,IG)
         JY = NGY-KXLT(IJ,IG) + 1
 
-        UU = UWND(IX,JY)
-        VV = VWND(IX,JY)
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+          UU = UWND(IX,JY) - U(IJ,IG)
+          VV = VWND(IX,JY) - V(IJ,IG)
+!!! testing
+!!! the use of reltive winds (wrt currents) has been disabled !!!!
+          UU = UWND(IX,JY)
+          VV = VWND(IX,JY)
+        ELSE
+          UU = UWND(IX,JY)
+          VV = VWND(IX,JY)
+        ENDIF
         US(IJ,IG) = SQRT(UU**2 + VV**2)
         IF (US(IJ,IG).NE.0.) THEN 
           DS(IJ,IG) = ATAN2(UU,VV)

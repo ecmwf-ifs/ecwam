@@ -1,4 +1,4 @@
-      SUBROUTINE MBLOCK (IA1, KA, KE, IPP)
+      SUBROUTINE MBLOCK (BATHY, KA, KE, IPP)
 
 ! ----------------------------------------------------------------------
 
@@ -15,8 +15,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MBLOCK (IA1, KA, KE, IPP)*
-!          *IA1*     - TOPOGRAPHIC DATA.
+!       *CALL* *MBLOCK (BATHY, KA, KE, IPP)*
+!          *BATHY*   - BATHYMETRY DATA.
 !          *KA*      - NUMBER OF FIRST LAT IN BLOCK.
 !          *KE*      - NUMBER OF LAST LAT IN BLOCK.
 !          *IPP*     - NUMBER OF SEA POINTS PER LAT.
@@ -52,7 +52,8 @@
       INTEGER, ALLOCATABLE :: IDUM(:), JDUM(:,:)
       REAL, ALLOCATABLE :: ZDUM(:,:)
 
-      DIMENSION IA1(NGX, NGY), IPP(NGY)
+      INTEGER :: IPP(NGY)
+      REAL :: BATHY(NGX, NGY)
 
 ! ----------------------------------------------------------------------
 
@@ -283,9 +284,9 @@
       IP = 0
       DO K=KA,KE
         DO I=1,NLONRGG(K)
-          IF (IA1(I,K).GT.-990) THEN
+          IF (BATHY(I,K).GT.-990.) THEN
             IP = IP+1
-            DEPTH(IP,IGL) = REAL(IA1(I,K))
+            DEPTH(IP,IGL) = BATHY(I,K)
             IXLG(IP,IGL) = I
             KXLT(IP,IGL) = K
           ENDIF

@@ -1,4 +1,4 @@
-      SUBROUTINE INITMDL (KDELWI,NADV)
+      SUBROUTINE INITMDL (NADV)
 
 ! ----------------------------------------------------------------------
 
@@ -37,11 +37,9 @@
 
 !          ---- FORMAL PARAMETERS ----
 
-!    *CALL* *INITMDL (KDELWI,NADV)*
+!    *CALL* *INITMDL (NADV)*
 !       *NADV*     INTEGER   NUMBER OF ADVECTION ITERATIONS
 !                            PER CALL OF WAMODEL, OUTPUT PARAMETER.
-!      *KDELWI*    INTEGER   WIND INPUT TIME STEP IN SECONDS IF
-!                            COUPLED WITH THE IFS.
 
 !          ---- INPUT/OUTPUT UNITS ---
 
@@ -160,9 +158,6 @@
 !ASSI
 !___PACK
 
-!ICE
-!           *IU90*   - INPUT UNIT OF SEA SURFACE TEMPERATURE
-!ICE
 !          FOR A START THE RESTART FILES WILL DYNAMICALLY BE ASSIGNED
 !          AND COPIED TO THE *OUTPUT* UNITS (IU12, IU14, IU15).
 !          IF IT IS REQUESTED TO SAVE RESTART FILES THESE WILL BE COPIED
@@ -212,16 +207,12 @@
 !       *HEADBC*    - WRITE BOUNDARY OUTPUT FILE HEADER.
 !       *INCDATE*   - UPDATE DATE TIME GROUP.
 !       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *GETSTRESS  - READS RESTART STRESS/WIND FILE
 !REFRA
 !       *PROPDOT*   - PRECOMPUTE REFRACTION.
 !REFRA
 !NEST
 !       *READBOU*   - READS PREPROC BOUNDARY FILES.
 !NEST
-!ICE
-!       *READICE*   - READS SST FROM UNIT 90 AND PREPARES THE ICE EDGE.
-!ICE
 !       *SETMARSTYPE* SETS VARIABLE MARSTYPE
 !       *SETWGRIBHD*- SETS DEFAULT GRIB HEADERS  
 !       *USERIN*    - READS USER INPUT.
@@ -234,27 +225,30 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCBOU  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
      &            LOUTSPP
+      USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFBOU  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
+     &             FRM5    ,COFRM4   ,COEF4    ,FRATIO 
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+      USE YOWICE   , ONLY : ICEMASK
+      USE YOWINDN  , ONLY : ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            KMNOP    ,KMSOP
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,KTAG     ,
-     &            NPRECR   ,NPRECI
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+     &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGY      ,NBLO     ,
-     &            NIBLO
+     &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,ZPI      ,RAD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            INDEP
+     &            INDEP    ,TCGOND
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,
      &            ROAIRO   ,ZIDLOLD  ,
@@ -263,12 +257,13 @@
      &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,IDELPRO  ,
      &            IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,
-     &            CDATEA   ,MARSTYPE ,LANAONLY
+     &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
      &            FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,LSAMEDEPTH
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,KCOR     ,
+     &            KRLAT    ,KRLON    ,KRLAT2   ,KRLON2   ,LSAMEDEPTH
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
      &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
@@ -282,25 +277,16 @@
 
 ! -------------------------------------------------------------------
 
-      CHARACTER*12 ZERO,CDUM
+      CHARACTER*14 ZERO,CDUM
       CHARACTER*24 FILNM
 
 !----------------------------------------------------------------------
-      REAL X4(2)
-      INTEGER I4(2)
       REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
       CALL INIWCST
 
-!     0. DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
-!        -----------------------------------------------------
-
-      X4=1.
-      NPRECR = KIND(X4)
-      I4=1
-      NPRECI = KIND(I4)
 
 !     0.1 SET IREAD TO THE PROCESSOR WHICH WILL READ THE INPUT FILES
 !         ----------------------------------------------------------
@@ -338,7 +324,7 @@
 
 ! STANDARD OUTPUT UNIT
 ! --------------------
- !    DEFINITION HAS  BEEN MOVED TO MPDECOMP
+!    DEFINITION HAS  BEEN MOVED TO MPDECOMP
 
 ! GRID AND UBUF FILES UNITS
 ! -------------------------
@@ -408,15 +394,6 @@
 !__PACK
 
       IUVELO = 39
-!ICE
-! SEA SURFACE TEMPERATURE FILE UNIT
-! ---------------------------------
-      IF(LWCOU) THEN
-        IU90 = 38
-      ELSE
-        IU90 = 90
-      ENDIF
-!ICE
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. INITMDL: UNITS DEFINED'
@@ -435,12 +412,29 @@
         CALL FLUSH(IU06)
       ENDIF
 
+!     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
+
+      IF(.NOT.ALLOCATED(FR5)) ALLOCATE(FR5(NFRE))
+      IF(.NOT.ALLOCATED(FRM5)) ALLOCATE(FRM5(NFRE))
+      IF(.NOT.ALLOCATED(COFRM4)) ALLOCATE(COFRM4(NFRE))
+
+      DO M=1,NFRE
+        FR5(M) = FR(M)**5
+        FRM5(M) = 1./FR5(M)
+        IF(ISHALLO.EQ.1) THEN
+          COFRM4(M) = COEF4*G/FR(M)**4
+        ELSE
+          COFRM4(M) = 0.5*COEF4*ZPI**4/SQRT(G)
+        ENDIF
+      ENDDO
+
       IF(LMESSPASS) THEN
 
         KTAG=100
 
 !      1.3 OUTPUT MODEL DECOMPOSITION DETAILS 
 !          ----------------------------------
+
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*)  ' MODEL DOMAIN DECOMPOSITION  : '
           WRITE(IU06,*)  ' =========================='
@@ -463,6 +457,7 @@
 !         IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
 !         POINT TO THE PARAMETRE WHICH ARE OUTPUT.
 !         ----------------------------------------------------------
+
       CALL MPCRTBL
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
@@ -471,6 +466,7 @@
 
 !     1.5 DETERMINE LAST OUTPUT DATE
 !         --------------------------
+
       IF (NOUTT.GT.0) THEN
         COUTLST=COUTT(NOUTT)
       ELSE
@@ -522,7 +518,9 @@
       ENDIF
 !NEST
 
-      ALLOCATE(IUSCR(NBLO))
+      IF (.NOT.ALLOCATED(IUSCR)) THEN
+        ALLOCATE(IUSCR(NBLO))
+      ENDIF
       DO IG=1,NBLO
         IUSCR(IG) = 39+IG
       ENDDO
@@ -562,34 +560,7 @@
         IF(ALLOCATED(FRHF)) DEALLOCATE(FRHF)
         IF(ALLOCATED(DFIMHF)) DEALLOCATE(DFIMHF)
       ENDIF
-!ICE
-!*    2.3. READ MODULE YOWICE
-!     -----------------------
 
-      CALL FLUSH (IU06)
-      LICERUN=.FALSE.
-
-      FILNM = 'sfctempin'
-      LIU   = LEN_TRIM(FILNM)
-      FILNM=FILNM(1:LIU)
-      INQUIRE(FILE=FILNM,EXIST=LICERUN)
-
-      ALLOCATE(ICEMASK(NIBLO,NBLO))
-
-      IF (LICERUN) THEN
-        CALL READICE (IU06,FILNM,ITEST,NSTART,NEND,IREAD,KTAG)
-      ELSE
-        ICEMASK=1
-        WRITE(IU06,*)' '
-        WRITE(IU06,*)'    ********************************************'
-        WRITE(IU06,*)'    SUB. INITMDL: FILE ',FILNM,' NOT FOUND '
-        WRITE(IU06,*)'    SUB. INITMDL: NO ICE MASK WILL BE USED '
-        WRITE(IU06,*)'    ********************************************'
-        WRITE(IU06,*)' '
-        CALL FLUSH(IU06)
-      ENDIF
-
-!ICE
 ! ----------------------------------------------------------------------
 
 !*    3. PRINT INITIAL CONDITIONS AS READ FROM PERPROCESSING.
@@ -670,12 +641,12 @@
       IF (ITEST.GE.2)CALL FLUSH(IU06)
 
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &               ROAIRO,ZIDLOLD,
+     &               ROAIRO,ZIDLOLD,ICEMASK,
      &               NSTART,NEND,IREAD)
 
       IF (LWCOU) THEN
-        IDELWO = KDELWI
-        IDELWI = KDELWI
+        IDELWO = KCOUSTEP 
+        IDELWI = KCOUSTEP 
       ENDIF
  
       CDA = CDTPRO
@@ -754,7 +725,7 @@
 
       IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) THEN
         CDTINTT= CBPLTDT
-        IF(LANAONLY) THEN	
+        IF(LANAONLY) THEN
           CDTINTT=CDATEA
         ELSE
  5102     CONTINUE
@@ -766,7 +737,7 @@
       ENDIF
       IF (PFLAG21.OR.FFLAG21.OR.GFLAG21) THEN
         CDTINTS= CBPLTDT
-        IF(LANAONLY) THEN	
+        IF(LANAONLY) THEN
           CDTINTS=CDATEA
         ELSE
  5103     CONTINUE
@@ -778,7 +749,7 @@
       ENDIF
       IF (PFLAG25.OR.FFLAG25.OR.GFLAG25) THEN
         CDTSPT= CBPLTDT
-        IF(LANAONLY) THEN	
+        IF(LANAONLY) THEN
           CDTSPT=CDATEA
         ELSE
  5104     CONTINUE
@@ -790,7 +761,7 @@
       ENDIF
       IF (PFLAG26.OR.FFLAG26.OR.GFLAG26) THEN
         CDTSPS= CBPLTDT
-        IF(LANAONLY) THEN	
+        IF(LANAONLY) THEN
           CDTSPS=CDATEA
         ELSE
  5105     CONTINUE
@@ -897,6 +868,46 @@
         ENDIF
 
 !SHALLOW
+!     8.2 COMPUTE THE NONLINEAR TRANSFER FUNCTION COEFFICIENTS FOR SNL
+!         VALID FOR THE NEW FORMULATION
+!         ------------------------------------------------------------ 
+
+      IF(.NOT.ALLOCATED(ENH))
+     &   ALLOCATE(ENH(NSTART(IRANK):NEND(IRANK),NFRE+4,IGL))
+
+      IF (ISNONLIN.NE.0) THEN
+        ENH_MAX=10.
+        IF (ISHALLO.NE.1) THEN
+          DO IG=1,IGL
+            DO M=1,NFRE
+               DO IJ=NSTART(IRANK),NEND(IRANK)
+                 D = DEPTH(IJ,IG)
+                 OM = ZPI*FR(M)
+                 XK = AKI(OM,D)
+                 ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
+               ENDDO
+            ENDDO
+            DO M=NFRE+1,NFRE+4
+               DO IJ=NSTART(IRANK),NEND(IRANK)
+                 D = DEPTH(IJ,IG)
+                 OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
+!                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
+!                HENCE THE USE OF FUNCTIOn AKI.
+                 XK = AKI(OM,D)
+                 ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
+               ENDDO
+            ENDDO
+          ENDDO
+        ELSE
+          DO IG=1,IGL
+            DO M=1,NFRE+4
+               DO IJ=NSTART(IRANK),NEND(IRANK)
+                 ENH(IJ,M,IG) = 1.
+               ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+      ENDIF
 
 !*    8.3 COMPUTE SHALLOW WATER TABLE INDICES.
 !         ------------------------------------
@@ -919,19 +930,65 @@
           IF(.NOT.ALLOCATED(LSAMEDEPTH)) 
      &        ALLOCATE(LSAMEDEPTH(NSTART(IRANK):NEND(IRANK)))
 
-          DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
-     &          INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
-     &          INDEP(IJ).EQ.INDEP(KLAT(IJ,1)) .AND.
-     &          INDEP(IJ).EQ.INDEP(KLAT(IJ,2)) .AND.
-     &          INDEP(IJ).EQ.INDEP(KLAT2(IJ,1)).AND.
-     &          INDEP(IJ).EQ.INDEP(KLAT2(IJ,2)) ) THEN
-              LSAMEDEPTH(IJ) = .TRUE.
-            ELSE
-              LSAMEDEPTH(IJ) = .FALSE.
-            ENDIF
+          IF(IPROPAGS.EQ.2) THEN
+            DO IJ = NSTART(IRANK),NEND(IRANK)
+              IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,1)).AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,2)) ) THEN
+                LSAMEDEPTH(IJ) = .TRUE.
+              ELSE
+                LSAMEDEPTH(IJ) = .FALSE.
+              ENDIF
+              IF(LSAMEDEPTH(IJ)) THEN
+                OUTER : DO ICL=-1,1
+                  DO IC=1,4
+                    IF( INDEP(IJ).NE.INDEP(KCOR(IJ,IC,ICL))) THEN
+                      LSAMEDEPTH(IJ) = .FALSE.
+                      EXIT OUTER
+                    ENDIF 
+                  ENDDO
+                ENDDO OUTER
+              ENDIF
 
-          ENDDO
+            ENDDO
+          ELSE IF(IPROPAGS.EQ.1) THEN
+            DO IJ = NSTART(IRANK),NEND(IRANK)
+              IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,1)).AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,2)).AND.
+     &            INDEP(IJ).EQ.INDEP(KRLON(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KRLON(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KRLAT(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KRLAT(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KRLAT2(IJ,1)).AND.
+     &            INDEP(IJ).EQ.INDEP(KRLAT2(IJ,2)).AND.
+     &            INDEP(IJ).EQ.INDEP(KRLON2(IJ,1)).AND.
+     &            INDEP(IJ).EQ.INDEP(KRLON2(IJ,2)) ) THEN
+                LSAMEDEPTH(IJ) = .TRUE.
+              ELSE
+                LSAMEDEPTH(IJ) = .FALSE.
+              ENDIF
+            ENDDO
+          ELSE
+            DO IJ = NSTART(IRANK),NEND(IRANK)
+              IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,1)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT(IJ,2)) .AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,1)).AND.
+     &            INDEP(IJ).EQ.INDEP(KLAT2(IJ,2)) ) THEN
+                LSAMEDEPTH(IJ) = .TRUE.
+              ELSE
+                LSAMEDEPTH(IJ) = .FALSE.
+              ENDIF
+            ENDDO
+          ENDIF
 
         ENDIF
 !SHALLOW
@@ -942,16 +999,37 @@
 
 ! ----------------------------------------------------------------------
 !REFRA
-!*    9. PRECOMPUTE REFRACTION TERMS.
-!        ----------------------------
-
+!*    9. PRECOMPUTE BOTTOM REFRACTION TERMS.
+!        -----------------------------------
       IF (IREFRA.NE.0) THEN
-        CALL PROPDOT(SL)
+        NIBLD=NIBLO
+        NBLD=NBLO
+        NIBLC=NIBLO
+        NBLC=NBLO
+      ELSE
+        NIBLD=0
+        NBLD=0
+        NIBLC=0
+        NBLC=0
+      ENDIF
+
+!     INITIALISE CDTCUR
+      CDTCUR=CDATECURA
+      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        CALL INCDATE(CDTCUR,-3600*IDELCUR)
+      ENDIF
+
+!     COMPUTE BOTTOM REFRACTION TERMS
+      IF (IREFRA.EQ.1) THEN
+        CALL PROPDOT
         IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '    SUB. INITMDL: MODULE YOWREFD ',
+     &   WRITE(IU06,*) '    SUB. INITMDL: REFRACTION TERMS',
      &   'INITIALIZED '
          CALL FLUSH(IU06)
       ENDIF
+!     THE CURRENT REFRACTION TERMS ARE NOW COMPUTED IN WAVEMDL ONCE
+!     THE CURRENT FIELD IS INPUT.
+
 !REFRA
 ! ----------------------------------------------------------------------
 !CMFA

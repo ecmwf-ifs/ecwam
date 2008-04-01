@@ -27,8 +27,8 @@
 !         *IUNIT*  INTEGER    FORTRAN UNIT.
 !         *ICH*    INTEGER    IF ICH = 0 THEN FILE WITH DTG IS SAVED,
 !                             ELSE FILE FROM A LIST IS SAVED.
-!         *CDATE*  CHAR*12    DATE (YYYYMMDDHHMM) OF FILE TO BE SAVED.
-!         *CDATEF* CHAR*12    DATE TIME GROUP OF FORECAST START.
+!         *CDATE*  CHAR*14    DATE (YYYYMMDDHHMM) OF FILE TO BE SAVED.
+!         *CDATEF* CHAR*14    DATE TIME GROUP OF FORECAST START.
 !         *FILEID* CHARACTER  FILE ID.
 !         *OPT*    CHARACTER  OPTION
 !                             = 'S' SAVE FILE CONNECTED TO IUNIT
@@ -80,7 +80,7 @@
       PARAMETER (QQNAME =  7)
       CHARACTER NAME(QQNAME)*17,
      &          FILENA*17, IU*8, PLIST*110,
-     &          CDATE*12, CDATEF*12, CDATEH*10
+     &          CDATE*14, CDATEF*14, CDATEH*10
 
 ! ----------------------------------------------------------------------
 
@@ -210,10 +210,6 @@
         WRITE(IU06,*) ' * W A R N I N G in --GSFILE-- '//
      &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '//
      &                 ' RESTART FILES' 
-      ELSEIF ( LIP .EQ. 0 ) THEN
-        WRITE(IU06,*) '  '
-        WRITE(IU06,*) ' * W A R N I N G in --GSFILE-- '//
-     &                 ' NO PATH --> NO CALL TO ECFS !! '
       ENDIF
 
 ! ----------------------------------------------------------------------

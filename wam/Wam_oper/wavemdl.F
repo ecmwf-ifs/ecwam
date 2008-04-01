@@ -1,11 +1,12 @@
       SUBROUTINE WAVEMDL (CBEGDAT, KDELWI, KDURAT,
      &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, FIELDS,
+     &                    ISEC1, ISEC2, RMISS, FIELDS,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
      &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
-     &                    NFDBREF)
+     &                    NFDBREF,
+     &                    FRSTIME, NADV)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -29,6 +30,8 @@
 !                                            GENERALIZE THE INTERFACE WITH
 !                                            THE ATMOSPHERIC MODEL
 !         G.Mozdzynski ECMWF  January  2005  OPTIMISE COUPLING COMMS
+!         J BIDLOT     ECMWF  August 2006  PASS RMISS TO SPECIFY MISSING DATA.
+!         M. Drusch    ECMWF  Sep 2007  Re-initialize through FRSTIME and NADV
 !                                            
 
 !     PURPOSE.                                                          
@@ -87,21 +90,26 @@
 
 ! -------------------------------------------------------------------   
 
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS,KCOUSTEP
       USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
-      USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
-     &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
-     &            NWFDBREF ,LFDBOPEN ,LSARINV
-      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,
+     &             LLCHKCFL,LLCHKCFLA
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO
+      USE YOWPCONS , ONLY : ZMISS
+      USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
+     &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
+     &            IASSI    ,NWFDBREF ,LFDBOPEN ,LSARINV
+      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
      &            NSTART ,NEND
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWWIND  , ONLY : CDAWIFL
+      USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW
       USE FDBSUBS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -121,12 +129,17 @@
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       
-      CHARACTER CBEGDAT*12, CDTASS*12
+      CHARACTER CBEGDAT*14, CDTASS*14
+      CHARACTER*14 :: CDATEIN, CDTNEWCUR
       CHARACTER*12 :: FLABEL(NWVFIELDS)
+      CHARACTER*24 FILNM
 
-      LOGICAL FRSTIME, LDSTOP, LDWRRE, LDRESTARTED, LDWCOUNORMS
-
-      DATA FRSTIME, NADV /.TRUE., 0 /
+      LOGICAL :: LDSTOP, LDWRRE, LDRESTARTED, LDWCOUNORMS
+      LOGICAL :: LLCURRENT
+      LOGICAL :: FRSTIME
+      LOGICAL :: L1STCALL
+      INTEGER :: NADV
+      INTEGER :: NFDBREF
 
 !     NADV  NUMBER OF PROPAGATION TIME STEPS IN ONE CALL OF WAMODEL.    
 ! --------------------------------------------------------------------- 
@@ -140,13 +153,17 @@
  1013 FORMAT ('  *    ========================================    *')
  1014 FORMAT ('  *    TWO-WAY INTERACTION WIND AND WAVES          *')
  1015 FORMAT ('  *    ONE-WAY INTERACTION WIND AND WAVES          *')
- 1016 FORMAT ('  * START DATE OF RUN      ', A12,  ' (CDATEA)   *')
- 1018 FORMAT ('  * END DATE OF RUN        ', A12,  ' (CDATEE)   *')
+ 1016 FORMAT ('  * START DATE OF RUN      ', A14,  ' (CDATEA)   *')
+ 1018 FORMAT ('  * END DATE OF RUN        ', A14,  ' (CDATEE)   *')
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
 !     KEEP GRIB HEADER KSEC1 FROM THE IFS
+
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
+
+      ZMISS=RMISS
+
       IF(LWCOU) THEN
         IF (ITEST.GE.1) THEN
             WRITE (IU06,*) ' WAVEMDL: KSEC1 FROM IFS'
@@ -161,11 +178,15 @@
 
       KCOUSTEP=KDELWI
 
+
       IF (FRSTIME) THEN                                                 
+        WRITE (IU06,*) ' WAVEMDL:'
+        WRITE (IU06,*) ' FRSTIME', FRSTIME
+        CALL FLUSH(IU06)
         IF(LWCOU) THEN
           IU06=20
           IL = LEN_TRIM(CBEGDAT)
-          IF(IL.NE.12) THEN
+          IF(IL.NE.14) THEN
             WRITE (IU06,*) ' NON-Y2K COMPLIANT DATE IN CALLING WAVEMDL'
             WRITE (IU06,*) ' CBEGDAT =  ',CBEGDAT
             WRITE (IU06,*) ' PROGRAM WILL ABORT '
@@ -195,7 +216,17 @@
           WRITE (IU06,1010)
 
         ENDIF
-        CALL INITMDL (KDELWI,NADV)
+
+!       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
+        IF(IUNITW.NE.0) THEN
+          CALL PBCLOSE(IUNITW,KRET)
+          IUNITW=0
+        ENDIF
+
+        CALL INITMDL (NADV)
+
+        LLCHKCFL=.FALSE.
+
         KQGAUSS=IQGAUSS
 !       if new levtype is used in coupled run than it assumed
 !       that WAM and IFS will be sharing the same stream, therefore
@@ -215,6 +246,7 @@
         ENDIF
 
         FRSTIME = .FALSE.                                              
+        L1STCALL = .TRUE.
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'                 
@@ -284,19 +316,98 @@
           NWFDBREF=NFDBREF 
           LFDBOPEN=.TRUE.
         ENDIF
+
+        L1STCALL = .FALSE.
       ENDIF
 
 ! --------------------------------------------------------------------  
 
-!*    2.0  INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.                  
+!*    2.   INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.                  
 !          -------------------------------------------                  
+
+
+!     2.0  GET NEW CURRENTS IF IT IS REQUIRED.
+!          ----------------------------------
+
+      CALL GSTATS(1962,0)
+
+      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+
+        CDTNEWCUR=CDTCUR
+        CALL INCDATE(CDTNEWCUR,1800*IDELCUR)
+
+        IF(CDTPRO.GE.CDTNEWCUR) THEN
+          IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
+          IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
+
+          LLCURRENT=.FALSE.
+
+          CALL INCDATE(CDTCUR,3600*IDELCUR)
+
+          FILNM = 'currents'
+          LIU   = LEN_TRIM(FILNM)
+          FILNM=FILNM(1:LIU)
+          INQUIRE(FILE=FILNM,EXIST=LLCURRENT)
+
+          IREAD=1
+
+          IF (LLCURRENT) THEN
+            WRITE(IU06,*) ' '
+            WRITE(IU06,*) '   SUB. WAVEMDL: GETTING OCEAN CURRENTS'
+            WRITE(IU06,*) '   FOR DATE ',CDTCUR
+            CALL FLUSH(IU06)
+
+            CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
+
+            IF(CDATEIN.NE.CDTCUR) THEN
+              WRITE (IU06,*) ' **************************************'
+              WRITE (IU06,*) ' *                                    *'
+              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL :               *'
+              WRITE (IU06,*) ' * THE REQUESTED DATE FOR THE CURRENTS*'
+              WRITE (IU06,*) ' * DOES NOT CORRESPOND TO THE DECODED *'
+              WRITE (IU06,*) ' * DATE !!!!                          *'
+              WRITE (IU06,*) ' * CDTCUR =',CDTCUR 
+              WRITE (IU06,*) ' * CDATEIN=',CDATEIN
+              WRITE (IU06,*) ' *                                    *'
+              WRITE (IU06,*) ' **************************************'
+              CALL ABORT1
+            ENDIF
+          ELSE
+            U=0.
+            V=0.
+            WRITE(IU06,*)' '
+            WRITE(IU06,*)'    ****************************'
+            WRITE(IU06,*)'     FILE ',FILNM,' NOT FOUND '
+            WRITE(IU06,*)'     CURRENTS ARE SET TO 0. '
+            WRITE(IU06,*)'    ****************************'
+            WRITE(IU06,*)' '
+            CALL FLUSH(IU06)
+          ENDIF
+
+
+!         COMPUTE REFRACTION TERMS
+          CALL PROPDOT
+          IF (ITEST.GE.2)
+     &     WRITE(IU06,*) '    SUB. WAVEMDL: REFRACTION TERMS',
+     &     'INITIALIZED '
+           CALL FLUSH(IU06)
+
+          LLCHKCFLA=.TRUE.
+        ELSE
+          LLCHKCFLA=.FALSE.
+        ENDIF
+      ELSE
+        LLCHKCFLA=.FALSE.
+      ENDIF
+
+      CALL GSTATS(1962,1)
 
 
 !*    2.1  REFORMAT WINDS FROM GAUSSIAN TO BLOCKED.                     
 !          ----------------------------------------                     
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD,
+     &              ROAIRO, ZIDLOLD, ICEMASK,
      &              NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &              ISEC1, ISEC2, FIELDS, MASK_IN)
 
@@ -307,19 +418,22 @@
         WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
       ENDIF
 
+
 !*    2.2  INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.                  
 !          -------------------------------------------                  
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
       ENDIF
 
-!*    2.3  DATA ASSIMILATION AND OR SAR INVERSION.
+!*    2.3  DATA ASSIMILATION AND/OR SAR INVERSION.
 !*         IF REQUESTED AND MODEL IS IN ANALYSIS PERIOD.
+!          THE DATA ASSIMILATION SOFTWARE IS NOT AVAILABLE
+!          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
 
       IF (IASSI.EQ.1) THEN

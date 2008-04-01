@@ -539,6 +539,18 @@
 !       there is no such thing as IFS in stand alone
         KSTREAM = 1087
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1030) THEN
+!       ENSEMBLE DATA ASSIMILATION 
+        CSTREAM = 'enda'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1088
+        LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1088) THEN
+!       ENSEMBLE WAVE DATA ASSIMILATION 
+        CSTREAM = 'ewda'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1030
+        LASTREAM=.FALSE.
       ELSE
         CSTREAM='****'
         MARSFCTYPE = 'fc'

@@ -24,16 +24,6 @@
 !         *kjs*     INTEGER   INDEX OF FIRST POINT IN BLOCK.
 !         *kjl*     INTEGER   INDEX OF LAST POINT IN BLOCK.
 !         *kblock*  INTEGER   BLOCK NUMBER.
-
-
-! ----------------------------------------------------------------------
-
-!* 0.    COMMON OUTPUT CONTROL.
-!  ----------------------------
-
-#include <outctrl.h>
-      DATA csubna /"MAKEBLO"/
-
 ! ----------------------------------------------------------------------
 
       INTEGER kxlg(kiblo,kblo)
@@ -50,12 +40,6 @@
 
 !*    1. INITIALIZATIONS.
 !        ----------------
-      msub = msub + 1
-      CALL  uraopc (csubna, msub, llsuvi, lltest)
-      IF (llsuvi .OR. lltest) WRITE(*,*)' ',csubna,': BLOCK=',kblock
-
-      IF (lltest)
-     &write(81,'(a40)' )'       JX,  KGX,  KGY, KFRE,  KANG,    JI'
 
       ipsectrum = kang*kfre
 
@@ -73,10 +57,8 @@
       ENDDO
 
 
-
 !*    2. MAKE BLOCKED FIELD
 !     ---------------------
-
 
       DO jang = 1, kang
         DO jfre = 1, kfre
@@ -84,29 +66,10 @@
           DO ji = kjs, kjl
             jx = jx0 + i_off(ji)
             pfl3(ji,jang,jfre) = psec4(jx)
-            IF (lltest)
-     &      WRITE (81,1300) jx, ix, iy, jfre, jang, ji, psec4(jx)
           ENDDO
         ENDDO
       ENDDO
 
-!     DO 1200 ji = kjs,kjl
-!        ix = kxlg(ji,kblock)
-!        iy = kgy-kxlt(ji,kblock)
-!        i_off = ispoff(klonrgg, kgy, kang, kfre, iy, ix)
-!        DO jang=1,kang
-!           DO jfre=1,kfre
-!              jx=(jfre-1)*kang+1+(jang-1)+i_off
-!              pfl3(ji,jang,jfre) = psec4(jx)
-!              IF (lltest)
-!    .         write(81,1300) jx, ix, iy, jfre, jang, ji, psec4(jx)
-!           ENDDO
-!        ENDDO
-!1200 CONTINUE
- 
-      msub = msub - 1
       RETURN
  1300 FORMAT(i10,5i6,1x,f15.13)
       END SUBROUTINE makeblos
-
-

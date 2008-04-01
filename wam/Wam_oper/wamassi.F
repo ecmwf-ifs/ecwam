@@ -82,10 +82,12 @@
      &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
      &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJL
+      USE YOWICE   , ONLY : ICEMASK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
-     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,PFG
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
+     &            HMAXG    ,TMAXG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -99,14 +101,14 @@
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
      &            Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3
+     &            FL1      ,FL2      ,FL3      ,SL
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
-     &            IREST    ,IASSI    ,NTASKS   ,NSIZE    ,NENSFNB  ,
-     &            NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,MARSTYPE ,
-     &            YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,LSARINV  ,
-     &            IREFDATE ,LFDBOPEN
+     &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
+     &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
+     &            MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,
+     &            LSARINV  ,IREFDATE ,LFDBOPEN
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -120,7 +122,7 @@
 ! ----------------------------------------------------------------------
 
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
-      LOGICAL :: LSV, LOUT, LFDBIOOUT_OLD
+      LOGICAL :: LSV, LOUT, LLINTPOL
       REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
@@ -201,25 +203,29 @@
 
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
+        LLINTPOL=.FALSE.
         IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
      &      CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
 
-          IF (MOD(IG,2).EQ.1) THEN
-            IF (.NOT.LMESSPASS.AND.IG.NE.IGL) READ(IU11) FL2
+          IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+!!! it is assumed the FL1 still contains the spectra in the relative
+!!! frame of reference. It needs to be transformed to the absolute frame 
+            CALL GSTATS(1908,0)
+            CALL INTPOL (FL1, SL, IJS(IG), IJL(IG), IG, 1)
+
+            LLINTPOL=.TRUE.
+            CALL GSTATS(1908,1)
+            CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
+     &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
+     &        NSTART,NEND)
+          ELSE
             CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
      &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
      &        NSTART,NEND)
-            IF (ITEST.GE.2.AND.ITESTB.GE.IG) THEN
-              WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
-            ENDIF
-          ELSE
-            IF (IG.NE.IGL) READ(IU11) FL1
-            CALL OUTBS (FL2, FL3, IJS(IG), IJL(IG), IG, IGL,
-     &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
-     &        NSTART,NEND)
-            IF (ITEST.GE.2.AND.ITESTB.GE.IG) THEN
-              WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
-            ENDIF
+          ENDIF
+
+          IF (ITEST.GE.2.AND.ITESTB.GE.IG) THEN
+            WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
           ENDIF
         ENDIF
 
@@ -294,7 +300,6 @@
         ENDIF
       ENDIF
 
-
       LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
 
       IF (LSV.OR.LDWRRE) THEN
@@ -316,7 +321,7 @@
 
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
               CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &                       ZIDLOLD,NSTART,NEND,CDTPRO,CDATEF)
+     &          ZIDLOLD,ICEMASK,NSTART,NEND,CDTPRO,CDATEF)
             ENDIF
 
           ENDIF
@@ -325,7 +330,28 @@
 !           -------------
 
           IF ( LOUT.AND.LGRIBOUT ) THEN
-            CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+            IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+!             convert output spectra to absolute frame of reference
+              IF (.NOT.LLINTPOL) THEN
+                CALL GSTATS(1908,0)
+                CALL INTPOL (FL1, SL, IJS(IG), IJL(IG), IG, 1)
+                CALL GSTATS(1908,1)
+              ENDIF
+              CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+     &                     SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
+     &                     NLONRGG, KXLT, IXLG, NIBLO, NBLO,
+     &                     AMONOP, XDELLA, NSTART, NEND,
+     &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
+     &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
+     &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
+     &                     CDTPRO, CDATEF, CDATEA,
+     &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
+     &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
+     &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
+     &                     MFDBSF)
+            ELSE
+              CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                     NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                     AMONOP, XDELLA, NSTART, NEND,
@@ -339,6 +365,7 @@
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                     NWFDBREF, LFDBOPEN)
+            ENDIF
             CALL GSTATS(1976,0)
             ISTAT = IFLUSHFDBSUBS (NWFDBREF)
             CALL MPL_BARRIER(CDSTRING='WAMASSI:')
@@ -347,16 +374,7 @@
           ENDIF
 
           IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-
-            IF(LDWRRE.AND.LFDBIOOUT) THEN
-              LFDBIOOUT_OLD=LFDBIOOUT
-              LFDBIOOUT=.FALSE.
-            ENDIF
-
-            CALL SAVSPEC(FL1,NSTART,NEND,CDTPRO,CDATEF,CDATER,
-     &                   MARSTYPE,YCLASS, YEXPVER, CFDB2DSP)
-            IF(LDWRRE) LFDBIOOUT=LFDBIOOUT_OLD
-
+            CALL SAVSPEC(FL1,NSTART,NEND,CDTPRO,CDATEF,CDATER)
           ENDIF
 
           WRITE(IU06,*) ' '
@@ -441,7 +459,9 @@
       IF(ALLOCATED(WSPRDG)) DEALLOCATE(WSPRDG)
       IF(ALLOCATED(C4G)) DEALLOCATE(C4G)
       IF(ALLOCATED(BFG)) DEALLOCATE(BFG)
-      IF(ALLOCATED(PFG)) DEALLOCATE(PFG)
+      IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
+      IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
+      IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
 
       IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
       IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

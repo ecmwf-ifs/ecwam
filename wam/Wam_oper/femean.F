@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEAN (F, IJS, IJL, EM, FM, AK, LLAK)
+      SUBROUTINE FEMEAN (F, IJS, IJL, EM, FM, LLAK)
 
 ! ----------------------------------------------------------------------
 
@@ -21,13 +21,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, AK, LLAK)*
+!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, LLAK)*
 !              *F*   - SPECTRUM.
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
 !              *EM*  - MEAN WAVE ENERGY (INPUT)
 !              *FM*  - MEAN WAVE FREQUENCY (OUTPUT)
-!              *AK*  - MEAN WAVE NUMBER (OUTPUT)
 !              *LLAK*- TRUE IF MEAN WAVE NUMBER IS COMPUTED
 
 !     METHOD.
@@ -62,7 +61,7 @@
       INTEGER :: IJ,M,K,IJS,IJL
       REAL :: DELT25, DELT2, DEL2
       REAL :: F(NINF-1:NSUP,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM, AK
+      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
@@ -107,9 +106,6 @@
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
-        DO IJ=IJS,IJL
-          AK(IJ) = EPSMIN
-        ENDDO
         DO M=1,NFRE
           K=1
           DO IJ=IJS,IJL
@@ -124,7 +120,6 @@
           DO IJ=IJS,IJL
             EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
             FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
-            AK(IJ) = AK(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
 
@@ -149,8 +144,6 @@
           EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
           FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
           FM(IJ) = EM(IJ)/FM(IJ)
-          AK(IJ) = AK(IJ)+DEL2*TEMP2(IJ)
-          AK(IJ) = (EM(IJ)/AK(IJ))**2
         ENDDO
 
       ENDIF

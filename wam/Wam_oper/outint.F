@@ -62,8 +62,8 @@
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
-     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,PFG      ,
-     &            DEPTHG
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
+     &            DEPTHG   ,HMAXG    ,TMAXG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -75,9 +75,10 @@
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EGRCRV   ,
      &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV    ,EPSUS    ,
      &            EPSU10
+      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
-     &            CDTINTS  ,CFDBSF   ,IASSI    ,NENSFNB  ,NTOTENS  ,
-     &            MARSTYPE ,YCLASS   ,YEXPVER
+     &            CDTINTS  ,CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
+     &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER
       USE FDBSUBS
 
 ! ----------------------------------------------------------------------
@@ -95,73 +96,9 @@
       LOUTINT=.TRUE.
 
       IF(CLDOMAIN.EQ.'s') THEN
-!     the swamp case has been reduced to a one grid point model
-!     the necessary parameters for the study of the non dimensional
-!     growth curves are output
-!!!!  MAKE SURE that whgttg(i,j) is the wave wave height.
 
-
-        call difdate(cdatea,cdtpro,itime)
-        if(allocated(whgttg).and.
-     &     allocated(cdg).and.
-     &     allocated(u10g).and.
-     &     allocated(mwp1g).and.
-     &     allocated(tauwg).and.
-     &     allocated(wpkftg).and.
-     &     allocated(wmnftg) ) then
-          i=max(1,ngx/2)
-          do j=1,ngy
-            if(whgttg(i,j).ne.zmiss) then
-!             take the definiton from the model for the relation
-!             between ustar and u10g (see buildstress)
-              ustar2=max(cdg(i,j)*max(u10g(i,j)**2,epsu10),epsus)
-              ustar=sqrt(ustar2)
-              tstar=itime*g/ustar
-              estar=(whgttg(i,j)**2/16)*g**2/(ustar**4)
-              anfit=EGRCRV*(tstar/(AGRCRV+tstar))**BGRCRV
-              fmstar=ustar/(mwp1g(i,j)*g)
-              fmstar1=ustar*wmnftg(i,j)/g
-              fmfit=AFCRV*fmstar**BFCRV
-              cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
-              z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
-              charnock=max(g*z0/ustar2,alpha)
-              X=min(tauwg(i,j),0.99999999)
-              charnock2=alpha/sqrt(1.-X)
-              distance=(ngy-j+1)*DELPHI
-              fetch=g*distance/ustar2
-              write(iu06,*) 'grow ',ngy-j+1,
-     &                      tstar,estar,ustar,whgttg(i,j)**2/16,
-     &                      cdg(i,j),u10g(i,j),anfit,fmstar,fmfit,
-     &                      wpkftg(i,j),charnock,charnock2,fetch
-              write(iu06,*) ' '
-!!! alternative scaling on u10
-              u10=u10g(i,j)
-              ustar2=max(cdg(i,j)*max(u10g(i,j)**2,epsu10),epsus)
-              ustar=sqrt(ustar2)
-              tstar=itime*g/u10
-              estar=(whgttg(i,j)**2/16)*g**2/(u10**4)
-              anfit=EGRCRV*(tstar/(AGRCRV+tstar))**BGRCRV
-              fmstar=u10/(mwp1g(i,j)*g)
-
-              fmstar1=u10*wmnftg(i,j)/g
-
-              fmfit=AFCRV*fmstar**BFCRV
-              cdsqrtinv = min(1./sqrt(cdg(i,j)),100.0)
-              z0=xnlev(1)*exp(-xkappa*cdsqrtinv)
-              charnock=max(g*z0/ustar2,alpha)
-              X=min(tauwg(i,j),0.99999999)
-              charnock2=alpha/sqrt(1.-X)
-              distance=(ngy-j+1)*DELPHI
-              fetch=g*distance/(u10**2)
-              write(iu06,*) 'u10scaling ',ngy-j+1,
-     &                      tstar,estar,ustar,whgttg(i,j)**2/16,
-     &                      cdg(i,j),u10g(i,j),anfit,fmstar1,fmfit,
-     &                      wpkftg(i,j),charnock,charnock2,fetch
-              write(iu06,*) ' '
-            endif
-          enddo
-        endif
-
+        CALL OUT_ONEGRDPT(IU06)
+  
       ENDIF
 
       IF (CDTINTT.EQ.CDTPRO) THEN
@@ -263,8 +200,10 @@
         IF (FFLAG(27))CALL MPGATHERGRDFLD(IPFGTBL(27),IRECV,27,WSPRDG)
         IF (FFLAG(34))CALL MPGATHERGRDFLD(IPFGTBL(34),IRECV,34,C4G)
         IF (FFLAG(35))CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,35,BFG)
-        IF (FFLAG(36))CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,36,PFG)
+        IF (FFLAG(36))CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,36,QPG)
         IF (FFLAG(37))CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,37,DEPTHG)
+        IF (FFLAG(38))CALL MPGATHERGRDFLD(IPFGTBL(38),IRECV,38,HMAXG)
+        IF (FFLAG(39))CALL MPGATHERGRDFLD(IPFGTBL(39),IRECV,39,TMAXG)
 
       ENDIF
 
@@ -347,10 +286,13 @@
         IF (PFLAG(35).OR.(.NOT.LFDB.AND.GFLAG(35)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(35),IRECV,135,BFG)
         IF (PFLAG(36).OR.(.NOT.LFDB.AND.GFLAG(36)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,136,PFG)
+     &      CALL MPGATHERGRDFLD(IPFGTBL(36),IRECV,136,QPG)
         IF (PFLAG(37).OR.(.NOT.LFDB.AND.GFLAG(37)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,136,DEPTHG)
-
+     &      CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,137,DEPTHG)
+        IF (PFLAG(38).OR.(.NOT.LFDB.AND.GFLAG(38)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(38),IRECV,138,HMAXG)
+        IF (PFLAG(39).OR.(.NOT.LFDB.AND.GFLAG(39)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(39),IRECV,139,TMAXG)
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
@@ -412,8 +354,10 @@
             IF (FFLAG(27))WRITE (IU20) WSPRDG
             IF (FFLAG(34))WRITE (IU20) C4G
             IF (FFLAG(35))WRITE (IU20) BFG
-            IF (FFLAG(36))WRITE (IU20) PFG
+            IF (FFLAG(36))WRITE (IU20) QPG
             IF (FFLAG(37))WRITE (IU20) DEPTHG
+            IF (FFLAG(38))WRITE (IU20) HMAXG
+            IF (FFLAG(39))WRITE (IU20) TMAXG
           ENDIF
         ENDIF
 
@@ -551,7 +495,7 @@
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SPECTRAL PEAKEDNESS (0.1 Hz)'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 PFG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+     &                 QPG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
 
@@ -562,7 +506,20 @@
      &                 DEPTHG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-
+        IF (PFLAG(38)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MAXIMUM WAVE HEIGHT ( 0.1 METRES )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 HMAXG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(39)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MAX WAVE PERIOD ( SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 TMAXG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
         ENDIF
       ENDIF
 
@@ -699,16 +656,16 @@
 
       IF(MARSTYPE.EQ.'4v') THEN
 !*      THIS IS A 4V CASE
-        READ(CDATEA,'(I4,4I2)')IY,IM,ID,IH,IMN
+        READ(CDATEA,'(I4,5I2)')IY,IM,ID,IH,IMN,ISS
         CALL DIFDATE(CDATEA,CDTPRO,IFCST)
         IFCST=IFCST/3600
       ELSEIF(CDTPRO.LE.CDATEF) THEN
 !*      THIS IS AN ANALYSIS DATE
-        READ(CDTPRO,'(I4,4I2)') IY, IM, ID, IH, IMN
+        READ(CDTPRO,'(I4,5I2)') IY,IM,ID,IH,IMN,ISS
         IFCST = 0
       ELSE
 !*      THIS IS A  FORECAST DATE
-        READ(CDATEF,'(I4,4I2)')IY,IM,ID,IH,IMN
+        READ(CDATEF,'(I4,5I2)')IY,IM,ID,IH,IMN,ISS
         CALL DIFDATE(CDATEF,CDTPRO,IFCST)
         IFCST=IFCST/3600
       ENDIF
@@ -725,8 +682,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=229
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -741,8 +699,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=230
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -770,8 +729,9 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -787,8 +747,9 @@
      &      .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=249
-            CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -817,8 +778,9 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -835,8 +797,9 @@
             ilocal=ilocal+1
             IPARAM=233
             IZLEV=NINT(XNLEV(1))
-            CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &       LFDBOPEN)
           ENDIF
@@ -852,8 +815,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=244
-            CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -869,8 +833,9 @@
             ilocal=ilocal+1
             IPARAM=245
             IZLEV=NINT(XNLEV(1))
-            CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -885,8 +850,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=246
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -901,8 +867,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=247
-            CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -917,8 +884,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=248
-            CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -933,8 +901,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=220
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -949,8 +918,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=221
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -965,8 +935,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=222
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -981,8 +952,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=252
-            CALL GRIBPAC(IU06,IU30,NTENCODE,C4G,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,C4G,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -997,8 +969,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=253
-            CALL GRIBPAC(IU06,IU30,NTENCODE,BFG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,BFG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1013,8 +986,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=254
-            CALL GRIBPAC(IU06,IU30,NTENCODE,PFG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,QPG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1022,18 +996,50 @@
 !*      MODEL BATHYMETRY.
 !       -----------------
 
-        IF (GFLAG(37).AND.
-     &                    ( (MARSTYPE.EQ.'an'.AND.IASSI.EQ.1) .OR.
-     &                      (MARSTYPE.NE.'fg'.AND.IFCST.EQ.0) )
-     &     ) THEN
+        IF (GFLAG(37)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(37)))
      &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=219
-            CALL GRIBPAC(IU06,IU30,NTENCODE,DEPTHG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,DEPTHG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      MAXIMUM WAVE HEIGHT.
+!       -------------------
+
+        IF (GFLAG(38)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(38)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=218
+            CALL GRIBPAC(IU06,IU30,NTENCODE,HMAXG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      MAXIMUM WAVE PERIOD.
+!       -------------------
+
+        IF (GFLAG(39)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(39)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=217
+            CALL GRIBPAC(IU06,IU30,NTENCODE,TMAXG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1058,8 +1064,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=234
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1075,8 +1082,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=235
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1104,8 +1112,9 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1121,8 +1130,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=237
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1138,8 +1148,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=238
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,IY,IM,
-     &       ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
      &       CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
           ENDIF
         ENDIF
@@ -1167,8 +1178,9 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1184,8 +1196,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=223
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1201,8 +1214,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=224
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1219,7 +1233,8 @@
             ilocal=ilocal+1
             IPARAM=225
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
-     &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1237,8 +1252,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=226
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1254,8 +1270,9 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=227
-            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,IY,IM,
-     &                   ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+            CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1272,7 +1289,8 @@
             ilocal=ilocal+1
             IPARAM=228
             CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
-     &                   IY,IM,ID,IH,IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   IY,IM,ID,IH,IMN,
+     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF

@@ -1,4 +1,4 @@
-      SUBROUTINE MGRID (IA1)
+      SUBROUTINE MGRID (BATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -15,8 +15,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MGRID (IA1)*
-!          *IA1*     - TOPOGRAPHIC DATA OF PART
+!       *CALL* *MGRID (BATHY)*
+!          *BATHY*     - BATHYMETRY /DATA OF PART
 
 !     METHOD.
 !     -------
@@ -43,7 +43,7 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION IA1(NGX,NGY)
+      REAL :: BATHY(NGX,NGY)
 
 ! ----------------------------------------------------------------------
 
@@ -60,7 +60,7 @@
       DO K=1,NY
         IPP(K) = 0
         DO I=1,NLONRGG(K)
-          IF (IA1(I,K).GT.-990) THEN
+          IF (BATHY(I,K).GT.-990.) THEN
             IPP(K) = IPP(K) + 1
           ENDIF
         ENDDO
@@ -85,12 +85,12 @@
         IL = IL + IPP(K)
         IF (IL.GT.NIBLO) THEN
           KE = K-1
-          CALL MBLOCK (IA1, KA, KE, IPP)
+          CALL MBLOCK (BATHY, KA, KE, IPP)
           KA = KE-1
           IL = IPP(KA)+IPP(KE)+IPP(KE+1)
         ENDIF
       ENDDO
-      CALL MBLOCK (IA1, KA, NY, IPP)
+      CALL MBLOCK (BATHY, KA, NY, IPP)
 
       IF(NBLO.GT.1) THEN
         NOVER=1

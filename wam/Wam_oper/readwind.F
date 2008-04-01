@@ -2,7 +2,7 @@
      &                     ISEC1, ISEC2, FIELDS, MASK_IN,
      &                     LWNDFILE,LCLOSEWND,
      &                     KINF, KSUP,
-     &                     IUNIT1, FILNM, FRSTIME )
+     &                     FILNM, LLNOTOPENED )
 
 !***  *READWIND* - PROGRAM TO REFORMAT WIND FIELDS FROM MARS 
 !                 EITHER FROM A FILE OR 
@@ -63,7 +63,7 @@
 !     *CALL* *READWIND (CDTWIR, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
 !    &                  ISEC1, ISEC2, FIELDS, LWNDFILE,LCLOSEWND,
 !    &                  KINF, KSUP,
-!    &                  IUNIT1, FILNM, FRSTIME )*
+!    &                  FILNM, LLNOTOPENED )*
 !
 !        *CDTWIR* - DATE/TIME OF THE DATA READ                          
 !        *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
@@ -87,9 +87,8 @@
 !                    RESET
 !        *KINF*   - SMALLEST WAM GRID POINT INDEX USED BY THE PE 
 !        *KSUP*   - LARGEST WAM GRID POINT INDEX USED BY THE PE 
-!        *IUNIT1*   UNIT OF OPEN INPUT FILE
 !        *FILNM*    FILENAME OF INPUT FILE
-!        *FRSTIME*  TRUE IF THE INPUT FILE HAS TO BE OPEN
+!        *LLNOTOPENED*  TRUE IF THE INPUT FILE HAS TO BE OPENED
 
 !     EXTERNALS                                                         
 !     ---------                                                         
@@ -107,14 +106,16 @@
 
 ! --------------------------------------------------------------------- 
 
+      USE YOWCOUP  , ONLY : LWCOUNORMS
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
+      USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,CI
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     ,
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     , 
      &            KXLT
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,
-     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
      &            NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -122,10 +123,9 @@
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NC       ,NR       ,UWND     ,VWND     ,
-     &            AIRD     ,PZIDL
-      USE YOWCOUP  , ONLY : LWCOUNORMS
-
-      USE YOWPCONS , ONLY : ROAIR, Rconstant, EpsWaterVapor
+     &            AIRD     ,PZIDL    ,IUNITW   ,CWDFILE
+      USE YOWPCONS , ONLY : RAD      ,ZMISS    ,
+     &                ROAIR,Rconstant,EpsWaterVapor
 
 ! --------------------------------------------------------------------- 
 
@@ -147,9 +147,10 @@
       REAL, DIMENSION(NFIELDS) :: FAVG,FMIN,FMAX
 
       CHARACTER FILNM*24
-      CHARACTER*12 CDTWIR, CDTTURN
+      CHARACTER*14 CDTWIR, CDTTURN
+      CHARACTER*14, SAVE :: CWDDATE
       CHARACTER*16 :: AFLABEL(NFIELDS)
-      LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
+      LOGICAL LLNOTOPENED, LWNDFILE, LCLOSEWND
 
       LOGICAL FRSTMATM
       REAL, ALLOCATABLE :: AirDenLocal (:)
@@ -160,7 +161,10 @@
 ! --------------------------------------------------------------------  
 
 !     for the swamp case create your own wind fields
-      IF(CLDOMAIN.EQ.'s') goto 8000
+!     or if the file windforcing_time_series is present then
+!     the wind forcing will be extracted from the wind speed
+!     and direction time series specified herewith.
+      IF(CLDOMAIN.EQ.'s' .OR. LWDINTS) goto 8000
 
       NC=NGX
       NR=NGY
@@ -175,13 +179,13 @@
 !       1.0 INITIALISE VALUES. 
 !           ------------------ 
 
-        NBIT=430000
+        NBIT=520000
 
         ICOORD = 1
 
-        IF (FRSTIME) THEN
-          FILNM='sfcwindin'
-          CALL PBOPEN(IUNIT1,FILNM,'r',KRET)
+        FILNM='sfcwindin'
+        IF (LLNOTOPENED) THEN
+          CALL PBOPEN(IUNITW,FILNM,'r',KRET)
           IF(KRET.LT.0) THEN
             WRITE (IU06,*) '****************************************'
             WRITE (IU06,*) '*                                      *'
@@ -198,36 +202,39 @@
 
 !         TRYING TO FIGURE OUT THE SIZE OF EACH FIELD
 
-          FRSTIME = .FALSE.
+          LLNOTOPENED = .FALSE.
         ENDIF  
 
 
 ! --------------------------------------------------------------------  
 
 !*      2.0 READ MARS U and V WIND COMPONENTS  IN GRIB CODE FORMAT.
+!           AND SEA ICE FACTION (OR SST) IF LICERUN=TRUE
 !           -------------------------------------------------------
 
         ISIZE=NBIT
 
         IWPER = 1
 
-
-        IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NGX,NGY)) 
-        IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NGX,NGY))
-        IF(.NOT.ALLOCATED(AIRD)) ALLOCATE(AIRD(NGX,NGY))
-        IF(.NOT.ALLOCATED(PZIDL)) ALLOCATE(PZIDL(NGX,NGY))
-
         AIRD=ROAIR ! Initializes AirDensity field by the default value.
                 ! Actual values can be computed here as well but needs
                 ! to get the corresponding fields in the file sfcwindin.
         PZIDL = 0.
 
-        WND: DO IVAR=1,2
+        IF(LICERUN) THEN
+          NFLD=3
+        ELSE
+          CI = 0.
+          NFLD=2
+          IPARAMCI=31
+        ENDIF
+
+        WND: DO IVAR=1,NFLD
 
 2001      KPLENG=ISIZE*KIND(ISIZE)
           IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
 
-          CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
+          CALL PBGRIB(IUNITW,KGRIB,KPLENG,KLEN,KRET)
 
           IF (KRET.EQ.-1) THEN
             WRITE(IU06,*) ' *******************************************'
@@ -254,7 +261,7 @@
             CALL ABORT1
           ELSE IF (KRET.EQ.-3) THEN
             DEALLOCATE(KGRIB)
-            CALL KGRIBSIZE(IU06, IUNIT1, KLEN, ISIZE, 'READWIND')
+            CALL KGRIBSIZE(IU06, IUNITW, KLEN, ISIZE, 'READWIND')
             GOTO 2001
           ENDIF
 
@@ -276,7 +283,28 @@
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
      &                     ZDUM, ZDUM,
      &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, UWND)
-          ELSE
+
+            IF (IPARAM.EQ.165) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.33) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.131) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.180) THEN
+              ICODE = 2
+            ELSE
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +    WARNING ERROR IN SUB. READWIND     +'
+              WRITE(IU06,*) ' +    ==============================     +'
+              WRITE(IU06,*) ' + SUSPICIOUS U_WIND FIELD TYPE IN MARS  +'
+              WRITE(IU06,*) ' + TYPE IS = ', IPARAM
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              CALL ABORT1
+            ENDIF
+
+          ELSE IF (IVAR.EQ.2) THEN
             CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
      &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &                     KGRIB, KLENG ,
@@ -284,30 +312,48 @@
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
      &                     ZDUM, ZDUM,
      &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, VWND)
-          ENDIF
 
-!*      3.1.2 DETERMINE CODE FOR WIND FIELD TYPE:
-!             165 = U10 FIELD , 180 = STRESS FIELD.
-!             ------------------------------------ 
+            IF (IPARAM.EQ.166) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.34) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.132) THEN
+              ICODE = 3
+            ELSEIF (IPARAM.EQ.181) THEN
+              ICODE = 2
+            ELSE
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +    WARNING ERROR IN SUB. READWIND     +'
+              WRITE(IU06,*) ' +    ==============================     +'
+              WRITE(IU06,*) ' + SUSPICIOUS V_WIND FIELD TYPE IN MARS  +'
+              WRITE(IU06,*) ' + TYPE IS = ', IPARAM
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              CALL ABORT1
+            ENDIF
 
-          IF (IPARAM.EQ.165 .OR. IPARAM.EQ.166) THEN
-            ICODE = 3
-          ELSEIF (IPARAM.EQ.33 .OR. IPARAM.EQ.34) THEN
-            ICODE = 3
-          ELSEIF (IPARAM.EQ.180 .OR. IPARAM.EQ.181) THEN
-            ICODE = 2
           ELSE
-            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-            WRITE(IU06,*) ' +                                         +'
-            WRITE(IU06,*) ' +      WARNING ERROR IN SUB. READWIND     +'
-            WRITE(IU06,*) ' +      ==============================     +'
-            WRITE(IU06,*) ' + SUSPICIOUS WIND FIELD TYPE IN MARS BLOCK+'
-            WRITE(IU06,*) ' + TYPE IS = ', IPARAM
-            WRITE(IU06,*) ' +                                         +'
-            WRITE(IU06,*) ' +    PROGRAM CONTINUES                    +'
-            WRITE(IU06,*) ' +                                         +'
-            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-            CALL ABORT1
+            CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
+     &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
+     &                     KGRIB, KLENG ,
+     &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                     ZDUM, ZDUM,
+     &                     CDTWIR, IFORP, IPARAMCI, KZLEV, IDM, IDM, CI)
+
+            IF (IPARAMCI.NE.31 .AND. IPARAMCI.NE.139) THEN
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +    WARNING ERROR IN SUB. READWIND     +'
+              WRITE(IU06,*) ' +    ==============================     +'
+              WRITE(IU06,*) ' + SUSPICIOUS SEA ICE FIELD TYPE IN MARS +'
+              WRITE(IU06,*) ' + TYPE IS = ', IPARAMCI
+              WRITE(IU06,*) ' +                                       +'
+              WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+              CALL ABORT1
+            ENDIF
+
           ENDIF
 
 
@@ -343,6 +389,7 @@
      &     CDTWIR
           WRITE(IU06,66) ((UWND(I,J),I=1,24),J=1,5)
           WRITE(IU06,66) ((VWND(I,J),I=1,24),J=1,5)
+          WRITE(IU06,66) ((CI(I,J),I=1,24),J=1,5)
  66       FORMAT(1X,24F5.2)
           CALL FLUSH(IU06)
         ENDIF
@@ -490,11 +537,6 @@
         IWPER = 1
         ICOORD = 1
 
-        IF(.NOT.ALLOCATED(UWND)) ALLOCATE(UWND(NGX,NGY)) 
-        IF(.NOT.ALLOCATED(VWND)) ALLOCATE(VWND(NGX,NGY))
-        IF(.NOT.ALLOCATED(AIRD)) ALLOCATE(AIRD(NGX,NGY))
-        IF(.NOT.ALLOCATED(PZIDL)) ALLOCATE(PZIDL(NGX,NGY))
-
 ! Mod for OPENMP
         NPROMA=(KSUP-KINF+1)/NWAM_BLKS+1
         CALL GSTATS(1437,0)
@@ -507,7 +549,8 @@
      &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                   IXLG, KXLT, NIBLO, IGL, KIJS, KIJL,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                   RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL, 
+     &                   RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,
+     &                   CI, ZMISS,
      &                   LADEN, ROAIR, LGUST,LLINTERPOL,
      &                   DK1, DII1, DIIP1, KK, II, IIP, MASK_IN)
         ENDDO
@@ -534,8 +577,9 @@
 !       START DATE.
 
         IYYYY=(ISEC1(21)-1)*100+ISEC1(10)
-        WRITE(CDTWIR,'(I4.4,4I2.2)') IYYYY,ISEC1(11),ISEC1(12),
+        WRITE(CDTWIR(1:12),'(I4.4,4I2.2)') IYYYY,ISEC1(11),ISEC1(12),
      &                             ISEC1(13),ISEC1(14)
+        CDTWIR(13:14)='00'
 
 
 !       DETERMINE FORECAST PERIOD
@@ -549,6 +593,7 @@
 
         IPARAMU=165
         IPARAMV=166
+        IPARAMCI=31
 
 !*        6.1.2 DETERMINE CODE FOR WIND FIELD TYPE:
 !               165 = U10 FIELD , 180 = STRESS FIELD.
@@ -557,6 +602,8 @@
         IF (IPARAMU.EQ.165 .AND. IPARAMV.EQ.166) THEN
           ICODE = 3
         ELSEIF (IPARAMU.EQ.33 .AND. IPARAMV.EQ.34) THEN
+          ICODE = 3
+        ELSEIF (IPARAMU.EQ.131 .AND. IPARAMV.EQ.132) THEN
           ICODE = 3
         ELSEIF (IPARAMU.EQ.180 .AND. IPARAMV.EQ.181) THEN
           ICODE = 2
@@ -610,11 +657,12 @@
               I = IXLG(IJ,IG)
               K = NGY-KXLT(IJ,IG) + 1
               WRITE(IU06,63) I,K,
-     &                       UWND(I,K),VWND(I,K),AIRD(I,K),PZIDL(I,K)
+     &                       UWND(I,K),VWND(I,K),AIRD(I,K),PZIDL(I,K),
+     &                       CI(I,K)
             ENDDO
           ENDDO
           CALL FLUSH(IU06)
- 63       FORMAT(1X,2I4,1X,4F5.2)
+ 63       FORMAT(1X,2I4,1X,5F5.2)
         ENDIF
 
       ENDIF
@@ -630,16 +678,7 @@
       NC=NGX
       NR=NGY
 
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      ALLOCATE(UWND(NC,NR))                                
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      ALLOCATE(VWND(NC,NR))                                
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      ALLOCATE(AIRD(NC,NR))                                
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
-      ALLOCATE(PZIDL(NC,NR))                                
-
-      IF (FRSTIME) THEN
+      IF (LLNOTOPENED) THEN
          RLATS = AMOSOP
          RLATN = AMONOP 
          RLONL = AMOWEP 
@@ -661,60 +700,70 @@
          ELSE
            DPHI  = 0.
          ENDIF
-         FRSTIME = .FALSE.
+
+         IF(LWDINTS) THEN
+           IUNITW=I_GET_UNIT(IU06,CWDFILE, 'r', 'f', 0)
+           OPEN(IUNITW,FILE=CWDFILE,FORM='FORMATTED')
+           CWDDATE=CDATEA
+         ELSE
+           IUNITW=-1
+         ENDIF
+
+         LLNOTOPENED = .FALSE.
+
       ENDIF
 
       CALL INCDATE(CDTWIR,IDELWI)
 
-      CDTTURN = CDATEA
-      IDTTURN=DTNEWWIND*3600
-      CALL INCDATE(CDTTURN,IDTTURN)
+      IF(LWDINTS) THEN
 
-      IF(SWAMPWIND2.LE.0. .OR. CDTWIR.LE.CDTTURN) THEN
-        WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
-     &                  SWAMPWIND 
-        DO J=1,NR
-          DO I=1,NC
-            UWND(I,J)=0.0
-          ENDDO
-        ENDDO
-        DO J=1,NR
-          DO I=1,NC
-           VWND(I,J)=SWAMPWIND
-          ENDDO
-        ENDDO
+         READ(IUNITW,100,END=110,ERR=120) IWTIME,WSPEED,WTHETA
+100      FORMAT(i8,1x,f6.2,1x,f6.1)
+
+         CALL INCDATE(CWDDATE,IWTIME)
+         WRITE(IU06,'(a28,a14,1x,f6.2,1x,f6.1)')
+     &   '  WIND INPUT TIME SERIES AT ', CWDDATE,WSPEED,WTHETA
+  
+         WTHETA=RAD*WTHETA
+         UWIND=-WSPEED*SIN(WTHETA)
+         VWIND=-WSPEED*COS(WTHETA)
       ELSE
-        WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
-     &                  SWAMPWIND2 
-        IF(LTURN90) THEN
-          DO J=1,NR
-            DO I=1,NC
-              UWND(I,J)=SWAMPWIND2
-            ENDDO
-          ENDDO
-          DO J=1,NR
-            DO I=1,NC
-             VWND(I,J)=0.
-            ENDDO
-          ENDDO
+!       THE TRADITIONAL ONE GRID POINT FORCING
+        CDTTURN = CDATEA
+        IDTTURN=DTNEWWIND*3600
+        CALL INCDATE(CDTTURN,IDTTURN)
+        IF(SWAMPWIND2.LE.0. .OR. CDTWIR.LE.CDTTURN) THEN
+          WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
+     &                  SWAMPWIND 
+          UWIND=0.0
+          VWIND=SWAMPWIND
         ELSE
-          DO J=1,NR
-            DO I=1,NC
-              UWND(I,J)=0.0
-            ENDDO
-          ENDDO
-          DO J=1,NR
-            DO I=1,NC
-             VWND(I,J)=SWAMPWIND2
-            ENDDO
-          ENDDO
+          WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
+     &                  SWAMPWIND2 
+          IF(LTURN90) THEN
+            UWIND=SWAMPWIND2
+            VWIND=0.0
+          ELSE
+            UWIND=0.0
+            VWIND=SWAMPWIND2
+          ENDIF
         ENDIF
       ENDIF
+
+      IPARAMCI=31
+      DO J=1,NR
+        DO I=1,NC
+          UWND(I,J)=UWIND
+          VWND(I,J)=VWIND
+        ENDDO
+      ENDDO
+
 
       DO J=1,NR
         DO I=1,NC
           AIRD(I,J)=ROAIR
           PZIDL(I,J)=0.
+          CI(I,J)=0.
         ENDDO
       ENDDO
 
@@ -729,7 +778,30 @@
  67       FORMAT(1X,24F5.2)
         ENDIF
 
+
       RETURN
+
+110   CONTINUE
+      WRITE(IU06,*) '****************************************'
+      WRITE(IU06,*) '*                                      *'
+      WRITE(IU06,*) '*  ERROR IN READWIND:                  *'
+      WRITE(IU06,*) '*  END OF FILE REACHED FOR ',CWDFILE
+      WRITE(IU06,*) '*  THE WIND TIME SERIES SHOULD AT LEAST*'
+      WRITE(IU06,*) '*  BE AS LONG AS THE INTENDED RUN !!!! *'
+      WRITE(IU06,*) '*  THE RUN HAS ABORTED                 *'
+      WRITE(IU06,*) '*                                      *'
+      WRITE(IU06,*) '****************************************'
+      CALL ABORT1
+
+120   CONTINUE
+      WRITE(IU06,*) '****************************************'
+      WRITE(IU06,*) '*                                      *'
+      WRITE(IU06,*) '*  ERROR IN READWIND:                  *'
+      WRITE(IU06,*) '*  ERROR READING FILE ',CWDFILE
+      WRITE(IU06,*) '*  THE RUN HAS ABORTED                 *'
+      WRITE(IU06,*) '*                                      *'
+      WRITE(IU06,*) '****************************************'
+      CALL ABORT1
 
 
       END SUBROUTINE READWIND

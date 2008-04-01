@@ -1,5 +1,5 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD,
+     &                   ROAIRO, ZIDLOLD, ICEMASK,
      &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                   ISEC1, ISEC2, FIELDS,  MASK_IN)
 
@@ -7,6 +7,8 @@
 
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
+!               J BIDLOT AUGUST 2006 INCLUSION OF ICE MASK.
+
 
 !**** *NOTIM* - STEERING MODULE IF NO TIME INTERPOLATION WANTED.
 
@@ -19,7 +21,7 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD,
+!    &                 ROAIRO, ZIDLOLD, ICEMASK,
 !    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
 !    &                 ISEC1, ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
@@ -32,6 +34,7 @@
 !          *ROAIRO* - AIR DENSITY IN KG/M3.
 !          *ZIDLOLD*- Zi/L 
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *ICEMASK*- SEA ICE MASK.
 !          *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -75,11 +78,11 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            UWND     ,VWND     ,AIRD    , PZIDL    ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT
+     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,
+     &            ICEMASKNEXT
 
 ! ----------------------------------------------------------------------
-      CHARACTER*12 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
+      CHARACTER*14 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
@@ -92,9 +95,11 @@
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
      &                                , ROAIRO,ZIDLOLD
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS, ADS, ZIDL
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICMSK 
 
 !        *US*      REAL   OUTPUT WIND FIELD ARRAY (FRICTION VELOCITY).
 !        *DS*      REAL   OUTPUT WIND FIELD ARRAY (DIRECTION).
@@ -120,8 +125,8 @@
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
 
-        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD,
-     &               NINF, NSUP, NSUP, CDA,
+        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
+     &               NINF, NSUP, CDA,
      &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &               ISEC1, ISEC2, FIELDS, MASK_IN,
      &               LWNDFILE, LCLOSEWND)
@@ -136,10 +141,6 @@
      &     ''SAVED IN COMMON WIND'')')
         ENDIF
         IF (CDA.EQ.CDTWIE) THEN
-          IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-          IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-          IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-          IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
           RETURN
         ENDIF
         CALL INCDATE (CDTWIH,IDELWO)
@@ -169,7 +170,8 @@
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
-      CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDTWIH,
+      CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
+     &             NINF, NSUP, CDTWIH,
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &             ISEC1, ISEC2, FIELDS, MASK_IN,
      &             LWNDFILE, LCLOSEWND)
@@ -190,6 +192,7 @@
      &     (DS(I,IG),I=IJS(IG),IJL(IG))
      &    , (ADS(I,IG),I=IJS(IG),IJL(IG))
      &    , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
+     &    , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
         ENDDO
         IF (ITEST.GE.3) THEN
           WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILES AT ',
@@ -221,6 +224,8 @@
      &            ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
           IF(.NOT.ALLOCATED(ZIDLNEXT))
      &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ICEMASKNEXT))
+     &            ALLOCATE(ICEMASKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         ELSE
           IF(.NOT.ALLOCATED(USNEXT))
      &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -230,6 +235,8 @@
      &            ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
           IF(.NOT.ALLOCATED(ZIDLNEXT))
      &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(ICEMASKNEXT))
+     &            ALLOCATE(ICEMASKNEXT(NIBLO,NSTORE,NBLO))
         ENDIF
 
         DO IG=1,IGL
@@ -245,6 +252,7 @@
             DSNEXT(I,1,IG)=DS(I,IG)
             ADSNEXT(I,1,IG)=ADS(I,IG)
             ZIDLNEXT(I,1,IG)=ZIDL(I,IG)
+            ICEMASKNEXT(I,1,IG)=ICMSK(I,IG)
           ENDDO
 
         ENDDO
@@ -266,11 +274,6 @@
         ENDIF
 
 !!!!!!!!!!        CLOSE (UNIT=IUVELO, STATUS='KEEP')
-
-        IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-        IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-        IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-        IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
         RETURN
 
@@ -295,12 +298,14 @@
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
      &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
      &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
 
             WRITE (IUVELO,ERR=6300,IOSTAT=IOS)
      &       CDT, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
      &       (DS(I,IG),I=IJS(IG),IJL(IG))
      &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
      &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
+     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
           ENDDO
         ENDDO
       ENDDO
@@ -313,11 +318,6 @@
         WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILE ',
      &   'GENERATED AS COPY FROM  SCRATCH UNITS'
       ENDIF
-
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
 

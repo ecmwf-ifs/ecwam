@@ -3,16 +3,13 @@
      &                 NSPEC , MPART , NPARTW ,NANG , NFRE ,
 !                    INPUT/OUTPUT
      &                 SPECW , NW1D, 
-!                    WORK SPACE
-     &                 SPECT , 
 !                    INPUT
      &                 PARTW ,CORRELTAW ,MEANWE,MEANWANG,MEANWFRE,
      &                 MEANSE , MEANSANG , MEANSFRE ,
      &                 FRATIO,
 !                    OUTPUT
      &                 ADJUST , INTROTATE , FRACROTATE , 
-     &                 STRETCH , INTLOGSTRETCH ,
-     &                 COPO , COPODIFF  )
+     &                 STRETCH , INTLOGSTRETCH )
 
 !-------------------------------------------------------------------
 
@@ -34,8 +31,9 @@
       USE YOWFRED  , ONLY : DELTH
       USE YOWGAP   , ONLY : GAPVAL 
       USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWSPEC,   ONLY : FL1
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWSPEC,   ONLY : FL1
+      USE YOWSTAT  , ONLY : NWAM_BLKS
 
 !-------------------------------------------------------------------
 
@@ -46,10 +44,8 @@
 
       INTEGER NSPEC, MPART, NPARTW(NSPEC), NANG, NFRE
 !                   DIMENSIONS.
-      REAL SPECW(0:NSPEC,NANG,NFRE), 
-     &     SPECT(NSPEC,NANG,NFRE)
+      REAL :: SPECW(0:NSPEC,NANG,NFRE) 
 !                   WAM SPECTRM BEFORE AND AFTER CORRECTION 
-!                   AND WORK SPACE.
 
       INTEGER :: NW1D(NINF-1:NSUP,1)
 
@@ -76,13 +72,14 @@
 !                   FREQUENCY TRANSFORMATION PARAMETER.
       INTEGER INTLOGSTRETCH(NSPEC,MPART)
 !                   FREQUENCY TRANSFORMATION PARAMETER(GRID)
-      REAL COPO(NFRE), COPODIFF(NFRE)
+
       REAL FRATIO 
 
 !     LOCAL VARIABLES:
 !     ----------------
 
       INTEGER ISPEC, IPARTW, IPARTS, IANG, IFRE, JP, JBL
+      INTEGER NPROMA, JKGLO, KIJS, KIJL
 !                    LOOP INDICES.
       INTEGER JANG, JANGP1, JFRE, JFREP1
 !                    GRIDPOINT INDICES AFTER INTERPOLATED
@@ -92,7 +89,13 @@
       REAL ROTATE
 !                    THE NUMBER OF GRIDPOINTS THE PARTITIONING 
 !                    MUST BE ROTATED
+      REAL COPO(NFRE+1), COPODIFF(NFRE+1)
+!                   POWERS OF FRATIO AND DIFFERENCES OF POWERS OF 
+!                   FRATIO, ONLY USED IN SUBROUTINE TRANSFORM.
       REAL LOGCO, ENERGY, STRETCHFAC
+
+      REAL :: SPECT(NSPEC,NANG,NFRE+1)
+!                   WORK SPACE.
 
 !-------------------------------------------------------------------
 
@@ -101,7 +104,7 @@
 
       LOGCO = LOG(FRATIO)
       COPO(1) = FRATIO 
-      DO IFRE = 2,NFRE
+      DO IFRE = 2,NFRE+1
         COPO(IFRE) = COPO(IFRE-1) * FRATIO 
         COPODIFF(IFRE) = COPO(IFRE) - COPO(IFRE-1)
       END DO
@@ -140,19 +143,28 @@
 
 !     restore the unsmoothed model spectra
 !!!  will not work if multi block !!!
+
       JBL=1
-      DO JANG = 1,NANG
-        DO JFRE = 1,NFRE
-          DO JP = IJS(JBL),IJL(JBL)
-            IF(NW1D(JP,JBL).GT.0) THEN
-              SPECW(NW1D(JP,JBL),JANG,JFRE)=FL1(JP,JANG,JFRE)
-            ENDIF
-          ENDDO
-        END DO
-      END DO
+      NPROMA=(IJL(JBL)-IJS(JBL)+1)/NWAM_BLKS+1
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+      DO JKGLO = IJS(JBL),IJL(JBL),NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL(JBL))
+        DO JP = KIJS,KIJL
+          IF(NW1D(JP,JBL).GT.0) THEN
+            DO JANG = 1,NANG
+              DO JFRE = 1,NFRE
+                SPECW(NW1D(JP,JBL),JANG,JFRE)=FL1(JP,JANG,JFRE)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDDO
+!$OMP     END PARALLEL DO
+
 
       DO JANG = 1,NANG
-        DO JFRE = 1,NFRE
+        DO JFRE = 1,NFRE+1
           DO ISPEC = 1,NSPEC
             SPECT(ISPEC,JANG,JFRE) = GAPVAL
           END DO
@@ -163,6 +175,7 @@
         DO IFRE = 1,NFRE
           DO ISPEC = 1,NSPEC
             IPARTW = PARTW(ISPEC,IANG,IFRE)           
+
             JANG = IANG + INTROTATE(ISPEC,IPARTW)
             IF( JANG.GT.NANG ) JANG = JANG - NANG
             IF( JANG.LT.1 ) JANG = JANG + NANG
@@ -174,6 +187,7 @@
             END IF
             IF( JANGP1.GT.NANG ) JANGP1 = JANGP1 - NANG
             IF( JANGP1.LT.1 ) JANGP1 = JANGP1 + NANG
+
             JFRE = IFRE + INTLOGSTRETCH(ISPEC,IPARTW)
             IF(JFRE.LT.1) THEN
 !!!!              JFRE=1
@@ -183,7 +197,8 @@
               STRETCHFAC=STRETCH(ISPEC,IPARTW)
             ENDIF
             JFREP1 = JFRE + 1
-            IF( JFRE.GE.1 .AND. JFREP1.LE.NFRE )THEN
+
+            IF( JFRE.GE.1 .AND. JFRE.LE.NFRE )THEN
               BANG = ABS(FRACROTATE(ISPEC,IPARTW))
               AANG = 1 - BANG
               AFRE = ( COPO(JFREP1)

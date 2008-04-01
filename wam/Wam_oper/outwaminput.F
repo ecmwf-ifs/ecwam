@@ -52,6 +52,8 @@
       REAL :: PSEC2(NPSEK2),PSEC3(NPSEK3)
       REAL :: FIELD(NGX,NGY)
       REAL, ALLOCATABLE :: PSEC4(:)
+! The following must NOT be changed from a 4 byte real
+      REAL*4 :: REAL4
 
       CHARACTER* 1 HOPER
       CHARACTER*(*) OFILENAME
@@ -180,10 +182,12 @@
          KSEC4(57) =  2
 
          DO IC = 1, NANG
-           KSEC4(60+IC-1) = TRANSFER (TH(IC), 1)
+           REAL4 = TH(IC)
+           KSEC4(60+IC-1) = TRANSFER (REAL4, 1)
          ENDDO
          DO IC = 1, NFRE
-           KSEC4(60+NANG+IC-1) = TRANSFER (FR(IC), 1) 
+           REAL4 = FR(IC)
+           KSEC4(60+NANG+IC-1) = TRANSFER (REAL4, 1) 
          ENDDO
 
          HOPER=HOPERS
@@ -191,8 +195,16 @@
 !        LOG SCALING
 
          DO IJ=1,KLENP
-           PSEC4(IJ) = LOG10(PSEC4(IJ)+PPEPS)+ABS(PPREC)
-           IF ( PSEC4(IJ) .LE. PPMISS ) PSEC4(IJ)=PSEC3(2)
+!!! the spectra comes from grid data, hence if something less
+!!! then PPMISS exist, it must remain as such
+!!! provided it is positive
+!!!           IF ( PSEC4(IJ) .LE. PPMISS ) PSEC4(IJ)=PSEC3(2)
+           IF ( PSEC4(IJ) .LE. 0. ) THEN
+             PSEC4(IJ)=PSEC3(2)
+           ELSE
+             PSEC4(IJ) = LOG10(PSEC4(IJ)+PPEPS)+ABS(PPREC)
+           ENDIF
+
          ENDDO
 
       ELSE

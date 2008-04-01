@@ -22,8 +22,8 @@
 !         *IU14*    INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !         *IU15*    INTEGER    OUTPUT UNIT LAST WINDFIELDS.
 !         *IGL*     INTEGER    NUMBER OF BLOCKS.
-!         *CDATE*   CHAR*12    DATE/TIME OF LAST FIELD IN FILES.
-!         *CDATEF*  CHAR*12    START DATE OF FORECAST PERIOD.
+!         *CDATE*   CHAR*14    DATE/TIME OF LAST FIELD IN FILES.
+!         *CDATEF*  CHAR*14    START DATE OF FORECAST PERIOD.
 
 !     METHOD.
 !     -------
@@ -41,7 +41,7 @@
 !       NONE.
 ! ---------------------------------------------------------------------
 
-      CHARACTER*12 CDATE,CDATEF
+      CHARACTER*14 CDATE,CDATEF
 
 ! ----------------------------------------------------------------------
 

@@ -81,7 +81,6 @@
 !         ---------------------
 
       TAUWMAX = SQRT(5.)
-      
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 

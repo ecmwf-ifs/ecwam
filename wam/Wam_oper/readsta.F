@@ -28,15 +28,15 @@
 !     ----------                                                        
 
 !          IUIN     INTEGER    DISC UNIT FOR WAMINFO.                   
-!          CBDT     CHAR*12    BEGIN DATE-TIME-GROUP.                   
-!          CEDT     CHAR*12    END DATE-TIME-GROUP.                     
+!          CBDT     CHAR*14    BEGIN DATE-TIME-GROUP.                   
+!          CEDT     CHAR*14    END DATE-TIME-GROUP.                     
 !          ANALPD   INTEGER    ANALYSIS PERIOD IN SECONDS.
 !          FOREPD   INTEGER    FORECAST PERIOD IN SECONDS.
 !          IS       INTEGER    WIND INPUT TIME STEP IN SECONDS.
-!          CRSDT    CHAR*12    DATE FOR RESTART FILES OUTPUT
-!          CLSDT    CHAR*12    LAST DATE FOR SPECTRUM FILE OUTPUT
-!          CABDT    CHAR*12    BEGIN ANALYSIS DATE.
-!          CAEDT    CHAR*12    END ANALYSIS DATE.
+!          CRSDT    CHAR*14    DATE FOR RESTART FILES OUTPUT
+!          CLSDT    CHAR*14    LAST DATE FOR SPECTRUM FILE OUTPUT
+!          CABDT    CHAR*14    BEGIN ANALYSIS DATE.
+!          CAEDT    CHAR*14    END ANALYSIS DATE.
 !          IASS     INTEGER    ASSIMILATION CONDITION.                  
 !          NF       INTEGER    NEW FORECAST CONDITION.                  
 !          ISTAT    INTEGER    STATUS FLAGS FOR JOBS.                   
@@ -62,7 +62,8 @@
 
       INTEGER ANALPD, FOREPD                      
       INTEGER ISTAT(3)                                                  
-      CHARACTER*12 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+
 
 
 !*    1.0  READ WAMINFO FILE FROM IUIN.                                 
@@ -82,11 +83,11 @@
 !*    2.0  CONVERT CHARACTER TO INTEGER.                                
 !          -----------------------------                                
 
-      READ (CARD(1), '(15X,A12,4X,A12)') CBDT, CEDT
+      READ (CARD(1), '(15X,A14,4X,A14)') CBDT, CEDT
       READ (CARD(4), '(18X,I7)') ANALPD
       READ (CARD(5), '(18X,I10)') FOREPD
       READ (CARD(6), '(28X,I7)') IS
-      READ (CARD(7), '(14X,A12,4X,A12)') CABDT, CAEDT
+      READ (CARD(7), '(14X,A14,4X,A14)') CABDT, CAEDT
       IASS=0
       IF (CARD(8)(14:14).EQ.'Y') IASS=1
       NF=0
@@ -99,13 +100,13 @@
       IF (CARD(12)(16:16).EQ.'F') ISTAT(3)=1
                   
       IF(CARD(13).NE.' ') THEN
-        READ (CARD(13), '(40X,A12)') CRSDT
+        READ (CARD(13), '(40X,A14)') CRSDT
       ELSE
-        CRSDT = '000000000000'
+        CRSDT = '00000000000000'
       ENDIF
 
       IF(CARD(14).NE.' ') THEN
-        READ (CARD(14), '(36X,A12)') CLSDT
+        READ (CARD(14), '(36X,A14)') CLSDT
       ELSE
         CLSDT = CEDT
       ENDIF

@@ -78,6 +78,7 @@
 
       DIMENSION CONSTF(NFRE), TAUHF(IJS:IJL), TEMP(IJS:IJL),
      &          XSTRESS(IJS:IJL), YSTRESS(IJS:IJL), UST2(IJS:IJL)
+      DIMENSION ZROAIRN(IJS:IJL)
 ! ----------------------------------------------------------------------
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
@@ -103,17 +104,31 @@
 !*    2.2 INTEGRATE INPUT SOURCE FUNCTION OVER FREQUENCY AND DIRECTIONS.
 !         --------------------------------------------------------------
 
-      DO K=1,NANG
-        DO M=1,NFRE
-          CONST1=CONSTF(M)*SINTH(K)
-          CONST2=CONSTF(M)*COSTH(K)
+      DO IJ=IJS,IJL
+        ZROAIRN(IJ)=1.D0/MAX(ROAIRN(IJ),1.)
+      ENDDO
+
+      DO M=1,NFRE
+        DO K=1,NANG-1,2
+          CONST11=CONSTF(M)*SINTH(K  )
+          CONST12=CONSTF(M)*SINTH(K+1)
+          CONST21=CONSTF(M)*COSTH(K)
+          CONST22=CONSTF(M)*COSTH(K+1)
           DO IJ=IJS,IJL
-            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K,M)*CONST1
-     &                    /MAX(ROAIRN(IJ),1.)
-            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K,M)*CONST2
-     &                    /MAX(ROAIRN(IJ),1.)
+            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K  ,M)*CONST11*ZROAIRN(IJ)
+     &                             +SL(IJ,K+1,M)*CONST12*ZROAIRN(IJ)
+            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K  ,M)*CONST21*ZROAIRN(IJ)
+     &                             +SL(IJ,K+1,M)*CONST22*ZROAIRN(IJ)
           ENDDO
         ENDDO
+        IF(MOD(NANG,2) /= 0) THEN
+          CONST11=CONSTF(M)*SINTH(NANG)
+          CONST21=CONSTF(M)*COSTH(NANG)
+          DO IJ=IJS,IJL
+            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,NANG,M)*CONST11*ZROAIRN(IJ)
+            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,NANG,M)*CONST21*ZROAIRN(IJ)
+          ENDDO
+        ENDIF
       ENDDO
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.

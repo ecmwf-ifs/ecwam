@@ -72,13 +72,13 @@
 !      *NBOINP*    REAL      NUMBER OF INPUT SPECTRA.
 !      *FL*        REAL      INTERPOLATED SPECTRUM.
 
-      CHARACTER*12 CDTLAST, CDATE1, ZERO
-      DATA IJAF, CDTLAST /0, '000000000000'/  
+      CHARACTER*14 CDTLAST, CDATE1, ZERO
+      DATA IJAF, CDTLAST /0, '00000000000000'/  
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *IJFA*      REAL      NUMBER OF FIRST INPUT POINT IN BLOCK.
-!      *CDTLAST*   CHAR*12   DATE OF LAST FETCH FILE.
+!      *CDTLAST*   CHAR*14   DATE OF LAST FETCH FILE.
 
 
 ! ----------------------------------------------------------------------

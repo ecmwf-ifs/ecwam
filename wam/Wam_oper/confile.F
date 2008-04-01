@@ -26,7 +26,9 @@
 
 !        *kuso*       INTEGER       FORTRAN UNIT FOR THE PRINTER OUTPUT.
 !        *kunit*      INTEGER       FORTRAN UNIT FOR THE REQUESTED FILE.
-!        *cdate*      CHAR*12       DATE TIME GROUP (YYYYMMDDHHMM).
+!        *cdate*      CHAR*14       DATE TIME GROUP (YYYYMMDDHHMMSS).
+!                               !!! The seconds information will not be
+!                               !!! used for the filename definition.
 !        *yafileid*   CHARACTER*3   FILE ID.
 !        *kfail*      INTEGER       = 0 NO ERROR.
 !                                   > 0 ERROR.
@@ -59,7 +61,8 @@
 
       CHARACTER*130 younitnam
       CHARACTER* 15 yoname
-      CHARACTER*12 cdate
+      CHARACTER*12 cdate_short
+      CHARACTER*14 cdate
       LOGICAL   ex, od
 
 !----------------------------------------------------------------------
@@ -80,11 +83,12 @@
 !* 2.    CONSTRUCT FILE NAME.
 !  --------------------------
 
+      cdate_short=cdate(1:12)
       IF (losuvi) THEN
-        WRITE(kuso,*) ' FILE INQUIRY FOR ',yafileid,cdate
+        WRITE(kuso,*) ' FILE INQUIRY FOR ',yafileid,cdate_short
       ENDIF
       yoname = yafileid
-      yoname(4:15) = cdate
+      yoname(4:15) = cdate_short
 
 !----------------------------------------------------------------------
 

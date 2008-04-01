@@ -94,9 +94,9 @@
 !      *PPREC*     REAL      REFERENCE VALUE FOR CODING OF SPECTRA
 !      *NGRBRESS*  INTEGER   NUMBER OF BITS USED TO ENCODE.
 !      *PPRESOL*   REAL      MAXIMUM RESOLUTION FOR SPECTRAL PACKING.
-!      *CDTPRO*    CHAR*12   END DATE OF PROPAGATION.
-!      *CDATEF*    CHAR*12   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
-!      *CDATEA*    CHAR*12   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
+!      *CDTPRO*    CHAR*14   END DATE OF PROPAGATION.
+!      *CDATEF*    CHAR*14   END DATE OF ANALYSIS RUN (YYMMDDHHMM).
+!      *CDATEA*    CHAR*14   BEGIN DATE OF ANALYSIS RUN (YYMMDDHHMM).
 !      *CDDOMAIN   CHAR*1    GRIB DOMAIN DEFINITION FOR THE FDB
 !      *CDTYPE*    CHAR*     MARS TYPE OF FIELD.
 !      *CDCLASS*   CHAR*     MARS CLASS OF FIELD.
@@ -149,7 +149,9 @@
      &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
      &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
      &        NTENCODE, KCPLEN, NGRBRESS, KREFDATE
+      INTEGER :: IP
       INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
+      INTEGER, DIMENSION(KPROC) :: KRECVCOUNTS
 
       INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
      &        KSEK3(NKSEK3), KSEK4(NKSEK4), IFS_KSEC1(NKSEK1)
@@ -173,7 +175,7 @@
       INTEGER ISEC0(NKSEK0), ISEC1(NKSEK1), ISEC2(NKSEK2),
      &        ISEC3(NKSEK3), ISEC4(NKSEK4)
       INTEGER JSN, JK, JC, IX, ISTEP, IST, IYYYY,
-     &        IY, IMO, ID, IH, IMN, IFCST, ITHETA(KANG), IFREQ(KFRE),
+     &        IY, IMO, ID, IH, IMN,ISS,IFCST, ITHETA(KANG), IFREQ(KFRE),
      &        IJ, JANG, J1, ILENGOUT, IC,
      &        IRET, IWORD, IERR, ILENP, ITAG, KSTREAM, IFS_STREAM,
      &        IINDAT,IHHMM,NLEG,IOCCPL
@@ -217,15 +219,15 @@
 !           -------------------------
 
         IF (LDWCOU .AND. CDTYPE .EQ. 'fg') THEN
-          READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
+          READ (CDATEA, '(I4,5I2)') IYYYY, IMO, ID, IH, IMN, ISS
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
         ELSEIF (LDWCOU .AND. CDTYPE .EQ. '4v') THEN
-          READ (CDATEA, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
+          READ (CDATEA, '(I4,5I2)') IYYYY, IMO, ID, IH, IMN, ISS
           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
           IFCST = IFCST/3600
         ELSE
-          READ (CDTPRO, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
+          READ (CDTPRO, '(I4,5I2)') IYYYY, IMO, ID, IH, IMN, ISS
           IFCST = 0
         ENDIF
       ELSE
@@ -233,7 +235,7 @@
 !*    0.2.  THIS IS A  FORECAST DATE.
 !           -------------------------
 
-        READ (CDATEF, '(I4,4I2)') IYYYY, IMO, ID, IH, IMN
+        READ (CDATEF, '(I4,5I2)') IYYYY, IMO, ID, IH, IMN, ISS
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCST = IFCST/3600
       ENDIF
@@ -482,47 +484,76 @@
       ISTEP=KPROC
       IF (.NOT.LFDBIOOUT) ISTEP=1
 
-      ALLOCATE(ZSEC4OUT(NTENCODE))
 
       DO IC=1,KFRE*KANG,ISTEP
 
         IST=ISTEP
         IF(IC+ISTEP.GT.KFRE*KANG ) IST=KFRE*KANG-IC+1
-        ZSEC4OUT = 0.0
 
 !       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less fields
 !       ---------------------------------- than PE's)
         IF(KPROC.GT.1) THEN
-          ALLOCATE(WORK(KIBLO))
 
           DO KSEND=1,IST
             IM=(((IC-1)+KSEND-1)/KANG)+1
             IK=(IC-1)+KSEND-(IM-1)*KANG
+
+            IF(KSEND.EQ.KRANK) THEN
+              ALLOCATE(WORK(1:KEND(KPROC)))
+              ALLOCATE(ZSEC4OUT(NTENCODE))
+              CALL GSTATS(1433,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
+              DO JC=1,NTENCODE
+                ZSEC4OUT(JC)=0.0
+              ENDDO
+!$OMP END PARALLEL DO
+              CALL GSTATS(1433,1)
+            ELSE
+              ALLOCATE(WORK(KSTART(KRANK):KEND(KRANK)))
+            ENDIF
 
             DO J1=KSTART(KRANK),KEND(KRANK)
               WORK(J1) = PSPEC(J1,IK,IM)
             ENDDO
 
             ITAG=(IM-1)*KANG+IK
-            CALL MPGATHERSCFLD(KSEND,ITAG,KSTART,KEND,WORK)
-            IF (KTEST.GT.1)
-     &          WRITE(KU06,*) 'SUB SPEC2FDB: MPGATHERSCFLD DONE' 
 
-            IF(ISTEP.EQ.1.AND.KPROC.GT.1) THEN
-              CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
-            ENDIF
+            CALL GSTATS(674,0)
+            DO IP=1,KPROC
+              KRECVCOUNTS(IP)=KEND(IP)-KSTART(IP)+1
+            ENDDO
+
+            CALL MPL_GATHERV(WORK(KSTART(KRANK):KEND(KRANK)),
+     &                       KRECVCOUNTS=KRECVCOUNTS,
+     &                       PRECVBUF=WORK(1:KEND(KPROC)),
+     &                       KROOT=KSEND,
+     &                       CDSTRING='SPEC2FDB:')
+            CALL GSTATS(674,1)
+
+            IF (KTEST.GT.1)
+     &          WRITE(KU06,*) 'SUB SPEC2FDB: MPL_GATHERV DONE' 
 
             IF(KSEND.EQ.KRANK) THEN
               DO J1=1,KEND(KPROC)
                 ZSEC4OUT(IPOINTER(J1)) = WORK(J1)
               ENDDO
             ENDIF
+            DEALLOCATE(WORK)
+
+            CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
           ENDDO 
-          IF(ALLOCATED(WORK)) DEALLOCATE(WORK)
         ELSE
+          ALLOCATE(ZSEC4OUT(NTENCODE))
+          CALL GSTATS(1433,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
+          DO JC=1,NTENCODE
+            ZSEC4OUT(JC)=0.0
+          ENDDO
+!$OMP END PARALLEL DO
+          CALL GSTATS(1433,1)
+
           IM=((IC-1)/KANG)+1
           IK=IC-(IM-1)*KANG
- 
           DO J1=1,KEND(KPROC)
             ZSEC4OUT(IPOINTER(J1)) = PSPEC(J1,IK,IM)
           ENDDO
@@ -621,13 +652,13 @@
 !-----------------------------------------------------------------------
 
         IF(ALLOCATED(IOUTGRIB)) DEALLOCATE(IOUTGRIB)
+        IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
 
       ENDDO
 
 !*      5. DEALLOCATION.
 !       ----------------
 
-      IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
       IF(ALLOCATED(IPOINTER)) DEALLOCATE(IPOINTER)
 
       IF(LFDBIOOUT.and.ILOCAL.gt.0) THEN
@@ -638,6 +669,8 @@
             WRITE(KU06,*) ' ERROR setting fdb field count '
             WRITE(KU06,*) ' in routine SPEC2FDB '
             WRITE(KU06,*) ' FDB ERROR CODE IS ',IERR
+            WRITE(KU06,*) ' IGLOBAL = ',IGLOBAL
+            WRITE(KU06,*) ' ILOCAL = ',ILOCAL
             WRITE(KU06,*) ' ------------------------'
             CALL FLUSH(KU06)
             CALL ABORT1

@@ -50,7 +50,7 @@
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
 
-      ALPHAMCOEF = 20.
+      ALPHAMCOEF = 40.
       ALPHAM = ALPHAMCOEF*ALPHA
       DELUST = USTARM/REAL(IUSTAR)
       DELALP = ALPHAM/REAL(IALPHA)

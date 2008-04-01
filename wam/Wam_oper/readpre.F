@@ -1,4 +1,4 @@
-      SUBROUTINE READPRE (IU07, IREFRA)
+      SUBROUTINE READPRE (IU07)
 
 ! ----------------------------------------------------------------------
 
@@ -14,6 +14,8 @@
 !                          OTHERWISE IT MIGHT PICK UP THE DEFAULT ONE
 !                          THAT IS ALREADY ON DISK.
 !                          YOU ALSO HAVE TO CHANGE OUTCOM.
+! ALSO CHECK
+!            READPREB in Alt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !*    PURPOSE.
@@ -24,9 +26,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READPRE (IU07, IREFRA)*
+!       *CALL* *READPRE (IU07)*
 !          *IU07 *  - INPUT UNIT OF PREPROC GRID FILE.
-!          *IREFRA *- REFRACTION OPTION.
 
 !     METHOD.
 !     -------
@@ -48,7 +49,6 @@
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
      &            XNLEV
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
@@ -63,8 +63,8 @@
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
-     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID 
+     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,
+     &            IMDLGRDID 
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
@@ -77,7 +77,7 @@
       INTEGER :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
 
 !     READ MODEL IDENTIFIERS
-      READ(IU07) KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+      READ(IU07,ERR=1000) KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       IF(KMDLGRDID.NE.IMDLGRDID) THEN
          WRITE(IU06,*) '*****************************************'
          WRITE(IU06,*) '*                                       *'
@@ -99,7 +99,7 @@
 !        ----------------------------
 
       READ(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
-     &           NIBL1, IREFRA, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN 
+     &           NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN 
 
 !*    1. READ MODULE YOWFRED (FREQUENCY DIRECTION GRID).
 !        ----------------------------------------------
@@ -134,8 +134,10 @@
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
 
-      IF(.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
+      IF(ALLOCATED(IXLG)) DEALLOCATE(IXLG)
+      ALLOCATE(IXLG(NIBLO,NBLO))
+      IF(ALLOCATED(KXLT)) DEALLOCATE(KXLT)
+      ALLOCATE(KXLT(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
       READ(IU07) IXLG, KXLT, NX, NY, IPER,
@@ -200,13 +202,15 @@
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
 !        ----------------------------------------------------
 
+      READ(IU07)  NDEPTH, DEPTHA, DEPTHD
 !!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
-      IF(.NOT.ALLOCATED(DEPTH)) ALLOCATE(DEPTH(NIBLO,NBLO))
+      IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
+      ALLOCATE(DEPTH(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
       IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
       IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
 
-      READ(IU07)  DEPTH, DEPTHA, DEPTHD, TCGOND, TFAK, TSIHKD
+      READ(IU07)  DEPTH, TCGOND, TFAK, TSIHKD
 
 !*    9. READ MODULE YOWTABL (2nd part).
 !        -------------------
@@ -224,11 +228,20 @@
 !*    10. READ MODULE YOWCURR.
 !         --------------------
 
-      IF (IREFRA.EQ.2) THEN 
-         IF(.NOT.ALLOCATED(U)) ALLOCATE(U(0:NIBLC,NBLC))
-         IF(.NOT.ALLOCATED(V)) ALLOCATE(V(0:NIBLC,NBLC))
-         READ(IU07)  U, V
-      ENDIF
+!     THE OCEAN CURRENTS ARE INPUT IN INITMDL
 
       RETURN
+
+1000  CONTINUE
+      WRITE(IU06,*) '*************************************'
+      WRITE(IU06,*) '*                                   *'
+      WRITE(IU06,*) '*  READ ERROR IN SUB. READPRE       *'
+      WRITE(IU06,*) '*  ==========================       *'
+      WRITE(IU06,*) '*                                   *'
+      WRITE(IU06,*) '*  READ ERROR TO UNIT fort.',IU07
+      WRITE(IU06,*) '*  IS THE FILE PRESENT ????         *' 
+      WRITE(IU06,*) '*                                   *'
+      WRITE(IU06,*) '*************************************'
+      CALL ABORT1
+
       END SUBROUTINE READPRE

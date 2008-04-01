@@ -1,4 +1,4 @@
-      SUBROUTINE ABORT1 
+      SUBROUTINE ABORT1
 
 ! ----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@
 
 !*    PURPOSE.
 !     --------
-!     TO ABORT AFTER CLOSING OPENED UNITS 
+!     TO ABORT AFTER FLUSHING OPENED UNITS 
 
 !**   INTERFACE.
 !     ----------
@@ -17,7 +17,7 @@
 
 !     METHOD.
 !     -------
-!     CALL MPCLOSE_UNIT THEN CALL ABORT 
+!     CALL MPABORT OR ABORT 
 
 !     EXTERNALS.
 !     ----------
@@ -33,8 +33,11 @@
       USE YOWMESPAS, ONLY : LMESSPASS
 
 ! ----------------------------------------------------------------------
+      CHARACTER*30 :: CDMESSAGE
+
+      CDMESSAGE='!! WAVE MODEL HAS ABORTED !!!!'
       IF(LMESSPASS) THEN
-        CALL MPABORT
+        CALL MPABORT(CDMESSAGE)
       ELSE
         CALL ABORT
       ENDIF

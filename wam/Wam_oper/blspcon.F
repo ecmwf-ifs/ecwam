@@ -78,7 +78,7 @@
       CHARACTER*  4 cdexpver
       CHARACTER*  5 cdtask
       CHARACTER*  6 cddomain
-      CHARACTER* 12 cldate
+      CHARACTER* 14 cldate
       CHARACTER* 20 clname
       CHARACTER* 40 clmsg
       CHARACTER*100 cltitl
@@ -211,7 +211,7 @@
       IF (ldoutspp) iu_locs =  i_get_unit (kuso, 'locs', 's', 'f', 0)
 
       IF ( cdtask .EQ. 'GRID ') THEN
-        WRITE (cldate,'(I4.4, 4I2.2)') kyear, kmonth, kday, khour, 0
+        WRITE (cldate,'(I4.4, 5I2.2)') kyear, kmonth, kday, khour,0,0
         DO jblock=1,kblo
           IF (llsuvi) time0=-wam_user_clock()
           READ (kubls) (((fl3(j1,j2,j3),

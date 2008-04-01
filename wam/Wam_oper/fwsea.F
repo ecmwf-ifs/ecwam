@@ -33,7 +33,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : TH       ,C
+      USE YOWFRED  , ONLY : TH       ,C      ,FRIC
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -44,8 +44,6 @@
       IMPLICIT NONE
 
       INTEGER :: IJS,IJL,IJ,K,M,NWP
-
-      REAL, PARAMETER :: FRIC=28.
 
       REAL :: THRESHOLD,CHECKTA
 

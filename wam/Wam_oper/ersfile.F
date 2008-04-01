@@ -140,7 +140,7 @@
       IERS = 0                                                          
       IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'
      &    .OR.MARSTYPE.EQ.'4v') THEN
-        WRITE(FNAME,'(''COL'',A12)') CDTERS                            
+        WRITE(FNAME,'(''COL'',A12)') CDTERS(1:12)                            
         OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD', 
      &   IOSTAT=IERR)                                             
         IF (IERR.NE.0) THEN                                            
@@ -162,7 +162,7 @@
      &       FNAME, ' OPENED    '
           ENDIF
 
-          WRITE(FNAME,'(''COS'',A12)') CDTERS                         
+          WRITE(FNAME,'(''COS'',A12)') CDTERS(1:12)                         
           OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,   
      &     FORM='UNFORMATTED', STATUS='UNKNOWN')                 
           IF(ITEST.GT.0) THEN

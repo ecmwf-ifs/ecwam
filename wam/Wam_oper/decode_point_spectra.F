@@ -414,6 +414,26 @@
       IHH=KSEC1(13)
       IMI=KSEC1(14)
 
+!     FORECAST STEP (defined here in hours)
+      IF(KSEC1(15) .EQ. 1 ) THEN
+        FCST=KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 0 ) THEN
+        FCST=KSEC1(16)/60.
+      ELSEIF(KSEC1(15) .EQ. 2 ) THEN
+        FCST=24.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 12 ) THEN
+        FCST=12.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 11 ) THEN
+        FCST=6.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 10 ) THEN
+        FCST=3.*KSEC1(16)
+      ELSE
+        WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP !!!'
+        WRITE(*,*) 'KSEC1(15) = ',KSEC1(15)
+        CALL ABORT
+      ENDIF
+
+
       NGY = KSEC2(3)
       NGYN = NGY 
       IF (ITEST.gt.0) WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
@@ -448,6 +468,7 @@
       ENDIF
 
       ALLOCATE(KDOMRGG(NGYMAX))
+      KDOMRGG=0
       NFRANG=NANG*NFRE
       IF(IRGG.EQ.0) THEN
         NGX = KSEC2(2)
@@ -720,10 +741,10 @@
         xlon=AMOWEP+(ilon-1)*zdello
         xlat=AMONOP-(ilat-1)*xdella
 
-        WRITE(10,'(2(1x,F8.4),1x,i4.4,4(i2.2))')
-     &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI 
-        WRITE(11,'(2(1x,F8.4),1x,i4.4,4(i2.2))')
-     &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI 
+        WRITE(10,'(2(1x,F8.4),1x,i4.4,4(i2.2),1x,f4.0)')
+     &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI,FCST 
+        WRITE(11,'(2(1x,F8.4),1x,i4.4,4(i2.2)1x,f4.0)')
+     &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI,FCST 
 
         IF(NANG.EQ.12) THEN
           WRITE(10,100) dum,(TH(K),K=1,NANG)

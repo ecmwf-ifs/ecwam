@@ -1,4 +1,5 @@
-      SUBROUTINE OUTUBUF (IU08, IU18, IFORM,NIBLO,ML,KOBSLAT,KOBSLON)
+      SUBROUTINE OUTUBUF (IU08, IU18, IFORM,NIBLO,ML,
+     &                    KOBSLAT,KOBSLON,KOBSCOR,KOBSRLAT,KOBSRLON)
 
 ! ----------------------------------------------------------------------
 
@@ -47,11 +48,15 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WADV
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,KCOR     ,
+     &                      KRLAT    ,KRLAT2   ,KRLON    ,KRLON2   ,
+     &                      WLAT     ,WRLAT    ,WRLON
 
 ! ----------------------------------------------------------------------
 
       INTEGER, DIMENSION(NIBLO,ML,2) :: KOBSLON, KOBSLAT
+      INTEGER, DIMENSION(NIBLO,ML,2) :: KOBSRLON, KOBSRLAT
+      INTEGER, DIMENSION(NIBLO,ML,4) :: KOBSCOR
 
   998 FORMAT(10I8)
   999 FORMAT(10E6.3)
@@ -63,9 +68,16 @@
 
       IF (IFORM.NE.2) WRITE (IU08) KLAT, KLON
       IF (IFORM.NE.2) WRITE (IU08) KLAT2
-      IF (IFORM.NE.2) WRITE (IU08) WADV
+      IF (IFORM.NE.2) WRITE (IU08) KRLAT, KRLON
+      IF (IFORM.NE.2) WRITE (IU08) KRLAT2,KRLON2
+      IF (IFORM.NE.2) WRITE (IU08) KCOR
+      IF (IFORM.NE.2) WRITE (IU08) WLAT 
+      IF (IFORM.NE.2) WRITE (IU08) WRLAT,WRLON
       IF (IFORM.NE.2) WRITE (IU08) KOBSLAT
       IF (IFORM.NE.2) WRITE (IU08) KOBSLON
+      IF (IFORM.NE.2) WRITE (IU08) KOBSRLAT 
+      IF (IFORM.NE.2) WRITE (IU08) KOBSRLON
+      IF (IFORM.NE.2) WRITE (IU08) KOBSCOR
 
 ! ----------------------------------------------------------------------
 
@@ -74,9 +86,16 @@
 
       IF (IFORM.NE.1) WRITE (IU18,998) KLAT, KLON
       IF (IFORM.NE.1) WRITE (IU18,998) KLAT2
-      IF (IFORM.NE.1) WRITE (IU18,999) WADV
+      IF (IFORM.NE.1) WRITE (IU08,998) KRLAT, KRLON
+      IF (IFORM.NE.1) WRITE (IU08,998) KRLAT2,KRLON2
+      IF (IFORM.NE.1) WRITE (IU18,998) KCOR 
+      IF (IFORM.NE.1) WRITE (IU18,999) WLAT 
+      IF (IFORM.NE.1) WRITE (IU08,999) WRLAT,WRLON
       IF (IFORM.NE.1) WRITE (IU18,998) KOBSLAT
       IF (IFORM.NE.1) WRITE (IU18,998) KOBSLON
+      IF (IFORM.NE.1) WRITE (IU08,998) KOBSRLAT 
+      IF (IFORM.NE.1) WRITE (IU08,998) KOBSRLON
+      IF (IFORM.NE.1) WRITE (IU18,998) KOBSCOR
 
       RETURN
       END SUBROUTINE OUTUBUF

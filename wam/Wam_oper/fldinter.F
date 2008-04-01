@@ -2,7 +2,8 @@
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
      &                     IXLG, KXLT, NIBLO, IGL, IJS, IJL,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                     RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
+     &                     RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,
+     &                     CI, PMISS,
      &                     LADEN, ROAIR, LGUST,LLINTERPOL,
      &                     DK1M, DII1M, DIIP1M, KKM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
@@ -12,6 +13,9 @@
 !                  INTERPOLATION.
 
 !      S. ABDALLA   ECMWF   DECEMBER 2000. 
+!      J. BIDLOT  ECMWF AUGUST 2006  ADDED SEA ICE FRACTION WHICH
+!                                    CONTAINS MISSING DATA: NEAREST
+!                                    SEA POINT IS TAKEN (IF AVAILABLE).
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -32,6 +36,7 @@
 !    &                    IXLG, KXLT, NIBLO, IGL, IJS, IJL, 
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
+!    &                    CI, PMISS,
 !    &                    LADEN, ROAIR, LGUST,LLINTERPOL,
 !    &                    DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
 !
@@ -47,7 +52,7 @@
 !                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
 !                   FIELDS(:,3) = AIR DENSITY
 !                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
-!                   FIELDS(:,5) = RESERVED FOR ICE BOUNDARY
+!                   FIELDS(:,5) = SEA ICE FRACTION 
 
 !        WAVE MODEL GRID SPECIFICATION (INPUT):
 !        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
@@ -81,6 +86,8 @@
 !        *VWND*   - INTERPOLATED FIELD
 !        *AIRD*   - INTERPOLATED FIELD
 !        *PZIDL*  - INTERPOLATED FIELD
+!        *CI*     - INTERPOLATED SEA ICE FIELD
+!        *PMISS*  - MISSING DATA VALUE
 
 
 !     EXTERNALS.                                                        
@@ -99,7 +106,7 @@
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL:: LADEN, LGUST, LLINTERPOL
       
-      REAL, DIMENSION(NGX,NGY) :: UWND, VWND, AIRD, PZIDL
+      REAL, DIMENSION(NGX,NGY) :: UWND, VWND, AIRD, PZIDL, CI
 
       REAL ZDELLO(NGY)
 
@@ -132,7 +139,7 @@
               PZIDL(I,K) = 0.
             ENDIF
 
-!!! nothing is done for the ice boundary !!!
+            CI(I,K) = FIELDS(IKBLOCK(I,K),5) 
 
           ENDDO
         ENDDO
@@ -196,8 +203,61 @@
               PZIDL(I,K) = 0.
             ENDIF
 
-!!! nothing is done for the ice boundary !!!
 
+!           FOR SEA ICE FRACTION
+!           DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
+!           IF SO USE THE CLOSEST GRID POINT VALUE IF IT IS NOT MISSING
+            F00=FIELDS(IKBLOCK(II,KK),5)
+            F10=FIELDS(IKBLOCK(II1,KK),5)
+            F01=FIELDS(IKBLOCK(IIP,KK1),5)
+            F11=FIELDS(IKBLOCK(IIP1,KK1),5)
+            IF(F00.EQ.PMISS.OR.
+     &         F10.EQ.PMISS.OR.
+     &         F01.EQ.PMISS.OR.
+     &         F11.EQ.PMISS) THEN
+              IF(DK1.LE.0.5) THEN
+                KCL=KK
+                ICL=II1
+                IF(DII1.LE.0.5) ICL=II
+              ELSE
+                KCL=KK1
+                ICL=IIP1
+                IF(DIIP1.LE.0.5) ICL=IIP
+              ENDIF
+              CI(I,K)=FIELDS(IKBLOCK(ICL,KCL),5)
+
+!             NON MISSING VALUE OVER SEA IS NEEDED
+              IF(CI(I,K).EQ.PMISS) THEN
+                NCOUNT=0
+                CI(I,K)=0.
+                IF(F00.NE.PMISS) THEN
+                  CI(I,K)=CI(I,K)+F00
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F10.NE.PMISS) THEN
+                  CI(I,K)=CI(I,K)+F10
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F01.NE.PMISS) THEN
+                  CI(I,K)=CI(I,K)+F01
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F11.NE.PMISS) THEN
+                  CI(I,K)=CI(I,K)+F11
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(NCOUNT.GT.0) THEN
+                  CI(I,K)=CI(I,K)/NCOUNT
+                ELSE
+                  CI(I,K)=PMISS
+                ENDIF
+              ENDIF
+            ELSE
+              CI(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),5) +
+     &                      DII1*FIELDS(IKBLOCK(II1,KK),5) ) +
+     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),5) +
+     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),5) )
+            ENDIF
 
           ENDDO
         ENDDO

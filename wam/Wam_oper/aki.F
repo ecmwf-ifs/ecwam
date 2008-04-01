@@ -38,7 +38,7 @@
 ! ----------------------------------------------------------------------
 
 
-      USE YOWPCONS , ONLY : G
+      USE YOWPCONS , ONLY : G     ,DKMAX
 
 
 !*    *PARAMETER*  RELATIVE ERROR LIMIT OF NEWTON'S METHOD.
@@ -63,7 +63,7 @@
  2000 CONTINUE
       AKP = AO
       BO = BETA*AO
-      IF (BO.GT.40.) THEN
+      IF (BO.GT.DKMAX) THEN
         AKI = OM**2/G
       ELSE
         TH = G*AO*TANH(BO)

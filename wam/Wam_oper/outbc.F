@@ -51,7 +51,7 @@
       USE YOWCBOU  , ONLY : NBOUNC   ,IJARC    ,IGARC
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,AKMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -70,7 +70,7 @@
 
       LLAK=.FALSE.
       CALL FEMEAN (FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &             AKMEAN(IJS), LLAK)
+     &             LLAK)
       CALL STHQ   (FL3, IJS, IJL, THQ(IJS))
       IF (ITEST.GE.3) THEN
         IF (ITESTB.GE.IG) THEN

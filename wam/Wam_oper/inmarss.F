@@ -66,21 +66,24 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
+     &            NKSEK4   ,NPSEK2   ,NPSEK3
       USE YOWPCONS , ONLY : DEG 
 
 ! ----------------------------------------------------------------------
-      INTEGER   KSEC0(2),
-     &          KSEC1(43),
-     &          KSEC2(384),
-     &          KSEC3(2),
-     &          KSEC4(128)
 
-      DIMENSION PSEC2(96),
-     &          PSEC3(2),
+      INTEGER   KSEC0(NKSEK0),
+     &          KSEC1(NKSEK1),
+     &          KSEC2(NKSEK2),
+     &          KSEC3(NKSEK3),
+     &          KSEC4(NKSEK4)
+
+      DIMENSION PSEC2(NPSEK2),
+     &          PSEC3(NPSEK3),
      &          PSEC4(IDL),
      &          PX(ISX),
      &          PY(ISY),
-     &          ZKSEC4(128),
+     &          ZKSEC4(NKSEK4),
      &          IDOMRGG(IDY)
       EQUIVALENCE (KSEC4(1),ZKSEC4(1))
 
@@ -92,7 +95,7 @@
       DATA KSEC3 /0,     0 /
       DATA PSEC3 /0., -999./
       CHARACTER*40 ERRMSG(-4:6), MSG
-      CHARACTER*12 CDATE
+      CHARACTER*14 CDATE
 
       DATA ERRMSG/
      &            ' DECODED WITH BIT MAP                  *',
@@ -109,21 +112,11 @@
 
 ! ---------------------------------------------------------------------
 
-#include <outctrl.h>
-      DATA csubna /"inmarss"/
-
-
-! ---------------------------------------------------------------------
-
 !*    1. INITIALIZATIONS.
 !        ----------------
-      msub = msub + 1
-      CALL  uraopc (csubna, msub, llsuvi, lltest)
-      IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
 
       KSEC4=-99
       PSEC3(2) = PMISS
-      IF (llsuvi .OR. lltest) WRITE(kuso,*)' ',csubna,': '
 
       I4=1
       NPRECI = KIND(I4)
@@ -160,10 +153,8 @@
 !         -------------------
 
       KRET  = 1
-      IF (lltest) CALL GRSDBG (1)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
      &             PSEC4, IDL,   KGRIB, ISIZE , KWORD, HOPER, KRET)
-      IF (llsuvi) WRITE(kuso,*)' GRIBEX DONE'
 
       DEALLOCATE(KGRIB)
 
@@ -171,7 +162,6 @@
         MSG = ERRMSG(2)
         CALL GRPRS0 (KSEC0)
         CALL GRPRS1 (KSEC0, KSEC1)
-        msub = msub - 1
         WRITE (kuso,*) MSG 
         CALL abort
       ENDIF
@@ -182,7 +172,6 @@
         CALL GRPRS2 (KSEC0, KSEC1, PSEC2)
         CALL GRPRS3 (KSEC0, KSEC3, PSEC3)
         CALL GRPRS4 (KSEC0, KSEC4, PSEC4)
-        msub = msub - 1
         RETURN
       ENDIF
 
@@ -194,10 +183,6 @@
 !*    3.1 PRINT BLOCK.
 !         ------------
 
-      IF (lltest) THEN
-        CALL GRPRS0 (KSEC0)
-        CALL GRPRS1 (KSEC0, KSEC1)
-      ENDIF
 
 !*    3.2 DETERMINE DATE FROM KSEC1(10)-KSEC1(16).
 !         ----------------------------------------
@@ -205,8 +190,9 @@
 !         START DATE.
 
       IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-      WRITE (CDATE,'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
+      WRITE (CDATE(1:12),'(I4.4,4I2.2)') IYYYY,KSEC1(11),KSEC1(12),
      &                             KSEC1(13),KSEC1(14)
+      CDATE(13:14)='00'
 
 !*         DETERMINE TIME UNIT.
 
@@ -237,8 +223,6 @@
 
 !*    4.1 PRINT BLOCK.
 !         ------------
-
-      IF (lltest) CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
 
 !*    4.2 DETERMINE GRID AND MATRIX PARAMETERS.
 !         -------------------------------------
@@ -286,7 +270,6 @@
       IF ((NSX.GT.ISX).OR.(NSY.GT.ISY)) THEN
         KRET = 6
         MSG = ERRMSG(KRET)
-        msub = msub - 1
         RETURN
       ENDIF
 
@@ -301,25 +284,10 @@
         IPY=IPY+1
         PY(IPY) = ZKSEC4(J1)
       ENDDO
-      IF (lltest) THEN
-        WRITE(kuso,*) '  J1  KSEC4: '
-        DO J1=1,128
-          WRITE(kuso,'(I5,x,I19)') J1, KSEC4(J1)
-        ENDDO
-        WRITE(kuso,*) '  J1  PSEC4: '
-        DO J1=1,300
-          WRITE(kuso,'(I5,x,f10.4)') J1, PSEC4(J1)
-        ENDDO
-        WRITE(kuso,*) '  J1  ZKSEC4: '
-        DO J1=1,100
-          WRITE(kuso,'(I5,x,f10.4)') J1, ZKSEC4(J1)
-        ENDDO
-      ENDIF
 
       IF ((NTOT*NSX*NSY .GT. IDL)) THEN
         KRET = 4
         MSG = ERRMSG(KRET)
-        msub = msub - 1
         WRITE (kuso,*) ' SUB. INMARSS : ' 
         WRITE (kuso,*) MSG 
         WRITE (kuso,*) 'REQUIRED DIMENSION = ',NTOT*NSX*NSY  
@@ -328,7 +296,6 @@
       ENDIF
 
       MSG = ERRMSG(KRET)
-      msub = msub - 1
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -338,7 +305,6 @@
 
       KRET = 1
       MSG = ERRMSG(KRET)
-      msub = msub - 1
       WRITE (kuso,*) MSG 
       CALL abort
       END SUBROUTINE INMARSS

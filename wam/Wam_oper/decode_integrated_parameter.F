@@ -9,6 +9,7 @@
 !     --------
 !     decodes the grib integrated parameters as obtained from a mars request
 !     Input parameter can be any integrated parameter as output from WAM.
+!     or the atmospheric surface fields (winds) on a regular lat-lon grid.
 !     The results will be saved as in ascii as a header and 2d matrix.
 !     If more than one field is present, they will written out in the
 !     same output file.
@@ -30,10 +31,6 @@
 !            itest = 3 : prints built in diagnostics + gribex debugger 
 !                        messages (!!! it can be big)
 
-!     INPUT FILE REQUIREMENT :
-!     -----------------------
-!     The input file can only contain one parameter
- 
 !     LIBRARY : FORTRAN 90, and EMOSLIB
 !     -------
 
@@ -283,10 +280,30 @@
       IHH=KSEC1(13)
       IMI=KSEC1(14)
 
+!     FORECAST STEP (defined here in hours)
+      IF(KSEC1(15) .EQ. 1 ) THEN
+        FCST=KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 0 ) THEN
+        FCST=KSEC1(16)/60.
+      ELSEIF(KSEC1(15) .EQ. 2 ) THEN
+        FCST=24.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 12 ) THEN
+        FCST=12.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 11 ) THEN
+        FCST=6.*KSEC1(16)
+      ELSEIF(KSEC1(15) .EQ. 10 ) THEN
+        FCST=3.*KSEC1(16)
+      ELSE
+        WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP !!!'
+        WRITE(*,*) 'KSEC1(15) = ',KSEC1(15)
+        CALL ABORT
+      ENDIF
+
       NGY = KSEC2(3)
       IF (ITEST.gt.0) WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
 
       ALLOCATE(KDOMRGG(NGY))
+      KDOMRGG=0
       IF(IRGG.EQ.0) THEN
         NGX = KSEC2(2)
         KDOMRGG = NGX
@@ -370,7 +387,8 @@
         llfrst=.false.
         WRITE(*,*) ' '
         WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI
+        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI,
+     &             ' STEP ',INT(FCST),' HOURS'
         WRITE(*,*) ' '
         WRITE(*,*) ' OUTPUT MATRIX DIMENSION : ',NGX,NGY
         WRITE(*,*) ' '
@@ -389,20 +407,22 @@
       else
         WRITE(*,*) ' '
         WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI
+        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI,
+     &             ' STEP ',INT(FCST),' HOURS'
       endif
 
-      WRITE(10,'(I3,1X,I4.4,3(I2.2),1x,I3,1x,I3,4(F7.2,1x))')
-     &    IPARAM,IYYYY,IMM,IDD,IHH,NGX,NGY,XDELLO,XDELLA,AMONOP,AMOWEP
+      WRITE(10,'(I3,1X,I4.4,3(I2.2),1x,f4.0,1x,I3,1x,I3,4(F7.2,1x))')
+     &    IPARAM,IYYYY,IMM,IDD,IHH,FCST,
+     &    NGX,NGY,XDELLO,XDELLA,AMONOP,AMOWEP
 
-      NBY=15
-      DO II=1,INT(NGX/NBY)+1
-        DO K=1,NGY
-          WRITE(10,110) (FIELD(I,K),I=(II-1)*NBY+1,MIN(NGX,II*NBY))
-        ENDDO 
+
+      DO K=1,NGY
+        WRITE(10,110) (FIELD(I,K),I=1,NGX)
       ENDDO 
 
-110   FORMAT(15(F7.2))
+110   FORMAT(1500(F7.2))
+
+
 
       DEALLOCATE(PSEC4OUT)
       DEALLOCATE(KDOMRGG)

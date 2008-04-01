@@ -296,6 +296,7 @@
       DO ji = 1, 4
         isec1(41) = isec1(41)*256 + ICHAR(cdexpver(ji:ji))
       ENDDO
+      isec1(41) = transfer(cdexpver,isec1(41))
 
       isec1(42) = 0
       isec1(43) = 1

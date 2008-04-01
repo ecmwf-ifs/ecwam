@@ -1,4 +1,4 @@
-      SUBROUTINE OUTCOM (IU07, IU17, IFORM, IREFRA, ML, KL)
+      SUBROUTINE OUTCOM (IU07, IU17, IFORM, ML, KL)
 
 ! ----------------------------------------------------------------------
 
@@ -28,13 +28,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTCOM (IU07, IU17, IFORM, IREFRA, ML, KL)*
+!       *CALL* *OUTCOM (IU07, IU17, IFORM, ML, KL)*
 !          *IU07*   - LOGICAL UNIT FOR  UNFORMATED WRITE.
 !          *IU17*   - LOGICAL UNIT FOR    FORMATED WRITE.
 !          *IFORM*   - FORMAT OPTION  = 1  UNFORMATED WRITE.
 !                                     = 2  FORMATED WRITE.
 !                                     OTHERWISE BOTH.
-!          *IREFRA*  - REFRACTION OPTION.
 !          *ML*      - NUMBER OF FREQUENCIES.
 !          *KL*      - NUMBER OF DIRECTIONS.
 
@@ -67,7 +66,6 @@
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
      &            XNLEV
       USE YOWCPBO  , ONLY : NBOUNC
-      USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWFPBO  , ONLY : NBOUNF
@@ -92,6 +90,7 @@
 
 ! ----------------------------------------------------------------------
 
+  996 FORMAT(I8,1X,2E16.7)
   997 FORMAT(12I8,1X,A1)
   998 FORMAT(10I8)
   999 FORMAT(5E16.7)
@@ -108,13 +107,16 @@
 !*    0. WRITE YOWPARAM (BLOCK SIZES).
 !        ----------------------------
 
+!     IDUM REPLACES IREFRA WHICH IS NO LONGER USED IN PREPROC.
+      IDUM=0
+
       IF (IFORM.NE.2) THEN
         WRITE(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
-     &              NIBL1, IREFRA, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
+     &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE(IU17,997) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
-     &              NIBL1, IREFRA, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
+     &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
 
 
@@ -240,13 +242,15 @@
 !        --------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) DEPTH, DEPTHA, DEPTHD,
+        WRITE (IU07) NDEPTH, DEPTHA, DEPTHD
+        WRITE (IU07) DEPTH,
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML)
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) DEPTH, DEPTHA, DEPTHD,
+        WRITE (IU17,996) NDEPTH, DEPTHA, DEPTHD
+        WRITE (IU17,999) DEPTH,
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML)
@@ -269,10 +273,7 @@
 !*    10. WRITE MODULE YOWCURR.
 !         ---------------------
 
-      IF (IREFRA.EQ.2) THEN
-        IF (IFORM.NE.2) WRITE (IU07) U, V
-        IF (IFORM.NE.1) WRITE (IU17,999) U, V
-      ENDIF
+!      THE CURRENTS ARE NO LONGER PART OF THE CONSTANT FILES.
 
 ! ----------------------------------------------------------------------
 
@@ -287,7 +288,7 @@
       CALL OUTNAM
      & (NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC ,
-     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IREFRA, IPER)
+     &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
 
       RETURN
       END SUBROUTINE OUTCOM

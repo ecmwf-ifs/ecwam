@@ -62,7 +62,7 @@
 
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,NGOUT    ,IGAR     ,
      &            IJAR     ,LOUTSPP
-      USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN
@@ -81,7 +81,8 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3,FL1
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
-      CHARACTER NAME*20
+      CHARACTER NAME*20, CPATH*72
+      LOGICAL FRSTIME
       REAL,ALLOCATABLE :: SPEC(:,:)
 
 ! ----------------------------------------------------------------------
@@ -90,6 +91,7 @@
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
       REAL,ALLOCATABLE,DIMENSION(:) :: U10,THW,US
       REAL,ALLOCATABLE,DIMENSION(:) :: A1, A2, A3, A4, A5, A6, A7, A8
+      DATA FRSTIME/.TRUE./
 
 !     0. GATHER THE FIELDS ON PROCESS 1 
 !        ------------------------------
@@ -175,17 +177,31 @@
 !           --------------------
 
               IF (FFLAG(17)) THEN
-!               use a formatted output for swamp cases
+!
+!               USE SIMPLIFIED OUTPUT FOR SWAMP/SINGLE GRIDPOINT CASE
+!
                 IF(CLDOMAIN.EQ.'s') THEN
-                  WRITE(IU25,'(1X,f7.3,1x,f8.3,1x,a12,3(1x,F8.4))') 
-     &              XLAT,XLON,CDTPRO,U10NEW(IJ),THWNEW(IJ),USNEW(IJ)
-                  dum=0.
-                  WRITE(IU25,110) dum,(TH(K)*DEG,K=1,NANG)
                   DO M=1,NFRE
-                    WRITE(IU25,110) FR(M),
-     &                 (MIN(FL3(IJ,K,M),999.9999),K=1,NANG)
+                    DO K=1,NANG
+                      IF(LMESSPASS) THEN
+                        SPEC(K,M) = FLPTS(1,NGOU,K,M)
+                      ELSE
+                        SPEC(K,M) = FL3(IJ,K,M)
+                      ENDIF
+                    ENDDO
                   ENDDO
-110               FORMAT(25(1X,F8.4))
+                  ZHS = 4.*SQRT(EMEAN(IJ)) 
+                  ZTHQ = THQ(IJ)
+                  ZFM = FMEAN(IJ)
+                  ZUST = US(IJ)
+                  ZTHW = THW(IJ)
+                  ZU10 = U10(IJ)
+                  XFRE = REAL(NFRE)
+                  TH0 = TH(1)*DEG
+
+                  CALL OUT_ONEGRDPT_SP(SPEC,FR,TH,XLON,XLAT,CDTPRO,
+     &              ZHS,ZTHQ,ZFM,ZUST,ZTHW,ZU10,IU06,IU25)
+
                 ELSE
                   XANG = REAL(NANG)
                   XFRE = REAL(NFRE)

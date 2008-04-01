@@ -14,6 +14,12 @@
 !     J. BIDLOT    ECMWF         JANUARY 1998 : CORRECT THRESHOLD FOR
 !                                               ICE TO BE LT 271.50 
 !     J. BIDLOT    ECMWF         FEBRUARY 2000 : USE OF SEA ICE FRACTION
+ 
+
+!     J. BIDLOT    ECMWF
+!!!! this is now obsolete as the information for the ice mask is now
+!!!! read with the wind (see *READWIND*)
+
 
 !     PURPOSE.
 !     --------
@@ -53,14 +59,21 @@
 
 !---------------------------------------------------------------------
 
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWICE   , ONLY : ICEMASK
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOWSTAT  , ONLY : NWAM_BLKS
 
 !-----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
 
 !-----------------------------------------------------------------------
 
@@ -97,7 +110,19 @@
 !*    2. DEFINE ICE POINTS AND COMPUTE ICEMASK
 !        -------------------------------------
 
-      CALL MICEP (IU06, NSTART, NEND, FIELD, IPARAM)
+      DO IG=1,IGL
+        MIJS=IJS(IG)
+        MIJL=IJL(IG)
+! Mod for OPENMP
+        NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=MIJS,MIJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,MIJL)
+          CALL MICEP (FIELD, IPARAM, ICEMASK, NINF,NSUP,KIJS,KIJL,IG)
+        ENDDO
+!$OMP   END PARALLEL DO
+      ENDDO
 
       DEALLOCATE(FIELD)
 

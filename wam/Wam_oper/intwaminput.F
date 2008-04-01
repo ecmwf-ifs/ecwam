@@ -64,6 +64,7 @@
       INTEGER :: I4(2), IUIN, KRET, KPLENG, ISIZE, KLEN
       INTEGER :: KLENG, KLENP, KWORD, NC, NR, NTOT, I, J, JRGG, IR
       INTEGER :: IREPR, IPARAM, KANG, KFRE, IALLFLD, JSN
+      INTEGER :: IFR1, KFR1, IFR, IC, MMSHIFT, MLAST 
       INTEGER :: IFORP, KZLEV, K, M, KKK, MMM, JPARAM, KKKPR, NGYFULL
       INTEGER :: IPERIODIC, NRFULL, JSTREAM, ISTART, ISTOP, IDUM
       INTEGER :: IU07, ILEVTYPE, KSTREAM
@@ -77,17 +78,19 @@
       REAL X4(2)
       REAL :: RMONOP, RMOSOP, RMOEAP, RMOWEP
       REAL ::  DELLO
+      REAL :: ONETHIRD, TWOTHIRD
       REAL ::  PSEC2(NPSEK2),PSEC3(NPSEK3)
       REAL, ALLOCATABLE :: PSEC4(:)
       REAL, ALLOCATABLE, DIMENSION(:,:) :: FIELD, TEMP
 
       CHARACTER*  2 MARSFCTYPE
       CHARACTER*  4 CSTREAM 
-      CHARACTER* 12 CDATE
+      CHARACTER* 14 CDATE
       CHARACTER* 11 IFILENAME
       CHARACTER* 12 OFILENAME
 
       LOGICAL LLINTERPOL, LLNONWAVE, LASTREAM
+      LOGICAL LLFR1OK
 
 ! ----------------------------------------------------------------------
 
@@ -119,6 +122,9 @@
       NPRECI = KIND(I4)
       KTAG=100
 
+      ONETHIRD = 1./3.
+      TWOTHIRD = 2./3.
+
       ALLOCATE (NSTART(NPROC),NEND(NPROC))
 
 ! ----------------------------------------------------------------------
@@ -126,7 +132,7 @@
 !*    2. READ PREPROC OUTPUT.
 !        --------------------
 
-      CALL READPRE (IU07, IREFRA)
+      CALL READPRE (IU07)
 
       NINF=1
       NSUP=NIBLO
@@ -340,6 +346,7 @@
 !      FIND WHETHER INTERPOLATION IS NEEDED
 
        LLINTERPOL=.TRUE.
+       LLFR1OK=.TRUE.
 
        NGYFULL=INT(180./XDELLA)+1
 
@@ -379,19 +386,45 @@
            WRITE(IU06,*) ' NR = ',NR,' -> NGY = ',NGY
            WRITE(IU06,*) ' NC = ',NC,' -> NGX = ',NGX
        ENDIF
+
        IF(IPARAM.EQ.251) THEN
          KANG=KSEC1(46)
          KFRE=KSEC1(47)
-         IF(KANG.NE.NANG .OR. KFRE.NE.NFRE ) THEN
+!        input data first frequency
+         KFR1=KSEC1(50+KANG)
+!        model first frequency
+         IFR1=NINT(KSEC1(49)*FR(1))
+         IF(KANG.NE.NANG .OR. KFRE.NE.NFRE .OR. IFR1.NE.KFR1 ) THEN
 !        it's assumed here that we will not change the initial direction
-!        or frequency without changing the total number of directions or
-!        frequencies.
+!        without changing the total number of directions
            LLINTERPOL=.TRUE.
          ENDIF
-       ENDIF
+
+         IF(IFR1.NE.KFR1 ) THEN
+           LLFR1OK=.FALSE.
+           IF(IFR1.LT.KFR1) THEN
+             IC=1
+             IFR=IFR1
+             DO WHILE (IFR.LT.KFR1 .AND. IC.LT.NFRE) 
+               IC=IC+1
+               IFR=NINT(KSEC1(49)*FR(IC))
+             ENDDO
+             MMSHIFT=IC-1
+           ELSE
+             IC=1
+             IFR=KFR1
+             DO WHILE (IFR.LT.IFR1 .AND. IC.LT.NFRE) 
+               IC=IC+1
+               IFR=KSEC1(49+KANG+IC)
+             ENDDO
+             MMSHIFT=-(IC-1)
+           ENDIF
+         ELSE
+           LLFR1OK=.TRUE.
+           MMSHIFT=0
+         ENDIF
 
 
-       IF(IPARAM.EQ.251) THEN
          open(17,FILE='wave_spectral_resolution')
          WRITE(17,*) 'NANG ',KANG
          WRITE(17,*) 'NFRE ',KFRE
@@ -430,25 +463,30 @@
          KFRE=KSEC1(47)
 
          WRITE(IU06,*) ' '
-         IF(KANG.EQ.NANG .AND. KFRE.EQ.NFRE ) THEN
+         IF(KANG.EQ.NANG .AND. KFRE.EQ.NFRE .AND. LLFR1OK ) THEN
            WRITE(IU06,*) ' NO DIRECTIONAL OR FREQUENCY INTERPOLATION',
      &                   ' REQUIRED. '
-         ELSEIF( KANG.EQ.2*NANG .OR. 2*KANG.EQ.NANG) THEN
+         ELSEIF(KANG.EQ.NANG .AND. .NOT.LLFR1OK ) THEN
+           WRITE(IU06,*) ' NO DIRECTIONAL INTERPOLATION REQUIRED'
+           WRITE(IU06,*) ' BUT FREQUENCY INTERPOLATION IS REQUIRED'
+           WRITE(IU06,*) ' BECAUSE OF DIFFERENT FIRST FREQUENCY'
+           WRITE(IU06,*) ' INPUT FIRST FREQUENCY: ',KFR1
+           WRITE(IU06,*) ' MODEL FIRST FREQUENCY: ',IFR1
+         ELSEIF( KANG.EQ.2*NANG .OR. 2*KANG.EQ.NANG .OR.
+     &           KANG.EQ.3*NANG .OR. 3*KANG.EQ.NANG .OR.
+     &         2*KANG.EQ.3*NANG .OR. 3*KANG.EQ.2*NANG) THEN
            WRITE(IU06,*) ' DIRECTIONAL INTERPOLATION REQUIRED.'
            WRITE(IU06,*) ' INPUT NUMBER OF DIRECTIONS: ',KANG 
            WRITE(IU06,*) ' MODEL NUMBER OF DIRECTIONS: ',NANG 
            WRITE(IU06,*) ' '
-           IF(KFRE.EQ.NFRE ) THEN
+           IF(KFRE.EQ.NFRE .AND. LLFR1OK ) THEN
              WRITE(IU06,*) ' BUT NO FREQUENCY INTERPOLATION REQUIRED.'
-           ELSEIF((KFRE.EQ.25 .AND. NFRE.EQ.30) .OR.
-     &            (KFRE.EQ.25 .AND. NFRE.EQ.36) .OR.
-     &            (KFRE.EQ.30 .AND. NFRE.EQ.25) .OR.
-     &            (KFRE.EQ.30 .AND. NFRE.EQ.36) .OR.
-     &            (KFRE.EQ.36 .AND. NFRE.EQ.25) .OR.
-     &            (KFRE.EQ.36 .AND. NFRE.EQ.30) ) THEN
-             WRITE(IU06,*) ' AND FREQUENCY INTERPOLATION ALSO REQUIRED.'
+           ELSEIF(.NOT.LLFR1OK .OR. KFRE.NE.NFRE ) THEN
+             WRITE(IU06,*) ' AND FREQUENCY INTERPOLATION ALSO REQUIRED'
              WRITE(IU06,*) ' INPUT NUMBER OF FREQUENCIES: ',KFRE
              WRITE(IU06,*) ' MODEL NUMBER OF FREQUENCIES: ',NFRE
+             WRITE(IU06,*) ' INPUT FIRST FREQUENCY: ',KFR1
+             WRITE(IU06,*) ' MODEL FIRST FREQUENCY: ',IFR1
            ELSE
              WRITE(IU06,*) '*******************************************'
              WRITE(IU06,*) ' FREQUENCY REQUIRED.'
@@ -461,15 +499,12 @@
            ENDIF
          ELSEIF( KANG.EQ.NANG .AND. KFRE.NE.NFRE) THEN
            WRITE(IU06,*) ' NO DIRECTIONAL INTERPOLATION REQUIRED.'
-           IF((KFRE.EQ.25 .AND. NFRE.EQ.30) .OR.
-     &        (KFRE.EQ.25 .AND. NFRE.EQ.36) .OR.
-     &        (KFRE.EQ.30 .AND. NFRE.EQ.25) .OR.
-     &        (KFRE.EQ.30 .AND. NFRE.EQ.36) .OR.
-     &        (KFRE.EQ.36 .AND. NFRE.EQ.25) .OR.
-     &        (KFRE.EQ.36 .AND. NFRE.EQ.30) ) THEN
+           IF(.NOT.LLFR1OK .OR. KFRE.NE.NFRE ) THEN
              WRITE(IU06,*) ' BUT FREQUENCY INTERPOLATION IS REQUIRED.'
              WRITE(IU06,*) ' INPUT NUMBER OF FREQUENCIES: ',KFRE
              WRITE(IU06,*) ' MODEL NUMBER OF FREQUENCIES: ',NFRE
+             WRITE(IU06,*) ' INPUT FIRST FREQUENCY: ',KFR1
+             WRITE(IU06,*) ' MODEL FIRST FREQUENCY: ',IFR1
            ELSE
              WRITE(IU06,*) '*******************************************'
              WRITE(IU06,*) ' FREQUENCY REQUIRED.'
@@ -495,17 +530,15 @@
          WRITE(IU06,*) ' '
 
          ALLOCATE(FIELD(NGX,NGY))
-
-         IF( KANG.EQ.2*NANG) ALLOCATE(TEMP(NGX,NGY))
+         ALLOCATE(TEMP(NGX,NGY))
 
          KKKPR=0
 
-         IF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
-!          BY DEFINITION THE FIRST FREQUENCY FOR THE 30/36 FREQUENCIES
-!          CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
-!          CASES.
+         IF(.NOT. LLFR1OK) THEN
+!        SET MODEL VALUES TO MISSING FOR THE FIRST MMSHIFT FREQEUNCY BINS
+!        (WHEN MMSHIFT>0) SINCE NO INPUT DATA AVAILABLE FOR THOSE BINS.
            FIELD=PSEK3(2)
-           DO M=1,2
+           DO M=1,MMSHIFT
              DO K=1,NANG
                CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
              ENDDO
@@ -526,32 +559,14 @@
 
            DEALLOCATE(KGRIB)
 
-!          DIRECTION AND / OR FREQUENCY INTERPOLATION
+!          FREQUENCY INTERPOLATION
+!          -----------------------
+           M=MMM+MMSHIFT
+           MLAST=M
+           IF(M.LE.0 .OR. M.GT.NFRE) GOTO 2000
 
-           IF(KFRE.EQ.NFRE) THEN
-             M=MMM
-           ELSEIF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
-!            BY DEFINITION THE FIRST FREQUENCY FOR THE 30/36 FREQUENCIES
-!            CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
-!            CASES.
-             M=MMM+2
-           ELSEIF((KFRE.EQ.30.OR.KFRE.EQ.36) .AND. NFRE.EQ.25) THEN
-             M=MMM-2
-             IF(MMM.LT.3 .OR. MMM.GT.27) GOTO 2000
-           ELSEIF(KFRE.EQ.30 .AND. NFRE.EQ.36) THEN
-             M=MMM
-           ELSEIF(KFRE.EQ.36 .AND. NFRE.EQ.30) THEN
-             M=MMM
-             IF(MMM.GT.30) GOTO 2000
-           ELSE
-             WRITE(IU06,*) '************************************'
-             WRITE(IU06,*) ' NOT READY FOR THIS TYPE OF'
-             WRITE(IU06,*) ' FREQUENCY INTERPOLATION,'
-             WRITE(IU06,*) ' THE PROGRAM ABORTS ' 
-             WRITE(IU06,*) '*************************************'
-             CALL ABORT1
-           ENDIF
-
+!          DIRECTION INTERPOLATION
+!          -----------------------
            IF( KANG.EQ.NANG ) THEN
 !            NO SPECTRAL INTERPOLATION REQUIRED
              K=KKK
@@ -562,6 +577,56 @@
              CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
              K=2*KKK
              CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+
+           ELSEIF( 3*KANG.EQ.NANG) THEN
+!            TRIPLING THE NUMBER OF DIRECTIONS
+             K=3*KKK-2
+             CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+             K=3*KKK-1
+             CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+             K=3*KKK
+             CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+
+           ELSEIF( 3*KANG.EQ.2*NANG) THEN
+!            3/2 OF THE NUMBER OF DIRECTIONS
+             IF(MOD(KKK,2).EQ.1) THEN
+
+!              KEEP INPUT (!! TO AVERAGE OUT FOR NEXT OUTPUT BIN)
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   TEMP(I,J)=FIELD(I,J)
+                 ENDDO
+               ENDDO
+
+               K=3*KKK/2
+               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+
+             ELSE
+!              AVERAGE OUT THE INPUT WITH PREVIOUSLY SAVED ONE 
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   IF(FIELD(I,J).NE.PSEK3(2)) THEN
+                     IF(TEMP(I,J).NE.PSEK3(2)) THEN
+                       TEMP(I,J)=0.5*(TEMP(I,J)+FIELD(I,J))
+                     ELSE
+                       TEMP(I,J)=0.5*FIELD(I,J)
+                     ENDIF
+                   ELSE
+                     IF(TEMP(I,J).NE.PSEK3(2)) THEN
+                       TEMP(I,J)=0.5*TEMP(I,J)
+                     ENDIF
+                   ENDIF
+                 ENDDO
+               ENDDO
+               K=3*KKK/2-1
+               CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
+
+               K=3*KKK/2
+               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+             ENDIF
+
            ELSEIF( KANG.EQ.2*NANG) THEN
 !            HALVING THE NUMBER OF DIRECTIONS
              IF(MOD(KKK,2).EQ.1) THEN
@@ -606,6 +671,107 @@
                WRITE(IU06,*) '*************************************'
                CALL ABORT1
              ENDIF
+           ELSEIF( KANG.EQ.3*NANG) THEN
+!            1/3 OF THE NUMBER OF DIRECTIONS
+             IF(MOD(KKK,3).EQ.1) THEN
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   TEMP(I,J)=0.
+                 ENDDO
+               ENDDO
+             ENDIF
+             IF(MOD(KKK,3).NE.0) THEN
+!              SAVE DIRECTIONAL CONTRIBUTION TO BE COMBINED
+!              WITH THE NEXT ONE.
+               DO J=1,NGY
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
+                  IF(FIELD(I,J).NE.PSEK3(2)) THEN
+                    TEMP(I,J)=TEMP(I,J)+FIELD(I,J)
+                  ENDIF
+                ENDDO
+               ENDDO
+
+             ELSE
+               DO J=1,NGY
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
+                  IF(FIELD(I,J).NE.PSEK3(2)) THEN
+                    FIELD(I,J)=ONETHIRD*(FIELD(I,J)+TEMP(I,J))
+                  ELSE
+                    IF(TEMP(I,J).NE.0.) THEN
+                      FIELD(I,J)=ONETHIRD*TEMP(I,J)
+                    ENDIF
+                  ENDIF
+                ENDDO
+               ENDDO
+
+               K=KKK/3
+               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
+             ENDIF
+
+           ELSEIF( 2*KANG.EQ.3*NANG) THEN
+!            2/3 OF THE NUMBER OF DIRECTIONS
+             IF(MOD(KKK,3).EQ.1) THEN
+!              KEEP INPUT
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   TEMP(I,J)=FIELD(I,J)
+                 ENDDO
+               ENDDO
+
+             ELSEIF(MOD(KKK,3).EQ.2) THEN
+!              ADD CONTRIBUTION OF PREVIOUSLY SAVED TO INPUT 
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   IF(FIELD(I,J).NE.PSEK3(2)) THEN
+                     IF(TEMP(I,J).NE.PSEK3(2)) THEN
+                       TEMP(I,J)=TWOTHIRD*TEMP(I,J)+ONETHIRD*FIELD(I,J)
+                     ELSE
+                       TEMP(I,J)=ONETHIRD*FIELD(I,J)
+                     ENDIF
+                   ELSE
+                     TEMP(I,J)=TWOTHIRD*TEMP(I,J)
+                   ENDIF
+                 ENDDO
+               ENDDO
+               K=2*(KKK/3)+1
+               CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
+
+!              KEEP INPUT
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   TEMP(I,J)=FIELD(I,J)
+                 ENDDO
+               ENDDO
+
+             ELSE
+!              ADD INPUT TO PREVIOUSLY SAVED
+               DO J=1,NGY
+                 JSN=NGY-J+1
+                 DO I=1,NLONRGG(JSN)
+                   IF(FIELD(I,J).NE.PSEK3(2)) THEN
+                     IF(TEMP(I,J).NE.PSEK3(2)) THEN
+                       TEMP(I,J)=ONETHIRD*TEMP(I,J)+TWOTHIRD*FIELD(I,J)
+                     ELSE
+                       TEMP(I,J)=TWOTHIRD*FIELD(I,J)
+                     ENDIF
+                   ELSE
+                     IF(TEMP(I,J).NE.PSEK3(2)) THEN
+                       TEMP(I,J)=ONETHIRD*TEMP(I,J)
+                     ENDIF
+                   ENDIF
+                 ENDDO
+               ENDDO
+               K=2*(KKK/3)
+               CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
+
+             ENDIF
+
            ELSE
              WRITE(IU06,*) '************************************'
              WRITE(IU06,*) ' NOT READY FOR THIS TYPE OF'
@@ -652,24 +818,14 @@
 
          ENDDO
 
-         IF(KFRE.EQ.25 .AND. (NFRE.EQ.30.OR.NFRE.EQ.36)) THEN
-!          BY DEFINITION THE FIRST FREQUENCY FOR THE 30 FREQUENCIES
-!          CASES IS THE SAME AS THE THIRD FREQUENCY OF THE 25 FREQ.
-!          CASES.
-           FIELD=PSEK3(2)
-           DO M=28,NFRE
-             DO K=1,NANG
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-             ENDDO
+!        SET MODEL VALUES TO MISSING IF NO VALUES WERE PROVIDED 
+!        BY INPUT DATA 
+         FIELD=PSEK3(2)
+         DO M=MLAST+1,NFRE
+           DO K=1,NANG
+             CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
            ENDDO
-         ELSEIF(KFRE.EQ.30 .AND. NFRE.EQ.36 ) THEN
-           FIELD=PSEK3(2)
-           DO M=31,NFRE
-             DO K=1,NANG
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-             ENDDO
-           ENDDO
-         ENDIF
+         ENDDO
 
        ELSE
 !      ALL THE OTHER WAVE PARAMETERS

@@ -30,7 +30,8 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NALTAVLB ,IJALT    ,INTLMAX  ,
-     &            NOBSPE   ,ALTDATA
+     &            NOBSPE   ,ALTDATA  ,LALTPASSIV,
+     &            XLONOBS  , SIGRATIO2, DIFFALTFG
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,NLONRGG  ,IGL      ,
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,XDELLA   ,
@@ -39,20 +40,20 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : RAD      ,DEG      ,R
       USE YOWSPEC,   ONLY : NSTART   ,NEND
+      USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: JC
       INTEGER :: NOBS(NSTART(IRANK):NEND(IRANK))
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IOBS4IJ
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+
 
       REAL :: XMO(NIBLO)
       REAL :: XOI(NINF:NSUP)
-      REAL :: XNEW(NSTART(IRANK):NEND(IRANK))
       INTEGER, ALLOCATABLE, DIMENSION(:) :: KALTMIN, KALTMAX
-      REAL, ALLOCATABLE, DIMENSION(:) :: XLONOBS, SIGRATIO2, DIFFALTFG
-      REAL, ALLOCATABLE, DIMENSION(:) :: V
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
       REAL, ALLOCATABLE, DIMENSION(:,:) :: W
 
 ! ----------------------------------------------------------------------
@@ -112,7 +113,8 @@
         IF(ALTDATA(IOBS,1).GT.0.) THEN
           KALT = KXLT(IJALT(IOBS,1),IG)
           DO IJ = IJS(IG),IJL(IG)
-            IF(XMO(IJ).GE.0.01) THEN
+!           TAKE ONLY POSITIVE ACTIVE HS
+            IF(XMO(IJ).GE.0.01 .AND. .NOT.LALTPASSIV(IJALT(IOBS,2)))THEN
               I = IXLG(IJ,IG)
               K = KXLT(IJ,IG)
               IF(K.GE.KALTMIN(IOBS) .AND. K.LE.KALTMAX(IOBS)) THEN
@@ -176,101 +178,20 @@
 
 !     LOOP ON EACH GRID POINT
 
-      XNEW = 0.
       IG = 1
-      DO IJ = IJS(IG),IJL(IG)
-
-        IF (NOBS(IJ).GT.0) THEN
-
-          ALLOCATE(D(NOBS(IJ),NOBS(IJ)))
-          ALLOCATE(P(NOBS(IJ),NOBS(IJ)))
-          ALLOCATE(XM(NOBS(IJ),NOBS(IJ)))
-
-!         DETERMINE OBSERVATION CORRELATION MATRIX  D
-
-          D = 0.
-
-          DO IOBS=1,NOBS(IJ)
-            D(IOBS,IOBS) = SIGRATIO2(IOBS4IJ(IJ,IOBS))
-          ENDDO
-
-!         DETERMINE MODEL CORRELATION MATRIX AT OBSERVATION
-!         POINTS.
-                                                                        
-          DO IOBS=1,NOBS(IJ)
-            I1 = IXLG(IJALT(IOBS4IJ(IJ,IOBS),1),IG) 
-            K1 = KXLT(IJALT(IOBS4IJ(IJ,IOBS),1),IG) 
-
-            DO JOBS=IOBS+1,NOBS(IJ)
-
-              I2 = IXLG(IJALT(IOBS4IJ(IJ,JOBS),1),IG)
-              K2 = KXLT(IJALT(IOBS4IJ(IJ,JOBS),1),IG) 
-
-              IF(IJALT(IOBS4IJ(IJ,IOBS),1).EQ.IJALT(IOBS4IJ(IJ,JOBS),1))
-     &        THEN
-                DOBS = 0.
-              ELSE
-                DELLON = XLONOBS(IOBS4IJ(IJ,IOBS))
-     &           - XLONOBS(IOBS4IJ(IJ,JOBS))
-                COSLON = COS(DELLON*RAD)
-                DOBS2  = COSLON*COSPH(K1)*COSPH(K2) +
-     &           SINPH(K1)*SINPH(K2)
-                DOBS = ACOS(MAX(MIN(DOBS2,1.),-1.))
-              ENDIF
-
-              P(IOBS,JOBS) = EXP(-DOBS/DIST)
-              P(JOBS,IOBS) = P(IOBS,JOBS)
-            ENDDO
-            P(IOBS,IOBS) = 1.
-          ENDDO
-
-          XM=P+D
-
-          DEALLOCATE(D)
-          DEALLOCATE(P)
-
-!         INVERSE MATRIX XM
-
-          COND=0.
-          EPS=0. 
-          ALLOCATE(V(NOBS(IJ)))            
-          V = 0.
-
-          CALL SYMINV(XM,NOBS(IJ),NOBS(IJ),COND,V,EPS)
-          DO IOBS=1,NOBS(IJ)-1
-            DO JOBS=IOBS+1,NOBS(IJ)
-             XM(IOBS,JOBS) = XM(JOBS,IOBS)
-            ENDDO
-          ENDDO
-
-          DEALLOCATE(V)            
-
-!         PRODUCE FIELD AT POINT I,J ACCORDING TO OPTIMUM INTERPOLATION
-
-          DO IOBS=1,NOBS(IJ)
-            DIFF = 0.
-            DO JOBS=1,NOBS(IJ)
-              KOBS=IOBS4IJ(IJ,JOBS)
-              IJOBS=IJALT(KOBS,1)
-              DIFF=DIFF+XM(IOBS,JOBS)*DIFFALTFG(KOBS)
-            ENDDO
-            XNEW(IJ)=XNEW(IJ)+W(IJ,IOBS)*DIFF
-          ENDDO
-
-          DEALLOCATE(XM)            
-
-        ENDIF
-
+      NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+      DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+        CALL WAMOI(NOBS(KIJS:KIJL),IOBS4IJ(KIJS:KIJL,:),W(KIJS:KIJL,:),
+     &             KIJS,KIJL,NDIM2,
+     &             DIST, XMO(KIJS:KIJL), XOI(KIJS:KIJL), IG)
       ENDDO
+!$OMP END PARALLEL DO
 
 
-      IG = 1
-      DO IJ = IJS(IG),IJL(IG)
-        IF (NOBS(IJ).GT.0) THEN
-          XOI(IJ) = XMO(IJ) + XNEW(IJ)
-        ENDIF
-      ENDDO
-                                                                        
+
       IF(ALLOCATED(XLONOBS)) DEALLOCATE(XLONOBS)
       IF(ALLOCATED(SIGRATIO2)) DEALLOCATE(SIGRATIO2)
       IF(ALLOCATED(DIFFALTFG)) DEALLOCATE(DIFFALTFG)

@@ -50,7 +50,7 @@
 ! ----------------------------------------------------------------------
 
       CHARACTER TITL*100
-      CHARACTER*12 CDATE
+      CHARACTER*14 CDATE
       DIMENSION IARRAY(ID1,ID2),ARRAY(ID1,ID2),ILON(NGX),YLAT(NGY)
 
 ! ----------------------------------------------------------------------
@@ -100,8 +100,9 @@
           WRITE (IUOUT,305) J,YLAT(J),(IARRAY(I,J),I=ISTART,IEND)
         ENDDO
       ENDDO
+      WRITE (IUOUT,*) ' '
 
- 300  FORMAT('1',6X,A12,2X,A100,5X,'PAGE ',I2,/)
+ 300  FORMAT('1',6X,A14,2X,A100,5X,'PAGE ',I2,/)
  302  FORMAT(7X,'I=',30I4)
  303  FORMAT(5X,'LON=',30I4)
  304  FORMAT('   J LAT',/)

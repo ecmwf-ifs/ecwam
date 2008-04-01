@@ -96,7 +96,6 @@
 
       USE YOWALTAS , ONLY : IJALT    ,ALTDATA
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCURR  , ONLY : U
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
      &            XDELLA   ,XDELLO
@@ -106,7 +105,8 @@
      &            NPRECI
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
      &            LL1D
-      USE YOWSTAT  , ONLY : CDTPRO   ,IDELALT  ,YCLASS
+      USE YOWSTAT  , ONLY : CDTPRO   ,IDELALT  ,YCLASS   ,IPROPAGS ,
+     &            LSUBGRID
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
@@ -146,6 +146,8 @@
       IMO     =    10
       IOEMAX  =    10
       IDELALT = 21600
+      IPROPAGS = 0
+      LSUBGRID = .FALSE.
       IU06 = 6
 
       ALLOCATE (CLDATES(IMO))
@@ -354,8 +356,9 @@
       ALLOCATE(WHME(NGX,NGY))
 
       DO JLD = 1, IDATES
-        CDTPRO = CLDATES(JLD)
-        io = i_get_unit(IU06, 'rfl'//CDTPRO, 'w', 'u', 0)
+        CDTPRO(1:12) = CLDATES(JLD)
+        CDTPRO(13:14) = '00'
+        io = i_get_unit(IU06, 'rfl'//CLDATES(JLD), 'w', 'u', 0)
 
         CALL GRDATA (NOBS, NSTART, NEND, LAVERAGE)
 

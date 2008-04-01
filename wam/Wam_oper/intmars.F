@@ -80,7 +80,7 @@
       REAL ZDELLO(NGY)
       REAL PSEK3(NPSEK3)
 
-      CHARACTER CDATE*12, FILNM*24
+      CHARACTER CDATE*14, FILNM*24
                                                                         
 
 !*    1.0 READ MARS DATA IN GRIB CODE FORMAT.                           

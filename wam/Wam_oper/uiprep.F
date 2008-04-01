@@ -1,4 +1,4 @@
-      SUBROUTINE UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)
+      SUBROUTINE UIPREP (IU05, IFORM, ML, KL, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -14,13 +14,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IU05, IFORM, IREFRA, ML, KL, LLGRID)*
+!       *CALL* *UIPREP (IU05, IFORM, ML, KL, LLGRID)*
 !          *IU05*    - LOGICAL INPUT UNIT.
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
-!          *IREFRA*  - REFRACTION OPTION = 2 CURRENT PROCESSING.
-!                                        OTHERWISE NOTHING.
 !          *ML*      - NUMBER OF FREQUENCIES.
 !          *KL*      - NUMBER OF DIRECTIONS.
 !          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
@@ -63,6 +61,7 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
      &            XDELLA   ,XDELLO   ,LLOBSTRCT
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
 ! ----------------------------------------------------------------------
@@ -74,9 +73,12 @@
       LOGICAL :: LLGRID
       NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,
-     &                  IFORM, IREFRA, ITEST, ITESTB,
+     &                  IFORM, ITEST, ITESTB,
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC,
-     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT
+     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,
+     &                  NDEPTH   ,DEPTHA   ,DEPTHD,
+     &                  IFRE1
+
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
 
@@ -98,7 +100,6 @@
       AMOWEP =   0.0
       AMOEAP =   0.0
       IFORM  =  -1
-      IREFRA =  -1
       ITEST  =  -1
       ITESTB =  -1
       IBOUNC =  -1
@@ -108,6 +109,10 @@
       AMOWEC =   0.0
       AMOEAC =   0.0
       LLOBSTRCT = .TRUE.
+      NDEPTH = 74
+      DEPTHA = 1.
+      DEPTHD = 1.1
+      IFRE1 = 1
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
@@ -124,12 +129,10 @@
 
       ALLOCATE(FR(ML))
 
-      IF(ML.EQ.30 .OR. ML.EQ.36) THEN
-        FR(1) = (FR1/FRATIO)/FRATIO
-        FR1 = FR(1)
-      ELSE
-        FR(1) = FR1
-      ENDIF
+      FR(IFRE1) = FR1
+      DO M=IFRE1-1,1,-1
+        FR(M) = (FR(M+1)/FRATIO)
+      ENDDO
 
       WRITE (IU06,'(2X, A70,/)') CLINE(1:70)
 
@@ -163,11 +166,10 @@
 
       WRITE (IU06,'("   FREQUENCY / DIRECTION GRID"/)')
       WRITE (IU06,'("   NUMBER OF FREQUENCIES IS ML = ",I6)') ML
-      IF(ML.EQ.30 .OR. ML.EQ.36) THEN
-        WRITE (IU06,'("!!SINCE THE NUMBER OF FREQUENCIES IS",I6)')ML
+      IF(IFRE1.NE.1) THEN
         WRITE (IU06,'("!!MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
       ELSE
-        WRITE (IU06,'("   MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
+        WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
       WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS KL = ",I6)') KL
 
@@ -241,6 +243,14 @@
           CLDOMAIN = 'm'
         ENDIF 
       ENDIF 
+
+      WRITE (IU06,*) ' '
+      WRITE (IU06,*) '   MINIMUM DEPTH IN TABLES IS ', DEPTHA
+      WRITE (IU06,*) '   WITH A STEP ', DEPTHD 
+      DEPTHMAX=DEPTHA*DEPTHD**(NDEPTH-1)
+      WRITE (IU06,*) '   MAXIMUM DEPTH IN TABLES IS ', DEPTHMAX
+      WRITE (IU06,*) ' '
+ 
 
 ! ----------------------------------------------------------------------
 
@@ -442,8 +452,6 @@
 
       WRITE (IU06,'(" OUTPUT OPTION IS       IFORM =",I3,
      &         " (1: UNFORM.  2: FORM.  3: BOTH)")') IFORM
-      WRITE (IU06,'(" REFRACTION OPTION IS  IREFRA =",I3,
-     &         " (2: CURRENTS  OTHERWISE: NOTHING)")') IREFRA
       WRITE (IU06,'(" TEST OUTPUT OPTION IS  ITEST =",I3,
      &         " (0: NO  >0: UP TO LEVEL ITEST)")') ITEST
       WRITE (IU06,'(" BLOCK TEST OPTION IS  ITESTB =",I3,

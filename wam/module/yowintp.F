@@ -22,8 +22,10 @@
       REAL, ALLOCATABLE :: WSPRDG(:,:) 
       REAL, ALLOCATABLE :: C4G(:,:) 
       REAL, ALLOCATABLE :: BFG(:,:) 
-      REAL, ALLOCATABLE :: PFG(:,:) 
+      REAL, ALLOCATABLE :: QPG(:,:) 
       REAL, ALLOCATABLE :: DEPTHG(:,:) 
+      REAL, ALLOCATABLE :: HMAXG(:,:) 
+      REAL, ALLOCATABLE :: TMAXG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -52,8 +54,10 @@
 !      *WSPRDG*    REAL      GRIDDED DIRECTIONAL SPREAD (-). 
 !      *C4G*       REAL      GRIDDED SPECTRAL KURTOSIS (-). 
 !      *BFG*       REAL      GRIDDED BENJAMIN-FEIR INDEX (-). 
-!      *PFG*       REAL      GRIDDED SPECTRAL PEAKEDNESS (-). 
+!      *QPG*       REAL      GRIDDED SPECTRAL PEAKEDNESS (-). 
 !      *DEPTHG*    REAL      GRIDDED MODEL DEPTH.
+!      *HMAXG*     REAL      GRIDDED MAXIMUM WAVE HEIGHT FIELD (M).
+!      *TMAXG*     REAL      GRIDDED MAXIMUM WAVE PERIOD FIELD (S).
 
 
 ! ----------------------------------------------------------------------

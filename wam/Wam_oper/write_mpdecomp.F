@@ -41,6 +41,10 @@
 !            23      - ASCII TEXT FILE obstructions_N_S_xxxx
 !            24      - ASCII TEXT FILE obstructions_W_E_xxxx
 !            25      - ASCII TEXT FILE obstructions_E_W_xxxx
+!            32      - ASCII TEXT FILE obstructions_SE_NW_xxxx
+!            33      - ASCII TEXT FILE obstructions_NW_SE_xxxx
+!            34      - ASCII TEXT FILE obstructions_SW_NE_xxxx
+!            35      - ASCII TEXT FILE obstructions_NE_SW_xxxx
 !            where xxxx=nproc 
 
 !          MESSAGE PASSING NOT CATERED FOR YET.
@@ -71,8 +75,10 @@
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,OBSLAT   ,
-     &            OBSLON
+      USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,KRLAT    ,
+     &            KRLON    ,KRLAT2   ,KRLON2   ,OBSLAT   ,OBSLON   ,
+     &            OBSRLAT  ,OBSRLON
 
 ! -------------------------------------------------------------------
 
@@ -108,6 +114,10 @@
       LL1D = .FALSE.
       LLIRANK = .FALSE.
       LLALLPTS = .FALSE.
+      IPROPAGS = 1
+!!! currently set up to produce output for ipropags=1 !!!
+!!! for other option, please refer to mpdecomp
+      LSUBGRID = .TRUE.
 
       CMDLINE: DO
         IOPTVAL=GETCLO(clopts,clarg)
@@ -252,6 +262,49 @@
       WRITE(25,'(a11)') '#FORMAT LLV'
       WRITE(25,'(a5)') '#DATA'
 
+      FILENAME='obstructions_SE_NW_'
+      WRITE (FILENAME(20:23),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(24:24)='.'
+        WRITE (FILENAME(25:28),'(I4.4)') IRANK
+      ENDIF
+      OPEN(32,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(32,'(a4)') '#GEO'
+      WRITE(32,'(a11)') '#FORMAT LLV'
+      WRITE(32,'(a5)') '#DATA'
+
+      FILENAME='obstructions_NW_SE_'
+      WRITE (FILENAME(20:23),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(24:24)='.'
+        WRITE (FILENAME(25:28),'(I4.4)') IRANK
+      ENDIF
+      OPEN(33,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(33,'(a4)') '#GEO'
+      WRITE(33,'(a11)') '#FORMAT LLV'
+      WRITE(33,'(a5)') '#DATA'
+
+      FILENAME='obstructions_SW_NE_'
+      WRITE (FILENAME(20:23),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(24:24)='.'
+        WRITE (FILENAME(25:28),'(I4.4)') IRANK
+      ENDIF
+      OPEN(34,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(34,'(a4)') '#GEO'
+      WRITE(34,'(a11)') '#FORMAT LLV'
+      WRITE(34,'(a5)') '#DATA'
+
+      FILENAME='obstructions_NE_SW_'
+      WRITE (FILENAME(20:23),'(I4.4)') NPROC
+      IF(LLIRANK) THEN
+        FILENAME(24:24)='.'
+        WRITE (FILENAME(25:28),'(I4.4)') IRANK
+      ENDIF
+      OPEN(35,FILE=FILENAME,FORM='FORMATTED')
+      WRITE(35,'(a4)') '#GEO'
+      WRITE(35,'(a11)') '#FORMAT LLV'
+      WRITE(35,'(a5)') '#DATA'
 
       FILENAME='subarea_depth_'
       WRITE (FILENAME(15:18),'(I4.4)') NPROC
@@ -301,6 +354,18 @@
      &              XLON-0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,1))
               WRITE(25,'(2(1X,F8.3),1X,I4)') 
      &              XLON+0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,2))
+              WRITE(32,'(2(1X,F8.3),1X,I4)') 
+     &              XLON+0.25*XDELLO,XLAT-0.25*XDELLA,
+     &              NINT(1000*OBSRLAT(IJ,M,1))
+              WRITE(33,'(2(1X,F8.3),1X,I4)') 
+     &              XLON-0.25*XDELLO,XLAT+0.25*XDELLA,
+     &              NINT(1000*OBSRLAT(IJ,M,2))
+              WRITE(34,'(2(1X,F8.3),1X,I4)') 
+     &              XLON-0.25*XDELLO,XLAT-0.25*XDELLA,
+     &              NINT(1000*OBSRLON(IJ,M,1))
+              WRITE(35,'(2(1X,F8.3),1X,I4)') 
+     &              XLON+0.25*XDELLO,XLAT+0.25*XDELLA,
+     &              NINT(1000*OBSRLON(IJ,M,2))
             ENDIF
 
 ! subareas for which I need the depth as in the old WAM
@@ -328,6 +393,10 @@
       CLOSE(23)
       CLOSE(24)
       CLOSE(25)
+      CLOSE(32)
+      CLOSE(33)
+      CLOSE(34)
+      CLOSE(35)
 
       DO IPROC=1,NPROC
         DO IJ=NSTART(IPROC),NEND(IPROC)
@@ -379,6 +448,14 @@
      &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC)))=1 
             IF(KLAT2(IJ,IC).GT.0.AND.KLAT2(IJ,IC).LE.NIBLO)
      &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT2(IJ,IC)))=1 
+            IF(KRLON(IJ,IC).GT.0.AND.KRLON(IJ,IC).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC)))=1 
+            IF(KRLAT(IJ,IC).GT.0.AND.KRLAT(IJ,IC).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC)))=1 
+            IF(KRLAT2(IJ,IC).GT.0.AND.KRLAT2(IJ,IC).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT2(IJ,IC)))=1 
+            IF(KRLON2(IJ,IC).GT.0.AND.KRLON2(IJ,IC).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON2(IJ,IC)))=1 
           ENDDO
         ENDDO
         NPE(IPR)=NEND(IPR)-NSTART(IPR)+1

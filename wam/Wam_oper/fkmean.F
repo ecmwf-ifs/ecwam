@@ -27,7 +27,7 @@
 !              *AK*  - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
 !                      ONLY FOR SHALLOW WATER RUNS.
 !!!                    AK IS STILL NEEDED IN SNONLIN !!!!
-!!!
+!!!                    IF THE OLD FORMULATION IS USED.
 !              *XK*  - MEAN WAVE NUMBER  BASED ON sqrt(k)*F INTEGRATION
 !                      ONLY FOR SHALLOW WATER RUNS.
 

@@ -1,175 +1,240 @@
-      SUBROUTINE KURTOSIS(F3, IJS, IJL, C4, BF, QP)
+      SUBROUTINE KURTOSIS(F3, IJS, IJL, IG, C4, BF2, QP, FP, HMAX, TMAX)
  
 !***  *KURTOSIS*   DETERMINES KURTOSIS, BENJAMIN-FEIR INDEX
-!                  AND GODA'S PEAKEDNESS PARAMETER.
+!                  GODA'S PEAKEDNESS PARAMETER AND NORMALIZED
+!                  MAXIMUM WAVE HEIGHT.
  
-!     PETER JANSSEN       JANUARY 2003.
+!     PETER JANSSEN       JULY 2007.
  
 !     PURPOSE.
 !     --------
  
-!             DETERMINATION OF KURTOSIS, B-F INDEX AND GODA QF
+!           DETERMINATION OF KURTOSIS, B-F INDEX , GODA QP AND
+!                              HMAX AND TMAX
  
 !     INTERFACE.
 !     ----------
-!             *CALL*  *KURTOSIS((F3, IJS, IJL, C4, BF, QP)
+!           *CALL*  *KURTOSIS((F3, IJS, IJL, IG, C4, BF, QP, HMAX, TMAX)
  
 !                      INPUT:
 !                           *F3*    - 2-DIMENSIONAL SPECTRUM
 !                           *IJS*   - STARTING INDEX
 !                           *IJL*   - LAST INDEX
+!                           *IG*    - BLOCK NUMBER
 !                      OUTPUT: 
 !                           *C4*    - KURTOSIS
 !                           *BF*    - BENJAMIN-FEIR INDEX
 !                           *QP*    - GODA'S QUALITY FACTOR
+!                           *FP*    - PEAK FREQUENCY
+!                           *HMAX*  - MAXIMUM WAVE HEIGHT
+!                           *TMAX*  - MAXIMUM WAVE PERIOD
 !
 !     METHOD.
 !     -------
-!            STARTING POINT IS EQ.(29) FROM THE REFERENCE BELOW.
-!            THIS EQUATION IS REWRITTEN FOR THE ANGULAR FREQUENCY-
-!            DIRECTION SPECTRUM AND THE INTEGRATION OVER K4 IS PERFORMED
-!            NEXT WE IMPOSE THE CONDITION FOR NARROW SPECTRA
-!            IN FREQUENCY AND DIRECTION, WITH THE RESULT
+!            USED NUMERICAL SIMULATIONS OF THE NONLINEAR SCHROEDINGER
+!            EQUATION TO OBTAIN THE DEPENDENCE OF KURTOSIS ON THE
+!            SQUARE OF THE BENJAMIN-FEIR INDEX, BF2, AND THE WIDTH OF
+!            THE DIRECTIONAL DISTRIBUTION, SIG_TH. FITTING THE NUMERICAL 
+!            RESULTS ONE FINDS (ONORATO, MORI AND JANSSEN, 2007)
 !                 
-!              C4 = (4*G*K_0^3)/(OM_0*M_0^2)INT F1D_1*F1D_2*F1D_3/DELOM
+!              C4 = A_MORI/SIG_TH * BF2 * PI/(3*SQRT(3))
 !
-!             WHERE DELOM = OM_1+OM_2-OM_3-OM_4 AND 
+!            WHERE A_MORI=0.031. NOTE THAT FOR NARROW SPECTRA, I.E.
+!            SIG_TH => A_MORI, THE ONE-DIMENSIONAL RESULT, PREVIOUSLY
+!            IMPLEMENTED, IS OBTAINED.
 !
-!                  OM_4 = SQRT(|OM_1^2+OM_2^2-OM_3^2|)
+!            IN ADDITION, IT IS WELL-KNOWN THAT WHEN A WAVE GROUP
+!            APPROACHES SHALLOW WATER THE NONLINEAR FOCUSSING 
+!            EFFECT DISAPPEARS FOR K*D=1.363 AND WHEN K*D BECOMES
+!            LESS THAN THIS CRITICAL VALUE EVEN DEFOCUSSING OCCURS.
+!            AS A CONSEQUENCE, FOR K*D>1.363 C4 > 0 WHILE IN THE
+!            OPPOSITE CASE C4 < 0. HERE, FOLLOWING THE WORK
+!            OF JANSSEN & ONORATO (2007) WE HAVE PARAMETRIZED THIS SHALLOW
+!            WATER EFFECT BY MEANS OF THE FUNCTION TRANSF2.
 !
-!            FURTHERMORE, F1D IS THE ONE-DIMENSIONAL FREQUENCY SPECTRUM.
-!            THE INTEGRAL IS A PRINCIPLE VALUE INTEGRAL AND IS OVER
-!            THE FREQUENCIES OM_1, OM_2 AND OM_3. I HAVE PROGRAMMED
-!            THE ABOVE EXPRESSION, BUT I FOUND THAT RESULTS DEPEND IN
-!            A SENSITIVE MANNER ON RESOLUTION IN FREQUENCY SPACE.
-!            FOR THE PRESENT OPERATIONAL RESOLUTION CONSIDERABLE
-!            REDUCTIONS IN THE KURTOSIS ARE FOUND.
-!
-!            I THEREFORE PROCEED AS FOLLOWS. I ASSUME THAT THE SPECTRAL
-!            PEAK HAS A GAUSSIAN SHAPE WITH STEEPNESS AND WIDTH GIVEN
-!            BY THE ACTUAL SPECTRUM, AND A SYMMETRICAL, ACCURATE 
-!            INTEGRATION OF THE PRINCIPLE VALUE INTEGRAL IS PERFORMED.
-!            THIS NEEDS TO BE DONE ONLY ONCE, RESULTING IN A VERY
-!            FAST ALGORITHM.
-!            THE KURTOSIS NOW BECOMES
-
-!                C4 = 2*BFI**2*J
-!
-!             WHERE 
- 
-!             J = INT DX1DX2DX3/(ZPI)^1.5*EXP(-0.5*(X1^2+X2^2+X3^2)/DEL
- 
-!             AND
- 
-!             DEL = (X3-X1)*(X3-X2)
- 
-!             THIS INTEGRAL CAN BE EVALUATED EXACTLY WITH THE RESULT:
- 
-!                J = PI/(6*SQRT(3))  
 !
 !     EXTERNALS.
 !     ----------
-!             NONE
+!             AKI,TRANSF2,H_MAX,PEAK_FREQ
 !
-!     REFERENCE:
+!     REFERENCES:
 !     ---------
  
 !     NONLINEAR FOUR WAVE INTERACTIONS AND FREAK WAVES
 !     PETER A.E.M. JANSSEN, JPO, 863-884, APRIL 2003
- 
+
+!     ON KURTOSIS AND OCCURRENCE PROBABILITY OF FREAK WAVES
+!     NOBUHITO MORI AND PETER A.E.M. JANSSEN, JPO, 1471-1483, JULY 2006 
+
+!     THE INTERMEDIATE WATER DEPTH LIMIT OF THE ZAKHAROV EQUATION AND 
+!     CONSEQUENCES FOR WAVE PREDICTION
+!     PETER A.E.M. JANSSEN AND MIGUEL ONORATO, ACCEPTED FOR PUBLICATION
+!     IN JPO, 2007
+
+!     EFFECTS OF DIRECTIONALITY ON THE NONLINEAR FOCUSSING IN RANDOM SEAS. 
+!     MIGUEL ONORATO, NOBUHITO MORI AND PETER A.E.M. JANSSEN
+!     IN PREPARATION, 2007
+!
 !-----------------------------------------------------------------------
 !     MODULES:
 !     --------
 
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,ZPISQRT
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-
+      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
        
 ! ----------------------------------------------------------------------
  
       IMPLICIT NONE
 
-      INTEGER :: IJ, M, K, IJS, IJL
+      INTEGER :: IJ, M, K, IJS, IJL, IG
 
-      INTEGER, DIMENSION(IJS:IJL) ::  MMAX
+      INTEGER, DIMENSION(IJS:IJL) ::  MMAX, KMAX, NW
 
-      REAL :: ZSUM3, S_SIG, ZPISQRT, ZPI2OG
+      REAL :: ZSUM3, ZALPHA, ZBETA, ZA_MORI, ZJ , ZEPS, ZNU, 
+     &        HS, SIG_OM1, DURATION, AKI, TRANSF2
       REAL :: F3(NINF-1:NSUP,NANG,NFRE)
-      REAL :: F1D(IJS:IJL,NFRE)
-      REAL, DIMENSION(IJS:IJL) ::  C4,BF,QP,ETA2,SUM4,XKM,XMAX
-      REAL :: FAC4(NFRE)
+      REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
+      REAL, DIMENSION(IJS:IJL) ::  C4,BF2,QP,HMAX,TMAX,ETA2,SUM0,SUM1,
+     &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
+     &                             SIG_TH,EPS 
+      REAL, DIMENSION(NFRE) :: DF,FAC1,FAC2,FAC3,FAC4
  
-      ZSUM3  = ZPI/(6.*SQRT(3.))
-      ZPISQRT = SQRT(ZPI)
-      ZPI2OG = ZPI**2/G
+      ZSUM3  = PI/(3.*SQRT(3.))
+      ZALPHA = 0.4
+      ZA_MORI = 0.062
  
-!***  1. DETERMINE ONE-D SPECTRUM AND PEAK WAVE NUMBER.
-!     ------------------------------------------------
+!***  1. DETERMINE ONE-D FREQUENCY AND ANGULAR SPECTRUM.
+!     -------------------------------------------------
 
       DO M=1,NFRE
-         DO IJ=IJS,IJL   
-            F1D(IJ,M) = 0.
-         ENDDO   
+         DF(M) = DFIM(M)/DELTH
+         FAC1(M) = FR(M)*DF(M)
+         FAC2(M) = FR(M)**2*DF(M)
+         FAC4(M) = 2.*FAC1(M)
       ENDDO
+
       DO M=1,NFRE
-         DO K=1,NANG
+         K=1
+         DO IJ=IJS,IJL   
+            F1D(IJ,M) = F3(IJ,K,M)*DELTH
+         ENDDO   
+         DO K=2,NANG
             DO IJ=IJS,IJL
                F1D(IJ,M) = F1D(IJ,M)+F3(IJ,K,M)*DELTH
             ENDDO
          ENDDO
       ENDDO 
- 
-      DO IJ=IJS,IJL
-        MMAX(IJ) = 1
-        XMAX(IJ) = F1D(IJ,1)
-      ENDDO
-      DO M=2,NFRE
+
+      DO K=1,NANG
+         M=1
          DO IJ=IJS,IJL
-            IF (F1D(IJ,M).GT.XMAX(IJ)) THEN
-              MMAX(IJ) = M
-              XMAX(IJ) = F1D(IJ,M)
-            ENDIF
+            F1A(IJ,K) = F3(IJ,K,M)*DF(M)
          ENDDO
-      ENDDO   
-      
-      DO IJ=IJS,IJL
-         XKM(IJ) = ZPI2OG*FR(MMAX(IJ))**2
-      ENDDO   
- 
-!***  2. DETERMINE BF, QP AND C4.
-!    ----------------------------
- 
-            
-      DO M=1,NFRE
-         FAC4(M) = 2.*FR(M)*DFIM(M)/DELTH
+         DO M=2,NFRE
+            DO IJ=IJS,IJL
+               F1A(IJ,K) = F1A(IJ,K)+F3(IJ,K,M)*DF(M)
+            ENDDO
+         ENDDO
       ENDDO
+!
+!***  2. DETERMINE PEAK PARAMETERS FP,SIG_OM AND SIG_TH.
+!     -------------------------------------------------
+!
+      CALL PEAK_FREQ(F1D,F1A,IJS,IJL,IG,XMAX,FP,SIG_OM,YMAX,SIG_TH)
+
+ 
+!***  3. DETERMINE BF2, QP AND C4.
+!    ----------------------------
 
       DO IJ=IJS,IJL
          ETA2(IJ)  = 0.
+         SUM0(IJ)  = 0.
+         SUM1(IJ)  = 0.
+         SUM2(IJ)  = 0.
          SUM4(IJ)  = 0.
       ENDDO
 
+
       DO M=1,NFRE
          DO IJ=IJS,IJL
-            ETA2(IJ) = ETA2(IJ)+F1D(IJ,M)*DFIM(M)/DELTH
-            SUM4(IJ) = SUM4(IJ)+F1D(IJ,M)**2*FAC4(M)
+            ZBETA = ZALPHA*XMAX(IJ)
+            IF (F1D(IJ,M).GT.ZBETA) THEN
+               ETA2(IJ) = ETA2(IJ)+F1D(IJ,M)*DF(M)
+               SUM4(IJ) = SUM4(IJ)+F1D(IJ,M)**2*FAC4(M)
+            ENDIF 
+            SUM0(IJ) = SUM0(IJ)+F1D(IJ,M)*DF(M)
+            SUM1(IJ) = SUM1(IJ)+FAC1(M)*F1D(IJ,M)
+            SUM2(IJ) = SUM2(IJ)+FAC2(M)*F1D(IJ,M)
          ENDDO
-      ENDDO   
- 
+      ENDDO
+
+
       DO IJ=IJS,IJL
          IF (ETA2(IJ).GT.0.) THEN
-            QP(IJ) = SUM4(IJ)/ETA2(IJ)**2
-            S_SIG = XKM(IJ)*SQRT(ETA2(IJ))
-            BF(IJ) = ZPISQRT*S_SIG*QP(IJ)
-            C4(IJ) = BF(IJ)**2*ZSUM3
+            QP(IJ)     = SUM4(IJ)/ETA2(IJ)**2
+            SIG_OM1    = 1./(QP(IJ)*ZPISQRT)
+            SIG_OM(IJ) = MIN(SIG_OM(IJ),SIG_OM1)
+            XKP(IJ)    = AKI(ZPI*FP(IJ),DEPTH(IJ,IG))
+            EPS(IJ)    = XKP(IJ)*SQRT(SUM0(IJ))
+
+            BF2(IJ) = 2.*EPS(IJ)**2/SIG_OM(IJ)**2*
+     &                TRANSF2(XKP(IJ),DEPTH(IJ,IG),G)
          ELSE
-            C4(IJ) = 0.
-            BF(IJ) = 0.
-            QP(IJ) = 0.
+            BF2(IJ)    = 0.
+            EPS(IJ)    = 0.
+            SIG_OM(IJ) = 0.
+            QP(IJ)     = 0.
+         ENDIF 
+      ENDDO
+      DO IJ=IJS,IJL
+         IF (ETA2(IJ).GT.0.) THEN
+            SIG_TH(IJ) = MAX(SIG_TH(IJ),ZA_MORI)
+            ZJ = ZA_MORI/SIG_TH(IJ)*ZSUM3
+            C4(IJ) = ZJ*BF2(IJ)+8.*EPS(IJ)**2
+         ELSE
+            C4(IJ)  = 0.
+         ENDIF
+      ENDDO  
+
+! 
+!***  5. DETERMINE HMAX AND TMAX. 
+!       (EXPECTED IN RECORD OF LENGTH GIVEN BY DURATION)
+!     -------------------------------------------------
+!
+      DURATION = 10800.
+
+      DO IJ=IJS,IJL
+         IF (FP(IJ).EQ.0.) THEN
+            NW(IJ) = NINT(0.1*DURATION)
+         ELSE
+            NW(IJ) = NINT(DURATION*FP(IJ))
          ENDIF
       ENDDO
+
+      CALL H_MAX(C4,NW,IJS,IJL,HMAX)
+
+      DO IJ=IJS,IJL
+         IF (SUM1(IJ).GT.0.) THEN
+            ZNU = SQRT(SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.)
+            ZEPS = ZNU/(SQRT(2.)*HMAX(IJ))
+            TMAX(IJ) = 1.+0.5*ZEPS**2+0.75*ZEPS**4
+            TMAX(IJ) = TMAX(IJ)*SUM0(IJ)/SUM1(IJ)
+         ELSE
+            TMAX(IJ) = 0.
+         ENDIF
+      ENDDO
+
+      DO IJ=IJS,IJL
+         IF (SUM0(IJ).GT.0.) THEN
+            HS = 4.*SQRT(SUM0(IJ))
+            HMAX(IJ) = HMAX(IJ)*HS
+         ELSE
+            HMAX(IJ) = 0.
+         ENDIF
+      ENDDO 
             
       RETURN
 

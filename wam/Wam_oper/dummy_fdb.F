@@ -31,6 +31,7 @@
        ENTRY iwritefdb
        ENTRY ireadfdb
        ENTRY iopenfdb
+       ENTRY isetrankfdb
 
        WRITE(*,*) ' NO ACCESS TO THE FDB SERVER FROM THIS SOFTWARE'
        WRITE(*,*) ' NO ACCESS TO THE FDB SERVER FROM THIS SOFTWARE'

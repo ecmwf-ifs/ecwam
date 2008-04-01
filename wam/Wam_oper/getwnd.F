@@ -1,4 +1,5 @@
-      SUBROUTINE GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
+      SUBROUTINE GETWND (US, DS, ADS, ZIDL, ICMSK,
+     &                   KINF, KSUP, CDTWIS,
      &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                   ISEC1, ISEC2, FIELDS, MASK_IN,
      &                   LWNDFILE, LCLOSEWND)
@@ -17,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (US, DS, ADS, ZIDL, KINF, KSUP, KEND, CDTWIS,
+!       *CALL* *GETWND (US, DS, ADS, ZIDL, KINF, KSUP, CDTWIS,
 !                       NFIELDS, NGPTOTG, NC, NR, FCRANGE,
 !                       ISEC1, ISEC2, FIELDS,
 !                       LWNDFILE, LCLOSEWND)*
@@ -27,7 +28,6 @@
 !         *ZIDL*   - Zi/L  IN EACH POINT AND BLOCK.
 !         *KINF*   - LOWER BOUND ON FIRST DIEMENSION OF FIELD
 !         *KSUP*   - UPPER BOUND ON FIRST DIEMENSION OF FIELD
-!         *KEND*   - USED UPPER LIMIT ON FIRST DIMENSION OF FIELD
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !         *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
@@ -70,16 +70,20 @@
 !                 INCLUSION OF AIR DENSITY AND Zi/L.
 !    J. BIDLOT    ECMWF NOVEMEBR 2003
 !                 INTRODUCE openMP
+!    J. BIDLOT    ECMWF AUGUST 2006
+!                 SEA ICE FRACTION IF COUPLED.
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWICE   , ONLY : IPARAMCI ,CI
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
+     &             CLDOMAIN,LWDINTS
       USE YOWGRIBHD, ONLY : NKSEK1 
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : UWND     ,VWND     ,AIRD     ,PZIDL     ,
-     &               WSPMIN
+     &               WSPMIN,IUNITW
 
 ! ----------------------------------------------------------------------
       INTEGER NFIELDS, NGPTOTG, NC, NR
@@ -89,34 +93,49 @@
 ! ----------------------------------------------------------------------
 
       REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS, ADS, ZIDL
-      INTEGER :: IUNIT1
+      INTEGER, DIMENSION (KINF:KSUP,NBLO) :: ICMSK 
+
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
-      LOGICAL FRSTIME, LWNDFILE, LCLOSEWND
-      LOGICAL LFRSTIME
+      LOGICAL LLNOTOPENED, LWNDFILE, LCLOSEWND
+      LOGICAL LONLYONCE
 
-      CHARACTER*12 CDTWIS, CDTWIR
+      CHARACTER*14 CDTWIS, CDTWIR
       CHARACTER*24 :: FILNM
 
-      DATA FRSTIME / .TRUE. /
-      DATA LFRSTIME /.TRUE./
+      DATA LONLYONCE /.TRUE./
 
       SAVE CDTWIR
-      SAVE IUNIT1
+      SAVE LLNOTOPENED
 
 ! ----------------------------------------------------------------------
+
+!*    0. GLOBAL FIELD FOR THE INPUTS
+!        ---------------------------
+
+      ALLOCATE(UWND(NGX,NGY))
+      ALLOCATE(VWND(NGX,NGY))
+      ALLOCATE(AIRD(NGX,NGY))
+      ALLOCATE(PZIDL(NGX,NGY))
+      ALLOCATE(CI(NGX,NGY))
 
 !*    1. WIND DATA ARE READ
 !        ------------------
 
  1000 CONTINUE
 
+      IF(IUNITW.EQ.0) THEN
+        LLNOTOPENED=.TRUE.
+      ELSE
+        LLNOTOPENED=.FALSE.
+      ENDIF
+
       CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &               ISEC1, ISEC2, FIELDS, MASK_IN,
      &               LWNDFILE, LCLOSEWND,
      &               KINF, KSUP,
-     &               IUNIT1, FILNM, FRSTIME )
+     &               FILNM, LLNOTOPENED )
 
 !*    2. CHECK WIND FIELD DATE
 !        ----------------------
@@ -165,8 +184,9 @@
       ENDIF
 
 
-      IF (LCLOSEWND .AND. LWNDFILE .AND. (CLDOMAIN.NE.'s') ) THEN
-        CALL PBCLOSE(IUNIT1,KRET)
+      IF (LCLOSEWND .AND. LWNDFILE .AND. 
+     &   .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
+        CALL PBCLOSE(IUNITW,KRET)
         IF(KRET.LT.0) THEN
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
@@ -176,7 +196,8 @@
           WRITE (IU06,*) '****************************************'
           CALL ABORT1
         ENDIF
-        FRSTIME = .TRUE.
+        LLNOTOPENED = .TRUE.
+        IUNITW=0
         IF (ITEST.GT.1)
      &    WRITE(IU06,*) ' SUB. GETWND - PBCLOSE ON ',FILNM
       ENDIF
@@ -205,27 +226,38 @@
         ENDDO
 !$OMP   END PARALLEL DO
 
-      ENDDO
+        IF(LONLYONCE) THEN
+          WRITE (IU06,*) ' '
+          WRITE (IU06,*) ' SUB. GETWND : '
+          WRITE (IU06,*) ' '
+          WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
+          WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
+          WRITE (IU06,*) ' '
+          CALL FLUSH(IU06)
+          LONLYONCE=.FALSE.
+        ENDIF
 
-      IF(LFRSTIME) THEN
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' SUB. GETWND : '
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' WIND SPEEDS LOWER THAN ',WSPMIN, ' M/S'
-        WRITE (IU06,*) ' WERE RESET TO  ',WSPMIN, ' M/S'
-        WRITE (IU06,*) ' '
-        CALL FLUSH(IU06)
-        LFRSTIME=.FALSE.
-      ENDIF
+!       USE THE SEA ICE FRACTION TO DEFINE THE SEA ICE BOUNDARY
+! Mod for OPENMP
+        NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=MIJS,MIJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,MIJL)
+          CALL MICEP (CI, IPARAMCI, ICMSK, KINF, KSUP, KIJS, KIJL, IG)
+        ENDDO
+!$OMP   END PARALLEL DO
+
+      ENDDO ! END LOOP ON IG
 
 !*    4. DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
 !        -----------------------------------------------
 
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
-
+      DEALLOCATE(UWND)
+      DEALLOCATE(VWND)
+      DEALLOCATE(AIRD)
+      DEALLOCATE(PZIDL)
+      DEALLOCATE(CI)
 
       RETURN
       END SUBROUTINE GETWND

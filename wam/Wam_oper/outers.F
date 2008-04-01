@@ -62,7 +62,7 @@
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
-      CHARACTER CDTPRO*12
+      CHARACTER CDTPRO*14
 
 ! ----------------------------------------------------------------------
 

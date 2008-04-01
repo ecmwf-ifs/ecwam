@@ -124,7 +124,7 @@
       CHARACTER*1  cldomain
       CHARACTER*1  cleg
 
-      CHARACTER*2  cltime
+      CHARACTER*4  cltime
       CHARACTER*2  cltype
       CHARACTER*2  cdclass
       CHARACTER*2  clclass
@@ -228,7 +228,7 @@
         WRITE( cldate(01:04), '(i4.4)' ) iyyyy 
         WRITE( cldate(05:06), '(i2.2)' ) ksec1(11)
         WRITE( cldate(07:08), '(i2.2)' ) ksec1(12)
-        WRITE( cltime, '(i2.2)' ) ksec1(13)
+        WRITE( cltime, '(2i2.2)' ) ksec1(13),ksec1(14)
 
 !
 ! For VAREPS hindcast we use a different logic 

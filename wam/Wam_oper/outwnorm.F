@@ -34,7 +34,7 @@
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,PFG      ,DEPTHG
+     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -357,7 +357,7 @@
         ENDIF
 
         IF(NFLAG(36).AND.(GFLAG(36).OR.FFLAG(36).OR.PFLAG(36))) THEN
-          CALL WAMNORM(PFG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+          CALL WAMNORM(QPG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(36),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
@@ -373,6 +373,28 @@
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MODEL BATHYMETRY:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(38).AND.(GFLAG(38).OR.FFLAG(38).OR.PFLAG(38))) THEN
+          CALL WAMNORM(HMAXG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(38),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MAXIMUM WAVE HEIGHT:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(39).AND.(GFLAG(39).OR.FFLAG(39).OR.PFLAG(39))) THEN
+          CALL WAMNORM(TMAXG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(39),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM MAXIMUM WAVE PERIOD:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF

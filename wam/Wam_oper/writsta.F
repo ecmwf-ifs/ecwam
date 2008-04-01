@@ -18,15 +18,15 @@
 !     ----------                                                        
 
 !         *IDIN*     INTEGER     UNIT NUMBER.                           
-!         *CBDT*     CHAR*12     BEGIN DATE TIME GROUP.                 
-!         *CEDT*     CHAR*12     END DATE TIME GROUP.                   
+!         *CBDT*     CHAR*14     BEGIN DATE TIME GROUP.                 
+!         *CEDT*     CHAR*14     END DATE TIME GROUP.                   
 !         *ANALPD*   INTEGER     ANALYSIS PERIOD IN SECONDS.
 !         *FOREPD*   INTEGER     FORECAST PERIOD IN SECONDS.
 !         *IS*       INTEGER     WIND INPUT TIME STEP IN SECONDS.
-!         *CRSDT*    CHAR*12     DATE FOR RESTART FILES OUTPUT
-!         *CLSDT*    CHAR*12     LAST DATE FOR SPECTRUM FILE OUTPUT
-!         *CABDT*    CHAR*12     BEGIN ANALYSIS DATE TIME GROUP.            
-!         *CAEDT*    CHAR*12     END ANALYSIS DATE TIME GROUP.              
+!         *CRSDT*    CHAR*14     DATE FOR RESTART FILES OUTPUT
+!         *CLSDT*    CHAR*14     LAST DATE FOR SPECTRUM FILE OUTPUT
+!         *CABDT*    CHAR*14     BEGIN ANALYSIS DATE TIME GROUP.            
+!         *CAEDT*    CHAR*14     END ANALYSIS DATE TIME GROUP.              
 !         *IASS*     INTEGER     ASSIMILATION CONDITION.                
 !         *NF*       INTEGER     NEW FORECAST CONDITION.                
 !         *ISTAT*    INTEGER     JOB STATUS INDICATORS.                 
@@ -52,7 +52,7 @@
 
       INTEGER ANALPD, FOREPD                      
       INTEGER ISTAT(3)                                                  
-      CHARACTER*12 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT,  CRSDT, CLSDT
 
 ! --------------------------------------------------------------------- 
 
@@ -60,7 +60,7 @@
 !          ----------------                                             
 
       WRITE(CARD(1), 1) CBDT, CEDT
-    1 FORMAT('RUN MODEL FROM ',A12,' TO ',A12)
+    1 FORMAT('RUN MODEL FROM ',A14,' TO ',A14)
                                                                         
       CARD(2)='PARAM=10U/10V,'
 
@@ -76,7 +76,7 @@
     4 FORMAT('WIND TIME STEP IN SECONDS = ',I7)
                                                                         
       WRITE(CARD(7), 5) CABDT, CAEDT
-    5 FORMAT('ANALYSIS FROM ',A12,' TO ',A12)
+    5 FORMAT('ANALYSIS FROM ',A14,' TO ',A14)
                                                                         
       IF (IASS.EQ.0) THEN                                               
         CARD(8) = 'ASSIMILATION NO'        
@@ -100,10 +100,10 @@
         ENDIF                                                         
       ENDDO
       WRITE(CARD(13),8) CRSDT
-    8 FORMAT('DATE FOR OUTPUT OF BOTH RESTART FILES = ',A12)
+    8 FORMAT('DATE FOR OUTPUT OF BOTH RESTART FILES = ',A14)
 
       WRITE(CARD(14),9) CLSDT
-    9 FORMAT('LAST DATE FOR SPECTRA FILE OUTPUT = ',A12)
+    9 FORMAT('LAST DATE FOR SPECTRA FILE OUTPUT = ',A14)
 
 !*    2.0  WRITE CARD TO IDIN.                                          
 !          -------------------                                          

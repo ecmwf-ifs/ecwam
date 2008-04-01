@@ -1,11 +1,12 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  ROAIRO, ZIDLOLD, 
+     &                  ROAIRO, ZIDLOLD, ICEMASK, 
      &                  NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                  ISEC1, ISEC2, FIELDS, MASK_IN)
 
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
+!               J BIDLOT AUGUST 2006 INCLUSION OF ICE MASK.
 
 
 !**** *TIMIN* - STEERING MODULE IF TIME INTERPOLATION IS WANTED.
@@ -22,7 +23,7 @@
 !     ----------
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD,
+!    &                 ROAIRO, ZIDLOLD, ICEMASK,
 !    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
 !    &                 ISEC1, ISEC2, FIELDS)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
@@ -35,6 +36,7 @@
 !          *ROAIRO* - AIR DENSITY IN KG/M3.
 !          *ZIDLOLD*- Zi/L
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *ICEMASK*- SEA ICE MASK.
 !          *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -81,12 +83,11 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            UWND     ,VWND     ,AIRD    , PZIDL    ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT
+     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,ICEMASKNEXT
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER*12 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
+      CHARACTER*14 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
@@ -98,6 +99,7 @@
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
      &                                , ROAIRO,ZIDLOLD
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
 
       CHARACTER*80 FILENAME
 ! ----------------------------------------------------------------------
@@ -105,6 +107,8 @@
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS   ,ADS ,ZIDL
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US2, DS2 ,ADS2,ZIDL2
       REAL,DIMENSION(NINF:NSUP) :: US3, DS3, ADS3, ZIDL3
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICMSK, ICMSK2
+      INTEGER,DIMENSION(NINF:NSUP) :: ICMSK3 
 
 !        *US*     REAL   OUTPUT WIND FIELD (FRICTION VELOCITIES).
 !        *DS*     REAL   OUTPUT WIND FIELD (DIRECTIONS).
@@ -126,7 +130,8 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (US, DS, ADS, ZIDL, NINF, NSUP, NSUP, CDT1,
+        CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
+     &               NINF, NSUP, CDT1,
      &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &               ISEC1, ISEC2, FIELDS, MASK_IN,
      &               LWNDFILE, LCLOSEWND)
@@ -136,6 +141,7 @@
             THWOLD(IJ,IG) = DS(IJ,IG)
             ROAIRO(IJ,IG) = ADS(IJ,IG)
             ZIDLOLD(IJ,IG)= ZIDL(IJ,IG)
+            ICEMASK(IJ,IG)= ICMSK(IJ,IG)
           ENDDO
         ENDDO
         DO IG = 1,IGL
@@ -157,6 +163,7 @@
             DS(IJ,IG) = THWOLD(IJ,IG)
             ADS(IJ,IG) = ROAIRO(IJ,IG)
             ZIDL(IJ,IG)= ZIDLOLD(IJ,IG)
+            ICMSK(IJ,IG)= ICEMASK(IJ,IG)
           ENDDO
         ENDDO
         CDTH = CDT1
@@ -203,7 +210,8 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, ADS2, ZIDL2, NINF, NSUP, NSUP, CDT2,
+      CALL GETWND (US2, DS2, ADS2, ZIDL2, ICMSK2,
+     &             NINF, NSUP, CDT2,
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &             ISEC1, ISEC2, FIELDS, MASK_IN,
      &             LWNDFILE, LCLOSEWND)
@@ -224,6 +232,8 @@
      &          ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         IF(.NOT.ALLOCATED(ZIDLNEXT))
      &          ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(ICEMASKNEXT))
+     &          ALLOCATE(ICEMASKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
       ELSE
         IF(.NOT.ALLOCATED(USNEXT))
      &          ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -233,6 +243,8 @@
      &          ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
         IF(.NOT.ALLOCATED(ZIDLNEXT))
      &          ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(ICEMASKNEXT))
+     &          ALLOCATE(ICEMASKNEXT(NIBLO,NSTORE,NBLO))
       ENDIF
 
       DO IG=1,IGL
@@ -257,6 +269,8 @@
      &                      REAL(N)*DEL*(ADS2(IJ,IG)-ADS(IJ,IG))
             ZIDL3(IJ) = ZIDL(IJ,IG)+
      &                       REAL(N)*DEL*(ZIDL2(IJ,IG)-ZIDL(IJ,IG))
+            ICMSK3(IJ) = NINT(ICMSK(IJ,IG)+
+     &                       REAL(N)*DEL*(ICMSK2(IJ,IG)-ICMSK(IJ,IG)))
 
 !!!! arrays replacing the files
             CDTNEXT(N)=CDTH
@@ -264,6 +278,7 @@
             DSNEXT(IJ,N,IG)=DS3(IJ)
             ADSNEXT(IJ,N,IG)=ADS3(IJ)
             ZIDLNEXT(IJ,N,IG)=ZIDL3(IJ)
+            ICEMASKNEXT(IJ,N,IG)=ICMSK3(IJ)
 
           ENDDO
 
@@ -272,6 +287,7 @@
 !!!!     &     (DS3(I),I=IJS(IG),IJL(IG))
 !!!!     &     , (ADS3(I),I=IJS(IG),IJL(IG))
 !!!!     &     , (ZIDL3(I),I=IJS(IG),IJL(IG))
+!!!!     &     , (ICMSK3(I),I=IJS(IG),IJL(IG))
 
 
         ENDDO
@@ -281,6 +297,7 @@
           DS(IJ,IG) = DS2(IJ,IG)
           ADS(IJ,IG) = ADS2(IJ,IG)
           ZIDL(IJ,IG) = ZIDL2(IJ,IG)
+          ICMSK(IJ,IG) = ICMSK2(IJ,IG)
         ENDDO
       ENDDO
       CDT1 = CDT2
@@ -339,12 +356,14 @@
 !!!!     &       (DS(I,IG),I=IJS(IG),IJL(IG))
 !!!!     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
 !!!!     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
+!!!!     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
 !!!!            IF (CDTH.GE.CDTWIS)
 !!!!     &       WRITE (IUVELO,ERR=6300,IOSTAT=IOS)
 !!!!     &       CDTH, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
 !!!!     &       (DS(I,IG),I=IJS(IG),IJL(IG))
 !!!!     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
 !!!!     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
+!!!!     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
 !!!!          ENDDO
 !!!!        ENDDO
 !!!!      ENDDO
@@ -358,11 +377,6 @@
      &   'CDTH = ', CDTH,' WRITTEN TO OUTPUT UNIT'
           CALL FLUSH (IU06)
       ENDIF
-
-      IF(ALLOCATED(UWND)) DEALLOCATE(UWND)
-      IF(ALLOCATED(VWND)) DEALLOCATE(VWND)
-      IF(ALLOCATED(AIRD)) DEALLOCATE(AIRD)
-      IF(ALLOCATED(PZIDL)) DEALLOCATE(PZIDL)
 
       RETURN
 

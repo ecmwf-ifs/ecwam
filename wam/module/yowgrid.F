@@ -10,6 +10,9 @@
       REAL, ALLOCATABLE :: SINPH(:) 
       REAL, ALLOCATABLE :: COSPH(:) 
       REAL, ALLOCATABLE :: COSPHM1(:,:) 
+      REAL, ALLOCATABLE :: CDR(:,:,:) 
+      REAL, ALLOCATABLE :: SDR(:,:,:) 
+      REAL, ALLOCATABLE :: PRQRT(:,:)
       INTEGER, ALLOCATABLE :: NLONRGG(:) 
       INTEGER IGL 
       INTEGER, ALLOCATABLE :: IJS(:) 
@@ -27,6 +30,14 @@
 !      *SINPH*     REAL      SIN OF LATITUDE.
 !      *COSPH*     REAL      COS OF LATITUDE.
 !      *COSPHM1*   REAL      1./COSPH AT BLOCK POINTS (IJ's).
+!      *CDR*       REAL      ADVECTION VELOCITY IN SE-NW DIRECTION WHEN
+!                            GRID ROTATED BY 45 DEGREES.
+!      *SDR*       REAL      ADVECTION VELOCITY IN SW-NE DIRECTION WHEN
+!                            GRID ROTATED BY 45 DEGREES.
+!      *PRQRT*     REAL      PERCENTAGE OF THE ROTATED (45 degree) GRID
+!                            USED FOR THE PROPAGATION (see PROPAGS1).
+!                            IT IS 50% EXCEPT IF FOR STABILITY REASON
+!                            IT HAS TO BE DECREASED ABOVE ~75 DEGREE
 !      *IGL*       INTEGER   NO OF BLOCKS.
 !      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
 !      *IJS*       INTEGER   INDEX OF FIRST POINT OF SECOND LAT.
