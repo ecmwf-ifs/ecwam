@@ -180,7 +180,7 @@
      &        IRET, IWORD, IERR, ILENP, ITAG, KSTREAM, IFS_STREAM,
      &        IINDAT,IHHMM,NLEG,IOCCPL
       REAL :: PPMAX, PPMIN, DELTAPP
-      REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:)
+      REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:),WORK1(:)
       REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
       REAL , DIMENSION(KANG) :: ZTHETA
       REAL , DIMENSION(KFRE) :: ZFREQ
@@ -498,8 +498,8 @@
             IM=(((IC-1)+KSEND-1)/KANG)+1
             IK=(IC-1)+KSEND-(IM-1)*KANG
 
+            ALLOCATE(WORK(1:KEND(KPROC)))
             IF(KSEND.EQ.KRANK) THEN
-              ALLOCATE(WORK(1:KEND(KPROC)))
               ALLOCATE(ZSEC4OUT(NTENCODE))
               CALL GSTATS(1433,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
@@ -508,8 +508,6 @@
               ENDDO
 !$OMP END PARALLEL DO
               CALL GSTATS(1433,1)
-            ELSE
-              ALLOCATE(WORK(KSTART(KRANK):KEND(KRANK)))
             ENDIF
 
             DO J1=KSTART(KRANK),KEND(KRANK)
@@ -523,9 +521,10 @@
               KRECVCOUNTS(IP)=KEND(IP)-KSTART(IP)+1
             ENDDO
 
+            ALLOCATE(WORK1(1:KEND(KPROC)))
             CALL MPL_GATHERV(WORK(KSTART(KRANK):KEND(KRANK)),
      &                       KRECVCOUNTS=KRECVCOUNTS,
-     &                       PRECVBUF=WORK(1:KEND(KPROC)),
+     &                       PRECVBUF=WORK1(1:KEND(KPROC)),
      &                       KROOT=KSEND,
      &                       CDSTRING='SPEC2FDB:')
             CALL GSTATS(674,1)
@@ -535,10 +534,11 @@
 
             IF(KSEND.EQ.KRANK) THEN
               DO J1=1,KEND(KPROC)
-                ZSEC4OUT(IPOINTER(J1)) = WORK(J1)
+                ZSEC4OUT(IPOINTER(J1)) = WORK1(J1)
               ENDDO
             ENDIF
             DEALLOCATE(WORK)
+            DEALLOCATE(WORK1)
 
             CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
           ENDDO 
@@ -730,7 +730,3 @@
       CALL ABORT1
 
       END SUBROUTINE SPEC2FDB
-
-
-
-
