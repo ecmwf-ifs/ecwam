@@ -986,9 +986,13 @@
       ALLOCATE(NLENHALO(NPR))
 
       ALLOCATE(ITEMP(MAXPERMLEN2))
+      DO IH=1,MAXPERMLEN2
+        ITEMP(IH)=0
+      ENDDO
 
       DO IP=1,NPR
         DO IH=1,MAXPERMLEN
+          IJFROMPE(IH,IP)=0
           IPROCFROM(IH,IP)=NPR+1
         ENDDO
       ENDDO
@@ -1130,21 +1134,23 @@
           DEALLOCATE(INDEX)
         ENDIF
 
-        JH=1
-
-        IJFROMPE(1,IP)=ITEMP(1)
-        DO IH=2,NH
-          IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
-            JH=JH+1
-            IF(JH.GT.MAXPERMLEN) THEN
-               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-               WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
-               WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
-               CALL ABORT1
+        JH=0
+        IF(NH.GT.1) THEN
+          JH=1
+          IJFROMPE(JH,IP)=ITEMP(1)
+          DO IH=2,NH
+            IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
+              JH=JH+1
+              IF(JH.GT.MAXPERMLEN) THEN
+                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+                WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
+                WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
+                CALL ABORT1
+              ENDIF
+              IJFROMPE(JH,IP)=ITEMP(IH)
             ENDIF
-            IJFROMPE(JH,IP)=ITEMP(IH)
-          ENDIF
-        ENDDO
+          ENDDO
+        ENDIF
         NLENHALO(IP)=JH
 
       ENDDO ! END DO ON IP
@@ -1238,7 +1244,7 @@
       ENDDO
 
       IF (ALLOCATED(NFROMPELST)) DEALLOCATE(NFROMPELST)
-      ALLOCATE(NFROMPELST(NGBFROMPE))
+      ALLOCATE(NFROMPELST(MAX(1,NGBFROMPE)))
       INBNGH=0
       DO IP=1,NPR
         IF(NFROMPE(IP).GT.0) THEN 
@@ -1268,7 +1274,8 @@
         ENDDO
       ENDIF
 
-      ALLOCATE(IJHALO(NLENHALO(IRANK)))
+      ALLOCATE(IJHALO(MAX(1,NLENHALO(IRANK))))
+
       DO IH=1,NLENHALO(IRANK)
         IF(IPROCFROM(IH,IRANK).LT.IRANK) THEN
           IJHALO(IH)=NINF+IH-1
@@ -1352,7 +1359,7 @@
           ENDDO
         ENDIF
 
-        ALLOCATE(RDUM(NLENHALO(IRANK)))
+        ALLOCATE(RDUM(MAX(1,NLENHALO(IRANK))))
         DO IG=1,IGL
           DO IH=1,NLENHALO(IRANK)
             IJ=IJFROMPE(IH,IRANK)
