@@ -84,7 +84,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY
       USE YOWPCONS , ONLY : DEG      ,R        ,ZMISS
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
 !-----------------------------------------------------------------------
 

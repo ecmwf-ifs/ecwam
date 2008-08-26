@@ -110,7 +110,7 @@
 !     because 251 does not contain the origin in the grib header
 !     it is not very clean !!!!!
       USE YOWGRIBHD , ONLY : KSEK1
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
       INTEGER       klen
       DIMENSION ksec1(*), kfield(klen)

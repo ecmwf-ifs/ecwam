@@ -134,7 +134,7 @@
 !-------------------------------------------------------------------
 
       USE MPL_MODULE
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
       IMPLICIT NONE
 

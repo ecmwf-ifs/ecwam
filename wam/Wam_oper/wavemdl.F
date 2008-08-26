@@ -110,7 +110,7 @@
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
      &            NSTART ,NEND
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW
-      USE FDBSUBS
+      USE FDBSUBS_MOD
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! --------------------------------------------------------------------- 

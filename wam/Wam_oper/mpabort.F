@@ -34,7 +34,7 @@
       USE YOWCOUP  , ONLY : LWCOU  
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
-      USE SDL_MODULE
+      USE SDL_MOD
 
 ! ----------------------------------------------------------------------
       CHARACTER*(*),INTENT(IN) :: CDMESSAGE

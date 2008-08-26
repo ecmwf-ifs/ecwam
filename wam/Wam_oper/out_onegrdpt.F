@@ -58,7 +58,7 @@
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CDTINTS  ,CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
      &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
       

@@ -349,7 +349,7 @@
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
       USE MPL_MODULE
-      USE FDBSUBS
+      USE FDBSUBS_MOD
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

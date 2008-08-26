@@ -68,7 +68,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
 

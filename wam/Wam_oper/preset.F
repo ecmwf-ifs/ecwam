@@ -139,7 +139,7 @@
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,IU04     ,
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
 ! -------------------------------------------------------------------
       REAL X4(2)

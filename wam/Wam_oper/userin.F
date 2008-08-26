@@ -96,7 +96,7 @@
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE
-      USE FDBSUBS
+      USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
 
