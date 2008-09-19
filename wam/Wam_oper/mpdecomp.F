@@ -141,6 +141,7 @@
 
 
       INTEGER I4(2)
+      INTEGER :: NLENHALO_MAX
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
       INTEGER,ALLOCATABLE :: KCOMBUF_S(:,:)
       INTEGER,ALLOCATABLE :: KCOMBUF_R(:)
@@ -151,7 +152,8 @@
       INTEGER,ALLOCATABLE, DIMENSION(:) :: NSTART1D,NEND1D
       INTEGER,ALLOCATABLE, DIMENSION(:) :: KSTART1,KEND1, NLON, ILON
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IXLON
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,KTEMP,NLENHALO,IJHALO
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,NLENHALO,IJHALO
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: KTEMP
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE,IPROCFROM
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
@@ -183,7 +185,7 @@
         INQUIRE(UNIT=IU06, OPENED=LLEXIST)
         IF(.NOT. LLEXIST) THEN
           OPEN(IU06,FILE=LOGFILENAME,STATUS='UNKNOWN')
-          WRITE(*,*) ' STDOUT FILE ', LOGFILENAME, ' OPENED ON PE ', IRANK
+          WRITE(*,*) ' STDOUT FILE ',LOGFILENAME, ' OPENED ON PE ',IRANK
           WRITE(IU06,*) ' STDOUT OF PE ', IRANK
           WRITE(IU06,*) ' ============ '
         ENDIF
@@ -972,21 +974,21 @@
       ENDDO
 
 !     FIND INDEX AND PE OF THE POINTS IN THE HALO
-      MAXPERMLEN=2*MAXLEN+12
+      MAXPERMLEN=2*MAX(MAXLEN,NGX)+12
       IF(IPROPAGS.EQ.0) THEN
-        MAXPERMLEN2=6*MAXPERMLEN
+        MXPRLEN=6*MAXPERMLEN
       ELSEIF(IPROPAGS.EQ.1) THEN
-        MAXPERMLEN2=8*MAXPERMLEN
+        MXPRLEN=8*MAXPERMLEN
       ELSE
-        MAXPERMLEN2=12*MAXPERMLEN
+        MXPRLEN=12*MAXPERMLEN
       ENDIF
 
       ALLOCATE(IJFROMPE(MAXPERMLEN,NPR))
       ALLOCATE(IPROCFROM(MAXPERMLEN,NPR))
       ALLOCATE(NLENHALO(NPR))
 
-      ALLOCATE(ITEMP(MAXPERMLEN2))
-      DO IH=1,MAXPERMLEN2
+      ALLOCATE(ITEMP(MXPRLEN))
+      DO IH=1,MXPRLEN
         ITEMP(IH)=0
       ENDDO
 
@@ -998,6 +1000,7 @@
       ENDDO
 
 !     DETERMINE IJFROMPE
+      NLENHALO_MAX=0
       DO IP=1,NPR
         IH=0
 
@@ -1009,9 +1012,9 @@
      &          (KLON(IJ,IC).LT.NSTART(IP).OR.
      &           KLON(IJ,IC).GT.NEND(IP)       ) ) THEN
                IH=IH+1
-               IF(IH.GT.MAXPERMLEN2) THEN
+               IF(IH.GT.MXPRLEN) THEN
                  WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                  CALL ABORT1
                ENDIF
                ITEMP(IH)=KLON(IJ,IC)
@@ -1021,9 +1024,9 @@
      &          (KLAT(IJ,IC).LT.NSTART(IP).OR.
      &           KLAT(IJ,IC).GT.NEND(IP)       ) ) THEN 
                IH=IH+1
-               IF(IH.GT.MAXPERMLEN2) THEN
+               IF(IH.GT.MXPRLEN) THEN
                  WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                  CALL ABORT1
                ENDIF
                ITEMP(IH)=KLAT(IJ,IC)
@@ -1033,9 +1036,9 @@
      &          (KLAT2(IJ,IC).LT.NSTART(IP).OR.
      &           KLAT2(IJ,IC).GT.NEND(IP)       ) ) THEN 
                IH=IH+1
-               IF(IH.GT.MAXPERMLEN2) THEN
+               IF(IH.GT.MXPRLEN) THEN
                  WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                 WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                 WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                  CALL ABORT1
                ENDIF
                ITEMP(IH)=KLAT2(IJ,IC)
@@ -1056,9 +1059,9 @@
      &              (KCOR(IJ,IC,ICL).LT.NSTART(IP).OR.
      &               KCOR(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN
                    IH=IH+1
-                   IF(IH.GT.MAXPERMLEN2) THEN
+                   IF(IH.GT.MXPRLEN) THEN
                      WRITE(IU06,*) 'MPDECOMP : DECOMPOSITION PROBLEM !'
-                     WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                     WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                      CALL ABORT1
                    ENDIF
                    ITEMP(IH)=KCOR(IJ,IC,ICL)
@@ -1077,9 +1080,9 @@
      &            (KRLON(IJ,IC).LT.NSTART(IP).OR.
      &             KRLON(IJ,IC).GT.NEND(IP)       ) ) THEN
                  IH=IH+1
-                 IF(IH.GT.MAXPERMLEN2) THEN
+                 IF(IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!'
-                   WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
                  ENDIF
                  ITEMP(IH)=KRLON(IJ,IC)
@@ -1089,9 +1092,9 @@
      &            (KRLAT(IJ,IC).LT.NSTART(IP).OR.
      &             KRLAT(IJ,IC).GT.NEND(IP)       ) ) THEN 
                  IH=IH+1
-                 IF(IH.GT.MAXPERMLEN2) THEN
+                 IF(IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!'
-                   WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
                  ENDIF
                  ITEMP(IH)=KRLAT(IJ,IC)
@@ -1101,9 +1104,9 @@
      &            (KRLON2(IJ,IC).LT.NSTART(IP).OR.
      &             KRLON2(IJ,IC).GT.NEND(IP)       ) ) THEN 
                  IH=IH+1
-                 IF(IH.GT.MAXPERMLEN2) THEN
+                 IF(IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!'
-                   WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
                  ENDIF
                  ITEMP(IH)=KRLON2(IJ,IC)
@@ -1113,9 +1116,9 @@
      &            (KRLAT2(IJ,IC).LT.NSTART(IP).OR.
      &             KRLAT2(IJ,IC).GT.NEND(IP)       ) ) THEN 
                  IH=IH+1
-                 IF(IH.GT.MAXPERMLEN2) THEN
+                 IF(IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!'
-                   WRITE(IU06,*) 'MAXPERMLEN2 TOO SMALL !!!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
                  ENDIF
                  ITEMP(IH)=KRLAT2(IJ,IC)
@@ -1152,9 +1155,45 @@
           ENDDO
         ENDIF
         NLENHALO(IP)=JH
+        NLENHALO_MAX=MAX(NLENHALO_MAX,NLENHALO(IP))
 
       ENDDO ! END DO ON IP
-      DEALLOCATE(ITEMP)
+      DEALLOCATE(ITEMP) 
+
+
+!     RESIZE ARRAYS BASED ON MAXIMUM SIZE OF HALO
+
+      NLENHALO_MAX=MAX(1,NLENHALO_MAX)
+      ALLOCATE(KTEMP(NLENHALO_MAX,NPR))
+
+      DO IP=1,NPR
+        DO IH=1,NLENHALO_MAX
+          KTEMP(IH,IP)=IJFROMPE(IH,IP)
+        ENDDO
+      ENDDO
+      DEALLOCATE(IJFROMPE)
+      ALLOCATE(IJFROMPE(NLENHALO_MAX,NPR))
+      DO IP=1,NPR
+        DO IH=1,NLENHALO_MAX
+          IJFROMPE(IH,IP)=KTEMP(IH,IP)
+        ENDDO
+      ENDDO
+
+      DO IP=1,NPR
+        DO IH=1,NLENHALO_MAX
+          KTEMP(IH,IP)=IPROCFROM(IH,IP)
+        ENDDO
+      ENDDO
+      DEALLOCATE(IPROCFROM)
+      ALLOCATE(IPROCFROM(NLENHALO_MAX,NPR))
+      DO IP=1,NPR
+        DO IH=1,NLENHALO_MAX
+          IPROCFROM(IH,IP)=KTEMP(IH,IP)
+        ENDDO
+      ENDDO
+
+      DEALLOCATE(KTEMP)
+
 
 !     DETERMINE IPROCFROM, KLENBOT and KLENTOP
       DO IP=1,NPR

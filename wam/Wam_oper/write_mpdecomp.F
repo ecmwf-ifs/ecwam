@@ -114,9 +114,9 @@
       LL1D = .FALSE.
       LLIRANK = .FALSE.
       LLALLPTS = .FALSE.
-      IPROPAGS = 1
-!!! currently set up to produce output for ipropags=1 !!!
-!!! for other option, please refer to mpdecomp
+      IPROPAGS = 2
+!!! currently set up to produce output for ipropags=2 !!!
+!!! since it is the default nor, for other option, please refer to mpdecomp
       LSUBGRID = .TRUE.
 
       CMDLINE: DO
@@ -489,8 +489,6 @@
       SNGHB=SNGHB-XNGHB_MEAN**2
       SNGHB=SQRT(MAX(SNGHB,0.))
       XNPE=XNPE/(IPROC_E-IPROC_S+1)
-
-      WRITE(*,*) 'in write_mpdecomp ',NPROC,XNGHB_MEAN,SNGHB,XNPE
 
       CLOSE(IUOUN)
       DEALLOCATE(IJPROC)
