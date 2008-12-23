@@ -82,7 +82,7 @@
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
      &            IFS_KSEC1,LGRHDIFS ,LNEWLVTP 
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,XDELLA
+      USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,AMOSOP   ,XDELLA
       USE YOWPARAM , ONLY : CLDOMAIN
       USE YOWPCONS , ONLY : G        ,ZMISS
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
@@ -118,6 +118,54 @@
         INDEX = (NINT((90. - AMONOP ) / XDELLA))*I1 + 1
         ZWORK=ZMISS
       ENDIF
+
+!     PAD THE POLES IF INCLUDED IN THE GRID
+      IF((NINT((90. - AMONOP ) / XDELLA)).EQ.0) THEN
+        TEMP=0.
+        NN=0
+        J=2
+        JSN=I2-J+1
+        DO I=1,NLONRGG(JSN)
+          IF(FIELD(I,J).NE.ZMISS) THEN
+            TEMP=TEMP+FIELD(I,J)
+            NN=NN+1
+          ENDIF
+        ENDDO
+        IF(NN.GT.0) THEN
+          TEMP=TEMP/NN
+        ELSE
+          TEMP=ZMISS
+        ENDIF
+        J=1
+        JSN=I2-J+1
+        DO I=1,NLONRGG(JSN)
+          FIELD(I,J)=TEMP
+        ENDDO
+      ENDIF
+      IF((NINT((-90. - AMOSOP ) / XDELLA)).EQ.0) THEN
+        TEMP=0.
+        NN=0
+        J=I2-1
+        JSN=I2-J+1
+        DO I=1,NLONRGG(JSN)
+          IF(FIELD(I,J).NE.ZMISS) THEN
+            TEMP=TEMP+FIELD(I,J)
+            NN=NN+1
+          ENDIF
+        ENDDO
+        IF(NN.GT.0) THEN
+          TEMP=TEMP/NN
+        ELSE
+          TEMP=ZMISS
+        ENDIF
+        J=I2
+        JSN=I2-J+1
+        DO I=1,NLONRGG(JSN)
+          FIELD(I,J)=TEMP
+        ENDDO
+      ENDIF
+
+!     FILL THE ENCODING ARRAY
       DO J=1,I2
         JSN=I2-J+1
         DO I=1,NLONRGG(JSN)

@@ -116,12 +116,15 @@
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
       INTEGER, PARAMETER :: NFIELDS=1
 ! ----------------------------------------------------------------------
-      REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
-
+      INTEGER :: NLON, NLAT
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
-      REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
+
+      REAL :: RSOUTW, RNORTW
+      REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
+      REAL FIELDS(NGPTOTG,NFIELDS)
+
 ! ----------------------------------------------------------------------
 
       INTEGER IINITFDB_VPP
@@ -193,8 +196,7 @@
 
 !     GET CONTROLLING FLAG FROM INPUT NAMELIST 
 !     (the rest will be read in userin)
-!!!!! INPUT UNIT FOR THE USER FILE IS NOW 3
-      IU05 = 3
+      IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
       CALL MPUSERIN(IU05,LMESSPASS_NL,LFDB,LWCOU,LL1D,LSUBGRID,
      &              IPROPAGS)
 
@@ -235,6 +237,12 @@
       ELSE
         NNEXT=IRANK+1
       ENDIF
+
+!     0.2 GET MODEL PARAMETERS
+!         --------------------
+
+      CALL WVWAMINIT (LWCOU,IU06,NLON,NLAT,RSOUTW,RNORTW)
+
 
 !     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------

@@ -49,7 +49,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,IU04
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
 
 ! ----------------------------------------------------------------------
       CHARACTER*14 CDTPRO,CDATEF,CDATER

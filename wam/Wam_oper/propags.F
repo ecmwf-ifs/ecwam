@@ -56,8 +56,8 @@
       USE YOWCURR  , ONLY : U        ,V        ,LLCHKCFL
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
      &            COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPHM1  ,
-     &            IGL      ,IJLT
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPH    ,
+     &            COSPHM1  ,IGL      ,IJLT
       USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -694,7 +694,7 @@
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
           JH = KXLT(IJ,IG)
-          TANPH = SINPH(JH)*DCO(IJ)
+          TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
         ENDDO
@@ -1023,7 +1023,7 @@
         SM = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
           JH = KXLT(IJ,IG)
-          TANPH = SINPH(JH)*DCO(IJ)
+          TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
         ENDDO

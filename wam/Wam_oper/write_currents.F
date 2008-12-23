@@ -17,9 +17,9 @@
 
 !           *IU06*   - PRINTER OUTPUT.
 !           *currents*   - INPUT CURRENTS
-!           *IU07*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC). fort.7 must be there !
-!           *IU08*   - INPUT  UNIT OF COMMON UBUF.
+!           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC). fort.8 must be there !
 !           *IUOUT*  - THE OUTPUT IS DIRECTED TO fort.30 
 
@@ -38,6 +38,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWCOU
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWMAP   , ONLY : IXLG     ,KXLT
@@ -61,11 +62,13 @@
       INTEGER :: IREAD, LIU, IJ, I, J, NPR, MAXLEN, IG
       INTEGER :: IU30, IPARAM, KFDB
       INTEGER :: IY, IM, ID, IH, IMN, ISS, IFCST
+      INTEGER :: NLON,NLAT
 
       INTEGER I4(2)
 
       REAL Z4(2)
       REAL, ALLOCATABLE, DIMENSION(:,:) :: CURMAG, CURDIR
+      REAL :: RSOUTW,RNORTW
 
       CHARACTER*14 :: CDATEIN
       CHARACTER*28 FILNM
@@ -119,6 +122,12 @@
       NPRECI = KIND(I4)
 
       IREAD=1
+
+      LWCOU = .FALSE.
+      NLON=1
+      NLAT=1
+
+      CALL WVWAMINIT (LWCOU,IU06,NLON,NLAT,RSOUTW,RNORTW)
 
       NPR=NPROC
 

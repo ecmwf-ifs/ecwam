@@ -87,7 +87,6 @@
 !                  IF THIS IS A FINE GRID PREPROC.
 !                  FORMATED IF IFORM = 2 OTHERWISE UNFORMATED.
 !                  (SEE SUB MBOUNF).
-!       *IU05*   - LOGICAL UNIT FOR USER INPUT. (SEE SUB UIPREP).
 !       *IU06*   - LOGICAL UNIT FOR PRINTER OUTPUT UNIT
 !       *IU07*   - LOGICAL UNIT FOR OUTPUT OF GRID ORGANISATION
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
@@ -149,7 +148,6 @@
 !       *TAUHF*     - HIGH FREQUENCY STRESS TABLE.
 !       *TOPOAR*    - PREPARE TOPOGRAPHY FOR GRID.
 !       *UIPREP*    - READS USER INPUT
-!       *WAMCUR*    - PREPARE CURRENT FIELD.
 
 !     REFERENCE.
 !     ----------
@@ -171,7 +169,7 @@
      &            NLONRGG  ,IGL
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
-     &            XDELLO   ,ZDELLO
+     &            XDELLO   ,ZDELLO   ,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
 
@@ -192,13 +190,9 @@
 !*    1. INITIALISATION OF INPUT/OUTPUT UNITS.
 !        -------------------------------------
 
-      IU01  = 1
       IU02  = 2
       IU03  = 3
-      IU05  = 4
       IU06  = 6
-      IU07  = 7
-      IU08  = 8
       IU09  = 9
       IU10  = 10
       IU17  = 17
@@ -211,7 +205,7 @@
 !*    2. USER INPUT AND LINEPRINTER PROTOCOL.
 !        ------------------------------------
 
-      CALL UIPREP (IU05, IFORM, ML, KL, LLGRID)
+      CALL UIPREP (IFORM, ML, KL, LLGRID)
 
 
 ! ----------------------------------------------------------------------
@@ -235,6 +229,11 @@
 !     NLONRGG IS ALLOCATED IN UIPREP
       ALLOCATE(ZDELLO(NY))
 
+
+      IU01 = I_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'w', 'u', 0)
+      IU08 = I_GET_UNIT(IU06, 'wam_subgrid', 'w', 'u', 0)
+
 ! ----------------------------------------------------------------------
 
 !*    3. INITIALISE TOTAL NUMBER OF BLOCKS,
@@ -256,7 +255,7 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
-              NLONRGG(K) = NINT(NX*COSPH(K))
+              NLONRGG(K) = MAX(NINT(NX*COSPH(K)),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
@@ -278,6 +277,16 @@
         ENDIF
         DELLAM(K)  = ZDELLO(K)*CIRC/360.
       ENDDO
+
+!     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
+      XLATMAX=88.5
+      COSPHMIN=COS(XLATMAX*RAD)
+      DO K=1,NY
+        IF(COSPH(K).LE.COSPHMIN) THEN
+          COSPH(K)=COS(XLATMAX*RAD)
+          SINPH(K)=SIN(XLATMAX*RAD)
+        ENDIF
+      ENDDO 
 
 ! ----------------------------------------------------------------------
 
@@ -333,10 +342,20 @@
 !*        REQUESTED RESOLUTION.
 !         ---------------------------------------------------------
 
-      CALL TOPOAR (IU01, BATHY, ML)
-      IF (ITEST.GT.0) THEN
-        WRITE (IU06,*) ' SUB TOPOAR DONE'
-        CALL FLUSH(IU06)
+      IF(.NOT.LAQUA) THEN
+        CALL TOPOAR (IU01, BATHY, ML)
+        IF (ITEST.GT.0) THEN
+          WRITE (IU06,*) ' SUB TOPOAR DONE'
+          CALL FLUSH(IU06)
+        ENDIF
+      ELSE
+!       AQUA PLANET SET TO DEEP EVERYWHERE
+!       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
+        BATHY=999.
+        DO IX=1,NX
+          BATHY(IX,1)=-999.
+          BATHY(IX,NY)=-999.
+        ENDDO
       ENDIF
 
 !*    5.2 COMPUTATION OF BLOCKS.

@@ -72,6 +72,7 @@
       INTEGER :: KRMONOP, KRMOEAP, KRMOSOP, KRMOWEP 
       INTEGER :: KSEC0(NKSEK0), KSEC2(NKSEK2),
      &           KSEC3(NKSEK3), KSEC4(NKSEK4)
+      INTEGER :: I_GET_UNIT
 
       INTEGER, ALLOCATABLE :: KSEC1(:), KGRIB(:), KLONRGG(:)
 
@@ -95,7 +96,7 @@
 ! ----------------------------------------------------------------------
 
       IU06 = 6
-      IU07 = 7
+      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
 
       WRITE(IU06,*) ' INTWAMINPUT STARTED '
 

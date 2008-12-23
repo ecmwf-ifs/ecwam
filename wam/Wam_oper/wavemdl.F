@@ -91,15 +91,16 @@
 ! -------------------------------------------------------------------   
 
       USE YOWCOUT  , ONLY : CASS     ,NASS
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS,KCOUSTEP
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS,KCOUSTEP,
+     &         LMASK_OUT_NOT_SET, LMASK_TASK_STR
       USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,
      &             LLCHKCFL,LLCHKCFLA
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,LL1D
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IREFRA   ,
@@ -119,15 +120,22 @@
 !     COUPLING ARRAYS
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
+      REAL, DIMENSION(NWVFIELDS) :: DEFVAL
       REAL  ZHOOK_HANDLE
 
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
 
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
       INTEGER NFIELDS, NGPTOTG, NC, NR
+      INTEGER, DIMENSION(NWVFIELDS) :: NTOT 
       REAL FCRANGE
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL, ALLOCATABLE :: WVBLOCK(:,:)
       
       CHARACTER CBEGDAT*14, CDTASS*14
       CHARACTER*14 :: CDATEIN, CDTNEWCUR
@@ -138,6 +146,7 @@
       LOGICAL :: LLCURRENT
       LOGICAL :: FRSTIME
       LOGICAL :: L1STCALL
+      LOGICAL :: LLGLOBAL_WVFLDG
       INTEGER :: NADV
       INTEGER :: NFDBREF
 
@@ -183,6 +192,10 @@
         WRITE (IU06,*) ' WAVEMDL:'
         WRITE (IU06,*) ' FRSTIME', FRSTIME
         CALL FLUSH(IU06)
+
+        LMASK_OUT_NOT_SET=.TRUE.
+        LMASK_TASK_STR=.TRUE.
+
         IF(LWCOU) THEN
           IU06=20
           IL = LEN_TRIM(CBEGDAT)
@@ -489,87 +502,140 @@
         ENDIF
       ENDIF
 
-! PUT ZDELLO IN ZDELATM FOR THE ATMOSPHERIC COUPLING
+!----------------------------------------------------------------------
+
+!     3. PREPARE FIELDS THAT ARE RETURNED TO IFS (if coupled).
+!        -----------------------------------------------------
+
       IF(LWCOU) THEN
+
+        IG=1
+
+        ALLOCATE(WVBLOCK(IJS(IG):IJL(IG),NWVFIELDS))
+
+!       GRID LAYOUT
         DO K=1,NLATW
           ZDELATM(K) = ZDELLO(K)
         ENDDO
 
-! Fields to be passed to the atmospheric model are:
-!  1. Charnock field
+!       FIELDS TO BE PASSED TO THE ATMOSPHERIC MODEL ARE:
+
+!       1. CHARNOCK FIELD
         FLABEL(1)='Charnock'
-        DO IG=1,IGL
-          DO IJ=IJS(IG),IJL(IG) 
-            USNEW(IJ) = USOLD(IJ,IG)
-            Z0NEW(IJ) = Z0OLD(IJ,IG)
-          ENDDO
-          CALL OUTBETA (IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
-     &                    NSTART, NEND, WVFLDG(1,1,1),
-     &                    NLONW, NLATW)
+        DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+
+        NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+        CALL GSTATS(1443,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          CALL OUTBETA (KIJS, KIJL, IG, USOLD, Z0OLD,
+     &                  DEFVAL(1),WVBLOCK(KIJS,1))
         ENDDO
-!  2. Test field (Hs).
-!RMIT!  IF (NWVFIELDS.GE.2) THEN 
-!RMIT!!  WVFLDG(:,:,2)=WHGTTG             ! Test ONLY !!!!!!!!!!!!!!!!!!!!!!!!!
-!RMIT!!  WVFLDG(:,:,2)=10.*WVFLDG(:,:,1)  ! Test ONLY !!!!!!!!!!!!!!!!!!!!!!!!!
-!RMIT!   DO IG=1,IGL
-!RMIT!    CALL OUTTHEOTHER (IJS(IG), IJL(IG), IG, IGL,USNEW,Z0NEW,
-!RMIT&                    NSTART, NEND, WVFLDG(1,1,2),
-!RMIT&                    NLONW, NLATW)
-!RMIT!   ENDDO 
-!RMIT!  ENDIF
-! Print TEST values:
-! TEST ONLY !!!!!!!!!!!!!!!!!!!!!!!!!
-!RMIT!  IF (NWVFIELDS.GE.2) THEN
-!RMIT!   WRITE(6,'(A)') ' Sent second field (10.*Charnock):'
-!RMIT!!  DO JLA=51,120
-!RMIT!!   WRITE(6,'(60F6.3)') (WVFLDG(JLO,JLA,2),JLO=201,250)
-!RMIT!!  ENDDO
-!RMIT!!  CALL FLUSH(6)
-!RMIT!   WRITE(6,'(A)') ' Summary Characteristics (W2):'
-!RMIT!   IF (ANY(WVFLDG(:,:,2).GT.0.0)) THEN
-!RMIT!    WRITE(6,'(A,G23.16)') '  * Abs. Minimum Value W2: ', 
-!RMIT&      MINVAL(WVFLDG(:,:,2))
-!RMIT!    WRITE(6,'(A,G23.16)') '  * Minimum Value W2: ', 
-!RMIT&      MINVAL(WVFLDG(:,:,2),MASK=WVFLDG(:,:,2).GT.0.0)
-!RMIT!    WRITE(6,'(A,G23.16)') '  * Maximum Value W2: ', 
-!RMIT&      MAXVAL(WVFLDG(:,:,2),MASK=WVFLDG(:,:,2).GT.0.0)
-!RMIT!    WRITE(6,'(A,G23.16)') '  * Mean Value W2: ', 
-!RMIT&      SUM(WVFLDG(:,:,2),MASK=WVFLDG(:,:,2).GT.0.0) / 
-!RMIT&      COUNT(WVFLDG(:,:,2).GT.0.0)
-!RMIT!   ELSE
-!RMIT!   WRITE(6,'(A)') ' WARNING: No values W2 were found GT 0.0!'
-!RMIT!   ENDIF
-!RMIT!   CALL FLUSH(6)
-!RMIT!  ENDIF
-!------------------------------------------------------
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1443,1)
+
+!!!!!!
+!       if other fields are needed for IFS add  them here
+!!!!!!
+
+
+!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
+!       INFORMATION
+
+        CALL MPFLDTOIFS(IG, IJS(IG), IJL(IG), NWVFIELDS, WVBLOCK,
+     &                  WVFLDG, DEFVAL, MASK_OUT, LLGLOBAL_WVFLDG)
+
+
+        DEALLOCATE(WVBLOCK)
+
 
 !       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
-        IF( LWCOUNORMS )THEN
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) ' NORM OF FIELDS RETURNED TO THE ATM. MODEL : '
-          NTOT=NLATW*NLONW
+        WRITE(IU06,*) ' '
+        IF(LLGLOBAL_WVFLDG)THEN
+          WRITE(IU06,*) ' GLOBAL NORM OF FIELDS RETURNED TO IFS :'
+
+          CALL GSTATS(1443,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,J,I)
           DO IFLD=1,NWVFIELDS
-            FAVG(IFLD)=0.
-            FMIN(IFLD)=999999999999.
-            FMAX(IFLD)=-99999999999.
+            JF=IFLD
+            NTOT(JF)=NLATW*NLONW
+            FAVG(JF)=0.
+            FMIN(JF)=WVFLDG(1,1,JF)
+            FMAX(JF)=WVFLDG(1,1,JF)
             DO J=1,NLATW
               DO I=1,NLONW
-                FAVG(IFLD)=FAVG(IFLD)+WVFLDG(I,J,IFLD)
-                FMIN(IFLD)=MIN(FMIN(IFLD),WVFLDG(I,J,IFLD))
-                FMAX(IFLD)=MAX(FMAX(IFLD),WVFLDG(I,J,IFLD))
+                FAVG(JF)=FAVG(JF)+WVFLDG(I,J,JF)
+                FMIN(JF)=MIN(FMIN(JF),WVFLDG(I,J,JF))
+                FMAX(JF)=MAX(FMAX(JF),WVFLDG(I,J,JF))
               ENDDO
             ENDDO
-            FAVG(IFLD)=FAVG(IFLD)/NTOT
-            WRITE(IU06,*) FLABEL(IFLD),
-     *                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT
+            FAVG(JF)=FAVG(JF)/NTOT(JF)
           ENDDO
-          WRITE(IU06,*) ' '
-          IF(ITEST.GT.0) CALL FLUSH(IU06)
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1443,1)
+
+          DO IFLD=1,NWVFIELDS
+            WRITE(IU06,*) FLABEL(IFLD),
+     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT(IFLD)
+          ENDDO
+
+        ELSE
+          WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
+
+          CALL GSTATS(1443,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,J,I)
+          DO IFLD=1,NWVFIELDS
+            JF=IFLD
+            NTOT(JF)=0
+            FAVG(JF)=0.
+            FMIN(JF)=0.
+            FMAX(JF)=0.
+            LOOP_J: DO J=1,NLATW
+              DO I=1,NLONW
+                IF(MASK_OUT(I,J).EQ.1) THEN
+                  FMIN(JF)=WVFLDG(I,J,JF)
+                  FMAX(JF)=WVFLDG(I,J,JF)
+                  EXIT LOOP_J
+                ENDIF
+              ENDDO
+            ENDDO LOOP_J
+            DO J=1,NLATW
+              DO I=1,NLONW
+                IF(MASK_OUT(I,J).EQ.1) THEN
+                  NTOT(JF)=NTOT(JF)+1
+                  FAVG(JF)=FAVG(JF)+WVFLDG(I,J,JF)
+                  FMIN(JF)=MIN(FMIN(JF),WVFLDG(I,J,JF))
+                  FMAX(JF)=MAX(FMAX(JF),WVFLDG(I,J,JF))
+                ENDIF
+              ENDDO
+            ENDDO
+            FAVG(JF)=FAVG(JF)/MAX(NTOT(JF),1)
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1443,1)
+
+          DO IFLD=1,NWVFIELDS
+            WRITE(IU06,*) FLABEL(IFLD),
+     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT(IFLD),
+     &                    IRANK, NPROC, LL1D
+          ENDDO
         ENDIF
+        WRITE(IU06,*) ' '
+        CALL FLUSH(IU06)
+
+
+
+
 !       TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
         LDWCOUNORMS=LWCOUNORMS
       ENDIF
 
+
+!     4. END OF RUN ?
+!        -----------
       IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         IF(LWCOU .AND. LNEWLVTP) THEN
 !         the fdb should be closed by IFS

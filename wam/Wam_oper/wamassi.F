@@ -403,8 +403,8 @@
             CBPLTDT = CDATEF
             CEPLTDT = CDATEE
 
-            OPEN (IU04,FILE=CWI(1:ICPLEN+8),
-     &            STATUS='UNKNOWN',FORM='FORMATTED')
+            IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
+
             CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                    IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
      &                    IASSI, NFCST, ISTAT)

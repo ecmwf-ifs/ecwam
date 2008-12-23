@@ -1,44 +1,37 @@
-      SUBROUTINE OUTBETA (IJS, IJL, IG, IGL,USNEW,Z0NEW,NSTART,NEND,
-     &                    BETAG, NLONW, NLATW)
+      SUBROUTINE OUTBETA (IJS, IJL, IG, US, Z0,
+     &                    RCHAR, BETA)
 
 ! ----------------------------------------------------------------------
 
-!**** *OUTBETA* - OUTPUT OF CHARNOCK CONSTANT FOR ATMOSPHERIC
-!****             MODEL IN GRIDDED FORMAT.
+!**** *OUTBETA* - DETERMINES THE CHARNOCK PARAMETER FOR THE IFS. 
 
 !     P.JANSSEN      KNMI/ECMWF  JANUARY 1992
 !     J.BIDLOT       ECMWF       FEBRUARY 1996  MESSAGE PASSING
-
+!     J.BIDLOT       ECMWF       AUGUST 2008  REMOVE MESSAGE PASSING 
 
 !*    PURPOSE.
 !     --------
 
-!       OUTPUT OF CHARNOCK CONSTANT FOR ATMOSPHERIC MODEL
-
+!       COMPUTES THE CHARNOCK PARAMETER FOR ATMOSPHERIC MODEL.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, IG, IGL,USNEW,Z0NEW,NSTART,NEND,
-!    &                   BETAG, NLONW, NLATW)*
+!       *CALL* *OUTBETA (IJS, IJL, IG, IGL,US,Z0,
+!                        RCHAR, BETA)*
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *IG*     - BLOCK NUMBER.
-!         *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!         *Z0NEW*     ROUGHNESS LENGTH IN M.
-!         *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!         *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-!         *BETAG*   GRIDDED CHARNOCK FIELD
-!         *NLONW*   FIRST DIMENSION OF BETAG
-!         *NLATW*   SECOND DIMENSION OF BETAG
+!         *US*     - FRICTION VELOCITY IN M/S.
+!         *Z0*     - ROUGHNESS LENGTH IN M.
+!         *RCHAR*  - DEFAULT VALUES FOR CHARNOCK
+!         *BETA*   - CHARNOCK FIELD (BLOCK ARRAY)
 !         
 
 !     EXTERNALS.
 !     ----------
 
-!       *MAKEGRID*  - GENERATES GRIDDED FIELDS.
-!       *MPBCASTSCFLD DISTRIBUTE TO ALL PE's THE CONTRIBUTION OF A BLOCK
-!                     FILE
+!       NONE.
 
 !     METHOD.
 !     -------
@@ -52,59 +45,38 @@
 
 ! ----------------------------------------------------------------------
 
-!*    *PARAMETER*  FOR ARRAY DIMENSIONS.
-
-
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWICE   , ONLY : LICERUN  ,ICEMASK
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+      IMPLICIT NONE
 
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
-      REAL,DIMENSION(NINF:NSUP) :: USNEW,Z0NEW
+      INTEGER :: IJS, IJL, IG
+      INTEGER :: IJ
+      REAL :: RCHAR
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, Z0
+      REAL :: BETA(IJS:IJL)
       REAL ZHOOK_HANDLE
-
-! ----------------------------------------------------------------------
-      DIMENSION BETAG(NLONW,NLATW)
-! ----------------------------------------------------------------------
-
-      LOGICAL :: LSQRT
-      DIMENSION BETA(NIBLO)
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
-!*    1. COMPUTE CHARNOCK 'CONSTANT' BETA.
-!        ---------------------------------
-
-      RCHAR=0.018
+!*    COMPUTE CHARNOCK 'CONSTANT' BETA.
+!     ---------------------------------
 
       DO IJ = IJS,IJL
         IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
           BETA(IJ) = RCHAR
         ELSE
-          BETA(IJ) = G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
+          BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)
         ENDIF
       ENDDO
-
-!*    1.1 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
-!         -------------------------------------------------
-
-      LSQRT=.FALSE.
-
-      IF(LMESSPASS) THEN
-        CALL MPBCASTSCFLD(20,NSTART,NEND,BETA)
-        CALL MAKEGRID (BETA , BETAG  , 1, NEND(NPROC), IG, LSQRT, RCHAR)
-      ELSE
-        CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG, LSQRT, RCHAR)
-      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
 

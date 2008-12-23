@@ -66,6 +66,7 @@
      &        LGUST, LADEN  ,LL1D, LSUBGRID, LGRHDIFS ,LNEWLVTP, LICERUN
       LOGICAL LBIWBK 
       LOGICAL LLSOURCE
+      LOGICAL LNSESTART
 
       CHARACTER*1 CLMTSU(4), CLOTSU(7)
 
@@ -93,6 +94,7 @@
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT, LSUBGRID, LALTPAS,
      &   LLSOURCE,
+     &   LNSESTART,
      &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
 
 ! ----------------------------------------------------------------------

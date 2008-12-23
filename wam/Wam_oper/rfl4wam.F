@@ -36,9 +36,9 @@
 !           *IU00*   - ERROR STANDARD OUTPUT.
 !           *IU05*   - USER INPUT UNIT.
 !           *IU06*   - PRINTER OUTPUT.
-!           *IU07*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid7*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC).
-!           *IU08*   - INPUT  UNIT OF COMMON UBUF.
+!           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC).
 !           *IU90*   - INPUT UNIT OF SEA SURFACE TEMPERATURE
 !           *IUME*   - ALTIMETER DATA INPUT UNIT (FILES: RFL$DATE).
@@ -133,6 +133,8 @@
       INTEGER,ALLOCATABLE :: IOESATID(:), IOERDUM(:)
       REAL,ALLOCATABLE :: OERR(:), OERRDUM(:)
 
+      INTEGER :: NLON,NLAT
+      REAL :: RSOUTW,RNORTW
 ! ----------------------------------------------------------------------
 
 !*    1. INITIAL VALUES SET AND CRACK COMMAND LINE.
@@ -288,6 +290,13 @@
         NNEXT=IRANK+1
       ENDIF
 
+      LWCOU = .FALSE.
+      NLON=1
+      NLAT=1
+
+      CALL WVWAMINIT (LWCOU,IU06,NLON,NLAT,RSOUTW,RNORTW)
+
+
       NPR=NPROC
       LL1D=.FALSE.
       LLIRANK=.FALSE.
@@ -299,11 +308,6 @@
 ! SET IREAD TO THE PROCESSOR WHICH WILL READ THE INPUT FILES.
 ! -----------------------------------------------------------
       IREAD=1
-
-! DEFINITION OF MODEL PARAMETERS.
-! -------------------------------
-
-      LWCOU = .FALSE.
 
 ! SEA SURFACE TEMPERATURE FILE UNIT.
 ! ----------------------------------

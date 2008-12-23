@@ -508,35 +508,39 @@
       ITOP=0
       IF(KAMONOP.GT.KRMONOP) THEN
         IF(KPARFRSTT.NE.IPARAM) THEN
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  THE MODEL NORTHERN BOUNDARY IS OUTSIDE *'
-          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
-          WRITE(IU06,*) '  ',IPARAM 
-          WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
-          WRITE(IU06,*) '*  AREA IN BETWEEN.'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
-          KPARFRSTT=IPARAM
+          IF(ITEST.GT.0) THEN
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  THE MODEL NORTHERN BOUNDARY IS OUTSIDE *'
+            WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
+            WRITE(IU06,*) '  ',IPARAM 
+            WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
+            WRITE(IU06,*) '*  AREA IN BETWEEN.'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
+            KPARFRSTT=IPARAM
+          ENDIF
         ENDIF
         ITOP=INT((AMONOP-RMONOP)/DELLA)+2
       ENDIF
       IBOT=0
       IF (KAMOSOP.LT.KRMOSOP) THEN
         IF(KPARFRSTB.NE.IPARAM) THEN
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  THE MODEL SOUTHERN BOUNDARY IS OUTSIDE *'
-          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
-          WRITE(IU06,*) '  ',IPARAM 
-          WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
-          WRITE(IU06,*) '*  AREA IN BETWEEN.'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
-          WRITE(IU06,*) '*                                         *'
+          IF(ITEST.GT.0) THEN
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  WARNING SUB. GRB2WGRD                  *'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  THE MODEL SOUTHERN BOUNDARY IS OUTSIDE *'
+            WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER         *'
+            WRITE(IU06,*) '  ',IPARAM 
+            WRITE(IU06,*) '*  MISSING DATA WILL BE ASSUMED FOR THE   *'
+            WRITE(IU06,*) '*  AREA IN BETWEEN.'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
+            WRITE(IU06,*) '*                                         *'
           KPARFRSTB=IPARAM
+          ENDIF
         ENDIF
         IBOT=INT((RMOSOP-AMOSOP)/DELLA)+2
       ENDIF
@@ -650,28 +654,8 @@
 !         FOR WAVE DATA ALWAYS USE THE CLOSEST GRID POINT IF
 !         CORNER DATA ARE MISSING.
           LLNEAREST=.TRUE.
-        ELSE
-!         FOR NON WAVE DATA USE THE CLOSEST GRID POINT IF
-!         CORNER DATA ARE FOUND TO BE MISSING.
-          NDECODED=ABS(KSEC4(1))
-          L=1
-          IF(L.LE.NDECODED)THEN
-            DO WHILE(PSEC4(L).NE.PMISS)
-              L=L+1
-              IF(L.GT.NDECODED)EXIT
-            ENDDO
-          ENDIF
-          IF(L.GT.NDECODED) THEN
-            LLNEAREST=.FALSE.
-          ELSE
-            LLNEAREST=.TRUE.
-          ENDIF
-        ENDIF
-
-
-        IF(.NOT. LLNONWAVE) THEN 
-!         FOR WAVE DATA ALWAYS USE THE CLOSEST GRID POINT IF
-!         CORNER DATA ARE MISSING.
+        ELSE IF (ITOP.NE.0 .OR. IBOT.NE.0) THEN
+!         MISSING DATA ARE USED TO PAD THE INPUT DATA
           LLNEAREST=.TRUE.
         ELSE
 !         FOR NON WAVE DATA USE THE CLOSEST GRID POINT IF
@@ -690,7 +674,6 @@
             LLNEAREST=.TRUE.
           ENDIF
         ENDIF
-
 
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' '
@@ -736,12 +719,12 @@
           ENDDO
         ENDDO
 
-        L = 0                                                          
-        DO KK=1,NR                                                
+        L = 0
+        DO KK=1,NR
           JSN=NR-KK+1
           DO II=1,RLONRGG(JSN)
-            L = L+1                                                     
-            WORK(II,KK) = PSEC4(L)                                       
+            L = L+1
+            WORK(II,KK) = PSEC4(L)
           ENDDO
         ENDDO
         DEALLOCATE(PSEC4)
@@ -761,12 +744,12 @@
 
           IF(.NOT.LLOCEAN) THEN
             XK = RMONOP - (AMOSOP + (JSN-1)*XDELLA)
-            XK = XK/DELLA+1.
+            XK = (XK/DELLA)+0.5*(1.+SIGN(1.,XK))
             KK = MAX(KKMIN,INT(XK))
             KSN= NR-KK+1
             KK1=MIN(KK+1,KKMAX)
             KSN1=NR-KK1+1
-            DK1=XK-REAL(KK)
+            DK1=ABS(XK-REAL(KK))
             DK2=1.-DK1
           ELSE
             KK=1

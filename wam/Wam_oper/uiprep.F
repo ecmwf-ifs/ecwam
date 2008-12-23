@@ -1,4 +1,4 @@
-      SUBROUTINE UIPREP (IU05, IFORM, ML, KL, LLGRID)
+      SUBROUTINE UIPREP (IFORM, ML, KL, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -14,8 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IU05, IFORM, ML, KL, LLGRID)*
-!          *IU05*    - LOGICAL INPUT UNIT.
+!       *CALL* *UIPREP (IFORM, ML, KL, LLGRID)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
@@ -60,7 +59,7 @@
 
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
-     &            XDELLA   ,XDELLO   ,LLOBSTRCT
+     &            XDELLA   ,XDELLO   ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
 
@@ -77,7 +76,7 @@
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC,
      &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,
      &                  NDEPTH   ,DEPTHA   ,DEPTHD,
-     &                  IFRE1
+     &                  IFRE1, LAQUA
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
@@ -113,6 +112,7 @@
       DEPTHA = 1.
       DEPTHD = 1.1
       IFRE1 = 1
+      LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
@@ -124,6 +124,9 @@
 
 !*    1. READ NAMELIST NALINE.
 !        ---------------------
+
+
+      IU05 =  I_GET_UNIT (IU06, 'procin', 'r', 'f', 0)
 
       READ (IU05, NALINE)
 
@@ -155,7 +158,6 @@
         READ (IU,'(I4)') NY
       ENDIF
 
-
 ! ----------------------------------------------------------------------
 
 
@@ -178,6 +180,7 @@
       NFRE = ML
       NANG = KL
 
+
 ! ----------------------------------------------------------------------
 
 !*    2.2 OUTPUT GRID DEFINITIONS.
@@ -188,6 +191,15 @@
       ELSE
         WRITE(IU06,'("   USE A REGULAR LON LAT GRID")')
       ENDIF      
+
+      IF(LAQUA) THEN
+        LLOBSTRCT=.FALSE.
+        WRITE(IU06,*) ' '
+        WRITE(IU06,*) '   AN AQUA PLANET WAS REQUESTED '
+        WRITE(IU06,*) '   THE BATHYMETRY WILL BE DEEP EVERYWHERE !!!'
+        WRITE(IU06,*) ' '
+      ENDIF
+
       IF(LLOBSTRCT) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '   THE NEW FORM OF BATHYMETRY INPUT IS USED IN'
@@ -218,6 +230,16 @@
         CLOSE(IU)
 
       ELSE
+!       RESET FOR AQUA PLANET IF SELECTED
+        IF(LAQUA) THEN
+          NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
+          WRITE (IU06,*) ' !! RESETING TO AQUA PLANET CONFIGURATION !!'
+          AMONOP=90.
+          AMOSOP=-90.
+          NY=INT((AMONOP-AMOSOP)/XDELLA)+1
+          IRGG=1
+        ENDIF
+
         IPER = 0
         IF (ABS(AMOEAP-AMOWEP+1.5*XDELLO) .GE. 360. ) IPER = 1
         NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1

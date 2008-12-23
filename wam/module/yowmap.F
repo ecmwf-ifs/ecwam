@@ -27,6 +27,7 @@
       REAL, ALLOCATABLE :: ZDELLO(:) 
       LOGICAL :: LLOBSTRCT
       LOGICAL, ALLOCATABLE :: LLBOUND(:)
+      LOGICAL :: LAQUA
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -60,6 +61,8 @@
 !                            OBSTRUCTION COEFFICIENT IN THE ADVECTION.
 !      *LLBOUND*   LOGICAL   TRUE IS THE GRID POINT IS ON THE BOUNDARY OF
 !                            THE DOMAIN.
+!      *LAQUA*     LOGICAL   TRUE IF MODEL IN AQUA PLANET CONFIGURATION
+!                            (i.e. NO LAND AND DEEP WATER).
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMAP

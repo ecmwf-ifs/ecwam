@@ -84,7 +84,8 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
-     &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE
+     &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE ,
+     &            LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -139,6 +140,7 @@
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
      &   LGUST, LADEN, LALTGRDOUT, LSUBGRID, LALTPAS,
      &   LLSOURCE,
+     &   LNSESTART,
      &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
 
       CHARACTER* 14 CLOUT
@@ -346,6 +348,8 @@
 !               SEA ICE MASK (TRUE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
 !                IS COMPUTED.
+!     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
+!                 RESET TO NOISE LEVEL.
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -523,6 +527,8 @@
       LICERUN = .TRUE.
 
       LLSOURCE = .TRUE.
+
+      LNSESTART = .FALSE.
 
 ! ----------------------------------------------------------------------
 
@@ -861,11 +867,11 @@
 
       INQUIRE(FILE=CWI,EXIST=LRESTARTED)
       IF (LRESTARTED) THEN
-        OPEN  (IU04,FILE=CWI,STATUS='OLD', FORM='FORMATTED')
+        IU04 =  I_GET_UNIT (IU06, CWI(1:ICPLEN+8) , 'r', 'f', 0)
         CALL READSTA(IU04, CBEGDT, CENDDT, IANALPD, IFOREPD, IDELWIN,
      &               CRSTDT, CLSPDT, CBPLTDT, CEPLTDT, IASSIM, NFCST,
      &               ISTAT)
-        CLOSE (IU04,STATUS='KEEP')
+        CLOSE (IU04)
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+    WARNING MODEL RESTART FROM RC FILE     +'
@@ -1151,6 +1157,9 @@
         ELSE
           WRITE(IU06,*) ' MODEL STARTS FROM FORECAST FIELDS'
         ENDIF
+      ENDIF
+      IF(LNSESTART) THEN
+        WRITE(IU06,*) ' INITIAL SPECTRA ARE RESET TO NOISE.' 
       ENDIF
       IF (IASSI.EQ.1) THEN
         WRITE(IU06,*) ' '

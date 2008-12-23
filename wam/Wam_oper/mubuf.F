@@ -66,7 +66,7 @@
       IMPLICIT NONE
 
       INTEGER :: IU01
-      INTEGER :: NFREMAX, IX, IFRE
+      INTEGER :: NFREMAX, IX
       INTEGER :: IG,IU08,IU18,IFORM,IJ,IJP,I,K,IP,IH,IS,ML,M
       INTEGER :: IMIN,IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER :: IC, ICP
@@ -80,7 +80,6 @@
       CHARACTER*4 :: CX
       CHARACTER*10 :: FORMAT
       LOGICAL :: LLABORT
-      LOGICAL :: LLKEEP
 
 ! ----------------------------------------------------------------------
 
@@ -1039,13 +1038,14 @@
 !     DETERMINE THE REAL REDUCTION FACTORS TO BE USED IN THE PROPAGATION
 
         READ (IU01,'(I4)') NFREMAX
-!!!     NFREMAX can only be 36 
 
-        IF(NFREMAX.NE.36 ) THEN
+        IF(NFREMAX.NE.ML ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. MUBUF         *'
-          WRITE (IU06,*) ' * NFREMAX MUST BE = 36                    *'
+          WRITE (IU06,*) ' * NFREMAX MUST BE = ML                    *'
+          WRITE (IU06,*) ' * NFREMAX = ',NFREMAX
+          WRITE (IU06,*) ' * ML      = ',ML 
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
           WRITE (IU06,*) ' *                                         *'
@@ -1053,51 +1053,18 @@
           CALL ABORT1
         ENDIF
 
-        IF(ML.NE.36 .AND. ML.NE.30 .AND. ML.NE.25) THEN
-          WRITE (IU06,*) ' *******************************************'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. MUBUF         *'
-          WRITE (IU06,*) ' * NUMBER OF FREQUENCIES MUST BE 36,30,25  *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *******************************************'
-          CALL ABORT1
-        ENDIF
-
-        DO IFRE=1,NFREMAX
-          IF(ML.EQ.NFREMAX) THEN
-            LLKEEP=.TRUE.
-            M=IFRE
-          ELSE IF (ML.EQ.25) THEN
-            IF(IFRE.LE.2 .OR. IFRE.GT.27) THEN
-              LLKEEP=.FALSE.
-            ELSE
-              LLKEEP=.TRUE.
-              M=IFRE-2
-            ENDIF
-          ELSE IF (ML.EQ.30) THEN
-            IF(IFRE.GT.30) THEN
-              LLKEEP=.FALSE.
-            ELSE
-              LLKEEP=.TRUE.
-              M=IFRE
-            ENDIF
-          ENDIF
-
+        DO M=1,NFREMAX
           DO IS=1,2
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            IF(LLKEEP) THEN
-              DO IP = 1,IJLT(IG)
-                I = IXLG(IP,IG)
-                K = KXLT(IP,IG)
-                KOBSLAT(IP,M,IS)=IDUM(I,K)
-              ENDDO
-            ENDIF
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KOBSLAT(IP,M,IS)=IDUM(I,K)
+            ENDDO
           ENDDO
 
           DO IS=1,2
@@ -1106,13 +1073,11 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            IF(LLKEEP) THEN
-              DO IP = 1,IJLT(IG)
-                I = IXLG(IP,IG)
-                K = KXLT(IP,IG)
-                KOBSLON(IP,M,IS)=IDUM(I,K)
-              ENDDO
-            ENDIF
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KOBSLON(IP,M,IS)=IDUM(I,K)
+            ENDDO
           ENDDO
 
           DO IS=1,2
@@ -1121,13 +1086,11 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            IF(LLKEEP) THEN
-              DO IP = 1,IJLT(IG)
-                I = IXLG(IP,IG)
-                K = KXLT(IP,IG)
-                KOBSRLAT(IP,M,IS)=IDUM(I,K)
-              ENDDO
-            ENDIF
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KOBSRLAT(IP,M,IS)=IDUM(I,K)
+            ENDDO
           ENDDO
 
           DO IS=1,2
@@ -1136,13 +1099,11 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            IF(LLKEEP) THEN
-              DO IP = 1,IJLT(IG)
-                I = IXLG(IP,IG)
-                K = KXLT(IP,IG)
-                KOBSRLON(IP,M,IS)=IDUM(I,K)
-              ENDDO
-            ENDIF
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KOBSRLON(IP,M,IS)=IDUM(I,K)
+            ENDDO
           ENDDO
 
           DO IS=1,4
@@ -1151,13 +1112,11 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            IF(LLKEEP) THEN
-              DO IP = 1,IJLT(IG)
-                I = IXLG(IP,IG)
-                K = KXLT(IP,IG)
-                KOBSCOR(IP,M,IS)=IDUM(I,K)
-              ENDDO
-            ENDIF
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KOBSCOR(IP,M,IS)=IDUM(I,K)
+            ENDDO
           ENDDO
 
         ENDDO ! END LOOP ON NFREMAX

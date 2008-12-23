@@ -31,9 +31,9 @@
 !          ---- INPUT/OUTPUT UNITS ---
 
 !           *IU06*   - PRINTER OUTPUT.
-!           *IU07*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC). fort.7 must be there !
-!           *IU08*   - INPUT  UNIT OF COMMON UBUF.
+!           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC). fort.8 must be there !
 !           *IUOUT*  - ASCII TEXT FILE grid_decomposition_xxxx
 !           *IUDPT*  - ASCII TEXT FILE grid_point_depth_xxxx
@@ -62,6 +62,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
@@ -183,6 +184,12 @@
       ELSE
         NNEXT=IRANK+1
       ENDIF
+
+      LWCOU = .FALSE.
+      NLON=1
+      NLAT=1
+
+      CALL WVWAMINIT (LWCOU,IU06,NLON,NLAT,RSOUTW,RNORTW)
 
       NPR=NPROC
 

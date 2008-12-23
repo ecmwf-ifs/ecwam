@@ -50,7 +50,7 @@
 
 !     OUTPUT FILES:
 
-!     wamtopo_xxxx
+!     wam_topo_xxxx
 !     where xxxx=int(xdella*100) if grid_description is not present
 !     else  xxxx=the gaussian spectral truncation ISPECTRUNC
 
@@ -74,6 +74,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT,IOBSRLON
       INTEGER :: LEVEL(NREF),NDEPTH(NREF)
+      INTEGER :: NFRE, IFRE1
 
       REAL, PARAMETER :: OLDPI = 3.1415927
       REAL, ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
@@ -81,6 +82,7 @@
       REAL, ALLOCATABLE, DIMENSION(:) :: FR
       REAL ::  ALON(ILON),ALAT(ILAT)
       REAL :: XINF(NREF),XSUP(NREF),YINF(NREF),YSUP(NREF)
+      REAL :: FR1
 
       CHARACTER*2 :: CFR
       CHARACTER*4 :: CWAMRESOL
@@ -99,16 +101,7 @@
       OLDRAD=OLDPI/180.
       G=9.806
 
-!     FIRST OR THIRD FREQUENCY IN WAM
-      FR1= 4.177248E-02
       FRATIO=1.1
-!!!   the obstructions will be produced for 36 frequencies
-!!!   if 30 or 25 frequencies are used then the irrelevant
-!!!   frequencies will be skipped (see topoar). Any other
-!!!   number will not work.
-
-      NFRE=36
-
 
 !     READ INPUT SELECTION
 !     --------------------
@@ -121,6 +114,10 @@
       READ(5,*) IPER
       READ(5,*) CLINE
       READ(5,*) IRGG
+      READ(5,*) CLINE
+      READ(5,*) FR1 
+      READ(5,*) CLINE
+      READ(5,*) NFRE, IFRE1
       READ(5,*) CLINE
       READ(5,*) LLPRINT
       READ(5,*) CLINE
@@ -194,7 +191,7 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
-              NLONRGG(K) = NINT(NX*COSPH(K))
+              NLONRGG(K) = MAX(NINT(NX*COSPH(K)),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
@@ -211,22 +208,14 @@
       ENDDO
 
       ALLOCATE(FR(NFRE))
-      IF(NFRE.EQ.30 .OR. NFRE.EQ.36) THEN
-        FR(3)=FR1
-        FR(2)=FR(3)/FRATIO
-        FR(1)=FR(2)/FRATIO
-        DO M=4,NFRE
-          FR(M) = FRATIO*FR(M-1)
-        ENDDO
-      ELSEIF(NFRE.EQ.25) THEN
-        FR(1)=FR1
-        DO M=2,NFRE
-          FR(M) = FRATIO*FR(M-1)
-        ENDDO
-      ELSE
-        WRITE(*,*) 'UNKNOWN NUMBER OF FREQUENCIES !!!!'
-        CALL ABORT
-      ENDIF
+
+      FR(IFRE1) = FR1
+      DO M=IFRE1-1,1,-1
+        FR(M) = (FR(M+1)/FRATIO)
+      ENDDO
+      DO M=IFRE1+1,NFRE
+        FR(M) = FRATIO*FR(M-1)
+      ENDDO
 
 !     COMPUTE THE THRESHOLD AT WHICH THE WAVES
 !     ARE OBSTRUCTED BY THE BOTTOM.
@@ -268,7 +257,9 @@
       ILONL = NINT((ALONL + 180.)*30) + 1
       ILONR = NINT((ALONR + 180.)*30) + 1
       ILATB = NINT((90.- ALATB)*30) + 1
+      ILATB = MAX(1,MIN(ILATB,ILAT))
       ILATT = NINT((90.- ALATT)*30) + 1
+      ILATT = MAX(1,MIN(ILATT,ILAT))
       IF(ILONR.EQ.ILON+1)ILONR=ILON
       IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -422,7 +413,7 @@
              IF(JJ.GE.1 .AND. JJ.LE.ILAT) THEN
                DO II=I-NIM,I+NIP
                  IK=II
-                 IF(II.LT.1) IK=ILON-II
+                 IF(II.LT.1) IK=ILON+II
                  IF(II.GT.ILON) IK=II-ILON
                  IF(IDEPTH(IK,JJ).LE.0) THEN
                    NSEA=NSEA+1
@@ -449,7 +440,7 @@
              IF(JJ.GE.1 .AND. JJ.LE.ILAT) THEN
                DO II=I-NLANDCENTREPM,I+NLANDCENTREPM
                  IK=II
-                 IF(II.LT.1) IK=ILON-II
+                 IF(II.LT.1) IK=ILON+II
                  IF(II.GT.ILON) IK=II-ILON
                  IF(IDEPTH(IK,JJ).GT.0) THEN
                    NLANDCENTRE=NLANDCENTRE+1
@@ -569,7 +560,7 @@
       ELSE
         WRITE(CWAMRESOL,'(I4.4)') INT(100*XDELLA)
       ENDIF
-      FILENAME='wamtopo_'//CWAMRESOL
+      FILENAME='wam_topo_'//CWAMRESOL
 
       OPEN(1,FILE=FILENAME,FORM='FORMATTED')
       WRITE(1,'(6F10.5)')XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
@@ -633,7 +624,9 @@
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -761,7 +754,9 @@
             XLATT=XLAT(K)+0.5*XDELLA
             XLATB=XLAT(K)-0.5*XDELLA
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -906,7 +901,9 @@
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -1032,7 +1029,9 @@
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -1179,7 +1178,9 @@
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -1305,7 +1306,9 @@
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -1465,7 +1468,9 @@
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
@@ -1596,7 +1601,9 @@
               XLATB=XLAT(K)-XDELLA
             ENDIF
             ILATT = NINT((90.- XLATT)*30) + 1
+            ILATT = MAX(1,MIN(ILATT,ILAT))
             ILATB = NINT((90.- XLATB)*30) + 1
+            ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)

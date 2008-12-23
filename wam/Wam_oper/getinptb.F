@@ -65,9 +65,11 @@
 !*    1. PRINT WAMINFO FILE AND THE GRID INFORMATION
 !        -------------------------------------------
 
-      IU04 = 4 
       IU06 = 6
-      IU07 = 7
+
+      IU04 =  I_GET_UNIT (IU06, 'waminfo', 's', 'f', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
+
       IU22 = 22
       CARD = ' '
       CALL READSTA (IU04, CDAT1, CDAT2, IANALPD, IFOREPD, ISHIFT,

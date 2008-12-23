@@ -49,7 +49,7 @@
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
       USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWGRIBHD, ONLY : NKSEK1 
-      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
+      USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,NWAM_BLKS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
@@ -69,6 +69,7 @@
       PARAMETER (NFIELDS=1, NGPTOTG=1, NCA=1, NRA=1)
       INTEGER ISEC1(NKSEK1), ISEC2(22+NRA)
       REAL FIELDS(1)
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
       INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------
 
@@ -82,13 +83,26 @@
       ILEN=1
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
-      RU10OLD = 0.
-      RTHWOLD = 0.
-      RUSOLD = 0.
-      RTAUW = 0.
-      RZ0OLD = 0.
-      RADOLD = ROAIR
-      RZIDLOLD = 0.
+
+      DO IG=1,NBLO
+        NPROMA=NIBLO/NWAM_BLKS+1
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=1,NIBLO,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,NIBLO)
+          DO IJ=KIJS,KIJL
+            RU10OLD(IJ,IG)=0.
+            RTHWOLD(IJ,IG)=0.
+            RUSOLD(IJ,IG)=0.
+            RTAUW(IJ,IG)=0.
+            RZ0OLD(IJ,IG)=0.
+            RADOLD(IJ,IG)=ROAIR
+            RZIDLOLD(IJ,IG)=0.
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+      ENDDO
+
       FCRANGE = 0.
       CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD, KICEMASK,
      &             1, NIBLO, CDTPRO,

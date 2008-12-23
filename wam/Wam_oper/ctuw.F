@@ -86,7 +86,7 @@
       REAL :: DP(MIJS:MIJL,2)
       REAL, ALLOCATABLE :: SIGSI(:,:) 
 
-      LOGICAL:: LCFLFAIL
+      LOGICAL, DIMENSION(MIJS:MIJL) :: LCFLFAIL
       LOGICAL:: LLNOTOK
       LOGICAL :: LLNOTNINF
 
@@ -95,7 +95,9 @@
       DELPRO = REAL(IDELPRO)   
       CMTODEG = 360./CIRC
 
-      LCFLFAIL=.FALSE.
+      DO IJ=MIJS,MIJL
+        LCFLFAIL(IJ)=.FALSE.
+      ENDDO
 
       IF (ISHALLO.NE.1) THEN
         DO M=1,NFRE
@@ -268,7 +270,7 @@
                     WRITE (IU06,*) '* TIME STEP SHOULD REDUCED TO',DTNEW
                     WRITE (IU06,*) '*                                 *'
                     WRITE (IU06,*) '***********************************'
-                    LCFLFAIL=.TRUE.
+                    LCFLFAIL(IJ)=.TRUE.
                   ENDIF
                   IF(ADYP(IC).GT.XDELLA)THEN
                     WRITE (IU06,*) '***********************************'
@@ -281,7 +283,7 @@
                     WRITE (IU06,*) '* TIME STEP SHOULD REDUCED TO',DTNEW
                     WRITE (IU06,*) '*                                 *'
                     WRITE (IU06,*) '***********************************'
-                    LCFLFAIL=.TRUE.
+                    LCFLFAIL(IJ)=.TRUE.
                   ENDIF
                 ENDDO
 
@@ -431,12 +433,14 @@
 !       ------------------------
         SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
+
         DO IJ = MIJS,MIJL
           JH=KXLT(IJ,IG)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
         ENDDO
+
 !*      COMPUTE DEPTH REFRACTION.
 !       -------------------------
         IF (IREFRA.EQ.1 .AND. ISHALLO.NE.1) THEN
@@ -499,7 +503,7 @@
      &                            WLATN(IJ,K,M,IC)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
-                LCFLFAIL=.TRUE.
+                LCFLFAIL(IJ)=.TRUE.
               ENDIF
             ENDDO
 
@@ -512,7 +516,7 @@
      &                          WLONN(IJ,K,M)
               WRITE (IU06,*) '*                                 *'
               WRITE (IU06,*) '***********************************'
-              LCFLFAIL=.TRUE.
+              LCFLFAIL(IJ)=.TRUE.
             ENDIF
 
             DO IC=-1,1
@@ -526,7 +530,7 @@
      &                            WKPMN(IJ,K,M,IC)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
-                LCFLFAIL=.TRUE.
+                LCFLFAIL(IJ)=.TRUE.
               ENDIF
             ENDDO
 
@@ -538,17 +542,19 @@
               WRITE (IU06,*) '* CTUW:                           *'
               WRITE (IU06,*) '* CFL VIOLATED                    *'
               WRITE (IU06,*) '* SUMW SHOULD BE < 1 AND > 0, BUT*'
-              WRITE (IU06,*) '* SUMWN= ',IJ,SUMWN(IJ,K,M)
+              WRITE (IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
               WRITE (IU06,*) '*                                 *'
               WRITE (IU06,*) '***********************************'
-              LCFLFAIL=.TRUE.
+              LCFLFAIL(IJ)=.TRUE.
             ENDIF
 
           ENDDO  ! END LOOP OVER GRID POINTS
         ENDDO  ! END LOOP OVER FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 
-      IF(LCFLFAIL) RETURN
+      DO IJ=MIJS,MIJL
+        IF(LCFLFAIL(IJ)) RETURN
+      ENDDO
 
 
 !     CHECK THAT THE KLATN BELONG TO THE PRE-DEFINED MAXIMUM HALO

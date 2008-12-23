@@ -362,7 +362,7 @@
       LOGICAL GFLAGBAK(JPPFLAG)
       LOGICAL :: LSV, LRST, LOUT,L1STCALL,LLINTPOL,L4VOUT 
       LOGICAL :: LUPDTWGHT
-      LOGICAL :: LCFLFAIL
+      LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
@@ -781,10 +781,10 @@
 !           IF CTU SCHEME IS USED, COMPUTE THE WEIGHTS
 !!!! ???? once we have currents, we might need to update more often !!!!
             IF(IPROPAGS.EQ.2. AND. LUPDTWGHT) THEN
-              LCFLFAIL=.FALSE.
+              ALLOCATE(LCFLFAIL(IJS(IG):IJL(IG)))
 
-                WRITE(IU06,*) '   SUB. WAMODEL: BEFORE CALLING CTUW'
-                CALL FLUSH (IU06)
+              WRITE(IU06,*) '   SUB. WAMODEL: BEFORE CALLING CTUW'
+              CALL FLUSH (IU06)
 
               IF(.NOT. ALLOCATED(KLATN))
      &           ALLOCATE(KLATN(IJS(IG):IJL(IG),NANG,-1:1))
@@ -804,7 +804,7 @@
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                CALL CTUW(KIJS,KIJL,IG,LCFLFAIL)
+                CALL CTUW(KIJS,KIJL,IG,LCFLFAIL(JKGLO))
               ENDDO
 !$OMP         END PARALLEL DO
               CALL GSTATS(1430,1)
@@ -813,9 +813,19 @@
                 CALL FLUSH (IU06)
               ENDIF
 
-              IF(LCFLFAIL) CALL ABORT1
+              DO IJ=IJS(IG),IJL(IG)
+                IF(LCFLFAIL(IJ)) THEN
+                  WRITE(*,*) '!!! ********************************* !!'
+                  WRITE(*,*) '!!! WAVE MODEL HAS ABORTED !!!'
+                  WRITE(*,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
+                  WRITE(*,*) '!!! ON PE ',IRANK
+                  WRITE(*,*) '!!! ********************************* !!'
+                  CALL ABORT1
+                ENDIF
+              ENDDO
 
               LUPDTWGHT=.FALSE.
+              DEALLOCATE(LCFLFAIL)
             ENDIF
 
             IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
@@ -1420,8 +1430,8 @@
 
               CEPLTDT = CDATEF
 
-              OPEN (IU04,FILE=CWI(1:ICPLEN+8),
-     &         STATUS='UNKNOWN',FORM='FORMATTED')
+              IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
+
               CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
      &                      IASSI, NFCST, ISTAT)

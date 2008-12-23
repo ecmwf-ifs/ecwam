@@ -52,7 +52,6 @@
 !                      COARSE GRID IF THIS A FINE GRID RUN.
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
 !                      (OUTPUT OF BOUINT).
-!           *IU04*   - INPUT AND OUTPUT UNIT FOR WAMINFO FILE
 !           *IU05*   - USER INPUT UNIT.
 !           *IU06*   - PRINTER OUTPUT.
 !           *IU07*   - INPUT  UNIT OF PRECOMPUTED GRID PARAMETERS.
@@ -235,7 +234,8 @@
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
      &             FRM5    ,COFRM4   ,COEF4    ,FRATIO 
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
+     &             COSPH
       USE YOWICE   , ONLY : ICEMASK
       USE YOWINDN  , ONLY : ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
@@ -268,7 +268,7 @@
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
      &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
      &            IU23     ,IU25     ,IU26     ,IU27     ,IU28     ,
-     &            IUVELO   ,IUSCR    ,IU04     ,IU30     ,IU31     ,
+     &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,
      &            IU38
       USE YOWWAMI  , ONLY : CBPLTDT
@@ -306,21 +306,11 @@
       IU02 = 2
 !NEST
 
-! WAMINFO FILE UNIT
-! -----------------
-      IF(LWCOU) THEN
-        IU04 = 27
-      ELSE
-        IU04 = 4
-      ENDIF
 
-! STANDARD INPUT UNIT
+! STANDARD INPUT UNIT (now a set of namelists)
 ! --------------------
-      IF(LWCOU) THEN
-        IU05 = 26
-      ELSE
-        IU05 = 3
-      ENDIF
+
+      IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
 
 ! STANDARD OUTPUT UNIT
 ! --------------------
@@ -342,7 +332,7 @@
 ! -------------------
 
 ! NOTE IF MESSAGE PASSING
-! NOTE IU12 WILL ONLY BE CONNECTED TO UNIT 12 FOR THE INPUT
+! NOTE IU12 WILL ONLY BE CONNECTED TO UNIT 12 FOR PURE BINARY INPUT
 ! NOTE OTHERWISE IT WILL CONNECTED TO THE FILENAME BLS WITH
 ! NOTE AN EXTENSION FUNCTION OF THE PE.
 
@@ -407,6 +397,7 @@
 !         ------------------------
 
       CALL USERIN (IU05, IBOUNC, IBOUNF, IFORCA)
+      CLOSE(IU05)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '    SUB. INITMDL: USERIN DONE'
         CALL FLUSH(IU06)
@@ -797,8 +788,7 @@
       DLH = CIRC 
 !     FIND THE SMALLEST DLH
       DO KX=KMSOP,KMNOP
-        XLA = AMOSOP+REAL(KX-1)*XDELLA
-        DLH_KX = DELLAM(KX)*COS(XLA*RAD)
+        DLH_KX = DELLAM(KX)*COSPH(KX)
         DLH = MIN(DLH_KX,DLH)
       ENDDO
 

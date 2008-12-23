@@ -259,8 +259,7 @@
 
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITIALINT *'
-         WRITE(IU06,*) '*  ============================== *'
+         WRITE(IU06,*) '*  WARNING IN SUB. INITIALINT     *'
          WRITE(IU06,*) '*                                 *'
          WRITE(IU06,*) '*  THE MODEL DOMAIN IS OUTSIDE    *' 
          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR FIELDS    *'
@@ -271,9 +270,10 @@
          WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'RMOEAP : ',RMOEAP
          WRITE(IU06,*) '*  DELLO: ', DELLO
          WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
+         WRITE(IU06,*) '*  MODEL GRID POINTS OUTSIDE WILL *' 
+         WRITE(IU06,*) '*  THE VALUES AT THE BOUNDARY OF  *'
+         WRITE(IU06,*) '*  THE INPUT DOMAIN.              *'
          WRITE(IU06,*) '***********************************'
-         CALL ABORT1
       ENDIF
 
       LLINTERPOL=.TRUE.
@@ -320,7 +320,9 @@
 
           JSN=NGY-K+1
 
-          XK = RMONOP - (AMOSOP + (JSN-1)*XDELLA)
+          XLAT = AMOSOP + (JSN-1)*XDELLA
+          XLAT=MIN(MAX(XLAT,RMOSOP),RMONOP)
+          XK = RMONOP - XLAT 
           XK = XK/DELLA+1.
           KK(K) = MAX(1,INT(XK))
           KSN = NR-KK(K)+1

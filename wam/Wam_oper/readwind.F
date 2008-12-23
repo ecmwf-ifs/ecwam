@@ -292,13 +292,17 @@
               ICODE = 3
             ELSEIF (IPARAM.EQ.180) THEN
               ICODE = 2
+            ELSEIF (.NOT.LICERUN .AND.
+     &              (IPARAM.EQ.31.OR.IPARAM.EQ.139) ) THEN
+!             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
+              GOTO 2001
             ELSE
               WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
               WRITE(IU06,*) ' +                                       +'
               WRITE(IU06,*) ' +    WARNING ERROR IN SUB. READWIND     +'
               WRITE(IU06,*) ' +    ==============================     +'
               WRITE(IU06,*) ' + SUSPICIOUS U_WIND FIELD TYPE IN MARS  +'
-              WRITE(IU06,*) ' + TYPE IS = ', IPARAM
+              WRITE(IU06,*) ' + PARAMETER IS = ', IPARAM
               WRITE(IU06,*) ' +                                       +'
               WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
               CALL ABORT1
@@ -321,13 +325,17 @@
               ICODE = 3
             ELSEIF (IPARAM.EQ.181) THEN
               ICODE = 2
+            ELSEIF (.NOT.LICERUN .AND.
+     &              (IPARAM.EQ.31.OR.IPARAM.EQ.139) ) THEN
+!             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
+              GOTO 2001
             ELSE
               WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
               WRITE(IU06,*) ' +                                       +'
               WRITE(IU06,*) ' +    WARNING ERROR IN SUB. READWIND     +'
               WRITE(IU06,*) ' +    ==============================     +'
               WRITE(IU06,*) ' + SUSPICIOUS V_WIND FIELD TYPE IN MARS  +'
-              WRITE(IU06,*) ' + TYPE IS = ', IPARAM
+              WRITE(IU06,*) ' + PARAMETER IS = ', IPARAM
               WRITE(IU06,*) ' +                                       +'
               WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
               CALL ABORT1

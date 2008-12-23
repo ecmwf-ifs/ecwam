@@ -136,7 +136,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
      &            CPATH
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,IU04     ,
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
@@ -264,10 +264,11 @@
 !*    1. DEFINE UNIT NAMES.
 !        ------------------
 
-      IU04 = 4
       IU05 = 5
       IU06 = 6
-      IU07 = 7
+
+      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
+
       IU12 = 12
       IU14 = 14
       IU15 = 15
