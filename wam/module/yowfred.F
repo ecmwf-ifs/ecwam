@@ -28,7 +28,7 @@
       REAL, PARAMETER :: COEF4 = 3.0E-07
 
       REAL, PARAMETER ::  FRIC = 28.
-
+      REAL  :: FLOGSPRDM1
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
@@ -57,5 +57,6 @@
 !                            ANGULAR FREQUENCY OF THE SPECTRAL PEAK
 !                            TO THE FRICTION VELOCITY:
 !                            OMEGA_PM=G/(FRIC*USTAR) 
+!      *FLOGSPRDM1* REAL     FLOGSPRDM1=1./LOG10(FRATIO)
 ! ----------------------------------------------------------------------
       END MODULE YOWFRED

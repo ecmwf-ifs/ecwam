@@ -18,7 +18,7 @@
       REAL DELTAUW 
       REAL DELU 
       REAL, PARAMETER :: USTARM = 5.
-      REAL, ALLOCATABLE :: TAUHFT(:,:) 
+      REAL, ALLOCATABLE :: TAUHFT(:,:,:) 
       REAL DELUST 
       REAL DELALP 
       REAL, ALLOCATABLE :: FAC0(:,:,:,:) 

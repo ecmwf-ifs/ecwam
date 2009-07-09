@@ -128,6 +128,11 @@
 !*    2. ENOUGH DATA?                                                   
 !        ------------                                                   
 
+      IF (NTOT.LE.0) THEN
+        XMAX=0.
+        YMAX=0.
+      ENDIF
+
       IF (NTOT.LT.1) RETURN                                             
       XPT  = REAL(NTOT)                                                 
       XPTD = 1./XPT                                                     
@@ -179,7 +184,7 @@
      &     - 2.*(1.-SLOPE2)*RINTR2*XMEAN)                       
           RMSES2 = SQRT(RMSES2)                                       
         ENDIF                                                          
-      ENDIF                                                             
+      ENDIF
                                                                         
       RETURN                                                            
       END SUBROUTINE STATSE

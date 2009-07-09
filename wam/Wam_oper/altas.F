@@ -132,10 +132,12 @@
 
 !     specify the correlation distance (DIST) and the maximum spreading
 !     distance (DISTMAX)
-      IF(XDELLA.LT.0.3) THEN
-        DIST  = 150000./R
+      IF(XDELLA.LT.0.2) THEN
+        DIST = 150000./R
+      ELSE IF(XDELLA.LT.0.3) THEN
+        DIST = 150000./R
       ELSE
-        DIST  = 300000./R
+        DIST = 300000./R
       ENDIF
 
       DISTMAX = SQRT(2.) * 2.*DIST

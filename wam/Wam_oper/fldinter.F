@@ -1,11 +1,10 @@
       SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS,
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-     &                     IXLG, KXLT, NIBLO, IGL, IJS, IJL,
+     &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                     RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,
-     &                     CI, PMISS,
-     &                     LADEN, ROAIR, LGUST,LLINTERPOL,
-     &                     DK1M, DII1M, DIIP1M, KKM, IIM, IIPM, MASK_IN)
+     &                     RLONRGG, IJBLOCK, PMISS,
+     &                     LADEN, ROAIR, LGUST, ZIDL0,LWCUR,LLINTERPOL,
+     &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
 !***  *FLDINTER* - INTERPOLATION OF ATMOSPHERIC FIELDS OVER
@@ -33,12 +32,11 @@
 
 !      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FIELDS,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IXLG, KXLT, NIBLO, IGL, IJS, IJL, 
+!    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-!    &                    RLONRGG, IKBLOCK, UWND, VWND, AIRD, PZIDL,  
-!    &                    CI, PMISS,
-!    &                    LADEN, ROAIR, LGUST,LLINTERPOL,
-!    &                    DK1M, DII1M, DIIP1M, KKM, IIM, IIPM)
+!    &                    RLONRGG, IJBLOCK, PMISS,
+!    &                    LADEN, ROAIR, LGUST, ZIDL0,LWCUR,LLINTERPOL,
+!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM)
 !
 !        *IU06*   - OUTPUT UNIT.
 !        *ITEST*  - TEST MESSAGE LEVEL.
@@ -61,10 +59,13 @@
 !        *KLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (OUTPUT FIELD)
 !        *XDELLA* - GRID POINT SPACING BETWEEN LATITUDES.
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
-!        *IXLG*   - INTEGER  LONG. GRID INDEX.
-!        *KXLT*   - INTEGER  LAT. GRID INDEX.
-!        *NIBLO*  - FIRST DIMENSION OF IXLG AND KXLT.
-!        *IGL*    - SECOND DIMENSION OF IXLG AND KXLT.
+!        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
+!        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
+!        *NINF *  - INTEGER INDEX OF FIRST POINT IN BLOCKS 
+!                   INCLUDING HALO.
+!        *NSUP *  - INTEGER INDEX OF LAST POINT IN BLOCKS 
+!                   INCLUDING HALO.
+!        *IGL*    - SECOND DIMENSION OF IFROMIJ AND JFROMIJ.
 !        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
 !        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
@@ -72,22 +73,21 @@
 !        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
 !        *AMONOP* - MOST NORTHERN LATITUDE IN GRID ( ? , 1 ).           
 !        *IPERIODIC* - SPECIFIES IF WAM GRID IS PERIODIC (=1) OR NOT (=0)
+!        *PMISS*  - MISSING DATA VALUE
 !        INTERPOLATION COEFFICIENTS & INDECES (INPUT):
-!        *IKBLOCK* - BLOCK INDEX FOR THE ATMOSPHERIC FIELDS.
+!        *IJBLOCK* - BLOCK INDEX FOR THE ATMOSPHERIC FIELDS.
+!        *LADEN*  - VARIABLE AIR DENSITY IS USED.
+!        *ROAIR*  - DEFAULT VALUE FOR AIR DENSITY.
+!        *LGUST*  - GUSTINESS IS USED.
+!        *ZIDL0*  - DEFAULT VALUE FOR Zi/L
+!        *LWCUR*  - SURFACE CURRENTS ARE USED.
 !        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
-!        *DK1M*   - COEFFICIENT
+!        *DJ1M*   - COEFFICIENT
 !        *DII1M*  - COEFFICIENT
 !        *DIIP1M* - COEFFICIENT
-!        *KKM*    - INDEX
+!        *JJM*    - INDEX
 !        *IIM*    - INDEX
 !        *IIPM*   - INDEX
-!        OUTPUT:
-!        *UWND*   - INTERPOLATED FIELD
-!        *VWND*   - INTERPOLATED FIELD
-!        *AIRD*   - INTERPOLATED FIELD
-!        *PZIDL*  - INTERPOLATED FIELD
-!        *CI*     - INTERPOLATED SEA ICE FIELD
-!        *PMISS*  - MISSING DATA VALUE
 
 
 !     EXTERNALS.                                                        
@@ -95,23 +95,26 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
+
+! ----------------------------------------------------------------------
       INTEGER KLONRGG(NGY)
 
-      INTEGER NGPTOTG, NC, NR, NIBLO, IGL, IJS, IJL 
-      INTEGER, DIMENSION(NIBLO,IGL) :: IXLG, KXLT
+      INTEGER NGPTOTG, NC, NR, IGL, IJS, IJL 
+      INTEGER, DIMENSION(NINF-1:NSUP,IGL) :: IFROMIJ, JFROMIJ 
       INTEGER RLONRGG(NR)
-      INTEGER :: IKBLOCK(0:NC+1,NR)
+      INTEGER :: IJBLOCK(0:NC+1,NR)
       REAL :: ROAIR
+      REAL :: ZIDL0 
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
-      LOGICAL:: LADEN, LGUST, LLINTERPOL
+      LOGICAL:: LADEN, LGUST, LWCUR, LLINTERPOL
       
-      REAL, DIMENSION(NGX,NGY) :: UWND, VWND, AIRD, PZIDL, CI
-
       REAL ZDELLO(NGY)
+      REAL :: CI
 
-      INTEGER  KKM(NGY), IIM(NGX,NGY), IIPM(NGX,NGY)
-      REAL DK1M(NGY), DII1M(NGX,NGY), DIIP1M(NGX,NGY)
+      INTEGER  JJM(NGY), IIM(NGX,NGY), IIPM(NGX,NGY)
+      REAL DJ1M(NGY), DII1M(NGX,NGY), DIIP1M(NGX,NGY)
 ! ----------------------------------------------------------------------
 
       IF(.NOT.LLINTERPOL) THEN
@@ -121,25 +124,35 @@
 
         DO IG=1,IGL
           DO IJ = IJS,IJL
-            I = IXLG(IJ,IG)
-            K = NGY-KXLT(IJ,IG) + 1
+            I = IFROMIJ(IJ,IG)
+            J = JFROMIJ(IJ,IG)
 
-            MASK_IN(IKBLOCK(I,K))=1
+            MASK_IN(IJBLOCK(I,J))=1
 
-            UWND(I,K) = FIELDS(IKBLOCK(I,K),1) 
-            VWND(I,K) = FIELDS(IKBLOCK(I,K),2) 
+            FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1) 
+            FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2) 
             IF (LADEN) THEN
-              AIRD(I,K) = FIELDS(IKBLOCK(I,K),3) 
+              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3) 
             ELSE
-              AIRD(I,K) = ROAIR
+              FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              PZIDL(I,K) = FIELDS(IKBLOCK(I,K),4) 
+              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4) 
             ELSE
-              PZIDL(I,K) = 0.
+              FIELDG(I,J)%ZIDL = ZIDL0 
             ENDIF
 
-            CI(I,K) = FIELDS(IKBLOCK(I,K),5) 
+            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
+
+            IF(LLNEWCURR) THEN
+              IF(LWCUR) THEN
+                FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),6)
+                FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),7)
+              ELSE
+                FIELDG(I,J)%UCUR = 0.
+                FIELDG(I,J)%VCUR = 0.
+              ENDIF
+            ENDIF
 
           ENDDO
         ENDDO
@@ -151,112 +164,130 @@
 
         DO IG=1,IGL
           DO IJ = IJS,IJL 
-            I = IXLG(IJ,IG)
-            K = NGY-KXLT(IJ,IG) + 1
+            I = IFROMIJ(IJ,IG)
+            J = JFROMIJ(IJ,IG)
 
-            KK = KKM(K)
-            KSN= NR-KK+1
-            KK1= MIN(KK+1,NR)
-            KSN1=NR-KK1+1
-            DK1= DK1M(K) 
-            DK2=1.-DK1
+            JJ = JJM(J)
+            JSN= NR-JJ+1
+            JJ1= MIN(JJ+1,NR)
+            JSN1=NR-JJ1+1
+            DJ1= DJ1M(J) 
+            DJ2=1.-DJ1
 
-            II = IIM(I,K)
-            II1 = MIN(II+1,RLONRGG(KSN)+IPERIODIC)
-            DII1=DII1M(I,K) 
+            II = IIM(I,J)
+            II1 = MIN(II+1,RLONRGG(JSN)+IPERIODIC)
+            DII1=DII1M(I,J) 
             DII2=1.-DII1
 
-            IIP = IIPM(I,K) 
-            IIP1 = MIN(IIP+1,RLONRGG(KSN1)+IPERIODIC)
-            DIIP1= DIIP1M(I,K) 
+            IIP = IIPM(I,J) 
+            IIP1 = MIN(IIP+1,RLONRGG(JSN1)+IPERIODIC)
+            DIIP1= DIIP1M(I,J) 
             DIIP2=1.-DIIP1
 
-            MASK_IN(IKBLOCK(II,KK))=1
-            MASK_IN(IKBLOCK(II1,KK))=1
-            MASK_IN(IKBLOCK(IIP,KK1))=1
-            MASK_IN(IKBLOCK(IIP1,KK1))=1
+            MASK_IN(IJBLOCK(II,JJ))=1
+            MASK_IN(IJBLOCK(II1,JJ))=1
+            MASK_IN(IJBLOCK(IIP,JJ1))=1
+            MASK_IN(IJBLOCK(IIP1,JJ1))=1
 
-            UWND(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),1) +
-     &                      DII1*FIELDS(IKBLOCK(II1,KK),1) ) +
-     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),1) +
-     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),1) )
+            FIELDG(I,J)%UWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),1) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),1) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),1) )
 
-            VWND(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),2) +
-     &                      DII1*FIELDS(IKBLOCK(II1,KK),2) ) +
-     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),2) +
-     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),2) )
+            FIELDG(I,J)%VWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),2) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),2) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),2) )
 
             IF (LADEN) THEN
-              AIRD(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),3) +
-     &                        DII1*FIELDS(IKBLOCK(II1,KK),3) ) +
-     &                  DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),3) +
-     &                        DIIP1*FIELDS(IKBLOCK(IIP1,KK1),3) )
+              FIELDG(I,J)%AIRD=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),3) ) +
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),3) +
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),3) )
             ELSE
-              AIRD(I,K) = ROAIR
+              FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              PZIDL(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),4) +
-     &                         DII1*FIELDS(IKBLOCK(II1,KK),4) ) +
-     &                   DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),4) +
-     &                         DIIP1*FIELDS(IKBLOCK(IIP1,KK1),4) )
+              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +
+     &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +
+     &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +
+     &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
-              PZIDL(I,K) = 0.
+              FIELDG(I,J)%ZIDL = ZIDL0 
             ENDIF
-
 
 !           FOR SEA ICE FRACTION
 !           DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
 !           IF SO USE THE CLOSEST GRID POINT VALUE IF IT IS NOT MISSING
-            F00=FIELDS(IKBLOCK(II,KK),5)
-            F10=FIELDS(IKBLOCK(II1,KK),5)
-            F01=FIELDS(IKBLOCK(IIP,KK1),5)
-            F11=FIELDS(IKBLOCK(IIP1,KK1),5)
+            F00=FIELDS(IJBLOCK(II,JJ),5)
+            F10=FIELDS(IJBLOCK(II1,JJ),5)
+            F01=FIELDS(IJBLOCK(IIP,JJ1),5)
+            F11=FIELDS(IJBLOCK(IIP1,JJ1),5)
             IF(F00.EQ.PMISS.OR.
      &         F10.EQ.PMISS.OR.
      &         F01.EQ.PMISS.OR.
      &         F11.EQ.PMISS) THEN
-              IF(DK1.LE.0.5) THEN
-                KCL=KK
+              IF(DJ1.LE.0.5) THEN
+                JCL=JJ
                 ICL=II1
                 IF(DII1.LE.0.5) ICL=II
               ELSE
-                KCL=KK1
+                JCL=JJ1
                 ICL=IIP1
                 IF(DIIP1.LE.0.5) ICL=IIP
               ENDIF
-              CI(I,K)=FIELDS(IKBLOCK(ICL,KCL),5)
+              CI=FIELDS(IJBLOCK(ICL,JCL),5)
 
 !             NON MISSING VALUE OVER SEA IS NEEDED
-              IF(CI(I,K).EQ.PMISS) THEN
+              IF(CI.EQ.PMISS) THEN
                 NCOUNT=0
-                CI(I,K)=0.
+                CI=0.
                 IF(F00.NE.PMISS) THEN
-                  CI(I,K)=CI(I,K)+F00
+                  CI=CI+F00
                   NCOUNT=NCOUNT+1
                 ENDIF
                 IF(F10.NE.PMISS) THEN
-                  CI(I,K)=CI(I,K)+F10
+                  CI=CI+F10
                   NCOUNT=NCOUNT+1
                 ENDIF
                 IF(F01.NE.PMISS) THEN
-                  CI(I,K)=CI(I,K)+F01
+                  CI=CI+F01
                   NCOUNT=NCOUNT+1
                 ENDIF
                 IF(F11.NE.PMISS) THEN
-                  CI(I,K)=CI(I,K)+F11
+                  CI=CI+F11
                   NCOUNT=NCOUNT+1
                 ENDIF
                 IF(NCOUNT.GT.0) THEN
-                  CI(I,K)=CI(I,K)/NCOUNT
+                  CI=CI/NCOUNT
                 ELSE
-                  CI(I,K)=PMISS
+                  CI=PMISS
                 ENDIF
               ENDIF
+              FIELDG(I,J)%CIFR=CI
             ELSE
-              CI(I,K)=DK2*( DII2*FIELDS(IKBLOCK(II,KK),5) +
-     &                      DII1*FIELDS(IKBLOCK(II1,KK),5) ) +
-     &                DK1*( DIIP2*FIELDS(IKBLOCK(IIP,KK1),5) +
-     &                      DIIP1*FIELDS(IKBLOCK(IIP1,KK1),5) )
+              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
+            ENDIF
+
+
+            IF(LLNEWCURR) THEN
+              IF(LWCUR) THEN
+                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
+
+                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+              ELSE
+                FIELDG(I,J)%UCUR = 0.
+                FIELDG(I,J)%VCUR = 0.
+              ENDIF
             ENDIF
 
           ENDDO

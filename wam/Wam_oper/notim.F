@@ -1,13 +1,13 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD, ICEMASK,
-     &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                   ISEC1, ISEC2, FIELDS,  MASK_IN)
+     &                   ROAIRO, ZIDLOLD, ICEMASK, IREAD)
 
 ! ----------------------------------------------------------------------
 
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
 !               J BIDLOT AUGUST 2006 INCLUSION OF ICE MASK.
+!               J BIDLOT AUGUST 2008 REMOVE INFORMATION FROM COUPLED RUNS
+!                                    AND CLEAN UP OBSOLETE OPTIONS.
 
 
 !**** *NOTIM* - STEERING MODULE IF NO TIME INTERPOLATION WANTED.
@@ -21,9 +21,7 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK,
-!    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-!    &                 ISEC1, ISEC2, FIELDS)*
+!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -35,14 +33,8 @@
 !          *ZIDLOLD*- Zi/L 
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *ICEMASK*- SEA ICE MASK.
-!          *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
-!          *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
-!          *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
-!          *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
-!          *FCRANGE*- FORECAST RANGE IN SECONDS
-!          *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
-!          *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
-!          *FIELDS* - ATM. FIELDS (U10, V10, Q2, MSL, SKT, ice, Zi/L)
+!          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+
 
 !     METHOD.
 !     -------
@@ -70,45 +62,41 @@
 
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO
+      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNIT  , ONLY : IUVELO   ,IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
      &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,
      &            ICEMASKNEXT
 
-! ----------------------------------------------------------------------
-      CHARACTER*14 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
-      LOGICAL LWNDFILE, LCLOSEWND
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-      INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      INTEGER MASK_IN(NGPTOTG)
 ! ----------------------------------------------------------------------
-
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
      &                                , ROAIRO,ZIDLOLD
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
-! ----------------------------------------------------------------------
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL
+      REAL ZHOOK_HANDLE
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS, ADS, ZIDL
       INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICMSK 
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
 
-!        *US*      REAL   OUTPUT WIND FIELD ARRAY (FRICTION VELOCITY).
-!        *DS*      REAL   OUTPUT WIND FIELD ARRAY (DIRECTION).
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
+      CHARACTER*14 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
+      LOGICAL LWNDFILE, LCLOSEWND
 
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALISE WIND REQUEST DATE AND PROCESS FIRST WINDFIELD
 !*       IF COLD START.
 !        --------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('NOTIM',0,ZHOOK_HANDLE)
 
       ZERO = ' '
       CDTWIH = CDTWIS
@@ -126,21 +114,28 @@
         CDA = CDTWIS
 
         CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
-     &               NINF, NSUP, CDA,
-     &               NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS, MASK_IN,
-     &               LWNDFILE, LCLOSEWND)
+     &               CDA, LWNDFILE, LCLOSEWND, IREAD)
 
         DO IG = 1,IGL
-          CALL AIRSEA (U10OLD(IJS(IG),IG), TAUW(IJS(IG),IG),
-     &     USOLD(IJS(IG),IG), Z0OLD(IJS(IG),IG),
-     &     IJS(IG), IJL(IG), ILEV)
+          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+          CALL GSTATS(1445,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            CALL AIRSEA (U10OLD(KIJS,IG), TAUW(KIJS,IG),
+     &        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
+     &        KIJS, KIJL, ILEV)
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1445,1)
         ENDDO
         IF (ITEST.GE.3) THEN
           WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',
      &     ''SAVED IN COMMON WIND'')')
         ENDIF
         IF (CDA.EQ.CDTWIE) THEN
+          IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
           RETURN
         ENDIF
         CALL INCDATE (CDTWIH,IDELWO)
@@ -148,71 +143,36 @@
 
 ! ----------------------------------------------------------------------
 
-!*    2. CREATE WIND FILE NAME FROM END DATE.
-!        ------------------------------------
-
-!!!!      CALL CREWFN (IUVELO, CDTWIE)
-!!!!      IF (ITEST.GE.3) THEN
-!!!!         WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILE '
-!!!!         WRITE(IU06,*) '       UNIT IS IUVELO = ', IUVELO,
-!!!!     1                 ' WIND FILE DATE IS CDTWIE = ', CDTWIE
-!!!!      ENDIF
-!!!!      REWIND (UNIT=IUVELO)
-      MP = 0
-
-! ----------------------------------------------------------------------
-
 !*    3. LOOP OVER OUTPUT WIND TIMES.
 !        ----------------------------
-
- 3000 CONTINUE
 
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
       CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
-     &             NINF, NSUP, CDTWIH,
-     &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS, MASK_IN,
-     &             LWNDFILE, LCLOSEWND)
-      MP = MP + 1
+     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD)
 
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------
 
       IF (IDELPRO.GT.IDELWO) THEN
-
-!*        MORE THAN ONE FIELD PER PROPAGATION TIME STEP.
-!*        SAVE ON SCRATCH UNITS:
-
-        DO IG=1,IGL
-          IUNIT =IUSCR(IG)
-          WRITE (IUNIT,ERR=6100,IOSTAT=IOS)
-     &     CDTWIH, IG, (US(I,IG),I=IJS(IG),IJL(IG)),
-     &     (DS(I,IG),I=IJS(IG),IJL(IG))
-     &    , (ADS(I,IG),I=IJS(IG),IJL(IG))
-     &    , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
-     &    , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
-        ENDDO
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILES AT ',
-     &     'CDTWIH = ', CDTWIH,' WRITTEN TO SCRATCH UNIT'
-          WRITE(IU06,'(''+'', A8)') IUNIT
-        ENDIF
-
-!*        UPDATE WIND FIELD REQUEST TIME.
-
-        CALL INCDATE (CDTWIH,IDELWO)
-
-!*        IF TIME LEFT BRANCH BACK TO 3.0 FOR NEXT FIELD.
-
-        IF (CDTWIH.LE.CDTWIE) GOTO 3000
+!*      WIND FIELD IS NOT CONSTANT FOR ONE PROPAGATION TIME STEP:
+!       THIS OPTION IS NO LONGER AVAILABLE !!!
+        WRITE (IU06,*) ' '
+        WRITE (IU06,*) ' **********************************'
+        WRITE (IU06,*) ' *                                *'
+        WRITE (IU06,*) ' *   FATAL ERROR IN SUB. NOTIM:   *'
+        WRITE (IU06,*) ' *   ==========================   *'
+        WRITE (IU06,*) ' *   THE OPTION IDELPRO.GT.IDELWO *'
+        WRITE (IU06,*) ' *      IS LONGER AVAILABLE !!!!! *'
+        WRITE (IU06,*) ' *                                *'
+        WRITE (IU06,*) ' *          PROGRAM ABORTS        *'
+        WRITE (IU06,*) ' *                                *'
+        WRITE (IU06,*) ' **********************************'
+        CALL ABORT1
       ELSE
-
-!*        WIND FIELD IS CONSTANT FOR ONE PROPAGATION TIME STEP:
-!*        WRITE TO OUTPUT.
-!         -----------------------------------------------------
-
+!*      WIND FIELD IS CONSTANT FOR ONE PROPAGATION TIME STEP:
+!       -----------------------------------------------------
         NSTORE=1
         IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
         IF(LMESSPASS) THEN
@@ -240,166 +200,57 @@
         ENDIF
 
         DO IG=1,IGL
-
-!!!!            WRITE (IUVELO,ERR=6400,IOSTAT=IOS)
-!!!     1            CDTWIH, IG, (US(I,IG),I=IJS(IG),IJL(IG)),
-!!     2            (DS(I,IG),I=IJS(IG),IJL(IG))
-!! 
-!!save to array instead
           CDTNEXT(1)=CDTWIH
-          DO I=IJS(IG),IJL(IG)
-            USNEXT(I,1,IG)=US(I,IG)
-            DSNEXT(I,1,IG)=DS(I,IG)
-            ADSNEXT(I,1,IG)=ADS(I,IG)
-            ZIDLNEXT(I,1,IG)=ZIDL(I,IG)
-            ICEMASKNEXT(I,1,IG)=ICMSK(I,IG)
-          ENDDO
 
+          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+          CALL GSTATS(1445,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            DO IJ = KIJS, KIJL
+              USNEXT(IJ,1,IG)=US(IJ,IG)
+              DSNEXT(IJ,1,IG)=DS(IJ,IG)
+              ADSNEXT(IJ,1,IG)=ADS(IJ,IG)
+              ZIDLNEXT(IJ,1,IG)=ZIDL(IJ,IG)
+              ICEMASKNEXT(IJ,1,IG)=ICMSK(IJ,IG)
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1445,1)
         ENDDO
 
-!*        UPDATE WIND FIELD REQUEST TIME.
-!         -------------------------------
-
+!*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)
 
-!*        IF TIME LEFT BRANCH BACK TO 3.0 FOR NEXT FIELD.
-
-!!!!!
-!!!!         IF (CDTWIH.LE.CDTWIE) GOTO 3000
-!!! we don't allow to loop anymore
-        IF (CDTWIH.LE.CDTWIE) GOTO 6500
-
-        IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILE GENERATED '
+!*      IF TIME LEFT BRANCH NOT ALLOWED TO LOOP ANYMORE 
+        IF (CDTWIH.LE.CDTWIE) THEN
+          WRITE (IU06,*) ' '
+          WRITE (IU06,*) ' ********************************************'
+          WRITE (IU06,*) ' *                                          *'
+          WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
+          WRITE (IU06,*) ' *       ==========================         *'
+          WRITE (IU06,*) ' * ERROR WHEN WRITTING ON WIND OUTPUT FILE  *'
+          WRITE (IU06,*) ' * MORE THAN ONE LOOP NOT ALLOWED ANY LONGER*'
+          WRITE (IU06,*) ' * WHEN USING ARRAY INSTEAD OF WRITE TO FILE*'
+          WRITE (IU06,*) ' *                                          *'
+          WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
+          WRITE (IU06,*) ' *                                          *'
+          WRITE (IU06,*) ' ********************************************'
+          CALL ABORT1
         ENDIF
 
-!!!!!!!!!!        CLOSE (UNIT=IUVELO, STATUS='KEEP')
+        IF (ITEST.GE.3) THEN
+          WRITE(IU06,*) '      SUB. NOTIM: NEW FORCING FIELDS GENERATED'
+        ENDIF
 
+        IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
         RETURN
 
       ENDIF
 
-! ----------------------------------------------------------------------
-
-!*    4. RE-ARRANGE THE BLOCKS.
-!        ----------------------
-
-      DO IG=1,IGL
-        REWIND (UNIT=IUSCR(IG))
-      ENDDO
-
-      MSTEP = IDELPRO/IDELWO
-      DO M=1,MP,MSTEP
-        DO IG=1,IGL
-          IUNIT = IUSCR(IG)
-          DO MM=1,MSTEP
-            READ (IUNIT,ERR=6200,IOSTAT=IOS)
-     &       CDT,IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
-     &       (DS(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
-
-            WRITE (IUVELO,ERR=6300,IOSTAT=IOS)
-     &       CDT, IGG, (US(I,IG),I=IJS(IG),IJL(IG)),
-     &       (DS(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ADS(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ZIDL(I,IG),I=IJS(IG),IJL(IG))
-     &       , (ICMSK(I,IG),I=IJS(IG),IJL(IG))
-          ENDDO
-        ENDDO
-      ENDDO
-      REWIND (UNIT=IUVELO)
-      DO IG=1,IGL
-        CLOSE (UNIT=IUSCR(IG), STATUS='DELETE')
-      ENDDO
-      CLOSE (UNIT=IUVELO, STATUS='KEEP')
-      IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '       SUB. NOTIM: NEW WIND FILE ',
-     &   'GENERATED AS COPY FROM  SCRATCH UNITS'
-      ENDIF
-
+      IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
       RETURN
 
-! ----------------------------------------------------------------------
-
-!*    6. ERROR MESSAGES
-
- 6100 CONTINUE
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) ' ********************************************'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
-      WRITE (IU06,*) ' *       ==========================         *'
-      WRITE (IU06,*) ' * ERROR WHEN WRITTING ON SCRATCH UNIT      *'
-      WRITE (IU06,*) ' * FOR BLOCK NUMBER          IG = ', IG
-      WRITE (IU06,*) ' * NUMBER OF WIND FIELD IS   MP = ', MP
-      WRITE (IU06,*) ' * DATE OF WIND FIELD IS CDTWIH = ', CDTWIH
-      WRITE (IU06,*) ' * MESSAGE IS               IOS = ', IOS
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' ********************************************'
-      CALL ABORT1
- 6200 CONTINUE
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) ' ********************************************'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
-      WRITE (IU06,*) ' *       ==========================         *'
-      WRITE (IU06,*) ' * ERROR WHEN READING FROM SCRATCH UNIT     *'
-      WRITE (IU06,*) ' * FOR BLOCK NUMBER       IG = ', IG
-      WRITE (IU06,*) ' * DATE OF WIND FIELD IS CDT = ', CDT
-      WRITE (IU06,*) ' * MESSAGE IS            IOS = ', IOS
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' ********************************************'
-      CALL ABORT1
- 6300 CONTINUE
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) ' ********************************************'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
-      WRITE (IU06,*) ' *       ==========================         *'
-      WRITE (IU06,*) ' * ERROR WHEN WRITTING ON WIND OUTPUT FILE  *'
-      WRITE (IU06,*) ' * AFTER READING FROM SCRATCH UNIT          *'
-      WRITE (IU06,*) ' * FOR BLOCK NUMBER       IG = ', IG
-      WRITE (IU06,*) ' * DATE OF WIND FIELD IS CDT = ', CDT
-      WRITE (IU06,*) ' * MESSAGE IS            IOS = ', IOS
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' ********************************************'
-      CALL ABORT1
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) ' ********************************************'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
-      WRITE (IU06,*) ' *       ==========================         *'
-      WRITE (IU06,*) ' * ERROR WHEN WRITTING ON WIND OUTPUT FILE  *'
-      WRITE (IU06,*) ' * SCRATCH UNITS ARE NOT USED               *'
-      WRITE (IU06,*) ' * FOR BLOCK NUMBER          IG = ', IG
-      WRITE (IU06,*) ' * DATE OF WIND FIELD IS CDTWIH = ',CDTWIH
-      WRITE (IU06,*) ' * MESSAGE IS               IOS = ', IOS
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' ********************************************'
-      CALL ABORT1
- 6500 CONTINUE
-      WRITE (IU06,*) ' '
-      WRITE (IU06,*) ' ********************************************'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' *       FATAL ERROR IN SUB. NOTIM:         *'
-      WRITE (IU06,*) ' *       ==========================         *'
-      WRITE (IU06,*) ' * ERROR WHEN WRITTING ON WIND OUTPUT FILE  *'
-      WRITE (IU06,*) ' * MORE THAN ONE LOOP NOT ALLOWED ANY LONGER*'
-      WRITE (IU06,*) ' * WHEN USING ARRAY INSTEAD OF WRITE TO FILE*'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' * PROGRAM ABORTS    PROGRAM ABORTS         *'
-      WRITE (IU06,*) ' *                                          *'
-      WRITE (IU06,*) ' ********************************************'
-      CALL ABORT1
 
       END SUBROUTINE NOTIM

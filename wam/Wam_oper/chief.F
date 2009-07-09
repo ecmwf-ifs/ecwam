@@ -83,6 +83,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
@@ -92,7 +93,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
      &            LL1D
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,
-     &            IPROPAGS ,LSUBGRID 
+     &            IPROPAGS ,LSUBGRID ,IREFRA 
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,
      &            NFROMPELST,
@@ -114,7 +115,7 @@
       INTEGER, PARAMETER :: NC=1
       INTEGER, PARAMETER :: NR=1
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
-      INTEGER, PARAMETER :: NFIELDS=1
+      INTEGER, PARAMETER :: NFIELDS=7
 ! ----------------------------------------------------------------------
       INTEGER :: NLON, NLAT
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
@@ -135,6 +136,7 @@
       LOGICAL :: LDWCOUNORMS
       LOGICAL :: FRSTIME
       LOGICAL :: LMESSPASS_NL
+      LOGICAL :: LWCUR
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
       time0=-wam_user_clock()
       IU06=6
@@ -198,7 +200,7 @@
 !     (the rest will be read in userin)
       IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
       CALL MPUSERIN(IU05,LMESSPASS_NL,LFDB,LWCOU,LL1D,LSUBGRID,
-     &              IPROPAGS)
+     &              IPROPAGS, IREFRA)
 
       IF(LMESSPASS_NL.NEQV.LMESSPASS) THEN
         WRITE (IU06,*) ' *********************************'
@@ -280,18 +282,29 @@
       ALLOCATE (FMEAN(NSTART(IRANK):NEND(IRANK)))
       ALLOCATE (THQ(NSTART(IRANK):NEND(IRANK)))
 
+      IF(IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
+        U=0.
+        IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
+        V=0.
+      ENDIF
+
+
 !     0.4 INITIALIZE SIGNAL HANDLER.
 !         --------------------------
 
       ISIGHUP = 0  !    1 /* hangup */
       ISIGINT = 0  !    2 /* interrupt (rubout) */
 
-!!!!  the call to IFSSIG is specific to signal handling for runs at
+!!!!  the call to IFSSIG and sigmaster are specific to signal handling for runs at
 !!!!  ECMWF, it can be commented out for other configuration.
 
       IF(LMESSPASS) THEN
         WRITE(IU06,*) ' INITIALIZE SIGNAL HANDLER on PE ', IRANK 
         CALL IFSSIG (ISIGHUP, ISIGINT, IRANK)
+
+        IF(IRANK.EQ.1) CALL SIGMASTER()
+
         WRITE(IU06,*) ' SIGNAL HANDLER on PE ', IRANK, ' OK'
       ENDIF  
 
@@ -307,13 +320,11 @@
 
 !* DEFINE DUMMY PARAMETERS TO FILL COUPLED ARRAYS
 
-      IUGB=0
-      IVGB=0
-      ILEN=1
       CBEGDAT='99999999999999'
       IDUM=0
       IDURAT=-99
       NFDBREF=0  ! only used in coupled model
+      LWCUR=.FALSE. ! only used in coupled runs
 
       RMISS=-999. ! missing data indicator
 
@@ -322,6 +333,7 @@
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &             ISEC1, ISEC2, RMISS, FIELDS,
+     &             LWCUR,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM, KQGAUSS,

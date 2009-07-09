@@ -31,7 +31,7 @@
 !          ---- INPUT/OUTPUT UNITS ---
 
 !           *IU06*   - PRINTER OUTPUT.
-!           *wam_grid*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid_tables*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC). fort.7 must be there !
 !           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC). fort.8 must be there !
@@ -77,8 +77,8 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,KRLAT    ,
-     &            KRLON    ,KRLAT2   ,KRLON2   ,OBSLAT   ,OBSLON   ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KRLAT    ,
+     &            KRLON    ,OBSLAT   ,OBSLON   ,
      &            OBSRLAT  ,OBSRLON
 
 ! -------------------------------------------------------------------
@@ -451,18 +451,18 @@
           DO IC=1,2
             IF(KLON(IJ,IC).GT.0.AND.KLON(IJ,IC).LE.NIBLO)
      &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLON(IJ,IC)))=1 
-            IF(KLAT(IJ,IC).GT.0.AND.KLAT(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC)))=1 
-            IF(KLAT2(IJ,IC).GT.0.AND.KLAT2(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT2(IJ,IC)))=1 
-            IF(KRLON(IJ,IC).GT.0.AND.KRLON(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC)))=1 
-            IF(KRLAT(IJ,IC).GT.0.AND.KRLAT(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC)))=1 
-            IF(KRLAT2(IJ,IC).GT.0.AND.KRLAT2(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT2(IJ,IC)))=1 
-            IF(KRLON2(IJ,IC).GT.0.AND.KRLON2(IJ,IC).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON2(IJ,IC)))=1 
+            IF(KLAT(IJ,IC,1).GT.0.AND.KLAT(IJ,IC,1).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC,1)))=1 
+            IF(KLAT(IJ,IC,2).GT.0.AND.KLAT(IJ,IC,2).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC,2)))=1 
+            IF(KRLON(IJ,IC,1).GT.0.AND.KRLON(IJ,IC,1).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC,1)))=1 
+            IF(KRLAT(IJ,IC,1).GT.0.AND.KRLAT(IJ,IC,1).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC,1)))=1 
+            IF(KRLAT(IJ,IC,2).GT.0.AND.KRLAT(IJ,IC,2).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC,2)))=1 
+            IF(KRLON(IJ,IC,2).GT.0.AND.KRLON(IJ,IC,2).LE.NIBLO)
+     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC,2)))=1 
           ENDDO
         ENDDO
         NPE(IPR)=NEND(IPR)-NSTART(IPR)+1

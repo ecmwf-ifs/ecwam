@@ -13,6 +13,7 @@
 !     The results will be saved as in ascii as a header and 2d matrix.
 !     If more than one field is present, they will written out in the
 !     same output file.
+!     (the data will be written fron north to south)
 
 !     USAGE : decode_integrated_parameter [-i input_filename]
 !                                         [-o output_filename]
@@ -31,6 +32,7 @@
 !            itest = 3 : prints built in diagnostics + gribex debugger 
 !                        messages (!!! it can be big)
 
+ 
 !     LIBRARY : FORTRAN 90, and EMOSLIB
 !     -------
 
@@ -79,8 +81,8 @@
 
       INTEGER I4
       INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(255),KSEC2(2060),
-     &           KSEC3(2),KSEC4(128)
+      INTEGER :: KSEC0(2),KSEC1(2048),KSEC2(2060),
+     &           KSEC3(2),KSEC4(252)
       INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
       REAL :: ONE,ZTHETA,ZFRE
       REAL :: PSEC2(96),PSEC3(2)
@@ -93,6 +95,7 @@
       CHARACTER*40 ERRMSG(-4:6), MSG
       CHARACTER*128 CLARG, FNAMEIN, FNAMEOUT
       LOGICAL LLEXIST, LINTEGRATE, LWAVEHGT, LLASTFRE, llfrst
+      LOGICAL :: LLSCANNS
 
       DATA CLOPTS/'i;o;t;'/
       DATA ERRMSG/
@@ -262,15 +265,36 @@
 
       IPARAM = KSEC1(6)
       IRGG = KSEC2(17)
-      AMONOP = FLOAT(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+
+      IF(KSEC2(11).EQ.0) THEN
+        LLSCANNS=.TRUE.
+      ELSEIF(KSEC2(11).EQ.64 .OR. KSEC2(11).EQ.2) THEN
+        LLSCANNS=.FALSE.
+      ELSE
+        WRITE(IU06,*) '***********************************'
+        WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
+        WRITE(IU06,*) ' KSEC2(11) = ', KSEC2(11)
+        WRITE(IU06,*) '***********************************'
+        CALL ABORT
+      ENDIF
+
+      YFRST = FLOAT(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
      &         0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
-      AMOSOP = FLOAT(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
+      YLAST = FLOAT(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
      &         0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
+      IF(LLSCANNS) THEN
+        AMONOP = YFRST 
+        AMOSOP = YLAST 
+      ELSE
+        AMONOP = YLAST 
+        AMOSOP = YFRST 
+      ENDIF
       AMOWEP = FLOAT(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
      &         0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
 
       AMOEAP = FLOAT(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
      &         0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+
       XDELLA = FLOAT(KSEC2(10))/1000
       XDELLO = FLOAT(KSEC2(9))/1000
 
@@ -369,15 +393,27 @@
 !     *******************************************
 
       ALLOCATE(FIELD(NGX,NGY))
+!     BY DEFINITION FIELD IS FRON NORTH to SOUTH
       FIELD=ZMISS
-      L=0
-      DO K=1,NGY
-        JSN=NGY-K+1
-        DO I=1,KDOMRGG(JSN)
-          L = L+1
-          FIELD(I,K) = PSEC4OUT(L)
+      IF(LLSCANNS) THEN
+        L=0
+        DO K=1,NGY
+          JSN=NGY-K+1
+          DO I=1,KDOMRGG(JSN)
+            L = L+1
+            FIELD(I,K) = PSEC4OUT(L)
+          ENDDO
         ENDDO
-      ENDDO
+      ELSE
+        L=0
+        DO K=NGY,1,-1
+          JSN=K
+          DO I=1,KDOMRGG(JSN)
+            L = L+1
+            FIELD(I,K) = PSEC4OUT(L)
+          ENDDO
+        ENDDO
+      ENDIF
 
       if(llfrst) then
         LFILE=0
@@ -411,17 +447,15 @@
      &             ' STEP ',INT(FCST),' HOURS'
       endif
 
-      WRITE(10,'(I3,1X,I4.4,3(I2.2),1x,f4.0,1x,I3,1x,I3,4(F7.2,1x))')
-     &    IPARAM,IYYYY,IMM,IDD,IHH,FCST,
-     &    NGX,NGY,XDELLO,XDELLA,AMONOP,AMOWEP
-
-
+      DO I=1,NGX
       DO K=1,NGY
-        WRITE(10,110) (FIELD(I,K),I=1,NGX)
+        if(field(i,k).ne.zmiss) then
+        WRITE(10,110) IPARAM,IYYYY,IMM,IDD,IHH,I,K,FIELD(I,K)
+        endif
+      ENDDO 
       ENDDO 
 
-110   FORMAT(1500(F7.2))
-
+110   FORMAT(I3,1X,I4.4,3(I2.2),1x,2I4,1x,f12.8)
 
 
       DEALLOCATE(PSEC4OUT)

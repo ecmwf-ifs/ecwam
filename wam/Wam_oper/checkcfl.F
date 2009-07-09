@@ -39,13 +39,13 @@
       USE YOWMPP   , ONLY : NINF
       USE YOWSHAL  , ONLY : INDEP    ,DEPTH
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2
+      USE YOWUBUF  , ONLY : KLAT     ,KLON
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: MIJS, MIJL, IJ, IC, ICP
+      INTEGER :: MIJS, MIJL, IJ, IC, ICP, ICL
       REAL,DIMENSION(MIJS:MIJL) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
       REAL,DIMENSION(MIJS:MIJL) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
       REAL,DIMENSION(MIJS:MIJL) :: DTC
@@ -145,15 +145,12 @@
           WRITE(IU06,*) ' * CFLTP = ',CFLTP(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
           WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ,1)
-          DO IC=1,2
-            ICP=KLAT(IJ,IC)
-            IF(ICP.NE.NINF-1)
-     &      WRITE(IU06,*)' * KLAT_',IC, INDEP(ICP),DEPTH(ICP,1)
-          ENDDO
-          DO IC=1,2
-            ICP=KLAT2(IJ,IC)
-            IF(ICP.NE.NINF-1)
-     &      WRITE(IU06,*)' * KLAT2',IC, INDEP(ICP),DEPTH(ICP,1)
+          DO ICL=1,2
+            DO IC=1,2
+              ICP=KLAT(IJ,IC,ICL)
+              IF(ICP.NE.NINF-1)
+     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
+            ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
@@ -174,15 +171,12 @@
           WRITE(IU06,*) ' * CFLTM = ',CFLTM(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
           WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ,1)
-          DO IC=1,2
-            ICP=KLAT(IJ,IC)
-            IF(ICP.NE.NINF-1)
-     &      WRITE(IU06,*)' * KLAT_',IC, INDEP(ICP),DEPTH(ICP,1)
-          ENDDO
-          DO IC=1,2
-            ICP=KLAT2(IJ,IC)
-            IF(ICP.NE.NINF-1)
-     &      WRITE(IU06,*)' * KLAT2',IC, INDEP(ICP),DEPTH(ICP,1)
+          DO ICL=1,2
+            DO IC=1,2
+              ICP=KLAT(IJ,IC,ICL)
+              IF(ICP.NE.NINF-1)
+     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
+            ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)

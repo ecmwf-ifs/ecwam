@@ -1,6 +1,6 @@
-      SUBROUTINE BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                       RADOLD, RZIDLOLD, KICEMASK,
-     &                       KEND)
+      SUBROUTINE BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                       ROAIRO, ZIDLOLD, ICEMASK,
+     &                       IREAD)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF   APRIL 1998 
@@ -8,6 +8,8 @@
 !     J. BIDLOT    ECMWF   FEBRUARY 1999 TAUT --> SQRT(TAUT)
 
 !     S. ABDALLA   ECMWF   OCTOBER 1999 MODIFICATION THE CALL TO GETWND
+ 
+!     J. BIDLOT    ECMWF   AUGUST 2008 : MAKE IT MORE PARALLEL.
 
 !*    PURPOSE.
 !     --------
@@ -15,16 +17,18 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *BUILDSTRESS*(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,RADOLD,
-!                                                      RZIDLOLD,KEND)
-!     *RU10OLD*   WIND SPEED.
-!     *RTHWOLD*   WIND DIRECTION (RADIANS).
-!     *RUSOLD*    FRICTION VELOCITY.
-!     *RTAUW*     WAVE STRESS.
-!     *RZ0OLD*    ROUGHNESS LENGTH IN M.
+!     CALL *BUILDSTRESS*(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+!    &                   ROAIRO, ZIDLOLD, ICEMASK,
+!    &                   IREAD)*
+!     *U10OLD*   WIND SPEED.
+!     *THWOLD*   WIND DIRECTION (RADIANS).
+!     *USOLD*    FRICTION VELOCITY.
+!     *TAUW*     WAVE STRESS.
+!     *Z0OLD*    ROUGHNESS LENGTH IN M.
 !     *RAD0OLD*   AIR DENSITY IN KG/M3.
 !     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!     *KEND*      USED UPPER LIMIT ON FIRST DIMENSION OF INPUT ARRAYS
+!     *ICEMASK*   SEA ICE MASK
+!     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
 !     METHOD.
 !     -------
@@ -45,77 +49,64 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO
-      USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWGRIBHD, ONLY : NKSEK1 
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
+      USE YOWPARAM , ONLY : NBLO     ,NIBLO    ,NGX      ,NGY
+      USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,NWAM_BLKS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-      LOGICAL LWNDFILE, LCLOSEWND
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
+     &                                  ROAIRO, ZIDLOLD
+      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
+      INTEGER IREAD
+      INTEGER MIJS,MIJL
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+      REAL ZHOOK_HANDLE
       REAL, ALLOCATABLE :: CD(:,:), TEMPTAUT(:,:,:)
       CHARACTER*24 FILNM
-      REAL,DIMENSION(NIBLO,NBLO) :: RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW
-     &                             ,RADOLD, RZIDLOLD
-      INTEGER,DIMENSION(NIBLO,NBLO) :: KICEMASK 
       LOGICAL :: LLONLYPOS
+      LOGICAL LWNDFILE, LCLOSEWND
 ! ----------------------------------------------------------------------
-! "Dummy" arrays and parameters for compatability purposes:
-      INTEGER NFIELDS, NGPTOTG, NCA, NRA
-      PARAMETER (NFIELDS=1, NGPTOTG=1, NCA=1, NRA=1)
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NRA)
-      REAL FIELDS(1)
-      INTEGER JKGLO,KIJS,KIJL,NPROMA
-      INTEGER MASK_IN(NGPTOTG)
-! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
 
       CDATEWO = ' '
       CDAWIFL = ' '
       CDATEFL = ' '
       CDTPRO = CDATEA
 
-!     GET ATMOSPHERIC MODEL 10m WINDS
+!     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
+!         -------------------------------------
 
       ILEN=1
       LWNDFILE=.TRUE.
       LCLOSEWND=.TRUE.
 
-      DO IG=1,NBLO
-        NPROMA=NIBLO/NWAM_BLKS+1
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=1,NIBLO,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,NIBLO)
-          DO IJ=KIJS,KIJL
-            RU10OLD(IJ,IG)=0.
-            RTHWOLD(IJ,IG)=0.
-            RUSOLD(IJ,IG)=0.
-            RTAUW(IJ,IG)=0.
-            RZ0OLD(IJ,IG)=0.
-            RADOLD(IJ,IG)=ROAIR
-            RZIDLOLD(IJ,IG)=0.
-          ENDDO
-        ENDDO
-!$OMP   END PARALLEL DO
-      ENDDO
-
       FCRANGE = 0.
-      CALL GETWND (RU10OLD, RTHWOLD, RADOLD, RZIDLOLD, KICEMASK,
-     &             1, NIBLO, CDTPRO,
-!------------------ dummy parameters & arrays
-     &             NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
-     &             ISEC1, ISEC2, FIELDS, MASK_IN,
-!---------------------------------------------
-     &             LWNDFILE, LCLOSEWND)
+
+!     GETWND REQUIRES FIELDG TO BE ALLOCATED !
+      ALLOCATE(FIELDG(NGX,NGY))
+      CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD)
+      DEALLOCATE(FIELDG)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
 
-!     USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
+
+
+!     1.2 USE DATA FROM A FILE CONTAINING WIND SPEED MODIFIED BY
+!         ----------------------------------------------------
 !     A PREVIOUS WAVE MODEL RUN ON WHICH THIS RESTART IS BASED
-!     IF IT EXISTS, OTHERWISE PRESET WILL USE THE INFORMATION FROM
+!     IF IT EXISTS, OTHERWISE IT WILL USE THE INFORMATION FROM
 !     THE ATMOSPHERIC MODEL WIND SPEED ARCHIVE.
 
       LWAVEWIND=.FALSE.
@@ -129,8 +120,8 @@
 
         IPARAM=245
         LLONLYPOS=.FALSE.
-        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,RU10OLD,1,NIBLO,KEND,
-     &                 KZLEVUWAVE, LLONLYPOS)
+        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,U10OLD,
+     &                 KZLEVUWAVE, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
         WRITE(IU06,*) ' '
@@ -139,12 +130,11 @@
         WRITE(IU06,*) ' WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT '
-        WRITE(IU06,*) ' ',KZLEVUWAVE,' m'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',
+     &                  KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
         ILEV=1
-
 
       ELSE
 
@@ -159,8 +149,8 @@
         WRITE(IU06,*) ' WAS POSSIBLE'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WIND AND DRAG COEFFICIENT ARE ASSUMED'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT '
-        WRITE(IU06,*) ' ',KZLEVUWAVE,' m'
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',
+     &                  KZLEVUWAVE,' m'
 
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
       ENDIF
@@ -193,47 +183,51 @@
 
       ENDIF
 
+      IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NINF:NSUP,NBLO))
 
-      IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(NIBLO,NBLO))
-
-!     INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
+!     1.3 INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
+!         ----------------------------------------------------
 
       DO IG=1,IGL
-        IF(LMESSPASS) THEN
-          CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
-     &     RZ0OLD(1,IG), 1, KEND, ILEV)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+        MIJS=IJS(IG)
+        MIJL=IJL(IG)
+! Mod for OPENMP
+        NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
+        CALL GSTATS(1444,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=MIJS,MIJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,MIJL)
 
-          DO IJ=1,KEND
-!! the numerical relation between usold and u10old should always be as
-!! in outgrid
-            CDINV = MAX(RU10OLD(IJ,IG)**2,EPSU10)/
-     &              MAX(RUSOLD(IJ,IG)**2,EPSUS)
+          DO IJ=KIJS,KIJL
+            TAUW(IJ,IG)=0.
+          ENDDO
+
+          CALL AIRSEA (U10OLD(KIJS,IG),TAUW(KIJS,IG),USOLD(KIJS,IG),
+     &                 Z0OLD(KIJS,IG), KIJS, KIJL, ILEV)
+
+          DO IJ=KIJS,KIJL
+!!          THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
+!!          ALWAYS BE AS IN OUTGRID
+            CDINV = MAX(U10OLD(IJ,IG)**2,EPSU10)/
+     &              MAX(USOLD(IJ,IG)**2,EPSUS)
             CDINV = MIN(CDINV,10000.) 
             CD(IJ,IG) = 1./CDINV
           ENDDO
-        ELSE
-          CALL AIRSEA (RU10OLD(1,IG), RTAUW(1,IG),RUSOLD(1,IG),
-     &     RZ0OLD(1,IG), IJS(IG), IJL(IG), ILEV)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
-
-          DO IJ=IJS(IG),IJL(IG)
-!! the numerical relation between usold and u10old should always be as
-!! in outgrid
-            CDINV = MAX(RU10OLD(IJ,IG)**2,EPSU10)/
-     &              MAX(RUSOLD(IJ,IG)**2,EPSUS)
-            CDINV = MIN(CDINV,10000.) 
-            CD(IJ,IG) = 1./CDINV
-          ENDDO
-        ENDIF
+        ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1444,1)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
       ENDDO
 
+!     1.4  GET DRAG COEFFICIENT
+!          --------------------
       IF(.NOT.LNOCDIN) THEN
         IPARAM=233
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
-        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,1,NIBLO,KEND,
-     &                 KZLEVCD, LLONLYPOS)
+        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,
+     &                 KZLEVCD, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
@@ -254,31 +248,39 @@
           ENDIF
         ENDIF
 
-!       COMPUTE TAUW,USOLD AND Z0OLD
+
+
+!       1.5 COMPUTE TAUW,USOLD AND Z0OLD
+!           ----------------------------
 
         ILEV=1
 
         DO IG=1,IGL
-           IF(LMESSPASS) THEN
-             IJSTART=1
-             IJSTOP=KEND
-           ELSE
-             IJSTART=IJS(IG)
-             IJSTOP=IJL(IG)
-           ENDIF
-           DO IJ=IJSTART,IJSTOP
-            CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
-            RZ0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
-!! RUSOLD will first contain its square
-!! the numerical relation between usold and u10old should always be as
-!! in outgrid
-            RUSOLD(IJ,IG) = CD(IJ,IG)*MAX(RU10OLD(IJ,IG)**2,EPSU10)
-            RUSOLD(IJ,IG) = MAX(RUSOLD(IJ,IG),EPSUS)
-            CHARNOCK = G*RZ0OLD(IJ,IG)/RUSOLD(IJ,IG)
-            CHARNOCK = MAX(CHARNOCK,ALPHA)
-            RTAUW(IJ,IG) = RUSOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
-            RUSOLD(IJ,IG) = SQRT(RUSOLD(IJ,IG))
+          MIJS=IJS(IG)
+          MIJL=IJL(IG)
+! Mod for OPENMP
+          NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
+          CALL GSTATS(1444,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=MIJS,MIJL,NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,MIJL)
+            DO IJ=KIJS,KIJL
+              CDSQRTINV = MIN(1./SQRT(CD(IJ,IG)),100.0)
+              Z0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
+!!            USOLD WILL FIRST CONTAIN ITS SQUARE
+!!            THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
+!!            ALWAYS BE AS IN OUTGRID
+              USOLD(IJ,IG) = CD(IJ,IG)*MAX(U10OLD(IJ,IG)**2,EPSU10)
+              USOLD(IJ,IG) = MAX(USOLD(IJ,IG),EPSUS)
+              CHARNOCK = G*Z0OLD(IJ,IG)/USOLD(IJ,IG)
+              CHARNOCK = MAX(CHARNOCK,ALPHA)
+              TAUW(IJ,IG) = USOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
+              USOLD(IJ,IG) = SQRT(USOLD(IJ,IG))
+            ENDDO
           ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1444,1)
         ENDDO
       ENDIF
 
@@ -290,8 +292,10 @@
         DEALLOCATE(TEMPTAUT)
       ENDIF
 
-      IF (ITEST.GE.2)
+      IF (ITEST.GE.1)
      &    WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
+
+      IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE BUILDSTRESS

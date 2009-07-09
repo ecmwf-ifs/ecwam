@@ -81,12 +81,14 @@
         READ(CDATE,'(i4, 5i2)')IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
       ELSEIF (IL==0) THEN
         WRITE(6, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
+        WRITE(*, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
         CALL ABORT
       ELSE
         WRITE(CLFMT,'(A59, I2.2, A2)')
      &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE
+        WRITE(*, CLFMT) IL, CDATE
         STOP
       ENDIF
 
@@ -106,6 +108,14 @@
         WRITE(6, '("           IHOUR ", I2 )') IHOUR
         WRITE(6, '("           IMIN ", I2 )') IMIN
         WRITE(6, '("           ISEC ", I2 )') ISEC
+        WRITE(*, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(*, '("           INPUT DATE INCORRECT,")')
+        WRITE(*, '("           IYEAR ", I4 )') IYEAR
+        WRITE(*, '("           IMON ", I2 )') IMON
+        WRITE(*, '("           IDAY ", I2 )') IDAY
+        WRITE(*, '("           IHOUR ", I2 )') IHOUR
+        WRITE(*, '("           IMIN ", I2 )') IMIN
+        WRITE(*, '("           ISEC ", I2 )') ISEC
         CALL ABORT
       ENDIF
       IF (IL==12 .AND. MOD(ISHIFT,60).NE.0) THEN
@@ -114,6 +124,10 @@
         WRITE(6, '(" WHEN HANDELING CHARACTER*12 DATES,")')
         WRITE(6, '(" ISHIFT MUST BE A MULTIPLE OF 60 SECONDS")')
         WRITE(6, '(" ISHIFT = ", I12 )') ISHIFT
+        WRITE(*, '(" INCDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(*, '(" WHEN HANDELING CHARACTER*12 DATES,")')
+        WRITE(*, '(" ISHIFT MUST BE A MULTIPLE OF 60 SECONDS")')
+        WRITE(*, '(" ISHIFT = ", I12 )') ISHIFT
         CALL ABORT
       ENDIF
 

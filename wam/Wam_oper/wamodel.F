@@ -280,8 +280,8 @@
 !          WAVE PREDICTION MODEL. JPO, VOL. 18, NO. 12, 1988.
 !       P.A.E.M JANSSEN: JPO, 1989 AND 1991.
 !       K. HASSELMANN: TRANSPORT EQUATION OF FINITE DEPTH SURFACE
-!          WAVE SPECTRUM IN TIME DPENDANT CURRENT AND DEPTH FIELD USING
-!          NONCANONICAL SPACIAL (SPHERICAL) AND WAVE NUMBER (FRQUENCY-
+!          WAVE SPECTRUM IN TIME DEPENDANT CURRENT AND DEPTH FIELD USING
+!          NONCANONICAL SPATIAL (SPHERICAL) AND WAVE NUMBER (FRQUENCY-
 !          DIRECTION) COORDINATES. WAM REPORT 1988.
 
 ! -------------------------------------------------------------------
@@ -294,7 +294,9 @@
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP
+      USE YOWCURR  , ONLY : CDTCUR
       USE YOWFBOU  , ONLY : IBOUNF
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
@@ -307,7 +309,8 @@
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,QPG      ,HMAXG    ,TMAXG
+     &            BFG      ,QPG      ,HMAXG    ,TMAXG    ,USTOKESG ,
+     &            VSTOKESG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -340,8 +343,10 @@
 !!                  SL IS used as a FL array when intpol is called !
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLATN    ,KLONN    ,
-     &             SUMWN   ,WLATN   ,WLONN    ,WKPMN
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,
+     &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,
+     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
+     &            LUPDTWGHT 
       USE YOWUNIT  , ONLY : IU02     ,IU08     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU19     ,IU20     ,IU21     ,
      &            IU25     ,IU26     ,IU04     ,IU30
@@ -361,15 +366,12 @@
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
       LOGICAL GFLAGBAK(JPPFLAG)
       LOGICAL :: LSV, LRST, LOUT,L1STCALL,LLINTPOL,L4VOUT 
-      LOGICAL :: LUPDTWGHT
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
 !     DEFINE LOCAL ALLOCATABLE ARRAYS
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: FL4
       REAL(KIND=JPRB) :: ZHOOK_HANDLE
-
-      DATA LUPDTWGHT /.TRUE./
 
 ! ----------------------------------------------------------------------
 
@@ -435,9 +437,29 @@
           ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
         ENDDO
 
-        CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+!         convert output spectra to absolute frame of reference
+          CALL GSTATS(1236,0)
+          IRA=1
+          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+             KIJS=JKGLO
+             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+             CALL INTPOL (FL1, SL, KIJS, KIJL, IG, IRA)
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1236,1)
+          LLINTPOL=.TRUE.
+
+          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
+     &                IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
+     &                TAUW, NSTART,NEND)
+        ELSE
+          CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
      &              IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &              TAUW, NSTART,NEND)
+        ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
 
@@ -662,7 +684,7 @@
         IF(.NOT.LMESSPASS) REWIND IU12
 
         IF (IGL.NE.1) THEN
-          REWIND IU08
+          REWIND IU08(IPROPAGS)
           REWIND IU11
           REWIND IU13
           REWIND IU14
@@ -702,7 +724,8 @@
 !           ----------------------------------------------------------
 
           IF (IGL.NE.1) THEN
-            READ (IU08) KLAT, KLON
+            READ (IU08(IPROPAGS)) KLAT
+            READ (IU08(IPROPAGS)) KLON
 !SHALLOW
 
 !*    1.5.3 COMPUTE SHALLOW WATER TABLE INDICES.
@@ -778,26 +801,43 @@
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
           IF (CDATE.EQ.CDTPRA) THEN
+
 !           IF CTU SCHEME IS USED, COMPUTE THE WEIGHTS
-!!!! ???? once we have currents, we might need to update more often !!!!
             IF(IPROPAGS.EQ.2. AND. LUPDTWGHT) THEN
               ALLOCATE(LCFLFAIL(IJS(IG):IJL(IG)))
 
               WRITE(IU06,*) '   SUB. WAMODEL: BEFORE CALLING CTUW'
               CALL FLUSH (IU06)
 
-              IF(.NOT. ALLOCATED(KLATN))
-     &           ALLOCATE(KLATN(IJS(IG):IJL(IG),NANG,-1:1))
-              IF(.NOT. ALLOCATED(KLONN))
-     &           ALLOCATE(KLONN(IJS(IG):IJL(IG),NANG))
               IF(.NOT. ALLOCATED(SUMWN))
      &           ALLOCATE(SUMWN(IJS(IG):IJL(IG),NANG,NFRE))
               IF(.NOT. ALLOCATED(WLATN))
-     &           ALLOCATE(WLATN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
+     &           ALLOCATE(WLATN(IJS(IG):IJL(IG),NANG,NFRE,2,2))
+              IF(.NOT. ALLOCATED(LLWLATN))
+     &           ALLOCATE(LLWLATN(NANG,NFRE,2,2))
+
               IF(.NOT. ALLOCATED(WLONN))
-     &           ALLOCATE(WLONN(IJS(IG):IJL(IG),NANG,NFRE))
+     &           ALLOCATE(WLONN(IJS(IG):IJL(IG),NANG,NFRE,2))
+              IF(.NOT. ALLOCATED(LLWLONN))
+     &           ALLOCATE(LLWLONN(NANG,NFRE,2))
+
+              IF(.NOT. ALLOCATED(WCORN))
+     &           ALLOCATE(WCORN(IJS(IG):IJL(IG),NANG,NFRE,4,2))
+              IF(.NOT. ALLOCATED(LLWCORN))
+     &           ALLOCATE(LLWCORN(NANG,NFRE,4,2))
+
               IF(.NOT. ALLOCATED(WKPMN))
      &           ALLOCATE(WKPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
+              IF(.NOT. ALLOCATED(LLWKPMN))
+     &           ALLOCATE(LLWKPMN(NANG,NFRE,-1:1))
+
+              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+                IF(.NOT. ALLOCATED(WMPMN))
+     &             ALLOCATE(WMPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
+                IF(.NOT. ALLOCATED(LLWMPMN))
+     &             ALLOCATE(LLWMPMN(NANG,NFRE,-1:1))
+              ENDIF
+
 
               CALL GSTATS(1430,0)
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
@@ -813,19 +853,104 @@
                 CALL FLUSH (IU06)
               ENDIF
 
+              CALL GSTATS(753,0)
+              CALL MPL_BARRIER(CDSTRING='WAMODEL AFTER CTUW:')
+              CALL GSTATS(753,1)
               DO IJ=IJS(IG),IJL(IG)
                 IF(LCFLFAIL(IJ)) THEN
-                  WRITE(*,*) '!!! ********************************* !!'
-                  WRITE(*,*) '!!! WAVE MODEL HAS ABORTED !!!'
-                  WRITE(*,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
-                  WRITE(*,*) '!!! ON PE ',IRANK
-                  WRITE(*,*) '!!! ********************************* !!'
+                  WRITE(0,*) '!!! ********************************* !!'
+                  WRITE(0,*) '!!! WAVE MODEL HAS ABORTED !!!'
+                  WRITE(0,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
+                  WRITE(0,*) '!!! ON PE ',IRANK
+                  WRITE(0,*) '!!! ********************************* !!'
                   CALL ABORT1
                 ENDIF
               ENDDO
 
+!             FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION
+!             IN PROPAGS2
+
+              DO IC=1,2
+                DO ICL=1,2
+                  DO K=1,NANG
+                    DO M=1,NFRE
+                      LLWLATN(K,M,IC,ICL)=.FALSE.
+                      DO IJ=IJS(IG),IJL(IG)
+                        IF(WLATN(IJ,K,M,IC,ICL).GT.0.) THEN
+                          LLWLATN(K,M,IC,ICL)=.TRUE.
+                          EXIT
+                        ENDIF
+                      ENDDO
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDDO
+
+              DO IC=1,2
+                DO M=1,NFRE
+                  DO K=1,NANG
+                    LLWLONN(K,M,IC)=.FALSE.
+                    DO IJ=IJS(IG),IJL(IG)
+                      IF(WLONN(IJ,K,M,IC).GT.0.) THEN
+                        LLWLONN(K,M,IC)=.TRUE.
+                        EXIT
+                      ENDIF
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDDO
+
+              DO ICL=1,2
+                DO ICR=1,4
+                  DO M=1,NFRE
+                    DO K=1,NANG
+                      LLWCORN(K,M,ICR,ICL)=.FALSE.
+                      DO IJ=IJS(IG),IJL(IG)
+                        IF(WCORN(IJ,K,M,ICR,ICL).GT.0.) THEN
+                          LLWCORN(K,M,ICR,ICL)=.TRUE.
+                          EXIT
+                        ENDIF
+                      ENDDO
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDDO
+
+              DO IC=-1,1
+                DO M=1,NFRE
+                  DO K=1,NANG
+                   LLWKPMN(K,M,IC)=.FALSE.
+                    DO IJ=IJS(IG),IJL(IG)
+                      IF(WKPMN(IJ,K,M,IC).GT.0.) THEN
+                        LLWKPMN(K,M,IC)=.TRUE.
+                        EXIT
+                      ENDIF
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDDO
+
+              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+                DO IC=-1,1
+                  DO M=1,NFRE
+                    DO K=1,NANG
+                     LLWMPMN(K,M,IC)=.FALSE.
+                      DO IJ=IJS(IG),IJL(IG)
+                        IF(WMPMN(IJ,K,M,IC).GT.0.) THEN
+                          LLWMPMN(K,M,IC)=.TRUE.
+                          EXIT
+                        ENDIF
+                      ENDDO
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDIF
+
               LUPDTWGHT=.FALSE.
               DEALLOCATE(LCFLFAIL)
+              IF(ALLOCATED(THDD)) DEALLOCATE(THDD)
+              IF(ALLOCATED(THDC)) DEALLOCATE(THDC)
+              IF(ALLOCATED(SDOT)) DEALLOCATE(SDOT)
             ENDIF
 
             IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
@@ -1048,12 +1173,12 @@
             ENDIF
           ENDIF
 
-!!          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
+          IF(.NOT.LWCOU .AND. .NOT. LDSTOP) THEN
 !!!!      the call to CHESIG is a signal handeling facility which is
 !!!!      specific to running WAM at ECMWF, it can be ignored when
 !!!!      WAM is not run at ECMWF.
-!!            CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
-!!          ENDIF
+            CALL CHESIG (IU06, ITEST, IRANK, NPROC, LDSTOP, LDWRRE)
+          ENDIF
 
           LRST=(LDWRRE .AND. KADV.EQ.NADV )
           IF(LRST) THEN
@@ -1078,10 +1203,20 @@
      &     THEN
 
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-              CALL GSTATS(1908,0)
-              CALL INTPOL (FL3, SL, IJS(IG), IJL(IG), IG, 1)
+!             convert output spectra to absolute frame of reference
+              CALL GSTATS(1236,0)
+              IRA=1
+              NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+              DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                CALL INTPOL (FL3, SL, KIJS, KIJL, IG, IRA)
+              ENDDO
+!$OMP         END PARALLEL DO
+              CALL GSTATS(1236,1)
               LLINTPOL=.TRUE.
-              CALL GSTATS(1908,1)
+
               CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
      &                    IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                    TAUW, NSTART,NEND)
@@ -1113,9 +1248,9 @@
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            DO IJ=KIJS,KIJL
-              DO K=1,NANG
-                DO M=1,NFRE
+            DO K=1,NANG
+              DO M=1,NFRE
+                DO IJ=KIJS,KIJL
                   FL1(IJ,K,M) = FL3(IJ,K,M)
 !!!   note in case of Alt and SAR assimilation both FL1 and FL3
 !!!   are needed since FL1 will be first modified by the altimeter
@@ -1190,6 +1325,8 @@
           IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
           IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
           IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
+          IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
+          IF(ALLOCATED(VSTOKESG)) DEALLOCATE(VSTOKESG)
 
           IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
           IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)
@@ -1350,9 +1487,17 @@
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !               convert output spectra to absolute frame of reference
                 IF (.NOT.LLINTPOL) THEN
-                  CALL GSTATS(1908,0)
-                  CALL INTPOL (FL1, SL, IJS(IG), IJL(IG), IG, 1)
-                  CALL GSTATS(1908,1)
+                  CALL GSTATS(1236,0)
+                  IRA=1
+                  NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP          PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+                  DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                    KIJS=JKGLO
+                    KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                    CALL INTPOL (FL1, SL, KIJS, KIJL, IG, IRA)
+                  ENDDO
+!$OMP          END PARALLEL DO
+                  CALL GSTATS(1236,1)
                 ENDIF
                 CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                       SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
@@ -1434,7 +1579,7 @@
 
               CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                      IASSI, NFCST, ISTAT)
+     &                      IASSI, NFCST, ISTAT, CDTCUR)
  
               CLOSE (IU04)
               WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',

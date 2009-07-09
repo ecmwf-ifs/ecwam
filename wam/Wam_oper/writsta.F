@@ -1,5 +1,6 @@
       SUBROUTINE WRITSTA (IDIN, CBDT, CEDT, ANALPD, FOREPD, IS,
-     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT)
+     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
+     &                    CCURA)
                                                                         
 ! --------------------------------------------------------------------- 
 
@@ -30,6 +31,7 @@
 !         *IASS*     INTEGER     ASSIMILATION CONDITION.                
 !         *NF*       INTEGER     NEW FORECAST CONDITION.                
 !         *ISTAT*    INTEGER     JOB STATUS INDICATORS.                 
+!         *CCURA*    CHAR*14     BEGIN DATE FOR USE OF CURRENTS.                 
 
 !     METHOD.                                                           
 !     -------                                                           
@@ -52,7 +54,7 @@
 
       INTEGER ANALPD, FOREPD                      
       INTEGER ISTAT(3)                                                  
-      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT,  CRSDT, CLSDT
+      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT,  CRSDT, CLSDT, CCURA
 
 ! --------------------------------------------------------------------- 
 
@@ -104,6 +106,9 @@
 
       WRITE(CARD(14),9) CLSDT
     9 FORMAT('LAST DATE FOR SPECTRA FILE OUTPUT = ',A14)
+
+      WRITE(CARD(15),10) CCURA
+   10 FORMAT('BEGIN DATE FOR USING SURFACE CURRENT = ',A14)
 
 !*    2.0  WRITE CARD TO IDIN.                                          
 !          -------------------                                          

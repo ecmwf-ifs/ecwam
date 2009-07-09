@@ -15,6 +15,10 @@
 !     J. BIDLOT        ECMWF  OCTOBER  1997 ADD OUTPUT OF U10G.
 !     B. HANSEN        ECMWF  FEBRUARY 1998 INTERFACE TO FDB.
 !     P. TOWERS        ECMWF  APRIL    2003 ISETFIELDCOUNTFDB
+!     P.A.E.M. JANSSEN ECMWF  JUNE     2007 ADD OUTPUT OF FREAK WAVE 
+!                                           PARAMETERS.
+!     P.A.E.M. JANSSEN ECMWF  MARCH    2009 ADD OUTPUT OF STOKES DRIFT 
+!                                           COMPONENTS.
 
 !*    PURPOSE.
 !     --------
@@ -63,7 +67,7 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
-     &            DEPTHG   ,HMAXG    ,TMAXG
+     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -204,6 +208,8 @@
         IF (FFLAG(37))CALL MPGATHERGRDFLD(IPFGTBL(37),IRECV,37,DEPTHG)
         IF (FFLAG(38))CALL MPGATHERGRDFLD(IPFGTBL(38),IRECV,38,HMAXG)
         IF (FFLAG(39))CALL MPGATHERGRDFLD(IPFGTBL(39),IRECV,39,TMAXG)
+        IF (FFLAG(40))CALL MPGATHERGRDFLD(IPFGTBL(40),IRECV,40,USTOKESG)
+        IF (FFLAG(41))CALL MPGATHERGRDFLD(IPFGTBL(41),IRECV,41,VSTOKESG)
 
       ENDIF
 
@@ -293,6 +299,10 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(38),IRECV,138,HMAXG)
         IF (PFLAG(39).OR.(.NOT.LFDB.AND.GFLAG(39)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(39),IRECV,139,TMAXG)
+        IF (PFLAG(40).OR.(.NOT.LFDB.AND.GFLAG(40)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(40),IRECV,140,USTOKESG)
+        IF (PFLAG(41).OR.(.NOT.LFDB.AND.GFLAG(41)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(41),IRECV,141,VSTOKESG)
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
@@ -358,6 +368,8 @@
             IF (FFLAG(37))WRITE (IU20) DEPTHG
             IF (FFLAG(38))WRITE (IU20) HMAXG
             IF (FFLAG(39))WRITE (IU20) TMAXG
+            IF (FFLAG(40))WRITE (IU20) USTOKESG
+            IF (FFLAG(41))WRITE (IU20) VSTOKESG
           ENDIF
         ENDIF
 
@@ -518,6 +530,20 @@
             TITL = ' MAX WAVE PERIOD ( SECOND )'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
      &                 TMAXG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(40)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' U-COMP STOKES DRIFT ( 0.01 M/S )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 USTOKESG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(41)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' V-COMP STOKES DRIFT ( 0.01 M/S )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 VSTOKESG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
         ENDIF
@@ -747,9 +773,10 @@
      &      .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=249
+            IZLEV=NINT(XNLEV(1))
             CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,
      &                   IY,IM,ID,IH,IMN,
-     &                   IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &                   IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
      &                   YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
      &                   LFDBOPEN)
           ENDIF
@@ -1038,6 +1065,40 @@
             ilocal=ilocal+1
             IPARAM=217
             CALL GRIBPAC(IU06,IU30,NTENCODE,TMAXG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      U-COMP STOKES DRIFT.
+!       -------------------
+
+        IF (GFLAG(40)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(40)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=215
+            CALL GRIBPAC(IU06,IU30,NTENCODE,USTOKESG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      V-COMP STOKES DRIFT.
+!       -------------------
+
+        IF (GFLAG(41)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(41)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=216
+            CALL GRIBPAC(IU06,IU30,NTENCODE,VSTOKESG,NGX,NGY,IPARAM,
      &       IY,IM,ID,IH,IMN,
      &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)

@@ -32,9 +32,13 @@
 
 !----------------------------------------------------------------------
 
+      USE YOWPCONS , ONLY : PI     , C4MAX    ,C4MIN 
+
+!----------------------------------------------------------------------
+ 
       IMPLICIT NONE
       INTEGER :: IJ, IJS, IJL
-      REAL :: GAMMA_E, PI, CONST, C4M, XN, Z0, B_Z, ARG, Z 
+      REAL :: GAMMA_E, CONST, C4M, XN, Z0, B_Z, ARG, Z 
       INTEGER, DIMENSION(IJS:IJL):: NW
       REAL, DIMENSION(IJS:IJL):: C4,HMAX_N
 
@@ -42,13 +46,12 @@
 !     -----------------------------------------
     
       GAMMA_E = 0.57721566  ! EULER CONSTANT
-      PI = 4.*ATAN(1.)
 
       CONST = 0.5*(GAMMA_E**2+PI**2/6.)
 
       DO IJ=IJS,IJL
-         C4M = MIN(1.,C4(IJ))
-         C4M = MAX(-0.33,C4M)
+         C4M = MIN(C4MAX,C4(IJ))
+         C4M = MAX(C4MIN,C4M)
          XN = FLOAT(NW(IJ))
 
          Z0 = 0.5*LOG(XN)

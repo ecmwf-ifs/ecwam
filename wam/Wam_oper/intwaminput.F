@@ -96,7 +96,7 @@
 ! ----------------------------------------------------------------------
 
       IU06 = 6
-      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
 
       WRITE(IU06,*) ' INTWAMINPUT STARTED '
 

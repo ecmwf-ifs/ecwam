@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID (FL3, IJS, IJL, IG,U10NEW,THWNEW,USNEW,TAUW,
+      SUBROUTINE OUTGRID (IJS, IJL, IG, U10NEW, THWNEW, USNEW, TAUW,
      &                    NSTART,NEND)
 ! ----------------------------------------------------------------------
 
@@ -29,8 +29,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTGRID (FL3, IJS, IJL, IG,U10NEW,THWNEW,USNEW,TAUW)*
-!         *FL3*    - BLOCK OF SPECTRA.
+!        *CALL* *OUTGRID (IJS, IJL, IG,U10NEW,THWNEW,USNEW,TAUW)*
+!    &                    NSTART,NEND)
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *IG*     - BLOCK NUMBER.
@@ -70,13 +70,15 @@
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG
+     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
+     &            USTOKESG ,VSTOKESG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN    ,
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,BFMEAN   ,
-     &            QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN
+     &            QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,USTMEAN  ,
+     &            VSTMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
@@ -93,7 +95,6 @@
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3
       REAL,DIMENSION(NINF:NSUP,NBLO) :: TAUW
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
 
@@ -296,6 +297,22 @@
      &      CALL MAKEGRID (TEMP,TMAXG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
+          IF(IPFGTBL(40).NE.0) THEN
+            CALL LOC2GLO(USTMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(40),40,NSTART,NEND,TEMP)
+            IF(IPFGTBL(40).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,USTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(41).NE.0) THEN
+            CALL LOC2GLO(VSTMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(41),41,NSTART,NEND,TEMP)
+            IF(IPFGTBL(41).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,VSTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
         ELSE
 
           IF(IPFGTBL(1).NE.0) THEN
@@ -429,6 +446,18 @@
             CALL LOC2GLO(TMAXMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
             CALL MAKEGRID (TEMP,TMAXG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(40).NE.0) THEN
+            CALL LOC2GLO(USTMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,USTOKESG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(41).NE.0) THEN
+            CALL LOC2GLO(VSTMEAN,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,VSTOKESG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
         ENDIF

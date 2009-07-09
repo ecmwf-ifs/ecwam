@@ -1,4 +1,4 @@
-      SUBROUTINE GETSPEC(FL,NSTART,NEND,IREAD,U10OLD,THWOLD)
+      SUBROUTINE GETSPEC(FL,SL,NSTART,NEND,IREAD,U10OLD,THWOLD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 
@@ -8,8 +8,9 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL,NSTART,NEND,IREAD,U10OLD,THWOLD)
+!     *CALL* *GETSPEC(FL,SL,NSTART,NEND,IREAD,U10OLD,THWOLD)
 !     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
+!     *SL*        SPARE ARRAY TO MANIPUATE SPECTRA
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK 
@@ -22,8 +23,8 @@
 !     -------
 
 !     IN CASE THE INPUT SPECTRA ARE IN GRIB THEN EITHER THEY ARE READ
-!     FROM A FILE ON DISK USING THE PBGRIB SOFTWARE OR THEY ARE READ
-!     DIRECTLY FROM FDB. GRIB SPECTRA WILL BE DECODED. IN CASE OF BINARY
+!     FROM A FILE ON DISK USING THE PBGRIB SOFTWARE.
+!     GRIB SPECTRA WILL BE DECODED. IN CASE OF BINARY
 !     DATA, USE READFL TO READ IN THE SPECTRA DEPENDING ON THE USE OF
 !     THE PBIO SOFTWARE OR NOT. PBIO WILL LIMIT THE SIZE OF THE ARRAY
 !     NECESSARY TO READ THE INPUT SPECTRA. THE READING IS ONLY DONE ON
@@ -48,7 +49,7 @@
 !     NONE
 
 ! ----------------------------------------------------------------------
-
+      USE YOWCOUT  , ONLY : KDEL    ,MDEL
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3  , 
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3   ,
@@ -63,8 +64,8 @@
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
      &            EPSMIN
-      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CFDB2DSP ,YCLASS   ,
-     &            YEXPVER  ,NWAM_BLKS,LNSESTART
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NWAM_BLKS,IREFRA   ,
+     &            LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
       USE MPL_MODULE
@@ -72,26 +73,17 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 126000)
+      PARAMETER (NBIT = 140000)
 
-      CHARACTER*  9 CMBXSIZE
       CHARACTER* 14 CDATE 
       CHARACTER* 120 FILENAME
 
-!* fdb variables.
-
-      CHARACTER*  4 CLEXPVER
-      CHARACTER*  2 CLTYPE, CLCLASS, CLDIR, CLFRE
-
       LOGICAL LFRSDECODE, LPBOPEN, LPBCLOSE, LLEXIST
-
-      INTEGER ifdb
-      SAVE ifdb
 
 ! ----------------------------------------------------------------------
 
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL, SL
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
 
 ! ----------------------------------------------------------------------
@@ -100,7 +92,8 @@
       INTEGER,ALLOCATABLE :: INGRIB(:), IPOINTER(:)
       INTEGER,ALLOCATABLE :: KSEC0(:),KSEC1(:),KSEC2(:),KSEC3(:)
       INTEGER,ALLOCATABLE :: KSEC4(:)
-      REAL, ALLOCATABLE,DIMENSION(:) :: PSEC2,PSEC3,PSEC4,WORK,WORKRCV
+      REAL, ALLOCATABLE,DIMENSION(:) :: PSEC2,PSEC3,PSEC4,WORK
+      REAL, ALLOCATABLE,DIMENSION(:) :: ZRECVBUF
 
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
       REAL :: ONE,ZTHETA,ZFRE
@@ -108,12 +101,12 @@
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
-
-      INTEGER :: ISENDREQ
+      INTEGER :: IPROC, ITAG, IREQ, IST, IEND
+      INTEGER :: ISENDREQ(NPROC)
 
       LOGICAL :: LLEPSMIN
 
-      DATA MDEL, ONE / 1, 1.0/
+      DATA ONE /1.0/
 
 ! ----------------------------------------------------------------------
 
@@ -218,70 +211,13 @@ C
             ENDIF
 
           ELSE
-
-!           INITIALIZE AND OPEN FDB.
-
-            istat = iopenfdbsubs ('fdb', ifdb, 'r')
-            IF (ITEST.GE.2)WRITE(iu06,'("  FDB OPENED status=",I3,
-     &         " Reference=", I2)') istat, ifdb
-
-            ICFDB2DSP = LEN_TRIM(CFDB2DSP)
-            IF (ICFDB2DSP .GT. 0 ) THEN
-              ISTAT = ISET_FDBSUBS_ROOT(IFDB, CFDB2DSP(1:ICFDB2DSP) )
-              IF ( ISTAT .NE. 0 ) THEN
-                WRITE(IU06,'("Error\ /Getspec/ Root dir specified:
-     &                       ",A)') CFDB2DSP(1:ICFDB2DSP)
-                WRITE(IU06,'("Error\ /Getspec/
-     &                      iopenfdb return status:",I3)') istat
-                kerr = 1
-                CALL ABORT1
-              ELSEIF (ITEST.GE.2) THEN
-                WRITE(IU06,'("\ /Getspec/ iset_fdb_root status:",
-     &                  i3,
-     &          " Root: ", a25)') istat, CFDB2DSP(1:ICFDB2DSP)
-              ENDIF
-            ENDIF
-
-!           SET FIXED PARAMETERS FOR FDB.
-
-            istat = isetvalfdbsubs (ifdb, 'levty',  's'      )
-            istat = isetvalfdbsubs (ifdb, 'param',  '251'    )
-            istat = isetvalfdbsubs (ifdb, 'repres', 'll'     )
-            istat = isetvalfdbsubs (ifdb, 'stream', 'wave'   )
-            istat = isetvalfdbsubs (ifdb, 'step',   '000000' )
-!---<       istat = isetvalfdbsubs (ifdb, 'fstep',  '000000' )
-
-            kfcst = 0
-            IF ( kfcst .EQ. 0 ) THEN
-              cltype='an'
-            ELSE
-              cltype='fc'
-            ENDIF
-
-            clclass = yclass
-            clexpver = yexpver
-
-            CALL u2l1cr( cltype )
-            CALL u2l1cr( clclass )
-            CALL u2l1cr( clexpver )
-
-            istat = isetvalfdbsubs (ifdb, 'expver', clexpver    )
-            istat = isetvalfdbsubs (ifdb, 'date',   cdtpro(1:8))
-            istat = isetvalfdbsubs (ifdb, 'type',   cltype     )
-            istat = isetvalfdbsubs (ifdb, 'time',   cdtpro(9:10))
-            istat = isetvalfdbsubs (ifdb, 'domain', cldomain )
-!---<       istat = isetrankfdbsubs (ifdb, ipe)
-
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,'("\ /getspec/ PARAM: ", a8)') '251'
-              WRITE(IU06,'("\ /getspec/ STEP:  ", a8)') '000000'
-              WRITE(IU06,'("\ /getspec/ CLASS: ", a8)') clclass
-              WRITE(IU06,'("\ /getspec/ EXPVER:", a8)') clexpver
-              WRITE(IU06,'("\ /getspec/ DOMAIN:", a8)') cldomain
-              WRITE(IU06,'("\ /getspec/ TY:   ", a8)') cltype
-              WRITE(IU06,'("\ /getspec/ DATE: ", a8)') cdtpro(1:8)
-              WRITE(IU06,'("\ /getspec/ TIME: ", a8)') cdtpro(9:10)
-            ENDIF
+            WRITE(IU06,*)'**************************************'
+            WRITE(IU06,*)'*                                    *'
+            WRITE(IU06,*)'*GETSPEC : THIS OPTION IS OBSOLETE !!*'
+            WRITE(IU06,*)'*PROGRAM WILL ABORT                  *'
+            WRITE(IU06,*)'*                                    *'
+            WRITE(IU06,*)'**************************************'
+            CALL ABORT1
           ENDIF
         ENDIF
 
@@ -297,10 +233,10 @@ C
 
         ALL_FILE : DO IC=1,NFRE*NANG,ISTEP 
 
-          IST=ISTEP
-          IF(IC+ISTEP.GT.NFRE*NANG ) IST=NFRE*NANG-IC+1
+          ISTEP_LOCAL=ISTEP
+          IF(IC+ISTEP.GT.NFRE*NANG ) ISTEP_LOCAL=NFRE*NANG-IC+1
 
-          ALL_DECODE_PE : DO IDUM=1,IST
+          ALL_DECODE_PE : DO IDUM=1,ISTEP_LOCAL
             IF(NPROC.EQ.1) THEN
               KSEND=1
             ELSEIF(IDUM.LT.IREAD) THEN
@@ -313,58 +249,7 @@ C
 
 !           DATA ARE READ IN ON PE IREAD
 
-            IF (LFDBIOIN.AND.IRANK.EQ.IREAD) THEN
-
-!             READ GRIB DATA FROM FDB (IF REQUESTED)
-!             SET VARIABLE PARAMETERS FOR FDB.
-
-              WRITE( cldir, '(i2.2)' ) K 
-              istat = isetvalfdbsubs( ifdb, 'direction', cldir )
-              WRITE( clfre, '(i2.2)' ) M
-              istat = isetvalfdbsubs( ifdb, 'frequency', clfre )
-              istat = isetvalfdbsubs (ifdb, 'class',  clclass       )
-              IF (ITEST.GE.2) THEN
-                WRITE(IU06,'("\ /getspec/ DIR:   ", a8)') cldir
-                WRITE(IU06,'("\ /getspec/ FREQ:  ", a8)') clfre
-              ENDIF
-
-!* try to estimate the size of the next product:
-
-              icount = 1129120
-              IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
-              ALLOCATE (ingrib(icount))
-              IF (ITEST.GE.2) WRITE(IU06,'(" GETSPEC: allocate", I10,
-     &          " words for ingrib", " nstart=", i8, " nend=", i8,
-     &          " spectrum=" , i4) ')icount,nstart(irank),nend(irank),
-     &          nang*nfre
-              irstat = ireadfdbsubs (ifdb, ingrib, icount      )
-              IF (irstat.NE.0 .OR. icount.LE.0) THEN
-                WRITE (IU06,'("***********************************")')
-                WRITE (IU06,'("*                                 *")')
-                WRITE (IU06,'("*ERROR FOLLOWING CALL TO ireadfdb *")')
-                WRITE (IU06,'("*IN GETSPEC                       *")')
-                WRITE (IU06,'("*STAT CODE irstat =", I10)') irstat
-                WRITE (IU06,'("*LENGTH OF MESSAGE=", I10)') icount
-                WRITE (IU06,'("*                                 *")')
-                WRITE (IU06,'("***********************************")')
-                CALL ABORT1
-              ELSEIF (ITEST.GE.2) THEN
-                WRITE(IU06,'(" GETSPEC: readfdb read ",i10,
-     &          " words (status:", i3, ")" )')icount, irstat
-              ENDIF
-
-              IF(M.EQ.NFRE.AND.K.EQ.NANG) THEN 
-                CALL GSTATS(1787,0)
-                istat = iclosefdbsubs(ifdb)
-                CALL GSTATS(1787,1)
-                IF (ISTAT .NE. 0) CALL ABORT1
-              ENDIF
-
-              isize = icount
-              IF (ITEST.GE.2) CALL FLUSH (IU06)
-
-
-            ELSEIF (.NOT.LFDBIOIN.AND.IRANK.EQ.IREAD) THEN
+            IF (.NOT.LFDBIOIN.AND.IRANK.EQ.IREAD) THEN
 
 !             READ GRIB DATA FROM FILE (IF REQUESTED)
 
@@ -389,6 +274,15 @@ C
                 CALL KGRIBSIZE(IU06, IUGRS, ILENG, ISIZE, 'GETSPEC')
                 GOTO 1000
               ENDIF
+
+            ELSEIF (LFDBIOIN.AND.IRANK.EQ.IREAD) THEN
+              WRITE(IU06,*)'**************************************'
+              WRITE(IU06,*)'*                                    *'
+              WRITE(IU06,*)'*GETSPEC : THIS OPTION IS OBSOLETE !!*'
+              WRITE(IU06,*)'*PROGRAM WILL ABORT                  *'
+              WRITE(IU06,*)'*                                    *'
+              WRITE(IU06,*)'**************************************'
+              CALL ABORT1
 
             ENDIF
 
@@ -435,7 +329,7 @@ C
 
                 ITAG=NFRE*NANG+(M-1)*NANG+K
                 CALL MPL_SEND(INGRIB(1:ISIZE),KDEST=KSEND,KTAG=ITAG,
-     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ,
+     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ(1),
      &           KERROR=IERR,CDSTRING='GETSPEC 1:')
                 IF(IERR.LT.0) CALL MPL_ABORT
      &                      ('MPL_SEND ERROR AT 2 in GETSPEC' )
@@ -460,7 +354,7 @@ C
               ENDIF
 
               IF(IRANK.EQ.IREAD.AND.NPROC.NE.1) THEN
-                CALL MPL_WAIT(INGRIB(1:ISIZE),KREQUEST=ISENDREQ, 
+                CALL MPL_WAIT(INGRIB(1:ISIZE),KREQUEST=ISENDREQ(1), 
      &           CDSTRING='GETSPEC: WAIT FOR SEND')
 
                 IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
@@ -662,11 +556,10 @@ C
 
           ENDDO ALL_DECODE_PE
 
-!         DISTRIBUTE THE RESPECTIVE CONTRIBUTION OF WORK TO EACH PE.
-
-          ALLOCATE(WORKRCV(NIBLO))
-
-          DO IDUM=1,IST
+!         SEND THE RESPECTIVE CONTRIBUTIONS OF WORK TO EACH PE.
+          CALL GSTATS(623,0)
+          IREQ=0
+          DO IDUM=1,ISTEP_LOCAL
             IF(NPROC.EQ.1) THEN
               KSEND=1
             ELSEIF(IDUM.LT.IREAD) THEN
@@ -680,21 +573,90 @@ C
             ITAG=2*NFRE*NANG+(M-1)*NANG+K
 
             IF(IRANK.EQ.KSEND) THEN
-              CALL MPDISTRIBSCFLD(KSEND,ITAG,NSTART,NEND,WORK)
-              DO IJ = NSTART(IRANK),NEND(IRANK) 
-                FL(IJ,K,M) = WORK(IJ)
+!             SEND TO ALL OTHER TASKS
+              DO IP=1,NPROC-1
+                IPROC=MOD(IRANK+IP-1,NPROC)+1
+                IREQ=IREQ+1
+                IST=NSTART(IPROC)
+                IEND=NEND(IPROC)
+                CALL MPL_SEND(WORK(IST:IEND),
+     &                        KDEST=IPROC,KTAG=ITAG,
+     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                        KREQUEST=ISENDREQ(IREQ),
+     &                        CDSTRING='GETSPEC: SENDING WORK' )
               ENDDO
-            ELSE
-              CALL MPDISTRIBSCFLD(KSEND,ITAG,NSTART,NEND,WORKRCV)
-              DO IJ = NSTART(IRANK),NEND(IRANK) 
-                FL(IJ,K,M) = WORKRCV(IJ)
-              ENDDO
-            ENDIF
 
-            FL(NINF-1,K,M) = 0.
+            ENDIF
           ENDDO
 
-          IF(ALLOCATED(WORKRCV)) DEALLOCATE(WORKRCV)
+!         RECEIVE THE RESPECTIVE CONTRIBUTIONS OF WORK TO EACH PE.
+          IPROC=IRANK
+          IST=NSTART(IPROC)
+          IEND=NEND(IPROC)
+          ALLOCATE(ZRECVBUF(IST:IEND))
+          DO IDUM=1,ISTEP_LOCAL
+            IF(NPROC.EQ.1) THEN
+              KSEND=1
+            ELSEIF(IDUM.LT.IREAD) THEN
+              KSEND=IDUM
+            ELSE
+              KSEND=IDUM+1
+            ENDIF
+
+            M=(((IC-1)+IDUM-1)/NANG)+1
+            K=(IC-1)+IDUM-(M-1)*NANG
+
+            IF(IRANK.EQ.KSEND) THEN
+!             SAVE LOCAL CONTRIBUTION
+              DO IJ = NSTART(IRANK),NEND(IRANK) 
+                FL(IJ,K,M)=WORK(IJ)
+              ENDDO
+            ELSE
+!             RECEIVE INFORMATION FROM KSEND (that sets M and K)
+              CALL MPL_RECV(ZRECVBUF(IST:IEND),
+     &                      KFROM=KFROM,KRECVTAG=KRTAG,
+     &                      KMP_TYPE=JP_BLOCKING_STANDARD,
+     &                      CDSTRING='GETSPEC: RECEIVING WORK' )
+
+              IF(KFROM.LT.IREAD) THEN
+                ID=KFROM
+              ELSE
+                ID=KFROM-1
+              ENDIF
+              MR=(((IC-1)+ID-1)/NANG)+1
+              KR=(IC-1)+ID-(MR-1)*NANG
+              ITAG=2*NFRE*NANG+(MR-1)*NANG+KR
+              IF(KRTAG.NE.ITAG) THEN
+                WRITE(0,*)'MPL_RECV ERROR in GETSPEC: MISMATCHED TAGS'
+                WRITE(0,*)'IRANK = ',IRANK
+                WRITE(0,*)'KFROM = ',KFROM
+                WRITE(0,*)'KRTAG = ',KRTAG
+                WRITE(0,*)'ITAG  = ',ITAG
+                WRITE(0,*)' ABORTING !!!!'
+                CALL ABORT1
+              ENDIF
+
+              DO IJ = IST,IEND 
+                FL(IJ,KR,MR)=ZRECVBUF(IJ) 
+              ENDDO
+
+            ENDIF
+
+            FL(NINF-1,K,M)=0.
+          ENDDO
+          DEALLOCATE(ZRECVBUF)
+
+!         ENSURE ALL SENDS ARE FINISHED.
+          IF(IREQ.GT.0) THEN
+            CALL MPL_WAIT(WORK(:),KREQUEST=ISENDREQ(1:IREQ),
+     &                    CDSTRING='GETSPEC: WAIT SENDING WORK')
+          ENDIF
+          CALL GSTATS(623,1)
+
+
+!         MAKE SURE THAT ALL RECEIVE ARE FINISHED ON ALL PE'S
+!         BEFORE PROCESSING ANOTHER BATCH.
+          CALL MPL_BARRIER(CDSTRING='GETSPEC:')
 
         ENDDO ALL_FILE
 
@@ -722,175 +684,99 @@ C
         IF(ALLOCATED(IPOINTER)) DEALLOCATE(IPOINTER)
         IF(ALLOCATED(WORK)) DEALLOCATE(WORK)
 
+!       THE INPUT SPECTRA ARE IN THE ABSOLUTE FRAME OF REFERENCE
+!       THEY NEED TO BE CONVERTED TO THE RELATIVE FRAME
+!       (WITH RESPECT TO AMBIENT CURRENTS)
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+          IG=1
+          IRA=-1
+
+          NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+
+          CALL GSTATS(1236,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+
+            CALL INTPOL (FL, SL, KIJS, KIJL, IG, IRA)
+
+            DO K=1,NANG
+              DO M=1,NFRE
+                DO IJ=KIJS,KIJL
+                  FL(IJ,K,M) = SL(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1236,1)
+
+        ENDIF
 
       ELSE
+ 
+!       BINARY INPUT:
+         IF (ITEST.GE.2) THEN
+           WRITE(IU06,*)''
+           WRITE(IU06,*)' IN GETSPEC :'
+           IF(MDEL.EQ.1) THEN
+             WRITE(IU06,*)'  ',MDEL,
+     &                  ' FREQUENCY IS DISTRIBUTED AT ONE TIME'
+           ELSE
+             WRITE(IU06,*)'  ',MDEL,
+     &                    ' FREQUENCIES ARE DISTRIBUTED EACH TIME'
+           ENDIF
+         ENDIF
 
-        IF(LMESSPASS) THEN
+         IF (IRANK.EQ.ISEND)
+     &       CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
-          IF(LFRSDECODE) THEN
+         DO MLOOP=1,NFRE,MDEL
+           MINF=MLOOP
+           MSUP=MIN(MLOOP+MDEL-1,NFRE)
+           DO KLOOP=1,NANG,KDEL
+             KINF=KLOOP
+             KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-!         DETERMINE MAXIMUM NUMBER OF FREQUENCIES WHICH CAN BE USED
-!         TO SEND SPECTRA FROM ONE PE  TO THE OTHERS
-!         WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE 
+             ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+!            READ RESTART SPECTRA FROM PE ISEND (IREAD) 
+             IF (IRANK.EQ.ISEND) THEN
+               LPBOPEN = .FALSE.
+               LPBCLOSE = .FALSE.
+               IF(MINF.EQ.1 .AND. KINF.EQ.1) LPBOPEN = .TRUE.
+               IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LPBCLOSE = .TRUE.
 
-            CALL GETENV('MBX_SIZE',CMBXSIZE)
-            READ(CMBXSIZE,'(I9)') MBXSIZE
-            MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
-            IF(MINSIZE.GT.MBXSIZE) THEN
-              WRITE (IU06,*) '***************************************'
-              WRITE (IU06,*) '*                                     *'
-              WRITE (IU06,*) '* MESSAGE MAIL BOX SIZE IS TOO SMALL  *'
-              WRITE (IU06,*) '* TO DISTRIBUTE THE RESTART SPECTRUM  *'
-              WRITE (IU06,*) '* FILE                                *'
-              WRITE (IU06,*) '* THE PRESCRIBED SIZE SIZE IS         *'
-              WRITE (IU06,*) '* ', MBXSIZE,' BYTES                  *'
-              WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
-              WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
-              WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
-              WRITE (IU06,*) '* MBX_SIZE                            *' 
-              WRITE (IU06,*) '*                                     *'
-              WRITE (IU06,*) '***************************************'
-              CALL ABORT1
-            ENDIF
+               CALL READFL(RFL, KINF, KSUP, MINF, MSUP,
+     &                     FILENAME, IUNIT, LPBOPEN, LPBCLOSE)
+             ENDIF
 
-            MDEL=1
-!CC          MDEL = NFRE 
-!CC          DO WHILE (MINSIZE*MDEL.GE.MBXSIZE.AND.MDEL.GT.1)
-!CC             MDEL=MDEL-1
-!CC          ENDDO
+             CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,KINF,KSUP,
+     &                        MINF,MSUP,RFL)
+             KTAG=KTAG+1
 
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*)''
-              WRITE(IU06,*)' IN GETSPEC :'
-              WRITE(IU06,*)'  MESSAGE MAILBOX SIZE OF',MBXSIZE,' BYTES'
-              IF(MDEL.EQ.1) THEN
-                WRITE(IU06,*)'  ',MDEL,
-     &                     ' FREQUENCY IS DISTRIBUTED AT ONE TIME'
-              ELSE
-                WRITE(IU06,*)'  ',MDEL,
-     &                       ' FREQUENCIES ARE DISTRIBUTED EACH TIME'
-              ENDIF
-              WRITE(IU06,*)'  WHICH SHOULD RESULT IN A MAXIMUM USAGE OF'
-              WRITE(IU06,*)'  ',MINSIZE*MDEL,
-     &                     ' BYTES FOR EACH MPDISTRIBFL CALL'
-              WRITE(IU06,*)''
-            ENDIF
-          ENDIF
+             IF (ITEST.GE.2)
+     &        WRITE(IU06,*)
+     &        'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
 
+!            KEEP CORRESPONDING CONTRIBUTION TO FL
+             DO M=MINF,MSUP
+               DO K=KINF,KSUP
+                 DO IJ=NSTART(IRANK),NEND(IRANK)
+                   FL(IJ,K,M) = RFL(IJ,K,M)
+                 ENDDO
+               ENDDO
+             ENDDO
 
-          IF(LPBIOIN) THEN
+             DO M=MINF,MSUP
+               DO K=KINF,KSUP
+                 FL(NINF-1,K,M) = 0. 
+               ENDDO
+             ENDDO
 
-!           INPUT SPECTRA ARE IN A BINARY FILE AND WILL BE READ
-!           USING THE PBIO SOFTWARE
-
-            IF (IRANK.EQ.ISEND)
-     &          CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-
-            DO MLOOP=1,NFRE,MDEL
-
-              MINF=MLOOP
-              MSUP=MIN(MLOOP+MDEL-1,NFRE)
-              ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
-!              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
-              IF (IRANK.EQ.ISEND) THEN
-
-                LPBOPEN = .FALSE.
-                LPBCLOSE = .FALSE.
-                IF(MINF.EQ.1) LPBOPEN = .TRUE.
-                IF(MSUP.EQ.NFRE) LPBCLOSE = .TRUE.
-
-                CALL READFL(RFL,MINF,MSUP,FILENAME,IUNIT,
-     &           LPBOPEN,LPBCLOSE)
-              ENDIF
-!              PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              CALL MPL_BARRIER(CDSTRING='GETSPEC:')
-
-              CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
-     &         MINF,MSUP,RFL)
-              KTAG=KTAG+1
-              IF (ITEST.GE.2)
-     &         WRITE(IU06,*)
-     &         'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
-
-!              KEEP CORRESPONDING CONTRIBUTION TO FL
-              DO M=MINF,MSUP
-                DO K=1,NANG
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    FL(IJ,K,M) = RFL(IJ,K,M)
-                  ENDDO
-                ENDDO
-              ENDDO
-
-              DO M=MINF,MSUP
-                DO K=1,NANG
-                  FL(NINF-1,K,M) = 0. 
-                ENDDO
-              ENDDO
-
-              IF(ALLOCATED(RFL)) DEALLOCATE(RFL)
-
-            ENDDO
-
-          ELSE
-
-!           BINARY SPECTRA ARE READ USING FORTRAN READ
-
-            IF(.NOT.ALLOCATED(RFL)) ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
-
-!           READ RESTART SPECTRA FROM PE ISEND (IREAD)
-            IF (IRANK.EQ.ISEND) THEN
-              CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-              IF (ITEST > 3 ) THEN
-                 WRITE(IU06,*) ' BLS arranged to ', FILENAME
-                 CALL FLUSH (IU06)
-              ENDIF
-              CALL READFL(RFL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
-            ENDIF
-
-            DO MLOOP=1,NFRE,MDEL
-              MINF=MLOOP
-              MSUP=MIN(MLOOP+MDEL-1,NFRE)
-!             PUT A BARRIER TO AVOID FLOODING THE CROSSBAR 
-              CALL MPL_BARRIER(CDSTRING='GETSPEC 2:')
-
-              CALL MPDISTRIBFL(ISEND,KTAG,NSTART,NEND,MINF,MSUP,
-     &                         1,NFRE,RFL)
-              KTAG=KTAG+1
-            ENDDO
-
-!           KEEP CORRESPONDING CONTRIBUTION TO FL
-            DO K=1,NANG
-              DO M=1,NFRE
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  FL(IJ,K,M) = RFL(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-
-            DO K=1,NANG
-              DO M=1,NFRE
-                FL(NINF-1,K,M) = 0. 
-              ENDDO
-            ENDDO
-
-            IF (ITEST.GE.2)
-     &      WRITE(IU06,*)
-     &      'SUB. GETSPEC: RESTART SPECTRUM COLLECTED'
-
-            IF(ALLOCATED(RFL)) DEALLOCATE(RFL)
-
-          ENDIF
-
-        ELSE
-
-!         NON MESSAGE PASSING READ OF SPECTRA
-
-          CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-          LPBOPEN = .TRUE.
-          LPBCLOSE = .TRUE.
-
-          CALL READFL(FL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
-        ENDIF
+             DEALLOCATE(RFL)
+           ENDDO
+         ENDDO
 
       ENDIF
 

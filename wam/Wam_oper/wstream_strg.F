@@ -36,6 +36,19 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1025
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1077) THEN
+!       WAVE ENSEMBLE forecast HINDCAST STATISTICS
+        CSTREAM = 'wehs'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1040
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1079) THEN
 !       ENSEMBLE FORECAST WAVE HINDCAST
         CSTREAM = 'enwh'
@@ -326,6 +339,19 @@
           MARSFCTYPE = 'pf'
         ENDIF
         KSTREAM = 1079
+        LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1040) THEN
+!       ENSEMBLE forecast HINDCAST STATISTICS
+        CSTREAM = 'efhs'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1077
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1037) THEN
 !       WAVE MULTI ANALYSIS

@@ -104,6 +104,7 @@
 !       *STRESSO*   - COMPUTATION NORMALISED WAVE STRESS.
 !           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
 !           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
+!       *FRCUTINDEX*
 
 !     REFERENCE.
 !     ----------
@@ -113,10 +114,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
-     &            FRM5     ,COFRM4   ,FRATIO   ,WETAIL   ,TH       ,
-     &            C        ,FRIC
+     &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
+     &            C        ,FRIC     ,FLOGSPRDM1
       USE YOWICE   , ONLY : FLMINFR
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -210,8 +210,14 @@
         CALL FLUSH (IU06)
       ENDIF
 
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
+
       CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
-     &              ROAIRN, TAUW,SL)
+     &              ROAIRN, TAUW, SL, MIJ)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
@@ -309,23 +315,11 @@
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
 
-!*    2.5.2 COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!*          FREQUENCIES LE 2.5*MAX(FMEANWS,FMEAN).
-!           ------------------------------------------------------------
-
-      TAILFACTOR=2.5
-      FPMH = TAILFACTOR/FR(1)
-      FLOGSPRDM1=1./LOG10(FRATIO)
-     
-      DO IJ=IJS,IJL
-        FM = MAX(FMEANWS(IJ),FMEAN(IJ))
-        FPM4 = FM*FPMH
-        MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-        MIJ(IJ) = MIN(MIJ(IJ),NFRE)
-      ENDDO
-
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
       DO IJ=IJS,IJL
         GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
@@ -372,7 +366,7 @@
       ENDIF
 
       CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
-     &              ROAIRN, TAUW,SL)
+     &              ROAIRN, TAUW, SL, MIJ)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)

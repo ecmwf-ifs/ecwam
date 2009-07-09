@@ -10,6 +10,7 @@
 !     J. BIDLOT         ECMWF       FEBRUARY 1996  MESSAGE PASSING 
 !     S. ABDALLA        ECMWF       OCTOBER 2001   INCLUSION OF AIR
 !                                                  DENSITY AND Zi/L
+!     J. BIDLOT         ECMWF       AUGUST 2008: CLEAN-UP 
 
 !*    PURPOSE.
 !     --------
@@ -66,12 +67,14 @@
 
       USE YOWPARAM , ONLY : NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWSTAT  , ONLY : IDELWO
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWUNIT  , ONLY : IU17     ,IU18
+      USE YOWSTAT  , ONLY : IDELWO   ,NWAM_BLKS
+      USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
      &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
      &            ZIDLNEXT ,ICEMASKNEXT
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
@@ -81,88 +84,56 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL NEWREAD, NEWFILE
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+      REAL ZHOOK_HANDLE
 
+      LOGICAL NEWREAD, NEWFILE
       CHARACTER*14 CDATEWH, CDATE
 
       DATA ISTORE /0/
 
 ! ----------------------------------------------------------------------
 
-!*    1. INITIALISATION.
-!        ---------------
+      IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
 
 
-!*    1.1 INTERNAL TIME COUNTER AND WIND FILE UNIT.
-!         -----------------------------------------
-
-      IDNIN = IU17    
-
-!*    1.2 WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
-!         ------------------------------------------
-
+!*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
+!        ------------------------------------------
       IF (CDATE.LT.CDATEWH) THEN
-        DO IJ=IJS,IJL
-          U10NEW(IJ) = U10OLD(IJ,IG)
-          THWNEW(IJ) = THWOLD(IJ,IG)
-          ROAIRN(IJ) = ROAIRO(IJ,IG)
-          ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+        NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+        CALL GSTATS(1445,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          DO IJ = KIJS, KIJL
+            U10NEW(IJ) = U10OLD(IJ,IG)
+            THWNEW(IJ) = THWOLD(IJ,IG)
+            ROAIRN(IJ) = ROAIRO(IJ,IG)
+            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+          ENDDO
         ENDDO
-      ENDIF
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1445,1)
 
-
-! --------------------------------------------------------------------- 
-
-
+      ELSE
 !*    2. NEW WIND INPUT.
 !        ---------------
-
-
-      IF (CDATE.GE.CDATEWH) THEN
-
-!*    2.1 WINDS HAVE TO BE READ FROM FILE.
-!         --------------------------------
-
         IF (CDATE.GE.CDATEFL) THEN
-
-!*    2.1.1 A NEW WIND FILE HAS TO BE USED.
-!           -------------------------------
-
           IF (IG.EQ.1) THEN
-
-!*    2.1.1.1 A NEW WIND FILE HAS TO BE ACCESSED.
-!             -----------------------------------
-
-!!!               CALL CREWFN (IU18, CDAWIFL)
             NEWFILE = .TRUE.
             ISTORE=1
             IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND FILE',
+              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',
      &         ' AT CDATE = ', CDATE
-              WRITE(IU06,*) '     WINDFILE DATE IS CDAWIFL ',
-     &         CDAWIFL, ' UNIT IS IU18 = ',IU18
             ENDIF
           ENDIF
-          IDNIN = IU18
         ENDIF
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
-
-        IF (ITEST.GE.2) THEN
-          IF (ITESTB.GE.IG) THEN
-            WRITE(IU06,*) '       SUB. NEWWIND: READ WIND ',
-     &       'IDNIN = ', IDNIN, ' AT CDATE = ', CDATE
-          ENDIF
-        ENDIF
-!!!!         READ(IDNIN) CDA, IIG, (U10NEW(L),L=IJS,IJL),
-!!!!     1                         (THWNEW(L),L=IJS,IJL),
-!!!!     2                         (ROAIRN(L),L=IJS,IJL),
-!!!!     3                         (ZIDLNEW(L),L=IJS,IJL),
-!!!!     4                        (ICEMASK(L,1),L=IJS,IJL)
-!!!!
-!!!! read from file instead
-
         IF(ISTORE.GT.NSTORE) THEN
           WRITE(IU06,*) ' ********************************************'
           WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
@@ -175,20 +146,31 @@
 
         CDA=CDTNEXT(ISTORE)
         IIG=IG
-        DO L=IJS,IJL
-          U10NEW(L)=USNEXT(L,ISTORE,IIG)
-          THWNEW(L)=DSNEXT(L,ISTORE,IIG)
-          ROAIRN(L)=ADSNEXT(L,ISTORE,IIG)
-          ZIDLNEW(L)=ZIDLNEXT(L,ISTORE,IIG)
-          ICEMASK(L,IG)=ICEMASKNEXT(L,ISTORE,IG)
+
+        NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+        CALL GSTATS(1445,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          DO IJ = KIJS, KIJL
+            U10NEW(IJ)=USNEXT(IJ,ISTORE,IIG)
+            THWNEW(IJ)=DSNEXT(IJ,ISTORE,IIG)
+            ROAIRN(IJ)=ADSNEXT(IJ,ISTORE,IIG)
+            ZIDLNEW(IJ)=ZIDLNEXT(IJ,ISTORE,IIG)
+            ICEMASK(IJ,IG)=ICEMASKNEXT(IJ,ISTORE,IIG)
+          ENDDO
         ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1445,1)
 
         ISTORE=ISTORE+1
 
-
         CALL INCDATE(CDATEWH,IDELWO)
         NEWREAD = .TRUE.   
+
       ENDIF   
 
+      IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE NEWWIND

@@ -75,6 +75,7 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
      &            GFLAG20  ,LFDB     ,IPFGTBL  ,LOUTINT  ,LOUTSPP
+      USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
@@ -87,7 +88,7 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
-     &            HMAXG    ,TMAXG
+     &            HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -108,7 +109,7 @@
      &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,
-     &            LSARINV  ,IREFDATE ,LFDBOPEN
+     &            LSARINV  ,IREFDATE ,LFDBOPEN ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -124,6 +125,10 @@
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT, LLINTPOL
       REAL ZHOOK_HANDLE
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
 
       IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
 
@@ -210,11 +215,19 @@
           IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !!! it is assumed the FL1 still contains the spectra in the relative
 !!! frame of reference. It needs to be transformed to the absolute frame 
-            CALL GSTATS(1908,0)
-            CALL INTPOL (FL1, SL, IJS(IG), IJL(IG), IG, 1)
-
+            CALL GSTATS(1236,0)
+            IRA=1
+            NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              CALL INTPOL (FL1, SL, KIJS, KIJL, IG, IRA)
+            ENDDO
+!$OMP       END PARALLEL DO
             LLINTPOL=.TRUE.
-            CALL GSTATS(1908,1)
+            CALL GSTATS(1236,1)
+
             CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
      &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
      &        NSTART,NEND)
@@ -333,9 +346,17 @@
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !             convert output spectra to absolute frame of reference
               IF (.NOT.LLINTPOL) THEN
-                CALL GSTATS(1908,0)
-                CALL INTPOL (FL1, SL, IJS(IG), IJL(IG), IG, 1)
-                CALL GSTATS(1908,1)
+                CALL GSTATS(1236,0)
+                IRA=1
+                NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP          PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+                DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  CALL INTPOL (FL1, SL, KIJS, KIJL, IG, IRA)
+                ENDDO
+!$OMP          END PARALLEL DO
+                CALL GSTATS(1236,1)
               ENDIF
               CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
@@ -344,12 +365,13 @@
      &                     NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                     NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
      &                     KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
+     &                     LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                     DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                     CDTPRO, CDATEF, CDATEA,
      &                     CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                     MFDBSF)
+     &                     NWFDBREF, LFDBOPEN)
             ELSE
               CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
@@ -381,6 +403,7 @@
           WRITE(IU06,*) '  WAVE SPECTRA FIELDS DISPOSED AT........',
      &                  ' CDTPRO  = ', CDTPRO
           WRITE(IU06,*) ' '
+          CALL FLUSH (IU06)
 
 
 !*    3.1.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
@@ -407,7 +430,7 @@
 
             CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                    IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                    IASSI, NFCST, ISTAT)
+     &                    IASSI, NFCST, ISTAT, CDTCUR)
 
             CLOSE (IU04)
             WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',
@@ -462,6 +485,8 @@
       IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
       IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
       IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
+      IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
+      IF(ALLOCATED(VSTOKESG)) DEALLOCATE(VSTOKESG)
 
       IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
       IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

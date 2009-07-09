@@ -47,7 +47,7 @@
 !          *IFCST*   FORECAST TIME FROM BASE DATE-TIME-GROUP.
 !                    SPECIFIED IN HOURS.
 !          *KLEV*   - REFERENCE LEVEL IN full METER
-!                     (SHOULD BE 0 EXCEPT FOR 233 AND 245)
+!                     (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249)
 !          *LFDB*   - LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
 !                     .T. TO ACTIVATE, .F. TO IGNORE
 !          *ITEST*  - TEST OUTPUT GIVEN IF ITEST GT 2.
@@ -105,7 +105,7 @@
       DATA FRSTIME32 / .TRUE. /
 
 ! ----------------------------------------------------------------------
-      CALL GSTATS(1709,0)
+      CALL GSTATS(1707,0)
 
 !*    0. PUT FIELD INTO GLOBAL MATRIX ZWORK.
 !        -----------------------------------
@@ -322,7 +322,7 @@
       WRITE(IU06,*)'   SUB. GRIBPAC : PARAMETER ',IPARAM,
      &                              ' STREAM= ', CSTREAM,
      &                              ' EXPVER=',YEXPVER,
-     &                              ' TYPE OF MARS DATA = ',MARSTYPE
+     &                              ' TYPE OF DATA = ',MARSTYPE
 
       IF(KRET.EQ.0) THEN
         IF(LFDB) THEN
@@ -428,7 +428,7 @@
         CALL GRPRS2 (KSEC0, KSEC2, PSEC2)
       ENDIF
 
-      CALL GSTATS(1709,1)
+      CALL GSTATS(1707,1)
 
       RETURN
       END SUBROUTINE GRIBPAC

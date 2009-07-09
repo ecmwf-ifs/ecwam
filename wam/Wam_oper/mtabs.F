@@ -42,7 +42,7 @@
       USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            TCGOND   ,TFAK     ,TSIHKD
+     &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -53,6 +53,7 @@
       ALLOCATE(TCGOND(NDEPTH,NFRE))
       ALLOCATE(TFAK(NDEPTH,NFRE))
       ALLOCATE(TSIHKD(NDEPTH,NFRE))
+      ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
 !*    1. GROUP VELOCITY AND WAVE NUMBER.
 !        -------------------------------
@@ -76,9 +77,11 @@
             TCGOND(JD,M) = 0.5*SQRT(G*TANH(AKD)/AK)*
      &       (1.0+2.0*AKD/SINH(2.*AKD))
             TSIHKD(JD,M) = OM/SINH(2.*AKD)
+            TFAC_ST(JD,M) = 2.*G*AK**2/(OM*TANH(2.*AKD))
           ELSE
             TCGOND(JD,M) = GH/FR(M)
             TSIHKD(JD,M) = 0.
+            TFAC_ST(JD,M) = 2./G*OM**3
           ENDIF
         ENDDO
       ENDDO
@@ -106,6 +109,8 @@
         WRITE (IU06,'(1x,13F10.5)') (TFAK(JD,M),M=1,ML)
         WRITE (IU06,'(1X,''OMEGA/SINH(2KD) IN 1./SECOND'')')
         WRITE (IU06,'(1x,13F10.5)') (TSIHKD(JD,M),M=1,ML)
+        WRITE (IU06,'(1X,''2G K**2/(OMEGA*TANH(2KD)) IN 1./(M S)'')')
+        WRITE (IU06,'(1x,13F10.5)') (TFAC_ST(JD,M),M=1,ML)
       ENDDO
 
       RETURN

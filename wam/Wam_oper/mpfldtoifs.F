@@ -310,7 +310,6 @@
               IF(LFROMTASK(IP).GT.0) THEN
                 IST=ISTFROMTASK(IP)
                 IEND=IST+LFROMTASK(IP)-1
-!               ALLOCATE(ZRECVBUF(IST:IEND))
                 CALL MPL_RECV(ZRECVBUF(IST:IEND),
      &                        KSOURCE=IP,KTAG=ITAG,
      &                        KMP_TYPE=JP_BLOCKING_STANDARD,

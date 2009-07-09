@@ -1,35 +1,36 @@
       SUBROUTINE READSTA (IUIN, CBDT, CEDT, ANALPD, FOREPD, IS,
-     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT)
+     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
+     &                    CCURA)
                                                                         
 ! -------------------------------------------------------------------   
 
-!****  *READSTA*  READS THE WAMINFO FILE.                               
+!****  *READSTA*  READS THE WAMINFO FILE.
 
-!     PURPOSE.                                                          
-!     --------                                                          
+!     PURPOSE.
+!     --------
 
-!         *READSTA* - READS THE WAMINFO FILE AND DETERMINES             
-!                     BEGIN DATE TIME, END DATE TIME, ANALYSIS PERIOD,  
-!                     FORECAST PERIOD, SHIFT,                           
-!                     PLOTTING DATES, IASS, NF, ISTATUS                 
-!                     FROM THE PREVIOUS RUN AND WRITES THIS             
-!                     INFO ON ARRAY CARD                                
+!         *READSTA* - READS THE WAMINFO FILE AND DETERMINES 
+!                     BEGIN DATE TIME, END DATE TIME, ANALYSIS PERIOD,
+!                     FORECAST PERIOD, SHIFT,
+!                     PLOTTING DATES, IASS, NF, ISTATUS
+!                     FROM THE PREVIOUS RUN AND WRITES THIS
+!                     INFO ON ARRAY CARD
 !                     AND THE LAST DATE FOR OUTPUT OF RESTART FILES
 !                     IF SPECIFIED OTHERWISE IT WILL BE SET TO END DATE
 
-!     PROGRAMMER.                                                       
-!     -----------                                                       
+!     PROGRAMMER.
+!     -----------
 
-!          P. JANSSEN                                                   
+!          P. JANSSEN
 !          J. BIDLOT NOVEMBER 96  : add CRSDT and CLSDT definition
 !          B. HANSEN APRIL    97  : move COMMON CARD INTO INCLUDE FILE.
 
-!**   INTERFACE.                                                        
-!     ----------                                                        
+!**   INTERFACE.
+!     ----------
 
-!          IUIN     INTEGER    DISC UNIT FOR WAMINFO.                   
-!          CBDT     CHAR*14    BEGIN DATE-TIME-GROUP.                   
-!          CEDT     CHAR*14    END DATE-TIME-GROUP.                     
+!          IUIN     INTEGER    DISC UNIT FOR WAMINFO.
+!          CBDT     CHAR*14    BEGIN DATE-TIME-GROUP.
+!          CEDT     CHAR*14    END DATE-TIME-GROUP.
 !          ANALPD   INTEGER    ANALYSIS PERIOD IN SECONDS.
 !          FOREPD   INTEGER    FORECAST PERIOD IN SECONDS.
 !          IS       INTEGER    WIND INPUT TIME STEP IN SECONDS.
@@ -40,48 +41,46 @@
 !          IASS     INTEGER    ASSIMILATION CONDITION.                  
 !          NF       INTEGER    NEW FORECAST CONDITION.                  
 !          ISTAT    INTEGER    STATUS FLAGS FOR JOBS.                   
+!         *CCURA*   CHAR*14    BEGIN DATE FOR USE OF CURRENTS. 
 
-!     METHOD.                                                           
+
+!     METHOD.
 !     -------                                                           
 
-!          READ THE WAMINFO FILE                                        
+!          READ THE WAMINFO FILE
 
-!     EXTERNALS.                                                        
-!     ----------                                                        
+!     EXTERNALS.
+!     ----------
 
 !          ABORT1    TERMINATES PROCESSING
 
-!     REFERENCES.                                                       
-!     -----------                                                       
+!     REFERENCES.
+!     -----------
 
-!          NONE                                                         
+!          NONE
 
 !---------------------------------------------------------------------- 
 
       USE YOWCARD  , ONLY : JPCL     ,CARD
 
-      INTEGER ANALPD, FOREPD                      
-      INTEGER ISTAT(3)                                                  
-      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT
+      INTEGER ANALPD, FOREPD 
+      INTEGER ISTAT(3)
+      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT, CCURA
 
 
-
-!*    1.0  READ WAMINFO FILE FROM IUIN.                                 
-!          ----------------------------                                 
+!*    1.0  READ WAMINFO FILE FROM IUIN.
+!          ---------------------------- 
 
       CARD=' '
       CRSDT = ' '
-      REWIND IUIN                                                       
-      DO I=1,JPCL                                                    
-!!!
-        write(*,*) I
-!!!!
-        READ(IUIN,'(A72)', END=3000, ERR=3000) CARD(I)                 
+      REWIND(IUIN)
+      DO I=1,JPCL
+        READ(IUIN,'(A72)', END=3000, ERR=3000) CARD(I)
       ENDDO
-      REWIND IUIN                                                       
+      REWIND(IUIN)
 
-!*    2.0  CONVERT CHARACTER TO INTEGER.                                
-!          -----------------------------                                
+!*    2.0  CONVERT CHARACTER TO INTEGER.
+!          -----------------------------
 
       READ (CARD(1), '(15X,A14,4X,A14)') CBDT, CEDT
       READ (CARD(4), '(18X,I7)') ANALPD
@@ -111,13 +110,19 @@
         CLSDT = CEDT
       ENDIF
 
+      IF(CARD(15).NE.' ') THEN
+        READ (CARD(15), '(39X,A14)') CCURA
+      ELSE
+        CCURA = CBDT
+      ENDIF
+
       RETURN                                                            
 
-!*    3.0  ERROR EXIT                                                   
-!          -----------                                                  
+!*    3.0  ERROR EXIT
+!          ----------
 
- 3000 CONTINUE                                                          
-      IU06 = 6                                                          
+ 3000 CONTINUE
+      IU06 = 6
       WRITE(IU06,*) ' *************************************************'
       WRITE(IU06,*) ' *                                               *'
       WRITE(IU06,*) ' *        FATAL ERROR IN SUB. READSTA            *'
@@ -127,8 +132,8 @@
       WRITE(IU06,*) ' * RECORD NUMBER IS I = ', I                       
       WRITE(IU06,*) ' * WAMINFO READ BEFORE ERROR IS:                 *'
       WRITE(IU06,*) ' *                                               *'
-      DO L=1,I                                                     
-        WRITE(IU06,'(5X,A72)') CARD(L)                                
+      DO L=1,I
+        WRITE(IU06,'(5X,A72)') CARD(L)
       ENDDO
       WRITE(IU06,*) ' *                                               *'
       WRITE(IU06,*) ' *  PROGRAMM ABORTS  PROGRAMM ABORTS             *'
@@ -136,5 +141,5 @@
       WRITE(IU06,*) ' *************************************************'
       CALL ABORT1
 
-      RETURN                                                            
+      RETURN
       END SUBROUTINE READSTA

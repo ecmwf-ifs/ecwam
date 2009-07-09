@@ -37,7 +37,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (ID1=1521, ID2=861, IDP=13)
+      PARAMETER (ID1=1521, ID2=861, IDP=14)
       PARAMETER ( JPLENG=2400000 )
 
       CHARACTER*5 :: BUOY
@@ -47,7 +47,7 @@
       LOGICAL :: LLINTER, PER
       LOGICAL :: LLEXIST
       REAL, ALLOCATABLE, DIMENSION(:,:) :: WAVEHT, WAVEDIR, WAVEMPR,
-     & WINDSPD, WINDDIR, WAVEPPR, UWND, VWND,
+     & HMAX, WINDSPD, WINDDIR, WAVEPPR, UWND, VWND,
      & TAIR, TSEA, PRS, WGUST, FIELD 
       REAL, ALLOCATABLE, DIMENSION(:) :: BLAT, BLON, MLAT, MLON, FLD
       REAL, ALLOCATABLE, DIMENSION(:,:) :: SERIEB, SERIEM, R2DUM 
@@ -57,6 +57,7 @@
       LOGICAL :: LFLDPRST(255)
       LOGICAL :: LMODLOC(255)
       LOGICAL :: LNOTFOUND
+      LOGICAL :: LLNEW
       REAL :: BSDVAL(IDP)
 !     BSDVAL(1) : LONGITUDE (degree)
 !     BSDVAL(2) : LATITUDE (degree)
@@ -71,6 +72,7 @@
 !     BSDVAL(11): WAVE PEAK PERIOD (TP) (s)
 !     BSDVAL(12): WAVE DIRECTION (degree)
 !     BSDVAL(13): ANEMOMETER HEIGHT (m) 
+!     BSDVAL(14): MAXIMIM WAVE HEIGHT (m) 
 
 ! ----------------------------------------------------------------------
 
@@ -81,6 +83,7 @@
 !     1. INITALISATION.
 !        --------------
       ALLOCATE(WAVEHT(ID1,ID2), WAVEDIR(ID1,ID2), WAVEMPR(ID1,ID2))
+      ALLOCATE(HMAX(ID1,ID2))
       ALLOCATE(WINDSPD(ID1,ID2), WINDDIR(ID1,ID2), WAVEPPR(ID1,ID2))
       ALLOCATE(UWND(ID1,ID2), VWND(ID1,ID2), WGUST(ID1,ID2))
       ALLOCATE(TAIR(ID1,ID2), TSEA(ID1,ID2), PRS(ID1,ID2))
@@ -98,6 +101,7 @@
       WAVEMPR = DUMMY 
       WAVEPPR = DUMMY 
       WAVEDIR = DUMMY 
+      HMAX    = DUMMY
 
       UWND    = DUMMY 
       VWND    = DUMMY 
@@ -129,6 +133,15 @@
         CALL ABORT
       ENDIF
       IUBUO = I_GET_UNIT(-1, 'BUO', 'S', 'F', 0)
+!     test which format (old or new)
+      READ (IUBUO,444,ERR=1111,END=1111) BUOY, CDATEB, BSDVAL
+      LLNEW=.TRUE.
+      GOTO 1112
+1111  CONTINUE
+      LLNEW=.FALSE.
+      REWIND(IUBUO)
+1112  CONTINUE
+
 
 !     OUTPUT COLLOCATION
       IUCBSDM = I_GET_UNIT(-1, 'CBSDM', 'S', 'F', 0)
@@ -203,6 +216,10 @@
         GOTO 4300 
       ELSEIF (IERR .GT. 1) THEN
         GOTO 5005
+      ELSEIF ( IPARAM .EQ. 218) THEN
+        HMAX=FIELD
+        LFLDPRST(IPARAM)=.TRUE.
+        CDTPR(IPARAM)=CDATEM
       ELSEIF ( IPARAM .EQ. 221) THEN
         WAVEMPR=FIELD
         LFLDPRST(IPARAM)=.TRUE.
@@ -354,7 +371,12 @@
 !         ---------------------
 
  4400 CONTINUE
-      READ (IUBUO,444,ERR=5001,END=4500) BUOY, CDATEB, BSDVAL
+      IF(LLNEW) THEN
+        READ (IUBUO,444,ERR=5001,END=4500) BUOY, CDATEB, BSDVAL
+      ELSE
+        BSDVAL=DUMMY
+        READ (IUBUO,444,ERR=5001,END=4500) BUOY, CDATEB, BSDVAL(1:13)
+      ENDIF
 
 
 !     PICK ONLY DATA THAT CORRESPOND TO MODEL TIME 
@@ -363,7 +385,7 @@
       IF (BSDVAL(1).EQ.-99. .AND. BSDVAL(2).EQ.-99 ) GOTO 4400  
 
 444   FORMAT(A5,1X,A12,1X,F7.2,1X,F6.2,1X,F6.2,1X,F5.0,1X,F6.2,
-     &       1X,F8.2,1X,5(F6.2,1X),F5.0,1X,F6.2)
+     &       1X,F8.2,1X,5(F6.2,1X),F5.0,2(1X,F6.2))
 
  
 !*    4.4.1.2 STORE BUOY REPORT.
@@ -496,7 +518,7 @@
 
 !         WIND GUST 
 
-      IPARAM = 47 
+      IPARAM = 49 
       IF(LFLDPRST(IPARAM)) THEN
       CALL EXPOINT (IU06, ID1, ID2, NGX, NGY, IPARAM,NB, NB, LLINTER,
      1              DUMMY, BLON, BLAT, MLON, MLAT, FLD, PER,
@@ -627,6 +649,22 @@
         SERIEM(IS,13)=10.
       ENDDO
 
+!         MAXIMUM WAVE HEIGHT.
+
+      IPARAM = 218
+      IF(LFLDPRST(IPARAM)) THEN
+        CALL EXPOINT (IU06, ID1, ID2, NGX, NGY, IPARAM, NB, NB, LLINTER,
+     1                DUMMY, BLON, BLAT, MLON, MLAT, FLD, PER,
+     2                AMOWEP, AMOSOP, AMOEAP, AMONOP, HMAX)
+        DO IS=1,NB
+          IF(LMODLOC(IPARAM)) THEN
+            SERIEM(IS,1)=MLON(IS)
+            SERIEM(IS,2)=MLAT(IS)
+          ENDIF
+          SERIEM(IS,14)=FLD(IS)
+        ENDDO
+      ENDIF
+
 !     -180 < longitude < 180      
       DO IS=1,NB
         IF(SERIEM(IS,1).GT.180.) SERIEM(IS,1)=SERIEM(IS,1)-360.
@@ -639,7 +677,7 @@
 !       IF WAVE HEIGHT FIELD PRESENT, USE IT TO MASK LAND
         IF((LFLDPRST(229) .AND. SERIEM(IB,9).NE.DUMMY) .OR.
      &     .NOT. LFLDPRST(229) ) THEN
-            WRITE (IUCBSDM,'(A5,1X,A12,26F8.2)')
+            WRITE (IUCBSDM,'(A5,1X,A12,28F8.2)')
      &         NAME(IB), CDTBO(IB),
      &         (SERIEB(IB,IP),SERIEM(IB,IP),IP=1,IDP)
         ENDIF

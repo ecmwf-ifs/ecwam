@@ -39,31 +39,15 @@
 ! ----------------------------------------------------------------------
       CHARACTER*(*),INTENT(IN) :: CDMESSAGE
 
-      INTEGER :: IERROR
       LOGICAL :: LLABORT=.TRUE.
-
-      IERROR=-1
 
 !     FLUSH UNITS
       CALL MPCLOSE_UNIT
 
-
       IF(LWCOU) THEN
-!       USE THE SAME ABORT AS THE IFS.
-!        IF(PRESENT(CDMESSAGE)) THEN
-          CALL ABOR1(CDMESSAGE)
-!        ELSE
-!          CALL ABOR1('!!!! THE WAVE MODEL HAS ABORTED !!!!')
-!        ENDIF
+        CALL ABOR1(CDMESSAGE)
       ELSEIF (NPROC > 1) THEN
-!        IF(PRESENT(CDMESSAGE)) THEN
-          CALL MPL_MESSAGE(KERROR=IERROR,CDMESSAGE=CDMESSAGE,
-     &                     LDABORT=LLABORT)
-!        ELSE
-!          CALL MPL_MESSAGE(KERROR=IERROR,
-!     &                     CDMESSAGE='!!! THE MODEL HAS ABORTED !!!',
-!     &                     LDABORT=LLABORT)
-!        ENDIF
+        CALL MPL_MESSAGE(CDMESSAGE=CDMESSAGE,LDABORT=LLABORT)
       ELSE
         CALL SDL_TRACEBACK
         CALL FLUSH(0)

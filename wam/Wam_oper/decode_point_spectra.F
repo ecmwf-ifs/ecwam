@@ -200,10 +200,10 @@
 
       INTEGER I4
       INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(255),KSEC2(2060),
-     &           KSEC3(2),KSEC4(128)
-      INTEGER :: ISEC0(2),ISEC1(255),ISEC2(2060),
-     &           ISEC3(2),ISEC4(128)
+      INTEGER :: KSEC0(2),KSEC1(2048),KSEC2(2060),
+     &           KSEC3(2),KSEC4(252)
+      INTEGER :: ISEC0(2),ISEC1(2048),ISEC2(2060),
+     &           ISEC3(2),ISEC4(252)
       INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
       REAL :: ONE,ZTHETA,ZFRE
       REAL :: PSEC2(96),PSEC3(2)
@@ -741,9 +741,9 @@
         xlon=AMOWEP+(ilon-1)*zdello
         xlat=AMONOP-(ilat-1)*xdella
 
-        WRITE(10,'(2(1x,F8.4),1x,i4.4,4(i2.2),1x,f4.0)')
+        WRITE(10,'(1X,F7.3,1X,F8.4,1x,i4.4,4(i2.2),1x,f4.0)')
      &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI,FCST 
-        WRITE(11,'(2(1x,F8.4),1x,i4.4,4(i2.2)1x,f4.0)')
+        WRITE(11,'(1X,,F7.3,1X,F8.4,1x,i4.4,4(i2.2)1x,f4.0)')
      &        xlat,xlon,IYYYY,IMM,IDD,IHH,IMI,FCST 
 
         IF(NANG.EQ.12) THEN
@@ -759,7 +759,7 @@
             WRITE(11,*) FR(M),SUM
           ENDDO
         ELSE IF(NANG.EQ.24) THEN
-          WRITE(10,110) FR(M),(TH(K),K=1,NANG)
+          WRITE(10,110) dum,(TH(K),K=1,NANG)
           DO M=1,NFRE
             WRITE(10,110) FR(M),
      &         (PSEC4(K+(M-1)*NANG+(IJ-1)*NFRANG),K=1,NANG)

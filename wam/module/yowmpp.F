@@ -14,7 +14,6 @@
       INTEGER KTAG 
       INTEGER NPRECR 
       INTEGER NPRECI 
-      INTEGER MBXSIZE 
 
 !*     VARIABLE.     TYPE.   PURPOSE.
 !      ---------     -----   --------
@@ -28,8 +27,6 @@
 !      *KTAG*        INTEGER GLOBAL TAG FOR MESSAGE PASSING
 !      *NPRECR*      INTEGER NUMBER OF BYTES TO REPRESENT REAL NUMBERS
 !      *NPRECI*      INTEGER NUMBER OF BYTES TO REPRESENT INTEGERS
-!      *MBXSIZE*     INTEGER MAXIMUM SIZE IN BYTES OF THE MESSAGE
-!                    PASSING BUFFER  
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMPP

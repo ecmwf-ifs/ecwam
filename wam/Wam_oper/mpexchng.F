@@ -121,15 +121,15 @@
      &    ('MPL_RECV ERROR in MPEXCHNG: MISMATCHED TAGS' )
 
 !!! this test may not be necessary but to start with is ok
-        LLOK=.FALSE.
-        DO KNGB=1,NGBFROMPE
-          IF(KRFROM.EQ.NFROMPELST(KNGB)) THEN
-            LLOK=.TRUE.
-            EXIT
-          ENDIF
-        ENDDO
-        IF(.NOT.LLOK) CALL MPL_ABORT
-     &    ('MPL_RECV ERROR in MPEXCHNG: MESSAGE FROM A NON NEIGHBOUR !')
+!!        LLOK=.FALSE.
+!!        DO KNGB=1,NGBFROMPE
+!!          IF(KRFROM.EQ.NFROMPELST(KNGB)) THEN
+!!           LLOK=.TRUE.
+!!            EXIT
+!!          ENDIF
+!!        ENDDO
+!!        IF(.NOT.LLOK) CALL MPL_ABORT
+!!     &    ('MPL_RECV ERROR in MPEXCHNG: MESSAGE FROM A NON NEIGHBOUR !')
 !!!
 
 !       DECODE THE RECEIVED BUFFERS

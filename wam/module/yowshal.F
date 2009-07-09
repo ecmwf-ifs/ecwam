@@ -11,6 +11,7 @@
       REAL, ALLOCATABLE :: TCGOND(:,:) 
       REAL, ALLOCATABLE :: TFAK(:,:) 
       REAL, ALLOCATABLE :: TSIHKD(:,:) 
+      REAL, ALLOCATABLE :: TFAC_ST(:,:) 
       INTEGER, ALLOCATABLE :: INDEP(:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -22,6 +23,7 @@
 !      *TCGOND*    REAL      SHALLOW WATER GROUP VELOCITY TABLE.
 !      *TFAK*      REAL      WAVE NUMBER TABLE.
 !      *TSIHKD*    REAL      TABLE FOR OMEGA/SINH(2KD).
+!      *TFAC_ST*   REAL      TABLE FOR 2*G*K**2/(OMEGA*TANH(2KD)).
 !      *INDEP*     INTEGER   DEPTH INDEX FOR A BLOCK.
 
 ! ----------------------------------------------------------------------

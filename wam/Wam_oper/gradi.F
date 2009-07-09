@@ -52,7 +52,7 @@
       USE YOWMPP   , ONLY : NINF
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NSTART   ,NEND
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WLAT
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
 ! ----------------------------------------------------------------------
 
@@ -72,10 +72,10 @@
 
       IF (IREFRA.EQ.1 .OR. IREFRA.EQ.3) THEN
         DO IJ=MIJS,MIJL
-          IPP = KLAT(IJ,2)
-          IPM = KLAT(IJ,1)
-          IPP2 = KLAT2(IJ,2)
-          IPM2 = KLAT2(IJ,1)
+          IPP = KLAT(IJ,2,1)
+          IPM = KLAT(IJ,1,1)
+          IPP2 = KLAT(IJ,2,2)
+          IPM2 = KLAT(IJ,1,2)
           IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
             DPTP=WLAT(IJ,2)*DEPTH(IPP,IG)+(1.-WLAT(IJ,2))*DEPTH(IPP2,IG)
@@ -115,10 +115,10 @@
 
       IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
         DO IJ=MIJS,MIJL
-          IPP = KLAT(IJ,2)
-          IPM = KLAT(IJ,1)
-          IPP2 = KLAT2(IJ,2)
-          IPM2 = KLAT2(IJ,1)
+          IPP = KLAT(IJ,2,1)
+          IPM = KLAT(IJ,1,1)
+          IPP2 = KLAT(IJ,2,2)
+          IPM2 = KLAT(IJ,1,2)
           IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
             UP=WLAT(IJ,2)*U(IPP,IG)+(1.-WLAT(IJ,2))*U(IPP2,IG)

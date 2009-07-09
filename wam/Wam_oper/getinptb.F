@@ -55,6 +55,7 @@
       CHARACTER*14 CDAT1, CDAT2, CPBDT, CPEDT , CDATF, CRSDT, CLSDT
       CHARACTER*14 CDUMMY
       CHARACTER CDATS*8,CDATEFC*8,CDE*8,CGRID*3,CHOUS*2,CHOUE*2
+      CHARACTER*14 :: CCURA
       CHARACTER CANPERIOD*3,CFCPERIOD*3,CSHIFT*2
       CHARACTER MARS(21)*80,CFILENAME*44
       INTEGER ISTAT(3)
@@ -68,12 +69,13 @@
       IU06 = 6
 
       IU04 =  I_GET_UNIT (IU06, 'waminfo', 's', 'f', 0)
-      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
 
       IU22 = 22
       CARD = ' '
       CALL READSTA (IU04, CDAT1, CDAT2, IANALPD, IFOREPD, ISHIFT,
-     &                    CRSDT, CLSDT, CPBDT, CPEDT, IRST, INF, ISTAT)
+     &                    CRSDT, CLSDT, CPBDT, CPEDT, IRST, INF, ISTAT,
+     &                    CCURA)
       WRITE(IU06,'(1H1,'' START OF GETINPT'',//,
      &       '' THE WAMINFO FILE IS AS FOLLOWS:'',/)')
       DO I=1,JPCL

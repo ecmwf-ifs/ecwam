@@ -48,16 +48,19 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUT  , ONLY : NREAL    ,NINTGR
+      USE YOWCURR  , ONLY : U        ,V
       USE YOWGRID  , ONLY : IGL
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
       USE YOWPARAM , ONLY : NBLO     ,NIBLO
-      USE YOWPCONS , ONLY : ROAIR    ,EPSMIN
-      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,NWAM_BLKS,
-     &            LNSESTART
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,
+     &            NWAM_BLKS,LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,WSPMIN
+      USE YOWUBUF  , ONLY : LUPDTWGHT
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
       CHARACTER*14 ZERO
@@ -71,14 +74,17 @@
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: RU10OLD,RTHWOLD,RUSOLD,
-     &                                   RZ0OLD,RTAUW
-     &                                  ,RADOLD, RZIDLOLD
-      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: KICEMASK
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFIELD
+      INTEGER,ALLOCATABLE,DIMENSION(:,:,:) :: IFIELD 
+
+      INTEGER :: IFLD
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
+      REAL ZHOOK_HANDLE
 
+
+      IF (LHOOK) CALL DR_HOOK('GETSTRESS',0,ZHOOK_HANDLE)
 
       ZERO = ' '
 
@@ -93,32 +99,101 @@
         CALL FLUSH (IU06)
       ENDIF
 
+      ALLOCATE(RFIELD(NIBLO,NBLO,NREAL))
+      ALLOCATE(IFIELD(NIBLO,NBLO,NINTGR))
+
       IF(LMESSPASS) THEN
 
-        ISEND=IREAD
-        IBUFLENGTH=57+1
 
-        ALLOCATE(RU10OLD(NIBLO,NBLO),RTHWOLD(NIBLO,NBLO),
-     &  RUSOLD(NIBLO,NBLO),RZ0OLD(NIBLO,NBLO),RTAUW(NIBLO,NBLO)
-     &                    ,RADOLD(NIBLO,NBLO),RZIDLOLD(NIBLO,NBLO),
-     &                     KICEMASK(NIBLO,NBLO))
-
-        ALLOCATE(IBUF(IBUFLENGTH))
-
-!       READ RESTART FILE FROM PE ISEND (IREAD) 
+!       READ RESTART FILE FROM PE IREAD
 
         CALL GSTATS(1882,0)
-        IF (IRANK.EQ.ISEND) THEN
 
-          IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
-            CALL BUILDSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                       RADOLD, RZIDLOLD, KICEMASK,  
-     &                       NEND(NPROC))  
+        IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
+!         CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
+          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                     ROAIRO,ZIDLOLD,ICEMASK,
+     &                     IREAD)
+          IF (ITEST.GE.1)
+     &     WRITE(IU06,*)
+     &     'SUB. GETSTRESS: BUILDSTRESS CALLED'
+        ELSE
 
-          ELSE
+
+          IF (IRANK.EQ.IREAD) THEN
             CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-            CALL READSTRESS(RU10OLD,RTHWOLD,RUSOLD,RTAUW,RZ0OLD,
-     &                      RADOLD,RZIDLOLD,KICEMASK,FILENAME)
+            CALL READSTRESS(NREAL, RFIELD, NINTGR, IFIELD,
+     &                      FILENAME)
+          ENDIF
+
+!         DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
+
+          DO IFLD=1,NREAL
+            CALL MPDISTRIBSCFLD(IREAD,KTAG,NSTART,NEND,
+     &                          RFIELD(:,:,IFLD))
+            KTAG=KTAG+1
+          ENDDO
+
+          DO IFLD=1,NINTGR
+            CALL MPDISTRIBINTFLD(IREAD,KTAG,NSTART,NEND,
+     &                           IFIELD(:,:,IFLD))
+            KTAG=KTAG+1
+          ENDDO
+
+          IF (ITEST.GE.2)
+     &     WRITE(IU06,*)
+     &     'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
+
+
+!         KEEP CORRESPONDING CONTRIBUTION 
+          DO IG=1,NBLO
+            NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+            DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+              DO IJ=KIJS,KIJL
+                U10OLD(IJ,IG)=RFIELD(IJ,IG,1)
+                THWOLD(IJ,IG)=RFIELD(IJ,IG,2)
+                USOLD(IJ,IG)=RFIELD(IJ,IG,3)
+                TAUW(IJ,IG)=RFIELD(IJ,IG,4)
+                Z0OLD(IJ,IG)=RFIELD(IJ,IG,5)
+                ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
+                ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
+!               for U and V see below
+                ICEMASK(IJ,IG)=IFIELD(IJ,IG,1)
+              ENDDO
+            ENDDO
+!$OMP       END PARALLEL DO
+          ENDDO
+
+          IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
+            DO IG=1,NBLO
+              NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+              DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+                DO IJ=KIJS,KIJL
+                  U(IJ,IG)=RFIELD(IJ,IG,8)
+                  V(IJ,IG)=RFIELD(IJ,IG,9)
+                ENDDO
+              ENDDO
+!$OMP         END PARALLEL DO
+              U(NINF-1,IG)=0.
+              V(NINF-1,IG)=0.
+
+!!!           U AND V MUST ALSO BE DEFINED OVER THE HALO
+              CALL MPEXCHNG(U(:,IG),1,1)
+              CALL MPEXCHNG(V(:,IG),1,1)
+            ENDDO
+
+!           RE-COMPUTE REFRACTION TERMS
+            CALL PROPDOT
+
+!           SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+            LUPDTWGHT=.TRUE.
+
           ENDIF
 
         ENDIF
@@ -126,10 +201,12 @@
 
 !       BROADCAST THE 4 DATES FROM RESTART FILE TO THE OTHER PE'S
 !       AS WELL AS LWAVEWIND
-        IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
+        IF((IREAD.EQ.0).OR.(NPROC.EQ.1)) THEN
       
         ELSE
-          IF(IRANK.EQ.ISEND) THEN
+          IBUFLENGTH=57+1
+          ALLOCATE(IBUF(IBUFLENGTH))
+          IF(IRANK.EQ.IREAD) THEN
             IF(LWAVEWIND) THEN
               IBUF(1)=1
             ELSE
@@ -168,13 +245,13 @@
           ENDIF
 
           CALL GSTATS(621,0)
-          CALL MPL_BROADCAST(IBUF(1:IBUFLENGTH),KROOT=ISEND,
+          CALL MPL_BROADCAST(IBUF(1:IBUFLENGTH),KROOT=IREAD,
      &     KTAG=KTAG,CDSTRING='GETSTRESS:')
           CALL GSTATS(621,1)
 
           KTAG=KTAG+1
 
-          IF(IRANK.NE.ISEND) THEN
+          IF(IRANK.NE.IREAD) THEN
             IF(IBUF(1).EQ.1) THEN
               LWAVEWIND=.TRUE. 
             ELSE
@@ -212,6 +289,8 @@
             ENDDO
           ENDIF
 
+          DEALLOCATE(IBUF)
+
         ENDIF
 
         IF(CDTPRO.EQ.'00000000000000') CDTPRO = ZERO
@@ -219,64 +298,64 @@
         IF(CDAWIFL.EQ.'00000000000000')CDAWIFL = ZERO
         IF(CDATEFL.EQ.'00000000000000') CDATEFL= ZERO
 
-!       DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
-
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RU10OLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RTHWOLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RUSOLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RTAUW)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZ0OLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RADOLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBSCFLD(ISEND,KTAG,NSTART,NEND,RZIDLOLD)
-        KTAG=KTAG+1
-        CALL MPDISTRIBINTFLD(ISEND,KTAG,NSTART,NEND,KICEMASK)
-        KTAG=KTAG+1
-
-        IF (ITEST.GE.2)
-     &   WRITE(IU06,*)
-     &   'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
-
-!       KEEP CORRESPONDING CONTRIBUTION 
-        DO IG=1,NBLO
-          NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
-            DO IJ=KIJS,KIJL
-              U10OLD(IJ,IG)=RU10OLD(IJ,IG)
-              THWOLD(IJ,IG)=RTHWOLD(IJ,IG)
-              USOLD(IJ,IG)=RUSOLD(IJ,IG)
-              TAUW(IJ,IG)=RTAUW(IJ,IG)
-              Z0OLD(IJ,IG)=RZ0OLD(IJ,IG)
-              ROAIRO(IJ,IG)=RADOLD(IJ,IG)
-              ZIDLOLD(IJ,IG)=RZIDLOLD(IJ,IG)
-              ICEMASK(IJ,IG)=KICEMASK(IJ,IG)
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-        ENDDO
-
-        DEALLOCATE(RU10OLD,RTHWOLD,RUSOLD,RZ0OLD,RTAUW,IBUF,
-     &             RADOLD,RZIDLOLD,KICEMASK)
-
       ELSE
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,ICEMASK,NIBLO)
+     &                     ROAIRO,ZIDLOLD,ICEMASK,
+     &                     IREAD)
         ELSE
           CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-          CALL READSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    ROAIRO,ZIDLOLD,ICEMASK,FILENAME)
+          CALL READSTRESS(NREAL, RFIELD, NINTGR, IFIELD,
+     &                    FILENAME)
+
+!         KEEP CORRESPONDING CONTRIBUTION 
+          DO IG=1,NBLO
+            NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+            DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+              DO IJ=KIJS,KIJL
+                U10OLD(IJ,IG)=RFIELD(IJ,IG,1)
+                THWOLD(IJ,IG)=RFIELD(IJ,IG,2)
+                USOLD(IJ,IG)=RFIELD(IJ,IG,3)
+                TAUW(IJ,IG)=RFIELD(IJ,IG,4)
+                Z0OLD(IJ,IG)=RFIELD(IJ,IG,5)
+                ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
+                ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
+!               for U and V see below
+                ICEMASK(IJ,IG)=IFIELD(IJ,IG,1)
+              ENDDO
+            ENDDO
+!$OMP       END PARALLEL DO
+          ENDDO
+
+          IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
+            DO IG=1,NBLO
+              NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+              DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+                DO IJ=KIJS,KIJL
+                  U(IJ,IG)=RFIELD(IJ,IG,8)
+                  V(IJ,IG)=RFIELD(IJ,IG,9)
+                ENDDO
+              ENDDO
+!$OMP         END PARALLEL DO
+              U(NINF-1,IG)=0.
+              V(NINF-1,IG)=0.
+            ENDDO
+
+!           RE-COMPUTE REFRACTION TERMS
+            CALL PROPDOT
+
+!           SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+            LUPDTWGHT=.TRUE.
+
+          ENDIF
         ENDIF
       ENDIF
-
 
       IF(LNSESTART .AND. .NOT.LRESTARTED) THEN
 !       RESET WAVE INDUCED STRESS TO ZERO 
@@ -295,10 +374,13 @@
         ENDDO
       ENDIF
 
+      DEALLOCATE(RFIELD, IFIELD)
+
       WRITE(IU06,*) ''
       WRITE(IU06,*) ' WIND AND STRESS FILES READ IN.......',
      &              ' CDTPRO  = ', CDTPRO
       CALL FLUSH (IU06)
 
+      IF (LHOOK) CALL DR_HOOK('GETSTRESS',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE GETSTRESS

@@ -91,7 +91,7 @@
 !       *IU07*   - LOGICAL UNIT FOR OUTPUT OF GRID ORGANISATION
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
 !                  (SEE SUB OUTCOM).
-!       *IU08*   - LOGICAL UNIT FOR OUTPUT OF MODULE UBUF.
+!       *IU08*   - LOGICAL UNITS FOR OUTPUT OF MODULE UBUF.
 !                  (UNFORMATED) (SEE SUB OUTUBUF).
 !       *IU09*   - LOGICAL UNIT FOR UNFORMATED OUTPUT OF COARSE
 !                  GRID BOUNDARY ORGANISATION (MODULE CBOUND),
@@ -102,7 +102,6 @@
 !                  IF THIS IS A FINE GRID PREPROC.
 !                  (SEE SUB MBOUNF).
 !       *IU17*   - SAME AS IU07 BUT FORMATED.
-!       *IU18*   - SAME AS IU08 BUT FORMATED.
 !       *IU19*   - SAME AS IU09 BUT FORMATED.
 !       *IU20*   - SAME AS IU10 BUT FORMATED.
 
@@ -172,10 +171,14 @@
      &            XDELLO   ,ZDELLO   ,LAQUA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
+      USE YOWUNIT  , ONLY : IU07     ,IU08
 
 ! ----------------------------------------------------------------------
 
       REAL, ALLOCATABLE :: BATHY(:,:)
+
+      CHARACTER*1 :: C1 
+      CHARACTER*80 :: FILENAME
 
 !     *BATHY* REAL  BATHYMETRY ON MODEL GRID.
 
@@ -196,7 +199,6 @@
       IU09  = 9
       IU10  = 10
       IU17  = 17
-      IU18  = 18
       IU19  = 19
       IU20  = 20
 
@@ -231,8 +233,14 @@
 
 
       IU01 = I_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0)
-      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'w', 'u', 0)
-      IU08 = I_GET_UNIT(IU06, 'wam_subgrid', 'w', 'u', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0)
+      DO ICL=0,2
+        WRITE(C1,'(I1)') ICL
+        FILENAME='wam_subgrid_'//C1
+        LFILE=0
+        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IU08(ICL) = I_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0)
+      ENDDO
 
 ! ----------------------------------------------------------------------
 
@@ -245,6 +253,7 @@
       OLDRAD=OLDPI/180.
       DO K=1,NY
         XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
+        XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
         SINPH(K)   = SIN(XLAT)
         COSPH(K)   = COS(XLAT)
         IF(.NOT.LLGRID) THEN
@@ -255,7 +264,7 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
-              NLONRGG(K) = MAX(NINT(NX*COSPH(K)),2)
+              NLONRGG(K) = MAX(NINT(NX*COSD(XLATD)),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
@@ -279,7 +288,7 @@
       ENDDO
 
 !     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      XLATMAX=88.5
+      XLATMAX=88.25
       COSPHMIN=COS(XLATMAX*RAD)
       DO K=1,NY
         IF(COSPH(K).LE.COSPHMIN) THEN
@@ -317,6 +326,7 @@
       ALPHA   = 0.0095
       XKAPPA  = 0.40
 
+
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
 
       XNLEV(1)= 10.0
@@ -325,7 +335,7 @@
 !         -----------------------------
 
       CALL STRESS(IU06,ITEST)
-      CALL TAUHF (FR(ML))
+      CALL TAUHF(ML)
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
@@ -418,7 +428,7 @@
 !        -------------------------------
 
       DO IG=1,IGL
-        CALL MUBUF (IU01, BATHY, IG, ML, IU08, IU18, IFORM)
+        CALL MUBUF (IU01, BATHY, IG, ML, IU08)
         IF (ITEST.GT.0) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*)
      &     ' SUB MUBUF DONE FOR BLOCK ',IG

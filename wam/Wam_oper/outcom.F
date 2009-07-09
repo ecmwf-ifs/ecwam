@@ -82,7 +82,7 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            TCGOND   ,TFAK     ,TSIHKD
+     &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,DELUST   ,
      &            DELALP   ,FAC0     ,FAC1     ,FAC2     ,FAC3     ,
@@ -246,14 +246,16 @@
         WRITE (IU07) DEPTH,
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML)
+     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML),
+     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,ML)
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE (IU17,996) NDEPTH, DEPTHA, DEPTHD
         WRITE (IU17,999) DEPTH,
      &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
      &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML)
+     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML),
+     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,ML)
       ENDIF
 
 ! ----------------------------------------------------------------------

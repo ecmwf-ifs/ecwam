@@ -49,12 +49,12 @@
       REAL :: XOI(IJS:IJL)
       REAL :: XNEW
       REAL :: DELLON, COSLON, DOBS, DOBS2
-      REAL :: COND, EPS 
+      REAL :: COND
       REAL :: DIFF 
       REAL :: W(IJS:IJL,NDIM2)
 
       REAL, ALLOCATABLE, DIMENSION(:) :: V
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: D, P 
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
 
 ! ----------------------------------------------------------------------
 
@@ -69,7 +69,7 @@
 
         ALLOCATE(D(NOBS(IJ),NOBS(IJ)))
         ALLOCATE(P(NOBS(IJ),NOBS(IJ)))
-        ALLOCATE(V(NOBS(IJ)))            
+        ALLOCATE(XM(NOBS(IJ),NOBS(IJ)))
 
 !       DETERMINE OBSERVATION CORRELATION MATRIX  D
 
@@ -114,22 +114,21 @@
 !       SUM BOTH MATRICES
         DO IOBS=1,NOBS(IJ)
           DO JOBS=1,NOBS(IJ)
-            D(IOBS,JOBS)=D(IOBS,JOBS)+P(IOBS,JOBS)
+            XM(IOBS,JOBS)=D(IOBS,JOBS)+P(IOBS,JOBS)
           ENDDO
         ENDDO
 
+        DEALLOCATE(P)
+        DEALLOCATE(D)            
 
 !       INVERSE MATRIX D
         COND=0.
-        EPS=0. 
-        DO IOBS=1,NOBS(IJ)
-          V(IOBS) = 0.
-        ENDDO
 
-        CALL SYMINV(D,NOBS(IJ),NOBS(IJ),COND,V,EPS)
+        CALL WAM_SYMINV(XM,NOBS(IJ),NOBS(IJ),COND)
+
         DO IOBS=1,NOBS(IJ)-1
           DO JOBS=IOBS+1,NOBS(IJ)
-           D(IOBS,JOBS) = D(JOBS,IOBS)
+           XM(IOBS,JOBS) = XM(JOBS,IOBS)
           ENDDO
         ENDDO
 
@@ -140,20 +139,18 @@
           DIFF = 0.
           DO JOBS=1,NOBS(IJ)
             KOBS=IOBS4IJ(IJ,JOBS)
-            DIFF=DIFF+D(IOBS,JOBS)*DIFFALTFG(KOBS)
+            DIFF=DIFF+XM(IOBS,JOBS)*DIFFALTFG(KOBS)
           ENDDO
           XNEW=XNEW+W(IJ,IOBS)*DIFF
         ENDDO
 
-        DEALLOCATE(P)
-        DEALLOCATE(D)            
-        DEALLOCATE(V)            
+        DEALLOCATE(XM)
 
 !       UPDATE FIRST GUESS
         XOI(IJ) = XMO(IJ) + XNEW
 
       ENDIF
       ENDDO
-                                                                  
+
       RETURN                                                            
       END SUBROUTINE WAMOI

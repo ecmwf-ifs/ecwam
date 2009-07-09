@@ -1,4 +1,5 @@
-      SUBROUTINE READFL(FL,MINF,MSUP,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
+      SUBROUTINE READFL(FL, KINF, KSUP, MINF, MSUP,
+     &                  FILENAME, IUNIT, LPBOPEN, LPBCLOSE)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997
@@ -9,17 +10,17 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *READFL*(FL,MINF,MSUP,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
+!     CALL *READFL*(FL, KINF, KSUP, MINF, MSUP,
+!                   FILENAME, IUNIT, LPBOPEN, LPBCLOSE)
 !     *FL*       ARRAY TO BE WRITTEN TO FILE
+!     *KINF*     SECOND LOWER DIMENSION BOUND OF FL
+!     *KSUP*     SECOND UPPER DIMENSION BOUND OF FL
 !     *MINF*     THIRD LOWER DIMENSION BOUND OF FL
 !     *MSUP*     THIRD UPPER DIMENSION BOUND OF FL
-!     note the first and second dimension of FL are given 
-!     by 0:NIBLO and NANG
 !     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE
-!     *IUNIT*    PBIO UNIT (ONLY ACTIVE IF PBIO OUTPUT)
+!     *IUNIT*    FILE UNIT (ONLY ACTIVE IF PBIO OUTPUT)
 !     *LPBOPEN*  LOGICAL, TRUE IF PBOPEN HAS TO BE CALLED
 !     *LPBCLOSE* LOGICAL, TRUE IF PBCLOSE HAS TO BE CALLED
-!     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE
 
 !     METHOD.
 !     -------
@@ -28,8 +29,6 @@
 
 !     IF PBIO IS USED, THEN PBREAD IS CALLED TO READ (MSUP-MINF+1) 
 !     FREQUENCY CONTRIBUTION TO FL.
-!     IF FORTRAN READ IS USED THEN FILNAME IS READ AS UNFORMATTED BINARY
-!     MINF SHOULD BE SET TO 1 AND MSUP TO NFRE
 
 
 !     EXTERNALS.
@@ -46,10 +45,9 @@
 
       USE YOWMESPAS, ONLY : LPBIOIN
       USE YOWMPP   , ONLY : NPROC    ,NPRECR
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO     ,LL1D
+      USE YOWPARAM , ONLY : NIBLO     ,LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNIT  , ONLY : IU12
 
 ! ----------------------------------------------------------------------
 
@@ -57,7 +55,7 @@
       CHARACTER*120 FILENAME
       LOGICAL LPBOPEN,LPBCLOSE
 
-      REAL,DIMENSION(0:NIBLO,NANG,MINF:MSUP) :: FL
+      REAL,DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
       REAL,ALLOCATABLE :: RFL(:,:,:)
 ! ----------------------------------------------------------------------
 
@@ -81,16 +79,16 @@
           ENDIF
         ENDIF
 
-        KOUNT = (NIBLO+1)*NANG*(MSUP-MINF+1)*NPRECR
+        KOUNT = (NIBLO+1)*(KSUP-KINF+1)*(MSUP-MINF+1)*NPRECR
         IF(LL1D .OR. NPROC.EQ.1) THEN
           CALL PBREAD(IUNIT,FL,KOUNT,KRET)
         ELSE
 !         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !         BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
-          ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
+          ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
           CALL PBREAD(IUNIT,RFL,KOUNT,KRET)
           DO M=MINF,MSUP
-            DO K=1,NANG
+            DO K=KINF,KSUP
               DO IJ=0,NIBLO
                 FL(IJ2NEWIJ(IJ),K,M)=RFL(IJ,K,M)
               ENDDO
@@ -138,30 +136,29 @@
         ENDIF
 
       ELSE
-
-        IF(MINF.NE.1.OR.MSUP.NE.NFRE) THEN
-          WRITE (IU06,*) '************************************'
-          WRITE (IU06,*) '*                                  *'
-          WRITE (IU06,*) '* ERROR IN READFL                  *' 
-          WRITE (IU06,*) '* MINF MUST BE = 1                 *'
-          WRITE (IU06,*) '* MSUP MUST BE = NFRE              *'
-          WRITE (IU06,*) '* MINF WAS ', MINF
-          WRITE (IU06,*) '* MSUP WAS ', MSUP
-          WRITE (IU06,*) '* NFRE WAS ', NFRE 
-          WRITE (IU06,*) '*                                  *'
-          WRITE (IU06,*) '************************************'
-          CALL ABORT1
+        LFILE=0
+        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IF(LPBOPEN) THEN
+          IUNIT=I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
         ENDIF
 
         IF(LL1D .OR. NPROC.EQ.1) THEN
-          READ(IU12) FL
+          READ(IUNIT) (((FL(J1,J2,J3),
+     &                    J1=0,NIBLO),
+     &                    J2=KINF,KSUP),
+     &                    J3=MINF,MSUP)
         ELSE
 !         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !         BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
-          READ(IU12) (((FL(IJ2NEWIJ(IJ),K,M),IJ=0,NIBLO),
-     &                  K=1,NANG),M=MINF,MSUP)
+          READ(IUNIT) (((FL(IJ2NEWIJ(J1),J2,J3),
+     &                    J1=0,NIBLO),
+     &                    J2=KINF,KSUP),
+     &                    J3=MINF,MSUP)
+
         ENDIF
-        CLOSE(IU12)
+        IF(LPBCLOSE) THEN
+          CLOSE(IUNIT)
+        ENDIF
 
       ENDIF
 

@@ -1,93 +1,69 @@
-      SUBROUTINE WAMCUR (IUCUR)
+      SUBROUTINE WAMCUR (U, V, KINF, KSUP, IJS, IJL, IG)
 
 ! ----------------------------------------------------------------------
 
-!**** *WAMCUR* - ROUTINE PROCESS A CURRENT FIELD.
+!**** *WAMCUR* - TRANSFORMS INPUT CURRENTS TO BLOCKED WAM POINTS.
 
-!     SUSANNE HASSELMANN        JUNE     1990.
-!     H. GUNTHER    ECMWF/GKSS  DECEMBER 1990  MODIFIED FOR CYCLE_4.
+!     J. BIDLOR  AUGUST 2008 :: REDEFINE WAMCUR TO BLOCk TRANSFORM.
 
 !*    PURPOSE.
 !     --------
 
-!       INPUT AND INTERPOLATION TO BLOCKED CURRENT ARRAYS.
+!       CONVERTS INPUT CURRENT FIELDS TO WAM BLOCKS FOR ALL
+!       POINTS IN THE GRID ON A PE !!! INCLUDING OVER THE LOCALLY
+!       DEFINED HALO !!!!.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WAMCUR (IUCUR)*
-!          *IUCUR*  - INPUT UNIT FOR CURRENTS.
+!       *CALL WAMCUR (U, V, KINF, KSUP, IJS, IJL, IG)*
+!          *U*   - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
+!          *V*   - INTERPOLATED V CURRENT AT ALL POINTS.
+!          *KINF-1* - LOWER BOUND ON FIRST DIMENSION OF U AND V 
+!          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF U AND V 
+!          *IJS*    - INDEX OF FIRST GRIDPOINT
+!          *IJL*    - INDEX OF LAST GRIDPOINT
+!          *IG*     - BLOCK NUMBER
 
 !     METHOD.
 !     -------
 
-!       LINEAR INTERPOLATION.
 
 !     EXTERNALS.
 !     ----------
 
-!       *LOCINT*    - INTERPOLATE TO BLOCKS.
-!       *READCUR*   - READ A CURRENT FIELD.
+! ----------------------------------------------------------------------
 
-!     REFERENCE.
-!     ----------
-
-!       NONE.
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
+      USE YOWPARAM , ONLY : NGY      ,NBLO
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : FIELDG
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCURR  , ONLY : U        ,V
-      USE YOWCURG  , ONLY : DUCLO    ,DUCLA    ,UCLO     ,UCLW     ,
-     &            UCUR     ,VCUR     ,KRCI     ,KCCI     ,IPCUR
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJLT
-      USE YOWPARAM , ONLY : NIBLC    ,NBLC
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      IMPLICIT NONE
+
+      INTEGER :: IJS, IJL, KINF, KSUP, IG 
+      INTEGER :: IJ, IX, JY
+
+      REAL, DIMENSION (KINF-1:KSUP,NBLO) :: U,V
+      REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-!*    1. READ CURRENT FILE.
-!        ------------------
+!*    1. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
+!        ----------------------------------------
 
-      CALL READCUR (IUCUR, CDTCR)
+      IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
 
-! ----------------------------------------------------------------------
-
-!*    2. INTERPOLATION OF INPUT CURRENT ON MODEL GRID.
-!        ---------------------------------------------
-
-      IJA =1
-
-      ALLOCATE(U(0:NIBLC,NBLC))
-      ALLOCATE(V(0:NIBLC,NBLC))
-
-      DO IG=1,IGL
-        CALL LOCINT (IG, IJA, IJLT(IG), KCCI, KRCI, KCCI, KRCI, IPCUR,
-     &   DUCLO, DUCLA, UCLW, UCLO, UCUR, VCUR, U(IJS(IG),IG),
-     &   V(IJS(IG),IG))
+      DO IJ = IJS,IJL
+        IX = IFROMIJ(IJ,IG)
+        JY = JFROMIJ(IJ,IG)
+        U(IJ,IG) = FIELDG(IX,JY)%UCUR
+        V(IJ,IG) = FIELDG(IX,JY)%VCUR
       ENDDO
 
-      DEALLOCATE(UCUR)
-      DEALLOCATE(VCUR)
-
-! ----------------------------------------------------------------------
-
-!*    3. TEST OUTPUT OF WAVE MODEL BLOCKS
-!        ---------------------------------
-
-      IF (ITEST.GE.3) THEN
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) '      SUB. WAMCUR..',
-     &   ' CURRENTS CONVERTED TO BLOCKS'
-        WRITE (IU06,*) ' '
-        DO IG = 1,ITESTB
-          IJA = IJS(IG)
-          IJE = IJS(IG)+4
-          WRITE (IU06,*) ' BLOCK= ',IG
-          WRITE (IU06,*) ' '
-          WRITE (IU06,*) ' U(IJS - IJS+4): ',(U(I,IG),I=IJA,IJE)
-          WRITE (IU06,*) ' V(IJS - IJS+4): ',(V(I,IG),I=IJA,IJE)
-        ENDDO
-      ENDIF
-
+      IF (LHOOK) CALL DR_HOOK('WAMCUR',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE WAMCUR

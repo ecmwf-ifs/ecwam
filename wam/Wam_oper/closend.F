@@ -60,41 +60,50 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
-
       USE YOWPARAM , ONLY : NBLO
-      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI
+      USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWUNIT  , ONLY : IU17     ,IU18
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
-
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD, ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW     , ROAIRN,ZIDLNEW
-
-! ----------------------------------------------------------------------
-
-      LOGICAL NEWREAD, NEWFILE, LLEX
+      REAL ZHOOK_HANDLE
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
 
       CHARACTER*14 CDATEWH, CDATE
+
+      LOGICAL NEWREAD, NEWFILE, LLEX
 
 ! ----------------------------------------------------------------------
 
 !*    1. SAVE WIND INTO INTERMEDIATE STORAGE.
 !     ----------------------------------------
 
+      IF (LHOOK) CALL DR_HOOK('CLOSEND',0,ZHOOK_HANDLE)
+
       IF (NEWREAD) THEN
-        DO IJ=IJS,IJL
-          U10OLD(IJ,IG) = U10NEW(IJ)
-          THWOLD(IJ,IG) = THWNEW(IJ)
-          ROAIRO(IJ,IG) = ROAIRN(IJ)
-          ZIDLOLD(IJ,IG) = ZIDLNEW(IJ)
+        NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+        CALL GSTATS(1445,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          DO IJ=KIJS,KIJL
+            U10OLD(IJ,IG) = U10NEW(IJ)
+            THWOLD(IJ,IG) = THWNEW(IJ)
+            ROAIRO(IJ,IG) = ROAIRN(IJ)
+            ZIDLOLD(IJ,IG) = ZIDLNEW(IJ)
+          ENDDO
         ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1445,1)
         NEWREAD = .FALSE.
         IF (ITEST.GE.2) THEN
           IF (ITESTB.GE.IG) THEN
@@ -111,27 +120,7 @@
 
       IF (IG.EQ.IGL) THEN
         IF (NEWFILE) THEN
-
-!*    2.1 A NEW WIND FILE HAS BEEN USED.
-!         ------------------------------
-
-!*    2.1.1 CLOSE WIND FILES SO THEY DO NOT ACCUMULATE.
-!           -------------------------------------------
-
-          INQUIRE(UNIT=IU17,OPENED=LLEX)
-
-          IF(LLEX) CLOSE (UNIT=IU17, STATUS='DELETE')
-
-          IF (ITEST.GE.2)
-     &     WRITE(IU06,'(7X,''SUB. CLOSEND: CLOSED IU17 = '',
-     &     I8,'' AT CDATE = '',A14)') IU17, CDATE
-
-!*    2.1.2 UPDATE WIND FILE TIME COUNTER AND UNITS.
-!           ----------------------------------------
-
-          IUH  = IU17
-          IU17 = IU18
-          IU18 = IUH
+!*        UPDATE WIND FILE TIME COUNTER AND UNITS.
           NEWFILE = .FALSE.
           IDELWH = MAX(IDELWI,IDELPRO)
           CALL INCDATE(CDAWIFL,IDELWH)
@@ -145,11 +134,10 @@
           ENDIF
         ENDIF
 
-!*    2.2 UPDATE WIND FIELD COUNTER.
-!         --------------------------
-
+!*      UPDATE WIND FIELD COUNTER.
         CDATEWO=CDATEWH
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('CLOSEND',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE CLOSEND

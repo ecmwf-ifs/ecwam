@@ -1,8 +1,5 @@
       SUBROUTINE GETWND (US, DS, ADS, ZIDL, ICMSK,
-     &                   KINF, KSUP, CDTWIS,
-     &                   NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                   ISEC1, ISEC2, FIELDS, MASK_IN,
-     &                   LWNDFILE, LCLOSEWND)
+     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD)
 
 ! ----------------------------------------------------------------------
 
@@ -18,29 +15,20 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (US, DS, ADS, ZIDL, KINF, KSUP, CDTWIS,
-!                       NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-!                       ISEC1, ISEC2, FIELDS,
-!                       LWNDFILE, LCLOSEWND)*
-!         *US*     - MAGNITUDE OF USTAR IN EACH POINT AND BLOCK.
-!         *DS*     - DIRECTION OF USTAR IN EACH POINT AND BLOCK.
-!         *ADS*    - AIR DENSITY IN EACH POINT AND BLOCK.
-!         *ZIDL*   - Zi/L  IN EACH POINT AND BLOCK.
-!         *KINF*   - LOWER BOUND ON FIRST DIEMENSION OF FIELD
-!         *KSUP*   - UPPER BOUND ON FIRST DIEMENSION OF FIELD
+!       *CALL* *GETWND (US, DS, ADS, ZIDL, ICMSK,
+!                       CDTWIS, LWNDFILE, LCLOSEWND)*
+!         *US*     - MAGNITUDE OF USTAR AT EACH POINT AND BLOCK.
+!         *DS*     - DIRECTION OF USTAR AT EACH POINT AND BLOCK.
+!         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
+!         *ZIDL*   - Zi/L  AT EACH POINT AND BLOCK.
+!         *ICMSK*  - ICE MASK AT EACH POINT
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
-!         *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
-!         *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
-!         *NC*     - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
-!         *NR*     - NUMBER OF ATM. ROWS OF LATITUDES
-!         *FCRANGE*- FORECAST RANGE IN SECONDS
-!         *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
-!         *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
-!         *FIELDS* - ATMOSPHERIC FIELDS (U10, V10, AIR DENSITY, Zi/L)
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
-!                     FILE OR PASSED AS ARGUMENTS IN IUGB AND IVGB
+!                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
 !         *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND
 !                     THE UNIT RESET
+!         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!                    (IF NEEDED)
 
 !     METHOD.
 !     -------
@@ -72,9 +60,14 @@
 !                 INTRODUCE openMP
 !    J. BIDLOT    ECMWF AUGUST 2006
 !                 SEA ICE FRACTION IF COUPLED.
+!    J. BIDLOT    ECMWF AUGUST 2008
+!                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
+!                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : IPARAMCI ,CI
+      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWICE   , ONLY : IPARAMCI
+      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
      &             CLDOMAIN,LWDINTS
       USE YOWGRIBHD, ONLY : NKSEK1 
@@ -82,22 +75,20 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : UWND     ,VWND     ,AIRD     ,PZIDL     ,
-     &               WSPMIN,IUNITW
+      USE YOWWIND  , ONLY : FIELDG   ,WSPMIN   ,IUNITW
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-      INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      INTEGER MASK_IN(NGPTOTG)
-! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (KINF:KSUP,NBLO) :: US, DS, ADS, ZIDL
-      INTEGER, DIMENSION (KINF:KSUP,NBLO) :: ICMSK 
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL
+      INTEGER, DIMENSION (NINF:NSUP,NBLO) :: ICMSK 
 
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
+
+      REAL ZHOOK_HANDLE
+
       LOGICAL LLNOTOPENED, LWNDFILE, LCLOSEWND
       LOGICAL LONLYONCE
 
@@ -111,17 +102,10 @@
 
 ! ----------------------------------------------------------------------
 
-!*    0. GLOBAL FIELD FOR THE INPUTS
-!        ---------------------------
-
-      ALLOCATE(UWND(NGX,NGY))
-      ALLOCATE(VWND(NGX,NGY))
-      ALLOCATE(AIRD(NGX,NGY))
-      ALLOCATE(PZIDL(NGX,NGY))
-      ALLOCATE(CI(NGX,NGY))
-
 !*    1. WIND DATA ARE READ
 !        ------------------
+
+      IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
 
  1000 CONTINUE
 
@@ -131,100 +115,100 @@
         LLNOTOPENED=.FALSE.
       ENDIF
 
-      CALL READWIND (CDTWIR, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS, MASK_IN,
-     &               LWNDFILE, LCLOSEWND,
-     &               KINF, KSUP,
-     &               FILNM, LLNOTOPENED )
+!     GET FORCING FIELDS FROM INPUT FILES (if needed)
+!     -----------------------------------
+      IF(LWNDFILE) THEN
+        CALL READWIND (CDTWIR, LCLOSEWND, FILNM, LLNOTOPENED, IREAD)  
 
-!*    2. CHECK WIND FIELD DATE
-!        ----------------------
+!       CHECK WIND FIELD DATE
 
-      IF (CDTWIR.LT.CDTWIS) THEN
-
-!     2.1 DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
+        IF (CDTWIR.LT.CDTWIS) THEN
+!         DATE OF INPUT FIELD IS BEFORE REQUESTED DATE
 !         TRY AGAIN
-!         --------------------------------------------
-        IF(LWNDFILE) THEN
-          GOTO 1000
-        ELSE
-          WRITE (IU06,*) ' ******************************************'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND            *'
-          WRITE (IU06,*) ' *      =======================            *'
-          WRITE (IU06,*) ' * WIND DATE IS EARLIER THAN EXPECTED      *'
-          WRITE (IU06,*) ' * DECODED DATE IS  CDTWIR = ', CDTWIR
+          IF(LWNDFILE) THEN
+            IF (ITEST.GT.1) THEN
+              WRITE(IU06,*) ' SUB. GETWND - BEFORE REQUESTED DATE '
+              WRITE(IU06,*) ' CDTWIR= ',CDTWIR
+              WRITE(IU06,*) ' CDTWIS= ',CDTWIS
+              WRITE(IU06,*) ' SUB. GETWND - CALLING READWIND AGAIN'
+              CALL FLUSH(IU06)
+            ENDIF
+            GOTO 1000
+          ELSE
+            WRITE (IU06,*) ' ****************************************'
+            WRITE (IU06,*) ' *                                       *'
+            WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND          *'
+            WRITE (IU06,*) ' *      =======================          *'
+            WRITE (IU06,*) ' * WIND DATE IS EARLIER THAN EXPECTED    *'
+            WRITE (IU06,*) ' * DECODED DATE IS  CDTWIR = ', CDTWIR
+            WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
+            WRITE (IU06,*) ' *                                       *'
+            WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS      *'
+            WRITE (IU06,*) ' *                                       *'
+            WRITE (IU06,*) ' ****************************************'
+            CALL ABORT1
+          ENDIF
+        ELSEIF (CDTWIR.GT.CDTWIS) THEN
+
+!         DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
+          WRITE (IU06,*) ' ****************************************'
+          WRITE (IU06,*) ' *                                      *'
+          WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND         *'
+          WRITE (IU06,*) ' *      =======================         *'
+          WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED     *'
+          IF(LWNDFILE) THEN
+            WRITE (IU06,*) ' * DATE READ IS    CDTWIR = ', CDTWIR
+          ELSE
+            WRITE (IU06,*) ' * DECODED DATE IS CDTWIR = ', CDTWIR
+          ENDIF
           WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS        *'
-          WRITE (IU06,*) ' *                                         *'
-          WRITE (IU06,*) ' ******************************************'
+          WRITE (IU06,*) ' *                                      *'
+          WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS     *'
+          WRITE (IU06,*) ' *                                      *'
+          WRITE (IU06,*) ' ****************************************'
           CALL ABORT1
         ENDIF
-      ELSEIF (CDTWIR.GT.CDTWIS) THEN
 
-!     2.2 DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
-!         ------------------------------------------------
-        WRITE (IU06,*) ' ******************************************'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *      FATAL ERROR SUB. GETWND           *'
-        WRITE (IU06,*) ' *      =======================           *'
-        WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED       *'
-        IF(LWNDFILE) THEN
-          WRITE (IU06,*) ' * DATE READ IS     CDTWIR = ', CDTWIR
-        ELSE
-          WRITE (IU06,*) ' * DECODED DATE IS  CDTWIR = ', CDTWIR
+        IF (LCLOSEWND .AND. LWNDFILE .AND. 
+     &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
+          IF(IRANK.EQ.IREAD) THEN
+            CALL PBCLOSE(IUNITW,KRET)
+            IF(KRET.LT.0) THEN
+              WRITE (IU06,*) '**************************************'
+              WRITE (IU06,*) '*                                    *'
+              WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE   *'
+              WRITE (IU06,*) '*  IN GETWND                         *'
+              WRITE (IU06,*) '*                                    *'
+              WRITE (IU06,*) '**************************************'
+              CALL ABORT1
+            ENDIF
+            LLNOTOPENED = .TRUE.
+            IUNITW=0
+            IF (ITEST.GT.1)
+     &        WRITE(IU06,*) ' SUB. GETWND - PBCLOSE ON ',FILNM
+          ENDIF
         ENDIF
-        WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS       *'
-        WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' ******************************************'
-        CALL ABORT1
+
       ENDIF
-
-
-      IF (LCLOSEWND .AND. LWNDFILE .AND. 
-     &   .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
-        CALL PBCLOSE(IUNITW,KRET)
-        IF(KRET.LT.0) THEN
-          WRITE (IU06,*) '****************************************'
-          WRITE (IU06,*) '*                                      *'
-          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE     *'
-          WRITE (IU06,*) '*  IN GETWND                           *'
-          WRITE (IU06,*) '*                                      *'
-          WRITE (IU06,*) '****************************************'
-          CALL ABORT1
-        ENDIF
-        LLNOTOPENED = .TRUE.
-        IUNITW=0
-        IF (ITEST.GT.1)
-     &    WRITE(IU06,*) ' SUB. GETWND - PBCLOSE ON ',FILNM
-      ENDIF
-
 ! ----------------------------------------------------------------------
 
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
       DO IG=1,IGL
-        IF(KINF.EQ.1.AND.KSUP.EQ.NIBLO.AND.LMESSPASS) THEN
-          MIJS=KINF
-          MIJL=KSUP
-        ELSE
-          MIJS=IJS(IG)
-          MIJL=IJL(IG)
-        ENDIF
-
+        MIJS=IJS(IG)
+        MIJL=IJL(IG)
 ! Mod for OPENMP
         NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
+        CALL GSTATS(1444,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP, KIJS, KIJL, IG)
+          CALL WAMWND (US, DS, ADS, ZIDL, KIJS, KIJL, IG)
         ENDDO
 !$OMP   END PARALLEL DO
+        CALL GSTATS(1444,1)
 
         IF(LONLYONCE) THEN
           WRITE (IU06,*) ' '
@@ -238,26 +222,22 @@
         ENDIF
 
 !       USE THE SEA ICE FRACTION TO DEFINE THE SEA ICE BOUNDARY
+
+        CALL GSTATS(1444,0)
 ! Mod for OPENMP
         NPROMA=(MIJL-MIJS+1)/NWAM_BLKS+1
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL MICEP (CI, IPARAMCI, ICMSK, KINF, KSUP, KIJS, KIJL, IG)
+          CALL MICEP(IPARAMCI,ICMSK,KIJS,KIJL,IG)
         ENDDO
 !$OMP   END PARALLEL DO
+        CALL GSTATS(1444,1)
 
       ENDDO ! END LOOP ON IG
 
-!*    4. DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
-!        -----------------------------------------------
-
-      DEALLOCATE(UWND)
-      DEALLOCATE(VWND)
-      DEALLOCATE(AIRD)
-      DEALLOCATE(PZIDL)
-      DEALLOCATE(CI)
+      IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE GETWND

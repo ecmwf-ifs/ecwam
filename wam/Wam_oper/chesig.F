@@ -50,15 +50,13 @@
 
 !     ------------------------------------------------------------------
 
-
       USE YOWSTAT  , ONLY : ISIGHUP  ,ISIGINT
       USE MPL_MODULE
 
-
       IMPLICIT LOGICAL (L)
 
+      INTEGER :: IBUF(2)
       INTEGER, PARAMETER :: JPSIGTAG=1000
-      INTEGER, PARAMETER :: JPICODE=1
 
 ! ----------------------------------------------------------------------
 
@@ -75,27 +73,28 @@
       LDSIGSTOP=.FALSE.
       LDSIGREST=.FALSE.
 
-      IF (KTST.GE.2) THEN
-        WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' STOP    = ', 
-     &   ISIGHUP
-        WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' RESTART = ', 
-     &   ISIGINT
-      ENDIF
-
       IF (KRANK .EQ. 1) THEN
+        IF(ISIGINT == 1) THEN
+          WRITE(*,'(A)')' SIGNAL RECEIVED: WRITE RESTART FILES'
+        ENDIF
+        IF(ISIGHUP == 1) THEN
+          WRITE(*,'(A)')' SIGNAL RECEIVED: STOP'
+        ENDIF
+
         DO JE=2, KPROC
           ITAG=JPSIGTAG+JE
-          CALL MPL_SEND(ISIGHUP,KDEST=JE,KTAG=ITAG,KERROR=IERR)
-          IF (KTST.GE.2)
-     &    WRITE(KU06,*)' SEND STATUS TO PE ', JE, ' R-CODE= ', IERR
+          IBUF(1)=ISIGHUP
+          IBUF(2)=ISIGINT
+          CALL MPL_SEND(IBUF,KDEST=JE,KTAG=ITAG,
+     &                  CDSTRING='CHESIG:') 
         ENDDO
       ELSE
         ITAG=JPSIGTAG+KRANK
         IPROC=1
-        CALL MPL_RECV(ISIGHUP,KSOURCE=IPROC,KTAG=ITAG,KERROR=IERR)
-        IF (KTST.GE.2)
-     &  WRITE(KU06,*)' RECEIVED STATUS ON PE ',KRANK, 'R-CODE= ', IERR,
-     &               'STOP= ',ISIGHUP, 'RESTART= ',ISIGINT
+        CALL MPL_RECV(IBUF,KSOURCE=IPROC,KTAG=ITAG,
+     &                CDSTRING='CHESIG:') 
+        ISIGHUP=IBUF(1)
+        ISIGINT=IBUF(2)
       ENDIF
       IF (ISIGHUP.NE.0) LDSIGSTOP=.TRUE.
       IF (ISIGINT.NE.0) LDSIGREST=.TRUE.
@@ -115,4 +114,3 @@
 
       RETURN
       END SUBROUTINE CHESIG
-

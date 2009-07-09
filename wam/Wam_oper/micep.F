@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-      SUBROUTINE MICEP (FIELD, IPARAM, ICMSK, KINF,KSUP,IJS,IJL,IG)
+      SUBROUTINE MICEP (IPARAM, ICMSK, IJS, IJL, IG)
 
 !-------------------------------------------------------------------
 
@@ -25,15 +25,12 @@
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(FIELD, IPARAM, ICMSK, KINF,KSUP,IJS,IJL,IG)
+!             *CALL MICEP* *(IPARAM, ICMSK, IJS, IJL, IG)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *FIELD*     REAL      GLOBAL FIELD USED TO DETERMINE THE ICE MASK
-!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELD
+!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CIFR
 !      *ICMSK*     INTEGER   ICE MASK 
-!      *KINF*      LOWER BOUND ON FIRST DIMENSION OF ICMSK 
-!      *KSUP*      UPPER BOUND ON FIRST DIMENSION OF ICMSK 
 !      *IJS*       INDEX OF FIRST GRIDPOINT
 !      *IJL*       INDEX OF LAST GRIDPOINT
 !      *IG*        BLOCK NUMBER
@@ -50,21 +47,25 @@
 !---------------------------------------------------------------------
 
       USE YOWMAP   , ONLY : IXLG     ,KXLT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWMPP   , ONLY : IRANK    ,NPROC   ,NINF       ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY     ,NBLO
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST 
+      USE YOWWIND  , ONLY : FIELDG 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL,DIMENSION(NGX,NGY) :: FIELD
-      INTEGER, DIMENSION (KINF:KSUP,NBLO) :: ICMSK 
+      INTEGER, DIMENSION (NINF:NSUP,NBLO) :: ICMSK 
 
 ! ----------------------------------------------------------------------
+      REAL ZHOOK_HANDLE
 
 !     1. INITIALIZATION
 !     ------------------
+
+      IF (LHOOK) CALL DR_HOOK('MICEP',0,ZHOOK_HANDLE)
 
 !-----------------------------------------------------------------
 
@@ -80,8 +81,9 @@
         DO IJ = IJS, IJL 
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
-          IF (FIELD(IX,IY) .GT. 0.3 .AND. FIELD(IX,IY) .LE. 1.01  .AND.
-     &        FIELD(IX,IY) .NE. ZMISS ) THEN
+          IF (FIELDG(IX,IY)%CIFR .GT. 0.3 .AND.
+     &        FIELDG(IX,IY)%CIFR .LE. 1.01  .AND.
+     &        FIELDG(IX,IY)%CIFR .NE. ZMISS ) THEN
             NICE = NICE + 1
             ICMSK(IJ,IG) = 0
           ELSE
@@ -92,7 +94,7 @@
         DO IJ = IJS, IJL 
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
-            IF (FIELD(IX,IY) .LT. 271.5) THEN
+            IF (FIELDG(IX,IY)%CIFR .LT. 271.5) THEN
               NICE = NICE + 1
               ICMSK(IJ,IG) = 0
             ELSE
@@ -117,5 +119,6 @@
         ENDIF
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE MICEP

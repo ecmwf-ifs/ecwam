@@ -108,6 +108,7 @@
       ELSE
         WRITE(IU06,*)
      &  ' SUB INITIALINT : REPRESENTATION OF THE FIELD NOT KNOWN'
+        WRITE(IU06,*)'  JRGG= ',JRGG
         CALL ABORT1
       ENDIF
 

@@ -23,7 +23,6 @@
 !     MODULES:
 !     --------
 
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJL2
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
       USE YOWSARAS , ONLY : NW1D     ,SPECW    ,UW10     ,THWW     ,

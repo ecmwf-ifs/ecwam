@@ -26,6 +26,8 @@
       REAL, ALLOCATABLE :: DEPTHG(:,:) 
       REAL, ALLOCATABLE :: HMAXG(:,:) 
       REAL, ALLOCATABLE :: TMAXG(:,:) 
+      REAL, ALLOCATABLE :: USTOKESG(:,:) 
+      REAL, ALLOCATABLE :: VSTOKESG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -58,6 +60,8 @@
 !      *DEPTHG*    REAL      GRIDDED MODEL DEPTH.
 !      *HMAXG*     REAL      GRIDDED MAXIMUM WAVE HEIGHT FIELD (M).
 !      *TMAXG*     REAL      GRIDDED MAXIMUM WAVE PERIOD FIELD (S).
+!      *USTOKESG*  REAL      GRIDDED U-COMP STOKES DRIFT (M/S).
+!      *VSTOKESG*  REAL      GRIDDED V-COMP STOKESDRIFT (M/S).
 
 
 ! ----------------------------------------------------------------------

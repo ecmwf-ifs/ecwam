@@ -72,7 +72,7 @@
 
       IF (FRSTIME) THEN
         CPATH = 'out_spec'
-        OPEN (IU_SPEC,FILE=CPATH,STATUS='NEW', FORM='FORMATTED')
+        OPEN (IU_SPEC,FILE=CPATH,STATUS='UNKNOWN', FORM='FORMATTED')
         FRSTIME = .FALSE.
       ENDIF
          

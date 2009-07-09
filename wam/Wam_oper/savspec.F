@@ -25,9 +25,9 @@
 !     BY GRSTNAME OR BY THE FDB SOFTWARE IF FDB IS USED.
 !     THE CONTRIBUTION FROM ALL PE'S NEED TO BE GATHERED ON THE OUTPUT
 !     PE BY CALLING MPGATHERFL.
-!     IN ORDER NOT TO EXCEED THE MAXIMUN SIZE OF THE MESSAGE MAILBOX,
-!     ONLY PART OF THE SPECTRA WILL BE GATHERED PER CALL TO MPGATHERFL
-!     BY ALLOWING ONLY MDEL FREQUENCIES PER CALL.
+!     IN ORDER TO USE MPL_GATHERV IN MPGATHERFL THE SPECTRA WILL BE
+!     GATHERED MDEL FREQUENCIES AT A TIME
+!     AND KDEL DIRECTIONS AT A TIME.
 
 !     EXTERNALS.
 !     ----------
@@ -41,7 +41,7 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL
+      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL
       USE YOWGRID  , ONLY : IGL
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
@@ -53,167 +53,60 @@
 
 ! ----------------------------------------------------------------------
       CHARACTER*14 CDTPRO,CDATEF,CDATER
-      CHARACTER*9 CMBXSIZE
       CHARACTER*120 FILENAME
 
-      LOGICAL LFRSTIME, LPBOPEN, LPBCLOSE
+      LOGICAL LPBOPEN, LPBCLOSE
 
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
 ! ----------------------------------------------------------------------
-!     define local allocatable arrays
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
-      DATA MDEL, LFRSTIME / 1, .TRUE./
-
-      INTEGER IUNIT
-      SAVE IUNIT
 
       LPBOPEN = .TRUE.
       LPBCLOSE = .TRUE.
 
-      IF (LMESSPASS) THEN
-
-! OPEN OUPUT FILE
-
-! FOR OPERATION, THE RESTART FILES SHOULD BE OUTPUT TO A VFL FILE SYSTEM
-! WHERE PREALLOCATION OF THE SPACE CAN BE DONE BEFORE WRITE TO DISK
-
-        CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+      CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
 ! COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
 ! SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
+      IRECV=IPFGTBL(JPPFLAG+1)
 
-! DETERMINE MAXIMUM NUMBER OF FREQUENCIES WHICH CAN BE USED TO COLLECT
-! SPECTRA ON ONE PE WITHOUT EXCEEDING THE MAXIMUM MAILBOX SIZE
+      DO MLOOP=1,NFRE,MDEL
+        MINF=MLOOP
+        MSUP=MIN(MLOOP+MDEL-1,NFRE)
+        DO KLOOP=1,NANG,KDEL
+          KINF=KLOOP
+          KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-        IF(LFRSTIME) THEN
-          CALL GETENV('MBX_SIZE',CMBXSIZE)
-          READ(CMBXSIZE,'(I9)') MBXSIZE
-          MINSIZE=NINT(REAL(NPROC-1)*NIBLO*NANG*NPRECR/NPROC)
-          IF(MINSIZE.GT.MBXSIZE) THEN
-            WRITE (IU06,*) '***************************************'
-            WRITE (IU06,*) '*                                     *'
-            WRITE (IU06,*) '* MESSAGE MAIL BOX SIZE IS TOO SMALL  *'
-            WRITE (IU06,*) '* TO OUTPUT THE RESTART SPECTRUM FILE *'
-            WRITE (IU06,*) '* THE PRESCRIBED SIZE SIZE IS         *'
-            WRITE (IU06,*) '* ', MBXSIZE,' BYTES                  *'
-            WRITE (IU06,*) '* PLEASE INCREASE SIZE TO AT LEAST    *'
-            WRITE (IU06,*) '* ', MINSIZE, 'BYTES                  *'
-            WRITE (IU06,*) '* SEE ENVIRONMENT VARIABLE            *'
-            WRITE (IU06,*) '* MBX_SIZE                            *'
-            WRITE (IU06,*) '*                                     *'
-            WRITE (IU06,*) '***************************************'
-            CALL ABORT1
-          ENDIF
-          MDEL = 1
-!!           MDEL = NFRE
-!!           DO WHILE (MINSIZE*MDEL.GE.MBXSIZE.AND.MDEL.GT.1)
-!!              MDEL=MDEL-1
-!!           ENDDO
-          WRITE (IU06,*)''
-          WRITE (IU06,*)' IN SAVSPEC :'
-          WRITE (IU06,*)' MESSAGE MAIL BOX SIZE OF ',MBXSIZE,' BYTES'
-          IF (MDEL.EQ.1) THEN
-            WRITE (IU06,*)' ',MDEL,' FREQUENCY IS GATHERED AT ONE TIME'
-          ELSE
-            WRITE (IU06,*)' ',MDEL,'FREQUENCIES ARE GATHERED AT ONE 
-     &       TIME'
-          ENDIF
-          WRITE (IU06,*)' WHICH SHOULD RESULT IN A MAXIMUM USAGE OF'
-          WRITE (IU06,*)' ',MINSIZE*MDEL, 'BYTES FOR EACH CALL TO ',
-     &     'MPGATHERFL'
-          WRITE (IU06,*)''
+          LPBOPEN = .FALSE.
+          LPBCLOSE = .FALSE.
+          IF(MINF.EQ.1 .AND. KINF.EQ.1) LPBOPEN = .TRUE.
+          IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LPBCLOSE = .TRUE.
 
-          LFRSTIME=.FALSE.
-        ENDIF
-        IF (LPBIOOUT) THEN
-! use the ability of the PBIO to write and append
-! output by frequency bands
-
-          DO MLOOP=1,NFRE,MDEL
-
-            MINF=MLOOP
-            MSUP=MIN(MLOOP+MDEL-1,NFRE)
-
-            LPBOPEN = .FALSE.
-            LPBCLOSE = .FALSE.
-            IF(MINF.EQ.1) LPBOPEN = .TRUE.
-            IF(MSUP.EQ.NFRE) LPBCLOSE = .TRUE.
-
-            ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
-            RFL=0.
-
-            DO M=MINF,MSUP
-              DO K=1,NANG
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  RFL(IJ,K,M) = FL(IJ,K,M)
-                ENDDO
+          ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+          RFL(0,:,:)=0.
+          DO M=MINF,MSUP
+            DO K=KINF,KSUP
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                RFL(IJ,K,M) = FL(IJ,K,M)
               ENDDO
             ENDDO
-            IRECV=IPFGTBL(JPPFLAG+1)
-            CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
-     &       MINF,MSUP,RFL)
-            IF (ITEST.GE.2)
-     &       WRITE(IU06,*)
-     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
-
-            IF (IRANK.EQ.IPFGTBL(JPPFLAG+1)) THEN
-              IF (ITEST .GE. 2)
-     &         WRITE(IU06,'(" savspec: CALLS WRITEFL: NIBLO=", I6, 
-     &         " MINF=", I3, " MSUP=", I3, " FILENAME=", A40, " IUNIT=",
-     &         I2, " LPBOPEN=", L1, " LPBCLOSE=", L1)')
-     &         NIBLO,MINF,MSUP,FILENAME(1:40),IUNIT,LPBOPEN,LPBCLOSE
-              CALL WRITEFL(RFL,MINF,MSUP,FILENAME,IUNIT,
-     &                     LPBOPEN,LPBCLOSE)
-
-            ENDIF
-            DEALLOCATE(RFL)
-
           ENDDO
 
+          CALL MPGATHERFL(IRECV,NSTART,NEND,KINF,KSUP,
+     &                    MINF,MSUP,RFL)
 
-        ELSE
+          IF (ITEST.GE.2)
+     &     WRITE(IU06,*)
+     &     'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
 
-          ALLOCATE(RFL(0:NIBLO,NANG,NFRE))
-          RFL=0.
-
-          DO MLOOP=1,NFRE,MDEL
-
-            MINF=MLOOP
-            MSUP=MIN(MLOOP+MDEL-1,NFRE)
-
-            DO M=MINF,MSUP
-              DO K=1,NANG
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  RFL(IJ,K,M) = FL(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-
-            IRECV=IPFGTBL(JPPFLAG+1)
-            CALL MPGATHERFL(IRECV,121+MLOOP,NSTART,NEND,MINF,MSUP,
-     &       1,NFRE,RFL)
-
-            IF (ITEST.GE.2)
-     &       WRITE(IU06,*)
-     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
-
-          ENDDO
-
-          IF (IRANK.EQ.IPFGTBL(JPPFLAG+1))
-     &     CALL WRITEFL(RFL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
-
+          IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. .NOT.LMESSPASS) THEN
+            CALL WRITEFL(RFL,KINF,KSUP,MINF,MSUP,
+     &                   FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
+          ENDIF
           DEALLOCATE(RFL)
-
-        ENDIF
-
-
-      ELSE
-
-        CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
-        CALL WRITEFL(FL,1,NFRE,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
-
-      ENDIF
+        ENDDO
+      ENDDO
 
       WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',
      &                ' CDTPRO  = ', CDTPRO

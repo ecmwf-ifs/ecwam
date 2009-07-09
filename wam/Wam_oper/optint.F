@@ -23,7 +23,7 @@
 
 !     EXTERNALS
 !     ---------
-!     SYMINV (ECLIB ROUTINE) 
+!     WAM_SYMINV
 
 !     METHOD.
 !     -------
@@ -100,10 +100,8 @@
       INTEGER
      & CORRELTAS(NSPECW,MPARTSW,JPSIW),PARTS(NSPEC,NANG,NFRE)
 
-      REAL :: WSUME,EPS,COND
+      REAL :: WSUME,COND
 !            SUMS OF ERRORS.
-      REAL, ALLOCATABLE :: WKSPACE(:)
-!            INTERMEDIATE STORAGE SPACE.
       REAL :: SIGMASAR(NSPEC,NSPEC)
 !     CORRELATION FUNCTION BETWEEN SAR OBS.
 
@@ -173,7 +171,6 @@
 !      ---------------------------------
 
       ALLOCATE(SIGMA(NJSAR,NJSAR))
-      ALLOCATE(WKSPACE(NJSAR))
 
 
       DO K = 1,NSPEC
@@ -193,7 +190,7 @@
       DO ISPEC=1,NSPECW
 
         DO IPARTS=1,NPARTW(ISPEC)
-!         create symmetric matrix SIGMA (SYMINV only requires the lower
+!         create symmetric matrix SIGMA (WAM_SYMINV only requires the lower
 !         triangular part.)
           NJS=0
           KSAR=0
@@ -220,9 +217,7 @@
 
           IF(NJS.GT.1) THEN
             COND=0.
-            EPS=0.
-            WKSPACE=0.
-            CALL SYMINV(SIGMA,NJSAR,NJS,COND,WKSPACE,EPS)
+            CALL WAM_SYMINV(SIGMA,NJSAR,NJS,COND)
           ELSE IF (NJS.EQ.1) THEN
             SIGMA(1,1)=1./SIGMA(1,1)
           ENDIF
@@ -255,7 +250,6 @@
       END DO
 
       DEALLOCATE(SIGMA)
-      DEALLOCATE(WKSPACE)
 
 !------------------------------------------------------------------
 

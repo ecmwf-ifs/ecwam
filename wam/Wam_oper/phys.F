@@ -134,7 +134,7 @@
 
           IF (CDATE.EQ.CDTPRA) THEN
             IF(NIBLO.GT.1) THEN
-              CALL PROPAGS(FL1, FL3, MIJS, MIJL, IG, SL, FCONST)
+              CALL PROPAGS(FL1, FL3, MIJS, MIJL, IG,SL,FCONST,L1STCALL)
             ELSE
               FL3 = FL1
             ENDIF

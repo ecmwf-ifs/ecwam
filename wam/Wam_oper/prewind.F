@@ -1,7 +1,8 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO, ZIDLOLD, ICEMASK,
+     &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, FIELDS, MASK_IN)
+     &                    ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -34,8 +35,9 @@
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, ICEMASK,
+!    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-!    &                 ISEC1, ISEC2, FIELDS)*
+!    &                 ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)*
 
 !      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                            VELOCITY.
@@ -51,6 +53,8 @@
 !      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
 !                                   L: MONIN-OBUKHOV LENGTH).
 !      *ICEMASK*   INTEGER   SEA ICE MASK.
+!      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!                            (IF NEEDED).
 !      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
@@ -58,7 +62,9 @@
 !      *FCRANGE*   REAL      FORECAST RANGE IN SECONDS
 !      *ISEC1*     INTEGER   GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
-!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L)
+!      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
+!      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 
 !       *UNIT* *DESCRIPTION*
 
@@ -118,17 +124,18 @@
 
       USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
      &            IDELWO   ,LANAONLY
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL
+      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FCRANGE
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      LOGICAL :: LWCUR
       INTEGER MASK_IN(NGPTOTG)
 
       CHARACTER*14 CDTWIE, CDTWIS, ZERO
@@ -174,14 +181,36 @@
       ELSE
         CDTWIE = CDATEE
       ENDIF
-
 ! ----------------------------------------------------------------------
-!*    2. PROCESS WIND FIELDS.
-!        --------------------
+
+!*    2. PROCESS FORCING FIELDS.
+!        -----------------------
+
+!*    2.0 GLOBAL FIELD FOR THE INPUTS
+!         ---------------------------
+
+      ALLOCATE(FIELDG(NGX,NGY))
+
+
+!     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
+!         -----------------------------------------------------------
+
+      CALL IFSTOWAM (CDTWIS, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
+     &               ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+
+
+!     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
+!         -------------------------------------------
+
+      CALL GETCURR(LWCUR, IREAD)
+
+
+!*    PROCESS THE OTHER FORCING FIELDS.
+!     ---------------------------------
 
       IF (IDELWO.GE.IDELWI) THEN
 
-!*    2.1 NO TIME INTERPOLATION.
+!*    2.2 NO TIME INTERPOLATION.
 !         ----------------------
 
         IF (ITEST.GE.2) THEN
@@ -195,13 +224,11 @@
         ENDIF
         CALL GSTATS(1968,2)
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK,
-     &              NFIELDS,NGPTOTG, NC,NR, FCRANGE,
-     &              ISEC1,ISEC2, FIELDS, MASK_IN)
+     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD)
         CALL GSTATS(1968,3)
       ELSE
 
-!*    2.2 TIME INTERPOLATION.
+!*    2.3 TIME INTERPOLATION.
 !         -------------------
 
         IF (ITEST.GE.2) THEN
@@ -215,11 +242,15 @@
         ENDIF
         CALL GSTATS(1968,2)
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK,
-     &              NFIELDS,NGPTOTG, NC,NR, FCRANGE, 
-     &              ISEC1,ISEC2, FIELDS, MASK_IN)
+     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD)
         CALL GSTATS(1968,3)
       ENDIF
+
+!*    2.4 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
+!         -----------------------------------------------
+
+      DEALLOCATE(FIELDG)
+
       CALL GSTATS(1968,1)
       IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
 

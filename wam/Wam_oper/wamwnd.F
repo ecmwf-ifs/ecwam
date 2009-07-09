@@ -1,29 +1,33 @@
-      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, KINF, KSUP,IJS, IJL, IG)
+      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG)
 
 ! ----------------------------------------------------------------------
 
 !     MODIFIED  S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
 
-!**** *WAMWND* - TRANSFORMS INPUT WINDS TO BLOCKED WAM POINTS.
+!     MODIFIED J. BIDLOT 2008 :: INCLUDE SURFACE CURRENTS FOR
+!                                RELATIVE WIND CALCULATION. 
+!                                USE OF NEUTRAL WIND SPEED FROM WAM.
+
+!**** *WAMWND* - TRANSFORMS INPUT FORCING TO BLOCKED WAM POINTS.
 
 
 !*    PURPOSE.
 !     --------
 
-!       INTERPOLATE AND CONVERT INPUT WINDS TO WAM WINDS FOR ALL
-!       POINTS IN THE GRID.
+!       CONVERTS THE INTERPOLATED INPUT FIELDS TO WAM BLOCKS FOR ALL
+!       POINTS IN THE GRID ON A PE, EXCEPT FOR U and V CURRENTS !!!
+!       SEE *GETCURR* (THEY ARE NEEDED OVER THE GRID POINT HALO).
+!       U and V ARE HOWEVER NEEDED HERE !!!.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, ADS, ZIDL, KINF, KSUP,IJS, IJL, IG)*
+!       *CALL WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG)*
 !          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
 !                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *KINF* - LOWER BOUND ON FIRST DIMENSION OF FIELD
-!          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF FIELD
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
@@ -31,8 +35,7 @@
 !     METHOD.
 !     -------
 
-!       THE INPUT WINDS ARE INTERPOLATED TO THE WAVE MODEL GRID POINTS
-!       IN BLOCKED FORMAT. THE INTERPOLATED VALUES ARE TRANSFORMED TO
+!       THE INTERPOLATED VALUES ARE TRANSFORMED TO
 !       MAGNITUDE AND DIRECTION. INPUT MAY BE WIND IN 10M HEIGHT ,
 !       SURFACE WINDS OR FRICTION VELOCITIES. THE INPUT GRID HAS TO BE
 !       A LATITUDE/LONGITUDE GRID EITHER PERIODIC OR NON PERIODIC.
@@ -42,18 +45,19 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : XKAPPA
+      USE YOWCOUP  , ONLY : LWCOU    , XKAPPA
       USE YOWCURR  , ONLY : U        ,V
       USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWMPP   , ONLY : NINF     ,NSUP 
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWPARAM , ONLY : NGY      ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR
-      USE YOWSTAT  , ONLY : IREFRA
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR    ,ZMISS
+      USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,UWND     ,
-     &            VWND     ,AIRD     ,PZIDL
-      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLONL    ,
-     &            KCOL     ,KROW     ,ICODE    ,IWPER
+      USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,FIELDG   ,
+     &            LLWSWAVE ,LLWDWAVE
+      USE YOWWNDG  , ONLY : ICODE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -61,9 +65,12 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (KINF:KSUP,NBLO) :: US,DS,ADS,ZIDL
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL
+      REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WAMWND',0,ZHOOK_HANDLE)
 
 !*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !*       AND TRANSFORM TO MAGNITUDE AND DIRECTION.
@@ -74,28 +81,95 @@
         IX = IXLG(IJ,IG)
         JY = NGY-KXLT(IJ,IG) + 1
 
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-          UU = UWND(IX,JY) - U(IJ,IG)
-          VV = VWND(IX,JY) - V(IJ,IG)
-!!! testing
-!!! the use of reltive winds (wrt currents) has been disabled !!!!
-          UU = UWND(IX,JY)
-          VV = VWND(IX,JY)
+        IF(LLWSWAVE .AND. LLWDWAVE) THEN
+
+!         USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
+!         -------------------------------------------------------------
+          US(IJ,IG) = FIELDG(IX,JY)%WSWAVE
+          DS(IJ,IG) = FIELDG(IX,JY)%WDWAVE 
+
+!         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
+!         USE U and V FROM ATMOSPHERE INSTEAD
+          IF(US(IJ,IG).LE.0.) THEN
+            UU = FIELDG(IX,JY)%UWND
+            VV = FIELDG(IX,JY)%VWND
+            US(IJ,IG) = SQRT(UU**2 + VV**2)
+            IF (US(IJ,IG).NE.0.) THEN 
+              DS(IJ,IG) = ATAN2(UU,VV)
+            ELSE
+              DS(IJ,IG) = 0.
+            ENDIF
+          ENDIF
+
+          IF(LRELWIND) THEN
+            IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+              UU = US(IJ,IG)*SIN(DS(IJ,IG))
+              VV = US(IJ,IG)*COS(DS(IJ,IG))
+              UU = UU - U(IJ,IG)
+              VV = VV - V(IJ,IG)
+              US(IJ,IG) = SQRT(UU**2 + VV**2)
+              IF (US(IJ,IG).NE.0.) THEN 
+                DS(IJ,IG) = ATAN2(UU,VV)
+              ELSE
+                DS(IJ,IG) = 0.
+              ENDIF
+            ENDIF
+          ENDIF
+
         ELSE
-          UU = UWND(IX,JY)
-          VV = VWND(IX,JY)
+
+          UU = FIELDG(IX,JY)%UWND
+          VV = FIELDG(IX,JY)%VWND
+
+!         USE NEUTRAL WIND SPEED FROM A PREVIOUS WAM RUN.
+!         ----------------------------------------------
+          IF(LLWSWAVE) THEN
+            IF(FIELDG(IX,JY)%WSWAVE.NE.ZMISS .AND.
+     &         FIELDG(IX,JY)%WSWAVE.GT.0. ) THEN
+              WSPEED = SQRT(UU**2 + VV**2)
+              IF(WSPEED.GT.0.) THEN
+                RESCALE=FIELDG(IX,JY)%WSWAVE/WSPEED
+                UU = UU * RESCALE 
+                VV = VV * RESCALE
+              ENDIF
+            ENDIF
+          ENDIF
+
+!         CORRECT FOR RELATIVE WINDS WITH RESPECT TO THE SURFACE CURRENTS.
+!         ----------------------------------------------------------------
+
+          IF(LWCOU) THEN
+!           In coupled experiments the winds are already relative to the currents
+            IF(.NOT.LRELWIND) THEN
+              UU = UU + U(IJ,IG)
+              VV = VV + V(IJ,IG)
+            ENDIF
+          ELSE
+            IF(LRELWIND) THEN
+              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+                UU = UU - U(IJ,IG)
+                VV = VV - V(IJ,IG)
+              ENDIF
+            ENDIF
+          ENDIF
+
+          US(IJ,IG) = SQRT(UU**2 + VV**2)
+          IF (US(IJ,IG).NE.0.) THEN 
+            DS(IJ,IG) = ATAN2(UU,VV)
+          ELSE
+            DS(IJ,IG) = 0.
+          ENDIF
+
         ENDIF
-        US(IJ,IG) = SQRT(UU**2 + VV**2)
-        IF (US(IJ,IG).NE.0.) THEN 
-          DS(IJ,IG) = ATAN2(UU,VV)
-        ELSE
-          DS(IJ,IG) = 0.
-        ENDIF
+
         IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
+
+!       IMPOSE A MINIMUM WIND SPEED.
+!       ----------------------------
         US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
 
-        ADS(IJ,IG) = AIRD(IX,JY)
-        ZIDL(IJ,IG) = PZIDL(IX,JY)
+        ADS(IJ,IG) = FIELDG(IX,JY)%AIRD
+        ZIDL(IJ,IG)= FIELDG(IX,JY)%ZIDL
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -137,18 +211,10 @@
       IF (ITEST.GE.3) THEN
         WRITE (IU06,*) ' '
         WRITE (IU06,*) '      SUB. WAMWND:',
-     &   ' WINDFIELDS CONVERTED TO BLOCKS'
-        WRITE (IU06,*) ' '
-        IJA = IJS
-        IJE = MIN(IJS+4,IJL)
-        WRITE (IU06,*) ' BLOCK= ',IG
-        WRITE (IU06,*) ' '
-        WRITE (IU06,*) ' US (IJS - IJS+4): ',(US(I,IG),I=IJA,IJE)
-        WRITE (IU06,*) ' DS (IJS - IJS+4): ',(DS(I,IG),I=IJA,IJE)
-        WRITE (IU06,*) ' ADS(IJS - IJS+4): ',(ADS(I,IG),I=IJA,IJE)
-        WRITE (IU06,*) ' ZIDL(IJS - IJS+4): ',(ZIDL(I,IG),I=IJA,IJE)
+     &   ' INPUT FORCING FIELDS CONVERTED TO BLOCKS'
         CALL FLUSH(IU06)
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('WAMWND',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE WAMWND

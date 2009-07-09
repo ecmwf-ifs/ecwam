@@ -66,7 +66,7 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,WLAT     ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,
      &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
 
 ! ----------------------------------------------------------------------
@@ -154,13 +154,13 @@
 !             ------------------------------------------------
 
         DO IJ = MIJS,MIJL
-          JH = KLAT(IJ,1)
+          JH = KLAT(IJ,1,1)
           IF (JH.EQ.NINF-1) THEN
             DP1(IJ) = 1.
           ELSE
             DP1(IJ) = DCO(IJ)/DCO(JH)
           ENDIF
-          JH = KLAT(IJ,2)
+          JH = KLAT(IJ,2,1)
           IF (JH.EQ.NINF-1) THEN
             DP2(IJ) = 1.
           ELSE
@@ -259,7 +259,7 @@
             DO IJ = MIJS,MIJL
               DTT = 1.-(SDA*DELLA0(IJ)+CDA*DELPH0)*GOM(M)
               F3(IJ,K,M) = DTT * F1(IJ,K,M )
-     &         + DNO * F1(KLAT(IJ,IJPH),K  ,M)
+     &         + DNO * F1(KLAT(IJ,IJPH,1),K  ,M)
      &         + DEA(IJ) * F1(KLON(IJ,IJLA),K  ,M)
             ENDDO
 
@@ -314,16 +314,16 @@
             IF (CD.GE.0.) THEN
               DO IJ=MIJS,MIJL
                 CDD = CD*DELPH0
-                DPH(IJ) = CDD*(CGOND(KLAT(IJ,1),M) + CGOND(IJ,M))
+                DPH(IJ) = CDD*(CGOND(KLAT(IJ,1,1),M) + CGOND(IJ,M))
                 DTC(IJ) = DTC(IJ)
-     &           + CDD*(CGOND(KLAT(IJ,2),M) + CGOND(IJ,M))
+     &           + CDD*(CGOND(KLAT(IJ,2,1),M) + CGOND(IJ,M))
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
                 CDD = CD*DELPH0
-                DPH(IJ) =-CDD*(CGOND(KLAT(IJ,2),M) + CGOND(IJ,M))
+                DPH(IJ) =-CDD*(CGOND(KLAT(IJ,2,1),M) + CGOND(IJ,M))
                 DTC(IJ) = DTC(IJ)
-     &           -CDD*(CGOND(KLAT(IJ,1),M) + CGOND(IJ,M))
+     &           -CDD*(CGOND(KLAT(IJ,1,1),M) + CGOND(IJ,M))
               ENDDO
             ENDIF
             IF (IREFRA.EQ.1) THEN
@@ -341,7 +341,7 @@
 
             DO IJ = MIJS,MIJL
               F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &         + DPH(IJ) * F1(KLAT(IJ,IJPH),K  ,M)
+     &         + DPH(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)
      &         + DLA(IJ) * F1(KLON(IJ,IJLA),K  ,M)
             ENDDO
             IF (IREFRA.EQ.1) THEN
@@ -469,8 +469,8 @@
               DLW(IJ) =  DLWE+ABS(DLWE)
               DTC(IJ) =  DLEA+ABS(DLEA)-DLWE+ABS(DLWE)
 
-              DPSO = DPH(IJ) + DPH(KLAT(IJ,1))
-              DPNO = DPH(IJ) + DPH(KLAT(IJ,2))
+              DPSO = DPH(IJ) + DPH(KLAT(IJ,1,1))
+              DPNO = DPH(IJ) + DPH(KLAT(IJ,2,1))
               DPN(IJ) = -DPNO+ABS(DPNO)
               DPS(IJ) =  DPSO+ABS(DPSO)
               DTC(IJ) =  DTC(IJ) + DPNO+ABS(DPNO)-DPSO+ABS(DPSO)
@@ -514,8 +514,8 @@
               DLW(IJ) =  DLWE+ABS(DLWE)
               DTC(IJ) = DLEA+ABS(DLEA)-DLWE+ABS(DLWE)
 
-              DPSO = DPH(IJ) + DPH(KLAT(IJ,1))
-              DPNO = DPH(IJ) + DPH(KLAT(IJ,2))
+              DPSO = DPH(IJ) + DPH(KLAT(IJ,1,1))
+              DPNO = DPH(IJ) + DPH(KLAT(IJ,2,1))
               DPN(IJ) = -DPNO+ABS(DPNO)
               DPS(IJ) =  DPSO+ABS(DPSO)
               DTC(IJ) = DTC(IJ) + DPNO+ABS(DPNO)-DPSO+ABS(DPSO)
@@ -540,8 +540,8 @@
 
           DO IJ = MIJS,MIJL
             F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &       + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
-     &       + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
+     &       + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
+     &       + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
      &       + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
      &       + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
      &       + DTP(IJ) * F1(IJ        ,KP1,M)
@@ -633,8 +633,8 @@
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.)
               ELSE
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
-     &                             WLATM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +
+     &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
           ENDDO
@@ -645,8 +645,8 @@
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.)
               ELSE
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*
-     &                            (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC),M) +
-     &                             WLATM1(IJ,IC)*CGOND(KLAT2(IJ,IC),M))
+     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +
+     &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
           ENDDO
@@ -766,8 +766,8 @@
                 YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
                 XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
                 F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &            (YY * WLAT(IJ,IJPH) * F1(KLAT(IJ,IJPH),K  ,M)
-     &           + YY * WLATM1(IJ,IJPH) * F1(KLAT2(IJ,IJPH),K,M)
+     &            (YY * WLAT(IJ,IJPH) * F1(KLAT(IJ,IJPH,1),K  ,M)
+     &           + YY * WLATM1(IJ,IJPH) * F1(KLAT(IJ,IJPH,2),K,M)
      &           + XX * F1(KLON(IJ,IJLA),K  ,M)
      &           + DTP(IJ) * F1(IJ           ,KP1,M)
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
@@ -779,7 +779,7 @@
                 YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
                 XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
                 F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &            (YY * F1(KLAT(IJ,IJPH),K  ,M)
+     &            (YY * F1(KLAT(IJ,IJPH,1),K  ,M)
      &           + XX * F1(KLON(IJ,IJLA),K  ,M)
      &           + DTP(IJ) * F1(IJ           ,KP1,M)
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
@@ -902,8 +902,8 @@
 
             DO IJ = MIJS,MIJL
               F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,IJPH),K  ,M)
-     &         + DPN2(IJ)* F1(KLAT2(IJ,IJPH),K  ,M)
+     &         + DPN(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)
+     &         + DPN2(IJ)* F1(KLAT(IJ,IJPH,2),K  ,M)
      &         + DLE(IJ) * F1(KLON(IJ,IJLA),K  ,M)
      &         + DTP(IJ) * F1(IJ           ,KP1,M)
      &         + DTM(IJ) * F1(IJ           ,KM1,M)
@@ -1085,14 +1085,14 @@
 
 !             IRREGULAR GRID
               IF(IRGG.EQ.1) THEN
-                DPNO = (DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ))*WLAT(IJ,2)
+                DPNO = (DPH(IJ)+ DPH(KLAT(IJ,2,1))*DP2(IJ))*WLAT(IJ,2)
                 DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
-                DPNO2= (DPH(IJ) + DPH(KLAT2(IJ,2))*DP2(IJ))*WLATM1(IJ,2)
+                DPNO2= (DPH(IJ)+ DPH(KLAT(IJ,2,2))*DP2(IJ))*WLATM1(IJ,2)
                 DPN2(IJ)= (-DPNO2+ABS(DPNO2))*OBSLAT(IJ,M,2)
 
-                DPSO = (DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ))*WLAT(IJ,1)
+                DPSO = (DPH(IJ)+ DPH(KLAT(IJ,1,1))*DP1(IJ))*WLAT(IJ,1)
                 DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
-                DPSO2= (DPH(IJ) + DPH(KLAT2(IJ,1))*DP1(IJ))*WLATM1(IJ,1)
+                DPSO2= (DPH(IJ)+ DPH(KLAT(IJ,1,2))*DP1(IJ))*WLATM1(IJ,1)
                 DPS2(IJ)= ( DPSO2+ABS(DPSO2))*OBSLAT(IJ,M,1)
 
                 CFLNO(IJ) =  DPNO+ABS(DPNO)
@@ -1103,9 +1103,9 @@
      &                               CFLNO2(IJ) + CFLSO2(IJ)
               ELSE
 !             REGULAR GRID
-                DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
+                DPNO = DPH(IJ) + DPH(KLAT(IJ,2,1))*DP2(IJ)
                 DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
-                DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
+                DPSO = DPH(IJ) + DPH(KLAT(IJ,1,1))*DP1(IJ)
                 DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
                 CFLNO(IJ) =  DPNO+ABS(DPNO)
                 CFLSO(IJ) =  -DPSO+ABS(DPSO)
@@ -1159,14 +1159,14 @@
 
 !             IRREGULAR GRID
               IF(IRGG.EQ.1) THEN
-                DPNO = (DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ))*WLAT(IJ,2)
+                DPNO = (DPH(IJ)+ DPH(KLAT(IJ,2,1))*DP2(IJ))*WLAT(IJ,2)
                 DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
-                DPNO2= (DPH(IJ) + DPH(KLAT2(IJ,2))*DP2(IJ))*WLATM1(IJ,2)
+                DPNO2= (DPH(IJ)+ DPH(KLAT(IJ,2,2))*DP2(IJ))*WLATM1(IJ,2)
                 DPN2(IJ)= (-DPNO2+ABS(DPNO2))*OBSLAT(IJ,M,2)
 
-                DPSO = (DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ))*WLAT(IJ,1)
+                DPSO = (DPH(IJ)+ DPH(KLAT(IJ,1,1))*DP1(IJ))*WLAT(IJ,1)
                 DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
-                DPSO2= (DPH(IJ) + DPH(KLAT2(IJ,1))*DP1(IJ))*WLATM1(IJ,1)
+                DPSO2= (DPH(IJ)+ DPH(KLAT(IJ,1,2))*DP1(IJ))*WLATM1(IJ,1)
                 DPS2(IJ)= ( DPSO2+ABS(DPSO2))*OBSLAT(IJ,M,1)
                 CFLNO(IJ) =  DPNO+ABS(DPNO)
                 CFLSO(IJ) =  -DPSO+ABS(DPSO)
@@ -1176,9 +1176,9 @@
      &                               CFLNO2(IJ) + CFLSO2(IJ)
               ELSE
 !             REGULAR GRID
-                DPNO = DPH(IJ) + DPH(KLAT(IJ,2))*DP2(IJ)
+                DPNO = DPH(IJ) + DPH(KLAT(IJ,2,1))*DP2(IJ)
                 DPN(IJ) = (-DPNO+ABS(DPNO))*OBSLAT(IJ,M,2)
-                DPSO = DPH(IJ) + DPH(KLAT(IJ,1))*DP1(IJ)
+                DPSO = DPH(IJ) + DPH(KLAT(IJ,1,1))*DP1(IJ)
                 DPS(IJ) = ( DPSO+ABS(DPSO))*OBSLAT(IJ,M,1)
                 CFLNO(IJ) = DPNO+ABS(DPNO)
                 CFLSO(IJ) = -DPSO+ABS(DPSO)
@@ -1224,10 +1224,10 @@
           IF(IRGG.EQ.1) THEN
             DO IJ = MIJS,MIJL
               F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
-     &         + DPN2(IJ)* F1(KLAT2(IJ,2),K  ,M)
-     &         + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
-     &         + DPS2(IJ)* F1(KLAT2(IJ,1),K  ,M)
+     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
+     &         + DPN2(IJ)* F1(KLAT(IJ,2,2),K  ,M)
+     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
+     &         + DPS2(IJ)* F1(KLAT(IJ,1,2),K  ,M)
      &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
      &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
      &         + DTP(IJ) * F1(IJ        ,KP1,M)
@@ -1239,8 +1239,8 @@
 !           REGULAR GRID
             DO IJ = MIJS,MIJL
               F3(IJ,K,M) = (1.-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,2),K  ,M)
-     &         + DPS(IJ) * F1(KLAT(IJ,1),K  ,M)
+     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
+     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
      &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
      &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
      &         + DTP(IJ) * F1(IJ        ,KP1,M)

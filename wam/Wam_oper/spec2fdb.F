@@ -498,17 +498,7 @@
             IM=(((IC-1)+KSEND-1)/KANG)+1
             IK=(IC-1)+KSEND-(IM-1)*KANG
 
-            ALLOCATE(WORK(1:KEND(KPROC)))
-            IF(KSEND.EQ.KRANK) THEN
-              ALLOCATE(ZSEC4OUT(NTENCODE))
-              CALL GSTATS(1433,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
-              DO JC=1,NTENCODE
-                ZSEC4OUT(JC)=0.0
-              ENDDO
-!$OMP END PARALLEL DO
-              CALL GSTATS(1433,1)
-            ENDIF
+            ALLOCATE(WORK(KSTART(KRANK):KEND(KRANK)))
 
             DO J1=KSTART(KRANK),KEND(KRANK)
               WORK(J1) = PSPEC(J1,IK,IM)
@@ -532,12 +522,22 @@
             IF (KTEST.GT.1)
      &          WRITE(KU06,*) 'SUB SPEC2FDB: MPL_GATHERV DONE' 
 
+            DEALLOCATE(WORK)
+
             IF(KSEND.EQ.KRANK) THEN
+              ALLOCATE(ZSEC4OUT(NTENCODE))
+              CALL GSTATS(1433,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
+              DO JC=1,NTENCODE
+                ZSEC4OUT(JC)=0.0
+              ENDDO
+!$OMP END PARALLEL DO
+              CALL GSTATS(1433,1)
+
               DO J1=1,KEND(KPROC)
                 ZSEC4OUT(IPOINTER(J1)) = WORK1(J1)
               ENDDO
             ENDIF
-            DEALLOCATE(WORK)
             DEALLOCATE(WORK1)
 
             CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
@@ -620,6 +620,8 @@
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
 
+          DEALLOCATE(ZSEC4OUT)
+
 !         OUTPUT
 !         ------
           IF (LFDBIOOUT) THEN
@@ -652,7 +654,6 @@
 !-----------------------------------------------------------------------
 
         IF(ALLOCATED(IOUTGRIB)) DEALLOCATE(IOUTGRIB)
-        IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
 
       ENDDO
 

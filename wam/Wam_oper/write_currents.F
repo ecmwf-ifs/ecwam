@@ -17,7 +17,7 @@
 
 !           *IU06*   - PRINTER OUTPUT.
 !           *currents*   - INPUT CURRENTS
-!           *wam_grid*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid_tables*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC). fort.7 must be there !
 !           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC). fort.8 must be there !

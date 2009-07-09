@@ -5,6 +5,7 @@
 !**** *CURRENT2WAM* 
 
 !     J. BIDLOT    ECMWF  NOVEMBER 2002.
+!     J. BIDLOT    ECMWF  AUGUST 2008: USE *WAMCUR*
 
 !     PURPOSE.
 !     --------
@@ -33,15 +34,18 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
-      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,  
+     &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
+
+      USE MPL_MODULE
 
 !-----------------------------------------------------------------------
 
@@ -49,8 +53,9 @@
 
       INTEGER :: IREAD, IUNIT1
       INTEGER :: NBIT, KRET, ISIZE, IVAR, KPLENG, KLEN, KLENG, IDM
-      INTEGER :: IFORP, IPARAM, KZLEV, IG, IJ, IC
-      INTEGER, ALLOCATABLE :: KGRIB(:), IBUF(:)
+      INTEGER :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
+      INTEGER :: IBUF(2)
+      INTEGER, ALLOCATABLE :: KGRIB(:)
 
       REAL :: ZDUM
       REAL, ALLOCATABLE, DIMENSION(:,:) :: FIELD
@@ -70,7 +75,7 @@
       IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
      &    .NOT.LMESSPASS) THEN
 
-        NBIT=175000
+        NBIT=240000
 
         IF (FRSTIME) THEN
           CALL PBOPEN(IUNIT1,FILNM,'r',KRET)
@@ -141,6 +146,32 @@
             WRITE(IU06,*) ' IVAR = ',IVAR 
           ENDIF
 
+        ENDIF
+
+
+!       BROADCAST GRIB DATA TO OTHER PE'S
+        IF(LMESSPASS .AND. NPROC.GT.1) THEN
+
+          CALL MPL_BARRIER(CDSTRING='CURRENT2WAM: KGRIB ')
+
+          CALL GSTATS(622,0)
+          IF(IRANK.EQ.IREAD) THEN
+            IBUF(1)=ISIZE
+            IBUF(2)=KLEN
+          ENDIF
+          CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=IVAR,
+     &                       CDSTRING='CURRENT2WAM IBUF:')
+          IF(IRANK.NE.IREAD) THEN
+            ISIZE=IBUF(1)
+            KLEN=IBUF(2)
+            ALLOCATE(KGRIB(ISIZE))
+          ENDIF
+
+          CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,
+     &                       CDSTRING='CURRENT2WAM KGRIB:')
+
+          CALL GSTATS(622,1)
+        ENDIF
 ! ----------------------------------------------------------------------
 
 !*        UNPACK MARS FIELDS.
@@ -154,6 +185,7 @@
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP,
      &                   ZDUM, ZDUM,
      &                   CDATEIN, IFORP, IPARAM,KZLEV,IDM,IDM, FIELD)
+
 
           IF(IVAR.EQ.2 .AND. CDATEIN.NE.CDATEIN_OLD) THEN
             WRITE(IU06,*) ' *****************************************'
@@ -173,67 +205,35 @@
 
           CDATEIN_OLD=CDATEIN
 
-        ENDIF
 
-        IF (LMESSPASS) THEN
-!         BROADCAST FIELD TO OTHER PE'S
-
-          CALL MPBCASTGRDFLD(IREAD,KTAG,NGX,NGY,FIELD)
-          KTAG=KTAG+1
-
-
-!         BROADCAST IPARAM AND CDATEIN TO OTHER PE'S
-
-          ALLOCATE(IBUF(15))
-          IF(IREAD.EQ.IRANK) THEN
-            DO IC=1,14
-              READ(CDATEIN(IC:IC),'(I1)') IBUF(IC)
-            ENDDO
-            IBUF(15)=IPARAM
-          ENDIF
-
-          CALL MPBCASTINTFLD(IREAD,KTAG,15,1,IBUF)
-          KTAG=KTAG+1
-
-          IF(IREAD.NE.IRANK) THEN
-            DO IC=1,14
-              WRITE(CDATEIN(IC:IC),'(I1)') IBUF(IC)
-            ENDDO
-            IPARAM=IBUF(15)
-          ENDIF
-
-          DEALLOCATE(IBUF)
-
-        ENDIF
-
-!       it does not work if multi block !!!
-        IG=1
         IF(IPARAM.EQ.131) THEN
-          CALL MAKEBLO(U(NSTART(IRANK),1),FIELD,
-     &                 NSTART(IRANK),NEND(IRANK),IG)
-!         some wam model grid points may have a missing data from
-!         ocean model. They are set to 0.
-          DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.
-          ENDDO
-!         ECHANGE THE CURRENT FOR HALO POINTS SINCE THEY ARE NEEDED
-!         FOR THE CALCULATION OF THE GRADIENTS (SEE GRADI).
-          IF (LMESSPASS) THEN
-            CALL MPEXCHNG(U,1,1)
-          ENDIF
-          U(NINF-1,IG)=0.
+           DO IG = 1,IGL
+             DO IJ =  NINF, NSUP
+!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
+!!!            HENCE NINF TO NSUP.
+               IX = IFROMIJ(IJ,IG)
+               JY = JFROMIJ(IJ,IG)
+               U(IJ,IG) = FIELD(IX,JY)
+!              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
+!              OCEAN MODEL. THEY ARE SET TO 0.
+               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.
+             ENDDO
+             U(NINF-1,IG)=0.
+           ENDDO
         ELSEIF(IPARAM.EQ.132) THEN
-          CALL MAKEBLO(V(NSTART(IRANK),1),FIELD,
-     &                 NSTART(IRANK),NEND(IRANK),IG)
-          DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.
-          ENDDO
-!         ECHANGE THE CURRENT FOR HALO POINTS SINCE THEY ARE NEEDED
-!         FOR THE CALCULATION OF THE GRADIENTS (SEE GRADI).
-          IF (LMESSPASS) THEN
-            CALL MPEXCHNG(V,1,1)
-          ENDIF
-          V(NINF-1,IG)=0.
+           DO IG = 1,IGL
+             DO IJ =  NINF, NSUP
+!!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
+!!!            HENCE NINF TO NSUP.
+               IX = IFROMIJ(IJ,IG)
+               JY = JFROMIJ(IJ,IG)
+               V(IJ,IG) = FIELD(IX,JY)
+!              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
+!              OCEAN MODEL. THEY ARE SET TO 0.
+               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.
+             ENDDO
+             V(NINF-1,IG)=0.
+           ENDDO
         ELSE
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'
@@ -248,10 +248,7 @@
           CALL ABORT1
         ENDIF
 
-!!! need to put message paasing to collect the U and V in the halo.
-!!! the index ij is only local for all halo points whereas it is global
-!!! for other points
-
+        DEALLOCATE(KGRIB)
 
       ENDDO READCURRENT 
 

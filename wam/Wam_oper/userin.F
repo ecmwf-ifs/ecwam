@@ -1,4 +1,4 @@
-      SUBROUTINE USERIN (IU05, IBOUNC, IBOUNF, IFORCA)
+      SUBROUTINE USERIN (IU05, IBOUNC, IBOUNF, IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -15,6 +15,12 @@
 !                                                 NAMLIST FOR READING.
 !     S. ABDALLA     ECMWF        OCTOBER 2001  LGUST & LADEN ADDED TO
 !                                               CONTROL GUSTINESS & AIR DENSITY 
+!     J BIDLOT       ECMWF        MARCH 2008    LLWSWAVE AND LLWDWAVE
+!                                               ADDED TO CONTROL WHETHER OR
+!                                               NOT PARAMETER 245 AND/OR
+!                                               PARAMETER 249 ARE USED TO
+!                                               GENERATE THE WIND FORCING
+!                                               (ONLY FOR UNCOUPLED RUNS).
 
 !*    PURPOSE.
 !     --------
@@ -26,11 +32,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *USERIN (IU05, IBOUNC, IBOUNF, IFORCA)*
+!       *CALL* *USERIN (IU05, IBOUNC, IBOUNF, IFORCA, LWCUR)*
 !          *IU05*   -  INPUT UNIT USER INPUT FILE.
 !          *IBOUNC* -  COARSE GRID BOUNDARY FLAG.
 !          *IBOUNF* -  FINE GRID BOUNDARY FLAG.
 !          *IFORCA* -  FORCAST START OPTION.
+!          *LWCUR* -  INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+
 
 !     METHOD.
 !     -------
@@ -67,17 +75,19 @@
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
-      USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP
+      USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP,
+     &            IMDLGRBID_G,IMDLGRBID_M 
       USE YOWICE   , ONLY : LICERUN
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
-     &            LWDINTS  ,LL1D
+     &            LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
      &            ISNONLIN ,
+     &            IDAMPING ,
      &            LBIWBK   ,
      &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,
@@ -85,7 +95,9 @@
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
      &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE ,
-     &            LNSESTART
+     &            LNSESTART,
+     &            LRELWIND ,
+     &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
@@ -96,13 +108,14 @@
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
-      USE YOWWIND  , ONLY : CWDFILE
+      USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE
       USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
 
       LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF, LASTREAM
       LOGICAL LLNALTGO
+      LOGICAL :: LWCUR
       CHARACTER*2 :: MARSFCTYPE
       CHARACTER*4 :: CSTREAM
       CHARACTER (LEN=  14), PARAMETER :: ZERO = ' '
@@ -126,11 +139,13 @@
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
      &   ISNONLIN,
+     &   IDAMPING,
      &   LBIWBK  ,
      &   IPROPAGS,
      &   IREFRA,
      &   IBOUNC, IBOUNF,
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
+     &   IMDLGRBID_G, IMDLGRBID_M,
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
@@ -138,9 +153,10 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN, LALTGRDOUT, LSUBGRID, LALTPAS,
+     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,
      &   LLSOURCE,
      &   LNSESTART,
+     &   LLWSWAVE, LLWDWAVE,
      &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
 
       CHARACTER* 14 CLOUT
@@ -151,6 +167,10 @@
 
       CHARACTER* 14 CLAOUT
       NAMELIST /NAAT/ CLAOUT
+
+      INTEGER :: IDWI, IDWO
+      CHARACTER* 14 CLWOUT
+      NAMELIST /NAWI/ IDWI, IDWO, CLWOUT
 
 !     NAMELIST NALINE : 
 !     ===============
@@ -166,7 +186,9 @@
 !              THE UPPER BOUND ON THE TIME STEP, WHICH WOULD OTHERWISE
 !              BE SET TO THE COUPLING TIME STEP.
 !     IDELWO: WIND OUTPUT TIME STEP.
+!             (if specific values are not specified by namelist NAWI).
 !     IDELWI: WIND INPUT TIME STEP.
+!             (if specific values are not specified by namelist NAWI).
 !     CLMTSU: STEP UNIT (S : seconds or H : hours).
 !     IDELALT: ALTIMETER DATA TIME WINDOW (in seconds).
 !     IDELINT: OUTPUT TIME STEP FOR INTEGRATED PARAMETER OF TOTAL SEA
@@ -181,7 +203,7 @@
 !     IDELAGS: TIME STEP NOT IN USE.
 !     IDELRES: OUTPUT TIME STEP for RESTART SPECTRA (if output times
 !              are not specified by namelist NAOS).
-!     IDELCUR: CURRENTS INPUT TIME STEP IN HOURS !!!!!
+!     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
 !     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT, IDELINS,
 !             IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES.
@@ -257,6 +279,7 @@
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
 !     IFORCA: 1 FOR START RUN WITH ANALYSIS FIELD (OBSOLETE). 
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
+!     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
 !     USERID, RUNID, PATH : OUT OF DATE, SHOULD ONLY BE USED WHENEVER
@@ -266,6 +289,10 @@
 !     YEXPVER: EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
 !     CPATH: PATH FOR OUTPUT TO DISK (USED WHENEVER OUTPUT IS NOT
 !            TO THE FIELD DATA BASE (SEE LFDBIOOUT)).
+!     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
+!                  DEFAULT VALUE SET IN YOWGRIBHD.
+!     IMDLGRBID_M: LAW MODEL IDENTIFICATION NUMBER FOR GRIB CODING.
+!                  DEFAULT VALUE SET IN YOWGRIBHD.
 !     NTOTENS: TOTAL ENSEMBLE FORECAST MEMBERS (DEFAULT=0).
 !     NENSFNB: ENSEMBLE FORECAST NUMBER (DEFAULT=0).
 !     NSYSNB : SYSTEM NUMBER TO BE USED FOR GRIBBING OF SEASONAL DATA.
@@ -316,6 +343,12 @@
 !                (SEE GRFIELD). 
 !     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
+!     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO
+!               SURFACE CURRENTS.
+!     LLWSWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND SPEED AS
+!               INPUT TO CONSTRUCT THE WIND FORCING - UNCOUPLED RUNS ONLY
+!     LLWDWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND DIRECTION
+!               AS INPUT TO CONSTRUCT THE WIND FORCING - UNCOUPLED RUNS ONLY.
 !     NLOCGRB: LOCAL GRIB TABLE NUMBER
 !     IREFDATE: REFERENCE DATE FOR MONTHLY FORECAST HINDCAST.
 !     NCONSENSUS: ORIGINE OF THE INITIAL CONDITONS FOR
@@ -355,13 +388,19 @@
 !     ===============
 !     CLOUT : LIST OF OUTPUT TIME FOR INTEGRATED PARAMETERS.
       
-!     NAMELISS NAOT : 
+!     NAMELIST NAOS : 
 !     ===============
 !     CLSOUT : LIST OF OUTPUT TIME FOR SPECTRA. 
 
-!     NAMELISS NAAT : 
+!     NAMELIST NAAT : 
 !     ===============
 !     CLAOUT : LIST OF TIME FOR ALTIMETER DATA ASSIMILATION. 
+
+!     NAMELIST NAWI (only meaningful for uncoupled runs): 
+!     ===============
+!     IDWI : LIST OF IDELWI
+!     IDWO : LIST OF IDELWO
+!     CLWOUT : LIST OF TIME UNTIL WHICH IDWI AND IDWO ARE VALID. 
 
 ! ----------------------------------------------------------------------
 
@@ -419,6 +458,7 @@
       ICASE     = 1 
       ISHALLO   = 0 
       ISNONLIN  = 1 
+      IDAMPING  = 1 
       IPROPAGS  = 0 
       IREFRA    = 0 
       ITEST     = 0 
@@ -507,6 +547,10 @@
 
       LGUST = .FALSE.
       LADEN = .FALSE.
+      LADEN = .TRUE.
+
+      LLWSWAVE = .FALSE.
+      LLWDWAVE = .FALSE.
 
       LSUBGRID = .TRUE.
 
@@ -530,6 +574,8 @@
 
       LNSESTART = .FALSE.
 
+      NDELW_LST = 0
+
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -546,6 +592,11 @@
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+      IF (IDAMPING.NE.0 .AND. IDAMPING.NE.1) THEN
+        WRITE(IU06,*) ' WRONG VALUE FOR IDAMPING !!!'
+        WRITE(IU06,*) ' IDAMPING =',IDAMPING
         CALL ABORT1
       ENDIF
 
@@ -742,12 +793,43 @@
 !       TO AVOID ALL THE CHECKS. SEE IN INITMDL WHERE THEY ARE RESET
         IDELWO=IDELPRO
         IDELWI=IDELPRO
+
+      ELSE
+!           **** FORCING TIME STEPPING AT SPECIFIED TIMES ****
+        REWIND(IU05)
+        SPWI: DO
+          CALL WPOSNAM (IU05, 'NAWI', LLEOF)
+          IF (LLEOF) EXIT SPWI
+          READ (IU05, NAWI, END=1903)
+          NDELW_LST = NDELW_LST + 1 
+        ENDDO SPWI
+1903    CONTINUE
+        REWIND(IU05)
+        IF (.NOT.ALLOCATED(IDELWI_LST)) THEN
+          ALLOCATE(IDELWI_LST(NDELW_LST))
+        ENDIF
+        IF (.NOT.ALLOCATED(IDELWO_LST)) THEN
+          ALLOCATE(IDELWO_LST(NDELW_LST))
+        ENDIF
+        IF (.NOT.ALLOCATED(CDTW_LST)) THEN
+          ALLOCATE(CDTW_LST(NDELW_LST))
+        ENDIF
+        SPW: DO IC=1,NDELW_LST
+          CALL WPOSNAM (IU05, 'NAWI', LLEOF)
+          IF (LLEOF) EXIT SPW
+          READ (IU05, NAWI, END=1913)
+          IDELWI_LST(IC) = IDWI 
+          IDELWO_LST(IC) = IDWO 
+          CDTW_LST(IC) = CLWOUT
+        ENDDO SPW
+1913    CONTINUE
+
       ENDIF
 
 !   1 FORMAT(A,A3)
 !   2 FORMAT(A,A3,A,I10,A)
 
-!* CHECK FLAG FOR GRIBING AS SOME OPTION ARE NOT IMPLEMENTED
+!* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
 
       IF (GFLAG(4)) THEN
@@ -763,6 +845,17 @@
         WRITE(IU06,*) ' NO GRIB OUTPUT POSSIBLE FOR' 
         WRITE(IU06,*) ' NORMALISED WAVE STRESS'
         WRITE(IU06,*) ' NOT IMPLEMENTED IN OUTINT ' 
+        WRITE(IU06,*) ' '
+      ENDIF
+      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(5)) THEN
+        GFLAG(5) = .TRUE.
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
+        WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
+        WRITE(IU06,*) ' BUT DID NOT REQUEST OUTPUT OF WIND DIRECTION. '
+        WRITE(IU06,*) ' THE MODEL WILL RESET THE OUTPUT OPTION TO GET ' 
+        WRITE(IU06,*) ' IT OUT AT TIME PRESCRIBED BY THE OUTPUT OF ALL'
+        WRITE(IU06,*) ' OTHER INTEGRATED PARAMETERS.'
+        WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
       IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(7)) THEN
@@ -870,7 +963,7 @@
         IU04 =  I_GET_UNIT (IU06, CWI(1:ICPLEN+8) , 'r', 'f', 0)
         CALL READSTA(IU04, CBEGDT, CENDDT, IANALPD, IFOREPD, IDELWIN,
      &               CRSTDT, CLSPDT, CBPLTDT, CEPLTDT, IASSIM, NFCST,
-     &               ISTAT)
+     &               ISTAT, CDATECURA)
         CLOSE (IU04)
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                           +'
@@ -885,6 +978,7 @@
         WRITE(IU06,*)'+ FORECAST PERIOD (SECONDS) IFOREPD = ', IFOREPD
         WRITE(IU06,*)'+ END DATE FROM WAMINFO     CENDDT  = ', CENDDT
         WRITE(IU06,*)'+ END DATE FROM INPUT       CDATEE  = ', CDATEE
+        WRITE(IU06,*)'+ START DATE FOR CURRENTS CDATECURA = ',CDATECURA
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+ MODEL CONTINUES USING RESTART DATE.       +'
         WRITE(IU06,*)'+                                           +'
@@ -893,10 +987,7 @@
         CDATEF = CEPLTDT
         IF (.NOT. LWCOU) THEN
           CDATEA = CBEGDT
-
-          CDATEE = CDATEF
-!         IF ( IANALPD.LT.0 ) IFOREPD=IFOREPD+IANALPD*(-1) 
-          CALL INCDATE (CDATEE,IFOREPD)
+          CDATEE = CENDDT
         ENDIF
 
         CDATER = CRSTDT
@@ -1030,10 +1121,19 @@
       WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ',
      & IDELPRO,' SECS'
       IF(.NOT.LWCOU) THEN
-        WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ',
-     &   IDELWI,' SECS'
-        WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ',
-     &   IDELWO,' SECS'
+        IF(NDELW_LST.LE.0) THEN
+          WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ',
+     &     IDELWI,' SECS'
+          WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ',
+     &     IDELWO,' SECS'
+        ELSE
+          DO IC=1,NDELW_LST
+            WRITE(IU06,*) ' MODEL WIND INPUT  TIME STEP UNTIL ',
+     &      CDTW_LST(IC),' IS ',IDELWI_LST(IC),' SECS'
+            WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP UNTIL ',
+     &      CDTW_LST(IC),' IS ',IDELWO_LST(IC),' SECS'
+          ENDDO
+        ENDIF
       ELSE
         WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ',
      & KCOUSTEP,' SECS'
@@ -1060,6 +1160,11 @@
         ELSE
           WRITE(IU06,*) ' THE NEW SNONLIN IS USED ' 
         ENDIF
+      ENDIF
+      IF (IDAMPING.EQ.1) THEN
+        WRITE(IU06,*) ' WAVE DAMPING FORMULATION IS USED'
+      ENDIF
+      IF (ISHALLO.EQ.0) THEN
         IF(LBIWBK) THEN
           WRITE(IU06,*) ' BOTTOM INDUCED WAVE BREAKING IS USED'
         ENDIF
@@ -1070,7 +1175,7 @@
 !!!! PROPAGS1 has not yet been adapted for anything else then
 !!! propgation on a spherical coordinates without currents.
         IF(ICASE.NE.1 .OR.
-     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IFREFRA.EQ.3))
+     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3))
      &    ) THEN
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
@@ -1082,9 +1187,7 @@
         WRITE(IU06,*) ' CORNER TRANSPORT UPSTREAM SCHEME'
 !!!! PROPAGS2 has not yet been adapted for anything else then
 !!! propgation on a spherical coordinates without currents.
-        IF(ICASE.NE.1 .OR.
-     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IFREFRA.EQ.3))
-     &    ) THEN
+        IF(ICASE.NE.1) THEN
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
           WRITE(IU06,*) ' '
@@ -1105,27 +1208,58 @@
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH REFRACTION ONLY'
       ELSEIF (IREFRA.EQ.2) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH CURRENT REFRACTION ONLY'
+        IF(.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
-     &                ' HOURS.'
+     &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
+        ENDIF
       ELSEIF (IREFRA.EQ.3) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
+        IF(.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
-     &                ' HOURS.'
+     &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
+        ENDIF
       ENDIF
 
       IF (LLSOURCE) THEN
-        IF (IDELWO.GE.IDELWI) THEN
-          WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME'
+        IF(NDELW_LST.LE.0) THEN
+          IF (IDELWO.GE.IDELWI) THEN
+            WRITE(IU06,*) ' WIND FIELDS ARE NOT INTERPOLATED IN TIME.'
+          ELSE
+            WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME.'
+          ENDIF
         ELSE
-          WRITE(IU06,*) ' WIND FIELDS ARE INTERPOLATED IN TIME'
+          DO IC=1,NDELW_LST
+            IF (IDELWO_LST(IC).GE.IDELWI_LST(IC)) THEN
+              WRITE(IU06,*)' WIND FIELDS ARE NOT INTERPOLATED IN TIME',
+     &                     ' UNTIL ', CDTW_LST(IC)
+            ELSE
+              WRITE(IU06,*)' WIND FIELDS ARE INTERPOLATED IN TIME',
+     &                     ' UNTIL ', CDTW_LST(IC)
+            ENDIF
+          ENDDO
+        ENDIF
+        IF (LLWSWAVE .AND. .NOT. LWCOU) THEN
+          WRITE(IU06,*) ' WIND SPEED FROM WAVE MODEL USED AS FORCING.'
+        ENDIF
+        IF (LLWDWAVE .AND. .NOT. LWCOU) THEN
+          WRITE(IU06,*) ' WIND DIRECTION FROM WAVE MODEL USED AS WELL.'
         ENDIF
         IF (LGUST) THEN
           WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
         ENDIF
         IF (LADEN) THEN
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
+        ENDIF
+        IF ( (LWCOU .AND. LWCUR) .OR.
+     &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+          WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'
+          IF (LRELWIND) THEN
+            WRITE(IU06,*) ' HENCE, RELATIVE WINDS WILL BE USED.'
+          ELSE
+            WRITE(IU06,*) ' BUT ABSOLUTE WINDS WILL BE USED.'
+          ENDIF
         ENDIF
       ELSE
         WRITE(IU06,*) ' ADVECTION ONLY RUN '
@@ -1330,12 +1464,16 @@
      & '......', FFLAG(35),'.....',GFLAG(35)
       WRITE(IU06,*) '36 WAVE SPECTRAL PEAKEDNESS...', PFLAG(36),
      & '......', FFLAG(36),'.....',GFLAG(36)
-      WRITE(IU06,*) '37 BATHYMETRY (an & fc step 0)', PFLAG(37),
+      WRITE(IU06,*) '37 BATHYMETRY ................', PFLAG(37),
      & '......', FFLAG(37),'.....',GFLAG(37)
       WRITE(IU06,*) '38 MAXIMUM WAVE HEIGHT........', PFLAG(38),
      & '......', FFLAG(38),'.....',GFLAG(38)
       WRITE(IU06,*) '39 MAXIMUM WAVE PERIOD........', PFLAG(39),
      & '......', FFLAG(39),'.....',GFLAG(39)
+      WRITE(IU06,*) '40 U-COMP STOKES DRIFT........', PFLAG(40),
+     & '......', FFLAG(40),'.....',GFLAG(40)
+      WRITE(IU06,*) '41 V-COMP STOKES DRIFT........', PFLAG(41),
+     & '......', FFLAG(41),'.....',GFLAG(41)
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
@@ -1419,11 +1557,12 @@
 
       ELSEIF (IREST.EQ.1) THEN
         IF(.NOT.LGRIBOUT) THEN
-          WRITE(IU06,*) ' SPECTRA FILES WILLBE WRITTEN OUT TO DISK '
+          WRITE(IU06,*) ' SPECTRA FILES WILL BE WRITTEN OUT TO DISK '
      &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
         ELSE
-          WRITE(IU06,*) ' RESTART FILES WILL BE DISPOSED '
-     &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
+          WRITE(IU06,*) ' WAVE SPECTRA WILL BE DISPOSED '
+     &    ,'EVERY ...', IDELRES
+          WRITE(IU06,*) '  AND AT THE END OF THE RUN.'
         ENDIF
         IF(CDATER.LT.CDATEE.AND..NOT.LGRIBOUT) WRITE(IU06,*)
      &   ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',
@@ -1500,10 +1639,15 @@
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
       WRITE(IU06,*) '  '
       WRITE(IU06,'("  CURRENT RUN:")')
-      WRITE(IU06,'("  GRIB TABLE : ", I4)') NLOCGRB
-      WRITE(IU06,'("  STREAM ....: ", A4)') CSTREAM 
-      WRITE(IU06,'("  CLASS......: ", A4)') YCLASS
-      WRITE(IU06,'("  EXPERIMENT.: ", A4)') YEXPVER
+      WRITE(IU06,'("  GRIB TABLE..: ", I4)') NLOCGRB
+      WRITE(IU06,'("  STREAM .....: ", A4)') CSTREAM 
+      WRITE(IU06,'("  CLASS.......: ", A4)') YCLASS
+      WRITE(IU06,'("  EXPERIMENT..: ", A4)') YEXPVER
+      IF( CLDOMAIN == 'g' ) THEN
+        WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_G
+      ELSE IF( CLDOMAIN == 'm' ) THEN
+        WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_M
+      ENDIF
 
       IF(LGRHDIFS) THEN
         WRITE(IU06,*) ' '
@@ -1659,36 +1803,91 @@
 !*    2.4 WIND INPUT AND WIND OUTPUT TIMESTEP.
 !         ------------------------------------
 
-      IF (IDELWO.GT.IDELWI) THEN
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) '+                                         +'
-        WRITE(IU06,*) '+   WARNING ERROR IN SUB. USERIN          +'
-        WRITE(IU06,*) '+   ============================          +'
-        WRITE(IU06,*) '+ WIND INPUT TIME STEP IS LESS THAN       +'
-        WRITE(IU06,*) '+ WIND OUTPUT STEP                        +'
-        WRITE(IU06,*) '+ WIND INPUT TIMESTEP   IDELWI = ', IDELWI
-        WRITE(IU06,*) '+ WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
-        WRITE(IU06,*) '+                                         +'
-        WRITE(IU06,*) '+ WIND INPUT CHANGED TO WIND OUTPUT       +'
-        WRITE(IU06,*) '+ MODEL WILL USE A NEW WIND FIELD EVERY   +'
-        WRITE(IU06,*) '+ WIND OUTPUT TIME STEP AND IGNORE FIELDS +'
-        WRITE(IU06,*) '+ IN BETWEEN.                             +'
-        WRITE(IU06,*) '+                                         +'
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
-        IDELWI = IDELWO
-      ENDIF
-      IF ((IDELWO.LE.IDELWI.AND.MOD(IDELWI,IDELWO).NE.0)) THEN
-        WRITE(IU06,*) '*******************************************'
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-        WRITE(IU06,*) '*    ==========================           *'
-        WRITE(IU06,*) '* WIND INPUT  AND WIND OUTPUT             *'
-        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
-        WRITE(IU06,*) '* WIND INPUT TIMESTEP   IDELWI = ', IDELWI
-        WRITE(IU06,*) '* WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
-        WRITE(IU06,*) '*                                         *'
-        WRITE(IU06,*) '*******************************************'
-        LERROR = .TRUE.
+      IF(NDELW_LST.LE.0) THEN
+        IF (IDELWO.GT.IDELWI) THEN
+          WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) '+                                         +'
+          WRITE(IU06,*) '+   WARNING ERROR IN SUB. USERIN          +'
+          WRITE(IU06,*) '+   ============================          +'
+          WRITE(IU06,*) '+ WIND INPUT TIME STEP IS LESS THAN       +'
+          WRITE(IU06,*) '+ WIND OUTPUT STEP                        +'
+          WRITE(IU06,*) '+ WIND INPUT TIMESTEP   IDELWI = ', IDELWI
+          WRITE(IU06,*) '+ WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
+          WRITE(IU06,*) '+                                         +'
+          WRITE(IU06,*) '+ WIND INPUT CHANGED TO WIND OUTPUT       +'
+          WRITE(IU06,*) '+ MODEL WILL USE A NEW WIND FIELD EVERY   +'
+          WRITE(IU06,*) '+ WIND OUTPUT TIME STEP AND IGNORE FIELDS +'
+          WRITE(IU06,*) '+ IN BETWEEN.                             +'
+          WRITE(IU06,*) '+                                         +'
+          WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+          IDELWI = IDELWO
+        ENDIF
+        IF ((IDELWO.LE.IDELWI.AND.MOD(IDELWI,IDELWO).NE.0)) THEN
+          WRITE(IU06,*) '*******************************************'
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+          WRITE(IU06,*) '*    ==========================           *'
+          WRITE(IU06,*) '* WIND INPUT  AND WIND OUTPUT             *'
+          WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
+          WRITE(IU06,*) '* WIND INPUT TIMESTEP   IDELWI = ', IDELWI
+          WRITE(IU06,*) '* WIND OUTPUT TIMESTEP  IDELWO = ', IDELWO
+          WRITE(IU06,*) '*                                         *'
+          WRITE(IU06,*) '*******************************************'
+          LERROR = .TRUE.
+        ENDIF
+      ELSE
+        DO IC=1,NDELW_LST
+          IF (IDELWO_LST(IC).GT.IDELWI_LST(IC)) THEN
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) '+                                         +'
+            WRITE(IU06,*) '+   WARNING ERROR IN SUB. USERIN          +'
+            WRITE(IU06,*) '+   ============================          +'
+            WRITE(IU06,*) '+ WIND INPUT TIME STEP IS LESS THAN       +'
+            WRITE(IU06,*) '+ WIND OUTPUT STEP UNTIL ',CDTW_LST(IC)
+            WRITE(IU06,*) '+ WIND INPUT TIMESTEP  = ', IDELWI_LST(IC)
+            WRITE(IU06,*) '+ WIND OUTPUT TIMESTEP = ', IDELWO_LST(IC)
+            WRITE(IU06,*) '+                                         +'
+            WRITE(IU06,*) '+ WIND INPUT CHANGED TO WIND OUTPUT       +'
+            WRITE(IU06,*) '+ MODEL WILL USE A NEW WIND FIELD EVERY   +'
+            WRITE(IU06,*) '+ WIND OUTPUT TIME STEP AND IGNORE FIELDS +'
+            WRITE(IU06,*) '+ IN BETWEEN.                             +'
+            WRITE(IU06,*) '+                                         +'
+            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
+            IDELWI_LST(IC) = IDELWO_LST(IC)
+          ENDIF
+          IF ((IDELWO_LST(IC).LE.IDELWI_LST(IC).AND.
+     &         MOD(IDELWI_LST(IC),IDELWO_LST(IC)).NE.0)) THEN
+            WRITE(IU06,*) '*******************************************'
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+            WRITE(IU06,*) '*    ==========================           *'
+            WRITE(IU06,*) '* WIND INPUT AND WIND OUTPUT UNTIL ',
+     &                       CDTW_LST(IC)
+            WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
+            WRITE(IU06,*) '* WIND INPUT TIMESTEP   = ', IDELWI_LST(IC)
+            WRITE(IU06,*) '* WIND OUTPUT TIMESTEP  = ', IDELWO_LST(IC)
+            WRITE(IU06,*) '*                                         *'
+            WRITE(IU06,*) '*******************************************'
+            LERROR = .TRUE.
+           ENDIF
+          IF(IC.GT.1) THEN
+            IF(CDTW_LST(IC).LE.CDTW_LST(IC-1)) THEN
+              WRITE(IU06,*) '***************************************'
+              WRITE(IU06,*) '*                                     *'
+              WRITE(IU06,*) '*   FATAL ERROR IN SUB. USERIN        *'
+              WRITE(IU06,*) '*   ==========================        *'
+              WRITE(IU06,*) '* TIMES FOR WIND INPUT STEPS MUST BE  *'
+              WRITE(IU06,*) '* CHRONOLOGICALLY ORDERED IN NAMELIST *' 
+              WRITE(IU06,*) '* NAWI !!!!!                          *'
+              WRITE(IU06,*) '* IC-1, CDTW_LST(IC-1): ',IC-1,' ',
+     &                         CDTW_LST(IC-1) 
+              WRITE(IU06,*) '* IC, CDTW_LST(IC): ',IC,' ',CDTW_LST(IC) 
+              WRITE(IU06,*) '*                                     *'
+              WRITE(IU06,*) '***************************************'
+              LERROR = .TRUE.
+            ENDIF
+          ENDIF
+        ENDDO
       ENDIF
 
       CWDFILE='wind_forcing_time_series'
@@ -1733,8 +1932,7 @@
 !*    2.5 FILE DISPOSE TIMESTEP.
 !         ----------------------
 
-      IF (MOD(IDELRES,IDELPRO).NE.0 .AND.
-     &    MOD(IDELRES,IDELWI).NE.0) THEN
+      IF (MOD(IDELRES,IDELPRO).NE.0 ) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1742,7 +1940,6 @@
         WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
         WRITE(IU06,*) '*    IDELRES = ',IDELRES,' SECONDS'
         WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
-        WRITE(IU06,*) '* THE WIND INPUT TIMESTEP   IDELWI = ', IDELWI
         WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*******************************************'

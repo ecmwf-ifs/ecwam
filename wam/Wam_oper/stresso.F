@@ -1,5 +1,5 @@
       SUBROUTINE STRESSO (F,IJS, IJL, IG,THWNEW,USNEW,Z0NEW,
-     &                    ROAIRN, TAUW,SL)
+     &                    ROAIRN, TAUW, SL, MIJ)
 
 ! ----------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 !     J. BIDLOT             ECMWF FEBRUARY  1996-97
 !     S. ABDALLA            ECMWF OCTOBER   2001 INTRODUCTION OF VARIABLE
 !                                                AIR DENSITY
+!     J. BIDLOT             ECMWF           2007  ADD MIJ
 
 !*    PURPOSE.
 !     --------
@@ -19,7 +20,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STRESSO (F,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,ROAIRN,TAUW,SL)*
+!       *CALL* *STRESSO (F,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,ROAIRN,TAUW,SL,MIJ)*
 !         *F*       - WAVE SPECTRUM.
 !         *IJS*     - INDEX OF FIRST GRIDPOINT.
 !         *IJL*     - INDEX OF LAST GRIDPOINT.
@@ -32,6 +33,7 @@
 !         *ROAIRN*  - AIR DENSITY IN KG/M3.
 !         *TAUW*    - WAVE STRESS IN (M/S)**2
 !         *SL*      - TOTAL SOURCE FUNCTION ARRAY.
+!         *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 
 !     METHOD.
 !     -------
@@ -58,7 +60,7 @@
 
       USE YOWCOUP  , ONLY : ALPHA
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
-     &            COSTH    ,SINTH
+     &            COSTH    ,SINTH    ,FR5
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
@@ -69,67 +71,62 @@
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
+      INTEGER :: MIJ(IJS:IJL)
+
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,SL
       REAL,DIMENSION(NINF:NSUP,NBLO) :: TAUW
-      REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW,Z0NEW
-     &                           , ROAIRN
+      REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW, ROAIRN
+      REAL :: CONST0(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION CONSTF(NFRE), TAUHF(IJS:IJL), TEMP(IJS:IJL),
-     &          XSTRESS(IJS:IJL), YSTRESS(IJS:IJL), UST2(IJS:IJL)
-      DIMENSION ZROAIRN(IJS:IJL)
+      REAL :: CONST, DFIMLOC, CNST
+      REAL :: ZPIROFR(NFRE)
+      REAL :: CONSTF(IJS:IJL,NFRE)
+      REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP, XSTRESS, YSTRESS, UST2
 ! ----------------------------------------------------------------------
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
 
-      CONST0  = DELTH*(ZPI)**4*FR(NFRE)**5/G**2
+      CONST = DELTH*(ZPI)**4/G**2
+
+      DO IJ=IJS,IJL
+        CONST0(IJ)  = CONST*FR5(MIJ(IJ))
+      ENDDO
 
       DO M=1,NFRE
-        CONSTF(M) =ZPI*ROWATER*FR(M)*DFIM(M)
+        ZPIROFR(M) =ZPI*ROWATER*FR(M)
+      ENDDO
+
+      DO IJ=IJS,IJL
+        DO M=1,MIJ(IJ)-1
+          CONSTF(IJ,M) =ZPIROFR(M)*DFIM(M)
+        ENDDO
+        DFIMLOC=0.5*DELTH*(FR(MIJ(IJ))-FR(MIJ(IJ)-1))
+        CONSTF(IJ,MIJ(IJ)) =ZPIROFR(MIJ(IJ))*DFIMLOC
       ENDDO
 
 !*    2. COMPUTE WAVE STRESS OF ACTUEL BLOCK.
 !        ------------------------------------
 
-!*    2.1 PRESET STRESS ARRAYS.
-!         ---------------------
-
-      DO IJ=IJS,IJL
-        XSTRESS(IJ)=0.
-        YSTRESS(IJ)=0.
-      ENDDO
-
 !*    2.2 INTEGRATE INPUT SOURCE FUNCTION OVER FREQUENCY AND DIRECTIONS.
 !         --------------------------------------------------------------
 
       DO IJ=IJS,IJL
-        ZROAIRN(IJ)=1.D0/MAX(ROAIRN(IJ),1.)
-      ENDDO
-
-      DO M=1,NFRE
-        DO K=1,NANG-1,2
-          CONST11=CONSTF(M)*SINTH(K  )
-          CONST12=CONSTF(M)*SINTH(K+1)
-          CONST21=CONSTF(M)*COSTH(K)
-          CONST22=CONSTF(M)*COSTH(K+1)
-          DO IJ=IJS,IJL
-            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K  ,M)*CONST11*ZROAIRN(IJ)
-     &                             +SL(IJ,K+1,M)*CONST12*ZROAIRN(IJ)
-            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K  ,M)*CONST21*ZROAIRN(IJ)
-     &                             +SL(IJ,K+1,M)*CONST22*ZROAIRN(IJ)
+        XSTRESS(IJ)=0.
+        YSTRESS(IJ)=0.
+        DO M=1,MIJ(IJ)
+          DO K=1,NANG
+            CNST=SL(IJ,K,M)*CONSTF(IJ,M)
+            XSTRESS(IJ)=XSTRESS(IJ)+CNST*SINTH(K)
+            YSTRESS(IJ)=YSTRESS(IJ)+CNST*COSTH(K)
           ENDDO
         ENDDO
-        IF(MOD(NANG,2) /= 0) THEN
-          CONST11=CONSTF(M)*SINTH(NANG)
-          CONST21=CONSTF(M)*COSTH(NANG)
-          DO IJ=IJS,IJL
-            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,NANG,M)*CONST11*ZROAIRN(IJ)
-            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,NANG,M)*CONST21*ZROAIRN(IJ)
-          ENDDO
-        ENDIF
+        XSTRESS(IJ)=XSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
+        YSTRESS(IJ)=YSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
       ENDDO
+
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !     ----------------------------------------------------
@@ -137,13 +134,13 @@
       K=1
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
-        TEMP(IJ) = F(IJ,K,NFRE)*COSW**3
+        TEMP(IJ) = F(IJ,K,MIJ(IJ))*COSW**3
       ENDDO
 
       DO K=2,NANG
         DO IJ=IJS,IJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
-          TEMP(IJ) = TEMP(IJ)+F(IJ,K,NFRE)*COSW**3
+          TEMP(IJ) = TEMP(IJ)+F(IJ,K,MIJ(IJ))*COSW**3
         ENDDO
       ENDDO
 
@@ -164,10 +161,12 @@
         DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
         DELJ2   = 1. - DELJ1
 
-        TAU1 = (TAUHFT(I,J  )*DELI2 + TAUHFT(I+1,J  )*DELI1)*DELJ2
-     &   + (TAUHFT(I,J+1)*DELI2 + TAUHFT(I+1,J+1)*DELI1)*DELJ1
+        TAU1 = ( TAUHFT(I  ,J  ,MIJ(IJ))*DELI2 +
+     &           TAUHFT(I+1,J  ,MIJ(IJ))*DELI1 )*DELJ2
+     &       + ( TAUHFT(I  ,J+1,MIJ(IJ))*DELI2 +
+     &           TAUHFT(I+1,J+1,MIJ(IJ))*DELI1 )*DELJ1
 
-        TAUHF(IJ) = CONST0*TEMP(IJ)*UST2(IJ)*TAU1
+        TAUHF(IJ) = CONST0(IJ)*TEMP(IJ)*UST2(IJ)*TAU1
       ENDDO
 
       DO IJ=IJS,IJL

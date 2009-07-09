@@ -44,11 +44,11 @@
 
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
-     &         FRATIO
+     &         FRATIO      ,FLOGSPRDM1
       USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06
@@ -59,6 +59,9 @@
 
       REAL,DIMENSION(IJS:IJL) :: FNEF,NEWF,NEWF1,KNEW,GWP,GWM,WAVN
 
+      LOGICAL :: LICE2SEA(IJS:IJL)
+
+
 ! ----------------------------------------------------------------------
 
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
@@ -66,7 +69,7 @@
 
       PI2G = ZPI/G 
       FRE0 = FRATIO-1.
-      ALN00 = 1. / LOG10(FRATIO)
+
       IF(ABS(IRA).NE.1) THEN
         WRITE (IU06,*) '**************************************'
         WRITE (IU06,*) '* SUBROUTINE INTPOL:                  '
@@ -78,6 +81,29 @@
         WRITE (IU06,*) '**************************************'
         CALL ABORT1
       ENDIF
+
+      DO IJ = IJS, IJL
+        LICE2SEA(IJ)=.TRUE.
+      ENDDO
+
+      DO K=1,NANG
+        DO M=1,NFRE
+          DO IJ = IJS, IJL
+             IF(F3(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = IJS, IJL
+            IF(LICE2SEA(IJ)) THEN
+              F3(IJ,K,M) = 0.0
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
 
       DO M = 1, NFRE
         DO K = 1, NANG
@@ -125,9 +151,9 @@
 
           DO IJ = IJS, IJL
             IF (FNEF(IJ).LE.FR(1)/FRATIO) THEN
-              NEWF(IJ) = -1
+              NEWF(IJ)= -1
             ELSE
-              NEWF(IJ) =INT(LOG10(FNEF(IJ)/FR(1))*ALN00+1.000000001)
+              NEWF(IJ)=INT(LOG10(FNEF(IJ)/FR(1))*FLOGSPRDM1)+1
             ENDIF
           ENDDO
 
@@ -181,23 +207,28 @@
 
 !     A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
 !     SO IF THE SPECTRUM WAS SHIFTED DOWN THEN THE F**-5 LAW
-!     HAS TO BE RESTABLISHED PROVIDED THERE WAS SOME ENERGY THERE.
+!     IS REESTABLISHED
+!!!! we will need to adapt for shallow water in term of k**-5/2
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          IF(F3(IJ,K,NFRE).LE.FLMIN ) THEN
-            NEWF(IJ)=NFRE
-          ELSE
-            DO M = NFRE, 1, -1
-              IF(F1(IJ,K,M).GT.0.0 .OR. M.EQ.1 ) THEN 
-                NEWF(IJ)=M
-                EXIT
-              ENDIF
-            ENDDO
-          ENDIF
+          NEWF(IJ)=NFRE
+          M=NFRE
+          DO WHILE(F1(IJ,K,M).LE.0.0 .AND. M.GT.1)
+            M=M-1
+            NEWF(IJ)=M
+          ENDDO
         ENDDO
         DO IJ = IJS, IJL
           DO M = NEWF(IJ)+1,NFRE
             F1(IJ,K,M)=F1(IJ,K,NEWF(IJ))*(FR(NEWF(IJ))/FR(M))**5
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ = IJS, IJL
+            F1(IJ,K,M) = MAX(F1(IJ,K,M),EPSMIN)
           ENDDO
         ENDDO
       ENDDO

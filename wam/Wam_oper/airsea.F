@@ -44,23 +44,25 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,TAUT     ,DELTAUW  ,DELU
+      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA   ,XNLEV
+      USE YOWPCONS , ONLY : G
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,TAUT     ,DELTAUW     ,
+     &              DELU   ,EPS1
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(IJS:IJL) ::  U10,TAUW,US,Z0
-
-! ----------------------------------------------------------------------
-
+      REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
 !*    1. SELECT TABLE ACCORDING TO WIND LEVEL.
 !        -------------------------------------
 
-      ILEV=KLEV
+      IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
 
+      ILEV=KLEV
 
 !*    2. DETERMINE TOTAL STRESS FROM TABLE.
 !        ----------------------------------
@@ -82,9 +84,13 @@
 !        ---------------------------
 
       DO IJ=IJS,IJL
-        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
-        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
+!!!        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
+!!!        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
+        UST2 = US(IJ)**2
+        ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
+        Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE AIRSEA

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTUBUF (IU08, IU18, IFORM,NIBLO,ML,
+      SUBROUTINE OUTUBUF (IU08, NIBLO, ML,
      &                    KOBSLAT,KOBSLON,KOBSCOR,KOBSRLAT,KOBSRLON)
 
 ! ----------------------------------------------------------------------
@@ -25,12 +25,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTUBUF (IU08, IU18, IFORM)*
-!         *IU08*   - LOGICAL UNIT FOR  UNFORMATED WRITE
-!         *IU18*   - LOGICAL UNIT FOR    FORMATED WRITE
-!         *IFORM*  - FORMAT OPTION  = 1  UNFORMATED WRITE
-!                                   = 2  FORMATED WRITE
-!                                   OTHERWISE BOTH
+!       *CALL* *OUTUBUF (IU08)*
+!         *IU08*   - LOGICAL UNITS FOR  UNFORMATED WRITE
 !     METHOD.
 !     -------
 
@@ -48,54 +44,50 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KLAT2    ,KCOR     ,
-     &                      KRLAT    ,KRLAT2   ,KRLON    ,KRLON2   ,
-     &                      WLAT     ,WRLAT    ,WRLON
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,
+     &                      KRLAT    ,KRLON    ,
+     &                      WLAT     ,WCOR     ,WRLAT    ,WRLON
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: IU08(0:2)
       INTEGER, DIMENSION(NIBLO,ML,2) :: KOBSLON, KOBSLAT
       INTEGER, DIMENSION(NIBLO,ML,2) :: KOBSRLON, KOBSRLAT
       INTEGER, DIMENSION(NIBLO,ML,4) :: KOBSCOR
-
-  998 FORMAT(10I8)
-  999 FORMAT(10E6.3)
 
 ! ----------------------------------------------------------------------
 
 !*    1. WRITE COMMON UBUF UNFORMATED.
 !        -----------------------------
 
-      IF (IFORM.NE.2) WRITE (IU08) KLAT, KLON
-      IF (IFORM.NE.2) WRITE (IU08) KLAT2
-      IF (IFORM.NE.2) WRITE (IU08) KRLAT, KRLON
-      IF (IFORM.NE.2) WRITE (IU08) KRLAT2,KRLON2
-      IF (IFORM.NE.2) WRITE (IU08) KCOR
-      IF (IFORM.NE.2) WRITE (IU08) WLAT 
-      IF (IFORM.NE.2) WRITE (IU08) WRLAT,WRLON
-      IF (IFORM.NE.2) WRITE (IU08) KOBSLAT
-      IF (IFORM.NE.2) WRITE (IU08) KOBSLON
-      IF (IFORM.NE.2) WRITE (IU08) KOBSRLAT 
-      IF (IFORM.NE.2) WRITE (IU08) KOBSRLON
-      IF (IFORM.NE.2) WRITE (IU08) KOBSCOR
+      DO IP=0,2
+        WRITE (IU08(IP)) KLAT
+        WRITE (IU08(IP)) KLON
+      ENDDO
 
-! ----------------------------------------------------------------------
+      WRITE (IU08(1)) KRLAT
+      WRITE (IU08(1)) KRLON
 
-!*    2. WRITE COMMON UBUF FORMATED.
-!        ---------------------------
+      WRITE (IU08(2)) KCOR
 
-      IF (IFORM.NE.1) WRITE (IU18,998) KLAT, KLON
-      IF (IFORM.NE.1) WRITE (IU18,998) KLAT2
-      IF (IFORM.NE.1) WRITE (IU08,998) KRLAT, KRLON
-      IF (IFORM.NE.1) WRITE (IU08,998) KRLAT2,KRLON2
-      IF (IFORM.NE.1) WRITE (IU18,998) KCOR 
-      IF (IFORM.NE.1) WRITE (IU18,999) WLAT 
-      IF (IFORM.NE.1) WRITE (IU08,999) WRLAT,WRLON
-      IF (IFORM.NE.1) WRITE (IU18,998) KOBSLAT
-      IF (IFORM.NE.1) WRITE (IU18,998) KOBSLON
-      IF (IFORM.NE.1) WRITE (IU08,998) KOBSRLAT 
-      IF (IFORM.NE.1) WRITE (IU08,998) KOBSRLON
-      IF (IFORM.NE.1) WRITE (IU18,998) KOBSCOR
+      DO IP=0,2
+        WRITE (IU08(IP)) WLAT 
+      ENDDO
+
+      WRITE (IU08(1)) WRLAT
+      WRITE (IU08(1)) WRLON
+
+      WRITE (IU08(2)) WCOR 
+
+      DO IP=0,2
+        WRITE (IU08(IP)) KOBSLAT
+        WRITE (IU08(IP)) KOBSLON
+      ENDDO
+
+      WRITE (IU08(1)) KOBSRLAT 
+      WRITE (IU08(1)) KOBSRLON
+
+      WRITE (IU08(2)) KOBSCOR
 
       RETURN
       END SUBROUTINE OUTUBUF

@@ -4,12 +4,12 @@
 ! The fields should be retrieved on their initial resolution
 ! and therefore have the same resolution for all of them.
 !
-      INTEGER, PARAMETER :: NBIT = 200000
+      INTEGER, PARAMETER :: NBIT = 430000
       INTEGER, PARAMETER :: NKSEC0=2
-      INTEGER, PARAMETER :: NKSEC1=1024
+      INTEGER, PARAMETER :: NKSEC1=2048
       INTEGER, PARAMETER :: NKSEC2=2060
       INTEGER, PARAMETER :: NKSEC3=2
-      INTEGER, PARAMETER :: NKSEC4=128
+      INTEGER, PARAMETER :: NKSEC4=252
 
       INTEGER, PARAMETER :: NPSEC2=96
       INTEGER, PARAMETER :: NPSEC3=2

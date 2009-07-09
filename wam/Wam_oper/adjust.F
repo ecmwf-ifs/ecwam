@@ -39,9 +39,13 @@
 !* 1. CORRECT BORDERS.
 !     ----------------
 
+      OLD_WEST=WEST
+      OLD_EAST=EAST
       WEST = MOD(WEST+720.,360.)
       EAST = MOD(EAST+720.,360.)
-      IF (WEST.GT.EAST) WEST = WEST-360.
+      IF(OLD_WEST.NE.OLD_EAST) THEN
+        IF (WEST.GE.EAST) WEST = WEST-360.
+      ENDIF
 
       RETURN
       END SUBROUTINE ADJUST

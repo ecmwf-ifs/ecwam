@@ -1,4 +1,4 @@
-      REAL FUNCTION TRANSF2(XK,D,G)
+      REAL FUNCTION TRANSF2(XK,D)
 !
 !***  DETERMINE NARROW BAND LIMIT BENJAMIN-FEIR INDEX FOR
 !     THE FINITE DEPTH CASE.
@@ -9,24 +9,27 @@
 !
 !     XK             REAL         WAVE NUMBER
 !     D              REAL         DEPTH
-!     G              REAL         ACCELERATION OF GRAVITY
 !
 !
 !     BF**2 = (2 S^2)/SIG_OM^2) . TRANSF2(XK,D) 
 !
        
 ! ----------------------------------------------------------------------
- 
+
+      USE YOWPCONS , ONLY : G     ,DKMAX
+
+!----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      REAL :: XK,D,G,X,T_0,OM,C_0,C_S,V_G,D2OM,XNL_1,XNL_2,T_NL
+      REAL :: XK,D,X,T_0,OM,C_0,C_S,V_G,D2OM,XNL_1,XNL_2,T_NL
 
 !----------------------------------------------------------------------
 !
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 !     
-      X   = MIN(XK*D,40.)
+      X   = MIN(XK*D,DKMAX)
       X   = MAX(X,0.5)
       T_0 = TANH(X)
       OM  = SQRT(G*XK*T_0)

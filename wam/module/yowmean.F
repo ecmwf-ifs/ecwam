@@ -17,23 +17,27 @@
       REAL,ALLOCATABLE :: HMAXMEAN(:) 
       REAL,ALLOCATABLE :: FPMEAN(:) 
       REAL,ALLOCATABLE :: TMAXMEAN(:) 
+      REAL,ALLOCATABLE :: USTMEAN(:) 
+      REAL,ALLOCATABLE :: VSTMEAN(:) 
 
-!*     VARIABLE.   TYPE.     PURPOSE.
-!      ---------   -------   --------
-!      *EMEAN*     REAL      TOTAL ENERGY.
-!      *FMEAN*     REAL      MEAN FREQUENCY (1./MEAN PERIOD).
-!      *THQ*       REAL      MEAN WAVE DIRECTION IN RADIANS.
-!      *SMEAN*     REAL      MEAN SQUARE SLOPE.
-!      *P1MEAN*    REAL      MEAN PERIOD (1).
-!      *P2MEAN*    REAL      MEAN PERIOD (2).
-!      *SPRDMEAN*  REAL      MEAN DIRECTIONAl SPREAD.
-!      *C4MEAN*    REAL      SURFACE ELEVATION KURTOSIS.
-!      *BFMEAN*    REAL      BENJAMIN-FEIR INDEX.
-!      *QPMEAN*    REAL      SPECTRAL PEAKEDNESS.
-!      *HMAXMEAN*  REAL      MAXIMUM WAVE HEIGHT.
-!      *FPMEAN*    REAL      PEAK FREQUENCY FROM 1D SPECTRUM.
-!      *TMAXMEAN*  REAL      MAXIMUM PERIOD CORRESPONDING TO MAXIMUM
-!                            WAVE HEIGHT.
+!*     VARIABLE.      TYPE.     PURPOSE.
+!      ---------      -------   --------
+!      *EMEAN*        REAL      TOTAL ENERGY.
+!      *FMEAN*        REAL      MEAN FREQUENCY (1./MEAN PERIOD).
+!      *THQ*          REAL      MEAN WAVE DIRECTION IN RADIANS.
+!      *SMEAN*        REAL      MEAN SQUARE SLOPE.
+!      *P1MEAN*       REAL      MEAN PERIOD (1).
+!      *P2MEAN*       REAL      MEAN PERIOD (2).
+!      *SPRDMEAN*     REAL      MEAN DIRECTIONAl SPREAD.
+!      *C4MEAN*       REAL      SURFACE ELEVATION KURTOSIS.
+!      *BFMEAN*       REAL      BENJAMIN-FEIR INDEX.
+!      *QPMEAN*       REAL      SPECTRAL PEAKEDNESS.
+!      *HMAXMEAN*     REAL      MAXIMUM WAVE HEIGHT.
+!      *FPMEAN*       REAL      PEAK FREQUENCY FROM 1D SPECTRUM.
+!      *TMAXMEAN*     REAL      MAXIMUM PERIOD CORRESPONDING TO MAXIMUM
+!                               WAVE HEIGHT.
+!      *USTMEAN*      REAL      U-COMP STOKES DRIFT.
+!      *VSTMEAN*      REAL      V-COMP STOKES DRIFT.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

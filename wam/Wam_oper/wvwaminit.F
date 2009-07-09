@@ -19,7 +19,7 @@
 
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,
-     &            MBXSIZE  ,KTAG
+     &            KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY      ,KWAMVER 
       USE YOWTEST  , ONLY : IU06
       USE YOWUNIT  , ONLY : IU07     ,IU08
@@ -34,13 +34,14 @@
       INTEGER :: IULOG, NLON, NLAT
       INTEGER :: IREAD, LFILE
       INTEGER :: I4(2)
+      INTEGER :: ICL
       INTEGER :: I_GET_UNIT
 
       REAL :: RSOUTW, RNORTW
       REAL :: X4(2)
       REAL :: ZHOOK_HANDLE
 
-      CHARACTER*9 :: CMBXSIZE
+      CHARACTER*1 :: C1 
       CHARACTER*80 :: FILENAME
       CHARACTER*80 :: LOGFILENAME
 
@@ -79,7 +80,7 @@
 
 !     CONSTANT FILES INPUT UNIT
 !     -------------------------
-      FILENAME='wam_grid'
+      FILENAME='wam_grid_tables'
       LFILE=0
       LLEXIST=.FALSE.
       IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
@@ -99,26 +100,29 @@
       ENDIF
       IU07 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
 
-      FILENAME='wam_subgrid'
-      LFILE=0
-      LLEXIST=.FALSE.
-      IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
-      INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
-      IF(.NOT. LLEXIST) THEN
-        WRITE(IU06,*) '************************************'
-        WRITE(IU06,*) '*                                  *'
-        WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
-        WRITE(IU06,*) '*  =============================   *'
-        WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
-     &  ' IS MISSING !!!!'
-        WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
-     &  ' IS MISSING !!!!'
-        WRITE(IU06,*) '*                                  *'
-        WRITE(IU06,*) '************************************'
-        CALL ABORT1
-      ENDIF
-      IU08 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+      DO ICL=0,2
+        WRITE(C1,'(I1)') ICL
+        FILENAME='wam_subgrid_'//C1
 
+        LFILE=0
+        LLEXIST=.FALSE.
+        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+        IF(.NOT. LLEXIST) THEN
+          WRITE(IU06,*) '************************************'
+          WRITE(IU06,*) '*                                  *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
+          WRITE(IU06,*) '*  =============================   *'
+          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+     &    ' IS MISSING !!!!'
+          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+     &    ' IS MISSING !!!!'
+          WRITE(IU06,*) '*                                  *'
+          WRITE(IU06,*) '************************************'
+          CALL ABORT1
+        ENDIF
+        IU08(ICL) = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+      ENDDO
 
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------
@@ -127,10 +131,6 @@
       NPRECR = KIND(X4)
       I4=1
       NPRECI = KIND(I4)
-
-!     GET MESSAGE PASSING BUFFER SIZE
-      CALL GETENV('MBX_SIZE',CMBXSIZE)
-      READ(CMBXSIZE,'(I9)') MBXSIZE
 
 !     READ GRID INPUT FROM PREPROC 
 !     ----------------------------

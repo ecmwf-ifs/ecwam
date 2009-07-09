@@ -129,7 +129,7 @@
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS,
-     &            IREFDATE ,ISTREAM
+     &            IREFDATE ,ISTREAM  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
      &            ROAIRO   ,ZIDLOLD
@@ -138,7 +138,8 @@
      &            CPATH
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,
      &            IUSCR
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
+     &            LLNEWCURR
       USE FDBSUBS_MOD
 
 ! -------------------------------------------------------------------
@@ -167,6 +168,7 @@
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
+      LOGICAL :: LWCUR
       REAL :: FCRANGE
 
 ! ----------------------------------------------------------------------
@@ -267,7 +269,7 @@
       IU05 = 5
       IU06 = 6
 
-      IU07 = I_GET_UNIT(IU06, 'wam_grid', 'r', 'u', 0)
+      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
 
       IU12 = 12
       IU14 = 14
@@ -284,6 +286,8 @@
       I4=1
       NPRECI = KIND(I4)
       KTAG=100
+
+      LLNEWCURR=.TRUE.
 
 ! ----------------------------------------------------------------------
 
@@ -317,6 +321,9 @@
 
       LGRHDIFS=.FALSE.
       LNEWLVTP=.FALSE.
+
+
+      LWCUR=.FALSE.
 
 ! ----------------------------------------------------------------------
 
@@ -475,7 +482,10 @@
       IDELWO  = IDELWI
 
       LWCOU=.FALSE.
+      IREFRA=0
       ILEN=1
+
+      IREAD=1
 
       IF (.NOT.LGRIBIN) THEN
         IF(.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(0:NIBLO,NANG,NFRE))
@@ -502,8 +512,9 @@
       IF (.NOT.LGRIBIN.AND.IOPTI.GT.0.AND.IOPTI.NE.3) THEN
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD, ICEMASK,
+     &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                ISEC1, ISEC2, FIELDS, MASK_IN)
+     &                ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSEIF (LGRIBIN) THEN
@@ -511,7 +522,8 @@
         IF(.NOT.LGRIBOUT) THEN
 !         RECONSTRUCT THE BINARY STRESS AND WIND FILE FROM THE WINDS
 !         AND THE DRAG COEFFICIENT FIELDS.
-          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ICEMASK,NIBLO)
+          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ICEMASK,
+     &                     IREAD)
         ENDIF
 
 !       GET SPECTRA FROM GRIBBED DATA.

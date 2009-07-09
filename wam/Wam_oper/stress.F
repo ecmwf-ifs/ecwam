@@ -54,7 +54,7 @@
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            JPLEVT   ,EPS1     ,UMAX     ,TAUT     ,
-     &            DELTAUW  ,DELU     ,TAUHFT
+     &            DELTAUW  ,DELU
 
 ! ----------------------------------------------------------------------
 
@@ -72,7 +72,6 @@
 !        ----------------
 
       IF(.NOT.ALLOCATED(TAUT)) ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-      IF(.NOT.ALLOCATED(TAUHFT)) ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA))
 
 !*    1.DETERMINE TOTAL STRESS.
 !       -----------------------

@@ -79,7 +79,8 @@
 !     MODULES:
 !     --------
 
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,ZPISQRT
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,ZPISQRT   ,
+     &             BF2MAX  ,BF2MIN   ,C4MAX    ,C4MIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -181,7 +182,8 @@
             EPS(IJ)    = XKP(IJ)*SQRT(SUM0(IJ))
 
             BF2(IJ) = 2.*EPS(IJ)**2/SIG_OM(IJ)**2*
-     &                TRANSF2(XKP(IJ),DEPTH(IJ,IG),G)
+     &                TRANSF2(XKP(IJ),DEPTH(IJ,IG))
+            BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
          ELSE
             BF2(IJ)    = 0.
             EPS(IJ)    = 0.
@@ -194,6 +196,7 @@
             SIG_TH(IJ) = MAX(SIG_TH(IJ),ZA_MORI)
             ZJ = ZA_MORI/SIG_TH(IJ)*ZSUM3
             C4(IJ) = ZJ*BF2(IJ)+8.*EPS(IJ)**2
+            C4(IJ) = MAX(MIN(C4(IJ),C4MAX),C4MIN)
          ELSE
             C4(IJ)  = 0.
          ENDIF

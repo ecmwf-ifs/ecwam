@@ -2,7 +2,8 @@
      &                   NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
      &                   CDATE, IFORP, IPARAM, NGX, NGY,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, KRGG, KLONRGG,
-     &                   KZLEV, FIELD, KRET, MSG, IU06) 
+     &                   KZLEV, FIELD, KRET, MSG, IU06,
+     &                   IREAD, IRANK, NPROC)
 
 ! -----------------------------------------------------------------     
 
@@ -33,7 +34,8 @@
 !    &                NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
 !    &                CDATE, IFORP, IPARAM, NGX, NGY,
 !    &                AMOWEP, AMOSOP, AMOEAP, AMONOP, KRGG, KLONRGG,
-!    &                KZLEV, FIELD, KRET, MSG, IU06) 
+!    &                KZLEV, FIELD, KRET, MSG, IU06, 
+!    &                IREAD, IRANK, NPROC)
 
 !        *FILNM*  - DATA INPUT FILENAME. 
 !        *ID1  *  - NUMBER OF COLUMNS IN ARRAY FIELD (1 DIMENSION).     
@@ -64,13 +66,16 @@
 !        *KRGG*   - GRID DEFINITION PARAMETER (O=REGULAR, 1=IRREGULAR)
 !        *KLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE
 !        *KZLEV*  - REFERENCE LEVEL IN full METER
-!                   SHOULD BE 0 EXCEPT FOR 233 AND 245 WHERE IT
+!                   SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
 !                   MIGHT BE DIFFERENT THAN 0 PROVIDED IT WAS
 !                   CODED IN KSEC1(7) AND KSEC1(8) SEE *GRIBPAC*
 !        *FIELD*  - UNPACKED DATA.
 !        *KRET*   - ERROR NUMBER (0 = NO ERROR).
-!        *MSG*    _ ERROR MESSAGE.
-!        *IU06*   _ OUTPUT UNIT.
+!        *MSG*    - ERROR MESSAGE.
+!        *IU06*   - OUTPUT UNIT.
+!        *IREAD*  - ACCESS TO FILE ONLY FOR PE=IREAD.
+!        *IRANK*  - PROCESSOR NUMBER.
+!        *NPROC*  - TOTAL NUMBER OF PE'S. 
 
 
 !       THIS FEATURE HAS BEEN REMOVED :
@@ -94,13 +99,19 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (NBIT = 420000)
+      USE MPL_MODULE
+
+! ----------------------------------------------------------------------
+
+      PARAMETER (NBIT = 430000)
 
       INTEGER KLONRGG(ID2)                                          
       INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1), KSEC2(NKSEK2),
      &        KSEC3(NKSEK3), KSEC4(NKSEK4)
       INTEGER KSEK3(NKSEK3)
       INTEGER, ALLOCATABLE ::  KGRIB(:)
+      INTEGER :: LNAME 
+      INTEGER :: IBUF(2) 
 
       REAL FIELD(ID1,ID2)                                          
       REAL PSEC2(NPSEK2), PSEC3(NPSEK3), PSEC4(ID1*ID2)
@@ -108,6 +119,8 @@
 
       CHARACTER*40 ERRMSG(-5:4), MSG
       CHARACTER HOPER*1, CDATE*14, FILNM*24
+
+      LOGICAL :: LLEXIST
                                                                         
       DATA HOPER / 'D' /                                                
       DATA ERRMSG/' -5                                    *',
@@ -128,31 +141,73 @@
 
 !*    1.0 READ MARS DATA IN GRIB CODE FORMAT.                           
 !         -----------------------------------                           
-
-      CALL PBOPEN(IUNIT1,FILNM,'r',KRET)                            
-      IF(KRET.LT.0) THEN
-        IF(KRET.EQ.-1) MSG=' COULD NOT OPEN '//FILNM
-        IF(KRET.EQ.-2) MSG='INVALID FILENAME'//FILNM
+     
+      LLEXIST=.FALSE.
+      LNAME = LEN_TRIM(FILNM)
+      INQUIRE(FILE=FILNM(1:LNAME),EXIST=LLEXIST)
+      IF(.NOT. LLEXIST) THEN
+        WRITE (IU06,*) '*************************************'
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+        WRITE (IU06,*) '*  IN INMARS:                       *'
+        WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*************************************'
+        MSG=' COULD NOT FIND FILE '//FILNM
         RETURN 
       ENDIF
 
-      ISIZE=NBIT
-1001  KPLENG=ISIZE*KIND(ISIZE)
-      IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
-      CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
-      IF(KRET.EQ.-1) MSG='PBGRIB : END OF FILE ENCOUNTED'
-      IF(KRET.EQ.-2) MSG='PBGRIB : FILE HANDLING ERROR'
-      IF(KRET.EQ.-3) THEN 
-        DEALLOCATE(KGRIB)
-        CALL KGRIBSIZE(IU06, IUNIT1, KLEN, ISIZE, 'INMARS')
-        GOTO 1001
+      IF(IRANK.EQ.IREAD) THEN
+        CALL PBOPEN(IUNIT1,FILNM,'r',KRET)                            
+        IF(KRET.LT.0) THEN
+          IF(KRET.EQ.-1) MSG=' COULD NOT OPEN '//FILNM
+          IF(KRET.EQ.-2) MSG='INVALID FILENAME'//FILNM
+          RETURN 
+        ENDIF
+
+        ISIZE=NBIT
+1001    KPLENG=ISIZE*KIND(ISIZE)
+        IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+        CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
+        IF(KRET.EQ.-1) MSG='PBGRIB : END OF FILE ENCOUNTED'
+        IF(KRET.EQ.-2) MSG='PBGRIB : FILE HANDLING ERROR'
+        IF(KRET.EQ.-3) THEN 
+          DEALLOCATE(KGRIB)
+          CALL KGRIBSIZE(IU06, IUNIT1, KLEN, ISIZE, 'INMARS')
+          GOTO 1001
+        ENDIF
+        IF(KRET.LT.0) RETURN
+
+        CALL PBCLOSE(IUNIT1,KRET)
+        IF(KRET.EQ.-1) MSG='PBCLOSE :FILE HANDLING ERROR'
+        IF(KRET.LT.0) RETURN
       ENDIF
-      IF(KRET.LT.0) RETURN
 
-      CALL PBCLOSE(IUNIT1,KRET)
-      IF(KRET.EQ.-1) MSG='PBCLOSE :FILE HANDLING ERROR'
-      IF(KRET.LT.0) RETURN
+      WRITE(IU06,*) ' SUB. INMARS - READ FROM ',FILNM
 
+      CALL MPL_BARRIER(CDSTRING='INMARS: KGRIB')
+
+!     SEND GRIB DATA TO THE OTHER PE'S
+!     --------------------------------
+      IF(NPROC.GT.1) THEN
+        CALL GSTATS(619,0)
+        IF(IRANK.EQ.IREAD) THEN
+          IBUF(1)=ISIZE
+          IBUF(2)=KLEN
+        ENDIF
+        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=1,
+     &                     CDSTRING='INMARS IBUF:')
+        IF(IRANK.NE.IREAD) THEN
+          ISIZE=IBUF(1)
+          KLEN=IBUF(2)
+          ALLOCATE(KGRIB(ISIZE))
+        ENDIF
+
+        CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=2,
+     &                     CDSTRING='INMARS: KGRIB')
+
+        CALL GSTATS(619,1)
+      ENDIF
 
 ! ----------------------------------------------------------------------
 

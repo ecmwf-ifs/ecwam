@@ -34,7 +34,8 @@
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG
+     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
+     &            USTOKESG ,VSTOKESG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -53,7 +54,7 @@
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '   WAMNORM ON ',CDTPRO
           WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
-     &     '           MAXIMUM      NUMBER OF SEA POINTS' 
+     &     '           MAXIMUM        SEA POINTS' 
         ELSE
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '   WAMNORM ON ',CDTPRO,' SEE PE 1 OUTPUT'
@@ -395,6 +396,28 @@
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MAXIMUM WAVE PERIOD:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(40).AND.(GFLAG(40).OR.FFLAG(40).OR.PFLAG(40))) THEN
+          CALL WAMNORM(USTOKESG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(40),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM U-STOKESDRIFT:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(41).AND.(GFLAG(41).OR.FFLAG(41).OR.PFLAG(41))) THEN
+          CALL WAMNORM(VSTOKESG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(41),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM V-STOKESDRIFT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF

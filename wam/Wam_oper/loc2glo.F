@@ -15,7 +15,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTGRID (ALOC, GLO, IJS, IJL, IG)
+!       *CALL* *LOC2GLO (ALOC, GLO, IJS, IJL, IG)
 !         *ALOC*   - LOCAL BLOCK ARRAY.
 !         *GLO*    - LOCAL BLOCK ARRAY.
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.

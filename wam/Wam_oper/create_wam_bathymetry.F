@@ -103,6 +103,8 @@
 
       FRATIO=1.1
 
+      IU06=6
+
 !     READ INPUT SELECTION
 !     --------------------
       READ(5,*) CLINE
@@ -191,12 +193,13 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
-              NLONRGG(K) = MAX(NINT(NX*COSPH(K)),2)
+             NLONRGG(K) = MAX(NINT(NX*COSD(XLAT(K))),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX
           ENDIF
+          WRITE(IU06,*) 'POINTS PER LATITUDES: ',K, XLAT(K), NLONRGG(K)
         ENDIF
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO

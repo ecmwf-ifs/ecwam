@@ -36,7 +36,7 @@
 !           *IU00*   - ERROR STANDARD OUTPUT.
 !           *IU05*   - USER INPUT UNIT.
 !           *IU06*   - PRINTER OUTPUT.
-!           *wam_grid7*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
+!           *wam_grid_tables*   - INPUT  UNIT OF PRECOMPUTED COMMON BLOCKS.
 !                      (OUTPUT OF PREPROC).
 !           *wam_subgrid*   - INPUT  UNIT OF COMMON UBUF.
 !                      (OUTPUT OF PREPROC).

@@ -75,7 +75,7 @@
 
       IF (FRSTIME) THEN
         CPATH = 'out_intp'
-        OPEN (IU_INTP,FILE=CPATH,STATUS='NEW', FORM='FORMATTED')
+        OPEN (IU_INTP,FILE=CPATH,STATUS='UNKNOWN', FORM='FORMATTED')
         FRSTIME = .FALSE.
       ENDIF
          
@@ -98,10 +98,14 @@
             HS     = WHGTTG(I,J) 
             USTAR2 = MAX(CD*MAX(U10**2,EPSU10),EPSUS)
             USTAR  = SQRT(USTAR2)
+            SQTAUW   = SQRT(TAUWG(I,J)*USTAR2)
 
             TSTAR = G*ITIME/USTAR
+            DSTAR = G*DEPTH(I,J)/(USTAR**2)
             E     = HS**2/16.
             ESTAR = G**2*E/(USTAR**4)
+
+            FMSTAR=USTAR/(MWP1G(I,J)*G)
 
             TSTAR_0 = 4.26*10.**5
             XP      = 1.5
@@ -138,22 +142,22 @@
      &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),
      &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,
      &                       USTAR,CD,BETA,T10,FETCH10,E10,
-     &                       E_OBS,FP10
+     &                       TSTAR, FMSTAR, DSTAR, ESTAR
 
             WRITE(IU06,61) NGY-J+1,DEPTH(1,1),ITIME/3600.,
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,
      &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,
      &                     USTAR,CD,BETA,T10,FETCH10,E10,
-     &                     E_OBS,FP10
+     &                     TSTAR, FMSTAR, DSTAR, ESTAR
 
           ENDIF
         ENDDO
         CALL FLUSH(IU_INTP)
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,
-     V       2F8.5,2E10.3,3F8.5)
+     V       2F12.5,2E10.3,7(1x,F14.5))
    61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,
-     V       2F8.5,2E10.3,3F8.5)
+     V       2F12.5,2E10.3,7(1xF14.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 

@@ -1,4 +1,5 @@
-      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W,LFRSTIM)
+      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W,LWCUR,
+     &                   LFRSTIM)
 
 ! ----------------------------------------------------------------------
 
@@ -15,6 +16,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
       USE YOWCOUT  , ONLY : LFDB
+      USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -27,7 +29,7 @@
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
-      USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
+      USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -37,6 +39,7 @@
       LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
       LOGICAL :: LLIRANK 
       LOGICAL LFRST
+      LOGICAL :: LWCUR
       LOGICAL LFRSTIM
       REAL ZHOOK_HANDLE
 
@@ -50,7 +53,7 @@
       IF(LFRST) THEN
         IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
         CALL MPUSERIN(IU05,LMESSPASS,LFDB,LWCOU,LL1D,LSUBGRID,
-     &                IPROPAGS)
+     &                IPROPAGS, IREFRA)
         LFRST=.FALSE.
       ENDIF
 
@@ -139,6 +142,19 @@
       IF(.NOT.ALLOCATED(FMEAN))
      &  ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))
       IF(.NOT.ALLOCATED(THQ)) ALLOCATE(THQ(NSTART(IRANK):NEND(IRANK)))
+
+      IF ( (LWCOU .AND. LWCUR) .OR.
+     &      IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        IF(.NOT.ALLOCATED(U)) THEN
+          ALLOCATE(U(NINF-1:NSUP,NBLO))
+          U=0.
+        ENDIF
+        IF(.NOT.ALLOCATED(V)) THEN
+          ALLOCATE(V(NINF-1:NSUP,NBLO))
+          V=0.
+        ENDIF
+      ENDIF
+
 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',1,ZHOOK_HANDLE)
  

@@ -13,7 +13,7 @@
 # @ notify_user = wab@ecmwf.int 
 # @ account_no = ecrmwa
 
-#@ resources = ConsumableCpus(1) ConsumableMemory(100mb) 
+#@ resources = ConsumableCpus(1) ConsumableMemory(500mb) 
 
 # @ queue 
 
@@ -35,7 +35,7 @@
 # See MPIF_PATH=
 #.
 #. This version of WAM was extracted from the ECMWF software data base
-#. from perforce branch wab_CY31R2_extract_WAM
+#. from perforce branch wab_CY35R1_extract_WAM
 #. Note that we have tried to remove much of the extra features that were
 #. introduced when both WAM and the atmospheric models were coupled.
 #. Some features do however remain. As much as possible, we have replaced
@@ -357,10 +357,10 @@ SOURCE	= parkind1.F90 \
 parkind2.F90 \
 mpl_mpif.F90 \
 yomhook.F90 \
-yomoml.F90 \
+oml_mod.F90 \
 mpl_data_module.F90 \
 yomabrt.F90 \
-sdl_module.F90 \
+sdl_mod.F90 \
 mpl_abort_mod.F90 \
 mpl_message_mod.F90 \
 mpl_myrank_mod.F90 \
@@ -394,13 +394,14 @@ mpl_setdflt_comm_mod.F90 \
 mpl_write_mod.F90 \
 mpl_module.F90 \
 yomgstats.F90 \
-fdbsubs.F90 \
+fdbsubs_mod.F90 \
 cmpl_binding.F90 \
 convin.F90 \
 convout.F90 \
 endian.c \
 env.c \
-cargs.c
+cargs.c \
+fnecsx.c
 OBJECTS1	=	$(SOURCE:.F=.o)
 OBJECTS2	=	$(SOURCE:.F90=.o)
 OBJECTS3	=	$(SOURCE:.c=.o)
@@ -420,8 +421,10 @@ clean:
 #
 EOFPRO
 
+cat makefile_mpl
 
 gmake -f makefile_mpl
+
 
 #.
 # The makefile for the wam code 
@@ -498,9 +501,9 @@ chmod go+rx ${LIBS}/libwam.a
 #          32-bit BUT make sure you compile both wam and the emoslib witht the same precission !!!
 
 \rm -f ${LIBS}/libemos.a 
-#          We are using cycle 300 of emoslib but in principle it should
+#          We are using cycle 351 of emoslib but in principle it should
 #          also run with any recent cycle.
-ln -s /home/ma/emos/lib/000300/libemos.R64.D64.I32.a ${LIBS}/libemos.a
+ln -s /home/ma/emos/lib/000351/libemos.R64.D64.I32.a ${LIBS}/libemos.a
 
 # IMPORTANT NOTE: you will also need the message passing library (mpi). In the ECMWF setup
 #                 the mpi library is automatically loaded by using the mpxlf90_r command.

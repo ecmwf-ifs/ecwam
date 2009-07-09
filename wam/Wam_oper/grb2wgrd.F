@@ -117,7 +117,8 @@
 
       REAL FIELD(NGX,NGY)                                          
       REAL ZDELLO(NGY)
-      REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), WORK(:,:)
+      REAL :: WK(2)
+      REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), WORK(:,:,:)
       REAL, ALLOCATABLE :: YLAT(:)
 
       CHARACTER*2 :: CDUM 
@@ -125,6 +126,8 @@
       CHARACTER CDATE*14
 
       LOGICAL LLINTERPOL, LLNEAREST, LLNONWAVE, LLOCEAN, LASTREAM
+      LOGICAL :: LLSCANNS
+      LOGICAL :: LLDIRFLD
 
       DATA KPARFRSTT,KPARFRSTB /0,0/
                                                                         
@@ -133,6 +136,7 @@
       CSTREAM='****'
       KSEC3 = KSEK3 
       PSEC3 = PSEK3 
+
 
 !*    UNPACK MARS FIELDS.                                           
 !     -------------------                                           
@@ -180,6 +184,20 @@
         ALLOCATE(KSEC2(KSEC2_SIZE))
         GOTO 1000
       ENDIF
+
+      IF(KSEC2(11).EQ.0) THEN
+        LLSCANNS=.TRUE.
+      ELSEIF(KSEC2(11).EQ.64 .OR. KSEC2(11).EQ.2) THEN
+        LLSCANNS=.FALSE.
+      ELSE
+        WRITE(IU06,*) '***********************************'
+        WRITE(IU06,*) '*   ERROR IN SUB. GRB2WGRD        *'
+        WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
+        WRITE(IU06,*) ' KSEC2(11) = ', KSEC2(11)
+        WRITE(IU06,*) '***********************************'
+        CALL ABORT1
+      ENDIF
+
 
 !     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
       IF(KSEC1(37).EQ.4) THEN
@@ -322,8 +340,10 @@
       ALLOCATE(PSEC4(KLENP))
       KRET  = 1                                                         
 
+      CALL GSTATS(1703,0)
       CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
      &             PSEC4, KLENP, KGRIB, KLENG, KWORD, 'D', KRET)
+      CALL GSTATS(1703,1)
       IF(KRET.GT.0) THEN                                                
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
@@ -377,7 +397,12 @@
 
 !     DETERMINE FORECAST PERIOD.
 
-      IFORP = JCONS*KSEC1(16)
+      IF(KSEC1(18).EQ.2) THEN
+!       THE DATA ARE VALIB BETWEEN TWO TMES. TAKE THE MIDDLE POINT
+        IFORP = JCONS*(KSEC1(16)+KSEC1(17))/2
+      ELSE
+        IFORP = JCONS*KSEC1(16)
+      ENDIF
 
 !     GET DATE OF THE FORECAST INSTEAD OF STARTING DATE
 
@@ -404,14 +429,22 @@
       ALLOCATE(YLAT(NR))
 
       IF(.NOT.LLOCEAN) THEN
-        RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+        YFRST = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
      &           0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
+
+        YLAST = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
+     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
+
+        IF(LLSCANNS) THEN
+          RMONOP = YFRST 
+          RMOSOP = YLAST 
+        ELSE
+          RMONOP = YLAST 
+          RMOSOP = YFRST 
+        ENDIF
 
         RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
      &           0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
-
-        RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
-     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
 
 !!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
 !!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
@@ -437,8 +470,13 @@
         DO KK=1,NR
           YLAT(KK)=KSEC1(KK+KSKIP)*1.E-6
         ENDDO
-        RMONOP = YLAT(1) 
-        RMOSOP = YLAT(NR) 
+        IF(LLSCANNS) THEN
+          RMONOP = YLAT(1) 
+          RMOSOP = YLAT(NR) 
+        ELSE
+          RMONOP = YLAT(NR) 
+          RMOSOP = YLAT(1) 
+        ENDIF
         RMOWEP = KSEC1(63)*1.E-6 
         RMOEAP = KSEC1(65)*1.E-6
       ENDIF
@@ -456,17 +494,29 @@
         ENDDO
 
         DO J=1,NR
-          JSN=NR-J+1
+          IF(LLSCANNS) THEN
+            JSN=NR-J+1
+          ELSE
+            JSN=J
+          ENDIF
           RLONRGG(JSN) = KSEC2(22+J+ISTART) 
         ENDDO
 
         IDUM = KSEC2(4)-ISTART*KSEC2(10)
-        RMONOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+        YFRST = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
      &           0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
 
         IDUM = KSEC2(7)+ISTOP*KSEC2(10)
-        RMOSOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+        YLAST = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
      &         0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
+
+        IF(LLSCANNS) THEN
+          RMONOP = YFRST 
+          RMOSOP = YLAST 
+        ELSE
+          RMONOP = YLAST 
+          RMOSOP = YFRST 
+        ENDIF
 
       ELSEIF(JRGG.EQ.0) THEN
         RLONRGG=NC
@@ -519,8 +569,8 @@
             WRITE(IU06,*) '*  AREA IN BETWEEN.'
             WRITE(IU06,*) '*                                         *'
             WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
-            KPARFRSTT=IPARAM
           ENDIF
+          KPARFRSTT=IPARAM
         ENDIF
         ITOP=INT((AMONOP-RMONOP)/DELLA)+2
       ENDIF
@@ -539,8 +589,8 @@
             WRITE(IU06,*) '*                                         *'
             WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
             WRITE(IU06,*) '*                                         *'
-          KPARFRSTB=IPARAM
           ENDIF
+          KPARFRSTB=IPARAM
         ENDIF
         IBOT=INT((RMOSOP-AMOSOP)/DELLA)+2
       ENDIF
@@ -593,6 +643,8 @@
          ENDIF
       ENDIF
 
+      IF(.NOT.LLSCANNS) LLINTERPOL=.TRUE.
+
 !     TRANSFORM WAVE SPECTRAL VALUE TO THEIR ACTUAL SCALE
       KKK=0
       MMM=0
@@ -638,16 +690,13 @@
         IF((IPARAM.EQ.230 .OR. IPARAM.EQ.235 .OR. IPARAM.EQ.238 .OR.
      &      IPARAM.EQ.242 .OR. IPARAM.EQ.249) .AND.
      &      CSTREAM.NE.'****') THEN
-          WRITE(IU06,*) '****************************************'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. GRB2WGRD      *'
-          WRITE(IU06,*) '*    ============================      *'
-          WRITE(IU06,*) '*                                      *'
-          WRITE(IU06,*) '* GRB2WGRD NOT YET READY TO INTERPOLATE*' 
-          WRITE(IU06,*) '* DIRECTIONAL FIELDS !!                *'
-          WRITE(IU06,*) '*                                      *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS               *'
-          WRITE(IU06,*) '****************************************'
-          CALL ABORT1
+
+!         WE HAVE ASSUMED THAT THE FIELDS ARE GIVEN IN DEGREES !!!
+          LLDIRFLD=.TRUE.
+          NDIM=2
+        ELSE
+          LLDIRFLD=.FALSE.
+          NDIM=1
         ENDIF
 
         IF(.NOT. LLNONWAVE) THEN 
@@ -705,35 +754,80 @@
 
         KKMIN=1-ITOP
         KKMAX=NR+IBOT
-        ALLOCATE(WORK(1-IPERIODIC:NC+IPERIODIC,KKMIN:KKMAX))
+        ALLOCATE(WORK(1-IPERIODIC:NC+IPERIODIC,KKMIN:KKMAX,NDIM))
 
-        DO KK=KKMIN,0
-          DO II=1-IPERIODIC,NC+IPERIODIC
-            WORK(II,KK) = PMISS
+
+        DO ID=1,NDIM
+          DO KK=KKMIN,0
+            DO II=1-IPERIODIC,NC+IPERIODIC
+              WORK(II,KK,ID) = PMISS
+            ENDDO
           ENDDO
         ENDDO
 
-        DO KK=NR+1,KKMAX
-          DO II=1-IPERIODIC,NC+IPERIODIC
-            WORK(II,KK) = PMISS
+        DO ID=1,NDIM
+          DO KK=NR+1,KKMAX
+            DO II=1-IPERIODIC,NC+IPERIODIC
+              WORK(II,KK,ID) = PMISS
+            ENDDO
           ENDDO
         ENDDO
 
-        L = 0
-        DO KK=1,NR
-          JSN=NR-KK+1
-          DO II=1,RLONRGG(JSN)
-            L = L+1
-            WORK(II,KK) = PSEC4(L)
-          ENDDO
-        ENDDO
+        IF(LLSCANNS) THEN
+          L = 0
+          IF(LLDIRFLD) THEN
+            DO KK=1,NR
+              JSN=NR-KK+1
+              DO II=1,RLONRGG(JSN)
+                L = L+1
+                IF(PSEC4(L).NE.PMISS) THEN
+                  WORK(II,KK,1) = SIND(PSEC4(L))
+                  WORK(II,KK,2) = COSD(PSEC4(L))
+                ENDIF
+              ENDDO
+            ENDDO
+          ELSE
+            DO KK=1,NR
+              JSN=NR-KK+1
+              DO II=1,RLONRGG(JSN)
+                L = L+1
+                WORK(II,KK,1) = PSEC4(L)
+              ENDDO
+            ENDDO
+          ENDIF
+        ELSE
+          L = 0
+          IF(LLDIRFLD) THEN
+            DO KK=NR,1,-1
+              JSN=KK
+              DO II=1,RLONRGG(JSN)
+                L = L+1
+                IF(PSEC4(L).NE.PMISS) THEN
+                  WORK(II,KK,1) = SIND(PSEC4(L))
+                  WORK(II,KK,2) = COSD(PSEC4(L))
+                ENDIF
+              ENDDO
+            ENDDO
+          ELSE
+            DO KK=NR,1,-1
+              JSN=KK
+              DO II=1,RLONRGG(JSN)
+                L = L+1
+                WORK(II,KK,1) = PSEC4(L)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
         DEALLOCATE(PSEC4)
 
         IF(IPERIODIC.EQ.1) THEN
-          DO KK=1,NR                                                
-          JSN=NR-KK+1
-          WORK(0,KK)= WORK(RLONRGG(JSN),KK)
-          WORK(RLONRGG(JSN)+1,KK)= WORK(1,KK)
+          DO ID=1,NDIM
+            DO KK=1,NR                                                
+            JSN=NR-KK+1
+            WORK(0,KK,ID)= WORK(RLONRGG(JSN),KK,ID)
+            WORK(RLONRGG(JSN)+1,KK,ID)= WORK(1,KK,ID)
+            ENDDO
           ENDDO
         ENDIF
 
@@ -763,7 +857,7 @@
             KK1=MIN(KK+1,NR)
             KSN1=NR-KK1+1
             DK1=YLAT(KK)-XK
-            DK2=1.-DK1
+          DK2=1.-DK1
           ENDIF
 
 
@@ -804,10 +898,10 @@
             IF(LLNEAREST) THEN
 !             DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
 !             IF SO USE THE CLOSEST GRID POINT VALUE.
-              IF(WORK(II,KK).EQ.PMISS.OR.
-     &           WORK(II1,KK).EQ.PMISS.OR.
-     &           WORK(IIP,KK1).EQ.PMISS.OR.
-     &           WORK(IIP1,KK1).EQ.PMISS) THEN
+              IF(WORK(II,KK,1).EQ.PMISS.OR.
+     &           WORK(II1,KK,1).EQ.PMISS.OR.
+     &           WORK(IIP,KK1,1).EQ.PMISS.OR.
+     &           WORK(IIP1,KK1,1).EQ.PMISS) THEN
                 IF(DK1.LE.0.5) THEN
                   KCL=KK
                   ICL=II1
@@ -817,27 +911,35 @@
                   ICL=IIP1
                   IF(DIIP1.LE.0.5) ICL=IIP
                 ENDIF
-                FIELD(I,K)=WORK(ICL,KCL)
+                IF(LLDIRFLD) THEN
+                  IF(WORK(ICL,KCL,2).NE.PMISS) THEN
+                    FIELD(I,K)=ATAN2D(WORK(ICL,KCL,1),WORK(ICL,KCL,2))
+                  ELSE
+                    FIELD(I,K)=PMISS
+                  ENDIF
+                ELSE
+                  FIELD(I,K)=WORK(ICL,KCL,1)
+                ENDIF
 
 !               FOR NON WAVE FIELD, NON MISSING VALUE OVER SEA IS NEEDED
                 IF(LLNONWAVE) THEN
                   IF(FIELD(I,K).EQ.PMISS) THEN
                     NCOUNT=0
                     FIELD(I,K)=0.
-                    IF(WORK(II,KK).NE.PMISS) THEN
-                      FIELD(I,K)=FIELD(I,K)+WORK(II,KK)
+                    IF(WORK(II,KK,1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(II,KK,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF(WORK(II1,KK).NE.PMISS) THEN
-                      FIELD(I,K)=FIELD(I,K)+WORK(II1,KK)
+                    IF(WORK(II1,KK,1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(II1,KK,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF(WORK(IIP,KK1).NE.PMISS) THEN
-                      FIELD(I,K)=FIELD(I,K)+WORK(IIP,KK1)
+                    IF(WORK(IIP,KK1,1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(IIP,KK1,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
-                    IF(WORK(IIP1,KK1).NE.PMISS) THEN
-                      FIELD(I,K)=FIELD(I,K)+WORK(IIP1,KK1)
+                    IF(WORK(IIP1,KK1,1).NE.PMISS) THEN
+                      FIELD(I,K)=FIELD(I,K)+WORK(IIP1,KK1,1)
                       NCOUNT=NCOUNT+1
                     ENDIF
                     IF(NCOUNT.GT.0) THEN
@@ -847,14 +949,34 @@
                 ENDIF
 
               ELSE
-                FIELD(I,K)=DK2*(DII2*WORK(II,KK)+DII1*WORK(II1,KK)) +
-     &                  DK1*(DIIP2*WORK(IIP,KK1)+DIIP1*WORK(IIP1,KK1))
+                DO ID=1,NDIM
+                  WK(ID)=DK2*(DII2*WORK(II,KK,ID)+
+     &                        DII1*WORK(II1,KK,ID)) +
+     &                   DK1*(DIIP2*WORK(IIP,KK1,ID)+
+     &                        DIIP1*WORK(IIP1,KK1,ID))
+                ENDDO
+                IF(LLDIRFLD) THEN
+                  FIELD(I,K)=ATAN2D(WK(1),WK(2))
+                ELSE
+                  FIELD(I,K)=WK(1)
+                ENDIF
               ENDIF
+
             ELSE
-              FIELD(I,K)=DK2*(DII2*WORK(II,KK)+DII1*WORK(II1,KK)) +
-     &                DK1*(DIIP2*WORK(IIP,KK1)+DIIP1*WORK(IIP1,KK1))
+
+              DO ID=1,NDIM
+                WK(ID)=DK2*(DII2*WORK(II,KK,ID)+
+     &                      DII1*WORK(II1,KK,ID)) +
+     &                 DK1*(DIIP2*WORK(IIP,KK1,ID)+
+     &                      DIIP1*WORK(IIP1,KK1,ID))
+              ENDDO
+              IF(LLDIRFLD) THEN
+                FIELD(I,K)=ATAN2D(WK(1),WK(2))
+              ELSE
+                FIELD(I,K)=WK(1)
+              ENDIF
             ENDIF
-            
+
           ENDDO
         ENDDO
 

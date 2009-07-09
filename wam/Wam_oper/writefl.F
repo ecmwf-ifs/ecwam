@@ -1,4 +1,5 @@
-      SUBROUTINE WRITEFL(FL,MINF,MSUP,FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
+      SUBROUTINE WRITEFL(FL, KINF, KSUP, MINF, MSUP,
+     &                   FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
 
 ! ---------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -9,9 +10,11 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *WRITEFL*(FL,MINF,MSUP,FILENAME,IUNIT,
-!    1               LPBOPEN,LPBCLOSE)
+!     CALL *WRITEFL(FL, KINF, KSUP, MINF, MSUP,
+!    &              FILENAME,IUNIT,LPBOPEN,LPBCLOSE)
 !     *FL*        ARRAY TO BE WRITTEN TO FILE
+!     *KINF*      SECOND LOWER DIMENSION BOUND OF FL
+!     *KSUP*      SECOND UPPER DIMENSION BOUND OF FL
 !     *MINF*      THIRD LOWER DIMENSION BOUND OF FL
 !     *MSUP*      THIRD UPPER DIMENSION BOUND OF FL
 !     *FILENAME*  FILENAME (INCLUDING PATH) OF TARGET FILE
@@ -33,8 +36,8 @@
 
 !     IF FORTRAN WRITE IS USED THEN IN THE CASE OF MESSAGE PASSING
 !     FL IS WRITTEN AS UNFORMATTED BINARY TO FILENAME CONNECTED
-!     TO UNIT IU12. IN THE NON MESSAGE PASSING CASE, FL IS WRITTEN AS
-!     UNFORMATTED BINARY TO FORTRAN UNIT SPECIFIED BY IU12.
+!     TO UNIT IUNIT. IN THE NON MESSAGE PASSING CASE, FL IS WRITTEN AS
+!     UNFORMATTED BINARY TO FORTRAN UNIT SPECIFIED BY IUNIT.
 
 
 !     EXTERNALS.
@@ -53,10 +56,9 @@
       USE YOWGRID  , ONLY : IGL
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
       USE YOWMPP   , ONLY : NPROC, NPRECR
-      USE YOWPARAM , ONLY : NANG     ,NIBLO    ,CLDOMAIN ,LL1D
+      USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNIT  , ONLY : IU12
 
 ! ----------------------------------------------------------------------
 
@@ -67,7 +69,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(0:NIBLO,NANG,MINF:MSUP) :: FL
+      REAL,DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
       REAL,ALLOCATABLE :: RFL(:,:,:)
 
 ! ----------------------------------------------------------------------
@@ -89,7 +91,7 @@
             CALL ABORT1
           ENDIF
         ENDIF
-        KOUNT = (NIBLO+1)*NANG*(MSUP-MINF+1)*NPRECR
+        KOUNT = (NIBLO+1)*(KSUP-KINF+1)*(MSUP-MINF+1)*NPRECR
         IF(LL1D .OR. NPROC.EQ.1) THEN
           CALL PBWRITE(IUNIT,FL,KOUNT,KRET)
           IF(KRET.LT.0) THEN
@@ -105,9 +107,9 @@
         ELSE
 !         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !         BUT THE BINARY INPUT FILES SHOULD BE IN THE OLD MAPPING
-          ALLOCATE(RFL(0:NIBLO,NANG,MINF:MSUP))
+          ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
           DO M=MINF,MSUP
-            DO K=1,NANG
+            DO K=KINF,KSUP
               DO IJ=0,NIBLO
                 RFL(IJ,K,M)=FL(IJ2NEWIJ(IJ),K,M)
               ENDDO
@@ -140,28 +142,34 @@
           ENDIF
         ENDIF
       ELSE
-        IF (LMESSPASS .OR. IGL.EQ.1) THEN
-          OPEN(IU12,FILE=FILENAME,STATUS='UNKNOWN',FORM='UNFORMATTED')
-
-          IF(LL1D .OR. NPROC.EQ.1) THEN
-            WRITE(IU12) (((FL(J1,J2,J3),
-     &                      J1=0,NIBLO),
-     &                      J2=1,NANG),
-     &                      J3=MINF,MSUP)
-          ELSE
-!         WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
-!         BUT THE BINARY INPUT FILES SHOULD BE IN THE OLD MAPPING
-            WRITE(IU12) (((FL(IJ2NEWIJ(J1),J2,J3),
-     &                      J1=0,NIBLO),
-     &                      J2=1,NANG),
-     &                      J3=MINF,MSUP)
-
-          ENDIF
-
-          IF (ITEST.GE.2)
-     &      WRITE(IU06,*) ' SUB. WRITEFL: OUTPUT OF FL DONE'
-          CLOSE(IU12)
+        LFILE=0
+        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IF(LPBOPEN) THEN
+          IUNIT=I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'w', 'u', 0)
+        ELSE
+          IUNIT=I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'a', 'u', 0)
         ENDIF
+
+        IF(LL1D .OR. NPROC.EQ.1) THEN
+          WRITE(IUNIT) (((FL(J1,J2,J3),
+     &                    J1=0,NIBLO),
+     &                    J2=KINF,KSUP),
+     &                    J3=MINF,MSUP)
+        ELSE
+!       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
+!       BUT THE BINARY INPUT FILES SHOULD BE IN THE OLD MAPPING
+          WRITE(IUNIT) (((FL(IJ2NEWIJ(J1),J2,J3),
+     &                    J1=0,NIBLO),
+     &                    J2=KINF,KSUP),
+     &                    J3=MINF,MSUP)
+
+        ENDIF
+
+        IF (ITEST.GE.2)
+     &    WRITE(IU06,*) ' SUB. WRITEFL: OUTPUT OF FL DONE',
+     &                   KINF,KSUP,MINF,MSUP
+
+        CLOSE(IUNIT)
       ENDIF
 
       RETURN
