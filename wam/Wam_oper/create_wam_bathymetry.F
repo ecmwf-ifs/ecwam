@@ -364,6 +364,7 @@
         ENDDO
 
 !     COMPUTE MEAN DEPTH 
+      WRITE(*,*) 'COMPUTE MEAN DEPTH'
 
       DO K=1,NY
          DO IX=1,NX
@@ -599,6 +600,7 @@
 
 
       DO M=1,NFRE
+        WRITE(*,*) 'M = ',M
 
         IOBSLAT=1000
         IOBSLON=1000
@@ -606,34 +608,36 @@
         IOBSRLAT=1000
         IOBSRLON=1000
 
-!       NORTH-SOUTH OBSTRUCTIONS
-!       -----------------------
-!       IS=1 is for the south-north advection
-!       IS=2 is for the north-south advection
-        WRITE(*,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
-        DO IS=1,2
-          DO K=1,NY
-            IF(IS.EQ.1) THEN
-              KT=K
-              KB=K-1
-              STEPT=-1./30.
-              STEPB=0.
-            ELSE
-              KT=K+1
-              KB=K
-              STEPT=0.
-              STEPB=1./30.
-            ENDIF
-            XLATT=XLAT(KT)+STEPT
-            XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+        DO K=1,NY
+          DO IX=1,NLONRGG(K)
+           IF(WAMDEPTH(IX,K).LT.0) THEN
 
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
+              XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+
+!             NORTH-SOUTH OBSTRUCTIONS
+!             ------------------------
+!             IS=1 is for the south-north advection
+!             IS=2 is for the north-south advection
+              DO IS=1,2
+                IF(IS.EQ.1) THEN
+                  KT=K
+                  KB=K-1
+                  STEPT=-1./30.
+                  STEPB=0.
+                ELSE
+                  KT=K+1
+                  KB=K
+                  STEPT=0.
+                  STEPB=1./30.
+                ENDIF
+                XLATT=XLAT(KT)+STEPT
+                XLATB=XLAT(KB)+STEPB
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+
                 XLONL=AMOWEP + (REAL(IX-1)-0.5)*ZDELLO(K)
                 IF(XLONL.GT.180.) then
                   XLONL=XLONL-360.
@@ -742,28 +746,21 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+              ENDDO  ! END LOOP ON IS NORTH-SOUTH
 
-!       EAST-WEST OBSTRUCTIONS
-!       -----------------------
-!       IS=1 is for the west-east advection
-!       IS=2 is for the east-west advection
-        WRITE(*,*) 'CREATE EAST-WEST  OBSTRUCTIONS '
-        DO IS=1,2
-          DO K=1,NY
-            XLATT=XLAT(K)+0.5*XDELLA
-            XLATB=XLAT(K)-0.5*XDELLA
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+!             EAST-WEST OBSTRUCTIONS
+!             -----------------------
+!             IS=1 is for the west-east advection
+!             IS=2 is for the east-west advection
+              XLATT=XLAT(K)+0.5*XDELLA
+              XLATB=XLAT(K)-0.5*XDELLA
+              ILATT = NINT((90.- XLATT)*30) + 1
+              ILATT = MAX(1,MIN(ILATT,ILAT))
+              ILATB = NINT((90.- XLATB)*30) + 1
+              ILATB = MAX(1,MIN(ILATB,ILAT))
+              IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
+              DO IS=1,2
                 IF(IS.EQ.1) THEN
                   XLONL=AMOWEP + (REAL(IX-2))*ZDELLO(K)
                   XLONR=AMOWEP + (REAL(IX-1))*ZDELLO(K) -1./30.
@@ -874,43 +871,35 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+              ENDDO  ! END LOOP ON IS EAST-WEST
 
 
-!       NORTH-WEST-SOUTH-EAST OBSTRUCTIONS
-!       ----------------------------------
-!       IS=1 is for the southeast-northwest advection
-!       IS=2 is for the northwest-southeast advection
+!             NORTH-WEST-SOUTH-EAST OBSTRUCTIONS
+!             ----------------------------------
+!             IS=1 is for the southeast-northwest advection
+!             IS=2 is for the northwest-southeast advection
 
-        WRITE(*,*) 'CREATE NORTH-WEST-SOUTH-EAST OBSTRUCTIONS '
+!             first search north-south
+              DO IS=1,2
+                IF(IS.EQ.1) THEN
+                  KT=K
+                  KB=K-1
+                  STEPT=-1./30.
+                  STEPB=0.
+                ELSE
+                  KT=K+1
+                  KB=K
+                  STEPT=0.
+                  STEPB=1./30.
+                ENDIF
+                XLATT=XLAT(KT)+STEPT
+                XLATB=XLAT(KB)+STEPB
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-!       first search north-south
-        DO IS=1,2
-          DO K=1,NY
-            IF(IS.EQ.1) THEN
-              KT=K
-              KB=K-1
-              STEPT=-1./30.
-              STEPB=0.
-            ELSE
-              KT=K+1
-              KB=K
-              STEPT=0.
-              STEPB=1./30.
-            ENDIF
-            XLATT=XLAT(KT)+STEPT
-            XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
-
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*XDELLA
                 IF(XLONL.GT.180.) THEN
@@ -1020,25 +1009,16 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
-              ENDIF
-            ENDDO
 
-          ENDDO
-        ENDDO
+!               then search east-west and average 
+                XLATT=XLAT(K)+(IS-1)*XDELLA
+                XLATB=XLAT(K)-(2-IS)*XDELLA
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-!       then search east-west and average 
-        DO IS=1,2
-          DO K=1,NY
-            XLATT=XLAT(K)+(IS-1)*XDELLA
-            XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
-
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 IF(IS.EQ.1) THEN
                   XLONL=XLON + 1./30.
@@ -1151,43 +1131,34 @@
                 XX=SQRT(XX)
                 IOBSRLAT(IX,K,IS)=MIN(NINT(XX),1000)
 
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+              ENDDO ! END LOOP ON IS 
 
+!             SOUTH-WEST-NORTH-EAST OBSTRUCTIONS
+!             ----------------------------------
+!             IS=1 is for the southwest-northeast advection
+!             IS=2 is for the northeast-southwest advection
 
-!       SOUTH-WEST-NORTH-EAST OBSTRUCTIONS
-!       ----------------------------------
-!       IS=1 is for the southwest-northeast advection
-!       IS=2 is for the northeast-southwest advection
+!             first search north-south
+              DO IS=1,2
+                IF(IS.EQ.1) THEN
+                  KT=K
+                  KB=K-1
+                  STEPT=-1./30.
+                  STEPB=0.
+                ELSE
+                  KT=K+1
+                  KB=K
+                  STEPT=0.
+                  STEPB=1./30.
+                ENDIF
+                XLATT=XLAT(KT)+STEPT
+                XLATB=XLAT(KB)+STEPB
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-        WRITE(*,*) 'CREATE SOUTH-WEST-NORTH-EAST OBSTRUCTIONS '
-
-!       first search north-south
-        DO IS=1,2
-          DO K=1,NY
-            IF(IS.EQ.1) THEN
-              KT=K
-              KB=K-1
-              STEPT=-1./30.
-              STEPB=0.
-            ELSE
-              KT=K+1
-              KB=K
-              STEPT=0.
-              STEPB=1./30.
-            ENDIF
-            XLATT=XLAT(KT)+STEPT
-            XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
-
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*XDELLA
                 IF(XLONL.GT.180.) THEN
@@ -1297,25 +1268,15 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
-              ENDIF
-            ENDDO
+!               then search east-west and average 
+                XLATT=XLAT(K)+(IS-1)*XDELLA
+                XLATB=XLAT(K)-(2-IS)*XDELLA
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-          ENDDO
-        ENDDO
-
-!       then search east-west and average 
-        DO IS=1,2
-          DO K=1,NY
-            XLATT=XLAT(K)+(IS-1)*XDELLA
-            XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
-
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 IF(IS.EQ.1) THEN
                   XLONL=XLON + 1./30.
@@ -1428,57 +1389,49 @@
                 XX=SQRT(XX)
                 IOBSRLON(IX,K,IS)=MIN(NINT(XX),1000)
 
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+              ENDDO  ! END LOOP ON IS
+
+!             GRID CORNER POINT OBSTRUCTIONS
+!             ------------------------------
+!             IS=1 is for the northeast-southwest advection
+!             IS=2 is for the southeast-northwest advection
+!             IS=3 is for the southwest-northeast advection
+!             IS=4 is for the northwest-southeast advection
+
+              DO IS=1,4
 
 
-!       GRID CORNER POINT OBSTRUCTIONS
-!       ------------------------------
-!       IS=1 is for the northeast-southwest advection
-!       IS=2 is for the southeast-northwest advection
-!       IS=3 is for the southwest-northeast advection
-!       IS=4 is for the northwest-southeast advection
+!               FIRST SEARCH NORTH-SOUTH
+                IF(IS.EQ.1) THEN 
+                  KT=K+1
+                  KB=K
+                  STEPT=0.
+                  STEPB=1./30.
+                ELSE IF(IS.EQ.2) THEN
+                  KT=K
+                  KB=K-1
+                  STEPT=-1./30.
+                  STEPB=0.
+                ELSE IF(IS.EQ.3) THEN
+                  KT=K
+                  KB=K-1
+                  STEPT=-1./30.
+                  STEPB=0.
+                ELSE IF (IS.EQ.4) THEN
+                  KT=K+1
+                  KB=K
+                  STEPT=0.
+                  STEPB=1./30.
+                ENDIF
 
-        WRITE(*,*) 'CREATE GRID CORNER OBSTRUCTIONS '
+                XLATT=XLAT(KT)+STEPT
+                XLATB=XLAT(KB)+STEPB
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-!       first search north-south
-        DO IS=1,4
-          DO K=1,NY
-            IF(IS.EQ.1) THEN 
-              KT=K+1
-              KB=K
-              STEPT=0.
-              STEPB=1./30.
-            ELSE IF(IS.EQ.2) THEN
-              KT=K
-              KB=K-1
-              STEPT=-1./30.
-              STEPB=0.
-            ELSE IF(IS.EQ.3) THEN
-              KT=K
-              KB=K-1
-              STEPT=-1./30.
-              STEPB=0.
-            ELSE IF (IS.EQ.4) THEN
-              KT=K+1
-              KB=K
-              STEPT=0.
-              STEPB=1./30.
-            ENDIF
-
-            XLATT=XLAT(KT)+STEPT
-            XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
-
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
                 IF(XLONL.GT.180.) THEN
                   XLONL=XLONL-360.
@@ -1557,6 +1510,7 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
+
                   DO I=1,ILONR
                     NIOBSLON=0
                     DO J=ILATT,ILATB
@@ -1587,31 +1541,22 @@
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
-              ENDIF
-            ENDDO
 
-          ENDDO
-        ENDDO
+!               THEN SEARCH EAST-WEST AND AVERAGE 
 
-!       then search east-west and average 
-        DO IS=1,4
-          DO K=1,NY
-            IF(IS.EQ.1 .OR. IS.EQ.4) THEN
-              XLATT=XLAT(K)+XDELLA
-              XLATB=XLAT(K)
-            ELSE
-              XLATT=XLAT(K)
-              XLATB=XLAT(K)-XDELLA
-            ENDIF
-            ILATT = NINT((90.- XLATT)*30) + 1
-            ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*30) + 1
-            ILATB = MAX(1,MIN(ILATB,ILAT))
-            IF(ILATB.EQ.ILAT+1)ILATB=ILAT
+                IF(IS.EQ.1 .OR. IS.EQ.4) THEN
+                  XLATT=XLAT(K)+XDELLA
+                  XLATB=XLAT(K)
+                ELSE
+                  XLATT=XLAT(K)
+                  XLATB=XLAT(K)-XDELLA
+                ENDIF
+                ILATT = NINT((90.- XLATT)*30) + 1
+                ILATT = MAX(1,MIN(ILATT,ILAT))
+                ILATB = NINT((90.- XLATB)*30) + 1
+                ILATB = MAX(1,MIN(ILATB,ILAT))
+                IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
-            DO IX=1,NLONRGG(K)
-              IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 IF(IS.EQ.1 .OR. IS.EQ.2) THEN
                   XLONL=XLON + 1./30.
                   XLONR=XLON + ZDELLO(K) 
@@ -1723,10 +1668,12 @@
                 XX=SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
+              ENDDO  ! END LOOP ON IS (CORNER INDEX)
+
+
+            ENDIF ! LOOP ON SEA POINTS ONLY
+          ENDDO ! END LOOP ON IX
+        ENDDO ! END LOOp ON K
 
 
 !       OUTPUT OBSTRUCTIONS
@@ -1818,7 +1765,7 @@
               STEPLAT=0.25*XDELLA
             ENDIF 
             DO K=1,NY
-               DO IX=1,NLONRGG(K)
+              DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
@@ -1940,6 +1887,7 @@
 
 !       OUTPUT OBSTRUCTIONS
 !       FOR GLOBAL FIELD (in the same file as mean bathymetry)
+
         DO IS =1,2
           DO K=1,NY
            WRITE(CX,'(I4.4)') NLONRGG(K) 

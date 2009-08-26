@@ -135,8 +135,11 @@
 
       USE MPL_MODULE
       USE FDBSUBS_MOD
+      USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
       IMPLICIT NONE
+
+      REAL ZHOOK_HANDLE
 
 !*  DUMMY ARGUMENTS:
 !   ----------------
@@ -144,14 +147,13 @@
       LOGICAL LDWCOU, LFDBIOOUT, LGRHDIFS,LNEWLVTP 
 
       INTEGER KU06, KINF, KSUP, KANG, KFRE, KGX, KGY, KIBLO, KBLO,
-     &        KRANK, KPROC, KSEND, IK, IM, KENSFNB, KTOTENS, KSYSNB,
+     &        KRANK, KPROC, IK, IM, KENSFNB, KTOTENS, KSYSNB,
      &        KMETNB, KLONRGG(KGY), LFILE, IUOUT, KOUNT, KTEST, KFDB,
      &        KXLT(KIBLO, KBLO), KXLG(KIBLO, KBLO), KDEXN,
      &        NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4, NPSEK2, NPSEK3,
      &        NTENCODE, KCPLEN, NGRBRESS, KREFDATE
       INTEGER :: IP
       INTEGER, DIMENSION(KPROC) :: KSTART, KEND 
-      INTEGER, DIMENSION(KPROC) :: KRECVCOUNTS
 
       INTEGER KSEK0(NKSEK0), KSEK1(NKSEK1), KSEK2(NKSEK2),
      &        KSEK3(NKSEK3), KSEK4(NKSEK4), IFS_KSEC1(NKSEK1)
@@ -172,15 +174,17 @@
 
       INTEGER, ALLOCATABLE :: IOUTGRIB(:), IPOINTER(:)
 
+      INTEGER, DIMENSION(KPROC) :: ISENDCOUNTS,IRECVCOUNTS
+
       INTEGER ISEC0(NKSEK0), ISEC1(NKSEK1), ISEC2(NKSEK2),
      &        ISEC3(NKSEK3), ISEC4(NKSEK4)
-      INTEGER JSN, JK, JC, IX, ISTEP, IST, IYYYY,
+      INTEGER JSN, JK, JC, IX, ISTEP, IST, IYYYY, ICNT,
      &        IY, IMO, ID, IH, IMN,ISS,IFCST, ITHETA(KANG), IFREQ(KFRE),
      &        IJ, JANG, J1, ILENGOUT, IC,
-     &        IRET, IWORD, IERR, ILENP, ITAG, KSTREAM, IFS_STREAM,
+     &        IRET, IWORD, IERR, ILENP, KSTREAM, IFS_STREAM,
      &        IINDAT,IHHMM,NLEG,IOCCPL
       REAL :: PPMAX, PPMIN, DELTAPP
-      REAL, ALLOCATABLE :: ZSEC4OUT(:),WORK(:),WORK1(:)
+      REAL, ALLOCATABLE :: ZSEC4OUT(:),ZSENDBUF(:),ZRECVBUF(:)
       REAL ZSEC2(NPSEK2), ZSEC3(NPSEK3)
       REAL , DIMENSION(KANG) :: ZTHETA
       REAL , DIMENSION(KFRE) :: ZFREQ
@@ -196,6 +200,8 @@
       LOGICAL :: LASTREAM
 !
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
+
+      IF (LHOOK) CALL DR_HOOK('SPEC2FDB',0,ZHOOK_HANDLE)
 
       ILOCAL=0
 
@@ -475,7 +481,6 @@
       ENDIF
       CALL GSTATS(1987,1)
 
-
 !-----------------------------------------------------------------------
 
 !*    3. OUTPUT GRIB DATA 
@@ -484,6 +489,8 @@
       ISTEP=KPROC
       IF (.NOT.LFDBIOOUT) ISTEP=1
 
+      ALLOCATE(ZSENDBUF(KPROC*(KEND(KRANK)-KSTART(KRANK)+1)))
+      ALLOCATE(ZRECVBUF(KEND(KPROC)))
 
       DO IC=1,KFRE*KANG,ISTEP
 
@@ -494,54 +501,50 @@
 !       ---------------------------------- than PE's)
         IF(KPROC.GT.1) THEN
 
-          DO KSEND=1,IST
-            IM=(((IC-1)+KSEND-1)/KANG)+1
-            IK=(IC-1)+KSEND-(IM-1)*KANG
+          ICNT = 0
+          DO IP=1,KPROC
+            IF (IP <= IST) THEN
+              IM=(((IC-1)+IP-1)/KANG)+1
+              IK=(IC-1)+IP-(IM-1)*KANG
 
-            ALLOCATE(WORK(KSTART(KRANK):KEND(KRANK)))
-
-            DO J1=KSTART(KRANK),KEND(KRANK)
-              WORK(J1) = PSPEC(J1,IK,IM)
-            ENDDO
-
-            ITAG=(IM-1)*KANG+IK
-
-            CALL GSTATS(674,0)
-            DO IP=1,KPROC
-              KRECVCOUNTS(IP)=KEND(IP)-KSTART(IP)+1
-            ENDDO
-
-            ALLOCATE(WORK1(1:KEND(KPROC)))
-            CALL MPL_GATHERV(WORK(KSTART(KRANK):KEND(KRANK)),
-     &                       KRECVCOUNTS=KRECVCOUNTS,
-     &                       PRECVBUF=WORK1(1:KEND(KPROC)),
-     &                       KROOT=KSEND,
-     &                       CDSTRING='SPEC2FDB:')
-            CALL GSTATS(674,1)
-
-            IF (KTEST.GT.1)
-     &          WRITE(KU06,*) 'SUB SPEC2FDB: MPL_GATHERV DONE' 
-
-            DEALLOCATE(WORK)
-
-            IF(KSEND.EQ.KRANK) THEN
-              ALLOCATE(ZSEC4OUT(NTENCODE))
-              CALL GSTATS(1433,0)
-!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
-              DO JC=1,NTENCODE
-                ZSEC4OUT(JC)=0.0
+              DO J1=KSTART(KRANK),KEND(KRANK)
+                ICNT = ICNT + 1
+                ZSENDBUF(ICNT) = PSPEC(J1,IK,IM)
               ENDDO
-!$OMP END PARALLEL DO
-              CALL GSTATS(1433,1)
-
-              DO J1=1,KEND(KPROC)
-                ZSEC4OUT(IPOINTER(J1)) = WORK1(J1)
-              ENDDO
+                          
+              ISENDCOUNTS(IP) = KEND(KRANK) - KSTART(KRANK) + 1
+            ELSE
+              ISENDCOUNTS(IP) = 0
             ENDIF
-            DEALLOCATE(WORK1)
 
-            CALL MPL_BARRIER(CDSTRING='SPEC2FDB:')
-          ENDDO 
+            IF (KRANK <= IST) THEN
+              IRECVCOUNTS(IP) = KEND(IP) - KSTART(IP) + 1
+            ELSE
+               IRECVCOUNTS(IP) = 0 
+            ENDIF
+          ENDDO
+
+          CALL GSTATS(674,0)
+          CALL MPL_ALLTOALLV(ZSENDBUF,ISENDCOUNTS,
+     &                       ZRECVBUF,IRECVCOUNTS,
+     &                       CDSTRING='SPEC2FDB:')
+          CALL GSTATS(674,1)
+
+          IF (KTEST.GT.1)
+     &      WRITE(KU06,*) 'SUB SPEC2FDB: MPL_ALLTOALLV DONE' 
+
+          ALLOCATE(ZSEC4OUT(NTENCODE))
+          CALL GSTATS(1433,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
+          DO JC=1,NTENCODE
+            ZSEC4OUT(JC)=0.0
+          ENDDO
+!$OMP END PARALLEL DO
+          CALL GSTATS(1433,1)
+
+          DO J1=1,KEND(KPROC)
+             ZSEC4OUT(IPOINTER(J1)) = ZRECVBUF(J1)
+          ENDDO
         ELSE
           ALLOCATE(ZSEC4OUT(NTENCODE))
           CALL GSTATS(1433,0)
@@ -657,6 +660,9 @@
 
       ENDDO
 
+      DEALLOCATE(ZSENDBUF)
+      DEALLOCATE(ZRECVBUF)
+
 !*      5. DEALLOCATION.
 !       ----------------
 
@@ -678,6 +684,7 @@
           ENDIF
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('SPEC2FDB',1,ZHOOK_HANDLE)
       RETURN
 
 !-----------------------------------------------------------------------

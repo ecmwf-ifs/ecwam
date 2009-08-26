@@ -323,7 +323,11 @@
 
       BETAMAX = 1.20
       ZALP    = 0.0110
-      ALPHA   = 0.0095
+      IF(ML.GT.30) THEN
+        ALPHA   = 0.0090
+      ELSE
+        ALPHA   = 0.0095
+      ENDIF
       XKAPPA  = 0.40
 
 
