@@ -4,8 +4,8 @@
 
 !*    ** *GRIB HEADERS:  COMMON (DEFAULT) GRIB HEADERS.
 
-      INTEGER :: IMDLGRBID_G=121
-      INTEGER :: IMDLGRBID_M=221
+      INTEGER :: IMDLGRBID_G=104
+      INTEGER :: IMDLGRBID_M=204
 
       INTEGER, PARAMETER :: NKSEK0=2
       INTEGER, PARAMETER :: NKSEK1=2048
@@ -48,9 +48,27 @@
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     IMDLGRBID_G INTEGER   GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN BE MODIFIED IN THE IMPUT NAMELIST.
+!                           IT CAN ALSO BE MODIFIED IN THE IMPUT NAMELIST.
 !     IMDLGRBID_M INTEGER   LAW MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN BE MODIFIED IN THE IMPUT NAMELIST.
+!                           IT CAN ALSO BE MODIFIED IN THE IMPUT NAMELIST.
+! 
+! The generating process identification numbers (model numbers) for GRIB
+! headers are allocated in pre-defined ranges for ECMWF GRIB coded
+! fields. The field in the GRIB code for this number is 1 octet and with
+! the value 255 indicating 'missing value', only numbers 1-254 are
+! available for use.
+
+! The atmospheric model allocated numbers are in the range 121 to 203.
+! The Global wave model allocated numbers are in the range 104 to 120.
+! The LAW model allocated numbers are in the range 204 to 220.
+ 
+! The numbers 221 to 254 stay reserved for the moment.
+
+! This pre-allocation was introduced to enable some Member States, which
+! use the model number to identify products, to write their software in
+! such a way that model number changes did not cause them problems with
+! hard-coded model numbers. 
+
 !     NKSEK0      INTEGER   DIMENSION OF KSEK0
 !     NKSEK1      INTEGER   DIMENSION OF KSEK1
 !     NKSEK2      INTEGER   DIMENSION OF KSEK2
