@@ -413,14 +413,14 @@
 
       do ip=1,nparam
         if(lpresent(ip)) then
-        do jp=jp+1,nparam
+        do jp=ip+1,nparam
           if(lpresent(jp)) then
             if(kr(jp).ne.kr(ip)) then
-            WRITE(IU06,*) '***********************************'
+            WRITE(IU06,*) '*************************************'
             WRITE(IU06,*) '* NR MISMATCHED !!!'
-            WRITE(IU06,*) KR(ip),'for parameter ',jparam(ip) 
-            WRITE(IU06,*) KR(jp),'for parameter ',jparam(jp) 
-            WRITE(IU06,*) '***********************************'
+            WRITE(IU06,*) ip, KR(ip),'for parameter ',jparam(ip) 
+            WRITE(IU06,*) jp, KR(jp),'for parameter ',jparam(jp) 
+            WRITE(IU06,*) '*************************************'
             CALL ABORT
           endif
           endif
@@ -430,7 +430,7 @@
 
       do ip=1,nparam
         if(lpresent(ip)) then
-        do jp=jp+1,nparam
+        do jp=ip+1,nparam
           if(lpresent(jp)) then
             if(cdate(ip).ne.cdate(jp)) then
               WRITE(IU06,*) '***********************************'
@@ -447,7 +447,7 @@
 
       do ip=1,nparam
         if(lpresent(ip)) then
-        do jp=jp+1,nparam
+        do jp=ip+1,nparam
           if(lpresent(jp)) then
             if(jrgg(ip).ne.jrgg(jp)) then
               WRITE(IU06,*) '***********************************'

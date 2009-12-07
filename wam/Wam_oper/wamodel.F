@@ -550,9 +550,9 @@
 !J           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
              CALL GSTATS(1976,1)
           ELSE
-             CALL GSTATS(1976,0)
+             CALL GSTATS(753,0)
 !J           CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-             CALL GSTATS(1976,1)
+             CALL GSTATS(753,1)
           ENDIF
 
           IF(LFRSTFLD) THEN
@@ -1535,9 +1535,9 @@
 !J              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
                 CALL GSTATS(1976,1)
               ELSE
-                CALL GSTATS(1976,0)
+                CALL GSTATS(753,0)
 !J              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-                CALL GSTATS(1976,1)
+                CALL GSTATS(753,1)
               ENDIF
               LLFLUSH = .FALSE.
             ENDIF  
@@ -1606,9 +1606,9 @@
      &    CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
         ELSE
-          CALL GSTATS(1976,0)
+          CALL GSTATS(753,0)
 !J        CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-          CALL GSTATS(1976,1)
+          CALL GSTATS(753,1)
         ENDIF
 
 !*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.

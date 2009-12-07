@@ -1701,6 +1701,11 @@
         WRITE(IU06,'("  ************************************ ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
+      ELSE IF ( ISTREAM .EQ. 1088 ) THEN
+          WRITE(IU06,'("  ENSEMBLE DATA ASSIMILATION RUN : ")')
+          WRITE(IU06,'("  ************************************ ")')
+          WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
+          WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE
         IF (NENSFNB.NE.0.OR.NTOTENS.NE.0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')

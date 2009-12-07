@@ -353,6 +353,7 @@
               istat = isetvalfdb( kfdb,   'NUMBER',  clnumber)
             endif
           else if(ksec1(40).eq.1082 .OR.
+     &            ksec1(40).eq.1088 .OR.
      &            ksec1(40).eq.1095 .OR.
      &            ksec1(40).eq.1222) then
               istat = isetvalfdbsubs( kfdb,   'NUMBER',  clnumber)
