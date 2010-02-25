@@ -35,7 +35,7 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG
+     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -418,6 +418,28 @@
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM V-STOKESDRIFT:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(42).AND.(GFLAG(42).OR.FFLAG(42).OR.PFLAG(42))) THEN
+          CALL WAMNORM(UCURG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(42),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM U-CURRENT:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,*) ' '
+          ENDIF
+        ENDIF
+
+        IF(NFLAG(43).AND.(GFLAG(43).OR.FFLAG(43).OR.PFLAG(43))) THEN
+          CALL WAMNORM(VCURG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(43),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM V-CURRENT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,*) ' '
           ENDIF

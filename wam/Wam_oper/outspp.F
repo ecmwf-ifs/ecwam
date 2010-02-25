@@ -89,8 +89,10 @@
 
 !     WORK ARRAYS
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
-      REAL,ALLOCATABLE,DIMENSION(:) :: U10,THW,US
-      REAL,ALLOCATABLE,DIMENSION(:) :: A1, A2, A3, A4, A5, A6, A7, A8
+      REAL,ALLOCATABLE,DIMENSION(:) :: U10_G,THW_G,US_G
+      REAL,ALLOCATABLE,DIMENSION(:) :: EMEAN_G, FMEAN_G, THQ_G,
+     &                                 SMEAN_G, ESWELL_G, FSWELL_G,
+     &                                 THSWELL_G, THWISEA_G
       DATA FRSTIME/.TRUE./
 
 !     0. GATHER THE FIELDS ON PROCESS 1 
@@ -100,60 +102,69 @@
 
       ALLOCATE(SPEC(NANG,NFRE))
       IF(NGOUT.GE.1) THEN 
-        ALLOCATE(U10(NIBLO),THW(NIBLO),US(NIBLO))
+        ALLOCATE(U10_G(NIBLO),THW_G(NIBLO),US_G(NIBLO))
         DO IJ=NSTART(IRANK),NEND(IRANK)
-          U10(IJ)=U10NEW(IJ)
-          THW(IJ)=THWNEW(IJ)
-          US(IJ)=USNEW(IJ)
+          U10_G(IJ)=U10NEW(IJ)
+          THW_G(IJ)=THWNEW(IJ)
+          US_G(IJ)=USNEW(IJ)
         ENDDO
-      ENDIF 
-      IF((LMESSPASS).AND.(NGOUT.GE.1)) THEN 
-        ALLOCATE(A1(NIBLO),A2(NIBLO),A3(NIBLO))
-        ALLOCATE(A4(NIBLO),A5(NIBLO),A6(NIBLO),A7(NIBLO),A8(NIBLO))
-        IRECV=1
-        NSPFLD=2 
-        NSCFLD=11 
 
-        CALL LOC2GLO(EMEAN(IJS),A1,IJS,IJL,IG)
-        CALL LOC2GLO(FMEAN(IJS),A2,IJS,IJL,IG)
-        CALL LOC2GLO(THQ(IJS),A3,IJS,IJL,IG)
+        ALLOCATE(EMEAN_G(NIBLO))
+        CALL LOC2GLO(EMEAN(IJS),EMEAN_G,IJS,IJL,IG)
 
+        ALLOCATE(FMEAN_G(NIBLO))
+        CALL LOC2GLO(FMEAN(IJS),FMEAN_G,IJS,IJL,IG)
+
+        ALLOCATE(THQ_G(NIBLO))
+        CALL LOC2GLO(THQ(IJS),THQ_G,IJS,IJL,IG)
+
+        ALLOCATE(SMEAN_G(NIBLO))
         IF(.NOT.ALLOCATED(SMEAN)) THEN
-          ALLOCATE(SMEAN(IJS:IJL))
-          SMEAN=0.
+          SMEAN_G=0.
+        ELSE
+          CALL LOC2GLO(SMEAN(IJS),SMEAN_G,IJS,IJL,IG)
         ENDIF
-        CALL LOC2GLO(SMEAN(IJS),A4,IJS,IJL,IG)
 
+        ALLOCATE(ESWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(ESWELL)) THEN
-          ALLOCATE(ESWELL(IJS:IJL))
-          ESWELL=0.
+          ESWELL_G=0.
+        ELSE
+          CALL LOC2GLO(ESWELL,ESWELL_G,IJS,IJL,IG)
         ENDIF
-        CALL LOC2GLO(ESWELL,A5,IJS,IJL,IG)
 
+        ALLOCATE(FSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(FSWELL)) THEN
-          ALLOCATE(FSWELL(IJS:IJL))
-          FSWELL=0.
+          FSWELL_G=0.
+        ELSE
+          CALL LOC2GLO(FSWELL,FSWELL_G,IJS,IJL,IG)
         ENDIF
-        CALL LOC2GLO(FSWELL,A6,IJS,IJL,IG)
 
+        ALLOCATE(THSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(THSWELL)) THEN
-          ALLOCATE(THSWELL(IJS:IJL))
-          THSWELL=0.
+          THSWELL_G=0.
+        ELSE
+          CALL LOC2GLO(THSWELL,THSWELL_G,IJS,IJL,IG)
         ENDIF
-        CALL LOC2GLO(THSWELL,A7,IJS,IJL,IG)
 
+        ALLOCATE(THWISEA_G(NIBLO))
         IF(.NOT.ALLOCATED(THWISEA)) THEN
-          ALLOCATE(THWISEA(IJS:IJL))
-          THWISEA=0.
+          THWISEA_G=0.
+        ELSE
+          CALL LOC2GLO(THWISEA,THWISEA_G,IJS,IJL,IG)
         ENDIF
-        CALL LOC2GLO(THWISEA,A8,IJS,IJL,IG)
 
-        ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
-        CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
-     &                   FL3,FL1,FLPTS,
-     &                   A1,A2,A3,A4,A5,A6,A7,
-     &                   A8,U10,THW,US)
+        IF(LMESSPASS) THEN 
+          IRECV=1
+          NSPFLD=2 
+          NSCFLD=11 
+          ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
+          CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
+     &                     FL3,FL1,FLPTS,
+     &                     EMEAN_G,FMEAN_G,THQ_G,SMEAN_G,ESWELL_G,
+     &                     FSWELL_G,THSWELL_G,THWISEA_G,
+     &                     U10_G,THW_G,US_G)
 
+        ENDIF
       ENDIF
 
 !*    1. LOOP OVER OUTPUT POINTS.
@@ -190,12 +201,12 @@
                       ENDIF
                     ENDDO
                   ENDDO
-                  ZHS = 4.*SQRT(EMEAN(IJ)) 
-                  ZTHQ = THQ(IJ)
-                  ZFM = FMEAN(IJ)
-                  ZUST = US(IJ)
-                  ZTHW = THW(IJ)
-                  ZU10 = U10(IJ)
+                  ZHS = 4.*SQRT(EMEAN_G(IJ)) 
+                  ZTHQ = THQ_G(IJ)
+                  ZFM = FMEAN_G(IJ)
+                  ZUST = US_G(IJ)
+                  ZTHW = THW_G(IJ)
+                  ZU10 = U10_G(IJ)
                   XFRE = REAL(NFRE)
                   TH0 = TH(1)*DEG
 
@@ -208,9 +219,9 @@
                   TH0 = TH(1)*DEG
                   WRITE(IU25) XLON, XLAT, CDTPRO, XANG, XFRE,
      &             TH0, FR(1), FRATIO 
-                  WRITE(IU25) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     &             FMEAN(IJ), US(IJ), DEG*THW(IJ),
-     &             U10(IJ)
+                  WRITE(IU25) 4.*SQRT(EMEAN_G(IJ)), DEG*THQ_G(IJ),
+     &             FMEAN_G(IJ), US_G(IJ), DEG*THW_G(IJ),
+     &             U10_G(IJ)
                   IF(LMESSPASS) THEN
                     WRITE(IU25) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
                   ELSE
@@ -234,9 +245,9 @@
                 ENDDO
                 WRITE (NAME,'(''BL= '',I3,'' POINT= '',I4)') IG,IJ
                 CALL PRSPP (IU06, CDTPRO, XLON, XLAT, NAME,
-     &           4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     &           FMEAN(IJ), US(IJ), DEG*THW(IJ),
-     &           U10(IJ),
+     &           4.*SQRT(EMEAN_G(IJ)), DEG*THQ_G(IJ),
+     &           FMEAN_G(IJ), US_G(IJ), DEG*THW_G(IJ),
+     &           U10_G(IJ),
      &           FR, TH, SPEC, NANG, NFRE, NANG, NFRE)
               ENDIF
             ENDIF
@@ -245,10 +256,12 @@
 !         -------------------------
 
             IF (CDTSPS.EQ.CDTPRO) THEN
-              EWSEA=EMEAN(IJ)-ESWELL(IJ)
-              IF(FMEAN(IJ).GT.EPSMIN .AND. FSWELL(IJ).GT.EPSMIN .AND.
+              EWSEA=EMEAN_G(IJ)-ESWELL_G(IJ)
+              IF(FMEAN_G(IJ).GT.EPSMIN .AND.
+     &           FSWELL_G(IJ).GT.EPSMIN .AND.
      &           EWSEA.GT.EPSMIN ) THEN
-                FWSEA=EWSEA/(EMEAN(IJ)/FMEAN(IJ)-ESWELL(IJ)/FSWELL(IJ))
+                FWSEA=EWSEA/(EMEAN_G(IJ)/FMEAN_G(IJ)
+     &               -ESWELL_G(IJ)/FSWELL_G(IJ))
               ELSE
                 FWSEA=0.
               ENDIF
@@ -276,9 +289,9 @@
                 TH0 = TH(1)*DEG
                 WRITE(IU26) XLON, XLAT, CDTPRO, XANG, XFRE,
      &           TH0, FR(1), FRATIO 
-                WRITE(IU26) EWSEA, 4.*SQRT(ESWELL(IJ)),
-     &           DEG*THWISEA(IJ), DEG*THSWELL(IJ),
-     &           FWSEA, FSWELL(IJ)
+                WRITE(IU26) EWSEA, 4.*SQRT(ESWELL_G(IJ)),
+     &           DEG*THWISEA_G(IJ), DEG*THSWELL_G(IJ),
+     &           FWSEA, FSWELL_G(IJ)
                 WRITE(IU26) ((SPEC(K,M),K=1,NANG),M=1,NFRE)
               ENDIF
 
@@ -288,18 +301,19 @@
               IF (PFLAG(18)) THEN
                 WRITE (NAME,'(''BL= '',I3,'' POINT= '',I4)') IG,IJ
                 CALL PRSPPS (IU06, CDTPRO, XLON, XLAT, NAME,
-     &           EWSEA, DEG*THWISEA(IJ), FWSEA,
-     &           4.*SQRT(ESWELL(IJ)), DEG*THSWELL(IJ),
-     &           FSWELL(IJ), FR, TH, SPEC, NANG, NFRE, NANG, NFRE)
+     &           EWSEA, DEG*THWISEA_G(IJ), FWSEA,
+     &           4.*SQRT(ESWELL_G(IJ)), DEG*THSWELL_G(IJ),
+     &           FSWELL_G(IJ), FR, TH, SPEC, NANG, NFRE, NANG, NFRE)
               ENDIF
             ENDIF
           ENDIF
         ENDDO
       ENDIF
       IF((LMESSPASS).AND.(NGOUT.GE.1)) DEALLOCATE(FLPTS)
-      IF(NGOUT.GE.1) DEALLOCATE(U10,THW,US)
-      IF((LMESSPASS).AND.(NGOUT.GE.1)) DEALLOCATE(A1,A2,A3) 
-      IF((LMESSPASS).AND.(NGOUT.GE.1)) DEALLOCATE(A4,A5,A6,A7,A8) 
+      IF(NGOUT.GE.1) DEALLOCATE(U10_G,THW_G,US_G)
+      IF(NGOUT.GE.1) DEALLOCATE(EMEAN_G,FMEAN_G,THQ_G)
+      IF(NGOUT.GE.1) DEALLOCATE(SMEAN_G,ESWELL_G,FSWELL_G)
+      IF(NGOUT.GE.1) DEALLOCATE(THSWELL_G,THWISEA_G)
       DEALLOCATE(SPEC)
 
       RETURN

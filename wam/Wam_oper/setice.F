@@ -1,4 +1,3 @@
-!ICE
 !-----------------------------------------------------------------------
 
       SUBROUTINE SETICE (FL3,MIJS,MIJL,IG)
@@ -41,10 +40,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWICE   , ONLY : ICEMASK
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
-      DIMENSION FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: FL3(MIJS:MIJL,NANG,NFRE)
 
 ! ----------------------------------------------------------------------
 
@@ -55,7 +53,6 @@
         DO K = 1, NANG
           DO IJ = MIJS,MIJL
             IF(ICEMASK(IJ,IG).EQ.0) THEN
-!!!            FL3(IJ,K,M) = ICEMASK(IJ,IG)*FL3(IJ,K,M)
               FL3(IJ,K,M) = 0.
             ENDIF
           ENDDO
@@ -65,4 +62,3 @@
       RETURN
 
       END SUBROUTINE SETICE
-!ICE

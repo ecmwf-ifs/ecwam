@@ -292,7 +292,8 @@
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
-     &            JPPFLAG  ,GFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
+     &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
+     &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFBOU  , ONLY : IBOUNF
@@ -310,7 +311,7 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,HMAXG    ,TMAXG    ,USTOKESG ,
-     &            VSTOKESG
+     &            VSTOKESG ,UCURG    ,VCURG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -364,7 +365,7 @@
       CHARACTER*14 CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
       CHARACTER*14 CDATE, CDTPRA, CDTIMP, CDTIMPNEXT
       LOGICAL LDSTOP, LDWRRE, LLFLUSH
-      LOGICAL GFLAGBAK(JPPFLAG)
+      LOGICAL :: FFLAGBAK(JPPFLAG), PFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL :: LSV, LRST, LOUT,L1STCALL,LLINTPOL,L4VOUT 
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
@@ -401,11 +402,23 @@
       ENDIF
       LLFLUSH = .TRUE.
 
+      IG=1
+
       IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE .AND. LICERUN) THEN
 !       INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
 !       FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT
 !       RESTARTED).
-        CALL UNSETICE(FL1,NSTART,NEND,U10OLD,THWOLD)
+        CALL GSTATS(1236,0)
+        NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          CALL UNSETICE(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
+     &                  U10OLD(KIJS:KIJL,1),THWOLD(KIJS:KIJL,1))
+        ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1236,1)
       ENDIF
 
       KTAG=200
@@ -427,7 +440,6 @@
         CDTSPT=CDTPRO
         CDTSPS=CDTPRO
 
-        IG=1
 
         DO IJ=IJS(IG),IJL(IG)
           U10NEW(IJ) = U10OLD(IJ,IG)
@@ -476,7 +488,7 @@
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL1,KIJS,KIJL,IG)
+              CALL SETICE(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,IG)
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1439,1)
@@ -495,11 +507,21 @@
      &     LANAONLY.OR.LFRSTFLD) THEN
 
           IF(LFRSTFLD) THEN
+            FFLAGBAK=FFLAG
+            PFLAGBAK=PFLAG
             GFLAGBAK=GFLAG
             MARSTYPEBAK=MARSTYPE
             IF(MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'an') THEN
-              IF(.NOT.LNOCDIN) GFLAG(7)=.FALSE.
-              IF(LWAVEWIND) GFLAG(10)=.FALSE.
+              IF(.NOT.LNOCDIN) THEN
+                FFLAG(7)=.FALSE.
+                PFLAG(7)=.FALSE.
+                GFLAG(7)=.FALSE.
+              ENDIF
+              IF(LWAVEWIND) THEN
+                FFLAG(10)=.FALSE.
+                PFLAG(10)=.FALSE.
+                GFLAG(10)=.FALSE.
+              ENDIF
               GFLAG(22)=.FALSE.
               GFLAG(23)=.FALSE.
               GFLAG(24)=.FALSE.
@@ -557,6 +579,8 @@
 
           IF(LFRSTFLD) THEN
             MARSTYPE=MARSTYPEBAK
+            FFLAG=FFLAGBAK
+            PFLAG=PFLAGBAK
             GFLAG=GFLAGBAK
             LFRSTFLD=.FALSE.
           ENDIF
@@ -588,6 +612,18 @@
         IF(ALLOCATED(CDG)) DEALLOCATE(CDG)
         IF(ALLOCATED(SMEANG)) DEALLOCATE(SMEANG)
         IF(ALLOCATED(U10G)) DEALLOCATE(U10G)
+        IF(ALLOCATED(MWP1G)) DEALLOCATE(MWP1G)
+        IF(ALLOCATED(MWP2G)) DEALLOCATE(MWP2G)
+        IF(ALLOCATED(WSPRDG)) DEALLOCATE(WSPRDG)
+        IF(ALLOCATED(C4G)) DEALLOCATE(C4G)
+        IF(ALLOCATED(BFG)) DEALLOCATE(BFG)
+        IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
+        IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
+        IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
+        IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
+        IF(ALLOCATED(VSTOKESG)) DEALLOCATE(VSTOKESG)
+        IF(ALLOCATED(UCURG)) DEALLOCATE(UCURG)
+        IF(ALLOCATED(VCURG)) DEALLOCATE(VCURG)
 
         IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
         IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)
@@ -1033,17 +1069,23 @@
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                CALL IMPLSCH (FL3, FL1, KIJS, KIJL, IG,
-     &                        THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
-     &                        U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
-     &                        SL,FCONST)
-                IF (ITEST.GE.2) THEN
-                  WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED'
-                  CALL FLUSH (IU06)
-                ENDIF
-
+                CALL IMPLSCH (FL3(KIJS:KIJL,:,:),
+     &                      FL1(KIJS:KIJL,:,:),
+     &                      KIJS, KIJL, IG,
+     &                      THWOLD(KIJS,IG),USOLD(KIJS,IG),
+     &                      TAUW(KIJS,IG),Z0OLD(KIJS,IG),
+     &                      ROAIRO(KIJS,IG),ZIDLOLD(KIJS,IG),
+     &                      U10NEW(KIJS),THWNEW(KIJS),USNEW(KIJS),
+     &                      Z0NEW(KIJS),ROAIRN(KIJS),ZIDLNEW(KIJS),
+     &                      SL(KIJS:KIJL,:,:),
+     &                      FCONST(KIJS:KIJL,:))
               ENDDO
 !$OMP       END PARALLEL DO
+              IF (ITEST.GE.2) THEN
+                WRITE(IU06,*) '   SUB. WAMODEL: IMPLSCH CALLED'
+                CALL FLUSH (IU06)
+              ENDIF
+
             ELSE
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
@@ -1108,7 +1150,7 @@
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL3,KIJS,KIJL,IG)
+              CALL SETICE(FL3(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,IG)
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1439,1)
@@ -1327,6 +1369,8 @@
           IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
           IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
           IF(ALLOCATED(VSTOKESG)) DEALLOCATE(VSTOKESG)
+          IF(ALLOCATED(UCURG)) DEALLOCATE(UCURG)
+          IF(ALLOCATED(VCURG)) DEALLOCATE(VCURG)
 
           IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
           IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)

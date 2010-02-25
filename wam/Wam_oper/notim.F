@@ -1,5 +1,6 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD, ICEMASK, IREAD)
+     &                   ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &                   LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -21,7 +22,8 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD)
+!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+!                      LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -34,6 +36,7 @@
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *ICEMASK*- SEA ICE MASK.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
 
 !     METHOD.
@@ -89,6 +92,7 @@
 
       CHARACTER*14 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
       LOGICAL LWNDFILE, LCLOSEWND
+      LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
 
@@ -114,7 +118,8 @@
         CDA = CDTWIS
 
         CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
-     &               CDA, LWNDFILE, LCLOSEWND, IREAD)
+     &               CDA, LWNDFILE, LCLOSEWND, IREAD,
+     &               LWCUR)
 
         DO IG = 1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
@@ -150,7 +155,8 @@
 !         --------------------------------------------
 
       CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
-     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD)
+     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
+     &             LWCUR)
 
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------

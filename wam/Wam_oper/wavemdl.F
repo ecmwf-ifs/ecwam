@@ -1,7 +1,7 @@
       SUBROUTINE WAVEMDL (CBEGDAT, KDELWI, KDURAT,
      &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &                    ISEC1, ISEC2, RMISS, FIELDS,
-     &                    LWCUR,
+     &                    LWCUR, LWSTOKES,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
@@ -34,6 +34,7 @@
 !         J BIDLOT     ECMWF  August 2006  PASS RMISS TO SPECIFY MISSING DATA.
 !         M. Drusch    ECMWF  Sep 2007  Re-initialize through FRSTIME and NADV
 !         J BIDLOT     ECMWF  August 2008 ADD LWCUR, MOVE PREWIND.
+!         J BIDLOT     ECMWF  June 2009 ADD LWSTOKES. 
 !                                            
 
 !     PURPOSE.                                                          
@@ -102,7 +103,8 @@
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,LL1D
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
+     &            NBLO     ,LL1D
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
@@ -112,13 +114,13 @@
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
-     &            NSTART ,NEND
+     &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE
 
 ! --------------------------------------------------------------------- 
-
 
 !     COUPLING ARRAYS
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
@@ -135,11 +137,16 @@
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ::  IC
-      REAL FCRANGE
+      INTEGER :: NADV
+      INTEGER :: NFDBREF
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
+      INTEGER :: ISENDREQ, ITAG
+
+      REAL FCRANGE
       REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL, ALLOCATABLE :: ZCOMBUF(:)
       REAL, ALLOCATABLE :: WVBLOCK(:,:)
-      LOGICAL :: LWCUR
+      LOGICAL :: LWSTOKES
       
       CHARACTER CBEGDAT*14, CDTASS*14
       CHARACTER*12 :: FLABEL(NWVFIELDS)
@@ -149,8 +156,7 @@
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: FRSTIME
-      INTEGER :: NADV
-      INTEGER :: NFDBREF
+      LOGICAL :: LWCUR
 
       DATA LFRST /.TRUE./
 
@@ -493,9 +499,19 @@
 !       FIELDS TO BE PASSED TO THE ATMOSPHERIC MODEL ARE:
 
 !       1. CHARNOCK FIELD
-        FLABEL(1)='Charnock'
+        FLABEL(1)=' Charnock'
         DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
+        IF(NWVFIELDS.GT.1) THEN
+          FLABEL(2)='U-Stokes_drift'
+          DEFVAL(2)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+        IF(NWVFIELDS.GT.2) THEN
+          FLABEL(3)='V-Stokes_drift'
+          DEFVAL(3)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
 
         NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
         CALL GSTATS(1443,0)
@@ -505,13 +521,22 @@
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, IG, USOLD, Z0OLD,
      &                  DEFVAL(1),WVBLOCK(KIJS,1))
+
+          IF(LWSTOKES) THEN
+             CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
+     &                        WVBLOCK(KIJS,2),WVBLOCK(KIJS,3))
+          ELSE
+             IF(NWVFIELDS.GT.1) THEN
+                WVBLOCK(KIJS:KIJL,2)=DEFVAL(2)
+             ENDIF
+             IF(NWVFIELDS.GT.2) THEN
+               WVBLOCK(KIJS:KIJL,3)=DEFVAL(3)
+             ENDIF
+          ENDIF
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
-
-!!!!!!
-!       if other fields are needed for IFS add  them here
-!!!!!!
 
 
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
@@ -557,9 +582,8 @@
           CALL FLUSH(IU06)
 
         ELSE
-          WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
 
-
+!         Local NORM OF FIELDS RETURNED TO IFS :
 !         INITIALISE I,J POINTER TO MASK_OUT
           IF(LFRST) THEN
             LFRST=.FALSE.
@@ -589,9 +613,8 @@
             ENDDO
           ENDIF
 
-!         COMPUTE NORMS
-          DO IFLD=1,NWVFIELDS
-            JF=IFLD
+!         COMPUTE local NORMS
+          DO JF=1,NWVFIELDS
             VAL=WVFLDG(I_MASK_OUT(1),J_MASK_OUT(1),JF)
             FAVG(JF)=VAL
             FMIN(JF)=VAL
@@ -605,13 +628,92 @@
             FAVG(JF)=FAVG(JF)/MAX(N_MASK_OUT,1)
           ENDDO
 
+!         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
+!         PSEUDO GLOBAL NORM.
+ 
+          IRECV=1
+          NCOMLOC=1+3*NWVFIELDS
+          NCOMBUF=NCOMLOC*NPROC
+          ALLOCATE(ZCOMBUF(NCOMBUF))
+
+          IST=1+(IRANK-1)*NCOMLOC
+          IED=IST+NCOMLOC-1
+          ICOUNT=IST
+          ZCOMBUF(ICOUNT)=N_MASK_OUT
+          DO IFLD=1,NWVFIELDS
+            ICOUNT=ICOUNT+1
+            ZCOMBUF(ICOUNT)=FAVG(IFLD)
+            ICOUNT=ICOUNT+1
+            ZCOMBUF(ICOUNT)=FMIN(IFLD)
+            ICOUNT=ICOUNT+1
+            ZCOMBUF(ICOUNT)=FMAX(IFLD)
+          ENDDO
+
+          ITAG=1
+          CALL MPL_SEND(ZCOMBUF(IST:IED),KDEST=IRECV,KTAG=ITAG,
+     &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                  KREQUEST=ISENDREQ,
+     &                  CDSTRING='WAVEMDL: MPL_SEND' )
+          IF(IRANK.EQ.IRECV) THEN
+            DO IP=1,NPROC
+              IST=1+(IP-1)*NCOMLOC
+              IED=IST+NCOMLOC-1
+              CALL MPL_RECV(ZCOMBUF(IST:IED),
+     &                      KSOURCE=IP,KTAG=ITAG,
+     &                      KMP_TYPE=JP_BLOCKING_STANDARD,
+     &                      CDSTRING='WAVEMDL: MPL_RECV' )
+
+            ENDDO
+            CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
+     &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
+          ENDIF
+
+
+!         COMPUTE PSEUDO GLOBAL NORM
+          IF(IRANK.EQ.IRECV) THEN
+          WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
+            IST=1+(IRANK-1)*NCOMLOC
+            ICOUNT=IST
+            NMASK=ZCOMBUF(ICOUNT)
+            NTOT=NMASK
+            DO JF=1,NWVFIELDS
+              ICOUNT=ICOUNT+1
+              FAVG(JF)=NMASK*ZCOMBUF(ICOUNT)
+              ICOUNT=ICOUNT+2
+            ENDDO
+            DO IP=1,NPROC
+              IF(IP.NE.IRECV) THEN
+                IST=1+(IP-1)*NCOMLOC
+                ICOUNT=IST
+                NMASK=ZCOMBUF(ICOUNT)
+                NTOT=NTOT+NMASK
+                DO JF=1,NWVFIELDS
+                  ICOUNT=ICOUNT+1
+                  FAVG(JF)=FAVG(JF)+NMASK*ZCOMBUF(ICOUNT)
+                  ICOUNT=ICOUNT+1
+                  FMIN(JF)=MIN(FMIN(JF),ZCOMBUF(ICOUNT))
+                  ICOUNT=ICOUNT+1
+                  FMAX(JF)=MAX(FMAX(JF),ZCOMBUF(ICOUNT))
+                ENDDO
+              ENDIF
+            ENDDO
+            DO JF=1,NWVFIELDS
+              FAVG(JF)=FAVG(JF)/NTOT
+            ENDDO
+          ELSE
+            NTOT=N_MASK_OUT
+            WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
+          ENDIF
+
           DO IFLD=1,NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD),
-     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),N_MASK_OUT,
+     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT,
      &                    IRANK, NPROC, LL1D
           ENDDO
           WRITE(IU06,*) ' '
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
+
+          DEALLOCATE(ZCOMBUF)
         ENDIF
 
 

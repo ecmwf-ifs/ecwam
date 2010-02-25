@@ -43,7 +43,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : DELTH    ,FR
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
 ! ----------------------------------------------------------------------
@@ -53,7 +52,7 @@
       INTEGER :: IPEAKF(IJS:IJL) 
       INTEGER :: IJ,K,M,IJS,IJL
       REAL, DIMENSION(IJS:IJL) :: TEMP, EPEAKF
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F(IJS:IJL,NANG,NFRE)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------

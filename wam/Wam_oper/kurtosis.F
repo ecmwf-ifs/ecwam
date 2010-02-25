@@ -82,7 +82,6 @@
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,ZPISQRT   ,
      &             BF2MAX  ,BF2MIN   ,C4MAX    ,C4MIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
        
@@ -96,7 +95,7 @@
 
       REAL :: ZSUM3, ZALPHA, ZBETA, ZA_MORI, ZJ , ZEPS, ZNU, 
      &        HS, SIG_OM1, DURATION, AKI, TRANSF2
-      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
       REAL, DIMENSION(IJS:IJL) ::  C4,BF2,QP,HMAX,TMAX,ETA2,SUM0,SUM1,
      &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
@@ -220,8 +219,9 @@
       CALL H_MAX(C4,NW,IJS,IJL,HMAX)
 
       DO IJ=IJS,IJL
-         IF (SUM1(IJ).GT.0.) THEN
-            ZNU = SQRT(SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.)
+         IF (SUM1(IJ).GT.0. .AND. HMAX(IJ).GT.0.) THEN
+            ZNU = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
+            ZNU = SQRT(MAX(0.,ZNU))
             ZEPS = ZNU/(SQRT(2.)*HMAX(IJ))
             TMAX(IJ) = 1.+0.5*ZEPS**2+0.75*ZEPS**4
             TMAX(IJ) = TMAX(IJ)*SUM0(IJ)/SUM1(IJ)

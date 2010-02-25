@@ -40,18 +40,17 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMEAN  , ONLY : EMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
       LOGICAL :: LLEPSMIN
-      DIMENSION F(NINF-1:NSUP,NANG,NFRE)
-      REAL,DIMENSION(NINF:NSUP) :: ETOI, USMO, THMO         
-      REAL,DIMENSION(NINF:NSUP) :: EWFG, EWOI, EWA,FMWFG, FMWA,
-     &                             TDUR, USA
+      DIMENSION F(IJS:IJL,NANG,NFRE)
+      REAL,DIMENSION(IJS:IJL) :: EMN
+      REAL,DIMENSION(IJS:IJL) :: ETOI, USMO, THMO         
+      REAL,DIMENSION(IJS:IJL) :: EWFG, EWOI, EWA,FMWFG, FMWA,
+     &                           TDUR, USA
 
 !       *EWFG*     : WINDSEA ENERGY (FIRST GUESS).                      
 !       *EWOI*     : WINDSEA ENERGY (MEASUREMENT).                      
@@ -70,15 +69,15 @@
 !        -----------------                                              
 
       LLEPSMIN=.TRUE.
-      CALL SEMEAN (F, IJS, IJL, EMEAN(IJS), LLEPSMIN)
+      CALL SEMEAN (F, IJS, IJL, EMN, LLEPSMIN)
 
-      CALL FWSEA (F, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
+      CALL FWSEA (F, EMN, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
 
 !*    2. CORRECT OVERESTIMATE OF FIRST GUESS WINDSEA ENERGY.            
 !        ---------------------------------------------------            
 
       DO IJ = IJS,IJL                                              
-        EWFG(IJ) = MIN(EWFG(IJ),EMEAN(IJ))                             
+        EWFG(IJ) = MIN(EWFG(IJ),EMN(IJ))                             
       ENDDO
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
@@ -100,7 +99,7 @@
 !        -------------------------------------------                    
 
       DO IJ=IJS,IJL                                                
-        IF (EMEAN(IJ).GT.0.) EWOI(IJ) = EWFG(IJ)/EMEAN(IJ)*ETOI(IJ)    
+        IF (EMN(IJ).GT.0.) EWOI(IJ) = EWFG(IJ)/EMN(IJ)*ETOI(IJ)    
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -155,7 +154,7 @@
 !*    7. UPDATE THE SPECTRA.                                            
 !        -------------------                                            
 
-      CALL UPWSPEC (F, EMEAN(IJS), ETOI, FMWFG, FMWA, IJS, IJL)
+      CALL UPWSPEC (F, EMN, ETOI, FMWFG, FMWA, IJS, IJL)
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
      &   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'

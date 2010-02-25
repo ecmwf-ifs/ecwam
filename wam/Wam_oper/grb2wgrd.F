@@ -166,23 +166,19 @@
       NR=KSEC2(3)
       NRFULL=NR
       IF(NR.GT.KSEC2_SIZE-22) THEN
-        WRITE(IU06,*) '********************************************'
-        WRITE(IU06,*) '*                                          *'
-        WRITE(IU06,*) '*        ERROR IN SUB. GRB2WGRD            *'
+        WRITE(IU06,*) '*********************************************'
+        WRITE(IU06,*) '*                                           *'
+        WRITE(IU06,*) '*        ERROR IN SUB. GRB2WGRD             *'
         WRITE(IU06,*) '*        WHILE DECODING ',KSEC1(6)  
-        WRITE(IU06,*) '*                                          *'
+        WRITE(IU06,*) '*                                           *'
         WRITE(IU06,*) '*  THE DIMENSION FOR KSEC2 ',NR+22
         WRITE(IU06,*) '*  IS LARGER THAN THE PRESCRIBED ONE ',NKSEK2
-        WRITE(IU06,*) '*                                          *'
-        WRITE(IU06,*) '*  SIZE WAS ADAPTED AUTOMATICALLY          *'
-        WRITE(IU06,*) '*  TO AVOID THIS MESSAGE CHANGE NKSEK2     *'
+        WRITE(IU06,*) '*                                           *'
+        WRITE(IU06,*) '*  SIZE MUST BE ADAPTED IN MODULE YOWGRIBHD *'
         WRITE(IU06,*) '*  TO AT LEAST ',NR+22
-        WRITE(IU06,*) '*  IN YOWGRIBHD '    
-        WRITE(IU06,*) '********************************************'
-        DEALLOCATE(KSEC2)
-        KSEC2_SIZE=NR+22
-        ALLOCATE(KSEC2(KSEC2_SIZE))
-        GOTO 1000
+        WRITE(IU06,*) '*********************************************'
+        CALL FLUSH(IU06)
+        CALL ABORT1
       ENDIF
 
       IF(KSEC2(11).EQ.0) THEN
@@ -397,7 +393,7 @@
 
 !     DETERMINE FORECAST PERIOD.
 
-      IF(KSEC1(18).EQ.2) THEN
+      IF(KSEC1(18).EQ.2 .OR. KSEC1(18).EQ.3) THEN
 !       THE DATA ARE VALIB BETWEEN TWO TMES. TAKE THE MIDDLE POINT
         IFORP = JCONS*(KSEC1(16)+KSEC1(17))/2
       ELSE

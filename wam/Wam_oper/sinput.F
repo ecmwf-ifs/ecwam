@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN,ZIDLNEW, SL, LLWS)
+     &                   ROAIRN, ZIDLNEW, SL, LLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -89,8 +89,7 @@
 
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,XKAPPA
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
@@ -99,9 +98,8 @@
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
-      REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW
-     &                           , ROAIRN,ZIDLNEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F, FL, SL
+      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW
 
 ! ----------------------------------------------------------------------
 

@@ -30,6 +30,7 @@
       USE YOWALTAS , ONLY : IJALT    , XLONOBS  , SIGRATIO2, DIFFALTFG
       USE YOWGRID  , ONLY : SINPH    ,COSPH
       USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWPARAM , ONLY : NIBLO
       USE YOWPCONS , ONLY : RAD
 
 ! ----------------------------------------------------------------------
@@ -44,7 +45,7 @@
       INTEGER :: I1, I2, K1, K2
       INTEGER :: IOBS4IJ(IJS:IJL,NDIM2)
 
-      REAL :: DIST 
+      REAL :: DIST(IJS:IJL) 
       REAL :: XMO(IJS:IJL)
       REAL :: XOI(IJS:IJL)
       REAL :: XNEW
@@ -105,7 +106,7 @@
               DOBS = ACOS(MAX(MIN(DOBS2,1.),-1.))
             ENDIF
 
-            P(IOBS,JOBS) = EXP(-DOBS/DIST)
+            P(IOBS,JOBS) = EXP(-DOBS/DIST(IJ))
             P(JOBS,IOBS) = P(IOBS,JOBS)
           ENDDO
           P(IOBS,IOBS) = 1.

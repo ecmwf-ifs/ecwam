@@ -1,7 +1,10 @@
       SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG,
-     &                    THWOLD,USOLD,TAUW,Z0OLD,   ROAIRO,ZIDLOLD,
-     &                    U10NEW,THWNEW,USNEW,Z0NEW, ROAIRN,ZIDLNEW,
-     &                    SL,FCONST)
+     &                    THWOLD, USOLD,
+     &                    TAUW, Z0OLD,
+     &                    ROAIRO, ZIDLOLD,
+     &                    U10NEW, THWNEW, USNEW,
+     &                    Z0NEW, ROAIRN, ZIDLNEW,
+     &                    SL, FCONST)
 
 ! ----------------------------------------------------------------------
 
@@ -119,8 +122,7 @@
      &            C        ,FRIC     ,FLOGSPRDM1
       USE YOWICE   , ONLY : FLMINFR
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
@@ -131,12 +133,12 @@
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL,FL3,SL
-      REAL,DIMENSION(NINF:NSUP,NFRE) :: FCONST 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD,Z0OLD,TAUW
-     &                                , ROAIRO,ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW,Z0NEW
-     &                           , ROAIRN,ZIDLNEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
+      REAL,DIMENSION(IJS:IJL,NFRE) :: FCONST 
+      REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW,
+     &                           ROAIRO,ZIDLOLD
+      REAL,DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW,
+     &                           ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
@@ -193,7 +195,7 @@
 !!            FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
      &   IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
@@ -203,8 +205,8 @@
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW,USNEW,Z0NEW,
-     &             ROAIRN,ZIDLNEW, SL, LLWS)
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, ZIDLNEW, SL, LLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
@@ -216,14 +218,14 @@
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
-      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
+      CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &              ROAIRN, TAUW, SL, MIJ)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
      &             IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
@@ -365,14 +367,14 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL STRESSO (FL3,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
+      CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &              ROAIRN, TAUW, SL, MIJ)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
      & IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
@@ -385,10 +387,10 @@
 !         -------------------------------------
 
       DO IJ=IJS,IJL
-        USOLD(IJ,IG) = USNEW(IJ)
-        Z0OLD(IJ,IG) = Z0NEW(IJ)
-        ROAIRO(IJ,IG) = ROAIRN(IJ)
-        ZIDLOLD(IJ,IG) = ZIDLNEW(IJ)
+        USOLD(IJ) = USNEW(IJ)
+        Z0OLD(IJ) = Z0NEW(IJ)
+        ROAIRO(IJ) = ROAIRN(IJ)
+        ZIDLOLD(IJ) = ZIDLNEW(IJ)
       ENDDO
 
 ! ----------------------------------------------------------------------

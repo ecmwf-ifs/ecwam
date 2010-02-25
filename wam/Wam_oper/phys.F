@@ -115,10 +115,13 @@
             FL3 = FL1
           ENDIF
         ENDIF
-        CALL IMPLSCH (FL3, FL, IJS, IJL, IG,
-     &   THWOLD,USOLD,TAUW,Z0OLD,    ROAIRO,ZIDLOLD,
-     &   U10NEW,THWNEW,USNEW,Z0NEW,  ROAIRN,ZIDLNEW,
-     &   SL,FCONST)
+        CALL IMPLSCH (FL3(IJS:IJL,:,:), FL1(IJS:IJL,:,:),
+     &   IJS, IJL, IG,
+     &   THWOLD(IJS,:),USOLD(IJS,:),TAUW(IJS,:),
+     &   Z0OLD(IJS,:),ROAIRO(IJS,:),ZIDLOLD(IJS,:),
+     &   U10NEW(IJS),THWNEW(IJS),USNEW(IJS),
+     &   Z0NEW(IJS),ROAIRN(IJS),ZIDLNEW(IJS),
+     &   SL(IJS:IJL,:,:),FCONST(IJS:IJL,:))
 
       ELSE
 
@@ -139,10 +142,14 @@
               FL3 = FL1
             ENDIF
           ENDIF
-          CALL IMPLSCH (FL3, FL, MIJS, MIJL, IG,
-     &     THWOLD,USOLD,TAUW,Z0OLD,    ROAIRO,ZIDLOLD,
-     &     U10NEW,THWNEW,USNEW,Z0NEW,  ROAIRN,ZIDLNEW,
-     &     SL,FCONST)
+           CALL IMPLSCH (FL3(MIJS:MIJL,:,:), FL(MIJS:MIJL,:,:),
+     &       MIJS, MIJL, IG,
+     &       THWOLD(MIJS,:),USOLD(MIJS,:),TAUW(MIJS,:),
+     &       Z0OLD(MIJS,:),ROAIRO(MIJS,:),ZIDLOLD(MIJS,:),
+     &       U10NEW(MIJS),THWNEW(MIJS),USNEW(MIJS),
+     &       Z0NEW(MIJS),ROAIRN(MIJS),ZIDLNEW(MIJS),
+     &       SL(MIJS:MIJL,:,:),FCONST(MIJS:MIJL,:))
+
           GO TO 1000
         ENDIF
 

@@ -22,6 +22,10 @@
 !                  THAT IS ALREADY ON DISK.
 !                  YOU ALSO HAVE TO CHANGE OUTUBUF.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    P. de Rosnay  ECMWF   October 2009
+!                  Re-initilize for SEKF surface analysis loops
+!                  (in case of coupled Jacobians only) 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !     PURPOSE.
 !     --------
@@ -101,6 +105,7 @@
 
 ! -------------------------------------------------------------------
 
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,
      &             DFFR     ,DFFR2   ,COSTH     ,SINTH
@@ -170,6 +175,11 @@
       CHARACTER*80 LOGFILENAME
       LOGICAL :: LLIRANK
       LOGICAL :: LLEXIST
+!   FOR SEKF surface analysis
+      LOGICAL :: LL_sekf
+      INTEGER :: NLON_sekf, NLAT_sekf
+      REAL :: RS_sekf, RN_sekf
+
 
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 
@@ -180,6 +190,15 @@
       IREAD=1
 
 !     CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
+!     Re-initilize for SEKF surface analysis loops
+      IF(IU08(IPROPAGS) < 0) Then
+      LL_sekf = .True.
+      CALL WVWAMINIT(LL_sekf,IU06,NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+      ENDIF
+      WRITE(IU06,*) 'IPROPAGS, IU08()',IPROPAGS,IU08(IPROPAGS)
+      WRITE(IU06,*) 'IU08(:)',IU08(:)
+!
+
 
       WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'
       CALL FLUSH (IU06)
@@ -872,6 +891,10 @@
           ENDDO
         ENDDO
         DEALLOCATE(RDUM)
+
+        DO NGOU=1,NGOUT
+          IJAR(NGOU)=IJ2NEWIJ(IJAR(NGOU))
+        ENDDO
 
       ENDIF ! END IF LL1D
 
@@ -2789,6 +2812,9 @@
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
 
       CLOSE (UNIT=IU08(IPROPAGS))
+      !     For the SEKF surface analysis
+      IU08(IPROPAGS) = -1
+
 
       DEALLOCATE(ISENDREQ)
 

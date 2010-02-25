@@ -69,9 +69,9 @@
 !        ------------------------
 
       LLAK=.FALSE.
-      CALL FEMEAN (FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+      CALL FEMEAN (FL3(IJS:IJL,:,:), IJS, IJL, EMEAN(IJS), FMEAN(IJS),
      &             LLAK)
-      CALL STHQ   (FL3, IJS, IJL, THQ(IJS))
+      CALL STHQ   (FL3(IJS:IJL,:,:), IJS, IJL, THQ(IJS))
       IF (ITEST.GE.3) THEN
         IF (ITESTB.GE.IG) THEN
           WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',

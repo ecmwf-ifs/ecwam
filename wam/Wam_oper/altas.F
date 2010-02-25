@@ -56,23 +56,27 @@
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX  ,NOBSPE
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL      ,
+     &            COSPH
       USE YOWMAP   , ONLY : XDELLA   ,KXLT
+      USE YOWMAP   , ONLY : XDELLA   ,KXLT     ,AMOSOP
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    , NINF     ,NSUP     ,
-     &            KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    , NINF    ,NSUP     ,
+     &            KTAG     ,MPMAXLENGTH
       USE YOWMLTSK , ONLY : NCHUNK
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NANG     ,
+     &            NFRE
       USE YOWPCONS , ONLY : DEG      ,R
       USE YOWSPEC,   ONLY : NSTART   ,NEND     ,U10NEW   ,U10OLD   ,
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
      &            Z0OLD    ,TAUW     ,FL1      ,FL2      ,SL       ,
      &            ROAIRN   ,ZIDLNEW
-      USE YOWSTAT  , ONLY : CDTPRO   ,NTASKS   ,NSIZE
+      USE YOWSTAT  , ONLY : CDTPRO   ,NTASKS   ,NSIZE    ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14
       USE YOWWIND  , ONLY : WSPMIN
+      USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 
@@ -81,17 +85,22 @@
       INTEGER ITSKCA(9,NTASKS)
       EXTERNAL MT_ALLOT
 
+! Mod for OPENMP
+      INTEGER JKGLO,KIJS,KIJL,NPROMA
+! End Mod for OPENMP
+
+      LOGICAL NEWREAD, NEWFIL
 ! ----------------------------------------------------------------------
 !     DEFINE ALLOCATABLE ARRAYS
 
+      INTEGER,DIMENSION(NPROC) :: ISENDLEN
+      INTEGER,ALLOCATABLE :: ISENDREQ(:)
+
+      REAL,ALLOCATABLE,DIMENSION(:) :: DIST 
       REAL,ALLOCATABLE,DIMENSION(:) :: WHMOD
       REAL,ALLOCATABLE,DIMENSION(:) :: ETOIB
-
-!*    VARIABLE.     TYPE.        PURPOSE.
-!     ---------     -----        --------
-!      *WHMOD*      REAL         MODEL WAVE HEIGHT (FIRST GUESS).
-!      *ETOIB*      REAL         WAVE HEIGHT FROM O.I. UNTIL
-!                                CONVERTED TOTAL ENERGY BEFORE UPDATE.
+      REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
+      REAL,ALLOCATABLE :: ZCOMBUFR(:)
 
 !-----------------------------------------------------------------------
 
@@ -100,17 +109,48 @@
       WRITE(IU06,*)' '
       WRITE(IU06,*)'  -----ALT DATA ASSIMILATION BEGINS--------'
 
-!    1. GET MODEL WAVE HEIGHT 
-!       ---------------------
+      IG=1
+      IF(.NOT.LMESSPASS) THEN
+        write(*,*) 'ALTAS DOES NOT WORK FOR THIS CONFIGURATION !!!'
+        WRITE(IU06,*) 'ALTAS DOES NOT WORK FOR THIS CONFIGURATION !!!'
+        CALL ABORT1
+      ENDIF
 
-      IF(LMESSPASS) THEN
-        LLAK=.FALSE.
-        CALL FEMEAN (FL1, NSTART(IRANK), NEND(IRANK), EMEAN, FMEAN,
-     &               LLAK)
+!*    1. MEASUREMENTS AND MODEL ARE MERGED BY OPTIMUM INTERPOLATION.
+!        -----------------------------------------------------------
 
-        ALLOCATE(WHMOD(NIBLO))
+!     specify the correlation distance (DIST) and the maximum spreading
+!     factor  EXTENDMAX and get first guess wave height (WHMOD)
 
-        DO IJ = NSTART(IRANK), NEND(IRANK)
+!!! if DIST were to be reset during the run, then MPPEWITHINDIST has to be called
+!!! again !!!!
+      ALLOCATE(DIST(NSTART(IRANK):NEND(IRANK)))
+
+!!! for now, we will disactivate the geographically varying DIST
+
+      IF(XDELLA.LT.0.3) THEN
+        XLMIN=150000.
+        XLMAX=0.
+      ELSE
+        XLMIN=300000.
+        XLMAX=0.
+      ENDIF
+
+      SIGH=0.75
+
+      ALLOCATE(WHMOD(NIBLO))
+
+      NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+
+      LLAK=.FALSE.
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,KJ)
+      DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+        CALL FEMEAN (FL1(KIJS:KIJL,1:NANG,1:NFRE), KIJS, KIJL,
+     &               EMEAN(KIJS), FMEAN(KIJS),LLAK)
+
+        DO IJ=KIJS,KIJL
           IF(EMEAN(IJ).GT.0.) THEN
             WHMOD(IJ)=4.*SQRT(EMEAN(IJ)) 
           ELSE
@@ -118,66 +158,150 @@
           ENDIF
         ENDDO
 
-!       make WHMOD a global array
-        KTAG=KTAG+1
-        CALL MPBCASTSCFLD(KTAG,NSTART,NEND,WHMOD) 
-      ELSE
-        write(*,*) 'ALTAS DOES NOT WORK FOR THIS CONFIGURATION !!!'
-        WRITE(IU06,*) 'ALTAS DOES NOT WORK FOR THIS CONFIGURATION !!!'
-        CALL ABORT1
-      ENDIF
+        DO IJ=KIJS,KIJL
+          KJ=KXLT(IJ,IG)
+          DIST(IJ) = (XLMIN+XLMAX*COSPH(KJ))/R
+        ENDDO
+      ENDDO
+!$OMP       END PARALLEL DO
 
-!*    2. MEASUREMENTS AND MODEL ARE MERGED BY OPTIMUM INTERPOLATION.
-!        -----------------------------------------------------------
+      EXTENDMAX = SQRT(2.) * 2.
 
-!     specify the correlation distance (DIST) and the maximum spreading
-!     distance (DISTMAX)
-      IF(XDELLA.LT.0.2) THEN
-        DIST = 150000./R
-      ELSE IF(XDELLA.LT.0.3) THEN
-        DIST = 150000./R
-      ELSE
-        DIST = 300000./R
-      ENDIF
-
-      DISTMAX = SQRT(2.) * 2.*DIST
-
-!     specify the model error
-!     note that the observation error is now specified in rfl4wam
-      SIGMOD=0.5
+      DISTMAX = 0.
+      DO IJ = NSTART(IRANK), NEND(IRANK)
+         DISTMAX = MAX(DISTMAX,DIST(IJ))
+      ENDDO
+!!    DMAX IS THE ABSOLUTE MAXIMUM OF DISTMAX
+      DMAX = EXTENDMAX*(XLMIN+XLMAX)
 
 !     DETERMINE THE TABLE WHICH TELLS WHICH PE POTENTIALLY SHARES 
 !     ALTIMETER DATA WITH OTHER PE'S.
+!     IT IS BASED ON THE VALUES OF DIST BEFORE REDUCTION FOR LOW WAVE HEIGHT
       IF(.NOT. ALLOCATED(INTLMAX) ) THEN
         ALLOCATE(INTLMAX(NPROC,NPROC))
         ALLOCATE(KMINLMAX(NPROC))
         ALLOCATE(KMAXLMAX(NPROC))
 
-        CALL MPPEWITHINDIST(DISTMAX,INTLMAX,KMINLMAX,KMAXLMAX)
+        CALL MPPEWITHINDIST(DMAX,INTLMAX,KMINLMAX,KMAXLMAX)
+      ENDIF
+
+
+!     SPECIFY THE MODEL ERROR:
+
+!     note that the observation error is now specified in rfl4wam
+      SIGMOD=0.5
+
+!     REDUCE DIST FOR LOW WAVE HEIGHT:
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,REDUC)
+      DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+        DO IJ=KIJS,KIJL
+          REDUC=1.-EXP(-MIN((WHMOD(IJ)/SIGH)**2,50.)) 
+          DIST(IJ) = MAX(0.1,REDUC)*DIST(IJ)
+        ENDDO
+      ENDDO
+!$OMP       END PARALLEL DO
+
+
+!     DISTRIBUTE WHMOD TO WHERE IT IS NEEDED
+
+      IF(NPROC.GT. 1) THEN
+
+        KTAG=KTAG+1
+        NDISPE=0
+        DO IR = 1, NPROC
+          IF(INTLMAX(IR,IRANK).EQ.1) THEN
+            NDISPE=NDISPE+1
+            ISENDLEN(IR)=MPMAXLENGTH
+          ELSE
+            ISENDLEN(IR)=0
+          ENDIF
+        ENDDO
+!       PACKING THE CONTRIBUTION WHICH MIGHT BE COMMON
+        ALLOCATE(ZCOMBUFS(MPMAXLENGTH,NDISPE))
+        ALLOCATE(ISENDREQ(NDISPE))
+        IDISPE=0
+        DO IR = 1, NPROC
+          IF(INTLMAX(IR,IRANK).EQ.1) THEN
+            IDISPE=IDISPE+1
+            ICOUNT = 0
+            DO IJ = NSTART(IRANK), NEND(IRANK)
+              ICOUNT = ICOUNT + 1
+              ZCOMBUFS(ICOUNT,IDISPE) = WHMOD(IJ)
+           ENDDO
+          ENDIF
+        ENDDO
+
+!       SENDING THE CONTRIBUTION WHICH MIGHT BE COMMON
+!       SEND NON BLOCKING THE BUFFERS
+
+        IDISPE=0
+        CALL GSTATS(618,0)
+        DO IR = 1, NPROC
+          IF(INTLMAX(IR,IRANK).EQ.1) THEN
+            IDISPE=IDISPE+1
+            ICOUNT = ISENDLEN(IR) 
+            CALL MPL_SEND(ZCOMBUFS(1:ICOUNT,IDISPE),
+     &                    KDEST=IR,KTAG=KTAG,
+     &                    KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                    KREQUEST=ISENDREQ(IDISPE),
+     &                    CDSTRING='ALTAS:')
+          ENDIF
+        ENDDO
+        CALL GSTATS(618,1)
+
+!       RECEIVING THE CONTRIBUTIONS WHICH MIGHT BE COMMON
+!       (in whatever order they arrive.)
+        ALLOCATE(ZCOMBUFR(MPMAXLENGTH))
+        DO IPR =1,NDISPE
+            CALL GSTATS(618,0)
+            CALL MPL_RECV(ZCOMBUFR(1:MPMAXLENGTH),KFROM=IR,KTAG=KTAG,
+     &             KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='ALTAS:')
+            CALL GSTATS(618,1)
+            IF(KRTAG.NE.KTAG) CALL MPL_ABORT
+     &      ('MPL_RECV ERROR in ALTAS: MISMATCHED TAGS' )
+             ICOUNT = 0
+             DO IJ = NSTART(IR), NEND(IR)
+               ICOUNT = ICOUNT + 1
+               WHMOD(IJ)=ZCOMBUFR(ICOUNT)
+             ENDDO
+        ENDDO
+        DEALLOCATE(ZCOMBUFR)
+
+!       WAIT ANY OUTSTANDING SENDS TO COMPLETE
+        CALL GSTATS(618,0)
+        IF(MPMAXLENGTH.GT.0) THEN
+          CALL MPL_WAIT(ZCOMBUFS(1:MPMAXLENGTH,1),KREQUEST=ISENDREQ,
+     &                  CDSTRING='ALTAS')
+        ENDIF
+        CALL GSTATS(618,1)
+        IF(ALLOCATED(ISENDREQ)) DEALLOCATE(ISENDREQ)
+        KTAG = KTAG + 1
+        IF(ALLOCATED(ZCOMBUFS)) DEALLOCATE(ZCOMBUFS)
 
       ENDIF
 
 
-
-!*    2.1 THINNED MEASUREMENTS ARE READ IN
+!*    2.2 THINNED MEASUREMENTS ARE READ IN
 !         --------------------------------
 
       ALLOCATE (NOBSPE(NPROC))
-      CALL GRFIELD(WHMOD,SIGMOD,DISTMAX)
+      CALL GRFIELD(WHMOD,SIGMOD,DMAX)
 
       IF (ITEST.GE.2)
      &   WRITE(IU06,*) '   SUB. ALTAS: MEASUREMENTS READ IN'
 
 
-!*    2.2 OI.
+!*    2.3 OI.
 !         ---
 
-      ALLOCATE(ETOIB(NINF:NSUP))
+      ALLOCATE(ETOIB(NSTART(IRANK):NEND(IRANK)))
 
-      CALL OIFIELD (WHMOD, ETOIB, SIGMOD, DIST, DISTMAX)
+      CALL OIFIELD (WHMOD, ETOIB, SIGMOD, DIST, DISTMAX, EXTENDMAX)
 
+      DEALLOCATE(DIST)
       DEALLOCATE(WHMOD)
-
 
       IF (ITEST.GE.2)
      &   WRITE(IU06,*) '   SUB. ALTAS: OIFIELD DONE FOR WAVE HEIGHTS'
@@ -187,51 +311,59 @@
 
 !*    3.1 LOOP OVER THE BLOCKS.
 !         ---------------------
-      IG=1
 
 !*    3.1.1 TRANSFERS RESULTS OF OPTIMAL INT TO BLOCKS.
 !           -------------------------------------------
 
-      DO IJ=IJS(IG),IJL(IG)
-        USNEW(IJ) = USOLD(IJ,IG)
-        THWNEW(IJ)= THWOLD(IJ,IG)
-        Z0NEW(IJ)= Z0OLD(IJ,IG)
-      ENDDO
-
+      NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
       CINV16=1./16.
-      DO IJ=IJS(IG),IJL(IG)
-        IF (ETOIB(IJ).GT.0.) THEN
-          ETOIB(IJ) = ETOIB(IJ)**2*CINV16
-        ELSE
-          ETOIB(IJ) = -99.
-        ENDIF
-      ENDDO
 
-      CALL UPDATE (FL1, ETOIB, USNEW, THWNEW, IJS(IG), IJL(IG))
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+      DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+
+        DO IJ=KIJS,KIJL
+          USNEW(IJ) = USOLD(IJ,IG)
+          THWNEW(IJ)= THWOLD(IJ,IG)
+          Z0NEW(IJ)= Z0OLD(IJ,IG)
+        ENDDO
+
+        DO IJ=KIJS,KIJL
+          IF (ETOIB(IJ).GT.0.) THEN
+            ETOIB(IJ) = ETOIB(IJ)**2*CINV16
+          ELSE
+            ETOIB(IJ) = -99.
+          ENDIF
+        ENDDO
+
+!       UPDATE SPECTRA
+        CALL UPDATE (FL1(KIJS:KIJL,1:NANG,1:NFRE),
+     &               ETOIB(KIJS), USNEW(KIJS), THWNEW(KIJS), KIJS, KIJL)
+
+!       THE WIND FIELD CURRENTLY USED IS UPDATED.
+        CALL UPDATEWD(FL1(KIJS:KIJL,1:NANG,1:NFRE),
+     &                SL(KIJS:KIJL,1:NANG,1:NFRE),
+     &                KIJS,KIJL,
+     &                THWNEW(KIJS), USNEW(KIJS),
+     &                USOLD(KIJS:KIJL,IG), TAUW(KIJS:KIJL,IG),
+     &                Z0NEW(KIJS), U10NEW(KIJS),
+     &                ROAIRN(KIJS), ZIDLNEW(KIJS) )
+
+        DO IJ=KIJS,KIJL
+          U10OLD(IJ,IG) = U10NEW(IJ)
+          Z0OLD(IJ,IG) = Z0NEW(IJ)
+          USOLD(IJ,IG) = USNEW(IJ)
+        ENDDO
+      ENDDO
+!$OMP       END PARALLEL DO
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. ALTAS: SPECTRA AND WIND UPDATED '
+      ENDIF
 
       DEALLOCATE(ETOIB)
-
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. ALTAS: SPECTRA UPDATED '
-      ENDIF
-
-!     THE WIND FIELD CURRENTLY USED IS UPDATED.
-
-      CALL UPDATEWD(FL1, SL, IJS(IG),IJL(IG),IG, THWNEW, USNEW,
-     &              USOLD, TAUW, Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
-
-      DO IJ=IJS(IG),IJL(IG)
-        U10OLD(IJ,IG) = U10NEW(IJ)
-        Z0OLD(IJ,IG) = Z0NEW(IJ)
-        USOLD(IJ,IG) = USNEW(IJ)
-      ENDDO
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. ALTAS: WIND REPLACED'
-      ENDIF
-
       DEALLOCATE (NOBSPE)
 
       WRITE(IU06,*) '  ALTAS ENDS NORMALLY'

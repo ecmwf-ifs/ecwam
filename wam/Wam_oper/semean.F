@@ -40,7 +40,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -51,7 +50,7 @@
 
       INTEGER :: IJ,M,K,IJS,IJL
       REAL :: DELT25
-      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL, DIMENSION(IJS:IJL) ::  EM, TEMP
       LOGICAL :: LLEPSMIN
 

@@ -224,7 +224,8 @@
         ENDIF
         CALL GSTATS(1968,2)
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD)
+     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &              LWCUR)
         CALL GSTATS(1968,3)
       ELSE
 
@@ -242,7 +243,8 @@
         ENDIF
         CALL GSTATS(1968,2)
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD)
+     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &              LWCUR)
         CALL GSTATS(1968,3)
       ENDIF
 

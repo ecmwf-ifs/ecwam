@@ -51,7 +51,6 @@
 
       USE YOWFRED  , ONLY : FR
       USE YOWMEAN  , ONLY : EMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
@@ -63,7 +62,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       REAL,DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN
 
       PARAMETER (CDIS = 2.1)

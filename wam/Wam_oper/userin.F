@@ -108,7 +108,7 @@
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
-      USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE
+      USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
@@ -256,6 +256,10 @@
 !     37 : MODEL BATHYMETRY (m)
 !     38 : MAXIMUM WAVE HEIGHT (m)
 !     39 : MAXIMUM WAVE PERIOD (S)
+!     40 : U-COMPONENT OF STOKES DRIFT (m/s) 
+!     41 : V-COMPONENT OF STOKES DRIFT (m/s) 
+!     42 : U-COMPONENT OF SURFACE CURRENT (m/s) 
+!     43 : V-COMPONENT OF SURFACE CURRENT (m/s) 
 
 !     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
 !     LPBIOIN: IF TRUE THE PBIO SOFTWARE IS USED FOR BINARY INPUT
@@ -573,6 +577,8 @@
       LLSOURCE = .TRUE.
 
       LNSESTART = .FALSE.
+
+      LRELWIND = .TRUE.
 
       NDELW_LST = 0
 
@@ -894,19 +900,22 @@
      &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
      &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27).OR.
      &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36).OR.FFLAG(37).OR.
-     &          FFLAG(38).OR.FFLAG(39)
+     &          FFLAG(38).OR.FFLAG(39).OR.FFLAG(40).OR.FFLAG(41).OR.
+     &          FFLAG(42).OR.FFLAG(43)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
      &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
      &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27).OR.
      &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36).OR.PFLAG(37).OR.
-     &          PFLAG(38).OR.PFLAG(39)
+     &          PFLAG(38).OR.PFLAG(39).OR.PFLAG(40).OR.PFLAG(41).OR.
+     &          PFLAG(42).OR.PFLAG(43)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
      &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
      &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27).OR.
      &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36).OR.GFLAG(37).OR.
-     &          GFLAG(38).OR.GFLAG(39) 
+     &          GFLAG(38).OR.GFLAG(39).OR.GFLAG(40).OR.GFLAG(41).OR.
+     &          GFLAG(42).OR.GFLAG(43) 
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
      &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
      &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
@@ -930,7 +939,8 @@
      &          NFLAG(26).OR.NFLAG(27).OR.NFLAG(28).OR.NFLAG(29).OR.
      &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
      &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36).OR.NFLAG(37).OR.
-     &          NFLAG(38).OR.NFLAG(39) 
+     &          NFLAG(38).OR.NFLAG(39).OR.NFLAG(40).OR.NFLAG(41).OR.
+     &          NFLAG(42).OR.NFLAG(43) 
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -1256,7 +1266,8 @@
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
           WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'
           IF (LRELWIND) THEN
-            WRITE(IU06,*) ' HENCE, RELATIVE WINDS WILL BE USED.'
+            WRITE(IU06,*) ' HENCE, RELATIVE WINDS WILL BE USED, BUT'
+            WRITE(IU06,*) ' WITH A REDUCTION FACTOR OF ',RWFAC 
           ELSE
             WRITE(IU06,*) ' BUT ABSOLUTE WINDS WILL BE USED.'
           ENDIF
@@ -1474,6 +1485,10 @@
      & '......', FFLAG(40),'.....',GFLAG(40)
       WRITE(IU06,*) '41 V-COMP STOKES DRIFT........', PFLAG(41),
      & '......', FFLAG(41),'.....',GFLAG(41)
+      WRITE(IU06,*) '42 U-COMP SURFACE CURRENT.....', PFLAG(42),
+     & '......', FFLAG(42),'.....',GFLAG(42)
+      WRITE(IU06,*) '43 V-COMP SURFACE CURRENT.....', PFLAG(43),
+     & '......', FFLAG(43),'.....',GFLAG(43)
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
@@ -1957,7 +1972,7 @@
       IF (NOUTT.GT.0) THEN
         DO J=1,NOUTT
           CALL DIFDATE (CDATEA, COUTT(J), ISHIFT)
-          IF (ISHIFT.LE.0) THEN
+          IF (ISHIFT.LT.0) THEN
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
             WRITE(IU06,*) '+                                         +'
             WRITE(IU06,*) '+    WARNING INFO IN SUB. USERIN          +'

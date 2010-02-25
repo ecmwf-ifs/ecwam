@@ -1,4 +1,4 @@
-      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, IG,THWOLD,USOLD,USNEW)
+      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW)
 
 ! ----------------------------------------------------------------------
 
@@ -24,14 +24,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, IG,THWOLD,USOLD,USNEW)*
+!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW)*
 !          *FL3* - BLOCK OF SPECTRA
 !          *FL1* - SWELL FLAG ARRAY
 !                  = 1 IF COMPONENT IS SWELL
 !                  = 0 IF COMPONENT IS SEA
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *IG * - BLOCK NUMBER
 !          *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                      WIND VELOCITY.
 !          *USNEW*     NEW FRICTION VELOCITY IN M/S.
@@ -55,18 +54,17 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
      &            TH       ,COSTH    ,SINTH    ,FRIC
       USE YOWMEAN  , ONLY : EMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE)  :: FL1,FL3
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: THWOLD,USOLD
-      REAL,DIMENSION(NINF:NSUP) :: USNEW
-      REAL, ALLOCATABLE :: THRESHOLD(:)
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE)  :: FL1,FL3
+      REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD
+      REAL,DIMENSION(IJS:IJL) :: USNEW
+      REAL,DIMENSION(IJS:IJL) :: THRESHOLD
 
       LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
 
@@ -76,10 +74,9 @@
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
-      ALLOCATE(THRESHOLD(IJS:IJL))
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = 1.2*USOLD(IJ,IG)*COS(TH(K)-THWOLD(IJ,IG))
+          THRESHOLD(IJ) = 1.2*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
         ENDDO
         DO M=1,NFRE
           CM = FRIC/C(M)
@@ -93,7 +90,6 @@
           ENDDO
         ENDDO
       ENDDO
-      DEALLOCATE(THRESHOLD)
 
 
 !*    2. COMPUTATION OF SWELL OUTPUT PARAMETERS
@@ -109,8 +105,7 @@
   
       IF(IPFGTBL(16).NE.0) THEN
         LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS),
-     &              LLAK)
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS), LLAK)
       ENDIF
 
 !     femean must be called before semean since LLEPSMIN is false
@@ -177,7 +172,7 @@
 !       to the wind direction.
         DO IJ=IJS,IJL
           IF(ESEA(IJ).LE.0.) THEN
-            THWISEA(IJ)=THWOLD(IJ,IG)
+            THWISEA(IJ)=THWOLD(IJ)
           ENDIF
         ENDDO
       ENDIF

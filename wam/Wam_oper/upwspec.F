@@ -67,22 +67,19 @@
 !-----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,FRATIO
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: IJS, IJL 
       INTEGER :: M1(NFRE)
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
-      REAL,DIMENSION(NINF:NSUP) :: ETA, FMWFG, FMWA
-!cc note ETFG corresponds to EMEAN which is module yowmean in UPDATE
-!cc therefore it has to have a different definition as the other arrays
-      REAL,DIMENSION(IJS:IJL) :: ETFG, XR, XB 
 
       REAL :: XL11
+      REAL :: F(IJS:IJL,NANG,NFRE)
+      REAL,DIMENSION(IJS:IJL) :: ETA, FMWFG, FMWA
+      REAL,DIMENSION(IJS:IJL) :: ETFG, XR, XB
+      REAL,DIMENSION(IJS:IJL) :: ESPFG, ESPFG_1D, DELLOW, DELHIGH
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
-      REAL :: ESPFG(IJS:IJL), ESPFG_1D(IJS:IJL) 
-      REAL :: DELLOW(IJS:IJL), DELHIGH(IJS:IJL) 
 
 ! ----------------------------------------------------------------------
 

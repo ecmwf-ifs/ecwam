@@ -1,4 +1,4 @@
-      SUBROUTINE FWSEA (F, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL) 
+      SUBROUTINE FWSEA (F, EMN, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -34,8 +34,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : TH       ,C      ,FRIC
-      USE YOWMEAN  , ONLY : EMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
@@ -47,8 +45,9 @@
 
       REAL :: THRESHOLD,CHECKTA
 
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
-      REAL,DIMENSION(NINF:NSUP) :: EWFG, FMWFG, ETOI, THMO, USMO
+      REAL :: F(IJS:IJL,NANG,NFRE)
+      REAL,DIMENSION(IJS:IJL) :: EMN
+      REAL,DIMENSION(IJS:IJL) :: EWFG, FMWFG, ETOI, THMO, USMO
       REAL,DIMENSION(NANG,NFRE) :: FSEA
       REAL :: CM(NFRE)
 
@@ -76,7 +75,7 @@
       DO IJ=IJS,IJL
         LLFOUND=.FALSE.
 !       SKIP THE LAND POINTS.
-        IF (EMEAN(IJ).GT.0.01.AND.ETOI(IJ).GT.0.01) THEN
+        IF (EMN(IJ).GT.0.01 .AND. ETOI(IJ).GT.0.01) THEN
           DO K=1,NANG
             THRESHOLD = 1.2*USMO(IJ)*COS(TH(K)-THMO(IJ))
             DO M=1,NFRE

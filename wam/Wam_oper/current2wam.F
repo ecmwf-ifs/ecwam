@@ -75,7 +75,7 @@
       IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
      &    .NOT.LMESSPASS) THEN
 
-        NBIT=240000
+        NBIT=350000
 
         IF (FRSTIME) THEN
           CALL PBOPEN(IUNIT1,FILNM,'r',KRET)

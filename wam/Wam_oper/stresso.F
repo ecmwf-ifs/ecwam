@@ -1,4 +1,4 @@
-      SUBROUTINE STRESSO (F,IJS, IJL, IG,THWNEW,USNEW,Z0NEW,
+      SUBROUTINE STRESSO (F,IJS, IJL, THWNEW,USNEW,Z0NEW,
      &                    ROAIRN, TAUW, SL, MIJ)
 
 ! ----------------------------------------------------------------------
@@ -20,11 +20,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STRESSO (F,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,ROAIRN,TAUW,SL,MIJ)*
+!       *CALL* *STRESSO (F,IJS,IJL,THWNEW,USNEW,Z0NEW,ROAIRN,TAUW,SL,MIJ)*
 !         *F*       - WAVE SPECTRUM.
 !         *IJS*     - INDEX OF FIRST GRIDPOINT.
 !         *IJL*     - INDEX OF LAST GRIDPOINT.
-!         *IG*      - ACTUAL BLOCK NUMBER.
 !         *THWNEW*  - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                     NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                     CLOCKWISE FROM NORTH).
@@ -61,8 +60,7 @@
       USE YOWCOUP  , ONLY : ALPHA
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &            COSTH    ,SINTH    ,FR5
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
       USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,EPS1     ,TAUHFT   ,
      &            DELUST   ,DELALP
@@ -73,9 +71,8 @@
 
       INTEGER :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,SL
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: TAUW
-      REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW, ROAIRN
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,SL
+      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW
       REAL :: CONST0(IJS:IJL)
 
 ! ----------------------------------------------------------------------
@@ -172,10 +169,10 @@
       DO IJ=IJS,IJL
         XSTRESS(IJ) = XSTRESS(IJ)+TAUHF(IJ)*SIN(THWNEW(IJ))
         YSTRESS(IJ) = YSTRESS(IJ)+TAUHF(IJ)*COS(THWNEW(IJ))
-        TAUW(IJ,IG) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
+        TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
 
-        TAUW(IJ,IG) = MIN(TAUW(IJ,IG),UST2(IJ)-EPS1)
-        TAUW(IJ,IG) = MAX(TAUW(IJ,IG),0.)
+        TAUW(IJ) = MIN(TAUW(IJ),UST2(IJ)-EPS1)
+        TAUW(IJ) = MAX(TAUW(IJ),0.)
       ENDDO
 
       RETURN

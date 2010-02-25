@@ -1,6 +1,6 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  ROAIRO, ZIDLOLD, ICEMASK, IREAD)
-
+     &                  ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &                  LWCUR)
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
@@ -24,7 +24,8 @@
 !     ----------
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD)*
+!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+!    &                 LWCUR)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -37,6 +38,7 @@
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *ICEMASK*- SEA ICE MASK.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
+!          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
 
 !     METHOD.
@@ -99,6 +101,7 @@
       CHARACTER*80 FILENAME
 
       LOGICAL LWNDFILE, LCLOSEWND
+      LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
 
@@ -120,7 +123,8 @@
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
         CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
-     &               CDT1, LWNDFILE, LCLOSEWND, IREAD)
+     &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
+     &               LWCUR)
         DO IG=1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
           CALL GSTATS(1445,0)
@@ -204,7 +208,8 @@
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
       CALL GETWND (US2, DS2, ADS2, ZIDL2, ICMSK2,
-     &             CDT2, LWNDFILE, LCLOSEWND, IREAD)
+     &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
+     &             LWCUR)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.
 !         -----------------------------------------

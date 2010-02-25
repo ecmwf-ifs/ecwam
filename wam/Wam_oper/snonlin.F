@@ -60,12 +60,11 @@
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
      &            FRH      ,ENH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK,    INDEP 
       USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F,FL,SL
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
 
       DIMENSION FTEMP(IJS:IJL), AD(IJS:IJL), DELAD(IJS:IJL), 
      &          DELAP(IJS:IJL), DELAM(IJS:IJL)

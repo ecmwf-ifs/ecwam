@@ -1,4 +1,4 @@
-      SUBROUTINE UPDATEWD (FL1, SL, IJS, IJL, IG, THWNEW, USNEW,
+      SUBROUTINE UPDATEWD (FL1, SL, IJS, IJL, THWNEW, USNEW,
      &                     USOLD, TAUW, Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
 
 ! ----------------------------------------------------------------------
@@ -16,13 +16,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UPDATEWD (FL1, SL,IJS, IJL, IG, THWNEW, USNEW,
+!       *CALL* *UPDATEWD (FL1, SL,IJS, IJL, THWNEW, USNEW,
 !                         TAUW, Z0NEW, U10NEW,ROAIRN, ZIDLNEW)*
 !          *FL1* - SPECTRUM.
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
 !          *IJL* - INDEX OF LAST GRIDPOINT.
-!          *IG*  - ACTUAL BLOCK NUMBER.
 !          *THWNEW*    WIND DIRECTION.
 !          *USNEW*     NEW FRICTION VELOCITY IN M/S.
 !          *TAUW*      WAVE STRESS IN (M/S)**2
@@ -51,8 +50,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : UMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -61,14 +59,14 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJ, IJS, IJL, IG, ILEV
+      INTEGER :: IJ, IJS, IJL, ILEV
       INTEGER :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: USOLD, TAUW
-      REAL,DIMENSION(NINF:NSUP) :: THWNEW, USNEW, Z0NEW, U10NEW,
-     &                             ROAIRN,ZIDLNEW
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1,SL
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: DUMMYFL
+      REAL,DIMENSION(IJS:IJL) :: USOLD, TAUW
+      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, U10NEW,
+     &                           ROAIRN,ZIDLNEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,SL
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
 
@@ -77,14 +75,14 @@
 ! ----------------------------------------------------------------------
 
       DO IJ=IJS,IJL
-        U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ,IG))*U10NEW(IJ)
+        U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ))*U10NEW(IJ)
         U10NEW(IJ) = MIN(U10NEW(IJ),UMAX)
         U10NEW(IJ) = MAX(U10NEW(IJ),WSPMIN)
       ENDDO
 
       ILEV=1
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS,IG), USNEW(IJS), Z0NEW(IJS),
+      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
      &             IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: AIRSEA CALLED '
@@ -109,7 +107,7 @@
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
-      CALL STRESSO (FL1,IJS,IJL,IG,THWNEW,USNEW,Z0NEW,
+      CALL STRESSO (FL1,IJS,IJL,THWNEW,USNEW,Z0NEW,
      &              ROAIRN, TAUW,SL, MIJ)
 
       IF (ITEST.GE.2) THEN

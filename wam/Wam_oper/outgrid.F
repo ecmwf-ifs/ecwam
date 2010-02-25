@@ -66,12 +66,13 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWCURR  , ONLY : U, V 
       USE YOWICE   , ONLY : LICERUN  ,ICEMASK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG
+     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -313,6 +314,28 @@
      &      CALL MAKEGRID (TEMP,VSTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
+          IF(IPFGTBL(42).NE.0) THEN
+            DO IJ = IJS,IJL
+!             the ice mask does not apply to the imposed ocean current 
+              TEMP(IJ) = U(IJ,IG)
+            ENDDO
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(42),42,NSTART,NEND,TEMP)
+            IF(IPFGTBL(42).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,UCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(43).NE.0) THEN
+            DO IJ = IJS,IJL
+!             the ice mask does not apply to the imposed ocean current 
+              TEMP(IJ) = V(IJ,IG)
+            ENDDO
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(43),43,NSTART,NEND,TEMP)
+            IF(IPFGTBL(43).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,VCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
         ELSE
 
           IF(IPFGTBL(1).NE.0) THEN
@@ -458,6 +481,24 @@
             CALL LOC2GLO(VSTMEAN,TEMP,IJS,IJL,IG)
             LSQRT=.FALSE.
             CALL MAKEGRID (TEMP,VSTOKESG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(42).NE.0) THEN
+            DO IJ = IJS,IJL
+!             the ice mask does not apply to the imposed ocean current 
+              TEMP(IJ) = U(IJ,IG)
+            ENDDO
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,UCURG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(43).NE.0) THEN
+            DO IJ = IJS,IJL
+!             the ice mask does not apply to the imposed ocean current 
+              TEMP(IJ) = V(IJ,IG)
+            ENDDO
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,VCURG,JS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
         ENDIF

@@ -43,7 +43,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DELTH    ,TH       ,COSTH    ,SINTH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
 
 ! ----------------------------------------------------------------------
 
@@ -52,7 +51,7 @@
       INTEGER :: IJ,K,IJS,IJL
       INTEGER,DIMENSION(IJS:IJL) :: MM
       REAL,DIMENSION(IJS:IJL) :: MEANDIR, MEANCOSFL
-      REAL :: SI(IJS:IJL), CI(IJS:IJL), F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: SI(IJS:IJL), CI(IJS:IJL), F(IJS:IJL,NANG,NFRE)
 
 ! ----------------------------------------------------------------------
 

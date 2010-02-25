@@ -51,7 +51,6 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFFR     ,
      &              DFFR2  ,DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL  ,
      &              WP2TAIL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
@@ -63,7 +62,7 @@
 
       INTEGER :: IJ,M,K,IJS,IJL
       REAL :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F(IJS:IJL,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
       REAL,DIMENSION(IJS:IJL) :: EM, FM1, F1, AK, XK
 

@@ -41,7 +41,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFFR  ,DELTH    ,WP1TAIL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
 
@@ -50,7 +49,7 @@
       IMPLICIT NONE
 
       INTEGER :: IJ,K,M,IJS,IJL
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F(IJS:IJL,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: TEMP, EMEAN, MEANWP1
       REAL :: COEF_FR
 

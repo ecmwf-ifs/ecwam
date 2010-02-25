@@ -102,7 +102,7 @@
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NC       ,NR       ,FIELDG   ,IUNITW   ,
      &            CWDFILE  ,LLWSWAVE ,LLWDWAVE
-      USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,ZIDL0
+      USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
 
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -143,7 +143,7 @@
 !       1.0 INITIALISE VALUES. 
 !           ------------------ 
 
-        NBIT=1080000
+        NBIT=2730000
 
         ICOORD = 1
 
@@ -231,7 +231,7 @@
         ELSE
           DO J=1,NGY
             DO I=1,NGX
-              FIELDG(I,J)%ZIDL = ZIDL0
+              FIELDG(I,J)%ZIDL = WSTAR0
             ENDDO
           ENDDO
         ENDIF
@@ -245,7 +245,7 @@
 
         WND: DO IVAR=1,NFLD
           IF (ITEST.GT.1) THEN
-            WRITE(IU06,*) ' SUB. READWIND - LOOP OVE IVAR ',IVAR,NFLD
+            WRITE(IU06,*) ' SUB. READWIND - LOOP OVER IVAR ',IVAR,NFLD
           ENDIF
 2002      CONTINUE
           IF(IRANK.EQ.IREAD) THEN
@@ -285,6 +285,7 @@
 
             IF (ITEST.GT.1) THEN
               WRITE(IU06,*) ' SUB. READWIND - READ FROM ',FILNM
+              CALL FLUSH(IU06)
             ENDIF
           ENDIF
 
@@ -449,7 +450,7 @@
               DO J=1,NGY
                 DO I=1,NGX
                   IF(WORK(I,J).EQ.PMISS) THEN
-                    FIELDG(I,J)%ZIDL = ZIDL0
+                    FIELDG(I,J)%ZIDL = WSTAR0
                   ELSE
                     FIELDG(I,J)%ZIDL=WORK(I,J)
                   ENDIF
@@ -622,7 +623,7 @@
         DO J=1,NR
           DO I=1,NC
             FIELDG(I,J)%AIRD=ROAIR
-            FIELDG(I,J)%ZIDL=ZIDL0
+            FIELDG(I,J)%ZIDL=WSTAR0
             FIELDG(I,J)%CIFR=0.
             FIELDG(I,J)%UCUR=0.
             FIELDG(I,J)%VCUR=0.

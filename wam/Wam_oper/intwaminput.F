@@ -596,7 +596,7 @@
                DO J=1,NGY
                  JSN=NGY-J+1
                  DO I=1,NLONRGG(JSN)
-                   TEMP(I,J)=FIELD(I,J)
+                   TEMP(I,J)=0.5*FIELD(I,J)
                  ENDDO
                ENDDO
 
@@ -610,7 +610,7 @@
                  DO I=1,NLONRGG(JSN)
                    IF(FIELD(I,J).NE.PSEK3(2)) THEN
                      IF(TEMP(I,J).NE.PSEK3(2)) THEN
-                       TEMP(I,J)=0.5*(TEMP(I,J)+FIELD(I,J))
+                       TEMP(I,J)=TEMP(I,J)+0.5*FIELD(I,J)
                      ELSE
                        TEMP(I,J)=0.5*FIELD(I,J)
                      ENDIF
@@ -689,7 +689,7 @@
                 JSN=NGY-J+1
                 DO I=1,NLONRGG(JSN)
                   IF(FIELD(I,J).NE.PSEK3(2)) THEN
-                    TEMP(I,J)=TEMP(I,J)+FIELD(I,J)
+                    TEMP(I,J)=TEMP(I,J)+ONETHIRD*FIELD(I,J)
                   ENDIF
                 ENDDO
                ENDDO
@@ -699,10 +699,10 @@
                 JSN=NGY-J+1
                 DO I=1,NLONRGG(JSN)
                   IF(FIELD(I,J).NE.PSEK3(2)) THEN
-                    FIELD(I,J)=ONETHIRD*(FIELD(I,J)+TEMP(I,J))
+                    FIELD(I,J)=ONETHIRD*FIELD(I,J)+TEMP(I,J)
                   ELSE
                     IF(TEMP(I,J).NE.0.) THEN
-                      FIELD(I,J)=ONETHIRD*TEMP(I,J)
+                      FIELD(I,J)=TEMP(I,J)
                     ENDIF
                   ENDIF
                 ENDDO

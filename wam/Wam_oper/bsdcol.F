@@ -37,7 +37,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (ID1=1521, ID2=861, IDP=14)
+      PARAMETER (ID1=1521, ID2=1861, IDP=14)
       PARAMETER ( JPLENG=2400000 )
 
       CHARACTER*5 :: BUOY

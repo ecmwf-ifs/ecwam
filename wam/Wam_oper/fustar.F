@@ -46,7 +46,6 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMPP   , ONLY : NINF    ,NSUP
       USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV   ,
      &             AFCRV   ,BFCRV
       USE YOWTABL  , ONLY : USTARM
@@ -55,8 +54,8 @@
 ! ----------------------------------------------------------------------
 
       INTEGER, PARAMETER :: NITER=5
-      REAL,DIMENSION(NINF:NSUP) :: USMO, USA, EWOI, EWA, T, FMWA,
-     &                             EWFG, USTANAL , USTANAL0
+      REAL,DIMENSION(IJS:IJL) :: USMO, USA, EWOI, EWA, T, FMWA,
+     &                           EWFG, USTANAL , USTANAL0
 
 ! ----------------------------------------------------------------------
 

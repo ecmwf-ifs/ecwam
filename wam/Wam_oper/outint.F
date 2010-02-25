@@ -67,7 +67,8 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
-     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG
+     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
+     &            UCURG    ,VCURG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -210,6 +211,8 @@
         IF (FFLAG(39))CALL MPGATHERGRDFLD(IPFGTBL(39),IRECV,39,TMAXG)
         IF (FFLAG(40))CALL MPGATHERGRDFLD(IPFGTBL(40),IRECV,40,USTOKESG)
         IF (FFLAG(41))CALL MPGATHERGRDFLD(IPFGTBL(41),IRECV,41,VSTOKESG)
+        IF (FFLAG(42))CALL MPGATHERGRDFLD(IPFGTBL(42),IRECV,42,UCURG)
+        IF (FFLAG(43))CALL MPGATHERGRDFLD(IPFGTBL(43),IRECV,43,VCURG)
 
       ENDIF
 
@@ -303,6 +306,10 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(40),IRECV,140,USTOKESG)
         IF (PFLAG(41).OR.(.NOT.LFDB.AND.GFLAG(41)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(41),IRECV,141,VSTOKESG)
+        IF (PFLAG(42).OR.(.NOT.LFDB.AND.GFLAG(42)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(42),IRECV,142,UCURG)
+        IF (PFLAG(43).OR.(.NOT.LFDB.AND.GFLAG(43)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(43),IRECV,143,VCURG)
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
@@ -370,6 +377,8 @@
             IF (FFLAG(39))WRITE (IU20) TMAXG
             IF (FFLAG(40))WRITE (IU20) USTOKESG
             IF (FFLAG(41))WRITE (IU20) VSTOKESG
+            IF (FFLAG(42))WRITE (IU20) UCURG
+            IF (FFLAG(43))WRITE (IU20) VCURG
           ENDIF
         ENDIF
 
@@ -546,6 +555,21 @@
      &                 VSTOKESG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        IF (PFLAG(42)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' U-COMP SURFACE CURRENT ( 0.01 M/S )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 UCURG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(43)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' V-COMP SURFACE CURRENT ( 0.01 M/S )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 VCURG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
@@ -1099,6 +1123,40 @@
             ilocal=ilocal+1
             IPARAM=216
             CALL GRIBPAC(IU06,IU30,NTENCODE,VSTOKESG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      U-COMP SURFACE CUIRRENT.
+!       ------------------------
+
+        IF (GFLAG(42)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(42)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=131
+            CALL GRIBPAC(IU06,IU30,NTENCODE,UCURG,NGX,NGY,IPARAM,
+     &       IY,IM,ID,IH,IMN,
+     &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
+     &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+          ENDIF
+        ENDIF
+
+!*      V-COMP SURFACE CUIRRENT.
+!       ------------------------
+
+        IF (GFLAG(43)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(43)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=132
+            CALL GRIBPAC(IU06,IU30,NTENCODE,VCURG,NGX,NGY,IPARAM,
      &       IY,IM,ID,IH,IMN,
      &       IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &       YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)

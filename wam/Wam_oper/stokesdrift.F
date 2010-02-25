@@ -40,7 +40,6 @@
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &                      COSTH    ,SINTH  
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
        
@@ -51,7 +50,7 @@
       INTEGER :: IJ, M, K, IJS, IJL
 
       REAL :: CONST, FAC, FAC1, FAC2, FAC3
-      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL, DIMENSION(IJS:IJL) ::  USTOKES,VSTOKES 
  
 !***  1. DETERMINE STOKE DRIFT VECTOR.
@@ -73,9 +72,9 @@
             FAC1 = FAC*SINTH(K)
             FAC2 = FAC*COSTH(K)
             DO IJ = IJS,IJL
-               FAC3 = TFAC_ST(INDEP(IJ),M)
-               USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3*F3(IJ,K,M)
-               VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3*F3(IJ,K,M)
+               FAC3 = TFAC_ST(INDEP(IJ),M)*F3(IJ,K,M)
+               USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
+               VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
             ENDDO
          ENDDO
       ENDDO
@@ -87,8 +86,9 @@
          FAC1 = DELTH*SINTH(K)
          FAC2 = DELTH*COSTH(K)
          DO IJ = IJS,IJL
-            USTOKES(IJ) = USTOKES(IJ)+CONST*FAC1*F3(IJ,K,NFRE)
-            VSTOKES(IJ) = VSTOKES(IJ)+CONST*FAC2*F3(IJ,K,NFRE)
+            FAC3 = CONST*F3(IJ,K,NFRE)
+            USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
+            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
          ENDDO
       ENDDO
 

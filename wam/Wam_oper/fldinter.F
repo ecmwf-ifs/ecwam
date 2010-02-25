@@ -3,7 +3,7 @@
      &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                     RLONRGG, IJBLOCK, PMISS,
-     &                     LADEN, ROAIR, LGUST, ZIDL0,LWCUR,LLINTERPOL,
+     &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -35,7 +35,7 @@
 !    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    RLONRGG, IJBLOCK, PMISS,
-!    &                    LADEN, ROAIR, LGUST, ZIDL0,LWCUR,LLINTERPOL,
+!    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
 !    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM)
 !
 !        *IU06*   - OUTPUT UNIT.
@@ -79,7 +79,7 @@
 !        *LADEN*  - VARIABLE AIR DENSITY IS USED.
 !        *ROAIR*  - DEFAULT VALUE FOR AIR DENSITY.
 !        *LGUST*  - GUSTINESS IS USED.
-!        *ZIDL0*  - DEFAULT VALUE FOR Zi/L
+!        *WSTAR0* - DEFAULT VALUE FOR w*. 
 !        *LWCUR*  - SURFACE CURRENTS ARE USED.
 !        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
 !        *DJ1M*   - COEFFICIENT
@@ -105,7 +105,7 @@
       INTEGER RLONRGG(NR)
       INTEGER :: IJBLOCK(0:NC+1,NR)
       REAL :: ROAIR
-      REAL :: ZIDL0 
+      REAL :: WSTAR0 
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL:: LADEN, LGUST, LWCUR, LLINTERPOL
@@ -139,7 +139,7 @@
             IF (LGUST) THEN
               FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4) 
             ELSE
-              FIELDG(I,J)%ZIDL = ZIDL0 
+              FIELDG(I,J)%ZIDL = WSTAR0 
             ENDIF
 
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
@@ -213,7 +213,7 @@
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
-              FIELDG(I,J)%ZIDL = ZIDL0 
+              FIELDG(I,J)%ZIDL = WSTAR0 
             ENDIF
 
 !           FOR SEA ICE FRACTION

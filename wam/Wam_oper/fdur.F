@@ -32,11 +32,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV
-      USE YOWMPP   , ONLY : NINF    ,NSUP
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF:NSUP) :: EWFG, T, USMO 
+      REAL,DIMENSION(IJS:IJL) :: EWFG, T, USMO 
 
 
 !*    1. INITIALIZE DURATION.                                           

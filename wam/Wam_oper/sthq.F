@@ -41,14 +41,13 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DFIM     ,COSTH    ,SINTH
-      USE YOWMPP   , ONLY : NINF     ,NSUP
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER :: IJ,M,K,IJS,IJL
-      REAL :: F3(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL, DIMENSION(IJS:IJL) :: TEMP, THQ, SI, CI
 
 ! ----------------------------------------------------------------------

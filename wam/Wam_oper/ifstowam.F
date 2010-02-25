@@ -28,7 +28,7 @@
 !                   FIELDS(:,1) = U COMPONENT OF WIND SPEED
 !                   FIELDS(:,2) = V COMPONENT OF WIND SPEED
 !                   FIELDS(:,3) = AIR DENSITY
-!                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
+!                   FIELDS(:,4) = w* USED FOR GUSTINESS
 !                   FIELDS(:,5) = SEA ICE FRACTION 
 !                   FIELDS(:,6) = U COMPONENT OF SURFACE CURRENT 
 !                   FIELDS(:,7) = V COMPONENT OF SURFACE CURRENT 
@@ -58,7 +58,7 @@
      &            JFROMIJ 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LL1D
-      USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,ZIDL0
+      USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
@@ -68,6 +68,8 @@
      &            CWDFILE  ,LLNEWCURR,NORMS_IN
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE
+
 
 ! --------------------------------------------------------------------- 
 
@@ -84,6 +86,9 @@
       INTEGER :: IC
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL, SAVE :: LLINTERPOL
+
+      INTEGER :: ISENDREQ, ITAG
+      REAL, ALLOCATABLE :: ZCOMBUF(:)
 
       INTEGER, ALLOCATABLE, SAVE :: JJ(:), II(:,:), IIP(:,:)
       INTEGER, ALLOCATABLE, SAVE :: ISTART(:)
@@ -214,7 +219,7 @@
         AFLABEL(1)='Neutral 10m U   '
         AFLABEL(2)='Neutral 10m V   '
         IF (NFIELDS.GE.3) AFLABEL(3)='Air density     '
-        IF (NFIELDS.GE.4) AFLABEL(4)='Zi/L            '
+        IF (NFIELDS.GE.4) AFLABEL(4)='w*              '
         IF (NFIELDS.GE.5) AFLABEL(5)='Sea ice fraction'
         IF (NFIELDS.GE.6) AFLABEL(6)='U-ocean-current '
         IF (NFIELDS.GE.7) AFLABEL(7)='V-ocean-current '
@@ -229,14 +234,15 @@
 !       IF REQUESTED BY SETTING LWCOUNORMS=TRUE IN INPUT NAMELIST.
         IF( LFRSTIME .OR. LWCOUNORMS )THEN
           WRITE(IU06,*) ' '
-          WRITE(IU06,*) ' *GLOBAL* NORM OF INPUT ATMOSPHERIC FIELDS : '
+          WRITE(IU06,*) ' *GLOBAL* NORMS OF INPUT ATMOSPHERIC FIELDS :'
           CALL GSTATS(1436,0)
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,I,IC)
           DO IFLD=1,NFIELDS
             JF=IFLD
-            DO IC=1,4
+            DO IC=1,3
               NORMS(JF,IC)=FIELDS(1,JF)
             ENDDO
+            NORMS(JF,4)=FIELDS(1,JF)**2
             DO I=2,NGPTOTG 
               NORMS(JF,1)=NORMS(JF,1)+FIELDS(I,JF)
               NORMS(JF,2)=MIN(NORMS(JF,2),FIELDS(I,JF))
@@ -261,9 +267,15 @@
 
         ELSE
 !       *LOCAL* NORM
-          WRITE(IU06,*) ' '
-          WRITE(IU06,*) ' *Local* NORM OF INPUT ATMOSPHERIC FIELDS : '
-          WRITE(IU06,*) ' *Can only be compared if the two runs '
+
+          IRECV=1
+
+          IF(IRANK.EQ.IRECV) THEN
+          WRITE(IU06,*) ' NORMS OF GLOBAL INPUT ATMOSPHERIC FIELDS :'
+          ELSE
+          WRITE(IU06,*) ' *Local* NORMS OF INPUT ATMOSPHERIC FIELDS : '
+          ENDIF
+          WRITE(IU06,*) ' *Can only be compared if the log files'
           WRITE(IU06,*) '  are for processor: ',IRANK 
           WRITE(IU06,*) '  have the same number of processors: ',NPROC 
           IF(LL1D) THEN
@@ -314,11 +326,89 @@
             NORMS(JF,4)=NORMS(JF,4)-NORMS(JF,1)**2
           ENDDO
 
+!         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
+!         PSEUDO GLOBAL NORM.
+ 
+          NCOMLOC=1+4*NFIELDS
+          NCOMBUF=NCOMLOC*NPROC
+          ALLOCATE(ZCOMBUF(NCOMBUF))
+
+          IST=1+(IRANK-1)*NCOMLOC
+          IED=IST+NCOMLOC-1
+          ICOUNT=IST
+          ZCOMBUF(ICOUNT)=N_MASK_IN
+          DO IFLD=1,NFIELDS
+            DO IC=1,4
+              ICOUNT=ICOUNT+1
+              ZCOMBUF(ICOUNT)=NORMS(IFLD,IC)
+            ENDDO
+          ENDDO
+
+          ITAG=1
+          CALL MPL_SEND(ZCOMBUF(IST:IED),KDEST=IRECV,KTAG=ITAG,
+     &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                  KREQUEST=ISENDREQ,
+     &                  CDSTRING='IFSTOWAM: MPL_SEND' )
+          IF(IRANK.EQ.IRECV) THEN
+            DO IP=1,NPROC
+              IST=1+(IP-1)*NCOMLOC
+              IED=IST+NCOMLOC-1
+              CALL MPL_RECV(ZCOMBUF(IST:IED),
+     &                      KSOURCE=IP,KTAG=ITAG,
+     &                      KMP_TYPE=JP_BLOCKING_STANDARD,
+     &                      CDSTRING='IFSTOWAM: MPL_RECV' )
+
+            ENDDO
+            CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
+     &                    CDSTRING='IFSTOWAM: WAIT MPL_SEND')
+          ENDIF
+
+
+!         COMPUTE PSEUDO GLOBAL NORM
+          IF(IRANK.EQ.IRECV) THEN
+            IST=1+(IRANK-1)*NCOMLOC
+            ICOUNT=IST
+            NMASK=ZCOMBUF(ICOUNT)
+            NTOT=NMASK
+            DO JF=1,NFIELDS
+              ICOUNT=ICOUNT+1
+              NORMS(JF,1)=NMASK*ZCOMBUF(ICOUNT)
+              ICOUNT=ICOUNT+3
+              NORMS(JF,4)=NMASK*ZCOMBUF(ICOUNT)
+            ENDDO
+            DO IP=1,NPROC
+              IF(IP.NE.IRECV) THEN
+                IST=1+(IP-1)*NCOMLOC
+                ICOUNT=IST
+                NMASK=ZCOMBUF(ICOUNT)
+                NTOT=NTOT+NMASK
+                DO JF=1,NFIELDS
+                  ICOUNT=ICOUNT+1
+                  NORMS(JF,1)=NORMS(JF,1)+NMASK*ZCOMBUF(ICOUNT)
+                  ICOUNT=ICOUNT+1
+                  NORMS(JF,2)=MIN(NORMS(JF,2),ZCOMBUF(ICOUNT))
+                  ICOUNT=ICOUNT+1
+                  NORMS(JF,3)=MAX(NORMS(JF,3),ZCOMBUF(ICOUNT))
+                  ICOUNT=ICOUNT+1
+                  NORMS(JF,4)=NORMS(JF,4)+NMASK*ZCOMBUF(ICOUNT)
+                ENDDO
+              ENDIF
+            ENDDO
+            DO JF=1,NFIELDS
+              NORMS(JF,1)=NORMS(JF,1)/NTOT
+              NORMS(JF,4)=NORMS(JF,4)/NTOT
+            ENDDO
+          ELSE
+            NTOT=N_MASK_IN
+          ENDIF
+
           DO IFLD=1,NFIELDS
             WRITE(IU06,*) ' ',AFLABEL(IFLD),
-     &         NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3),N_MASK_IN,
+     &         NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3),NTOT,
      &                    IRANK, NPROC, LL1D
           ENDDO
+
+          DEALLOCATE(ZCOMBUF)
         ENDIF
         WRITE(IU06,*) ' '
         IF(ITEST.GT.0) CALL FLUSH(IU06)
@@ -360,7 +450,7 @@
      &                   IFROMIJ, JFROMIJ, NINF, NSUP, IGL, KIJS, KIJL,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                   RLONRGG, IJBLOCK, ZMISS, 
-     &                   LADEN, ROAIR, LGUST, ZIDL0,LWCUR,LLINTERPOL,
+     &                   LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
      &                   DJ1, DII1, DIIP1, JJ, II, IIP, MASK_IN)
         ENDDO
 !$OMP   END PARALLEL DO
@@ -378,7 +468,7 @@
 
         IF (LGUST) THEN 
           IF (ITEST.GT.1)
-     &      WRITE(IU06,*) ' SUB. IFSTOWAM - Zi/L INTERPOLATED'
+     &      WRITE(IU06,*) ' SUB. IFSTOWAM - w* INTERPOLATED'
         ENDIF
 
         IF (LWCUR) THEN 

@@ -28,6 +28,8 @@
       REAL, ALLOCATABLE :: TMAXG(:,:) 
       REAL, ALLOCATABLE :: USTOKESG(:,:) 
       REAL, ALLOCATABLE :: VSTOKESG(:,:) 
+      REAL, ALLOCATABLE :: UCURG(:,:) 
+      REAL, ALLOCATABLE :: VCURG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -62,6 +64,8 @@
 !      *TMAXG*     REAL      GRIDDED MAXIMUM WAVE PERIOD FIELD (S).
 !      *USTOKESG*  REAL      GRIDDED U-COMP STOKES DRIFT (M/S).
 !      *VSTOKESG*  REAL      GRIDDED V-COMP STOKESDRIFT (M/S).
+!      *UCURG*     REAL      GRIDDED U-COMP SURFACE CURRENT (M/S).
+!      *VCURG*     REAL      GRIDDED V-COMP SURFACE CURRENT (M/S).
 
 
 ! ----------------------------------------------------------------------

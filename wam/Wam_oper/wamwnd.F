@@ -1,4 +1,4 @@
-      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG)
+      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +22,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG)*
+!       *CALL WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG, LWCUR)*
 !          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
@@ -31,6 +31,8 @@
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
+!          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+
 
 !     METHOD.
 !     -------
@@ -55,7 +57,7 @@
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,FIELDG   ,
-     &            LLWSWAVE ,LLWDWAVE
+     &            LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOWWNDG  , ONLY : ICODE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -67,6 +69,8 @@
 
       REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL
       REAL ZHOOK_HANDLE
+
+      LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
 
@@ -105,8 +109,8 @@
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
               UU = US(IJ,IG)*SIN(DS(IJ,IG))
               VV = US(IJ,IG)*COS(DS(IJ,IG))
-              UU = UU - U(IJ,IG)
-              VV = VV - V(IJ,IG)
+              UU = UU - RWFAC*U(IJ,IG)
+              VV = VV - RWFAC*V(IJ,IG)
               US(IJ,IG) = SQRT(UU**2 + VV**2)
               IF (US(IJ,IG).NE.0.) THEN 
                 DS(IJ,IG) = ATAN2(UU,VV)
@@ -139,16 +143,18 @@
 !         ----------------------------------------------------------------
 
           IF(LWCOU) THEN
+            IF(LWCUR) THEN
 !           In coupled experiments the winds are already relative to the currents
-            IF(.NOT.LRELWIND) THEN
-              UU = UU + U(IJ,IG)
-              VV = VV + V(IJ,IG)
+              IF(.NOT.LRELWIND) THEN
+                UU = UU + RWFAC*U(IJ,IG)
+                VV = VV + RWFAC*V(IJ,IG)
+              ENDIF
             ENDIF
           ELSE
             IF(LRELWIND) THEN
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-                UU = UU - U(IJ,IG)
-                VV = VV - V(IJ,IG)
+                UU = UU - RWFAC*U(IJ,IG)
+                VV = VV - RWFAC*V(IJ,IG)
               ENDIF
             ENDIF
           ENDIF

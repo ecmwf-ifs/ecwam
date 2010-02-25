@@ -137,6 +137,7 @@
       LOGICAL :: FRSTIME
       LOGICAL :: LMESSPASS_NL
       LOGICAL :: LWCUR
+      LOGICAL :: LWSTOKES
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
       time0=-wam_user_clock()
       IU06=6
@@ -325,6 +326,7 @@
       IDURAT=-99
       NFDBREF=0  ! only used in coupled model
       LWCUR=.FALSE. ! only used in coupled runs
+      LWSTOKES=.FALSE.  ! only used in coupled runs
 
       RMISS=-999. ! missing data indicator
 
@@ -333,7 +335,7 @@
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
      &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
      &             ISEC1, ISEC2, RMISS, FIELDS,
-     &             LWCUR,
+     &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM, KQGAUSS,

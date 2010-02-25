@@ -48,7 +48,6 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
      &                WETAIL    ,FRTAIL
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
@@ -60,7 +59,7 @@
 
       INTEGER :: IJ,M,K,IJS,IJL
       REAL :: DELT25, DELT2, DEL2
-      REAL :: F(NINF-1:NSUP,NANG,NFRE)
+      REAL :: F(IJS:IJL,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM
       LOGICAL :: LLAK
 

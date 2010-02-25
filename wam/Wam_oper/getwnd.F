@@ -1,5 +1,6 @@
       SUBROUTINE GETWND (US, DS, ADS, ZIDL, ICMSK,
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD)
+     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
+     &                   LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -16,7 +17,8 @@
 !     ----------
 
 !       *CALL* *GETWND (US, DS, ADS, ZIDL, ICMSK,
-!                       CDTWIS, LWNDFILE, LCLOSEWND)*
+!                       CDTWIS, LWNDFILE, LCLOSEWND,
+!                       LWCUR)*
 !         *US*     - MAGNITUDE OF USTAR AT EACH POINT AND BLOCK.
 !         *DS*     - DIRECTION OF USTAR AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
@@ -29,7 +31,7 @@
 !                     THE UNIT RESET
 !         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                    (IF NEEDED)
-
+!         *LWCUR*  -  LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !     METHOD.
 !     -------
 
@@ -82,6 +84,8 @@
 
       REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL
       INTEGER, DIMENSION (NINF:NSUP,NBLO) :: ICMSK 
+      LOGICAL :: LWCUR
+
 
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
@@ -205,7 +209,7 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (US, DS, ADS, ZIDL, KIJS, KIJL, IG)
+          CALL WAMWND (US, DS, ADS, ZIDL, KIJS, KIJL, IG, LWCUR)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

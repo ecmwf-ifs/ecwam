@@ -17,6 +17,7 @@
       END TYPE FORCING_FIELDS 
 
       REAL, PARAMETER :: WSPMIN=2.
+      REAL, PARAMETER :: RWFAC=0.5 
 
       CHARACTER*14 CDA 
       CHARACTER*14 CDAWIFL 
@@ -49,6 +50,9 @@
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *WSPMIN*    REAL      MINIMUM WIND SPEED ALLOWED IN WAM.
+!      *RWFAC*     REAL      REDUCTION FACTOR OF THE SURFACE CURRENTS
+!                            WHEN USED TO COMPUTE THE RELATIVE WINDS
+!                            0 <= RWFAC <= 1
 !      *CDA*       CHAR*14   DATE OF LAST WINDFIELD READ IN.
 !      *CDATEWO*   CHAR*14   DATE OF NEXT WIND FIELD TO BE READ.
 !      *CDAWIFL*   CHAR*14   DATE OF NEXT WIND FILE NAME.

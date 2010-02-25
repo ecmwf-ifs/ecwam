@@ -76,6 +76,7 @@
       CHARACTER*24 FILNM
       LOGICAL :: LLONLYPOS
       LOGICAL LWNDFILE, LCLOSEWND
+      LOGICAL LCR
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
@@ -84,6 +85,7 @@
       CDAWIFL = ' '
       CDATEFL = ' '
       CDTPRO = CDATEA
+      LCR=.FALSE.
 
 !     1.1 GET ATMOSPHERIC MODEL FORCINGS FIELDS 
 !         -------------------------------------
@@ -97,7 +99,8 @@
 !     GETWND REQUIRES FIELDG TO BE ALLOCATED !
       ALLOCATE(FIELDG(NGX,NGY))
       CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD)
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
+     &             LCR)
       DEALLOCATE(FIELDG)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. GETWND DONE'
 

@@ -1,4 +1,4 @@
-      SUBROUTINE UNSETICE(FL,NSTART,NEND,U10OLD,THWOLD)
+      SUBROUTINE UNSETICE(FL,IJS,IJL,U10OLD,THWOLD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      AUGUST 2006 
 
@@ -9,10 +9,10 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *UNSETICE(FL,NSTART,NEND,U10OLD,THWOLD)
+!     *CALL* *UNSETICE(FL,IJS,IJL,U10OLD,THWOLD)
 !     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
-!     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *IJS*       INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *IJL*       INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *U10OLD*    WIND SPEED. (used with fetch law to fill empty 
 !                 sea points)
 !     *THWOLD*    WIND DIRECTION (RADIANS).
@@ -34,9 +34,7 @@
       USE YOWGRID  , ONLY : DELPHI
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWICE   , ONLY : FLMINFR  ,ICEMASK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,
-     &            NBLO     ,CLDOMAIN
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,R        ,EPSMIN
       USE YOWSHAl  , ONLY : DEPTH
       USE YOWTABL  , ONLY : JUMAX    ,DELU
@@ -46,14 +44,14 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
+      INTEGER :: IJS, IJL
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL
+      REAL,DIMENSION(IJS:IJL) :: U10OLD,THWOLD
 
 ! ----------------------------------------------------------------------
 
       REAL,ALLOCATABLE :: ET(:,:), STK(:)
-      LOGICAL :: LICE2SEA(NINF:NSUP)
+      LOGICAL :: LICE2SEA(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -62,12 +60,12 @@
 !       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
 !       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
 !       AND HAVE AN ICEMASK = 1.
-        DO IJ=NSTART(IRANK),NEND(IRANK)
+        DO IJ=IJS,IJL
           LICE2SEA(IJ)=.TRUE.
         ENDDO
         DO K=1,NANG
           DO M=1,NFRE
-            DO IJ=NSTART(IRANK),NEND(IRANK)
+            DO IJ=IJS,IJL
                IF(FL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
           ENDDO
@@ -81,7 +79,7 @@
         SB=9.000000E-02
         FPMAX=FR(NFRE-1)
 
-        DO IJ=NSTART(IRANK),NEND(IRANK)
+        DO IJ=IJS,IJL
           IF(LICE2SEA(IJ) .AND. ICEMASK(IJ,1).EQ.1 ) THEN
             IF(DEPTH(IJ,1).LE.50.) THEN
               FETCH=MIN(DELPHI,50000.)
@@ -95,9 +93,9 @@
             GX = G * FETCH
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
-            IF (U10OLD(IJ,1) .GT. 0.1E-08 .AND.
+            IF (U10OLD(IJ) .GT. 0.1E-08 .AND.
      &          DEPTH(IJ,1) .GT. 10.) THEN
-              U10 = U10OLD(IJ,1)
+              U10 = U10OLD(IJ)
               GXU = GX/(U10*U10)
               UG = G/U10
               FPK = AJONS * GXU ** DJONS
@@ -113,7 +111,7 @@
 
             CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
 
-            THESK=THWOLD(IJ,1)
+            THESK=THWOLD(IJ)
 
             CALL SPR (NANG, NANG, THESK, TH, STK)
 
@@ -127,10 +125,10 @@
 
         DO K=1,NANG
           DO M=1,NFRE
-            DO IJ=NSTART(IRANK),NEND(IRANK)
-              XJ=U10OLD(IJ,1)/DELU
+            DO IJ=IJS,IJL
+              XJ=U10OLD(IJ)/DELU
               JU=MIN(JUMAX, MAX(NINT(XJ),1))
-              FLLOWEST=FLMINFR(JU,M)*MAX(0.,COS(TH(K)-THWOLD(IJ,1)))**2
+              FLLOWEST=FLMINFR(JU,M)*MAX(0.,COS(TH(K)-THWOLD(IJ)))**2
               IF(FL(IJ,K,M) .LT. FLLOWEST) FL(IJ,K,M) = FLLOWEST
             ENDDO
           ENDDO
