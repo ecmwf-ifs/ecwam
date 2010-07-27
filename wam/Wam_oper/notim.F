@@ -123,7 +123,7 @@
 
         DO IG = 1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1445,0)
+          CALL GSTATS(1493,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -133,7 +133,7 @@
      &        KIJS, KIJL, ILEV)
           ENDDO
 !$OMP     END PARALLEL DO
-          CALL GSTATS(1445,1)
+          CALL GSTATS(1493,1)
         ENDDO
         IF (ITEST.GE.3) THEN
           WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',
@@ -209,7 +209,7 @@
           CDTNEXT(1)=CDTWIH
 
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1445,0)
+          CALL GSTATS(1493,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -223,7 +223,7 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          CALL GSTATS(1445,1)
+          CALL GSTATS(1493,1)
         ENDDO
 
 !*      UPDATE WIND FIELD REQUEST TIME.

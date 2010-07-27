@@ -110,7 +110,9 @@
 2001      KPLENG=ISIZE*KIND(ISIZE)
           IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
 
+          CALL GSTATS(1740,0)
           CALL PBGRIB(IUNIT1,KGRIB,KPLENG,KLEN,KRET)
+          CALL GSTATS(1740,1)
 
           IF (KRET.EQ.-1) THEN
             WRITE(IU06,*) ' *****************************************'
@@ -150,11 +152,11 @@
 
 
 !       BROADCAST GRIB DATA TO OTHER PE'S
+        CALL GSTATS(622,0)
         IF(LMESSPASS .AND. NPROC.GT.1) THEN
 
           CALL MPL_BARRIER(CDSTRING='CURRENT2WAM: KGRIB ')
 
-          CALL GSTATS(622,0)
           IF(IRANK.EQ.IREAD) THEN
             IBUF(1)=ISIZE
             IBUF(2)=KLEN
@@ -170,8 +172,8 @@
           CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,
      &                       CDSTRING='CURRENT2WAM KGRIB:')
 
-          CALL GSTATS(622,1)
         ENDIF
+        CALL GSTATS(622,1)
 ! ----------------------------------------------------------------------
 
 !*        UNPACK MARS FIELDS.

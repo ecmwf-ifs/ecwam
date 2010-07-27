@@ -27,11 +27,16 @@
       REAL, PARAMETER :: YEPS = ROAIR/ROWATER
       REAL, PARAMETER :: YINVEPS = 1./YEPS
       REAL, PARAMETER :: WSTAR0 = 0.
-      REAL, PARAMETER :: EGRCRV = 1918.5
-      REAL, PARAMETER :: AGRCRV = 0.754E+6
-      REAL, PARAMETER :: BGRCRV = 1.668
-      REAL, PARAMETER :: AFCRV = 11.741E-4
-      REAL, PARAMETER :: BFCRV = -2.779
+      REAL, PARAMETER :: EGRCRV = 1877
+      REAL, PARAMETER :: AGRCRV = 0.544E+6
+      REAL, PARAMETER :: BGRCRV = 1.90
+      REAL, PARAMETER :: AFCRV = 5.054E-4
+      REAL, PARAMETER :: BFCRV = -2.959
+      REAL, PARAMETER :: ESH = 1711.
+      REAL, PARAMETER :: ASH = 8.0E-4 
+      REAL, PARAMETER :: BSH = 0.96 
+      REAL, PARAMETER :: ASWKM=0.0981
+      REAL, PARAMETER :: BSWKM=0.425
       REAL, PARAMETER :: Rconstant = 287.16   ! The gas constant
       REAL, PARAMETER :: EpsWaterVapor = 0.61 ! The mass ratio of 
                                               ! water vapor to dry air
@@ -81,6 +86,18 @@
 !                           FSTAR=(EGRCRV/AFCRV)**(1/BFCRV)
 !     *BFMRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY
 !                           GROWTH CURVE.
+!     *ESH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           AS A FUNCTION OF NON-DIMENSIONAL DEPTH DSTAR
+!                           ESTAR_LIMIT=ESH*TANH(ASH*DSTAR**BSH), where
+!                           DSTAR=DEPTH*G/USTAR**2
+!     *ASH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           SEE ESH.
+!     *BSH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           SEE ESH.
+!     *ASWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
+!                           OF DEPTH: KMEAN >= ASWKM*DEPTH**BSWKM 
+!     *BSWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
+!                           OF DEPTH: KMEAN >= ASWKM*DEPTH**BSWKM 
 !     *EPSUS*     REAL      SMALL NUMBER ADDED TO THE SQUARE OF USTAR
 !                           WHEN COMPUTING CD OR THE CHARNOCK COEF.
 !     *EPSU10*    REAL      SMALL NUMBER ADDED TO THE SQUARE OF U10

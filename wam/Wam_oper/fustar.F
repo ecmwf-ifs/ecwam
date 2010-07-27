@@ -47,7 +47,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV   ,
-     &             AFCRV   ,BFCRV
+     &             AFCRV   ,BFCRV   ,ESH      ,ASH     ,BSH
+      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : USTARM
       USE YOWTEST  , ONLY : IU06
 
@@ -59,17 +61,24 @@
 
 ! ----------------------------------------------------------------------
 
-!     INLINE FUNCTION.                                                  
-!     ----------------                                                  
+!     INLINE FUNCTION.
+!     ----------------
 
-!     DIMENSIONLESS FREQUENCY AS FUNCTION OF DIMENSIONLESS ENERGY       
+!     DIMENSIONLESS FREQUENCY AS FUNCTION OF DIMENSIONLESS ENERGY
 
-      YNU(X) = (X/AFCRV)**(1./BFCRV)                                          
+      YNU(X) = (X/AFCRV)**(1./BFCRV)
+
+!     DIMENSIONLESS ENERGY LIMIT AS FUNCTION OF DIMENSIONLESS DEPTH 
+
+      EMAX(X) = ESH*TANH(ASH*X**BSH)
+
 
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALIZE OUTPUT FIELDS.                                      
 !        -------------------------                                      
+
+      IG=1
 
       DO IJ=IJS,IJL                                                
         USA(IJ)  =   -99.                                              
@@ -120,12 +129,18 @@
       ENDDO
 
 !          -----------------------------------------------------
+
       DO IJ=IJS,IJL
         IF (EWFG(IJ).GT.EWFGMIN.AND.T(IJ).GT.0.) THEN
           IF(ABS(USTANAL(IJ)-USMO(IJ))/USMO(IJ).LT.0.5) THEN
             USA(IJ) = MIN(USTANAL(IJ),USTARM)
             EWA(IJ) = EWOI(IJ)
-            FMWA(IJ) = YNU(EWOI(IJ)*G2/USTANAL(IJ)**4)*G/USTANAL(IJ)
+            ESTAR=EWOI(IJ)*G2/USTANAL(IJ)**4
+            IF (ISHALLO.NE.1) THEN
+              DSTAR = DEPTH(IJ,IG)*G/USTANAL(IJ)**2
+              ESTAR = MIN(EMAX(DSTAR),ESTAR)
+            ENDIF
+            FMWA(IJ) = YNU(ESTAR)*G/USTANAL(IJ)
           ENDIF
         ENDIF
       ENDDO

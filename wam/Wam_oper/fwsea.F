@@ -35,13 +35,14 @@
 
       USE YOWFRED  , ONLY : TH       ,C      ,FRIC
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJS,IJL,IJ,K,M,NWP
+      INTEGER :: IJS,IJL,IJ,K,M,NWP,IG
 
       REAL :: THRESHOLD,CHECKTA
 
@@ -52,6 +53,8 @@
       REAL :: CM(NFRE)
 
       LOGICAL :: LLFOUND
+
+      IG=1
 
 !*   1. PARAMETERS AND INITIALIZATION.                                  
 !       ------------------------------                                  
@@ -91,7 +94,7 @@
 
 !         COMPUTATION OF THE WINDSEA ENERGY WINDSEA MEAN FREQUENCY.
           IF(LLFOUND) THEN
-            CALL WSMFEN (FSEA, EWFG(IJ), FMWFG(IJ), USMO(IJ))
+            CALL WSMFEN (FSEA,EWFG(IJ),FMWFG(IJ),USMO(IJ),DEPTH(IJ,IG))
             NWP = NWP + 1
           ENDIF
         ENDIF

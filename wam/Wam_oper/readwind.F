@@ -252,7 +252,9 @@
 2001        KPLENG=ISIZE*KIND(ISIZE)
             IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
 
+            CALL GSTATS(1740,0)
             CALL PBGRIB(IUNITW,KGRIB,KPLENG,KLEN,KRET)
+            CALL GSTATS(1740,1)
 
             IF (KRET.EQ.-1) THEN
               WRITE(IU06,*) ' *****************************************'
@@ -289,12 +291,12 @@
             ENDIF
           ENDIF
 
+          CALL GSTATS(622,0)
           CALL MPL_BARRIER(CDSTRING='READWIND: KGRIB ')
 
 !         SEND GRIB DATA TO THE OTHER PE'S
 !         --------------------------------
           IF(LMESSPASS .AND. NPROC.GT.1) THEN
-            CALL GSTATS(622,0)
             IF(IRANK.EQ.IREAD) THEN
               IDUM(1)=ISIZE
               IDUM(2)=KLEN
@@ -310,8 +312,8 @@
             CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,
      &                         CDSTRING='READWIND KGRIB:')
 
-            CALL GSTATS(622,1)
           ENDIF
+          CALL GSTATS(622,1)
 
 ! ----------------------------------------------------------------------
 

@@ -31,12 +31,26 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV
+      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV    ,
+     &            ESH      ,ASH     ,BSH
+      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(IJS:IJL) :: EWFG, T, USMO 
 
+
+!     INLINE FUNCTION.                                                  
+!     ----------------                                                  
+
+!     DIMENSIONLESS ENERGY LIMIT AS FUNCTION OF DIMENSIONLESS DEPTH 
+
+      EMAX(X) = ESH*TANH(ASH*X**BSH)
+
+! ----------------------------------------------------------------------
+
+      IG=1
 
 !*    1. INITIALIZE DURATION.                                           
 !        -------------------                                            
@@ -58,8 +72,18 @@
 !         THE WAM MODEL GROWTH CURVE, IF WINDSEA IS PRESENT.
 
           ESTAR = EWFG(IJ)*G2/USMO(IJ)**4
+
+!!! test !!!
+          IF (ISHALLO.NE.1) THEN
+            DSTAR = DEPTH(IJ,IG)*G/USMO(IJ)**2
+            ESTAR = MIN(EMAX(DSTAR),ESTAR)
+          ENDIF
+!!!
+
           ERATIO= ESTAR/EGRCRV
+!!!!why? May not be necessary once we use emax
           ERATIO= MIN (ERATIO, .93)
+
           ERATIO= ERATIO**BGRCRV_INV
           TSTAR = ERATIO*AGRCRV/(1.-ERATIO) 
           T(IJ) = USMO(IJ)/G*TSTAR

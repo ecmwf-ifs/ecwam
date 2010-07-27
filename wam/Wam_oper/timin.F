@@ -127,7 +127,7 @@
      &               LWCUR)
         DO IG=1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1445,0)
+          CALL GSTATS(1494,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -146,7 +146,7 @@
      &        KIJS, KIJL, ILEV)
           ENDDO
 !$OMP     END PARALLEL DO
-          CALL GSTATS(1445,1)
+          CALL GSTATS(1494,1)
         ENDDO
         IF (ITEST.GE.3) THEN
           WRITE(IU06,'(''       SUB. TIMIN: FIRST WIND FIELD '',
@@ -157,7 +157,7 @@
         CDT1 = CDA
         DO IG=1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1445,0)
+          CALL GSTATS(1494,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -171,7 +171,7 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          CALL GSTATS(1445,1)
+          CALL GSTATS(1494,1)
         ENDDO
         CDTH = CDT1
         CALL INCDATE (CDTH,IDELWO)
@@ -246,7 +246,7 @@
         DO N=1,NTS
           CALL INCDATE(CDTH,IDELWO)
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1445,0)
+          CALL GSTATS(1494,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -273,7 +273,7 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          CALL GSTATS(1445,1)
+          CALL GSTATS(1494,1)
         ENDDO
 
         DO IJ=IJS(IG),IJL(IG)

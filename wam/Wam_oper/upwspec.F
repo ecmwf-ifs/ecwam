@@ -1,4 +1,4 @@
-      SUBROUTINE UPWSPEC (F, ETFG, ETA, FMWFG, FMWA, IJS, IJL)
+      SUBROUTINE UPWSPEC (F, ETFG, AKFG, ETA, FMWFG, FMWA, IJS, IJL)
 
 !-----------------------------------------------------------------------
 
@@ -22,12 +22,13 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!        *CALL* *UPWSPEC (F, ETFG, ETA, FMWFG, FMWA, IJS, IJL)*          
+!        *CALL* *UPWSPEC (F, ETFG, AKFG, ETA, FMWFG, FMWA, IJS, IJL)*          
 
 !          *F*      REAL     INPUT IS THE OLD SWELL SPECTRUM.           
 !                            OUTPUT IS  THE ANALISED SPECTRUM.          
 !          *ETFG*   REAL     FIRST GUESS TOTAL ENERGY.                  
-!          *ETA*    REAL     ANALISED TOTAL ENERGY.                     
+!          *AKFG*   REAL     FIRST GUESS MEAN WAVE NUMBER.                  
+!          *ETA*    REAL     ANALYSED TOTAL ENERGY.                     
 !          *FMWFG   REAL     MEAN FREQUENCY OF THE WINDSEA FROM THE     
 !                            FIRST GUESS SPECTRUM.                      
 !          *FMWA*   REAL     ANALYSED MEAN FREQUENCY OF THE WINDSEA.    
@@ -68,6 +69,9 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : ZPI      ,EPSMIN   ,ASWKM    ,BSWKM 
+      USE YOWSHAL  , ONLY : DEPTH
+      USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
 
@@ -77,11 +81,12 @@
       REAL :: XL11
       REAL :: F(IJS:IJL,NANG,NFRE)
       REAL,DIMENSION(IJS:IJL) :: ETA, FMWFG, FMWA
-      REAL,DIMENSION(IJS:IJL) :: ETFG, XR, XB
-      REAL,DIMENSION(IJS:IJL) :: ESPFG, ESPFG_1D, DELLOW, DELHIGH
+      REAL,DIMENSION(IJS:IJL) :: ETFG, AKFG, XR, XB 
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
 
 ! ----------------------------------------------------------------------
+
+      IG=1
 
       XL11 = LOG(FRATIO)
 
@@ -108,9 +113,46 @@
           IF (FOLD.LE.0.) THEN
 !*          THE SPECTRUM IS MAINLY SWELL (THE WINDSEA MEAN FREQUENCY
 !*          OF THE FIRST GUESS SPECTRUM IS NEGATIVE).
-            XDELTA = 1.-0.006*(HNEW-HOLD)
-            XR(IJ) = XDELTA*(HNEW/HOLD)**2.5
-            XB(IJ) = XDELTA* SQRT(HNEW/HOLD)
+
+!           FOR RELATIVELY SHALLOW CASES,
+!           THE ASSUMPTION OF CONSTANT STEEPNESS IS NOT APPROPRIATE.
+!           RELAX THE SCHEME TO ONLY ADAPT ENERGY LEVEL  
+!           (I.E. THE WAVES WILL GET STEEPER)
+!           SUCH THAT THE MINIMUM MEAN WAVE NUMBER IS INFORCED.
+
+            XKMEAN_MIN=ASWKM/DEPTH(IJ,IG)**BSWKM
+            IF(ISHALLO.NE.1 .AND. AKFG(IJ).LT.XKMEAN_MIN) THEN
+              XR(IJ) = (HNEW/HOLD)**2
+              XB(IJ) = 1. 
+            ELSE
+              XDELTA = 1.-0.006*(HNEW-HOLD)
+              XB(IJ) = XDELTA* SQRT(HNEW/HOLD)
+!!!testing that new xkmean does not violate the condition on minimum xkmean???
+              IF(ISHALLO.NE.1) THEN
+                ICOUNT=0
+1111            ICOUNT=ICOUNT+1
+                IF(XB(IJ).GT.1.AND.ICOUNT.LE.10) THEN
+                  AKMNEAN_NEW=EPSMIN
+                  DO M=1,NFRE
+                     OMEGA=ZPI*FR(M)/XB(IJ)
+                     XK=AKI(OMEGA,DEPTH(IJ,IG))
+                     ESPFG_1D=0.
+                     DO K=1,NANG
+                       ESPFG_1D=ESPFG_1D+F(IJ,K,M)
+                     ENDDO
+                     XKMEAN_NEW=XKMEAN_NEW+DFIM(M)*ESPFG_1D/SQRT(XK)
+                  ENDDO
+                  XKMEAN_NEW=(HOLD**2/(16*XKMEAN_NEW))**2
+                  IF(XKMEAN_NEW.LT.XKMEAN_MIN) THEN
+                    XB(IJ)=0.5*(1.+XB(IJ))
+!                   iterate
+                    GOTO 1111
+                  ENDIF
+                ENDIF
+              ENDIF
+!!!!
+              XR(IJ) = XB(IJ)*(HNEW/HOLD)**2
+            ENDIF
           ELSE 
 !*          THE SPECTRUM IS MAINLY WINDSEA.
             XR(IJ) = (HNEW/HOLD)**2*FOLD/FNEW
@@ -118,34 +160,18 @@
           ENDIF
 
           DELET=ABS(ETA(IJ)-ETFG(IJ))
-          DELLOW(IJ)=0.8*DELET
-          DELHIGH(IJ)=1.2*DELET 
-        ENDIF
-      ENDDO
+          DELLOW=0.8*DELET
+          DELHIGH=1.2*DELET 
 
-      DO IJ=IJS,IJL                                                
-        ESPFG(IJ)=0.
-      ENDDO
+          ESPFG=0.
 
-      DO M=NFREINF,NFRE
-        DO IJ=IJS,IJL                                                
-          ESPFG_1D(IJ)=0.
-        ENDDO
-        DO K=1,NANG
-          DO IJ=IJS,IJL                                                
-            ESPFG_1D(IJ)=ESPFG_1D(IJ)+F(IJ,K,M)
+          DO M=NFREINF,NFRE
+            ESPFG_1D=0.
+            DO K=1,NANG
+              ESPFG_1D=ESPFG_1D+F(IJ,K,M)
+            ENDDO
+            ESPFG=ESPFG+DFIM(M)*ESPFG_1D
           ENDDO
-        ENDDO
-        DO IJ=IJS,IJL                                                
-          ESPFG(IJ)=ESPFG(IJ)+DFIM(M)*ESPFG_1D(IJ)
-        ENDDO
-      ENDDO
-
-      DO IJ=IJS,IJL                                                
-
-!*      SKIP LAND POINTS AND POINTS WHERE THERE ARE NO RELIABLE DATA.
-
-        IF (ETFG(IJ).GT.0.001.AND.ETA(IJ).GT.0.001) THEN
 
 !*        LOOP OVER NEW FREQUENCIES.
 
@@ -190,8 +216,8 @@
             ESPAN=ESPAN+DFIM(M)*ESPAN_1D
           ENDDO
 
-          IF(ABS(ESPAN-ESPFG(IJ)).LT.DELHIGH(IJ) .AND.
-     &       ABS(ESPAN-ESPFG(IJ)).GT.DELLOW(IJ) ) THEN
+          IF(ABS(ESPAN-ESPFG).LT.DELHIGH .AND.
+     &       ABS(ESPAN-ESPFG).GT.DELLOW ) THEN
             DO K=1,NANG
               DO M=NFREINF,NFRE
                 F(IJ,K,M) = FTEMP(K,M)

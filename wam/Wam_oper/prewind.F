@@ -154,7 +154,6 @@
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
 
-      CALL GSTATS(1968,0)
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
 
@@ -222,11 +221,9 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           CALL FLUSH (IU06)
         ENDIF
-        CALL GSTATS(1968,2)
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
      &              LWCUR)
-        CALL GSTATS(1968,3)
       ELSE
 
 !*    2.3 TIME INTERPOLATION.
@@ -241,11 +238,9 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           CALL FLUSH (IU06)
         ENDIF
-        CALL GSTATS(1968,2)
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
      &              LWCUR)
-        CALL GSTATS(1968,3)
       ENDIF
 
 !*    2.4 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
@@ -253,7 +248,6 @@
 
       DEALLOCATE(FIELDG)
 
-      CALL GSTATS(1968,1)
       IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
 
       RETURN

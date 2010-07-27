@@ -1,4 +1,4 @@
-      SUBROUTINE WSMFEN (FSEA, EW, FM, USTT)                            
+      SUBROUTINE WSMFEN (FSEA, EW, FM, USTT, DPT)
 
 !---------------------------------------------------------------------- 
 
@@ -15,12 +15,13 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!       *CALL* *WSMFEN (FSEA, EW, FM, USTT)*                            
+!       *CALL* *WSMFEN (FSEA, EW, FM, USTT, DPT)*                            
 
 !        *FSEA*   REAL     WINDSEA PART OF THE WAVE SPECTRUM.           
 !        *EW*     REAL     WINDSEA ENERGY .                             
 !        *FM*     REAL     MEAN FREQUENCY OF THE WINDSEA.               
 !        *USTT*   REAL     FRICTION VELOCITY.                           
+!        *DPT*    REAL     DEPTH.                           
 
 !     METHOD.                                                           
 !     -------                                                           
@@ -37,7 +38,10 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,EPSMIN   ,AFCRV   ,BFCRV
+      USE YOWPCONS , ONLY : G        ,EPSMIN   ,AFCRV   ,BFCRV     ,
+     &            ESH      ,ASH     ,BSH
+      USE YOWSTAT  , ONLY : ISHALLO
+
 
 ! ----------------------------------------------------------------------
 
@@ -45,22 +49,27 @@
 
 ! ----------------------------------------------------------------------
 
-!     INLINE FUNCTIONS.                                                 
-!     -----------------                                                 
+!     INLINE FUNCTIONS.
+!     -----------------
 
-!     ENERGY AS FUNCTION OF MEAN FREQUENCY.                             
+!     ENERGY AS FUNCTION OF MEAN FREQUENCY.
 
-      EN(X)=AFCRV*X**BFCRV                                                    
+      EN(X)=AFCRV*X**BFCRV
 
-!     MEAN FREQUENCY AS FUNCTION OF ENERGY.                             
+!     MEAN FREQUENCY AS FUNCTION OF ENERGY.
 
-      YNU(X)=(X/AFCRV)**(1./BFCRV)                                            
+      YNU(X)=(X/AFCRV)**(1./BFCRV)
+
+!     DIMENSIONLESS ENERGY LIMIT AS FUNCTION OF DIMENSIONLESS DEPTH 
+
+      EMAX(X) = ESH*TANH(ASH*X**BSH)
 
 ! ----------------------------------------------------------------------
 
 !*    1. INTEGRATING THE WINDSEA PART OF THE SPECTRUM.                  
 !*       (UNDERESTIMATE IS IMPLIED)                                     
 !        ---------------------------------------------                  
+
 
 !*    1.1 COMPUTATION OF THE WIND-SEA ENERGY.                           
 !         -----------------------------------                           
@@ -101,12 +110,24 @@
 
       XTEMP = FM*USTT/G                                                 
       IF (XTEMP.LE.0.) WRITE(*,*) FM,USTT,EW                            
-      SPINTDI = USTT**4/G**2 * EN(FM*USTT/G)                            
+
+      ESTAR=EN(FM*USTT/G)
+      IF (ISHALLO.NE.1) THEN
+         DSTAR = DPT*G/USTT**2
+         ESTAR = MIN(EMAX(DSTAR),ESTAR)
+      ENDIF
+      SPINTDI = USTT**4/G**2 * ESTAR 
 
 !*    2.2 MEAN FREQUENCY IS DERIVED FROM THE UNDERESTIMATED ENERGY.     
 !         ---------------------------------------------------------     
 
-      FREQDI = G/USTT * YNU(EW*G**2/USTT**4)                            
+      ESTAR=EW*G**2/USTT**4                            
+      IF (ISHALLO.NE.1) THEN
+         DSTAR = DPT*G/USTT**2
+         ESTAR = MIN(EMAX(DSTAR),ESTAR)
+      ENDIF
+
+      FREQDI = G/USTT * YNU(ESTAR)                            
 
 ! ----------------------------------------------------------------------
 

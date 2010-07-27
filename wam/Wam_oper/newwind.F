@@ -103,7 +103,7 @@
 !        ------------------------------------------
       IF (CDATE.LT.CDATEWH) THEN
         NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
-        CALL GSTATS(1445,0)
+        CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
@@ -116,7 +116,7 @@
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-        CALL GSTATS(1445,1)
+        CALL GSTATS(1492,1)
 
       ELSE
 !*    2. NEW WIND INPUT.
@@ -148,7 +148,7 @@
         IIG=IG
 
         NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
-        CALL GSTATS(1445,0)
+        CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
@@ -162,7 +162,7 @@
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-        CALL GSTATS(1445,1)
+        CALL GSTATS(1492,1)
 
         ISTORE=ISTORE+1
 

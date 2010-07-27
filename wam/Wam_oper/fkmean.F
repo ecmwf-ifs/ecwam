@@ -75,6 +75,8 @@
         EM(IJ) = EPSMIN
         FM1(IJ)= EPSMIN
         F1(IJ) = EPSMIN
+        AK(IJ) = EPSMIN
+        XK(IJ) = EPSMIN
       ENDDO
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
@@ -113,10 +115,6 @@
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
-        DO IJ=IJS,IJL
-          AK(IJ) = EPSMIN
-          XK(IJ) = EPSMIN
-        ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
             SQRTK=SQRT(TFAK(INDEP(IJ),M))

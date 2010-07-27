@@ -40,14 +40,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL :: LLEPSMIN
       DIMENSION F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: EMN
+      REAL,DIMENSION(IJS:IJL) :: EMN, FMN
+      REAL,DIMENSION(IJS:IJL) :: F1MN, AKMN, XKMN 
       REAL,DIMENSION(IJS:IJL) :: ETOI, USMO, THMO         
       REAL,DIMENSION(IJS:IJL) :: EWFG, EWOI, EWA,FMWFG, FMWA,
      &                           TDUR, USA
@@ -68,8 +69,7 @@
 !*    1. FIND THE WINDSEA.                                              
 !        -----------------                                              
 
-      LLEPSMIN=.TRUE.
-      CALL SEMEAN (F, IJS, IJL, EMN, LLEPSMIN)
+      CALL FKMEAN(F, IJS, IJL, EMN, FMN, F1MN, AKMN, XKMN)
 
       CALL FWSEA (F, EMN, EWFG, FMWFG, ETOI, USMO, THMO, IJS, IJL)     
 
@@ -154,7 +154,7 @@
 !*    7. UPDATE THE SPECTRA.                                            
 !        -------------------                                            
 
-      CALL UPWSPEC (F, EMN, ETOI, FMWFG, FMWA, IJS, IJL)
+      CALL UPWSPEC (F, EMN, AKMN, ETOI, FMWFG, FMWA, IJS, IJL)
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
      &   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'
