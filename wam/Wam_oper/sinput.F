@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, LLWS)
+     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -93,6 +93,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -108,12 +109,15 @@
       REAL, DIMENSION(IJS:IJL) :: SIG_N, XV1D, XV2D
       REAL, DIMENSION(IJS:IJL) :: CNSN
       REAL, DIMENSION(NFRE) :: FAC, CONST
-      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
       LOGICAL L1,L2,LZ(IJS:IJL,NANG)
       REAL X1,X2,X1D,X2D,ZLOG1,ZLOG2,CONST3,XV1,XV2,ZBETA1,ZBETA2
       REAL XKAPPAD
       REAL TEMPD(IJS:IJL,NANG),UCN1D(IJS:IJL),UCN2D(IJS:IJL)
       PARAMETER (A = 0.8/1000. , B = 0.08/1000.)
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -150,9 +154,6 @@
         C_D = A+B*U10
         DC_DDU = B
         SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-!OLD!        SIG_N (IJ) = SIG_CONV*(BG_GUST-0.5*ZIDLNEW(IJ))**ONETHIRD
-!OLD!     &                 *USNEW(IJ)/U10
-        !!!  NOTE:   ZIDL is now  W* (vertical convention velocity)  !!!
         SIG_N (IJ) = MIN(0.5, SIG_CONV * 
      &                        (BG_GUST*USNEW(IJ)**3+
      &                         0.5*XKAPPA*ZIDLNEW(IJ)**3)**ONETHIRD
@@ -228,22 +229,22 @@
               IF (L1) THEN
                 ZLOG2X=ZLOG1*ZLOG1*X1
                 UFAC2(IJ,K) = EXP(ZLOG1)*ZLOG2X*ZLOG2X+ZBETA1
-                LLWS(IJ,K,M)=.TRUE.
+                XLLWS(IJ,K,M)= 1.
               ELSE
                 UFAC2(IJ,K) = ZBETA1
-                LLWS(IJ,K,M)=.FALSE.
+                XLLWS(IJ,K,M)= 0.
               ENDIF
               IF (L2) THEN
                 ZLOG2X=ZLOG2*ZLOG2*X2
                 UFAC2(IJ,K) = UFAC2(IJ,K)+
      &                        EXP(ZLOG2)*ZLOG2X*ZLOG2X+ZBETA2
-                LLWS(IJ,K,M)=.TRUE.
+                XLLWS(IJ,K,M)= 1.
               ELSE
                 UFAC2(IJ,K) = UFAC2(IJ,K)+ZBETA2
               ENDIF
             ELSE
               UFAC2(IJ,K) = ZBETA1+ZBETA2
-              LLWS(IJ,K,M)=.FALSE.
+              XLLWS(IJ,K,M)= 0.
             ENDIF
           ENDDO
         ENDDO
@@ -259,6 +260,9 @@
         ENDDO
 
       ENDDO
+
+
+      IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SINPUT

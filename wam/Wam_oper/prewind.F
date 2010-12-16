@@ -1,8 +1,8 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO, ZIDLOLD, ICEMASK,
      &                    IREAD,
-     &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                    NFIELDS, NGPTOTG, NC, NR,
+     &                    ISEC2, FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -36,8 +36,8 @@
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, ICEMASK,
 !    &                 IREAD,
-!    &                 NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-!    &                 ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)*
+!    &                 NFIELDS, NGPTOTG, NC, NR,
+!    &                 ISEC2, FIELDS, LWCUR, MASK_IN)*
 
 !      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                            VELOCITY.
@@ -59,8 +59,6 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *FCRANGE*   REAL      FORECAST RANGE IN SECONDS
-!      *ISEC1*     INTEGER   GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
 !      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
@@ -122,7 +120,6 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
@@ -132,8 +129,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      REAL FCRANGE
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
+      INTEGER ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       LOGICAL :: LWCUR
       INTEGER MASK_IN(NGPTOTG)
@@ -194,8 +190,8 @@
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------
 
-      CALL IFSTOWAM (CDTWIS, NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &               ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+      CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR,
+     &               ISEC2, FIELDS, LWCUR, MASK_IN)
 
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 

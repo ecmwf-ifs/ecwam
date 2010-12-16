@@ -102,6 +102,7 @@
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE MPL_MODULE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -118,6 +119,7 @@
       INTEGER, PARAMETER :: NFIELDS=7
 ! ----------------------------------------------------------------------
       INTEGER :: NLON, NLAT
+      INTEGER :: IGRIB_HANDLE_DUM
       INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
@@ -125,6 +127,8 @@
       REAL :: RSOUTW, RNORTW
       REAL WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL :: ZHOOK_HANDLE
+
 
 ! ----------------------------------------------------------------------
 
@@ -139,8 +143,11 @@
       LOGICAL :: LWCUR
       LOGICAL :: LWSTOKES
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
+
       time0=-wam_user_clock()
       IU06=6
+      LHOOK = .TRUE.
+      IF (LHOOK) CALL DR_HOOK('CHIEF',0,ZHOOK_HANDLE)
 
 !   0.0 SET MACHINE ARCHTECTURE TYPE
 !       ----------------------------
@@ -325,6 +332,7 @@
       IDUM=0
       IDURAT=-99
       NFDBREF=0  ! only used in coupled model
+      IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       LWCUR=.FALSE. ! only used in coupled runs
       LWSTOKES=.FALSE.  ! only used in coupled runs
 
@@ -333,8 +341,8 @@
  20   CONTINUE
 
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
-     &             NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &             ISEC1, ISEC2, RMISS, FIELDS,
+     &             NFIELDS, NGPTOTG, NC, NR,
+     &             IGRIB_HANDLE_DUM, ISEC1, ISEC2, RMISS, FIELDS,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
@@ -380,6 +388,8 @@
         CALL MPCLOSE_UNIT
         CALL MPL_END
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('CHIEF',1,ZHOOK_HANDLE)
 
       STOP
       END

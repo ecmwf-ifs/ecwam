@@ -82,6 +82,7 @@
      &            KRLON    ,WLAT     ,WRLAT     ,
      &            WRLON    ,OBSLAT   ,OBSLON   ,OBSRLAT  ,OBSRLON   ,
      &            LSAMEDEPTH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -111,7 +112,9 @@
       REAL,ALLOCATABLE,DIMENSION(:) :: CFLNOR,CFLSOR,CFLNO2R 
 
       LOGICAL :: L1STCALL
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS1',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
       ALLOCATE(DELLA0(NINF-1:IJLT(IG)))
@@ -1540,6 +1543,8 @@
       DEALLOCATE(CFLTM)
       DEALLOCATE(CFLOP)
       DEALLOCATE(CFLOM)
+
+      IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE PROPAGS1

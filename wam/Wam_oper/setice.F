@@ -39,11 +39,14 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : ICEMASK
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
       REAL :: FL3(MIJS:MIJL,NANG,NFRE)
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('SETICE',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. SET SPECTRA TO ZERO AT ICE POINTS.
@@ -58,6 +61,8 @@
           ENDDO
         ENDDO
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('SETICE',1,ZHOOK_HANDLE)
 
       RETURN
 

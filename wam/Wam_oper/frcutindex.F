@@ -31,6 +31,7 @@
 
       USE YOWFRED  , ONLY : FR       ,FRATIO   ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NFRE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -42,6 +43,9 @@
       REAL :: TAILFACTOR, FPMH, FPM4
       REAL, DIMENSION(IJS:IJL) :: FM, FMWS
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
@@ -56,6 +60,8 @@
         MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
         MIJ(IJ) = MIN(MIJ(IJ),NFRE)
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE FRCUTINDEX

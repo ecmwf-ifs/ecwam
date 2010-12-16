@@ -68,6 +68,7 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,
      &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -87,7 +88,9 @@
       REAL,ALLOCATABLE,DIMENSION(:) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
       REAL,ALLOCATABLE,DIMENSION(:) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
       LOGICAL :: L1STCALL
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
       ALLOCATE(DELLA0(NINF-1:IJLT(IG)))
@@ -1286,5 +1289,6 @@
       DEALLOCATE(CFLOP)
       DEALLOCATE(CFLOM)
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE PROPAGS

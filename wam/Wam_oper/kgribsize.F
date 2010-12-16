@@ -24,6 +24,9 @@
 !     REFERENCE.
 !     ----------
 ! ----------------------------------------------------------------------
+
+      USE YOWCOUT  , ONLY : LGRIBAPI_I
+
       IMPLICIT NONE
 
       INTEGER ::  IU06, IUIN, KRET, ISIZE, KLEN, KOFFSET
@@ -31,7 +34,7 @@
 
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' ***** WARNING IN ',CALLINGSUB
-      WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
+      WRITE(IU06,*) ' SIZE  OF THE GRIB BUFFER IS NOT BIG ENOUGH.'
       WRITE(IU06,*) ' IT WAS ', ISIZE
 
       KRET=0
@@ -46,22 +49,24 @@
       WRITE(IU06,*) ' '
       CALL FLUSH(IU06)
 
-!     RESET THE FILE POINTER TO READ FIELD AGAIN
-      KOFFSET=-KLEN
-      CALL PBSEEK(IUIN,KOFFSET,1,KRET)
-      IF(KRET.EQ.-1) THEN
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
-        WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT1
-      ENDIF
-      IF(KRET.EQ.-2) THEN
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
-        WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT1
+      IF(.NOT.LGRIBAPI_I) THEN
+!       RESET THE FILE POINTER TO READ FIELD AGAIN
+        KOFFSET=-KLEN
+        CALL PBSEEK(IUIN,KOFFSET,1,KRET)
+        IF(KRET.EQ.-1) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
+          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT1
+        ENDIF
+        IF(KRET.EQ.-2) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
+          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT1
+        ENDIF
       ENDIF
 
       RETURN

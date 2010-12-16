@@ -38,6 +38,7 @@
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,
      &            XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
       USE YOWMPP   , ONLY : NINF
@@ -93,6 +94,9 @@
 
       LOGICAL, DIMENSION(MIJS:MIJL) :: LCFLFAIL
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
       DELPRO = REAL(IDELPRO)   
@@ -118,13 +122,41 @@
 
       DO IC=1,2
         DO IJ = MIJS,MIJL
-          WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+          IF (KLAT(IJ,IC,1).GT. NINF-1 .AND.
+     &        KLAT(IJ,IC,2).GT. NINF-1) THEN
+!           BOTH CLOSEST AND SECOND CLOSEST POINTS ARE OVER THE OCEAN
+            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+          ELSE IF (KLAT(IJ,IC,1).EQ. NINF-1) THEN
+!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
+!           CLOSEST POINT IS OVER LAND
+            IF(WLAT(IJ,IC).LE.0.75) WLAT(IJ,IC)=0.
+            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+          ELSE
+!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
+!           SECOND CLOSEST POINT IS OVER LAND
+            IF(WLAT(IJ,IC).GE.0.5) WLAT(IJ,IC)=1.
+            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+          ENDIF
         ENDDO
       ENDDO
 
       DO ICR=1,4
         DO IJ = MIJS,MIJL
-          WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+          IF(KCOR(IJ,ICR,1).GT.NINF-1 .AND. 
+     &       KCOR(IJ,ICR,2).GT.NINF-1) THEN
+!           BOTH CLOSEST AND SECOND CLOSEST CORNER POINTS ARE OVER THE OCEAN
+            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+          ELSE IF(KCOR(IJ,ICR,1).EQ.NINF-1) THEN
+!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
+!           CLOSEST CORNER POINT IS OVER LAND
+            IF(WCOR(IJ,ICR).LE.0.75) WCOR(IJ,ICR)=0.
+            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+          ELSE
+!           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
+!           SECOND CLOSEST CORNER POINT IS OVER LAND
+            IF(WCOR(IJ,ICR).GT.0.5) WCOR(IJ,ICR)=1. 
+            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+          ENDIF
         ENDDO
       ENDDO
 
@@ -679,6 +711,9 @@
       ENDDO  ! END LOOP OVER DIRECTIONS
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
+
       RETURN
       END SUBROUTINE CTUW 
 

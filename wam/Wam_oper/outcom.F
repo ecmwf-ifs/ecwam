@@ -86,10 +86,14 @@
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,DELUST   ,
      &            DELALP   ,FAC0     ,FAC1     ,FAC2     ,FAC3     ,
-     &            FAK      ,FRHF     ,DFIMHF
-
+     &            FAK      ,FRHF     ,DFIMHF   ,
+     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
+     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
+     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
+     &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
 ! ----------------------------------------------------------------------
 
+  995 FORMAT(5I8)
   996 FORMAT(I8,1X,2E16.7)
   997 FORMAT(12I8,1X,A1)
   998 FORMAT(10I8)
@@ -260,7 +264,7 @@
 
 ! ----------------------------------------------------------------------
 
-!*    9. WRITE MODULE YOWTABL (2nd part).
+!*    9. WRITE MODULE YOWTABL (2ND AND 3RD PART).
 !        ---------------------
 
       IF (IFORM.NE.2) THEN
@@ -270,6 +274,18 @@
         WRITE (IU17,999) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF 
       ENDIF
 
+      IF (IFORM.NE.2) THEN
+        WRITE (IU07) MR, XMR, MA, XMA, NFREH, NANGH, NMAX
+ 
+        WRITE (IU07) OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M, 
+     &               TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
+      ENDIF
+      IF (IFORM.NE.1) THEN
+        WRITE (IU17,995) MR, MA, NFREH, NANGH, NMAX 
+        WRITE (IU17,998) IM_P, IM_M 
+        WRITE (IU17,999) XMR, XMA, OMEGA, DFDTH, THH, DELTHH,
+     &                   TA, TB, TC_QL, TT_4M, TT_4P, TFAKH 
+      ENDIF
 ! ----------------------------------------------------------------------
 
 !*    10. WRITE MODULE YOWCURR.

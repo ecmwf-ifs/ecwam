@@ -72,7 +72,7 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
-      USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWCOUT  , ONLY : IPFGTBL  ,LSECONDORDER
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
@@ -88,12 +88,14 @@
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
+      USE YOWSHAL, ONLY: DEPTH,INDEP
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,MARSTYPE ,NWAM_BLKS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -112,6 +114,10 @@
 !     LOGICAL FUNCTION
       LOGICAL :: LLALLOC_GRDFLD
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
+!
 ! ----------------------------------------------------------------------
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
@@ -156,10 +162,20 @@
 
       LLAK=.FALSE.
       LLPEAKF = .FALSE.
+      SIG = +1.
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=IJS,IJL,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
+
+        IF(LSECONDORDER) THEN
+
+          CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,1:NANG,1:NFRE),
+     &                             FL(KIJS:KIJL,1:NANG,1:NFRE),
+     &                             KIJS,KIJL,
+     &                             DEPTH(KIJS:KIJL,IG),INDEP(KIJS:KIJL),
+     &                             SIG)
+        ENDIF
 
         CALL FEMEAN (FL3(KIJS:KIJL,1:NANG,1:NFRE), KIJS, KIJL,
      &               EMEAN(KIJS), FMEAN(KIJS),LLAK)
@@ -538,6 +554,7 @@
           ENDIF
         ENDIF
       ENDIF
+      IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE OUTBS

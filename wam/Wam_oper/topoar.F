@@ -72,7 +72,7 @@
      &            LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
-      USE YOWTEST  , ONLY : IU06
+      USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
 
@@ -466,6 +466,7 @@
         WRITE (IU06,*) ' *******************************************'
         WRITE (IU06,*) ' ' 
       ENDIF
+
 !     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
       BATHYMAX=-999.
       DO J=1,NY
@@ -537,37 +538,39 @@
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')
       WRITE (IU06,'(10F8.3)') ZDELLO
 
-      ILEN = 120
-      IPAGE = (NX+ILEN-1)/ILEN
-      IF (IPAGE.GT.1) THEN
-        LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
-        IF (LAST.LE.10) THEN
-          ILEN = ILEN + 10
-          IPAGE = (NX+ILEN-1)/ILEN
+      IF (ITEST.GE.3) THEN
+        ILEN = 120
+        IPAGE = (NX+ILEN-1)/ILEN
+        IF (IPAGE.GT.1) THEN
+          LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
+          IF (LAST.LE.10) THEN
+            ILEN = ILEN + 10
+            IPAGE = (NX+ILEN-1)/ILEN
+          ENDIF
         ENDIF
-      ENDIF
 
-      ALLOCATE(AXX(NGX))
+        ALLOCATE(AXX(NGX))
 
-      DO L=1,IPAGE
-        IA = (L-1)*ILEN
-        IE = MIN(IA+ILEN,NX)
-        IA = IA+1
-        WRITE (IU06,'(''0UNBLOCKED GRID               N'',
-     &   40X,''PAGE'',I2)') L
-        WRITE (IU06,'(''   L = LAND               W -   - E'')')
-        WRITE (IU06,'(''   S = SEA                    S'',/)')
-        WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-        DO JH =NY,1,-1
-          DO I=IA,IE
-            IF (BATHY(I,JH).EQ.-999) AXX(I)='L'
-            IF (BATHY(I,JH).NE.-999) AXX(I)='S'
+        DO L=1,IPAGE
+          IA = (L-1)*ILEN
+          IE = MIN(IA+ILEN,NX)
+          IA = IA+1
+          WRITE (IU06,'(''0UNBLOCKED GRID               N'',
+     &     40X,''PAGE'',I2)') L
+          WRITE (IU06,'(''   L = LAND               W -   - E'')')
+          WRITE (IU06,'(''   S = SEA                    S'',/)')
+          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
+          DO JH =NY,1,-1
+            DO I=IA,IE
+              IF (BATHY(I,JH).EQ.-999) AXX(I)='L'
+              IF (BATHY(I,JH).NE.-999) AXX(I)='S'
+            ENDDO
+            WRITE (IU06,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
+            WRITE (54,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
           ENDDO
-          WRITE (IU06,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
-          WRITE (54,'(1X,I1,130A1)') MOD(JH,10),(AXX(I),I=IA,IE)
+          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
         ENDDO
-        WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-      ENDDO
+      ENDIF
 
       IF(ALLOCATED(AX)) DEALLOCATE(AX)
       IF(ALLOCATED(AXX)) DEALLOCATE(AXX)

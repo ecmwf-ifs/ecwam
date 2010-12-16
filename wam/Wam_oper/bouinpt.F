@@ -48,6 +48,7 @@
       USE YOWFBOU  , ONLY : NBOUNF   ,IJARF    ,IGARF    ,IBFL     ,
      &            IBFR     ,BFW
       USE YOWFRED  , ONLY : FR       ,TH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTRES   ,IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -80,6 +81,9 @@
 !      *IJFA*      REAL      NUMBER OF FIRST INPUT POINT IN BLOCK.
 !      *CDTLAST*   CHAR*14   DATE OF LAST FETCH FILE.
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('BOUINPT',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -337,5 +341,7 @@
       WRITE (IU06,*) '*                                         *'
       WRITE (IU06,*) '*******************************************'
       CALL ABORT1
+
+      IF (LHOOK) CALL DR_HOOK('BOUINPT',1,ZHOOK_HANDLE)
 
       END SUBROUTINE BOUINPT

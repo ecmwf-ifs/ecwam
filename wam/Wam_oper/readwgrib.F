@@ -53,6 +53,7 @@
 !     ----------
 
 !      *ABORT1*
+!      *INWGRIB*
 !      *INMARS*
 
 !     REFERENCE.
@@ -62,8 +63,7 @@
 
 !-------------------------------------------------------------------
 
-!*    *PARAMETER*  FOR ARRAY DIMENSIONS.
-
+      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
@@ -79,23 +79,19 @@
 
 !-----------------------------------------------------------------------
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER :: KLONRGG(NGY)
+
+      REAL :: ZHOOK_HANDLE
+      REAL :: WORK(NGX,NGY)
       REAL,DIMENSION(NINF:NSUP,NBLO) :: FIELD 
 
-!-----------------------------------------------------------------------
-      INTEGER,ALLOCATABLE :: KLONRGG(:)
-! Mod for OPENMP
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-! End Mod for OPENMP
-
-      REAL,ALLOCATABLE ::  WORK(:,:)
-      REAL ZHOOK_HANDLE
-
-      CHARACTER*14 CCDDATE,CDATE 
-      CHARACTER*24 FILNM
-      CHARACTER*40 MSG
+      CHARACTER(LEN=14) :: CCDDATE,CDATE 
+      CHARACTER(LEN=24) :: FILNM
+      CHARACTER(LEN=40) MSG
 
       LOGICAL :: LLONLYPOS
+
 !-----------------------------------------------------------------------
 
 !*    1. INPUT OF GRIB DATA.
@@ -103,28 +99,141 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      ALLOCATE(WORK(NGX,NGY),KLONRGG(NGY))
-
-      CALL INMARS  ( FILNM, NGX, NGY, ZMISS, NKSEK0, NKSEK1, NKSEK2,
-     &               NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &               CCDDATE, IFORP, KPARAM, NGXCD, NGYCD,
-     &               CDMOWEP, CDMOSOP, CDMOEAP, CDMONOP, KRGG, KLONRGG,
-     &               KZLEV,WORK, IERR, MSG, IU06,
-     &               IREAD, IRANK, NPROC)
-      IF ( IERR .EQ. 0 ) THEN
-        WRITE(IU06,*)'            '
-        WRITE(IU06,*)' SUB. READWGRIB ON RETURNING FROM INMARS: DATE=',
-     &                CCDDATE,' IPARAM= ',IPARAM
+      IF(LGRIBAPI_I) THEN
+        CALL INWGRIB  (FILNM, IREAD,
+     &                 CCDDATE, KPARAM, KZLEV, WORK)
+        KRGG=IRGG 
       ELSE
-        WRITE(IU06,*)' SUB. READWGRIB ON RETURNING FROM INAMRS: IERR=',
+        CALL INMARS  (FILNM, NGX, NGY, ZMISS, NKSEK0, NKSEK1, NKSEK2,
+     &                NKSEK3, NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
+     &                CCDDATE, IFORP, KPARAM, NGXCD, NGYCD,
+     &                CDMOWEP, CDMOSOP, CDMOEAP, CDMONOP,KRGG,KLONRGG,
+     &                KZLEV,WORK, IERR, MSG, IU06,
+     &                IREAD, IRANK, NPROC)
+        IF ( IERR .EQ. 0 ) THEN
+          WRITE(IU06,*)'            '
+          WRITE(IU06,*)' SUB. READWGRIB RETURNING FROM INMARS: DATE=',
+     &                CCDDATE,' IPARAM= ',IPARAM
+        ELSE
+          WRITE(IU06,*)' SUB. READWGRIB RETURNING FROM INAMRS: IERR=',
      &                IERR,' IPARAM= ',IPARAM
-        WRITE(IU06,*) MSG
-        CALL ABORT1
+          WRITE(IU06,*) MSG
+          CALL ABORT1
+        ENDIF
+        CALL ADJUST (CDMOWEP, CDMOEAP)
+        KAMOWEP=NINT(AMOWEP*100.)
+        KAMOEAP=NINT(AMOEAP*100.)
+        KAMONOP=NINT(AMONOP*100.)
+        KAMOSOP=NINT(AMOSOP*100.)
+        KCDMOWEP=NINT(CDMOWEP*100.)
+        KCDMOEAP=NINT(CDMOEAP*100.)
+        KCDMONOP=NINT(CDMONOP*100.)
+        KCDMOSOP=NINT(CDMOSOP*100.)
+        IF (KAMOWEP.NE.KCDMOWEP .OR. KAMOEAP.NE.KCDMOEAP .OR.
+     &      KAMONOP.NE.KCDMONOP .OR. KAMOSOP.NE.KCDMOSOP) THEN
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*                                 *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. READWGRIB  *'
+          WRITE(IU06,*) '*  ============================   *'
+          WRITE(IU06,*) '*                                 *'
+          WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID AREA *'
+          WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
+          WRITE(IU06,*) '*  COARSE MODEL GRID              *'
+          WRITE(IU06,*) '* IN FILE: ',FILNM 
+          WRITE(IU06,*) '*                                 *'
+          WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'CDMOSOP : ',CDMOSOP
+          WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'CDMONOP : ',CDMONOP
+          WRITE(IU06,*) '*  AMOWEP: ', AMOWEP, 'CDMOWEP : ',CDMOWEP
+          WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'CDMOEAP : ',CDMOEAP
+          WRITE(IU06,*) '*                                 *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT1
+        ENDIF
+        IF (KRGG.EQ.0) THEN
+          IF (NGXCD .NE. NGX) THEN
+            WRITE(IU06,*)'********************************'
+            WRITE(IU06,*)'*                              *'
+            WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
+            WRITE(IU06,*)'* ===========================  *'
+            WRITE(IU06,*)'*                              *'
+            WRITE(IU06,*)'* NGXCD SHOULD BE EQUAL TO NGX *'
+            WRITE(IU06,*)'* IN FILE: ',FILNM
+            WRITE(IU06,*)'* NGX  = ',NGX
+            WRITE(IU06,*)'* NGXCD  = ',NGXCD
+            WRITE(IU06,*)'*                              *'
+            WRITE(IU06,*)'********************************'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+        IF (NGYCD .NE. NGY) THEN
+          WRITE(IU06,*)'********************************'
+          WRITE(IU06,*)'*                              *'
+          WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
+          WRITE(IU06,*)'* ===========================  *'
+          WRITE(IU06,*)'*                              *'
+          WRITE(IU06,*)'* NGYCD SHOULD BE EQUAL TO NGY *'
+          WRITE(IU06,*)'* IN FILE: ',FILNM
+          WRITE(IU06,*)'* NGY  = ',NGY
+          WRITE(IU06,*)'* NGYCD  = ',NGYCD
+          WRITE(IU06,*)'*                              *'
+          WRITE(IU06,*)'********************************'
+          CALL ABORT1
+        ENDIF
+        IF (KRGG.NE.IRGG) THEN
+          WRITE(IU06,*)'********************************'
+          WRITE(IU06,*)'*                              *'
+          WRITE(IU06,*)'* ERROR IN SUB READWGRIB       *'
+          WRITE(IU06,*)'* =====================        *'
+          WRITE(IU06,*)'*                              *'
+          WRITE(IU06,*)'* KRGG IS NOT EQUAL TO IRGG    *'
+          WRITE(IU06,*)'* KRGG  = ',KRGG
+          WRITE(IU06,*)'* IRGG  = ',IRGG
+          WRITE(IU06,*)'*                              *'
+          IF(KRGG.EQ.0) THEN
+            WRITE(IU06,*)'* WARNING INTERPOLATION WILL   *'
+            WRITE(IU06,*)'* TAKE PLACE FROM REGULAR GRID *'
+            WRITE(IU06,*)'* DATA TO IRREGULAR GRID       *'
+            WRITE(IU06,*)'*                              *'
+            WRITE(IU06,*)'********************************'
+          ELSE
+            WRITE(IU06,*)'* PROGRAM CANNOT INTERPOLATE   *'
+            WRITE(IU06,*)'* BETWEEN THOSE 2 GRID         *'
+            WRITE(IU06,*)'* IT WILL ABORT                *'
+            WRITE(IU06,*)'*                              *'
+            WRITE(IU06,*)'********************************'
+            CALL ABORT1
+          ENDIF
+        ENDIF
+        IF (KRGG.EQ.1) THEN
+          DO J=1,NGY
+            IF(KLONRGG(J).NE.NLONRGG(J)) THEN
+              WRITE(IU06,*)'***********************************'
+              WRITE(IU06,*)'*                                 *'
+              WRITE(IU06,*)'* ERROR IN SUB READWGRIB          *'
+              WRITE(IU06,*)'* =====================           *'
+              WRITE(IU06,*)'*                                 *'
+              WRITE(IU06,*)'* THE IRREGULAR GRID DEFINITION   *'
+              WRITE(IU06,*)'* OF THE INPUT FILE DO NOT MATCH  *'
+              WRITE(IU06,*)'* WITH THE MODEL ONE.             *' 
+              WRITE(IU06,*)'* KLONRGG IS NOT EQUAL TO NLONRGG *'
+              DO JJ=1,NGY
+                WRITE(IU06,*)'* JJ = ',JJ
+                WRITE(IU06,*)'* KLONRGG  = ',KLONRGG(JJ)
+                WRITE(IU06,*)'* NLONRGG  = ',NLONRGG(JJ)
+              ENDDO
+              WRITE(IU06,*)'*                                 *'
+              WRITE(IU06,*)'***********************************'
+              CALL ABORT1
+            ENDIF
+          ENDDO
+        ENDIF
+
       ENDIF
 
 
-!*    1.1 ERROR MESSAGES
-!     ------------------
+!*    SIMPLE CHECKS ON THE RETRIEVED DATA 
+!     -----------------------------------
 
       IF (KPARAM.NE.IPARAM) THEN
         WRITE(IU06,*)'********************************'
@@ -154,119 +263,14 @@
         WRITE(IU06,*)'**********************************'
         CALL ABORT1
       ENDIF
-      CALL ADJUST (CDMOWEP, CDMOEAP)
-      KAMOWEP=NINT(AMOWEP*100.)
-      KAMOEAP=NINT(AMOEAP*100.)
-      KAMONOP=NINT(AMONOP*100.)
-      KAMOSOP=NINT(AMOSOP*100.)
-      KCDMOWEP=NINT(CDMOWEP*100.)
-      KCDMOEAP=NINT(CDMOEAP*100.)
-      KCDMONOP=NINT(CDMONOP*100.)
-      KCDMOSOP=NINT(CDMOSOP*100.)
-      IF (KAMOWEP.NE.KCDMOWEP .OR. KAMOEAP.NE.KCDMOEAP .OR.
-     &    KAMONOP.NE.KCDMONOP .OR. KAMOSOP.NE.KCDMOSOP) THEN
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*                                 *'
-        WRITE(IU06,*) '*  FATAL ERROR IN SUB. READWGRIB  *'
-        WRITE(IU06,*) '*  ============================   *'
-        WRITE(IU06,*) '*                                 *'
-        WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID AREA *'
-        WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
-        WRITE(IU06,*) '*  COARSE MODEL GRID              *'
-        WRITE(IU06,*) '* IN FILE: ',FILNM 
-        WRITE(IU06,*) '*                                 *'
-        WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'CDMOSOP : ',CDMOSOP
-        WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'CDMONOP : ',CDMONOP
-        WRITE(IU06,*) '*  AMOWEP: ', AMOWEP, 'CDMOWEP : ',CDMOWEP
-        WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'CDMOEAP : ',CDMOEAP
-        WRITE(IU06,*) '*                                 *'
-        WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT1
-      ENDIF
-      IF (KRGG.EQ.0) THEN
-        IF (NGXCD .NE. NGX) THEN
-          WRITE(IU06,*)'********************************'
-          WRITE(IU06,*)'*                              *'
-          WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
-          WRITE(IU06,*)'* ===========================  *'
-          WRITE(IU06,*)'*                              *'
-          WRITE(IU06,*)'* NGXCD SHOULD BE EQUAL TO NGX *'
-          WRITE(IU06,*)'* IN FILE: ',FILNM
-          WRITE(IU06,*)'* NGX  = ',NGX
-          WRITE(IU06,*)'* NGXCD  = ',NGXCD
-          WRITE(IU06,*)'*                              *'
-          WRITE(IU06,*)'********************************'
-          CALL ABORT1
-        ENDIF
-      ENDIF
-      IF (NGYCD .NE. NGY) THEN
-        WRITE(IU06,*)'********************************'
-        WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'* FATAL ERROR IN SUB READWGRIB *'
-        WRITE(IU06,*)'* ===========================  *'
-        WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'* NGYCD SHOULD BE EQUAL TO NGY *'
-        WRITE(IU06,*)'* IN FILE: ',FILNM
-        WRITE(IU06,*)'* NGY  = ',NGY
-        WRITE(IU06,*)'* NGYCD  = ',NGYCD
-        WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'********************************'
-        CALL ABORT1
-      ENDIF
-      IF (KRGG.NE.IRGG) THEN
-        WRITE(IU06,*)'********************************'
-        WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'* ERROR IN SUB READWGRIB       *'
-        WRITE(IU06,*)'* =====================        *'
-        WRITE(IU06,*)'*                              *'
-        WRITE(IU06,*)'* KRGG IS NOT EQUAL TO IRGG    *'
-        WRITE(IU06,*)'* KRGG  = ',KRGG
-        WRITE(IU06,*)'* IRGG  = ',IRGG
-        WRITE(IU06,*)'*                              *'
-        IF(KRGG.EQ.0) THEN
-          WRITE(IU06,*)'* WARNING INTERPOLATION WILL   *'
-          WRITE(IU06,*)'* TAKE PLACE FROM REGULAR GRID *'
-          WRITE(IU06,*)'* DATA TO IRREGULAR GRID       *'
-          WRITE(IU06,*)'*                              *'
-          WRITE(IU06,*)'********************************'
-        ELSE
-          WRITE(IU06,*)'* PROGRAM CANNOT INTERPOLATE   *'
-          WRITE(IU06,*)'* BETWEEN THOSE 2 GRID         *'
-          WRITE(IU06,*)'* IT WILL ABORT                *'
-          WRITE(IU06,*)'*                              *'
-          WRITE(IU06,*)'********************************'
-          CALL ABORT1
-        ENDIF
-      ENDIF
-      IF (KRGG.EQ.1) THEN
-        DO J=1,NGY
-          IF(KLONRGG(J).NE.NLONRGG(J)) THEN
-            WRITE(IU06,*)'***********************************'
-            WRITE(IU06,*)'*                                 *'
-            WRITE(IU06,*)'* ERROR IN SUB READWGRIB          *'
-            WRITE(IU06,*)'* =====================           *'
-            WRITE(IU06,*)'*                                 *'
-            WRITE(IU06,*)'* THE IRREGULAR GRID DEFINITION   *'
-            WRITE(IU06,*)'* OF THE INPUT FILE DO NOT MATCH  *'
-            WRITE(IU06,*)'* WITH THE MODEL ONE.             *' 
-            WRITE(IU06,*)'* KLONRGG IS NOT EQUAL TO NLONRGG *'
-            DO JJ=1,NGY
-              WRITE(IU06,*)'* JJ = ',JJ
-              WRITE(IU06,*)'* KLONRGG  = ',KLONRGG(JJ)
-              WRITE(IU06,*)'* NLONRGG  = ',NLONRGG(JJ)
-            ENDDO
-            WRITE(IU06,*)'*                                 *'
-            WRITE(IU06,*)'***********************************'
-            CALL ABORT1
-          ENDIF
-        ENDDO
-      ENDIF
+
+
 
 ! TRANSFORM GRID DATA TO BLOCK DATA
 
       IF(KRGG.EQ.0.AND.IRGG.EQ.1) THEN
-!   INTERPOLATION IS REQUIRED : TAKE CLOSEST GRID POINT
+!       INTERPOLATION IS REQUIRED : TAKE CLOSEST GRID POINT
+!       (this part to be removed once we only use gribapi !)
         DELLO=XDELLO
         DELLA=XDELLA
         DO IG=1,IGL
@@ -274,7 +278,8 @@
 
           IF(LLONLYPOS) THEN
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP       PARALLEL DO SCHEDULE(STATIC)
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,KX,XI,XJ,I,J)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -296,7 +301,8 @@
             CALL GSTATS(1444,1)
           ELSE
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP       PARALLEL DO SCHEDULE(STATIC)
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,KX,XI,XJ,I,J)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -318,13 +324,14 @@
           ENDIF
         ENDDO
       ELSE
-!   NO INTERPOLATION IS REQUIRED
+!       NO INTERPOLATION IS REQUIRED
         DO IG=1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
           IF(LLONLYPOS) THEN
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP       PARALLEL DO SCHEDULE(STATIC)
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -340,7 +347,8 @@
 
           ELSE
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP       PARALLEL DO SCHEDULE(STATIC) 
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -355,9 +363,6 @@
           ENDIF
         ENDDO
       ENDIF
-
-      IF(ALLOCATED(WORK))DEALLOCATE(WORK)
-      IF(ALLOCATED(KLONRGG))DEALLOCATE(KLONRGG)
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',1,ZHOOK_HANDLE)
 

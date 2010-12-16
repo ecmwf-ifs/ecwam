@@ -1,57 +1,76 @@
-!----------------------------------------------------------------
-
-!***  *REAL FUNCTION* *VPLUS(XI,XJ,XK,THI,THJ,THK,OI,OJ,OK)
-
+!
+!
 !-----------------------------------------------------------------------
-
-      REAL FUNCTION VPLUS(XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK)
-
-!***  *VPLUS*  DETERMINES THE NONLINEAR TRANSFER COEFFICIENT FOR THREE
-!              WAVE INTERACTIONS OF GRAVITY-CAPILLARY WAVES.
-
+!
+!***  *REAL FUNCTION* *VPLUS(XI,XJ,XK,THI,THJ,THK)
+!
+!-----------------------------------------------------------------------
+      REAL FUNCTION VPLUS(XI,XJ,XK,THI,THJ,THK)
+!
+!***  *VPLUS*  DETERMINES THE SECOND-ORDER TRANSFER COEFFICIENT 
+!              FOR THREE WAVE INTERACTIONS OF GRAVITY WAVES.
+!
 !     PETER JANSSEN
-
+!
 !     PURPOSE.
 !     --------
-
+!
 !              GIVES NONLINEAR TRANSFER COEFFICIENT FOR THREE
-!              WAVE INTERACTIONS OF GRAVITY-CAPILLARY WAVES IN THE
+!              WAVE INTERACTIONS OF GRAVITY WAVES IN THE
 !              IDEAL CASE OF NO CURRENT. (CF.ZAKHAROV)
-
+!
 !     INTERFACE.
 !     ----------
 !              *VPLUS(XI,XJ,XK)*
-!                      *XI*  - WAVE NUMBER
-!                      *XJ*  - WAVE NUMBER
-!                      *XK*  - WAVE NUMBER
+!                      *XI*   - WAVE NUMBER
+!                      *XJ*   - WAVE NUMBER
+!                      *XK*   - WAVE NUMBER
+!                      *THI*  - WAVE DIRECTION
+!                      *THJ*  - WAVE DIRECTION
+!                      *THK*  - WAVE DIRECTION
 !     METHOD.
 !     -------
 !              NONE
-
+!
 !     EXTERNALS.
 !     ----------
 !              NONE.
-
+!
 !-----------------------------------------------------------------------
-
-      USE YOWPCONS , ONLY : ZCONST
-
-      REAL, PARAMETER :: DEL1=1.0E-10
-
+!
+      USE YOWPCONS, ONLY : G
+      IMPLICIT NONE
+      REAL DEL1,RI,RJ,RK,XI,XJ,XK,THI,THJ,THK,OI,OJ,OK,QI,QJ,QK,
+     V     RIJ,RIK,RJK,SQIJK,SQIKJ,SQJKI,ZCONST,OMEG
+!
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
+!
+      DEL1 = 10.**(-12)
+      ZCONST=1./(4*SQRT(2.))
 
-      RI=ABS(XI)+DEL1
-      RJ=ABS(XJ)+DEL1
-      RK=ABS(XK)+DEL1
-      OI=XOI+DEL1
-      OJ=XOJ+DEL1
-      OK=XOK+DEL1
-      SQIJK=SQRT(OI*OJ*RK/(OK*RI*RJ))
-      SQIKJ=SQRT(OI*OK*RJ/(OJ*RI*RK))
-      SQJKI=SQRT(OJ*OK*RI/(OI*RJ*RK))
-      VPLUS=ZCONST*( (XIJ+RI*RJ)*SQIJK + (XIK+RI*RK)*SQIKJ
-     &               + (XJK+RJ*RK)*SQJKI )
+      RI = XI
+      RJ = XJ
+      RK = XK
 
+      OI=OMEG(RI)+DEL1
+      OJ=OMEG(RJ)+DEL1
+      OK=OMEG(RK)+DEL1
+
+      QI=OI**2/G
+      QJ=OJ**2/G
+      QK=OK**2/G
+
+      RIJ = RI*RJ*COS(THJ-THI)
+      RIK = RI*RK*COS(THK-THI)
+      RJK = RJ*RK*COS(THK-THJ)
+
+      SQIJK=SQRT(G*OK/(OI*OJ))
+      SQIKJ=SQRT(G*OJ/(OI*OK))
+      SQJKI=SQRT(G*OI/(OJ*OK))
+
+      VPLUS=ZCONST*( (RIJ+QI*QJ)*SQIJK + (RIK+QI*QK)*SQIKJ
+     V               + (RJK+QJ*QK)*SQJKI )
       RETURN
-      END FUNCTION VPLUS
+      END
+

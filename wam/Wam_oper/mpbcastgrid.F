@@ -59,10 +59,15 @@
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
+      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
      &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
-     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
+     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
+     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
+     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
+     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
+     &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
+
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -80,7 +85,7 @@
 
 !       BUFFER SIZE MESSAGE AND THE FEW DIMENSIONS NEEDED TO 
 !       ALLOCATE ALL ARRAYS
-        MFIRST=11
+        MFIRST=16
         ALLOCATE(ICOMBUF(MFIRST))
 
         IF(IRANK.EQ.ISEND) THEN
@@ -107,12 +112,22 @@
           ICOMBUF(IKCOUNT)=NGOUT
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NDEPTH
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=MR
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=MA
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NFREH
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NANGH
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NMAX
           IF(IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
             WRITE (IU06,*) '* IKCOUNT = ',IKCOUNT
-            WRITE (IU06,*) '* MFIRST  - ',MFIRST
+            WRITE (IU06,*) '* MFIRST  = ',MFIRST
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF
@@ -146,6 +161,16 @@
           NGOUT=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NDEPTH=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          MR=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          MA=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NFREH=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NANGH=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          NMAX=ICOMBUF(IKCOUNT)
 
           IF(IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
@@ -159,10 +184,12 @@
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT
+        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(NFRE+4)+8*NANG+2*NGOUT+
+     &      2*NFREH*NFREH
         MZC=25+(4+4*NDEPTH)*NFRE+5*(NFRE+4)+3*NANG+4*NGY+KFRH+JPLEVC+
      &      JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)*NFRE+
-     &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF
+     &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+
+     &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
@@ -235,6 +262,23 @@
           IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
           IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
           IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+
+          IF(.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
+          IF(.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
+          IF(.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
+          IF(.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
+          IF(.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
+          IF(.NOT.ALLOCATED(TC_QL)) 
+     &                    ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
+          IF(.NOT.ALLOCATED(TT_4M))
+     &                    ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
+          IF(.NOT.ALLOCATED(TT_4P))
+     &                    ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
+          IF(.NOT.ALLOCATED(IM_P))
+     &                    ALLOCATE(IM_P(NFREH,NFREH))
+          IF(.NOT.ALLOCATED(IM_M)) 
+     &                    ALLOCATE(IM_M(NFREH,NFREH))
+          IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
         ELSE 
           KCOUNT=0
@@ -560,6 +604,61 @@
           DO M=1,NFREHF
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=DFIMHF(M)
+          ENDDO
+
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=XMR
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=XMA
+
+          DO M=1,NFREH
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=OMEGA(M)
+          ENDDO
+
+          DO K=1,NANGH
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=THH(K)
+          ENDDO
+
+          DO M=1,NFREH
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=DFDTH(M)
+          ENDDO
+
+          DO M1=1,NFREH
+            DO M2=1,NFREH
+              DO K1=1,NANGH
+                DO KDEPTH=1,NDEPTH
+                   KCOUNT=KCOUNT+1
+                   ZCOMBUF(KCOUNT)=TA(KDEPTH,K1,M2,M1)
+                   KCOUNT=KCOUNT+1
+                   ZCOMBUF(KCOUNT)=TB(KDEPTH,K1,M2,M1)
+                   KCOUNT=KCOUNT+1
+                   ZCOMBUF(KCOUNT)=TC_QL(KDEPTH,K1,M2,M1)
+                   KCOUNT=KCOUNT+1
+                   ZCOMBUF(KCOUNT)=TT_4M(KDEPTH,K1,M2,M1)
+                   KCOUNT=KCOUNT+1
+                   ZCOMBUF(KCOUNT)=TT_4P(KDEPTH,K1,M2,M1)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M1=1,NFREH
+            DO M2=1,NFREH
+               IKCOUNT=IKCOUNT+1
+               ICOMBUF(IKCOUNT)=IM_P(M2,M1)
+               IKCOUNT=IKCOUNT+1
+               ICOMBUF(IKCOUNT)=IM_M(M2,M1)
+            ENDDO
+          ENDDO
+ 
+          DO KDEPTH=1,NDEPTH
+            DO M=1,NFREH
+              KCOUNT=KCOUNT+1
+              ZCOMBUF(KCOUNT)=TFAKH(M,KDEPTH)
+            ENDDO
           ENDDO
 
           IF(IKCOUNT.NE.MIC) THEN
@@ -917,6 +1016,61 @@
           DO M=1,NFREHF
             KCOUNT=KCOUNT+1
             DFIMHF(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          KCOUNT=KCOUNT+1
+          XMR=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          XMA=ZCOMBUF(KCOUNT)
+
+          DO M=1,NFREH
+            KCOUNT=KCOUNT+1
+            OMEGA(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          DO K=1,NANGH
+            KCOUNT=KCOUNT+1
+            THH(K)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          DO M=1,NFREH
+            KCOUNT=KCOUNT+1
+            DFDTH(M)=ZCOMBUF(KCOUNT)
+          ENDDO
+
+          DO M1=1,NFREH
+            DO M2=1,NFREH
+              DO K1=1,NANGH
+                DO KDEPTH=1,NDEPTH
+                   KCOUNT=KCOUNT+1
+                   TA(KDEPTH,K1,M2,M1)=ZCOMBUF(KCOUNT)
+                   KCOUNT=KCOUNT+1
+                   TB(KDEPTH,K1,M2,M1)=ZCOMBUF(KCOUNT)
+                   KCOUNT=KCOUNT+1
+                   TC_QL(KDEPTH,K1,M2,M1)=ZCOMBUF(KCOUNT)
+                   KCOUNT=KCOUNT+1
+                   TT_4M(KDEPTH,K1,M2,M1)=ZCOMBUF(KCOUNT)
+                   KCOUNT=KCOUNT+1
+                   TT_4P(KDEPTH,K1,M2,M1)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO M1=1,NFREH
+            DO M2=1,NFREH
+               IKCOUNT=IKCOUNT+1
+               IM_P(M2,M1)=ICOMBUF(IKCOUNT)
+               IKCOUNT=IKCOUNT+1
+               IM_M(M2,M1)=ICOMBUF(IKCOUNT)
+            ENDDO
+          ENDDO
+
+          DO KDEPTH=1,NDEPTH
+            DO M=1,NFREH
+              KCOUNT=KCOUNT+1
+              TFAKH(M,KDEPTH)=ZCOMBUF(KCOUNT)
+            ENDDO
           ENDDO
 
           IF(IKCOUNT.NE.MIC) THEN

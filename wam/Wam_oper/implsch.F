@@ -120,8 +120,9 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
      &            C        ,FRIC     ,FLOGSPRDM1
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMINFR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
@@ -150,8 +151,11 @@
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL, DIMENSION(IJS:IJL) :: USFM
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
-      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLWS
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALISATION.
@@ -206,14 +210,14 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, LLWS)
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
+      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
@@ -234,12 +238,12 @@
 
 !     MEAN CHARACTERISTICS FOR WIND SEA
 !     ---------------------------------
-      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
+      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
         CALL FLUSH (IU06)
@@ -262,17 +266,21 @@
       DELT5 = XIMP*DELT
 
       DO M=1,NFRE
-!!      warning COFRM4 is different for deep or shallow !!
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
       DO IJ=IJS,IJL
         USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
       ENDDO
 
+      DO M=1,NFRE
+        DO IJ=IJS,IJL
+          TEMP(IJ,M) = USFM(IJ)*DELFL(M)
+        ENDDO
+      ENDDO
+
       IF(ISHALLO.EQ.1) THEN
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            TEMP(IJ,M) = USFM(IJ)*DELFL(M)
             TEMP2(IJ,M) = FRM5(M)
           ENDDO
         ENDDO
@@ -281,8 +289,6 @@
           DO IJ=IJS,IJL
             AKM1 = 1./TFAK(INDEP(IJ),M)
             AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
-            DELFL2 = DELFL(M)*SQRT(AKM1)*AK2VGM1
-            TEMP(IJ,M) = USFM(IJ)*DELFL2
             TEMP2(IJ,M) = AKM1*AK2VGM1
           ENDDO
         ENDDO
@@ -302,6 +308,7 @@
         ENDDO
       ENDDO
 
+
 ! ----------------------------------------------------------------------
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
@@ -315,7 +322,7 @@
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3, IJS, IJL, USNEW, THWNEW, EMEANWS, FMEANWS,LLWS)
+      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
@@ -361,7 +368,7 @@
 !           --------------------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN,ZIDLNEW, SL, LLWS)
+     &             ROAIRN,ZIDLNEW, SL, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -394,6 +401,8 @@
       ENDDO
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE IMPLSCH

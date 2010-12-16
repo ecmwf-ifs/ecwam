@@ -1,5 +1,5 @@
-      SUBROUTINE IFSTOWAM (CDTWIS, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
-     &                     ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+      SUBROUTINE IFSTOWAM (NFIELDS, NGPTOTG, NCA, NRA,
+     &                     ISEC2, FIELDS, LWCUR, MASK_IN)
 
 !***  *IFSTOWAM* - INTERPOLATES FORCING FIELDS FROM IFS TO WAM GRID. 
 
@@ -13,16 +13,13 @@
 !     INTERFACE                                                         
 !     ---------                                                         
 
-!     *CALL* *IFSTOWAM (CDTWIS, NFIELDS, NGPTOTG, NCA, NRA, FCRANGE,
-!    &                  ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+!     *CALL* *IFSTOWAM (NFIELDS, NGPTOTG, NCA, NRA,
+!    &                  ISEC2, FIELDS, LWCUR, MASK_IN)
 !
-!        *CDTWIS* - EXPECTED DATE/TIME OF THE DATA OBTAINED FROM IFS.
 !        *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
-!        *FCRANGE*- FORECAST RANGE IN SECONDS
-!        *ISEC1*  - GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !        *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
 !                   FIELDS(:,1) = U COMPONENT OF WIND SPEED
@@ -49,7 +46,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,
      &            I_MASK_IN,N_MASK_IN
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
+      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWICE   , ONLY : IPARAMCI
@@ -76,7 +73,7 @@
       INTEGER, ALLOCATABLE :: KGRIB(:)
 
       INTEGER NFIELDS, NGPTOTG, NCA, NRA
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NRA)
+      INTEGER ISEC2(22+NRA)
       INTEGER, ALLOCATABLE, SAVE :: RLONRGG(:), IJBLOCK(:,:)
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA,I,JF
@@ -95,7 +92,6 @@
       REAL, ALLOCATABLE, SAVE :: DJ1(:), DII1(:,:), DIIP1(:,:)
       REAL, DIMENSION(NFIELDS,4) :: NORMS ! 1:average, 2:min, 3:max, 4:variance 
 
-      CHARACTER*14 CDTWIR, CDTWIS
       CHARACTER*16 :: AFLABEL(NFIELDS)
 
       LOGICAL :: LLDUM
@@ -236,7 +232,7 @@
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' *GLOBAL* NORMS OF INPUT ATMOSPHERIC FIELDS :'
           CALL GSTATS(1436,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JF,I,IC)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(IFLD,JF,IC,I)
           DO IFLD=1,NFIELDS
             JF=IFLD
             DO IC=1,3
@@ -263,6 +259,8 @@
           DO IFLD=1,NFIELDS
             WRITE(IU06,*) ' ',AFLABEL(IFLD),
      &       NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3),N_MASK_IN
+            WRITE(IU06,111) 
+     &       NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3)
           ENDDO
 
         ELSE
@@ -406,10 +404,13 @@
             WRITE(IU06,*) ' ',AFLABEL(IFLD),
      &         NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3),NTOT,
      &                    IRANK, NPROC, LL1D
+            WRITE(IU06,111) 
+     &         NORMS(IFLD,1),NORMS(IFLD,2),NORMS(IFLD,3)
           ENDDO
 
           DEALLOCATE(ZCOMBUF)
         ENDIF
+111     FORMAT(19x,'HEX: ',3(Z16.16,2x))
         WRITE(IU06,*) ' '
         IF(ITEST.GT.0) CALL FLUSH(IU06)
 
@@ -474,56 +475,6 @@
         IF (LWCUR) THEN 
           IF (ITEST.GT.1)
      &      WRITE(IU06,*) ' SUB. IFSTOWAM - CURRENTS INTERPOLATED'
-        ENDIF
-
-! Decode the date of the fields:
-!       START DATE.
-
-        IYYYY=(ISEC1(21)-1)*100+ISEC1(10)
-        WRITE(CDTWIR(1:12),'(I4.4,4I2.2)') IYYYY,ISEC1(11),ISEC1(12),
-     &                             ISEC1(13),ISEC1(14)
-        CDTWIR(13:14)='00'
-
-
-!       DETERMINE FORECAST PERIOD
-
-        IFORP = NINT(FCRANGE)
-
-!       GET DATE OF THE FORECAST INSTEAD OF STARTING DATE
-
-        CALL INCDATE (CDTWIR,IFORP)
-
-      
-        IF (CDTWIR.LT.CDTWIS) THEN
-!         DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
-!         ------------------------------------------------
-          WRITE (IU06,*) ' ******************************************'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' *      FATAL ERROR SUB. IFSTOWAM         *'
-          WRITE (IU06,*) ' *      ==========================        *'
-          WRITE (IU06,*) ' * WIND DATE IS EARLIER THAN EXPECTED     *'
-          WRITE (IU06,*) ' * DATE FROM IFS IS CDTWIR = ', CDTWIR
-          WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS       *'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' ******************************************'
-          CALL ABORT1
-        ELSEIF (CDTWIR.GT.CDTWIS) THEN
-!         DATE OF INPUT FIELD IS LATER THAN REQUESTED DATE
-!         ------------------------------------------------
-          WRITE (IU06,*) ' ******************************************'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' *      FATAL ERROR SUB. IFSTOWAM*'
-          WRITE (IU06,*) ' *      ==========================        *'
-          WRITE (IU06,*) ' * WIND DATE IS LATER THAN EXPECTED       *'
-          WRITE (IU06,*) ' * DATE FROM IFS IS CDTWIR = ', CDTWIR
-          WRITE (IU06,*) ' * DATE EXPECTED IS CDTWIS = ', CDTWIS
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS       *'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' ******************************************'
-          CALL ABORT1
         ENDIF
 
         IPARAMU=165

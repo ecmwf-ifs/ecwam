@@ -74,7 +74,8 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,IPFGTBL  ,LOUTINT  ,LOUTSPP
+     &            GFLAG20  ,LFDB     ,IPFGTBL  ,LOUTINT  ,LOUTSPP  ,
+     &            LGRIBAPI_O
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
@@ -233,7 +234,22 @@
      &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
      &        NSTART,NEND)
           ELSE
-            CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
+            NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              DO M=1,NFRE
+                DO K=1,NANG
+                  DO IJ=KIJS,KIJL
+                    SL(IJ,K,M) = FL1(IJ,K,M)
+                  ENDDO
+                ENDDO
+              ENDDO
+            ENDDO
+!$OMP       END PARALLEL DO
+
+            CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
      &        IU27, IU28,THWOLD,USOLD,U10NEW,THWNEW,USNEW,TAUW,
      &        NSTART,NEND)
           ENDIF
@@ -359,7 +375,10 @@
 !$OMP          END PARALLEL DO
                 CALL GSTATS(1236,1)
               ENDIF
-              CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+              IF(LGRIBAPI_O) THEN
+                CALL OUTWSPEC(SL)
+              ELSE
+                CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                     NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                     AMONOP, XDELLA, NSTART, NEND,
@@ -373,8 +392,12 @@
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                     NWFDBREF, LFDBOPEN)
+              ENDIF
             ELSE
-              CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+              IF(LGRIBAPI_O) THEN
+                CALL OUTWSPEC(FL1)
+              ELSE
+                CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                     FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                     NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                     AMONOP, XDELLA, NSTART, NEND,
@@ -388,6 +411,7 @@
      &                     CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                     IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                     NWFDBREF, LFDBOPEN)
+               ENDIF
             ENDIF
             CALL GSTATS(1976,0)
             ISTAT = IFLUSHFDBSUBS (NWFDBREF)

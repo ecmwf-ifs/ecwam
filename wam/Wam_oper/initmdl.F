@@ -1,7 +1,7 @@
       SUBROUTINE INITMDL (NADV,
      &                    IREAD,
-     &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                    NFIELDS, NGPTOTG, NC, NR,
+     &                    ISEC2, FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -45,8 +45,8 @@
 
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
-!    &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-!    &                ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)*
+!    &                NFIELDS, NGPTOTG, NC, NR,
+!    &                ISEC2, FIELDS, LWCUR, MASK_IN)*
 
 !      *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -55,8 +55,6 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *FCRANGE*   REAL      FORECAST RANGE IN SECONDS
-!      *ISEC1*     INTEGER   GRIB ISEC1 (TO EXTRACT DATE/TIME OF ATM. FIELDS)
 !      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
 !      *LWCUR*    LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
@@ -251,14 +249,15 @@
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
-     &            LOUTSPP
+     &            LOUTSPP  ,LGRIBAPI_I, LGRIBAPI_O
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
      &            V
       USE YOWFBOU  , ONLY : IBOUNF
+      USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
      &            COSTH    ,SINTH
-      USE YOWGRIBHD, ONLY : NKSEK1
+      USE YOWGRIBHD, ONLY : NKSEK1   ,LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
      &             COSPH
       USE YOWICE   , ONLY : ICEMASK
@@ -307,8 +306,7 @@
 ! -------------------------------------------------------------------
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      REAL FCRANGE
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
+      INTEGER ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       LOGICAL :: LWCUR
       INTEGER MASK_IN(NGPTOTG)
@@ -451,11 +449,7 @@
       DO M=1,NFRE
         FR5(M) = FR(M)**5
         FRM5(M) = 1./FR5(M)
-        IF(ISHALLO.EQ.1) THEN
-          COFRM4(M) = COEF4*G/FR(M)**4
-        ELSE
-          COFRM4(M) = 0.5*COEF4*ZPI**4/SQRT(G)
-        ENDIF
+        COFRM4(M) = COEF4*G/FR(M)**4
       ENDDO
 
       FLOGSPRDM1=1./LOG10(FRATIO)
@@ -492,7 +486,7 @@
 
       CALL MPCRTBL
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
+        WRITE(IU06,*) '   SUB. INITMDL: MPCRTBL DONE'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -580,9 +574,20 @@
 
       CALL SETMARSTYPE
 
-      CALL SETWGRIBHD
-      IF (ITEST.GE.2)
-     1   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
+      IF(.NOT.LGRIBAPI_I .OR. .NOT.LGRIBAPI_O) THEN
+        CALL SETWGRIBHD
+        IF (ITEST.GE.2)
+     &   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
+      ENDIF
+
+      IF(LGRIBAPI_I .OR. LGRIBAPI_O) THEN
+        IF(.NOT. LGRHDIFS) THEN
+!         FOR INTEGRATED PARAMETERS
+          CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!         FOR SPECTRA 
+          CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+        ENDIF
+      ENDIF
 
       IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc')THEN
         IF(ALLOCATED(FAC0)) DEALLOCATE(FAC0)
@@ -955,8 +960,8 @@
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, ICEMASK,
      &              IREAD,
-     &              NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &              ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &              NFIELDS, NGPTOTG, NC, NR,
+     &              ISEC2, FIELDS, LWCUR, MASK_IN)
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
       CALL FLUSH (IU06)
 

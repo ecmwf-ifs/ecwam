@@ -77,9 +77,9 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KRLAT    ,
-     &            KRLON    ,OBSLAT   ,OBSLON   ,
-     &            OBSRLAT  ,OBSRLON
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,
+     &            KRLAT    ,KRLON    ,
+     &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
 
 ! -------------------------------------------------------------------
 
@@ -361,18 +361,47 @@
      &              XLON-0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,1))
               WRITE(25,'(2(1X,F8.3),1X,I4)') 
      &              XLON+0.25*XDELLO,XLAT,NINT(1000*OBSLON(IJ,M,2))
-              WRITE(32,'(2(1X,F8.3),1X,I4)') 
+
+              IF(IPROPAGS.EQ.2) THEN
+                WRITE(32,'(2(1X,F8.3),1X,I4)') 
+     &              XLON+0.25*XDELLO,XLAT-0.25*XDELLA,
+     &              NINT(1000*OBSCOR(IJ,M,2))
+              ELSE
+                WRITE(32,'(2(1X,F8.3),1X,I4)') 
      &              XLON+0.25*XDELLO,XLAT-0.25*XDELLA,
      &              NINT(1000*OBSRLAT(IJ,M,1))
-              WRITE(33,'(2(1X,F8.3),1X,I4)') 
+              ENDIF
+
+              IF(IPROPAGS.EQ.2) THEN
+                WRITE(33,'(2(1X,F8.3),1X,I4)') 
+     &              XLON-0.25*XDELLO,XLAT+0.25*XDELLA,
+     &              NINT(1000*OBSCOR(IJ,M,4))
+              ELSE
+                WRITE(33,'(2(1X,F8.3),1X,I4)') 
      &              XLON-0.25*XDELLO,XLAT+0.25*XDELLA,
      &              NINT(1000*OBSRLAT(IJ,M,2))
-              WRITE(34,'(2(1X,F8.3),1X,I4)') 
+              ENDIF
+
+              IF(IPROPAGS.EQ.2) THEN
+                WRITE(34,'(2(1X,F8.3),1X,I4)') 
+     &              XLON-0.25*XDELLO,XLAT-0.25*XDELLA,
+     &              NINT(1000*OBSCOR(IJ,M,3))
+              ELSE
+                WRITE(34,'(2(1X,F8.3),1X,I4)') 
      &              XLON-0.25*XDELLO,XLAT-0.25*XDELLA,
      &              NINT(1000*OBSRLON(IJ,M,1))
-              WRITE(35,'(2(1X,F8.3),1X,I4)') 
+              ENDIF
+
+              IF(IPROPAGS.EQ.2) THEN
+                WRITE(35,'(2(1X,F8.3),1X,I4)') 
+     &              XLON+0.25*XDELLO,XLAT+0.25*XDELLA,
+     &              NINT(1000*OBSCOR(IJ,M,1))
+              ELSE
+                WRITE(35,'(2(1X,F8.3),1X,I4)') 
      &              XLON+0.25*XDELLO,XLAT+0.25*XDELLA,
      &              NINT(1000*OBSRLON(IJ,M,2))
+              ENDIF
+
             ENDIF
 
 ! subareas for which I need the depth as in the old WAM
@@ -448,22 +477,36 @@
       NPE=0
       DO IPR=IPROC_S,IPROC_E
         DO IJ=NSTART(IPR),NEND(IPR)
+
           DO IC=1,2
             IF(KLON(IJ,IC).GT.0.AND.KLON(IJ,IC).LE.NIBLO)
      &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLON(IJ,IC)))=1 
-            IF(KLAT(IJ,IC,1).GT.0.AND.KLAT(IJ,IC,1).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC,1)))=1 
-            IF(KLAT(IJ,IC,2).GT.0.AND.KLAT(IJ,IC,2).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC,2)))=1 
-            IF(KRLON(IJ,IC,1).GT.0.AND.KRLON(IJ,IC,1).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC,1)))=1 
-            IF(KRLAT(IJ,IC,1).GT.0.AND.KRLAT(IJ,IC,1).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC,1)))=1 
-            IF(KRLAT(IJ,IC,2).GT.0.AND.KRLAT(IJ,IC,2).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC,2)))=1 
-            IF(KRLON(IJ,IC,2).GT.0.AND.KRLON(IJ,IC,2).LE.NIBLO)
-     &        NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC,2)))=1 
+            DO IP=1,2
+              IF(KLAT(IJ,IC,IP).GT.0.AND.KLAT(IJ,IC,IP).LE.NIBLO)
+     &          NEIGHBOUR(IJPROC(IJ),IJPROC(KLAT(IJ,IC,IP)))=1 
+            ENDDO
           ENDDO
+
+          IF(IPROPAGS.EQ.1) THEN
+          DO IC=1,2
+            DO IP=1,2
+              IF(KRLAT(IJ,IC,IP).GT.0.AND.KRLAT(IJ,IC,IP).LE.NIBLO)
+     &          NEIGHBOUR(IJPROC(IJ),IJPROC(KRLAT(IJ,IC,IP)))=1 
+              IF(KRLON(IJ,IC,IP).GT.0.AND.KRLON(IJ,IC,IP).LE.NIBLO)
+     &          NEIGHBOUR(IJPROC(IJ),IJPROC(KRLON(IJ,IC,IP)))=1 
+            ENDDO
+          ENDDO
+          ENDIF
+
+          IF(IPROPAGS.EQ.2) THEN
+          DO IC=1,4
+            DO IP=1,2
+              IF(KCOR(IJ,IC,IP).GT.0.AND.KCOR(IJ,IC,IP).LE.NIBLO)
+     &          NEIGHBOUR(IJPROC(IJ),IJPROC(KCOR(IJ,IC,IP)))=1 
+            ENDDO
+          ENDDO
+          ENDIF
+
         ENDDO
         NPE(IPR)=NEND(IPR)-NSTART(IPR)+1
       ENDDO

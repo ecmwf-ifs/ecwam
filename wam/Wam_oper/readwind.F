@@ -1,4 +1,4 @@
-      SUBROUTINE READWIND (CDTWIR, LCLOSEWND, FILNM, LLNOTOPENED,IREAD)
+      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED,IREAD)
 
 !***  *READWIND* - PROGRAM TO FORMAT WIND FIELDS FROM MARS 
 !                  FROM INPUT FILE sfcwind.
@@ -43,6 +43,8 @@
 !    J. BIDLOT    ECMWF 2008  REMOVE PART FOR ATMOSPHERIC FIELDS
 !                             TO *IFSTOWAM*
 
+!    J. BIDLOR    ECMWF 2010 USE GRIB API
+
 !     PURPOSE                                                       
 !     -------                                                      
 
@@ -57,11 +59,9 @@
 !     INTERFACE
 !     ---------
 
-!     *CALL* *READWIND (CDTWIR, LCLOSEWND, FILNM, LLNOTOPENED, IREAD)*
+!     *CALL* *READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)*
 !
 !        *CDTWIR* - DATE/TIME OF THE DATA READ
-!        *LCLOSEWND* IF TRUE THE INPUT FILE WILL BE CLOSED AND THE UNIT
-!                    RESET
 !        *FILNM*    FILENAME OF INPUT FILE
 !        *LLNOTOPENED*  TRUE IF THE INPUT FILE HAS TO BE OPENED
 !        *IREAD*    PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -82,6 +82,7 @@
 
 ! --------------------------------------------------------------------- 
 
+      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
@@ -91,7 +92,7 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     , 
      &            KXLT
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
@@ -101,29 +102,45 @@
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NC       ,NR       ,FIELDG   ,IUNITW   ,
-     &            CWDFILE  ,LLWSWAVE ,LLWDWAVE
+     &            NBITW    ,CWDFILE  ,LLWSWAVE ,LLWDWAVE
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
 
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE GRIB_API_INTERFACE
 
 ! --------------------------------------------------------------------- 
 
-      INTEGER, ALLOCATABLE :: KGRIB(:)
-      INTEGER :: IDUM(2)
+      IMPLICIT NONE
+
+      INTEGER :: IREAD 
+      INTEGER :: NFLD  
+      INTEGER :: I, J, IVAR, JSN
+      INTEGER :: ISIZE, KRET, KPLENG, KLEN, KLENG 
+      INTEGER :: IFORP, IPARAM, KZLEV, IDM 
+      INTEGER :: IWTIME, IDTTURN
       INTEGER :: LNAME 
+      INTEGER :: I_GET_UNIT
+      INTEGER :: KBYTES, IRET, KDUM
+      INTEGER :: KGRIB_HANDLE
+      INTEGER :: IDUM(2)
+      INTEGER, ALLOCATABLE :: KGRIB(:)
 
+      REAL :: ZDUM
+      REAL :: UWIND, VWIND, WSPEED, WTHETA
+      REAL :: PMISS 
+      REAL :: ZHOOK_HANDLE
       REAL, ALLOCATABLE :: WORK(:,:)  
-      REAL ZHOOK_HANDLE
 
-      CHARACTER FILNM*24
-      CHARACTER*14 CDTWIR, CDTTURN
+      CHARACTER*24 :: FILNM
+      CHARACTER*14 :: CDTWIR, CDTTURN
       CHARACTER*14, SAVE :: CWDDATE
 
-      LOGICAL LLNOTOPENED, LCLOSEWND
-      LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
+      LOGICAL :: LLNOTOPENED
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
+      LOGICAL :: LLRESIZING=.FALSE.
+      LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
 
 ! --------------------------------------------------------------------  
 
@@ -143,8 +160,6 @@
 !       1.0 INITIALISE VALUES. 
 !           ------------------ 
 
-        NBIT=2730000
-
         ICOORD = 1
 
         FILNM='sfcwindin'
@@ -163,21 +178,26 @@
           CALL ABORT1
         ENDIF
 
+1121    CONTINUE
         IF(IRANK.EQ.IREAD) THEN
           IF (LLNOTOPENED) THEN
-            CALL PBOPEN(IUNITW,FILNM,'r',KRET)
-            IF(KRET.LT.0) THEN
-              WRITE (IU06,*) '****************************************'
-              WRITE (IU06,*) '*                                      *'
-              WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBOPEN      *'
-              WRITE (IU06,*) '*  IN READWIND                         *'
-              IF(KRET.EQ.-1)
-     &         WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILNM
-              IF(KRET.EQ.-2) WRITE (IU06,*)'INVALID FILENAME ',FILNM
-              IF(KRET.EQ.-3) WRITE (IU06,*)'INVALID OPEN MODE '
-              WRITE (IU06,*) '*                                      *'
-              WRITE (IU06,*) '****************************************'
-              CALL ABORT1
+            IF(LGRIBAPI_I) THEN
+              CALL IGRIB_OPEN_FILE(IUNITW,FILNM(1:LNAME),'r')
+            ELSE
+              CALL PBOPEN(IUNITW,FILNM,'r',KRET)
+              IF(KRET.LT.0) THEN
+                WRITE (IU06,*) '**************************************'
+                WRITE (IU06,*) '*                                    *'
+                WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBOPEN    *'
+                WRITE (IU06,*) '*  IN READWIND                       *'
+                IF(KRET.EQ.-1)
+     &           WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILNM
+                IF(KRET.EQ.-2) WRITE (IU06,*)'INVALID FILENAME ',FILNM
+                IF(KRET.EQ.-3) WRITE (IU06,*)'INVALID OPEN MODE '
+                WRITE (IU06,*) '*                                    *'
+                WRITE (IU06,*) '**************************************'
+                CALL ABORT1
+              ENDIF
             ENDIF
  
             LLNOTOPENED = .FALSE.
@@ -194,10 +214,6 @@
 !           SURFACE AIR DENSITY (IF LADEN AND NOT COUPLED TO IFS)
 !           GUSTINESS (IF LGUST AND NOT COUPLED TO IFS)
 !           -------------------------------------------------------
-
-        ISIZE=NBIT
-
-        PMISS=PSEK3(2)
 
         IWPER = 1
 
@@ -237,58 +253,102 @@
         ENDIF
 
         ALLOCATE(WORK(NGX,NGY))
-
         ALLOCATE(LLNOTREAD(NFLD))
         LLNOTREAD=.TRUE.
 
         LLABORT=.FALSE.
 
+
+!       LOOP OVER INPUT
+
         WND: DO IVAR=1,NFLD
           IF (ITEST.GT.1) THEN
             WRITE(IU06,*) ' SUB. READWIND - LOOP OVER IVAR ',IVAR,NFLD
           ENDIF
+
 2002      CONTINUE
-          IF(IRANK.EQ.IREAD) THEN
-2001        KPLENG=ISIZE*KIND(ISIZE)
-            IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
 
-            CALL GSTATS(1740,0)
-            CALL PBGRIB(IUNITW,KGRIB,KPLENG,KLEN,KRET)
-            CALL GSTATS(1740,1)
-
-            IF (KRET.EQ.-1) THEN
-              WRITE(IU06,*) ' *****************************************'
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *       FATAL ERROR IN SUB. READWIND    *'
-              WRITE(IU06,*) ' *       ===========================     *'
-              WRITE(IU06,*) ' * PBGRIB EOF ON FILE ',FILNM 
-              WRITE(IU06,*) ' *       NO MORE WINDS                   *'
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS    *'
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *****************************************'
-              CALL ABORT1
-            ELSE IF (KRET.EQ.-2) THEN
-              WRITE(IU06,*) ' *****************************************'
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *       FATAL ERROR IN SUB. READWIND    *'
-              WRITE(IU06,*) ' *       ===========================     *'
-              WRITE(IU06,*) ' * PBGRIB ERROR ON FILE ',FILNM
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS    *'
-              WRITE(IU06,*) ' *                                       *'
-              WRITE(IU06,*) ' *****************************************'
-              CALL ABORT1
-            ELSE IF (KRET.EQ.-3) THEN
-              DEALLOCATE(KGRIB)
-              CALL KGRIBSIZE(IU06, IUNITW, KLEN, ISIZE, 'READWIND')
-              GOTO 2001
+          IF(LGRIBAPI_I) THEN
+!           USE GRIB API
+            IF(IRANK.EQ.IREAD) THEN
+1021          ISIZE=NBITW
+              KBYTES=ISIZE*NPRECI
+              IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+              CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
+              IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+                KDUM=-1
+                CALL KGRIBSIZE(IU06, KDUM, KBYTES, NBITW, 'READWIND')
+                DEALLOCATE(KGRIB)
+                LLRESIZING=.TRUE.
+                GOTO 1021
+              ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
+!               LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
+                DEALLOCATE(KGRIB)
+                GOTO 1021
+              ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
+!               WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
+                DEALLOCATE(KGRIB)
+                LLRESIZING=.FALSE.
+                CALL IGRIB_CLOSE_FILE(IUNITW)
+                LLNOTOPENED=.TRUE.
+                DEALLOCATE(WORK)
+                DEALLOCATE(LLNOTREAD)
+                GOTO 1121
+              ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+                WRITE(IU06,*) '**********************************'
+                WRITE(IU06,*) '* READWIND: END OF FILE ENCOUNTED'
+                WRITE(IU06,*) '**********************************'
+                CALL ABORT1
+              ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+                WRITE(IU06,*) '**********************************'
+                WRITE(IU06,*) '* READWIND: FILE HANDLING ERROR'
+                WRITE(IU06,*) '**********************************'
+                CALL ABORT1
+              ENDIF
             ENDIF
 
-            IF (ITEST.GT.1) THEN
-              WRITE(IU06,*) ' SUB. READWIND - READ FROM ',FILNM
-              CALL FLUSH(IU06)
+          ELSE
+!           USE GRIBEX
+            ISIZE=NBITW
+            PMISS=PSEK3(2)
+
+            IF(IRANK.EQ.IREAD) THEN
+2001          KPLENG=ISIZE*KIND(ISIZE)
+              IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+
+              CALL GSTATS(1740,0)
+              CALL PBGRIB(IUNITW,KGRIB,KPLENG,KLEN,KRET)
+              CALL GSTATS(1740,1)
+
+              IF (KRET.EQ.-1) THEN
+                WRITE(IU06,*) ' ***************************************'
+                WRITE(IU06,*) ' *    FATAL ERROR IN SUB. READWIND     *'
+                WRITE(IU06,*) ' *    ============================     *'
+                WRITE(IU06,*) ' * PBGRIB EOF ON FILE ',FILNM 
+                WRITE(IU06,*) ' *       NO MORE WINDS                 *'
+                WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS  *'
+                WRITE(IU06,*) ' ***************************************'
+                CALL ABORT1
+              ELSE IF (KRET.EQ.-2) THEN
+                WRITE(IU06,*) ' ***************************************'
+                WRITE(IU06,*) ' *    FATAL ERROR IN SUB. READWIND     *'
+                WRITE(IU06,*) ' *    ============================     *'
+                WRITE(IU06,*) ' * PBGRIB ERROR ON FILE ',FILNM
+                WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS  *'
+                WRITE(IU06,*) ' ***************************************'
+                CALL ABORT1
+              ELSE IF (KRET.EQ.-3) THEN
+                DEALLOCATE(KGRIB)
+                CALL KGRIBSIZE(IU06, IUNITW, KLEN, ISIZE, 'READWIND')
+                GOTO 2001
+              ENDIF
+
             ENDIF
+
+          ENDIF
+
+          IF (ITEST.GT.1) THEN
+            WRITE(IU06,*) ' SUB. READWIND - READ FROM ',FILNM
           ENDIF
 
           CALL GSTATS(622,0)
@@ -319,22 +379,38 @@
 
 !*        3.0 UNPACK MARS FIELDS.
 !             -------------------
-          KLENG = KLEN 
-          ZDUM=0.
-          CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
-     &                   NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &                   KGRIB, KLENG ,
-     &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                   AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                   ZDUM, ZDUM,
-     &                   CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
+          IF(LGRIBAPI_I) THEN
+            KGRIB_HANDLE=-99
+            CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
+            ZDUM=0.
+            CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+     &                       KGRIB_HANDLE, KGRIB, ISIZE,
+     &                       NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                       AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                       ZMISS, ZDUM, ZDUM,
+     &                       CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
+
+            CALL IGRIB_RELEASE(KGRIB_HANDLE)
+
+          ELSE
+            KLENG = KLEN
+            ZDUM=0.
+            CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
+     &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
+     &                     KGRIB, KLENG ,
+     &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                     ZDUM, ZDUM,
+     &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
+          ENDIF
 
           IF (IPARAM.EQ.165 .OR. IPARAM.EQ.33 .OR. IPARAM.EQ.131 .OR.
      &        IPARAM.EQ.180 ) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NGY
-                DO I=1,NGX
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
                   FIELDG(I,J)%UWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -353,7 +429,8 @@
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NGY
-                DO I=1,NGX
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
                   FIELDG(I,J)%VWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -373,7 +450,8 @@
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NGY
-                DO I=1,NGX
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
                   FIELDG(I,J)%CIFR=WORK(I,J)
                 ENDDO
               ENDDO
@@ -391,7 +469,8 @@
             IF (LLWSWAVE) THEN
               IF(LLNOTREAD(IVAR)) THEN 
                 DO J=1,NGY
-                  DO I=1,NGX
+                  JSN=NGY-J+1
+                  DO I=1,NLONRGG(JSN)
                     IF(WORK(I,J).EQ.PMISS) THEN
                       FIELDG(I,J)%WSWAVE=0. 
                     ELSE
@@ -410,7 +489,8 @@
             IF (LLWDWAVE) THEN
               IF(LLNOTREAD(IVAR)) THEN 
                 DO J=1,NGY
-                  DO I=1,NGX
+                  JSN=NGY-J+1
+                  DO I=1,NLONRGG(JSN)
                     IF(WORK(I,J).EQ.PMISS) THEN
                       FIELDG(I,J)%WDWAVE=0. 
                     ELSE
@@ -431,7 +511,8 @@
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NGY
-                DO I=1,NGX
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
                   IF(WORK(I,J).EQ.PMISS) THEN
                     FIELDG(I,J)%AIRD=ROAIR
                   ELSE
@@ -450,7 +531,8 @@
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NGY
-                DO I=1,NGX
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
                   IF(WORK(I,J).EQ.PMISS) THEN
                     FIELDG(I,J)%ZIDL = WSTAR0
                   ELSE
@@ -586,12 +668,13 @@
            CALL INCDATE(CWDDATE,IWTIME)
            WRITE(IU06,'(a28,a14,1x,f6.2,1x,f6.1)')
      &     '  WIND INPUT TIME SERIES AT ', CWDDATE,WSPEED,WTHETA
-  
+
            WTHETA=RAD*WTHETA
            UWIND=-WSPEED*SIN(WTHETA)
            VWIND=-WSPEED*COS(WTHETA)
         ELSE
 !         THE TRADITIONAL ONE GRID POINT FORCING
+
           CDTTURN = CDATEA
           IDTTURN=DTNEWWIND*3600
           CALL INCDATE(CDTTURN,IDTTURN)

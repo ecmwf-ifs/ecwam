@@ -55,6 +55,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -68,9 +69,11 @@
       PARAMETER (CDIS = 2.1)
       PARAMETER (DELTA = 0.6)
       PARAMETER (ALPH_B_J = 1.0)
-      PARAMETER (GAM_B_J = 0.6)
+      PARAMETER (GAM_B_J = 0.8)
       PARAMETER (COEF_B_J=2*ALPH_B_J)
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
@@ -152,6 +155,8 @@
      
 !SHALLOW
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SDISSIP

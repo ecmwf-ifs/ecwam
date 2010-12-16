@@ -51,6 +51,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFFR     ,
      &              DFFR2  ,DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL  ,
      &              WP2TAIL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
@@ -66,6 +67,9 @@
       REAL,DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
       REAL,DIMENSION(IJS:IJL) :: EM, FM1, F1, AK, XK
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('FKMEAN',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
@@ -170,6 +174,8 @@
         ENDDO
 
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('FKMEAN',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE FKMEAN

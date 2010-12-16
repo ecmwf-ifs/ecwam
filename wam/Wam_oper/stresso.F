@@ -60,6 +60,7 @@
       USE YOWCOUP  , ONLY : ALPHA
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &            COSTH    ,SINTH    ,FR5
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
       USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,EPS1     ,TAUHFT   ,
@@ -81,6 +82,10 @@
       REAL :: ZPIROFR(NFRE)
       REAL :: CONSTF(IJS:IJL,NFRE)
       REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP, XSTRESS, YSTRESS, UST2
+
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
@@ -174,6 +179,8 @@
         TAUW(IJ) = MIN(TAUW(IJ),UST2(IJ)-EPS1)
         TAUW(IJ) = MAX(TAUW(IJ),0.)
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE STRESSO

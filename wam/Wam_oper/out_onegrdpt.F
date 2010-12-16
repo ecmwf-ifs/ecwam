@@ -35,7 +35,6 @@
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
      &            LFDB     ,IPFGTBL
-      USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,

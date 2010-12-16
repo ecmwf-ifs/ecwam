@@ -294,7 +294,8 @@
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
-     &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP
+     &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
+     &            LGRIBAPI_I,LGRIBAPI_O,LRSTST0
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFBOU  , ONLY : IBOUNF
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
@@ -423,6 +424,8 @@
 
       KTAG=200
 
+      LRSTST0=.FALSE.
+
 !     TIME FOR THE NEXT SOURCE TERM INTEGRATION
       CDTIMPNEXT=CDTPRO
       CALL INCDATE(CDTIMPNEXT,IDELT)   
@@ -468,7 +471,22 @@
      &                IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                TAUW, NSTART,NEND)
         ELSE
-          CALL OUTBS (FL1, FL3, IJS(IG), IJL(IG), IG, IGL,
+          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  SL(IJ,K,M) = FL1(IJ,K,M)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+
+          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
      &              IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &              TAUW, NSTART,NEND)
         ENDIF
@@ -533,33 +551,38 @@
 !         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
 !         THE START OF THE RUN.
           IF(LGRHDIFS) THEN
-             IFS_KSEC1_BAK(16)=IFS_KSEC1(16)  ! value to reset after output
-             IF(IFS_KSEC1(16).GT.0) THEN
-               IF(IFS_KSEC1(15).EQ.0) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/60) 
-               ELSEIF(IFS_KSEC1(15).EQ.1) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/3600) 
-               ELSEIF(IFS_KSEC1(15).EQ.10) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(3*3600)) 
-               ELSEIF(IFS_KSEC1(15).EQ.11) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(6*3600)) 
-               ELSEIF(IFS_KSEC1(15).EQ.12) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(12*3600)) 
-               ELSEIF(IFS_KSEC1(15).EQ.2) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(24*3600)) 
-               ELSEIF(IFS_KSEC1(15).EQ.254) THEN
-                 IFS_KSEC1(16)=IFS_KSEC1(16)-KCOUSTEP 
+             LRSTST0=.TRUE.
+
+             IF(.NOT.LGRIBAPI_I) THEN 
+               IFS_KSEC1_BAK(16)=IFS_KSEC1(16)  ! value to reset after output
+               IF(IFS_KSEC1(16).GT.0) THEN
+                 IF(IFS_KSEC1(15).EQ.0) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/60) 
+                 ELSEIF(IFS_KSEC1(15).EQ.1) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/3600) 
+                 ELSEIF(IFS_KSEC1(15).EQ.10) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(3*3600)) 
+                 ELSEIF(IFS_KSEC1(15).EQ.11) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(6*3600)) 
+                 ELSEIF(IFS_KSEC1(15).EQ.12) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(12*3600)) 
+                 ELSEIF(IFS_KSEC1(15).EQ.2) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(24*3600)) 
+                 ELSEIF(IFS_KSEC1(15).EQ.254) THEN
+                   IFS_KSEC1(16)=IFS_KSEC1(16)-KCOUSTEP 
+                 ENDIF
                ENDIF
-             ENDIF
-!            IN VAREPS THE FC STEP 0 IS ALWAYS AN OVERLAP FOR LEG 2
-!            AND ABOVE
-             IFS_KSEC1_BAK(40)=IFS_KSEC1(40)  ! value to reset after output
-             IINDAT=IFS_KSEC1(46)
-             IHHMM=IFS_KSEC1(47)
-             NLEG=IFS_KSEC1(48)
-             IF(NLEG.GE.2 .AND. IINDAT.NE.0 .AND. IHHMM.NE.0 ) THEN
-               IFS_KSEC1(40)=1034
-             ENDIF
+!              IN VAREPS THE FC STEP 0 IS ALWAYS AN OVERLAP FOR LEG 2
+!              AND ABOVE
+               IFS_KSEC1_BAK(40)=IFS_KSEC1(40)  ! value to reset after output
+               IINDAT=IFS_KSEC1(46)
+               IHHMM=IFS_KSEC1(47)
+               NLEG=IFS_KSEC1(48)
+               IF(NLEG.GE.2 .AND. IINDAT.NE.0 .AND. IHHMM.NE.0 ) THEN
+                 IFS_KSEC1(40)=1034
+               ENDIF
+             ENDIF 
+
           ENDIF 
 
           IF( .NOT. LRESTARTED ) THEN
@@ -587,9 +610,13 @@
 
           CDTINTT=CDTINTTBAK
           CDTINTS=CDTINTSBAK
+
           IF(LGRHDIFS) THEN
-            IFS_KSEC1(16)=IFS_KSEC1_BAK(16)
-            IFS_KSEC1(40)=IFS_KSEC1_BAK(40)
+            LRSTST0=.FALSE.
+            IF(.NOT.LGRIBAPI_I) THEN 
+              IFS_KSEC1(16)=IFS_KSEC1_BAK(16)
+              IFS_KSEC1(40)=IFS_KSEC1_BAK(40)
+            ENDIF
           ENDIF
 
           IF (ITEST .GE. 2) THEN
@@ -842,9 +869,6 @@
             IF(IPROPAGS.EQ.2. AND. LUPDTWGHT) THEN
               ALLOCATE(LCFLFAIL(IJS(IG):IJL(IG)))
 
-              WRITE(IU06,*) '   SUB. WAMODEL: BEFORE CALLING CTUW'
-              CALL FLUSH (IU06)
-
               IF(.NOT. ALLOCATED(SUMWN))
      &           ALLOCATE(SUMWN(IJS(IG):IJL(IG),NANG,NFRE))
               IF(.NOT. ALLOCATED(WLATN))
@@ -902,7 +926,6 @@
                   CALL ABORT1
                 ENDIF
               ENDDO
-
 !             FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION
 !             IN PROPAGS2
 
@@ -981,6 +1004,7 @@
                   ENDDO
                 ENDDO
               ENDIF
+
 
               LUPDTWGHT=.FALSE.
               DEALLOCATE(LCFLFAIL)
@@ -1087,7 +1111,8 @@
               ENDIF
 
             ELSE
-!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP         PARALLEL DO SCHEDULE(STATIC)  
+!$OMP+        PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -1242,7 +1267,7 @@
      &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO .OR.
      &     CDATEE.EQ.CDTPRO .OR. LRST .OR.
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV ))
-     &     THEN
+     &    THEN
 
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !             convert output spectra to absolute frame of reference
@@ -1263,7 +1288,25 @@
      &                    IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                    TAUW, NSTART,NEND)
             ELSE
-              CALL OUTBS (FL3, FL1, IJS(IG), IJL(IG), IG, IGL,
+
+              NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!             CALL STATS(1432,0)
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+              DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                KIJS=JKGLO
+                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                DO M=1,NFRE
+                  DO K=1,NANG
+                    DO IJ=KIJS,KIJL
+                      SL(IJ,K,M) = FL3(IJ,K,M)
+                    ENDDO
+                  ENDDO
+                ENDDO
+              ENDDO
+!$OMP         END PARALLEL DO
+!             CALL GSTATS(1432,1)
+
+              CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
      &                    IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
      &                    TAUW, NSTART,NEND)
             ENDIF
@@ -1281,25 +1324,27 @@
 
 !*    1.6 IF ONE BLOCK VERSION COPY RESULTS.
 !         ----------------------------------
-
-        IF (IGL.EQ.1) THEN
-          IG=1
-          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-          CALL GSTATS(1432,0)
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            DO K=1,NANG
-              DO M=1,NFRE
-                DO IJ=KIJS,KIJL
-                  FL1(IJ,K,M) = FL3(IJ,K,M)
+!!!
 !!!   note in case of Alt and SAR assimilation both FL1 and FL3
 !!!   are needed since FL1 will be first modified by the altimeter
 !!!   data assimilation and FL3 is needed to keep the first guess
 !!!   (unaltered by the alt data assimilation) for the calculation
 !!!   of the difference between SAR data and model values
 !!!   (see rearrangsar)
+!!!
+        IF (IGL.EQ.1) THEN
+          IG=1
+          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+          CALL GSTATS(1432,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) 
+!$OMP+    PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            DO M=1,NFRE
+              DO K=1,NANG
+                DO IJ=KIJS,KIJL
+                  FL1(IJ,K,M) = FL3(IJ,K,M)
                 ENDDO
               ENDDO
             ENDDO
@@ -1543,7 +1588,10 @@
 !$OMP          END PARALLEL DO
                   CALL GSTATS(1236,1)
                 ENDIF
-                CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+                IF(LGRIBAPI_O) THEN
+                  CALL OUTWSPEC(SL)
+                ELSE
+                  CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                       SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                       NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                       AMONOP, XDELLA, NSTART, NEND,
@@ -1557,8 +1605,12 @@
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                       NWFDBREF, LFDBOPEN)
+                ENDIF
               ELSE
-                CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+                IF(LGRIBAPI_O) THEN
+                  CALL OUTWSPEC(FL1)
+                ELSE
+                  CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                       FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                       NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                       AMONOP, XDELLA, NSTART, NEND,
@@ -1572,6 +1624,7 @@
      &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                       NWFDBREF, LFDBOPEN)
+                  ENDIF
               ENDIF
               IF (LFDB) THEN
                 CALL GSTATS(1976,0)

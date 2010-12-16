@@ -6,7 +6,7 @@
 
 ! ----------------------------------------------------------------------
 
-!**** *PROPAGS2* -  ADVECTION USING THE CONER TRANSPORT SCHEME IN SPACE
+!**** *PROPAGS2* -  ADVECTION USING THE CORNER TRANSPORT SCHEME IN SPACE
 
 
 !*    PURPOSE.
@@ -52,6 +52,7 @@
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN   ,
      &            SUMWN    ,
      &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -62,6 +63,10 @@
       INTEGER :: K,M,IJ
       INTEGER :: IC, ICR, ICL 
       INTEGER :: KP1,KM1, MM1, MP1, KNS, KEW
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
+
 ! ----------------------------------------------------------------------
 
 
@@ -202,5 +207,8 @@
       ENDIF
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
+
       RETURN
       END SUBROUTINE PROPAGS2 

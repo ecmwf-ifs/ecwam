@@ -43,6 +43,7 @@
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL
       USE YOWGRID  , ONLY : IGL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            NPRECR
@@ -61,6 +62,10 @@
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
 ! ----------------------------------------------------------------------
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
+
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('SAVSPEC',0,ZHOOK_HANDLE)
 
       LPBOPEN = .TRUE.
       LPBCLOSE = .TRUE.
@@ -110,6 +115,8 @@
 
       WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',
      &                ' CDTPRO  = ', CDTPRO
+
+      IF (LHOOK) CALL DR_HOOK('SAVSPEC',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SAVSPEC

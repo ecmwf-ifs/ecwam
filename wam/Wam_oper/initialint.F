@@ -69,158 +69,366 @@
 !        none
 ! ----------------------------------------------------------------------
 
-      INTEGER NCA, NRA
-      INTEGER KSEC2(22+NRA)
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWCOUT  , ONLY : LGRIBAPI_I
 
-      INTEGER KLONRGG(NGY)
-      INTEGER RLONRGG(NRA)
 
-      REAL ZDELLO(NGY)
+      USE GRIB_API_INTERFACE
+
+      INTEGER :: NCA, NRA
+      INTEGER :: KSEC2(22+NRA)
+      INTEGER :: KGRIB_HANDLE
+      INTEGER :: KLONRGG(NGY)
+      INTEGER :: RLONRGG(NRA)
+      INTEGER :: KK(NGY), II(NGX,NGY), IIP(NGX,NGY)
+      INTEGER, DIMENSION(:), ALLOCATABLE :: PL
+
+      REAL :: DELLA
+      REAL :: YFRST, YLAST
+      REAL :: ZDELLO(NGY)
       REAL, ALLOCATABLE :: RDELLO(:)
+      REAL :: DK1(NGY), DII1(NGX,NGY), DIIP1(NGX,NGY)
 
-      INTEGER  KK(NGY), II(NGX,NGY), IIP(NGX,NGY)
-      REAL DK1(NGY), DII1(NGX,NGY), DIIP1(NGX,NGY)
+      CHARACTER(LEN=12) :: CGRIDTYPE
 
-      LOGICAL LLINTERPOL, LLNEAREST
+      LOGICAL :: LLINTERPOL
+      LOGICAL :: LLSCANNS
+
                                                                         
 ! ----------------------------------------------------------------------
 
-      NR=KSEC2(3)
-      JRGG = KSEC2(17)
+      IF(LGRIBAPI_I) THEN
+!!!     use grib handle passed down from IFS
 
-      IF(JRGG.EQ.1) THEN
-        NC=0
-        NTOT=0
-        DO J=1,NR
-          NC = MAX(NC,KSEC2(22+J))
-          NTOT=NTOT+KSEC2(22+J)
-        ENDDO
+        KGRIB_HANDLE=NGRIB_HANDLE_IFS
 
-        IR=0
-        DO J=1,NR
-          IF(KSEC2(22+J).NE.0) IR=IR+1
-        ENDDO
-        NR=IR
-        KLEN=NTOT
-      ELSEIF(JRGG.EQ.0) THEN
-        NC=KSEC2(2)
-        KLEN = NC*NR
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NR)
+
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
+        IF(CGRIDTYPE(1:10) == 'regular_gg') THEN
+          JRGG=0
+          IREPR=4
+        ELSEIF(CGRIDTYPE(1:10) == 'reduced_gg') THEN
+          JRGG=1
+          IREPR=4
+        ELSEIF(CGRIDTYPE(1:7) == 'regular') THEN
+          JRGG=0
+          IREPR=0
+        ELSEIF(CGRIDTYPE(1:7) == 'reduced') THEN
+          JRGG=1
+          IREPR=0
+        ELSE
+          WRITE(IU06,*) '*********************************'
+          WRITE(IU06,*) '*  ERROR IN SUB. INITIALINT*'
+          WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!! *'
+          WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
+          WRITE(IU06,*) '*********************************'
+          CALL ABORT1
+        ENDIF
+
+        IF(JRGG.EQ.1) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
+          IF (IPLPRESENT == 1) THEN
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                          'numberOfPointsAlongAMeridian',NB_PL)
+            ALLOCATE(PL(NB_PL))
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'pl',PL)
+          ELSE
+            WRITE(IU06,*) '*********************************'
+            WRITE(IU06,*) '*  ERROR IN SUB. INITIALINT*'
+            WRITE(IU06,*) '*  NUMBER OF POINTS PER LATITUDE MISSING !!!'
+            WRITE(IU06,*) '*********************************'
+            CALL ABORT1
+          ENDIF
+          NC=0
+          DO J=1,NB_PL
+            NC = MAX(NC,PL(J))
+          ENDDO
+          IR=0
+          DO J=1,NB_PL
+            IF(PL(J).NE.0) IR=IR+1
+          ENDDO
+          NR=IR
+
+        ELSEIF(JRGG.EQ.0) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',IVAL)
+          NC=IVAL
+        ELSE
+          WRITE(IU06,*)
+     &    ' SUB INITIALINT : REPRESENTATION OF THE FIELD NOT KNOWN'
+          WRITE(IU06,*)'  JRGG= ',JRGG
+          CALL ABORT1
+        ENDIF
+
+        IF (NC.NE.NCA .OR. NR.NE.NRA) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*    WARNING   IN SUB. INITIALINT     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '* NC and NCA are NOT equal:           *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,'(A,I6,A,I6,A)')
+     &               '*  NC = ', NC, '   and    NCA = ',NCA,'  *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*              OR                     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '* NR and NRA are NOT equal:           *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,'(A,I6,A,I6,A)')
+     &               '*  NR = ', NR, '   and    NRA = ',NRA,'  *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '***************************************'
+        ENDIF
+
+
+        IF(IREPR.NE.0.AND.IREPR.NE.4) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITIALINT     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  UNKNOWN GRID REPRESENTATION = ',IREPR
+          WRITE(IU06,*) '*  IT CAN ONLY DEAL WITH        *'
+          WRITE(IU06,*) '*  LATITUDE/LONGITUDE GRID (IREPR=0)  *'
+          WRITE(IU06,*) '*   OR GAUSSIAN (IREPR=4)             *' 
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
+
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'iScansNegatively',ISCAN)
+        IF(ISCAN.EQ.0) THEN
+          LLSCANNS=.TRUE.
+        ELSEIF(ISCAN.EQ.64 .OR. ISCAN.EQ.2) THEN
+          LLSCANNS=.FALSE.
+        ELSE
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  ERROR IN SUB. INITIALINT       *'
+          WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
+          WRITE(IU06,*) '*  ISCAN = ', ISCAN
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT1
+        ENDIF
+
+        RLONRGG=0
+        ALLOCATE(RDELLO(NR))
+
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'latitudeOfFirstGridPointInDegrees',YFRST)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'latitudeOfLastGridPointInDegrees',YLAST)
+
+        IF(LLSCANNS) THEN
+          RMONOP = YFRST 
+          RMOSOP = YLAST 
+        ELSE
+          RMONOP = YLAST 
+          RMOSOP = YFRST 
+        ENDIF
+
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'longitudeOfFirstGridPointInDegrees',RMOWEP)
+
+
+!!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
+!!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
+!!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
+!!!   RMOEAP IS IMPLICITLY KNOWN.
+        IF(IREPR.EQ.4) THEN
+          DELLO = 360./MAX(1,NC)
+          RMOEAP = RMOWEP+360. - DELLO
+          IPERIODIC = 1
+        ELSE
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
+
+          CALL ADJUST (RMOWEP, RMOEAP)
+          IPERIODIC = 0
+          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+          IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+        ENDIF
+
+        IF(JRGG.EQ.1) THEN
+          ISTART=1
+          DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
+             ISTART=ISTART+1
+          ENDDO
+          ISTART=ISTART-1
+
+          ISTOP=0
+          DO WHILE(PL(NB_PL-ISTOP).EQ.0 .AND. ISTOP.LT.NB_PL)
+            ISTOP=ISTOP+1
+          ENDDO
+
+          DO J=1,NR-ISTART
+            IF(LLSCANNS) THEN
+              JSN=NR-J+1
+            ELSE
+              JSN=J
+            ENDIF
+            RLONRGG(JSN) = PL(J+ISTART) 
+
+          ENDDO
+
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'latitudeOfFirstGridPointInDegrees',YFRST)
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'latitudeOfLastGridPointInDegrees',YLAST)
+
+          IF(ISTART.NE.0 .OR. ISTOP.NE.0) THEN
+            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                       'jDirectionIncrementInDegrees',DELLA)
+
+            YFRST = YFRST-ISTART*DELLA 
+            YLAST = YLAST+ISTOP*DELLA 
+          ENDIF
+
+          IF(LLSCANNS) THEN
+            RMONOP = YFRST 
+            RMOSOP = YLAST 
+          ELSE
+            RMONOP = YLAST 
+            RMOSOP = YFRST 
+          ENDIF
+
+        ELSEIF(JRGG.EQ.0) THEN
+          RLONRGG=NC
+        ELSE
+          WRITE(IU06,*)
+     &    ' SUB INITIALINT: REPRESENTATION OF THE FIELD NOT KNOWN'
+          CALL ABORT1
+        ENDIF
+
+
       ELSE
-        WRITE(IU06,*)
-     &  ' SUB INITIALINT : REPRESENTATION OF THE FIELD NOT KNOWN'
-        WRITE(IU06,*)'  JRGG= ',JRGG
-        CALL ABORT1
-      ENDIF
+!        using grib headers passed from IFS
 
-      IF (NC.NE.NCA .OR. NR.NE.NRA) THEN
-        WRITE(IU06,*) '***************************************'
-        WRITE(IU06,*) '***************************************'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*    WARNING   IN SUB. INITIALINT     *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '* NC and NCA are NOT equal:           *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,'(A,I6,A,I6,A)')
-     &             '*  NC = ', NC, '   and    NCA = ',NCA,'  *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*              OR                     *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '* NR and NRA are NOT equal:           *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,'(A,I6,A,I6,A)')
-     &             '*  NR = ', NR, '   and    NRA = ',NRA,'  *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '***************************************'
-      ENDIF
-
-      LLNEAREST=.FALSE.
-
-      IREPR=KSEC2(1)
-
-      IF(IREPR.NE.0.AND.IREPR.NE.4) THEN
-        WRITE(IU06,*) '***************************************'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITIALINT     *'
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*  UNKNOWN GRID REPRESENTATION = ',IREPR
-        WRITE(IU06,*) '*  GRB2WGRD CAN ONLY DEAL WITH        *'
-        WRITE(IU06,*) '*  LATITUDE/LONGITUDE GRID (IREPR=0)  *'
-        WRITE(IU06,*) '*   OR GAUSSIAN (IREPR=4)              *' 
-        WRITE(IU06,*) '*                                     *'
-        WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-        WRITE(IU06,*) '***************************************'
-        CALL ABORT1
-      ENDIF
+        NR=KSEC2(3)
+        JRGG = KSEC2(17)
+        IREPR=KSEC2(1)
 
 
-! ----------------------------------------------------------------------
+        IF(JRGG.EQ.1) THEN
+          NC=0
+          DO J=1,NR
+            NC = MAX(NC,KSEC2(22+J))
+          ENDDO
 
-!*    DETERMINE INFORMATION ABOUT THE DECODED DATA 
-!     --------------------------------------------
-!*    DETERMINE GRID PARAMETERS.                                    
-!     --------------------------                                    
+          IR=0
+          DO J=1,NR
+            IF(KSEC2(22+J).NE.0) IR=IR+1
+          ENDDO
+          NR=IR
+        ELSEIF(JRGG.EQ.0) THEN
+          NC=KSEC2(2)
+        ELSE
+          WRITE(IU06,*)
+     &    ' SUB INITIALINT : REPRESENTATION OF THE FIELD NOT KNOWN'
+          WRITE(IU06,*)'  JRGG= ',JRGG
+          CALL ABORT1
+        ENDIF
 
-      RLONRGG=0
-      ALLOCATE(RDELLO(NR))
+        IF (NC.NE.NCA .OR. NR.NE.NRA) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*    WARNING   IN SUB. INITIALINT     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '* NC and NCA are NOT equal:           *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,'(A,I6,A,I6,A)')
+     &               '*  NC = ', NC, '   and    NCA = ',NCA,'  *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*              OR                     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '* NR and NRA are NOT equal:           *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,'(A,I6,A,I6,A)')
+     &               '*  NR = ', NR, '   and    NRA = ',NRA,'  *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '***************************************'
+        ENDIF
 
-      RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
-     &         0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
 
-      RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
-     &         0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
+        IF(IREPR.NE.0.AND.IREPR.NE.4) THEN
+          WRITE(IU06,*) '***************************************'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITIALINT     *'
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*  UNKNOWN GRID REPRESENTATION = ',IREPR
+          WRITE(IU06,*) '*  GRB2WGRD CAN ONLY DEAL WITH        *'
+          WRITE(IU06,*) '*  LATITUDE/LONGITUDE GRID (IREPR=0)  *'
+          WRITE(IU06,*) '*   OR GAUSSIAN (IREPR=4)              *' 
+          WRITE(IU06,*) '*                                     *'
+          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
+          WRITE(IU06,*) '***************************************'
+          CALL ABORT1
+        ENDIF
 
-      RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
-     &         0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
+        RLONRGG=0
+        ALLOCATE(RDELLO(NR))
+
+        RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
+     &           0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
+
+        RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
+     &           0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
+
+        RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
+     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
 
 !!! THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
 !!! THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!! A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!! RMOEAP IS IMPLICITLY KNOWN.
-      IF(IREPR.EQ.4 .AND. .NOT. LLNEAREST) THEN
-        DELLO = 360./MAX(1,NC)
-        RMOEAP = RMOWEP+360. - DELLO
-        IPERIODIC = 1
-      ELSE
-        RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
-     &           0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
-        IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
-        IPERIODIC = 0
-        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-        IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
-      ENDIF
+        IF(IREPR.EQ.4) THEN
+          DELLO = 360./MAX(1,NC)
+          RMOEAP = RMOWEP+360. - DELLO
+          IPERIODIC = 1
+        ELSE
+          RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
+     &             0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
+          IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
+          IPERIODIC = 0
+          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+          IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+        ENDIF
 
 
-      IF(JRGG.EQ.1) THEN
+        IF(JRGG.EQ.1) THEN
 
-        ISTART=0
-        DO WHILE(KSEC2(23+ISTART).EQ.0)
-          ISTART=ISTART+1 
-        ENDDO
+          ISTART=0
+          DO WHILE(KSEC2(23+ISTART).EQ.0)
+            ISTART=ISTART+1 
+          ENDDO
 
-        ISTOP=0
-        DO WHILE(KSEC2(23+NR-1-ISTOP).EQ.0)
-          ISTOP=ISTOP+1 
-        ENDDO
+          ISTOP=0
+          DO WHILE(KSEC2(23+NR-1-ISTOP).EQ.0)
+            ISTOP=ISTOP+1 
+          ENDDO
 
-        DO J=1,NR
-          JSN=NR-J+1
-          RLONRGG(JSN) = KSEC2(22+J+ISTART) 
-        ENDDO
+          DO J=1,NR
+            JSN=NR-J+1
+            RLONRGG(JSN) = KSEC2(22+J+ISTART) 
+          ENDDO
 
-        IDUM = KSEC2(4)-ISTART*KSEC2(10)
-        RMONOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+          IDUM = KSEC2(4)-ISTART*KSEC2(10)
+          RMONOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
+     &             0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
+
+          IDUM = KSEC2(7)+ISTOP*KSEC2(10)
+          RMOSOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
      &           0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
 
-        IDUM = KSEC2(7)+ISTOP*KSEC2(10)
-        RMOSOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
-     &         0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
+        ELSEIF(JRGG.EQ.0) THEN
+          RLONRGG=NC
+        ELSE
+          WRITE(IU06,*)
+     &    ' SUB INITIALINT: REPRESENTATION OF THE FIELD NOT KNOWN'
+          CALL ABORT1
+        ENDIF
 
-      ELSEIF(JRGG.EQ.0) THEN
-        RLONRGG=NC
-      ELSE
-        WRITE(IU06,*)
-     &  ' SUB INITIALINT: REPRESENTATION OF THE FIELD NOT KNOWN'
-        CALL ABORT1
       ENDIF
 
 
@@ -258,23 +466,17 @@
      &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
      &    .AND.KAMOEAP.GT.NINT((RMOEAP+DELLO)*100.)) ) THEN
 
-         WRITE(IU06,*) '***********************************'
-         WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*  WARNING IN SUB. INITIALINT     *'
-         WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*  THE MODEL DOMAIN IS OUTSIDE    *' 
-         WRITE(IU06,*) '*  THE INPUT DOMAIN FOR FIELDS    *'
-         WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
-         WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
-         WRITE(IU06,*) '*  AMOWEP: ', AMOWEP, 'RMOWEP : ',RMOWEP
-         WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'RMOEAP : ',RMOEAP
-         WRITE(IU06,*) '*  DELLO: ', DELLO
-         WRITE(IU06,*) '*                                 *'
-         WRITE(IU06,*) '*  MODEL GRID POINTS OUTSIDE WILL *' 
-         WRITE(IU06,*) '*  THE VALUES AT THE BOUNDARY OF  *'
-         WRITE(IU06,*) '*  THE INPUT DOMAIN.              *'
-         WRITE(IU06,*) '***********************************'
+         WRITE(IU06,*) '                               '
+         WRITE(IU06,*) ' SUB. INITIALINT :             '
+         WRITE(IU06,*) ' THE MODEL DOMAIN IS OUTSIDE   ' 
+         WRITE(IU06,*) ' THE INPUT DOMAIN FOR FIELDS   '
+         WRITE(IU06,*) ' AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
+         WRITE(IU06,*) ' AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
+         WRITE(IU06,*) ' AMOWEP: ', AMOWEP, 'RMOWEP : ',RMOWEP
+         WRITE(IU06,*) ' AMOEAP: ', AMOEAP, 'RMOEAP : ',RMOEAP
+         WRITE(IU06,*) ' DELLO: ', DELLO
+         WRITE(IU06,*) ' MODEL GRID POINTS OUTSIDE WILL HAVE' 
+         WRITE(IU06,*) ' THE BOUNDARY VALUES OF THE INPUT DOMAIN'
       ENDIF
 
       LLINTERPOL=.TRUE.
@@ -357,7 +559,7 @@
       ENDIF
 
       DEALLOCATE (RDELLO)
+      IF(ALLOCATED(PL)) DEALLOCATE(PL)
 
       RETURN
       END SUBROUTINE INITIALINT
-

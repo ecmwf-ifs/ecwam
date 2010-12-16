@@ -70,7 +70,11 @@
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
      &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
-     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF
+     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
+     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
+     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
+     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
+     &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -213,7 +217,7 @@
 
       READ(IU07)  DEPTH, TCGOND, TFAK, TSIHKD, TFAC_ST
 
-!*    9. READ MODULE YOWTABL (2nd part).
+!*    9. READ MODULE YOWTABL (2ND AND 3RD part).
 !        -------------------
 
       IF(.NOT.ALLOCATED(FAC0)) ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
@@ -225,6 +229,28 @@
       IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
 
       READ(IU07) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF
+
+      READ(IU07) MR, XMR, MA, XMA, NFREH, NANGH, NMAX
+
+      IF(.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
+      IF(.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
+      IF(.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
+      IF(.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
+      IF(.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
+      IF(.NOT.ALLOCATED(TC_QL)) 
+     &                    ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
+      IF(.NOT.ALLOCATED(TT_4M))
+     &                    ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
+      IF(.NOT.ALLOCATED(TT_4P))
+     &                    ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
+      IF(.NOT.ALLOCATED(IM_P))
+     &                    ALLOCATE(IM_P(NFREH,NFREH))
+      IF(.NOT.ALLOCATED(IM_M)) 
+     &                    ALLOCATE(IM_M(NFREH,NFREH))
+      IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
+
+      READ(IU07) OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M, 
+     &           TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
 
 !*    10. READ MODULE YOWCURR.
 !         --------------------

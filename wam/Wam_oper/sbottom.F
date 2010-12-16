@@ -38,17 +38,22 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (CONST = -2.0*0.038/G)
+      PARAMETER (CONST = -2.0*0.076/G)
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       DIMENSION SBO(IJS:IJL)
 
+      REAL ZHOOK_HANDLE
+
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
 
       DO M=1,NFRE
         DO IJ=IJS,IJL
@@ -68,6 +73,8 @@
           ENDDO
         ENDDO
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE SBOTTOM

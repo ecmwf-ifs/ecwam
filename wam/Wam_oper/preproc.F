@@ -25,8 +25,10 @@
 !     J. BIDLOT    ECMWF         SEPTEMBER 1996 REDUCED GRID.
 
 !     J. BIDLOT    ECMWF OCTOBER 1998 : INTRODUCE USE OF MODULES
-!                                       IN PLACE COMMON BLOCKS 
-
+!                                       IN PLACE OF COMMON BLOCKS 
+!     P.A.E.M. JANSSEN  ECMWF JULY 2010 : INTRODUCE 2ND ORDER INTERACTION
+!                                         COEFFICIENTS
+!
 !*    PURPOSE.
 !     --------
 
@@ -343,8 +345,15 @@
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
-
+!
+!         FIRST ROUTINE IS FOR DEEP WATER ONLY AND IS APPLIED FOR 
+!         ALTIMETRIC CORRECTIONS
+!         SECOND ROUTINE IS MORE GENERAL, HENCE APPLIES TO DEEP AND 
+!         SHALLOW WATER
+!     
       CALL SECONDHH
+
+      CALL SECONDHH_GEN
 
 ! ----------------------------------------------------------------------
 
@@ -457,6 +466,8 @@
 
       STOP
       END
+
+
 
 
 

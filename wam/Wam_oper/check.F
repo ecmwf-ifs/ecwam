@@ -51,7 +51,7 @@
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH
       USE YOWSTAT  , ONLY : IREFRA
-      USE YOWTEST  , ONLY : IU06
+      USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
       CHARACTER*1, ALLOCATABLE :: LST(:,:)
@@ -267,56 +267,60 @@
 !*    2.4 PRINT LAND SEA MAP.
 !         -------------------
 
-      ILEN = 120
-      IPAGE = (NX+ILEN-1)/ILEN
-      IF (IPAGE.GT.1) THEN
-        LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
-        IF (LAST.LE.10) THEN
-          ILEN = ILEN + 10
-          IPAGE = (NX+ILEN-1)/ILEN
+      IF (ITEST.GE.3) THEN
+        ILEN = 120
+        IPAGE = (NX+ILEN-1)/ILEN
+        IF (IPAGE.GT.1) THEN
+          LAST = (NX-ILEN*(IPAGE-1)+IPAGE-2)/(IPAGE-1)
+          IF (LAST.LE.10) THEN
+            ILEN = ILEN + 10
+            IPAGE = (NX+ILEN-1)/ILEN
+          ENDIF
         ENDIF
-      ENDIF
-      DO L=1,IPAGE
-        IA = (L-1)*ILEN
-        IE = MIN(IA+ILEN,NX)
-        IA = IA + 1
-        BMOWEP = AMOWEP +REAL(IA-1)*XDELLO
-        BMOEAP = AMOWEP +REAL(IE-1)*XDELLO
-        WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',
-     &   ''   L = LAND  S = SEA  + = OUTPUT POINT'',
-     &   ''                PAGE: '',I2)') L
-        WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)')
-     &   BMOWEP, BMOEAP
-        WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)')
-     &   AMONOP, AMOSOP
-        WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-        DO K=NY,1,-1
-          WRITE (IU06,'(1X,I1,130A1)') MOD(K,10),(LST(I,K),I=IA,IE)
+        DO L=1,IPAGE
+          IA = (L-1)*ILEN
+          IE = MIN(IA+ILEN,NX)
+          IA = IA + 1
+          BMOWEP = AMOWEP +REAL(IA-1)*XDELLO
+          BMOEAP = AMOWEP +REAL(IE-1)*XDELLO
+          WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',
+     &     ''   L = LAND  S = SEA  + = OUTPUT POINT'',
+     &     ''                PAGE: '',I2)') L
+          WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)')
+     &     BMOWEP, BMOEAP
+          WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)')
+     &     AMONOP, AMOSOP
+          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
+          DO K=NY,1,-1
+            WRITE (IU06,'(1X,I1,130A1)') MOD(K,10),(LST(I,K),I=IA,IE)
+          ENDDO
+          WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
         ENDDO
-        WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
-      ENDDO
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
 !*    3. OUTPUT OF DEPTH FIELD.
 !        ----------------------
 
-      DO K=1,NY
-        DO I=1,NX
-          GRID(I,K) = 99999
+      IF (ITEST.GE.3) THEN
+        DO K=1,NY
+          DO I=1,NX
+            GRID(I,K) = 99999
+          ENDDO
         ENDDO
-      ENDDO
 
-      DO IG=1,IGL
-        DO IJ=IJS(IG),IJL(IG)
-          GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) = MIN(DEPTH(IJ,IG),999.)
+        DO IG=1,IGL
+          DO IJ=IJS(IG),IJL(IG)
+            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) = MIN(DEPTH(IJ,IG),999.)
+          ENDDO
         ENDDO
-      ENDDO
 
-      TITL = 'WATER DEPTH IN METERS. '//
-     &       '(DEPTH DEEPER THAN 999M ARE PRINTED AS 999)'
-      CALL OUTPP ('00000000000000',IU06, NGX, NGY, NX, NY, TITL,1.,GRID,
-     &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
+        TITL = 'WATER DEPTH IN METERS. '//
+     &         '(DEPTH DEEPER THAN 999M ARE PRINTED AS 999)'
+        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,1.,GRID,
+     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -324,41 +328,45 @@
 !        ------------------------
 
 
-      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+      IF (ITEST.GE.3) THEN
 
-      DO K=1,NY
-        DO I=1,NX
-          GRID(I,K) = 99999
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+ 
+        DO K=1,NY
+          DO I=1,NX
+            GRID(I,K) = 99999
+          ENDDO
         ENDDO
-      ENDDO
 
-      DO IG=1,IGL
-        DO IJ=IJS(IG),IJL(IG)
-          GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
-     &     SQRT(U(IJ,IG)**2+V(IJ,IG)**2)
+        DO IG=1,IGL
+          DO IJ=IJS(IG),IJL(IG)
+            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
+     &       SQRT(U(IJ,IG)**2+V(IJ,IG)**2)
+          ENDDO
         ENDDO
-      ENDDO
 
-      TITL = 'CURRENT SPEED IN 0.01 METRES/SECOND '
-      CALL OUTPP ('00000000000000',IU06, NGX, NGY,NX,NY,TITL,100.,GRID,
-     &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
+        TITL = 'CURRENT SPEED IN 0.01 METRES/SECOND '
+        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,100.,GRID,
+     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
 
-      DO K=1,NY
-        DO I=1,NX
-          GRID(I,K) = 99999
+        DO K=1,NY
+          DO I=1,NX
+            GRID(I,K) = 99999
+          ENDDO
         ENDDO
-      ENDDO
 
-      DO IG=1,IGL
-        DO IJ=IJS(IG),IJL(IG)
-          GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
-     &     MOD(ATAN2(U(IJ,IG),V(IJ,IG)+0.1E-10)*DEG+360.,360.)
+        DO IG=1,IGL
+          DO IJ=IJS(IG),IJL(IG)
+            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
+     &       MOD(ATAN2(U(IJ,IG),V(IJ,IG)+0.1E-10)*DEG+360.,360.)
+          ENDDO
         ENDDO
-      ENDDO
 
-      TITL = 'CURRENT DIRECTIOM IN DEGREES (CLOCKWISE FROM NORTH)'
-      CALL OUTPP ('00000000000000',IU06, NGX, NGY, NX, NY, TITL,1.,GRID,
-     &            AMOWEP, AMOSOP, AMOEAP, AMONOP)
+        TITL = 'CURRENT DIRECTIOM IN DEGREES (CLOCKWISE FROM NORTH)'
+        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,1.,GRID,
+     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
+
+        ENDIF
 
       ENDIF
 

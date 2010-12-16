@@ -4,6 +4,7 @@
       PROGRAM DECODE_INTEGRATED_PARAMETER
 !
 !     J BIDLOT ECMWF   OCTOBRE 1998
+!     J BIDLOT ECMWF   MAY 2009: CONVERSION TO GRIB_API 
 !
 !     PURPOSE.
 !     --------
@@ -33,7 +34,7 @@
 !                        messages (!!! it can be big)
 
  
-!     LIBRARY : FORTRAN 90, and EMOSLIB
+!     LIBRARY : FORTRAN 90, GRIB_API ($GRIB_API_INCLUDE $GRIB_API_LIB) and $EMOSLIB
 !     -------
 
 !     OUTPUT FILE FORMAT :
@@ -74,59 +75,53 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER(NFREMAX=36)
-      PARAMETER (G = 9.806, PI = 3.1415927, CIRC = 40000000.,
-     1           ZPI = 2.*PI, RAD = PI/180., DEG = 180./PI,
-     2           R = CIRC/ZPI, EPSMIN=0.1E-32, ZMISS=-999.0)
+      USE GRIB_API
 
-      INTEGER I4
-      INTEGER GETCLO, GETCLA, IOPTVAL
-      INTEGER :: KSEC0(2),KSEC1(2048),KSEC2(2060),
-     &           KSEC3(2),KSEC4(252)
-      INTEGER, ALLOCATABLE :: INGRIB(:),OUTGRIB(:),KDOMRGG(:)
-      REAL :: ONE,ZTHETA,ZFRE
-      REAL :: PSEC2(96),PSEC3(2)
-      REAL, ALLOCATABLE :: PSEC4OUT(:)
+      IMPLICIT NONE
+
+      REAL, PARAMETER :: ZMISS=-999.0
+
+      INTEGER :: MORARG, IU06
+      INTEGER :: GETCLO, GETCLA, IOPTVAL
+      INTEGER :: I1, ITEST, LFILE
+      INTEGER :: NGX, NGY, L, K, I, J, JSN, ISTART
+      INTEGER :: IFILE, IRET, IGRIB 
+      INTEGER :: ITABPAR, IPARAM, ITABLE, IRGG, ISCAN
+      INTEGER :: IYYYYMMDD, IHHMM, IHH
+      INTEGER :: NUMBEROFVALUES
+      INTEGER :: PLPRESENT, NB_PL
+      INTEGER, DIMENSION(:), ALLOCATABLE :: PL
+      INTEGER, DIMENSION(:), ALLOCATABLE :: KDOMRGG
+
+      REAL :: YFRST, YLAST, AMONOP, AMOSOP, AMOWEP, AMOEAP
+      REAL :: XDELLO, XDELLA
+      REAL :: FCST, STEP
+      REAL(KIND=8), ALLOCATABLE :: VALUES(:)
       REAL, ALLOCATABLE :: FIELD(:,:)
-      CHARACTER     CLOPTLET
-      CHARACTER*  3 CLL1
-      CHARACTER*  6 CLOPTS
-      CHARACTER* 12 CLFMT
-      CHARACTER*40 ERRMSG(-4:6), MSG
-      CHARACTER*128 CLARG, FNAMEIN, FNAMEOUT
-      LOGICAL LLEXIST, LINTEGRATE, LWAVEHGT, LLASTFRE, llfrst
+
+      CHARACTER*1  :: CLOPTLET
+      CHARACTER*3  :: CLL1
+      CHARACTER*6  :: CLOPTS
+      CHARACTER*8  :: CSTEPUNITS
+      CHARACTER*8  :: CSTEPTYPE
+      CHARACTER*12 :: CGRIDTYPE
+      CHARACTER*12 :: CLFMT
+      CHARACTER*128:: CLARG, FNAMEIN, FNAMEOUT
+
+      LOGICAL :: LLEXIST, LLFRST
       LOGICAL :: LLSCANNS
 
       DATA CLOPTS/'i;o;t;'/
-      DATA ERRMSG/
-     4            ' DECODED WITH BIT MAP                  *',
-     3            '                                       *',
-     2            '                                       *',
-     1            '                                       *',
-     1            ' NO ERROR                              *',
-     1            ' END OF FILE ENCOUNTED                 *',
-     2            ' DECODING ERROR SEE GRIBEX DESCRIPTION *',
-     3            ' SUSPICIOUS TIME UNIT IN BLOCK 1       *',
-     4            ' DIMENSION 1   IS TOO SMALL            *',
-     5            ' error  *',
-     6            ' ENCODING ERROR SEE GRIBEX DESCRIPTION *'/
 
 ! ----------------------------------------------------------------------
 
 !*    INITIAL VALUES SET AND CRACK COMMAND LINE.
 !     -----------------------------------------
 
-      I4=1
-      NPRECI = KIND(I4) 
       FNAMEIN='input'
       FNAMEOUT='output'
-      IFRE_FIRST=1
-      IFRE_LAST=NFREMAX
-      LINTEGRATE=.FALSE.
-      LWAVEHGT=.FALSE.
-      LLASTFRE=.FALSE.
       ITEST=0
-      llfrst=.true.
+      LLFRST=.TRUE.
 
       CMDLINE: DO
         IOPTVAL=GETCLO(CLOPTS,CLARG)
@@ -150,35 +145,16 @@
         ENDIF
       ENDDO CMDLINE
 
-      KSEC1=0
-      KSEC2=0
-      KSEC4=0
-      KSEC3(1)=0
-      KSEC3(2)=0
-      PSEC2=0.
-      PSEC3(2)=ZMISS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!*    INPUT GRIB DATA FILE
-!     --------------------
+!*    OPEN DATA FILE
+!     --------------
       LFILE=0
       LLEXIST=.FALSE.
       IF (FNAMEIN.NE. ' ') LFILE=LEN_TRIM(FNAMEIN)
       INQUIRE(FILE=FNAMEIN(1:LFILE),EXIST=LLEXIST)
       IF(LLEXIST) THEN
-        CALL PBOPEN(IUGRS,FNAMEIN(1:LFILE),'r',KRET)
-        IF(KRET.LT.0) THEN
-          WRITE (*,*) '****************************************'
-          WRITE (*,*) '*                                      *'
-          WRITE (*,*) '*   ERROR FOLLOWING CALL TO PBOPEN     *'
-          IF(KRET.EQ.-1)
-     &      WRITE (*,*) 'COULD NOT OPEN FILE ',FNAMEIN
-          IF(KRET.EQ.-2)
-     &      WRITE (*,*) 'INVALID FILENAME ',FNAMEIN
-          IF(KRET.EQ.-3) WRITE (*,*) 'INVALID OPEN MODE SPECIFIED'
-          WRITE (*,*) '*                                      *'
-          WRITE (*,*) '****************************************'
-          CALL ABORT
-        ENDIF
+        CALL GRIB_OPEN_FILE(IFILE,FNAMEIN(1:LFILE),'r')
       ELSE
         WRITE(*,*)'****************************'
         WRITE(*,*)'*                          *'
@@ -189,364 +165,277 @@
         WRITE(*,*)'****************************'
         CALL ABORT
       ENDIF
+
+!     LOOP ON ALL MESSAGES IN INPUT FILE
  
-!     GET SIZE OF INGRIB
+      IGRIB=-99
+      CALL  GRIB_NEW_FROM_FILE(IFILE,IGRIB,IRET)
 
+      LOOP: DO WHILE (IRET /= GRIB_END_OF_FILE)
 
-      CALL PBSIZE (IUGRS, IPLENG)
-      ISIZE=(IPLENG+NPRECI-1)/NPRECI
-1111  IPLENG=ISIZE*NPRECI
-      IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+!       GET THE SIZE OF THE VALUES ARRAY
+        CALL GRIB_GET_SIZE(IGRIB,'values',NUMBEROFVALUES)
 
-!     GET DATA FILE
+        ALLOCATE(VALUES(NUMBEROFVALUES))
 
-      CALL PBGRIB(IUGRS,INGRIB,IPLENG,ILENG,KRET)
-      IF     (KRET.EQ.-1) THEN
-        WRITE (*,*) ' REACHED EOF IN ',FNAMEIN 
-        GOTO 2222
-      ELSEIF (KRET .EQ. -2) THEN
-        WRITE (*,*) ' ERROR IN FILE HANDLING IN ',FNAMEIN 
-      ELSEIF (KRET .EQ. -3) THEN
-        DEALLOCATE(INGRIB)
+!       SET THE MISSING DATA INDICATOR
+        CALL GRIB_SET(IGRIB, 'missingValue',ZMISS)
 
-        WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' SIZE  OF KGRIB IS NOT BIG ENOUGH.'
-        WRITE(IU06,*) ' IT WAS ', ISIZE
+!       GET DATA VALUES
+        CALL GRIB_GET(IGRIB,'values',VALUES)
 
-        KKRET=0
+!       DETERMINE DATA FIELD CHARACTERISTICS 
 
-        ISIZE=(ILENG+KIND(ISIZE)-1)/KIND(ISIZE)
-        WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
-        WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
-        WRITE(IU06,*) ' '
-        CALL FLUSH(IU06)
+        CALL GRIB_GET(IGRIB,'paramId',ITABPAR)
+        IF (ITEST.gt.0) WRITE(*,*) ' THE INPUT PARAMETER IS ',ITABPAR
+        ITABLE=ITABPAR/1000
+        IPARAM=ITABPAR-ITABLE*1000
 
-!       RESET THE FILE POINTER TO READ FIELD AGAIN
-        KOFFSET=-ILENG
-        CALL PBSEEK(IUGRS,KOFFSET,1,KKRET)
-        IF(KKRET.EQ.-1) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT
-        ENDIF
-        IF(KKRET.EQ.-2) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT
-        ENDIF
-
-        GOTO 1111
-
-      ENDIF
-
-!*    GET GRIB HEADERS 
-
-      KRET  = 1
-      ILEN1 = 1
-      ALLOCATE(PSEC4OUT(ILEN1))
-      IF (ITEST.gt.0)
-     &     WRITE(*,*)' GETTING GRIB HEADER OF 1st INPUT FIELD' 
-      IF (ITEST.GT.2) CALL GRSDBG (1)
-      CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     &             PSEC4OUT, ILEN1, INGRIB, ILENG , KWORD, 'J', KRET)
-      IF (ITEST.GT.1) WRITE(*,*)' GRIBEX DONE status=' , KRET 
-      IF(KRET.GT.0) THEN
-        MSG = ERRMSG(2)
-        CALL GRPRS0 (KSEC0)
-        CALL GRPRS1 (KSEC0, KSEC1)
-        WRITE (*,*) MSG
-        CALL ABORT
-      ENDIF
-      IF(ALLOCATED(PSEC4OUT)) DEALLOCATE(PSEC4OUT)
-
-!*    DETERMINE DATA FIELD CHARACTERISTICS 
-
-      IPARAM = KSEC1(6)
-      IRGG = KSEC2(17)
-
-      IF(KSEC2(11).EQ.0) THEN
-        LLSCANNS=.TRUE.
-      ELSEIF(KSEC2(11).EQ.64 .OR. KSEC2(11).EQ.2) THEN
-        LLSCANNS=.FALSE.
-      ELSE
-        WRITE(IU06,*) '***********************************'
-        WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
-        WRITE(IU06,*) ' KSEC2(11) = ', KSEC2(11)
-        WRITE(IU06,*) '***********************************'
-        CALL ABORT
-      ENDIF
-
-      YFRST = FLOAT(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
-     &         0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
-      YLAST = FLOAT(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
-     &         0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
-      IF(LLSCANNS) THEN
-        AMONOP = YFRST 
-        AMOSOP = YLAST 
-      ELSE
-        AMONOP = YLAST 
-        AMOSOP = YFRST 
-      ENDIF
-      AMOWEP = FLOAT(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
-     &         0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
-
-      AMOEAP = FLOAT(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
-     &         0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
-
-      XDELLA = FLOAT(KSEC2(10))/1000
-      XDELLO = FLOAT(KSEC2(9))/1000
-
-      IYYYY=(KSEC1(21)-1)*100+KSEC1(10)
-      IMM=KSEC1(11)
-      IDD=KSEC1(12)
-      IHH=KSEC1(13)
-      IMI=KSEC1(14)
-
-!     FORECAST STEP (defined here in hours)
-      IF(KSEC1(15) .EQ. 1 ) THEN
-        FCST=KSEC1(16)
-      ELSEIF(KSEC1(15) .EQ. 0 ) THEN
-        FCST=KSEC1(16)/60.
-      ELSEIF(KSEC1(15) .EQ. 2 ) THEN
-        FCST=24.*KSEC1(16)
-      ELSEIF(KSEC1(15) .EQ. 12 ) THEN
-        FCST=12.*KSEC1(16)
-      ELSEIF(KSEC1(15) .EQ. 11 ) THEN
-        FCST=6.*KSEC1(16)
-      ELSEIF(KSEC1(15) .EQ. 10 ) THEN
-        FCST=3.*KSEC1(16)
-      ELSE
-        WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP !!!'
-        WRITE(*,*) 'KSEC1(15) = ',KSEC1(15)
-        CALL ABORT
-      ENDIF
-
-      NGY = KSEC2(3)
-      IF (ITEST.gt.0) WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-
-      ALLOCATE(KDOMRGG(NGY))
-      KDOMRGG=0
-      IF(IRGG.EQ.0) THEN
-        NGX = KSEC2(2)
-        KDOMRGG = NGX
-      ELSE
-        ISTART=0
-        DO WHILE(KSEC2(23+ISTART).EQ.0)
-           ISTART=ISTART+1
-        ENDDO
-        NGX = 0
-        DO J=1,NGY-ISTART
-           KDOMRGG(J) = KSEC2(22+J+ISTART)
-           NGX = MAX(NGX,KDOMRGG(J))
-        ENDDO
-      ENDIF
-
-!     DECODE INPUT GRIB DATA
-!     ----------------------
-
-
-      IF(IRGG.EQ.0) THEN
-        ILEN1 = NGY*NGX
-      ELSE
-        ILEN1=0
-        DO J=1,NGY
-          ILEN1 = ILEN1 + KDOMRGG(J) 
-        ENDDO
-      ENDIF
-
-      ALLOCATE(PSEC4OUT(ILEN1))
-      PSEC4OUT=ZMISS
-
-      KSEC3(2)=0
-      PSEC3(2)=ZMISS
-      IF (ITEST.gt.0) 
-     &   WRITE(*,*)' DECODING INPUT FIELD '
-      CALL GRIBEX(KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     &            PSEC4OUT, ILEN1, INGRIB, ILENG , KWORD, 'D', KRET)
-      IF (ITEST.gt.1) THEN 
-        WRITE(*,*)' GRIBEX DONE status=' , KRET 
-        WRITE(*,*) ' KSEC0 : '
-        WRITE(*,*) KSEC0
-        WRITE(*,*) ' KSEC1 : '
-        WRITE(*,*) KSEC1
-        WRITE(*,*) ' KSEC2 : '
-        WRITE(*,*) KSEC2
-        WRITE(*,*) ' KSEC3 : '
-        WRITE(*,*) KSEC3
-        WRITE(*,*) ' KSEC4 : '
-        WRITE(*,*) KSEC4
-        WRITE(*,*) ' PSEC2 : '
-        WRITE(*,*) PSEC2
-      ENDIF
-      IF(KRET.GT.0) THEN
-        MSG = ERRMSG(2)
-        CALL GRPRS0 (KSEC0)
-        CALL GRPRS1 (KSEC0, KSEC1)
-        WRITE (*,*) MSG
-        CALL ABORT
-      ENDIF
-
-
-!     WRITES OUT DECODED DATA IN FORMATTED FORMAT
-!     *******************************************
-
-      ALLOCATE(FIELD(NGX,NGY))
-!     BY DEFINITION FIELD IS FRON NORTH to SOUTH
-      FIELD=ZMISS
-      IF(LLSCANNS) THEN
-        L=0
-        DO K=1,NGY
-          JSN=NGY-K+1
-          DO I=1,KDOMRGG(JSN)
-            L = L+1
-            FIELD(I,K) = PSEC4OUT(L)
-          ENDDO
-        ENDDO
-      ELSE
-        L=0
-        DO K=NGY,1,-1
-          JSN=K
-          DO I=1,KDOMRGG(JSN)
-            L = L+1
-            FIELD(I,K) = PSEC4OUT(L)
-          ENDDO
-        ENDDO
-      ENDIF
-
-      if(llfrst) then
-        LFILE=0
-        IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
-        OPEN(10,FILE=FNAMEOUT(1:LFILE),STATUS='UNKNOWN',
-     &       FORM='FORMATTED')
-        llfrst=.false.
-        WRITE(*,*) ' '
-        WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI,
-     &             ' STEP ',INT(FCST),' HOURS'
-        WRITE(*,*) ' '
-        WRITE(*,*) ' OUTPUT MATRIX DIMENSION : ',NGX,NGY
-        WRITE(*,*) ' '
-        WRITE(*,*) ' AMONOP = ',AMONOP
-        WRITE(*,*) ' AMOWEP = ',AMOWEP
-        WRITE(*,*) ' AMOSOP = ',AMOSOP
-        WRITE(*,*) ' AMOEAP = ',AMOEAP
-        IF(IRGG.EQ.0) THEN
-          WRITE(*,*) ' REGULAR LAT LON GRID '
-          WRITE(*,*) ' XDELLO = ',XDELLO
-          WRITE(*,*) ' XDELLA = ',XDELLA
+        CALL GRIB_GET(IGRIB,'gridType', CGRIDTYPE)
+        IF(CGRIDTYPE(1:7) == 'regular') THEN
+          IRGG=0
+        ELSEIF(CGRIDTYPE(1:7) == 'reduced') THEN
+          IRGG=1
         ELSE
-          WRITE(*,*) ' IRREGULAR LAT LON GRID '
-          WRITE(*,*) ' XDELLA = ',XDELLA
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!!'
+          WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
         ENDIF
-      else
-        WRITE(*,*) ' '
-        WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
-        WRITE(*,*) ' FOR DATE ',IYYYY,IMM,IDD,IHH,IMI,
-     &             ' STEP ',INT(FCST),' HOURS'
-      endif
 
-      DO I=1,NGX
-      DO K=1,NGY
-        if(field(i,k).ne.zmiss) then
-        WRITE(10,110) IPARAM,IYYYY,IMM,IDD,IHH,I,K,FIELD(I,K)
-        endif
-      ENDDO 
-      ENDDO 
+        CALL GRIB_GET(IGRIB,'iScansNegatively',ISCAN)
+        IF(ISCAN.EQ.0) THEN
+          LLSCANNS=.TRUE.
+        ELSEIF(ISCAN.EQ.64 .OR. ISCAN.EQ.2) THEN
+          LLSCANNS=.FALSE.
+        ELSE
+          WRITE(IU06,*) '***********************************'
+          WRITE(IU06,*) '*  SCANNING MODE NOT RECOGNIZED !!!'
+          WRITE(IU06,*) ' ISCAN = ', ISCAN 
+          WRITE(IU06,*) '***********************************'
+          CALL ABORT
+        ENDIF
 
-110   FORMAT(I3,1X,I4.4,3(I2.2),1x,2I4,1x,f12.8)
+        CALL GRIB_GET(IGRIB,'latitudeOfFirstGridPointInDegrees',YFRST)
+        CALL GRIB_GET(IGRIB,'latitudeOfLastGridPointInDegrees',YLAST)
+
+        IF(LLSCANNS) THEN
+          AMONOP = YFRST 
+          AMOSOP = YLAST 
+        ELSE
+          AMONOP = YLAST 
+          AMOSOP = YFRST 
+        ENDIF
+
+        CALL GRIB_GET(IGRIB,'longitudeOfFirstGridPointInDegrees',AMOWEP)
+        CALL GRIB_GET(IGRIB,'longitudeOfLastGridPointInDegrees',AMOEAP)
+
+        CALL GRIB_GET(IGRIB,'jDirectionIncrementInDegrees',XDELLA)
+        CALL GRIB_GET(IGRIB,'iDirectionIncrementInDegrees',XDELLO)
 
 
-      DEALLOCATE(PSEC4OUT)
-      DEALLOCATE(KDOMRGG)
-      DEALLOCATE(FIELD)
-      GOTO 1111
+        CALL GRIB_GET(IGRIB,'date',IYYYYMMDD)
+        CALL GRIB_GET(IGRIB,'time',IHHMM)
+        IHH=IHHMM/100
+
+        CALL GRIB_GET(IGRIB,'stepType',CSTEPTYPE)
+
+!       FORECAST STEP (defined here in hours)
+        IF(CSTEPTYPE(1:7) .EQ. 'instant') THEN
+          CALL GRIB_SET(IGRIB,'stepUnits','h')
+          CALL GRIB_GET(IGRIB,'step',STEP)
+          FCST=STEP
+        ELSE
+          WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP TYPE !!!'
+          WRITE(*,*) 'stepType = ',CSTEPTYPE
+          CALL ABORT
+        ENDIF
 
 
-2222  CONTINUE
-      CALL PBCLOSE(IUGRS,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (*,*) '************************************'
-        WRITE (*,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (*,*) '* FILE ',FNAMEIN
-        WRITE (*,*) '************************************'
-        CALL ABORT
-      ENDIF
+        CALL GRIB_GET(IGRIB,'Ny',NGY)
+
+        ALLOCATE(KDOMRGG(NGY))
+        KDOMRGG=0
+        IF(IRGG.EQ.0) THEN
+          CALL GRIB_GET(IGRIB,'Nx',NGX)
+          KDOMRGG = NGX
+        ELSE
+          CALL GRIB_GET(IGRIB,'PLPresent',PLPRESENT)
+          IF (PLPRESENT == 1) THEN
+            CALL GRIB_GET_SIZE(IGRIB,'pl',NB_PL)
+            ALLOCATE(PL(NB_PL))
+            CALL GRIB_GET(IGRIB,'pl',PL)
+          ELSE
+            WRITE(*,*) 'NUMBER OF POINTS PER LATITUDE MISSING !!!'
+            CALL ABORT
+          ENDIF
+
+          ISTART=1
+          DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
+             ISTART=ISTART+1
+          ENDDO
+          ISTART=ISTART-1
+          NGX = 0
+          DO J=1,NGY-ISTART
+             KDOMRGG(J) = PL(J+ISTART)
+             NGX = MAX(NGX,KDOMRGG(J))
+          ENDDO
+          DEALLOCATE(PL)
+        ENDIF
+
+!       WRITES OUT DECODED DATA IN FORMATTED FORMAT
+!       *******************************************
+
+        ALLOCATE(FIELD(NGX,NGY))
+!       BY DEFINITION FIELD IS FRON NORTH to SOUTH
+        FIELD=ZMISS
+        IF(LLSCANNS) THEN
+          L=0
+          DO K=1,NGY
+            JSN=NGY-K+1
+            DO I=1,KDOMRGG(JSN)
+              L = L+1
+            FIELD(I,K) = VALUES(L)
+            ENDDO
+          ENDDO
+        ELSE
+          L=0
+          DO K=NGY,1,-1
+            JSN=K
+            DO I=1,KDOMRGG(JSN)
+              L = L+1
+              FIELD(I,K) = VALUES(L)
+            ENDDO
+          ENDDO
+        ENDIF
+
+        IF(LLFRST) THEN
+          LFILE=0
+          IF (FNAMEOUT.NE. ' ') LFILE=LEN_TRIM(FNAMEOUT)
+          OPEN(10,FILE=FNAMEOUT(1:LFILE),STATUS='UNKNOWN',
+     &         FORM='FORMATTED')
+          LLFRST=.FALSE.
+          WRITE(*,*) ' '
+          WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM
+          WRITE(*,*) ' FOR DATE ',IYYYYMMDD,IHHMM,
+     &               ' STEP ',INT(FCST),' HOURS'
+          WRITE(*,*) ' '
+          WRITE(*,*) ' OUTPUT MATRIX DIMENSION : ',NGX,NGY
+          WRITE(*,*) ' '
+          WRITE(*,*) ' AMONOP = ',AMONOP
+          WRITE(*,*) ' AMOWEP = ',AMOWEP
+          WRITE(*,*) ' AMOSOP = ',AMOSOP
+          WRITE(*,*) ' AMOEAP = ',AMOEAP
+          IF(IRGG.EQ.0) THEN
+            WRITE(*,*) ' REGULAR LAT LON GRID '
+            WRITE(*,*) ' XDELLO = ',XDELLO
+            WRITE(*,*) ' XDELLA = ',XDELLA
+          ELSE
+            WRITE(*,*) ' IRREGULAR LAT LON GRID '
+            WRITE(*,*) ' XDELLA = ',XDELLA
+          ENDIF
+        ELSE
+          WRITE(*,*) ' '
+          WRITE(*,*) ' THE INPUT PARAMETER IS ',IPARAM 
+          WRITE(*,*) ' FOR DATE ',IYYYYMMDD,IHHMM,
+     &               ' STEP ',INT(FCST),' HOURS'
+        ENDIF
+
+        DO I=1,NGX
+          DO K=1,NGY
+            IF(FIELD(I,K).NE.ZMISS) THEN
+            WRITE(10,110) IPARAM,IYYYYMMDD,IHH,I,K,FIELD(I,K)
+            ENDIF
+          ENDDO 
+        ENDDO 
+
+110     FORMAT(I3,1X,I8.8,i2.2,1x,2I4,1x,f12.8)
+
+        DEALLOCATE(FIELD)
+
+        CALL GRIB_RELEASE(IGRIB)
+
+        IGRIB=-99
+        CALL GRIB_NEW_FROM_FILE(IFILE,IGRIB, IRET)
+
+      END DO LOOP
+
+      CALL GRIB_CLOSE_FILE(IFILE)
 
       CLOSE(10)
 
       END
 
 !#######################################################################
-!z    FUNCTION getclo(yaoptions, yaargument)
-!z    INTEGER getclo, getcla, rtb
-!z    CHARACTER*   1 yolastarg
-!z    CHARACTER* (*) yaoptions, yaargument
-!z    CHARACTER* 120 arg
+      FUNCTION getclo(yaoptions, yaargument)
+      INTEGER getclo, getcla, rtb
+      CHARACTER*   1 yolastarg
+      CHARACTER* (*) yaoptions, yaargument
+      CHARACTER* 120 arg
 
-!z    INTEGER here, imorearg, ivarg
-!z    DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
-!z    DATA yolastarg / " " /
+      INTEGER here, imorearg, ivarg
+      DATA here, imorearg, ivarg, arg / 1, 0, 0, "  " /
+      DATA yolastarg / " " /
 
-!z    arg=' '
-!z    CALL getarg(here,arg)
+      arg=' '
+      CALL getarg(here,arg)
 !-->  PRINT*,'-------------getclo---------------'
 !-->  PRINT*,' ###',arg,'###'
 
-!z    iol=rtb(arg)
+      iol=rtb(arg)
 !-->  PRINT*,' iol: ', iol
-!z    IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
-!z      iol = rtb(yaoptions)
+      IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
+        iol = rtb(yaoptions)
 !-->    PRINT*,' iol 2',iol,' options: ', yaoptions
-!z      DO jl=1,iol
-!z        getclo = 0
-!z        IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
-!z          getclo = ichar(arg(2:2))
+        DO jl=1,iol
+          getclo = 0
+          IF ( yaoptions(jl:jl) .EQ. arg(2:2) ) THEN
+            getclo = ichar(arg(2:2))
 !-->        PRINT *,' FOUND ',yaoptions(jl:jl), ' IN THE COMMAND LINE',
 !--> .               yaoptions(jl+1:jl+1)
-!z          IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
+            IF (yaoptions(jl+1:jl+1) .EQ. ':' ) THEN
 !-->          PRINT*, yaoptions(jl:jl),' requires arguments'
-!z            yolastarg=yaoptions(jl:jl)
-!z            ivarg=1
-!z          ENDIF
-!z          EXIT
-!z        ENDIF
-!z      ENDDO
-!z    ELSEIF ( ivarg .EQ. 1 ) THEN
-!z       WRITE(*,*) ' option -', yolastarg, ' requires arguments'
-!z       getclo=-1
-!z    ELSEIF (iol .EQ. 0) THEN
-!z      getclo=0
-!z    ELSE
-!z       WRITE(*,*) 'illegal option: ',arg(1:iol)
-!z       getclo=-1
-!z    ENDIF
+              yolastarg=yaoptions(jl:jl)
+              ivarg=1
+            ENDIF
+            EXIT
+          ENDIF
+        ENDDO
+      ELSEIF ( ivarg .EQ. 1 ) THEN
+         WRITE(*,*) ' option -', yolastarg, ' requires arguments'
+         getclo=-1
+      ELSEIF (iol .EQ. 0) THEN
+        getclo=0
+      ELSE
+         WRITE(*,*) 'illegal option: ',arg(1:iol)
+         getclo=-1
+      ENDIF
 !-->  PRINT *,' HERE ins getclo', here
-!z    here = here + 1
-!z    RETURN
+      here = here + 1
+      RETURN
 
-!z    ENTRY getcla(yaargument)
+      ENTRY getcla(yaargument)
 !-->  PRINT*,'-------------getcla--------------'
 !-->  PRINT*, 'HERE ins getcla :', here,' options: ', yaoptions
 
-!z    getcla = 1
-!z    CALL getarg(here,arg)
+      getcla = 1
+      CALL getarg(here,arg)
 !-->  PRINT*,' arg in getcla ', arg
-!z    IF ( arg (1:1) .NE. '-' ) THEN
-!z      here = here + 1
-!z      yaargument=arg
-!z    ELSE
-!z      IF (ivarg.EQ.1) THEN
-!z        WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
-!z   .    ' the option -',yolastarg
-!z        getcla = -1
-!z      ELSE
-!z        getcla = 0
-!z      ENDIF
-!z    ENDIF
-!z    ivarg=0
+      IF ( arg (1:1) .NE. '-' ) THEN
+        here = here + 1
+        yaargument=arg
+      ELSE
+        IF (ivarg.EQ.1) THEN
+          WRITE(*,*)' refused to take ', arg (1:2) ,' as argument for',
+     .    ' the option -',yolastarg
+          getcla = -1
+        ELSE
+          getcla = 0
+        ENDIF
+      ENDIF
+      ivarg=0
 !-->  PRINT*,' getcla in getcla ', getcla
 
-!z    RETURN
-!z    END
+      RETURN
+      END

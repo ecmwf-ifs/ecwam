@@ -25,8 +25,8 @@
 !     EXTERNALS.
 !     ----------
 
-!         VMIN
-!         VPLUS          
+!         VMIN_D
+!         VPLUS_D          
 
 !     REFERENCES.
 !     -----------
@@ -99,8 +99,8 @@
               F1 = SQRT(XK1/(2.*OM1))
               F2 = SQRT(XK2/(2.*OM2))
               F3 = SQRT(XK3/(2.*OM3))
-              VM = ZPI*VMIN(XK3,XK1,XK2,X13,X32,X12,OM3,OM1,OM2)
-              VP = ZPI*VPLUS(-XK3,XK1,XK2,-X13,-X32,X12,OM3,OM1,OM2)
+              VM = ZPI*VMIN_D(XK3,XK1,XK2,X13,X32,X12,OM3,OM1,OM2)
+              VP = ZPI*VPLUS_D(-XK3,XK1,XK2,-X13,-X32,X12,OM3,OM1,OM2)
               DELOM1 = OM3-OM1-OM2+DEL1
               DELOM2 = OM3+OM1+OM2+DEL1
               FAC0(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM1)+
@@ -130,8 +130,8 @@
               F1 = SQRT(XK1/(2.*OM1))
               F2 = SQRT(XK2/(2.*OM2))
               F3 = SQRT(ABS(XK3)/(2.*OM3))
-              VM = ZPI*VMIN(XK1,XK3,XK2,X13,X12,X32,OM1,OM3,OM2)
-              VP = ZPI*VMIN(XK2,-XK3,XK1,-X32,X12,-X13,OM2,OM3,OM1)
+              VM = ZPI*VMIN_D(XK1,XK3,XK2,X13,X12,X32,OM1,OM3,OM2)
+              VP = ZPI*VMIN_D(XK2,-XK3,XK1,-X32,X12,-X13,OM2,OM3,OM1)
               DELOM321 = OM3+OM2-OM1+DEL1
               DELOM312 = OM3+OM1-OM2+DEL1
               B(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM321)+

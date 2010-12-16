@@ -1,6 +1,6 @@
       SUBROUTINE WAVEMDL (CBEGDAT, KDELWI, KDURAT,
-     &                    NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                    ISEC1, ISEC2, RMISS, FIELDS,
+     &                    NFIELDS, NGPTOTG, NC, NR,
+     &                    IGRIB_HANDLE, ISEC1, ISEC2, RMISS, FIELDS,
      &                    LWCUR, LWSTOKES,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
@@ -35,6 +35,7 @@
 !         M. Drusch    ECMWF  Sep 2007  Re-initialize through FRSTIME and NADV
 !         J BIDLOT     ECMWF  August 2008 ADD LWCUR, MOVE PREWIND.
 !         J BIDLOT     ECMWF  June 2009 ADD LWSTOKES. 
+!         J BIDLOT     ECMWF  August 2010 ADD IGRIB_HANDLE.
 !                                            
 
 !     PURPOSE.                                                          
@@ -98,6 +99,7 @@
      &         LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT
       USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWICE   , ONLY : ICEMASK
@@ -117,6 +119,7 @@
      &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
+      USE GRIB_API_INTERFACE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
@@ -136,32 +139,31 @@
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
 
-      INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ::  IC
+      INTEGER :: NFIELDS, NGPTOTG, NC, NR
+      INTEGER :: IC
       INTEGER :: NADV
       INTEGER :: NFDBREF
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
+      INTEGER :: IGRIB_HANDLE
+      INTEGER :: ISEC1(NKSEK1), ISEC2(22+NR)
       INTEGER :: ISENDREQ, ITAG
 
-      REAL FCRANGE
-      REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL, ALLOCATABLE :: ZCOMBUF(:)
       REAL, ALLOCATABLE :: WVBLOCK(:,:)
-      LOGICAL :: LWSTOKES
-      
-      CHARACTER CBEGDAT*14, CDTASS*14
+
+      CHARACTER*14 :: CBEGDAT, CDTASS
       CHARACTER*12 :: FLABEL(NWVFIELDS)
 
+      LOGICAL :: LWCUR
+      LOGICAL :: LWSTOKES
       LOGICAL :: LDSTOP, LDWRRE, LDRESTARTED, LDWCOUNORMS
       LOGICAL :: LFRST
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: FRSTIME
-      LOGICAL :: LWCUR
 
       DATA LFRST /.TRUE./
 
-!     NADV  NUMBER OF PROPAGATION TIME STEPS IN ONE CALL OF WAMODEL.    
 ! --------------------------------------------------------------------- 
 
 !*    1.  THE FIRST CALL TO WAVEMDL PERFORMS INITIALIZATION.            
@@ -173,8 +175,8 @@
  1013 FORMAT ('  *    ========================================    *')
  1014 FORMAT ('  *    TWO-WAY INTERACTION WIND AND WAVES          *')
  1015 FORMAT ('  *    ONE-WAY INTERACTION WIND AND WAVES          *')
- 1016 FORMAT ('  * START DATE OF RUN      ', A14,  ' (CDATEA)   *')
- 1018 FORMAT ('  * END DATE OF RUN        ', A14,  ' (CDATEE)   *')
+ 1016 FORMAT ('  * START DATE OF RUN      ', A14,  ' (CDATEA) *')
+ 1018 FORMAT ('  * END DATE OF RUN        ', A14,  ' (CDATEE) *')
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
@@ -185,9 +187,27 @@
       ZMISS=RMISS
 
       IF(LWCOU) THEN
-        IF (ITEST.GE.1) THEN
-            WRITE (IU06,*) ' WAVEMDL: KSEC1 FROM IFS'
+
+        NGRIB_HANDLE_IFS=IGRIB_HANDLE
+
+        IF(NGRIB_HANDLE_IFS < 0 ) THEN
+          WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
+          WRITE(IU06,*)' CALL ABORT1 '
+          WRITE(IU06,*)'  '
+          CALL ABORT1
         ENDIF
+
+        IF (ITEST.GE.1) THEN
+           WRITE (IU06,*) ' WAVEMDL: GRIB HANDLE FROM IFS'
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'date',IYYYYMMDD)
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
+           WRITE (IU06,*) ' DATE: ',IYYYYMMDD,' TIME : ',IHHMM
+           WRITE (IU06,*) ' STEP: ',STEP
+           WRITE (IU06,*) ' ISTEP: ',ISTEP
+        ENDIF
+
         DO IC=1,NKSEK1
           IFS_KSEC1(IC)=ISEC1(IC)
           IF (ITEST.GE.1) THEN
@@ -256,8 +276,8 @@
 
         CALL INITMDL (NADV,
      &                IREAD,
-     &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                NFIELDS, NGPTOTG, NC, NR,
+     &                ISEC2, FIELDS, LWCUR, MASK_IN)
 
         LLCHKCFL=.FALSE.
 
@@ -399,8 +419,8 @@
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, ICEMASK,
      &              IREAD,
-     &              NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &              ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &              NFIELDS, NGPTOTG, NC, NR,
+     &              ISEC2, FIELDS, LWCUR, MASK_IN)
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
@@ -504,12 +524,12 @@
         DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         IF(NWVFIELDS.GT.1) THEN
-          FLABEL(2)='U-Stokes_drift'
+          FLABEL(2)=' U-Stokes'
           DEFVAL(2)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
         IF(NWVFIELDS.GT.2) THEN
-          FLABEL(3)='V-Stokes_drift'
+          FLABEL(3)=' V-Stokes'
           DEFVAL(3)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
@@ -578,7 +598,10 @@
           DO IFLD=1,NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD),
      &               FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),N_MASK_OUT_GLOBAL
+            WRITE(IU06,111) 
+     &               FAVG(IFLD),FMIN(IFLD),FMAX(IFLD)
           ENDDO
+111       FORMAT(14x,'HEX: ',3(Z16.16,2x))
           WRITE(IU06,*) ' '
           CALL FLUSH(IU06)
 
@@ -711,8 +734,9 @@
             WRITE(IU06,*) FLABEL(IFLD),
      &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT,
      &                    IRANK, NPROC, LL1D
+            WRITE(IU06,111) 
+     &                    FAVG(IFLD),FMIN(IFLD),FMAX(IFLD)
           ENDDO
-          WRITE(IU06,*) ' '
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
           DEALLOCATE(ZCOMBUF)

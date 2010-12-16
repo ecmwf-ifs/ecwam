@@ -45,6 +45,7 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
      &         FRATIO      ,FLOGSPRDM1
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -61,7 +62,9 @@
       REAL,DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
       LOGICAL :: LICE2SEA(IJS:IJL)
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -233,6 +236,8 @@
           ENDDO
         ENDDO
       ENDDO
+
+      IF (LHOOK) CALL DR_HOOK('INTPOL',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE INTPOL

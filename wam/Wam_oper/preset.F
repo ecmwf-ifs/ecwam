@@ -1,4 +1,4 @@
-      PROGRAM preset 
+      PROGRAM preset
 
 ! ----------------------------------------------------------------------
 
@@ -48,7 +48,7 @@
 !                 !OR!      OUTPUT UNIT LAST DRAG COEFFICIENT.
 !     METHOD.
 !     -------
-!       IF USED TO PRODUCED A COLD START (LGRIBIN=FALSE) :
+!       IT IS USED TO PRODUCED A COLD START:
 
 !       A JONSWAP SPECTRAL SHAPE IS ASSUMED.
 !       JONSWAP PARAMETERS ARE DEFINED EITHER BY USER INPUT (IOPTI=0) OR
@@ -65,14 +65,6 @@
 !       (UNITS IU12,IU14, AND IU15) TO PERMANENT FILES.
 
 
-!       IF USED TO CONVERT 250 INTO 251 (LGRIBIN=TRUE) :
-
-!       CONVERT AND INTERPOLATE SPECTRAL COMPONENTS SEE SPLITGRS.
-!       GLOBAL FIELDS PRIOR 19961205 AND MEDITERANEAN FIELDS WERE CODED
-!       IN GRIB AS 0NE SINGLE FIELD. GLOBAL FIELDS AFTER 19961205 WERE
-!       SPLIT INTO TWO FIELDS. USE THE INPUT NAMELIST IOPTI TO SPECIFY
-!       THE NUMBER OF FIELDS 250 IS PROVIDED WITH.
-!       
 !     EXTERNALS.
 !     ----------
 !       *ABORT1*    - TERMINATES PROCESSING.
@@ -82,7 +74,6 @@
 !       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
 !       *INCDATE*   - UPDATES A DATE TINE GROUP.
 !       *INIWCST*   - SETS GLOBAL CONSTANTS.
-!       *INTGRS*    - PERFORMS INTERPOLATIONS OF INPUT SPECTRA 
 !       *LOCINT*    - INTERPOLATES TO MODEL GRID.
 !       *MSTART*    - GENERATES THE RESTART FILES.
 !       *NOTIM*     - CONTROLS WIND GENERATION (NO TIME INTERPOLATION).
@@ -94,7 +85,6 @@
 !       *SPLITBL*   - SAVES SECOND TO LAST LATITUDES.
 !       *SPLITGRS*  - PERFORMS SPLITTING OF SPECTRA ON SUB DOMAINS 
 !       *SPR*       - DIRECTIONAL DISTRIBUTION.
-!       *READGRS*   - READS GRIBBED SPECTRUM DATA
 !       *READPRE*   - READS PREPROC OUTPUT.
 !       *READWIND*   - READS A WIND FIELD.
 !       *TIMIN*     - CONTROLS WIND GENERATION (TIME INTERPOLATION).
@@ -105,7 +95,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUT  , ONLY : LGRIBAPI_I, LGRIBAPI_O
       USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
      &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
      &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
@@ -117,8 +109,8 @@
      &            SB       ,THETAQ
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
-     &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT
+      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,
+     &            LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
@@ -129,10 +121,15 @@
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS,
-     &            IREFDATE ,ISTREAM  ,IREFRA
+     &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
      &            ROAIRO   ,ZIDLOLD
+      USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,
+     &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,
+     &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,
+     &            TC_QL    ,TT_4M     ,TT_4P    ,TFAKH
+
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
      &            CPATH
@@ -153,7 +150,6 @@
 
       PARAMETER (ZERO=' ', CDUM='00000000000000')
 
-      LOGICAL LINTGRS
       LOGICAL LFDBOPEN
 
 ! DIMENSION DUMMY COUPLED VARIABLES
@@ -165,11 +161,10 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
+      INTEGER ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL :: LWCUR
-      REAL :: FCRANGE
 
 ! ----------------------------------------------------------------------
 
@@ -178,15 +173,14 @@
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,
      &          USERID, RUNID, PATH, CPATH,
      &          CDATEA, IDELWI, CLTUNIT,
-     &          LPBIOOUT, LFDBIOOUT, LGRIBIN, LGRIBOUT,
+     &          LPBIOOUT, LGRIBOUT,
+     &          LGRIBAPI_I, LGRIBAPI_O,
      &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
      &          NWAM_BLKS
 
-!     IOPTI : WHEN LGRIBIN = FALSE, IT SELECTS COLD START SPECTRAL FORM
+!     IOPTI : IT SELECTS COLD START SPECTRAL FORM
 !             (0, 1, or 2 see MSTART)
 !             (3 see MSWELL)
-!             OR INDICATES WHETHER INPUT SPECTRA IS CONTAINED IN 1 OR 2
-!             FIELD(S) (WHEN LGRIBIN = TRUE). 
 !     ITEST, ITESTB : TEST OUTPUT LEVEL SEE MODULE YOWTEST
 !     ALFA, FM, GAMMA, SA, SB, THETA, FETCH : JONSWAP PARAMETERS
 !                                             SEE MODULE YOWINTS
@@ -194,19 +188,16 @@
 !     USERID, RUNID, PATH : OUT OF DATE, SHOULD ONLY BE USED WHENEVER 
 !                           USER WANTS TO WRITE OUTPUT DIRECTLY TO ECFS
 !                           WHICH IS HIGHLY NOT RECOMMENDATED ON THE VPP
-!     CPATH : PATH FOR OUTPUT TO DISK (USED WHENEVER OUTPUT IS NOT 
-!             TO THE FIELD DATA BASE (SEE LFDBIOOUT)).
+!     CPATH : PATH FOR OUTPUT TO DISK
 !     CDATEA : INPUT DATE.
 !     IDELWI : INPUT WIND TIME STEP IN UNIT DEFINED BY CLTUNIT
 !     CLTUNIT : INPUT WIND TIME STEP UNIT (S : seconds or H : hours)
 !     LPBIOOUT : IF TRUE THE PBIO SOFTWARE WILL BE USED FOR BINARY
 !                OUTPUT (see LGRIBOUT).
-!     LFDBIOOUT : IF TRUE THE OUTPUT WILL BE SEND TO THE FDB.
-!     LGRIBIN : IF TRUE GRIB SPECTRA 250 ARE INPUT FOR INTERPOLATION AND
-!               CONVERSION TO PARAMETER 251. OTHERWISE A COLD START WILL
-!               BE CREATED BASED ON THE CHOICE OF IOPTI.
 !     LGRIBOUT : IF TRUE THE WAVE SPECTRA IS OUTPUT IN GRIB FORMAT, ELSE
 !                THE BINARY RESTART FILES ARE PRODUCED.
+!     LGRIBAPI_I : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR INPUT FIELDS
+!     LGRIBAPI_O : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR OUTPUT FIELDS
 !     MARSTYPE : DATA TYPE USED TO CODE DATA IN GRIB
 !     YCLASS   : DATA CLASS USED TO CODE DATA IN GRIB.
 !     YEXPVER : EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
@@ -249,12 +240,10 @@
 
       LPBIOIN   = .FALSE.
       LPBIOOUT  = .TRUE.
-!     LFDBIOIN : obsolete, was used to read directly from fdb
-!                it should not be used
-      LFDBIOIN  = .FALSE. 
-      LFDBIOOUT = .FALSE. 
-      LGRIBIN  = .FALSE.
       LGRIBOUT = .TRUE.
+
+      LGRIBAPI_I = .TRUE.
+      LGRIBAPI_O = .TRUE.
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
@@ -278,6 +267,7 @@
 !     1.1 INITIALISATION OF MPP VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------
 
+      LFDBIOOUT = .FALSE. 
       IRANK=1
       NPROC=1
       LL1D=.FALSE.
@@ -315,6 +305,7 @@
       NTOTENS = 0
       NENSFNB = 0  
       ISTREAM =1045 !! if changed to an ifs stream also change LNEWLVTP
+      NLOCGRB   = 1
       NSYSNB  = -1
       NMETNB  = -1
       IREFDATE= 0
@@ -343,10 +334,44 @@
         IUSCR(IG) = 39+IG
       ENDDO
 
+!!!   deallocate big arrays that were read in with READPRE
+
+      IF(ALLOCATED(FAC0)) DEALLOCATE(FAC0)
+      IF(ALLOCATED(FAC1)) DEALLOCATE(FAC1)
+      IF(ALLOCATED(FAC2)) DEALLOCATE(FAC2)
+      IF(ALLOCATED(FAC3)) DEALLOCATE(FAC3)
+      IF(ALLOCATED(FAK)) DEALLOCATE(FAK)
+      IF(ALLOCATED(FRHF)) DEALLOCATE(FRHF)
+      IF(ALLOCATED(DFIMHF)) DEALLOCATE(DFIMHF)
+
+      IF(ALLOCATED(OMEGA)) DEALLOCATE(OMEGA)
+      IF(ALLOCATED(THH))   DEALLOCATE(THH)
+      IF(ALLOCATED(DFDTH)) DEALLOCATE(DFDTH)
+      IF(ALLOCATED(IM_P)) DEALLOCATE(IM_P)
+      IF(ALLOCATED(IM_M)) DEALLOCATE(IM_M) 
+      IF(ALLOCATED(TA)) DEALLOCATE(TA)
+      IF(ALLOCATED(TB)) DEALLOCATE(TB)
+      IF(ALLOCATED(TC_QL)) DEALLOCATE(TC_QL)
+      IF(ALLOCATED(TT_4M)) DEALLOCATE(TT_4M)
+      IF(ALLOCATED(TT_4P)) DEALLOCATE(TT_4P)
+      IF(ALLOCATED(TFAKH)) DEALLOCATE(TFAKH)
+
+
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
+      IF(.NOT.LGRIBAPI_I .OR. .NOT.LGRIBAPI_O) THEN
+        CALL SETWGRIBHD
+      ENDIF
 
-      CALL SETWGRIBHD
+      IF(LGRIBAPI_I .OR. LGRIBAPI_O) THEN
+        IF(.NOT. LGRHDIFS) THEN
+!         FOR INTEGRATED PARAMETERS
+          CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!         FOR SPECTRA 
+          CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+        ENDIF
+      ENDIF
+
 ! ----------------------------------------------------------------------
 
 !*    4. PRINTER PROTOCOL OF INPUT.
@@ -355,13 +380,6 @@
       WRITE (IU06,'(A70)') HEADER
       WRITE (IU06,'('' MODEL OPTIONS  :'',/)')
 
-      IF(LGRIBIN) THEN
-        WRITE (IU06,*)'  '
-        WRITE (IU06,*)' ******************************************'
-        WRITE (IU06,*)' THE INPUT SPECTRA ARE GRIB FILES '
-        WRITE (IU06,*)' ******************************************'
-        WRITE (IU06,*)'  '
-      ENDIF
       WRITE (IU06,*)'  '
       WRITE (IU06,*)' ******************************************'
       IF(LGRIBOUT) THEN
@@ -373,37 +391,27 @@
       WRITE (IU06,*)' ******************************************'
       WRITE (IU06,*)'  '
 
-      IF (.NOT.LGRIBIN.AND.IOPTI.EQ.0) THEN
+      IF (IOPTI.EQ.0) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
      &   '' INPUT PARAMETERS.'')')
-      ELSEIF (.NOT.LGRIBIN.AND.IOPTI.EQ.1) THEN
+      ELSEIF (IOPTI.EQ.1) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' WAVE ENERGY IS ZERO IN CALM WIND AREAS.'')')
-      ELSEIF (.NOT.LGRIBIN.AND.IOPTI.EQ.2) THEN
+      ELSEIF (IOPTI.EQ.2) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' PARAMETERS USED IN CALM WIND AREAS.'')')
-      ELSEIF (.NOT.LGRIBIN.AND.IOPTI.EQ.3) THEN
+      ELSEIF (IOPTI.EQ.3) THEN
         WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
      &   '' IMPOSED SWELL SYSTEMS.'')')
-      ELSEIF (LGRIBIN.AND.IOPTI.EQ.1) THEN
-        WRITE (IU06,'('' INITIAL SPECTRAL VALUES ARE COMPUTED FROM'',
-     &   '' ARCHIVED SPECTRUM AND DRAG COEF. FIELDS.'')')
-        WRITE (IU06,'('' AND ARCHIVED WAVE MODEL ANALYSED WIND SPEED'',
-     &   '' IF AVAILABLE.'')')
-      ELSEIF (LGRIBIN.AND.IOPTI.EQ.2) THEN
-        WRITE (IU06,'('' INITIAL SPECTRAL VALUES ARE COMPUTED FROM'',
-     &   '' ARCHIVED SLIT SPECTRUM AND DRAG COEF. FIELDS.'')')
-        WRITE (IU06,'('' AND ARCHIVED WAVE MODEL ANALYSED WIND SPEED'',
-     &   '' IF AVAILABLE.'')')
       ELSE
         WRITE (IU06,'('' INVALID INPUT OPTION. PROGRAM WILL ABORT '')')
         CALL ABORT1
       ENDIF
 
       WRITE(IU06,*) '  '
-      IF(.NOT.LGRIBIN.AND.LPBIOIN) THEN
+      IF(LPBIOIN) THEN
         WRITE (IU06,*)
      &   ' PBIO SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
       ENDIF
@@ -413,61 +421,21 @@
       ENDIF
       WRITE(IU06,*) '  '
 
-      IF(LFDBIOIN) THEN
-        WRITE (IU06,*)
-     &   ' FDB SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
-      ENDIF
-      IF(LFDBIOOUT) THEN
-        WRITE (IU06,*)
-     &   ' FDB SOFTWARE IS USED TO WRITE TO SELECTED OUTPUT FILES' 
-          WRITE(IU06,'("   ITS ROOT DIRECTORY IS ", A)')
-     &     CFDB2DSP(1:LEN_TRIM(CFDB2DSP))
-        IF(.NOT.LGRIBOUT) THEN
-          WRITE (IU06,*) ' OUTPUT OF BINARY DATA ' 
-          WRITE (IU06,*) ' HOWEVER THIS OPTION IS OBSOLETE AND '
-          WRITE (IU06,*) ' SHOULD NOT BE RUN. PROGRAM WILL ABORT.'
-          CALL ABORT1
-        ENDIF
-      ENDIF
-
       WRITE (IU06,*) ' TEST OUTPUT LEVEL IS .......... ITEST = ', ITEST
       WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
 
-      IF (.NOT.LGRIBIN) THEN
-        WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
-        WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',
-     &                F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')
-     &                ALFA, FM, GAMMA, SA, SB
-        WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,
-     &                '' DEGREE'')')  THETA
-      ENDIF
+      WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
+      WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',
+     &              F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')
+     &              ALFA, FM, GAMMA, SA, SB
+      WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,
+     &              '' DEGREE'')')  THETA
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' WIND INPUT TIMESTEP (SECONDS)      : ',IDELWI
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' END OF USER INPUT PROTOCOLL'
       WRITE (IU06,'(''  NUMBER OF DIRECTION BINS  NANG = '',I4)') NANG
       WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE = '',I4)') NFRE
-
-      IF (LFDBIOOUT .OR. LFDBIOIN) THEN
-        WRITE(IU06,*) ' ACCESS TO FIELDS DATA BASE REQUESTED '
-        WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
-        INITFDB_STAT = IINITFDBSUBS()
-        IF (INITFDB_STAT .NE. 0) THEN
-          WRITE(IU06,'("****************************************")')
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("*    FATAL ERROR IN SUB. USERIN        *")')
-          WRITE(IU06,'("*    ==========================        *")')
-          WRITE(IU06,'("*    INITIALIZATIO OF THE              *")')
-          WRITE(IU06,'("*    FIELDS DATA BASE                  *")')
-          WRITE(IU06,'("*     F A I L E D .                    *")')
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')
-     &     INITFDB_STAT
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("****************************************")')
-          CALL ABORT1
-        ENDIF
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -487,70 +455,32 @@
 
       IREAD=1
 
-      IF (.NOT.LGRIBIN) THEN
-        IF(.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(0:NIBLO,NANG,NFRE))
-      ENDIF
-      IF (.NOT.LGRIBIN.OR..NOT.LGRIBOUT) THEN
-        IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
-        IF(.NOT.ALLOCATED(ICEMASK)) ALLOCATE(ICEMASK(NIBLO,NBLO))
-        U10OLD = 0.
-        THWOLD = 0.
-        USOLD = 0.
-        TAUW = 0.
-        Z0OLD = 0.
-        ROAIRO = ROAIR      
-        ZIDLOLD = 0.
-        ICEMASK = 1
-      ENDIF
+      IF(.NOT.ALLOCATED(FL1)) ALLOCATE (FL1(0:NIBLO,NANG,NFRE))
+      IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(ICEMASK)) ALLOCATE(ICEMASK(NIBLO,NBLO))
+      U10OLD = 0.
+      THWOLD = 0.
+      USOLD = 0.
+      TAUW = 0.
+      Z0OLD = 0.
+      ROAIRO = ROAIR      
+      ZIDLOLD = 0.
+      ICEMASK = 1
 
-      IF (.NOT.LGRIBIN.AND.IOPTI.GT.0.AND.IOPTI.NE.3) THEN
+      IF (IOPTI.GT.0.AND.IOPTI.NE.3) THEN
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD, ICEMASK,
      &                IREAD,
-     &                NFIELDS, NGPTOTG, NC, NR, FCRANGE,
-     &                ISEC1, ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                NFIELDS, NGPTOTG, NC, NR,
+     &                ISEC2, FIELDS, LWCUR, MASK_IN)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
-      ELSEIF (LGRIBIN) THEN
-
-        IF(.NOT.LGRIBOUT) THEN
-!         RECONSTRUCT THE BINARY STRESS AND WIND FILE FROM THE WINDS
-!         AND THE DRAG COEFFICIENT FIELDS.
-          CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ICEMASK,
-     &                     IREAD)
-        ENDIF
-
-!       GET SPECTRA FROM GRIBBED DATA.
-
-        ISPLIT=IOPTI
-
-        CALL GRSTNAME(CDTPRO,CDATEF,'GRS',ICPLEN,CPATH,SFILENAME)
-        CALL GRSTNAME(CDTPRO,CDATEF,'IGS',ICPLEN,CPATH,ISFILENAME)
-
-!       INTERPOLATE THE GLOBAL FIELD IF IT IS NECESSARY
-
-        LINTGRS=.FALSE. 
-        CALL INTGRS (IU06,SFILENAME,ISPLIT,CDTPRO,LINTGRS,ISFILENAME)
-
-        IF(LINTGRS) SFILENAME=ISFILENAME 
-
-        IF(.NOT.LGRIBOUT) THEN
-!         THE SPECTRA WILL BE SAVED AS A BINARY FILE
-!CCC      note !! FL1 is allocated in readgrs !!!!
-          CALL READGRS(IU06,SFILENAME,ISPLIT,CDTPRO)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READGRS DONE'
-        ELSE
-!         SPECTRA WILL BE SAVED AS A GRIB DATA (parameter 251) 
-          CALL SPLITGRS (IU06,SFILENAME,ISPLIT,CDTPRO,ITEST,LFDBIOOUT,
-     &                   YCLASS, YEXPVER, CFDB2DSP,CLDOMAIN)
-          IF (ITEST.GT.0.OR.LINTGRS) WRITE (IU06,*)' SUB. SPLITGRS DONE'
-        ENDIF
       ELSE
         IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
       ENDIF
@@ -561,13 +491,11 @@
 !        ----------------------------------------
 
 
-      IF (.NOT.LGRIBIN) THEN
-        IF (FETCH.LT.0.1E-5) FETCH = 0.5*DELPHI
-        FRMAX = FM
-        IF (IOPTI.NE.0 .AND. IOPTI.NE.3) THEN
-          WRITE (IU06,*) ' FETCH USED (METRES)       : ', FETCH
-          WRITE (IU06,*) ' MAXIMUM PEAK FREQUENCY IS : ', FRMAX
-        ENDIF
+      IF (FETCH.LT.0.1E-5) FETCH = 0.5*DELPHI
+      FRMAX = FM
+      IF (IOPTI.NE.0 .AND. IOPTI.NE.3) THEN
+        WRITE (IU06,*) ' FETCH USED (METRES)       : ', FETCH
+        WRITE (IU06,*) ' MAXIMUM PEAK FREQUENCY IS : ', FRMAX
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -575,15 +503,13 @@
 !*    7. GENERATE AND WRITE START FILES.
 !        -------------------------------
 
-      IF (.NOT.LGRIBIN) THEN
-        IF(IOPTI.NE.3) THEN
-          THETAQ = THETA * RAD
-          CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-     &                FL1,U10OLD,THWOLD,USOLD,Z0OLD)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
-        ELSE
-          CALL MSWELL (FL1)
-        ENDIF
+      IF(IOPTI.NE.3) THEN
+        THETAQ = THETA * RAD
+        CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
+     &              FL1,U10OLD,THWOLD,USOLD,Z0OLD)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
+      ELSE
+        CALL MSWELL (FL1)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -598,16 +524,33 @@
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
       ENDIF
 
+      IF(ALLOCATED(U10OLD)) DEALLOCATE(U10OLD)
+      IF(ALLOCATED(THWOLD)) DEALLOCATE(THWOLD)
+      IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
+      IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
+      IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
+      IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
+      IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
+      IF(ALLOCATED(ICEMASK)) DEALLOCATE(ICEMASK)
+
+      WRITE (IU06,*) ' SAVING SPECTRA '
+
+      CALL FLUSH(IU06)
 !     SPECTRA :
-      IF (.NOT.LGRIBIN.AND.LGRIBOUT) THEN
+      IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
-        CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
+        IF(LGRIBAPI_O) THEN
+          CDTPRO  = CDATEA
+          CALL OUTWSPEC(FL1)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
+        ELSE
+          CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
      &                 FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
      &                 NLONRGG, KXLT, IXLG, NIBLO, NBLO,
      &                 AMONOP, XDELLA, NSTART, NEND,
      &                 NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
      &                 NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS, 
+     &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
      &                 LGRHDIFS, LNEWLVTP, IFS_KSEC1,
      &                 DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
      &                 CDATEA, CDATEF, CDATEA,
@@ -616,7 +559,7 @@
      &                 IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
      &                 IFDB, LFDBOPEN)
 
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SPEC2FDB DONE'
+        ENDIF
       ELSEIF (.NOT.LGRIBOUT) THEN
         CALL SAVSPEC(FL1,NSTART,NEND,CDATEA,CDATEA,CDUM)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
@@ -631,14 +574,6 @@
 
 ! DEALLOCATE ARRAYS
 
-      IF(ALLOCATED(U10OLD)) DEALLOCATE(U10OLD)
-      IF(ALLOCATED(THWOLD)) DEALLOCATE(THWOLD)
-      IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
-      IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
-      IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
-      IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
-      IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
-      IF(ALLOCATED(ICEMASK)) DEALLOCATE(ICEMASK)
       IF(ALLOCATED(FL1)) DEALLOCATE(FL1)
       IF(ALLOCATED(NSTART)) DEALLOCATE(NSTART)
       IF(ALLOCATED(NEND)) DEALLOCATE(NEND)

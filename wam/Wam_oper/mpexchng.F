@@ -45,6 +45,7 @@
 
 ! -------------------------------------------------------------------
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &          KTAG
       USE YOWSPEC, ONLY   : NTOPE    ,NTOPEMAX ,IJTOPE   ,NGBTOPE  , 
@@ -64,7 +65,12 @@
       REAL,ALLOCATABLE :: ZCOMBUFR(:)
       LOGICAL :: LLOK
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('MPEXCHNG',0,ZHOOK_HANDLE)
+
       IF(NPROC.LE.1) THEN
+        IF (LHOOK) CALL DR_HOOK('MPEXCHNG',1,ZHOOK_HANDLE)
         RETURN
       ENDIF
 
@@ -161,5 +167,7 @@
 
       DEALLOCATE(ZCOMBUFS)
       DEALLOCATE(ZCOMBUFR)
+
+      IF (LHOOK) CALL DR_HOOK('MPEXCHNG',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MPEXCHNG

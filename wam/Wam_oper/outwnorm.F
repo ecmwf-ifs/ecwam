@@ -31,6 +31,7 @@
 
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG    ,
      &            NFLAGALL ,IPFGTBL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
@@ -46,6 +47,9 @@
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
 
+      REAL ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
       IF(NFLAGALL) THEN
@@ -60,6 +64,8 @@
           WRITE(IU06,*) '   WAMNORM ON ',CDTPRO,' SEE PE 1 OUTPUT'
         ENDIF
 
+111     FORMAT(4x,'HEX: ',3(Z16.16,2x))
+
         IF(NFLAG(1).AND.(GFLAG(1).OR.FFLAG(1).OR.PFLAG(1))) THEN
           CALL WAMNORM(WHGTTG,NGX,NGY,ZMISS,EPSMIN,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(1),1,KTAG)
@@ -67,7 +73,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR TOTAL WAVE HEIGHT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -78,7 +84,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE MEAN DIRECTION'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -89,7 +95,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE MEAN PERIOD'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -100,7 +106,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR FRICTION VELOCITY'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -111,7 +117,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WIND DIRECTION'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -122,7 +128,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE PEAK FREQUENCY: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -133,7 +139,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR DRAG COEFFICIENT: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -144,7 +150,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE INDUCED STRESS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -155,7 +161,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR MEAN SQUARE SLOPE: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -166,7 +172,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WAVE WIND SPEED: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -177,7 +183,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR WIND SEA WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -188,7 +194,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM FOR SWELL WAVE HEIGHTS: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -199,7 +205,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM WIND SEA WAVE DIRECTION: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -210,7 +216,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM SWELL WAVE DIRECTION: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -221,7 +227,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM WIND SEA MEAN PERIOD: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -232,7 +238,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM SWELL MEAN PERIOD: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -243,7 +249,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WAVE PERIOD (1): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -254,7 +260,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WAVE PERIOD (2): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -265,7 +271,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WAVE DIRECTIONAL SPREAD: '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -276,7 +282,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (1): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -287,7 +293,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN SWELL PERIOD (1): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -298,7 +304,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (2): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -309,7 +315,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WIND SEA PERIOD (2): '
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -320,7 +326,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN WIND SEA DIRECTIONAL SPREAD:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -331,7 +337,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MEAN SWELL DIRECTIONAL SPREAD:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -342,7 +348,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM WAVE SPECTRAL KURTOSIS:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -353,7 +359,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM BENJAMIN-FEIR INSTABILITY:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -364,7 +370,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM WAVE SPECTRAL PEAKEDNESS:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -375,7 +381,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MODEL BATHYMETRY:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -386,7 +392,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MAXIMUM WAVE HEIGHT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -397,7 +403,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM MAXIMUM WAVE PERIOD:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -408,7 +414,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM U-STOKESDRIFT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -419,7 +425,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM V-STOKESDRIFT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -430,7 +436,7 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM U-CURRENT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
@@ -441,11 +447,13 @@
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM V-CURRENT:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+            WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF
         ENDIF
 
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('OUTWNORM',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE OUTWNORM

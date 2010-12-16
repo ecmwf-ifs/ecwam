@@ -32,6 +32,7 @@
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWICE   , ONLY : FLMINFR  ,ICEMASK
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
@@ -52,7 +53,9 @@
 
       REAL,ALLOCATABLE :: ET(:,:), STK(:)
       LOGICAL :: LICE2SEA(IJS:IJL)
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
       IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
@@ -143,6 +146,8 @@
         ENDIF
 
       ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('UNSETICE',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE UNSETICE

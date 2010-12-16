@@ -95,9 +95,9 @@
 !     *BSH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
 !                           SEE ESH.
 !     *ASWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
-!                           OF DEPTH: KMEAN >= ASWKM*DEPTH**BSWKM 
+!                           OF DEPTH: KMEAN >= ASWKM/DEPTH**BSWKM 
 !     *BSWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
-!                           OF DEPTH: KMEAN >= ASWKM*DEPTH**BSWKM 
+!                           OF DEPTH: KMEAN >= ASWKM/DEPTH**BSWKM 
 !     *EPSUS*     REAL      SMALL NUMBER ADDED TO THE SQUARE OF USTAR
 !                           WHEN COMPUTING CD OR THE CHARNOCK COEF.
 !     *EPSU10*    REAL      SMALL NUMBER ADDED TO THE SQUARE OF U10

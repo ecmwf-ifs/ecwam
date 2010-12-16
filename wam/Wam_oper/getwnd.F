@@ -66,7 +66,7 @@
 !                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
 !                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
-
+      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP
@@ -79,6 +79,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : FIELDG   ,WSPMIN   ,IUNITW
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
 
@@ -122,7 +123,7 @@
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
       IF(LWNDFILE) THEN
-        CALL READWIND (CDTWIR, LCLOSEWND, FILNM, LLNOTOPENED, IREAD)  
+        CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
 !       CHECK WIND FIELD DATE
 
@@ -176,20 +177,24 @@
         IF (LCLOSEWND .AND. LWNDFILE .AND. 
      &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
           IF(IRANK.EQ.IREAD) THEN
-            CALL PBCLOSE(IUNITW,KRET)
-            IF(KRET.LT.0) THEN
-              WRITE (IU06,*) '**************************************'
-              WRITE (IU06,*) '*                                    *'
-              WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE   *'
-              WRITE (IU06,*) '*  IN GETWND                         *'
-              WRITE (IU06,*) '*                                    *'
-              WRITE (IU06,*) '**************************************'
-              CALL ABORT1
+            IF(LGRIBAPI_I) THEN
+              CALL IGRIB_CLOSE_FILE(IUNITW)
+            ELSE
+              CALL PBCLOSE(IUNITW,KRET)
+              IF(KRET.LT.0) THEN
+                WRITE (IU06,*) '**************************************'
+                WRITE (IU06,*) '*                                    *'
+                WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE   *'
+                WRITE (IU06,*) '*  IN GETWND                         *'
+                WRITE (IU06,*) '*                                    *'
+                WRITE (IU06,*) '**************************************'
+                CALL ABORT1
+              ENDIF
             ENDIF
             LLNOTOPENED = .TRUE.
             IUNITW=0
             IF (ITEST.GT.1)
-     &        WRITE(IU06,*) ' SUB. GETWND - PBCLOSE ON ',FILNM
+     &        WRITE(IU06,*) ' SUB. GETWND - CLOSE ',FILNM
           ENDIF
         ENDIF
 

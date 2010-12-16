@@ -105,9 +105,8 @@
       INTEGER,ALLOCATABLE :: RLONRGG(:)
       INTEGER :: ILEVTYPE
 
-      INTEGER KSEC0(NKSEK0), KSEC1(NKSEK1),
+      INTEGER KSEC0(NKSEK0), KSEC2(NKSEK2), KSEC1(NKSEK1),
      &        KSEC3(NKSEK3), KSEC4(NKSEK4)
-      INTEGER, ALLOCATABLE :: KSEC2(:)
       INTEGER KSEK3(NKSEK3)
 
       INTEGER KGRIB(ISIZE)
@@ -137,13 +136,12 @@
       KSEC3 = KSEK3 
       PSEC3 = PSEK3 
 
+      FIELD=PSEC3(2)
 
 !*    UNPACK MARS FIELDS.                                           
 !     -------------------                                           
 
 !     GET SIZE OF THE UNPACKED DATA
-      KSEC2_SIZE=NKSEK2
-      ALLOCATE(KSEC2(KSEC2_SIZE))
       ALLOCATE(PSEC4(1))
 1000  KLENG = ISIZE
       KLENP = 1
@@ -165,7 +163,7 @@
 
       NR=KSEC2(3)
       NRFULL=NR
-      IF(NR.GT.KSEC2_SIZE-22) THEN
+      IF(NR.GT.NKSEK2-22) THEN
         WRITE(IU06,*) '*********************************************'
         WRITE(IU06,*) '*                                           *'
         WRITE(IU06,*) '*        ERROR IN SUB. GRB2WGRD             *'
@@ -769,6 +767,8 @@
           ENDDO
         ENDDO
 
+        WORK = PMISS
+
         IF(LLSCANNS) THEN
           L = 0
           IF(LLDIRFLD) THEN
@@ -779,6 +779,9 @@
                 IF(PSEC4(L).NE.PMISS) THEN
                   WORK(II,KK,1) = SIND(PSEC4(L))
                   WORK(II,KK,2) = COSD(PSEC4(L))
+                ELSE
+                  WORK(II,KK,1) = PMISS 
+                  WORK(II,KK,2) = PMISS
                 ENDIF
               ENDDO
             ENDDO
@@ -801,6 +804,9 @@
                 IF(PSEC4(L).NE.PMISS) THEN
                   WORK(II,KK,1) = SIND(PSEC4(L))
                   WORK(II,KK,2) = COSD(PSEC4(L))
+                ELSE
+                  WORK(II,KK,1) = PMISS 
+                  WORK(II,KK,2) = PMISS
                 ENDIF
               ENDDO
             ENDDO

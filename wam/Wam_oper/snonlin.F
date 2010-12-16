@@ -62,6 +62,7 @@
      &            FRH      ,ENH
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK,    INDEP 
       USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
@@ -71,7 +72,9 @@
 
       REAL :: AKMEAN(IJS:IJL)
       REAL :: ENHFR(IJS:IJL)
+      REAL ZHOOK_HANDLE
 
+      IF (LHOOK) CALL DR_HOOK('SNONLIN',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
 !*    1. SHALLOW WATER INITIALISATION (ONLY FOR THE OLD FORMULATION).
@@ -301,5 +304,6 @@
 
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('SNONLIN',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE SNONLIN

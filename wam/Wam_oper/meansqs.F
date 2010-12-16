@@ -130,7 +130,7 @@
 !        ------------------------------------------
 
       DO IJ=IJS,IJL      
-        CONST1    = LOG(FC/FS)  
+        CONST1    = 0.*LOG(FC/FS)  
         CP        = G/(ZPI*FM(IJ))
         XI        = CP/USNEW(IJ)
         ALPHAP    = MAX(0.21/XI,0.0040)
