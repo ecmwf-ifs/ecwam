@@ -272,24 +272,56 @@
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
 !         we need to set the following to be compatible with what was
 !         done with gribex !!!
-          IRET=0
-          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'system',
-     &                         IDUM, KRET=IRET)
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',
+     &                         IDUM,KRET=IRET)
           IF(IRET.NE.0) THEN
-          KSYSNB=65535
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
-          KMETNB=65535
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
-          KREFDATE=0 
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
-
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'oceanAtmosphereCoupling',0)
+             KSYSNB=65535
+             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'systemNumber',KSYSNB)
           ENDIF
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'methodNumber',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0) THEN
+             KMETNB=65535
+             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'methodNumber',KMETNB)
+          ENDIF
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'referenceDate',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0) THEN
+             KREFDATE=0 
+             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
+          ENDIF
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateFrom',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'climateDateTo',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseDate',
+     &                         IDUM,KRET=IRET) 
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legBaseTime',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseTime',0)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'legNumber', 
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,
+     &                         'oceanAtmosphereCoupling',
+     &                         IDUM,KRET=IRET)
+          IF(IRET.NE.0)
+     &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
+     &                           'oceanAtmosphereCoupling',0)
         ENDIF
 
 !       RESET STREAM IF NEEDED
