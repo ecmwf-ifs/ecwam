@@ -176,6 +176,7 @@
             ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
           ENDIF
         ELSE IF(ISTREAM == 1082 .OR.
+     &          ISTREAM == 1088 .OR.
      &          ISTREAM == 1095 .OR.
      &          ISTREAM == 1222) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber',
