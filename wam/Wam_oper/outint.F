@@ -89,6 +89,7 @@
      &            CDTINTS  ,CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
      &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER
       USE FDBSUBS_MOD
+      USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
 
@@ -98,8 +99,12 @@
 !
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
       INTEGER IERR
+      INTEGER :: IUOUT
       CHARACTER(LEN=14) :: CDATE
+      CHARACTER(LEN=24) :: OFILENAME
       LOGICAL LFDBOPEN
+      LOGICAL FRSTIME30
+      DATA FRSTIME30 / .TRUE. /
 
 ! ----------------------------------------------------------------------
 !
@@ -745,6 +750,25 @@
         ENDIF
       ENDIF
 
+
+!     OUTPUT FILE FOR GRIB DATA (if not written to FDB)
+
+      IF(.NOT.LFDB) THEN
+        IF(LGRIBAPI_O) THEN
+          IF (GFLAG20 .OR. GFLAG21) THEN
+            WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
+            IF (FRSTIME30) THEN
+              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
+              FRSTIME30=.FALSE.
+            ELSE
+              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
+            ENDIF
+          ENDIF
+        ENDIF
+      ELSE
+        IUOUT=0
+      ENDIF
+
       IF (GFLAG20.AND.CDTINTT.EQ.CDTPRO) THEN
 
 !*      WAVE HEIGHTS.
@@ -762,7 +786,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -787,7 +811,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -825,7 +849,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFTG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -852,7 +876,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UDIRG,
      &                      ITABLE, IPARAM, IZLEV, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -891,7 +915,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WPKFTG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -918,7 +942,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CDG,
      &                      ITABLE, IPARAM, IZLEV, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -944,7 +968,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, SMEANG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -970,7 +994,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, U10G,
      &                      ITABLE, IPARAM, IZLEV, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -995,7 +1019,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1020,7 +1044,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CWHTAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1045,7 +1069,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RANGAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1070,7 +1094,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1G,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1095,7 +1119,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2G,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1120,7 +1144,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1145,7 +1169,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C4G,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,C4G,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1170,7 +1194,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, BFG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,BFG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1195,7 +1219,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, QPG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,QPG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1220,7 +1244,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, DEPTHG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,DEPTHG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1245,7 +1269,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, HMAXG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,HMAXG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1270,7 +1294,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TMAXG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,TMAXG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1295,7 +1319,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, USTOKESG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,USTOKESG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1320,7 +1344,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,VSTOKESG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1345,7 +1369,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UCURG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,UCURG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1370,7 +1394,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VCURG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,VCURG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1405,7 +1429,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTWG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1431,7 +1455,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRWG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1469,7 +1493,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFWG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1495,7 +1519,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTSG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1521,7 +1545,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRSG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,
      &         IY,IM,ID,IH,IMN,
@@ -1559,7 +1583,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFSG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1585,7 +1609,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1WG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1611,7 +1635,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2WG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1637,7 +1661,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1665,7 +1689,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1SG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1691,7 +1715,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2SG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1717,7 +1741,7 @@
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IU30)
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
             ELSE
               CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
      &                     IY,IM,ID,IH,IMN,
@@ -1738,6 +1762,14 @@
             WRITE(IU06,*) ' ------------------------'
             CALL ABORT1
          ENDIF
+      ENDIF
+
+      IF(.NOT.LFDB) THEN
+        IF(LGRIBAPI_O) THEN
+          IF (GFLAG20 .OR. GFLAG21) THEN
+            CALL IGRIB_CLOSE_FILE(IUOUT)
+          ENDIF
+        ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('OUTINT',1,ZHOOK_HANDLE)
