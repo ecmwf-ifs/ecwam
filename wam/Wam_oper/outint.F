@@ -1364,7 +1364,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=131
-            ITABLE=140
+            ITABLE=151
             IF(LGRIBAPI_O) THEN
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UCURG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
@@ -1389,7 +1389,7 @@
      &     .OR.(.NOT.LMESSPASS)) THEN
             ilocal=ilocal+1
             IPARAM=132
-            ITABLE=140
+            ITABLE=151
             IF(LGRIBAPI_O) THEN
               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VCURG,
      &                      ITABLE, IPARAM, 0, 0 , 0,

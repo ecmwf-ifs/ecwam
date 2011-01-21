@@ -256,7 +256,24 @@
 
 !     GRIB TABLE AND PARAMETER NUMBER
       ITABPAR=ITABLE*1000+IPARAM
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
+      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
+      IF(IERR.NE.0)THEN
+        WRITE(*,*) ' *********************************************'
+        WRITE(IU06,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(*,*) ' GRIB_API ERROR WHILE SETTING paramId ',ITABPAR
+        WRITE(*,*) ' GRIB_API ERROR CODE ', IERR
+        WRITE(IU06,*) ' GRIB_API ERROR CODE ', IERR
+        CALl FLUSH(IU06)
+        IF(IERR.EQ.-36)THEN
+          WRITE(*,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
+          WRITE(*,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
+          WRITE(*,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
+          WRITE(*,*) ' *********************************************'
+        ELSE
+          WRITE(*,*) ' *********************************************'
+          CALL ABORT1
+        ENDIF
+      ENDIF
 
 !     LEVEL DEFINITION
       IF(.NOT.LNEWLVTP) THEN
