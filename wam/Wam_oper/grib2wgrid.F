@@ -443,7 +443,7 @@
           ISTOP=ISTOP+1
         ENDDO
 
-        DO J=1,NR-ISTART
+        DO J=1,NR
           IF(LLSCANNS) THEN
             JSN=NR-J+1
           ELSE
