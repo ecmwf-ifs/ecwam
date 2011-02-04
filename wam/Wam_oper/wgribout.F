@@ -353,6 +353,7 @@
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
 
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'unitOfTimeRange',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
 
