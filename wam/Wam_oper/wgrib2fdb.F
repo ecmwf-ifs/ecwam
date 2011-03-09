@@ -328,13 +328,9 @@
 !     FC STEP:
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
-      IF ( CLTYPE == 'fg' .AND. ISTEP == 0 ) THEN
-        CLSTEP = '000006'
-      ELSE
-!       make sure the step is in hours
-        ISTEP=ISTEP
-        WRITE(CLSTEP, '( I6.6 )' ) ISTEP 
-      ENDIF
+!     make sure the step is in hours
+      ISTEP=ISTEP
+      WRITE(CLSTEP, '( I6.6 )' ) ISTEP 
       ISTAT = ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
 
 !     LEVEL TYPE:
