@@ -147,9 +147,10 @@
 
       INTEGER I4(2)
       INTEGER :: NLENHALO_MAX
+      INTEGER :: ICOUNTS(NPR)
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
-      INTEGER,ALLOCATABLE :: KCOMBUF_S(:,:)
-      INTEGER,ALLOCATABLE :: KCOMBUF_R(:)
+      INTEGER,ALLOCATABLE :: ICOMBUF_S(:)
+      INTEGER,ALLOCATABLE :: ICOMBUF_R(:)
       INTEGER,ALLOCATABLE :: ISENDREQ(:)
       INTEGER,ALLOCATABLE :: KDUM(:), KDUM2(:,:), KDUM3(:,:,:)
       INTEGER,ALLOCATABLE, DIMENSION(:) :: INDEX,IJNDEX,NTOTSUB
@@ -160,13 +161,14 @@
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,NLENHALO,IJHALO
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: KTEMP
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE,IPROCFROM
+      INTEGER, ALLOCATABLE, DIMENSION(:)   :: IJFROMPEX
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
 
       REAL X4(2)
-      REAL,ALLOCATABLE :: RCOMBUF_S(:,:)
+      REAL,ALLOCATABLE :: RCOMBUF_S(:)
       REAL,ALLOCATABLE :: RCOMBUF_R(:)
       REAL,ALLOCATABLE :: RDUM(:), RDUM2(:,:)
 
@@ -183,9 +185,9 @@
 
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
 
-
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
+
 
       IREAD=1
 
@@ -902,7 +904,6 @@
 !        BETWEEN NEIGHBORING SUB GRID DOMAINS
 !        -----------------------------------------------------------
 
-
       MAXLEN=0
       DO IP=1,NPR
         MAXLEN=MAX(MAXLEN,NEND(IP)-NSTART(IP)+1)
@@ -922,156 +923,180 @@
       ALLOCATE(IPROCFROM(MAXPERMLEN,NPR))
       ALLOCATE(NLENHALO(NPR))
 
-      ALLOCATE(ITEMP(MXPRLEN))
-      DO IH=1,MXPRLEN
-        ITEMP(IH)=0
-      ENDDO
-
+      CALL GSTATS(1497,0)
+!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(IP,IH)
       DO IP=1,NPR
         DO IH=1,MAXPERMLEN
           IJFROMPE(IH,IP)=0
           IPROCFROM(IH,IP)=NPR+1
         ENDDO
       ENDDO
+!$OMP END PARALLEL DO
+      CALL GSTATS(1497,1)
 
 !     DETERMINE IJFROMPE
       NLENHALO_MAX=0
-      DO IP=1,NPR
-        IH=0
 
+      ALLOCATE(ITEMP(MXPRLEN))
+      DO IH=1,MXPRLEN
+        ITEMP(IH)=0
+      ENDDO
+      ALLOCATE(INDEX(MXPRLEN))
+
+
+      IH=0
+
+      IP=IRANK
 !       CONTRIBUTION FROM NON-ROTATED GRID (NEEDED FOR ALL OPTIONS)
+      DO IC=1,2
+        DO IJ=NSTART(IP),NEND(IP)
+
+          IF(  KLON(IJ,IC).GT.0 .AND.
+     &         KLON(IJ,IC).LE.NIBLO .AND.
+     &        (KLON(IJ,IC).LT.NSTART(IP).OR.
+     &         KLON(IJ,IC).GT.NEND(IP)       ) ) THEN
+             IH=IH+1
+             IF(IH.GT.MXPRLEN) THEN
+               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+               WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
+               CALL ABORT1
+             ENDIF
+             ITEMP(IH)=KLON(IJ,IC)
+          ENDIF
+
+        ENDDO ! END DO ON IJ
+      ENDDO ! END DO ON IC
+
+      DO ICL=1,2
         DO IC=1,2
           DO IJ=NSTART(IP),NEND(IP)
 
-            IF(  KLON(IJ,IC).GT.0 .AND.
-     &           KLON(IJ,IC).LE.NIBLO .AND.
-     &          (KLON(IJ,IC).LT.NSTART(IP).OR.
-     &           KLON(IJ,IC).GT.NEND(IP)       ) ) THEN
-               IH=IH+1
-               IF(IH.GT.MXPRLEN) THEN
-                 WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                 WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
-                 CALL ABORT1
-               ENDIF
-               ITEMP(IH)=KLON(IJ,IC)
-            ENDIF
+          IF(  KLAT(IJ,IC,ICL).GT.0 .AND.
+     &         KLAT(IJ,IC,ICL).LE.NIBLO .AND.
+     &        (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+     &         KLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
+             IH=IH+1
+             IF(IH.GT.MXPRLEN) THEN
+               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+               WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
+               CALL ABORT1
+             ENDIF
+             ITEMP(IH)=KLAT(IJ,IC,ICL)
+          ENDIF
 
           ENDDO ! END DO ON IJ
         ENDDO ! END DO ON IC
+      ENDDO ! END DO ON ICL
 
+      IF (IPROPAGS.EQ.2) THEN
+!       CONTRIBUTION FROM CORNER GRID POINT
+!       (NEEDED FOR CTU SCHEME: IPROPAGS=2)
         DO ICL=1,2
-          DO IC=1,2
+          DO ICR=1,4
             DO IJ=NSTART(IP),NEND(IP)
 
-            IF(  KLAT(IJ,IC,ICL).GT.0 .AND.
-     &           KLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &          (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
-     &           KLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
-               IH=IH+1
-               IF(IH.GT.MXPRLEN) THEN
-                 WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                 WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
-                 CALL ABORT1
-               ENDIF
-               ITEMP(IH)=KLAT(IJ,IC,ICL)
-            ENDIF
+              IF(  KCOR(IJ,ICR,ICL).GT.0 .AND.
+     &             KCOR(IJ,ICR,ICL).LE.NIBLO .AND.
+     &            (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.
+     &             KCOR(IJ,ICR,ICL).GT.NEND(IP)      ) ) THEN
+                 IH=IH+1
+                 IF(IH.GT.MXPRLEN) THEN
+                   WRITE(IU06,*) 'MPDECOMP : DECOMPOSITION PROBLEM !'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
+                   CALL ABORT1
+                 ENDIF
+                 ITEMP(IH)=KCOR(IJ,ICR,ICL)
+              ENDIF
 
             ENDDO ! END DO ON IJ
           ENDDO ! END DO ON IC
         ENDDO ! END DO ON ICL
-
-        IF (IPROPAGS.EQ.2) THEN
-!       CONTRIBUTION FROM CORNER GRID POINT
-!       (NEEDED FOR CTU SCHEME: IPROPAGS=2)
-          DO ICL=1,2
-            DO ICR=1,4
-              DO IJ=NSTART(IP),NEND(IP)
-
-                IF(  KCOR(IJ,ICR,ICL).GT.0 .AND.
-     &               KCOR(IJ,ICR,ICL).LE.NIBLO .AND.
-     &              (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.
-     &               KCOR(IJ,ICR,ICL).GT.NEND(IP)      ) ) THEN
-                   IH=IH+1
-                   IF(IH.GT.MXPRLEN) THEN
-                     WRITE(IU06,*) 'MPDECOMP : DECOMPOSITION PROBLEM !'
-                     WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
-                     CALL ABORT1
-                   ENDIF
-                   ITEMP(IH)=KCOR(IJ,ICR,ICL)
-                ENDIF
-
-              ENDDO ! END DO ON IJ
-            ENDDO ! END DO ON IC
-          ENDDO ! END DO ON ICL
-        ELSE IF (IPROPAGS.EQ.1) THEN
+      ELSE IF (IPROPAGS.EQ.1) THEN
 !       CONTRIBUTION FROM ROTATED GRID
-!      (NEEDED FOR DUAL ROTATED SCHEME SCHEME: IPROPAGS=1)
-          DO ICL=1,2
-            DO IC=1,2
-              DO IJ=NSTART(IP),NEND(IP)
+!       (NEEDED FOR DUAL ROTATED SCHEME SCHEME: IPROPAGS=1)
+        DO ICL=1,2
+          DO IC=1,2
+            DO IJ=NSTART(IP),NEND(IP)
 
-                IF(  KRLON(IJ,IC,ICL).GT.0 .AND. 
-     &               KRLON(IJ,IC,ICL).LE.NIBLO .AND.
-     &              (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.
-     &               KRLON(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN
-                   IH=IH+1
-                   IF(IH.GT.MXPRLEN) THEN
-                     WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
-                     WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
-                     CALL ABORT1
-                   ENDIF
-                   ITEMP(IH)=KRLON(IJ,IC,ICL)
-                ENDIF
-
-                IF(  KRLAT(IJ,IC,ICL).GT.0 .AND.
-     &               KRLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &              (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
-     &               KRLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
-                   IH=IH+1
-                   IF(IH.GT.MXPRLEN) THEN
-                     WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
-                     WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
-                     CALL ABORT1
-                   ENDIF
-                   ITEMP(IH)=KRLAT(IJ,IC,ICL)
-                ENDIF
-
-              ENDDO ! END DO ON IJ
-            ENDDO ! END DO ON IC
-          ENDDO ! END DO ON ICL
-        ENDIF
-
-        NH=IH
-
-        IF(NH.GT.1) THEN
-          ALLOCATE(INDEX(NH))
-          CALL SORTINI(ITEMP,INDEX,NH)
-          CALL SORTI(ITEMP,INDEX,NH)
-          DEALLOCATE(INDEX)
-        ENDIF
-
-        JH=0
-        IF(NH.GT.1) THEN
-          JH=1
-          IJFROMPE(JH,IP)=ITEMP(1)
-          DO IH=2,NH
-            IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
-              JH=JH+1
-              IF(JH.GT.MAXPERMLEN) THEN
-                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
-                WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
-                WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
-                CALL ABORT1
+              IF(  KRLON(IJ,IC,ICL).GT.0 .AND. 
+     &             KRLON(IJ,IC,ICL).LE.NIBLO .AND.
+     &            (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.
+     &             KRLON(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN
+                 IH=IH+1
+                 IF(IH.GT.MXPRLEN) THEN
+                   WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
+                   CALL ABORT1
+                 ENDIF
+                 ITEMP(IH)=KRLON(IJ,IC,ICL)
               ENDIF
-              IJFROMPE(JH,IP)=ITEMP(IH)
-            ENDIF
-          ENDDO
-        ENDIF
-        NLENHALO(IP)=JH
-        NLENHALO_MAX=MAX(NLENHALO_MAX,NLENHALO(IP))
 
-      ENDDO ! END DO ON IP
+              IF(  KRLAT(IJ,IC,ICL).GT.0 .AND.
+     &             KRLAT(IJ,IC,ICL).LE.NIBLO .AND.
+     &            (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+     &             KRLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
+                 IH=IH+1
+                 IF(IH.GT.MXPRLEN) THEN
+                   WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
+                   WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
+                   CALL ABORT1
+                 ENDIF
+                 ITEMP(IH)=KRLAT(IJ,IC,ICL)
+              ENDIF
+
+            ENDDO ! END DO ON IJ
+          ENDDO ! END DO ON IC
+        ENDDO ! END DO ON ICL
+      ENDIF
+
+      NH=IH
+
+      IF(NH.GT.1) THEN
+        CALL SORTINI(ITEMP,INDEX,NH)
+        CALL SORTI(ITEMP,INDEX,NH)
+      ENDIF
+
+      JH=0
+      IF(NH.GT.1) THEN
+        JH=1
+        IJFROMPE(JH,IP)=ITEMP(1)
+        DO IH=2,NH
+          IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
+            JH=JH+1
+            IF(JH.GT.MAXPERMLEN) THEN
+              WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
+              WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
+              WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
+              CALL ABORT1
+            ENDIF
+            IJFROMPE(JH,IP)=ITEMP(IH)
+          ENDIF
+        ENDDO
+      ENDIF
+      NLENHALO(IP)=JH
+
       DEALLOCATE(ITEMP) 
+      DEALLOCATE(INDEX)
+
+!     UPDATE NLENHALO OVER ALL PROCS
+      ICOUNTS(:)=1
+      CALL GSTATS(694,0)
+      CALL MPL_ALLGATHERV(NLENHALO(IP),NLENHALO,ICOUNTS,
+     &     CDSTRING='MPDECOMP:')
+      CALL GSTATS(694,1)
+      NLENHALO_MAX=MAXVAL(NLENHALO(:))
+
+!     UPDATE IJFROMPE OVER ALL PROCS
+      ICOUNTS(:)=MAXPERMLEN
+      ALLOCATE(IJFROMPEX(MAXPERMLEN*NPR))
+      CALL GSTATS(694,0)
+      CALL MPL_ALLGATHERV(IJFROMPE(:,IP),IJFROMPEX,ICOUNTS,
+     &     CDSTRING='MPDECOMP:')
+      CALL GSTATS(694,1)
+      DO J=1,NPR
+        IJFROMPE(:,J)=IJFROMPEX((J-1)*MAXPERMLEN+1:J*MAXPERMLEN)
+      ENDDO
+      DEALLOCATE(IJFROMPEX)
 
 
 !     RESIZE ARRAYS BASED ON MAXIMUM SIZE OF HALO
@@ -1106,7 +1131,6 @@
       ENDDO
 
       DEALLOCATE(KTEMP)
-
 
 !     DETERMINE IPROCFROM, KLENBOT and KLENTOP
       DO IP=1,NPR
@@ -1824,21 +1848,20 @@
           ENDIF
 
           IF(IRANK.EQ.IREAD) THEN
-            ALLOCATE(RCOMBUF_S(MPLENGTH,NPR))
-          ELSE
-            ALLOCATE(RCOMBUF_R(MPLENGTH))
+            ALLOCATE(RCOMBUF_S(MPLENGTH*NPR))
           ENDIF
+          ALLOCATE(RCOMBUF_R(MPLENGTH))
 
           IF(IRANK.EQ.IREAD) THEN
 !           SEND TO OTHER PE'S
 
 !           FILL THE SEND BUFFER
             DO IP=1,NPR
-              KCOUNT=0
+              KCOUNT=(IP-1)*MPLENGTH
               DO IC=1,2
                 DO IJ=NSTART(IP),NEND(IP)
                   KCOUNT=KCOUNT+1
-                  RCOMBUF_S(KCOUNT,IP)=WLAT(IJ,IC)
+                  RCOMBUF_S(KCOUNT)=WLAT(IJ,IC)
                 ENDDO
               ENDDO
 
@@ -1846,20 +1869,20 @@
                 DO ICR=1,4
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT,IP)=WCOR(IJ,ICR)
+                    RCOMBUF_S(KCOUNT)=WCOR(IJ,ICR)
                   ENDDO
                 ENDDO
               ELSE IF(IPROPAGS.EQ.1) THEN
                 DO IC=1,2
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT,IP)=WRLAT(IJ,IC)
+                    RCOMBUF_S(KCOUNT)=WRLAT(IJ,IC)
                   ENDDO
                 ENDDO
                 DO IC=1,2
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    RCOMBUF_S(KCOUNT,IP)=WRLON(IJ,IC)
+                    RCOMBUF_S(KCOUNT)=WRLON(IJ,IC)
                   ENDDO
                 ENDDO
               ENDIF
@@ -1874,35 +1897,14 @@
               DEALLOCATE(WCOR)
             ENDIF
 
-!           SEND NON BLOCKING THE BUFFERS
-            CALL GSTATS(694,0)
-            IPCOUNT=0
-            DO IP=1,NPR
-              IF(IP.NE.IREAD) THEN
-                IPCOUNT=IPCOUNT+1
-                CALL MPL_SEND(RCOMBUF_S(1:MPLENGTH,IP),
-     &           KDEST=IP,KTAG=ITAG,
-     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &           KREQUEST=ISENDREQ(IPCOUNT),
-     &           CDSTRING='MPDECOMP 1:')
-              ENDIF
-            ENDDO
-            CALL GSTATS(694,1)
-
-          ELSE
-!           RECEIVE FROM PE IREAD 
-            CALL GSTATS(694,0)
-            CALL MPL_RECV(RCOMBUF_R(1:MPLENGTH),
-     &       KSOURCE=IREAD,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &       KMP_TYPE=JP_BLOCKING_STANDARD,
-     &       CDSTRING='MPDECOMP 1:')
-            IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR in MPDECOMP 1:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &      ('MPL_RECV ERROR in MPDECOMP 1 MISMATCHED TAGS' )
-            CALL GSTATS(694,1)
           ENDIF
+
+          CALL GSTATS(694,0)
+          ICOUNTS(:)=MPLENGTH
+          CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S,
+     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+          CALL GSTATS(694,1)
+
 
 !         KEEP THE RELEVANT PART OF WLAT
           ALLOCATE(WLAT(NSTART(IRANK):NEND(IRANK),2))
@@ -1914,11 +1916,11 @@
           ENDIF
 
           IF(IRANK.EQ.IREAD) THEN
-            KCOUNT=0
+            KCOUNT=(IRANK-1)*MPLENGTH
             DO IC=1,2
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 KCOUNT=KCOUNT+1
-                WLAT(IJ,IC)=RCOMBUF_S(KCOUNT,IRANK)
+                WLAT(IJ,IC)=RCOMBUF_S(KCOUNT)
               ENDDO
             ENDDO
 
@@ -1926,20 +1928,20 @@
               DO ICR=1,4
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  WCOR(IJ,ICR)=RCOMBUF_S(KCOUNT,IRANK)
+                  WCOR(IJ,ICR)=RCOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
             ELSE IF(IPROPAGS.EQ.1) THEN
               DO IC=1,2
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  WRLAT(IJ,IC)=RCOMBUF_S(KCOUNT,IRANK)
+                  WRLAT(IJ,IC)=RCOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
               DO IC=1,2
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  WRLON(IJ,IC)=RCOMBUF_S(KCOUNT,IRANK)
+                  WRLON(IJ,IC)=RCOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
             ENDIF
@@ -1975,15 +1977,6 @@
             ENDIF
           ENDIF
 
-!         WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!         --------------------------------------
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(694,0)
-            CALL MPL_WAIT(RCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &              CDSTRING='WAIT IN MPDECOMP 1:')
-            CALL GSTATS(694,1)
-          ENDIF
-
           IF(ALLOCATED(RCOMBUF_S)) DEALLOCATE(RCOMBUF_S)
           IF(ALLOCATED(RCOMBUF_R)) DEALLOCATE(RCOMBUF_R)
 
@@ -1998,10 +1991,9 @@
         IF(NPR.GT.1) THEN
           MPLENGTH=2*NFRE*MAXLEN
           IF(IRANK.EQ.IREAD) THEN
-            ALLOCATE(KCOMBUF_S(MPLENGTH,NPR))
-          ELSE
-            ALLOCATE(KCOMBUF_R(MPLENGTH))
+            ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
           ENDIF
+          ALLOCATE(ICOMBUF_R(MPLENGTH))
         ENDIF
 
 !       READING KOBSLAT
@@ -2031,12 +2023,12 @@
           IF(NPR.GT.1) THEN
 !           FILL THE SEND BUFFER
             DO IP=1,NPR
-              KCOUNT=0
+              KCOUNT=(IP-1)*MPLENGTH
               DO IC=1,2
                 DO M=1,NFRE
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    KCOMBUF_S(KCOUNT,IP)=KOBSLAT(IJ,M,IC)
+                    ICOMBUF_S(KCOUNT)=KOBSLAT(IJ,M,IC)
                   ENDDO
                 ENDDO
               ENDDO
@@ -2044,51 +2036,25 @@
 
             DEALLOCATE(KOBSLAT)
 
-!           SEND NON BLOCKING THE BUFFERS
-            CALL GSTATS(694,0)
-            IPCOUNT=0
-            DO IP=1,NPR
-              IF(IP.NE.IREAD) THEN
-                IPCOUNT=IPCOUNT+1
-                CALL MPL_SEND(KCOMBUF_S(1:MPLENGTH,IP),
-     &           KDEST=IP,KTAG=ITAG,
-     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &           KREQUEST=ISENDREQ(IPCOUNT),
-     &           CDSTRING='MPDECOMP SENDING KOBSLAT:')
-              ENDIF
-            ENDDO
-            CALL GSTATS(694,1)
-
-          ENDIF
-
-        ELSE
-!         RECEIVE FROM PE IREAD 
-          IF(NPR.GT.1) THEN
-            CALL GSTATS(694,0)
-            CALL MPL_RECV(KCOMBUF_R(1:MPLENGTH),
-     &       KSOURCE=IREAD,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &       KMP_TYPE=JP_BLOCKING_STANDARD,
-     &       CDSTRING='MPDECOMP RECEIVING KOBSLAT:')
-            IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR in MPDECOMP 2:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &      ('MPL_RECV ERROR in MPDECOMP 2 MISMATCHED TAGS' )
-            CALL GSTATS(694,1)
-
           ENDIF
         ENDIF
+
+        CALL GSTATS(694,0)
+        ICOUNTS(:)=MPLENGTH
+        CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
+     &   KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+        CALL GSTATS(694,1)
 
         IF(NPR.GT.1) THEN
 !       KEEP THE RELEVANT PART OF KOBSLAT
           ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
           IF(IRANK.EQ.IREAD) THEN
-            KCOUNT=0
+            KCOUNT=(IRANK-1)*MPLENGTH
             DO IC=1,2
               DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  KOBSLAT(IJ,M,IC)=KCOMBUF_S(KCOUNT,IRANK)
+                  KOBSLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
             ENDDO
@@ -2098,24 +2064,12 @@
               DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  KOBSLAT(IJ,M,IC)=KCOMBUF_R(KCOUNT)
+                  KOBSLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
                 ENDDO
               ENDDO
             ENDDO
           ENDIF
         ENDIF
-
-!       WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!       --------------------------------------
-        IF(NPR.GT.1) THEN
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(694,0)
-            CALL MPL_WAIT(KCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &              CDSTRING='WAIT IN MPDECOMP 2:')
-            CALL GSTATS(694,1)
-          ENDIF
-        ENDIF
-
 
 !       READING KOBSLON
 !       ---------------
@@ -2143,12 +2097,12 @@
           IF(NPR.GT.1) THEN
 !           FILL THE SEND BUFFER
             DO IP=1,NPR
-              KCOUNT=0
+              KCOUNT=(IP-1)*MPLENGTH
               DO IC=1,2
                 DO M=1,NFRE
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    KCOMBUF_S(KCOUNT,IP)=KOBSLON(IJ,M,IC)
+                    ICOMBUF_S(KCOUNT)=KOBSLON(IJ,M,IC)
                   ENDDO
                 ENDDO
               ENDDO
@@ -2156,51 +2110,25 @@
 
             DEALLOCATE(KOBSLON)
 
-!           SEND NON BLOCKING THE BUFFERS
-            CALL GSTATS(694,0)
-            IPCOUNT=0
-            DO IP=1,NPR
-              IF(IP.NE.IREAD) THEN
-                IPCOUNT=IPCOUNT+1
-                CALL MPL_SEND(KCOMBUF_S(1:MPLENGTH,IP),
-     &           KDEST=IP,KTAG=ITAG,
-     &           KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &           KREQUEST=ISENDREQ(IPCOUNT),
-     &           CDSTRING='MPDECOMP SENDING KOBSLON:')
-              ENDIF
-            ENDDO
-            CALL GSTATS(694,1)
-
-          ENDIF
-
-        ELSE
-!         RECEIVE FROM PE IREAD 
-          IF(NPR.GT.1) THEN
-            CALL GSTATS(694,0)
-            CALL MPL_RECV(KCOMBUF_R(1:MPLENGTH),
-     &       KSOURCE=IREAD,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &       KMP_TYPE=JP_BLOCKING_STANDARD,
-     &       CDSTRING='MPDECOMP RECEIVING KOBSLON:')
-            IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &       ('MPL_RECV ERROR in MPDECOMP 3:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &      ('MPL_RECV ERROR in MPDECOMP 3 MISMATCHED TAGS' )
-            CALL GSTATS(694,1)
-
           ENDIF
         ENDIF
+
+        CALL GSTATS(694,0)
+        ICOUNTS(:)=MPLENGTH
+        CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
+     &   KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+        CALL GSTATS(694,1)
 
         IF(NPR.GT.1) THEN
 !       KEEP THE RELEVANT PART OF KOBSLON
           ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
           IF(IRANK.EQ.IREAD) THEN
-            KCOUNT=0
+            KCOUNT=(IRANK-1)*MPLENGTH
             DO IC=1,2
               DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  KOBSLON(IJ,M,IC)=KCOMBUF_S(KCOUNT,IRANK)
+                  KOBSLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
             ENDDO
@@ -2210,21 +2138,10 @@
               DO M=1,NFRE
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
-                  KOBSLON(IJ,M,IC)=KCOMBUF_R(KCOUNT)
+                  KOBSLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
                 ENDDO
               ENDDO
             ENDDO
-          ENDIF
-        ENDIF
-
-!       WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!       --------------------------------------
-        IF(NPR.GT.1) THEN
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(694,0)
-            CALL MPL_WAIT(KCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &              CDSTRING='WAIT IN MPDECOMP 3:')
-            CALL GSTATS(694,1)
           ENDIF
         ENDIF
 
@@ -2259,12 +2176,12 @@
             IF(NPR.GT.1) THEN
 !             FILL THE SEND BUFFER
               DO IP=1,NPR
-                KCOUNT=0
+                KCOUNT=(IP-1)*MPLENGTH
                 DO IC=1,2
                   DO M=1,NFRE
                     DO IJ=NSTART(IP),NEND(IP)
                       KCOUNT=KCOUNT+1
-                      KCOMBUF_S(KCOUNT,IP)=KOBSRLAT(IJ,M,IC)
+                      ICOMBUF_S(KCOUNT)=KOBSRLAT(IJ,M,IC)
                     ENDDO
                   ENDDO
                 ENDDO
@@ -2272,51 +2189,25 @@
 
               DEALLOCATE(KOBSRLAT)
 
-!             SEND NON BLOCKING THE BUFFERS
-              CALL GSTATS(694,0)
-              IPCOUNT=0
-              DO IP=1,NPR
-                IF(IP.NE.IREAD) THEN
-                  IPCOUNT=IPCOUNT+1
-                  CALL MPL_SEND(KCOMBUF_S(1:MPLENGTH,IP),
-     &             KDEST=IP,KTAG=ITAG,
-     &             KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &             KREQUEST=ISENDREQ(IPCOUNT),
-     &             CDSTRING='MPDECOMP SENDING KOBSRLAT:')
-                ENDIF
-              ENDDO
-              CALL GSTATS(694,1)
-
-            ENDIF
-
-          ELSE
-!           RECEIVE FROM PE IREAD 
-            IF(NPR.GT.1) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_RECV(KCOMBUF_R(1:MPLENGTH),
-     &         KSOURCE=IREAD,KTAG=ITAG,
-     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &         KMP_TYPE=JP_BLOCKING_STANDARD,
-     &         CDSTRING='MPDECOMP RECEIVING KOBSRLAT:')
-              IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &         ('MPL_RECV ERROR in MPDECOMP 4:MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in MPDECOMP 4 MISMATCHED TAGS' )
-              CALL GSTATS(694,1)
-
             ENDIF
           ENDIF
+
+          CALL GSTATS(694,0)
+          ICOUNTS(:)=MPLENGTH
+          CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
+     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+          CALL GSTATS(694,1)
 
           IF(NPR.GT.1) THEN
 !         KEEP THE RELEVANT PART OF KOBSRLAT
             ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
             IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=0
+              KCOUNT=(IRANK-1)*MPLENGTH
               DO IC=1,2
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSRLAT(IJ,M,IC)=KCOMBUF_S(KCOUNT,IRANK)
+                    KOBSRLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
@@ -2326,21 +2217,10 @@
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSRLAT(IJ,M,IC)=KCOMBUF_R(KCOUNT)
+                    KOBSRLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
-            ENDIF
-          ENDIF
-
-!         WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!         --------------------------------------
-          IF(NPR.GT.1) THEN
-            IF(IRANK.EQ.IREAD) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_WAIT(KCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &                CDSTRING='WAIT IN MPDECOMP 4:')
-              CALL GSTATS(694,1)
             ENDIF
           ENDIF
 
@@ -2379,12 +2259,12 @@
             IF(NPR.GT.1) THEN
 !             FILL THE SEND BUFFER
               DO IP=1,NPR
-                KCOUNT=0
+                KCOUNT=(IP-1)*MPLENGTH
                 DO IC=1,2
                   DO M=1,NFRE
                     DO IJ=NSTART(IP),NEND(IP)
                       KCOUNT=KCOUNT+1
-                      KCOMBUF_S(KCOUNT,IP)=KOBSRLON(IJ,M,IC)
+                      ICOMBUF_S(KCOUNT)=KOBSRLON(IJ,M,IC)
                     ENDDO
                   ENDDO
                 ENDDO
@@ -2392,51 +2272,25 @@
 
               DEALLOCATE(KOBSRLON)
 
-!             SEND NON BLOCKING THE BUFFERS
-              CALL GSTATS(694,0)
-              IPCOUNT=0
-              DO IP=1,NPR
-                IF(IP.NE.IREAD) THEN
-                  IPCOUNT=IPCOUNT+1
-                  CALL MPL_SEND(KCOMBUF_S(1:MPLENGTH,IP),
-     &            KDEST=IP,KTAG=ITAG,
-     &             KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &             KREQUEST=ISENDREQ(IPCOUNT),
-     &             CDSTRING='MPDECOMP SENDING KOBSRLON:')
-                ENDIF
-              ENDDO
-              CALL GSTATS(694,1)
-
-            ENDIF
-
-          ELSE
-!           RECEIVE FROM PE IREAD 
-            IF(NPR.GT.1) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_RECV(KCOMBUF_R(1:MPLENGTH),
-     &         KSOURCE=IREAD,KTAG=ITAG,
-     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &         KMP_TYPE=JP_BLOCKING_STANDARD,
-     &         CDSTRING='MPDECOMP RECEIVING KOBSRLON:')
-              IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &         ('MPL_RECV ERROR in MPDECOMP 5:MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in MPDECOMP 5 MISMATCHED TAGS' )
-              CALL GSTATS(694,1)
-
             ENDIF
           ENDIF
+
+          CALL GSTATS(694,0)
+          ICOUNTS(:)=MPLENGTH
+          CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
+     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+          CALL GSTATS(694,1)
 
           IF(NPR.GT.1) THEN
 !         KEEP THE RELEVANT PART OF KOBSRLON
             ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
             IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=0
+              KCOUNT=(IRANK-1)*MPLENGTH
               DO IC=1,2
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSRLON(IJ,M,IC)=KCOMBUF_S(KCOUNT,IRANK)
+                    KOBSRLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
@@ -2446,21 +2300,10 @@
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSRLON(IJ,M,IC)=KCOMBUF_R(KCOUNT)
+                    KOBSRLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
-            ENDIF
-          ENDIF
-
-!         WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!         --------------------------------------
-          IF(NPR.GT.1) THEN
-            IF(IRANK.EQ.IREAD) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_WAIT(KCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &                CDSTRING='WAIT IN MPDECOMP 5:')
-              CALL GSTATS(694,1)
             ENDIF
           ENDIF
 
@@ -2485,12 +2328,11 @@
           IF(NPR.GT.1) THEN
             MPLENGTH=4*NFRE*MAXLEN
             IF(IRANK.EQ.IREAD) THEN
-              IF(ALLOCATED(KCOMBUF_S)) DEALLOCATE(KCOMBUF_S)
-              ALLOCATE(KCOMBUF_S(MPLENGTH,NPR))
-            ELSE
-              IF(ALLOCATED(KCOMBUF_R)) DEALLOCATE(KCOMBUF_R)
-              ALLOCATE(KCOMBUF_R(MPLENGTH))
+              IF(ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
+              ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
             ENDIF
+            IF(ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
+            ALLOCATE(ICOMBUF_R(MPLENGTH))
           ENDIF
           IF(IRANK.EQ.IREAD) THEN
 !           RELABELLING OF THE ARRAY
@@ -2510,12 +2352,12 @@
             IF(NPR.GT.1) THEN
 !             FILL THE SEND BUFFER
               DO IP=1,NPR
-                KCOUNT=0
+                KCOUNT=(IP-1)*MPLENGTH
                 DO IC=1,4
                   DO M=1,NFRE
                     DO IJ=NSTART(IP),NEND(IP)
                       KCOUNT=KCOUNT+1
-                      KCOMBUF_S(KCOUNT,IP)=KOBSCOR(IJ,M,IC)
+                      ICOMBUF_S(KCOUNT)=KOBSCOR(IJ,M,IC)
                     ENDDO
                   ENDDO
                 ENDDO
@@ -2523,51 +2365,25 @@
 
               DEALLOCATE(KOBSCOR)
 
-!             SEND NON BLOCKING THE BUFFERS
-              CALL GSTATS(694,0)
-              IPCOUNT=0
-              DO IP=1,NPR
-                IF(IP.NE.IREAD) THEN
-                  IPCOUNT=IPCOUNT+1
-                  CALL MPL_SEND(KCOMBUF_S(1:MPLENGTH,IP),
-     &             KDEST=IP,KTAG=ITAG,
-     &             KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &             KREQUEST=ISENDREQ(IPCOUNT),
-     &             CDSTRING='MPDECOMP SENDING KOBSCOR:')
-                ENDIF
-              ENDDO
-              CALL GSTATS(694,1)
-
-            ENDIF
-
-          ELSE
-!           RECEIVE FROM PE IREAD 
-            IF(NPR.GT.1) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_RECV(KCOMBUF_R(1:MPLENGTH),
-     &         KSOURCE=IREAD,KTAG=ITAG,
-     &         KOUNT=KRCOUNT,KRECVTAG=KRTAG,
-     &         KMP_TYPE=JP_BLOCKING_STANDARD,
-     &         CDSTRING='MPDECOMP RECEIVING KOBSCOR:')
-              IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
-     &         ('MPL_RECV ERROR in MPDECOMP 6:MISMATCHED MSG LENGTH')
-              IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR in MPDECOMP 6 MISMATCHED TAGS' )
-              CALL GSTATS(694,1)
-
             ENDIF
           ENDIF
+
+          CALL GSTATS(694,0)
+          ICOUNTS(:)=MPLENGTH
+          CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
+     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+          CALL GSTATS(694,1)
 
           IF(NPR.GT.1) THEN
 !         KEEP THE RELEVANT PART OF KOBSCOR
             ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
             IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=0
+              KCOUNT=(IRANK-1)*MPLENGTH
               DO IC=1,4
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSCOR(IJ,M,IC)=KCOMBUF_S(KCOUNT,IRANK)
+                    KOBSCOR(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
@@ -2577,21 +2393,10 @@
                 DO M=1,NFRE
                   DO IJ=NSTART(IRANK),NEND(IRANK)
                     KCOUNT=KCOUNT+1
-                    KOBSCOR(IJ,M,IC)=KCOMBUF_R(KCOUNT)
+                    KOBSCOR(IJ,M,IC)=ICOMBUF_R(KCOUNT)
                   ENDDO
                 ENDDO
               ENDDO
-            ENDIF
-          ENDIF
-
-!         WAIT ANY OUTSTANDING SENDS TO COMPLETE
-!         --------------------------------------
-          IF(NPR.GT.1) THEN
-            IF(IRANK.EQ.IREAD) THEN
-              CALL GSTATS(694,0)
-              CALL MPL_WAIT(KCOMBUF_S(1:MPLENGTH,1),KREQUEST=ISENDREQ,
-     &                CDSTRING='WAIT IN MPDECOMP 5:')
-              CALL GSTATS(694,1)
             ENDIF
           ENDIF
 
@@ -2600,8 +2405,8 @@
         ENDIF
 
 
-        IF(ALLOCATED(KCOMBUF_S)) DEALLOCATE(KCOMBUF_S)
-        IF(ALLOCATED(KCOMBUF_R)) DEALLOCATE(KCOMBUF_R)
+        IF(ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
+        IF(ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
 
         IF(.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
 
@@ -2657,6 +2462,7 @@
       IF (ALLOCATED(OBSLAT)) DEALLOCATE(OBSLAT)
       ALLOCATE(OBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
 
+      CALL GSTATS(1497,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
       DO ICC=1,2
         IC=ICC
@@ -2689,6 +2495,7 @@
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
+      CALL GSTATS(1497,1)
 
       DEALLOCATE(KOBSLON)
       DEALLOCATE(KOBSLAT)
@@ -2700,6 +2507,7 @@
 !       NOTE: THE VALUE OF OBSRLAT WILL NOT BE RESET IN THE FIRST
         IF(ALLOCATED(OBSRLAT)) DEALLOCATE(OBSRLAT)
         ALLOCATE(OBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
         DO ICC=1,2
           IC=ICC
@@ -2733,6 +2541,7 @@
 
         ENDDO
 !$OMP END PARALLEL DO
+        CALL GSTATS(1497,1)
         DEALLOCATE(KOBSRLON)
         DEALLOCATE(KOBSRLAT)
       ENDIF
@@ -2740,6 +2549,7 @@
       IF(IPROPAGS.EQ.2) THEN
         IF(ALLOCATED(OBSCOR)) DEALLOCATE(OBSCOR)
         ALLOCATE(OBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
+        CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
         DO ICC=1,4
           IC=ICC
@@ -2758,6 +2568,7 @@
           ENDDO
         ENDDO
 !$OMP END PARALLEL DO
+        CALL GSTATS(1497,1)
         DEALLOCATE(KOBSCOR)
       ENDIF
 

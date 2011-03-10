@@ -158,7 +158,7 @@
         IF (ITEST.GT.1)
      &    WRITE(IU06,*) 'SUB OUTWSPEC: MPL_ALLTOALLV DONE' 
 
-        CALL GSTATS(1433,0)
+        CALL GSTATS(1496,0)
         NPROMA=NEND(NPROC)/NWAM_BLKS+1
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
         DO JKGLO=1,NEND(NPROC),NPROMA
@@ -171,7 +171,7 @@
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-        CALL GSTATS(1433,1)
+        CALL GSTATS(1496,1)
 
 !-----------------------------------------------------------------------
 
@@ -196,14 +196,10 @@
             ENDIF
           ENDIF
 
-          CALL GSTATS(1704,0)
-
           CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                  ITABLE, IPARAM, 0, IK , IM, 
      &                  CDATE, IFCST, MARSTYPE,
      &                  LFDBIOOUT, CFDB2DSP, NWFDBREF, LFDBOPEN,IUOUT)
-
-          CALL GSTATS(1704,1)
 
           IF (.NOT.LFDBIOOUT) THEN
             IF(IM.EQ.NFRE.AND.IK.EQ.NANG) THEN
