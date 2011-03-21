@@ -252,7 +252,7 @@
           ISTAT = ISETVALFDB(KFDB, 'refdate', CDATEREF)
         ELSE IF (ISTREAM == 1078 .OR.
      &           ISTREAM == 1079 ) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'date',C12)
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
           HDATE=C12(1:8)
           ISTAT = ISETVALFDB(KFDB,'hdate', HDATE)
         ENDIF
@@ -309,7 +309,7 @@
       ISTAT = ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
 
 !     DATE:
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'date',C12)
+      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
       CLDATE=C12(1:8)
 !!!   For VAREPS hindcast we need to reset CLDATE to the reference date
 !!!   if non zero

@@ -326,7 +326,7 @@
 !     --------------------------------------------
 
 !     START DATE. 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'date',IYYYYMMDD)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate',IYYYYMMDD)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time',IHHMM)
 
       WRITE(CDATE(1:12),'(I8.8,I4.4)') IYYYYMMDD,IHHMM 
