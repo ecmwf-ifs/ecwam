@@ -339,14 +339,8 @@
 !         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','s')
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
-
-          ISTEP_HRS=ISTEP
           ISTEP=ISTEP-KCOUSTEP
-          IF(ISTEP.EQ.0) THEN 
-            ISTEP_HRS=0
-          ELSE
-            ISTEP_HRS=ISTEP_HRS/3600
-          ENDIF
+          ISTEP_HRS=ISTEP/3600
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP_HRS)
