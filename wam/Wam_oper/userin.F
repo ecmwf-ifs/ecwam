@@ -1274,11 +1274,20 @@
         IF ( (LWCOU .AND. LWCUR) .OR.
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
           WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'
-          IF (LRELWIND) THEN
-            WRITE(IU06,*) ' HENCE, RELATIVE WINDS WILL BE USED, BUT'
-            WRITE(IU06,*) ' WITH A REDUCTION FACTOR OF ',RWFAC 
+          IF ( LWCOU ) THEN 
+            IF (LRELWIND) THEN
+              WRITE(IU06,*) ' THE WINDS ARE RELATIVE TO THE CURRENT.'
+            ELSE
+              WRITE(IU06,*) ' BUT ABSOLUTE WINDS WILL BE MODIFIED'
+              WRITE(IU06,*) ' WITH A FACTOR OF ',-RWFAC 
+            ENDIF
           ELSE
-            WRITE(IU06,*) ' BUT ABSOLUTE WINDS WILL BE USED.'
+            IF (LRELWIND) THEN
+              WRITE(IU06,*) ' HENCE, RELATIVE WINDS WILL BE USED, BUT'
+              WRITE(IU06,*) ' WITH A REDUCTION FACTOR OF ',RWFAC 
+            ELSE
+              WRITE(IU06,*) ' BUT ABSOLUTE WINDS WILL BE USED.'
+            ENDIF
           ENDIF
         ENDIF
       ELSE

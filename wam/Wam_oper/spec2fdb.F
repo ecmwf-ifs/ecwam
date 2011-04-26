@@ -623,7 +623,6 @@
           CLMSG='ENCODING ZSEC4OUT'
           IF(IRET.GT.0) GOTO 3500
 
-          DEALLOCATE(ZSEC4OUT)
 
 !         OUTPUT
 !         ------
@@ -653,6 +652,8 @@
           ENDIF
 
         ENDIF
+
+        IF(ALLOCATED(ZSEC4OUT)) DEALLOCATE(ZSEC4OUT)
 
 !-----------------------------------------------------------------------
 

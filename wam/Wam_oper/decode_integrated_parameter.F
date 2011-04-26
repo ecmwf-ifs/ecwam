@@ -34,7 +34,7 @@
 !                        messages (!!! it can be big)
 
  
-!     LIBRARY : FORTRAN 90, GRIB_API ($GRIB_API_INCLUDE $GRIB_API_LIB) and $EMOSLIB
+!     LIBRARY : FORTRAN 90, GRIB_API ($GRIB_API_INCLUDE $GRIB_API_LIB)
 !     -------
 
 !     OUTPUT FILE FORMAT :
@@ -235,7 +235,7 @@
         CALL GRIB_GET(IGRIB,'iDirectionIncrementInDegrees',XDELLO)
 
 
-        CALL GRIB_GET(IGRIB,'date',IYYYYMMDD)
+        CALL GRIB_GET(IGRIB,'dataDate',IYYYYMMDD)
         CALL GRIB_GET(IGRIB,'time',IHHMM)
         IHH=IHHMM/100
 
@@ -369,7 +369,7 @@
 
 !#######################################################################
       FUNCTION getclo(yaoptions, yaargument)
-      INTEGER getclo, getcla, rtb
+      INTEGER getclo, getcla, my_rtb
       CHARACTER*   1 yolastarg
       CHARACTER* (*) yaoptions, yaargument
       CHARACTER* 120 arg
@@ -383,10 +383,10 @@
 !-->  PRINT*,'-------------getclo---------------'
 !-->  PRINT*,' ###',arg,'###'
 
-      iol=rtb(arg)
+      iol=my_rtb(arg)
 !-->  PRINT*,' iol: ', iol
       IF (iol .EQ. 2 .AND. arg(1:1) .EQ. '-' .AND. ivarg .EQ. 0 ) THEN
-        iol = rtb(yaoptions)
+        iol = my_rtb(yaoptions)
 !-->    PRINT*,' iol 2',iol,' options: ', yaoptions
         DO jl=1,iol
           getclo = 0
@@ -439,3 +439,62 @@
 
       RETURN
       END
+C Copyright 1981-2007 ECMWF
+C 
+C Licensed under the GNU Lesser General Public License which
+C incorporates the terms and conditions of version 3 of the GNU
+C General Public License.
+C See LICENSE and gpl-3.0.txt for details.
+C
+
+
+      INTEGER FUNCTION MY_RTB (CHAR)
+C
+C---->
+C*
+C*    NAME      : MY_RTB
+C*
+C*    FUNCTION  : COUNT THE NUMBER OF CHARACTERS IN A CHARACTER
+C*                STRING, EXCLUDING TRAILING SPACES.
+C*
+C*    INPUT     : CHAR - CHARACTER STRING
+C*
+C*    OUTPUT    : MY_RTB  - NO OF CHARACTERS
+C*
+C*    GENERAL   : MY_RTB CALLS  -----
+C*
+C*    AUTHOR    : J.HENNESSY  15.4.85
+C*
+C     ---------------------------------------------------------------
+C----<
+C
+      CHARACTER*(*) CHAR
+C
+      J = LEN (CHAR)
+C
+C     No trailing blanks.
+C
+      IF (CHAR(J:J).NE.' ')
+     C     THEN
+               MY_RTB = J
+               RETURN
+           ENDIF
+C
+C     String with trailing blanks.
+C
+      DO 100 I = J,1,-1
+         IF (CHAR(I:I).NE.' ')
+     C          THEN
+                    MY_RTB = I
+                    RETURN
+                ENDIF
+  100 CONTINUE
+C
+C     String consists of only blanks.
+C
+      MY_RTB = 0
+C
+      RETURN
+      END
+
+

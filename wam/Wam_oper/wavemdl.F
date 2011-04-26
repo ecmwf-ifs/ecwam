@@ -723,7 +723,7 @@
               ENDIF
             ENDDO
             DO JF=1,NWVFIELDS
-              FAVG(JF)=FAVG(JF)/NTOT
+              FAVG(JF)=FAVG(JF)/MAX(NTOT,1)
             ENDDO
           ELSE
             NTOT=N_MASK_OUT

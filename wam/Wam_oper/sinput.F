@@ -136,11 +136,12 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
-          TEMPD(IJ,K) = 1.D0/TEMP1(IJ,K)
           IF(TEMP1(IJ,K) .GT. 0.01) THEN
             LZ(IJ,K) = .TRUE.
+            TEMPD(IJ,K) = 1.D0/TEMP1(IJ,K)
           ELSE
             LZ(IJ,K) = .FALSE.
+            TEMPD(IJ,K) = 1.D0
           ENDIF
         ENDDO
       ENDDO

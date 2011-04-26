@@ -352,7 +352,7 @@
           ENDIF
 
           CALL GSTATS(622,0)
-          CALL MPL_BARRIER(CDSTRING='READWIND: KGRIB ')
+          IF(LMESSPASS) CALL MPL_BARRIER(CDSTRING='READWIND: KGRIB ')
 
 !         SEND GRIB DATA TO THE OTHER PE'S
 !         --------------------------------
