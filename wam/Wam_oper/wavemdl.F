@@ -153,16 +153,23 @@
 
       CHARACTER*14 :: CBEGDAT, CDTASS
       CHARACTER*12 :: FLABEL(NWVFIELDS)
+      CHARACTER(LEN=2) :: CCLASS, CTYPE
+      CHARACTER(LEN=4) :: CSTREAM
+      CHARACTER(LEN=4) :: CEXPVER
+      CHARACTER(LEN=12) :: C12
+
 
       LOGICAL :: LWCUR
       LOGICAL :: LWSTOKES
       LOGICAL :: LDSTOP, LDWRRE, LDRESTARTED, LDWCOUNORMS
       LOGICAL :: LFRST
+      LOGICAL :: LLGRAPI
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: FRSTIME
 
       DATA LFRST /.TRUE./
+      DATA LLGRAPI /.TRUE./
 
 ! --------------------------------------------------------------------- 
 
@@ -197,7 +204,8 @@
           CALL ABORT1
         ENDIF
 
-        IF (ITEST.GE.1) THEN
+        IF (LLGRAPI .OR. ITEST.GE.1) THEN
+           WRITE(IU06,*)'  '
            WRITE (IU06,*) ' WAVEMDL: GRIB HANDLE FROM IFS'
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'dataDate',IYYYYMMDD)
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
@@ -206,6 +214,23 @@
            WRITE (IU06,*) ' DATE: ',IYYYYMMDD,' TIME : ',IHHMM
            WRITE (IU06,*) ' STEP: ',STEP
            WRITE (IU06,*) ' ISTEP: ',ISTEP
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
+           IF(IRET.NE.0) THEN
+             CEXPVER='****'
+           ELSE
+             CEXPVER=C12(1:4)
+           ENDIF
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'class',C12)
+           CCLASS=C12(1:2)
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',C12)
+           CSTREAM=C12(1:4)
+           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'type',C12)
+           CTYPE=C12(1:2)
+           WRITE(IU06,*)' EXPVER=', CEXPVER,
+     &                  ' CLASS=', CCLASS,
+     &                  ' STREAM=', CSTREAM,
+     &                  ' TYPE=', CTYPE
+           LLGRAPI=.FALSE.
         ENDIF
 
         DO IC=1,NKSEK1
