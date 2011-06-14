@@ -48,6 +48,7 @@
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NIBLO) :: FIELD
+      REAL,ALLOCATABLE,DIMENSION(:) :: ZSENDBUF
 !----------------------------------------------------------------------
 
       INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
@@ -65,11 +66,18 @@
 
         ENDDO
 
-        CALL MPL_GATHERV(FIELD(NSTART(IRANK):NEND(IRANK)),
+        ALLOCATE(ZSENDBUF(NSTART(IRANK):NEND(IRANK)))
+        DO IJ=NSTART(IRANK),NEND(IRANK)
+          ZSENDBUF(IJ)=FIELD(IJ)
+        ENDDO
+
+        CALL MPL_GATHERV(ZSENDBUF(NSTART(IRANK):NEND(IRANK)),
      &                   KRECVCOUNTS=KRECVCOUNTS,
      &                   PRECVBUF=FIELD(1:NIBLO),
      &                   KROOT=IRECV,
      &                   CDSTRING='MPGATHERSCFLD:')
+
+        DEALLOCATE(ZSENDBUF)
         CALL GSTATS(674,1)
 
       ENDIF
