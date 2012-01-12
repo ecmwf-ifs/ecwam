@@ -49,6 +49,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN      
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
@@ -69,6 +70,7 @@
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
       REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL, DIMENSION(IJS:IJL) :: DUM1, DUM2, DUM3, DUM4 
 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
@@ -108,7 +110,8 @@
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
       CALL STRESSO (FL1,IJS,IJL,THWNEW,USNEW,Z0NEW,
-     &              ROAIRN, TAUW,SL, MIJ)
+     &              ROAIRN,TAUW, DUM1, DUM2, 
+     &              DUM3, DUM4,SL,MIJ,.FALSE.)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: STRESSO CALLED'

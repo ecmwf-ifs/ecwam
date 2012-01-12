@@ -56,10 +56,10 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
+      INTEGER,DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
       REAL,DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
-      REAL,DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
       LOGICAL :: LICE2SEA(IJS:IJL)
       REAL ZHOOK_HANDLE

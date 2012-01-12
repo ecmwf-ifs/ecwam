@@ -47,7 +47,6 @@
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNIT  , ONLY : IU15
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
@@ -158,28 +157,32 @@
 
       ELSE
 
-        READ(IU15) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
+        LFILE=0
+        IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+        IUNIT=I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+
+        READ(IUNIT) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
         IF(LL1D .OR. NPROC.EQ.1 ) THEN
           DO IFLD=1,NREAL
-            READ(IU15) RFIELD(:,:,IFLD) 
+            READ(IUNIT) RFIELD(:,:,IFLD) 
           ENDDO
           DO IFLD=1,NINTGR
-          READ(IU15) IFIELD(:,:,IFLD) 
+          READ(IUNIT) IFIELD(:,:,IFLD) 
           ENDDO
         ELSE
 !       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE
 !       RE-LABELLED BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
           DO IFLD=1,NREAL
-            READ(IU15)
+            READ(IUNIT)
      &      ((RFIELD(IJ2NEWIJ(IJ),IG,IFLD),IJ=1,NIBLO),IG=1,NBLO)
           ENDDO
           DO IFLD=1,NINTGR
-            READ(IU15)
+            READ(IUNIT)
      &      ((IFIELD(IJ2NEWIJ(IJ),IG,IFLD),IJ=1,NIBLO),IG=1,NBLO)
           ENDDO
         ENDIF
 
-        CLOSE(IU15)
+        CLOSE(IUNIT)
 
       ENDIF
 

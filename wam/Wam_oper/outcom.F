@@ -23,7 +23,7 @@
 !     -------
 
 !       TO WRITE OUT THE COMPUTED MODULES
-!       (MODULE UBUF IS WRITTEN IN OUTUBUF)
+!       (MODULE UBUF IS WRITTEN IN MUBUF)
 
 !**   INTERFACE.
 !     ----------

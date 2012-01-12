@@ -69,17 +69,17 @@
 
 ! ----------------------------------------------------------------------
 
-
       USE YOWTEXT  , ONLY : LRESTARTED,USERID   ,PATH
 
-
       INTEGER IU06, IUNIT
-      CHARACTER FILEID*3, OPT*1
-
+      CHARACTER OPT*1
+      CHARACTER*3 :: FILEID
+      CHARACTER*160 :: FILENA
+ 
       INTEGER QQNAME
       PARAMETER (QQNAME =  7)
       CHARACTER NAME(QQNAME)*17,
-     &          FILENA*17, IU*8, PLIST*110,
+     &          IU*8, PLIST*110,
      &          CDATE*14, CDATEF*14, CDATEH*10
 
 ! ----------------------------------------------------------------------
@@ -111,16 +111,20 @@
 !*    2. CLOSE UNIT.
 !        -----------
 
-      CLOSE (UNIT=IUNIT, STATUS='KEEP')
+      IF(IUNIT.NE.0) CLOSE (UNIT=IUNIT)
 
 ! ----------------------------------------------------------------------
 
 !*    3.0  CONSTRUCT FILE NAME.
 !          --------------------
 
+      FILENA = ''
+
+      IL = LEN_TRIM(FILEID)
+
       INDEX = ICH
       IF (ICH.EQ.0) THEN
-        FILENA = FILEID
+        FILENA(1:IL) = FILEID(1:IL)
         IF (CDATE.LE.CDATEF) THEN
           CDATEH = CDATE(1:10)
           ISHIFT = 0
@@ -129,8 +133,8 @@
           CALL DIFDATE (CDATEF, CDATE, ISHIFT)
           ISHIFT = ISHIFT/3600
         ENDIF
-        FILENA(4:13) = CDATEH
-        WRITE (FILENA(14:17),'(I4.4)') ISHIFT
+        FILENA(IL+1:IL+10) = CDATEH
+        WRITE (FILENA(IL+11:IL+14),'(I4.4)') ISHIFT
       ELSE
         IF (INDEX.GT.QQNAME) THEN
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
@@ -210,6 +214,8 @@
         WRITE(IU06,*) ' * W A R N I N G in --GSFILE-- '//
      &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '//
      &                 ' RESTART FILES' 
+      ELSEIF (OPT.EQ.'G' .AND. LIP .EQ. 0) THEN
+        IUNIT=I_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -251,14 +257,11 @@
 !         LOCATION.
 !         -----------------------------------------------------------
 
-
-        CALL FILE_TRANSFER(IU06,IUNIT,FILENA,OPT)
+        CALL FILE_TRANSFER(IU06,IUNIT,FILENA(1:LNAME),OPT)
 
       ELSEIF ( LIP .EQ. 0 .AND. OPT .EQ. 'G' ) THEN
         IF (LRESTARTED) THEN
-          CALL FILE_TRANSFER(IU06,IUNIT,FILENA,OPT)
-        ELSE
-          WRITE(IU06,*) ' FILE '//IU(1:LIU)//' EXPECTED TO BE ONLINE'
+          CALL FILE_TRANSFER(IU06,IUNIT,FILENA(1:LNAME),OPT)
         ENDIF
 
       ENDIF

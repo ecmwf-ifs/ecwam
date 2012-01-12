@@ -85,7 +85,7 @@
             Z0       = UST**2*(ALPHA+REAL(L)*DELALP)/G
             OMEGACC  = MAX(OMEGAC,X0*G/UST)
             YC       = OMEGACC*SQRT(Z0/G)
-            DELY     = MAX((1.-YC)/REAL(JTOT),0.)
+            DELY     = MAX((1.-YC)/REAL(JTOT-1),0.)
             DO J=1,JTOT
               Y        = YC+REAL(J-1)*DELY
               OMEGA    = Y*SQRT(G/Z0)

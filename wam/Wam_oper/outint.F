@@ -72,7 +72,7 @@
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
-     &            UCURG    ,VCURG
+     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -229,6 +229,9 @@
         IF (FFLAG(41))CALL MPGATHERGRDFLD(IPFGTBL(41),IRECV,41,VSTOKESG)
         IF (FFLAG(42))CALL MPGATHERGRDFLD(IPFGTBL(42),IRECV,42,UCURG)
         IF (FFLAG(43))CALL MPGATHERGRDFLD(IPFGTBL(43),IRECV,43,VCURG)
+        IF (FFLAG(44))CALL MPGATHERGRDFLD(IPFGTBL(44),IRECV,44,PHIEPSG)
+        IF (FFLAG(45))CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,45,PHIAWG)
+        IF (FFLAG(46))CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,46,TAUOCG)
 
       ENDIF
 
@@ -326,6 +329,12 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(42),IRECV,142,UCURG)
         IF (PFLAG(43).OR.(.NOT.LFDB.AND.GFLAG(43)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(43),IRECV,143,VCURG)
+        IF (PFLAG(44).OR.(.NOT.LFDB.AND.GFLAG(44)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(44),IRECV,144,PHIEPSG)
+        IF (PFLAG(45).OR.(.NOT.LFDB.AND.GFLAG(45)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,145,PHIAWG)
+        IF (PFLAG(46).OR.(.NOT.LFDB.AND.GFLAG(46)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,146,TAUOCG)
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
@@ -396,6 +405,9 @@
             IF (FFLAG(41))WRITE (IU20) VSTOKESG
             IF (FFLAG(42))WRITE (IU20) UCURG
             IF (FFLAG(43))WRITE (IU20) VCURG
+            IF (FFLAG(44))WRITE (IU20) PHIEPSG
+            IF (FFLAG(45))WRITE (IU20) PHIAWG
+            IF (FFLAG(46))WRITE (IU20) TAUOCG
           ENDIF
         ENDIF
 
@@ -586,7 +598,27 @@
      &                 VCURG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-
+        IF (PFLAG(44)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' NORMALIZED ENERGY FLUX TO OCEAN'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 PHIEPSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(45)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' NORMALIZED ENERGY FLUX TO WAVES'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 PHIAWG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(46)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' NORMALIZED MOMENTUM FLUX TO OCEAN'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 TAUOCG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
         ENDIF
       ENDIF
 
@@ -1400,6 +1432,81 @@
      &         IY,IM,ID,IH,IMN,
      &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
      &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+            ENDIF
+          ENDIF
+        ENDIF
+
+!*      NORMALIZED ENERGY FLUX TO OCEAN.
+!       -------------------------------
+
+        IF (GFLAG(44)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(44)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=212
+            ITABLE=140
+            IF(LGRIBAPI_O) THEN
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ELSE
+              CALL GRIBPAC(IU06,IU30,NTENCODE,PHIEPSG,NGX,NGY,IPARAM,
+     &         IY,IM,ID,IH,IMN,
+     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+            ENDIF
+          ENDIF
+        ENDIF
+
+!*      NORMALIZED ENERGY FLUX TO WAVES.
+!       -------------------------------
+
+        IF (GFLAG(45)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(45)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=211
+            ITABLE=140
+            IF(LGRIBAPI_O) THEN
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIAWG,
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ELSE
+              CALL GRIBPAC(IU06,IU30,NTENCODE,PHIAWG,NGX,NGY,IPARAM,
+     &         IY,IM,ID,IH,IMN,
+     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
+            ENDIF
+          ENDIF
+        ENDIF
+
+!*      NORMALIZED ENERGY FLUX TO WAVES.
+!       -------------------------------
+
+        IF (GFLAG(46)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(46)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=214
+            ITABLE=140
+            IF(LGRIBAPI_O) THEN
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TAUOCG,
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ELSE
+              CALL GRIBPAC(IU06,IU30,NTENCODE,TAUOCG,NGX,NGY,IPARAM,
+     &         IY,IM,ID,IH,IMN,
+     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
+     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
             ENDIF
           ENDIF
         ENDIF

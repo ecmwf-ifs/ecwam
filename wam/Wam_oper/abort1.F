@@ -31,9 +31,12 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
       CHARACTER*30 :: CDMESSAGE
+
+      CALL FLUSH(IU06)
 
       CDMESSAGE='!! WAVE MODEL HAS ABORTED !!!!'
       IF(LMESSPASS) THEN

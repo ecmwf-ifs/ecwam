@@ -43,7 +43,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,ZIDLNEW, SL, LLWS)
+!    &                   ROAIRN,ZIDLNEW, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -57,7 +57,7 @@
 !      *ZIDLNEW* - Zi/L  USED FOR GUSTINESS.
 !                  (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
-!         *LLWS* - TRUE WHERE SINPUT IS POSITIVE
+!         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
 
 
 !     METHOD.
@@ -111,7 +111,7 @@
       REAL, DIMENSION(NFRE) :: FAC, CONST
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
       LOGICAL L1,L2,LZ(IJS:IJL,NANG)
-      REAL X1,X2,X1D,X2D,ZLOG1,ZLOG2,CONST3,XV1,XV2,ZBETA1,ZBETA2
+      REAL X1,X2,ZLOG1,ZLOG2,CONST3,XV1,XV2,ZBETA1,ZBETA2
       REAL XKAPPAD
       REAL TEMPD(IJS:IJL,NANG),UCN1D(IJS:IJL),UCN2D(IJS:IJL)
       PARAMETER (A = 0.8/1000. , B = 0.08/1000.)
@@ -215,19 +215,15 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            X1    = TEMP1(IJ,K)*UCN1(IJ)
-            X1D   = TEMPD(IJ,K)*UCN1D(IJ)
-            ZLOG1 = ZCN(IJ) + XKAPPA*X1D
-            L1    = ZLOG1.LT.0.
-            X2    = TEMP1(IJ,K)*UCN2(IJ)
-            X2D   = TEMPD(IJ,K)*UCN2D(IJ)
-            ZLOG2 = ZCN(IJ) + XKAPPA*X2D
-            L2    = ZLOG2.LT.0.
-
-            ZBETA1 = CONST3*(TEMP1(IJ,K)-XV1D(IJ))*UCN1(IJ)**2 
-            ZBETA2 = CONST3*(TEMP1(IJ,K)-XV2D(IJ))*UCN2(IJ)**2             
+            ZBETA1 = CONST3*(TEMP1(IJ,K)-XV1D(IJ))*UCN1(IJ)**2
+            ZBETA2 = CONST3*(TEMP1(IJ,K)-XV2D(IJ))*UCN2(IJ)**2
             IF (LZ(IJ,K)) THEN
-              IF (L1) THEN
+              ZLOG1 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN1D(IJ)
+              ZLOG2 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN2D(IJ)
+              L1    = ZLOG1.LT.0.
+              L2    = ZLOG2.LT.0.
+              IF (ZLOG1.LT.0.) THEN
+                X1=TEMP1(IJ,K)*UCN1(IJ)
                 ZLOG2X=ZLOG1*ZLOG1*X1
                 UFAC2(IJ,K) = EXP(ZLOG1)*ZLOG2X*ZLOG2X+ZBETA1
                 XLLWS(IJ,K,M)= 1.
@@ -235,7 +231,8 @@
                 UFAC2(IJ,K) = ZBETA1
                 XLLWS(IJ,K,M)= 0.
               ENDIF
-              IF (L2) THEN
+              IF (ZLOG2.LT.0.) THEN
+                X2=TEMP1(IJ,K)*UCN2(IJ)
                 ZLOG2X=ZLOG2*ZLOG2*X2
                 UFAC2(IJ,K) = UFAC2(IJ,K)+
      &                        EXP(ZLOG2)*ZLOG2X*ZLOG2X+ZBETA2

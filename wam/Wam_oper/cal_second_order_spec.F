@@ -112,27 +112,11 @@
             DO K=1,NANGH
                DO IJ=IJS,IJL
                   M0 = MR*M
-                  MP = M0+1
-                  MP = MIN(NFRE,MP)
-                  MM = M0-1
-
                   K0 = MA*K+1
-                  KP = K0+1
-                  KM = K0-1
-                  AREA = 0.
-                  SUM = 0.
+                  IF (K0.GT.NANG) K0 = K0-NANG
+                  IF (K0.LT.1) K0 = K0+NANG
 
-                  DO KL = KM,KP
-                     KLL = KL
-                     IF (KLL.GT.NANG) KLL = KLL-NANG
-                     IF (KLL.LT.1) KLL = KLL+NANG
-                     DO ML = MM,MP
-                        DEL = DFIM(ML)
-                        AREA = AREA+DEL
-                        SUM = SUM+F1(IJ,KLL,ML)*DEL
-                     ENDDO
-                  ENDDO
-                  PF1(IJ,K,M) = SUM/AREA 
+                  PF1(IJ,K,M)=PF1(IJ,K,M)+F1(IJ,K0,M0)
                ENDDO
             ENDDO
          ENDDO

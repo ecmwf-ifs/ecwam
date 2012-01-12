@@ -11,6 +11,8 @@
 !                               IN ORDER TO SAVE MEMORY THE OBSTRUCTION
 !                               COEFFICIENTS ARE READ IN AND PROCESSED
 !                               SEQUENTIALLY.
+!                          ECMWF       MODIFIED TO COMPUTE AND WRITE ALL
+!                                      ARRAYS SEQUENTIALLY.
 
 !*    PURPOSE.
 !     -------
@@ -62,129 +64,46 @@
 
       INTEGER :: IU01
       INTEGER :: NFREMAX, IX
-      INTEGER :: IU08(0:2)
       INTEGER :: IG,IJ,IJP,I,K,IP,IH,IS,ML,M
       INTEGER :: IMIN,IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER :: IC, ICP, ICL, ICR
-      REAL ::  BATHY(NGX, NGY)
+      INTEGER :: IU08(0:2)
       INTEGER, DIMENSION(NGX, NGY) :: IDUM
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: KDUM
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
+
       REAL :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
       REAL :: XLON, XL, XP, TWOXDELLA
       REAL :: XLL, XPL, XLR, XPR
+      REAL ::  BATHY(NGX, NGY)
+
       CHARACTER*4 :: CX
       CHARACTER*10 :: FORMAT
+
       LOGICAL :: LLABORT
 
 ! ----------------------------------------------------------------------
 
-!     0. ALLOCATE ARRAYS
-!        ---------------
-
-      ALLOCATE(KLAT(NIBLO,2,2))
-      ALLOCATE(KLON(NIBLO,2))
-      ALLOCATE(KRLAT(NIBLO,2,2))
-      ALLOCATE(KRLON(NIBLO,2,2))
-      ALLOCATE(KCOR(NIBLO,4,2))
-      ALLOCATE(WLAT(NIBLO,2))
-      ALLOCATE(WRLAT(NIBLO,2))
-      ALLOCATE(WRLON(NIBLO,2))
-      ALLOCATE(WCOR(NIBLO,4))
-
-      ALLOCATE(KOBSLON(NIBLO,ML,2))
-      ALLOCATE(KOBSLAT(NIBLO,ML,2))
-      ALLOCATE(KOBSCOR(NIBLO,ML,4))
-      ALLOCATE(KOBSRLON(NIBLO,ML,2))
-      ALLOCATE(KOBSRLAT(NIBLO,ML,2))
-
-!*    1. INITIALISE ARRAYS.
-!        ------------------
-
       TWOXDELLA=2*XDELLA
 
-      DO ICL=1,2
-        DO IJP=1,2
-          DO IJ=1,NIBLO
-             KLAT(IJ,IJP,ICL) = 0
-             KRLAT(IJ,IJP,ICL) = 0
-             KRLON(IJ,IJP,ICL) = 0
-          ENDDO
-        ENDDO
-      ENDDO
-      DO IJP=1,2
-        DO IJ=1,NIBLO
-           KLON(IJ,IJP) = 0
-           WLAT(IJ,IJP)=1.
-           WRLAT(IJ,IJP)=1.
-           WRLON(IJ,IJP)=1.
-        ENDDO
-        DO M=1,ML
-          DO IJ=1,NIBLO
-             KOBSLAT(IJ,M,IJP)=1000
-             KOBSLON(IJ,M,IJP)=1000
-             KOBSRLAT(IJ,M,IJP)=1000
-             KOBSRLON(IJ,M,IJP)=1000
-          ENDDO
-        ENDDO
-      ENDDO
-      DO ICR=1,4
-        DO IJ=1,NIBLO
-           WCOR(IJ,ICR)=1.
-        ENDDO
-      ENDDO
-      DO IC=1,2
-        DO ICR=1,4
-          DO IJ=1,NIBLO
-             KCOR(IJ,ICR,IC) = 0
-          ENDDO
-        ENDDO
-      ENDDO
-      DO IC=1,4
-        DO M=1,ML
-          DO IJ=1,NIBLO
-             KOBSCOR(IJ,M,IC)=1000
-          ENDDO
-        ENDDO
-      ENDDO
 
-! ----------------------------------------------------------------------
 
 !*    2. COMPUTE INDICES OF NEIGHBOUR SEA POINTS.
 !        ----------------------------------------
 
+!*    2.1 LATITUDE NEIGHBOURS (KLAT)
+!         --------------------------
 
-!*    2.1 LONGITUDE NEIGHBOURS.
-!         ---------------------
-
-      DO IP = 1,IJLT(IG)
-        I = IXLG(IP,IG)
-        K = KXLT(IP,IG)
-        IF (I.GT.1) THEN
-          IF (BATHY(I-1,K).GT.-990.) KLON(IP,1) = IP-1
-        ELSE
-          IF (IPER.EQ.1 .AND. BATHY(NLONRGG(K),K).GT.-990.) THEN
-            KLON(IP,1) = IP
-            DO IH=2,NLONRGG(K)
-              IF (BATHY(IH,K).GT.-990.) KLON(IP,1) = KLON(IP,1)+1
-            ENDDO
-          ENDIF
-        ENDIF
-        IF (I.LT.NLONRGG(K)) THEN
-          IF (BATHY(I+1,K).GT.-990.) KLON(IP,2) = IP+1
-        ELSE
-          IF (IPER.EQ.1 .AND. BATHY(1,K).GT.-990.) THEN
-            KLON(IP,2) = IP
-            DO IH=NLONRGG(K)-1,1,-1
-              IF (BATHY(IH,K).GT.-990.) KLON(IP,2) = KLON(IP,2)-1
-            ENDDO
-          ENDIF
-        ENDIF
+      ALLOCATE(KLAT(NIBLO,2,2))
+      DO ICL=1,2
+        DO IJP=1,2
+          DO IJ=1,NIBLO
+             KLAT(IJ,IJP,ICL) = 0
+          ENDDO
+        ENDDO
       ENDDO
-
-!*    2.2 LATITUDE NEIGHBOURS.
-!         --------------------
 
       DO IP = 1,IJLT(IG)
         I = IXLG(IP,IG)
@@ -271,9 +190,67 @@
 
       ENDDO
 
+      DO IJP=0,2
+        WRITE (IU08(IJP)) KLAT
+      ENDDO
+
+      DEALLOCATE(KLAT)
+
+!*    2.2 LONGITUDE NEIGHBOURS (KLON)
+!         ---------------------------
+
+      ALLOCATE(KLON(NIBLO,2))
+      DO IJP=1,2
+        DO IJ=1,NIBLO
+           KLON(IJ,IJP) = 0
+        ENDDO
+      ENDDO
+
+      DO IP = 1,IJLT(IG)
+        I = IXLG(IP,IG)
+        K = KXLT(IP,IG)
+        IF (I.GT.1) THEN
+          IF (BATHY(I-1,K).GT.-990.) KLON(IP,1) = IP-1
+        ELSE
+          IF (IPER.EQ.1 .AND. BATHY(NLONRGG(K),K).GT.-990.) THEN
+            KLON(IP,1) = IP
+            DO IH=2,NLONRGG(K)
+              IF (BATHY(IH,K).GT.-990.) KLON(IP,1) = KLON(IP,1)+1
+            ENDDO
+          ENDIF
+        ENDIF
+        IF (I.LT.NLONRGG(K)) THEN
+          IF (BATHY(I+1,K).GT.-990.) KLON(IP,2) = IP+1
+        ELSE
+          IF (IPER.EQ.1 .AND. BATHY(1,K).GT.-990.) THEN
+            KLON(IP,2) = IP
+            DO IH=NLONRGG(K)-1,1,-1
+              IF (BATHY(IH,K).GT.-990.) KLON(IP,2) = KLON(IP,2)-1
+            ENDDO
+          ENDIF
+        ENDIF
+      ENDDO
+
+      DO IJP=0,2
+        WRITE (IU08(IJP)) KLON
+      ENDDO
+
+      DEALLOCATE(KLON)
+
+
 !     COMPUTE THE CORNER GRID POINT AND THE CLOSEST GRID POINT ON EITHER
-!     SIDE (ON A GIVEN LATITUDE)
+!     SIDE (ON A GIVEN LATITUDE) (KCOR)
 !     ------------------------------------------------------------------
+
+      ALLOCATE(KCOR(NIBLO,4,2))
+      DO IC=1,2
+        DO ICR=1,4
+          DO IJ=1,NIBLO
+             KCOR(IJ,ICR,IC) = 0
+          ENDDO
+        ENDDO
+      ENDDO
+
       DO IP = 1,IJLT(IG)
         I = IXLG(IP,IG)
         K = KXLT(IP,IG)
@@ -485,9 +462,26 @@
       ENDDO
 
 
+      WRITE (IU08(2)) KCOR
+
+      DEALLOCATE(KCOR)
+
+
 !     COMPUTE THE CLOSEST GRID POINTS IN THE SW-NE and SE-NW DIRECTIONS
-!     (I.E. GOING AT 45 DEGREE)
+!     (I.E. GOING AT 45 DEGREE) (KRLAT, KRLON)
 !     -----------------------------------------------------------------
+
+      ALLOCATE(KRLAT(NIBLO,2,2))
+      ALLOCATE(KRLON(NIBLO,2,2))
+      DO ICL=1,2
+        DO IJP=1,2
+          DO IJ=1,NIBLO
+             KRLAT(IJ,IJP,ICL) = 0
+             KRLON(IJ,IJP,ICL) = 0
+          ENDDO
+        ENDDO
+      ENDDO
+
       DO IP = 1,IJLT(IG)
         I = IXLG(IP,IG)
         K = KXLT(IP,IG)
@@ -691,9 +685,33 @@
 
       ENDDO
 
+      WRITE (IU08(1)) KRLAT
+      WRITE (IU08(1)) KRLON
+
+      DEALLOCATE(KRLAT)
+      DEALLOCATE(KRLON)
  
 
 !     COMPUTE THE WEIGHT FOR THE ADVECTION SCHEME ON AN IRREGULAR GRID
+!     ()
+
+      ALLOCATE(WLAT(NIBLO,2))
+      ALLOCATE(WRLAT(NIBLO,2))
+      ALLOCATE(WRLON(NIBLO,2))
+      ALLOCATE(WCOR(NIBLO,4))
+
+      DO IJP=1,2
+        DO IJ=1,NIBLO
+           WLAT(IJ,IJP)=1.
+           WRLAT(IJ,IJP)=1.
+           WRLON(IJ,IJP)=1.
+        ENDDO
+      ENDDO
+      DO ICR=1,4
+        DO IJ=1,NIBLO
+           WCOR(IJ,ICR)=1.
+        ENDDO
+      ENDDO
 
       IF(IRGG.EQ.1) THEN
         DO IP = 1,IJLT(IG)
@@ -1007,11 +1025,26 @@
         ENDIF
       ENDIF
 
-      IF(LLOBSTRCT) THEN
+      DO IJP=0,2
+        WRITE (IU08(IJP)) WLAT 
+      ENDDO
+
+      WRITE (IU08(1)) WRLAT
+      WRITE (IU08(1)) WRLON
+
+      WRITE (IU08(2)) WCOR 
+
+      DEALLOCATE(WLAT)
+      DEALLOCATE(WRLAT)
+      DEALLOCATE(WRLON)
+      DEALLOCATE(WCOR)
+
+
 !     DETERMINE THE REAL REDUCTION FACTORS TO BE USED IN THE PROPAGATION
 
+!     CHECK INOUT IS CONSISTENT WITH CURRENT SETUP
+      IF(LLOBSTRCT) THEN
         READ (IU01,'(I4)') NFREMAX
-
         IF(NFREMAX.NE.ML ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
@@ -1025,110 +1058,119 @@
           WRITE (IU06,*) ' *******************************************'
           CALL ABORT1
         ENDIF
-
-        DO M=1,NFREMAX
-          DO IS=1,2
-            DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
-            ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
-              KOBSLAT(IP,M,IS)=IDUM(I,K)
-            ENDDO
-          ENDDO
-
-          DO IS=1,2
-            DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
-            ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
-              KOBSLON(IP,M,IS)=IDUM(I,K)
-            ENDDO
-          ENDDO
-
-          DO IS=1,2
-            DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-            ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
-              KOBSRLAT(IP,M,IS)=IDUM(I,K)
-            ENDDO
-          ENDDO
-
-          DO IS=1,2
-            DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
-            ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
-              KOBSRLON(IP,M,IS)=IDUM(I,K)
-            ENDDO
-          ENDDO
-
-          DO IS=1,4
-            DO K=1,NY
-              WRITE(CX,'(I4.4)') NLONRGG(K)
-              FORMAT='('//CX//'I4)'
-              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
-            ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
-              KOBSCOR(IP,M,IS)=IDUM(I,K)
-            ENDDO
-          ENDDO
-
-        ENDDO ! END LOOP ON NFREMAX
-
-      ELSE
-
-        DO IS=1,2
-          DO M=1,ML
-            DO IP = 1,IJLT(IG)
-              KOBSLAT(IP,M,IS)=1000
-              KOBSLON(IP,M,IS)=1000
-              KOBSRLAT(IP,M,IS)=1000
-              KOBSRLON(IP,M,IS)=1000
-            ENDDO
-          ENDDO
-        ENDDO
-
-        DO IS=1,4
-          DO M=1,ML
-            DO IP = 1,IJLT(IG)
-              KOBSCOR(IP,M,IS)=1000
-            ENDDO
-          ENDDO
-        ENDDO
-
       ENDIF
 
-! ----------------------------------------------------------------------
+      ALLOCATE(KDUM(NIBLO))
 
-!*    3. OUTPUT OF COMMON UBUF FOR ONE BLOCK.
-!        ------------------------------------
-      CALL OUTUBUF (IU08, NIBLO, ML,
-     &              KOBSLAT,KOBSLON,KOBSCOR,KOBSRLAT,KOBSRLON)
+      DO M=1,ML  ! loop over frequencies
 
-      DEALLOCATE(KOBSLON)
-      DEALLOCATE(KOBSLAT)
-      DEALLOCATE(KOBSCOR)
-      DEALLOCATE(KOBSRLON)
-      DEALLOCATE(KOBSRLAT)
+!     KOBSLAT
+        DO IS=1,2
+          DO IJ=1,NIBLO
+            KDUM(IJ)=1000
+          ENDDO
+          IF(LLOBSTRCT) THEN
+            DO K=1,NY
+              WRITE(CX,'(I4.4)') NLONRGG(K)
+              FORMAT='('//CX//'I4)'
+              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+            ENDDO
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KDUM(IP)=IDUM(I,K)
+            ENDDO
+          ENDIF
+          DO IJP=0,2
+            WRITE(IU08(IJP)) KDUM 
+          ENDDO
+        ENDDO
+
+!     KOBSLON
+        DO IS=1,2
+          DO IJ=1,NIBLO
+            KDUM(IJ)=1000
+          ENDDO
+          IF(LLOBSTRCT) THEN
+            DO K=1,NY
+              WRITE(CX,'(I4.4)') NLONRGG(K)
+              FORMAT='('//CX//'I4)'
+              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+            ENDDO
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KDUM(IP)=IDUM(I,K)
+            ENDDO
+          ENDIF
+          DO IJP=0,2
+            WRITE(IU08(IJP)) KDUM 
+          ENDDO
+        ENDDO
+
+!     KOBSRLAT
+        DO IS=1,2
+          DO IJ=1,NIBLO
+            KDUM(IJ)=1000
+          ENDDO
+          IF(LLOBSTRCT) THEN
+            DO K=1,NY
+              WRITE(CX,'(I4.4)') NLONRGG(K)
+              FORMAT='('//CX//'I4)'
+              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+            ENDDO
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KDUM(IP)=IDUM(I,K)
+            ENDDO
+          ENDIF
+          WRITE(IU08(1)) KDUM 
+        ENDDO
+
+!     KOBSRLON
+        DO IS=1,2
+          DO IJ=1,NIBLO
+            KDUM(IJ)=1000
+          ENDDO
+          IF(LLOBSTRCT) THEN
+            DO K=1,NY
+              WRITE(CX,'(I4.4)') NLONRGG(K)
+              FORMAT='('//CX//'I4)'
+              READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
+            ENDDO
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KDUM(IP)=IDUM(I,K)
+            ENDDO
+          ENDIF
+          WRITE(IU08(1)) KDUM 
+        ENDDO
+
+!     KOBSCOR
+        DO IS=1,4
+          DO IJ=1,NIBLO
+            KDUM(IJ)=1000
+          ENDDO
+          IF(LLOBSTRCT) THEN
+            DO K=1,NY
+              WRITE(CX,'(I4.4)') NLONRGG(K)
+              FORMAT='('//CX//'I4)'
+              READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
+            ENDDO
+            DO IP = 1,IJLT(IG)
+              I = IXLG(IP,IG)
+              K = KXLT(IP,IG)
+              KDUM(IP)=IDUM(I,K)
+            ENDDO
+          ENDIF
+          WRITE(IU08(2)) KDUM 
+        ENDDO
+
+      ENDDO  ! end loop over frequencies
+
+      DEALLOCATE(KDUM)
 
       RETURN
       END SUBROUTINE MUBUF

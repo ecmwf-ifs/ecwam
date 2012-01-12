@@ -1,4 +1,5 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN)
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, 
+     V                    PHIEPS, TAUWD, MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -49,13 +50,14 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR
+      USE YOWFRED  , ONLY : FR, DFIM
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
@@ -63,11 +65,14 @@
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: MIJ(IJS:IJL)
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
-      REAL,DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN
+      REAL,DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
+      REAL, DIMENSION(NFRE) :: FAC
+      LOGICAL :: LCFLX
 
-      PARAMETER (CDIS = 2.1)
-      PARAMETER (DELTA = 0.6)
+      PARAMETER (CDIS = 1.33)
+      PARAMETER (DELTA = 0.5)
       PARAMETER (ALPH_B_J = 1.0)
       PARAMETER (GAM_B_J = 0.8)
       PARAMETER (COEF_B_J=2*ALPH_B_J)
@@ -80,39 +85,64 @@
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
 
+      ROG = ROWATER*G
+
+      IF (LCFLX) THEN
+         PHIEPS = 0.
+         TAUWD = 0.
+      ENDIF
+
       IF (ISHALLO.EQ.1) THEN
         CONSD = -CDIS*ZPI**9/G**4
         DO IJ=IJS,IJL
           SDS(IJ) = CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
         ENDDO
         DO M=1,NFRE
+          FAC(M) = ZPI*FR(M)
+          CM(IJS)  = FAC(M)/G
           DO IJ=IJS,IJL
             X         = (FR(M)/F1MEAN(IJ))**2
             TEMP1(IJ) = SDS(IJ)*( (1.-DELTA)*X + DELTA*X**2)
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
+              SDISS = TEMP1(IJ)*F(IJ,K,M)
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+              IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
+                PHIEPS(IJ) = PHIEPS(IJ)+ROG*SDISS*DFIM(M)
+                TAUWD(IJ)  = TAUWD(IJ)+ROG*CM(IJS)*SDISS*DFIM(M)
+              ENDIF
             ENDDO
-          ENDDO
+          ENDDO     
         ENDDO
       ELSE
 !SHALLOW
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. SDISSIP: START DO-LOOP (ISHALLO=0)'
+          CALL FLUSH (IU06)
+        ENDIF
         CONSS = -CDIS*ZPI
         DO IJ=IJS,IJL
           SDS(IJ) = CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
         ENDDO
 
         DO M=1,NFRE
+          FAC(M) = ZPI*FR(M)
           DO IJ=IJS,IJL
             X         = TFAK(INDEP(IJ),M)/XKMEAN(IJ)
             TEMP1(IJ) = SDS(IJ)*( (1.-DELTA)*X + DELTA*X**2)
+            CM(IJ)    = TFAK(INDEP(IJ),M)/FAC(M)
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
+              SDISS = TEMP1(IJ)*F(IJ,K,M)
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+              IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
+                PHIEPS(IJ) = PHIEPS(IJ)+ROG*SDISS*DFIM(M)
+                TAUWD(IJ)  = TAUWD(IJ)+ROG*CM(IJ)*SDISS*DFIM(M)
+              ENDIF
             ENDDO
           ENDDO
         ENDDO
@@ -120,7 +150,7 @@
 !*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
 !        ----------- -- -------------- -----------------------
 !
-!        (FOLLOWING BATTJES-JANSSEN AND BEJI)
+!       (FOLLOWING BATTJES-JANSSEN AND BEJI)
         DEPTHTRS=50.
         IF(LBIWBK) THEN
           DO IJ=IJS,IJL
@@ -128,8 +158,6 @@
                EMAX = (GAM_B_J*DEPTH(IJ,IG))**2/16.
                ALPH = 2.*EMAX/(EMEAN(IJ))
                ARG  = MIN(ALPH,50.)
-!!!!!!!! test an iterative scheme
-!!!!!!!! if it works we might want to introduce a table
                Q_OLD = EXP(-ARG)
                DO IC=1,15
                  Q = EXP(-ARG*(1.-Q_OLD))

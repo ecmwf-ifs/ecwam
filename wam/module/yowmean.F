@@ -19,6 +19,9 @@
       REAL,ALLOCATABLE :: TMAXMEAN(:) 
       REAL,ALLOCATABLE :: USTMEAN(:) 
       REAL,ALLOCATABLE :: VSTMEAN(:) 
+      REAL,ALLOCATABLE :: PHIEPS(:) 
+      REAL,ALLOCATABLE :: PHIAW(:) 
+      REAL,ALLOCATABLE :: TAUOC(:) 
 
 !*     VARIABLE.      TYPE.     PURPOSE.
 !      ---------      -------   --------
@@ -38,6 +41,9 @@
 !                               WAVE HEIGHT.
 !      *USTMEAN*      REAL      U-COMP STOKES DRIFT.
 !      *VSTMEAN*      REAL      V-COMP STOKES DRIFT.
+!      *PHIEPS*       REAL      NORMALIZED ENERGY FLUX TO OCEAN.
+!      *PHIAW*        REAL      NORMALIZED ENERGY FLUX FROM WIND TO WAVES.
+!      *TAUOC*        REAL      NORMALIZED MOMENTUM FLUX INTO OCEAN.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

@@ -1,4 +1,4 @@
-      SUBROUTINE HEADBC (NBOUNC, IDELPRO, TH0, FR1, IU19, IU06)
+      SUBROUTINE HEADBC (NBOUNC, IDELPRO, TH0, FR1, IUOUT, IU06)
 
 ! ----------------------------------------------------------------------
 
@@ -15,12 +15,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *HEADBC (NBOUNC, IDELPRO, TH0, FR1, IU19, IU06)*
+!       *CALL* *HEADBC (NBOUNC, IDELPRO, TH0, FR1, IUOUT, IU06)*
 !          *NBOUNC*  - NUMBER OF OUTPUT POINTS.
 !          *IDELPRO* - PROPAGATION = OUTPUT TIMESTEP (SECONDS).
 !          *TH0*     - FIRST DIRECTION (IN RADIAN)
 !          *FR1*     - FIRST FREQUENCY (HERTZ).
-!          *IU19*    - OUTPUT UNIT OF BOUNDARY VALUES.
+!          *IUOUT*   - OUTPUT UNIT OF BOUNDARY VALUES.
 !          *IU06*    - PRINTER OUTPUT UNIT.
 
 !     METHOD.
@@ -52,7 +52,7 @@
       XFRE = REAL(NFRE)
       XBOU = REAL(NBOUNC)
       XDEL = REAL(IDELPRO)
-      WRITE(IU19,ERR=2000) XANG, XFRE, TH0, FR1, FRATIO, XBOU, XDEL
+      WRITE(IUOUT,ERR=2000) XANG, XFRE, TH0, FR1, FRATIO, XBOU, XDEL
 
       RETURN
 
@@ -66,7 +66,7 @@
       WRITE(IU06,*) '*    FATAL ERROR IN SUB. HEADBC        *'
       WRITE(IU06,*) '*    ===========================       *'
       WRITE(IU06,*) '*                                      *'
-      WRITE(IU06,*) '*    WRITE ERROR FROM UNIT : IU19 = ', IU19
+      WRITE(IU06,*) '*    WRITE ERROR FROM UNIT : IUOUT = ', IUOUT
       WRITE(IU06,*) '*                                      *'
       WRITE(IU06,*) '*        PROGRAM ABORTS                *'
       WRITE(IU06,*) '****************************************'

@@ -45,11 +45,12 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,
      &            DPHIAC   ,AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC   ,
-     &            BLATC    ,BLNGC
+     &            BLATC    ,BLNGC    ,GBOUNC   ,IPOGBO
       USE YOWMAP   , ONLY : XDELLA   ,XDELLO
       USE YOWPRPROC,ONLY : NBMAX
       USE YOWTEST  , ONLY : IU06
 
+      INTEGER, ALLOCATABLE :: IPOGBN(:)
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
@@ -63,13 +64,17 @@
       DPHIAC = XDELLA
       DLAMAC = XDELLO
 
-      NBMAX = (NGX+NGY)*2-4
+      NBMAX = GBOUNC*((NGX+NGY)*2-4)
 
+      ALLOCATE(IPOGBO(0:GBOUNC))
+      ALLOCATE(IPOGBN(0:GBOUNC))
       ALLOCATE(IJARC(NBMAX))
       ALLOCATE(IGARC(NBMAX))
       ALLOCATE(BLATC(NBMAX))
       ALLOCATE(BLNGC(NBMAX))
 
+      IPOGBN(0) = 0
+      IPOGBO(0) = 0
       DO I = 1,NBMAX
         IJARC(I) = 0
         IGARC(I) = 0
@@ -81,66 +86,91 @@
 
 !*    2. COMPUTED THE SQUARE BOX.
 !        ------------------------
+      DO II=1,GBOUNC
 
-      CALL MBOXB (NBOUNC, AMOWEC, AMOSOC, AMOEAC, AMONOC, BLATC, BLNGC)
-
+        CALL MBOXB (NBOUNC,AMOWEC(II),AMOSOC(II),AMOEAC(II),AMONOC(II), 
+     &   BLATC(IPOGBN(II-1)+1), BLNGC(IPOGBN(II-1)+1))
+       
+        IPOGBN(II)=IPOGBN(II-1)+NBOUNC
 ! ----------------------------------------------------------------------
 
 !*    3. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
-
-      write(*,*) 'the call the findb has changed. It must be adapted'
-      write(IU06,*) 'the call the findb has changed. It must be adapted'
-      call flush(IU06)
-      call abort1
-     
-      CALL FINDB (NBMAX, NBOUNC, BLATC, BLNGC, IGARC, IJARC)
+        CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1), 
+     &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1), 
+     &    IJARC(IPOGBN(II-1)+1),
+     &     1, ISTART,IEND, 1)
 
 ! ----------------------------------------------------------------------
 
 !*    4. PACKED ALL ARRAYS.
 !        -------------------
 
-      CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC, BLATC)
-      CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC, BLNGC)
-      CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC, IJARC)
-      CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC, IGARC)
-      NBOUNC = NBOUNEW
+        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),
+     &    BLATC(IPOGBN(II-1)+1))
+        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+     &    BLNGC(IPOGBN(II-1)+1))
+        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+     &   IJARC(IPOGBN(II-1)+1))
+        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+     &   IGARC(IPOGBN(II-1)+1))
+        IPOGBO(II) = IPOGBO(II-1)+NBOUNEW
+        IPOGBN(II) = IPOGBO(II)
 
 ! ----------------------------------------------------------------------
 
 !*    5. PRINTER PROTOCOL.
 !        -----------------
 
-      WRITE (IU06,'(''1BOUNDARY OUTPUT POINTS OF THIS GRID:'')')
-      WRITE (IU06,*) '===================================='
-      WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNC = ', NBOUNC
-      WRITE (IU06,'(4X,''     |-----INPUT-----|'',
-     &               ''-POINT INDEX--|'')')
-      WRITE (IU06,'(4X,''  NO.    LAT.   LONG.  BLOCK.'',
+        WRITE (IU06,'(''1BOUNDARY OUTPUT POINTS OF THIS GRID:'')')
+        WRITE (IU06,*) '===================================='
+        WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNC = ', 
+     &    NBOUNEW
+        WRITE (IU06,'(4X,''     |-----INPUT-----|'',
+     &                 ''-POINT INDEX--|'')')
+        WRITE (IU06,'(4X,''  NO.    LAT.   LONG.  BLOCK.'',
      &              ''  POINT.'')')
-      DO IO=1,NBOUNC
-        WRITE (IU06,'(4X,I5,2F8.2,2I8)')
-     &   IO, BLATC(IO), BLNGC(IO), IGARC(IO), IJARC(IO)
+        DO IO=IPOGBO(II-1)+1,IPOGBO(II)
+          WRITE (IU06,'(4X,I5,2F8.2,2I8)')
+     &     IO-IPOGBO(II-1), BLATC(IO), BLNGC(IO), 
+     &     IGARC(IO), IJARC(IO)
+        ENDDO
+
       ENDDO
 
 ! ----------------------------------------------------------------------
 
 !*    6. WRITE COMMON CBOUND.
 !        --------------------
-
       IF (IFORM.NE.2) THEN
-        WRITE(IU09) NBOUNC
-        WRITE(IU09) (IGARC(I),I=1,NBOUNC), (IJARC(I),I=1,NBOUNC)
-        WRITE(IU09) DLAMAC, DPHIAC, AMOSOC, AMONOC, AMOEAC, AMOWEC,
-     &   (BLNGC(I),I=1,NBOUNC), (BLATC(I),I=1,NBOUNC)
+        WRITE(IU09) GBOUNC
+        WRITE(IU09) (IPOGBN(I),I=1,GBOUNC)
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE(IU19,998) NBOUNC
-        WRITE(IU19,998) (IGARC(I),I=1,NBOUNC), (IJARC(I),I=1,NBOUNC)
-        WRITE(IU19,999) DLAMAC,DPHIAC, AMOSOC, AMONOC, AMOEAC, AMOWEC,
-     &   (BLNGC(I),I=1,NBOUNC), (BLATC(I),I=1,NBOUNC)
+        WRITE(IU19,998) GBOUNC
+        WRITE(IU19,998) (IPOGBN(I),I=1,GBOUNC)
       ENDIF
+ 
+      DO II=1,GBOUNC
+        NBOUNC = IPOGBN(II)
+        INI = IPOGBN(II-1) + 1
+        IF (IFORM.NE.2) THEN
+          WRITE(IU09)NBOUNC-INI+1
+          WRITE(IU09)(IGARC(I),I=INI,NBOUNC)
+          WRITE(IU09)(IJARC(I),I=INI,NBOUNC)
+          WRITE(IU09)DLAMAC, DPHIAC, AMOSOC(II), AMONOC(II), 
+     &     AMOEAC(II), AMOWEC(II),
+     &     (BLNGC(I),I=INI,NBOUNC), (BLATC(I),I=INI,NBOUNC)
+        ENDIF
+        IF (IFORM.NE.1) THEN
+          WRITE(IU19,998)NBOUNC-INI+1
+          WRITE(IU19,998)(IGARC(I),I=INI,NBOUNC)
+          WRITE(IU19,998)(IJARC(I),I=INI,NBOUNC)
+          WRITE(IU19,999)DLAMAC,DPHIAC, AMOSOC(II), AMONOC(II), 
+     &     AMOEAC(II), AMOWEC(II),
+     &     (BLNGC(I),I=INI,NBOUNC), (BLATC(I),I=INI,NBOUNC)
+        ENDIF
+      ENDDO
 
 ! ----------------------------------------------------------------------
 

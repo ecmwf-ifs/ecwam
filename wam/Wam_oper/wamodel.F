@@ -286,7 +286,8 @@
 
 ! -------------------------------------------------------------------
 
-      USE YOWCBOU  , ONLY : IBOUNC   ,NBOUNC
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,
+     &            CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
@@ -297,7 +298,7 @@
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
      &            LGRIBAPI_I,LGRIBAPI_O,LRSTST0
       USE YOWCURR  , ONLY : CDTCUR
-      USE YOWFBOU  , ONLY : IBOUNF
+      USE YOWFPBO  , ONLY : IBOUNF
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
@@ -312,7 +313,8 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,HMAXG    ,TMAXG    ,USTOKESG ,
-     &            VSTOKESG ,UCURG    ,VCURG
+     &            VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,
+     &            TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -332,6 +334,7 @@
      &            CDTSPS   ,CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
+     &            CDTBC    ,IDELBC   ,
      &            IPROPAGS ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
@@ -651,6 +654,9 @@
         IF(ALLOCATED(VSTOKESG)) DEALLOCATE(VSTOKESG)
         IF(ALLOCATED(UCURG)) DEALLOCATE(UCURG)
         IF(ALLOCATED(VCURG)) DEALLOCATE(VCURG)
+        IF(ALLOCATED(PHIEPSG)) DEALLOCATE(PHIEPSG)
+        IF(ALLOCATED(PHIAWG)) DEALLOCATE(PHIAWG)
+        IF(ALLOCATED(TAUOCG)) DEALLOCATE(TAUOCG)
 
         IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
         IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)
@@ -741,6 +747,10 @@
         ELSE
           IF (CDTRES.LT.CDTPRO) CALL INCDATE(CDTRES,IDELRES)
         ENDIF
+
+        IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1).AND.CDTBC.LT.CDTPRO)
+     &  CALL INCDATE(CDTBC,IDELBC)
+
 
 !*    1.2 RESET FILES.
 !         ------------
@@ -913,9 +923,6 @@
                 CALL FLUSH (IU06)
               ENDIF
 
-              CALL GSTATS(753,0)
-              CALL MPL_BARRIER(CDSTRING='WAMODEL AFTER CTUW:')
-              CALL GSTATS(753,1)
               DO IJ=IJS(IG),IJL(IG)
                 IF(LCFLFAIL(IJ)) THEN
                   WRITE(0,*) '!!! ********************************* !!'
@@ -926,6 +933,7 @@
                   CALL ABORT1
                 ENDIF
               ENDDO
+
 !             FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION
 !             IN PROPAGS2
 
@@ -1189,7 +1197,7 @@
 
           CALL GSTATS(1909,0)
           IF (IBOUNF.EQ.1) THEN
-            CALL BOUINPT (FL3, IG, IU02)
+            CALL BOUINPT (FL3, IU02, NSTART, NEND)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*)
      &         '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
@@ -1497,20 +1505,30 @@
 
  
         END IF
+
+!NEST
+!       SAVE BOUNDARY VALUE FILE.
+
+        IF(CDTBC.EQ.CDTPRO) THEN
+          IF (IBOUNC.EQ.1) THEN
+            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+              DO II=1,GBOUNC
+              CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
+     &          CBCPREF(II), 'S')
+              IF (CDTBC.LT.CDATEE)
+     &          CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
+     &                       TH(1), FR(1), IU19(II), IU06) 
+              ENDDO
+            ENDIF
+          ENDIF
+        ENDIF
+
+!NEST
  
         LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
 
         IF (LSV.OR.LRST) THEN
 
-!NEST
-!         SAVE BOUNDARY VALUE FILE.
-
-          IF (IBOUNC.EQ.1) THEN
-            CALL GSFILE (IU06, IU19, 0, CDTPRO, CDATEF, 'CBO', 'S')
-            IF (CDTPRO.LT.CDATEE)
-     &         CALL HEADBC (NBOUNC, IDELPRO, TH(1), FR(1), IU19, IU06)
-          ENDIF
-!NEST
 
 !*        1.8.3 SAVE RESTART FIELDS.
 !               --------------------

@@ -64,6 +64,7 @@
      &   (LGE(CLTEST,'A').AND.LLE(CLTEST,'Z'))) GO TO 102
       BACKSPACE(KULNAM)
 
+
 !     ------------------------------------------------------------------
 
       RETURN

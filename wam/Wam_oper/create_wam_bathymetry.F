@@ -169,8 +169,8 @@
 
       ELSE
         XDELLO=XDELLA     
-        NX=INT((AMOEAP-AMOWEP)/XDELLO)+1
-        NY=INT((AMONOP-AMOSOP)/XDELLA)+1
+        NX=NINT((AMOEAP-AMOWEP)/XDELLO)+1
+        NY=NINT((AMONOP-AMOSOP)/XDELLA)+1
 
         ALLOCATE(NLONRGG(NY))
       ENDIF
@@ -377,10 +377,7 @@
            IF(ALAT(J+1).LT.XLAT(K).AND.
      &        XLAT(K).LE.ALAT(J) ) EXIT
          ENDDO
-         IF(J.GT.ILAT .OR. J.LT.1) THEN
-            WRITE(*,*) 'PROBLEM WITH J !!!'
-            CALL ABORT
-         ENDIF
+         J=MIN(MAX(J,1),ILAT)
 
          DO IX=1,NLONRGG(K)
 

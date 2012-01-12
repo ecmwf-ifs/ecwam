@@ -4,8 +4,8 @@
 
 !*    ** *GRIB HEADERS:  COMMON (DEFAULT) GRIB HEADERS.
 
-      INTEGER :: IMDLGRBID_G=108 !! see below the rule on how to select IMDLGRBID_G
-      INTEGER :: IMDLGRBID_M=208
+      INTEGER :: IMDLGRBID_G=109 !! see below the rule on how to select IMDLGRBID_G
+      INTEGER :: IMDLGRBID_M=209
 
       INTEGER, PARAMETER :: NKSEK0=2
       INTEGER, PARAMETER :: NKSEK1=2048

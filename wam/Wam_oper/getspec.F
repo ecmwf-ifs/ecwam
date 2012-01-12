@@ -78,7 +78,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NBIT = 300000
+      INTEGER :: NBIT
 
       INTEGER :: ISEND, IREAD
       INTEGER :: IJ, K, M, IC, ICC, JSN, IDUM, IX, IY, ID, MR, KR, IP
@@ -86,6 +86,7 @@
       INTEGER :: IERR, KRCOUNT, KFROM, KRTAG
       INTEGER :: IRA, IG
       INTEGER :: IUNIT
+      INTEGER :: IBREAD, NBREAD, NBREAD_AGAIN 
       INTEGER :: IPARAM, KZLEV,KK,MM
       INTEGER :: IYYYY, JCONS, IFORP, KDEXN
       INTEGER :: ISTEP, ISTEP_LOCAL
@@ -120,6 +121,8 @@
 ! ----------------------------------------------------------------------
 
       LFRSDECODE=.TRUE.
+
+      NBIT=NIBLO
 
       IF (ITEST > 3 ) THEN
         WRITE(IU06,*) ' SUB. GETSPEC:'
@@ -192,6 +195,8 @@ C
           CALL ABORT1
         ENDIF
 
+        NBREAD=0
+        NBREAD_AGAIN=0
 1121    CONTINUE
         IF(LGRIBAPI_I) THEN
 !       USE GRIB API
@@ -274,9 +279,11 @@ C
 1021            ISIZE=NBIT
                 KBYTES=ISIZE*NPRECI
                 IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+                NBREAD=NBREAD+1
                 CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,
      &                                    KBYTES,IRET)
                 IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+                  IF(.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
                   CALL KGRIBSIZE(IU06, IUGRS, KBYTES, NBIT, 'GETSPEC')
                   DEALLOCATE(INGRIB)
                   LLRESIZING=.TRUE.
@@ -290,7 +297,17 @@ C
                   DEALLOCATE(INGRIB)
                   LLRESIZING=.FALSE.
                   CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
-                  GOTO 1121
+                  CALL IGRIB_OPEN_FILE(KFILE_HANDLE,
+     &                                 FILENAME(1:LFILE),'r')
+                  ISIZE=NBIT
+                  IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+                  DO IBREAD=1,NBREAD_AGAIN
+                    KBYTES=ISIZE*NPRECI
+                    CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,
+     &                                        KBYTES,IRET)
+                  ENDDO
+                  NBREAD=IBREAD-1
+                  NBREAD_AGAIN=0
                 ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
                   WRITE(IU06,*) '**********************************'
                   WRITE(IU06,*) '* GETSPEC: END OF FILE ENCOUNTED'
@@ -855,6 +872,8 @@ C
 
          IF (IRANK.EQ.ISEND)
      &       CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+
+         IUNIT=0
 
          DO MLOOP=1,NFRE,MDEL
            MINF=MLOOP

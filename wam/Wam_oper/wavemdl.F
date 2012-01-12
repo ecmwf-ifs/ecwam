@@ -95,8 +95,8 @@
 ! -------------------------------------------------------------------   
 
       USE YOWCOUT  , ONLY : CASS     ,NASS
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOUNORMS,KCOUSTEP,
-     &         LMASK_OUT_NOT_SET, LMASK_TASK_STR,
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
+     &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT
       USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -104,9 +104,11 @@
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWICE   , ONLY : ICEMASK
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,
+     &            TAUOC
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
-     &            NBLO     ,LL1D
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,
+     &                      NBLO     ,LL1D
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
@@ -192,6 +194,7 @@
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 
       ZMISS=RMISS
+
 
       IF(LWCOU) THEN
 
@@ -548,14 +551,53 @@
         FLABEL(1)=' Charnock'
         DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
+
+!       2. U-STOKESDRIFT
         IF(NWVFIELDS.GT.1) THEN
           FLABEL(2)=' U-Stokes'
           DEFVAL(2)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
+
+!       3. V-STOKESDRIFT
         IF(NWVFIELDS.GT.2) THEN
           FLABEL(3)=' V-Stokes'
           DEFVAL(3)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+
+!       4. ENERGY FLUX TO OCEAN
+        IF(NWVFIELDS.GT.3) THEN
+          FLABEL(4)=' Phi_oc'
+          DEFVAL(4)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+
+!       5. ENERGY FLUX TO WAVES
+        IF(NWVFIELDS.GT.4) THEN
+          FLABEL(5)=' Phi_aw'
+          DEFVAL(5)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+
+!       6. MOMENTUM FLUX TO OCEAN
+        IF(NWVFIELDS.GT.5) THEN
+          FLABEL(6)=' Tau_oc'
+          DEFVAL(6)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+
+!       7. WAVE VARIANCE
+        IF(NWVFIELDS.GT.6) THEN
+          FLABEL(7)=' Emean'
+          DEFVAL(7)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                         ! THE WAVE MODEL ICE FREE SEA POINTS.
+        ENDIF
+  
+!       8. MEAN FREQUENCY
+        IF(NWVFIELDS.GT.7) THEN
+          FLABEL(8)=' Fmean'
+          DEFVAL(8)=0.0  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
@@ -573,11 +615,35 @@
      &                        WVBLOCK(KIJS,2),WVBLOCK(KIJS,3))
           ELSE
              IF(NWVFIELDS.GT.1) THEN
-                WVBLOCK(KIJS:KIJL,2)=DEFVAL(2)
+               WVBLOCK(KIJS:KIJL,2)=DEFVAL(2)
              ENDIF
              IF(NWVFIELDS.GT.2) THEN
                WVBLOCK(KIJS:KIJL,3)=DEFVAL(3)
              ENDIF
+          ENDIF
+
+          IF(LWFLUX) THEN
+             WVBLOCK(KIJS:KIJL,4)=PHIEPS(KIJS:KIJL)
+             WVBLOCK(KIJS:KIJL,5)=PHIAW(KIJS:KIJL)
+             WVBLOCK(KIJS:KIJL,6)=TAUOC(KIJS:KIJL)
+             WVBLOCK(KIJS:KIJL,7)=EMEAN(KIJS:KIJL)
+             WVBLOCK(KIJS:KIJL,8)=FMEAN(KIJS:KIJL)
+          ELSE
+             IF(NWVFIELDS.GT.3) THEN
+               WVBLOCK(KIJS:KIJL,4)=DEFVAL(4)
+             ENDIF
+             IF(NWVFIELDS.GT.4) THEN
+               WVBLOCK(KIJS:KIJL,5)=DEFVAL(5)
+             ENDIF
+             IF(NWVFIELDS.GT.5) THEN
+               WVBLOCK(KIJS:KIJL,6)=DEFVAL(6)
+             ENDIF             
+             IF(NWVFIELDS.GT.6) THEN
+               WVBLOCK(KIJS:KIJL,7)=DEFVAL(7)
+             ENDIF    
+             IF(NWVFIELDS.GT.7) THEN
+               WVBLOCK(KIJS:KIJL,8)=DEFVAL(8)
+             ENDIF    
           ENDIF
 
         ENDDO

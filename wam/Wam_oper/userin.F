@@ -1,4 +1,4 @@
-      SUBROUTINE USERIN (IU05, IBOUNC, IBOUNF, IFORCA, LWCUR)
+      SUBROUTINE USERIN (IU05, IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -32,10 +32,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *USERIN (IU05, IBOUNC, IBOUNF, IFORCA, LWCUR)*
+!       *CALL* *USERIN (IU05, IFORCA, LWCUR)*
 !          *IU05*   -  INPUT UNIT USER INPUT FILE.
-!          *IBOUNC* -  COARSE GRID BOUNDARY FLAG.
-!          *IBOUNF* -  FINE GRID BOUNDARY FLAG.
 !          *IFORCA* -  FORCAST START OPTION.
 !          *LWCUR* -  INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -66,17 +64,21 @@
 
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
      &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,
-     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR  ,
+     &            LODBRALT
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
-     &            NASS     ,
+     &            NASS     ,JPPFLAG  ,
+     $            LWFLUXOUT,
      &            LSECONDORDER,
      &            LGRIBAPI_I, LGRIBAPI_O
+      USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
+      USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP,
      &            IMDLGRBID_G,IMDLGRBID_M 
       USE YOWICE   , ONLY : LICERUN
@@ -87,6 +89,7 @@
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
+     &            IDELBC   ,
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
      &            ISNONLIN ,
      &            IDAMPING ,
@@ -118,7 +121,9 @@
       LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF, LASTREAM
       LOGICAL LLNALTGO
       LOGICAL :: LWCUR
+      CHARACTER*1 :: CLMTSU(4), CLOTSU(8)
       CHARACTER*2 :: MARSFCTYPE
+      CHARACTER*2 :: C2
       CHARACTER*4 :: CSTREAM
       CHARACTER (LEN=  14), PARAMETER :: ZERO = ' '
       CHARACTER (LEN=  70)            :: CLHEADER
@@ -126,7 +131,6 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER*1 CLMTSU(4), CLOTSU(7)
 
 !     caution : if you change NALINE, also change it in mpuserin
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -148,10 +152,12 @@
      &   IPROPAGS,
      &   IREFRA,
      &   IBOUNC, IBOUNF,
+     &   IDELBC, CBCPREF,
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
      &   IMDLGRBID_G, IMDLGRBID_M,
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
+     &   LODBRALT,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
      &   IBUFRSAT, SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
@@ -210,7 +216,7 @@
 !     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
 !     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT, IDELINS,
-!             IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES.
+!             IDELAGI, IDELSPT, IDELSPS, IDELAGS, IDELRES, IDELBC.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
 !             are not specified by namelist NAOS).
 !     CDATES: LAST OUTPUT TIME ALLOWED BESIDE CDATER FOR RESTART SPECTRA
@@ -264,6 +270,9 @@
 !     41 : V-COMPONENT OF STOKES DRIFT (m/s) 
 !     42 : U-COMPONENT OF SURFACE CURRENT (m/s) 
 !     43 : V-COMPONENT OF SURFACE CURRENT (m/s) 
+!     44 : NORMALIZED ENERGY FLUX INTO OCEAN 
+!     45 : NORMALIZED ENERGY FLUX INTO WAVES 
+!     46 : NORMALIZED STRESS INTO OCEAN 
 
 !     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
 !     LPBIOIN: IF TRUE THE PBIO SOFTWARE IS USED FOR BINARY INPUT
@@ -294,6 +303,11 @@
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
+!     IDELBC: TIMESTEP FOR THE DISPOSAL OF OUTPUT BC FILE(S) INTO PERMANENT
+!             FILE(S). IF SET TO ZERO THEN IT WILL BE RESET TO THE LENGTH
+!             OF THE RUN (I.E. THE FILE(S) WILL DISPOSED AT THE END OF THE
+!             RUN.
+!     CBCPREF: PREFIXES OF BC FILES
 !     USERID, RUNID, PATH : OUT OF DATE, SHOULD ONLY BE USED WHENEVER
 !                           USER WANTS TO WRITE OUTPUT DIRECTLY TO ECFS
 !                           WHICH IS HIGHLY NOT RECOMMENDATED ON THE VPP
@@ -319,6 +333,8 @@
 !     CFDB2DSP : FDB ROOT DIRECTORY FOR 2D SPECTRA. 
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
+!     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ PASSED 
+!               THROUGH OBSERVATION DATABASE (ODB)
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !              SEE GRFIELD. 
 !     L4VTYPE: IF TRUE THEN MARS TYPE 4V IS USED INSTEAD OF FG.
@@ -419,6 +435,7 @@
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
 
+      PRINT*,' JPPFLAG = ',JPPFLAG
       CLMTSU    = 'S'
       CLOTSU    = 'H'
       CLHEADER  = ZERO
@@ -469,6 +486,7 @@
       LPBIOOUT  = .TRUE. 
       LGRIBOUT  = .TRUE. 
       LFDBIOOUT = .TRUE. 
+      LODBRALT  = .FALSE.
       ICASE     = 1 
       ISHALLO   = 0 
       ISNONLIN  = 1 
@@ -482,6 +500,11 @@
       IFORCA    = 1 
       IBOUNC    = 0 
       IBOUNF    = 0 
+      IDELBC    = 0
+      DO II=1,GBOUNC_MAX
+        WRITE(C2,'(I2.2)') II
+        CBCPREF(II)='B'//C2
+      ENDDO
       USERID    = ZERO
       RUNID     = ZERO
       PATH      = ZERO
@@ -619,6 +642,14 @@
         CALL ABORT1
       ENDIF
 
+      IF (.NOT.LWCOU .AND. LODBRALT) THEN
+        WRITE(IU06,*)'WARNING IN SUBROUTINE USERIN:'
+        WRITE(IU06,*)'        ODB IS NOT READY FOR STAND-ALONE MODEL'
+        WRITE(IU06,*)'        ODB WILL NOT BE USED!'
+        LODBRALT = .FALSE.  ! ODB is not ready for stand-alone wave model
+                            ! this needs to be changed later.
+      ENDIF
+
       IF(.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
       IF(LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
@@ -689,6 +720,8 @@
       IF (CLOTSU(5) .EQ. 'H') IDELSPS = IDELSPS*3600
       IF (CLOTSU(6) .EQ. 'H') IDELAGS = IDELAGS*3600
       IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
+      IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
+
 !           **** CHECK LENGTH OF YEXPVER AND PUT IT RIGHT JUSTIFIED ****
       LYEP=LEN_TRIM(YEXPVER)
       YEXPVER(5-LYEP:4)=YEXPVER(1:LYEP)
@@ -914,21 +947,24 @@
      &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27).OR.
      &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36).OR.FFLAG(37).OR.
      &          FFLAG(38).OR.FFLAG(39).OR.FFLAG(40).OR.FFLAG(41).OR.
-     &          FFLAG(42).OR.FFLAG(43)
+     &          FFLAG(42).OR.FFLAG(43).OR.FFLAG(44).OR.FFLAG(45).OR.
+     &          FFLAG(46)
       PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
      &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
      &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
      &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27).OR.
      &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36).OR.PFLAG(37).OR.
      &          PFLAG(38).OR.PFLAG(39).OR.PFLAG(40).OR.PFLAG(41).OR.
-     &          PFLAG(42).OR.PFLAG(43)
+     &          PFLAG(42).OR.PFLAG(43).OR.PFLAG(44).OR.PFLAG(45).OR.
+     &          PFLAG(46)
       GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
      &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
      &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
      &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27).OR.
      &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36).OR.GFLAG(37).OR.
      &          GFLAG(38).OR.GFLAG(39).OR.GFLAG(40).OR.GFLAG(41).OR.
-     &          GFLAG(42).OR.GFLAG(43) 
+     &          GFLAG(42).OR.GFLAG(43).OR.GFLAG(44).OR.GFLAG(45).OR.
+     &          GFLAG(46) 
       FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
      &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
      &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
@@ -953,7 +989,14 @@
      &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
      &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36).OR.NFLAG(37).OR.
      &          NFLAG(38).OR.NFLAG(39).OR.NFLAG(40).OR.NFLAG(41).OR.
-     &          NFLAG(42).OR.NFLAG(43) 
+     &          NFLAG(42).OR.NFLAG(43).OR.NFLAG(44).OR.NFLAG(45).OR.
+     &          NFLAG(46) 
+
+!     ARE THE OCEAN FLUXES OUTPUT PARAMETERS:
+
+      LWFLUXOUT = FFLAG(44).OR.FFLAG(45).OR.FFLAG(46)
+      LWFLUXOUT = LWFLUXOUT .OR. PFLAG(44).OR.PFLAG(45).OR.PFLAG(46)
+      LWFLUXOUT = LWFLUXOUT .OR. GFLAG(44).OR.GFLAG(45).OR.GFLAG(46)
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -1100,6 +1143,11 @@
       ENDIF
       IF(CDATES .LT. CDATEA) CDATES = CDATEE
       IF(CDATES .GT. CDATEE) CDATES = CDATEE
+
+!     IF IDELBC IS SET TO ZERO THEN IT WILL BE RESET TO THE LENGTH
+!     OF THE RUN (I.E. THE FILE(S) WILL DISPOSED AT THE END OF THE
+!     RUN.
+      IF(IDELBC.LE.0) CALL DIFDATE(CDATEA,CDATEE,IDELBC)
 
 !     1.3 CHECK IF IDELALT WAS SET ELSE SET IT TO IDELWO
 !         ----------------------------------------------
@@ -1299,7 +1347,7 @@
       ENDIF
       IF(.NOT.LWCOU) THEN
         IF (IBOUNC.EQ.1) THEN
-          WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (COARSE GRID)'
+          WRITE(IU06,*) ' MODEL PRODUCES BOUNDARY DATA (COARSE GRID)'
         ELSE
           IF(ITEST.GT.0) THEN
           WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
@@ -1513,6 +1561,18 @@
      & '......', FFLAG(42),'.....',GFLAG(42)
       WRITE(IU06,*) '43 V-COMP SURFACE CURRENT.....', PFLAG(43),
      & '......', FFLAG(43),'.....',GFLAG(43)
+      WRITE(IU06,*) '44 ENERGYFLUX TO OCEAN........', PFLAG(44),
+     & '......', FFLAG(44),'.....',GFLAG(44)
+      WRITE(IU06,*) '45 ENERGYFLUX TO WAVES........', PFLAG(45),
+     & '......', FFLAG(45),'.....',GFLAG(45)
+      WRITE(IU06,*) '46 STRESS TO OCEAN............', PFLAG(46),
+     & '......', FFLAG(46),'.....',GFLAG(46)
+
+      IF(LWCOU .AND. LWFLUX) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) ' OCEAN FLUXES WILL ALSO BE RETURNED TO IFS.'
+        WRITE(IU06,*) ''
+      ENDIF
 
       IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
      & NOUTT,'IU21','IU31','IU23','IU33')
@@ -1984,6 +2044,22 @@
         WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
         WRITE(IU06,*) '*    IDELRES = ',IDELRES,' SECONDS'
         WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
+        WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*******************************************'
+        LERROR = .TRUE.
+      ENDIF
+
+      IF (MOD(IDELBC,IDELPRO).NE.0 .AND.
+     &    MOD(IDELBC,IDELWI).NE.0) THEN
+        WRITE(IU06,*) '*******************************************'
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+        WRITE(IU06,*) '*    ==========================           *'
+        WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
+        WRITE(IU06,*) '*    IDELRES = ',IDELBC,' SECONDS'
+        WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
+        WRITE(IU06,*) '* THE WIND INPUT TIMESTEP   IDELWI = ', IDELWI
         WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*******************************************'

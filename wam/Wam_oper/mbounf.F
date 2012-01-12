@@ -53,16 +53,18 @@
 
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,
-     &            DPHIAC   ,BLATC    ,BLNGC
+     &            DPHIAC   ,BLATC    ,BLNGC    ,
+     &            GBOUNC   ,IPOGBO
       USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IGARF    ,IBFL     ,
      &            IBFR     ,BFW
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
-     &            XDELLA   ,XDELLO
+     &            XDELLA   ,XDELLO   ,NX       ,NY
       USE YOWPRPROC,ONLY : NBMAX
-      USE YOWTEST  , ONLY : IU06
+      USE YOWTEST  ,ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: GBOUNC_LOC
       REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
 
 ! ----------------------------------------------------------------------
@@ -101,17 +103,51 @@
 !     ---------------------
 
       IF (IFORM.NE.2) THEN
-        READ (IU03) NBOUNC
-        READ (IU03) (IGARC(I),I=1,NBOUNC), (IJARC(I),I=1,NBOUNC)
-        READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
-     &   (BLNGC(I),I=1,NBOUNC), (BLATC(I),I=1,NBOUNC)
+        READ (IU03) GBOUNC_LOC
+        ALLOCATE(IPOGBO(0:GBOUNC_LOC))
+        READ(IU03)(IPOGBO(I),I=1,GBOUNC_LOC)
+        IPOGBO(0)=0
+        DO II=1,GBOUNC_LOC
+!         FIND THE RIGHT DOMAIN
+          READ (IU03) NBOUNC_LOC
+          ALLOCATE(IGARC(NBOUNC_LOC))
+          ALLOCATE(IJARC(NBOUNC_LOC))
+          ALLOCATE(BLNGC(NBOUNC_LOC))
+          ALLOCATE(BLATC(NBOUNC_LOC))
+          READ (IU03) (IGARC(I),I=1,NBOUNC_LOC)
+          READ (IU03) (IJARC(I),I=1,NBOUNC_LOC)
+          READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
+     &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
+          DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
+          IF (AMOWEP.EQ.AMOWEA .AND. AMOEAP.EQ.AMOEAA .AND.
+     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) EXIT
+        ENDDO
       ELSE
-        READ (IU03,998) NBOUNC
-        READ (IU03,998) (IGARC(I),I=1,NBOUNC), (IJARC(I),I=1,NBOUNC)
-        READ (IU03,999) DLAMAC,DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
-     &   (BLNGC(I),I=1,NBOUNC), (BLATC(I),I=1,NBOUNC)
+        READ (IU03,998) GBOUNC_LOC
+        ALLOCATE(IPOGBO(0:GBOUNC_LOC))
+        READ(IU03,998)(IPOGBO(I),I=1,GBOUNC_LOC)
+        IPOGBO(0)=0
+        DO II=1,GBOUNC
+!         FIND THE RIGHT DOMAIN
+          READ (IU03,998) NBOUNC_LOC
+          ALLOCATE(IGARC(NBOUNC_LOC))
+          ALLOCATE(IJARC(NBOUNC_LOC))
+          ALLOCATE(BLNGC(NBOUNC_LOC))
+          ALLOCATE(BLATC(NBOUNC_LOC))
+          READ (IU03,998) (IGARC(I),I=1,NBOUNC_LOC)
+          READ (IU03,998) (IJARC(I),I=1,NBOUNC_LOC)
+          READ (IU03,999) DLAMAC, DPHIAC, AMOSOA,
+     &      AMONOA, AMOEAA, AMOWEA,
+     &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
+          DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
+          IF (AMOWEP.NE.AMOWEA .OR. AMOEAP.NE.AMOEAA .OR.
+     &      AMONOP.NE.AMONOA .OR. AMOSOP.NE.AMOSOA) EXIT
+        ENDDO
       ENDIF
+      NBOUNC = NBOUNC_LOC
       IINPC = NBOUNC
+
+      DEALLOCATE(IPOGBO)
 
 ! ----------------------------------------------------------------------
 
@@ -127,7 +163,7 @@
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
         WRITE(IU06,*) '*  ==========================     *'
         WRITE(IU06,*) '*                                 *'
-        WRITE(IU06,*) '*  THIS IS NOT THE SAME GRID      *'
+        WRITE(IU06,*) '*  THIS IS NOT ANY SAME GRID      *'
         WRITE(IU06,*) '*  AS YOU HAD DELARED IN THE      *'
         WRITE(IU06,*) '*  COARSE GRID                    *'
         WRITE(IU06,*) '*                                 *'
@@ -143,8 +179,8 @@
 
 !     IS THE STEP OF LAT. AND LONG. OF THE FINE GRID A MULTIPLE
 !              OF THE COARSE GRID ?
-
-      IF (MOD(DPHIAC,XDELLA).NE.0.) THEN
+      RATIO=MOD(DPHIAC+360.,180.)/((AMONOP-AMOSOP)/(NY-1))
+      IF(MOD(RATIO,REAL(INT(RATIO))).GT.1.E-12) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -162,7 +198,9 @@
         CALL ABORT1
       ENDIF
 
-      IF (MOD(DLAMAC,XDELLO).NE.0.) THEN
+      RATIO=MOD(DLAMAC+360.,180.)/
+     &  ABS((AMOEOP-AMOWOP)/(NX-1))
+      IF(MOD(RATIO,REAL(INT(RATIO))).GT.1.E-12) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -191,12 +229,8 @@
 
 !*    5. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
-      write(*,*) 'the call the findb has changed. It must be adapted'
-      write(IU06,*) 'the call the findb has changed. It must be adapted'
-      call flush(IU06)
-      call abort1
-     
-      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF)
+      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,
+     & 1,ISTART,IEND,1)
 
 ! ----------------------------------------------------------------------
 
@@ -213,6 +247,7 @@
       CALL PACKR (NBOUNF, NBOUNEW, NBMAX, IGARF, BLNGF)
       CALL PACKR (NBOUNF, NBOUNEW, NBMAX, IGARF, BLATF)
       CALL PACKR (NBOUNF, NBOUNEW, NBMAX, IGARF, BFW)
+      CALL PACKI (NBOUNF, NBOUNEW, NBMAX, IGARF, IBFL)
       CALL PACKI (NBOUNF, NBOUNEW, NBMAX, IGARF, IBFR)
       CALL PACKI (NBOUNF, NBOUNEW, NBMAX, IGARF, IJARF)
       CALL PACKI (NBOUNF, NBOUNEW, NBMAX, IGARF, IGARF)
@@ -241,7 +276,6 @@
       IF (ALLOCATED(BLNGF)) DEALLOCATE(BLNGF)
 
 ! ----------------------------------------------------------------------
-
 !*    9. WRITE COMMON FBOUND
 
       IF (IFORM.NE.2) THEN

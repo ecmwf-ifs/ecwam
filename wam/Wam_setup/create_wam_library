@@ -35,7 +35,7 @@
 # See MPIF_PATH=
 #.
 #. This version of WAM was extracted from the ECMWF software data base
-#. from perforce branch wab_CY35R1_extract_WAM
+#. from perforce branch wab_CY36R4_extract_WAM
 #. Note that we have tried to remove much of the extra features that were
 #. introduced when both WAM and the atmospheric models were coupled.
 #. Some features do however remain. As much as possible, we have replaced
@@ -73,7 +73,7 @@ BINS=${TMPROOT}/bin
 
 #. location of the mpif.h file (please adapt !)
 #.#############################################
-MPIF_PATH=/home/rd/rdx/module/xlf90/31r2/ifsaux
+MPIF_PATH=/home/rd/rdx/module/xlf90/36r4/ifsaux
 
 #. Start compilation
 
@@ -394,14 +394,17 @@ mpl_setdflt_comm_mod.F90 \
 mpl_write_mod.F90 \
 mpl_module.F90 \
 yomgstats.F90 \
+gstats_barrier.F90 \
 fdbsubs_mod.F90 \
 cmpl_binding.F90 \
+gentrbk.F90 \
 convin.F90 \
 convout.F90 \
 endian.c \
 env.c \
 cargs.c \
-fnecsx.c
+fnecsx.c \
+my_sync.c
 OBJECTS1	=	$(SOURCE:.F=.o)
 OBJECTS2	=	$(SOURCE:.F90=.o)
 OBJECTS3	=	$(SOURCE:.c=.o)
@@ -513,9 +516,10 @@ ln -s /home/ma/emos/lib/000351/libemos.R64.D64.I32.a ${LIBS}/libemos.a
 
 cd ${BINS}
 
-for file in chief preproc preset create_wam_bathymetry
+for file in chief preproc preset create_wam_bathymetry bouint
 do
   echo 'create executable for '$file
+  \rm -f $file
   ar xv ${LIBS}/libwam.a ${file}.o
   mpxlf90_r -o ${file} -b64 -bbigtoc -bmaxstack:0x8000000000 -qsmp=omp ${file}.o \
   -L${LIBS} -lwam -lemos

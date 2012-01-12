@@ -530,7 +530,7 @@
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1220) THEN
 !       MULTI MODEL WAVE SEASONAL FORECAST
-        CSTREAM = 'mnsf'
+        CSTREAM = 'mmsf'
         IF(NTOTENS.EQ.0) THEN
           MARSFCTYPE = 'fc'
         ELSEIF(NENSFNB.EQ.0) THEN
@@ -538,7 +538,8 @@
         ELSE
           MARSFCTYPE = 'fc'
         ENDIF
-        KSTREAM = 1222
+!       KSTREAM = 1222  multi-model seasonal forecasts still use original seasonal wave stream
+        KSTREAM = 1082
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1221) THEN
 !       MULTI MODEL WAVE SEASONAL FORECAST MONTHLY MEANS

@@ -82,11 +82,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX 
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWICE   , ONLY : ICEMASK
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
+     &                      PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
@@ -112,7 +113,7 @@
 
       INTEGER, PARAMETER:: NLONW=1
       INTEGER, PARAMETER :: NLATW=1
-      INTEGER, PARAMETER :: NWVFIELDS=1
+      INTEGER, PARAMETER :: NWVFIELDS=8
       INTEGER, PARAMETER :: NC=1
       INTEGER, PARAMETER :: NR=1
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
@@ -267,8 +268,11 @@
       CALL MPDECOMP(NPR,MAXLEN,LLIRANK)
       MPMAXLENGTH=MAXLEN
 
+
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
+
+      LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
 
       ALLOCATE (U10OLD(NINF:NSUP,NBLO),THWOLD(NINF:NSUP,NBLO),
      &          USOLD(NINF:NSUP,NBLO),U10NEW(NINF:NSUP),
@@ -368,6 +372,11 @@
       DEALLOCATE (EMEAN)
       DEALLOCATE (FMEAN)
       DEALLOCATE (THQ)
+      IF (LWFLUX) THEN
+         DEALLOCATE (PHIEPS)
+         DEALLOCATE (PHIAW)
+         DEALLOCATE (TAUOC)
+      ENDIF
 
 
 !    3.  TERMINATE MESSAGE PASSING PROTOCOL 

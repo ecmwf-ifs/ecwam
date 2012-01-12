@@ -48,8 +48,8 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,CLDOMAIN
-      USE YOWCPBO  , ONLY : IBOUNC   ,AMOSOC   ,AMONOC   ,AMOEAC   ,
-     &            AMOWEC
+      USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,
+     &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,
      &            XOUTN    ,NOUTD    ,OUTLONG  ,OUTLAT
       USE YOWCOUT  , ONLY : NGOUT
@@ -179,6 +179,13 @@
 
       NFRE = ML
       NANG = KL
+
+      GBOUNC = 0
+      DO II=1,GBOUNC_MAX
+        IF(AMOSOC(II).EQ.-100.AND.AMONOC(II).EQ.-100..AND.
+     &    AMOWEC(II).EQ.0..AND.AMOEAC(II).EQ.0.)EXIT
+        GBOUNC=II
+      ENDDO
 
 
 ! ----------------------------------------------------------------------
@@ -488,76 +495,96 @@
 !           -------------------
 
       WRITE (IU06,'(" COARSE GRID OPTION IS IBOUNC = ",I3)') IBOUNC
+
       IF (IBOUNC .EQ. 1) THEN
-        CALL ADJUST (AMOWEC, AMOEAC)
-        WRITE (IU06,*) '   THIS IS A COARSE GRID RUN  INFORMATION',
-     &   ' FOR A FOLLOW UP FINE GRID WILL BE GENERATED'
-        WRITE (IU06,'(/4X," NEST AREA IN COARSE GIRD IS",
-     &   /,4X,"  SOUTHERN LAT  NORTHERN LAT ",
-     &   " WESTERN LONG  EASTERN LONG ")')
-        WRITE (IU06,'(4X,4F14.3)') AMOSOC, AMONOC, AMOWEC, AMOEAC
+
+        DO I=1,GBOUNC
+          CALL ADJUST (AMOWEC(I), AMOEAC(I))
+          WRITE (IU06,*) '   THIS IS A COARSE GRID RUN  INFORMATION',
+     &     ' FOR A FOLLOW UP FINE GRID WILL BE GENERATED'
+          WRITE (IU06,'(/4X," NEST AREA IN COARSE GIRD IS",
+     &     /,4X,"  SOUTHERN LAT  NORTHERN LAT ",
+     &     " WESTERN LONG  EASTERN LONG ")')
+          WRITE (IU06,'(4X,4F14.3)') AMOSOC(I), AMONOC(I), AMOWEC(I), 
+     &     AMOEAC(I)
 
 !*    2.6.1.1 ARE ALL CORNER POINTS OF THE NEST GRID POINTS?
 !             ----------------------------------------------
 
-        WEST = MOD(AMOWEC - AMOWEP + 720., 360.)
-        EAST = MOD(AMOEAC - AMOWEP + 720., 360.)
-        IF ((MOD(WEST, XDELLA) .NE. 0) .OR.
-     &   (MOD(EAST, XDELLA) .NE. 0) .OR.
-     &   (MOD(AMOSOC - AMOSOP, XDELLO) .NE. 0) .OR.
-     &   (MOD(AMONOC - AMONOP, XDELLO) .NE. 0)) THEN
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+    WARNING ERROR IN SUB. UIPREP        +'
-          WRITE (IU06,*) '+    ============================        +'
-          WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
-          WRITE (IU06,*) '+ ONE OR MORE CORNER POINTS ARE NOT      +'
-          WRITE (IU06,*) '+ COARSE GRID POINTS.                    +'
-          WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          IBOUNC = 0
-        ENDIF
+          WEST = MOD(AMOWEC(I) - AMOWEP + 720., 360.)
+          EAST = MOD(AMOEAC(I) - AMOEAP + 720., 360.)
+          DW=ABS(NINT(WEST/ XDELLO)-(WEST/ XDELLO)) 
+          DE=ABS(NINT(EAST/ XDELLO)-(EAST/ XDELLO))
+          DS=ABS(NINT((AMOSOC(I) - AMOSOP)/ XDELLA)-((AMOSOC(I)
+     &       - AMOSOP)/ XDELLA))
+          DN= ABS(NINT((AMONOC(I) - AMONOP)/ XDELLA)-((AMONOC(I) 
+     &       - AMONOP)/ XDELLA))
+
+          IF ((DW .GT. 1.E-10) .OR.
+     &        (DE .GT. 1.E-10) .OR.
+     &        (DS .GT. 1.E-10) .OR.
+     &        (DN .GT. 1.E-10)) THEN
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+    WARNING ERROR IN SUB. UIPREP        +'
+            WRITE (IU06,*) '+    ============================        +'
+            WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
+            WRITE (IU06,*) '+ ONE OR MORE CORNER POINTS ARE NOT      +'
+            WRITE (IU06,*) '+ COARSE GRID POINTS.                    +'
+            WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            WRITE (IU06,*) DW, AMOWEC(I), AMOWEP
+            WRITE (IU06,*) DE, AMOWEC(I), AMOEAP
+            WRITE (IU06,*) DS, AMOSOC(I), AMOSOP
+            WRITE (IU06,*) DN, AMONOC(I), AMONOP
+            IBOUNC = 0
+          ENDIF
+
 
 !*    2.6.1.2 INCLUDES THE COARSE GRID THE NEST GRID?
 !             ---------------------------------------
 
-        IF ((IPER.NE.1) .AND.
-     &   (AMOWEP.GT.AMOWEC      .OR. AMOEAC.GT.AMOEAP     ) .AND.
-     &   (AMOWEP.GT.AMOWEC+360. .OR. AMOEAC+360..GT.AMOEAP) .AND.
-     &   (AMOWEP.GT.AMOWEC-360. .OR. AMOEAC-360..GT.AMOEAP) ) THEN
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+     WARNING ERROR IN SUB. UIPREP       +'
-          WRITE (IU06,*) '+     ============================       +'
-          WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
-          WRITE (IU06,*) '+ WEST OR EAST BOUNDARY IS NOT IN COARSE +'
-          WRITE (IU06,*) '+ GRID AREA.                             +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+     AMOWEC AND/OR AMOEAC ARE WRONG     +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          IBOUNC = 0
-        ENDIF
-        IF (AMOSOP .GT. AMOSOC .OR. AMONOC .GT. AMONOP .OR.
-     &   AMOSOC .GE. AMONOC) THEN
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+     WARNING ERROR IN SUB. UIPREP       +'
-          WRITE (IU06,*) '+     ============================       +'
-          WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
-          WRITE (IU06,*) '+ NORTH OR SOUTH BOUNDARY IS NOT IN      +'
-          WRITE (IU06,*) '+ COARSE GRID AREA, OR SOUTH IS GE NORTH +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+     AMOSOC AND/OR AMONOC ARE WRONG     +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
-          WRITE (IU06,*) '+                                        +'
-          WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
-          IBOUNC = 0
-        ENDIF
+          IF ((IPER.NE.1) .AND.
+     &     (AMOWEP.GT.AMOWEC(I)     .OR. AMOEAC(I).GT.AMOEAP     ) .AND.
+     &     (AMOWEP.GT.AMOWEC(I)+360..OR. AMOEAC(I)+360..GT.AMOEAP) .AND.
+     &     (AMOWEP.GT.AMOWEC(I)-360..OR. AMOEAC(I)-360..GT.AMOEAP)) THEN
+
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+     WARNING ERROR IN SUB. UIPREP       +'
+            WRITE (IU06,*) '+     ============================       +'
+            WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
+            WRITE (IU06,*) '+ WEST OR EAST BOUNDARY IS NOT IN COARSE +'
+            WRITE (IU06,*) '+ GRID AREA.                             +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+     AMOWEC AND/OR AMOEAC ARE WRONG     +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            IBOUNC = 0
+          ENDIF
+          IF (AMOSOP .GT. AMOSOC(I) .OR. AMONOC(I) .GT. AMONOP .OR.
+     &     AMOSOC(I) .GE. AMONOC(I)) THEN
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+     WARNING ERROR IN SUB. UIPREP       +'
+            WRITE (IU06,*) '+     ============================       +'
+            WRITE (IU06,*) '+ ERROR IN NEST SPECIFICATIONS.          +'
+            WRITE (IU06,*) '+ OF FINE GRID NUMBER : ', I
+            WRITE (IU06,*) '+ NORTH OR SOUTH BOUNDARY IS NOT IN      +'
+            WRITE (IU06,*) '+ COARSE GRID AREA, OR SOUTH IS GE NORTH +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+     AMOSOC AND/OR AMONOC ARE WRONG     +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '+ NEST INFORMATION WILL NOT BE GENERATED +'
+            WRITE (IU06,*) '+                                        +'
+            WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
+            IBOUNC = 0
+          ENDIF
+        ENDDO
+        WRITE (IU06,*) '   NUMBERS OF FINE GRIDS ',GBOUNC
       ELSE
         WRITE (IU06,*) '   A NEST IS NOT INCLUDED IN THIS GRID'
       ENDIF

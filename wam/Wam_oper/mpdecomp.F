@@ -20,7 +20,7 @@
 !                  MAKE SURE THAT IT IS CREATED FOR YOUR RUN,
 !                  OTHERWISE IT MIGHT PICK UP THE DEFAULT ONE
 !                  THAT IS ALREADY ON DISK.
-!                  YOU ALSO HAVE TO CHANGE OUTUBUF.
+!                  YOU ALSO HAVE TO CHANGE MUBUF.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    P. de Rosnay  ECMWF   October 2009
 !                  Re-initilize for SEKF surface analysis loops
@@ -148,10 +148,12 @@
       INTEGER I4(2)
       INTEGER :: NLENHALO_MAX
       INTEGER :: ICOUNTS(NPR)
+      INTEGER :: NPLEN(NPR)
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
       INTEGER,ALLOCATABLE :: ICOMBUF_S(:)
       INTEGER,ALLOCATABLE :: ICOMBUF_R(:)
       INTEGER,ALLOCATABLE :: ISENDREQ(:)
+      INTEGER,ALLOCATABLE :: IDUM(:)
       INTEGER,ALLOCATABLE :: KDUM(:), KDUM2(:,:), KDUM3(:,:,:)
       INTEGER,ALLOCATABLE, DIMENSION(:) :: INDEX,IJNDEX,NTOTSUB
       INTEGER,ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
@@ -906,7 +908,8 @@
 
       MAXLEN=0
       DO IP=1,NPR
-        MAXLEN=MAX(MAXLEN,NEND(IP)-NSTART(IP)+1)
+        NPLEN(IP)=NEND(IP)-NSTART(IP)+1
+        MAXLEN=MAX(MAXLEN,NPLEN(IP))
       ENDDO
 
 !     FIND INDEX AND PE OF THE POINTS IN THE HALO
@@ -1899,11 +1902,13 @@
 
           ENDIF
 
-          CALL GSTATS(694,0)
-          ICOUNTS(:)=MPLENGTH
-          CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S,
-     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
-          CALL GSTATS(694,1)
+          IF(NPR.GT.1) THEN
+            CALL GSTATS(694,0)
+            ICOUNTS(:)=MPLENGTH
+            CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S,
+     &       KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+            CALL GSTATS(694,1)
+          ENDIF
 
 
 !         KEEP THE RELEVANT PART OF WLAT
@@ -1988,435 +1993,322 @@
 
         IF(.NOT.LL1D.AND.NPR.GT.1) ALLOCATE(KDUM(NIBLO))
 
-        IF(NPR.GT.1) THEN
-          MPLENGTH=2*NFRE*MAXLEN
-          IF(IRANK.EQ.IREAD) THEN
-            ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
-          ENDIF
-          ALLOCATE(ICOMBUF_R(MPLENGTH))
+        MPLENGTH=MAXLEN
+        IF(IRANK.EQ.IREAD) THEN
+          ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
         ENDIF
+        ALLOCATE(ICOMBUF_R(MPLENGTH))
+
+        ALLOCATE(IDUM(NIBLO))
+
+        ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        IF(IPROPAGS.EQ.1) THEN
+          ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+          ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        ENDIF
+        IF(IPROPAGS.EQ.2) THEN
+          ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
+        ENDIF
+
+        DO M=1,NFRE ! loop over frequencies
 
 !       READING KOBSLAT
 !       ---------------
-        ITAG=KTAG+2
-        IF(IRANK.EQ.IREAD) THEN
-          CALL GSTATS(1771,0)
-          ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
-          READ (IU08(IPROPAGS)) KOBSLAT
-          CALL GSTATS(1771,1)
+          DO IC=1,2
+            ITAG=ITAG+1
+            IF(IRANK.EQ.IREAD) THEN
 
-!         RELABELLING OF THE ARRAY
-          IF(.NOT.LL1D.AND.NPR.GT.1) THEN
-            DO IC=1,2
-              DO M=1,NFRE
+              CALL GSTATS(1771,0)
+              READ (IU08(IPROPAGS)) IDUM 
+              CALL GSTATS(1771,1)
+
+!             RELABELLING OF THE ARRAY
+              IF(.NOT.LL1D.AND.NPR.GT.1) THEN
                 DO NIJ=NSTART(1),NEND(NPR)
-                   KDUM(NIJ)=KOBSLAT(NEWIJ2IJ(NIJ),M,IC)
+                  KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                 ENDDO
                 DO NIJ=NSTART(1),NEND(NPR)
-                  KOBSLAT(NIJ,M,IC)=KDUM(NIJ)
+                  IDUM(NIJ)=KDUM(NIJ)
                 ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
+              ENDIF
 
-!         SEND TO OTHER PE'S
-          IF(NPR.GT.1) THEN
-!           FILL THE SEND BUFFER
-            DO IP=1,NPR
-              KCOUNT=(IP-1)*MPLENGTH
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    ICOMBUF_S(KCOUNT)=KOBSLAT(IJ,M,IC)
-                  ENDDO
-                ENDDO
-              ENDDO
-            ENDDO
-
-            DEALLOCATE(KOBSLAT)
-
-          ENDIF
-        ENDIF
-
-        IF(NPR.GT.1) THEN
-          CALL GSTATS(694,0)
-          ICOUNTS(:)=MPLENGTH
-          CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
-     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 1:')
-          CALL GSTATS(694,1)
-        ENDIF
-
-        IF(NPR.GT.1) THEN
-!       KEEP THE RELEVANT PART OF KOBSLAT
-          ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
-          IF(IRANK.EQ.IREAD) THEN
-            KCOUNT=(IRANK-1)*MPLENGTH
-            DO IC=1,2
-              DO M=1,NFRE
-                DO IJ=NSTART(IRANK),NEND(IRANK)
+!             FILL THE SEND BUFFER
+              DO IP=1,NPR
+                KCOUNT=(IP-1)*MPLENGTH
+                DO IJ=NSTART(IP),NEND(IP)
                   KCOUNT=KCOUNT+1
-                  KOBSLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
+                  ICOMBUF_S(KCOUNT)=IDUM(IJ)
                 ENDDO
               ENDDO
-            ENDDO
-          ELSE
-            KCOUNT=0
-            DO IC=1,2
-              DO M=1,NFRE
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                ENDDO
+            ENDIF
+
+            IF(NPR.GT.1) THEN
+              CALL GSTATS(694,0)
+              ICOUNTS(:)=MPLENGTH
+              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
+     &          KSENDBUF=ICOMBUF_S,
+     &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 1:')
+              CALL GSTATS(694,1)
+            ENDIF
+
+!           KEEP THE RELEVANT PART OF KOBSLAT
+            IF(IRANK.EQ.IREAD) THEN
+              KCOUNT=(IRANK-1)*MPLENGTH
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                KCOUNT=KCOUNT+1
+                KOBSLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
               ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
+            ELSE
+              KCOUNT=0
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                KCOUNT=KCOUNT+1
+                KOBSLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
+              ENDDO
+            ENDIF
+
+          ENDDO
 
 !       READING KOBSLON
 !       ---------------
-        ITAG=KTAG+3
-        IF(IRANK.EQ.IREAD) THEN
-          CALL GSTATS(1771,0)
-          ALLOCATE(KOBSLON(NIBLO,NFRE,2))
-          READ (IU08(IPROPAGS)) KOBSLON
-          CALL GSTATS(1771,1)
 
-!         RELABELLING OF THE ARRAY
-          IF(.NOT.LL1D.AND.NPR.GT.1) THEN
-            DO IC=1,2
-              DO M=1,NFRE
+          DO IC=1,2
+
+            ITAG=ITAG+1
+            IF(IRANK.EQ.IREAD) THEN
+              CALL GSTATS(1771,0)
+              READ (IU08(IPROPAGS)) IDUM 
+              CALL GSTATS(1771,1)
+
+!             RELABELLING OF THE ARRAY
+              IF(.NOT.LL1D.AND.NPR.GT.1) THEN
                 DO NIJ=NSTART(1),NEND(NPR)
-                   KDUM(NIJ)=KOBSLON(NEWIJ2IJ(NIJ),M,IC)
+                   KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                 ENDDO
                 DO NIJ=NSTART(1),NEND(NPR)
-                  KOBSLON(NIJ,M,IC)=KDUM(NIJ)
+                  IDUM(NIJ)=KDUM(NIJ)
                 ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-!         SEND TO OTHER PE'S
-          IF(NPR.GT.1) THEN
-!           FILL THE SEND BUFFER
-            DO IP=1,NPR
-              KCOUNT=(IP-1)*MPLENGTH
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IP),NEND(IP)
-                    KCOUNT=KCOUNT+1
-                    ICOMBUF_S(KCOUNT)=KOBSLON(IJ,M,IC)
-                  ENDDO
-                ENDDO
-              ENDDO
-            ENDDO
-
-            DEALLOCATE(KOBSLON)
-
-          ENDIF
-        ENDIF
-
-        IF(NPR.GT.1) THEN
-          CALL GSTATS(694,0)
-          ICOUNTS(:)=MPLENGTH
-          CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
-     &     KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 2:')
-          CALL GSTATS(694,1)
-        ENDIF
-
-        IF(NPR.GT.1) THEN
-!       KEEP THE RELEVANT PART OF KOBSLON
-          ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
-          IF(IRANK.EQ.IREAD) THEN
-            KCOUNT=(IRANK-1)*MPLENGTH
-            DO IC=1,2
-              DO M=1,NFRE
-                DO IJ=NSTART(IRANK),NEND(IRANK)
+              ENDIF
+!             FILL THE SEND BUFFER
+              DO IP=1,NPR
+                KCOUNT=(IP-1)*MPLENGTH
+                DO IJ=NSTART(IP),NEND(IP)
                   KCOUNT=KCOUNT+1
-                  KOBSLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
+                  ICOMBUF_S(KCOUNT)=IDUM(IJ)
                 ENDDO
               ENDDO
-            ENDDO
-          ELSE
-            KCOUNT=0
-            DO IC=1,2
-              DO M=1,NFRE
-                DO IJ=NSTART(IRANK),NEND(IRANK)
-                  KCOUNT=KCOUNT+1
-                  KOBSLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                ENDDO
+            ENDIF
+
+            IF(NPR.GT.1) THEN
+              CALL GSTATS(694,0)
+              ICOUNTS(:)=MPLENGTH
+              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
+     &          KSENDBUF=ICOMBUF_S,
+     &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 2:')
+              CALL GSTATS(694,1)
+            ENDIF
+
+!           KEEP THE RELEVANT PART OF KOBSLON
+            IF(IRANK.EQ.IREAD) THEN
+              KCOUNT=(IRANK-1)*MPLENGTH
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                KCOUNT=KCOUNT+1
+                KOBSLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
               ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
+            ELSE
+              KCOUNT=0
+              DO IJ=NSTART(IRANK),NEND(IRANK)
+                KCOUNT=KCOUNT+1
+                KOBSLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
+              ENDDO
+            ENDIF
+
+          ENDDO
 
 
 !       READING KOBSRLAT
 !       ----------------
-        IF(IPROPAGS.EQ.1) THEN
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(1771,0)
-            ALLOCATE(KOBSRLAT(NIBLO,NFRE,2))
-            READ (IU08(IPROPAGS)) KOBSRLAT
-            CALL GSTATS(1771,1)
-          ENDIF
+          IF(IPROPAGS.EQ.1) THEN
 
-!        DISTRIBUTE TO OTHER PE'S (IF NEEDED).
-          ITAG=KTAG+2
-          IF(IRANK.EQ.IREAD) THEN
-!           RELABELLING OF THE ARRAY
-            IF(.NOT.LL1D.AND.NPR.GT.1) THEN
-              DO IC=1,2
-                DO M=1,NFRE
+            DO IC=1,2
+              ITAG=ITAG+1
+
+              IF(IRANK.EQ.IREAD) THEN
+                CALL GSTATS(1771,0)
+                READ (IU08(IPROPAGS)) IDUM 
+                CALL GSTATS(1771,1)
+
+!               RELABELLING OF THE ARRAY
+                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
-                     KDUM(NIJ)=KOBSRLAT(NEWIJ2IJ(NIJ),M,IC)
+                    KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
                   DO NIJ=NSTART(1),NEND(NPR)
-                    KOBSRLAT(NIJ,M,IC)=KDUM(NIJ)
+                    IDUM(NIJ)=KDUM(NIJ)
                   ENDDO
-                ENDDO
-              ENDDO
-            ENDIF
-!           SEND TO OTHER PE'S
-            IF(NPR.GT.1) THEN
-!             FILL THE SEND BUFFER
-              DO IP=1,NPR
-                KCOUNT=(IP-1)*MPLENGTH
-                DO IC=1,2
-                  DO M=1,NFRE
-                    DO IJ=NSTART(IP),NEND(IP)
-                      KCOUNT=KCOUNT+1
-                      ICOMBUF_S(KCOUNT)=KOBSRLAT(IJ,M,IC)
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+                ENDIF
 
-              DEALLOCATE(KOBSRLAT)
-
-            ENDIF
-          ENDIF
-
-          IF(NPR.GT.1) THEN
-            CALL GSTATS(694,0)
-            ICOUNTS(:)=MPLENGTH
-            CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
-     &       KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 3:')
-            CALL GSTATS(694,1)
-          ENDIF
-
-          IF(NPR.GT.1) THEN
-!         KEEP THE RELEVANT PART OF KOBSRLAT
-            ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
-            IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=(IRANK-1)*MPLENGTH
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
+!               FILL THE SEND BUFFER
+                DO IP=1,NPR
+                  KCOUNT=(IP-1)*MPLENGTH
+                  DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    KOBSRLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
+                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
                   ENDDO
                 ENDDO
-              ENDDO
-           ELSE
-              KCOUNT=0
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    KCOUNT=KCOUNT+1
-                    KOBSRLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                  ENDDO
+              ENDIF
+
+              IF(NPR.GT.1) THEN
+                CALL GSTATS(694,0)
+                ICOUNTS(:)=MPLENGTH
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
+     &           KSENDBUF=ICOMBUF_S,
+     &           KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 3:')
+                CALL GSTATS(694,1)
+              ENDIF
+
+!             KEEP THE RELEVANT PART OF KOBSRLAT
+              IF(IRANK.EQ.IREAD) THEN
+                KCOUNT=(IRANK-1)*MPLENGTH
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSRLAT(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                 ENDDO
-              ENDDO
-            ENDIF
+              ELSE
+                KCOUNT=0
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSRLAT(IJ,M,IC)=ICOMBUF_R(KCOUNT)
+                ENDDO
+              ENDIF
+
+            ENDDO
           ENDIF
-
-        ELSE
-          IF(ALLOCATED(KOBSRLAT)) DEALLOCATE(KOBSRLAT)
-        ENDIF
-
 
 !       READING KOBSRLON
 !       ----------------
-        IF(IPROPAGS.EQ.1) THEN
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(1771,0)
-            ALLOCATE(KOBSRLON(NIBLO,NFRE,2))
-            READ (IU08(IPROPAGS)) KOBSRLON
-            CALL GSTATS(1771,1)
-          ENDIF
+          IF(IPROPAGS.EQ.1) THEN
 
-!         DISTRIBUTE TO OTHER PE'S (IF NEEDED).
-          ITAG=KTAG+5
-          IF(IRANK.EQ.IREAD) THEN
-!           RELABELLING OF THE ARRAY
-            IF(.NOT.LL1D.AND.NPR.GT.1) THEN
-              DO IC=1,2
-                DO M=1,NFRE
+            DO IC=1,2
+              ITAG=ITAG+1
+
+              IF(IRANK.EQ.IREAD) THEN
+                CALL GSTATS(1771,0)
+                READ (IU08(IPROPAGS)) IDUM 
+                CALL GSTATS(1771,1)
+
+!               RELABELLING OF THE ARRAY
+                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
-                     KDUM(NIJ)=KOBSRLON(NEWIJ2IJ(NIJ),M,IC)
+                     KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
                   DO NIJ=NSTART(1),NEND(NPR)
-                    KOBSRLON(NIJ,M,IC)=KDUM(NIJ)
+                    IDUM(NIJ)=KDUM(NIJ)
                   ENDDO
-                ENDDO
-              ENDDO
-            ENDIF
-!           SEND TO OTHER PE'S
-            IF(NPR.GT.1) THEN
-!             FILL THE SEND BUFFER
-              DO IP=1,NPR
-                KCOUNT=(IP-1)*MPLENGTH
-                DO IC=1,2
-                  DO M=1,NFRE
-                    DO IJ=NSTART(IP),NEND(IP)
-                      KCOUNT=KCOUNT+1
-                      ICOMBUF_S(KCOUNT)=KOBSRLON(IJ,M,IC)
-                    ENDDO
-                  ENDDO
-                ENDDO
-              ENDDO
+                ENDIF
 
-              DEALLOCATE(KOBSRLON)
-
-            ENDIF
-          ENDIF
-
-          IF(NPR.GT.1) THEN
-            CALL GSTATS(694,0)
-            ICOUNTS(:)=MPLENGTH
-            CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
-     &       KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 4:')
-            CALL GSTATS(694,1)
-          ENDIF
-
-          IF(NPR.GT.1) THEN
-!         KEEP THE RELEVANT PART OF KOBSRLON
-            ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
-            IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=(IRANK-1)*MPLENGTH
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
+!               FILL THE SEND BUFFER
+                DO IP=1,NPR
+                  KCOUNT=(IP-1)*MPLENGTH
+                  DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
-                    KOBSRLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
+                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
                   ENDDO
                 ENDDO
-              ENDDO
-            ELSE
-              KCOUNT=0
-              DO IC=1,2
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    KCOUNT=KCOUNT+1
-                    KOBSRLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                  ENDDO
-                ENDDO
-              ENDDO
-            ENDIF
-          ENDIF
+              ENDIF
 
-        ELSE
-          IF(ALLOCATED(KOBSRLON)) DEALLOCATE(KOBSRLON)
-        ENDIF
+              IF(NPR.GT.1) THEN
+                CALL GSTATS(694,0)
+                ICOUNTS(:)=MPLENGTH
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
+     &           KSENDBUF=ICOMBUF_S,
+     &           KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 4:')
+                CALL GSTATS(694,1)
+              ENDIF
+
+!             KEEP THE RELEVANT PART OF KOBSRLON
+              IF(IRANK.EQ.IREAD) THEN
+                KCOUNT=(IRANK-1)*MPLENGTH
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSRLON(IJ,M,IC)=ICOMBUF_S(KCOUNT)
+                ENDDO
+              ELSE
+                KCOUNT=0
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSRLON(IJ,M,IC)=ICOMBUF_R(KCOUNT)
+                ENDDO
+              ENDIF
+
+            ENDDO
+          ENDIF
 
 
 !       READING KOBSCOR
 !       ---------------
+          IF(IPROPAGS.EQ.2) THEN
+            DO IC=1,4
+              ITAG=ITAG+1
 
-        IF(IPROPAGS.EQ.2) THEN
-          IF(IRANK.EQ.IREAD) THEN
-            CALL GSTATS(1771,0)
-            ALLOCATE(KOBSCOR(NIBLO,NFRE,4))
-            READ (IU08(IPROPAGS)) KOBSCOR
-            CALL GSTATS(1771,1)
-          ENDIF
+              IF(IRANK.EQ.IREAD) THEN
+                CALL GSTATS(1771,0)
+                READ (IU08(IPROPAGS)) IDUM 
+                CALL GSTATS(1771,1)
 
-!         DISTRIBUTE TO OTHER PE'S (IF NEEDED).
-          ITAG=KTAG+6
-          IF(NPR.GT.1) THEN
-            MPLENGTH=4*NFRE*MAXLEN
-            IF(IRANK.EQ.IREAD) THEN
-              IF(ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
-              ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
-            ENDIF
-            IF(ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
-            ALLOCATE(ICOMBUF_R(MPLENGTH))
-          ENDIF
-          IF(IRANK.EQ.IREAD) THEN
-!           RELABELLING OF THE ARRAY
-            IF(.NOT.LL1D.AND.NPR.GT.1) THEN
-              DO IC=1,4
-                DO M=1,NFRE
+!               RELABELLING OF THE ARRAY
+                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
-                     KDUM(NIJ)=KOBSCOR(NEWIJ2IJ(NIJ),M,IC)
+                   KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
                   DO NIJ=NSTART(1),NEND(NPR)
-                    KOBSCOR(NIJ,M,IC)=KDUM(NIJ)
+                    IDUM(NIJ)=KDUM(NIJ)
+                  ENDDO
+                ENDIF
+
+!               FILL THE SEND BUFFER
+                DO IP=1,NPR
+                  KCOUNT=(IP-1)*MPLENGTH
+                  DO IJ=NSTART(IP),NEND(IP)
+                    KCOUNT=KCOUNT+1
+                    ICOMBUF_S(KCOUNT)=IDUM(IJ)
                   ENDDO
                 ENDDO
-              ENDDO
-            ENDIF
-!           SEND TO OTHER PE'S
-            IF(NPR.GT.1) THEN
-!             FILL THE SEND BUFFER
-              DO IP=1,NPR
-                KCOUNT=(IP-1)*MPLENGTH
-                DO IC=1,4
-                  DO M=1,NFRE
-                    DO IJ=NSTART(IP),NEND(IP)
-                      KCOUNT=KCOUNT+1
-                      ICOMBUF_S(KCOUNT)=KOBSCOR(IJ,M,IC)
-                    ENDDO
-                  ENDDO
+              ENDIF
+
+              IF(NPR.GT.1) THEN
+                CALL GSTATS(694,0)
+                ICOUNTS(:)=MPLENGTH
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
+     &            KSENDBUF=ICOMBUF_S,
+     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 5:')
+                CALL GSTATS(694,1)
+              ENDIF           
+
+!             KEEP THE RELEVANT PART OF KOBSCOR
+              IF(IRANK.EQ.IREAD) THEN
+                KCOUNT=(IRANK-1)*MPLENGTH
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSCOR(IJ,M,IC)=ICOMBUF_S(KCOUNT)
                 ENDDO
-              ENDDO
+              ELSE
+                KCOUNT=0
+                DO IJ=NSTART(IRANK),NEND(IRANK)
+                  KCOUNT=KCOUNT+1
+                  KOBSCOR(IJ,M,IC)=ICOMBUF_R(KCOUNT)
+                ENDDO
+              ENDIF
+            ENDDO
 
-              DEALLOCATE(KOBSCOR)
-
-            ENDIF
           ENDIF
 
-          IF(NPR.GT.1) THEN
-            CALL GSTATS(694,0)
-            ICOUNTS(:)=MPLENGTH
-            CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,KSENDBUF=ICOMBUF_S,
-     &       KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 5:')
-            CALL GSTATS(694,1)
-          ENDIF           
-
-          IF(NPR.GT.1) THEN
-!         KEEP THE RELEVANT PART OF KOBSCOR
-            ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
-            IF(IRANK.EQ.IREAD) THEN
-              KCOUNT=(IRANK-1)*MPLENGTH
-              DO IC=1,4
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    KCOUNT=KCOUNT+1
-                    KOBSCOR(IJ,M,IC)=ICOMBUF_S(KCOUNT)
-                  ENDDO
-                ENDDO
-              ENDDO
-            ELSE
-              KCOUNT=0
-              DO IC=1,4
-                DO M=1,NFRE
-                  DO IJ=NSTART(IRANK),NEND(IRANK)
-                    KCOUNT=KCOUNT+1
-                    KOBSCOR(IJ,M,IC)=ICOMBUF_R(KCOUNT)
-                  ENDDO
-                ENDDO
-              ENDDO
-            ENDIF
-          ENDIF
-
-        ELSE
-          IF(ALLOCATED(KOBSCOR)) DEALLOCATE(KOBSCOR)
-        ENDIF
-
+        ENDDO ! end loop on frequencies
 
         IF(ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
         IF(ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
+
+        DEALLOCATE(IDUM)
 
         IF(.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
 
@@ -2434,20 +2326,36 @@
           ALLOCATE(WCOR(NIBLO,4))
           READ (IU08(IPROPAGS)) WCOR
         ENDIF
+
         ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
         ALLOCATE(KOBSLON(NIBLO,NFRE,2))
-        READ (IU08(IPROPAGS)) KOBSLAT
-        READ (IU08(IPROPAGS)) KOBSLON
         IF(IPROPAGS.EQ.1) THEN
           ALLOCATE(KOBSRLAT(NIBLO,NFRE,2))
           ALLOCATE(KOBSRLON(NIBLO,NFRE,2))
-          READ (IU08(IPROPAGS)) KOBSRLAT
-          READ (IU08(IPROPAGS)) KOBSRLON
-        ENDIF
-        IF(IPROPAGS.EQ.2) THEN
+        ELSEIF (IPROPAGS.EQ.2) THEN
           ALLOCATE(KOBSCOR(NIBLO,NFRE,4))
-          READ (IU08(IPROPAGS)) KOBSCOR
         ENDIF
+
+        DO M=1,NFRE ! loop over frequencies
+          DO IC=1,2
+            READ (IU08(IPROPAGS)) KOBSLAT(:,M,IC)
+          ENDDO
+          DO IC=1,2
+            READ (IU08(IPROPAGS)) KOBSLON(:,M,IC)
+          ENDDO
+          IF(IPROPAGS.EQ.1) THEN
+            DO IC=1,2
+              READ (IU08(IPROPAGS)) KOBSRLAT(:,M,IC)
+            ENDDO
+            DO IC=1,2
+              READ (IU08(IPROPAGS)) KOBSRLON(:,M,IC)
+            ENDDO
+          ELSEIF(IPROPAGS.EQ.2) THEN
+            DO IC=1,4
+              READ (IU08(IPROPAGS)) KOBSCOR(:,M,IC)
+            ENDDO
+          ENDIF
+        ENDDO
         CALL GSTATS(1771,1)
       ENDIF
 

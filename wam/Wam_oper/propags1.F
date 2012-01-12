@@ -407,6 +407,7 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -604,6 +605,7 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -972,8 +974,8 @@
 !           the non rotated quadrant has the strictest CFL criteria
             DO IJ = MIJS,MIJL
               CGOMFULL=GOM(M)/(1.-PRQRT(IJ,IG))
-              CFLEA(IJ) = DLE(IJ)*GOMFULL
-              CFLNO(IJ) = CFLNO(IJ)*GOMFULL
+              CFLEA(IJ) = DLE(IJ)*CGOMFULL
+              CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
               DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
             ENDDO
               CALL CHECKCFL(MIJS, MIJL, DTC,
@@ -1145,8 +1147,8 @@
 !             the non rotated quadrant has the strictest CFL criteria
               DO IJ = MIJS,MIJL
                 CGOMFULL=1./(1.-PRQRT(IJ,IG))
-                CFLEA(IJ) = CFLEA(IJ)*GOMFULL
-                CFLNO(IJ) = CFLNO(IJ)*GOMFULL
+                CFLEA(IJ) = CFLEA(IJ)*CGOMFULL
+                CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
                 DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
               ENDDO
               CALL CHECKCFL(MIJS, MIJL, DTC,
@@ -1207,6 +1209,7 @@
       DEALLOCATE(CFLEAR)
       DEALLOCATE(CFLNOR)
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -1545,6 +1548,5 @@
       DEALLOCATE(CFLOM)
 
       IF (LHOOK) CALL DR_HOOK('PROPAGS1',1,ZHOOK_HANDLE)
-
       RETURN
       END SUBROUTINE PROPAGS1

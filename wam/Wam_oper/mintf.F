@@ -74,7 +74,8 @@
 
         XLAMDA = AMOWEP + REAL(I-1) * XDELLO
         DO M=1,NBOUNC
-          IF (BLATC(M).EQ.PHI .AND. BLNGC(M).EQ.XLAMDA) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -117,7 +118,8 @@
 
         XLAMDA = AMOWEP + (I-IS) * XDELLO
         DO M=1,NBOUNC
-          IF (BLATC(M).EQ.PHI .AND. BLNGC(M).EQ.XLAMDA) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -169,8 +171,10 @@
 
         K = K + 1
         PHI = AMOSOP + (K-1) * DPHIAC
+         
         DO M=1,NBOUNC
-          IF (BLNGC(M).EQ.XLAMDA .AND. BLATC(M).EQ.PHI) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -227,7 +231,8 @@
         K = K + 1
         PHI = AMOSOP + (K-1) * DPHIAC
         DO M=1,NBOUNC
-          IF (BLNGC(M).EQ.XLAMDA .AND. BLATC(M).EQ.PHI) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI

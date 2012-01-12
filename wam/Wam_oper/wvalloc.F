@@ -1,5 +1,5 @@
-      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W,LWCUR,
-     &                   LFRSTIM)
+      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W,LDWFLUX,
+     &                   LWCUR,LFRSTIM)
 
 ! ----------------------------------------------------------------------
 
@@ -14,11 +14,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
       USE YOWCOUT  , ONLY : LFDB
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : ICEMASK
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
+     &                      PHIAW    ,TAUOC  
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
@@ -36,7 +37,7 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W
+      LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W, LDWFLUX
       LOGICAL :: LLIRANK 
       LOGICAL LFRST
       LOGICAL :: LWCUR
@@ -67,6 +68,7 @@
       LMESSPASS=LMESSPIFS
       LWCOU=LDWCOUIFS
       LWCOU2W=LDWCOU2W
+      LWFLUX=LDWFLUX
 
       IF(LFRSTIM) THEN
         IF(LMESSPASS) THEN
@@ -141,7 +143,21 @@
      &  ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
       IF(.NOT.ALLOCATED(FMEAN))
      &  ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))
-      IF(.NOT.ALLOCATED(THQ)) ALLOCATE(THQ(NSTART(IRANK):NEND(IRANK)))
+      IF(.NOT.ALLOCATED(THQ)) 
+     &  ALLOCATE(THQ(NSTART(IRANK):NEND(IRANK)))
+
+        IF(.NOT.ALLOCATED(PHIEPS)) THEN 
+          ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
+          PHIEPS = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(PHIAW)) THEN 
+          ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
+          PHIAW = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(TAUOC)) THEN
+          ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
+          TAUOC = 0.
+        ENDIF
 
       IF ( (LWCOU .AND. LWCUR) .OR.
      &      IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN

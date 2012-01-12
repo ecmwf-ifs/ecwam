@@ -13,7 +13,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
+     &                      PHIAW    ,TAUOC    
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
      &            FCONST   ,ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,
      &            SL
@@ -51,6 +52,9 @@
       IF(ALLOCATED(EMEAN)) DEALLOCATE(EMEAN)
       IF(ALLOCATED(FMEAN)) DEALLOCATE(FMEAN)
       IF(ALLOCATED(THQ)) DEALLOCATE(THQ)
+      IF(ALLOCATED(PHIEPS)) DEALLOCATE(PHIEPS)
+      IF(ALLOCATED(PHIAW)) DEALLOCATE(PHIAW)
+      IF(ALLOCATED(TAUOC)) DEALLOCATE(TAUOC)
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 

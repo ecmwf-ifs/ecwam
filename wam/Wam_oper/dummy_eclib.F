@@ -57,14 +57,21 @@
 
        SUBROUTINE JFH_BIND 
        WRITE(*,*) 'THE ROUTINE JFH_BIND WAS REPLACED BY A DUMMY'
-       WRITE(*,*) 'IFSSIG is specific to signal handling for runs'
+       WRITE(*,*) 'It is specific to signal handling for runs'
+       WRITE(*,*) 'at  ECMWF, it can be commented out.'
+       RETURN
+       END
+
+       SUBROUTINE EC_BIND 
+       WRITE(*,*) 'THE ROUTINE EC_BIND WAS REPLACED BY A DUMMY'
+       WRITE(*,*) 'It is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
        END
 
        SUBROUTINE C_DRHOOK_PRINT 
        WRITE(*,*) 'THE ROUTINE C_DRHOOK_PRINT WAS REPLACED BY A DUMMY'
-       WRITE(*,*) 'IFSSIG is specific to signal handling for runs'
+       WRITE(*,*) 'It is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
        END

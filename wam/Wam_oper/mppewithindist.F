@@ -64,7 +64,7 @@
       REAL, ALLOCATABLE :: XLONG(:)
       REAL, ALLOCATABLE,DIMENSION(:,:) :: CPH2, SPH2
 
-      LMAX = NINT(DEG*DISTMAX/XDELLA)
+      LMAX = INT(DEG*DISTMAX/XDELLA)+1
 !     add a small number to DISTMAX as a safety precaution
 !     i.e each PE will get slightly more data that they should
 !     strictly have.

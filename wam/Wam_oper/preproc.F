@@ -94,7 +94,7 @@
 !                  AND COMPUTED CONSTANTS. (UNFORMATED)
 !                  (SEE SUB OUTCOM).
 !       *IU08*   - LOGICAL UNITS FOR OUTPUT OF MODULE UBUF.
-!                  (UNFORMATED) (SEE SUB OUTUBUF).
+!                  (UNFORMATED) (SEE SUB MUBUF).
 !       *IU09*   - LOGICAL UNIT FOR UNFORMATED OUTPUT OF COARSE
 !                  GRID BOUNDARY ORGANISATION (MODULE CBOUND),
 !                  IF THIS IS A COARSE GRID PREPROC.
@@ -140,7 +140,6 @@
 !       *NLWEIGT*   - COMPUTES NON LINEAR WEIGHTS IN MODULE INDNL
 !       *OUTCOM*    - OUTPUT OF COMPUTED MODULES
 !       *OUTPP*     - OUTPUT OF GRID.
-!       *OUTUBUF*   - OUTPUT OF BLOCK MODULE UBUF
 !       *PACKI*     - PACKS AN INTEGER ARRAY.
 !       *PACKR*     - PACKS A REAL ARRAY.
 !       *READCUR*   - READ A CURRENT FIELD.
@@ -187,7 +186,6 @@
 ! ----------------------------------------------------------------------
       LOGICAL :: LLGRID
 
-
       LMESSPASS=.FALSE.
 
       CALL INIWCST
@@ -196,13 +194,7 @@
 !        -------------------------------------
 
       IU02  = 2
-      IU03  = 3
       IU06  = 6
-      IU09  = 9
-      IU10  = 10
-      IU17  = 17
-      IU19  = 19
-      IU20  = 20
 
 ! ----------------------------------------------------------------------
 
@@ -210,7 +202,6 @@
 !        ------------------------------------
 
       CALL UIPREP (IFORM, ML, KL, LLGRID)
-
 
 ! ----------------------------------------------------------------------
 
@@ -233,9 +224,14 @@
 !     NLONRGG IS ALLOCATED IN UIPREP
       ALLOCATE(ZDELLO(NY))
 
-
       IU01 = I_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0)
-      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0)
+
+      IF (IFORM.NE.2) THEN
+        IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0)
+      ELSE
+        IU17 = I_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0)
+      ENDIF
+
       DO ICL=0,2
         WRITE(C1,'(I1)') ICL
         FILENAME='wam_subgrid_'//C1
@@ -243,6 +239,34 @@
         IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
         IU08(ICL) = I_GET_UNIT(IU06,FILENAME(1:LFILE) , 'w', 'u', 0)
       ENDDO
+
+      IF (IBOUNC.EQ.1) THEN
+!       Information of the nested grid(s) that will be produce by a coarse grid run
+        IF (IFORM.NE.2) THEN
+          IU09=I_GET_UNIT(IU06,'wam_nested_grids_info','w', 'u', 0)
+        ELSE
+          IU19=I_GET_UNIT(IU06,'wam_nested_grids_info_form','w','f',0)
+        ENDIF
+      ENDIF
+
+      IF (IBOUNF.EQ.1) THEN
+!       Information of the nested grid(s) that were produced by a coarse grid run
+        IF (IFORM.NE.2) THEN
+          IU03=I_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info',
+     &                    'r', 'u', 0)
+        ELSE
+          IU03=I_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form',
+     &                    'r','f',0)
+        ENDIF
+
+!       Information about the boundary points that will be needed for a fine
+!       grid run.
+        IF (IFORM.NE.2) THEN
+          IU10=I_GET_UNIT(IU06,'wam_boundary_grid_info', 'w', 'u', 0)
+        ELSE
+          IU20=I_GET_UNIT(IU06,'wam_boundary_grid_info_form','w','f',0)
+        ENDIF
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -324,11 +348,11 @@
 !         --------------
 
       BETAMAX = 1.20
-      ZALP    = 0.0110
+      ZALP    = 0.008
       IF(ML.GT.30) THEN
-        ALPHA   = 0.0090
+        ALPHA   = 0.0060
       ELSE
-        ALPHA   = 0.0095
+        ALPHA   = 0.0075
       ENDIF
       XKAPPA  = 0.40
 
@@ -390,7 +414,7 @@
         CALL FLUSH(IU06)
       ENDIF
 
-      NIBLD=O
+      NIBLD=0
       NBLD=0
       NIBLC=0
       NBLC=0
@@ -407,7 +431,7 @@
 !        -------------------------
 
 
-!*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFBOU).
+!*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
 !         ---------------------------------------------------
 
       IF (IBOUNF.EQ.1) THEN
@@ -418,7 +442,7 @@
         NBOUNF = 0
       ENDIF
 
-!*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCBOU).
+!*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
 !         -----------------------------------------------------
 
       IF (IBOUNC.EQ.1) THEN
@@ -466,9 +490,3 @@
 
       STOP
       END
-
-
-
-
-
-

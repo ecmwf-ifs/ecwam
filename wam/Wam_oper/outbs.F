@@ -77,14 +77,15 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG
+     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
+     &            PHIAWG  ,TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,
      &            SMEAN    ,P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
-     &            USTMEAN  ,VSTMEAN
+     &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
@@ -493,6 +494,23 @@
           IF(LLALLOC_GRDFLD(43)) ALLOCATE(VCURG(NGX,NGY))
         ENDIF
       ENDIF
+      IF(IPFGTBL(44).NE.0) THEN
+        IF(.NOT.ALLOCATED(PHIEPSG)) THEN
+          IF(LLALLOC_GRDFLD(44)) ALLOCATE(PHIEPSG(NGX,NGY))
+        ENDIF
+      ENDIF
+      IF(IPFGTBL(45).NE.0) THEN
+        IF(.NOT.ALLOCATED(PHIAWG)) THEN
+          IF(LLALLOC_GRDFLD(45)) ALLOCATE(PHIAWG(NGX,NGY))
+        ENDIF
+      ENDIF
+      IF(IPFGTBL(46).NE.0) THEN
+        IF(.NOT.ALLOCATED(TAUOCG)) THEN
+          IF(LLALLOC_GRDFLD(46)) ALLOCATE(TAUOCG(NGX,NGY))
+        ENDIF
+      ENDIF
+
+
 
       CALL OUTGRID (IJS, IJL, IG, U10NEW, THWNEW, USNEW, TAUW,
      &              NSTART,NEND)

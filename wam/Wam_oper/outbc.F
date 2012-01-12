@@ -10,7 +10,7 @@
 !*    PURPOSE.
 !     --------
 
-!        WRITE THE BOUNDARY VALUE OUTPUT FILE.
+!        WRITE THE BOUNDARY VALUE OUTPUT FILE(s).
 
 !**   INTERFACE.
 !     ----------
@@ -30,7 +30,7 @@
 !     METHOD.
 !     -------
 
-!       SEQUENCIAL UNFORMATED WRITE TO UNIT.
+!       SEQUENCIAL UNFORMATED WRITE TO UNIT(s).
 
 !     EXTERNALS.
 !     ----------
@@ -47,60 +47,90 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWCBOU  , ONLY : NBOUNC   ,IJARC    ,IGARC
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,GBOUNC   ,
+     &            IPOGBO
+      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWSTAT  , ONLY : CDTPRO
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWMPP   , ONLY : NINF     ,NSUP     , NPROC  , IRANK
+      USE YOWSTAT  , ONLY : CDTPRO   ,NWAM_BLKS
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      REAL :: FL3(NINF-1:NSUP,NANG,NFRE)
+      INTEGER, PARAMETER :: NSCFLD=3
+      INTEGER:: IJS, IJL, IG 
+      INTEGER:: IJ, II, NGOU, IX, KX, K ,M 
+      INTEGER:: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER :: IRECV
+      INTEGER,DIMENSION(GBOUNC) :: IU19
 
+      REAL :: XLON, XLAT
       REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW
+      REAL,DIMENSION(IJS:IJL) :: EM, FM, TQ
+      REAL,DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
+      REAL :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL,DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
+
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
+
+      NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
       LLAK=.FALSE.
-      CALL FEMEAN (FL3(IJS:IJL,:,:), IJS, IJL, EMEAN(IJS), FMEAN(IJS),
-     &             LLAK)
-      CALL STHQ   (FL3(IJS:IJL,:,:), IJS, IJL, THQ(IJS))
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+      DO JKGLO=IJS,IJL,NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJL)
+
+        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),
+     &               FM(KIJS), LLAK)
+        CALL STHQ (FL3(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
+      ENDDO
+!$OMP END PARALLEL DO
+
       IF (ITEST.GE.3) THEN
-        IF (ITESTB.GE.IG) THEN
-          WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',
-     &     ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
-        ENDIF
+        WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',
+     &   ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
       ENDIF
 
-!*    2. LOOP OVER BOUNDARY POINTS.
-!        --------------------------
+      IRECV=1
+      CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,
+     &                FL3(IJS:IJL,:,:), EM, TQ, FM,
+     &                FLPTS, EMPTS, TQPTS, FMPTS)
 
-      DO NGOU=1,NBOUNC
-        IF (IG .LT. IGARC(NGOU)) EXIT 
-        IF (IG.EQ.IGARC(NGOU)) THEN
-          IJ = IJARC(NGOU)
-          IX = IXLG(IJ,IG)
-          KX = KXLT(IJ,IG)
-          XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
-          XLAT = AMOSOP + REAL(KX-1)*XDELLA
 
-!*    2.1 WRITE INFORMATION TO FILE IU19.
-!         -------------------------------
+!*    2. WRITE INFORMATION TO FILE(s) IU19.
+!        ----------------------------------
 
-          XIJ   = REAL(IJ)
-          XIG   = REAL(IG)
-          WRITE(IU19) XLON, XLAT, CDTPRO, EMEAN(IJ),
-     &     THQ(IJ), FMEAN(IJ), USNEW(IJ), THWNEW(IJ)
-          WRITE(IU19) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
-        ENDIF
-      ENDDO
+      IF(IRANK.EQ.IRECV) THEN
+        DO II=1,GBOUNC
+          DO NGOU=IPOGBO(II-1)+1,IPOGBO(II)
+            IF(LL1D) THEN
+              IJ = IJARC(NGOU)
+            ELSE
+              IJ = IJ2NEWIJ(IJARC(NGOU))
+            ENDIF
+            IX = IXLG(IJ,IG)
+            KX = KXLT(IJ,IG)
+            XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
+            XLAT = AMOSOP + REAL(KX-1)*XDELLA
+
+            WRITE(IU19(II)) XLON, XLAT, CDTPRO,
+     &          EMPTS(NGOU), TQPTS(NGOU), FMPTS(NGOU) 
+            WRITE(IU19(II)) ((FLPTS(NGOU,K,M),K=1,NANG),M=1,NFRE)
+          ENDDO
+        ENDDO
+      ENDIF
 
       RETURN
       END SUBROUTINE OUTBC

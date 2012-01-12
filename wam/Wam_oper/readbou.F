@@ -36,24 +36,35 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCBOU  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
-      USE YOWFBOU  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF    ,
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC, 
+     &            GBOUNC, IPOGBO
+      USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF    ,
      &            IBFL     ,IBFR     ,BFW
+      USE YOWMPP   , ONLY : NPROC
+      USE YOWPARAM , ONLY : LL1D
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
+      REAL,ALLOCATABLE ::  BLNGC(:),BLATC(:)
 
       IF (IBOUNC.EQ.1) THEN
-
-!     READ COMMON BOUNC
-
-        READ (IU09,ERR=2000) NBOUNC
-
+        READ(IU09, ERR=2000) GBOUNC
+        ALLOCATE(IPOGBO(0:GBOUNC))
+        READ(IU09, ERR=2000)(IPOGBO(I),I=1,GBOUNC)
+        NBOUNC=IPOGBO(GBOUNC)
+        IPOGBO(0)=0
         ALLOCATE(IGARC(NBOUNC))
         ALLOCATE(IJARC(NBOUNC))
-
-        READ (IU09,ERR=2000) (IGARC(I),I=1,NBOUNC),
-     &   (IJARC(I),I=1,NBOUNC)
-
+        ALLOCATE(BLNGC(NBOUNC))
+        ALLOCATE(BLATC(NBOUNC))
+!       READ COMMON BOUNC
+        DO II=1,GBOUNC
+          READ(IU09, ERR=2000) NBOUNC_LOC
+          READ (IU09,ERR=2000) (IGARC(IPOGBO(II-1)+I),I=1,NBOUNC_LOC)
+          READ (IU09,ERR=2000) (IJARC(IPOGBO(II-1)+I),I=1,NBOUNC_LOC)
+          READ(IU09,ERR=2000) DLA, DPH, AMOS, AMON, AMOE, AMOW, 
+     &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
+        ENDDO
       ENDIF
 
       IF (IBOUNF.EQ.1) THEN
@@ -73,6 +84,13 @@
      &   (IBFL(I),I=1,NBOUNF),
      &   (IBFR(I),I=1,NBOUNF),
      &   (BFW(I),I=1,NBOUNF)
+
+!       CONVERT IJARF TO NEW ORDER IF 2D DECOMPOSITION
+        IF(.NOT.LL1D .AND. NPROC.GT.1 ) THEN
+          DO I=1,NBOUNF
+            IJARF(I)=IJ2NEWIJ(IJARF(I))
+          ENDDO
+        ENDIF
 
       ENDIF
       RETURN

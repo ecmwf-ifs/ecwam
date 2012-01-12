@@ -72,14 +72,15 @@
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG
+     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
+     &            PHIAWG   ,TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN    ,
-     &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,BFMEAN   ,
-     &            QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,USTMEAN  ,
-     &            VSTMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,
+     &            SMEAN    ,P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,
+     &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
+     &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
@@ -89,6 +90,7 @@
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
+      USE YOWTEST  , ONLY : IU06     
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -336,6 +338,30 @@
      &      CALL MAKEGRID (TEMP,VCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
           ENDIF
 
+          IF(IPFGTBL(44).NE.0) THEN
+            CALL LOC2GLO(PHIEPS(IJS),TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(44),44,NSTART,NEND,TEMP)
+            IF(IPFGTBL(44).EQ.IRANK) 
+     &      CALL MAKEGRID (TEMP,PHIEPSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(45).NE.0) THEN
+            CALL LOC2GLO(PHIAW(IJS),TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(45),45,NSTART,NEND,TEMP)
+            IF(IPFGTBL(45).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,PHIAWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(46).NE.0) THEN
+            CALL LOC2GLO(TAUOC(IJS),TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MPGATHERSCFLD(IPFGTBL(46),46,NSTART,NEND,TEMP)
+            IF(IPFGTBL(46).EQ.IRANK)
+     &      CALL MAKEGRID (TEMP,TAUOCG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+          ENDIF
+
         ELSE
 
           IF(IPFGTBL(1).NE.0) THEN
@@ -499,6 +525,22 @@
             ENDDO
             LSQRT=.FALSE.
             CALL MAKEGRID (TEMP,VCURG,JS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+
+          IF(IPFGTBL(44).NE.0) THEN
+            CALL LOC2GLO(PHIEPS,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,PHIEPSG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+          IF(IPFGTBL(45).NE.0) THEN
+            CALL LOC2GLO(PHIAW,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,PHIAWG,IJS,IJL,IG,LSQRT,ZMISS)
+          ENDIF
+          IF(IPFGTBL(46).NE.0) THEN
+            CALL LOC2GLO(TAUOC,TEMP,IJS,IJL,IG)
+            LSQRT=.FALSE.
+            CALL MAKEGRID (TEMP,TAUOCG,IJS,IJL,IG,LSQRT,ZMISS)
           ENDIF
 
         ENDIF

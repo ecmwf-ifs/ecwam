@@ -63,7 +63,7 @@
       INTEGER :: IREAD, IUNIT1
       INTEGER :: KFILE_HANDLE1
       INTEGER :: LFILE, KGRIB_HANDLE
-      INTEGER :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM
+      INTEGER :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
       INTEGER :: IRET, KBYTES, ISIZE
       INTEGER :: KK, MM
       INTEGER :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
@@ -238,6 +238,8 @@
           IF(LGRIBAPI_I) THEN
            CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
+           KK=0
+           MM=0
            CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                      KGRIB_HANDLE, INGRIB, ISIZE,
      &                      NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
@@ -248,6 +250,8 @@
             CALL IGRIB_RELEASE(KGRIB_HANDLE)
           ELSE
             KLENG = KLEN 
+            KDM=0
+            MDM=0
             ZDUM=0.
             CALL GRB2WGRD (IU06, ITEST, NKSEK0,NKSEK1,NKSEK2,NKSEK3,
      &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
@@ -255,9 +259,8 @@
      &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
      &                     ZDUM, ZDUM,
-     &                     CDATEIN, IFORP, IPARAM,KZLEV,IDM,IDM, FIELD)
+     &                     CDATEIN, IFORP, IPARAM,KZLEV,KDM,MDM, FIELD)
           ENDIF
-
 
           IF(IVAR.EQ.2 .AND. CDATEIN.NE.CDATEIN_OLD) THEN
             WRITE(IU06,*) ' *****************************************'

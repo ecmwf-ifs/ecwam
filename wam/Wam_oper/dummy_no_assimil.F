@@ -38,7 +38,6 @@
        CALL ABORT1
        RETURN
        END
-       END
        SUBROUTINE SYMINV 
        WRITE(*,*) 'FATAL ERROR : ATTEMPT TO USE THE DUMMY DEFINITION OF'
        WRITE(*,*) '              SUBROUTINE SYMINV !!!'

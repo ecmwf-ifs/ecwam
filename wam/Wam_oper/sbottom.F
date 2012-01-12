@@ -46,7 +46,7 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (CONST = -2.0*0.076/G)
+      PARAMETER (CONST = -2.0*0.038/G)
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       DIMENSION SBO(IJS:IJL)
 

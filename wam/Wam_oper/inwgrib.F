@@ -36,7 +36,7 @@
 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWMAP   , ONLY : IRGG     ,AMOSOP   ,
      &            AMONOP   ,AMOWEP   ,AMOEAP   ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI 
@@ -52,7 +52,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NBIT = 430000
+      INTEGER :: NBIT
 
       INTEGER :: IREAD, IPARAM, KZLEV, IFORP
       INTEGER :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
@@ -73,6 +73,8 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
+
+      NBIT=NIBLO
 
       LLEXIST=.FALSE.
       LFILE = LEN_TRIM(FILNM)

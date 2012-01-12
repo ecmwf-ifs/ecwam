@@ -30,6 +30,9 @@
       REAL, ALLOCATABLE :: VSTOKESG(:,:) 
       REAL, ALLOCATABLE :: UCURG(:,:) 
       REAL, ALLOCATABLE :: VCURG(:,:) 
+      REAL, ALLOCATABLE :: PHIEPSG(:,:) 
+      REAL, ALLOCATABLE :: PHIAWG(:,:) 
+      REAL, ALLOCATABLE :: TAUOCG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -66,6 +69,9 @@
 !      *VSTOKESG*  REAL      GRIDDED V-COMP STOKESDRIFT (M/S).
 !      *UCURG*     REAL      GRIDDED U-COMP SURFACE CURRENT (M/S).
 !      *VCURG*     REAL      GRIDDED V-COMP SURFACE CURRENT (M/S).
+!      *PHIEPSG*   REAL      GRIDDED NORMALIZED ENERGYFLUX TO OCEAN.
+!      *PHIAWG*    REAL      GRIDDED NORMALIZED ENERGY FLUX TO WAVES.
+!      *TAUOCG*    REAL      GRIDDED NORMALIZED MOMENTUMFLUX TO OCEAN.
 
 
 ! ----------------------------------------------------------------------

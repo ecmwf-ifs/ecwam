@@ -1,6 +1,6 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE FILE_TRANSFER (IU06, IUNIT, FILENA, CDOPT) 
+      SUBROUTINE FILE_TRANSFER (IU06, IUNIT, FILENA, CDOPT)
 
 ! ----------------------------------------------------------------------
 
@@ -63,12 +63,12 @@
       INTEGER IU06, IUNIT
       CHARACTER*  1 MODE,
      &              CDOPT
-      CHARACTER* 17 FILENA
+      CHARACTER*(*) FILENA
       CHARACTER* 160 FILENAM,
-     &              FILENAMEF, 
-     &              FILENAMET 
+     &              FILENAMEF,
+     &              FILENAMET
 
-      INTEGER, ALLOCATABLE :: KARRAY(:) 
+      INTEGER, ALLOCATABLE :: KARRAY(:)
       LOGICAL LMORE
       LOGICAL LLEXIST
 
@@ -78,8 +78,10 @@
 
       IF (IUNIT.LT.10) THEN
         WRITE(FILENAMEF,'(A,I1)') 'fort.',IUNIT
-      ELSE
+      ELSEIF (IUNIT.LT.100) THEN
         WRITE(FILENAMEF,'(A,I2)') 'fort.',IUNIT
+      ELSE
+        WRITE(FILENAMEF,'(A,I3)') 'fort.',IUNIT
       ENDIF
       FILENAM=FILENAMEF
       LNAME = LEN_TRIM(FILENAM)
@@ -104,7 +106,10 @@
         CALL ABORT1
       ENDIF
 
-      FILENAM=FILENA
+      FILENAM=''
+      LNAME = LEN_TRIM(FILENA)
+      FILENAM(1:LNAME)=FILENA(1:LNAME)
+
       LNAME = LEN_TRIM(FILENAM)
       IF(ICPLEN.EQ.0) THEN
         FILENAMET=FILENAM(1:LNAME)
@@ -124,7 +129,7 @@
 
       IF(LPBIOOUT) THEN
       KLENG=((NSUP-NINF+1)*NANG*NFRE*NPRECR)/9+8+1
-      ALLOCATE(KARRAY(KLENG)) 
+      ALLOCATE(KARRAY(KLENG))
 
 !       1. OPEN INPUT AND OUTPUT FILES
 !          ---------------------------

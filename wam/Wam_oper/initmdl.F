@@ -78,8 +78,8 @@
 !           *IU08*   - INPUT  UNIT OF MODULE YOWUBUF.
 !                      (OUTPUT OF PREPROC).
 !NEST
-!           *IU09*   - INPUT  UNIT MODULE YOWCBOU (OUTPUT OF PREPROC).
-!           *IU10*   - INPUT  UNIT MODULE YOWFBOU (OUTPUT OF PREPROC).
+!           *IU09*   - INPUT  UNIT MODULE YOWCPBO (OUTPUT OF PREPROC).
+!           *IU10*   - INPUT  UNIT MODULE YOWFPBO (OUTPUT OF PREPROC).
 !NEST
 !           *IU11*   - INPUT UNIT OF SPECTRA AT ALL GRID POINTS.
 !                      EACH PROPAGATION STEP THE FILES CONNECTED
@@ -215,7 +215,6 @@
 
 !       *ABORT1*     - TERMINATES PROCESSING.
 !       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
-!       *GETREST*   - GETS RESTART FILES.
 !REFRA
 !       *GRADI*     - COMPUTES DEPTH AND CURRENT GRADIENTS.
 !REFRA
@@ -243,16 +242,18 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCBOU  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC, 
+     &            GBOUNC  , IPOGBO   ,CBCPREF
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
+     &            LWFLUXOUT,
      &            LOUTSPP  ,LGRIBAPI_I, LGRIBAPI_O
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
      &            V
-      USE YOWFBOU  , ONLY : IBOUNF
+      USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
@@ -265,6 +266,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            KMNOP    ,KMSOP
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
@@ -278,9 +280,10 @@
      &            ROAIRO   ,ZIDLOLD  ,
      &            FL1      ,SL
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,IDELPRO  ,
-     &            IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,
+     &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,CDTBC    ,
+     &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
+     &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
+     &            ISHALLO  ,IREFRA   ,
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
@@ -307,12 +310,17 @@
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
       INTEGER ISEC2(22+NR)
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      LOGICAL :: LWCUR
       INTEGER MASK_IN(NGPTOTG)
+
+      REAL FCRANGE
+      REAL FIELDS(NGPTOTG,NFIELDS)
 
       CHARACTER*14 ZERO,CDUM
       CHARACTER*24 FILNM
+      CHARACTER*80 :: FILENAME
+
+      LOGICAL :: LWCUR
+      LOGICAL :: LLEXIST
 
 !----------------------------------------------------------------------
       REAL ZHOOK_HANDLE
@@ -331,7 +339,7 @@
 !          ------------------
 
 !NEST
-      IU02 = 2
+      IU02 = 0
 !NEST
 
 
@@ -349,10 +357,6 @@
 
 !    DEFINITION HAS  BEEN MOVED TO MPDECOMP
 
-!NEST
-      IU09 = 9
-      IU10 = 10
-!NEST
       IU11 = 11
 
 
@@ -380,9 +384,7 @@
 !REFRA
       IU17 = 17
       IU18 = 18
-!NEST
-      IU19 = 19
-!NEST
+
       IU20 = 20
       IU21 = 21
 !ASSI
@@ -433,11 +435,26 @@
 !*    1.2 INPUT OF USER PARAMETER.
 !         ------------------------
 
-      CALL USERIN (IU05, IBOUNC, IBOUNF, IFORCA, LWCUR)
+      CALL USERIN (IU05, IFORCA, LWCUR)
       CLOSE(IU05)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '    SUB. INITMDL: USERIN DONE'
         CALL FLUSH(IU06)
+      ENDIF
+
+      IF(LWFLUXOUT) THEN
+        IF(.NOT.ALLOCATED(PHIEPS)) THEN 
+          ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
+          PHIEPS = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(PHIAW)) THEN 
+          ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
+          PHIAW = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(TAUOC)) THEN
+          ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
+          TAUOC = 0.
+        ENDIF
       ENDIF
 
 !     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
@@ -486,7 +503,7 @@
 
       CALL MPCRTBL
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. INITMDL: MPCRTBL DONE'
+        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -552,11 +569,66 @@
         IUSCR(IG) = 39+IG
       ENDDO
 
-!*    2.1 READ MODULE YOWCBOU AND YOWFBOU.
+!*    2.1 READ MODULE YOWCPBO AND YOWFPBO.
 !     ------------------------------------
 
+      GBOUNC = 1
+
       IF (IBOUNC.EQ.1 .OR. IBOUNF.EQ.1) THEN
+        IF (IBOUNC.EQ.1) THEN
+!         READ INFORMATION ABOUT WHERE THE FINE GRID(S) ARE
+          FILENAME='wam_nested_grids_info'
+          LFILE=0
+          LLEXIST=.FALSE.
+          IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+          INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+          IF(.NOT. LLEXIST) THEN
+            WRITE(IU06,*) '************************************'
+            WRITE(IU06,*) '*                                  *'
+            WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
+            WRITE(IU06,*) '*  =============================   *'
+            WRITE(IU06,*) '*  WITH OPTION IBOUNC = 1          *' 
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '* ',FILENAME(1:LFILE)
+            WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+     &        ' IS MISSING !!!!'
+            WRITE(IU06,*) '*                                  *'
+            WRITE(IU06,*) '************************************'
+            CALL ABORT1
+          ENDIF
+          IU09 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+        ELSE
+          IU09 = 9
+        ENDIF
+
+        IF (IBOUNF.EQ.1) THEN
+!         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE 
+          FILENAME='wam_boundary_grid_info'
+          LFILE=0
+          LLEXIST=.FALSE.
+          IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+          INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+          IF(.NOT. LLEXIST) THEN
+            WRITE(IU06,*) '************************************'
+            WRITE(IU06,*) '*                                  *'
+            WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
+            WRITE(IU06,*) '*  =============================   *'
+            WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *' 
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '* ',FILENAME(1:LFILE)
+            WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+     &        ' IS MISSING !!!!'
+            WRITE(IU06,*) '*                                  *'
+            WRITE(IU06,*) '************************************'
+            CALL ABORT1
+          ENDIF
+          IU10 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+        ELSE
+          IU10 = 10 
+        ENDIF
+
         CALL READBOU (IU09, IU10, IU06)
+
         CLOSE (UNIT=IU09, STATUS='KEEP')
         CLOSE (UNIT=IU10, STATUS='KEEP')
         IF (ITEST.GE.2) THEN
@@ -565,7 +637,9 @@
           CALL FLUSH (IU06)
         ENDIF
       ENDIF
-!NEST
+
+      IF(.NOT.ALLOCATED(IU19)) ALLOCATE(IU19(GBOUNC))
+
 
 !*    2.2.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !          ------------------------------------
@@ -647,7 +721,7 @@
         ENDDO
       ENDIF
  3002 FORMAT(3x,a,f9.3,a)
- 3003 FORMAT(3x,a,i6,  a)
+ 3003 FORMAT(3x,a,i8,  a)
 !NEST
       CALL FLUSH (IU06)
       IF (IBOUNC .EQ. 1) THEN
@@ -750,6 +824,7 @@
       ENDIF
 
       CDATEWO = CDTPRO
+      CDTBC= CDATEA
       IF (IDELT.LT.IDELWO) CALL INCDATE(CDATEWO,IDELWO/2)
       CDAWIFL = CDTPRO
       IDELWH = MAX(IDELWI,IDELPRO)
@@ -828,6 +903,7 @@
 !         -----------------------------------
 
       CDTRES = CBPLTDT
+      CDTBC  = CDATEA
       CALL INCDATE(CDTRES, IDELRES)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '    SUB. INITMDL: TIME COUNTER INITIALIZED'
@@ -1156,48 +1232,24 @@
      &   'READ AND INITIALIZED '
 
 ! ----------------------------------------------------------------------
-!CMFA
-!*    10. OPEN THE FIRST RESULT FILES.
-!         ----------------------------
-
-!           INTEGRATED PARAMETER DATA FILE.
-
-!     IF (FFLAG20)
-!    1   CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
-
-!            INTEGRATED SWELL AND SEA DATA FILE.
-
-!     IF (FFLAG21)
-!    1   CALL GSFILE (IU06, IU21, 0, CDTPRO, CDATEF, 'SWE', 'S')
-
-!             SPECTRA FILE.
-
-!     IF (FFLAG25)
-!    1   CALL GSFILE (IU06, IU25, 0, CDTPRO, CDATEF, 'OUT', 'S')
-
-!             SWELL SPECTRA FILE.
-
-!     IF (FFLAG26)
-!    1   CALL GSFILE (IU06, IU26, 0, CDTPRO, CDATEF, 'SWS', 'S')
 !NEST
-!             BOUNDARY VALUE FILE.
-
-!     IF (IBOUNC.EQ.1)
-!    1   CALL GSFILE (IU06, IU19, 0, CDTPRO, CDATEF, 'CBO', 'S')
-!NEST
-
-!     IF (ITEST.GE.2)
-!    1   WRITE(IU06,*) '   SUB. INITMDL: OUTPUT FILES OPENED'
-!CMFE
-!NEST
-
-!        WRITE BOUNDARY VALUE FILE HEADER.
-
+!     10. WRITE BOUNDARY VALUE FILE HEADER.
+!         ------------------------------
       IF (IBOUNC.EQ.1) THEN
-        CALL HEADBC (NBOUNC, IDELPRO, TH(1), FR(1), IU19, IU06)
-        IF (ITEST.GE.2)
-     &   WRITE(IU06,'(''    SUB. INITMDL: HEADER FOR  '',
-     &   ''COARSE GRID WAS WRITTEN OF UNIT IU19 = '',A8)') IU19
+        IF((LMESSPASS.AND.IRANK.EQ.1).OR..NOT.LMESSPASS) THEN
+          DO II=1,GBOUNC
+            IU19(II)=I_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
+!           make the unit available for a silly fort.unit output
+!           we will need to recode this a bit better !!!
+            CLOSE(IU19(II))
+            CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1), 
+     &                   IU19(II), IU06)
+            IF (ITEST.GE.2)
+     &       WRITE(IU06,'(''    SUB. INITMDL: HEADER FOR  '',
+     &       ''COARSE GRID WAS WRITTEN OF UNIT = '',A8)') 
+     &        IU19(II)
+          ENDDO
+        ENDIF
       ENDIF
 !NEST
 

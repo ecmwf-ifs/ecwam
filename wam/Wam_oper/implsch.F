@@ -117,12 +117,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWFLUX 
+      USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
      &            C        ,FRIC     ,FLOGSPRDM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMINFR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
+     &                      TAUOC    
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
@@ -151,7 +154,10 @@
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL, DIMENSION(IJS:IJL) :: USFM
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
+      REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
+     &                            PHIWA 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      LOGICAL :: LCFLX
 
       REAL ZHOOK_HANDLE
 
@@ -161,6 +167,7 @@
 !*    1. INITIALISATION.
 !        ---------------
 
+      LCFLX=LWFLUX.OR.LWFLUXOUT
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -171,12 +178,10 @@
 
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
-!         ------------------------
-
+!        ------------------------
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
      &            F1MEAN, AKMEAN, XKMEAN)
-
 
       DO K=1,NANG
         DO IJ=IJS,IJL
@@ -223,7 +228,9 @@
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &              ROAIRN, TAUW, SL, MIJ)
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, 
+     &              PHIAWDIAG, PHIAWUNR, SL, 
+     &              MIJ, .FALSE.)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
@@ -245,10 +252,15 @@
 !           ---------------------------
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN)
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+     &              PHIOC, TAUWD, MIJ, .FALSE.)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
 !SHALLOW
@@ -364,8 +376,8 @@
       ENDDO
 
 
-!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
-!           --------------------------------------------------
+!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
+!           -------------------------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN,ZIDLNEW, SL, XLLWS)
@@ -373,19 +385,43 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &              ROAIRN, TAUW, SL, MIJ)
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, 
+     &              PHIAWDIAG, PHIAWUNR, SL, MIJ, 
+     &              LCFLX)
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
 
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
-     & IJS, IJL, ILEV)
+     &             IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
+      ENDIF
+
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+     &              PHIOC, TAUWD, MIJ, LCFLX)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!*    2.5.6 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
+!           -------------------------------------------------------
+
+      IF(LCFLX) THEN
+        DO IJ=IJS,IJL
+          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
+          XN        = ROAIRN(IJ)*USNEW(IJ)**3
+
+          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
+          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
+          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
+          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
+        ENDDO
       ENDIF
 
 ! ----------------------------------------------------------------------

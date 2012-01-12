@@ -379,6 +379,7 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -576,6 +577,7 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -953,6 +955,7 @@
       DEALLOCATE(CFLTP)
       DEALLOCATE(CFLTM)
 
+      IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
       RETURN
 
 ! ----------------------------------------------------------------------
