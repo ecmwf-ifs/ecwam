@@ -1,4 +1,4 @@
-      SUBROUTINE GETWND (US, DS, ADS, ZIDL, ICMSK,
+      SUBROUTINE GETWND (US, DS, ADS, ZIDL, CICVR,
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
      &                   LWCUR)
 
@@ -16,14 +16,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (US, DS, ADS, ZIDL, ICMSK,
+!       *CALL* *GETWND (US, DS, ADS, ZIDL, CICVR,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR)*
 !         *US*     - MAGNITUDE OF USTAR AT EACH POINT AND BLOCK.
 !         *DS*     - DIRECTION OF USTAR AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
 !         *ZIDL*   - Zi/L  AT EACH POINT AND BLOCK.
-!         *ICMSK*  - ICE MASK AT EACH POINT
+!         *CICVR*  - SEA ICE COVER.
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
@@ -83,8 +83,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL
-      INTEGER, DIMENSION (NINF:NSUP,NBLO) :: ICMSK 
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICVR
       LOGICAL :: LWCUR
 
 
@@ -239,7 +238,7 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL MICEP(IPARAMCI,ICMSK,KIJS,KIJL,IG)
+          CALL MICEP(IPARAMCI,CICVR,KIJS,KIJL,IG)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

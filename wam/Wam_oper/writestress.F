@@ -1,5 +1,4 @@
-      SUBROUTINE WRITESTRESS(NREAL, RFIELD, NINTGR, IFIELD,
-     &                       FILENAME,LPBOPEN,LPBCLOSE) 
+      SUBROUTINE WRITESTRESS(NREAL,RFIELD,FILENAME,LPBOPEN,LPBCLOSE)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      APRIL 1997
@@ -11,12 +10,9 @@
 !**   INTERFACE.
 !     ----------
 
-!     CALL *WRITESTRESS*(NREAL, RFIELD, NINTGR, IFIELD,
-!                        FILENAME,LPBOPEN,LPBCLOSE) 
+!     CALL *WRITESTRESS*(NREAL, RFIELD,FILENAME,LPBOPEN,LPBCLOSE)
 !     *NREAL*    NUMBER OF FIELDS IN RFIELD
 !     *RFIELD*     REAL RESTART FIELDS
-!     *NINTGR*   NUMBER OF FIELDS IN IFIELD
-!     *IFIELD*     INTEGER RESTART FIELDS
 !     *FILENAME* FILENAME (INCLUDING PATH) OF TARGET FILE
 !     *LPBOPEN*  LOGICAL, TRUE IF PBOPEN HAS TO BE CALLED
 !     *LPBCLOSE* LOGICAL, TRUE IF PBCLOSE HAS TO BE CALLED
@@ -61,16 +57,13 @@
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
-
       INTEGER :: IFLD
-      INTEGER :: NREAL, NINTGR
-      CHARACTER*1 MODE
-      CHARACTER*120 FILENAME
-      LOGICAL LPBOPEN,LPBCLOSE
-      INTEGER,DIMENSION(NIBLO,NBLO,NINTGR) :: IFIELD 
+      INTEGER :: NREAL
       REAL,DIMENSION(NIBLO,NBLO,NREAL) :: RFIELD 
       REAL, ALLOCATABLE :: RDUM(:,:)
-      INTEGER, ALLOCATABLE :: IDUM(:,:)
+      CHARACTER*1 :: MODE
+      CHARACTER*120 :: FILENAME
+      LOGICAL :: LPBOPEN,LPBCLOSE
 ! ----------------------------------------------------------------------
 
       IF(LPBIOOUT) THEN
@@ -109,10 +102,6 @@
             CALL PBWRITE(IUNIT,RFIELD(:,:,IFLD),KOUNT,KRET)
             IF(KRET.LT.0) GOTO 1099
           ENDDO
-          DO IFLD=1,NINTGR
-            CALL PBWRITE(IUNIT,IFIELD(:,:,IFLD),IOUNT,KRET)
-            IF(KRET.LT.0) GOTO 1099
-          ENDDO
         ELSE
           ALLOCATE(RDUM(NIBLO,NBLO))
           DO IFLD=1,NREAL
@@ -125,19 +114,6 @@
             IF(KRET.LT.0) GOTO 1099
           ENDDO
           DEALLOCATE(RDUM)
-
-          ALLOCATE(IDUM(NIBLO,NBLO))
-          DO IFLD=1,NINTGR
-            DO IG=1,NBLO
-              DO IJ=1,NIBLO
-                 IDUM(IJ,IG)=IFIELD(IJ2NEWIJ(IJ),IG,IFLD)
-              ENDDO
-            ENDDO
-            CALL PBWRITE(IUNIT,IDUM,IOUNT,KRET)
-            IF(KRET.LT.0) GOTO 1099
-          ENDDO
-
-          DEALLOCATE(IDUM)
         ENDIF
 
 1099    CONTINUE 
@@ -177,17 +153,10 @@
           DO IFLD=1,NREAL
             WRITE(IU15)((RFIELD(J1,IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
           ENDDO
-          DO IFLD=1,NINTGR
-            WRITE(IU15)((IFIELD(J1,IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
-          ENDDO
         ELSE
           DO IFLD=1,NREAL
             WRITE(IU15)
      &      ((RFIELD(IJ2NEWIJ(J1),IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
-          ENDDO
-          DO IFLD=1,NINTGR
-            WRITE(IU15)
-     &      ((IFIELD(IJ2NEWIJ(J1),IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
           ENDDO
         ENDIF
 

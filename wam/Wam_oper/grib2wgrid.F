@@ -89,6 +89,7 @@
       INTEGER :: NGX, NGY, KRGG
       INTEGER :: IFORP, IPARAM, ITABLE, KZLEV, KKK, MMM
       INTEGER :: NC, NR, I, J, JSN, K, L, JRGG, IREPR, IR, IVAL, IDUM
+      INTEGER :: IRET, ILEN1, IEN
       INTEGER :: ISCAN, ILOC, ISTAG, ICRLST, ICFG3, ICFG4, KSKIP,NGCOR 
       INTEGER :: ITOP, IBOT, NDIM
       INTEGER :: NRFULL, ISTART, ISTOP
@@ -172,7 +173,20 @@
       IPARAM=IVAL-ITABLE*1000
 
 !     MAKE A DISTINCTION FOR OCEAN MODEL DATA AND TEST CONFIGURATION.
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC)
+!     ??? The option argument KRET does not seem to work
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IEN)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
+      IF((IEN.EQ.1 .AND. ILEN1.GT.28) .OR. IEN.NE.1) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,
+     &                       KRET=IRET)
+        IF(IRET.NE.JPGRIB_SUCCESS) THEN
+          WRITE(IU06,*) '   Data do not contain localDefinitionNumber !'
+          WRITE(IU06,*) '   The program will continue wihtout it.'
+          ILOC=-1
+        ENDIF
+      ELSE
+        ILOC=-1
+      ENDIF
       IF(ILOC.EQ.4) THEN
         WRITE(IU06,*) '   OCEAN MODEL DATA DECODED, PARAM= ',IPARAM
         IF(ITEST.GT.0) CALL FLUSH(IU06)
@@ -289,7 +303,11 @@
       ENDIF
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE)
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',ISTREAM)
+      IF(ILOC.GE.0) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',ISTREAM)
+      ELSE
+        ISTREAM=0
+      ENDIF
       IDUM=0
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
@@ -326,8 +344,14 @@
 !     --------------------------------------------
 
 !     START DATE. 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate',IYYYYMMDD)
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time',IHHMM)
+      IF(ILOC.EQ.11) THEN
+!       Supplementary data used by the analysis:
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dateOfAnalysis',IYYYYMMDD)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'timeOfAnalysis',IHHMM)
+      ELSE
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate',IYYYYMMDD)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time',IHHMM)
+      ENDIF
 
       WRITE(CDATE(1:12),'(I8.8,I4.4)') IYYYYMMDD,IHHMM 
       CDATE(13:14)='00'

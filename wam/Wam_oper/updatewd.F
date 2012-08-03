@@ -1,5 +1,6 @@
       SUBROUTINE UPDATEWD (FL1, SL, IJS, IJL, THWNEW, USNEW,
-     &                     USOLD, TAUW, Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
+     &                     USOLD, TAUW, CICVR,
+     &                     Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
 
 ! ----------------------------------------------------------------------
 
@@ -30,6 +31,7 @@
 !          *ROAIRN*    AIR DENSITY IN KG/M3.
 !          *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT,
 !                             L: MONIN-OBUKHOV LENGTH).
+!          *CICVR*     SEA ICE COVER.
 
 !     METHOD.
 !     -------
@@ -64,6 +66,7 @@
       INTEGER :: MIJ(IJS:IJL)
 
       REAL,DIMENSION(IJS:IJL) :: USOLD, TAUW
+      REAL,DIMENSION(IJS:IJL) :: CICVR
       REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, U10NEW,
      &                           ROAIRN,ZIDLNEW
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,SL
@@ -107,7 +110,7 @@
       CALL FEMEANWS(FL1,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
 
       CALL STRESSO (FL1,IJS,IJL,THWNEW,USNEW,Z0NEW,
      &              ROAIRN,TAUW, DUM1, DUM2, 

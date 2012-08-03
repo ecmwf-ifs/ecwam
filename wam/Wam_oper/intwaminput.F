@@ -59,6 +59,7 @@
      &            NLOCGRB , IREFRA   ,NENSFNB  ,NTOTENS  ,NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
 
       USE GRIB_API_INTERFACE
 
@@ -117,10 +118,10 @@
       LOGICAL :: LLFR1OK
       LOGICAL :: LLEXIST
       LOGICAL :: LFDB, LFDBOPEN
-      LOGICAL :: LLRESIZING=.FALSE.
 
 ! ----------------------------------------------------------------------
 
+      CALL MPL_INIT()
       IU06 = 6
       IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
 
@@ -183,7 +184,6 @@
 !!!! because using grib_api or gribex are mutually exclusive,
 !!!! we will keep both in the code for now but gribex will have to go.
 
-1121  CONTINUE
       IF(LGRIBAPI_I) THEN
 !!!     use gribapi
 
@@ -213,21 +213,12 @@
         CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,KBYTES,IRET)
 
         IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!         USE THE NEW SIZE TO KEEP ON READING
+!!!       *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!       the size is too small, so figure out the size and read again.
+          IUIN=-1
           CALL KGRIBSIZE(IU06, IUIN, KBYTES, NBIT, 'INTWAMINPUT')
           DEALLOCATE(KGRIB_BUFR)
-          LLRESIZING=.TRUE.
           GOTO 1021
-        ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
-!         LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
-          DEALLOCATE(KGRIB_BUFR)
-          GOTO 1021
-        ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
-!         WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
-          DEALLOCATE(KGRIB_BUFR)
-          LLRESIZING=.FALSE.
-          CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
-          GOTO 1121
         ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '*************************************'
           WRITE(IU06,*) '* INTWAMINPUT: END OF FILE ENCOUNTED'
@@ -1231,23 +1222,12 @@
              CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,
      &                                 KBYTES,IRET)
              IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!              USE THE NEW SIZE TO KEEP ON READING
-               CALL KGRIBSIZE(IU06, IUIN, KBYTES, NBIT, 'INTWAMINPUT')
-               DEALLOCATE(KGRIB_BUFR)
-               LLRESIZING=.TRUE.
-               GOTO 2021
-             ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
-!              LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
+!!!            *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!            the size is too small, so figure out the size and read again.
+               IUIN=-1
+               CALL KGRIBSIZE(IU06, IUIN, KBYTES, NBIT, 'INTWAMINPUT 2')
                DEALLOCATE(KGRIB_BUFR)
                GOTO 2021
-             ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
-!              WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
-               DEALLOCATE(KGRIB_BUFR)
-               LLRESIZING=.FALSE.
-               CALL IGRIB_RELEASE(KGRIB_HANDLE)
-               CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
-               IF(LLINTERPOL) CALL IGRIB_CLOSE_FILE(IUOUT)
-               GOTO 1121
              ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
                IF(IALLFLD.EQ.1) THEN
                  WRITE(IU06,*) ' ONLY ONE SPECTRAL FIELD HAS BEEN READ!'
@@ -1370,6 +1350,7 @@
         IF(LLINTERPOL) CALL IGRIB_CLOSE_FILE(IUOUT)
       ENDIF
  
+      CALL MPL_END()
       WRITE (IU06,*) ' PROGRAM INTWAMINPUT: ALL DONE'
 
       END

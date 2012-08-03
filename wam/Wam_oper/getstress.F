@@ -1,5 +1,5 @@
       SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO, ZIDLOLD, ICEMASK,
+     &                     ROAIRO, ZIDLOLD, CICOVER,
      &                     NSTART, NEND, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -21,7 +21,7 @@
 !     *Z0OLD*     ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR DENSITY IN KG/M3.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!     *ICEMASK*   SEA ICE MASK
+!     *CICOVER*   SEA ICE COVER. 
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -48,7 +48,7 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : NREAL    ,NINTGR
+      USE YOWCOUT  , ONLY : NREAL
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRID  , ONLY : IGL
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LGRIBIN  ,LWAVEWIND
@@ -69,13 +69,11 @@
 ! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO, ZIDLOLD 
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
+     &                                  ROAIRO, ZIDLOLD, CICOVER 
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFIELD
-      INTEGER,ALLOCATABLE,DIMENSION(:,:,:) :: IFIELD 
 
       INTEGER :: IFLD
 ! Mod for OPENMP
@@ -100,7 +98,6 @@
       ENDIF
 
       ALLOCATE(RFIELD(NIBLO,NBLO,NREAL))
-      ALLOCATE(IFIELD(NIBLO,NBLO,NINTGR))
 
       IF(LMESSPASS) THEN
 
@@ -110,7 +107,7 @@
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
 !         CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,ICEMASK,
+     &                     ROAIRO,ZIDLOLD,CICOVER,
      &                     IREAD)
           IF (ITEST.GE.1)
      &     WRITE(IU06,*)
@@ -120,8 +117,7 @@
 
           IF (IRANK.EQ.IREAD) THEN
             CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-            CALL READSTRESS(NREAL, RFIELD, NINTGR, IFIELD,
-     &                      FILENAME)
+            CALL READSTRESS(NREAL, RFIELD, FILENAME)
           ENDIF
 
 !         DISTRIBUTE THE DIFFERENT CONTRIBUTIONS TO THE OTHER PE'S
@@ -129,12 +125,6 @@
           DO IFLD=1,NREAL
             CALL MPDISTRIBSCFLD(IREAD,KTAG,NSTART,NEND,
      &                          RFIELD(:,:,IFLD))
-            KTAG=KTAG+1
-          ENDDO
-
-          DO IFLD=1,NINTGR
-            CALL MPDISTRIBINTFLD(IREAD,KTAG,NSTART,NEND,
-     &                           IFIELD(:,:,IFLD))
             KTAG=KTAG+1
           ENDDO
 
@@ -158,8 +148,8 @@
                 Z0OLD(IJ,IG)=RFIELD(IJ,IG,5)
                 ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
                 ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
+                CICOVER(IJ,IG)=RFIELD(IJ,IG,8)
 !               for U and V see below
-                ICEMASK(IJ,IG)=IFIELD(IJ,IG,1)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -173,8 +163,8 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
                 DO IJ=KIJS,KIJL
-                  U(IJ,IG)=RFIELD(IJ,IG,8)
-                  V(IJ,IG)=RFIELD(IJ,IG,9)
+                  U(IJ,IG)=RFIELD(IJ,IG,9)
+                  V(IJ,IG)=RFIELD(IJ,IG,10)
                 ENDDO
               ENDDO
 !$OMP         END PARALLEL DO
@@ -298,12 +288,11 @@
       ELSE
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,ICEMASK,
+     &                     ROAIRO,ZIDLOLD,CICOVER,
      &                     IREAD)
         ELSE
           CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-          CALL READSTRESS(NREAL, RFIELD, NINTGR, IFIELD,
-     &                    FILENAME)
+          CALL READSTRESS(NREAL, RFIELD, FILENAME) 
 
 !         KEEP CORRESPONDING CONTRIBUTION 
           DO IG=1,NBLO
@@ -320,8 +309,8 @@
                 Z0OLD(IJ,IG)=RFIELD(IJ,IG,5)
                 ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
                 ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
+                CICOVER(IJ,IG)=RFIELD(IJ,IG,8)
 !               for U and V see below
-                ICEMASK(IJ,IG)=IFIELD(IJ,IG,1)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -335,8 +324,8 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
                 DO IJ=KIJS,KIJL
-                  U(IJ,IG)=RFIELD(IJ,IG,8)
-                  V(IJ,IG)=RFIELD(IJ,IG,9)
+                  U(IJ,IG)=RFIELD(IJ,IG,9)
+                  V(IJ,IG)=RFIELD(IJ,IG,10)
                 ENDDO
               ENDDO
 !$OMP         END PARALLEL DO
@@ -371,7 +360,7 @@
         ENDDO
       ENDIF
 
-      DEALLOCATE(RFIELD, IFIELD)
+      DEALLOCATE(RFIELD)
 
       WRITE(IU06,*) ''
       WRITE(IU06,*) ' WIND AND STRESS FILES READ IN.......',

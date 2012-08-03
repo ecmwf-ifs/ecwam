@@ -1,4 +1,4 @@
-      SUBROUTINE INIWCST 
+      SUBROUTINE INIWCST(PRPLRADI) 
 
 ! ----------------------------------------------------------------------
 
@@ -7,6 +7,8 @@
 !*    PURPOSE.
 !     --------
 !     INITIALISES CONSTANTS
+
+!      *RPLRADI*   REAL      EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
 
 !**   INTERFACE.
 !     ----------
@@ -24,18 +26,20 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,
-     &            RAD      ,DEG      ,R        ,ZPISQRT
+     &            RAD      ,DEG      ,R        ,ZPISQRT  ,G2ZPI4   ,
+     &            G
 
 ! ----------------------------------------------------------------------
 
       PI = 4.*ATAN(1.)
       ZPI= 2.*PI
       ZPISQRT = SQRT(PI)
+      G2ZPI4 = G**2/ZPI**4
 
       ZCONST=1./(8.*PI*SQRT(2.))
       RAD = PI/180.
       DEG = 180./PI
-      R = CIRC/ZPI
+      R = CIRC/ZPI*PRPLRADI
 
       RETURN
       END SUBROUTINE INIWCST

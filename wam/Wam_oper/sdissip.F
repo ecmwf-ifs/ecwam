@@ -1,5 +1,5 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, 
-     V                    PHIEPS, TAUWD, MIJ, LCFLX)
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+     &                    PHIEPS, TAUWD, MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +22,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN,)*
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
@@ -88,14 +88,16 @@
       ROG = ROWATER*G
 
       IF (LCFLX) THEN
-         PHIEPS = 0.
-         TAUWD = 0.
+        DO IJ=IJS,IJL
+          PHIEPS(IJ) = 0.
+          TAUWD(IJ) = 0.
+        ENDDO
       ENDIF
 
       IF (ISHALLO.EQ.1) THEN
         CONSD = -CDIS*ZPI**9/G**4
         DO IJ=IJS,IJL
-          SDS(IJ) = CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
+          SDS(IJ)=CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
         ENDDO
         DO M=1,NFRE
           FAC(M) = ZPI*FR(M)
@@ -124,7 +126,7 @@
         ENDIF
         CONSS = -CDIS*ZPI
         DO IJ=IJS,IJL
-          SDS(IJ) = CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
+          SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
         ENDDO
 
         DO M=1,NFRE

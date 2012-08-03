@@ -44,22 +44,20 @@
 ! ----------------------------------------------------------------------
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI      ,G2ZPI4
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER :: M, IJ, IJS, IJL
 
-      REAL :: GAMMA, SA, SB, SIGMA, G2ZPI4, G2ZPI4FRH5M
+      REAL :: GAMMA, SA, SB, SIGMA, G2ZPI4FRH5M
       REAL :: FRH, EARG, FJON, FMPF, FJONH
 
       REAL :: ALPHAJ(IJS:IJL), FP(IJS:IJL)
       REAL :: ET(IJS:IJL,NFRE)
 
 ! ----------------------------------------------------------------------
-
-      G2ZPI4=G**2/ZPI**4
 
       DO M=1,NFRE
         FRH = FR(M)

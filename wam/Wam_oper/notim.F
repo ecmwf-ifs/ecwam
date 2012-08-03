@@ -1,5 +1,5 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &                   ROAIRO, ZIDLOLD, CICOVER, IREAD,
      &                   LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -22,7 +22,7 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER, IREAD,
 !                      LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
@@ -34,7 +34,7 @@
 !          *ROAIRO* - AIR DENSITY IN KG/M3.
 !          *ZIDLOLD*- Zi/L 
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *ICEMASK*- SEA ICE MASK.
+!          *CICOVER*- SEA ICE COVER.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -72,26 +72,21 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
      &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,
-     &            ICEMASKNEXT
+     &            CICOVERNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-     &                                , ROAIRO,ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL
-      REAL ZHOOK_HANDLE
+     &                                , ROAIRO,ZIDLOLD,CICOVER
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICR
+      REAL :: ZHOOK_HANDLE
 
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICMSK 
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
-
-! Mod for OPENMP
-      INTEGER JKGLO,KIJS,KIJL,NPROMA
-! End Mod for OPENMP
-
-      CHARACTER*14 CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
-      LOGICAL LWNDFILE, LCLOSEWND
+      CHARACTER*14 :: CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
+      LOGICAL :: LWNDFILE, LCLOSEWND
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
@@ -117,7 +112,7 @@
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
 
-        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
+        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER,
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
 
@@ -154,7 +149,7 @@
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
-      CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
+      CALL GETWND (US, DS, ADS, ZIDL, CICR,
      &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR)
 
@@ -190,8 +185,8 @@
      &            ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
           IF(.NOT.ALLOCATED(ZIDLNEXT))
      &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ICEMASKNEXT))
-     &            ALLOCATE(ICEMASKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(CICOVERNEXT))
+     &            ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         ELSE
           IF(.NOT.ALLOCATED(USNEXT))
      &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -201,8 +196,8 @@
      &            ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
           IF(.NOT.ALLOCATED(ZIDLNEXT))
      &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ICEMASKNEXT))
-     &            ALLOCATE(ICEMASKNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(CICOVERNEXT))
+     &            ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
         ENDIF
 
         DO IG=1,IGL
@@ -219,7 +214,7 @@
               DSNEXT(IJ,1,IG)=DS(IJ,IG)
               ADSNEXT(IJ,1,IG)=ADS(IJ,IG)
               ZIDLNEXT(IJ,1,IG)=ZIDL(IJ,IG)
-              ICEMASKNEXT(IJ,1,IG)=ICMSK(IJ,IG)
+              CICOVERNEXT(IJ,1,IG)=CICR(IJ,IG)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO

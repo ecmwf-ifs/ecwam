@@ -1,5 +1,4 @@
-      SUBROUTINE READSTRESS(NREAL, RFIELD, NINTGR, IFIELD,
-     &                      FILENAME)
+      SUBROUTINE READSTRESS(NREAL, RFIELD, FILENAME)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -10,12 +9,9 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *READSTRESS*(NREAL, RFIELD, NINTGR, IFIELD,
-!                       FILENAME)
+!     CALL *READSTRESS*(NREAL, RFIELD, FILENAME)  
 !     *NREAL*    NUMBER OF FIELDS IN RFIELD
 !     *RFIELD*     REAL RESTART FIELDS
-!     *NINTGR*   NUMBER OF FIELDS IN IFIELD
-!     *IFIELD*     INTEGER RESTART FIELDS
 !     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE (ONLY IF 
 !                MESSAGE PASSING IS USED)
 
@@ -58,13 +54,11 @@
       CHARACTER*120 FILENAME
 
       INTEGER :: IFLD
-      INTEGER :: NREAL, NINTGR
+      INTEGER :: NREAL
 
-      INTEGER,DIMENSION(NIBLO,NBLO,NINTGR) :: IFIELD 
       REAL,DIMENSION(NIBLO,NBLO,NREAL) :: RFIELD 
 
       REAL, ALLOCATABLE :: RDUM(:,:)
-      INTEGER, ALLOCATABLE :: IDUM(:,:)
 ! ----------------------------------------------------------------------
 
       IF (ITEST.GE.2) THEN
@@ -112,10 +106,6 @@
             CALL PBREAD(IUNIT,RFIELD(:,:,IFLD),KOUNT,KRET)
             IF(KRET.LT.0.OR.KRET.NE.KOUNT) GOTO 1099
           ENDDO
-          DO IFLD=1,NINTGR
-            CALL PBREAD(IUNIT,IFIELD(:,:,IFLD),IOUNT,KRET)
-            IF(KRET.LT.0.OR.KRET.NE.IOUNT) GOTO 1098
-          ENDDO
         ELSE
           ALLOCATE(RDUM(NIBLO,NBLO))
           DO IFLD=1,NREAL
@@ -129,17 +119,6 @@
           ENDDO
           DEALLOCATE(RDUM)
 
-          ALLOCATE(IDUM(NIBLO,NBLO))
-          DO IFLD=1,NINTGR
-            CALL PBREAD(IUNIT,IDUM,IOUNT,KRET)
-            IF(KRET.LT.0.OR.KRET.NE.IOUNT) GOTO 1098
-            DO IG=1,NBLO
-              DO IJ=1,NIBLO
-                 IFIELD(IJ2NEWIJ(IJ),IG,IFLD)=IDUM(IJ,IG)
-              ENDDO
-            ENDDO
-          ENDDO
-          DEALLOCATE(IDUM)
         ENDIF
 
 
@@ -166,19 +145,12 @@
           DO IFLD=1,NREAL
             READ(IUNIT) RFIELD(:,:,IFLD) 
           ENDDO
-          DO IFLD=1,NINTGR
-          READ(IUNIT) IFIELD(:,:,IFLD) 
-          ENDDO
         ELSE
 !       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE
 !       RE-LABELLED BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
           DO IFLD=1,NREAL
             READ(IUNIT)
      &      ((RFIELD(IJ2NEWIJ(IJ),IG,IFLD),IJ=1,NIBLO),IG=1,NBLO)
-          ENDDO
-          DO IFLD=1,NINTGR
-            READ(IUNIT)
-     &      ((IFIELD(IJ2NEWIJ(IJ),IG,IFLD),IJ=1,NIBLO),IG=1,NBLO)
           ENDDO
         ENDIF
 

@@ -1,5 +1,6 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    ROAIRO, ZIDLOLD, ICEMASK,
+     &                    ROAIRO, ZIDLOLD,
+     &                    CICOVER, CITHICK, CIWA,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
      &                    ISEC2, FIELDS, LWCUR, MASK_IN)
@@ -34,7 +35,7 @@
 !     ----------
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK,
+!    &                 ROAIRO, ZIDLOLD, CICOVER,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
 !    &                 ISEC2, FIELDS, LWCUR, MASK_IN)*
@@ -52,7 +53,9 @@
 !      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
 !      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
 !                                   L: MONIN-OBUKHOV LENGTH).
-!      *ICEMASK*   INTEGER   SEA ICE MASK.
+!      *CICOVER*   REAL      SEA ICE COVER.
+!      *CITHICK*   REAL      SEA ICE THICKNESS.
+!      *CIWA*      REAL      SEA ICE WAVE ATTENUATION FACTOR.
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                            (IF NEEDED).
 !      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
@@ -121,7 +124,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
      &            IDELWO   ,LANAONLY
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -142,9 +145,10 @@
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-     &                                 ,ROAIRO,ZIDLOLD
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
+      REAL,DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
+     &                                  ROAIRO,ZIDLOLD,
+     &                                  CICOVER,CITHICK
       REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -218,7 +222,7 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &              ROAIRO, ZIDLOLD, CICOVER, IREAD,
      &              LWCUR)
       ELSE
 
@@ -235,11 +239,18 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &              ROAIRO, ZIDLOLD, CICOVER, IREAD,
      &              LWCUR)
       ENDIF
 
-!*    2.4 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
+
+!*    2.4 DETERMINE THE SEA ICE REDUCTION FACTOR
+!         --------------------------------------
+
+      CALL CIREDUCE (CICOVER,CITHICK,CIWA)
+
+
+!*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
 !         -----------------------------------------------
 
       DEALLOCATE(FIELDG)

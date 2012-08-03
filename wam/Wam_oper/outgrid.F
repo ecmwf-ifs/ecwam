@@ -67,7 +67,7 @@
 
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWCURR  , ONLY : U, V 
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
@@ -157,7 +157,8 @@
               TEMP(IJ) = USNEW(IJ)
 !             cannot set USNEW to ZMISS since it can still be used
 !             in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
+              IF (LICERUN.AND.LMASKICE.AND.
+     &            CICOVER(IJ,IG).GT.CITHRSH) THEN
                 TEMP(IJ)=ZMISS
               ELSE
                 TEMP(IJ) = USNEW(IJ)
@@ -387,7 +388,8 @@
               TEMP(IJ) = USNEW(IJ)
 !             cannot set USNEW to 0. since it can still be used
 !             in the next time step
-              IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
+              IF (LICERUN.AND.LMASKICE.AND.
+     &            CICOVER(IJ,IG).GT.CITHRSH) THEN
                 TEMP(IJ)=0.
               ELSE
                 TEMP(IJ) = USNEW(IJ)

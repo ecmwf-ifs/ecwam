@@ -24,7 +24,7 @@
 !     --------
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,IGL      ,IJS      ,
      &            IJL
-      USE YOWICE   , ONLY : ICEMASK
+      USE YOWICE   , ONLY : CICOVER  ,CITHRSH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
      &            IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,ZDELLO
@@ -135,7 +135,7 @@
      &       IS(JSAR).GT.0 .AND. KS(JSAR).GT.0 ) THEN
 
             DO JP=IJS(JBL),IJL(JBL)
-              IF(ICEMASK(JP,JBL).NE.0 .AND.
+              IF(CICOVER(JP,JBL).LE.CITHRSH .AND.
      &           ABS(KS(JSAR)-KXLT(JP,JBL)).LE.LLAT) THEN
 
                 XI = AMOWEP + REAL(IXLG(JP,JBL)-1)*ZDELLO(KXLT(JP,JBL))

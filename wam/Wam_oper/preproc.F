@@ -180,6 +180,7 @@
 
       CHARACTER*1 :: C1 
       CHARACTER*80 :: FILENAME
+      LOGICAL :: LLEXIST
 
 !     *BATHY* REAL  BATHYMETRY ON MODEL GRID.
 
@@ -225,6 +226,22 @@
       ALLOCATE(ZDELLO(NY))
 
       IU01 = I_GET_UNIT(IU06, 'wam_topo', 'r', 'f', 0)
+
+      FILENAME='wam_topo'
+      LLEXIST=.FALSE.
+      LNAME = LEN_TRIM(FILENAME)
+      INQUIRE(FILE=FILENAME(1:LNAME),EXIST=LLEXIST)
+      IF(.NOT. LLEXIST) THEN
+        WRITE (IU06,*) '*************************************'
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+        WRITE (IU06,*) '*  IN PREPROC:                     *'
+        WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILENAME
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*************************************'
+        CALL ABORT1
+      ENDIF
+      IU01 = I_GET_UNIT(IU06, FILENAME(1:LNAME), 'r', 'f', 0)
 
       IF (IFORM.NE.2) THEN
         IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'w', 'u', 0)
@@ -314,7 +331,13 @@
       ENDDO
 
 !     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      XLATMAX=88.25
+      IF(XDELLA.LT.0.24) THEN
+!       this is a bit of a dirty trick but at those resolutions, we might need
+!       to increase the number of directions.
+        XLATMAX=87.5
+      ELSE
+        XLATMAX=88.25
+      ENDIF
       COSPHMIN=COS(XLATMAX*RAD)
       DO K=1,NY
         IF(COSPH(K).LE.COSPHMIN) THEN
@@ -337,7 +360,7 @@
 !*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
 !         ------------------------------------------------
 
-      CALL NLWEIGT (ML, KL)
+      CALL NLWEIGT
 
 !*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
 !         --------------------------------------
@@ -477,7 +500,7 @@
 !*    9. OUTPUT OF MODULES.
 !        ------------------
 
-      CALL OUTCOM (IU07, IU17, IFORM, ML, KL)
+      CALL OUTCOM (IU07, IU17, IFORM)
       IF (ITEST.GT.0) WRITE (IU06,*) ' SUB OUTCOM DONE'
 
 ! ----------------------------------------------------------------------

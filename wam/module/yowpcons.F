@@ -5,11 +5,12 @@
 !*    *PARAMETER* OF GLOBAL CONSTANTS.
 !     THE NON PARAMETRIC CONSTANTS WILL BE RESET BY CALLING INIWCST !!!!
 
-      REAL, PARAMETER :: G = 9.806
+      REAL :: G = 9.806
       REAL, PARAMETER :: OLDPI = 3.1415927 
       REAL :: PI = OLDPI 
       REAL, PARAMETER :: CIRC = 40000000.
       REAL :: ZPI = 6.2831854
+      REAL :: G2ZPI4 = 0.987152585
       REAL :: ZPISQRT = 1.7724539
       REAL :: ZCONST = 0.0281349 
       REAL :: RAD = 0.017453293 
@@ -52,6 +53,7 @@
 !     *RAD*       REAL      PI / 180.
 !     *DEG*       REAL      180. / PI.
 !     *ZPI*       REAL      2. * PI.
+!     *G2ZPI4*    REAL      G**2/ZPI**4 
 !     *ZPISQRT*   REAL      SQRT(PI)
 !     *ZCONST*    REAL      1./(8.*PI*SQRT(2.))
 !     *R*         REAL      EARTH RADIUS        (METRES).

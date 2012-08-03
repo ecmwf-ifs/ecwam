@@ -34,7 +34,7 @@
       USE YOWGRID  , ONLY : DELPHI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
-      USE YOWICE   , ONLY : FLMINFR  ,ICEMASK
+      USE YOWICE   , ONLY : FLMINFR  ,LMASKICE ,CICOVER  ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,R        ,EPSMIN
       USE YOWSHAl  , ONLY : DEPTH
@@ -51,7 +51,8 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,ALLOCATABLE :: ET(:,:), STK(:)
+      REAL :: STK(NANG)
+      REAL :: ET(1,NFRE)
       LOGICAL :: LICE2SEA(IJS:IJL)
       REAL ZHOOK_HANDLE
 
@@ -59,23 +60,30 @@
 ! ----------------------------------------------------------------------
 
       IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
+
+        IF(LMASKICE) THEN
+          CILIMIT=CITHRSH
+        ELSE
+!         WHEN WE ARE NOT IMPOSING A FIXED ICE BOUNDARY THEN
+!         ONLY POINTS WITH NO ICE WILL BE RESET
+          CILIMIT=0.0
+        ENDIF
+
 !       TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
 !       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
 !       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
-!       AND HAVE AN ICEMASK = 1.
+!       AND HAVE AN CICOVER > CITHRSH .
         DO IJ=IJS,IJL
           LICE2SEA(IJ)=.TRUE.
         ENDDO
         DO K=1,NANG
           DO M=1,NFRE
+
             DO IJ=IJS,IJL
                IF(FL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
           ENDDO
         ENDDO
-
-        ALLOCATE(ET(1,NFRE))
-        ALLOCATE(STK(NANG))
 
         GAMMA=3.000000
         SA=7.000000E-02
@@ -83,7 +91,7 @@
         FPMAX=FR(NFRE-1)
 
         DO IJ=IJS,IJL
-          IF(LICE2SEA(IJ) .AND. ICEMASK(IJ,1).EQ.1 ) THEN
+          IF(LICE2SEA(IJ) .AND. CICOVER(IJ,1).LE.CILIMIT) THEN
             IF(DEPTH(IJ,1).LE.50.) THEN
               FETCH=MIN(DELPHI,50000.)
             ELSEIF(DEPTH(IJ,1).LE.150.) THEN
@@ -126,6 +134,8 @@
           ENDIF
         ENDDO
 
+
+!       REINSTATE THE MIMIMUM ENERGY LEVEL
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=IJS,IJL
@@ -136,9 +146,6 @@
             ENDDO
           ENDDO
         ENDDO
-
-        DEALLOCATE(ET)
-        DEALLOCATE(STK)
 
         IF (ITEST.GE.2) THEN
          WRITE(IU06,*) ' UNSETICE: SPECTRA INITIALISED OVER OLD SEA ICE'

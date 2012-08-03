@@ -52,7 +52,6 @@
 !*    1. FREQUENCY DEPENDENT CONSTANTS.
 !        ------------------------------
 
-
 !*    1.1 COMPUTE FREQUENCIES.
 !         --------------------
 

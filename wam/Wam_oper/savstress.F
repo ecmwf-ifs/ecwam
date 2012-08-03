@@ -1,5 +1,5 @@
       SUBROUTINE SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &                     ZIDLOLD,ICEMASK,NSTART,NEND,CDTPRO,CDATEF)
+     &                     ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -11,7 +11,7 @@
 !**   INTERFACE.
 !     ----------
 !     *CALL* *SAVSTRESS(U10OLD,THWOLD,USOLD,Z0OLD,TAUW,ROAIRO,
-!                       ZIDLOLD,ICEMASK,NSTART,NEND,CDTPRO,CDATEF)
+!                       ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
 !     *U10OLD*    INTERMEDIATE STORAGE OF WIND SPEED.
 !     *THWOLD*    INTERMEDIATE STORAGE OF WIND DIRECTION. 
 !     *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION VELOCITY.
@@ -19,7 +19,7 @@
 !     *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR/WATER DENSITY RATIO.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!     *ICEMASK*  SEA ICE MASK.
+!     *CICOVER*   SEA ICE COVER.
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN.
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN.
 !     *CDTPRO*    CHAR*14   END DATE OF PROPAGATION.
@@ -43,7 +43,7 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : NREAL    ,NINTGR   ,JPPFLAG  ,IPFGTBL
+      USE YOWCOUT  , ONLY : NREAL    ,JPPFLAG  ,IPFGTBL
       USE YOWCURR  , ONLY : U        ,V
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
@@ -60,13 +60,11 @@
       LOGICAL LPBOPEN, LPBCLOSE
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                                  ROAIRO,ZIDLOLD
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK
+     &                                  ROAIRO,ZIDLOLD,CICOVER
       INTEGER :: IFLD
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFIELD
-      INTEGER,ALLOCATABLE,DIMENSION(:,:,:) :: IFIELD 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: RDUM 
 
       LPBOPEN = .TRUE.
@@ -77,7 +75,6 @@
 !     ----------------------------------------------------
 
       ALLOCATE(RFIELD(NIBLO,NBLO,NREAL))
-      ALLOCATE(IFIELD(NIBLO,NBLO,NINTGR))
 
 !     ASSIGN THE DIFFERENT RESTART FIELDS TO OUTPUT ARRAY.
 !     MAKE SURE IT IS THE SAME IN GETSTRESS !
@@ -91,24 +88,17 @@
             RFIELD(IJ,IG,5) = Z0OLD(IJ,IG)
             RFIELD(IJ,IG,6) = ROAIRO(IJ,IG)
             RFIELD(IJ,IG,7) = ZIDLOLD(IJ,IG)
+            RFIELD(IJ,IG,8) = CICOVER(IJ,IG)
             IF(ALLOCATED(U)) THEN
-              RFIELD(IJ,IG,8) =  U(IJ,IG) 
-            ELSE
-              RFIELD(IJ,IG,8) =  0.
-            ENDIF
-            IF(ALLOCATED(V)) THEN
-              RFIELD(IJ,IG,9) =  V(IJ,IG) 
+              RFIELD(IJ,IG,9) =  U(IJ,IG) 
             ELSE
               RFIELD(IJ,IG,9) =  0.
             ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-
-      DO IFLD=1,NINTGR
-        DO IG=1,NBLO
-          DO IJ = NSTART(IRANK),NEND(IRANK) 
-            IFIELD(IJ,IG,1) = ICEMASK(IJ,IG)
+            IF(ALLOCATED(V)) THEN
+              RFIELD(IJ,IG,10) =  V(IJ,IG) 
+            ELSE
+              RFIELD(IJ,IG,10) =  0.
+            ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -123,25 +113,6 @@
           CALL MPGATHERSCFLD(IRECV,ITAG,NSTART,NEND,RFIELD(:,:,IFLD))
         ENDDO
 
-        ALLOCATE(RDUM(NIBLO,NBLO))
-        DO IFLD=1,NINTGR
-          DO IG=1,NBLO
-            DO IJ = NSTART(IRANK),NEND(IRANK) 
-              RDUM(IJ,IG) = FLOAT(IFIELD(IJ,IG,IFLD))
-            ENDDO
-          ENDDO
-          ITAG=150+NREAL+IFLD
-          CALL MPGATHERSCFLD(IRECV,ITAG,NSTART,NEND,RDUM)
-          DO IG=1,NBLO
-            DO IJ = 1, NIBLO
-               IF(IRANK.EQ.IRECV ) THEN
-                 IFIELD(IJ,IG,IFLD) = NINT(RDUM(IJ,IG))
-               ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
-        DEALLOCATE(RDUM)
-
         IF (ITEST.GE.2)
      &   WRITE(IU06,*) '   SUB. SAVSTRESS: RESTART FILES COLLECTED'
 
@@ -150,11 +121,10 @@
 
       IF(IRANK.EQ.IRECV .OR. .NOT.LMESSPASS) THEN
           CALL GRSTNAME(CDTPRO,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
-          CALL WRITESTRESS(NREAL, RFIELD, NINTGR, IFIELD,
-     &                     FILENAME,LPBOPEN,LPBCLOSE)
+          CALL WRITESTRESS(NREAL,RFIELD,FILENAME,LPBOPEN,LPBCLOSE)
       ENDIF
 
-      DEALLOCATE(RFIELD, IFIELD)
+      DEALLOCATE(RFIELD)
 
       WRITE(IU06,*) ' '
       WRITE(IU06,*) 'SUB. SAVSTRESS: WIND FIELD SAVED FOR RESTART'

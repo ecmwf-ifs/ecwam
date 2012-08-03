@@ -46,7 +46,8 @@
 
 ! ----------------------------------------------------------------------
 
-      PARAMETER (CONST = -2.0*0.038/G)
+    ! PARAMETER (CONST = -2.0*0.038/G)
+      REAL:: CONST
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       DIMENSION SBO(IJS:IJL)
 
@@ -55,6 +56,7 @@
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
 
+      CONST = -2.0*0.038/G
       DO M=1,NFRE
         DO IJ=IJS,IJL
           IF(DEPTH(IJ,IG).LT.999) THEN

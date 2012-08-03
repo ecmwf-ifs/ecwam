@@ -7,7 +7,7 @@
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
      &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
      &                    NFDBREF,
-     &                    FRSTIME, NADV)
+     &                    FRSTIME, NADV, PRPLRADI, PRPLRG)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -36,6 +36,7 @@
 !         J BIDLOT     ECMWF  August 2008 ADD LWCUR, MOVE PREWIND.
 !         J BIDLOT     ECMWF  June 2009 ADD LWSTOKES. 
 !         J BIDLOT     ECMWF  August 2010 ADD IGRIB_HANDLE.
+!         P Bechtold   ECMWF  March 2012 ADD SMALL PLANET RADIUS&GRAVITY FACTOR
 !                                            
 
 !     PURPOSE.                                                          
@@ -102,14 +103,14 @@
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : ICEMASK
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,
      &            TAUOC
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,
      &                      NBLO     ,LL1D
-      USE YOWPCONS , ONLY : ZMISS
+      USE YOWPCONS , ONLY : ZMISS    ,G
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,
      &            NWFDBREF ,LFDBOPEN ,LSARINV  ,NWAM_BLKS,
@@ -118,7 +119,7 @@
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
      &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
-     &            NSTART ,NEND     ,FL1
+     &            NSTART ,NEND     ,FL1      ,FL3      ,SL
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
@@ -152,6 +153,7 @@
       REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL, ALLOCATABLE :: ZCOMBUF(:)
       REAL, ALLOCATABLE :: WVBLOCK(:,:)
+      REAL :: PRPLRADI, PRPLRG
 
       CHARACTER*14 :: CBEGDAT, CDTASS
       CHARACTER*12 :: FLABEL(NWVFIELDS)
@@ -194,7 +196,7 @@
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 
       ZMISS=RMISS
-
+      G=G*PRPLRG ! modified for small planet
 
       IF(LWCOU) THEN
 
@@ -249,6 +251,14 @@
       IREAD=1
       IF(NPROC.EQ.1) IREAD=1
 
+
+
+!!!!test freeing up some memory that is not needed yet
+      IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
+      IF(ALLOCATED(SL)) DEALLOCATE(SL)
+
+
+      
       IF (FRSTIME) THEN                                                 
 
 !     !!!! FIRST TIME AROUND !!!!
@@ -305,7 +315,7 @@
         CALL INITMDL (NADV,
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
-     &                ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                ISEC2, FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
         LLCHKCFL=.FALSE.
 
@@ -445,7 +455,8 @@
 
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK,
+     &              ROAIRO, ZIDLOLD,
+     &              CICOVER, CITHICK, CIWA,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
      &              ISEC2, FIELDS, LWCUR, MASK_IN)
@@ -455,6 +466,11 @@
         ENDIF
 
       ENDIF
+
+!!test: reallocating the memory that was freed
+
+      IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
+      IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
 
 ! --------------------------------------------------------------------  
 

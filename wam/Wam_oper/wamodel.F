@@ -308,13 +308,13 @@
      &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
      &            IJL      ,IJLT
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CIWA
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,QPG      ,HMAXG    ,TMAXG    ,USTOKESG ,
-     &            VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,
-     &            TAUOCG
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
+     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
+     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
@@ -408,10 +408,12 @@
 
       IG=1
 
-      IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE .AND. LICERUN) THEN
+      IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE .AND. LICERUN ) THEN
 !       INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
 !       FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT
 !       RESTARTED).
+!       IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
+!       WHEN GETTING THE DATA FROM GRIB.
         CALL GSTATS(1236,0)
         NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
@@ -475,7 +477,8 @@
      &                TAUW, NSTART,NEND)
         ELSE
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+    PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -496,7 +499,7 @@
 
 !       SET FL1 ON ICE POINTS TO ZERO
 
-          IF (LICERUN) THEN
+          IF (LICERUN .AND. LMASKICE) THEN
             IF (ITEST.GE.1) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT',
      &         ' ICEPOINTS'
@@ -645,9 +648,13 @@
         IF(ALLOCATED(MWP1G)) DEALLOCATE(MWP1G)
         IF(ALLOCATED(MWP2G)) DEALLOCATE(MWP2G)
         IF(ALLOCATED(WSPRDG)) DEALLOCATE(WSPRDG)
+        IF(ALLOCATED(WHGTAG)) DEALLOCATE(WHGTAG)
+        IF(ALLOCATED(CWHTAG)) DEALLOCATE(CWHTAG)
+        IF(ALLOCATED(RANGAG)) DEALLOCATE(RANGAG)
         IF(ALLOCATED(C4G)) DEALLOCATE(C4G)
         IF(ALLOCATED(BFG)) DEALLOCATE(BFG)
         IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
+        IF(ALLOCATED(DEPTHG)) DEALLOCATE(DEPTHG)
         IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
         IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
         IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
@@ -1087,7 +1094,7 @@
 
             CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
-     &                   ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,ICEMASK)
+     &                   ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,CICOVER)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN
                 WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
@@ -1107,6 +1114,7 @@
      &                      THWOLD(KIJS,IG),USOLD(KIJS,IG),
      &                      TAUW(KIJS,IG),Z0OLD(KIJS,IG),
      &                      ROAIRO(KIJS,IG),ZIDLOLD(KIJS,IG),
+     &                      CICOVER(KIJS,IG),CIWA(KIJS:KIJL,:,IG),
      &                      U10NEW(KIJS),THWNEW(KIJS),USNEW(KIJS),
      &                      Z0NEW(KIJS),ROAIRN(KIJS),ZIDLNEW(KIJS),
      &                      SL(KIJS:KIJL,:,:),
@@ -1173,7 +1181,7 @@
 !*    1.5.6 SET FL3 ON ICE POINTS TO ZERO
 !           -----------------------------
 
-          IF (LICERUN) THEN
+          IF (LICERUN .AND. LMASKICE) THEN
             IF (ITEST.GE.1) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT',
      &         ' ICEPOINTS'
@@ -1299,7 +1307,8 @@
 
               NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 !             CALL STATS(1432,0)
-!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+        PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -1384,7 +1393,16 @@
 
           CALL OUTWNORM
 
+!         IF THE OUTPUT TIME IS NOT AN ANLYSIS TIME THEN TYPE FG
+!         BECOMES TYPE AN (i.e. speudo analysis)
+          MARSTYPEBAK=MARSTYPE
+          IF((MARSTYPE.EQ.'fg' .OR. MARSTYPE.EQ.'4v') .AND.
+     &        KADV.LT.NADV) THEN
+            MARSTYPE='an'
+          ENDIF
           CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, NWFDBREF,LFDBOPEN)
+          MARSTYPE=MARSTYPEBAK
+
           IF(LMESSPASS) THEN
             CALL GSTATS(753,0)
             CALL MPL_BARRIER(CDSTRING='WAMODEL:')
@@ -1415,9 +1433,13 @@
           IF(ALLOCATED(MWP1G)) DEALLOCATE(MWP1G)
           IF(ALLOCATED(MWP2G)) DEALLOCATE(MWP2G)
           IF(ALLOCATED(WSPRDG)) DEALLOCATE(WSPRDG)
+          IF(ALLOCATED(WHGTAG)) DEALLOCATE(WHGTAG)
+          IF(ALLOCATED(CWHTAG)) DEALLOCATE(CWHTAG)
+          IF(ALLOCATED(RANGAG)) DEALLOCATE(RANGAG)
           IF(ALLOCATED(C4G)) DEALLOCATE(C4G)
           IF(ALLOCATED(BFG)) DEALLOCATE(BFG)
           IF(ALLOCATED(QPG)) DEALLOCATE(QPG)
+          IF(ALLOCATED(DEPTHG)) DEALLOCATE(DEPTHG)
           IF(ALLOCATED(HMAXG)) DEALLOCATE(HMAXG)
           IF(ALLOCATED(TMAXG)) DEALLOCATE(TMAXG)
           IF(ALLOCATED(USTOKESG)) DEALLOCATE(USTOKESG)
@@ -1544,25 +1566,8 @@
      &            .AND.
      &             LSV
 
-!         CHECK WHETHER OUTPUT IS NECESSARY DESPITE BEING IN
-!         ASSIMILATION MODE.
-          IF(IASSI.EQ.1 .AND.CDTPRO.LE.CDATEF .AND.NASS.GT.0) THEN
-            L4VOUT = .TRUE.
-            DO J=1,NASS
-              IF(CDTPRO.EQ.CASS(J)) THEN
-                L4VOUT = .FALSE. 
-                EXIT
-              ENDIF
-            ENDDO
-          ELSE
-            L4VOUT = .FALSE.
-          ENDIF
 
-
-          IF ( (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF .OR. L4VOUT )
-     &         .AND.
-     &         ( LOUT .OR. LRST )  
-     &       ) THEN
+          IF ( LOUT .OR. LRST ) THEN
 
 
 !*          STRESS FIELD IS DUMPED FOR RESTART.
@@ -1578,7 +1583,7 @@
 
               IF ( .NOT.LGRIBOUT .OR.LDWRRE ) THEN
                 CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &            ZIDLOLD,ICEMASK,NSTART,NEND,CDTPRO,CDATEF)
+     &            ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
 
               ENDIF
 
@@ -1587,10 +1592,18 @@
 !           SAVE SPECTRUM
 !           -------------
 
-!           we have insure that the spectra will be written to FDB
+!           we have insured that the spectra will be written to FDB
 !           even when the restart option is triggered and it is an
 !           output step for the spectra.
             IF(LOUT.AND.LGRIBOUT) THEN
+
+!             IF THE OUTPUT TIME IS NOT AN ANLYSIS TIME THEN TYPE FG
+!             BECOMES TYPE AN (i.e. speudo analysis)
+              MARSTYPEBAK=MARSTYPE
+              IF((MARSTYPE.EQ.'fg' .OR. MARSTYPE.EQ.'4v') .AND.
+     &            KADV.LT.NADV) THEN
+                MARSTYPE='an'
+              ENDIF
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !               convert output spectra to absolute frame of reference
                 IF (.NOT.LLINTPOL) THEN
@@ -1644,6 +1657,8 @@
      &                       NWFDBREF, LFDBOPEN)
                   ENDIF
               ENDIF
+              MARSTYPE=MARSTYPEBAK
+
               IF (LFDB) THEN
                 CALL GSTATS(1976,0)
                 ISTAT = IFLUSHFDBSUBS (NWFDBREF)

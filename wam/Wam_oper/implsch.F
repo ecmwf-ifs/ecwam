@@ -2,6 +2,7 @@
      &                    THWOLD, USOLD,
      &                    TAUW, Z0OLD,
      &                    ROAIRO, ZIDLOLD,
+     &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
      &                    Z0NEW, ROAIRN, ZIDLNEW,
      &                    SL, FCONST)
@@ -41,7 +42,9 @@
 !     ----------
 
 !       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
-!    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
+!    1                    THWOLD,USOLD,TAUW,Z0OLD,
+!    &                    ROAIRO, ZIDLOLD, 
+!    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
 !    3                    SL,FCONST)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
@@ -66,6 +69,8 @@
 !      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
+!      *CICOVER*   SEA ICE COVER.
+!      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
 !      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
 !                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
@@ -127,7 +132,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
      &                      TAUOC    
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
       USE YOWTABL  , ONLY : JUMAX    ,DELU
@@ -138,9 +143,9 @@
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
-      REAL,DIMENSION(IJS:IJL,NFRE) :: FCONST 
+      REAL,DIMENSION(IJS:IJL,NFRE) :: FCONST, CIWA
       REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW,
-     &                           ROAIRO,ZIDLOLD
+     &                           ROAIRO,ZIDLOLD,CICVR
       REAL,DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW,
      &                           ROAIRN,ZIDLNEW
 
@@ -225,7 +230,7 @@
       CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
 
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &              ROAIRN, TAUW, TAUWLF, PHIWA, 
@@ -313,13 +318,13 @@
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
+            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
             FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
+!!! testing sea ice attenuation (might need to restrict usage when needed)
+            FL3(IJ,K,M) = MAX(CIWA(IJ,M)*FL3(IJ,K,M),FLLOWEST)
           ENDDO
         ENDDO
       ENDDO
-
 
 ! ----------------------------------------------------------------------
 
@@ -340,7 +345,7 @@
 !           ---------------------------
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
 
       DO IJ=IJS,IJL
         GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
@@ -380,7 +385,7 @@
 !           -------------------------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN,ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)

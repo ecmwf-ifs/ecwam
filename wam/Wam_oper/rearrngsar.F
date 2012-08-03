@@ -21,7 +21,7 @@
 !     MODULES:
 !     --------
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : ICEMASK
+      USE YOWICE   , ONLY : CICOVER  ,CITHRSH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -112,7 +112,7 @@
             JP=IJSAR(ISPEC)
             IF(JP.NE.0) THEN
               IF(IGSAR(ISPEC).EQ.JBL) THEN
-                IF(ICEMASK(JP,JBL).NE.0) THEN
+                IF(CICOVER(JP,JBL).NE.0) THEN
                   DO JFRE=1,NFRE
                     DO JANG=1,NANG
                       SPEC(ISPEC,JANG,JFRE,1)=FL1(JP,JANG,JFRE)
@@ -149,7 +149,7 @@
           IF(JBL.NE.IGL) READ(IU11) FL1
           DO ISPEC = 1, NSPEC 
             JP=IJSAR(ISPEC)
-            IF(ICEMASK(MAX(JP,1),JBL).NE.0 .AND. JP.NE.0) THEN
+            IF(CICOVER(MAX(JP,1),JBL).LE.CITHRSH .AND. JP.NE.0) THEN
               IF(IGSAR(ISPEC).EQ.JBL) THEN
                 DO JFRE=1,NFRE
                   DO JANG=1,NANG

@@ -47,7 +47,7 @@
 
       USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+      USE YOWICE   , ONLY : LICERUN  ,CICOVER  ,CITHRSH
       USE YOWMPP   , ONLY : NINF     ,NSUP
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -71,7 +71,7 @@
 !     ---------------------------------
 
       DO IJ = IJS,IJL
-        IF (LICERUN.AND.ICEMASK(IJ,IG).EQ.0) THEN
+        IF (LICERUN.AND.CICOVER(IJ,IG).GT.CITHRSH) THEN
           BETA(IJ) = RCHAR
         ELSE
           BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)

@@ -44,7 +44,7 @@
 
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
-     &         FRATIO      ,FLOGSPRDM1
+     &              DELTH  ,FRATIO   ,FLOGSPRDM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -58,6 +58,7 @@
 
       INTEGER,DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
+      REAL :: DFTH(NFRE)
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
       REAL,DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
 
@@ -73,6 +74,16 @@
 
       PI2G = ZPI/G 
       FRE0 = FRATIO-1.
+
+!!!??? I believe that in order to be energy conserving, since
+!!! DFIM(1) is only the part above FR(1)
+!!! purpose of trapezoidal rule, one has to take DFTH(1) which 
+!!! define on both side of FR(1). Similarly for FR(NFRE)
+!!! Redefine the centered frequency-direction intervals
+      CDF= 0.5*(FRATIO-1./FRATIO)*DELTH
+      DO M=1,NFRE
+        DFTH(M)= FR(M)*CDF
+      ENDDO
 
       IF(ABS(IRA).NE.1) THEN
         WRITE (IU06,*) '**************************************'
@@ -157,7 +168,7 @@
             IF (FNEF(IJ).LE.FR(1)/FRATIO) THEN
               NEWF(IJ)= -1
             ELSE
-              NEWF(IJ)=INT(LOG10(FNEF(IJ)/FR(1))*FLOGSPRDM1)+1
+              NEWF(IJ)=FLOOR(LOG10(FNEF(IJ)/FR(1))*FLOGSPRDM1)+1
             ENDIF
           ENDDO
 
@@ -169,18 +180,18 @@
             NEWM = NEWF(IJ)
             IF (NEWM.LT.NFRE.AND.NEWM.GE.1) THEN
               NEWM1 = NEWM + 1
-              GWH = DFIM(M)/(FR(NEWM1)-FR(NEWM)) *F3(IJ,K,M)
-              GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFIM(NEWM)
-              GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFIM(NEWM1)
+              GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *F3(IJ,K,M)
+              GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFTH(NEWM)
+              GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFTH(NEWM1)
               NEWF1(IJ) = NEWM1
             ELSEIF (NEWM.EQ.0) THEN
-              GWH = FRATIO*DFIM(M)/(FRE0*FR(1)) * F3(IJ,K,M)
-              GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFIM(1)
+              GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * F3(IJ,K,M)
+              GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFTH(1)
               NEWF (IJ) = -1
               NEWF1(IJ) = 1
             ELSEIF (NEWM.EQ.NFRE) THEN
-              GWH = DFIM(M)/(FRE0*FR(NFRE)) * F3(IJ,K,M)
-              GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFIM(NFRE)
+              GWH = DFTH(M)/(FRE0*FR(NFRE)) * F3(IJ,K,M)
+              GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFTH(NFRE)
               NEWF1(IJ) = -1
             ELSE
               NEWF (IJ) = -1

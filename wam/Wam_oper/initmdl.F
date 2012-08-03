@@ -1,7 +1,7 @@
       SUBROUTINE INITMDL (NADV,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                    ISEC2, FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
 ! ----------------------------------------------------------------------
 
@@ -59,6 +59,7 @@
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
 !      *LWCUR*    LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
+!      *PRPLRADI*  REAL      EARTH RADIUS REDUCTION FACTOR FOR SMALL PLANET
 
 !          ---- INPUT/OUTPUT UNITS ---
 
@@ -261,8 +262,8 @@
       USE YOWGRIBHD, ONLY : NKSEK1   ,LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
      &             COSPH
-      USE YOWICE   , ONLY : ICEMASK
-      USE YOWINDN  , ONLY : ENH
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
+      USE YOWINDN  , ONLY : MLSTHG   ,ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            KMNOP    ,KMSOP
@@ -314,6 +315,8 @@
 
       REAL FCRANGE
       REAL FIELDS(NGPTOTG,NFIELDS)
+      REAL ZHOOK_HANDLE
+      REAL PRPLRADI
 
       CHARACTER*14 ZERO,CDUM
       CHARACTER*24 FILNM
@@ -323,11 +326,10 @@
       LOGICAL :: LLEXIST
 
 !----------------------------------------------------------------------
-      REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 
-      CALL INIWCST
+      CALL INIWCST(PRPLRADI)
 
 
 !*    1. DEFINITION OF MODEL PARAMETERS.
@@ -759,7 +761,7 @@
       ENDIF
 
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &               ROAIRO,ZIDLOLD,ICEMASK,
+     &               ROAIRO,ZIDLOLD,CICOVER,
      &               NSTART,NEND,IREAD)
 
       CDA = CDTPRO
@@ -1027,6 +1029,14 @@
          CALL FLUSH(IU06)
       ENDIF
 
+
+!    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
+      CALL CIGETDEAC
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '  SUB. INITMDL:  CIGETDEAC CALLED '
+        WRITE(IU06,*) ''
+      ENDIF
+
 !      NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
 !      *GETCURR* IS CALLED (SEE *PREWIND*).
 !      A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
@@ -1034,7 +1044,8 @@
 !      ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, ICEMASK,
+     &              ROAIRO, ZIDLOLD,
+     &              CICOVER, CITHICK, CIWA,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
      &              ISEC2, FIELDS, LWCUR, MASK_IN)
@@ -1051,12 +1062,19 @@
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)
 
-!     9.2 COMPUTE THE NONLINEAR TRANSFER FUNCTION COEFFICIENTS FOR SNL
-!         VALID FOR THE NEW FORMULATION
+!     9.2 COMPUTE FREQUENCY DEPENDENT INDICES AND COEFFICIENTS FOR SNONLIN
+!         AND THE FREQUENCY FRONT TAIl REDUCTION COEFFICIENTS.
+!         ------------------------------------------------------------ 
+
+      CALL INISNONLIN
+
+
+!     9.2 COMPUTE THE NONLINEAR TRANSFER FUNCTION COEFFIxCIENTS FOR SNL
+!         VALID FOR THE NEW FORMULATION AND OTHER STUFFS
 !         ------------------------------------------------------------ 
 
       IF(.NOT.ALLOCATED(ENH))
-     &   ALLOCATE(ENH(NSTART(IRANK):NEND(IRANK),NFRE+4,IGL))
+     &   ALLOCATE(ENH(NSTART(IRANK):NEND(IRANK),MLSTHG,IGL))
 
       IF (ISNONLIN.NE.0) THEN
         ENH_MAX=10.
@@ -1070,7 +1088,7 @@
                  ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
                ENDDO
             ENDDO
-            DO M=NFRE+1,NFRE+4
+            DO M=NFRE+1,MLSTHG
                DO IJ=NSTART(IRANK),NEND(IRANK)
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
@@ -1083,7 +1101,7 @@
           ENDDO
         ELSE
           DO IG=1,IGL
-            DO M=1,NFRE+4
+            DO M=1,MLSTHG
                DO IJ=NSTART(IRANK),NEND(IRANK)
                  ENH(IJ,M,IG) = 1.
                ENDDO
@@ -1230,6 +1248,7 @@
       IF (ITEST.GE.2)
      &   WRITE(IU06,*) '    SUB. INITMDL: MODULE YOWUBUF ',
      &   'READ AND INITIALIZED '
+
 
 ! ----------------------------------------------------------------------
 !NEST

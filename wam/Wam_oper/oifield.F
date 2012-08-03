@@ -1,4 +1,5 @@
-      SUBROUTINE OIFIELD (XMO, XOI, SIGMOD, DIST, DISTMAX, EXTENDMAX)
+      SUBROUTINE OIFIELD (MINIJS,MAXIJL,XMO,CICVR,
+     &                    XOI,SIGMOD,DIST,DISTMAX,EXTENDMAX)
 
 !**** *OIFIELD* - OPTIMUM INTERPOLATION.                                
 
@@ -20,27 +21,31 @@
 !**   INTERFACE.                                                        
 !     ----------                                                        
 
-!       *CALL* *OIFIELD (XMO, SIGMOD, DIST, DISTMAX, EXTENDMAX)*      
+!       *CALL* *OIFIELD (MINIJS,MAXIJL,XMO,CICVR,
+!    &                    XOI,SIGMOD,DIST,DISTMAX,EXTENDMAX)
 
+!         *MINIJS*  INTEGER  MINUMUM INDEX OF XMO AND CICVR
+!         *MAXIJL*  INTEGER  MAXIMUM INDEX OF XMO AND CICVR 
 !         *XMO*     REAL     FIELD FROM MODEL (FIRST GUESS)
 !         *XOI*     REAL     FIELD FROM O.I. ON OUTPUT.
+!         *CICVR*   REAL     MODEL SEA ICE
 !         *SIGMOD*  REAL     MODEL ERROR ESTIMATE.                             
 !         *DIST*    REAL     CORRELATION DISTANCE (in radian)
 !         *DISTMAX* REAL     MAXIMUM OF DIST
 !         *EXTENDMAX* REAL   EXTENDMAX*DIST = MAXIMUM SPREADING DISTANCE
-
 
 ! ----------------------------------------------------------------------
 
       USE YOWALTAS , ONLY : NALTAVLB ,IJALT    ,INTLMAX  ,
      &            NOBSPE   ,ALTDATA  ,LALTPASSIV,
      &            XLONOBS  ,SIGRATIO2,DIFFALTFG
+      USE YOWICE   , ONLY : CITHRSH_SAT 
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,NLONRGG  ,IGL      ,
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IPER     ,XDELLA   ,
      &            ZDELLO   ,AMOWEP
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : RAD      ,DEG      ,R
       USE YOWSPEC,   ONLY : NSTART   ,NEND
       USE YOWSTAT  , ONLY : NWAM_BLKS
@@ -48,12 +53,13 @@
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: MINIJS, MAXIJL 
       INTEGER :: JC
       INTEGER :: NOBS(NSTART(IRANK):NEND(IRANK))
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IOBS4IJ
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
-      REAL :: XMO(NIBLO)
+      REAL, DIMENSION(MINIJS:MAXIJL) :: XMO, CICVR
       REAL :: DIST(NSTART(IRANK):NEND(IRANK))
       REAL :: XOI(NSTART(IRANK):NEND(IRANK))
       INTEGER, ALLOCATABLE, DIMENSION(:) :: KALTMIN, KALTMAX
@@ -125,7 +131,7 @@
       ENDDO
 
 !     SET LAND SEA ICE MASK (LLSIMASK=.true. if over land or sea ice)
-!     BASED ON FIRST GUESS HS
+!     BASED ON FIRST GUESS HS AND SEA ICE COVER WITH THRESHOLD CITHRSH_SAT
       IF(NOBSPE(IRANK).GT.0) THEN
 
         IF(.NOT.ALLOCATED(LLSIMASK))THEN
@@ -136,11 +142,11 @@
             LLSIMASK(I,K) = .TRUE. 
           ENDDO
         ENDDO
-        DO IJ = 1, NIBLO 
+        DO IJ = MINIJS, MAXIJL
           K = KXLT(IJ,IG)
           IF( K.GE.KMIN .AND. K.LE.KMAX ) THEN
             I = IXLG(IJ,IG)
-            IF(XMO(IJ).GT. 0.0) THEN
+            IF(XMO(IJ).GT. 0.0 .AND. CICVR(IJ).LE.CITHRSH_SAT) THEN
               LLSIMASK(I,K) = .FALSE. 
             ENDIF
           ENDIF

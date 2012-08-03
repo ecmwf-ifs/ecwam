@@ -71,6 +71,7 @@
 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCOUT  , ONLY : LGRIBAPI_I
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 
       USE GRIB_API_INTERFACE
@@ -94,8 +95,11 @@
       LOGICAL :: LLINTERPOL
       LOGICAL :: LLSCANNS
 
+      REAL :: ZHOOK_HANDLE
                                                                         
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('INITIALINT',0,ZHOOK_HANDLE)
 
       IF(LGRIBAPI_I) THEN
 !!!     use grib handle passed down from IFS
@@ -560,6 +564,8 @@
 
       DEALLOCATE (RDELLO)
       IF(ALLOCATED(PL)) DEALLOCATE(PL)
+
+      IF (LHOOK) CALL DR_HOOK('INITIALINT',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE INITIALINT

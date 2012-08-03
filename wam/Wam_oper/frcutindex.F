@@ -1,4 +1,4 @@
-      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, MIJ)
+      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ)
 
 ! ----------------------------------------------------------------------
 
@@ -8,11 +8,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FRCUTINDEX (IJS, IJL, FM, FMWS, MIJ)
+!       *CALL* *FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ)
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
+!          *CICVR*  - CICVR 
 !          *MIJ*    - LAST FREQUENCY INDEX
 
 !     METHOD.
@@ -29,6 +30,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWFRED  , ONLY : FR       ,FRATIO   ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NFRE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -41,7 +43,7 @@
       INTEGER :: MIJ(IJS:IJL)
 
       REAL :: TAILFACTOR, FPMH, FPM4
-      REAL, DIMENSION(IJS:IJL) :: FM, FMWS
+      REAL, DIMENSION(IJS:IJL) :: FM, FMWS, CICVR
 
       REAL ZHOOK_HANDLE
 
@@ -56,9 +58,13 @@
       FPMH = TAILFACTOR/FR(1)
      
       DO IJ=IJS,IJL
-        FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
-        MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-        MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+          FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
+          MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        ELSE
+          MIJ(IJ) = NFRE
+        ENDIF
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)

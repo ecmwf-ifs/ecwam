@@ -1,7 +1,7 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
      &                    U10OLD,THWOLD,U10NEW,THWNEW,
      &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-     &                    ICEMASK)
+     &                    CICOVER)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -23,7 +23,7 @@
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
 !     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
 !     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!     3                  ICEMASK)*
+!     3                  CICOVER)*
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -43,7 +43,7 @@
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
-!      *ICEMASK* - SEA ICE MASK
+!      *CICOVER* - SEA ICE COVER. 
 
 !     METHOD.
 !     -------
@@ -71,16 +71,16 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
      &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
-     &            ZIDLNEXT ,ICEMASKNEXT
+     &            ZIDLNEXT ,CICOVERNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD, ROAIRO,ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW     , ROAIRN,ZIDLNEW
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,ROAIRO,ZIDLOLD
+      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW ,ROAIRN,ZIDLNEW
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: CICOVER 
 
 ! ----------------------------------------------------------------------
 
@@ -158,7 +158,7 @@
             THWNEW(IJ)=DSNEXT(IJ,ISTORE,IIG)
             ROAIRN(IJ)=ADSNEXT(IJ,ISTORE,IIG)
             ZIDLNEW(IJ)=ZIDLNEXT(IJ,ISTORE,IIG)
-            ICEMASK(IJ,IG)=ICEMASKNEXT(IJ,ISTORE,IIG)
+            CICOVER(IJ,IG)=CICOVERNEXT(IJ,ISTORE,IIG)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

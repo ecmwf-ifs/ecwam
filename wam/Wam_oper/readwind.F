@@ -116,7 +116,6 @@
       INTEGER :: IREAD 
       INTEGER :: NFLD  
       INTEGER :: I, J, IVAR, JSN
-      INTEGER :: IVAR0, IVARI, IREP, NREP
       INTEGER :: ISIZE, KRET, KPLENG, KLEN, KLENG 
       INTEGER :: IFORP, IPARAM, KZLEV, IDM 
       INTEGER :: IWTIME, IDTTURN
@@ -140,17 +139,18 @@
       LOGICAL :: LLNOTOPENED
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
-      LOGICAL :: LLRESIZING=.FALSE.
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
 
 ! --------------------------------------------------------------------  
 
       IF (LHOOK) CALL DR_HOOK('READWIND',0,ZHOOK_HANDLE)
 
+      IF (ITEST.GT.1) THEN
+        WRITE(IU06,*) ' SUB. READWIND - STARTING ' 
+        CALL FLUSH(IU06)
+      ENDIF
       NC=NGX
       NR=NGY
-      IVARI=1
-      NREP=1
 
       IF(.NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS)) THEN
 !       IF IT IS NOT A SWAMP CASE OR A CASE FOR WHICH A TIME SERIES
@@ -181,8 +181,6 @@
           CALL ABORT1
         ENDIF
 
-1121    CONTINUE
-        IVAR0=IVARI
         IF(IRANK.EQ.IREAD) THEN
           IF (LLNOTOPENED) THEN
             IF(LGRIBAPI_I) THEN
@@ -265,9 +263,10 @@
 
 !       LOOP OVER INPUT
 
-        WND: DO IVAR=IVAR0,NFLD
+        WND: DO IVAR=1,NFLD
           IF (ITEST.GT.1) THEN
             WRITE(IU06,*) ' SUB. READWIND - LOOP OVER IVAR ',IVAR,NFLD
+            CALL FLUSH(IU06)
           ENDIF
 
 2002      CONTINUE
@@ -278,33 +277,13 @@
 1021          ISIZE=NBITW
               KBYTES=ISIZE*NPRECI
               IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
-              DO IREP=1,NREP
-                CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
-              ENDDO
+              CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
               IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+!!!             *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!              the size is too small, so figure out the size and read again.
                 KDUM=-1
                 CALL KGRIBSIZE(IU06, KDUM, KBYTES, NBITW, 'READWIND')
                 DEALLOCATE(KGRIB)
-                LLRESIZING=.TRUE.
-                IVARI=IVAR
-                NREP=1
-                GOTO 1021
-              ELSEIF(LLRESIZING .AND. IRET.NE.JPGRIB_END_OF_FILE) THEN
-!               LOOP UNTIL YOU HAVE EXPLORE THE SIZE FOR THE WHOLE FILE.
-                DEALLOCATE(KGRIB)
-                NREP=1
-                GOTO 1021
-              ELSEIF(LLRESIZING .AND. IRET.EQ.JPGRIB_END_OF_FILE) THEN
-!               WE SHOULD HAVE THE MAXIMUM SIZE NECESSARY, START ALL OVER.
-                DEALLOCATE(KGRIB)
-                LLRESIZING=.FALSE.
-                CALL IGRIB_CLOSE_FILE(IUNITW)
-                LLNOTOPENED=.TRUE.
-                DEALLOCATE(WORK)
-                DEALLOCATE(LLNOTREAD)
-!               you will need to read back to where you were
-                NREP=IVARI
-                GOTO 1121
               ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
                 WRITE(IU06,*) '**********************************'
                 WRITE(IU06,*) '* READWIND: END OF FILE ENCOUNTED'
@@ -316,7 +295,6 @@
                 WRITE(IU06,*) '**********************************'
                 CALL ABORT1
               ENDIF
-              NREP=1
             ENDIF
 
           ELSE

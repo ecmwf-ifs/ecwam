@@ -100,7 +100,8 @@
       INTEGER IGLOBAL,ILOCAL      ! FDB field counters
       INTEGER IERR
       INTEGER :: IUOUT
-      CHARACTER(LEN=14) :: CDATE
+      INTEGER :: INHOUR, ISHIFT
+      CHARACTER(LEN=14) :: CDATE, CDATE1, CDATE2
       CHARACTER(LEN=24) :: OFILENAME
       LOGICAL LFDBOPEN
       LOGICAL FRSTIME30
@@ -769,17 +770,39 @@
 !*      THIS IS A  FORECAST DATE
         CDATE=CDATEF
         READ(CDATEF,'(I4,5I2)')IY,IM,ID,IH,IMN,ISS
-        CALL DIFDATE(CDATEF,CDTPRO,IFCST)
+!       FIND THE STEP IN HOURS ! 
+        CDATE1=CDATEF
+        CDATE2=CDATE1(1:8)//'010000'
+!       MORE THAN A YEAR IN SECONDS 366*24*3600=31622400
+        CALL INCDATE(CDATE2,31622400) 
+        CDATE2=CDATE2(1:8)//'010000'
+        INHOUR=0
+!       FIND THE NUMBER OF FULL YEARS AND CONVERT THEM IN HOURS
+        DO WHILE (CDATE2.LT.CDTPRO)
+          CALL DIFDATE(CDATE1,CDATE2,ISHIFT)
+          INHOUR=INHOUR+ISHIFT/3600
+          CDATE1=CDATE2
+          CDATE2=CDATE1(1:8)//'010000'
+          CALL INCDATE(CDATE2,31622400) 
+          CDATE2=CDATE2(1:8)//'010000'
+        ENDDO
+        CALL DIFDATE(CDATE1,CDTPRO,IFCST)
         IF(MOD(IFCST,3600) == 0 ) THEN
           IFCST=IFCST/3600
         ELSE
           WRITE(IU06,*) ' ------------------------------------------'
           WRITE(IU06,*) ' ERROR in routine OUTINT :'
           WRITE(IU06,*) ' forecast step must be a multiple of hours!'
-          WRITE(IU06,*) ' IFCST=',IFCST
+          WRITE(IU06,*) ' IFCST =', IFCST
+          WRITE(IU06,*) ' CDATEF=', CDATEF 
+          WRITE(IU06,*) ' CDATE1=', CDATE1 
+          WRITE(IU06,*) ' CDTPRO=', CDTPRO 
+          WRITE(IU06,*) ' INHOUR=', INHOUR 
           WRITE(IU06,*) ' ------------------------------------------'
           CALL ABORT1
         ENDIF
+        IFCST=INHOUR+IFCST
+
       ENDIF
 
 

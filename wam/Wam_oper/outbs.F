@@ -75,10 +75,10 @@
       USE YOWCOUT  , ONLY : IPFGTBL  ,LSECONDORDER
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
-     &            PHIAWG  ,TAUOCG
+     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
+     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
+     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
+     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -401,6 +401,30 @@
       IF(IPFGTBL(16).NE.0) THEN
         IF(.NOT.ALLOCATED(WMNFSG)) THEN
           IF(LLALLOC_GRDFLD(16)) ALLOCATE(WMNFSG(NGX,NGY))
+        ENDIF
+      ENDIF
+      IF(IPFGTBL(22).NE.0) THEN
+        IF(.NOT.ALLOCATED(WHGTAG)) THEN
+          IF(LLALLOC_GRDFLD(22)) THEN
+            ALLOCATE(WHGTAG(NGX,NGY))
+            WHGTAG=0.
+          ENDIF
+        ENDIF
+      ENDIF
+      IF(IPFGTBL(23).NE.0) THEN
+        IF(.NOT.ALLOCATED(CWHTAG)) THEN
+          IF(LLALLOC_GRDFLD(23)) THEN
+            ALLOCATE(CWHTAG(NGX,NGY))
+            CWHTAG=0.
+          ENDIF
+        ENDIF
+      ENDIF
+      IF(IPFGTBL(24).NE.0) THEN
+        IF(.NOT.ALLOCATED(RANGAG)) THEN
+          IF(LLALLOC_GRDFLD(24)) THEN
+            ALLOCATE(RANGAG(NGX,NGY))
+            RANGAG=0.
+          ENDIF
         ENDIF
       ENDIF
       IF(IPFGTBL(25).NE.0) THEN

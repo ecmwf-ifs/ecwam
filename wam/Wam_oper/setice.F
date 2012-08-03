@@ -8,8 +8,6 @@
 
 !     R.PORTZ      MPI         OKT.1992
 !     J. BIDLOT    ECMWF       JUNE 1996  MESSAGE PASSING
-!     P. JANSSEN   ECMWF       OCTOBER 1997 SIMPLIFY BY INTRODUCING
-!                                           ICEMASK
 
 !     PURPOSE.
 !     -------
@@ -40,7 +38,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWICE   , ONLY : ICEMASK
+      USE YOWICE   , ONLY : CICOVER  ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
       REAL :: FL3(MIJS:MIJL,NANG,NFRE)
@@ -55,7 +53,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = MIJS,MIJL
-            IF(ICEMASK(IJ,IG).EQ.0) THEN
+            IF(CICOVER(IJ,IG).GT.CITHRSH) THEN
               FL3(IJ,K,M) = 0.
             ENDIF
           ENDDO

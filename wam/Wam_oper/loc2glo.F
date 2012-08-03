@@ -25,7 +25,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : LICERUN  ,ICEMASK
+      USE YOWICE   , ONLY : LICERUN  , LMASKICE, CICOVER, CITHRSH
       USE YOWPARAM , ONLY : NIBLO
       USE YOWPCONS , ONLY : ZMISS
 
@@ -36,9 +36,11 @@
       INTEGER :: IJ, IJS, IJL, IG
       REAL :: ALOC(IJS:IJL), GLO(NIBLO)
 
+!!!      IF (LICERUN .AND. LMASKICE) THEN
+!!! always mask the integrated parameters over the sea ice
       IF (LICERUN) THEN
         DO IJ = IJS,IJL
-          IF (ICEMASK(IJ,IG).EQ.0) THEN
+          IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
              GLO(IJ) = ZMISS
           ELSE
              GLO(IJ) = ALOC(IJ)

@@ -54,6 +54,8 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IFROMIJ  , 
      &            JFROMIJ 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOMCT0   , ONLY : NPRTRW     ,NPRTRV
+      USE YOMMP    , ONLY : MYSETW   ,NPRCIDS
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NWAM_BLKS
@@ -65,6 +67,7 @@
      &            CWDFILE  ,LLNEWCURR,NORMS_IN
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMTAG   , ONLY : MTAGWAMNORM
       USE MPL_MODULE
 
 
@@ -84,13 +87,19 @@
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL, SAVE :: LLINTERPOL
 
-      INTEGER :: ISENDREQ, ITAG
-      REAL, ALLOCATABLE :: ZCOMBUF(:)
+      REAL, ALLOCATABLE :: ZCOMBUF(:),ZCOMBUF1(:)
+      INTEGER :: IRECVCOUNTS(NPROC)
 
       INTEGER, ALLOCATABLE, SAVE :: JJ(:), II(:,:), IIP(:,:)
       INTEGER, ALLOCATABLE, SAVE :: ISTART(:)
       REAL, ALLOCATABLE, SAVE :: DJ1(:), DII1(:,:), DIIP1(:,:)
       REAL, DIMENSION(NFIELDS,4) :: NORMS ! 1:average, 2:min, 3:max, 4:variance 
+
+      REAL,ALLOCATABLE :: ZBUFW(:)
+      INTEGER :: IREQ(NPROC+1)
+      INTEGER :: IMASTER,IR,ITOT,IINC,IRECV,JSETW,J,ITAG
+      INTEGER :: IBEG,IEND,IBEGOFF,IENDOFF,ISETW,ISETV
+      REAL    :: ZDUM(2)
 
       CHARACTER*16 :: AFLABEL(NFIELDS)
 
@@ -111,6 +120,8 @@
 ! --------------------------------------------------------------------  
 
       IF (LHOOK) CALL DR_HOOK('IFSTOWAM',0,ZHOOK_HANDLE)
+
+      CALL GSTATS_BARRIER(796)
 
 !     ONLY ACTIVE IF COUPLED TO IFS.
 !     -----------------------------
@@ -266,9 +277,9 @@
         ELSE
 !       *LOCAL* NORM
 
-          IRECV=1
+          IMASTER=1
 
-          IF(IRANK.EQ.IRECV) THEN
+          IF(IRANK.EQ.IMASTER) THEN
           WRITE(IU06,*) ' NORMS OF GLOBAL INPUT ATMOSPHERIC FIELDS :'
           ELSE
           WRITE(IU06,*) ' *Local* NORMS OF INPUT ATMOSPHERIC FIELDS : '
@@ -324,46 +335,75 @@
             NORMS(JF,4)=NORMS(JF,4)-NORMS(JF,1)**2
           ENDDO
 
-!         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
+!         FOR PRIMARY PE (IMASTER), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.
  
           NCOMLOC=1+4*NFIELDS
           NCOMBUF=NCOMLOC*NPROC
           ALLOCATE(ZCOMBUF(NCOMBUF))
+          ALLOCATE(ZCOMBUF1(NCOMLOC))
 
-          IST=1+(IRANK-1)*NCOMLOC
-          IED=IST+NCOMLOC-1
-          ICOUNT=IST
-          ZCOMBUF(ICOUNT)=N_MASK_IN
+          ICOUNT=1
+          ZCOMBUF1(ICOUNT)=N_MASK_IN
           DO IFLD=1,NFIELDS
             DO IC=1,4
               ICOUNT=ICOUNT+1
-              ZCOMBUF(ICOUNT)=NORMS(IFLD,IC)
+              ZCOMBUF1(ICOUNT)=NORMS(IFLD,IC)
             ENDDO
           ENDDO
 
-          ITAG=1
-          CALL MPL_SEND(ZCOMBUF(IST:IED),KDEST=IRECV,KTAG=ITAG,
-     &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                  KREQUEST=ISENDREQ,
-     &                  CDSTRING='IFSTOWAM: MPL_SEND' )
-          IF(IRANK.EQ.IRECV) THEN
-            DO IP=1,NPROC
-              IST=1+(IP-1)*NCOMLOC
-              IED=IST+NCOMLOC-1
-              CALL MPL_RECV(ZCOMBUF(IST:IED),
-     &                      KSOURCE=IP,KTAG=ITAG,
-     &                      KMP_TYPE=JP_BLOCKING_STANDARD,
-     &                      CDSTRING='IFSTOWAM: MPL_RECV' )
+          CALL GSTATS(647,0)
+          IRECVCOUNTS(:)=NCOMLOC
 
+!         CALL MPL_GATHERV(ZCOMBUF1(:),KROOT=IMASTER,
+!    &       PRECVBUF=ZCOMBUF,KRECVCOUNTS=IRECVCOUNTS,
+!    &       CDSTRING='IFSTOWAM:')
+
+!         Optimise comms to use a 2D gather scheme
+
+          IMASTER=1
+          IBEG=(MYSETW-1)*NPRTRV+1
+          IEND=IBEG+NPRTRV-1
+          ALLOCATE(ZBUFW(SUM(IRECVCOUNTS(IBEG:IEND))))
+          CALL MPL_GATHERV(ZCOMBUF1(1:NCOMLOC),KROOT=IMASTER,
+     &      PRECVBUF=ZBUFW,KRECVCOUNTS=IRECVCOUNTS(IBEG:IEND),
+     &      KCOMM=MPL_ALL_LEVS_COMM,CDSTRING='IFSTOWAM:')
+          CALL PE2SET(IRANK,IA,IB,ISETW,ISETV)
+          ITAG=MTAGWAMNORM
+          IR=0
+          IF( IRANK==IMASTER )THEN
+            ITOT=0
+            DO JSETW=1,NPRTRW
+              CALL SET2PE(IRECV,0,0,JSETW,1)
+              IR=IR+1
+              IBEG=(JSETW-1)*NPRTRV+1
+              IEND=IBEG+NPRTRV-1
+              IINC=SUM(IRECVCOUNTS(IBEG:IEND))
+              IBEGOFF=1+ITOT
+              IENDOFF=IBEGOFF+IINC-1
+              CALL MPL_RECV(ZCOMBUF(IBEGOFF:IENDOFF),
+     &          KSOURCE=NPRCIDS(IRECV),
+     &          KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+     &          KTAG=ITAG,CDSTRING='IFSTOWAM:' )
+              ITOT=ITOT+IINC
             ENDDO
-            CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
-     &                    CDSTRING='IFSTOWAM: WAIT MPL_SEND')
           ENDIF
+          IF( ISETV==1 )THEN
+            IR=IR+1
+            CALL MPL_SEND(ZBUFW,KDEST=NPRCIDS(IMASTER),
+     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+     &        KTAG=ITAG,CDSTRING='IFSTOWAM:' )
+          ENDIF
+          IF(IR > 0) THEN
+            CALL MPL_WAIT(ZDUM,KREQUEST=IREQ(1:IR), 
+     &        CDSTRING='IFSTOWAM: WAIT FOR SENDS AND RECEIVES')
+          ENDIF
+          DEALLOCATE(ZBUFW)
+          CALL GSTATS(647,1)
 
 
 !         COMPUTE PSEUDO GLOBAL NORM
-          IF(IRANK.EQ.IRECV) THEN
+          IF(IRANK.EQ.IMASTER) THEN
             IST=1+(IRANK-1)*NCOMLOC
             ICOUNT=IST
             NMASK=ZCOMBUF(ICOUNT)
@@ -375,7 +415,7 @@
               NORMS(JF,4)=NMASK*ZCOMBUF(ICOUNT)
             ENDDO
             DO IP=1,NPROC
-              IF(IP.NE.IRECV) THEN
+              IF(IP.NE.IMASTER) THEN
                 IST=1+(IP-1)*NCOMLOC
                 ICOUNT=IST
                 NMASK=ZCOMBUF(ICOUNT)
@@ -409,6 +449,7 @@
           ENDDO
 
           DEALLOCATE(ZCOMBUF)
+          DEALLOCATE(ZCOMBUF1)
         ENDIF
 111     FORMAT(19x,'HEX: ',3(Z16.16,2x))
         WRITE(IU06,*) ' '

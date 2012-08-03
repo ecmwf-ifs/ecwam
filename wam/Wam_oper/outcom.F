@@ -1,4 +1,4 @@
-      SUBROUTINE OUTCOM (IU07, IU17, IFORM, ML, KL)
+      SUBROUTINE OUTCOM (IU07, IU17, IFORM)
 
 ! ----------------------------------------------------------------------
 
@@ -28,14 +28,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTCOM (IU07, IU17, IFORM, ML, KL)*
+!       *CALL* *OUTCOM (IU07, IU17, IFORM)*
 !          *IU07*   - LOGICAL UNIT FOR  UNFORMATED WRITE.
 !          *IU17*   - LOGICAL UNIT FOR    FORMATED WRITE.
 !          *IFORM*   - FORMAT OPTION  = 1  UNFORMATED WRITE.
 !                                     = 2  FORMATED WRITE.
 !                                     OTHERWISE BOTH.
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
 
 !     METHOD.
 !     -------
@@ -43,8 +41,8 @@
 !       MODULES YOWPARAM, YOWCOUPL, YOWCURR, YOWFRED, YOWINDNL, YOWGRID,
 !       YOWMAP, YOWCOUT, YOWTABL, AND YOWSHAL ARE WRITTEN TO UNIT.
 !       ALL FREQUENCY AND DIRECTION DEPENDENT ARRAYS
-!       ARE WRITTEN FROM 1 TO THE USED NUMBER OF FREQUENCIES (ML),
-!       AND THE USED NUMBER OF DIRECTIONS (KL). OTHER ARRAYS ARE
+!       ARE WRITTEN FROM 1 TO THE USED NUMBER OF FREQUENCIES (NFRE),
+!       AND THE USED NUMBER OF DIRECTIONS (NANG). OTHER ARRAYS ARE
 !       WRITTEN ACCORDING TO THEIR DIMENSIONS.
 
 !     EXTERNALS.
@@ -76,7 +74,7 @@
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
-     &            FRH
+     &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
@@ -116,10 +114,12 @@
 
       IF (IFORM.NE.2) THEN
         WRITE(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
+     &              KFRH, MFRSTLW, MLSTHG,
      &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE(IU17,997) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
+     &              KFRH, MFRSTLW, MLSTHG,
      &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
 
@@ -128,16 +128,16 @@
 !        --------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) (FR(M),M=1,ML), (DFIM(M),M=1,ML),
-     &   (GOM(M),M=1,ML), (C(M),M=1,ML),
-     &   DELTH, DELTR, (TH(K),K=1,KL),
-     &   (COSTH(K),K=1,KL), (SINTH(K),K=1,KL)
+        WRITE (IU07) (FR(M),M=1,NFRE), (DFIM(M),M=1,NFRE),
+     &   (GOM(M),M=1,NFRE), (C(M),M=1,NFRE),
+     &   DELTH, DELTR, (TH(K),K=1,NANG),
+     &   (COSTH(K),K=1,NANG), (SINTH(K),K=1,NANG)
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) (FR(M),M=1,ML), (DFIM(M),M=1,ML),
-     &   (GOM(M),M=1,ML), (C(M),M=1,ML),
-     &   DELTH, DELTR, (TH(K),K=1,KL),
-     &   (COSTH(K),K=1,KL), (SINTH(K),K=1,KL)
+        WRITE (IU17,999) (FR(M),M=1,NFRE), (DFIM(M),M=1,NFRE),
+     &   (GOM(M),M=1,NFRE), (C(M),M=1,NFRE),
+     &   DELTH, DELTR, (TH(K),K=1,NANG),
+     &   (COSTH(K),K=1,NANG), (SINTH(K),K=1,NANG)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -178,27 +178,30 @@
 !        ---------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) (IKP(M),M=1,ML+4), (IKP1(M),M=1,ML+4),
-     &   (IKM(M),M=1,ML+4), (IKM1(M),M=1,ML+4),
-     &   ((K1W(K,L),K=1,KL),L=1,2),
-     &   ((K2W(K,L),K=1,KL),L=1,2),
-     &   ((K11W(K,L),K=1,KL),L=1,2),
-     &   ((K21W(K,L),K=1,KL),L=1,2),
-     &   (AF11(M),M=1,ML+4), (FKLAP(M),M=1,ML+4),
-     &   (FKLAP1(M),M=1,ML+4), (FKLAM(M),M=1,ML+4),
-     &   (FKLAM1(M),M=1,ML+4),
+        WRITE(IU07)(IKP(M),M=MFRSTLW,MLSTHG),
+     &   (IKP1(M),M=MFRSTLW,MLSTHG),
+     &   (IKM(M),M=MFRSTLW,MLSTHG), (IKM1(M),M=MFRSTLW,MLSTHG),
+     &   ((K1W(K,L),K=1,NANG),L=1,2),
+     &   ((K2W(K,L),K=1,NANG),L=1,2),
+     &   ((K11W(K,L),K=1,NANG),L=1,2),
+     &   ((K21W(K,L),K=1,NANG),L=1,2),
+     &   (AF11(M),M=MFRSTLW,MLSTHG), (FKLAP(M),M=MFRSTLW,MLSTHG),
+     &   (FKLAP1(M),M=MFRSTLW,MLSTHG), (FKLAM(M),M=MFRSTLW,MLSTHG),
+     &   (FKLAM1(M),M=MFRSTLW,MLSTHG),
      &   ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,998) (IKP(M),M=1,ML+4), (IKP1(M),M=1,ML+4),
-     &   (IKM(M),M=1,ML+4), (IKM1(M),M=1,ML+4),
-     &   ((K1W(K,L),K=1,KL),L=1,2),
-     &   ((K2W(K,L),K=1,KL),L=1,2),
-     &   ((K11W(K,L),K=1,KL),L=1,2),
-     &   ((K21W(K,L),K=1,KL),L=1,2)
-        WRITE (IU17,999) (AF11(M),M=1,ML+4),   (FKLAP(M),M=1,ML+4),
-     &   (FKLAP1(M),M=1,ML+4), (FKLAM(M),M=1,ML+4),
-     &   (FKLAM1(M),M=1,ML+4),
+        WRITE(IU17,998)(IKP(M),M=MFRSTLW,MLSTHG),
+     &   (IKP1(M),M=MFRSTLW,MLSTHG),
+     &   (IKM(M),M=MFRSTLW,MLSTHG), (IKM1(M),M=MFRSTLW,MLSTHG),
+     &   ((K1W(K,L),K=1,NANG),L=1,2),
+     &   ((K2W(K,L),K=1,NANG),L=1,2),
+     &   ((K11W(K,L),K=1,NANG),L=1,2),
+     &   ((K21W(K,L),K=1,NANG),L=1,2)
+        WRITE(IU17,999)(AF11(M),M=MFRSTLW,MLSTHG),
+     &    (FKLAP(M),M=MFRSTLW,MLSTHG),
+     &   (FKLAP1(M),M=MFRSTLW,MLSTHG), (FKLAM(M),M=MFRSTLW,MLSTHG),
+     &   (FKLAM1(M),M=MFRSTLW,MLSTHG),
      &   ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
       ENDIF
 
@@ -248,18 +251,18 @@
       IF (IFORM.NE.2) THEN
         WRITE (IU07) NDEPTH, DEPTHA, DEPTHD
         WRITE (IU07) DEPTH,
-     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,ML)
+     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,NFRE)
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE (IU17,996) NDEPTH, DEPTHA, DEPTHD
         WRITE (IU17,999) DEPTH,
-     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TFAK(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,ML),
-     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,ML)
+     &   ((TCGOND(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TFAK(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TSIHKD(L,M),L=1,NDEPTH),M=1,NFRE),
+     &   ((TFAC_ST(L,M),L=1,NDEPTH),M=1,NFRE)
       ENDIF
 
 ! ----------------------------------------------------------------------

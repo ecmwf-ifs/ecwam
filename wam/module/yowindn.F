@@ -5,7 +5,11 @@
 !*    ** *INDNL* - INDICES AND WEIGHTS USED IN THE COMPUTATION
 !                  OF THE NONLINEAR TRANSFER RATE.
 
-      INTEGER, PARAMETER :: KFRH=30 
+      INTEGER, PARAMETER :: NINL = 5
+      INTEGER, PARAMETER :: NRNL = 25
+      INTEGER :: KFRH 
+      INTEGER :: MFRSTLW
+      INTEGER :: MLSTHG
 
       INTEGER, ALLOCATABLE :: IKP(:) 
       INTEGER, ALLOCATABLE :: IKP1(:) 
@@ -15,6 +19,7 @@
       INTEGER, ALLOCATABLE :: K2W(:,:) 
       INTEGER, ALLOCATABLE :: K11W(:,:) 
       INTEGER, ALLOCATABLE :: K21W(:,:) 
+      INTEGER, ALLOCATABLE :: INLCOEF(:,:)
       REAL, ALLOCATABLE :: AF11(:) 
       REAL, ALLOCATABLE :: FKLAP(:) 
       REAL, ALLOCATABLE :: FKLAP1(:) 
@@ -27,11 +32,17 @@
       REAL DAL1 
       REAL DAL2 
       REAL, ALLOCATABLE :: FRH(:)
+      REAL, ALLOCATABLE :: FTRF(:)
+      REAL, ALLOCATABLE :: RNLCOEF(:,:)
       REAL, ALLOCATABLE :: ENH(:,:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   -------
+!      *NINL*      INTEGER   SIZE OF INLCOEF
+!      *NRNL*      INTEGER   SIZE OF RNLCOEF
 !      *KFRH*      INTEGER   SIZE OF FRH
+!      *MFRSTLW*   INTEGER   INDEX OF FIRST EXTRA LOW FREQUENCY FOR SNL
+!      *MLSTHG*    INTEGER   INDEX OF LAST EXTRA HIGH FREQUENCY FOR SNL
 !      *IKP*       INTEGER   FREQUENCY INDEX ARRAY FOR STORING ENERGY
 !                            TRANSFER INCREMENTS INTO BINS, WAVE NO. 3.
 !      *IKP1*      INTEGER   IKP+1.
@@ -44,6 +55,8 @@
 !      *K2W*       INTEGER   ANGULAR INDEX ARRAY FOR STORING ENERGY
 !                            TRANSFER INCREMENTS INTO BINS, WAVE NO. 4.
 !      *K21W*      INTEGER   K2W(.,1)+1, K2W(.,2)-1.
+!      *INLCOEF*   INTEGER   ARRAY USED TO STORE ALL FREQUENCY DEPENDENT
+!                            INDICES FOUND IN SNONLIN
 !      *AF11*      REAL      WEIGHTS FOR DISCRETE APPROXIMATION OF NONL
 !                            TRANSFER (AT PRESENT ONE TERM ONLY SET TO
 !                            3000). MULTIPLIED BY FREQUENCIES **11.
@@ -61,6 +74,10 @@
 !      *DAL1*      REAL      1./ACL1.
 !      *DAL2*      REAL      1./ACL2.
 !      *FRH*       REAL      TAIL FREQUENCY RATION **5
+!      *FTRF*      REAL      FRONT TAIL REDUCTIOn FACTOR USED TO A SPECTRAL
+!                            TAIL IN FRONT OF THE FIRST DISCRETISED FREQUENCY
+!      *RNLCOEF*   REAL      ARRAY USED TO STORE ALL FREQUENCY DEPENDENT
+!                            COEFFICIENT FOUND IN SNONLIN
 !      *ENH*       REAL      TRANSFER FUNCTION COEFFICIENT.     
 
 ! ----------------------------------------------------------------------

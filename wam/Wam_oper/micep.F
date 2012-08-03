@@ -1,15 +1,13 @@
 !-------------------------------------------------------------------
 
-      SUBROUTINE MICEP (IPARAM, ICMSK, IJS, IJL, IG)
+      SUBROUTINE MICEP (IPARAM, CICVR, IJS, IJL, IG)
 
 !-------------------------------------------------------------------
 
-!**** *MICEP* - DEFINES ICEMASK OF ALL SEA POINTS.
+!**** *MICEP* - CLEAN UP SEA FRACTION FOR ALL SEA POINTS.
 
 !     R. PORTZ     MPI HAMBURG   OCTOBER 1992
 !     J. BIDLOT    ECMWF         JUNE 1996    MESSAGE PASSING
-!     P. JANSSEN   ECMWF         OCTOBER 1997 SIMPLIFY BY INTRODUCING
-!                                             ICEMASK
 !     J. BIDLOT    ECMWF         JANUARY 1998 : CORRECT THRESHOLD FOR
 !                                               ICE TO BE LT 271.50
 !     J. BIDLOT    ECMWF         FEBRUARY 2000 : USE OF SEA ICE FRACTION
@@ -19,18 +17,18 @@
 !     PURPOSE.
 !     --------
 !            SELECTS POINTS (TEMP < 271.5 KELVIN) IN THE TEMPERATURE
-!            GRID AND DEFINE AS SEA ICE POINTS.
-!            DOES THE SAME BUT WITH THE SEA ICE FRACTION WHERE
-!            ANY POINT WITH SEA ICE FRACTION > 0.3 IS CONSIDERED ICE.
+!            GRID AND DEFINE SEA COVER AS 1., OTHERWISE 0. 
+!            BUT IF SEA ICE FRACTION IS GIVEN DEFINE MODEL SEA ICE
+!            COVER MAKING SURE IT IS ALWAYS >=0. AND <=1. 
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(IPARAM, ICMSK, IJS, IJL, IG)
+!             *CALL MICEP* *(IPARAM, CICVR, IJS, IJL, IG)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CIFR
-!      *ICMSK*     INTEGER   ICE MASK 
+!      *CICVR*     REAL      SEA ICE COVER.
 !      *IJS*       INDEX OF FIRST GRIDPOINT
 !      *IJL*       INDEX OF LAST GRIDPOINT
 !      *IG*        BLOCK NUMBER
@@ -46,6 +44,7 @@
 
 !---------------------------------------------------------------------
 
+      USE YOWICE   , ONLY : CITHRSH 
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWMPP   , ONLY : IRANK    ,NPROC   ,NINF       ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY     ,NBLO
@@ -57,7 +56,7 @@
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      INTEGER, DIMENSION (NINF:NSUP,NBLO) :: ICMSK 
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: CICVR 
 
 ! ----------------------------------------------------------------------
       REAL ZHOOK_HANDLE
@@ -70,24 +69,22 @@
 !-----------------------------------------------------------------
 
 !*    2. WE DEFINE ICE FOR THOSE POINTS WHERE SST < 271.5 KELVIN). 
-!        OR WITH SEA ICE FRACTION > 0.3.
-!        AT THOSE POINTS ICE MASK = 0
+!        OR CLEAN SEA ICE FRACTION TO DEFINE MODEL SEA ICE COVER.
 !        -------------------------------------------------------
 
-      NICE = 0
 
       IF (IPARAM.EQ.31) THEN
-!       sea ice fraction is only defined between 0 and 1
         DO IJ = IJS, IJL 
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
-          IF (FIELDG(IX,IY)%CIFR .GT. 0.3 .AND.
-     &        FIELDG(IX,IY)%CIFR .LE. 1.01  .AND.
-     &        FIELDG(IX,IY)%CIFR .NE. ZMISS ) THEN
-            NICE = NICE + 1
-            ICMSK(IJ,IG) = 0
+          IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR. 
+     &        FIELDG(IX,IY)%CIFR .LT. 0.01 .OR.
+     &        FIELDG(IX,IY)%CIFR .GT. 1.01 ) THEN 
+            CICVR(IJ,IG) = 0.0
+          ELSEIF (FIELDG(IX,IY)%CIFR .GT. 0.95) THEN 
+            CICVR(IJ,IG) = 1.0
           ELSE
-            ICMSK(IJ,IG) = 1
+            CICVR(IJ,IG) = FIELDG(IX,IY)%CIFR 
           ENDIF
         ENDDO
       ELSE IF(IPARAM.EQ.139) THEN
@@ -95,13 +92,17 @@
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
             IF (FIELDG(IX,IY)%CIFR .LT. 271.5) THEN
-              NICE = NICE + 1
-              ICMSK(IJ,IG) = 0
+              CICVR(IJ,IG) = 1.0
             ELSE
-              ICMSK(IJ,IG) = 1
+              CICVR(IJ,IG) = 0.0
             ENDIF
         ENDDO
       ENDIF 
+
+      NICE = 0
+      DO IJ = IJS, IJL 
+        IF(CICVR(IJ,IG) .GT. CITHRSH) NICE = NICE + 1 
+      ENDDO
 
       IF(ITEST.GE.1) THEN
         IF(IPARAM.EQ.139) THEN
@@ -109,7 +110,7 @@
      &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
         ELSEIF (IPARAM.EQ.31) THEN
           WRITE(IU06,*)' SUB. MICEP: ',
-     &           'POINTS WITH SEA ICE FRACTION > 0.3: ',
+     &           'POINTS WITH SEA ICE FRACTION > ', CITHRSH, ': ',
      &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
         ELSE
           WRITE(IU06,*)' ********************************************'

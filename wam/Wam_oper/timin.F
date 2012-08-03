@@ -1,5 +1,5 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+     &                  ROAIRO, ZIDLOLD, CICOVER, IREAD,
      &                  LWCUR)
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
@@ -24,7 +24,7 @@
 !     ----------
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, ICEMASK, IREAD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER, IREAD,
 !    &                 LWCUR)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST WIND FIELD.
@@ -36,7 +36,7 @@
 !          *ROAIRO* - AIR DENSITY IN KG/M3.
 !          *ZIDLOLD*- Zi/L
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *ICEMASK*- SEA ICE MASK.
+!          *CICOVER*- SEA ICE COVER.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -77,30 +77,25 @@
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,ICEMASKNEXT
+     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,CICOVERNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-     &                                , ROAIRO,ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS   ,ADS ,ZIDL
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2, DS2 ,ADS2,ZIDL2
-      REAL,DIMENSION(NINF:NSUP) :: US3, DS3, ADS3, ZIDL3
+     &                                , ROAIRO,ZIDLOLD,CICOVER
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS   ,ADS ,ZIDL, CICR
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2, DS2 ,ADS2,ZIDL2, CICR2
+      REAL,DIMENSION(NINF:NSUP) :: US3, DS3, ADS3, ZIDL3, CICR3
       REAL ZHOOK_HANDLE
 
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICMSK, ICMSK2
-      INTEGER,DIMENSION(NINF:NSUP) :: ICMSK3 
-! Mod for OPENMP
-      INTEGER JKGLO,KIJS,KIJL,NPROMA
-! End Mod for OPENMP
+      CHARACTER*14 :: CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
+      CHARACTER*80 :: FILENAME
 
-      CHARACTER*14 CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
-      CHARACTER*80 FILENAME
-
-      LOGICAL LWNDFILE, LCLOSEWND
+      LOGICAL :: LWNDFILE, LCLOSEWND
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
@@ -122,7 +117,7 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (US, DS, ADS, ZIDL, ICMSK,
+        CALL GETWND (US, DS, ADS, ZIDL, CICR,
      &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
         DO IG=1,IGL
@@ -138,7 +133,7 @@
               THWOLD(IJ,IG) = DS(IJ,IG)
               ROAIRO(IJ,IG) = ADS(IJ,IG)
               ZIDLOLD(IJ,IG)= ZIDL(IJ,IG)
-              ICEMASK(IJ,IG)= ICMSK(IJ,IG)
+              CICOVER(IJ,IG)= CICR(IJ,IG)
             ENDDO
 
             CALL AIRSEA (U10OLD(KIJS,IG), TAUW(KIJS,IG),
@@ -167,7 +162,7 @@
               DS(IJ,IG) = THWOLD(IJ,IG)
               ADS(IJ,IG) = ROAIRO(IJ,IG)
               ZIDL(IJ,IG)= ZIDLOLD(IJ,IG)
-              ICMSK(IJ,IG)= ICEMASK(IJ,IG)
+              CICR(IJ,IG)= CICOVER(IJ,IG)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
@@ -207,7 +202,7 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, ADS2, ZIDL2, ICMSK2,
+      CALL GETWND (US2, DS2, ADS2, ZIDL2, CICR2,
      &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR)
 
@@ -226,8 +221,8 @@
      &          ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         IF(.NOT.ALLOCATED(ZIDLNEXT))
      &          ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ICEMASKNEXT))
-     &          ALLOCATE(ICEMASKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CICOVERNEXT))
+     &          ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
       ELSE
         IF(.NOT.ALLOCATED(USNEXT))
      &          ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -237,8 +232,8 @@
      &          ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
         IF(.NOT.ALLOCATED(ZIDLNEXT))
      &          ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ICEMASKNEXT))
-     &          ALLOCATE(ICEMASKNEXT(NIBLO,NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CICOVERNEXT))
+     &          ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
       ENDIF
 
       DO IG=1,IGL
@@ -262,14 +257,14 @@
      &                        REAL(N)*DEL*(ADS2(IJ,IG)-ADS(IJ,IG))
               ZIDL3(IJ) = ZIDL(IJ,IG)+
      &                         REAL(N)*DEL*(ZIDL2(IJ,IG)-ZIDL(IJ,IG))
-              ICMSK3(IJ) = NINT(ICMSK(IJ,IG)+
-     &                         REAL(N)*DEL*(ICMSK2(IJ,IG)-ICMSK(IJ,IG)))
+              CICR3(IJ) = CICR(IJ,IG)+
+     &                         REAL(N)*DEL*(CICR2(IJ,IG)-CICR(IJ,IG))
 
               USNEXT(IJ,N,IG)=US3(IJ)
               DSNEXT(IJ,N,IG)=DS3(IJ)
               ADSNEXT(IJ,N,IG)=ADS3(IJ)
               ZIDLNEXT(IJ,N,IG)=ZIDL3(IJ)
-              ICEMASKNEXT(IJ,N,IG)=ICMSK3(IJ)
+              CICOVERNEXT(IJ,N,IG)=CICR3(IJ)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
@@ -281,7 +276,7 @@
           DS(IJ,IG) = DS2(IJ,IG)
           ADS(IJ,IG) = ADS2(IJ,IG)
           ZIDL(IJ,IG) = ZIDL2(IJ,IG)
-          ICMSK(IJ,IG) = ICMSK2(IJ,IG)
+          CICR(IJ,IG) = CICR2(IJ,IG)
         ENDDO
 
       ENDDO

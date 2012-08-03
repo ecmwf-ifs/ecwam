@@ -1,5 +1,5 @@
       SUBROUTINE BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                       ROAIRO, ZIDLOLD, ICEMASK,
+     &                       ROAIRO, ZIDLOLD, CICOVER,
      &                       IREAD)
 
 ! ----------------------------------------------------------------------
@@ -18,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *BUILDSTRESS*(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-!    &                   ROAIRO, ZIDLOLD, ICEMASK,
+!    &                   ROAIRO, ZIDLOLD, CICOVER,
 !    &                   IREAD)*
 !     *U10OLD*   WIND SPEED.
 !     *THWOLD*   WIND DIRECTION (RADIANS).
@@ -27,7 +27,7 @@
 !     *Z0OLD*    ROUGHNESS LENGTH IN M.
 !     *RAD0OLD*   AIR DENSITY IN KG/M3.
 !     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!     *ICEMASK*   SEA ICE MASK
+!     *CICOVER*   SEA ICE COVER.
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
 !     METHOD.
@@ -64,8 +64,7 @@
 
 ! ----------------------------------------------------------------------
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO, ZIDLOLD
-      INTEGER,DIMENSION(NINF:NSUP,NBLO) :: ICEMASK 
+     &                                  ROAIRO, ZIDLOLD, CICOVER
       INTEGER IREAD
       INTEGER MIJS,MIJL
 ! Mod for OPENMP
@@ -96,7 +95,7 @@
 
 !     GETWND REQUIRES FIELDG TO BE ALLOCATED !
       ALLOCATE(FIELDG(NGX,NGY))
-      CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, ICEMASK,
+      CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER,
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
      &             LCR)
       DEALLOCATE(FIELDG)
