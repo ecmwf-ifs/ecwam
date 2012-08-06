@@ -84,8 +84,8 @@
       MFRSTLW=1+ISM
       MLSTHG=NFRE-ISM
 
-      KFRH=-ISM+ISP+1
-!     KFRH=-ISM+ISP+2
+!     KFRH=-ISM+ISP+1
+      KFRH=-ISM+ISP+2
 
       ALLOCATE(JA1(NANG,2))
       ALLOCATE(JA2(NANG,2))
