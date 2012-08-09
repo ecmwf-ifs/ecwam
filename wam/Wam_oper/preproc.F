@@ -176,6 +176,7 @@
 
 ! ----------------------------------------------------------------------
 
+      REAL :: PRPLRADI
       REAL, ALLOCATABLE :: BATHY(:,:)
 
       CHARACTER*1 :: C1 
@@ -188,8 +189,9 @@
       LOGICAL :: LLGRID
 
       LMESSPASS=.FALSE.
+      PRPLRADI=1.0
 
-      CALL INIWCST
+      CALL INIWCST(PRPLRADI)
 
 !*    1. INITIALISATION OF INPUT/OUTPUT UNITS.
 !        -------------------------------------

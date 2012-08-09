@@ -97,6 +97,7 @@
       REAL :: X4(2)
       REAL :: STEP, START_STEP, END_STEP
       REAL :: RMONOP, RMOSOP, RMOEAP, RMOWEP
+      REAL :: PRPLRADI
       REAL ::  DELLO, DELLA
       REAL :: ONETHIRD, TWOTHIRD
       REAL ::  PSEC2(NPSEK2),PSEC3(NPSEK3)
@@ -127,7 +128,8 @@
 
       WRITE(IU06,*) ' INTWAMINPUT STARTED '
 
-      CALL INIWCST
+      PRPLRADI=1.0
+      CALL INIWCST(PRPLRADI)
 
 !     1.1 INITIALISATION OF VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------

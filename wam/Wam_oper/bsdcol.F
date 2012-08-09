@@ -37,6 +37,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
+
       PARAMETER (ID1=1521, ID2=1861, IDP=14)
       PARAMETER ( JPLENG=2400000 )
 
@@ -75,6 +77,8 @@
 !     BSDVAL(14): MAXIMIM WAVE HEIGHT (m) 
 
 ! ----------------------------------------------------------------------
+
+      CALL MPL_INIT()
 
       PI=4*ATAN(1.)
       RAD = PI/180.
@@ -704,4 +708,5 @@
       WRITE(*,*) MSG
       CALL ABORT
 
+      CALL MPL_END()
       END

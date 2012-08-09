@@ -162,6 +162,7 @@
 ! ----------------------------------------------------------------------
 
       INTEGER ISEC2(22+NR)
+      REAL :: PRPLRADI
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
       LOGICAL :: LWCUR
@@ -211,7 +212,8 @@
 
 ! ----------------------------------------------------------------------
 
-      CALL INIWCST
+      PRPLRADI=1.0
+      CALL INIWCST(PRPLRADI)
 
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------

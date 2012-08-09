@@ -265,7 +265,7 @@
       NADV=0
       FRSTIME=.TRUE.
 
-      CALL INIWCST
+      CALL INIWCST(PRPLRADI)
 
       NPR=NPROC
       LLIRANK=.FALSE.

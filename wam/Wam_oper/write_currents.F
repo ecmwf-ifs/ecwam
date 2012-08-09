@@ -69,6 +69,7 @@
       REAL Z4(2)
       REAL, ALLOCATABLE, DIMENSION(:,:) :: CURMAG, CURDIR
       REAL :: RSOUTW,RNORTW
+      REAL :: PRPLRADI
 
       CHARACTER*14 :: CDATEIN
       CHARACTER*28 FILNM
@@ -80,7 +81,8 @@
 !*    1. INITIAL VALUES
 !        --------------
 
-      CALL INIWCST
+      PRPLRADI=1.0
+      CALL INIWCST(PRPLRADI)
 
       IU06 = 6
       IU30=30

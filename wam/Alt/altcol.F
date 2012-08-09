@@ -4,6 +4,9 @@
 ! The fields should be retrieved on their initial resolution
 ! and therefore have the same resolution for all of them.
 !
+
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
+
       INTEGER, PARAMETER :: NBIT = 430000
       INTEGER, PARAMETER :: NKSEC0=2
       INTEGER, PARAMETER :: NKSEC1=2048
@@ -30,6 +33,7 @@
       INTEGER,ALLOCATABLE :: RLONRGG(:)
       REAL, ALLOCATABLE :: PSEC4(:), RDELLO(:), FIELD(:,:,:)
 
+      CALL MPL_INIT()
       iu06=6      
 
 !     list of the collocated parameters (only 229,246,247 are
@@ -483,5 +487,7 @@
 2000  continue
 
       close(11)
+ 
+      CALL MPL_END()
 
       end
