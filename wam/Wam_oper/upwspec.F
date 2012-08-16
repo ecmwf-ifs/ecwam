@@ -132,7 +132,7 @@
                 ICOUNT=0
 1111            ICOUNT=ICOUNT+1
                 IF(XB(IJ).GT.1.AND.ICOUNT.LE.10) THEN
-                  AKMNEAN_NEW=EPSMIN
+                  XKMNEAN_NEW=EPSMIN
                   DO M=1,NFRE
                      OMEGA=ZPI*FR(M)/XB(IJ)
                      XK=AKI(OMEGA,DEPTH(IJ,IG))
