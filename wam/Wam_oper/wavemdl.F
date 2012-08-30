@@ -796,9 +796,10 @@
      &                      CDSTRING='WAVEMDL: MPL_RECV' )
 
             ENDDO
-            CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
-     &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
           ENDIF
+
+          CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
+     &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
 
 
 !         COMPUTE PSEUDO GLOBAL NORM
