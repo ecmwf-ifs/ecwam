@@ -232,7 +232,7 @@
       REAL :: XDELLO, XDELLA
       REAL :: DELLO
       REAL :: FCST, STEP
-      REAL :: DELTH,PPREC,PPEPS,SUM
+      REAL :: DELTH,SUM
       REAL :: XLAT, XLON
       REAL(KIND=8), ALLOCATABLE :: VALUES(:)
       REAL, ALLOCATABLE :: SPEC(:) 
@@ -251,6 +251,8 @@
       LOGICAL :: LLEXIST, LLFRST
       LOGICAL :: LLSCANNS
       LOGICAL :: LPERIODIC
+      LOGICAL :: LLRESETMISSING
+      LOGICAL :: LLABORT
 
       DATA CLOPTS/'i;o;t;'/
 
@@ -461,13 +463,12 @@
           ALLOCATE(VALUES(NUMBEROFVALUES))
           ALLOCATE(SPEC(NUMBEROFVALUES*NFRANG))
 
+          TH(1:NANG)=ZMISS
+          FR(1:NFRE)=ZMISS
           DO M=1,NFRE
             DO K=1,NANG
             IF (ITEST.gt.0) 
      &          WRITE(*,*)' DECODING INPUT FIELD ',(M-1)*NANG+K 
-
-!             SET THE MISSING DATA INDICATOR
-              CALL GRIB_SET(IGRIB, 'missingValue',ZMISS)
 
 !             CHECK ON NUMBER OF VALUES
               CALL GRIB_GET_SIZE(IGRIB,'values',NBVAL)
@@ -480,6 +481,12 @@
                 WRITE (*,*) '*************************************'
                 CALL ABORT
               ENDIF
+
+!             SET THE MISSING DATA INDICATOR
+              CALL GRIB_SET(IGRIB, 'missingValue',ZMISS)
+!!debile
+              VALUES=ZMISS
+
 !             GET DATA VALUES
               CALL GRIB_GET(IGRIB,'values',VALUES)
 
@@ -495,33 +502,24 @@
               CALL GRIB_GET(IGRIB,'scaledFrequencies',SCFR)
               FR(MM) =  SCFR(MM)/IFRESCALING
 
-              IF(KK.NE.K.AND.MM.NE.M) THEN
-                WRITE (*,*) '************************************'
-                WRITE (*,*) '* DIRECTION AND FREQUENCY INDEX ARE'
-                WRITE (*,*) '* OUT OF ORDER. '
-                WRITE (*,*) '* IN FILE ',FNAMEIN
-                WRITE (*,*) '* WE EXPECTED DIRECTION : ', K 
-                WRITE (*,*) '* AND GOT ', KK
-                WRITE (*,*) '* WE EXPECTED FREQUENCY : ', M 
-                WRITE (*,*) '* AND GOT ', MM 
-                WRITE (*,*) '* VERIFY THAT YOUR MARS REQUEST WAS'
-                WRITE (*,*) '* DONE FOR ALL DIRECTIONS AND FREQUENCIES'
-                WRITE (*,*) '* IN THE DEFAULT ORDER.'
-                WRITE (*,*) '************************************'
-                CALL ABORT
-              ENDIF
 
-              PPREC=0.0
-              PPEPS=1.0e-10
+!             there is currently a bug in the grab_api that sets all values to 0
+!             when they are all missing. Reset them to missing (it will hopefully be
+!             corrected soon).
+              LLRESETMISSING=.TRUE.
+              DO IJ=1,NUMBEROFVALUES
+                IF(VALUES(IJ).NE.0.0) THEN
+                   LLRESETMISSING=.FALSE.
+                   EXIT
+                ENDIF
+              ENDDO
+              IF(LLRESETMISSING) VALUES=ZMISS 
+
               DO IJ=1,NUMBEROFVALUES
                 IF (VALUES(IJ) .NE. ZMISS) THEN
-!!                the use of variable DUM is to insure that we get same
-!!                results as with gribex
-                  DUM=VALUES(IJ)
-                  SPEC(K+(M-1)*NANG+(IJ-1)*NFRANG) =
-     &                      10.**(DUM-ABS(PPREC))- PPEPS
+                  SPEC(KK+(MM-1)*NANG+(IJ-1)*NFRANG) = 10.**VALUES(IJ)
                 ELSE
-                  SPEC(K+(M-1)*NANG+(IJ-1)*NFRANG) = 0.0
+                  SPEC(KK+(MM-1)*NANG+(IJ-1)*NFRANG) = 0.0
                 ENDIF
               ENDDO
 
@@ -535,6 +533,36 @@
 
             ENDDO
           ENDDO
+
+!         check that all frequencies and directions were decoded
+          LLABORT=.FALSE.
+          DO M=1,NFRE
+            IF(FR(M).EQ.ZMISS) THEN
+               WRITE (*,*) '************************************'
+               WRITE (*,*) '* MISSING FREQUENCY'
+               WRITE (*,*) '* IN FILE ',FNAMEIN
+               WRITE (*,*) '* WE EXPECTED FREQUENCY INDEX : ', M 
+               WRITE (*,*) '* AND IT WAS NOT FOUND ! '
+               WRITE (*,*) '* VERIFY THAT YOUR MARS REQUEST WAS'
+               WRITE (*,*) '* DONE FOR ALL DIRECTIONS AND FREQUENCIES'
+               WRITE (*,*) '************************************'
+               LLABORT=.TRUE.
+            ENDIF
+          ENDDO
+          DO K=1,NANG
+            IF(TH(K).EQ.ZMISS) THEN
+               WRITE (*,*) '************************************'
+               WRITE (*,*) '* MISSING DIRECTION'
+               WRITE (*,*) '* IN FILE ',FNAMEIN
+               WRITE (*,*) '* WE EXPECTED DIRECTION INDEX : ', K 
+               WRITE (*,*) '* AND IT WAS NOT FOUND ! '
+               WRITE (*,*) '* VERIFY THAT YOUR MARS REQUEST WAS'
+               WRITE (*,*) '* DONE FOR ALL DIRECTIONS AND FREQUENCIES'
+               WRITE (*,*) '************************************'
+               LLABORT=.TRUE.
+            ENDIF
+          ENDDO
+          IF(LLABORT) CALL ABORT
 
         ENDIF
  
@@ -596,6 +624,7 @@
 
         IF(ALLOCATED(KDOMRGG))DEALLOCATE(KDOMRGG)
         IF(ALLOCATED(TH))DEALLOCATE(TH)
+        IF(ALLOCATED(FR))DEALLOCATE(FR)
         IF(ALLOCATED(SCTH))DEALLOCATE(SCTH)
         IF(ALLOCATED(SCFR))DEALLOCATE(SCFR)
         IF(ALLOCATED(VALUES)) DEALLOCATE(VALUES)

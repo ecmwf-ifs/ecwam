@@ -1,7 +1,7 @@
       SUBROUTINE INITMDL (NADV,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    ISEC2, FIELDS, LWCUR, MASK_IN, PRPLRADI)
+     &                    FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
 ! ----------------------------------------------------------------------
 
@@ -46,7 +46,7 @@
 !    *CALL* *INITMDL (NADV,
 !    &                IREAD,
 !    &                NFIELDS, NGPTOTG, NC, NR,
-!    &                ISEC2, FIELDS, LWCUR, MASK_IN)*
+!    &                FIELDS, LWCUR, MASK_IN)*
 
 !      *NADV*      INTEGER   NUMBER OF ADVECTION ITERATIONS
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -55,7 +55,6 @@
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
 !      *LWCUR*    LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
@@ -250,8 +249,7 @@
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
-     &            LWFLUXOUT,
-     &            LOUTSPP  ,LGRIBAPI_I, LGRIBAPI_O
+     &            LWFLUXOUT,LOUTSPP
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
      &            V
       USE YOWFPBO  , ONLY : IBOUNF
@@ -259,7 +257,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
      &            COSTH    ,SINTH
-      USE YOWGRIBHD, ONLY : NKSEK1   ,LGRHDIFS
+      USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
      &             COSPH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
@@ -310,7 +308,6 @@
 ! -------------------------------------------------------------------
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC2(22+NR)
       INTEGER MASK_IN(NGPTOTG)
 
       REAL FCRANGE
@@ -324,6 +321,7 @@
 
       LOGICAL :: LWCUR
       LOGICAL :: LLEXIST
+      LOGICAL :: LLINIT
 
 !----------------------------------------------------------------------
 
@@ -498,17 +496,6 @@
       ENDIF
 
 
-!     1.4 SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
-!         IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
-!         POINT TO THE PARAMETRE WHICH ARE OUTPUT.
-!         ----------------------------------------------------------
-
-      CALL MPCRTBL
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
-        CALL FLUSH (IU06)
-      ENDIF
-
 !     1.5 DETERMINE LAST OUTPUT DATE
 !         --------------------------
 
@@ -650,19 +637,11 @@
 
       CALL SETMARSTYPE
 
-      IF(.NOT.LGRIBAPI_I .OR. .NOT.LGRIBAPI_O) THEN
-        CALL SETWGRIBHD
-        IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
-      ENDIF
-
-      IF(LGRIBAPI_I .OR. LGRIBAPI_O) THEN
-        IF(.NOT. LGRHDIFS) THEN
-!         FOR INTEGRATED PARAMETERS
-          CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!         FOR SPECTRA 
-          CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
-        ENDIF
+      IF(.NOT. LGRHDIFS) THEN
+!       FOR INTEGRATED PARAMETERS
+        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!       FOR SPECTRA 
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
       IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc')THEN
@@ -760,8 +739,9 @@
         IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
       ENDIF
 
+
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &               ROAIRO,ZIDLOLD,CICOVER,
+     &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,
      &               NSTART,NEND,IREAD)
 
       CDA = CDTPRO
@@ -1031,6 +1011,7 @@
 
 
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
+!!!! might need to restrict call when needed !!!
       CALL CIGETDEAC
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '  SUB. INITMDL:  CIGETDEAC CALLED '
@@ -1042,13 +1023,14 @@
 !      A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
 !      BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
 !      ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
-
+      LLINIT=.TRUE.
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              CICOVER, CITHICK, CIWA,
+     &              LLINIT,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
-     &              ISEC2, FIELDS, LWCUR, MASK_IN)
+     &              FIELDS, LWCUR, MASK_IN)
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
       CALL FLUSH (IU06)
 
@@ -1260,12 +1242,13 @@
             IU19(II)=I_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output
 !           we will need to recode this a bit better !!!
+
             CLOSE(IU19(II))
             CALL HEADBC (IPOGBO(II)-IPOGBO(II-1),IDELPRO,TH(1),FR(1), 
      &                   IU19(II), IU06)
             IF (ITEST.GE.2)
      &       WRITE(IU06,'(''    SUB. INITMDL: HEADER FOR  '',
-     &       ''COARSE GRID WAS WRITTEN OF UNIT = '',A8)') 
+     &       ''COARSE GRID WAS WRITTEN OF UNIT = '',I4)') 
      &        IU19(II)
           ENDDO
         ENDIF

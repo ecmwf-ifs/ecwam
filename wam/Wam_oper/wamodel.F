@@ -296,27 +296,30 @@
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
-     &            LGRIBAPI_I,LGRIBAPI_O,LRSTST0
+     &            LRSTST0
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
-     &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
+      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
+     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
      &            IJL      ,IJLT
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CIWA
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,
+     &            CIWA
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
-     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG
+     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
+     &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
+     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
+      USE YOWINTT  , ONLY : WHGTT1G  ,WDIRT1G  ,MWP1T1G  ,
+     &                      WHGTT2G  ,WDIRT2G  ,MWP1T2G  ,
+     &                      WHGTT3G  ,WDIRT3G  ,MWP1T3G
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
@@ -363,7 +366,6 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-      INTEGER :: IFS_KSEC1_BAK(NKSEK1)
       CHARACTER*2 MARSTYPEBAK
       CHARACTER*14 CDATEWH, ZERO
       CHARACTER*14 CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
@@ -453,9 +455,30 @@
           U10NEW(IJ) = U10OLD(IJ,IG)
           THWNEW(IJ) = THWOLD(IJ,IG)
           USNEW(IJ) = USOLD(IJ,IG)
+          Z0NEW(IJ) = Z0OLD(IJ,IG)
           ROAIRN(IJ) = ROAIRO(IJ,IG)
           ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
         ENDDO
+
+       IF(LLSOURCE) THEN
+         NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
+!$OMP    PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+         DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            CALL WDFLUXES (KIJS, KIJL, IG,
+     &                     FL1(KIJS:KIJL,:,:), FL3(KIJS:KIJL,:,:),
+     &                     SL(KIJS:KIJL,:,:),
+     &                     CICOVER(KIJS,IG),
+     &                     THWNEW(KIJS), USNEW(KIJS),
+     &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS) )
+         ENDDO
+!$OMP    END PARALLEL DO
+         IF (ITEST.GE.2) THEN
+            WRITE(IU06,*) '   SUB. WAMODEL: WDFLUXES CALLED'
+           CALL FLUSH (IU06)
+         ENDIF
+       ENDIF
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !         convert output spectra to absolute frame of reference
@@ -472,9 +495,7 @@
           CALL GSTATS(1236,1)
           LLINTPOL=.TRUE.
 
-          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
-     &                IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &                TAUW, NSTART,NEND)
+          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL, IU25, IU26)
         ELSE
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1)
@@ -492,9 +513,7 @@
           ENDDO
 !$OMP     END PARALLEL DO
 
-          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL,
-     &              IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &              TAUW, NSTART,NEND)
+          CALL OUTBS (SL, FL3, IJS(IG), IJL(IG), IG, IGL, IU25, IU26)
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
@@ -558,37 +577,6 @@
 !         THE START OF THE RUN.
           IF(LGRHDIFS) THEN
              LRSTST0=.TRUE.
-
-             IF(.NOT.LGRIBAPI_I) THEN 
-               IFS_KSEC1_BAK(16)=IFS_KSEC1(16)  ! value to reset after output
-               IF(IFS_KSEC1(16).GT.0) THEN
-                 IF(IFS_KSEC1(15).EQ.0) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/60) 
-                 ELSEIF(IFS_KSEC1(15).EQ.1) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/3600) 
-                 ELSEIF(IFS_KSEC1(15).EQ.10) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(3*3600)) 
-                 ELSEIF(IFS_KSEC1(15).EQ.11) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(6*3600)) 
-                 ELSEIF(IFS_KSEC1(15).EQ.12) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(12*3600)) 
-                 ELSEIF(IFS_KSEC1(15).EQ.2) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-(KCOUSTEP/(24*3600)) 
-                 ELSEIF(IFS_KSEC1(15).EQ.254) THEN
-                   IFS_KSEC1(16)=IFS_KSEC1(16)-KCOUSTEP 
-                 ENDIF
-               ENDIF
-!              IN VAREPS THE FC STEP 0 IS ALWAYS AN OVERLAP FOR LEG 2
-!              AND ABOVE
-               IFS_KSEC1_BAK(40)=IFS_KSEC1(40)  ! value to reset after output
-               IINDAT=IFS_KSEC1(46)
-               IHHMM=IFS_KSEC1(47)
-               NLEG=IFS_KSEC1(48)
-               IF(NLEG.GE.2 .AND. IINDAT.NE.0 .AND. IHHMM.NE.0 ) THEN
-                 IFS_KSEC1(40)=1034
-               ENDIF
-             ENDIF 
-
           ENDIF 
 
           IF( .NOT. LRESTARTED ) THEN
@@ -619,10 +607,6 @@
 
           IF(LGRHDIFS) THEN
             LRSTST0=.FALSE.
-            IF(.NOT.LGRIBAPI_I) THEN 
-              IFS_KSEC1(16)=IFS_KSEC1_BAK(16)
-              IFS_KSEC1(40)=IFS_KSEC1_BAK(40)
-            ENDIF
           ENDIF
 
           IF (ITEST .GE. 2) THEN
@@ -664,6 +648,17 @@
         IF(ALLOCATED(PHIEPSG)) DEALLOCATE(PHIEPSG)
         IF(ALLOCATED(PHIAWG)) DEALLOCATE(PHIAWG)
         IF(ALLOCATED(TAUOCG)) DEALLOCATE(TAUOCG)
+        IF(ALLOCATED(STRNMSG)) DEALLOCATE(STRNMSG)
+        IF(ALLOCATED(RHOAG)) DEALLOCATE(RHOAG)
+        IF(ALLOCATED(WSTARG)) DEALLOCATE(WSTARG)
+        IF(ALLOCATED(CICG)) DEALLOCATE(CICG)
+        IF(ALLOCATED(CIHG)) DEALLOCATE(CIHG)
+        IF(ALLOCATED(WX1G)) DEALLOCATE(WX1G)
+        IF(ALLOCATED(WX2G)) DEALLOCATE(WX2G)
+        IF(ALLOCATED(WX3G)) DEALLOCATE(WX3G)
+        IF(ALLOCATED(WX4G)) DEALLOCATE(WX4G)
+        IF(ALLOCATED(WX5G)) DEALLOCATE(WX5G)
+
 
         IF(ALLOCATED(WHGTSG)) DEALLOCATE(WHGTSG)
         IF(ALLOCATED(WDIRSG)) DEALLOCATE(WDIRSG)
@@ -671,6 +666,16 @@
         IF(ALLOCATED(WHGTWG)) DEALLOCATE(WHGTWG)
         IF(ALLOCATED(WDIRWG)) DEALLOCATE(WDIRWG)
         IF(ALLOCATED(WMNFWG)) DEALLOCATE(WMNFWG)
+
+        IF(ALLOCATED(WHGTT1G)) DEALLOCATE(WHGTT1G)
+        IF(ALLOCATED(WDIRT1G)) DEALLOCATE(WDIRT1G)
+        IF(ALLOCATED(MWP1T1G)) DEALLOCATE(MWP1T1G)
+        IF(ALLOCATED(WHGTT2G)) DEALLOCATE(WHGTT2G)
+        IF(ALLOCATED(WDIRT2G)) DEALLOCATE(WDIRT2G)
+        IF(ALLOCATED(MWP1T2G)) DEALLOCATE(MWP1T2G)
+        IF(ALLOCATED(WHGTT3G)) DEALLOCATE(WHGTT3G)
+        IF(ALLOCATED(WDIRT3G)) DEALLOCATE(WDIRT3G)
+        IF(ALLOCATED(MWP1T3G)) DEALLOCATE(MWP1T3G)
 
       ENDIF
 
@@ -1094,7 +1099,8 @@
 
             CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
-     &                   ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,CICOVER)
+     &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
+     &                   CICOVER, CITHICK)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN
                 WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
@@ -1174,6 +1180,7 @@
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
      &         ' INTEGRATED:'
+               CALL FLUSH(IU06)
             ENDIF
           ENDIF
 !ICE
@@ -1185,6 +1192,7 @@
             IF (ITEST.GE.1) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT',
      &         ' ICEPOINTS'
+               CALL FLUSH(IU06)
             ENDIF
             CALL GSTATS(1439,0)
 !$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
@@ -1209,6 +1217,7 @@
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*)
      &         '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
+               CALL FLUSH(IU06)
             ENDIF
           ENDIF
 !NEST
@@ -1235,8 +1244,9 @@
             CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19, THWNEW, USNEW)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*)
-     &         '   SUB. WAMODEL: BOUNDARY OUTP',
-     &         'UT (COARSE GRID) DONE IN SUB OUTBC'
+     &         '   SUB. WAMODEL: BOUNDARY OUTPUT',
+     &         '  (COARSE GRID) DONE IN SUB OUTBC'
+               CALL FLUSH(IU06)
             ENDIF
           ENDIF
 !NEST
@@ -1300,9 +1310,7 @@
               CALL GSTATS(1236,1)
               LLINTPOL=.TRUE.
 
-              CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
-     &                    IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &                    TAUW, NSTART,NEND)
+              CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,IU25,IU26)
             ELSE
 
               NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
@@ -1323,9 +1331,7 @@
 !$OMP         END PARALLEL DO
 !             CALL GSTATS(1432,1)
 
-              CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,
-     &                    IU25, IU26,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &                    TAUW, NSTART,NEND)
+              CALL OUTBS (SL, FL1, IJS(IG), IJL(IG), IG, IGL,IU25,IU26)
             ENDIF
 
             IF (ITEST.GE.2) THEN
@@ -1454,6 +1460,16 @@
           IF(ALLOCATED(WDIRWG)) DEALLOCATE(WDIRWG)
           IF(ALLOCATED(WMNFWG)) DEALLOCATE(WMNFWG)
 
+          IF(ALLOCATED(WHGTT1G)) DEALLOCATE(WHGTT1G)
+          IF(ALLOCATED(WDIRT1G)) DEALLOCATE(WDIRT1G)
+          IF(ALLOCATED(MWP1T1G)) DEALLOCATE(MWP1T1G)
+          IF(ALLOCATED(WHGTT2G)) DEALLOCATE(WHGTT2G)
+          IF(ALLOCATED(WDIRT2G)) DEALLOCATE(WDIRT2G)
+          IF(ALLOCATED(MWP1T2G)) DEALLOCATE(MWP1T2G)
+          IF(ALLOCATED(WHGTT3G)) DEALLOCATE(WHGTT3G)
+          IF(ALLOCATED(WDIRT3G)) DEALLOCATE(WDIRT3G)
+          IF(ALLOCATED(MWP1T3G)) DEALLOCATE(MWP1T3G)
+
         ENDIF
 
 
@@ -1499,8 +1515,8 @@
             ENDIF
           ENDIF
 
-!           SAVE INTEGRATED SWELL AND SEA DATA FILE.
-!           ----------------------------------------
+!           SAVE INTEGRATED SWELL, SEA AND 3 TRAINS DATA FILE.
+!           --------------------------------------------------
 
           IF (FFLAG21 .AND. LOUTINT) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
@@ -1582,8 +1598,9 @@
      &         (LDWRRE)) THEN
 
               IF ( .NOT.LGRIBOUT .OR.LDWRRE ) THEN
-                CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &            ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
+                CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+     &                         ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &                         NSTART, NEND, CDTPRO, CDATEF)
 
               ENDIF
 
@@ -1604,59 +1621,9 @@
      &            KADV.LT.NADV) THEN
                 MARSTYPE='an'
               ENDIF
-              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-!               convert output spectra to absolute frame of reference
-                IF (.NOT.LLINTPOL) THEN
-                  CALL GSTATS(1236,0)
-                  IRA=1
-                  NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-!$OMP          PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                  DO JKGLO=IJS(IG),IJL(IG),NPROMA
-                    KIJS=JKGLO
-                    KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                    CALL INTPOL (FL1, SL, KIJS, KIJL, IG, IRA)
-                  ENDDO
-!$OMP          END PARALLEL DO
-                  CALL GSTATS(1236,1)
-                ENDIF
-                IF(LGRIBAPI_O) THEN
-                  CALL OUTWSPEC(SL)
-                ELSE
-                  CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
-     &                       SL, NINF, NSUP, NANG, NFRE, NGX, NGY,
-     &                       NLONRGG, KXLT, IXLG, NIBLO, NBLO,
-     &                       AMONOP, XDELLA, NSTART, NEND,
-     &                       NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
-     &                       NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                       KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                       LGRHDIFS, LNEWLVTP, IFS_KSEC1,
-     &                       DEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
-     &                       CDTPRO, CDATEF, CDATEA,
-     &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                       NWFDBREF, LFDBOPEN)
-                ENDIF
-              ELSE
-                IF(LGRIBAPI_O) THEN
-                  CALL OUTWSPEC(FL1)
-                ELSE
-                  CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
-     &                       FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
-     &                       NLONRGG, KXLT, IXLG, NIBLO, NBLO,
-     &                       AMONOP, XDELLA, NSTART, NEND,
-     &                       NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
-     &                       NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                       KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                       LGRHDIFS, LNEWLVTP, IFS_KSEC1,
-     &                       DEG, PPMISS, PPEPS, PPREC,NGRBRESS,PPRESOL,
-     &                       CDTPRO, CDATEF, CDATEA,
-     &                       CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                       CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                       IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                       NWFDBREF, LFDBOPEN)
-                  ENDIF
-              ENDIF
+
+              CALL OUTWSPEC(FL1)
+
               MARSTYPE=MARSTYPEBAK
 
               IF (LFDB) THEN

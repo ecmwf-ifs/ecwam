@@ -1,5 +1,6 @@
-      SUBROUTINE SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &                     ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
+      SUBROUTINE SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+     &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &                     NSTART, NEND, CDTPRO, CDATEF)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -10,8 +11,9 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SAVSTRESS(U10OLD,THWOLD,USOLD,Z0OLD,TAUW,ROAIRO,
-!                       ZIDLOLD,CICOVER,NSTART,NEND,CDTPRO,CDATEF)
+!     *CALL* *SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+!                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+!                       NSTART, NEND, CDTPRO, CDATEF)
 !     *U10OLD*    INTERMEDIATE STORAGE OF WIND SPEED.
 !     *THWOLD*    INTERMEDIATE STORAGE OF WIND DIRECTION. 
 !     *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION VELOCITY.
@@ -20,6 +22,7 @@
 !     *ROAIRO*    AIR/WATER DENSITY RATIO.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *CICOVER*   SEA ICE COVER.
+!     *CITHICK*   SEA ICE THICKNESS.
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN.
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN.
 !     *CDTPRO*    CHAR*14   END DATE OF PROPAGATION.
@@ -60,7 +63,7 @@
       LOGICAL LPBOPEN, LPBCLOSE
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                                  ROAIRO,ZIDLOLD,CICOVER
+     &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
       INTEGER :: IFLD
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
@@ -89,15 +92,16 @@
             RFIELD(IJ,IG,6) = ROAIRO(IJ,IG)
             RFIELD(IJ,IG,7) = ZIDLOLD(IJ,IG)
             RFIELD(IJ,IG,8) = CICOVER(IJ,IG)
+            RFIELD(IJ,IG,9) = CITHICK(IJ,IG)
             IF(ALLOCATED(U)) THEN
-              RFIELD(IJ,IG,9) =  U(IJ,IG) 
-            ELSE
-              RFIELD(IJ,IG,9) =  0.
-            ENDIF
-            IF(ALLOCATED(V)) THEN
-              RFIELD(IJ,IG,10) =  V(IJ,IG) 
+              RFIELD(IJ,IG,10) =  U(IJ,IG) 
             ELSE
               RFIELD(IJ,IG,10) =  0.
+            ENDIF
+            IF(ALLOCATED(V)) THEN
+              RFIELD(IJ,IG,11) =  V(IJ,IG) 
+            ELSE
+              RFIELD(IJ,IG,11) =  0.
             ENDIF
           ENDDO
         ENDDO

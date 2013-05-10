@@ -20,6 +20,7 @@
 !                                 WIND GUSTINESS
 !       P.A.E.M. JANSSEN OCTOBER 2008: INTRODUCE DAMPING WHEN WAVES ARE 
 !                                      RUNNING FASTER THAN THE WIND.
+!       J-R BIDLOT JANUARY 2013: SHALLOW WATER FORMULATION.
 
 !*    PURPOSE.
 !     ---------
@@ -96,6 +97,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
@@ -103,19 +105,29 @@
       REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW
 
 ! ----------------------------------------------------------------------
+      REAL, PARAMETER :: A = 0.8/1000.
+      REAL, PARAMETER :: B = 0.08/1000.
 
-      REAL, DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
+      INTEGER :: IJ,IJS,IJL,IG,K,M
+
+      REAL :: ONETHIRD, BG_GUST, CONST1, CONST3, XKAPPAD
+      REAL :: U10, C_D, DC_DDU, SIG_CONV
+      REAL :: RWINV
+      REAL :: X1,X2,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
+      REAL ZHOOK_HANDLE
+      REAL, DIMENSION(NFRE) :: FAC, CONST
       REAL, DIMENSION(IJS:IJL) :: UCN1, UCN2, ZCN, CM, USP, USM
+      REAL, DIMENSION(IJS:IJL) :: SH, XK
       REAL, DIMENSION(IJS:IJL) :: SIG_N, XV1D, XV2D
       REAL, DIMENSION(IJS:IJL) :: CNSN
-      REAL, DIMENSION(NFRE) :: FAC, CONST
+      REAL, DIMENSION(IJS:IJL) :: EPSIL 
+      REAL, DIMENSION(IJS:IJL) :: UCN1D,UCN2D
+      REAL, DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
+      REAL, DIMENSION(IJS:IJL,NANG) :: TEMPD
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
-      LOGICAL L1,L2,LZ(IJS:IJL,NANG)
-      REAL X1,X2,ZLOG1,ZLOG2,CONST3,XV1,XV2,ZBETA1,ZBETA2
-      REAL XKAPPAD
-      REAL TEMPD(IJS:IJL,NANG),UCN1D(IJS:IJL),UCN2D(IJS:IJL)
-      PARAMETER (A = 0.8/1000. , B = 0.08/1000.)
-      REAL ZHOOK_HANDLE
+
+      LOGICAL :: L1,L2
+      LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
 
@@ -126,7 +138,7 @@
       CONST1   = BETAMAX/XKAPPA**2 
       CONST3   = 2.*XKAPPA/CONST1  ! SEE IDAMPING
       XKAPPAD  = 1.D0/XKAPPA
-
+      RWINV = 1.0/ROWATER
 
       CONST3 = IDAMPING*CONST3
 
@@ -155,7 +167,7 @@
         C_D = A+B*U10
         DC_DDU = B
         SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-        SIG_N (IJ) = MIN(0.5, SIG_CONV * 
+        SIG_N(IJ) = MIN(0.5, SIG_CONV * 
      &                        (BG_GUST*USNEW(IJ)**3+
      &                         0.5*XKAPPA*ZIDLNEW(IJ)**3)**ONETHIRD
      &                           /U10
@@ -165,6 +177,10 @@
       DO IJ=IJS,IJL
         USP(IJ) = USNEW(IJ)*(1.+SIG_N(IJ))
         USM(IJ) = USNEW(IJ)*(1.-SIG_N(IJ))
+      ENDDO
+
+      DO IJ=IJS,IJL
+          EPSIL(IJ) = ROAIRN(IJ)*RWINV
       ENDDO
 ! ----------------------------------------------------------------------
 
@@ -182,11 +198,15 @@
 
         IF (ISHALLO.EQ.1) THEN
           DO IJ=IJS,IJL
+            XK(IJ) = FAC(M)**2/G
             CM(IJ) = FAC(M)/G
+            SH(IJ) = 1.0
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            CM(IJ) = TFAK(INDEP(IJ),M)/FAC(M)
+            XK(IJ) = TFAK(INDEP(IJ),M)
+            CM(IJ) = XK(IJ)/FAC(M)
+            SH(IJ) = FAC(M)**2/(G*XK(IJ)) 
           ENDDO
         ENDIF
 
@@ -200,8 +220,8 @@
           UCN1D(IJ) = 1.D0/ UCN1(IJ)
           UCN2D(IJ) = 1.D0/ UCN2(IJ)
 
-          ZCN(IJ)  = LOG(G*Z0NEW(IJ)*CM(IJ)**2)
-          CNSN(IJ) = CONST(M) * ROAIRN(IJ)/ROWATER
+          ZCN(IJ)  = LOG(XK(IJ)*Z0NEW(IJ))
+          CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
 
           XV1      = -USP(IJ)*XKAPPAD*ZCN(IJ)*CM(IJ)
           XV2      = -USM(IJ)*XKAPPAD*ZCN(IJ)*CM(IJ)
@@ -258,7 +278,6 @@
         ENDDO
 
       ENDDO
-
 
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 

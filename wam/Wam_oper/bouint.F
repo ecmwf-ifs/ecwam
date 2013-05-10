@@ -136,7 +136,6 @@
       NANG=-1
       NFRE=-1
       MBMAX=-1
-
  
 !*    1.2 READ USER INPUT.
 !         ----------------
@@ -231,9 +230,9 @@
          CALL GSFILE (IU06, IU02, 0, CDATE, CDATE, FILEDO, 'G')
 
          XDELF = FLOAT(IDELPRF)
-         IF(LREAL.OR.LSWAN)THEN
-           WRITE(IU02) REAL(XANG), REAL(XFRE), REAL(TH0), 
-     &       REAL(FR(1)), REAL(CO), REAL(XBOU), REAL(XDELF)
+         IF(LREAL)THEN
+           WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4), 
+     &       REAL(FR(1),4), REAL(CO,4), REAL(XBOU,4), REAL(XDELF,4)
          ELSE
            WRITE(IU02) XANG, XFRE, TH0, FR(1), CO, XBOU, XDELF
          ENDIF
@@ -303,17 +302,24 @@
  
       IF (CDTOUT.LE.CDATE1) THEN
         DO IJ=1,NBOUNC
-          IF(LREAL)THEN
-            WRITE(IU02) REAL(XLON(IJ)), REAL(XLAT(IJ)), CDTOUT,
-     &        REAL(EMEAN(IJ,1)), REAL(THQ(IJ,1)), REAL(FMEAN(IJ,1))
-            WRITE(IU02) ((REAL(F(IJ,K,M,1)),K=1,KL),M=1,ML)
-          ELSEIF(LSWAN)THEN
-            WRITE(IU02) REAL(XLON(IJ)), REAL(XLAT(IJ)),CDTOUT(3:14),
-     &        REAL(EMEAN(IJ,1)), REAL(THQ(IJ,1)), REAL(FMEAN(IJ,1))
-            WRITE(IU02) ((REAL(F(IJ,K,M,1)),K=1,KL),M=1,ML)
+          IF(LREAL) THEN
+            IF(LSWAN)THEN
+            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4),CDTOUT(3:14),
+     &      REAL(EMEAN(IJ,1),4), REAL(THQ(IJ,1),4), REAL(FMEAN(IJ,1),4)
+            WRITE(IU02) ((REAL(F(IJ,K,M,1),4),K=1,KL),M=1,ML)
+            ELSE
+            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4), CDTOUT,
+     &       REAL(EMEAN(IJ,1),4), REAL(THQ(IJ,1),4), REAL(FMEAN(IJ,1),4)
+            WRITE(IU02) ((REAL(F(IJ,K,M,1),4),K=1,KL),M=1,ML)
+            ENDIF
           ELSE
+            IF(LSWAN)THEN
+            WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),
+     &        EMEAN(IJ,1), THQ(IJ,1), FMEAN(IJ,1)
+            ELSE
             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,
      &        EMEAN(IJ,1), THQ(IJ,1), FMEAN(IJ,1)
+            ENDIF
             WRITE(IU02) ((F(IJ,K,M,1),K=1,KL),M=1,ML)
           ENDIF
         ENDDO
@@ -345,9 +351,9 @@
 
         READ (IU01, ERR=6000, END=6000)
      &        XANG, XFRE, TH0, FR(1), CO, XBOU, XDELC
-        IF(LREAL.OR.LSWAN)THEN
-          WRITE(IU02) REAL(XANG), REAL(XFRE), REAL(TH0), 
-     &      REAL(FR(1)), REAL(CO), REAL(XBOU), REAL(XDELF)
+        IF(LREAL)THEN
+          WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4), 
+     &      REAL(FR(1),4), REAL(CO,4), REAL(XBOU,4), REAL(XDELF,4)
         ELSE
           WRITE(IU02) XANG, XFRE, TH0, FR(1), CO, XBOU, XDELF
         ENDIF
@@ -360,7 +366,8 @@
         READ (IU01, ERR=6003, END=6003)
      &    XLON(IJ), XLAT(IJ), CDATE2, EMEAN(IJ,2),
      &    THQ(IJ,2), FMEAN(IJ,2)
-        READ (IU01, ERR=6004, END=6004) ((F(IJ,K,M,2),K=1,KL),M=1,ML)
+        READ (IU01, ERR=6004, END=6004) 
+     &   ((F(IJ,K,M,2),K=1,KL),M=1,ML)
       ENDDO
       WRITE(IU06,*) ' DATE OF SECOND INPUT IS CDATE2 = ', CDATE2
  
@@ -413,17 +420,23 @@
 !               ---------------------
  
          IF(LREAL)THEN
-           WRITE(IU02) REAL(XLON(IJ)), REAL(XLAT(IJ)), CDTOUT,
-     &                 EMEAN_PT, THQ_PT, FMEAN_PT
-           WRITE(IU02) (((FL(K,M)),K=1,KL),M=1,ML)
-         ELSEIF(LSWAN)THEN
-           WRITE(IU02) REAL(XLON(IJ)), REAL(XLAT(IJ)),CDTOUT(3:14),
-     &                  EMEAN_PT, THQ_PT, FMEAN_PT
-           WRITE(IU02) (((FL(K,M)),K=1,KL),M=1,ML)
+           IF(LSWAN)THEN
+             WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4),CDTOUT(3:14),
+     &       REAL(EMEAN_PT,4), REAL(THQ_PT,4), REAL(FMEAN_PT,4)
+           ELSE
+              WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4), CDTOUT,
+     &        REAL(EMEAN_PT,4), REAL(THQ_PT,4), REAL(FMEAN_PT,4)
+           ENDIF
+           WRITE(IU02) ((REAL(FL(K,M),4),K=1,KL),M=1,ML)
          ELSE
-           WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,
+           IF(LSWAN)THEN
+             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),
      &       EMEAN_PT, THQ_PT, FMEAN_PT
-         WRITE(IU02) ((FL(K,M),K=1,KL),M=1,ML)
+           ELSE
+             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,
+     &       EMEAN_PT, THQ_PT, FMEAN_PT
+           ENDIF
+           WRITE(IU02) ((FL(K,M),K=1,KL),M=1,ML)
          ENDIF
       ENDDO
       WRITE(IU06,*) ' INTERPOLATED DATA TO OUTPUT IDTOUT = ', CDTOUT

@@ -11,7 +11,7 @@
 # @ error  = /home/rd/wab/libwam.$(jobid).err
 
 # @ notify_user = wab@ecmwf.int 
-# @ account_no = ecrmwa
+# @ account_no = ecrdpdma 
 
 #@ resources = ConsumableCpus(1) ConsumableMemory(500mb) 
 

@@ -22,6 +22,12 @@
       REAL,ALLOCATABLE :: PHIEPS(:) 
       REAL,ALLOCATABLE :: PHIAW(:) 
       REAL,ALLOCATABLE :: TAUOC(:) 
+      REAL,ALLOCATABLE :: STRNMS(:) 
+      REAL,ALLOCATABLE :: WX1(:)
+      REAL,ALLOCATABLE :: WX2(:)
+      REAL,ALLOCATABLE :: WX3(:)
+      REAL,ALLOCATABLE :: WX4(:)
+      REAL,ALLOCATABLE :: WX5(:)
 
 !*     VARIABLE.      TYPE.     PURPOSE.
 !      ---------      -------   --------
@@ -44,6 +50,7 @@
 !      *PHIEPS*       REAL      NORMALIZED ENERGY FLUX TO OCEAN.
 !      *PHIAW*        REAL      NORMALIZED ENERGY FLUX FROM WIND TO WAVES.
 !      *TAUOC*        REAL      NORMALIZED MOMENTUM FLUX INTO OCEAN.
+!      *STRNMS*       REAL      MEAN SQUARE STRAIN INTO THE SEA ICE.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

@@ -1,6 +1,6 @@
       SUBROUTINE STATSDIR(NTOT, X, Y,
      &                    XMEAN, YMEAN, STDEVX, STDEVY,      
-     &                    DMAX, BIAS, RMSE, STDEVD)
+     &                    DMAX, BIAS, RMSE, STDEVD, SLOPES)
                                                                         
 ! ----------------------------------------------------------------------
 
@@ -17,14 +17,15 @@
 !       2.  MAXIMUM VALUE OF ABSOLUTE DIFFERNCE                         
 !       3.  MEAN VALUE OF DIFFERENCE (BIAS)                           
 !       4.  ROOT-MEAN-SQUARE ERROR (RMSE)                               
-!       5.  STANDARD DEVIATION OF DIFFERENCES                           
+!       5.  STANDARD DEVIATION OF DIFFERENCES
+!       6.  SYMMETRIC SLOPE.
 
 !***  INTERFACE.                                                        
 !     ----------                                                        
 
 !        *CALL STATSDIR(NTOT, X, Y,
 !                       XMEAN, YMEAN, STDEVX, STDEVY,      
-!                       DMAX, BIAS, RMSE, STDEVD)
+!                       DMAX, BIAS, RMSE, STDEVD, SLOPES)
 
 !*    VARIABLE.    TYPE.     PURPOSE.                                   
 !     ---------    -------   --------                                   
@@ -41,6 +42,7 @@
 !       *BIAS*     REAL      MEAN VALUE OF DIFFERENCES                  
 !       *RMSE*     REAL      ROOT-MEAN-SQUARE ERROR                     
 !       *STDEVD*   REAL      STANDARD DEVIATION OF DIFFERENCE           
+!       *SLOPES*   REAL      SYMMETRIC SLOPE 
 
 !     METHOD.                                                           
 !     -------                                                           
@@ -70,6 +72,7 @@
       BIAS   = 0.
       RMSE   = 0.
       STDEVD = 0.
+      SLOPES = 0.
       DMAX = 0.
 
       PI=4*ATAN(1.)
@@ -115,8 +118,8 @@
       ENDIF
 
 
-!*    3. COMPUTE RMSE STDEVX STDEVY STDEVD
-!        ---------------------------------
+!*    3. COMPUTE RMSE STDEVX STDEVY STDEVD SLOPES
+!        ----------------------------------------
                                                                         
       IF (NTOT.GT.1) THEN
         SUMXX2=0.
@@ -142,6 +145,9 @@
         STDEVY = SQRT(SUMYY2/(XPT-1.))
         RMSE = SQRT(SUMYX2*XPTD)
         STDEVD = SQRT(SUMYYXX2/(XPT-1.))
+        IF(SUMXX2.GT.0.) THEN
+          SLOPES = SQRT(SUMYY2/SUMXX2)
+        ENDIF
 
       ENDIF                                                             
 

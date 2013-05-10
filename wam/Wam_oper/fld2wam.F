@@ -37,11 +37,8 @@
 
 !---------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3 ,
-     &            PPEPS    ,PPREC
+      USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,  
@@ -64,15 +61,16 @@
 
       INTEGER :: NBIT = 550000
 
-      INTEGER :: IPARAM, IREAD, IUNIT1, IJS, IJL, IG
+      INTEGER :: IPARAM, IREAD, IJS, IJL, IG
       INTEGER :: KFILE_HANDLE1
       INTEGER :: LFILE, KGRIB_HANDLE
       INTEGER :: KRET, KPLENG, KLEN, KLENG, IDM
-      INTEGER :: IRET, KBYTES, ISIZE
+      INTEGER :: IRET, ISIZE
       INTEGER :: KK, MM
       INTEGER :: IFORP, IPARAM_IN, KZLEV, IJ, IC, IX, JY
       INTEGER :: IBUF(2)
       INTEGER, ALLOCATABLE :: INGRIB(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: VALMISS 
       REAL :: ZDUM
@@ -94,26 +92,8 @@
       IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
      &    .NOT.LMESSPASS) THEN
 
-        IF(LGRIBAPI_I) THEN
-          KFILE_HANDLE1=-99
-          CALL IGRIB_OPEN_FILE(KFILE_HANDLE1,FILNM(1:LFILE),'r')
-        ELSE
-          CALL PBOPEN(IUNIT1,FILNM,'r',KRET)
-          IF(KRET.LT.0) THEN
-            WRITE (IU06,*) '****************************************'
-            WRITE (IU06,*) '*                                      *'
-            WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBOPEN      *'
-            WRITE (IU06,*) '*  IN FLD2WAM                          *'
-            IF(KRET.EQ.-1)
-     &       WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILNM
-            IF(KRET.EQ.-2) WRITE (IU06,*)'INVALID FILENAME ',FILNM
-            IF(KRET.EQ.-3) WRITE (IU06,*)'INVALID OPEN MODE SPECIFIED'
-            WRITE (IU06,*) '*                                      *'
-            WRITE (IU06,*) '****************************************'
-            CALL ABORT1
-          ENDIF
-        ENDIF
-
+        KFILE_HANDLE1=-99
+        CALL IGRIB_OPEN_FILE(KFILE_HANDLE1,FILNM(1:LFILE),'r')
         ISIZE=NBIT
       ENDIF
 
@@ -121,72 +101,30 @@
         IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
      &      .NOT.LMESSPASS) THEN
 
-          IF(LGRIBAPI_I) THEN
-!           USING GRIBAPI
-1021        ISIZE=NBIT
-            KBYTES=ISIZE*NPRECI
-            IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
-            CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE1,INGRIB,KBYTES,IRET)
-            IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!!!           *IGRIB_READ_FROM_FILE* does not read through the file if
-!!!            the size is too small, so figure out the size and read again.
-              IUNIT1=-1
-              CALL KGRIBSIZE(IU06, IUNIT1, KBYTES, NBIT, 'FLD2WAM')
-              DEALLOCATE(INGRIB)
-              GOTO 1021
-            ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
-              WRITE(IU06,*) '**************************************'
-              WRITE(IU06,*) '* FLD2WAM: END OF FILE ENCOUNTED *'
-              WRITE(IU06,*) '**************************************'
-              CALL ABORT1
-            ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
-               WRITE(IU06,*) '************************************'
-               WRITE(IU06,*) '* FLD2WAM: FILE HANDLING ERROR *'
-               WRITE(IU06,*) '************************************'
-              CALL ABORT1
-            ENDIF
-
-          ELSE
-!           USING GRIBEX
-2001        KPLENG=ISIZE*KIND(ISIZE)
-            IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
-            CALL GSTATS(1740,0)
-            CALL PBGRIB(IUNIT1,INGRIB,KPLENG,KLEN,KRET)
-            CALL GSTATS(1740,1)
-
-            IF (KRET.EQ.-1) THEN
-              WRITE(IU06,*) ' ****************************************'
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' *    FATAL ERROR IN SUB. FLD2WAM   *'
-              WRITE(IU06,*) ' *      ============================    *'
-              WRITE(IU06,*) ' * PBGRIB EOF ON FILE ',FILNM 
-              WRITE(IU06,*) ' *       NO MORE CURRENTS               *'
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS   *'
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' ****************************************'
-              CALL ABORT1
-            ELSE IF (KRET.EQ.-2) THEN
-              WRITE(IU06,*) ' ****************************************'
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' *    FATAL ERROR IN SUB. FLD2WAM   *'
-              WRITE(IU06,*) ' *      ============================    *'
-              WRITE(IU06,*) ' * PBGRIB ERROR ON FILE ',FILNM
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS   *'
-              WRITE(IU06,*) ' *                                      *'
-              WRITE(IU06,*) ' ****************************************'
-              CALL ABORT1
-            ELSE IF (KRET.EQ.-3) THEN
-              DEALLOCATE(INGRIB)
-              CALL KGRIBSIZE(IU06, IUNIT1, KLEN, ISIZE, 'FLD2WAM')
-              GOTO 2001
-            ENDIF
+1021      ISIZE=NBIT
+          KBYTES=ISIZE*NPRECI
+          IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+          CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE1,INGRIB,KBYTES,IRET)
+          IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+!!!         *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!          the size is too small, so figure out the size and read again.
+            CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'FLD2WAM')
+            DEALLOCATE(INGRIB)
+            GOTO 1021
+          ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+             WRITE(IU06,*) '**************************************'
+             WRITE(IU06,*) '* FLD2WAM: END OF FILE ENCOUNTED *'
+             WRITE(IU06,*) '**************************************'
+             CALL ABORT1
+          ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+             WRITE(IU06,*) '************************************'
+             WRITE(IU06,*) '* FLD2WAM: FILE HANDLING ERROR *'
+             WRITE(IU06,*) '************************************'
+             CALL ABORT1
           ENDIF
 
           WRITE(IU06,*) ' SUB. FLD2WAM - READ FROM ',FILNM
         ENDIF
-
 
 !       BROADCAST GRIB DATA TO OTHER PE'S
         CALL GSTATS(622,0)
@@ -213,31 +151,18 @@
         CALL GSTATS(622,1)
 ! ----------------------------------------------------------------------
 
-!*        UNPACK GRIB FIELDS.
-!         -------------------
-          IF(LGRIBAPI_I) THEN
-           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
+!*      UNPACK GRIB FIELDS.
+!       -------------------
+        CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
-           CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
-     &                      KGRIB_HANDLE, INGRIB, ISIZE,
-     &                      NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                      AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                      ZMISS, PPREC, PPEPS,
-     &                      CDATEIN, IFORP, IPARAM_IN,KZLEV,KK,MM,FIELD)
+        CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+     &                   KGRIB_HANDLE, INGRIB, ISIZE,
+     &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                   AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                   ZMISS, PPREC, PPEPS,
+     &                   CDATEIN, IFORP, IPARAM_IN,KZLEV,KK,MM,FIELD)
 
-            CALL IGRIB_RELEASE(KGRIB_HANDLE)
-          ELSE
-            KLENG = KLEN 
-            ZDUM=0.
-            CALL GRB2WGRD (IU06, ITEST, NKSEK0,NKSEK1,NKSEK2,NKSEK3,
-     &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &                     INGRIB, KLENG ,
-     &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                     ZDUM, ZDUM,
-     &                     CDATEIN, IFORP,IPARAM_IN,KZLEV,IDM,IDM,FIELD)
-          ENDIF
-
+        CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
         IF(IPARAM_IN.EQ.IPARAM) THEN
            DO IJ = IJS, IJL 

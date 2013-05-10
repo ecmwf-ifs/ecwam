@@ -1,5 +1,4 @@
-      SUBROUTINE OUTERS (FL3, IG, IGL, CDTPRO, NSTART, NEND,
-     &                   U10NEW,THWNEW,USNEW)
+      SUBROUTINE OUTERS (FL3, IG, IGL, CDTPRO)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
@@ -12,19 +11,11 @@
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL3, IG, IGL, CDTPRO, NSTART, NEND,
-!                      U10NEW,THWNEW,USNEW)* 
+!       *CALL  OUTERS (FL3, IG, IGL, CDTPRO)
 !          *FL3*    -   SPECTRUM.                                       
 !          *IG*     -   BLOCK NUMBER.                                   
 !          *IGL*    -   NUMBER OF BLOCKS.                               
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
-!          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-!          *U10NEW*    NEW WIND SPEED IN M/S.
-!          *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                      NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                      CLOCKWISE FROM NORTH).
-!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
 
 !    EXTERNALS.                                                         
 !    ----------                                                         
@@ -53,15 +44,15 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
+      USE YOWSPEC, ONLY   : NSTART   ,NEND     , 
+     &            U10NEW   ,THWNEW   ,USNEW
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
       CHARACTER CDTPRO*14
 
 ! ----------------------------------------------------------------------
@@ -207,13 +198,13 @@
         ENDIF
       ENDIF                                                             
 
-      IF (CDTPRO.EQ.CDTERS) THEN                          
-        IF (IG.EQ.IGL) THEN                                               
+      IF (CDTPRO.EQ.CDTERS) THEN
+        IF (IG.EQ.IGL) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             CALL ERSFILE (IU91, IU92, -9, -9)
           ENDIF
-        ENDIF                                                             
-      ENDIF                                                             
+        ENDIF
+      ENDIF
 
       IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
       IF(ALLOCATED(IGERS))  DEALLOCATE (IGERS)
@@ -225,5 +216,5 @@
       IF(ALLOCATED(USPTS)) DEALLOCATE (USPTS)
       IF(ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
 
-      RETURN                                                            
+      RETURN
       END SUBROUTINE OUTERS

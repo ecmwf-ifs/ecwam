@@ -118,9 +118,14 @@
           READ (IU03) (IJARC(I),I=1,NBOUNC_LOC)
           READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
-          DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
+
           IF (AMOWEP.EQ.AMOWEA .AND. AMOEAP.EQ.AMOEAA .AND.
-     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) EXIT
+     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) THEN
+!           FOUND THE RIGHT ONE
+            EXIT
+          ELSE
+            DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
+          ENDIF
         ENDDO
       ELSE
         READ (IU03,998) GBOUNC_LOC
@@ -139,9 +144,13 @@
           READ (IU03,999) DLAMAC, DPHIAC, AMOSOA,
      &      AMONOA, AMOEAA, AMOWEA,
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
-          DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
-          IF (AMOWEP.NE.AMOWEA .OR. AMOEAP.NE.AMOEAA .OR.
-     &      AMONOP.NE.AMONOA .OR. AMOSOP.NE.AMOSOA) EXIT
+          IF (AMOWEP.EQ.AMOWEA .AND. AMOEAP.EQ.AMOEAA .AND.
+     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) THEN
+!           FOUND THE RIGHT ONE
+            EXIT
+          ELSE
+            DEALLOCATE (IJARC,IGARC,BLATC,BLNGC)
+          ENDIF
         ENDDO
       ENDIF
       NBOUNC = NBOUNC_LOC
@@ -179,8 +188,8 @@
 
 !     IS THE STEP OF LAT. AND LONG. OF THE FINE GRID A MULTIPLE
 !              OF THE COARSE GRID ?
-      RATIO=MOD(DPHIAC+360.,180.)/((AMONOP-AMOSOP)/(NY-1))
-      IF(MOD(RATIO,REAL(INT(RATIO))).GT.1.E-12) THEN
+      IRATIO=NINT(DPHIAC/XDELLA)
+      IF(ABS(IRATIO*XDELLA-DPHIAC)/DPHIAC.GT.1.E-6) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -192,15 +201,16 @@
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FINE GRID XDELLA: ', XDELLA
         WRITE(IU06,*) '*  COARSE GRID DPHIAC: ', DPHIAC
+        WRITE(IU06,*) '*  IRATIO: ',IRATIO
+        WRITE(IU06,*) '*  DIFF = ',ABS(IRATIO*XDELLA-DPHIAC)/DPHIAC
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
         WRITE(IU06,*) '***********************************'
         CALL ABORT1
       ENDIF
 
-      RATIO=MOD(DLAMAC+360.,180.)/
-     &  ABS((AMOEOP-AMOWOP)/(NX-1))
-      IF(MOD(RATIO,REAL(INT(RATIO))).GT.1.E-12) THEN
+      IRATIO=NINT(DLAMAC/XDELLO)
+      IF(ABS(IRATIO*XDELLO-DLAMAC)/DLAMAC.GT.1.E-6) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -212,6 +222,8 @@
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FINE GRID   XDELLO: ', XDELLO
         WRITE(IU06,*) '*  COARSE GRID DLAMAC: ', DLAMAC
+        WRITE(IU06,*) '*  IRATIO: ',IRATIO
+        WRITE(IU06,*) '*  DIFF = ',ABS(IRATIO*XDELLO-DLAMAC)
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
         WRITE(IU06,*) '***********************************'
@@ -274,6 +286,11 @@
 
       IF (ALLOCATED(BLATF)) DEALLOCATE(BLATF)
       IF (ALLOCATED(BLNGF)) DEALLOCATE(BLNGF)
+
+      IF (ALLOCATED(IJARC)) DEALLOCATE(IJARC)
+      IF (ALLOCATED(IGARC)) DEALLOCATE(IGARC)
+      IF (ALLOCATED(BLATC)) DEALLOCATE(BLATC)
+      IF (ALLOCATED(BLNGC)) DEALLOCATE(BLNGC)
 
 ! ----------------------------------------------------------------------
 !*    9. WRITE COMMON FBOUND

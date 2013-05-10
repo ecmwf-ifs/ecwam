@@ -8,6 +8,7 @@ SOURCE	=\
               adjust.F         \
               aki.F            \
               check.F          \
+              class_wgrib.F    \
               convert_grbspec.F\
               difdate.F        \
               dummy_mp.F       \
@@ -16,13 +17,9 @@ SOURCE	=\
               findb.F          \
               fldinter.F       \
               getrest.F        \
-              grb2wgrd.F       \
               gsfile_new.F     \
               incdate.F        \
-              inmars.F         \
-              initialint.F     \
               iniwcst.F        \
-              intmars.F        \
               intspec.F        \
               jafu.F           \
               jonswap.F        \
@@ -44,8 +41,6 @@ SOURCE	=\
               outpp.F          \
               outcom.F         \
               outnam.F         \
-              outubuf.F        \
-              outwaminput.F    \
               packi.F          \
               packr.F          \
               preproc.F        \
@@ -58,6 +53,7 @@ SOURCE	=\
               secondhh.F       \
               stats.F          \
               statsc.F         \
+              statsdir.F       \
               statse.F         \
               statsi.F         \
               statsp.F         \
@@ -68,7 +64,6 @@ SOURCE	=\
               vmin.F           \
               vplus.F          \
               wam_user_clock.F \
-              wamcur.F         \
               wposnam.F        \
               writsta.F        \
               wstream_strg.F

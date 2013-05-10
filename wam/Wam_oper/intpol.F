@@ -220,26 +220,6 @@
 
       ENDDO
 
-!     A F**-5 LAW IS ASSUMED FOR FREQUENCIES ABOVE FR(NFRE)
-!     SO IF THE SPECTRUM WAS SHIFTED DOWN THEN THE F**-5 LAW
-!     IS REESTABLISHED
-!!!! we will need to adapt for shallow water in term of k**-5/2
-      DO K = 1, NANG
-        DO IJ = IJS, IJL
-          NEWF(IJ)=NFRE
-          M=NFRE
-          DO WHILE(F1(IJ,K,M).LE.0.0 .AND. M.GT.1)
-            M=M-1
-            NEWF(IJ)=M
-          ENDDO
-        ENDDO
-        DO IJ = IJS, IJL
-          DO M = NEWF(IJ)+1,NFRE
-            F1(IJ,K,M)=F1(IJ,K,NEWF(IJ))*(FR(NEWF(IJ))/FR(M))**5
-          ENDDO
-        ENDDO
-      ENDDO
-
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS, IJL

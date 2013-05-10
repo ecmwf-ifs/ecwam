@@ -1,5 +1,5 @@
       SUBROUTINE BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                       ROAIRO, ZIDLOLD, CICOVER,
+     &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
      &                       IREAD)
 
 ! ----------------------------------------------------------------------
@@ -18,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *BUILDSTRESS*(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-!    &                   ROAIRO, ZIDLOLD, CICOVER,
+!    &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !    &                   IREAD)*
 !     *U10OLD*   WIND SPEED.
 !     *THWOLD*   WIND DIRECTION (RADIANS).
@@ -28,6 +28,7 @@
 !     *RAD0OLD*   AIR DENSITY IN KG/M3.
 !     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *CICOVER*   SEA ICE COVER.
+!     *CITHICK*   SEA ICE THICKNESS.
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 
 !     METHOD.
@@ -49,7 +50,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
-      USE YOWGRIBHD, ONLY : NKSEK1 
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
@@ -64,7 +64,7 @@
 
 ! ----------------------------------------------------------------------
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO, ZIDLOLD, CICOVER
+     &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
       INTEGER IREAD
       INTEGER MIJS,MIJL
 ! Mod for OPENMP
@@ -95,7 +95,7 @@
 
 !     GETWND REQUIRES FIELDG TO BE ALLOCATED !
       ALLOCATE(FIELDG(NGX,NGY))
-      CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER,
+      CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK,
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
      &             LCR)
       DEALLOCATE(FIELDG)

@@ -1,9 +1,10 @@
       SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                    ROAIRO, ZIDLOLD,
      &                    CICOVER, CITHICK, CIWA,
+     &                    LLINIT,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                    FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
 
@@ -36,9 +37,10 @@
 
 !     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, CICOVER,
+!    &                 LLINIT,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
-!    &                 ISEC2, FIELDS, LWCUR, MASK_IN)*
+!    &                 FIELDS, LWCUR, MASK_IN)*
 
 !      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
 !                            VELOCITY.
@@ -56,13 +58,13 @@
 !      *CICOVER*   REAL      SEA ICE COVER.
 !      *CITHICK*   REAL      SEA ICE THICKNESS.
 !      *CIWA*      REAL      SEA ICE WAVE ATTENUATION FACTOR.
+!      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                            (IF NEEDED).
 !      *NFIELDS*   INTEGER   NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !      *NGPTOTG*   INTEGER   NUMBER OF ATMOSPHERIC GRID POINTS
 !      *NC*        INTEGER   NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !      *NR*        INTEGER   NUMBER OF ATM. ROWS OF LATITUDES
-!      *ISEC2*     INTEGER   GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !      *FIELDS*    REAL      ATM. FIELDS (U10, V10, AIR DENSITY, Zi/L, U and V CURRENTS)
 !      *LWCUR*     LOGICAL   INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 !      *MASK_IN*   INTEGER   MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
@@ -132,7 +134,6 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
       INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER ISEC2(22+NR)
       REAL FIELDS(NGPTOTG,NFIELDS)
       LOGICAL :: LWCUR
       INTEGER MASK_IN(NGPTOTG)
@@ -140,6 +141,7 @@
       CHARACTER*14 CDTWIE, CDTWIS, ZERO
 
       LOGICAL LLFRST
+      LOGICAL :: LLINIT
       DATA LLFRST / .TRUE. /
 
 ! ----------------------------------------------------------------------
@@ -195,7 +197,12 @@
 !         -----------------------------------------------------------
 
       CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR,
-     &               ISEC2, FIELDS, LWCUR, MASK_IN)
+     &               FIELDS, LWCUR, MASK_IN)
+
+!!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
+!!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
+!!!   AS PART OF THE GRIB RESTART FILES.
+      IF (LLINIT) CALL WAMADSZIDL(ROAIRO,ZIDLOLD)
 
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
@@ -222,7 +229,7 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, IREAD,
+     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &              LWCUR)
       ELSE
 
@@ -239,7 +246,7 @@
           CALL FLUSH (IU06)
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, IREAD,
+     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &              LWCUR)
       ENDIF
 

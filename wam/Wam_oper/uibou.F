@@ -103,6 +103,7 @@
          RUNDO  = LINE(2:4)
          FILEDO = LINE(7:9)
          PATHO  = LINE(12:71)
+         GOTO 1000
       ELSE IF (ICOUNT.EQ.5) THEN
          READ(LINE(2:2),'(L1)') LREAD
          READ(LINE(4:4),'(L1)') LSWAN

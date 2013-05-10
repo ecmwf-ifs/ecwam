@@ -1,6 +1,7 @@
       SUBROUTINE STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                    ROAIRN, TAUW, TAUWLF, PHIAW, PHIAWDIAG, 
-     &                    PHIAWUNR, SL, MIJ, LCFLX)
+     &                    ROAIRN, TAUW, TAUWLF, PHIAW,
+     &                    PHIAWDIAG, PHIAWUNR, SL, 
+     &                    MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -22,8 +23,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW, ROAIRN, TAUW,
-!                        TAUW_LF, PHI_AW, PHI_AW_DIAG, SL, MIJ)*
+!       *CALL* *STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW,
+!                        ROAIRN, TAUW, TAUWLF, PHIAW,
+!                        PHIAWDIAG, PHIAWUNR, SL, 
+!                        MIJ, LCFLX)*
 !         *F*           - WAVE SPECTRUM.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
@@ -34,10 +37,16 @@
 !         *Z0NEW*       - ROUGHNESS LENGTH IN M.
 !         *ROAIRN*      - AIR DENSITY IN KG/M3.
 !         *TAUW*        - WAVE STRESS IN (M/S)**2
-!         *TAUW_LF*     - LOW-FREQUENCY PART OF WAVE STRESS
-!         *PHIAW*       - ENERGY FLUX FROM WIND INTO WAVES
+!         *TAUWLF*      - LOW-FREQUENCY PART OF WAVE STRESS
+!                         (i.e. INTEGRATED OVER  THE PROGNOSTIC RANGE)
+!         *PHIAW*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
+!                         OVER THE FULL DISCRETISED FREQUENCY RANGE.
 !         *PHIAWDIAG*   - DIAGNOSTIC PART OF ENERGY FLUX INTO WAVES
-!         *PHIAWUNR*    - UNRESOLVED PART ENERGY FLUX
+!                         (i.e. INTEGRATED FROM THE END OF THE PROGNOSTIC RANGE
+!                          TO THE LAST DISCRETISED FREQUENCY) 
+!         *PHIAWUNR*    - UNRESOLVED PART OF ENERGY FLUX
+!                         (i.e. INTEGRATED FROM THE LAST DISCRETISED FREQUENCY
+!                          TO INFINITY).
 !         *SL*          - TOTAL SOURCE FUNCTION ARRAY.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !         *LCFLX*       - TRUE IF THE CALCULATION FOR THE FLUXES ARE 
@@ -67,7 +76,7 @@
 
       USE YOWCOUP  , ONLY : ALPHA
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
-     &            COSTH    ,SINTH    ,FR5
+     &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
@@ -90,10 +99,12 @@
 ! ----------------------------------------------------------------------
 
       REAL :: CONST, ROG, DFIMLOC, CNST
+      REAL :: SCDFM, SCDFP
       REAL :: ZPIROFR(NFRE)
-      REAL :: CONSTFM(IJS:IJL,NFRE),CONSTFE(IJS:IJL,NFRE) 
       REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP1, TEMP2, XSTRESS, YSTRESS,
      &                            UST2
+      REAL, DIMENSION(NFRE) :: CONSTFT
+      REAL, DIMENSION(IJS:IJL,NFRE) :: CONSTFM, CONSTFE
 
       REAL ZHOOK_HANDLE
 
@@ -114,15 +125,36 @@
         ZPIROFR(M) = ZPI*ROWATER*FR(M)
       ENDDO
 
+
+!     !!!! CONSTFM is only defined up to M=MIJ(IJ)
+      SCDFM = 0.5*DELTH*(1.-1./FRATIO)
       DO IJ=IJS,IJL
+!       !!!! CONSTFM is only defined up to M=MIJ(IJ)
         DO M=1,MIJ(IJ)-1
           CONSTFM(IJ,M) = ZPIROFR(M)*DFIM(M)
-          CONSTFE(IJ,M) = ROG*DFIM(M)
         ENDDO
-        DFIMLOC = 0.5*DELTH*(FR(MIJ(IJ))-FR(MIJ(IJ)-1))
-        CONSTFM(IJ,MIJ(IJ)) = ZPIROFR(MIJ(IJ))*DFIMLOC
-        CONSTFE(IJ,MIJ(IJ)) = ROG*DFIMLOC
+        CONSTFM(IJ,MIJ(IJ)) = ZPIROFR(MIJ(IJ))*SCDFM*FR(MIJ(IJ))
       ENDDO
+
+
+!!!!!!!!! CONSTFT and CONSTFE are only used if LCFLX is true
+      IF (LCFLX) THEN
+        DO M=1,NFRE
+          CONSTFT(M) = ROG*DFIM(M)
+        ENDDO
+!     !!!! CONSTFE is only defined from M=MIJ(IJ)
+        SCDFP = 0.5*DELTH*(FRATIO-1.)
+        DO IJ=IJS,IJL
+          IF(MIJ(IJ).LT.NFRE) THEN
+            CONSTFE(IJ,MIJ(IJ)) = ROG*SCDFP*FR(MIJ(IJ))
+          ELSE
+            CONSTFE(IJ,MIJ(IJ)) = 0. 
+          ENDIF
+          DO M=MIJ(IJ)+1,NFRE
+            CONSTFE(IJ,M) = ROG*DFIM(M)
+          ENDDO
+        ENDDO
+      ENDIF
 
 !*    2. COMPUTE WAVE STRESS OF ACTUEL BLOCK.
 !        ------------------------------------
@@ -147,15 +179,14 @@
            TAUWLF(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         ENDDO
 
-        PHIAW = 0.
-        PHIAWDIAG = 0.
+        PHIAW(IJS:IJL) = 0.
+        PHIAWDIAG(IJS:IJL) = 0.
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              CNST = SL(IJ,K,M)*CONSTFE(IJ,M)
-              PHIAW(IJ) = PHIAW(IJ)+CNST
-              IF (M.GT.MIJ(IJ)) THEN
-                PHIAWDIAG(IJ) = PHIAWDIAG(IJ)+CNST
+              PHIAW(IJ) = PHIAW(IJ)+SL(IJ,K,M)*CONSTFT(M)
+              IF (M.GE.MIJ(IJ)) THEN
+                PHIAWDIAG(IJ) = PHIAWDIAG(IJ)+SL(IJ,K,M)*CONSTFE(IJ,M)
               ENDIF
             ENDDO
           ENDDO

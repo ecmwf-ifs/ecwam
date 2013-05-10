@@ -17,7 +17,7 @@
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
       USE YOWCOUT  , ONLY : LFDB
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK ,CIWA
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
      &                      PHIAW    ,TAUOC  
       USE YOWMESPAS, ONLY : LMESSPASS

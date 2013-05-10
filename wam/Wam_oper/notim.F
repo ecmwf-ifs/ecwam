@@ -1,5 +1,5 @@
       SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD, CICOVER, IREAD,
+     &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &                   LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -22,7 +22,7 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, IREAD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
 !                      LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
@@ -35,6 +35,7 @@
 !          *ZIDLOLD*- Zi/L 
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *CICOVER*- SEA ICE COVER.
+!          *CITHICK*- SEA ICE THICKNESS. 
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -72,7 +73,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
      &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,
-     &            CICOVERNEXT
+     &            CICOVERNEXT, CITHICKNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -80,9 +81,9 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-     &                                , ROAIRO,ZIDLOLD,CICOVER
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICR
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
+     &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICR, CITH
       REAL :: ZHOOK_HANDLE
 
       CHARACTER*14 :: CDTWIE, CDTWIH, CDTWIS, CDT, ZERO
@@ -112,7 +113,7 @@
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
 
-        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER,
+        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK,
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
 
@@ -149,7 +150,7 @@
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
-      CALL GETWND (US, DS, ADS, ZIDL, CICR,
+      CALL GETWND (US, DS, ADS, ZIDL, CICR, CITH,
      &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR)
 
@@ -187,6 +188,8 @@
      &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
           IF(.NOT.ALLOCATED(CICOVERNEXT))
      &            ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(CITHICKNEXT))
+     &            ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         ELSE
           IF(.NOT.ALLOCATED(USNEXT))
      &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -198,6 +201,8 @@
      &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
           IF(.NOT.ALLOCATED(CICOVERNEXT))
      &            ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
+          IF(.NOT.ALLOCATED(CITHICKNEXT))
+     &            ALLOCATE(CITHICKNEXT(NIBLO,NSTORE,NBLO))
         ENDIF
 
         DO IG=1,IGL
@@ -215,6 +220,7 @@
               ADSNEXT(IJ,1,IG)=ADS(IJ,IG)
               ZIDLNEXT(IJ,1,IG)=ZIDL(IJ,IG)
               CICOVERNEXT(IJ,1,IG)=CICR(IJ,IG)
+              CITHICKNEXT(IJ,1,IG)=CITH(IJ,IG)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO

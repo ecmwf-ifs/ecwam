@@ -56,10 +56,11 @@
 
       INTEGER :: IREAD, IPARAM, KZLEV, IFORP
       INTEGER :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
-      INTEGER :: IRET, KBYTES, ISIZE, IUNIT
+      INTEGER :: IRET, ISIZE
       INTEGER :: KK, MM
       INTEGER :: IBUF(2) 
       INTEGER, ALLOCATABLE :: INGRIB(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
       REAL :: FIELD(NGX,NGY)                                          
@@ -100,8 +101,7 @@
         IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
 !!!       *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!       the size is too small, so figure out the size and read again.
-          IUNIT=-1
-          CALL KGRIBSIZE(IU06, IUNIT, KBYTES, NBIT, 'INWGRIB')
+          CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INWGRIB')
           DEALLOCATE(INGRIB)
           GOTO 1021
         ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN

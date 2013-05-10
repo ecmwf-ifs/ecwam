@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEANWS (F, IJS, IJL, USNEW, THWNEW, EM, FM, XLLWS)
+      SUBROUTINE FEMEANWS (F, IJS, IJL, EM, FM, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -22,8 +22,6 @@
 !              *F*      - SPECTRUM.
 !              *IJS*    - INDEX OF FIRST GRIDPOINT
 !              *IJL*    - INDEX OF LAST GRIDPOINT
-!              *USNEW*  - FRICTION VELOCITY
-!              *THWNEW* - WIND DIRECTION
 !              *EM*     - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*     - MEAN WAVE FREQUENCY (OUTPUT)
 
@@ -57,7 +55,6 @@
       INTEGER :: IJ,M,K,IJS,IJL
       REAL :: DELT25, DELT2, CM, CHECKTA
       REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: THWNEW,USNEW
       REAL,DIMENSION(IJS:IJL) :: TEMP2, EM, FM, THRESHOLD
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 

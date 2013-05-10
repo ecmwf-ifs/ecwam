@@ -95,14 +95,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCOUT  , ONLY : LGRIBAPI_I, LGRIBAPI_O
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
-     &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,NGRBRESS ,
-     &            HOPERS   ,PPRESOL  ,IFS_KSEC1,LGRHDIFS ,LNEWLVTP
+      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
+     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
       USE YOWICE   , ONLY : CICOVER  ,CITHICK   ,CIWA
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
@@ -138,6 +134,8 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
      &            LLNEWCURR
       USE FDBSUBS_MOD
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
+
 
 ! -------------------------------------------------------------------
       REAL X4(2)
@@ -151,6 +149,7 @@
       PARAMETER (ZERO=' ', CDUM='00000000000000')
 
       LOGICAL LFDBOPEN
+      LOGICAL :: LLINIT
 
 ! DIMENSION DUMMY COUPLED VARIABLES
 
@@ -161,7 +160,6 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER ISEC2(22+NR)
       REAL :: PRPLRADI
       REAL FIELDS(NGPTOTG,NFIELDS)
       INTEGER MASK_IN(NGPTOTG)
@@ -175,7 +173,6 @@
      &          USERID, RUNID, PATH, CPATH,
      &          CDATEA, IDELWI, CLTUNIT,
      &          LPBIOOUT, LGRIBOUT,
-     &          LGRIBAPI_I, LGRIBAPI_O,
      &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
      &          NWAM_BLKS
 
@@ -197,8 +194,6 @@
 !                OUTPUT (see LGRIBOUT).
 !     LGRIBOUT : IF TRUE THE WAVE SPECTRA IS OUTPUT IN GRIB FORMAT, ELSE
 !                THE BINARY RESTART FILES ARE PRODUCED.
-!     LGRIBAPI_I : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR INPUT FIELDS
-!     LGRIBAPI_O : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR OUTPUT FIELDS
 !     MARSTYPE : DATA TYPE USED TO CODE DATA IN GRIB
 !     YCLASS   : DATA CLASS USED TO CODE DATA IN GRIB.
 !     YEXPVER : EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
@@ -211,6 +206,8 @@
 
 
 ! ----------------------------------------------------------------------
+
+      CALL MPL_INIT(KOUTPUT=1)
 
       PRPLRADI=1.0
       CALL INIWCST(PRPLRADI)
@@ -243,9 +240,6 @@
       LPBIOIN   = .FALSE.
       LPBIOOUT  = .TRUE.
       LGRIBOUT = .TRUE.
-
-      LGRIBAPI_I = .TRUE.
-      LGRIBAPI_O = .TRUE.
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
@@ -361,17 +355,11 @@
 
 !*    3.* SET GRIB HEADERS FOR INPUTS/OUTPUTS
 !         -----------------------------------
-      IF(.NOT.LGRIBAPI_I .OR. .NOT.LGRIBAPI_O) THEN
-        CALL SETWGRIBHD
-      ENDIF
-
-      IF(LGRIBAPI_I .OR. LGRIBAPI_O) THEN
-        IF(.NOT. LGRHDIFS) THEN
-!         FOR INTEGRATED PARAMETERS
-          CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!         FOR SPECTRA 
-          CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
-        ENDIF
+      IF(.NOT. LGRHDIFS) THEN
+!       FOR INTEGRATED PARAMETERS
+        CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!       FOR SPECTRA 
+        CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -485,12 +473,14 @@
 !!!! might need to restict call when needed !!!
       CALL CIGETDEAC
 
+        LLINIT=.FALSE.
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD,
      &                CICOVER, CITHICK, CIWA,
+     &                LLINIT, 
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
-     &                ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                FIELDS, LWCUR, MASK_IN)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSE
@@ -531,8 +521,9 @@
 
 !     STRESS RELATED FIELDS :
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
-     &     ZIDLOLD,CICOVER,NSTART,NEND,CDATEA,CDATEA)
+        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+     &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &                 NSTART, NEND, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
       ENDIF
 
@@ -553,27 +544,9 @@
 !     SPECTRA :
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
-        IF(LGRIBAPI_O) THEN
-          CDTPRO  = CDATEA
-          CALL OUTWSPEC(FL1)
-          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
-        ELSE
-          CALL SPEC2FDB (IU06, NPROC, IRANK, LWCOU, TH, FR,
-     &                 FL1, NINF, NSUP, NANG, NFRE, NGX, NGY,
-     &                 NLONRGG, KXLT, IXLG, NIBLO, NBLO,
-     &                 AMONOP, XDELLA, NSTART, NEND,
-     &                 NKSEK0, NKSEK1, NKSEK2, NKSEK3, NKSEK4,
-     &                 NPSEK2, NPSEK3, KSEK0, KSEK1, KSEK2, KSEK3,
-     &                 KSEK4, PSEK2, PSEK3, NTENCODE, HOPERS,
-     &                 LGRHDIFS, LNEWLVTP, IFS_KSEC1,
-     &                 DEG, PPMISS, PPEPS,PPREC,NGRBRESS,PPRESOL,
-     &                 CDATEA, CDATEF, CDATEA,
-     &                 CLDOMAIN, MARSTYPE, YCLASS, YEXPVER,
-     &                 CFDB2DSP, NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &                 IREFDATE, LFDBIOOUT,ICPLEN, CPATH, ITEST,
-     &                 IFDB, LFDBOPEN)
-
-        ENDIF
+        CDTPRO  = CDATEA
+        CALL OUTWSPEC(FL1)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
       ELSEIF (.NOT.LGRIBOUT) THEN
         CALL SAVSPEC(FL1,NSTART,NEND,CDATEA,CDATEA,CDUM)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
@@ -595,4 +568,5 @@
       WRITE (IU06,*) ' '
       WRITE (IU06,*) ' PROGRAM PRESET: ALL DONE'
 
+      CALL MPL_END()
       END

@@ -1,5 +1,5 @@
       SUBROUTINE GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO, ZIDLOLD, CICOVER,
+     &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,
      &                     NSTART, NEND, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
@@ -22,6 +22,7 @@
 !     *ROAIRO*    AIR DENSITY IN KG/M3.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !     *CICOVER*   SEA ICE COVER. 
+!     *CITHICK*   SEA ICE THICKNESS. 
 !     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
@@ -69,7 +70,7 @@
 ! ----------------------------------------------------------------------
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO, ZIDLOLD, CICOVER 
+     &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK 
 ! ----------------------------------------------------------------------
 !     define local allocatable arrays
       INTEGER,ALLOCATABLE,DIMENSION(:) :: IBUF
@@ -107,7 +108,7 @@
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
 !         CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,CICOVER,
+     &                     ROAIRO,ZIDLOLD,CICOVER,CITHICK,
      &                     IREAD)
           IF (ITEST.GE.1)
      &     WRITE(IU06,*)
@@ -149,6 +150,7 @@
                 ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
                 ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
                 CICOVER(IJ,IG)=RFIELD(IJ,IG,8)
+                CITHICK(IJ,IG)=RFIELD(IJ,IG,9)
 !               for U and V see below
               ENDDO
             ENDDO
@@ -163,8 +165,8 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
                 DO IJ=KIJS,KIJL
-                  U(IJ,IG)=RFIELD(IJ,IG,9)
-                  V(IJ,IG)=RFIELD(IJ,IG,10)
+                  U(IJ,IG)=RFIELD(IJ,IG,10)
+                  V(IJ,IG)=RFIELD(IJ,IG,11)
                 ENDDO
               ENDDO
 !$OMP         END PARALLEL DO
@@ -288,7 +290,7 @@
       ELSE
         IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
           CALL BUILDSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                     ROAIRO,ZIDLOLD,CICOVER,
+     &                     ROAIRO,ZIDLOLD,CICOVER,CITHICK,
      &                     IREAD)
         ELSE
           CALL GRSTNAME(CDATEA,CDATEF,'LAW',ICPLEN,CPATH,FILENAME)
@@ -310,6 +312,7 @@
                 ROAIRO(IJ,IG)=RFIELD(IJ,IG,6)
                 ZIDLOLD(IJ,IG)=RFIELD(IJ,IG,7)
                 CICOVER(IJ,IG)=RFIELD(IJ,IG,8)
+                CITHICK(IJ,IG)=RFIELD(IJ,IG,9)
 !               for U and V see below
               ENDDO
             ENDDO
@@ -324,8 +327,8 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
                 DO IJ=KIJS,KIJL
-                  U(IJ,IG)=RFIELD(IJ,IG,9)
-                  V(IJ,IG)=RFIELD(IJ,IG,10)
+                  U(IJ,IG)=RFIELD(IJ,IG,10)
+                  V(IJ,IG)=RFIELD(IJ,IG,11)
                 ENDDO
               ENDDO
 !$OMP         END PARALLEL DO

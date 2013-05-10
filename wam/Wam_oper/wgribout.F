@@ -59,7 +59,7 @@
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   , PPEPS    ,PPREC    ,NTENCODE ,
      &            NGRBRESS ,PPRESOL  ,LGRHDIFS ,LNEWLVTP  ,PPMIN_RESET,
-     &            LPADPOLES
+     &            LPADPOLES, DATE_TIME_WINDOW_END,NWINOFF
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,AMOSOP   ,XDELLA
       USE YOWMPP   , ONLY : NPRECI   ,IRANK
@@ -79,10 +79,13 @@
       INTEGER :: ICLASS, IFCST, ISTEP, ISTEP_HRS 
       INTEGER :: IC, JC, ITABPAR, IDATE, ITIME
       INTEGER :: ICOUNT, NN, I, J, JSN, KK, MM
+      INTEGER :: IY1,IM1,ID1,IH1,IDATERES,IRET, IWINOFF
+      INTEGER :: IY2,IM2,ID2,IH2
       INTEGER :: IERR
       INTEGER :: IGRIB_HANDLE
-      INTEGER :: KBYTES, ISIZE
+      INTEGER :: ISIZE
       INTEGER, ALLOCATABLE :: KGRIB_BUFR(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: TEMP
       REAL :: PMISS 
@@ -257,7 +260,12 @@
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
 !     GRIB TABLE AND PARAMETER NUMBER
-      ITABPAR=ITABLE*1000+IPARAM
+      IF(ITABLE.EQ.128) THEN
+!       it seems that then default table is not used when defining paramId !
+        ITABPAR=IPARAM
+      ELSE
+        ITABPAR=ITABLE*1000+IPARAM
+      ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF(IERR.NE.0)THEN
         WRITE(*,*) ' *********************************************'
@@ -303,13 +311,40 @@
 !!!   for compatibility with previous coding, impose:
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'timeRangeIndicator',10)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'endStep',IFCST)
-
+        
         IF ( MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0 ) THEN
           ICLASS = 1
         ELSEIF ( MARSTYPE .EQ. '4v' ) THEN
           ICLASS = 6
         ELSEIF ( MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0 ) THEN
           ICLASS = 2
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
+          IF (C12(1:4) == 'ewla' .OR. C12(1:4) == 'lwwv') THEN
+            IDATERES=DATE_TIME_WINDOW_END
+            IY1=IDATERES/1000000
+            IDATERES=IDATERES-IY1*1000000
+            IM1=IDATERES/10000
+            IDATERES=IDATERES-IM1*10000
+            ID1=IDATERES/100
+            IDATERES=IDATERES-ID1*100
+            IH1=IDATERES
+!
+            IDATERES=IDATE*100+ITIME/100
+            IY2=IDATERES/1000000
+            IDATERES=IDATERES-IY2*1000000
+            IM2=IDATERES/10000
+            IDATERES=IDATERES-IM2*10000
+            ID2=IDATERES/100
+            IDATERES=IDATERES-ID2*100
+            IH2=IDATERES
+!
+            CALL HOURDIFF(IY1,IM1,ID1,IH1,IY2,IM2,ID2,IH2,IWINOFF,IRET)
+            IF (IRET /= 0) WRITE(0,*) 'IRET FROM HOURDIFF',IRET
+            NWINOFF=IWINOFF
+            write(IU06,*) ' SUB: WGRIBOUT: winoff:',NWINOFF
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
+     &       'offsetToEndOf4DvarWindow',NWINOFF)          
+          ENDIF 
         ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
           ICLASS = 10 
         ELSEIF ( MARSTYPE .EQ. 'pf' ) THEN

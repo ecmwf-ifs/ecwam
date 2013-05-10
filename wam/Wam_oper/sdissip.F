@@ -23,6 +23,7 @@
 !     ----------
 
 !       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN,)*
+!                        PHIEPS, TAUWD, MIJ, LCFLX)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
@@ -31,6 +32,14 @@
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
+!          *PHIEPS* - ENERGY FLUX FROM WAVES TO OCEAN INTEGRATED OVER 
+!                     THE PROGNOSTIC RANGE.
+!          *TAUWD*  - DISSIPATION STRESS INTEGRATED OVER
+!                     THE PROGNOSTIC RANGE.
+!          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *LCFLX*  - TRUE IF THE CALCULATION FOR THE FLUXES ARE 
+!                     PERFORMED.
+
 
 !     METHOD.
 !     -------
@@ -50,29 +59,30 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR, DFIM
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
       USE YOWMEAN  , ONLY : EMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION TEMP1(IJS:IJL), SDS(IJS:IJL)
-
-! ----------------------------------------------------------------------
-
       INTEGER :: MIJ(IJS:IJL)
+      REAL ::  SCDFM
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       REAL,DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
+      REAL,DIMENSION(IJS:IJL) :: TEMP1, SDS
       REAL, DIMENSION(NFRE) :: FAC
+      REAL, DIMENSION(IJS:IJL,NFRE) :: CONSTFM
+
       LOGICAL :: LCFLX
 
       PARAMETER (CDIS = 1.33)
       PARAMETER (DELTA = 0.5)
+
       PARAMETER (ALPH_B_J = 1.0)
       PARAMETER (GAM_B_J = 0.8)
       PARAMETER (COEF_B_J=2*ALPH_B_J)
@@ -88,9 +98,15 @@
       ROG = ROWATER*G
 
       IF (LCFLX) THEN
+        PHIEPS(IJS:IJL) = 0.
+        TAUWD(IJS:IJL) = 0.
+!       !!!! CONSTFM is only defined up to M=MIJ(IJ)
+        SCDFM = 0.5*DELTH*(1.-1./FRATIO)
         DO IJ=IJS,IJL
-          PHIEPS(IJ) = 0.
-          TAUWD(IJ) = 0.
+          DO M=1,MIJ(IJ)-1
+            CONSTFM(IJ,M) = ROG*DFIM(M)
+          ENDDO
+          CONSTFM(IJ,MIJ(IJ)) = ROG*SCDFM*FR(MIJ(IJ))
         ENDDO
       ENDIF
 
@@ -112,8 +128,8 @@
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
-                PHIEPS(IJ) = PHIEPS(IJ)+ROG*SDISS*DFIM(M)
-                TAUWD(IJ)  = TAUWD(IJ)+ROG*CM(IJS)*SDISS*DFIM(M)
+                PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
+                TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
               ENDIF
             ENDDO
           ENDDO     
@@ -142,8 +158,8 @@
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
-                PHIEPS(IJ) = PHIEPS(IJ)+ROG*SDISS*DFIM(M)
-                TAUWD(IJ)  = TAUWD(IJ)+ROG*CM(IJ)*SDISS*DFIM(M)
+                PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
+                TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
               ENDIF
             ENDDO
           ENDDO

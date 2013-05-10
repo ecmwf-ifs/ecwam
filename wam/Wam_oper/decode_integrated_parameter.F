@@ -231,8 +231,16 @@
         CALL GRIB_GET(IGRIB,'longitudeOfFirstGridPointInDegrees',AMOWEP)
         CALL GRIB_GET(IGRIB,'longitudeOfLastGridPointInDegrees',AMOEAP)
 
-        CALL GRIB_GET(IGRIB,'jDirectionIncrementInDegrees',XDELLA)
-        CALL GRIB_GET(IGRIB,'iDirectionIncrementInDegrees',XDELLO)
+        IF(CGRIDTYPE(9:10) == 'gg') THEN
+          XDELLA=0.0
+          XDELLO=0.0
+        ELSEIF(CGRIDTYPE(1:7) == 'reduced') THEN
+          CALL GRIB_GET(IGRIB,'jDirectionIncrementInDegrees',XDELLA)
+          XDELLO=0.0
+        ELSE
+          CALL GRIB_GET(IGRIB,'jDirectionIncrementInDegrees',XDELLA)
+          CALL GRIB_GET(IGRIB,'iDirectionIncrementInDegrees',XDELLO)
+        ENDIF
 
 
         CALL GRIB_GET(IGRIB,'dataDate',IYYYYMMDD)

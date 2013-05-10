@@ -50,32 +50,34 @@
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 !
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
-!
-!      DEFAULTS: ALAMD=0.25 => DELPHI1=-11.48, DELPHI2=33.56
-!                CON=3000.
+
+      REAL, PARAMETER :: ALAMD=0.25
+      REAL, PARAMETER :: CON=3000.
 !
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *ALAMD*     REAL      LAMBDA
 !      *CON*       REAL      WEIGHT FOR DISCRETE APPROXIMATION OF
 !                            NONLINEAR TRANSFER
-!      *DELPHI1*   REAL
-!      *DELPHI2*   REAL
-
 ! ----------------------------------------------------------------------
-!     LOCAL ARRAYS
+
+      INTEGER :: I, ISP,ISM, M, K
+      INTEGER :: KLP1, IC, KH, KLH, KS, ISG, K1, K11, K2, K21, IKN
+      INTEGER :: JAFU
       INTEGER, ALLOCATABLE :: JA1(:,:)
       INTEGER, ALLOCATABLE :: JA2(:,:)
+
+      REAL :: F1P1, XF, COSTH3, DELPHI1, COSTH4, DELPHI2, CL1, CL2, CH
+      REAL :: CL1H, CL2H, FRG, FLP, FLM, FKP, FKM, DELTHA, AL11, AL12 
       REAL, ALLOCATABLE :: FRLON(:)
 
 ! ----------------------------------------------------------------------
 
 !     0. ALLOCATE ARRAYS
 !        ---------------
-
-      ALAMD   = 0.25
 
       F1P1 = LOG10(FRATIO)
       ISP = INT(LOG10(1.+ALAMD)/F1P1+.000001)
@@ -84,7 +86,6 @@
       MFRSTLW=1+ISM
       MLSTHG=NFRE-ISM
 
-!     KFRH=-ISM+ISP+1
       KFRH=-ISM+ISP+2
 
       ALLOCATE(JA1(NANG,2))
@@ -112,13 +113,11 @@
 !*    1.1 DETERMINE ANGLES DELPHI USING RESONANCE CONDITION.
 !         --------------------------------------------------
 !     
-
       XF      = ((1.+ALAMD)/(1.-ALAMD))**4
       COSTH3  = (1.+2.*ALAMD+2.*ALAMD**3)/(1.+ALAMD)**2
       DELPHI1 = -180./PI*ACOS(COSTH3)
       COSTH4  = SQRT(1.-XF+XF*COSTH3**2)
       DELPHI2 = 180./PI*ACOS(COSTH4)
-      CON     = 3000.
 
       DELTHA = DELTH*DEG
       CL1 = DELPHI1/DELTHA
@@ -148,10 +147,8 @@
 !*    1.2 COMPUTATION OF ANGULAR WEIGHTS.
 !         -------------------------------
 
-      ICL1 = CL1
-      CL1  = CL1-ICL1
-      ICL2 = CL2
-      CL2  = CL2-ICL2
+      CL1  = CL1-INT(CL1)
+      CL2  = CL2-INT(CL2)
       ACL1 = ABS(CL1)
       ACL2 = ABS(CL2)
       CL11 = 1.-ACL1
@@ -251,6 +248,10 @@
 
       WRITE(IU06,'(1H1,'' NON LINEAR INTERACTION PARAMETERS:'')')
       WRITE(IU06,'(1H0,'' COMMON INDNL: CONSTANTS'')')
+      WRITE(IU06,*)'    ALAMD = ', ALAMD
+      WRITE(IU06,*)'      CON = ', CON
+      WRITE(IU06,*)'  DELPHI1 = ',DELPHI1
+      WRITE(IU06,*)'  DELPHI2 = ',DELPHI2
       WRITE(IU06,'(1X,''    ACL1       ACL2   '',
      &             ''    CL11       CL21   '',
      &             ''    DAL1       DAL2'')')

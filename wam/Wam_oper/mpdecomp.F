@@ -145,7 +145,7 @@
 !----------------------------------------------------------------------
 
 
-      INTEGER I4(2)
+      INTEGER :: NTEMP(1)
       INTEGER :: NLENHALO_MAX
       INTEGER :: ICOUNTS(NPR)
       INTEGER :: NPLEN(NPR)
@@ -1084,7 +1084,8 @@
 !     UPDATE NLENHALO OVER ALL PROCS
       ICOUNTS(:)=1
       CALL GSTATS(694,0)
-      CALL MPL_ALLGATHERV(NLENHALO(IP),NLENHALO,ICOUNTS,
+      NTEMP(1)=NLENHALO(IP)
+      CALL MPL_ALLGATHERV(NTEMP,NLENHALO,ICOUNTS,
      &     CDSTRING='MPDECOMP:')
       CALL GSTATS(694,1)
       NLENHALO_MAX=MAXVAL(NLENHALO(:))

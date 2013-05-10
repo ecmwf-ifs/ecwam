@@ -1,5 +1,5 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  ROAIRO, ZIDLOLD, CICOVER, IREAD,
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &                  LWCUR)
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
@@ -24,7 +24,7 @@
 !     ----------
 
 !       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, IREAD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
 !    &                 LWCUR)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST WIND FIELD.
@@ -37,6 +37,7 @@
 !          *ZIDLOLD*- Zi/L
 !                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !          *CICOVER*- SEA ICE COVER.
+!          *CITHICK*- SEA ICE THICKNESS.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -68,7 +69,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -77,7 +77,8 @@
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,CICOVERNEXT
+     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,CICOVERNEXT,
+     &            CITHICKNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -86,10 +87,10 @@
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
-     &                                , ROAIRO,ZIDLOLD,CICOVER
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS   ,ADS ,ZIDL, CICR
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2, DS2 ,ADS2,ZIDL2, CICR2
-      REAL,DIMENSION(NINF:NSUP) :: US3, DS3, ADS3, ZIDL3, CICR3
+     &                                , ROAIRO,ZIDLOLD,CICOVER,CITHICK
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CICR,CITH
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2,DS2,ADS2,ZIDL2,CICR2,CITH2
+      REAL,DIMENSION(NINF:NSUP) :: US3, DS3,ADS3,ZIDL3,CICR3,CITH3
       REAL ZHOOK_HANDLE
 
       CHARACTER*14 :: CDTWIE, CDTH, CDT1, CDT2, CDTWIS, ZERO
@@ -117,7 +118,7 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (US, DS, ADS, ZIDL, CICR,
+        CALL GETWND (US, DS, ADS, ZIDL, CICR, CITH,
      &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
         DO IG=1,IGL
@@ -134,6 +135,7 @@
               ROAIRO(IJ,IG) = ADS(IJ,IG)
               ZIDLOLD(IJ,IG)= ZIDL(IJ,IG)
               CICOVER(IJ,IG)= CICR(IJ,IG)
+              CITHICK(IJ,IG)= CITH(IJ,IG)
             ENDDO
 
             CALL AIRSEA (U10OLD(KIJS,IG), TAUW(KIJS,IG),
@@ -163,6 +165,7 @@
               ADS(IJ,IG) = ROAIRO(IJ,IG)
               ZIDL(IJ,IG)= ZIDLOLD(IJ,IG)
               CICR(IJ,IG)= CICOVER(IJ,IG)
+              CITH(IJ,IG)= CITHICK(IJ,IG)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
@@ -202,7 +205,7 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, ADS2, ZIDL2, CICR2,
+      CALL GETWND (US2, DS2, ADS2, ZIDL2, CICR2, CITH2,
      &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR)
 
@@ -223,6 +226,8 @@
      &          ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
         IF(.NOT.ALLOCATED(CICOVERNEXT))
      &          ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CITHICKNEXT))
+     &          ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
       ELSE
         IF(.NOT.ALLOCATED(USNEXT))
      &          ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
@@ -234,6 +239,8 @@
      &          ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
         IF(.NOT.ALLOCATED(CICOVERNEXT))
      &          ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CITHICKNEXT))
+     &          ALLOCATE(CITHICKNEXT(NIBLO,NSTORE,NBLO))
       ENDIF
 
       DO IG=1,IGL
@@ -259,12 +266,15 @@
      &                         REAL(N)*DEL*(ZIDL2(IJ,IG)-ZIDL(IJ,IG))
               CICR3(IJ) = CICR(IJ,IG)+
      &                         REAL(N)*DEL*(CICR2(IJ,IG)-CICR(IJ,IG))
+              CITH3(IJ) = CITH(IJ,IG)+
+     &                         REAL(N)*DEL*(CITH2(IJ,IG)-CITH(IJ,IG))
 
               USNEXT(IJ,N,IG)=US3(IJ)
               DSNEXT(IJ,N,IG)=DS3(IJ)
               ADSNEXT(IJ,N,IG)=ADS3(IJ)
               ZIDLNEXT(IJ,N,IG)=ZIDL3(IJ)
               CICOVERNEXT(IJ,N,IG)=CICR3(IJ)
+              CITHICKNEXT(IJ,N,IG)=CITH3(IJ)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
@@ -277,6 +287,7 @@
           ADS(IJ,IG) = ADS2(IJ,IG)
           ZIDL(IJ,IG) = ZIDL2(IJ,IG)
           CICR(IJ,IG) = CICR2(IJ,IG)
+          CITH(IJ,IG) = CITH2(IJ,IG)
         ENDDO
 
       ENDDO

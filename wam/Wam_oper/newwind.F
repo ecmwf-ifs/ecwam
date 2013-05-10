@@ -1,7 +1,7 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
      &                    U10OLD,THWOLD,U10NEW,THWNEW,
      &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-     &                    CICOVER)
+     &                    CICOVER, CITHICK)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -23,7 +23,7 @@
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
 !     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
 !     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!     3                  CICOVER)*
+!     3                  CICOVER, CITHICK)*
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -44,6 +44,7 @@
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
 !      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
 !      *CICOVER* - SEA ICE COVER. 
+!      *CITHICK* - SEA ICE THICKNESS. 
 
 !     METHOD.
 !     -------
@@ -71,7 +72,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
      &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
-     &            ZIDLNEXT ,CICOVERNEXT
+     &            ZIDLNEXT ,CICOVERNEXT, CITHICKNEXT
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -80,7 +81,7 @@
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW ,ROAIRN,ZIDLNEW
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: CICOVER 
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: CICOVER, CITHICK 
 
 ! ----------------------------------------------------------------------
 
@@ -159,6 +160,7 @@
             ROAIRN(IJ)=ADSNEXT(IJ,ISTORE,IIG)
             ZIDLNEW(IJ)=ZIDLNEXT(IJ,ISTORE,IIG)
             CICOVER(IJ,IG)=CICOVERNEXT(IJ,ISTORE,IIG)
+            CITHICK(IJ,IG)=CITHICKNEXT(IJ,ISTORE,IIG)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

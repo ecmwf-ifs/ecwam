@@ -121,12 +121,14 @@
          ASPF = (ZPI*FPK)**3/(G*USTAR)*SPF(M)
          AF2 = USTAR*FR(M)/G
          ASPF2 = ZPI**3*G**3/USTAR**5*SPF(M)
-         WRITE(IU_SPEC,62) FR(M), SPF(M), AF, ASPF, AF2, ASPF2
+!!         WRITE(IU_SPEC,62) XLON,XLAT,FR(M),SPF(M),AF,ASPF,AF2,ASPF2
+         WRITE(IU_SPEC,63) XLON,XLAT,FR(M),SPF(M)
       ENDDO
 
  60   FORMAT(1X,F7.3,1X,F8.3,1X,A12,3(1X,F8.4))
  61   FORMAT(25(1X,F8.4))
- 62   FORMAT(4(1X,F10.5),1X,F10.6,E10.3)
+ 62   FORMAT(4(1X,F8.4),1X,F10.6,E10.3)
+ 63   FORMAT(2(1X,F8.4),2(1x,F14.10))
 !
 ! -------------------------------------------------------------------
 !

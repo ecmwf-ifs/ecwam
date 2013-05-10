@@ -18,8 +18,7 @@
 !       Explicit arguments : CDCLASS - CLASS code - 2 characters (input)
 !       --------------------           can be either upper or lower case
 !                            CLASS_WGRIB returns value is the integer
-!                                        GRIB code
-!                                for ECMWF local GRIB usage of KSEC1(38)
+!                                        GRIB code for ECMWF local usage
 !                            IU06 - PRINTER OUTPUT UNIT.
 
 

@@ -101,6 +101,7 @@
       IF (ITEST.GE.3) THEN
         WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',
      &   ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
+        CALL FLUSH(IU06)
       ENDIF
 
       IRECV=1
@@ -115,7 +116,7 @@
       IF(IRANK.EQ.IRECV) THEN
         DO II=1,GBOUNC
           DO NGOU=IPOGBO(II-1)+1,IPOGBO(II)
-            IF(LL1D) THEN
+            IF(LL1D .OR. NPROC.EQ.1) THEN
               IJ = IJARC(NGOU)
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))

@@ -1,5 +1,5 @@
       SUBROUTINE IFSTOWAM (NFIELDS, NGPTOTG, NCA, NRA,
-     &                     ISEC2, FIELDS, LWCUR, MASK_IN)
+     &                     FIELDS, LWCUR, MASK_IN)
 
 !***  *IFSTOWAM* - INTERPOLATES FORCING FIELDS FROM IFS TO WAM GRID. 
 
@@ -14,13 +14,12 @@
 !     ---------                                                         
 
 !     *CALL* *IFSTOWAM (NFIELDS, NGPTOTG, NCA, NRA,
-!    &                  ISEC2, FIELDS, LWCUR, MASK_IN)
+!    &                  FIELDS, LWCUR, MASK_IN)
 !
 !        *NFIELDS*- NUMBER OF FIELDS HOLDING ATMOSPHERIC DATA
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
-!        *ISEC2*  - GRIB ISEC2 (TO EXTRACT ATM. GRID CHARACTERISTICS)
 !        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
 !                   FIELDS(:,1) = U COMPONENT OF WIND SPEED
 !                   FIELDS(:,2) = V COMPONENT OF WIND SPEED
@@ -46,8 +45,6 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,
      &            I_MASK_IN,N_MASK_IN
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK2   ,NKSEK3,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
@@ -55,7 +52,7 @@
      &            JFROMIJ 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOMCT0   , ONLY : NPRTRW     ,NPRTRV
-      USE YOMMP    , ONLY : MYSETW   ,NPRCIDS
+      USE YOMMP0   , ONLY : MYSETW   ,NPRCIDS
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NWAM_BLKS
@@ -76,7 +73,6 @@
       INTEGER, ALLOCATABLE :: KGRIB(:)
 
       INTEGER NFIELDS, NGPTOTG, NCA, NRA
-      INTEGER ISEC2(22+NRA)
       INTEGER, ALLOCATABLE, SAVE :: RLONRGG(:), IJBLOCK(:,:)
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA,I,JF
@@ -140,7 +136,7 @@
           IF (.NOT.ALLOCATED(DIIP1)) ALLOCATE (DIIP1(NGX,NGY))
 
           
-          CALL INITIALINT(IU06, ITEST, NCA, NRA, ISEC2,
+          CALL INITIALINT(IU06, ITEST, NCA, NRA,
      &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
      &                    RLONRGG, 

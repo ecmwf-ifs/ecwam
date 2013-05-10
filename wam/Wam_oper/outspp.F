@@ -1,5 +1,4 @@
-      SUBROUTINE OUTSPP (FL3, FL1, IJS, IJL,IG, IU25, IU26,NSTART,NEND,
-     &                   U10NEW,THWNEW,USNEW)
+      SUBROUTINE OUTSPP (FL3, FL1, IJS, IJL,IG, IU25, IU26)
 
 ! ----------------------------------------------------------------------
 
@@ -25,8 +24,7 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL  OUTSPP (FL3, FL1, IG, IU25, IU26,,NSTART,NEND,
-!                       U10NEW,THWNEW,USNEW)*
+!        *CALL  OUTSPP (FL3, FL1, IG, IU25, IU26)
 !           *FL3*    -   BLOCK OF SPECTRA.
 !           *FL1*    -   SWELL SPECTRUM.
 !           *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -34,13 +32,6 @@
 !           *IG*     -   BLOCK NUMBER.
 !           *IU25*   -   OUTPUT UNIT FOR SPECTRA.
 !           *IU26*   -   OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
-!           *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!           *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
-!           *U10NEW*    NEW WIND SPEED IN M/S.
-!           *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                       NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                       CLOCKWISE FROM NORTH).
-!           *USNEW*     NEW FRICTION VELOCITY IN M/S.
 
 !     EXTERNALS.
 !     ----------
@@ -70,6 +61,8 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,EPSMIN
+      USE YOWSPEC, ONLY   : NSTART   ,NEND     , 
+     &            U10NEW   ,THWNEW   ,USNEW
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTSPT   ,CDTSPS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,THWISEA
       USE YOWTEST  , ONLY : IU06
@@ -79,8 +72,6 @@
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3,FL1
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
-      REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW,USNEW
       CHARACTER NAME*20, CPATH*72
       LOGICAL FRSTIME
       REAL,ALLOCATABLE :: SPEC(:,:)
@@ -201,7 +192,7 @@
                       ENDIF
                     ENDDO
                   ENDDO
-                  ZHS = 4.*SQRT(EMEAN_G(IJ)) 
+                  ZHS = 4.*SQRT(MAX(EMEAN_G(IJ),0.0)) 
                   ZTHQ = THQ_G(IJ)
                   ZFM = FMEAN_G(IJ)
                   ZUST = US_G(IJ)
@@ -219,7 +210,8 @@
                   TH0 = TH(1)*DEG
                   WRITE(IU25) XLON, XLAT, CDTPRO, XANG, XFRE,
      &             TH0, FR(1), FRATIO 
-                  WRITE(IU25) 4.*SQRT(EMEAN_G(IJ)), DEG*THQ_G(IJ),
+                  WRITE(IU25) 4.*SQRT(MAX(EMEAN_G(IJ),0.0)),
+     &             DEG*THQ_G(IJ),
      &             FMEAN_G(IJ), US_G(IJ), DEG*THW_G(IJ),
      &             U10_G(IJ)
                   IF(LMESSPASS) THEN
@@ -245,7 +237,7 @@
                 ENDDO
                 WRITE (NAME,'(''BL= '',I3,'' POINT= '',I4)') IG,IJ
                 CALL PRSPP (IU06, CDTPRO, XLON, XLAT, NAME,
-     &           4.*SQRT(EMEAN_G(IJ)), DEG*THQ_G(IJ),
+     &           4.*SQRT(MAX(EMEAN_G(IJ),0.0)), DEG*THQ_G(IJ),
      &           FMEAN_G(IJ), US_G(IJ), DEG*THW_G(IJ),
      &           U10_G(IJ),
      &           FR, TH, SPEC, NANG, NFRE, NANG, NFRE)
@@ -265,7 +257,7 @@
               ELSE
                 FWSEA=0.
               ENDIF
-              EWSEA = 4.*SQRT(EWSEA)
+              EWSEA = 4.*SQRT(MAX(EWSEA,0.0))
               IF(LMESSPASS) THEN
                 DO M=1,NFRE
                   DO K=1,NANG
@@ -289,7 +281,7 @@
                 TH0 = TH(1)*DEG
                 WRITE(IU26) XLON, XLAT, CDTPRO, XANG, XFRE,
      &           TH0, FR(1), FRATIO 
-                WRITE(IU26) EWSEA, 4.*SQRT(ESWELL_G(IJ)),
+                WRITE(IU26) EWSEA, 4.*SQRT(MAX(ESWELL_G(IJ),0.0)),
      &           DEG*THWISEA_G(IJ), DEG*THSWELL_G(IJ),
      &           FWSEA, FSWELL_G(IJ)
                 WRITE(IU26) ((SPEC(K,M),K=1,NANG),M=1,NFRE)
@@ -302,7 +294,7 @@
                 WRITE (NAME,'(''BL= '',I3,'' POINT= '',I4)') IG,IJ
                 CALL PRSPPS (IU06, CDTPRO, XLON, XLAT, NAME,
      &           EWSEA, DEG*THWISEA_G(IJ), FWSEA,
-     &           4.*SQRT(ESWELL_G(IJ)), DEG*THSWELL_G(IJ),
+     &           4.*SQRT(MAX(ESWELL_G(IJ),0.0)), DEG*THSWELL_G(IJ),
      &           FSWELL_G(IJ), FR, TH, SPEC, NANG, NFRE, NANG, NFRE)
               ENDIF
             ENDIF

@@ -397,7 +397,9 @@
         JJ=JJ+1
         XLA=AMOSOP+REAL(JJ)*XDELLA
 
-        IF((XLA-0.5*XDELA).GT.AMONOP) THEN
+!!debile bug ????
+!!!!        IF((XLA-0.5*XDELA).GT.AMONOP) THEN
+        IF((XLA-0.5*XDELLA).GT.AMONOP) THEN
           GOTO 3080
         ELSE
           GOTO 3010
@@ -523,16 +525,16 @@
 !        ------------------------------------
 
       WRITE (IU06,'(''0NUMBER OF LATITUDES IS        NY = '',I5)') NY
-      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F5.1)')
+      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)')
      &           AMOSOP
-      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F5.1)')
+      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)')
      &           AMONOP
-      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F5.1)')
+      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)')
      &           XDELLA
       WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS   NX = '',I5)') NX
-      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F5.1)')
+      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)')
      &           AMOWEP
-      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F5.1)')
+      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)')
      &           AMOEAP
       WRITE (IU06,
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')

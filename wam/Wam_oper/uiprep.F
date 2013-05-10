@@ -186,6 +186,17 @@
      &    AMOWEC(II).EQ.0..AND.AMOEAC(II).EQ.0.)EXIT
         GBOUNC=II
       ENDDO
+      IF(IBOUNC .EQ. 1 .AND. GBOUNC.LE.0 ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE PRODUCTION OF FINE GRID BOUNDARY WAS   *'
+        WRITE (IU06,*) '* REQUESTED BUT NO BOUNDING BOX VALUES WERE  *'
+        WRITE (IU06,*) '* SUPPLIED IN THE NAMELIST!                  *'
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
 
 
 ! ----------------------------------------------------------------------
@@ -490,6 +501,23 @@
 
 !*    2.6 NESTED GRID INFORMATION.
 !         ------------------------
+
+      IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1) .AND. IRGG.EQ.1) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '* THE NESTING OPTION DOES NOT WORK FOR       *'
+        WRITE (IU06,*) '* IRREGULAR ALT-LON GRID                     *' 
+        WRITE (IU06,*) '* IRGG = ',IRGG
+        WRITE (IU06,*) '* IBOUNC = ',IBOUNC
+        WRITE (IU06,*) '* IBOUNF = ',IBOUNF
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
+
 
 !*    2.6.1 COARSE GRID OPTION.
 !           -------------------

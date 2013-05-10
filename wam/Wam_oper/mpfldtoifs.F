@@ -69,7 +69,7 @@
       REAL,DIMENSION(NWVFIELDS) :: DEFVAL 
       REAL,DIMENSION(IJS:IJL,NWVFIELDS) :: BLOCK 
       REAL,DIMENSION(NGX,NGY,NWVFIELDS) :: GRID 
-      REAL,ALLOCATABLE :: ZBUF(:) 
+      REAL,ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
       REAL,ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
       REAL ZHOOK_HANDLE
       REAL ZHOOK_HANDLE1
@@ -105,30 +105,32 @@
 
           IF(LLGLOBAL) THEN
 
-            ALLOCATE(ZBUF(NIBLO))
+            ALLOCATE(ZBUFS(NIBLO))
+            ALLOCATE(ZBUFR(NIBLO))
 
             DO IJ=IJS,IJL
-              ZBUF(IJ)=BLOCK(IJ,IFLD)
+              ZBUFS(IJ)=BLOCK(IJ,IFLD)
             ENDDO
 
             DO IP=1,NPROC
               KRECVCOUNTS(IP)=NEND(IP) - NSTART(IP)+1
             ENDDO
 
-            CALL MPL_ALLGATHERV(ZBUF(NSTART(IRANK):NEND(IRANK)),
-     &                        ZBUF(1:NIBLO),KRECVCOUNTS,
-     &                        CDSTRING='MPFLDTOIFS:')
+            CALL MPL_ALLGATHERV(ZBUFS(NSTART(IRANK):NEND(IRANK)),
+     &                          ZBUFR(1:NIBLO),KRECVCOUNTS,
+     &                          CDSTRING='MPFLDTOIFS:')
 
 !           TRANSFORM FROM BLOCK TO GRID
             DO IP=1,NPROC
               DO IJ = NSTART(IP), NEND(IP)
                IX = IXLG(IJ,IG)
                IY = NGY- KXLT(IJ,IG) +1
-               GRID(IX,IY,IFLD) = ZBUF(IJ)
+               GRID(IX,IY,IFLD) = ZBUFR(IJ)
               ENDDO
             ENDDO
 
-            DEALLOCATE(ZBUF)
+            DEALLOCATE(ZBUFS)
+            DEALLOCATE(ZBUFR)
 
             LMASK_OUT_NOT_SET=.FALSE.
 

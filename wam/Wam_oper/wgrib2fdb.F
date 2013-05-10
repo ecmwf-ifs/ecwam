@@ -34,7 +34,7 @@
 
 !     ------------------------------------------------------------------
 
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M,NWINOFF
       USE YOWMPP   , ONLY : NPRECI
 
       USE FDBSUBS_MOD
@@ -44,13 +44,13 @@
 !     ------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER ::  KUSO, KTEST,IGRIB_HANDLE, KERR, KFDB
-      INTEGER :: KBYTES, KLEN
+      INTEGER :: KUSO, KTEST,IGRIB_HANDLE, KERR, KFDB, KLEN
       INTEGER :: ICDFDBSF
       INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP
       INTEGER :: NLOCGRB, NENSFNB, NLEG, ICENTRE
       INTEGER :: ISTAT, ISTATUS
       INTEGER, ALLOCATABLE :: KGRIB(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
 
@@ -65,7 +65,7 @@
       CHARACTER(LEN=2) :: CLFRE
 
       CHARACTER(LEN=3) :: CLPARAM
-      CHARACTER(LEN=3) :: CLNUMBER
+      CHARACTER(LEN=3) :: CLNUMBER,CLWINOFF
 
       CHARACTER(LEN=4) :: CLTIME
       CHARACTER(LEN=4) :: CLEXPVER
@@ -88,7 +88,6 @@
 !     ------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',0,ZHOOK_HANDLE)
-  
 !*    1.   DERIVE FIELD DATA BASE VARIABLES FROM GRIB_HANDLE
 
 !     ------------------------------------------------------------------
@@ -100,13 +99,11 @@
 
 
       IF(.NOT.LFDBOPEN)  THEN
-
 !       OPEN THE APPROPRIATE FDB:
 
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',
      &                       NLOCGRB)
-
         IF (ISTREAM == 1082 .OR.
      &      ISTREAM == 1222 .OR.
      &      ISTREAM == 1095 .OR.
@@ -177,6 +174,7 @@
           ENDIF
         ELSE IF(ISTREAM == 1082 .OR.
      &          ISTREAM == 1088 .OR.
+     &          ISTREAM == 1250 .OR.
      &          ISTREAM == 1095 .OR.
      &          ISTREAM == 1222) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber',
@@ -184,7 +182,6 @@
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
           ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
         ENDIF
-
 !       SYSTEM AND METHOD:
         IF (ISTREAM == 1082 .OR.
      &      ISTREAM == 1095 .OR.
@@ -269,7 +266,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
       CLSTREAM=C12(1:4)
       ISTAT = ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
-
+      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
 !     CLASS:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'class',C12)
       CLCLASS=C12(1:2)
@@ -324,7 +321,6 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'time',C12)
       CLTIME=C12(1:4)
       ISTAT = ISETVALFDBSUBS( KFDB, 'time', CLTIME )
-
 !     FC STEP:
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
@@ -377,6 +373,21 @@
         WRITE(kuso,'("\ /WGRIB2FDB/ FREQ:  ", a8)') CLFRE
         CALL FLUSH (KUSO)
       ENDIF
+! LONG WINDOW OFFSET
+        IF (ISTREAM == 1250 .OR. ISTREAM == 1248 ) THEN
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
+          CLTYPE=C12(1:2)
+!          IF (CLTYPE /= 'an') THEN
+            write(kuso,*) 'before igrib_get_value ',CLTYPE
+            CALL FLUSH (KUSO)
+            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,
+     &      'offsetToEndOf4DvarWindow',NWINOFF)
+!          ENDIF
+          write(kuso,*) 'type, winoff',CLTYPE,NWINOFF
+          CALL FLUSH (KUSO)
+          WRITE(CLWINOFF,'(I3.3)') NWINOFF
+          ISTAT = ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
+        ENDIF
 
 !     ------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-      SUBROUTINE KGRIBSIZE(IU06, IUIN, KLEN, ISIZE, CALLINGSUB) 
+      SUBROUTINE KGRIBSIZE(IU06, KLEN, ISIZE, CALLINGSUB) 
 
 ! ----------------------------------------------------------------------
 
@@ -15,7 +15,7 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL KGRIBSIZE(IU06, IUIN, KLEN, ISIZE, CALLINGSUB)*
+!     *CALL KGRIBSIZE(IU06, KLEN, ISIZE, CALLINGSUB)*
 
 !     METHOD.
 !     -------
@@ -24,12 +24,11 @@
 !     REFERENCE.
 !     ----------
 ! ----------------------------------------------------------------------
-
-      USE YOWCOUT  , ONLY : LGRIBAPI_I
-
       IMPLICIT NONE
 
-      INTEGER ::  IU06, IUIN, KRET, ISIZE, KLEN, KOFFSET
+      INTEGER ::  IU06
+      INTEGER(KIND=8) ::  KLEN
+      INTEGER ::  ISIZE
       CHARACTER*(*) :: CALLINGSUB
 
       WRITE(IU06,*) ' '
@@ -37,9 +36,8 @@
       WRITE(IU06,*) ' SIZE  OF THE GRIB BUFFER IS NOT BIG ENOUGH.'
       WRITE(IU06,*) ' IT WAS ', ISIZE
 
-      KRET=0
-
       ISIZE=(KLEN+KIND(ISIZE)-1)/KIND(ISIZE)+1
+
       WRITE(IU06,*) ' IT SHOULD AT LEAST BE ', ISIZE
       WRITE(IU06,*) ' THE SIZE WAS RESET AUTOMATICALLY'
       WRITE(IU06,*) ' AND THE FIELD READ WITH THE NEW SIZE'
@@ -48,26 +46,6 @@
       WRITE(IU06,*) ' ***** WARNING ****** WARNING *****'
       WRITE(IU06,*) ' '
       CALL FLUSH(IU06)
-
-      IF(.NOT.LGRIBAPI_I) THEN
-!       RESET THE FILE POINTER TO READ FIELD AGAIN
-        KOFFSET=-KLEN
-        CALL PBSEEK(IUIN,KOFFSET,1,KRET)
-        IF(KRET.EQ.-1) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
-          WRITE(IU06,*) '*  PBSEEK : END OF FILE ENCOUNTED'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-        IF(KRET.EQ.-2) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  SUB. KGRIBSIZE : ' 
-          WRITE(IU06,*) '*  PBSEEK : FILE HANDLING ERROR'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-      ENDIF
 
       RETURN
       END SUBROUTINE KGRIBSIZE

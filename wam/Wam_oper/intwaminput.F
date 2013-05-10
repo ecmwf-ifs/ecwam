@@ -37,13 +37,9 @@
 !       NONE.
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3   ,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK0    ,KSEK1    ,
-     &            KSEK2    ,KSEK3    ,KSEK4    ,PSEK2    ,PSEK3    ,
-     &            PPEPS    ,PPREC    ,NGRBRESI ,PPMIN_RESET,
+      USE YOWGRIBHD, ONLY : PPEPS    ,PPREC    ,NGRBRESI ,PPMIN_RESET,
      &            NGRBRESS ,HOPERI   ,HOPERS   ,LGRHDIFS ,LNEWLVTP ,
      &            LPADPOLES
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
@@ -70,7 +66,7 @@
 
       INTEGER :: NBIT = 424000
 
-      INTEGER :: I4(2), IUIN, KRET, KPLENG, ISIZE, KLEN
+      INTEGER :: I4(2), KRET, KPLENG, ISIZE, KLEN
       INTEGER :: KLENG, KLENP, KWORD, NC, NR, NTOT, I, J, JRGG, IR
       INTEGER :: IREPR, IPARAM, ITABLE, KANG, KFRE, IALLFLD, JSN
       INTEGER :: IFR1, KFR1, IFR, IC, JC, MMSHIFT, MLAST 
@@ -79,20 +75,18 @@
       INTEGER :: IU07, ILEVTYPE, KSTREAM
       INTEGER :: KAMONOP, KAMOEAP, KAMOSOP, KAMOWEP
       INTEGER :: KRMONOP, KRMOEAP, KRMOSOP, KRMOWEP 
-      INTEGER :: KSEC0(NKSEK0), KSEC2(NKSEK2),
-     &           KSEC3(NKSEK3), KSEC4(NKSEK4)
       INTEGER :: I_GET_UNIT
       INTEGER :: LFILE, KFILE_HANDLE, KGRIB_HANDLE, IGRIB_LEN  
       INTEGER :: IYYYYMMDD, IHHMM
       INTEGER :: IVAL 
-      INTEGER :: KBYTES, IRET
+      INTEGER :: IRET
       INTEGER :: IPLPRESENT, NB_PL
       INTEGER :: IDIRSCALING, IFRESCALING
       INTEGER :: IUOUT, KFDB
       INTEGER, DIMENSION(:), ALLOCATABLE :: PL
-      INTEGER, ALLOCATABLE :: KSEC1(:)
       INTEGER, ALLOCATABLE :: KGRIB_BUFR(:)
       INTEGER, ALLOCATABLE ::  KLONRGG(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: X4(2)
       REAL :: STEP, START_STEP, END_STEP
@@ -100,8 +94,6 @@
       REAL :: PRPLRADI
       REAL ::  DELLO, DELLA
       REAL :: ONETHIRD, TWOTHIRD
-      REAL ::  PSEC2(NPSEK2),PSEC3(NPSEK3)
-      REAL, ALLOCATABLE :: PSEC4(:)
       REAL, ALLOCATABLE, DIMENSION(:,:) :: FIELD, TEMP
       REAL, ALLOCATABLE :: SCFR(:), SCTH(:)
 
@@ -134,7 +126,6 @@
 !     1.1 INITIALISATION OF VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------
 
-      LGRIBAPI_I=.TRUE.
       ITEST  =   0 
       LMESSPASS = .FALSE.
       MARSTYPE = 'an'
@@ -183,500 +174,252 @@
       IFILENAME='input_field'
       OFILENAME='output_field'
   
-!!!! because using grib_api or gribex are mutually exclusive,
-!!!! we will keep both in the code for now but gribex will have to go.
+!     CONNECT TO INPUT FILE
+      LFILE=0
+      LLEXIST=.FALSE.
+      IF (IFILENAME.NE. ' ') LFILE=LEN_TRIM(IFILENAME)
+      INQUIRE(FILE=IFILENAME(1:LFILE),EXIST=LLEXIST)
+      IF(LLEXIST) THEN
+        CALL IGRIB_OPEN_FILE(KFILE_HANDLE,IFILENAME(1:LFILE),'r')
+      ELSE
+        WRITE(*,*)'****************************'
+        WRITE(*,*)'*                          *'
+        WRITE(*,*)'*GRIB DATA NOT FOUND IN *'
+        WRITE(*,*)  IFILENAME 
+        WRITE(*,*)'*PROGRAM WILL ABORT        *'
+        WRITE(*,*)'*                          *'
+        WRITE(*,*)'****************************'
+        CALL ABORT1
+      ENDIF
 
-      IF(LGRIBAPI_I) THEN
-!!!     use gribapi
+!     LOAD THE DATA
+1021  ISIZE=NBIT
+      KBYTES=ISIZE*NPRECI
+      ALLOCATE(KGRIB_BUFR(ISIZE))
 
-!       CONNECT TO INPUT FILE
-        LFILE=0
-        LLEXIST=.FALSE.
-        IF (IFILENAME.NE. ' ') LFILE=LEN_TRIM(IFILENAME)
-        INQUIRE(FILE=IFILENAME(1:LFILE),EXIST=LLEXIST)
-        IF(LLEXIST) THEN
-          CALL IGRIB_OPEN_FILE(KFILE_HANDLE,IFILENAME(1:LFILE),'r')
+      CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,KBYTES,IRET)
+
+      IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+!!!     *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!     the size is too small, so figure out the size and read again.
+        CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INTWAMINPUT')
+        DEALLOCATE(KGRIB_BUFR)
+        GOTO 1021
+      ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+        WRITE(IU06,*) '*************************************'
+        WRITE(IU06,*) '* INTWAMINPUT: END OF FILE ENCOUNTED'
+        WRITE(IU06,*) '*************************************'
+        CALL ABORT1
+      ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+        WRITE(IU06,*) '*************************************'
+        WRITE(IU06,*) '* INTWAMINPUT: FILE HANDLING ERROR'
+        WRITE(IU06,*) '*************************************'
+        CALL ABORT1
+      ENDIF
+
+      KGRIB_HANDLE=-99
+      CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB_BUFR)
+
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NR)
+
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
+      IF(CGRIDTYPE(1:10) == 'regular_gg') THEN
+        JRGG=1
+        IREPR=4
+      ELSEIF(CGRIDTYPE(1:10) == 'reduced_gg') THEN
+        JRGG=1
+        IREPR=4
+      ELSEIF(CGRIDTYPE(1:7) == 'regular') THEN
+        JRGG=0
+        IREPR=0
+      ELSEIF(CGRIDTYPE(1:7) == 'reduced') THEN
+        JRGG=1
+        IREPR=0
+      ELSE
+        WRITE(IU06,*) '***********************************'
+        WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!!'
+        WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
+        WRITE(IU06,*) '***********************************'
+        CALL ABORT1
+      ENDIF
+
+      IF(JRGG.EQ.1) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
+        IF (IPLPRESENT == 1) THEN
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                         'numberOfPointsAlongAMeridian',NB_PL)
+          ALLOCATE(PL(NB_PL))
+          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'pl',PL)
         ELSE
-          WRITE(*,*)'****************************'
-          WRITE(*,*)'*                          *'
-          WRITE(*,*)'*GRIB DATA NOT FOUND IN *'
-          WRITE(*,*)  IFILENAME 
-          WRITE(*,*)'*PROGRAM WILL ABORT        *'
-          WRITE(*,*)'*                          *'
-          WRITE(*,*)'****************************'
+          WRITE(IU06,*) 'NUMBER OF POINTS PER LATITUDE MISSING !!!'
           CALL ABORT1
         ENDIF
-
-!       LOAD THE DATA
-1021    ISIZE=NBIT
-        KBYTES=ISIZE*NPRECI
-        ALLOCATE(KGRIB_BUFR(ISIZE))
-
-        CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,KBYTES,IRET)
-
-        IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!!!       *IGRIB_READ_FROM_FILE* does not read through the file if
-!!!       the size is too small, so figure out the size and read again.
-          IUIN=-1
-          CALL KGRIBSIZE(IU06, IUIN, KBYTES, NBIT, 'INTWAMINPUT')
-          DEALLOCATE(KGRIB_BUFR)
-          GOTO 1021
-        ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
-          WRITE(IU06,*) '*************************************'
-          WRITE(IU06,*) '* INTWAMINPUT: END OF FILE ENCOUNTED'
-          WRITE(IU06,*) '*************************************'
-          CALL ABORT1
-        ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
-          WRITE(IU06,*) '*************************************'
-          WRITE(IU06,*) '* INTWAMINPUT: FILE HANDLING ERROR'
-          WRITE(IU06,*) '*************************************'
-          CALL ABORT1
-        ENDIF
-
-        KGRIB_HANDLE=-99
-        CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB_BUFR)
-
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Nj',NR)
-
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'gridType', CGRIDTYPE)
-        IF(CGRIDTYPE(1:10) == 'regular_gg') THEN
-          JRGG=1
-          IREPR=4
-        ELSEIF(CGRIDTYPE(1:10) == 'reduced_gg') THEN
-          JRGG=1
-          IREPR=4
-        ELSEIF(CGRIDTYPE(1:7) == 'regular') THEN
-          JRGG=0
-          IREPR=0
-        ELSEIF(CGRIDTYPE(1:7) == 'reduced') THEN
-          JRGG=1
-          IREPR=0
-        ELSE
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  GRID TYPE NOT RECOGNIZED !!!'
-          WRITE(IU06,*) '   gridType = ', CGRIDTYPE 
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-
-        IF(JRGG.EQ.1) THEN
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'PLPresent',IPLPRESENT)
-          IF (IPLPRESENT == 1) THEN
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                           'numberOfPointsAlongAMeridian',NB_PL)
-            ALLOCATE(PL(NB_PL))
-            CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'pl',PL)
-          ELSE
-            WRITE(IU06,*) 'NUMBER OF POINTS PER LATITUDE MISSING !!!'
-            CALL ABORT1
-          ENDIF
-          NC=0
-          DO J=1,NB_PL
-            NC = MAX(NC,PL(J))
-          ENDDO
-          IR=0
-          DO J=1,NB_PL
-            IF(PL(J).NE.0) IR=IR+1
-          ENDDO
-          NR=IR
-        ELSEIF(JRGG.EQ.0) THEN
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',IVAL)
-          NC=IVAL
-        ELSE
-          WRITE(IU06,*)
+        NC=0
+        DO J=1,NB_PL
+          NC = MAX(NC,PL(J))
+        ENDDO
+        IR=0
+        DO J=1,NB_PL
+          IF(PL(J).NE.0) IR=IR+1
+        ENDDO
+        NR=IR
+      ELSEIF(JRGG.EQ.0) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'Ni',IVAL)
+        NC=IVAL
+      ELSE
+        WRITE(IU06,*)
      &  '   STRUCTURE OF THE FIELD NOT KNOWN'
-          CALL ABORT1
+        CALL ABORT1
+      ENDIF
+
+!*    DETERMINE CODE FOR DATA FIELD TYPE.
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'paramId',IVAL)
+      ITABLE=IVAL/1000
+      IPARAM=IVAL-ITABLE*1000
+
+!     DATE. 
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate',IYYYYMMDD)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time',IHHMM)
+      WRITE(CDATE(1:12),'(I8.8,I4.4)') IYYYYMMDD,IHHMM 
+      CDATE(13:14)='00'
+
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stepType',CSTEPTYPE)
+!     FORECAST STEP (in seconds)
+      IF(CSTEPTYPE(1:7) .EQ. 'instant') THEN
+        CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'stepUnits','s')
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'step',STEP)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'startStep',START_STEP)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'endStep',END_STEP)
+!       THE DATA ARE VALID BETWEEN TWO TIMES. TAKE THE MIDDLE POINT
+        IF(START_STEP.NE.END_STEP) THEN
+          STEP=(END_STEP-START_STEP)/2
         ENDIF
-
-!*      DETERMINE CODE FOR DATA FIELD TYPE.
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'paramId',IVAL)
-        ITABLE=IVAL/1000
-        IPARAM=IVAL-ITABLE*1000
-
-!       DATE. 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'dataDate',IYYYYMMDD)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'time',IHHMM)
-        WRITE(CDATE(1:12),'(I8.8,I4.4)') IYYYYMMDD,IHHMM 
-        CDATE(13:14)='00'
-
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stepType',CSTEPTYPE)
-!       FORECAST STEP (in seconds)
-        IF(CSTEPTYPE(1:7) .EQ. 'instant') THEN
-          CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'stepUnits','s')
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'step',STEP)
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'startStep',START_STEP)
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'endStep',END_STEP)
-!         THE DATA ARE VALID BETWEEN TWO TIMES. TAKE THE MIDDLE POINT
-          IF(START_STEP.NE.END_STEP) THEN
-            STEP=(END_STEP-START_STEP)/2
-          ENDIF
-          IFORP=STEP
-        ELSE
-          WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP TYPE !!!'
-          WRITE(*,*) 'stepType = ',CSTEPTYPE
-          CALL ABORT1
-        ENDIF
+        IFORP=STEP
+      ELSE
+        WRITE(*,*) 'UNKNOWN DEFINITION OF FORECAST STEP TYPE !!!'
+        WRITE(*,*) 'stepType = ',CSTEPTYPE
+        CALL ABORT1
+      ENDIF
 
 
-!       DETERMINE GRID PARAMETERS.
+!     DETERMINE GRID PARAMETERS.
 
-        IF(.NOT.ALLOCATED(KLONRGG)) ALLOCATE(KLONRGG(NR))
-        KLONRGG=0
+      IF(.NOT.ALLOCATED(KLONRGG)) ALLOCATE(KLONRGG(NR))
+      KLONRGG=0
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                      'latitudeOfFirstGridPointInDegrees',RMONOP)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                      'latitudeOfLastGridPointInDegrees',RMOSOP)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                     'latitudeOfFirstGridPointInDegrees',RMONOP)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                     'latitudeOfLastGridPointInDegrees',RMOSOP)
 
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                      'longitudeOfFirstGridPointInDegrees',RMOWEP)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                     'longitudeOfFirstGridPointInDegrees',RMOWEP)
 
 !!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
 !!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
 !!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
 !!!   RMOEAP IS IMPLICITLY KNOWN.
-        CSTREAM='****'
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE)
-        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',JSTREAM)
-        CALL WSTREAM_STRG(JSTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
+      CSTREAM='****'
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'levtype',ILEVTYPE)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'stream',JSTREAM)
+      CALL WSTREAM_STRG(JSTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
      &                  KSTREAM,LASTREAM)
 
-        IF(CSTREAM.EQ.'****' .OR.
-     &    (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212 )) THEN 
-          LLNONWAVE=.TRUE.
-        ELSE
-          LLNONWAVE=.FALSE.
-        ENDIF
-
-        IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
-          DELLO = 360./MAX(1,NC)
-          RMOEAP = RMOWEP+360. - DELLO
-           IPERIODIC = 1
-        ELSE
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
-          IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
-          IPERIODIC = 0
-          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-          IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
-        ENDIF
-
-        IF(JRGG.EQ.1) THEN
-          ISTART=1
-          DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
-             ISTART=ISTART+1
-          ENDDO
-          ISTART=ISTART-1
-
-          ISTOP=0
-          DO WHILE(PL(NB_PL-ISTOP).EQ.0 .AND. ISTOP.LT.NB_PL)
-            ISTOP=ISTOP+1
-          ENDDO
-
-          DO J=1,NR-ISTART
-             JSN=NR-J+1
-             KLONRGG(JSN) = PL(J+ISTART)
-          ENDDO
-          DEALLOCATE(PL)
-
-          CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                  'jDirectionIncrementInDegrees',DELLA)
-          RMONOP =  RMONOP-ISTART*DELLA
-          RMOSOP =  RMOSOP+ISTOP*DELLA
-
-        ELSEIF(JRGG.EQ.0) THEN
-           KLONRGG=NC
-        ELSE
-           WRITE(IU06,*)
-     &     ' REPRESENTATION OF THE FIELD NOT KNOWN'
-          CALL ABORT1
-        ENDIF
-
-        IF(IPARAM.EQ.251) THEN
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfDirections',KANG)
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfFrequencies',KFRE)
-
-!          input data first frequency
-           IF(.NOT.ALLOCATED(SCFR)) ALLOCATE(SCFR(KFRE))
-           IF(.NOT.ALLOCATED(SCTH)) ALLOCATE(SCTH(KANG))
-
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                         'directionScalingFactor',IDIRSCALING)
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledDirections',SCTH)
-
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
-     &                         'frequencyScalingFactor',IFRESCALING)
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledFrequencies',SCFR)
-
-           KFR1=NINT(SCFR(1))
-!          model first frequency
-           IFR1=NINT(IFRESCALING*FR(1))
-
-           IF(IFR1.NE.KFR1 ) THEN
-             LLFR1OK=.FALSE.
-             IF(IFR1.LT.KFR1) THEN
-               IC=1
-               IFR=IFR1
-               DO WHILE (IFR.LT.KFR1 .AND. IC.LT.NFRE) 
-                 IC=IC+1
-                 IFR=NINT(IFRESCALING*FR(IC))
-               ENDDO
-               MMSHIFT=IC-1
-             ELSE
-               IC=1
-               IFR=KFR1
-               DO WHILE (IFR.LT.IFR1 .AND. IC.LT.NFRE) 
-                 IC=IC+1
-                 IFR=NINT(SCFR(IC))
-               ENDDO
-               MMSHIFT=-(IC-1)
-             ENDIF
-           ELSE
-             LLFR1OK=.TRUE.
-             MMSHIFT=0
-           ENDIF
-
-        ENDIF
-
-
+      IF(CSTREAM.EQ.'****' .OR.
+     &  (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212 )) THEN 
+        LLNONWAVE=.TRUE.
       ELSE
-!!!     use gribex instead
-!       SET GRIB HEADERS FOR INPUTS/OUTPUTS
+        LLNONWAVE=.FALSE.
+      ENDIF
 
-        CALL SETWGRIBHD
+      IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
+        DELLO = 360./MAX(1,NC)
+        RMOEAP = RMOWEP+360. - DELLO
+        IPERIODIC = 1
+      ELSE
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
+        IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
+        IPERIODIC = 0
+        DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
+        IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
+      ENDIF
 
-        ALLOCATE(KSEC1(NKSEK1))
+      IF(JRGG.EQ.1) THEN
+        ISTART=1
+        DO WHILE(PL(ISTART).EQ.0 .AND. ISTART.LT.NB_PL)
+          ISTART=ISTART+1
+        ENDDO
+        ISTART=ISTART-1
 
-! ----------------------------------------------------------------------
+        ISTOP=0
+        DO WHILE(PL(NB_PL-ISTOP).EQ.0 .AND. ISTOP.LT.NB_PL)
+          ISTOP=ISTOP+1
+        ENDDO
 
-!      3. READ GRIB INPUT.
-!         ---------------
+        DO J=1,NR-ISTART
+          JSN=NR-J+1
+          KLONRGG(JSN) = PL(J+ISTART)
+        ENDDO
+        DEALLOCATE(PL)
 
-        CALL PBOPEN(IUIN,IFILENAME,'r',KRET)
-        IF(KRET.LT.0) THEN
-          IF(KRET.EQ.-1) THEN
-             WRITE(IU06,*) '***********************************'
-             WRITE(IU06,*) '*  COULD NOT OPEN '//IFILENAME
-             WRITE(IU06,*) '***********************************'
-             CALL ABORT1
-          ENDIF
-           IF(KRET.EQ.-2) THEN
-            WRITE(IU06,*) '***********************************'
-            WRITE(IU06,*) '*  INVALID FILENAME'//IFILENAME
-            WRITE(IU06,*) '***********************************'
-            CALL ABORT1
-          ENDIF
-        ENDIF
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                       'jDirectionIncrementInDegrees',DELLA)
+        RMONOP =  RMONOP-ISTART*DELLA
+        RMOSOP =  RMOSOP+ISTOP*DELLA
 
+      ELSEIF(JRGG.EQ.0) THEN
+        KLONRGG=NC
+      ELSE
+        WRITE(IU06,*) ' REPRESENTATION OF THE FIELD NOT KNOWN'
+        CALL ABORT1
+      ENDIF
 
-        ISIZE=NBIT
-1001    KPLENG=ISIZE*KIND(ISIZE)
-        IF(.NOT.ALLOCATED(KGRIB_BUFR)) ALLOCATE(KGRIB_BUFR(ISIZE))
-        CALL PBGRIB(IUIN,KGRIB_BUFR,KPLENG,KLEN,KRET)
-        IF(KRET.EQ.-1) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  PBGRIB :  END OF FILE ENCOUNTED'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-        IF(KRET.EQ.-2) THEN
-          WRITE(IU06,*) '***********************************'
-          WRITE(IU06,*) '*  PBGRIB : FILE HANDLING ERROR'
-          WRITE(IU06,*) '***********************************'
-          CALL ABORT1
-        ENDIF
-        IF(KRET.EQ.-3) THEN
-          CALL KGRIBSIZE(IU06, IUIN, KLEN, ISIZE, 'INTWAMINPUT')
-          DEALLOCATE(KGRIB_BUFR)
-          GOTO 1001
-        ENDIF
+      IF(IPARAM.EQ.251) THEN
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfDirections',KANG)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'numberOfFrequencies',KFRE)
 
-!       GET SIZE OF THE UNPACKED DATA
-        ALLOCATE(PSEC4(1))
-        KLENG = ISIZE
-        KLENP = 1
-        KRET  = 1
-        KSEC3 = KSEK3
-        PSEC3 = PSEK3
+!       input data first frequency
+        IF(.NOT.ALLOCATED(SCFR)) ALLOCATE(SCFR(KFRE))
+        IF(.NOT.ALLOCATED(SCTH)) ALLOCATE(SCTH(KANG))
 
-!       CALL GRSDBG(1)
-        CALL GRIBEX (KSEC0, KSEC1, KSEC2, PSEC2, KSEC3, PSEC3, KSEC4,
-     &               PSEC4, KLENP, KGRIB_BUFR, KLENG , KWORD, 'I',KRET)
-        IF(KRET.GT.0) THEN
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  GRIBEX FAILED WITH ERROR CODE ',KRET
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                       'directionScalingFactor',IDIRSCALING)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledDirections',SCTH)
 
-        NR=KSEC2(3)
-        NRFULL=NR
-        IF(NR.GT.NKSEK2-22) THEN
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  THE DIMENSION FOR KSEC2 ',NR+22
-          WRITE(IU06,*) '*  IS LARGER THAN THE PRESCRIBED ONE ',NKSEK2
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
-        JRGG = KSEC2(17)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+     &                      'frequencyScalingFactor',IFRESCALING)
+        CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'scaledFrequencies',SCFR)
 
-        IF(JRGG.EQ.1) THEN
-          NC=0
-          NTOT=0
-          DO J=1,NR
-            NC = MAX(NC,KSEC2(22+J))
-            NTOT=NTOT+KSEC2(22+J)
-          ENDDO
+        KFR1=NINT(SCFR(1))
+!       model first frequency
+        IFR1=NINT(IFRESCALING*FR(1))
 
-          IR=0
-          DO J=1,NR
-            IF(KSEC2(22+J).NE.0) IR=IR+1
-          ENDDO
-          NR=IR
-          KLEN=NTOT
-        ELSEIF(JRGG.EQ.0) THEN
-          NC=KSEC2(2)
-          KLEN = NC*NR
-        ELSE
-          WRITE(IU06,*)
-     &    'STRUCTURE OF THE FIELD NOT KNOWN'
-          CALL ABORT1
-        ENDIF
-
-        IREPR=KSEC2(1)
-
-        IF(IREPR.NE.0.AND.IREPR.NE.4) THEN
-          WRITE(IU06,*) '***************************************'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*  UNKNOWN GRID REPRESENTATION = ',IREPR
-          WRITE(IU06,*) '*  CAN ONLY DEAL WITH                 *'
-          WRITE(IU06,*) '*  LATITUDE/LONGITUDE GRID (IREPR=0)  *'
-          WRITE(IU06,*) '*   OR GAUSSIAN (IREPR=4)             *'
-          WRITE(IU06,*) '*                                     *'
-          WRITE(IU06,*) '*     THE PROGRAM ABORTS              *'
-          WRITE(IU06,*) '***************************************'
-          CALL ABORT1
-        ENDIF
-
-!*      DETERMINE CODE FOR DATA FIELD TYPE.
-
-        IPARAM = KSEC1(6)
-
-!       DETERMINE GRID PARAMETERS.
-
-        IF(.NOT.ALLOCATED(KLONRGG)) ALLOCATE(KLONRGG(NR))
-        KLONRGG=0
-
-
-        RMONOP = REAL(KSEC2(4)/1000)+0.1*(MOD(KSEC2(4),1000)/100)+
-     &           0.01*(MOD(KSEC2(4),100)/10)+0.001*MOD(KSEC2(4),10)
-
-        RMOWEP = REAL(KSEC2(5)/1000)+0.1*(MOD(KSEC2(5),1000)/100)+
-     &           0.01*(MOD(KSEC2(5),100)/10)+0.001*MOD(KSEC2(5),10)
-
-        RMOSOP = REAL(KSEC2(7)/1000)+0.1*(MOD(KSEC2(7),1000)/100)+
-     &           0.01*(MOD(KSEC2(7),100)/10)+0.001*MOD(KSEC2(7),10)
-
-!!!   THERE IS A DANGER THAT THE DEFINITON FOR RMOEAP MIGHT VARY DUE TO
-!!!   THE AMBIGOUS DEFINITION FOR IRREGULAR GRIDS. FOR NON WAVE FIELDS,
-!!!   A GAUSSIAN GRID IMPLIES THAT THE GRID IS GLOBAL, THEREFORE
-!!!   RMOEAP IS IMPLICITLY KNOWN.
-        CSTREAM='****'
-        ILEVTYPE=KSEC1(7)
-        JSTREAM=KSEC1(40)
-        CALL WSTREAM_STRG(JSTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
-     &                   KSTREAM,LASTREAM)
-
-        IF(CSTREAM.EQ.'****' .OR.
-     &    (LASTREAM .AND. ILEVTYPE.NE.209 .AND. ILEVTYPE.NE.212 )) THEN 
-          LLNONWAVE=.TRUE.
-        ELSE
-          LLNONWAVE=.FALSE.
-        ENDIF
-
-        IF(IREPR.EQ.4 .AND. LLNONWAVE) THEN
-          DELLO = 360./MAX(1,NC)
-          RMOEAP = RMOWEP+360. - DELLO
-          IPERIODIC = 1
-        ELSE
-          RMOEAP = REAL(KSEC2(8)/1000)+0.1*(MOD(KSEC2(8),1000)/100)+
-     &            0.01*(MOD(KSEC2(8),100)/10)+0.001*MOD(KSEC2(8),10)
-          IF(JRGG.EQ.1) CALL ADJUST (RMOWEP, RMOEAP)
-          IPERIODIC = 0
-          DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
-          IF (RMOEAP-RMOWEP+1.5*DELLO.GE.360.) IPERIODIC = 1
-        ENDIF
-
-        IF(JRGG.EQ.1) THEN
-           ISTART=0
-          DO WHILE(KSEC2(23+ISTART).EQ.0)
-            ISTART=ISTART+1
-          ENDDO
-          ISTOP=0
-          DO WHILE(KSEC2(23+NRFULL-1-ISTOP).EQ.0)
-            ISTOP=ISTOP+1
-          ENDDO
-          DO J=1,NR
-            JSN=NR-J+1
-            KLONRGG(JSN) = KSEC2(22+J+ISTART)
-          ENDDO
-          IDUM = KSEC2(4)-ISTART*KSEC2(10)
-          RMONOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
-     &             0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
-          IDUM = KSEC2(7)+ISTOP*KSEC2(10)
-          RMOSOP = REAL(IDUM/1000)+0.1*(MOD(IDUM,1000)/100)+
-     &           0.01*(MOD(IDUM,100)/10)+0.001*MOD(IDUM,10)
-         ELSEIF(JRGG.EQ.0) THEN
-           KLONRGG=NC
-         ELSE
-           WRITE(IU06,*)
-     &     ' REPRESENTATION OF THE FIELD NOT KNOWN'
-         CALL ABORT1
-        ENDIF
-
-        IF(IPARAM.EQ.251) THEN
-          KANG=KSEC1(46)
-          KFRE=KSEC1(47)
-!         input data first frequency
-          KFR1=KSEC1(50+KANG)
-!         model first frequency
-          IFR1=NINT(KSEC1(49)*FR(1))
-
-          IF(IFR1.NE.KFR1 ) THEN
-            LLFR1OK=.FALSE.
-            IF(IFR1.LT.KFR1) THEN
-              IC=1
-              IFR=IFR1
-              DO WHILE (IFR.LT.KFR1 .AND. IC.LT.NFRE) 
-                IC=IC+1
-                IFR=NINT(KSEC1(49)*FR(IC))
-              ENDDO
-              MMSHIFT=IC-1
-            ELSE
-              IC=1
-              IFR=KFR1
-              DO WHILE (IFR.LT.IFR1 .AND. IC.LT.NFRE) 
-                IC=IC+1
-                IFR=KSEC1(49+KANG+IC)
-              ENDDO
-              MMSHIFT=-(IC-1)
-            ENDIF
+        IF(IFR1.NE.KFR1 ) THEN
+          LLFR1OK=.FALSE.
+          IF(IFR1.LT.KFR1) THEN
+            IC=1
+            IFR=IFR1
+            DO WHILE (IFR.LT.KFR1 .AND. IC.LT.NFRE) 
+              IC=IC+1
+              IFR=NINT(IFRESCALING*FR(IC))
+            ENDDO
+            MMSHIFT=IC-1
           ELSE
-            LLFR1OK=.TRUE.
-            MMSHIFT=0
+            IC=1
+            IFR=KFR1
+            DO WHILE (IFR.LT.IFR1 .AND. IC.LT.NFRE) 
+              IC=IC+1
+              IFR=NINT(SCFR(IC))
+            ENDDO
+            MMSHIFT=-(IC-1)
           ENDIF
-
+        ELSE
+          LLFR1OK=.TRUE.
+          MMSHIFT=0
         ENDIF
 
-        DEALLOCATE(PSEC4)
-
-       ENDIF ! end selection on gribapi or gribex
+      ENDIF
 
 !      FIND WHETHER INTERPOLATION IS NEEDED
 !      ------------------------------------
@@ -752,19 +495,17 @@
 
          GOTO 8888 
        ELSE
-         IF(LGRIBAPI_I) THEN
-!          PREPARE OUTPUT
-           CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
+!        PREPARE OUTPUT
+         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
      &                        'localDefinitionNumber',NLOCGRB)
-!          GRIB HANDLES FOR OUTPUT
-           LGRHDIFS=.FALSE.
-!          FOR INTEGRATED PARAMETERS
-           CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!          FOR SPECTRA
-           CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
+!        GRIB HANDLES FOR OUTPUT
+         LGRHDIFS=.FALSE.
+!        FOR INTEGRATED PARAMETERS
+         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
+!        FOR SPECTRA
+         CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
 
-           CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
-         ENDIF
+         CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
        ENDIF
 
        IF(IPARAM.EQ.250) THEN
@@ -858,14 +599,10 @@
            
            DO M=1,MMSHIFT
              DO K=1,NANG
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ENDDO
            ENDDO
          ENDIF
@@ -874,23 +611,12 @@
 
 !          GET THE DATA AND PERFORM INTERPOLATION TO WAVE MODEL GRID.
 
-           IF(LGRIBAPI_I) THEN
-             CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
-     &                        KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
-     &                        NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                        AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                        ZMISS, PPREC, PPEPS,
-     &                        CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
-           ELSE
-             CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
-     &                    NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &                    KGRIB_BUFR, ISIZE,
-     &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                    AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                    PPREC, PPEPS,
-     &                    CDATE, IFORP, JPARAM, KZLEV, KKK, MMM, FIELD)
-
-           ENDIF
+           CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+     &                      KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
+     &                      NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
+     &                      AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                      ZMISS, PPREC, PPEPS,
+     &                      CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
            DEALLOCATE(KGRIB_BUFR)
 
 !          FREQUENCY INTERPOLATION
@@ -904,61 +630,39 @@
            IF( KANG.EQ.NANG ) THEN
 !            NO SPECTRAL INTERPOLATION REQUIRED
              K=KKK
-             IF(LGRIBAPI_I) THEN
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-             ELSE
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-             ENDIF
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
            ELSEIF( 2*KANG.EQ.NANG) THEN
 !            DOUBLING THE NUMBER OF DIRECTIONS
-             IF(LGRIBAPI_I) THEN
-               K=2*KKK-1
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               K=2*KKK
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-             ELSE
-               K=2*KKK-1
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               K=2*KKK
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-             ENDIF
-
+             K=2*KKK-1
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+             K=2*KKK
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
            ELSEIF( 3*KANG.EQ.NANG) THEN
 !            TRIPLING THE NUMBER OF DIRECTIONS
-             IF(LGRIBAPI_I) THEN
-               K=3*KKK-2
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               K=3*KKK-1
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               K=3*KKK
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                       ITABLE, IPARAM, 0, K , M,
-     &                       CDATE, IFORP, MARSTYPE,
-     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-             ELSE
-               K=3*KKK-2
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               K=3*KKK-1
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               K=3*KKK
-               CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-             ENDIF
-
+             K=3*KKK-2
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+             K=3*KKK-1
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+             K=3*KKK
+             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                     ITABLE, IPARAM, 0, K , M,
+     &                     CDATE, IFORP, MARSTYPE,
+     &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
            ELSEIF( 3*KANG.EQ.2*NANG) THEN
 !            3/2 OF THE NUMBER OF DIRECTIONS
              IF(MOD(KKK,2).EQ.1) THEN
@@ -974,15 +678,10 @@
                ENDDO
 
                K=3*KKK/2
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               ENDIF
-
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ELSE
 !              AVERAGE OUT THE INPUT WITH PREVIOUSLY SAVED ONE 
                DO J=1,NGY
@@ -1001,24 +700,16 @@
                    ENDIF
                  ENDDO
                ENDDO
-               IF(LGRIBAPI_I) THEN
-                 K=3*KKK/2-1
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-                 K=3*KKK/2
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 K=3*KKK/2-1
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-
-                 K=3*KKK/2
-                 CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
-               ENDIF
+               K=3*KKK/2-1
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+               K=3*KKK/2
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ENDIF
 
            ELSEIF( KANG.EQ.2*NANG) THEN
@@ -1053,14 +744,10 @@
                ENDDO
 
                K=KKK/2
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ELSE
                WRITE(IU06,*) '************************************'
                WRITE(IU06,*) ' FOR THIS TYPE OF'
@@ -1109,14 +796,10 @@
                ENDDO
 
                K=KKK/3
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ENDIF
 
            ELSEIF( 2*KANG.EQ.3*NANG) THEN
@@ -1149,14 +832,10 @@
                  ENDDO
                ENDDO
                K=2*(KKK/3)+1
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
 
 !              KEEP INPUT
                DO J=1,NGY
@@ -1185,14 +864,10 @@
                  ENDDO
                ENDDO
                K=2*(KKK/3)
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(TEMP, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
 
              ENDIF
 
@@ -1213,71 +888,39 @@
 !          -------------------------------------------------------
            IF(IALLFLD.EQ.KANG*KFRE) EXIT
 
-           IF(LGRIBAPI_I) THEN
+           CALL IGRIB_RELEASE(KGRIB_HANDLE)
+           KGRIB_HANDLE=0
 
-             CALL IGRIB_RELEASE(KGRIB_HANDLE)
-             KGRIB_HANDLE=0
-
-2021         ISIZE=NBIT
-             KBYTES=ISIZE*NPRECI
-             ALLOCATE(KGRIB_BUFR(ISIZE))
-             CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,
-     &                                 KBYTES,IRET)
-             IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!!!            *IGRIB_READ_FROM_FILE* does not read through the file if
-!!!            the size is too small, so figure out the size and read again.
-               IUIN=-1
-               CALL KGRIBSIZE(IU06, IUIN, KBYTES, NBIT, 'INTWAMINPUT 2')
-               DEALLOCATE(KGRIB_BUFR)
-               GOTO 2021
-             ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
-               IF(IALLFLD.EQ.1) THEN
-                 WRITE(IU06,*) ' ONLY ONE SPECTRAL FIELD HAS BEEN READ!'
-                 EXIT
-               ELSE
-                 WRITE(IU06,*) '**********************************'
-                 WRITE(IU06,*) '*   END OF FILE ENCOUNTED'
-                 WRITE(IU06,*) '**********************************'
-                 CALL ABORT1
-               ENDIF
-             ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
-               WRITE(IU06,*) '*************************************'
-               WRITE(IU06,*) '* INTWAMINPUT: FILE HANDLING ERROR'
-               WRITE(IU06,*) '*************************************'
-               CALL ABORT1
-             ENDIF
-
-             KGRIB_HANDLE=-99
-             CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB_BUFR)
-
-           ELSE
-2001         KPLENG=ISIZE*KIND(ISIZE)
-             IF(.NOT.ALLOCATED(KGRIB_BUFR)) ALLOCATE(KGRIB_BUFR(ISIZE))
-
-             CALL PBGRIB(IUIN,KGRIB_BUFR,KPLENG,KLEN,KRET)
-             IF(KRET.EQ.-1) THEN
-               IF(IALLFLD.EQ.1) THEN
-                 WRITE(IU06,*) ' ONLY ONE SPECTRAL FIELD HAS BEEN READ!'
-                 EXIT
-               ELSE
-                 WRITE(IU06,*) '**********************************'
-                 WRITE(IU06,*) '*  PBGRIB:  END OF FILE ENCOUNTED'
-                 WRITE(IU06,*) '**********************************'
-                 CALL ABORT1
-               ENDIF
-             ENDIF
-             IF(KRET.EQ.-2) THEN
+2021       ISIZE=NBIT
+           KBYTES=ISIZE*NPRECI
+           ALLOCATE(KGRIB_BUFR(ISIZE))
+           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,KGRIB_BUFR,
+     &                               KBYTES,IRET)
+           IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+!!!          *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!          the size is too small, so figure out the size and read again.
+             CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INTWAMINPUT 2')
+             DEALLOCATE(KGRIB_BUFR)
+             GOTO 2021
+           ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+             IF(IALLFLD.EQ.1) THEN
+               WRITE(IU06,*) ' ONLY ONE SPECTRAL FIELD HAS BEEN READ!'
+               EXIT
+             ELSE
                WRITE(IU06,*) '**********************************'
-               WRITE(IU06,*) '*  PBGRIB: FILE HANDLING ERROR'
+               WRITE(IU06,*) '*   END OF FILE ENCOUNTED'
                WRITE(IU06,*) '**********************************'
                CALL ABORT1
              ENDIF
-             IF(KRET.EQ.-3) THEN
-               CALL KGRIBSIZE(IU06, IUIN, KLEN, ISIZE, 'INTWAMINPUT')
-               DEALLOCATE(KGRIB_BUFR)
-               GOTO 2001
-             ENDIF
+           ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+             WRITE(IU06,*) '*************************************'
+             WRITE(IU06,*) '* INTWAMINPUT: FILE HANDLING ERROR'
+             WRITE(IU06,*) '*************************************'
+             CALL ABORT1
            ENDIF
+
+           KGRIB_HANDLE=-99
+           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB_BUFR)
 
          ENDDO
 
@@ -1288,14 +931,10 @@
            FIELD=ZMISS
            DO M=MLAST+1,NFRE
              DO K=1,NANG
-               IF(LGRIBAPI_I) THEN
-                 CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                         ITABLE, IPARAM, 0, K , M,
-     &                         CDATE, IFORP, MARSTYPE,
-     &                         LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-               ELSE
-                 CALL OUTWAMINPUT(FIELD, KSEC1, K, M, OFILENAME)
-               ENDIF
+               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                       ITABLE, IPARAM, 0, K , M,
+     &                       CDATE, IFORP, MARSTYPE,
+     &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              ENDDO
            ENDDO
          ENDIF
@@ -1306,23 +945,12 @@
 !        GET THE DATA AND PERFORM INTERPOLATION TO WAVE MODEL GRID.
 
          IF(.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NGX,NGY))
-         IF(LGRIBAPI_I) THEN
-           CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
-     &                      KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
-     &                      NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                      AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                      ZMISS, PPREC, PPEPS,
-     &                      CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
-         ELSE
-           CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
-     &                    NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &                    KGRIB_BUFR, ISIZE,
+         CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+     &                    KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
      &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                    AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                    PPREC, PPEPS,
-     &                    CDATE, IFORP, JPARAM, KZLEV, KKK, MMM, FIELD)
-
-         ENDIF
+     &                    ZMISS, PPREC, PPEPS,
+     &                    CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
 
          DEALLOCATE(KGRIB_BUFR)
 
@@ -1333,24 +961,18 @@
          KKK=0
          MMM=0
 
-         IF(LGRIBAPI_I) THEN
-           CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
-     &                   ITABLE, IPARAM, KZLEV, KKK , MMM,
-     &                   CDATE, IFORP, MARSTYPE,
-     &                   LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-         ELSE
-           CALL OUTWAMINPUT(FIELD, KSEC1, KKK, MMM, OFILENAME)
-         ENDIF
+         CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+     &                 ITABLE, IPARAM, KZLEV, KKK , MMM,
+     &                 CDATE, IFORP, MARSTYPE,
+     &                 LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
 
        ENDIF
 
 8888  CONTINUE
 
-      IF(LGRIBAPI_I) THEN
-        CALL IGRIB_RELEASE(KGRIB_HANDLE)
-        CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
-        IF(LLINTERPOL) CALL IGRIB_CLOSE_FILE(IUOUT)
-      ENDIF
+      CALL IGRIB_RELEASE(KGRIB_HANDLE)
+      CALL IGRIB_CLOSE_FILE(KFILE_HANDLE)
+      IF(LLINTERPOL) CALL IGRIB_CLOSE_FILE(IUOUT)
  
       CALL MPL_END()
       WRITE (IU06,*) ' PROGRAM INTWAMINPUT: ALL DONE'

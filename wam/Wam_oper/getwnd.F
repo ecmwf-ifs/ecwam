@@ -1,4 +1,4 @@
-      SUBROUTINE GETWND (US, DS, ADS, ZIDL, CICVR,
+      SUBROUTINE GETWND (US, DS, ADS, ZIDL, CICVR, CITH,
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
      &                   LWCUR)
 
@@ -16,7 +16,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (US, DS, ADS, ZIDL, CICVR,
+!       *CALL* *GETWND (US, DS, ADS, ZIDL, CICVR, CITH,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
 !                       LWCUR)*
 !         *US*     - MAGNITUDE OF USTAR AT EACH POINT AND BLOCK.
@@ -24,6 +24,7 @@
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
 !         *ZIDL*   - Zi/L  AT EACH POINT AND BLOCK.
 !         *CICVR*  - SEA ICE COVER.
+!         *CITH*   - SEA ICE THICKNESS.
 !         *CDTWIS* - DATE OF WIND FIELD TO BE LOOKED FOR.
 !         *LWNDFILE - FLAG USED TO DETERMINE WHETHER WINDS ARE READ FROM
 !                     FILE OR ARE AVAILABLE IN ARRAY FIELDG (SEE *IFSTOWAM).
@@ -66,13 +67,11 @@
 !                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
 !                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
-      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
      &             CLDOMAIN,LWDINTS
-      USE YOWGRIBHD, ONLY : NKSEK1 
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : NWAM_BLKS
@@ -83,7 +82,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICVR
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CICVR,CITH
       LOGICAL :: LWCUR
 
 
@@ -176,20 +175,7 @@
         IF (LCLOSEWND .AND. LWNDFILE .AND. 
      &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
           IF(IRANK.EQ.IREAD) THEN
-            IF(LGRIBAPI_I) THEN
-              CALL IGRIB_CLOSE_FILE(IUNITW)
-            ELSE
-              CALL PBCLOSE(IUNITW,KRET)
-              IF(KRET.LT.0) THEN
-                WRITE (IU06,*) '**************************************'
-                WRITE (IU06,*) '*                                    *'
-                WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBCLOSE   *'
-                WRITE (IU06,*) '*  IN GETWND                         *'
-                WRITE (IU06,*) '*                                    *'
-                WRITE (IU06,*) '**************************************'
-                CALL ABORT1
-              ENDIF
-            ENDIF
+            CALL IGRIB_CLOSE_FILE(IUNITW)
             LLNOTOPENED = .TRUE.
             IUNITW=0
             IF (ITEST.GT.1)
@@ -213,7 +199,7 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (US, DS, ADS, ZIDL, KIJS, KIJL, IG, LWCUR)
+          CALL WAMWND (US, DS, ADS, ZIDL, CITH, KIJS, KIJL, IG, LWCUR)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
@@ -238,7 +224,7 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL MICEP(IPARAMCI,CICVR,KIJS,KIJL,IG)
+          CALL MICEP(IPARAMCI,CICVR, CITH, KIJS,KIJL,IG)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)

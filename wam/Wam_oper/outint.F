@@ -19,6 +19,7 @@
 !                                           PARAMETERS.
 !     P.A.E.M. JANSSEN ECMWF  MARCH    2009 ADD OUTPUT OF STOKES DRIFT 
 !                                           COMPONENTS.
+!     D. PETTENUZZO           MAY      2012 ADD OUTPUT of 3 WAVE TRAINS
 
 !*    PURPOSE.
 !     --------
@@ -32,7 +33,7 @@
 !       *CALL* *OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB)
 !          *IU06*   - PRINTER OUTPUT UNIT.
 !          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
-!          *IU21    - OUTPUT UNIT OF SEA AND SWELL PARAMETER.
+!          *IU21    - OUTPUT UNIT OF SEA AND SWELL + 3 TRAINS PARAMETERS.
 !          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
 !                     SPECTRUM.
 !          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
@@ -62,8 +63,7 @@
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
      &            JPPFLAG  ,
-     &            LFDB     ,IPFGTBL  ,LOUTINT  ,
-     &            LGRIBAPI_O
+     &            LFDB     ,IPFGTBL  ,LOUTINT
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -72,10 +72,15 @@
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
-     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG
+     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
+     &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
+     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
+      USE YOWINTT  , ONLY : WHGTT1G  ,WDIRT1G  ,MWP1T1G  ,
+     &                      WHGTT2G  ,WDIRT2G  ,MWP1T2G  ,
+     &                      WHGTT3G  ,WDIRT3G  ,MWP1T3G
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -92,24 +97,30 @@
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      CHARACTER TITL*100
-
-! ----------------------------------------------------------------------
-!
-      INTEGER IGLOBAL,ILOCAL      ! FDB field counters
-      INTEGER IERR
-      INTEGER :: IUOUT
-      INTEGER :: INHOUR, ISHIFT
+      INTEGER :: IU06, IU20, IU21, IU30, ITEST, KFDB
+      INTEGER :: I,J,ITG
+      INTEGER :: JY, JX
+      INTEGER :: IGLOBAL,ILOCAL      ! FDB field counters
+      INTEGER :: IPARAM, ITABLE
+      INTEGER :: IZLEV
+      INTEGER :: IRECV
+      INTEGER :: IERR
+      INTEGER :: IUOUT 
+      INTEGER :: IFCST, INHOUR, ISHIFT
+      INTEGER :: IY,IM,ID,IH,IMN,ISS
+      REAL :: DNGX,DNGY
+      REAL :: ZHOOK_HANDLE
       CHARACTER(LEN=14) :: CDATE, CDATE1, CDATE2
       CHARACTER(LEN=24) :: OFILENAME
-      LOGICAL LFDBOPEN
-      LOGICAL FRSTIME30
+      CHARACTER(LEN=100) :: TITL
+      LOGICAL :: LFDBOPEN
+      LOGICAL :: FRSTIME30
       DATA FRSTIME30 / .TRUE. /
 
 ! ----------------------------------------------------------------------
 !
-      REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('OUTINT',0,ZHOOK_HANDLE)
 
@@ -182,6 +193,42 @@
           ENDIF
         ENDIF
 
+        IF(FFLAG(48).OR.PFLAG(48).OR.GFLAG(48)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(48)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WDIRT1G(I,J).NE.ZMISS)
+     &            WDIRT1G(I,J) = MOD(DEG * WDIRT1G(I,J) + 180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(51).OR.PFLAG(51).OR.GFLAG(51)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(51)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WDIRT2G(I,J).NE.ZMISS)
+     &            WDIRT2G(I,J) = MOD(DEG * WDIRT2G(I,J) + 180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(54).OR.PFLAG(54).OR.GFLAG(54)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(54)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WDIRT3G(I,J).NE.ZMISS)
+     &            WDIRT3G(I,J) = MOD(DEG * WDIRT3G(I,J) + 180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
       ENDIF
 
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON A SPECIFIC PROCESS
@@ -233,6 +280,11 @@
         IF (FFLAG(44))CALL MPGATHERGRDFLD(IPFGTBL(44),IRECV,44,PHIEPSG)
         IF (FFLAG(45))CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,45,PHIAWG)
         IF (FFLAG(46))CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,46,TAUOCG)
+        IF (FFLAG(56))CALL MPGATHERGRDFLD(IPFGTBL(56),IRECV,56,STRNMSG)
+        IF (FFLAG(57))CALL MPGATHERGRDFLD(IPFGTBL(57),IRECV,57,RHOAG)
+        IF (FFLAG(58))CALL MPGATHERGRDFLD(IPFGTBL(58),IRECV,58,WSTARG)
+        IF (FFLAG(59))CALL MPGATHERGRDFLD(IPFGTBL(59),IRECV,59,CICG)
+        IF (FFLAG(60))CALL MPGATHERGRDFLD(IPFGTBL(60),IRECV,60,CIHG)
 
       ENDIF
 
@@ -336,11 +388,39 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,145,PHIAWG)
         IF (PFLAG(46).OR.(.NOT.LFDB.AND.GFLAG(46)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,146,TAUOCG)
+        IF (PFLAG(47).OR.(.NOT.LFDB.AND.GFLAG(47)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(47),IRECV,147,WHGTT1G)
+        IF (PFLAG(48).OR.(.NOT.LFDB.AND.GFLAG(48)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(48),IRECV,148,WDIRT1G)
+        IF (PFLAG(49).OR.(.NOT.LFDB.AND.GFLAG(49)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(49),IRECV,149,MWP1T1G)
+        IF (PFLAG(50).OR.(.NOT.LFDB.AND.GFLAG(50)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(50),IRECV,150,WHGTT2G)
+        IF (PFLAG(51).OR.(.NOT.LFDB.AND.GFLAG(51)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(51),IRECV,151,WDIRT2G)
+        IF (PFLAG(52).OR.(.NOT.LFDB.AND.GFLAG(52)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(52),IRECV,152,MWP1T2G)
+        IF (PFLAG(53).OR.(.NOT.LFDB.AND.GFLAG(53)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(53),IRECV,153,WHGTT3G)
+        IF (PFLAG(54).OR.(.NOT.LFDB.AND.GFLAG(54)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(54),IRECV,154,WDIRT3G)
+        IF (PFLAG(55).OR.(.NOT.LFDB.AND.GFLAG(55)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(55),IRECV,155,MWP1T3G)
+        IF (PFLAG(56).OR.(.NOT.LFDB.AND.GFLAG(56)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(56),IRECV,156,STRNMSG)
+        IF (PFLAG(57).OR.(.NOT.LFDB.AND.GFLAG(57)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(57),IRECV,157,RHOAG)
+        IF (PFLAG(58).OR.(.NOT.LFDB.AND.GFLAG(58)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(58),IRECV,158,WSTARG)
+        IF (PFLAG(59).OR.(.NOT.LFDB.AND.GFLAG(59)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(59),IRECV,159,CICG)
+        IF (PFLAG(60).OR.(.NOT.LFDB.AND.GFLAG(60)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(60),IRECV,160,CIHG)
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
-!       1.3 COLLECT SWELL AND WIND SEA PARAMETER ARRAYS TO PROCESS IRECV
-!           ------------------------------------------------------------
+!       1.3 COLLECT SWELL, WIND SEA AND 3 TRAINS PARAMETER ARRAYS TO PROCESS IRECV
+!           ----------------------------------------------------------------------
         IRECV=MIN(2,NPROC)
 
         IF (FFLAG(11)) CALL MPGATHERGRDFLD(IPFGTBL(11),IRECV,11,WHGTWG)
@@ -355,6 +435,16 @@
         IF (FFLAG(31)) CALL MPGATHERGRDFLD(IPFGTBL(31),IRECV,31,MWP2SG)
         IF (FFLAG(32)) CALL MPGATHERGRDFLD(IPFGTBL(32),IRECV,32,WSPRDWG)
         IF (FFLAG(33)) CALL MPGATHERGRDFLD(IPFGTBL(33),IRECV,33,WSPRDSG)
+
+        IF (FFLAG(47)) CALL MPGATHERGRDFLD(IPFGTBL(47),IRECV,47,WHGTT1G)
+        IF (FFLAG(48)) CALL MPGATHERGRDFLD(IPFGTBL(48),IRECV,48,WDIRT1G)
+        IF (FFLAG(49)) CALL MPGATHERGRDFLD(IPFGTBL(49),IRECV,49,MWP1T1G)
+        IF (FFLAG(50)) CALL MPGATHERGRDFLD(IPFGTBL(50),IRECV,50,WHGTT2G)
+        IF (FFLAG(51)) CALL MPGATHERGRDFLD(IPFGTBL(51),IRECV,51,WDIRT2G)
+        IF (FFLAG(52)) CALL MPGATHERGRDFLD(IPFGTBL(52),IRECV,52,MWP1T2G)
+        IF (FFLAG(53)) CALL MPGATHERGRDFLD(IPFGTBL(53),IRECV,53,WHGTT3G)
+        IF (FFLAG(54)) CALL MPGATHERGRDFLD(IPFGTBL(54),IRECV,54,WDIRT3G)
+        IF (FFLAG(55)) CALL MPGATHERGRDFLD(IPFGTBL(55),IRECV,55,MWP1T3G)
 
       ENDIF
 
@@ -409,6 +499,11 @@
             IF (FFLAG(44))WRITE (IU20) PHIEPSG
             IF (FFLAG(45))WRITE (IU20) PHIAWG
             IF (FFLAG(46))WRITE (IU20) TAUOCG
+            IF (FFLAG(56))WRITE (IU20) STRNMSG
+            IF (FFLAG(57))WRITE (IU20) RHOAG 
+            IF (FFLAG(58))WRITE (IU20) WSTARG
+            IF (FFLAG(59))WRITE (IU20) CICG
+            IF (FFLAG(60))WRITE (IU20) CIHG
           ENDIF
         ENDIF
 
@@ -620,18 +715,54 @@
      &                 TAUOCG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        IF (PFLAG(56)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN SQUARE WAVE STRAIN IN THE SEA ICE'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100000000.,
+     &                 STRNMSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(57)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' AIR DENSITY'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,10.,
+     &                 RHOAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(58)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' CONVECTIVE VELOCITY'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,10.,
+     &                 WSTARG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(59)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SEA ICE COVER'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100.,
+     &                 CICG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(60)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SEA ICE THICKNESS'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100.,
+     &                 CIHG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
 
-!*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA AND SWELL.
-!        -------------------------------------------------
+!*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA, SWELL AND 3 TRAINS.
+!        -----------------------------------------------------------
 
       IF (CDTINTS.EQ.CDTPRO) THEN
 
-!*      3.1 WRITE PARAMETERS OF SWELL AND WIND DIRECTION TO FILE.
-!           -----------------------------------------------------
+!*      3.1 WRITE PARAMETERS OF SWELL, WIND DIRECTION AND 3 TRAINS TO FILE.
+!           ---------------------------------------------------------------
 
         IF(FFLAG21) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
@@ -656,6 +787,16 @@
             IF (FFLAG(31)) WRITE (IU21) MWP2SG
             IF (FFLAG(32)) WRITE (IU21) WSPRDWG
             IF (FFLAG(33)) WRITE (IU21) WSPRDSG
+
+            IF (FFLAG(47)) WRITE (IU21) WHGTT1G
+            IF (FFLAG(48)) WRITE (IU21) WDIRT1G
+            IF (FFLAG(49)) WRITE (IU21) MWP1T1G
+            IF (FFLAG(50)) WRITE (IU21) WHGTT2G
+            IF (FFLAG(51)) WRITE (IU21) WDIRT2G
+            IF (FFLAG(52)) WRITE (IU21) MWP1T2G
+            IF (FFLAG(53)) WRITE (IU21) WHGTT3G
+            IF (FFLAG(54)) WRITE (IU21) WDIRT3G
+            IF (FFLAG(55)) WRITE (IU21) MWP1T3G
           ENDIF
         ENDIF
 
@@ -747,6 +888,71 @@
      &                 WSPRDSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+
+        IF (PFLAG(47)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 1 WAVE HEIGHT  ( 0.1 METRES )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 WHGTT1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(48)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 1 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WDIRT1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(49)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN TRAIN 1 PERIOD (1) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP1T1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(50)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 2 WAVE HEIGHT  ( 0.1 METRES )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 WHGTT2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(51)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 2 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WDIRT2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(52)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN TRAIN 2 PERIOD (1) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP1T2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(53)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 3 WAVE HEIGHT  ( 0.1 METRES )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 WHGTT3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(54)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' TRAIN 3 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WDIRT3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        IF (PFLAG(55)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' MEAN TRAIN 3 PERIOD (1) ( 0.1 SECOND )'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &                 MWP1T3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
@@ -754,7 +960,6 @@
 
 !*    4.  PACK INTEGRATED PARAMETERS INTO GRIB FM94.
 !         ------------------------------------------
-
       IF(MARSTYPE.EQ.'4v') THEN
 !*      THIS IS A 4V CASE
         CDATE=CDATEA
@@ -809,15 +1014,13 @@
 !     OUTPUT FILE FOR GRIB DATA (if not written to FDB)
 
       IF(.NOT.LFDB) THEN
-        IF(LGRIBAPI_O) THEN
-          IF (GFLAG20 .OR. GFLAG21) THEN
-            WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
-            IF (FRSTIME30) THEN
-              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
-              FRSTIME30=.FALSE.
-            ELSE
-              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
-            ENDIF
+        IF (GFLAG20 .OR. GFLAG21) THEN
+          WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
+          IF (FRSTIME30) THEN
+            CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
+            FRSTIME30=.FALSE.
+          ELSE
+            CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
           ENDIF
         ENDIF
       ELSE
@@ -837,17 +1040,10 @@
             ilocal=ilocal+1
             IPARAM=229
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTTG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -862,17 +1058,10 @@
             ilocal=ilocal+1
             IPARAM=230
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRTG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -900,18 +1089,10 @@
             ENDDO
             IPARAM=232
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFTG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFTG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -927,18 +1108,10 @@
             IZLEV=NINT(XNLEV(1))
             IPARAM=249
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UDIRG,
-     &                      ITABLE, IPARAM, IZLEV, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,UDIRG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UDIRG,
+     &                    ITABLE, IPARAM, IZLEV, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -966,18 +1139,10 @@
                 ENDIF
               ENDDO
             ENDDO
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WPKFTG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WPKFTG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WPKFTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -993,18 +1158,10 @@
             IPARAM=233
             ITABLE=140
             IZLEV=NINT(XNLEV(1))
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CDG,
-     &                      ITABLE, IPARAM, IZLEV, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,CDG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &         LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CDG,
+     &                    ITABLE, IPARAM, IZLEV, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1019,17 +1176,10 @@
             ilocal=ilocal+1
             IPARAM=244
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, SMEANG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,SMEANG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, SMEANG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1045,17 +1195,10 @@
             IPARAM=245
             ITABLE=140
             IZLEV=NINT(XNLEV(1))
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, U10G,
-     &                      ITABLE, IPARAM, IZLEV, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,U10G,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,IZLEV,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, U10G,
+     &                    ITABLE, IPARAM, IZLEV, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1070,17 +1213,10 @@
             ilocal=ilocal+1
             IPARAM=246
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTAG,
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
      &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTAG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
           ENDIF
         ENDIF
 
@@ -1095,17 +1231,10 @@
             ilocal=ilocal+1
             IPARAM=247
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CWHTAG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,CWHTAG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CWHTAG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1120,17 +1249,10 @@
             ilocal=ilocal+1
             IPARAM=248
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RANGAG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,RANGAG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RANGAG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1145,17 +1267,10 @@
             ilocal=ilocal+1
             IPARAM=220
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1G,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1G,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1170,17 +1285,10 @@
             ilocal=ilocal+1
             IPARAM=221
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2G,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2G,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1195,17 +1303,10 @@
             ilocal=ilocal+1
             IPARAM=222
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1220,17 +1321,10 @@
             ilocal=ilocal+1
             IPARAM=252
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C4G,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,C4G,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C4G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1245,17 +1339,10 @@
             ilocal=ilocal+1
             IPARAM=253
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, BFG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,BFG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, BFG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1270,17 +1357,10 @@
             ilocal=ilocal+1
             IPARAM=254
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, QPG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,QPG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, QPG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1295,17 +1375,10 @@
             ilocal=ilocal+1
             IPARAM=219
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, DEPTHG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,DEPTHG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, DEPTHG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1320,17 +1393,10 @@
             ilocal=ilocal+1
             IPARAM=218
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, HMAXG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,HMAXG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, HMAXG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1345,17 +1411,10 @@
             ilocal=ilocal+1
             IPARAM=217
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TMAXG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,TMAXG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TMAXG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1370,17 +1429,10 @@
             ilocal=ilocal+1
             IPARAM=215
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, USTOKESG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,USTOKESG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, USTOKESG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1395,17 +1447,10 @@
             ilocal=ilocal+1
             IPARAM=216
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,VSTOKESG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1420,17 +1465,10 @@
             ilocal=ilocal+1
             IPARAM=131
             ITABLE=151
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UCURG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,UCURG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UCURG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1445,17 +1483,10 @@
             ilocal=ilocal+1
             IPARAM=132
             ITABLE=151
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VCURG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,VCURG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &         YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VCURG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1470,17 +1501,10 @@
             ilocal=ilocal+1
             IPARAM=212
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,PHIEPSG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1495,22 +1519,15 @@
             ilocal=ilocal+1
             IPARAM=211
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIAWG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,PHIAWG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIAWG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
-!*      NORMALIZED ENERGY FLUX TO WAVES.
-!       -------------------------------
+!*      NORMALIZED MOMENTUM FLUX TO OCEAN.
+!       ----------------------------------
 
         IF (GFLAG(46)) THEN
           iglobal=iglobal+1
@@ -1520,17 +1537,205 @@
             ilocal=ilocal+1
             IPARAM=214
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TAUOCG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,TAUOCG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TAUOCG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      MEAN SQUARE WAVE STRAIN INTO THE SEA ICE 
+!       ----------------------------------------
+
+        ITG=56
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=210
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, STRNMSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      SURFACE AIR DENSITY 
+!       -------------------
+
+        ITG=57
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=209
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RHOAG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      CONVECTVE VELOCITY SCALING 
+!       --------------------------
+
+        ITG=58
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=208
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSTARG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+
+!*      SEA ICE COVER
+!       -------------
+
+        ITG=59
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=31
+            ITABLE=128
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CICG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      SEA ICE THICKNESS 
+!       -----------------
+
+        ITG=60
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=92
+            ITABLE=3
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CIHG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+
+
+
+
+!*      EXTRA FIELD 1
+!       -------------
+
+        ITG=JPPFLAG-4
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=080
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX1G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      EXTRA FIELD 2
+!       -------------
+
+        ITG=JPPFLAG-3
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=081
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX2G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      EXTRA FIELD 3
+!       -------------
+
+        ITG=JPPFLAG-2
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=082
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX3G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      EXTRA FIELD 4
+!       -------------
+
+        ITG=JPPFLAG-1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=083
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX4G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      EXTRA FIELD 5
+!       -------------
+
+        ITG=JPPFLAG
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=084
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX5G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1555,17 +1760,10 @@
             ilocal=ilocal+1
             IPARAM=234
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTWG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTWG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTWG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1581,17 +1779,10 @@
             ilocal=ilocal+1
             IPARAM=235
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRWG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRWG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRWG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1619,18 +1810,10 @@
                 ENDIF
               ENDDO
             ENDDO
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFWG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFWG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFWG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1645,17 +1828,10 @@
             ilocal=ilocal+1
             IPARAM=237
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTSG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WHGTSG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1671,17 +1847,10 @@
             ilocal=ilocal+1
             IPARAM=238
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRSG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WDIRSG,NGX,NGY,IPARAM,
-     &         IY,IM,ID,IH,IMN,
-     &         IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,YEXPVER,HOPERI,
-     &         CFDBSF,NENSFNB,NTOTENS,KFDB,LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1709,18 +1878,10 @@
                 ENDIF
               ENDDO
             ENDDO
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFSG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WMNFSG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1735,18 +1896,10 @@
             ilocal=ilocal+1
             IPARAM=223
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1WG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1WG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1WG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1761,18 +1914,10 @@
             ilocal=ilocal+1
             IPARAM=224
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2WG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2WG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2WG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1787,18 +1932,10 @@
             ilocal=ilocal+1
             IPARAM=225
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDWG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1815,18 +1952,10 @@
             ilocal=ilocal+1
             IPARAM=226
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1SG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP1SG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-             ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1SG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1841,18 +1970,10 @@
             ilocal=ilocal+1
             IPARAM=227
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2SG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,MWP2SG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2SG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1867,20 +1988,187 @@
             ilocal=ilocal+1
             IPARAM=228
             ITABLE=140
-            IF(LGRIBAPI_O) THEN
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
-     &                      ITABLE, IPARAM, 0, 0 , 0,
-     &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-            ELSE
-              CALL GRIBPAC(IU06,IU30,NTENCODE,WSPRDSG,NGX,NGY,IPARAM,
-     &                     IY,IM,ID,IH,IMN,
-     &                     IFCST,0,LFDB,ITEST,MARSTYPE,YCLASS,
-     &                     YEXPVER,HOPERI,CFDBSF,NENSFNB,NTOTENS,KFDB,
-     &                     LFDBOPEN)
-            ENDIF
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
+
+
+! ----------------------------------------------------------------------
+
+!*    6.  PACK 3 WAVE TRAINS PARAMETERS INTO GRIB FM94.
+!         ---------------------------------------------
+
+
+      IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
+
+!*      TRAIN 1 WAVE HEIGHTS.
+!       ---------------------
+
+        IF (GFLAG(47)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(47)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=121
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT1G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 1 WAVE DIRECTION.
+!       ------------------------
+
+        IF (GFLAG(48)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(48)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=122
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT1G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 1 WAVE PERIOD 1.
+!       -----------------------
+
+        IF (GFLAG(49)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(49)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=123
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T1G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 2 WAVE HEIGHTS.
+!       ---------------------
+
+        IF (GFLAG(50)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(50)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=124
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT2G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 2 WAVE DIRECTION.
+!       ------------------------
+
+        IF (GFLAG(51)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(51)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=125
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT2G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 2 WAVE PERIOD 1.
+!       -----------------------
+
+        IF (GFLAG(52)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(52)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=126
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T2G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 3 WAVE HEIGHTS.
+!       ---------------------
+
+        IF (GFLAG(53)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(53)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=127
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT3G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 3 WAVE DIRECTION.
+!       ------------------------
+
+        IF (GFLAG(54)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(54)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=128
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT3G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      TRAIN 3 WAVE PERIOD 1.
+!       -----------------------
+
+        IF (GFLAG(55)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(55)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=129
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T3G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+      ENDIF
+
+! ----------------------------------------------------------------------
 
       IF(LFDB.and.ILOCAL.gt.0) THEN
          IERR = ISETFIELDCOUNTFDBSUBS(KFDB,IGLOBAL,ILOCAL)
@@ -1895,10 +2183,8 @@
       ENDIF
 
       IF(.NOT.LFDB) THEN
-        IF(LGRIBAPI_O) THEN
-          IF (GFLAG20 .OR. GFLAG21) THEN
-            CALL IGRIB_CLOSE_FILE(IUOUT)
-          ENDIF
+        IF (GFLAG20 .OR. GFLAG21) THEN
+          CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
       ENDIF
 

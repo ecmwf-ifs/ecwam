@@ -112,6 +112,7 @@
       INTEGER, ALLOCATABLE :: IGRIDCOORDINATE(:)
       INTEGER, DIMENSION(:), ALLOCATABLE :: PL
 
+      REAL :: RAD, DEG
       REAL :: XDELLA
       REAL :: DELLA, DELLO
       REAL :: AMOWEP, AMOSOP, AMOEAP, AMONOP
@@ -139,6 +140,16 @@
       LOGICAL :: LLSCANNS
       LOGICAL :: LLDIRFLD
 
+      REAL, PARAMETER :: ZZ180 = 180.
+      REAL, PARAMETER :: ZZPI = 4. * ATAN(1.)
+      REAL, PARAMETER :: ZZPI_180 = ZZPI / ZZ180
+      REAL, PARAMETER :: ZZ180_PI = ZZ180 / ZZPI
+      REAL :: SIND, COSD, ATAN2D
+      REAL :: ZZDEG, ZZARG1, ZZARG2
+      SIND(ZZDEG) = SIN(ZZPI_180 * ZZDEG)
+      COSD(ZZDEG) = COS(ZZPI_180 * ZZDEG)
+      ATAN2D(ZZARG1, ZZARG2) = ZZ180_PI * ATAN2(ZZARG1, ZZARG2)
+
       DATA KPARFRSTT,KPARFRSTB /0,0/
 
 ! ----------------------------------------------------------------------
@@ -147,6 +158,8 @@
 
       CSTREAM='****'
       ISTAG=0
+      RAD=4.*ATAN(1.)/180.
+      DEG=1./RAD
 
 !*    UNPACK MARS FIELDS.                                           
 !     -------------------                                           
@@ -176,6 +189,7 @@
 !     ??? The option argument KRET does not seem to work
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'editionNumber',IEN)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'section1Length',ILEN1)
+
       IF((IEN.EQ.1 .AND. ILEN1.GT.28) .OR. IEN.NE.1) THEN
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'localDefinitionNumber',ILOC,
      &                       KRET=IRET)
@@ -768,8 +782,8 @@
               DO II=1,RLONRGG(JSN)
                 L = L+1
                 IF(VALUES(L).NE.PMISS) THEN
-                  WORK(II,KK,1) = SIND(VALUES(L))
-                  WORK(II,KK,2) = COSD(VALUES(L))
+                  WORK(II,KK,1) = SIN(RAD*VALUES(L))
+                  WORK(II,KK,2) = COS(RAD*VALUES(L))
                 ELSE
                   WORK(II,KK,1) = PMISS 
                   WORK(II,KK,2) = PMISS
@@ -793,8 +807,8 @@
               DO II=1,RLONRGG(JSN)
                 L = L+1
                 IF(VALUES(L).NE.PMISS) THEN
-                  WORK(II,KK,1) = SIND(VALUES(L))
-                  WORK(II,KK,2) = COSD(VALUES(L))
+                  WORK(II,KK,1) = SIN(RAD*VALUES(L))
+                  WORK(II,KK,2) = COS(RAD*VALUES(L))
                 ELSE
                   WORK(II,KK,1) = PMISS 
                   WORK(II,KK,2) = PMISS
@@ -908,7 +922,8 @@
                 ENDIF
                 IF(LLDIRFLD) THEN
                   IF(WORK(ICL,KCL,2).NE.PMISS) THEN
-                    FIELD(I,K)=ATAN2D(WORK(ICL,KCL,1),WORK(ICL,KCL,2))
+                    FIELD(I,K)=
+     &                DEG*ATAN2(WORK(ICL,KCL,1),WORK(ICL,KCL,2))
                   ELSE
                     FIELD(I,K)=PMISS
                   ENDIF
@@ -952,7 +967,7 @@
      &                        DIIP1*WORK(IIP1,KK1,ID))
                 ENDDO
                 IF(LLDIRFLD) THEN
-                  FIELD(I,K)=ATAN2D(WK(1),WK(2))
+                  FIELD(I,K)=DEG*ATAN2(WK(1),WK(2))
                 ELSE
                   FIELD(I,K)=WK(1)
                 ENDIF
@@ -967,7 +982,7 @@
      &                      DIIP1*WORK(IIP1,KK1,ID))
               ENDDO
               IF(LLDIRFLD) THEN
-                FIELD(I,K)=ATAN2D(WK(1),WK(2))
+                FIELD(I,K)=DEG*ATAN2(WK(1),WK(2))
               ELSE
                 FIELD(I,K)=WK(1)
               ENDIF

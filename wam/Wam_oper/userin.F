@@ -21,6 +21,7 @@
 !                                               PARAMETER 249 ARE USED TO
 !                                               GENERATE THE WIND FORCING
 !                                               (ONLY FOR UNCOUPLED RUNS).
+!     D. PETTENUZZO               MAY 2012      ADDED 9 NEW PARAMETERS
 
 !*    PURPOSE.
 !     --------
@@ -66,27 +67,29 @@
      &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,
      &            LODBRALT
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX ,
+     &            LWNEMOCOU, LWNEMOCOUDEBUG
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
      &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
-     $            LWFLUXOUT,
-     &            LSECONDORDER,
-     &            LGRIBAPI_I, LGRIBAPI_O
+     &            IPFGTBL  ,
+     &            LWFLUXOUT,
+     &            LSECONDORDER
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWGRIBHD, ONLY : IFS_KSEC1, LGRHDIFS ,LNEWLVTP,
-     &            IMDLGRBID_G,IMDLGRBID_M 
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CITHRSH  ,CIBLOCK  ,
-     &            CITHRSH_SAT, CITHRSH_TAIL
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
+      USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,
+     &            CITHRSH  ,CIBLOCK  ,LICETH   ,
+     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
       USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,LFDBIOIN ,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
-     &            LWDINTS  ,LL1D     ,CLDOMAIN
+     &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
@@ -116,12 +119,15 @@
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE FDBSUBS_MOD
+      USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
 
+      INTEGER :: ITG
       LOGICAL LERROR, LMESSPIFS, LFDBOPIFS, LLEOF, LASTREAM
       LOGICAL LLNALTGO
       LOGICAL :: LWCUR
+      LOGICAL :: SET_WFLAGS
       CHARACTER*1 :: CLMTSU(4), CLOTSU(8)
       CHARACTER*2 :: MARSFCTYPE
       CHARACTER*2 :: C2
@@ -145,7 +151,6 @@
      &   PFLAG,  FFLAG,  GFLAG, NFLAG,
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
      &   LSECONDORDER,
-     &   LGRIBAPI_I, LGRIBAPI_O,
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
      &   ISNONLIN,
      &   IDAMPING,
@@ -161,7 +166,8 @@
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LODBRALT,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
-     &   IBUFRSAT, SWAMPWIND, SWAMPWIND2, DTNEWWIND, LTURN90,
+     &   IBUFRSAT, SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,
+     &   DTNEWWIND, LTURN90,
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB, IREFDATE,
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
@@ -169,7 +175,9 @@
      &   LLSOURCE,
      &   LNSESTART,
      &   LLWSWAVE, LLWDWAVE,
-     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP, LICERUN
+     &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,
+     &   LICERUN, LCIWABR, LICETH,
+     &   LWNEMOCOU, LWNEMOCOUDEBUG
 
       CHARACTER* 14 CLOUT
       NAMELIST /NAOT/ CLOUT
@@ -275,6 +283,23 @@
 !     44 : NORMALIZED ENERGY FLUX INTO OCEAN 
 !     45 : NORMALIZED ENERGY FLUX INTO WAVES 
 !     46 : NORMALIZED STRESS INTO OCEAN 
+!     47 : TRAIN 1 WAVE HEIGHT (M)
+!     48 : TRAIN 1 MEAN WAVE DIRECTION (DEG.)
+!     49 : TRAIN 1 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
+!     50 : TRAIN 2 WAVE HEIGHT (M)
+!     51 : TRAIN 2 MEAN WAVE DIRECTION (DEG.)
+!     52 : TRAIN 2 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
+!     53 : TRAIN 3 WAVE HEIGHT (M)
+!     54 : TRAIN 3 MEAN WAVE DIRECTION (DEG.)
+!     55 : TRAIN 3 WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
+!     56 : MEAN SQUARE WAVE STRAIN IN THE SEA ICE.  
+!     57 : SURFACE AIR DENSITY (kg m**-3) 
+!     58 : CONVECTIVE VELOCITY SCALE (m/s) 
+!     JPPFLAG-4 : 1st EXTRA EXPERIMENTAL FIELD
+!     JPPFLAG-3 : 2nd EXTRA EXPERIMENTAL FIELD
+!     JPPFLAG-2 : 3rd EXTRA EXPERIMENTAL FIELD
+!     JPPFLAG-1 : 4th EXTRA EXPERIMENTAL FIELD
+!     JPPFLAG   : 5th EXTRA EXPERIMENTAL FIELD
 
 !     LFDB: TRUE IF INTEGRATED PARAMETERS ARE WRITTEN OUT TO FDB.
 !     LPBIOIN: IF TRUE THE PBIO SOFTWARE IS USED FOR BINARY INPUT
@@ -288,8 +313,6 @@
 !     LFDBIOOUT : IF TRUE THE GRIB SPECTRA OUTPUT IS SENT TO THE FDB.
 !     LSECONDORDER : IF TRUE THEN SECOND ORDER CORRECTIOn IS APPLIED TO
 !                    OUTPUT INTEGRATED PARAMETERS.
-!     LGRIBAPI_I : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR INPUT FIELDS
-!     LGRIBAPI_O : IF TRUE THEN GRIB_API SOFTWARE IS USED FOR OUTPUT FIELDS
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
 !     ISHALLO: 1 FOR DEEP WATER MODE ELSE SHALLOW WATER MODEL.
 !     IREFRA: 0 MODEL RUNS WITHOUT REFRACTION.
@@ -329,6 +352,8 @@
 !              or MONTHLY FORECAST RUNS
 !     LMESSPASS: TRUE FOR MESSAGE PASSING ARCHITECHTURE.
 !     LWCOU: FALSE FOR UNCOUPLED RUN.
+!     LWNEMOCOU: FALSE FOR NO COUPLING TO NEMO RUN.
+!     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !     NTASKS: NUMBER OF PROCESSORS FOR PARALELL RUN ON CRAY (OBSOLETE).
 !     NSIZE: WORK LOAD PER PROCESSOR FOR PARALELL RUN ON CRAY (OBSOLETE)
 !     CFDBSF: FDB ROOT DIRECTORY FOR SCALAR GRIB FIELDS.
@@ -351,6 +376,8 @@
 !     SWAMPWIND2 : SECOND WIND SPEED VALUE TO BE USED (if different than 0)
 !                  IN SWAMP CASE. IT WILL BE APPLIED DTNEWWIND HOURS
 !                  AFTER STATING TIME.
+!     SWAMPCIFR : CONSTANT SEA ICE FRACTION FOR THE 1/2 NORTHERN PART OF SWAMP DOMAIN
+!     SWAMPCITH : CONSTANT SEA ICE THICKNESS FOR THE 1/2 NORTHERN PART OF SWAMP DOMAIN
 !     DTNEWWIND : TIME IN HOURS AFTER WHICH SWAMPWIND2 WILL BE APPLIED
 !     LTURN90 : IF TRUE THE NEW WIND IN SWAMP CASE WILL TURN BY 90 DEGREES.
 !     LALTLRGR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
@@ -409,6 +436,9 @@
 !     LICERUN : FLAG CONTROLLING WHETHER OR NOT SEA ICE FRACTION (OR SST)
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
+!     LCIWABR : FLAG CONTROLLING THE USE OF SEA ICE BOTTOM FRICTION ATTENUATION  
+!     LICETH  : FLAG CONTROLLING WHETHER OR NOT SEA ICE THICKNESS FILEDS
+!               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
@@ -437,7 +467,6 @@
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
 
-!     PRINT*,' JPPFLAG = ',JPPFLAG
       CLMTSU    = 'S'
       CLOTSU    = 'H'
       CLHEADER  = ZERO
@@ -566,6 +595,8 @@
       SWAMPWIND = 18.45
       SWAMPWIND2 = 0.
       DTNEWWIND = 0.
+      SWAMPCIFR = 0.
+      SWAMPCITH = 0.
       LTURN90 = .FALSE.
 
       ISTREAM   = 0
@@ -598,6 +629,10 @@
 
       LWCOU = .FALSE.
 
+      LWNEMOCOU = .FALSE.
+
+      LWNEMOCOUDEBUG = .FALSE.
+
       LWCOUNORMS = .FALSE.
 
       LGRHDIFS = .FALSE.
@@ -608,7 +643,11 @@
 
       LICERUN = .TRUE.
 
+      LCIWABR = .TRUE.
+
       LMASKICE = .FALSE.
+
+      LICETH = .FALSE.
 
       LLSOURCE = .TRUE.
 
@@ -617,10 +656,6 @@
       LRELWIND = .TRUE.
 
       NDELW_LST = 0
-
-      LGRIBAPI_I = .TRUE.
-
-      LGRIBAPI_O = .TRUE.
 
 ! ----------------------------------------------------------------------
 
@@ -657,7 +692,7 @@
       IF(.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
       IF(LGRHDIFS) THEN
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-        IFS_STREAM=IFS_KSEC1(40)
+        CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
         IF(.NOT.LNEWLVTP) THEN
           CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,
      &                      MARSFCTYPE, ISTREAM, LASTREAM)
@@ -696,6 +731,18 @@
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+
+      IF (LWNEMOCOU.AND..NOT.LWCOU) THEN
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+                                             +'
+        WRITE(IU06,*) '+ SUBROUTINE USERIN :                         +'
+        WRITE(IU06,*) '+ WAM<->NEMO COUPLING ACTIVE BUT WAM<->IFS    +'
+        WRITE(IU06,*) '+ COUPLING IS NOT ACTIVE                      +'
+        WRITE(IU06,*) '+ THIS IS NOT SUPPOSED TO WORK                +'
+        WRITE(IU06,*) '+                                             +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
         CALL ABORT1
       ENDIF
 
@@ -945,62 +992,28 @@
       IF (GFLAG(24).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
         GFLAG(24) = .FALSE.
       ENDIF
-      FFLAG20 = FFLAG( 1).OR.FFLAG( 2).OR.FFLAG( 3).OR.FFLAG( 4).OR.
-     &          FFLAG( 5).OR.FFLAG( 6).OR.FFLAG( 7).OR.FFLAG( 8).OR.
-     &          FFLAG( 9).OR.FFLAG(10).OR.FFLAG(22).OR.FFLAG(23).OR.
-     &          FFLAG(24).OR.FFLAG(25).OR.FFLAG(26).OR.FFLAG(27).OR.
-     &          FFLAG(34).OR.FFLAG(35).OR.FFLAG(36).OR.FFLAG(37).OR.
-     &          FFLAG(38).OR.FFLAG(39).OR.FFLAG(40).OR.FFLAG(41).OR.
-     &          FFLAG(42).OR.FFLAG(43).OR.FFLAG(44).OR.FFLAG(45).OR.
-     &          FFLAG(46)
-      PFLAG20 = PFLAG( 1).OR.PFLAG( 2).OR.PFLAG( 3).OR.PFLAG( 4).OR.
-     &          PFLAG( 5).OR.PFLAG( 6).OR.PFLAG( 7).OR.PFLAG( 8).OR.
-     &          PFLAG( 9).OR.PFLAG(10).OR.PFLAG(22).OR.PFLAG(23).OR.
-     &          PFLAG(24).OR.PFLAG(25).OR.PFLAG(26).OR.PFLAG(27).OR.
-     &          PFLAG(34).OR.PFLAG(35).OR.PFLAG(36).OR.PFLAG(37).OR.
-     &          PFLAG(38).OR.PFLAG(39).OR.PFLAG(40).OR.PFLAG(41).OR.
-     &          PFLAG(42).OR.PFLAG(43).OR.PFLAG(44).OR.PFLAG(45).OR.
-     &          PFLAG(46)
-      GFLAG20 = GFLAG( 1).OR.GFLAG( 2).OR.GFLAG( 3).OR.GFLAG( 4).OR.
-     &          GFLAG( 5).OR.GFLAG( 6).OR.GFLAG( 7).OR.GFLAG( 8).OR.
-     &          GFLAG( 9).OR.GFLAG(10).OR.GFLAG(22).OR.GFLAG(23).OR.
-     &          GFLAG(24).OR.GFLAG(25).OR.GFLAG(26).OR.GFLAG(27).OR.
-     &          GFLAG(34).OR.GFLAG(35).OR.GFLAG(36).OR.GFLAG(37).OR.
-     &          GFLAG(38).OR.GFLAG(39).OR.GFLAG(40).OR.GFLAG(41).OR.
-     &          GFLAG(42).OR.GFLAG(43).OR.GFLAG(44).OR.GFLAG(45).OR.
-     &          GFLAG(46) 
-      FFLAG21 = FFLAG(11).OR.FFLAG(12).OR.FFLAG(13).OR.FFLAG(14).OR.
-     &          FFLAG(15).OR.FFLAG(16).OR.FFLAG(28).OR.FFLAG(29).OR.
-     &          FFLAG(30).OR.FFLAG(31).OR.FFLAG(32).OR.FFLAG(33) 
-      PFLAG21 = PFLAG(11).OR.PFLAG(12).OR.PFLAG(13).OR.PFLAG(14).OR.
-     &          PFLAG(15).OR.PFLAG(16).OR.PFLAG(28).OR.PFLAG(29).OR.
-     &          PFLAG(30).OR.PFLAG(31).OR.PFLAG(32).OR.PFLAG(33) 
-      GFLAG21 = GFLAG(11).OR.GFLAG(12).OR.GFLAG(13).OR.GFLAG(14).OR.
-     &          GFLAG(15).OR.GFLAG(16).OR.GFLAG(28).OR.GFLAG(29).OR.
-     &          GFLAG(30).OR.GFLAG(31).OR.GFLAG(32).OR.GFLAG(33)
+
+      FFLAG20 = SET_WFLAGS(FFLAG,JPPFLAG,20)
+      PFLAG20 = SET_WFLAGS(PFLAG,JPPFLAG,20)
+      GFLAG20 = SET_WFLAGS(GFLAG,JPPFLAG,20)
+      FFLAG21 = SET_WFLAGS(FFLAG,JPPFLAG,21)
+      PFLAG21 = SET_WFLAGS(PFLAG,JPPFLAG,21)
+      GFLAG21 = SET_WFLAGS(GFLAG,JPPFLAG,21)
+      
       FFLAG25 = FFLAG(17)
       PFLAG25 = PFLAG(17)
       GFLAG25 = GFLAG(17)
       FFLAG26 = FFLAG(18)
       PFLAG26 = PFLAG(18)
       GFLAG26 = GFLAG(18)
-      NFLAGALL= NFLAG( 1).OR.NFLAG( 2).OR.NFLAG( 3).OR.NFLAG( 4).OR.
-     &          NFLAG( 5).OR.NFLAG( 6).OR.NFLAG( 7).OR.NFLAG( 8).OR.
-     &          NFLAG( 9).OR.NFLAG(10).OR.NFLAG(11).OR.NFLAG(12).OR.
-     &          NFLAG(13).OR.NFLAG(14).OR.NFLAG(15).OR.NFLAG(16).OR.
-     &          NFLAG(22).OR.NFLAG(23).OR.NFLAG(24).OR.NFLAG(25).OR.
-     &          NFLAG(26).OR.NFLAG(27).OR.NFLAG(28).OR.NFLAG(29).OR.
-     &          NFLAG(30).OR.NFLAG(31).OR.NFLAG(32).OR.NFLAG(33).OR.
-     &          NFLAG(34).OR.NFLAG(35).OR.NFLAG(36).OR.NFLAG(37).OR.
-     &          NFLAG(38).OR.NFLAG(39).OR.NFLAG(40).OR.NFLAG(41).OR.
-     &          NFLAG(42).OR.NFLAG(43).OR.NFLAG(44).OR.NFLAG(45).OR.
-     &          NFLAG(46) 
+      NFLAGALL= 
+     &  SET_WFLAGS(NFLAG,JPPFLAG,20) .OR. SET_WFLAGS(NFLAG,JPPFLAG,21)
 
 !     ARE THE OCEAN FLUXES OUTPUT PARAMETERS:
 
-      LWFLUXOUT = FFLAG(44).OR.FFLAG(45).OR.FFLAG(46)
-      LWFLUXOUT = LWFLUXOUT .OR. PFLAG(44).OR.PFLAG(45).OR.PFLAG(46)
-      LWFLUXOUT = LWFLUXOUT .OR. GFLAG(44).OR.GFLAG(45).OR.GFLAG(46)
+      LWFLUXOUT = SET_WFLAGS(GFLAG,JPPFLAG,44) .OR.
+     &            SET_WFLAGS(FFLAG,JPPFLAG,44) .OR.
+     &            SET_WFLAGS(PFLAG,JPPFLAG,44)
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -1168,6 +1181,7 @@
         WRITE(IU06,*) '+                                             +'
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
       ENDIF
+      
 
 !*    1.4  PRINT INITIAL CONDITIONS.
 !          -------------------------
@@ -1179,6 +1193,7 @@
       WRITE(IU06,*) CLHEADER
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' COUPLING WITH ATMOS. MODEL (LWCOU) : ',LWCOU
+      WRITE(IU06,*) ' COUPLING WITH NEMO MOD.(LWNEMOCOU) : ',LWNEMOCOU
       IF(.NOT.LMESSPASS) THEN
         WRITE(IU06,*) ' USING ',NTASKS,' PROCESSORS'
         WRITE(IU06,*) ' WITH A WORKLOAD OF ',NSIZE,' PER PROCESSOR'
@@ -1353,17 +1368,18 @@
         CITHRSH_SAT=CITHRSH
         CIBLOCK=CITHRSH
         CITHRSH_TAIL=CITHRSH
+        CDICWA=0.0
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
         CITHRSH=0.5
 !     EXCEPT FOR DATA ASSIMILATION
         CITHRSH_SAT=0.3
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
-        CIBLOCK=0.7
-!!! testing
-        CIBLOCK=0.5
+        CIBLOCK=0.70
 !     HIGH FREQUENCY SPECTRAL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
         CITHRSH_TAIL=0.3
+!     ICE WATER DRAG COEFFICIENT
+        CDICWA=0.01
       ENDIF
 
       IF (LICERUN) THEN
@@ -1382,7 +1398,14 @@
      &                    CITHRSH_SAT
           WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',
      &                    CITHRSH_TAIL
+          IF(LCIWABR) THEN
+          WRITE(IU06,*) ' WITH AN ICE-WATER DRAG COEFFICENT OF ',CDICWA
+          ENDIF
         ENDIF
+      ENDIF
+
+      IF (LICETH) THEN
+        WRITE(IU06,*) ' SEA ICE THICKNESS IS PART OF THE INPUT.'
       ENDIF
 
       IF(.NOT.LWCOU) THEN
@@ -1451,7 +1474,7 @@
              WRITE(IU06,*) ' THE ALTIMETER DATA FROM SATELLITE ',
      &                       IBUFRSAT(ISAT) 
             IF(LALTPAS(ISAT)) THEN
-              WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! ' 
+              WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! '
               WRITE(IU06,*) '  '
             ENDIF
             IF(LALTLRGR(ISAT)) THEN
@@ -1521,92 +1544,136 @@
         WRITE(IU06,*) '  '
       ENDIF
 
+!     SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
+!     IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
+!     POINT TO THE PARAMETRE WHICH ARE OUTPUT.
+      CALL MPCRTBL
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
+        CALL FLUSH (IU06)
+      ENDIF
+
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                           PRINTER   FILE    GRIB'
+      WRITE(IU06,*) '                           LOGFILE   FILE    GRIB',
+     &'     OUT PE'
       WRITE(IU06,*) '1  SIGNIFICANT WAVE HEIGHT ...', PFLAG( 1),
-     & '......', FFLAG( 1),'.....',GFLAG( 1)
+     & '......', FFLAG( 1),'.....',GFLAG( 1),'.....',IPFGTBL( 1)
       WRITE(IU06,*) '2  MEAN WAVE DIRECTION .......', PFLAG( 2),
-     & '......', FFLAG( 2),'.....',GFLAG( 2)
+     & '......', FFLAG( 2),'.....',GFLAG( 2),'.....',IPFGTBL( 2)
       WRITE(IU06,*) '3  WAVE MEAN PERIOD (-1) .....', PFLAG( 3),
-     & '......', FFLAG( 3),'.....',GFLAG( 3)
+     & '......', FFLAG( 3),'.....',GFLAG( 3),'.....',IPFGTBL( 3)
       WRITE(IU06,*) '4  FRICTION VELOCITY .........', PFLAG( 4),
-     & '......', FFLAG( 4),'.....',GFLAG( 4)
+     & '......', FFLAG( 4),'.....',GFLAG( 4),'.....',IPFGTBL( 4)
       WRITE(IU06,*) '5  WAVE MODEL WIND DIRECTION..', PFLAG( 5),
-     & '......', FFLAG( 5),'.....',GFLAG( 5)
+     & '......', FFLAG( 5),'.....',GFLAG( 5),'.....',IPFGTBL( 5)
       WRITE(IU06,*) '6  WAVE PEAK FREQUENCY .......', PFLAG( 6),
-     & '......', FFLAG( 6),'.....',GFLAG( 6)
+     & '......', FFLAG( 6),'.....',GFLAG( 6),'.....',IPFGTBL( 6)
       WRITE(IU06,*) '7  DRAG COEFFICIENT ..........', PFLAG( 7),
-     & '......', FFLAG( 7),'.....',GFLAG( 7)
+     & '......', FFLAG( 7),'.....',GFLAG( 7),'.....',IPFGTBL( 7)
       WRITE(IU06,*) '8  NORMALISED WAVE STRESS ....', PFLAG( 8),
-     & '......', FFLAG( 8),'.....',GFLAG( 8)
+     & '......', FFLAG( 8),'.....',GFLAG( 8),'.....',IPFGTBL( 8)
       WRITE(IU06,*) '9  MEAN SQUARE SLOPE..........', PFLAG( 9),
-     & '......', FFLAG( 9),'.....',GFLAG( 9)
+     & '......', FFLAG( 9),'.....',GFLAG( 9),'.....',IPFGTBL( 9)
       WRITE(IU06,*) '10 WAVE MODEL WIND SPEED......', PFLAG(10),
-     & '......', FFLAG(10),'.....',GFLAG(10)
+     & '......', FFLAG(10),'.....',GFLAG(10),'.....',IPFGTBL(10)
       WRITE(IU06,*) '11 WIND SEA WAVE HEIGHT.......', PFLAG(11),
-     & '......', FFLAG(11),'.....',GFLAG(11)
+     & '......', FFLAG(11),'.....',GFLAG(11),'.....',IPFGTBL(11)
       WRITE(IU06,*) '12 SWELL WAVE HEIGHT..........', PFLAG(12),
-     & '......', FFLAG(12),'.....',GFLAG(12)
+     & '......', FFLAG(12),'.....',GFLAG(12),'.....',IPFGTBL(12)
       WRITE(IU06,*) '13 WIND SEA DIRECTION.........', PFLAG(13),
-     & '......', FFLAG(13),'.....',GFLAG(13)
+     & '......', FFLAG(13),'.....',GFLAG(13),'.....',IPFGTBL(13)
       WRITE(IU06,*) '14 SWELL WAVE DIRECTION.......', PFLAG(14),
-     & '......', FFLAG(14),'.....',GFLAG(14)
+     & '......', FFLAG(14),'.....',GFLAG(14),'.....',IPFGTBL(14)
       WRITE(IU06,*) '15 WIND SEA MEAN PERIOD (-1) .', PFLAG(15),
-     & '......', FFLAG(15),'.....',GFLAG(15)
+     & '......', FFLAG(15),'.....',GFLAG(15),'.....',IPFGTBL(15)
       WRITE(IU06,*) '16 SWELL MEAN PERIOD (-1) ....', PFLAG(16),
-     & '......', FFLAG(16),'.....',GFLAG(16)
+     & '......', FFLAG(16),'.....',GFLAG(16),'.....',IPFGTBL(16)
       WRITE(IU06,*) ' '
       WRITE(IU06,*) '22 ALTIMETER WAVE HEIGHT......', PFLAG(22),
-     & '......', FFLAG(22),'.....',GFLAG(22)
+     & '......', FFLAG(22),'.....',GFLAG(22),'.....',IPFGTBL(22)
       WRITE(IU06,*) '23 CORRECTED ALT WAVE HEIGHT..', PFLAG(23),
-     & '......', FFLAG(23),'.....',GFLAG(23)
+     & '......', FFLAG(23),'.....',GFLAG(23),'.....',IPFGTBL(23)
       WRITE(IU06,*) '24 ALTIMETER RANGE CORRECTION.', PFLAG(24),
-     & '......', FFLAG(24),'.....',GFLAG(24)
+     & '......', FFLAG(24),'.....',GFLAG(24),'.....',IPFGTBL(24)
       WRITE(IU06,*) ' '
       WRITE(IU06,*) '25 WAVE MEAN PERIOD (1)  .....', PFLAG(25),
-     & '......', FFLAG(25),'.....',GFLAG(25)
+     & '......', FFLAG(25),'.....',GFLAG(25),'.....',IPFGTBL(25)
       WRITE(IU06,*) '26 WAVE MEAN PERIOD (2)  .....', PFLAG(26),
-     & '......', FFLAG(26),'.....',GFLAG(26)
+     & '......', FFLAG(26),'.....',GFLAG(26),'.....',IPFGTBL(26)
       WRITE(IU06,*) '27 WAVE DIRECTIONAL SPREAD ...', PFLAG(27),
-     & '......', FFLAG(27),'.....',GFLAG(27)
+     & '......', FFLAG(27),'.....',GFLAG(27),'.....',IPFGTBL(27)
       WRITE(IU06,*) '28 WIND SEA MEAN PERIOD (1) ..', PFLAG(28),
-     & '......', FFLAG(28),'.....',GFLAG(28)
+     & '......', FFLAG(28),'.....',GFLAG(28),'.....',IPFGTBL(28)
       WRITE(IU06,*) '29 SWELL MEAN PERIOD (1) .....', PFLAG(29),
-     & '......', FFLAG(29),'.....',GFLAG(29)
+     & '......', FFLAG(29),'.....',GFLAG(29),'.....',IPFGTBL(29)
       WRITE(IU06,*) '30 WIND SEA MEAN PERIOD (2) ..', PFLAG(30),
-     & '......', FFLAG(30),'.....',GFLAG(30)
+     & '......', FFLAG(30),'.....',GFLAG(30),'.....',IPFGTBL(30)
       WRITE(IU06,*) '31 SWELL MEAN PERIOD (2) .....', PFLAG(31),
-     & '......', FFLAG(31),'.....',GFLAG(31)
+     & '......', FFLAG(31),'.....',GFLAG(31),'.....',IPFGTBL(31)
       WRITE(IU06,*) '32 WIND SEA DIRECTIONAL SPREAD', PFLAG(32),
-     & '......', FFLAG(32),'.....',GFLAG(32)
+     & '......', FFLAG(32),'.....',GFLAG(32),'.....',IPFGTBL(32)
       WRITE(IU06,*) '33 SWELL DIRECTIONAL SPREAD ..', PFLAG(33),
-     & '......', FFLAG(33),'.....',GFLAG(33)
+     & '......', FFLAG(33),'.....',GFLAG(33),'.....',IPFGTBL(33)
       WRITE(IU06,*) '34 WAVE SPECTRAL KURTOSIS.....', PFLAG(34),
-     & '......', FFLAG(34),'.....',GFLAG(34)
+     & '......', FFLAG(34),'.....',GFLAG(34),'.....',IPFGTBL(34)
       WRITE(IU06,*) '35 BENJAMIN-FEIR INDEX   .....', PFLAG(35),
-     & '......', FFLAG(35),'.....',GFLAG(35)
+     & '......', FFLAG(35),'.....',GFLAG(35),'.....',IPFGTBL(35)
       WRITE(IU06,*) '36 WAVE SPECTRAL PEAKEDNESS...', PFLAG(36),
-     & '......', FFLAG(36),'.....',GFLAG(36)
+     & '......', FFLAG(36),'.....',GFLAG(36),'.....',IPFGTBL(36)
       WRITE(IU06,*) '37 BATHYMETRY ................', PFLAG(37),
-     & '......', FFLAG(37),'.....',GFLAG(37)
+     & '......', FFLAG(37),'.....',GFLAG(37),'.....',IPFGTBL(37)
       WRITE(IU06,*) '38 MAXIMUM WAVE HEIGHT........', PFLAG(38),
-     & '......', FFLAG(38),'.....',GFLAG(38)
+     & '......', FFLAG(38),'.....',GFLAG(38),'.....',IPFGTBL(38)
       WRITE(IU06,*) '39 MAXIMUM WAVE PERIOD........', PFLAG(39),
-     & '......', FFLAG(39),'.....',GFLAG(39)
+     & '......', FFLAG(39),'.....',GFLAG(39),'.....',IPFGTBL(39)
       WRITE(IU06,*) '40 U-COMP STOKES DRIFT........', PFLAG(40),
-     & '......', FFLAG(40),'.....',GFLAG(40)
+     & '......', FFLAG(40),'.....',GFLAG(40),'.....',IPFGTBL(40)
       WRITE(IU06,*) '41 V-COMP STOKES DRIFT........', PFLAG(41),
-     & '......', FFLAG(41),'.....',GFLAG(41)
+     & '......', FFLAG(41),'.....',GFLAG(41),'.....',IPFGTBL(41)
       WRITE(IU06,*) '42 U-COMP SURFACE CURRENT.....', PFLAG(42),
-     & '......', FFLAG(42),'.....',GFLAG(42)
+     & '......', FFLAG(42),'.....',GFLAG(42),'.....',IPFGTBL(42)
       WRITE(IU06,*) '43 V-COMP SURFACE CURRENT.....', PFLAG(43),
-     & '......', FFLAG(43),'.....',GFLAG(43)
+     & '......', FFLAG(43),'.....',GFLAG(43),'.....',IPFGTBL(43)
       WRITE(IU06,*) '44 ENERGYFLUX TO OCEAN........', PFLAG(44),
-     & '......', FFLAG(44),'.....',GFLAG(44)
+     & '......', FFLAG(44),'.....',GFLAG(44),'.....',IPFGTBL(44)
       WRITE(IU06,*) '45 ENERGYFLUX TO WAVES........', PFLAG(45),
-     & '......', FFLAG(45),'.....',GFLAG(45)
+     & '......', FFLAG(45),'.....',GFLAG(45),'.....',IPFGTBL(45)
       WRITE(IU06,*) '46 STRESS TO OCEAN............', PFLAG(46),
-     & '......', FFLAG(46),'.....',GFLAG(46)
+     & '......', FFLAG(46),'.....',GFLAG(46),'.....',IPFGTBL(46)
+      WRITE(IU06,*) '47 TRAIN 1 WAVE HEIGHT........', PFLAG(47),
+     & '......', FFLAG(47),'.....',GFLAG(47),'.....',IPFGTBL(47)
+      WRITE(IU06,*) '48 TRAIN 1 DIRECTION..........', PFLAG(48),
+     & '......', FFLAG(48),'.....',GFLAG(48),'.....',IPFGTBL(48)
+      WRITE(IU06,*) '49 TRAIN 1 MEAN PERIOD (1)....', PFLAG(49),
+     & '......', FFLAG(49),'.....',GFLAG(49),'.....',IPFGTBL(49)
+      WRITE(IU06,*) '50 TRAIN 2 WAVE HEIGHT........', PFLAG(50),
+     & '......', FFLAG(50),'.....',GFLAG(50),'.....',IPFGTBL(50)
+      WRITE(IU06,*) '51 TRAIN 2 DIRECTION..........', PFLAG(51),
+     & '......', FFLAG(51),'.....',GFLAG(51),'.....',IPFGTBL(51)
+      WRITE(IU06,*) '52 TRAIN 2 MEAN PERIOD (1)....', PFLAG(52),
+     & '......', FFLAG(52),'.....',GFLAG(52),'.....',IPFGTBL(52)
+      WRITE(IU06,*) '53 TRAIN 3 WAVE HEIGHT........', PFLAG(53),
+     & '......', FFLAG(53),'.....',GFLAG(53),'.....',IPFGTBL(53)
+      WRITE(IU06,*) '54 TRAIN 3 DIRECTION..........', PFLAG(54),
+     & '......', FFLAG(54),'.....',GFLAG(54),'.....',IPFGTBL(54)
+      WRITE(IU06,*) '55 TRAIN 3 MEAN PERIOD (1)....', PFLAG(55),
+     & '......', FFLAG(55),'.....',GFLAG(55),'.....',IPFGTBL(55)
+      WRITE(IU06,*) '56 MEAN SQUARE STRAIN IN ICE..', PFLAG(56),
+     & '......', FFLAG(56),'.....',GFLAG(56),'.....',IPFGTBL(56)
+      WRITE(IU06,*) '57 SURFACE AIR DENSITY   .....', PFLAG(57),
+     & '......', FFLAG(57),'.....',GFLAG(57),'.....',IPFGTBL(57)
+      WRITE(IU06,*) '58 CONVECTIVE VELOCITY SCALE..', PFLAG(58),
+     & '......', FFLAG(58),'.....',GFLAG(58),'.....',IPFGTBL(58)
+      WRITE(IU06,*) '59 SEA ICE COVER .............', PFLAG(59),
+     & '......', FFLAG(59),'.....',GFLAG(59),'.....',IPFGTBL(59)
+      WRITE(IU06,*) '60 SEA ICE THICKNESS .........', PFLAG(60),
+     & '......', FFLAG(60),'.....',GFLAG(60),'.....',IPFGTBL(60)
+      DO IC=1,5
+        ITG=JPPFLAG-5+IC
+      WRITE(IU06,*) ITG,'EXTRA FIELD ...............', PFLAG(ITG),
+     & '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
+      ENDDO
+      WRITE(IU06,*) ' '
 
       IF(LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''
@@ -1622,13 +1689,13 @@
      & NOUTT,'IU26','IU36','IU28','IU38')
 
       IF(ITEST.GT.0) THEN
-      WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
+      WRITE(IU06,*) '                        LOGFILE   UNIT    GRIB'
       WRITE(IU06,*) '17 SPECTRA OF TOTAL SEA .....', PFLAG(17),
      & '......', FFLAG(17),'.....',GFLAG(17)
       WRITE(IU06,*) ' SEE INSTEAD OUTPUT OF RESTART SPECTRA IN GRIB !!!'
       WRITE(IU06,*) '  '
 
-      WRITE(IU06,*) '                        PRINTER   UNIT    GRIB'
+      WRITE(IU06,*) '                        LOGFILE   UNIT    GRIB'
       WRITE(IU06,*) '18 SWELL SPECTRA ............', PFLAG(18),
      & '......', FFLAG(18),'.....',GFLAG(18)
       WRITE(IU06,*) ' GRIBBING NOT YET IMPLEMENTED !!!'
@@ -1753,7 +1820,7 @@
       ENDIF
 !     CFDB2DSP is reset to null since the FDB will be initialised
 !     with CFDBSF, provided it is used (ie grib output of integrated
-!     parameters (see fld2fdb).
+!     parameters.
       IF(LFDB.AND.(GFLAG20.OR.GFLAG21)) CFDB2DSP  = "" 
       IF (LFDBIOIN.OR.LFDBIOOUT) THEN
         CLFORM='("  ITS ROOT DIRECTORY IS ", A256)'
@@ -1786,12 +1853,14 @@
         WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_G
       ELSE IF( CLDOMAIN == 'm' ) THEN
         WRITE(IU06,'("  MODEL NUMBER: ", I4)') IMDLGRBID_M
-      ENDIF
-
-      IF(LGRHDIFS) THEN
-        WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' !!  KSEC1 HEADERS ARE SET BY IFS !! ' 
-        WRITE(IU06,*) ' '
+      ELSE IF( CLDOMAIN == 's' ) THEN
+        WRITE(IU06,*) '  ONE GRIDPOINT OR SWAMP CASE !!!'
+        WRITE(IU06,*) '  SWAMPWIND = ',SWAMPWIND
+        WRITE(IU06,*) '  SWAMPWIND2= ',SWAMPWIND2
+        WRITE(IU06,*) '  DTNEWWIND = ',DTNEWWIND
+        WRITE(IU06,*) '  LTURN90   = ',LTURN90 
+        WRITE(IU06,*) '  SWAMPCIFR = ',SWAMPCIFR
+        WRITE(IU06,*) '  SWAMPCITH = ',SWAMPCITH
       ENDIF
 
       IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.

@@ -114,8 +114,7 @@
       IF(.NOT.LNEWLVTP) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',102)
       ELSE
-        ! if this change check fld2fdb, grb2wgrd  
-        ! wgribout and intwaminput.
+        ! if this change check wgribout and intwaminput.
         IF(CT.EQ."S") THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'levtype',212)
         ELSE
@@ -193,8 +192,6 @@
           ENDIF
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'referenceDate',KREFDATE)
 
-!         we need to set the following to be compatible with what was
-!         done with gribex !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateFrom',0)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'climateDateTo',0)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legBaseDate',0)
@@ -270,8 +267,6 @@
         IF(CT.EQ."S") THEN
 !         SPECTRA USE THEIR OWN GRIB TABLE !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
-!         we need to set the following to be compatible with what was
-!         done with gribex !!!
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',
      &                         IDUM,KRET=IRET)
           IF(IRET.NE.0) THEN

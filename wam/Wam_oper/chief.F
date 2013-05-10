@@ -84,7 +84,6 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX 
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWGRIBHD, ONLY : NKSEK1
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
      &                      PHIAW    ,TAUOC
@@ -111,7 +110,7 @@
 
 ! DIMENSION DUMMY COUPLED VARIABLES
 
-      INTEGER, PARAMETER:: NLONW=1
+      INTEGER, PARAMETER :: NLONW=1
       INTEGER, PARAMETER :: NLATW=1
       INTEGER, PARAMETER :: NWVFIELDS=8
       INTEGER, PARAMETER :: NC=1
@@ -121,7 +120,6 @@
 ! ----------------------------------------------------------------------
       INTEGER :: NLON, NLAT
       INTEGER :: IGRIB_HANDLE_DUM
-      INTEGER ISEC1(NKSEK1), ISEC2(22+NR)
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
 
@@ -353,14 +351,14 @@
 
       CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
      &             NFIELDS, NGPTOTG, NC, NR,
-     &             IGRIB_HANDLE_DUM, ISEC1, ISEC2, RMISS, FIELDS,
+     &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
      &             LLRESTARTED, ZDELATM, KQGAUSS,
      &             LDWCOUNORMS, MASK_IN, MASK_OUT,
      &             NFDBREF,
-     &             FRSTIME, NADV, PRPLRADI, PRPLRG)
+     &             FRSTIME, NADV, PRPLRADI, PRPLRG,IDUM)
 
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20

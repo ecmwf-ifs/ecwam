@@ -21,6 +21,12 @@
 !     DEPTH AND ELEVATIONS ARE IN METERS
 
 
+!!!!! BECAUSE ETOPO2 HAS A RESOLUTION At BEST OF 1/30 degrees, IT DOES NOT
+!!!!! MAKE ANY SENSE TO COMPUTE THE SMALL ISLANDS OBSTRUCTIONS IF THE RESOLUTION
+!!!!! IS OF THAT ORDER OR SMALLER !!!!
+!!!!! SO IF XDELLA < 2*1/30, THEN THE OBSTRUCTIONS WILL ALL BE SET TO NON BLOCKING !!!
+
+
 !     INPUT FILES:
 !     -----------
 !     etopo2_2006apr.dat
@@ -106,6 +112,7 @@
       RAD=PI/180.
       OLDRAD=OLDPI/180.
       G=9.806
+      X60=60.
 
       FRATIO=1.1
 
@@ -202,7 +209,10 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
-             NLONRGG(K) = MAX(NINT(NX*COSD(XLAT(K))),2)
+!            The silly division by cos(x60*RAD) is an attempt at making sure
+!            that exactly 0.5 is used for cosine of 60 degrees.
+             NLONRGG(K)=
+     &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2.*COS(X60*RAD)))),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
@@ -615,6 +625,19 @@
 
       DO M=1,NFRE
 
+!!!!    COMPUTE THE OBSTRUCTIONS ONLY WHEN IT IS MEANINGFUL
+        IF(XDELLA .LE. 2./30 ) THEN
+          IF(M.EQ.1) THEN
+            WRITE(*,*) ''
+            WRITE(*,*) '*********************************************'
+            WRITE(*,*) 'THE REQUESTED RESOLUTION IS SMALL ENOUGH WITH'
+            WRITE(*,*) 'RESPECT TO THE INPUT BATHYMETRY DATA !'
+            WRITE(*,*) 'NO OBSTRUCTIONS WILL BE COMPUTED !'
+            WRITE(*,*) '*********************************************'
+            WRITE(*,*) ''
+          ENDIF
+        ELSE 
+
 !       COMPUTE WAVE NUMBERS
         OMEGA=2*PI*FR(M)
         XKDEEP=OMEGA**2/G
@@ -652,6 +675,11 @@
 !       IS=2 is for the north-south advection
         WRITE(*,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -794,6 +822,7 @@
               ENDIF
             ENDDO
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 !       EAST-WEST OBSTRUCTIONS
@@ -802,6 +831,11 @@
 !       IS=2 is for the east-west advection
         WRITE(*,*) 'CREATE EAST-WEST  OBSTRUCTIONS '
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS)
           DO K=1,NY
             XLATT=XLAT(K)+0.5*XDELLA
             XLATB=XLAT(K)-0.5*XDELLA
@@ -933,6 +967,7 @@
               ENDIF
             ENDDO
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 
@@ -945,6 +980,11 @@
 
 !       first search north-south
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -1087,10 +1127,16 @@
             ENDDO
 
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 !       then search east-west and average 
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
@@ -1224,6 +1270,7 @@
               ENDIF
             ENDDO
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 
@@ -1236,6 +1283,11 @@
 
 !       first search north-south
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -1378,10 +1430,16 @@
             ENDDO
 
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 !       then search east-west and average 
         DO IS=1,2
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
@@ -1515,6 +1573,7 @@
               ENDIF
             ENDDO
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 
@@ -1529,6 +1588,11 @@
 
 !       first search north-south
         DO IS=1,4
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN 
               KT=K+1
@@ -1682,10 +1746,16 @@
             ENDDO
 
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
 
 !       then search east-west and average 
         DO IS=1,4
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
+!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
+!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
+!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             IF(IS.EQ.1 .OR. IS.EQ.4) THEN
               XLATT=XLAT(K)+XDELLA
@@ -1824,7 +1894,10 @@
               ENDIF
             ENDDO
           ENDDO
+!$OMP END PARALLEL DO
         ENDDO
+
+        ENDIF ! end if xdella too small, do not compute obstructions
 
 
 !       OUTPUT OBSTRUCTIONS
@@ -2077,3 +2150,13 @@
       ENDDO ! END LOOP ON FREQUENCIES
 
       END PROGRAM
+
+
+
+
+
+
+
+
+
+

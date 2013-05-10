@@ -159,6 +159,12 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1028
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1248) THEN
+!       WAVE LONG CUT-OFF FORECAST
+        CSTREAM = 'lwwv'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1247
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1092) THEN
 !       WAVE SEASONAL MONTHLY MEANS
         CSTREAM = 'swmm'
@@ -420,6 +426,12 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1029
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1247) THEN
+!       WAVE LONG CUT-OFF FORECAST
+        CSTREAM = 'lwda'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1248
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1091) THEN
 !       WAVE SEASONAL MONTHLY MEANS
         CSTREAM = 'sfmm'
@@ -572,11 +584,23 @@
         MARSFCTYPE = 'fc'
         KSTREAM = 1088
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1249) THEN
+!       ENSEMBLE DATA ASSIMILATION 
+        CSTREAM = 'elda'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1250
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1088) THEN
 !       ENSEMBLE WAVE DATA ASSIMILATION 
         CSTREAM = 'ewda'
         MARSFCTYPE = 'fc'
         KSTREAM = 1030
+        LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1250) THEN
+!       ENSEMBLE WAVE DATA ASSIMILATION 
+        CSTREAM = 'ewla'
+        MARSFCTYPE = 'fc'
+        KSTREAM = 1249
         LASTREAM=.FALSE.
       ELSE
         CSTREAM='****'

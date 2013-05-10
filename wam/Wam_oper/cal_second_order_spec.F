@@ -94,7 +94,8 @@
             DO K=1,NANG
                DO IJ=IJS,IJL
                   DELF = F3(IJ,K,M)
-                  F1(IJ,K,M)=MAX(0.000001,F1(IJ,K,M)+SIG*DELF)
+                  F1(IJ,K,M)=MAX(MIN(0.000001,F1(IJ,K,M)),
+     &                               F1(IJ,K,M)+SIG*DELF)
                ENDDO
             ENDDO
          ENDDO
@@ -166,7 +167,8 @@
 
                   DELF = C1*D2+C2*D1
 
-                  F1(IJ,K,M)=MAX(0.000001,F1(IJ,K,M)+EMAXL(IJ)*SIG*DELF)
+                  F1(IJ,K,M)=MAX(MIN(0.000001,F1(IJ,K,M)),
+     &                               F1(IJ,K,M)+EMAXL(IJ)*SIG*DELF)
 
                ENDDO
             ENDDO

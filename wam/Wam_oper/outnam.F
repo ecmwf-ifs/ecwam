@@ -1,9 +1,9 @@
 
       SUBROUTINE OUTNAM (
      &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,
+     &  KFRH, MFRSTLW, MLSTHG,
      &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
      &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper)
-
 
 ! ----------------------------------------------------------------------
 
@@ -13,6 +13,7 @@
       LOGICAL llper          !  the land sea mask is periodic (T)
       NAMELIST /PARWAM/
      &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
+     &  ifrh, ifrstlw, ilsthg,
      &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
      &  itaumax, iumax, iustar, ialpha, idepth, irefra, llper
 
@@ -51,6 +52,9 @@
       iover   = KNOVER
       ioutp   = KNGOUT
       ioutt   = KNOUTT
+      ifrh    = KFRH
+      ifrstlw = MFRSTLW
+      ilsthg  = MLSTHG
       imaxc   = KNMAXC
       imaxf   = KNMAXF
       ibinp   = KNBINP
@@ -75,7 +79,3 @@
 
       RETURN
       END SUBROUTINE OUTNAM
-
-
-
-

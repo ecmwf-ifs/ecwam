@@ -126,6 +126,7 @@
       INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       INTEGER,ALLOCATABLE,DIMENSION(:) :: STATID, SENSOR, PARAM
 
+      REAL :: HSMIN
       REAL,ALLOCATABLE,DIMENSION(:) :: LATMI, LONGMI, LATMA, LONGMA
       REAL,ALLOCATABLE,DIMENSION(:) :: VALUE_MIN, VALUE_MAX, DLON
 
@@ -157,6 +158,8 @@
       CALL INCDATE (CBEGINDT,-IDELALT/2)
       CENDDT = CBEGINDT
       CALL INCDATE (CENDDT,IDELALT)
+
+      HSMIN=0.05
 
       WRITE(IU06,*) ' GRDATA : SELECTING ALTIMETER MEASUREMENTS '
       WRITE(IU06,*) '          PERIOD FROM ', CBEGINDT,' TO ', CENDDT
@@ -652,7 +655,7 @@
               IF (NN.EQ.0) THEN
 !               IF THERE ARE NO MEASUREMENTS
                 WHME(I,J,ISAT)=-3.
-              ELSEIF (WHME(I,J,ISAT).LT.0.50) THEN
+              ELSEIF (WHME(I,J,ISAT).LT.HSMIN) THEN
                 WHME(I,J,ISAT) = -WHME(I,J,ISAT)
               ELSE
                 NWH = NWH+1
@@ -676,7 +679,7 @@
               XX = REAL(NR(I,J,ISAT))/REAL(NN)
               RFWM = MAX(0.5,0.25*WHME(I,J,ISAT))
               IF (WHSE(I,J,ISAT).GT.RFWM .OR.
-     &            WHME(I,J,ISAT).LT.0.50 .OR.
+     &            WHME(I,J,ISAT).LT.HSMIN .OR.
      &            XX.GT.0.1) THEN
                 WHME(I,J,ISAT) = -WHME(I,J,ISAT)
               ELSE

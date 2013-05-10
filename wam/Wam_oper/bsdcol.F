@@ -78,7 +78,7 @@
 
 ! ----------------------------------------------------------------------
 
-      CALL MPL_INIT()
+      CALL MPL_INIT(KOUTPUT=1)
 
       PI=4*ATAN(1.)
       RAD = PI/180.
@@ -699,14 +699,17 @@
 
  5000 CONTINUE
       WRITE (IU06,*) ' ----- NORMAL END OF PROG. BSDCOL -----'
+      CALL FLUSH(IU06)
+      CALL MPL_END()
       STOP 
  5001 CONTINUE
       WRITE(*,*) ' !!! PROBLEM ACCESSING FILE BUO !!!'
+      CALL MPL_END()
       STOP
  5005 CONTINUE
       WRITE(*,*) ' !!! ERROR WHILE DECODING GRIB DATA !!!'
       WRITE(*,*) MSG
       CALL ABORT
-
       CALL MPL_END()
+
       END

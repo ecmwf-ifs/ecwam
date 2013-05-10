@@ -54,6 +54,7 @@
       LOGICAL llper          !  the land sea mask is periodic (T)
       NAMELIST /PARWAM/
      &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
+     &  ifrh, ifrstlw, ilsthg,
      &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
      &  itaumax, iumax, iustar, ialpha, idepth, irefra, llper
 
@@ -122,11 +123,13 @@
 
       CALL BLSCOMP ( jpuso, iu_grd, iubls, clfile,
      &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
+     &  ifrh, ifrstlw, ilsthg,
      &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc,
      &  itaumax, iumax, iustar, ialpha, idepth, irefra)
       END
       SUBROUTINE blscomp( kuso, kugrd, kubls, cdfile,
      &  NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,
+     &  KFRH, MFRSTLW, MLSTHG,
      &  NMAXC, NMAXF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC,
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IREFRA)
 
@@ -196,13 +199,14 @@
      &     IJS(NBLO), IJL2(NBLO), IJLS(NBLO),
      &     IJL(NBLO), IJLT(NBLO),
      &     IXLG(NIBLO,NBLO), KXLT(NIBLO,NBLO),
-     &     IKP(NFRE+4), IKP1(NFRE+4),
-     &     IKM(NFRE+4), IKM1(NFRE+4),
+     &     IKP(MFRSTLW:MLSTHG), IKP1(MFRSTLW:MLSTHG),
+     &     IKM(MFRSTLW:MLSTHG), IKM1(MFRSTLW:MLSTHG),
      &     K1W(NANG,2), K2W(NANG,2), K11W(NANG,2),
-     &     K21W(NANG,2), AF11(NFRE+4), FKLAP(NFRE+4),
-     &     FKLAP1(NFRE+4), FKLAM(NFRE+4), FKLAM1(NFRE+4)
+     &     K21W(NANG,2), AF11(MFRSTLW:MLSTHG), FKLAP(MFRSTLW:MLSTHG),
+     &     FKLAP1(MFRSTLW:MLSTHG), FKLAM(MFRSTLW:MLSTHG),
+     &     FKLAM1(MFRSTLW:MLSTHG)
       REAL
-     &     FRH(30), IGAR(NGOUT), IJAR(NGOUT),
+     &     FRH(KFRH), IGAR(NGOUT), IJAR(NGOUT),
      &     DEPTH(NIBLO, NBLO),
      &     TCGOND(NDEPTH,NFRE), TFAK(NDEPTH,NFRE),
      &     TSIHKD(NDEPTH,NFRE), TAUT(0:ITAUMAX,0:JUMAX,jplev),
@@ -241,6 +245,7 @@
 
       CALL READPREB (kuso, kugrd, IREFRA,
      &     NANG, NFRE, NGY, NBLO, NIBLO, NGOUT, NIBLC, NBLC,
+     &     KFRH, MFRSTLW, MLSTHG,
      &     NDEPTH, ITAUMAX, JUMAX, IUSTAR, IALPHA, jplev,
      &     FR, DFIM, GOM, C, DELTH, DELTR, TH, COSTH, SINTH,
      &     DELPHI, DELLAM, NLONRGG, SINPH, COSPH, IGL, IJS, IJL2, IJLS,
@@ -299,7 +304,6 @@
             WRITE (kuso,*) '*****************************************'
             WRITE (kuso,*) '*                                       *'
             WRITE (kuso,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
-            WRITE (kuso,*) '*    IN READFL                          *'
             WRITE (kuso,*) '*    FILE 1 ',cdfile(1)
             WRITE (kuso,*) '*    FILE 2 ',cdfile(2)
             WRITE (kuso,*) '*                                       *'
@@ -312,7 +316,6 @@
             WRITE (kuso,*) '*****************************************'
             WRITE (kuso,*) '*                                       *'
             WRITE (kuso,*) '*    ERROR FOLLOWING CALL TO PBREAD     *'
-            WRITE (kuso,*) '*    IN READFL                          *'
             WRITE (kuso,*) '*    FILE 1 ',cdfile(1)
             WRITE (kuso,*) '*    FILE 2 ',cdfile(2)
             WRITE (kuso,*) '*    NUMBER OF BYTES READ : ',IRET2, IRET3
@@ -445,5 +448,3 @@
 !  12 FORMAT("1", i5,2i4,2e20.10)
    21 FORMAT("1", e20.15)
       END SUBROUTINE blscomp
-
-

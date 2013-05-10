@@ -1,4 +1,4 @@
-      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG, LWCUR)
+      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -22,12 +22,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, ADS, ZIDL, IJS, IJL, IG, LWCUR)*
+!       *CALL WAMWND (US, DS, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)*
 !          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
 !          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
 !                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *CITH* - SEA ICE THICKNESS. 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
@@ -67,7 +68,7 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL
+      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CITH
       REAL ZHOOK_HANDLE
 
       LOGICAL :: LWCUR
@@ -176,6 +177,7 @@
 
         ADS(IJ,IG) = FIELDG(IX,JY)%AIRD
         ZIDL(IJ,IG)= FIELDG(IX,JY)%ZIDL
+        CITH(IJ,IG)= FIELDG(IX,JY)%CITH
       ENDDO
 
 ! ----------------------------------------------------------------------

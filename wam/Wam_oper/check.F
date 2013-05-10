@@ -190,7 +190,7 @@
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' * BLOCK NUMBER OF OUTPUT POINT IS     *'
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * BOUNDARY POINT NUMBER IS  IO = ', IO
+            WRITE (IU06,*) ' * COARSE BOUNDARY POINT NUMBER IS IO= ',IO
             WRITE (IU06,*) ' * BLOCK NUMBER IS         IG = ', IG
             WRITE (IU06,*) ' * MAX. BLOCK NUMBER IS   IGL = ', IGL
             WRITE (IU06,*) ' *                                     *'
@@ -206,7 +206,7 @@
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' * GRID POINT NUMBER OF OUTPUT POINT IS*'
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * BOUNDARY POINT NUMBER IS IO = ', IO
+            WRITE (IU06,*) ' * COARSE BOUNDARY POINT NUMBER IS IO= ',IO
             WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
             WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS(IG)
             WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL(IG)
@@ -235,7 +235,7 @@
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' * BLOCK NUMBER OF OUTPUT POINT IS     *'
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * BOUNDARY POINT NUMBER IS  IO = ', IO
+            WRITE (IU06,*) ' * FINE BOUNDARY POINT NUMBER IS  IO =',IO
             WRITE (IU06,*) ' * BLOCK NUMBER IS         IG = ', IG
             WRITE (IU06,*) ' * MAX. BLOCK NUMBER IS   IGL = ', IGL
             WRITE (IU06,*) ' *                                     *'
@@ -251,7 +251,7 @@
             WRITE (IU06,*) ' *                                     *'
             WRITE (IU06,*) ' * GRID POINT NUMBER OF OUTPUT POINT IS*'
             WRITE (IU06,*) ' * OUT OF RANGE.                       *'
-            WRITE (IU06,*) ' * BOUNDARY POINT NUMBER IS IO = ', IO
+            WRITE (IU06,*) ' * FINE BOUNDARY POINT NUMBER IS IO= ', IO
             WRITE (IU06,*) ' * GRID POINT NUMBER IS   IJ = ', IJ
             WRITE (IU06,*) ' * MIN. NUMBER IS        IJS = ', IJS(IG)
             WRITE (IU06,*) ' * MAX. NUMBER IS        IJL = ', IJL(IG)

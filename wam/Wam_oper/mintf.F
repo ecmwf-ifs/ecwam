@@ -69,6 +69,7 @@
           ENDDO
         ENDIF
 
+
 !*    2.3 INDICES OF COARSE GRID OUTPUT POINTS.
 !         -------------------------------------
 
@@ -86,10 +87,10 @@
                 IBFL(I+N) = M
               ENDIF
             ENDDO
-            GOTO 2101
+            EXIT
           ENDIF
         ENDDO
- 2101   continue
+
       ENDDO
 
 !*    3. NORTHERN MOST LATITUDE OF FINE GRID.
@@ -130,10 +131,10 @@
                 IBFL(I+N) = M
               ENDIF
             ENDDO
-            GOTO 3101
+            EXIT
           ENDIF
         ENDDO
- 3101   continue
+
       ENDDO
 
 !*    4. WESTERN MOST LONGITUDE OF FINE GRID.
@@ -181,10 +182,10 @@
               IBFL(I+2*N) = M
               IBFR(I-2*N) = M
             ENDDO
-            GOTO 4201
+            EXIT
           ENDIF
         ENDDO
- 4201   continue
+
       ENDDO
 
 !*    4.5 RIGHT INDICES FOR LAST COARSE GRID SECTION.
@@ -239,10 +240,10 @@
               IBFL(I+2*N) = M
               IBFR(I-2*N) = M
             ENDDO
-            GOTO 5201
+            EXIT
           ENDIF
         ENDDO
- 5201   continue
+
       ENDDO
 
 !*    5.5 RIGHT INDICES FOR LAST COARSE GRID SECTION.

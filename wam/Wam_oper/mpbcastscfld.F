@@ -46,7 +46,7 @@
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
       INTEGER,DIMENSION(NPROC) :: NSTART,NEND
-      REAL,DIMENSION(NIBLO) :: FIELD
+      REAL,DIMENSION(NIBLO) :: FIELD, ZTMP
 !----------------------------------------------------------------------
 
       INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
@@ -63,8 +63,9 @@
 
         CALL GSTATS(616,0)
         CALL MPL_ALLGATHERV(FIELD(NSTART(IRANK):NEND(IRANK)),
-     &                     FIELD(1:NIBLO),KRECVCOUNTS,
-     &                     CDSTRING='MPBCASTSCFLD:')
+     &                      ZTMP,KRECVCOUNTS,
+     &                      CDSTRING='MPBCASTSCFLD:')
+        FIELD(:) = ZTMP(:)
         CALL GSTATS(616,1)
 
       ENDIF

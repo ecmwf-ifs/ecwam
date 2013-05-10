@@ -144,6 +144,9 @@
 
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
 
+!!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
+            FIELDG(I,J)%CITH = 0.0
+
             IF(LLNEWCURR) THEN
               IF(LWCUR) THEN
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),6)
@@ -271,6 +274,9 @@
      &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
             ENDIF
+
+!!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
+            FIELDG(I,J)%CITH = 0.0
 
 
             IF(LLNEWCURR) THEN

@@ -1,13 +1,14 @@
       SUBROUTINE WAVEMDL (CBEGDAT, KDELWI, KDURAT,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    IGRIB_HANDLE, ISEC1, ISEC2, RMISS, FIELDS,
+     &                    IGRIB_HANDLE, RMISS, FIELDS,
      &                    LWCUR, LWSTOKES,
      &                    NWVFIELDS, WVFLDG,
      &                    NLONW, NLATW, LDSTOP, LDWRRE,
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
      &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
      &                    NFDBREF,
-     &                    FRSTIME, NADV, PRPLRADI, PRPLRG)
+     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,
+     &                    IDATE_TIME_WINDOW_END)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -98,8 +99,9 @@
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
-     &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT
-      USE YOWGRIBHD, ONLY : NKSEK1   ,IFS_KSEC1,LNEWLVTP
+     &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU
+      USE YOWGRIBHD, ONLY : LNEWLVTP,
+     &         DATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
@@ -137,7 +139,7 @@
       INTEGER :: N_MASK_OUT_GLOBAL
       INTEGER MASK_IN(NGPTOTG)
       INTEGER MASK_OUT(NLONW,NLATW)
-
+      INTEGER IDATE_TIME_WINDOW_END
 ! Mod for OPENMP
       INTEGER JKGLO,KIJS,KIJL,NPROMA
 ! End Mod for OPENMP
@@ -147,11 +149,10 @@
       INTEGER :: NADV
       INTEGER :: NFDBREF
       INTEGER :: IGRIB_HANDLE
-      INTEGER :: ISEC1(NKSEK1), ISEC2(22+NR)
       INTEGER :: ISENDREQ, ITAG
 
       REAL :: FIELDS(NGPTOTG,NFIELDS)
-      REAL, ALLOCATABLE :: ZCOMBUF(:)
+      REAL, ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL, ALLOCATABLE :: WVBLOCK(:,:)
       REAL :: PRPLRADI, PRPLRG
 
@@ -171,6 +172,7 @@
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: FRSTIME
+      LOGICAL :: LLINIT
 
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
@@ -191,10 +193,8 @@
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
-!     KEEP GRIB HEADER KSEC1 FROM THE IFS
-
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
-
+      DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
 
@@ -216,9 +216,9 @@
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'time',IHHMM)
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'step',STEP)
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'endStep',ISTEP)
-           WRITE (IU06,*) ' DATE: ',IYYYYMMDD,' TIME : ',IHHMM
-           WRITE (IU06,*) ' STEP: ',STEP
-           WRITE (IU06,*) ' ISTEP: ',ISTEP
+           WRITE (IU06,*) ' dataDate: ',IYYYYMMDD,' time : ',IHHMM
+           WRITE (IU06,*) ' step: ',STEP
+           WRITE (IU06,*) ' endStep: ',ISTEP
            CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'expver',C12,KRET=IRET)
            IF(IRET.NE.0) THEN
              CEXPVER='****'
@@ -238,12 +238,6 @@
            LLGRAPI=.FALSE.
         ENDIF
 
-        DO IC=1,NKSEK1
-          IFS_KSEC1(IC)=ISEC1(IC)
-          IF (ITEST.GE.1) THEN
-            WRITE (IU06,*) 'KSEC1(',IC,')', ISEC1(IC)
-          ENDIF
-        ENDDO
       ENDIF
 
       KCOUSTEP=KDELWI
@@ -315,7 +309,7 @@
         CALL INITMDL (NADV,
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
-     &                ISEC2, FIELDS, LWCUR, MASK_IN, PRPLRADI)
+     &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
 
         LLCHKCFL=.FALSE.
 
@@ -369,6 +363,10 @@
             LDRESTARTED = .FALSE.
           ENDIF
         ENDIF
+
+! INITIALIZE THE NEMO COUPLING
+
+        IF(LWNEMOCOU) CALL INITNEMOCPL
 
       ELSE
 
@@ -452,14 +450,15 @@
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
 !       ---------------------------------------------------
-
+        LLINIT=.FALSE.
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              CICOVER, CITHICK, CIWA,
+     &              LLINIT,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
-     &              ISEC2, FIELDS, LWCUR, MASK_IN)
+     &              FIELDS, LWCUR, MASK_IN)
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
@@ -667,6 +666,15 @@
         CALL GSTATS(1443,1)
 
 
+!        GRIDDED FIELDS THAT ARE RETURNED TO NEMO (if coupled).
+!        -----------------------------------------------------
+
+        IF(LWNEMOCOU) THEN
+           
+           CALL UPDNEMOFIELDS(LWSTOKES,WVBLOCK(:,2),WVBLOCK(:,3))
+
+        ENDIF
+
 !       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
 !       INFORMATION
 
@@ -766,31 +774,32 @@
           IRECV=1
           NCOMLOC=1+3*NWVFIELDS
           NCOMBUF=NCOMLOC*NPROC
-          ALLOCATE(ZCOMBUF(NCOMBUF))
+          ALLOCATE(ZCOMBUFS(NCOMBUF))
 
           IST=1+(IRANK-1)*NCOMLOC
           IED=IST+NCOMLOC-1
           ICOUNT=IST
-          ZCOMBUF(ICOUNT)=N_MASK_OUT
+          ZCOMBUFS(ICOUNT)=N_MASK_OUT
           DO IFLD=1,NWVFIELDS
             ICOUNT=ICOUNT+1
-            ZCOMBUF(ICOUNT)=FAVG(IFLD)
+            ZCOMBUFS(ICOUNT)=FAVG(IFLD)
             ICOUNT=ICOUNT+1
-            ZCOMBUF(ICOUNT)=FMIN(IFLD)
+            ZCOMBUFS(ICOUNT)=FMIN(IFLD)
             ICOUNT=ICOUNT+1
-            ZCOMBUF(ICOUNT)=FMAX(IFLD)
+            ZCOMBUFS(ICOUNT)=FMAX(IFLD)
           ENDDO
 
           ITAG=1
-          CALL MPL_SEND(ZCOMBUF(IST:IED),KDEST=IRECV,KTAG=ITAG,
+          CALL MPL_SEND(ZCOMBUFS(IST:IED),KDEST=IRECV,KTAG=ITAG,
      &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
      &                  KREQUEST=ISENDREQ,
      &                  CDSTRING='WAVEMDL: MPL_SEND' )
           IF(IRANK.EQ.IRECV) THEN
+            ALLOCATE(ZCOMBUFR(NCOMBUF))
             DO IP=1,NPROC
               IST=1+(IP-1)*NCOMLOC
               IED=IST+NCOMLOC-1
-              CALL MPL_RECV(ZCOMBUF(IST:IED),
+              CALL MPL_RECV(ZCOMBUFR(IST:IED),
      &                      KSOURCE=IP,KTAG=ITAG,
      &                      KMP_TYPE=JP_BLOCKING_STANDARD,
      &                      CDSTRING='WAVEMDL: MPL_RECV' )
@@ -798,7 +807,7 @@
             ENDDO
           ENDIF
 
-          CALL MPL_WAIT(ZCOMBUF(:),KREQUEST=ISENDREQ,
+          CALL MPL_WAIT(ZCOMBUFS(:),KREQUEST=ISENDREQ,
      &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
 
 
@@ -807,29 +816,30 @@
           WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
             IST=1+(IRANK-1)*NCOMLOC
             ICOUNT=IST
-            NMASK=ZCOMBUF(ICOUNT)
+            NMASK=ZCOMBUFR(ICOUNT)
             NTOT=NMASK
             DO JF=1,NWVFIELDS
               ICOUNT=ICOUNT+1
-              FAVG(JF)=NMASK*ZCOMBUF(ICOUNT)
+              FAVG(JF)=NMASK*ZCOMBUFR(ICOUNT)
               ICOUNT=ICOUNT+2
             ENDDO
             DO IP=1,NPROC
               IF(IP.NE.IRECV) THEN
                 IST=1+(IP-1)*NCOMLOC
                 ICOUNT=IST
-                NMASK=ZCOMBUF(ICOUNT)
+                NMASK=ZCOMBUFR(ICOUNT)
                 NTOT=NTOT+NMASK
                 DO JF=1,NWVFIELDS
                   ICOUNT=ICOUNT+1
-                  FAVG(JF)=FAVG(JF)+NMASK*ZCOMBUF(ICOUNT)
+                  FAVG(JF)=FAVG(JF)+NMASK*ZCOMBUFR(ICOUNT)
                   ICOUNT=ICOUNT+1
-                  FMIN(JF)=MIN(FMIN(JF),ZCOMBUF(ICOUNT))
+                  FMIN(JF)=MIN(FMIN(JF),ZCOMBUFR(ICOUNT))
                   ICOUNT=ICOUNT+1
-                  FMAX(JF)=MAX(FMAX(JF),ZCOMBUF(ICOUNT))
+                  FMAX(JF)=MAX(FMAX(JF),ZCOMBUFR(ICOUNT))
                 ENDDO
               ENDIF
             ENDDO
+            DEALLOCATE(ZCOMBUFR)
             DO JF=1,NWVFIELDS
               FAVG(JF)=FAVG(JF)/MAX(NTOT,1)
             ENDDO
@@ -847,7 +857,7 @@
           ENDDO
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
-          DEALLOCATE(ZCOMBUF)
+          DEALLOCATE(ZCOMBUFS)
         ENDIF
 
 

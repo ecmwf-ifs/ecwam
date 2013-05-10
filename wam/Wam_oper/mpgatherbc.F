@@ -48,7 +48,7 @@
       REAL,DIMENSION(NBOUNC) :: EMPTS, TQPTS, FMPTS
       REAL,DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL
-      REAL,ALLOCATABLE :: ZCOMBUF(:)
+      REAL,ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
 
 !----------------------------------------------------------------------
 
@@ -99,7 +99,7 @@
 
         MESLENGTH=NSCFLD+NANG*NFRE
         MAXLENGTH=MESLENGTH*NBOUNC
-        ALLOCATE(ZCOMBUF(MAXLENGTH))
+        ALLOCATE(ZCOMBUFS(MAXLENGTH))
 
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
@@ -111,15 +111,15 @@
           DO IGOU=IBS(IRANK),IBL(IRANK)
             IJ=IJBC(IGOU)
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=EMEAN(IJ)
+            ZCOMBUFS(KCOUNT)=EMEAN(IJ)
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=THQ(IJ)
+            ZCOMBUFS(KCOUNT)=THQ(IJ)
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FMEAN(IJ)
+            ZCOMBUFS(KCOUNT)=FMEAN(IJ)
             DO  M = 1, NFRE
               DO K = 1, NANG
                 KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FL(IJ,K,M)
+                ZCOMBUFS(KCOUNT)=FL(IJ,K,M)
               ENDDO
             ENDDO
           ENDDO
@@ -139,7 +139,7 @@
 
 !         SEND BUFFER
           CALL GSTATS(673,0)
-          CALL MPL_SEND(ZCOMBUF(IST:IND),KDEST=IRECV,KTAG=ITAG,
+          CALL MPL_SEND(ZCOMBUFS(IST:IND),KDEST=IRECV,KTAG=ITAG,
      &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
      &                  KREQUEST=ISENDREQ,
      &                  CDSTRING='MPGATHERBC:')
@@ -149,13 +149,14 @@
 !       RECEIVE CONTRIBUTIONS
 !       ---------------------
         IF(IRANK.EQ.IRECV) THEN
+          ALLOCATE(ZCOMBUFR(MAXLENGTH))
           CALL GSTATS(673,0)
           DO IP=1,NPROC
             IF(NPTS(IP).GT.0) THEN
               IST=MESLENGTH*(IBS(IP)-1)+1
               IND=IST+NPTS(IP)*MESLENGTH-1
               KCOUNT=IND-IST+1
-              CALL MPL_RECV(ZCOMBUF(IST:IND),
+              CALL MPL_RECV(ZCOMBUFR(IST:IND),
      &                      KSOURCE=IP, KTAG=ITAG,
      &                      KOUNT=KRCOUNT, KRECVTAG=KRTAG,
      &                      KMP_TYPE=JP_BLOCKING_STANDARD,
@@ -173,28 +174,29 @@
           DO IGOU=1,NBOUNC
             NGOU=NGOUG(IGOU)
             KCOUNT=KCOUNT+1
-            EMPTS(NGOU)=ZCOMBUF(KCOUNT)
+            EMPTS(NGOU)=ZCOMBUFR(KCOUNT)
             KCOUNT=KCOUNT+1
-            TQPTS(NGOU)=ZCOMBUF(KCOUNT)
+            TQPTS(NGOU)=ZCOMBUFR(KCOUNT)
             KCOUNT=KCOUNT+1
-            FMPTS(NGOU)=ZCOMBUF(KCOUNT)
+            FMPTS(NGOU)=ZCOMBUFR(KCOUNT)
             DO  M = 1, NFRE
               DO K = 1, NANG
                 KCOUNT=KCOUNT+1
-                FLPTS(NGOU,K,M)=ZCOMBUF(KCOUNT)
+                FLPTS(NGOU,K,M)=ZCOMBUFR(KCOUNT)
               ENDDO
             ENDDO
           ENDDO
+          DEALLOCATE(ZCOMBUFR)
         ENDIF
 
         IF(NPTS(IRANK).GT.0) THEN
           CALL GSTATS(673,0)
-          CALL MPL_WAIT(ZCOMBUF(1:MAXLENGTH),KREQUEST=ISENDREQ,
+          CALL MPL_WAIT(ZCOMBUFS(1:MAXLENGTH),KREQUEST=ISENDREQ,
      &              CDSTRING='MPGATHERBC:')
           CALL GSTATS(673,1)
         ENDIF
 
-        DEALLOCATE(ZCOMBUF)
+        DEALLOCATE(ZCOMBUFS)
       ENDIF
 
       CALL MPL_BARRIER(CDSTRING='MPGATHERBC:')

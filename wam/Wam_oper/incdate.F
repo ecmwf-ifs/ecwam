@@ -43,11 +43,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
       INTEGER :: MON(12)
       INTEGER :: IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
-      REAL :: ZHOOK_HANDLE
 
       CHARACTER*(*) CDATE
       CHARACTER* 80 CLFMT
@@ -55,8 +52,6 @@
       LOGICAL LLND
 
       DATA MON /31,28,31,30,31,30,31,31,30,31,30,31/
-
-      IF (LHOOK) CALL DR_HOOK('INCDATE',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -237,7 +232,6 @@
         WRITE(CDATE,'(5i2.2)')IYEAR, IMON, IDAY, IHOUR, IMIN
       ENDIF
 
-      IF (LHOOK) CALL DR_HOOK('INCDATE',1,ZHOOK_HANDLE)
       RETURN
 
       CONTAINS

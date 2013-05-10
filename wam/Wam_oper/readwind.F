@@ -82,19 +82,17 @@
 
 ! --------------------------------------------------------------------- 
 
-      USE YOWCOUT  , ONLY : LGRIBAPI_I
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRIBHD, ONLY : NKSEK0   ,NKSEK1   ,NKSEK2   ,NKSEK3,
-     &            NKSEK4   ,NPSEK2   ,NPSEK3   ,KSEK3    ,PSEK3
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
-      USE YOWICE   , ONLY : LICERUN  ,IPARAMCI
+      USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     , 
      &            KXLT
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,
-     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,
+     &            SWAMPCIFR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
      &            NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -121,10 +119,11 @@
       INTEGER :: IWTIME, IDTTURN
       INTEGER :: LNAME 
       INTEGER :: I_GET_UNIT
-      INTEGER :: KBYTES, IRET, KDUM
+      INTEGER :: IRET
       INTEGER :: KGRIB_HANDLE
       INTEGER :: IDUM(2)
       INTEGER, ALLOCATABLE :: KGRIB(:)
+      INTEGER(KIND=8) :: KBYTES
 
       REAL :: ZDUM
       REAL :: UWIND, VWIND, WSPEED, WTHETA
@@ -178,30 +177,19 @@
           WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
           WRITE (IU06,*) '*                                   *'
           WRITE (IU06,*) '*************************************'
+          WRITE (*,*) '*************************************'
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+          WRITE (*,*) '*  IN READWIND:                     *'
+          WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
 
         IF(IRANK.EQ.IREAD) THEN
           IF (LLNOTOPENED) THEN
-            IF(LGRIBAPI_I) THEN
-              CALL IGRIB_OPEN_FILE(IUNITW,FILNM(1:LNAME),'r')
-            ELSE
-              CALL PBOPEN(IUNITW,FILNM,'r',KRET)
-              IF(KRET.LT.0) THEN
-                WRITE (IU06,*) '**************************************'
-                WRITE (IU06,*) '*                                    *'
-                WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO PBOPEN    *'
-                WRITE (IU06,*) '*  IN READWIND                       *'
-                IF(KRET.EQ.-1)
-     &           WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILNM
-                IF(KRET.EQ.-2) WRITE (IU06,*)'INVALID FILENAME ',FILNM
-                IF(KRET.EQ.-3) WRITE (IU06,*)'INVALID OPEN MODE '
-                WRITE (IU06,*) '*                                    *'
-                WRITE (IU06,*) '**************************************'
-                CALL ABORT1
-              ENDIF
-            ENDIF
- 
+            CALL IGRIB_OPEN_FILE(IUNITW,FILNM(1:LNAME),'r') 
             LLNOTOPENED = .FALSE.
           ENDIF
         ENDIF  
@@ -230,28 +218,49 @@
           NFLD=2
           IPARAMCI=31
         ENDIF
-        IF(LLWSWAVE) NFLD=NFLD+1
-        IF(LLWDWAVE) NFLD=NFLD+1
 
-!       AIR DENSITY AND GUSTINESS ARE ONLY PROVIDED FROM A FILE IF STAND ALONE RUN
-        IF(.NOT.LWCOU .AND. LADEN) THEN
-          NFLD=NFLD+1 
+        IF(LICETH) THEN
+          NFLD=NFLD+1
         ELSE
           DO J=1,NGY
             DO I=1,NGX
-              FIELDG(I,J)%AIRD=ROAIR ! sets air density field to the default value.
+              FIELDG(I,J)%CITH = 0.
             ENDDO
           ENDDO
         ENDIF
 
-        IF(.NOT.LWCOU .AND. LGUST) THEN
-          NFLD=NFLD+1 
-        ELSE
-          DO J=1,NGY
-            DO I=1,NGX
-              FIELDG(I,J)%ZIDL = WSTAR0
+        IF(LLWSWAVE) NFLD=NFLD+1
+        IF(LLWDWAVE) NFLD=NFLD+1
+
+!       AIR DENSITY AND GUSTINESS ARE ONLY PROVIDED FROM A FILE IF STAND ALONE RUN
+!!      for coupled run we re-initialise witht he value provided by IFS, even though
+!!      strickly speaking, it shoudl be provided as part of the restart but it is better than
+!!      setting it to a constant !!
+        IF(.NOT.LWCOU) THEN
+          IF(LADEN) THEN
+            NFLD=NFLD+1 
+          ELSE
+            DO J=1,NGY
+              DO I=1,NGX
+                FIELDG(I,J)%AIRD=ROAIR ! sets air density field to the default value.
+              ENDDO
             ENDDO
-          ENDDO
+          ENDIF
+        ENDIF
+
+!!      for coupled run we re-initialise witht he value provided by IFS, even though
+!!      strickly speaking, it shoudl be provided as part of the restart but it is better than
+!!      setting it to a constant !!
+        IF(.NOT.LWCOU) THEN
+          IF(LGUST) THEN
+            NFLD=NFLD+1 
+          ELSE
+            DO J=1,NGY
+              DO I=1,NGX
+                FIELDG(I,J)%ZIDL = WSTAR0
+              ENDDO
+            ENDDO
+          ENDIF
         ENDIF
 
         ALLOCATE(WORK(NGX,NGY))
@@ -271,70 +280,28 @@
 
 2002      CONTINUE
 
-          IF(LGRIBAPI_I) THEN
-!           USE GRIB API
-            IF(IRANK.EQ.IREAD) THEN
-1021          ISIZE=NBITW
-              KBYTES=ISIZE*NPRECI
-              IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
-              CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
-              IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
-!!!             *IGRIB_READ_FROM_FILE* does not read through the file if
-!!!              the size is too small, so figure out the size and read again.
-                KDUM=-1
-                CALL KGRIBSIZE(IU06, KDUM, KBYTES, NBITW, 'READWIND')
-                DEALLOCATE(KGRIB)
-              ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
-                WRITE(IU06,*) '**********************************'
-                WRITE(IU06,*) '* READWIND: END OF FILE ENCOUNTED'
-                WRITE(IU06,*) '**********************************'
-                CALL ABORT1
-              ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
-                WRITE(IU06,*) '**********************************'
-                WRITE(IU06,*) '* READWIND: FILE HANDLING ERROR'
-                WRITE(IU06,*) '**********************************'
-                CALL ABORT1
-              ENDIF
+          IF(IRANK.EQ.IREAD) THEN
+1021        ISIZE=NBITW
+            KBYTES=ISIZE*NPRECI
+            IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
+            CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
+            IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+!!!           *IGRIB_READ_FROM_FILE* does not read through the file if
+!!!            the size is too small, so figure out the size and read again.
+              CALL KGRIBSIZE(IU06, KBYTES, NBITW, 'READWIND')
+              DEALLOCATE(KGRIB)
+              GOTO 1021
+            ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+              WRITE(IU06,*) '**********************************'
+              WRITE(IU06,*) '* READWIND: END OF FILE ENCOUNTED'
+              WRITE(IU06,*) '**********************************'
+              CALL ABORT1
+            ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+              WRITE(IU06,*) '**********************************'
+              WRITE(IU06,*) '* READWIND: FILE HANDLING ERROR'
+              WRITE(IU06,*) '**********************************'
+              CALL ABORT1
             ENDIF
-
-          ELSE
-!           USE GRIBEX
-            ISIZE=NBITW
-            PMISS=PSEK3(2)
-
-            IF(IRANK.EQ.IREAD) THEN
-2001          KPLENG=ISIZE*KIND(ISIZE)
-              IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
-
-              CALL GSTATS(1740,0)
-              CALL PBGRIB(IUNITW,KGRIB,KPLENG,KLEN,KRET)
-              CALL GSTATS(1740,1)
-
-              IF (KRET.EQ.-1) THEN
-                WRITE(IU06,*) ' ***************************************'
-                WRITE(IU06,*) ' *    FATAL ERROR IN SUB. READWIND     *'
-                WRITE(IU06,*) ' *    ============================     *'
-                WRITE(IU06,*) ' * PBGRIB EOF ON FILE ',FILNM 
-                WRITE(IU06,*) ' *       NO MORE WINDS                 *'
-                WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS  *'
-                WRITE(IU06,*) ' ***************************************'
-                CALL ABORT1
-              ELSE IF (KRET.EQ.-2) THEN
-                WRITE(IU06,*) ' ***************************************'
-                WRITE(IU06,*) ' *    FATAL ERROR IN SUB. READWIND     *'
-                WRITE(IU06,*) ' *    ============================     *'
-                WRITE(IU06,*) ' * PBGRIB ERROR ON FILE ',FILNM
-                WRITE(IU06,*) ' *  PROGRAM ABORTS     PROGRAM ABORTS  *'
-                WRITE(IU06,*) ' ***************************************'
-                CALL ABORT1
-              ELSE IF (KRET.EQ.-3) THEN
-                DEALLOCATE(KGRIB)
-                CALL KGRIBSIZE(IU06, IUNITW, KLEN, ISIZE, 'READWIND')
-                GOTO 2001
-              ENDIF
-
-            ENDIF
-
           ENDIF
 
           IF (ITEST.GT.1) THEN
@@ -369,30 +336,17 @@
 
 !*        3.0 UNPACK MARS FIELDS.
 !             -------------------
-          IF(LGRIBAPI_I) THEN
-            KGRIB_HANDLE=-99
-            CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
-            ZDUM=0.
-            CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
-     &                       KGRIB_HANDLE, KGRIB, ISIZE,
-     &                       NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                       AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                       ZMISS, ZDUM, ZDUM,
-     &                       CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
-
-            CALL IGRIB_RELEASE(KGRIB_HANDLE)
-
-          ELSE
-            KLENG = KLEN
-            ZDUM=0.
-            CALL GRB2WGRD (IU06, ITEST, NKSEK0, NKSEK1, NKSEK2, NKSEK3,
-     &                     NKSEK4, NPSEK2, NPSEK3, KSEK3, PSEK3,
-     &                     KGRIB, KLENG ,
+          KGRIB_HANDLE=-99
+          CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
+          ZDUM=0.
+          CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+     &                     KGRIB_HANDLE, KGRIB, ISIZE,
      &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                     ZDUM, ZDUM,
-     &                     CDTWIR, IFORP, IPARAM, KZLEV, IDM, IDM, WORK)
-          ENDIF
+     &                     ZMISS, ZDUM, ZDUM,
+     &                     CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
+
+          CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
           IF (IPARAM.EQ.165 .OR. IPARAM.EQ.33 .OR. IPARAM.EQ.131 .OR.
      &        IPARAM.EQ.180 ) THEN
@@ -449,6 +403,24 @@
             ELSEIF (.NOT.LICERUN .AND.
      &              (IPARAM.EQ.31.OR.IPARAM.EQ.139) ) THEN
 !             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
+              GOTO 2002
+            ELSE
+              LLABORT=.TRUE.
+            ENDIF
+
+          ELSEIF (IPARAM.EQ.92) THEN
+
+            IF(LLNOTREAD(IVAR)) THEN 
+              DO J=1,NGY
+                JSN=NGY-J+1
+                DO I=1,NLONRGG(JSN)
+                  FIELDG(I,J)%CITH=WORK(I,J)
+                ENDDO
+              ENDDO
+              LLNOTREAD(IVAR)=.FALSE.
+            ELSEIF (.NOT.LICETH .AND.
+     &              (IPARAM.EQ.92) ) THEN
+!             SKIP SEA ICE THICKNESS INFORMATION AS IT IS NOT NEEDED
               GOTO 2002
             ELSE
               LLABORT=.TRUE.
@@ -561,6 +533,9 @@
             WRITE(IU06,*) ' + 166 or 34 or 132 or 181 V-WIND COMPONENT+'
             IF(LICERUN) THEN
             WRITE(IU06,*) ' + 31 or 139 SEA ICE FRACTION OR SST       +'
+            ENDIF
+            IF(LICETH) THEN
+            WRITE(IU06,*) ' + 92 SEA ICE THICKNESS                    +'
             ENDIF
             IF(LLWSWAVE) THEN
             WRITE(IU06,*) ' + 245  WIND SPEED FROM WAVE MODEL         +'
@@ -697,13 +672,26 @@
 
         DO J=1,NR
           DO I=1,NC
+            FIELDG(I,J)%CITH=0.
             FIELDG(I,J)%AIRD=ROAIR
             FIELDG(I,J)%ZIDL=WSTAR0
-            FIELDG(I,J)%CIFR=0.
             FIELDG(I,J)%UCUR=0.
             FIELDG(I,J)%VCUR=0.
           ENDDO
-       ENDDO
+        ENDDO
+
+!!!! impose the northern part of the swamp domain to be covered with
+!!!! a sea ice cover=SWAMPCIFR
+        DO J=1,NR/2
+          DO I=1,NC
+            FIELDG(I,J)%CIFR=SWAMPCIFR
+          ENDDO
+        ENDDO
+        DO J=NR/2+1,NR
+          DO I=1,NC
+            FIELDG(I,J)%CIFR=0.
+          ENDDO
+        ENDDO
 
       ENDIF
 
