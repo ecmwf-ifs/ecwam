@@ -60,7 +60,7 @@
       INTEGER :: KK, MM
       INTEGER :: IBUF(2) 
       INTEGER, ALLOCATABLE :: INGRIB(:)
-      INTEGER(KIND=8) :: KBYTES
+      INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
       REAL :: FIELD(NGX,NGY)                                          

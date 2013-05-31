@@ -24,10 +24,13 @@
 !     REFERENCE.
 !     ----------
 ! ----------------------------------------------------------------------
+
+      USE GRIB_API_INTERFACE
+
       IMPLICIT NONE
 
       INTEGER ::  IU06
-      INTEGER(KIND=8) ::  KLEN
+      INTEGER(KIND=JPKSIZE_T) ::  KLEN
       INTEGER ::  ISIZE
       CHARACTER*(*) :: CALLINGSUB
 
