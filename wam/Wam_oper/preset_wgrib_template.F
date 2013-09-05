@@ -131,6 +131,9 @@
         IF(CT.EQ."S") THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',
      &                         13)
+          ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
+          ! not used in uncoupled mode.
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',
      &                         NLOCGRB)
@@ -267,6 +270,13 @@
         IF(CT.EQ."S") THEN
 !         SPECTRA USE THEIR OWN GRIB TABLE !!!
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',13)
+
+          CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,
+     &                        'offsetToEndOf4DvarWindow',IDUM,KRET=IRET)
+          ! set localFlag to 3 to prevent use of offsetToEndOf4DvarWindow
+          ! if not used in the IFS template.
+          IF(IRET.NE.0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
+
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'systemNumber',
      &                         IDUM,KRET=IRET)
           IF(IRET.NE.0) THEN
