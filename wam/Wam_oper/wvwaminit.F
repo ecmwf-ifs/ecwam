@@ -25,7 +25,6 @@
       USE YOWUNIT  , ONLY : IU07     ,IU08
 
       USE MPL_MODULE
-      USE MPL_DATA_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

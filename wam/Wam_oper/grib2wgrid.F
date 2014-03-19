@@ -682,7 +682,7 @@
           JSN=NGY-K+1
           DO I=1,KLONRGG(JSN)
             L = L+1                                                     
-            FIELD(I,K) = VALUES(L)                                       
+            FIELD(I,K) = VALUES(L)
           ENDDO
         ENDDO
         DEALLOCATE(VALUES)

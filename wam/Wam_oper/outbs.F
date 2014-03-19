@@ -400,7 +400,7 @@
 !        ------------------------------------------
 
       IF (CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
-        CALL OUTSPP (FL3, FL, IJS, IJL, IG, IU25)
+        CALL OUTSPP (FL3, FL, IJS, IJL, IG, IU25, IU26)
         IF (ITEST.GE.3) THEN
           IF (ITESTB.GE.IG) THEN
             WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',

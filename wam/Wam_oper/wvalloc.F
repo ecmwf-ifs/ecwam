@@ -19,7 +19,7 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
-     &                      PHIAW    ,TAUOC  
+     &                      PHIAW    ,TAUOC    ,NEMEAN   ,NFMEAN
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
@@ -159,6 +159,14 @@
         IF(.NOT.ALLOCATED(TAUOC)) THEN
           ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
           TAUOC = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(NEMEAN)) THEN
+          ALLOCATE(NEMEAN(NSTART(IRANK):NEND(IRANK)))
+          NEMEAN = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(NFMEAN)) THEN
+          ALLOCATE(NFMEAN(NSTART(IRANK):NEND(IRANK)))
+          NFMEAN = 0.
         ENDIF
 
       IF ( (LWCOU .AND. LWCUR) .OR.

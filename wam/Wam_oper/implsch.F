@@ -130,7 +130,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMINFR  ,LCIWABR
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
-     &                      TAUOC    
+     &                      TAUOC    ,NEMEAN   ,NFMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
@@ -444,6 +444,8 @@
           PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
           PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
           TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
+          NEMEAN(IJ) = EMEAN(IJ)
+          NFMEAN(IJ) = FMEAN(IJ)
         ENDDO
       ENDIF
 

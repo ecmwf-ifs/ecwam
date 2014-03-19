@@ -86,7 +86,7 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
-     &                      PHIAW    ,TAUOC
+     &                      PHIAW    ,TAUOC    ,NEMEAN   ,NFMEAN
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
@@ -383,6 +383,8 @@
          DEALLOCATE (PHIEPS)
          DEALLOCATE (PHIAW)
          DEALLOCATE (TAUOC)
+         DEALLOCATE (NEMEAN)
+         DEALLOCATE (NFMEAN)
       ENDIF
 
 

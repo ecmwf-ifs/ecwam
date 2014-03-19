@@ -51,8 +51,7 @@
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IFROMIJ  , 
      &            JFROMIJ 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOMCT0   , ONLY : NPRTRW     ,NPRTRV
-      USE YOMMP0   , ONLY : MYSETW   ,NPRCIDS
+      USE YOMMP0   , ONLY : MYSETW   ,NPRCIDS  ,NPRTRW   ,NPRTRV
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NWAM_BLKS

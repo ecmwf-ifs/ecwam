@@ -127,7 +127,6 @@
 
       REAL :: ZDUM
       REAL :: UWIND, VWIND, WSPEED, WTHETA
-      REAL :: PMISS 
       REAL :: ZHOOK_HANDLE
       REAL, ALLOCATABLE :: WORK(:,:)  
 
@@ -433,7 +432,7 @@
                 DO J=1,NGY
                   JSN=NGY-J+1
                   DO I=1,NLONRGG(JSN)
-                    IF(WORK(I,J).EQ.PMISS) THEN
+                    IF(WORK(I,J).EQ.ZMISS) THEN
                       FIELDG(I,J)%WSWAVE=0. 
                     ELSE
                       FIELDG(I,J)%WSWAVE=WORK(I,J)
@@ -453,7 +452,7 @@
                 DO J=1,NGY
                   JSN=NGY-J+1
                   DO I=1,NLONRGG(JSN)
-                    IF(WORK(I,J).EQ.PMISS) THEN
+                    IF(WORK(I,J).EQ.ZMISS) THEN
                       FIELDG(I,J)%WDWAVE=0. 
                     ELSE
 !                     re-convert to WAM convention
@@ -475,7 +474,7 @@
               DO J=1,NGY
                 JSN=NGY-J+1
                 DO I=1,NLONRGG(JSN)
-                  IF(WORK(I,J).EQ.PMISS) THEN
+                  IF(WORK(I,J).EQ.ZMISS) THEN
                     FIELDG(I,J)%AIRD=ROAIR
                   ELSE
                     FIELDG(I,J)%AIRD=WORK(I,J)
@@ -495,7 +494,7 @@
               DO J=1,NGY
                 JSN=NGY-J+1
                 DO I=1,NLONRGG(JSN)
-                  IF(WORK(I,J).EQ.PMISS) THEN
+                  IF(WORK(I,J).EQ.ZMISS) THEN
                     FIELDG(I,J)%ZIDL = WSTAR0
                   ELSE
                     FIELDG(I,J)%ZIDL=WORK(I,J)

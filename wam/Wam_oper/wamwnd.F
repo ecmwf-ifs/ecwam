@@ -51,25 +51,23 @@
       USE YOWCOUP  , ONLY : LWCOU    , XKAPPA
       USE YOWCURR  , ONLY : U        ,V
       USE YOWMAP   , ONLY : IXLG     ,KXLT
-      USE YOWMPP   , ONLY : NINF     ,NSUP 
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWPARAM , ONLY : NGY      ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROAIR    ,ZMISS
+      USE YOWPARAM , ONLY : NGY
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
-      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWWIND  , ONLY : WSPMIN   ,NC       ,NR       ,FIELDG   ,
-     &            LLWSWAVE ,LLWDWAVE ,RWFAC
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : WSPMIN   ,FIELDG   ,LLWSWAVE ,LLWDWAVE ,
+     &            RWFAC
       USE YOWWNDG  , ONLY : ICODE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
+      INTEGER :: IJ, IX, JY, IJS, IJL, IG
       REAL, PARAMETER :: ALPHACH = 0.0185
-
-! ----------------------------------------------------------------------
-
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CITH
-      REAL ZHOOK_HANDLE
+      REAL :: UU, VV, WSPEED, RESCALE, USTAR, Z0, CD
+      REAL, DIMENSION (IJS:IJL) :: US,DS,ADS,ZIDL,CITH
+      REAL :: ZHOOK_HANDLE
 
       LOGICAL :: LWCUR
 
@@ -82,46 +80,57 @@
 !*       AND SET LOWER WIND SPEED TO WSPMIN m/s
 !        ----------------------------------------
 
-      DO IJ = IJS,IJL
-        IX = IXLG(IJ,IG)
-        JY = NGY-KXLT(IJ,IG) + 1
-
-        IF(LLWSWAVE .AND. LLWDWAVE) THEN
+      IF(LLWSWAVE .AND. LLWDWAVE) THEN
+        DO IJ = IJS,IJL
+          IX = IXLG(IJ,IG)
+          JY = NGY-KXLT(IJ,IG) + 1
 
 !         USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
 !         -------------------------------------------------------------
-          US(IJ,IG) = FIELDG(IX,JY)%WSWAVE
-          DS(IJ,IG) = FIELDG(IX,JY)%WDWAVE 
+          US(IJ) = FIELDG(IX,JY)%WSWAVE
+          DS(IJ) = FIELDG(IX,JY)%WDWAVE 
 
 !         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
 !         USE U and V FROM ATMOSPHERE INSTEAD
-          IF(US(IJ,IG).LE.0.) THEN
+          IF(US(IJ).LE.0.) THEN
             UU = FIELDG(IX,JY)%UWND
             VV = FIELDG(IX,JY)%VWND
-            US(IJ,IG) = SQRT(UU**2 + VV**2)
-            IF (US(IJ,IG).NE.0.) THEN 
-              DS(IJ,IG) = ATAN2(UU,VV)
+            WSPEED = SQRT(UU**2 + VV**2)
+            IF(WSPEED.GT.0.) THEN
+              US(IJ) = WSPEED
+              DS(IJ) = ATAN2(UU,VV)
             ELSE
-              DS(IJ,IG) = 0.
+              US(IJ) = 0.
+              DS(IJ) = 0.
             ENDIF
           ENDIF
+        ENDDO
 
-          IF(LRELWIND) THEN
-            IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-              UU = US(IJ,IG)*SIN(DS(IJ,IG))
-              VV = US(IJ,IG)*COS(DS(IJ,IG))
-              UU = UU - RWFAC*U(IJ,IG)
-              VV = VV - RWFAC*V(IJ,IG)
-              US(IJ,IG) = SQRT(UU**2 + VV**2)
-              IF (US(IJ,IG).NE.0.) THEN 
-                DS(IJ,IG) = ATAN2(UU,VV)
-              ELSE
-                DS(IJ,IG) = 0.
-              ENDIF
+        IF(LRELWIND .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3) ) THEN
+          DO IJ = IJS,IJL
+            IX = IXLG(IJ,IG)
+            JY = NGY-KXLT(IJ,IG) + 1
+
+            UU = US(IJ)*SIN(DS(IJ))
+            VV = US(IJ)*COS(DS(IJ))
+            UU = UU - RWFAC*U(IJ,IG)
+            VV = VV - RWFAC*V(IJ,IG)
+            WSPEED = SQRT(UU**2 + VV**2)
+            IF(WSPEED.GT.0.) THEN
+              US(IJ) = WSPEED
+              DS(IJ) = ATAN2(UU,VV)
+            ELSE
+              US(IJ) = 0.
+              DS(IJ) = 0.
             ENDIF
-          ENDIF
+          ENDDO
+        ENDIF
 
-        ELSE
+      ELSE
+
+        DO IJ = IJS,IJL
+          IX = IXLG(IJ,IG)
+          JY = NGY-KXLT(IJ,IG) + 1
 
           UU = FIELDG(IX,JY)%UWND
           VV = FIELDG(IX,JY)%VWND
@@ -160,24 +169,29 @@
             ENDIF
           ENDIF
 
-          US(IJ,IG) = SQRT(UU**2 + VV**2)
-          IF (US(IJ,IG).NE.0.) THEN 
-            DS(IJ,IG) = ATAN2(UU,VV)
+          US(IJ) = SQRT(UU**2 + VV**2)
+          IF (US(IJ).NE.0.) THEN 
+            DS(IJ) = ATAN2(UU,VV)
           ELSE
-            DS(IJ,IG) = 0.
+            DS(IJ) = 0.
           ENDIF
 
-        ENDIF
+        ENDDO
+      ENDIF
 
-        IF (DS(IJ,IG).LT.0.) DS(IJ,IG) = DS(IJ,IG) + ZPI
-
+      DO IJ = IJS,IJL
+        IF (DS(IJ).LT.0.) DS(IJ) = DS(IJ) + ZPI
 !       IMPOSE A MINIMUM WIND SPEED.
 !       ----------------------------
-        US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
+        US(IJ) = MAX(US(IJ),WSPMIN)
+      ENDDO
 
-        ADS(IJ,IG) = FIELDG(IX,JY)%AIRD
-        ZIDL(IJ,IG)= FIELDG(IX,JY)%ZIDL
-        CITH(IJ,IG)= FIELDG(IX,JY)%CITH
+      DO IJ = IJS,IJL
+        IX = IXLG(IJ,IG)
+        JY = NGY-KXLT(IJ,IG) + 1
+        ADS(IJ) = FIELDG(IX,JY)%AIRD
+        ZIDL(IJ)= FIELDG(IX,JY)%ZIDL
+        CITH(IJ)= FIELDG(IX,JY)%CITH
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -192,11 +206,11 @@
 !          ---------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX(0.01,US(IJ,IG))
+          USTAR = MAX(0.01,US(IJ))
           Z0  = ALPHACH/G*USTAR**2
           CD  = XKAPPA/LOG(10./Z0)
-          US(IJ,IG) = USTAR/CD
-          US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
+          US(IJ) = USTAR/CD
+          US(IJ) = MAX(US(IJ),WSPMIN)
         ENDDO
 
       ELSEIF (ICODE.EQ.2) THEN
@@ -205,11 +219,11 @@
 !         ---------------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX (0.01, SQRT(US(IJ,IG)/ADS(IJ,IG)))
+          USTAR = MAX (0.01, SQRT(US(IJ)/ADS(IJ)))
           Z0  = ALPHACH/G*USTAR**2
           CD  = XKAPPA/LOG(10./Z0)
-          US(IJ,IG) = USTAR/CD
-          US(IJ,IG) = MAX(US(IJ,IG),WSPMIN)
+          US(IJ) = USTAR/CD
+          US(IJ) = MAX(US(IJ),WSPMIN)
         ENDDO
       ENDIF
 

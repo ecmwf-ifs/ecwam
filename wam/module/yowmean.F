@@ -6,6 +6,8 @@
 
       REAL,ALLOCATABLE :: EMEAN(:) 
       REAL,ALLOCATABLE :: FMEAN(:) 
+      REAL,ALLOCATABLE :: NEMEAN(:) 
+      REAL,ALLOCATABLE :: NFMEAN(:) 
       REAL,ALLOCATABLE :: THQ(:) 
       REAL,ALLOCATABLE :: SMEAN(:) 
       REAL,ALLOCATABLE :: P1MEAN(:) 
@@ -33,6 +35,8 @@
 !      ---------      -------   --------
 !      *EMEAN*        REAL      TOTAL ENERGY.
 !      *FMEAN*        REAL      MEAN FREQUENCY (1./MEAN PERIOD).
+!      *NEMEAN*       REAL      COPY OF EMEAN FOR NEMO
+!      *NFMEAN*       REAL      COPY OF FMEAN FOR NEMO
 !      *THQ*          REAL      MEAN WAVE DIRECTION IN RADIANS.
 !      *SMEAN*        REAL      MEAN SQUARE SLOPE.
 !      *P1MEAN*       REAL      MEAN PERIOD (1).
