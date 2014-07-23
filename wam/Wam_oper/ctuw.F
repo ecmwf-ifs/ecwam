@@ -62,6 +62,7 @@
       IMPLICIT NONE
 
       INTEGER :: MIJS,MIJL,IG
+      INTEGER :: IP,IJP
       INTEGER :: K,M,IJ,IC,IX,KY,KK,KKM
       INTEGER :: KP1,KM1,JH
       INTEGER :: ICL,ICR,ICC, ICRM, JCR
@@ -661,6 +662,25 @@
               WRITE (IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
               WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
               WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+              DO IP=1,2
+              DO IC=1,2
+                IJP = KLAT(IJ,IC,IP)
+                IF(IJP.NE.NINF-1) THEN
+                  WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP,IG)
+                ELSE
+                  WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,'LAND'
+                ENDIF
+              ENDDO
+              ENDDO
+              DO IC=1,2
+                IJP = KLON(IJ,IC)
+                IF(IJP.NE.NINF-1) THEN
+                  WRITE (IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP,IG)
+                ELSE
+                  WRITE (IU06,*) '* DEPTH= ',IJP,IC,'LAND'
+                ENDIF
+              ENDDO
+
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
               WRITE (IU06,*) '* U = ',U(IJ,IG),' V = ',V(IJ,IG)
               ENDIF

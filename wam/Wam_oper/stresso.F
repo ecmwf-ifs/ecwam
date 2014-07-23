@@ -1,5 +1,5 @@
       SUBROUTINE STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                    ROAIRN, TAUW, TAUWLF, PHIAW,
+     &                    ROAIRN, TAUW, TAUWLF, PHIWA,
      &                    PHIAWDIAG, PHIAWUNR, SL, 
      &                    MIJ, LCFLX)
 
@@ -24,7 +24,7 @@
 !     ----------
 
 !       *CALL* *STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!                        ROAIRN, TAUW, TAUWLF, PHIAW,
+!                        ROAIRN, TAUW, TAUWLF, PHIWA,
 !                        PHIAWDIAG, PHIAWUNR, SL, 
 !                        MIJ, LCFLX)*
 !         *F*           - WAVE SPECTRUM.
@@ -39,7 +39,7 @@
 !         *TAUW*        - WAVE STRESS IN (M/S)**2
 !         *TAUWLF*      - LOW-FREQUENCY PART OF WAVE STRESS
 !                         (i.e. INTEGRATED OVER  THE PROGNOSTIC RANGE)
-!         *PHIAW*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
+!         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                         OVER THE FULL DISCRETISED FREQUENCY RANGE.
 !         *PHIAWDIAG*   - DIAGNOSTIC PART OF ENERGY FLUX INTO WAVES
 !                         (i.e. INTEGRATED FROM THE END OF THE PROGNOSTIC RANGE
@@ -91,7 +91,7 @@
 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,SL
       REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW,
-     &                           TAUWLF, PHIAW, PHIAWDIAG, 
+     &                           TAUWLF, PHIWA, PHIAWDIAG, 
      &                           PHIAWUNR
       REAL :: CONST0(IJS:IJL)
       LOGICAL :: LCFLX
@@ -179,12 +179,12 @@
            TAUWLF(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         ENDDO
 
-        PHIAW(IJS:IJL) = 0.
+        PHIWA(IJS:IJL) = 0.
         PHIAWDIAG(IJS:IJL) = 0.
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              PHIAW(IJ) = PHIAW(IJ)+SL(IJ,K,M)*CONSTFT(M)
+              PHIWA(IJ) = PHIWA(IJ)+SL(IJ,K,M)*CONSTFT(M)
               IF (M.GE.MIJ(IJ)) THEN
                 PHIAWDIAG(IJ) = PHIAWDIAG(IJ)+SL(IJ,K,M)*CONSTFE(IJ,M)
               ENDIF

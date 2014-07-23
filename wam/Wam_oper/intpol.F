@@ -55,19 +55,24 @@
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      INTEGER,DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
+      INTEGER :: IJ, IJS, IJL, IG, IRA, M, K
+      INTEGER :: NEWM, NEWM1, KH 
+      INTEGER, DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
+      REAL :: PI2G, FRE0, CDF 
+      REAL :: FNEW, GWH
+      REAL :: ZHOOK_HANDLE
       REAL :: DFTH(NFRE)
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
-      REAL,DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
+      REAL, DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
 
       LOGICAL :: LICE2SEA(IJS:IJL)
-      REAL ZHOOK_HANDLE
+! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
 
-! ----------------------------------------------------------------------
 
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
 !        -------------------------------

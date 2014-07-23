@@ -37,6 +37,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -45,14 +46,18 @@
       INTEGER :: IJS,IJL,IJ,K,M,NWP,IG
 
       REAL :: THRESHOLD,CHECKTA
-
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: EMN
-      REAL,DIMENSION(IJS:IJL) :: EWFG, FMWFG, ETOI, THMO, USMO
-      REAL,DIMENSION(NANG,NFRE) :: FSEA
+      REAL :: ZHOOK_HANDLE
       REAL :: CM(NFRE)
+      REAL, DIMENSION(IJS:IJL) :: EMN
+      REAL, DIMENSION(IJS:IJL) :: EWFG, FMWFG, ETOI, THMO, USMO
+      REAL, DIMENSION(NANG,NFRE) :: FSEA
+      REAL :: F(IJS:IJL,NANG,NFRE)
 
       LOGICAL :: LLFOUND
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('FWSEA',0,ZHOOK_HANDLE)
 
       IG=1
 
@@ -64,8 +69,6 @@
         EWFG(IJ)  = -999.                                              
         FMWFG(IJ) = -9999.                                             
       ENDDO
-
-! ----------------------------------------------------------------------
 
 
 !*    2. LOOP ON THE POINTS INSIDE THE BLOCK.                           
@@ -103,5 +106,6 @@
       IF (ITEST.GT.1)  WRITE(IU06,*)
      &   '          SUB. FWSEA: WIND SEA FOUND AT ',NWP, ' POINTS'
 
+      IF (LHOOK) CALL DR_HOOK('FWSEA',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE FWSEA

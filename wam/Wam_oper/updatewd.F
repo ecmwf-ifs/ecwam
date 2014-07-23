@@ -51,8 +51,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN      
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN 
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : UMAX

@@ -159,7 +159,7 @@
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
                 PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
-                TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
+                TAUWD(IJ)  = TAUWD(IJ)+CM(IJ)*SDISS*CONSTFM(IJ,M)
               ENDIF
             ENDDO
           ENDDO

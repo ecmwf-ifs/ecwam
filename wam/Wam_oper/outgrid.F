@@ -36,7 +36,7 @@
 !     EXTERNALS.
 !     ----------
 
-!       *LOC2GLO*   - TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK 
+!       *SETICEMASK*   - TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK 
 !                     ARRAY AND IMPOSES ICE MASK.
 !       *MAKEGRID*  - GENERATES GRIDDED FIELDS.
 !       *MPGATHERSCFLD* - GATHER SCALAR FIELD DISTRIBUTED ON DIFFERENT
@@ -54,31 +54,32 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL
+      USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL
       USE YOWCURR  , ONLY : U, V 
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH  ,
-     &            CICOVER  ,CITHICK 
+     &            CIBLOCK ,CITHICK 
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
+     &            C3G      ,WHGTAG   ,CWHTAG   ,RANGAG   ,
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
      &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
      &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
      &            CICG     ,CIHG     ,
-     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
+     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
+     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
-      USE YOWINTT  , ONLY : WHGTT1G  ,WDIRT1G  ,MWP1T1G  ,
-     &                      WHGTT2G  ,WDIRT2G  ,MWP1T2G  ,
-     &                      WHGTT3G  ,WDIRT3G  ,MWP1T3G
+      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,
-     &            SMEAN    ,P1MEAN   ,P2MEAN   ,SPRDMEAN ,C4MEAN   ,
+     &            SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
+     &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
      &            STRNMS   ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : ZMISS    ,EPSUS    ,EPSU10
       USE YOWSHAL  , ONLY : DEPTH
@@ -89,33 +90,60 @@
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
-      USE YOWTRAINS , ONLY: ETRAIN1  ,THTRAIN1 ,P1TRAIN1 ,
-     &                      ETRAIN2  ,THTRAIN2 ,P1TRAIN2 ,
-     &                      ETRAIN3  ,THTRAIN3 ,P1TRAIN3
+      USE YOWTRAINS, ONLY : EMTRAIN  ,THTRAIN  ,PMTRAIN
       USE YOWTEST  , ONLY : IU06     
+      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK, 
+     &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER ::  IJ,IJS,IJL,IG
+      INTEGER :: IJ,IJS,IJL,IG
+      INTEGER :: ITT,ICT
+      INTEGER :: NFLDTOT, NFLDPPEMAX
       INTEGER :: ITG
+      INTEGER :: ICNT, IFLD
+      INTEGER :: IR, IPR
+      INTEGER, DIMENSION(NPROC) :: NFLDPPE 
+      INTEGER, DIMENSION(NPROC) :: ISENDCOUNTS,IRECVCOUNTS
 
       REAL :: TAU 
       REAL :: ZHOOK_HANDLE
-      REAL,ALLOCATABLE,DIMENSION(:) :: CD,WVSTR
-      REAL :: TEMP(NIBLO)
+      REAL :: CD(IJS:IJL)
+      REAL :: ZCOMBUFR(MPMAXLENGTH)
+      REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP 
+      REAL, ALLOCATABLE, DIMENSION(:) :: WVSTR
+      REAL, ALLOCATABLE, DIMENSION(:) :: ZSENDBUF,ZRECVBUF
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
 
       LOGICAL :: LSQRT
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
 
+!     FIND THE NUMBER OF FIELDS EACH PE HAS TO DEAL WITH
+      NFLDPPE(:)=0
+      NFLDTOT=0
+      NFLDPPEMAX=1
+      DO ICT=1,JPPFLAG
+        IF(IPFGTBL(ICT).NE.0) THEN 
+          NFLDPPE(IPFGTBL(ICT))=NFLDPPE(IPFGTBL(ICT))+1
+          NFLDTOT=NFLDTOT+1
+          NFLDPPEMAX=MAX(NFLDPPEMAX,NFLDPPE(IPFGTBL(ICT)))
+        ENDIF
+      ENDDO
+      IF(NFLDTOT.EQ.0) THEN
+        IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
+        RETURN
+      ENDIF
+ 
+      ALLOCATE(TEMP(IJS:IJL,JPPFLAG))
+
 !*    1. INTEGRATED PARAMETERS OF TOTAL SEA.
 !        -----------------------------------
 
-        ALLOCATE (CD(IJS:IJL))
         IF(IPFGTBL(8).NE.0) ALLOCATE(WVSTR(IJS:IJL))
         DO IJ = IJS,IJL
           TAU = MAX(USNEW(IJ)**2,EPSUS)
@@ -126,544 +154,639 @@
           CD(IJ) = TAU/MAX(U10NEW(IJ)**2,EPSU10)
         ENDDO
 
-!*    1.3 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
+!*    1.3 APPLY SEA ICE MASK (IF NEEDED) AND SEND TO DEDICATED OUTPUT PE
 !         -------------------------------------------------
 
-          IF(IPFGTBL(1).NE.0) THEN 
-            CALL LOC2GLO(EMEAN(IJS),TEMP,IJS,IJL,IG)
+        IF(IPFGTBL(1).NE.0) THEN 
+          CALL SETICEMASK(EMEAN(IJS),TEMP(IJS,1),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(2).NE.0) THEN 
+          CALL SETICEMASK(THQ(IJS),TEMP(IJS,2),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(3).NE.0) THEN 
+          CALL SETICEMASK(FMEAN(IJS),TEMP(IJS,3),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(4).NE.0) THEN
+!         The friction velocity is NOT set to missing over ice 
+          CALL SETICEMASK(USNEW(IJS),TEMP(IJS,4),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(5).NE.0) THEN 
+!         The wind direction is NOT set to missing over ice 
+          CALL SETICEMASK(THWNEW(IJS),TEMP(IJS,5),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(6).NE.0) THEN
+          CALL SETICEMASK(FPMEAN,TEMP(IJS,6),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(7).NE.0) THEN 
+!         The drag coefficient is NOT set to missing over ice 
+          CALL SETICEMASK(CD,TEMP(IJS,7),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(8).NE.0) THEN
+!         The wave stress is NOT set to missing over ice 
+          CALL SETICEMASK(WVSTR,TEMP(IJS,8),IJS,IJL,IG,1.1)
+          DEALLOCATE(WVSTR)
+        ENDIF
+
+        IF(IPFGTBL(9).NE.0) THEN
+          CALL SETICEMASK(SMEAN(IJS),TEMP(IJS,9),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(10).NE.0) THEN
+!         The wind speed is NOT set to missing over ice. 
+          CALL SETICEMASK(U10NEW(IJS),TEMP(IJS,10),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(11).NE.0) THEN
+          CALL SETICEMASK(ESEA,TEMP(IJS,11),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(12).NE.0) THEN
+          CALL SETICEMASK(ESWELL,TEMP(IJS,12),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(13).NE.0) THEN
+          CALL SETICEMASK(THWISEA,TEMP(IJS,13),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(14).NE.0) THEN
+          CALL SETICEMASK(THSWELL,TEMP(IJS,14),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(15).NE.0) THEN
+          CALL SETICEMASK(FSEA,TEMP(IJS,15),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(16).NE.0) THEN
+          CALL SETICEMASK(FSWELL,TEMP(IJS,16),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(22).NE.0) THEN
+          CALL SETICEMASK(ALTWH,TEMP(IJS,22),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(23).NE.0) THEN
+          CALL SETICEMASK(CALTWH,TEMP(IJS,23),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(24).NE.0) THEN
+          CALL SETICEMASK(RALTCOR,TEMP(IJS,24),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(25).NE.0) THEN
+          CALL SETICEMASK(P1MEAN,TEMP(IJS,25),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(26).NE.0) THEN
+          CALL SETICEMASK(P2MEAN,TEMP(IJS,26),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(27).NE.0) THEN
+          CALL SETICEMASK(SPRDMEAN,TEMP(IJS,27),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(28).NE.0) THEN
+          CALL SETICEMASK(P1SEA,TEMP(IJS,28),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(29).NE.0) THEN
+          CALL SETICEMASK(P1SWELL,TEMP(IJS,29),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(30).NE.0) THEN
+          CALL SETICEMASK(P2SEA,TEMP(IJS,30),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(31).NE.0) THEN
+          CALL SETICEMASK(P2SWELL,TEMP(IJS,31),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(32).NE.0) THEN
+          CALL SETICEMASK(SPRDSEA,TEMP(IJS,32),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(33).NE.0) THEN
+          CALL SETICEMASK(SPRDSWELL,TEMP(IJS,33),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(34).NE.0) THEN
+          CALL SETICEMASK(C4MEAN,TEMP(IJS,34),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(35).NE.0) THEN
+          CALL SETICEMASK(BFMEAN,TEMP(IJS,35),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(36).NE.0) THEN
+          CALL SETICEMASK(QPMEAN,TEMP(IJS,36),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(37).NE.0) THEN
+!         The bathymetry is NOT set to missing over ice. 
+          CALL SETICEMASK(DEPTH(IJS,IG),TEMP(IJS,37),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(38).NE.0) THEN
+          CALL SETICEMASK(HMAXMEAN,TEMP(IJS,38),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(39).NE.0) THEN
+          CALL SETICEMASK(TMAXMEAN,TEMP(IJS,39),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(40).NE.0) THEN
+          CALL SETICEMASK(USTMEAN,TEMP(IJS,40),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(41).NE.0) THEN
+          CALL SETICEMASK(VSTMEAN,TEMP(IJS,41),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        IF(IPFGTBL(42).NE.0) THEN
+!         the ice mask does not apply to the imposed ocean current 
+          CALL SETICEMASK(U(IJS,IG),TEMP(IJS,42),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(43).NE.0) THEN
+!         the ice mask does not apply to the imposed ocean current 
+          CALL SETICEMASK(V(IJS,IG),TEMP(IJS,43),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(44).NE.0) THEN
+!         The energy flux into ocean is NOT set to missing over ice 
+          CALL SETICEMASK(PHIEPS(IJS),TEMP(IJS,44),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(45).NE.0) THEN
+!         The energy flux into waves is NOT set to missing over ice 
+          CALL SETICEMASK(PHIAW(IJS),TEMP(IJS,45),IJS,IJL,IG,1.1)
+        ENDIF
+
+        IF(IPFGTBL(46).NE.0) THEN
+!         The momentum flux into ocean is NOT set to missing over ice 
+          CALL SETICEMASK(TAUOC(IJS),TEMP(IJS,46),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ICT=46
+        DO ITT = 1, NTRAIN
+          ICT=ICT+1
+          IF(IPFGTBL(ICT).NE.0) THEN
+          CALL SETICEMASK(EMTRAIN(:,ITT),TEMP(IJS,ICT),
+     &                    IJS,IJL,IG,CITHRSH)
+          ENDIF
+
+          ICT=ICT+1
+          IF(IPFGTBL(ICT).NE.0) THEN
+          CALL SETICEMASK(THTRAIN(:,ITT),TEMP(IJS,ICT),
+     &                    IJS,IJL,IG,CITHRSH)
+          ENDIF
+
+          ICT=ICT+1
+          IF(IPFGTBL(ICT).NE.0) THEN
+          CALL SETICEMASK(PMTRAIN(:,ITT),TEMP(IJS,ICT),
+     &                    IJS,IJL,IG,CITHRSH)
+          ENDIF
+
+        ENDDO
+
+
+        ITG=46+3*NTRAIN+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+!         the ice mask does not apply to the mean square strain in the ice
+          CALL SETICEMASK(STRNMS(IJS),TEMP(IJS,ITG),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+!         the ice mask does not apply to air density 
+          CALL SETICEMASK(ROAIRN(IJS),TEMP(IJS,ITG),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+!         the ice mask does not apply to the imposed convective velocity scale
+          CALL SETICEMASK(ZIDLNEW(IJS),TEMP(IJS,ITG),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+!         the ice mask does not apply
+          CALL SETICEMASK(CICOVER(IJS,IG),TEMP(IJS,ITG),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(CITHICK(IJS,IG),TEMP(IJS,ITG),IJS,IJL,IG,1.1)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(C3MEAN,TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          DO IJ = IJS,IJL
+            TEMP(IJ,ITG) = NEMOSST(IJ) 
+          ENDDO
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          DO IJ = IJS,IJL
+            TEMP(IJ,ITG) = NEMOCICOVER(IJ) 
+          ENDDO
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          IF (LNEMOCITHICK) THEN
+            DO IJ = IJS,IJL
+              TEMP(IJ,ITG) = NEMOCITHICK(IJ) 
+            ENDDO
+          ELSE
+            DO IJ = IJS,IJL
+              TEMP(IJ,ITG) = ZMISS
+            ENDDO
+          ENDIF
+        ENDIF
+          
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          DO IJ = IJS,IJL
+            TEMP(IJ,ITG) = NEMOUCUR(IJ) 
+          ENDDO
+        ENDIF
+        
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          DO IJ = IJS,IJL
+            TEMP(IJ,ITG) = NEMOVCUR(IJ) 
+          ENDDO
+        ENDIF
+
+!       EXTRA OUTPUT FIELDS:
+!       See *OUTBS* where they should have been calculated or pick them up from
+!       the forcing fields (see above if the sea ice mask has to be removed)
+        ITG=JPPFLAG-4
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(WX1(IJS),TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+        ITG=JPPFLAG-3
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(WX2(IJS),TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+        ITG=JPPFLAG-2
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(WX3(IJS),TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+        ITG=JPPFLAG-2
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(WX4(IJS),TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+        ITG=JPPFLAG
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SETICEMASK(WX5(IJS),TEMP(IJS,ITG),IJS,IJL,IG,CITHRSH)
+        ENDIF
+
+
+!     SENDING TO RELEVANT PE'S
+!     ------------------------
+
+
+      DO IPR=1,NPROC
+        ISENDCOUNTS(IPR)=NFLDPPE(IPR)*(NEND(IRANK)-NSTART(IRANK)+1)
+      ENDDO
+
+      DO IPR=1,NPROC
+        IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NEND(IPR)-NSTART(IPR)+1)
+      ENDDO
+
+!     LOADING THE COMMUNICATION BUFFER
+      ALLOCATE(ZSENDBUF(NFLDTOT*MPMAXLENGTH))
+      ICNT=0
+      DO IPR=1,NPROC
+        DO ICT=1,JPPFLAG
+          IF(IPFGTBL(ICT).EQ.IPR) THEN 
+            DO IJ=IJS,IJL
+              ICNT = ICNT + 1
+              ZSENDBUF(ICNT) = TEMP(IJ,ICT)
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDDO
+
+      DEALLOCATE(TEMP)
+      ALLOCATE(ZRECVBUF(NFLDPPEMAX*NIBLO))
+
+!     GLOBAL EXCHANGE
+      CALL GSTATS(674,0)
+      CALL MPL_ALLTOALLV(ZSENDBUF,ISENDCOUNTS,
+     &                   ZRECVBUF,IRECVCOUNTS,
+     &                   CDSTRING='OUTGRID:')
+      CALL GSTATS(674,1)
+      DEALLOCATE(ZSENDBUF)
+
+
+!     RETRIEVE THE INFORMATION
+!     ------------------------
+
+      IF(NFLDPPE(IRANK).GT.0) THEN
+        ALLOCATE(GTEMP(NIBLO))
+
+
+!     RECEIVING AND TRANSFERING FROM BLOCK TO GRID
+!     --------------------------------------------
+
+      IFLD=0
+      DO ICT=1,JPPFLAG
+        IF(IFLD.GE.NFLDPPE(IRANK)) EXIT
+        IF(IPFGTBL(ICT).EQ.IRANK) THEN
+          ICNT=0
+          DO IPR=1,NPROC
+            ICNT=ICNT+IFLD*(NEND(IPR)-NSTART(IPR)+1)
+            DO IJ=NSTART(IPR),NEND(IPR)
+              ICNT=ICNT+1
+              GTEMP(IJ)=ZRECVBUF(ICNT)
+            ENDDO
+            ICNT=ICNT+(NFLDPPE(IRANK)-1-IFLD)*(NEND(IPR)-NSTART(IPR)+1)
+          ENDDO
+
+!!! until I move all grid arrays to one work array, need to loop on all
+!!! special case
+          IF(ICT.EQ.1) THEN
             LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(1),1,NSTART,NEND,TEMP)
-            IF(IPFGTBL(1).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(2).NE.0) THEN 
-            CALL LOC2GLO(THQ(IJS),TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WHGTTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.2) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(2),2,NSTART,NEND,TEMP)
-            IF(IPFGTBL(2).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(3).NE.0) THEN 
-            CALL LOC2GLO(FMEAN(IJS),TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WDIRTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.3) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(3),3,NSTART,NEND,TEMP)
-            IF(IPFGTBL(3).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WMNFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(4).NE.0) THEN
-            DO IJ = IJS,IJL
-              TEMP(IJ) = USNEW(IJ)
-!             cannot set USNEW to ZMISS since it can still be used
-!             in the next time step
-              IF (LICERUN.AND.LMASKICE.AND.
-     &            CICOVER(IJ,IG).GT.CITHRSH) THEN
-                TEMP(IJ)=ZMISS
-              ELSE
-                TEMP(IJ) = USNEW(IJ)
-              ENDIF
-            ENDDO
+            CALL MAKEGRID (GTEMP,WMNFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.4) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(4),4,NSTART,NEND,TEMP)
-            IF(IPFGTBL(4).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP,USTARG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(5).NE.0) THEN 
-            DO IJ = IJS,IJL
-!             The wind direction is NOT set to missing over ice 
-              TEMP(IJ) = THWNEW(IJ) 
-            ENDDO
+            CALL MAKEGRID (GTEMP,USTARG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.5) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(5),5,NSTART,NEND,TEMP)
-            IF(IPFGTBL(5).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP,UDIRG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(6).NE.0) THEN
-            CALL LOC2GLO(FPMEAN,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,UDIRG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.6) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(6),6,NSTART,NEND,TEMP)
-            IF(IPFGTBL(6).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WPKFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(7).NE.0) THEN 
-            CALL LOC2GLO(CD,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WPKFTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.7) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(7),7,NSTART,NEND,TEMP)
-            IF(IPFGTBL(7).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,CDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-            IF(ALLOCATED(CD)) DEALLOCATE(CD)
-          ENDIF
-
-          IF(IPFGTBL(8).NE.0) THEN
-            CALL LOC2GLO(WVSTR,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,CDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.8) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(8),8,NSTART,NEND,TEMP)
-            IF(IPFGTBL(8).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,TAUWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-            DEALLOCATE(WVSTR)
-          ENDIF
-
-          IF(IPFGTBL(9).NE.0) THEN
-            CALL LOC2GLO(SMEAN(IJS),TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,TAUWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.9) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(9),9,NSTART,NEND,TEMP)
-            IF(IPFGTBL(9).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,SMEANG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(10).NE.0) THEN
-            DO IJ = IJS,IJL
-!             The wind speed is NOT set to missing over ice. 
-              TEMP(IJ) = U10NEW(IJ)
-            ENDDO
+            CALL MAKEGRID (GTEMP,SMEANG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.10) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(10),10,NSTART,NEND,TEMP)
-            IF(IPFGTBL(10).EQ.IRANK) 
-     &        CALL MAKEGRID (TEMP,U10G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(25).NE.0) THEN
-            CALL LOC2GLO(P1MEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(25),25,NSTART,NEND,TEMP)
-            IF(IPFGTBL(25).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,MWP1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(26).NE.0) THEN
-            CALL LOC2GLO(P2MEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(26),26,NSTART,NEND,TEMP)
-            IF(IPFGTBL(26).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,MWP2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(27).NE.0) THEN
-            CALL LOC2GLO(SPRDMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(27),27,NSTART,NEND,TEMP)
-            IF(IPFGTBL(27).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WSPRDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(34).NE.0) THEN
-            CALL LOC2GLO(C4MEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(34),34,NSTART,NEND,TEMP)
-            IF(IPFGTBL(34).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,C4G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(35).NE.0) THEN
-            CALL LOC2GLO(BFMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(35),35,NSTART,NEND,TEMP)
-            IF(IPFGTBL(35).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,BFG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(36).NE.0) THEN
-            CALL LOC2GLO(QPMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(36),36,NSTART,NEND,TEMP)
-            IF(IPFGTBL(36).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,QPG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(37).NE.0) THEN
-            DO IJ = IJS,IJL
-!             The bathymetry is NOT set to missing over ice. 
-              TEMP(IJ) = DEPTH(IJ,IG)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(37),37,NSTART,NEND,TEMP)
-            IF(IPFGTBL(37).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,DEPTHG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(38).NE.0) THEN
-            CALL LOC2GLO(HMAXMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(38),38,NSTART,NEND,TEMP)
-            IF(IPFGTBL(38).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,HMAXG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(39).NE.0) THEN
-            CALL LOC2GLO(TMAXMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(39),39,NSTART,NEND,TEMP)
-            IF(IPFGTBL(39).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,TMAXG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(40).NE.0) THEN
-            CALL LOC2GLO(USTMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(40),40,NSTART,NEND,TEMP)
-            IF(IPFGTBL(40).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,USTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(41).NE.0) THEN
-            CALL LOC2GLO(VSTMEAN,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(41),41,NSTART,NEND,TEMP)
-            IF(IPFGTBL(41).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,VSTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(42).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply to the imposed ocean current 
-              TEMP(IJ) = U(IJ,IG)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(42),42,NSTART,NEND,TEMP)
-            IF(IPFGTBL(42).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,UCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(43).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply to the imposed ocean current 
-              TEMP(IJ) = V(IJ,IG)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(43),43,NSTART,NEND,TEMP)
-            IF(IPFGTBL(43).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,VCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(44).NE.0) THEN
-            CALL LOC2GLO(PHIEPS(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(44),44,NSTART,NEND,TEMP)
-            IF(IPFGTBL(44).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,PHIEPSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(45).NE.0) THEN
-            CALL LOC2GLO(PHIAW(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(45),45,NSTART,NEND,TEMP)
-            IF(IPFGTBL(45).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,PHIAWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(46).NE.0) THEN
-            CALL LOC2GLO(TAUOC(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(46),46,NSTART,NEND,TEMP)
-            IF(IPFGTBL(46).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,TAUOCG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          ITG=56
-          IF(IPFGTBL(ITG).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply to the mean square strain in the ice
-              TEMP(IJ) = STRNMS(IJ)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,STRNMSG,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-
-          ITG=57
-          IF(IPFGTBL(ITG).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply to the imposed air density
-              TEMP(IJ) = ROAIRN(IJ)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,RHOAG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          ITG=58
-          IF(IPFGTBL(ITG).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply to the imposed convective velocity scale
-              TEMP(IJ) = ZIDLNEW(IJ)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WSTARG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          ITG=59
-          IF(IPFGTBL(ITG).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply
-              TEMP(IJ) = CICOVER(IJ,IG)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,CICG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          ITG=60
-          IF(IPFGTBL(ITG).NE.0) THEN
-            DO IJ = IJS,IJL
-!             the ice mask does not apply
-              TEMP(IJ) = CITHICK(IJ,IG)
-            ENDDO
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,CIHG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-!         EXTRA OUTPUT FIELDS:
-!         See *OUTBS* where they should have been calculated or pick them up from
-!         the forcing fields (see above if the sea ice mask has to be removed)
-          ITG=JPPFLAG-4
-          IF(IPFGTBL(ITG).NE.0) THEN
-            CALL LOC2GLO(WX1(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WX1G,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-          ITG=JPPFLAG-3
-          IF(IPFGTBL(ITG).NE.0) THEN
-            CALL LOC2GLO(WX2(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WX2G,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-          ITG=JPPFLAG-2
-          IF(IPFGTBL(ITG).NE.0) THEN
-            CALL LOC2GLO(WX3(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WX3G,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-          ITG=JPPFLAG-2
-          IF(IPFGTBL(ITG).NE.0) THEN
-            CALL LOC2GLO(WX4(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WX4G,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-          ITG=JPPFLAG
-          IF(IPFGTBL(ITG).NE.0) THEN
-            CALL LOC2GLO(WX5(IJS),TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(ITG),ITG,NSTART,NEND,TEMP)
-            IF(IPFGTBL(ITG).EQ.IRANK)
-     &      CALL MAKEGRID (TEMP,WX5G,1,NEND(NPROC),IG,LSQRT,0.)
-          ENDIF
-
-
-! ----------------------------------------------------------------------
-
-!*    2. INTEGRATED PARAMETERS OF SWELL AND WIND SEA.
-!        --------------------------------------------
-
-      IF (CDTINTS.EQ.CDTPRO) THEN
-
-!*    2.1 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
-!         -------------------------------------------------
-
-          IF(IPFGTBL(11).NE.0) THEN
-            CALL LOC2GLO(ESEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,U10G,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.11) THEN
             LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(11),11,NSTART,NEND,TEMP)
-            IF(IPFGTBL(11).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(12).NE.0) THEN
-            CALL LOC2GLO(ESWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WHGTWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.12) THEN
             LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(12),12,NSTART,NEND,TEMP)
-            IF(IPFGTBL(12).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(13).NE.0) THEN
-            CALL LOC2GLO(THWISEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WHGTSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.13) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(13),13,NSTART,NEND,TEMP)
-            IF(IPFGTBL(13).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(14).NE.0) THEN
-            CALL LOC2GLO(THSWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WDIRWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.14) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(14),14,NSTART,NEND,TEMP)
-            IF(IPFGTBL(14).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(15).NE.0) THEN
-            CALL LOC2GLO(FSEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WDIRSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.15) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(15),15,NSTART,NEND,TEMP)
-            IF(IPFGTBL(15).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WMNFWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(16).NE.0) THEN
-            CALL LOC2GLO(FSWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WMNFWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.16) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(16),16,NSTART,NEND,TEMP)
-            IF(IPFGTBL(16).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WMNFSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(28).NE.0) THEN
-            CALL LOC2GLO(P1SEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WMNFSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.22) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(28),28,NSTART,NEND,TEMP)
-            IF(IPFGTBL(28).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP1WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(29).NE.0) THEN
-            CALL LOC2GLO(P1SWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,WHGTAG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.23) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(29),29,NSTART,NEND,TEMP)
-            IF(IPFGTBL(29).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP1SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(30).NE.0) THEN
-            CALL LOC2GLO(P2SEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,CWHTAG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.24) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(30),30,NSTART,NEND,TEMP)
-            IF(IPFGTBL(30).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP2WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(31).NE.0) THEN
-            CALL LOC2GLO(P2SWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,RANGAG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.25) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(31),31,NSTART,NEND,TEMP)
-            IF(IPFGTBL(31).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP2SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(32).NE.0) THEN
-            CALL LOC2GLO(SPRDSEA,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,MWP1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.26) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(32),32,NSTART,NEND,TEMP)
-            IF(IPFGTBL(32).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WSPRDWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(33).NE.0) THEN
-            CALL LOC2GLO(SPRDSWELL,TEMP,IJS,IJL,IG)
+            CALL MAKEGRID (GTEMP,MWP2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.27) THEN
             LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(33),33,NSTART,NEND,TEMP)
-            IF(IPFGTBL(33).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WSPRDSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,WSPRDG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.28) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,MWP1WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.29) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,MWP1SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.30) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,MWP2WG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.31) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,MWP2SG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.32) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,WSPRDWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.33) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,WSPRDSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.34) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,C4G,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.35) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,BFG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.36) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,QPG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.37) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,DEPTHG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.38) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,HMAXG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.39) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,TMAXG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.40) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,USTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.41) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,VSTOKESG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.42) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,UCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.43) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,VCURG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.44) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,PHIEPSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.45) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,PHIAWG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.46) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,TAUOCG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
           ENDIF
 
+          DO ITT = 1, NTRAIN
+            IF(ICT.EQ.(46+(ITT-1)*3+1) ) THEN
+              LSQRT=.TRUE.
+              CALL MAKEGRID (GTEMP,WHGTTRG(:,:,ITT),
+     &                   1,NEND(NPROC),IG,LSQRT,ZMISS)
+              IFLD=IFLD+1
+
+            ELSEIF(ICT.EQ.(46+(ITT-1)*3+2) ) THEN
+              LSQRT=.FALSE.
+              CALL MAKEGRID (GTEMP,WDIRTRG(:,:,ITT),
+     &                   1,NEND(NPROC),IG,LSQRT,ZMISS)
+              IFLD=IFLD+1
+
+            ELSEIF(ICT.EQ.(46+(ITT-1)*3+3) ) THEN
+              LSQRT=.FALSE.
+              CALL MAKEGRID (GTEMP,MWPMTRG(:,:,ITT),
+     &                   1,NEND(NPROC),IG,LSQRT,ZMISS)
+              IFLD=IFLD+1
+            ENDIF
+          ENDDO
+
+          IF(ICT.EQ.(46+3*NTRAIN+1)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,STRNMSG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+2)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,RHOAG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+3)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,WSTARG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+4)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,CICG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+5)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,CIHG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+6)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,C3G,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+7)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NSSTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+8)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NICCG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+9)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NICTG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+10)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NUCUG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+11)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NVCUG,1,NEND(NPROC),IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ENDIF
+
+!     EXTRA OUTPUT FIELDS:
+!     See *OUTBS* where they should have been calculated or pick them up from
+!     the forcing fields (see above if the sea ice mask has to be removed)
+        IF(ICT.EQ.(JPPFLAG-4)) THEN
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,WX1G,1,NEND(NPROC),IG,LSQRT,0.)
+          IFLD=IFLD+1
+        ELSEIF(ICT.EQ.(JPPFLAG-3)) THEN
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,WX2G,1,NEND(NPROC),IG,LSQRT,0.)
+          IFLD=IFLD+1
+        ELSEIF(ICT.EQ.(JPPFLAG-2)) THEN
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,WX3G,1,NEND(NPROC),IG,LSQRT,0.)
+          IFLD=IFLD+1
+        ELSEIF(ICT.EQ.(JPPFLAG-1)) THEN
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,WX4G,1,NEND(NPROC),IG,LSQRT,0.)
+          IFLD=IFLD+1
+        ELSEIF(ICT.EQ.(JPPFLAG)) THEN
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,WX5G,1,NEND(NPROC),IG,LSQRT,0.)
+          IFLD=IFLD+1
+        ENDIF
+
+
+        ENDIF ! IPFGTBL
+      ENDDO  ! ICT
+
+        DEALLOCATE(GTEMP)
       ENDIF
 
-! ----------------------------------------------------------------------
+      DEALLOCATE(ZRECVBUF)
 
-!*    3. INTEGRATED PARAMETERS OF 3 WAVE TRAINS
-!        --------------------------------------------
-
-      IF (CDTINTS.EQ.CDTPRO) THEN
-
-!*    3.1 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
-!         -------------------------------------------------
-
-          IF(IPFGTBL(47).NE.0) THEN
-            CALL LOC2GLO(ETRAIN1,TEMP,IJS,IJL,IG)
-            LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(47),47,NSTART,NEND,TEMP)
-            IF(IPFGTBL(47).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTT1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(48).NE.0) THEN
-            CALL LOC2GLO(THTRAIN1,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(48),48,NSTART,NEND,TEMP)
-            IF(IPFGTBL(48).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRT1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(49).NE.0) THEN
-            CALL LOC2GLO(P1TRAIN1,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(49),49,NSTART,NEND,TEMP)
-            IF(IPFGTBL(49).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP1T1G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(50).NE.0) THEN
-            CALL LOC2GLO(ETRAIN2,TEMP,IJS,IJL,IG)
-            LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(50),50,NSTART,NEND,TEMP)
-            IF(IPFGTBL(50).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTT2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(51).NE.0) THEN
-            CALL LOC2GLO(THTRAIN2,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(51),51,NSTART,NEND,TEMP)
-            IF(IPFGTBL(51).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRT2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(52).NE.0) THEN
-            CALL LOC2GLO(P1TRAIN2,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(52),52,NSTART,NEND,TEMP)
-            IF(IPFGTBL(52).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP1T2G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(53).NE.0) THEN
-            CALL LOC2GLO(ETRAIN3,TEMP,IJS,IJL,IG)
-            LSQRT=.TRUE.
-            CALL MPGATHERSCFLD(IPFGTBL(53),53,NSTART,NEND,TEMP)
-            IF(IPFGTBL(53).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WHGTT3G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(54).NE.0) THEN
-            CALL LOC2GLO(THTRAIN3,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(54),54,NSTART,NEND,TEMP)
-            IF(IPFGTBL(54).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,WDIRT3G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-          IF(IPFGTBL(55).NE.0) THEN
-            CALL LOC2GLO(P1TRAIN3,TEMP,IJS,IJL,IG)
-            LSQRT=.FALSE.
-            CALL MPGATHERSCFLD(IPFGTBL(55),55,NSTART,NEND,TEMP)
-            IF(IPFGTBL(55).EQ.IRANK) 
-     &      CALL MAKEGRID (TEMP,MWP1T3G,1,NEND(NPROC),IG,LSQRT,ZMISS)
-          ENDIF
-
-      ENDIF
-
-      CALL GSTATS(750,0)
-      CALL MPL_BARRIER(CDSTRING='OUTGRID:')
-      CALL GSTATS(750,1)
 
       IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
       RETURN

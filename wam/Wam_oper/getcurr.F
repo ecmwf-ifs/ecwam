@@ -46,7 +46,8 @@
 
 ! ------------------------------------------------------------------- 
 
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
+      USE YOWNEMOFLDS,ONLY: NEMOUCUR, NEMOVCUR
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,
      &             LLCHKCFL,LLCHKCFLA
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
@@ -66,7 +67,7 @@
 
       INTEGER :: IG
       INTEGER :: LIU, IREAD
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER :: JKGLO,KIJS,KIJL,NPROMA,IJ
 
       REAL :: ZHOOK_HANDLE
 
@@ -105,7 +106,7 @@
             IF(LWCOU) THEN
 !             CURRENTS FROM COUPLING INTERFACE 
 !             --------------------------------
-              IF(LWCUR) THEN
+              IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
 
                 DO IG=1,IGL
 !!!               from NINF to NSUP as the halo has to be included
@@ -131,8 +132,19 @@
      &             ' INPUT CURRENTS FIELDS CONVERTED TO BLOCKS'
                    CALL FLUSH(IU06)
                 ENDIF
-
-
+!             CURRENTS FROM NEMO
+!             ------------------
+              ELSEIF(LWCUR.AND.LWNEMOCOUCUR) THEN
+                WRITE(IU06,*)'NEMO CURRENTS'!
+                IG=1
+                DO IJ = IJS(IG),IJL(IG)
+                  U(IJ,IG) = NEMOUCUR(IJ)
+                  V(IJ,IG) = NEMOVCUR(IJ)
+                ENDDO
+                U(NINF-1,IG)=0.
+                V(NINF-1,IG)=0.
+                CALL MPEXCHNG(U,1,1)
+                CALL MPEXCHNG(V,1,1)
               ELSE
                 U=0.
                 V=0.

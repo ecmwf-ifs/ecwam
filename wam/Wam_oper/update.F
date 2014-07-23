@@ -40,18 +40,22 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      DIMENSION F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: EMN, FMN
-      REAL,DIMENSION(IJS:IJL) :: F1MN, AKMN, XKMN 
-      REAL,DIMENSION(IJS:IJL) :: ETOI, USMO, THMO         
-      REAL,DIMENSION(IJS:IJL) :: EWFG, EWOI, EWA,FMWFG, FMWA,
-     &                           TDUR, USA
+      INTEGER :: IJ, IJS, IJL
+
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: EMN, FMN
+      REAL, DIMENSION(IJS:IJL) :: F1MN, AKMN, XKMN 
+      REAL, DIMENSION(IJS:IJL) :: ETOI, USMO, THMO         
+      REAL, DIMENSION(IJS:IJL) :: EWFG, EWOI, EWA,FMWFG, FMWA,
+     &                            TDUR, USA
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: F
 
 !       *EWFG*     : WINDSEA ENERGY (FIRST GUESS).                      
 !       *EWOI*     : WINDSEA ENERGY (MEASUREMENT).                      
@@ -65,6 +69,8 @@
 !                    AND DURATION (I.E. ANALYSED USTAR).                
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('UPDATE',0,ZHOOK_HANDLE)
 
 !*    1. FIND THE WINDSEA.                                              
 !        -----------------                                              
@@ -159,5 +165,6 @@
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
      &   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'
                                                                         
+      IF (LHOOK) CALL DR_HOOK('UPDATE',1,ZHOOK_HANDLE)
       RETURN                                                            
       END SUBROUTINE UPDATE

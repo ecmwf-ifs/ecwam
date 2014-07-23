@@ -1,7 +1,7 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
      &                    U10OLD,THWOLD,U10NEW,THWNEW,
      &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-     &                    CICOVER, CITHICK)
+     &                    CICOVER, CITHICK, CIWA)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -15,7 +15,7 @@
 !*    PURPOSE.
 !     --------
 
-!       READ WINDS WHEN NEEDED.                                   
+!       GETS FORCING FIELDS WHEN NEEDED.                                   
 
 !**   INTERFACE.
 !     ----------
@@ -23,7 +23,7 @@
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
 !     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
 !     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!     3                  CICOVER, CITHICK)*
+!     3                  CICOVER, CITHICK, CIWA)*
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -45,6 +45,7 @@
 !      *ZIDLOLD* - INTERMEDIATE STORAGE OF Zi/L.
 !      *CICOVER* - SEA ICE COVER. 
 !      *CITHICK* - SEA ICE THICKNESS. 
+!      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
 
 !     METHOD.
 !     -------
@@ -66,7 +67,7 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
-      USE YOWPARAM , ONLY : NBLO
+      USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -82,6 +83,7 @@
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,ROAIRO,ZIDLOLD
       REAL,DIMENSION(NINF:NSUP) :: U10NEW,THWNEW ,ROAIRN,ZIDLNEW
       REAL,DIMENSION(NINF:NSUP,NBLO) :: CICOVER, CITHICK 
+      REAL,DIMENSION(NINF:NSUP,NFRE,NBLO) :: CIWA
 
 ! ----------------------------------------------------------------------
 
@@ -103,6 +105,7 @@
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
       IF (CDATE.LT.CDATEWH) THEN
+
         NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
@@ -170,6 +173,9 @@
 
         CALL INCDATE(CDATEWH,IDELWO)
         NEWREAD = .TRUE.   
+
+!       UPDATE THE SEA ICE REDUCTION FACTOR
+        CALL CIREDUCE (CICOVER,CITHICK,CIWA)
 
       ENDIF   
 

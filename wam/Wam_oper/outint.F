@@ -33,7 +33,7 @@
 !       *CALL* *OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB)
 !          *IU06*   - PRINTER OUTPUT UNIT.
 !          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
-!          *IU21    - OUTPUT UNIT OF SEA AND SWELL + 3 TRAINS PARAMETERS.
+!          *IU21    - OUTPUT UNIT OF SEA AND SWELL + 3 SWELL TRAINS PARAMETERS.
 !          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
 !                     SPECTRUM.
 !          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
@@ -62,7 +62,7 @@
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
      &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
-     &            JPPFLAG  ,
+     &            NTRAIN   ,JPPFLAG  ,
      &            LFDB     ,IPFGTBL  ,LOUTINT
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
@@ -74,13 +74,13 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
+     &            C3G      ,
+     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG    ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
-      USE YOWINTT  , ONLY : WHGTT1G  ,WDIRT1G  ,MWP1T1G  ,
-     &                      WHGTT2G  ,WDIRT2G  ,MWP1T2G  ,
-     &                      WHGTT3G  ,WDIRT3G  ,MWP1T3G
+      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -100,7 +100,8 @@
       IMPLICIT NONE
 
       INTEGER :: IU06, IU20, IU21, IU30, ITEST, KFDB
-      INTEGER :: I,J,ITG
+      INTEGER :: I, J, ITG
+      INTEGER :: ITT, ICT, ITAG
       INTEGER :: JY, JX
       INTEGER :: IGLOBAL,ILOCAL      ! FDB field counters
       INTEGER :: IPARAM, ITABLE
@@ -110,13 +111,17 @@
       INTEGER :: IUOUT 
       INTEGER :: IFCST, INHOUR, ISHIFT
       INTEGER :: IY,IM,ID,IH,IMN,ISS
+  
       REAL :: DNGX,DNGY
       REAL :: ZHOOK_HANDLE
+
       CHARACTER(LEN=14) :: CDATE, CDATE1, CDATE2
       CHARACTER(LEN=24) :: OFILENAME
       CHARACTER(LEN=100) :: TITL
+
       LOGICAL :: LFDBOPEN
       LOGICAL :: FRSTIME30
+
       DATA FRSTIME30 / .TRUE. /
 
 ! ----------------------------------------------------------------------
@@ -193,43 +198,25 @@
           ENDIF
         ENDIF
 
-        IF(FFLAG(48).OR.PFLAG(48).OR.GFLAG(48)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(48)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-                IF(WDIRT1G(I,J).NE.ZMISS)
-     &            WDIRT1G(I,J) = MOD(DEG * WDIRT1G(I,J) + 180.,360.)
+        ICT=45
+        DO ITT=1,NTRAIN
+          ICT=ICT+3
+          IF(FFLAG(ICT).OR.PFLAG(ICT).OR.GFLAG(ICT)) THEN
+            IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(ICT)))
+     &       .OR.(.NOT.LMESSPASS)) THEN
+              DO J=1,NGY
+                DO I=1,NGX
+                  IF(WDIRTRG(I,J,ITT).NE.ZMISS)
+     &              WDIRTRG(I,J,ITT) =
+     &                MOD(DEG * WDIRTRG(I,J,ITT) + 180.,360.)
+                ENDDO
               ENDDO
-            ENDDO
+            ENDIF
           ENDIF
-        ENDIF
-
-        IF(FFLAG(51).OR.PFLAG(51).OR.GFLAG(51)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(51)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-                IF(WDIRT2G(I,J).NE.ZMISS)
-     &            WDIRT2G(I,J) = MOD(DEG * WDIRT2G(I,J) + 180.,360.)
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
-
-        IF(FFLAG(54).OR.PFLAG(54).OR.GFLAG(54)) THEN
-          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(54)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            DO J=1,NGY
-              DO I=1,NGX
-                IF(WDIRT3G(I,J).NE.ZMISS)
-     &            WDIRT3G(I,J) = MOD(DEG * WDIRT3G(I,J) + 180.,360.)
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
+        ENDDO
 
       ENDIF
+
 
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON A SPECIFIC PROCESS
 !        --------------------------------------------------------------
@@ -280,11 +267,41 @@
         IF (FFLAG(44))CALL MPGATHERGRDFLD(IPFGTBL(44),IRECV,44,PHIEPSG)
         IF (FFLAG(45))CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,45,PHIAWG)
         IF (FFLAG(46))CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,46,TAUOCG)
-        IF (FFLAG(56))CALL MPGATHERGRDFLD(IPFGTBL(56),IRECV,56,STRNMSG)
-        IF (FFLAG(57))CALL MPGATHERGRDFLD(IPFGTBL(57),IRECV,57,RHOAG)
-        IF (FFLAG(58))CALL MPGATHERGRDFLD(IPFGTBL(58),IRECV,58,WSTARG)
-        IF (FFLAG(59))CALL MPGATHERGRDFLD(IPFGTBL(59),IRECV,59,CICG)
-        IF (FFLAG(60))CALL MPGATHERGRDFLD(IPFGTBL(60),IRECV,60,CIHG)
+
+        ITG=46+3*NTRAIN+1
+
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,STRNMSG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,RHOAG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,WSTARG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,CICG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,CIHG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,C3G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NSSTG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NICCG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NICTG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NUCUG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NVCUG)
 
       ENDIF
 
@@ -388,38 +405,69 @@
      &      CALL MPGATHERGRDFLD(IPFGTBL(45),IRECV,145,PHIAWG)
         IF (PFLAG(46).OR.(.NOT.LFDB.AND.GFLAG(46)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(46),IRECV,146,TAUOCG)
-        IF (PFLAG(47).OR.(.NOT.LFDB.AND.GFLAG(47)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(47),IRECV,147,WHGTT1G)
-        IF (PFLAG(48).OR.(.NOT.LFDB.AND.GFLAG(48)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(48),IRECV,148,WDIRT1G)
-        IF (PFLAG(49).OR.(.NOT.LFDB.AND.GFLAG(49)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(49),IRECV,149,MWP1T1G)
-        IF (PFLAG(50).OR.(.NOT.LFDB.AND.GFLAG(50)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(50),IRECV,150,WHGTT2G)
-        IF (PFLAG(51).OR.(.NOT.LFDB.AND.GFLAG(51)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(51),IRECV,151,WDIRT2G)
-        IF (PFLAG(52).OR.(.NOT.LFDB.AND.GFLAG(52)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(52),IRECV,152,MWP1T2G)
-        IF (PFLAG(53).OR.(.NOT.LFDB.AND.GFLAG(53)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(53),IRECV,153,WHGTT3G)
-        IF (PFLAG(54).OR.(.NOT.LFDB.AND.GFLAG(54)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(54),IRECV,154,WDIRT3G)
-        IF (PFLAG(55).OR.(.NOT.LFDB.AND.GFLAG(55)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(55),IRECV,155,MWP1T3G)
-        IF (PFLAG(56).OR.(.NOT.LFDB.AND.GFLAG(56)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(56),IRECV,156,STRNMSG)
-        IF (PFLAG(57).OR.(.NOT.LFDB.AND.GFLAG(57)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(57),IRECV,157,RHOAG)
-        IF (PFLAG(58).OR.(.NOT.LFDB.AND.GFLAG(58)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(58),IRECV,158,WSTARG)
-        IF (PFLAG(59).OR.(.NOT.LFDB.AND.GFLAG(59)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(59),IRECV,159,CICG)
-        IF (PFLAG(60).OR.(.NOT.LFDB.AND.GFLAG(60)))
-     &      CALL MPGATHERGRDFLD(IPFGTBL(60),IRECV,160,CIHG)
+        ICT=46
+        DO ITT=1,NTRAIN
+          ICT=ICT+1
+          ITAG=100+ICT
+          IF (PFLAG(ICT).OR.(.NOT.LFDB.AND.GFLAG(ICT)))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ITAG,WHGTTRG(:,:,ITT))
+          ICT=ICT+1
+          IF (PFLAG(ICT).OR.(.NOT.LFDB.AND.GFLAG(ICT)))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ITAG,WDIRTRG(:,:,ITT))
+          ICT=ICT+1
+          IF (PFLAG(ICT).OR.(.NOT.LFDB.AND.GFLAG(ICT)))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ITAG,MWPMTRG(:,:,ITT))
+        ENDDO
+
+        ITG=46+3*NTRAIN+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,STRNMSG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,RHOAG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,WSTARG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,CICG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,CIHG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,C3G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NSSTG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NICCG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NICTG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NUCUG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NVCUG)
+
       ENDIF
 
       IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
-!       1.3 COLLECT SWELL, WIND SEA AND 3 TRAINS PARAMETER ARRAYS TO PROCESS IRECV
+!       1.3 COLLECT SWELL, WIND SEA AND SWELL TRAINS PARAMETER ARRAYS TO PROCESS IRECV
 !           ----------------------------------------------------------------------
         IRECV=MIN(2,NPROC)
 
@@ -436,15 +484,18 @@
         IF (FFLAG(32)) CALL MPGATHERGRDFLD(IPFGTBL(32),IRECV,32,WSPRDWG)
         IF (FFLAG(33)) CALL MPGATHERGRDFLD(IPFGTBL(33),IRECV,33,WSPRDSG)
 
-        IF (FFLAG(47)) CALL MPGATHERGRDFLD(IPFGTBL(47),IRECV,47,WHGTT1G)
-        IF (FFLAG(48)) CALL MPGATHERGRDFLD(IPFGTBL(48),IRECV,48,WDIRT1G)
-        IF (FFLAG(49)) CALL MPGATHERGRDFLD(IPFGTBL(49),IRECV,49,MWP1T1G)
-        IF (FFLAG(50)) CALL MPGATHERGRDFLD(IPFGTBL(50),IRECV,50,WHGTT2G)
-        IF (FFLAG(51)) CALL MPGATHERGRDFLD(IPFGTBL(51),IRECV,51,WDIRT2G)
-        IF (FFLAG(52)) CALL MPGATHERGRDFLD(IPFGTBL(52),IRECV,52,MWP1T2G)
-        IF (FFLAG(53)) CALL MPGATHERGRDFLD(IPFGTBL(53),IRECV,53,WHGTT3G)
-        IF (FFLAG(54)) CALL MPGATHERGRDFLD(IPFGTBL(54),IRECV,54,WDIRT3G)
-        IF (FFLAG(55)) CALL MPGATHERGRDFLD(IPFGTBL(55),IRECV,55,MWP1T3G)
+        ICT=46
+        DO ITT=1,NTRAIN
+          ICT=ICT+1
+          IF (FFLAG(ICT))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ICT,WHGTTRG(:,:,ITT))
+          ICT=ICT+1
+          IF (FFLAG(ICT))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ICT,WDIRTRG(:,:,ITT))
+          ICT=ICT+1
+          IF (FFLAG(ICT))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ICT),IRECV,ICT,MWPMTRG(:,:,ITT))
+        ENDDO
 
       ENDIF
 
@@ -499,11 +550,28 @@
             IF (FFLAG(44))WRITE (IU20) PHIEPSG
             IF (FFLAG(45))WRITE (IU20) PHIAWG
             IF (FFLAG(46))WRITE (IU20) TAUOCG
-            IF (FFLAG(56))WRITE (IU20) STRNMSG
-            IF (FFLAG(57))WRITE (IU20) RHOAG 
-            IF (FFLAG(58))WRITE (IU20) WSTARG
-            IF (FFLAG(59))WRITE (IU20) CICG
-            IF (FFLAG(60))WRITE (IU20) CIHG
+            ITG=46+3*NTRAIN+1
+            IF (FFLAG(ITG))WRITE (IU20) STRNMSG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) RHOAG 
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) WSTARG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) CICG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) CIHG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) C3G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) NSSTG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) NICCG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) NICTG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) NUCUG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) NVCUG
           ENDIF
         ENDIF
 
@@ -715,53 +783,105 @@
      &                 TAUOCG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-        IF (PFLAG(56)) THEN
+        ITG=46+3*NTRAIN+1
+        IF (PFLAG(ITG)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' MEAN SQUARE WAVE STRAIN IN THE SEA ICE'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100000000.,
      &                 STRNMSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-        IF (PFLAG(57)) THEN
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' AIR DENSITY'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,10.,
      &                 RHOAG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-        IF (PFLAG(58)) THEN
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' CONVECTIVE VELOCITY'
+            TITL = ' CONVECTIVE VELOCITY SCALE'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,10.,
      &                 WSTARG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-        IF (PFLAG(59)) THEN
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SEA ICE COVER'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100.,
      &                 CICG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-        IF (PFLAG(60)) THEN
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' SEA ICE THICKNESS'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100.,
      &                 CIHG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
-
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SPECTRAL SKWENESS'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,1.,
+     &                 C3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' SST FROM NEMO'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 NSSTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' ICE COVER FROM NEMO'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 NICCG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' ICE THICKNESS FROM NEMO'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 NICTG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' U-CURRENT FROM NEMO'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 NUCUG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' V-CURRENT FROM NEMO'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 NVCUG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
         ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
 
-!*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA, SWELL AND 3 TRAINS.
+!*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA, SWELL AND SWELL TRAINS.
 !        -----------------------------------------------------------
 
       IF (CDTINTS.EQ.CDTPRO) THEN
 
-!*      3.1 WRITE PARAMETERS OF SWELL, WIND DIRECTION AND 3 TRAINS TO FILE.
+!*      3.1 WRITE PARAMETERS OF SWELL, WIND DIRECTION AND SWELL TRAINS TO FILE.
 !           ---------------------------------------------------------------
 
         IF(FFLAG21) THEN
@@ -788,22 +908,24 @@
             IF (FFLAG(32)) WRITE (IU21) WSPRDWG
             IF (FFLAG(33)) WRITE (IU21) WSPRDSG
 
-            IF (FFLAG(47)) WRITE (IU21) WHGTT1G
-            IF (FFLAG(48)) WRITE (IU21) WDIRT1G
-            IF (FFLAG(49)) WRITE (IU21) MWP1T1G
-            IF (FFLAG(50)) WRITE (IU21) WHGTT2G
-            IF (FFLAG(51)) WRITE (IU21) WDIRT2G
-            IF (FFLAG(52)) WRITE (IU21) MWP1T2G
-            IF (FFLAG(53)) WRITE (IU21) WHGTT3G
-            IF (FFLAG(54)) WRITE (IU21) WDIRT3G
-            IF (FFLAG(55)) WRITE (IU21) MWP1T3G
+            ICT=46
+            DO ITT=1,NTRAIN
+              ICT=ICT+1
+              IF (FFLAG(ICT)) WRITE (IU21) WHGTTRG(:,:,ITT)
+              ICT=ICT+1
+              IF (FFLAG(ICT)) WRITE (IU21) WDIRTRG(:,:,ITT)
+              ICT=ICT+1
+              IF (FFLAG(ICT)) WRITE (IU21) MWPMTRG(:,:,ITT)
+            ENDDO
           ENDIF
         ENDIF
 
 
 !*      3.2 PRINT PARAMETERS OF SWELL AND WIND WAVE DIRECTION.
 !           --------------------------------------------------
+
         IF(CLDOMAIN.NE.'s') THEN
+
         IF (PFLAG(11)) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             TITL = ' WIND SEA WAVE HEIGHT ( 0.1 METRES )'
@@ -889,71 +1011,35 @@
           ENDIF
         ENDIF
 
-        IF (PFLAG(47)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 1 WAVE HEIGHT  ( 0.1 METRES )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 WHGTT1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+        ICT=46
+        DO ITT=1,NTRAIN
+          ICT=ICT+1
+          IF (PFLAG(ICT)) THEN
+            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+              TITL = ' SWELL TRAIN WAVE HEIGHT  ( 0.1 METRES )'
+              CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &               WHGTTRG(:,:,ITT), AMOWEP, AMOSOP, AMOEAP, AMONOP)
+            ENDIF
           ENDIF
-        ENDIF
-        IF (PFLAG(48)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 1 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH)'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     &                 WDIRT1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ICT=ICT+1
+          IF (PFLAG(ICT)) THEN
+            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+              TITL = ' SWELL TRAIN MEAN DIRECTION  ( DEGREE FROM NORTH)'
+              CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &               WDIRTRG(:,:,ITT), AMOWEP, AMOSOP, AMOEAP, AMONOP)
+            ENDIF
           ENDIF
-        ENDIF
-        IF (PFLAG(49)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' MEAN TRAIN 1 PERIOD (1) ( 0.1 SECOND )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 MWP1T1G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ICT=ICT+1
+          IF (PFLAG(ICT)) THEN
+            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+              TITL = ' SWELL MEAN TRAIN PERIOD (1) ( 0.1 SECOND )'
+              CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
+     &               MWPMTRG(:,:,ITT), AMOWEP, AMOSOP, AMOEAP, AMONOP)
+            ENDIF
           ENDIF
-        ENDIF
-        IF (PFLAG(50)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 2 WAVE HEIGHT  ( 0.1 METRES )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 WHGTT2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
-        IF (PFLAG(51)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 2 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH)'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     &                 WDIRT2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
-        IF (PFLAG(52)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' MEAN TRAIN 2 PERIOD (1) ( 0.1 SECOND )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 MWP1T2G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
-        IF (PFLAG(53)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 3 WAVE HEIGHT  ( 0.1 METRES )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 WHGTT3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
-        IF (PFLAG(54)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' TRAIN 3 MEAN WAVE DIRECTION  ( DEGREE FROM NORTH )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
-     &                 WDIRT3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
-        IF (PFLAG(55)) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            TITL = ' MEAN TRAIN 3 PERIOD (1) ( 0.1 SECOND )'
-            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 10.,
-     &                 MWP1T3G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
-          ENDIF
-        ENDIF
+        ENDDO
 
-        ENDIF
+        ENDIF ! CLDOMAIN
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -1547,7 +1633,7 @@
 !*      MEAN SQUARE WAVE STRAIN INTO THE SEA ICE 
 !       ----------------------------------------
 
-        ITG=56
+        ITG=46+3*NTRAIN+1
         IF (GFLAG(ITG)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
@@ -1566,7 +1652,7 @@
 !*      SURFACE AIR DENSITY 
 !       -------------------
 
-        ITG=57
+        ITG=ITG+1
         IF (GFLAG(ITG)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
@@ -1585,7 +1671,7 @@
 !*      CONVECTVE VELOCITY SCALING 
 !       --------------------------
 
-        ITG=58
+        ITG=ITG+1
         IF (GFLAG(ITG)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
@@ -1605,7 +1691,7 @@
 !*      SEA ICE COVER
 !       -------------
 
-        ITG=59
+        ITG=ITG+1
         IF (GFLAG(ITG)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
@@ -1624,7 +1710,7 @@
 !*      SEA ICE THICKNESS 
 !       -----------------
 
-        ITG=60
+        ITG=ITG+1
         IF (GFLAG(ITG)) THEN
           iglobal=iglobal+1
           IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
@@ -1640,8 +1726,119 @@
           ENDIF
         ENDIF
 
+!*      SPECTRAL SKEWNESS
+!       -----------------
 
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=207
+            ITABLE=140
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C3G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
 
+!*      NEMO SST.
+!       ---------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=159
+            ITABLE=151
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NSSTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      NEMO ICE COVER.
+!       ---------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=91
+            ITABLE=3
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NICCG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      NEMO ICE THICKNESS.
+!       -------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=92
+            ITABLE=3
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NICTG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      NEMO U-CURRENT.
+!       ---------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=49
+            ITABLE=3
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NUCUG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      NEMO V-CURRENT.
+!       ---------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=50
+            ITABLE=3
+            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NVCUG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
 
 
 !*      EXTRA FIELD 1
@@ -1998,173 +2195,70 @@
 
 ! ----------------------------------------------------------------------
 
-!*    6.  PACK 3 WAVE TRAINS PARAMETERS INTO GRIB FM94.
+!*    6.  PACK SWELL WAVE TRAINS PARAMETERS INTO GRIB FM94.
 !         ---------------------------------------------
 
-
       IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
-
-!*      TRAIN 1 WAVE HEIGHTS.
-!       ---------------------
-
-        IF (GFLAG(47)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(47)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=121
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT1G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+        ITG=46
+        IPARAM=120
+        DO ITT=1,NTRAIN
+!*        TRAIN WAVE HEIGHTS.
+!         ---------------------
+          ITG=ITG+1
+          IPARAM=IPARAM+1
+          IF (GFLAG(ITG)) THEN
+            iglobal=iglobal+1
+            IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &       .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &       .OR.(.NOT.LMESSPASS)) THEN
+              ilocal=ilocal+1
+              ITABLE=140
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTRG(:,:,ITT),
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ENDIF
           ENDIF
-        ENDIF
 
-!*      TRAIN 1 WAVE DIRECTION.
-!       ------------------------
+!*        TRAIN WAVE DIRECTION.
+!         ------------------------
+          ITG=ITG+1
+          IPARAM=IPARAM+1
 
-        IF (GFLAG(48)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(48)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=122
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT1G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          IF (GFLAG(ITG)) THEN
+            iglobal=iglobal+1
+            IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &       .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &       .OR.(.NOT.LMESSPASS)) THEN
+              ilocal=ilocal+1
+              ITABLE=140
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTRG(:,:,ITT),
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ENDIF
           ENDIF
-        ENDIF
 
-!*      TRAIN 1 WAVE PERIOD 1.
-!       -----------------------
+!*        TRAIN WAVE PERIOD 
+!         -----------------
 
-        IF (GFLAG(49)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(49)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=123
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T1G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ITG=ITG+1
+          IPARAM=IPARAM+1
+          IF (GFLAG(ITG)) THEN
+            iglobal=iglobal+1
+            IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &       .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &       .OR.(.NOT.LMESSPASS)) THEN
+              ilocal=ilocal+1
+              ITABLE=140
+              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWPMTRG(:,:,ITT),
+     &                      ITABLE, IPARAM, 0, 0 , 0,
+     &                      CDATE, IFCST, MARSTYPE,
+     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+            ENDIF
           ENDIF
-        ENDIF
 
-!*      TRAIN 2 WAVE HEIGHTS.
-!       ---------------------
-
-        IF (GFLAG(50)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(50)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=124
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT2G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
-
-!*      TRAIN 2 WAVE DIRECTION.
-!       ------------------------
-
-        IF (GFLAG(51)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(51)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=125
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT2G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
-
-!*      TRAIN 2 WAVE PERIOD 1.
-!       -----------------------
-
-        IF (GFLAG(52)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(52)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=126
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T2G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
-
-!*      TRAIN 3 WAVE HEIGHTS.
-!       ---------------------
-
-        IF (GFLAG(53)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(53)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=127
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTT3G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
-
-!*      TRAIN 3 WAVE DIRECTION.
-!       ------------------------
-
-        IF (GFLAG(54)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(54)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=128
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRT3G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
-
-!*      TRAIN 3 WAVE PERIOD 1.
-!       -----------------------
-
-        IF (GFLAG(55)) THEN
-          iglobal=iglobal+1
-          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(55)))
-     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            ilocal=ilocal+1
-            IPARAM=129
-            ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1T3G,
-     &                    ITABLE, IPARAM, 0, 0 , 0,
-     &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
-          ENDIF
-        ENDIF
+        ENDDO
 
       ENDIF
 

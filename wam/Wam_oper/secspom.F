@@ -2,8 +2,8 @@
 !--------------------------------------------------------------------
 !
       SUBROUTINE SECSPOM(F1,F3,IJS,IJL,NFRE,NANG,NMAX,NDEPTH,DEPTHA,
-     V                   DEPTHD,OMSTART,FRAC,MR,DFDTH,OMEGA,DEPTH,
-     V                   AKMEAN,TA,TB,TC_QL,TT_4M,TT_4P,IM_P,IM_M)
+     &                   DEPTHD,OMSTART,FRAC,MR,DFDTH,OMEGA,DEPTH,
+     &                   AKMEAN,TA,TB,TC_QL,TT_4M,TT_4P,IM_P,IM_M)
 !
 !--------------------------------------------------------------------
 !
@@ -91,10 +91,13 @@
       INTEGER IM_P(NFRE,NFRE),IM_M(NFRE,NFRE),JD(IJS:IJL),
      V        INDEP(IJS:IJL)
 
-      REAL OM0,OM0H,TH0,XK0,OM1,TH1,XK1,OM2,XK2,OM0P,XK0P,OM0M,XK0M,
-     V     OMSTART,FRAC,XMR,XM2,XINCR1,XINCR2,XINCR3,XINCR4,FAC1,FAC2,
-     V     FAC3,T_4M,T_4P,F2K(IJS:IJL),F2KP(IJS:IJL),F2KM(IJS:IJL),
-     V     F2K1,F2K2,DELM1,XD,X_MIN,DEPTHA,DEPTHD
+      REAL OM0,OM0P,OM0M,
+     V     OMSTART,FRAC,XMR,XM2,
+     V     T_4M,T_4P,DF2KP(IJS:IJL),DF2KM(IJS:IJL),
+     V     DELM1,XD,X_MIN,DEPTHA,DEPTHD
+      REAL :: OMRT
+      REAL, DIMENSION(NANG,NANG) :: LL
+      REAL, DIMENSION(IJS:IJL) :: FAC2, XINCR
       REAL OMEGA(NFRE), DFDTH(NFRE)
       REAL TA(NDEPTH,NANG,NFRE,NFRE),TB(NDEPTH,NANG,NFRE,NFRE),
      V     TC_QL(NDEPTH,NANG,NFRE,NFRE),TT_4M(NDEPTH,NANG,NFRE,NFRE),
@@ -104,6 +107,8 @@
      V     PSUM(IJS:IJL)
 
       REAL ZHOOK_HANDLE
+
+      LOGICAL :: LLSAMEDEPTH
 
       IF (LHOOK) CALL DR_HOOK('SECSPOM',0,ZHOOK_HANDLE)
 !
@@ -127,6 +132,12 @@
          ID = MAX(ID,1)
          JD(IJ) = MIN(ID,NDEPTH)
       ENDDO
+      LLSAMEDEPTH=.TRUE.
+      ID=JD(IJS)
+      DO IJ=IJS+1,IJL
+         LLSAMEDEPTH=(LLSAMEDEPTH.AND.(JD(IJ-1).EQ.JD(IJ)))
+         IF(.NOT.LLSAMEDEPTH) EXIT
+      ENDDO
 
       DO M=1,NFRE
          DO K=1,NANG
@@ -138,14 +149,23 @@
 
       DO M=NFRE+1,NMAX
          OM0 = OMSTART*(1.+FRAC)**(MR*M-1)
+         OMRT = OMEGA(NFRE)**5/OM0**5
          DO K=1,NANG
             DO IJ=IJS,IJL
-               F2(IJ,K,M) = OMEGA(NFRE)**5*F1(IJ,K,NFRE)/OM0**5
+               F2(IJ,K,M) = OMRT*F1(IJ,K,NFRE)
             ENDDO
          ENDDO
       ENDDO
-!     
-!
+
+      DO K=1,NANG
+        DO K1=1,NANG
+          L = K-K1
+          IF (L.GT.NANG) L=L-NANG
+          IF (L.LT.1) L=L+NANG
+          LL(K1,K)=L
+        ENDDO
+      ENDDO
+
 !
 !
 !***  2. COMPUTATION OF THE 2nd ORDER FREQUENCY SPECTRUM.
@@ -153,8 +173,6 @@
 !
 !
       DO M=1,NFRE
-         OM0 = OMEGA(M)
-         OM0H = OM0/2.                  
          MP   = MIN(M+1,NFRE)
          OM0P = OMEGA(MP)
          MM   = MAX(M-1,1) 
@@ -163,63 +181,87 @@
          DO K=1,NANG
             K2 = K
             DO IJ = IJS,IJL
-               F2K(IJ)  = F2(IJ,K,M)
-               F2KP(IJ) = F2(IJ,K,MP)
-               F2KM(IJ) = F2(IJ,K,MM)
+               DF2KP(IJ) = F2(IJ,K,MP)*DELM1
+               DF2KM(IJ) = F2(IJ,K,MM)*DELM1
                PSUM(IJ) = 0.
             ENDDO               
             DO M1=1,NFRE
-               OM1 = OMEGA(M1)
                M2_M = IM_M(M1,M)
                M2_P = IM_P(M1,M)
                DO K1=1,NANG
-                  L = K-K1
-                  IF (L.GT.NANG) L=L-NANG
-                  IF (L.LT.1) L=L+NANG
-    
-                  DO IJ=IJS,IJL
+                  L = LL(K1,K) 
 
-                     F2K1 = F2(IJ,K1,M1)
+                  IF(LLSAMEDEPTH) THEN 
+!*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
+!                   ---------------------------------- 
+!                   OM2 = OM0-OM1
+!DIR$ PREFERVECTOR
+                    DO IJ=IJS,IJL
+                      PSUM(IJ)= PSUM(IJ)+TA(ID,L,M1,M)*
+     &                                  ( F2(IJ,K1,M1)*F2(IJ,K2,M2_M)+
+     &                                    F2(IJ,K2,M1)*F2(IJ,K1,M2_M) )
+                    ENDDO
+
+!*                  2.2 OM1+OM0 CASE: INFRA-GRAVITY WAVES
+!                   ------------------------------------- 
+!                   OM2 = OM1+OM0 
+                    DO IJ=IJS,IJL
+                      XINCR(IJ) = 2.*TB(ID,L,M1,M)*F2(IJ,K2,M2_P)
+                    ENDDO
 !
-!*                   2.1 OM0-OM1 CASE: SECOND HARMONICS
-!                    ---------------------------------- 
-!           
-!                    OM2 = OM0-OM1
-             
-                     F2K2 = F2(IJ,K2,M2_M)
-                     FAC1 = TA(JD(IJ),L,M1,M)
-                     FAC2 = F2K1*F2K2+F2(IJ,K2,M1)*F2(IJ,K1,M2_M)
-
-                     XINCR1 = FAC1*FAC2
-                     PSUM(IJ)= PSUM(IJ)+XINCR1
-
-!
-!*                   2.2 OM1+OM0 CASE: INFRA-GRAVITY WAVES
-!                    ------------------------------------- 
-!           
-!                    OM2 = OM1+OM0 
-
-                     F2K2 = F2(IJ,K2,M2_P)
-                     FAC3 = 2.*TB(JD(IJ),L,M1,M)
-                     XINCR2 = FAC3*F2K2
-!
-!*                   2.3 QUASI-LINEAR EFFECT
-!                    -----------------------
-!           
-!  
-                     XINCR3 = TC_QL(JD(IJ),L,M1,M)*F2K(IJ)
+!*                  2.3 QUASI-LINEAR EFFECT
+!                   -----------------------
+                    DO IJ=IJS,IJL
+                     XINCR(IJ)=XINCR(IJ)+TC_QL(ID,L,M1,M)*F2(IJ,K,M)
+                    ENDDO
 !  
 !*                   2.4 STOKES-FREQUENCY CORRECTION
 !                    ------------------------------- 
-!
-!      
-                     T_4M = TT_4M(JD(IJ),L,M1,M)
-                     T_4P = TT_4P(JD(IJ),L,M1,M)
-                     XINCR4 = -(F2KP(IJ)*T_4P-F2KM(IJ)*T_4M)*DELM1
+                    DO IJ=IJS,IJL
+                       T_4M = TT_4M(ID,L,M1,M)
+                       T_4P = TT_4P(ID,L,M1,M)
+                       XINCR(IJ) = XINCR(IJ)
+     &                          -(DF2KP(IJ)*T_4P-DF2KM(IJ)*T_4M)
+                    ENDDO
 
-                     PSUM(IJ) = PSUM(IJ)+F2K1*(XINCR2+XINCR3+XINCR4)
-                     
+                  ELSE
+
+!*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
+!                   ---------------------------------- 
+!                   OM2 = OM0-OM1
+                    DO IJ=IJS,IJL
+                      PSUM(IJ)= PSUM(IJ)+TA(JD(IJ),L,M1,M)*
+     &                                  ( F2(IJ,K1,M1)*F2(IJ,K2,M2_M)+
+     &                                    F2(IJ,K2,M1)*F2(IJ,K1,M2_M) )
+                    ENDDO
+
+!*                  2.2 OM1+OM0 CASE: INFRA-GRAVITY WAVES
+!                   ------------------------------------- 
+!                   OM2 = OM1+OM0 
+                    DO IJ=IJS,IJL
+                      XINCR(IJ) = 2.*TB(JD(IJ),L,M1,M)*F2(IJ,K2,M2_P)
+                    ENDDO
+!
+!*                  2.3 QUASI-LINEAR EFFECT
+!                   -----------------------
+                    DO IJ=IJS,IJL
+                     XINCR(IJ)=XINCR(IJ)+TC_QL(JD(IJ),L,M1,M)*F2(IJ,K,M)
+                    ENDDO
+!  
+!*                   2.4 STOKES-FREQUENCY CORRECTION
+!                    ------------------------------- 
+                    DO IJ=IJS,IJL
+                       T_4M = TT_4M(JD(IJ),L,M1,M)
+                       T_4P = TT_4P(JD(IJ),L,M1,M)
+                       XINCR(IJ) = XINCR(IJ)
+     &                          -(DF2KP(IJ)*T_4P-DF2KM(IJ)*T_4M)
+                    ENDDO
+                  ENDIF
+
+                  DO IJ=IJS,IJL
+                     PSUM(IJ) = PSUM(IJ)+F2(IJ,K1,M1)*XINCR(IJ)
                   ENDDO
+
                ENDDO
             ENDDO
             DO IJ=IJS,IJL

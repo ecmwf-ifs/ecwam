@@ -4,8 +4,8 @@
 
 !*    ** *GRIB HEADERS:  COMMON (DEFAULT) GRIB HEADERS.
 
-      INTEGER :: IMDLGRBID_G=110 !! see below the rule on how to select IMDLGRBID_G
-      INTEGER :: IMDLGRBID_M=210
+      INTEGER :: IMDLGRBID_G=111 !! see below the rule on how to select IMDLGRBID_G
+      INTEGER :: IMDLGRBID_M=211
       INTEGER ::  DATE_TIME_WINDOW_END
       INTEGER ::  NWINOFF
 

@@ -469,14 +469,8 @@
 
       IF (IOPTI.GT.0.AND.IOPTI.NE.3) THEN
 
-
-!!!! might need to restict call when needed !!!
-      CALL CIGETDEAC
-
         LLINIT=.FALSE.
-        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                ROAIRO, ZIDLOLD,
-     &                CICOVER, CITHICK, CIWA,
+        CALL PREWIND (
      &                LLINIT, 
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,

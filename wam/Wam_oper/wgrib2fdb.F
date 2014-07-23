@@ -378,13 +378,9 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
           CLTYPE=C12(1:2)
 !          IF (CLTYPE /= 'an') THEN
-            write(kuso,*) 'before igrib_get_value ',CLTYPE
-            CALL FLUSH (KUSO)
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,
      &      'offsetToEndOf4DvarWindow',NWINOFF)
 !          ENDIF
-          write(kuso,*) 'type, winoff',CLTYPE,NWINOFF
-          CALL FLUSH (KUSO)
           WRITE(CLWINOFF,'(I3.3)') NWINOFF
           ISTAT = ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
         ENDIF

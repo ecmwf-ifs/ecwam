@@ -1,10 +1,9 @@
-      SUBROUTINE PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                    ROAIRO, ZIDLOLD,
-     &                    CICOVER, CITHICK, CIWA,
+      SUBROUTINE PREWIND (
      &                    LLINIT,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
      &                    FIELDS, LWCUR, MASK_IN)
+
 
 ! ----------------------------------------------------------------------
 
@@ -35,29 +34,12 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER,
+!     *CALL* *PREWIND (
 !    &                 LLINIT,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
 !    &                 FIELDS, LWCUR, MASK_IN)*
 
-!      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
-!                            VELOCITY.
-!                            CLOCKWISE FROM NORTH).
-!      *THWOLD*    REAL      INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                            WIND VELOCITY.
-!      *USOLD*     REAL      INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                            VELOCITY.
-!      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
-!                            M.
-!      *TAUW*      REAL      WAVE STRESS IN (M/S)**2
-!      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
-!      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
-!                                   L: MONIN-OBUKHOV LENGTH).
-!      *CICOVER*   REAL      SEA ICE COVER.
-!      *CITHICK*   REAL      SEA ICE THICKNESS.
-!      *CIWA*      REAL      SEA ICE WAVE ATTENUATION FACTOR.
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                            (IF NEEDED).
@@ -127,12 +109,14 @@
 
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
+      USE YOWSPEC  , ONLY : ROAIRO   ,ZIDLOLD
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
      &            IDELWO   ,LANAONLY
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
+      USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
+      USE YOWTEXT  , ONLY : LRESTARTED
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
       INTEGER NFIELDS, NGPTOTG, NC, NR
       REAL FIELDS(NGPTOTG,NFIELDS)
       LOGICAL :: LWCUR
@@ -140,17 +124,10 @@
 
       CHARACTER*14 CDTWIE, CDTWIS, ZERO
 
-      LOGICAL LLFRST
+      LOGICAL LLFRST,LLFRSTNEMO
       LOGICAL :: LLINIT
       DATA LLFRST / .TRUE. /
-
-! ----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-
-      REAL,DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO,ZIDLOLD,
-     &                                  CICOVER,CITHICK
+      DATA LLFRSTNEMO / .TRUE. /
       REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -199,6 +176,18 @@
       CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR,
      &               FIELDS, LWCUR, MASK_IN)
 
+!     2.1.1 GET DATA FROM NEMO.
+!           ------------------
+!
+!     IF RESTART DO NOT CALL RECVNEMOFIELDS AT THE FIRST TIME STEP
+!     BUT USE THE VALUES FROM THE RESTART.
+!      
+      IF(LWNEMOCOU.AND.LWNEMOCOURECV) THEN
+        CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,
+     &                      LLFRSTNEMO.AND..NOT.LRESTARTED)
+        LLFRSTNEMO=.FALSE.
+      ENDIF
+
 !!!   WHEN COUPLED, IT IS ALSO NEEDED TO INITIALISE THE AIR DENSITY AND
 !!!   THE CONVECTIVE VELOCITY SCALE ARRAYS SINCE THESE ARE NOT (YET) PROVIDED
 !!!   AS PART OF THE GRIB RESTART FILES.
@@ -228,9 +217,7 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           CALL FLUSH (IU06)
         ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL NOTIM (CDTWIS, CDTWIE, IREAD, LWCUR)
       ELSE
 
 !*    2.3 TIME INTERPOLATION.
@@ -245,16 +232,8 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           CALL FLUSH (IU06)
         ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL TIMIN (CDTWIS, CDTWIE, IREAD, LWCUR)
       ENDIF
-
-
-!*    2.4 DETERMINE THE SEA ICE REDUCTION FACTOR
-!         --------------------------------------
-
-      CALL CIREDUCE (CICOVER,CITHICK,CIWA)
 
 
 !*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS

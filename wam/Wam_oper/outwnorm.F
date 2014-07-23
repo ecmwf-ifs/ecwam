@@ -31,7 +31,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG    ,
-     &            NFLAGALL ,IPFGTBL
+     &            NFLAGALL ,NTRAIN   ,IPFGTBL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
@@ -39,26 +39,27 @@
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
      &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
      &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
-     &            CICG     ,CIHG     ,
+     &            CICG     ,CIHG     ,C3G      ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
-      USE YOWINTT  , ONLY : WHGTT1G  ,WDIRT1G  ,MWP1T1G  ,
-     &                      WHGTT2G  ,WDIRT2G  ,MWP1T2G  ,
-     &                      WHGTT3G  ,WDIRT3G  ,MWP1T3G
+      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : EPSMIN   ,ZMISS
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
-
-      INTEGER :: ITG
-      REAL ZHOOK_HANDLE
-
-      IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER :: ITG, ITT, NAVG
+      REAL :: ZHOOK_HANDLE
+      REAL :: FAVG,FMIN,FMAX
+
+! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 
       IF(NFLAGALL) THEN
 
@@ -495,115 +496,51 @@
           ENDIF
         ENDIF
 
-        ITG=47
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WHGTT1G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 1 WAVE HEIGHTS: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
 
-        ITG=48
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WDIRT1G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 1 WAVE DIRECTION: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+        ITG=46
+        DO ITT = 1, NTRAIN
+          ITG=ITG+1
+          IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.
+     &       FFLAG(ITG).OR.PFLAG(ITG))) THEN
+            CALL WAMNORM(WHGTTRG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &       NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
+            KTAG=KTAG+1
+            IF(IRANK.EQ.1) THEN
+              WRITE(IU06,*) '   WAMNORM TRAIN WAVE HEIGHTS: ',ITT
+              WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+              WRITE(IU06,*) ' '
+            ENDIF
           ENDIF
-        ENDIF
 
-        ITG=49
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(MWP1T1G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM MEAN TRAIN 1 PERIOD (1): '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+          ITG=ITG+1
+          IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.
+     &       FFLAG(ITG).OR.PFLAG(ITG))) THEN
+            CALL WAMNORM(WDIRTRG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &       NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
+            KTAG=KTAG+1
+            IF(IRANK.EQ.1) THEN
+              WRITE(IU06,*) '   WAMNORM TRAIN WAVE DIRECTION: ',ITT
+              WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+              WRITE(IU06,*) ' '
+            ENDIF
           ENDIF
-        ENDIF
 
-        ITG=50
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WHGTT2G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 2 WAVE HEIGHTS: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
+          ITG=ITG+1
+          IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.
+     &       FFLAG(ITG).OR.PFLAG(ITG))) THEN
+            CALL WAMNORM(MWPMTRG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &       NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
+            KTAG=KTAG+1
+            IF(IRANK.EQ.1) THEN
+              WRITE(IU06,*) '   WAMNORM MEAN TRAIN PERIOD (-1): ',ITT
+              WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+              WRITE(IU06,*) ' '
+            ENDIF
           ENDIF
-        ENDIF
 
-        ITG=51
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WDIRT2G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 2 WAVE DIRECTION: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
+        ENDDO
 
-        ITG=52
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(MWP1T2G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM MEAN TRAIN 2 PERIOD (1): '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-
-        ITG=53
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WHGTT3G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 3 WAVE HEIGHTS: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-
-        ITG=54
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(WDIRT3G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM TRAIN 3 WAVE DIRECTION: '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-
-        ITG=55
-        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-          CALL WAMNORM(MWP1T3G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
-     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
-          KTAG=KTAG+1
-          IF(IRANK.EQ.1) THEN
-            WRITE(IU06,*) '   WAMNORM MEAN TRAIN 3 PERIOD (1): '
-            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
-            WRITE(IU06,*) ' '
-          ENDIF
-        ENDIF
-
-        ITG=56
+        ITG=46+3*NTRAIN+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(STRNMSG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -615,7 +552,7 @@
           ENDIF
         ENDIF
 
-        ITG=57
+        ITG=46+3*NTRAIN+2
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(RHOAG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -627,7 +564,7 @@
           ENDIF
         ENDIF
 
-        ITG=58
+        ITG=46+3*NTRAIN+3
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(WSTARG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -639,7 +576,7 @@
           ENDIF
         ENDIF
 
-        ITG=59
+        ITG=46+3*NTRAIN+4
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(CICG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -651,13 +588,25 @@
           ENDIF
         ENDIF
 
-        ITG=60
+        ITG=46+3*NTRAIN+5
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(CIHG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
           KTAG=KTAG+1
           IF(IRANK.EQ.1) THEN
             WRITE(IU06,*) '   WAMNORM SEA ICE THICKNESS:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,111) FAVG,FMIN,FMAX
+          ENDIF
+        ENDIF
+
+        ITG=46+3*NTRAIN+6
+        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
+          CALL WAMNORM(C3G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM SPECTRAL SKEWNESS:'
             WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
             WRITE(IU06,111) FAVG,FMIN,FMAX
           ENDIF

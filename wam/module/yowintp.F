@@ -20,6 +20,7 @@
       REAL, ALLOCATABLE :: MWP1G(:,:) 
       REAL, ALLOCATABLE :: MWP2G(:,:) 
       REAL, ALLOCATABLE :: WSPRDG(:,:) 
+      REAL, ALLOCATABLE :: C3G(:,:) 
       REAL, ALLOCATABLE :: C4G(:,:) 
       REAL, ALLOCATABLE :: BFG(:,:) 
       REAL, ALLOCATABLE :: QPG(:,:) 
@@ -43,6 +44,11 @@
       REAL, ALLOCATABLE :: WX3G(:,:)
       REAL, ALLOCATABLE :: WX4G(:,:)
       REAL, ALLOCATABLE :: WX5G(:,:)
+      REAL, ALLOCATABLE :: NSSTG(:,:) 
+      REAL, ALLOCATABLE :: NICCG(:,:) 
+      REAL, ALLOCATABLE :: NICTG(:,:) 
+      REAL, ALLOCATABLE :: NUCUG(:,:) 
+      REAL, ALLOCATABLE :: NVCUG(:,:) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -69,6 +75,7 @@
 !      *MWP1G*     REAL      GRIDDED MEAN WAVE PERIOD 1 (S.).
 !      *MWP2G*     REAL      GRIDDED MEAN WAVE PERIOD 2 (S.).
 !      *WSPRDG*    REAL      GRIDDED DIRECTIONAL SPREAD (-). 
+!      *C3G*       REAL      GRIDDED SKEWNESS KURTOSIS (-). 
 !      *C4G*       REAL      GRIDDED SPECTRAL KURTOSIS (-). 
 !      *BFG*       REAL      GRIDDED BENJAMIN-FEIR INDEX (-). 
 !      *QPG*       REAL      GRIDDED SPECTRAL PEAKEDNESS (-). 
@@ -92,6 +99,11 @@
 !      *WX3G*      REAL      GRIDDED WAVE EXPERIMENTAL PARAMETER.
 !      *WX4G*      REAL      GRIDDED WAVE EXPERIMENTAL PARAMETER.
 !      *WX5G*      REAL      GRIDDED WAVE EXPERIMENTAL PARAMETER.
+!      *NSSTG*     REAL      GRIDDED NEMO SST
+!      *NICCG*     REAL      GRIDDED NEMO ICE COVER
+!      *NICTG*     REAL      GRIDDED NEMO ICE THICKNESS
+!      *NUCUG*     REAL      GRIDDED NEMO U-CURRENT
+!      *NVCUG*     REAL      GRIDDED NEMO V-CURRENT
 
 
 ! ----------------------------------------------------------------------

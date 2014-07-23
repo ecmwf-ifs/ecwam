@@ -82,18 +82,22 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX 
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   ,LWNEMOCOU          ,
+     &                      NEMOINIDATE, NEMOINITIME               ,
+     &                      NEMOITINI,   NEMOITEND                 ,
+     &                      NEMOTSTEP,   NEMOFRCO                  ,
+     &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
-     &                      PHIAW    ,TAUOC    ,NEMEAN   ,NFMEAN
+     &                      PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
      &            NINF     ,NSUP     ,MPMAXLENGTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
      &            LL1D
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,
-     &            IPROPAGS ,LSUBGRID ,IREFRA 
+     &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,
      &            NFROMPELST,
@@ -142,10 +146,16 @@
       LOGICAL :: LMESSPASS_NL
       LOGICAL :: LWCUR
       LOGICAL :: LWSTOKES
+      LOGICAL :: LNEMOIOSERVER
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
 
       time0=-wam_user_clock()
       IU06=6
+      LNEMOIOSERVER=.FALSE.
+#ifdef WITH_NEMO
+      CALL WAMININEMOIO(LNEMOIOSERVER)
+#endif
+      IF (.NOT.LNEMOIOSERVER) THEN
       LHOOK = .TRUE.
       IF (LHOOK) CALL DR_HOOK('CHIEF',0,ZHOOK_HANDLE)
 
@@ -208,7 +218,7 @@
 !     (the rest will be read in userin)
       IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
       CALL MPUSERIN(IU05,LMESSPASS_NL,LFDB,LWCOU,LL1D,LSUBGRID,
-     &              IPROPAGS, IREFRA)
+     &              IPROPAGS, IREFRA, IDELPRO)
 
       IF(LMESSPASS_NL.NEQV.LMESSPASS) THEN
         WRITE (IU06,*) ' *********************************'
@@ -342,10 +352,51 @@
       IDURAT=-99
       NFDBREF=0  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
-      LWCUR=.FALSE. ! only used in coupled runs
-      LWSTOKES=.FALSE.  ! only used in coupled runs
+      IF (.NOT.LWNEMOCOU) THEN
+        LWCUR=.FALSE. ! only used in coupled runs
+        LWSTOKES=.FALSE.  ! only used in coupled runs
+      ENDIF
 
       RMISS=-999. ! missing data indicator
+
+      ! WAM-NEMO COUPLING
+
+      IF (LWNEMOCOU) THEN
+        IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
+        CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME, 
+     &                         NEMOITINI, NEMOITEND, NEMOTSTEP, .TRUE. )
+        IF(IRANK.EQ.1) THEN
+          WRITE(IU06,*)'NEMO INITIAL DATE         : ',NEMOINIDATE
+          WRITE(IU06,*)'NEMO INITIAL TIME         : ',NEMOINITIME
+          WRITE(IU06,*)'NEMO INITIAL STEP         : ',NEMOITINI
+          WRITE(IU06,*)'NEMO FINAL STEP           : ',NEMOITEND
+          WRITE(IU06,*)'NEMO TIME STEP            : ',NEMOTSTEP
+        ENDIF
+        ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
+        ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
+        ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
+        IF (NEMOFRCO==0) THEN
+          WRITE(IU06,*) ' NEMOFRCO NEEDS TO BE SET IN WAM-NEMO MODE.'
+          CALL ABORT1
+        ELSE
+          NEMOCSTEP=NEMOITINI
+          NEMONSTEP=NINT(NEMOFRCO*IDELPRO/NEMOTSTEP)
+          NEMOWSTEP=0
+        ENDIF
+        IF ((NEMOFRCO*IDELPRO)/=NINT(NEMOTSTEP*NEMONSTEP)) THEN
+          WRITE(IU06,*)'Inconsistent NEMO and WAM coupling intervals:'
+          WRITE(IU06,*)'WAM coupling interval is  : ',NEMOFRCO*IDELPRO
+          WRITE(IU06,*)'NEMO coupling interval is : ',NEMOTSTEP*NEMONSTEP
+          CALL ABORT1
+        ELSE
+          IF (IRANK.EQ.1) THEN
+            WRITE(IU06,*)'NEMONSTEP                 : ',NEMONSTEP
+            WRITE(IU06,*)'NEMO coupling interval is : ',
+     &                   NEMOTSTEP*NEMONSTEP
+          ENDIF
+        ENDIF
+        LWSTOKES=.TRUE.
+      ENDIF
 
  20   CONTINUE
 
@@ -383,8 +434,6 @@
          DEALLOCATE (PHIEPS)
          DEALLOCATE (PHIAW)
          DEALLOCATE (TAUOC)
-         DEALLOCATE (NEMEAN)
-         DEALLOCATE (NFMEAN)
       ENDIF
 
 
@@ -402,6 +451,10 @@
       ENDIF
       WRITE (IU06,*) ' ++++++++++++++++++++++++++++++'
 
+      IF (LWNEMOCOU) THEN
+        CALL NEMOGCMCOUP_FINAL
+      ENDIF
+
       IF(LMESSPASS) THEN
         CALL MPCLOSE_UNIT
         CALL MPL_END
@@ -409,5 +462,10 @@
 
       IF (LHOOK) CALL DR_HOOK('CHIEF',1,ZHOOK_HANDLE)
 
+#ifdef WITH_NEMO
+      CALL WAMENDNEMOIO(LNEMOIOSERVER)
+#endif
+      ENDIF
+      
       STOP
       END

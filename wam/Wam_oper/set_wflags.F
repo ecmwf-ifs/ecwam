@@ -1,4 +1,4 @@
-      LOGICAL FUNCTION SET_WFLAGS(FLAG,N,IFLAG)
+      LOGICAL FUNCTION SET_WFLAGS(FLAG,N,NTRAIN,IFLAG)
 
 ! ----------------------------------------------------------------------
 
@@ -17,13 +17,14 @@
 
 !     *FLAG* LOGICAL  INPUT FLAGS 
 !     *N*    INTEGER  SIZE OF FLAG
+!     *NTRAIN* INTEGER NUMBER OF WAVE TRAIN 
 !     *IFLAG*INTEGER  DETERMINES THE LOGIC TO BE APPLIED TO FLAG 
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: N, IFLAG, IFL
+      INTEGER :: N, IFLAG, IFL, NTRAIN
       LOGICAL :: FLAG(N)
 
       SET_WFLAGS=.FALSE.
@@ -55,6 +56,11 @@
         ENDDO
         IFL=28
         DO WHILE (.NOT. SET_WFLAGS .AND. IFL.LE.33)
+          SET_WFLAGS = FLAG(IFL)
+          IFL=IFL+1
+        ENDDO
+        IFL=47
+        DO WHILE (.NOT. SET_WFLAGS .AND. IFL.LE.(46+3*NTRAIN))
           SET_WFLAGS = FLAG(IFL)
           IFL=IFL+1
         ENDDO

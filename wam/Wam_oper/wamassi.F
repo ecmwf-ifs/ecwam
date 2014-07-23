@@ -74,7 +74,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,IPFGTBL  ,LOUTINT  ,LOUTSPP
+     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -88,15 +88,17 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
-     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
+     &            C3G      ,
+     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
+     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG
+      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG 
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,U10NEW   ,U10OLD   ,
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
@@ -113,7 +115,8 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
-     &            IU22     ,IU23     ,IU27     ,IU28     ,IU04     ,IU32
+     &            IU22     ,IU23     ,IU25     ,IU26     ,IU27     ,
+     &            IU28     ,IU04     ,IU32
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE MPL_MODULE
@@ -121,14 +124,16 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      LOGICAL LDSTOP, LDWRRE, LLFLUSH
+      INTEGER :: IFIL, IJ, IRA, K, M
+      INTEGER :: IG
+      INTEGER :: I_GET_UNIT
+      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+      REAL :: ZHOOK_HANDLE
+
+      LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT, LLINTPOL
-      REAL ZHOOK_HANDLE
-! Mod for OPENMP
-      INTEGER JKGLO,KIJS,KIJL,NPROMA
-! End Mod for OPENMP
-
 
       IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
 
@@ -138,13 +143,6 @@
      &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       WRITE (IU06,*) '  '
       LLFLUSH = .TRUE.
-
-      IF(.NOT.ALLOCATED(WHGTAG) .AND. IRANK.EQ.IPFGTBL(22))
-     &  ALLOCATE(WHGTAG(NGX,NGY))
-      IF(.NOT.ALLOCATED(CWHTAG) .AND. IRANK.EQ.IPFGTBL(23))
-     &  ALLOCATE(CWHTAG(NGX,NGY))
-      IF(.NOT.ALLOCATED(RANGAG) .AND. IRANK.EQ.IPFGTBL(24))
-     &  ALLOCATE(RANGAG(NGX,NGY))
 
 !     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
 !        ------------------------------------------
@@ -214,7 +212,7 @@
 
           IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 !!! it is assumed the FL1 still contains the spectra in the relative
-!!! frame of reference. It needs to be transformed to the absolute frame 
+!!! frame of reference. To compute the integrated parameters, it needs to be transformed to the absolute frame 
             CALL GSTATS(1236,0)
             IRA=1
             NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
@@ -379,7 +377,6 @@
 
           IF ((LDSTOP.OR.LDWRRE) .AND. 
      &        (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
-            ICH = 7
             CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
             CALL DIFDATE (CDTPRO,CDATEF,IANALPD)
             IF (CDTPRO.LE.CDATEF) THEN
@@ -466,6 +463,12 @@
       IF(ALLOCATED(WSTARG)) DEALLOCATE(WSTARG)
       IF(ALLOCATED(CICG)) DEALLOCATE(CICG)
       IF(ALLOCATED(CIHG)) DEALLOCATE(CIHG)
+      IF(ALLOCATED(C3G)) DEALLOCATE(C3G)
+      IF(ALLOCATED(NSSTG)) DEALLOCATE(NSSTG)
+      IF(ALLOCATED(NICCG)) DEALLOCATE(NICCG)
+      IF(ALLOCATED(NICTG)) DEALLOCATE(NICTG)
+      IF(ALLOCATED(NUCUG)) DEALLOCATE(NUCUG)
+      IF(ALLOCATED(NVCUG)) DEALLOCATE(NVCUG)
       IF(ALLOCATED(WX1G)) DEALLOCATE(WX1G)
       IF(ALLOCATED(WX2G)) DEALLOCATE(WX2G)
       IF(ALLOCATED(WX3G)) DEALLOCATE(WX3G)
@@ -478,6 +481,11 @@
       IF(ALLOCATED(WHGTWG)) DEALLOCATE(WHGTWG)
       IF(ALLOCATED(WDIRWG)) DEALLOCATE(WDIRWG)
       IF(ALLOCATED(WMNFWG)) DEALLOCATE(WMNFWG)
+
+      IF(ALLOCATED(WHGTTRG)) DEALLOCATE(WHGTTRG)
+      IF(ALLOCATED(WDIRTRG)) DEALLOCATE(WDIRTRG)
+      IF(ALLOCATED(MWPMTRG)) DEALLOCATE(MWPMTRG)
+
 
       IF (LHOOK) CALL DR_HOOK('WAMASSI',1,ZHOOK_HANDLE)
 

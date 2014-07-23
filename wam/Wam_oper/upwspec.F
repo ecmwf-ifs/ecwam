@@ -72,19 +72,32 @@
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN   ,ASWKM    ,BSWKM 
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      INTEGER :: IJS, IJL 
+      INTEGER :: IJ, IJS, IJL, M, K, ICOUNT 
+      INTEGER :: NFREINF
+      INTEGER :: IG 
       INTEGER :: M1(NFRE)
 
       REAL :: XL11
+      REAL :: HNEW, FNEW, HOLD, FOLD
+      REAL :: XKMEAN_MIN, XDELTA, XKMEAN_NEW
+      REAL :: OMEGA, XK, ESPFG_1D
+      REAL :: DELET, DELLOW, DELHIGH, ESPFG 
+      REAL :: WEIGHT, F1, F2, DE 
+      REAL :: ESPAN, ESPAN_1D    
+      REAL :: AKI 
+      REAL :: ZHOOK_HANDLE
       REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: ETA, FMWFG, FMWA
-      REAL,DIMENSION(IJS:IJL) :: ETFG, AKFG, XR, XB 
+      REAL, DIMENSION(IJS:IJL) :: ETA, FMWFG, FMWA
+      REAL, DIMENSION(IJS:IJL) :: ETFG, AKFG, XR, XB 
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
 
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('UPWSPEC',0,ZHOOK_HANDLE)
 
       IG=1
 
@@ -194,6 +207,7 @@
               ENDDO
 
             ELSE
+
               WEIGHT=(FU(M)-FR(M1(M)))/DFRE(M1(M))
               DO K=1,NANG
                 F1 = F(IJ,K,M1(M))
@@ -228,5 +242,6 @@
         ENDIF
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('UPWSPEC',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE UPWSPEC

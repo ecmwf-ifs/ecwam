@@ -52,9 +52,14 @@
 
       USE YOWCARD  , ONLY : JPCL     ,CARD
 
-      INTEGER ANALPD, FOREPD                      
-      INTEGER ISTAT(3)                                                  
-      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT,  CRSDT, CLSDT, CCURA
+! --------------------------------------------------------------------- 
+      IMPLICIT NONE
+
+      INTEGER :: I, IDIN, IS, IASS, NF 
+      INTEGER :: ANALPD, FOREPD
+      INTEGER :: ISTAT(3)
+
+      CHARACTER(LEN=14) :: CBDT,CEDT,CABDT,CAEDT,CRSDT,CLSDT,CCURA
 
 ! --------------------------------------------------------------------- 
 

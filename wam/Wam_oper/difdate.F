@@ -58,23 +58,32 @@
 
 !       NONE.
 
+!----------------------------------------------------------------------
 
-! ---------------------------------------------------------------------
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-      INTEGER :: MON(12)
+!----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER :: M, IL, ISI, IDUM, IRET, ISHIFT, KSHIFT
+      INTEGER :: IYEAR ,IMON ,IDAY ,IHOUR ,IMIN ,ISEC
       INTEGER :: IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
       INTEGER :: IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
-      INTEGER :: IDUM
-      INTEGER :: KSHIFT
-      CHARACTER*(*) CDATE1, CDATE2
-      CHARACTER*14 :: CDT1, CDT2
-      CHARACTER* 80 CLFMT
-      LOGICAL LLND
+      INTEGER :: MON(12)
+
+      REAL :: ZHOOK_HANDLE
+
+      CHARACTER(LEN=*) :: CDATE1, CDATE2
+      CHARACTER(LEN=14) :: CDT1, CDT2
+      CHARACTER(LEN=80) :: CLFMT
+
+      LOGICAL :: LLND
 
       DATA MON /31,28,31,30,31,30,31,31,30,31,30,31/
 
 
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('DIFDATE',0,ZHOOK_HANDLE)
 
 !*    1.0 SPLIT DATE TIME GROUPS INTO SECOND, MINUTE, HOUR, DAY, MONTH,
 !*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
@@ -294,14 +303,14 @@
 !*        AND CONVERT TO SECONDS.
 !         ------------------------------------------------------
  
-      kSHIFT = KSHIFT*ISI
+      KSHIFT = KSHIFT*ISI
 
+      IF (LHOOK) CALL DR_HOOK('DIFDATE',1,ZHOOK_HANDLE)
       RETURN
       CONTAINS
 
-      FUNCTION MFEB_LENGTH(IYEAR)
+      INTEGER FUNCTION MFEB_LENGTH(IYEAR)
 !     LENGTH OF FEBRUARY IN DAYS FOR YEAR IYEAR (YYYY)
-      INTEGER :: MFEB_LENGTH
       INTEGER :: IYEAR
       IF(MOD(IYEAR,400).EQ.0) THEN
         MFEB_LENGTH=29

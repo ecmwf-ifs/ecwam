@@ -4,7 +4,8 @@
 
 !*    ** *COUT*  OUTPUT POINTS INDICES AND FLAGS.
 
-      INTEGER, PARAMETER :: JPPFLAG=65   !!!! change also in scripts: wave_setgflag
+      INTEGER, PARAMETER :: NTRAIN=3 
+      INTEGER, PARAMETER :: JPPFLAG=57+3*NTRAIN+5 !!!! change also in scripts: wave_setgflag
       INTEGER, PARAMETER :: NREAL=11 
 
       CHARACTER*14, ALLOCATABLE :: COUTT(:)
@@ -52,6 +53,7 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
+!      *NTRAIN*    INTEGER   MAXIMUM NUMBER OF SWELL TRAINS.
 !      *NREAL*     INTEGER   NUMBER OF REAL FIELDS IN RESTART FILE
 !      *COUTT*     CHAR*14   OUTPUT TIMES.
 !      *COUTLST*   CHAR*14   LAST OUTPUT TIME.

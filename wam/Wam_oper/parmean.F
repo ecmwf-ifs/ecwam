@@ -1,4 +1,4 @@
-      SUBROUTINE PARMEAN (F,EM,THQ,MEANWP1,FP)
+      SUBROUTINE PARMEAN (F, NPK, EM, THQ, MEANWP)
 
 ! ----------------------------------------------------------------------
 
@@ -16,12 +16,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PARMEAN (F,EM,THQ,MEANWP1,FP)*
+!       *CALL* *PARMEAN (F,NPK,EM,THQ,MEANWP)*
 !              *F*       - SPECTRUM.
+!              *NPK*     - NUMBER OF PEAKS 
 !              *EM*      - MEAN WAVE ENERGY FOR THE WAVE SYSTEM 
 !              *THQ*     - MEAN WAVE DIRECTION
-!              *MEANWP1* - MEAN PERIOD BASED ON THE FIRST MOMENT.
-!              *FP*      - PEAK FREQUENCY OF THE 1D SPECTRUM.
+!              *MEANWP*  - MEAN PERIOD BASED ON -1 MOMENT.
 
 !     METHOD.
 !     -------
@@ -40,149 +40,66 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  ,ONLY : FR ,DFIM ,DFFR ,DELTH,WP1TAIL,COSTH,
-     &                     SINTH,WETAIL
-      USE YOWPARAM ,ONLY : NANG,NFRE
-      USE YOWPCONS ,ONLY : EPSMIN,ZPI
+      USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
+      USE YOWPARAM ,ONLY : NANG, NFRE
+      USE YOWPCONS ,ONLY : EPSMIN, ZPI
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: K,M,MMAX
-      REAL    :: F(NANG,NFRE)
-      REAL    :: TEMP2(NFRE)
-      REAL    :: TEMP, EMEAN, MEANWP1, THQ, FP, SI, CI, EM
-      REAL    :: XMAX, XP1, XM1, F10, F1P1, F1M1
-      REAL    :: A, B, C
-      REAL    :: COEF_FR, DELT25
+      INTEGER :: IPK, NPK, K, M
+      REAL    :: F1D(NFRE)
+      REAL, DIMENSION(NPK) :: TEMP, EMEAN, MEANWP, THQ, SI, CI, EM, FM
+      REAL    :: F(NANG,NFRE,NPK)
 
 ! ----------------------------------------------------------------------
 
 
-!!!!! need to re-write to combine similar operations
+      DO IPK=1,NPK
 
-!     1D FREQUENCy SPECTRUM
-      DO M=1,NFRE
-        K=1
-        TEMP2(M) = F(K,M)
-        DO K=2,NANG
-          TEMP2(M) = TEMP2(M)+F(K,M)
+        EM(IPK) = EPSMIN
+        FM(IPK) = EPSMIN
+        DO M=1,NFRE
+          F1D(M) = F(1,M,IPK)
+          DO K=2,NANG
+            F1D(M) = F1D(M)+F(K,M,IPK)
+          ENDDO
+          EM(IPK) = EM(IPK)+F1D(M)*DFIM(M)
+          FM(IPK) = FM(IPK)+F1D(M)*DFIMOFR(M)
         ENDDO
+
+        IF(EM(IPK).GT.EPSMIN) THEN
+          MEANWP(IPK) = FM(IPK)/EM(IPK)
+        ELSE
+          MEANWP(IPK) = 0.
+        ENDIF
+
       ENDDO
-
-!*    TOTAL ENERGY
-!     ------------
-
-!*    1. Initialise energy array.
-!        ------------------------
-
-      EM = EPSMIN
-
-! ----------------------------------------------------------------------
-
-!*    2. Integrate over frequencies and direction.
-!        -----------------------------------------
-
-      DO M=1,NFRE
-        EM = EM+DFIM(M)*TEMP2(M)
-      ENDDO
-
-! ----------------------------------------------------------------------
-
-!*    3. Add tail energy.
-!        ----------------
-
-      DELT25 = WETAIL*FR(NFRE)*DELTH
-      EM = EM+DELT25*TEMP2(NFRE)
 
 ! ----------------------------------------------------------------------
 
 !*    MEAN WAVE DIRECTION
 !     -------------------
 
-!*    1. Initialize sin and cos arrays
-!        ------------------------------
+      DO IPK=1,NPK
+        SI(IPK) = 0.
+        CI(IPK) = 0.
 
-      SI = 0.
-      CI = 0.
-
-! ----------------------------------------------------------------------
-
-!*    2. Integrate over frequencies and directions.
-!        ------------------------------------------
-
-      DO K=1,NANG
-        TEMP = F(K,1)*DFIM(1)
-        DO M=2,NFRE
-          TEMP = TEMP+F(K,M)*DFIM(M)
+        DO K=1,NANG
+          TEMP(IPK) = F(K,1,IPK)*DFIM(1)
+          DO M=2,NFRE
+            TEMP(IPK) = TEMP(IPK)+F(K,M,IPK)*DFIM(M)
+          ENDDO
+          SI(IPK) = SI(IPK)+SINTH(K)*TEMP(IPK)
+          CI(IPK) = CI(IPK)+COSTH(K)*TEMP(IPK)
         ENDDO
-        SI = SI+SINTH(K)*TEMP
-        CI = CI+COSTH(K)*TEMP
+
+
+        IF (CI(IPK).EQ.0.) CI(IPK) = EPSMIN
+        THQ(IPK) = ATAN2(SI(IPK),CI(IPK))
+        IF (THQ(IPK).LT.0.) THQ(IPK) = THQ(IPK) + ZPI
       ENDDO
-
-! ----------------------------------------------------------------------
-
-!*    3. Compute mean direction.
-!        -----------------------
-
-      IF (CI.EQ.0.) CI = EPSMIN
-      THQ = ATAN2(SI,CI)
-      IF (THQ.LT.0.) THQ = THQ + ZPI
-
-! ----------------------------------------------------------------------
-
-!*    MEAN PERIOD BASED ON FIRST MOMENT
-!     ---------------------------------
-
-      MEANWP1 = EPSMIN 
-
-      DO M=1,NFRE
-        MEANWP1 = MEANWP1+DFFR(M)*TEMP2(M)
-      ENDDO
-
-!*    ADD TAIL CORRECTION TO MEAN PERIOD AND
-!     AND TRANSFORM TO PERIOD.
-
-      COEF_FR = WP1TAIL*DELTH*FR(NFRE)**2
-
-      MEANWP1 = MEANWP1+COEF_FR*TEMP2(NFRE)
-      IF(EM.GT.EPSMIN .AND. MEANWP1.GT.EPSMIN ) THEN
-        MEANWP1 = EM/MEANWP1
-      ELSE
-        MEANWP1 = 0.
-      ENDIF
-
-!*    PEAK FREQUENCY
-!     --------------
-      XMAX = 0.
-      MMAX = 1
-
-      DO M=1,NFRE
-        IF (TEMP2(M).GT.XMAX) THEN
-          MMAX = M
-          XMAX = TEMP2(M)
-        ENDIF
-      ENDDO
-
-      FP= FR(MMAX)
-
-      IF (XMAX.GT.0..AND.MMAX.LT.NFRE.AND.MMAX.GT.1) THEN
-        XP1 = FR(MMAX+1)-FR(MMAX)
-        XM1 = FR(MMAX-1)-FR(MMAX)
-        F10  = TEMP2(MMAX) 
-        F1P1 = TEMP2(MMAX+1)-F10
-        F1M1 = TEMP2(MMAX-1)-F10
-
-        A = F10
-        B = 1./(XM1-XP1)*(XM1*F1P1/XP1-XP1*F1M1/XM1)
-        C = 1./(XM1-XP1)*(F1M1/XM1-F1P1/XP1)
-
-        IF (C.LT.0.) THEN
-          FP = FR(MMAX)-B/(2.*C)
-        ENDIF
-      ENDIF
-
 
 ! ----------------------------------------------------------------------
 

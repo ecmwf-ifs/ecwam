@@ -40,6 +40,9 @@
       USE YOWSTAT  , ONLY : IASSI
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER :: IR, IFLAG
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------

@@ -1,5 +1,4 @@
-      SUBROUTINE OUTBETA (IJS, IJL, IG, US, Z0,
-     &                    RCHAR, BETA)
+      SUBROUTINE OUTBETA (IJS, IJL, IG, U10, US, Z0, BETA)
 
 ! ----------------------------------------------------------------------
 
@@ -8,6 +7,8 @@
 !     P.JANSSEN      KNMI/ECMWF  JANUARY 1992
 !     J.BIDLOT       ECMWF       FEBRUARY 1996  MESSAGE PASSING
 !     J.BIDLOT       ECMWF       AUGUST 2008  REMOVE MESSAGE PASSING 
+!     J.BIDLOT       ECMWF       MARCH 2014  USE MODEL CHARNOCK FOR ALL
+!                                SEA POINTS (INCLUDING SEA ICE POINTS)
 
 !*    PURPOSE.
 !     --------
@@ -17,14 +18,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, IG, IGL,US,Z0,
-!                        RCHAR, BETA)*
+!       *CALL* *OUTBETA (IJS, IJL, IG, IGL,US,Z0, BETA)
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *IG*     - BLOCK NUMBER.
+!         *U10*    - 10M WIND SPEED IN M/S.
 !         *US*     - FRICTION VELOCITY IN M/S.
 !         *Z0*     - ROUGHNESS LENGTH IN M.
-!         *RCHAR*  - DEFAULT VALUES FOR CHARNOCK
 !         *BETA*   - CHARNOCK FIELD (BLOCK ARRAY)
 !         
 
@@ -47,7 +47,6 @@
 
       USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOWICE   , ONLY : LICERUN  ,CICOVER  ,CITHRSH
       USE YOWMPP   , ONLY : NINF     ,NSUP
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -56,12 +55,12 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJS, IJL, IG
-      INTEGER :: IJ
-      REAL :: RCHAR
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US, Z0
+      INTEGER :: IJ, IJS, IJL
+      INTEGER :: IG 
+
+      REAL :: ZHOOK_HANDLE
       REAL :: BETA(IJS:IJL)
-      REAL ZHOOK_HANDLE
+      REAL, DIMENSION(NINF:NSUP,NBLO) :: U10, US, Z0
 
 ! ----------------------------------------------------------------------
 
@@ -71,11 +70,7 @@
 !     ---------------------------------
 
       DO IJ = IJS,IJL
-        IF (LICERUN.AND.CICOVER(IJ,IG).GT.CITHRSH) THEN
-          BETA(IJ) = RCHAR
-        ELSE
-          BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)
-        ENDIF
+        BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)

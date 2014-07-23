@@ -79,8 +79,8 @@
       INTEGER :: ICLASS, IFCST, ISTEP, ISTEP_HRS 
       INTEGER :: IC, JC, ITABPAR, IDATE, ITIME
       INTEGER :: ICOUNT, NN, I, J, JSN, KK, MM
-      INTEGER :: IY1,IM1,ID1,IH1,IDATERES,IRET, IWINOFF
-      INTEGER :: IY2,IM2,ID2,IH2
+      INTEGER :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET, IWINOFF
+      INTEGER :: IY2,IM2,ID2,IH2,IMN2,ISS2
       INTEGER :: IERR
       INTEGER :: IGRIB_HANDLE
       INTEGER :: ISIZE
@@ -99,7 +99,7 @@
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=4) :: CEXPVER
       CHARACTER(LEN=12) :: C12
-      CHARACTER(LEN=14) :: CDATE
+      CHARACTER(LEN=14) :: CDATE, CDATE1, CDATE2
       CHARACTER(LEN=24) :: FILNM
 
       LOGICAL :: LFDB
@@ -328,6 +328,8 @@
             ID1=IDATERES/100
             IDATERES=IDATERES-ID1*100
             IH1=IDATERES
+            IMN1=0
+            ISS1=0
 !
             IDATERES=IDATE*100+ITIME/100
             IY2=IDATERES/1000000
@@ -337,11 +339,17 @@
             ID2=IDATERES/100
             IDATERES=IDATERES-ID2*100
             IH2=IDATERES
+            IMN2=0
+            ISS2=0
 !
-            CALL HOURDIFF(IY1,IM1,ID1,IH1,IY2,IM2,ID2,IH2,IWINOFF,IRET)
-            IF (IRET /= 0) WRITE(0,*) 'IRET FROM HOURDIFF',IRET
-            NWINOFF=IWINOFF
-            write(IU06,*) ' SUB: WGRIBOUT: winoff:',NWINOFF
+            WRITE(CDATE1,'(I4,5I2)')IY1,IM1,ID1,IH1,IMN1,ISS1
+            WRITE(CDATE2,'(I4,5I2)')IY2,IM2,ID2,IH2,IMN2,ISS2
+            CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
+            NWINOFF=NWINOFF/3600
+!debile
+             write(*,*) 'debile wgribout ',NWINOFF
+
+!           in hours
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
      &       'offsetToEndOf4DvarWindow',NWINOFF)          
           ENDIF 

@@ -1,4 +1,5 @@
-      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW)
+      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, THWOLD, USOLD, USNEW,
+     &                    U10NEW, THWNEW, LLPARTITION)
 
 ! ----------------------------------------------------------------------
 
@@ -15,6 +16,7 @@
 !                                               *OUTBS*
 !                                               TO MAKE IT CALLABLE IN AN
 !                                               OPENMP LOOP.
+!     J. BIDLOT     JUNE 213           ECMWF    ADD PARTITIONING SCHEME
 
 !*    PURPOSE.
 !     --------
@@ -24,7 +26,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW)*
+!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW,
+!                        U10NEW, THWNEW, LLPARTITION)*
 !          *FL3* - BLOCK OF SPECTRA
 !          *FL1* - SWELL FLAG ARRAY
 !                  = 1 IF COMPONENT IS SWELL
@@ -36,12 +39,17 @@
 !          *USNEW*     NEW FRICTION VELOCITY IN M/S.
 !          *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
 !                      VELOCITY.
+!          *U10NEW* - LATESt WIND SPEED.
+!          *THWNEW* - LATEST WIND DIRECTION.
+!          *LLPARTITION* TRUE IF SPECTRAL PARTITIONING IS USED.
 
 !     METHOD.
 !     -------
 
 !       THE WAVES WHICH DO NOT INTERACT WITH THE WIND ARE
 !       CONSIDERED SWELL.
+!       IF LLPARTITION THEN A SPECTRAl PARTITIONING SCHEME WILL BE USED
+!       TO SPLIT THE SWELL SPECTRUM INTO ITS TWO MAIN COMPONENTS.
 
 !     EXTERNALS.
 !     ----------
@@ -51,22 +59,33 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : IPFGTBL
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
-     &            TH       ,COSTH    ,SINTH    ,FRIC
-      USE YOWMEAN  , ONLY : EMEAN
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,C        ,
+     &            TH       ,FRIC
+      USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWMEAN  , ONLY : EMEAN
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
 
-! ----------------------------------------------------------------------
+! ---------------------------,-------------------------------------------
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE)  :: FL1,FL3
-      REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD
-      REAL,DIMENSION(IJS:IJL) :: USNEW
-      REAL,DIMENSION(IJS:IJL) :: THRESHOLD
+      IMPLICIT NONE
+
+      INTEGER :: IJ,IJS,IJL,K,M
+      INTEGER :: MIJ(IJS:IJL)
+
+      REAL :: CM, CHECKTA
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,FL3
+      REAL, DIMENSION(IJS:IJL) :: THWOLD,USOLD
+      REAL, DIMENSION(IJS:IJL) :: USNEW
+      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW 
+      REAL, DIMENSION(IJS:IJL) :: THRESHOLD
+      REAL, DIMENSION(IJS:IJL) :: ETNP
+      REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
 
       LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
+      LOGICAL :: LLPARTITION
 
 ! ----------------------------------------------------------------------
 
@@ -74,9 +93,17 @@
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
+      DO IJ=IJS,IJL
+        EMWS(IJ) = EPSMIN
+        FMWS(IJ) = EPSMIN
+        FPWS(IJ) = FR(NFRE) 
+        EMAXWS(IJ) = EPSMIN
+        DUM(IJ) = 0.
+      ENDDO
+
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = 1.2*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
+          THRESHOLD(IJ) = 2.0*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
         ENDDO
         DO M=1,NFRE
           CM = FRIC/C(M)
@@ -86,14 +113,25 @@
               FL1(IJ,K,M)=1.
             ELSE
               FL1(IJ,K,M)=0.
+              EMWS(IJ) = EMWS(IJ)+FL3(IJ,K,M)*DFIM(M)
+              FMWS(IJ) = FMWS(IJ)+FL3(IJ,K,M)*DFIMOFR(M)
+              IF(FL3(IJ,K,M).GT.EMAXWS(IJ)) THEN
+                 EMAXWS(IJ) = FL3(IJ,K,M)
+                 FPWS(IJ) = FR(M)
+              ENDIF
             ENDIF
           ENDDO
         ENDDO
       ENDDO
 
+      DO IJ=IJS,IJL
+        FMWS(IJ) = EMWS(IJ)/FMWS(IJ)
+      ENDDO
 
-!*    2. COMPUTATION OF SWELL OUTPUT PARAMETERS
-!        ---------------------------------------
+
+
+!*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
+!         --------------------------------------------
 
       DO M=1,NFRE
         DO K=1,NANG
@@ -143,6 +181,14 @@
       ENDIF
 
 
+!*    2.2 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
+!         ------------------------------------------------------
+
+      IF(LLPARTITION) THEN
+        CALL FRCUTINDEX(IJS, IJL, FPWS, FMWS, DUM, MIJ)
+        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
+      ENDIF
+
 
 !*    3. COMPUTATION OF WIND SEA OUTPUT PARAMETERS
 !        -----------------------------------------
@@ -160,8 +206,9 @@
         CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), LLAK)
       ENDIF
 
+
 !     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0) THEN
+      IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0 ) THEN
         LLEPSMIN=.FALSE.
         CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
       ENDIF
@@ -196,6 +243,16 @@
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
         CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
+      ENDIF
+
+
+!     RE-ASSIGN THE NON PARTITONED ENERGY TO WINDSEA
+      IF(LLPARTITION) THEN
+        IF(IPFGTBL(11).NE.0 ) THEN
+          DO IJ=IJS,IJL
+            ESEA(IJ) = ESEA(IJ)+ETNP(IJ) 
+          ENDDO
+        ENDIF
       ENDIF
 
       RETURN

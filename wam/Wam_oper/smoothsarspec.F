@@ -1,4 +1,4 @@
-       SUBROUTINE SMOOTHSARSPEC(NSPEC,NANG,NFRE,SPEC) 
+       SUBROUTINE SMOOTHSARSPEC(LSPEC,NSPEC,NANG,NFRE,SPEC) 
  
 !---------------------------------------------------------------------
 
@@ -23,29 +23,29 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NSPEC,NANG,NFRE,ISPEC,K,M,KM,KP
+      INTEGER :: LSPEC,NSPEC,NANG,NFRE,ISPEC,K,M,KM,KP
 
       REAL :: C16
-      REAL :: SPEC(0:NSPEC,NANG,NFRE)
-      REAL :: WORK(NSPEC,NANG,NFRE)
-      REAL, DIMENSION(NSPEC) ::  EM, EW, TEMP
+      REAL :: SPEC(LSPEC:NSPEC,NANG,NFRE)
+      REAL :: WORK(LSPEC:NSPEC,NANG,NFRE)
+      REAL, DIMENSION(LSPEC:NSPEC) ::  EM, EW, TEMP
 
 !     COMPUTE THE ENERGY OF THE ORIGINAL SPECTRA
 
-      DO ISPEC = 1,NSPEC 
+      DO ISPEC = LSPEC,NSPEC 
         EM(ISPEC) = EPSMIN 
       ENDDO
 
       DO M=1,NFRE
-        DO ISPEC = 1,NSPEC
+        DO ISPEC = LSPEC,NSPEC 
           TEMP(ISPEC) = 0.
         ENDDO
         DO K=1,NANG
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = LSPEC,NSPEC 
             TEMP(ISPEC) = TEMP(ISPEC)+SPEC(ISPEC,K,M)
           ENDDO
         ENDDO
-        DO ISPEC = 1,NSPEC 
+        DO ISPEC = LSPEC,NSPEC 
           EM(ISPEC) = EM(ISPEC)+DFIM(M)*TEMP(ISPEC)
         ENDDO
       ENDDO
@@ -60,7 +60,7 @@
         IF (KP.GT. NANG) KP = 1
 
         DO M=2,NFRE-1
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = LSPEC,NSPEC 
             WORK(ISPEC,K,M) = SPEC(ISPEC,KM,M-1) +
      &                     2.*SPEC(ISPEC,KM,M)   + 
      &                        SPEC(ISPEC,KM,M+1) + 
@@ -83,7 +83,7 @@
         IF (KP.GT. NANG) KP = 1
 
         DO M=2,NFRE-1
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = LSPEC,NSPEC 
             SPEC(ISPEC,K,M) = C16 * WORK(ISPEC,K,M)
           ENDDO
         ENDDO
@@ -91,20 +91,20 @@
 
 !     COMPUTE THE ENERGY OF THE SMOOTHED SPECTRA
 
-      DO ISPEC = 1,NSPEC 
+      DO ISPEC = LSPEC,NSPEC 
         EW(ISPEC) = EPSMIN 
       ENDDO
 
       DO M=1,NFRE
-        DO ISPEC = 1,NSPEC
+        DO ISPEC = LSPEC,NSPEC 
           TEMP(ISPEC) = 0.
         ENDDO
         DO K=1,NANG
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = LSPEC,NSPEC 
             TEMP(ISPEC) = TEMP(ISPEC)+SPEC(ISPEC,K,M)
           ENDDO
         ENDDO
-        DO ISPEC = 1,NSPEC 
+        DO ISPEC = LSPEC,NSPEC 
           EW(ISPEC) = EW(ISPEC)+DFIM(M)*TEMP(ISPEC)
         ENDDO
       ENDDO
@@ -114,7 +114,7 @@
 
       DO M=1,NFRE
         DO K=1,NANG
-          DO ISPEC = 1,NSPEC
+          DO ISPEC = LSPEC,NSPEC 
             SPEC(ISPEC,K,M) = (EM(ISPEC)/EW(ISPEC))*SPEC(ISPEC,K,M)
           ENDDO
         ENDDO

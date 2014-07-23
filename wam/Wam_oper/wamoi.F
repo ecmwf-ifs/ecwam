@@ -32,32 +32,36 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWPARAM , ONLY : NIBLO
       USE YOWPCONS , ONLY : RAD
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER :: IJS, IJL, IJ
-      INTEGER :: NDIM2 
-      INTEGER :: NOBS(IJS:IJL)
+      INTEGER :: I1, I2, K1, K2
       INTEGER :: IG 
       INTEGER :: IOBS, JOBS, KOBS
-      INTEGER :: I1, I2, K1, K2
+      INTEGER :: NDIM2 
+      INTEGER :: NOBS(IJS:IJL)
       INTEGER :: IOBS4IJ(IJS:IJL,NDIM2)
 
-      REAL :: DIST(IJS:IJL) 
-      REAL :: XMO(IJS:IJL)
-      REAL :: XOI(IJS:IJL)
       REAL :: XNEW
       REAL :: DELLON, COSLON, DOBS, DOBS2
       REAL :: COND
       REAL :: DIFF 
+      REAL :: ZHOOK_HANDLE
+      REAL :: DIST(IJS:IJL) 
+      REAL :: XMO(IJS:IJL)
+      REAL :: XOI(IJS:IJL)
       REAL :: W(IJS:IJL,NDIM2)
 
       REAL, ALLOCATABLE, DIMENSION(:) :: V
       REAL, ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WAMOI',0,ZHOOK_HANDLE)
 
 !     LOOP ON EACH GRID POINT
 
@@ -153,5 +157,6 @@
       ENDIF
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('WAMOI',1,ZHOOK_HANDLE)
       RETURN                                                            
       END SUBROUTINE WAMOI

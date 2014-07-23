@@ -232,7 +232,7 @@ C
               NBREAD=NBREAD+1
               CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,
      &                                  KBYTES,IRET)
-              IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+              IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
                 IF(.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
                 CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'GETSPEC')
                 DEALLOCATE(INGRIB)
@@ -255,7 +255,7 @@ C
 
                 CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,
      &                                    KBYTES,IRET)
-                IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+                IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
                   IF(.NOT.LLRESIZING) NBREAD_AGAIN=NBREAD
                   CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'GETSPEC')
                   DEALLOCATE(INGRIB)

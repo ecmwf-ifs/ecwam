@@ -129,8 +129,7 @@
      &            C        ,FRIC     ,FLOGSPRDM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMINFR  ,LCIWABR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
-     &                      TAUOC    ,NEMEAN   ,NFMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
@@ -143,25 +142,14 @@
       IMPLICIT NONE
 
       INTEGER :: IJS, IJL, IG
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
-      REAL,DIMENSION(IJS:IJL,NFRE) :: FCONST, CIWA
-      REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW,
-     &                           ROAIRO,ZIDLOLD,CICVR
-      REAL,DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW,
-     &                           ROAIRN,ZIDLNEW
-
-! ----------------------------------------------------------------------
-
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
 
+
       REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
-      REAL :: TAU, XN, PHIDIAG 
       REAL :: ZHOOK_HANDLE
       REAL :: DELFL(NFRE)
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
@@ -172,11 +160,17 @@
       REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
+      REAL, DIMENSION(IJS:IJL,NFRE) :: FCONST, CIWA
+      REAL, DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW,
+     &                           ROAIRO,ZIDLOLD,CICVR
+      REAL, DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW,
+     &                           ROAIRN,ZIDLNEW
 
       LOGICAL :: LCFLX
 
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -402,6 +396,10 @@
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
 !           -------------------------------------------------------
 
+      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
       IF (ITEST.GE.2) THEN
@@ -436,17 +434,12 @@
 !           -------------------------------------------------------
 
       IF(LCFLX) THEN
-        DO IJ=IJS,IJL
-          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
-          XN        = ROAIRN(IJ)*USNEW(IJ)**3
+        CALL WNFLUXES (IJS, IJL,
+     &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
+     &                 PHIOC, TAUWD,
+     &                 EMEAN(IJS), FMEAN(IJS), U10NEW, THWNEW,
+     &                 USNEW, ROAIRN, .TRUE.)
 
-          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
-          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
-          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
-          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
-          NEMEAN(IJ) = EMEAN(IJ)
-          NFMEAN(IJ) = FMEAN(IJ)
-        ENDDO
       ENDIF
 
 ! ----------------------------------------------------------------------

@@ -1,6 +1,4 @@
-      SUBROUTINE NOTIM  (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &                   LWCUR)
+      SUBROUTINE NOTIM (CDTWIS, CDTWIE, IREAD, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -21,21 +19,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-!                      LWCUR)
+!       *CALL* *NOTIM (CDTWIS, CDTWIE, IREAD, LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
-!          *U10OLD* - WIND SPEED.
-!          *THWOLD* - WIND DIRECTION (RADIANS).
-!          *USOLD*  - FRICTION VELOCITY.
-!          *TAUW*   - WAVE STRESS.
-!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
-!          *ROAIRO* - AIR DENSITY IN KG/M3.
-!          *ZIDLOLD*- Zi/L 
-!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!          *CICOVER*- SEA ICE COVER.
-!          *CITHICK*- SEA ICE THICKNESS. 
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -64,11 +50,14 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWSPEC  , ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
+     &              TAUW   ,ROAIRO   ,ZIDLOLD
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
@@ -81,8 +70,6 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US, DS, ADS, ZIDL, CICR, CITH
       REAL :: ZHOOK_HANDLE
 

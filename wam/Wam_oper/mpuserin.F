@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------
 
       SUBROUTINE MPUSERIN (IU05, LMESSPASS, LFDB, LWCOU, LL1D, LSUBGRID,
-     &                     IPROPAGS, IREFRA)
+     &                     IPROPAGS, IREFRA, IDELPRO)
 
 ! ----------------------------------------------------------------------
 
@@ -29,6 +29,7 @@
 !        *IPROPAGS*  - CONTROLS WHICH PROPAGATION SCHEME IS USED.
 !        *IREFRA*    - CONTROLS WHICH REFRACTION SCHMEE IS USED
 !                      (NONE-BOTTOM-CURRENT-CURRENT/BOTTOM)
+!        *IDELPRO*   - TIME STEP
 
 !     METHOD.
 !     -------
@@ -48,17 +49,20 @@
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
      &            HSALTCUT, LALTGRDOUT, LALTPAS,
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,
-     &            LODBRALT
+     &            LODBRALT ,CSATNAME
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG
       USE YOWCPBO  , ONLY : IBOUNC   ,CBCPREF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWTEST  , ONLY : ITEST    ,ITESTB
-      USE YOWCOUP  , ONLY : LWCOUNORMS, LWNEMOCOU, LWNEMOCOUDEBUG
+      USE YOWCOUP  , ONLY : LWCOUNORMS, LWNEMOCOU, LWNEMOCOUSEND, 
+     &                      LWNEMOCOURECV, LWNEMOCOUDEBUG,
+     &                      LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,
+     &                      LWNEMOCOUSTRN,
+     &                      LWNEMOTAUOC, NEMOFRCO
 
 
 ! ----------------------------------------------------------------------
-
       CHARACTER *2 YCLASS
       CHARACTER *3 USERID, RUNID
       CHARACTER *4 YEXPVER
@@ -104,7 +108,8 @@
      &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
      &   LODBRALT,
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
-     &   IBUFRSAT,SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,
+     &   IBUFRSAT, CSATNAME,
+     &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,
      &   DTNEWWIND, LTURN90,
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
      &   ISTREAM, NLOCGRB, IREFDATE,
@@ -115,7 +120,9 @@
      &   LLWSWAVE, LLWDWAVE,
      &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,
      &   LICERUN, LCIWABR, LICETH,
-     &   LWNEMOCOU, LWNEMOCOUDEBUG
+     &   LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUDEBUG,
+     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR, LWNEMOCOUSTRN,
+     &   LWNEMOTAUOC, NEMOFRCO
 
 ! ----------------------------------------------------------------------
 
@@ -125,8 +132,19 @@
       LFDB =.FALSE.
       LMESSPASS =.TRUE.
       LWCOU=.FALSE.
-      LWNEMOCOU=.FALSE.
+      LWNEMOCOU=.FALSE. 
+      LWNEMOCOUSEND=.TRUE.
+      LWNEMOCOURECV=.FALSE.
       LWNEMOCOUDEBUG=.FALSE.
+      LWNEMOTAUOC=.TRUE.
+      LWNEMOCOUCIC=.FALSE.
+      LWNEMOCOUCIT=.FALSE.
+      LWNEMOCOUCUR=.FALSE.
+      LWNEMOCOUSTRN=.FALSE.
+! NEMO OUTPUT ON WAM
+      GFLAG(61:65)=.FALSE.
+      FFLAG(61:65)=.FALSE.
+      PFLAG(61:65)=.FALSE.
       LL1D=.TRUE.
       LSUBGRID=.TRUE.
       LWCOUNORMS = .FALSE.
@@ -143,7 +161,6 @@
       READ (IU05, NALINE)
       CLOSE(IU05)
 
-
       IF(IRANK.EQ.1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
@@ -151,6 +168,14 @@
         WRITE(6,*) '*** LFDB = ',LFDB
         WRITE(6,*) '*** LWCOU= ',LWCOU
         WRITE(6,*) '*** LWNEMOCOU= ',LWNEMOCOU
+        WRITE(6,*) '*** LWNEMOCOUSEND  = ',LWNEMOCOUSEND
+        WRITE(6,*) '*** LWNEMOCOURECV  = ',LWNEMOCOURECV
+        WRITE(6,*) '*** LWNEMOCOUDEBUG = ',LWNEMOCOUDEBUG
+        WRITE(6,*) '*** LWNEMOCOUCIC   = ',LWNEMOCOUCIC
+        WRITE(6,*) '*** LWNEMOCOUCIT   = ',LWNEMOCOUCIT
+        WRITE(6,*) '*** LWNEMOCOUCUR   = ',LWNEMOCOUCUR
+        WRITE(6,*) '*** LWNEMOCOUSTRN  = ',LWNEMOCOUSTRN
+        WRITE(6,*) '*** LWNEMOTAUOC    = ',LWNEMOTAUOC
         WRITE(6,*) '*** LSUBGRID= ',LSUBGRID
         WRITE(6,*) '*** IPROPAGS= ',IPROPAGS
         WRITE(6,*) '*** IREFRA= ',IREFRA

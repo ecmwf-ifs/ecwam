@@ -1,4 +1,4 @@
-      SUBROUTINE H_MAX(C4,NW,IJS,IJL,HMAX_N)
+      SUBROUTINE H_MAX(C3,C4,NW,IJS,IJL,HMAX_N)
 
 !***  DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 
@@ -14,6 +14,7 @@
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
 
+!     C_3            REAL         SKEWNESS
 !     C_4            REAL         KURTOSIS(<ETA>^4/(3<ETA^2>^2)-1)
 !     N_W            INTEGER      NUMBER OF WAVES
 !     IJS            INTEGER      FIRST INDEX
@@ -33,36 +34,62 @@
 !----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : PI     , C4MAX    ,C4MIN 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
  
       IMPLICIT NONE
       INTEGER :: IJ, IJS, IJL
-      REAL :: GAMMA_E, CONST, C4M, XN, Z0, B_Z, ARG, Z 
       INTEGER, DIMENSION(IJS:IJL):: NW
-      REAL, DIMENSION(IJS:IJL):: C4,HMAX_N
+      REAL :: GAMMA_E, ZETA_3, C3M, C4M, XN, Z0, C_Z, D_Z, E_Z, ARG, Z 
+      REAL :: ALPHA, BETA, G1, G2, G3
+      REAL :: ZHOOK_HANDLE
+
+      REAL, DIMENSION(IJS:IJL):: C3,C4,HMAX_N
+
+      IF (LHOOK) CALL DR_HOOK('H_MAX',0,ZHOOK_HANDLE)
 
 !*    1. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 !     -----------------------------------------
     
       GAMMA_E = 0.57721566  ! EULER CONSTANT
-
-      CONST = 0.5*(GAMMA_E**2+PI**2/6.)
+      ZETA_3  = 1.20206     ! RIEMANN ZETA FUNCTION
+!
+!     G1, G2, G3 ARE FIRST, SECOND AND THIRD DERIVATIVE OF
+!     GAMMA FUNCTION AT Z=1.
+!
+      G1 = -GAMMA_E
+      G2 = (GAMMA_E**2+PI**2/6.)
+      G3 = -2.*ZETA_3-GAMMA_E*PI**2/2.-GAMMA_E**3
 
       DO IJ=IJS,IJL
-         C4M = MIN(C4MAX,C4(IJ))
-         C4M = MAX(C4MIN,C4M)
-         XN = FLOAT(NW(IJ))
 
-         Z0 = 0.5*LOG(XN)
-         B_Z = 2.*Z0*(Z0-1.)
-         ARG = 1.+C4M*(B_Z-GAMMA_E*(1.-2.*Z0)-CONST)
-         ARG = MAX(ARG,0.1)
-         Z = Z0+0.5*(GAMMA_E+LOG(ARG))
+        IF (NW(IJ).GT.0) THEN
+          C3M = C3(IJ)
+          C4M = MIN(C4MAX,C4(IJ))
+          C4M = MAX(C4MIN,C4M)
+          XN = REAL(NW(IJ))
 
-         HMAX_N(IJ) = SQRT(Z)
+          Z0 = 0.5*LOG(XN)
+          ALPHA = 2.*Z0*(Z0-1.)+(1.-2.*Z0)*G1+0.5*G2
+
+          C_Z = Z0*(4.*Z0**2-12.*Z0+6.)-(6.*Z0**2-12.*Z0+3.)*G1
+          D_Z = 3.*(Z0-1.)*G2 
+          E_Z = -0.5*G3
+          BETA = C_Z+D_Z+E_Z
+
+          ARG = 1.+C4M*ALPHA+C3M**2*BETA       
+          ARG = MAX(ARG,0.1)
+          Z = Z0+0.5*(GAMMA_E+LOG(ARG))
+
+          HMAX_N(IJ) = SQRT(Z)
+        ELSE
+          HMAX_N(IJ) = 0.
+        ENDIF
+
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('H_MAX',1,ZHOOK_HANDLE)
       RETURN
 
       END SUBROUTINE H_MAX

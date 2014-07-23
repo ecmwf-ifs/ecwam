@@ -48,12 +48,15 @@
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      INTEGER, ALLOCATABLE :: IDUM(:), JDUM(:,:)
-      REAL, ALLOCATABLE :: ZDUM(:,:)
-
+      INTEGER  :: KA, KE
+      INTEGER  :: IC, IJ, IP, K, I 
       INTEGER :: IPP(NGY)
+      INTEGER, ALLOCATABLE :: IDUM(:), JDUM(:,:)
+
       REAL :: BATHY(NGX, NGY)
+      REAL, ALLOCATABLE :: ZDUM(:,:)
 
 ! ----------------------------------------------------------------------
 
@@ -261,6 +264,9 @@
       IF (KA.EQ.1) THEN
         IJS (IGL) = 1
         IJL2(IGL) = IPP(1)
+      ELSE IF (KA.EQ.NGY) THEN
+        IJS (IGL) = IPP(KA)+1
+        IJL2(IGL) = IPP(KA)
       ELSE
         IJS (IGL) = IPP(KA)+1
         IJL2(IGL) = IPP(KA)+IPP(KA+1)
@@ -274,7 +280,11 @@
       ELSE
         IJL (IGL) = IJLT(IGL)-IPP(KE)
       ENDIF
-      IJLS(IGL) = IJL(IGL)-IPP(KE-1)+1
+      IF(KE.GT.1) THEN
+        IJLS(IGL) = IJL(IGL)-IPP(KE-1)+1
+      ELSE
+        IJLS(IGL) = IJL(IGL)+1
+      ENDIF
 
 ! ----------------------------------------------------------------------
 

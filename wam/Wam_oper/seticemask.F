@@ -1,23 +1,22 @@
-      SUBROUTINE LOC2GLO (ALOC, GLO, IJS, IJL, IG, THRSCI)
+      SUBROUTINE SETICEMASK (X, Y, IJS, IJL, IG, THRSCI)
 ! ----------------------------------------------------------------------
 
-!**** *LOC2GLO* - TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK ARRAY 
+!**** *SETICEMASK* - IMPOSES THE ICE MASK IF PRESENT.
 
 !     J. BIDLOT   ECMWF       MARCH 2000 
 
 !*    PURPOSE.
 !     --------
 
-!    TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK ARRAY. 
-!    IT WILL ALSO IMPOSE THE ICE MASK IF PRESENT
+!    COPY X TO Y AND IMPOSE THE ICE MASK IF PRESENT
 
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *LOC2GLO (ALOC, GLO, IJS, IJL, IG, THRSCI )
-!         *ALOC*   - LOCAL BLOCK ARRAY.
-!         *GLO*    - LOCAL BLOCK ARRAY.
+!       *CALL* *SETICEMASK (X, Y, IJS, IJL, IG, THRSCI )
+!         *X*      - INPUT BLOCK ARRAY.
+!         *Y*      - OUTPUT BLOCK ARRAY.
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *IG*     - BLOCK NUMBER.
@@ -25,9 +24,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : LICERUN  , LMASKICE, CICOVER
-      USE YOWPARAM , ONLY : NIBLO
+      USE YOWICE   , ONLY : LICERUN  , CICOVER
       USE YOWPCONS , ONLY : ZMISS
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -35,21 +34,26 @@
 
       INTEGER :: IJ, IJS, IJL, IG
       REAL :: THRSCI
-      REAL :: ALOC(IJS:IJL), GLO(NIBLO)
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: X, Y
 
+      IF (LHOOK) CALL DR_HOOK('SETICEMASK',0,ZHOOK_HANDLE)
+
+      IG=1
       IF (LICERUN) THEN
         DO IJ = IJS,IJL
           IF (CICOVER(IJ,IG).GT.THRSCI) THEN
-             GLO(IJ) = ZMISS
+             Y(IJ) = ZMISS
           ELSE
-             GLO(IJ) = ALOC(IJ)
+             Y(IJ) = X(IJ)
           ENDIF
         ENDDO
       ELSE
         DO IJ = IJS,IJL
-          GLO(IJ) = ALOC(IJ)
+          Y(IJ) = X(IJ)
         ENDDO
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('SETICEMASK',1,ZHOOK_HANDLE)
       RETURN
-      END SUBROUTINE LOC2GLO
+      END SUBROUTINE SETICEMASK

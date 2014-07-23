@@ -53,17 +53,23 @@
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
 
 ! ----------------------------------------------------------------------
-      CHARACTER*14 CDTPRO,CDATEF,CDATER
-      CHARACTER*120 FILENAME
+      IMPLICIT NONE
 
-      LOGICAL LPBOPEN, LPBCLOSE
+      INTEGER :: IJ, K, M
+      INTEGER :: IUNIT
+      INTEGER :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
+      INTEGER, DIMENSION(NPROC) :: NSTART, NEND
 
-      INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: RFL
+
+      CHARACTER(LEN=14) :: CDTPRO,CDATEF,CDATER
+      CHARACTER(LEN=120) :: FILENAME
+
+      LOGICAL :: LPBOPEN, LPBCLOSE
+
 ! ----------------------------------------------------------------------
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RFL
-
-      REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',0,ZHOOK_HANDLE)
 

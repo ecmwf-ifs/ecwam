@@ -1,7 +1,8 @@
       SUBROUTINE WDFLUXES (IJS, IJL, IG,
      &                     FL3, FL, SL,
      &                     CICVR,
-     &                     THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW)
+     &                     U10NEW, THWNEW, USNEW,
+     &                     Z0NEW, ROAIRN, ZIDLNEW)
 
 ! ----------------------------------------------------------------------
 
@@ -25,6 +26,7 @@
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
 !          *IG*     - BLOCK NUMBER.
+!          *U10NEW* - WIND SPEED.
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
@@ -55,7 +57,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWFLUX 
+      USE YOWCOUP  , ONLY : LWFLUX
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
@@ -69,24 +71,22 @@
 
       IMPLICIT NONE
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
-      REAL,DIMENSION(IJS:IJL) :: CICVR
-      REAL,DIMENSION(IJS:IJL) :: THWNEW,USNEW,Z0NEW,
-     &                           ROAIRN,ZIDLNEW
-
-! ----------------------------------------------------------------------
-
       INTEGER :: IJ,IJS,IJL,IG
       INTEGER :: MIJ(IJS:IJL)
 
-      REAL :: TAU, XN, PHIDIAG
+      REAL :: TAU, XN, PHIDIAG, TAUO
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: CICVR
+      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW, USNEW, Z0NEW,
+     &                            ROAIRN, ZIDLNEW
+
       REAL, DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
      &                            PHIWA 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
 
       LOGICAL :: LCFLX
 
@@ -144,17 +144,13 @@
 !*      1.3 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !           -------------------------------------------------------
 
-        DO IJ=IJS,IJL
-          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
-          XN        = ROAIRN(IJ)*USNEW(IJ)**3
-          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
-          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
-          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
-          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
-        ENDDO
+        CALL WNFLUXES (IJS, IJL,
+     &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
+     &                 PHIOC, TAUWD,
+     &                 EMEAN(IJS), FMEAN(IJS),U10NEW, THWNEW,
+     &                 USNEW, ROAIRN, .FALSE.)
 
       ENDIF
-
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)

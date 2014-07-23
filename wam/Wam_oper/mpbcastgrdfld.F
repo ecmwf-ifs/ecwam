@@ -13,7 +13,7 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *MPGATHERSCFLD*(ITAG,NSTART,NEND,FIELD) 
+!     CALL *MPBCASTGRDFLD*(ITAG,NSTART,NEND,FIELD) 
 
 !     *ISEND*     RANK OF THE PROCESS FROM WHICH THE FIELD IS
 !                 BROADCASTED
@@ -39,17 +39,24 @@
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      REAL,DIMENSION(NXF,NYF) :: FIELD
+      INTEGER :: ISEND,ITAG,NXF,NYF
+      INTEGER :: MPLENGTH, I, J, KCOUNT
 
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NXF,NYF) :: FIELD
       REAL,ALLOCATABLE :: ZCOMBUF(:)
+
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRDFLD',0,ZHOOK_HANDLE)
+
       MPLENGTH=NXF*NYF
 
-      IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
-        RETURN
-      ELSE
+      IF((ISEND.NE.0).AND.(NPROC.NE.1)) THEN
+
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ----------------------------------------
         ALLOCATE(ZCOMBUF(MPLENGTH))
@@ -82,5 +89,6 @@
 
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRDFLD',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE MPBCASTGRDFLD

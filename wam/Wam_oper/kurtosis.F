@@ -1,20 +1,24 @@
-      SUBROUTINE KURTOSIS(F3, IJS, IJL, IG, C4, BF2, QP, FP, HMAX, TMAX)
+      SUBROUTINE KURTOSIS(F3, IJS, IJL, IG,
+     &                    C3, C4, BF2, QP, FP, HMAX, TMAX)
  
-!***  *KURTOSIS*   DETERMINES KURTOSIS, BENJAMIN-FEIR INDEX
+!***  *KURTOSIS*   DETERMINES SKEWNESS, KURTOSIS, BENJAMIN-FEIR INDEX
 !                  GODA'S PEAKEDNESS PARAMETER AND NORMALIZED
 !                  MAXIMUM WAVE HEIGHT.
  
 !     PETER JANSSEN       JULY 2007.
+!     PETER JANSSEN       APRIL 2014. INCLUDES SKEWNESS EFFECTS, WHILE 
+!                         NUMBER OF WAVES IS DETERMINED BY EWING (1973)
  
 !     PURPOSE.
 !     --------
  
-!           DETERMINATION OF KURTOSIS, B-F INDEX , GODA QP AND
+!           DETERMINATION OF SKEWNESS, KURTOSIS, B-F INDEX , GODA QP, NW,
 !                              HMAX AND TMAX
  
 !     INTERFACE.
 !     ----------
-!           *CALL*  *KURTOSIS((F3, IJS, IJL, IG, C4, BF, QP, HMAX, TMAX)
+!           *CALL*  *KURTOSIS(F3, IJS, IJL, IG,
+!                             C3, C4, BF, QP, HMAX, TMAX)
  
 !                      INPUT:
 !                           *F3*    - 2-DIMENSIONAL SPECTRUM
@@ -22,6 +26,7 @@
 !                           *IJL*   - LAST INDEX
 !                           *IG*    - BLOCK NUMBER
 !                      OUTPUT: 
+!                           *C3*    - SKEWNESS 
 !                           *C4*    - KURTOSIS
 !                           *BF*    - BENJAMIN-FEIR INDEX
 !                           *QP*    - GODA'S QUALITY FACTOR
@@ -31,6 +36,9 @@
 !
 !     METHOD.
 !     -------
+!            JULY 2007:
+!            ---------
+!
 !            USED NUMERICAL SIMULATIONS OF THE NONLINEAR SCHROEDINGER
 !            EQUATION TO OBTAIN THE DEPENDENCE OF KURTOSIS ON THE
 !            SQUARE OF THE BENJAMIN-FEIR INDEX, BF2, AND THE WIDTH OF
@@ -51,6 +59,28 @@
 !            OPPOSITE CASE C4 < 0. HERE, FOLLOWING THE WORK
 !            OF JANSSEN & ONORATO (2007) WE HAVE PARAMETRIZED THIS SHALLOW
 !            WATER EFFECT BY MEANS OF THE FUNCTION TRANSF2.
+!
+!            APRIL 2014:
+!            ----------
+!
+!            1) FORMULATE DYNAMIC KURTOSIS C4 IN TERMS OF THE DIMENSIONLESS
+!               NUMBER R = 0.5*(SIG_TH/SIG_OM)**2 (SEE TECH MEMO 588). 
+!               RESULTS IN GOOD AGREEMENT WITH  MORI FORMULATION FOR
+!                  C4 = XJ*BFI**2
+!               WITH
+!                  XJ = C4_CONST/SQRT(1+7.*R),
+!               WHERE
+!                  C4_CONST = PI/(3.*SQRT(3.))
+!            2) BOUND WAVES HAVE ALSO FINITE SKEWNESS WHICH AFFECTS ENVELOPE
+!               WAVE HEIGHT DISTRIBUTION (SEE MEMO ON UPDATES)
+!            3) FOR MAXIMUM WAVE HEIGHT THE NUMBER NW OF INDEPENDENT EVENTS
+!               IS REQUIRED. THUS FAR NUMBER OF INDEPENDENT EVENTS WAS OBTAINED 
+!               BY SAMPLING WITH THE PEAK FREQUENCY. THIS IS NOT CORRECT. IT
+!               IS MORE APPROPRIATE TO USE AS ESTIMATE OF EVENTS THE NUMBER OF 
+!               WAVE GROUPS IN THE TIME SERIES. THIS IS OBTAINED USING JOHN
+!               EWINGS (1973) RESULT ON THE LENGTH OF A WAVE GROUP REFERRED TO
+!               SIGNIFICANT WAVE HEIGHT.
+!
 !
 !
 !     EXTERNALS.
@@ -74,6 +104,12 @@
 !     EFFECTS OF DIRECTIONALITY ON THE NONLINEAR FOCUSSING IN RANDOM SEAS. 
 !     MIGUEL ONORATO, NOBUHITO MORI AND PETER A.E.M. JANSSEN
 !     IN PREPARATION, 2007
+
+!     ON THE EXTENSION OF THE FREAK WAVE WARNING SYSTEM AND ITS VERIFICATION.
+!     PETER A.E.M JANSSEN AND J.-R. BIDLOT, ECMWF TECH MEMO 588.
+
+!     FURTHER UPDATES TO THE FREAK WAVE WARNING SYSTEM. PETER A.E.M. 
+!     JANSSEN AND J.-R. BIDLOT, TO BE PUBLISHED AS ECMWF TECH MEMO
 !
 !-----------------------------------------------------------------------
 !     MODULES:
@@ -84,6 +120,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
        
 ! ----------------------------------------------------------------------
  
@@ -93,24 +130,29 @@
 
       INTEGER, DIMENSION(IJS:IJL) ::  MMAX, KMAX, NW
 
-      REAL :: ZSUM3, ZALPHA, ZBETA, ZA_MORI, ZJ , ZEPS, ZNU, 
-     &        HS, SIG_OM1, DURATION, AKI, TRANSF2
+      REAL :: ZC4_CONST, ZALPHA, ZBETA, ZR, ZR_0, ZJ , ZEPS, ZNU, 
+     &        HS, SIG_OM1, DURATION, AKI, TRANSF2, ZF_WG, ZK, ZARG,
+     &        ZKAPPA30, ZKAPPA03, ZKAPPA12, ZKAPPA21,
+     &        ZKAPPA40, ZKAPPA04, ZKAPPA22, ZKAPPA4
+      REAL :: ZHOOK_HANDLE
       REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
       REAL, DIMENSION(IJS:IJL) ::  C4,BF2,QP,HMAX,TMAX,ETA2,SUM0,SUM1,
      &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
-     &                             SIG_TH,EPS 
+     &                             SIG_TH,EPS,C3
       REAL, DIMENSION(NFRE) :: DF,FAC1,FAC2,FAC3,FAC4
+
+      IF (LHOOK) CALL DR_HOOK('KURTOSIS',0,ZHOOK_HANDLE)
  
-      ZSUM3  = PI/(3.*SQRT(3.))
-      ZALPHA = 0.4
-      ZA_MORI = 0.062
+      ZC4_CONST = PI/(3.*SQRT(3.))
+      ZALPHA    = 0.4
+      ZR_0      = 3.*SQRT(3.)/(4.*PI**3)
  
 !***  1. DETERMINE ONE-D FREQUENCY AND ANGULAR SPECTRUM.
 !     -------------------------------------------------
 
       DO M=1,NFRE
-         DF(M) = DFIM(M)/DELTH
+         DF(M)   = DFIM(M)/DELTH
          FAC1(M) = FR(M)*DF(M)
          FAC2(M) = FR(M)**2*DF(M)
          FAC4(M) = 2.*FAC1(M)
@@ -192,12 +234,37 @@
       ENDDO
       DO IJ=IJS,IJL
          IF (ETA2(IJ).GT.0.) THEN
-            SIG_TH(IJ) = MAX(SIG_TH(IJ),ZA_MORI)
-            ZJ = ZA_MORI/SIG_TH(IJ)*ZSUM3
-            C4(IJ) = ZJ*BF2(IJ)+8.*EPS(IJ)**2
+!
+!           SKEWNESS
+!
+            ZKAPPA30 = 3.*EPS(IJ)
+            ZKAPPA03 = 0.
+            ZKAPPA12 = ZKAPPA30/3.
+            ZKAPPA21 = 0.
+!
+!           BOUND-WAVE PART OF KURTOSIS
+!
+
+            ZKAPPA40 = 18.*EPS(IJ)**2
+            ZKAPPA04 = 0.
+            ZKAPPA22 = ZKAPPA40/6.
+            ZKAPPA4  = ZKAPPA40+ZKAPPA04+2.*ZKAPPA22
+!
+!           DYNAMIC PART OF KURTOSIS
+!
+            ZR = 0.5*(SIG_TH(IJ)/SIG_OM(IJ))**2
+            ZJ = ZC4_CONST/SQRT(1+7.*ZR)
+            
+            C4(IJ) = ZJ*BF2(IJ)+ZKAPPA4/8.
             C4(IJ) = MAX(MIN(C4(IJ),C4MAX),C4MIN)
+
+            ZARG = 5.*(ZKAPPA30**2+ZKAPPA03**2)+9*(ZKAPPA21**2+
+     &            ZKAPPA12**2)+6.*(ZKAPPA30*ZKAPPA12+ZKAPPA03*ZKAPPA21)
+
+            C3(IJ) = SQRT(ZARG/72.)
          ELSE
-            C4(IJ)  = 0.
+            C4(IJ) = 0.
+            C3(IJ) = 0.
          ENDIF
       ENDDO  
 
@@ -208,21 +275,30 @@
 !
       DURATION = 10800.
 
+!
+!     WAVE GROUP FREQUENCY F_WG FOLLOWS FROM EWING (1973) AND 
+!     CRAMER AND LEADBETTER (1967), WHERE
+!     K = 2  CORRESPONDS TO SIGNIFICANT HEIGHT LEVEL
+      ZK = 2.
+
       DO IJ=IJS,IJL
-         IF (FP(IJ).EQ.0.) THEN
-            NW(IJ) = NINT(0.1*DURATION)
+         IF (ETA2(IJ).GT.0. .AND. FP(IJ).GT.0.) THEN
+            ZNU = SIG_OM(IJ)
+            ZF_WG  = ZK*ZNU*FP(IJ)*SQRT(ZPI)
+            NW(IJ) = NINT(DURATION*ZF_WG)
          ELSE
-            NW(IJ) = NINT(DURATION*FP(IJ))
+            NW(IJ) = 0
          ENDIF
       ENDDO
 
-      CALL H_MAX(C4,NW,IJS,IJL,HMAX)
+      CALL H_MAX(C3,C4,NW,IJS,IJL,HMAX)
 
       DO IJ=IJS,IJL
          IF (SUM1(IJ).GT.0. .AND. HMAX(IJ).GT.0.) THEN
-            ZNU = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
-            ZNU = SQRT(MAX(0.,ZNU))
+            ZNU  = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
+            ZNU  = SQRT(MAX(0.,ZNU))
             ZEPS = ZNU/(SQRT(2.)*HMAX(IJ))
+
             TMAX(IJ) = 1.+0.5*ZEPS**2+0.75*ZEPS**4
             TMAX(IJ) = TMAX(IJ)*SUM0(IJ)/SUM1(IJ)
          ELSE
@@ -232,13 +308,14 @@
 
       DO IJ=IJS,IJL
          IF (SUM0(IJ).GT.0.) THEN
-            HS = 4.*SQRT(SUM0(IJ))
+            HS       = 4.*SQRT(SUM0(IJ))
             HMAX(IJ) = HMAX(IJ)*HS
          ELSE
             HMAX(IJ) = 0.
          ENDIF
       ENDDO 
             
+      IF (LHOOK) CALL DR_HOOK('KURTOSIS',1,ZHOOK_HANDLE)
       RETURN
 
       END SUBROUTINE KURTOSIS

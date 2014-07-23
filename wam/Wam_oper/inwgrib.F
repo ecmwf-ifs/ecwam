@@ -98,7 +98,7 @@
         KBYTES=ISIZE*NPRECI
         IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-        IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+        IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!       *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!       the size is too small, so figure out the size and read again.
           CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INWGRIB')
@@ -107,11 +107,13 @@
         ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
+          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
           ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
+          WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
         ENDIF

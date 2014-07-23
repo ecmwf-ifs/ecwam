@@ -63,6 +63,8 @@
       INTEGER :: K,M,IJ
       INTEGER :: IC, ICR, ICL 
       INTEGER :: KP1,KM1, MM1, MP1, KNS, KEW
+      INTEGER :: JJK,JJY,JJX
+      REAL,DIMENSION(MIJS:MIJL) :: FJ1,FJ2,FJ3,FJ4,FJ5
       REAL ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
@@ -82,16 +84,39 @@
 !       ----------------------------------------
 
           DO K=1,NANG
+            JJX=JXO(K,1)
+            JJY=JYO(K,1)
+            JJY=JYO(K,1)
+            JJK=KCR(K,1)
             DO M=1,NFRE
-
+              DO IJ=MIJS,MIJL
+                FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
+                FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
+                FJ3(IJ)= F1(KLAT(IJ,JJY,2),K  ,M)
+                FJ4(IJ)= F1(KCOR(IJ,JJK,1),K  ,M)
+                FJ5(IJ)= F1(KCOR(IJ,JJK,2),K  ,M)
+              ENDDO
+!JFH Loop split to enhance vecotiratation
+!DIR$ IVDEP
+!DIR$ PREFERVECTOR
               DO IJ=MIJS,MIJL
                 F3(IJ,K,M) = 
      &                (1.-SUMWN(IJ,K,M))* F1(IJ                 ,K  ,M)
-     &         + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M)
-     &         +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M)
-     &         +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M)
-     &         +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M)
-     &         +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+!    &         + WLONN(IJ,K,M,JXO(K,1)) * F1(KLON(IJ,JXO(K,1))  ,K  ,M)
+!    &         +WLATN(IJ,K,M,JYO(K,1),1)* F1(KLAT(IJ,JYO(K,1),1),K  ,M)
+!    &         +WLATN(IJ,K,M,JYO(K,1),2)* F1(KLAT(IJ,JYO(K,1),2),K  ,M)
+!    &         +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,KCR(K,1),1),K  ,M)
+!    &         +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+!    &         + WLONN(IJ,K,M,JJX) * F1(KLON(IJ,JJX)  ,K  ,M)
+!    &         +WLATN(IJ,K,M,JJY,1)* F1(KLAT(IJ,JJY,1),K  ,M)
+!    &         +WLATN(IJ,K,M,JJY,2)* F1(KLAT(IJ,JJY,2),K  ,M)
+!    &         +       WCORN(IJ,K,M,1,1)* F1(KCOR(IJ,JJK,1),K  ,M)
+!    &         +       WCORN(IJ,K,M,1,2)* F1(KCOR(IJ,JJK,2),K  ,M)
+     &         + WLONN(IJ,K,M,JJX) * FJ1(IJ)
+     &         +WLATN(IJ,K,M,JJY,1)* FJ2(IJ)
+     &         +WLATN(IJ,K,M,JJY,2)* FJ3(IJ)
+     &         +       WCORN(IJ,K,M,1,1)* FJ4(IJ)
+     &         +       WCORN(IJ,K,M,1,2)* FJ5(IJ)
               ENDDO
 
               DO IC=-1,1,2

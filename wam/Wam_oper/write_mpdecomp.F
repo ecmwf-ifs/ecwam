@@ -80,6 +80,7 @@
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,
      &            KRLAT    ,KRLON    ,
      &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
+      USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
 
 ! -------------------------------------------------------------------
 
@@ -106,6 +107,8 @@
 
 !*    1. INITIAL VALUES SET AND CRACK COMMAND LINE.
 !        -----------------------------------------
+
+      CALL MPL_INIT(KOUTPUT=1)
 
       PRPLRADI=1.0
       CALL INIWCST(PRPLRADI)
@@ -549,4 +552,5 @@
 
       CLOSE(IUOUN)
 
+      CALL MPL_END()
       END

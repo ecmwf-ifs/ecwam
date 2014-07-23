@@ -61,17 +61,22 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      CHARACTER*  1 CLMODE
-      DATA          CLMODE   / "w" /
-      CHARACTER*120 FILENAME
-      LOGICAL LPBOPEN,LPBCLOSE
+      INTEGER :: KINF, KSUP, MINF, MSUP, IUNIT
+      INTEGER :: IJ, K, M, J1, J2, J3
+      INTEGER :: KRET, KOUNT, LFILE
+      INTEGER :: I_GET_UNIT
 
-! ----------------------------------------------------------------------
+      REAL, DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
+      REAL, ALLOCATABLE :: RFL(:,:,:)
 
-      REAL,DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
-      REAL,ALLOCATABLE :: RFL(:,:,:)
+      CHARACTER(LEN=1) :: CLMODE
+      CHARACTER(LEN=120) :: FILENAME
 
+      LOGICAL :: LPBOPEN,LPBCLOSE
+
+      DATA CLMODE   / "w" /
 ! ----------------------------------------------------------------------
 
       IF(LPBIOOUT) THEN

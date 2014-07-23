@@ -693,7 +693,8 @@
 !       ------------------------------
 
         IF((IPARAM.EQ.230 .OR. IPARAM.EQ.235 .OR. IPARAM.EQ.238 .OR.
-     &      IPARAM.EQ.242 .OR. IPARAM.EQ.249) .AND.
+     &      IPARAM.EQ.242 .OR. IPARAM.EQ.249 .OR. IPARAM.EQ.122 .OR.
+     &      IPARAM.EQ.125 .OR. IPARAM.EQ.128 ) .AND.
      &      CSTREAM.NE.'****') THEN
 
 !         WE HAVE ASSUMED THAT THE FIELDS ARE GIVEN IN DEGREES !!!

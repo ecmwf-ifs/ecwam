@@ -94,21 +94,63 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      LOGICAL LAVERAGE
-
+      INTEGER, PARAMETER :: MAXSATBC=10
+      INTEGER :: NNMIN
+      INTEGER :: IJ, I, J, IX, IY, IC, JSN, J1, J2, J2SN, IP1
+      INTEGER :: IUME, IOSZX
+      INTEGER :: NBL, IOBL , IBL
+      INTEGER :: NN, NWH, NUWH, IOBS
+      INTEGER :: IOBCT, NSATBC, MAXNBCINC 
+      INTEGER :: IBCT, IBCS, MAXBCT
+      INTEGER :: ISAT, KSAT, IDUM, NBCINC
+      INTEGER :: IBLKLIST_SWH
+      INTEGER :: IDENTI, ISENSOR, IDES_HS, IDES_WS
+      INTEGER :: NRGG
+      INTEGER :: ISHIFT
+      INTEGER :: I_GET_UNIT
+      INTEGER, DIMENSION(NPROC) :: NSTART, NEND
       INTEGER, DIMENSION(NUMALT) :: ICOUNT, ICOUNTT, ICOUNTD,
      &                              ICOUNTB, ICOUNTQCF,
      &                              ICOUNTBL, IOLD, JOLD
+      INTEGER, DIMENSION(MAXSATBC) :: ISATBC, NBCT
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: STATID, SENSOR, PARAM
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: NBCINCMAX
+      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IFLAG 
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: NUMBWH, NR
+
+      REAL :: HSMIN
+      REAL :: WSMIN
+      REAL :: BCINC0
+      REAL :: DX, XI
+      REAL :: RLAT, RLON, SWH, WS, WHSE2, RFWM
+      REAL :: XX, ZI, BCIV
       REAL, DIMENSION(NUMALT) :: SWHO
-      REAL, ALLOCATABLE, DIMENSION(:,:,:) ::  WHME, WHSE
-      REAL, ALLOCATABLE, DIMENSION(:,:,:) ::  XLATTMP, XLONTMP, XWSTMP
-      CHARACTER*14 CBEGINDT, CENDDT
-      CHARACTER*14 CDATE
-      CHARACTER*14 :: CDATEO(NUMALT)
-      CHARACTER*14, ALLOCATABLE, DIMENSION(:,:,:) ::  CDATETMP
-      LOGICAL EOFD
+      REAL, ALLOCATABLE, DIMENSION(:) :: LATMI, LONGMI, LATMA, LONGMA
+      REAL, ALLOCATABLE, DIMENSION(:) :: VALUE_MIN, VALUE_MAX, DLON
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: BCINC
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: BCTABLE
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: WHME, WHSE
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: XLATTMP, XLONTMP, XWSTMP
+
+      CHARACTER (LEN=3) :: YOFID
+      CHARACTER (LEN=14) :: CBEGINDT, CENDDT, CDATE
+      CHARACTER (LEN=19) :: YOFILE
+      CHARACTER (LEN=100) :: CDUM
+      CHARACTER (LEN=14) :: CDATEO(NUMALT)
+      CHARACTER (LEN=12), ALLOCATABLE, DIMENSION(:) :: CDATESTART
+      CHARACTER (LEN=12), ALLOCATABLE, DIMENSION(:) :: CDATEEND
+      CHARACTER (LEN=12), ALLOCATABLE, DIMENSION(:,:) :: CBCDATESTART
+      CHARACTER (LEN=12), ALLOCATABLE, DIMENSION(:,:) :: CBCDATEEND
+      CHARACTER (LEN=14), ALLOCATABLE, DIMENSION(:,:,:) :: CDATETMP
+
+      LOGICAL :: LEOFD
+      LOGICAL :: LAVERAGE
+      LOGICAL :: LOPENED
+      LOGICAL :: LLBLEXIST
+      LOGICAL :: LLBCTEXIST, LLDOBC, LNEW
+      LOGICAL :: LBLKLIST_SWH
 
 !*     VARIABLE     TYPE     PURPOSE.
 !      --------     ----     --------
@@ -123,34 +165,6 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER,DIMENSION(NPROC) :: NSTART, NEND
-      INTEGER,ALLOCATABLE,DIMENSION(:) :: STATID, SENSOR, PARAM
-
-      REAL :: HSMIN
-      REAL,ALLOCATABLE,DIMENSION(:) :: LATMI, LONGMI, LATMA, LONGMA
-      REAL,ALLOCATABLE,DIMENSION(:) :: VALUE_MIN, VALUE_MAX, DLON
-
-      CHARACTER*19 YOFILE
-      CHARACTER*100 CDUM
-      CHARACTER (LEN=12),ALLOCATABLE :: CDATESTART(:), CDATEEND(:)
-
-      LOGICAL :: LLBLEXIST
-      LOGICAL :: OPENED
-
-      PARAMETER (MAXSATBC=10)
-      INTEGER, DIMENSION(MAXSATBC) :: ISATBC, NBCT
-      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: NBCINCMAX
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: BCINC
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: BCTABLE
-      CHARACTER (LEN=12),ALLOCATABLE,DIMENSION(:,:) :: CBCDATESTART
-      CHARACTER (LEN=12),ALLOCATABLE,DIMENSION(:,:) :: CBCDATEEND
-      LOGICAL :: LLBCTEXIST, LLDOBC, LNEW
-
-      CHARACTER* 3 YOFID
-
-! ----------------------------------------------------------------------
-
-
 !*    1. FIX TIME WINDOW EQUAL TO ONE WIND TIME STEP.
 !        --------------------------------------------
 
@@ -160,6 +174,7 @@
       CALL INCDATE (CENDDT,IDELALT)
 
       HSMIN=0.05
+      WSMIN=0.01
 
       WRITE(IU06,*) ' GRDATA : SELECTING ALTIMETER MEASUREMENTS '
       WRITE(IU06,*) '          PERIOD FROM ', CBEGINDT,' TO ', CENDDT
@@ -192,6 +207,7 @@
 !*    2. INITIALIZE ARRAYS, counters and units.
 !        --------------------------------------
 
+      ALLOCATE(IFLAG(NGX,NGY,NUMALT))
       ALLOCATE(WHME(NGX,NGY,NUMALT))
       ALLOCATE(WHSE(NGX,NGY,NUMALT))
       ALLOCATE(NUMBWH(NGX,NGY,NUMALT))
@@ -211,6 +227,7 @@
       DO ISAT=1,NUMALT
         DO J=1,NGY
           DO I=1,NGX
+            IFLAG(I,J,ISAT) = -1 
             WHME(I,J,ISAT) = 0.
             WHSE(I,J,ISAT) = 0.
             NUMBWH(I,J,ISAT) = 0
@@ -231,8 +248,8 @@
 
 
       DO IUME=33,99,1
-        INQUIRE ( UNIT=IUME, OPENED=opened)
-        IF ( .NOT. opened) THEN
+        INQUIRE ( UNIT=IUME, OPENED=LOPENED)
+        IF ( .NOT. LOPENED) THEN
           WRITE(iu06,*)
      &     ' GRDATA : TAKES UNIT ',iume,' AS ALTIMETER DATA INPUT UNIT'
           GOTO 2000
@@ -440,7 +457,7 @@
  3000 CONTINUE
       CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &              CDATE, RLAT, RLON, IDES_HS, SWH,
-     &              IDES_WS, WS, EOFD, YOFID)
+     &              IDES_WS, WS, LEOFD, YOFID)
 
       IF(ITEST.GE.2)
      & WRITE(IU06,'(A,A,2I6,2(I6,F6.2))') 
@@ -468,7 +485,7 @@
         GOTO 3000
       ENDIF
 
-      IF (EOFD) GOTO 4000
+      IF (LEOFD) GOTO 4000
       ICOUNTD(KSAT) = ICOUNTD(KSAT)+1
 
 !     CHECK DATE.
@@ -482,6 +499,7 @@
 
 !       BLACKLISTING
 
+        LBLKLIST_SWH=.FALSE.
         IF(LLBLEXIST) THEN
           DO IBL=1,NBL
             IF(STATID(IBL).EQ.IDENTI .AND.
@@ -498,7 +516,7 @@
               DX = MOD(RLON-LONGMI(IBL)+720.,360.)
               IF(DX.LE.DLON(IBL)) THEN
                 ICOUNTBL(KSAT)=ICOUNTBL(KSAT)+1
-                GOTO 3000
+                LBLKLIST_SWH=.TRUE.
               ENDIF
             ENDIF
           ENDDO
@@ -531,6 +549,8 @@
           IF (LAVERAGE) THEN
 !           the superobservation is assigned to the closest grid point.
             IF (SWH.GE.0.) THEN
+!             if blacklisted, mark the grid box for that satellite as blacklisted
+              IF(LBLKLIST_SWH) IFLAG(I,J,ISAT) = 0
               WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
               NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
             ENDIF
@@ -560,6 +580,8 @@
             ENDIF
 
             IF (SWH.GE.0.) THEN
+!             if blacklisted, mark the grid box for that satellite as blacklisted
+              IF(LBLKLIST_SWH) IFLAG(I,J,ISAT) = 0
               WHME(I,J,KSAT) = WHME(I,J,KSAT) + SWH
               WHSE (I,J,KSAT) = WHSE(I,J,KSAT) + SWH**2
               NUMBWH(I,J,KSAT) = NUMBWH(I,J,KSAT) + 1
@@ -629,6 +651,7 @@
               IF (NN.GE.NNMIN) THEN
 !               MEAN VALUES
                 WHME(I,J,ISAT) = WHME(I,J,ISAT)/REAL(NN)
+                IF( IFLAG(I,J,ISAT) .NE. 0 ) IFLAG(I,J,ISAT) = 1 
 !               COMPUTE THE STANDARD DEVIATION.
                 IF (.NOT. LAVERAGE) THEN
                   WHSE2 =  (WHSE(I,J,ISAT)-WHME(I,J,ISAT)**2*REAL(NN))
@@ -645,7 +668,9 @@
 !        --------------------------------------------------------------
 
 !         ONLY KEEP THE RELEVANT INFORMATION
-!         ALL DATA THAT ARE NOT OVER SEA ARE DISCARDED HERE !
+!         DATA THAT HAVE FAILED THE BASIC QC WILL BE KEPT AND FLAGGED WITH
+!         IJALT(:,3) < 0
+!         BLACKLISTED DATA WILL BE FLAGGED WITH IJALT(:,3) = 0
 
           IF (LAVERAGE) THEN
             DO IJ = NSTART(1), NEND(NPROC)
@@ -653,11 +678,14 @@
               J = NGY- KXLT(IJ,1) +1
               NN = NUMBWH(I,J,ISAT)
               IF (NN.EQ.0) THEN
-!               IF THERE ARE NO MEASUREMENTS
-                WHME(I,J,ISAT)=-3.
+!               IF THERE ARE NO MEASUREMENTS.
+                IFLAG(I,J,ISAT) = -1
               ELSEIF (WHME(I,J,ISAT).LT.HSMIN) THEN
-                WHME(I,J,ISAT) = -WHME(I,J,ISAT)
+!               HS BELOW MINIMUM
+                IFLAG(I,J,ISAT) = -2
+                NWH = NWH+1
               ELSE
+                IF( IFLAG(I,J,ISAT) .NE. 0 ) IFLAG(I,J,ISAT) = 1 
                 NWH = NWH+1
               ENDIF
             ENDDO
@@ -668,11 +696,12 @@
             J = NGY- KXLT(IJ,1) +1
             NN = NUMBWH(I,J,ISAT)
             IF (NN.EQ.0) THEN
-!             IF THERE ARE NO MEASUREMENTS
-              WHME(I,J,ISAT)=-3.
+!             IF THERE ARE NO MEASUREMENTS.
+              IFLAG(I,J,ISAT) = -1 
             ELSEIF (NN.GT.0. AND. NN.LT.NNMIN) THEN
 !             IF THERE ARE FEW MEASUREMENTS.
-              WHME(I,J,ISAT)=-2.
+              IFLAG(I,J,ISAT) = -3
+              NWH = NWH+1
             ELSEIF (NN.GE.NNMIN) THEN
 !             IF THE VARIANCE IS TOO LARGE.
 !             OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
@@ -681,7 +710,8 @@
               IF (WHSE(I,J,ISAT).GT.RFWM .OR.
      &            WHME(I,J,ISAT).LT.HSMIN .OR.
      &            XX.GT.0.1) THEN
-                WHME(I,J,ISAT) = -WHME(I,J,ISAT)
+                IFLAG(I,J,ISAT) = -4
+                NWH = NWH+1
               ELSE
                 NWH = NWH+1
               ENDIF
@@ -732,6 +762,7 @@
                 ALTDATA(IOBS,3) = WHME(IX,IY,ISAT)  !  1 REPLACED BY 3
                 IJALT(IOBS,1) = IJ
                 IJALT(IOBS,2) = IBUFRSAT(ISAT)
+                IJALT(IOBS,3) = IFLAG(IX,IY,ISAT) 
 
                 ! NOTE THAT WE NEED TO PASS ALL DATA TO ODB EVEN THOSE REJECTED.
                 ! NEW FLAGS NEED TO BE DESIGNED FOR THAT.
@@ -740,6 +771,15 @@
                 ALTEXDATA(IOBS,2) = XLONTMP  (IX,IY,ISAT)
                 ALTEXDATA(IOBS,3) = XWSTMP   (IX,IY,ISAT)
                 CDATEOBS (IOBS)   = CDATETMP (IX,IY,ISAT)
+
+                !! NO REAl QC ON WIND SPEED YET !!!
+                !! only that there is a wave height and wind speed > WSMIN
+                IF(XWSTMP(IX,IY,ISAT).GT.WSMIN) THEN
+                  !! wind data are passive
+                  IJALT(IOBS,4) = 0 
+                ELSE
+                  IJALT(IOBS,4) = -2 
+                ENDIF
 
                 ! BIAS CORRECTION IS DONE IF NEEDED
                 IF(LLDOBC) THEN
@@ -768,6 +808,7 @@
         ENDDO
       ENDIF
 
+      DEALLOCATE(IFLAG)
       DEALLOCATE(WHME)
 
       DEALLOCATE(XLATTMP)

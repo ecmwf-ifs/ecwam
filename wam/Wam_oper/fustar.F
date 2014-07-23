@@ -52,12 +52,21 @@
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : USTARM
       USE YOWTEST  , ONLY : IU06
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
       INTEGER, PARAMETER :: NITER=5
-      REAL,DIMENSION(IJS:IJL) :: USMO, USA, EWOI, EWA, T, FMWA,
-     &                           EWFG, USTANAL , USTANAL0
+      INTEGER :: IJ, IJS, IJL, ITER
+      INTEGER :: IG
+
+      REAL :: YNU, EMAX, X
+      REAL :: G2, BGRCRVM1, EWFGMIN
+      REAL :: TSTAR, ESTAR, DSTAR, XX, YY, ERATIO
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: USMO, USA, EWOI, EWA, T, FMWA,
+     &                            EWFG, USTANAL , USTANAL0
 
 ! ----------------------------------------------------------------------
 
@@ -74,6 +83,7 @@
 
 
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('FUSTAR',0,ZHOOK_HANDLE)
 
 !*    1. INITIALIZE OUTPUT FIELDS.                                      
 !        -------------------------                                      
@@ -145,5 +155,6 @@
         ENDIF
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('FUSTAR',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE FUSTAR

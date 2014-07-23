@@ -40,7 +40,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : CITHICK
+      USE YOWICE   , ONLY : CITHICK  ,FLMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
@@ -55,9 +55,10 @@
 
       INTEGER :: IJ,M,K,IJS,IJL,IG,JD
       REAL :: AKI_ICE
+      REAL :: F1LIM 
       REAL :: F(IJS:IJL,NANG,NFRE)
       REAL, DIMENSION(IJS:IJL) :: STRN
-      REAL, DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, F1DDF 
+      REAL, DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -68,6 +69,7 @@
 !        ----------
 
       IG=1
+      F1LIM=FLMIN/DELTH
 
       DO IJ=IJS,IJL
         STRN(IJ) = 0.0
@@ -98,16 +100,18 @@
         ENDDO
 
         DO IJ=IJS,IJL
-          F1DDF(IJ) = 0.
+          SUME(IJ) = 0.
         ENDDO
         DO K=1,NANG
           DO IJ=IJS,IJL
-            F1DDF(IJ) = F1DDF(IJ)+F(IJ,K,M)*DFIM(M)
+            SUME(IJ) = SUME(IJ)+F(IJ,K,M)
           ENDDO
         ENDDO
 
         DO IJ=IJS,IJL
-          STRN(IJ) = STRN(IJ)+E(IJ)**2*F1DDF(IJ)
+          IF(SUME(IJ).GT.F1LIM) THEN
+            STRN(IJ) = STRN(IJ)+E(IJ)**2*SUME(IJ)*DFIM(M)
+          ENDIF
         ENDDO
 
       ENDDO

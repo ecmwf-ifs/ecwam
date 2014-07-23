@@ -307,7 +307,7 @@
         DO J=ILATT,ILATB
           DO I=ILONL,ILONR
             IF(IDEPTH(I,J).GE. -300 .and. 
-     &         IDEPTH(I,J).LE. 1000 ) THEN
+     &         IDEPTH(I,J).LE. 2000 ) THEN
             WRITE(11,'(2(1X,F8.3),1X,I4)')ALON(I),ALAT(J),IDEPTH(I,J)
             ENDIF
           ENDDO
@@ -378,7 +378,7 @@
       ENDDO
 
       NJM=INT(0.5*XDELLA*(60/2))
-      NJP=NJM
+      NJP=NINT(0.5*XDELLA*(60/2))
 
       DO K=1,NY
 !        WE ASSUME THAT WAMGRID IS ALWAYS WITHIN ETOPO2
@@ -404,7 +404,7 @@
            ENDDO
 
            NIM=INT(0.5*ZDELLO(K)*(60/2))
-           NIP=NIM
+           NIP=NINT(0.5*ZDELLO(K)*(60/2))
 
            NSEA=0
            SEA=0.

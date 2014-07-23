@@ -58,6 +58,8 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST 
       USE YOWWIND  , ONLY : FIELDG 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWCOUP  , ONLY : LWNEMOCOUCIC, LWNEMOCOUCIT
+      USE YOWNEMOFLDS, ONLY : NEMOCICOVER, NEMOCITHICK, LNEMOICEREST
 
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -83,7 +85,11 @@
 !        -------------------------------------------------------
 
 
-      IF (IPARAM.EQ.31) THEN
+      IF(LWNEMOCOUCIC) THEN
+        DO IJ=IJS,IJL
+          CICVR(IJ,IG) = NEMOCICOVER(IJ)
+        ENDDO
+      ELSEIF (IPARAM.EQ.31) THEN
         DO IJ=IJS,IJL
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
@@ -123,7 +129,7 @@
             CITH(IJ,IG)=0.0
           ENDIF
         ENDDO
-      ELSE IF(.NOT.LICETH) THEN
+      ELSE IF((.NOT.LICETH).AND.(.NOT.LWNEMOCOUCIT)) THEN
 !       SEA ICE THICKNESS IS PARAMETERISED:
         DO IJ=IJS,IJL
           IF(CICVR(IJ,IG).GT.0.0) THEN
@@ -132,7 +138,29 @@
             CITH(IJ,IG)=0.0
           ENDIF
         ENDDO
+      ELSE IF(LWNEMOCOUCIT) THEN
+
+         IF(LNEMOICEREST) THEN
+           DO IJ=IJS,IJL
+              CITH(IJ,IG)=NEMOCITHICK(IJ)
+           ENDDO
+         ELSE
+           DO IJ=IJS,IJL
+              CITH(IJ,IG)=CICVR(IJ,IG)*NEMOCITHICK(IJ)
+           ENDDO
+         ENDIF
+
+!       CONSISTENCY CHECK:
+!       no ice if thickness < 0.5*HICMIN
+        DO IJ=IJS,IJL
+          IF(CICVR(IJ,IG).GT.0.0 .AND. CITH(IJ,IG).LT.0.5*HICMIN ) THEN
+            CICVR(IJ,IG)=0.0
+            CITH(IJ,IG)=0.0
+          ENDIF
+        ENDDO
+
       ELSE
+
 !!!!   define a representative sea ice thickness that account for sea ice coverage
         DO IJ=IJS,IJL
           CITH(IJ,IG)=CICVR(IJ,IG)*CITH(IJ,IG)

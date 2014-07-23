@@ -284,7 +284,7 @@
             KBYTES=ISIZE*NPRECI
             IF(.NOT.ALLOCATED(KGRIB)) ALLOCATE(KGRIB(ISIZE))
             CALL IGRIB_READ_FROM_FILE(IUNITW,KGRIB,KBYTES,IRET)
-            IF(IRET.EQ.JPGRIB_BUFR_TOO_SHORT) THEN
+            IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!           *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!            the size is too small, so figure out the size and read again.
               CALL KGRIBSIZE(IU06, KBYTES, NBITW, 'READWIND')

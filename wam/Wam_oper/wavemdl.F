@@ -99,7 +99,9 @@
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
-     &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU
+     &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
+     &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTRN
+      USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWGRIBHD, ONLY : LNEWLVTP,
      &         DATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -119,8 +121,7 @@
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
-     &            TAUW   ,ROAIRO   ,ZIDLOLD  ,USNEW    ,Z0NEW    ,
+      USE YOWSPEC, ONLY : U10OLD   , USOLD    ,Z0OLD   ,
      &            NSTART ,NEND     ,FL1      ,FL3      ,SL
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
@@ -364,10 +365,6 @@
           ENDIF
         ENDIF
 
-! INITIALIZE THE NEMO COUPLING
-
-        IF(LWNEMOCOU) CALL INITNEMOCPL
-
       ELSE
 
 !     !!!! ANY OTHER TIMES !!!!
@@ -452,9 +449,7 @@
 !       ---------------------------------------------------
         LLINIT=.FALSE.
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD,
-     &              CICOVER, CITHICK, CIWA,
+        CALL PREWIND (
      &              LLINIT,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
@@ -465,6 +460,7 @@
         ENDIF
 
       ENDIF
+
 
 !!test: reallocating the memory that was freed
 
@@ -478,7 +474,7 @@
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL, LWSTOKES)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
@@ -566,6 +562,8 @@
         FLABEL(1)=' Charnock'
         DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
+                         !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
+                         ! BUT WELL OVER LAND POINTS.
 
 !       2. U-STOKESDRIFT
         IF(NWVFIELDS.GT.1) THEN
@@ -622,8 +620,8 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, IG, USOLD, Z0OLD,
-     &                  DEFVAL(1),WVBLOCK(KIJS,1))
+          CALL OUTBETA (KIJS, KIJL, IG, U10OLD, USOLD, Z0OLD,
+     &                  WVBLOCK(KIJS,1))
 
           IF(LWSTOKES) THEN
              CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
@@ -661,17 +659,23 @@
              ENDIF    
           ENDIF
 
+          IF(LWNEMOCOUSTRN) THEN
+            CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
+     &                    NEMOSTRN(KIJS))
+          ENDIF
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
 
 
-!        GRIDDED FIELDS THAT ARE RETURNED TO NEMO (if coupled).
+!        GRIDDED FIELDS THAT WILL RETURNED TO NEMO (if coupled).
 !        -----------------------------------------------------
 
-        IF(LWNEMOCOU) THEN
+        IF(LWNEMOCOU.AND.LWNEMOCOUSEND.AND.LWCOU) THEN
            
-           CALL UPDNEMOFIELDS(LWSTOKES,WVBLOCK(:,2),WVBLOCK(:,3))
+           NEMOUSTOKES(:)=WVBLOCK(:,2)
+           NEMOVSTOKES(:)=WVBLOCK(:,3)
 
         ENDIF
 

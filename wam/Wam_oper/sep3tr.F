@@ -1,29 +1,36 @@
-      SUBROUTINE SEP3TR (FL3, IJS, IJL, USOLD, THWOLD)
+      SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW , ETNP)
 
 ! ----------------------------------------------------------------------
 
 !**** *SEP3TR* -  COMPUTE ENERGY, DIRECTION AND PERIOD FOR THE 3 WAVE
-!****             TRAINS: WIND WAVE, SWELL1 AND SWELL2
+!****             TRAINS: SWELL1, SWELL2, SWELL3
 
 !     D.PETTENUZZO     MAY 2012
+!     JEAN BIDLOT      JUNE 2013  SIMPLIFIED BY REMOVING THE WIND SEA PART
+!                                 AND ONLY PARTITIONED THE SWELL SPECTRUM
+!                                 AND ONLY LOOKING IN THE PROGNOSTIC RANGE
 
 
 !*    PURPOSE.
 !     --------
 
-!     CREATED TO TEST WAVE SPECTRA PARTITIONING INTO MORE THAN
-!     2 WAVE TRAINS
+!     CREATED TO TEST WAVE SWELL SPECTRA PARTITIONING INTO 3 WAVE TRAINS 
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEP3TR (FL3, IJS, IJL, USOLD, THWOLD)*
-!          *FL3* - BLOCK OF SPECTRA
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *USOLD*   INTERMEDIATE STORAGE OF FRICTION VELOCITY
-!          *THWOLD*  INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                    WIND DIRECTION.
+!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP) 
+!          *FL1*    - BLOCK OF SPECTRA
+!          *IJS*    - INDEX OF FIRST GRIDPOINT
+!          *IJL*    - INDEX OF LAST GRIDPOINT
+!          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *U10NEW* - LATESt WIND SPEED.
+!          *THWNEW* - LATEST WIND DIRECTION.
+!          *ETNP*   - TOTAL ENERGY NOT HELD BY ALL PARTITIONS.
+!                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
+!                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
+!                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
+!                     MIGHT NOT BE PARTITIONED.
 
 !     METHOD.
 !     -------
@@ -38,15 +45,15 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  ,  ONLY : FR       ,DFIM     ,C        ,
+      USE YOWCOUT  , ONLY : NTRAIN
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
      &            TH       ,COSTH    ,SINTH    ,FRIC
-      USE YOWICE   ,  ONLY : FLMIN
-      USE YOWPARAM ,  ONLY : NANG     ,NFRE
-      USE YOWPCONS ,  ONLY : ZPI      ,G        ,ZMISS    ,EPSMIN
-      USE YOWTEST  ,  ONLY : IU06
-      USE YOWTRAINS , ONLY: ETRAIN1  ,THTRAIN1 ,P1TRAIN1 ,
-     &                      ETRAIN2  ,THTRAIN2 ,P1TRAIN2 ,
-     &                      ETRAIN3  ,THTRAIN3 ,P1TRAIN3
+      USE YOWICE   , ONLY : FLMIN    ,FLMINFR 
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
+      USE YOWTABL  , ONLY : JUMAX    ,DELU
+      USE YOWTRAINS ,ONLY : EMTRAIN  ,THTRAIN  ,PMTRAIN
+      USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -55,21 +62,37 @@
 
       INTEGER, PARAMETER :: NPMAX=20
       INTEGER :: IJ, IJS, IJL, M, K, IP
-      INTEGER :: NPEAK, ISORT, I, IPNOW
+      INTEGER :: ISORT, I
       INTEGER :: IFL, IFH, ITHL, ITHH
-      INTEGER,ALLOCATABLE :: WNDI(:)
+      INTEGER, DIMENSION(IJS:IJL) :: NPEAK
+      INTEGER, DIMENSION(IJS:IJL) :: MIJ, MMIN, MMAX 
+      INTEGER, DIMENSION(IJS:IJL) :: IPNOW 
+      INTEGER, DIMENSION(IJS:IJL) :: JU 
+      INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
+      INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
-      REAL :: DELDW, ENMAX, ENEX
+      REAL :: DELDW
+      REAL :: XJ, DELUINV 
       REAL :: COSDIR, FRLIMIT 
-      REAL :: FP_DUM
       REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,FL3
-      REAL,DIMENSION(IJS:IJL) :: THWOLD,USOLD
-      INTEGER,DIMENSION(NPMAX) :: NFRP, NTHP
-      REAL, DIMENSION(NPMAX) :: DIR,PER,ENE,FP
-      REAL, DIMENSION(NPMAX) :: DIRSORT,PERSORT,ENESORT
-      REAL,DIMENSION(NANG,NFRE) :: W1, W2, WWMSK, SW1MSK, SW2MSK
-      REAL, ALLOCATABLE :: MSK(:,:,:)
+      REAL :: FLLOWEST
+      REAL :: ZZ(0:1)
+      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW 
+      REAL, DIMENSION(IJS:IJL) :: ENEX, SUMETRAIN
+      REAL, DIMENSION(IJS:IJL) :: ETOT
+      REAL, DIMENSION(IJS:IJL) :: ETT, ETNP
+      REAL, DIMENSION(IJS:IJL) :: ENMAX
+      REAL, DIMENSION(NANG,NFRE) :: W2
+      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL, DIMENSION(IJS:IJL,0:NPMAX) :: DIR,PER,ENE
+      REAL, DIMENSION(NANG,NFRE,NPMAX) :: SPEC
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: W1 
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW 
+
+      LOGICAL :: LLEPSMIN
+      LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
 
@@ -78,183 +101,251 @@
 
       IF (LHOOK) CALL DR_HOOK('SEP3TR',0,ZHOOK_HANDLE)
 
-      DO IJ=IJS,IJL
 
+!     SMOOTH INPUT SPECTRA
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL3(IJ,K,M) = FL1(IJ,K,M) 
+          ENDDO
+        ENDDO
+      ENDDO
+      IF(NANG.GT.12) THEN
+        CALL SMOOTHSARSPEC(IJS,IJL,NANG,NFRE,FL3)
+!       RE-IMPOSE THE WINDSEA MASK
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+!     TOTAL ENERGY IN THE SWELL SPECTRA
+      LLEPSMIN=.FALSE.
+      CALL SEMEAN (FL3, IJS, IJL, ETOT, LLEPSMIN)
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          EMTRAIN(IJ,ISORT) = 0. 
+          THTRAIN(IJ,ISORT) = THWNEW(IJ)
+          PMTRAIN(IJ,ISORT) = 0.
+        ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+        NPEAK(IJ)=0
+      ENDDO
 
 !*    1. DETERMINATES MAXIMA POSITIONS AND NUMBER
 !        ----------------------------------------
 
-        NPEAK=0
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+        ENDDO
+      ENDDO
+      DELUINV=1./DELU
+      DO IJ=IJS,IJL
+        XJ=U10NEW(IJ)*DELUINV
+        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
+      ENDDO
 
-        W1 = 0.
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FLLOW(IJ,K,M) = MAX(FLMINFR(JU(IJ),M)*SPRD(IJ,K),FLMIN)
+          ENDDO
+        ENDDO
+      ENDDO
 
-        DO M= 1,NFRE
+
+      DO IJ=IJS,IJL
+        OUT: DO M= 1,MIJ(IJ)-1
           IFL    = MAX ( 1 , M-1 )
           IFH    = MIN ( NFRE , M+1 )
           DO K=1,NANG
-            ITHL   = 1 + MOD(NANG+K-2,NANG)
-            ITHH   = 1 + MOD(K,NANG)
-            IF ( FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFL ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFH ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFL ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHL,M   ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFH ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFL ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHH,M   ) .AND.
-     &           FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFH ) .AND.
-     &           FL3(IJ,K,M) .GT. FLMIN           ) THEN
-                NPEAK  = NPEAK + 1
-                IF(NPEAK.GT.NPMAX) EXIT
-                NFRP(NPEAK) = M
-                NTHP(NPEAK) = K
+
+            FLLOWEST = FLLOW(IJ,K,M)
+
+            IF(FL3(IJ,K,M) .GT. FLLOWEST) THEN
+              ITHL   = 1 + MOD(NANG+K-2,NANG)
+              ITHH   = 1 + MOD(K,NANG)
+              IF ( FL3(IJ,ITHL,M   ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,ITHH,M   ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,K   ,IFL ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,K   ,IFH ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,ITHL,IFL ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,ITHL,IFH ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,ITHH,IFL ) .GT. FLLOWEST .AND.
+     &             FL3(IJ,ITHH,IFH ) .GT. FLLOWEST ) THEN
+
+                IF ( FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFL ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFH ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFL ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,M   ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFH ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFL ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,M   ) .AND.
+     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFH ) ) THEN
+                    NPEAK(IJ) = NPEAK(IJ) + 1
+                    IF(NPEAK(IJ).GT.NPMAX) EXIT OUT
+                    NFRP(IJ,NPEAK(IJ)) = M
+                    NTHP(IJ,NPEAK(IJ)) = K
+                ENDIF
+              ENDIF
             ENDIF
+
           ENDDO
-        ENDDO
 
-        IF ( NPEAK .GT. NPMAX ) THEN
-            NPEAK  = NPMAX
-        ENDIF
+        ENDDO OUT
+      ENDDO
 
-        ALLOCATE(MSK(NANG,NFRE,NPEAK))
-        ALLOCATE(WNDI(NPEAK))
-        MSK=0.
-        WNDI=0
-        WWMSK=0.
-
+      DO IJ=IJS,IJL
+        NPEAK(IJ)=MIN(NPEAK(IJ),NPMAX)
+      ENDDO
 
 !*    2. GENERATE MASK FOR EACH PARTITION AND COMPUTE STATISTICS
 !        -------------------------------------------------------
 
-        DO IP=1, NPEAK
-         CALL FNDPRT(NTHP(IP),NFRP(IP),FL3(IJ:IJ,1:NANG,1:NFRE),W1,W2)
+!     ENE must be initialised and index 0 must stay equal to 0
+      DO IP=0,NPMAX
+        DO IJ=IJS,IJL
+          ENE(IJ,IP)=0.
+          DIR(IJ,IP)=0.
+          PER(IJ,IP)=0.
+        ENDDO
+      ENDDO
+
+!     POINTS BELOW THE MINIMUM LEVEL BELONG TO THE WINDSEA PART
+!     AND CAN BE EXCLUDED FROM THE PARTITIONS OF THE SWELL SPECTRUM
+      DO IJ=IJS,IJL
+        MMIN(IJ)=NFRE
+        MMAX(IJ)=0
+      ENDDO
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            IF(FL3(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
+              W1(IJ,K,M) = 1.
+            ELSE
+              W1(IJ,K,M) = 0.
+              MMIN(IJ)=MIN(M,MMIN(IJ))
+              MMAX(IJ)=M
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+
+        DO M=1,NFRE
+          DO K=1,NANG
+            LLW3(K,M)= (W1(IJ,K,M).LT.1.0)
+          ENDDO
+        ENDDO
+        
+        DO IP=1,NPEAK(IJ)
+          CALL FNDPRT(NTHP(IJ:IJ,IP),NFRP(IJ:IJ,IP),
+     &                MIJ(IJ),MMIN(IJ),MMAX(IJ),
+     &                FL3(IJ:IJ,1:NANG,1:NFRE),LLW3,
+     &                W1(IJ:IJ,1:NANG,1:NFRE),W2)
   
           DO M=1,NFRE
             DO K=1,NANG
-              MSK(K,M,IP)=W2(K,M)
-              FL1(IJ,K,M) = FL3(IJ,K,M)*W2(K,M)
+              SPEC(K,M,IP) = FL3(IJ,K,M)*W2(K,M)
             ENDDO
           ENDDO
-
-          CALL PARMEAN(FL1(IJ:IJ,1:NANG,1:NFRE),
-     &                 ENE(IP),DIR(IP),PER(IP),FP(IP))
-
-        ENDDO
-       
-
-!*    3. DIVIDE SWELL AND WIND WAVE (THE LATTER IS GROUPED)
-!        --------------------------------------------------
-
-        DO IP=1, NPEAK
-          COSDIR=COS(DIR(IP)-THWOLD(IJ))
-          IF (COSDIR.GT.0. .AND. USOLD(IJ).GT.0.) THEN
-!!! if it works make all constants into one coefficient
-            FRLIMIT= G/(1.5*ZPI*FRIC*USOLD(IJ)*COSDIR)
-            IF(FP(IP).GE.FRLIMIT) THEN
-              DO M=1,NFRE
-                DO K=1,NANG
-                WWMSK(K,M) = WWMSK(K,M) + MSK(K,M,IP)
-                ENDDO
-              ENDDO
-              WNDI(IP) = 1
-            ENDIF
-          ENDIF
-        ENDDO
-        
-
-!*    4. COMPUTATION OF WIND WAVE OUTPUT PARAMETERS
-!        ------------------------------------------
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          FL1(IJ,K,M) = FL3(IJ,K,M)*WWMSK(K,M)
-        ENDDO
-      ENDDO
-
-      IF( MAXVAL(WNDI) .GT. 0)THEN
-        CALL PARMEAN(FL1(IJ:IJ,1:NANG,1:NFRE),
-     &               ETRAIN1(IJ),THTRAIN1(IJ),P1TRAIN1(IJ),FP_DUM)
-      ELSE !if there isn't any windsea energy, set the windsea mean direction
-           !to the wind direction.
-        THTRAIN1(IJ)=THWOLD(IJ)
-        ETRAIN1(IJ) =ZMISS
-        P1TRAIN1(IJ)=ZMISS
-      ENDIF 
-
-
-!*    5. SORT SWELL PARTITIONS ACCORDING TO ENERGY AND ASSIGN 2ND AND 3RD TRAIN
-!        ----------------------------------------------------------------------
-
-      ENESORT=0.
-      DIRSORT=0.
-      PERSORT=0.
-      IPNOW=0
-
-      DO ISORT=1,NPEAK
-        ENMAX   = 0.
-        DO IP=1, NPEAK
-          IF ( ENE(IP).GT.ENMAX .AND. WNDI(IP) .EQ. 0 ) THEN
-              IPNOW  = IP
-              ENMAX   = ENE(IP)
-            ENDIF
         ENDDO
 
-        IF(IPNOW.GT.0) THEN
-          ENESORT(ISORT)=ENE(IPNOW)
-          PERSORT(ISORT)=PER(IPNOW)
-          DIRSORT(ISORT)=DIR(IPNOW)
-          ENE(IPNOW)=0.
+        IF(NPEAK(IJ).GT.0) THEN
+          CALL PARMEAN(SPEC(1:NANG,1:NFRE,1:NPEAK(IJ)),
+     &                 NPEAK(IJ), ENE(IJ:IJ,1:NPEAK(IJ)),
+     &                 DIR(IJ:IJ,1:NPEAK(IJ)),PER(IJ:IJ,1:NPEAK(IJ)))
         ENDIF
-        IPNOW  = 0
 
       ENDDO
 
-      IF(ENESORT(1).GT.0.) THEN
-        ETRAIN2(IJ)  = ENESORT(1)
-        THTRAIN2(IJ) = DIRSORT(1)
-        P1TRAIN2(IJ) = PERSORT(1)
-      ELSE
-        ETRAIN2(IJ)  = ZMISS
-        THTRAIN2(IJ) = ZMISS
-        P1TRAIN2(IJ) = ZMISS
-      ENDIF
-      IF(ENESORT(2).GT.0.) THEN
-        ETRAIN3(IJ)  = ENESORT(2)
-        THTRAIN3(IJ) = DIRSORT(2)
-        P1TRAIN3(IJ) = PERSORT(2)
-      ELSE
-        ETRAIN3(IJ)  = ZMISS
-        THTRAIN3(IJ) = ZMISS
-        P1TRAIN3(IJ) = ZMISS
-      ENDIF
+!*    5. SORT PARTITIONS ACCORDING TO ENERGY AND ASSIGN THE FIRST NTRAIN TRAINS
+!        WE ONLY NEED THE FIRST NTRAIN TO BE SORTED
+!        -----------------------------------------------------------------
+
+      DO IJ=IJS,IJL
+        ETT(IJ)=ENE(IJ,1)
+      ENDDO
+      DO IP=2,NPMAX
+        DO IJ=IJS,IJL
+          ETT(IJ)=ETT(IJ)+ENE(IJ,IP)
+        ENDDO
+      ENDDO
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IPNOW(IJ)=0
+          ENMAX(IJ)=0.
+        ENDDO
+
+        DO IP=1,NPMAX
+          DO IJ=IJS,IJL
+            IF (ENE(IJ,IP).GT.ENMAX(IJ)) THEN
+              IPNOW(IJ) = IP
+              ENMAX(IJ) = ENE(IJ,IP)
+            ENDIF
+          ENDDO
+        ENDDO
+
+        DO IJ=IJS,IJL
+          EMTRAIN(IJ,ISORT)=ENE(IJ,IPNOW(IJ))
+          THTRAIN(IJ,ISORT)=DIR(IJ,IPNOW(IJ))
+          PMTRAIN(IJ,ISORT)=PER(IJ,IPNOW(IJ))
+          ENE(IJ,IPNOW(IJ))=0.
+          IENERGY(IJ,ISORT)=MIN(IPNOW(IJ),1)
+        ENDDO
+      ENDDO
+
 
 !*    6. PRESERVE TOTAL ENERGY
 !        ---------------------
 
-!     6.1 Compute extra energy
+!     6.1 Distribute extra energy proportionally to swell trains
 
-      ENEX=0.
-      DO IP=3, NPEAK
-        ENEX=ENEX + ENESORT(IP)
+      DO IJ=IJS,IJL
+        SUMETRAIN(IJ)=MAX(EMTRAIN(IJ,1),EPSMIN)
+      ENDDO
+      DO ISORT=2,NTRAIN
+        DO IJ=IJS,IJL
+          SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
+        ENDDO
       ENDDO
 
-!     6.2 Distribute extra energy proportionally to swell trains
+      DO IJ=IJS,IJL
+        ENEX(IJ)=MAX((ETT(IJ)-SUMETRAIN(IJ)),0.)/SUMETRAIN(IJ)
+      ENDDO
 
-      ETRAIN2(IJ)=
-     &  ETRAIN2(IJ)+ENEX *ETRAIN2(IJ)/(ETRAIN2(IJ)+ETRAIN3(IJ))
-      ETRAIN3(IJ)=
-     &  ETRAIN3(IJ)+ENEX *ETRAIN3(IJ)/(ETRAIN2(IJ)+ETRAIN3(IJ))
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          EMTRAIN(IJ,ISORT)=
+     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
+        ENDDO
+      ENDDO
+
+!     PREPARE OUTPUT
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IF(IENERGY(IJ,ISORT).EQ.0) THEN
+            EMTRAIN(IJ,ISORT) = 0.0
+            THTRAIN(IJ,ISORT) = THWNEW(IJ)
+            PMTRAIN(IJ,ISORT) = 0.0 
+          ENDIF
+        ENDDO
+      ENDDO
 
 
-!*    7. DEALLOCATE ARRAYS
-!        -----------------
-
-        DEALLOCATE(MSK)
-        DEALLOCATE(WNDI)
-
-
-!*    END LOOP THROUGH THE GRID POINTS
-!     ----------------------------
-
+!     NON PARTITIONED ENERGY
+      DO IJ=IJS,IJL
+        ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('SEP3TR',1,ZHOOK_HANDLE)

@@ -5,6 +5,9 @@
 !**** *MBOUNF* - MAKE FINE GRID BOUNDARY.
 
 !     R. PORTZ     MPI         15/01/1991
+!     Oyvind Breivik (oyvind.breivik@ecmwf.int) 2012-11-23: 
+!       Added tolerance to grid comparison
+!                   
 
 !*    PURPOSE.
 !     -------
@@ -64,7 +67,10 @@
 
 ! ----------------------------------------------------------------------
 
+      REAL, PARAMETER :: GRDTOL = 0.000001
+
       INTEGER :: GBOUNC_LOC
+      REAL :: GRDDIFF
       REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
 
 ! ----------------------------------------------------------------------
@@ -119,8 +125,9 @@
           READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
 
-          IF (AMOWEP.EQ.AMOWEA .AND. AMOEAP.EQ.AMOEAA .AND.
-     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) THEN
+          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+
+     &              ABS(AMONOP-AMONOA)+ABS(AMOSOP-AMOSOA)
+          IF (GRDDIFF < GRDTOL) THEN
 !           FOUND THE RIGHT ONE
             EXIT
           ELSE
@@ -144,8 +151,9 @@
           READ (IU03,999) DLAMAC, DPHIAC, AMOSOA,
      &      AMONOA, AMOEAA, AMOWEA,
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
-          IF (AMOWEP.EQ.AMOWEA .AND. AMOEAP.EQ.AMOEAA .AND.
-     &      AMONOP.EQ.AMONOA .AND. AMOSOP.EQ.AMOSOA) THEN
+          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+
+     &              ABS(AMONOP-AMONOA)+ABS(AMOSOP-AMOSOA)
+          IF (GRDDIFF < GRDTOL) THEN
 !           FOUND THE RIGHT ONE
             EXIT
           ELSE
@@ -165,8 +173,7 @@
 
 !     IS THE FINE GRID THE SAME AS IN THE COARSE GRID ?
 
-      IF (AMOWEP.NE.AMOWEA .OR. AMOEAP.NE.AMOEAA .OR.
-     &    AMONOP.NE.AMONOA .OR. AMOSOP.NE.AMOSOA) THEN
+      IF (GRDDIFF >= GRDTOL) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'

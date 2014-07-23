@@ -35,10 +35,17 @@
      &            ESH      ,ASH     ,BSH
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(IJS:IJL) :: EWFG, T, USMO 
+      INTEGER :: IJ, IJS, IJL
+      INTEGER :: IG
+
+      REAL :: G2, BGRCRV_INV, ESTAR, DSTAR, TSTAR, ERATIO
+      REAL :: EMAX, X
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: EWFG, T, USMO 
 
 
 !     INLINE FUNCTION.                                                  
@@ -49,6 +56,8 @@
       EMAX(X) = ESH*TANH(ASH*X**BSH)
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('FDUR',0,ZHOOK_HANDLE)
 
       IG=1
 
@@ -90,5 +99,6 @@
         ENDIF
       ENDDO
                                                                         
+      IF (LHOOK) CALL DR_HOOK('FDUR',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE FDUR

@@ -244,7 +244,8 @@
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC, 
      &            GBOUNC  , IPOGBO   ,CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,
+     &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
@@ -265,8 +266,8 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            KMNOP    ,KMSOP
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,NEMEAN   ,
-     &                      NFMEAN
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,NSWH     ,
+     &                      NMWP
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
@@ -446,23 +447,15 @@
       IF(LWFLUXOUT) THEN
         IF(.NOT.ALLOCATED(PHIEPS)) THEN 
           ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
-          PHIEPS = 0.
+          PHIEPS(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(PHIAW)) THEN 
           ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
-          PHIAW = 0.
+          PHIAW(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(TAUOC)) THEN
           ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
-          TAUOC = 0.
-        ENDIF
-        IF(.NOT.ALLOCATED(NEMEAN)) THEN
-          ALLOCATE(NEMEAN(NSTART(IRANK):NEND(IRANK)))
-          NEMEAN = 0.
-        ENDIF
-        IF(.NOT.ALLOCATED(NFMEAN)) THEN
-          ALLOCATE(NFMEAN(NSTART(IRANK):NEND(IRANK)))
-          NFMEAN = 0.
+          TAUOC(:) = 0.
         ENDIF
       ENDIF
 
@@ -734,6 +727,24 @@
       ENDIF
 !NEST
 
+!*    3.1 COMPUTE SHALLOW WATER TABLE INDICES.
+!         ------------------------------------
+
+      IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:IJLT(IGL)))
+      INDEP(NINF-1)=NDEPTH
+      IF (ISHALLO.NE.1) THEN
+        DO IJ=NINF,IJLT(IGL)
+          XD = LOG(DEPTH(IJ,IGL)/DEPTHA)/LOG(DEPTHD)+1.
+          ID = NINT(XD)
+          ID = MAX(ID,1)
+          INDEP(IJ) = MIN(ID,NDEPTH)
+        ENDDO
+      ELSE
+        DO IJ=NINF,IJLT(IGL)
+          INDEP(IJ) = NDEPTH
+        ENDDO
+      ENDIF
+
 ! ----------------------------------------------------------------------
 
 !*    4. CONNECT RESTART FIELDS TO OUTPUT UNITS (IF PBIO SOFTWARE NOT
@@ -969,23 +980,6 @@
 
 ! ----------------------------------------------------------------------
 
-!*    8.1 COMPUTE SHALLOW WATER TABLE INDICES.
-!         ------------------------------------
-
-      IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:IJLT(IGL)))
-      INDEP(NINF-1)=NDEPTH
-      IF (ISHALLO.NE.1) THEN
-        DO IJ=NINF,IJLT(IGL)
-          XD = LOG(DEPTH(IJ,IGL)/DEPTHA)/LOG(DEPTHD)+1.
-          ID = NINT(XD)
-          ID = MAX(ID,1)
-          INDEP(IJ) = MIN(ID,NDEPTH)
-        ENDDO
-      ELSE
-        DO IJ=NINF,IJLT(IGL)
-          INDEP(IJ) = NDEPTH
-        ENDDO
-      ENDIF
 
 !*    8.2  PRECOMPUTE BOTTOM REFRACTION TERMS.
 !          -----------------------------------
@@ -1018,6 +1012,23 @@
          CALL FLUSH(IU06)
       ENDIF
 
+!     INITIALIZE THE NEMO COUPLING
+      IF(LWNEMOCOU) CALL INITNEMOCPL(LWNEMOCOURECV)
+
+!      NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
+!      *GETCURR* IS CALLED (SEE *PREWIND*).
+!      A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
+!      BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
+!      ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
+      LLINIT=.NOT.LRESTARTED
+      CALL PREWIND (
+     &              LLINIT,
+     &              IREAD,
+     &              NFIELDS, NGPTOTG, NC, NR,
+     &              FIELDS, LWCUR, MASK_IN)
+
+      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
+      CALL FLUSH (IU06)
 
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
 !!!! might need to restrict call when needed !!!
@@ -1027,21 +1038,12 @@
         WRITE(IU06,*) ''
       ENDIF
 
-!      NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
-!      *GETCURR* IS CALLED (SEE *PREWIND*).
-!      A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
-!      BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
-!      ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
-      LLINIT=.NOT.LRESTARTED
-      CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD,
-     &              CICOVER, CITHICK, CIWA,
-     &              LLINIT,
-     &              IREAD,
-     &              NFIELDS, NGPTOTG, NC, NR,
-     &              FIELDS, LWCUR, MASK_IN)
-      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
+!     DETERMINE THE SEA ICE REDUCTION FACTOR
+      CALL CIREDUCE (CICOVER,CITHICK,CIWA)
+
+      WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
       CALL FLUSH (IU06)
+
 
 ! ----------------------------------------------------------------------
 
