@@ -71,6 +71,7 @@
       INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
       INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
+      REAL :: COSDIFF
       REAL :: DELDW
       REAL :: XJ, DELUINV 
       REAL :: COSDIR, FRLIMIT 
@@ -92,6 +93,8 @@
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW 
 
       LOGICAL :: LLEPSMIN
+      LOGICAL :: LLADDPART
+      LOGICAL, DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
       LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
@@ -101,6 +104,9 @@
 
       IF (LHOOK) CALL DR_HOOK('SEP3TR',0,ZHOOK_HANDLE)
 
+!     TOTAL ENERGY IN THE SWELL SPECTRA
+      LLEPSMIN=.FALSE.
+      CALL SEMEAN (FL1, IJS, IJL, ETOT, LLEPSMIN)
 
 !     SMOOTH INPUT SPECTRA
       DO M=1,NFRE
@@ -110,21 +116,15 @@
           ENDDO
         ENDDO
       ENDDO
-      IF(NANG.GT.12) THEN
-        CALL SMOOTHSARSPEC(IJS,IJL,NANG,NFRE,FL3)
-!       RE-IMPOSE THE WINDSEA MASK
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
-            ENDDO
+      CALL SMOOTHSARSPEC(IJS,IJL,NANG,NFRE,FL3)
+!     RE-IMPOSE THE WINDSEA MASK
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
           ENDDO
         ENDDO
-      ENDIF
-
-!     TOTAL ENERGY IN THE SWELL SPECTRA
-      LLEPSMIN=.FALSE.
-      CALL SEMEAN (FL3, IJS, IJL, ETOT, LLEPSMIN)
+      ENDDO
 
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
@@ -143,7 +143,9 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+          COSDIFF=COS(TH(K)-THWNEW(IJ))
+          LLCOSDIFF(IJ,K)=(COSDIFF.LT.-0.4)
+          SPRD(IJ,K)=MAX(0.,COSDIFF)**2
         ENDDO
       ENDDO
       DELUINV=1./DELU
@@ -172,14 +174,15 @@
             IF(FL3(IJ,K,M) .GT. FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
               ITHH   = 1 + MOD(K,NANG)
-              IF ( FL3(IJ,ITHL,M   ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,ITHH,M   ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,K   ,IFL ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,K   ,IFH ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,ITHL,IFL ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,ITHL,IFH ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,ITHH,IFL ) .GT. FLLOWEST .AND.
-     &             FL3(IJ,ITHH,IFH ) .GT. FLLOWEST ) THEN
+              IF ( FL3(IJ,ITHL,M   ) .GT. 0.0 .AND.
+     &             FL3(IJ,ITHH,M   ) .GT. 0.0 .AND.
+     &             FL3(IJ,K   ,IFL ) .GT. 0.0 .AND.
+     &             FL3(IJ,K   ,IFH ) .GT. 0.0 .AND.
+     &             FL3(IJ,ITHL,IFL ) .GT. 0.0 .AND.
+     &             FL3(IJ,ITHL,IFH ) .GT. 0.0 .AND.
+     &             FL3(IJ,ITHH,IFL ) .GT. 0.0 .AND.
+     &             FL3(IJ,ITHH,IFH ) .GT. 0.0 ) THEN
+
 
                 IF ( FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFL ) .AND.
      &               FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFH ) .AND.
@@ -258,6 +261,33 @@
             ENDDO
           ENDDO
         ENDDO
+
+!       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
+!       ADDED AS A PARTITION
+        LLADDPART=.FALSE.
+        IF(NPEAK(IJ).LT.NPMAX) THEN
+          DO K=1,NANG
+            DO M=1,NFRE
+              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0) THEN
+                W2(K,M) = 1.
+                LLADDPART=.TRUE.
+              ELSE
+                W2(K,M) = 0.
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDIF
+
+        IF(LLADDPART) THEN
+          NPEAK(IJ)=NPEAK(IJ)+1
+          IP=NPEAK(IJ)
+          DO M=1,NFRE
+            DO K=1,NANG
+              SPEC(K,M,IP) = FL3(IJ,K,M)*W2(K,M)
+            ENDDO
+          ENDDO
+        ENDIF
+
 
         IF(NPEAK(IJ).GT.0) THEN
           CALL PARMEAN(SPEC(1:NANG,1:NFRE,1:NPEAK(IJ)),

@@ -103,7 +103,7 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = 2.0*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
+          THRESHOLD(IJ) = 1.2*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
         ENDDO
         DO M=1,NFRE
           CM = FRIC/C(M)
@@ -136,7 +136,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = FL3(IJ,K,M)*FL1(IJ,K,M)
+            FL1(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)*FL1(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -247,10 +247,16 @@
 
 
 !     RE-ASSIGN THE NON PARTITONED ENERGY TO WINDSEA
+!     AND REMOVE IT FROM THE SWELL
       IF(LLPARTITION) THEN
         IF(IPFGTBL(11).NE.0 ) THEN
           DO IJ=IJS,IJL
             ESEA(IJ) = ESEA(IJ)+ETNP(IJ) 
+          ENDDO
+        ENDIF
+        IF(IPFGTBL(12).NE.0) THEN
+          DO IJ=IJS,IJL
+            ESWELL(IJ) = MAX(ESWELL(IJ)-ETNP(IJ),0.0) 
           ENDDO
         ENDIF
       ENDIF
