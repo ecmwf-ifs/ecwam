@@ -57,33 +57,64 @@
       CHARACTER(LEN=*) :: CDFDBSF
 
       CHARACTER(LEN=1) :: CLDOMAIN
+      CHARACTER(LEN=1),save :: CLDOMAIN_PREV = " "
       CHARACTER(LEN=1) :: CLEG
 
       CHARACTER(LEN=2) :: CLTYPE
+      CHARACTER(LEN=2),save :: CLTYPE_PREV = "  "
+
       CHARACTER(LEN=2) :: CLCLASS
+      CHARACTER(LEN=2),save :: CLCLASS_PREV ="  "
+
+
       CHARACTER(LEN=2) :: CLDIR
+      CHARACTER(LEN=2),save :: CLDIR_PREV ="  "
+
       CHARACTER(LEN=2) :: CLFRE
+      CHARACTER(LEN=2),save :: CLFRE_PREV="  "
 
       CHARACTER(LEN=3) :: CLPARAM
-      CHARACTER(LEN=3) :: CLNUMBER,CLWINOFF
+      CHARACTER(LEN=3),save :: CLPARAM_PREV="   "
+
+      CHARACTER(LEN=3) :: CLNUMBER
+
+      CHARACTER(LEN=3) :: CLWINOFF
+      CHARACTER(LEN=3),save :: CLWINOFF_PREV="   "
 
       CHARACTER(LEN=4) :: CLTIME
+      CHARACTER(LEN=4),save :: CLTIME_PREV ="    "
+
       CHARACTER(LEN=4) :: CLEXPVER
+      CHARACTER(LEN=4),save :: CLEXPVER_PREV ="    "
+
       CHARACTER(LEN=4) :: CLSTREAM
+      CHARACTER(LEN=4),save :: CLSTREAM_PREV ="    "
+
       CHARACTER(LEN=4) :: CDORIGIN
 
       CHARACTER(LEN=5) :: CLSYSTEM
+
       CHARACTER(LEN=5) :: CLMETHOD
 
       CHARACTER(LEN=6) :: CLSTEP
+      CHARACTER(LEN=6),save :: CLSTEP_PREV
 
       CHARACTER(LEN=8) :: CLDATE
+      CHARACTER(LEN=8),save :: CLDATE_PREV = "        "
+
       CHARACTER(LEN=8) :: HDATE
+
       CHARACTER(LEN=8) :: CDATEREF
 
       CHARACTER(LEN=12) :: C12
 
+      CHARACTER(LEN=1),save :: CLLEVTY_PREV=" "
+      CHARACTER(LEN=2),save :: CLREPR_PREV ="  "
+
       LOGICAL :: LFDBOPEN
+
+      real time
+      real,external :: timef
 
 !     ------------------------------------------------------------------
 
@@ -202,7 +233,6 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'method',C12)
           CLMETHOD=C12(1:5)
           ISTAT = ISETVALFDBSUBS( KFDB, 'method', CLMETHOD)
-
           ISTAT = ISETVALFDBSUBS( KFDB, 'level','0000')
 
           IF (KTEST.GT.3) WRITE(KUSO,'("\ /WGRIB2FDB/ system:", a5,
@@ -265,17 +295,27 @@
 !     STREAM:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
       CLSTREAM=C12(1:4)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
+      if(clstream.ne.clstream_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
+        clstream_prev=clstream
+      endif
+
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
 !     CLASS:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'class',C12)
       CLCLASS=C12(1:2)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
+      if(clclass.ne.clclass_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
+        clclass_prev=clclass
+      endif
 
 !     EXPVER:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'expver',C12)
       CLEXPVER=C12(1:4)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
+      if(clexpver.ne.clexpver_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
+        clexpver_prev=clexpver
+      endif
 
 !     DOMAIN:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier',
@@ -289,21 +329,33 @@
         KERR = 1
         RETURN
       ENDIF
-      ISTAT = ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
+      if(cldomain.ne.cldomain_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
+        cldomain_prev=cldomain
+      endif
 
 !     REPRESENTATION:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'gridType',C12)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
+      if(c12(9:10).ne.clrepr_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
+        clrepr_prev=c12(9:10)
+      endif
 
 !     TYPE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
       CLTYPE=C12(1:2)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
+      if(CLTYPE.ne.cltype_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
+        cltype_prev=c12(1:2)
+      endif
 
 !     PARAMETER:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'param',C12)
       CLPARAM=C12(1:3)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
+      if(CLPARAM.ne.clparam_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
+        clparam_prev=CLPARAM
+      endif
 
 !     DATE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
@@ -315,38 +367,62 @@
       IF(ISTATUS == 0 .AND. C12(1:1).NE. '0' ) THEN
         CLDATE=C12(1:8)
       ENDIF
-      ISTAT = ISETVALFDBSUBS( KFDB, 'date', CLDATE )
+      if(CLDATE.ne.cldate_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'date', CLDATE )
+        cldate_prev=cldate
+      endif
 
 !     TIME:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'time',C12)
       CLTIME=C12(1:4)
-      ISTAT = ISETVALFDBSUBS( KFDB, 'time', CLTIME )
+      if(CLTIME.ne.cltime_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'time', CLTIME )
+        cltime_prev=cltime
+      endif
 !     FC STEP:
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
 !     make sure the step is in hours
       ISTEP=ISTEP
       WRITE(CLSTEP, '( I6.6 )' ) ISTEP 
-      ISTAT = ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
+      if(CLSTEP.ne.clstep_prev) then
+        ISTAT = ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
+        clstep_prev=CLSTEP
+      endif
 
 !     LEVEL TYPE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ilvtp)
       IF(ILVTP == 209) THEN
-        ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
+        if('wv'.ne.cllevty_prev) then
+          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
+          cllevty_prev='wv'
+        endif
       ELSE IF(ILVTP == 212) THEN
-        ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
+        if('ws'.ne.cllevty_prev) then
+          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
+          cllevty_prev='ws'
+        endif
       ELSE
-        ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 's'   )
+        if('s'.ne.cllevty_prev) then
+          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 's'   )
+          cllevty_prev='s'
+        endif
       ENDIF 
 
 !     DIRECTION AND FREQUENCY:
       IF(CLPARAM == '251' ) THEN
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'directionNumber',C12)
          CLDIR=C12(1:2)
-         ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+         if(CLDIR.ne.cldir_prev) then
+           ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+           cldir_prev=CLDIR
+         endif
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'frequencyNumber',C12)
          CLFRE=C12(1:2)
-         ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+         if(CLFRE.ne.clfre_prev) then
+           ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+           clfre_prev=CLFRE
+         endif
       ELSE
         CLDIR="00"
         CLFRE="00"
@@ -355,8 +431,14 @@
      &      ISTREAM /= 1203 .AND.
      &      ISTREAM /= 1204 .AND.
      &      ISTREAM /= 1222) THEN
-          ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
-          ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+         if(CLDIR.ne.cldir_prev) then
+            ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+            cldir_prev=CLDIR
+         endif
+         if(CLFRE.ne.clfre_prev) then
+            ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+            clfre_prev=CLFRE
+         endif
         ENDIF
       ENDIF
 
@@ -382,7 +464,10 @@
      &      'offsetToEndOf4DvarWindow',NWINOFF)
 !          ENDIF
           WRITE(CLWINOFF,'(I3.3)') NWINOFF
-          ISTAT = ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
+          if(CLWINOFF.ne.clwinoff_prev) then
+            ISTAT = ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
+            clwinoff_prev=clwinoff
+          endif
         ENDIF
 
 !     ------------------------------------------------------------------
@@ -395,7 +480,12 @@
       KLEN=(KBYTES+NPRECI)/NPRECI
       ALLOCATE(KGRIB(KLEN))
       CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,KGRIB)
+!     time=timef()
       ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, KLEN ) 
+!     time=timef()-time
+!     write(20,'(" pjtdiags WAVE IWRITEFDB took ",f8.0," ms writing ",
+!    &            i12," bytes")') time,KLEN*NPRECI
+      
       DEALLOCATE(KGRIB)
 
       IF ( ISTAT .NE. 0 ) THEN
