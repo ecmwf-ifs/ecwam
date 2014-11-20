@@ -139,6 +139,7 @@
       LOGICAL :: LLINTERPOL, LLNEAREST, LLNONWAVE, LLOCEAN, LASTREAM
       LOGICAL :: LLSCANNS
       LOGICAL :: LLDIRFLD
+      LOGICAL :: LLSKIP
 
       REAL, PARAMETER :: ZZ180 = 180.
       REAL, PARAMETER :: ZZPI = 4. * ATAN(1.)
@@ -585,11 +586,7 @@
       ENDIF
 
       IF(KAMONOP.LT.KRMOSOP.OR.
-     &   KAMOSOP.GT.KRMONOP.OR.
-     &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
-     &    .AND.KAMOWEP.LT.KRMOWEP).OR.
-     &   (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
-     &    .AND.KAMOEAP.GT.NINT((RMOEAP+DELLO)*100.)) ) THEN
+     &   KAMOSOP.GT.KRMONOP ) THEN
 
          WRITE(IU06,*) '***********************************'
          WRITE(IU06,*) '*                                 *'
@@ -609,6 +606,31 @@
          WRITE(IU06,*) '*     THE PROGRAM ABORTS          *'
          WRITE(IU06,*) '***********************************'
          CALL ABORT1
+      ENDIF
+
+      IF ((JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
+     &     .AND.KAMOWEP.LT.KRMOWEP).OR.
+     &    (JRGG.EQ.0.AND.IREPR.NE.4.AND.IPERIODIC.NE.1
+     &     .AND.KAMOEAP.GT.NINT((RMOEAP+DELLO)*100.))) THEN
+
+         WRITE(IU06,*) '***********************************'
+         WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  WARNING IN SUB. GRIB2WGRID     *'
+         WRITE(IU06,*) '*  ============================   *'
+         WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  THE MODEL DOMAIN IS PARTIALLY OUTSIDE *' 
+         WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER *'
+         WRITE(IU06,*) '  ',IPARAM 
+         WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  AMOSOP: ', AMOSOP, 'RMOSOP : ',RMOSOP
+         WRITE(IU06,*) '*  AMONOP: ', AMONOP, 'RMONOP : ',RMONOP
+         WRITE(IU06,*) '*  AMOWEP: ', AMOWEP, 'RMOWEP : ',RMOWEP
+         WRITE(IU06,*) '*  AMOEAP: ', AMOEAP, 'RMOEAP : ',RMOEAP
+         WRITE(IU06,*) '*  DELLO: ', DELLO
+         WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  MISSING DATA WILL BE USED FOR  *'
+         WRITE(IU06,*) '*  THE PART THAT IS NOT COMMON    *'
+         WRITE(IU06,*) '***********************************'
       ENDIF
 
       LLINTERPOL=.TRUE.
@@ -873,6 +895,7 @@
 !         loop over all wave model grid points on each latitude.
           DO I=1,KLONRGG(JSN)
 
+            LLSKIP=.FALSE.
             IF(.NOT.LLOCEAN) THEN
               XI = AMOWEP+(I-1)*ZDELLO(JSN) - RMOWEP
             ELSE
@@ -884,9 +907,12 @@
 
             KSNLIM=MIN(MAX(KSN,1),NR)
             XII = XI/RDELLO(KSNLIM)+1.
-            II = MAX(1-IPERIODIC,INT(XII))
-            II = MIN(II,RLONRGG(KSNLIM))
-            II1 = MIN(II+1,RLONRGG(KSNLIM)+IPERIODIC)
+            II = INT(XII)
+            IF(II < 1-IPERIODIC .OR. II > RLONRGG(KSNLIM)) LLSKIP=.TRUE.
+            II = MIN(MAX(1-IPERIODIC,II),RLONRGG(KSNLIM))
+            II1= II+1
+            IF(II1 > RLONRGG(KSNLIM)+IPERIODIC) LLSKIP=.TRUE.
+            II1= MIN(II1,RLONRGG(KSNLIM)+IPERIODIC)
             DII1=XII-REAL(II)
             DII2=1.-DII1
 
@@ -898,13 +924,18 @@
 
             KSN1LIM=MIN(MAX(KSN1,1),NR)
             XIIP = XI/RDELLO(KSN1LIM)+1.
-            IIP = MAX(1-IPERIODIC,INT(XIIP))
-            IIP = MIN(IIP,RLONRGG(KSN1LIM)) 
-            IIP1 = MIN(IIP+1,RLONRGG(KSN1LIM)+IPERIODIC) 
+            IIP = INT(XIIP)
+            IF(IIP<1-IPERIODIC .OR. IIP>RLONRGG(KSN1LIM)) LLSKIP=.TRUE.
+            IIP = MIN(MAX(1-IPERIODIC,IIP),RLONRGG(KSN1LIM))
+            IIP1 = IIP+1
+            IF(IIP1 > RLONRGG(KSN1LIM)+IPERIODIC) LLSKIP=.TRUE.
+            IIP1 = MIN(IIP1,RLONRGG(KSN1LIM)+IPERIODIC) 
             DIIP1=XIIP-REAL(IIP)
             DIIP2=1.-DIIP1
 
-            IF(LLNEAREST) THEN
+            IF(LLSKIP) THEN
+              FIELD(I,K)=PMISS
+            ELSE IF(LLNEAREST) THEN
 !             DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
 !             IF SO USE THE CLOSEST GRID POINT VALUE.
               IF(WORK(II,KK,1).EQ.PMISS.OR.

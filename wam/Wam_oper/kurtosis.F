@@ -130,16 +130,16 @@
 
       INTEGER, DIMENSION(IJS:IJL) ::  MMAX, KMAX, NW
 
-      REAL :: ZC4_CONST, ZALPHA, ZBETA, ZR, ZR_0, ZJ , ZEPS, ZNU, 
+      REAL :: ZC4_CONST, ZALPHA, ZBETA, ZR, ZR_0, ZJ , ZEPS, HC, 
      &        HS, SIG_OM1, DURATION, AKI, TRANSF2, ZF_WG, ZK, ZARG,
-     &        ZKAPPA30, ZKAPPA03, ZKAPPA12, ZKAPPA21,
+     &        ZOM1, ZKAPPA30, ZKAPPA03, ZKAPPA12, ZKAPPA21,
      &        ZKAPPA40, ZKAPPA04, ZKAPPA22, ZKAPPA4
       REAL :: ZHOOK_HANDLE
       REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
       REAL, DIMENSION(IJS:IJL) ::  C4,BF2,QP,HMAX,TMAX,ETA2,SUM0,SUM1,
      &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
-     &                             SIG_TH,EPS,C3
+     &                             SIG_TH,EPS,C3,ZNU
       REAL, DIMENSION(NFRE) :: DF,FAC1,FAC2,FAC3,FAC4
 
       IF (LHOOK) CALL DR_HOOK('KURTOSIS',0,ZHOOK_HANDLE)
@@ -273,20 +273,26 @@
 !       (EXPECTED IN RECORD OF LENGTH GIVEN BY DURATION)
 !     -------------------------------------------------
 !
-      DURATION = 10800.
+      DURATION = 1200.
 
 !
 !     WAVE GROUP FREQUENCY F_WG FOLLOWS FROM EWING (1973) AND 
 !     CRAMER AND LEADBETTER (1967), WHERE
-!     K = 2  CORRESPONDS TO SIGNIFICANT HEIGHT LEVEL
-      ZK = 2.
+!     HC = 1  CORRESPONDS TO SIGNIFICANT HEIGHT LEVEL, BUT COMPARISON 
+!     WITH MONTE CARLO SIMULATIONS SHOWS THAT HC SHOULD BE CHOSEN AS SQRT(2).
 
+      HC = SQRT(2.)
+      ZK = 2.*HC/SQRT(ZPI)
       DO IJ=IJS,IJL
-         IF (ETA2(IJ).GT.0. .AND. FP(IJ).GT.0.) THEN
-            ZNU = SIG_OM(IJ)
-            ZF_WG  = ZK*ZNU*FP(IJ)*SQRT(ZPI)
+         IF (SUM1(IJ).GT.0. .AND. SUM0(IJ).GT.0.) THEN
+            ZOM1     = ZPI*SUM1(IJ)/SUM0(IJ)
+            ZNU(IJ)  = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
+            ZNU(IJ)  = SQRT(MAX(0.,ZNU(IJ)))
+
+            ZF_WG  = ZK*ZNU(IJ)*ZOM1
             NW(IJ) = NINT(DURATION*ZF_WG)
          ELSE
+            ZNU(IJ) = 0.
             NW(IJ) = 0
          ENDIF
       ENDDO
@@ -295,12 +301,8 @@
 
       DO IJ=IJS,IJL
          IF (SUM1(IJ).GT.0. .AND. HMAX(IJ).GT.0.) THEN
-            ZNU  = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
-            ZNU  = SQRT(MAX(0.,ZNU))
-            ZEPS = ZNU/(SQRT(2.)*HMAX(IJ))
-
-            TMAX(IJ) = 1.+0.5*ZEPS**2+0.75*ZEPS**4
-            TMAX(IJ) = TMAX(IJ)*SUM0(IJ)/SUM1(IJ)
+            ZEPS     = ZNU(IJ)/(SQRT(2.)*HMAX(IJ))
+            TMAX(IJ) = (1.+0.5*ZEPS**2+0.75*ZEPS**4)*SUM0(IJ)/SUM1(IJ) 
          ELSE
             TMAX(IJ) = 0.
          ENDIF

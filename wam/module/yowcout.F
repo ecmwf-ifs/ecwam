@@ -41,6 +41,7 @@
       LOGICAL :: LSECONDORDER
       LOGICAL :: LRSTST0
 
+      INTEGER :: NWRTOUTWAM=1
       INTEGER NGOUT 
       INTEGER, ALLOCATABLE :: IGAR(:) 
       INTEGER, ALLOCATABLE :: IJAR(:) 
@@ -100,5 +101,7 @@
 !      *LRSTST0    LOGICAL   TRUE IF GRIB HEADER HAVE TO BE RESET
 !                            SUCH THAT THE FORECAST STEP POINTS TO
 !                            THE START OF THE RUN.
+!      *NWRTOUTWAM INTEGER   CONTROLS THE STRIDE WITH WHICH FDB OUTPUT PE's
+!                            ARE SELECTED (BY DEFAULT = 1)
 ! ----------------------------------------------------------------------
       END MODULE YOWCOUT

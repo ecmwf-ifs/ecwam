@@ -38,6 +38,7 @@
 !-------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUT  , ONLY : NWRTOUTWAM
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LFDBIOOUT
@@ -64,7 +65,7 @@
       INTEGER :: IPARAM, ITABLE
       INTEGER :: IGLOBAL, ILOCAL
       INTEGER :: IERR, LFILE, IUOUT
-      INTEGER, DIMENSION(NPROC) :: ISENDCOUNTS,IRECVCOUNTS
+      INTEGER, DIMENSION(NPROC) :: IPR, ISENDCOUNTS, IRECVCOUNTS
 
       REAL :: ZHOOK_HANDLE
       REAL :: FIELD(NGX, NGY)
@@ -73,6 +74,8 @@
 
       CHARACTER(LEN=14) :: CDATE 
       CHARACTER(LEN=120) :: OUTFILEN
+
+      LOGICAL :: LLOUT(NPROC)
 
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC',0,ZHOOK_HANDLE)
 
@@ -105,7 +108,7 @@
       ENDIF
 !-----------------------------------------------------------------------
 
-!*    3. OUTPUT GRIB DATA 
+!*    3. OUTPUT GRIB DATA (USING A MAXIMUM OF NPROC/NWRTOUTWAM TASKS)
 !     -------------------
 
       DO J = 1,NGY
@@ -114,8 +117,13 @@
         ENDDO
       ENDDO
       
-      ISTEP=NPROC
+      ISTEP=NPROC/NWRTOUTWAM
       IF (.NOT.LFDBIOOUT) ISTEP=1
+
+      DO IP=1,NPROC
+        LLOUT(IP)=(MOD(IP-1,NWRTOUTWAM) == 0)
+        IPR(IP)=1+(IP-1)/NWRTOUTWAM
+      ENDDO
 
       ALLOCATE(ZSENDBUF(NPROC*(NEND(IRANK)-NSTART(IRANK)+1)))
       ALLOCATE(ZRECVBUF(NEND(NPROC)))
@@ -129,9 +137,9 @@
 !       ---------------------------------- than PE's)
         ICNT = 0
         DO IP=1,NPROC
-          IF (IP <= IST) THEN
-            IM=(((IC-1)+IP-1)/NANG)+1
-            IK=(IC-1)+IP-(IM-1)*NANG
+          IF ( LLOUT(IP) .AND. IPR(IP) <= IST) THEN
+            IM=(((IC-1)+IPR(IP)-1)/NANG)+1
+            IK=(IC-1)+IPR(IP)-(IM-1)*NANG
 
             DO J1=NSTART(IRANK),NEND(IRANK)
               ICNT = ICNT + 1
@@ -143,7 +151,7 @@
             ISENDCOUNTS(IP) = 0
           ENDIF
 
-          IF (IRANK <= IST) THEN
+          IF ( LLOUT(IRANK) .AND. IPR(IRANK) <= IST ) THEN
             IRECVCOUNTS(IP) = NEND(IP) - NSTART(IP) + 1
           ELSE
              IRECVCOUNTS(IP) = 0 
@@ -181,9 +189,9 @@
         IPARAM=251
         ITABLE=140
 
-        IF(IRANK.LE.IST) THEN
-          IM=(((IC-1)+IRANK-1)/NANG)+1
-          IK=(IC-1)+IRANK-(IM-1)*NANG
+        IF ( LLOUT(IRANK) .AND. IPR(IRANK) <= IST ) THEN
+          IM=(((IC-1)+IPR(IRANK)-1)/NANG)+1
+          IK=(IC-1)+IPR(IRANK)-(IM-1)*NANG
 
           ILOCAL=ILOCAL+1
 
@@ -208,6 +216,7 @@
           ENDIF
 
         ENDIF
+        CALL MPL_BARRIER(CDSTRING='OUTWSPEC:')
 
       ENDDO
 

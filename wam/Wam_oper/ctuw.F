@@ -667,6 +667,8 @@
                 IJP = KLAT(IJ,IC,IP)
                 IF(IJP.NE.NINF-1) THEN
                   WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP,IG)
+                  WRITE (IU06,*) '*     U= ',U(IJP,IG)
+                  WRITE (IU06,*) '*     V= ',V(IJP,IG)
                 ELSE
                   WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,'LAND'
                 ENDIF
@@ -676,6 +678,8 @@
                 IJP = KLON(IJ,IC)
                 IF(IJP.NE.NINF-1) THEN
                   WRITE (IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP,IG)
+                  WRITE (IU06,*) '*     U= ',U(IJP,IG)
+                  WRITE (IU06,*) '*     V= ',V(IJP,IG)
                 ELSE
                   WRITE (IU06,*) '* DEPTH= ',IJP,IC,'LAND'
                 ENDIF

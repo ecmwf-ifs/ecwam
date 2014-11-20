@@ -25,6 +25,8 @@
       CHARACTER*14 CDTINTS 
       CHARACTER*14 CDTSPT 
       CHARACTER*14 CDTSPS 
+      CHARACTER*25 CMETER
+      CHARACTER*25 CEVENT
       CHARACTER*256 CFDBSF 
       CHARACTER*256 CFDB2DSP 
 
@@ -83,6 +85,7 @@
       LOGICAL LBIWBK
       LOGICAL LLSOURCE
       LOGICAL LNSESTART 
+      LOGICAL LSMSSIG_WAM
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -254,5 +257,8 @@
 !      *IREFDATE*  INTEGER   REFERENCE DATE FOR MONTHLY FORECAST
 !                            HINDCAST RUNS. 
 !
+!      *LSMSSIG_WAM* LOGICAL .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!      *CMETER*   CHARACTER  SMS or ECFLOW meter command (ECMWF supervisor)
+!      *CEVENT*   CHARACTER  SMS or ECFLOW event command (ECMWF supervisor)
 ! ----------------------------------------------------------------------
       END MODULE YOWSTAT

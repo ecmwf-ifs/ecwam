@@ -42,7 +42,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            NPRECI
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWPCONS , ONLY : ZMISS
+      USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -68,6 +68,7 @@
       INTEGER, ALLOCATABLE :: INGRIB(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
+      REAL, PARAMETER :: WLOWEST=0.0001
       REAL :: ZDUM
       REAL :: ZHOOK_HANDLE
       REAL :: FIELD(NGX,NGY)
@@ -201,9 +202,11 @@
                U(IJ,IG) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
-               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.
+!              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
+               IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0
+               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0
              ENDDO
-             U(NINF-1,IG)=0.
+             U(NINF-1,IG)=0.0
            ENDDO
         ELSEIF(IPARAM.EQ.132) THEN
            DO IG = 1,IGL
@@ -215,7 +218,9 @@
                V(IJ,IG) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
-               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.
+!              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
+               IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0
+               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0
              ENDDO
              V(NINF-1,IG)=0.
            ENDDO

@@ -1,4 +1,4 @@
-      SUBROUTINE GRADI (IG, MIJS, MIJL,IREFRA, DDPHI, DDLAM, DUPHI,
+      SUBROUTINE GRADI (IG, MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,
      &                  DULAM, DVPHI, DVLAM)
 
 ! ----------------------------------------------------------------------
@@ -54,11 +54,22 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE 
+
+      INTEGER :: IG 
+      INTEGER :: MIJS, MIJL, IREFRA
+      INTEGER :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM, KX
+
+      REAL :: DPTP, DPTM, UP, UM, VP, VM 
+      REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(MIJS:MIJL) :: DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM
 
 ! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISE.
 !        -----------
@@ -116,9 +127,15 @@
       IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
         DO IJ=MIJS,MIJL
           IPP = KLAT(IJ,2,1)
+!         exact 0 means that the current field was not defined, hence
+!         no gradient should be extrapolated
+          IF(U(IPP,IG).EQ.0. .AND. V(IPP,IG).EQ.0.) IPP=NLAND 
           IPM = KLAT(IJ,1,1)
+          IF(U(IPM,IG).EQ.0. .AND. V(IPM,IG).EQ.0.) IPM=NLAND 
           IPP2 = KLAT(IJ,2,2)
+          IF(U(IPP2,IG).EQ.0. .AND. V(IPP2,IG).EQ.0.) IPP2=NLAND 
           IPM2 = KLAT(IJ,1,2)
+          IF(U(IPM2,IG).EQ.0. .AND. V(IPM2,IG).EQ.0.) IPM2=NLAND 
           IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
             UP=WLAT(IJ,2)*U(IPP,IG)+(1.-WLAT(IJ,2))*U(IPP2,IG)
@@ -146,7 +163,11 @@
             DVPHI(IJ) = 0.0
           ENDIF
           ILP = KLON(IJ,2)
+!         exact 0 means that the current field was not defined, hence
+!         no gradient should be extrapolated
+          IF(U(ILP,IG).EQ.0. .AND. V(ILP,IG).EQ.0.) ILP=NLAND 
           ILM = KLON(IJ,1)
+          IF(U(ILM,IG).EQ.0. .AND. V(ILM,IG).EQ.0.) ILM=NLAND 
           KX  = KXLT(IJ,IG)
           IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
             DULAM(IJ) = (U(ILP,IG)-U(ILM,IG))/(2.*DELLAM(KX))
@@ -165,5 +186,6 @@
         ENDDO
       ENDIF
 
+      IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
       RETURN
       END SUBROUTINE GRADI

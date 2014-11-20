@@ -79,6 +79,7 @@
      &            NASS     ,JPPFLAG  ,
      &            NTRAIN   ,
      &            IPFGTBL  ,
+     &            NWRTOUTWAM,
      &            LWFLUXOUT,
      &            LSECONDORDER
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
@@ -108,6 +109,7 @@
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
      &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE ,
      &            LNSESTART,
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,
      &            LRELWIND ,
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -153,6 +155,7 @@
      &   CLOTSU, CDATER, CDATES,
      &   PFLAG,  FFLAG,  GFLAG, NFLAG,
      &   LFDB, LPBIOIN, LGRIBIN, LPBIOOUT, LGRIBOUT, LFDBIOOUT,
+     &   NWRTOUTWAM,
      &   LSECONDORDER,
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI, IFORCA,
      &   ISNONLIN,
@@ -178,6 +181,7 @@
      &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,
      &   LLSOURCE,
      &   LNSESTART,
+     &   LSMSSIG_WAM,CMETER,CEVENT,
      &   LLWSWAVE, LLWDWAVE,
      &   NWAM_BLKS, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,
      &   LICERUN, LCIWABR, LICETH,
@@ -318,6 +322,7 @@
 !     LGRIBOUT : IF TRUE THE WAVE SPECTRA IS OUTPUT IN GRIB FORMAT, ELSE
 !                THE BINARY RESTART FILES ARE PRODUCED.
 !     LFDBIOOUT : IF TRUE THE GRIB SPECTRA OUTPUT IS SENT TO THE FDB.
+!     NWRTOUTWAM: STRIDE WITH WHICH FDB OUTPUT PE's ARE SELECTED.
 !     LSECONDORDER : IF TRUE THEN SECOND ORDER CORRECTIOn IS APPLIED TO
 !                    OUTPUT INTEGRATED PARAMETERS.
 !     ICASE: 1 FOR SPHERICAL COORDINATES ELSE CARTESIAN COORDINATES.
@@ -452,6 +457,10 @@
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
+!     LSMSSIG_WAM : .T. = send signals to SMS or ECFLOW (ECMWF supervisor)
+!     CMETER :  SMS or ECFLOW meter command (ECMWF supervisor)
+!     CEVENT :  SMS or ECFLOW event command (ECMWF supervisor)
+
 
 !     NAMELIST NAOT : 
 !     ===============
@@ -526,6 +535,7 @@
       LPBIOOUT  = .TRUE. 
       LGRIBOUT  = .TRUE. 
       LFDBIOOUT = .TRUE. 
+      NWRTOUTWAM= 1
       LODBRALT  = .FALSE.
       ICASE     = 1 
       ISHALLO   = 0 
@@ -683,6 +693,12 @@
 
       NDELW_LST = 0
 
+      LSMSSIG_WAM =.FALSE.
+
+      CMETER='smsmeter'
+
+      CEVENT='smsevent'
+
 ! ----------------------------------------------------------------------
 
 !*    1. READ NAMELIST NALINE.
@@ -774,6 +790,7 @@
 
       IF(LWCOU) LMESSPASS = LMESSPIFS
       IF(LWCOU) LFDB = LFDBOPIFS
+      IF(LWCOU) LSMSSIG_WAM =.FALSE. ! by definition
 
       IF(.NOT.LWCOU) THEN
         CDATEA = CBPLTDT
@@ -1853,6 +1870,7 @@
       IF(LFDBIOOUT) THEN
         WRITE (IU06,*)
      &   ' FDB SOFTWARE IS USED TO WRITE OUTPUT SPECTRA FILES' 
+        WRITE (IU06,*) ' OUTPUT TASK SELECTED WITH STRIDE = ',NWRTOUTWAM
       ELSE
         WRITE (IU06,*)
      &   ' OUTPUT SPECTRA FILES ARE WRITTEN OUT TO DISK' 
@@ -1990,6 +2008,13 @@
           WRITE(IU06,'("****************************************")')
           CALL ABORT1
         ENDIF
+      ENDIF
+
+      IF(LSMSSIG_WAM) THEN
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' SIGNALLING IS ACTIVE with '
+        WRITE(IU06,*) ' ',TRIM(CMETER),' and ',TRIM(CEVENT)
+        WRITE(IU06,*) '  '
       ENDIF
 
 ! ----------------------------------------------------------------------

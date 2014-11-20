@@ -196,7 +196,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = FL3(IJ,K,M)-FL1(IJ,K,M)
+            FL1(IJ,K,M) = MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.)
           ENDDO
         ENDDO
       ENDDO

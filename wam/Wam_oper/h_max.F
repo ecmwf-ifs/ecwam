@@ -31,6 +31,9 @@
 
 !     P.A.E.M. JANSSEN, JANUARY 2008
 
+!     FURTHER UPDATES TO THE FREAK WAVE WARNING SYSTEM. PETER A.E.M. 
+!     JANSSEN AND J.-R. BIDLOT, TO BE PUBLISHED AS ECMWF TECH MEMO
+!
 !----------------------------------------------------------------------
 
       USE YOWPCONS , ONLY : PI     , C4MAX    ,C4MIN 
@@ -80,9 +83,8 @@
 
           ARG = 1.+C4M*ALPHA+C3M**2*BETA       
           ARG = MAX(ARG,0.1)
-          Z = Z0+0.5*(GAMMA_E+LOG(ARG))
 
-          HMAX_N(IJ) = SQRT(Z)
+          HMAX_N(IJ) = SQRT(Z0)*(1.+(GAMMA_E+LOG(ARG))/(4.*Z0))
         ELSE
           HMAX_N(IJ) = 0.
         ENDIF
