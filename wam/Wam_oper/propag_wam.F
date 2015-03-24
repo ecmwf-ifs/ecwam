@@ -1,0 +1,104 @@
+      SUBROUTINE PROPAG_WAM (FL1, FL3, IJS, IJL, L1STCALL)
+
+! ----------------------------------------------------------------------
+
+!**** *PROPAG_WAM* - PROPGATION ON STRUCTURED GRID. 
+
+!*    PURPOSE.
+!     --------
+
+!     PROPAGATION ON STRUCTURED GRID.     
+
+!**   INTERFACE.
+!     ----------
+
+!     *CALL* *PROPAG_WAM (FL1,FL3,IJS,IJL,L1STCALL)*
+!          *FL1*  - SPECTRUM AT TIME T.
+!          *FL3*  - SPECTRUM AT TIME T+DELT.
+!          *IJS*  - INDEX OF FIRST POINT
+!          *IJL*  - INDEX OF LAST POINT
+!          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
+
+
+!     METHOD.
+!     -------
+
+!     EXTERNALS.
+!     ----------
+
+
+! -------------------------------------------------------------------
+
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSTAT  , ONLY : IPROPAGS ,NWAM_BLKS 
+      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, K, M, J
+      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
+
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
+
+      LOGICAL, INTENT(IN) :: L1STCALL
+! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
+#endif
+
+      CALL GSTATS(1430,0)
+      NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+
+      IF(IPROPAGS.EQ.1) THEN
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL PROPAGS1(FL1,FL3(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+        ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS1 CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ELSEIF(IPROPAGS.EQ.2) THEN
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL PROPAGS2(FL1,FL3(KIJS:KIJL,:,:),KIJS,KIJL)
+        ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS2 CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ELSE
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL PROPAGS(FL1,FL3(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+          ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ENDIF
+      CALL GSTATS(1430,1)
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
+      END SUBROUTINE PROPAG_WAM

@@ -46,15 +46,21 @@
 
 ! ----------------------------------------------------------------------
 
-    ! PARAMETER (CONST = -2.0*0.038/G)
-      REAL:: CONST
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
-      DIMENSION SBO(IJS:IJL)
+      IMPLICIT NONE
 
-      REAL ZHOOK_HANDLE
+      INTEGER, INTENT(IN) :: IJS, IJL, IG
+      INTEGER :: IJ, K, M
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL
+
+      REAL :: CONST, ARG
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: SBO
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
+#endif
 
       CONST = -2.0*0.038/G
       DO M=1,NFRE
@@ -76,7 +82,9 @@
         ENDDO
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SBOTTOM

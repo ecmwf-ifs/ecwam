@@ -50,8 +50,9 @@
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
+#endif
 
       DO IG=1,IGL
         NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
@@ -93,6 +94,8 @@
 
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIREDUCE',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CIREDUCE

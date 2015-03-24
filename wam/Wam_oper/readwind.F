@@ -73,9 +73,6 @@
 
 !     *ABORT1*         TERMINATES PROCESSING
 !     *INCDATE*        INCREMENTS DATE
-!     *PBGRIB*
-!     *PBOPEN*
-!     *PBCLOSE*
 !     *KGRIBSIZE*
 !     *FLUSH*
 !     *GRB2WGRD*       TRANSFORM GRIB FIELDS TO WAM GRID FIELDS
@@ -90,7 +87,7 @@
      &            KXLT
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,CLDOMAIN ,
+      USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,
      &            SWAMPCIFR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
@@ -99,10 +96,12 @@
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
      &            IWPER    ,ICOORD
-      USE YOWWIND  , ONLY : NC       ,NR       ,FIELDG   ,IUNITW   ,
+      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG   ,IUNITW   ,
      &            NBITW    ,CWDFILE  ,LLWSWAVE ,LLWDWAVE
+      USE YOWWIND  , ONLY : FIELDG_coupl
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
-
+      USE YOWPD, ONLY : MNP => npa
+      USE YOWUNPOOL ,ONLY : LLUNSTR
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE GRIB_API_INTERFACE
@@ -114,7 +113,7 @@
       INTEGER :: IREAD 
       INTEGER :: NFLD  
       INTEGER :: I, J, IVAR, JSN
-      INTEGER :: ISIZE, KRET, KPLENG, KLEN, KLENG 
+      INTEGER :: ISIZE
       INTEGER :: IFORP, IPARAM, KZLEV, IDM 
       INTEGER :: IWTIME, IDTTURN
       INTEGER :: LNAME 
@@ -123,6 +122,7 @@
       INTEGER :: KGRIB_HANDLE
       INTEGER :: IDUM(2)
       INTEGER, ALLOCATABLE :: KGRIB(:)
+      INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZDUM
@@ -141,14 +141,21 @@
 
 ! --------------------------------------------------------------------  
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',0,ZHOOK_HANDLE)
+#endif
 
       IF (ITEST.GT.1) THEN
         WRITE(IU06,*) ' SUB. READWIND - STARTING ' 
         CALL FLUSH(IU06)
       ENDIF
-      NC=NGX
-      NR=NGY
+
+      IF(LLUNSTR) THEN
+        NLONRGG_LOC(:)=MNP
+      ELSE
+        NLONRGG_LOC(:)=NLONRGG(:)
+      ENDIF
+
 
       IF(.NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS)) THEN
 !       IF IT IS NOT A SWAMP CASE OR A CASE FOR WHICH A TIME SERIES
@@ -165,28 +172,28 @@
 
         FILNM='sfcwindin'
      
-        LLEXIST=.FALSE.
-        LNAME = LEN_TRIM(FILNM)
-        INQUIRE(FILE=FILNM(1:LNAME),EXIST=LLEXIST)
-        IF(.NOT. LLEXIST) THEN
-          WRITE (IU06,*) '*************************************'
-          WRITE (IU06,*) '*                                   *'
-          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-          WRITE (IU06,*) '*  IN READWIND:                     *'
-          WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
-          WRITE (IU06,*) '*                                   *'
-          WRITE (IU06,*) '*************************************'
-          WRITE (*,*) '*************************************'
-          WRITE (*,*) '*                                   *'
-          WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-          WRITE (*,*) '*  IN READWIND:                     *'
-          WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
-          WRITE (*,*) '*                                   *'
-          WRITE (*,*) '*************************************'
-          CALL ABORT1
-        ENDIF
-
         IF(IRANK.EQ.IREAD) THEN
+          LLEXIST=.FALSE.
+          LNAME = LEN_TRIM(FILNM)
+          INQUIRE(FILE=FILNM(1:LNAME),EXIST=LLEXIST)
+          IF(.NOT. LLEXIST) THEN
+            WRITE (IU06,*) '*************************************'
+            WRITE (IU06,*) '*                                   *'
+            WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+            WRITE (IU06,*) '*  IN READWIND:                     *'
+            WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
+            WRITE (IU06,*) '*                                   *'
+            WRITE (IU06,*) '*************************************'
+            WRITE (*,*) '*************************************'
+            WRITE (*,*) '*                                   *'
+            WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+            WRITE (*,*) '*  IN READWIND:                     *'
+            WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
+            WRITE (*,*) '*                                   *'
+            WRITE (*,*) '*************************************'
+            CALL ABORT1
+          ENDIF
+
           IF (LLNOTOPENED) THEN
             CALL IGRIB_OPEN_FILE(IUNITW,FILNM(1:LNAME),'r') 
             LLNOTOPENED = .FALSE.
@@ -209,60 +216,26 @@
         IF(LICERUN) THEN
           NFLD=3
         ELSE
-          DO J=1,NGY
-            DO I=1,NGX
-              FIELDG(I,J)%CIFR = 0.
-            ENDDO
-          ENDDO
           NFLD=2
           IPARAMCI=31
         ENDIF
 
-        IF(LICETH) THEN
-          NFLD=NFLD+1
-        ELSE
-          DO J=1,NGY
-            DO I=1,NGX
-              FIELDG(I,J)%CITH = 0.
-            ENDDO
-          ENDDO
-        ENDIF
-
+        IF(LICETH) NFLD=NFLD+1
         IF(LLWSWAVE) NFLD=NFLD+1
         IF(LLWDWAVE) NFLD=NFLD+1
 
 !       AIR DENSITY AND GUSTINESS ARE ONLY PROVIDED FROM A FILE IF STAND ALONE RUN
 !!      for coupled run we re-initialise witht he value provided by IFS, even though
-!!      strickly speaking, it shoudl be provided as part of the restart but it is better than
+!!      strickly speaking, it should be provided as part of the restart but it is better than
 !!      setting it to a constant !!
-        IF(.NOT.LWCOU) THEN
-          IF(LADEN) THEN
-            NFLD=NFLD+1 
-          ELSE
-            DO J=1,NGY
-              DO I=1,NGX
-                FIELDG(I,J)%AIRD=ROAIR ! sets air density field to the default value.
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
+        IF(.NOT.LWCOU .AND. LADEN) NFLD=NFLD+1
 
 !!      for coupled run we re-initialise witht he value provided by IFS, even though
-!!      strickly speaking, it shoudl be provided as part of the restart but it is better than
+!!      strickly speaking, it should be provided as part of the restart but it is better than
 !!      setting it to a constant !!
-        IF(.NOT.LWCOU) THEN
-          IF(LGUST) THEN
-            NFLD=NFLD+1 
-          ELSE
-            DO J=1,NGY
-              DO I=1,NGX
-                FIELDG(I,J)%ZIDL = WSTAR0
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDIF
+        IF(.NOT.LWCOU .AND. LGUST) NFLD=NFLD+1
 
-        ALLOCATE(WORK(NGX,NGY))
+        ALLOCATE(WORK(NXFF,NYFF))
         ALLOCATE(LLNOTREAD(NFLD))
         LLNOTREAD=.TRUE.
 
@@ -315,13 +288,11 @@
           IF(LMESSPASS .AND. NPROC.GT.1) THEN
             IF(IRANK.EQ.IREAD) THEN
               IDUM(1)=ISIZE
-              IDUM(2)=KLEN
             ENDIF
-            CALL MPL_BROADCAST(IDUM(1:2),KROOT=IREAD,KTAG=IVAR,
+            CALL MPL_BROADCAST(IDUM(1:1),KROOT=IREAD,KTAG=IVAR,
      &                         CDSTRING='READWIND IDUM:')
             IF(IRANK.NE.IREAD) THEN
               ISIZE=IDUM(1)
-              KLEN=IDUM(2)
               ALLOCATE(KGRIB(ISIZE))
             ENDIF
 
@@ -340,8 +311,10 @@
           ZDUM=0.
           CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                     KGRIB_HANDLE, KGRIB, ISIZE,
-     &                     NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                     LLUNSTR,
+     &                     NXFF, NYFF, NLONRGG_LOC,
+     &                     IRGG, XDELLA, ZDELLO,
+     &                     FIELDG%XLON, FIELDG%YLAT,
      &                     ZMISS, ZDUM, ZDUM,
      &                     CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
 
@@ -350,10 +323,10 @@
           IF (IPARAM.EQ.165 .OR. IPARAM.EQ.33 .OR. IPARAM.EQ.131 .OR.
      &        IPARAM.EQ.180 ) THEN
 
-            IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+            IF(LLNOTREAD(IVAR)) THEN
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   FIELDG(I,J)%UWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -371,9 +344,9 @@
      &            .OR. IPARAM.EQ.181 ) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   FIELDG(I,J)%VWND=WORK(I,J)
                 ENDDO
               ENDDO
@@ -392,9 +365,9 @@
              IPARAMCI=IPARAM
 
             IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   FIELDG(I,J)%CIFR=WORK(I,J)
                 ENDDO
               ENDDO
@@ -410,9 +383,9 @@
           ELSEIF (IPARAM.EQ.92) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   FIELDG(I,J)%CITH=WORK(I,J)
                 ENDDO
               ENDDO
@@ -429,9 +402,9 @@
 
             IF (LLWSWAVE) THEN
               IF(LLNOTREAD(IVAR)) THEN 
-                DO J=1,NGY
-                  JSN=NGY-J+1
-                  DO I=1,NLONRGG(JSN)
+                DO J=1,NYFF
+                  JSN=NYFF-J+1
+                  DO I=1,NLONRGG_LOC(JSN)
                     IF(WORK(I,J).EQ.ZMISS) THEN
                       FIELDG(I,J)%WSWAVE=0. 
                     ELSE
@@ -449,9 +422,9 @@
 
             IF (LLWDWAVE) THEN
               IF(LLNOTREAD(IVAR)) THEN 
-                DO J=1,NGY
-                  JSN=NGY-J+1
-                  DO I=1,NLONRGG(JSN)
+                DO J=1,NYFF
+                  JSN=NYFF-J+1
+                  DO I=1,NLONRGG_LOC(JSN)
                     IF(WORK(I,J).EQ.ZMISS) THEN
                       FIELDG(I,J)%WDWAVE=0. 
                     ELSE
@@ -471,9 +444,9 @@
           ELSEIF (IPARAM.EQ.215) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   IF(WORK(I,J).EQ.ZMISS) THEN
                     FIELDG(I,J)%AIRD=ROAIR
                   ELSE
@@ -491,9 +464,9 @@
           ELSEIF (IPARAM.EQ.216) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
-              DO J=1,NGY
-                JSN=NGY-J+1
-                DO I=1,NLONRGG(JSN)
+              DO J=1,NYFF
+                JSN=NYFF-J+1
+                DO I=1,NLONRGG_LOC(JSN)
                   IF(WORK(I,J).EQ.ZMISS) THEN
                     FIELDG(I,J)%ZIDL = WSTAR0
                   ELSE
@@ -556,8 +529,8 @@
 !*      3.2.1 DETERMINE GRID PARAMETERS.                
 !             -------------------------- 
 
-          KCOL = NGX
-          KROW = NGY
+          KCOL = NXFF
+          KROW = NYFF
           RLATN = AMONOP
           RLATS = AMOSOP
           RLONL = AMOWEP
@@ -595,8 +568,8 @@
            ICODE = 3
            CDTWIR = CDATEA
            CALL INCDATE(CDTWIR,-IDELWI)
-           KCOL = NC
-           KROW = NR
+           KCOL = NXFF
+           KROW = NYFF
            IWPER = 0
            ICOORD = 1
            IF(KCOL.NE.1) THEN
@@ -626,8 +599,7 @@
 
         IF(LWDINTS) THEN
 
-           READ(IUNITW,100,END=110,ERR=120) IWTIME,WSPEED,WTHETA
-100        FORMAT(i8,1x,f6.2,1x,f6.1)
+           READ(IUNITW,*,END=110,ERR=120) IWTIME,WSPEED,WTHETA
 
            CALL INCDATE(CWDDATE,IWTIME)
            WRITE(IU06,'(a28,a14,1x,f6.2,1x,f6.1)')
@@ -662,39 +634,60 @@
 
         IPARAMCI=31
 
-        DO J=1,NR
-          DO I=1,NC
+#ifdef MODEL_COUPLING_ATM_WAV
+        DO J=1,NYFF
+          DO I=1,NXFF
+            FIELDG(I,J)%UWND=FIELDG_coupl(I,J)%UWND
+            FIELDG(I,J)%VWND=FIELDG_coupl(I,J)%VWND
+            FIELDG(I,J)%CITH=FIELDG_coupl(I,J)%CITH
+            FIELDG(I,J)%AIRD=FIELDG_coupl(I,J)%AIRD
+            FIELDG(I,J)%ZIDL=FIELDG_coupl(I,J)%ZIDL
+            FIELDG(I,J)%UCUR=FIELDG_coupl(I,J)%UCUR
+            FIELDG(I,J)%VCUR=FIELDG_coupl(I,J)%VCUR
+          ENDDO
+        ENDDO
+#else
+        DO J=1,NYFF
+          DO I=1,NXFF
             FIELDG(I,J)%UWND=UWIND
             FIELDG(I,J)%VWND=VWIND
           ENDDO
         ENDDO
 
-        DO J=1,NR
-          DO I=1,NC
-            FIELDG(I,J)%CITH=0.
-            FIELDG(I,J)%AIRD=ROAIR
-            FIELDG(I,J)%ZIDL=WSTAR0
-            FIELDG(I,J)%UCUR=0.
-            FIELDG(I,J)%VCUR=0.
-          ENDDO
-        ENDDO
+#endif
 
 !!!! impose the northern part of the swamp domain to be covered with
 !!!! a sea ice cover=SWAMPCIFR
-        DO J=1,NR/2
-          DO I=1,NC
+        DO J=1,NYFF/2
+          DO I=1,NXFF
             FIELDG(I,J)%CIFR=SWAMPCIFR
           ENDDO
         ENDDO
-        DO J=NR/2+1,NR
-          DO I=1,NC
+        DO J=NYFF/2+1,NYFF
+          DO I=1,NXFF
             FIELDG(I,J)%CIFR=0.
           ENDDO
         ENDDO
 
       ENDIF
 
+#if !defined MODEL_COUPLING_ATM_WAV && defined NETCDF_OUTPUT_WAM
+        DO J=1,NYFF
+          DO I=1,NXFF
+            FIELDG_coupl(I,J)%UWND=FIELDG(I,J)%UWND
+            FIELDG_coupl(I,J)%VWND=FIELDG(I,J)%VWND
+            FIELDG_coupl(I,J)%CITH=FIELDG(I,J)%CITH
+            FIELDG_coupl(I,J)%AIRD=FIELDG(I,J)%AIRD
+            FIELDG_coupl(I,J)%ZIDL=FIELDG(I,J)%ZIDL
+            FIELDG_coupl(I,J)%UCUR=FIELDG(I,J)%UCUR
+            FIELDG_coupl(I,J)%VCUR=FIELDG(I,J)%VCUR
+          ENDDO
+        ENDDO
+#endif
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
 110   CONTINUE
@@ -719,6 +712,8 @@
       WRITE(IU06,*) '****************************************'
       CALL ABORT1
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE READWIND

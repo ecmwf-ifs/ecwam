@@ -52,15 +52,23 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(IJS:IJL) ::  U10,TAUW,US,Z0
-      REAL ZHOOK_HANDLE
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL, KLEV
+      INTEGER :: ILEV, IJ, I, J
+      REAL,DIMENSION(IJS:IJL),INTENT(IN)  ::  U10,TAUW
+      REAL,DIMENSION(IJS:IJL),INTENT(OUT) ::  US,Z0
+      REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1 
+      REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
+#endif
+
 !*    1. SELECT TABLE ACCORDING TO WIND LEVEL.
 !        -------------------------------------
-
-      IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
 
       ILEV=KLEV
 
@@ -91,6 +99,8 @@
         Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE AIRSEA

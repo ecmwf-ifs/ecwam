@@ -71,5 +71,4 @@
       ENDDO
 
       RETURN
- 1300 FORMAT(i10,5i6,1x,f15.13)
       END SUBROUTINE makeblos

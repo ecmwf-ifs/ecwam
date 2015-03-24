@@ -37,15 +37,15 @@
 !
 !     -----------------------------------------------------------
 
-      USE PARKIND1  ,ONLY : JPIM 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE MPL_MODULE
       
       IMPLICIT NONE
 
       LOGICAL, INTENT(OUT) :: LNEMOIOSERVER
       CHARACTER(LEN=128) :: CLNEMOIO              ! String to store NEMOIO env.
-      INTEGER(KIND=JPIM) :: ILOCAL_COMM ! Local communicator 
-      INTEGER(KIND=JPIM) :: IERR
+      INTEGER(KIND=JWIM) :: ILOCAL_COMM ! Local communicator 
+      INTEGER(KIND=JWIM) :: IERR
       LOGICAL :: LNEMOIO 
       
 #ifdef WITH_NEMO

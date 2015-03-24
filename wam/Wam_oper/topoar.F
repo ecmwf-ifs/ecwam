@@ -359,7 +359,8 @@
           XLO = MOD(XLO+720.,360.)
           XLOG = MOD(XLOH + REAL(I)*XDELO,360.)
  3030     CONTINUE
-          IF (XLO.LE.XLOG) XLO  = XLO  + 360.
+          IF (XLO.LT.XLOG) XLO  = XLO  + 360.
+
           IF (XLO.LE.XLOG+XDELO) THEN
             NL=NL+1
             IF (NL.GT.NGX) THEN
@@ -397,8 +398,6 @@
         JJ=JJ+1
         XLA=AMOSOP+REAL(JJ)*XDELLA
 
-!!debile bug ????
-!!!!        IF((XLA-0.5*XDELA).GT.AMONOP) THEN
         IF((XLA-0.5*XDELLA).GT.AMONOP) THEN
           GOTO 3080
         ELSE

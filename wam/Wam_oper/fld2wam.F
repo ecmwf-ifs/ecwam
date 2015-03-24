@@ -40,16 +40,17 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,  
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWPD, ONLY : MNP => npa
+      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -70,22 +71,30 @@
       INTEGER :: IFORP, IPARAM_IN, KZLEV, IJ, IC, IX, JY
       INTEGER :: IBUF(2)
       INTEGER, ALLOCATABLE :: INGRIB(:)
+      INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: VALMISS 
       REAL :: ZDUM
       REAL :: ZHOOK_HANDLE
       REAL :: BLOCK(IJS:IJL)
-      REAL :: FIELD(NGX,NGY)
+      REAL :: FIELD(NXFF,NYFF)
 
       CHARACTER(LEN=14) :: CDATEIN
       CHARACTER(LEN=24) :: FILNM
 
 ! --------------------------------------------------------------------  
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FLD2WAM',0,ZHOOK_HANDLE)
+#endif
 
       IREAD=1
+
+      IF(LLUNSTR) THEN
+        NLONRGG_LOC(:)=MNP
+      ELSE
+        NLONRGG_LOC(:)=NLONRGG(:)
+      ENDIF
 
       LFILE = LEN_TRIM(FILNM)
 
@@ -157,8 +166,10 @@
 
         CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                   KGRIB_HANDLE, INGRIB, ISIZE,
-     &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                   AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                   LLUNSTR,
+     &                   NXFF, NYFF, NLONRGG_LOC,
+     &                   IRGG, XDELLA, ZDELLO,
+     &                   FIELDG%XLON, FIELDG%YLAT,
      &                   ZMISS, PPREC, PPEPS,
      &                   CDATEIN, IFORP, IPARAM_IN,KZLEV,KK,MM,FIELD)
 
@@ -190,7 +201,9 @@
         DEALLOCATE(INGRIB)
 
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FLD2WAM',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE FLD2WAM

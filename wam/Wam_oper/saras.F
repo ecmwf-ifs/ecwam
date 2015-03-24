@@ -135,12 +135,13 @@
 
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-!     VARIABLES:
-!     ----------
- 
+! -------------------------------------------------------------------
+
       IMPLICIT NONE
+
       INTEGER :: IU11,IU12,IU13, IU14
       INTEGER, ALLOCATABLE :: PART(:,:,:,:)
 !                   TO SPEC CORRESPONDING ARRAY OF PARTITIONING
@@ -212,6 +213,7 @@
 !     PARTIONING NPARTW OF FIRST GUESS SPECTRUM NSPECW.
 
 !--------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 
       CALL GSTATS(1883,0)
@@ -324,7 +326,7 @@
       ALEVEL=0.75
 
       IF(NANG.GT.12) THEN
-        CALL SMOOTHSARSPEC(1,NSPEC,NANG,NFRE,SPEC(0,1,1,1))
+        CALL SMOOTHSARSPEC(0,NSPEC,NANG,NFRE,SPEC(0,1,1,1))
       ENDIF
 
       CALL SWELLSEP(
@@ -348,7 +350,7 @@
       ALEVEL=0.75
 
       IF(NANG.GT.12) THEN
-        CALL SMOOTHSARSPEC(1,NSPEC,NANG,NFRE,SPEC(0,1,1,2))
+        CALL SMOOTHSARSPEC(0,NSPEC,NANG,NFRE,SPEC(0,1,1,2))
       ENDIF
 
       CALL SWELLSEP(
@@ -476,7 +478,7 @@
      &WRITE(IU06,*)'-------PARTITIONING OF WAM SPECTRA BEGINS --'
 
       IF(NANG.GT.12) THEN
-        CALL SMOOTHSARSPEC(1,NSPECW,NANG,NFRE,SPECW)
+        CALL SMOOTHSARSPEC(0,NSPECW,NANG,NFRE,SPECW)
       ENDIF
 
       ALEVEL=0.75
@@ -661,6 +663,8 @@
       CALL FLUSH(IU06)
 
       CALL GSTATS(1883,1)
+
+      CALL MPL_BARRIER(CDSTRING='SARAS:')
 
       IF (LHOOK) CALL DR_HOOK('SARAS',1,ZHOOK_HANDLE)
       RETURN

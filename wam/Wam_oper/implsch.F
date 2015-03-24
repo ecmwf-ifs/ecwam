@@ -5,7 +5,7 @@
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
      &                    Z0NEW, ROAIRN, ZIDLNEW,
-     &                    SL, FCONST)
+     &                    SL)
 
 ! ----------------------------------------------------------------------
 
@@ -46,7 +46,7 @@
 !    &                    ROAIRO, ZIDLOLD, 
 !    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
-!    3                    SL,FCONST)
+!    3                    SL)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -72,8 +72,6 @@
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
-!      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
-!                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
 
 !     METHOD.
 !     -------
@@ -132,21 +130,31 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
-      USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO
+      USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
+     &            IODP     ,IOBND 
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWUNPOOL ,ONLY : LLUNSTR
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJS, IJL, IG
+      INTEGER, INTENT(IN) :: IJS, IJL, IG
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
 
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, ZIDLOLD
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: USNEW, Z0NEW
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, ZIDLNEW
+      REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3, FL, SL
 
       REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
@@ -160,17 +168,14 @@
       REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
-      REAL, DIMENSION(IJS:IJL,NFRE) :: FCONST, CIWA
-      REAL, DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW,
-     &                           ROAIRO,ZIDLOLD,CICVR
-      REAL, DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW,
-     &                           ROAIRN,ZIDLNEW
+      REAL, DIMENSION(IJS:IJL,NFRE) :: TLFR
 
       LOGICAL :: LCFLX
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -237,8 +242,14 @@
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      IF(IPHYS.EQ.0) THEN
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &               ROAIRN, ZIDLNEW, SL, XLLWS)
+      ELSE
+        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
+      ENDIF
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
@@ -273,8 +284,14 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
-     &              PHIOC, TAUWD, MIJ, .FALSE.)
+      IF(IPHYS.EQ.0) THEN
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+     &                PHIOC, TAUWD, MIJ, .FALSE.)
+      ELSE
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,
+     &                       PHIOC, TAUWD, MIJ, .FALSE.)
+      ENDIF
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
@@ -308,22 +325,22 @@
         ENDDO
       ENDDO
 
-      IF(ISHALLO.EQ.1) THEN
+      IF (LLUNSTR) THEN
+      DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            TEMP2(IJ,M) = FRM5(M)
+            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
+            FLHAB = ABS(GTEMP2)
+            FLHAB = MIN(FLHAB,TEMP(IJ,M))
+            FL3(IJ,K,M) = FL3(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
+            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
+            FL3(IJ,K,M)=
+     &      MAX(IODP(IJ)*CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
           ENDDO
         ENDDO
+      ENDDO
       ELSE
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            AKM1 = 1./TFAK(INDEP(IJ),M)
-            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
-            TEMP2(IJ,M) = AKM1*AK2VGM1
-          ENDDO
-        ENDDO
-      ENDIF
-
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -334,10 +351,11 @@
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
             FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M)=
-     &        MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
+     &      MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
           ENDDO
         ENDDO
       ENDDO
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -360,9 +378,22 @@
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
 
-      DO IJ=IJS,IJL
-        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
-      ENDDO
+
+      IF(ISHALLO.EQ.1) THEN
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            TEMP2(IJ,M) = FRM5(M)
+          ENDDO
+        ENDDO
+      ELSE
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            AKM1 = 1./TFAK(INDEP(IJ),M)
+            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
+            TEMP2(IJ,M) = AKM1*AK2VGM1
+          ENDDO
+        ENDDO
+      ENDIF
 
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
@@ -370,11 +401,12 @@
 
       DO IJ=IJS,IJL
         DO M=1,MIJ(IJ)
-          FCONST(IJ,M) = 1.
+          TLFR(IJ,M) = 1.
           TEMP(IJ,M) = 0.
         ENDDO
+        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
         DO M=MIJ(IJ)+1,NFRE
-          FCONST(IJ,M) = 0.
+          TLFR(IJ,M) = 0.
           TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
         ENDDO
       ENDDO
@@ -387,7 +419,7 @@
           DO IJ=IJS,IJL
             FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)
-     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
+     &       + MAX(FL3(IJ,K,M),FLLOWEST)*TLFR(IJ,M)
           ENDDO
         ENDDO
       ENDDO
@@ -399,9 +431,14 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
      &            F1MEAN, AKMEAN, XKMEAN)
 
+      IF(IPHYS.EQ.0) THEN
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &               ROAIRN, ZIDLNEW, SL, XLLWS)
+      ELSE
+        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
+      ENDIF
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -423,8 +460,14 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
-     &              PHIOC, TAUWD, MIJ, LCFLX)
+      IF(IPHYS.EQ.0) THEN
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+     &                PHIOC, TAUWD, MIJ, LCFLX)
+      ELSE
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,
+     &                PHIOC, TAUWD, MIJ, LCFLX)
+      ENDIF
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -455,8 +498,9 @@
       ENDDO
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE IMPLSCH

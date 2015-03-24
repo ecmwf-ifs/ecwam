@@ -161,7 +161,7 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
-     &            XNLEV
+     &            XNLEV    ,TAUWSHELTER
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            TH       ,COSTH    ,SINTH
@@ -170,23 +170,34 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
      &            XDELLO   ,ZDELLO   ,LAQUA
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
-      USE YOWUNIT  , ONLY : IU07     ,IU08
+      USE YOWUNIT  , ONLY : NPROPAGS ,IU07     ,IU08
+      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
+      USE UNWAM
 
 ! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER :: IU01, IU02, IU03, IU09, IU10, IU17, IU19, IU20 
+      INTEGER :: IG
+      INTEGER :: K, IX, ICL, IFORM, ML, KL, LNAME, IINPC, LFILE
+      INTEGER :: I_GET_UNIT
 
       REAL :: PRPLRADI
+      REAL :: OLDRAD
+      REAL :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
       REAL, ALLOCATABLE :: BATHY(:,:)
 
-      CHARACTER*1 :: C1 
-      CHARACTER*80 :: FILENAME
-      LOGICAL :: LLEXIST
+      CHARACTER(LEN=1) :: C1 
+      CHARACTER(LEN=80) :: FILENAME
 
-!     *BATHY* REAL  BATHYMETRY ON MODEL GRID.
+      LOGICAL :: LLEXIST
+      LOGICAL :: LLGRID
 
 ! ----------------------------------------------------------------------
-      LOGICAL :: LLGRID
 
       LMESSPASS=.FALSE.
       PRPLRADI=1.0
@@ -251,7 +262,7 @@
         IU17 = I_GET_UNIT(IU06, 'wam_grid_tables_form', 'w', 'f', 0)
       ENDIF
 
-      DO ICL=0,2
+      DO ICL=0,NPROPAGS
         WRITE(C1,'(I1)') ICL
         FILENAME='wam_subgrid_'//C1
         LFILE=0
@@ -371,16 +382,48 @@
 
 !*    4.4 MODULE COUPLE.
 !         --------------
-
-      BETAMAX = 1.20
-      ZALP    = 0.008
-      IF(ML.GT.30) THEN
-        ALPHA   = 0.0060
+      IF (IPHYS.EQ.0) THEN
+!       ECMWF PHYSICS:
+        BETAMAX = 1.20
+        ZALP    = 0.008
+        TAUWSHELTER=0.0
+        IF(ML.GT.30) THEN
+          ALPHA   = 0.0060
+        ELSE
+          ALPHA   = 0.0075
+        ENDIF
+      ELSE IF (IPHYS.EQ.1) THEN
+!       METEO FRANCE PHYSICS:
+        BETAMAX = 1.52
+        ZALP    = 0.0060
+        TAUWSHELTER=0.6
+        IF(ML.GT.30) THEN
+          ALPHA   = 0.0090
+        ELSE
+          ALPHA   = 0.0095
+        ENDIF
+      ELSE IF (IPHYS.EQ.2) THEN
+!       COMBINED ECMWF/METEO FRANCE PHYSICS:
+        BETAMAX = 1.52
+        ZALP    = 0.0060
+        TAUWSHELTER=0.0
+        IF(ML.GT.30) THEN
+          ALPHA   = 0.003
+        ELSE
+          ALPHA   = 0.004
+        ENDIF
       ELSE
-        ALPHA   = 0.0075
+        WRITE (IU06,*) '*************************************'
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*  ERROR IN PREPROC                 *'
+        WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
+        WRITE (IU06,*) '*  IPHYS =' , IPHYS
+        WRITE (IU06,*) '*                                   *'
+        WRITE (IU06,*) '*************************************'
+        CALL ABORT1
       ENDIF
-      XKAPPA  = 0.40
 
+      XKAPPA  = 0.40
 
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
 
@@ -392,6 +435,7 @@
       CALL STRESS(IU06,ITEST)
       CALL TAUHF(ML)
 
+
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
 !
@@ -400,6 +444,7 @@
 !         SECOND ROUTINE IS MORE GENERAL, HENCE APPLIES TO DEEP AND 
 !         SHALLOW WATER
 !     
+
       CALL SECONDHH
 
       CALL SECONDHH_GEN
@@ -423,7 +468,7 @@
       ELSE
 !       AQUA PLANET SET TO DEEP EVERYWHERE
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
-        BATHY=999.
+        BATHY(:,:)=999.
         DO IX=1,NX
           BATHY(IX,1)=-999.
           BATHY(IX,NY)=-999.
@@ -438,6 +483,12 @@
         WRITE (IU06,*) ' SUB MGRID DONE'
         CALL FLUSH(IU06)
       ENDIF
+
+      IF (LLUNSTR .AND. LPREPROC) THEN
+
+        CALL INIT_UNWAM
+
+      END IF ! LLUNSTR
 
       NIBLD=0
       NBLD=0
@@ -458,6 +509,8 @@
 
 !*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
 !         ---------------------------------------------------
+!AR: We just omit the nest informations in this module since it is anyway broken ...
+      IF (.NOT. LLUNSTR) THEN
 
       IF (IBOUNF.EQ.1) THEN
         CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
@@ -490,12 +543,15 @@
 !        -------------------------------
 
       DO IG=1,IGL
-        CALL MUBUF (IU01, BATHY, IG, ML, IU08)
+        CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
         IF (ITEST.GT.0) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*)
      &     ' SUB MUBUF DONE FOR BLOCK ',IG
         ENDIF
       ENDDO
+!
+      END IF ! .NOT. LLUNSTR
+
 
 ! ----------------------------------------------------------------------
 
@@ -512,6 +568,5 @@
 !         --------------------------------------------------
 
       CALL CHECK (ML, KL, IINPC)
-
-      STOP
+  
       END

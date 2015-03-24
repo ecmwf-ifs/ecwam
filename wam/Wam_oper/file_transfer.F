@@ -4,14 +4,12 @@
 
 ! ----------------------------------------------------------------------
 
-!**** *FILE_TRANSFER* - COPY FORTRAN UNIT FILE TO A FILE 
+!**** *FILE_TRANSFER* - MOVE FORTRAN UNIT FILE TO A FILE 
 
 !     THIS IS QUITE OLD FASHIONED. ALL WRITES TO FILE SHOULD BE
 !     REWRITTEN !!! AT ECMWF, WE NORMALLY DO NOT USE THIS OPTION
 !     AS WE WRITE IN GRIB FORMAT DIRECTLY INTO THE FIELD DATA
 !     BASE !!! (SORRY).
-!     THE USE OF THE PBIO SOFTWARE WAS MOTIVATED BY EFFICIENCY ISSUES
-!     ON ONE OF ECMWF SUPERCOMPUTERS. IT IS NOT LONGER THE CASE !!!
 
 !     J. BIDLOT     ECMWF JUNE  1996  MESSAGE PASSING
 !     B. HANSEN     ECMWF APRIL 1996  MOVE CYMPPATH TO COMTEXT AND ADD 
@@ -20,7 +18,7 @@
 !*    PURPOSE.
 !     --------
 
-!     COPY FORTRAN UNIT FILE TO A FILE 
+!     MOVE FORTRAN UNIT FILE TO A FILE. 
 
 !**   INTERFACE.
 !     ----------
@@ -37,14 +35,10 @@
 !     EXTERNALS.
 !     ----------
 
-!       *PBOPEN*
-!       *PBREAD2*
-!       *PBWRITE*
-!       *PBCLOSE* 
-!       *EXPRAND_STRING - ADD EXTENSION TO FILENAME FUNCTION OF THE PE 
-
 !     METHOD.
 !     -------
+
+!     USE A SYSTEM CALL TO MOVE THE FILE. 
 
 !     REFERENCES.
 !      -----------
@@ -53,27 +47,21 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
-     &            NPRECR
-      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
 
 
-      INTEGER IU06, IUNIT
-      CHARACTER*  1 MODE,
-     &              CDOPT
-      CHARACTER*(*) FILENA
-      CHARACTER* 160 FILENAM,
-     &              FILENAMEF,
-     &              FILENAMET
+      IMPLICIT NONE
 
-      INTEGER, ALLOCATABLE :: KARRAY(:)
-      LOGICAL LMORE
-      LOGICAL LLEXIST
+      INTEGER :: IU06, IUNIT
+      INTEGER :: LNAME, LNF, LNT
+
+      CHARACTER(LEN=1) :: MODE, CDOPT 
+      CHARACTER(LEN=*) :: FILENA
+      CHARACTER(LEN=160) :: FILENAM, FILENAMEF,  FILENAMET
+
+      LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
-      LMORE=.TRUE.
       LLEXIST=.FALSE.
 
       IF (IUNIT.LT.10) THEN
@@ -123,118 +111,13 @@
         FILENAMEF = FILENAM
       ENDIF
 
-      WRITE(IU06,*) 'FILE_TRANSFER: COPY FILE ',
+      WRITE(IU06,*) 'FILE_TRANSFER: MOVE FILE ',
      & FILENAMEF(1:LEN_TRIM(FILENAMEF)), ' TO ',
      & FILENAMET(1:LEN_TRIM(FILENAMET))
 
-      IF(LPBIOOUT) THEN
-      KLENG=((NSUP-NINF+1)*NANG*NFRE*NPRECR)/9+8+1
-      ALLOCATE(KARRAY(KLENG))
-
-!       1. OPEN INPUT AND OUTPUT FILES
-!          ---------------------------
-      MODE='r'
-      CALL PBOPEN(KUNITF,FILENAMEF,MODE,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (IU06,*) '******************************************'
-        WRITE (IU06,*) '*                                        *'
-        WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN       *'
-        WRITE (IU06,*) '*   IN FILE_TRANSFER                     *'
-        IF(KRET.EQ.-1)
-     &   WRITE (IU06,*) ' COULD NOT OPEN FILE ',FILENAMEF
-        IF(KRET.EQ.-2) WRITE (IU06,*) ' INVALID FILENAME ',FILENAMEF
-        IF(KRET.EQ.-3) WRITE (IU06,*) ' INVALID OPEN MODE SPECIFIED'
-        WRITE (IU06,*) '*                                        *'
-        WRITE (IU06,*) '******************************************'
-        CALL ABORT1
-      ENDIF
-
-      MODE='w'
-      CALL PBOPEN(KUNITO,FILENAMET,MODE,KRET)
-      IF(KRET.LT.0) THEN
-        WRITE (IU06,*) '******************************************'
-        WRITE (IU06,*) '*                                        *'
-        WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN       *'
-        WRITE (IU06,*) '*   IN FILE_TRANSFER                     *'
-        IF(KRET.EQ.-1)
-     &   WRITE (IU06,*) 'COULD NOT OPEN FILE ',FILENAMET
-        IF(KRET.EQ.-2) WRITE (IU06,*) 'INVALID FILENAME ',FILENAMET
-        IF(KRET.EQ.-3) WRITE (IU06,*) 'INVALID OPEN MODE SPECIFIED'
-        WRITE (IU06,*) '*                                        *'
-        WRITE (IU06,*) '******************************************'
-        CALL ABORT1
-      ENDIF
-
-!       2. COPY FILES
-!          ----------
-      DO WHILE (LMORE)
-
-        CALL PBREAD2(KUNITF,KARRAY,KLENG,KRET)
-        IF(KRET.LT.0) THEN
-          WRITE (IU06,*) '******************************************'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBREAD2      *'
-          WRITE (IU06,*) '*   IN FILE_TRANSFER                     *'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '******************************************'
-          CALL ABORT1
-        ENDIF
-
-        IF(KRET.LT.KLENG) THEN 
-          KOUNT=KRET 
-          LMORE=.FALSE.
-        ELSE
-          KOUNT=KLENG 
-          LMORE=.TRUE.
-        ENDIF
-
-        CALL PBWRITE(KUNITO,KARRAY,KOUNT,KRET)
-        IF(KRET.LT.0) THEN
-          WRITE (IU06,*) '*****************************************'
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBWRITE    *'
-          WRITE (IU06,*) '*    IN FILE_TRANSFER                   *'
-          WRITE (IU06,*) '*      FILE ',FILENAMET
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
-
-      ENDDO
-
-!       3. CLOSE FILES
-!          -----------
-      CALL PBCLOSE(KUNITF,KRET) 
-      IF(KRET.LT.0) THEN
-        WRITE (IU06,*) '************************************'
-        WRITE (IU06,*) '*                                  *'
-        WRITE (IU06,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-        WRITE (IU06,*) '* IN FILE_TRANSFER                 *'
-        WRITE (IU06,*) '* FILE ',FILENAMEF
-        WRITE (IU06,*) '*                                  *'
-        WRITE (IU06,*) '************************************'
-        CALL ABORT1
-      ENDIF
-
-      CALL PBCLOSE(KUNITO,KRET) 
-      IF(KRET.LT.0) THEN
-        WRITE (IU06,*) '*******************************************'
-        WRITE (IU06,*) '*                                         *'
-        WRITE (IU06,*) '*     ERROR FOLLOWING CALL TO PBCLOSE     *'
-        WRITE (IU06,*) '*     IN FILE_TRANSFER                    *'
-        WRITE (IU06,*) '*     FILE ',FILENAMET
-        WRITE (IU06,*) '*                                         *'
-        WRITE (IU06,*) '*******************************************'
-        CALL ABORT1
-      ENDIF
-
-      DEALLOCATE(KARRAY)
-
-      ELSE
-        LNF = LEN_TRIM(FILENAMEF)
-        LNT = LEN_TRIM(FILENAMET)
-        CALL SYSTEM('mv '//FILENAMEF(1:LNF)//' '//FILENAMET(1:LNT))
-      ENDIF
+      LNF = LEN_TRIM(FILENAMEF)
+      LNT = LEN_TRIM(FILENAMET)
+      CALL SYSTEM('mv '//FILENAMEF(1:LNF)//' '//FILENAMET(1:LNT))
 
       RETURN
       END SUBROUTINE FILE_TRANSFER

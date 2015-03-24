@@ -63,8 +63,9 @@
       REAL, DIMENSION(NINF:NSUP,NBLO) :: U10, US, Z0
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
+#endif
 
 !*    COMPUTE CHARNOCK 'CONSTANT' BETA.
 !     ---------------------------------
@@ -73,7 +74,9 @@
         BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
+#endif
 
 ! ----------------------------------------------------------------------
       RETURN

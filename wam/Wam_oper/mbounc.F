@@ -51,6 +51,7 @@
       USE YOWTEST  , ONLY : IU06
 
       INTEGER, ALLOCATABLE :: IPOGBN(:)
+      INTEGER :: ListSTART(1), ListEND(1)
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
@@ -68,9 +69,13 @@
 
       ALLOCATE(IPOGBO(0:GBOUNC))
       ALLOCATE(IPOGBN(0:GBOUNC))
+      if(ALLOCATED(IJARC))DEALLOCATE(IJARC)
       ALLOCATE(IJARC(NBMAX))
+      if(ALLOCATED(IGARC))DEALLOCATE(IGARC)
       ALLOCATE(IGARC(NBMAX))
+      if(ALLOCATED(BLATC))DEALLOCATE(BLATC)
       ALLOCATE(BLATC(NBMAX))
+      if(ALLOCATED(BLNGC))DEALLOCATE(BLNGC)
       ALLOCATE(BLNGC(NBMAX))
 
       IPOGBN(0) = 0
@@ -96,10 +101,12 @@
 
 !*    3. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
+        ListSTART(1)=ISTART
+        ListEND(1)=IEND
         CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1), 
      &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1), 
      &    IJARC(IPOGBN(II-1)+1),
-     &     1, ISTART,IEND, 1)
+     &     1, ListSTART,ListEND, 1)
 
 ! ----------------------------------------------------------------------
 

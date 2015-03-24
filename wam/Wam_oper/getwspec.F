@@ -233,6 +233,7 @@
 
       IF(NSPECW .GT. 0 ) THEN
        ALLOCATE(SPECW(0:NSPECW,NANG,NFRE))
+       SPECW(:,:,:)=0.0
 
 !       READ FIRST BLOCK
         IF(IGL.GT.1) THEN

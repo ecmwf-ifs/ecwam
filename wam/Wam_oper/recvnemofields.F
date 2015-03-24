@@ -61,8 +61,9 @@
                        ! FOR OUTPUT
       REAL :: ZHOOK_HANDLE
       INTEGER :: IG,IP,JSTORE
-
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
+#endif
 
       ! Temporary debugging.
       WRITE(IU06,*)'WAM: Receiving NEMO files. LREST IS ',LREST
@@ -82,6 +83,7 @@
         LNEMOICEREST=.TRUE.
         LNEMOCITHICK=.TRUE.
       ELSE
+#ifdef ECMWF
         CALL NEMOGCMCOUP_WAM_GET( IRANK-1, NPROC, MPL_COMM, 
      &                            IJL(IG)-IJS(IG)+1,
      &                            NEMOSST(IJS(IG):IJL(IG)),
@@ -90,6 +92,7 @@
      &                            NEMOUCUR(IJS(IG):IJL(IG)),
      &                            NEMOVCUR(IJS(IG):IJL(IG)), 
      &                            LNEMOCITHICK )
+#endif
         LNEMOICEREST=.FALSE.
       ENDIF
 
@@ -108,7 +111,7 @@
         IF (LWNEMOCOUCUR) THEN
            IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
               U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
-              U(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
+              V(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
            ENDIF
         ENDIF
       ENDIF
@@ -121,6 +124,8 @@
         CALL ABORT1
       ENDIF
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',1,ZHOOK_HANDLE)
+#endif
 
       END

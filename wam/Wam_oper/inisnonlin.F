@@ -64,8 +64,9 @@
       REAL :: EPMMA, X
       EPMMA(X)= EXP(-MIN(1.25*X**4,50.))*(X**5)
 
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',0,ZHOOK_HANDLE)
+#endif
 ! ----------------------------------------------------------------------
 
 
@@ -87,7 +88,6 @@
 
 !*    3. FREQUENCY LOOP.
 !        ---------------
-
       DO MC=1,MLSTHG
         MP  = IKP (MC)
         MP1 = IKP1(MC)
@@ -251,6 +251,8 @@
         CALL ABORT1
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE INISNONLIN

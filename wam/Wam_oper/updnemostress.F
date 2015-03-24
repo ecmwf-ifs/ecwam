@@ -55,13 +55,22 @@
      &                      NEMOTAUX, NEMOTAUY, NEMONEW10, 
      &                      NEMOPHIF, NEMONTAU
       USE YOWSTAT  , ONLY : CDATEF, CDTPRO
+
+! -------------------------------------------------------------------   
+
       IMPLICIT NONE
-      LOGICAL :: LWSTOKES
+
       INTEGER :: IG, IJ
+
       REAL :: TAU
       REAL :: ZHOOK_HANDLE
- 
+
+      LOGICAL :: LWSTOKES
+
+! -------------------------------------------------------------------   
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOSTRESS',0,ZHOOK_HANDLE)
+#endif
 
       IF (LWNEMOCOU) THEN
 
@@ -80,11 +89,11 @@
           NEMONEW10(IJS(IG):IJL(IG)) = 0.0 
           NEMOPHIF(IJS(IG):IJL(IG)) = 0.0 
         ENDIF
-
+#ifdef ECMWF
         CALL NEMOGCMCOUP_WAM_UPDATE_STRESS( IRANK-1, NPROC, MPL_COMM,
      &      IJL(IG)-IJS(IG)+1, NEMOTAUX, NEMOTAUY, NEMONEW10, NEMOPHIF,
      &      CDTPRO, LWNEMOCOUDEBUG )
-
+#endif
         ! INITIALIZE STRESS FOR ACCUMULATION
 
         NEMONTAU = 0
@@ -95,6 +104,8 @@
 
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPDNEMOSTRESS',1,ZHOOK_HANDLE)
+#endif
 
-      END
+      END SUBROUTINE UPDNEMOSTRESS

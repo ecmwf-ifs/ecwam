@@ -1,0 +1,143 @@
+      SUBROUTINE INIT_FIELDG(LLINIALL,LLOCAL)
+
+! ----------------------------------------------------------------------
+
+!**** *INIT_FIELDG* - INITIALISES DATA STRUCTURE FIELDG 
+
+!*    PURPOSE.
+!     --------
+
+!     ALLOCATES AND INITIALISES DATA STRUCTURE FIELDG 
+
+!**   INTERFACE.
+!     ----------
+
+!     *CALL* *INIT_FIELDG(LLINIALL,LLOCAL)*
+!          LLINIALL  LOGICAL : IF TRUE ALL STRUCTURE IS INITIALISED
+!                               OTHERWISE ONLY XLON and YLAT
+!          LLOCAL    LOGICAL : IF TRUE ONLY THE LOCAL SEA POINTS ARE GIVEN
+!                              VALID COORDINATES (XLON, YLAT) 
+!                              PROVIDED THE LOCAL INDEX ARRAYS EXIST.
+
+!     REFERENCE.
+!     -----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO  ,
+     &            IFROMIJ  ,JFROMIJ
+      USE YOWGRID  , ONLY : NLONRGG
+      USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
+      USE YOWMPP   , ONLY : IRANK
+      USE YOWWIND  , ONLY : FIELDG   ,NXFF     ,NYFF    ,WSPMIN
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOWSTAT  , ONLY : NWAM_BLKS
+      USE YOWSPEC  , ONLY : NSTART   ,NEND
+      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWPD    , ONLY : MNP=>npa , XP=>x, YP=>y
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER :: IG, IJ, IX, JY, JSN
+      INTEGER:: JKGLO,KIJS,KIJL,NPROMA
+
+      REAL :: ZHOOK_HANDLE
+
+      LOGICAL :: LLINIALL, LLOCAL, LLOCAL_EXIST
+! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
+#endif
+
+      IG=1
+
+      IF(ALLOCATED(FIELDG)) DEALLOCATE(FIELDG)
+      ALLOCATE(FIELDG(NXFF,NYFF))
+
+      IF(LLINIALL) THEN
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX)
+        DO JY=1,NYFF
+          DO IX=1,NXFF
+            FIELDG(IX,JY)%XLON   = ZMISS 
+            FIELDG(IX,JY)%YLAT   = ZMISS
+            FIELDG(IX,JY)%UWND   = 0.
+            FIELDG(IX,JY)%VWND   = 0.
+            FIELDG(IX,JY)%WSWAVE = WSPMIN 
+            FIELDG(IX,JY)%WDWAVE = 0.
+            FIELDG(IX,JY)%CIFR   = 0.
+            FIELDG(IX,JY)%CITH   = 0.
+            FIELDG(IX,JY)%AIRD   = ROAIR
+            FIELDG(IX,JY)%ZIDL   = WSTAR0
+            FIELDG(IX,JY)%UCUR   = 0.
+            FIELDG(IX,JY)%VCUR   = 0.
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+      ELSE
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX)
+        DO JY=1,NYFF
+          DO IX=1,NXFF
+            FIELDG(IX,JY)%XLON   = ZMISS 
+            FIELDG(IX,JY)%YLAT   = ZMISS
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+      ENDIF
+
+!     COORDINATES OF THE POINTS IN FIELDG THAT ARE NEEDED
+      LLOCAL_EXIST=LLOCAL.AND.ALLOCATED(IFROMIJ).AND.ALLOCATED(JFROMIJ)
+
+      IF(LLOCAL_EXIST) THEN
+        NPROMA=(NEND(IRANK)-NSTART(IRANK)+1)/NWAM_BLKS+1
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
+        DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
+          DO IJ=KIJS,KIJL
+            IX = IFROMIJ(IJ,IG)
+            JY = JFROMIJ(IJ,IG)
+            JSN=NYFF-JY+1
+            IF(LLUNSTR) THEN
+              FIELDG(IX,JY)%XLON = XP(IJ)
+              FIELDG(IX,JY)%YLAT = YP(IJ)
+            ELSE
+              FIELDG(IX,JY)%XLON = AMOWEP + (IX-1)*ZDELLO(JSN)
+              FIELDG(IX,JY)%YLAT = AMOSOP + (JSN-1)*XDELLA
+            ENDIF
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+
+      ELSE
+        IF(LLUNSTR) THEN
+!!!!
+
+      write(*,*) 'In INIT_FIELDG : not yet ready for unstructured grid '
+      call abort1
+
+        ELSE
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JY,IX,JSN)
+          DO JY=1,NYFF
+            JSN=NYFF-JY+1
+            DO IX=1,NLONRGG(JSN)
+              FIELDG(IX,JY)%XLON = AMOWEP + (IX-1)*ZDELLO(JSN)
+              FIELDG(IX,JY)%YLAT = AMOSOP + (JSN-1)*XDELLA
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+        ENDIF
+
+      ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
+
+      END SUBROUTINE INIT_FIELDG

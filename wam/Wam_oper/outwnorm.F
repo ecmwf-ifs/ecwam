@@ -59,7 +59,9 @@
       REAL :: FAVG,FMIN,FMAX
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
+#endif
 
       IF(NFLAGALL) THEN
 
@@ -614,7 +616,9 @@
 
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE OUTWNORM

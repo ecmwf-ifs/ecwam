@@ -1,5 +1,6 @@
 !=======================================================================
-      SUBROUTINE WGRIB2FDB (KUSO, KTEST, IGRIB_HANDLE,
+      SUBROUTINE WGRIB2FDB (KUSO, KTEST, 
+     &                      IGRIB_HANDLE, KLEN, KGRIB,
      &                      CDFDBSF, KFDB, LFDBOPEN,
      &                      KERR)
 !=======================================================================
@@ -16,6 +17,8 @@
 !**      INPUT:*KUSO*         LOGICAL UNIT FOR STANDARD OUTPUT.
 !**            *KTEST*        SWITCH DIAGNOSTICS OUTPUT ON IF KTEST GT 1.
 !**            *IGRIB_HANDLE* GRIB HANDLE CONTAINING THE ENCODED DATA.
+!**            *KLEN*         GRIB MESSAGE LENGTH.
+!**            *KGRIB*        GRIB MESSAGE.
 !**            *CDFDBSF*
 !**            *KFDB*         DATA BASE REFERENCE
 !**            *LFDBOPEN*     TRUE IF DATA BASE IS OPENED.
@@ -44,17 +47,18 @@
 !     ------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: KUSO, KTEST,IGRIB_HANDLE, KERR, KFDB, KLEN
+      INTEGER, INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
+      INTEGER, INTENT(INOUT) :: KLEN, KFDB
+      INTEGER, INTENT(OUT) :: KERR
+      INTEGER, DIMENSION(KLEN), INTENT(INOUT) :: KGRIB
       INTEGER :: ICDFDBSF
       INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP
       INTEGER :: NLOCGRB, NENSFNB, NLEG, ICENTRE
       INTEGER :: ISTAT, ISTATUS
-      INTEGER, ALLOCATABLE :: KGRIB(:)
-      INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=*) :: CDFDBSF
+      CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
 
       CHARACTER(LEN=1) :: CLDOMAIN
       CHARACTER(LEN=1),save :: CLDOMAIN_PREV = " "
@@ -111,14 +115,15 @@
       CHARACTER(LEN=1),save :: CLLEVTY_PREV=" "
       CHARACTER(LEN=2),save :: CLREPR_PREV ="  "
 
-      LOGICAL :: LFDBOPEN
+      LOGICAL, INTENT(INOUT) :: LFDBOPEN
 
       real time
       real,external :: timef
 
 !     ------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',0,ZHOOK_HANDLE)
+#endif
 !*    1.   DERIVE FIELD DATA BASE VARIABLES FROM GRIB_HANDLE
 
 !     ------------------------------------------------------------------
@@ -248,7 +253,7 @@
           IF(ICENTRE == 0 ) then
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'origin',C12)
             CDORIGIN = C12(1:4)
-            CALL U2L1CR(CDORIGIN)
+            CALL WAM_U2L1CR(CDORIGIN)
             ISTAT = ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
           ELSE
             ISTAT = ISETVALFDBSUBS( KFDB, 'origin', 'consensus' )
@@ -263,7 +268,7 @@
             KERR = 1
             RETURN
           ENDIF
-          ISTAT = ISETVALFDB( KFDB, 'origin', CDORIGIN )
+          ISTAT = ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
         ENDIF
 
 !       HINDCAST REFERENCE DATE:
@@ -271,17 +276,17 @@
         IF ( ISTREAM == 1204 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'refdate',C12)
           CDATEREF=c12(1:8)
-          ISTAT = ISETVALFDB(KFDB, 'refdate', CDATEREF)
+          ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
         ELSE IF(ISTREAM == 1084 .OR.
      &          ISTREAM == 1085 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'referenceDate',C12)
           CDATEREF=c12(1:8)
-          ISTAT = ISETVALFDB(KFDB, 'refdate', CDATEREF)
+          ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
         ELSE IF (ISTREAM == 1078 .OR.
      &           ISTREAM == 1079 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
           HDATE=C12(1:8)
-          ISTAT = ISETVALFDB(KFDB,'hdate', HDATE)
+          ISTAT = ISETVALFDBSUBS(KFDB,'hdate', HDATE)
         ENDIF
 
       ENDIF
@@ -476,17 +481,12 @@
 
 !     ------------------------------------------------------------------
 
-      CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
-      KLEN=(KBYTES+NPRECI)/NPRECI
-      ALLOCATE(KGRIB(KLEN))
-      CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,KGRIB)
 !     time=timef()
       ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, KLEN ) 
 !     time=timef()-time
 !     write(20,'(" pjtdiags WAVE IWRITEFDB took ",f8.0," ms writing ",
 !    &            i12," bytes")') time,KLEN*NPRECI
       
-      DEALLOCATE(KGRIB)
 
       IF ( ISTAT .NE. 0 ) THEN
         WRITE(KUSO, '( "Error\ /WGRIB2FDB/ Failed to write to fdb")' )
@@ -503,7 +503,9 @@
 
 !*    4.  RETURN
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE WGRIB2FDB

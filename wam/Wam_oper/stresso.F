@@ -74,42 +74,47 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : ALPHA
+      USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
       USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,EPS1     ,TAUHFT   ,
-     &            DELUST   ,DELALP
+     &            TAUHFT2  ,ILEVTAIL ,DELUST   ,DELALP   ,DELTAIL
+      USE YOWSTAT  , ONLY : IPHYS
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+      IMPLICIT NONE
 
-      INTEGER :: MIJ(IJS:IJL)
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER :: IJ, M, K, I, J, II
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F,SL
-      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW,
-     &                           TAUWLF, PHIWA, PHIAWDIAG, 
-     &                           PHIAWUNR
-      REAL :: CONST0(IJS:IJL)
-      LOGICAL :: LCFLX
-
-! ----------------------------------------------------------------------
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN
+      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, TAUWLF
+      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: PHIWA, PHIAWDIAG, PHIAWUNR
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SL
 
       REAL :: CONST, ROG, DFIMLOC, CNST
-      REAL :: SCDFM, SCDFP
-      REAL :: ZPIROFR(NFRE)
-      REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP1, TEMP2, XSTRESS, YSTRESS,
-     &                            UST2
-      REAL, DIMENSION(NFRE) :: CONSTFT
+      REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, TAU1, XK, DELK1, DELK2
+      REAL :: COSW, UST, SCDFM, SCDFP, BETAM, CONSTPHI
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NFRE) :: ZPIROFR, CONSTFT
+      REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP1, TEMP2, XSTRESS, YSTRESS
+      REAL, DIMENSION(IJS:IJL) :: UST2, TAUX, TAUY, TAUPX, TAUPY
+      REAL, DIMENSION(IJS:IJL) :: USDIRP, CONST0
       REAL, DIMENSION(IJS:IJL,NFRE) :: CONSTFM, CONSTFE
 
-      REAL ZHOOK_HANDLE
+      LOGICAL, INTENT(IN) :: LCFLX
 
-      IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
@@ -201,6 +206,20 @@
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !     ----------------------------------------------------
 
+      IF (IPHYS.EQ.0 .OR. ITSHELT.EQ.0) THEN
+        DO IJ=IJS,IJL
+          USDIRP(IJ)=THWNEW(IJ)
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          TAUX(IJ)=(USNEW(IJ)**2)*SIN(THWNEW(IJ))
+          TAUY(IJ)=(USNEW(IJ)**2)*COS(THWNEW(IJ))
+          TAUPX(IJ)=TAUX(IJ)-ABS(TAUWSHELTER)*XSTRESS(IJ)
+          TAUPY(IJ)=TAUY(IJ)-ABS(TAUWSHELTER)*YSTRESS(IJ)
+          USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
+        ENDDO
+      ENDIF
+
       K=1
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
@@ -216,34 +235,71 @@
         ENDDO
       ENDDO
 
+      IF (ITSHELT.EQ.0) THEN
+        DO IJ=IJS,IJL
+          UST   = MAX(USNEW(IJ),0.000001)
+          UST2(IJ) = UST**2
+          XI    = UST / DELUST
+          XI    = MIN(REAL(IUSTAR),XI)
+          I     = MIN (IUSTAR-1, INT(XI))
+          I     = MAX (0, I)
+          DELI1 = MIN (1. ,XI-REAL(I))
+          DELI2   = 1. - DELI1
+
+          XJ    = (G*Z0NEW(IJ)/UST2(IJ)-ALPHA) / DELALP
+          XJ    = MIN(REAL(IALPHA),XJ)
+          J     = MIN (IALPHA-1, INT(XJ))
+          J     = MAX (0, J)
+          DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+          DELJ2   = 1. - DELJ1
+
+          TAU1 = ( TAUHFT(I  ,J  ,MIJ(IJ))*DELI2 +
+     &             TAUHFT(I+1,J  ,MIJ(IJ))*DELI1 )*DELJ2
+     &         + ( TAUHFT(I  ,J+1,MIJ(IJ))*DELI2 +
+     &             TAUHFT(I+1,J+1,MIJ(IJ))*DELI1 )*DELJ1
+
+          TAUHF(IJ) = CONST0(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          UST   = MAX(USNEW(IJ),0.000001)
+          UST2(IJ) = UST**2
+          XI    = UST / DELUST
+          XI    = MIN(REAL(IUSTAR),XI)
+          I     = MIN (IUSTAR-1, INT(XI))
+          I     = MAX (0, I)
+          DELI1 = MIN (1. ,XI-REAL(I))
+          DELI2   = 1. - DELI1
+
+          XJ    = (G*Z0NEW(IJ)/UST2(IJ)-ALPHA) / DELALP
+          XJ    = MIN(REAL(IALPHA),XJ)
+          J     = MIN (IALPHA-1, INT(XJ))
+          J     = MAX (0, J)
+          DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+          DELJ2   = 1. - DELJ1
+
+          XK=CONST0(IJ)*TEMP1(IJ)/DELTAIL
+          II=MIN(ILEVTAIL-1,INT(XK))
+          DELK1= MIN (1. ,XK-FLOAT(II))
+          DELK2=1. -DELK1
+
+          TAU1 = ( (TAUHFT2(I  ,J  ,II  )*DELI2 +
+     &              TAUHFT2(I+1,J  ,II  )*DELI1 )*DELJ2 +
+     &             (TAUHFT2(I  ,J+1,II  )*DELI2 +
+     &              TAUHFT2(I+1,J+1,II  )*DELI1)*DELJ1 ) * DELK2
+     &           +
+     &           ( (TAUHFT2(I  ,J  ,II+1)*DELI2 +
+     &              TAUHFT2(I+1,J  ,II+1)*DELI1 )*DELJ2+
+     &             (TAUHFT2(I  ,J+1,II+1)*DELI2 +
+     &              TAUHFT2(I+1,J+1,II+1)*DELI1)*DELJ1 ) * DELK1
+
+          TAUHF(IJ) = CONST0(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1
+        ENDDO
+      ENDIF
+
       DO IJ=IJS,IJL
-        UST   = MAX(USNEW(IJ),0.000001)
-        UST2(IJ) = UST**2
-        XI    = UST / DELUST
-        XI    = MIN(REAL(IUSTAR),XI)
-        I     = MIN (IUSTAR-1, INT(XI))
-        I     = MAX (0, I)
-        DELI1 = MIN (1. ,XI-REAL(I))
-        DELI2   = 1. - DELI1
-
-        XJ    = (G*Z0NEW(IJ)/UST2(IJ)-ALPHA) / DELALP
-        XJ    = MIN(REAL(IALPHA),XJ)
-        J     = MIN (IALPHA-1, INT(XJ))
-        J     = MAX (0, J)
-        DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
-        DELJ2   = 1. - DELJ1
-
-        TAU1 = ( TAUHFT(I  ,J  ,MIJ(IJ))*DELI2 +
-     &           TAUHFT(I+1,J  ,MIJ(IJ))*DELI1 )*DELJ2
-     &       + ( TAUHFT(I  ,J+1,MIJ(IJ))*DELI2 +
-     &           TAUHFT(I+1,J+1,MIJ(IJ))*DELI1 )*DELJ1
-
-        TAUHF(IJ) = CONST0(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1
-      ENDDO
-
-      DO IJ=IJS,IJL
-        XSTRESS(IJ) = XSTRESS(IJ)+TAUHF(IJ)*SIN(THWNEW(IJ))
-        YSTRESS(IJ) = YSTRESS(IJ)+TAUHF(IJ)*COS(THWNEW(IJ))
+        XSTRESS(IJ) = XSTRESS(IJ)+TAUHF(IJ)*SIN(USDIRP(IJ))
+        YSTRESS(IJ) = YSTRESS(IJ)+TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
 
         TAUW(IJ) = MIN(TAUW(IJ),UST2(IJ)-EPS1)
@@ -263,7 +319,9 @@
         ENDDO
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE STRESSO

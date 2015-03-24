@@ -74,9 +74,7 @@
 !
 !
 !--------------------------------------------------------------------
-!
-!
-!     
+
       USE YOWPARAM, ONLY: CLDOMAIN
       USE YOWPCONS, ONLY: G, PI, ZPI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -86,48 +84,43 @@
    
       IMPLICIT NONE
    
-      INTEGER IJ,IJS,IJL,NFRE,NANG,NDEPTH,M,K,M1,K1,M2,M2_M,M2_P,K2,
-     V        MP,MM,L,MR,NMAX,ID
-      INTEGER IM_P(NFRE,NFRE),IM_M(NFRE,NFRE),JD(IJS:IJL),
-     V        INDEP(IJS:IJL)
+      INTEGER, INTENT(IN) :: IJS, IJL, NFRE, NANG, NMAX, NDEPTH, MR
+      INTEGER, DIMENSION(NFRE,NFRE), INTENT(IN) :: IM_P, IM_M 
 
-      REAL OM0,OM0P,OM0M,
-     V     OMSTART,FRAC,XMR,XM2,
-     V     T_4M,T_4P,DF2KP(IJS:IJL),DF2KM(IJS:IJL),
-     V     DELM1,XD,X_MIN,DEPTHA,DEPTHD
-      REAL :: OMRT
-      REAL, DIMENSION(NANG,NANG) :: LL
-      REAL, DIMENSION(IJS:IJL) :: FAC2, XINCR
-      REAL OMEGA(NFRE), DFDTH(NFRE)
-      REAL TA(NDEPTH,NANG,NFRE,NFRE),TB(NDEPTH,NANG,NFRE,NFRE),
-     V     TC_QL(NDEPTH,NANG,NFRE,NFRE),TT_4M(NDEPTH,NANG,NFRE,NFRE),
-     V     TT_4P(NDEPTH,NANG,NFRE,NFRE)
-      REAL F1(IJS:IJL,NANG,NFRE),F2(IJS:IJL,NANG,NMAX),
-     V     F3(IJS:IJL,NANG,NFRE),DEPTH(IJS:IJL),AKMEAN(IJS:IJL),
-     V     PSUM(IJS:IJL)
+      INTEGER :: IJ, M, K, M1, K1, M2_M, M2_P, K2, MP, MM, L, ID
+      INTEGER, DIMENSION(NANG,NANG) :: LL
+      INTEGER, DIMENSION(IJS:IJL) :: JD
 
-      REAL ZHOOK_HANDLE
+      REAL, INTENT(IN) :: DEPTHA, DEPTHD, OMSTART, FRAC
+      REAL, DIMENSION(NFRE), INTENT(IN) :: OMEGA, DFDTH
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH, AKMEAN
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F1
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F3 
+      REAL, DIMENSION(NDEPTH,NANG,NFRE,NFRE), INTENT(IN) ::
+     &                                  TA,TB,TC_QL,TT_4M,TT_4P
+
+      REAL :: OM0, OM0P, OM0M, OM0H, OM1
+      REAL :: T_4M, T_4P, DELM1, XD, X_MIN, OMRT, XLOGD, OMG5
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: XINCR, DF2KP, DF2KM, PSUM
+      REAL, DIMENSION(IJS:IJL,NANG,NMAX) :: F2
 
       LOGICAL :: LLSAMEDEPTH
 
+! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SECSPOM',0,ZHOOK_HANDLE)
+#endif
 !
 !***  1. COMPUTATION OF TAIL OF THE SPECTRUM AND INDEX JD
 !     ---------------------------------------------------
 !
 !
-      DO M=1,NFRE
-         DO K=1,NANG
-            DO IJ=IJS,IJL
-               F3(IJ,K,M) = 0.
-            ENDDO
-         ENDDO
-      ENDDO
-
       X_MIN = 1.0
+      XLOGD = LOG(DEPTHD)
       DO IJ=IJS,IJL
          XD = MAX(X_MIN/AKMEAN(IJ),DEPTH(IJ))
-         XD = LOG(XD/DEPTHA)/LOG(DEPTHD)+1.
+         XD = LOG(XD/DEPTHA)/XLOGD+1.
          ID = NINT(XD)
          ID = MAX(ID,1)
          JD(IJ) = MIN(ID,NDEPTH)
@@ -147,9 +140,10 @@
          ENDDO
       ENDDO
 
+      OMG5 = OMEGA(NFRE)**5
       DO M=NFRE+1,NMAX
          OM0 = OMSTART*(1.+FRAC)**(MR*M-1)
-         OMRT = OMEGA(NFRE)**5/OM0**5
+         OMRT = OMG5/OM0**5
          DO K=1,NANG
             DO IJ=IJS,IJL
                F2(IJ,K,M) = OMRT*F1(IJ,K,NFRE)
@@ -167,12 +161,12 @@
       ENDDO
 
 !
-!
 !***  2. COMPUTATION OF THE 2nd ORDER FREQUENCY SPECTRUM.
 !     ---------------------------------------------------
-!
-!
+ 
       DO M=1,NFRE
+         OM0 = OMEGA(M)
+         OM0H = 0.5*OM0      
          MP   = MIN(M+1,NFRE)
          OM0P = OMEGA(MP)
          MM   = MAX(M-1,1) 
@@ -186,6 +180,7 @@
                PSUM(IJ) = 0.
             ENDDO               
             DO M1=1,NFRE
+               OM1 = OMEGA(M1)
                M2_M = IM_M(M1,M)
                M2_P = IM_P(M1,M)
                DO K1=1,NANG
@@ -195,28 +190,33 @@
 !*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
 !                   ---------------------------------- 
 !                   OM2 = OM0-OM1
+                    IF (ABS(OM1).LT.OM0H) THEN
 !DIR$ PREFERVECTOR
-                    DO IJ=IJS,IJL
-                      PSUM(IJ)= PSUM(IJ)+TA(ID,L,M1,M)*
+                      DO IJ=IJS,IJL
+                        PSUM(IJ)= PSUM(IJ)+TA(ID,L,M1,M)*
      &                                  ( F2(IJ,K1,M1)*F2(IJ,K2,M2_M)+
      &                                    F2(IJ,K2,M1)*F2(IJ,K1,M2_M) )
-                    ENDDO
+                      ENDDO
+                    ENDIF
 
 !*                  2.2 OM1+OM0 CASE: INFRA-GRAVITY WAVES
 !                   ------------------------------------- 
 !                   OM2 = OM1+OM0 
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                       XINCR(IJ) = 2.*TB(ID,L,M1,M)*F2(IJ,K2,M2_P)
                     ENDDO
 !
 !*                  2.3 QUASI-LINEAR EFFECT
 !                   -----------------------
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                      XINCR(IJ)=XINCR(IJ)+TC_QL(ID,L,M1,M)*F2(IJ,K,M)
                     ENDDO
 !  
 !*                   2.4 STOKES-FREQUENCY CORRECTION
 !                    ------------------------------- 
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                        T_4M = TT_4M(ID,L,M1,M)
                        T_4P = TT_4P(ID,L,M1,M)
@@ -229,27 +229,33 @@
 !*                  2.1 OM0-OM1 CASE: SECOND HARMONICS
 !                   ---------------------------------- 
 !                   OM2 = OM0-OM1
-                    DO IJ=IJS,IJL
-                      PSUM(IJ)= PSUM(IJ)+TA(JD(IJ),L,M1,M)*
+                    IF (ABS(OM1).LT.OM0H) THEN
+!DIR$ PREFERVECTOR
+                      DO IJ=IJS,IJL
+                        PSUM(IJ)= PSUM(IJ)+TA(JD(IJ),L,M1,M)*
      &                                  ( F2(IJ,K1,M1)*F2(IJ,K2,M2_M)+
      &                                    F2(IJ,K2,M1)*F2(IJ,K1,M2_M) )
-                    ENDDO
+                      ENDDO
+                    ENDIF
 
 !*                  2.2 OM1+OM0 CASE: INFRA-GRAVITY WAVES
 !                   ------------------------------------- 
 !                   OM2 = OM1+OM0 
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                       XINCR(IJ) = 2.*TB(JD(IJ),L,M1,M)*F2(IJ,K2,M2_P)
                     ENDDO
 !
 !*                  2.3 QUASI-LINEAR EFFECT
 !                   -----------------------
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                      XINCR(IJ)=XINCR(IJ)+TC_QL(JD(IJ),L,M1,M)*F2(IJ,K,M)
                     ENDDO
 !  
 !*                   2.4 STOKES-FREQUENCY CORRECTION
 !                    ------------------------------- 
+!DIR$ PREFERVECTOR
                     DO IJ=IJS,IJL
                        T_4M = TT_4M(JD(IJ),L,M1,M)
                        T_4P = TT_4P(JD(IJ),L,M1,M)
@@ -263,17 +269,18 @@
                   ENDDO
 
                ENDDO
-            ENDDO
+            ENDDO ! M1
             DO IJ=IJS,IJL
-               F3(IJ,K,M) = F3(IJ,K,M)+PSUM(IJ)
+               F3(IJ,K,M) = PSUM(IJ)
             ENDDO
-         ENDDO
-      ENDDO 
-! 
-!
+         ENDDO !K
+      ENDDO !M 
+ 
 !--------------------------------------------------------------------
-!      
+       
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SECSPOM',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SECSPOM

@@ -62,7 +62,7 @@
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
-     &            XNLEV
+     &            XNLEV    ,TAUWSHELTER, ITSHELT
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -81,14 +81,19 @@
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
      &            TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,DELUST   ,
+     &            TAUHFT2  ,DELTAIL  ,ILEVTAIL ,
      &            DELALP   ,FAC0     ,FAC1     ,FAC2     ,FAC3     ,
      &            FAK      ,FRHF     ,DFIMHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
+      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
+
+      USE UNWAM
 ! ----------------------------------------------------------------------
 
   995 FORMAT(5I8)
@@ -210,11 +215,19 @@
 !*    5. WRITE MODULE YOWCOUPL.
 !        ----------------------
 
+      IF (ABS(TAUWSHELTER).LE.0.0) THEN
+        ITSHELT=0
+      ELSE
+        ITSHELT=1
+      ENDIF
+
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) BETAMAX, ZALP, ALPHA, XKAPPA, XNLEV
+        WRITE (IU07) IPHYS,BETAMAX,ZALP,ALPHA,TAUWSHELTER,ITSHELT,
+     &    XKAPPA,XNLEV
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) BETAMAX, ZALP, ALPHA, XKAPPA, XNLEV
+       WRITE (IU17,999)IPHYS,BETAMAX,ZALP,ALPHA,TAUWSHELTER,ITSHELT,
+     &    XKAPPA,XNLEV
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -223,10 +236,19 @@
 !        ---------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) TAUT, DELTAUW, DELU, TAUHFT, DELUST, DELALP
+        WRITE (IU07) DELTAUW, DELU, DELUST, DELALP, DELTAIL 
+        WRITE (IU07) TAUT
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) TAUT, DELTAUW, DELU, TAUHFT, DELUST, DELALP
+        WRITE (IU17,999) DELTAUW, DELU, DELUST, DELALP, DELTAIL 
+        WRITE (IU17,999) TAUT
+      ENDIF
+      IF (ABS(TAUWSHELTER).LE.0.0) THEN
+        IF (IFORM.NE.2) WRITE (IU07) TAUHFT
+        IF (IFORM.NE.1) WRITE (IU17,999) TAUHFT
+      ELSE
+        IF (IFORM.NE.2) WRITE (IU07) TAUHFT2
+        IF (IFORM.NE.1) WRITE (IU17,999) TAUHFT2
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -311,6 +333,10 @@
      &  KFRH, MFRSTLW, MLSTHG,
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC ,
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
+
+      IF (LLUNSTR .AND. LPREPROC) THEN
+        CALL UNWAM_OUT(IU07)
+      END IF
 
       RETURN
       END SUBROUTINE OUTCOM

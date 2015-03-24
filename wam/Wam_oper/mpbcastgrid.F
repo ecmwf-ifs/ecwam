@@ -39,7 +39,8 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,
-     &            XKAPPA   ,XNLEV
+     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -61,6 +62,7 @@
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
      &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
+     &            TAUHFT2  ,ILEVTAIL ,DELTAIL  ,
      &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
@@ -68,24 +70,38 @@
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
-!----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, ISEND
+      INTEGER, INTENT(INOUT) :: ITAG
+      INTEGER, PARAMETER :: MFIRST=20
+      INTEGER :: IG 
+      INTEGER :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,ILEV,KDEPTH,NGOU
+      INTEGER :: IKCOUNT, KCOUNT
+      INTEGER :: MIC, MZC 
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
+
+      REAL :: ZHOOK_HANDLE
       REAL,ALLOCATABLE :: ZCOMBUF(:)
 
+!----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',0,ZHOOK_HANDLE)
+#endif
+
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
-        RETURN
+         WRITE (IU06,*) ''
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ------------------------------------------------
       ELSE
 
 !       BUFFER SIZE MESSAGE AND THE FEW DIMENSIONS NEEDED TO 
 !       ALLOCATE ALL ARRAYS
-        MFIRST=19
         ALLOCATE(ICOMBUF(MFIRST))
 
         IF(IRANK.EQ.ISEND) THEN
@@ -128,6 +144,8 @@
           ICOMBUF(IKCOUNT)=NANGH
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NMAX
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=ITSHELT
           IF(IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -183,6 +201,8 @@
           NANGH=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NMAX=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          ITSHELT=ICOMBUF(IKCOUNT)
 
           IF(IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
@@ -196,14 +216,15 @@
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+
+        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=25+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
+        MZC=27+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
      &      KFRH+JPLEVC+
-     &      JPLEVT*(1+JUMAX)*(1+ITAUMAX)+(1+IUSTAR)*(1+IALPHA)*NFRE+
+     &      JPLEVT*(1+JUMAX)*(1+ITAUMAX)+
+     &      (1-ITSHELT)*((1+IUSTAR)*(1+IALPHA)*NFRE)+
+     &      ITSHELT*((1+IUSTAR)*(1+IALPHA)*(1+ILEVTAIL))+
      &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
-
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
 !       ALLOCATE ALL ARRAYS NEEDED TO KEEP THE BUFFERS ON THE OTHER PE'S
@@ -248,8 +269,14 @@
           IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
           IF(.NOT.ALLOCATED(TAUT))
      &       ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-          IF(.NOT.ALLOCATED(TAUHFT))
-     &       ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE))
+
+          IF(ITSHELT.EQ.0) THEN
+            IF(.NOT.ALLOCATED(TAUHFT))
+     &        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE))
+          ELSE
+            IF(.NOT.ALLOCATED(TAUHFT2))
+     &        ALLOCATE(TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL))
+          ENDIF
 
           IF(NGOUT.GT.0) THEN
             IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
@@ -478,12 +505,16 @@
             ZCOMBUF(KCOUNT)=FRH(IC)
           ENDDO
 
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IPHYS
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=BETAMAX
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=ZALP
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=ALPHA
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=TAUWSHELTER
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=XKAPPA
           DO IC=1,JPLEVC
@@ -503,18 +534,31 @@
           ZCOMBUF(KCOUNT)=DELTAUW
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DELU
-          DO M=1,NFRE
-            DO L=0,IALPHA
-              DO K=0,IUSTAR
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=TAUHFT(K,L,M)
-              ENDDO
-            ENDDO
-          ENDDO
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DELUST
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DELALP
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=DELTAIL
+          IF(ITSHELT.EQ.0) THEN
+            DO M=1,NFRE
+              DO L=0,IALPHA
+                DO K=0,IUSTAR
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=TAUHFT(K,L,M)
+                ENDDO
+              ENDDO
+            ENDDO
+          ELSE
+            DO L=0,IALPHA
+              DO K=0,IUSTAR
+                DO I=0,ILEVTAIL
+                  KCOUNT=KCOUNT+1
+                  ZCOMBUF(KCOUNT)=TAUHFT2(K,L,I)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDIF
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
@@ -890,12 +934,16 @@
             FRH(IC)=ZCOMBUF(KCOUNT)
           ENDDO
 
+          IKCOUNT=IKCOUNT+1
+          IPHYS=ICOMBUF(IKCOUNT)
           KCOUNT=KCOUNT+1
           BETAMAX=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           ZALP=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           ALPHA=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          TAUWSHELTER=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           XKAPPA=ZCOMBUF(KCOUNT)
           DO IC=1,JPLEVC
@@ -915,18 +963,31 @@
           DELTAUW=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           DELU=ZCOMBUF(KCOUNT)
-          DO M=1,NFRE
-            DO L=0,IALPHA
-              DO K=0,IUSTAR
-                KCOUNT=KCOUNT+1
-                TAUHFT(K,L,M)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
           KCOUNT=KCOUNT+1
           DELUST=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           DELALP=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          DELTAIL=ZCOMBUF(KCOUNT)
+          IF(ITSHELT.EQ.0) THEN
+            DO M=1,NFRE
+              DO L=0,IALPHA
+                DO K=0,IUSTAR
+                  KCOUNT=KCOUNT+1
+                  TAUHFT(K,L,M)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ELSE
+            DO L=0,IALPHA
+              DO K=0,IUSTAR
+                DO I=0,ILEVTAIL
+                  KCOUNT=KCOUNT+1
+                  TAUHFT2(K,L,I)=ZCOMBUF(KCOUNT)
+                ENDDO
+              ENDDO
+            ENDDO
+          ENDIF
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
@@ -1111,6 +1172,9 @@
         DEALLOCATE(ICOMBUF,ZCOMBUF)
 
       ENDIF
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE MPBCASTGRID

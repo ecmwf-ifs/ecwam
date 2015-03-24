@@ -7,8 +7,8 @@
 !*    PURPOSE.
 !     --------
 
-!       COMPUTATION OF THE CORNER TRANSPORT UPSTREAM WEIGHT
-!       USE IN THE PROPAGATION FOR A GIVEN TIME STEP.
+!       COMPUTATION OF THE CORNER TRANSPORT UPSTREAM WEIGHTS
+!       USED IN THE PROPAGATION FOR A GIVEN TIME STEP.
 
 !**   INTERFACE.
 !     ----------
@@ -61,7 +61,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: MIJS,MIJL,IG
+      INTEGER, INTENT(IN) :: MIJS,MIJL,IG
       INTEGER :: IP,IJP
       INTEGER :: K,M,IJ,IC,IX,KY,KK,KKM
       INTEGER :: KP1,KM1,JH
@@ -72,8 +72,6 @@
 
       REAL :: DELPRO, DTNEW
       REAL :: DXP, DYP, XM 
-      REAL, DIMENSION(2) :: ADXP, ADYP
-      REAL, DIMENSION(2) :: DXUP, DXDW, DYUP, DYDW
       REAL :: CMTODEG
       REAL :: GRIDAREA
       REAL :: CGYP, CGTH
@@ -82,22 +80,26 @@
       REAL :: DXX, DYY
       REAL :: UU, VV, UREL, VREL
       REAL :: XLAT, XLON
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(2) :: ADXP, ADYP
+      REAL, DIMENSION(2) :: DXUP, DXDW, DYUP, DYDW
       REAL, DIMENSION(4) :: WEIGHT
-      REAL, DIMENSION(MIJS:MIJL,NFRE) :: CGR
-      REAL, DIMENSION(MIJS:MIJL,2) :: CGX, CGY
       REAL, DIMENSION(MIJS:MIJL) :: DRGP,DRGM
       REAL, DIMENSION(MIJS:MIJL) :: DRDP,DRDM
       REAL, DIMENSION(MIJS:MIJL) :: DRCP,DRCM
+      REAL, DIMENSION(MIJS:MIJL,2) :: CGX, CGY
       REAL, DIMENSION(MIJS:MIJL,2) :: DP 
       REAL, DIMENSION(MIJS:MIJL,2) :: WLATM1 
       REAL, DIMENSION(MIJS:MIJL,4) :: WCORM1 
+      REAL, DIMENSION(MIJS:MIJL,NFRE) :: CGR
       REAL, ALLOCATABLE :: SIGSI(:,:) 
 
-      LOGICAL, DIMENSION(MIJS:MIJL) :: LCFLFAIL
+      LOGICAL, DIMENSION(MIJS:MIJL), INTENT(INOUT) :: LCFLFAIL
 
-      REAL ZHOOK_HANDLE
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
+#endif
 ! ----------------------------------------------------------------------
 
       DELPRO = REAL(IDELPRO)   
@@ -491,7 +493,7 @@
             DO IJ=MIJS,MIJL
               DTHP = DRGP(IJ)*CGR(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGR(IJ,M) + DRCM(IJ)
-              WKPMN(IJ,K,M,0)=DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
             ENDDO
@@ -503,7 +505,7 @@
             DO IJ=MIJS,MIJL
               DTHP = DRGP(IJ)*CGR(IJ,M)+SIGSI(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGR(IJ,M)+SIGSI(IJ,M)*DRDM(IJ)+DRCM(IJ)
-              WKPMN(IJ,K,M,0)=DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
             ENDDO
@@ -541,7 +543,7 @@
               DO IJ=MIJS,MIJL
                 DTHP = (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
                 DTHM = (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
-                WMPMN(IJ,K,M,0) =DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
+                WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
               ENDDO
@@ -736,7 +738,9 @@
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE CTUW 

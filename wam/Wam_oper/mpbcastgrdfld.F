@@ -51,7 +51,10 @@
       REAL, DIMENSION(NXF,NYF) :: FIELD
       REAL,ALLOCATABLE :: ZCOMBUF(:)
 
+!----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPBCASTGRDFLD',0,ZHOOK_HANDLE)
+#endif
 
       MPLENGTH=NXF*NYF
 
@@ -89,6 +92,9 @@
 
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPBCASTGRDFLD',1,ZHOOK_HANDLE)
+#endif
+
       RETURN
       END SUBROUTINE MPBCASTGRDFLD

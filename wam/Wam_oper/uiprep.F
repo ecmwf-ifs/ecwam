@@ -61,7 +61,9 @@
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
      &            XDELLA   ,XDELLO   ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWUNPOOL, ONLY : LLUNSTR, LPREPROC, LVECTOR, IVECTOR
 
 ! ----------------------------------------------------------------------
 
@@ -73,10 +75,11 @@
       NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,
      &                  IFORM, ITEST, ITESTB,
+     &                  IPHYS,
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC,
      &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,
      &                  NDEPTH   ,DEPTHA   ,DEPTHD,
-     &                  IFRE1, LAQUA
+     &                  IFRE1, LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
@@ -88,6 +91,11 @@
 !        ---------------------------------------------
 
       CLINE  = ' '
+
+      LLUNSTR = .FALSE. 
+      LPREPROC = .FALSE. 
+      LVECTOR   =.FALSE.
+      IVECTOR   = 1
       ML     =   0
       KL     =   0
       FR1    =   0.0
@@ -101,6 +109,8 @@
       IFORM  =  -1
       ITEST  =  -1
       ITESTB =  -1
+      IPHYS  =   0  ! ECMWF PHYSICS
+      !IPHYS  =   1  ! ARDHUIN PHYSICS
       IBOUNC =  -1
       IBOUNF =  -1
       AMOSOC =-100.0
@@ -166,6 +176,7 @@
 
 !*    2.1 FREQUENCY AND DIRECTION GRID DEFINITIONS.
 
+      WRITE (IU06,*) "   PHYSICS BASED ON IPHYS = ",IPHYS
       WRITE (IU06,'("   FREQUENCY / DIRECTION GRID"/)')
       WRITE (IU06,'("   NUMBER OF FREQUENCIES IS ML = ",I6)') ML
       IF(IFRE1.NE.1) THEN

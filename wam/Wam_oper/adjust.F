@@ -36,6 +36,11 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      REAL, INTENT(INOUT) :: WEST, EAST 
+      REAL :: OLD_WEST, OLD_EAST
+
 !* 1. CORRECT BORDERS.
 !     ----------------
 

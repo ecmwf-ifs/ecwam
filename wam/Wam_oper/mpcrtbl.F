@@ -39,14 +39,34 @@
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#if defined MODEL_COUPLING_ATM_WAV || defined NETCDF_OUTPUT_WAM
+      LOGICAL :: COUPLFLAG(JPPFLAG+1)
+#endif
 
       INTEGER :: IR, IFLAG
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
 
+#if defined MODEL_COUPLING_ATM_WAV || defined NETCDF_OUTPUT_WAM
+      COUPLFLAG=.FALSE.
+      COUPLFLAG(1)=.TRUE. ! HS
+      COUPLFLAG(2)=.TRUE. ! WDIRTG (Mean wave direction)
+      COUPLFLAG(3)=.TRUE.
+      COUPLFLAG(6)=.TRUE. ! WPKFTG (wave peak frequency)
+      COUPLFLAG(37)=.TRUE.
+#endif
+#if defined MODEL_COUPLING_OCN_WAV
+      COUPLFLAG(27)=.TRUE.   ! DSPR
+      COUPLFLAG(25)=.TRUE.   ! T01
+      COUPLFLAG(26)=.TRUE.   ! T02
+          ! below are for the wave supported stress
+      COUPLFLAG(46)=.TRUE.   ! TAUOC
+      COUPLFLAG(5)=.TRUE.    ! TWINDDIR
+#endif
       IR=1
       DO IFLAG=1,JPPFLAG
         IF((IASSI.EQ.1).AND.
@@ -54,8 +74,13 @@
           IPFGTBL(IFLAG)=IR
           IR=IR+NWRTOUTWAM
           IF(IR.GT.NPROC) IR=1
+#if defined MODEL_COUPLING_ATM_WAV || defined NETCDF_OUTPUT_WAM || defined MODEL_COUPLING_OCN_WAV
+        ELSEIF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.
+     &         NFLAG(IFLAG).OR.COUPLFLAG(IFLAG) ) THEN
+#else
         ELSEIF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.
      &         NFLAG(IFLAG) ) THEN
+#endif
           IPFGTBL(IFLAG)=IR
           IR=IR+NWRTOUTWAM
           IF(IR.GT.NPROC) IR=1

@@ -112,7 +112,7 @@
             JP=IJSAR(ISPEC)
             IF(JP.NE.0) THEN
               IF(IGSAR(ISPEC).EQ.JBL) THEN
-                IF(CICOVER(JP,JBL).NE.0) THEN
+                IF(CICOVER(JP,JBL).LE.CITHRSH) THEN
                   DO JFRE=1,NFRE
                     DO JANG=1,NANG
                       SPEC(ISPEC,JANG,JFRE,1)=FL1(JP,JANG,JFRE)

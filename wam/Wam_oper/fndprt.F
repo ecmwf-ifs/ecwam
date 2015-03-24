@@ -47,16 +47,18 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+      INTEGER, intent(in) :: ITHC, IFRC, MIJ, MMIN
+      INTEGER, intent(inout) :: MMAX
+      REAL, intent(in), DIMENSION(NANG,NFRE) :: SPEC
+      LOGICAL, intent(in), DIMENSION(NANG,NFRE) :: LLW3
+      REAL, intent(inout), DIMENSION(NANG,NFRE) :: W1, W2
 
       INTEGER :: M, K, NITT
-      INTEGER :: MIJ, MMIN, MMAX 
       INTEGER :: NANGH, KK, KKMIN, KKMAX
-      INTEGER :: IFRC, ITHC, IFRL, ITHL, ITHR, IFRH
+      INTEGER :: IFRL, ITHL, ITHR, IFRH
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
       REAL :: HALF_SECTOR
-      REAL, DIMENSION(NANG,NFRE) :: SPEC, W1, W2
       LOGICAL :: LLCHANGE, LLADD
-      LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
 

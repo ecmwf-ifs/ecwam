@@ -95,8 +95,9 @@
       REAL :: ZHOOK_HANDLE
                                                                         
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITIALINT',0,ZHOOK_HANDLE)
+#endif
 
 !!!   use grib handle passed down from IFS
 
@@ -428,7 +429,9 @@
       DEALLOCATE (RDELLO)
       IF(ALLOCATED(PL)) DEALLOCATE(PL)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITIALINT',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE INITIALINT

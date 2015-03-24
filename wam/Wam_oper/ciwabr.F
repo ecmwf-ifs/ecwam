@@ -61,8 +61,9 @@
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIWABR',0,ZHOOK_HANDLE)
+#endif
 
       IF( .NOT. LICERUN .OR. LMASKICE ) THEN
 
@@ -106,6 +107,8 @@
         ENDIF
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIWABR',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CIWABR

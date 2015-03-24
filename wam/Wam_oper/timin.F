@@ -1,4 +1,6 @@
-      SUBROUTINE TIMIN (CDTWIS, CDTWIE, IREAD, LWCUR)
+      SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
+     &                  LWCUR)
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
@@ -21,9 +23,21 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TIMIN (CDTWIS, CDTWIE,  IREAD, LWCUR)
+!       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
+!    &                 LWCUR)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST WIND FIELD.
+!          *U10OLD* - WIND SPEED.
+!          *THWOLD* - WIND DIRECTION (RADIANS).
+!          *USOLD*  - FRICTION VELOCITY.
+!          *TAUW*   - WAVE STRESS.
+!          *Z0OLD*  - ROUGHNESS LENGTH IN M.
+!          *ROAIRO* - AIR DENSITY IN KG/M3.
+!          *ZIDLOLD*- Zi/L
+!                     (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *CICOVER*- SEA ICE COVER.
+!          *CITHICK*- SEA ICE THICKNESS.
 !          *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
 
@@ -54,14 +68,11 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
-      USE YOWSPEC  , ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
-     &              TAUW   ,ROAIRO   ,ZIDLOLD
       USE YOWPCONS , ONLY : PI       ,ZPI
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -75,6 +86,8 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW
+     &                                , ROAIRO,ZIDLOLD,CICOVER,CITHICK
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CICR,CITH
       REAL,DIMENSION(NINF:NSUP,NBLO) :: US2,DS2,ADS2,ZIDL2,CICR2,CITH2
       REAL,DIMENSION(NINF:NSUP) :: US3, DS3,ADS3,ZIDL3,CICR3,CITH3
@@ -90,8 +103,9 @@
 
 !*    1. INITIALIZE TIMECOUNTER.
 !        -----------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TIMIN',0,ZHOOK_HANDLE)
+#endif
 
       ZERO= ' '
 
@@ -299,6 +313,8 @@
           CALL FLUSH (IU06)
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TIMIN',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE TIMIN

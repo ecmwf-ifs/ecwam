@@ -63,7 +63,7 @@
         FRH = FR(M)
         G2ZPI4FRH5M=G2ZPI4/FRH**5
         DO IJ=IJS,IJL
-          IF (FP(IJ).NE.0.) THEN
+          IF (ALPHAJ(IJ).NE.0. .AND. FP(IJ).NE.0.) THEN
             IF (FRH.GT.FP(IJ)) THEN
               SIGMA = SB
             ELSE

@@ -59,7 +59,9 @@
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETICE',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. SET SPECTRA TO NOISE LEVEL OVER ICE POINTS.
 !     ----------------------------------------------
@@ -86,7 +88,9 @@
         ENDDO
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETICE',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
 

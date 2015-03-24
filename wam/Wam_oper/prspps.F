@@ -98,10 +98,10 @@
 
       WRITE(IUNIT,4100) CDATE, NAME, XLONG, XLAT
  4100 FORMAT('1',2X,'SEA AND SWELL INFORMATION. DATE: ',A14,
-     &       ' SIDE: ',A20,3X,'LONG.: ',F7.2,' LAT.: ',F6.2)
+     &       ' SIDE: ',A20,3X,'LONG.: ',F9.2,' LAT.: ',F9.2)
       WRITE(IUNIT,4200) WAHTWS, WADIWS, WAMFWS, WAHTSW, WADISW, WAMFSW
- 4200 FORMAT(1X,'SEA: HS = ',F6.2,'  THETA = ',F6.0,'  FMEAN = ',F6.4,
-     &     '   SWELL: HS = ',F6.2,'  THETA = ',F6.0,'  FMEAN = ',F6.4/)
+ 4200 FORMAT(1X,'SEA: HS = ',F9.2,'  THETA = ',F7.0,'  FMEAN = ',F11.4,
+     &     '   SWELL: HS = ',F9.2,'  THETA = ',F7.0,'  FMEAN = ',F11.4/)
       IPE = 0
       IF (NANG.GT.IPDIR) THEN
         FORM1 = '(1X,''DIR (DEG)'',T11,12F8.1,''  DIR (DEG)'')'

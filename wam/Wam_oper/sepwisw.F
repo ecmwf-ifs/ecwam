@@ -67,28 +67,34 @@
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-! ---------------------------,-------------------------------------------
+! -----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,IJS,IJL,K,M
-      INTEGER :: MIJ(IJS:IJL)
+      INTEGER, INTENT(IN) :: IJS,IJL
+      INTEGER :: IJ,K,M
+      INTEGER, DIMENSION(IJS:IJL) :: MIJ
 
-      REAL :: CM, CHECKTA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,FL3
-      REAL, DIMENSION(IJS:IJL) :: THWOLD,USOLD
-      REAL, DIMENSION(IJS:IJL) :: USNEW
-      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW 
-      REAL, DIMENSION(IJS:IJL) :: THRESHOLD
-      REAL, DIMENSION(IJS:IJL) :: ETNP
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWOLD, USOLD
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, U10NEW, THWNEW
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL, DIMENSION(NFRE) :: CM
+      REAL :: CHECKTA
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
       REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
 
+      LOGICAL, INTENT(IN) :: LLPARTITION
       LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
-      LOGICAL :: LLPARTITION
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('SEPWISH',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
@@ -101,14 +107,17 @@
         DUM(IJ) = 0.
       ENDDO
 
+      DO M=1,NFRE
+        CM(M) = FRIC/C(M)
+      ENDDO
+
       DO K=1,NANG
         DO IJ=IJS,IJL
           THRESHOLD(IJ) = 1.2*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
         ENDDO
         DO M=1,NFRE
-          CM = FRIC/C(M)
           DO IJ=IJS,IJL
-            CHECKTA = CM*THRESHOLD(IJ)
+            CHECKTA = CM(M)*THRESHOLD(IJ)
             IF (CHECKTA.LT.1.) THEN
               FL1(IJ,K,M)=1.
             ELSE
@@ -129,7 +138,6 @@
       ENDDO
 
 
-
 !*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
 !         --------------------------------------------
 
@@ -140,7 +148,7 @@
           ENDDO
         ENDDO
       ENDDO
-  
+
       IF(IPFGTBL(16).NE.0) THEN
         LLAK=.FALSE.
         CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS), LLAK)
@@ -200,19 +208,18 @@
           ENDDO
         ENDDO
       ENDDO
-  
+
       IF(IPFGTBL(15).NE.0) THEN
         LLAK=.FALSE.
         CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), LLAK)
       ENDIF
-
 
 !     femean must be called before semean since LLEPSMIN is false
       IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0 ) THEN
         LLEPSMIN=.FALSE.
         CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
       ENDIF
-      
+
       IF(IPFGTBL(13).NE.0) THEN
         CALL STHQ   (FL1, IJS, IJL, THWISEA(IJS))
 !       if there isn't any windsea energy, set the windsea mean direction
@@ -260,6 +267,10 @@
           ENDDO
         ENDIF
       ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SEPWISW

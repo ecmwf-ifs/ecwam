@@ -54,6 +54,8 @@
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,ISTREAM  ,
      &            NLOCGRB , IREFRA   ,NENSFNB  ,NTOTENS  ,NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
+      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWIND  , ONLY : NXFF     ,NYFF
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
 
@@ -85,6 +87,7 @@
       INTEGER :: IUOUT, KFDB
       INTEGER, DIMENSION(:), ALLOCATABLE :: PL
       INTEGER, ALLOCATABLE :: KGRIB_BUFR(:)
+      INTEGER, ALLOCATABLE ::  NLONRGG_LOC(:) 
       INTEGER, ALLOCATABLE ::  KLONRGG(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
@@ -95,6 +98,7 @@
       REAL ::  DELLO, DELLA
       REAL :: ONETHIRD, TWOTHIRD
       REAL, ALLOCATABLE, DIMENSION(:,:) :: FIELD, TEMP
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
       REAL, ALLOCATABLE :: SCFR(:), SCTH(:)
 
 
@@ -120,14 +124,17 @@
 
       WRITE(IU06,*) ' INTWAMINPUT STARTED '
 
+!!!!!  because this program will write its output in grib, it is not yet ready for unsctructured grid
+      LLUNSTR=.FALSE.
+
       PRPLRADI=1.0
       CALL INIWCST(PRPLRADI)
 
 !     1.1 INITIALISATION OF VARIABLES WITH DEFAULT VALUES
 !         ---------------------------------------------------
 
-      ITEST  =   0 
-      LMESSPASS = .FALSE.
+      ITEST = 1 
+      LMESSPASS = .TRUE.
       MARSTYPE = 'an'
       YCLASS   = 'od'
       YEXPVER  = '0001' 
@@ -146,9 +153,9 @@
 
       ONETHIRD = 1./3.
       TWOTHIRD = 2./3.
-      ! reset PPMIN to avoid imposing a minmimum value in *WGRIBOUT*
+      ! reset PPMIN to avoid imposing a minmimum value in *WGRIBENCODE*
       PPMIN_RESET=LOG10(PPEPS)+ABS(PPREC)+EPSMIN 
-      LPADPOLES=.FALSE. ! do not pad poles in *WGRIBOUT*
+      LPADPOLES=.FALSE. ! do not pad poles in *WGRIBENCODE*
 
       KFDB=0
       LFDB=.FALSE.
@@ -170,6 +177,38 @@
 
       NSTART=1
       NEND=IJL(1)
+
+      IF(LLUNSTR) THEN
+        WRITE(*,*) 'NOT YET READY FOR UNSTRUCTURED GRID '
+        CALL ABORT1
+      ELSE
+        NXFF=NGX
+        NYFF=NGY
+        ALLOCATE(NLONRGG_LOC(NYFF))
+      ENDIF
+
+      IF(.NOT.ALLOCATED(XLON)) ALLOCATE(XLON(NXFF,NYFF))
+      XLON(:,:)=ZMISS
+      IF(.NOT.ALLOCATED(YLAT)) ALLOCATE(YLAT(NXFF,NYFF))
+      YLAT(:,:)=ZMISS
+
+      IF(LLUNSTR) THEN
+        WRITE(*,*) 'NOT YET READY FOR UNSTRUCTURED GRID '
+!!!!    still too many NGX, NGY
+        CALL ABORT1
+      ELSE
+        NLONRGG_LOC(:)=NLONRGG(:)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(J,I,JSN)
+        DO J=1,NYFF
+          JSN=NYFF-J+1
+          DO I=1,NLONRGG(JSN)
+            XLON(I,J) = AMOWEP + (I-1)*ZDELLO(JSN)
+            YLAT(I,J) = AMOSOP + (JSN-1)*XDELLA
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+      ENDIF
+
 
       IFILENAME='input_field'
       OFILENAME='output_field'
@@ -599,7 +638,7 @@
            
            DO M=1,MMSHIFT
              DO K=1,NANG
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -613,10 +652,14 @@
 
            CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                      KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
-     &                      NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                      AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                      LLUNSTR,
+     &                      NXFF, NYFF, NLONRGG_LOC,
+     &                      IRGG, XDELLA, ZDELLO,
+     &                      XLON, YLAT,
      &                      ZMISS, PPREC, PPEPS,
      &                      CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
+
+
            DEALLOCATE(KGRIB_BUFR)
 
 !          FREQUENCY INTERPOLATION
@@ -630,36 +673,36 @@
            IF( KANG.EQ.NANG ) THEN
 !            NO SPECTRAL INTERPOLATION REQUIRED
              K=KKK
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
            ELSEIF( 2*KANG.EQ.NANG) THEN
 !            DOUBLING THE NUMBER OF DIRECTIONS
              K=2*KKK-1
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              K=2*KKK
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
            ELSEIF( 3*KANG.EQ.NANG) THEN
 !            TRIPLING THE NUMBER OF DIRECTIONS
              K=3*KKK-2
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              K=3*KKK-1
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
              K=3*KKK
-             CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, K , M,
      &                     CDATE, IFORP, MARSTYPE,
      &                     LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -678,7 +721,7 @@
                ENDDO
 
                K=3*KKK/2
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -701,12 +744,12 @@
                  ENDDO
                ENDDO
                K=3*KKK/2-1
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
                K=3*KKK/2
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -744,7 +787,7 @@
                ENDDO
 
                K=KKK/2
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -796,7 +839,7 @@
                ENDDO
 
                K=KKK/3
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -832,7 +875,7 @@
                  ENDDO
                ENDDO
                K=2*(KKK/3)+1
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TEMP,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -864,7 +907,7 @@
                  ENDDO
                ENDDO
                K=2*(KKK/3)
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TEMP,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TEMP,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -931,7 +974,7 @@
            FIELD=ZMISS
            DO M=MLAST+1,NFRE
              DO K=1,NANG
-               CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                       ITABLE, IPARAM, 0, K , M,
      &                       CDATE, IFORP, MARSTYPE,
      &                       LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -947,8 +990,10 @@
          IF(.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NGX,NGY))
          CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                    KGRIB_HANDLE, KGRIB_BUFR, ISIZE,
-     &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                    AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                    LLUNSTR,
+     &                    NXFF, NYFF, NLONRGG_LOC,
+     &                    IRGG, XDELLA, ZDELLO,
+     &                    XLON, YLAT,
      &                    ZMISS, PPREC, PPEPS,
      &                    CDATE, IFORP, JPARAM, KZLEV,KKK,MMM,FIELD)
 
@@ -961,7 +1006,7 @@
          KKK=0
          MMM=0
 
-         CALL WGRIBOUT(IU06, ITEST, NGX, NGY, FIELD,
+         CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,
      &                 ITABLE, IPARAM, KZLEV, KKK , MMM,
      &                 CDATE, IFORP, MARSTYPE,
      &                 LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)

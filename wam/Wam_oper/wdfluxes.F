@@ -90,7 +90,9 @@
 
       LOGICAL :: LCFLX
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
+#endif
 ! ----------------------------------------------------------------------
 
 !*    1. INITIALISATION.
@@ -153,7 +155,9 @@
       ENDIF
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE WDFLUXES

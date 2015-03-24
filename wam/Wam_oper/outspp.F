@@ -1,4 +1,4 @@
-      SUBROUTINE OUTSPP (FL3, FL1, IJS, IJL,IG, IU25, IU26)
+      SUBROUTINE OUTSPP (FL3, FL1, IJS, IJL, IJ_OFFSET, IG, IU25, IU26)
 
 ! ----------------------------------------------------------------------
 
@@ -29,6 +29,7 @@
 !           *FL1*    -   SWELL SPECTRUM.
 !           *IJS*    - INDEX OF FIRST GRIDPOINT
 !           *IJL*    - INDEX OF LAST GRIDPOINT
+!           *IJ_OFFSET* 
 !           *IG*     -   BLOCK NUMBER.
 !           *IU25*   -   OUTPUT UNIT FOR SPECTRA.
 !           *IU26*   -   OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
@@ -67,11 +68,13 @@
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTSPT   ,CDTSPS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,THWISEA
       USE YOWTEST  , ONLY : IU06
+      USE YOWUNPOOL, ONLY : LLUNSTR
 
 ! ----------------------------------------------------------------------
 
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
+      INTEGER :: IJS_OFFSET
       REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3,FL1
       CHARACTER NAME*20, CPATH*72
       LOGICAL FRSTIME
@@ -94,55 +97,65 @@
 
       ALLOCATE(SPEC(NANG,NFRE))
       IF(NGOUT.GE.1) THEN 
+
+       IF (LLUNSTR) THEN
+         write(iu06,*) ' this bit is NOT ready for unstructured grid !'
+         write(*,*) ' this bit is NOT ready for unstructured grid !'
+!!! see how it was done in outgrid. we might not need ij_offset
+         call abort1
+       ENDIF
+
+
+
         ALLOCATE(U10_G(NIBLO),THW_G(NIBLO),US_G(NIBLO))
-        DO IJ=NSTART(IRANK),NEND(IRANK)
+        DO IJ=IJS,IJL
           U10_G(IJ)=U10NEW(IJ)
           THW_G(IJ)=THWNEW(IJ)
           US_G(IJ)=USNEW(IJ)
         ENDDO
 
         ALLOCATE(EMEAN_G(NIBLO))
-        CALL LOC2GLO(EMEAN(IJS),EMEAN_G,IJS,IJL,IG,CITHRSH)
+        CALL LOC2GLO(EMEAN(IJS),EMEAN_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
 
         ALLOCATE(FMEAN_G(NIBLO))
-        CALL LOC2GLO(FMEAN(IJS),FMEAN_G,IJS,IJL,IG,CITHRSH)
+        CALL LOC2GLO(FMEAN(IJS),FMEAN_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
 
         ALLOCATE(THQ_G(NIBLO))
-        CALL LOC2GLO(THQ(IJS),THQ_G,IJS,IJL,IG,CITHRSH)
+        CALL LOC2GLO(THQ(IJS),THQ_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
 
         ALLOCATE(SMEAN_G(NIBLO))
         IF(.NOT.ALLOCATED(SMEAN)) THEN
           SMEAN_G=0.
         ELSE
-          CALL LOC2GLO(SMEAN(IJS),SMEAN_G,IJS,IJL,IG,CITHRSH)
+          CALL LOC2GLO(SMEAN(IJS),SMEAN_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(ESWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(ESWELL)) THEN
           ESWELL_G=0.
         ELSE
-          CALL LOC2GLO(ESWELL,ESWELL_G,IJS,IJL,IG,CITHRSH)
+          CALL LOC2GLO(ESWELL,ESWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(FSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(FSWELL)) THEN
           FSWELL_G=0.
         ELSE
-          CALL LOC2GLO(FSWELL,FSWELL_G,IJS,IJL,IG,CITHRSH)
+          CALL LOC2GLO(FSWELL,FSWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(THSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(THSWELL)) THEN
           THSWELL_G=0.
         ELSE
-          CALL LOC2GLO(THSWELL,THSWELL_G,IJS,IJL,IG,CITHRSH)
+          CALL LOC2GLO(THSWELL,THSWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(THWISEA_G(NIBLO))
         IF(.NOT.ALLOCATED(THWISEA)) THEN
           THWISEA_G=0.
         ELSE
-          CALL LOC2GLO(THWISEA,THWISEA_G,IJS,IJL,IG,CITHRSH)
+          CALL LOC2GLO(THWISEA,THWISEA_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         IF(LMESSPASS) THEN 
@@ -150,6 +163,7 @@
           NSPFLD=2 
           NSCFLD=11 
           ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
+!!!!! not ready for unstructured grid !!!
           CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
      &                     FL3,FL1,FLPTS,
      &                     EMEAN_G,FMEAN_G,THQ_G,SMEAN_G,ESWELL_G,

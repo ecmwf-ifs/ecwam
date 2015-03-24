@@ -37,13 +37,16 @@
 
 ! ----------------------------------------------------------------------
 
-
       USE YOWPCONS , ONLY : G     ,DKMAX
+! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
 
 !*    *PARAMETER*  RELATIVE ERROR LIMIT OF NEWTON'S METHOD.
-
       REAL, PARAMETER :: EBS = 0.0001
+
+      REAL, INTENT(IN) :: OM, BETA
+      REAL :: AKM1, AKM2, AO, AKP, BO, TH, STH  
 
 ! ----------------------------------------------------------------------
 

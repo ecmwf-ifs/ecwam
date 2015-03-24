@@ -52,16 +52,21 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, M, K
+
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, XLLWS
+
       REAL :: DELT25, DELT2, CM, CHECKTA
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: TEMP2, EM, FM, THRESHOLD
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: TEMP2, THRESHOLD
 
-      REAL ZHOOK_HANDLE
 
-      IF (LHOOK) CALL DR_HOOK('FEMEANWS',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('FEMEANWS',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
@@ -104,7 +109,9 @@
         FM(IJ) = EM(IJ)/FM(IJ)
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FEMEANWS',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE FEMEANWS

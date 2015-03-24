@@ -101,8 +101,9 @@
 
 !*    LOOP THROUGH THE GRID POINTS
 !     ----------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEP3TR',0,ZHOOK_HANDLE)
+#endif
 
 !     TOTAL ENERGY IN THE SWELL SPECTRA
       LLEPSMIN=.FALSE.
@@ -250,10 +251,10 @@
         ENDDO
         
         DO IP=1,NPEAK(IJ)
-          CALL FNDPRT(NTHP(IJ:IJ,IP),NFRP(IJ:IJ,IP),
+          CALL FNDPRT(NTHP(IJ,IP),NFRP(IJ,IP),
      &                MIJ(IJ),MMIN(IJ),MMAX(IJ),
-     &                FL3(IJ:IJ,1:NANG,1:NFRE),LLW3,
-     &                W1(IJ:IJ,1:NANG,1:NFRE),W2)
+     &                FL3(IJ,1:NANG,1:NFRE),LLW3,
+     &                W1(IJ,1:NANG,1:NFRE),W2)
   
           DO M=1,NFRE
             DO K=1,NANG
@@ -378,7 +379,9 @@
         ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEP3TR',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SEP3TR

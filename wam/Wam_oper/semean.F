@@ -48,17 +48,23 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, M, K
+
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+
       REAL :: DELT25
-      REAL :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) ::  EM, TEMP
-      LOGICAL :: LLEPSMIN
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: TEMP
 
-      REAL ZHOOK_HANDLE
-
-      IF (LHOOK) CALL DR_HOOK('SEMEAN',0,ZHOOK_HANDLE)
+      LOGICAL, INTENT(IN) :: LLEPSMIN
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('SEMEAN',0,ZHOOK_HANDLE)
+#endif
+
 
 !*    1. INITIALISE ENERGY ARRAY.
 !        ------------------------
@@ -103,7 +109,9 @@
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEMEAN',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SEMEAN

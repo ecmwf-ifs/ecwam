@@ -60,8 +60,9 @@
       REAL, ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMOI',0,ZHOOK_HANDLE)
+#endif
 
 !     LOOP ON EACH GRID POINT
 
@@ -157,6 +158,8 @@
       ENDIF
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMOI',1,ZHOOK_HANDLE)
+#endif
       RETURN                                                            
       END SUBROUTINE WAMOI

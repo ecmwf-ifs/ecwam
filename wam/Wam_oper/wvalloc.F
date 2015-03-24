@@ -27,7 +27,7 @@
      &            LL1D
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,FCONST   ,
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
@@ -35,28 +35,26 @@
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+
 ! ----------------------------------------------------------------------
 
-      LOGICAL LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W, LDWFLUX
+      IMPLICIT NONE
+
+      INTEGER :: NPR, MAXLEN
+
+      REAL :: ZHOOK_HANDLE
+
+      LOGICAL :: LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W, LDWFLUX
       LOGICAL :: LLIRANK 
-      LOGICAL LFRST
       LOGICAL :: LWCUR
-      LOGICAL LFRSTIM
-      REAL ZHOOK_HANDLE
+      LOGICAL :: LFRSTIM
 
-      DATA LFRST /.TRUE./
-
-
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',0,ZHOOK_HANDLE)
+#endif
 !     READ FIRST THE WAVE MODEL NAMELIST TO GET THE WAVE MODEL
 !     DECOMPOSITION (LL1D).
-
-      IF(LFRST) THEN
-        IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
-        CALL MPUSERIN(IU05,LMESSPASS,LFDB,LWCOU,LL1D,LSUBGRID,
-     &                IPROPAGS, IREFRA, IDELPRO)
-        LFRST=.FALSE.
-      ENDIF
 
 !!!   LMESSPASS,LFDB and LWCOU will take the values provided by the IFS
 !!!   see below.
@@ -88,6 +86,10 @@
           IRANK = 1 
           NPROC = 1 
         ENDIF
+
+#ifndef MODEL_COUPLING_ATM_WAV
+        MyRankGlobal=IRANK
+#endif
 
         NPREVIOUS=IRANK-1
         IF(IRANK.EQ.NPROC) THEN
@@ -139,7 +141,6 @@
      &   ALLOCATE(FL2(NINF-1:NSUP,NANG,NFRE))
 
       IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
-      IF(.NOT.ALLOCATED(FCONST)) ALLOCATE(FCONST(NINF:NSUP,NFRE))
 
       IF(.NOT.ALLOCATED(EMEAN))
      &  ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
@@ -173,8 +174,9 @@
         ENDIF
       ENDIF
 
-
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',1,ZHOOK_HANDLE)
+#endif
  
       RETURN
       END SUBROUTINE WVALLOC

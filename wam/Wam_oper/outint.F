@@ -44,7 +44,7 @@
 
 !       *OUTPP*     - PRINTER OUTPUT OF AN ARRAY.
 !       *GRIBPAC*   -
-!       *WGRIBOUT*
+!       *WGRIBENOUT*
 !       *MPGATHERGRDFLD* - GATHER GRID FIELD ONTO ONE PROCESS
 
 !     METHOD.
@@ -126,8 +126,9 @@
 
 ! ----------------------------------------------------------------------
 !
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTINT',0,ZHOOK_HANDLE)
+#endif
 
       IGLOBAL=0
       ILOCAL=0
@@ -1126,7 +1127,7 @@
             ilocal=ilocal+1
             IPARAM=229
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1144,7 +1145,7 @@
             ilocal=ilocal+1
             IPARAM=230
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1175,7 +1176,7 @@
             ENDDO
             IPARAM=232
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1194,7 +1195,7 @@
             IZLEV=NINT(XNLEV(1))
             IPARAM=249
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UDIRG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, UDIRG,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1225,7 +1226,7 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WPKFTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WPKFTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1244,7 +1245,7 @@
             IPARAM=233
             ITABLE=140
             IZLEV=NINT(XNLEV(1))
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CDG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CDG,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1262,7 +1263,7 @@
             ilocal=ilocal+1
             IPARAM=244
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, SMEANG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, SMEANG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1281,7 +1282,7 @@
             IPARAM=245
             ITABLE=140
             IZLEV=NINT(XNLEV(1))
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, U10G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, U10G,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1299,7 +1300,7 @@
             ilocal=ilocal+1
             IPARAM=246
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTAG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
      &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1317,7 +1318,7 @@
             ilocal=ilocal+1
             IPARAM=247
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CWHTAG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CWHTAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1335,7 +1336,7 @@
             ilocal=ilocal+1
             IPARAM=248
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RANGAG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, RANGAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1353,7 +1354,7 @@
             ilocal=ilocal+1
             IPARAM=220
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1371,7 +1372,7 @@
             ilocal=ilocal+1
             IPARAM=221
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1389,7 +1390,7 @@
             ilocal=ilocal+1
             IPARAM=222
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1407,7 +1408,7 @@
             ilocal=ilocal+1
             IPARAM=252
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C4G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, C4G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1425,7 +1426,7 @@
             ilocal=ilocal+1
             IPARAM=253
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, BFG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BFG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1443,7 +1444,7 @@
             ilocal=ilocal+1
             IPARAM=254
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, QPG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, QPG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1461,7 +1462,7 @@
             ilocal=ilocal+1
             IPARAM=219
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, DEPTHG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, DEPTHG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1479,7 +1480,7 @@
             ilocal=ilocal+1
             IPARAM=218
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, HMAXG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, HMAXG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1497,7 +1498,7 @@
             ilocal=ilocal+1
             IPARAM=217
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TMAXG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TMAXG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1515,7 +1516,7 @@
             ilocal=ilocal+1
             IPARAM=215
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, USTOKESG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, USTOKESG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1533,7 +1534,7 @@
             ilocal=ilocal+1
             IPARAM=216
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1551,7 +1552,7 @@
             ilocal=ilocal+1
             IPARAM=131
             ITABLE=151
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, UCURG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, UCURG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1569,7 +1570,7 @@
             ilocal=ilocal+1
             IPARAM=132
             ITABLE=151
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, VCURG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, VCURG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1587,7 +1588,7 @@
             ilocal=ilocal+1
             IPARAM=212
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1605,7 +1606,7 @@
             ilocal=ilocal+1
             IPARAM=211
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, PHIAWG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, PHIAWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1623,7 +1624,7 @@
             ilocal=ilocal+1
             IPARAM=214
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, TAUOCG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TAUOCG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1642,7 +1643,7 @@
             ilocal=ilocal+1
             IPARAM=210
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, STRNMSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, STRNMSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1661,7 +1662,7 @@
             ilocal=ilocal+1
             IPARAM=209
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, RHOAG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, RHOAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1680,7 +1681,7 @@
             ilocal=ilocal+1
             IPARAM=208
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSTARG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSTARG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1700,7 +1701,7 @@
             ilocal=ilocal+1
             IPARAM=31
             ITABLE=128
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CICG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CICG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1719,7 +1720,7 @@
             ilocal=ilocal+1
             IPARAM=92
             ITABLE=3
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, CIHG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CIHG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1738,7 +1739,7 @@
             ilocal=ilocal+1
             IPARAM=207
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, C3G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, C3G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1757,7 +1758,7 @@
             ilocal=ilocal+1
             IPARAM=159
             ITABLE=151
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NSSTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NSSTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1776,7 +1777,7 @@
             ilocal=ilocal+1
             IPARAM=91
             ITABLE=3
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NICCG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NICCG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1795,7 +1796,7 @@
             ilocal=ilocal+1
             IPARAM=92
             ITABLE=3
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NICTG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NICTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1814,7 +1815,7 @@
             ilocal=ilocal+1
             IPARAM=49
             ITABLE=3
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NUCUG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NUCUG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1833,7 +1834,7 @@
             ilocal=ilocal+1
             IPARAM=50
             ITABLE=3
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, NVCUG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NVCUG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1853,7 +1854,7 @@
             ilocal=ilocal+1
             IPARAM=080
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX1G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX1G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1872,7 +1873,7 @@
             ilocal=ilocal+1
             IPARAM=081
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX2G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX2G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1891,7 +1892,7 @@
             ilocal=ilocal+1
             IPARAM=082
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX3G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX3G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1910,7 +1911,7 @@
             ilocal=ilocal+1
             IPARAM=083
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX4G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX4G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1929,7 +1930,7 @@
             ilocal=ilocal+1
             IPARAM=084
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WX5G,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX5G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1957,7 +1958,7 @@
             ilocal=ilocal+1
             IPARAM=234
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTWG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -1976,7 +1977,7 @@
             ilocal=ilocal+1
             IPARAM=235
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRWG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2007,7 +2008,7 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFWG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2025,7 +2026,7 @@
             ilocal=ilocal+1
             IPARAM=237
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2044,7 +2045,7 @@
             ilocal=ilocal+1
             IPARAM=238
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2075,7 +2076,7 @@
                 ENDIF
               ENDDO
             ENDDO
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WMNFSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2093,7 +2094,7 @@
             ilocal=ilocal+1
             IPARAM=223
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1WG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1WG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2111,7 +2112,7 @@
             ilocal=ilocal+1
             IPARAM=224
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2WG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2WG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2129,7 +2130,7 @@
             ilocal=ilocal+1
             IPARAM=225
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2149,7 +2150,7 @@
             ilocal=ilocal+1
             IPARAM=226
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP1SG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1SG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2167,7 +2168,7 @@
             ilocal=ilocal+1
             IPARAM=227
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWP2SG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2SG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2185,7 +2186,7 @@
             ilocal=ilocal+1
             IPARAM=228
             ITABLE=140
-            CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2213,7 +2214,7 @@
      &       .OR.(.NOT.LMESSPASS)) THEN
               ilocal=ilocal+1
               ITABLE=140
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WHGTTRG(:,:,ITT),
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
      &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2232,7 +2233,7 @@
      &       .OR.(.NOT.LMESSPASS)) THEN
               ilocal=ilocal+1
               ITABLE=140
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, WDIRTRG(:,:,ITT),
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
      &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2251,7 +2252,7 @@
      &       .OR.(.NOT.LMESSPASS)) THEN
               ilocal=ilocal+1
               ITABLE=140
-              CALL WGRIBOUT(IU06, ITEST, NGX, NGY, MWPMTRG(:,:,ITT),
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWPMTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
      &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2282,7 +2283,9 @@
         ENDIF
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTINT',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE OUTINT

@@ -46,6 +46,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -54,14 +55,22 @@
       REAL, PARAMETER :: XLAMBDAC=0.0628
       REAL, PARAMETER :: SURFT=0.000075
 
-      INTEGER :: IJ,M,K,IJS,IJL
-      REAL :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
-      REAL :: F(IJS:IJL,NANG,NFRE), FD(NFRE)
-      REAL,DIMENSION(IJS:IJL) :: USNEW
-      REAL, DIMENSION(IJS:IJL) ::  FM, SM, TEMP1, TEMP2
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, M, K
 
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  FM, SM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+
+      REAL :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NFRE) :: FD
+      REAL, DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
+#endif
 
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
@@ -138,5 +147,8 @@
         SM(IJ) = SM(IJ)+CONST1*CONST3
       ENDDO
 
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE MEANSQS

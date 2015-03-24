@@ -35,17 +35,18 @@
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,  
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            NPRECI
-      USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWPD, ONLY : MNP => npa
+      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -55,7 +56,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NBIT = 550000
+      INTEGER :: NBIT = 1000000
 
       INTEGER :: IREAD
       INTEGER :: KFILE_HANDLE1
@@ -66,12 +67,13 @@
       INTEGER :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
       INTEGER :: IBUF(2)
       INTEGER, ALLOCATABLE :: INGRIB(:)
+      INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL, PARAMETER :: WLOWEST=0.0001
       REAL :: ZDUM
       REAL :: ZHOOK_HANDLE
-      REAL :: FIELD(NGX,NGY)
+      REAL :: FIELD(NXFF,NYFF)
 
       CHARACTER(LEN=14) :: CDATEIN, CDATEIN_OLD 
       CHARACTER(LEN=24) :: FILNM
@@ -84,7 +86,15 @@
 
 ! --------------------------------------------------------------------  
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',0,ZHOOK_HANDLE)
+#endif
+
+      IF(LLUNSTR) THEN
+        NLONRGG_LOC(:)=MNP
+      ELSE
+        NLONRGG_LOC(:)=NLONRGG(:)
+      ENDIF
 
 
       LFILE = LEN_TRIM(FILNM)
@@ -166,10 +176,13 @@
         MM=0
         CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                   KGRIB_HANDLE, INGRIB, ISIZE,
-     &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                   AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &                   ZMISS, PPREC, PPEPS,
+     &                   LLUNSTR,
+     &                   NXFF, NYFF, NLONRGG_LOC,
+     &                   IRGG, XDELLA, ZDELLO,
+     &                   FIELDG%XLON, FIELDG%YLAT,
+     &                   ZMISS, ZDUM, ZDUM,
      &                   CDATEIN, IFORP, IPARAM,KZLEV,KK,MM, FIELD)
+
 
         CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
@@ -242,7 +255,9 @@
 
       ENDDO READCURRENT 
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE CURRENT2WAM

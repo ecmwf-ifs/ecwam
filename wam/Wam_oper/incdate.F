@@ -66,7 +66,7 @@
         WRITE(6, CLFMT ) CDATE
         WRITE(*, CLFMT ) CDATE
         LLND = .FALSE.
-        CALL ABORT
+        CALL ABORT1
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE,'(i4, 4i2)')IYEAR, IMON, IDAY, IHOUR, IMIN
@@ -77,7 +77,7 @@
       ELSEIF (IL==0) THEN
         WRITE(6, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
         WRITE(*, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
-        CALL ABORT
+        CALL ABORT1
       ELSE
         WRITE(CLFMT,'(A59, I2.2, A2)')
      &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
@@ -111,7 +111,7 @@
         WRITE(*, '("           IHOUR ", I2 )') IHOUR
         WRITE(*, '("           IMIN ", I2 )') IMIN
         WRITE(*, '("           ISEC ", I2 )') ISEC
-        CALL ABORT
+        CALL ABORT1
       ENDIF
       IF (IL==12 .AND. MOD(ISHIFT,60).NE.0) THEN
         IRET=-6
@@ -123,7 +123,7 @@
         WRITE(*, '(" WHEN HANDELING CHARACTER*12 DATES,")')
         WRITE(*, '(" ISHIFT MUST BE A MULTIPLE OF 60 SECONDS")')
         WRITE(*, '(" ISHIFT = ", I12 )') ISHIFT
-        CALL ABORT
+        CALL ABORT1
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -206,7 +206,7 @@
         WRITE(6, '("           IMIN ", I2 )') IMIN
         WRITE(6, '("           ISEC ", I2 )') ISEC
         WRITE(6, '("           ISHIFT ", I12 )') ISHIFT
-        CALL ABORT
+        CALL ABORT1
       ENDIF
 
       IF (LLND) THEN
@@ -218,7 +218,7 @@
      &                                IMIN, ISEC
         ELSE
           WRITE(6,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
-          CALL ABORT
+          CALL ABORT1
         ENDIF
       ELSE
         IYEAR = IYEAR - 1900
@@ -227,7 +227,7 @@
      &     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
           WRITE(6, CLFMT ) CDATE
           WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
-          CALL ABORT
+          CALL ABORT1
         ENDIF
         WRITE(CDATE,'(5i2.2)')IYEAR, IMON, IDAY, IHOUR, IMIN
       ENDIF

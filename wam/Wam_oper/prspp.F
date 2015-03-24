@@ -98,11 +98,11 @@
 
       WRITE(IUNIT,4100) CDATE, NAME, XLONG, XLAT
  4100 FORMAT('1',2X,'WAVE AND WIND INFORMATION. DATE: ',A14,
-     &       ' SIDE: ',A20,3X,'LONG.: ',F7.2,' LAT.: ',F6.2)
+     &       ' SIDE: ',A20,3X,'LONG.: ',F9.2,' LAT.: ',F9.2)
       WRITE(IUNIT,4200) WAVEHT, WAVEDIR, WAVEMFR, WINDSPD, WIND10,
      &                  WINDDIR
- 4200 FORMAT(3X,'HS = ',F6.2,'  THETA = ',F6.0,' FMEAN = ',F6.4,
-     &          ' USTAR = ',F6.2,' U10 = ',F6.2,'  PHI = ',F6.0/)
+ 4200 FORMAT(3X,'HS = ',F9.2,'  THETA = ',F6.0,' FMEAN = ',F11.4,
+     &          ' USTAR = ',F9.2,' U10 = ',F9.2,'  PHI = ',F6.0/)
       IPE = 0
       IF (NANG.GT.IPDIR) THEN
         FORM1 = '(1X,''DIR (DEG)'',T11,12F8.1,''  DIR (DEG)'')'

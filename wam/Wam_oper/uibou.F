@@ -9,7 +9,7 @@
  
 !     H. GUNTHER     GKSS/ECMWF     JANUARY 1991
 
-!!!! it should be replace by a proper namelist !!!!
+!!!! it should be replaced by a proper namelist !!!!
  
 !*    PURPOSE.
 !     --------
@@ -61,11 +61,16 @@
 !       NONE.
  
 ! ------------------------------------------------------------------
+      IMPLICIT NONE 
+
+      INTEGER :: IU05, IU06, IDELPRF, IDELFI  
+      INTEGER :: ICOUNT, IOS
  
-      CHARACTER USERID*3, RUNDI*3, FILEDI*3, PATHI*60,
-     1                    RUNDO*3, FILEDO*3, PATHO*60
-      CHARACTER*14 CDATEA, CDATEE, CDATES
-      CHARACTER LINE*72
+      CHARACTER(LEN=3) :: USERID, RUNDI, FILEDI, RUNDO, FILEDO 
+      CHARACTER(LEN=14) :: CDATEA, CDATEE, CDATES
+      CHARACTER(LEN=60) :: PATHI, PATHO  
+      CHARACTER(LEN=120) :: LINE
+
       LOGICAL :: LREAL, LSWAN
  
 ! --------------------------------------------------------------------
@@ -78,19 +83,19 @@
 
       ICOUNT = 0
  1000 CONTINUE
-      READ(IU05, '(A72)',ERR=4000,END=4000,IOSTAT=IOS) LINE
+      READ(IU05, '(A120)',ERR=4000,END=4000,IOSTAT=IOS) LINE
       IF (LINE(1:1).EQ.'C') GOTO 1000
       ICOUNT = ICOUNT + 1
       IF (ICOUNT.EQ.1) THEN
          CDATEA=LINE( 2:15)
          CDATEE=LINE(18:31)
-         READ(LINE(34:40),'(I7 )',ERR=4100,IOSTAT=IOS) IDELPRF
+         READ(LINE(34:40),'(I7)',ERR=4100,IOSTAT=IOS) IDELPRF
          IF (LINE(42:42).EQ.'H') IDELPRF = IDELPRF*3600
          GOTO 1000
       ELSE IF (ICOUNT.EQ.2) THEN
 !         READ(LINE( 2:11),'(I10)',ERR=4100,IOSTAT=IOS) IDATES
          CDATES=LINE( 2:15)
-         READ(LINE(18:24),'(I7 )',ERR=4100,IOSTAT=IOS) IDELFI
+         READ(LINE(18:24),'(I7)',ERR=4100,IOSTAT=IOS) IDELFI
          IF (LINE(26:26).EQ.'H') IDELFI = IDELFI*3600
          USERID = LINE(29:31)
          GOTO 1000
@@ -105,14 +110,13 @@
          PATHO  = LINE(12:71)
          GOTO 1000
       ELSE IF (ICOUNT.EQ.5) THEN
-         READ(LINE(2:2),'(L1)') LREAD
+         READ(LINE(2:2),'(L1)') LREAL
          READ(LINE(4:4),'(L1)') LSWAN
       ENDIF
  
 !     2. PRINT USER INPUT
 !        ----------------
  2000 CONTINUE
-      WRITE(IU06,'(1H1)')
       WRITE(IU06,*) ' USER INPUT:'
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' START  DATE (FORMAT:YYMMDDHHMM) : ',CDATEA,
@@ -158,7 +162,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '* ---------------   --------------        *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
       ENDIF
 
       RETURN
@@ -178,7 +182,7 @@
          WRITE(IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS         *'
          WRITE(IU06,*) ' *                                          *'
          WRITE(IU06,*) ' ********************************************'
-         CALL ABORT
+         CALL ABORT1
  4100 CONTINUE
          WRITE(IU06,*) ' ********************************************'
          WRITE(IU06,*) ' *                                          *'
@@ -191,6 +195,6 @@
          WRITE(IU06,*) ' *   PROGRAM ABORTS  PROGRAM ABORTS         *'
          WRITE(IU06,*) ' *                                          *'
          WRITE(IU06,*) ' ********************************************'
-         CALL ABORT
+         CALL ABORT1
 
       END SUBROUTINE UIBOU

@@ -8,6 +8,7 @@
 !     PETER JANSSEN       JULY 2007.
 !     PETER JANSSEN       APRIL 2014. INCLUDES SKEWNESS EFFECTS, WHILE 
 !                         NUMBER OF WAVES IS DETERMINED BY EWING (1973)
+!     F. VANA             MARCH 2015 SINGLE PRECISION SUPPORT
  
 !     PURPOSE.
 !     --------
@@ -141,9 +142,16 @@
      &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
      &                             SIG_TH,EPS,C3,ZNU
       REAL, DIMENSION(NFRE) :: DF,FAC1,FAC2,FAC3,FAC4
+      REAL :: ZEPSILON, ZSQREPSILON
 
+! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('KURTOSIS',0,ZHOOK_HANDLE)
+#endif
  
+      ZEPSILON=10.*EPSILON(ZEPSILON)
+      ZSQREPSILON=SQRT(ZEPSILON)
+
       ZC4_CONST = PI/(3.*SQRT(3.))
       ZALPHA    = 0.4
       ZR_0      = 3.*SQRT(3.)/(4.*PI**3)
@@ -215,14 +223,14 @@
 
 
       DO IJ=IJS,IJL
-         IF (ETA2(IJ).GT.0.) THEN
+         IF (ETA2(IJ).GT.ZSQREPSILON) THEN
             QP(IJ)     = SUM4(IJ)/ETA2(IJ)**2
-            SIG_OM1    = 1./(QP(IJ)*ZPISQRT)
+            SIG_OM1    = 1./MAX(QP(IJ)*ZPISQRT,ZEPSILON)
             SIG_OM(IJ) = MIN(SIG_OM(IJ),SIG_OM1)
             XKP(IJ)    = AKI(ZPI*FP(IJ),DEPTH(IJ,IG))
             EPS(IJ)    = XKP(IJ)*SQRT(SUM0(IJ))
 
-            BF2(IJ) = 2.*EPS(IJ)**2/SIG_OM(IJ)**2*
+            BF2(IJ) = 2.*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2 *
      &                TRANSF2(XKP(IJ),DEPTH(IJ,IG))
             BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
          ELSE
@@ -252,7 +260,7 @@
 !
 !           DYNAMIC PART OF KURTOSIS
 !
-            ZR = 0.5*(SIG_TH(IJ)/SIG_OM(IJ))**2
+            ZR = 0.5*(SIG_TH(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2
             ZJ = ZC4_CONST/SQRT(1+7.*ZR)
             
             C4(IJ) = ZJ*BF2(IJ)+ZKAPPA4/8.
@@ -284,7 +292,7 @@
       HC = SQRT(2.)
       ZK = 2.*HC/SQRT(ZPI)
       DO IJ=IJS,IJL
-         IF (SUM1(IJ).GT.0. .AND. SUM0(IJ).GT.0.) THEN
+         IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
             ZOM1     = ZPI*SUM1(IJ)/SUM0(IJ)
             ZNU(IJ)  = SUM0(IJ)*SUM2(IJ)/SUM1(IJ)**2 - 1.
             ZNU(IJ)  = SQRT(MAX(0.,ZNU(IJ)))
@@ -300,7 +308,7 @@
       CALL H_MAX(C3,C4,NW,IJS,IJL,HMAX)
 
       DO IJ=IJS,IJL
-         IF (SUM1(IJ).GT.0. .AND. HMAX(IJ).GT.0.) THEN
+         IF (SUM1(IJ).GT.ZEPSILON .AND. HMAX(IJ).GT.ZEPSILON) THEN
             ZEPS     = ZNU(IJ)/(SQRT(2.)*HMAX(IJ))
             TMAX(IJ) = (1.+0.5*ZEPS**2+0.75*ZEPS**4)*SUM0(IJ)/SUM1(IJ) 
          ELSE
@@ -317,7 +325,9 @@
          ENDIF
       ENDDO 
             
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('KURTOSIS',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
       END SUBROUTINE KURTOSIS

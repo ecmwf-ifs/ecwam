@@ -50,7 +50,10 @@
 
       REAL, DIMENSION(IJS:IJL):: C3,C4,HMAX_N
 
+!----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('H_MAX',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 !     -----------------------------------------
@@ -67,7 +70,7 @@
 
       DO IJ=IJS,IJL
 
-        IF (NW(IJ).GT.0) THEN
+        IF (NW(IJ).GT.1) THEN
           C3M = C3(IJ)
           C4M = MIN(C4MAX,C4(IJ))
           C4M = MAX(C4MIN,C4M)
@@ -91,7 +94,9 @@
 
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('H_MAX',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
       END SUBROUTINE H_MAX

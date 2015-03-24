@@ -1,4 +1,4 @@
-      SUBROUTINE DOTDC (IJS, IJL, ISHALLO, FCONST)
+      SUBROUTINE DOTDC (IJS, IJL, ISHALLO, SHLFAC)
 
 ! ----------------------------------------------------------------------
 
@@ -17,16 +17,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *DOTDC (IJS, IJL, ISHALLO, FCONST)*
+!       *CALL* *DOTDC (IJS, IJL, ISHALLO, SHLFAC)*
 !          *IJS*     - INDEX OF FIRST GRID POINT.
 !          *IJL*     - INDEX OF LAST  GRID POINT.
 !          *ISHALLO* - SHALLOW WATER OPTION.
-!          *FCONST * - SIGMA/SINH(2KD)
+!          *SHLFAC * - SIGMA/SINH(2KD)
 
 !     METHOD.
 !     -------
-
-!       SEQUENTIAL READ FROM UNIT.
 
 !     EXTERNALS.
 !     ----------
@@ -45,8 +43,11 @@
       USE YOWSHAL  , ONLY : TSIHKD   ,INDEP
 
 ! ----------------------------------------------------------------------
+      IMPLICIT NONE
 
-      REAL,DIMENSION(NINF:NSUP,NFRE):: FCONST
+      INTEGER, INTENT(IN) :: IJS, IJL, ISHALLO
+      INTEGER :: IJ, M
+      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT):: SHLFAC
 
 ! ----------------------------------------------------------------------
 
@@ -60,9 +61,8 @@
 
       DO M=1,NFRE
         DO IJ=IJS,IJL
-          FCONST(IJ,M) = TSIHKD(INDEP(IJ),M)
+          SHLFAC(IJ,M) = TSIHKD(INDEP(IJ),M)
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE DOTDC

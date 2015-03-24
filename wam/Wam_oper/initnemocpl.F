@@ -59,7 +59,10 @@
 ! DR. HOOK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
+! -------------------------------------------------------------------   
+
       IMPLICIT NONE
+
 ! RECEIVE DATA FROM NEMO
       LOGICAL :: LRECV
 ! GLOBAL INDEX DEFINITON.      
@@ -71,7 +74,11 @@
 ! MISC
       REAL :: ZHOOK_HANDLE
 
+! -------------------------------------------------------------------   
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',0,ZHOOK_HANDLE)
+#endif
 
       WRITE(IU06,*)
       WRITE(IU06,*)' **************************************************'
@@ -146,15 +153,18 @@
 ! THE TASKS RANK CONVENTION IS 0 TO NPROC-1 SO WE SUBTRACT ONE FOR IRANK
 ! SINCE WE ONLY HAVE LOCAL OCEAN POINTS WE SPECIFY GLOBAL NUMBER OF
 ! POINTS AS THE SUM OF NLOGRGG
-      
+
+#ifdef ECMWF      
       CALL NEMOGCMCOUP_WAM_COUPINIT( IRANK-1, NPROC, MPL_COMM, 
      &     IJL(IG)-IJS(IG)+1, SUM(NLONRGG(1:NGY)),
      &     NLOCMSK(IJS(IG):IJL(IG)), NGLOIND(IJS(IG):IJL(IG)), 0)
+#endif
 
 
 ! DEALLOCATE DATA NOT NEEDED ANYMORE
 
       DEALLOCATE( NLOCMSK, NGLOIND )
+#ifdef ECMWF
 
 ! ALLOCATE RECEIVE DATA IF NEEDED
 
@@ -174,8 +184,10 @@
       ALLOCATE(NEMOUSTOKES(IJS(IG):IJL(IG)))
       ALLOCATE(NEMOVSTOKES(IJS(IG):IJL(IG)))
       
+#endif
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',1,ZHOOK_HANDLE)
+#endif
 
-
-      END
-
+      END SUBROUTINE INITNEMOCPL

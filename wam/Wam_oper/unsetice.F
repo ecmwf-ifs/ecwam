@@ -6,6 +6,7 @@
 !     --------
 !     TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
 !     PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
+!     ALSO REINSTATE THE MIMIMUM ENERGY LEVEL.
 
 !**   INTERFACE.
 !     ----------
@@ -36,7 +37,7 @@
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWICE   , ONLY : FLMINFR  ,LMASKICE ,CICOVER  ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
-      USE YOWPCONS , ONLY : G        ,R        ,EPSMIN
+      USE YOWPCONS , ONLY : PI       ,G        ,R        ,EPSMIN
       USE YOWSHAl  , ONLY : DEPTH
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -45,21 +46,44 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER :: IJS, IJL
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL
-      REAL,DIMENSION(IJS:IJL) :: U10OLD,THWOLD
+      IMPLICIT NONE
 
-! ----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, K, M
+      INTEGER :: JU(IJS:IJL)
 
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD,THWOLD
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL
+      REAL :: ZHOOK_HANDLE
+      REAL :: CILIMIT
+      REAL :: GAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
+      REAL :: U10, GXU, UG, XJ, FLLOWEST 
       REAL :: STK(NANG)
-      REAL :: ET(1,NFRE)
-      LOGICAL :: LICE2SEA(IJS:IJL)
-      REAL ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL,NFRE) :: ET
+      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD, COS2NOISE
+      REAL, DIMENSION(IJS:IJL) :: FPK, ALPHAV
 
-      IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
+      LOGICAL :: LICE2SEA(IJS:IJL)
+
 ! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
+#endif
 
       IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
+
+        ZDP=2./PI
+        DO IJ=IJS,IJL
+          XJ=U10OLD(IJ)/DELU
+          JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
+        ENDDO
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            COS2NOISE(IJ,K)=MAX(0.,COS(TH(K)-THWOLD(IJ)))**2
+            SPRD(IJ,K)=ZDP*COS2NOISE(IJ,K)
+          ENDDO
+        ENDDO
 
         IF(LMASKICE) THEN
           CILIMIT=CITHRSH
@@ -78,7 +102,6 @@
         ENDDO
         DO K=1,NANG
           DO M=1,NFRE
-
             DO IJ=IJS,IJL
                IF(FL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
@@ -101,48 +124,39 @@
             ELSE
               FETCH=MIN(5*DELPHI,250000.)
             ENDIF
-            GX = G * FETCH
+
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
             IF (U10OLD(IJ) .GT. 0.1E-08 .AND.
      &          DEPTH(IJ,1) .GT. 10.) THEN
+              GX = G * FETCH
               U10 = U10OLD(IJ)
               GXU = GX/(U10*U10)
               UG = G/U10
-              FPK = AJONS * GXU ** DJONS
-              FPK = MAX(0.13, FPK)
-              FPK = MIN(FPK, FPMAX/UG)
-              ALPHJO = BJONS * FPK** EJONS
-              ALPHJO = MAX(ALPHJO, 0.0081)
-              FPK = FPK*UG
+              FPK(IJ) = AJONS * GXU ** DJONS
+              FPK(IJ) = MAX(0.13, FPK(IJ))
+              FPK(IJ) = MIN(FPK(IJ), FPMAX/UG)
+              ALPHAV(IJ) = BJONS * FPK(IJ)** EJONS
+              ALPHAV(IJ) = MAX(ALPHAV(IJ), 0.0081)
+              FPK(IJ) = FPK(IJ)*UG
             ELSE
-              FPK = 0.
-              ALPHJO = 0.
+              FPK(IJ)=0.
+              ALPHAV(IJ)=0.
             ENDIF
-
-            CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, ET)
-
-            THESK=THWOLD(IJ)
-
-            CALL SPR (NANG, NANG, THESK, TH, STK)
-
-            DO K=1,NANG
-              DO M=1,NFRE
-                FL(IJ,K,M) = ET(1,M)*STK(K)
-              ENDDO
-            ENDDO
+          ELSE
+            FPK(IJ)=FPMAX 
+            ALPHAV(IJ)=0.
           ENDIF
         ENDDO
 
+        CALL JONSWAP(ALPHAV, GAMMA, SA, SB, FPK, IJS, IJL, ET)
 
-!       REINSTATE THE MIMIMUM ENERGY LEVEL
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XJ=U10OLD(IJ)/DELU
-              JU=MIN(JUMAX, MAX(NINT(XJ),1))
-              FLLOWEST=FLMINFR(JU,M)*MAX(0.,COS(TH(K)-THWOLD(IJ)))**2
-              IF(FL(IJ,K,M) .LT. FLLOWEST) FL(IJ,K,M) = FLLOWEST
+              FL(IJ,K,M) =  MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
+              FLLOWEST = FLMINFR(JU(IJ),M)*COS2NOISE(IJ,K)
+              FL(IJ,K,M) = MAX(FL(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO
         ENDDO
@@ -154,7 +168,9 @@
 
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UNSETICE',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE UNSETICE

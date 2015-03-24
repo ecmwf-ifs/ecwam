@@ -110,6 +110,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,
      &             DFFR     ,DFFR2   ,COSTH     ,SINTH
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,
+     &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
       USE YOWICE   , ONLY : FLMIN    ,FLMINFR
@@ -129,25 +130,41 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
      &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,
-     &            IJ2NEWIJ
+     &            IJ2NEWIJ ,NBLKS    ,NBLKE
       USE YOWTABL  , ONLY : JUMAX    ,UMAX     ,DELU
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,
      &            KRLAT    ,KRLON    ,
      &            WLAT     ,WCOR     ,WRLAT    ,WRLON    ,
      &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
-      USE YOWUNIT  , ONLY : IU07     ,IU08
+      USE YOWUNIT  , ONLY : IREADG   ,IU07     ,IU08     ,LWVWAMINIT
+      USE YOWWIND  , ONLY : NXFF     ,NYFF
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
+      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWPD, ONLY : MNP => npa, RANK
+      USE UNWAM
 
 !----------------------------------------------------------------------
 
+      IMPLICIT NONE
 
+      INTEGER :: NPR, MAXLEN 
+      INTEGER :: IG
+      INTEGER :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
+      INTEGER :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH
+      INTEGER :: ITAG, IREAD 
       INTEGER :: NTEMP(1)
       INTEGER :: NLENHALO_MAX
       INTEGER :: ICOUNTS(NPR)
       INTEGER :: NPLEN(NPR)
+      INTEGER :: NLON_sekf, NLAT_sekf
+      INTEGER :: MPLENGTH, KCOUNT, ICL, ICR, ICOUNT, IPROC
+      INTEGER :: NXDECOMP, NYDECOMP, NYCUT
+      INTEGER :: ISTAGGER, NIJ, NTOT, NAREA
+      INTEGER :: NMEAN, NREST, NPTS, IXLONMAX
+      INTEGER :: KLATBOT, KLATTOP, KXLAT, NLONGMAX, KMIN, IXLONMIN 
+      INTEGER :: MAXPERMLEN, MXPRLEN 
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
       INTEGER,ALLOCATABLE :: ICOMBUF_S(:)
       INTEGER,ALLOCATABLE :: ICOMBUF_R(:)
@@ -167,36 +184,46 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
-
-      REAL X4(2)
+      REAL :: ZHOOK_HANDLE
+      REAL :: RS_sekf, RN_sekf
+      REAL :: GAMMA, SA, SB, FETCH, GX, FPMAX, U10, GXU, UG, ALPHJO
+      REAL :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
+      REAL :: THETAMAX, SINTHMAX, DELTA
+      REAL :: X4(2)
+      REAL :: FPK(JUMAX)
       REAL,ALLOCATABLE :: RCOMBUF_S(:)
       REAL,ALLOCATABLE :: RCOMBUF_R(:)
       REAL,ALLOCATABLE :: RDUM(:), RDUM2(:,:)
+      REAL :: ALPHAJinp(1)
+      REAL :: FPinp(1)
+      REAL :: ETinp(1, NFRE)
 
-      REAL ZHOOK_HANDLE
+      CHARACTER(LEN=80) :: LOGFILENAME
 
-      CHARACTER*80 LOGFILENAME
       LOGICAL :: LLIRANK
       LOGICAL :: LLEXIST
-!   FOR SEKF surface analysis
       LOGICAL :: LL_sekf
-      INTEGER :: NLON_sekf, NLAT_sekf
-      REAL :: RS_sekf, RN_sekf
+      LOGICAL :: LLRNL
 
-
+!----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
+#endif
 
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
 
-
-      IREAD=1
+!AR: ITAG was not set
+      ITAG =0 
+      IREAD=IREADG
 
 !     CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
 !     Re-initilize for SEKF surface analysis loops
-      IF(IU08(IPROPAGS) < 0) Then
-      LL_sekf = .True.
-      CALL WVWAMINIT(LL_sekf,IU06,NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+      IF(LWVWAMINIT) THEN
+        LL_sekf = .True.
+        LLRNL=.TRUE.
+        CALL WVWAMINIT(LL_sekf,IU06,LLRNL,
+     &                 NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
       ENDIF
 
       WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'
@@ -214,17 +241,6 @@
         DFIMOFR(M) = DFIM(M)/FR(M)
         DFFR(M) = DFIM(M)*FR(M)
         DFFR2(M) = DFIM(M)*FR(M)**2
-      ENDDO
-
-
-!     FIND KNMOP AND KMSOP
-      KMNOP=1
-      KMSOP=NGY
-      DO IG=1,IGL
-        DO IJ = IJS(IG),IJL(IG)
-          KMNOP=MAX(KXLT(IJ,IG),KMNOP)
-          KMSOP=MIN(KXLT(IJ,IG),KMSOP)
-        ENDDO
       ENDDO
 
 
@@ -248,17 +264,20 @@
 !       the same formulation as in subroutine peak is used.
         GXU = GX/(U10*U10)
         UG = G/U10
-        FPK = AJONS * GXU ** DJONS
-        FPK = MAX(0.13, FPK)
-        FPK = MIN(FPK, MAX(FPMAX/UG,0.13))
-        ALPHJO = BJONS * FPK** EJONS
+        FPK(J) = AJONS * GXU ** DJONS
+        FPK(J) = MAX(0.13, FPK(J))
+        FPK(J) = MIN(FPK(J), MAX(FPMAX/UG,0.13))
+        ALPHJO = BJONS * FPK(J)** EJONS
         ALPHJO = MAX(ALPHJO, 0.0081)
-        FPK = FPK*UG
+        FPK(J) = FPK(J)*UG
 !       We are taking 1% of the JONSWAP value as it is intended to be
 !       noise...
         ALPHJO = 0.01*ALPHJO
+        ALPHAJinp(1)=ALPHJO
+        FPinp(1)=FPK(J)
+        CALL JONSWAP(ALPHAJinp, GAMMA, SA, SB, FPinp, 1, 1, ETinp)
+        FLMINFR(J,:)=ETinp(1,:)
 
-        CALL JONSWAP(ALPHJO, GAMMA, SA, SB, FPK, 1, 1, FLMINFR(J,:))
 
 !       AVOID TOO SMALL NUMBERS
         DO M = 1,NFRE
@@ -267,9 +286,75 @@
 
       ENDDO
 
+      IF (LLUNSTR) THEN
+
+!AR: augmented domain ...
+        NINF = 1
+        NSUP = MNP 
+        MAXLEN = MAXVAL(RANK(:)%NP) 
+! NEW MAPPINGS BASED ON THE DECOMPOSITION ...
+        IJS(:) = 1
+        IJL(:) = MNP
+        IJLT(:)= MNP
+
+        IF (ALLOCATED(NSTART)) DEALLOCATE(NSTART)
+        ALLOCATE (NSTART(NPR))
+        IF (ALLOCATED(NEND)) DEALLOCATE(NEND)
+        ALLOCATE (NEND(NPR))
+        NSTART(:) = 1
+!!! this need to be sorted nstart and nend were designed to contain
+!!!! the number of point on each PE excluding the ghost node but with unstructured 
+!!! we compute on ghost node so it does work !!! 
+!!! for now introduce NBLKS and NBLKE to do that job
+        NEND(:)   = NIBLO
+        NEND(IRANK)=MNP
+
+        IJSLOC=1
+        IJLLOC=RANK(IRANK)%NP
+        IJGLOBAL_OFFSET=RANK(IRANK)%ISTART-1
+
+        IF (ALLOCATED(NBLKS)) DEALLOCATE(NBLKS)
+        ALLOCATE (NBLKS(NPR))
+        IF (ALLOCATED(NBLKE)) DEALLOCATE(NBLKE)
+        ALLOCATE (NBLKE(NPR))
+        DO IP=1,NPR
+          NBLKS(IP)=RANK(IP)%ISTART
+          NBLKE(IP)=NBLKS(IP)+RANK(IP)%NP-1
+        ENDDO
+
+!       the data structure of type FORCING_FIELDS are defacto uni-dimensional
+!       when unstructured grid is used and only limited to the local+ghost points
+        NXFF=MNP
+        NYFF=1
+        IF(ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
+        ALLOCATE(IFROMIJ(NINF-1:NSUP,IGL))
+        IF(ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
+        ALLOCATE(JFROMIJ(NINF-1:NSUP,IGL))
+
+        IFROMIJ(NINF-1,:)=0
+        JFROMIJ(NINF-1,:)=0
+        DO IJ = 1,NSUP
+          IFROMIJ(IJ,:)=IJ
+          JFROMIJ(IJ,:)=1
+        ENDDO
+
+      ELSE
+
+      NXFF=NGX
+      NYFF=NGY
 
 !*    1. INPUT NEIGHBOURING GRID POINT INDICES (UBUF) 
 !        --------------------------------------------
+
+!     FIND KNMOP AND KMSOP
+      KMNOP=1
+      KMSOP=NGY
+      DO IG=1,IGL
+        DO IJ = IJS(IG),IJL(IG)
+          KMNOP=MAX(KXLT(IJ,IG),KMNOP)
+          KMSOP=MIN(KXLT(IJ,IG),KMSOP)
+        ENDDO
+      ENDDO
 
       IF(ALLOCATED(KLAT)) DEALLOCATE(KLAT)
       ALLOCATE(KLAT(NIBLO,2,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
@@ -317,6 +402,7 @@
             MPLENGTH=6*NIBLO
           ENDIF
           ALLOCATE(ICOMBUF(MPLENGTH))
+
 
           IF(IRANK.EQ.IREAD) THEN
             KCOUNT=0
@@ -518,6 +604,7 @@
 !       be determined to be as even as possible
         NMEAN=IJL(NBLO)/NYDECOMP
         NREST=IJL(NBLO)-NMEAN*NYDECOMP
+
      
         NSTART1D(1)=1
         IF(NREST.GT.0) THEN
@@ -593,6 +680,7 @@
 
         XDELLOINV=1.0/XDELLO
 
+
         STAGGER=0.5*(AMOEAP-AMOWEP+IPER*XDELLO)/NXDECOMP
         STAGGER=FLOAT(NINT(100*STAGGER))/100.
         ISTAGGER=NINT(STAGGER*XDELLOINV)
@@ -634,9 +722,9 @@
           KLATBOT=KXLT(NSTART1D(IPR),IG)
           KLATTOP=KXLT(NEND1D(IPR),IG)
           ALLOCATE(KSTART1(KLATBOT:KLATTOP))
-          KSTART1=0
+          KSTART1(:)=0
           ALLOCATE(KEND1(KLATBOT:KLATTOP))
-          KEND1=0
+          KEND1(:)=0
           ALLOCATE(NLON(KLATBOT:KLATTOP))
           KXLAT=KLATBOT
           KSTART1(KXLAT) = NSTART1D(IPR)
@@ -2529,22 +2617,37 @@
           IJS(1)=NSTART(IRANK)
           IJL(1)=NEND(IRANK)
           IJLT(1)=NSUP
+
+          IJSLOC=NSTART(IRANK)
+          IJLLOC=NEND(IRANK)
+          IJGLOBAL_OFFSET=0
+
+          IF (ALLOCATED(NBLKS)) DEALLOCATE(NBLKS)
+          ALLOCATE (NBLKS(NPR))
+          NBLKS(:)=NSTART(:)
+          IF (ALLOCATED(NBLKE)) DEALLOCATE(NBLKE)
+          ALLOCATE (NBLKE(NPR))
+          NBLKE(:)=NEND(:)
         ENDIF
       ENDIF
 
       KTAG=KTAG+1
 
-      IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
 
-      CLOSE (UNIT=IU08(IPROPAGS))
-      !     For the SEKF surface analysis
-      IU08(IPROPAGS) = -1
-
+      IF(IRANK.EQ.IREAD) CLOSE (UNIT=IU08(IPROPAGS))
+      ! For the SEKF surface analysis
+      LWVWAMINIT=.TRUE.
 
       DEALLOCATE(ISENDREQ)
 
+      END IF ! LLUNSTR
+
       WRITE(IU06,*) ' MODEL DECOMPOSITION FINISHED.'
       CALL FLUSH(IU06)
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE MPDECOMP

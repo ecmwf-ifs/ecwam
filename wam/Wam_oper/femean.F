@@ -57,11 +57,16 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, M, K
+
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+
       REAL :: DELT25, DELT2, DEL2
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2, EM, FM
-      LOGICAL :: LLAK
+      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2
+
+      LOGICAL, INTENT(IN) :: LLAK
 
 ! ----------------------------------------------------------------------
 

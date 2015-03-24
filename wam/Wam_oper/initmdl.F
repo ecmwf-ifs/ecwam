@@ -71,7 +71,6 @@
 !                      COARSE GRID IF THIS A FINE GRID RUN.
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'FBI'
 !                      (OUTPUT OF BOUINT).
-!           *IU05*   - USER INPUT UNIT.
 !           *IU06*   - PRINTER OUTPUT.
 !           *IU07*   - INPUT  UNIT OF PRECOMPUTED GRID PARAMETERS.
 !                      (OUTPUT OF PREPROC).
@@ -85,8 +84,6 @@
 !                      EACH PROPAGATION STEP THE FILES CONNECTED
 !                      TO IU11 AND IU12 ARE INTERCHANGED.
 !           *IU12*   - OUTPUT UNIT BLOCKS OF SPECTRA (SEE IU11).
-!C                     THIS UNIT IS NOT USED ANYMORE IF PBIO SOFTWARE IS
-!C                     USED TO READ THE SPECTRA. (FLAG LPBIOIN)
 !           *IU13*   - INPUT UNIT OF SPECTRA ON LAST LATITUDE
 !                      OF A BLOCK. SPECTRA ARE SAVED FROM THE
 !                      SECOND LATITUDE OF NEXT BLOCK.
@@ -94,8 +91,6 @@
 !                      TO IU13 AND IU14 ARE INTERCHANGED.
 !           *IU14*   - OUTPUT UNIT SECOND LATITUDES (SEE IU13).
 !           *IU15*   - OUTPUT UNIT LAST WINDFIELDS.
-!C                     THIS UNIT IS NOT USED ANYMORE IF PBIO SOFTWARE IS
-!C                     USED TO READ THE LAST WINDFIELDS. (FLAG LPBIOIN)
 !REFRA
 !           *IU16*   - INPUT/OUTPUT UNIT OF MODULE YOWREFD.
 !REFRA
@@ -260,23 +255,24 @@
      &            COSTH    ,SINTH
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
-     &             COSPH
+     &             IJS     ,IJL      ,COSPH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWINDN  , ONLY : MLSTHG   ,ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
-     &            KMNOP    ,KMSOP
+     &            KMNOP    ,KMSOP    ,IPER
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,NSWH     ,
      &                      NMWP
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGY      ,NBLO     ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,
+     &            NGX      ,NGY      ,
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,ZPI      ,RAD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            INDEP    ,TCGOND
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
+     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW
+      USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,
      &            ROAIRO   ,ZIDLOLD  ,
      &            FL1      ,SL
@@ -306,20 +302,40 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
      &            LLNEWCURR,NORMS_IN ,LLWSWAVE ,LLWDWAVE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWUNPOOL, ONLY : LLUNSTR  ,IE_OUTPTS, IOBP
+      USE UNWAM
+
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE pgmcl_lib_WAM, ONLY : WAV_initialize_all_coupling
+#endif
+
 
 ! -------------------------------------------------------------------
 
-      INTEGER NFIELDS, NGPTOTG, NC, NR
-      INTEGER MASK_IN(NGPTOTG)
+      IMPLICIT NONE
 
-      REAL FCRANGE
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      REAL ZHOOK_HANDLE
-      REAL PRPLRADI
+      INTEGER :: NADV, IREAD, NFIELDS, NGPTOTG, NC, NR
+      INTEGER :: IFORCA
+      INTEGER :: IG
+      INTEGER :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID, IC, ICR
+      INTEGER :: KM1, KP1
+      INTEGER :: IDELWH
+      INTEGER :: IU05, IU09, IU10, I_GET_UNIT
+      INTEGER :: MASK_IN(NGPTOTG)
 
-      CHARACTER*14 ZERO,CDUM
-      CHARACTER*24 FILNM
-      CHARACTER*80 :: FILENAME
+      REAL :: FCRANGE, XD
+      REAL :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
+      REAL :: D, OM, XK
+      REAL :: ENH_MAX
+      REAL :: PRPLRADI
+      REAL :: ZHOOK_HANDLE
+      REAL :: FIELDS(NGPTOTG,NFIELDS)
+      REAL :: AKI, TRANSF
+      REAL*8 :: XLA, XLO 
+
+      CHARACTER(LEN=14) :: ZERO, CDUM
+      CHARACTER(LEN=24) :: FILNM
+      CHARACTER(LEN=80) :: FILENAME
 
       LOGICAL :: LWCUR
       LOGICAL :: LLEXIST
@@ -327,7 +343,9 @@
 
 !----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
+#endif
 
       CALL INIWCST(PRPLRADI)
 
@@ -344,15 +362,6 @@
       IU02 = 0
 !NEST
 
-
-! STANDARD INPUT UNIT (now a set of namelists)
-! --------------------
-
-      IU05 =  I_GET_UNIT (IU06, 'wam_namelist', 's', 'f', 0)
-
-! STANDARD OUTPUT UNIT
-! --------------------
-!    DEFINITION HAS  BEEN MOVED TO MPDECOMP
 
 ! GRID AND UBUF FILES UNITS
 ! -------------------------
@@ -437,8 +446,7 @@
 !*    1.2 INPUT OF USER PARAMETER.
 !         ------------------------
 
-      CALL USERIN (IU05, IFORCA, LWCUR)
-      CLOSE(IU05)
+      CALL USERIN (IFORCA, LWCUR)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '    SUB. INITMDL: USERIN DONE'
         CALL FLUSH(IU06)
@@ -446,16 +454,24 @@
 
       IF(LWFLUXOUT) THEN
         IF(.NOT.ALLOCATED(PHIEPS)) THEN 
-          ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
+          ALLOCATE(PHIEPS(IJS(1):IJL(1)))
           PHIEPS(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(PHIAW)) THEN 
-          ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
+          ALLOCATE(PHIAW(IJS(1):IJL(1)))
           PHIAW(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(TAUOC)) THEN
-          ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
+          ALLOCATE(TAUOC(IJS(1):IJL(1)))
           TAUOC(:) = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(NSWH)) THEN
+          ALLOCATE(NSWH(IJS(1):IJL(1)))
+          NSWH(:) = 0.
+        ENDIF
+        IF(.NOT.ALLOCATED(NMWP)) THEN
+          ALLOCATE(NMWP(IJS(1):IJL(1)))
+          NMWP(:) = 0.
         ENDIF
       ENDIF
 
@@ -473,6 +489,10 @@
 
       FLOGSPRDM1=1./LOG10(FRATIO)
 
+      CALL TABU_SWELLFT
+
+      IF (.NOT. LLUNSTR) THEN
+
       IF(LMESSPASS) THEN
 
         KTAG=100
@@ -486,9 +506,9 @@
           DO IP=1,NPROC
             WRITE(IU06,*)
             WRITE(IU06,*) ' PROCESS NUMBER : ',IP
-            WRITE(IU06,*) ' NSTART : ',NSTART(IP)
-            WRITE(IU06,*) ' NEND   : ',NEND(IP)
-            WRITE(IU06,*) ' N      : ',NEND(IP)-NSTART(IP)+1
+            WRITE(IU06,*) ' NBLKS  : ',NBLKS(IP)
+            WRITE(IU06,*) ' NBLKE  : ',NBLKE(IP)
+            WRITE(IU06,*) ' N      : ',NBLKE(IP)-NBLKS(IP)+1
             WRITE(IU06,*) ' KLENBOT: ',KLENBOT(IP)
             WRITE(IU06,*) ' KLENTOP: ',KLENTOP(IP)
             WRITE(IU06,*) ' ----------------------- '
@@ -496,8 +516,7 @@
           CALL FLUSH(IU06)
         ENDIF
       ENDIF
-
-
+      ENDIF ! .NOT. LLUNSTR
 !     1.5 DETERMINE LAST OUTPUT DATE
 !         --------------------------
 
@@ -523,7 +542,6 @@
 
         IF(COUTLST.GT.CDATEE) COUTLST=CDATEE
       ENDIF
-
 
 ! ----------------------------------------------------------------------
 
@@ -565,6 +583,8 @@
 
       GBOUNC = 1
 
+      IF (.NOT. LLUNSTR) THEN
+ 
       IF (IBOUNC.EQ.1 .OR. IBOUNF.EQ.1) THEN
         IF (IBOUNC.EQ.1) THEN
 !         READ INFORMATION ABOUT WHERE THE FINE GRID(S) ARE
@@ -628,6 +648,8 @@
           CALL FLUSH (IU06)
         ENDIF
       ENDIF
+
+      ENDIF ! .NOT. LLUNSTR
 
       IF(.NOT.ALLOCATED(IU19)) ALLOCATE(IU19(GBOUNC))
 
@@ -707,6 +729,7 @@
  3003 FORMAT(3x,a,i8,  a)
 !NEST
       CALL FLUSH (IU06)
+
       IF (IBOUNC .EQ. 1) THEN
         WRITE(IU06,*)
         WRITE(IU06,*) ' COARSE GRID: BOUNDARY OUTPUT POINTS :'
@@ -730,20 +753,52 @@
 !*    3.1 COMPUTE SHALLOW WATER TABLE INDICES.
 !         ------------------------------------
 
-      IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:IJLT(IGL)))
+!     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
+      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(NINF-1:NSUP))
+      DO IJ=NINF,NSUP
+        IF(DEPTH(IJ,1).LE.TOOSHALLOW) THEN
+          IODP(IJ) = 0
+        ELSE
+          IODP(IJ) = 1
+        ENDIF
+      ENDDO
+      IODP(NINF-1)=0
+
+      IF(.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(NINF-1:NSUP))
+      IF (.NOT. LLUNSTR) THEN
+         IOBND(:)=1
+      ELSE
+        DO IJ=NINF,NSUP
+          IF (IOBP(IJ) .NE. 0) THEN
+            IOBND(IJ)=0
+          ELSE
+            IOBND(IJ)=1
+          ENDIF
+        ENDDO
+      ENDIF
+      IOBND(NINF-1)=0
+
+      DO IJ=NINF,NSUP
+        DEPTH(IJ,1) = MAX(DEPTH(IJ,1),DEPTHA)
+      ENDDO
+
+
+!     COMPUTE SHALLOW WATER TABLE INDICES.
+      IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:NSUP))
       INDEP(NINF-1)=NDEPTH
       IF (ISHALLO.NE.1) THEN
-        DO IJ=NINF,IJLT(IGL)
-          XD = LOG(DEPTH(IJ,IGL)/DEPTHA)/LOG(DEPTHD)+1.
+        DO IJ=NINF,NSUP
+          XD = LOG(DEPTH(IJ,1)/DEPTHA)/LOG(DEPTHD)+1.
           ID = NINT(XD)
           ID = MAX(ID,1)
           INDEP(IJ) = MIN(ID,NDEPTH)
         ENDDO
       ELSE
-        DO IJ=NINF,IJLT(IGL)
+        DO IJ=NINF,NSUP
           INDEP(IJ) = NDEPTH
         ENDDO
       ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -762,7 +817,7 @@
 
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,
-     &               NSTART,NEND,IREAD)
+     &               NBLKS,NBLKE,IREAD)
 
       CDA = CDTPRO
 
@@ -916,6 +971,7 @@
 
 !*    6. CONSISTENCY CHECK ACCORDING TO CFL CRITERION.
 !        ---------------------------------------------
+      IF (.NOT. LLUNSTR) THEN
 
       GVE = G/(ZPI*FR(1)*2.)
       DPH = DELPHI
@@ -952,6 +1008,8 @@
         WRITE(IU06,*) ' **********************************************'
         CALL ABORT1
       ENDIF
+
+      ENDIF ! .NOT. LLUNSTR
 
 ! ----------------------------------------------------------------------
 
@@ -1012,16 +1070,46 @@
          CALL FLUSH(IU06)
       ENDIF
 
+
 !     INITIALIZE THE NEMO COUPLING
       IF(LWNEMOCOU) CALL INITNEMOCPL(LWNEMOCOURECV)
 
-!      NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
-!      *GETCURR* IS CALLED (SEE *PREWIND*).
-!      A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
-!      BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
-!      ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
+
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      CALL WAV_initialize_all_coupling
+#endif
+
+
+      IF (LLUNSTR) THEN
+!     PREPARE OUTPUT OF UNSTRUCTURED GRID TO STRUCTURED GRID (as read in)
+        IF(ALLOCATED(IE_OUTPTS)) DEALLOCATE(IE_OUTPTS)
+        ALLOCATE(IE_OUTPTS(NGX,NGY))
+!AR: add openmp here but better it would be if you would have only one loop over ngx*ngy
+        DO IY=1,NGY
+          XLA = AMONOP-REAL(IY-1)*XDELLA
+          DO IX=1,NGX
+            XLO = AMOWEP+REAL(IX-1)*ZDELLO(IY)
+!!debile
+!!! need to find out unstructured grid left longitude (I assume -180 for now)
+            IF(XLO.GE.180.d0) XLO=max(XLO-IPER*360.d0,-180.d0)
+
+            IE_OUTPTS(IX,IY)=-1
+            CALL FIND_ELE (XLO,XLA,IE_OUTPTS(IX,IY))
+          ENDDO
+        ENDDO
+      ENDIF
+
+!     NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
+!     *GETCURR* IS CALLED (SEE *PREWIND*).
+!     A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
+!     BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
+!     ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
+
       LLINIT=.NOT.LRESTARTED
-      CALL PREWIND (
+
+      CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &              ROAIRO, ZIDLOLD,
+     &              CICOVER, CITHICK, CIWA,
      &              LLINIT,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
@@ -1029,6 +1117,7 @@
 
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
       CALL FLUSH (IU06)
+
 
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
 !!!! might need to restrict call when needed !!!
@@ -1050,7 +1139,7 @@
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1,SL,NSTART,NEND,IREAD,U10OLD,THWOLD)
+      CALL GETSPEC(FL1,NBLKS,NBLKE,IREAD,U10OLD,THWOLD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)
@@ -1067,14 +1156,14 @@
 !         ------------------------------------------------------------ 
 
       IF(.NOT.ALLOCATED(ENH))
-     &   ALLOCATE(ENH(NSTART(IRANK):NEND(IRANK),MLSTHG,IGL))
+     &   ALLOCATE(ENH(IJS(1):IJL(1),MLSTHG,IGL))
 
       IF (ISNONLIN.NE.0) THEN
         ENH_MAX=10.
         IF (ISHALLO.NE.1) THEN
           DO IG=1,IGL
             DO M=1,NFRE
-               DO IJ=NSTART(IRANK),NEND(IRANK)
+               DO IJ = IJS(1), IJL(1) 
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(M)
                  XK = AKI(OM,D)
@@ -1082,7 +1171,7 @@
                ENDDO
             ENDDO
             DO M=NFRE+1,MLSTHG
-               DO IJ=NSTART(IRANK),NEND(IRANK)
+               DO IJ = IJS(1), IJL(1) 
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
 !                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
@@ -1095,7 +1184,7 @@
         ELSE
           DO IG=1,IGL
             DO M=1,MLSTHG
-               DO IJ=NSTART(IRANK),NEND(IRANK)
+               DO IJ = IJS(1), IJL(1) 
                  ENH(IJ,M,IG) = 1.
                ENDDO
             ENDDO
@@ -1106,12 +1195,13 @@
 !     9.3 DETERMINE WHETHER A GRID POINT IS SURROUNDED BY
 !         POINTS WITH THE SAME DEPTH INDEX (EXCLUDING LAND POINTS).
 !         ---------------------------------------------------------
+      IF (.NOT. LLUNSTR) THEN
 
       IF(.NOT.ALLOCATED(LSAMEDEPTH)) 
-     &    ALLOCATE(LSAMEDEPTH(NSTART(IRANK):NEND(IRANK)))
+     &    ALLOCATE(LSAMEDEPTH(IJS(1):IJL(1)))
 
       IF(IPROPAGS.EQ.2) THEN
-         DO IJ = NSTART(IRANK),NEND(IRANK)
+         DO IJ = IJS(1), IJL(1) 
            IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.
@@ -1135,7 +1225,7 @@
 
          ENDDO
       ELSE IF(IPROPAGS.EQ.1) THEN
-         DO IJ = NSTART(IRANK),NEND(IRANK)
+         DO IJ = IJS(1), IJL(1) 
             IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.
@@ -1156,7 +1246,7 @@
            ENDIF
          ENDDO
       ELSE
-         DO IJ = NSTART(IRANK),NEND(IRANK)
+         DO IJ = IJS(1), IJL(1) 
            IF( INDEP(IJ).EQ.INDEP(KLON(IJ,1)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLON(IJ,2)) .AND.
      &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.
@@ -1197,6 +1287,7 @@
           KP1 = K+1
           IF (KP1.GT.NANG) KP1 = 1
           KPM(K,1)=KP1
+
 
           IF(COSTH(K).GE.0.) THEN
             JYO(K,1)=1
@@ -1266,10 +1357,15 @@
       ENDIF
 !NEST
 
+      ENDIF ! .NOT. LLUNSTR
+
       IF (ITEST.GE.2)
      1   WRITE(IU06,*) '   SUB. INITMDL: DEFAULT  GRIB HEADERS SET'
 
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITMDL',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE INITMDL

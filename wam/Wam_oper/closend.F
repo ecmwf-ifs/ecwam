@@ -85,8 +85,9 @@
 
 !*    1. SAVE WIND INTO INTERMEDIATE STORAGE.
 !     ----------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CLOSEND',0,ZHOOK_HANDLE)
+#endif
 
       IF (NEWREAD) THEN
         NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
@@ -138,6 +139,8 @@
         CDATEWO=CDATEWH
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CLOSEND',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CLOSEND

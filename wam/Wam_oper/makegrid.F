@@ -1,4 +1,4 @@
-      SUBROUTINE MAKEGRID (BLOCK, GRID, IJS, IJL, IG, LSQRT, PMISS)
+      SUBROUTINE MAKEGRID (BLOCK, GRID, IG, LSQRT, PMISS)
 
 ! ----------------------------------------------------------------------
 
@@ -17,8 +17,6 @@
 !        *CALL MAKEGRID*
 !           *BLOCK*   REAL   DATA IN BLOCKED FORMAT
 !           *GRID*    REAL   DATA IN GRID FORMAT
-!           *IJS*     INTEGER INDEX OF FIRST GRIDPOINT IN BLOCK
-!           *IJL*     INTEGER INDEX OF LAST  GRIDPOINT IN BLOCK
 !           *IG*      INTEGER BLOCK NUMBER
 !           *LSQRT*   LOGICAL IF TRUE THE 4*SQUARE ROOT OF BLOCK IS
 !                     COMPUTED WHEN TRANSFERRING TO GRID EXCEPT IF
@@ -45,45 +43,110 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
+     &            XDELLA   ,ZDELLO   ,IPER
+      USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+      USE YOWUNPOOL, ONLY : LLUNSTR  ,IE_OUTPTS
+      USE YOWPD,     ONLY : NODES=>nodes_global,INE_GLOBAL,rank, np
+      USE UNWAM
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LSQRT
-      DIMENSION BLOCK(NIBLO), GRID(NGX,NGY)
+      IMPLICIT NONE
+
+      INTEGER :: IG
+      INTEGER :: IY, IX, J, I, IJ, IE, KI, IR, IP
+      INTEGER :: NI(3)
+
+      REAL    :: PMISS
+      REAL    :: ZHOOK_HANDLE
+      REAL    :: GRID(NGX,NGY)
+      REAL, DIMENSION(NIBLO) :: BLOCK, BLOCK_G 
+      REAL*8  :: XLO, XLA
+      REAL*8  :: BLOCK8, GRID8, PMS8
+      REAL*8  :: XYELE(2,3), SKALAR(3)
+
+      LOGICAL :: LSQRT
+      LOGICAL :: LLCLST
+! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MAKEGRID',0,ZHOOK_HANDLE)
+#endif
+
+      CALL GSTATS(1996,0)
 
 !*    1. INITIALIZATION
 !     -----------------
 
-      CALL GSTATS(1996,0)
-      IF (IG.EQ.1) THEN
-        DO J = 1,NGY
-          DO I = 1,NGX
-            GRID(I,J) = PMISS
-          ENDDO
+      PMS8=PMISS
+
+      DO J = 1,NGY
+        DO I = 1,NGX
+          GRID(I,J) = PMISS
+        ENDDO
+      ENDDO
+
+      IF(LSQRT) THEN
+        DO IJ = 1,NIBLO 
+          IF(BLOCK(IJ).NE.PMISS) THEN
+             BLOCK(IJ) = 4.*SQRT(BLOCK(IJ))
+          ELSE
+            BLOCK(IJ) = PMISS
+          ENDIF
         ENDDO
       ENDIF
 
+!     RE-ESTABLISH THE GLOBAL CONFIGURATION:
+      IF (LLUNSTR) CALL UNBLKRORD(1,1,1,1,1,BLOCK(1),BLOCK_G(1))
 !*    2. MAKE GRIDDED FIELD
 !     ---------------------
 
-      IF(LSQRT) THEN
-        DO IJ = IJS,IJL
-          IF(BLOCK(IJ).NE.PMISS) THEN
-            IX = IXLG(IJ,IG)
-            IY = NGY- KXLT(IJ,IG) +1
-            GRID(IX,IY) = 4.*SQRT(BLOCK(IJ))
-          ENDIF
+      IF (LLUNSTR) THEN
+!!! I believe one could have an openmp loop here !!!!
+        DO IY=1,NGY
+          XLA = AMONOP-REAL(IY-1)*XDELLA
+          DO IX=1,NGX
+            XLO = AMOWEP+REAL(IX-1)*ZDELLO(IY)
+!!debile
+!!! need to find out unstructured grid left longitude (I assume -180 for now)
+            IF(XLO.GE.180.d0) XLO=max(XLO-IPER*360.d0,-180.d0)
+
+            IE=IE_OUTPTS(IX,IY)
+            IF(IE.NE.-1) THEN
+!!! this is not very efficient
+              LLCLST=.FALSE.
+              NI = INE_GLOBAL(:,IE)
+              XYELE(1,:)=NODES(NI)%X
+              XYELE(2,:)=NODES(NI)%Y
+              SKALAR(:)=BLOCK_G(NI)
+              IF(ANY(BLOCK_G(NI).EQ.PMISS)) LLCLST=.TRUE.
+              CALL INTELEMENT_IPOL(LLCLST,XYELE,SKALAR,XLO,XLA,IE,
+     &                             PMS8,GRID8)
+              GRID(IX,IY)=GRID8
+            ENDIF
+
+          ENDDO
         ENDDO
+
       ELSE
-        DO IJ = IJS,IJL
+
+        DO IJ = 1, NIBLO 
           IX = IXLG(IJ,IG)
           IY = NGY- KXLT(IJ,IG) +1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
-      ENDIF
+
+      ENDIF ! LLUNSTR
+
       CALL GSTATS(1996,1)
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MAKEGRID',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE MAKEGRID

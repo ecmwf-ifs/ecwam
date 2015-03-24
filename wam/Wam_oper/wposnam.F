@@ -81,7 +81,7 @@
       WRITE(*,*) '*********************'
       WRITE(*,*) 'READ ERROR IN WPOSNAM ' 
       WRITE(*,*) '*********************'
-      CALL ABORT
+      CALL ABORT1
 
       RETURN
 

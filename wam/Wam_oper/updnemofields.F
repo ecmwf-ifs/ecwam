@@ -54,15 +54,22 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! INFORMATION FOR OPTIONAL DEBUGGING
       USE YOWSTAT  , ONLY : CDATEF, CDTPRO
+
+! -------------------------------------------------------------------   
+
       IMPLICIT NONE
-      LOGICAL :: LWSTOKES
-      REAL, DIMENSION(IJS(1):IJL(1)) :: USTOKES, VSTOKES
-      REAL, ALLOCATABLE, DIMENSION(:) :: CD, ZDUMU, ZDUMV, ZDUMSTRN
+
       INTEGER :: IG, IJ
+
       REAL :: TAU
       REAL :: ZHOOK_HANDLE
- 
+      REAL, ALLOCATABLE, DIMENSION(:) :: ZDUMU, ZDUMV, ZDUMSTRN
+
+      LOGICAL :: LWSTOKES
+! -------------------------------------------------------------------   
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)
+#endif
 
       IF (LWNEMOCOU) THEN
 
@@ -88,6 +95,7 @@
            ZDUMV(IJS(IG):IJL(IG)) = 0.0
         ENDIF
 
+#ifdef ECMWF
         CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,
      &       IJL(IG)-IJS(IG)+1,
      &       NSWH(IJS(IG):IJL(IG)),NMWP(IJS(IG):IJL(IG)),
@@ -95,11 +103,15 @@
      &       ZDUMSTRN(IJS(IG):IJL(IG)), 
      &       ZDUMU(IJS(IG):IJL(IG)), ZDUMV(IJS(IG):IJL(IG)),
      &       CDTPRO, LWNEMOCOUDEBUG )
+#endif
 
         DEALLOCATE(ZDUMSTRN,ZDUMU,ZDUMV)
 
       ENDIF
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',1,ZHOOK_HANDLE)
+#endif
 
-      END
+      RETURN
+      END SUBROUTINE UPDNEMOFIELDS

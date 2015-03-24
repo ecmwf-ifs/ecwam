@@ -71,7 +71,9 @@
       LOGICAL :: LICE2SEA(IJS:IJL)
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
+#endif
 
 
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
@@ -233,7 +235,9 @@
         ENDDO
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INTPOL',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE INTPOL

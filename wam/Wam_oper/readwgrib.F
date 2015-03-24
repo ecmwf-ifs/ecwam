@@ -64,9 +64,7 @@
 !-------------------------------------------------------------------
 
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
-     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,
-     &            ZDELLO
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
@@ -76,7 +74,13 @@
 
 !-----------------------------------------------------------------------
 
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+      IMPLICIT NONE
+
+      INTEGER :: IU06, IPARAM, KZLEV, IREAD
+      INTEGER :: KPARAM 
+      INTEGER :: IG 
+      INTEGER :: IJ, IX, JY
+      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: KLONRGG(NGY)
 
       REAL :: ZHOOK_HANDLE
@@ -94,10 +98,11 @@
 !*    1. INPUT OF GRIB DATA.
 !     -----------------------
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
+#endif
 
       CALL INWGRIB  (FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
-      KRGG=IRGG 
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
@@ -132,81 +137,23 @@
       ENDIF
 
 
-
 ! TRANSFORM GRID DATA TO BLOCK DATA
 
-      IF(KRGG.EQ.0.AND.IRGG.EQ.1) THEN
-!       INTERPOLATION IS REQUIRED : TAKE CLOSEST GRID POINT
-!       (this part to be removed once we only use gribapi !)
-        DELLO=XDELLO
-        DELLA=XDELLA
         DO IG=1,IGL
           NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
           IF(LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC)
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,KX,XI,XJ,I,J)
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
               DO IJ = KIJS, KIJL
-                IX = IXLG(IJ,IG)
-                KX = KXLT(IJ,IG)
-                XI = AMOWEP + REAL(IX-1)*ZDELLO(KX)-CDMOWEP
-                XI = MOD(XI+720.,360.)
-                XI = XI/DELLO+1.00001
-                XJ = CDMONOP - AMOSOP - REAL(KX-1)*XDELLA
-                XJ = XJ/DELLA+1.00001
-                I  = NINT(XI)
-                J  = NINT(XJ)
-                IF(WORK(I,J).NE.ZMISS .AND. WORK(I,J) .GT. 0.)
-     &             FIELD(IJ,IG)=WORK(I,J)
-              ENDDO
-            ENDDO
-!$OMP       END PARALLEL DO
-            CALL GSTATS(1444,1)
-          ELSE
-            CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(STATIC)
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,KX,XI,XJ,I,J)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              DO IJ = KIJS, KIJL
-                IX = IXLG(IJ,IG)
-                KX = KXLT(IJ,IG)
-                XI = AMOWEP + REAL(IX-1)*ZDELLO(KX)-CDMOWEP
-                XI = MOD(XI+720.,360.)
-                XI = XI/DELLO+1.00001
-                XJ = CDMONOP - AMOSOP - REAL(KX-1)*XDELLA
-                XJ = XJ/DELLA+1.00001
-                I  = NINT(XI)
-                J  = NINT(XJ)
-                IF(WORK(I,J).NE.ZMISS) FIELD(IJ,IG)=WORK(I,J)
-              ENDDO
-            ENDDO
-!$OMP       END PARALLEL DO
-            CALL GSTATS(1444,1)
-          ENDIF
-        ENDDO
-      ELSE
-!       NO INTERPOLATION IS REQUIRED
-        DO IG=1,IGL
-          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
-
-          IF(LLONLYPOS) THEN
-            CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(STATIC)
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              DO IJ = KIJS, KIJL
-                IX = IXLG(IJ,IG)
-                IY = NGY- KXLT(IJ,IG) +1
-                IF(WORK(IX,IY).NE.ZMISS .AND. WORK(IX,IY) .GT. 0.)
-     &               FIELD(IJ,IG)=WORK(IX,IY)
+                IX = IFROMIJ(IJ,IG)
+                JY = JFROMIJ(IJ,IG)
+                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY) .GT. 0.)
+     &               FIELD(IJ,IG)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -215,23 +162,24 @@
           ELSE
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) 
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
+!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
               DO IJ = KIJS, KIJL
-                IX = IXLG(IJ,IG)
-                IY = NGY- KXLT(IJ,IG) +1
-                IF(WORK(IX,IY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,IY)
+                IX = IFROMIJ(IJ,IG)
+                JY = JFROMIJ(IJ,IG)
+                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1444,1)
           ENDIF
         ENDDO
-      ENDIF
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE READWGRIB

@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, IG, FCONST, L1STCALL)
+      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, L1STCALL)
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS* - COMPUTATION OF A PROPAGATION TIME STEP.
@@ -15,7 +15,6 @@
 
 !     H. GUNTHER   GKSS/ECMWF   17/01/91    -   MODIFIED FOR CYCLE_4
 
-!     J. BIDLOT    ECMWF   FEBRUARY 1997    - ADD FCONST
 !     J. BIDLOT    ECMWF   APRIL 1997       - MODIFIED ADVECTION SCHEME 
 !     J. BIDLOT    ECMWF   2003             - OBSTRUCTION COEFFICIENTS  
 
@@ -27,13 +26,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, IG, FCONST,L1STCALL)*
-!          *F1*   - SPECTRUM AT TIME T.
-!          *F3*   - SPECTRUM AT TIME T+DELT.
+!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, L1STCALL)*
+!          *F1*   - BLOCK SPECTRUM AT TIME T.
+!          *F3*   - CHUNCK SPECTRUM AT TIME T+DELT.
 !          *MIJS* - INDEX OF FIRST POINT
 !          *MIJL* - INDEX OF LAST POINT
-!          *IG*   - BLOCK NUMBER.
-!          *FCONST* - SIGMA/SINH(2KD)
 !          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
 
 !     METHOD.
@@ -72,8 +69,23 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F1,F3
-      REAL,DIMENSION(NINF:NSUP,NFRE):: FCONST
+      IMPLICIT NONE
+
+      INTEGER, PARAMETER :: IG=1
+      INTEGER, INTENT(IN) :: MIJS, MIJL
+      INTEGER :: K, M, IJ, JH
+      INTEGER :: IC, IJLA, IJPH, KP1, KM1, MP1, MM1
+
+
+      REAL :: ZHOOK_HANDLE
+      REAL :: DELPRO, DELPH0, DELTH0, DELFR0, DELPH0_CDA 
+      REAL :: SD, CD, SDA, CDA, DNO, DTT, SDD, CDD, DTHP, DTHM, DFP, DFM
+      REAL :: CGS, CGC, DLWE, DLEA, DPSO, DPNO, SDA2, SP, SM, TANPH  
+      REAL :: DPNO2, DPSO2, XX, YY
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE),INTENT(IN) :: F1
+      REAL,DIMENSION(MIJS:MIJL,NANG,NFRE),INTENT(INOUT) :: F3
+
+      REAL,DIMENSION(MIJS:MIJL,NFRE):: SHLFAC
 
       REAL,ALLOCATABLE,DIMENSION(:) :: DELLA0,DCO,DP1,DP2
       REAL,ALLOCATABLE,DIMENSION(:) :: DPN,DPN2,DPS,DPS2
@@ -87,10 +99,14 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CGKLON, CGKLAT
       REAL,ALLOCATABLE,DIMENSION(:) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
       REAL,ALLOCATABLE,DIMENSION(:) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
-      LOGICAL :: L1STCALL
-      REAL ZHOOK_HANDLE
 
+      LOGICAL :: L1STCALL
+
+! ----------------------------------------------------------------------
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS',0,ZHOOK_HANDLE)
+#endif
 ! ----------------------------------------------------------------------
 
       ALLOCATE(DELLA0(NINF-1:IJLT(IG)))
@@ -99,16 +115,6 @@
       ALLOCATE(DTP(MIJS:MIJL))
       ALLOCATE(DTM(MIJS:MIJL))
       ALLOCATE(DTC(MIJS:MIJL))
-
-!*    0. SPECTRUM AT LAND TO ZERO.
-!        -------------------------
-
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          F3(NINF-1,K,M) = 0.
-        ENDDO
-      ENDDO
 
       DELPRO = REAL(IDELPRO)   
 
@@ -130,7 +136,7 @@
 !         -------------------------------------
 
       IF (IREFRA.NE.0) THEN
-        CALL DOTDC (MIJS, MIJL, ISHALLO, FCONST)
+        CALL DOTDC (MIJS, MIJL, ISHALLO, SHLFAC)
       ENDIF
 
 !*    0.2 SPHERICAL OR CARTESIAN GRID?
@@ -331,8 +337,8 @@
             ENDIF
             IF (IREFRA.EQ.1) THEN
               DO IJ = MIJS,MIJL
-                DTHP = FCONST(IJ,M)*DRDP(IJ)
-                DTHM = FCONST(IJ,M)*DRDM(IJ)
+                DTHP = SHLFAC(IJ,M)*DRDP(IJ)
+                DTHM = SHLFAC(IJ,M)*DRDM(IJ)
                 DTC(IJ) = DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
                 DTP(IJ) = -DTHP+ABS(DTHP)
                 DTM(IJ) =  DTHM+ABS(DTHM)
@@ -379,7 +385,9 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -524,8 +532,8 @@
               DPS(IJ) =  DPSO+ABS(DPSO)
               DTC(IJ) = DTC(IJ) + DPNO+ABS(DPNO)-DPSO+ABS(DPSO)
 
-              DTHP = FCONST(IJ,M)*DRDP(IJ) + DRCP(IJ)
-              DTHM = FCONST(IJ,M)*DRDM(IJ) + DRCM(IJ)
+              DTHP = SHLFAC(IJ,M)*DRDP(IJ) + DRCP(IJ)
+              DTHM = SHLFAC(IJ,M)*DRDM(IJ) + DRCM(IJ)
               DTC(IJ) = DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
               DTP(IJ) = -DTHP+ABS(DTHP)
               DTM(IJ) =  DTHM+ABS(DTHM)
@@ -577,7 +585,9 @@
         DEALLOCATE(DRDM)
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -892,8 +902,8 @@
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
-                DTHP = DRGP(IJ)*CGOND(IJ,M)+FCONST(IJ,M)*DRDP(IJ)
-                DTHM = DRGM(IJ)*CGOND(IJ,M)+FCONST(IJ,M)*DRDM(IJ)
+                DTHP = DRGP(IJ)*CGOND(IJ,M)+SHLFAC(IJ,M)*DRDP(IJ)
+                DTHM = DRGM(IJ)*CGOND(IJ,M)+SHLFAC(IJ,M)*DRDM(IJ)
                 CFLTP(IJ) = DTHP+ABS(DTHP)
                 CFLTM(IJ) = -DTHM+ABS(DTHM) 
                 DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
@@ -955,7 +965,9 @@
       DEALLOCATE(CFLTP)
       DEALLOCATE(CFLTM)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
 ! ----------------------------------------------------------------------
@@ -1194,9 +1206,9 @@
               ENDIF
 
               DTHP=DRGP(IJ)*CGOND(IJ,M)
-     &         +FCONST(IJ,M)*DRDP(IJ)+DRCP(IJ)
+     &         +SHLFAC(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM=DRGM(IJ)*CGOND(IJ,M)
-     &         +FCONST(IJ,M)*DRDM(IJ)+DRCM(IJ)
+     &         +SHLFAC(IJ,M)*DRDM(IJ)+DRCM(IJ)
               CFLTP(IJ) = DTHP+ABS(DTHP)
               CFLTM(IJ) = -DTHM+ABS(DTHM) 
               DTC(IJ) =  DTC(IJ) + CFLTP(IJ) + CFLTM(IJ)
@@ -1292,6 +1304,8 @@
       DEALLOCATE(CFLOP)
       DEALLOCATE(CFLOM)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE PROPAGS

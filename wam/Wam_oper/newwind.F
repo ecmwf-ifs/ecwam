@@ -77,7 +77,6 @@
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-
 ! ----------------------------------------------------------------------
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
       REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,ROAIRO,ZIDLOLD
@@ -98,14 +97,14 @@
       DATA ISTORE /0/
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
+#endif
 
 
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
       IF (CDATE.LT.CDATEWH) THEN
-
         NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
@@ -121,7 +120,6 @@
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1492,1)
-
       ELSE
 !*    2. NEW WIND INPUT.
 !        ---------------
@@ -179,6 +177,8 @@
 
       ENDIF   
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE NEWWIND

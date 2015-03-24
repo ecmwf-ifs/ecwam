@@ -36,13 +36,15 @@
 
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
-      USE YOWMAP   , ONLY : IRGG     ,AMOSOP   ,
-     &            AMONOP   ,AMOWEP   ,AMOEAP   ,XDELLA   ,ZDELLO
+      USE YOWPARAM , ONLY : NIBLO
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI 
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NWAM_BLKS
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
+      USE YOWPD, ONLY : MNP => npa
+      USE YOWUNPOOL ,ONLY : LLUNSTR
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -60,10 +62,11 @@
       INTEGER :: KK, MM
       INTEGER :: IBUF(2) 
       INTEGER, ALLOCATABLE :: INGRIB(:)
+      INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
-      REAL :: FIELD(NGX,NGY)                                          
+      REAL :: FIELD(NXFF,NYFF)                                          
 
       CHARACTER(LEN=14) :: CDATE
       CHARACTER(LEN=24) :: FILNM
@@ -72,26 +75,41 @@
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
+#endif
 
       NBIT=NIBLO
 
-      LLEXIST=.FALSE.
-      LFILE = LEN_TRIM(FILNM)
-      INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
-      IF(.NOT. LLEXIST) THEN
-        WRITE (IU06,*) '*************************************'
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
-        WRITE (IU06,*) '*  IN INWGRIB:                      *'
-        WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*************************************'
-        CALL ABORT1
+      IF(LLUNSTR) THEN
+        NLONRGG_LOC(:)=MNP
+      ELSE
+        NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF
 
 !     READ DATA ON PE IREAD
       IF(IRANK.EQ.IREAD) THEN
+        LLEXIST=.FALSE.
+        LFILE = LEN_TRIM(FILNM)
+        INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
+        IF(.NOT. LLEXIST) THEN
+          WRITE (IU06,*) '*************************************'
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+          WRITE (IU06,*) '*  IN INWGRIB:                      *'
+          WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILNM
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*************************************'
+          WRITE (*,*) '*************************************'
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+          WRITE (*,*) '*  IN INWGRIB:                      *'
+          WRITE (*,*) '*  COULD NOT FIND FILE ',FILNM
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*************************************'
+          CALL ABORT1
+        ENDIF
+
         CALL IGRIB_OPEN_FILE(KFILE_HANDLE,FILNM(1:LFILE),'r')
 
 1021    ISIZE=NBIT
@@ -151,8 +169,10 @@
 
       CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
      &                 KGRIB_HANDLE, INGRIB, ISIZE,
-     &                 NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
-     &                 AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &                 LLUNSTR,
+     &                 NXFF, NYFF, NLONRGG_LOC,
+     &                 IRGG, XDELLA, ZDELLO,
+     &                 FIELDG%XLON, FIELDG%YLAT,
      &                 ZMISS, PPREC, PPEPS,
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
@@ -160,7 +180,9 @@
 
       IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INWGRIB',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE INWGRIB

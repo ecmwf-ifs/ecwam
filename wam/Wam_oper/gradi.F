@@ -69,7 +69,9 @@
       REAL, DIMENSION(MIJS:MIJL) :: DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISE.
 !        -----------
@@ -186,6 +188,8 @@
         ENDDO
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE GRADI

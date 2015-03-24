@@ -72,7 +72,7 @@
       INTEGER :: GBOUNC_LOC
       REAL :: GRDDIFF
       REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
-
+      INTEGER :: ListSTART(1), ListEND(1)
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
@@ -248,8 +248,10 @@
 
 !*    5. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
+      ListSTART(1)=ISTART
+      ListEND(1)=IEND
       CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,
-     & 1,ISTART,IEND,1)
+     & 1,ListSTART,ListEND,1)
 
 ! ----------------------------------------------------------------------
 

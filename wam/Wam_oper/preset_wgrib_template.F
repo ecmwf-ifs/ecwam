@@ -84,11 +84,15 @@
 
 !-------------------------------------------------------------------
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
+#endif
 
       IF(.NOT. LGRHDIFS) THEN
-        CALL IGRIB_NEW_FROM_TEMPLATE(IGRIB_HANDLE,'gg_sfc')
+        IGRIB_HANDLE=-99
+        CALL IGRIB_NEW_FROM_TEMPLATE(IGRIB_HANDLE,'gg_sfc_grib1')
       ELSE
+         IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
       ENDIF
       IF(ITEST.GT.0) THEN
@@ -500,7 +504,9 @@
         NTENCODE=NY*NGX
       ENDIF
 
+#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE PRESET_WGRIB_TEMPLATE 

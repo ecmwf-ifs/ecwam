@@ -77,10 +77,13 @@
       REAL, DIMENSION(IJS:IJL) :: PHIOC, TAUWD
       REAL, DIMENSION(IJS:IJL) :: EM, FM, U10, THW
       REAL, DIMENSION(IJS:IJL) :: USNEW, ROAIRN
+
       LOGICAL :: LNUPD
 
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+#endif
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
@@ -121,7 +124,9 @@
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE WNFLUXES

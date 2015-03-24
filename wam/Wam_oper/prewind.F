@@ -1,9 +1,10 @@
-      SUBROUTINE PREWIND (
+      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+     &                    ROAIRO, ZIDLOLD,
+     &                    CICOVER, CITHICK, CIWA,
      &                    LLINIT,
      &                    IREAD,
      &                    NFIELDS, NGPTOTG, NC, NR,
      &                    FIELDS, LWCUR, MASK_IN)
-
 
 ! ----------------------------------------------------------------------
 
@@ -34,12 +35,29 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (
+!     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+!    &                 ROAIRO, ZIDLOLD, CICOVER,
 !    &                 LLINIT,
 !    &                 IREAD,
 !    &                 NFIELDS, NGPTOTG, NC, NR,
 !    &                 FIELDS, LWCUR, MASK_IN)*
 
+!      *U10OLD*    REAL      INTERMEDIATE STORAGE OF MODULUS OF WIND
+!                            VELOCITY.
+!                            CLOCKWISE FROM NORTH).
+!      *THWOLD*    REAL      INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
+!                            WIND VELOCITY.
+!      *USOLD*     REAL      INTERMEDIATE STORAGE OF MODULUS OF FRICTION
+!                            VELOCITY.
+!      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
+!                            M.
+!      *TAUW*      REAL      WAVE STRESS IN (M/S)**2
+!      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
+!      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
+!                                   L: MONIN-OBUKHOV LENGTH).
+!      *CICOVER*   REAL      SEA ICE COVER.
+!      *CITHICK*   REAL      SEA ICE THICKNESS.
+!      *CIWA*      REAL      SEA ICE WAVE ATTENUATION FACTOR.
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
 !      *IREAD*     INTEGER   PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                            (IF NEEDED).
@@ -107,31 +125,53 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
+      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
-      USE YOWSPEC  , ONLY : ROAIRO   ,ZIDLOLD
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
-     &            IDELWO   ,LANAONLY
+     &            IDELWO   ,LANAONLY, IDELT
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
-      USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
       USE YOWTEXT  , ONLY : LRESTARTED
+      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      INTEGER NFIELDS, NGPTOTG, NC, NR
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      LOGICAL :: LWCUR
-      INTEGER MASK_IN(NGPTOTG)
-
-      CHARACTER*14 CDTWIE, CDTWIS, ZERO
-
-      LOGICAL LLFRST,LLFRSTNEMO
-      LOGICAL :: LLINIT
-      DATA LLFRST / .TRUE. /
-      DATA LLFRSTNEMO / .TRUE. /
-      REAL ZHOOK_HANDLE
+#ifdef MODEL_COUPLING_ATM_WAV
+      USE pgmcl_lib_WAM, only : WAV_coupl_prewind
+#endif
 
 ! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER :: NFIELDS, NGPTOTG, NC, NR
+      INTEGER :: IDELWH, IREAD
+      INTEGER :: ISTORE, IJ, IG, IIG
+      INTEGER :: MASK_IN(NGPTOTG)
+
+      REAL :: ZHOOK_HANDLE
+      REAL :: FIELDS(NGPTOTG,NFIELDS)
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
+     &                                  ROAIRO,ZIDLOLD,
+     &                                  CICOVER,CITHICK
+      REAL,DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
+
+      CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
+
+      LOGICAL :: LLFRSTNEMO
+      LOGICAL :: LWCUR
+      LOGICAL :: LLFRST
+      LOGICAL :: LLINIT
+      LOGICAL :: LLINIALL, LLOCAL
+
+      DATA LLFRST / .TRUE. /
+      DATA LLFRSTNEMO / .TRUE. /
+
+! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
@@ -144,7 +184,7 @@
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) "  PREWIND AT CDATEA = ", CDATEA 
-          CALL FLUSH (IU06)
+          FLUSH (IU06)
         ENDIF
         CDTWIS = CDATEA
       ELSE
@@ -166,9 +206,9 @@
 
 !*    2.0 GLOBAL FIELD FOR THE INPUTS
 !         ---------------------------
-
-      ALLOCATE(FIELDG(NGX,NGY))
-
+      LLINIALL=.TRUE.
+      LLOCAL=.TRUE.
+      CALL INIT_FIELDG(LLINIALL,LLOCAL)
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------
@@ -193,6 +233,7 @@
 !!!   AS PART OF THE GRIB RESTART FILES.
       IF (LLINIT) CALL WAMADSZIDL(ROAIRO,ZIDLOLD)
 
+#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
 
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
@@ -202,7 +243,6 @@
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
-
       IF (IDELWO.GE.IDELWI) THEN
 
 !*    2.2 NO TIME INTERPOLATION.
@@ -215,9 +255,12 @@
           WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
           WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          CALL FLUSH (IU06)
+          FLUSH (IU06)
         ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE, IREAD, LWCUR)
+        CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
+     &              LWCUR)
+
       ELSE
 
 !*    2.3 TIME INTERPOLATION.
@@ -230,10 +273,23 @@
           WRITE (IU06,*) '     END   OF PERIOD IS    CDTWIE = ',CDTWIE
           WRITE (IU06,*) '     WIND INPUT TIME STEP  IDELWI = ',IDELWI
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
-          CALL FLUSH (IU06)
+          FLUSH (IU06)
         ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE, IREAD, LWCUR)
+        CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
+     &              LWCUR)
+
       ENDIF
+
+#else
+      CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,          
+     &                       ROAIRO, ZIDLOLD,                         
+     &                       CICOVER, CITHICK, CIWA,                  
+     &                       LLINIT,                                  
+     &                       IREAD,                                   
+     &                       NFIELDS, NGPTOTG, NC, NR,                
+     &                       FIELDS, LWCUR, MASK_IN)
+#endif
 
 
 !*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS
@@ -241,7 +297,9 @@
 
       DEALLOCATE(FIELDG)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
 

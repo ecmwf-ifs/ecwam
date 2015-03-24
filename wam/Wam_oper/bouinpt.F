@@ -59,24 +59,24 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IU02 
+      INTEGER, INTENT(INOUT) :: IU02
+      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
       INTEGER :: I, M, K, IP, IJ, IJF, IC, KL, ML, IDELINP
       INTEGER, SAVE :: NBOINP
       INTEGER :: ISEND, IREQ
       INTEGER :: ICOUNT, NZCOMBUF, NINTFLD
       INTEGER :: KRCOUNT, KRTAG
       INTEGER :: ILOC, IBCL, IBCR
-      INTEGER,DIMENSION(NPROC) :: NSTART, NEND
       INTEGER :: ISENDREQ(NPROC)
       INTEGER :: NIJB
       INTEGER, DIMENSION(NBOUNF) :: IJB, IBND
 
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
       REAL :: XANG, XFRE, TH0, FR1, CO, XNBO, XDELIN  
       REAL :: XLON, XLAT
       REAL :: DEL12, DEL1L
       REAL :: FMEAN, EMEAN, THQ
       REAL :: ZHOOK_HANDLE
-      REAL ::  FL3(NINF-1:NSUP,NANG,NFRE)
 !      *FMEAN1*    REAL      MEAN FREQUENCIES FROM COARSE GRID.
 !      *EMEAN1*    REAL      TOTAL ENERGIES FROM COARSE GRID.
 !      *THQ1*      REAL      MEAN DIRECTIONS FROM COARSE GRID (RAD).
@@ -96,8 +96,9 @@
       LOGICAL :: LLBC(NPROC)
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('BOUINPT',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALIZATION.
 !        ---------------
@@ -488,6 +489,7 @@
       WRITE (IU06,*) '*******************************************'
       CALL ABORT1
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('BOUINPT',1,ZHOOK_HANDLE)
-
+#endif
       END SUBROUTINE BOUINPT

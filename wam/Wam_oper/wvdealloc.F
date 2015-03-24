@@ -16,17 +16,21 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
      &                      PHIAW    ,TAUOC
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
-     &            FCONST   ,ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,
-     &            SL
+     &            ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,SL
       USE YOWWIND  , ONLY : CDTNEXT  ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
      &            ZIDLNEXT ,CICOVERNEXT, CITHICKNEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+! ----------------------------------------------------------------------
 
-      REAL ZHOOK_HANDLE
+      IMPLICIT NONE
 
-      IF (LHOOK) CALL DR_HOOK('WVDEALLOC',0,ZHOOK_HANDLE)
+      REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('WVDEALLOC',0,ZHOOK_HANDLE)
+#endif
+
 !     1.  DEALLOCATE NECESSARY ARRAYS
 !         -------------------------
       IF(ALLOCATED(U10NEW)) DEALLOCATE(U10NEW)
@@ -41,7 +45,6 @@
       IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
       IF(ALLOCATED(SL)) DEALLOCATE(SL)
-      IF(ALLOCATED(FCONST)) DEALLOCATE(FCONST)
 
       IF(ALLOCATED(CDTNEXT)) DEALLOCATE(CDTNEXT)
       IF(ALLOCATED(USNEXT)) DEALLOCATE(USNEXT)
@@ -58,7 +61,9 @@
       IF(ALLOCATED(PHIAW)) DEALLOCATE(PHIAW)
       IF(ALLOCATED(TAUOC)) DEALLOCATE(TAUOC)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE WVDEALLOC

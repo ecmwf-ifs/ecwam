@@ -36,7 +36,11 @@
       CHARACTER*4 :: CSTREAM
       LOGICAL :: LASTREAM
       REAL ZHOOK_HANDLE
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
+#endif
+
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
       ELSE
@@ -71,7 +75,9 @@
         ENDIF
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SETMARSTYPE

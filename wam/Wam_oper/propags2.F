@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS2 (F1, F3, MIJS, MIJL, IG)
+      SUBROUTINE PROPAGS2 (F1, F3, MIJS, MIJL)
 
 ! ----------------------------------------------------------------------
 
@@ -17,12 +17,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, MIJS, MIJL, IG)*
-!          *F1*   - SPECTRUM AT TIME T.
-!          *F3*   - SPECTRUM AT TIME T+DELT.
+!       *CALL* *PROPAGS2(F1, F3, MIJS, MIJL)*
+!          *F1*   - BLOCK SPECTRUM AT TIME T.
+!          *F3*   - CHUNCK SPECTRUM AT TIME T+DELT.
 !          *MIJS* - INDEX OF FIRST POINT
 !          *MIJL* - INDEX OF LAST POINT
-!          *IG*   - BLOCK NUMBER.
 
 
 !     METHOD.
@@ -58,16 +57,23 @@
 
       IMPLICIT NONE
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F1,F3
-      INTEGER :: MIJS,MIJL,IG
+      INTEGER, PARAMETER :: IG=1
+      INTEGER, INTENT(IN) :: MIJS,MIJL
       INTEGER :: K,M,IJ
       INTEGER :: IC, ICR, ICL 
       INTEGER :: KP1,KM1, MM1, MP1, KNS, KEW
       INTEGER :: JJK,JJY,JJX
-      REAL,DIMENSION(MIJS:MIJL) :: FJ1,FJ2,FJ3,FJ4,FJ5
-      REAL ZHOOK_HANDLE
 
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: F1
+      REAL,DIMENSION(MIJS:MIJL,NANG,NFRE), INTENT(OUT) :: F3
+      REAL,DIMENSION(MIJS:MIJL) :: FJ1,FJ2,FJ3,FJ4,FJ5
+
+! ----------------------------------------------------------------------
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
+#endif
 
 ! ----------------------------------------------------------------------
 
@@ -233,7 +239,9 @@
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE PROPAGS2 

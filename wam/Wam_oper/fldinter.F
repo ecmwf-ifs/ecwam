@@ -98,6 +98,7 @@
       USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
 
 ! ----------------------------------------------------------------------
+
       INTEGER KLONRGG(NGY)
 
       INTEGER NGPTOTG, NC, NR, IGL, IJS, IJL 

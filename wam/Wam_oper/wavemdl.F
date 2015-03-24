@@ -95,7 +95,9 @@
 !          NONE                                                         
 
 ! -------------------------------------------------------------------   
-
+#ifdef MODEL_COUPLING_ATM_WAV
+      USE pgmcl_lib_WAM, ONLY : US_coupl, Z0_coupl
+#endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
@@ -122,22 +124,24 @@
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
-      USE YOWSPEC, ONLY : U10OLD   , USOLD    ,Z0OLD   ,
+      USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
+     &            TAUW   ,ROAIRO   ,ZIDLOLD  ,
      &            NSTART ,NEND     ,FL1      ,FL3      ,SL
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWUNPOOL ,ONLY : LLUNSTR
       USE MPL_MODULE
-
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(INOUT) :: KQGAUSS
       INTEGER :: IG
       INTEGER :: I, J, K, ICPLEN,ICPLEN_ECF
       INTEGER :: KDELWI, KDURAT, IDURAT
-      INTEGER :: NLONW, NLATW, NWVFIELDS, KQGAUSS
+      INTEGER :: NLONW, NLATW, NWVFIELDS
       INTEGER :: N_MASK_OUT_GLOBAL
       INTEGER :: IGRIB_HANDLE, IDATE_TIME_WINDOW_END
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
@@ -153,10 +157,12 @@
       INTEGER :: MASK_IN(NGPTOTG)
       INTEGER :: MASK_OUT(NLONW,NLATW)
 
+      
       REAL :: RMISS, PRPLRADI, PRPLRG
       REAL :: VAL
       REAL :: STEP
       REAL :: ZHOOK_HANDLE
+
       REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL, DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
@@ -192,7 +198,7 @@
 ! --------------------------------------------------------------------- 
 
 !*    1.  THE FIRST CALL TO WAVEMDL PERFORMS INITIALIZATION.            
-!         --------------------------------------------------            
+!         --------------------------------------------------  
 
  1010 FORMAT ('  **************************************************')
  1011 FORMAT ('  *                                                *')
@@ -205,7 +211,9 @@
  1019 FORMAT ('  * TOTAL RUN IN HOURS     ', I10,  ' (KDURAT)     *')
  1020 FORMAT ('  * INTERACTION TIME STEP  ', I10,  ' (KDELWI)     *')
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
+#endif
 
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       ZMISS=RMISS
@@ -258,15 +266,11 @@
       IREAD=1
       IF(NPROC.EQ.1) IREAD=1
 
-
-
-!!!!test freeing up some memory that is not needed yet
       IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
       IF(ALLOCATED(SL)) DEALLOCATE(SL)
 
 
-      
-      IF (FRSTIME) THEN                                                 
+      IF (FRSTIME) THEN
 
 !     !!!! FIRST TIME AROUND !!!!
 
@@ -290,7 +294,6 @@
             CALL ABORT1
           ENDIF
           CDATEA = CBEGDAT
-          CDATEF = CDATEA
           CDATEE = CDATEA
           IDURAT = KDURAT*60
           CALL INCDATE (CDATEE,IDURAT)
@@ -314,18 +317,17 @@
         ENDIF
 
 !       INQUIRE IF IUNITW IS ALREADY OPEN THEN CLOSE IT
-        IF(IUNITW.NE.0) THEN
-          CALL PBCLOSE(IUNITW,KRET)
-          IUNITW=0
-        ENDIF
+        IF(IUNITW.NE.0) CLOSE(IUNITW)
 
         CALL INITMDL (NADV,
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
+!
 
-
+#ifdef ECMWF
         IF(IRANK==1.AND.LSMSSIG_WAM) CALL SIGMASTER()
+#endif
 
         LLCHKCFL=.FALSE.
 
@@ -464,11 +466,14 @@
 !       ---------------------------------------------------
         LLINIT=.FALSE.
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (
+        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &              ROAIRO, ZIDLOLD,
+     &              CICOVER, CITHICK, CIWA,
      &              LLINIT,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
      &              FIELDS, LWCUR, MASK_IN)
+
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
@@ -476,11 +481,11 @@
 
       ENDIF
 
-
 !!test: reallocating the memory that was freed
 
       IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
+
 
 ! --------------------------------------------------------------------  
 
@@ -489,7 +494,7 @@
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL, LWSTOKES)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL, LWCUR, LWSTOKES)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
@@ -502,6 +507,7 @@
 !          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
 
+#ifdef ECMWF
       IF (IASSI.EQ.1) THEN
 
         MARSTYPE = 'an'
@@ -554,9 +560,10 @@
           IF(ITEST.GE.1) WRITE(IU06,*) '   SUB. WAVEMDL: SARINVERT done'
         ENDIF
       ENDIF
+#endif
 
 
-
+#ifdef ECMWF
 !     SMS METER:
       IF(LSMSSIG_WAM) THEN
 
@@ -585,6 +592,7 @@
           ENDIF
         ENDIF
       ENDIF
+#endif
 
 
 
@@ -917,6 +925,11 @@
         LDWCOUNORMS=LWCOUNORMS
       ENDIF
 
+#ifdef MODEL_COUPLING_ATM_WAV
+      Z0_coupl=Z0OLD
+      US_coupl=USOLD
+#endif
+
 
 !     4. END OF RUN ?
 !        -----------
@@ -938,7 +951,9 @@
         ENDIF
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)
+#endif
 
       RETURN                                                            
       END SUBROUTINE WAVEMDL

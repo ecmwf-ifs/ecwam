@@ -75,6 +75,8 @@
       CHARACTER*28 FILNM
 
       LOGICAL :: LLCURRENT, LLIRANK, LFDB
+      LOGICAL :: LLRNL
+      LOGICAL :: LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -128,8 +130,9 @@
       LWCOU = .FALSE.
       NLON=1
       NLAT=1
+      LLRNL=.FALSE.
 
-      CALL WVWAMINIT (LWCOU,IU06,NLON,NLAT,RSOUTW,RNORTW)
+      CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
 
       NPR=NPROC
 
@@ -139,6 +142,10 @@
 
 !     SET GRIB HEADERS FOR INPUTS/OUTPUTS
       CALL SETWGRIBHD
+
+      LLINIALL=.TRUE.
+      LLOCAL=.FALSE.
+      CALL INIT_FIELDG(LLINIALL,LLOCAL)
 
 ! ----------------------------------------------------------------------
 

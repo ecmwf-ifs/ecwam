@@ -77,8 +77,9 @@
       LOGICAL :: LLGLOBAL
 
 !----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
+#endif
 
       CALL GSTATS_BARRIER(734)
 
@@ -363,6 +364,8 @@
 
       CALL GSTATS(686,1)
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE MPFLDTOIFS

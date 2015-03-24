@@ -50,7 +50,9 @@
 
       INTEGER :: IJ,K,M,IJS,IJL
       REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL,DIMENSION(IJS:IJL) :: TEMP, EMEAN, MEANWP1
+      REAL,DIMENSION(IJS:IJL) :: TEMP
+      REAL,DIMENSION(IJS:IJL), intent(in) :: EMEAN
+      REAL,DIMENSION(IJS:IJL), intent(out) :: MEANWP1
       REAL :: COEF_FR
 
 ! ----------------------------------------------------------------------

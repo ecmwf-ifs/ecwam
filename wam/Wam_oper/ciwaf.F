@@ -66,8 +66,9 @@
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIWAF',0,ZHOOK_HANDLE)
+#endif
 
 !     following  Dumont et al. (2011), eqn (13):
       ! sea ice fragility
@@ -158,6 +159,8 @@
         ENDDO
       ENDIF
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIWAF',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CIWAF

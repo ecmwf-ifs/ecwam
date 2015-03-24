@@ -1,4 +1,4 @@
-      SUBROUTINE MPDISTRIBSCFLD(ISEND,ITAG,NSTART,NEND,FIELD)
+      SUBROUTINE MPDISTRIBSCFLD(ISEND,ITAG,NBLKS,NBLKE,FIELD)
 
 ! ----------------------------------------------------------------------
 
@@ -14,13 +14,13 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *MPDISTRIBFL*(ISEND,ITAG,NSTART,NEND,MI,MS,FIELD) 
+!     CALL *MPDISTRIBFL*(ISEND,ITAG,NBLKS,NBLKE,FIELD) 
 
 !     *ISEND*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
 !     *ITAG*      TAG ASSOCIATED WITH AS A PARTICULAR CALL TO SUBROUTINE
 !                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS
-!     *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *FIELD*     INPUT/OUTPUT ARRAY
 
 !     METHOD.
@@ -42,22 +42,33 @@
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
       USE YOWPARAM , ONLY : NIBLO
+      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
-      REAL,DIMENSION(NIBLO) :: FIELD
-!----------------------------------------------------------------------
+      IMPLICIT NONE
 
+      INTEGER :: ISEND, ITAG
+      INTEGER :: IR, IP, IJ, MPLENGTH, KCOUNT, KRTAG, KRCOUNT
+      INTEGER,DIMENSION(NPROC) :: NBLKS,NBLKE
       INTEGER,DIMENSION(NPROC) :: ISENDREQ
-      REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
-      REAL,ALLOCATABLE :: ZCOMBUFR(:)
 
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NIBLO) :: FIELD
+      REAL*8, ALLOCATABLE :: AC(:)
+      REAL,ALLOCATABLE :: ZCOMBUFR(:)
+      REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
+
+!----------------------------------------------------------------------
 
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) RETURN 
 
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPDISTIBSCFLD',0,ZHOOK_HANDLE)
+#endif
       IF(IRANK.EQ.ISEND) THEN
 !     1.1 SEND NON BLOCKING TO ALL PROCESSORS
 !         -----------------------------------
@@ -66,7 +77,7 @@
 
         DO IP=1,NPROC
           KCOUNT=0
-          DO IJ=NSTART(IP),NEND(IP)
+          DO IJ=NBLKS(IP),NBLKE(IP)
             KCOUNT=KCOUNT+1
             ZCOMBUFS(KCOUNT,IP)=FIELD(IJ)
           ENDDO
@@ -97,11 +108,18 @@
      & ('MPL_RECV ERROR in MPDISTRIBSCFLD MISMATCHED TAGS' )
       CALL GSTATS(624,1)
 
-      KCOUNT=0
-      DO IJ=NSTART(IRANK),NEND(IRANK)
-        KCOUNT=KCOUNT+1
-        FIELD(IJ)=ZCOMBUFR(KCOUNT)
-      ENDDO
+      IF (LLUNSTR) THEN
+        ALLOCATE(AC(MNP))
+        DO IP = 1, RANK(IRANK)%NP
+          AC(IP) = DBLE(ZCOMBUFR(IP))
+        ENDDO
+      ELSE
+        KCOUNT=0
+        DO IJ=NBLKS(IRANK),NBLKE(IRANK)
+          KCOUNT=KCOUNT+1
+          FIELD(IJ)=ZCOMBUFR(KCOUNT)
+        ENDDO
+      ENDIF
 
 !     1.3 WAIT ANY OUTSTANDING SENDS TO COMPLETE
 !         --------------------------------------
@@ -113,6 +131,21 @@
       ENDIF
 
       DEALLOCATE(ZCOMBUFR)
+
+
+!!! it's not very prety but when unstructured, you also need to have the values on the halo
+!!! it should be combined with the previous exchange
+      IF (LLUNSTR) THEN
+        CALL EXCHANGE(AC)
+        DO IP = 1 , MNP
+          FIELD(IP) = AC(IP)
+        ENDDO
+        DEALLOCATE(AC)
+      ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPDISTIBSCFLD',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE MPDISTRIBSCFLD

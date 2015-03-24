@@ -82,6 +82,7 @@
       USE YOWTEXT  , ONLY : PATH
 
  
+! ----------------------------------------------------------------------
       IMPLICIT NONE
  
       INTEGER :: K, M, IJ 
@@ -211,7 +212,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
       ENDIF
  
 !*    2.4 GENERATE FREQUENCY ARRAY.
@@ -391,7 +392,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
       ENDIF
  
 !*    4.4 LOOP OVER INTERMEDIATE OUTPUT TIMES.
@@ -506,7 +507,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
  6001 CONTINUE
          WRITE(IU06,*) '*******************************************'
          WRITE(IU06,*) '*                                         *'
@@ -521,7 +522,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
  6002 CONTINUE
          WRITE(IU06,*) '*******************************************'
          WRITE(IU06,*) '*                                         *'
@@ -537,7 +538,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
  6003 CONTINUE
          WRITE(IU06,*) '*******************************************'
          WRITE(IU06,*) '*                                         *'
@@ -552,7 +553,7 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
  6004 CONTINUE
          WRITE(IU06,*) '*******************************************'
          WRITE(IU06,*) '*                                         *'
@@ -568,6 +569,6 @@
          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.       *'
          WRITE(IU06,*) '*                                         *'
          WRITE(IU06,*) '*******************************************'
-         CALL ABORT
+         CALL ABORT1
 
       END

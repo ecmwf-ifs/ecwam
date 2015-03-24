@@ -1,4 +1,4 @@
-      SUBROUTINE WRITESTRESS(NREAL,RFIELD,FILENAME,LPBOPEN,LPBCLOSE)
+      SUBROUTINE WRITESTRESS(NREAL,RFIELD,FILENAME,LOUNIT,LCUNIT)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      APRIL 1997
@@ -10,161 +10,85 @@
 !**   INTERFACE.
 !     ----------
 
-!     CALL *WRITESTRESS*(NREAL, RFIELD,FILENAME,LPBOPEN,LPBCLOSE)
+!     CALL *WRITESTRESS*(NREAL, RFIELD,FILENAME,LOUNIT,LCUNIT)
 !     *NREAL*    NUMBER OF FIELDS IN RFIELD
-!     *RFIELD*     REAL RESTART FIELDS
+!     *RFIELD*   REAL RESTART FIELDS
 !     *FILENAME* FILENAME (INCLUDING PATH) OF TARGET FILE
-!     *LPBOPEN*  LOGICAL, TRUE IF PBOPEN HAS TO BE CALLED
-!     *LPBCLOSE* LOGICAL, TRUE IF PBCLOSE HAS TO BE CALLED
+!     *LOUNIT*   LOGICAL, TRUE IF FREE UNIT HAS TO BE FOUND.
+!     *LCUNIT*   LOGICAL, TRUE IF UNIT HAS TO CLOSED
 
 !     METHOD.
 !     -------
-!     WRITES ARRAYS TO FILE. FORTRAN WRITES OR PBIO WRITES ARE
-!     USED DEPENDING ON THE CHOICE OF OUTPUT MODE AS SELECTED BY
-!     LPBIOOUT
+!     WRITES ARRAYS TO FILE (FORTRAN WRITES).
 
-!     IF PBIO IS USED, THEN THE ARRAYS  WILL BE SAVED IN FILENAME 
-!     USING PBWRITE ON CONDITION THAT FILENAME WAS NOT OPENED BEFORE
-!     AND CONNECTED TO IUNIT.
-!     IT WILL BE APPENDED TO THE BOTTOM OF THE CONTENT OF FILENAME IF
-!     FILENAME WAS ALREADY OPENED AND CONNECTED TO UNIT IUNIT.
-
-!     IF FORTRAN WRITES ARE USED THEN IN THE CASE OF MESSAGE PASSING
 !     THE OUTPUT IS WRITTEN AS UNFORMATTED BINARY TO FILENAME CONNECTED
-!     TO UNIT IU15. IN THE NON MESSAGE PASSING CASE, IT IS WRITTEN AS
-!     UNFORMATTED BINARY TO FORTRAN UNIT SPECIFIED BY IU15.
+!     TO UNIT IU15
+!     IT IS IN A FORM THAT IS INDEPENDENT OF THE MODEL DECOMPOSITION.
 
 
 !     EXTERNALS.
 !     ----------
-!     *PBOPEN*
-!     *PBWRITE*
-!     *PBCLOSE*
-!     *ABORT1*
 
 !     REFERENCE.
 !     ----------
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOOUT
-      USE YOWMPP   , ONLY : NPROC   ,NPRECR   ,NPRECI
+      USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NBLO    ,NIBLO    ,LL1D
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU15
+      USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
-      INTEGER :: IFLD
-      INTEGER :: NREAL
-      REAL,DIMENSION(NIBLO,NBLO,NREAL) :: RFIELD 
-      REAL, ALLOCATABLE :: RDUM(:,:)
-      CHARACTER*1 :: MODE
-      CHARACTER*120 :: FILENAME
-      LOGICAL :: LPBOPEN,LPBCLOSE
+      IMPLICIT NONE
+
+      INTEGER :: IFLD, IJ, IG, NREAL
+
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NIBLO) :: RFIELD_G
+      REAL,DIMENSION(NIBLO,NREAL) :: RFIELD
+
+      CHARACTER(LEN=1) :: MODE
+      CHARACTER(LEN=120) :: FILENAME
+
+      LOGICAL :: LOUNIT, LCUNIT
 ! ----------------------------------------------------------------------
 
-      IF(LPBIOOUT) THEN
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('WRITESTRESS',0,ZHOOK_HANDLE)
+#endif
 
-        IF(LPBOPEN) THEN
-          MODE = 'w'
-          CALL PBOPEN(IUNIT,FILENAME,MODE,KRET)
-          IF(KRET.LT.0) THEN
-            WRITE (IU06,*) '******************************************'
-            WRITE (IU06,*) '*                                        *'
-            WRITE (IU06,*) '*   ERROR FOLLOWING CALL TO PBOPEN       *'
-            WRITE (IU06,*) '*   IN WRITESTRESS                       *' 
-            IF(KRET.EQ.-1)
-     &       WRITE (IU06,*) 'COULD NOT OPEN FILE ',FILENAME
-            IF(KRET.EQ.-2) WRITE (IU06,*) 'INVALID FILENAME ',FILENAME
-            IF(KRET.EQ.-3) WRITE (IU06,*) 'INVALID OPEN MODE SPECIFIED'
-            WRITE (IU06,*) '*                                        *'
-            WRITE (IU06,*) '******************************************'
-            CALL ABORT1
-          ENDIF
-        ENDIF
+      OPEN(IU15,FILE=FILENAME,STATUS='UNKNOWN',FORM='UNFORMATTED')
 
-        CALL PBWRITE(IUNIT,CDTPRO,14,KRET)
-        IF(KRET.LT.0) GOTO 1099
-        CALL PBWRITE(IUNIT,CDATEWO,14,KRET)
-        IF(KRET.LT.0) GOTO 1099
-        CALL PBWRITE(IUNIT,CDAWIFL,14,KRET)
-        IF(KRET.LT.0) GOTO 1099
-        CALL PBWRITE(IUNIT,CDATEFL,14,KRET)
-        IF(KRET.LT.0) GOTO 1099
-
-        KOUNT = NIBLO*NBLO*NPRECR
-        IOUNT = NIBLO*NBLO*NPRECI
-        IF(LL1D .OR. NPROC.EQ.1 ) THEN
-          DO IFLD=1,NREAL
-            CALL PBWRITE(IUNIT,RFIELD(:,:,IFLD),KOUNT,KRET)
-            IF(KRET.LT.0) GOTO 1099
-          ENDDO
-        ELSE
-          ALLOCATE(RDUM(NIBLO,NBLO))
-          DO IFLD=1,NREAL
-            DO IG=1,NBLO
-              DO IJ=1,NIBLO
-                 RDUM(IJ,IG)=RFIELD(IJ2NEWIJ(IJ),IG,IFLD)
-              ENDDO
-            ENDDO
-            CALL PBWRITE(IUNIT,RDUM,KOUNT,KRET)
-            IF(KRET.LT.0) GOTO 1099
-          ENDDO
-          DEALLOCATE(RDUM)
-        ENDIF
-
-1099    CONTINUE 
-        IF(KRET.LT.0) THEN
-          WRITE (IU06,*) '*****************************************'
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*    ERROR FOLLOWING CALL TO PBWRITE    *'
-          WRITE (IU06,*) '*    IN WRITESTRESS                     *' 
-          WRITE (IU06,*) '*    FILE ',FILENAME 
-          WRITE (IU06,*) '*                                       *'
-          WRITE (IU06,*) '*****************************************'
-          CALL ABORT1
-        ENDIF
-
-
-        IF(LPBCLOSE) THEN
-          CALL PBCLOSE(IUNIT,KRET)
-          IF(KRET.LT.0) THEN
-            WRITE (IU06,*) '************************************'
-            WRITE (IU06,*) '*                                  *'
-            WRITE (IU06,*) '* ERROR FOLLOWING CALL TO PBCLOSE   '
-            WRITE (IU06,*) '* IN WRITESTRESS                   *'
-            WRITE (IU06,*) '* FILE ',FILENAME
-            WRITE (IU06,*) '*                                  *'
-            WRITE (IU06,*) '************************************'
-            CALL ABORT1
-          ENDIF
-        ENDIF
-
-
+      WRITE(IU15) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
+      IF(LLUNSTR) THEN
+        DO IFLD=1,NREAL
+          CALL UNBLKRORD(1,1,1,1,1,RFIELD(1,IFLD),RFIELD_G(1))
+          WRITE(IU15)(RFIELD_G(IJ),IJ=1,NIBLO)
+        ENDDO
+      ELSE IF(LL1D .OR. NPROC.EQ.1 ) THEN
+        DO IFLD=1,NREAL
+          WRITE(IU15)(RFIELD(IJ,IFLD),IJ=1,NIBLO)
+        ENDDO
       ELSE
-
-        OPEN(IU15,FILE=FILENAME,STATUS='UNKNOWN',FORM='UNFORMATTED')
-
-        WRITE(IU15) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
-        IF(LL1D .OR. NPROC.EQ.1 ) THEN
-          DO IFLD=1,NREAL
-            WRITE(IU15)((RFIELD(J1,IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
-          ENDDO
-        ELSE
-          DO IFLD=1,NREAL
-            WRITE(IU15)
-     &      ((RFIELD(IJ2NEWIJ(J1),IG,IFLD),J1=1,NIBLO),IG=1,NBLO)
-          ENDDO
-        ENDIF
-
-        IF(LMESSPASS) CLOSE(IU15)
-
+        DO IFLD=1,NREAL
+          WRITE(IU15) (RFIELD(IJ2NEWIJ(IJ),IFLD),IJ=1,NIBLO)
+        ENDDO
       ENDIF
+
+      CLOSE(IU15)
+
       IF (ITEST.GE.2)
      &    WRITE(IU06,*) ' SUB. WRITESTRESS: OUTPUT DONE'
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('WRITESTRESS',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE WRITESTRESS

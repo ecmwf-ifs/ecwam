@@ -82,8 +82,6 @@
 !       *SAVSPEC*   - SAVES THE RESTART SPECTRA.
 !       *SAVSTRESS* - SAVES THE RESTART WIND AND STRESS FIELDS.
 !       *SPECTRA*   - COMPUTES SPECTRA FROM PARAMETERS.
-!       *SPLITBL*   - SAVES SECOND TO LAST LATITUDES.
-!       *SPLITGRS*  - PERFORMS SPLITTING OF SPECTRA ON SUB DOMAINS 
 !       *SPR*       - DIRECTIONAL DISTRIBUTION.
 !       *READPRE*   - READS PREPROC OUTPUT.
 !       *READWIND*   - READS A WIND FIELD.
@@ -99,14 +97,15 @@
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJL
+      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS, IJL, IJLT    ,
+     &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : CICOVER  ,CITHICK   ,CIWA
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
      &            SB       ,THETAQ
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
-     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LPBIOIN  ,LPBIOOUT ,
-     &            LFDBIOOUT,LGRIBOUT
+     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,
+     &            IFROMIJ  ,JFROMIJ
+      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
@@ -120,7 +119,7 @@
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
-     &            ROAIRO   ,ZIDLOLD
+     &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,
      &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,
@@ -129,40 +128,46 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
      &            CPATH
+      USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
-     &            LLNEWCURR
+     &            LLNEWCURR,NXFF     ,NYFF    
       USE FDBSUBS_MOD
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
-
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -------------------------------------------------------------------
-      REAL X4(2)
-      INTEGER I4(2)
 
-      CHARACTER*  1 CLTUNIT
-      CHARACTER* 14 ZERO, CDUM
-      CHARACTER* 70 HEADER
-      CHARACTER* 120 SFILENAME, ISFILENAME
-
-      PARAMETER (ZERO=' ', CDUM='00000000000000')
-
-      LOGICAL LFDBOPEN
-      LOGICAL :: LLINIT
-
-! DIMENSION DUMMY COUPLED VARIABLES
+      IMPLICIT NONE 
 
       INTEGER, PARAMETER :: NC=1
       INTEGER, PARAMETER :: NR=1
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
       INTEGER, PARAMETER :: NFIELDS=1
-
-! ----------------------------------------------------------------------
+      INTEGER :: ILEN, IREAD, IOPTI
+      INTEGER :: IG
+      INTEGER :: IJ
+      INTEGER :: IU05, IU07 
+      INTEGER :: I4(2)
+      INTEGER :: MASK_IN(NGPTOTG)
+      INTEGER :: I_GET_UNIT
 
       REAL :: PRPLRADI
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      INTEGER MASK_IN(NGPTOTG)
+      REAL :: THETA, FETCH, FRMAX 
+      REAL :: ZHOOK_HANDLE
+      REAL :: X4(2)
+      REAL :: FIELDS(NGPTOTG,NFIELDS)
+
+      CHARACTER(LEN=1) :: CLTUNIT
+      CHARACTER(LEN=14) :: ZERO, CDUM
+      CHARACTER(LEN=70) :: HEADER
+      CHARACTER(LEN=120) :: SFILENAME, ISFILENAME
+
+      PARAMETER (ZERO=' ', CDUM='00000000000000')
+
+      LOGICAL :: LFDBOPEN
+      LOGICAL :: LLINIT
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
@@ -172,7 +177,8 @@
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,
      &          USERID, RUNID, PATH, CPATH,
      &          CDATEA, IDELWI, CLTUNIT,
-     &          LPBIOOUT, LGRIBOUT,
+     &          LLUNSTR, LPREPROC,
+     &          LGRIBOUT,
      &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
      &          NWAM_BLKS
 
@@ -190,8 +196,6 @@
 !     CDATEA : INPUT DATE.
 !     IDELWI : INPUT WIND TIME STEP IN UNIT DEFINED BY CLTUNIT
 !     CLTUNIT : INPUT WIND TIME STEP UNIT (S : seconds or H : hours)
-!     LPBIOOUT : IF TRUE THE PBIO SOFTWARE WILL BE USED FOR BINARY
-!                OUTPUT (see LGRIBOUT).
 !     LGRIBOUT : IF TRUE THE WAVE SPECTRA IS OUTPUT IN GRIB FORMAT, ELSE
 !                THE BINARY RESTART FILES ARE PRODUCED.
 !     MARSTYPE : DATA TYPE USED TO CODE DATA IN GRIB
@@ -206,6 +210,9 @@
 
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
+#endif
 
       CALL MPL_INIT(KOUTPUT=1)
 
@@ -235,10 +242,11 @@
       CLTUNIT= 'H' 
       IDELWI =    0
 
+      LLUNSTR  =.FALSE.
+      LPREPROC =.FALSE.
+
       LMESSPASS = .FALSE.
 
-      LPBIOIN   = .FALSE.
-      LPBIOOUT  = .TRUE.
       LGRIBOUT = .TRUE.
 
       MARSTYPE = 'an'
@@ -267,9 +275,9 @@
       IRANK=1
       NPROC=1
       LL1D=.FALSE.
-      X4=1.
+      X4(:)=1.
       NPRECR = KIND(X4)
-      I4=1
+      I4(:)=1
       NPRECI = KIND(I4)
       KTAG=100
 
@@ -280,6 +288,7 @@
 ! ALLOCATE NECESSARY ARRAYS
 
       ALLOCATE (NSTART(NPROC),NEND(NPROC))
+      ALLOCATE (NBLKS(NPROC),NBLKE(NPROC))
 
 ! ----------------------------------------------------------------------
 
@@ -309,7 +318,6 @@
       LGRHDIFS=.FALSE.
       LNEWLVTP=.FALSE.
 
-
       LWCUR=.FALSE.
 
 ! ----------------------------------------------------------------------
@@ -322,8 +330,49 @@
       NINF=1
       NSUP=NIBLO
 
-      NSTART=1
-      NEND=IJL(1)
+      IF(ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
+      ALLOCATE(IFROMIJ(NINF-1:NSUP,NBLO))
+      IF(ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
+      ALLOCATE(JFROMIJ(NINF-1:NSUP,NBLO))
+
+      IF (LLUNSTR) THEN
+        IJS(1) = 1
+        IJL(1) = NIBLO
+        IJLT(1)= NIBLO
+        NXFF=NIBLO
+        NYFF=1
+        NSTART=1
+        NEND=IJL(1)
+        IJSLOC=1
+        IJLLOC=IJL(1)
+        IJGLOBAL_OFFSET=0
+        NBLKS=NSTART
+        NBLKE=NEND
+        IFROMIJ(NINF-1,:)=0
+        JFROMIJ(NINF-1,:)=0
+        DO IJ = 1,NSUP
+          IFROMIJ(IJ,:)=IJ
+          JFROMIJ(IJ,:)=1
+        ENDDO
+      ELSE
+        NXFF=NGX
+        NYFF=NGY
+        NSTART=1
+        NEND=IJL(1)
+        IJSLOC=1
+        IJLLOC=IJL(1)
+        IJGLOBAL_OFFSET=0
+        NBLKS=NSTART
+        NBLKE=NEND
+        IFROMIJ(NINF-1,:)=0
+        JFROMIJ(NINF-1,:)=0
+        IG=1
+        DO IJ=NSTART(IRANK),NEND(IRANK)
+          IFROMIJ(IJ,IG)=IXLG(IJ,IG)
+          JFROMIJ(IJ,IG)=NGY-KXLT(IJ,IG)+1
+        ENDDO
+      ENDIF
+
 
       ALLOCATE(IUSCR(NBLO))
       DO IG=1,NBLO
@@ -401,15 +450,6 @@
       ENDIF
 
       WRITE(IU06,*) '  '
-      IF(LPBIOIN) THEN
-        WRITE (IU06,*)
-     &   ' PBIO SOFTWARE IS USED TO READ SELECTED INPUT FILES' 
-      ENDIF
-      IF(.NOT.LGRIBOUT.AND.LPBIOOUT) THEN
-        WRITE (IU06,*)
-     &   ' PBIO SOFTWARE IS USED TO WRITE TO SELECTED OUTPUT FILES' 
-      ENDIF
-      WRITE(IU06,*) '  '
 
       WRITE (IU06,*) ' TEST OUTPUT LEVEL IS .......... ITEST = ', ITEST
       WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
@@ -456,25 +496,33 @@
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CIWA)) ALLOCATE(CIWA(NIBLO,NFRE,NBLO))
-      U10OLD = 0.
-      THWOLD = 0.
-      USOLD = 0.
-      TAUW = 0.
-      Z0OLD = 0.
-      ROAIRO = ROAIR      
-      ZIDLOLD = 0.
-      CICOVER = 0.
-      CITHICK = 0.
-      CIWA = 1.
+      U10OLD(:,:) = 0.
+      THWOLD(:,:) = 0.
+      USOLD(:,:) = 0.
+      TAUW(:,:) = 0.
+      Z0OLD(:,:) = 0.
+      ROAIRO(:,:) = ROAIR      
+      ZIDLOLD(:,:) = 0.
+      CICOVER(:,:) = 0.
+      CITHICK(:,:) = 0.
+      CIWA(:,:,:) = 1.
+
 
       IF (IOPTI.GT.0.AND.IOPTI.NE.3) THEN
 
+!!!! might need to restict call when needed !!!
+!!! remove that call in 40R3
+      CALL CIGETDEAC
+
         LLINIT=.FALSE.
-        CALL PREWIND (
+        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+     &                ROAIRO, ZIDLOLD,
+     &                CICOVER, CITHICK, CIWA,
      &                LLINIT, 
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
      &                FIELDS, LWCUR, MASK_IN)
+
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSE
@@ -514,10 +562,12 @@
 !        --------------------
 
 !     STRESS RELATED FIELDS :
+      WRITE(IU06,*) 'MINVAL OF U10OLD = ',MINVAL(U10OLD)
+      WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
         CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
      &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
-     &                 NSTART, NEND, CDATEA, CDATEA)
+     &                 NBLKS, NBLKE, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
       ENDIF
 
@@ -541,11 +591,9 @@
         CDTPRO  = CDATEA
         CALL OUTWSPEC(FL1)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
-      ELSEIF (.NOT.LGRIBOUT) THEN
-        CALL SAVSPEC(FL1,NSTART,NEND,CDATEA,CDATEA,CDUM)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
       ELSE
-        IF (ITEST.GT.0) WRITE (IU06,*) ' OUTPUT TOOK PLACE IN SPLITGRS' 
+        CALL SAVSPEC(FL1,NBLKS,NBLKE,CDATEA,CDATEA,CDUM)
+        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSPEC DONE'
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -553,14 +601,12 @@
 !*    9. END OF JOB: DELETE WORK FILES.
 !        ------------------------------
 
-! DEALLOCATE ARRAYS
-
-      IF(ALLOCATED(FL1)) DEALLOCATE(FL1)
-      IF(ALLOCATED(NSTART)) DEALLOCATE(NSTART)
-      IF(ALLOCATED(NEND)) DEALLOCATE(NEND)
-
       WRITE (IU06,*) ' '
       WRITE (IU06,*) ' PROGRAM PRESET: ALL DONE'
 
       CALL MPL_END()
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
+#endif
       END

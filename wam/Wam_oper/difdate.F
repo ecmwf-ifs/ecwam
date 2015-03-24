@@ -83,7 +83,9 @@
 
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('DIFDATE',0,ZHOOK_HANDLE)
+#endif
 
 !*    1.0 SPLIT DATE TIME GROUPS INTO SECOND, MINUTE, HOUR, DAY, MONTH,
 !*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
@@ -98,7 +100,7 @@
         WRITE(6, CLFMT ) CDATE1
         WRITE(*, CLFMT ) CDATE1
         LLND = .FALSE.
-        CALL ABORT
+        CALL ABORT1
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE1,'(I4, 5I2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1
@@ -128,7 +130,7 @@
         WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE1 IS 0 CHARACTER LONG'
         WRITE(6, *) ' '
-        CALL ABORT
+        CALL ABORT1
       ELSE
         WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
@@ -136,7 +138,7 @@
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE1
         WRITE(6, *) ' '
-        CALL ABORT
+        CALL ABORT1
       ENDIF
 
 !*        SPLIT CDATE2.
@@ -148,7 +150,7 @@
         WRITE(6, CLFMT ) CDATE2
         WRITE(*, CLFMT ) CDATE2
         LLND = .FALSE.
-        CALL ABORT
+        CALL ABORT1
       ELSEIF (IL==12) THEN
         LLND = .TRUE.
         READ(CDATE2,'(I4, 5I2)')IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2
@@ -178,7 +180,7 @@
         WRITE(6, *) ' '
         WRITE(6, *) ' DIFDATE:  FATAL@! DATE2 IS 0 CHARACTER LONG'
         WRITE(6, *) ' '
-        CALL ABORT
+        CALL ABORT1
       ELSE
         WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')
@@ -186,7 +188,7 @@
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
         WRITE(6, *) ' '
-        CALL ABORT
+        CALL ABORT1
       ENDIF
 
       IRET=0
@@ -219,7 +221,7 @@
         WRITE(6, '("           IHOUR2 ", I2 )') IHOUR2 
         WRITE(6, '("           IMIN2 ", I2 )') IMIN2 
         WRITE(6, '("           ISEC2 ", I2 )') ISEC2 
-        CALL ABORT
+        CALL ABORT1
       ENDIF
 
 !*    CHANGE DATE TIME GROUPS TO ENSURE THAT THE SECOND IS LARGER.
@@ -305,8 +307,11 @@
  
       KSHIFT = KSHIFT*ISI
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('DIFDATE',1,ZHOOK_HANDLE)
+#endif
       RETURN
+
       CONTAINS
 
       INTEGER FUNCTION MFEB_LENGTH(IYEAR)

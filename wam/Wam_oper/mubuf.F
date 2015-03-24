@@ -1,4 +1,4 @@
-      SUBROUTINE MUBUF (IU01, BATHY, IG, ML, IU08)
+      SUBROUTINE MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
 ! ----------------------------------------------------------------------
 
 !**** *MUBUF* - ROUTINE TO ARRANGE YOWMON UBUF FOR ONE BLOCK.
@@ -63,11 +63,12 @@
       IMPLICIT NONE
 
       INTEGER :: IU01
+      INTEGER :: NPROPAGS
       INTEGER :: NFREMAX, IX
       INTEGER :: IG,IJ,IJP,I,K,IP,IH,IS,ML,M
       INTEGER :: IMIN,IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER :: IC, ICP, ICL, ICR
-      INTEGER :: IU08(0:2)
+      INTEGER :: IU08(0:NPROPAGS)
       INTEGER, DIMENSION(NGX, NGY) :: IDUM
       INTEGER, ALLOCATABLE, DIMENSION(:) :: KDUM
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
@@ -190,7 +191,7 @@
 
       ENDDO
 
-      DO IJP=0,2
+      DO IJP=0,NPROPAGS
         WRITE (IU08(IJP)) KLAT
       ENDDO
 
@@ -231,7 +232,7 @@
         ENDIF
       ENDDO
 
-      DO IJP=0,2
+      DO IJP=0,NPROPAGS
         WRITE (IU08(IJP)) KLON
       ENDDO
 
@@ -1025,7 +1026,7 @@
         ENDIF
       ENDIF
 
-      DO IJP=0,2
+      DO IJP=0,NPROPAGS
         WRITE (IU08(IJP)) WLAT 
       ENDDO
 
@@ -1081,7 +1082,7 @@
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
-          DO IJP=0,2
+          DO IJP=0,NPROPAGS
             WRITE(IU08(IJP)) KDUM 
           ENDDO
         ENDDO
@@ -1103,7 +1104,7 @@
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
-          DO IJP=0,2
+          DO IJP=0,NPROPAGS
             WRITE(IU08(IJP)) KDUM 
           ENDDO
         ENDDO

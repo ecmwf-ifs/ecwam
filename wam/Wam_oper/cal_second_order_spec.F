@@ -1,8 +1,7 @@
 !
-!
 !-----------------------------------------------------------------------
 !
-      SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,INDEP,SIG)
+      SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,SIG)
 !
 !***  *CAL_SEC_ORDER_SPEC*   DETERMINES SECOND_ORDER SPECTRUM
 !
@@ -15,21 +14,21 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,INDEP,SIG)*
+!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,SIG)*
 !
 !                       INPUT:
-!                            *F1*    - 2-D FREE WAVE SPECTRUM
+!                            *F1*    - 2-D FREE WAVE SPECTRUM (at input)
+!                            *F3*    - WORK ARRAY FOR SPECTRUM
 !                            *IJS*   - FIRST GRIDPOINT              
 !                            *IJL*   - LAST GRIDPOINT 
 !                            *DEPTH* - DEPTH ARRAY (FROM IJS:IJL)
-!                            *INDEP* - INDEX DEPTH ARRAY (FROM IJS:IJL)
 !                            *SIG*   - DIRECTION OF MAPPING:
 !                                      FORWARD: SIG = +1
 !                                      INVERSE: SIG = -1
 !
 !                       OUTPUT: 
 !                            *F1*    - 2-D SPECTRUM INCLUDING SECOND-ORDER
-!                                      CORRECTION
+!                                      CORRECTION (at output)
 !
 !     METHOD.
 !     -------
@@ -52,21 +51,29 @@
      &                    TA, TB, TC_QL, TT_4M, TT_4P
       USE YOWTEST  , ONLY : IU06
 
+!-----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      INTEGER IJ,IJS,IJL,M,K,K0,M0,MP,KP,MM,KM,KL,KLL,ML
-      INTEGER INDEP(IJS:IJL)
-      REAL,ALLOCATABLE ::  PF1(:,:,:),PF3(:,:,:)
-      REAL, DIMENSION(IJS:IJL) :: DEPTH,F1MEAN,AKMEAN,XKMEAN 
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ,M,K,K0,M0,MP,KP,MM,KM,KL,KLL,ML
 
-      REAL SIG,FRAC,CO1,DEL,DELF,D1,D2,D3,D4,C1,
-     &     C2,XM,XK,OMSTART,AREA,SUM,SUM1,SUM3,GAM_B_J,ZFAC
+      REAL, INTENT(IN) :: SIG
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH
+      REAL, DIMENSION(IJS:IJL,1:NANG,1:NFRE), INTENT(INOUT) :: F1
+      REAL, DIMENSION(IJS:IJL,1:NANG,1:NFRE), INTENT(INOUT) :: F3
 
-      REAL EMAXL(IJS:IJL)
-      REAL F1(IJS:IJL,NANG,NFRE),F3(IJS:IJL,NANG,NFRE)
-      REAL ZHOOK_HANDLE
+      REAL :: FRAC,CO1,DEL,DELF,D1,D2,D3,D4,C1
+      REAL :: C2,XM,XK,OMSTART,AREA,SUM,SUM1,SUM3,GAM_B_J,ZFAC
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN, EMAXL  
+      REAL, ALLOCATABLE ::  PF1(:,:,:),PF3(:,:,:)
 
+!-----------------------------------------------------------------------
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CAL_SECOND_ORDER_SPEC',0,ZHOOK_HANDLE)
+#endif
 !
 !***  1. DETERMINE SECOND ORDER CORRECTION TO THE SPECTRUM
 !     ----------------------------------------------------
@@ -177,7 +184,9 @@
       IF (ALLOCATED(PF1)) DEALLOCATE(PF1)
       IF (ALLOCATED(PF3)) DEALLOCATE(PF3)
 !      
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CAL_SECOND_ORDER_SPEC',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE CAL_SECOND_ORDER_SPEC

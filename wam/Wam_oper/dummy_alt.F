@@ -62,5 +62,5 @@ C
        WRITE(0,*) ' * PROGRAM ABORTS  PROGRAM ABORTS  PROGRAM ABORTS * '
        WRITE(0,*) ' *                                                * '
        WRITE(0,*) ' ************************************************** '
-       CALL ABORT
+       CALL ABORT1
        END

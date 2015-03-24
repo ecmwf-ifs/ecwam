@@ -56,12 +56,17 @@
 
       INTEGER, DIMENSION(IJS:IJL) ::  MMAX, KMAX
 
+      REAL :: ZEPSILON
       REAL :: A,B,C,XP1,XM1,F1P1,F1M1,F10,R1,SIG_TH2
       REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
       REAL, DIMENSION(IJS:IJL) ::  SUM0,SUM1,SUM2,SUM3,SUM4,
      &                             XMAX,YMAX,XKP,FP,SIG_OM,SIG_TH,
      &                             SIG_TH1,THMAX
 
+!
+!***  0. SECURITY FIRST
+
+      ZEPSILON=100.*EPSILON(ZEPSILON)
 
 !
 !***  1. DETERMINE F_PEAK USING QUADRATIC FIT.
@@ -103,7 +108,8 @@
             IF (C.LT.0.) THEN
                FP(IJ) = FR(MMAX(IJ))-B/(2.*C)
                XMAX(IJ) = A-B**2/(4.*C)
-               SIG_OM(IJ) = SQRT((B**2-4.*A*C)/(8.*C**2))/FP(IJ)
+               SIG_OM(IJ) = SQRT((B**2-4.*A*C)/MAX(8.*C**2,ZEPSILON))
+     &                      / FP(IJ)
             ENDIF
 
          ENDIF
@@ -150,7 +156,7 @@
             IF (C.LT.0.) THEN
                THMAX(IJ) = THMAX(IJ)-B/(2.*C)
                YMAX(IJ) = A-B**2/(4.*C)
-               SIG_TH1(IJ) = SQRT((B**2-4.*A*C)/(8.*C**2))
+               SIG_TH1(IJ) = SQRT((B**2-4.*A*C)/MAX(8.*C**2,ZEPSILON))
             ENDIF
          ENDIF 
       ENDDO

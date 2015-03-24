@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
+     &                   ROAIRN, WSTAR, SL, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -44,7 +44,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,ZIDLNEW, SL, XLLWS)
+!    &                   ROAIRN,WSTAR, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -55,8 +55,7 @@
 !        *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !        *Z0NEW* - ROUGHNESS LENGTH IN M.
 !       *ROAIRN* - AIR DENSITY IN KG/M3
-!      *ZIDLNEW* - Zi/L  USED FOR GUSTINESS.
-!                  (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
 
@@ -69,7 +68,7 @@
 !     EXTERNALS.
 !     ----------
 
-!       NONE.
+!       WSIGSTAR. 
 
 !     MODIFICATIONS
 !     -------------
@@ -99,22 +98,18 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER :: IJ, IG, K, M
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: F, FL, SL
-      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, XLLWS
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR
 
-! ----------------------------------------------------------------------
-      REAL, PARAMETER :: A = 0.8/1000.
-      REAL, PARAMETER :: B = 0.08/1000.
-
-      INTEGER :: IJ,IJS,IJL,IG,K,M
-
-      REAL :: ONETHIRD, BG_GUST, CONST1, CONST3, XKAPPAD
-      REAL :: U10, C_D, DC_DDU, SIG_CONV
+      REAL :: CONST1, CONST3, XKAPPAD
       REAL :: RWINV
       REAL :: X1,X2,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
-      REAL ZHOOK_HANDLE
+      REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(NFRE) :: FAC, CONST
       REAL, DIMENSION(IJS:IJL) :: UCN1, UCN2, ZCN, CM, USP, USM
       REAL, DIMENSION(IJS:IJL) :: SH, XK
@@ -124,17 +119,15 @@
       REAL, DIMENSION(IJS:IJL) :: UCN1D,UCN2D
       REAL, DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
       REAL, DIMENSION(IJS:IJL,NANG) :: TEMPD
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
-      LOGICAL :: L1,L2
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
-
-      IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
 
 ! ----------------------------------------------------------------------
 
-      ONETHIRD = 1./3.
-      BG_GUST  = 0.        ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
+#endif
+
       CONST1   = BETAMAX/XKAPPA**2 
       CONST3   = 2.*XKAPPA/CONST1  ! SEE IDAMPING
       XKAPPAD  = 1.D0/XKAPPA
@@ -158,21 +151,10 @@
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
-!
-!       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
-!       BASED ON U*
-!
-        U10 = USNEW(IJ)/XKAPPA*LOG(10./Z0NEW(IJ))
-        C_D = A+B*U10
-        DC_DDU = B
-        SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-        SIG_N(IJ) = MIN(0.5, SIG_CONV * 
-     &                        (BG_GUST*USNEW(IJ)**3+
-     &                         0.5*XKAPPA*ZIDLNEW(IJ)**3)**ONETHIRD
-     &                           /U10
-     &                 )
-      ENDDO
+
+!     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
+      CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
+
 
       DO IJ=IJS,IJL
         USP(IJ) = USNEW(IJ)*(1.+SIG_N(IJ))
@@ -240,8 +222,6 @@
             IF (LZ(IJ,K)) THEN
               ZLOG1 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN1D(IJ)
               ZLOG2 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN2D(IJ)
-              L1    = ZLOG1.LT.0.
-              L2    = ZLOG2.LT.0.
               IF (ZLOG1.LT.0.) THEN
                 X1=TEMP1(IJ,K)*UCN1(IJ)
                 ZLOG2X=ZLOG1*ZLOG1*X1
@@ -279,7 +259,9 @@
 
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE SINPUT

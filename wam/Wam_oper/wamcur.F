@@ -54,8 +54,9 @@
 
 !*    1. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !        ----------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
+#endif
 
       DO IJ = IJS,IJL
         IX = IFROMIJ(IJ,IG)
@@ -64,6 +65,8 @@
         V(IJ,IG) = FIELDG(IX,JY)%VCUR
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMCUR',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE WAMCUR

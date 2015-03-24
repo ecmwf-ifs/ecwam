@@ -62,8 +62,9 @@
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIMSSTRN',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISE
 !        ----------
@@ -116,6 +117,8 @@
 
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIMSSTRN',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CIMSSTRN

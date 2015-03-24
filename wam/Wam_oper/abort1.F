@@ -30,7 +30,6 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -39,10 +38,7 @@
       CALL FLUSH(IU06)
 
       CDMESSAGE='!! WAVE MODEL HAS ABORTED !!!!'
-      IF(LMESSPASS) THEN
-        CALL MPABORT(CDMESSAGE)
-      ELSE
-        CALL ABORT
-      ENDIF
+      CALL MPABORT(CDMESSAGE)
+
       RETURN
       END SUBROUTINE ABORT1

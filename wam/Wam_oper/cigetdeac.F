@@ -41,8 +41,9 @@
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIGETDEAC',0,ZHOOK_HANDLE)
+#endif
 
 ! I have kindly received the values from Figure 6 of Kohout and Meylan
 ! from Alison Kohout
@@ -548,6 +549,8 @@
         ENDDO
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIGETDEAC',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE CIGETDEAC

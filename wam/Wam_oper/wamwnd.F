@@ -1,4 +1,4 @@
-      SUBROUTINE WAMWND (US, DS, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)
+      SUBROUTINE WAMWND (U10, THW, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -22,9 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (US, DS, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)*
-!          *US*   - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
-!          *DS*   - INTERPOLATED WIND DIRECTION AT ALL POINTS.
+!       *CALL WAMWND (U10, THW, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)*
+!          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
+!          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
 !                   (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
@@ -50,8 +50,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU    , XKAPPA
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
-      USE YOWPARAM , ONLY : NGY
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -64,16 +63,19 @@
       IMPLICIT NONE
 
       INTEGER :: IJ, IX, JY, IJS, IJL, IG
+
       REAL, PARAMETER :: ALPHACH = 0.0185
       REAL :: UU, VV, WSPEED, RESCALE, USTAR, Z0, CD
-      REAL, DIMENSION (IJS:IJL) :: US,DS,ADS,ZIDL,CITH
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION (IJS:IJL) :: U10,THW,ADS,ZIDL,CITH
 
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMWND',0,ZHOOK_HANDLE)
+# endif
 
 !*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !*       AND TRANSFORM TO MAGNITUDE AND DIRECTION.
@@ -82,46 +84,46 @@
 
       IF(LLWSWAVE .AND. LLWDWAVE) THEN
         DO IJ = IJS,IJL
-          IX = IXLG(IJ,IG)
-          JY = NGY-KXLT(IJ,IG) + 1
+          IX = IFROMIJ(IJ,IG)
+          JY = JFROMIJ(IJ,IG)
 
 !         USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
 !         -------------------------------------------------------------
-          US(IJ) = FIELDG(IX,JY)%WSWAVE
-          DS(IJ) = FIELDG(IX,JY)%WDWAVE 
+          U10(IJ) = FIELDG(IX,JY)%WSWAVE
+          THW(IJ) = FIELDG(IX,JY)%WDWAVE 
 
 !         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
 !         USE U and V FROM ATMOSPHERE INSTEAD
-          IF(US(IJ).LE.0.) THEN
+          IF(U10(IJ).LE.0.) THEN
             UU = FIELDG(IX,JY)%UWND
             VV = FIELDG(IX,JY)%VWND
             WSPEED = SQRT(UU**2 + VV**2)
             IF(WSPEED.GT.0.) THEN
-              US(IJ) = WSPEED
-              DS(IJ) = ATAN2(UU,VV)
+              U10(IJ) = WSPEED
+              THW(IJ) = ATAN2(UU,VV)
             ELSE
-              US(IJ) = 0.
-              DS(IJ) = 0.
+              U10(IJ) = 0.
+              THW(IJ) = 0.
             ENDIF
           ENDIF
         ENDDO
 
         IF(LRELWIND .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3) ) THEN
           DO IJ = IJS,IJL
-            IX = IXLG(IJ,IG)
-            JY = NGY-KXLT(IJ,IG) + 1
+            IX = IFROMIJ(IJ,IG)
+            JY = JFROMIJ(IJ,IG)
 
-            UU = US(IJ)*SIN(DS(IJ))
-            VV = US(IJ)*COS(DS(IJ))
+            UU = U10(IJ)*SIN(THW(IJ))
+            VV = U10(IJ)*COS(THW(IJ))
             UU = UU - RWFAC*U(IJ,IG)
             VV = VV - RWFAC*V(IJ,IG)
             WSPEED = SQRT(UU**2 + VV**2)
             IF(WSPEED.GT.0.) THEN
-              US(IJ) = WSPEED
-              DS(IJ) = ATAN2(UU,VV)
+              U10(IJ) = WSPEED
+              THW(IJ) = ATAN2(UU,VV)
             ELSE
-              US(IJ) = 0.
-              DS(IJ) = 0.
+              U10(IJ) = 0.
+              THW(IJ) = 0.
             ENDIF
           ENDDO
         ENDIF
@@ -129,8 +131,8 @@
       ELSE
 
         DO IJ = IJS,IJL
-          IX = IXLG(IJ,IG)
-          JY = NGY-KXLT(IJ,IG) + 1
+          IX = IFROMIJ(IJ,IG)
+          JY = JFROMIJ(IJ,IG)
 
           UU = FIELDG(IX,JY)%UWND
           VV = FIELDG(IX,JY)%VWND
@@ -169,26 +171,26 @@
             ENDIF
           ENDIF
 
-          US(IJ) = SQRT(UU**2 + VV**2)
-          IF (US(IJ).NE.0.) THEN 
-            DS(IJ) = ATAN2(UU,VV)
+          U10(IJ) = SQRT(UU**2 + VV**2)
+          IF (U10(IJ).NE.0.) THEN 
+            THW(IJ) = ATAN2(UU,VV)
           ELSE
-            DS(IJ) = 0.
+            THW(IJ) = 0.
           ENDIF
 
         ENDDO
       ENDIF
 
       DO IJ = IJS,IJL
-        IF (DS(IJ).LT.0.) DS(IJ) = DS(IJ) + ZPI
+        IF (THW(IJ).LT.0.) THW(IJ) = THW(IJ) + ZPI
 !       IMPOSE A MINIMUM WIND SPEED.
 !       ----------------------------
-        US(IJ) = MAX(US(IJ),WSPMIN)
+        U10(IJ) = MAX(U10(IJ),WSPMIN)
       ENDDO
 
       DO IJ = IJS,IJL
-        IX = IXLG(IJ,IG)
-        JY = NGY-KXLT(IJ,IG) + 1
+        IX = IFROMIJ(IJ,IG)
+        JY = JFROMIJ(IJ,IG)
         ADS(IJ) = FIELDG(IX,JY)%AIRD
         ZIDL(IJ)= FIELDG(IX,JY)%ZIDL
         CITH(IJ)= FIELDG(IX,JY)%CITH
@@ -206,11 +208,11 @@
 !          ---------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX(0.01,US(IJ))
+          USTAR = MAX(0.01,U10(IJ))
           Z0  = ALPHACH/G*USTAR**2
           CD  = XKAPPA/LOG(10./Z0)
-          US(IJ) = USTAR/CD
-          US(IJ) = MAX(US(IJ),WSPMIN)
+          U10(IJ) = USTAR/CD
+          U10(IJ) = MAX(U10(IJ),WSPMIN)
         ENDDO
 
       ELSEIF (ICODE.EQ.2) THEN
@@ -219,11 +221,11 @@
 !         ---------------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX (0.01, SQRT(US(IJ)/ADS(IJ)))
+          USTAR = MAX (0.01, SQRT(U10(IJ)/ADS(IJ)))
           Z0  = ALPHACH/G*USTAR**2
           CD  = XKAPPA/LOG(10./Z0)
-          US(IJ) = USTAR/CD
-          US(IJ) = MAX(US(IJ),WSPMIN)
+          U10(IJ) = USTAR/CD
+          U10(IJ) = MAX(U10(IJ),WSPMIN)
         ENDDO
       ENDIF
 
@@ -236,7 +238,8 @@
      &   ' INPUT FORCING FIELDS CONVERTED TO BLOCKS'
         CALL FLUSH(IU06)
       ENDIF
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMWND',1,ZHOOK_HANDLE)
+# endif
       RETURN
       END SUBROUTINE WAMWND
