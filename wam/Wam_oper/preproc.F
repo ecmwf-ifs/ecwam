@@ -320,7 +320,11 @@
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
+#ifdef _CRAYFTN
               NLONRGG(K) = MAX(NINT(NX*COSD(XLATD)),2)
+#else
+              NLONRGG(K) = MAX(NINT(NX*COS(RAD*XLATD)),2)
+#endif
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
