@@ -261,8 +261,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            KMNOP    ,KMSOP    ,IPER
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,NSWH     ,
-     &                      NMWP
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC 
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
@@ -464,14 +463,6 @@
         IF(.NOT.ALLOCATED(TAUOC)) THEN
           ALLOCATE(TAUOC(IJS(1):IJL(1)))
           TAUOC(:) = 0.
-        ENDIF
-        IF(.NOT.ALLOCATED(NSWH)) THEN
-          ALLOCATE(NSWH(IJS(1):IJL(1)))
-          NSWH(:) = 0.
-        ENDIF
-        IF(.NOT.ALLOCATED(NMWP)) THEN
-          ALLOCATE(NMWP(IJS(1):IJL(1)))
-          NMWP(:) = 0.
         ENDIF
       ENDIF
 
