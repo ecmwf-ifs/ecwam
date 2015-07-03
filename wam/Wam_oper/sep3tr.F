@@ -19,7 +19,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP) 
+!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
 !          *FL1*    - BLOCK OF SPECTRA
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -86,6 +86,7 @@
       REAL, DIMENSION(NANG,NFRE) :: W2
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
       REAL, DIMENSION(IJS:IJL,0:NPMAX) :: DIR,PER,ENE
+      REAL, DIMENSION(IJS:IJL,NTRAIN) :: TEMPDIR,TEMPPER,TEMPENE
       REAL, DIMENSION(NANG,NFRE,NPMAX) :: SPEC
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
@@ -94,6 +95,7 @@
 
       LOGICAL :: LLEPSMIN
       LOGICAL :: LLADDPART
+      LOGICAL, DIMENSION(IJS:IJL,NTRAIN) :: LPWSECTOR
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
       LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
 
@@ -361,6 +363,76 @@
         ENDDO
       ENDDO
 
+!     6.2 Distribute the non-partioned energy proportionally to swell trains
+!         that are in the wind direction
+
+!     non-partitioned energy
+      DO IJ=IJS,IJL
+        ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
+      ENDDO
+
+      DO IJ=IJS,IJL
+        SUMETRAIN(IJ)=EPSMIN
+      ENDDO
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0. .AND.
+     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
+            LPWSECTOR(IJ,ISORT)=.TRUE.
+            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
+          ELSE
+            LPWSECTOR(IJ,ISORT)=.FALSE.
+          ENDIF
+        ENDDO
+      ENDDO
+      DO IJ=IJS,IJL
+        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
+      ENDDO
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IF(LPWSECTOR(IJ,ISORT)) THEN
+            EMTRAIN(IJ,ISORT)=
+     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
+            ETNP(IJ)=0.
+          ENDIF
+        ENDDO
+      ENDDO
+
+
+!     RE-ORDER SWELL SYSTEM ACCORDING TO TOTAL ENERGY
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          TEMPENE(IJ,ISORT)=EMTRAIN(IJ,ISORT)
+          TEMPDIR(IJ,ISORT)=THTRAIN(IJ,ISORT)
+          TEMPPER(IJ,ISORT)=PMTRAIN(IJ,ISORT)
+        ENDDO
+      ENDDO
+
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IPNOW(IJ)=0
+          ENMAX(IJ)=0.
+        ENDDO
+
+        DO IP=1,NTRAIN
+          DO IJ=IJS,IJL
+            IF (TEMPENE(IJ,IP).GT.ENMAX(IJ)) THEN
+              IPNOW(IJ) = IP
+              ENMAX(IJ) = TEMPENE(IJ,IP)
+            ENDIF
+          ENDDO
+        ENDDO
+
+        DO IJ=IJS,IJL
+          EMTRAIN(IJ,ISORT)=TEMPENE(IJ,IPNOW(IJ))
+          THTRAIN(IJ,ISORT)=TEMPDIR(IJ,IPNOW(IJ))
+          PMTRAIN(IJ,ISORT)=TEMPPER(IJ,IPNOW(IJ))
+          TEMPENE(IJ,IPNOW(IJ))=0.
+        ENDDO
+      ENDDO
+
 !     PREPARE OUTPUT
 
       DO ISORT=1,NTRAIN
@@ -373,11 +445,6 @@
         ENDDO
       ENDDO
 
-
-!     NON PARTITIONED ENERGY
-      DO IJ=IJS,IJL
-        ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
-      ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEP3TR',1,ZHOOK_HANDLE)

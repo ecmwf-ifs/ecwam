@@ -76,6 +76,7 @@
      &            NASS     ,JPPFLAG  ,
      &            NTRAIN   ,
      &            IPFGTBL  ,
+     &            LWAMANOUT,
      &            NWRTOUTWAM,
      &            LWFLUXOUT,
      &            LSECONDORDER
@@ -1577,6 +1578,14 @@
 
 !*    2.5 OUTPUT OPTION.
 !         --------------
+
+      IF (.NOT. LWAMANOUT) THEN
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) '+ INFO FROM SUB. USERIN                     +'
+        WRITE(IU06,*) '+   OUTPUT AT ANALYSIS TIME IS DISABLED.    +'
+        WRITE(IU06,*) '+   REASON:  LWAMANOUT IS SET TO .FALSE.    +'
+        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
+      ENDIF
 
       IF (NOUTT.GT.0) THEN
         DO J=1,NOUTT

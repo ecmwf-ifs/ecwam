@@ -29,6 +29,8 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: POSI(:,:), I_DIAG(:)
       INTEGER(KIND=JWIM) :: NNZ
 
+      REAL(KIND=JWRU), PARAMETER :: YPMAX=87.5_JWRU
+
       REAL(KIND=JWRU), ALLOCATABLE :: ASPAR_JAC(:,:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: B_JAC(:,:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: CAD_THE(:,:,:)
@@ -103,18 +105,23 @@
       CALL COHERENCY_ERROR_3D(FL1, "testing the function FL1")
       CALL COHERENCY_ERROR_3D(FL3, "testing the function FL3")
 #endif
-      IF (LVECTOR) THEN 
-        CALL EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
+      IF (LIMPLICIT) THEN
+        CALL IMPLICIT_N_SCHEME_BLOCK(FL1, FL3)
+        Print *, 'Leaving IMPLICIT_N_SCHEME_BLOCK'
       ELSE
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ID,IS)
-        DO ID = 1, NANG
-          DO IS = 1, MSC
-             CALL EXPLICIT_N_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
-            !CALL EXPLICIT_PSI_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
-            !CALL EXPLICIT_LF_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
+        IF (LVECTOR) THEN 
+          CALL EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
+        ELSE
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ID,IS)
+          DO ID = 1, NANG
+            DO IS = 1, MSC
+              CALL EXPLICIT_N_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
+             !CALL EXPLICIT_PSI_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
+             !CALL EXPLICIT_LF_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
+            END DO
           END DO
-        END DO
-!$OMP   END PARALLEL DO
+!$OMP     END PARALLEL DO
+        ENDIF
       ENDIF
 
       END SUBROUTINE PROPAG_UNWAM
@@ -249,8 +256,12 @@
          USE YOWUNPOOL
          use yowdatapool, only: myrank
          USE yowpd, only: MNE=>ne, MNP=>npa, INE, exchange, comm
-         USE YOWMPP   , ONLY : NINF, NSUP
+         USE YOWMPP   , ONLY : NINF, NSUP, IRANK
          USE YOWSTAT  , ONLY : IDELPRO
+         USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+!     -------------------------------------------------------------------------
+
          IMPLICIT NONE
 
          INTEGER(KIND=JWIM), INTENT(IN)    :: IS,ID
@@ -281,8 +292,16 @@
 ! local parameter
 !
          REAL(KIND=JWRU) :: TMP
+         REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
          INTEGER(KIND=JWIM) :: ierr
+
+!     -------------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('EXPLICIT_N_SCHEME',0,ZHOOK_HANDLE)
+#endif
+
 !
 ! set time step
 !
@@ -315,6 +334,7 @@
 !
 !        Calculate K-Values and contour based quantities ...
 !
+
          DO IE = 1, MNE
             I1 = INE(1,IE)
             I2 = INE(2,IE)
@@ -349,6 +369,7 @@
             FLALL(3,IE) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
          END DO
 
+
          IF (LCALC) THEN ! If the current field or water level --> new CFL 
            KKSUM = 0.0_JWRU
            DO IE = 1, MNE
@@ -368,13 +389,16 @@
                CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
+
 !             if(DTMAX_GLOBAL_EXP < 0.1) then
 !               WRITE(DBG%FHNDL,*) 'LOCAL',IP,SI(IP),KKSUM(IP),DTMAX_EXP
 !               WRITE(DBG%FHNDL,*) DTMAX_GLOBAL_EXP
 !             endif
            END DO
+
            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC, DTMAX_GLOBAL_EXP,    &
      &                        1, MPI_REAL8, MPI_MIN, COMM, IERR)
+
 
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
            REST  = ABS(MOD(CFLXY,1.0_JWRU))
@@ -413,6 +437,11 @@
 
          UNEW(NINF-1)=0.0_JWRB
          UNEW(1:MNP) = REAL(U(1:MNP),JWRB)
+
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('EXPLICIT_N_SCHEME',1,ZHOOK_HANDLE)
+#endif
 
       END SUBROUTINE EXPLICIT_N_SCHEME
 
@@ -889,9 +918,12 @@
 !*
 !**********************************************************************
       SUBROUTINE CADVXY(IS,ID,C)
-      USE YOWUNPOOL
-      USE yowpd, only: MNP=>npa, XP=>x, YP=>y
+      USE YOWUNPOOL, ONLY : LADVTEST, LCUR, LSPHE, CG, CURTXY, DEGRAD, REARTH
+      USE YOWPD,     ONLY : MNP=>npa, XP=>x, YP=>y
       USE YOWFRED  , ONLY : COSTH, SINTH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
@@ -899,6 +931,17 @@
       REAL(KIND=JWRU), INTENT(OUT)  :: C(2,MNP)
 
       INTEGER(KIND=JWIM) :: IP
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DGRTH, DGRTHM1
+
+! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('CADVXY',0,ZHOOK_HANDLE)
+#endif
+
+      DGRTH = DEGRAD*REARTH
+      DGRTHM1 = 1.0_JWRU/(DGRTH)
       IF (LADVTEST) THEN
         C(1,:) =   YP
         C(2,:) = - XP
@@ -912,11 +955,15 @@
             C(2,IP) = CG(IP,IS)*COSTH(ID)
           END IF
           IF (LSPHE) THEN
-            C(1,IP) = C(1,IP)*1.0_JWRU/(DEGRAD*REARTH*COS(YP(IP)*DEGRAD))
-            C(2,IP) = C(2,IP)*1.0_JWRU/(DEGRAD*REARTH)
+            C(1,IP) = C(1,IP)*1.0_JWRU/(DGRTH*COS(MIN(ABS(YP(IP)),YPMAX)*DEGRAD))
+            C(2,IP) = C(2,IP)*DGRTHM1
           END IF
         END DO
       END IF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('CADVXY',1,ZHOOK_HANDLE)
+#endif
       END SUBROUTINE CADVXY
 
 !**********************************************************************
@@ -1015,12 +1062,13 @@
       USE YOWUNPOOL, ONLY : BND, DBG, GRID, FILEDEF
       USE YOWSHAL  , ONLY : DEPTH    ,DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
-      USE yowpd, only: MNP=>npa, z, comm, np_global, initPD 
-
+      USE yowpd, only: MNP=>npa, z, comm, np_global, initPD, setDimSize
+      USE YOWPARAM , ONLY : NANG, NFRE
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: IERR, IP
 
+      CALL setDimSize(NANG, NFRE)
       CALL SET_UNWAM_HANDLES ! set file handles
       CALL initPD("system.dat")
       CALL mpi_barrier(comm, ierr)
@@ -1124,7 +1172,7 @@
       USE YOWUNPOOL
       USE yowpd, only: MNE=>ne, MNP=>npa, INE, XP=>x, YP=>y, z, exchange
       USE YOWFRED  , ONLY : FR
-
+      USE YOWPARAM , ONLY : NANG, NFRE
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: I, J, K
@@ -1414,7 +1462,7 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-        ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
+        ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), I_DIAG(MNP), ASPAR_JAC(NANG,NFRE,NNZ), stat=istat)
         IF (istat/=0) stop 'wwm_fluctsplit, allocate error 6'
         JA = 0
         IA = 0
@@ -3095,7 +3143,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
-      USE YOWUNPOOL
+      USE YOWUNPOOL, ONLY : LCUR, LSPHE, CG, CURTXY, DEGRAD, REARTH, &
+&                           ONETHIRD, ONESIXTH, IEN, ONE, TWO, THR, TRIA, MDC, &
+&                           DT4A, IOBPD, IOBWB, LBCWA, IWBMNP, LINHOM, IWBNDLC, &
+&                           SI
       USE yowpd, only: XP=>x, YP=>y
       USE yowpd, only: MNE=>ne, INE, MNP=>npa
       USE YOWFRED  , ONLY : COSTH, SINTH
@@ -3134,14 +3185,14 @@
           DO IS=1,NFRE
             DO ID=1,NANG
               IF (LCUR) THEN
-                CXY(1,ID,IS,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
-                CXY(2,ID,IS,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,ID,IS,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,ID,IS,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CXY(1,ID,IS,I) = CG(IS,IP)*COSTH(ID)
-                CXY(2,ID,IS,I) = CG(IS,IP)*SINTH(ID)
+                CXY(1,ID,IS,I) = CG(IP,IS)*COSTH(ID)
+                CXY(2,ID,IS,I) = CG(IP,IS)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
-                CXY(1,ID,IS,I) = CXY(1,ID,IS,I)/(DEGRAD*REARTH*COS(YP(IP)*DEGRAD))
+                CXY(1,ID,IS,I) = CXY(1,ID,IS,I)/(DEGRAD*REARTH*COS(MIN(ABS(YP(IP)),YPMAX)*DEGRAD))
                 CXY(2,ID,IS,I) = CXY(2,ID,IS,I)/(DEGRAD*REARTH)
               END IF
             END DO
@@ -3201,8 +3252,14 @@
       USE YOWPARAM , ONLY : NANG, NFRE
       IMPLICIT NONE
       REAL(KIND=JWRU), intent(inout) :: ASPAR_JAC(NANG,NFRE,NNZ)
-      Print *, 'This needs to be written down'
-      stop
+      IF (REFRACTION_IMPL) THEN
+        Print *, 'This needs to be written down (Refraction)'
+        stop
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        Print *, 'This needs to be written down (Freq Shift)'
+        stop
+      END IF
       END SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS
 
 !**********************************************************************
@@ -3273,7 +3330,7 @@
       USE YOWMPP   , ONLY : NINF, NSUP
       USE yowunpool
       USE yowpd, only: exchange
-
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
@@ -3300,6 +3357,11 @@
       REAL(KIND=JWRU) :: Sum_new, Sum_prev, eVal, DiffNew, DiffOld
       REAL(KIND=JWRU) :: AC1(NANG,NFRE,MNP)
       REAL(KIND=JWRU) :: AC2(NANG,NFRE,MNP)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
+      WRITE(740+MyRankGlobal,*) 'JWRB=', JWRB
+      FLUSH(740+MyRankGlobal)
+#endif
 
       DO IP=1,MNP
         AC2(:,:,IP)=FL1(IP,:,:)
@@ -3341,9 +3403,21 @@
           ELSE
             CALL GET_BLOCAL(IP, AC2, eSum)
           END IF
+          IF (LNANINFCHK) THEN
+            IF (SUM(eSum) .ne. SUM(esum)) THEN
+              Print *, 'NAN IN SOLVER After assignation of values'
+              STOP
+            ENDIF
+          ENDIF
           DO J=IA(IP),IA(IP+1)-1 
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
           END DO
+          IF (LNANINFCHK) THEN
+            IF (SUM(eSum) .ne. SUM(esum)) THEN
+              Print *, 'NAN IN SOLVER After substraction of entries'
+              STOP
+            ENDIF
+          ENDIF
           IF (REFRACTION_IMPL) THEN
             CAD=CAD_THE(:,:,IP)
             CP_THE = MAX(ZERO,CAD)
@@ -3378,13 +3452,19 @@
               END DO
             END DO
           END IF
+          IF (LNANINFCHK) THEN
+            IF (SUM(eSum) .ne. SUM(esum)) THEN
+              Print *, 'NAN IN SOLVER before division by ASPAR_DIAG'
+              STOP
+            ENDIF
+          ENDIF
           eSum=eSum/ASPAR_DIAG
           IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
             IF (LNANINFCHK) THEN
               IF (SUM(eSum) .ne. SUM(esum)) THEN
-                Print *, 'NAN IN SOLVER'
+                Print *, 'NAN IN SOLVER before assignation'
                 STOP
               ENDIF
             ENDIF
@@ -3989,6 +4069,8 @@
       USE YOWSPEC, ONLY   : FL1, FL3, SL
       USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
+!      character(*), intent(in) :: string
+!      WRITE(740+MyRankGlobal,*) 'CHECK ', TRIM(string)
       IF (LLUNSTR) THEN
         IF (ALLOCATED(FL1)) THEN
           CALL COHERENCY_ERROR_3D(FL1, "testing FL1")

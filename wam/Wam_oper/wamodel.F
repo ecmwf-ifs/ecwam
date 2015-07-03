@@ -1,3 +1,4 @@
+
       SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL,LWCUR,LWSTOKES)
 
 ! ----------------------------------------------------------------------
@@ -296,7 +297,7 @@
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
-     &            LRSTST0
+     &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
@@ -559,9 +560,10 @@
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
 
-        IF(MARSTYPE.EQ.'cf'.OR.MARSTYPE.EQ.'pf'.OR.MARSTYPE.EQ.'fc'.OR.
-     &     MARSTYPE.EQ.'4v'.OR.
-     &     LANAONLY.OR.LFRSTFLD) THEN
+        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.
+     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.
+     &      LANAONLY         .OR. LFRSTFLD             )
+     &     .AND. LWAMANOUT) THEN
 
           IF(LFRSTFLD) THEN
             FFLAGBAK=FFLAG
@@ -1084,7 +1086,7 @@
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
               CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS,KIJL,
-     &                    CICOVER(KIJS,IG), THWNEW(KIJS), USNEW(KIJS))
+     &                    CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1439,1)
@@ -1263,15 +1265,17 @@
 
           CALL OUTWNORM
 
-!         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
-!         BECOMES TYPE AN (i.e. speudo analysis)
-          MARSTYPEBAK=MARSTYPE
-          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
-     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
-            MARSTYPE='an'
+          IF (LWAMANOUT) THEN
+!           IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
+!           BECOMES TYPE AN (i.e. speudo analysis)
+            MARSTYPEBAK=MARSTYPE
+            IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+     &         (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+              MARSTYPE='an'
+            ENDIF
+            CALL OUTINT (IU06,IU20,IU21,IU30,ITEST, NWFDBREF,LFDBOPEN)
+            MARSTYPE=MARSTYPEBAK
           ENDIF
-          CALL OUTINT (IU06, IU20, IU21, IU30, ITEST, NWFDBREF,LFDBOPEN)
-          MARSTYPE=MARSTYPEBAK
 
           IF(LMESSPASS) THEN
             CALL GSTATS(753,0)
@@ -1304,7 +1308,7 @@
      &     " CDATES=", CDATES, "IREST=", IREST
         ENDIF
 
-        IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
+        IF (CDATEE.EQ.CDTPRO) THEN
 
 !*    1.8.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
 !           INTEGRATED PARAMETERS OF ENTIRE GRID.
@@ -1390,7 +1394,7 @@
      &            .AND.
      &          (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
      &            .AND.
-     &             LSV
+     &             LSV .AND. LWAMANOUT
 
 
           IF ( LOUT .OR. LRST ) THEN

@@ -89,32 +89,37 @@
       IMPLICIT NONE
 
       REAL :: ZHOOK_HANDLE
-      LOGICAL :: LNEMOIOSERVER
+      LOGICAL :: LNEMOIO,LNEMOIOSERVER
 
 ! ----------------------------------------------------------------------
+      LNEMOIO=.FALSE.
+      LNEMOIOSERVER=.FALSE.
 #ifdef ECMWF
-      LHOOK = .TRUE.
+      CALL WAMININEMOIO(LNEMOIO,LNEMOIOSERVER)
+#endif
+
+#ifdef ECMWF
+      LHOOK = .NOT.LNEMOIOSERVER
       IF (LHOOK) CALL DR_HOOK('CHIEF',0,ZHOOK_HANDLE)
 #else
       LHOOK = .FALSE.
 #endif
 
-      LNEMOIOSERVER=.FALSE.
 
-!     NEMO IO server?
-#ifdef ECMWF
-      CALL WAMININEMOIO(LNEMOIOSERVER)
-#endif
+!     Run model if not NEMO IO server
       IF (.NOT.LNEMOIOSERVER) THEN
-        CALL RUNWAM
-#ifdef ECMWF
-        CALL WAMENDNEMOIO(LNEMOIOSERVER)
-#endif
+        CALL RUNWAM(LNEMOIO)
       ENDIF
 
 #ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('CHIEF',1,ZHOOK_HANDLE)
 #endif
 
+!     Close NEMO IO servers
+#ifdef ECMWF
+      IF (LNEMOIO.AND.(.NOT.LNEMOIOSERVER)) THEN
+        CALL WAMENDNEMOIO(LNEMOIOSERVER)     
+      ENDIF
+#endif
       STOP
       END PROGRAM

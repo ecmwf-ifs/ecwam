@@ -329,12 +329,20 @@
 
         IF(IPFGTBL(42).NE.0) THEN
 !         the ice mask does not apply to the imposed ocean current 
-          CALL SETWMASK(U(IJS,IG),TEMP(IJS,42),IJS,IJL,1.1,IODP(IJS))
+          IF(ALLOCATED(U)) THEN
+            CALL SETWMASK(U(IJS,IG),TEMP(IJS,42),IJS,IJL,1.1,IODP(IJS))
+          ELSE
+            TEMP(:,42)=0.0
+          ENDIF
         ENDIF
 
         IF(IPFGTBL(43).NE.0) THEN
 !         the ice mask does not apply to the imposed ocean current 
-          CALL SETWMASK(V(IJS,IG),TEMP(IJS,43),IJS,IJL,1.1,IODP(IJS))
+          IF(ALLOCATED(V)) THEN
+            CALL SETWMASK(V(IJS,IG),TEMP(IJS,43),IJS,IJL,1.1,IODP(IJS))
+          ELSE
+            TEMP(:,43)=0.0
+          ENDIF
         ENDIF
 
         IF(IPFGTBL(44).NE.0) THEN

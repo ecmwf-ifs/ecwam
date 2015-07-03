@@ -254,19 +254,21 @@
 
 
 !     RE-ASSIGN THE NON PARTITONED ENERGY TO WINDSEA
+!!!!!! it does not work as it creates holes in the total swell field
+!!!!!! as feature that cannot be handled by our users
 !     AND REMOVE IT FROM THE SWELL
-      IF(LLPARTITION) THEN
-        IF(IPFGTBL(11).NE.0 ) THEN
-          DO IJ=IJS,IJL
-            ESEA(IJ) = ESEA(IJ)+ETNP(IJ) 
-          ENDDO
-        ENDIF
-        IF(IPFGTBL(12).NE.0) THEN
-          DO IJ=IJS,IJL
-            ESWELL(IJ) = MAX(ESWELL(IJ)-ETNP(IJ),0.0) 
-          ENDDO
-        ENDIF
-      ENDIF
+!      IF(LLPARTITION) THEN
+!        IF(IPFGTBL(11).NE.0 ) THEN
+!          DO IJ=IJS,IJL
+!            ESEA(IJ) = ESEA(IJ)+ETNP(IJ)
+!          ENDDO
+!        ENDIF
+!        IF(IPFGTBL(12).NE.0) THEN
+!          DO IJ=IJS,IJL
+!            ESWELL(IJ) = MAX(ESWELL(IJ)-ETNP(IJ),0.0)
+!          ENDDO
+!        ENDIF
+!      ENDIF
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)

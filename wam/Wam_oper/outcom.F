@@ -96,6 +96,14 @@
       USE UNWAM
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+ 
+      INTEGER, INTENT(IN) :: IU07, IU17, IFORM
+      INTEGER :: IDUM, K, M, L
+      INTEGER :: NBINP, NOUTT
+
+! ----------------------------------------------------------------------
+
   995 FORMAT(5I8)
   996 FORMAT(I8,1X,2E16.7)
   997 FORMAT(12I8,1X,A1)

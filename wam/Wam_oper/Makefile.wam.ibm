@@ -23,7 +23,6 @@ SOURCE	=\
               intspec.F        \
               jafu.F           \
               jonswap.F        \
-              kgribsize.F      \
               llalloc_grdfld.F \
               locint.F         \
               mblock.F         \
@@ -39,11 +38,9 @@ SOURCE	=\
               mubuf.F          \
               nlweigt.F        \
               outpp.F          \
-              outcom.F         \
               outnam.F         \
               packi.F          \
               packr.F          \
-              preproc.F        \
               prspp.F          \
               prspps.F         \
               readcur.F        \

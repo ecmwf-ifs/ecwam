@@ -74,7 +74,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP
+     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -214,8 +214,8 @@
 
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
-        IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
-     &      CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
+        IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
+     &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
 
           CALL OUTBS (FL1, SL, FL3, IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
      &                IG, IGL, IU25, IU26, LLOUTBS)
@@ -235,7 +235,8 @@
 !           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 !           --------------------------------------------
 
-      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
+      IF (LWAMANOUT .AND. 
+     &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
 
 !       PRINTS OUT NORMS
         CALL OUTWNORM
@@ -296,13 +297,16 @@
         ENDIF
       ENDIF
 
-      LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
+      LSV=(CDTRES.EQ.CDTPRO .OR. CDATEE.EQ.CDTPRO 
+     &                      .OR. CDTPRO.EQ.CDATER)
 
       IF (LSV.OR.LDWRRE) THEN
 
 !*    3.1.4 SAVE RESTART FIELDS.
 !           --------------------
-        LOUT=(IREST.EQ.1.AND.(CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
+        LOUT=(IREST.EQ.1 
+     &        .AND. (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES)
+     &        .AND. LWAMANOUT )
         IF ( LOUT .OR. LDWRRE ) THEN 
 
 !           SAVE SPECTRUM

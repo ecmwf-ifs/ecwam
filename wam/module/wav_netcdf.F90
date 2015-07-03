@@ -5,6 +5,49 @@ MODULE WAV_netcdf
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+# ifdef DEBUG
+      SUBROUTINE PRINT_MINMAX_U10_NEWOLD
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC
+      USE YOWSPEC, ONLY   : U10NEW   ,U10OLD
+      implicit none
+      REAL siz, avgHS, avgWindSpeed
+      logical IsFirst
+      REAL minU10new, maxU10new
+      REAL minU10old, maxU10old
+      INTEGER IG, IJ
+      IG=1
+      IsFirst=.TRUE.
+      DO IJ=IJSLOC,IJLLOC
+        IF (IsFirst) THEN
+          minU10new=U10NEW(IJ)
+          maxU10new=U10NEW(IJ)
+          minU10old=U10OLD(IJ,IG)
+          maxU10old=U10OLD(IJ,IG)
+        ELSE
+          IF (minU10new .gt. U10NEW(IJ) ) THEN
+            minU10new=U10NEW(IJ)
+          END IF
+          IF (maxU10new .lt. U10NEW(IJ) ) THEN
+            maxU10new=U10NEW(IJ)
+          END IF
+          IF (minU10old .gt. U10OLD(IJ,IG) ) THEN
+            minU10old=U10OLD(IJ,IG)
+          END IF
+          IF (maxU10old .lt. U10OLD(IJ,IG) ) THEN
+            maxU10old=U10OLD(IJ,IG)
+          END IF
+        END IF
+        IsFirst=.FALSE.
+      END DO
+      WRITE(740+MyRankGlobal,*) 'IJSLOC/IJLLOC=', IJSLOC, IJLLOC
+      WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)sel=', minU10new, maxU10new
+      WRITE(740+MyRankGlobal,*) 'U10OLD(min/max)sel=', minU10old, maxU10old
+      FLUSH(740+MyRankGlobal)
+      END SUBROUTINE
+# endif
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WAV_netcdf_init
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWMPP   , ONLY : NPROC, NPRECR, NINF, NSUP, IRANK
@@ -323,6 +366,7 @@ MODULE WAV_netcdf
       integer :: status(MPI_STATUS_SIZE)
       integer iVar, IPglob, NP_RESloc, IJglob
       integer VertStatus(np_global)
+      real eMin, eMax, eAvg
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Before WAV_netcdf_setup_array_variables'
       WRITE(740+MyRankGlobal,*) 'minWind min(NETCDF_var(3,:))=', minval(NETCDF_var(3,:))
@@ -414,10 +458,14 @@ MODULE WAV_netcdf
       FLUSH(740+MyRankGlobal)
 # endif
 # ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'MyRankLocal=', MyRankLocal
       IF (MyRankLocal .eq. 0) THEN
-        WRITE(740+MyRankGlobal,*) 'NETCDF_nbVar=', NETCDF_nbVar
+        WRITE(740+MyRankGlobal,*) 'setup_array_variable : NETCDF_nbVar=', NETCDF_nbVar
         DO iVar=1,NETCDF_nbVar
-          WRITE(740+MyRankGlobal,*) 'iV=', iVar, ' v(min/max/sum)=', minval(NETCDF_var_gridded(iVar,:,:)), maxval(NETCDF_var_gridded(iVar,:,:)), sum(NETCDF_var_gridded(iVar,:,:))
+          eMin=minval(NETCDF_var_gridded(iVar,:,:))
+          eMax=maxval(NETCDF_var_gridded(iVar,:,:))
+          eAvg=sum(NETCDF_var_gridded(iVar,:,:))/(REAL(NETCDF_X)*REAL(NETCDF_Y))
+          WRITE(740+MyRankGlobal,*) 'iV=', iVar, ' v(min/max/sum)=', eMin, eMax, eAvg
         END DO
         WRITE(740+MyRankGlobal,*) 'Begin WAV_netcdf_setup_array_variables'
         WRITE(740+MyRankGlobal,*) 'From NETCDF_var_gridded'
@@ -479,9 +527,7 @@ MODULE WAV_netcdf
       USE YOWPCONS , ONLY : EPSUS    ,EPSU10
       USE YOWUNPOOL, ONLY : LLUNSTR, LCFL, CFLCXY
       USE yowpd    , only : NP_RES => np
-# ifdef DEBUG
-!!!! need to fix this      USE unwam, only : COHERENCY_ERROR_KERNEL
-#endif
+      USE unwam, only : COHERENCY_ERROR_KERNEL
 #if defined MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, only : Uwind_atm, Vwind_atm
 #endif
@@ -502,6 +548,8 @@ MODULE WAV_netcdf
       REAL SumError, MaxError, TotalSum
 # ifdef DEBUG
       REAL siz, avgHS, avgWindSpeed
+      logical IsFirst
+      REAL minU10new, maxU10new
 # endif
       gValue=9.806
       IG=1
@@ -513,6 +561,9 @@ MODULE WAV_netcdf
         IJfirst=IJSLOC
         IJlast =IJLLOC
       END IF
+# ifdef DEBUG
+      IsFirst=.true.
+# endif
       DO IJ=IJfirst,IJlast
         idx_loc=idx_loc+1
         eSingZ0=Z0NEW(IJ)
@@ -527,6 +578,20 @@ MODULE WAV_netcdf
         eCD = eTAU/MAX(U10NEW(IJ)**2,EPSU10)
         eWindSpeed=U10NEW(IJ)
         eWindDir=THWNEW(IJ)
+# ifdef DEBUG
+        IF (IsFirst) THEN
+          minU10new=eWindSpeed
+          maxU10new=eWindSpeed
+        ELSE
+          IF (minU10new .gt. eWindSpeed) THEN
+            minU10new=eWindSpeed
+          END IF
+          IF (maxU10new .lt. eWindSpeed) THEN
+            maxU10new=eWindSpeed
+          END IF
+        END IF
+        IsFirst=.FALSE.
+# endif
         eU_10_wam=eWindSpeed*SIN(eWindDir)
         eV_10_wam=eWindSpeed*COS(eWindDir)
 # if defined MODEL_COUPLING_ATM_WAV && defined DEBUG
@@ -576,8 +641,8 @@ MODULE WAV_netcdf
         END IF
       END DO
 # ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) 'minval(U10NEW)=', minval(U10NEW)
-      FLUSH(740+MyRankGlobal)
+      WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)=', minval(U10NEW), maxval(U10NEW)
+      WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)sel=', minU10new, maxU10new
       IF (LLUNSTR) THEN
         CALL COHERENCY_ERROR_KERNEL(U10NEW, SumError, MaxError, TotalSum)
         WRITE(740+MyRankGlobal,*) 'U10NEW(SumError,TotalSum)=', SumError, TotalSum
@@ -1250,16 +1315,14 @@ MODULE WAV_netcdf
       WRITE(740+MyRankGlobal,*)  'VarName=', TRIM(VarName)
       FLUSH(740+MyRankGlobal)
 # endif
-      IF (LLUNSTR) THEN
-        IF (MyRankLocal.eq.0) THEN
+      IF (MyRankLocal.eq.0) THEN
+        IF (LLUNSTR) THEN
           TheFieldUnstruct=NETCDF_var_gridded(idVar,:,1)
           iret=nf90_inq_varid(ncid, TRIM(VarName), var_id)
           CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, iret)
           iret=nf90_put_var(ncid,var_id,TheFieldUnstruct,start = (/1, idx/), count=(/NETCDF_X,1/))
           CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, iret)
-        END IF
-      ELSE
-        IF (MyRankLocal.eq.0) THEN
+        ELSE
           TheFieldNC=NETCDF_var_gridded(idVar,:,:)
           iret=nf90_inq_varid(ncid, TRIM(VarName), var_id)
           CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, iret)

@@ -45,6 +45,7 @@
       LOGICAL :: LWFLUXOUT
       LOGICAL :: LSECONDORDER
       LOGICAL :: LRSTST0
+      LOGICAL :: LWAMANOUT
 
       INTEGER :: NWRTOUTWAM=1
       INTEGER NGOUT 
@@ -106,6 +107,9 @@
 !      *LRSTST0    LOGICAL   TRUE IF GRIB HEADER HAVE TO BE RESET
 !                            SUCH THAT THE FORECAST STEP POINTS TO
 !                            THE START OF THE RUN.
+!      *LWAMANOUT* LOGICAL   CONTROLS WHETHER FIELDS WILL BE WRITTEN AT 
+!                            ANALYSIS TIME OR NOT. (USEFUL WHEN WAVE DATA
+!                            ASSIMILATION IS DONE IN MORE THAN ONE TRAJECTORY.)
 !      *NWRTOUTWAM INTEGER   CONTROLS THE STRIDE WITH WHICH FDB OUTPUT PE's
 !                            ARE SELECTED (BY DEFAULT = 1)
 ! ----------------------------------------------------------------------

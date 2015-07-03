@@ -1,4 +1,4 @@
-      SUBROUTINE RUNWAM
+      SUBROUTINE RUNWAM(LNEMOIO)
 
 ! ----------------------------------------------------------------------
 
@@ -118,6 +118,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+      LOGICAL, INTENT(IN) :: LNEMOIO
 
 ! DIMENSION DUMMY COUPLED VARIABLES
       INTEGER, PARAMETER :: NLONW=1
@@ -170,8 +171,10 @@
       LMPLUSERCOMM = .TRUE.
       MPLUSERCOMM = WAV_COMM_WORLD
 #else
-      LMPLUSERCOMM = .TRUE.
-      MPLUSERCOMM = MPI_COMM_WORLD
+      IF (.NOT.LNEMOIO) THEN
+         LMPLUSERCOMM = .TRUE.
+         MPLUSERCOMM = MPI_COMM_WORLD
+      ENDIF
 #endif
 
       time0=-wam_user_clock()
@@ -282,6 +285,11 @@
      &          Z0OLD(NINF:NSUP,NBLO),Z0NEW(NINF:NSUP),
      &          TAUW(NINF:NSUP,NBLO))
 
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      U10NEW = 0
+      U10OLD = 0
+#endif
+
       ALLOCATE (ROAIRN(NINF:NSUP),ROAIRO(NINF:NSUP,NBLO),
      &          ZIDLNEW(NINF:NSUP),ZIDLOLD(NINF:NSUP,NBLO))
  
@@ -348,7 +356,9 @@
         LWCUR=.FALSE. ! only used in coupled runs
         LWSTOKES=.FALSE.  ! only used in coupled runs
       ENDIF
-
+!#ifdef MODEL_COUPLING_OCN_WAV
+!      LWCUR=.TRUE.
+!#endif
       RMISS=-999. ! missing data indicator
 
       ! WAM-NEMO COUPLING
@@ -357,7 +367,8 @@
         IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
 #ifdef ECMWF
         CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME, 
-     &                         NEMOITINI, NEMOITEND, NEMOTSTEP, .TRUE. )
+     &                         NEMOITINI, NEMOITEND, NEMOTSTEP,
+     &                         .TRUE., -1, .FALSE. )
 #endif
         IF(IRANK.EQ.1) THEN
           WRITE(IU06,*)'NEMO INITIAL DATE         : ',NEMOINIDATE
@@ -453,7 +464,7 @@
 #endif
 
       CALL MPCLOSE_UNIT
-      CALL MPL_END
+      IF (.NOT.LNEMOIO) CALL MPL_END
 
 #ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',1,ZHOOK_HANDLE)

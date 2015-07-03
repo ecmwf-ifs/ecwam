@@ -348,13 +348,7 @@
       ENDDO
 
 !     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      IF(XDELLA.LT.0.24) THEN
-!       this is a bit of a dirty trick but at those resolutions, we might need
-!       to increase the number of directions.
-        XLATMAX=87.5
-      ELSE
-        XLATMAX=88.25
-      ENDIF
+      XLATMAX=87.5
       COSPHMIN=COS(XLATMAX*RAD)
       DO K=1,NY
         IF(COSPH(K).LE.COSPHMIN) THEN
