@@ -21,7 +21,7 @@
 !         *IJS*    - INDEX OF FIRST GRID POINT.
 !         *IJL*    - INDEX OF LAST GRID POINT.
 !         *THRSCI* - SEA ICE THRESHOLD FOR GIVEN PARAMETER.
-!         *IODP*   - LAND MASK (0 over LAND, 1 OVER SEA).
+!         *IODP*   - SEA MASK (0 over LAND, 1 OVER SEA).
 
 ! ----------------------------------------------------------------------
 

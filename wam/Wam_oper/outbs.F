@@ -413,34 +413,30 @@
      &      ALLOCATE(PMTRAIN(IJSLOC:IJLLOC,NTRAIN))
       ENDIF
 
-      IF (CDTINTS.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
 
-!       COMPUTE MEAN PARAMETERS
+!     COMPUTE MEAN PARAMETERS
 
-        NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
-        NPROMA=MAX(NPROMA/2,1)
+      NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
+      NPROMA=MAX(NPROMA/2,1)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJSLOC,IJLLOC,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
+      DO JKGLO=IJSLOC,IJLLOC,NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
-          CALL SEPWISW (FL3(KIJS:KIJL,:,:),
-     &                  FL(KIJS:KIJL,:,:),
-     &                  KIJS, KIJL, THWOLD(KIJS,IG),
-     &                  USOLD(KIJS,IG),USNEW(KIJS),
-     &                  U10NEW(KIJS),THWNEW(KIJS),
-     &                  LLPARTITION)
-        ENDDO
-!$OMP   END PARALLEL DO
+        CALL SEPWISW (FL3(KIJS:KIJL,:,:),
+     &                FL(KIJS:KIJL,:,:),
+     &                KIJS, KIJL, THWOLD(KIJS,IG),
+     &                USOLD(KIJS,IG),USNEW(KIJS),
+     &                U10NEW(KIJS),THWNEW(KIJS),
+     &                LLPARTITION)
+      ENDDO
+!$OMP END PARALLEL DO
 
-
-        IF (ITEST.GE.3) THEN
-          IF (ITESTB.GE.IG) THEN
-            WRITE(IU06,*) '      SUB. OUTBS: SWELL /SEA',
-     &       ' SEPARATION DONE'
-          ENDIF
+      IF (ITEST.GE.3) THEN
+        IF (ITESTB.GE.IG) THEN
+          WRITE(IU06,*) '      SUB. OUTBS: SWELL /SEA',
+     &     ' SEPARATION DONE'
         ENDIF
-
       ENDIF
 
       CALL GSTATS(1951,1)
