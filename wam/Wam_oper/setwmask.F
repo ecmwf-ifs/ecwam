@@ -42,7 +42,7 @@
       REAL, INTENT(IN) :: THRSCI
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: X
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: Y
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: Y
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
