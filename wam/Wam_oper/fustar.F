@@ -83,17 +83,19 @@
 
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FUSTAR',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALIZE OUTPUT FIELDS.                                      
 !        -------------------------                                      
 
       IG=1
 
-      DO IJ=IJS,IJL                                                
-        USA(IJ)  =   -99.                                              
-        EWA(IJ)  =  -999.                                              
-        FMWA(IJ) = -9999.                                              
+      DO IJ=IJS,IJL
+        USA(IJ)  =   -99.
+        EWA(IJ)  =  -999.
+        FMWA(IJ) = -9999.
       ENDDO
 
 !*    2. LOOP OVER GRID POINTS.                                         
@@ -155,6 +157,8 @@
         ENDIF
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FUSTAR',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE FUSTAR

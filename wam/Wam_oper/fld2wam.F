@@ -17,7 +17,7 @@
 !    &                    BLOCK, CDATEIN)
 
 
-!     *IPARAM*    GRIB PARAMETER EXPETED.
+!     *IPARAM*    GRIB PARAMETER EXPECTED.
 !     *FILNM*     DATA INPUT FILENAME.
 !            !!!  FILNM WILL NOT BE KEPT OPENED !!!!
 !     *IJS*       INDEX OF FIRST GRIDPOINT
@@ -45,7 +45,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSTAT  , ONLY : NWAM_BLKS
+      USE YOWSTAT  , ONLY : NPROMA_WAM 
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWPD, ONLY : MNP => npa
@@ -60,9 +60,17 @@
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IPARAM, IJS, IJL, IG
+
+      REAL, INTENT(IN) :: VALMISS 
+      REAL, INTENT(OUT) :: BLOCK(IJS:IJL)
+
+      CHARACTER(LEN=24), INTENT(IN) :: FILNM
+      CHARACTER(LEN=14), INTENT(OUT) :: CDATEIN
+
       INTEGER :: NBIT = 550000
 
-      INTEGER :: IPARAM, IREAD, IJS, IJL, IG
+      INTEGER :: IREAD
       INTEGER :: KFILE_HANDLE1
       INTEGER :: LFILE, KGRIB_HANDLE
       INTEGER :: KRET, KPLENG, KLEN, KLENG, IDM
@@ -74,14 +82,10 @@
       INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL :: VALMISS 
       REAL :: ZDUM
       REAL :: ZHOOK_HANDLE
-      REAL :: BLOCK(IJS:IJL)
       REAL :: FIELD(NXFF,NYFF)
 
-      CHARACTER(LEN=14) :: CDATEIN
-      CHARACTER(LEN=24) :: FILNM
 
 ! --------------------------------------------------------------------  
 #ifdef ECMWF
@@ -164,7 +168,7 @@
 !       -------------------
         CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
-        CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+        CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
      &                   KGRIB_HANDLE, INGRIB, ISIZE,
      &                   LLUNSTR,
      &                   NXFF, NYFF, NLONRGG_LOC,

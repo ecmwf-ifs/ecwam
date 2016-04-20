@@ -39,19 +39,36 @@
 
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL,DIMENSION(NGX,NGY) :: FIELD
-!----------------------------------------------------------------------
+      IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: ISEND, IRECV
+      INTEGER, INTENT(INOUT) :: ITAG
+      REAL,DIMENSION(NGX,NGY), INTENT(INOUT) :: FIELD
+
+      INTEGER :: IJ, I, J
+      INTEGER :: KCOUNT
+      INTEGER :: KRCOUNT, KRTAG
+
+      REAL :: ZHOOK_HANDLE
       REAL,DIMENSION(NGX*NGY):: ZCOMBUF
+
+!----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',0,ZHOOK_HANDLE)
+#endif
+
 
       KCOUNT=NGX*NGY 
 
       IF((ISEND.EQ.IRECV).OR.(NPROC.EQ.1)) THEN
+#ifdef ECMWF
+        IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',1,ZHOOK_HANDLE)
+#endif
         RETURN
 
       ELSEIF(IRANK.EQ.ISEND) THEN 
@@ -96,5 +113,8 @@
         ENDDO
       ENDIF
 
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE MPGATHERGRDFLD

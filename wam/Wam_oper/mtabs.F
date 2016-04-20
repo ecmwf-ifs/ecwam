@@ -1,4 +1,4 @@
-       SUBROUTINE MTABS (ML, KL)
+      SUBROUTINE MTABS (ML, KL)
 
 ! ----------------------------------------------------------------------
 
@@ -44,6 +44,16 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTEST  , ONLY : IU06
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ML, KL
+
+      INTEGER :: M, JD, NAN, NSTP
+      REAL :: AKI
+      REAL :: GH, OM, AD, AK, AKD, DEPTHE
 
 ! ----------------------------------------------------------------------
 

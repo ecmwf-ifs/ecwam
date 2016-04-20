@@ -44,7 +44,6 @@
 !        *FWSEA*    - DETERMINES IF WINDSEA IS PRESENT IN THE SPECTRUM,,
 !                     COMPUTING EVENTUALLY WINDSEA ENERGY AND MEAN FREQ.
 !        *GRFIELD*  - READS GRIDDED MEASUREMENTS AND DISTRIBUTES THEM.
-!        *GRDATA*   - TRANSFERS MEASUREMENTS TO THE MODEL GRID.         
 !        *GSFILE*   - ROUTINE TO DYNAMICALLY FETCH OR DISPOSE FILES.    
 !        *INCDATE*  - UPDATE DATE TIME GROUP.                           
 !        *MAKEBLO*  - MAKES BLOCKS FROM GRIDDED FIEDS.                  
@@ -74,7 +73,8 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT
+     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT,
+     &            LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -112,7 +112,7 @@
      &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,
-     &            LSARINV  ,IREFDATE ,LFDBOPEN ,NWAM_BLKS
+     &            LSARINV  ,IREFDATE ,LFDBOPEN
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
@@ -368,7 +368,8 @@
 
             CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                    IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                    IASSI, NFCST, ISTAT, CDTCUR)
+     &                    IASSI, NFCST, ISTAT, CDTCUR,
+     &                    LRSTPARALW, NPROC)
 
             CLOSE (IU04)
             WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',

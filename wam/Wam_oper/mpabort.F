@@ -32,12 +32,14 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU  
-      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE MPL_MODULE
       USE SDL_MOD
 
 ! ----------------------------------------------------------------------
-      CHARACTER*(*),INTENT(IN) :: CDMESSAGE
+
+      IMPLICIT NONE
+
+      CHARACTER(LEN=*),INTENT(IN) :: CDMESSAGE
 
       LOGICAL :: LLABORT=.TRUE.
 

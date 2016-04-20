@@ -57,6 +57,12 @@
 
 ! ----------------------------------------------------------------------
 
+      USE MPL_MPIF
+      USE yowDatapool, only: comm
+      USE OUTPUT_STRUCT, only : INITIAL_OUTPUT_INITS_NEXTGEN
+      USE OUTPUT_STRUCT, only : SET_UP_ARR_OUT_RECV
+      USE YOWPD, only : INE, npa, NP_RES =>np
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL
       USE YOWCURR  , ONLY : U, V 
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH  ,
@@ -68,7 +74,7 @@
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
      &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
      &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
-     &            CICG     ,CIHG     ,
+     &            CICG     ,CIHG     ,E10G     ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
@@ -80,7 +86,7 @@
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
-     &            STRNMS   ,
+     &            STRNMS   ,E10MEAN  ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH        ,
      &            KTAG
@@ -99,6 +105,10 @@
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK, 
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE OUTPUT_STRUCT, ONLY : ARR_OUT_RECV, LocalPosICT
+      USE YOWUNPOOL, ONLY : NIBLO_FD, NIBLO_OUT
+      USE YOWUNPOOL, ONLY : OUT_METHOD
+      USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -131,8 +141,12 @@
       REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
 
       LOGICAL :: LSQRT
-
-! ----------------------------------------------------------------------
+      LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
+!----------------------------------------------------------------------
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Begin OUTGRID'
+      FLUSH(740+MyRankGlobal)
+#endif
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
 #endif
@@ -150,6 +164,22 @@
           ENDIF
         ENDIF
       ENDDO
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'OUT_METHOD=', OUT_METHOD
+      FLUSH(740+MyRankGlobal)
+#endif
+      IF (HaveMPI_arrays .eqv. .FALSE.) THEN
+        IF (LLUNSTR .and. (OUT_METHOD .eq. 2)) THEN
+#ifdef DEBUG
+           WRITE(740+MyRankGlobal,*) 'Before call to NEXTGEN'
+#endif
+           CALL INITIAL_OUTPUT_INITS_NEXTGEN
+#ifdef DEBUG
+           WRITE(740+MyRankGlobal,*) 'After call to NEXTGEN'
+#endif
+        END IF
+      END IF
+      HaveMPI_arrays=.TRUE.
       IF(NFLDTOT.EQ.0) THEN
 #ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
@@ -220,6 +250,13 @@
         IF(IPFGTBL(10).NE.0) THEN
 !         The wind speed is NOT set to missing over ice or land 
           CALL SETWMASK(U10NEW(IJS),TEMP(IJS,10),IJS,IJL,1.1,NIODP(IJS))
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'minval(U10NEW)=',                  &
+     &       minval(U10NEW(IJS:IJL))
+          WRITE(740+MyRankGlobal,*) 'maxval(U10NEW)=',                  &
+     &       maxval(U10NEW(IJS:IJL))
+          FLUSH(740+MyRankGlobal)
+#endif          
         ENDIF
 
         IF(IPFGTBL(11).NE.0) THEN
@@ -391,6 +428,12 @@
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E10MEAN(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
 !         the ice mask does not apply to air density or land 
          CALL SETWMASK(ROAIRN(IJS),TEMP(IJS,ITG),IJS,IJL,1.1,NIODP(IJS))
         ENDIF
@@ -483,6 +526,10 @@
         IF(IPFGTBL(ITG).NE.0) THEN
          CALL SETWMASK(WX5(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
         ENDIF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After construction of TEMP'
+      FLUSH(740+MyRankGlobal)
+#endif          
 
 
 !     SENDING TO RELEVANT PE'S
@@ -496,62 +543,81 @@
         IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NBLKE(IPR)-NBLKS(IPR)+1)
       ENDDO
 
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Before exchanges'
+      FLUSH(740+MyRankGlobal)
+#endif          
+      
+      IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
+      
 !     LOADING THE COMMUNICATION BUFFER
-      ALLOCATE(ZSENDBUF(NFLDPPEMAX*MPMAXLENGTH,NPROC))
+        ALLOCATE(ZSENDBUF(NFLDPPEMAX * MPMAXLENGTH,NPROC))
 
-      ICNT(:)=0
-      DO ICT=1,JPPFLAG
-        IF(ICT.LE.16 .OR. ICT.GE.22) THEN
-          IF(IPFGTBL(ICT).NE.0) THEN 
-            IPR=IPFGTBL(ICT)
-            DO IJ=IJS,IJL
-              ICNT(IPR) = ICNT(IPR) + 1
-              ZSENDBUF(ICNT(IPR),IPR) = TEMP(IJ,ICT)
-            ENDDO
+        ICNT(:)=0
+        DO ICT=1,JPPFLAG
+          IF(ICT.LE.16 .OR. ICT.GE.22) THEN
+            IF(IPFGTBL(ICT).NE.0) THEN 
+              IPR=IPFGTBL(ICT)
+              DO IJ=IJS,IJL
+                ICNT(IPR) = ICNT(IPR) + 1
+                ZSENDBUF(ICNT(IPR),IPR) = TEMP(IJ,ICT)
+              ENDDO
+            ENDIF
           ENDIF
-        ENDIF
-      ENDDO
-
+        ENDDO
+      ELSE
+        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
+      END IF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After construction of ARR_OUT_RECV'
+      WRITE(740+MyRankGlobal,*) 'allocated(TEMP)=', allocated(TEMP)
+      FLUSH(740+MyRankGlobal)
+#endif          
       DEALLOCATE(TEMP)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After deallocation'
+      FLUSH(740+MyRankGlobal)
+#endif          
 
 !     GLOBAL EXCHANGE
-      CALL GSTATS(674,0)
 
-      IR=0
-
-      IF(NFLDPPE(IRANK).GT.0) THEN
-        ALLOCATE(ZRECVBUF(NFLDPPE(IRANK)*MPMAXLENGTH,NPROC))
-
-        DO IPR=1,NPROC
-          IR=IR+1
-          CALL MPL_RECV(ZRECVBUF(1:IRECVCOUNTS(IPR),IPR),KSOURCE=IPR,
-     &      KTAG=KTAG,
-     &      KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
-     &      CDSTRING='OUTGRID:')
-        ENDDO
-      ENDIF
-
-      DO IPR=1,NPROC
-        IF(NFLDPPE(IPR).GT.0) THEN
-          IR=IR+1
-          CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,
-     &      KTAG=KTAG,
-     &      KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
-     &      CDSTRING='OUTGRID:')
+      IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
+        CALL GSTATS(693,0)
+        IR=0
+        IF(NFLDPPE(IRANK).GT.0) THEN
+          ALLOCATE(ZRECVBUF(NFLDPPE(IRANK)*MPMAXLENGTH,NPROC))
+          DO IPR=1,NPROC
+            IR=IR+1
+            CALL MPL_RECV(ZRECVBUF(1:IRECVCOUNTS(IPR),IPR),KSOURCE=IPR,
+     &        KTAG=KTAG,
+     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+     &        CDSTRING='OUTGRID:')
+          ENDDO
         ENDIF
-      ENDDO
-
-!     NOW WAIT FOR ALL TO COMPLETE
-
-      CALL MPL_WAIT(ZDUM,KREQUEST=IREQ(1:IR),CDSTRING='OUTGRID:')
-
-      CALL GSTATS(674,1)
+        DO IPR=1,NPROC
+          IF(NFLDPPE(IPR).GT.0) THEN
+            IR=IR+1
+            CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,
+     &        KTAG=KTAG,
+     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+     &        CDSTRING='OUTGRID:')
+          ENDIF
+        ENDDO
+!       NOW WAIT FOR ALL TO COMPLETE
+        CALL MPL_WAIT(ZDUM,KREQUEST=IREQ(1:IR),CDSTRING='OUTGRID:')
+        CALL GSTATS(693,1)
+      END IF
 
 
 !     RETRIEVE THE INFORMATION
 !     ------------------------
 
-      ALLOCATE(GTEMP(NIBLO))
+      IF (LLUNSTR .and. (OUT_METHOD .eq. 2)) THEN
+        NIBLO_OUT = NIBLO_FD
+      ELSE
+        NIBLO_OUT = NIBLO
+      END IF
+      ALLOCATE(GTEMP(NIBLO_OUT))
 
 
 !     RECEIVING AND TRANSFERING FROM BLOCK TO GRID
@@ -562,14 +628,18 @@
       IFLD=0
       DO WHILE ( IFLD.LT.NFLDPPE(IRANK) .AND. ICT .LE. JPPFLAG )
         IF((ICT.LE.16 .OR. ICT.GE.22).AND. IPFGTBL(ICT).EQ.IRANK ) THEN
-          DO IPR=1,NPROC
-            ICOUNT=ICNT(IPR)
-            DO IJ=NBLKS(IPR),NBLKE(IPR)
-              ICOUNT=ICOUNT+1
-              GTEMP(IJ)=ZRECVBUF(ICOUNT,IPR)
+          IF (.NOT.(LLUNSTR) .or. (OUT_METHOD .eq. 1)) THEN
+            DO IPR=1,NPROC
+              ICOUNT=ICNT(IPR)
+              DO IJ=NBLKS(IPR),NBLKE(IPR)
+                ICOUNT=ICOUNT+1
+                GTEMP(IJ)=ZRECVBUF(ICOUNT,IPR)
+              ENDDO
+              ICNT(IPR)=ICOUNT
             ENDDO
-            ICNT(IPR)=ICOUNT
-          ENDDO
+          ELSE
+            GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
+          END IF
 
 !!! until I move all grid arrays to one work array, need to loop on all
 !!! special case
@@ -765,42 +835,46 @@
             CALL MAKEGRID (GTEMP,STRNMSG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+2)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,RHOAG,IG,LSQRT,ZMISS)
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E10G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+3)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WSTARG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,RHOAG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+4)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CICG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,WSTARG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+5)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CIHG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,CICG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+6)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,C3G,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,CIHG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+7)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NSSTG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,C3G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+8)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NICCG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,NSSTG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+9)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NICTG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,NICCG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+10)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NUCUG,IG,LSQRT,ZMISS)
+            CALL MAKEGRID (GTEMP,NICTG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(46+3*NTRAIN+11)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,NUCUG,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+12)) THEN
             LSQRT=.FALSE.
             CALL MAKEGRID (GTEMP,NVCUG,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
@@ -838,8 +912,12 @@
 
       DEALLOCATE(GTEMP)
       IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
-      DEALLOCATE(ZSENDBUF)
+      IF(ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
 
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Now leaving OUTGRID'
+      FLUSH(740+MyRankGlobal)
+#endif          
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)

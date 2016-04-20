@@ -48,12 +48,6 @@ SOURCE	=\
               rotspec.F        \
               savrest.F        \
               secondhh.F       \
-              stats.F          \
-              statsc.F         \
-              statsdir.F       \
-              statse.F         \
-              statsi.F         \
-              statsp.F         \
               stress.F         \
               tauhf.F          \
               topoar.F         \

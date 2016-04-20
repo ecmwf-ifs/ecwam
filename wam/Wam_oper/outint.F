@@ -74,7 +74,7 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
-     &            C3G      ,
+     &            C3G      ,E10G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG    ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
@@ -275,6 +275,9 @@
      &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,STRNMSG)
         ITG=ITG+1
         IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E10G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
      &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,RHOAG)
         ITG=ITG+1
         IF (FFLAG(ITG))
@@ -427,6 +430,10 @@
         ITG=ITG+1
         ITAG=100+ITG
         IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E10G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,RHOAG)
         ITG=ITG+1
         ITAG=100+ITG
@@ -553,6 +560,8 @@
             IF (FFLAG(46))WRITE (IU20) TAUOCG
             ITG=46+3*NTRAIN+1
             IF (FFLAG(ITG))WRITE (IU20) STRNMSG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E10G 
             ITG=ITG+1
             IF (FFLAG(ITG))WRITE (IU20) RHOAG 
             ITG=ITG+1
@@ -790,6 +799,14 @@
             TITL = ' MEAN SQUARE WAVE STRAIN IN THE SEA ICE'
             CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,100000000.,
      &                 STRNMSG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H10 (0.1 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY,NGX,NGY,TITL,10.,
+     &                 E10G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
         ITG=ITG+1
@@ -1644,6 +1661,25 @@
             IPARAM=210
             ITABLE=140
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, STRNMSG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      WAVE HEIGHT FOR ALL WAVES WITH PERIOD LARGER THAN 10S. 
+!       ------------------------------------------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=120
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E10G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)

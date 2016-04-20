@@ -45,6 +45,13 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NBOUNC, IDELPRO, IUOUT, IU06
+      REAL, INTENT(IN) :: TH0, FR1
+
+      REAL :: XANG, XFRE, XBOU, XDEL
+
 !*    1. FORMAT AND WRITE HEADER.
 !        ------------------------
 

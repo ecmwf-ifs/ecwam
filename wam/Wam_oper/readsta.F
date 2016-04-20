@@ -1,6 +1,6 @@
       SUBROUTINE READSTA (IUIN, CBDT, CEDT, ANALPD, FOREPD, IS,
      &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
-     &                    CCURA)
+     &                    CCURA, LRSTPARAL, NPROC_RST )
                                                                         
 ! -------------------------------------------------------------------   
 
@@ -42,6 +42,9 @@
 !          NF       INTEGER    NEW FORECAST CONDITION.                  
 !          ISTAT    INTEGER    STATUS FLAGS FOR JOBS.                   
 !         *CCURA*   CHAR*14    BEGIN DATE FOR USE OF CURRENTS. 
+!          LRSTPARAL LOGICAL   TRUE IF RESTART FILES WRITTEN IN PARALLEL
+!          NPROC_RST INTEGER   NUMBER OF PARALLEL MPI TASKS THAT HAVE BEEN USED
+                                                                        
 
 
 !     METHOD.
@@ -62,10 +65,21 @@
 !---------------------------------------------------------------------- 
 
       USE YOWCARD  , ONLY : JPCL     ,CARD
+      USE YOWTEST  , ONLY : IU06 
 
-      INTEGER ANALPD, FOREPD 
-      INTEGER ISTAT(3)
-      CHARACTER*14 CBDT, CEDT, CABDT, CAEDT, CRSDT, CLSDT, CCURA
+!---------------------------------------------------------------------- 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IUIN
+      INTEGER, INTENT(OUT) :: ANALPD, FOREPD, IS, IASS, NF 
+      INTEGER, INTENT(OUT) :: NPROC_RST
+      INTEGER, INTENT(OUT) :: ISTAT(3)
+      CHARACTER(LEN=14), INTENT(OUT) :: CBDT, CEDT
+      CHARACTER(LEN=14), INTENT(OUT) :: CRSDT, CLSDT, CABDT, CAEDT 
+      CHARACTER(LEN=14), INTENT(OUT) :: CCURA 
+      LOGICAL, INTENT(OUT) :: LRSTPARAL
+
+      INTEGER :: I, L
 
 
 !*    1.0  READ WAMINFO FILE FROM IUIN.
@@ -116,13 +130,17 @@
         CCURA = CBDT
       ENDIF
 
+      LRSTPARAL=.FALSE.
+      IF (CARD(16)(20:20).EQ.'Y') LRSTPARAL=.TRUE.
+
+      READ (CARD(17), '(27X,I10)') NPROC_RST 
+
       RETURN                                                            
 
 !*    3.0  ERROR EXIT
 !          ----------
 
  3000 CONTINUE
-      IU06 = 6
       WRITE(IU06,*) ' *************************************************'
       WRITE(IU06,*) ' *                                               *'
       WRITE(IU06,*) ' *        FATAL ERROR IN SUB. READSTA            *'

@@ -46,7 +46,14 @@
 
 ! ---------------------------------------------------------------------
 
-      CHARACTER*14 CDATE,CDATEF,CDATER
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) ::IU06, IU04, IU12, IU14, IU15
+      INTEGER, INTENT(IN) ::IGL
+
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF, CDATER
+
+      INTEGER :: ICH
 
 ! ---------------------------------------------------------------------
 
@@ -106,5 +113,3 @@
 
       RETURN
       END SUBROUTINE SAVREST
-
-

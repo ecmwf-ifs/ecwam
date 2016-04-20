@@ -31,6 +31,7 @@
       REAL,ALLOCATABLE :: TAUOC(:) 
       REAL,ALLOCATABLE :: NTAUOC(:) 
       REAL,ALLOCATABLE :: STRNMS(:) 
+      REAL,ALLOCATABLE :: E10MEAN(:) 
       REAL,ALLOCATABLE :: WX1(:)
       REAL,ALLOCATABLE :: WX2(:)
       REAL,ALLOCATABLE :: WX3(:)
@@ -67,6 +68,7 @@
 !      *TAUOC*        REAL      NORMALIZED MOMENTUM FLUX INTO OCEAN.
 !      *NTAUOC*       REAL      COPY OF TAUOC FOR NEMO.
 !      *STRNMS*       REAL      MEAN SQUARE STRAIN INTO THE SEA ICE.
+!      *E10MEAN*      REAL      SPECTRAL VARIANCE WITH PERIOD > 10s  
 
 ! ----------------------------------------------------------------------
       END MODULE YOWMEAN

@@ -139,7 +139,7 @@
       REAL(KIND=JWRU) :: XLO, YLA, DIST
       REAL(KIND=JWRU), DIMENSION(NLOC) :: YLAT0, XLON0
 
-      LOGICAL :: LLINIALL, LLOCAL
+      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 !----------------------------------------------------------------------
 
@@ -153,9 +153,10 @@
           ENDDO
         ENDDO
 
+        LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        CALL INIT_FIELDG(LLINIALL,LLOCAL)
+        CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
 
 !       DEFINE THE SWELL SYSTEMS
         H0(1)=2.0_JWRB

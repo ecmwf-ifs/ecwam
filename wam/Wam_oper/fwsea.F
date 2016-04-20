@@ -56,8 +56,9 @@
       LOGICAL :: LLFOUND
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FWSEA',0,ZHOOK_HANDLE)
+#endif
 
       IG=1
 
@@ -106,6 +107,8 @@
       IF (ITEST.GT.1)  WRITE(IU06,*)
      &   '          SUB. FWSEA: WIND SEA FOUND AT ',NWP, ' POINTS'
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FWSEA',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE FWSEA

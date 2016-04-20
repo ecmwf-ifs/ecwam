@@ -35,6 +35,11 @@
          REAL*8,  PARAMETER     :: ONETHIRD = 1.0d0/3.0d0
          REAL*8,  PARAMETER     :: TWOTHIRD = 2.d0/3.d0
 
+         integer :: OUT_METHOD = 2
+         integer MaxLen
+         integer NIBLO_FD, NIBLO_OUT
+         
+         
 !         INTEGER                :: MNP ! Number of nodes ...
 !         INTEGER                :: MNE ! Number of elements ...
          INTEGER                :: MAXMNECON ! max. number of connected elements on all nodes ...
@@ -53,7 +58,6 @@
 
 !         REAL*8, ALLOCATABLE    :: XP(:), YP(:) ! x.-y. coordinates 
 
-         REAL*8                 :: DT4A ! advection time step 
          REAL*8,  ALLOCATABLE   :: SI(:) ! median dual patch area for each node 
          REAL*8,  ALLOCATABLE   :: TRIA(:) ! triangle area of each element 
          REAL*8,  ALLOCATABLE   :: IEN(:,:) ! normal vectors for each element in x and y direction, inward pointing normalized by the edge length 
@@ -61,13 +65,8 @@
          REAL*8, ALLOCATABLE    :: CURTXY(:,:) ! current vel. x and y direction for each node ...
          REAL*8, ALLOCATABLE    :: CFLCXY(:,:) ! cfl nunmber of each direction and freq. 
 
-         INTEGER                :: IWBMNP ! number of wave boundary points 
          INTEGER                :: IVECTOR 
 
-         INTEGER, ALLOCATABLE   :: IWBNDLC(:) ! local wave boundary index 
-         INTEGER, ALLOCATABLE   :: IOBPD(:,:) ! boundary direction pointer 
-         INTEGER, ALLOCATABLE   :: IOBWB(:)   ! gl. wave boundary index ... will vanish in the decomp. 
-         INTEGER, ALLOCATABLE   :: IOBP(:)    ! boundary points index 
          INTEGER, SAVE          :: ITER_MAX
 
          LOGICAL                :: LCALC = .TRUE.  ! if true do cfl number 
@@ -75,13 +74,8 @@
          LOGICAL                :: LCUR = .FALSE.  ! prepared for taking currnets into account 
          LOGICAL                :: LADVTEST = .FALSE. ! switch for testing advection ... 
          LOGICAL                :: LSPHE = .TRUE. ! spherical coordinates 
-         LOGICAL                :: LBCWA = .FALSE. 
-         LOGICAL                :: LINHOM = .TRUE. 
-         LOGICAL                :: LBINTER = .FALSE. 
          LOGICAL                :: LVECTOR = .FALSE. 
 
-!         REAL*8, ALLOCATABLE    :: WBAC(:,:,:) ! prepared for boundary forcing ... nesting 
-!         REAL*8, ALLOCATABLE    :: WBACNEW(:,:,:)
 !         REAL*8, ALLOCATABLE    :: WBACOLD(:,:,:)
 !         REAL*8, ALLOCATABLE    :: DSPEC(:,:,:)
 
@@ -94,10 +88,6 @@
 
          TYPE (FILEDEF)         :: BND,WAV,STAT,DBG,WAMOUT,GRID,XFN_HS,
      &                             XFN_TM, XFN_TEST
-
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       END MODULE YOWUNPOOL
 !**********************************************************************
 !*                                                                    *

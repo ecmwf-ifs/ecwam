@@ -49,9 +49,25 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER TITL*100
-      CHARACTER*14 CDATE
-      DIMENSION IARRAY(ID1,ID2),ARRAY(ID1,ID2),ILON(NGX),YLAT(NGY)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IUOUT, ID1, ID2, NGX, NGY
+
+      REAL, INTENT(IN) :: CONST
+      REAL, INTENT(IN) :: AMOWEP, AMOSOP, AMOEAP, AMONOP
+      REAL, DIMENSION(ID1,ID2), INTENT(IN) :: ARRAY
+
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE
+      CHARACTER(LEN=100), INTENT(IN) :: TITL
+
+
+      INTEGER :: I, J, NP
+      INTEGER :: NPTS, NPAGE, ISTART, IEND
+      INTEGER, DIMENSION(NGX) :: ILON
+      INTEGER, DIMENSION(ID1,ID2) :: IARRAY
+
+      REAL :: DLAMA, DPHIA
+      REAL, DIMENSION(NGY) :: YLAT
 
 ! ----------------------------------------------------------------------
 
@@ -110,7 +126,3 @@
 
       RETURN
       END SUBROUTINE OUTPP
-
-
-
-

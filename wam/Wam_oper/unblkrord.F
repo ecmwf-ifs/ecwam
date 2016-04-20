@@ -1,4 +1,5 @@
-      SUBROUTINE UNBLKRORD(NLTOG,KINF,KSUP,MINF,MSUP,BLOCK,BLOCK_G)
+      SUBROUTINE UNBLKRORD(NLTOG,IJS,IJL,KINF,KSUP,MINF,MSUP,
+     &                     BLOCK,BLOCK_G)
 
 !****  *UNBLKRORD* - RE-ORDER BLOCK OF DATA FROM WHEN UNSTRUCTURED GRID 
 !                    IS USED TO EITHER ITS GLOBAL CONFIGURATION
@@ -14,8 +15,11 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *UNBLKRORD*(NLTOG,KINF,KSUP,MINF,MSUP,BLOCK,BLOCK_G)
+!     CALL *UNBLKRORD*(NLTOG,IJS,IJL,KINF,KSUP,MINF,MSUP,BLOCK,BLOCK_G)
 
+!     *NLTOG*     SPECIFIES THE LOCAL ORDER IN INPOY OR OUTPUT 
+!     *IJS*       INDEX OF THE FIRST FIRST DIMENSION OF BLOCK AND BLOCK_G
+!     *IJL*       INDEX OF THE LAST  FIRST DIMENSION OF BLOCK AND BLOCK_G
 !     *KINF*      INDEX OF THE FIRST SECOND DIMENSION OF BLOCK AND BLOCK_G
 !     *KSUP*      INDEX OF THE LAST  SECOND DIMENSION OF BLOCK AND BLOCK_G
 !     *MINF*      INDEX OF THE FIRST THIRD DIMENSION OF BLOCK AND BLOCK_G
@@ -31,7 +35,6 @@
 ! -------------------------------------------------------------------
 
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : NIBLO
       USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD, ONLY : RANK
@@ -42,11 +45,13 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NLTOG,IJS,IJL,KINF,KSUP,MINF,MSUP
+      INTEGER, INTENT(IN) :: NLTOG,IJS,IJL,KINF,KSUP,MINF,MSUP
+      REAL,DIMENSION(IJS:IJL,KINF:KSUP,MINF:MSUP),INTENT(INOUT)::BLOCK
+      REAL,DIMENSION(IJS:IJL,KINF:KSUP,MINF:MSUP),INTENT(INOUT)::BLOCK_G
+
       INTEGER :: IR, IP, M, K, ISTART
 
       REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(NIBLO,KINF:KSUP,MINF:MSUP) :: BLOCK, BLOCK_G 
 
 !----------------------------------------------------------------------
 
@@ -61,12 +66,12 @@
           BLOCK(:,:,:)=BLOCK_G(:,:,:)
         ENDIF
       ELSE IF(LLUNSTR) THEN
-        IF(SUM(RANK(:)%NP).NE.NIBLO) THEN
+        IF(SUM(RANK(:)%NP).NE.IJL) THEN
           WRITE(IU06,*)'*******************************************'
           WRITE(IU06,*)'*                                         *'
           WRITE(IU06,*)'* UNBLKRORD : INCONSISTENCY NIBLO AND SUM *' 
           WRITE(IU06,*)'* NOT EQUAL !!!                           *'
-          WRITE(IU06,*)'* NIBLO= ',NIBLO
+          WRITE(IU06,*)'* NIBLO (=IJL) = ',IJL
           WRITE(IU06,*)'* SUM(RANK(:)%NP)= ',SUM(RANK(:)%NP)
           WRITE(IU06,*)'*                                         *'
           WRITE(IU06,*)'*******************************************'

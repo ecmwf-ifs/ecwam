@@ -1,4 +1,4 @@
-      SUBROUTINE SPR (KL, NANG, THETAQ, THETA, ST)
+      SUBROUTINE SPR (NANG, THETAQ, THETA, ST)
 
 ! ----------------------------------------------------------------------
 
@@ -14,8 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SPR (KL, NANG, THETAQ, THETA, ST)*
-!          *KL*      INTEGER  NUMBER OF ANGULAR INTERVALS
+!       *CALL* *SPR (NANG, THETAQ, THETA, ST)*
 !          *NANG*    INTEGER  DIMENSION FOR ANGULAR INTERVALS
 !          *THETAQ*  REAL     MEAN WAVE DIRECTION
 !          *THETA*   REAL     ANGULAR DIRECTIONS
@@ -41,7 +40,18 @@
 
       USE YOWPCONS , ONLY : PI
 
-      DIMENSION THETA(NANG), ST(NANG)
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NANG
+      REAL, INTENT(IN) :: THETAQ
+      REAL, DIMENSION(NANG), INTENT(IN) :: THETA
+      REAL, DIMENSION(NANG), INTENT(OUT) :: ST
+
+      INTEGER :: K
+
+      REAL :: ZDP, THE
 
 ! ----------------------------------------------------------------------
 
@@ -49,7 +59,7 @@
 
 !     SPREAD FCT. WITH COS**2.
 
-      DO K=1,KL
+      DO K=1,NANG
         THE = COS(THETA(K)-THETAQ)
         IF (THE.GT.0.) THEN
           ST(K) = ZDP*THE**2

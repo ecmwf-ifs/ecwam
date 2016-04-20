@@ -38,7 +38,14 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION IFLAG(NDIM), IPACK(NDIM)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NIN, NDIM
+      INTEGER, INTENT(OUT) :: NOUT
+      INTEGER, DIMENSION(NDIM), INTENT(INOUT) :: IFLAG, IPACK
+
+
+      INTEGER :: K, I
 
 ! ----------------------------------------------------------------------
 
@@ -62,7 +69,3 @@
 
       RETURN
       END SUBROUTINE PACKI
-
-
-
-

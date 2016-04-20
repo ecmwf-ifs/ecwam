@@ -96,10 +96,10 @@
 !REFRA
 !           *IU17*   - INPUT  UNIT OF BLOCKED WINDS.
 !                      THIS FILE IS DYNAMICALLY ASSIGNED IN SUB
-!                      IMPLSCH. SEE SUB CREWFN TOO.
+!                      IMPLSCH.
 !           *IU18*   - INPUT  UNIT OF BLOCKED WINDS.
 !                      THIS FILE IS DYNAMICALLY ASSIGNED IN SUB
-!                      IMPLSCH. SEE SUB CREWFN TOO.
+!                      IMPLSCH.
 !NEST
 !           *IU19*   - OUTPUT UNIT OF BOUNDARY VALUES IF
 !                      THIS IS A FINE GRID RUN.
@@ -136,7 +136,7 @@
 !           *IUSCR*  - SCRATCH UNITS FOR WIND PROCESSING.
 !           *IUVELO* - OUTPUT UNIT OF BLOCKED WINDFILEDS.
 !                      FILES ARE DYNAMICALLY ASSIGNED IN SUB
-!                      NOTIM OR TIMIN. SEE SUB CREWFN TOO.
+!                      NOTIM OR TIMIN.
 
 !___PACK  THESE UNITS ARE USED FOR FILES CONTAINING GRIB DATA.
 
@@ -180,8 +180,7 @@
 
 !          SUB NOTIM OR TIMIN OPENS FILES AND ASSIGNS THEM TO UNIT
 !          IUVELO FOR THE BLOCKED WINDS. THESE FILES ARE READ AND
-!          DELETED IN SUB IMPLSCH (IU17 AND IU18). THE FILE NAMES
-!          ARE CREATED IN SUB CREWFN.
+!          DELETED IN SUB IMPLSCH (IU17 AND IU18).
 
 !          THE PROGRAM CLOSES AND DELETES ALL WORK FILES.
 
@@ -252,7 +251,7 @@
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
-     &            COSTH    ,SINTH
+     &            COSTH    ,SINTH    ,FLMAX    ,ALPHAPMAX
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
      &             IJS     ,IJL      ,COSPH
@@ -268,7 +267,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,
      &            NGX      ,NGY      ,
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
-      USE YOWPCONS , ONLY : G        ,CIRC     ,ZPI      ,RAD
+      USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,RAD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,
@@ -301,8 +300,9 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
      &            LLNEWCURR,NORMS_IN ,LLWSWAVE ,LLWDWAVE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,IE_OUTPTS, IOBP
-      USE UNWAM
+      USE YOWUNPOOL, ONLY : LLUNSTR, OUT_METHOD
+      USE UNWAM    , ONLY : IOBP
+      USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
 
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE pgmcl_lib_WAM, ONLY : WAV_initialize_all_coupling
@@ -339,6 +339,7 @@
       LOGICAL :: LWCUR
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
+      LOGICAL :: LLALLOC_FIELDG_ONLY
 
 !----------------------------------------------------------------------
 
@@ -471,11 +472,13 @@
       IF(.NOT.ALLOCATED(FR5)) ALLOCATE(FR5(NFRE))
       IF(.NOT.ALLOCATED(FRM5)) ALLOCATE(FRM5(NFRE))
       IF(.NOT.ALLOCATED(COFRM4)) ALLOCATE(COFRM4(NFRE))
+      IF(.NOT.ALLOCATED(FLMAX)) ALLOCATE(FLMAX(NFRE))
 
       DO M=1,NFRE
         FR5(M) = FR(M)**5
         FRM5(M) = 1./FR5(M)
         COFRM4(M) = COEF4*G/FR(M)**4
+        FLMAX(M) = (ALPHAPMAX/PI)*(G**2/ZPI**4)/FR5(M)
       ENDDO
 
       FLOGSPRDM1=1./LOG10(FRATIO)
@@ -1053,12 +1056,14 @@
       ENDIF
 
 !     COMPUTE BOTTOM REFRACTION TERMS
-      IF (IREFRA.EQ.1) THEN
-        CALL PROPDOT
-        IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '    SUB. INITMDL: REFRACTION TERMS',
-     &   'INITIALIZED '
-         CALL FLUSH(IU06)
+      IF (IREFRA .NE. 0) THEN
+        IF (.NOT. LLUNSTR) THEN
+          CALL PROPDOT
+          IF (ITEST.GE.2) THEN
+            WRITE(IU06,*) ' SUB. INITMDL: REFRACTION TERMS INITIALIZED '
+            CALL FLUSH(IU06)
+          END IF
+        END IF
       ENDIF
 
 
@@ -1072,22 +1077,9 @@
 
 
       IF (LLUNSTR) THEN
-!     PREPARE OUTPUT OF UNSTRUCTURED GRID TO STRUCTURED GRID (as read in)
-        IF(ALLOCATED(IE_OUTPTS)) DEALLOCATE(IE_OUTPTS)
-        ALLOCATE(IE_OUTPTS(NGX,NGY))
-!AR: add openmp here but better it would be if you would have only one loop over ngx*ngy
-        DO IY=1,NGY
-          XLA = AMONOP-REAL(IY-1)*XDELLA
-          DO IX=1,NGX
-            XLO = AMOWEP+REAL(IX-1)*ZDELLO(IY)
-!!debile
-!!! need to find out unstructured grid left longitude (I assume -180 for now)
-            IF(XLO.GE.180.d0) XLO=max(XLO-IPER*360.d0,-180.d0)
-
-            IE_OUTPTS(IX,IY)=-1
-            CALL FIND_ELE (XLO,XLA,IE_OUTPTS(IX,IY))
-          ENDDO
-        ENDDO
+        IF (OUT_METHOD .eq. 1) THEN
+          CALL INITIAL_OUTPUT_INITS
+        END IF
       ENDIF
 
 !     NOTE THAT CURRENT REFRACTION TERMS ARE NOW COMPUTED WHEN
@@ -1097,11 +1089,12 @@
 !     ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
 
       LLINIT=.NOT.LRESTARTED
+      LLALLOC_FIELDG_ONLY=.FALSE.
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD,
      &              CICOVER, CITHICK, CIWA,
-     &              LLINIT,
+     &              LLINIT, LLALLOC_FIELDG_ONLY,
      &              IREAD,
      &              NFIELDS, NGPTOTG, NC, NR,
      &              FIELDS, LWCUR, MASK_IN)
@@ -1130,7 +1123,7 @@
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1,NBLKS,NBLKE,IREAD,U10OLD,THWOLD)
+      CALL GETSPEC(FL1,NBLKS,NBLKE,IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)

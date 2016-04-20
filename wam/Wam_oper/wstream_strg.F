@@ -25,10 +25,17 @@
 !     *CALL WSTREAM_STRG*(ISTREAM,CSTREAM)
 
 ! ----------------------------------------------------------------------
-      INTEGER :: ISTREAM, NENSFNB, NTOTENS
-      CHARACTER*2 :: MARSFCTYPE
-      CHARACTER*4 CSTREAM
-      LOGICAL :: LASTREAM
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ISTREAM, NENSFNB, NTOTENS
+      INTEGER, INTENT(OUT) :: KSTREAM
+
+      CHARACTER(LEN=2), INTENT(OUT) :: MARSFCTYPE
+      CHARACTER(LEN=4), INTENT(OUT) :: CSTREAM
+      LOGICAL, INTENT(OUT) :: LASTREAM
+
+! ----------------------------------------------------------------------
 
       IF(ISTREAM.EQ.1045) THEN
 !       DETERMINISTIC WAVE FORECAST

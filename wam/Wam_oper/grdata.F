@@ -1,4 +1,4 @@
-      SUBROUTINE GRDATA(NWH, NSTART, NEND, LAVERAGE)
+      SUBROUTINE GRDATA(NWH, NSTART, NEND, IDATAWL, LAVERAGE)
 
 !--------------------------------------------------------------------
 
@@ -54,7 +54,7 @@
 
 !          Aug 97 Jean Bidlot : in coupled mode IDELWO is not the
 !                 appropriate time span for the selection of the data
-!                 to be used but rather IDELALT, A NEW VARIABLE WHICH
+!                 to be used but rather IDATAWL, A NEW VARIABLE WHICH
 !                 IS SUPPLIED IN WAMINPUT
 
 !          Oct 97 Jean Bidlot : use of the new ice mask instead of 
@@ -90,13 +90,14 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWSTAT  , ONLY : CDTPRO   ,IDELALT
+      USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER, PARAMETER :: MAXSATBC=10
+      INTEGER :: IDATAWL
       INTEGER :: NNMIN
       INTEGER :: IJ, I, J, IX, IY, IC, JSN, J1, J2, J2SN, IP1
       INTEGER :: IUME, IOSZX
@@ -169,9 +170,13 @@
 !        --------------------------------------------
 
       CBEGINDT = CDTPRO
-      CALL INCDATE (CBEGINDT,-IDELALT/2)
+      IF(IDATAWL.LE.10800) THEN
+        CALL INCDATE (CBEGINDT,-IDATAWL)
+      ELSE 
+        CALL INCDATE (CBEGINDT,-IDATAWL/2)
+      ENDIF
       CENDDT = CBEGINDT
-      CALL INCDATE (CENDDT,IDELALT)
+      CALL INCDATE (CENDDT,IDATAWL)
 
       HSMIN=0.05
       WSMIN=0.01

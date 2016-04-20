@@ -63,16 +63,25 @@
       USE YOWNEMOFLDS, ONLY : NEMOCICOVER, NEMOCITHICK, LNEMOICEREST
 
 ! ----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL, DIMENSION (NINF:NSUP,NBLO) :: CICVR, CITH 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IG
+      INTEGER, INTENT(IN) :: IPARAM, IJS, IJL
+
+      REAL, DIMENSION (NINF:NSUP,NBLO), INTENT(INOUT) :: CICVR, CITH 
+
+
+      INTEGER :: IJ, IX, IY
+      INTEGER :: NICE
 
 !     CONSTANTS FOR PARAMETRISATION OF SEA ICE THICKNESS:
       REAL, PARAMETER :: C1=0.2
       REAL, PARAMETER :: C2=0.4
 
-! ----------------------------------------------------------------------
       REAL :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
 
 !     1. INITIALIZATION
 !     ------------------

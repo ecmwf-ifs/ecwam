@@ -43,8 +43,13 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER :: IO, KX, IX, NG
+      INTEGER :: NGOUTNEW
       INTEGER, ALLOCATABLE :: IDUM(:)
       INTEGER :: ListSTART(1), ListEND(1)
+      REAL :: ALONG, ALAT
 
 !*    1. NO OUTPUT POINTS SPECIFIED.
 !        ---------------------------
@@ -63,8 +68,8 @@
 !*    2. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
 
-      ListSTART(1)=ISTART
-      ListEND(1)=IEND
+      ListSTART(1)=1
+      ListEND(1)=1
       CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,
      &            1, ListSTART,ListEND,1)
 

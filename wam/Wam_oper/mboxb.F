@@ -49,7 +49,14 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION BLNGB(NBMAX), BLATB(NBMAX)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(OUT) :: NBOUN
+      REAL, INTENT(IN) :: AMOWEB, AMOSOB, AMOEAB, AMONOB
+      REAL, DIMENSION(NBMAX), INTENT(INOUT) :: BLNGB, BLATB
+
+      INTEGER :: I, K
+      INTEGER :: NLNGB, NLATB
 
 ! ----------------------------------------------------------------------
 

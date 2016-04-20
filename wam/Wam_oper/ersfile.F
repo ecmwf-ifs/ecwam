@@ -57,19 +57,36 @@
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDATEA   ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : IRANK
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU91, IU92
+      INTEGER, INTENT(IN) :: IG, IGL
+
+      INTEGER :: I, JC
+      INTEGER :: IERR, IOS, NERSOLD
       INTEGER, ALLOCATABLE :: IDUM(:)
-      CHARACTER * 2 CLH       ! HELPER STRING TO STORE HOUR.            
-      CHARACTER *15 FNAME                                               
-      CHARACTER *12 CL_DATE
-      CHARACTER *14 CL_TIME
-      LOGICAL FRSTIME                                                   
-      DATA FRSTIME / .TRUE./                                            
+
+      REAL :: ZLATIS, ZLONGS, ZLATIW, ZLONGW
+      REAL :: ZHOOK_HANDLE
+
+      CHARACTER(LEN=2) CLH       ! HELPER STRING TO STORE HOUR.            
+      CHARACTER(LEN=15) FNAME
+      CHARACTER(LEN=12) CL_DATE
+      CHARACTER(LEN=14) CL_TIME
+
+      LOGICAL :: FRSTIME
+
+      DATA FRSTIME / .TRUE./
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('ERSFILE',0,ZHOOK_HANDLE)
+#endif
 
 !*    1.  SAVE SPECTRA FILE.                                            
 !         ------------------                                            
@@ -90,6 +107,9 @@
           ENDIF
         ENDIF
         IERS = 0
+#ifdef ECMWF
+        IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
+#endif
         RETURN
       ENDIF
 
@@ -98,17 +118,17 @@
 !*    2. INITIAL DATES IF FIRST CALL.                                   
 !        ----------------------------                                   
 
-      IF (FRSTIME) THEN                                                 
-        NERS = 1000                                                       
-        IERS = 0                                                       
-        IDELERS = 21600                                                
-        CDTERS  = CDATEA                                               
+      IF (FRSTIME) THEN
+        NERS = 1000
+        IERS = 0
+        IDELERS = 21600
+        CDTERS  = CDATEA
         CLH=CDATEA(9:10)
         IF (CLH.EQ.'09'.OR.CLH.EQ.'15'.OR.
      &   CLH.EQ.'21'.OR.CLH.EQ.'03') THEN
           CALL INCDATE (CDTERS, -10800)
         ENDIF
-        FRSTIME = .FALSE.                                              
+        FRSTIME = .FALSE.
         IF (ITEST.GE.3) THEN
           WRITE(IU06,*) " SUB: ERSFILE (for the first time) "//
      &     " CDATEA=", CDATEA, " CDTERS=", CDTERS, " CDATEF=", CDATEF
@@ -117,7 +137,7 @@
       ENDIF                                                             
 
       DO WHILE (CDTERS.LT.CDTPRO)
-        CALL INCDATE (CDTERS, IDELERS)                                  
+        CALL INCDATE (CDTERS, IDELERS)
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -126,7 +146,12 @@
 !        --------------------                                           
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
-      IF(LMESSPASS.AND.(IRANK.NE.1)) RETURN
+      IF(LMESSPASS.AND.(IRANK.NE.1)) THEN
+#ifdef ECMWF
+        IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
+#endif
+        RETURN
+      ENDIF
 
       IF(.NOT.ALLOCATED(IJERS)) ALLOCATE(IJERS(NERS))
       IF(.NOT.ALLOCATED(IGERS)) ALLOCATE(IGERS(NERS))
@@ -134,16 +159,19 @@
 !     DO NOT DEAL WITH IU91 AND IU92 IF IT IS NOT COLLOCATION TIME 
       IF (CDTPRO.NE.CDTERS) THEN
         IERS=0
+#ifdef ECMWF
+        IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
+#endif
         RETURN
-	  ENDIF
+      ENDIF
 
-      IERS = 0                                                          
+      IERS = 0
       IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'
      &    .OR.MARSTYPE.EQ.'4v') THEN
-        WRITE(FNAME,'(''COL'',A12)') CDTERS(1:12)                            
-        OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD', 
-     &   IOSTAT=IERR)                                             
-        IF (IERR.NE.0) THEN                                            
+        WRITE(FNAME,'(''COL'',A12)') CDTERS(1:12)
+        OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD',
+     &   IOSTAT=IERR)
+        IF (IERR.NE.0) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             IF(ITEST.GT.0) THEN
             WRITE (IU06,*) '                                     '
@@ -153,8 +181,11 @@
             CALL FLUSH (IU06)
             ENDIF
           ENDIF
-          RETURN                                                      
-        ELSE                                                           
+#ifdef ECMWF
+          IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
+#endif
+          RETURN
+        ELSE
           READ(IU91)CL_DATE
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
             WRITE (IU06,*) '                                     '
@@ -162,32 +193,32 @@
      &       FNAME, ' OPENED    '
           ENDIF
 
-          WRITE(FNAME,'(''COS'',A12)') CDTERS(1:12)                         
-          OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,   
-     &     FORM='UNFORMATTED', STATUS='UNKNOWN')                 
+          WRITE(FNAME,'(''COS'',A12)') CDTERS(1:12)
+          OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,
+     &     FORM='UNFORMATTED', STATUS='UNKNOWN')
           IF(ITEST.GT.0) THEN
             WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
      &       FNAME, ' OPENED'
             CALL FLUSH (IU06)
           ENDIF
-          WRITE(IU92) CDTPRO                                    
+          WRITE(IU92) CDTPRO
         ENDIF
 
- 3001   CONTINUE                                                       
-        IERS = IERS + 1                                                
+ 3001   CONTINUE
+        IERS = IERS + 1
 
-        IF (IERS.GT.NERS) THEN                                         
+        IF (IERS.GT.NERS) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'   
-            WRITE (IU06,*) ' +                                     +'   
-            WRITE (IU06,*) ' +        WARNING SUB ERSFILE.         +'   
-            WRITE (IU06,*) ' +     ==========================      +'   
-            WRITE (IU06,*) ' + NUMBER OF OUTPUT POINTS             +'   
-            WRITE (IU06,*) ' + EXCEEDS DIMENSION NERS = ', NERS         
-            WRITE (IU06,*) ' + THE DIMENSION WILL BE DOUBLED       +'   
-            WRITE (IU06,*) ' + IN ORDER TO CONTNUE                 +'   
-            WRITE (IU06,*) ' +                                     +'   
-            WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'   
+            WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
+            WRITE (IU06,*) ' +                                     +'
+            WRITE (IU06,*) ' +        WARNING SUB ERSFILE.         +'
+            WRITE (IU06,*) ' +     ==========================      +'
+            WRITE (IU06,*) ' + NUMBER OF OUTPUT POINTS             +'
+            WRITE (IU06,*) ' + EXCEEDS DIMENSION NERS = ', NERS
+            WRITE (IU06,*) ' + THE DIMENSION WILL BE DOUBLED       +'
+            WRITE (IU06,*) ' + IN ORDER TO CONTNUE                 +'
+            WRITE (IU06,*) ' +                                     +'
+            WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
           ENDIF
           NERSOLD=NERS
           NERS=NERS*2
@@ -206,29 +237,29 @@
             IGERS(JC)=IDUM(JC)
           ENDDO
         
-          DEALLOCATE(IDUM)  
+          DEALLOCATE(IDUM)
 
-        ENDIF                                                          
+        ENDIF
 
         READ (IU91, END=3002, ERR=3002, IOSTAT=IOS) CL_TIME,
      &   ZLATIS, ZLONGS, ZLATIW, ZLONGW, IGERS(IERS), IJERS(IERS)
-        IF (IGERS(IERS).EQ.0) THEN                                     
-          IERS = IERS-1                                               
-          GOTO 3001                                                   
-        ENDIF                                                          
-        IF (IERS.GT.1) THEN                                            
-          DO I=1,IERS-1                                          
-            IF (IGERS(I).EQ.IGERS(IERS) .AND.                        
-     &       IJERS(I).EQ.IJERS(IERS)) THEN                        
-              IERS = IERS-1                                         
-              GOTO 3001                                             
-            ENDIF                                                    
+        IF (IGERS(IERS).EQ.0) THEN
+          IERS = IERS-1
+          GOTO 3001
+        ENDIF
+        IF (IERS.GT.1) THEN
+          DO I=1,IERS-1
+            IF (IGERS(I).EQ.IGERS(IERS) .AND.
+     &       IJERS(I).EQ.IJERS(IERS)) THEN
+              IERS = IERS-1
+              GOTO 3001
+            ENDIF
           ENDDO
-        ENDIF                                                          
-        GOTO 3001                                                      
- 3002   CONTINUE                                                       
-        IERS = IERS - 1                                                
-        CLOSE (IU91, STATUS='KEEP')                                    
+        ENDIF
+        GOTO 3001
+ 3002   CONTINUE
+        IERS = IERS - 1
+        CLOSE (IU91, STATUS='KEEP')
         IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
           IF(ITEST.GT.0) THEN
             WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',
@@ -237,7 +268,11 @@
             CALL FLUSH (IU06)
           ENDIF
         ENDIF
-      ENDIF                                                             
+      ENDIF
 
-      RETURN                                                            
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
       END SUBROUTINE ERSFILE

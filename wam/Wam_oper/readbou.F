@@ -45,7 +45,19 @@
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
-      REAL,ALLOCATABLE ::  BLNGC(:),BLATC(:)
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU09, IU10, IU06
+
+
+      INTEGER :: I, II
+      INTEGER :: NBOUNC_LOC
+
+      REAL :: DLA, DPH, AMOS, AMON, AMOE, AMOW
+      REAL, DIMENSION(:), ALLOCATABLE :: BLNGC, BLATC
+
+! ----------------------------------------------------------------------
 
       IF (IBOUNC.EQ.1) THEN
         READ(IU09, ERR=2000) GBOUNC

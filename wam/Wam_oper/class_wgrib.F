@@ -45,17 +45,26 @@
 !       Original : 98-08-10
 !       D.Salmond : 03-10-02  Change to include 'test'
 !     ------------------------------------------------------------------
-!
-      PARAMETER (JPCLASS_LIST=29)
-      CHARACTER*2 CDCLASS
-      CHARACTER*2 CLASSES(58)
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06
+      CHARACTER(LEN=2), INTENT(IN) :: CDCLASS
+
+      INTEGER, PARAMETER :: JPCLASS_LIST=29
+
+      INTEGER :: ICODE, JL
+      INTEGER :: GRIBCODES(JPCLASS_LIST)
+
+      CHARACTER(LEN=2) :: CLASSES(2*JPCLASS_LIST)
+
       DATA CLASSES/'OD','RD','ER','CS','E4','AT','BE','HR','DK','FI',
      &             'FR','DE','GR','HU','IS','IE','IT','NL','NO','PT',
      &             'SI','ES','SE','CH','TR','UK','TE','EI','MC',
      &             'od','rd','er','cs','e4','at','be','hr','dk','fi',
      &             'fr','de','gr','hu','is','ie','it','nl','no','pt',
      &             'si','es','se','ch','tr','uk','te','ei','mc'/
-      INTEGER GRIBCODES(29)
+
       DATA GRIBCODES/ 1,   2,   3,   4,   5, 100, 101, 102, 103, 104,
      &              105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
      &              115, 116, 117, 118, 119, 120, 99, 14, 19/

@@ -71,17 +71,26 @@
 
       USE YOWTEXT  , ONLY : LRESTARTED,USERID   ,PATH
 
-      INTEGER IU06, IUNIT
-      CHARACTER OPT*1
-      CHARACTER*3 :: FILEID
-      CHARACTER*160 :: FILENA
- 
-      INTEGER QQNAME
-      PARAMETER (QQNAME =  7)
-      CHARACTER NAME(QQNAME)*17,
-     &          IU*8, PLIST*110,
-     &          CDATE*14, CDATEF*14, CDATEH*10
+! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, ICH
+      INTEGER, INTENT(INOUT) :: IUNIT
+      CHARACTER(LEN=1), INTENT(IN) :: OPT
+      CHARACTER(LEN=3), INTENT(IN) :: FILEID
+      CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF
+
+      INTEGER :: I_GET_UNIT
+      INTEGER, PARAMETER :: KKNAME=7
+      INTEGER :: IL, LIU, LIP, LUSI, LNAME, INDXF, ISHIFT, IFAIL
+
+      CHARACTER(LEN=8) :: IU
+      CHARACTER(LEN=8) :: PLIST
+      CHARACTER(LEN=10) :: CDATEH
+      CHARACTER(LEN=160) :: FILENA
+      CHARACTER(LEN=17), DIMENSION(KKNAME) :: NAME
+ 
 ! ----------------------------------------------------------------------
 
 !*    1. DEFINE RESTART FILENAMES AND OPTIONS.
@@ -120,9 +129,10 @@
 
       FILENA = ''
 
+
       IL = LEN_TRIM(FILEID)
 
-      INDEX = ICH
+      INDXF = ICH
       IF (ICH.EQ.0) THEN
         FILENA(1:IL) = FILEID(1:IL)
         IF (CDATE.LE.CDATEF) THEN
@@ -136,20 +146,20 @@
         FILENA(IL+1:IL+10) = CDATEH
         WRITE (FILENA(IL+11:IL+14),'(I4.4)') ISHIFT
       ELSE
-        IF (INDEX.GT.QQNAME) THEN
+        IF (INDXF.GT.KKNAME) THEN
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
           WRITE(IU06,*) ' +                                         +'
           WRITE(IU06,*) ' +      WARNING ERROR IN --GSFILE--        +'
           WRITE(IU06,*) ' +      ===========================        +'
-          WRITE(IU06,*) ' + FILE NAME INDEX REQUESTED IS ',INDEX
-          WRITE(IU06,*) ' + MAXIMUM INDEX ALLOWED IS QQNAME =',QQNAME
+          WRITE(IU06,*) ' + FILE NAME INDXF REQUESTED IS ',INDXF
+          WRITE(IU06,*) ' + MAXIMUM INDXF ALLOWED IS KKNAME =',KKNAME
           WRITE(IU06,*) ' + NO GET OR SAVE PROCESSED                +'
           WRITE(IU06,*) ' + EXECUTION IS CONTINUED                  +'
           WRITE(IU06,*) ' +                                         +'
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
           RETURN
         ENDIF
-        FILENA = NAME(INDEX)
+        FILENA = NAME(INDXF)
       ENDIF
       LNAME = LEN_TRIM(FILENA)
 
@@ -179,7 +189,7 @@
 !     5.1 SAVE FILE.
 !         ----------
 
-        IF (INDEX.EQ.7) THEN
+        IF (INDXF.EQ.7) THEN
           CALL SYSTEM('chmod go+rw '// IU(1:LIU))
         ELSE
           CALL SYSTEM('chmod go+r '// IU(1:LIU))

@@ -213,8 +213,9 @@
 !     PARTIONING NPARTW OF FIRST GUESS SPECTRUM NSPECW.
 
 !--------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
+#endif
 
       CALL GSTATS(1883,0)
 
@@ -666,7 +667,9 @@
 
       CALL MPL_BARRIER(CDSTRING='SARAS:')
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SARAS',1,ZHOOK_HANDLE)
+#endif
       RETURN
 
       END SUBROUTINE SARAS

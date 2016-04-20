@@ -43,9 +43,18 @@
 
 !----------------------------------------------------------------------
 
-      INTEGER,DIMENSION(NXF,NYF) :: IFIELD
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ISEND, NXF, NYF
+      INTEGER, INTENT(INOUT) :: ITAG
+      INTEGER,DIMENSION(NXF,NYF), INTENT(INOUT) :: IFIELD
+
+      INTEGER :: I, J, KCOUNT
+      INTEGER :: MPLENGTH
 
       INTEGER,ALLOCATABLE :: ICOMBUF(:)
+
+
       MPLENGTH=NXF*NYF
 
       IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN

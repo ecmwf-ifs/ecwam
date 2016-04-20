@@ -20,6 +20,9 @@
       REAL, ALLOCATABLE :: FRM5(:)
       REAL, ALLOCATABLE :: COFRM4(:)
 
+      REAL, ALLOCATABLE :: FLMAX(:)
+      REAL :: ALPHAPMAX
+
       REAL, PARAMETER :: FRATIO = 1.1
       REAL, PARAMETER :: WETAIL = 0.25
       REAL, PARAMETER :: FRTAIL = 0.2
@@ -46,6 +49,9 @@
 !      *FR5*       REAL      FR(M)**5 
 !      *FRM5*      REAL      (1./FR(M))**5 
 !      *COFRM4*    REAL      COEF4*G*FR(M)**(-4.) 
+!      *FLMAX*     REAL      MAXIMUM SPECTRAL COMPONENT ALLOWED.
+!                            (ALPHAPMAX/PI) (G**2/(2PI)**4) FR(M)**-5
+!      *ALPHAPMAX  REAL      MAXIMUM PHILLIPS PARAMETER (SEE USERIN).  
 !      *FRATIO*    REAL      FREQUENCY RATIO.
 !      *WETAIL*    REAL      WAVE ENERGY TAIL CONSTANT FACTOR.
 !      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.

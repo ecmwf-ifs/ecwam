@@ -76,7 +76,7 @@
 
       LOGICAL :: LLCURRENT, LLIRANK, LFDB
       LOGICAL :: LLRNL
-      LOGICAL :: LLINIALL, LLOCAL
+      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 ! ----------------------------------------------------------------------
 
@@ -143,9 +143,10 @@
 !     SET GRIB HEADERS FOR INPUTS/OUTPUTS
       CALL SETWGRIBHD
 
+      LLALLOC_ONLY=.FALSE.
       LLINIALL=.TRUE.
       LLOCAL=.FALSE.
-      CALL INIT_FIELDG(LLINIALL,LLOCAL)
+      CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
 
 ! ----------------------------------------------------------------------
 

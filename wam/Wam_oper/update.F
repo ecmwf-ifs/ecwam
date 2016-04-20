@@ -69,8 +69,9 @@
 !                    AND DURATION (I.E. ANALYSED USTAR).                
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPDATE',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. FIND THE WINDSEA.                                              
 !        -----------------                                              
@@ -164,7 +165,9 @@
                                                                         
       IF (ITEST.GE.3) WRITE (IU06,*) '      SUB. UPDATE: ',             
      &   ' NEW SPECTRA COMPUTED IN SUB. UPWSPEC'
-                                                                        
+
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPDATE',1,ZHOOK_HANDLE)
+#endif
       RETURN                                                            
       END SUBROUTINE UPDATE

@@ -44,13 +44,13 @@
       INTEGER, ALLOCATABLE :: I2DUM(:,:)
       LOGICAL, ALLOCATABLE :: L3DUM(:,:,:)
 
-      INTEGER :: ISPEC, IGAP, JGAP, NEWMGAP, DEL
+      INTEGER :: ISPEC, IGAP, JGAP, NEWMGAP, IDEL
 
 
 !     NEW DIMENSION
 
-      DEL = 10
-      NEWMGAP = MGAP + DEL 
+      IDEL = 10
+      NEWMGAP = MGAP + IDEL 
 
       WRITE(IU06,*)' ************************************************'
       WRITE(IU06,*)' * THE DIMENSION OF ALLOCATABLES ARRAYS IN      *'
@@ -61,7 +61,7 @@
       WRITE(IU06,*)' ************************************************'
       CALL FLUSH(IU06)
 
-      IF(NEWMGAP.GT.NFRE*NANG+DEL) THEN
+      IF(NEWMGAP.GT.NFRE*NANG+IDEL) THEN
         WRITE(IU06,*)' ****************************************'
         WRITE(IU06,*)' PROBLEM WITH RESIZING GAP ARRAYS ' 
         WRITE(IU06,*)' THE REQUESTED SIZE IS LARGER THEN THE'

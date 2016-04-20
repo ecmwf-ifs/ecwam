@@ -56,6 +56,13 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER :: IG
+      INTEGER :: IJ, K, M
+
+      REAL :: CD, SD, SS, SC, CC
+
       REAL, ALLOCATABLE, DIMENSION(:) :: DDPHI, DDLAM, DUPHI, DULAM
       REAL, ALLOCATABLE, DIMENSION(:) :: DVPHI, DVLAM, DCO, OMDD
 

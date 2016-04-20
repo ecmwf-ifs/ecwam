@@ -69,7 +69,6 @@
 !     ----------
 !       *ABORT1*    - TERMINATES PROCESSING.
 !       *BUILDSTRESS- RECONSTRUCT THE LAW FILE FROM WINDS AND CD. 
-!       *CREWFN*    - CREATES A WIND FILE NAME.
 !       *GRSTNAME*  - BUILD NAME FOR INPUT/OUTPUT FILES 
 !       *GSFILE*    - GETS OR SAVES FILES (COMPUTER DEPENDENT).
 !       *INCDATE*   - UPDATES A DATE TINE GROUP.
@@ -115,7 +114,7 @@
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NWAM_BLKS,
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
      &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
@@ -168,6 +167,7 @@
 
       LOGICAL :: LFDBOPEN
       LOGICAL :: LLINIT
+      LOGICAL :: LLALLOC_FIELDG_ONLY
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
@@ -180,7 +180,7 @@
      &          LLUNSTR, LPREPROC,
      &          LGRIBOUT,
      &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
-     &          NWAM_BLKS
+     &          NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
 !             (0, 1, or 2 see MSTART)
@@ -202,11 +202,7 @@
 !     YCLASS   : DATA CLASS USED TO CODE DATA IN GRIB.
 !     YEXPVER : EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
 !     CFDB2DSP : FDB ROOT USED TO WRITE GRIB OUTPUT TO FDB.
-!     NWAM_BLKS: IF OPENMP IS USED THEN NWAM_BLKS WILL BE THE NUMBER
-!                USED TO SPLIT THE GRID POINTS INTO NWAM_BLKS CHUNKS
-!                THAT ARE DISTRIBUTED TO THE DIFFERENT THREADS. 
-!                OTHERWISE IT IS STILL USED TO SPLIT THE INNER LOOPS
-!                INTO CHUNKS (SEE GETWND).
+!     NPROMA_WAM: NUMBER OF THE GRID POINTS PER LOOP WHEN CUT INTO CHUNKS
 
 
 ! ----------------------------------------------------------------------
@@ -254,7 +250,8 @@
       YEXPVER  = USERID//'a'
       CFDB2DSP = "/hpca/fdb"
 
-      NWAM_BLKS = 1
+      NPROMA_WAM = 1
+      NPROMA_WAM = HUGE(NPROMA_WAM)/2
 
 !*    1. DEFINE UNIT NAMES.
 !        ------------------
@@ -515,10 +512,12 @@
       CALL CIGETDEAC
 
         LLINIT=.FALSE.
+        LLALLOC_FIELDG_ONLY=.FALSE.
+
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &                ROAIRO, ZIDLOLD,
      &                CICOVER, CITHICK, CIWA,
-     &                LLINIT, 
+     &                LLINIT, LLALLOC_FIELDG_ONLY, 
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
      &                FIELDS, LWCUR, MASK_IN)
@@ -550,7 +549,7 @@
       IF(IOPTI.NE.3) THEN
         THETAQ = THETA * RAD
         CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-     &              FL1,U10OLD,THWOLD,USOLD,Z0OLD)
+     &              FL1,U10OLD,THWOLD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
       ELSE
         CALL MSWELL (FL1)

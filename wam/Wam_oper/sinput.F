@@ -44,7 +44,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,WSTAR, SL, XLLWS)
+!    &                   ROAIRN, WSTAR, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -93,13 +93,16 @@
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
+      USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, PARAMETER :: NSIN=2 
       INTEGER :: IJ, IG, K, M
+      INTEGER :: ISIN
 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, XLLWS
@@ -108,15 +111,19 @@
 
       REAL :: CONST1, CONST3, XKAPPAD
       REAL :: RWINV
-      REAL :: X1,X2,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
+
+      REAL :: X, ZLOG, ZLOG2X, ZBETA
+
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NSIN) :: WSIN
       REAL, DIMENSION(NFRE) :: FAC, CONST
-      REAL, DIMENSION(IJS:IJL) :: UCN1, UCN2, ZCN, CM, USP, USM
+      REAL, DIMENSION(IJS:IJL) :: CM
       REAL, DIMENSION(IJS:IJL) :: SH, XK
-      REAL, DIMENSION(IJS:IJL) :: SIG_N, XV1D, XV2D
+      REAL, DIMENSION(IJS:IJL) :: SIG_N
       REAL, DIMENSION(IJS:IJL) :: CNSN
       REAL, DIMENSION(IJS:IJL) :: EPSIL 
-      REAL, DIMENSION(IJS:IJL) :: UCN1D,UCN2D
+      REAL, DIMENSION(IJS:IJL,NSIN) :: SIGDEV, US, Z0, UCN, ZCN 
+      REAL, DIMENSION(IJS:IJL,NSIN) :: XVD, UCND, CONST3_UCN2 
       REAL, DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
       REAL, DIMENSION(IJS:IJL,NANG) :: TEMPD
 
@@ -135,6 +142,7 @@
 
       CONST3 = IDAMPING*CONST3
 
+
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
 
@@ -143,26 +151,63 @@
           TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
           IF(TEMP1(IJ,K) .GT. 0.01) THEN
             LZ(IJ,K) = .TRUE.
-            TEMPD(IJ,K) = 1.D0/TEMP1(IJ,K)
+            TEMPD(IJ,K) = XKAPPA/TEMP1(IJ,K)
           ELSE
             LZ(IJ,K) = .FALSE.
-            TEMPD(IJ,K) = 1.D0
+            TEMPD(IJ,K) = XKAPPA 
           ENDIF
         ENDDO
       ENDDO
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NSIN.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
 
+
+!     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
+!     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
+
+      IF(NSIN.EQ.1) THEN
+        WSIN(1) = 1.0 
+        DO IJ=IJS,IJL
+          SIGDEV(IJ,1) = 1.0
+        ENDDO
+      ELSE IF (NSIN.EQ.2) THEN
+        WSIN(1) = 0.5 
+        WSIN(2) = 0.5 
+        DO IJ=IJS,IJL
+          SIGDEV(IJ,1) = 1.-SIG_N(IJ)
+          SIGDEV(IJ,2) = 1.+SIG_N(IJ)
+        ENDDO
+      ELSE
+         WRITE (IU06,*) '**************************************'
+         WRITE (IU06,*) '*    FATAL ERROR                     *'
+         WRITE (IU06,*) '*    ===========                     *'
+         WRITE (IU06,*) '* IN SINPUT: NSIN > 2                *'
+         WRITE (IU06,*) '* NSIN = ', NSIN
+         WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
+         WRITE (IU06,*) '*                                    *'
+         WRITE (IU06,*) '**************************************'
+         CALL ABORT1
+      ENDIF
+
+
+      IF(NSIN.EQ.1) THEN
+        DO IJ=IJS,IJL
+          US(IJ,1) = USNEW(IJ)
+          Z0(IJ,1) = Z0NEW(IJ)
+        ENDDO
+      ELSE
+        DO ISIN=1,NSIN
+          DO IJ=IJS,IJL
+            US(IJ,ISIN) = USNEW(IJ)*SIGDEV(IJ,ISIN)
+            Z0(IJ,ISIN) = Z0NEW(IJ)
+          ENDDO
+        ENDDO
+      ENDIF
 
       DO IJ=IJS,IJL
-        USP(IJ) = USNEW(IJ)*(1.+SIG_N(IJ))
-        USM(IJ) = USNEW(IJ)*(1.-SIG_N(IJ))
-      ENDDO
-
-      DO IJ=IJS,IJL
-          EPSIL(IJ) = ROAIRN(IJ)*RWINV
+        EPSIL(IJ) = ROAIRN(IJ)*RWINV
       ENDDO
 ! ----------------------------------------------------------------------
 
@@ -196,55 +241,57 @@
 !       ----------------------------------
 
         DO IJ=IJS,IJL
-          UCN1(IJ) = USP(IJ)*CM(IJ) + ZALP
-          UCN2(IJ) = USM(IJ)*CM(IJ) + ZALP
-
-          UCN1D(IJ) = 1.D0/ UCN1(IJ)
-          UCN2D(IJ) = 1.D0/ UCN2(IJ)
-
-          ZCN(IJ)  = LOG(XK(IJ)*Z0NEW(IJ))
           CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
+        ENDDO
 
-          XV1      = -USP(IJ)*XKAPPAD*ZCN(IJ)*CM(IJ)
-          XV2      = -USM(IJ)*XKAPPAD*ZCN(IJ)*CM(IJ)
-
-          XV1D(IJ) = 1.D0/XV1
-          XV2D(IJ) = 1.D0/XV2
+        DO ISIN=1,NSIN
+          DO IJ=IJS,IJL
+            UCN(IJ,ISIN) = US(IJ,ISIN)*CM(IJ) + ZALP
+            CONST3_UCN2(IJ,ISIN) = CONST3*UCN(IJ,ISIN)**2
+            UCND(IJ,ISIN) = 1.D0/ UCN(IJ,ISIN)
+            ZCN(IJ,ISIN)  = LOG(XK(IJ)*Z0(IJ,ISIN))
+            XVD(IJ,ISIN) =
+     &          1.D0/(-US(IJ,ISIN)*XKAPPAD*ZCN(IJ,ISIN)*CM(IJ))
+          ENDDO
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
         DO K=1,NANG
+
           DO IJ=IJS,IJL
-            ZBETA1 = CONST3*(TEMP1(IJ,K)-XV1D(IJ))*UCN1(IJ)**2
-            ZBETA2 = CONST3*(TEMP1(IJ,K)-XV2D(IJ))*UCN2(IJ)**2
-            IF (LZ(IJ,K)) THEN
-              ZLOG1 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN1D(IJ)
-              ZLOG2 = ZCN(IJ) + XKAPPA*TEMPD(IJ,K)*UCN2D(IJ)
-              IF (ZLOG1.LT.0.) THEN
-                X1=TEMP1(IJ,K)*UCN1(IJ)
-                ZLOG2X=ZLOG1*ZLOG1*X1
-                UFAC2(IJ,K) = EXP(ZLOG1)*ZLOG2X*ZLOG2X+ZBETA1
-                XLLWS(IJ,K,M)= 1.
-              ELSE
-                UFAC2(IJ,K) = ZBETA1
-                XLLWS(IJ,K,M)= 0.
-              ENDIF
-              IF (ZLOG2.LT.0.) THEN
-                X2=TEMP1(IJ,K)*UCN2(IJ)
-                ZLOG2X=ZLOG2*ZLOG2*X2
-                UFAC2(IJ,K) = UFAC2(IJ,K)+
-     &                        EXP(ZLOG2)*ZLOG2X*ZLOG2X+ZBETA2
-                XLLWS(IJ,K,M)= 1.
-              ELSE
-                UFAC2(IJ,K) = UFAC2(IJ,K)+ZBETA2
-              ENDIF
-            ELSE
-              UFAC2(IJ,K) = ZBETA1+ZBETA2
-              XLLWS(IJ,K,M)= 0.
-            ENDIF
+            XLLWS(IJ,K,M)= 0.
           ENDDO
+
+          DO ISIN=1,1
+            DO IJ=IJS,IJL
+              ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
+              UFAC2(IJ,K) = WSIN(ISIN)*ZBETA
+            ENDDO
+          ENDDO
+          DO ISIN=2,NSIN
+            DO IJ=IJS,IJL
+              ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
+              UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(ISIN)*ZBETA
+            ENDDO
+          ENDDO
+
+          DO ISIN=1,NSIN
+            DO IJ=IJS,IJL
+              IF (LZ(IJ,K)) THEN
+                ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
+                IF (ZLOG.LT.0.) THEN
+                  X=TEMP1(IJ,K)*UCN(IJ,ISIN)
+                  ZLOG2X=ZLOG*ZLOG*X
+                  UFAC2(IJ,K) = UFAC2(IJ,K)+
+     &                          WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  XLLWS(IJ,K,M)= 1.
+                ENDIF
+              ENDIF
+            ENDDO
+          ENDDO
+
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
@@ -252,7 +299,7 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
+            FL(IJ,K,M) = CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO

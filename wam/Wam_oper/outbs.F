@@ -73,6 +73,7 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
+     &            E10G     , 
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
@@ -84,7 +85,7 @@
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
-     &            STRNMS   ,
+     &            STRNMS   ,E10MEAN  ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
       USE YOWSPEC  , ONLY : 
@@ -94,7 +95,7 @@
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSHAL, ONLY: DEPTH       ,INDEP    ,IODP
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,MARSTYPE ,NWAM_BLKS,IREFRA
+     &            CDTSPS   ,MARSTYPE ,NPROMA_WAM,IREFRA
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
@@ -109,7 +110,8 @@
 #ifdef NETCDF_OUTPUT_WAM
       USE WAV_netcdf, ONLY : WAV_netcdf_export
 #endif
-
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -134,7 +136,11 @@
 
 !     LOGICAL FUNCTION
       LOGICAL :: LLALLOC_GRDFLD
-
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Begin OUTBS'
+      FLUSH(740+MyRankGlobal)
+#endif
+      
 ! ----------------------------------------------------------------------
 
 #ifdef ECMWF
@@ -146,7 +152,9 @@
 
       LLOUTBS=.TRUE.
 
-      CALL GSTATS(1951,0)
+      NPROMA=NPROMA_WAM
+
+      CALL GSTATS(1502,0)
 
 !     ALLOCATE THE NECESSARY ARRAYS
 
@@ -200,9 +208,15 @@
         IF(.NOT.ALLOCATED(USTMEAN)) ALLOCATE(USTMEAN(IJSLOC:IJLLOC))
         IF(.NOT.ALLOCATED(VSTMEAN)) ALLOCATE(VSTMEAN(IJSLOC:IJLLOC))
       ENDIF
-      IF(IPFGTBL(56).NE.0) THEN
+      ITG=46+3*NTRAIN+1
+      IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(STRNMS)) ALLOCATE(STRNMS(IJSLOC:IJLLOC))
       ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E10MEAN)) ALLOCATE(E10MEAN(IJSLOC:IJLLOC))
+      ENDIF
+
 
 !     FOR THE EXTRA FIELDS
 !     note that if the extra fields are forcing fields (i.e. already known) then
@@ -226,41 +240,37 @@
 
 !     COMPUTE MEAN PARAMETERS
 
-      NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
-
       LLAK=.FALSE.
       LLPEAKF = .FALSE.
       IRA=1
       SIG = +1.
 
-      IF(LSECONDORDER) THEN
-        NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
-!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,K,IJ)
-        DO JKGLO=IJSLOC,IJLLOC,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,M,K,IJ)
+      DO JKGLO=IJSLOC,IJLLOC,NPROMA
+        KIJS=JKGLO
+        KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
-          IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-            CALL INTPOL (FL1, FL3, KIJS, KIJL, IG, IRA)
-          ELSE
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  FL3(IJ,K,M) = FL1(IJ,K,M)
-                ENDDO
+        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+          CALL INTPOL (FL1, FL3, KIJS, KIJL, IG, IRA)
+        ELSE
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                FL3(IJ,K,M) = FL1(IJ,K,M)
               ENDDO
             ENDDO
-          ENDIF
+          ENDDO
+        ENDIF
+        IF(LSECONDORDER) THEN
           CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,1:NANG,1:NFRE),
      &                               FL(KIJS:KIJL,1:NANG,1:NFRE),
      &                               KIJS,KIJL,
      &                               DEPTH(KIJS:KIJL,IG),
      &                               SIG)
-        ENDDO
+        ENDIF
+      ENDDO
 !$OMP   END PARALLEL DO
-      ENDIF
 
-      NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
@@ -307,9 +317,16 @@
           CALL STOKESDRIFT(FL3(KIJS:KIJL,:,:),
      &                     KIJS, KIJL, USTMEAN(KIJS), VSTMEAN(KIJS))
         ENDIF
-        IF(IPFGTBL(56).NE.0) THEN
+
+        ITG=46+3*NTRAIN+1
+        IF(IPFGTBL(ITG).NE.0) THEN
           CALL CIMSSTRN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,
      &                   STRNMS(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+          CALL SE10MEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,E10MEAN(KIJS))
         ENDIF
 
 !       COMPUTE OUTPUT EXTRA FIELDS
@@ -416,8 +433,6 @@
 
 !     COMPUTE MEAN PARAMETERS
 
-      NPROMA=(IJLLOC-IJSLOC+1)/NWAM_BLKS+1
-      NPROMA=MAX(NPROMA/2,1)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
@@ -439,11 +454,11 @@
         ENDIF
       ENDIF
 
-      CALL GSTATS(1951,1)
+      CALL GSTATS(1502,1)
 
-      CALL GSTATS(674,0)
+      CALL GSTATS(719,0)
       CALL MPL_BARRIER(CDSTRING='OUTBS:')
-      CALL GSTATS(674,1)
+      CALL GSTATS(719,1)
 
 !*    4. OUTPUT OF SPECTRA AT SELECTED GRID POINTS.
 !        ------------------------------------------
@@ -704,6 +719,12 @@
       ENDIF
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E10G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E10G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(RHOAG)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(RHOAG(NGX,NGY))
         ENDIF
@@ -826,6 +847,7 @@
       IF(ALLOCATED(USTMEAN)) DEALLOCATE(USTMEAN)
       IF(ALLOCATED(VSTMEAN)) DEALLOCATE(VSTMEAN)
       IF(ALLOCATED(STRNMS)) DEALLOCATE(STRNMS)
+      IF(ALLOCATED(E10MEAN)) DEALLOCATE(E10MEAN)
       IF(ALLOCATED(WX1)) DEALLOCATE(WX1)
       IF(ALLOCATED(WX2)) DEALLOCATE(WX2)
       IF(ALLOCATED(WX3)) DEALLOCATE(WX3)

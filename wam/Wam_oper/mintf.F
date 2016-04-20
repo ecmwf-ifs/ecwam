@@ -43,6 +43,12 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER :: I, K, M, N, IS, IE
+      INTEGER :: IDELLA, IDELLO, NI, NSTEP
+      REAL :: PHI, XLAMDA
+
 !*    1. RATIOS OF GRID INCREMENTS.
 !        --------------------------
 

@@ -1,5 +1,5 @@
-      SUBROUTINE WRITEFL(FL, KINF, KSUP, MINF, MSUP,
-     &                   FILENAME,IUNIT,LOUNIT,LCUNIT)
+      SUBROUTINE WRITEFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,
+     &                   FILENAME,IUNIT,LOUNIT,LRSTPARAL)
 
 ! ---------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -10,9 +10,11 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *WRITEFL(FL, KINF, KSUP, MINF, MSUP,
-!    &              FILENAME,IUNIT,LOUNIT,LCUNIT)
+!     CALL *WRITEFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,
+!    &              FILENAME,IUNIT,LOUNIT,LRSTPARAL)
 !     *FL*        ARRAY TO BE WRITTEN TO FILE
+!     *IJINF*     FIRST LOWER DIMENSION OF FL
+!     *IJSUP*     FIRST UPPER DIMENSION OF FL
 !     *KINF*      SECOND LOWER DIMENSION BOUND OF FL
 !     *KSUP*      SECOND UPPER DIMENSION BOUND OF FL
 !     *MINF*      THIRD LOWER DIMENSION BOUND OF FL
@@ -20,7 +22,7 @@
 !     *FILENAME*  FILENAME (INCLUDING PATH) OF TARGET FILE
 !     *IUNIT*     PBIO UNIT (ONLY ACTIVE IF PBIO OUTPUT)
 !     *LOUNIT*    LOGICAL, TRUE IF FREE UNIT HAS TO BE FOUND
-!     *LCUNIT*    LOGICAL, TRUE IF UNIT HAs TO CLOSED 
+!     *LRSTPARAL* LOGICAL, TRUE THEN WRITE IN PARALLEL
 
 !     METHOD.
 !     -------
@@ -42,7 +44,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : NIBLO    ,LL1D
+      USE YOWPARAM , ONLY : LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL, ONLY : LLUNSTR
@@ -51,18 +53,22 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: KINF, KSUP, MINF, MSUP, IUNIT
+      INTEGER, INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
+      INTEGER, INTENT(INOUT) :: IUNIT
+
+      REAL, DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP), INTENT(IN) :: FL
+
+      CHARACTER(LEN=120), INTENT(IN) :: FILENAME
+
+      LOGICAL, INTENT(IN) :: LOUNIT, LRSTPARAL
+
       INTEGER :: IJ, K, M, J2, J3
       INTEGER :: KRET, KOUNT, LFILE
       INTEGER :: I_GET_UNIT
 
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL, FL_G
+      REAL, DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
       REAL, ALLOCATABLE :: RFL(:,:,:)
-
-      CHARACTER(LEN=120) :: FILENAME
-
-      LOGICAL :: LOUNIT,LCUNIT
 
 ! ----------------------------------------------------------------------
 
@@ -78,26 +84,26 @@
         IUNIT=I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'a', 'u', 0)
       ENDIF
 
-      IF(LLUNSTR) THEN
+      IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
         FL_G(0,:,:)=0.
-        CALL UNBLKRORD(1,KINF,KSUP,MINF,MSUP,
-     &                 FL(1:NIBLO,KINF:KSUP,MINF:MSUP),
-     &               FL_G(1:NIBLO,KINF:KSUP,MINF:MSUP))
+        CALL UNBLKRORD(1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,
+     &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),
+     &               FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP))
         WRITE(IUNIT) (((FL_G(IJ,J2,J3),
-     &                  IJ=0,NIBLO),
+     &                  IJ=IJINF,IJSUP),
      &                  J2=KINF,KSUP),
      &                  J3=MINF,MSUP)
 
-      ELSE IF(LL1D .OR. NPROC.EQ.1) THEN
+      ELSE IF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
         WRITE(IUNIT) (((FL(IJ,J2,J3),
-     &                  IJ=0,NIBLO),
+     &                  IJ=IJINF,IJSUP),
      &                  J2=KINF,KSUP),
      &                  J3=MINF,MSUP)
       ELSE
 !     WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
-!     BUT THE BINARY INPUT FILES SHOULD BE IN THE OLD MAPPING
+!     BUT THE SINGLE BINARY INPUT FILES SHOULD BE IN THE OLD MAPPING
         WRITE(IUNIT) (((FL(IJ2NEWIJ(IJ),J2,J3),
-     &                  IJ=0,NIBLO),
+     &                  IJ=IJINF,IJSUP),
      &                  J2=KINF,KSUP),
      &                  J3=MINF,MSUP)
 

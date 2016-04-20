@@ -54,19 +54,23 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
-      USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NWAM_BLKS
+      USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : LLNEWCURR 
-
+      USE UNWAM, ONLY : SET_CURTXY
+      USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! --------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IREAD
+      LOGICAL, INTENT(IN) :: LWCUR
+
       INTEGER :: IG
-      INTEGER :: LIU, IREAD
+      INTEGER :: LIU
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA,IJ
 
       REAL :: ZHOOK_HANDLE
@@ -74,7 +78,6 @@
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
 
-      LOGICAL :: LWCUR
       LOGICAL :: LLCURRENT
 
 ! --------------------------------------------------------------------- 
@@ -114,7 +117,7 @@
 !!!               for the calculation of the gradients !!!
 ! Mod for OPENMP
                   CALL GSTATS(1444,0)
-                  NPROMA=(NSUP-NINF+1)/NWAM_BLKS+1
+                  NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
                   DO JKGLO=NINF,NSUP,NPROMA
                     KIJS=JKGLO
@@ -203,11 +206,14 @@
 
 
 !           COMPUTE REFRACTION TERMS
-            CALL PROPDOT
-            IF (ITEST.GE.2)
-     &       WRITE(IU06,*) ' SUB. GETCURR: REFRACTION TERMS',
-     &       ' INITIALIZED'
-             CALL FLUSH(IU06)
+            IF (IREFRA .NE. 0) THEN
+              CALL PROPDOT
+              IF (ITEST.GE.2) THEN
+                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',             &
+     &         ' TERMS INITIALIZED'
+                CALL FLUSH(IU06)
+              END IF
+            END IF
 
             LLCHKCFLA=.TRUE.
 
@@ -217,6 +223,9 @@
           ELSE
             LLCHKCFLA=.FALSE.
           ENDIF
+          IF (LLUNSTR) THEN
+            CALL SET_CURTXY
+          END IF
         ENDIF
       ELSE
         LLCHKCFLA=.FALSE.

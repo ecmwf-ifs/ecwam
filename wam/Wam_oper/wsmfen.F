@@ -45,6 +45,15 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      REAL, INTENT(IN) :: USTT, DPT
+      REAL, INTENT(OUT) :: EW, FM
+
+      INTEGER :: M, K
+      REAL :: EN, YNU, EMAX, X
+      REAL :: DELT25, XTEMP, TEMP, SPFB
+      REAL :: ESTAR, DSTAR, SPINTDI, FREQDI 
       REAL :: FSEA(NANG,NFRE)
 
 ! ----------------------------------------------------------------------
@@ -74,31 +83,31 @@
 !*    1.1 COMPUTATION OF THE WIND-SEA ENERGY.                           
 !         -----------------------------------                           
 
-      EW = EPSMIN                                                      
-      DO M=1,NFRE                                                  
-        TEMP = 0.                                                      
-        DO K=1,NANG                                               
-          TEMP = TEMP+FSEA(K,M)                                       
+      EW = EPSMIN
+      DO M=1,NFRE
+        TEMP = 0.
+        DO K=1,NANG
+          TEMP = TEMP+FSEA(K,M)
         ENDDO
-        EW = EW+TEMP*DFIM(M)                                           
+        EW = EW+TEMP*DFIM(M)
       ENDDO
-      DELT25 = FR(NFRE)/3.*DELTH                                        
+      DELT25 = FR(NFRE)/3.*DELTH
       EW = EW+DELT25*TEMP                                               
 
 !*    1.2 COMPUTATION OF THE MEAN FREQUENCY.                            
 !         ----------------------------------                            
 
-      FM = EPSMIN                                                     
-      DO M=1,NFRE                                                  
-        SPFB = 0.                                                      
-        DO K=1,NANG                                               
-          SPFB = SPFB+FSEA(K,M)                                       
+      FM = EPSMIN
+      DO M=1,NFRE
+        SPFB = 0.
+        DO K=1,NANG
+          SPFB = SPFB+FSEA(K,M)
         ENDDO
-        SPFB = SPFB*DELTH                                              
+        SPFB = SPFB*DELTH
         FM = FM+SPFB*FR(M)**2.*(FRATIO-1./FRATIO)/2.
       ENDDO
-      FM = FM+SPFB*FR(NFRE)**2./3.                                      
-      FM = FM/EW                                                        
+      FM = FM+SPFB*FR(NFRE)**2./3.
+      FM = FM/EW
 
 ! ----------------------------------------------------------------------
 
@@ -108,41 +117,41 @@
 !*    2.1 ENERGY IS DERIVED FROM UNDERESTIMATED MEAN FREQUENCY.         
 !         -----------------------------------------------------         
 
-      XTEMP = FM*USTT/G                                                 
-      IF (XTEMP.LE.0.) WRITE(*,*) FM,USTT,EW                            
+      XTEMP = FM*USTT/G
+      IF (XTEMP.LE.0.) WRITE(*,*) FM,USTT,EW
 
       ESTAR=EN(FM*USTT/G)
       IF (ISHALLO.NE.1) THEN
          DSTAR = DPT*G/USTT**2
          ESTAR = MIN(EMAX(DSTAR),ESTAR)
       ENDIF
-      SPINTDI = USTT**4/G**2 * ESTAR 
+      SPINTDI = USTT**4/G**2 * ESTAR
 
 !*    2.2 MEAN FREQUENCY IS DERIVED FROM THE UNDERESTIMATED ENERGY.     
 !         ---------------------------------------------------------     
 
-      ESTAR=EW*G**2/USTT**4                            
+      ESTAR=EW*G**2/USTT**4
       IF (ISHALLO.NE.1) THEN
          DSTAR = DPT*G/USTT**2
          ESTAR = MIN(EMAX(DSTAR),ESTAR)
       ENDIF
 
-      FREQDI = G/USTT * YNU(ESTAR)                            
+      FREQDI = G/USTT * YNU(ESTAR)
 
 ! ----------------------------------------------------------------------
 
-!*    3. FINAL ESTIMATE.                                                
-!        ---------------                                                
+!*    3. FINAL ESTIMATE
+!        ---------------
 
-!*    3.1 AVERAGING THE ENERGY ESTIMATES.                               
-!         -------------------------------                               
+!*    3.1 AVERAGING THE ENERGY ESTIMATES
+!         -------------------------------
 
-      EW = (EW+SPINTDI)*0.5                                             
+      EW = (EW+SPINTDI)*0.5
 
 !*    3.2 AVERAGING THE MEAN FREQUENCY ESTIMATES.                       
 !         ---------------------------------------                       
 
-      FM = (FM+FREQDI)*0.5                                              
-                                                                        
-      RETURN                                                            
+      FM = (FM+FREQDI)*0.5
+ 
+      RETURN
       END SUBROUTINE WSMFEN

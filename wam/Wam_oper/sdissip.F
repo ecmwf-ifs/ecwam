@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, EMEAN, F1MEAN,XKMEAN,
      &                    PHIEPS, TAUWD, MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
@@ -22,7 +22,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN,)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, EMEAN,F1MEAN, XKMEAN,)*
 !                        PHIEPS, TAUWD, MIJ, LCFLX)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
@@ -30,6 +30,7 @@
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *IG*  - BLOCK NUMBER
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
+!          *EMEAN* - MEAN ENERGU DENSITY 
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
 !          *PHIEPS* - ENERGY FLUX FROM WAVES TO OCEAN INTEGRATED OVER 
@@ -60,7 +61,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
-      USE YOWMEAN  , ONLY : EMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
@@ -76,7 +76,7 @@
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       INTEGER :: IJ, K, M, IC
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: F1MEAN, XKMEAN
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
       REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: PHIEPS, TAUWD
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL

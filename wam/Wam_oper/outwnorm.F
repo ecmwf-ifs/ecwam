@@ -39,7 +39,7 @@
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
      &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
      &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
-     &            CICG     ,CIHG     ,C3G      ,
+     &            CICG     ,CIHG     ,C3G      ,E10G     ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
@@ -554,7 +554,19 @@
           ENDIF
         ENDIF
 
-        ITG=46+3*NTRAIN+2
+        ITG=ITG+1
+        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
+          CALL WAMNORM(E10G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
+     &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
+          KTAG=KTAG+1
+          IF(IRANK.EQ.1) THEN
+            WRITE(IU06,*) '   WAMNORM H10:'
+            WRITE(IU06,*) '  ',FAVG,FMIN,FMAX,NAVG
+            WRITE(IU06,111) FAVG,FMIN,FMAX
+          ENDIF
+        ENDIF
+
+        ITG=ITG+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(RHOAG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -566,7 +578,7 @@
           ENDIF
         ENDIF
 
-        ITG=46+3*NTRAIN+3
+        ITG=ITG+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(WSTARG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -578,7 +590,7 @@
           ENDIF
         ENDIF
 
-        ITG=46+3*NTRAIN+4
+        ITG=ITG+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(CICG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -590,7 +602,7 @@
           ENDIF
         ENDIF
 
-        ITG=46+3*NTRAIN+5
+        ITG=ITG+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(CIHG,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)
@@ -602,7 +614,7 @@
           ENDIF
         ENDIF
 
-        ITG=46+3*NTRAIN+6
+        ITG=ITG+1
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           CALL WAMNORM(C3G,NGX,NGY,ZMISS,0.,FAVG,FMIN,FMAX,
      &     NAVG,LMESSPASS,IRANK,IPFGTBL(ITG),1,KTAG)

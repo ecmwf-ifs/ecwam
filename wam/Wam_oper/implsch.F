@@ -90,7 +90,6 @@
 !     ---------
 
 !       *AIRSEA*    - SURFACE LAYER STRESS AND ROUGHNESS LENGTH.
-!       *CREWFN*    - CREATE A WIND FILE NAME.
 !       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
 !       *INCDATE*   - UPDATE DATE TIME GROUP.
 !SHALLOW
@@ -124,10 +123,9 @@
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
-     &            C        ,FRIC     ,FLOGSPRDM1
+     &            C        ,FRIC     ,FLOGSPRDM1, FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMINFR  ,LCIWABR
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
@@ -160,6 +158,7 @@
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
       REAL :: ZHOOK_HANDLE
       REAL :: DELFL(NFRE)
+      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
@@ -193,7 +192,7 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
@@ -232,8 +231,7 @@
 !!            FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
-     &   IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
@@ -259,7 +257,7 @@
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
 
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &              ROAIRN, TAUW, TAUWLF, PHIWA, 
@@ -270,8 +268,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
-     &             IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -285,10 +282,11 @@
         CALL FLUSH (IU06)
       ENDIF
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL,EMEANALL,F1MEAN,XKMEAN,
      &                PHIOC, TAUWD, MIJ, .FALSE.)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
+     &                       USNEW, THWNEW, ROAIRN,
      &                       PHIOC, TAUWD, MIJ, .FALSE.)
       ENDIF
 
@@ -316,7 +314,7 @@
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
       DO IJ=IJS,IJL
-        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
+        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEANALL(IJ))
       ENDDO
 
       DO M=1,NFRE
@@ -352,6 +350,7 @@
             FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M)=
      &      MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
+            FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
       ENDDO
@@ -366,7 +365,7 @@
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
@@ -376,7 +375,8 @@
 !           ---------------------------
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
+
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
 
 
       IF(ISHALLO.EQ.1) THEN
@@ -428,7 +428,7 @@
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
 !           -------------------------------------------------------
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
       IF(IPHYS.EQ.0) THEN
@@ -453,19 +453,22 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS),
-     &             IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
 
-      IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
-     &                PHIOC, TAUWD, MIJ, LCFLX)
-      ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,
-     &                PHIOC, TAUWD, MIJ, LCFLX)
+      IF(LCFLX) THEN
+!     this call is only needed if we are to compute the fluxes
+        IF(IPHYS.EQ.0) THEN
+          CALL SDISSIP (FL3 ,FL, IJS, IJL, IG,SL,EMEANALL,F1MEAN,XKMEAN,
+     &                  PHIOC, TAUWD, MIJ, LCFLX)
+        ELSE
+          CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
+     &                         USNEW, THWNEW, ROAIRN,
+     &                         PHIOC, TAUWD, MIJ, LCFLX)
+        ENDIF
       ENDIF
 
       IF (ITEST.GE.2) THEN
@@ -480,7 +483,7 @@
         CALL WNFLUXES (IJS, IJL,
      &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
      &                 PHIOC, TAUWD,
-     &                 EMEAN(IJS), FMEAN(IJS), U10NEW, THWNEW,
+     &                 EMEANALL, FMEANALL, U10NEW, THWNEW,
      &                 USNEW, ROAIRN, .TRUE.)
 
       ENDIF

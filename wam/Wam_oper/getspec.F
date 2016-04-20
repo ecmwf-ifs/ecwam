@@ -1,4 +1,4 @@
-      SUBROUTINE GETSPEC(FL,NBLKS,NBLKE,IREAD,U10OLD,THWOLD)
+      SUBROUTINE GETSPEC(FL,NBLKS,NBLKE,IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -9,14 +9,11 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *GETSPEC(FL,SL,NBLKS,NBLKE,IREAD,U10OLD,THWOLD)
+!     *CALL* *GETSPEC(FL,SL,NBLKS,NBLKE,IREAD)
 !     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
 !     *NBLKS*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*     PROCESSOR WHICH WILL ACCESS THE FILE ON DISK 
-!     *U10OLD*    WIND SPEED. (used with fetch law to fill empty 
-!                 sea points)
-!     *THWOLD*    WIND DIRECTION (RADIANS).
 
 
 !     METHOD.
@@ -46,7 +43,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : KDEL     ,MDEL
+      USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,NLONRGG
@@ -59,7 +56,7 @@
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
      &            EPSMIN
-      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NWAM_BLKS,IREFRA   ,
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NPROMA_WAM,IREFRA  ,
      &            LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,LRESTARTED
@@ -75,14 +72,19 @@
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(INOUT) :: IREAD
+      INTEGER, DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL
+
       INTEGER :: NBIT
 
-      INTEGER :: ISEND, IREAD
+      INTEGER :: ISEND
       INTEGER :: IJ, K, M, IC, ICC, JSN, IDUM, IX, IY, ID, MR, KR, IP
       INTEGER :: KLOOP, MLOOP, KINF, KSUP, MINF, MSUP
       INTEGER :: IERR, KRCOUNT, KFROM, KRTAG
       INTEGER :: IRA, IG
       INTEGER :: IUNIT
+      INTEGER :: LNAME
       INTEGER :: IBREAD, NBREAD, NBREAD_AGAIN 
       INTEGER :: IPARAM, KZLEV,KK,MM
       INTEGER :: IYYYY, JCONS, IFORP, KDEXN
@@ -93,7 +95,6 @@
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER :: IPROC, ITAG, IREQ, IST, IEND, KSEND
       INTEGER :: ISENDREQ(NPROC)
-      INTEGER, DIMENSION(NPROC) :: NBLKS, NBLKE
       INTEGER :: NLONRGG_LOC(NYFF)
       INTEGER, ALLOCATABLE :: INGRIB(:), INTMP(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
@@ -101,8 +102,6 @@
       REAL :: ZTHETA,ZFRE
       REAL :: ZHOOK_HANDLE
       REAL :: RMONOP
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
-      REAL, DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD
       REAL, ALLOCATABLE, DIMENSION(:) :: WORK
       REAL, ALLOCATABLE, DIMENSION(:) :: ZRECVBUF
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: RFL
@@ -112,7 +111,7 @@
       CHARACTER(LEN=120) :: FILENAME
 
       LOGICAL :: LLEPSMIN
-      LOGICAL :: LLINIALL, LLOCAL
+      LOGICAL :: LLALLOC_ONLY, LLINIALL, LLOCAL
       LOGICAL :: LFRSDECODE, LOUNIT, LCUNIT, LLEXIST
       LOGICAL :: LLRESIZING=.FALSE.
 
@@ -125,6 +124,8 @@
       LFRSDECODE=.TRUE.
 
       NBIT=NIBLO+200
+
+      NPROMA=NPROMA_WAM
 
       IF (ITEST > 3 ) THEN
         WRITE(IU06,*) ' SUB. GETSPEC:'
@@ -146,7 +147,6 @@ C
 !     =======================================================
 
         IG=1
-        NPROMA=(IJL(IG)-IJS(IG))/NWAM_BLKS+1
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
@@ -220,9 +220,12 @@ C
         ENDIF
 
 !       GRIB2WGRID REQUIRES FIELDG !
+
+        LLALLOC_ONLY=.FALSE.
         LLINIALL=.FALSE.
         LLOCAL=.FALSE.
-        CALL INIT_FIELDG(LLINIALL,LLOCAL)
+        CALL INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
+
 
         ALL_FILE : DO IC=1,NFRE*NANG,ISTEP 
 
@@ -387,7 +390,7 @@ C
               CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
               IF(.NOT.ALLOCATED(FIELD)) ALLOCATE(FIELD(NXFF,NYFF))
-              CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+              CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
      &                         KGRIB_HANDLE, INGRIB, ISIZE,
      &                         LLUNSTR,
      &                         NXFF, NYFF, NLONRGG_LOC,
@@ -436,7 +439,6 @@ C
                 CALL ABORT1
               ENDIF
 
-              NPROMA=NIBLO/NWAM_BLKS+1
 !$OMP         PARALLEL DO SCHEDULE(STATIC)
 !$OMP+        PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
               DO JKGLO=1,NIBLO,NPROMA
@@ -594,64 +596,74 @@ C
            ENDIF
          ENDIF
 
-         IF (IRANK.EQ.ISEND)
-     &       CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
+         CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
          IUNIT=0
 
-         DO MLOOP=1,NFRE,MDEL
-           MINF=MLOOP
-           MSUP=MIN(MLOOP+MDEL-1,NFRE)
-           DO KLOOP=1,NANG,KDEL
-             KINF=KLOOP
-             KSUP=MIN(KLOOP+KDEL-1,NANG)
+         IF(LRSTPARALR) THEN
+!          RESTART FILES FROM ALL PE's
+           LNAME = LEN_TRIM(FILENAME)
+           FILENAME=FILENAME(1:LNAME)//'.%p_%n'
+           CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
+           CALL READFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,
+     &                 FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
 
-             ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
-!            READ RESTART SPECTRA FROM PE ISEND (IREAD) 
-             IF (IRANK.EQ.ISEND) THEN
-               LOUNIT = .FALSE.
-               LCUNIT = .FALSE.
-               IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
-               IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LCUNIT = .TRUE.
+         ELSE
 
-               CALL READFL(RFL, KINF, KSUP, MINF, MSUP,
-     &                     FILENAME, IUNIT, LOUNIT, LCUNIT)
-             ENDIF
+           DO MLOOP=1,NFRE,MDEL
+             MINF=MLOOP
+             MSUP=MIN(MLOOP+MDEL-1,NFRE)
+             DO KLOOP=1,NANG,KDEL
+               KINF=KLOOP
+               KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-             CALL MPDISTRIBFL(ISEND,KTAG,NBLKS,NBLKE,KINF,KSUP,
-     &                        MINF,MSUP,RFL)
-             KTAG=KTAG+1
+               ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+!              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
+               IF (IRANK.EQ.ISEND) THEN
+                 LOUNIT = .FALSE.
+                 LCUNIT = .FALSE.
+                 IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
+                 IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LCUNIT = .TRUE.
 
-             IF (ITEST.GE.2)
-     &        WRITE(IU06,*)
-     &        'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
+                 CALL READFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,
+     &                     FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
+               ENDIF
 
-!            KEEP CORRESPONDING CONTRIBUTION TO FL
-             IG=1
-             NPROMA=(IJL(IG)-IJS(IG))/NWAM_BLKS+1
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-             DO JKGLO=IJS(IG),IJL(IG),NPROMA
-               KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-               DO K=KINF,KSUP
-                 DO M=MINF,MSUP
-                   DO IJ=KIJS,KIJL
-                     FL(IJ,K,M) = RFL(IJ,K,M)
+               CALL MPDISTRIBFL(ISEND,KTAG,NBLKS,NBLKE,KINF,KSUP,
+     &                          MINF,MSUP,RFL)
+               KTAG=KTAG+1
+
+               IF (ITEST.GE.2)
+     &          WRITE(IU06,*)
+     &          'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
+
+!              KEEP CORRESPONDING CONTRIBUTION TO FL
+               IG=1
+!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
+               DO JKGLO=IJS(IG),IJL(IG),NPROMA
+                 KIJS=JKGLO
+                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                 DO K=KINF,KSUP
+                   DO M=MINF,MSUP
+                     DO IJ=KIJS,KIJL
+                       FL(IJ,K,M) = RFL(IJ,K,M)
+                     ENDDO
                    ENDDO
                  ENDDO
                ENDDO
-             ENDDO
-!$OMP      END PARALLEL DO
+!$OMP       END PARALLEL DO
 
-             DO M=MINF,MSUP
-               DO K=KINF,KSUP
-                 FL(NINF-1,K,M) = 0. 
+               DO M=MINF,MSUP
+                 DO K=KINF,KSUP
+                   FL(NINF-1,K,M) = 0. 
+                 ENDDO
                ENDDO
-             ENDDO
 
-             DEALLOCATE(RFL)
+               DEALLOCATE(RFL)
+             ENDDO
            ENDDO
-         ENDDO
+
+         ENDIF
 
       ENDIF
 

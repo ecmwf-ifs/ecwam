@@ -1,6 +1,7 @@
       SUBROUTINE WRITSTA (IDIN, CBDT, CEDT, ANALPD, FOREPD, IS,
      &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
-     &                    CCURA)
+     &                    CCURA, LRSTPARAL, NPROC_RST )
+
                                                                         
 ! --------------------------------------------------------------------- 
 
@@ -32,6 +33,9 @@
 !         *NF*       INTEGER     NEW FORECAST CONDITION.                
 !         *ISTAT*    INTEGER     JOB STATUS INDICATORS.                 
 !         *CCURA*    CHAR*14     BEGIN DATE FOR USE OF CURRENTS.                 
+!         *LRSTPARAL LOGICAL     TRUE IF RESTART FILES WRITTEN IN PARALLEL
+!         *NPROC_RST INTEGER     NUMBER OF PARALLEL MPI TASKS THAT HAVE BEEN USED
+
 
 !     METHOD.                                                           
 !     -------                                                           
@@ -55,12 +59,17 @@
 ! --------------------------------------------------------------------- 
       IMPLICIT NONE
 
-      INTEGER :: I, IDIN, IS, IASS, NF 
-      INTEGER :: ANALPD, FOREPD
-      INTEGER :: ISTAT(3)
+      INTEGER, INTENT(IN) :: IDIN, IS, IASS, NF 
+      INTEGER, INTENT(IN) :: ANALPD, FOREPD
+      INTEGER, INTENT(IN) :: ISTAT(3)
+      INTEGER, INTENT(IN) :: NPROC_RST
 
-      CHARACTER(LEN=14) :: CBDT,CEDT,CABDT,CAEDT,CRSDT,CLSDT,CCURA
+      CHARACTER(LEN=14), INTENT(IN) :: CBDT,CEDT,CABDT,CAEDT,CRSDT,CLSDT
+      CHARACTER(LEN=14), INTENT(IN) :: CCURA
 
+      LOGICAL, INTENT(IN) :: LRSTPARAL
+
+      INTEGER :: I
 ! --------------------------------------------------------------------- 
 
 !*    1.0  FILL CARD ARRAY.                                             
@@ -114,6 +123,15 @@
 
       WRITE(CARD(15),10) CCURA
    10 FORMAT('BEGIN DATE FOR USING SURFACE CURRENT = ',A14)
+
+      IF(LRSTPARAL) THEN 
+        CARD(16) = 'PARALLEL RESTART = YES'        
+      ELSE
+        CARD(16) = 'PARALLEL RESTART = NO'        
+      ENDIF
+
+      WRITE(CARD(17),11) NPROC_RST
+   11 FORMAT('NUMBER OF MPI TASKS USED = ',I10)
 
 !*    2.0  WRITE CARD TO IDIN.                                          
 !          -------------------                                          

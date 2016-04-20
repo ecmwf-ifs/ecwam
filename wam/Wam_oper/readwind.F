@@ -91,7 +91,7 @@
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,
      &            SWAMPCIFR
       USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
-     &            NWAM_BLKS
+     &            NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
@@ -110,7 +110,11 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IREAD 
+      INTEGER, INTENT(IN) :: IREAD 
+      CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIR
+      CHARACTER(LEN=24), INTENT(INOUT) :: FILNM
+      LOGICAL, INTENT(INOUT) :: LLNOTOPENED
+
       INTEGER :: NFLD  
       INTEGER :: I, J, IVAR, JSN
       INTEGER :: ISIZE
@@ -130,11 +134,9 @@
       REAL :: ZHOOK_HANDLE
       REAL, ALLOCATABLE :: WORK(:,:)  
 
-      CHARACTER*24 :: FILNM
-      CHARACTER*14 :: CDTWIR, CDTTURN
-      CHARACTER*14, SAVE :: CWDDATE
+      CHARACTER(LEN=14) :: CDTTURN
+      CHARACTER(LEN=14), SAVE :: CWDDATE
 
-      LOGICAL :: LLNOTOPENED
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
@@ -309,7 +311,7 @@
           KGRIB_HANDLE=-99
           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
           ZDUM=0.
-          CALL GRIB2WGRID (IU06, ITEST, NWAM_BLKS, 
+          CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
      &                     KGRIB_HANDLE, KGRIB, ISIZE,
      &                     LLUNSTR,
      &                     NXFF, NYFF, NLONRGG_LOC,

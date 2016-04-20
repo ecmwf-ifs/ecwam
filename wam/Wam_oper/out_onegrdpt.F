@@ -47,7 +47,7 @@
      &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
+      USE YOWUNPOOL, ONLY : LLUNSTR
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -99,7 +99,7 @@
       LPHIOC = ALLOCATED(PHIEPSG)
       LTAUOC = ALLOCATED(TAUOCG)
 
-      IF (LPARAM) THEN
+      IF (LPARAM .and. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
           IF (WHGTTG(I,J).NE.ZMISS) THEN

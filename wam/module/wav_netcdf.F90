@@ -1,6 +1,7 @@
 MODULE WAV_netcdf
 #ifdef NETCDF_OUTPUT_WAM
       USE WAV_netcdf_var
+      USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -545,7 +546,7 @@ MODULE WAV_netcdf
       REAL diffU, diffV, diffUV
       REAL eU_10_wam, eV_10_wam
       integer k, IJfirst, IJlast
-      REAL SumError, MaxError, TotalSum
+      REAL SumError, MaxError, TotalSum, MinValue
 # ifdef DEBUG
       REAL siz, avgHS, avgWindSpeed
       logical IsFirst
@@ -644,9 +645,8 @@ MODULE WAV_netcdf
       WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)=', minval(U10NEW), maxval(U10NEW)
       WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)sel=', minU10new, maxU10new
       IF (LLUNSTR) THEN
-        CALL COHERENCY_ERROR_KERNEL(U10NEW, SumError, MaxError, TotalSum)
+        CALL COHERENCY_ERROR_KERNEL(U10NEW, SumError, MaxError, TotalSum, MinValue)
         WRITE(740+MyRankGlobal,*) 'U10NEW(SumError,TotalSum)=', SumError, TotalSum
-        FLUSH(740+MyRankGlobal)
       END IF
       WRITE(740+MyRankGlobal,*) 'From NETCDF_var'
       WRITE(740+MyRankGlobal,*) 'U_10(min/max)=', minval(NETCDF_var(1,:)), maxval(NETCDF_var(1,:))
@@ -666,8 +666,6 @@ MODULE WAV_netcdf
         WRITE(740+MyRankGlobal,*) 'Vcurr_ocn(min/max)=', minval(Vcurr_ocn(k,IJSLOC:IJLLOC)), maxval(Vcurr_ocn(k,IJSLOC:IJLLOC))
       END DO
 #  endif
-
-
       siz=REAL(1 + IJLLOC - IJSLOC)
       avgHS=sum(NETCDF_var(7,:))/siz
       avgWindSpeed=sum(NETCDF_var(3,:))/siz
@@ -715,26 +713,9 @@ MODULE WAV_netcdf
         FLUSH(740+MyRankGlobal)
 # endif
         DO IX=1,np_global
-# ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'IX=', IX
-          WRITE(740+MyRankGlobal,*) 'Before IX assignation'
-          FLUSH(740+MyRankGlobal)
-# endif
           eReal_8=nodes_global(IX)%z
-# ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'eReal_8=', eReal_8
-          FLUSH(740+MyRankGlobal)
-# endif
           eReal_4=SNGL(eReal_8)
-# ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'eReal_4=', eReal_4
-          FLUSH(740+MyRankGlobal)
-# endif
           DEPTHG_tot(IX,1)=eReal_4
-# ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'After IX assignation'
-          FLUSH(740+MyRankGlobal)
-# endif
         END DO
 # ifdef DEBUG
         WRITE(740+MyRankGlobal,*) 'After IX loop'
@@ -1250,53 +1231,6 @@ MODULE WAV_netcdf
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WAV_GET_ETIMEDAY(eTimeDay)
-      USE YOWWAMI  , ONLY : CBPLTDT
-      IMPLICIT NONE
-      real*8, intent(out) :: eTimeDay
-      real*8 eJD
-      character(len=4) eYear
-      character(len=2) eMonth, eDay, eHour, eMin, eSec
-      integer year, month, day, hour, min, sec
-      eYear(1:1)  = CBPLTDT(1:1)
-      eYear(2:2)  = CBPLTDT(2:2)
-      eYear(3:3)  = CBPLTDT(3:3)
-      eYear(4:4)  = CBPLTDT(4:4)
-      eMonth(1:1) = CBPLTDT(5:5)
-      eMonth(2:2) = CBPLTDT(6:6)
-      eDay(1:1)   = CBPLTDT(7:7)
-      eDay(2:2)   = CBPLTDT(8:8)
-      eHour(1:1)  = CBPLTDT(9:9)
-      eHour(2:2)  = CBPLTDT(10:10)
-      eMin(1:1)   = CBPLTDT(11:11)
-      eMin(2:2)   = CBPLTDT(12:12)
-      eSec(1:1)   = CBPLTDT(13:13)
-      eSec(2:2)   = CBPLTDT(14:14)
-      read(eYear , '(i10)' ) year
-      read(eMonth, '(i10)' ) month
-      read(eDay  , '(i10)' ) day
-      read(eHour , '(i10)' ) hour
-      read(eMin  , '(i10)' ) min
-      read(eSec  , '(i10)' ) sec
-      CALL DATE_ConvertSix2mjd(year, month, day, hour, min, sec, eJD)
-      eTimeDay = eJD + WAV_NetcdfPresTime / DBLE(86400)
-# ifdef DEBUG
-      WRITE(740+MyRankGlobal,*)  'CBPLTDT=', CBPLTDT
-      WRITE(740+MyRankGlobal,*)  'year=', year
-      WRITE(740+MyRankGlobal,*)  'month=', month
-      WRITE(740+MyRankGlobal,*)  'day=', day
-      WRITE(740+MyRankGlobal,*)  'hour=', hour
-      WRITE(740+MyRankGlobal,*)  'min=', min
-      WRITE(740+MyRankGlobal,*)  'sec=', sec
-      WRITE(740+MyRankGlobal,*)  'eJD=', eJD
-      WRITE(740+MyRankGlobal,*)  'eTimeDay=', eTimeDay
-      WRITE(740+MyRankGlobal,*)  'WAV_NetcdfPresTime=', WAV_NetcdfPresTime
-      FLUSH(740+MyRankGlobal)
-# endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE WAV_WRITE_VAR(ncid, idx, idVar, VarName)
       USE netcdf
       USE YOWPARAM , ONLY : NGX      ,NGY
@@ -1338,7 +1272,7 @@ MODULE WAV_netcdf
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE wav_single_write_netcdf(idxOutput, idxFile, idxInFile)
+      SUBROUTINE wav_single_write_netcdf(idxOutput, idxFile, idxInFile, Increment)
       USE netcdf
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG,     &
      &            USTARG, CDG
@@ -1346,10 +1280,12 @@ MODULE WAV_netcdf
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWWIND  , ONLY : FIELDG_coupl, FIELDG
       USE YOWUNPOOL, ONLY : LLUNSTR, LCFL
+      USE WAV_NETCDF_FCT, ONLY : WAV_GET_ETIMEDAY
       implicit none
       character (len = 400) :: FILE_NAME
       character (len=4) :: eStr
       integer, intent(in) :: idxOutput, idxFile, idxInfile
+      real*8, intent(in) :: Increment
       integer iret, ncid, var_id, idx
       integer eVarInt(1)
       character (len = *), parameter :: CallFct="wav_single_write_netcdf"
@@ -1382,7 +1318,7 @@ MODULE WAV_netcdf
       FLUSH(740+MyRankGlobal)
 # endif
       IF (MyRankLocal.eq.0) THEN
-        CALL WAV_GET_ETIMEDAY(eTimeDay)
+        CALL WAV_GET_ETIMEDAY(eTimeDay, Increment)
         CALL CPL_WRITE_NETCDF_TIME(ncid, idx, eTimeDay)
         !
         iret=nf90_inq_varid(ncid, "idxOutput", var_id)
@@ -1439,10 +1375,10 @@ MODULE WAV_netcdf
         CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 8, iret)
       END IF
 # ifdef DEBUG
-      WRITE(740+MyRankGlobal,*)  'wav_single_write_netcdf, step 18'
+      WRITE(740+MyRankGlobal,*)  'wav_single_write_netcdf, step 3'
       FLUSH(740+MyRankGlobal)
 # endif
-      END SUBROUTINE wav_single_write_netcdf
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1487,6 +1423,12 @@ MODULE WAV_netcdf
       IF (DO_OUTPUT) THEN
         IG=1
         DoNETCDF_sync=.TRUE.
+# ifdef DEBUG
+        WRITE(740+MyRankGlobal,*) 'minval(FL3)=', minval(FL3(IJSLOC:IJLLOC,:,:))
+        WRITE(740+MyRankGlobal,*) 'minval(SL)=',  minval( SL(IJSLOC:IJLLOC,:,:))
+        WRITE(740+MyRankGlobal,*) 'minval(FL1)=', minval(FL1(IJSLOC:IJLLOC,:,:))
+        FLUSH(740+MyRankGlobal)
+# endif
         CALL OUTBS (FL3, SL, FL1, IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IGL, IU25, IU26, LLOUTBS)
         DoNETCDF_sync=.FALSE.
         CALL WAV_netcdf_export
@@ -1527,7 +1469,7 @@ MODULE WAV_netcdf
         WRITE(740+MyRankGlobal,*) 'WAVw: WRITE TO THE NETCDF FILE, idxInfile=', idxInfile
         FLUSH(740+MyRankGlobal)
 # endif
-        CALL wav_single_write_netcdf(idxOutput, idxFile, idxInfile)
+        CALL wav_single_write_netcdf(idxOutput, idxFile, idxInfile, WAV_NetcdfPresTime)
 # ifdef DEBUG
         WRITE(740+MyRankGlobal,*) 'WAVw: ending'
         FLUSH(740+MyRankGlobal)
@@ -1576,26 +1518,6 @@ MODULE WAV_netcdf
  20   FORMAT (i2)
  30   FORMAT (i3)
  40   FORMAT (i4)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE WAV_GENERIC_NETCDF_ERROR(CallFct, idx, iret)
-      USE NETCDF
-      implicit none
-      integer, intent(in) :: iret, idx
-      character(*), intent(in) :: CallFct
-      character(len=500) :: CHRERR
-      character(len=1500) :: CHRERR_tot
-      IF (iret .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(iret)
-        WRITE(CHRERR_tot,*) TRIM(CallFct), ' -', idx, '-', TRIM(CHRERR)
-        WRITE(*,*) TRIM(CHRERR_tot)
-        WRITE(740+MyRankGlobal,*) TRIM(CHRERR_tot)
-        WRITE(740+MyRankGlobal,*) 'Debug the netcdf'
-        FLUSH(740+MyRankGlobal)
-        STOP 'Debug the netcdf'
-      ENDIF
       END SUBROUTINE
 #else
   contains

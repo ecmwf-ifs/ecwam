@@ -269,7 +269,16 @@
           WRITE(*,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
           WRITE(*,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
           WRITE(*,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
+          WRITE(*,*) ' USING WAVE PARAMETER 084' 
           WRITE(*,*) ' *********************************************'
+          WRITE(IU06,*) ' THE PARAMETER SHOULD BE ADDED TO THE LIST OF'
+          WRITE(IU06,*) ' PARAMETERS KNOWN BY GRIB_API !!!' 
+          WRITE(IU06,*) ' IN THE MEAN TIME, THE PROGRAM WILL CONTINUE.' 
+          WRITE(IU06,*) ' USING WAVE PARAMETER 084' 
+          WRITE(IU06,*) ' *********************************************'
+
+          ITABPAR=ITABLE*1000+84
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
         ELSE
           WRITE(*,*) ' *********************************************'
           CALL ABORT1

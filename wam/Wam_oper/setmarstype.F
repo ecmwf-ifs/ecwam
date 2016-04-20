@@ -33,10 +33,14 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER*4 :: CSTREAM
-      LOGICAL :: LASTREAM
-      REAL ZHOOK_HANDLE
+      IMPLICIT NONE
 
+      INTEGER :: KSTREAM
+      REAL ::ZHOOK_HANDLE
+      CHARACTER(LEN=4):: CSTREAM
+      LOGICAL :: LASTREAM
+
+! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
 #endif

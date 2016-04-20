@@ -23,15 +23,6 @@
 !             default value for input_filename : input 
 !                               output_filename : output 
 !                               itest : 0 (no diagnostics)
-!                               itest : 0 (no diagnostics)
-!                               itest : 1 (some diagnostics)
-!                               itest : 2 (some more diagnostics)
-!                               itest : 3 (all diagnostics)
-
-!            itest = 1 : prints built in diagnostics (only indication to calls)
-!            itest = 2 : prints built in diagnostics
-!            itest = 3 : prints built in diagnostics + gribex debugger 
-!                        messages (!!! it can be big)
 
  
 !     LIBRARY : FORTRAN 90, GRIB_API ($GRIB_API_INCLUDE $GRIB_API_LIB)
@@ -204,10 +195,10 @@
           CALL ABORT
         ENDIF
 
-        CALL GRIB_GET(IGRIB,'iScansNegatively',ISCAN)
+        CALL GRIB_GET(IGRIB,'jScansPositively',ISCAN)
         IF(ISCAN.EQ.0) THEN
           LLSCANNS=.TRUE.
-        ELSEIF(ISCAN.EQ.64 .OR. ISCAN.EQ.2) THEN
+        ELSEIF(ISCAN.EQ.1) THEN
           LLSCANNS=.FALSE.
         ELSE
           WRITE(IU06,*) '***********************************'

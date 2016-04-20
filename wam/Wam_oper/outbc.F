@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBC (FL3, IJS, IJL, IG, IU19, THWNEW, USNEW)
+      SUBROUTINE OUTBC (FL3, IJS, IJL, IG, IU19)
 
 ! ----------------------------------------------------------------------
 
@@ -15,16 +15,12 @@
 !**   INTERFACE.
 !     ----------
 
-!    *CALL* *OUTBC (FL3, IJS, IJL, IG, IU19, THWNEW, USNEW)*
+!    *CALL* *OUTBC (FL3, IJS, IJL, IG, IU19)*
 !      *FL3*     - BLOCK OF SPECTRA.
 !      *IJS*     - INDEX OF FIRST GRIDPOINT.
 !      *IJL*     - INDEX OF LAST GRIDPOINT.
 !      *IG*      - BLOCK NUMBER.
 !      *IU19*    - OUTPUT UNIT OF BOUNDARY VALUES.
-!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
-!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
-!                  CLOCKWISE FROM NORTH).
-!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
 
 
 !     METHOD.
@@ -55,32 +51,34 @@
      &            XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWMPP   , ONLY : NINF     ,NSUP     , NPROC  , IRANK
-      USE YOWSTAT  , ONLY : CDTPRO   ,NWAM_BLKS
+      USE YOWSTAT  , ONLY : CDTPRO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWSPEC  , ONLY : IJ2NEWIJ
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IJS, IJL, IG 
+      INTEGER,DIMENSION(GBOUNC), INTENT(IN) :: IU19
+
+      REAL, INTENT(IN) :: FL3(NINF-1:NSUP,NANG,NFRE)
+
       INTEGER, PARAMETER :: NSCFLD=3
-      INTEGER:: IJS, IJL, IG 
+
       INTEGER:: IJ, II, NGOU, IX, KX, K ,M 
       INTEGER:: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: IRECV
-      INTEGER,DIMENSION(GBOUNC) :: IU19
 
       REAL :: XLON, XLAT
-      REAL,DIMENSION(NINF:NSUP) :: THWNEW,USNEW
       REAL,DIMENSION(IJS:IJL) :: EM, FM, TQ
       REAL,DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
-      REAL :: FL3(NINF-1:NSUP,NANG,NFRE)
       REAL,DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
 
       LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
 
-      NPROMA=(IJL-IJS+1)/NWAM_BLKS+1
+      NPROMA=NPROMA_WAM
 
 
 !*    1. COMPUTE MEAN PARAMETERS.

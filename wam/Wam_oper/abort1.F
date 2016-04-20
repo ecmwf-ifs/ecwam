@@ -33,11 +33,14 @@
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
-      CHARACTER*30 :: CDMESSAGE
+
+      IMPLICIT NONE
+
+      CHARACTER(LEN=30) :: CDMESSAGE
 
       CALL FLUSH(IU06)
 
-      CDMESSAGE='!! WAVE MODEL HAS ABORTED !!!!'
+      CDMESSAGE='!! *** WAVE MODEL HAS ABORTED *** !!!!'
       CALL MPABORT(CDMESSAGE)
 
       RETURN

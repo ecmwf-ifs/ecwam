@@ -41,8 +41,14 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER*14 CDTCR, ZERO
-      PARAMETER(ZERO=' ') 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU02
+      CHARACTER(LEN=14), INTENT(OUT) :: CDTCR 
+
+
+      INTEGER :: I, J
+      CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
 ! ----------------------------------------------------------------------
 

@@ -58,6 +58,10 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, ITEST
+
       REAL, PARAMETER :: XM=0.50
       INTEGER, PARAMETER :: NITER=10
 
@@ -65,6 +69,12 @@
 !      ---------   -------   --------
 !      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
 !      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
+
+      INTEGER :: JL, I, J
+      INTEGER :: ITER 
+      REAL :: TAUWMAX, XL
+      REAL :: CDRAG, WCD, ZTAUW, UTOP, USTOLD, TAUOLD
+      REAL :: X, UST, Z0, F, DELF
 
 ! ----------------------------------------------------------------------
 
@@ -93,7 +103,6 @@
           WRITE(IU06,*)' '
           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
-
         CDRAG = 0.0012875
         WCD = SQRT(CDRAG) 
 

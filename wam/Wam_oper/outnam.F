@@ -10,7 +10,24 @@
 !*       PARAMETER NAMELIST AS IN COMMON PARAM OF THE WAM-MODEL.
 !        -------------------------------------------------------
 
-      LOGICAL llper          !  the land sea mask is periodic (T)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: 
+     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,
+     &  KFRH, MFRSTLW, MLSTHG,
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
+     &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper
+
+      INTEGER :: 
+     &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
+     &  ifrh, ifrstlw, ilsthg,
+     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
+     &  itaumax, iumax, iustar, ialpha, idepth, irefra
+
+      INTEGER :: IU06
+
+      LOGICAL :: llper          !  the land sea mask is periodic (T)
+
       NAMELIST /PARWAM/
      &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
      &  ifrh, ifrstlw, ilsthg,

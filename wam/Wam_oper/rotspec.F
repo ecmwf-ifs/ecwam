@@ -41,10 +41,17 @@
 
 ! -------------------------------------------------------------------
 
-!     USE YOWPCONS , ONLY : ZPI  ! Does NOT work for stand-alone SAR inversion!
-                                 ! defined explicitly below (SA)!
+      IMPLICIT NONE
 
-      DIMENSION FL1(NANG,NFRE), FL3(NANG,NFRE)
+      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL, INTENT(IN) :: RTHET
+      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: FL1
+      REAL, DIMENSION(NANG,NFRE), INTENT(OUT) :: FL3
+
+
+      INTEGER :: K, M
+      INTEGER :: INC, KC, KC1
+      REAL :: ZPI, FTH, ADIF, BDIF
 
 ! --------------------------------------------------------------------
 
@@ -69,5 +76,3 @@
 
       RETURN
       END SUBROUTINE ROTSPEC
-
-

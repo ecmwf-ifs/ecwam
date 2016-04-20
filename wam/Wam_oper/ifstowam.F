@@ -54,7 +54,7 @@
       USE YOMMP0   , ONLY : MYSETW   ,NPRCIDS  ,NPRTRW   ,NPRTRV
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
-      USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NWAM_BLKS
+      USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
      &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
@@ -69,8 +69,14 @@
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: NFIELDS, NGPTOTG, NCA, NRA
+      INTEGER, INTENT(INOUT) :: MASK_IN(NGPTOTG)
 
-      INTEGER :: NFIELDS, NGPTOTG, NCA, NRA
+      REAL, INTENT(IN) :: FIELDS(NGPTOTG,NFIELDS)
+
+      LOGICAL, INTENT(IN) :: LWCUR
+
+
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: I, J, JSN, JF, L, IC, IFLD, ICOUNT, IST, IP
       INTEGER :: NCOMLOC, NCOMBUF, NMASK, NTOT
@@ -79,16 +85,14 @@
       INTEGER :: IBEG,IEND,IBEGOFF,IENDOFF,IA,IB,ISETW,ISETV
       INTEGER, SAVE :: IPERIODIC
       INTEGER :: IREQ(NPROC+1)
-      INTEGER :: MASK_IN(NGPTOTG)
       INTEGER :: IRECVCOUNTS(NPROC)
       INTEGER, ALLOCATABLE, SAVE :: JJ(:), II(:,:), IIP(:,:)
       INTEGER, ALLOCATABLE, SAVE :: ISTART(:)
-      INTEGER, ALLOCATABLE, SAVE :: RLONRGG(:), IJBLOCK(:,:)
+      INTEGER, ALLOCATABLE, SAVE :: ILONRGG(:), IJBLOCK(:,:)
 
       REAL :: ZHOOK_HANDLE
       REAL :: ZDUM(2)
       REAL :: VAL 
-      REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL, DIMENSION(NFIELDS,4) :: NORMS ! 1:average, 2:min, 3:max, 4:variance 
       REAL, ALLOCATABLE :: ZCOMBUF(:),ZCOMBUF1(:)
       REAL, ALLOCATABLE :: ZBUFW(:)
@@ -99,7 +103,6 @@
       LOGICAL, SAVE :: LLINTERPOL
       LOGICAL :: LLDUM
       LOGICAL :: FRSTMATM
-      LOGICAL :: LWCUR
       LOGICAL :: LFRSTIME
       LOGICAL :: LFRST
 
@@ -122,7 +125,7 @@
 !         1.1 FIRST TIME ONLY, COMPUTE INTERPOLATION COEFFICIENTS:
 !             ----------------------------------------------------
 !
-          IF (.NOT.ALLOCATED(RLONRGG)) ALLOCATE (RLONRGG(NRA))
+          IF (.NOT.ALLOCATED(ILONRGG)) ALLOCATE (ILONRGG(NRA))
           IF (.NOT.ALLOCATED(JJ)) ALLOCATE (JJ(NGY))
           IF (.NOT.ALLOCATED(II)) ALLOCATE (II(NGX,NGY))
           IF (.NOT.ALLOCATED(IIP)) ALLOCATE (IIP(NGX,NGY))
@@ -134,7 +137,7 @@
           CALL INITIALINT(IU06, ITEST, NCA, NRA,
      &                    NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                    RLONRGG, 
+     &                    ILONRGG, 
      &                    LLINTERPOL,DJ1, DII1, DIIP1, JJ, II, IIP)
 
           IF (.NOT.ALLOCATED(IJBLOCK)) ALLOCATE(IJBLOCK(0:NCA+1,NRA))
@@ -142,7 +145,7 @@
           L = 0
           DO J=1,NRA
             JSN=NRA-J+1
-            DO I=1,RLONRGG(JSN)
+            DO I=1,ILONRGG(JSN)
               L = L+1
               IJBLOCK(I,J) = L
             ENDDO
@@ -156,8 +159,8 @@
             WRITE(IU06,*)' ##        L = ', L
             WRITE(IU06,*)' #######################################'
             WRITE(IU06,*)' ##  NCA = ', NCA, '   NRA = ', NRA
-            WRITE(IU06,*)' ##  SUM RLONRGG = ',SUM(RLONRGG(1:NRA))
-            WRITE(IU06,*)' ##  RLONRGG = ', RLONRGG(1:NRA)
+            WRITE(IU06,*)' ##  SUM ILONRGG = ',SUM(ILONRGG(1:NRA))
+            WRITE(IU06,*)' ##  ILONRGG = ', ILONRGG(1:NRA)
             WRITE(IU06,*)' #######################################'
             WRITE(IU06,*)' #######################################'
             WRITE(IU06,*)' #######################################'
@@ -167,8 +170,8 @@
           IF(IPERIODIC.EQ.1) THEN
             DO J=1,NRA
             JSN=NRA-J+1
-            IJBLOCK(0,J)= IJBLOCK(RLONRGG(JSN),J)
-            IJBLOCK(RLONRGG(JSN)+1,J)= IJBLOCK(1,J)
+            IJBLOCK(0,J)= IJBLOCK(ILONRGG(JSN),J)
+            IJBLOCK(ILONRGG(JSN)+1,J)= IJBLOCK(1,J)
             ENDDO
           ENDIF
      
@@ -470,8 +473,7 @@
         IWPER = 1
         ICOORD = 1
 
-! Mod for OPENMP
-        NPROMA=(NSUP-NINF+1)/NWAM_BLKS+1
+        NPROMA=NPROMA_WAM
         CALL GSTATS(1437,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=NINF, NSUP,NPROMA
@@ -482,7 +484,7 @@
      &                   NGX, NGY, IRGG, NLONRGG, XDELLA, ZDELLO,
      &                   IFROMIJ, JFROMIJ, NINF, NSUP, IGL, KIJS, KIJL,
      &                   AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                   RLONRGG, IJBLOCK, ZMISS, 
+     &                   ILONRGG, IJBLOCK, ZMISS, 
      &                   LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
      &                   DJ1, DII1, DIIP1, JJ, II, IIP, MASK_IN)
         ENDDO

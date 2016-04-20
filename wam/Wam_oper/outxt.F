@@ -43,11 +43,17 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER* 3 YOU(4)
-      CHARACTER* 4 YA1,YA2,YA3,YA4
-      CHARACTER*10 YOKDEL
-      CHARACTER*26 YUL
-      INTEGER KU(4)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: KU06,KU1,KU2,KU3,KU4,KDEL,KASSIM,KOUT
+      CHARACTER(LEN=4), INTENT(IN) :: YA1,YA2,YA3,YA4
+
+      INTEGER :: J
+      INTEGER :: KU(4)
+
+      CHARACTER(LEN=3) :: YOU(4)
+      CHARACTER(LEN=10) :: YOKDEL
+      CHARACTER(LEN=26) :: YUL
 
 !*    1. NOT MUCH TO SAY.
 !        ----------------

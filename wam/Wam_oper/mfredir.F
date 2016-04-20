@@ -49,6 +49,13 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ML, KL
+
+      INTEGER :: M, K
+      REAL :: CO1
+
 !*    1. FREQUENCY DEPENDENT CONSTANTS.
 !        ------------------------------
 

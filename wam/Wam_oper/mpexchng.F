@@ -54,19 +54,24 @@
 
 !----------------------------------------------------------------------
 
-      REAL,DIMENSION(NINF-1:NSUP,NDIM2,NDIM3) :: FLD
+      IMPLICIT NONE
 
-!----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: NDIM2, NDIM3
+      REAL,DIMENSION(NINF-1:NSUP,NDIM2,NDIM3), INTENT(INOUT) :: FLD
 
+
+      INTEGER :: INGB, M, K, IH, IJ, KCOUNT, IPROC, IR
+      INTEGER :: NBUFMAX
       INTEGER,DIMENSION(NGBTOPE+NGBFROMPE) :: IREQ
 
+      REAL :: ZHOOK_HANDLE
+      REAL :: ZDUM(2)
       REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
       REAL,ALLOCATABLE :: ZCOMBUFR(:,:)
-      REAL :: ZDUM(2)
-      INTEGER :: IR,IPROC
+
       LOGICAL :: LLOK
 
-      REAL ZHOOK_HANDLE
+!----------------------------------------------------------------------
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPEXCHNG',0,ZHOOK_HANDLE)

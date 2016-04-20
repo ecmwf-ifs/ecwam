@@ -72,38 +72,51 @@
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+      IMPLICIT NONE
 
-      INTEGER :: IJS_OFFSET
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3,FL1
-      CHARACTER NAME*20, CPATH*72
-      LOGICAL FRSTIME
-      REAL,ALLOCATABLE :: SPEC(:,:)
+      INTEGER, INTENT(IN) :: IG
+      INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET, IU25, IU26
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL3,FL1
 
-! ----------------------------------------------------------------------
 
-!     WORK ARRAYS
+      INTEGER :: IJ, M, K, NGOU
+      INTEGER :: IX, KX
+      INTEGER :: IRECV, NSPFLD,  NSCFLD
+
+      REAL :: XLAT, XLON
+      REAL :: ZHS, ZTHQ, ZFM, ZUST, ZTHW, ZU10
+      REAL :: XANG, XFRE, TH0
+      REAL :: EWSEA, FWSEA
+
+      REAL, DIMENSION(NANG,NFRE) :: SPEC
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
       REAL,ALLOCATABLE,DIMENSION(:) :: U10_G,THW_G,US_G
       REAL,ALLOCATABLE,DIMENSION(:) :: EMEAN_G, FMEAN_G, THQ_G,
      &                                 SMEAN_G, ESWELL_G, FSWELL_G,
      &                                 THSWELL_G, THWISEA_G
+
+      CHARACTER(LEN=20) :: NAME
+      CHARACTER(LEN=72) :: CPATH
+
+      LOGICAL :: FRSTIME
+
       DATA FRSTIME/.TRUE./
+
+! ----------------------------------------------------------------------
 
 !     0. GATHER THE FIELDS ON PROCESS 1 
 !        ------------------------------
 
       LOUTSPP=.TRUE.
 
-      ALLOCATE(SPEC(NANG,NFRE))
       IF(NGOUT.GE.1) THEN 
 
-       IF (LLUNSTR) THEN
+        IF (LLUNSTR) THEN
          write(iu06,*) ' this bit is NOT ready for unstructured grid !'
          write(*,*) ' this bit is NOT ready for unstructured grid !'
 !!! see how it was done in outgrid. we might not need ij_offset
          call abort1
-       ENDIF
+        ENDIF
 
 
 
@@ -125,35 +138,35 @@
 
         ALLOCATE(SMEAN_G(NIBLO))
         IF(.NOT.ALLOCATED(SMEAN)) THEN
-          SMEAN_G=0.
+          SMEAN_G(:)=0.
         ELSE
           CALL LOC2GLO(SMEAN(IJS),SMEAN_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(ESWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(ESWELL)) THEN
-          ESWELL_G=0.
+          ESWELL_G(:)=0.
         ELSE
           CALL LOC2GLO(ESWELL,ESWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(FSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(FSWELL)) THEN
-          FSWELL_G=0.
+          FSWELL_G(:)=0.
         ELSE
           CALL LOC2GLO(FSWELL,FSWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(THSWELL_G(NIBLO))
         IF(.NOT.ALLOCATED(THSWELL)) THEN
-          THSWELL_G=0.
+          THSWELL_G(:)=0.
         ELSE
           CALL LOC2GLO(THSWELL,THSWELL_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
         ALLOCATE(THWISEA_G(NIBLO))
         IF(.NOT.ALLOCATED(THWISEA)) THEN
-          THWISEA_G=0.
+          THWISEA_G(:)=0.
         ELSE
           CALL LOC2GLO(THWISEA,THWISEA_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
@@ -177,6 +190,7 @@
 !        ------------------------
 
       IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+
         DO NGOU=1,NGOUT
           IF (IG.EQ.IGAR(NGOU)) THEN
             IJ = IJAR(NGOU)
@@ -262,6 +276,7 @@
 !*    1.2 OUTPUT SWELL INFORMATION.
 !         -------------------------
 
+
             IF (CDTSPS.EQ.CDTPRO) THEN
               EWSEA=EMEAN_G(IJ)-ESWELL_G(IJ)
               IF(FMEAN_G(IJ).GT.EPSMIN .AND.
@@ -315,13 +330,13 @@
             ENDIF
           ENDIF
         ENDDO
+
       ENDIF
       IF((LMESSPASS).AND.(NGOUT.GE.1)) DEALLOCATE(FLPTS)
       IF(NGOUT.GE.1) DEALLOCATE(U10_G,THW_G,US_G)
       IF(NGOUT.GE.1) DEALLOCATE(EMEAN_G,FMEAN_G,THQ_G)
       IF(NGOUT.GE.1) DEALLOCATE(SMEAN_G,ESWELL_G,FSWELL_G)
       IF(NGOUT.GE.1) DEALLOCATE(THSWELL_G,THWISEA_G)
-      DEALLOCATE(SPEC)
 
       RETURN
       END SUBROUTINE OUTSPP

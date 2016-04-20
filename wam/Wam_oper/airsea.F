@@ -91,13 +91,7 @@
 !*    3. DETERMINE ROUGHNESS LENGTH.
 !        ---------------------------
 
-      DO IJ=IJS,IJL
-!!!        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
-!!!        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
-        UST2 = US(IJ)**2
-        ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
-        Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
-      ENDDO
+      CALL Z0WAVE (IJS, IJL, US, TAUW, Z0)
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)

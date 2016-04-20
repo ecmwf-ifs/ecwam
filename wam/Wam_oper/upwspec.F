@@ -97,7 +97,9 @@
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPWSPEC',0,ZHOOK_HANDLE)
+#endif
 
       IG=1
 
@@ -242,6 +244,8 @@
         ENDIF
       ENDDO
 
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPWSPEC',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE UPWSPEC

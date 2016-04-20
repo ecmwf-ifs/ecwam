@@ -59,9 +59,16 @@
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
+      IMPLICIT NONE
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD
+      INTEGER, INTENT(IN) :: IG
+      INTEGER, INTENT(IN) :: IJS, IJL
+
+      REAL, INTENT(IN) :: FETCH, FPMAX
+      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD
+
+      INTEGER :: IJ
+      REAL :: GX, U10, GXU, UG
 
 ! ----------------------------------------------------------------------
 

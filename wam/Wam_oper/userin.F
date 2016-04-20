@@ -74,6 +74,7 @@
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
+     &            LRSTPARALR, LRSTPARALW,
      &            NTRAIN   ,
      &            IPFGTBL  ,
      &            LWAMANOUT,
@@ -83,6 +84,7 @@
       USE YOWCPBO  , ONLY : IBOUNC
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
+      USE YOWFRED  , ONLY : ALPHAPMAX
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,
@@ -90,6 +92,7 @@
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
       USE YOWMESPAS, ONLY : LMESSPASS,
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
+      USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
@@ -106,7 +109,7 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
-     &            LGUST    ,LADEN    ,NWAM_BLKS,LSUBGRID ,LLSOURCE ,
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,
      &            LNSESTART,
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,
      &            LRELWIND ,
@@ -143,6 +146,7 @@
       INTEGER :: IUWDFILE
       INTEGER :: IWTIME, IWTIME_old
       INTEGER :: I_GET_UNIT
+      INTEGER :: NPROC_RST
 
       REAL :: ZHOOK_HANDLE
       REAL :: WSPEED,WTHETA
@@ -155,6 +159,7 @@
       LOGICAL :: LLNALTGO
       LOGICAL :: LWCUR
       LOGICAL :: SET_WFLAGS
+      LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -164,6 +169,7 @@
 ! !!!!!! THE READING OF NALINE HAS BEEN MOVED TO MPUSERIN !!!!!!!
 
       IFORCA=1
+      NPROC_RST=0
 
 
 !*    1. ANALYSE NAMELIST NALINE.
@@ -443,7 +449,7 @@
         IU04 =  I_GET_UNIT (IU06, CWI(1:ICPLEN+8) , 'r', 'f', 0)
         CALL READSTA(IU04, CBEGDT, CENDDT, IANALPD, IFOREPD, IDELWIN,
      &               CRSTDT, CLSPDT, CBPLTDT, CEPLTDT, IASSIM, NFCST,
-     &               ISTAT, CDATECURA)
+     &               ISTAT, CDATECURA, LRSTPARAL, NPROC_RST)
         CLOSE (IU04)
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                           +'
@@ -460,6 +466,40 @@
         WRITE(IU06,*)'+ END DATE FROM INPUT       CDATEE  = ', CDATEE
         WRITE(IU06,*)'+ START DATE FOR CURRENTS CDATECURA = ',CDATECURA
         WRITE(IU06,*)'+                                           +'
+!       OVER-WRITE LRSTPARALR WITH WHAT THE RESTART FILE WANTS
+        LRSTPARALR=LRSTPARAL
+        IF(LRSTPARALR) THEN
+          IF(NPROC_RST .NE. NPROC) THEN
+            WRITE(IU06,*)'+                                           +'
+            WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*)'+                                           +'
+            WRITE(IU06,*)'+   F A T A L   E R R O R  IN SUB. USERIN   +'
+            WRITE(IU06,*)'+   =====================================   +'
+            WRITE(IU06,*)'+                                           +'
+            WRITE(0,*)'+   RESTART FAILED.                         +'
+            WRITE(0,*)'+                                           +'
+            WRITE(0,*)'+   PARALLEL READ OPTION WAS SELECTED, BUT  +'
+            WRITE(0,*)'+   THE NUMBER OF MPI TASKS THAT WERE USED  +'
+            WRITE(0,*)'+   NPROC_RST = ',NPROC_RST
+            WRITE(0,*)'+   IS NOT EQUAL THE CURRENT NUMBER !       +'
+            WRITE(0,*)'+   NPROC = ',NPROC
+            WRITE(IU06,*)'+   RESTART FAILED.                         +'
+            WRITE(IU06,*)'+                                           +'
+            WRITE(IU06,*)'+   PARALLEL READ OPTION WAS SELECTED, BUT  +'
+            WRITE(IU06,*)'+   THE NUMBER OF MPI TASKS THAT WERE USED  +'
+            WRITE(IU06,*)'+   NPROC_RST = ',NPROC_RST
+            WRITE(IU06,*)'+   IS NOT EQUAL THE CURRENT NUMBER !       +'
+            WRITE(IU06,*)'+   NPROC = ',NPROC
+            WRITE(IU06,*)'+                                           +'
+            WRITE(IU06,*)'+   ABORT SERVICE ROUTINE CALLED BY USERIN  +'
+            WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
+            CALL ABORT1
+          ELSE
+            WRITE(IU06,*)'+ PARALLEL READ OPTION WAS SELECTED         +'
+          ENDIF
+        ELSE
+          WRITE(IU06,*)'+ NON PARALLEL READ OPTION WAS SELECTED     +'
+        ENDIF  
         WRITE(IU06,*)'+ MODEL CONTINUES USING RESTART DATE.       +'
         WRITE(IU06,*)'+                                           +'
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
@@ -525,6 +565,7 @@
           CALL ABORT1
         ENDIF
 
+        CALL FLUSH(IU06)
       ENDIF
 
       IF(CBPLTDT.GT.CDATEA.AND..NOT.LRESTARTED) THEN
@@ -649,6 +690,7 @@
           WRITE(IU06,*) ' THE NEW SNONLIN IS USED ' 
         ENDIF
       ENDIF
+      WRITE(IU06,*) ' MAXIMUM PHILLIPS PARAMETER ALLOWED: ',ALPHAPMAX
       IF (IDAMPING.EQ.1) THEN
         WRITE(IU06,*) ' WAVE DAMPING FORMULATION IS USED'
       ENDIF
@@ -769,7 +811,7 @@
         CDICWA=0.0
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
-        CITHRSH=0.30
+        CITHRSH=0.70
 !     EXCEPT FOR DATA ASSIMILATION
         CITHRSH_SAT=0.01
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
@@ -849,9 +891,13 @@
           CALL FLUSH(IU06)
         ENDIF
         IF(LALTAS) THEN
-          WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF ' 
-          WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS' 
-          WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
+          WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF '
+          WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
+          IF(IDELALT.LE.10800) THEN
+            WRITE(IU06,*) ' ENDING AT ASSIMILATION TIME(S) '
+          ELSE
+            WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
+          ENDIF
           LLNALTGO = .TRUE.
 
           MINBUFRSAT=IBUFRSAT(1)
@@ -1057,26 +1103,28 @@
      & '......', FFLAG(55),'.....',GFLAG(55),'.....',IPFGTBL(55)
       WRITE(IU06,*) '56 MEAN SQUARE STRAIN IN ICE..', PFLAG(56),
      & '......', FFLAG(56),'.....',GFLAG(56),'.....',IPFGTBL(56)
-      WRITE(IU06,*) '57 SURFACE AIR DENSITY   .....', PFLAG(57),
+      WRITE(IU06,*) '57 WAVE HEIGHT W/ PERIOD > 10s', PFLAG(57),
      & '......', FFLAG(57),'.....',GFLAG(57),'.....',IPFGTBL(57)
-      WRITE(IU06,*) '58 CONVECTIVE VELOCITY SCALE..', PFLAG(58),
+      WRITE(IU06,*) '58 SURFACE AIR DENSITY   .....', PFLAG(58),
      & '......', FFLAG(58),'.....',GFLAG(58),'.....',IPFGTBL(58)
-      WRITE(IU06,*) '59 SEA ICE COVER .............', PFLAG(59),
+      WRITE(IU06,*) '59 CONVECTIVE VELOCITY SCALE..', PFLAG(59),
      & '......', FFLAG(59),'.....',GFLAG(59),'.....',IPFGTBL(59)
-      WRITE(IU06,*) '60 SEA ICE THICKNESS .........', PFLAG(60),
+      WRITE(IU06,*) '60 SEA ICE COVER .............', PFLAG(60),
      & '......', FFLAG(60),'.....',GFLAG(60),'.....',IPFGTBL(60)
-      WRITE(IU06,*) '61 SPECTRAL SKWENESS .........', PFLAG(61),
+      WRITE(IU06,*) '61 SEA ICE THICKNESS .........', PFLAG(61),
      & '......', FFLAG(61),'.....',GFLAG(61),'.....',IPFGTBL(61)
-      WRITE(IU06,*) '62 NEMO SST ..................', PFLAG(62),
+      WRITE(IU06,*) '62 SPECTRAL SKWENESS .........', PFLAG(62),
      & '......', FFLAG(62),'.....',GFLAG(62),'.....',IPFGTBL(62)
-      WRITE(IU06,*) '63 NEMO SEA ICE COVER ........', PFLAG(63),
+      WRITE(IU06,*) '63 NEMO SST ..................', PFLAG(63),
      & '......', FFLAG(63),'.....',GFLAG(63),'.....',IPFGTBL(63)
-      WRITE(IU06,*) '64 NEMO SEA ICE THICKNESS ....', PFLAG(64),
+      WRITE(IU06,*) '64 NEMO SEA ICE COVER ........', PFLAG(64),
      & '......', FFLAG(64),'.....',GFLAG(64),'.....',IPFGTBL(64)
-      WRITE(IU06,*) '65 NEMO ZONAL CURRENT ........', PFLAG(65),
+      WRITE(IU06,*) '65 NEMO SEA ICE THICKNESS ....', PFLAG(65),
      & '......', FFLAG(65),'.....',GFLAG(65),'.....',IPFGTBL(65)
-      WRITE(IU06,*) '66 NEMO MERIDIONAL CURRENT ...', PFLAG(66),
+      WRITE(IU06,*) '66 NEMO ZONAL CURRENT ........', PFLAG(66),
      & '......', FFLAG(66),'.....',GFLAG(66),'.....',IPFGTBL(66)
+      WRITE(IU06,*) '67 NEMO MERIDIONAL CURRENT ...', PFLAG(67),
+     & '......', FFLAG(67),'.....',GFLAG(67),'.....',IPFGTBL(67)
 
       DO IC=1,5
         ITG=JPPFLAG-5+IC
@@ -1163,6 +1211,9 @@
         WRITE(IU06,*) '                    '
       ENDIF
 
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' BINARY RESTART READ  PARALLEL = ', LRSTPARALR 
+      WRITE(IU06,*) ' BINARY RESTART WRITE PARALLEL = ', LRSTPARALW 
       WRITE(IU06,*) '  '
       IF (NOUTS.GT.0.AND.IREST.EQ.1) THEN
         WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ',

@@ -50,8 +50,17 @@
       USE YOWPRPROC,ONLY : NBMAX
       USE YOWTEST  , ONLY : IU06
 
-      INTEGER, ALLOCATABLE :: IPOGBN(:)
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU09, IU19, IFORM
+
+      INTEGER :: I, II, IO, INI 
+      INTEGER :: NBOUNEW
       INTEGER :: ListSTART(1), ListEND(1)
+      INTEGER, ALLOCATABLE :: IPOGBN(:)
+
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
@@ -101,8 +110,8 @@
 
 !*    3. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
-        ListSTART(1)=ISTART
-        ListEND(1)=IEND
+        ListSTART(1)=1
+        ListEND(1)=1
         CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1), 
      &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1), 
      &    IJARC(IPOGBN(II-1)+1),

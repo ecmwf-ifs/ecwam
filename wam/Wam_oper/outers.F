@@ -50,18 +50,25 @@
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL3
-      CHARACTER CDTPRO*14
+      IMPLICIT NONE
 
-! ----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: IG, IGL
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL3
+      CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
 
-!     WORK ARRAYS
+      INTEGER :: NGOU, KCOUNT, IJ, K, M 
+      INTEGER :: IU91, IU92, ITAG
+      INTEGER :: KBUFRLENGTH
+      INTEGER :: IRECV, NSPFLD, NSCFLD
       INTEGER,ALLOCATABLE :: IBUFF(:)
+
+      REAL :: XANG, XFRE, XLAT, XLON
       REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
       REAL,ALLOCATABLE,DIMENSION(:) :: EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,
      &                                 USPTS
+
+! ----------------------------------------------------------------------
 
       IU91 = 91                                                         
       IU92 = 92                                                         

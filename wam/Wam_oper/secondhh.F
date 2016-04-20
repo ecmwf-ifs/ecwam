@@ -43,15 +43,28 @@
       USE YOWPCONS , ONLY : G        ,ZPI
 
 !-------------------------------------------------------------------
-      REAL, PARAMETER :: DEL1=1.0E-8
 
-      REAL, ALLOCATABLE :: B(:,:,:,:)
+      IMPLICIT NONE
+
+      INTEGER :: K, M, K1, M1, K2, M2
+
+      REAL, PARAMETER :: DEL1=1.0E-8
+      REAL :: VMIN_D, VPLUS_D
+      REAL :: CO1
+      REAL :: XK1, XK1SQ, XK2, XK2SQ, XK3
+      REAL :: COSDIFF
+      REAL :: X12, X13, X32, OM1, OM2, OM3, F1, F2, F3
+      REAL :: VM, VP
+      REAL :: DELOM1, DELOM2
+      REAL :: DELOM321, DELOM312
+      REAL :: C22, S22
+
+      REAL, DIMENSION(NANG,NANG,NFREHF,NFREHF) :: B
 
 !-----------------------------------------------------------------------
 
 !*    1. INITIALISE RELEVANT QUANTITIES.
 
-      ALLOCATE(B(NANG,NANG,NFREHF,NFREHF))
 
       ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
       ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
@@ -77,7 +90,6 @@
          DFIMHF(M)=CO1*(FRHF(M)+FRHF(M-1))
       ENDDO
       DFIMHF(NFREHF)=CO1*FRHF(NFREHF-1)
-
 
       DO M2=1,NFREHF
         XK2 = FAK(M2)
@@ -165,9 +177,7 @@
         ENDDO
       ENDDO
 
-      DEALLOCATE(B)
-
 !     -----------------------------------------------------------------
 
       RETURN
-      END SUBROUTINE SECONDHH 
+      END SUBROUTINE SECONDHH

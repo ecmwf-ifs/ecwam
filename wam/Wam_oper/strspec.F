@@ -40,8 +40,19 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION FL(NANG,NFRE), FR(NFRE)
-      DIMENSION AR1(KL,ML), AR2(ML)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL, INTENT(IN) :: GAMMA
+      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
+      REAL, DIMENSION(NANG,NFRE), INTENT(INOUT) :: FL
+
+
+      INTEGER :: M, K
+      INTEGER :: INC, MC, IFR, IFRP1
+      REAL :: ALO, GAMS, Z, ADIF, BDIF
+      REAL, DIMENSION(ML) :: AR2
+      REAL, DIMENSION(KL,ML) :: AR1
 
 !---------------------------------------------------------------------
 
@@ -152,7 +163,3 @@
 
       RETURN
       END SUBROUTINE STRSPEC
-
-
-
-

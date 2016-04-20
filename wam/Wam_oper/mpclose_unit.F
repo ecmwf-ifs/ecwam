@@ -29,7 +29,10 @@
 
 ! ----------------------------------------------------------------------
 
-      LOGICAL LOPENED
+      IMPLICIT NONE
+
+      INTEGER :: IU
+      LOGICAL :: LOPENED
 
       DO IU=1,99
         INQUIRE(UNIT=IU,OPENED=LOPENED)

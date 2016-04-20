@@ -20,7 +20,7 @@
         REAL :: YLAT    ! LATITUDE  OF FORCING_FIELDS DATA THAT ARE NEEDED (i.e. all local points only !) 
       END TYPE FORCING_FIELDS 
 
-      REAL, PARAMETER :: WSPMIN=2.
+      REAL, PARAMETER :: WSPMIN=1.
       REAL, PARAMETER :: RWFAC=0.5 
 
       CHARACTER*14 CDA 

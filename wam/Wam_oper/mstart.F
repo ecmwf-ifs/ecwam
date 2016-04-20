@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-     &                   FL1,U10OLD,THWOLD,USOLD,Z0OLD)
+     &                   FL1, U10OLD, THWOLD)
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -19,7 +19,7 @@
 !     ----------
 
 !   *CALL* *MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
-!    1              FL1,U10OLD,THWOLD,USOLD,Z0OLD)*
+!    1              FL1,U10OLD,THWOLD)*
 !      *IU12*   INTEGER    OUTPUT UNIT BLOCKS OF SPECTRA.
 !      *IU14*   INTEGER    OUTPUT UNIT SECOND LAT OF BLOCKS.
 !      *IU15*   INTEGER    OUTPUT UNIT LAST WINDFIELDS.
@@ -39,10 +39,6 @@
 !      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
 !      *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!      *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                  VELOCITY.
-!      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
-!                  M.
 
 !     METHOD.
 !     -------
@@ -55,7 +51,6 @@
 !       *ABORT*     - TERMINATES PROCESSING.
 !       *PEAK*      - COMPUTE PARAMETERS FROM WIND FOR A BLOCK.
 !       *SPECTRA*   - COMPUTES SPECTRA OF A BLOCK.
-!       *SPLITBL*   - STORING OVERLAPPING LATITUDES OF BLOCKS.
 
 !    REFERENCE.
 !    ----------
@@ -76,15 +71,19 @@
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
 ! ----------------------------------------------------------------------
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1 
+      IMPLICIT NONE
 
-! ----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: IU12, IU14, IU15, IOPTI
 
-      CHARACTER*14 ZERO
-      PARAMETER(ZERO=' ')
+      REAL, INTENT(IN) :: FETCH, FRMAX
+      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1 
+
+      INTEGER :: IG
+      INTEGER :: M, K, IJ, NGOU
+
+      CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
 ! ----------------------------------------------------------------------
 
@@ -150,7 +149,7 @@
 !           --------------------------------------------
 
         IF (IOPTI.NE.0) THEN
-          CALL PEAK (IJS(IG), IJL(IG), IG, FETCH, FRMAX,U10OLD)
+          CALL PEAK (IJS(IG), IJL(IG), IG, FETCH, FRMAX, U10OLD)
         ENDIF
         IF (ITEST.GT.1) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. PEAK DONE'
@@ -175,15 +174,6 @@
         IF (ITEST.GT.1) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. SPECTRA DONE'
         ENDIF
-
-!*    2.3 OUTPUT OF OVERLAPPING LATITUDES.
-!         --------------------------------
-
-        IF (IG.GT.1) CALL SPLITBL (FL1, IJS(IG), IJL2(IG), IU14)
-        IF (ITEST.GT.1) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. SPLITBL DONE'
-        ENDIF
-
 
 !*    BRANCHING BACK TO 2. FOR NEXT BLOCK.
 

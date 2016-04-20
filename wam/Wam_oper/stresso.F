@@ -161,7 +161,7 @@
         ENDDO
       ENDIF
 
-!*    2. COMPUTE WAVE STRESS OF ACTUEL BLOCK.
+!*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
 !        ------------------------------------
 
 !*    2.2 INTEGRATE INPUT SOURCE FUNCTION OVER FREQUENCY AND DIRECTIONS.
@@ -172,7 +172,8 @@
         YSTRESS(IJ) = 0.
         DO M=1,MIJ(IJ)
           DO K=1,NANG
-            CNST = SL(IJ,K,M)*CONSTFM(IJ,M)
+! until we have figure out how to deal with negative input
+            CNST = MAX(SL(IJ,K,M),0.)*CONSTFM(IJ,M)
             XSTRESS(IJ) = XSTRESS(IJ)+CNST*SINTH(K)
             YSTRESS(IJ) = YSTRESS(IJ)+CNST*COSTH(K)
           ENDDO
@@ -278,8 +279,9 @@
           DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
           DELJ2   = 1. - DELJ1
 
-          XK=CONST0(IJ)*TEMP1(IJ)/DELTAIL
+          XK=TAUWSHELTER*CONST0(IJ)*TEMP1(IJ)/DELTAIL
           II=MIN(ILEVTAIL-1,INT(XK))
+          II=MAX (0, II)
           DELK1= MIN (1. ,XK-FLOAT(II))
           DELK2=1. -DELK1
 

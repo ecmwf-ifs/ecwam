@@ -56,9 +56,21 @@
 
 !--------------------------------------------------------------------
 
-      DIMENSION F1(NCOLL,NANG,NFRE),XKAPPA1(NCOLL), DELH_ALT(NCOLL)
-      DIMENSION F2(NCOLL,NANG,NFREHF),
-     &          XMU(NCOLL,0:3,0:2,0:2),XLAMBDA(NCOLL,0:3,0:2,0:2)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, NCOLL
+
+      REAL, DIMENSION(NCOLL), INTENT(OUT) :: XKAPPA1, DELH_ALT
+      REAL, DIMENSION(NCOLL,NANG,NFRE), INTENT(IN) :: F1
+
+
+      INTEGER :: M, K, IJ, M1, K1, M2, K2, I, J
+      INTEGER :: MSTART
+   
+      REAL :: FH, DELF, XK1
+      REAL :: XPI, XPJ, XPK, XN, DELTA, XFAC
+      REAL, DIMENSION(NCOLL,NANG,NFREHF) :: F2
+      REAL, DIMENSION(NCOLL,0:3,0:2,0:2) :: XMU, XLAMBDA
 
 
 !     1. COMPUTATION OF FREQUENCY-DIRECTION INCREMENT
@@ -66,7 +78,7 @@
 
       MSTART = 1
 
-      XMU = 0.
+      XMU(:,:,:,:) = 0.
 
       DO K=1,NANG
         DO M=1,NFRE

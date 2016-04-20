@@ -60,9 +60,11 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY,
      &                      NEMONEW10, NEMOPHIF
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,
+     &                      PHIEPS   ,PHIAW    ,TAUOC    ,
      &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : PHIEPSMIN,PHIEPSMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -89,10 +91,13 @@
 !     -------------------------------------------------------------------
 
       DO IJ=IJS,IJL
+        EMEAN(IJ) = EM(IJ)
+        FMEAN(IJ) = FM(IJ)
         TAU       = ROAIRN(IJ)*USNEW(IJ)**2
         XN        = ROAIRN(IJ)*USNEW(IJ)**3
         PHIDIAG   = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
         PHIEPS(IJ)= (PHIOC(IJ)-PHIDIAG)/XN 
+        PHIEPS(IJ)= MIN(MAX(PHIEPS(IJ),PHIEPSMIN),PHIEPSMAX) 
         PHIAW(IJ) = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
         TAUO       = TAU-TAUWLF(IJ)-TAUWD(IJ)
         TAUOC(IJ)  = TAUO/TAU

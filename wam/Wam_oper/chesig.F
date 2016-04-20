@@ -53,8 +53,14 @@
       USE YOWSTAT  , ONLY : ISIGHUP  ,ISIGINT
       USE MPL_MODULE
 
-      IMPLICIT LOGICAL (L)
+! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: KU06, KTST, KRANK, KPROC
+      LOGICAL, INTENT(OUT) :: LDSIGSTOP, LDSIGREST
+
+      INTEGER :: JE, ITAG, IPROC
       INTEGER :: IBUF(2)
       INTEGER, PARAMETER :: JPSIGTAG=1000
 

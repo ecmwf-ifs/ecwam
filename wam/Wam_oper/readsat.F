@@ -1,6 +1,6 @@
       SUBROUTINE READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,
      &                    CDATE, RLAT, RLON, IDES_HS, SWH,
-     &                    IDES_WS, WS, EOFD, YOFID)
+     &                    IDES_WS, WS, LLEOFD, YOFID)
 
 !--------------------------------------------------------------------
 
@@ -30,7 +30,7 @@
 !          *SWH*      - WAVE HEIGHT.
 !          *IDES_WS*  - DATA DESCRIPTOR FOR WIND SPEED.
 !          *WS*       - WIND SPEED.
-!          *EOFD*     - END OF DATA. (.TRUE. , .FALSE.)
+!          *LLEOFD*     - END OF DATA. (.TRUE. , .FALSE.)
 !          *YOFID*    - CHARACTER*3   FILE ID.
 
 
@@ -65,13 +65,29 @@
 
 !-----------------------------------------------------------------------
 
-      CHARACTER* 3 YOFID
-      CHARACTER*12 CTIME
-      CHARACTER*14 CDTPRO, CDTGE1, ZERO
-      CHARACTER*14 CDATE
-      PARAMETER(ZERO=' ')
-      LOGICAL EOFD, LLTEST
-      LOGICAL:: LLONG=.TRUE.
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, IUME
+      INTEGER, INTENT(INOUT) :: IDENTI, ISENSOR, IDES_HS, IDES_WS
+
+      REAL, INTENT(INOUT) :: RLAT, RLON, SWH, WS
+
+      CHARACTER(LEN=3), INTENT(IN) :: YOFID
+      CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
+      CHARACTER(LEN=14), INTENT(INOUT) :: CDATE
+
+      LOGICAL, INTENT(INOUT) :: LLEOFD
+
+
+      INTEGER :: IFAIL, IRS, JRS
+
+      CHARACTER(LEN=12) :: CTIME
+      CHARACTER(LEN=14) :: CDTGE1
+
+      CHARACTER(LEN=14), PARAMETER :: ZERO='              '
+
+      LOGICAL :: LLTEST
+      LOGICAL :: LLONG=.TRUE.
 
       DATA CDTGE1 /ZERO/
 
@@ -82,7 +98,7 @@
 
       IF (CDTGE1.EQ.ZERO) THEN
         CDTGE1 = CDTPRO
-        EOFD = .TRUE.
+        LLEOFD = .TRUE.
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -90,7 +106,7 @@
 !*    2. GENERATE FIRST FILE DATES AND FETCH FILE FROM ECFILE.
 !        -----------------------------------------------------
 
-      IF (EOFD) THEN
+      IF (LLEOFD) THEN
         LLTEST=.TRUE.
         CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST)
         IF(IFAIL.NE.0) THEN
@@ -103,7 +119,7 @@
           WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
           WRITE(IU06,*) ' +                CDTGE1 = ', CDTGE1
           WRITE(IU06,*) ' + IFAIL = ', IFAIL
-          WRITE(IU06,*) ' + EOFD  = ', EOFD
+          WRITE(IU06,*) ' + LLEOFD  = ', LLEOFD
           WRITE(IU06,*) ' + PROCESSING WILL BE CONTINUED          +'
           WRITE(IU06,*) ' +                                       +'
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
@@ -111,7 +127,7 @@
           CDTGE1 = ZERO
           RETURN
         ENDIF
-        EOFD = .FALSE.
+        LLEOFD = .FALSE.
         READ (IUME,END=4000) CTIME
       ENDIF
 
@@ -154,8 +170,8 @@
 !        -------------------------------------------
 
  4000 CONTINUE
-      EOFD = .TRUE.
+      LLEOFD = .TRUE.
       CDTGE1 = ZERO
-!     CALL INCDATE (CDTGE1, 6*3600)
+
       RETURN
       END SUBROUTINE READSAT

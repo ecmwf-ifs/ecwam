@@ -38,7 +38,7 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
-     &            C3G      ,
+     &            C3G      ,E10G     ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
@@ -93,6 +93,7 @@
         IF(ALLOCATED(CICG)) DEALLOCATE(CICG)
         IF(ALLOCATED(CIHG)) DEALLOCATE(CIHG)
         IF(ALLOCATED(C3G)) DEALLOCATE(C3G)
+        IF(ALLOCATED(E10G)) DEALLOCATE(E10G)
         IF(ALLOCATED(NSSTG)) DEALLOCATE(NSSTG)
         IF(ALLOCATED(NICCG)) DEALLOCATE(NICCG)
         IF(ALLOCATED(NICTG)) DEALLOCATE(NICTG)

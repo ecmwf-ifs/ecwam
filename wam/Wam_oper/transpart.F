@@ -33,7 +33,7 @@
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSPEC,   ONLY : FL1
-      USE YOWSTAT  , ONLY : NWAM_BLKS
+      USE YOWSTAT  , ONLY : NPROMA_WAM
 
 !-------------------------------------------------------------------
 
@@ -145,7 +145,7 @@
 !!!  will not work if multi block !!!
 
       JBL=1
-      NPROMA=(IJL(JBL)-IJS(JBL)+1)/NWAM_BLKS+1
+      NPROMA=NPROMA_WAM
 !$OMP     PARALLEL DO SCHEDULE(STATIC) 
 !$OMP+    PRIVATE(JKGLO,KIJS,KIJL,JP,JANG,JFRE)
       DO JKGLO = IJS(JBL),IJL(JBL),NPROMA

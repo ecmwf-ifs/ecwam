@@ -64,21 +64,32 @@
 
 ! ----------------------------------------------------------------------
 
-
       USE YOWPCONS , ONLY : ZPI
-
-      DIMENSION F1(NANG,NFRE), F2(NANG,NFRE), FL(NANG, NFRE), FR(NFRE)
-
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
 
-      DIMENSION F3(NANG,NFRE), F4(NANG,NFRE)
+      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL, INTENT(IN) :: DEL12,  DEL1L
+      REAL, INTENT(IN) :: FMEAN1, EMEAN1, THETM1
+      REAL, INTENT(IN) :: FMEAN2, EMEAN2, THETM2
+      REAL, INTENT(OUT) :: FMEAN, EMEAN, THETM
+      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
+      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: F1
+      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: F2
+      REAL, DIMENSION(NANG,NFRE), INTENT(OUT) :: FL
+
+      INTEGER :: M, K
+
+      REAL :: GW1, GW2 
+      REAL :: CM1, CM2, SM1, SM2, CM,  SM 
+      REAL :: RTHET1,RTHET2, GAMMA, EMEANH
+      REAL, DIMENSION(NANG,NFRE) :: F3, F4
 
 ! ----------------------------------------------------------------------
 
 !*    1. INTERPOLATION WEIGHTS.
 !        ----------------------
-
 
       GW1 = (DEL12-DEL1L)/DEL12
       GW2 = DEL1L/DEL12
@@ -87,7 +98,6 @@
 
 !*    2. INTERPOLATE MEAN VALUES.
 !        ------------------------
-
 
       IF (EMEAN1.EQ.0.) THEN
 
@@ -146,6 +156,7 @@
 !*    3.1 ROTATE.
 !         -------
 
+
       RTHET1 = THETM - THETM1
       CALL ROTSPEC (NFRE, NANG, ML, KL, F1, F3, RTHET1)
 
@@ -198,7 +209,6 @@
 !*    5. LINEAR INTERPOLATION OF NEW SPECTRA.
 !        ------------------------------------
 
-
       DO M=1,ML
         DO K=1,KL
           FL(K,M) = GW1*F3(K,M) + GW2*F4(K,M)
@@ -207,5 +217,3 @@
 
       RETURN
       END SUBROUTINE INTSPEC
-
-

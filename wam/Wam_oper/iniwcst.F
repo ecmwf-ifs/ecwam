@@ -31,6 +31,10 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      REAL, INTENT(IN) :: PRPLRADI
+
       PI = 4.*ATAN(1.)
       ZPI= 2.*PI
       ZPISQRT = SQRT(PI)

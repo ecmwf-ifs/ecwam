@@ -16,7 +16,6 @@
 !     EXTERNALS
 !     ---------
        
-!     *SPLITBL*
 
 !***********************************************************************
 
@@ -42,7 +41,7 @@
 !     VARIABLES
 !     ---------
 
-      INTEGER JBL,JP,JFRE,JANG,IFIL
+      INTEGER :: JBL,JP,JFRE,JANG,IFIL
 
       REAL :: UST(2), USTM
      
@@ -84,12 +83,6 @@
               ENDDO
             ENDDO
 
-            IF(JBL.NE.1) THEN
-               CALL SPLITBL (FL1, IJS(JBL), IJL2(JBL), IU14,
-     &                       NIBLO,NANG,NFRE)
-               WRITE(IU12) FL1
-            ENDIF
-
 !         EVEN BLOCKS
           ELSE
 
@@ -103,11 +96,6 @@
                 ENDDO
               ENDDO
             ENDDO
-            IF(JBL.NE.1) THEN
-              CALL SPLITBL (FL2, IJS(JBL), IJL2(JBL), IU14,
-     &                      NIBLO,NANG,NFRE)
-             
-            ENDIF
           ENDIF
         ENDDO
 

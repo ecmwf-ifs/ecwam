@@ -94,7 +94,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YEPS
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
       USE YOWSHAL  , ONLY : TFAK     ,INDEP, DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
@@ -104,7 +104,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
-      INTEGER(KIND=JWIM) :: IJ,K,M,IND
+      INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
 
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: ABMAX = 8.0_JWRB 
@@ -116,23 +116,23 @@
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
-      REAL(KIND=JWRB) :: FU,FUD,FW,NU_AIR,SWELLFPAR,SWELLF,SWELLF2,SWELLF3,SWELLF4,SWELLF5
+      REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SWELLFPAR,SWELLF,SWELLF2,SWELLF3,SWELLF4,SWELLF5
       REAL(KIND=JWRB) :: SWELLF7, SMOOTH
       REAL(KIND=JWRB) :: ARG, DELAB, CONST11, CONST22
+      REAL(KIND=JWRB) :: TAUPX,TAUPY
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NANG) :: PP
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST, SIG, CONSTF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUX, TAUY, TAUPX,TAUPY,USTP,USDIRP
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST, SIG, CONSTF, COEF, COEF5
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: Z0VIS, Z0NOZ, FWW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PVISC, PTURB
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: UCN1, UCN2, ZCN, CM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ZCN, CM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N, UORBT, AORB, TEMP, RE, ZORB
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,2) :: XSTRESS, YSTRESS, FLP, SLP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,2) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XK
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DSTAB1, DSTAB2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: DSTAB
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DSTAB1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,2) :: TEMP1, UFAC, DSTAB2, DSTAB
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -151,19 +151,7 @@
 
       FU=ABS(SWELLF3)
       FUD=SWELLF2
-      FW=MAX(ABS(SWELLF3),0.0_JWRB)
       DELAB= (ABMAX-ABMIN)/REAL(IAB)
-
-
-
-!*    1. PRECALCULATED ANGULAR DEPENDENCE.
-!        ---------------------------------
-
-      DO K=1,NANG
-        DO IJ=IJS,IJL
-          TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
-        ENDDO
-      ENDDO
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
@@ -216,13 +204,22 @@
 
       END DO
 
-      DO IJ=IJS,IJL
-        XSTRESS(IJ)=0.0_JWRB
-        YSTRESS(IJ)=0.0_JWRB
+      DO IGST=1,2
+        DO IJ=IJS,IJL
+          XSTRESS(IJ,IGST)=0.0_JWRB
+          YSTRESS(IJ,IGST)=0.0_JWRB
+        ENDDO
       ENDDO
       DO IJ=IJS,IJL
-        TAUX(IJ)=(USNEW(IJ)**2)*SIN(THWNEW(IJ))
-        TAUY(IJ)=(USNEW(IJ)**2)*COS(THWNEW(IJ))
+        USG2(IJ,1)=(USNEW(IJ)*(1.0_JWRB+SIG_N(IJ)))**2
+        USG2(IJ,2)=(USNEW(IJ)*(1.0_JWRB-SIG_N(IJ)))**2
+      ENDDO
+
+      DO IGST=1,2
+        DO IJ=IJS,IJL
+          TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(THWNEW(IJ))
+          TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(THWNEW(IJ))
+        ENDDO
       ENDDO
 
 !*    2. LOOP OVER FREQUENCIES.
@@ -230,20 +227,26 @@
 
       DO M=1,NFRE
 
-        DO IJ=IJS,IJL
-          TAUPX(IJ)=TAUX(IJ)-ABS(TAUWSHELTER)*XSTRESS(IJ)
-          TAUPY(IJ)=TAUY(IJ)-ABS(TAUWSHELTER)*YSTRESS(IJ)
-          USTP(IJ)=(TAUPX(IJ)**2+TAUPY(IJ)**2)**0.25_JWRB
-          USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
+        DO IGST=1,2
+          DO IJ=IJS,IJL
+            TAUPX=TAUX(IJ,IGST)-ABS(TAUWSHELTER)*XSTRESS(IJ,IGST)
+            TAUPY=TAUY(IJ,IGST)-ABS(TAUWSHELTER)*YSTRESS(IJ,IGST)
+            USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
+            USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
+          ENDDO
         ENDDO
 
         CONSTF(M) =ZPI*ROWATER*FR(M)*DFIM(M)
         FAC(M) = ZPI*FR(M)
         CONST(M)=FAC(M)*CONST1
+        COEF(M) =-SWELLF*16._JWRB*SIG(M)**2/(G*ROWATER)
+        COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
 
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            TEMP1(IJ,K) = COS(TH(K)-USDIRP(IJ))
+        DO IGST=1,2
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              TEMP1(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
+            ENDDO
           ENDDO
         ENDDO
 
@@ -265,9 +268,12 @@
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
+        DO IGST=1,2
+          DO IJ=IJS,IJL
+            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ) + ZALP
+          ENDDO
+        ENDDO
         DO IJ=IJS,IJL
-          UCN1(IJ) = USTP(IJ)*(1.+SIG_N(IJ))*CM(IJ) + ZALP
-          UCN2(IJ) = USTP(IJ)*(1.-SIG_N(IJ))*CM(IJ) + ZALP
           ZCN(IJ) = LOG(G*Z0NEW(IJ)*CM(IJ)**2)
           CNSN(IJ) = CONST(M) * ROAIRN(IJ)
         ENDDO
@@ -277,29 +283,27 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF (TEMP1(IJ,K).GT.0.01_JWRB) THEN
-              X    = TEMP1(IJ,K)*UCN1(IJ)
-              ZLOG = ZCN(IJ) + XKAPPA/X
-              IF (ZLOG.LT.0.0_JWRB) THEN
-                ZLOG2X=ZLOG*ZLOG*X
-                UFAC2(IJ,K) = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                XLLWS(IJ,K,M)= 1.0_JWRB
-              ELSE
-                UFAC2(IJ,K) = 0.0_JWRB
-                XLLWS(IJ,K,M)= 0.0_JWRB
-              ENDIF
+            XLLWS(IJ,K,M)= 0.0_JWRB
+          ENDDO
+        ENDDO
 
-              X    = TEMP1(IJ,K)*UCN2(IJ)
-              ZLOG = ZCN(IJ) + XKAPPA/X
-              IF (ZLOG.LT.0.0_JWRB) THEN
-                ZLOG2X=ZLOG*ZLOG*X
-                UFAC2(IJ,K) = UFAC2(IJ,K)+EXP(ZLOG)*ZLOG2X*ZLOG2X
-                XLLWS(IJ,K,M)= 1.0_JWRB
+        DO IGST=1,2
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              IF (TEMP1(IJ,K,IGST).GT.0.01_JWRB) THEN
+                X    = TEMP1(IJ,K,IGST)*UCN(IJ,IGST)
+                ZLOG = ZCN(IJ) + XKAPPA/X
+                IF (ZLOG.LT.0.0_JWRB) THEN
+                  ZLOG2X=ZLOG*ZLOG*X
+                  UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  XLLWS(IJ,K,M)= 1.0_JWRB
+                ELSE
+                  UFAC(IJ,K,IGST) = 0.0_JWRB
+                ENDIF
+              ELSE
+                UFAC(IJ,K,IGST) = 0.0_JWRB
               ENDIF
-            ELSE
-              UFAC2(IJ,K) = 0.0_JWRB
-              XLLWS(IJ,K,M)=0.0_JWRB
-            ENDIF
+            ENDDO
           ENDDO
         ENDDO
 
@@ -307,14 +311,15 @@
         DO K=1,NANG
           PP(K) = 1.
           DO IJ=IJS,IJL
-            DSTAB1(IJ,K) = -SWELLF5*YEPS*2*XK(IJ,M)*SQRT(2*NU_AIR*SIG(M))*PP(K)
+            DSTAB1(IJ,K) = COEF5(M)*ROAIRN(IJ)*XK(IJ,M)*PP(K)
           END DO
 
-          DO IJ=IJS,IJL
-            FW = 0.04_JWRB*ZORB(IJ)**(-0.25_JWRB)
-            DSTAB2(IJ,K) = -YEPS*SWELLF*(FWW(IJ)*UORBT(IJ)+(FU+FUD*TEMP1(IJ,K))*USTP(IJ)) &
-                            *16*SIG(M)**2/G
-          END DO
+          DO IGST=1,2
+            DO IJ=IJS,IJL
+              DSTAB2(IJ,K,IGST) = COEF(M)*ROAIRN(IJ)*(FWW(IJ)*UORBT(IJ)+(FU+FUD*TEMP1(IJ,K,IGST))*USTP(IJ,IGST))
+            END DO
+          ENDDO
+
         END DO
 
         IF (SWELLF7.GT.0.0_JWRB) THEN
@@ -323,43 +328,55 @@
             PTURB(IJ)=0.5_JWRB+SMOOTH
             PVISC(IJ)=0.5_JWRB-SMOOTH
           ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              DSTAB(IJ,K,M) = PVISC(IJ)*DSTAB1(IJ,K)+PTURB(IJ)*DSTAB2(IJ,K)
-            ENDDO
-          END DO
+          DO IGST=1,2
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                DSTAB(IJ,K,IGST) = PVISC(IJ)*DSTAB1(IJ,K)+PTURB(IJ)*DSTAB2(IJ,K,IGST)
+              ENDDO
+            END DO
+          ENDDO
         ELSE
           DO IJ=IJS,IJL
             PTURB(IJ)=0.5_JWRB
             PVISC(IJ)=0.5_JWRB
           ENDDO
           IF (RE(IJ).LE.SWELLF4) THEN
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-                DSTAB(IJ,K,M) = PVISC(IJ)*DSTAB1(IJ,K)
-              ENDDO
-            END DO
+            DO IGST=1,2
+              DO K=1,NANG
+                DO IJ=IJS,IJL
+                  DSTAB(IJ,K,IGST) = PVISC(IJ)*DSTAB1(IJ,K)
+                ENDDO
+              END DO
+            ENDDO
           ELSE
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-              DSTAB(IJ,K,M) = PTURB(IJ)*DSTAB2(IJ,K)
-              ENDDO
-            END DO
+            DO IGST=1,2
+              DO K=1,NANG
+                DO IJ=IJS,IJL
+                DSTAB(IJ,K,IGST) = PTURB(IJ)*DSTAB2(IJ,K,IGST)
+                ENDDO
+              END DO
+            ENDDO
           ENDIF
         ENDIF
 
-!*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
-!         AND UPDATE THE SHELTERING STRESS.
-!         ------------------------------------------------
+!*    2.2 UPDATE THE SHELTERING STRESS,
+!         AND THEN ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
+!         ---------------------------------------------------------
 
         DO K=1,NANG
           CONST11=CONSTF(M)*SINTH(K)
           CONST22=CONSTF(M)*COSTH(K)
+          DO IGST=1,2
+            DO IJ=IJS,IJL
+              FLP(IJ,IGST) = CNSN(IJ)*UFAC(IJ,K,IGST)+DSTAB(IJ,K,IGST)
+              SLP(IJ,IGST) = FLP(IJ,IGST)*F(IJ,K,M)
+              XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11/MAX(ROAIRN(IJ),1.0_JWRB)
+              YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22/MAX(ROAIRN(IJ),1.0_JWRB)
+            ENDDO
+          ENDDO
           DO IJ=IJS,IJL
-            FL(IJ,K,M) = 0.5_JWRB*CNSN(IJ)*UFAC2(IJ,K)+DSTAB(IJ,K,M)
+            FL(IJ,K,M) = 0.5_JWRB*(FLP(IJ,1)+FLP(IJ,2))
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-            XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K,M)*CONST11/MAX(ROAIRN(IJ),1.0_JWRB)
-            YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K,M)*CONST22/MAX(ROAIRN(IJ),1.0_JWRB)
           ENDDO
         ENDDO
 

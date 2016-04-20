@@ -53,19 +53,21 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, ALLOCATABLE :: ST(:,:)
-      REAL, ALLOCATABLE :: ET(:,:)
-      REAL, ALLOCATABLE :: STH(:)
+      IMPLICIT NONE
 
-!     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(IN) :: IG
+      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL1
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL1
+      INTEGER :: IJ, K, M
+
+      REAL, DIMENSION(NANG) :: STH
+      REAL, DIMENSION(IJS:IJL,NANG) :: ST
+      REAL, DIMENSION(IJS:IJL,NFRE) :: ET
+
 
 ! ----------------------------------------------------------------------
 
-      ALLOCATE(ST(IJS:IJL,NANG))
-      ALLOCATE(ET(IJS:IJL,NFRE))
-      ALLOCATE(STH(NANG))
 
 !*    1. COMPUTE JONSWAP SPECTRUM.
 !        -------------------------
@@ -78,7 +80,7 @@
 !        ----------------------------------
 
       DO IJ=IJS,IJL
-        CALL SPR (NANG, NANG, THES(IJ), TH, STH)
+        CALL SPR (NANG, THES(IJ), TH, STH)
         DO K=1,NANG
           ST(IJ,K) = STH(K)
         ENDDO
@@ -96,10 +98,6 @@
           ENDDO
         ENDDO
       ENDDO
-
-      DEALLOCATE(ST)
-      DEALLOCATE(ET)
-      DEALLOCATE(STH)
 
       RETURN
       END SUBROUTINE SPECTRA

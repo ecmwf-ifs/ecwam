@@ -2,7 +2,7 @@
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
      &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                     RLONRGG, IJBLOCK, PMISS,
+     &                     ILONRGG, IJBLOCK, PMISS,
      &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
@@ -34,9 +34,9 @@
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
 !    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-!    &                    RLONRGG, IJBLOCK, PMISS,
+!    &                    ILONRGG, IJBLOCK, PMISS,
 !    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
-!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM)
+!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 !
 !        *IU06*   - OUTPUT UNIT.
 !        *ITEST*  - TEST MESSAGE LEVEL.
@@ -44,7 +44,7 @@
 !        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
-!        *RLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (INPUT FIELD)
+!        *ILONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (INPUT FIELD)
 !        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
 !                   FIELDS(:,1) = U COMPONENT OF NEUTRAL WIND SPEED (U10)
 !                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
@@ -88,6 +88,7 @@
 !        *JJM*    - INDEX
 !        *IIM*    - INDEX
 !        *IIPM*   - INDEX
+!        *MASK_IN*  INTEGER  MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
 
 
 !     EXTERNALS.                                                        
@@ -99,23 +100,36 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER KLONRGG(NGY)
+      IMPLICIT NONE
 
-      INTEGER NGPTOTG, NC, NR, IGL, IJS, IJL 
-      INTEGER, DIMENSION(NINF-1:NSUP,IGL) :: IFROMIJ, JFROMIJ 
-      INTEGER RLONRGG(NR)
-      INTEGER :: IJBLOCK(0:NC+1,NR)
-      REAL :: ROAIR
-      REAL :: WSTAR0 
-      REAL FIELDS(NGPTOTG,NFIELDS)
-      INTEGER MASK_IN(NGPTOTG)
-      LOGICAL:: LADEN, LGUST, LWCUR, LLINTERPOL
-      
-      REAL ZDELLO(NGY)
-      REAL :: CI
+      INTEGER, INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
+      INTEGER, INTENT(IN) :: IGL
+      INTEGER, INTENT(IN) :: NGX, NGY, KRGG, NINF, NSUP, IJS, IJL
+      INTEGER, INTENT(IN) :: IPERIODIC
+      INTEGER, DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
+      INTEGER, DIMENSION(NR), INTENT(IN) :: ILONRGG
+      INTEGER, DIMENSION(NINF-1:NSUP,IGL), INTENT(IN) :: IFROMIJ,JFROMIJ
+      INTEGER, DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
+      INTEGER, DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
+      INTEGER, DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
 
-      INTEGER  JJM(NGY), IIM(NGX,NGY), IIPM(NGX,NGY)
-      REAL DJ1M(NGY), DII1M(NGX,NGY), DIIP1M(NGX,NGY)
+      REAL, INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
+      REAL, INTENT(IN) :: ROAIR, WSTAR0
+      REAL, DIMENSION(NGY), INTENT(IN) :: ZDELLO, DJ1M
+      REAL, DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+      REAL, DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
+
+      LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLINTERPOL
+
+
+      INTEGER :: IG
+      INTEGER :: IJ, I, J
+      INTEGER :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
+      INTEGER :: NCOUNT
+
+      REAL :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
+      REAL :: F00, F10, F01, F11, CI
+
 ! ----------------------------------------------------------------------
 
       IF(.NOT.LLINTERPOL) THEN
@@ -171,6 +185,7 @@
             I = IFROMIJ(IJ,IG)
             J = JFROMIJ(IJ,IG)
 
+
             JJ = JJM(J)
             JSN= NR-JJ+1
             JJ1= MIN(JJ+1,NR)
@@ -179,12 +194,12 @@
             DJ2=1.-DJ1
 
             II = IIM(I,J)
-            II1 = MIN(II+1,RLONRGG(JSN)+IPERIODIC)
+            II1 = MIN(II+1,ILONRGG(JSN)+IPERIODIC)
             DII1=DII1M(I,J) 
             DII2=1.-DII1
 
             IIP = IIPM(I,J) 
-            IIP1 = MIN(IIP+1,RLONRGG(JSN1)+IPERIODIC)
+            IIP1 = MIN(IIP+1,ILONRGG(JSN1)+IPERIODIC)
             DIIP1= DIIP1M(I,J) 
             DIIP2=1.-DIIP1
 
@@ -278,7 +293,6 @@
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG(I,J)%CITH = 0.0
-
 
             IF(LLNEWCURR) THEN
               IF(LWCUR) THEN

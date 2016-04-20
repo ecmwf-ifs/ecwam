@@ -35,7 +35,15 @@
 
       USE YOWPCONS , ONLY : ZCONST
 
+!-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      REAL :: XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK
+
       REAL, PARAMETER :: DEL1=1.0E-10
+
+      REAL :: RI,RJ,RK,OI,OJ,OK,SQIJK,SQIKJ,SQJKI
 
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------

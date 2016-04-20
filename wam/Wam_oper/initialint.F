@@ -1,7 +1,7 @@
       SUBROUTINE INITIALINT (IU06, ITEST, NCA, NRA,
      &                       NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
      &                       AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                       RLONRGG, 
+     &                       ILONRGG, 
      &                       LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
 ! ----------------------------------------------------------------------    
 
@@ -32,7 +32,7 @@
 !      *CALL* *INITIALINT* (IU06, ITEST, NCA, NRA,
 !    &                      NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
 !    &                      AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-!    &                      RLONRGG,
+!    &                      ILONRGG,
 !    &                      LLINTERPOL,DK1, DII1, DIIP1, KK, II, IIP)
 
 !        *IU06*   - OUTPUT UNIT.
@@ -40,7 +40,7 @@
 !       ATMOSPHERIC MODEL GRID:
 !        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
 !        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
-!        *RLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (ATM. GRID)
+!        *ILONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (ATM. GRID)
 !       WAVE MODEL GRID SPECIFICATION:
 !        *NGX  *  - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
 !        *NGY  *  - NUMBER OF ROWS    IN ARRAY FIELD USED.              
@@ -71,29 +71,49 @@
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-
       USE GRIB_API_INTERFACE
 
-      INTEGER :: NCA, NRA
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE 
+
+      INTEGER, INTENT(IN) :: IU06, ITEST, NCA, NRA
+      INTEGER, INTENT(IN) :: NGX, NGY, KRGG
+      INTEGER, INTENT(INOUT) :: IPERIODIC
+      INTEGER, DIMENSION(NGY), INTENT(IN) :: KLONRGG
+      INTEGER, DIMENSION(NGY), INTENT(INOUT) :: KK
+      INTEGER, DIMENSION(NRA), INTENT(INOUT) :: ILONRGG
+      INTEGER, DIMENSION(NGX, NGY), INTENT(INOUT) :: II, IIP
+
+      REAL, INTENT(IN) :: XDELLA
+      REAL, DIMENSION(NGY), INTENT(IN) :: ZDELLO
+      REAL, INTENT(IN) :: AMOWEP, AMOSOP, AMOEAP, AMONOP
+      REAL, DIMENSION(NGY), INTENT(INOUT) :: DK1
+      REAL, DIMENSION(NGX, NGY), INTENT(INOUT) :: DII1, DIIP1
+
+      LOGICAL, INTENT(INOUT) :: LLINTERPOL
+
+
+      INTEGER :: I, J, K, JSN, IR, ISTART, ISTOP
+      INTEGER :: KSN, KK1, KSN1, III, IIIP
       INTEGER :: KGRIB_HANDLE
-      INTEGER :: KLONRGG(NGY)
-      INTEGER :: RLONRGG(NRA)
-      INTEGER :: KK(NGY), II(NGX,NGY), IIP(NGX,NGY)
+      INTEGER :: NC, NR, IPLPRESENT, NB_PL, IVAL, ISCAN
+      INTEGER :: JRGG, IREPR
+      INTEGER :: KAMOWEP, KAMOEAP, KAMONOP, KAMOSOP
+      INTEGER :: KRMOWEP, KRMOEAP, KRMONOP, KRMOSOP
       INTEGER, DIMENSION(:), ALLOCATABLE :: PL
 
-      REAL :: DELLA
+      REAL :: DELLA, DELLO
       REAL :: YFRST, YLAST
-      REAL :: ZDELLO(NGY)
-      REAL, ALLOCATABLE :: RDELLO(:)
-      REAL :: DK1(NGY), DII1(NGX,NGY), DIIP1(NGX,NGY)
+      REAL :: RMONOP, RMOSOP, RMOWEP, RMOEAP
+      REAL :: XK, XLAT, XI, XII, XIIP
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(:), ALLOCATABLE :: RDELLO
 
       CHARACTER(LEN=12) :: CGRIDTYPE
 
-      LOGICAL :: LLINTERPOL
       LOGICAL :: LLSCANNS
 
-      REAL :: ZHOOK_HANDLE
-                                                                        
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITIALINT',0,ZHOOK_HANDLE)
@@ -197,10 +217,10 @@
         CALL ABORT1
       ENDIF
 
-      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'iScansNegatively',ISCAN)
+      CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'jScansPositively',ISCAN)
       IF(ISCAN.EQ.0) THEN
         LLSCANNS=.TRUE.
-      ELSEIF(ISCAN.EQ.64 .OR. ISCAN.EQ.2) THEN
+      ELSEIF(ISCAN.EQ.1) THEN
         LLSCANNS=.FALSE.
       ELSE
         WRITE(IU06,*) '***********************************'
@@ -211,7 +231,7 @@
         CALL ABORT1
       ENDIF
 
-      RLONRGG=0
+      ILONRGG(:)=0
       ALLOCATE(RDELLO(NR))
 
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
@@ -267,7 +287,7 @@
           ELSE
             JSN=J
           ENDIF
-          RLONRGG(JSN) = PL(J+ISTART) 
+          ILONRGG(JSN) = PL(J+ISTART) 
         ENDDO
 
         CALL IGRIB_GET_VALUE(KGRIB_HANDLE,
@@ -292,7 +312,7 @@
         ENDIF
 
       ELSEIF(JRGG.EQ.0) THEN
-        RLONRGG=NC
+        ILONRGG(:)=NC
       ELSE
         WRITE(IU06,*)
      &    ' SUB INITIALINT: REPRESENTATION OF THE FIELD NOT KNOWN'
@@ -317,13 +337,13 @@
         DELLO=360./MAX(1,NC)
         DO J=1,NR
           JSN=NR-J+1
-          RDELLO(JSN) = 360./MAX(1,RLONRGG(JSN)) 
+          RDELLO(JSN) = 360./MAX(1,ILONRGG(JSN)) 
         ENDDO
       ELSE
         DELLO=(RMOEAP-RMOWEP)/MAX(1,NC-1)
         DO J=1,NR
           JSN=NR-J+1
-          RDELLO(JSN) = (RMOEAP-RMOWEP)/MAX(1,RLONRGG(JSN)-1) 
+          RDELLO(JSN) = (RMOEAP-RMOWEP)/MAX(1,ILONRGG(JSN)-1) 
         ENDDO
       ENDIF
 
@@ -358,7 +378,7 @@
 
             IF(KRGG.EQ.1) THEN
               DO J=1,NGY
-                IF(RLONRGG(J).NE.KLONRGG(J)) THEN
+                IF(ILONRGG(J).NE.KLONRGG(J)) THEN
                   LLINTERPOL=.TRUE.
                   EXIT
                 ENDIF
@@ -408,12 +428,12 @@
 
             XII = XI/RDELLO(KSN)+1.
             III = MAX(1-IPERIODIC,INT(XII))
-            II(I,K) = MIN(III,RLONRGG(KSN))
+            II(I,K) = MIN(III,ILONRGG(KSN))
             DII1(I,K) = XII-REAL(II(I,K))
 
             XIIP = XI/RDELLO(KSN1)+1.
             IIIP = MAX(1-IPERIODIC,INT(XIIP))
-            IIP(I,K) = MIN(IIIP,RLONRGG(KSN1)) 
+            IIP(I,K) = MIN(IIIP,ILONRGG(KSN1)) 
             DIIP1(I,K)=XIIP-REAL(IIP(I,K))
 
           ENDDO

@@ -132,7 +132,8 @@
       INTEGER :: NLON, NLAT
       INTEGER :: IGRIB_HANDLE_DUM
       INTEGER :: NADV
-      INTEGER :: IDURAT, IDUM
+      INTEGER :: KSTOP, KSTPW
+      INTEGER :: IDUM
       INTEGER :: KQGAUSS
       INTEGER :: NFDBREF, NPR
       INTEGER :: MAXLEN, IU06
@@ -141,6 +142,7 @@
       INTEGER :: MASK_IN(NGPTOTG)
       INTEGER :: MASK_OUT(NLONW,NLATW)
 
+      REAL :: PSTEP
       REAL :: RSOUTW, RNORTW
       REAL :: PRPLRADI, PRPLRG
       REAL :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
@@ -348,8 +350,10 @@
 !* DEFINE DUMMY PARAMETERS TO FILL COUPLED ARRAYS
 
       CBEGDAT='99999999999999'
+      PSTEP=0. ! only used in coupled model
+      KSTOP=0  ! only used in coupled model
+      KSTPW=0  ! only used in coupled model
       IDUM=0
-      IDURAT=-99
       NFDBREF=0  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       IF (.NOT.LWNEMOCOU) THEN
@@ -405,7 +409,7 @@
 
  20   CONTINUE
 
-      CALL WAVEMDL(CBEGDAT, IDUM, IDURAT, 
+      CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
      &             NFIELDS, NGPTOTG, NC, NR,
      &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
      &             LWCUR, LWSTOKES,

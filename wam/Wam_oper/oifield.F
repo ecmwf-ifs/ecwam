@@ -46,7 +46,7 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : RAD      ,DEG      ,R
       USE YOWSPEC,   ONLY : NSTART   ,NEND
-      USE YOWSTAT  , ONLY : NWAM_BLKS
+      USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -74,8 +74,9 @@
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLSIMASK
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OIFIELD',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISE SEARCH DISTANCE AND CORRELATION LENGTH.
 !     -----------------------------------------------------
@@ -317,7 +318,7 @@
 
       IG = 1
 
-      NPROMA=(NEND(IRANK)-NSTART(IRANK))/NWAM_BLKS+1
+      NPROMA=NPROMA_WAM
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=NSTART(IRANK),NEND(IRANK),NPROMA
         KIJS=JKGLO
@@ -336,6 +337,8 @@
       IF(ALLOCATED(W)) DEALLOCATE(W)
       IF(ALLOCATED(LLSIMASK)) DEALLOCATE(LLSIMASK)
                                                                   
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OIFIELD',1,ZHOOK_HANDLE)
+#endif
       RETURN                                                            
       END SUBROUTINE OIFIELD

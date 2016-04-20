@@ -394,7 +394,8 @@
 !       METEO FRANCE PHYSICS:
         BETAMAX = 1.52
         ZALP    = 0.0060
-        TAUWSHELTER=0.6
+!!!!!!!        TAUWSHELTER=0.6
+        TAUWSHELTER=1.0
         IF(ML.GT.30) THEN
           ALPHA   = 0.0090
         ELSE
@@ -458,7 +459,7 @@
 !         ---------------------------------------------------------
 
       IF(.NOT.LAQUA) THEN
-        CALL TOPOAR (IU01, BATHY, ML)
+        CALL TOPOAR (IU01, BATHY)
         IF (ITEST.GT.0) THEN
           WRITE (IU06,*) ' SUB TOPOAR DONE'
           CALL FLUSH(IU06)
@@ -510,23 +511,23 @@
 !AR: We just omit the nest informations in this module since it is anyway broken ...
       IF (.NOT. LLUNSTR) THEN
 
-      IF (IBOUNF.EQ.1) THEN
-        CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNF DONE'
-      ELSE
-        IINPC  = 0
-        NBOUNF = 0
-      ENDIF
+        IF (IBOUNF.EQ.1) THEN
+          CALL MBOUNF (IU03, IU10, IU20, IFORM, IINPC)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNF DONE'
+        ELSE
+          IINPC  = 0
+          NBOUNF = 0
+        ENDIF
 
 !*    6.2 COMPUTE COARSE GRID NEST INFORMATION (MODULE YOWCPBO).
 !         -----------------------------------------------------
 
-      IF (IBOUNC.EQ.1) THEN
-        CALL MBOUNC (IU09, IU19, IFORM)
-        IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNC DONE'
-      ELSE
-        NBOUNC = 0
-      ENDIF
+        IF (IBOUNC.EQ.1) THEN
+          CALL MBOUNC (IU09, IU19, IFORM)
+          IF (ITEST.GT.0) WRITE (IU06,*) ' SUB MBOUNC DONE'
+        ELSE
+          NBOUNC = 0
+        ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -540,13 +541,13 @@
 !*    8. GENERATE AND WRITE MODULE UBUF.
 !        -------------------------------
 
-      DO IG=1,IGL
-        CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
-        IF (ITEST.GT.0) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*)
-     &     ' SUB MUBUF DONE FOR BLOCK ',IG
-        ENDIF
-      ENDDO
+        DO IG=1,IGL
+          CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
+          IF (ITEST.GT.0) THEN
+            IF (IG.LE.ITESTB) WRITE (IU06,*)
+     &       ' SUB MUBUF DONE FOR BLOCK ',IG
+          ENDIF
+        ENDDO
 !
       END IF ! .NOT. LLUNSTR
 
@@ -567,4 +568,4 @@
 
       CALL CHECK (ML, KL, IINPC)
   
-      END
+      END PROGRAM

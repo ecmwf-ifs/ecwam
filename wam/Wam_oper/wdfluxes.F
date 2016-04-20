@@ -60,8 +60,7 @@
       USE YOWCOUP  , ONLY : LWFLUX
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,
-     &                      TAUOC    
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
@@ -81,6 +80,7 @@
      &                            ROAIRN, ZIDLNEW
 
       REAL, DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
+      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
@@ -106,7 +106,7 @@
 !*      1.2 COMPUTE MEAN PARAMETERS.
 !          ------------------------
 
-        CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS),
+        CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &              F1MEAN, AKMEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
@@ -125,7 +125,7 @@
         CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !       COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-        CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, CICVR, MIJ)
+        CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
 
         CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &                ROAIRN, TAUW_LOC, TAUWLF, PHIWA, 
@@ -136,7 +136,7 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL,EMEANALL,F1MEAN,XKMEAN,
      &                PHIOC, TAUWD, MIJ, LCFLX)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
@@ -149,7 +149,7 @@
         CALL WNFLUXES (IJS, IJL,
      &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
      &                 PHIOC, TAUWD,
-     &                 EMEAN(IJS), FMEAN(IJS),U10NEW, THWNEW,
+     &                 EMEANALL, FMEANALL,U10NEW, THWNEW,
      &                 USNEW, ROAIRN, .FALSE.)
 
       ENDIF

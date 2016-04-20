@@ -67,12 +67,22 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL, PARAMETER :: GRDTOL = 0.000001
+      IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IU03, IU10, IU20, IFORM
+      INTEGER, INTENT(OUT) :: IINPC
+
+      INTEGER :: I, II, IRATIO, IO
+      INTEGER :: NBOUNC_LOC
+      INTEGER :: NBOUNEW
       INTEGER :: GBOUNC_LOC
-      REAL :: GRDDIFF
-      REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
       INTEGER :: ListSTART(1), ListEND(1)
+
+      REAL, PARAMETER :: GRDTOL = 0.000001
+      REAL :: GRDDIFF
+      REAL :: AMOSOA, AMONOA, AMOEAA, AMOWEA
+      REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
+
 ! ----------------------------------------------------------------------
 
   998 FORMAT(10I8)
@@ -248,8 +258,8 @@
 
 !*    5. SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !        -----------------------------------------
-      ListSTART(1)=ISTART
-      ListEND(1)=IEND
+      ListSTART(1)=0
+      ListEND(1)=0
       CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,
      & 1,ListSTART,ListEND,1)
 

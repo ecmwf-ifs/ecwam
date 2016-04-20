@@ -40,8 +40,8 @@
       USE YOWFRED  , ONLY : FR
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,USTARM   ,TAUHFT   ,
-     &            DELUST   ,DELALP   ,
-     &            ILEVTAIL ,TAUHFT2 ,DELTAIL
+     &            DELUST   ,DELALP   ,ALPHAMCOEF,
+     &            XLEVTAILM, ILEVTAIL ,TAUHFT2 ,DELTAIL
       USE YOWSTAT  , ONLY : IPHYS
 
 ! ----------------------------------------------------------------------
@@ -52,7 +52,7 @@
 
       INTEGER, INTENT(IN) :: ML
       INTEGER :: M, L, K, I, J
-      REAL :: ALPHAMCOEF, ALPHAM, CONST1, OMEGA, OMEGAC, OMEGACC
+      REAL :: ALPHAM, CONST1, OMEGA, OMEGAC, OMEGACC
       REAL :: X0, UST, Z0, UST0, TAUW, TAUW0, XLEVTAIL
       REAL :: YC,DELY,Y,CM,ZX,ZARG,ZMU,ZLOG,ZBETA
       REAL, ALLOCATABLE :: W(:)
@@ -62,11 +62,12 @@
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
 
-      ALPHAMCOEF = 40.
-      ALPHAM = ALPHAMCOEF*ALPHA
       DELUST = USTARM/REAL(IUSTAR)
+
+      ALPHAM = ALPHAMCOEF*ALPHA
       DELALP = ALPHAM/REAL(IALPHA)
-      DELTAIL= ALPHAM/REAL(ILEVTAIL)
+
+      DELTAIL= XLEVTAILM/REAL(ILEVTAIL)
 
       CONST1 = BETAMAX/XKAPPA**2
 

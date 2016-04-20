@@ -1,4 +1,4 @@
-      SUBROUTINE TOPOAR (IU01, BATHY, ML)
+      SUBROUTINE TOPOAR (IU01, BATHY)
 
 ! ----------------------------------------------------------------------
 
@@ -22,10 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TOPOAR (IU01,BATHY,ML)*
+!       *CALL* *TOPOAR (IU01,BATHY)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
 !          *BATHY*   -  BATHYMETRY DATA IN OUTPUT GRID.
-!          *ML*    -  NUMBER OF FREQUENCIES (36)
 
 !     METHOD.
 !     -------
@@ -76,16 +75,30 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU01
+      REAL, DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
+
+      INTEGER :: I, J, K, JH, L, IX, IAA
+      INTEGER :: KLONRGG  
+      INTEGER :: MLON, NLATMAX, KMAX, NLAT, N1, N2, LAST
+      INTEGER :: NMINADJT
+      INTEGER :: ILW, NLON, IH, NJ, JJ, NL, JRGG, KXLO, KAMOEAP
+      INTEGER :: ILEN, IPAGE, IA, IE
       INTEGER, ALLOCATABLE :: IDUM(:)
-
-      REAL, DIMENSION(NGX, NGY) :: BATHY
-
-      CHARACTER*1, ALLOCATABLE :: AX(:), AXX(:)
-      CHARACTER*4 :: CX
-      CHARACTER*10 :: FORMAT
-      CHARACTER*14 :: CHEADER 
       INTEGER, ALLOCATABLE :: IA2H(:), IA1(:,:)
+
+      REAL :: BATHYMAX, TABLEMAX
+      REAL :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+      REAL :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
       REAL, ALLOCATABLE :: XA2H(:), XA1(:,:)
+
+      CHARACTER(LEN=1), ALLOCATABLE :: AX(:), AXX(:)
+      CHARACTER(LEN=4) :: CX
+      CHARACTER(LEN=10) :: FORMT
+      CHARACTER(LEN=14) :: CHEADER 
+
       LOGICAL :: LLREALIN
 
 ! ----------------------------------------------------------------------
@@ -128,7 +141,7 @@
      &                 '' WESTERN LONG '','' EASTERN LONG'',
      &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
 
-      BATHY = 999.
+      BATHY(:,:) = 999.
 
       IF(LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
@@ -186,11 +199,11 @@
         DO K=1,NY
           WRITE(CX,'(I4.4)') NLONRGG(K)
           IF(LLREALIN) THEN
-            FORMAT='('//CX//'F9.2)'
-            READ (IU01,FORMAT) (BATHY(IX,K),IX=1,NLONRGG(K))
+            FORMT='('//CX//'F9.2)'
+            READ (IU01,FORMT) (BATHY(IX,K),IX=1,NLONRGG(K))
           ELSE
-            FORMAT='('//CX//'I4)'
-            READ (IU01,FORMAT) (IDUM(IX),IX=1,NLONRGG(K))
+            FORMT='('//CX//'I4)'
+            READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
             DO IX=1,NLONRGG(K)
               BATHY(IX,K)=REAL(IDUM(IX))
             ENDDO

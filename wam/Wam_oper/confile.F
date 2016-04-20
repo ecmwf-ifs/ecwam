@@ -55,20 +55,25 @@
 
 !* 0.    DEFINITIONS.
 !  ------------------
+      IMPLICIT NONE
 
-      INTEGER kunit
-      CHARACTER* 3 yafileid
+      integer, intent(in) :: kuso, kunit
+      integer, intent(out) :: kfail
 
-      CHARACTER*130 younitnam
-      CHARACTER* 15 yoname
-      CHARACTER*12 cdate_short
-      CHARACTER*14 cdate
-      LOGICAL   ex, od
+      CHARACTER(LEN=3) :: yafileid
+      CHARACTER(LEN=14) :: cdate
 
-!----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: losuvi
 
-      LOGICAL losuvi
-      CHARACTER*7 csubna
+
+      integer :: knum
+      CHARACTER(LEN=7) :: csubna
+      CHARACTER(LEN=12) :: cdate_short
+      CHARACTER(LEN=15) :: yoname
+      CHARACTER(LEN=130) :: younitnam
+
+      LOGICAL :: ex, od
+
       DATA csubna /"confile"/
 
 !----------------------------------------------------------------------

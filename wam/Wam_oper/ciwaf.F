@@ -50,8 +50,13 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IJS, IJL 
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
+      REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: CITHICK
+      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: CIWA
+
       INTEGER :: ICM, I, MAXICM
-      INTEGER :: M, IJ, IJS, IJL 
+      INTEGER :: M, IJ
       INTEGER :: IT, IT1, IH, IH1 
 
       REAL :: CIDMIN, CIDMAX, CIDMEAN, CIFRGL, CIFRGMT
@@ -59,11 +64,9 @@
       REAL :: TW, X
       REAL :: A, B, C
       REAL :: CIDEAC_INT, WT, WT1, WH, WH1 
-      REAL,DIMENSION(IJS:IJL) :: DINV
-      REAL,DIMENSION(IJS:IJL,NFRE) :: CIWA
-      REAL,DIMENSION(IJS:IJL) :: CICOVER, CITHICK
-      REAL,DIMENSION(IJS:IJL,NFRE) :: ALP 
       REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(IJS:IJL) :: DINV
+      REAL,DIMENSION(IJS:IJL,NFRE) :: ALP 
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF

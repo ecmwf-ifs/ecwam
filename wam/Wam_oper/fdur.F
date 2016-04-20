@@ -39,13 +39,18 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER :: IJ, IJS, IJL
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EWFG, USMO 
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: T
+
+      INTEGER :: IJ
       INTEGER :: IG
 
       REAL :: G2, BGRCRV_INV, ESTAR, DSTAR, TSTAR, ERATIO
       REAL :: EMAX, X
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: EWFG, T, USMO 
 
 
 !     INLINE FUNCTION.                                                  
@@ -56,8 +61,9 @@
       EMAX(X) = ESH*TANH(ASH*X**BSH)
 
 ! ----------------------------------------------------------------------
-
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FDUR',0,ZHOOK_HANDLE)
+#endif
 
       IG=1
 
@@ -99,6 +105,8 @@
         ENDIF
       ENDDO
                                                                         
+#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FDUR',1,ZHOOK_HANDLE)
+#endif
       RETURN
       END SUBROUTINE FDUR

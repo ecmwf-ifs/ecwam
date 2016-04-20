@@ -88,9 +88,6 @@
 !          LDWRRE* - SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !     S. ABDALLA  ECMWF  OCTOBER 2000  INCLUDE AIR DENSITY & Zi/L
 !                                      & CALL OUTBETA MOVED TO WAVEMDL
-!     J. BIDLOT ECMWF MAY 2002 INTRODUCTION OF NWAM_BLKS TO SPLIT THE 
-!                              LENGTH OF THE IJ LOOP OR TO BE THE
-!                              NUMBER OF THREADS IF OPEMMP IS USED.
 !
 
 !SHALLOW
@@ -180,8 +177,7 @@
 !       ADVECTION TERMS, SEE ALSO COMMON GRIDPAR AND UBUF.
 
 !       THE WIND FILES FOR THE BLOCKED WINDS CREATED BY PREWIND ARE
-!       READ AND DELETED IN SUB IMPLSCH (IU17 AND IU18). THE FILE
-!       NAMES ARE CREATED IN SUB CREWFN AND AN IMPLICIT OPEN IS USED.
+!       READ AND DELETED IN SUB IMPLSCH (IU17 AND IU18).
 
 
 !       ALL PARAMETERS HAVE TO BE THE VALUES GIVEN AT THE END OF THE
@@ -195,7 +191,6 @@
 !NEST
 !       *BOUINPT*   - BOUNDARY VALUE INPUT.
 !NEST
-!       *CREWFN*    - CREATES A WIND FILE NAME.
 !REFRA
 !       *DOTDC*     - READ COMMON REFDOT.
 !REFRA
@@ -246,7 +241,6 @@
 !       *SNONLIN*   - COMPUTATION OF NONLINEAR TRANSFER RATE AND
 !                     DIAGONAL LINEAR CONTRIBUTION OF NONLINEAR SOURCE
 !                     FUNCTION TO FUNCTIONAL MATRIX.
-!       *SPLITBL*   - STORING OVERLAPPING LATITUDES OF BLOCKS.
 !       *STHQ*      - COMPUTATION OF MEAN WAVE DIRECTION AT EACH
 !                     GRID POINT.
 !       *STRESSO*   - COMPUTATION OF WAVE STRESS.
@@ -297,6 +291,7 @@
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
+     &            LRSTPARALW,
      &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
@@ -344,7 +339,7 @@
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
      &            LLSOURCE ,
-     &            LANAONLY ,LFRSTFLD ,NWAM_BLKS,IREFDATE ,LFDBOPEN
+     &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
@@ -362,14 +357,16 @@
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
-      USE UNWAM
+      USE UNWAM, ONLY : PROPAG_UNWAM
+      USE UNWAM, ONLY : COHERENCY_ERROR_3D, EXCHANGE_FOR_FL1_FL3_SL
       USE YOWUNPOOL ,ONLY : LLUNSTR, DBG, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
       USE MPL_MODULE
       USE FDBSUBS_MOD
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWNODEPOOL, ONLY : NP, IPLG, IPGL
-
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE pgmcl_lib_WAM, ONLY : WAV_all_import_export
       USE pgmcl_lib_WAM, ONLY : HAVE_NEW_COUPLING_FIELDS
@@ -433,6 +430,8 @@
 
       IG=1
 
+      NPROMA=NPROMA_WAM
+
       IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE .AND. LICERUN ) THEN
         IF (ITEST.GE.1) THEN
            WRITE(IU06,*) '   SEEDING OF ZERO ACTION'
@@ -444,7 +443,6 @@
 !       IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
 !       WHEN GETTING THE DATA FROM GRIB.
         CALL GSTATS(1236,0)
-        NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
@@ -496,17 +494,22 @@
         CDTSPS=CDTPRO
 
 
-        DO IJ=IJS(IG),IJL(IG)
-          U10NEW(IJ) = U10OLD(IJ,IG)
-          THWNEW(IJ) = THWOLD(IJ,IG)
-          USNEW(IJ) = USOLD(IJ,IG)
-          Z0NEW(IJ) = Z0OLD(IJ,IG)
-          ROAIRN(IJ) = ROAIRO(IJ,IG)
-          ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
+        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          DO IJ=KIJS,KIJL
+            U10NEW(IJ) = U10OLD(IJ,IG)
+            THWNEW(IJ) = THWOLD(IJ,IG)
+            USNEW(IJ) = USOLD(IJ,IG)
+            Z0NEW(IJ) = Z0OLD(IJ,IG)
+            ROAIRN(IJ) = ROAIRO(IJ,IG)
+            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+          ENDDO
         ENDDO
+!$OMP   END PARALLEL DO
 
         IF(LLSOURCE) THEN
-          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
@@ -539,8 +542,6 @@
      &         ' ICEPOINTS'
             ENDIF
 ! Mod for OPENMP
-! If NWAM_BLKS=1 then the code will be as before
-            NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
             CALL GSTATS(1439,0)
 !$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
@@ -780,9 +781,6 @@
           ENDIF
 
 ! Mod for OPENMP
-! If NWAM_BLKS=1 then the code will be as before
-
-          NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
 
           IF (CDATE.EQ.CDTPRA) THEN
 
@@ -945,6 +943,12 @@
               ELSE IF (LLUNSTR) THEN 
                 CALL PROPAG_UNWAM(FL1, FL3)
               END IF
+#ifdef DEBUG
+              CALL COHERENCY_ERROR_3D(FL1, "FL1 After PROPAG_UNWAM")
+              CALL COHERENCY_ERROR_3D(SL,  "SL  After PROPAG_UNWAM")
+              CALL COHERENCY_ERROR_3D(FL3, "FL3 After PROPAG_UNWAM")
+              WRITE(740+MyRankGlobal,*) "-------------------"
+#endif
 
               IF (ITEST.GE.2) THEN
                 IF (ITESTB.GE.IG) THEN
@@ -974,7 +978,8 @@
             CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
      &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
-     &                   CICOVER, CITHICK, CIWA)
+     &                   CICOVER, CITHICK, CIWA,
+     &                   TAUW)
 
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN
@@ -984,7 +989,16 @@
 
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
             CALL GSTATS(1431,0)
+#ifdef DEBUG
+            WRITE(740+MyRankGlobal,*) 'LLSOURCE=', LLSOURCE
+#endif
             IF(LLSOURCE) THEN
+#ifdef DEBUG
+              CALL COHERENCY_ERROR_3D(FL1, "FL1 Before IMPLSCH")
+              CALL COHERENCY_ERROR_3D(SL,  "SL  Before IMPLSCH")
+              CALL COHERENCY_ERROR_3D(FL3, "FL3 Before IMPLSCH")
+              WRITE(740+MyRankGlobal,*) "-------------------"
+#endif
 
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
@@ -1003,6 +1017,12 @@
 
               ENDDO
 !$OMP       END PARALLEL DO
+#ifdef DEBUG
+              CALL COHERENCY_ERROR_3D(FL1, "FL1 after IMPLSCH")
+              CALL COHERENCY_ERROR_3D(SL,  "SL  after IMPLSCH")
+              CALL COHERENCY_ERROR_3D(FL3, "FL3 after IMPLSCH")
+              WRITE(740+MyRankGlobal,*) "-------------------"
+#endif
 
               IF (LWNEMOCOU) THEN
                 NEMONTAU = NEMONTAU + 1
@@ -1057,6 +1077,12 @@
           ENDIF
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
+#ifdef DEBUG
+              CALL COHERENCY_ERROR_3D(FL1, "FL1 at 1.5.5.4")
+              CALL COHERENCY_ERROR_3D(SL,  "SL  at 1.5.5.4")
+              CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.5.4")
+              WRITE(740+MyRankGlobal,*) "-------------------"
+#endif
 
           IF (CDTIMPNEXT.LE.CDTPRO) GO TO 1550
 
@@ -1109,26 +1135,18 @@
           ENDIF
 !NEST
 
-!*    1.5.8 OUTPUT OF SECOND LATITUDES FOR NEXT TIMESTEP
-!*          START OF OUTPUT OF ALL SPECTRA IN BLOCK.
-!           --------------------------------------------
-
-          IF (IGL.NE.1) THEN
-            IF (IG.NE.1) CALL SPLITBL(FL3, IJS(IG), IJL2(IG), IU14)
-            WRITE(IU12) FL3
-            IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*)
-     &         '   SUB. WAMODEL: OVERLAPPING LATITUDES',
-     &         ' SAVED AND START OF BLOCK OUTPUT'
-            ENDIF
-          ENDIF
-!NEST
 
 !*    1.5.9 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
+#ifdef DEBUG
+              CALL COHERENCY_ERROR_3D(FL1, "FL1 at 1.5.9")
+              CALL COHERENCY_ERROR_3D(SL,  "SL  at 1.5.9")
+              CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.9")
+              WRITE(740+MyRankGlobal,*) "-------------------"
+#endif
 
           IF (IBOUNC.EQ.1) THEN
-            CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19, THWNEW, USNEW)
+            CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*)
      &         '   SUB. WAMODEL: BOUNDARY OUTPUT',
@@ -1214,7 +1232,6 @@
 !!!   (see rearrangsar)
 !!!
         IG=1
-        NPROMA=(IJL(IG)-IJS(IG)+1)/NWAM_BLKS+1
         CALL GSTATS(1432,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) 
 !$OMP+  PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ)
@@ -1437,7 +1454,7 @@
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-              CALL SAVSPEC(FL3,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
+              CALL SAVSPEC(FL1,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........',
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
@@ -1472,7 +1489,8 @@
 
               CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                      IASSI, NFCST, ISTAT, CDTCUR)
+     &                      IASSI, NFCST, ISTAT, CDTCUR,
+     &                      LRSTPARALW, NPROC)
  
               CLOSE (IU04)
               WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',

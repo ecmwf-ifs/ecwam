@@ -67,11 +67,30 @@
 
 ! ----------------------------------------------------------------------
 
-      CHARACTER* 70 CLINE
-      CHARACTER* 70 :: FILENAME
-      REAL, ALLOCATABLE :: XDUMP(:)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(OUT) :: IFORM, ML, KL
+      LOGICAL, INTENT(OUT) :: LLGRID
+
+      INTEGER :: I_GET_UNIT
+      INTEGER :: K, M, I, II, KSN
+      INTEGER :: IU05, IU
+      INTEGER :: IFRE1, ISPECTRUNC
+      INTEGER :: MOUTP, MOUTPNEW 
+      INTEGER :: IOS, IOUTA, IOUTANEW, IDUM
       INTEGER, ALLOCATABLE :: NDUMP(:)
-      LOGICAL :: LLGRID
+
+      REAL :: FR1 
+      REAL :: DEPTHMAX
+      REAL :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
+      REAL :: ZOUTLAT, ZOUTLONG 
+      REAL :: WEST, EAST, DW, DE, DS, DN
+      REAL, ALLOCATABLE :: XDUMP(:)
+
+      CHARACTER(LEN=70) :: CLINE, FILENAME
+
+! ----------------------------------------------------------------------
+
       NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,
      &                  IFORM, ITEST, ITESTB,
@@ -314,21 +333,21 @@
 !     been taken care when creating the file. 
         NOUT=0
       ELSE
-      REWIND (IU05)
-      NOUT=0
-      IOS=-9
-      IOUTA=500
-      ALLOCATE(XOUTW(IOUTA))
-      ALLOCATE(XOUTS(IOUTA))
-      ALLOCATE(XOUTE(IOUTA))
-      ALLOCATE(XOUTN(IOUTA))
-      ALLOCATE(NOUTD(IOUTA))
-      XOUTS  =-100.0
-      XOUTN  =-100.0
-      XOUTW  =   0.0
-      XOUTE  =   0.0
-      NOUTD  =   0
-      CORR: DO
+        REWIND (IU05)
+        NOUT=0
+        IOS=-9
+        IOUTA=500
+        ALLOCATE(XOUTW(IOUTA))
+        ALLOCATE(XOUTS(IOUTA))
+        ALLOCATE(XOUTE(IOUTA))
+        ALLOCATE(XOUTN(IOUTA))
+        ALLOCATE(NOUTD(IOUTA))
+        XOUTS  =-100.0
+        XOUTN  =-100.0
+        XOUTW  =   0.0
+        XOUTE  =   0.0
+        NOUTD  =   0
+        CORR: DO
         READ(IU05, NACORR, ERR=3000, IOSTAT=IOS, END=2300)
         NOUT=NOUT+1
         IF (NOUT.GT.IOUTA) THEN
@@ -660,4 +679,5 @@
       WRITE (IU06,*) '*                                            *'
       WRITE (IU06,*) '**********************************************'
       CALL ABORT1 
+
       END SUBROUTINE UIPREP

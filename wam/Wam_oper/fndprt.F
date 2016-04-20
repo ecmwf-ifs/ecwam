@@ -43,15 +43,16 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-      INTEGER, intent(in) :: ITHC, IFRC, MIJ, MMIN
-      INTEGER, intent(inout) :: MMAX
-      REAL, intent(in), DIMENSION(NANG,NFRE) :: SPEC
-      LOGICAL, intent(in), DIMENSION(NANG,NFRE) :: LLW3
-      REAL, intent(inout), DIMENSION(NANG,NFRE) :: W1, W2
+      INTEGER, INTENT(IN) :: ITHC, IFRC, MIJ, MMIN
+      INTEGER, INTENT(INOUT) :: MMAX
+      REAL, INTENT(IN), DIMENSION(NANG,NFRE) :: SPEC
+      LOGICAL, INTENT(IN), DIMENSION(NANG,NFRE) :: LLW3
+      REAL, INTENT(INOUT), DIMENSION(NANG,NFRE) :: W1, W2
 
       INTEGER :: M, K, NITT
       INTEGER :: NANGH, KK, KKMIN, KKMAX
@@ -59,13 +60,16 @@
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
       REAL :: HALF_SECTOR
       LOGICAL :: LLCHANGE, LLADD
+      REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
 !     ASSUME THAT ONE HAS ONLY SEARCH A SECTOR IN DIRECTION (not the full 360 degrees)
 !     AROUND THE PEAK
 !!!   THIS IS A STRONG ASSUMPTION ON THE DIRECTIONALITY OF SWELL !!!
-
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('FNDPRT',0,ZHOOK_HANDLE)
+#endif
       HALF_SECTOR=70.
       NANGH=NINT((HALF_SECTOR/360.)*NANG)+1
       KKMIN=ITHC-NANGH
@@ -185,6 +189,9 @@
           W1(K,M) = W1(K,M) + W2(K,M)
         ENDDO
       ENDDO
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('FNDPRT',1,ZHOOK_HANDLE)
+#endif
 
 
       RETURN

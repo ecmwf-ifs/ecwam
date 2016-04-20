@@ -1,4 +1,4 @@
-      SUBROUTINE PACKR (NIN, NOUT, NDIM, IFLAG, PACK)
+      SUBROUTINE PACKR (NIN, NOUT, NDIM, IFLAG, RPACK)
 
 ! ----------------------------------------------------------------------
 
@@ -14,12 +14,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PACKR (NIN, NOUT, NDIM, IFLAG, PACK)*
+!       *CALL* *PACKR (NIN, NOUT, NDIM, IFLAG, RPACK)*
 !          *NIN*   -  NUMBER OP POINTS IN ARRAYS BEFORE PACKING.
 !          *NOUT*  -  NUMBER OF POINTS IN ARRAYES AFTER PACKING.
 !          *NDIM*  -  DIMENSION OF ARRAYS.
 !          *IFLAG* -  FLAG ARRAY.
-!          *PACK*  -  ARRAY TO BE PACKED / PACKED ARRAY AT OUTPUT.
+!          *RPACK* -  ARRAY TO BE PACKED / PACKED ARRAY AT OUTPUT.
 
 !     METHOD.
 !     -------
@@ -38,7 +38,15 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION IFLAG(NDIM), PACK(NDIM)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NIN, NDIM
+      INTEGER, INTENT(OUT) :: NOUT
+      INTEGER, DIMENSION(NDIM), INTENT(INOUT) :: IFLAG
+      REAL, DIMENSION(NDIM), INTENT(INOUT) :: RPACK
+
+
+      INTEGER :: K, I
 
 ! ----------------------------------------------------------------------
 
@@ -51,7 +59,7 @@
         IF (IFLAG(I).EQ.0) THEN
           K = K + 1
         ELSE
-          PACK(I-K) = PACK(I)
+          RPACK(I-K) = RPACK(I)
         ENDIF
       ENDDO
 
@@ -62,7 +70,3 @@
 
       RETURN
       END SUBROUTINE PACKR
-
-
-
-

@@ -54,10 +54,22 @@
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
-      CHARACTER*1, ALLOCATABLE :: LST(:,:)
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ML, KL, IINPC
+
+      INTEGER :: IG
+      INTEGER :: IU1, IU2, IO, IO1, IO2
+      INTEGER :: I, K, IJ, IERR
+      INTEGER :: ILEN, IPAGE, LAST, L, IA, IE
+      INTEGER :: IJFLAT, IJLLAT, IJMAX, ISEA, IPOI, IOV 
+
+      REAL :: BMOWEP, BMOEAP
       REAL,  ALLOCATABLE :: GRID(:,:)
 
-      CHARACTER TITL*100
+      CHARACTER(LEN=100) :: TITL
+      CHARACTER(LEN=1), ALLOCATABLE :: LST(:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -266,6 +278,7 @@
 
 !*    2.4 PRINT LAND SEA MAP.
 !         -------------------
+
 
       IF (ITEST.GE.3) THEN
         ILEN = 120

@@ -178,7 +178,7 @@
       DO IJ=IJS,IJL
          IF (SUM1(IJ).GT.0.) THEN
             R1 = SUM2(IJ)/SUM1(IJ)
-            SIG_TH2 = SQRT(2.*(1.-R1))
+            SIG_TH2 = SQRT(2.*MAX(0., 1.-R1))
          ELSE
             SIG_TH2 = 1.
          ENDIF

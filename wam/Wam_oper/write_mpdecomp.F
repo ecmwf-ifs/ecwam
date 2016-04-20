@@ -84,25 +84,38 @@
 
 ! -------------------------------------------------------------------
 
-      INTEGER GETCLO, GETCLA, IOPTVAL
+      IMPLICIT NONE
+
+      INTEGER :: KOUTPUT
+      INTEGER :: IJ, M, IH, IPR, JPR, IC, IP
+      INTEGER :: IPROC_S, IPROC_E, IX, JSN, ISYMBOL, NGHB
+      INTEGER :: IU06, IUOUT, IUDPT, IUOUN, IUSPT
+      INTEGER :: MAXLEN
+      INTEGER :: IG
+      INTEGER :: I1, NPR, IPROC, IREAD, NLON, NLAT
+      INTEGER ::  MORARG, GETCLO, GETCLA, IOPTVAL
+      INTEGER :: I4(2)
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IJPROC, NPE
       INTEGER, ALLOCATABLE, DIMENSION(:,:) :: NEIGHBOUR
-      REAL :: PRPLRADI
-      LOGICAL :: LLALLPTS
-      CHARACTER*  3 CLL1
-      CHARACTER*  8 CLOPTS
-      CHARACTER* 12 CLFMT
-      CHARACTER*128 CLARG
-      CHARACTER*28 FILENAME
-      CHARACTER     CLOPTLET
-      DATA CLOPTS/'n;a;i;d;'/
 
+      REAL :: PRPLRADI
+      REAL :: XLON, XLAT, XNGHB_MEAN, SNGHB, XNPE
+      REAL :: RSOUTW,RNORTW
+      REAL :: Z4(2)
+
+      CHARACTER(LEN=1) :: CLOPTLET
+      CHARACTER(LEN=3) :: CLL1
+      CHARACTER(LEN=8) :: CLOPTS
+      CHARACTER(LEN=12) :: CLFMT
+      CHARACTER(LEN=128) :: CLARG
+      CHARACTER(LEN=28) :: FILENAME
+      CHARACTER(LEN=12),ALLOCATABLE :: CLMD(:)
+
+      LOGICAL :: LLALLPTS
       LOGICAL :: LLIRANK
       LOGICAL :: LLRNL
-      REAL Z4(2)
-      INTEGER I4(2)
 
-      CHARACTER (LEN=12),ALLOCATABLE :: CLMD(:)
+      DATA CLOPTS/'n;a;i;d;'/
 
 ! ----------------------------------------------------------------------
 
@@ -333,7 +346,7 @@
       IPROC=0
 
       ALLOCATE(IJPROC(NIBLO))
-      
+     
       IF(LLIRANK) THEN
         IPROC_S=IRANK
         IPROC_E=IRANK
@@ -348,8 +361,8 @@
           JSN= KXLT(IJ,IG)
           XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
           XLAT=AMOSOP + (JSN-1)*XDELLA
-          isymbol=mod(IPROC,9)
-          if(isymbol.eq.0) isymbol=9
+          ISYMBOL=mod(IPROC,9)
+          IF(ISYMBOL.EQ.0) ISYMBOL=9
 
           IF(LLALLPTS .OR. LLBOUND(IJ) ) THEN
 
@@ -526,6 +539,7 @@
       ENDIF
       IUOUN=20
       OPEN(IUOUN,FILE=FILENAME,FORM='FORMATTED')
+
 
       XNGHB_MEAN=0.
       SNGHB=0.

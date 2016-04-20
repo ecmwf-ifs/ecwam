@@ -53,8 +53,25 @@
 
       USE MPL_MODULE
 
-      REAL :: FIELD(NX,NY), ZCOMBUF(4)
-      LOGICAL :: LMESSPASS
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: NX, NY, IRANK, ISEND, IRECV
+      INTEGER, INTENT(OUT) :: NAVG 
+      INTEGER, INTENT(INOUT) :: ITAG 
+
+      REAL, INTENT(IN) :: ZMISS, ZMIN
+      REAL, INTENT(OUT) ::FAVG, FMIN, FMAX
+      REAL, INTENT(IN) :: FIELD(NX,NY)
+
+      LOGICAL, INTENT(IN) :: LMESSPASS
+
+
+      INTEGER :: I, J
+      INTEGER :: NTOT 
+      INTEGER :: KRCOUNT, KRTAG
+      REAL :: ZCOMBUF(4)
 
 ! ----------------------------------------------------------------------
 !*    2. MAKE GRIDDED FIELD

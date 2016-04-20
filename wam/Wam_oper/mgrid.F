@@ -43,16 +43,15 @@
 
 ! ----------------------------------------------------------------------
 
-      REAL :: BATHY(NGX,NGY)
+      IMPLICIT NONE
+
+      REAL, INTENT(INOUT) :: BATHY(NGX,NGY)
+
+      INTEGER :: K, I, IL, KA, KE
+      INTEGER, DIMENSION(NGY) :: IPP
 
 ! ----------------------------------------------------------------------
 
-      INTEGER, ALLOCATABLE :: IPP(:)
-
-!     *IPP*   INTEGER   NUMBER OF SEA POINTS PER LATITUDE.
-! ----------------------------------------------------------------------
-
-      ALLOCATE(IPP(NGY))
 
 !*    1. COUNT NUMBER OF SEA POINTS PER LATITUDE.
 !        ----------------------------------------
@@ -103,6 +102,5 @@
         NIBL1=1
       ENDIF
 
-      DEALLOCATE(IPP)
       RETURN
       END SUBROUTINE MGRID

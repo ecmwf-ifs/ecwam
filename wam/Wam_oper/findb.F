@@ -59,9 +59,21 @@
 
 ! ----------------------------------------------------------------------
 
-      DIMENSION BLATB(NDIM), BLNGB(NDIM), IGARB(NDIM), IJARB(NDIM)
-      INTEGER,DIMENSION(NPROC) :: NSTART,NEND
+      IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: NDIM, NBOUN, NPROC, IRANK
+
+      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
+      INTEGER, DIMENSION(NDIM), INTENT(INOUT) :: IGARB, IJARB
+
+      REAL, DIMENSION(NDIM),INTENT(IN) :: BLATB, BLNGB
+
+
+      INTEGER :: IG
+      INTEGER :: IJ
+      INTEGER :: ILATS, ILATN, IO, IOLT, IOLG
+
+      REAL :: ZDEL, ALONG 
 ! ----------------------------------------------------------------------
 
 !*    1. LOOP OVER INPUT LATITUDES, LONGITUDES.

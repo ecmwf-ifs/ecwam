@@ -39,6 +39,12 @@
 
 ! ----------------------------------------------------------------------
 
+      IMPLICIT NONE
+
+      INTEGER :: J, IAN
+      INTEGER :: IDPH, JA
+      REAL:: CL
+
       IDPH = CL
       JA = J+IDPH
       IF (JA.LE.0)   JA = IAN+JA-1
@@ -47,7 +53,3 @@
 
       RETURN
       END
-
-
-
-

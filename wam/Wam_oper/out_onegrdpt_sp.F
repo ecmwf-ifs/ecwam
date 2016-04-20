@@ -53,13 +53,32 @@
       USE YOWPCONS , ONLY : G        ,ZPI      ,DEG      ,EPSMIN
 
 ! ----------------------------------------------------------------------
-      
-      REAL,DIMENSION(NANG,NFRE) :: SPEC
-      REAL,DIMENSION(NANG) :: TH
-      REAL,DIMENSION(NFRE) :: FR
-      REAL,DIMENSION(NFRE) :: SPF
-      CHARACTER TITL*100, CPATH*72, CDTPRO*12
-      LOGICAL LPARAM, FRSTIME
+
+      IMPLICIT NONE
+ 
+      INTEGER, INTENT(IN) :: IU06,IU25
+
+      REAL, INTENT(IN) :: XLON, XLAT, HS
+      REAL, INTENT(IN) :: THQ, FMEAN, USTAR, THW, U10
+      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: SPEC
+      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
+      REAL, DIMENSION(NANG), INTENT(IN) :: TH
+
+      CHARACTER(LEN=12), INTENT(IN) :: CDTPRO
+
+
+      INTEGER ::  K, M
+      INTEGER :: IU_SPEC
+      INTEGER :: MMAX
+      REAL :: DUM, SUMMAX 
+      REAL :: FPK, X1, X2, X3, X4, X5, X6, AF, ASPF, AF2, ASPF2
+      REAL, DIMENSION(NFRE) :: SPF
+
+      CHARACTER(LEN=72) :: CPATH
+      CHARACTER(LEN=100) :: TITL
+
+      LOGICAL :: LPARAM, FRSTIME
+
       DATA FRSTIME/.TRUE./   
 !
 ! -------------------------------------------------------------------
@@ -100,6 +119,7 @@
         END IF
       ENDDO
 
+
       IF(SUMMAX.EQ.0.)THEN
          FPK=0.
       ELSEIF(MMAX.EQ.1) THEN
@@ -133,4 +153,4 @@
 ! -------------------------------------------------------------------
 !
       RETURN
-      END
+      END SUBROUTINE OUT_ONEGRDPT_SP

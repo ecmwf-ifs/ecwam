@@ -41,7 +41,8 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL
+      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,
+     &           LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
@@ -54,19 +55,21 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
+      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL
+      CHARACTER(LEN=14), INTENT(IN) :: CDTPRO,CDATEF,CDATER
+
       INTEGER :: IJ, K, M
       INTEGER :: IUNIT
       INTEGER :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
-      INTEGER, DIMENSION(NPROC) :: NBLKS, NBLKE
+      INTEGER :: LNAME
 
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE) :: FL
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: RFL
 
-      CHARACTER(LEN=14) :: CDTPRO,CDATEF,CDATER
       CHARACTER(LEN=120) :: FILENAME
 
-      LOGICAL :: LOUNIT, LCUNIT
+      LOGICAL :: LOUNIT
 
 ! ----------------------------------------------------------------------
 
@@ -75,49 +78,58 @@
 #endif
 
       LOUNIT = .TRUE.
-      LCUNIT = .TRUE.
 
       CALL GRSTNAME(CDTPRO,CDATEF,'BLS',ICPLEN,CPATH,FILENAME)
 
-! COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
-! SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
-      IRECV=IPFGTBL(JPPFLAG+1)
+      IF(LRSTPARALW) THEN
+!        RESTART FILES FROM ALL PS's
+         LNAME = LEN_TRIM(FILENAME)
+         FILENAME=FILENAME(1:LNAME)//'.%p_%n'
+         CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
 
-      DO MLOOP=1,NFRE,MDEL
-        MINF=MLOOP
-        MSUP=MIN(MLOOP+MDEL-1,NFRE)
-        DO KLOOP=1,NANG,KDEL
-          KINF=KLOOP
-          KSUP=MIN(KLOOP+KDEL-1,NANG)
+         CALL WRITEFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,
+     &                FILENAME, IUNIT, LOUNIT, LRSTPARALW)
 
-          LOUNIT = .FALSE.
-          LCUNIT = .FALSE.
-          IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
-          IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LCUNIT = .TRUE.
+      ELSE
 
-          ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
-          RFL(0,:,:)=0.
-          DO M=MINF,MSUP
-            DO K=KINF,KSUP
-              DO IJ = IJSLOC, IJLLOC
-                RFL(IJ+IJGLOBAL_OFFSET,K,M) = FL(IJ,K,M)
+!       COLLECT THE DIFFERENT CONTRIBUTIONS AND PROCEED TO THE OUTPUT OF
+!       SPECTRUM FROM PE IPFGTBL(JPPFLAG+1)
+        IRECV=IPFGTBL(JPPFLAG+1)
+
+        DO MLOOP=1,NFRE,MDEL
+          MINF=MLOOP
+          MSUP=MIN(MLOOP+MDEL-1,NFRE)
+          DO KLOOP=1,NANG,KDEL
+            KINF=KLOOP
+            KSUP=MIN(KLOOP+KDEL-1,NANG)
+
+            LOUNIT = .FALSE.
+            IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
+
+            ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+            RFL(0,:,:)=0.
+            DO M=MINF,MSUP
+              DO K=KINF,KSUP
+                DO IJ = IJSLOC, IJLLOC
+                  RFL(IJ+IJGLOBAL_OFFSET,K,M) = FL(IJ,K,M)
+                ENDDO
               ENDDO
             ENDDO
+
+            CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
+
+            IF (ITEST.GE.2)
+     &       WRITE(IU06,*)
+     &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
+
+            IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. NPROC.EQ.1) THEN
+              CALL WRITEFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,
+     &                     FILENAME, IUNIT, LOUNIT, LRSTPARALW)
+            ENDIF
+            DEALLOCATE(RFL)
           ENDDO
-
-          CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
-
-          IF (ITEST.GE.2)
-     &     WRITE(IU06,*)
-     &     'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
-
-          IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. NPROC.EQ.1) THEN
-            CALL WRITEFL(RFL,KINF,KSUP,MINF,MSUP,
-     &                   FILENAME,IUNIT,LOUNIT,LCUNIT)
-          ENDIF
-          DEALLOCATE(RFL)
         ENDDO
-      ENDDO
+      ENDIF
 
       WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',
      &                ' CDTPRO  = ', CDTPRO
