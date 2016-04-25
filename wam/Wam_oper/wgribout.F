@@ -75,18 +75,20 @@
 !*    1. SAVE ENCODED RESULT
 !        -------------------
 
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'expver',C12)
-      CEXPVER=C12(1:4)
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
-      CSTREAM=C12(1:4)
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
-      WRITE(IU06,*)'  '
-      WRITE(IU06,*)'   SUB. WGRIBOUT : PARAMETER ',ITABPAR,
-     &                               ' EXPVER=',CEXPVER,
-     &                               ' STREAM= ', CSTREAM,
-     &                               ' CLASS = ', ICLASS
-      CALL FLUSH(IU06)
+      IF(ITEST.GT.0) THEN
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'expver',C12)
+        CEXPVER=C12(1:4)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
+        CSTREAM=C12(1:4)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
+        WRITE(IU06,*)'  '
+        WRITE(IU06,*)'   SUB. WGRIBOUT : PARAMETER ',ITABPAR,
+     &                                 ' EXPVER=',CEXPVER,
+     &                                 ' STREAM= ', CSTREAM,
+     &                                 ' CLASS = ', ICLASS
+        CALL FLUSH(IU06)
+      ENDIF
 
 
       IF(LFDB) THEN
