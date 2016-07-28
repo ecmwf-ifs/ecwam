@@ -69,6 +69,7 @@
       INTEGER :: NBIT = 424000
 
       INTEGER :: I4(2), KRET, KPLENG, ISIZE, KLEN
+      INTEGER :: ISYSTEM_STAT, ISTAT
       INTEGER :: KLENG, KLENP, KWORD, NC, NR, NTOT, I, J, JRGG, IR
       INTEGER :: IREPR, IPARAM, ITABLE, KANG, KFRE, IALLFLD, JSN
       INTEGER :: IFR1, KFR1, IFR, IC, JC, MMSHIFT, MLAST
@@ -115,6 +116,7 @@
       LOGICAL :: LLFR1OK
       LOGICAL :: LLEXIST
       LOGICAL :: LFDB, LFDBOPEN
+      LOGICAL :: LLWAIT
 
 ! ----------------------------------------------------------------------
 
@@ -525,13 +527,25 @@
        ENDIF
 
        IF(.NOT.LLINTERPOL) THEN
-!      THERE IS NO NEED FOR INTERPOLATION THE INPUT FILE
+!      THERE IS NO NEED FOR INTERPOLATION, THE INPUT FILE
 !      WILL SIMPLY BE RECOPIED TO THE OUTPUT DESTINATION.
          WRITE(IU06,*) ' THERE IS NO NEED FOR INTERPOLATION'
          WRITE(IU06,*) ' THE INPUT FILE WILL SIMPLY BE RECOPIED'
          WRITE(IU06,*) ' TO THE OUTPUT DESTINATION.'
 
-         CALL SYSTEM('cp '//IFILENAME//' '//OFILENAME)
+         LLWAIT=.TRUE.
+         ISYSTEM_STAT=-1
+         ISTAT=-1
+         CALL EXECUTE_COMMAND_LINE('cp '//IFILENAME//' '//OFILENAME,
+     &        WAIT=LLWAIT, EXITSTAT=ISYSTEM_STAT,CMDSTAT=ISTAT)
+         IF(ISTAT.NE.0) THEN
+            WRITE(IU06,*) '*************************************'
+            WRITE(IU06,*) '* INTWAMINPUT: FILE COPYING ERROR !'
+            WRITE(IU06,*) '* ISTAT = ',ISTAT
+            WRITE(IU06,*) '* ISYSTEM_STAT = ',ISYSTEM_STAT
+            WRITE(IU06,*) '*************************************'
+            CALL ABORT1
+         ENDIF
 
          GOTO 8888 
        ELSE
