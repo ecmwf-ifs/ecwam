@@ -1125,6 +1125,22 @@
      & '......', FFLAG(66),'.....',GFLAG(66),'.....',IPFGTBL(66)
       WRITE(IU06,*) '67 NEMO MERIDIONAL CURRENT ...', PFLAG(67),
      & '......', FFLAG(67),'.....',GFLAG(67),'.....',IPFGTBL(67)
+      WRITE(IU06,*) '68 WAVE ENERGY FLUX MAGNITUDE.', PFLAG(68),
+     & '......', FFLAG(68),'.....',GFLAG(68),'.....',IPFGTBL(68)
+      WRITE(IU06,*) '69 WAVE ENERGY FLUX DIRECTION.', PFLAG(69),
+     & '......', FFLAG(69),'.....',GFLAG(69),'.....',IPFGTBL(69)
+      WRITE(IU06,*) '70 SIG. WAVE HEIGHT 10<=T<=12.', PFLAG(70),
+     & '......', FFLAG(70),'.....',GFLAG(70),'.....',IPFGTBL(70)
+      WRITE(IU06,*) '71 SIG. WAVE HEIGHT 12<=T<=14.', PFLAG(71),
+     & '......', FFLAG(71),'.....',GFLAG(71),'.....',IPFGTBL(71)
+      WRITE(IU06,*) '72 SIG. WAVE HEIGHT 14<=T<=17.', PFLAG(72),
+     & '......', FFLAG(72),'.....',GFLAG(72),'.....',IPFGTBL(72)
+      WRITE(IU06,*) '73 SIG. WAVE HEIGHT 17<=T<=21.', PFLAG(73),
+     & '......', FFLAG(73),'.....',GFLAG(73),'.....',IPFGTBL(73)
+      WRITE(IU06,*) '74 SIG. WAVE HEIGHT 21<=T<=25.', PFLAG(74),
+     & '......', FFLAG(74),'.....',GFLAG(74),'.....',IPFGTBL(74)
+      WRITE(IU06,*) '75 SIG. WAVE HEIGHT 25<=T<=30.', PFLAG(75),
+     & '......', FFLAG(75),'.....',GFLAG(75),'.....',IPFGTBL(75)
 
       DO IC=1,5
         ITG=JPPFLAG-5+IC
