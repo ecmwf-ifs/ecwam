@@ -2078,7 +2078,7 @@
             ilocal=ilocal+1
             IPARAM=114
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1012,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1012G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2097,7 +2097,7 @@
             ilocal=ilocal+1
             IPARAM=115
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1214,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1214G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2116,7 +2116,7 @@
             ilocal=ilocal+1
             IPARAM=116
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1417,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1417G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2135,7 +2135,7 @@
             ilocal=ilocal+1
             IPARAM=117
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1721,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1721G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2154,7 +2154,7 @@
             ilocal=ilocal+1
             IPARAM=118
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H2125,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2125G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
@@ -2173,7 +2173,7 @@
             ilocal=ilocal+1
             IPARAM=119
             ITABLE=140
-            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H2530,
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2530G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
      &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
