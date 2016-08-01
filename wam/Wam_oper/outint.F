@@ -171,6 +171,18 @@
           ENDIF
         ENDIF
 
+        IF(FFLAG(69).OR.PFLAG(69).OR.GFLAG(69)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(69)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WEFLXDG(I,J).NE.ZMISS)
+     &            WEFLXDG(I,J) = MOD(DEG * WEFLXDG(I,J) +180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
       ENDIF
 
       IF (CDTINTS.EQ.CDTPRO) THEN
@@ -963,6 +975,71 @@
      &                 NVCUG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' WAVE ENERGY FLUX MAGNITUDE'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WEFLXMG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' WAVE ENERGY FLUX DIRECTION'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WEFLXDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1012 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1012G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1214 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1214G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1417 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1417G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1721 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1721G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H2125 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E2125G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H2530 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E2530G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
@@ -1951,6 +2028,157 @@
           ENDIF
         ENDIF
 
+!*      WAVE ENERGY FLUX MAGITUDE.
+!       --------------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=112
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXMG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      WAVE ENERGY FLUX DIRECTION.
+!       --------------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=113
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXDG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1012.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=114
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1012,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1214.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=115
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1214,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1417.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=116
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1417,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1721.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=117
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H1721,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H2125.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=118
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H2125,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H2530.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=119
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, H2530,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
 
 !*      EXTRA FIELD 1
 !       -------------
