@@ -65,6 +65,7 @@
 
 ! ----------------------------------------------------------------------
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER
+      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
@@ -96,7 +97,8 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSHAL, ONLY: DEPTH       ,INDEP    ,IODP
+      USE YOWSHAL, ONLY: NDEPTH      ,DEPTH       ,INDEP    ,IODP  ,
+     &            TCGOND
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,MARSTYPE ,NPROMA_WAM,IREFRA
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
@@ -228,15 +230,14 @@
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(WEFLXM)) ALLOCATE(WEFLXM(IJSLOC:IJLLOC))
-!debile
-        WEFLXM(:)=0.
+        IF(.NOT.ALLOCATED(WEFLXD)) ALLOCATE(WEFLXD(IJSLOC:IJLLOC))
       ENDIF
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(WEFLXM)) ALLOCATE(WEFLXM(IJSLOC:IJLLOC))
         IF(.NOT.ALLOCATED(WEFLXD)) ALLOCATE(WEFLXD(IJSLOC:IJLLOC))
-!debile
-        WEFLXD(:)=0.
       ENDIF
+
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(E1012)) ALLOCATE(E1012(IJSLOC:IJLLOC))
@@ -328,7 +329,7 @@
       ENDDO
 !$OMP   END PARALLEL DO
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,ITG)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
@@ -385,6 +386,20 @@
         IF(IPFGTBL(ITG).NE.0) THEN
           CALL SE10MEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,E10MEAN(KIJS))
         ENDIF
+
+!       need to skip 10 because those fields are connected to the forcing
+!       (IFS or NEMO) or the spectral skewness
+        ITG=ITG+10
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
+           CALL WEFLUX (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
+     &                  NFRE, NANG, DFIM, DELTH,
+     &                  COSTH, SINTH, NDEPTH, INDEP, TCGOND,
+     &                  WEFLXM(KIJS), WEFLXD(KIJS))
+        ENDIF
+        ITG=ITG+1
+
 
 !       COMPUTE OUTPUT EXTRA FIELDS
 !       add necessary code to compute the extra output fields
