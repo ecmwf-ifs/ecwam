@@ -846,7 +846,7 @@
         IF(.NOT.ALLOCATED(E1012G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1012G(NGX,NGY))
 ! debile
-          E1012(:,:)=0.0
+          E1012G(:,:)=0.0
         ENDIF
       ENDIF
       ITG=ITG+1
@@ -854,7 +854,7 @@
         IF(.NOT.ALLOCATED(E1214G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1214G(NGX,NGY))
 ! debile
-          E1214(:,:)=0.0
+          E1214G(:,:)=0.0
         ENDIF
       ENDIF
       ITG=ITG+1
@@ -862,7 +862,7 @@
         IF(.NOT.ALLOCATED(E1417G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1417G(NGX,NGY))
 ! debile
-          E1417(:,:)=0.0
+          E1417G(:,:)=0.0
         ENDIF
       ENDIF
       ITG=ITG+1
@@ -870,7 +870,7 @@
         IF(.NOT.ALLOCATED(E1721G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1721G(NGX,NGY))
 ! debile
-          E1721(:,:)=0.0
+          E1721G(:,:)=0.0
         ENDIF
       ENDIF
       ITG=ITG+1
@@ -878,7 +878,7 @@
         IF(.NOT.ALLOCATED(E2125G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E2125G(NGX,NGY))
 ! debile
-          E2125(:,:)=0.0
+          E2125G(:,:)=0.0
         ENDIF
       ENDIF
       ITG=ITG+1
@@ -886,7 +886,7 @@
         IF(.NOT.ALLOCATED(E2530G)) THEN
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E2530G(NGX,NGY))
 ! debile
-          E2530(:,:)=0.0
+          E2530G(:,:)=0.0
         ENDIF
       ENDIF
 
