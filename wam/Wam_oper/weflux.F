@@ -129,7 +129,7 @@
        K=1
        DO IJ=IJS,IJL
           FCG = F(IJ,K,NFRE)
-          TEMP(IJ) = FCG*SINTH(K) 
+          TEMP(IJ) = FCG
           TEMPX(IJ) = FCG*SINTH(K) 
           TEMPY(IJ) = FCG*COSTH(K) 
        ENDDO
@@ -142,7 +142,7 @@
           ENDDO
        ENDDO
        DO IJ=IJS,IJL
-          WEFMAG(IJ)  = WEFMAG(IJ)+DELT*TEMP(IJ)
+          WEFMAG(IJ) = WEFMAG(IJ)+DELT*TEMP(IJ)
           WEFX(IJ)  = WEFX(IJ)+DELT*TEMPX(IJ)
           WEFY(IJ)  = WEFY(IJ)+DELT*TEMPY(IJ)
        ENDDO
