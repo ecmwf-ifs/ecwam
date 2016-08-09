@@ -383,7 +383,7 @@
         IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
            CALL WEFLUX (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
      &                  NFRE, NANG, DFIM, DELTH,
-     &                  COSTH, SINTH, NDEPTH, INDEP, TCGOND,
+     &                  COSTH, SINTH, NDEPTH, INDEP(KIJS), TCGOND,
      &                  WEFLXM(KIJS), WEFLXD(KIJS))
         ENDIF
         ITG=ITG+1
