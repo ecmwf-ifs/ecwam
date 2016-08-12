@@ -57,7 +57,7 @@
       USE YOWSTAT  , ONLY : LADEN    ,LGUST    ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
-     &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
+     &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE_CPL,
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NC       ,NR       ,FIELDG   ,
      &            CWDFILE  ,LLNEWCURR,NORMS_IN
@@ -80,7 +80,6 @@
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: I, J, JSN, JF, L, IC, IFLD, ICOUNT, IST, IP
       INTEGER :: NCOMLOC, NCOMBUF, NMASK, NTOT
-      INTEGER :: IPARAMU, IPARAMV
       INTEGER :: IMASTER,IR,ITOT,IINC,IRECV,JSETW,ITAG
       INTEGER :: IBEG,IEND,IBEGOFF,IENDOFF,IA,IB,ISETW,ISETV
       INTEGER, SAVE :: IPERIODIC
@@ -217,8 +216,21 @@
 !        
 !       COMPUTATION OF THE NORMS OF INPUT FIELDS
 !
-        AFLABEL(1)='Neutral 10m U   '
-        AFLABEL(2)='Neutral 10m V   '
+        SELECT CASE (ICODE_CPL)
+        CASE(0)
+          AFLABEL(1)='PROBLEM !!!!!!! '
+          AFLABEL(2)='PROBLEM !!!!!!! '
+        CASE(1)
+          AFLABEL(1)='u* x-component  '
+          AFLABEL(2)='u* y-component  '
+        CASE(2)
+          AFLABEL(1)='tau x-component '
+          AFLABEL(2)='tau y-component '
+        CASE(3)
+          AFLABEL(1)='Neutral 10m U   '
+          AFLABEL(2)='Neutral 10m V   '
+        END SELECT 
+
         IF (NFIELDS.GE.3) AFLABEL(3)='Air density     '
         IF (NFIELDS.GE.4) AFLABEL(4)='w*              '
         IF (NFIELDS.GE.5) AFLABEL(5)='Sea ice fraction'
@@ -511,36 +523,7 @@
      &      WRITE(IU06,*) ' SUB. IFSTOWAM - CURRENTS INTERPOLATED'
         ENDIF
 
-        IPARAMU=165
-        IPARAMV=166
         IPARAMCI=31
-
-!*        1.1.2 DETERMINE CODE FOR WIND FIELD TYPE:
-!               165 = U10 FIELD , 180 = STRESS FIELD.
-!               ------------------------------------
-
-        IF (IPARAMU.EQ.165 .AND. IPARAMV.EQ.166) THEN
-          ICODE = 3
-        ELSEIF (IPARAMU.EQ.33 .AND. IPARAMV.EQ.34) THEN
-          ICODE = 3
-        ELSEIF (IPARAMU.EQ.131 .AND. IPARAMV.EQ.132) THEN
-          ICODE = 3
-        ELSEIF (IPARAMU.EQ.180 .AND. IPARAMV.EQ.181) THEN
-          ICODE = 2
-        ELSE
-          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-          WRITE(IU06,*) ' +                                         +'
-          WRITE(IU06,*) ' +      WARNING ERROR IN SUB. IFSTOWAM     +'
-          WRITE(IU06,*) ' +      ==============================     +'
-          WRITE(IU06,*) ' + SUSPICIOUS WIND FIELD TYPE IN MARS BLOCK+'
-          WRITE(IU06,*) ' + U TYPE IS = ', IPARAMU
-          WRITE(IU06,*) ' + V TYPE IS = ', IPARAMV
-          WRITE(IU06,*) ' +                                         +'
-          WRITE(IU06,*) ' +    PROGRAM CONTINUES                    +'
-          WRITE(IU06,*) ' +                                         +'
-          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
-          CALL ABORT1
-        ENDIF
 
 !*      1.2 GRID DEFINITION BLOCK.
 !           ---------------------
