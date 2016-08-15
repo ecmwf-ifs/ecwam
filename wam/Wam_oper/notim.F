@@ -96,7 +96,7 @@
       INTEGER :: IG, ILEV, IJ
 
       REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10, THW, ADS, ZIDL, CICR, CITH
+      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10,US,THW,ADS,ZIDL,CICR,CITH
 
       CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
 
@@ -127,7 +127,8 @@
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
 
-        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+        CALL GETWND (U10OLD, USOLD,
+     &               THWOLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK,
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
         DO IG = 1,IGL
@@ -164,10 +165,6 @@
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
 
-      CALL GETWND (U10, THW, ADS, ZIDL, CICR, CITH,
-     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
-     &             LWCUR)
-
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------
 
@@ -191,35 +188,19 @@
 !       -----------------------------------------------------
         NSTORE=1
         IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
-        IF(LMESSPASS) THEN
-          IF(.NOT.ALLOCATED(USNEXT))
-     &            ALLOCATE(USNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(DSNEXT))
-     &            ALLOCATE(DSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ADSNEXT))
-     &            ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &            ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &            ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        ELSE
-          IF(.NOT.ALLOCATED(USNEXT))
-     &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(DSNEXT))
-     &            ALLOCATE(DSNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ADSNEXT))
-     &            ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &            ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &            ALLOCATE(CITHICKNEXT(NIBLO,NSTORE,NBLO))
-        ENDIF
+        IF(.NOT.ALLOCATED(USNEXT))
+     &          ALLOCATE(USNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(DSNEXT))
+     &          ALLOCATE(DSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(ADSNEXT))
+     &          ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(ZIDLNEXT))
+     &          ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CICOVERNEXT))
+     &          ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+        IF(.NOT.ALLOCATED(CITHICKNEXT))
+     &          ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
 
-        DO IG=1,IGL
           CDTNEXT(1)=CDTWIH
 
           CALL GSTATS(1493,0)
@@ -238,7 +219,15 @@
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)
-        ENDDO
+
+
+!?????????????
+
+      CALL GETWND (IJS(1),IJL(1),
+     &             U10, US,
+     &             THW, ADS, ZIDL, CICR, CITH,
+     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
+     &             LWCUR)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)

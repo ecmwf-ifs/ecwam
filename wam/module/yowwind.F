@@ -6,8 +6,12 @@
 !          See *INIT_FIELDG* for the initialisation
 
       TYPE FORCING_FIELDS 
-        REAL :: UWND    ! INPUT U WIND COMPONENT ON WAVE MODEL GRID
-        REAL :: VWND    ! INPUT V WIND COMPONENT ON WAVE MODEL GRID
+        REAL :: UWND    ! INPUT U COMPONENT ON WAVE MODEL GRID of
+                        ! 10m wind, or friction velocity or surfact stress
+                        ! See ICODE and ICODE_CPL
+        REAL :: VWND    ! INPUT V COMPONENT ON WAVE MODEL GRID of
+                        ! 10m wind, or friction velocity or surfact stress
+                        ! See ICODE and ICODE_CPL
         REAL :: AIRD    ! INPUT AIR DENSITY ON WAVE MODEL GRID
         REAL :: ZIDL    ! INPUT Zi/L ON WAVE MODEL GRID
         REAL :: CIFR    ! INPUT SEA ICE FRACTION ON WAVE MODEL GRID 
@@ -23,19 +27,19 @@
       REAL, PARAMETER :: WSPMIN=1.
       REAL, PARAMETER :: RWFAC=0.5 
 
-      CHARACTER*14 CDA 
-      CHARACTER*14 CDAWIFL 
-      CHARACTER*14 CDATEWO 
-      CHARACTER*14 CDATEFL 
-      CHARACTER*14, ALLOCATABLE :: CDTNEXT(:) 
-      CHARACTER*80 :: CWDFILE  
+      CHARACTER(LEN=14) :: CDA 
+      CHARACTER(LEN=14) :: CDAWIFL 
+      CHARACTER(LEN=14) :: CDATEWO 
+      CHARACTER(LEN=14) :: CDATEFL 
+      CHARACTER(LEN=14), ALLOCATABLE :: CDTNEXT(:) 
+      CHARACTER(LEN=80) :: CWDFILE  
 
-      INTEGER IIG 
-      INTEGER NC
-      INTEGER NR
+      INTEGER :: IIG 
+      INTEGER :: NC
+      INTEGER :: NR
       INTEGER :: NXFF
       INTEGER :: NYFF
-      INTEGER NSTORE
+      INTEGER :: NSTORE
       INTEGER :: IUNITW=0
       INTEGER :: NBITW=3400000
 
