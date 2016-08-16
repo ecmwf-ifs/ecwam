@@ -1,8 +1,10 @@
       SUBROUTINE GETWND (MIJS, MIJL,
      &                   U10, US,
-     &                   THW, ADS, ZIDL, CICVR, CITH,
+     &                   THW,
+     &                   ADS, ZIDL,
+     &                   CICVR, CITH,
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
-     &                   LWCUR)
+     &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -22,7 +24,7 @@
 !       *CALL* *GETWND (MIJS, MIJL,
 !                       U10, THW, ADS, ZIDL, CICVR, CITH,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
-!                       LWCUR)*
+!                       LWCUR, ICODE_WND)*
 !         *MIJS*    - INDEX OF FIRST GRIDPOINT
 !         *MIJL*    - INDEX OF LAST GRIDPOINT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
@@ -39,6 +41,30 @@
 !         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                    (IF NEEDED)
 !         *LWCUR*  -  LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!         *ICODE_WND* SPECIFY WHICH OF U10 OR US HAS BEEN UPDATED:
+!                     U10: ICODE_WND=3
+!                     US:  ICODE_WND=1 OR 2
+
+! ----------------------------------------------------------------------
+
+!**** *GETWND* - ROUTINE TO READ AND PROCESS ONE WINDFIELD.
+
+!*    PURPOSE.
+!     --------
+
+!        READ A WINDFIELD FROM THE WINDFILE (SEARCH FOR IT)
+!        AND CALCULATES THE WIND VELOCITY  AND DIRECTION
+!        FOR ALL WAM BLOCKS.
+!        ALSO INPUT THE OTHER FORCING FIELD.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *GETWND (MIJS, MIJL,
+!                       U10, THW, ADS, ZIDL, CICVR, CITH,
+!                       CDTWIS, LWNDFILE, LCLOSEWND,
+!                       LWCUR, ICODE_WND)*
+!         *MIJS*    - INDEX OF F
 !     METHOD.
 !     -------
 
@@ -90,9 +116,12 @@
 
       INTEGER, INTENT(IN) :: IREAD
       INTEGER, INTENT(IN) :: MIJS, MIJL
+      INTEGER, INTENT(OUT) :: ICODE_WND
 
       REAL, DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
-      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) ::THW,ADS,ZIDL,CICVR,CITH
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
 
@@ -101,7 +130,6 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER :: I, J
-      INTEGER :: ICODE_WND
 
       REAL :: ZHOOK_HANDLE
 

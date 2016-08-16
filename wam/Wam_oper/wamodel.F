@@ -977,6 +977,7 @@
 
             CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
+     &                   USOLD, USNEW,
      &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
      &                   CICOVER, CITHICK, CIWA,
      &                   TAUW)

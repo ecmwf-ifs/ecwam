@@ -1,6 +1,9 @@
-      SUBROUTINE TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+      SUBROUTINE TIMIN (CDTWIS, CDTWIE,
+     &                  MIJS, MIJL,
+     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
      &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &                  LWCUR)
+
 ! ----------------------------------------------------------------------
 !     MODIFIED  J. BIDLOT  FEBRARY 1996  MESSAGE PASSING
 !               S. ABDALLA OCTOBER 2001  INCLUSION OF AIR DENSITY & Zi/L
@@ -68,28 +71,23 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPCONS , ONLY : PI       ,ZPI
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,CICOVERNEXT,
-     &            CITHICKNEXT
-
+      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: MIJS, MIJL
       INTEGER, INTENT(IN) :: IREAD
       
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::
-     &               U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &               ROAIRO,ZIDLOLD,CICOVER,CITHICK
+      REAL,DIMENSION(MIJS:MIJL), INTENT(INOUT) ::
+     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,
+     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
 
@@ -97,14 +95,14 @@
 
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-      INTEGER :: IG, ILEV, IJ
+      INTEGER :: ILEV, IJ
       INTEGER :: NTS, N
 
       REAL :: ZHOOK_HANDLE
       REAL :: DEL, D
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US,DS,ADS,ZIDL,CICR,CITH
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: US2,DS2,ADS2,ZIDL2,CICR2,CITH2
-      REAL,DIMENSION(NINF:NSUP) :: US3, DS3,ADS3,ZIDL3,CICR3,CITH3
+      REAL,DIMENSION(MIJS:MIJL) :: U10,US,DS,ADS,ZIDL,CICR,CITH
+      REAL,DIMENSION(MIJS:MIJL) :: U102,US2,DS2,ADS2,ZIDL2,CICR2,CITH2
+      REAL,DIMENSION(MIJS:MIJL) :: U103,US3, DS3,ADS3,ZIDL3,CICR3,CITH3
 
       CHARACTER(LEN=14) :: CDTH, CDT1, CDT2, ZERO
       CHARACTER(LEN=80) :: FILENAME
@@ -133,57 +131,61 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (US, DS, ADS, ZIDL, CICR, CITH,
+        CALL GETWND (MIJS, MIJL,
+     &               U10, US,
+     &               DS,
+     &               ADS, ZIDL,
+     &               CICR, CITH,
      &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR)
-        DO IG=1,IGL
-          CALL GSTATS(1494,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
 
-            DO IJ=KIJS,KIJL
-              U10OLD(IJ,IG) = US(IJ,IG)
-              THWOLD(IJ,IG) = DS(IJ,IG)
-              ROAIRO(IJ,IG) = ADS(IJ,IG)
-              ZIDLOLD(IJ,IG)= ZIDL(IJ,IG)
-              CICOVER(IJ,IG)= CICR(IJ,IG)
-              CITHICK(IJ,IG)= CITH(IJ,IG)
-            ENDDO
+        CALL GSTATS(1494,0)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
+        DO JKGLO=MIJS,MIJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,MIJL)
 
-            CALL AIRSEA (U10OLD(KIJS,IG), TAUW(KIJS,IG),
-     &        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
-     &        KIJS, KIJL, ILEV)
+          DO IJ=KIJS,KIJL
+            U10OLD(IJ) = U10(IJ)
+            THWOLD(IJ) = DS(IJ)
+            ROAIRO(IJ) = ADS(IJ)
+            ZIDLOLD(IJ)= ZIDL(IJ)
+            CICOVER(IJ)= CICR(IJ)
+            CITHICK(IJ)= CITH(IJ)
           ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1494,1)
+
+          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS),
+     &      USOLD(KIJS), Z0OLD(KIJS),
+     &      KIJS, KIJL, ILEV)
         ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1494,1)
+
         IF (ITEST.GE.3) THEN
           WRITE(IU06,'(''       SUB. TIMIN: FIRST WIND FIELD '',
      &     ''SAVED IN COMMON WIND'')')
           CALL FLUSH(IU06)
         ENDIF
+
       ELSE
         CDT1 = CDA
-        DO IG=1,IGL
-          CALL GSTATS(1494,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            DO IJ=KIJS,KIJL
-              US(IJ,IG) = U10OLD(IJ,IG)
-              DS(IJ,IG) = THWOLD(IJ,IG)
-              ADS(IJ,IG) = ROAIRO(IJ,IG)
-              ZIDL(IJ,IG)= ZIDLOLD(IJ,IG)
-              CICR(IJ,IG)= CICOVER(IJ,IG)
-              CITH(IJ,IG)= CITHICK(IJ,IG)
-            ENDDO
+        CALL GSTATS(1494,0)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
+        DO JKGLO=MIJS,MIJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,MIJL)
+          DO IJ=KIJS,KIJL
+            U10(IJ) = U10OLD(IJ)
+            US(IJ) = USOLD(IJ)
+            DS(IJ) = THWOLD(IJ)
+            ADS(IJ) = ROAIRO(IJ)
+            ZIDL(IJ)= ZIDLOLD(IJ)
+            CICR(IJ)= CICOVER(IJ)
+            CITH(IJ)= CITHICK(IJ)
           ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1494,1)
         ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1494,1)
         CDTH = CDT1
         CALL INCDATE (CDTH,IDELWO)
         IF (CDTWIS.NE.CDTH) THEN
@@ -218,7 +220,11 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (US2, DS2, ADS2, ZIDL2, CICR2, CITH2,
+      CALL GETWND (MIJS, MIJL,
+     &             U102, US2,
+     &             DS2,
+     &             ADS2, ZIDL2,
+     &             CICR2, CITH2,
      &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR)
 
@@ -228,81 +234,57 @@
       NSTORE=NTS
 
       IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
-      IF(LMESSPASS) THEN
-        IF(.NOT.ALLOCATED(USNEXT))
-     &          ALLOCATE(USNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(DSNEXT))
-     &          ALLOCATE(DSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ADSNEXT))
-     &          ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &          ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &          ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &          ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-      ELSE
-        IF(.NOT.ALLOCATED(USNEXT))
-     &          ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(DSNEXT))
-     &          ALLOCATE(DSNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ADSNEXT))
-     &          ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &          ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &          ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
-        IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &          ALLOCATE(CITHICKNEXT(NIBLO,NSTORE,NBLO))
-      ENDIF
+        IF(.NOT.ALLOCATED(FF_NEXT))
+     &          ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
 
-      DO IG=1,IGL
         CDTH = CDT1
         DO N=1,NTS
           CALL INCDATE(CDTH,IDELWO)
           CDTNEXT(N)=CDTH
           CALL GSTATS(1494,0)
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,D)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          DO JKGLO=MIJS,MIJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            KIJL=MIN(KIJS+NPROMA-1,MIJL)
             DO IJ=KIJS,KIJL
-              US3(IJ) = US(IJ,IG)+REAL(N)*DEL*(US2(IJ,IG)-US(IJ,IG))
-              D = DS2(IJ,IG)-DS(IJ,IG)
+              U10(IJ) = U10(IJ)+REAL(N)*DEL*(U102(IJ)-U10(IJ))
+              US3(IJ) = US(IJ)+REAL(N)*DEL*(US2(IJ)-US(IJ))
+              D = DS2(IJ)-DS(IJ)
               IF (ABS(D).GT.PI) D = D-ZPI*SIGN(1.,D)
-              D = DS(IJ,IG)+REAL(N)*DEL*D
+              D = DS(IJ)+REAL(N)*DEL*D
               DS3(IJ) = MOD(D+ZPI,ZPI)
-              ADS3(IJ) = ADS(IJ,IG)+
-     &                        REAL(N)*DEL*(ADS2(IJ,IG)-ADS(IJ,IG))
-              ZIDL3(IJ) = ZIDL(IJ,IG)+
-     &                         REAL(N)*DEL*(ZIDL2(IJ,IG)-ZIDL(IJ,IG))
-              CICR3(IJ) = CICR(IJ,IG)+
-     &                         REAL(N)*DEL*(CICR2(IJ,IG)-CICR(IJ,IG))
-              CITH3(IJ) = CITH(IJ,IG)+
-     &                         REAL(N)*DEL*(CITH2(IJ,IG)-CITH(IJ,IG))
+              ADS3(IJ) = ADS(IJ)+
+     &                        REAL(N)*DEL*(ADS2(IJ)-ADS(IJ))
+              ZIDL3(IJ) = ZIDL(IJ)+
+     &                         REAL(N)*DEL*(ZIDL2(IJ)-ZIDL(IJ))
+              CICR3(IJ) = CICR(IJ)+
+     &                         REAL(N)*DEL*(CICR2(IJ)-CICR(IJ))
+              CITH3(IJ) = CITH(IJ)+
+     &                         REAL(N)*DEL*(CITH2(IJ)-CITH(IJ))
 
-              USNEXT(IJ,N,IG)=US3(IJ)
-              DSNEXT(IJ,N,IG)=DS3(IJ)
-              ADSNEXT(IJ,N,IG)=ADS3(IJ)
-              ZIDLNEXT(IJ,N,IG)=ZIDL3(IJ)
-              CICOVERNEXT(IJ,N,IG)=CICR3(IJ)
-              CITHICKNEXT(IJ,N,IG)=CITH3(IJ)
+              FF_NEXT(IJ,N)%WSWAVE=U103(IJ)
+              FF_NEXT(IJ,N)%USTAR=US3(IJ)
+              FF_NEXT(IJ,N)%WDWAVE=DS3(IJ)
+              FF_NEXT(IJ,N)%AIRD=ADS3(IJ)
+              FF_NEXT(IJ,N)%ZIDL=ZIDL3(IJ)
+              FF_NEXT(IJ,N)%CIFR=CICR3(IJ)
+              FF_NEXT(IJ,N)%CITH=CITH3(IJ)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1494,1)
         ENDDO
 
-        DO IJ=IJS(IG),IJL(IG)
-          US(IJ,IG) = US2(IJ,IG)
-          DS(IJ,IG) = DS2(IJ,IG)
-          ADS(IJ,IG) = ADS2(IJ,IG)
-          ZIDL(IJ,IG) = ZIDL2(IJ,IG)
-          CICR(IJ,IG) = CICR2(IJ,IG)
-          CITH(IJ,IG) = CITH2(IJ,IG)
+        DO IJ=MIJS,MIJL
+          U10(IJ) = U102(IJ)
+          US(IJ) = US2(IJ)
+          DS(IJ) = DS2(IJ)
+          ADS(IJ) = ADS2(IJ)
+          ZIDL(IJ) = ZIDL2(IJ)
+          CICR(IJ) = CICR2(IJ)
+          CITH(IJ) = CITH2(IJ)
         ENDDO
 
-      ENDDO
       CDT1 = CDT2
       IF (ITEST.GE.3) THEN
         WRITE(IU06,*) '       SUB. TIMIN: LAST WIND FIELD AT ',
