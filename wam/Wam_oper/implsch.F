@@ -134,6 +134,7 @@
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
 ! ----------------------------------------------------------------------
 
