@@ -74,7 +74,9 @@
      &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
      &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
      &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
-     &            CICG     ,CIHG     ,E10G     ,
+     &            CICG     ,CIHG     ,
+     &            E10G     ,WEFLXMG  ,WEFLXDG  ,E1012G   , 
+     &            E1214G   ,E1417G   ,E1721G   ,E2125G   ,E2530G   ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
@@ -86,7 +88,8 @@
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
-     &            STRNMS   ,E10MEAN  ,
+     &            STRNMS   ,E10MEAN  ,WEFLXM   ,WEFLXD   ,E1012    ,
+     &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH        ,
      &            KTAG
@@ -503,6 +506,55 @@
           ENDDO
         ENDIF
 
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(WEFLXM(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(WEFLXD(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E1012(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E1214(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E1417(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E1721(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E2125(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+         CALL SETWMASK(E2530(IJS),TEMP(IJS,ITG),
+     &                 IJS,IJL,CITHRSH,IODP(IJS))
+        ENDIF
+
+
 !       EXTRA OUTPUT FIELDS:
 !       See *OUTBS* where they should have been calculated or pick them up from
 !       the forcing fields (see above if the sea ice mask has to be removed)
@@ -877,6 +929,38 @@
           ELSEIF(ICT.EQ.(46+3*NTRAIN+12)) THEN
             LSQRT=.FALSE.
             CALL MAKEGRID (GTEMP,NVCUG,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+13)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,WEFLXMG,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+14)) THEN
+            LSQRT=.FALSE.
+            CALL MAKEGRID (GTEMP,WEFLXDG,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+15)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E1012G,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+16)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E1214G,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+17)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E1417G,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+18)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E1721G,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+19)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E2125G,IG,LSQRT,ZMISS)
+            IFLD=IFLD+1
+          ELSEIF(ICT.EQ.(46+3*NTRAIN+20)) THEN
+            LSQRT=.TRUE.
+            CALL MAKEGRID (GTEMP,E2530G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ENDIF
 

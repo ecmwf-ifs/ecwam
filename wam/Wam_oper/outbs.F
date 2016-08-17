@@ -65,6 +65,7 @@
 
 ! ----------------------------------------------------------------------
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER
+      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
@@ -73,9 +74,11 @@
      &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
      &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
-     &            E10G     , 
-     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
-     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
+     &            E10G     ,
+     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG    ,
+     &            WEFLXMG  ,WEFLXDG  ,E1012G   , 
+     &            E1214G   ,E1417G   ,E1721G   ,E2125G   ,E2530G   ,
+     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
@@ -85,7 +88,8 @@
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
-     &            STRNMS   ,E10MEAN  ,
+     &            STRNMS   ,E10MEAN  ,WEFLXM   ,WEFLXD   ,E1012    ,
+     &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
       USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
       USE YOWSPEC  , ONLY : 
@@ -93,7 +97,8 @@
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
       USE YOWPCONS , ONLY : ZMISS
-      USE YOWSHAL, ONLY: DEPTH       ,INDEP    ,IODP
+      USE YOWSHAL, ONLY: NDEPTH      ,DEPTH       ,INDEP    ,IODP  ,
+     &            TCGOND
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,MARSTYPE ,NPROMA_WAM,IREFRA
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
@@ -190,6 +195,7 @@
         IF(.NOT.ALLOCATED(SPRDMEAN)) ALLOCATE(SPRDMEAN(IJSLOC:IJLLOC))
       ENDIF
       IF(IPFGTBL(6) .NE.0 .OR.
+     &   IPFGTBL(62).NE.0 .OR.
      &   IPFGTBL(34).NE.0 .OR.
      &   IPFGTBL(35).NE.0 .OR.
      &   IPFGTBL(36).NE.0 .OR.
@@ -215,6 +221,46 @@
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(E10MEAN)) ALLOCATE(E10MEAN(IJSLOC:IJLLOC))
+      ENDIF
+
+!     need to skip 10 because those fields are connected to the forcing
+!     (IFS or NEMO) or the spectral skewness
+      ITG=ITG+10
+
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(WEFLXM)) ALLOCATE(WEFLXM(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(WEFLXD)) ALLOCATE(WEFLXD(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(WEFLXM)) ALLOCATE(WEFLXM(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(WEFLXD)) ALLOCATE(WEFLXD(IJSLOC:IJLLOC))
+      ENDIF
+
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1012)) ALLOCATE(E1012(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1214)) ALLOCATE(E1214(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1417)) ALLOCATE(E1417(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1721)) ALLOCATE(E1721(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E2125)) ALLOCATE(E2125(IJSLOC:IJLLOC))
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E2530)) ALLOCATE(E2530(IJSLOC:IJLLOC))
       ENDIF
 
 
@@ -271,7 +317,7 @@
       ENDDO
 !$OMP   END PARALLEL DO
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,ITG)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
@@ -328,6 +374,50 @@
         IF(IPFGTBL(ITG).NE.0) THEN
           CALL SE10MEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,E10MEAN(KIJS))
         ENDIF
+
+!       need to skip 10 because those fields are connected to the forcing
+!       (IFS or NEMO) or the spectral skewness
+        ITG=ITG+10
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
+           CALL WEFLUX (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
+     &                  NFRE, NANG, DFIM, DELTH,
+     &                  COSTH, SINTH, NDEPTH, INDEP(KIJS), TCGOND,
+     &                  WEFLXM(KIJS), WEFLXD(KIJS))
+        ENDIF
+        ITG=ITG+1
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,10.,12.,E1012(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,12.,14.,E1214(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,14.,17.,E1417(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,17.,21.,E1721(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,21.,25.,E2125(KIJS))
+        ENDIF
+
+        ITG=ITG+1
+        IF(IPFGTBL(ITG).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,25.,30.,E2530(KIJS))
+        ENDIF
+
 
 !       COMPUTE OUTPUT EXTRA FIELDS
 !       add necessary code to compute the extra output fields
@@ -784,6 +874,54 @@
           IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(NVCUG(NGX,NGY))
         ENDIF
       ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(WEFLXMG)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(WEFLXMG(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(WEFLXDG)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(WEFLXDG(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1012G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1012G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1214G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1214G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1417G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1417G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E1721G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E1721G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E2125G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E2125G(NGX,NGY))
+        ENDIF
+      ENDIF
+      ITG=ITG+1
+      IF(IPFGTBL(ITG).NE.0) THEN
+        IF(.NOT.ALLOCATED(E2530G)) THEN
+          IF(LLALLOC_GRDFLD(ITG)) ALLOCATE(E2530G(NGX,NGY))
+        ENDIF
+      ENDIF
 
 
       IF(IPFGTBL(JPPFLAG-4).NE.0) THEN
@@ -848,6 +986,14 @@
       IF(ALLOCATED(VSTMEAN)) DEALLOCATE(VSTMEAN)
       IF(ALLOCATED(STRNMS)) DEALLOCATE(STRNMS)
       IF(ALLOCATED(E10MEAN)) DEALLOCATE(E10MEAN)
+      IF(ALLOCATED(WEFLXM)) DEALLOCATE(WEFLXM)
+      IF(ALLOCATED(WEFLXD)) DEALLOCATE(WEFLXD)
+      IF(ALLOCATED(E1012)) DEALLOCATE(E1012)
+      IF(ALLOCATED(E1214)) DEALLOCATE(E1214)
+      IF(ALLOCATED(E1417)) DEALLOCATE(E1417)
+      IF(ALLOCATED(E1721)) DEALLOCATE(E1721)
+      IF(ALLOCATED(E2125)) DEALLOCATE(E2125)
+      IF(ALLOCATED(E2530)) DEALLOCATE(E2530)
       IF(ALLOCATED(WX1)) DEALLOCATE(WX1)
       IF(ALLOCATED(WX2)) DEALLOCATE(WX2)
       IF(ALLOCATED(WX3)) DEALLOCATE(WX3)

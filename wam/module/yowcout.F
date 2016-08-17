@@ -5,7 +5,7 @@
 !*    ** *COUT*  OUTPUT POINTS INDICES AND FLAGS.
 
       INTEGER, PARAMETER :: NTRAIN=3 
-      INTEGER, PARAMETER :: JPPFLAG=58+3*NTRAIN+5 !!!! change also in scripts: wave_setgflag
+      INTEGER, PARAMETER :: JPPFLAG=66+3*NTRAIN+5 !!!! change also in scripts: wave_setgflag
       INTEGER, PARAMETER :: NREAL=11 
 
       CHARACTER*14, ALLOCATABLE :: COUTT(:)
