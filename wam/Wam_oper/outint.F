@@ -76,6 +76,8 @@
      &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
      &            C3G      ,E10G     ,
      &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG    ,
+     &            WEFLXMG  ,WEFLXDG  ,E1012G   , 
+     &            E1214G   ,E1417G   ,E1721G   ,E2125G   ,E2530G   ,
      &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G
       USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
@@ -164,6 +166,18 @@
               DO I=1,NGX
                 IF(UDIRG(I,J).NE.ZMISS)
      &            UDIRG(I,J) = MOD(DEG * UDIRG(I,J) +180.,360.)
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDIF
+
+        IF(FFLAG(69).OR.PFLAG(69).OR.GFLAG(69)) THEN
+          IF ((LMESSPASS.AND.(IRANK.EQ.IPFGTBL(69)))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            DO J=1,NGY
+              DO I=1,NGX
+                IF(WEFLXDG(I,J).NE.ZMISS)
+     &            WEFLXDG(I,J) = MOD(DEG * WEFLXDG(I,J) +180.,360.)
               ENDDO
             ENDDO
           ENDIF
@@ -306,6 +320,30 @@
         ITG=ITG+1
         IF (FFLAG(ITG))
      &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,NVCUG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,WEFLXMG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,WEFLXDG)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E1012G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E1214G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E1417G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E1721G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E2125G)
+        ITG=ITG+1
+        IF (FFLAG(ITG))
+     &    CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITG,E2530G)
 
       ENDIF
 
@@ -471,6 +509,38 @@
         ITAG=100+ITG
         IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
      &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,NVCUG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,WEFLXMG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,WEFLXDG)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E1012G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E1214G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E1417G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E1721G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E2125G)
+        ITG=ITG+1
+        ITAG=100+ITG
+        IF (PFLAG(ITG).OR.(.NOT.LFDB.AND.GFLAG(ITG)))
+     &      CALL MPGATHERGRDFLD(IPFGTBL(ITG),IRECV,ITAG,E2530G)
 
       ENDIF
 
@@ -582,6 +652,22 @@
             IF (FFLAG(ITG))WRITE (IU20) NUCUG
             ITG=ITG+1
             IF (FFLAG(ITG))WRITE (IU20) NVCUG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) WEFLXMG 
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) WEFLXDG
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E1012G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E1214G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E1417G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E1721G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E2125G
+            ITG=ITG+1
+            IF (FFLAG(ITG))WRITE (IU20) E2530G 
           ENDIF
         ENDIF
 
@@ -889,6 +975,71 @@
      &                 NVCUG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
           ENDIF
         ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' WAVE ENERGY FLUX MAGNITUDE'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WEFLXMG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' WAVE ENERGY FLUX DIRECTION'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 1.,
+     &                 WEFLXDG, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1012 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1012G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1214 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1214G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1417 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1417G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H1721 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E1721G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H2125 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E2125G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+        ITG=ITG+1
+        IF (PFLAG(ITG)) THEN
+          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+            TITL = ' H2530 (0.01 METERS)'
+            CALL OUTPP (CDTPRO, IU06, NGX, NGY, NGX, NGY, TITL, 100.,
+     &                 E2530G, AMOWEP, AMOSOP, AMOEAP, AMONOP)
+          ENDIF
+        ENDIF
+
         ENDIF
       ENDIF
 
@@ -1877,6 +2028,157 @@
           ENDIF
         ENDIF
 
+!*      WAVE ENERGY FLUX MAGITUDE.
+!       --------------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=112
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXMG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      WAVE ENERGY FLUX DIRECTION.
+!       --------------------------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=113
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXDG,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1012.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=114
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1012G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1214.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=115
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1214G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1417.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=116
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1417G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H1721.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=117
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1721G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H2125.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=118
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2125G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
+
+!*      H2530.
+!       ------
+
+        ITG=ITG+1
+        IF (GFLAG(ITG)) THEN
+          iglobal=iglobal+1
+          IF ((LMESSPASS.AND.LFDB.AND.(IRANK.EQ.IPFGTBL(ITG)))
+     &     .OR.(LMESSPASS.AND.(.NOT.LFDB).AND.(IRANK.EQ.1))
+     &     .OR.(.NOT.LMESSPASS)) THEN
+            ilocal=ilocal+1
+            IPARAM=119
+            ITABLE=140
+            CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2530G,
+     &                    ITABLE, IPARAM, 0, 0 , 0,
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+          ENDIF
+        ENDIF
 
 !*      EXTRA FIELD 1
 !       -------------
