@@ -119,7 +119,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWFLUX, LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
@@ -142,6 +142,7 @@
       INTEGER, INTENT(IN) :: IJS, IJL, IG
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
+      INTEGER :: ICODE_WND
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
 
@@ -180,6 +181,13 @@
 !        ---------------
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
+
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE
+      ELSE
+        ICODE_WND = ICODE_CPL
+      ENDIF
+
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -231,7 +239,7 @@
 !!            FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
@@ -268,7 +276,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -453,7 +461,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)

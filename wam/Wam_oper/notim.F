@@ -92,6 +92,7 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER :: ILEV, IJ
+      INTEGER :: ICODE_WND
 
       REAL :: ZHOOK_HANDLE
       REAL,DIMENSION(MIJS:MIJL) :: U10, US, THW, ADS, ZIDL, CICR, CITH
@@ -131,16 +132,15 @@
      &               ROAIRO, ZIDLOLD,
      &               CICOVER, CITHICK,
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
-     &               LWCUR)
+     &               LWCUR, ICODE_WND)
 
           CALL GSTATS(1493,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
           DO JKGLO=MIJS,MIJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,MIJL)
-            CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS),
-     &        USOLD(KIJS), Z0OLD(KIJS),
-     &        KIJS, KIJL, ILEV)
+            CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS), 
+     &                   Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)
@@ -203,7 +203,7 @@
      &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL,
      &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH,
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
-     &               LWCUR)
+     &               LWCUR, ICODE_WND)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)

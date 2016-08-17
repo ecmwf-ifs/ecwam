@@ -96,6 +96,7 @@
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER :: ILEV, IJ
+      INTEGER :: ICODE_WND
       INTEGER :: NTS, N
 
       REAL :: ZHOOK_HANDLE
@@ -137,7 +138,7 @@
      &               ADS, ZIDL,
      &               CICR, CITH,
      &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
-     &               LWCUR)
+     &               LWCUR, ICODE_WND)
 
         CALL GSTATS(1494,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
@@ -154,9 +155,9 @@
             CITHICK(IJ)= CITH(IJ)
           ENDDO
 
-          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS),
-     &      USOLD(KIJS), Z0OLD(KIJS),
-     &      KIJS, KIJL, ILEV)
+          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),
+     &                 Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1494,1)
@@ -226,7 +227,7 @@
      &             ADS2, ZIDL2,
      &             CICR2, CITH2,
      &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
-     &             LWCUR)
+     &             LWCUR, ICODE_WND)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.
 !         -----------------------------------------

@@ -30,6 +30,7 @@
 !    &                THW, ADS, ZIDL, CITH,
 !    &                LWCUR, ICODE_WND)
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
+!          *us*   - INTERPOLATED FRICTION VELOCITY
 !          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
@@ -42,7 +43,8 @@
 !                        FIELDG%VWND
 !                        AND
 !                        WHAT IS UPDATED:
-!                        ICODE_WND=3 THEN U10, otherwise US is UPDATED
+!                        ICODE_WND=3 THEN U10, otherwise US is UPDATED !!
+!                        ++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 !     METHOD.
