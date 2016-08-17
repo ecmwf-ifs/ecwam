@@ -23,10 +23,11 @@
 !     ----------
 
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
-!     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
-!     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!     3                  CICOVER, CITHICK, CIWA,
-!     4                  TAUW)
+!                        U10OLD,THWOLD,U10NEW,THWNEW, 
+!                        USOLD, USNEW,
+!                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
+!                        CICOVER, CITHICK, CIWA,
+!                        TAUW)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -42,6 +43,8 @@
 !                  CLOCKWISE FROM NORTH).
 !      *THWOLD*  - INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
+!      *USOLD*   - INTERMEDIATE STORAGE OF FRICTIOn VELOCITY
+!      *USNEW*   - NEW FRICTIOn VELOCITY
 !      *ROAIRN*  - AIR DENSITY IN KG/M3.
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
