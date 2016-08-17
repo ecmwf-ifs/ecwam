@@ -17,7 +17,7 @@
      &                      PHIAW    ,TAUOC
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
      &            ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,SL
-      USE YOWWIND  , ONLY : CDTNEXT  ,FFNEXT
+      USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
