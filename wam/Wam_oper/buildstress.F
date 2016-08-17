@@ -128,9 +128,10 @@
       ENDIF
 
       CALL GETWND (MIJS, MIJL,
-     &             U10OLD, USOLD,
-     &             THWOLD,
-     &             ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &             U10OLD(MIJS,1), USOLD(MIJS,1),
+     &             THWOLD(MIJS,1),
+     &             ROAIRO(MIJS,1), ZIDLOLD(MIJS,1),
+     &             CICOVER(MIJS,1), CITHICK(MIJS,1),
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
      &             LCR, ICODE_WND)
 
