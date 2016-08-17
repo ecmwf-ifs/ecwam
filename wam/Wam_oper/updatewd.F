@@ -57,6 +57,7 @@
       USE YOWTABL  , ONLY : UMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
