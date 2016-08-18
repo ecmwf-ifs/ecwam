@@ -73,12 +73,14 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
+      USE YOWCOUP  , ONLY : LWCOU
       USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
      &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -104,6 +106,7 @@
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
 
 
+      INTEGER :: ICODE_WND
       INTEGER :: ISTORE
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
@@ -117,6 +120,13 @@
 #endif
 
       NPROMA=NPROMA_WAM
+
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE
+      ELSE
+        ICODE_WND = ICODE_CPL
+      ENDIF
+
 
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
@@ -169,9 +179,16 @@
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
+          IF (ICODE_WND == 3 ) THEN
+            DO IJ = KIJS, KIJL
+              U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
+            ENDDO
+          ELSE
+            DO IJ = KIJS, KIJL
+              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+            ENDDO
+          ENDIF
           DO IJ = KIJS, KIJL
-            U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
-            USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
             THWNEW(IJ)=FF_NEXT(IJ,ISTORE)%WDWAVE
             ROAIRN(IJ)=FF_NEXT(IJ,ISTORE)%AIRD
             ZIDLNEW(IJ)=FF_NEXT(IJ,ISTORE)%ZIDL
