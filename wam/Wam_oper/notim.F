@@ -197,13 +197,33 @@
 
         CDTNEXT(1)=CDTWIH
 
+
+!!!1 debile
+        write(*,*) 'debile in notim before call to getwnd !!!'
+
         CALL GETWND (MIJS,MIJL,
-     &               FF_NEXT(MIJS,1)%WSWAVE, FF_NEXT(MIJS,1)%USTAR,
-     &               FF_NEXT(MIJS,1)%WDWAVE,
-     &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL,
-     &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH,
+     &               U10(MIJS), US(MIJS),
+     &               THW(MIJS),
+     &               ADS(MIJS)  , ZIDL(MIJS),
+     &               CICR(MIJS) , CITH(MIJS),
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR, ICODE_WND)
+
+        FF_NEXT(MIJS:MIJL,1)%WSWAVE = U10(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%USTAR  = US(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%WDWAVE = THW(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%AIRD   = ADS(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%ZIDL   = ZIDL(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%CIFR   = CICR(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%CITH   = CITH(MIJS:MIJL)
+
+!        CALL GETWND (MIJS,MIJL,
+!     &               FF_NEXT(MIJS,1)%WSWAVE, FF_NEXT(MIJS,1)%USTAR,
+!     &               FF_NEXT(MIJS,1)%WDWAVE,
+!     &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL,
+!     &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH,
+!     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
+!     &               LWCUR, ICODE_WND)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)
