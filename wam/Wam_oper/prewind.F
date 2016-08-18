@@ -209,7 +209,12 @@
 !         ---------------------------
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
+
+      write(*,*) 'debile  LLALLOC_FIELDG_ONLY = ',LLALLOC_FIELDG_ONLY
+
       CALL INIT_FIELDG(LLALLOC_FIELDG_ONLY,LLINIALL,LLOCAL)
+
+      write(*,*) 'debile it should not be here !!!!!!!!!'
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------

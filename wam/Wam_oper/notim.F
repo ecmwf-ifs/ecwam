@@ -1,8 +1,8 @@
       SUBROUTINE NOTIM (CDTWIS, CDTWIE,
      &                  MIJS, MIJL,
      &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &                  LWCUR)
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &                  IREAD, LWCUR)
 
 
 ! ----------------------------------------------------------------------
@@ -25,8 +25,8 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-!                      LWCUR)
+!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+!                      IREAD, LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
