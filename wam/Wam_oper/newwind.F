@@ -185,7 +185,7 @@
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL
-              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+!              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL

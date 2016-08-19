@@ -264,7 +264,7 @@
      &                         REAL(N)*DEL*(CITH2(IJ)-CITH(IJ))
 
               FF_NEXT(IJ,N)%WSWAVE=U103(IJ)
-              FF_NEXT(IJ,N)%USTAR=US3(IJ)
+!!!              FF_NEXT(IJ,N)%USTAR=US3(IJ)
               FF_NEXT(IJ,N)%WDWAVE=DS3(IJ)
               FF_NEXT(IJ,N)%AIRD=ADS3(IJ)
               FF_NEXT(IJ,N)%ZIDL=ZIDL3(IJ)
