@@ -76,7 +76,7 @@
             FIELDG(IX,JY)%VWND   = 0.
             FIELDG(IX,JY)%WSWAVE = WSPMIN 
             FIELDG(IX,JY)%WDWAVE = 0.
-            FIELDG(IX,JY)%USTAR  = 0.
+!            FIELDG(IX,JY)%USTAR  = 0.
             FIELDG(IX,JY)%CIFR   = 0.
             FIELDG(IX,JY)%CITH   = 0.
             FIELDG(IX,JY)%AIRD   = ROAIR
