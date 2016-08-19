@@ -1,5 +1,8 @@
-      SUBROUTINE BUILDSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+      SUBROUTINE BUILDSTRESS(MIJS, MIJL,
+     &                       U10OLD, THWOLD,
+     &                       USOLD, TAUW, Z0OLD,
+     &                       ROAIRO, ZIDLOLD,
+     &                       CICOVER, CITHICK,
      &                       IREAD)
 
 ! ----------------------------------------------------------------------
@@ -17,9 +20,12 @@
 
 !**   INTERFACE.
 !     ----------
-!     CALL *BUILDSTRESS*(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+!     CALL *BUILDSTRESS*(MIJS, MIJL,
+!    &                   U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
 !    &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !    &                   IREAD)*
+!     *MIJS*      INDEX OF FIRST GRIDPOINT
+!     *MIJL*      INDEX OF LAST GRIDPOINT
 !     *U10OLD*   WIND SPEED.
 !     *THWOLD*   WIND DIRECTION (RADIANS).
 !     *USOLD*    FRICTION VELOCITY.
@@ -48,11 +54,8 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV, 
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
-      USE YOWGRID  , ONLY : IJS      ,IJL
-      USE YOWMPP   , ONLY : NINF     ,NSUP     ,NPROC    ,IRANK   ,
-     &              KTAG
+      USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
-      USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,NPROMA_WAM
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,JPLEVT   ,TAUT
@@ -68,22 +71,25 @@
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: MIJS, MIJL
       INTEGER, INTENT(IN) :: IREAD
-      INTEGER :: IG
+
+      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: U10OLD, THWOLD
+      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW
+      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
+      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
+
+
       INTEGER :: ICODE_WND
       INTEGER :: ILEN, LIU, IPARAM, ILEV, KZLEVUWAVE, KZLEVCD 
       INTEGER :: IJ, MIJS, MIJL
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: NWAVEWIND(1)
 
-      REAL, DIMENSION(NINF:NSUP,NBLO), INTENT(OUT) :: U10OLD, THWOLD
-      REAL, DIMENSION(NINF:NSUP,NBLO), INTENT(OUT) :: USOLD, Z0OLD, TAUW
-      REAL, DIMENSION(NINF:NSUP,NBLO), INTENT(OUT) :: ROAIRO, ZIDLOLD
-      REAL, DIMENSION(NINF:NSUP,NBLO), INTENT(OUT) :: CICOVER,CITHICK
-
       REAL :: ZHOOK_HANDLE
       REAL :: TEMPXNLEV, CDINV, CDSQRTINV, CHARNOCK
-      REAL, ALLOCATABLE :: CD(:), TEMPTAUT(:,:,:)
+      REAL, DIMENSION(MIJS:MIJL) :: CD
+      REAL, ALLOCATABLE :: TEMPTAUT(:,:,:)
 
       CHARACTER(LEN=24) :: FILNM
 
@@ -103,10 +109,6 @@
       CDATEFL = ' '
       CDTPRO = CDATEA
       LCR=.FALSE.
-
-      MIJS=IJS(1)
-      MIJL=IJL(1)
-      IG=1
 
 !     GETWND AND READWGRIB REQUIRES FIELDG TO BE ALLOCATED !
       LLALLOC_ONLY=.FALSE.
@@ -128,10 +130,10 @@
       ENDIF
 
       CALL GETWND (MIJS, MIJL,
-     &             U10OLD(MIJS,1), USOLD(MIJS,1),
-     &             THWOLD(MIJS,1),
-     &             ROAIRO(MIJS,1), ZIDLOLD(MIJS,1),
-     &             CICOVER(MIJS,1), CITHICK(MIJS,1),
+     &             U10OLD(MIJS), USOLD(MIJS),
+     &             THWOLD(MIJS),
+     &             ROAIRO(MIJS), ZIDLOLD(MIJS),
+     &             CICOVER(MIJS), CITHICK(MIJS),
      &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
      &             LCR, ICODE_WND)
 
@@ -178,8 +180,8 @@
       IF(LWAVEWIND) THEN
         IPARAM=245
         LLONLYPOS=.FALSE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, U10OLD,
-     &                 KZLEVUWAVE, LLONLYPOS, IREAD)
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,
+     &                 U10OLD(MIJS), KZLEVUWAVE, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
         WRITE(IU06,*) ' '
@@ -241,11 +243,8 @@
 
       ENDIF
 
-      IF(.NOT.ALLOCATED(CD)) ALLOCATE(CD(MIJS:MIJL))
-
 !     1.3 INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
 !         ----------------------------------------------------
-
 
 ! Mod for OPENMP
       NPROMA=NPROMA_WAM
@@ -257,17 +256,16 @@
         KIJL=MIN(KIJS+NPROMA-1,MIJL)
 
         DO IJ=KIJS,KIJL
-          TAUW(IJ,IG)=0.
+          TAUW(IJ)=0.
         ENDDO
 
-        CALL AIRSEA (U10OLD(KIJS,IG),TAUW(KIJS,IG),USOLD(KIJS,IG),
-     &               Z0OLD(KIJS,IG), KIJS, KIJL, ILEV, ICODE_WND)
+        CALL AIRSEA (U10OLD(KIJS),TAUW(KIJS),USOLD(KIJS),
+     &               Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
 
         DO IJ=KIJS,KIJL
 !!        THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
 !!        ALWAYS BE AS IN OUTGRID
-          CDINV = MAX(U10OLD(IJ,IG)**2,EPSU10)/
-     &            MAX(USOLD(IJ,IG)**2,EPSUS)
+          CDINV = MAX(U10OLD(IJ)**2,EPSU10)/MAX(USOLD(IJ)**2,EPSUS)
           CDINV = MIN(CDINV,10000.) 
           CD(IJ) = 1./CDINV
         ENDDO
@@ -282,8 +280,9 @@
         IPARAM=233
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
-        CALL READWGRIB(IU06,FILNM,IPARAM,CDTPRO,CD,
-     &                 KZLEVCD, LLONLYPOS, IREAD)
+!       !!!! CD was initialised above !!!!
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,
+     &                 CD(MIJS), KZLEVCD, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
 !       TEST REFERENCE LEVEL FOR UWAVE AND CD
@@ -319,23 +318,21 @@
             KIJL=MIN(KIJS+NPROMA-1,MIJL)
             DO IJ=KIJS,KIJL
               CDSQRTINV = MIN(1./SQRT(CD(IJ)),100.0)
-              Z0OLD(IJ,IG) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
+              Z0OLD(IJ) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !!            USOLD WILL FIRST CONTAIN ITS SQUARE
 !!            THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
 !!            ALWAYS BE AS IN OUTGRID
-              USOLD(IJ,IG) = CD(IJ)*MAX(U10OLD(IJ,IG)**2,EPSU10)
-              USOLD(IJ,IG) = MAX(USOLD(IJ,IG),EPSUS)
-              CHARNOCK = G*Z0OLD(IJ,IG)/USOLD(IJ,IG)
+              USOLD(IJ) = CD(IJ)*MAX(U10OLD(IJ)**2,EPSU10)
+              USOLD(IJ) = MAX(USOLD(IJ),EPSUS)
+              CHARNOCK = G*Z0OLD(IJ)/USOLD(IJ)
               CHARNOCK = MAX(CHARNOCK,ALPHA)
-              TAUW(IJ,IG) = USOLD(IJ,IG)*(1.-(ALPHA/CHARNOCK)**2)
-              USOLD(IJ,IG) = SQRT(USOLD(IJ,IG))
+              TAUW(IJ) = USOLD(IJ)*(1.-(ALPHA/CHARNOCK)**2)
+              USOLD(IJ) = SQRT(USOLD(IJ))
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1444,1)
       ENDIF
-
-      IF(ALLOCATED(CD)) DEALLOCATE(CD)
 
       IF(ALLOCATED(TEMPTAUT)) THEN
         XNLEV(1)=TEMPXNLEV

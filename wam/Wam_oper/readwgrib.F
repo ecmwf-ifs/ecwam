@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, FIELD,
-     &                     KZLEV, LLONLYPOS, IREAD )
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+     &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
 
@@ -12,13 +12,13 @@
 !*    PURPOSE.
 !     --------
 
-!       INPUT FROM GRIB WAVE FIELD 
+!       SPECIAL INPUT FROM GRIB WAVE FIELD (SEE METHOD BELOW !!!) 
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, FIELD,
-!    &                     KZLEV, LLONLYPOS, IREAD )
+!       *CALL* *READWGRIB*(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+!    &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -26,6 +26,8 @@
 !      *FILNM*     DATA INPUT FILENAME.
 !      *IPARAM*    INTEGER   PARAMETER IDENTIFIER OF FIELD
 !      *CDATE*     CHARACTER DATE OF THE REQUESTED FIELD 
+!      *MIJS*      INDEX OF FIRST GRIDPOINT
+!      *MIJL*      INDEX OF LAST GRIDPOINT
 !      *FIELD*     REAL      WAVE FIELD IN BLOCK FORMAT 
 !      *KZLEV*     INTEGER   REFERENCE LEVEL IN full METER
 !                           (SHOULD BE 0 EXCEPT FOR 233, 245 AND 249 WHERE IT
@@ -62,7 +64,7 @@
 
 !-------------------------------------------------------------------
 
-      USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
@@ -76,9 +78,10 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IU06, IREAD, IPARAM
+      INTEGER, INTENT(IN) :: MIJS, MIJL
       INTEGER, INTENT(INOUT) :: KZLEV
 
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: FIELD 
+      REAL,DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
@@ -86,8 +89,7 @@
       LOGICAL, INTENT(IN) :: LLONLYPOS
 
 
-      INTEGER :: KPARAM 
-      INTEGER :: IG 
+      INTEGER :: KPARAM
       INTEGER :: IJ, IX, JY
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER :: KLONRGG(NGY)
@@ -145,21 +147,20 @@
 
 ! TRANSFORM GRID DATA TO BLOCK DATA
 
-        DO IG=1,IGL
           NPROMA=NPROMA_WAM
 
           IF(LLONLYPOS) THEN
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC)
 !$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            DO JKGLO=MIJS,MIJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              KIJL=MIN(KIJS+NPROMA-1,MIJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,IG)
-                JY = JFROMIJ(IJ,IG)
+                IX = IFROMIJ(IJ,1)
+                JY = JFROMIJ(IJ,1)
                 IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY) .GT. 0.)
-     &               FIELD(IJ,IG)=WORK(IX,JY)
+     &               FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -169,19 +170,18 @@
             CALL GSTATS(1444,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) 
 !$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            DO JKGLO=MIJS,MIJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              KIJL=MIN(KIJS+NPROMA-1,MIJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,IG)
-                JY = JFROMIJ(IJ,IG)
-                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ,IG)=WORK(IX,JY)
+                IX = IFROMIJ(IJ,1)
+                JY = JFROMIJ(IJ,1)
+                IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
             CALL GSTATS(1444,1)
           ENDIF
-        ENDDO
 
 #ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',1,ZHOOK_HANDLE)
