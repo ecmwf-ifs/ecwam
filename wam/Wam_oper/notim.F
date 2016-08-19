@@ -127,10 +127,10 @@
         CDA = CDTWIS
 
         CALL GETWND (MIJS, MIJL,
-     &               U10OLD, USOLD,
-     &               THWOLD,
-     &               ROAIRO, ZIDLOLD,
-     &               CICOVER, CITHICK,
+     &               U10OLD(MIJS), USOLD(MIJS),
+     &               THWOLD(MIJS),
+     &               ROAIRO(MIJS), ZIDLOLD(MIJS),
+     &               CICOVER(MIJS), CITHICK(MIJS),
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR, ICODE_WND)
 
@@ -198,14 +198,11 @@
         CDTNEXT(1)=CDTWIH
 
 
-!!!1 debile
-        write(*,*) 'debile in notim before call to getwnd !!!'
-
-        CALL GETWND (MIJS,MIJL,
+        CALL GETWND (MIJS, MIJL,
      &               U10(MIJS), US(MIJS),
      &               THW(MIJS),
-     &               ADS(MIJS)  , ZIDL(MIJS),
-     &               CICR(MIJS) , CITH(MIJS),
+     &               ADS(MIJS), ZIDL(MIJS),
+     &               CICR(MIJS), CITH(MIJS),
      &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR, ICODE_WND)
 

@@ -133,10 +133,10 @@
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
         CALL GETWND (MIJS, MIJL,
-     &               U10, US,
-     &               DS,
-     &               ADS, ZIDL,
-     &               CICR, CITH,
+     &               U10(MIJS), US(MIJS),
+     &               DS(MIJS),
+     &               ADS(MIJS), ZIDL(MIJS),
+     &               CICR(MIJS), CITH(MIJS),
      &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
      &               LWCUR, ICODE_WND)
 
@@ -222,10 +222,10 @@
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
       CALL GETWND (MIJS, MIJL,
-     &             U102, US2,
-     &             DS2,
-     &             ADS2, ZIDL2,
-     &             CICR2, CITH2,
+     &             U102(MIJS), US2(MIJS),
+     &             DS2(MIJS),
+     &             ADS2(MIJS), ZIDL2(MIJS),
+     &             CICR2(MIJS), CITH2(MIJS),
      &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
      &             LWCUR, ICODE_WND)
 

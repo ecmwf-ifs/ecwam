@@ -246,9 +246,6 @@
 !     1.3 INITIALISE CD USING THE FRICTION VELOCITY FOR TAUW=0.
 !         ----------------------------------------------------
 
-!debile
-       write(*,*) 'debile buildstress ICODE_WND = ',ICODE_WND
-
 
 ! Mod for OPENMP
       NPROMA=NPROMA_WAM

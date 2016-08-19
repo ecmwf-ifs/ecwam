@@ -86,9 +86,9 @@
 ! ----------------------------------------------------------------------
 
       IF(LWCOU) THEN
-        ICODE_WND = ICODE
-      ELSE
         ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
       ENDIF
 
       IF (ICODE_WND == 3 ) THEN

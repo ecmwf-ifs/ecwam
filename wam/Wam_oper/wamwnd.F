@@ -102,9 +102,6 @@
         IF(LRELWIND .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3)) LCORREL=.TRUE.
       ENDIF
 
-!debile
-      write(*,*) 'debile wamwnd ICODE_WND = ',ICODE_WND
-
 !*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !        ----------------------------------------
 

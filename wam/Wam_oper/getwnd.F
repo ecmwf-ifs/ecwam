@@ -167,6 +167,8 @@
       IF(LWNDFILE) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
+        ICODE_WND = ICODE
+
 !       CHECK WIND FIELD DATE
 
         IF (CDTWIR.LT.CDTWIS) THEN
@@ -227,7 +229,6 @@
           ENDIF
         ENDIF
 
-        ICODE_WND = ICODE
       ELSE
         ICODE_WND = ICODE_CPL
       ENDIF
