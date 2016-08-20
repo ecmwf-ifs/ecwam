@@ -79,7 +79,8 @@
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
-     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW
+     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,
+     &            USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -182,10 +183,14 @@
           IF (ICODE_WND == 3 ) THEN
             DO IJ = KIJS, KIJL
               U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
+! adapt first estimate of wave induced stress for low winds
+              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL
               USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+! adapt first estimate of wave induced stress for low winds
+              IF(USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL
@@ -194,11 +199,8 @@
             ZIDLNEW(IJ)=FF_NEXT(IJ,ISTORE)%ZIDL
             CICOVER(IJ,IG)=FF_NEXT(IJ,ISTORE)%CIFR
             CITHICK(IJ,IG)=FF_NEXT(IJ,ISTORE)%CITH
-
-! adapt first estimate of wave induced stress for low winds
-            IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
-
           ENDDO
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1492,1)
