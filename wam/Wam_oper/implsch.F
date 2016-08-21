@@ -143,7 +143,7 @@
       INTEGER, INTENT(IN) :: IJS, IJL, IG
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
-      INTEGER :: ICODE_WND
+      INTEGER :: ICODE_WND, ICODE_WAM
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
 
@@ -189,6 +189,7 @@
       ELSE
         ICODE_WND = ICODE
       ENDIF
+      ICODE_WAM=3
 
 ! ----------------------------------------------------------------------
 
@@ -278,7 +279,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -463,7 +464,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
