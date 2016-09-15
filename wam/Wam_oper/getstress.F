@@ -84,7 +84,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:) :: RFIELD
 
       CHARACTER(LEN=14) :: ZERO
-      CHARACTER(LEN=120) :: FILENAME
+      CHARACTER(LEN=296) :: FILENAME
 
 ! ----------------------------------------------------------------------
 

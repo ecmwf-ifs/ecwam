@@ -8,9 +8,9 @@
       CHARACTER USERID*3 
       CHARACTER RUNID*3 
       CHARACTER PATH*60 
-      CHARACTER CPATH*80 
+      CHARACTER CPATH*256 
       LOGICAL LRESTARTED 
-      CHARACTER CWI*87 
+      CHARACTER CWI*263
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
