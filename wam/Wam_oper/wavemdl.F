@@ -402,7 +402,7 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL,
-                        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
+     &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  BETAOLD(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
@@ -761,7 +761,7 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL,
-                        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
+     &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  WVBLOCK(KIJS,1))
 
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
