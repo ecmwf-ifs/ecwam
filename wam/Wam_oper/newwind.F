@@ -3,7 +3,7 @@
      &                    USOLD, USNEW,
      &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
      &                    CICOVER, CITHICK, CIWA,
-     &                    TAUW)
+     &                    TAUW, BETAOLD)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -27,7 +27,7 @@
 !                        USOLD, USNEW,
 !                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
 !                        CICOVER, CITHICK, CIWA,
-!                        TAUW)
+!                        TAUW, BETAOLD)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -53,6 +53,7 @@
 !      *CITHICK* - SEA ICE THICKNESS. 
 !      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
 !      *TAUW*    - WAVE STRESS
+!      *BETAOLD* - CHARNOCK PARAMETER 
 
 !     METHOD.
 !     -------
@@ -73,7 +74,7 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA
       USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
@@ -95,6 +96,7 @@
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
+      REAL,DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
       REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
       REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
       REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
@@ -189,6 +191,8 @@
           ELSE
             DO IJ = KIJS, KIJL
               USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+! update the estimate of TAUW
+              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0-(ALPHA/BETAOLD)**2)
 ! adapt first estimate of wave induced stress for low winds
               IF(USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
             ENDDO

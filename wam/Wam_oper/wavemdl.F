@@ -124,7 +124,7 @@
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,
-     &            TAUW   ,ROAIRO   ,ZIDLOLD  ,
+     &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,
      &            NSTART ,NEND     ,FL1      ,FL3      ,SL
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE FDBSUBS_MOD
@@ -395,7 +395,6 @@
 
 
 
-        IF(.NOT.ALLOCATED(BETAOLD)) ALLOCATE(BETAOLD(IJS(1):IJL(1)))
         NPROMA=NPROMA_WAM
         CALL GSTATS(1443,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
@@ -765,8 +764,7 @@
                         USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  WVBLOCK(KIJS,1))
 
-?????????
-          BETAOLD
+          BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
 
           IF(LWSTOKES) THEN
              CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
