@@ -192,7 +192,7 @@
             DO IJ = KIJS, KIJL
               USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
 ! update the estimate of TAUW
-              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0-(ALPHA/BETAOLD)**2)
+              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0-(ALPHA/BETAOLD(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
               IF(USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
             ENDDO
