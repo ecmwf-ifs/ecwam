@@ -342,7 +342,7 @@
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1      ,FL2      ,FL3      ,SL
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB

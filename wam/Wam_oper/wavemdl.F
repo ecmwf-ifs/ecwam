@@ -268,6 +268,8 @@
 
       ICODE_CPL=NATMFLX
 
+      IG=1
+
       IF(LWCOU) THEN
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
@@ -390,6 +392,22 @@
      &                IREAD,
      &                NFIELDS, NGPTOTG, NC, NR,
      &                FIELDS, LWCUR, MASK_IN, PRPLRADI)
+
+
+
+        IF(.NOT.ALLOCATED(BETAOLD)) ALLOCATE(BETAOLD(IJS(1):IJL(1)))
+        NPROMA=NPROMA_WAM
+        CALL GSTATS(1443,0)
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          CALL OUTBETA (KIJS, KIJL,
+                        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
+     &                  BETAOLD(KIJS))
+        ENDDO
+!$OMP   END PARALLEL DO
+        CALL GSTATS(1443,1)
 !
 
 #ifdef ECMWF
@@ -671,7 +689,6 @@
 
       IF(LWCOU) THEN
 
-        IG=1
 
         ALLOCATE(WVBLOCK(IJS(IG):IJL(IG),NWVFIELDS))
 
@@ -744,8 +761,12 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, IG, U10OLD, USOLD, Z0OLD,
+          CALL OUTBETA (KIJS, KIJL,
+                        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  WVBLOCK(KIJS,1))
+
+?????????
+          BETAOLD
 
           IF(LWSTOKES) THEN
              CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
