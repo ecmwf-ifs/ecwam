@@ -164,7 +164,7 @@ MODULE OUTPUT_STRUCT
           FLUSH(740+MyRankGlobal)
 #endif
           CALL MPI_ISEND(ARR_OUT_SEND_C(jProcOut) % ARR,Maxlen*nbPointCovered, &
-&                                       MPI_EXCH_STR,eProcOut-1,1020,comm,out_send_rqst(jProcOut),ierr)
+&                        MPI_EXCH_STR,eProcOut-1,1020,comm,out_send_rqst(jProcOut),ierr)
 #ifdef DEBUG         
           WRITE(740+MyRankGlobal,*) 'After call to MPI_ISEND'
           FLUSH(740+MyRankGlobal)
@@ -356,38 +356,38 @@ MODULE OUTPUT_STRUCT
           WRITE(740+MyRankGlobal,*) 'NIBLO_FD=', NIBLO_FD
           FLUSH(740+MyRankGlobal)
           DO iNode=1,NIBLO_FD
-            WRITE(740+MyRankGlobal,*) 'iNode=', iNode, 'NIBLO_FD=', NIBLO_FD
-            FLUSH(740+MyRankGlobal)
-            WRITE(740+MyRankGlobal,*) 'Before'
-            FLUSH(740+MyRankGlobal)
+!            WRITE(740+MyRankGlobal,*) 'iNode=', iNode, 'NIBLO_FD=', NIBLO_FD
+!            FLUSH(740+MyRankGlobal)
+!            WRITE(740+MyRankGlobal,*) 'Before'
+!            FLUSH(740+MyRankGlobal)
             IF (ARR_OUT_RECV(pos,iNode) .eq. ZMISS) THEN
               nbZmiss = nbZmiss + 1
-              WRITE(740+MyRankGlobal,*) 'print, step 1'
-              FLUSH(740+MyRankGlobal)
-              WRITE(940+MyRankGlobal,*) 'iNode=', iNode, ' nbZmiss=', nbZmiss
-              WRITE(740+MyRankGlobal,*) 'print, step 2'
-              FLUSH(740+MyRankGlobal)
-              WRITE(740+MyRankGlobal,*) 'iNode=', iNode, ' nbZmiss=', nbZmiss
-              WRITE(740+MyRankGlobal,*) 'print, step 3'
-              FLUSH(740+MyRankGlobal)
+!              WRITE(740+MyRankGlobal,*) 'print, step 1'
+!              FLUSH(740+MyRankGlobal)
+!              WRITE(940+MyRankGlobal,*) 'iNode=', iNode, ' nbZmiss=', nbZmiss
+!              WRITE(740+MyRankGlobal,*) 'print, step 2'
+!              FLUSH(740+MyRankGlobal)
+!              WRITE(740+MyRankGlobal,*) 'iNode=', iNode, ' nbZmiss=', nbZmiss
+!              WRITE(740+MyRankGlobal,*) 'print, step 3'
+!              FLUSH(740+MyRankGlobal)
             END IF
-            WRITE(740+MyRankGlobal,*) 'After'
-            FLUSH(740+MyRankGlobal)
+!            WRITE(740+MyRankGlobal,*) 'After'
+!            FLUSH(740+MyRankGlobal)
           END DO
-          WRITE(740+MyRankGlobal,*) 'After loop'
-          FLUSH(740+MyRankGlobal)
-          IF (nbZmiss .gt. 0) THEN
-            FLUSH(940+MyRankGlobal)
-          END IF
+!          WRITE(740+MyRankGlobal,*) 'After loop'
+!          FLUSH(740+MyRankGlobal)
+!          IF (nbZmiss .gt. 0) THEN
+!            FLUSH(940+MyRankGlobal)
+!          END IF
           WRITE(740+MyRankGlobal,*) 'size(ARR_OUT_RECV,2)=', size(ARR_OUT_RECV,2)
           IF (size(ARR_OUT_RECV,2) .gt. 220) THEN
             WRITE(740+MyRankGlobal,*) 'ARR_OUT_RECV(pos,211)=', ARR_OUT_RECV(pos,211)
             WRITE(740+MyRankGlobal,*) 'HS: nbZmiss=', nbZmiss
             FLUSH(740+MyRankGlobal)
           END IF
-          IF (NIBLO_FD .gt. 0) THEN
-            STOP
-          END IF
+!          IF (NIBLO_FD .gt. 0) THEN
+!            STOP
+!          END IF
         END IF
         FirstTime = .FALSE.
         WRITE(740+MyRankGlobal,*) 'NIBLO_FD=', NIBLO_FD
@@ -727,8 +727,8 @@ MODULE OUTPUT_STRUCT
         FLUSH(740+MyRankGlobal)
       END DO
 #endif
-      allocate(ListStartIDXout(NbProcOut+1), ListICTpos(TotalOutVar), ListICTposRev(JPPFLAG), &
-&              LocalPosICT(JPPFLAG), ListICT_to_ProcOut(JPPFLAG), stat=istat)
+      allocate(ListStartIDXout(NbProcOut+1), ListICTpos(TotalOutVar), ListICTposRev(JPPFLAG), stat=istat)
+      allocate(LocalPosICT(JPPFLAG), ListICT_to_ProcOut(JPPFLAG), stat=istat)
       ListICTposRev = -1
       LocalPosICT=0
       ListStartIDXout(1)=1

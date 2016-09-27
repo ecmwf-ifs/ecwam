@@ -79,6 +79,9 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
+      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -101,8 +104,13 @@
 
       REAL :: ZHOOK_HANDLE
 
+      CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
+
+      LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND, LWCUR
+
       LOGICAL :: LLNOTOPENED
       LOGICAL :: LONLYONCE
+      LOGICAL :: IsAssigned
 
       CHARACTER(LEN=14) :: CDTWIR
       CHARACTER(LEN=24) :: FILNM
@@ -132,7 +140,14 @@
 
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
-      IF(LWNDFILE) THEN
+      IsAssigned=.FALSE.
+      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
+        IsAssigned=.TRUE.
+        CALL SET_WIND_UNSTRUCTURED
+      END IF
+
+
+      IF(LWNDFILE .and. (IsAssigned .eqv. .FALSE.)) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
 !       CHECK WIND FIELD DATE

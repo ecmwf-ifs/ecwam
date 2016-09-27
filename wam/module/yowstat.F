@@ -166,7 +166,8 @@
 !                            = 0 THE OLD FORMULATION IS USED.
 !      *IREFRA*    INTEGER   REFRACTION OPTION..
 !                            = 0  NO REFRACTION.
-!                            = 1 DEPTH REFRACTION.
+!                            = 1 DEPTH REFRACTION ONLY.
+!                            = 2 CURRENT REFRACTION ONLY.
 !                            = 2 DEPTH AND CURRENT REFRACTION.
 !      *IPROPAGS*  INTEGER   PROPAGATION SCHEME OPTION.
 !                            = 0 ORIGINAL FIRST ORDER SCHEME ON QUADRANT.

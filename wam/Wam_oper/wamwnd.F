@@ -67,8 +67,7 @@
       REAL, PARAMETER :: ALPHACH = 0.0185
       REAL :: UU, VV, WSPEED, RESCALE, USTAR, Z0, CD
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION (IJS:IJL) :: U10,THW,ADS,ZIDL,CITH
-
+      REAL, INTENT(OUT), DIMENSION (IJS:IJL) :: U10,THW,ADS,ZIDL,CITH
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------

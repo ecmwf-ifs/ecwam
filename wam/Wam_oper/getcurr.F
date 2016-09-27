@@ -58,7 +58,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : LLNEWCURR 
-      USE UNWAM, ONLY : SET_CURTXY
+      USE UNSTRUCT_CURR, ONLY : SET_CURTXY, SET_CURTXY_SINGLEFILE
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -175,7 +175,12 @@
      &                        ' FOR DATE ',CDTCUR
                 CALL FLUSH(IU06)
 
-                CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
+                IF (LLUNSTR) THEN
+                  CALL SET_CURTXY_SINGLEFILE
+                ELSE
+                  CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
+                END IF
+                
 
                 IF(CDATEIN.NE.CDTCUR) THEN
                 WRITE (IU06,*) ' **************************************'

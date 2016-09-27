@@ -57,7 +57,6 @@
       REAL, DIMENSION(NFRE) :: DFIMLOC
       REAL, DIMENSION(IJS:IJL) :: TEMP
 
-
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SE10MEAN',0,ZHOOK_HANDLE)

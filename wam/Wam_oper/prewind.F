@@ -138,6 +138,8 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+!      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
+!      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
 #ifdef MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, only : WAV_coupl_prewind
 #endif
@@ -240,14 +242,19 @@
 !         -------------------------------------------
 
       CALL GETCURR(LWCUR, IREAD)
-
+!      Print *, 'LLUNSTR=', LLUNSTR
+!      Print *, 'USE_DIRECT_WIND_FILE=', USE_DIRECT_WIND_FILE
+!      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
+!        CALL SET_WIND_UNSTRUCTURED(U10OLD,THWOLD,USOLD,                 &
+!     &    TAUW,Z0OLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK)
+!      ELSE
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
       IF (IDELWO.GE.IDELWI) THEN
 
-!*    2.2 NO TIME INTERPOLATION.
-!         ----------------------
+!*      2.2 NO TIME INTERPOLATION.
+!       ----------------------
 
         IF (ITEST.GE.2) THEN
           WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
@@ -261,11 +268,10 @@
         CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &              LWCUR)
-
       ELSE
 
-!*    2.3 TIME INTERPOLATION.
-!         -------------------
+!*      2.3 TIME INTERPOLATION.
+!       -------------------
 
         IF (ITEST.GE.2) THEN
           WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
@@ -279,9 +285,7 @@
         CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
      &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
      &              LWCUR)
-
       ENDIF
-
 #else
       CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,          
      &                       ROAIRO, ZIDLOLD,                         

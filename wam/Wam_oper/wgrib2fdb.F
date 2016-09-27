@@ -48,11 +48,12 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
-      INTEGER, INTENT(INOUT) :: KLEN, KFDB
+      INTEGER, INTENT(IN) :: KLEN 
+      INTEGER, INTENT(INOUT) :: KFDB
       INTEGER, INTENT(OUT) :: KERR
       INTEGER, DIMENSION(KLEN), INTENT(INOUT) :: KGRIB
       INTEGER :: ICDFDBSF
-      INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP
+      INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP, ILEN
       INTEGER :: NLOCGRB, NENSFNB, NLEG, ICENTRE
       INTEGER :: ISTAT, ISTATUS
 
@@ -131,6 +132,7 @@
 !     THIS VALUE WILL BE RETURNED IF EVERYTHING GOES OK.
       KERR = 0
 
+      ILEN = KLEN
 !*    OPEN FDB (only once)
 
 
@@ -482,10 +484,10 @@
 !     ------------------------------------------------------------------
 
 !     time=timef()
-      ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, KLEN ) 
+      ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, ILEN ) 
 !     time=timef()-time
 !     write(20,'(" pjtdiags WAVE IWRITEFDB took ",f8.0," ms writing ",
-!    &            i12," bytes")') time,KLEN*NPRECI
+!    &            i12," bytes")') time,ILEN*NPRECI
       
 
       IF ( ISTAT .NE. 0 ) THEN
@@ -496,8 +498,8 @@
         KERR = 1
         RETURN
       ENDIF
-      IF (KTEST.GT.1) WRITE(KUSO,'("\ /WGRIB2FDB/ iwritefdb klen:", i10,
-     &                      " status:", i4)') KLEN, ISTAT
+      IF (KTEST.GT.1) WRITE(KUSO,'("\ /WGRIB2FDB/ iwritefdb ilen:", i10,
+     &                      " status:", i4)') ILEN, ISTAT
 
 !     ------------------------------------------------------------------
 

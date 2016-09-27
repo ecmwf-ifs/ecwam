@@ -1,4 +1,4 @@
-      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED,IREAD)
+      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
 !***  *READWIND* - PROGRAM TO FORMAT WIND FIELDS FROM MARS 
 !                  FROM INPUT FILE sfcwind.
@@ -140,7 +140,6 @@
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
-
 ! --------------------------------------------------------------------  
 
 #ifdef ECMWF
@@ -158,11 +157,10 @@
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF
 
-
-      IF(.NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS)) THEN
+      IF (.NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS)) THEN
 !       IF IT IS NOT A SWAMP CASE OR A CASE FOR WHICH A TIME SERIES
 !       IS PRESCRIBED.
-
+!       
 !       WIND FIELDS ARE SUPPLIED FROM INPUT FILE sfcwindin
 !       AS IS THE CASE IN THE STAND ALONE VERSION OR AT INITIAL INPUT
 !       TIME IN COUPLED MODEL.
@@ -655,7 +653,6 @@
             FIELDG(I,J)%VWND=VWIND
           ENDDO
         ENDDO
-
 #endif
 
 !!!! impose the northern part of the swamp domain to be covered with
