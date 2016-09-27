@@ -294,8 +294,13 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
       ENDIF
+
 !SHALLOW
-      IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
+      IF(ISHALLO.NE.1) THEN
+        CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, 
+     &              DEPTH(IJS,1), EMEANALL, F1MEAN)
+        CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
+      ENDIF
 !SHALLOW
 
 ! ----------------------------------------------------------------------
