@@ -129,6 +129,7 @@
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
       INTEGER, PARAMETER :: NFIELDS=7
 
+      INTEGER :: NATMFLX
       INTEGER :: NLON, NLAT
       INTEGER :: IGRIB_HANDLE_DUM
       INTEGER :: NADV
@@ -356,6 +357,7 @@
       IDUM=0
       NFDBREF=0  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
+      NATMFLX=0
       IF (.NOT.LWNEMOCOU) THEN
         LWCUR=.FALSE. ! only used in coupled runs
         LWSTOKES=.FALSE.  ! only used in coupled runs
@@ -412,6 +414,7 @@
       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
      &             NFIELDS, NGPTOTG, NC, NR,
      &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
+     &             NATMFLX,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,

@@ -1,6 +1,10 @@
-      SUBROUTINE GETWND (U10, THW, ADS, ZIDL, CICVR, CITH,
+      SUBROUTINE GETWND (MIJS, MIJL,
+     &                   U10, US,
+     &                   THW,
+     &                   ADS, ZIDL,
+     &                   CICVR, CITH,
      &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
-     &                   LWCUR)
+     &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -17,9 +21,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GETWND (U10, THW, ADS, ZIDL, CICVR, CITH,
+!       *CALL* *GETWND (MIJS, MIJL,
+!                       U10, THW, ADS, ZIDL, CICVR, CITH,
 !                       CDTWIS, LWNDFILE, LCLOSEWND,
-!                       LWCUR)*
+!                       LWCUR, ICODE_WND)*
+!         *MIJS*    - INDEX OF FIRST GRIDPOINT
+!         *MIJL*    - INDEX OF LAST GRIDPOINT
 !         *U10*    - MAGNITUDE OF 10m WIND AT EACH POINT AND BLOCK.
 !         *THW*    - DIRECTION OF 10m WIND AT EACH POINT AND BLOCK.
 !         *ADS*    - AIR DENSITY AT EACH POINT AND BLOCK.
@@ -34,6 +41,30 @@
 !         *IREAD*  - PROCESSOR WHICH WILL ACCESS THE FILE ON DISK
 !                    (IF NEEDED)
 !         *LWCUR*  -  LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!         *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
+!                     U10: ICODE_WND=3
+!                     US:  ICODE_WND=1 OR 2
+
+! ----------------------------------------------------------------------
+
+!**** *GETWND* - ROUTINE TO READ AND PROCESS ONE WINDFIELD.
+
+!*    PURPOSE.
+!     --------
+
+!        READ A WINDFIELD FROM THE WINDFILE (SEARCH FOR IT)
+!        AND CALCULATES THE WIND VELOCITY  AND DIRECTION
+!        FOR ALL WAM BLOCKS.
+!        ALSO INPUT THE OTHER FORCING FIELD.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *GETWND (MIJS, MIJL,
+!                       U10, THW, ADS, ZIDL, CICVR, CITH,
+!                       CDTWIS, LWNDFILE, LCLOSEWND,
+!                       LWCUR, ICODE_WND)*
+!         *MIJS*    - INDEX OF F
 !     METHOD.
 !     -------
 
@@ -70,14 +101,12 @@
 ! ----------------------------------------------------------------------
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWICE   , ONLY : IPARAMCI
-      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO    ,
-     &             CLDOMAIN,LWDINTS
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWMESPAS, ONLY : LMESSPASS
+      USE YOWMPP   , ONLY : IRANK
+      USE YOWPARAM , ONLY : CLDOMAIN , LWDINTS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN   ,IUNITW
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
@@ -89,16 +118,19 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IREAD
+      INTEGER, INTENT(IN) :: MIJS, MIJL
+      INTEGER, INTENT(OUT) :: ICODE_WND
 
-      REAL, DIMENSION (NINF:NSUP,NBLO), INTENT(INOUT) :: 
-     &                 U10,THW,ADS,ZIDL,CICVR,CITH
+      REAL, DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
+      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
 
       LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND, LWCUR
 
 
-      INTEGER :: IG, MIJS, MIJL
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
       INTEGER :: I, J
 
@@ -149,6 +181,8 @@
 
       IF(LWNDFILE .and. (IsAssigned .eqv. .FALSE.)) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
+
+        ICODE_WND = ICODE
 
 !       CHECK WIND FIELD DATE
 
@@ -210,24 +244,24 @@
           ENDIF
         ENDIF
 
+      ELSE
+        ICODE_WND = ICODE_CPL
       ENDIF
 ! ----------------------------------------------------------------------
 
 !*    3. INTERPOLATE AND BLOCK WINDFIELD
 !        -------------------------------
 
-      DO IG=1,IGL
-        MIJS=IJS(IG)
-        MIJL=IJL(IG)
 ! Mod for OPENMP
         CALL GSTATS(1444,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (U10(KIJS,IG), THW(KIJS,IG), ADS(KIJS,IG),
-     &                 ZIDL(KIJS,IG), CITH(KIJS,IG), KIJS, KIJL, IG,
-     &                 LWCUR)
+          CALL WAMWND (KIJS, KIJL,
+     &                 U10(KIJS), US(KIJS),
+     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS),
+     &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
@@ -251,12 +285,11 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL MICEP(IPARAMCI,CICVR, CITH, KIJS,KIJL,IG)
+          CALL MICEP(IPARAMCI, CICVR(KIJS), CITH(KIJS), KIJS, KIJL)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
 
-      ENDDO ! END LOOP ON IG
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)

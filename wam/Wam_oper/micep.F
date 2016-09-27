@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-      SUBROUTINE MICEP (IPARAM, CICVR, CITH, IJS, IJL, IG)
+      SUBROUTINE MICEP (IPARAM, CICVR, CITH, IJS, IJL)
 
 !-------------------------------------------------------------------
 
@@ -26,7 +26,7 @@
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(IPARAM, CICVR, CITH, IJS, IJL, IG)
+!             *CALL MICEP* *(IPARAM, CICVR, CITH, IJS, IJL)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -35,7 +35,6 @@
 !      *CITH*      REAL      SEA ICE THICKNESS.
 !      *IJS*       INDEX OF FIRST GRIDPOINT
 !      *IJL*       INDEX OF LAST GRIDPOINT
-!      *IG*        BLOCK NUMBER
 
 
 !     METHOD.
@@ -51,9 +50,8 @@
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     ,
      &               HICMIN
       USE YOWMAP   , ONLY : IXLG     ,KXLT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC   ,NINF       ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY     ,NBLO       ,CLDOMAIN   ,
-     &            SWAMPCITH
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NGX      ,NGY     ,CLDOMAIN   ,SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST 
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -66,10 +64,9 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IG
       INTEGER, INTENT(IN) :: IPARAM, IJS, IJL
 
-      REAL, DIMENSION (NINF:NSUP,NBLO), INTENT(INOUT) :: CICVR, CITH 
+      REAL, DIMENSION (IJS:IJL), INTENT(INOUT) :: CICVR, CITH 
 
 
       INTEGER :: IJ, IX, IY
@@ -98,7 +95,7 @@
 
       IF(LWNEMOCOUCIC) THEN
         DO IJ=IJS,IJL
-          CICVR(IJ,IG) = NEMOCICOVER(IJ)
+          CICVR(IJ) = NEMOCICOVER(IJ)
         ENDDO
       ELSEIF (IPARAM.EQ.31) THEN
         DO IJ=IJS,IJL
@@ -106,17 +103,17 @@
             IX = IJ
             IY = 1
           ELSE
-            IX = IXLG(IJ,IG)
-            IY = NGY-KXLT(IJ,IG) + 1
+            IX = IXLG(IJ,1)
+            IY = NGY-KXLT(IJ,1) + 1
           ENDIF
           IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR. 
      &        FIELDG(IX,IY)%CIFR .LT. 0.01 .OR.
      &        FIELDG(IX,IY)%CIFR .GT. 1.01 ) THEN 
-            CICVR(IJ,IG) = 0.0
+            CICVR(IJ) = 0.0
           ELSEIF (FIELDG(IX,IY)%CIFR .GT. 0.95) THEN 
-            CICVR(IJ,IG) = 1.0
+            CICVR(IJ) = 1.0
           ELSE
-            CICVR(IJ,IG) = FIELDG(IX,IY)%CIFR 
+            CICVR(IJ) = FIELDG(IX,IY)%CIFR 
           ENDIF
         ENDDO
       ELSE IF(IPARAM.EQ.139) THEN
@@ -125,13 +122,13 @@
             IX = IJ
             IY = 1
           ELSE
-            IX = IXLG(IJ,IG)
-            IY = NGY-KXLT(IJ,IG) + 1
+            IX = IXLG(IJ,1)
+            IY = NGY-KXLT(IJ,1) + 1
           ENDIF
           IF (FIELDG(IX,IY)%CIFR .LT. 271.5) THEN
-            CICVR(IJ,IG) = 1.0
+            CICVR(IJ) = 1.0
           ELSE
-            CICVR(IJ,IG) = 0.0
+            CICVR(IJ) = 0.0
           ENDIF
         ENDDO
       ENDIF 
@@ -140,43 +137,43 @@
       IF( .NOT. LICERUN .OR. LMASKICE ) THEN
 !      SEA ICE THICKNESS IN CASE IT IS NOT SUPPLIED AS INPUT:
         DO IJ=IJS,IJL
-          CITH(IJ,IG)=0.0
+          CITH(IJ)=0.0
         ENDDO
       ELSE IF(CLDOMAIN == 's' ) THEN
         DO IJ=IJS,IJL
-          IF(CICVR(IJ,IG).GT.0.0) THEN
-            CITH(IJ,IG)=SWAMPCITH
+          IF(CICVR(IJ).GT.0.0) THEN
+            CITH(IJ)=SWAMPCITH
           ELSE
-            CITH(IJ,IG)=0.0
+            CITH(IJ)=0.0
           ENDIF
         ENDDO
       ELSE IF((.NOT.LICETH).AND.(.NOT.LWNEMOCOUCIT)) THEN
 !       SEA ICE THICKNESS IS PARAMETERISED:
         DO IJ=IJS,IJL
-          IF(CICVR(IJ,IG).GT.0.0) THEN
-            CITH(IJ,IG)=MAX(C1+C2*CICVR(IJ,IG),0.)
+          IF(CICVR(IJ).GT.0.0) THEN
+            CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.)
           ELSE
-            CITH(IJ,IG)=0.0
+            CITH(IJ)=0.0
           ENDIF
         ENDDO
       ELSE IF(LWNEMOCOUCIT) THEN
 
          IF(LNEMOICEREST) THEN
            DO IJ=IJS,IJL
-              CITH(IJ,IG)=NEMOCITHICK(IJ)
+              CITH(IJ)=NEMOCITHICK(IJ)
            ENDDO
          ELSE
            DO IJ=IJS,IJL
-              CITH(IJ,IG)=CICVR(IJ,IG)*NEMOCITHICK(IJ)
+              CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
            ENDDO
          ENDIF
 
 !       CONSISTENCY CHECK:
 !       no ice if thickness < 0.5*HICMIN
         DO IJ=IJS,IJL
-          IF(CICVR(IJ,IG).GT.0.0 .AND. CITH(IJ,IG).LT.0.5*HICMIN ) THEN
-            CICVR(IJ,IG)=0.0
-            CITH(IJ,IG)=0.0
+          IF(CICVR(IJ).GT.0.0 .AND. CITH(IJ).LT.0.5*HICMIN ) THEN
+            CICVR(IJ)=0.0
+            CITH(IJ)=0.0
           ENDIF
         ENDDO
 
@@ -184,15 +181,15 @@
 
 !!!!   define a representative sea ice thickness that account for sea ice coverage
         DO IJ=IJS,IJL
-          CITH(IJ,IG)=CICVR(IJ,IG)*CITH(IJ,IG)
+          CITH(IJ)=CICVR(IJ)*CITH(IJ)
         ENDDO
 
 !       CONSISTENCY CHECK:
 !       no ice if thickness < 0.5*HICMIN
         DO IJ=IJS,IJL
-          IF(CICVR(IJ,IG).GT.0.0 .AND. CITH(IJ,IG).LT.0.5*HICMIN ) THEN
-            CICVR(IJ,IG)=0.0
-            CITH(IJ,IG)=0.0
+          IF(CICVR(IJ).GT.0.0 .AND. CITH(IJ).LT.0.5*HICMIN ) THEN
+            CICVR(IJ)=0.0
+            CITH(IJ)=0.0
           ENDIF
         ENDDO
 
@@ -202,7 +199,7 @@
       IF(ITEST.GE.1) THEN
         NICE = 0
         DO IJ=IJS,IJL
-          IF(CICVR(IJ,IG) .GT. CITHRSH) NICE = NICE + 1 
+          IF(CICVR(IJ) .GT. CITHRSH) NICE = NICE + 1 
         ENDDO
         IF(IPARAM.EQ.139) THEN
           WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K :',

@@ -1,6 +1,8 @@
-      SUBROUTINE NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &                  LWCUR)
+      SUBROUTINE NOTIM (CDTWIS, CDTWIE,
+     &                  MIJS, MIJL,
+     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+     &                  IREAD, LWCUR)
 
 
 ! ----------------------------------------------------------------------
@@ -23,8 +25,8 @@
 !     ----------
 
 !       *CALL* *NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-!                      LWCUR)
+!    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+!                      IREAD, LWCUR)
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
 !          *CDTWIE* - DATE OF LAST FIRST WIND FIELD.
 !          *U10OLD* - WIND SPEED.
@@ -64,28 +66,24 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU25     ,IU26
-      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,
-     &            USNEXT   ,DSNEXT   ,ADSNEXT ,ZIDLNEXT  ,
-     &            CICOVERNEXT, CITHICKNEXT
+      USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: MIJS, MIJL
       INTEGER, INTENT(IN) :: IREAD
       
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::
-     &               U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &               ROAIRO,ZIDLOLD,CICOVER,CITHICK
+      REAL,DIMENSION(MIJS:MIJL), INTENT(INOUT) ::
+     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,
+     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
 
@@ -93,10 +91,11 @@
 
 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-      INTEGER :: IG, ILEV, IJ
+      INTEGER :: ILEV, IJ
+      INTEGER :: ICODE_WND
 
       REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10, THW, ADS, ZIDL, CICR, CITH
+      REAL,DIMENSION(MIJS:MIJL) :: U10, US, THW, ADS, ZIDL, CICR, CITH
 
       CHARACTER(LEN=14), intent(in) :: CDTWIS, CDTWIE
       CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
@@ -127,26 +126,30 @@
       ILEV=1
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
-        CALL GETWND (U10OLD, THWOLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+        CALL GETWND (MIJS, MIJL,
+     &               U10OLD(MIJS), USOLD(MIJS),
+     &               THWOLD(MIJS),
+     &               ROAIRO(MIJS), ZIDLOLD(MIJS),
+     &               CICOVER(MIJS), CITHICK(MIJS),
      &               CDA, LWNDFILE, LCLOSEWND, IREAD,
-     &               LWCUR)
-        DO IG = 1,IGL
+     &               LWCUR, ICODE_WND)
+
           CALL GSTATS(1493,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          DO JKGLO=MIJS,MIJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            CALL AIRSEA (U10OLD(KIJS,IG), TAUW(KIJS,IG),
-     &        USOLD(KIJS,IG), Z0OLD(KIJS,IG),
-     &        KIJS, KIJL, ILEV)
+            KIJL=MIN(KIJS+NPROMA-1,MIJL)
+            CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS), 
+     &                   Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)
-        ENDDO
+
         IF (ITEST.GE.3) THEN
           WRITE(IU06,'(''       SUB. NOTIM: FIRST WIND FIELD '',
      &     ''SAVED IN COMMON WIND'')')
         ENDIF
+
         IF (CDA.EQ.CDTWIE) THEN
 #ifdef ECMWF
           IF (LHOOK) CALL DR_HOOK('NOTIM',1,ZHOOK_HANDLE)
@@ -163,10 +166,6 @@
 
 !*    3.1 READ ONE WIND FIELD AND TRANSFORM TO BLOCKS.
 !         --------------------------------------------
-
-      CALL GETWND (U10, THW, ADS, ZIDL, CICR, CITH,
-     &             CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
-     &             LWCUR)
 
 !*    3.2 SAVE BLOCKED WIND FIELD.
 !         ------------------------
@@ -190,55 +189,41 @@
 !*      WIND FIELD IS CONSTANT FOR ONE PROPAGATION TIME STEP:
 !       -----------------------------------------------------
         NSTORE=1
+
         IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
-        IF(LMESSPASS) THEN
-          IF(.NOT.ALLOCATED(USNEXT))
-     &            ALLOCATE(USNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(DSNEXT))
-     &            ALLOCATE(DSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ADSNEXT))
-     &            ALLOCATE(ADSNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &            ALLOCATE(ZIDLNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &            ALLOCATE(CICOVERNEXT(IJS(1):IJL(1),NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &            ALLOCATE(CITHICKNEXT(IJS(1):IJL(1),NSTORE,NBLO))
+
+        IF(.NOT.ALLOCATED(FF_NEXT))
+     &          ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
+
+        CDTNEXT(1)=CDTWIH
+
+
+        CALL GETWND (MIJS, MIJL,
+     &               U10(MIJS), US(MIJS),
+     &               THW(MIJS),
+     &               ADS(MIJS), ZIDL(MIJS),
+     &               CICR(MIJS), CITH(MIJS),
+     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
+     &               LWCUR, ICODE_WND)
+
+        IF (ICODE_WND == 3 ) THEN
+          FF_NEXT(MIJS:MIJL,1)%WSWAVE = U10(MIJS:MIJL)
         ELSE
-          IF(.NOT.ALLOCATED(USNEXT))
-     &            ALLOCATE(USNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(DSNEXT))
-     &            ALLOCATE(DSNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ADSNEXT))
-     &            ALLOCATE(ADSNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(ZIDLNEXT))
-     &            ALLOCATE(ZIDLNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CICOVERNEXT))
-     &            ALLOCATE(CICOVERNEXT(NIBLO,NSTORE,NBLO))
-          IF(.NOT.ALLOCATED(CITHICKNEXT))
-     &            ALLOCATE(CITHICKNEXT(NIBLO,NSTORE,NBLO))
+          FF_NEXT(MIJS:MIJL,1)%USTAR  = US(MIJS:MIJL)
         ENDIF
+        FF_NEXT(MIJS:MIJL,1)%WDWAVE = THW(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%AIRD   = ADS(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%ZIDL   = ZIDL(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%CIFR   = CICR(MIJS:MIJL)
+        FF_NEXT(MIJS:MIJL,1)%CITH   = CITH(MIJS:MIJL)
 
-        DO IG=1,IGL
-          CDTNEXT(1)=CDTWIH
-
-          CALL GSTATS(1493,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            DO IJ = KIJS, KIJL
-              USNEXT(IJ,1,IG)=U10(IJ,IG)
-              DSNEXT(IJ,1,IG)=THW(IJ,IG)
-              ADSNEXT(IJ,1,IG)=ADS(IJ,IG)
-              ZIDLNEXT(IJ,1,IG)=ZIDL(IJ,IG)
-              CICOVERNEXT(IJ,1,IG)=CICR(IJ,IG)
-              CITHICKNEXT(IJ,1,IG)=CITH(IJ,IG)
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1493,1)
-        ENDDO
+!        CALL GETWND (MIJS,MIJL,
+!     &               FF_NEXT(MIJS,1)%WSWAVE, FF_NEXT(MIJS,1)%USTAR,
+!     &               FF_NEXT(MIJS,1)%WDWAVE,
+!     &               FF_NEXT(MIJS,1)%AIRD  , FF_NEXT(MIJS,1)%ZIDL,
+!     &               FF_NEXT(MIJS,1)%CIFR  , FF_NEXT(MIJS,1)%CITH,
+!     &               CDTWIH, LWNDFILE, LCLOSEWND, IREAD,
+!     &               LWCUR, ICODE_WND)
 
 !*      UPDATE WIND FIELD REQUEST TIME.
         CALL INCDATE (CDTWIH,IDELWO)

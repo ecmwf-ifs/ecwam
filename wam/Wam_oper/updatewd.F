@@ -51,23 +51,30 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCOUP  , ONLY : LWCOU
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : UMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJ, IJS, IJL, ILEV
+      INTEGER, INTENT(IN) :: IJS, IJL
+
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, SL
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, ZIDLNEW
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: USOLD
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW, U10NEW
+      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW
+
+      INTEGER :: IJ, ILEV
+      INTEGER :: ICODE_WND
       INTEGER :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL) :: USOLD, TAUW
-      REAL,DIMENSION(IJS:IJL) :: CICVR
-      REAL,DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, U10NEW,
-     &                           ROAIRN,ZIDLNEW
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL1,SL
       REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
       REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
@@ -78,15 +85,23 @@
 
 ! ----------------------------------------------------------------------
 
-      DO IJ=IJS,IJL
-        U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ))*U10NEW(IJ)
-        U10NEW(IJ) = MIN(U10NEW(IJ),UMAX)
-        U10NEW(IJ) = MAX(U10NEW(IJ),WSPMIN)
-      ENDDO
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
+      ENDIF
+
+      IF (ICODE_WND == 3 ) THEN
+        DO IJ=IJS,IJL
+          U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ))*U10NEW(IJ)
+          U10NEW(IJ) = MIN(U10NEW(IJ),UMAX)
+          U10NEW(IJ) = MAX(U10NEW(IJ),WSPMIN)
+        ENDDO
+      ENDIF
 
       ILEV=1
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: AIRSEA CALLED '
         CALL FLUSH (IU06)

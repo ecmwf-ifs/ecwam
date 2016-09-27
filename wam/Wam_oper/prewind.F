@@ -211,6 +211,7 @@
 !         ---------------------------
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
+
       CALL INIT_FIELDG(LLALLOC_FIELDG_ONLY,LLINIALL,LLOCAL)
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
@@ -265,9 +266,14 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL NOTIM (CDTWIS, CDTWIE,
+     &              IJS(1), IJL(1),
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+     &              IREAD, LWCUR)
+
       ELSE
 
 !*      2.3 TIME INTERPOLATION.
@@ -282,9 +288,14 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL TIMIN (CDTWIS, CDTWIE,
+     &              IJS(1), IJL(1),
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+     &              IREAD, LWCUR)
+
       ENDIF
 #else
       CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,          
