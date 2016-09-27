@@ -86,7 +86,7 @@
       REAL, ALLOCATABLE, DIMENSION(:) :: ZSENDBUF,ZRECVBUF
 
       CHARACTER(LEN=14) :: CDATE 
-      CHARACTER(LEN=120) :: OUTFILEN
+      CHARACTER(LEN=296) :: OUTFILEN
 
 !-----------------------------------------------------------------------
 

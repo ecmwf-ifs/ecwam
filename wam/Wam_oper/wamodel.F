@@ -291,7 +291,7 @@
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
-     &            LRSTPARALW,
+     &            LRSTPARALW, LRSTINFDAT, 
      &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
@@ -393,7 +393,7 @@
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, ZERO
       CHARACTER(LEN=14) :: CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
-      CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT
+      CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
       LOGICAL, INTENT(IN) :: LWCUR, LWSTOKES
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
@@ -1499,6 +1499,20 @@
      &         ' CDATEF  = ', CDATEF
               WRITE(IU06,*) ' TO ', CWI(1:ICPLEN+8)
               CALL FLUSH(IU06)
+
+              IF (LRSTINFDAT) THEN
+                CDTRCF=CDTPRO
+                CALL INCDATE(CDTRCF,IDELPRO)
+                IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//
+     &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),
+     &                              'w', 'f', 0)
+                CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
+     &                        IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
+     &                        IASSI, NFCST, ISTAT, CDTCUR,
+     &                        LRSTPARALW, NPROC)
+                CLOSE (IU04)
+              ENDIF
+
             ENDIF
 
           ENDIF  ! END SAVE RESTART FIELDS
