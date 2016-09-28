@@ -105,7 +105,7 @@
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
      &            Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL1      ,FL3      ,SL
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,

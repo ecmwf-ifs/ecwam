@@ -344,7 +344,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL1      ,FL3      ,SL
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,

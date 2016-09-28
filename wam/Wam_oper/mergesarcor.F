@@ -26,7 +26,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
       USE YOWSARAS , ONLY : NW1D     ,SPECW    ,UW10     ,THWW     ,
      &              NSPECW
-      USE YOWSPEC,   ONLY : FL1      ,FL2 
+      USE YOWSPEC,   ONLY : FL1
       USE YOWTEST  , ONLY : IU06
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14
       USE YOWWIND  , ONLY : WSPMIN
@@ -67,12 +67,7 @@
           READ(IU11) FL1
         ENDIF
 
-        DO JBL=1,IGL
-
-!         ODD BLOCKS
-          IF(MOD(JBL,2).EQ.1) THEN
-
-            IF(JBL.NE.IGL) READ(IU11) FL2
+        JBL=1
 
             DO JFRE=1,NFRE
               DO JANG=1,NANG
@@ -83,21 +78,6 @@
               ENDDO
             ENDDO
 
-!         EVEN BLOCKS
-          ELSE
-
-            IF(JBL.NE.IGL) READ(IU11) FL1
-
-            DO JFRE=1,NFRE
-              DO JANG=1,NANG
-                DO JP = IJS(JBL),IJL(JBL)
-                  IF(NW1D(JP,JBL).NE.0)
-     &            FL2(JP,JANG,JFRE)=SPECW(NW1D(JP,JBL),JANG,JFRE)       
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-        ENDDO
 
         IF(IGL.GT.1) THEN
           CLOSE(IU11)

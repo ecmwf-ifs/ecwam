@@ -34,7 +34,6 @@
       REAL, ALLOCATABLE :: ZIDLNEW(:) 
       REAL, ALLOCATABLE :: ZIDLOLD(:,:) 
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: FL1
-      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: FL2
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: FL3
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: SL
 
@@ -81,7 +80,6 @@
 !     *TAUW*      WAVE STRESS IN (M/S)**2
 !     *BETAOLD*   CHARNOCK COEFFICIENT AT THE BEGINNING OF TIME STEP
 !     *FL3*       FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!     *FL2*       FREQUENCY SPECTRUM(INPUT).
 !     *FL1*       FREQUENCY SPECTRUM(INPUT).
 !     *SL*        TOTAL SOURCE FUNCTION ARRAY.
 ! ----------------------------------------------------------------------

@@ -29,7 +29,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI
       USE YOWSPEC,   ONLY : NSTART   ,NEND     ,U10OLD   ,USOLD    ,
-     &            THWOLD   ,FL1      ,FL2
+     &            THWOLD   ,FL1
       USE YOWSARAS , ONLY : NSPEC    ,IGSAR    ,IJSAR    ,SPEC     ,
      &            LONG     ,LAT      ,U10      ,USSAR    ,THW
       USE YOWSTAT  , ONLY : LALTAS
@@ -104,10 +104,7 @@
         REWIND IU11
         READ(IU11) FL1
       ENDIF
-      DO JBL=1,IGL
-!       ODD BLOCKS
-        IF(MOD(JBL,2).EQ.1) THEN
-          IF(JBL.NE.IGL) READ(IU11) FL2
+      JBL=1
           DO ISPEC = 1, NSPEC 
             JP=IJSAR(ISPEC)
             IF(JP.NE.0) THEN
@@ -144,36 +141,6 @@
             ENDIF
 
           ENDDO
-!       EVEN BLOCKS
-        ELSE
-          IF(JBL.NE.IGL) READ(IU11) FL1
-          DO ISPEC = 1, NSPEC 
-            JP=IJSAR(ISPEC)
-            IF(CICOVER(MAX(JP,1),JBL).LE.CITHRSH .AND. JP.NE.0) THEN
-              IF(IGSAR(ISPEC).EQ.JBL) THEN
-                DO JFRE=1,NFRE
-                  DO JANG=1,NANG
-                    SPEC(ISPEC,JANG,JFRE,1)=FL2(JP,JANG,JFRE)
-                  ENDDO
-                ENDDO
-                LAT(ISPEC,1)=AMOSOP+REAL(KXLT(JP,JBL)-1)*XDELLA
-                LONG(ISPEC,1)=AMOWEP+
-     &                        REAL(IXLG(JP,JBL)-1)*ZDELLO(KXLT(JP,JBL))
-                NSPECPE=NSPECPE+1
-                ISPECPE(NSPECPE)=ISPEC
-              ENDIF
-            ELSE
-              DO JFRE=1,NFRE
-                DO JANG=1,NANG
-                  SPEC(ISPEC,JANG,JFRE,1)=SPEC(ISPEC,JANG,JFRE,2)
-                ENDDO
-              ENDDO
-              LAT(ISPEC,1)=LAT(ISPEC,2)
-              LONG(ISPEC,1)=LONG(ISPEC,2)
-            ENDIF
-          ENDDO
-        ENDIF
-      ENDDO
 
 ! REPLACE WINDS FROM SAR INPUT BY MODEL WINDS
 

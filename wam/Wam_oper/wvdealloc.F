@@ -16,7 +16,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
      &                      PHIAW    ,TAUOC
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
-     &            ROAIRN   ,ZIDLNEW  ,FL2      ,FL3      ,SL
+     &            ROAIRN   ,ZIDLNEW  ,FL3      ,SL
       USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -40,7 +40,6 @@
       IF(ALLOCATED(ROAIRN)) DEALLOCATE(ROAIRN)
       IF(ALLOCATED(ZIDLNEW)) DEALLOCATE(ZIDLNEW)
 
-      IF(ALLOCATED(FL2)) DEALLOCATE(FL2)
       IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
       IF(ALLOCATED(SL)) DEALLOCATE(SL)
