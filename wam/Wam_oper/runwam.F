@@ -112,7 +112,7 @@
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD
 #endif
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
 
 ! ----------------------------------------------------------------------
 

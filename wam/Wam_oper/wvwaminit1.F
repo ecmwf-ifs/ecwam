@@ -13,7 +13,7 @@
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
 
 ! ----------------------------------------------------------------------
 
