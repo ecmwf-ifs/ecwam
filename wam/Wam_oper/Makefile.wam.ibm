@@ -9,14 +9,11 @@ SOURCE	=\
               aki.F            \
               check.F          \
               class_wgrib.F    \
-              convert_grbspec.F\
               difdate.F        \
               dummy_mp.F       \
-              ersfile.F        \
               expand_string.F  \
               findb.F          \
               fldinter.F       \
-              getrest.F        \
               gsfile_new.F     \
               incdate.F        \
               iniwcst.F        \
@@ -24,7 +21,6 @@ SOURCE	=\
               jafu.F           \
               jonswap.F        \
               llalloc_grdfld.F \
-              locint.F         \
               mblock.F         \
               mbounc.F         \
               mbounf.F         \
