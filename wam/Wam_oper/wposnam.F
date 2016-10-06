@@ -40,14 +40,19 @@
 !     --------------
 !        Original : 93-06-22 from Mats Hamrud as posnam
 !     --------------------------------------------------------------
-      LOGICAL, INTENT(out)      :: LDEOF
+
+      IMPLICIT NONE
+
+      LOGICAL, INTENT(OUT)      :: LDEOF
       INTEGER, INTENT(IN)       :: KULNAM
-      CHARACTER*(*), INTENT(IN) :: CDNAML
+      CHARACTER(LEN=*), INTENT(IN) :: CDNAML
+
+      INTEGER :: ILEN, IND1
 
 ! === END OF INTERFACE BLOCK ===
 
-      CHARACTER*120 CLINE
-      CHARACTER*1 CLTEST
+      CHARACTER(LEN=120) :: CLINE
+      CHARACTER(LEN=1) :: CLTEST
 
 !*       1.    POSITION FILE
 !              -------------
@@ -86,5 +91,3 @@
       RETURN
 
       END SUBROUTINE WPOSNAM
-
-
