@@ -470,7 +470,7 @@
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
-          CAL FLUSH (IU06)
+          CALL FLUSH (IU06)
         ENDIF
       ENDIF
 
