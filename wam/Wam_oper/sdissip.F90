@@ -92,12 +92,12 @@
       CASE(0)
          CALL SDISSIP_JAN (F ,FL, IJS, IJL, SL, &
      &                     EMEAN, F1MEAN, XKMEAN, &
-     &                     PHIOC, TAUWD, MIJ, LCFLX)
+     &                     PHIEPS, TAUWD, MIJ, LCFLX)
 
       CASE(1) 
           CALL SDISSIP_ARD (F ,FL, IJS, IJL, SL, &
      &                      USNEW, THWNEW, ROAIRN, &
-     &                      PHIOC, TAUWD, MIJ, LCFLX)
+     &                      PHIEPS, TAUWD, MIJ, LCFLX)
       END SELECT 
 
 
