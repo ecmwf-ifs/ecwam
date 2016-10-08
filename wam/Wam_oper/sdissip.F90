@@ -63,6 +63,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
 
