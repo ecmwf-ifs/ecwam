@@ -1,9 +1,9 @@
-      SUBROUTINE SDISS_ARDH_VEC (F, FL, IJS, IJL, SL,&
-     &                           USNEW, THWNEW, ROAIRN,&
-     &                           PHIEPS, TAUWD, MIJ, LCFLX)
+      SUBROUTINE SDISSIP_ARD (F, FL, IJS, IJL, SL,&
+     &                        USNEW, THWNEW, ROAIRN,&
+     &                        PHIEPS, TAUWD, MIJ, LCFLX)
 ! ----------------------------------------------------------------------
 
-!**** *SDISSIP_ARDH_VEC* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
+!**** *SDISSIP_ARD* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
 
 !     LOTFI AOUF       METEO FRANCE 2013
 !     FABRICE ARDHUIN  IFREMER  2013
@@ -119,7 +119,7 @@
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP_ARDH_VEC',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',0,ZHOOK_HANDLE)
 #endif
 
 !     Br:
@@ -497,8 +497,7 @@
       IF (ALLOCATED(SATINDICES)) DEALLOCATE (SATINDICES)
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP_ARDH_VEC',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
-      END SUBROUTINE SDISS_ARDH_VEC
+      END SUBROUTINE SDISSIP_ARD

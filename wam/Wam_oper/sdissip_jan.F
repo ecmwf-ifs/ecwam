@@ -1,5 +1,6 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, EMEAN, F1MEAN,XKMEAN,
-     &                    PHIEPS, TAUWD, MIJ, LCFLX)
+      SUBROUTINE SDISSIP_JAN (F, FL, IJS, IJL, SL,
+     &                        EMEAN, F1MEAN, XKMEAN,
+     &                        PHIEPS, TAUWD, MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -11,7 +12,6 @@
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
 !     J. BIDLOT   ECMWF  NOVEMBER 2004  REFORMULATION BASED ON XKMEAN
 !                                       AND F1MEAN.
-!     P. JANSSEN  ECMWF  JANUARY 2006   ADD BOTTOM-INDUCED DISSIPATION.
 
 !*    PURPOSE.
 !     --------
@@ -22,13 +22,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, EMEAN,F1MEAN, XKMEAN,)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL,*
+!                        EMEAN, F1MEAN, XKMEAN,*
 !                        PHIEPS, TAUWD, MIJ, LCFLX)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *IG*  - BLOCK NUMBER
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 !          *EMEAN* - MEAN ENERGY DENSITY 
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
@@ -71,7 +71,7 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG
+      INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       INTEGER :: IJ, K, M
 
@@ -94,7 +94,7 @@
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',0,ZHOOK_HANDLE)
 #endif
 
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
@@ -175,8 +175,7 @@
       ENDIF
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
-      END SUBROUTINE SDISSIP
+      END SUBROUTINE SDISSIP_JAN

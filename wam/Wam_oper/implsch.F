@@ -251,13 +251,8 @@
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, ZIDLNEW, SL, XLLWS)
-      ELSE
-        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
-      ENDIF
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
@@ -292,15 +287,11 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL,EMEANALL,F1MEAN,XKMEAN,
-     &                PHIOC, TAUWD, MIJ, .FALSE.)
-      ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
-     &                       USNEW, THWNEW, ROAIRN,
-     &                       PHIOC, TAUWD, MIJ, .FALSE.)
-      ENDIF
 
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+     &              EMEANALL, F1MEAN, XKMEAN,
+     &              USNEW, THWNEW, ROAIRN,
+     &              PHIOC, TAUWD, MIJ, .FALSE.)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
@@ -447,13 +438,8 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
-      IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, ZIDLNEW, SL, XLLWS)
-      ELSE
-        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
-      ENDIF
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
@@ -477,19 +463,15 @@
 
       IF(LCFLX) THEN
 !     this call is only needed if we are to compute the fluxes
-        IF(IPHYS.EQ.0) THEN
-          CALL SDISSIP (FL3 ,FL, IJS, IJL, IG,SL,EMEANALL,F1MEAN,XKMEAN,
-     &                  PHIOC, TAUWD, MIJ, LCFLX)
-        ELSE
-          CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
-     &                         USNEW, THWNEW, ROAIRN,
-     &                         PHIOC, TAUWD, MIJ, LCFLX)
-        ENDIF
-      ENDIF
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+     &                EMEANALL, F1MEAN, XKMEAN,
+     &                USNEW, THWNEW, ROAIRN,
+     &                PHIOC, TAUWD, MIJ, LCFLX)
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
-        CALL FLUSH (IU06)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
+          CAL FLUSH (IU06)
+        ENDIF
       ENDIF
 
 !*    2.5.6 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
@@ -521,5 +503,4 @@
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE IMPLSCH
