@@ -1,10 +1,10 @@
       SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG,
      &                    THWOLD, USOLD,
      &                    TAUW, Z0OLD,
-     &                    ROAIRO, ZIDLOLD,
+     &                    ROAIRO, WSTAROLD,
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
-     &                    Z0NEW, ROAIRN, ZIDLNEW,
+     &                    Z0NEW, ROAIRN, WSTARNEW,
      &                    SL)
 
 ! ----------------------------------------------------------------------
@@ -43,9 +43,9 @@
 
 !       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
-!    &                    ROAIRO, ZIDLOLD, 
+!    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
 !    3                    SL)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
@@ -67,8 +67,8 @@
 !      *TAUW*      WAVE STRESS IN (M/S)**2
 !      *ROAIRN*    AIR DENSITY IN KG/M3.
 !      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
-!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
+!      *WSTARNEW*  FREE CONVECTION VELOCITY SCALE (M/S)
+!      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
@@ -148,12 +148,12 @@
       INTEGER :: JU(IJS:IJL)
 
       REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, ZIDLOLD
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, ZIDLNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3, FL, SL
 
@@ -252,7 +252,7 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
@@ -439,7 +439,7 @@
      &            F1MEAN, AKMEAN, XKMEAN)
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
@@ -495,7 +495,7 @@
         USOLD(IJ) = USNEW(IJ)
         Z0OLD(IJ) = Z0NEW(IJ)
         ROAIRO(IJ) = ROAIRN(IJ)
-        ZIDLOLD(IJ) = ZIDLNEW(IJ)
+        WSTAROLD(IJ) = WSTARNEW(IJ)
       ENDDO
 
 ! ----------------------------------------------------------------------

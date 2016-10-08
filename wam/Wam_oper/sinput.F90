@@ -66,10 +66,10 @@
       SELECT CASE (IPHYS)
       CASE(0)
         CALL SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
+     &                   ROAIRN, WSTAR, SL, XLLWS)
       CASE(1) 
         CALL SINPUT_ARD (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
+     &                   ROAIRN, WSTAR, SL, XLLWS)
       END SELECT 
 
 
