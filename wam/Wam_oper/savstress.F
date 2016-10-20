@@ -77,7 +77,7 @@
       REAL, ALLOCATABLE,DIMENSION(:,:) :: RDUM 
       REAL, ALLOCATABLE,DIMENSION(:,:) :: RFIELD
 
-      CHARACTER(LEN=120) :: FILENAME
+      CHARACTER(LEN=296) :: FILENAME
 
       LOGICAL :: LUAL, LVAL
 ! ----------------------------------------------------------------------
