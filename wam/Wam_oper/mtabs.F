@@ -105,9 +105,12 @@
       NSTP = NDEPTH/NAN
       NSTP = MAX(NSTP,1)
       DEPTHE = DEPTHA*DEPTHD**(NDEPTH-1)
+      Print *, 'DEPTHA=', DEPTHA
+      Print *, 'DEPTHE=', DEPTHE
+      Print *, 'DEPTHD=', DEPTHD
       WRITE (IU06,'(1H1, '' SHALLOW WATER TABLES:'',/)')
-      WRITE (IU06,'(''  LOGARITHMIC DEPTH FROM: DEPTHA = '',F5.1,
-     &  '' TO DEPTHE  = '',F5.1, ''IN STEPS OF DEPTHD = '',F5.1)')
+      WRITE (IU06,'(''  LOGARITHMIC DEPTH FROM: DEPTHA = '',F6.1,
+     &  '' TO DEPTHE  = '',F6.1, ''IN STEPS OF DEPTHD = '',F6.1)')
      &    DEPTHA, DEPTHE, DEPTHD
       WRITE (IU06,'(''  PRINTED IN STEPS OF '',I3,'' ENTRIES'',/)') NSTP
       DO JD=1,NDEPTH,NSTP

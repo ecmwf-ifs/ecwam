@@ -285,6 +285,7 @@
      &            FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED
+      USE YOWWNDG  , ONLY : ICODE
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,
      &            KRLAT    ,KRLON    ,LUPDTWGHT,
      &            JXO      ,JYO      ,KCR      ,KPM      ,MPM      ,
@@ -442,6 +443,8 @@
       NORMS_IN(:,3)=-1.
       NORMS_IN(:,4)=-1.
       LLNEWCURR=.TRUE.
+
+      ICODE=0
 
 !*    1.2 INPUT OF USER PARAMETER.
 !         ------------------------

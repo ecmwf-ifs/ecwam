@@ -342,9 +342,9 @@
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL1      ,FL3      ,SL
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,
@@ -977,9 +977,10 @@
 
             CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
+     &                   USOLD, USNEW,
      &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
      &                   CICOVER, CITHICK, CIWA,
-     &                   TAUW)
+     &                   TAUW, BETAOLD)
 
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN

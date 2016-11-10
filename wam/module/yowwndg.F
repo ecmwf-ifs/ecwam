@@ -4,17 +4,18 @@
 
 !*    ** *WNDGRD* -  INPUT WIND GRID SPECIFICATIONS.
 
-      REAL DLAM 
-      REAL DPHI 
-      REAL RLATS 
-      REAL RLATN 
-      REAL RLONL 
-      REAL RLONR 
-      INTEGER KCOL 
-      INTEGER KROW 
-      INTEGER ICODE 
-      INTEGER IWPER 
-      INTEGER ICOORD 
+      REAL :: DLAM 
+      REAL :: DPHI 
+      REAL :: RLATS 
+      REAL :: RLATN 
+      REAL :: RLONL 
+      REAL :: RLONR 
+      INTEGER :: KCOL 
+      INTEGER :: KROW 
+      INTEGER :: ICODE 
+      INTEGER :: ICODE_CPL 
+      INTEGER :: IWPER 
+      INTEGER :: ICOORD 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -26,7 +27,10 @@
 !      *RLONR*     REAL      LONGITUDE AT (NC,.) = EAST MOST LONGITUDE.
 !      *KCOL*      INTEGER   NUMBER OF COLUMNES IN WIND INPUT (USED).
 !      *KROW*      INTEGER   NUMBER OF ROWS     IN WIND INPUT (USED).
-!      *ICODE*     INTEGER   WIND CODE 1 = USTAR;  2 = USTRESS; 3 = U10
+!      *ICODE*     INTEGER   WIND CODE FROM INPUT FILE
+!                            1 = USTAR;  2 = USTRESS; 3 = U10
+!      *ICODE_CPL* INTEGER   WIND CODE PASSED VIA WAVEMDL
+!                            0 = NOT SET; 1 = USTAR;  2 = USTRESS; 3 = U10
 !      *IWPER*     INTEGER   INDICATOR PERIODICAL GRID.
 !                            0= NON-PERIODICAL;   1= PERIODICAL.
 !      *ICOORD*    INTEGER   CODE FOR COORDINATE SYSTEM USED

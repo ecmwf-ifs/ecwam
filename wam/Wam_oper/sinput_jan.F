@@ -1,8 +1,8 @@
-      SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, WSTAR, SL, XLLWS)
+      SUBROUTINE SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &                       ROAIRN, WSTAR, SL, XLLWS)
 ! ----------------------------------------------------------------------
 
-!**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
+!**** *SINPUT_JAN* - COMPUTATION OF INPUT SOURCE FUNCTION.
 
 !     P.A.E.M. JANSSEN    KNMI      AUGUST    1990
 
@@ -43,7 +43,7 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+!     *CALL* *SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN, WSTAR, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -132,7 +132,7 @@
 ! ----------------------------------------------------------------------
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SINPUT_JAN',0,ZHOOK_HANDLE)
 #endif
 
       CONST1   = BETAMAX/XKAPPA**2 
@@ -183,7 +183,7 @@
          WRITE (IU06,*) '**************************************'
          WRITE (IU06,*) '*    FATAL ERROR                     *'
          WRITE (IU06,*) '*    ===========                     *'
-         WRITE (IU06,*) '* IN SINPUT: NSIN > 2                *'
+         WRITE (IU06,*) '* IN SINPUT_JAN: NSIN > 2            *'
          WRITE (IU06,*) '* NSIN = ', NSIN
          WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
          WRITE (IU06,*) '*                                    *'
@@ -307,8 +307,7 @@
       ENDDO
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SINPUT_JAN',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
-      END SUBROUTINE SINPUT
+      END SUBROUTINE SINPUT_JAN

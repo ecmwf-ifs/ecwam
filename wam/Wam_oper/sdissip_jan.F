@@ -1,5 +1,6 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, EMEAN, F1MEAN,XKMEAN,
-     &                    PHIEPS, TAUWD, MIJ, LCFLX)
+      SUBROUTINE SDISSIP_JAN (F, FL, IJS, IJL, SL,
+     &                        EMEAN, F1MEAN, XKMEAN,
+     &                        PHIEPS, TAUWD, MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -11,7 +12,6 @@
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
 !     J. BIDLOT   ECMWF  NOVEMBER 2004  REFORMULATION BASED ON XKMEAN
 !                                       AND F1MEAN.
-!     P. JANSSEN  ECMWF  JANUARY 2006   ADD BOTTOM-INDUCED DISSIPATION.
 
 !*    PURPOSE.
 !     --------
@@ -22,15 +22,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, EMEAN,F1MEAN, XKMEAN,)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL,*
+!                        EMEAN, F1MEAN, XKMEAN,*
 !                        PHIEPS, TAUWD, MIJ, LCFLX)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *IG*  - BLOCK NUMBER
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
-!          *EMEAN* - MEAN ENERGU DENSITY 
+!          *EMEAN* - MEAN ENERGY DENSITY 
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 !          *XKMEAN* - MEAN WAVE NUMBER BASED ON 1st MOMENT.
 !          *PHIEPS* - ENERGY FLUX FROM WAVES TO OCEAN INTEGRATED OVER 
@@ -66,15 +66,14 @@
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
-      USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG
+      INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
-      INTEGER :: IJ, K, M, IC
+      INTEGER :: IJ, K, M
 
       REAL,DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
       REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: PHIEPS, TAUWD
@@ -83,7 +82,7 @@
 
       REAL :: SCDFM, ROG, CONSD, X, SDISS
       REAL :: ZHOOK_HANDLE
-      REAL :: DEPTHTRS, EMAX, ALPH, ARG, Q, Q_OLD, REL_ERR, CONSS
+      REAL :: CONSS
       REAL,DIMENSION(IJS:IJL) :: CM, TEMP1, SDS
       REAL, DIMENSION(NFRE) :: FAC
       REAL, DIMENSION(IJS:IJL,NFRE) :: CONSTFM
@@ -93,13 +92,9 @@
       REAL, PARAMETER :: CDIS = 1.33
       REAL, PARAMETER :: DELTA = 0.5
 
-      REAL, PARAMETER :: ALPH_B_J = 1.0
-      REAL, PARAMETER :: GAM_B_J = 0.8
-      REAL, PARAMETER :: COEF_B_J=2*ALPH_B_J
-
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',0,ZHOOK_HANDLE)
 #endif
 
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
@@ -138,19 +133,18 @@
               SDISS = TEMP1(IJ)*F(IJ,K,M)
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
                 PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
                 TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
               ENDIF
+
             ENDDO
           ENDDO     
         ENDDO
+
       ELSE
-!SHALLOW
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. SDISSIP: START DO-LOOP (ISHALLO=0)'
-          CALL FLUSH (IU06)
-        ENDIF
+
         CONSS = -CDIS*ZPI
         DO IJ=IJS,IJL
           SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
@@ -168,54 +162,20 @@
               SDISS = TEMP1(IJ)*F(IJ,K,M)
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
                 PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
                 TAUWD(IJ)  = TAUWD(IJ)+CM(IJ)*SDISS*CONSTFM(IJ,M)
               ENDIF
+
             ENDDO
           ENDDO
         ENDDO
-!
-!*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
-!        ----------- -- -------------- -----------------------
-!
-!       (FOLLOWING BATTJES-JANSSEN AND BEJI)
-        DEPTHTRS=50.
-        IF(LBIWBK) THEN
-          DO IJ=IJS,IJL
-             IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
-               EMAX = (GAM_B_J*DEPTH(IJ,IG))**2/16.
-               ALPH = 2.*EMAX/(EMEAN(IJ))
-               ARG  = MIN(ALPH,50.)
-               Q_OLD = EXP(-ARG)
-               DO IC=1,15
-                 Q = EXP(-ARG*(1.-Q_OLD))
-                 REL_ERR=ABS(Q-Q_OLD)/Q_OLD
-                 IF(REL_ERR.LT.0.01) EXIT
-                 Q_OLD = Q
-               ENDDO
-               SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
-             ENDIF
-          ENDDO 
-      
-          DO M=1,NFRE
-             DO K=1,NANG
-                DO IJ=IJS,IJL
-                  IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
-                    SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
-                    FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
-                  ENDIF
-                ENDDO
-             ENDDO
-          ENDDO
-        ENDIF
-     
-!SHALLOW
+
       ENDIF
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
-      END SUBROUTINE SDISSIP
+      END SUBROUTINE SDISSIP_JAN

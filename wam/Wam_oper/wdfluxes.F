@@ -136,7 +136,9 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL,EMEANALL,F1MEAN,XKMEAN,
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+     &                EMEANALL, F1MEAN, XKMEAN,
+     &                USNEW, THWNEW, ROAIRN,
      &                PHIOC, TAUWD, MIJ, LCFLX)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
@@ -159,5 +161,4 @@
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE WDFLUXES

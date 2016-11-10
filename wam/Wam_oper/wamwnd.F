@@ -1,4 +1,7 @@
-      SUBROUTINE WAMWND (U10, THW, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)
+      SUBROUTINE WAMWND (IJS, IJL,
+     &                   U10, US,
+     &                   THW, ADS, ZIDL, CITH,
+     &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
 
@@ -6,7 +9,7 @@
 
 !     MODIFIED J. BIDLOT 2008 :: INCLUDE SURFACE CURRENTS FOR
 !                                RELATIVE WIND CALCULATION. 
-!                                USE OF NEUTRAL WIND SPEED FROM WAM.
+!                                USE OF NEUTRAL WIND SPEED FROM WAM
 
 !**** *WAMWND* - TRANSFORMS INPUT FORCING TO BLOCKED WAM POINTS.
 
@@ -22,8 +25,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMWND (U10, THW, ADS, ZIDL, CITH, IJS, IJL, IG, LWCUR)*
+!       *CALL WAMWND (IJS, IJL,
+!    &                U10, US,
+!    &                THW, ADS, ZIDL, CITH,
+!    &                LWCUR, ICODE_WND)
 !          *U10*  - INTERPOLATED WINDS AT ALL POINTS AND BLOCKS.
+!          *us*   - INTERPOLATED FRICTION VELOCITY
 !          *THW*  - INTERPOLATED WIND DIRECTION AT ALL POINTS.
 !          *ADS*  - INTERPOLATED AIR DENSITY AT ALL POINTS.
 !          *ZIDL* - INTERPOLATED Zi/L AT ALL POINTS
@@ -31,8 +38,13 @@
 !          *CITH* - SEA ICE THICKNESS. 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
-!          *IG*     - BLOCK NUMBER
 !          *LWCUR*  - LOGICAL INDICATES THE PRESENCE OF SURFACE U AND V CURRENTS
+!          *ICODE_WND* - INTEGER INDICATES WHAT IS SAVED IN FIELDG%UWND, and
+!                        FIELDG%VWND
+!                        AND
+!                        WHAT IS UPDATED:
+!                        ICODE_WND=3 THEN U10, otherwise US is UPDATED !!
+!                        ++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 !     METHOD.
@@ -51,25 +63,29 @@
       USE YOWCOUP  , ONLY : LWCOU    , XKAPPA
       USE YOWCURR  , ONLY : U        ,V
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZMISS    ,EPSUS
       USE YOWSTAT  , ONLY : IREFRA   ,LRELWIND
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN   ,FIELDG   ,LLWSWAVE ,LLWDWAVE ,
      &            RWFAC
-      USE YOWWNDG  , ONLY : ICODE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJ, IX, JY, IJS, IJL, IG
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(IN) :: ICODE_WND
+      REAL, DIMENSION (IJS:IJL), INTENT(INOUT) :: U10, US
+      REAL, DIMENSION (IJS:IJL), INTENT(OUT) :: THW, ADS, ZIDL, CITH
+      LOGICAL, INTENT(IN) :: LWCUR
 
-      REAL, PARAMETER :: ALPHACH = 0.0185
-      REAL :: UU, VV, WSPEED, RESCALE, USTAR, Z0, CD
+      INTEGER :: IJ, IX, JY
+
+      REAL :: RESCALE
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION (IJS:IJL) :: U10,THW,ADS,ZIDL,CITH
+      REAL, DIMENSION (IJS:IJL) :: UU, VV, WSPEED
 
-      LOGICAL :: LWCUR
+      LOGICAL :: LCORREL
 
 ! ----------------------------------------------------------------------
 
@@ -77,157 +93,179 @@
       IF (LHOOK) CALL DR_HOOK('WAMWND',0,ZHOOK_HANDLE)
 # endif
 
-!*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
-!*       AND TRANSFORM TO MAGNITUDE AND DIRECTION.
-!*       AND SET LOWER WIND SPEED TO WSPMIN m/s
-!        ----------------------------------------
-
-      IF(LLWSWAVE .AND. LLWDWAVE) THEN
-        DO IJ = IJS,IJL
-          IX = IFROMIJ(IJ,IG)
-          JY = JFROMIJ(IJ,IG)
-
-!         USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
-!         -------------------------------------------------------------
-          U10(IJ) = FIELDG(IX,JY)%WSWAVE
-          THW(IJ) = FIELDG(IX,JY)%WDWAVE 
-
-!         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
-!         USE U and V FROM ATMOSPHERE INSTEAD
-          IF(U10(IJ).LE.0.) THEN
-            UU = FIELDG(IX,JY)%UWND
-            VV = FIELDG(IX,JY)%VWND
-            WSPEED = SQRT(UU**2 + VV**2)
-            IF(WSPEED.GT.0.) THEN
-              U10(IJ) = WSPEED
-              THW(IJ) = ATAN2(UU,VV)
-            ELSE
-              U10(IJ) = 0.
-              THW(IJ) = 0.
-            ENDIF
-          ENDIF
-        ENDDO
-
-        IF(LRELWIND .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3) ) THEN
-          DO IJ = IJS,IJL
-            IX = IFROMIJ(IJ,IG)
-            JY = JFROMIJ(IJ,IG)
-
-            UU = U10(IJ)*SIN(THW(IJ))
-            VV = U10(IJ)*COS(THW(IJ))
-            UU = UU - RWFAC*U(IJ,IG)
-            VV = VV - RWFAC*V(IJ,IG)
-            WSPEED = SQRT(UU**2 + VV**2)
-            IF(WSPEED.GT.0.) THEN
-              U10(IJ) = WSPEED
-              THW(IJ) = ATAN2(UU,VV)
-            ELSE
-              U10(IJ) = 0.
-              THW(IJ) = 0.
-            ENDIF
-          ENDDO
-        ENDIF
-
+!     CORRECT FOR RELATIVE WINDS WITH RESPECT TO THE SURFACE CURRENTS.
+      LCORREL=.FALSE.
+      IF(LWCOU) THEN
+!       In coupled experiments the winds are already relative to the currents
+        IF(LWCUR .AND. (.NOT.LRELWIND) ) LCORREL=.TRUE.
       ELSE
-
-        DO IJ = IJS,IJL
-          IX = IFROMIJ(IJ,IG)
-          JY = JFROMIJ(IJ,IG)
-
-          UU = FIELDG(IX,JY)%UWND
-          VV = FIELDG(IX,JY)%VWND
-
-!         USE NEUTRAL WIND SPEED FROM A PREVIOUS WAM RUN.
-!         ----------------------------------------------
-          IF(LLWSWAVE) THEN
-            IF(FIELDG(IX,JY)%WSWAVE.NE.ZMISS .AND.
-     &         FIELDG(IX,JY)%WSWAVE.GT.0. ) THEN
-              WSPEED = SQRT(UU**2 + VV**2)
-              IF(WSPEED.GT.0.) THEN
-                RESCALE=FIELDG(IX,JY)%WSWAVE/WSPEED
-                UU = UU * RESCALE 
-                VV = VV * RESCALE
-              ENDIF
-            ENDIF
-          ENDIF
-
-!         CORRECT FOR RELATIVE WINDS WITH RESPECT TO THE SURFACE CURRENTS.
-!         ----------------------------------------------------------------
-
-          IF(LWCOU) THEN
-            IF(LWCUR) THEN
-!           In coupled experiments the winds are already relative to the currents
-              IF(.NOT.LRELWIND) THEN
-                UU = UU + RWFAC*U(IJ,IG)
-                VV = VV + RWFAC*V(IJ,IG)
-              ENDIF
-            ENDIF
-          ELSE
-            IF(LRELWIND) THEN
-              IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-                UU = UU - RWFAC*U(IJ,IG)
-                VV = VV - RWFAC*V(IJ,IG)
-              ENDIF
-            ENDIF
-          ENDIF
-
-          U10(IJ) = SQRT(UU**2 + VV**2)
-          IF (U10(IJ).NE.0.) THEN 
-            THW(IJ) = ATAN2(UU,VV)
-          ELSE
-            THW(IJ) = 0.
-          ENDIF
-
-        ENDDO
+        IF(LRELWIND .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3)) LCORREL=.TRUE.
       ENDIF
 
-      DO IJ = IJS,IJL
-        IF (THW(IJ).LT.0.) THW(IJ) = THW(IJ) + ZPI
-!       IMPOSE A MINIMUM WIND SPEED.
-!       ----------------------------
-        U10(IJ) = MAX(U10(IJ),WSPMIN)
-      ENDDO
+!*    2. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
+!        ----------------------------------------
 
       DO IJ = IJS,IJL
-        IX = IFROMIJ(IJ,IG)
-        JY = JFROMIJ(IJ,IG)
+        IX = IFROMIJ(IJ,1)
+        JY = JFROMIJ(IJ,1)
+        UU(IJ) = FIELDG(IX,JY)%UWND
+        VV(IJ) = FIELDG(IX,JY)%VWND
         ADS(IJ) = FIELDG(IX,JY)%AIRD
         ZIDL(IJ)= FIELDG(IX,JY)%ZIDL
         CITH(IJ)= FIELDG(IX,JY)%CITH
       ENDDO
 
-! ----------------------------------------------------------------------
 
 !*    3. PROCESS WINDS ACCORDING TO TYPE
-!        NOTHING TO DO FOR WIND SPEED U10 (ICODE = 3).
-!        ---------------------------------------------
+!        ----------------------------------------
 
-      IF (ICODE.EQ.1) THEN
+      SELECT CASE (ICODE_WND)
+      CASE(3)
+!       USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
+        IF(LLWSWAVE .AND. LLWDWAVE) THEN
+          DO IJ = IJS,IJL
+            IX = IFROMIJ(IJ,1)
+            JY = JFROMIJ(IJ,1)
+            U10(IJ) = FIELDG(IX,JY)%WSWAVE
+            THW(IJ) = FIELDG(IX,JY)%WDWAVE 
+          ENDDO
+
+!         THERE MIGHT BE POINTS FOR WHICH NO WAM VALUES ARE AVAILABLE
+!         USE U and V FROM ATMOSPHERE INSTEAD
+          DO IJ = IJS,IJL
+            IF(U10(IJ).LE.0.) THEN
+              WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+              IF(WSPEED(IJ).GT.0.) THEN
+                U10(IJ) = WSPEED(IJ)
+                THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+              ELSE
+                U10(IJ) = 0.
+                THW(IJ) = 0.
+              ENDIF
+            ENDIF
+          ENDDO
+
+!         CORRECT FOR RELATIVE WINDS WITH RESPECT TO THE SURFACE CURRENTS.
+          IF(LCORREL) THEN
+            DO IJ = IJS,IJL
+              UU(IJ) = U10(IJ)*SIN(THW(IJ))
+              VV(IJ) = U10(IJ)*COS(THW(IJ))
+              UU(IJ) = UU(IJ) - RWFAC*U(IJ,1)
+              VV(IJ) = VV(IJ) - RWFAC*V(IJ,1)
+              WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+              IF(WSPEED(IJ).GT.0.) THEN
+                U10(IJ) = WSPEED(IJ)
+                THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+              ELSE
+                U10(IJ) = 0.
+                THW(IJ) = 0.
+              ENDIF
+            ENDDO
+          ENDIF
+
+!       USE NEUTRAL WIND SPEED FROM A PREVIOUS WAM RUN.
+!       -----------------------------------------------
+        ELSE IF(LLWSWAVE) THEN
+
+          DO IJ = IJS,IJL
+            IX = IFROMIJ(IJ,1)
+            JY = JFROMIJ(IJ,1)
+
+            IF(FIELDG(IX,JY)%WSWAVE.NE.ZMISS .AND.
+     &         FIELDG(IX,JY)%WSWAVE.GT.0. ) THEN
+              WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+              IF(WSPEED(IJ).GT.0.) THEN
+                RESCALE=FIELDG(IX,JY)%WSWAVE/WSPEED(IJ)
+                UU(IJ) = UU(IJ) * RESCALE 
+                VV(IJ) = VV(IJ) * RESCALE
+              ENDIF
+            ENDIF
+          ENDDO
+
+          IF(LCORREL) THEN
+            DO IJ = IJS,IJL
+              UU(IJ) = UU(IJ) + RWFAC*U(IJ,1)
+              VV(IJ) = VV(IJ) + RWFAC*V(IJ,1)
+            ENDDO
+          ENDIF
+
+          DO IJ = IJS,IJL
+            U10(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+            IF (U10(IJ).NE.0.) THEN 
+              THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+            ELSE
+              THW(IJ) = 0.
+            ENDIF
+          ENDDO
+
+
+        ELSE
+
+          IF(LCORREL) THEN
+            DO IJ = IJS,IJL
+              UU(IJ) = UU(IJ) + RWFAC*U(IJ,1)
+              VV(IJ) = VV(IJ) + RWFAC*V(IJ,1)
+            ENDDO
+          ENDIF
+
+          DO IJ = IJS,IJL
+            U10(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+            IF (U10(IJ).NE.0.) THEN 
+              THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+            ELSE
+              THW(IJ) = 0.
+            ENDIF
+          ENDDO
+
+        ENDIF
+
+!       IMPOSE A MINIMUM WIND SPEED.
+        DO IJ = IJS,IJL
+          U10(IJ) = MAX(U10(IJ),WSPMIN)
+        ENDDO
+
+      CASE(1)
 
 !*    3.2  INPUT IS FRICTION VELOCITY.
 !          ---------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX(0.01,U10(IJ))
-          Z0  = ALPHACH/G*USTAR**2
-          CD  = XKAPPA/LOG(10./Z0)
-          U10(IJ) = USTAR/CD
-          U10(IJ) = MAX(U10(IJ),WSPMIN)
+          US(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+          IF (US(IJ).NE.0.) THEN 
+            THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+          ELSE
+            THW(IJ) = 0.
+          ENDIF
+          US(IJ) = MAX(US(IJ),EPSUS)
         ENDDO
 
-      ELSEIF (ICODE.EQ.2) THEN
+      CASE(2)
 
 !*    3.3 INPUT WINDS ARE SURFACE STRESSES.
 !         ---------------------------------
 
         DO IJ = IJS,IJL
-          USTAR = MAX (0.01, SQRT(U10(IJ)/ADS(IJ)))
-          Z0  = ALPHACH/G*USTAR**2
-          CD  = XKAPPA/LOG(10./Z0)
-          U10(IJ) = USTAR/CD
-          U10(IJ) = MAX(U10(IJ),WSPMIN)
+          US(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
+          IF (US(IJ).NE.0.) THEN 
+            THW(IJ) = ATAN2(UU(IJ),VV(IJ))
+          ELSE
+            THW(IJ) = 0.
+          ENDIF
+          US(IJ) = SQRT(MAX(US(IJ),0.)/MAX(ADS(IJ),1.))
+          US(IJ) = MAX(US(IJ),EPSUS)
         ENDDO
-      ENDIF
+
+
+      END SELECT 
+
+
+
+      DO IJ = IJS,IJL
+        IF (THW(IJ).LT.0.) THW(IJ) = THW(IJ) + ZPI
+      ENDDO
+
+
+! ----------------------------------------------------------------------
 
 !*    4. TEST OUTPUT OF WAVE MODEL BLOCKS
 !        ---------------------------------

@@ -1,4 +1,3 @@
-!**********************************************************************
       MODULE UNWAM
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPARAM , ONLY : NANG, NFRE
@@ -6,33 +5,19 @@
       USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES => np
       USE yowpd, only: XP=>x, YP=>y, DEP=>z
       USE yowpd, only: exchange
+      USE UNSTRUCT_BOUND, ONLY : SPSIG, IWBMNP, IWBNDLC, LBCWA
+      USE UNSTRUCT_BOUND, ONLY : IOBP, IOBPD, IOBWB
+      USE UNSTRUCT_BOUND, ONLY : WBAC
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-
+      USE YOWFRED  , ONLY : COSTH, SINTH
+      USE UNSTRUCT_CURR, ONLY : CURTXY
       IMPLICIT NONE
-
-      integer :: recTime1, recTime2
-      integer, allocatable :: Indexes_boundary(:)
-      REAL(KIND=JWRU), allocatable :: ListTimeBnd(:)
-      integer nbTimeBnd
-      real*8 :: WAV_BoucTime = 0
-      character(len=*), parameter :: eFileBnd = 'wwm_bouc_format.nc'
-      INTEGER                :: IWBMNP ! number of wave boundary points
-      INTEGER                :: IWBMNPGL
-      INTEGER, ALLOCATABLE   :: IWBNDLC(:) ! local wave boundary index
-      INTEGER, ALLOCATABLE   :: IWBNDLC_REV(:) ! local wave boundary index
-      INTEGER, ALLOCATABLE   :: IOBPD(:,:) ! boundary direction pointer
-      INTEGER, ALLOCATABLE   :: IOBWB(:)   ! gl. wave boundary index ... will vanish in the decomp.
-      INTEGER, ALLOCATABLE   :: IOBP(:)    ! boundary points index
-
-
       LOGICAL :: APPLY_DXP_CORR = .TRUE.
 !!!! JB:
 !!!! USE_EXACT_FORMULA_SPHERICAL_AREA = .TRUE. DOES NOT SEEM TO WORK !!!
 !!! I need to investigate further
-
       LOGICAL :: USE_EXACT_FORMULA_SPHERICAL_AREA = .FALSE.
       LOGICAL :: LNANINFCHK = .TRUE.
-
       REAL(KIND=JWRU) :: DT4A, DT4D, DT4F
       REAL(KIND=JWRU) :: DDIR
       REAL(KIND=JWRU) :: KDMAX = 300.0_JWRU
@@ -40,17 +25,21 @@
       REAL(KIND=JWRU) :: ZERO = 0.0
       REAL(KIND=JWRU) :: THR = TINY(1.)
       REAL(KIND=JWRU) :: DMIN = 0.0
-
-      REAL(KIND=JWRU), ALLOCATABLE :: SPSIG(:)
-      REAL(KIND=JWRU), ALLOCATABLE :: WBAC (:,:,:)
-      REAL(KIND=JWRU), ALLOCATABLE :: WBAC1(:,:,:)
-      REAL(KIND=JWRU), ALLOCATABLE :: WBAC2(:,:,:)
-
-      REAL(KIND=JWRU), ALLOCATABLE :: CAD_THE(:,:,:)
-      REAL(KIND=JWRU), ALLOCATABLE :: CAS_SIG(:,:,:)
+      REAL(KIND=JWRU), ALLOCATABLE    :: CAD_THE(:,:,:)
+      REAL(KIND=JWRU), ALLOCATABLE    :: CAS_SIG(:,:,:)
       integer, allocatable :: ID_PREV(:), ID_NEXT(:)
       integer, allocatable :: Jstart(:)
-
+      integer recTime1, recTime2
+!     THE FOLLOWING FLAG ARE PART OF THE INPUT NAMELIST
+!     SEE *MPUSERIN*
+      LOGICAL :: USE_DIRECT_WIND_FILE
+      LOGICAL :: LIMPLICIT
+      LOGICAL :: SOURCE_IMPL
+      LOGICAL :: LNONL
+      LOGICAL :: BLOCK_GAUSS_SEIDEL
+      LOGICAL :: LLIMT
+      LOGICAL :: L_SOLVER_NORM
+      LOGICAL :: LCHKCONV
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: JA_IE(:,:,:)
       INTEGER(KIND=JWIM), ALLOCATABLE :: IA(:), JA(:)
@@ -79,23 +68,11 @@
       ! Solver thresholds
       !
       INTEGER(KIND=JWRU) :: maxiter = 100
+      REAL(KIND=JWRU) :: WAE_SOLVERTHR
+      REAL(KIND=JWRU) :: JGS_DIFF_SOLVERTHR
       REAL(KIND=JWRU) :: PMIN
       REAL(KIND=JWRU) :: PTAIL5
       REAL(KIND=JWRU), allocatable :: INVTRANS1(:)
-
-!     THE FOLLOWING FLAG ARE PART OF THE INPUT NAMELIST
-!     SEE *MPUSERIN*
-      REAL(KIND=JWRU) :: WAE_SOLVERTHR ! Solver threholds
-      REAL(KIND=JWRU) :: JGS_DIFF_SOLVERTHR ! Solver threholds
-      LOGICAL :: LIMPLICIT
-      LOGICAL :: SOURCE_IMPL
-      LOGICAL :: LNONL
-      LOGICAL :: BLOCK_GAUSS_SEIDEL
-      LOGICAL :: LLIMT
-      LOGICAL :: L_SOLVER_NORM
-      LOGICAL :: LCHKCONV
-      LOGICAL :: LBCWA = .FALSE.
-
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -142,6 +119,7 @@
       USE yownodepool, ONLY : NP, iplg, ipgl
       USE yowdatapool, only: myrank
       USE YOWMPP   , ONLY : NINF, NSUP
+      USE UNSTRUCT_BOUND, ONLY : SET_UP_WBAC, APPLY_BOUNDARY_CONDITION
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(INOUT)  :: FL1(NINF-1:NSUP,NANG,NFRE)
@@ -157,22 +135,29 @@
           CALL DIFFERENTIATE_XYDIR_LSPHE(DEP, DDEP)
           CALL DIFFERENTIATE_XYDIR_LSPHE(CURTXY(1,:), DCUX)
           CALL DIFFERENTIATE_XYDIR_LSPHE(CURTXY(2,:), DCUY)
-          DEPDT = 0
+          DEPDT(:) = 0.0_JWRU
         END IF
       END IF
 #ifdef DEBUG
       CALL COHERENCY_ERROR_3D(FL1, "testing the function FL1")
       CALL COHERENCY_ERROR_3D(FL3, "testing the function FL3")
 #endif
+!#ifdef DEBUG
+!      DO ID=1,NANG
+!        WRITE(740+MyRankGlobal,*) 'ID=', ID, ' C/S=', COSTH(ID), SINTH(ID)
+!      END DO
+!#endif
       IF (LBCWA) THEN
         CALL SET_UP_WBAC
+        CALL APPLY_BOUNDARY_CONDITION(FL1)
       END IF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Before sum(FL1)=', sum(FL1(1:MNP,:,:))
+      WRITE(740+MyRankGlobal,*) 'Before sum(FL3)=', sum(FL3(1:MNP,:,:))
+#endif
       IF (LIMPLICIT) THEN
         CALL IMPLICIT_N_SCHEME_BLOCK(FL1, FL3)
       ELSE
-        IF (LBCWA) THEN
-          CALL APPLY_BOUNDARY_CONDITION(FL1)
-        END IF
         IF (LVECTOR) THEN 
           CALL EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
         ELSE
@@ -185,6 +170,10 @@
             END DO
           END DO
 !$OMP     END PARALLEL DO
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) ' After sum(FL1)=', sum(FL1(1:MNP,:,:))
+          WRITE(740+MyRankGlobal,*) ' After sum(FL3)=', sum(FL3(1:MNP,:,:))
+#endif
           DO IP=1,MNP
             FLsing=REAL(FL3(IP,:,:), JWRU)
             CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(FLsing, IP)
@@ -192,6 +181,10 @@
           END DO
         ENDIF
       ENDIF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Leaving advection sum(FL1)=', sum(FL1(1:MNP,:,:))
+      WRITE(740+MyRankGlobal,*) 'Leaving advection sum(FL3)=', sum(FL3(1:MNP,:,:))
+#endif
       LCALC = .FALSE.
       END SUBROUTINE
 !**********************************************************************
@@ -308,7 +301,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_CURTXY
-      USE YOWUNPOOL, ONLY : CURTXY, LCALC
+      USE YOWUNPOOL, ONLY : LCALC
       USE YOWCURR, ONLY : U, V
       IMPLICIT NONE
       integer IP, IG
@@ -325,60 +318,59 @@
       SUBROUTINE PROPTHETA(IP, CAD)
       USE YOWUNPOOL, ONLY : LCUR, LSPHE, DEGRAD, REARTH
       USE YOWUNPOOL, ONLY : WK, CG
-      USE YOWFRED  , ONLY : COSTH, SINTH
       IMPLICIT NONE
       INTEGER, INTENT(IN)        :: IP
       REAL(KIND=JWRU), INTENT(OUT)   :: CAD(NANG,NFRE)
       INTEGER        :: IS, ID
       REAL(KIND=JWRU)    :: WKDEP, DWDH, CFL
 #ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) ' maxval(DDEP)', maxval(DDEP)
-      WRITE(740+MyRankGlobal,*) 'DEP   = ', DEP(IP)
-      WRITE(740+MyRankGlobal,*) 'DMIN  = ', DMIN
-      WRITE(740+MyRankGlobal,*) 'LSPHE = ', LSPHE
-      WRITE(740+MyRankGlobal,*) 'LCUR  = ', LCUR
-      WRITE(740+MyRankGlobal,*) 'maxval(CG)=', maxval(CG)
+!      WRITE(740+MyRankGlobal,*) ' maxval(DDEP)', maxval(DDEP)
+!      WRITE(740+MyRankGlobal,*) 'DEP   = ', DEP(IP)
+!      WRITE(740+MyRankGlobal,*) 'DMIN  = ', DMIN
+!      WRITE(740+MyRankGlobal,*) 'LSPHE = ', LSPHE
+!      WRITE(740+MyRankGlobal,*) 'LCUR  = ', LCUR
+!      WRITE(740+MyRankGlobal,*) 'maxval(CG)=', maxval(CG)
 #endif
-      IF (DEP(IP) .GT. DMIN) THEN
+      IF (LSPHE) THEN
         DO IS = 1, NFRE
-          WKDEP = WK(IS,IP) * DEP(IP)
-          IF (WKDEP .LT. 13.) THEN
-            DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-            DO ID = 1, NANG
-              CAD(ID,IS) = DWDH * ( SINTH(ID)*DDEP(1,IP)-COSTH(ID)*DDEP(2,IP) )
-            END DO
-          ENDIF
+          DO ID = 1, NANG
+!        it is SINTH(ID) because when theta is 0, it means propagation towards the north,
+!        hence along a meridian, which is a great circle, hence no need to change the
+!        wave propagation direction.
+            CAD(ID,IS) = CG(IS,IP)*SINTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
+          END DO
         END DO
-        IF (LSPHE) THEN
+      ELSE
+        CAD(:,:) = 0.0_JWRU
+      END IF
+
+!     Assume a meaningful water depth before considering bottom and/or current refraction
+      IF (DEP(IP) .GT. DMIN) THEN
+        IF ((IREFRA.eq.1).or.(IREFRA.eq.3)) THEN
           DO IS = 1, NFRE
-            DO ID = 1, NANG
-              CAD(ID,IS) = CAD(ID,IS) - CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
-            END DO
+            WKDEP = WK(IS,IP) * DEP(IP)
+            IF (WKDEP .LT. 13.) THEN
+              DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
+              DO ID = 1, NANG
+                CAD(ID,IS) = CAD(ID,IS) + DWDH * ( SINTH(ID)*DDEP(1,IP)-COSTH(ID)*DDEP(2,IP) )
+              END DO
+            ENDIF
           END DO
         END IF
-        IF (LCUR) THEN
+        IF (LCUR.and.((IREFRA.eq.2).or.(IREFRA.eq.3))) THEN
           DO IS = 1, NFRE
             DO ID = 1, NANG
               CAD(ID,IS) = CAD(ID,IS) + SIN2TH(ID)*DCUY(1,IP)-COS2TH(ID)*DCUX(2,IP)+SINCOSTH(ID)*( DCUX(1,IP)-DCUY(2,IP) )
             END DO
           END DO
         END IF
-      ELSE
-        CAD = 0.0
-      END IF
-      IF (LSPHE) THEN
-        DO IS = 1, NFRE
-          DO ID = 1, NANG
-            CAD(ID,IS) = CAD(ID,IS)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
-          END DO
-        END DO
       END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PROPSIGMA(IP, CAS)
-      USE YOWUNPOOL, ONLY : CG, WK, CURTXY
+      USE YOWUNPOOL, ONLY : CG, WK
       IMPLICIT NONE
       integer, intent(IN) :: IP
       real(KIND=JWRU), intent(out) :: CAS(NFRE,NANG)
@@ -393,9 +385,9 @@
             DWDH = 0.
           END IF
           DO ID = 1, NANG
-             CAS(IS,ID) = DWDH * WK(IS,IP) * &
-&                      ( DEPDT(IP) + CURTXY(1,IP)*DDEP(IP,1) + CURTXY(2,IP)*DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * &
-&                      ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+             CAS(IS,ID) = DWDH * WK(IS,IP) * ( DEPDT(IP) + CURTXY(1,IP)*DDEP(IP,1) + &
+&             CURTXY(2,IP)*DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + &
+&             SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
           END DO
         END DO
       END IF
@@ -463,20 +455,24 @@
       SUBROUTINE QUICKEST_DIR(MX, Q, CS, DT, DX)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: MX
-      REAL(KIND=JWRU), INTENT(INOUT) :: Q(0:MX+1), CS(0:MX+1)
+      REAL(KIND=JWRU), INTENT(INOUT) :: Q(-1:MX+2), CS(-1:MX+2)
       REAL(KIND=JWRU), INTENT(IN)    :: DT, DX
       REAL(KIND=JWRU) :: CFLL(0:MX+1), FLA(0:MX+1)
-      INTEGER     :: IXY, IXYC, IXYU, IXYD, INC
+      INTEGER, PARAMETER :: INC = 1
+      INTEGER     :: IXY, IXYC, IXYU, IXYD
+
       REAL(KIND=JWRU) :: CFL
       REAL(KIND=JWRU) :: DQ, DQNZ, QCN, QBN, QBR, QB
       REAL(KIND=JWRU) :: CFAC
 
-      INC = 1
-
+      CS(-1)   = CS(MX-1)
       CS(0)    = CS(MX)
       CS(MX+1) = CS(1)
+      CS(MX+2) = CS(2)
+      Q(-1)    = Q(MX-1)
       Q(0)     = Q(MX)
       Q(MX+1)  = Q(1)
+      Q(MX+2)  = Q(2)
       
       DO IXY = 0, MX+1
         CFLL(IXY) = CS(IXY) * DT / DX
@@ -484,7 +480,7 @@
       !
       !     Fluxes for central points (Fi,+)
       !
-      DO IXY = 1, MX - 1
+      DO IXY = 0, MX
         CFL = 0.5_JWRU * ( CFLL(IXY) + CFLL(IXY+INC) )
         IXYC = IXY - INC * INT(MIN(ZERO, SIGN(1.1_JWRU,CFL) ) )
         QB   = 0.5_JWRU*((1.0-CFL)*Q(IXY+INC)+(1.0+CFL)*Q(IXY))-(1.0-CFL**2.0)/6.0*(Q(IXYC-INC)-2.0*Q(IXYC)+Q(IXYC+INC))
@@ -502,30 +498,12 @@
         FLA(IXY) = CFL * QB
       END DO
       !
-      !     Fluxes for points with boundary above
-      !
-      IXY = 0
-      CFL = CFLL(IXY)
-      IXYC = IXY - INC * INT( MIN(ZERO, SIGN(1.1_JWRU,CFL) ) )
-      FLA(IXY) = CFL * Q(IXYC)
-      !
-      !     Fluxes for points with boundary below
-      !
-      IXY = MX
-      CFL = CFLL(MX)
-      IXYC = IXY - INC * INT( MIN(ZERO, SIGN(1.1_JWRU,CFL) ) )
-      FLA(IXY) = CFL * Q(IXYC)
-      !
-      ! check this
-      !
-      FLA(0) = FLA(MX)
-      !
       !     Propagation
       !
       DO IXY = 1, MX
         Q(IXY) = MAX(ZERO,Q(IXY) + FLA(IXY-INC) - FLA(IXY))
       END DO
-      END SUBROUTINE
+      END SUBROUTINE QUICKEST_DIR
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -535,14 +513,14 @@
       REAL(KIND=JWRU), intent(inout) :: FLsing(NANG,NFRE)
       integer, intent(in) :: IP
       REAL(KIND=JWRU) ACQ_F(0:NFRE+1)
-      REAL(KIND=JWRU) ACQ_D(0:NANG+1)
+      REAL(KIND=JWRU) ACQ_D(-1:NANG+2)
       REAL(KIND=JWRU) CASS(0:NFRE+1)
       REAL(KIND=JWRU) CAS(NFRE,NANG)
       REAL(KIND=JWRU) CAD(NANG,NFRE)
       REAL(KIND=JWRU) TheFL(NFRE)
       REAL(KIND=JWRU) REST, DT4FI, CFLCAS
       REAL(KIND=JWRU) DT4DI, CFLCAD
-      REAL(KIND=JWRU) CADS(0:NANG+1)
+      REAL(KIND=JWRU) CADS(-1:NANG+2)
       integer ID, ITER, IT, IS
       !
       IF (ABS(IOBP(IP)) .EQ. 1) RETURN
@@ -584,15 +562,15 @@
           FLsing(ID,:) = MAX(ZERO,TheFL)
         END DO
       END IF
-      IF ((IREFRA .eq. 1).or.(IREFRA .eq. 3)) THEN
+      IF ((IREFRA .eq. 1).or.(IREFRA .eq. 3).or.(LSPHE.eqv..TRUE.)) THEN
         CALL PROPTHETA(IP,CAD)
 #ifdef DEBUG
-        WRITE(740+MyRankGlobal,*) 'NFRE=', NFRE
-        WRITE(740+MyRankGlobal,*) ' NANG=', NANG
-        FLUSH(740+MyRankGlobal)
-        WRITE(740+MyRankGlobal,*) 'size(FLsing,1)=', size(FLsing,1)
-        WRITE(740+MyRankGlobal,*) 'size(FLsing,2)=', size(FLsing,2)
-        FLUSH(740+MyRankGlobal)
+!        WRITE(740+MyRankGlobal,*) 'NFRE=', NFRE
+!        WRITE(740+MyRankGlobal,*) ' NANG=', NANG
+!        FLUSH(740+MyRankGlobal)
+!        WRITE(740+MyRankGlobal,*) 'size(FLsing,1)=', size(FLsing,1)
+!        WRITE(740+MyRankGlobal,*) 'size(FLsing,2)=', size(FLsing,2)
+!        FLUSH(740+MyRankGlobal)
 #endif
         DO IS = 1, NFRE
 !#ifdef DEBUG
@@ -607,12 +585,12 @@
           CADS(1:NANG) = CAD(:,IS)
           CFLCAD = MAXVAL(ABS(CAD(:,IS)))*DT4D/DDIR
 #ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'DDIR=', DDIR
-          WRITE(740+MyRankGlobal,*) 'DT4D=', DT4D
-          DO ID=1,NANG
-            WRITE(740+MyRankGlobal,*) 'ID=', ID, ' CAD=', CAD(ID,IS)
-          END DO
-          FLUSH(740+MyRankGlobal)
+!          WRITE(740+MyRankGlobal,*) 'DDIR=', DDIR
+!          WRITE(740+MyRankGlobal,*) 'DT4D=', DT4D
+!          DO ID=1,NANG
+!            WRITE(740+MyRankGlobal,*) 'ID=', ID, ' CAD=', CAD(ID,IS)
+!          END DO
+!          FLUSH(740+MyRankGlobal)
 #endif
           IF (CFLCAD .LT. THR) CYCLE
           REST  = ABS(MOD(CFLCAD,ONE))
@@ -623,8 +601,8 @@
           END IF
           ITER = MAX(1,ITER)
 #ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'ITER=', ITER
-          FLUSH(740+MyRankGlobal)
+!          WRITE(740+MyRankGlobal,*) 'ITER=', ITER
+!          FLUSH(740+MyRankGlobal)
 #endif
           DT4DI = DT4D / REAL(ITER,JWRU)
           DO IT = 1, ITER ! Iteration
@@ -724,7 +702,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID, UOLD, UNEW )
+      SUBROUTINE EXPLICIT_N_SCHEME(IS, ID, UOLD, UNEW)
 
 !     Purpose.: Advects the spectra using non-vectorized RD-schemes
 !     --------
@@ -782,7 +760,7 @@
 !
          REAL(KIND=JWRU) :: FT
          REAL(KIND=JWRU) :: UTILDE
-         REAL(KIND=JWRU) :: DTMAX_GLOBAL_EXP, DTMAX_EXP, DTMAX_GLOBAL_EXP_LOC
+         REAL(KIND=JWRU) :: DTMAX_GLOBAL_EXP(1), DTMAX_EXP, DTMAX_GLOBAL_EXP_LOC(1)
          REAL(KIND=JWRU) :: REST
          REAL(KIND=JWRU) :: LAMBDA(2), DT4AI
          REAL(KIND=JWRU) :: FL11,FL12,FL21,FL22,FL31,FL32
@@ -799,11 +777,19 @@
          REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
          INTEGER(KIND=JWIM) :: ierr
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) '--------------------------------------------'
+      FLUSH(740+MyRankGlobal)
+#endif
 
 !     -------------------------------------------------------------------------
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('EXPLICIT_N_SCHEME',0,ZHOOK_HANDLE)
+#endif
+#ifdef DEBUG
+         WRITE(740+MyRankGlobal,*) 'ID=', ID, ' IS=', IS
+         FLUSH(740+MyRankGlobal)
 #endif
 
 !
@@ -868,7 +854,18 @@
             FLALL(2,IE) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
             FLALL(3,IE) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
          END DO
-
+#ifdef DEBUG
+         WRITE(740+MyRankGlobal,*) '     THR       =', THR
+         WRITE(740+MyRankGlobal,*) 'sum(abs(C(1:)))=', sum(abs(C(1,:)))
+         WRITE(740+MyRankGlobal,*) 'sum(abs(C(2:)))=', sum(abs(C(2,:)))
+         WRITE(740+MyRankGlobal,*) 'sum(abs( IEN ))=', sum(abs( IEN ))
+         WRITE(740+MyRankGlobal,*) 'sum(abs( SI  ))=', sum(abs( SI  ))
+         WRITE(740+MyRankGlobal,*) 'sum(abs(  N  ))=', sum(abs(  N  ))
+         WRITE(740+MyRankGlobal,*) 'sum(abs(KELEM))=', sum(abs(KELEM))
+         WRITE(740+MyRankGlobal,*) 'sum(abs(FLALL))=', sum(abs(FLALL))
+         WRITE(740+MyRankGlobal,*) '     LCALC     =', LCALC
+         FLUSH(740+MyRankGlobal)
+#endif
 
          IF (LCALC) THEN ! If the current field or water level --> new CFL 
            KKSUM = 0.0_JWRU
@@ -876,19 +873,24 @@
              NI = INE(:,IE)
              KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
            END DO
+#ifdef DEBUG
+           WRITE(740+MyRankGlobal,*) 'sum(abs(KKSUM))=', sum(abs(KKSUM))
+           FLUSH(740+MyRankGlobal)
+#endif
            !write(DBG%FHNDL, *) "KKSUM", KKSUM
 
 ! THOMAS find global dt max/min
-           DTMAX_GLOBAL_EXP = LARGE
-           DTMAX_GLOBAL_EXP_LOC = LARGE
+           DTMAX_GLOBAL_EXP(1) = LARGE
+           DTMAX_GLOBAL_EXP_LOC(1) = LARGE
            DO IP = 1, MNP
+
              DTMAX_EXP = SI(IP)/MAX(SMALL, KKSUM(IP))
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
                CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
              END IF
-             DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
+             DTMAX_GLOBAL_EXP_LOC(1) = MIN(DTMAX_GLOBAL_EXP_LOC(1),DTMAX_EXP)
 
 !             if(DTMAX_GLOBAL_EXP < 0.1) then
 !               WRITE(DBG%FHNDL,*) 'LOCAL',IP,SI(IP),KKSUM(IP),DTMAX_EXP
@@ -900,7 +902,7 @@
      &                        1, MPI_REAL8, MPI_MIN, COMM, IERR)
 
 
-           CFLXY = DT4A/DTMAX_GLOBAL_EXP
+           CFLXY = DT4A/DTMAX_GLOBAL_EXP(1)
            REST  = ABS(MOD(CFLXY,1.0_JWRU))
            IF (REST .LT. THR) THEN
              ITER_EXP(ID,IS) = ABS(NINT(CFLXY))
@@ -912,7 +914,14 @@
 !           WRITE(DBG%FHNDL,'(2I5,3F15.8,I10)') IS, ID, DT4A, CFLXY, 
 !     &                            DTMAX_GLOBAL_EXP, ITER_EXP(IS,ID)
          END IF
+#ifdef DEBUG
+         WRITE(740+MyRankGlobal,*) 'ITER=', ITER_EXP(ID,IS)
+         FLUSH(740+MyRankGlobal)
+#endif
 
+
+
+         
          DT4AI    = DT4A/REAL(ITER_EXP(ID,IS),JWRU)
          DTSI(:)  = DT4AI/SI(:)
 
@@ -942,7 +951,10 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('EXPLICIT_N_SCHEME',1,ZHOOK_HANDLE)
 #endif
-
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) '--------------------------------------------'
+      FLUSH(740+MyRankGlobal)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1030,7 +1042,7 @@
 !
       REAL(KIND=JWRU) :: FT
       REAL(KIND=JWRU) :: UTILDE
-      REAL(KIND=JWRU) :: DTMAX_GLOBAL_EXP, DTMAX_EXP
+      REAL(KIND=JWRU) :: DTMAX_GLOBAL_EXP(1), DTMAX_EXP
       REAL(KIND=JWRU) :: REST
       REAL(KIND=JWRU) :: LAMBDA(2), DT4AI
       REAL(KIND=JWRU) :: FL11,FL12,FL21,FL22,FL31,FL32
@@ -1089,12 +1101,12 @@
           NI = INE(:,IE)
           KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
         END DO
-        DTMAX_GLOBAL_EXP = LARGE
+        DTMAX_GLOBAL_EXP(1) = LARGE
         DO IP = 1, MNP
           DTMAX_EXP = SI(IP)/MAX(SMALL,KKSUM(IP))
-          DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
+          DTMAX_GLOBAL_EXP(1) = MIN ( DTMAX_GLOBAL_EXP(1), DTMAX_EXP)
         END DO
-        CFLXY = DT4A/DTMAX_GLOBAL_EXP
+        CFLXY = DT4A/DTMAX_GLOBAL_EXP(1)
         REST  = ABS(MOD(CFLXY,1.0_JWRU))
         IF (REST .LT. THR) THEN
           ITER_EXP(ID,IS) = ABS(NINT(CFLXY))
@@ -1379,45 +1391,49 @@
 !*
 !**********************************************************************
       SUBROUTINE CADVXY(IS,ID,C)
-      USE YOWUNPOOL, ONLY : LADVTEST, LCUR, LSPHE, CG, CURTXY
-      USE YOWFRED  , ONLY : COSTH, SINTH
+      USE YOWUNPOOL, ONLY : LADVTEST, LCUR, LSPHE, CG, DEGRAD, REARTH
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
-! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN)  :: IS, ID
       REAL(KIND=JWRU), INTENT(OUT)  :: C(2,MNP)
-
       INTEGER(KIND=JWIM) :: IP
-
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRU) :: eCX, eCY
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CADVXY',0,ZHOOK_HANDLE)
 #endif
-
       IF (LCUR) THEN
-        DO IP = 1, MNP
-          C(1,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(1,IP)
-          C(2,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(2,IP)
-        END DO
+        IF (LSPHE) THEN
+          DO IP=1,MNP
+            eCX = CG(IS,IP)*SINTH(ID)+CURTXY(1,IP)
+            eCY = CG(IS,IP)*COSTH(ID)+CURTXY(2,IP)
+            C(1,IP) = eCX * INVTRANS1(IP)
+            C(2,IP) = eCY * DGRTHM1
+          END DO
+        ELSE
+          DO IP=1,MNP
+            C(1,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(1,IP)
+            C(2,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(2,IP)
+          END DO
+        END IF
       ELSE
-        DO IP = 1, MNP
-          C(1,IP) = CG(IS,IP)*SINTH(ID)
-          C(2,IP) = CG(IS,IP)*COSTH(ID)
-        END DO
+        IF (LSPHE) THEN
+          DO IP=1,MNP
+            eCX = CG(IS,IP)*SINTH(ID)
+            eCY = CG(IS,IP)*COSTH(ID)
+            C(1,IP) = eCX * INVTRANS1(IP)
+            C(2,IP) = eCY * DGRTHM1
+          END DO
+        ELSE
+          DO IP=1,MNP
+            C(1,IP) = CG(IS,IP)*SINTH(ID)
+            C(2,IP) = CG(IS,IP)*COSTH(ID)
+          END DO
+        END IF
       END IF
-
-      IF (LSPHE) THEN
-        DO IP = 1, MNP
-          C(1,IP) = C(1,IP)*INVTRANS1(IP)
-          C(2,IP) = C(2,IP)*DGRTHM1
-        END DO
-      END IF
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CADVXY',1,ZHOOK_HANDLE)
 #endif
@@ -1475,10 +1491,11 @@
       ALLOCATE( IEN(6,MNE) ); IEN = 0
       ALLOCATE( CG(NFRE,MNP) ); CG = 0.0_JWRU
       ALLOCATE( WK(NFRE,MNP) ); CG = 0.0_JWRU
-      ALLOCATE( CURTXY(2,MNP)); CURTXY = 0.0_JWRU
       IF (IREFRA .ne. 0) THEN
         allocate(DCUX(2,MNP), DCUY(2,MNP), DDEP(2,MNP), DEPDT(MNP), stat=istat)
       END IF
+      allocate(CURTXY(2,MNP), stat=istat)
+      CURTXY=0
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1521,6 +1538,7 @@
       USE YOWSHAL  , ONLY : DEPTH    ,DEPTHA    ,TOOSHALLOW
       USE YOWPARAM , ONLY : NIBLO
       USE yowpd, only: z, comm, np_global, initPD, setDimSize
+      USE UNSTRUCT_BOUND, ONLY : INIT_BOUNDARY
       USE YOWFRED, ONLY : DELTH
       USE YOWSTAT  , ONLY : IDELPRO
       IMPLICIT NONE
@@ -1667,9 +1685,13 @@
 !**********************************************************************
       SUBROUTINE INIT_FLUCT
       USE YOWUNPOOL
+      USE YOWPD,     ONLY: COMM, RANK, MYRANK
+      use YOWERROR,  ONLY: PARALLEL_ABORT
       USE YOWFRED  , ONLY : FR
+      USE YOWTEST  , ONLY : IU06
       IMPLICIT NONE
 
+      INTEGER(KIND=JWIM) :: IERR, IPGL
       INTEGER(KIND=JWIM) :: I, J, K
       INTEGER(KIND=JWIM) :: IP, IE, IS, ISTAT
       INTEGER(KIND=JWIM) :: POS, POS_J, POS_K
@@ -1700,6 +1722,7 @@
       REAL(KIND=JWRU) :: AREA, AREA_RAD
 
       LOGICAL   :: LWRONG = .FALSE.
+      LOGICAL   :: LSINEG = .FALSE.
       LOGICAL   :: CHECK_COMBIN_ORIENT
 
       POS_TRICK(1,1) = 2
@@ -1797,15 +1820,25 @@
         SI(I2) = SI(I2) + TRIA03
         SI(I3) = SI(I3) + TRIA03
       ENDDO
+
       CALL exchange(SI)
-#ifdef DEBUG
+
       DO IP =1, MNP
         IF(SI(IP) .LT. SMALL) THEN
+          write(IU06,*) 'INIT_FLUCT : SI(IP) NEG. OR LESS THAN THR. IP, SI(IP) =', IP, SI(IP)
+          IPGL=RANK(MYRANK+1)%IPLG(IP)
+          write(IU06,*) 'INIT_FLUCT IP, IPGL, XP, YP, MYRANK',IP, IPGL, XP(IP), YP(IP), MYRANK
+          write(IU06,*) 'INIT_FLUCT IP, IPGL, MYRANK',IP, IPGL, MYRANK
           write(DBG%FHNDL,*) 'SI(IP) NEG. OR LESS THAN THR. IP=', IP
-          STOP 'SI NEG. OR LESS THAN THR'
+          LSINEG=.TRUE.
         ENDIF
       END DO
-#endif
+      CALL MPI_BARRIER(COMM, IERR)
+      IF(LSINEG) THEN
+        CALL FLUSH(IU06)
+        call parallel_abort('INIT_FLUCY: SI NEGATIVE OR LESS THAN THRESHOLD')
+      ENDIF
+
       MAXMNECON  = MAXVAL(CCON)
       ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
       IF (istat/=0) stop 'wwm_fluctsplit, allocate error 4'
@@ -2072,14 +2105,13 @@
 !**********************************************************************
       SUBROUTINE INIT_SPECTRAL_ARR
       USE YOWPCONS , ONLY : ZPI, PI
-      USE YOWFRED  , ONLY : COSTH, SINTH
-      USE YOWFRED  , ONLY : FR, WETAIL
+      USE YOWFRED  , ONLY : FR, WETAIL, FRATIO
       IMPLICIT NONE
       INTEGER IS, ID
       integer istat
       allocate(DS_BAND(0:NFRE+1), SPSIG(NFRE), stat=istat)
       SPSIG = FR * ZPI
-      PTAIL5 = DBLE(WETAIL*FR(NFRE))
+      PTAIL5 = ONE / (REAL(FRATIO,JWRU))**5
       DS_BAND(0)   = SPSIG(2) - SPSIG(1)
       DS_BAND(1)   = DS_BAND(0)
       DS_BAND(NFRE) = SPSIG(NFRE) - SPSIG(NFRE-1)
@@ -2133,6 +2165,7 @@
 
         USE YOWUNPOOL, ONLY : GRID, FILEDEF
         USE YOWPARAM , ONLY : NIBLO
+        USE UNSTRUCT_BOUND, ONLY : RHEADER_NODE, RHEADER_ELEMENT
         IMPLICIT NONE
 
         INTEGER(KIND=JWIM) :: NBOUND, NDOMAIN
@@ -2411,7 +2444,6 @@
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
       USE MPL_MPIF
-      USE YOWFRED  , ONLY : COSTH, SINTH
       USE YOWUNPOOL
       USE yowpd, only: comm
       USE YOWMPP   , ONLY : NINF, NSUP
@@ -2844,7 +2876,6 @@
          ENDDO
       ENDIF
 
-      IF (IREFRA .ne. 0) THEN
         DO ip = 1,mnp
 #ifdef DEBUG
           WRITE(740+MyRankGlobal,*) 'ip=', ip, ' mnp=', mnp
@@ -2852,7 +2883,6 @@
 #endif
           CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(U(:,:,ip), IP)
         END DO
-      END IF
 
       
       DO ip = 1 , mnp
@@ -2870,27 +2900,22 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
-      USE YOWUNPOOL, ONLY : LCUR, LSPHE, CG, CURTXY, DEGRAD, REARTH, &
-&                           ONETHIRD, ONESIXTH, IEN, ONE, TWO, THR, TRIA, MDC, &
-&                           SI
-      USE yowpd, only: XP=>x, YP=>y
-      USE YOWFRED  , ONLY : COSTH, SINTH
+      USE YOWUNPOOL, ONLY : LCUR, LSPHE, CG, ONETHIRD, ONESIXTH, IEN, ONE, TWO, THR, TRIA, MDC, SI
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: POS_TRICK(3,2)
       INTEGER(KIND=JWIM) :: I1, I2, I3
       INTEGER(KIND=JWIM) :: IP, ID, IS, IE
-      INTEGER(KIND=JWIM) :: I, IPGL1, IPrel
+      INTEGER(KIND=JWIM) :: I, idx
 
       REAL(KIND=JWRU), INTENT(INOUT) :: ASPAR(NANG, NFRE, NNZ)
       REAL(KIND=JWRU) :: FL11(NANG,NFRE), FL12(NANG,NFRE), FL21(NANG,NFRE), FL22(NANG,NFRE), FL31(NANG,NFRE), FL32(NANG,NFRE)
       REAL(KIND=JWRU) :: CRFS(NANG,NFRE,3), K1(NANG,NFRE), KM(NANG,NFRE,3), K(NANG,NFRE,3), TRIA03
       REAL(KIND=JWRU) :: CXY(2,NANG,NFRE,3)
-      REAL(KIND=JWRU) :: DIFRU, USOC, WVC
       REAL(KIND=JWRU) :: DELTAL(NANG,NFRE,3)
       REAL(KIND=JWRU) :: KP(NANG,NFRE,3), NM(NANG,NFRE)
       REAL(KIND=JWRU) :: DTK(NANG,NFRE), TMP3(NANG,NFRE)
       REAL(KIND=JWRU) :: LAMBDA(2,NANG,NFRE)
-      
+      REAL(KIND=JWRU) sumCXY, sumTMP3, sumCG, sumASPARdiag
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -2900,6 +2925,14 @@
 !
 !     Calculate countour integral quantities ...
 !
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'sum(IOBWB)=', sum(IOBWB)
+      WRITE(740+MyRankGlobal,*) 'sum(IOBPD)=', sum(IOBPD)
+      WRITE(740+MyRankGlobal,*) 'LSPHE=', LSPHE
+      sumTMP3 = 0
+      sumCXY  = 0
+      sumCG  = 0
+#endif
       ASPAR = 0.0_JWRU
       DO IE = 1, MNE
         DO I=1,3
@@ -2907,19 +2940,23 @@
           DO IS=1,NFRE
             DO ID=1,NANG
               IF (LCUR) THEN
-                CXY(1,ID,IS,I) = CG(IS,IP)*COSTH(ID)+CURTXY(1,IP)
-                CXY(2,ID,IS,I) = CG(IS,IP)*SINTH(ID)+CURTXY(2,IP)
+                CXY(1,ID,IS,I) = CG(IS,IP) * SINTH(ID) + CURTXY(1,IP)
+                CXY(2,ID,IS,I) = CG(IS,IP) * COSTH(ID) + CURTXY(2,IP)
               ELSE
-                CXY(1,ID,IS,I) = CG(IS,IP)*COSTH(ID)
-                CXY(2,ID,IS,I) = CG(IS,IP)*SINTH(ID)
+                CXY(1,ID,IS,I) = CG(IS,IP) * SINTH(ID)
+                CXY(2,ID,IS,I) = CG(IS,IP) * COSTH(ID)
               END IF
               IF (LSPHE) THEN
-                CXY(1,ID,IS,I) = CXY(1,ID,IS,I)/(DEGRAD*REARTH*COS(MIN(ABS(YP(IP)),YPMAX)*DEGRAD))
-                CXY(2,ID,IS,I) = CXY(2,ID,IS,I)/(DEGRAD*REARTH)
+                CXY(1,ID,IS,I) = CXY(1,ID,IS,I) * INVTRANS1(IP)
+                CXY(2,ID,IS,I) = CXY(2,ID,IS,I) * DGRTHM1
               END IF
             END DO
           END DO
         END DO
+#ifdef DEBUG
+        sumCXY  = sumCXY + sum(abs(CXY))
+        sumCG   = sumCG  + sum(abs(CG ))
+#endif
 
         LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
         K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
@@ -2949,23 +2986,39 @@
             DTK(ID,:) =  K1(ID,:) * DT4A * IOBPD(ID,IP) * IOBWB(IP)
           END DO
           TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+#ifdef DEBUG
+          sumTMP3 = sumTMP3 + sum(abs(TMP3))
+#endif
           ASPAR(:,:,I1) =  TRIA03 + DTK(:,:) - TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
           ASPAR(:,:,I2) =                    - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
           ASPAR(:,:,I3) =                    - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
         END DO
       END DO
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'sumTMP3=', sumTMP3
+      WRITE(740+MyRankGlobal,*) 'sumCXY=', sumCXY
+      WRITE(740+MyRankGlobal,*) 'sumCG =', sumCG
+#endif
       IF (LBCWA) THEN
-        DO IP = 1, IWBMNP
-          IPGL1 = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+        DO idx = 1, IWBMNP
+          IP = IWBNDLC(idx)
+          ASPAR(:,:,I_DIAG(IP)) = SI(IP) ! Set boundary on the diagonal
         END DO
       END IF
+#ifdef DEBUG
+      sumASPARdiag=0
+      DO IP=1,MNP
+        sumASPARdiag = sumASPARdiag + sum(abs(ASPAR(:,:,I_DIAG(IP))))
+      END DO
+      WRITE(740+MyRankGlobal,*) 'sumASPARdiag=', sumASPARdiag
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
-      USE YOWFRED,  ONLY : COSTH, SINTH, DELTH, FRATIO, FR
+      USE YOWUNPOOL, ONLY : LSPHE
+      USE YOWFRED,  ONLY : DELTH, FRATIO, FR
       USE YOWSTAT,  ONLY : IDELPRO, IREFRA, ISHALLO
       USE YOWGRID,  ONLY : DELPHI, IJS, IJL
       USE YOWPCONS, ONLY : PI, ZPI
@@ -2980,7 +3033,7 @@
       INTEGER IP, IJ, K, M, KM1, KP1, MP1, MM1
       REAL(KIND=JWRU) DFP, DFM
       REAL(KIND=JWRU) DTHP, DTHM
-      REAL(KIND=JWRU) SHLFAC(IJS(1):IJL(1),NFRE)
+      REAL SHLFAC(IJS(1):IJL(1),NFRE)
       REAL(KIND=JWRU) CASS(0:NFRE+1)
       REAL(KIND=JWRU) CAS(NFRE,NANG)
       REAL(KIND=JWRU) CAD(NANG,NFRE)
@@ -3042,8 +3095,8 @@
                   DFP = DELFR0/FR(M)
                   DFM = DELFR0/FR(MM1)
                   !
-                  DTHP = SHLFAC(IJ,M)*DRDP(K) + DRCP(K)
-                  DTHM = SHLFAC(IJ,M)*DRDM(K) + DRCM(K)
+                  DTHP = REAL(SHLFAC(IJ,M),JWRU)*DRDP(K) + DRCP(K)
+                  DTHM = REAL(SHLFAC(IJ,M),JWRU)*DRDM(K) + DRCM(K)
                   ASPAR_JAC(K,M,I_DIAG(IP)) = ASPAR_JAC(K,M,I_DIAG(IP)) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
                   DTP_I(K,M,IJ) = -DTHP+ABS(DTHP)
                   DTM_I(K,M,IJ) =  DTHM+ABS(DTHM)
@@ -3060,7 +3113,7 @@
         END IF
       END IF
       IF (REFRA_METHOD .eq. 2) THEN
-        IF ((IREFRA .eq. 1).or.(IREFRA.eq.3)) THEN
+        IF ((IREFRA .eq. 1).or.(IREFRA.eq.3).or.(LSPHE.eqv..TRUE.)) THEN
           DO IP=1,NP_RES
             TheVal=1
             IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3)) TheVal=0
@@ -3147,6 +3200,7 @@
 !**********************************************************************
       SUBROUTINE GET_BLOCAL(IP, AC, BLOC)
       USE YOWUNPOOL
+      USE UNSTRUCT_BOUND, ONLY : IWBNDLC_REV
       USE yowpd, only : np_global
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: IP
@@ -3158,10 +3212,14 @@
         BLOC = WBAC(:,:,idx) * SI(IP)
       ELSE
         BLOC = AC(:,:,IP) * SI(IP)
+        DO ID=1,NANG
+          BLOC(ID,:) = BLOC(ID,:) * IOBPD(ID,IP) * IOBWB(IP)
+        END DO
       END IF
-      DO ID=1,NANG
-        BLOC(ID,:) = BLOC(ID,:) * IOBPD(ID,IP) * IOBWB(IP)
-      END DO
+#ifdef DEBUG
+!      WRITE(740+MyRankGlobal,*) 'Leaving GET_BLOCAL'
+!      FLUSH(740+MyRankGlobal)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3170,15 +3228,15 @@
       USE MPL_MPIF
       USE yowpd, only : comm
       USE yowpd, only : np_global
-      USE YOWMPP   , ONLY : NINF, NSUP
-      USE YOWSTAT,  ONLY : IREFRA, ISHALLO
+      USE YOWMPP, ONLY : NINF, NSUP
+      USE YOWSTAT, ONLY : IREFRA, ISHALLO
       USE yowunpool
       IMPLICIT NONE
 
       INTEGER itmp(1), isend(1)
       INTEGER(KIND=JWIM) :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged
       INTEGER(KIND=JWIM) :: I, K, IP_ADJ, IADJ, JDX
-      INTEGER(KIND=JWIM) :: KP1, KM1, MP1, MM1, M, IJ
+      INTEGER(KIND=JWIM) :: KP1, KM1, MP1, MM1, M, IJ, IJS
       INTEGER(KIND=JWIM) :: ierr
 
       REAL(KIND=JWRB), INTENT(IN)  :: FL1(NINF-1:NSUP,NANG,NFRE)
@@ -3195,12 +3253,18 @@
       REAL(KIND=JWRU) Norm_L2_gl(NANG,NFRE), Norm_LINF_gl(NANG,NFRE)
       REAL(KIND=JWRU) B_SIG(NFRE), eFact, lambda
       REAL(KIND=JWRU) Sum_new, Sum_prev, eVal, DiffNew, DiffOld
+      REAL(KIND=JWRU) AC1(NANG,NFRE,MNP)
       REAL(KIND=JWRU) AC2(NANG,NFRE,MNP)
       REAL(KIND=JWRU) FLsing(NANG,NFRE)
       REAL(KIND=JWRU) sumASPARoff
       REAL(KIND=JWRU) CP_THE(NANG,NFRE), CM_THE(NANG,NFRE)
       REAL(KIND=JWRU) CP_SIG(NFRE,NANG), CM_SIG(NFRE,NANG)
 #ifdef DEBUG
+      REAL(KIND=JWRU) sumESUMbefore, sumESUMafter, sumESUMpre
+#endif
+      IJS = 1
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Begin IMPLICIT SOLVER'
       WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
       WRITE(740+MyRankGlobal,*) 'JWRB=', JWRB
       WRITE(740+MyRankGlobal,*) 'IREFRA=', IREFRA
@@ -3209,62 +3273,135 @@
 #endif
 
       DO IP=1,MNP
-        AC2(:,:,IP)=DBLE(FL1(IP,:,:)) ! no this is not an error
+        AC1(:,:,IP)=REAL(FL1(IP,:,:),JWRU) ! no this is not an error
+        AC2(:,:,IP)=REAL(FL1(IP,:,:),JWRU) ! no this is not an error
       END DO
-
       CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After EIMPS_ASPAR_BLOCK'
+      WRITE(740+MyRankGlobal,*) 'sum(abs(ASPAR_JAC))=', sum(abs(ASPAR_JAC))
+      WRITE(740+MyRankGlobal,*) 'sum(    ASPAR_JAC )=', sum(ASPAR_JAC)
+      FLUSH(740+MyRankGlobal)
+#endif
       !
       CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After ADD_FREQ_DIR_TO_ASPAR_COMP_CADS'
+      WRITE(740+MyRankGlobal,*) 'sum(abs(ASPAR_JAC))=', sum(abs(ASPAR_JAC))
+      WRITE(740+MyRankGlobal,*) 'sum(    ASPAR_JAC )=', sum(ASPAR_JAC)
+      WRITE(740+MyRankGlobal,*) 'SOURCE_IMPL=', SOURCE_IMPL
+      WRITE(740+MyRankGlobal,*) 'LNONL=', LNONL
+      FLUSH(740+MyRankGlobal)
+#endif
       IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
+#ifdef DEBUG
+        WRITE(740+MyRankGlobal,*) 'In the loop'
+        FLUSH(740+MyRankGlobal)
+#endif
         DO IP=1,NP_RES
-          CALL GET_BLOCAL(IP, AC2, BLOC)
-          CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'IP=', IP, ' NP_RES=', NP_RES
+          FLUSH(740+MyRankGlobal)
+#endif
+          CALL GET_BLOCAL(IP, AC1, BLOC)
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'step 1'
+          FLUSH(740+MyRankGlobal)
+#endif
+          CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'step 2'
+          FLUSH(740+MyRankGlobal)
+#endif
           ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'step 3'
+          FLUSH(740+MyRankGlobal)
+#endif
           B_JAC(:,:,IP)             = BLOC + IMATRA
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'step 4'
+          FLUSH(740+MyRankGlobal)
+#endif
         END DO
       END IF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After B_JAC and ASPAR_JAC assignations'
+      FLUSH(740+MyRankGlobal)
+#endif
       !
       ! Now the Gauss Seidel iterations
       !
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
 #ifdef DEBUG
-      CALL COHERENCY_ERROR_3D(FL3, "FL1 in implicit before")
-      CALL COHERENCY_ERROR_3D(FL3, "FL3 in implicit before")
       WRITE(740+MyRankGlobal,*) 'BLOCK_GAUSS_SEIDEL=', BLOCK_GAUSS_SEIDEL
       WRITE(740+MyRankGlobal,*) 'SOURCE_IMPL=', SOURCE_IMPL
       WRITE(740+MyRankGlobal,*) 'LLIMT=', LLIMT
       WRITE(740+MyRankGlobal,*) 'LCHKCONV=', LCHKCONV
       WRITE(740+MyRankGlobal,*) 'NANG=', NANG
       WRITE(740+MyRankGlobal,*) 'NFRE=', NFRE
-#endif 
+      WRITE(740+MyRankGlobal,*) 'L_SOLVER_NORM=', L_SOLVER_NORM
+#endif
       nbIter=0
       DO
 #ifdef DEBUG
         WRITE(740+MyRankGlobal,*) 'nbIter=', nbIter
+        WRITE(740+MyRankGlobal,*) 'Before iteration, sum(WBAC)=', sum(WBAC)
         WRITE(740+MyRankGlobal,*) 'Before iteration, sum(AC2)=', sum(AC2)
+        WRITE(740+MyRankGlobal,*) 'Before iteration, sum(FL1)=', sum(FL1(1:MNP,:,:))
+        WRITE(740+MyRankGlobal,*) 'Before iteration, minval(SI)=', minval(SI)
+        WRITE(740+MyRankGlobal,*) 'Before iteration, maxval(SI)=', maxval(SI)
+        sumESUMbefore=0
+        sumESUMafter=0
         FLUSH(740+MyRankGlobal)
 #endif 
         is_converged = 0
         DO IP=1,NP_RES
+#ifdef DEBUG
+!          WRITE(740+MyRankGlobal,*) 'Main implicit loop IP=', IP
+!          FLUSH(740+MyRankGlobal)
+#endif
+          IJ = IJS - 1 + IP
           ACLOC = AC2(:,:,IP)
-          Sum_prev = sum(ACLOC)
           ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BLOCAL(IP, AC2, BLOC)
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_BLOCAL(IP, AC1, BLOC)
+              CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
               eSum = BLOC + IMATRA
             ELSE
               eSum = B_JAC(:,:,IP)
             END IF
           ELSE
-            CALL GET_BLOCAL(IP, AC2, eSum)
+            CALL GET_BLOCAL(IP, AC1, eSum)
           END IF
+!          eSum(:,:)= AC1(:,:,IP) * SI(IP)
+!#ifdef DEBUG
+!          sumESUMpre = sumESUMpre + sum(abs(eSum))
+!#endif 
+!          DO ID=1,NANG
+!            eSum(ID,:) = eSum(ID,:) * IOBPD(ID,IP) * IOBWB(IP)
+!          END DO
+#ifdef DEBUG
+          sumESUMbefore = sumESUMbefore + sum(abs(eSum))
+#endif 
+#ifdef DEBUG
+!          WRITE(740+MyRankGlobal,*) 'Before ASPAR_JAC sums'
+!          FLUSH(740+MyRankGlobal)
+#endif 
           DO J=IA(IP),IA(IP+1)-1 
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
           END DO
+#ifdef DEBUG
+!          WRITE(740+MyRankGlobal,*) 'After ASPAR_JAC sums'
+!          FLUSH(740+MyRankGlobal)
+!          WRITE(740+MyRankGlobal,*) 'REFRA_METHOD=', REFRA_METHOD
+!          FLUSH(740+MyRankGlobal)
+!          WRITE(740+MyRankGlobal,*) 'IREFRA=', IREFRA
+!          FLUSH(740+MyRankGlobal)
+#endif 
           IF (REFRA_METHOD .eq. 1) THEN
             IF (IREFRA .NE. 0) THEN
               DO K=1,NANG
@@ -3273,8 +3410,8 @@
                 KM1 = K-1
                 IF (KM1.LT.1) KM1 = NANG
                 DO M=1,NFRE
-                  eSum(K,M) = eSum(K,M) - DTP_I(K,M,IJ)*AC2(KP1,M,IJ)
-                  eSum(K,M) = eSum(K,M) - DTM_I(K,M,IJ)*AC2(KM1,M,IJ)
+                  eSum(K,M) = eSum(K,M) - DTP_I(K,M,IJ)*AC2(KP1,M,IP)
+                  eSum(K,M) = eSum(K,M) - DTM_I(K,M,IJ)*AC2(KM1,M,IP)
                 END DO
               END DO
               DO K=1,NANG
@@ -3296,8 +3433,8 @@
               DO ID=1,NANG
                 ID1 = ID_PREV(ID)
                 ID2 = ID_NEXT(ID)
-                eSum(ID,:) = eSum(ID,:) + eFact*CP_THE(ID1,:)*AC2(ID1,:,IJ)
-                eSum(ID,:) = eSum(ID,:) - eFact*CM_THE(ID2,:)*AC2(ID2,:,IJ)
+                eSum(ID,:) = eSum(ID,:) + eFact*CP_THE(ID1,:)*AC2(ID1,:,IP)
+                eSum(ID,:) = eSum(ID,:) - eFact*CM_THE(ID2,:)*AC2(ID2,:,IP)
               END DO
             END IF
             IF ((IREFRA.eq.2).or.(IREFRA.eq.3)) THEN
@@ -3315,8 +3452,21 @@
               END DO
             END IF
           END IF
+#ifdef DEBUG
+!          WRITE(740+MyRankGlobal,*) 'After the refraction business'
+!          FLUSH(740+MyRankGlobal)
+#endif 
 !          WRITE(740+MyRankGlobal,*) 'IP=', IP, ' sum(ASPAR_diag)=', sum(ASPAR_diag)
+#ifdef DEBUG
+          sumESUMafter = sumESUMafter + sum(abs(eSum))
+#endif 
           eSum=eSum/ASPAR_DIAG
+#ifdef DEBUG
+!          WRITE(740+MyRankGlobal,*) 'After division by ASPAR_DIAG'
+!          FLUSH(740+MyRankGlobal)
+!          WRITE(740+MyRankGlobal,*) 'LLIMT=', LLIMT
+!          FLUSH(740+MyRankGlobal)
+#endif 
           IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
@@ -3354,6 +3504,11 @@
           AC2 = U_JACOBI
         ENDIF
 #ifdef DEBUG
+        WRITE(740+MyRankGlobal,*) 'sumESUMpre = ', sumESUMpre
+        WRITE(740+MyRankGlobal,*) 'sumESUMbefore = ', sumESUMbefore
+        WRITE(740+MyRankGlobal,*) 'sumESUMafter  = ', sumESUMafter
+#endif 
+#ifdef DEBUG
         WRITE(740+MyRankGlobal,*) ' After iteration, sum(AC2)=', sum(AC2)
         FLUSH(740+MyRankGlobal)
 #endif 
@@ -3386,15 +3541,15 @@
             ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
-                CALL GET_BLOCAL(IP, AC2, BLOC)
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+                CALL GET_BLOCAL(IP, AC1, BLOC)
+                CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
                 ASPAR_DIAG = ASPAR_DIAG + IMATDA
                 eSum = BLOC + IMATRA
               ELSE
                 eSum = B_JAC(:,:,IP)
               END IF
             ELSE
-              CALL GET_BLOCAL(IP, AC2, eSum)
+              CALL GET_BLOCAL(IP, AC1, eSum)
             END IF
             DO J=IA(IP),IA(IP+1)-1
               idx=JA(J)
@@ -3434,22 +3589,19 @@
           IF (sqrt(SumNorm) .le. WAE_SOLVERTHR) THEN
             EXIT
           END IF
-        END IF
+       END IF
       END DO
-      IF (IREFRA .ne. 0) THEN
-        DO ip = 1,mnp
-          FLsing=MAX(ZERO,AC2(:,:,IP))
-          CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(FLsing, ip)
-          FL3(IP,:,:) = REAL(FLsing,JWRB)
-        END DO
-      ELSE
-        DO IP=1,MNP
-          FLsing=MAX(ZERO,AC2(:,:,IP))
-          FL3(IP,:,:) = REAL(FLsing, JWRB)
-        END DO
-      END IF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Leaving SOLVER sum(FL3)=', sum(FL3(1:MNP,:,:))
+#endif
+      DO ip = 1,mnp
+        FLsing=MAX(ZERO,AC2(:,:,IP))
+        CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(FLsing, ip)
+        FL3(IP,:,:) = REAL(FLsing,JWRB)
+      END DO
 #ifdef DEBUG
       CALL COHERENCY_ERROR_3D(FL3, "FL3 after the implicit")
+      WRITE(740+MyRankGlobal,*) 'Leaving SOLVER sum(FL3)=', sum(FL3(1:MNP,:,:))
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -3457,7 +3609,6 @@
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF(FL1,FL3)
       USE MPL_MPIF
-      USE YOWFRED  , ONLY : COSTH, SINTH
       USE YOWUNPOOL
       USE yowpd, ONLY : comm
       USE yowexchangemodule
@@ -3999,605 +4150,6 @@
         avgWHGTTG=sumWHGTTG/sumPt
         WRITE(740+MyRankGlobal,*) 'nbSea/NaN/Pt/avg=', nbSea, nbNaN, sumPt, avgWHGTTG
       END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_BOUNDARY
-      IMPLICIT NONE
-      ALLOCATE( IOBP(MNP)  ); IOBP = 0
-      ALLOCATE( IOBPD(NANG,MNP)); IOBPD = 0
-      ALLOCATE( IOBWB(MNP) ); IOBWB = 1 ! for boundary nodes we set this to 0 since in this case we omit advection at these nodes
-      CALL SET_IOBP          ! boundary point marker
-      CALL SET_IOBPD         ! boundary directional marker
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE RHEADER_NODE(IFILE,NKR,NKG)
-
-!     Purpose.: Advects the spectra using non-vectorized RD-schemes
-!     --------
-
-
-!        Explicit arguments :  
-!        --------------------   
-
-
-!        Implicit arguments :     N1.d0
-!        --------------------
-
-!     Method.
-!     -------
-!     XFN header nodes ...
-
-!     Externals. 
-!     ----------
-
-!     Reference.
-!     ----------
-!        ECMWF Research Department documentation of the IFS
-
-!     Author.
-!     -------
-!        Aron Roland 2011  *ECMWF* based on Aron Roland & Mathieu Dutour 
-
-!     Modifications.
-!     --------------
-!        Original : Aron Roland, 11,2011
-!     --------------------------------------------------------------
-
-      IMPLICIT NONE
-
-      INTEGER(KIND=JWIM), INTENT(IN) :: IFILE
-      INTEGER(KIND=JWIM), INTENT(OUT):: NKR, NKG
-
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*) NKR
-      READ(IFILE,*)
-      READ(IFILE,*) NKG
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-
-      END SUBROUTINE RHEADER_NODE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE RHEADER_ELEMENT(IFILE,NELEM)
-
-!     Purpose.: Advects the spectra using non-vectorized RD-schemes
-!     --------
-
-
-!        Explicit arguments :  
-!        --------------------   
-
-
-!        Implicit arguments :     N1.d0
-!        --------------------
-
-!     Method.
-!     -------
-!     XFN header elements
-
-!     Externals.  
-!     ----------
-
-!     Reference.
-!     ----------
-!        ECMWF Research Department documentation of the IFS
-
-!     Author.
-!     -------
-!        Aron Roland 2011  *ECMWF* based on Aron Roland & Mathieu Dutour 
-
-!     Modifications.
-!     --------------
-!        Original : Aron Roland, 11,2011
-!     --------------------------------------------------------------
-
-      IMPLICIT NONE
-      INTEGER(KIND=JWIM), INTENT(IN) :: IFILE
-      INTEGER(KIND=JWIM), INTENT(OUT):: NELEM
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*) NELEM
-      READ(IFILE,*)
-      READ(IFILE,*)
-      READ(IFILE,*)
-      END SUBROUTINE RHEADER_ELEMENT
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_STATUS(STATUS)
-      IMPLICIT NONE
-      integer, intent(out) :: STATUS(MNP)
-      integer COLLECTED(MNP)
-      integer PREVVERT(MNP)
-      integer NEXTVERT(MNP)
-      integer IE, I, IPREV, INEXT, IP
-      integer IPPREV, IPNEXT
-      integer ZNEXT
-      LOGICAL IsFinished
-      STATUS(:) = 0
-      DO IE=1,MNE
-        DO I=1,3
-          IF (I.EQ.1) THEN
-            IPREV=3
-          ELSE
-            IPREV=I-1
-          END IF
-          IF (I.EQ.3) THEN
-            INEXT=1
-          ELSE
-            INEXT=I+1
-          END IF
-          IP=INE(I,IE)
-          IPNEXT=INE(INEXT,IE)
-          IPPREV=INE(IPREV,IE)
-          IF (STATUS(IP).EQ.0) THEN
-            STATUS(IP)=1
-            PREVVERT(IP)=IPPREV
-            NEXTVERT(IP)=IPNEXT
-          END IF
-        END DO
-      END DO
-      STATUS(:)=0
-      DO
-        COLLECTED(:)=0
-        DO IE=1,MNE
-          DO I=1,3
-            IF (I.EQ.1) THEN
-              IPREV=3
-            ELSE
-              IPREV=I-1
-            END IF
-            IF (I.EQ.3) THEN
-              INEXT=1
-            ELSE
-              INEXT=I+1
-            END IF
-            IP=INE(I,IE)
-            IPNEXT=INE(INEXT,IE)
-            IPPREV=INE(IPREV,IE)
-            IF (STATUS(IP).eq.0) THEN
-              ZNEXT=NEXTVERT(IP)
-              IF (ZNEXT.eq.IPPREV) THEN
-                COLLECTED(IP)=1
-                NEXTVERT(IP)=IPNEXT
-                IF (NEXTVERT(IP).eq.PREVVERT(IP)) THEN
-                  STATUS(IP)=1
-                END IF
-              END IF
-            END IF
-          END DO
-        END DO
-        ISFINISHED=.TRUE.
-        DO IP=1,MNP
-          IF ((COLLECTED(IP).eq.0).and.(STATUS(IP).eq.0)) THEN
-            STATUS(IP)=-1
-          END IF
-          IF (STATUS(IP).eq.0) THEN
-            ISFINISHED=.FALSE.
-          END IF
-        END DO
-        IF (ISFINISHED) THEN
-          EXIT
-        END IF
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SET_IOBP
-      USE YOWUNPOOL
-      USE yowpd, only: ipgl, iplg, np_global
-      IMPLICIT NONE
-      INTEGER(KIND=JWIM) :: I, IWILD(MNP)
-      INTEGER(KIND=JWIM) :: I1, I2, I3, IE, IP, ID, IFSTAT, IPglob
-      INTEGER(KIND=JWIM) :: ZNEXT, ITMP
-      INTEGER(KIND=JWIM) :: IOBPcopy(MNP), eDiff, nbDiff
-      integer STATUS(MNP)
-      integer istat
-      integer, allocatable :: Indexes(:)
-      REAL(KIND=JWRB) :: BNDTMP
-      REAL(KIND=JWRU) :: x1, y1, x2, y2
-      REAL(KIND=JWRU) :: EVX, EVY
-      REAL(KIND=JWRU) :: eDet1, eDet2
-      REAL(KIND=JWRU) :: ATMP, BTMP
-      REAL(KIND=JWRU) :: rtemp(MNP)
-      LOGICAL :: LFLIVE
-      integer IOBPglobal(np_global)
-      integer idx
-      integer eIOBP
-!
-! open and read boundary nodes file ...
-!
-      IOBP    = 0
-      IOBPD   = 0
-
-
-      OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-      CALL RHEADER_NODE(BND%FHNDL,ITMP,ITMP)
-      DO IPglob = 1, np_global
-        READ(BND%FHNDL,*) ITMP, BNDTMP, BNDTMP, BNDTMP
-        eIOBP=INT(BNDTMP)
-        IF (.NOT.  LBCWA) THEN
-          IF ((eIOBP .EQ. 2).or.(eIOBP .EQ. 3)) eIOBP = 1
-        END IF
-        IOBPglobal(IPglob) = eIOBP
-        IP = ipgl(IPglob)
-        IF(IP /= 0) THEN
-          IOBP(IP) = eIOBP
-        END IF
-      END DO
-      CLOSE(BND%FHNDL)
-      IOBPcopy=IOBP
-!
-! find islands and domain boundary ....
-!
-      CALL COMPUTE_STATUS(STATUS)
-      DO IP=1,MNP
-        IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
-          IOBP(IP)=1
-        END IF
-      END DO
-!
-! reporting differences found
-!
-#ifdef DEBUG
-      nbDiff=0
-      DO IP=1,MNP
-        IF (IOBP(IP) .ne. IOBPcopy(IP)) THEN
-          nbDiff=nbDiff+1
-        END IF
-      END DO
-      WRITE(740+MyRankGlobal,*) 'nbDiff=', nbDiff
-#endif
-!
-! Determining number of boundary nodes
-!
-      IWBMNP = 0
-      DO IP = 1, MNP
-        IF (IOBP(IP) == 2) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
-      END DO
-!
-! map boundary nodes ... needed later for the decomposition ...
-!
-      ALLOCATE( IWBNDLC(IWBMNP), IWBNDLC_REV(MNP), stat=istat )
-      IWBNDLC_REV = 0
-      idx = 0
-      DO IP = 1, MNP
-        IF (IOBP(IP) == 2) THEN
-          idx = idx + 1
-          IWBNDLC(idx)    = IP
-          IWBNDLC_REV(IP) = idx
-        END IF
-      END DO
-!
-! allocate wave boundary arrays ... 
-!
-      ALLOCATE(Indexes(np_global), stat=istat)
-      Indexes = 0
-      idx = 0
-      DO IPglob = 1, np_global
-        IF (IOBPglobal(IPglob) == 2) THEN
-          idx = idx + 1
-          Indexes(IPglob)=idx
-        END IF
-      END DO
-      IWBMNPGL = idx
-      allocate(Indexes_boundary(IWBMNP), stat=istat)
-      DO idx=1,IWBMNP
-        IP=IWBNDLC(idx)
-        IPglob=iplg(IP)
-        Indexes_boundary(idx) = Indexes(IPglob)
-      END DO
-      IF (LBCWA) THEN
-        CALL INIT_FILE_BOUNDARY
-      END IF      
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SET_IOBPD
-
-!     Purpose.: Advects the spectra using non-vectorized RD-schemes
-!     --------
-
-
-!        Explicit arguments :  
-!        --------------------   
-
-
-!        Implicit arguments :     N1.d0
-!        --------------------
-
-!     Method.
-!     -------
-!     Estimate the max. integration time step and amount of iterations ...
-
-!     Externals.  Estimate spectral direction that are pointing into the domain from the boundary ...
-!     ----------
-
-!     Reference.
-!     ----------
-!        ECMWF Research Department documentation of the IFS
-
-!     Author.
-!     -------
-!        Aron Roland 2011  *ECMWF* based on Aron Roland & Mathieu Dutour 
-
-!     Modifications.
-!     --------------
-!        Original : Aron Roland, 11,2011
-!     --------------------------------------------------------------
-
-        USE YOWUNPOOL
-        USE YOWFRED, ONLY : DFIM, COSTH, SINTH
-
-        IMPLICIT NONE
-
-        INTEGER(KIND=JWIM) :: I1, I2, I3, IE, IP, ID
-        INTEGER(KIND=JWIM) :: I, IWILD(MNP)
-        REAL(KIND=JWRU) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
-        REAL(KIND=JWRU) :: x1, y1, x2, y2
-        REAL(KIND=JWRU) :: EVX, EVY
-        REAL(KIND=JWRU) :: eDet1, eDet2
-        REAL(KIND=JWRU) :: rtemp(MNP)
-!
-! SET IOBPD ...
-!
-        DO IE=1,MNE
-          I1   =   INE(1,IE)
-          I2   =   INE(2,IE)
-          I3   =   INE(3,IE)
-          DXP1 =   IEN(6,IE)
-          DYP1 = - IEN(5,IE)
-          DXP2 =   IEN(2,IE)
-          DYP2 = - IEN(1,IE)
-          DXP3 =   IEN(4,IE)
-          DYP3 = - IEN(3,IE)
-!2do ... modifly wave direction by currents ...
-          DO ID=1,MDC
-            EVX=SINTH(ID)
-            EVY=COSTH(ID)
-            DO I=1,3
-              IF (I.eq.1) THEN
-                x1=   DXP1
-                y1=   DYP1
-                x2= - DXP3
-                y2= - DYP3
-                IP=   I1
-              END IF
-              IF (I.eq.2) THEN
-                x1 =   DXP2
-                y1 =   DYP2
-                x2 = - DXP1
-                y2 = - DYP1
-                IP =   I2
-              END IF
-              IF (I.eq.3) THEN
-                x1 =   DXP3
-                y1 =   DYP3
-                x2 = - DXP2
-                y2 = - DYP2
-                IP =   I3
-              END IF
-              eDet1 = SMALL-x1*EVY+y1*EVX
-              eDet2 = SMALL+x2*EVY-y2*EVX
-              IF ((eDet1.gt.0.0_JWRU).and.(eDet2.gt.0.0_JWRU)) THEN
-                IOBPD(ID,IP)=1
-              END IF
-            END DO
-          END DO
-        END DO
-
-        DO IP = 1, MNP
-          IF ( LBCWA ) THEN
-            IF ( IOBP(IP) == 2 ) THEN
-              IOBWB(IP) = 0
-              IOBPD(:,IP) = 1
-            ENDIF
-          END IF
-          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 4
-            IOBPD(:,IP) = 1 ! Update Neumann nodes ...
-          END IF
-        END DO
-
-        DO ID=1, MDC
-          rtemp = IOBPD(ID,:)
-          call exchange(rtemp)
-          IOBPD(ID,:) = INT(rtemp)
-        END DO
-      END SUBROUTINE SET_IOBPD
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE FIND_MATCH_TIME(NTIME, ListTime, eTime, iTime1, w1, iTime2, w2)
-      IMPLICIT NONE
-      integer, intent(in) :: NTIME
-      REAL(KIND=JWRU), intent(in) :: ListTime(NTIME)
-      REAL(KIND=JWRU), intent(in) :: eTime
-      integer, intent(out) :: iTime1, iTime2
-      real(KIND=JWRU), intent(out) :: w1, w2
-      REAL(KIND=JWRU), parameter :: tolDay = 0.00000001
-      REAL(KIND=JWRU) :: DeltaTime
-      DO iTime2=2,NTIME
-        iTime1=iTime2-1
-        DeltaTime=ListTime(iTime2) - ListTime(iTime1)
-        w1=(ListTime(iTime2) - eTime) / DeltaTime
-        w2=(eTime - ListTime(iTime1)) / DeltaTime
-!        WRITE(740+MyRankGlobal,*) 'iTime1=', iTime1, ' iTime2=', iTime2
-!        WRITE(740+MyRankGlobal,*) 'eTime=', eTime
-!        WRITE(740+MyRankGlobal,*) 'DeltaTime=', DeltaTime
-!        WRITE(740+MyRankGlobal,*) 'ListTime(iTime1)=', ListTime(iTime1)
-!        WRITE(740+MyRankGlobal,*) 'ListTime(iTime2)=', ListTime(iTime2)
-!        WRITE(740+MyRankGlobal,*) 'w1=', w1, ' w2=', w2
-        IF ((w1 + tolDay .ge. 0.).and.(w2 + tolDay .ge. 0.)) THEN
-          RETURN
-        END IF
-      END DO
-      WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
-      WRITE(740+MyRankGlobal,*) 'We did not find the time'
-      WRITE(740+MyRankGlobal,*) 'NTIME=', NTIME
-      WRITE(740+MyRankGlobal,*) 'eTime=', eTime
-      WRITE(740+MyRankGlobal,*) 'ListTime(1)     = ', ListTime(1)
-      WRITE(740+MyRankGlobal,*) 'ListTime(NTIME) = ', ListTime(NTIME)
-      FLUSH(740+MyRankGlobal)
-      STOP
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SINGLE_READ_BOUNDARY(eFile, WBAC, IT)
-      USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
-      USE YOWPCONS , ONLY : ZPI
-      USE NETCDF
-      IMPLICIT NONE
-      character(len=*), intent(in) :: eFile
-      REAL(KIND=JWRU), intent(out) :: WBAC(NANG,NFRE,IWBMNP)
-      integer, intent(in) :: IT
-      REAL(KIND=JWRU) WBAC_GL(NFRE,NANG,IWBMNPGL)
-      REAL(KIND=JWRU) eAC, eFL
-      integer istat, ncid, var_id
-      integer IP, IS, ID, idx
-      character(len=*), parameter :: CallFct = "SINGLE_READ_BOUNDARY"
-      !
-      ! We have this inversion of the order because that is so in WWM at 
-      ! the present time
-      !
-      ISTAT = NF90_OPEN(TRIM(eFile), NF90_NOWRITE, ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-      ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/NFRE,NANG,IWBMNPGL,1/))
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-      ISTAT = NF90_CLOSE(ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      !
-      ! Now reassigning 
-      !
-      WRITE(740+MyRankGlobal,*) 'IWBMNPGL = ', IWBMNPGL
-      WRITE(740+MyRankGlobal,*) 'IWBMNP   = ', IWBMNP
-      DO IP=1,IWBMNP
-        idx=Indexes_boundary(IP)
-!        WRITE(740+MyRankGlobal,*) 'IP=', IP, ' idx=', idx
-        DO ID=1,NANG
-          DO IS=1,NFRE
-            eAC=WBAC_GL(IS,ID,idx)
-            eFL=eAC * SPSIG(IS) * ZPI
-            WBAC(ID,IS,IP) = eFL
-          END DO
-        END DO
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SET_UP_WBAC
-      USE YOWSTAT  , ONLY : IDELT
-      USE PARKIND_WAVE, ONLY : JWRB, JWRU
-      USE WAV_NETCDF_FCT, ONLY : WAV_GET_ETIMEDAY
-      IMPLICIT NONE
-      REAL*8 eTimeDay
-      REAL(KIND=JWRU) w1, w2
-      integer iTime1, iTime2
-      CALL WAV_GET_ETIMEDAY(eTimeDay, WAV_BoucTime)
-      CALL FIND_MATCH_TIME(nbTimeBnd, ListTimeBnd, eTimeDay, iTime1, w1, iTime2, w2)
-      IF (iTime1 .ne. recTime1) THEN
-        CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC1, iTime1)
-        recTime1 = iTime1
-      END IF
-      IF (iTime2 .ne. recTime2) THEN
-        CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC2, iTime2)
-        recTime2 = iTime2
-      END IF
-      WBAC = w1*WBAC1 + w2*WBAC2
-      WAV_BoucTime = WAV_BoucTime + DBLE(IDELT)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE APPLY_BOUNDARY_CONDITION(FL)
-      USE YOWMPP   , ONLY : NINF, NSUP
-      IMPLICIT NONE
-      REAL(KIND=JWRB), INTENT(INOUT) :: FL(NINF-1:NSUP,NANG,NFRE)
-      integer ID, IS, IP, idx
-      DO IS=1,NFRE
-        DO ID=1,NANG
-          DO idx=1,IWBMNP
-            IP=IWBNDLC(idx)
-            FL(IP,ID,IS) = REAL(WBAC(ID,IS,idx),JWRB)
-          END DO
-        END DO
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_FILE_BOUNDARY
-      USE NETCDF
-      USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
-      USE WAV_NETCDF_FCT, ONLY : CF_EXTRACT_TIME
-      IMPLICIT NONE
-      character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
-      real*8, allocatable :: ListTime_mjd(:)
-      character (len=100) :: eStrUnitTime
-      real(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
-      INTEGER dimids(2), varid, ncid
-      integer istat
-      integer nbtime_mjd
-      integer iTime
-      !
-      ISTAT = NF90_OPEN(TRIM(eFileBnd), NF90_NOWRITE, ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-
-      ISTAT = nf90_inq_varid(ncid, "ocean_time", varid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-
-      ISTAT = nf90_get_att(ncid, varid, "units", eStrUnitTime)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-      CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
-      WRITE(740+MyRankGlobal,*) 'eStrUnitTime = ', eStrUnitTime
-      WRITE(740+MyRankGlobal,*) 'ConvertToDay = ', ConvertToDay
-      WRITE(740+MyRankGlobal,*) '  eTimeStart = ', eTimeStart
-
-      ISTAT = nf90_inquire_variable(ncid, varid, dimids=dimids)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-
-      ISTAT = nf90_inquire_dimension(ncid, dimids(1), len=nbtime_mjd)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      allocate(ListTime_mjd(nbtime_mjd), stat=istat)
-
-      ISTAT = nf90_get_var(ncid, varid, ListTime_mjd)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
-      
-      ISTAT = NF90_CLOSE(ncid)
-      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
-!
-! Now setting up the times
-!
-      nbTimeBnd=nbtime_mjd
-      allocate(ListTimeBnd(nbTimeBnd), stat=istat)
-      DO iTime=1,nbTimeBnd
-        eTimeBnd = ListTime_mjd(iTime)*ConvertToDay + eTimeStart
-        ListTimeBnd(iTime) = eTimeBnd
-!        WRITE(740+MyRankGlobal,*) 'iTime=', iTime, ' eTime=', ListTime_mjd(iTime), ' eTimeBnd=', eTimeBnd
-      END DO
-      deallocate(ListTime_mjd)
-!
-! allocate wave boundary arrays ... 
-!
-      recTime1=-1
-      recTime2=-1
-      ALLOCATE(WBAC(NANG,NFRE,IWBMNP), WBAC1(NANG,NFRE,IWBMNP), WBAC2(NANG,NFRE,IWBMNP), stat=istat)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

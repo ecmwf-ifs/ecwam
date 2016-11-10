@@ -135,6 +135,8 @@
       USE FDBSUBS_MOD
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
+      USE UNSTRUCT_BOUND, ONLY : IOBPD
 
 ! -------------------------------------------------------------------
 
@@ -146,7 +148,7 @@
       INTEGER, PARAMETER :: NFIELDS=1
       INTEGER :: ILEN, IREAD, IOPTI
       INTEGER :: IG
-      INTEGER :: IJ
+      INTEGER :: IJ, K, M
       INTEGER :: IU05, IU07 
       INTEGER :: I4(2)
       INTEGER :: MASK_IN(NGPTOTG)
@@ -176,6 +178,7 @@
      &          IOPTI, ITEST, ITESTB,
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,
      &          USERID, RUNID, PATH, CPATH,
+     &          USE_DIRECT_WIND_FILE,
      &          CDATEA, IDELWI, CLTUNIT,
      &          LLUNSTR, LPREPROC,
      &          LGRIBOUT,
@@ -553,6 +556,18 @@
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
       ELSE
         CALL MSWELL (FL1)
+
+        IF (LLUNSTR) THEN
+!         reset points with no flux out of the boundary to 0
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=1,NIBLO
+                FL1(IJ,K,M) = FL1(IJ,K,M)*IOBPD(K,IJ)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+
       ENDIF
 
 ! ----------------------------------------------------------------------

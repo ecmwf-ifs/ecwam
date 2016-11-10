@@ -1,10 +1,10 @@
       SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG,
      &                    THWOLD, USOLD,
      &                    TAUW, Z0OLD,
-     &                    ROAIRO, ZIDLOLD,
+     &                    ROAIRO, WSTAROLD,
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
-     &                    Z0NEW, ROAIRN, ZIDLNEW,
+     &                    Z0NEW, ROAIRN, WSTARNEW,
      &                    SL)
 
 ! ----------------------------------------------------------------------
@@ -43,9 +43,9 @@
 
 !       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
-!    &                    ROAIRO, ZIDLOLD, 
+!    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
 !    3                    SL)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
@@ -67,8 +67,8 @@
 !      *TAUW*      WAVE STRESS IN (M/S)**2
 !      *ROAIRN*    AIR DENSITY IN KG/M3.
 !      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
-!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
-!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
+!      *WSTARNEW*  FREE CONVECTION VELOCITY SCALE (M/S)
+!      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
@@ -119,7 +119,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWFLUX, LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
@@ -134,6 +134,7 @@
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
 ! ----------------------------------------------------------------------
 
@@ -142,15 +143,17 @@
       INTEGER, INTENT(IN) :: IJS, IJL, IG
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
+      INTEGER :: ICODE_WND, ICODE_WAM
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
 
       REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, ZIDLOLD
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: USNEW, Z0NEW
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, ZIDLNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3, FL, SL
 
@@ -180,6 +183,14 @@
 !        ---------------
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
+
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
+      ENDIF
+      ICODE_WAM=3
+
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -199,11 +210,6 @@
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
-      ENDDO
-
-      DO IJ=IJS,IJL
-        XJ=U10NEW(IJ)/DELU
-        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
       ENDDO
 
 !     COMPUTE DAMPING COEFFCIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
@@ -231,22 +237,22 @@
 !!            FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
 
+      DO IJ=IJS,IJL
+        XJ=U10NEW(IJ)/DELU
+        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
+      ENDDO
+
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, ZIDLNEW, SL, XLLWS)
-      ELSE
-        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
-      ENDIF
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
@@ -268,7 +274,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -281,21 +287,22 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL,EMEANALL,F1MEAN,XKMEAN,
-     &                PHIOC, TAUWD, MIJ, .FALSE.)
-      ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
-     &                       USNEW, THWNEW, ROAIRN,
-     &                       PHIOC, TAUWD, MIJ, .FALSE.)
-      ENDIF
 
+      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+     &              EMEANALL, F1MEAN, XKMEAN,
+     &              USNEW, THWNEW, ROAIRN,
+     &              PHIOC, TAUWD, MIJ, .FALSE.)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
       ENDIF
+
 !SHALLOW
-      IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
+      IF(ISHALLO.NE.1) THEN
+        CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, 
+     &              DEPTH(IJS,1), EMEANALL, F1MEAN)
+        CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
+      ENDIF
 !SHALLOW
 
 ! ----------------------------------------------------------------------
@@ -431,13 +438,8 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
-      IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, ZIDLNEW, SL, XLLWS)
-      ELSE
-        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                   ROAIRN, ZIDLNEW, SL, XLLWS)
-      ENDIF
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
@@ -453,7 +455,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -461,19 +463,15 @@
 
       IF(LCFLX) THEN
 !     this call is only needed if we are to compute the fluxes
-        IF(IPHYS.EQ.0) THEN
-          CALL SDISSIP (FL3 ,FL, IJS, IJL, IG,SL,EMEANALL,F1MEAN,XKMEAN,
-     &                  PHIOC, TAUWD, MIJ, LCFLX)
-        ELSE
-          CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL,
-     &                         USNEW, THWNEW, ROAIRN,
-     &                         PHIOC, TAUWD, MIJ, LCFLX)
-        ENDIF
-      ENDIF
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+     &                EMEANALL, F1MEAN, XKMEAN,
+     &                USNEW, THWNEW, ROAIRN,
+     &                PHIOC, TAUWD, MIJ, LCFLX)
 
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
-        CALL FLUSH (IU06)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
+          CALL FLUSH (IU06)
+        ENDIF
       ENDIF
 
 !*    2.5.6 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
@@ -497,7 +495,7 @@
         USOLD(IJ) = USNEW(IJ)
         Z0OLD(IJ) = Z0NEW(IJ)
         ROAIRO(IJ) = ROAIRN(IJ)
-        ZIDLOLD(IJ) = ZIDLNEW(IJ)
+        WSTAROLD(IJ) = WSTARNEW(IJ)
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -505,5 +503,4 @@
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE IMPLSCH

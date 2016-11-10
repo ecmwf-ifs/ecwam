@@ -80,8 +80,8 @@
       REAL :: XLL, XPL, XLR, XPR
       REAL ::  BATHY(NGX, NGY)
 
-      CHARACTER*4 :: CX
-      CHARACTER*10 :: FORMAT
+      CHARACTER(LEN=4) :: CX
+      CHARACTER(LEN=10) :: FORMAT
 
       LOGICAL :: LLABORT
 

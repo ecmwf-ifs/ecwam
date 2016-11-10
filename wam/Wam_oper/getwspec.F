@@ -31,8 +31,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NGY
       USE YOWPCONS , ONLY : RAD      ,DEG      ,R
-      USE YOWSPEC,   ONLY : U10OLD   ,USOLD    ,THWOLD   ,FL1      ,
-     &            FL2
+      USE YOWSPEC,   ONLY : U10OLD   ,USOLD    ,THWOLD   ,FL1
       USE YOWSARAS , ONLY : PPSARCF  ,SARCORDIA,NSPEC    ,
      &            NSPECW   ,JPSIW    ,NW1D     ,NTOSIW1D ,IGSAR    ,
      &            IJSAR    ,LONG     ,LAT      ,COSSARLAT,SINSARLAT,
@@ -235,15 +234,7 @@
        ALLOCATE(SPECW(0:NSPECW,NANG,NFRE))
        SPECW(:,:,:)=0.0
 
-!       READ FIRST BLOCK
-        IF(IGL.GT.1) THEN
-          REWIND IU11
-          READ(IU11) FL1
-        ENDIF
-        DO JBL=1,IGL
-!         ODD BLOCKS
-          IF(MOD(JBL,2).EQ.1) THEN
-            IF(JBL.NE.IGL) READ(IU11) FL2
+       JBL=1
               DO JFRE=1,NFRE
                 DO JANG=1,NANG
                   DO JP = IJS(JBL),IJL(JBL)
@@ -253,20 +244,6 @@
                   ENDDO
                 ENDDO
               ENDDO
-!         EVEN BLOCKS
-          ELSE
-            IF(JBL.NE.IGL) READ(IU11) FL1
-              DO JFRE=1,NFRE
-                DO JANG=1,NANG
-                  DO JP = IJS(JBL),IJL(JBL)
-                    IF(NW1D(JP,JBL).GT.0) THEN
-                      SPECW(NW1D(JP,JBL),JANG,JFRE)=FL2(JP,JANG,JFRE)
-                    ENDIF
-                  ENDDO
-                ENDDO
-              ENDDO
-          ENDIF
-        ENDDO
 
 !       4. READ U10 WINDS AND DEFINE U10 AND THW FROM WAM SPECTRA
 !       --------------------------------------------------------

@@ -62,7 +62,6 @@
          REAL*8,  ALLOCATABLE   :: TRIA(:) ! triangle area of each element 
          REAL*8,  ALLOCATABLE   :: IEN(:,:) ! normal vectors for each element in x and y direction, inward pointing normalized by the edge length 
 
-         REAL*8, ALLOCATABLE    :: CURTXY(:,:) ! current vel. x and y direction for each node ...
          REAL*8, ALLOCATABLE    :: CFLCXY(:,:) ! cfl nunmber of each direction and freq. 
 
          INTEGER                :: IVECTOR 
@@ -80,7 +79,7 @@
 !         REAL*8, ALLOCATABLE    :: DSPEC(:,:,:)
 
          REAL*8, ALLOCATABLE    :: CG(:,:), WK(:,:) ! group vel. and wave numbers ...
-
+         
          TYPE FILEDEF
             CHARACTER(LEN=40)   :: FNAME ! unWAM files names ... 
             INTEGER             :: FHNDL ! unWAM file handles ...

@@ -1,4 +1,4 @@
-      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED,IREAD)
+      SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
 !***  *READWIND* - PROGRAM TO FORMAT WIND FIELDS FROM MARS 
 !                  FROM INPUT FILE sfcwind.
@@ -140,7 +140,6 @@
       LOGICAL :: LLABORT
       LOGICAL :: LLEXIST
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
-
 ! --------------------------------------------------------------------  
 
 #ifdef ECMWF
@@ -158,11 +157,12 @@
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF
 
+      ICODE=0
 
       IF(.NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS)) THEN
 !       IF IT IS NOT A SWAMP CASE OR A CASE FOR WHICH A TIME SERIES
 !       IS PRESCRIBED.
-
+!       
 !       WIND FIELDS ARE SUPPLIED FROM INPUT FILE sfcwindin
 !       AS IS THE CASE IN THE STAND ALONE VERSION OR AT INITIAL INPUT
 !       TIME IN COUPLED MODEL.
@@ -227,12 +227,12 @@
         IF(LLWDWAVE) NFLD=NFLD+1
 
 !       AIR DENSITY AND GUSTINESS ARE ONLY PROVIDED FROM A FILE IF STAND ALONE RUN
-!!      for coupled run we re-initialise witht he value provided by IFS, even though
+!!      for coupled run we re-initialise witth he value provided by IFS, even though
 !!      strickly speaking, it should be provided as part of the restart but it is better than
 !!      setting it to a constant !!
         IF(.NOT.LWCOU .AND. LADEN) NFLD=NFLD+1
 
-!!      for coupled run we re-initialise witht he value provided by IFS, even though
+!!      for coupled run we re-initialise with the value provided by IFS, even though
 !!      strickly speaking, it should be provided as part of the restart but it is better than
 !!      setting it to a constant !!
         IF(.NOT.LWCOU .AND. LGUST) NFLD=NFLD+1
@@ -441,9 +441,7 @@
               ENDIF
             ENDIF
 
-!!!       215 is a pseudo parameter number for surface air density
-!!!       adapt accordingly if such parameter were to be produced
-          ELSEIF (IPARAM.EQ.215) THEN
+          ELSEIF (IPARAM.EQ.209) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NYFF
@@ -461,9 +459,7 @@
               LLABORT=.TRUE.
             ENDIF
 
-!!!       216 is a pseudo parameter number for gustiness (Zi/L) 
-!!!       adapt accordingly if such parameter were to be produced
-          ELSEIF (IPARAM.EQ.216) THEN
+          ELSEIF (IPARAM.EQ.208) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
               DO J=1,NYFF
@@ -518,10 +514,10 @@
             WRITE(IU06,*) ' + 249  WIND DIRECTION FROM WAVE MODEL     +'
             ENDIF
             IF(LADEN) THEN
-            WRITE(IU06,*) ' + 215  AIR DENSITY AT THE SURFACE         +'
+            WRITE(IU06,*) ' + 209  AIR DENSITY AT THE SURFACE         +'
             ENDIF
             IF(LGUST) THEN
-            WRITE(IU06,*) ' + 216  GUSTINESS (Zi/L)                   +'
+            WRITE(IU06,*) ' + 208  FREE CONVECTIVE VELOCITY SCALE     +'
             ENDIF
             WRITE(IU06,*) ' +                                         +'
             WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++++'
@@ -655,7 +651,6 @@
             FIELDG(I,J)%VWND=VWIND
           ENDDO
         ENDDO
-
 #endif
 
 !!!! impose the northern part of the swamp domain to be covered with

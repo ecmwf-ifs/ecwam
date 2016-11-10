@@ -1,21 +1,12 @@
-      SUBROUTINE WVALLOC(LFDBOPIFS,LMESSPIFS,LDWCOUIFS,LDWCOU2W,LDWFLUX,
-     &                   LWCUR,LFRSTIM)
+      SUBROUTINE WVALLOC(LWCUR)
 
 ! ----------------------------------------------------------------------
 
-!**** *WVALLOC* - WAVE MODEL ALLOCATION AND COUPLING TO IFS.
-
-!     J. DOYLE     ECMWF       NOVEMBER 1996 ATMOSPHERIC COUPLING
-
-!     MODIFIED BY:   B. HANSEN    APRIL 1997
-!                                 DOCTOR STYLE AND LDWCOU2W
-!                    S. ABDALLA   ECMWF  OCTOBER  2001
-!                                 INCLUSION OF AIR DENSITY & Zi/L
+!**** *WVALLOC* - WAVE MODEL ARRAY ALLOCATION
 
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
-      USE YOWCOUT  , ONLY : LFDB
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
@@ -27,15 +18,14 @@
      &            LL1D
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL1      ,FL3      ,SL
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWTEST  , ONLY : IU06
+      USE YOWWIND, ONLY   : NXFF     ,NYFF     ,FIELDG_coupl
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
 
 ! ----------------------------------------------------------------------
 
@@ -45,75 +35,15 @@
 
       REAL :: ZHOOK_HANDLE
 
-      LOGICAL :: LFDBOPIFS,LMESSPIFS,LDWCOUIFS, LDWCOU2W, LDWFLUX
-      LOGICAL :: LLIRANK 
       LOGICAL :: LWCUR
-      LOGICAL :: LFRSTIM
 
+! ----------------------------------------------------------------------
 #ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',0,ZHOOK_HANDLE)
 #endif
-!     READ FIRST THE WAVE MODEL NAMELIST TO GET THE WAVE MODEL
-!     DECOMPOSITION (LL1D).
-
-!!!   LMESSPASS,LFDB and LWCOU will take the values provided by the IFS
-!!!   see below.
-
-
-! INITIALIZE LOGICALS FROM IFS
-
-      LFDB=LFDBOPIFS
-      LMESSPASS=LMESSPIFS
-      LWCOU=LDWCOUIFS
-      LWCOU2W=LDWCOU2W
-      LWFLUX=LDWFLUX
-
-      IF(LFRSTIM) THEN
-        IF(LMESSPASS) THEN
-          IU06=20
-        ELSE
-          IU06=6
-        ENDIF
-
-        IF(LMESSPASS) THEN
-
-!     0.1 GET RANK AND TOTAL NUMBER OF PROCESSORS  
-!         ---------------------------------------
-
-          IRANK = MPL_MYRANK()
-          NPROC = MPL_NPROC()
-        ELSE
-          IRANK = 1 
-          NPROC = 1 
-        ENDIF
-
-#ifndef MODEL_COUPLING_ATM_WAV
-        MyRankGlobal=IRANK
-#endif
-
-        NPREVIOUS=IRANK-1
-        IF(IRANK.EQ.NPROC) THEN
-          NNEXT=0
-        ELSE
-          NNEXT=IRANK+1
-        ENDIF
-
-!     0.2 DETERMINE GRID DOMAIN DECOMPOSITION 
-!         -----------------------------------
-        NPR=NPROC
-        LLIRANK=.FALSE.
-        CALL MPDECOMP(NPR,MAXLEN,LLIRANK)
-        MPMAXLENGTH=MAXLEN
-
-      ENDIF
 
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
-
-!     !!!! NOTE THAT THIS ROUTINE IS ONLY USED FOR COUPLED RUNS !!!
-!     !!!! SEE PROGRAM chief FOR UNCOUPLED RUNS !
-!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
       IF(.NOT.ALLOCATED(U10OLD)) ALLOCATE(U10OLD(NINF:NSUP,NBLO))
       IF(.NOT.ALLOCATED(THWOLD)) ALLOCATE(THWOLD(NINF:NSUP,NBLO))
@@ -124,6 +54,12 @@
       IF(.NOT.ALLOCATED(THWNEW)) ALLOCATE(THWNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(USNEW)) ALLOCATE(USNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(Z0NEW)) ALLOCATE(Z0NEW(NINF:NSUP))
+      IF(.NOT.ALLOCATED(BETAOLD)) ALLOCATE(BETAOLD(NINF:NSUP))
+
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      U10NEW = 0
+      U10OLD = 0
+#endif
 
       IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NINF:NSUP,NBLO))
       IF(.NOT.ALLOCATED(ROAIRN)) ALLOCATE(ROAIRN(NINF:NSUP))
@@ -137,9 +73,6 @@
       IF(.NOT.ALLOCATED(FL1)) ALLOCATE(FL1(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
 
-      IF(.NOT.LMESSPASS.AND..NOT.ALLOCATED(FL2))
-     &   ALLOCATE(FL2(NINF-1:NSUP,NANG,NFRE))
-
       IF(.NOT.ALLOCATED(SL)) ALLOCATE(SL(NINF-1:NSUP,NANG,NFRE))
 
       IF(.NOT.ALLOCATED(EMEAN))
@@ -151,15 +84,15 @@
 
         IF(.NOT.ALLOCATED(PHIEPS)) THEN 
           ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
-          PHIEPS = 0.
+          PHIEPS(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(PHIAW)) THEN 
           ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
-          PHIAW = 0.
+          PHIAW(:) = 0.
         ENDIF
         IF(.NOT.ALLOCATED(TAUOC)) THEN
           ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
-          TAUOC = 0.
+          TAUOC(:) = 0.
         ENDIF
 
       IF ( (LWCOU .AND. LWCUR) .OR.
@@ -174,9 +107,12 @@
         ENDIF
       ENDIF
 
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV || defined NETCDF_OUTPUT_WAM
+      ALLOCATE(FIELDG_coupl(NXFF,NYFF))
+#endif
+
 #ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',1,ZHOOK_HANDLE)
 #endif
  
-      RETURN
       END SUBROUTINE WVALLOC

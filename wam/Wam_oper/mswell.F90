@@ -165,9 +165,6 @@
         XL(1)=250000.0_JWRB
         YLAT0(1)=47.0_JWRU
         XLON0(1)=165.0_JWRU
-!debile
-        YLAT0(1)=0.0_JWRU
-        XLON0(1)=0.0_JWRU
 
         H0(2)=2.0_JWRB
         THETA0(2)=90.0_JWRB
@@ -175,13 +172,8 @@
         XL(2)=200000.0_JWRB
         YLAT0(2)=-50.0_JWRU
         XLON0(2)=20.0_JWRU
-!debile
-        YLAT0(2)=-180.0_JWRU
-        XLON0(2)=0.0_JWRU
 
         H0(3)=2.0_JWRB
-!debile
-        H0(3)=0.0_JWRB
         THETA0(3)=180.0_JWRB
         OMEGAP(3)=0.3117_JWRB
         XL(3)=200000.0_JWRB
@@ -189,8 +181,6 @@
         XLON0(3)=331.0_JWRU
 
         H0(4)=2.0_JWRB
-!debile
-        H0(4)=0.0_JWRB
         THETA0(4)=45.0_JWRB
         OMEGAP(4)=0.3117_JWRB
         XL(4)=150000.0_JWRB
@@ -261,15 +251,11 @@
           DO ILOC=1,NLOC
             CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
             DIST=2*R*DIST/XL(ILOC)
-!debile
-!            IF(DIST.LT.10.0_JWRU) THEN
-            IF(DIST.LE.0.001_JWRU) THEN
+            IF(DIST.LT.10.0_JWRU) THEN
               SPRD=EXP(-DIST)
               DO M=1,NFRE
                 DO K=1,NANG
-!debile
                   FL1(IJ,K,M)=FL1(IJ,K,M)+FL0(ILOC,K,M)*SPRD 
-                  FL1(IJ,K,M)=1.0_JWRB
                 ENDDO
               ENDDO
             ENDIF

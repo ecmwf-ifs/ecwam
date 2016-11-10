@@ -1,8 +1,9 @@
       SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
      &                    U10OLD,THWOLD,U10NEW,THWNEW,
+     &                    USOLD, USNEW,
      &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
      &                    CICOVER, CITHICK, CIWA,
-     &                    TAUW)
+     &                    TAUW, BETAOLD)
 ! ----------------------------------------------------------------------
 
 !**** *NEWWIND* - HANDLING OF WINDS OUTSIDE MULTITASKED AREA    
@@ -22,10 +23,11 @@
 !     ----------
 
 !       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
-!     1                  U10OLD,THWOLD,U10NEW,THWNEW, 
-!     2                  ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-!     3                  CICOVER, CITHICK, CIWA,
-!     4                  TAUW)
+!                        U10OLD,THWOLD,U10NEW,THWNEW, 
+!                        USOLD, USNEW,
+!                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
+!                        CICOVER, CITHICK, CIWA,
+!                        TAUW, BETAOLD)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
 !      *IG*      - BLOCK NUMBER
@@ -41,6 +43,8 @@
 !                  CLOCKWISE FROM NORTH).
 !      *THWOLD*  - INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
 !                  WIND VELOCITY.
+!      *USOLD*   - INTERMEDIATE STORAGE OF FRICTIOn VELOCITY
+!      *USNEW*   - NEW FRICTIOn VELOCITY
 !      *ROAIRN*  - AIR DENSITY IN KG/M3.
 !      *ROAIRO*  - INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *ZIDLNEW* - Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
@@ -49,6 +53,7 @@
 !      *CITHICK* - SEA ICE THICKNESS. 
 !      *CIWA*    - SEA ICE WAVE ATTENUATION FACTOR.
 !      *TAUW*    - WAVE STRESS
+!      *BETAOLD* - CHARNOCK PARAMETER 
 
 !     METHOD.
 !     -------
@@ -69,14 +74,15 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
+      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA
       USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
-     &            IIG      ,NSTORE   ,USNEXT   ,DSNEXT   ,ADSNEXT  ,
-     &            ZIDLNEXT ,CICOVERNEXT, CITHICKNEXT
-
+     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,
+     &            USTMIN_RESET_TAUW
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -87,9 +93,12 @@
       INTEGER, INTENT(IN) :: IG, IGL
 
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
+      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
+      REAL,DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
       REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
+      REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
       REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER, CITHICK 
       REAL,DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
@@ -100,6 +109,7 @@
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
 
 
+      INTEGER :: ICODE_WND
       INTEGER :: ISTORE
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
@@ -114,6 +124,13 @@
 
       NPROMA=NPROMA_WAM
 
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
+      ENDIF
+
+
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
       IF (CDATE.LT.CDATEWH) THEN
@@ -124,6 +141,7 @@
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ = KIJS, KIJL
             U10NEW(IJ) = U10OLD(IJ,IG)
+            USNEW(IJ) = USOLD(IJ,IG)
             THWNEW(IJ) = THWOLD(IJ,IG)
             ROAIRN(IJ) = ROAIRO(IJ,IG)
             ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
@@ -158,24 +176,35 @@
         ENDIF
 
         CDA=CDTNEXT(ISTORE)
-        IIG=IG
 
         CALL GSTATS(1492,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          DO IJ = KIJS, KIJL
-            U10NEW(IJ)=USNEXT(IJ,ISTORE,IIG)
-            THWNEW(IJ)=DSNEXT(IJ,ISTORE,IIG)
-            ROAIRN(IJ)=ADSNEXT(IJ,ISTORE,IIG)
-            ZIDLNEW(IJ)=ZIDLNEXT(IJ,ISTORE,IIG)
-            CICOVER(IJ,IG)=CICOVERNEXT(IJ,ISTORE,IIG)
-            CITHICK(IJ,IG)=CITHICKNEXT(IJ,ISTORE,IIG)
+          IF (ICODE_WND == 3 ) THEN
+            DO IJ = KIJS, KIJL
+              U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
 ! adapt first estimate of wave induced stress for low winds
-            IF(U10NEW(IJ).LT.3.0) TAUW(IJ,IG)=0.0
-
+              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
+            ENDDO
+          ELSE
+            DO IJ = KIJS, KIJL
+              USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
+! update the estimate of TAUW
+              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0-(ALPHA/BETAOLD(IJ))**2)
+! adapt first estimate of wave induced stress for low winds
+              IF(USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
+            ENDDO
+          ENDIF
+          DO IJ = KIJS, KIJL
+            THWNEW(IJ)=FF_NEXT(IJ,ISTORE)%WDWAVE
+            ROAIRN(IJ)=FF_NEXT(IJ,ISTORE)%AIRD
+            ZIDLNEW(IJ)=FF_NEXT(IJ,ISTORE)%ZIDL
+            CICOVER(IJ,IG)=FF_NEXT(IJ,ISTORE)%CIFR
+            CITHICK(IJ,IG)=FF_NEXT(IJ,ISTORE)%CITH
           ENDDO
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1492,1)

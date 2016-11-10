@@ -138,6 +138,8 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+!      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
+!      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
 #ifdef MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, only : WAV_coupl_prewind
 #endif
@@ -209,6 +211,7 @@
 !         ---------------------------
       LLINIALL=.TRUE.
       LLOCAL=.TRUE.
+
       CALL INIT_FIELDG(LLALLOC_FIELDG_ONLY,LLINIALL,LLOCAL)
 
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
@@ -240,14 +243,19 @@
 !         -------------------------------------------
 
       CALL GETCURR(LWCUR, IREAD)
-
+!      Print *, 'LLUNSTR=', LLUNSTR
+!      Print *, 'USE_DIRECT_WIND_FILE=', USE_DIRECT_WIND_FILE
+!      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
+!        CALL SET_WIND_UNSTRUCTURED(U10OLD,THWOLD,USOLD,                 &
+!     &    TAUW,Z0OLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK)
+!      ELSE
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
       IF (IDELWO.GE.IDELWI) THEN
 
-!*    2.2 NO TIME INTERPOLATION.
-!         ----------------------
+!*      2.2 NO TIME INTERPOLATION.
+!       ----------------------
 
         IF (ITEST.GE.2) THEN
           WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
@@ -258,14 +266,18 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL NOTIM (CDTWIS, CDTWIE,
+     &              IJS(1), IJL(1),
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+     &              IREAD, LWCUR)
 
       ELSE
 
-!*    2.3 TIME INTERPOLATION.
-!         -------------------
+!*      2.3 TIME INTERPOLATION.
+!       -------------------
 
         IF (ITEST.GE.2) THEN
           WRITE (IU06,*) '   SUB. PREWIND: WIND REQUEST'
@@ -276,12 +288,15 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &              ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
-     &              LWCUR)
+        CALL TIMIN (CDTWIS, CDTWIE,
+     &              IJS(1), IJL(1),
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+     &              IREAD, LWCUR)
 
       ENDIF
-
 #else
       CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,          
      &                       ROAIRO, ZIDLOLD,                         

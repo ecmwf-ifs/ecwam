@@ -1,5 +1,112 @@
 MODULE WAV_NETCDF_FCT
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+      TYPE TIMEPERIOD
+        integer nbTime
+        REAL(KIND=JWRU), allocatable :: ListTime(:)
+      END TYPE TIMEPERIOD
       CONTAINS
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TEST_FILE_EXIST_DIE(eFile, errmsg)
+      IMPLICIT NONE
+      CHARACTER(LEN=*) :: eFile
+      CHARACTER(LEN=*) :: errmsg
+      LOGICAL :: LFLIVE
+      INQUIRE( FILE = TRIM(eFile), EXIST = LFLIVE )
+      IF ( .NOT. LFLIVE ) THEN
+        Print *, 'Missing file =', TRIM(eFile)
+        Print *, 'Reason for call =', TRIM(errmsg)
+        STOP
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE FIND_MATCH_TIME(RecTime, eTime, iTime1, w1, iTime2, w2)
+      IMPLICIT NONE
+      TYPE(TIMEPERIOD), intent(in) :: RecTime
+      REAL(KIND=JWRU), intent(in) :: eTime
+      integer, intent(out) :: iTime1, iTime2
+      real(KIND=JWRU), intent(out) :: w1, w2
+      REAL(KIND=JWRU), parameter :: tolDay = 0.00000001
+      REAL(KIND=JWRU) :: DeltaTime
+      DO iTime2=2,RecTime % nbTime
+        iTime1=iTime2-1
+        DeltaTime=RecTime % ListTime(iTime2) - RecTime % ListTime(iTime1)
+        w1=(RecTime % ListTime(iTime2) - eTime) / DeltaTime
+        w2=(eTime - RecTime % ListTime(iTime1)) / DeltaTime
+        !        WRITE(740+MyRankGlobal,*) 'iTime1=', iTime1, ' iTime2=', iTime2
+        !        WRITE(740+MyRankGlobal,*) 'eTime=', eTime
+        !        WRITE(740+MyRankGlobal,*) 'DeltaTime=', DeltaTime
+        !        WRITE(740+MyRankGlobal,*) 'ListTime(iTime1)=', ListTime(iTime1)
+        !        WRITE(740+MyRankGlobal,*) 'ListTime(iTime2)=', ListTime(iTime2)
+        !        WRITE(740+MyRankGlobal,*) 'w1=', w1, ' w2=', w2
+        IF ((w1 + tolDay .ge. 0.).and.(w2 + tolDay .ge. 0.)) THEN
+          RETURN
+        END IF
+      END DO
+      WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
+      WRITE(740+MyRankGlobal,*) 'We did not find the time'
+      WRITE(740+MyRankGlobal,*) 'nbTime=', RecTime % nbTime
+      WRITE(740+MyRankGlobal,*) 'eTime=', eTime
+      WRITE(740+MyRankGlobal,*) 'ListTime(1)     = ', RecTime % ListTime(1)
+      WRITE(740+MyRankGlobal,*) 'ListTime(nbTime) = ', RecTime % ListTime(RecTime % nbTime)
+      FLUSH(740+MyRankGlobal)
+      STOP
+      END SUBROUTINE FIND_MATCH_TIME
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_LIST_TIME(ncid, RecTime)
+      USE NETCDF
+      IMPLICIT NONE
+      integer, intent(in) :: ncid
+      TYPE(TIMEPERIOD), intent(inout) :: RecTime
+      character(len=*), parameter :: CallFct = "READ_LIST_TIME"
+      real*8, allocatable :: ListTime_mjd(:)
+      character (len=100) :: eStrUnitTime
+      real(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
+      REAL(KIND=JWRU) eTime
+      integer, dimension(nf90_max_var_dims) :: dimids
+      integer nbtime_mjd
+      integer istat
+      integer iTime
+      integer varid
+      !
+      ! reading the time
+      !
+      ISTAT = nf90_inq_varid(ncid, "ocean_time", varid)
+      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      !
+      ISTAT = nf90_get_att(ncid, varid, "units", eStrUnitTime)
+      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'eStrUnitTime = ', eStrUnitTime
+      WRITE(740+MyRankGlobal,*) 'ConvertToDay = ', ConvertToDay
+      WRITE(740+MyRankGlobal,*) '  eTimeStart = ', eTimeStart
+#endif
+      !
+      ISTAT = nf90_inquire_variable(ncid, varid, dimids=dimids)
+      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      !
+      ISTAT = nf90_inquire_dimension(ncid, dimids(1), len=nbtime_mjd)
+      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      allocate(ListTime_mjd(nbtime_mjd), stat=istat)
+      !
+      ISTAT = nf90_get_var(ncid, varid, ListTime_mjd)
+      CALL WAV_GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+      !
+      RecTime % nbTime = nbtime_mjd
+      allocate(RecTime % ListTime(nbtime_mjd), stat=istat)
+      DO iTime=1,nbtime_mjd
+         eTime = ListTime_mjd(iTime)*ConvertToDay + eTimeStart
+         RecTime % ListTime(iTime) = eTime
+      END DO
+      deallocate(ListTime_mjd)
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -75,6 +182,7 @@ MODULE WAV_NETCDF_FCT
 !**********************************************************************
       SUBROUTINE CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
       USE PARKIND_WAVE, ONLY : JWRB, JWRU
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       IMPLICIT NONE
       character(len=100), intent(in) :: eStrUnitTime
       real(KIND=JWRU), intent(out) :: ConvertToDay, eTimeStart
@@ -88,18 +196,23 @@ MODULE WAV_NETCDF_FCT
       integer alen, posBlank
       integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
       alen=LEN_TRIM(eStrUnitTime)
+!      WRITE(740+MyRankGlobal,*) 'alen=', alen
       posBlank=INDEX(eStrUnitTime(1:alen), ' ')
+!      WRITE(740+MyRankGlobal,*) 'posBlank=', posBlank
       Xname=eStrUnitTime(1:posBlank-1) ! should be days/hours/seconds
+!      WRITE(740+MyRankGlobal,*) 'Xname=', Xname
       IF (TRIM(Xname) .eq. 'days') THEN
-        ConvertToDay=1
+        ConvertToDay=REAL(1,JWRU)
       ELSEIF (TRIM(Xname) .eq. 'hours') THEN
-        ConvertToDay=1/24
+        ConvertToDay=REAL(1,JWRU)/REAL(24,JWRU)
       ELSEIF (TRIM(Xname) .eq. 'seconds') THEN
-        ConvertToDay=1/86400
+        ConvertToDay=REAL(1,JWRU)/REAL(86400,JWRU)
+!        WRITE(740+MyRankGlobal,*) 'assignment here for seconds'
       ELSE
         Print *, 'Error in the code for conversion'
         STOP
       END IF
+!      WRITE(740+MyRankGlobal,*) 'ConvertToDay=', ConvertToDay
       !
       Yname=eStrUnitTime(posBlank+1:alen)
       alenB=LEN_TRIM(Yname)
@@ -233,6 +346,7 @@ MODULE WAV_NETCDF_FCT
           END IF
         END IF
       END IF
+      WRITE(740+MyRankGlobal,*) 'eStrTime=', eStrTime
       CALL CT2MJD(eStrTime, eTimeStart)
       END SUBROUTINE
 !**********************************************************************

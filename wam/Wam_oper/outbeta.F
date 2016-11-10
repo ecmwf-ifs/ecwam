@@ -1,8 +1,8 @@
-      SUBROUTINE OUTBETA (IJS, IJL, IG, U10, US, Z0, BETA)
+      SUBROUTINE OUTBETA (IJS, IJL, US, Z0, BETA)
 
 ! ----------------------------------------------------------------------
 
-!**** *OUTBETA* - DETERMINES THE CHARNOCK PARAMETER FOR THE IFS. 
+!**** *OUTBETA* - DETERMINES THE CHARNOCK PARAMETER
 
 !     P.JANSSEN      KNMI/ECMWF  JANUARY 1992
 !     J.BIDLOT       ECMWF       FEBRUARY 1996  MESSAGE PASSING
@@ -13,16 +13,14 @@
 !*    PURPOSE.
 !     --------
 
-!       COMPUTES THE CHARNOCK PARAMETER FOR ATMOSPHERIC MODEL.
+!       COMPUTES THE CHARNOCK PARAMETER.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, IG, IGL,US,Z0, BETA)
+!       *CALL* *OUTBETA (IJS, IJL, US, Z0, BETA)
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
-!         *IG*     - BLOCK NUMBER.
-!         *U10*    - 10M WIND SPEED IN M/S.
 !         *US*     - FRICTION VELOCITY IN M/S.
 !         *Z0*     - ROUGHNESS LENGTH IN M.
 !         *BETA*   - CHARNOCK FIELD (BLOCK ARRAY)
@@ -45,22 +43,20 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJ, IJS, IJL
-      INTEGER :: IG 
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: US, Z0
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
+
+      INTEGER :: IJ
 
       REAL :: ZHOOK_HANDLE
-      REAL :: BETA(IJS:IJL)
-      REAL, DIMENSION(NINF:NSUP,NBLO) :: U10, US, Z0
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -71,7 +67,7 @@
 !     ---------------------------------
 
       DO IJ = IJS,IJL
-        BETA(IJ) = G*Z0(IJ,IG)/MAX(US(IJ,IG)**2,EPSUS)
+        BETA(IJ) = G*Z0(IJ)/MAX(US(IJ)**2,EPSUS)
       ENDDO
 
 #ifdef ECMWF

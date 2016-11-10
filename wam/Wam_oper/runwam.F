@@ -105,15 +105,14 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL1      ,FL3      ,SL
       USE YOWUNPOOL, ONLY : LLUNSTR
-      USE YOWWIND, ONLY   : NXFF     ,NYFF     ,FIELDG_coupl
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD
 #endif
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
+      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
 
 ! ----------------------------------------------------------------------
 
@@ -129,6 +128,7 @@
       INTEGER, PARAMETER :: NGPTOTG=NC*NR
       INTEGER, PARAMETER :: NFIELDS=7
 
+      INTEGER :: NATMFLX
       INTEGER :: NLON, NLAT
       INTEGER :: IGRIB_HANDLE_DUM
       INTEGER :: NADV
@@ -155,12 +155,13 @@
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
 
-      LOGICAL :: LFDB, LLSTOP, LLWRRE, LLRESTARTED, LLIRANK
+      LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK
       LOGICAL :: LDWCOUNORMS
       LOGICAL :: FRSTIME
       LOGICAL :: LWCUR
       LOGICAL :: LWSTOKES
       LOGICAL :: LLRNL
+      LOGICAL :: LDWCOU2W, LFDBIFS
 
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
 
@@ -189,8 +190,6 @@
       MyRankGlobal=0
 #endif
 
-      LMESSPASS=.TRUE. 
-
       CALL MPL_INIT(KERROR=KERROR)
       IF(KERROR.LT.0) THEN 
         IU06=6
@@ -206,34 +205,17 @@
         WRITE (IU06,*) ' *                                        *'
         WRITE (IU06,*) ' ******************************************'
         CALL ABORT1
-      ELSE
-
-!       GET RANK AND TOTAL NUMBER OF PROCESSORS  
-!       ---------------------------------------
-
-        IRANK = MPL_MYRANK()
-
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-        MyRankGlobal=IRANK-1
-        MyRankLocal =IRANK-1
-#endif
-        NPROC = MPL_NPROC()
-        IF (IRANK .EQ. 1) THEN
-          WRITE (IU06,*) ' ******************************************'
-          WRITE (IU06,*) ' *               PROGRAM RUNWAM           *'
-          WRITE (IU06,*) ' *               ==============           *'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' *      MESSAGE PASSING INITIALISATION    *'
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' * RUN ON ', NPROC, ' PEs    THIS: ', IRANK
-          WRITE (IU06,*) ' *                                        *'
-          WRITE (IU06,*) ' ******************************************'
-        ENDIF
       ENDIF
-
 
 !     0.2 GET MODEL PARAMETERS
 !         --------------------
+
+      LWCOU=.FALSE.
+      LDWCOU2W=.FALSE.
+      LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
+      LWCUR=.FALSE. ! only used in coupled runs
+      LFDBIFS=.FALSE.
+
 
       PRPLRADI=1.0
       PRPLRG=1.0
@@ -241,26 +223,7 @@
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
 
-      IF(LWCOU) THEN
-        IU06=6
-        WRITE (IU06,*) ' *********************************'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' * PROBLEM IN RUNWAM              *'
-        WRITE (IU06,*) ' * ============================= *'
-        WRITE (IU06,*) ' * LWCOU=TRUE WITH NO ATM. MODEL *'
-        WRITE (IU06,*) ' *            TO COUPLE TO       *'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' *                               *'
-        WRITE (IU06,*) ' *********************************'
-        CALL ABORT1
-      ENDIF
-
-      NPREVIOUS=IRANK-1
-      IF(IRANK.EQ.NPROC) THEN
-        NNEXT=0
-      ELSE
-        NNEXT=IRANK+1
-      ENDIF
+      CALL WVWAMINIT1 (LWCOU,LDWCOU2W,LWFLUX,LWCUR,LFDBIFS)
 
 !     0.3 DETERMINE GRID DOMAIN DECOMPOSITION 
 !         -----------------------------------
@@ -270,53 +233,13 @@
 
       CALL INIWCST(PRPLRADI)
 
-      NPR=NPROC
-      LLIRANK=.FALSE.
-      CALL MPDECOMP(NPR,MAXLEN,LLIRANK)
-      MPMAXLENGTH=MAXLEN
+      CALL WVWAMDECOMP(LWCUR)
 
 
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
-      LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
-
-      ALLOCATE (U10OLD(NINF:NSUP,NBLO),THWOLD(NINF:NSUP,NBLO),
-     &          USOLD(NINF:NSUP,NBLO),U10NEW(NINF:NSUP),
-     &          THWNEW(NINF:NSUP),USNEW(NINF:NSUP),
-     &          Z0OLD(NINF:NSUP,NBLO),Z0NEW(NINF:NSUP),
-     &          TAUW(NINF:NSUP,NBLO))
-
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      U10NEW = 0
-      U10OLD = 0
-#endif
-
-      ALLOCATE (ROAIRN(NINF:NSUP),ROAIRO(NINF:NSUP,NBLO),
-     &          ZIDLNEW(NINF:NSUP),ZIDLOLD(NINF:NSUP,NBLO))
- 
-      ALLOCATE (CICOVER(NINF:NSUP,NBLO))
-      ALLOCATE (CITHICK(NINF:NSUP,NBLO))
-
-      ALLOCATE (CIWA(NINF:NSUP,NFRE,NBLO))
-
-      ALLOCATE (FL1(NINF-1:NSUP,NANG,NFRE),FL3(NINF-1:NSUP,NANG,NFRE))
-      IF(.NOT.LMESSPASS) ALLOCATE (FL2(NINF-1:NSUP,NANG,NFRE))
-      ALLOCATE (SL(NINF-1:NSUP,NANG,NFRE))
-
-      ALLOCATE (EMEAN(NSTART(IRANK):NEND(IRANK)))
-      ALLOCATE (FMEAN(NSTART(IRANK):NEND(IRANK)))
-      ALLOCATE (THQ(NSTART(IRANK):NEND(IRANK)))
-
-      IF(IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-        IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
-        U=0.
-        IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
-        V=0.
-      ENDIF
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV || defined NETCDF_OUTPUT_WAM
-      allocate(FIELDG_coupl(NXFF,NYFF))
-#endif
+      CALL WVALLOC(LWCUR)
 
 
 !     0.4 INITIALIZE SIGNAL HANDLER.
@@ -356,13 +279,11 @@
       IDUM=0
       NFDBREF=0  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
+      NATMFLX=0
       IF (.NOT.LWNEMOCOU) THEN
         LWCUR=.FALSE. ! only used in coupled runs
         LWSTOKES=.FALSE.  ! only used in coupled runs
       ENDIF
-!#ifdef MODEL_COUPLING_OCN_WAV
-!      LWCUR=.TRUE.
-!#endif
       RMISS=-999. ! missing data indicator
 
       ! WAM-NEMO COUPLING
@@ -381,9 +302,6 @@
           WRITE(IU06,*)'NEMO FINAL STEP           : ',NEMOITEND
           WRITE(IU06,*)'NEMO TIME STEP            : ',NEMOTSTEP
         ENDIF
-        ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
-        ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
-        ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
         IF (NEMOFRCO==0) THEN
           WRITE(IU06,*) ' NEMOFRCO NEEDS TO BE SET IN WAM-NEMO MODE.'
           CALL ABORT1
@@ -412,6 +330,7 @@
       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
      &             NFIELDS, NGPTOTG, NC, NR,
      &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
+     &             NATMFLX,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
      &             NLONW, NLATW, LLSTOP, LLWRRE,
@@ -423,33 +342,7 @@
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
 
-! DEALLOCATE ARRAYS
-
  30   CONTINUE
-
-      IF (.NOT. LLUNSTR) THEN
-
-      DEALLOCATE (U10OLD,THWOLD,USOLD,U10NEW,THWNEW,USNEW,
-     &            Z0OLD,Z0NEW,TAUW,
-     &            CICOVER,CITHICK,CIWA,
-     &            FL1,FL3,SL,
-     &            ROAIRN,ROAIRO,ZIDLNEW,ZIDLOLD,
-     &            NSTART,NEND,KLENTOP,KLENBOT,NFROMPE,NTOPE,
-     &            NIJSTART,IJTOPE,NTOPELST,NFROMPELST)
-
-      END IF 
-
-      IF(ALLOCATED(FL2)) DEALLOCATE(FL2)
-
-      DEALLOCATE (EMEAN)
-      DEALLOCATE (FMEAN)
-      DEALLOCATE (THQ)
-      IF (LWFLUX) THEN
-         DEALLOCATE (PHIEPS)
-         DEALLOCATE (PHIAW)
-         DEALLOCATE (TAUOC)
-      ENDIF
-
 
 !    3.  TERMINATE MESSAGE PASSING PROTOCOL 
 !        -----------------------------------
