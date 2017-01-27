@@ -75,7 +75,7 @@
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
-#endif/
+#endif
 
 !*    1. SELECT TABLE ACCORDING TO WIND LEVEL.
 !        -------------------------------------
