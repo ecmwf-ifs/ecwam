@@ -401,7 +401,7 @@
      &        KTAG=ITAG,CDSTRING='IFSTOWAM:' )
           ENDIF
           IF(IR > 0) THEN
-            CALL MPL_WAIT(ZDUM,KREQUEST=IREQ(1:IR), 
+            CALL MPL_WAIT(KREQUEST=IREQ(1:IR), 
      &        CDSTRING='IFSTOWAM: WAIT FOR SENDS AND RECEIVES')
           ENDIF
           DEALLOCATE(ZBUFW)

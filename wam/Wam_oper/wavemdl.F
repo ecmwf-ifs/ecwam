@@ -954,7 +954,7 @@
             ENDDO
           ENDIF
 
-          CALL MPL_WAIT(ZCOMBUFS(:),KREQUEST=ISENDREQ,
+          CALL MPL_WAIT(KREQUEST=ISENDREQ,
      &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
 
 

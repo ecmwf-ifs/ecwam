@@ -209,7 +209,7 @@
      &                        CDSTRING='MPFLDTOIFS: RECV COUNT ' )
               ENDDO
 
-              CALL MPL_WAIT(LFROMTASK(:),KREQUEST=ISENDREQ(1:NPROC),
+              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:NPROC),
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND COUNT')
 
 
@@ -258,7 +258,7 @@
               ENDDO
 
               IF( IREQ .GT. 0 )THEN
-                CALL MPL_WAIT(LFROMTASK(:),KREQUEST=ISENDREQ(1:IREQ),
+                CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),
      &                        CDSTRING='MPFLDTOIFS: WAIT SEND IJ')
               ENDIF
 
@@ -329,7 +329,7 @@
 !           ENSURE ALL SENDS ARE FINISHED.
 
             IF(IREQ.GT.0) THEN
-              CALL MPL_WAIT(ZSENDBUF(:),KREQUEST=ISENDREQ(1:IREQ),
+              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND DATA ')
             ENDIF
 
