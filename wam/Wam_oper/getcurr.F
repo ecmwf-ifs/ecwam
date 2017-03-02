@@ -138,7 +138,7 @@
                 ENDIF
 !             CURRENTS FROM NEMO
 !             ------------------
-              ELSEIF(LWCUR.AND.LWNEMOCOUCUR) THEN
+              ELSEIF(LWNEMOCOUCUR) THEN
                 WRITE(IU06,*)'NEMO CURRENTS'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)

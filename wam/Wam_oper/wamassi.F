@@ -105,7 +105,7 @@
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
      &            Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL3      ,SL
+     &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
      &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
@@ -174,29 +174,6 @@
 !*    2. PREPARING OUTPUT AND UPDATE TO CHARNOCK PARAMETER
 !        -------------------------------------------------
 
-      IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
-     &    CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO ) THEN
-        IF(.NOT.LMESSPASS) THEN
-          REWIND IU12
-          IF (IGL.NE.1) THEN
-            REWIND IU11
-            REWIND IU12
-            REWIND IU13
-            REWIND IU14
-            IFIL=IU11
-            IU11=IU12
-            IU12=IFIL
-            IFIL=IU13
-            IU13=IU14
-            IU14=IFIL
-            READ(IU11) FL1
-            IF (ITEST.GE.2)
-     &       WRITE(IU06,*) '   SUB. WAMASSI: START OF READING',
-     &       ' FIRST BLOCK OF SPECTRA'
-          ENDIF
-        ENDIF
-      ENDIF
-
 !*    2.1 LOOP OVER THE BLOCKS.
 !         ---------------------
       BLOCK : DO IG=1,IGL
@@ -217,8 +194,9 @@
         IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
      &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
 
-          CALL OUTBS (FL1, SL, FL3, IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                IG, IGL, IU25, IU26, LLOUTBS)
+          CALL OUTBS (FL1(IJSLOC:IJLLOC,:,:),
+     &                IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &                IG, IU25, IU26, LLOUTBS)
 
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'

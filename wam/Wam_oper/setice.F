@@ -47,16 +47,17 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJS, IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+
       INTEGER :: IJ, M, K
       INTEGER, DIMENSION(IJS:IJL) :: JU 
 
       REAL :: XJ
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW, CICVR
-      REAL, DIMENSION(IJS:IJL) :: CIREDUC 
+      REAL, DIMENSION(IJS:IJL) :: CIREDUC, TEMP, ICEFREE 
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
 ! ----------------------------------------------------------------------
 
 #ifdef ECMWF
@@ -75,15 +76,22 @@
       DO IJ = IJS,IJL
         XJ=U10NEW(IJ)/DELU
         JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
-        CIREDUC(IJ)=MAX(EPSMIN,(1.-CICVR(IJ)))
+        IF(CICVR(IJ).GT.CITHRSH) THEN
+          CIREDUC(IJ)=MAX(EPSMIN,(1.-CICVR(IJ)))
+          ICEFREE(IJ)=0.0
+        ELSE
+          CIREDUC(IJ)=0.0
+          ICEFREE(IJ)=1.0
+        ENDIF
       ENDDO
 
       DO M = 1, NFRE
+        DO IJ = IJS,IJL
+          TEMP(IJ)=CIREDUC(IJ)*FLMINFR(JU(IJ),M)
+        ENDDO
         DO K = 1, NANG
           DO IJ = IJS,IJL
-            IF(CICVR(IJ).GT.CITHRSH) THEN
-              FL3(IJ,K,M)=CIREDUC(IJ)*FLMINFR(JU(IJ),M)*SPRD(IJ,K)
-            ENDIF
+            FL3(IJ,K,M)=FL3(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
           ENDDO
         ENDDO
       ENDDO
@@ -91,7 +99,5 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETICE',1,ZHOOK_HANDLE)
 #endif
-
-      RETURN
 
       END SUBROUTINE SETICE

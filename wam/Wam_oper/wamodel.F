@@ -1,5 +1,5 @@
 
-      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL,LWCUR,LWSTOKES)
+      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -281,7 +281,8 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,
      &            CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,
-     &                      LWNEMOCOUSTRN, NEMOWSTEP, NEMOFRCO     ,
+     &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,
+     &                      NEMOWSTEP, NEMOFRCO     ,
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
@@ -344,7 +345,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL3      ,SL
+     &            FL1      ,FL3
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,
@@ -395,7 +396,6 @@
       CHARACTER(LEN=14) :: CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
       CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
-      LOGICAL, INTENT(IN) :: LWCUR, LWSTOKES
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
@@ -447,8 +447,8 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL UNSETICE(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &                  U10OLD(KIJS:KIJL,1),THWOLD(KIJS:KIJL,1))
+          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,
+     &                  U10OLD(KIJS,1), THWOLD(KIJS,1))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -515,8 +515,7 @@
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
             CALL WDFLUXES (KIJS, KIJL, IG,
-     &                     FL1(KIJS:KIJL,:,:), FL3(KIJS:KIJL,:,:),
-     &                     SL(KIJS:KIJL,:,:),
+     &                     FL1(KIJS:KIJL,:,:),
      &                     CICOVER(KIJS,IG),
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
      &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS) )
@@ -531,28 +530,29 @@
 
         ENDIF
 
-        CALL OUTBS (FL1, SL, FL3, IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &              IG, IGL, IU25, IU26, LLOUTBS)
-
 !       SET FL1 ON ICE POINTS TO ZERO
-
-          IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT',
-     &         ' ICEPOINTS'
-            ENDIF
-! Mod for OPENMP
-            CALL GSTATS(1439,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,
-     &                    CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
-            ENDDO
-!$OMP       END PARALLEL DO
-            CALL GSTATS(1439,1)
+        IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
+          IF (ITEST.GE.1) THEN
+            WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT',
+     &       ' ICEPOINTS'
           ENDIF
+! Mod for OPENMP
+          CALL GSTATS(1439,0)
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,
+     &                  CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1439,1)
+        ENDIF
+
+!       COMPUTE  OUTPUT PARAMETERS
+        CALL OUTBS (FL1(IJSLOC:IJLLOC,:,:),
+     &              IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &              IG, IU25, IU26, LLOUTBS)
 
 !       PRINT OUT NORMS
         CALL OUTWNORM
@@ -639,20 +639,6 @@
       ENDIF ! DO_UPDATE_WIND_FLUX
 
 
-      IF(IGL.GT.1) THEN
-         WRITE (IU06,*) '**************************************'
-         WRITE (IU06,*) '*                                    *'
-         WRITE (IU06,*) '*    FATAL ERROR                     *'
-         WRITE (IU06,*) '*    ===========                     *'
-         WRITE (IU06,*) '* A MULTI BLOCK VERSION WAS REQUESTED*'
-         WRITE (IU06,*) '* THIS OPTION IS NOT IMPLEMENTED FOR *'
-         WRITE (IU06,*) '*                                    *'
-         WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
-         WRITE (IU06,*) '*                                    *'
-         WRITE (IU06,*) '**************************************'
-         CALL ABORT1
-      ENDIF
-
 !*    1. ADVECTION TIME LOOP.
 !        --------------------
 
@@ -723,32 +709,6 @@
 
 !*    1.2 RESET FILES.
 !         ------------
-        IF(.NOT.LMESSPASS) REWIND IU12
-
-        IF (IGL.NE.1) THEN
-          REWIND IU08(IPROPAGS)
-          REWIND IU11
-          REWIND IU13
-          REWIND IU14
-
-!*    1.3 CHANGE WORKING FILE UNITS.
-!         --------------------------
-
-          IFIL=IU11
-          IU11=IU12
-          IU12=IFIL
-          IFIL=IU13
-          IU13=IU14
-          IU14=IFIL
-
-!*    1.4 READ FIRST BLOCK OF SPECTRA, IF MULTI BLOCK VERSION.
-!         ----------------------------------------------------
-
-          READ(IU11) FL1
-          IF (ITEST.GE.2)
-     &     WRITE(IU06,*) '   SUB. WAMODEL: START OF READING',
-     &     ' FIRST BLOCK OF SPECTRA'
-        ENDIF
 
 !*    1.5  LOOP FOR BLOCKS OF LATITUDES.
 !          -----------------------------
@@ -945,16 +905,13 @@
               END IF
 #ifdef DEBUG
               CALL COHERENCY_ERROR_3D(FL1, "FL1 After PROPAG_UNWAM")
-              CALL COHERENCY_ERROR_3D(SL,  "SL  After PROPAG_UNWAM")
               CALL COHERENCY_ERROR_3D(FL3, "FL3 After PROPAG_UNWAM")
               WRITE(740+MyRankGlobal,*) "-------------------"
 #endif
 
               IF (ITEST.GE.2) THEN
-                IF (ITESTB.GE.IG) THEN
-                  WRITE(IU06,*) '   SUB. WAMODEL: PROPAG_UNWAM CALLED'
-                  CALL FLUSH (IU06)
-                ENDIF
+                WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
+                CALL FLUSH (IU06)
               ENDIF
 
 
@@ -983,9 +940,8 @@
      &                   TAUW, BETAOLD)
 
             IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
-              ENDIF
+              WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
+              CALL FLUSH (IU06)
             ENDIF
 
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
@@ -996,7 +952,6 @@
             IF(LLSOURCE) THEN
 #ifdef DEBUG
               CALL COHERENCY_ERROR_3D(FL1, "FL1 Before IMPLSCH")
-              CALL COHERENCY_ERROR_3D(SL,  "SL  Before IMPLSCH")
               CALL COHERENCY_ERROR_3D(FL3, "FL3 Before IMPLSCH")
               WRITE(740+MyRankGlobal,*) "-------------------"
 #endif
@@ -1006,21 +961,18 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
                 CALL IMPLSCH (FL3(KIJS:KIJL,:,:),
-     &                        FL1(KIJS:KIJL,:,:),
      &                        KIJS, KIJL, IG,
      &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),
      &                        TAUW(KIJS,IG), Z0OLD(KIJS,IG),
      &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
-     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),
-     &                        SL(KIJS:KIJL,:,:))
+     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS))
 
               ENDDO
 !$OMP       END PARALLEL DO
+
 #ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL1, "FL1 after IMPLSCH")
-              CALL COHERENCY_ERROR_3D(SL,  "SL  after IMPLSCH")
               CALL COHERENCY_ERROR_3D(FL3, "FL3 after IMPLSCH")
               WRITE(740+MyRankGlobal,*) "-------------------"
 #endif
@@ -1079,8 +1031,6 @@
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
 #ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL1, "FL1 at 1.5.5.4")
-              CALL COHERENCY_ERROR_3D(SL,  "SL  at 1.5.5.4")
               CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.5.4")
               WRITE(740+MyRankGlobal,*) "-------------------"
 #endif
@@ -1112,7 +1062,7 @@
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS,KIJL,
+              CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS, KIJL,
      &                    CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
             ENDDO
 !$OMP       END PARALLEL DO
@@ -1140,8 +1090,6 @@
 !*    1.5.9 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
 #ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL1, "FL1 at 1.5.9")
-              CALL COHERENCY_ERROR_3D(SL,  "SL  at 1.5.9")
               CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.9")
               WRITE(740+MyRankGlobal,*) "-------------------"
 #endif
@@ -1202,8 +1150,9 @@
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
 
-            CALL OUTBS (FL3, SL, FL1, IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                  IG, IGL, IU25, IU26, LLOUTBS)
+            CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:),
+     &                  IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &                  IG, IU25, IU26, LLOUTBS)
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*)
@@ -1215,9 +1164,7 @@
 !*    BRANCHING BACK TO 1.5 FOR NEXT BLOCK OF LATITUDES
 
         ENDDO BLOCK
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-        CALL WAV_all_import_export(LWCUR)
-#endif
+
 #ifdef NETCDF_OUTPUT_WAM
         CALL WAV_netcdf_output
 #endif
@@ -1532,7 +1479,9 @@
           CALL FLUSH (IU06)
         ENDIF
 
-!*    NEMO COUPLING
+!*    WAM-NEMO COUPLING (no atmospheric model !!!!!!)
+
+!!!  could use an openmp loop
 
         IF (LWNEMOCOU.AND.(.NOT.LWCOU)) THEN
           
@@ -1541,8 +1490,8 @@
           IF (MOD(NEMOWSTEP,NEMOFRCO)==0) THEN
 
              IG=1
-             IF(LWSTOKES) THEN
-               CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
+             IF(LWNEMOCOUSTK) THEN
+               CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
      &                          IJS(IG),IJL(IG),
      &                          NEMOUSTOKES(IJS(IG)),
      &                          NEMOVSTOKES(IJS(IG)))
@@ -1555,7 +1504,7 @@
      &                        IJS(IG),IJL(IG),
      &                        NEMOSTRN(IJS(IG)))
              ENDIF
-             CALL UPDNEMOFIELDS(LWSTOKES)
+             CALL UPDNEMOFIELDS
              CALL UPDNEMOSTRESS
 
              DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
@@ -1578,5 +1527,4 @@
       IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE WAMODEL

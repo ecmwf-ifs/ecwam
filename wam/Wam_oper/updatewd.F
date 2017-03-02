@@ -1,6 +1,6 @@
-      SUBROUTINE UPDATEWD (FL1, SL, IJS, IJL, THWNEW, USNEW,
+      SUBROUTINE UPDATEWD (FL1, IJS, IJL, THWNEW, USNEW,
      &                     USOLD, TAUW, CICVR,
-     &                     Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
+     &                     Z0NEW, U10NEW, ROAIRN, WSTAR)
 
 ! ----------------------------------------------------------------------
 
@@ -17,10 +17,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UPDATEWD (FL1, SL,IJS, IJL, THWNEW, USNEW,
-!                         TAUW, Z0NEW, U10NEW,ROAIRN, ZIDLNEW)*
+!       *CALL* *UPDATEWD (FL1, IJS, IJL, THWNEW, USNEW,
+!                         TAUW, Z0NEW, U10NEW,ROAIRN, WSTAR)*
 !          *FL1* - SPECTRUM.
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
 !          *IJL* - INDEX OF LAST GRIDPOINT.
 !          *THWNEW*    WIND DIRECTION.
@@ -29,8 +28,7 @@
 !          *Z0NEW*     ROUGHNESS LENGTH IN M.
 !          *U10NEW*    10m WIND SPEED.
 !          *ROAIRN*    AIR DENSITY IN KG/M3.
-!          *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT,
-!                             L: MONIN-OBUKHOV LENGTH).
+!          *WSTAR*     FREE CONVECTION VELOCITY SCALE (M/S).
 !          *CICVR*     SEA ICE COVER.
 
 !     METHOD.
@@ -58,14 +56,15 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-! ----------------------------------------------------------------------
+! -----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, SL
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, ZIDLNEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
       REAL,DIMENSION(IJS:IJL), INTENT(IN) :: USOLD
       REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW, U10NEW
@@ -75,15 +74,21 @@
       INTEGER :: ICODE_WND
       INTEGER :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
+      REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL, DIMENSION(IJS:IJL) :: DUM1, DUM2, DUM3, DUM4 
-
+      REAL, DIMENSION(IJS:IJL) :: PHIWA
+      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SL
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
 ! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('UPDATEWD',0,ZHOOK_HANDLE)
+#endif
 
       IF(LWCOU) THEN
         ICODE_WND = ICODE_CPL
@@ -108,7 +113,7 @@
       ENDIF
 
       CALL SINPUT (FL1, DUMMYFL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, WSTAR, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: SINPUT CALLED'
@@ -123,16 +128,23 @@
       CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+     &                MIJ,RHOWGDFTH)
 
-      CALL STRESSO (FL1,IJS,IJL,THWNEW,USNEW,Z0NEW,
-     &              ROAIRN,TAUW, DUM1, DUM2, 
-     &              DUM3, DUM4,SL,MIJ,.FALSE.)
+      CALL STRESSO (FL1, SL, IJS, IJL,
+     &              MIJ, RHOWGDFTH,
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+     &              TAUW, PHIWA)
+
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. UPDATEWD: STRESSO CALLED'
         CALL FLUSH (IU06)
       ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('UPDATEWD',1,ZHOOK_HANDLE)
+#endif
 
       RETURN
       END SUBROUTINE UPDATEWD

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTERS (FL3, IG, IGL, CDTPRO)
+      SUBROUTINE OUTERS (FL3, IJS, IJL, CDTPRO)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
@@ -11,10 +11,8 @@
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL3, IG, IGL, CDTPRO)
+!       *CALL  OUTERS (FL3, CDTPRO)
 !          *FL3*    -   SPECTRUM.                                       
-!          *IG*     -   BLOCK NUMBER.                                   
-!          *IGL*    -   NUMBER OF BLOCKS.                               
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
 
 !    EXTERNALS.                                                         
@@ -41,7 +39,6 @@
      &            XDELLA   ,ZDELLO
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
       USE YOWSPEC, ONLY   : NSTART   ,NEND     , 
@@ -53,10 +50,11 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IG, IGL
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL3
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
 
+      INTEGER :: IG
       INTEGER :: NGOU, KCOUNT, IJ, K, M 
       INTEGER :: IU91, IU92, ITAG
       INTEGER :: KBUFRLENGTH
@@ -73,10 +71,11 @@
       IU91 = 91                                                         
       IU92 = 92                                                         
 
-      IF (IG.EQ.1) THEN
-        CALL ERSFILE (IU91, IU92, IG, IGL)
+      IG = 1
 
-        IF(LMESSPASS.AND.NPROC.GT.1.AND.CDTPRO.EQ.CDTERS) THEN
+        CALL ERSFILE (IU91, IU92, .false.)
+
+        IF(NPROC.GT.1.AND.CDTPRO.EQ.CDTERS) THEN
 
 !*  EXCHANGE THE VALUE OF NERS, IERS,IGERS, AND IJERS WITH THE OTHER PE
 
@@ -133,14 +132,12 @@
           ENDIF
 
         ENDIF
-      ENDIF
 
 !*   1. LOOP OVER OUTPUT POINTS.                                        
 !       ------------------------                                        
 
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
-        IF(LMESSPASS) THEN
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 
           IRECV=1
@@ -158,16 +155,14 @@
           ALLOCATE(FLPTS(NSPFLD,IERS,NANG,NFRE))
 
           CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     &                         FL3,FLPTS,
-     &                         U10NEW,THWNEW,USNEW,
+     &                         IJS, IJL, FL3,FLPTS,
+     &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),
      &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
-        ENDIF
 
-        IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+        IF(IRANK.EQ.1) THEN
           XANG = REAL(NANG)
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
-            IF (IG.EQ.IGERS(NGOU)) THEN
               IJ = IJERS(NGOU)                                         
               XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
               XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
@@ -181,36 +176,20 @@
               ENDIF
               WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
      &                    TH(1), FR(1), FRATIO
-              IF(LMESSPASS) THEN
-                IF (EMPTS(NGOU) .GT. 0.0 ) THEN
-                  WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),
-     &                      FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),
-     &                      U10PTS(NGOU)
-                ELSE
-                  WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
-                ENDIF
-                WRITE(IU92) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
+              IF (EMPTS(NGOU) .GT. 0.0 ) THEN
+                WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),
+     &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),
+     &                    U10PTS(NGOU)
               ELSE
-                IF (EMEAN(IJ) .GT. 0.0 ) THEN
-                  WRITE(IU92) 4.*SQRT(EMEAN(IJ)), DEG*THQ(IJ),
-     &                      FMEAN(IJ), USNEW(IJ), DEG*THWNEW(IJ),
-     &                      U10NEW(IJ)
-                ELSE
-                  WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
-                ENDIF
-                WRITE(IU92) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
+                WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS
               ENDIF
-            ENDIF                                                       
+              WRITE(IU92) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
           ENDDO
         ENDIF
       ENDIF                                                             
 
       IF (CDTPRO.EQ.CDTERS) THEN
-        IF (IG.EQ.IGL) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            CALL ERSFILE (IU91, IU92, -9, -9)
-          ENDIF
-        ENDIF
+         CALL ERSFILE (IU91, IU92, .true.)
       ENDIF
 
       IF(ALLOCATED(IJERS))  DEALLOCATE (IJERS)
@@ -223,5 +202,4 @@
       IF(ALLOCATED(USPTS)) DEALLOCATE (USPTS)
       IF(ALLOCATED (FLPTS)) DEALLOCATE (FLPTS)
 
-      RETURN
       END SUBROUTINE OUTERS

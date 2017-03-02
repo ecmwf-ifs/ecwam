@@ -23,7 +23,6 @@
       REAL(KIND=JWRU) :: KDMAX = 300.0_JWRU
       REAL(KIND=JWRU) :: ONE = 1.0
       REAL(KIND=JWRU) :: ZERO = 0.0
-      REAL(KIND=JWRU) :: THR = TINY(1.)
       REAL(KIND=JWRU) :: DMIN = 0.0
       REAL(KIND=JWRU), ALLOCATABLE    :: CAD_THE(:,:,:)
       REAL(KIND=JWRU), ALLOCATABLE    :: CAS_SIG(:,:,:)
@@ -2552,7 +2551,7 @@
         kelem(3,:,:,ie) = lambda(1,:,:)*IEN(5,ie) + lambda(2,:,:)*IEN(6,ie)
         ktmp(:,:,:) = kelem(:,:,:,ie)
         tmp(:,:) = SUM(MIN(0.0_JWRU,ktmp(:,:,:)),DIM=1)
-        n(:,:,ie) = -1.0_JWRU/MIN(-thr8,tmp(:,:))
+        n(:,:,ie) = -1.0_JWRU/MIN(-thr,tmp(:,:))
         kelem(:,:,:,ie) = MAX(0.0_JWRU,ktmp(:,:,:))
 !            WRITE(DBG%FHNDL,'(3I10,3F15.4)') IS, ID, IE, KELEM(:,IE)
         fl11 = cx(:,:,i2)*IEN(1,ie) + cy(:,:,i2)*IEN(2,ie)
@@ -2597,16 +2596,16 @@
                DO is = 1 , msc
                   dtmax_global_exp = 10.E10_JWRU 
                   DO ip = 1 , mnp
-                     dtmax_exp = SI(ip)/MAX(thr8,kksum(id,is,ip))
+                     dtmax_exp = SI(ip)/MAX(thr,kksum(id,is,ip))
                      dtmax_global_exp = MIN(dtmax_global_exp,dtmax_exp)
                   ENDDO
                   dtmax_exp = dtmax_global_exp
                   CALL MPI_ALLREDUCE(dtmax_exp,dtmax_global_exp,1,mpi_real8,mpi_min,comm,ierr)
                   cflxy = dt4a/dtmax_global_exp
                   rest = ABS(MOD(cflxy,1.0_JWRU))
-                  IF ( rest.LT.thr8 ) THEN
+                  IF ( rest.LT.thr ) THEN
                      ITER_EXP(id,is) = ABS(NINT(cflxy))
-                  ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+                  ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                      ITER_EXP(id,is) = ABS(NINT(cflxy)) + 1
                   ELSE
                      ITER_EXP(id,is) = ABS(NINT(cflxy))
@@ -2622,16 +2621,16 @@
 #endif
             dtmax_global_exp = 10.E10
             DO ip = 1 , mnp 
-               dtmax_exp = SI(ip)/MAX(thr8,MAXVAL(kksum(:,:,ip)))
+               dtmax_exp = SI(ip)/MAX(thr,MAXVAL(kksum(:,:,ip)))
                dtmax_global_exp = MIN(dtmax_global_exp,dtmax_exp)
             ENDDO
             dtmax_exp = dtmax_global_exp
             CALL MPI_ALLREDUCE(dtmax_exp,dtmax_global_exp,1,mpi_real8,mpi_min,comm,ierr)
             cflxy = dt4a/dtmax_global_exp
             rest = ABS(MOD(cflxy,1.0_JWRU))
-            IF ( rest.LT.thr8 ) THEN
+            IF ( rest.LT.thr ) THEN
                iter_max = ABS(NINT(cflxy))
-            ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+            ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                iter_max = ABS(NINT(cflxy)) + 1
             ELSE
                iter_max = ABS(NINT(cflxy))
@@ -2646,16 +2645,16 @@
             DO is = 1 , msc
                dtmax_global_exp = 10.E10_JWRU
                DO ip = 1 , mnp 
-                  dtmax_exp = SI(ip)/MAX(thr8,MAXVAL(kksum(:,is,ip)))
+                  dtmax_exp = SI(ip)/MAX(thr,MAXVAL(kksum(:,is,ip)))
                   dtmax_global_exp = MIN(dtmax_global_exp,dtmax_exp)
                ENDDO
                dtmax_exp = dtmax_global_exp
                CALL MPI_ALLREDUCE(dtmax_exp,dtmax_global_exp,1,mpi_real8,mpi_min,comm,ierr)
                cflxy = dt4a/dtmax_global_exp
                rest = ABS(MOD(cflxy,1.0_JWRU))
-               IF ( rest.LT.thr8 ) THEN
+               IF ( rest.LT.thr ) THEN
                   ITER_EXPD(is) = ABS(NINT(cflxy))
-               ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+               ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                   ITER_EXPD(is) = ABS(NINT(cflxy)) + 1
                ELSE
                   ITER_EXPD(is) = ABS(NINT(cflxy))
@@ -2671,16 +2670,16 @@
             DO is = 1 , msc
                dtmax_global_exp = 10.E10
                DO ip = 1 , mnp 
-                  dtmax_exp = SI(ip)/MAX(thr8,MAXVAL(kksum(:,is,ip)))
+                  dtmax_exp = SI(ip)/MAX(thr,MAXVAL(kksum(:,is,ip)))
                   dtmax_global_exp = MIN(dtmax_global_exp,dtmax_exp)
                ENDDO
                dtmax_exp = dtmax_global_exp
                CALL MPI_ALLREDUCE(dtmax_exp,dtmax_global_exp,1,mpi_real8,mpi_min,comm,ierr)
                cflxy = dt4a/dtmax_global_exp
                rest = ABS(MOD(cflxy,1.0_JWRU))
-               IF ( rest.LT.thr8 ) THEN
+               IF ( rest.LT.thr ) THEN
                   ITER_EXPD(is) = ABS(NINT(cflxy))
-               ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+               ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                   ITER_EXPD(is) = ABS(NINT(cflxy)) + 1
                ELSE
                   ITER_EXPD(is) = ABS(NINT(cflxy))
@@ -2695,16 +2694,16 @@
 #endif
             dtmax_global_exp = 10.E10_JWRU
             DO ip = 1 , mnp 
-               dtmax_exp = SI(ip)/MAX(thr8,MAXVAL(kksum(:,:,ip)))
+               dtmax_exp = SI(ip)/MAX(thr,MAXVAL(kksum(:,:,ip)))
                dtmax_global_exp = MIN(dtmax_global_exp,dtmax_exp)
             ENDDO
             dtmax_exp = dtmax_global_exp
             CALL MPI_ALLREDUCE(dtmax_exp,dtmax_global_exp,1,MPI_REAL8,mpi_min,comm,ierr)
             cflxy = dt4a/dtmax_global_exp
             rest = ABS(MOD(cflxy,1.0_JWRU))
-            IF ( rest.LT.thr8 ) THEN
+            IF ( rest.LT.thr ) THEN
                iter_max = ABS(NINT(cflxy))
-            ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+            ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                iter_max = ABS(NINT(cflxy)) + 1
             ELSE
                iter_max = ABS(NINT(cflxy))
@@ -3477,7 +3476,7 @@
           IF (LCHKCONV) THEN
             Sum_new = sum(eSum)
 !            WRITE(740+MyRankGlobal,*) 'IP=', IP, 'Sum_new=', Sum_new
-            IF (Sum_new .gt. thr8) THEN
+            IF (Sum_new .gt. thr) THEN
               DiffNew=sum(abs(ACLOC - eSum))
 !              WRITE(740+MyRankGlobal,*) 'DiffNew=', DiffNew
               p_is_converged = DiffNew/Sum_new
@@ -3707,7 +3706,7 @@
                dtmax_global_exp = 10.E10
                dtmax_global_exp_loc = 10.E10
                DO ip = 1 , mnp 
-                  dtmax_exp = SI(ip)/MAX(thr8,ksum(ip))
+                  dtmax_exp = SI(ip)/MAX(thr,ksum(ip))
                   dtmax_global_exp_loc = MIN(dtmax_global_exp_loc,        &
      &               dtmax_exp)
                ENDDO
@@ -3715,9 +3714,9 @@
      &                            1,MPI_REAL8,mpi_min,comm,ierr)
                cflxy = dt4a/dtmax_global_exp
                rest = ABS(MOD(cflxy,1.0_JWRU))
-               IF ( rest.LT.thr8 ) THEN
+               IF ( rest.LT.thr ) THEN
                   ITER_EXP(id,is) = ABS(NINT(cflxy))
-               ELSEIF ( rest.GT.thr8 .AND. rest.LT.0.5_JWRU ) THEN
+               ELSEIF ( rest.GT.thr .AND. rest.LT.0.5_JWRU ) THEN
                   ITER_EXP(id,is) = ABS(NINT(cflxy)) + 1
                ELSE
                   ITER_EXP(id,is) = ABS(NINT(cflxy))
@@ -3783,7 +3782,7 @@
      &                          *IEN(6,ie)
  
 ! inverse of the positive sum ...
-                     n = -1.0_JWRU/MIN(-thr8,SUM(MIN(0.0_JWRU,kelem)))       ! N
+                     n = -1.0_JWRU/MIN(-thr,SUM(MIN(0.0_JWRU,kelem)))       ! N
  
 ! positive flux jacobians
                      kelem(1) = MAX(0.0_JWRU,kelem(1))
@@ -4041,7 +4040,7 @@
 !**********************************************************************
       SUBROUTINE CHECKS_FL1_FL3_SL
       USE YOWMPP   , ONLY : NINF, NSUP
-      USE YOWSPEC, ONLY   : FL1, FL3, SL
+      USE YOWSPEC, ONLY   : FL1, FL3
       USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
 !      character(*), intent(in) :: string
@@ -4053,20 +4052,13 @@
         IF (ALLOCATED(FL3)) THEN
           CALL COHERENCY_ERROR_3D(FL3, "testing FL3")
         END IF
-        IF (ALLOCATED(SL)) THEN
-          CALL COHERENCY_ERROR_3D(SL, "testing SL")
-        END IF
       END IF
       WRITE(740+MyRankGlobal,*) 'allocated(FL3)=', allocated(FL3)
-      WRITE(740+MyRankGlobal,*) 'allocated(SL)=', allocated(SL)
       IF (allocated(FL1)) THEN
         WRITE(740+MyRankGlobal,*) 'sum(FL1)=', sum(FL1)
       END IF
       IF (allocated(FL3)) THEN
         WRITE(740+MyRankGlobal,*) 'sum(FL3)=', sum(FL3)
-      END IF
-      IF (allocated(SL)) THEN
-        WRITE(740+MyRankGlobal,*) 'sum(SL)=', sum(SL)
       END IF
       FLUSH(740+MyRankGlobal)
       END SUBROUTINE
@@ -4075,7 +4067,7 @@
 !**********************************************************************
       SUBROUTINE CHECKS_GROWTH
       USE YOWMPP   , ONLY : NINF, NSUP
-      USE YOWSPEC, ONLY   : FL1, FL3, SL
+      USE YOWSPEC, ONLY   : FL1, FL3
       USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
       IF (allocated(FL1) .and. allocated(FL3)) THEN

@@ -1,4 +1,4 @@
-      SUBROUTINE ERSFILE (IU91, IU92, IG, IGL)                          
+      SUBROUTINE ERSFILE (IU91, IU92, LLOUTPUT)
                                                                         
 ! -------------------------------------------------------------------   
 
@@ -14,11 +14,10 @@
 
 !*** INTERFACE.                                                         
 !    ----------                                                         
-!      *CALL* *ERSFILE (IU91, IU92 IG, IGL)*                            
+!      *CALL* *ERSFILE (IU91, IU92 LLOUTPUT)*                            
 !         *IU91*   - INPUT UNIT OF LCATIOB FILE.                        
 !         *IU92*   - OUTPUT UNIT FOR SPECTRA.                           
-!         *IG*     - BLOCK NUMBER.                                      
-!         *IGL*    - NUMBER OF BLOCKS.                                  
+!         *LLOUTPUT* - IF TRUE OUTPUT IS DONE.
 
 !     EXTERNALS.                                                        
 !     ----------                                                        
@@ -56,7 +55,6 @@
      &            IJERS    ,IGERS
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDATEA   ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : IRANK
 
@@ -65,7 +63,7 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IU91, IU92
-      INTEGER, INTENT(IN) :: IG, IGL
+      LOGICAL, INTENT(IN) :: LLOUTPUT
 
       INTEGER :: I, JC
       INTEGER :: IERR, IOS, NERSOLD
@@ -91,13 +89,13 @@
 !*    1.  SAVE SPECTRA FILE.                                            
 !         ------------------                                            
 
-      IF (IG.EQ.-9 .AND.IGL.EQ.-9) THEN
+      IF (LLOUTPUT) THEN
 
         IF(ALLOCATED(IJERS)) DEALLOCATE(IJERS)
         IF(ALLOCATED(IGERS)) DEALLOCATE(IGERS)
 
 !       DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
-        IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+        IF(IRANK.EQ.1) THEN
           CLOSE (IU92,STATUS='KEEP')
           IF(ITEST.GT.0) THEN
           WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
@@ -146,7 +144,7 @@
 !        --------------------                                           
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
-      IF(LMESSPASS.AND.(IRANK.NE.1)) THEN
+      IF(IRANK.NE.1) THEN
 #ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
 #endif
@@ -172,7 +170,7 @@
         OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD',
      &   IOSTAT=IERR)
         IF (IERR.NE.0) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+          IF(IRANK.EQ.1) THEN
             IF(ITEST.GT.0) THEN
             WRITE (IU06,*) '                                     '
             WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
@@ -187,7 +185,7 @@
           RETURN
         ELSE
           READ(IU91)CL_DATE
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+          IF(IRANK.EQ.1) THEN
             WRITE (IU06,*) '                                     '
             WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
      &       FNAME, ' OPENED    '
@@ -208,7 +206,7 @@
         IERS = IERS + 1
 
         IF (IERS.GT.NERS) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+          IF(IRANK.EQ.1) THEN
             WRITE (IU06,*) ' +++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) ' +                                     +'
             WRITE (IU06,*) ' +        WARNING SUB ERSFILE.         +'
@@ -260,7 +258,7 @@
  3002   CONTINUE
         IERS = IERS - 1
         CLOSE (IU91, STATUS='KEEP')
-        IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+        IF(IRANK.EQ.1) THEN
           IF(ITEST.GT.0) THEN
             WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',
      &       ' POINTS FOR SATELLITE COLOCATION.  IERS = ', IERS,
@@ -274,5 +272,4 @@
       IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE ERSFILE

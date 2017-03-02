@@ -1,5 +1,5 @@
-      SUBROUTINE OUTBS (FL1, FL3, FL, IJSLOC, IJLLOC, IJ_OFFSET,
-     &                  IG,IGL, IU25, IU26, LLOUTBS)
+      SUBROUTINE OUTBS (FL1, IJSLOC, IJLLOC, IJ_OFFSET,
+     &                  IG, IU25, IU26, LLOUTBS)
 ! ----------------------------------------------------------------------
 
 !**** *OUTBS* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
@@ -16,17 +16,13 @@
 
 !**   INTERFACE.
 !     ----------
-!   *CALL* *OUTBS (FL1, FL3, FL, IJSLOC, IJLLOC, IJ_OFFSET, IG, IGL, IU25, IU26)
+!   *CALL* *OUTBS (FL1, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
 !      *FL1*    - INPUT SPECTRUM.
-!      *FL3*    - OUTPUT SPECTRUM with second order effect added if LSECONDORDER is true .
-!                                 and in the absolute frame of reference if currents are used 
-!      *FL*     - WORKING ARRAY FOR SWELL OUTPUT.
 !      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
 !      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
 !      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
 !                   only meaningful if unstructured grid
 !      *IG*     - BLOCK NUMBER
-!      *IGL*    - TOTAL NUMBER OF BLOCKS.
 !      *IU25*   - OUTPUT UNIT FOR SPECTRA.
 !      *IU26*   - OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
 !      *LLOUTBS - TRUE WHEN ACCESSING OUTBS
@@ -91,7 +87,7 @@
      &            STRNMS   ,E10MEAN  ,WEFLXM   ,WEFLXD   ,E1012    ,
      &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
-      USE YOWMPP   , ONLY : NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : NPROC
       USE YOWSPEC  , ONLY : 
      &            U10NEW   ,THWNEW   ,THWOLD   ,USNEW    ,USOLD
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
@@ -123,7 +119,7 @@
 
       INTEGER :: IJ_OFFSET
       INTEGER :: IJSLOC, IJLLOC, ITT, ITG, ICT
-      INTEGER :: IG, IGL
+      INTEGER :: IG
       INTEGER :: IJ, K, M 
       INTEGER :: IRA
       INTEGER :: IU25, IU26 
@@ -131,9 +127,13 @@
 
       REAL :: SIG
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL3
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
+
+!     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
+!            and in the absolute frame of reference if currents are used 
+!     *FL*   WORKING ARRAY FOR SWELL OUTPUT.
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL
 
       LOGICAL :: LLAK, LLPEAKF
       LOGICAL :: LLPARTITION
@@ -360,7 +360,8 @@
         ENDIF
 
         IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
-          CALL STOKESDRIFT(FL3(KIJS:KIJL,:,:),
+!!!!!!!! teh second order correction should not apply to the Stokes drift
+          CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:),
      &                     KIJS, KIJL, USTMEAN(KIJS), VSTMEAN(KIJS))
         ENDIF
 
@@ -1028,7 +1029,7 @@
 
       IF (MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'4v') THEN
         IF (CDTPRO.NE.CDATEA) THEN
-          CALL OUTERS (FL3, IG, IGL, CDTPRO)
+          CALL OUTERS (FL3, IJSLOC, IJLLOC, CDTPRO)
           IF (ITEST.GE.3) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
@@ -1042,5 +1043,4 @@
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE OUTBS

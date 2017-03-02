@@ -22,8 +22,8 @@
          REAL*8, PARAMETER      :: DEGRAD    = PI/180.d0
          REAL*8, PARAMETER      :: RADDEG    = 180.d0/PI
 
-         REAL*8, PARAMETER      :: THR      = TINY(1.)
-         REAL*8, PARAMETER      :: INVTHR   = 1.d0/TINY(1.)
+         REAL*8, PARAMETER      :: THR      = TINY(1.0_4)
+         REAL*8, PARAMETER      :: INVTHR   = 1.d0/TINY(1.0_4)
 
          REAL*8, PARAMETER      :: THR8      = TINY(1.0d0)
          REAL*8, PARAMETER      :: INVTHR8   = 1.d0/TINY(1.0d0)

@@ -1,7 +1,7 @@
       SUBROUTINE UPDNEMOSTRESS
 
 
-!****  *UPDNEMOSTRESS* - UPDATE STRESS IN NEMO WITH WAVE INFORMATION
+!****  *UPDNEMOSTRESS* - UPDATE FIELDS PASSED TO NEMO WITH WAVE INFORMATION
 
 !      KRISTIAN MOGENSEN ECMWF    JULY 2013                    
 
@@ -14,6 +14,9 @@
 
 !          THIS SUBROUTINE PASSES WAVE INFORMATION THROUGH TO
 !          NEMO VIA THE NEMO SINGLE EXECUTABLE COUPLING INTERFACE
+
+!          !!!!! APPLIES TO ACCUMULATED FIELDS !!!!!
+!          !!!!! SEE UPDNEMOFILDS FOR NON-ACCUMULATED FIELDS !!!!!
 
 !*    INTERFACE.                                                        
 !     ----------                                                        
@@ -62,7 +65,6 @@
       REAL :: TAU
       REAL :: ZHOOK_HANDLE
 
-      LOGICAL :: LWSTOKES
 
 ! -------------------------------------------------------------------   
 #ifdef ECMWF 
@@ -72,8 +74,6 @@
       IF (LWNEMOCOU) THEN
 
         IG=1
-
-        ! NORMALIZE STRESS
 
         IF (NEMONTAU.GT.0) THEN
           NEMOTAUX(IJS(IG):IJL(IG))=NEMOTAUX(IJS(IG):IJL(IG))/NEMONTAU
@@ -94,10 +94,10 @@
         ! INITIALIZE STRESS FOR ACCUMULATION
 
         NEMONTAU = 0
-        NEMOTAUX = 0.0
-        NEMOTAUY = 0.0
-        NEMONEW10 = 0.0
-        NEMOPHIF = 0.0
+        NEMOTAUX(:) = 0.0
+        NEMOTAUY(:) = 0.0
+        NEMONEW10(:) = 0.0
+        NEMOPHIF(:) = 0.0
 
       ENDIF
 

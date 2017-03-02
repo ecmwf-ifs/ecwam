@@ -1,8 +1,8 @@
       SUBROUTINE WDFLUXES (IJS, IJL, IG,
-     &                     FL3, FL, SL,
+     &                     FL3,
      &                     CICVR,
      &                     U10NEW, THWNEW, USNEW,
-     &                     Z0NEW, ROAIRN, ZIDLNEW)
+     &                     Z0NEW, ROAIRN, WSTAR)
 
 ! ----------------------------------------------------------------------
 
@@ -17,12 +17,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (FL3, FL, SL, IJS, IJL, IG,
+!       *CALL* *WDFLUXES (FL3, IJS, IJL, IG,
 !    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW)
+!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT).
-!          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE (dummy)
-!          *SL*     - TOTAL SOURCE FUNCTION ARRAY (dummy).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
 !          *IG*     - BLOCK NUMBER.
@@ -31,7 +29,8 @@
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
 !          *ROAIRN* - AIR DENSITY IN KG/M3.
-!          *ZIDLNEW*- Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
+
 
 !     METHOD.
 !     -------
@@ -66,27 +65,30 @@
 
 ! ----------------------------------------------------------------------
 
-!     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-
       IMPLICIT NONE
 
-      INTEGER :: IJ,IJS,IJL,IG
+      INTEGER, INTENT(IN) :: IJS,IJL,IG
+
+      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: CICVR
+      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: U10NEW, THWNEW, ROAIRN,WSTAR
+      REAL,DIMENSION(IJS:IJL),INTENT(INOUT) :: USNEW, Z0NEW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE),INTENT(IN) :: FL3
+
+
+      INTEGER :: IJ
       INTEGER :: MIJ(IJS:IJL)
 
       REAL :: TAU, XN, PHIDIAG, TAUO
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: CICVR
-      REAL, DIMENSION(IJS:IJL) :: U10NEW, THWNEW, USNEW, Z0NEW,
-     &                            ROAIRN, ZIDLNEW
 
       REAL, DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
-      REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
-     &                            PHIWA 
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
+      REAL, DIMENSION(IJS:IJL) :: PHIWA
+      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL,FL3,SL
 
       LOGICAL :: LCFLX
 
@@ -115,31 +117,39 @@
 !           -----------------------------------------
 
         CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, ZIDLNEW, SL, XLLWS)
+     &               ROAIRN, WSTAR, SL, XLLWS)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
           CALL FLUSH (IU06)
         ENDIF
 
+
 !       MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
         CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !       COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-        CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
+        CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,
+     &                  MIJ,RHOWGDFTH)
 
-        CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &                ROAIRN, TAUW_LOC, TAUWLF, PHIWA, 
-     &                PHIAWDIAG, PHIAWUNR, SL, 
-     &                MIJ, LCFLX)
+        CALL STRESSO (FL3, SL, IJS, IJL,
+     &                MIJ, RHOWGDFTH,
+     &                THWNEW, USNEW, Z0NEW, ROAIRN,
+     &                TAUW_LOC, PHIWA)
+
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: STRESSO CALLED'
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
+        CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+
+        CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
      &                EMEANALL, F1MEAN, XKMEAN,
-     &                USNEW, THWNEW, ROAIRN,
-     &                PHIOC, TAUWD, MIJ, LCFLX)
+     &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
           CALL FLUSH (IU06)
@@ -149,9 +159,10 @@
 !           -------------------------------------------------------
 
         CALL WNFLUXES (IJS, IJL,
-     &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
-     &                 PHIOC, TAUWD,
-     &                 EMEANALL, FMEANALL,U10NEW, THWNEW,
+     &                 MIJ, RHOWGDFTH,
+     &                 SL,
+     &                 PHIWA,
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
      &                 USNEW, ROAIRN, .FALSE.)
 
       ENDIF

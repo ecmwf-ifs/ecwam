@@ -105,7 +105,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &            FL1      ,FL3      ,SL
+     &            FL1      ,FL3
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -280,10 +280,8 @@
       NFDBREF=0  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       NATMFLX=0
-      IF (.NOT.LWNEMOCOU) THEN
-        LWCUR=.FALSE. ! only used in coupled runs
-        LWSTOKES=.FALSE.  ! only used in coupled runs
-      ENDIF
+      LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
+      LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999. ! missing data indicator
 
       ! WAM-NEMO COUPLING
@@ -322,7 +320,6 @@
      &                   NEMOTSTEP*NEMONSTEP
           ENDIF
         ENDIF
-        LWSTOKES=.TRUE.
       ENDIF
 
  20   CONTINUE

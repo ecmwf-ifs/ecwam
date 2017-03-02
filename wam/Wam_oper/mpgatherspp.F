@@ -1,5 +1,5 @@
       SUBROUTINE MPGATHERSPP(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     &                      FL3,FL1,FLPTS,
+     &                      IJS, IJL, FL3,FL1,FLPTS,
      &                      EMEAN,FMEAN,THQ,SMEAN,ESWELL,FSWELL,THSWELL,
      &                      THWISEA,U10,THW,US)
 
@@ -71,7 +71,7 @@
 ! -------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE MPL_MODULE
 
@@ -80,10 +80,11 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IRECV, NSPFLD, NSCFLD
+      INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(INOUT) :: ITAG
       INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
 
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1, FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, FL3
       REAL, DIMENSION(NSPFLD,NGOUT,NANG,NFRE), INTENT(OUT) :: FLPTS
       REAL,DIMENSION(NIBLO), INTENT(INOUT) :: EMEAN, FMEAN, THQ, SMEAN
       REAL,DIMENSION(NIBLO), INTENT(INOUT) :: ESWELL, FSWELL, THSWELL
@@ -128,7 +129,7 @@
         DO NGOU=1,NGOUT
 
           IJ=IJAR(NGOU)
-          IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK))) THEN
+          IF(IJ.GE.IJS .AND. IJ.LE.IJL) THEN
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=EMEAN(IJ)
             KCOUNT=KCOUNT+1
@@ -241,7 +242,7 @@
 
         DO NGOU=1,NGOUT
           IJ=IJAR(NGOU)
-          IF((IJ.GE.NSTART(IRANK)).AND.(IJ.LE.NEND(IRANK)))THEN
+          IF(IJ.GE.IJS .AND. IJ.LE.IJL)THEN
             DO  M = 1, NFRE
               DO K = 1, NANG
                 FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
@@ -259,5 +260,4 @@
 
       DEALLOCATE(ZCOMBUF)
 
-      RETURN
       END SUBROUTINE MPGATHERSPP

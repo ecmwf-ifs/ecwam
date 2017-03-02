@@ -16,7 +16,7 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
      &                      PHIAW    ,TAUOC
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,
-     &            ROAIRN   ,ZIDLNEW  ,FL3      ,SL
+     &            ROAIRN   ,ZIDLNEW  ,FL3
       USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -42,7 +42,6 @@
 
       IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
-      IF(ALLOCATED(SL)) DEALLOCATE(SL)
 
       IF(ALLOCATED(CDTNEXT)) DEALLOCATE(CDTNEXT)
       IF(ALLOCATED(FF_NEXT)) DEALLOCATE(FF_NEXT)
@@ -58,5 +57,4 @@
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE WVDEALLOC
