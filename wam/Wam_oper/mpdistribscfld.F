@@ -1,0 +1,151 @@
+      SUBROUTINE MPDISTRIBSCFLD(ISEND,ITAG,NBLKS,NBLKE,FIELD)
+
+! ----------------------------------------------------------------------
+
+!****  *MPDISTRIBSCFLD* - DISTRIBUTE FIELD ACROSS PROCESSORS 
+
+!     J. BIDLOT    ECMWF   SEPTEMBER 1997 
+
+!     PURPOSE.
+!     --------
+!     SEND THE RESPECTIVE CONTRIBUTION OF ARRAY FIELD FROM PROCESSOR 
+!     ISEND TO THE OTHER PE's.
+
+!*    INTERFACE.
+!     ----------
+
+!     CALL *MPDISTRIBFL*(ISEND,ITAG,NBLKS,NBLKE,FIELD) 
+
+!     *ISEND*     RANK OF THE PROCESS ONTO WHICH FIELD IS COLLECTED 
+!     *ITAG*      TAG ASSOCIATED WITH AS A PARTICULAR CALL TO SUBROUTINE
+!                 THIS IS NECESSARY TO DIFFERENTIATE THE DIFFERENT CALLS
+!     *NBLKS*     INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
+!     *NBLKE*     INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *FIELD*     INPUT/OUTPUT ARRAY
+
+!     METHOD.
+!     -------
+!     MPL SEND OF ARRAY FIELD FROM PROCESSOR CORRESPONDING TO ISEND TO 
+!     ALL OTHER PROCESSORS.
+
+!     EXTERNALS.
+!     ----------
+!     MPL PACKAGE :
+!         MPL_SEND
+!         MPL_RECV
+!         MPL_ABORT 
+
+!     REFERENCES.
+!     -----------
+!         NONE
+! -------------------------------------------------------------------
+
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH
+      USE YOWPARAM , ONLY : NIBLO
+      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE
+
+!----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER :: ISEND, ITAG
+      INTEGER :: IR, IP, IJ, MPLENGTH, KCOUNT, KRTAG, KRCOUNT
+      INTEGER,DIMENSION(NPROC) :: NBLKS,NBLKE
+      INTEGER,DIMENSION(NPROC) :: ISENDREQ
+
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NIBLO) :: FIELD
+      REAL*8, ALLOCATABLE :: AC(:)
+      REAL,ALLOCATABLE :: ZCOMBUFR(:)
+      REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
+
+!----------------------------------------------------------------------
+
+      IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) RETURN 
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPDISTIBSCFLD',0,ZHOOK_HANDLE)
+#endif
+      IF(IRANK.EQ.ISEND) THEN
+!     1.1 SEND NON BLOCKING TO ALL PROCESSORS
+!         -----------------------------------
+        MPLENGTH=MPMAXLENGTH
+        ALLOCATE(ZCOMBUFS(MPLENGTH,NPROC))
+
+        DO IP=1,NPROC
+          KCOUNT=0
+          DO IJ=NBLKS(IP),NBLKE(IP)
+            KCOUNT=KCOUNT+1
+            ZCOMBUFS(KCOUNT,IP)=FIELD(IJ)
+          ENDDO
+        ENDDO
+
+        DO IP=1,NPROC
+          CALL GSTATS(624,0)
+          CALL MPL_SEND(ZCOMBUFS(1:MPLENGTH,IP),KDEST=IP,KTAG=ITAG,
+     &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ(IP),
+     &     CDSTRING='MPDISTRIBSCFLD SEND:')
+          CALL GSTATS(624,1)
+        ENDDO
+
+      ENDIF
+
+!     1.2 RECEIVE CONTRIBUTION TO THE FIELD FROM PE ISEND 
+!         ------------------------------------------------ 
+
+      MPLENGTH=MPMAXLENGTH
+      ALLOCATE(ZCOMBUFR(MPLENGTH))
+
+      CALL GSTATS(624,0)
+      CALL MPL_RECV(ZCOMBUFR(1:MPLENGTH),KSOURCE=ISEND,KTAG=ITAG,
+     & KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPDISTRIBSCFLD:')
+      IF(KRCOUNT.NE.MPLENGTH) CALL MPL_ABORT
+     & ('MPL_RECV ERROR in MPDISTRIBSCFLD:MISMATCHED MSG LENGTH')
+      IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     & ('MPL_RECV ERROR in MPDISTRIBSCFLD MISMATCHED TAGS' )
+      CALL GSTATS(624,1)
+
+      IF (LLUNSTR) THEN
+        ALLOCATE(AC(MNP))
+        DO IP = 1, RANK(IRANK)%NP
+          AC(IP) = DBLE(ZCOMBUFR(IP))
+        ENDDO
+      ELSE
+        KCOUNT=0
+        DO IJ=NBLKS(IRANK),NBLKE(IRANK)
+          KCOUNT=KCOUNT+1
+          FIELD(IJ)=ZCOMBUFR(KCOUNT)
+        ENDDO
+      ENDIF
+
+!     1.3 WAIT ANY OUTSTANDING SENDS TO COMPLETE
+!         --------------------------------------
+
+      IF(IRANK.EQ.ISEND) THEN
+        CALL MPL_WAIT(ZCOMBUFS(1:MPLENGTH,1),KREQUEST=ISENDREQ,
+     &                CDSTRING='MPDISTRIBSCFLD:')
+        DEALLOCATE(ZCOMBUFS)
+      ENDIF
+
+      DEALLOCATE(ZCOMBUFR)
+
+
+!!! it's not very prety but when unstructured, you also need to have the values on the halo
+!!! it should be combined with the previous exchange
+      IF (LLUNSTR) THEN
+        CALL EXCHANGE(AC)
+        DO IP = 1 , MNP
+          FIELD(IP) = AC(IP)
+        ENDDO
+        DEALLOCATE(AC)
+      ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPDISTIBSCFLD',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
+      END SUBROUTINE MPDISTRIBSCFLD

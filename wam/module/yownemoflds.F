@@ -1,0 +1,31 @@
+      MODULE YOWNEMOFLDS
+
+      IMPLICIT NONE
+
+!*     ** *NEMOFLDS* NEMO FIELDS FOR COUPLED RUNS
+
+      SAVE
+      REAL, ALLOCATABLE :: NEMOSST(:) 
+      REAL, ALLOCATABLE :: NEMOCICOVER(:) 
+      REAL, ALLOCATABLE :: NEMOCITHICK(:) 
+      REAL, ALLOCATABLE :: NEMOUCUR(:) 
+      REAL, ALLOCATABLE :: NEMOVCUR(:) 
+      REAL, ALLOCATABLE :: NEMOSTRN(:) 
+      REAL, ALLOCATABLE :: NEMOUSTOKES(:) 
+      REAL, ALLOCATABLE :: NEMOVSTOKES(:) 
+      LOGICAL :: LNEMOCITHICK, LNEMOICEREST
+
+!--------------------------------------------------------------------
+
+!*    VARIABLE     TYPE      PURPOSE
+!     --------     ----      -------
+!     NEMOSST      REAL      NEMO SEA SURFACE TEMPERATURE
+!     NEMOCICOVER  REAL      NEMO SEA ICE COVER.
+!     NEMOCITHICK  REAL      NEMO SEA ICE THICKNESS.
+!     NEMOUCUR     REAL      NEMO ZONAL CURRENT.
+!     NEMOVCUR     REAL      NEMO MERIDIONAL CURRENT.
+!     NEMOSTRN     REAL      NEMO SEA ICE MEAN SQUARE WAVE STRAIN
+!     LNEMOCITHICK LOGICAL   SET TO TRUE IF SEA ICE THICKNESS IS 
+!                            AVAILABLE FROM NEMO (E.G. LIM2 ACTIVE).
+!--------------------------------------------------------------------
+      END MODULE YOWNEMOFLDS

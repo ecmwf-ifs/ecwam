@@ -1,0 +1,138 @@
+      SUBROUTINE UPDATEWD (FL1, SL, IJS, IJL, THWNEW, USNEW,
+     &                     USOLD, TAUW, CICVR,
+     &                     Z0NEW, U10NEW, ROAIRN, ZIDLNEW)
+
+! ----------------------------------------------------------------------
+
+!**** *UPDATEWD* - COMPUTATION OF WINDSPEED UPDATE AFTER ASSIMILATION
+
+!     J. BIDLOT             ECMWF  APRIL 2001
+
+!*    PURPOSE.
+!     --------
+
+!       UPDATE THE WIND SPEED AND WAVE STRESS USING NEW USTAR AND
+!       SPRECTRUM.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *UPDATEWD (FL1, SL,IJS, IJL, THWNEW, USNEW,
+!                         TAUW, Z0NEW, U10NEW,ROAIRN, ZIDLNEW)*
+!          *FL1* - SPECTRUM.
+!          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
+!          *IJS* - INDEX OF FIRST GRIDPOINT.
+!          *IJL* - INDEX OF LAST GRIDPOINT.
+!          *THWNEW*    WIND DIRECTION.
+!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
+!          *TAUW*      WAVE STRESS IN (M/S)**2
+!          *Z0NEW*     ROUGHNESS LENGTH IN M.
+!          *U10NEW*    10m WIND SPEED.
+!          *ROAIRN*    AIR DENSITY IN KG/M3.
+!          *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT,
+!                             L: MONIN-OBUKHOV LENGTH).
+!          *CICVR*     SEA ICE COVER.
+
+!     METHOD.
+!     -------
+
+!     FIND THE NEW CHARNOCK PARAMETER BASED ON THE NEW USTAR AND TAUW
+!     AND THUS UPDATE THE ROUGHNESS LENGTH. WITH THIS NEW ROUGHNESS
+!     LENGTH AND THE NEW USTAR FIND THE NEW U10 USING THE LOGARITHMIC
+!     WIND PROFILE.
+
+!     EXTERNALS.
+!     -----------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G
+      USE YOWTABL  , ONLY : UMAX
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : WSPMIN
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL
+
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, SL
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, ZIDLNEW
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: USOLD
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW, U10NEW
+      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW
+
+      INTEGER :: IJ, ILEV
+      INTEGER :: ICODE_WND
+      INTEGER :: MIJ(IJS:IJL)
+
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
+      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
+      REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL, DIMENSION(IJS:IJL) :: DUM1, DUM2, DUM3, DUM4 
+
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+
+! ----------------------------------------------------------------------
+
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
+      ENDIF
+
+      IF (ICODE_WND == 3 ) THEN
+        DO IJ=IJS,IJL
+          U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ))*U10NEW(IJ)
+          U10NEW(IJ) = MIN(U10NEW(IJ),UMAX)
+          U10NEW(IJ) = MAX(U10NEW(IJ),WSPMIN)
+        ENDDO
+      ENDIF
+
+      ILEV=1
+
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: AIRSEA CALLED '
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL SINPUT (FL1, DUMMYFL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: SINPUT CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!*    2.2 COMPUTE MEAN PARAMETERS.
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
+
+      CALL STRESSO (FL1,IJS,IJL,THWNEW,USNEW,Z0NEW,
+     &              ROAIRN,TAUW, DUM1, DUM2, 
+     &              DUM3, DUM4,SL,MIJ,.FALSE.)
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: STRESSO CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      RETURN
+      END SUBROUTINE UPDATEWD

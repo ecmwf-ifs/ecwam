@@ -1,0 +1,42 @@
+      MODULE YOWINTS
+
+      IMPLICIT NONE
+
+!*    ** *INTSPAR*  GRIDDED INTEGRATED SWELL/WIND SEA PARAMETERS.
+
+      REAL, ALLOCATABLE :: WHGTSG(:,:) 
+      REAL, ALLOCATABLE :: WDIRSG(:,:) 
+      REAL, ALLOCATABLE :: WMNFSG(:,:) 
+      REAL, ALLOCATABLE :: WHGTWG(:,:) 
+      REAL, ALLOCATABLE :: WDIRWG(:,:) 
+      REAL, ALLOCATABLE :: WMNFWG(:,:) 
+      REAL, ALLOCATABLE :: MWP1SG(:,:) 
+      REAL, ALLOCATABLE :: MWP2SG(:,:) 
+      REAL, ALLOCATABLE :: WSPRDSG(:,:) 
+      REAL, ALLOCATABLE :: MWP1WG(:,:) 
+      REAL, ALLOCATABLE :: MWP2WG(:,:) 
+      REAL, ALLOCATABLE :: WSPRDWG(:,:) 
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *WHGTSG*    REAL      GRIDDED MEAN SWELL ENERGY (M*M) CHANGED TO
+!                            WAVE HEIGHT (M) IN SUB MAKEGRID.
+!      *WDIRSG*    REAL      GRIDDED MEAN SWELL DIRECTION (RAD) CHANGED
+!                            TO DEGREE AND METEOROLOGICAL CONVENTION
+!                            IN SUB OUTINT.
+!      *WMNFSG*    REAL      GRIDDED MEAN SWELL FREQUENCY (HZ).
+!      *WHGTWG*    REAL      GRIDDED WIND SEA ENERGY (M*M) CHANGED TO
+!                            WAVE HEIGHT (M) IN SUB MAKEGRID. 
+!      *WDIRWG*    REAL      GRIDDED MEAN SEA   DIRECTION (RAD) CHANGED
+!                            TO DEGREE AND METEOROLOGICAL CONVENTION
+!                            IN SUB OUTINT.
+!      *WMNFWG*    REAL      GRIDDED MEAN WIND SEA FREQUENCY (HZ).
+!      *MWP1SG*    REAL      GRIDDED MEAN SWELL WAVE PERIOD 1 (S.). 
+!      *MWP2SG*    REAL      GRIDDED MEAN SWELL WAVE PERIOD 2 (S.). 
+!      *WSPRDSG*   REAL      GRIDDED SWELL DIRECTIONAL SPREAD (-). 
+!      *MWP1WG*    REAL      GRIDDED MEAN WIND SEA WAVE PERIOD 1 (S.). 
+!      *MWP2WG*    REAL      GRIDDED MEAN WIND SEA WAVE PERIOD 2 (S.). 
+!      *WSPRDWG*   REAL      GRIDDED WIND SEA DIRECTIONAL SPREAD (-). 
+
+! ----------------------------------------------------------------------
+      END MODULE YOWINTS
