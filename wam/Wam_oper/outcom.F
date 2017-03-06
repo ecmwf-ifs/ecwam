@@ -101,6 +101,7 @@
       INTEGER, INTENT(IN) :: IU07, IU17, IFORM
       INTEGER :: IDUM, K, M, L
       INTEGER :: NBINP, NOUTT
+      INTEGER :: NKIND !Precision used when writing
 
 ! ----------------------------------------------------------------------
 
@@ -113,11 +114,14 @@
 ! ----------------------------------------------------------------------
 !        WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
 !        ANYTHING TO THE MODEL). 
+      
+      NKIND = KIND(DELPHI)
+
       IF (IFORM.NE.2) THEN
-        WRITE(IU07) IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
+        WRITE(IU07) NKIND,IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE(IU17,998) IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
+        WRITE(IU17,998) NKIND,IMDLGRDID, IMDLGRBID_G, IMDLGRBID_M
       ENDIF
 !*    0. WRITE YOWPARAM (BLOCK SIZES).
 !        ----------------------------
