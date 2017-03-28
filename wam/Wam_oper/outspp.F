@@ -59,8 +59,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
      &            XDELLA   ,ZDELLO
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,SMEAN
-      USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : DEG      ,EPSMIN
       USE YOWSPEC, ONLY   : NSTART   ,NEND     , 
@@ -76,7 +75,7 @@
 
       INTEGER, INTENT(IN) :: IG
       INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET, IU25, IU26
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL3,FL1
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3, FL1
 
 
       INTEGER :: IJ, M, K, NGOU
@@ -171,25 +170,23 @@
           CALL LOC2GLO(THWISEA,THWISEA_G,IJS,IJL,IJ_OFFSET,IG,CITHRSH)
         ENDIF
 
-        IF(LMESSPASS) THEN 
-          IRECV=1
-          NSPFLD=2 
-          NSCFLD=11 
-          ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
+        IRECV=1
+        NSPFLD=2 
+        NSCFLD=11 
+        ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
 !!!!! not ready for unstructured grid !!!
-          CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
-     &                     FL3,FL1,FLPTS,
-     &                     EMEAN_G,FMEAN_G,THQ_G,SMEAN_G,ESWELL_G,
-     &                     FSWELL_G,THSWELL_G,THWISEA_G,
-     &                     U10_G,THW_G,US_G)
+        CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
+     &                   IJS, IJL, FL3,FL1,FLPTS,
+     &                   EMEAN_G,FMEAN_G,THQ_G,SMEAN_G,ESWELL_G,
+     &                   FSWELL_G,THSWELL_G,THWISEA_G,
+     &                   U10_G,THW_G,US_G)
 
-        ENDIF
       ENDIF
 
 !*    1. LOOP OVER OUTPUT POINTS.
 !        ------------------------
 
-      IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
+      IF(IRANK.EQ.1) THEN
 
         DO NGOU=1,NGOUT
           IF (IG.EQ.IGAR(NGOU)) THEN
@@ -214,11 +211,7 @@
                 IF(CLDOMAIN.EQ.'s') THEN
                   DO M=1,NFRE
                     DO K=1,NANG
-                      IF(LMESSPASS) THEN
-                        SPEC(K,M) = FLPTS(1,NGOU,K,M)
-                      ELSE
-                        SPEC(K,M) = FL3(IJ,K,M)
-                      ENDIF
+                      SPEC(K,M) = FLPTS(1,NGOU,K,M)
                     ENDDO
                   ENDDO
                   ZHS = 4.*SQRT(MAX(EMEAN_G(IJ),0.0)) 
@@ -243,11 +236,7 @@
      &             DEG*THQ_G(IJ),
      &             FMEAN_G(IJ), US_G(IJ), DEG*THW_G(IJ),
      &             U10_G(IJ)
-                  IF(LMESSPASS) THEN
-                    WRITE(IU25) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
-                  ELSE
-                    WRITE(IU25) ((FL3(IJ,K,M),K=1,NANG),M=1,NFRE)
-                  ENDIF
+                  WRITE(IU25) ((FLPTS(1,NGOU,K,M),K=1,NANG),M=1,NFRE)
                 ENDIF
               ENDIF
 
@@ -257,11 +246,7 @@
               IF (PFLAG(17)) THEN
                 DO M=1,NFRE
                   DO K=1,NANG
-                    IF(LMESSPASS) THEN
-                      SPEC(K,M) = FLPTS(1,NGOU,K,M)
-                    ELSE
-                      SPEC(K,M) = FL3(IJ,K,M)
-                    ENDIF
+                    SPEC(K,M) = FLPTS(1,NGOU,K,M)
                   ENDDO
                 ENDDO
                 WRITE (NAME,'(''BL= '',I3,'' POINT= '',I4)') IG,IJ
@@ -288,19 +273,11 @@
                 FWSEA=0.
               ENDIF
               EWSEA = 4.*SQRT(MAX(EWSEA,0.0))
-              IF(LMESSPASS) THEN
-                DO M=1,NFRE
-                  DO K=1,NANG
-                    SPEC(K,M) = FLPTS(2,NGOU,K,M)*FLPTS(1,NGOU,K,M)
-                  ENDDO
+              DO M=1,NFRE
+                DO K=1,NANG
+                  SPEC(K,M) = FLPTS(2,NGOU,K,M)*FLPTS(1,NGOU,K,M)
                 ENDDO
-              ELSE
-                DO M=1,NFRE
-                  DO K=1,NANG
-                    SPEC(K,M) = FL1(IJ,K,M)*FL3(IJ,K,M)
-                  ENDDO
-                ENDDO
-              ENDIF
+              ENDDO
 
 !*    1.2.1 FILE OUTPUT TO IU26.
 !           --------------------
@@ -332,11 +309,10 @@
         ENDDO
 
       ENDIF
-      IF((LMESSPASS).AND.(NGOUT.GE.1)) DEALLOCATE(FLPTS)
+      IF(NGOUT.GE.1) DEALLOCATE(FLPTS)
       IF(NGOUT.GE.1) DEALLOCATE(U10_G,THW_G,US_G)
       IF(NGOUT.GE.1) DEALLOCATE(EMEAN_G,FMEAN_G,THQ_G)
       IF(NGOUT.GE.1) DEALLOCATE(SMEAN_G,ESWELL_G,FSWELL_G)
       IF(NGOUT.GE.1) DEALLOCATE(THSWELL_G,THWISEA_G)
 
-      RETURN
       END SUBROUTINE OUTSPP

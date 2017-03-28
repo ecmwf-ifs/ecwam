@@ -1,4 +1,5 @@
-      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ)
+      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, USNEW, CICVR,
+     &                       MIJ, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
 
@@ -13,8 +14,13 @@
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
+!          *USNEW*  - FRICTION VELOCITY IN M/S
 !          *CICVR*  - CICVR 
 !          *MIJ*    - LAST FREQUENCY INDEX
+!          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
+!                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
+!                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
+
 
 !     METHOD.
 !     -------
@@ -30,23 +36,39 @@
 
 ! ----------------------------------------------------------------------
 
+!     EXTERNALS.
+!     ---------
+
+!     REFERENCE.
+!     ----------
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
+      USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1,
+     &                DELTH          ,DFIM_END_U ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
-      USE YOWFRED  , ONLY : FR       ,FRATIO   ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NFRE
+      USE YOWPCONS , ONLY : G        ,ROWATER    ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : IPHYS 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER:: IJ, IJS, IJL
-      INTEGER :: MIJ(IJS:IJL)
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL :: TAILFACTOR, FPMH, FPM4
-      REAL, DIMENSION(IJS:IJL) :: FM, FMWS, CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
+      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
-      REAL ZHOOK_HANDLE
+      INTEGER :: IJ, M
+
+      REAL :: FPMH, FPPM, FM2, FPM, FPM4
+      REAL :: ROG
+      REAL :: XLOGDFRTH
+      REAL :: ZHOOK_HANDLE
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
@@ -54,28 +76,42 @@
 ! ----------------------------------------------------------------------
 
 !*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!*    FREQUENCIES LE 2.5*MAX(FMWS,FM) (ECMWF PHYSICS).
+!*    FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
+!*    WHERE FPM IS THE PIERSON-MOSKOWITZ FREQUENCY BASED ON FRICTION
+!*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
 !     ------------------------------------------------------------
 
-      IF(IPHYS.EQ.1) THEN
-        MIJ(IJS:IJL)=NFRE
-      ELSE
-        TAILFACTOR=2.5
-        FPMH = TAILFACTOR/FR(1)
-        DO IJ=IJS,IJL
-          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
-            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
-          ELSE
-            MIJ(IJ) = NFRE
-          ENDIF
+      ROG = ROWATER*G
+      FPMH = TAILFACTOR/FR(1)
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
+
+      DO IJ=IJS,IJL
+        IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+          FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
+          FPM4 = MAX(FM2,FPM)
+          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        ELSE
+          MIJ(IJ) = NFRE
+        ENDIF
+      ENDDO
+
+!     COMPUTE RHOWGDFTH
+      XLOGDFRTH=LOG(FRATIO)*DELTH
+      DO IJ=IJS,IJL
+        RHOWGDFTH(IJ,1) = 0.5*ROG*FR(1)*XLOGDFRTH
+        DO M=2,MIJ(IJ)-1
+          RHOWGDFTH(IJ,M) = ROG*FR(M)*XLOGDFRTH
         ENDDO
-      ENDIF
+        RHOWGDFTH(IJ,MIJ(IJ)) = 0.5*ROG*FR(MIJ(IJ))*XLOGDFRTH
+        DO M=MIJ(IJ)+1,NFRE
+          RHOWGDFTH(IJ,M) = 0.
+        ENDDO
+      ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE FRCUTINDEX

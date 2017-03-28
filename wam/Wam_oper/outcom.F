@@ -57,12 +57,16 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+     &            BSWKM
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
-     &            XNLEV    ,TAUWSHELTER, ITSHELT
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,
+     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,
+     &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -79,13 +83,13 @@
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
-     &            TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,DELUST   ,
-     &            TAUHFT2  ,DELTAIL  ,ILEVTAIL ,
-     &            DELALP   ,FAC0     ,FAC1     ,FAC2     ,FAC3     ,
+     &            TAUT     ,DELTAUW  ,DELU     ,
+     &            FAC0     ,FAC1     ,FAC2     ,FAC3     ,
      &            FAK      ,FRHF     ,DFIMHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
@@ -230,12 +234,29 @@
       ENDIF
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) IPHYS,BETAMAX,ZALP,ALPHA,TAUWSHELTER,ITSHELT,
-     &    XKAPPA,XNLEV
+        WRITE (IU07) IPHYS,BETAMAX,ZALP,ALPHA,
+     &      ALPHAPMAX,
+     &      TAUWSHELTER,ITSHELT,
+     &      TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
       ENDIF
       IF (IFORM.NE.1) THEN
-       WRITE (IU17,999)IPHYS,BETAMAX,ZALP,ALPHA,TAUWSHELTER,ITSHELT,
-     &    XKAPPA,XNLEV
+       WRITE (IU17,999)IPHYS,BETAMAX,ZALP,ALPHA,
+     &      ALPHAPMAX,
+     &      TAUWSHELTER,ITSHELT,
+     &      TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
+      ENDIF
+
+
+!*    5.1 WRITE MODULE YOWALTAS.
+!         ----------------------
+
+      IF (IFORM.NE.2) THEN
+        WRITE (IU07) EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
+     &               ESH,ASH,BSH,ASWKM,BSWKM
+      ENDIF
+      IF (IFORM.NE.1) THEN
+       WRITE (IU17,999)EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
+     &                 ESH,ASH,BSH,ASWKM,BSWKM
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -244,19 +265,12 @@
 !        ---------------------
 
       IF (IFORM.NE.2) THEN
-        WRITE (IU07) DELTAUW, DELU, DELUST, DELALP, DELTAIL 
+        WRITE (IU07) DELTAUW, DELU
         WRITE (IU07) TAUT
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) DELTAUW, DELU, DELUST, DELALP, DELTAIL 
+        WRITE (IU17,999) DELTAUW, DELU
         WRITE (IU17,999) TAUT
-      ENDIF
-      IF (ABS(TAUWSHELTER).LE.0.0) THEN
-        IF (IFORM.NE.2) WRITE (IU07) TAUHFT
-        IF (IFORM.NE.1) WRITE (IU17,999) TAUHFT
-      ELSE
-        IF (IFORM.NE.2) WRITE (IU07) TAUHFT2
-        IF (IFORM.NE.1) WRITE (IU17,999) TAUHFT2
       ENDIF
 
 ! ----------------------------------------------------------------------

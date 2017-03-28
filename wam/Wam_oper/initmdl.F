@@ -249,9 +249,10 @@
      &            V
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWFRED  , ONLY : FR       ,TH       ,FR5     ,
+      USE YOWFRED  , ONLY : FR       ,TH       ,DELTH   ,FR5      ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
-     &            COSTH    ,SINTH    ,FLMAX    ,ALPHAPMAX
+     &            COSTH    ,SINTH    ,FLMAX    ,
+     &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
      &             IJS     ,IJL      ,COSPH
@@ -268,17 +269,20 @@
      &            NGX      ,NGY      ,
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,RAD
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW
+     &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW,
+     &            CINV     ,TFAK
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,
      &            ROAIRO   ,ZIDLOLD  ,
-     &            FL1      ,SL
+     &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
      &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
      &            ISHALLO  ,IREFRA   ,
+     &            IPHYS    ,
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
@@ -319,14 +323,17 @@
       INTEGER :: IG
       INTEGER :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID, IC, ICR
       INTEGER :: KM1, KP1
+      INTEGER :: JD
       INTEGER :: IDELWH
       INTEGER :: IU05, IU09, IU10, I_GET_UNIT
       INTEGER :: MASK_IN(NGPTOTG)
 
       REAL :: FCRANGE, XD
       REAL :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
+      REAL :: FAC, SCDF_L, SCDF_U
       REAL :: D, OM, XK
-      REAL :: ENH_MAX
+      REAL, PARAMETER :: ENH_MAX=10.
+      REAL, PARAMETER :: ENH_MIN=0.1   ! to prevent ENH to become too small
       REAL :: PRPLRADI
       REAL :: ZHOOK_HANDLE
       REAL :: FIELDS(NGPTOTG,NFIELDS)
@@ -476,17 +483,29 @@
       IF(.NOT.ALLOCATED(FRM5)) ALLOCATE(FRM5(NFRE))
       IF(.NOT.ALLOCATED(COFRM4)) ALLOCATE(COFRM4(NFRE))
       IF(.NOT.ALLOCATED(FLMAX)) ALLOCATE(FLMAX(NFRE))
+      IF(.NOT.ALLOCATED(DFIM_END_L)) ALLOCATE(DFIM_END_L(NFRE))
+      IF(.NOT.ALLOCATED(DFIM_END_U)) ALLOCATE(DFIM_END_U(NFRE))
+
+      SCDF_L = 0.5*DELTH*(FRATIO-1.)
+      SCDF_U = 0.5*DELTH*(1.-1./FRATIO)
 
       DO M=1,NFRE
         FR5(M) = FR(M)**5
         FRM5(M) = 1./FR5(M)
         COFRM4(M) = COEF4*G/FR(M)**4
         FLMAX(M) = (ALPHAPMAX/PI)*(G**2/ZPI**4)/FR5(M)
+        DFIM_END_L(M) = SCDF_L*FR(M)
+        DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO
 
       FLOGSPRDM1=1./LOG10(FRATIO)
 
       CALL TABU_SWELLFT
+
+      CALL INIT_X0TAUHF
+
+      IF(IPHYS.EQ.1) CALL INIT_SDISS_ARDH
+
 
       IF (.NOT. LLUNSTR) THEN
 
@@ -780,8 +799,9 @@
       ENDDO
 
 
-!     COMPUTE SHALLOW WATER TABLE INDICES.
+!     COMPUTE SHALLOW WATER TABLE INDICES AND THE RECIPROCAL PAHSE VELOCITY.
       IF(.NOT.ALLOCATED(INDEP)) ALLOCATE(INDEP(NINF-1:NSUP))
+      IF(.NOT.ALLOCATED(CINV)) ALLOCATE(CINV(NDEPTH,NFRE))
       INDEP(NINF-1)=NDEPTH
       IF (ISHALLO.NE.1) THEN
         DO IJ=NINF,NSUP
@@ -790,10 +810,27 @@
           ID = MAX(ID,1)
           INDEP(IJ) = MIN(ID,NDEPTH)
         ENDDO
+
+        DO M=1,NFRE
+          FAC = ZPI*FR(M)
+          DO JD=1,NDEPTH
+            CINV(JD,M)=TFAK(JD,M)/FAC
+          ENDDO
+        ENDDO
+
       ELSE
+
         DO IJ=NINF,NSUP
           INDEP(IJ) = NDEPTH
         ENDDO
+
+        DO M=1,NFRE
+          FAC = ZPI*FR(M)
+          DO JD=1,NDEPTH
+            CINV(JD,M)=FAC/G
+          ENDDO
+        ENDDO
+
       ENDIF
 
 
@@ -1146,7 +1183,6 @@
      &   ALLOCATE(ENH(IJS(1):IJL(1),MLSTHG,IGL))
 
       IF (ISNONLIN.NE.0) THEN
-        ENH_MAX=10.
         IF (ISHALLO.NE.1) THEN
           DO IG=1,IGL
             DO M=1,NFRE
@@ -1154,7 +1190,7 @@
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(M)
                  XK = AKI(OM,D)
-                 ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
+                 ENH(IJ,M,IG) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
                ENDDO
             ENDDO
             DO M=NFRE+1,MLSTHG
@@ -1164,7 +1200,7 @@
 !                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
 !                HENCE THE USE OF FUNCTIOn AKI.
                  XK = AKI(OM,D)
-                 ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
+                 ENH(IJ,M,IG) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
                ENDDO
             ENDDO
           ENDDO

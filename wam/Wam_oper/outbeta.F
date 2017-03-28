@@ -54,6 +54,8 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: US, Z0
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
 
+      REAL, PARAMETER :: ALPHAMIN=0.011
+      REAL, PARAMETER :: ALPHAMAX=0.1
       INTEGER :: IJ
 
       REAL :: ZHOOK_HANDLE
@@ -68,6 +70,7 @@
 
       DO IJ = IJS,IJL
         BETA(IJ) = G*Z0(IJ)/MAX(US(IJ)**2,EPSUS)
+        BETA(IJ) = MIN(MAX(BETA(IJ),ALPHAMIN),ALPHAMAX)
       ENDDO
 
 #ifdef ECMWF
@@ -75,5 +78,4 @@
 #endif
 
 ! ----------------------------------------------------------------------
-      RETURN
       END SUBROUTINE OUTBETA

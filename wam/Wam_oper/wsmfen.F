@@ -36,25 +36,26 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,FRATIO
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,EPSMIN   ,AFCRV   ,BFCRV     ,
+      USE YOWALTAS , ONLY : AFCRV   ,BFCRV     ,
      &            ESH      ,ASH     ,BSH
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFFR      ,
+     &            WETAIL   ,WP1TAIL
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
-
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       REAL, INTENT(IN) :: USTT, DPT
+      REAL, INTENT(IN) :: FSEA(NANG,NFRE)
       REAL, INTENT(OUT) :: EW, FM
 
       INTEGER :: M, K
       REAL :: EN, YNU, EMAX, X
-      REAL :: DELT25, XTEMP, TEMP, SPFB
+      REAL :: DELT25, COEF1, XTEMP, TEMP, SPFB
       REAL :: ESTAR, DSTAR, SPINTDI, FREQDI 
-      REAL :: FSEA(NANG,NFRE)
 
 ! ----------------------------------------------------------------------
 
@@ -81,32 +82,23 @@
 
 
 !*    1.1 COMPUTATION OF THE WIND-SEA ENERGY.                           
+!*    1.2 COMPUTATION OF THE MEAN FREQUENCY.                            
 !         -----------------------------------                           
 
       EW = EPSMIN
+      FM = EPSMIN
       DO M=1,NFRE
         TEMP = 0.
         DO K=1,NANG
           TEMP = TEMP+FSEA(K,M)
         ENDDO
         EW = EW+TEMP*DFIM(M)
+        FM = FM+TEMP*DFFR(M)
       ENDDO
-      DELT25 = FR(NFRE)/3.*DELTH
+      DELT25 = WETAIL*FR(NFRE)*DELTH
       EW = EW+DELT25*TEMP                                               
-
-!*    1.2 COMPUTATION OF THE MEAN FREQUENCY.                            
-!         ----------------------------------                            
-
-      FM = EPSMIN
-      DO M=1,NFRE
-        SPFB = 0.
-        DO K=1,NANG
-          SPFB = SPFB+FSEA(K,M)
-        ENDDO
-        SPFB = SPFB*DELTH
-        FM = FM+SPFB*FR(M)**2.*(FRATIO-1./FRATIO)/2.
-      ENDDO
-      FM = FM+SPFB*FR(NFRE)**2./3.
+      COEF1 = WP1TAIL*DELTH*FR(NFRE)**2
+      FM = FM+COEF1*TEMP
       FM = FM/EW
 
 ! ----------------------------------------------------------------------
@@ -118,7 +110,6 @@
 !         -----------------------------------------------------         
 
       XTEMP = FM*USTT/G
-      IF (XTEMP.LE.0.) WRITE(*,*) FM,USTT,EW
 
       ESTAR=EN(FM*USTT/G)
       IF (ISHALLO.NE.1) THEN
@@ -153,5 +144,4 @@
 
       FM = (FM+FREQDI)*0.5
  
-      RETURN
       END SUBROUTINE WSMFEN

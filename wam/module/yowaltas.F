@@ -107,5 +107,50 @@
 !     *LALTPAS* LOGICAL   CONTROLS WHETHER OR NOT THE DATA ARE FED 
 !                         PASSIVELY OR NOT (DEFAULT).
 !     *LALTPASSIV*LOGICAL USE BY OIFIELD TO EXCLUDE PASSIVE DATA. 
+
+
+
+!!!   EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+!     *EGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!                           ESTAR=EGRCRV*(TSTAR/(AGRCRV+TSTAR))**BGRCRV
+!     *AGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!     *BGRCRV*    REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY 
+!                           GROWTH CURVE.
+!     *AFCRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY 
+!                           GROWTH CURVE. Based on f * F(f)
+!                           FSTAR=(EGRCRV/AFCRV)**(1/BFCRV)
+!     *BFCRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY
+!                           GROWTH CURVES.
+!     *AFMRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY 
+!                           GROWTH CURVE. Based on 1/f F(f)
+!                           FSTAR=(EGRCRV/AFCRV)**(1/BFCRV)
+!     *BFMRV*     REAL      PARAMETER OF THE NON DIMENSIONAL FREQUENCY
+!                           GROWTH CURVE.
+!     *ESH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           AS A FUNCTION OF NON-DIMENSIONAL DEPTH DSTAR
+!                           ESTAR_LIMIT=ESH*TANH(ASH*DSTAR**BSH), where
+!                           DSTAR=DEPTH*G/USTAR**2
+!     *ASH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           SEE ESH.
+!     *BSH*       REAL      PARAMETER OF THE NON DIMENSIONAL ENERGY LIMIT
+!                           SEE ESH.
+!     *ASWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
+!                           OF DEPTH: KMEAN >= ASWKM/DEPTH**BSWKM 
+!     *BSWKM*     REAL      PARAMETER TO EXPRESS MINIMUM KMEAN AS A FUNCTION
+!                           OF DEPTH: KMEAN >= ASWKM/DEPTH**BSWKM 
+
+      REAL :: EGRCRV
+      REAL :: AGRCRV
+      REAL :: BGRCRV
+      REAL :: AFCRV
+      REAL :: BFCRV
+      REAL :: ESH
+      REAL :: ASH
+      REAL :: BSH
+      REAL :: ASWKM
+      REAL :: BSWKM
+
 ! ----------------------------------------------------------------------
       END MODULE YOWALTAS

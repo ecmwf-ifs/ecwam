@@ -46,8 +46,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV   ,
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,
      &             AFCRV   ,BFCRV   ,ESH      ,ASH     ,BSH
+      USE YOWPCONS , ONLY : G
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : USTARM
@@ -57,16 +58,19 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USMO, EWFG, EWOI, T
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: USA, EWA, FMWA
+
       INTEGER, PARAMETER :: NITER=5
-      INTEGER :: IJ, IJS, IJL, ITER
+      INTEGER :: IJ, ITER
       INTEGER :: IG
 
       REAL :: YNU, EMAX, X
       REAL :: G2, BGRCRVM1, EWFGMIN
       REAL :: TSTAR, ESTAR, DSTAR, XX, YY, ERATIO
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: USMO, USA, EWOI, EWA, T, FMWA,
-     &                            EWFG, USTANAL , USTANAL0
+      REAL, DIMENSION(IJS:IJL) ::  USTANAL, USTANAL0
 
 ! ----------------------------------------------------------------------
 

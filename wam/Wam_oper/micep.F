@@ -49,12 +49,11 @@
 
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     ,
      &               HICMIN
-      USE YOWMAP   , ONLY : IXLG     ,KXLT
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY     ,CLDOMAIN   ,SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST 
-      USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWIND  , ONLY : FIELDG 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWCOUP  , ONLY : LWNEMOCOUCIC, LWNEMOCOUCIT
@@ -99,13 +98,8 @@
         ENDDO
       ELSEIF (IPARAM.EQ.31) THEN
         DO IJ=IJS,IJL
-          IF (LLUNSTR) THEN
-            IX = IJ
-            IY = 1
-          ELSE
-            IX = IXLG(IJ,1)
-            IY = NGY-KXLT(IJ,1) + 1
-          ENDIF
+          IX = IFROMIJ(IJ,1)
+          IY = JFROMIJ(IJ,1)
           IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR. 
      &        FIELDG(IX,IY)%CIFR .LT. 0.01 .OR.
      &        FIELDG(IX,IY)%CIFR .GT. 1.01 ) THEN 
@@ -118,13 +112,8 @@
         ENDDO
       ELSE IF(IPARAM.EQ.139) THEN
         DO IJ=IJS,IJL
-          IF (LLUNSTR) THEN
-            IX = IJ
-            IY = 1
-          ELSE
-            IX = IXLG(IJ,1)
-            IY = NGY-KXLT(IJ,1) + 1
-          ENDIF
+          IX = IFROMIJ(IJ,1)
+          IY = JFROMIJ(IJ,1)
           IF (FIELDG(IX,IY)%CIFR .LT. 271.5) THEN
             CICVR(IJ) = 1.0
           ELSE
@@ -135,7 +124,7 @@
 
 
       IF( .NOT. LICERUN .OR. LMASKICE ) THEN
-!      SEA ICE THICKNESS IN CASE IT IS NOT SUPPLIED AS INPUT:
+!       SEA ICE THICKNESS IN CASE IT IS NOT SUPPLIED AS INPUT:
         DO IJ=IJS,IJL
           CITH(IJ)=0.0
         ENDDO
@@ -219,5 +208,4 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
 #endif
-      RETURN
       END SUBROUTINE MICEP

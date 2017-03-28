@@ -42,8 +42,7 @@
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EGRCRV   ,
-     &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV    ,EPSUS    ,
+      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,
      &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

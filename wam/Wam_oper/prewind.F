@@ -220,12 +220,9 @@
       CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR,
      &               FIELDS, LWCUR, MASK_IN)
 
-!     2.1.1 GET DATA FROM NEMO.
-!           ------------------
-!
-!     IF RESTART DO NOT CALL RECVNEMOFIELDS AT THE FIRST TIME STEP
-!     BUT USE THE VALUES FROM THE RESTART.
-!      
+!     2.1.1 GET DATA FROM NEMO (OR BINARY RESTART).
+!           -------------------------------------
+ 
       IF(LWNEMOCOU.AND.LWNEMOCOURECV) THEN
         CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,
      &                      LLFRSTNEMO.AND..NOT.LRESTARTED)
