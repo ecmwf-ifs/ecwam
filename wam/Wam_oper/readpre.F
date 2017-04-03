@@ -91,6 +91,7 @@
       INTEGER :: IREAD
       INTEGER :: IDUM, KIBLD, KBLD, KIBLC, KBLC
       INTEGER :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+      INTEGER :: NKIND !Precision of file when reading
 
       REAL :: ZHOOK_HANDLE
 
@@ -105,7 +106,7 @@
       CALL GSTATS(1771,0)
       IF(IRANK.EQ.IREAD) THEN
 !       READ MODEL IDENTIFIERS
-        READ(IU07,ERR=1000) KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+        READ(IU07,ERR=1000) NKIND,KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
         IF(KMDLGRDID.NE.IMDLGRDID) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
@@ -116,6 +117,21 @@
           WRITE(IU06,*) '* MODEL GRID IDENTIFIER.                *' 
           WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
           WRITE(IU06,*)    KMDLGRDID, IMDLGRDID
+          WRITE(IU06,*) '*                                       *'
+          WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
+          WRITE(IU06,*) '* ---------------   --------------      *'
+          WRITE(IU06,*) '*****************************************'
+          CALL ABORT1
+        ENDIF
+        IF(NKIND.NE.KIND(DELPHI)) THEN
+          WRITE(IU06,*) '*****************************************'
+          WRITE(IU06,*) '*                                       *'
+          WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
+          WRITE(IU06,*) '*  ==============================       *'
+          WRITE(IU06,*) '*                                       *'
+          WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
+          WRITE(IU06,*) '* PRECISION IN FILE AND MODEL.          *' 
+          WRITE(IU06,*)    NKIND, KIND(DELPHI)
           WRITE(IU06,*) '*                                       *'
           WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
           WRITE(IU06,*) '* ---------------   --------------      *'
