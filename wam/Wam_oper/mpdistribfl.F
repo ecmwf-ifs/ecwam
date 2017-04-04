@@ -64,7 +64,11 @@
 
       REAL :: ZHOOK_HANDLE
       REAL,DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
+#ifdef USE_SINGLE
+      REAL, ALLOCATABLE :: AC(:,:,:)
+#else
       REAL*8, ALLOCATABLE :: AC(:,:,:)
+#endif
       REAL,ALLOCATABLE :: ZCOMBUFS(:,:),ZCOMBUFR(:)
 
 !----------------------------------------------------------------------
