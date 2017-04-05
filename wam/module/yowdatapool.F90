@@ -34,14 +34,14 @@ module yowDatapool
 
   !> MPI Integer Type.
   !> Should be MPI_INTEGER
-  integer,save :: itype = MPI_INTEGER
+  integer,parameter :: itype = MPI_INTEGER
 
   !> MPI Real Type
   !> Shpuld be MPI_REAL8
 #ifdef USE_SINGLE
-  integer, save :: rtype = MPI_REAL4
+  integer, parameter :: rtype = MPI_REAL4
 #else
-  integer, save :: rtype = MPI_REAL8  
+  integer, parameter :: rtype = MPI_REAL8  
 #endif
 
 end module yowDatapool

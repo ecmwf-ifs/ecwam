@@ -58,11 +58,7 @@
 
       REAL :: ZHOOK_HANDLE
       REAL,DIMENSION(NIBLO) :: FIELD
-#ifdef USE_SINGLE
-      REAL, ALLOCATABLE :: AC(:)
-#else
       REAL*8, ALLOCATABLE :: AC(:)
-#endif
       REAL,ALLOCATABLE :: ZCOMBUFR(:)
       REAL,ALLOCATABLE :: ZCOMBUFS(:,:)
 

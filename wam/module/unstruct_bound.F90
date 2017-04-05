@@ -386,11 +386,7 @@ MODULE UNSTRUCT_BOUND
         REAL(KIND=JWRU) :: x1, y1, x2, y2
         REAL(KIND=JWRU) :: EVX, EVY
         REAL(KIND=JWRU) :: eDet1, eDet2
-#ifdef USE_SINGLE
-        REAL(KIND=JWRB) :: rtemp(MNP)
-#else
         REAL(KIND=JWRU) :: rtemp(MNP)
-#endif
 !
 ! SET IOBPD ...
 !
