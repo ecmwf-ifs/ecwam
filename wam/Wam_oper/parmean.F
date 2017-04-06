@@ -1,4 +1,6 @@
-      SUBROUTINE PARMEAN (F, NPK, EM, THQ, MEANWP)
+      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPK,
+     &                    F,
+     &                    EM, THQ, MEANWP)
 
 ! ----------------------------------------------------------------------
 
@@ -16,9 +18,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PARMEAN (F,NPK,EM,THQ,MEANWP)*
-!              *F*       - SPECTRUM.
+!       *CALL* *PARMEAN (IJS, IJL, NPMAX, NPK,
+!                        F,
+!                        EM, THQ, MEANWP)
+!              *IJS*     - INDEX OF FIRST GRIDPOINT
+!              *IJL*     - INDEX OF LAST GRIDPOINT
+!              *NPMAX*   - MAXIMUM NUMBER OF PARTITIONS
 !              *NPK*     - NUMBER OF PEAKS 
+!              *F*       - SPECTRUM.
 !              *EM*      - MEAN WAVE ENERGY FOR THE WAVE SYSTEM 
 !              *THQ*     - MEAN WAVE DIRECTION
 !              *MEANWP*  - MEAN PERIOD BASED ON -1 MOMENT.
@@ -43,17 +50,39 @@
       USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
       USE YOWPARAM ,ONLY : NANG, NFRE
       USE YOWPCONS ,ONLY : EPSMIN, ZPI
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IJS, IJL, NPMAX
+      INTEGER, INTENT(IN), DIMENSION(IJS:IJL) :: NPK
+      REAL, INTENT(IN) :: F(NANG,NFRE,NPMAX,IJS:IJL)
+      REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) ::  EM, THQ, MEANWP
+
       INTEGER :: IPK, NPK, K, M
+      REAL :: ZHOOK_HANDLE
       REAL    :: F1D(NFRE)
-      REAL, DIMENSION(NPK) :: TEMP, EMEAN, MEANWP, THQ, SI, CI, EM, FM
-      REAL    :: F(NANG,NFRE,NPK)
+      REAL, DIMENSION(NPK) :: TEMP, EMEAN, SI, CI, FM
 
 ! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PARMEAN',0,ZHOOK_HANDLE)
+#endif
+
+!     ENE must be initialised and index 0 must stay equal to 0
+      DO IP=0,NPMAX
+        DO IJ=IJS,IJL
+          ENE(IJ,IP)=0.
+          DIR(IJ,IP)=0.
+          PER(IJ,IP)=0.
+        ENDDO
+      ENDDO
+
+?????????? to finish
+        IF(NPEAK(IJ).GT.0) THEN
+        ENDIF
 
 
       DO IPK=1,NPK
@@ -101,7 +130,8 @@
         IF (THQ(IPK).LT.0.) THQ(IPK) = THQ(IPK) + ZPI
       ENDDO
 
-! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('PARMEAN',1,ZHOOK_HANDLE)
+#endif
 
-      RETURN
       END SUBROUTINE PARMEAN
