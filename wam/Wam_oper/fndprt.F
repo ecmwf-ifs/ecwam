@@ -71,7 +71,7 @@
       LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
 
       INTEGER :: ITHC, IFRC
-      INTEGER :: M, K, NITT
+      INTEGER :: IJ, M, K, IP, NITT
       INTEGER :: NANGH, KK, KKMIN, KKMAX
       INTEGER :: IFRL, ITHL, ITHR
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX
@@ -79,12 +79,13 @@
 
       REAL :: HALF_SECTOR
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NANG,NFRE) :: W1, W2
+      REAL, DIMENSION(NANG,NFRE) :: W2
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: W1
       REAL, DIMENSION(NANG,NFRE,NPMAX,IJS:IJL) :: SPEC
 
       LOGICAL :: LLCHANGE, LLADD
       LOGICAL :: LLADDPART
-      LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
+      LOGICAL, DIMENSION(IJS:IJL,NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
 
@@ -110,8 +111,10 @@
           DO IJ=IJS,IJL
             IF(FL3(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
               W1(IJ,K,M) = 1.
+              LLW3(IJ,K,M) = .FALSE.
             ELSE
               W1(IJ,K,M) = 0.
+              LLW3(IJ,K,M) = .TRUE.
               MMIN(IJ)=MIN(M,MMIN(IJ))
               MMAX(IJ)=M
             ENDIF
@@ -122,13 +125,6 @@
 
 !     MAIN LOOP ON GRID POINTS
       DO IJ=IJS,IJL
-
-        DO M=1,NFRE
-          DO K=1,NANG
-            LLW3(K,M)= (W1(IJ,K,M).LT.1.0)
-          ENDDO
-        ENDDO
-
         DO IP=1,NPEAK(IJ)
           ITHC=NTHP(IJ,IP)
           IFRC=NFRP(IJ,IP)
@@ -142,29 +138,29 @@
 !*        1.  SET UP THE W2 MAP
 !             -----------------
 
-          DO M=1, NFRE
-            DO K=1, NANG
+          DO M=1,NFRE
+            DO K=1,NANG
               W2(K,M) = 0.
             ENDDO
           ENDDO
 
-          IFRL   = MAX ( 1 , IFRC-1 )
+          IFRL = MAX ( 1 , IFRC-1 )
 
           DO K=ITHC-1, ITHC+1
             ITHL = 1 + MOD(NANG+K-1,NANG)
             DO M=IFRC-1, IFRC+1
               IFRL = MAX(1,MIN(NFRE,M))
-              IF ( W1(ITHL,IFRL) .LE. 0.5 ) W2(ITHL,IFRL) = 0.5
+              IF ( W1(IJ,ITHL,IFRL) .LE. 0.5 ) W2(ITHL,IFRL) = 0.5
             ENDDO
           ENDDO
 
-          IF ( W1(ITHC,IFRC) .LT. 0.25 ) W2(ITHC,IFRC) = 1.0
+          IF ( W1(IJ,ITHC,IFRC) .LT. 0.25 ) W2(ITHC,IFRC) = 1.0
 
 !         FIND IF MORE HIGH FREQUENCY BINS HAVE BECOME EXCLUDED
           OUT0: DO M=MMAX(IJ),MMIN(IJ),-1
             DO KK=KKMIN,KKMAX
               K=KLOC(KK)
-              IF ( W1(K,M).LT.1.0 ) THEN
+              IF ( W1(IJ,K,M).LT.1.0 ) THEN
                 MMAX(IJ)=M
                 EXIT OUT0
               ENDIF
@@ -190,8 +186,8 @@
             DO KK=KKMIN,KKMAX
               K=KLOC(KK)
 
-              IF ( LLW3(K,M) ) THEN
-                IF ( W2(K,M).EQ.0.5 .AND. W1(K,M).LT.0.5 ) THEN
+              IF ( LLW3(IJ,K,M) ) THEN
+                IF ( W2(K,M).EQ.0.5 .AND. W1(IJ,K,M).LT.0.5 ) THEN
                   LLADD    = .TRUE.
                   OUT1: DO ITHR=K-1, K+1
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
@@ -219,7 +215,7 @@
             DO KK=KKMIN,KKMAX
               K=KLOC(KK)
 
-              IF ( LLW3(K,M) .AND. W1(K,M).LT.1.0 ) THEN
+              IF ( LLW3(IJ,K,M) .AND. W1(IJ,K,M).LT.1.0 ) THEN
                 IF ( W2(K,M).EQ.0. ) THEN
                   OUT2: DO ITHR=K-1, K+1
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
@@ -246,7 +242,7 @@
 
           DO M=1, NFRE
             DO K=1, NANG
-              W1(K,M) = W1(K,M) + W2(K,M)
+              W1(IJ,K,M) = W1(IJ,K,M) + W2(K,M)
             ENDDO
           ENDDO
 
