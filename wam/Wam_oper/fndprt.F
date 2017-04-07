@@ -69,7 +69,7 @@
       REAL, INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL3
       REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
 
-      LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
+      LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: L LCOSDIFF
 
       INTEGER :: ITHC, IFRC
       INTEGER :: IJ, M, K, IP, NITT
@@ -133,7 +133,7 @@
           KKMIN=ITHC-NANGH
           KKMAX=ITHC+NANGH
           DO KK=KKMIN,KKMAX
-           KLOC(KK)=1+MOD(NANG+KK-1,NANG)
+            KLOC(KK)=1+MOD(NANG+KK-1,NANG)
           ENDDO
 
 !*        1.  SET UP THE W2 MAP
@@ -144,8 +144,6 @@
               W2(K,M) = 0.
             ENDDO
           ENDDO
-
-          IFRL = MAX ( 1 , IFRC-1 )
 
           DO K=ITHC-1, ITHC+1
             ITHL = 1 + MOD(NANG+K-1,NANG)
