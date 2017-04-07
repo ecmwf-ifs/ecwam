@@ -1,6 +1,6 @@
-      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPK,
-     &                    F,
-     &                    EM, THQ, MEANWP)
+      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPEAK,
+     &                    SPEC,
+     &                    ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
 
@@ -18,17 +18,17 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PARMEAN (IJS, IJL, NPMAX, NPK,
-!                        F,
-!                        EM, THQ, MEANWP)
+!       *CALL* *PARMEAN (IJS, IJL, NPMAX, NPEAK,
+!                        SPEC,
+!                        ENE, DIR, PER)
 !              *IJS*     - INDEX OF FIRST GRIDPOINT
 !              *IJL*     - INDEX OF LAST GRIDPOINT
 !              *NPMAX*   - MAXIMUM NUMBER OF PARTITIONS
-!              *NPK*     - NUMBER OF PEAKS 
-!              *F*       - SPECTRUM.
-!              *EM*      - MEAN WAVE ENERGY FOR THE WAVE SYSTEM 
-!              *THQ*     - MEAN WAVE DIRECTION
-!              *MEANWP*  - MEAN PERIOD BASED ON -1 MOMENT.
+!              *NPEAK*   - NUMBER OF PEAKS 
+!              *SPEC*    - SPECTRUM.
+!              *ENE*     - MEAN WAVE ENERGY FOR THE WAVE SYSTEM 
+!              *DIR*     - MEAN WAVE DIRECTION
+!              *PER*  - MEAN PERIOD BASED ON -1 MOMENT.
 
 !     METHOD.
 !     -------
@@ -57,14 +57,14 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL, NPMAX
-      INTEGER, INTENT(IN), DIMENSION(IJS:IJL) :: NPK
-      REAL, INTENT(IN) :: F(NANG,NFRE,NPMAX,IJS:IJL)
-      REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) ::  EM, THQ, MEANWP
+      INTEGER, INTENT(IN), DIMENSION(IJS:IJL) :: NPEAK
+      REAL, INTENT(IN) :: SPEC(NANG,NFRE,NPMAX,IJS:IJL)
+      REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) ::  ENE, DIR, PER
 
-      INTEGER :: IPK, NPK, K, M
+      INTEGER :: IPK, K, M
       REAL :: ZHOOK_HANDLE
       REAL    :: F1D(NFRE)
-      REAL, DIMENSION(NPK) :: TEMP, EMEAN, SI, CI, FM
+      REAL, DIMENSION(NPMAX) :: TEMP, SI, CI, EM, FM, THQ
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -80,54 +80,43 @@
         ENDDO
       ENDDO
 
-?????????? to finish
-        IF(NPEAK(IJ).GT.0) THEN
-        ENDIF
-
-
-      DO IPK=1,NPK
-
-        EM(IPK) = EPSMIN
-        FM(IPK) = EPSMIN
-        DO M=1,NFRE
-          F1D(M) = F(1,M,IPK)
-          DO K=2,NANG
-            F1D(M) = F1D(M)+F(K,M,IPK)
+!     LOOP OVER GRID POINT
+      DO IJ=IJS,IJL
+        DO IPK=1,NPEAK(IJ)
+          EM(IPK) = EPSMIN
+          FM(IPK) = EPSMIN
+          DO M=1,NFRE
+            F1D(M) = SPEC(1,M,IPK,IJ)
+            DO K=2,NANG
+              F1D(M) = F1D(M)+SPEC(K,M,IPK,IJ)
+            ENDDO
+            EM(IPK) = EM(IPK)+F1D(M)*DFIM(M)
+            FM(IPK) = FM(IPK)+F1D(M)*DFIMOFR(M)
           ENDDO
-          EM(IPK) = EM(IPK)+F1D(M)*DFIM(M)
-          FM(IPK) = FM(IPK)+F1D(M)*DFIMOFR(M)
+
+          SI(IPK) = 0.
+          CI(IPK) = 0.
+          DO K=1,NANG
+            TEMP(IPK) = SPEC(K,1,IPK,IJ)*DFIM(1)
+            DO M=2,NFRE
+              TEMP(IPK) = TEMP(IPK)+SPEC(K,M,IPK,IJ)*DFIM(M)
+            ENDDO
+            SI(IPK) = SI(IPK)+SINTH(K)*TEMP(IPK)
+            CI(IPK) = CI(IPK)+COSTH(K)*TEMP(IPK)
+            IF (CI(IPK).EQ.0.) CI(IPK) = EPSMIN
+            THQ(IPK) = ATAN2(SI(IPK),CI(IPK))
+            IF (THQ(IPK).LT.0.) THQ(IPK) = THQ(IPK) + ZPI
+          ENDDO
         ENDDO
 
-        IF(EM(IPK).GT.EPSMIN) THEN
-          MEANWP(IPK) = FM(IPK)/EM(IPK)
-        ELSE
-          MEANWP(IPK) = 0.
-        ENDIF
-
-      ENDDO
-
-! ----------------------------------------------------------------------
-
-!*    MEAN WAVE DIRECTION
-!     -------------------
-
-      DO IPK=1,NPK
-        SI(IPK) = 0.
-        CI(IPK) = 0.
-
-        DO K=1,NANG
-          TEMP(IPK) = F(K,1,IPK)*DFIM(1)
-          DO M=2,NFRE
-            TEMP(IPK) = TEMP(IPK)+F(K,M,IPK)*DFIM(M)
-          ENDDO
-          SI(IPK) = SI(IPK)+SINTH(K)*TEMP(IPK)
-          CI(IPK) = CI(IPK)+COSTH(K)*TEMP(IPK)
+        DO IPK=1,NPEAK(IJ)
+          IF(EM(IPK).GT.EPSMIN) THEN
+             ENE(IJ,IPK) = EM(IPK)
+             PER(IJ,IPK) = FM(IPK)/EM(IPK)
+             DIR(IJ,IPK) = THQ(IPK)
+          ENDIF
         ENDDO
 
-
-        IF (CI(IPK).EQ.0.) CI(IPK) = EPSMIN
-        THQ(IPK) = ATAN2(SI(IPK),CI(IPK))
-        IF (THQ(IPK).LT.0.) THQ(IPK) = THQ(IPK) + ZPI
       ENDDO
 
 #ifdef ECMWF
