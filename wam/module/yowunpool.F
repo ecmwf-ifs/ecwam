@@ -74,6 +74,7 @@
          LOGICAL                :: LADVTEST = .FALSE. ! switch for testing advection ... 
          LOGICAL                :: LSPHE = .TRUE. ! spherical coordinates 
          LOGICAL                :: LVECTOR = .FALSE. 
+         LOGICAL                :: LLR8TOR4 = .FALSE. ! Is input in fact legacy REAL*8 & NKIND == 4 ?
 
 !         REAL*8, ALLOCATABLE    :: WBACOLD(:,:,:)
 !         REAL*8, ALLOCATABLE    :: DSPEC(:,:,:)

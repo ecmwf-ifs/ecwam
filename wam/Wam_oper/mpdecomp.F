@@ -141,7 +141,7 @@
       USE YOWWIND  , ONLY : NXFF     ,NYFF
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOWUNPOOL, ONLY : LLUNSTR, LLR8TOR4
       USE YOWPD, ONLY : MNP => npa, RANK
       USE UNWAM
 
@@ -183,6 +183,9 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
+
+      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) :: 
+     &     R8_WLAT, R8_WRLAT, R8_WRLON, R8_WCOR
 
       REAL :: ZHOOK_HANDLE
       REAL :: RS_sekf, RN_sekf
@@ -1864,13 +1867,36 @@
             ALLOCATE(WCOR(NIBLO,4))
           ENDIF
           CALL GSTATS(1771,0)
-          READ (IU08(IPROPAGS)) WLAT
+          IF (LLR8TOR4) THEN
+             ALLOCATE(R8_WLAT(NIBLO,2))
+             READ (IU08(IPROPAGS)) R8_WLAT
+             WLAT = R8_WLAT
+             DEALLOCATE(R8_WLAT)
+          ELSE
+             READ (IU08(IPROPAGS)) WLAT
+          ENDIF
           IF(IPROPAGS.EQ.1) THEN
-            READ (IU08(IPROPAGS)) WRLAT
-            READ (IU08(IPROPAGS)) WRLON
+            IF (LLR8TOR4) THEN
+               ALLOCATE(R8_WRLAT(NIBLO,2),R8_WRLON(NIBLO,2))
+               READ (IU08(IPROPAGS)) R8_WRLAT
+               READ (IU08(IPROPAGS)) R8_WRLON
+               WRLAT = R8_WRLAT
+               WRLON = R8_WRLON
+               DEALLOCATE(R8_WRLAT,R8_WRLON)
+            ELSE
+               READ (IU08(IPROPAGS)) WRLAT
+               READ (IU08(IPROPAGS)) WRLON
+            ENDIF
           ENDIF
           IF(IPROPAGS.EQ.2) THEN
-            READ (IU08(IPROPAGS)) WCOR
+            IF (LLR8TOR4) THEN
+               ALLOCATE(R8_WCOR(NIBLO,4))
+               READ (IU08(IPROPAGS)) R8_WCOR
+               WCOR = R8_WCOR
+               DEALLOCATE(R8_WCOR)
+            ELSE
+               READ (IU08(IPROPAGS)) WCOR
+            ENDIF
           ENDIF
           CALL GSTATS(1771,1)
 
@@ -2397,18 +2423,45 @@
         IF(.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
 
       ELSEIF(.NOT.LMESSPASS) THEN
-        ALLOCATE(WLAT(NIBLO,2))
         CALL GSTATS(1771,0)
-        READ (IU08(IPROPAGS)) WLAT
-        IF(IPROPAGS.EQ.1) THEN
-          ALLOCATE(WRLAT(NIBLO,2))
-          ALLOCATE(WRLON(NIBLO,2))
-          READ (IU08(IPROPAGS)) WRLAT
-          READ (IU08(IPROPAGS)) WRLON
-        ENDIF
-        IF(IPROPAGS.EQ.2) THEN
-          ALLOCATE(WCOR(NIBLO,4))
-          READ (IU08(IPROPAGS)) WCOR
+        IF (LLR8TOR4) THEN ! Legacy input R8 conv. to R4
+           ALLOCATE(R8_WLAT(NIBLO,2))
+           ALLOCATE(WLAT(NIBLO,2))
+           READ (IU08(IPROPAGS)) R8_WLAT
+           WLAT = R8_WLAT
+           DEALLOCATE(R8_WLAT)
+           IF(IPROPAGS.EQ.1) THEN
+              ALLOCATE(R8_WRLAT(NIBLO,2))
+              ALLOCATE(R8_WRLON(NIBLO,2))
+              ALLOCATE(WRLAT(NIBLO,2))
+              ALLOCATE(WRLON(NIBLO,2))
+              READ (IU08(IPROPAGS)) R8_WRLAT
+              READ (IU08(IPROPAGS)) R8_WRLON
+              WRLAT = R8_WRLAT
+              WRLON = R8_WRLON
+              DEALLOCATE(R8_WRLAT)
+              DEALLOCATE(R8_WRLON)
+           ENDIF
+           IF(IPROPAGS.EQ.2) THEN
+              ALLOCATE(R8_WCOR(NIBLO,4))
+              ALLOCATE(WCOR(NIBLO,4))
+              READ (IU08(IPROPAGS)) R8_WCOR
+              WCOR = R8_WCOR
+              DEALLOCATE(R8_WCOR)
+           ENDIF
+        ELSE ! Normal situation
+           ALLOCATE(WLAT(NIBLO,2))
+           READ (IU08(IPROPAGS)) WLAT
+           IF(IPROPAGS.EQ.1) THEN
+              ALLOCATE(WRLAT(NIBLO,2))
+              ALLOCATE(WRLON(NIBLO,2))
+              READ (IU08(IPROPAGS)) WRLAT
+              READ (IU08(IPROPAGS)) WRLON
+           ENDIF
+           IF(IPROPAGS.EQ.2) THEN
+              ALLOCATE(WCOR(NIBLO,4))
+              READ (IU08(IPROPAGS)) WCOR
+           ENDIF
         ENDIF
 
         ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
