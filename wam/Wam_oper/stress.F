@@ -63,6 +63,7 @@
       INTEGER, INTENT(IN) :: IU06, ITEST
 
       REAL, PARAMETER :: XM=0.50
+      REAL, PARAMETER :: Z0MAXFAC=7.36E-7 
       INTEGER, PARAMETER :: NITER=10
 
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -75,6 +76,7 @@
       REAL :: TAUWMAX, XL
       REAL :: CDRAG, WCD, ZTAUW, UTOP, USTOLD, TAUOLD
       REAL :: X, UST, Z0, F, DELF
+      REAL :: Z0MAX
 
 ! ----------------------------------------------------------------------
 
@@ -112,17 +114,19 @@
 
           DO J=0,JUMAX
             UTOP    = REAL(J)*DELU
+            Z0MAX   = Z0MAXFAC*EXP(MIN(UTOP,40.))
             USTOLD  = UTOP*WCD
             TAUOLD  = MAX(USTOLD**2, ZTAUW+EPS1)
             DO ITER=1,NITER
               X      = ZTAUW/TAUOLD
               UST    = SQRT(TAUOLD)
               Z0     = ALPHA*TAUOLD/(G)/(1.-X)**XM
+              Z0     = MIN(Z0,Z0MAX)
               F      = UST-XKAPPA*UTOP/(LOG(XL/Z0))
               DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST*
      &         (1.-(XM+1)*X)/(1.-X)
               UST    = UST-F/DELF
-              TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
+              TAUOLD  = MAX(UST**2, ZTAUW+EPS1)
             ENDDO
             TAUT(I,J,JL)  = SQRT(TAUOLD)
           ENDDO
@@ -139,5 +143,4 @@
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE STRESS

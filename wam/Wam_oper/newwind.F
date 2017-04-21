@@ -74,6 +74,7 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
+      USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA
       USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -113,6 +114,7 @@
       INTEGER :: ISTORE
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
+      REAL :: WGHT, TLWMAX
       REAL :: ZHOOK_HANDLE
 
       DATA ISTORE /0/
@@ -130,6 +132,7 @@
         ICODE_WND = ICODE
       ENDIF
 
+      WGHT=1./MAX(WSPMIN_RESET_TAUW,EPSMIN)
 
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
@@ -178,7 +181,7 @@
         CDA=CDTNEXT(ISTORE)
 
         CALL GSTATS(1492,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,TLWMAX)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
@@ -186,7 +189,12 @@
             DO IJ = KIJS, KIJL
               U10NEW(IJ)=FF_NEXT(IJ,ISTORE)%WSWAVE
 ! adapt first estimate of wave induced stress for low winds
-              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
+! to a fraction of the simple relation u*^2 = Cd(U10) * U10^2
+! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
+              IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) THEN
+                TLWMAX=WGHT*(ACD+BCD*U10NEW(IJ))*U10NEW(IJ)**3
+                TAUW(IJ,IG)=MIN(TAUW(IJ,IG),TLWMAX)
+              ENDIF
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL

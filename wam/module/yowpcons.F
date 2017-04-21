@@ -36,6 +36,10 @@
       REAL, PARAMETER :: EPSUS = 1.0E-6
       REAL, PARAMETER :: EPSU10 = 1.0E-3
 
+      REAL, PARAMETER :: ACD=8.0E-4
+      REAL, PARAMETER :: BCD=8.0E-5
+
+
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     *G*         REAL      ACCELLERATION OF GRAVITY.
@@ -69,6 +73,8 @@
 !                           WHEN COMPUTING CD OR THE CHARNOCK COEF.
 !     *EPSU10*    REAL      SMALL NUMBER ADDED TO THE SQUARE OF U10
 !                           WHEN COMPUTING CD.
+!     *ACD*       REAL      COEFFICIENTS FOR SIMPLE CD(U10) RELATION
+!     *BCD*       REAL      CD = ACD + BCD*U10
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

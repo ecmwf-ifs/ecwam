@@ -50,7 +50,6 @@
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ROWATER    ,ZPI      ,EPSMIN
-      USE YOWSTAT  , ONLY : IPHYS 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -60,7 +59,7 @@
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS,USNEW,CICVR
       REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
       INTEGER :: IJ, M

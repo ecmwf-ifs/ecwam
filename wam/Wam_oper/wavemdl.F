@@ -400,7 +400,7 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL,
+          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  BETAOLD(KIJS))
         ENDDO
@@ -758,7 +758,7 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL,
+          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),
      &                  WVBLOCK(KIJS,1))
 
