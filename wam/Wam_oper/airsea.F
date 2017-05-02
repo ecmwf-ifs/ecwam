@@ -84,6 +84,7 @@
       IF(ICODE_WND == 3 ) THEN
          XLEV = XNLEV(KLEV)
          CALL TAUT_Z0(IJS, IJL, XLEV, U10, TAUW, US, Z0)
+        write(*,*) 'debile in airsea ',US,TAUW
       ENDIF
 
       IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
