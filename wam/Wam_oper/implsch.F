@@ -255,7 +255,7 @@
         CALL FLUSH (IU06)
       ENDIF
 !! debile
-     write(*,*) 'debile implsch after airsea',USNEW,U10NEW
+      write(*,*) 'debile implsch after airsea',USNEW,U10NEW
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
@@ -276,7 +276,7 @@
      &                MIJ,RHOWGDFTH)
 
 !! debile
-     write(*,*) 'debile implsch before stresso',USNEW
+      write(*,*) 'debile implsch before stresso',USNEW
 
       CALL STRESSO (FL3, SL, IJS, IJL,
      &              MIJ, RHOWGDFTH,
