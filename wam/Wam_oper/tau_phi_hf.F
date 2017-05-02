@@ -92,6 +92,9 @@
         UST0      = USTAR(IJ)
         TAUW0     = UST0**2
         GZ0       = G*Z0(IJ)
+!debile
+       write(*,*) 'debile ',GZ0,UST0
+
         XLOGGZ0   = LOG(GZ0)
         OMEGACC   = MAX(OMEGAC,X0G/UST0)
         SQRTZ0OG  = SQRT(Z0(IJ)*GM1)
