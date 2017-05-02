@@ -254,6 +254,8 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
+!! debile
+     write(*,*) 'debile implsch after airsea',USNEW,U10NEW
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
@@ -272,6 +274,9 @@
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
      &                MIJ,RHOWGDFTH)
+
+!! debile
+     write(*,*) 'debile implsch before stresso',USNEW
 
       CALL STRESSO (FL3, SL, IJS, IJL,
      &              MIJ, RHOWGDFTH,
