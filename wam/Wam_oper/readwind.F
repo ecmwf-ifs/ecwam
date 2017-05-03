@@ -558,12 +558,13 @@
 !       the wind forcing will be extracted from the wind speed
 !       and direction time series specified herewith.
 
+        ICODE = 3
+
         IF (LLNOTOPENED) THEN
            RLATS = AMOSOP
            RLATN = AMONOP 
            RLONL = AMOWEP 
            RLONR = AMOEAP 
-           ICODE = 3
            CDTWIR = CDATEA
            CALL INCDATE(CDTWIR,-IDELWI)
            KCOL = NXFF
