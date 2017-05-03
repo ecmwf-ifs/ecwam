@@ -42,7 +42,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : FR       ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWSTAT  , ONLY : IPHYS
@@ -82,7 +82,7 @@
         DO M=1,NFRE
           GAMOF=0. 
           DO K=1,NANG
-            GAMOF=GAMOF+FL(IJ,K,M)*TH
+            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
           ENDDO
           write(*,*) 'debile gamma ',M,USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
         ENDDO
