@@ -107,6 +107,9 @@
 
       ENDIF
 
+      write(*,*) 'debile end of airsea ',
+     &  U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND
+
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
 #endif
