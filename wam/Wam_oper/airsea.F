@@ -52,6 +52,7 @@
       USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,TAUT     ,DELTAUW     ,
      &              DELU
+      USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWWIND  , ONLY : WSPMIN
 
@@ -84,10 +85,8 @@
       IF(ICODE_WND == 3 ) THEN
          XLEV = XNLEV(KLEV)
          CALL TAUT_Z0(IJS, IJL, XLEV, U10, TAUW, US, Z0)
-        write(*,*) 'debile in airsea ',US,TAUW
-      ENDIF
 
-      IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
+      ELSE IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
@@ -105,10 +104,13 @@
           U10(IJ) = MAX(U10(IJ),WSPMIN)
         ENDDO
 
+      ELSE
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) ' + AIRSEA : INVALID VALUE OF ICODE_WND    +'
+        WRITE(IU06,*) ' ICODE_WND = ',ICODE_WND
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
       ENDIF
-
-      write(*,*) 'debile end of airsea ',
-     &  U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)

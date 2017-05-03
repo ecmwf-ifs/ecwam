@@ -172,9 +172,6 @@
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !     ----------------------------------------------------
 
-!!!debile
-       write(*,*) 'USNEW = ',USNEW
-
       DO IJ=IJS,IJL
         US2(IJ)=USNEW(IJ)**2
       ENDDO
@@ -223,9 +220,6 @@
           XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
         ENDDO
       ENDIF
-
-!!!debile
-       write(*,*) 'UST = ',UST
 
       CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL,
      &                TAU1, PHI1)

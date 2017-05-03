@@ -81,7 +81,6 @@
         TAUOLD = MAX(USTOLD**2,TAUW(IJ)+EPS1)
         USTAR(IJ) = SQRT(TAUOLD)
 
-        write(*,*) 'debile in taut_z0 ',USTAR(IJ),TAUW(IJ)
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
           Z0(IJ) = ALPHAOG*TAUOLD/SQRT(1.-X)
@@ -91,7 +90,6 @@
           USTAR(IJ) = USTAR(IJ)-F/DELF
           TAUNEW = MAX(USTAR(IJ)**2,TAUW(IJ)+EPS1)
           USTAR(IJ) = SQRT(TAUNEW)
-        write(*,*) 'debile in taut_z0 ',iter,USTAR(IJ)
           IF(TAUNEW.EQ.TAUOLD) EXIT
           TAUOLD = TAUNEW
         ENDDO
