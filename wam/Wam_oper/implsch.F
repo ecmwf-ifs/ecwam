@@ -125,8 +125,8 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
-     &            IODP     ,IOBND 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS
+     &            IODP     ,IOBND    ,CINV 
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -156,6 +156,7 @@
       REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
       REAL :: ZHOOK_HANDLE
+      REAL :: GAMOF
       REAL :: DELFL(NFRE)
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
@@ -260,6 +261,19 @@
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
+
+!     diagnostic (not coded efficiently)
+      DO IJ=IJS,IJL
+        DO M=1,NFRE
+          GAMOF=0. 
+          DO K=1,NANG
+            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
+          ENDDO
+          write(*,*) 'debile gamma ',CDTPRO," ",
+     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
+        ENDDO
+      ENDDO
+
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALLED'

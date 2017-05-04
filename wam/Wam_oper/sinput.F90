@@ -42,10 +42,8 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : CINV     ,INDEP
-      USE YOWSTAT  , ONLY : IPHYS    ,CDTPRO
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -53,15 +51,12 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
 
-      INTEGER(KIND=JWIM) :: IJ, K, M
-
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL,SL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: GAMOF 
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -76,17 +71,6 @@
         CALL SINPUT_ARD (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, XLLWS)
       END SELECT 
-
-!     diagnostic (not coded efficiently)
-      DO IJ=IJS,IJL
-        DO M=1,NFRE
-          GAMOF=0. 
-          DO K=1,NANG
-            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
-          ENDDO
-          write(*,*) 'debile gamma ',CDTPRO," ",USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
-        ENDDO
-      ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
