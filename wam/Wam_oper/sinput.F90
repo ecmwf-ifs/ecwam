@@ -86,7 +86,6 @@
           ENDDO
           write(*,*) 'debile gamma ',M,USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
         ENDDO
-        write(*,*) 'debile gamma '
       ENDDO
 
 #ifdef ECMWF
