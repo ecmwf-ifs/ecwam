@@ -39,41 +39,35 @@
 
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
+     &                      DFIM_ODD ,
      &                      FRATIO   ,COSTH    ,SINTH  
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
        
 ! ----------------------------------------------------------------------
- 
       IMPLICIT NONE
 
-      INTEGER :: IJ, M, K, IJS, IJL
-      INTEGER :: NFRE_ODD
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  USTOKES, VSTOKES 
+
+      INTEGER :: IJ, M, K
 
       REAL :: CONST, FAC, FAC1, FAC2, FAC3
-      REAL :: XLOGFRATIO
-      REAL :: DFIM_SIM(NFRE)
-      REAL :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) ::  USTOKES,VSTOKES 
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: STFAC
+
+! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',0,ZHOOK_HANDLE)
+#endif
  
 !***  1. DETERMINE STOKE DRIFT VECTOR.
 !     --------------------------------
 
-      NFRE_ODD=NFRE-1+MOD(NFRE,2)
-       
-      CONST = 2.*ZPI**3/G*FR(NFRE_ODD)**4
+      CONST = 2.*DELTH*ZPI**3/G*FR(NFRE_ODD)**4
 
-
-!!!! debile test:
-      XLOGFRATIO=LOG(FRATIO)
-      DFIM_SIM(1)=DELTH*XLOGFRATIO*FR(1)/3.
-      DO M=2,NFRE_ODD-1,2
-        DFIM_SIM(M)=4.*DELTH*XLOGFRATIO*FR(M)/3.
-        DFIM_SIM(M+1)=2.*DELTH*XLOGFRATIO*FR(M+1)/3.
-      ENDDO
-      DFIM_SIM(NFRE_ODD)=DELTH*XLOGFRATIO*FR(NFRE_ODD)/3.
-      
- 
 !***  1.1 PERFORM INTEGRATION.
 !     ------------------------
  
@@ -83,14 +77,14 @@
       ENDDO
 
       DO M=1,NFRE_ODD
-         FAC = DFIM_SIM(M)
+         DO IJ = IJS,IJL
+           STFAC(IJ) = TFAC_ST(INDEP(IJ),M)*DFIM_SIM(M)
+         ENDDO
          DO K=1,NANG
-            FAC1 = FAC*SINTH(K)
-            FAC2 = FAC*COSTH(K)
             DO IJ = IJS,IJL
-               FAC3 = TFAC_ST(INDEP(IJ),M)*F3(IJ,K,M)
-               USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
-               VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
+               FAC3 = STFAC(IJ)*F3(IJ,K,M)
+               USTOKES(IJ) = USTOKES(IJ)+FAC3*SINTH(K)
+               VSTOKES(IJ) = VSTOKES(IJ)+FAC3*COSTH(K)
             ENDDO
          ENDDO
       ENDDO
@@ -99,13 +93,16 @@
 !     -----------------------------------------
  
       DO K=1,NANG
-         FAC1 = DELTH*SINTH(K)
-         FAC2 = DELTH*COSTH(K)
+         FAC1 = CONST*SINTH(K)
+         FAC2 = CONST*COSTH(K)
          DO IJ = IJS,IJL
-            FAC3 = CONST*F3(IJ,K,NFRE_ODD)
-            USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
-            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
+            USTOKES(IJ) = USTOKES(IJ)+FAC1*F3(IJ,K,NFRE_ODD)
+            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*F3(IJ,K,NFRE_ODD)
          ENDDO
       ENDDO
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',1,ZHOOK_HANDLE)
+#endif
 
       END SUBROUTINE STOKESDRIFT

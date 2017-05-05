@@ -6,6 +6,7 @@
 
       REAL, ALLOCATABLE :: FR(:)
       REAL, ALLOCATABLE :: DFIM(:)
+      REAL, ALLOCATABLE :: DFIM_SIM(:)
       REAL, ALLOCATABLE :: DFIMOFR(:)
       REAL, ALLOCATABLE :: DFIM_END_L(:)
       REAL, ALLOCATABLE :: DFIM_END_U(:)
@@ -38,6 +39,9 @@
 !      ---------   -------   --------
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
 !      *DFIM*      REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
+!                            FOR TRAPEZOIDAL RULE
+!      *DFIM_SIM*  REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
+!                            FOR SIMPSON RULE
 !      *DFIMOFR*   REAL      DFIM/FR
 !      *DFIM_END_L REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL
 !                            FOR LOWER BOUND FOR TRAPEZOIDAL INTEGRATION  WHERE

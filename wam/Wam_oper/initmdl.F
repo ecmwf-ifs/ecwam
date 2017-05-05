@@ -252,6 +252,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH   ,FR5      ,
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,
      &            COSTH    ,SINTH    ,FLMAX    ,
+     &            DFIM_SIM ,
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,
@@ -266,6 +267,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,
+     &            NFRE_ODD ,
      &            NGX      ,NGY      ,
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,RAD
@@ -332,6 +334,7 @@
       REAL :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
       REAL :: FAC, SCDF_L, SCDF_U
       REAL :: D, OM, XK
+      REAL :: XLOGFRATIO
       REAL, PARAMETER :: ENH_MAX=10.
       REAL, PARAMETER :: ENH_MIN=0.1   ! to prevent ENH to become too small
       REAL :: PRPLRADI
@@ -499,6 +502,20 @@
       ENDDO
 
       FLOGSPRDM1=1./LOG10(FRATIO)
+
+!     
+      IF(.NOT.ALLOCATED(DFIM_SIM)) ALLOCATE(DFIM_SIM(NFRE))
+      NFRE_ODD=NFRE-1+MOD(NFRE,2)
+      DFIM_SIM(NFRE)=0.
+
+      XLOGFRATIO=LOG(FRATIO)
+      DFIM_SIM(1)=DELTH*XLOGFRATIO*FR(1)/3.
+      DO M=2,NFRE_ODD-1,2
+        DFIM_SIM(M)=4.*DELTH*XLOGFRATIO*FR(M)/3.
+        DFIM_SIM(M+1)=2.*DELTH*XLOGFRATIO*FR(M+1)/3.
+      ENDDO
+      DFIM_SIM(NFRE_ODD)=DELTH*XLOGFRATIO*FR(NFRE_ODD)/3.
+
 
       CALL TABU_SWELLFT
 
