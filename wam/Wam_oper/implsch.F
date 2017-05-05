@@ -263,16 +263,16 @@
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
 !     diagnostic (not coded efficiently)
-      DO IJ=IJS,IJL
-        DO M=1,NFRE
-          GAMOF=0. 
-          DO K=1,NANG
-            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
-          ENDDO
-          write(*,*) 'debile gamma ',CDTPRO," ",
-     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
-        ENDDO
-      ENDDO
+!!      DO IJ=IJS,IJL
+!!        DO M=1,NFRE
+!!          GAMOF=0. 
+!!          DO K=1,NANG
+!!            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
+!!          ENDDO
+!!          write(*,*) 'debile gamma ',CDTPRO," ",
+!!     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
+!!        ENDDO
+!!      ENDDO
 
 
       IF (ITEST.GE.2) THEN
