@@ -35,7 +35,7 @@
 !     METHOD.
 !     -------
 
-!       USE TABLE TAUT(TAUW,U) AND LINEAR INTERPOLATION.
+!       CALL TAUT_Z0
 
 !     EXTERNALS.
 !     ----------
@@ -50,8 +50,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,TAUT     ,DELTAUW     ,
-     &              DELU
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWWIND  , ONLY : WSPMIN

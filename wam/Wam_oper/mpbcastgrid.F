@@ -65,7 +65,7 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,
+     &            JPLEVT   ,
      &            FAC0     ,FAC1     ,FAC2     ,
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
@@ -220,9 +220,8 @@
 
         MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=37+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
+        MZC=35+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
      &      KFRH+JPLEVC+
-     &      JPLEVT*(1+JUMAX)*(1+ITAUMAX)+
      &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
@@ -267,8 +266,6 @@
           IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
           IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
           IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
-          IF(.NOT.ALLOCATED(TAUT))
-     &       ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
 
           IF(NGOUT.GT.0) THEN
             IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
@@ -539,19 +536,6 @@
           ZCOMBUF(KCOUNT)=ASWKM
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=BSWKM
-
-          DO ILEV=1,JPLEVT
-            DO J=0,JUMAX
-              DO I=0,ITAUMAX
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=TAUT(I,J,ILEV)
-              ENDDO
-            ENDDO
-          ENDDO
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELTAUW
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELU
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
@@ -969,19 +953,6 @@
           ASWKM=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           BSWKM=ZCOMBUF(KCOUNT)
-
-          DO ILEV=1,JPLEVT
-            DO J=0,JUMAX
-              DO I=0,ITAUMAX
-                KCOUNT=KCOUNT+1
-                TAUT(I,J,ILEV)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
-          KCOUNT=KCOUNT+1
-          DELTAUW=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          DELU=ZCOMBUF(KCOUNT)
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1

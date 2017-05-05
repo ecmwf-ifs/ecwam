@@ -75,7 +75,7 @@
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,
+     &            JPLEVT   ,
      &            FAC0     ,FAC1     ,FAC2     ,
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
@@ -222,16 +222,6 @@
 
         READ(IU07) EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
      &             ESH,ASH,BSH,ASWKM,BSWKM
-
-
-!*    6. READ MODULE YOWTABL (INDICES OF OUTPUT POINTS).
-!        ---------------------------------------------
-
-        READ(IU07) DELTAUW, DELU
-
-        IF(.NOT.ALLOCATED(TAUT)) 
-     &      ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-        READ(IU07) TAUT
 
 
 !*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).

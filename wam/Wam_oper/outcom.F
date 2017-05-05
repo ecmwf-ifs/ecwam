@@ -88,7 +88,6 @@
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,
-     &            TAUT     ,DELTAUW  ,DELU     ,
      &            FAC0     ,FAC1     ,FAC2     ,FAC3     ,
      &            FAK      ,FRHF     ,DFIMHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
@@ -261,20 +260,6 @@
 
 ! ----------------------------------------------------------------------
 
-!*    6. WRITE MODULE YOWTABL (1st part).
-!        ---------------------
-
-      IF (IFORM.NE.2) THEN
-        WRITE (IU07) DELTAUW, DELU
-        WRITE (IU07) TAUT
-      ENDIF
-      IF (IFORM.NE.1) THEN
-        WRITE (IU17,999) DELTAUW, DELU
-        WRITE (IU17,999) TAUT
-      ENDIF
-
-! ----------------------------------------------------------------------
-
 !*    7. WRITE MODULE YOWCOUT.
 !        ---------------------
 
@@ -360,5 +345,4 @@
         CALL UNWAM_OUT(IU07)
       END IF
 
-      RETURN
       END SUBROUTINE OUTCOM
