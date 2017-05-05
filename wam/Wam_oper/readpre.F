@@ -75,7 +75,7 @@
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,
+     &            JPLEVT   ,DELU     ,
      &            FAC0     ,FAC1     ,FAC2     ,
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
