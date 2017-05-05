@@ -56,7 +56,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWFLUX
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
@@ -141,12 +141,6 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
-
         CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
      &                EMEANALL, F1MEAN, XKMEAN,
      &                USNEW, THWNEW, ROAIRN)
@@ -155,15 +149,29 @@
           CALL FLUSH (IU06)
         ENDIF
 
-!*      1.3 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
-!           -------------------------------------------------------
+        IF(.NOT. LWVFLX_SNL) THEN
+          CALL WNFLUXES (IJS, IJL,
+     &                   MIJ, RHOWGDFTH,
+     &                   SL,
+     &                   PHIWA,
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                   USNEW, ROAIRN, .FALSE.)
+        ENDIF
 
-        CALL WNFLUXES (IJS, IJL,
-     &                 MIJ, RHOWGDFTH,
-     &                 SL,
-     &                 PHIWA,
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
-     &                 USNEW, ROAIRN, .FALSE.)
+        CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+
+        IF(LWVFLX_SNL) THEN
+          CALL WNFLUXES (IJS, IJL,
+     &                   MIJ, RHOWGDFTH,
+     &                   SL,
+     &                   PHIWA,
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                   USNEW, ROAIRN, .FALSE.)
+        ENDIF
 
       ENDIF
 ! ----------------------------------------------------------------------

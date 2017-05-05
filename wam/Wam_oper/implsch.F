@@ -115,7 +115,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
@@ -305,12 +305,6 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
       CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
      &              EMEANALL, F1MEAN, XKMEAN,
      &              USNEW, THWNEW, ROAIRN)
@@ -319,28 +313,40 @@
         CALL FLUSH (IU06)
       ENDIF
 
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+!!      !!! uses SL in argument
+        CALL WNFLUXES (IJS, IJL,
+     &                 MIJ, RHOWGDFTH,
+     &                 SL,
+     &                 PHIWA,
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                 USNEW, ROAIRN, .TRUE.)
+      ENDIF
 
-!*    DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
-!     -------------------------------------------------------
-      IF(LCFLX) THEN
-!!!!!!   SL must only contain contributions contributed to fluxes into the oceans
-!     MODULATE SL BY IMPLICIT FACTOR
-      DO K=1,NANG
+
+      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      IF(LCFLX .AND. LWVFLX_SNL) THEN
+!!!!!!  SL must only contain contributions contributed to fluxes into the oceans
+!       MODULATE SL BY IMPLICIT FACTOR
         DO M=1,NFRE
-          DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
-            SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+            ENDDO
           ENDDO
         ENDDO
-      ENDDO
-
         CALL WNFLUXES (IJS, IJL,
      &                 MIJ, RHOWGDFTH,
      &                 SSOURCE,
      &                 PHIWA,
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
      &                 USNEW, ROAIRN, .TRUE.)
-
       ENDIF
 
 
