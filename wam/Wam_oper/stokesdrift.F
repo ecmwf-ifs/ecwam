@@ -39,7 +39,7 @@
 
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
-     &                      DFIM_ODD ,
+     &                      DFIM_SIM ,
      &                      FRATIO   ,COSTH    ,SINTH  
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
