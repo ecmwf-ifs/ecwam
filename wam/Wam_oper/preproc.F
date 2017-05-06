@@ -464,7 +464,7 @@
 
 !!! HAS BEEN REPLACED WITH USING TAUT_Z0
 !!!!      CALL STRESS(IU06,ITEST)
-?
+
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
