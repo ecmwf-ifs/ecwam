@@ -64,10 +64,8 @@
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,
-     &            FAC0     ,FAC1     ,FAC2     ,
-     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
+      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
+     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
