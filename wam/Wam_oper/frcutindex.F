@@ -50,6 +50,7 @@
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ROWATER    ,ZPI      ,EPSMIN
+      USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -84,17 +85,30 @@
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
 
-      DO IJ=IJS,IJL
-        IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
-          FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
-          FPM4 = MAX(FM2,FPM)
-          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
-        ELSE
-          MIJ(IJ) = NFRE
-        ENDIF
-      ENDDO
+      IF (IPHYS.EQ.0) THEN
+!  this block is only here to insure that we can reproduce the default CY43R3
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
+            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+          ELSE
+            MIJ(IJ) = NFRE
+          ENDIF
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+            FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+            FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
+            FPM4 = MAX(FM2,FPM)
+            MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+          ELSE
+            MIJ(IJ) = NFRE
+         ENDIF
+        ENDDO
+      ENDIF
 
 !     COMPUTE RHOWGDFTH
       XLOGDFRTH=LOG(FRATIO)*DELTH

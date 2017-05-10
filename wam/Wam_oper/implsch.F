@@ -262,6 +262,18 @@
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
+
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+!     in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
 !     diagnostic (not coded efficiently)
 !!      DO IJ=IJS,IJL
 !!        DO M=1,NFRE
@@ -314,13 +326,12 @@
       ENDIF
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!!      !!! uses SL in argument
-        CALL WNFLUXES (IJS, IJL,
-     &                 MIJ, RHOWGDFTH,
-     &                 SL,
-     &                 PHIWA,
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
-     &                 USNEW, ROAIRN, .TRUE.)
+        CALL WRONG_WNFLUXES (IJS, IJL,
+     &                       MIJ, RHOWGDFTH,
+     &                       SSOURCE, SL,
+     &                       PHIWA,
+     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                       USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 

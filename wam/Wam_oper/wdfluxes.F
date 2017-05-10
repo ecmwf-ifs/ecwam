@@ -75,7 +75,7 @@
       REAL,DIMENSION(IJS:IJL,NANG,NFRE),INTENT(IN) :: FL3
 
 
-      INTEGER :: IJ
+      INTEGER :: IJ, K, M
       INTEGER :: MIJ(IJS:IJL)
 
       REAL :: TAU, XN, PHIDIAG, TAUO
@@ -89,6 +89,9 @@
       REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+
+!????
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
@@ -122,6 +125,17 @@
           WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
           CALL FLUSH (IU06)
         ENDIF
+  
+       IF(.NOT. LWVFLX_SNL) THEN
+!      in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+         DO M=1,NFRE
+           DO K=1,NANG
+             DO IJ=IJS,IJL
+               SSOURCE(IJ,K,M) = SL(IJ,K,M)
+             ENDDO
+           ENDDO
+         ENDDO
+       ENDIF
 
 
 !       MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
@@ -150,12 +164,12 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WNFLUXES (IJS, IJL,
-     &                   MIJ, RHOWGDFTH,
-     &                   SL,
-     &                   PHIWA,
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,
-     &                   USNEW, ROAIRN, .FALSE.)
+          CALL WRONG_WNFLUXES (IJS, IJL,
+     &                         MIJ, RHOWGDFTH,
+     &                         SSOURCE, SL,
+     &                         PHIWA,
+     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                         USNEW, ROAIRN, .FALSE.)
         ENDIF
 
         CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
