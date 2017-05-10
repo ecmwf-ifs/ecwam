@@ -123,7 +123,7 @@
         DO K=2,NANG
           DO IJ=IJS,IJL
             SUMT(IJ) = SUMT(IJ) + SSURF(IJ,K,M)
-            SUMD(IJ) = SUMT(IJ) + SSURF(IJ,K,M)-SINPUT(IJ,K,M)
+            SUMD(IJ) = SUMD(IJ) + SSURF(IJ,K,M)-SINPUT(IJ,K,M)
             SUMX(IJ) = SUMX(IJ) + SINTH(K)*SINPUT(IJ,K,M)
             SUMY(IJ) = SUMY(IJ) + COSTH(K)*SINPUT(IJ,K,M)
           ENDDO
