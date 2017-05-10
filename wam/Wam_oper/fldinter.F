@@ -1,0 +1,321 @@
+      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS,
+     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
+     &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
+     &                     ILONRGG, IJBLOCK, PMISS,
+     &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
+     &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
+! ----------------------------------------------------------------------    
+
+!***  *FLDINTER* - INTERPOLATION OF ATMOSPHERIC FIELDS OVER
+!                  THE WAVE MODEL GRID USING BILINEAR
+!                  INTERPOLATION.
+
+!      S. ABDALLA   ECMWF   DECEMBER 2000. 
+!      J. BIDLOT  ECMWF AUGUST 2006  ADDED SEA ICE FRACTION WHICH
+!                                    CONTAINS MISSING DATA: NEAREST
+!                                    SEA POINT IS TAKEN (IF AVAILABLE).
+
+!     PURPOSE.                                                          
+!     --------                                                          
+
+!     IT INTERPOLATES ATMOSPHERIC DATA FIELDS TO PRODUCE A FIELD 
+!     ON THE WAVE MODEL GRID USING BILINEAR INTERPOLATION.
+!     IT MAKES USE OF THE INTERPOLATION COEFFICIENTS PRODUCED BY 
+!     SUBROUTINE "INITIALINT" WHICH SHOULD BE CALLED BEFORE ANY
+!     CALL TO "FLDINTER".
+!     IT ONLY WORKS IF THE INPUT AND OUTPUT GRIDS ARE LATITUDE/LONGITUDE
+!     (REGULAR OR IRREGULAR) OR GAUSSIAN GRIDS (FULL OR REDUCED) !!!!
+
+!**   INTERFACE.                                                        
+!     ----------                                                        
+
+!      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FIELDS,
+!    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
+!    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
+!    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
+!    &                    ILONRGG, IJBLOCK, PMISS,
+!    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
+!    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
+!
+!        *IU06*   - OUTPUT UNIT.
+!        *ITEST*  - TEST MESSAGE LEVEL.
+!        ATMOSPHERIC MODEL GRID AND FIELD (INPUT):
+!        *NGPTOTG*- NUMBER OF ATMOSPHERIC GRID POINTS
+!        *NCA*    - NUMBER OF ATM. COLUMNS OF LONGITUDE NEAR EQUATOR
+!        *NRA*    - NUMBER OF ATM. ROWS OF LATITUDES
+!        *ILONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (INPUT FIELD)
+!        *FIELDS* - ATMOSPHERIC FIELDS AS FOLLOWS:
+!                   FIELDS(:,1) = U COMPONENT OF NEUTRAL WIND SPEED (U10)
+!                   FIELDS(:,2) = V COMPONENT OF NEUTRAL WIND SPEED (V10)
+!                   FIELDS(:,3) = AIR DENSITY
+!                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
+!                   FIELDS(:,5) = SEA ICE FRACTION 
+
+!        WAVE MODEL GRID SPECIFICATION (INPUT):
+!        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
+!        *NGY*    - NUMBER OF ROWS    IN ARRAY FIELD USED.              
+!        *KRGG*   - GRID DEFINITION PARAMETER (0=REGULAR, 1=IRREGULAR)
+!        *KLONRGG - NUMBER OF GRID POINTS FOR EACH LATITUDE (OUTPUT FIELD)
+!        *XDELLA* - GRID POINT SPACING BETWEEN LATITUDES.
+!        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
+!        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
+!        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
+!        *NINF *  - INTEGER INDEX OF FIRST POINT IN BLOCKS 
+!                   INCLUDING HALO.
+!        *NSUP *  - INTEGER INDEX OF LAST POINT IN BLOCKS 
+!                   INCLUDING HALO.
+!        *IGL*    - SECOND DIMENSION OF IFROMIJ AND JFROMIJ.
+!        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
+!        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
+!        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
+!        *AMOSOP* - MOST SOUTHERN LATITUDE IN GRID.( ? ,NGY).           
+!        *AMOEAP* - MOST EASTERN LONGITUDE IN GRID (NGX, ? ).           
+!        *AMONOP* - MOST NORTHERN LATITUDE IN GRID ( ? , 1 ).           
+!        *IPERIODIC* - SPECIFIES IF WAM GRID IS PERIODIC (=1) OR NOT (=0)
+!        *PMISS*  - MISSING DATA VALUE
+!        INTERPOLATION COEFFICIENTS & INDECES (INPUT):
+!        *IJBLOCK* - BLOCK INDEX FOR THE ATMOSPHERIC FIELDS.
+!        *LADEN*  - VARIABLE AIR DENSITY IS USED.
+!        *ROAIR*  - DEFAULT VALUE FOR AIR DENSITY.
+!        *LGUST*  - GUSTINESS IS USED.
+!        *WSTAR0* - DEFAULT VALUE FOR w*. 
+!        *LWCUR*  - SURFACE CURRENTS ARE USED.
+!        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
+!        *DJ1M*   - COEFFICIENT
+!        *DII1M*  - COEFFICIENT
+!        *DIIP1M* - COEFFICIENT
+!        *JJM*    - INDEX
+!        *IIM*    - INDEX
+!        *IIPM*   - INDEX
+!        *MASK_IN*  INTEGER  MASK TO INDICATE WHICH PART OF FIELDS IS RELEVANT.
+
+
+!     EXTERNALS.                                                        
+!     ----------                                                        
+
+! ----------------------------------------------------------------------
+
+      USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
+      INTEGER, INTENT(IN) :: IGL
+      INTEGER, INTENT(IN) :: NGX, NGY, KRGG, NINF, NSUP, IJS, IJL
+      INTEGER, INTENT(IN) :: IPERIODIC
+      INTEGER, DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
+      INTEGER, DIMENSION(NR), INTENT(IN) :: ILONRGG
+      INTEGER, DIMENSION(NINF-1:NSUP,IGL), INTENT(IN) :: IFROMIJ,JFROMIJ
+      INTEGER, DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
+      INTEGER, DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
+      INTEGER, DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
+
+      REAL, INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
+      REAL, INTENT(IN) :: ROAIR, WSTAR0
+      REAL, DIMENSION(NGY), INTENT(IN) :: ZDELLO, DJ1M
+      REAL, DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+      REAL, DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
+
+      LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLINTERPOL
+
+
+      INTEGER :: IG
+      INTEGER :: IJ, I, J
+      INTEGER :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
+      INTEGER :: NCOUNT
+
+      REAL :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
+      REAL :: F00, F10, F01, F11, CI
+
+! ----------------------------------------------------------------------
+
+      IF(.NOT.LLINTERPOL) THEN
+
+!       REARRANGE DATA FIELD.
+!       --------------------
+
+        DO IG=1,IGL
+          DO IJ = IJS,IJL
+            I = IFROMIJ(IJ,IG)
+            J = JFROMIJ(IJ,IG)
+
+            MASK_IN(IJBLOCK(I,J))=1
+
+            FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1) 
+            FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2) 
+            IF (LADEN) THEN
+              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3) 
+            ELSE
+              FIELDG(I,J)%AIRD = ROAIR
+            ENDIF
+            IF (LGUST) THEN
+              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4) 
+            ELSE
+              FIELDG(I,J)%ZIDL = WSTAR0 
+            ENDIF
+
+            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
+
+!!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
+            FIELDG(I,J)%CITH = 0.0
+
+            IF(LLNEWCURR) THEN
+              IF(LWCUR) THEN
+                FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),6)
+                FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),7)
+              ELSE
+                FIELDG(I,J)%UCUR = 0.
+                FIELDG(I,J)%VCUR = 0.
+              ENDIF
+            ENDIF
+
+          ENDDO
+        ENDDO
+
+      ELSE
+
+!       INTERPOLATE TO WAVE MODEL GRID
+!       ------------------------------
+
+        DO IG=1,IGL
+          DO IJ = IJS,IJL 
+            I = IFROMIJ(IJ,IG)
+            J = JFROMIJ(IJ,IG)
+
+
+            JJ = JJM(J)
+            JSN= NR-JJ+1
+            JJ1= MIN(JJ+1,NR)
+            JSN1=NR-JJ1+1
+            DJ1= DJ1M(J) 
+            DJ2=1.-DJ1
+
+            II = IIM(I,J)
+            II1 = MIN(II+1,ILONRGG(JSN)+IPERIODIC)
+            DII1=DII1M(I,J) 
+            DII2=1.-DII1
+
+            IIP = IIPM(I,J) 
+            IIP1 = MIN(IIP+1,ILONRGG(JSN1)+IPERIODIC)
+            DIIP1= DIIP1M(I,J) 
+            DIIP2=1.-DIIP1
+
+            MASK_IN(IJBLOCK(II,JJ))=1
+            MASK_IN(IJBLOCK(II1,JJ))=1
+            MASK_IN(IJBLOCK(IIP,JJ1))=1
+            MASK_IN(IJBLOCK(IIP1,JJ1))=1
+
+            FIELDG(I,J)%UWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),1) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),1) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),1) )
+
+            FIELDG(I,J)%VWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),2) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),2) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),2) )
+
+            IF (LADEN) THEN
+              FIELDG(I,J)%AIRD=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),3) ) +
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),3) +
+     &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),3) )
+            ELSE
+              FIELDG(I,J)%AIRD = ROAIR
+            ENDIF
+            IF (LGUST) THEN
+              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +
+     &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +
+     &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +
+     &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
+            ELSE
+              FIELDG(I,J)%ZIDL = WSTAR0 
+            ENDIF
+
+!           FOR SEA ICE FRACTION
+!           DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
+!           IF SO USE THE CLOSEST GRID POINT VALUE IF IT IS NOT MISSING
+            F00=FIELDS(IJBLOCK(II,JJ),5)
+            F10=FIELDS(IJBLOCK(II1,JJ),5)
+            F01=FIELDS(IJBLOCK(IIP,JJ1),5)
+            F11=FIELDS(IJBLOCK(IIP1,JJ1),5)
+            IF(F00.EQ.PMISS.OR.
+     &         F10.EQ.PMISS.OR.
+     &         F01.EQ.PMISS.OR.
+     &         F11.EQ.PMISS) THEN
+              IF(DJ1.LE.0.5) THEN
+                JCL=JJ
+                ICL=II1
+                IF(DII1.LE.0.5) ICL=II
+              ELSE
+                JCL=JJ1
+                ICL=IIP1
+                IF(DIIP1.LE.0.5) ICL=IIP
+              ENDIF
+              CI=FIELDS(IJBLOCK(ICL,JCL),5)
+
+!             NON MISSING VALUE OVER SEA IS NEEDED
+              IF(CI.EQ.PMISS) THEN
+                NCOUNT=0
+                CI=0.
+                IF(F00.NE.PMISS) THEN
+                  CI=CI+F00
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F10.NE.PMISS) THEN
+                  CI=CI+F10
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F01.NE.PMISS) THEN
+                  CI=CI+F01
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(F11.NE.PMISS) THEN
+                  CI=CI+F11
+                  NCOUNT=NCOUNT+1
+                ENDIF
+                IF(NCOUNT.GT.0) THEN
+                  CI=CI/NCOUNT
+                ELSE
+                  CI=PMISS
+                ENDIF
+              ENDIF
+              FIELDG(I,J)%CIFR=CI
+            ELSE
+              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +
+     &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
+            ENDIF
+
+!!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
+            FIELDG(I,J)%CITH = 0.0
+
+            IF(LLNEWCURR) THEN
+              IF(LWCUR) THEN
+                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
+
+                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+              ELSE
+                FIELDG(I,J)%UCUR = 0.
+                FIELDG(I,J)%VCUR = 0.
+              ENDIF
+            ENDIF
+
+          ENDDO
+        ENDDO
+
+      ENDIF
+
+      RETURN
+      END SUBROUTINE FLDINTER
+
