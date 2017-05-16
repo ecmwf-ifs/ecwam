@@ -392,11 +392,11 @@
             BACKSPACE(IU07)
             READ(IU07,IOSTAT=ISTAT) KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
             IF (ISTAT /= 0) GOTO 1000 ! Abort: Don't support this file format at all
-            IF (KIND(DELPHI) == 4) THEN
-               LLR8TOR4 = .TRUE. ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
-            ENDIF
-            NKIND = KIND(DELPHI) ! Pretend NKIND is in "right precision"
          ENDIF
+         IF (KIND(DELPHI) == 4) THEN
+            LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
+         ENDIF
+         NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
          WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,
      &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
  1002    FORMAT(1X,A,I0,A,I0,A,L1)
