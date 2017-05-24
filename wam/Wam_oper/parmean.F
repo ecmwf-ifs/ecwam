@@ -50,7 +50,7 @@
       USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
       USE YOWPARAM ,ONLY : NANG, NFRE
       USE YOWPCONS ,ONLY : EPSMIN, ZPI
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 

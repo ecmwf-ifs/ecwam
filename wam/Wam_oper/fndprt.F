@@ -193,7 +193,7 @@
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
                     DO IFRL=MAX(1,M-1), MIN(NFRE,M+1)
                       IF ( W2 (ITHL,IFRL).EQ.0. .AND.
-     &                   SPEC(ITHL,IFRL,IP,IJ).GT.SPEC(K,M,IP,IJ) ) THEN
+     &                   FL3(IJ,ITHL,IFRL).GT.FL3(IJ,K,M) ) THEN
                             LLADD = .FALSE.
                             EXIT OUT1
                       ENDIF
