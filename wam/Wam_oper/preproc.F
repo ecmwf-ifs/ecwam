@@ -422,13 +422,17 @@
 !        TAILFACTOR=2.5
 !        TAILFACTOR_PM=0.0
 !       TEST 471 adapted to ECWAM
-        ALPHA   = 0.0054
+
+!!!        ALPHA   = 0.0054
+        ALPHA   = 0.01
         BETAMAX = 1.37
         ZALP    = 0.006
         ALPHAPMAX = 0.035
-        TAUWSHELTER=0.33
+!!!!        TAUWSHELTER=0.33
+        TAUWSHELTER=0.3
         TAILFACTOR=2.5
-        TAILFACTOR_PM=3.4
+!!!        TAILFACTOR_PM=3.4
+        TAILFACTOR_PM=0.
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1000.0
