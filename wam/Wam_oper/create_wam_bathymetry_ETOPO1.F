@@ -110,7 +110,6 @@
       REAL :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
       REAL :: STEPLAT, STEPLON
       REAL :: RESOL
-      REAL :: Z
       REAL, DIMENSION(ILON) :: ALON
       REAL, DIMENSION(ILAT) :: ALAT
       REAL, DIMENSION(NDPT) :: XK 
@@ -306,8 +305,7 @@
       NTOT=ILON*ILAT
       DO J = 1,ILAT
         DO I = 1,ILON
-          READ(20,*,END=101) ALON(I),ALAT(J),Z
-          IDEPTH(I,J)=NINT(Z)
+          READ(20,*,END=101) ALON(I),ALAT(J),IDEPTH(I,J)
         ENDDO
       ENDDO
 101   CONTINUE
