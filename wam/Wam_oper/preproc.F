@@ -424,7 +424,7 @@
 !       TEST 471 adapted to ECWAM
 
 !!!        ALPHA   = 0.0054
-        ALPHA   = 0.01
+        ALPHA   = 0.006
         BETAMAX = 1.37
         ZALP    = 0.006
         ALPHAPMAX = 0.035
