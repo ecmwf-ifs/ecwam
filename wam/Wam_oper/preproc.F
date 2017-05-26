@@ -424,11 +424,11 @@
 !       TEST 471 adapted to ECWAM
 
 !!!        ALPHA   = 0.0054
-        ALPHA   = 0.007
+        ALPHA   = 0.0065
         BETAMAX = 1.37
         ZALP    = 0.006
 !!!        ALPHAPMAX = 0.035
-        ALPHAPMAX = 0.03
+        ALPHAPMAX = 0.031
 !!!!        TAUWSHELTER=0.33
         TAUWSHELTER=0.3
         TAILFACTOR=2.5
