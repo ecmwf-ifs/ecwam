@@ -485,9 +485,9 @@
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
              PERCENTSHALLOW(IX,K)=FLOAT(NSEASH)/FLOAT(NSEA)
              IF(PERCENTSHALLOW(IX,K).GE.0.3) THEN
-               WAMDEPTH(IX,K)=SEASH/NSEASH
+               WAMDEPTH(IX,K)=MIN(NINT(SEASH/NSEASH),-1)
              ELSE 
-               WAMDEPTH(IX,K)=SEA/NSEA
+               WAMDEPTH(IX,K)=NINT(SEA/NSEA)
              ENDIF
            ENDIF
 
