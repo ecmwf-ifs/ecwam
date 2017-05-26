@@ -428,7 +428,7 @@
         BETAMAX = 1.37
         ZALP    = 0.006
 !!!        ALPHAPMAX = 0.035
-        ALPHAPMAX = 0.031
+        ALPHAPMAX = 0.032
 !!!!        TAUWSHELTER=0.33
         TAUWSHELTER=0.3
         TAILFACTOR=2.5
