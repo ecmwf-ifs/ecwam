@@ -439,7 +439,7 @@
                  IK=II
                  IF(II.LT.1) IK=ILON+II
                  IF(II.GT.ILON) IK=II-ILON
-                 IF(IDEPTH(IK,JJ).LE.0) THEN
+                 IF(IDEPTH(IK,JJ).LT.0) THEN
                    NSEA=NSEA+1
 !                  IN WAM 999M IS THE MAXIMUM DEPTH
                    SEA=SEA+MAX(-999,IDEPTH(IK,JJ))
