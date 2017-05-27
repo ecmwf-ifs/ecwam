@@ -439,7 +439,7 @@
                  IK=II
                  IF(II.LT.1) IK=ILON+II
                  IF(II.GT.ILON) IK=II-ILON
-                 IF(IDEPTH(IK,JJ).LT.0) THEN
+                 IF(IDEPTH(IK,JJ).LE.0) THEN
                    NSEA=NSEA+1
 !                  IN WAM 999M IS THE MAXIMUM DEPTH
                    SEA=SEA+MAX(-999,IDEPTH(IK,JJ))
@@ -486,6 +486,10 @@
              PERCENTSHALLOW(IX,K)=FLOAT(NSEASH)/FLOAT(NSEA)
              IF(PERCENTSHALLOW(IX,K).GE.0.3) THEN
                WAMDEPTH(IX,K)=NINT(SEASH/NSEASH)
+               IF(PERCENTLAND(IX,K).LT.0.10) THEN
+!                IF MOSTLY SEA THEN IT SHOULD BE SEA AND NOT 0 
+                 WAMDEPTH(IX,K)=MIN(WAMDEPTH(IX,K),-1)
+               ENDIF
              ELSE 
                WAMDEPTH(IX,K)=NINT(SEA/NSEA)
              ENDIF
