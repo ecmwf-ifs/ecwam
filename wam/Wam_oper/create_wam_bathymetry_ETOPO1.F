@@ -685,7 +685,7 @@
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
               IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
-              IBLOCKDPT(IX,K)=INT(-0.05*XX)
+              IBLOCKDPT(IX,K)=INT(-0.025*XX)
             ENDIF
           ENDDO
         ENDDO
@@ -752,7 +752,7 @@
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
@@ -903,7 +903,7 @@
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
@@ -1058,7 +1058,7 @@
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
@@ -1205,7 +1205,7 @@
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
@@ -1361,7 +1361,7 @@
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
@@ -1508,7 +1508,7 @@
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
@@ -1677,7 +1677,7 @@
 !                     (SEE BELOW)
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
@@ -1829,7 +1829,7 @@
 !                     LAND IS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K)
 !                     ------------------------------------------
                         LLAND=.TRUE.
-                        IF(IDEPTH(I,J).GE.0 ) LREALLAND=.TRUE. 
+                        IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
