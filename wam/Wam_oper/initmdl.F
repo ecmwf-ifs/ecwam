@@ -285,6 +285,7 @@
      &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
      &            ISHALLO  ,IREFRA   ,
      &            IPHYS    ,
+     &            NPROMA_WAM,
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
@@ -328,6 +329,9 @@
       INTEGER :: JD
       INTEGER :: IDELWH
       INTEGER :: IU05, IU09, IU10, I_GET_UNIT
+      INTEGER :: NTOT, MTHREADS
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+
       INTEGER :: MASK_IN(NGPTOTG)
 
       REAL :: FCRANGE, XD
@@ -360,6 +364,13 @@
 
       CALL INIWCST(PRPLRADI)
 
+!     ADJUST NPROMA_WAM
+      NTOT=IJL(1)-IJS(1)+1
+      MTHREADS=1
+!$    MTHREADS=OMP_GET_MAX_THREADS()
+      NPROMA=NPROMA_WAM
+      CALL WAM_NPROMA(NTOT, MTHREADS, NPROMA)
+      NPROMA_WAM=NPROMA
 
 !*    1. DEFINITION OF MODEL PARAMETERS.
 !        -------------------------------
@@ -741,6 +752,14 @@
      & NANG 
       WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES ............: ',
      & NFRE 
+
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' PARALLEL ORGANISATION : '
+      WRITE(IU06,*) ' NPROC      : ', NPROC
+      WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
+      WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
+      WRITE(IU06,*) '  '
+
       IF(FFLAG25.OR.PFLAG25.OR.GFLAG25.OR.
      & FFLAG26.OR.PFLAG26.OR.GFLAG26) THEN
         WRITE(IU06,*) '  '
