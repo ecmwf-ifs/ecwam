@@ -56,11 +56,18 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 !----------------------------------------------------------------------
+      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,
+     &                      GRID, DEFVAL, MASK_OUT, LLGLOBAL)
 
       IMPLICIT NONE
 
-      INTEGER :: MASK_OUT(NGX,NGY)
-      INTEGER :: IG, IJS, IJL, NWVFIELDS
+      INTEGER, INTENT(IN) :: IG, IJS, IJL, NWVFIELDS
+      INTEGER, INTENT(IN) :: MASK_OUT(NGX,NGY)
+      REAL,DIMENSION(IJS:IJL,NWVFIELDS), INTENT(IN) :: BLOCK 
+      REAL,DIMENSION(NWVFIELDS), INTENT(IN) :: DEFVAL 
+      REAL,DIMENSION(NGX,NGY,NWVFIELDS), INTENT(OUT) :: GRID 
+      LOGICAL, INTENT(OUT) :: LLGLOBAL
+
       INTEGER :: IFLD, IP, IP1, IJ, I, J, IX, IY
       INTEGER :: ITAG, KREQ, ICOUNT, IC, IST, IEND
       INTEGER :: ISEND, IRECV, IR
@@ -68,18 +75,14 @@
       INTEGER :: ISENDREQ(NPROC)
       INTEGER, SAVE :: NSEND=0
       INTEGER, SAVE :: NRECV=0
-      INTEGER, ALLOCATABLE, SAVE :: IPSEND, IPRECV, IREQ 
+      INTEGER, ALLOCATABLE, SAVE :: IPSEND(:), IPRECV(:), IREQ(:) 
 
       REAL :: ZDUM(2)
-      REAL,DIMENSION(NWVFIELDS) :: DEFVAL 
-      REAL,DIMENSION(IJS:IJL,NWVFIELDS) :: BLOCK 
-      REAL,DIMENSION(NGX,NGY,NWVFIELDS) :: GRID 
       REAL,ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
       REAL,ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
       REAL ZHOOK_HANDLE
       REAL ZHOOK_HANDLE1
 
-      LOGICAL :: LLGLOBAL
 
 !----------------------------------------------------------------------
 #ifdef ECMWF
@@ -116,8 +119,10 @@
 
           IF(LLGLOBAL) THEN
 
-            ALLOCATE(ZBUFS(NIBLO))
-            ALLOCATE(ZBUFR(NIBLO))
+            IF(IFLD.EQ.1) THEN
+              ALLOCATE(ZBUFS(NIBLO))
+              ALLOCATE(ZBUFR(NIBLO))
+            ENDIF
 
             DO IJ=IJS,IJL
               ZBUFS(IJ)=BLOCK(IJ,IFLD)
@@ -140,8 +145,10 @@
               ENDDO
             ENDDO
 
-            DEALLOCATE(ZBUFS)
-            DEALLOCATE(ZBUFR)
+            IF(IFLD.EQ.NWVFIELDS) THEN
+              DEALLOCATE(ZBUFS)
+              DEALLOCATE(ZBUFR)
+            ENDIF
 
             LMASK_OUT_NOT_SET=.FALSE.
 
@@ -320,7 +327,7 @@
 !           EXCHANGE INFORMATION
 !           --------------------
 
-            IF(IFLD.EQ.1) then
+            IF(IFLD.EQ.1) THEN
               ALLOCATE(ZSENDBUF(MAX(1,NTOTASKS)))
               ALLOCATE(ZRECVBUF(NFROMTASKS))
             ENDIF
