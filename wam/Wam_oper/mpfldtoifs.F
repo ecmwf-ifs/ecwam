@@ -56,9 +56,6 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 !----------------------------------------------------------------------
-      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,
-     &                      GRID, DEFVAL, MASK_OUT, LLGLOBAL)
-
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IG, IJS, IJL, NWVFIELDS
