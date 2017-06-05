@@ -62,10 +62,15 @@
       INTEGER :: MASK_OUT(NGX,NGY)
       INTEGER :: IG, IJS, IJL, NWVFIELDS
       INTEGER :: IFLD, IP, IP1, IJ, I, J, IX, IY
-      INTEGER :: ITAG, IREQ, ICOUNT, IC, IST, IEND
+      INTEGER :: ITAG, KREQ, ICOUNT, IC, IST, IEND
+      INTEGER :: ISEND, IRECV, IR
       INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
       INTEGER :: ISENDREQ(NPROC)
+      INTEGER, SAVE :: NSEND=0
+      INTEGER, SAVE :: NRECV=0
+      INTEGER, ALLOCATABLE, SAVE :: IPSEND, IPRECV, IREQ 
 
+      REAL :: ZDUM(2)
       REAL,DIMENSION(NWVFIELDS) :: DEFVAL 
       REAL,DIMENSION(IJS:IJL,NWVFIELDS) :: BLOCK 
       REAL,DIMENSION(NGX,NGY,NWVFIELDS) :: GRID 
@@ -227,18 +232,18 @@
 !             SEND TO ALL OTHER TASKS TO LET THEM KNOW WHICH CONTRIBUTIONS
 !             FROM THEM ARE NEEDED.
               ITAG=2
-              IREQ=0
+              KREQ=0
 
               DO IP=1,NPROC
                 IF(LFROMTASK(IP).GT.0) THEN
-                  IREQ=IREQ+1
+                  KREQ=KREQ+1
 
                   IST=ISTFROMTASK(IP)
                   IEND=IST+LFROMTASK(IP)-1
                   CALL MPL_SEND(IJFROMTASK(IST:IEND),
      &                          KDEST=IP,KTAG=ITAG,
      &                          KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                          KREQUEST=ISENDREQ(IREQ),
+     &                          KREQUEST=ISENDREQ(KREQ),
      &                          CDSTRING='MPFLDTOIFS: SEND IJ ' )
                 ENDIF
               ENDDO
@@ -257,8 +262,8 @@
                 ENDIF
               ENDDO
 
-              IF( IREQ .GT. 0 )THEN
-                CALL MPL_WAIT(LFROMTASK(:),KREQUEST=ISENDREQ(1:IREQ),
+              IF( KREQ .GT. 0 )THEN
+                CALL MPL_WAIT(LFROMTASK(:),KREQUEST=ISENDREQ(1:KREQ),
      &                        CDSTRING='MPFLDTOIFS: WAIT SEND IJ')
               ENDIF
 
@@ -276,79 +281,110 @@
 !               CALL MPL_BARRIER(CDSTRING='MPFLDTOIFS')
 !             ENDDO
 
-            ENDIF
+
+              NSEND=0
+              DO IP=1,NPROC
+                IF(LTOTASK(IP).GT.0) NSEND=NSEND+1
+              ENDDO
+              IF (ALLOCATED(IPSEND)) DEALLOCATE(IPSEND)
+              ALLOCATE(IPSEND(MAX(1,NSEND)))
+              NSEND=0
+              DO IP=1,NPROC
+                IF(LTOTASK(IP).GT.0) THEN
+                  NSEND=NSEND+1
+                  IPSEND(NSEND)=IP
+                ENDIF
+              ENDDO
+
+              NRECV=0
+              DO IP=1,NPROC
+                IF(LFROMTASK(IP).GT.0) NRECV=NRECV+1
+              ENDDO
+              IF (ALLOCATED(IPRECV)) DEALLOCATE(IPRECV)
+              ALLOCATE(IPRECV(MAX(1,NRECV)))
+              NRECV=0
+              DO IP=1,NPROC
+                IF(LFROMTASK(IP).GT.0) THEN
+                  NRECV=NRECV+1
+                  IPRECV(NRECV)=IP
+                ENDIF
+              ENDDO
+
+              IF (ALLOCATED(IREQ)) DEALLOCATE(IREQ)
+              ALLOCATE(IREQ(MAX(1,NSEND+NRECV)))
+
+
+            ENDIF  ! LMASK_TASK_STR
 
 
 !           EXCHANGE INFORMATION
+!           --------------------
 
-!           SEND LOCAL TASK CONTRIBUTION TO TASKS THAT NEED IT
+            IF(IFLD.EQ.1) then
+              ALLOCATE(ZSENDBUF(MAX(1,NTOTASKS)))
+              ALLOCATE(ZRECVBUF(NFROMTASKS))
+            ENDIF
 
-            ALLOCATE(ZSENDBUF(MAX(1,NTOTASKS)))
-            DO IP=1,NPROC
-              IF(LTOTASK(IP).GT.0) THEN
-                IST=ISTTOTASK(IP)
-                IEND=IST+LTOTASK(IP)-1
-                DO IC=IST,IEND
-                  ZSENDBUF(IC)=BLOCK(IJTOTASK(IC),IFLD)
-                ENDDO
-              ENDIF
+            DO ISEND=1,NSEND
+              IP=IPSEND(ISEND)
+              IST=ISTTOTASK(IP)
+              IEND=IST+LTOTASK(IP)-1
+              DO IC=IST,IEND
+                ZSENDBUF(IC)=BLOCK(IJTOTASK(IC),IFLD)
+              ENDDO
             ENDDO
 
             ITAG=3
-            IREQ=0
+            KREQ=0
 
-            DO IP=1,NPROC
-              IF(LTOTASK(IP).GT.0) THEN
-                IREQ=IREQ+1
-                IST=ISTTOTASK(IP)
-                IEND=IST+LTOTASK(IP)-1
-                CALL MPL_SEND(ZSENDBUF(IST:IEND),
-     &                        KDEST=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                        KREQUEST=ISENDREQ(IREQ),
-     &                        CDSTRING='MPFLDTOIFS: SEND DATA' )
-              ENDIF
-            ENDDO
-
-            ALLOCATE(ZRECVBUF(NFROMTASKS))
-
+            IR=0
 !           RECEIVE INFORMATION FROM OTHER TASKS (IF NEEDED)
-            DO IP=1,NPROC
-
-              IF(LFROMTASK(IP).GT.0) THEN
-                IST=ISTFROMTASK(IP)
-                IEND=IST+LFROMTASK(IP)-1
-                CALL MPL_RECV(ZRECVBUF(IST:IEND),
-     &                        KSOURCE=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_BLOCKING_STANDARD,
-     &                        CDSTRING='MPFLDTOIFS: RECV DATA ' )
-
-              ENDIF
+            DO IRECV=1,NRECV
+              IR=IR+1
+              IP=IPRECV(IRECV)
+              IST=ISTFROMTASK(IP)
+              IEND=IST+LFROMTASK(IP)-1
+              CALL MPL_RECV(ZRECVBUF(IST:IEND),
+     &                      KSOURCE=IP,KTAG=ITAG,
+     &                      KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                      KREQUEST=IREQ(IR),
+     &                      CDSTRING='MPFLDTOIFS: RECV DATA ' )
             ENDDO
 
-!           ENSURE ALL SENDS ARE FINISHED.
+!           SEND LOCAL TASK CONTRIBUTION TO TASKS THAT NEED IT
+            DO ISEND=1,NSEND
+              IR=IR+1
+              IP=IPSEND(ISEND)
+              IST=ISTTOTASK(IP)
+              IEND=IST+LTOTASK(IP)-1
+              CALL MPL_SEND(ZSENDBUF(IST:IEND),
+     &                      KDEST=IP,KTAG=ITAG,
+     &                      KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                      KREQUEST=IREQ(IR),
+     &                      CDSTRING='MPFLDTOIFS: SEND DATA' )
+            ENDDO
 
-            IF(IREQ.GT.0) THEN
-              CALL MPL_WAIT(ZSENDBUF(:),KREQUEST=ISENDREQ(1:IREQ),
+
+!           ENSURE ALL TO COMPLETE.
+
+            IF(IR.GT.0) THEN
+              CALL MPL_WAIT(ZDUM,KREQUEST=IREQ(1:IR),
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND DATA ')
             ENDIF
 
-            DO IP=1,NPROC
-              IF(LFROMTASK(IP).GT.0) THEN
-                IST=ISTFROMTASK(IP)
-                IEND=IST+LFROMTASK(IP)-1
-!               TRANSFORM FROM BLOCK TO GRID
-                DO IC = IST,IEND
-                  IJ=IJFROMTASK(IC)
-                  IX = IXLG(IJ,IG)
-                  IY = NGY- KXLT(IJ,IG) +1
-                  GRID(IX,IY,IFLD) = ZRECVBUF(IC)
-                ENDDO
-              ENDIF
+            DO IRECV=1,NRECV
+              IP=IPRECV(IRECV)
+              IST=ISTFROMTASK(IP)
+              IEND=IST+LFROMTASK(IP)-1
+!             TRANSFORM FROM BLOCK TO GRID
+              DO IC = IST,IEND
+                IJ=IJFROMTASK(IC)
+                IX = IXLG(IJ,IG)
+                IY = NGY- KXLT(IJ,IG) +1
+                GRID(IX,IY,IFLD) = ZRECVBUF(IC)
+              ENDDO
             ENDDO
 
-            DEALLOCATE(ZSENDBUF)
-            DEALLOCATE(ZRECVBUF)
 
           ENDIF
 
@@ -367,10 +403,13 @@
 
       ENDDO
 
+      IF(ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
+      IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
+
       CALL GSTATS(686,1)
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
 #endif
-      RETURN
+
       END SUBROUTINE MPFLDTOIFS
