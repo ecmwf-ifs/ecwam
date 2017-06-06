@@ -299,6 +299,7 @@
           CALL GSTATS(686,1)
 
         ENDIF  ! LMASK_TASK_STR
+
 !         EXCHANGE INFORMATION
 !         --------------------
 
@@ -313,7 +314,7 @@
             IST=ISTTOTASK(IP)
             IEND=IST+LTOTASK(IP)-1
             DO IC=IST,IEND
-              ZSENDBUF(IC)=BLOCK(IJTOTASK(IC),IFLD)
+              ZSENDBUF(IC,IFLD)=BLOCK(IJTOTASK(IC),IFLD)
             ENDDO
           ENDDO
         ENDDO
@@ -372,7 +373,7 @@
               IJ=IJFROMTASK(IC)
               IX = IXLG(IJ,IG)
               IY = NGY- KXLT(IJ,IG) +1
-              GRID(IX,IY,IFLD) = ZRECVBUF(IC)
+              GRID(IX,IY,IFLD) = ZRECVBUF(IC,IFLD)
             ENDDO
           ENDDO
         ENDDO
