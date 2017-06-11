@@ -598,11 +598,7 @@ C
           DO IJ=KIJS,KIJL
             EMAX = 0.0625*(0.8*DEPTH(IJ,IG))**2
             IF(EM(IJ).GT.EMAX) THEN
-              IF(DEPTH(IJ,IG).LT.2.) THEN
-                EM(IJ)=0.0
-              ELSE
-                EM(IJ)=EMAX/EM(IJ)
-              ENDIF
+              EM(IJ)=EMAX/EM(IJ)
             ELSE
               EM(IJ)=1.
             ENDIF
