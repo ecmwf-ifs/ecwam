@@ -346,12 +346,12 @@
               WRITE(CDATE1,'(I4,5I2)')IY1,IM1,ID1,IH1,IMN1,ISS1
               CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
               NWINOFF=NWINOFF/3600
-            ELSE
-              NWINOFF=12-MOD(IH2+3,12)
-            ENDIF
 !           in hours
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
      &       'offsetToEndOf4DvarWindow',NWINOFF)          
+            ELSE
+              NWINOFF=12-MOD(IH2+3,12)
+            ENDIF
           ENDIF 
         ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
           ICLASS = 10 
