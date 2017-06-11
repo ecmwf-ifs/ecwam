@@ -596,9 +596,13 @@ C
 
           CALL SEMEAN (FL(KIJS:KIJL,:,:),KIJS,KIJL,EM(KIJS),LLEPSMIN)
           DO IJ=KIJS,KIJL
-            EMAX = 0.0625*DEPTH(IJ,IG)**2
+            EMAX = 0.0625*(0.8*DEPTH(IJ,IG))**2
             IF(EM(IJ).GT.EMAX) THEN
-              EM(IJ)=EMAX/EM(IJ)
+              IF(DEPTH(IJ,IG).LT.2.) THEN
+                EM(IJ)=0.0
+              ELSE
+                EM(IJ)=EMAX/EM(IJ)
+              ENDIF
             ELSE
               EM(IJ)=1.
             ENDIF
@@ -607,7 +611,7 @@ C
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                FL(IJ,K,M) = FL(IJ,K,M)*EM(IJ) 
+                FL(IJ,K,M) = MAX(FL(IJ,K,M)*EM(IJ),EPSMIN) 
               ENDDO
             ENDDO
           ENDDO
