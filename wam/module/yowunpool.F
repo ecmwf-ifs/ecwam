@@ -2,7 +2,7 @@
 !*                                                                    *
 !**********************************************************************
       MODULE YOWUNPOOL 
-      USE YOWPARAM , ONLY : MDC => NANG, &
+      USE YOWPARAM , ONLY : MDC => NANG,
      &                      MSC => NFRE 
 
          LOGICAL :: LLUNSTR
@@ -85,7 +85,7 @@
             INTEGER             :: FHNDL ! unWAM file handles ...
          END TYPE
 
-         TYPE (FILEDEF)         :: BND,WAV,STAT,DBG,WAMOUT,GRID,XFN_HS, &
+         TYPE (FILEDEF)         :: BND,WAV,STAT,DBG,WAMOUT,GRID,XFN_HS,
      &                             XFN_TM, XFN_TEST
       END MODULE YOWUNPOOL
 !**********************************************************************
