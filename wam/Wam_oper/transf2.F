@@ -46,10 +46,11 @@
       ZSEC  = SIGN(MAX(ABS(ZSEC),ZEPS),ZSEC)
       XNL_2 = ((2.*V_G-0.5*C_0)**2/ZSEC+1.)/X
 
-      T_NL = XK**3*(XNL_1-XNL_2)
+!      T_NL = XK**3*(XNL_1-XNL_2)
 !     TRANSF2 = (V_G/C_0)**2*G*T_NL/XK**4/D2OM
 !     Alternative formulation
-      TRANSF2 =  V_G*V_G*XK*T_NL/T_0 / D2OM
+      T_NL = XNL_1-XNL_2
+      TRANSF2 =  V_G*V_G*T_NL/T_0 / D2OM
 !
       RETURN
       END
