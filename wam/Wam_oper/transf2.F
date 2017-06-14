@@ -51,6 +51,9 @@
 !     Alternative formulation
       T_NL = XNL_1-XNL_2
       TRANSF2 =  V_G*V_G*T_NL/T_0 / D2OM
+
+!!! debile
+         write(*,*) 'debile transf2 = ',transf2
 !
       RETURN
       END
