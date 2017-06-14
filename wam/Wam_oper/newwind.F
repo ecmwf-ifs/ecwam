@@ -108,14 +108,12 @@
 
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
 
+      INTEGER, SAVE :: ISTORE = 0
 
       INTEGER :: ICODE_WND
-      INTEGER :: ISTORE
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
       REAL :: ZHOOK_HANDLE
-
-      DATA ISTORE /0/
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
