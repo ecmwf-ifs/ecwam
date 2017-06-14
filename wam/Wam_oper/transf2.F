@@ -28,7 +28,9 @@
 !
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
-!     
+!
+!     We implicitely imply use 999 as the threshold for deep water
+      IF(D.LT.999.) THEN
       !ZEPS= 1000.* TINY(ZEPS)
       ZEPS= 100.* EPSILON(ZEPS)
       X   = MIN(XK*D,DKMAX)
@@ -51,6 +53,10 @@
 !     Alternative formulation
       T_NL = XNL_1-XNL_2
       TRANSF2 =  V_G*V_G*T_NL/T_0 / D2OM
+
+      ELSE
+        TRANSF2 = 1.0
+      ENDIF
 
 !!! debile
          write(*,*) 'debile transf2 = ',transf2
