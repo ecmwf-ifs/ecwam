@@ -34,7 +34,7 @@
       !ZEPS= 1000.* TINY(ZEPS)
       ZEPS= 100.* EPSILON(ZEPS)
       X   = MIN(XK*D,DKMAX)
-      X   = MAX(X,0.5)
+      X   = MAX(X,0.05)
       T_0 = SIGN(MAX(ABS(TANH(X)),ZEPS),TANH(X))
       OM  = SQRT(G*XK*T_0)
       C_0 = OM/XK
