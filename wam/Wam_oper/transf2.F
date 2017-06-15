@@ -31,6 +31,7 @@
 !
 !     We implicitely imply use 999 as the threshold for deep water
       IF(D.LT.999.) THEN
+
       !ZEPS= 1000.* TINY(ZEPS)
       ZEPS= 100.* EPSILON(ZEPS)
       X   = MIN(XK*D,DKMAX)
@@ -58,8 +59,4 @@
         TRANSF2 = 1.0
       ENDIF
 
-!!! debile
-         write(*,*) 'debile transf2 = ',transf2
-!
-      RETURN
       END
