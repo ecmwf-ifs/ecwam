@@ -81,10 +81,10 @@
              ALPH = 2.*EMAX/(EMEAN(IJ))
              ARG  = MIN(ALPH,50.)
              Q_OLD = EXP(-ARG)
-             DO IC=1,15
+             DO IC=1,50
                Q = EXP(-ARG*(1.-Q_OLD))
                REL_ERR=ABS(Q-Q_OLD)/Q_OLD
-               IF(REL_ERR.LT.0.01) EXIT
+               IF(REL_ERR.LT.0.001) EXIT
                Q_OLD = Q
              ENDDO
              SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
