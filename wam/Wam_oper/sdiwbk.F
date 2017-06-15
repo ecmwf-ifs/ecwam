@@ -56,7 +56,7 @@
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
 
       REAL :: ZHOOK_HANDLE
-      REAL :: EMAX, ALPH, ARG, Q, Q_OLD, REL_ERR
+      REAL :: EMAX, ALPH, ARG, Q, Q_OLD, REL_ERR, EXPQ
       REAL,DIMENSION(IJS:IJL) :: SDS
 
       REAL, PARAMETER :: ALPH_B_J = 1.0
@@ -81,12 +81,15 @@
              ALPH = 2.*EMAX/(EMEAN(IJ))
              ARG  = MIN(ALPH,50.)
              Q_OLD = EXP(-ARG)
-             DO IC=1,50
-               Q = EXP(-ARG*(1.-Q_OLD))
+!            USE NEWTON-RAPHSON METHOD
+             DO IC=1,15
+               EXPQ = EXP(-ARG*(1.-Q_OLD))
+               Q = Q_OLD - (EXPQ-Q_OLD)/(ARG*EXPQ-1.)
                REL_ERR=ABS(Q-Q_OLD)/Q_OLD
-               IF(REL_ERR.LT.0.01) EXIT
+               IF(REL_ERR.LT.0.00001) EXIT
                Q_OLD = Q
              ENDDO
+             Q=MIN(Q,1.)
              SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
            ENDIF
         ENDDO 
