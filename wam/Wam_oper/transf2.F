@@ -28,11 +28,14 @@
 !
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
-!     
+!
+!     We implicitely imply use 999 as the threshold for deep water
+      IF(D.LT.999.) THEN
+
       !ZEPS= 1000.* TINY(ZEPS)
       ZEPS= 100.* EPSILON(ZEPS)
       X   = MIN(XK*D,DKMAX)
-      X   = MAX(X,0.5)
+      X   = MAX(X,0.05)
       T_0 = SIGN(MAX(ABS(TANH(X)),ZEPS),TANH(X))
       OM  = SQRT(G*XK*T_0)
       C_0 = OM/XK
@@ -51,6 +54,9 @@
 !     Alternative formulation
       T_NL = XNL_1-XNL_2
       TRANSF2 =  V_G*V_G*T_NL/T_0 / D2OM
-!
-      RETURN
+
+      ELSE
+        TRANSF2 = 1.0
+      ENDIF
+
       END
