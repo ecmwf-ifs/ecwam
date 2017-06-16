@@ -80,6 +80,8 @@
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
 
+      REAL, PARAMETER :: HSMIN=0.01  ! minimum Hs value to keep a partition
+      REAL :: THRS
       REAL :: HALF_SECTOR
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(NANG,NFRE) :: W2
@@ -285,6 +287,19 @@
       CALL PARMEAN(IJS, IJL, NPMAX, NPEAK,
      &             SPEC,
      &             ENE, DIR, PER)
+
+!     REMOVE PARTITION WITH Hs < HSMIN 
+
+      THRS=HSMIN**2/16.
+      DO IP=1,NPMAX
+        DO IJ=IJS,IJL
+          IF(ENE(IJ,IP).LT.THRS) THEN
+            ENE(IJ,IP)=0.
+            DIR(IJ,IP)=0.
+            PER(IJ,IP)=0.
+          ENDIF
+        ENDDO
+      ENDDO
 
 
 #ifdef ECMWF
