@@ -4,7 +4,8 @@
      &                    ROAIRO, WSTAROLD,
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
-     &                    Z0NEW, ROAIRN, WSTARNEW)
+     &                    Z0NEW, ROAIRN, WSTARNEW,
+     &                    MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -44,7 +45,8 @@
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW)
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
+!    &                    MIJ,  XLLWS)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -68,6 +70,9 @@
 !      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
+!      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!      *XLLWS*     WINDSEA MASK FROM INPUT SOURCE TERM
+
 
 !     METHOD.
 !     -------
@@ -137,11 +142,7 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL, IG
-      INTEGER :: IJ, K, M
-      INTEGER :: ILEV
-      INTEGER :: ICODE_WND, ICODE_WAM
-      INTEGER :: MIJ(IJS:IJL)
-      INTEGER :: JU(IJS:IJL)
+      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
       REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
@@ -152,6 +153,12 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+
+      INTEGER :: IJ, K, M
+      INTEGER :: ILEV
+      INTEGER :: ICODE_WND, ICODE_WAM
+      INTEGER :: JU(IJS:IJL)
 
       REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
@@ -169,7 +176,6 @@
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 !???
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
@@ -297,7 +303,7 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
-     &                MIJ,RHOWGDFTH)
+     &                MIJ, RHOWGDFTH)
 
       CALL STRESSO (FL3, SL, IJS, IJL,
      &              MIJ, RHOWGDFTH,

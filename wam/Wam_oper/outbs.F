@@ -1,4 +1,6 @@
-      SUBROUTINE OUTBS (FL1, IJSLOC, IJLLOC, IJ_OFFSET,
+      SUBROUTINE OUTBS (IJSLOC, IJLLOC, IJ_OFFSET,
+     &                  MIJ,
+     &                  FL1, XLLWS,
      &                  IG, IU25, IU26, LLOUTBS)
 ! ----------------------------------------------------------------------
 
@@ -16,12 +18,16 @@
 
 !**   INTERFACE.
 !     ----------
-!   *CALL* *OUTBS (FL1, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
-!      *FL1*    - INPUT SPECTRUM.
+!      *CALL*OUTBS (IJSLOC, IJLLOC, IJ_OFFSET,
+!     &             MIJ, FL1, XLLWS,
+!     &             IG, IU25, IU26, LLOUTBS)
 !      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
 !      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
 !      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
 !                   only meaningful if unstructured grid
+!      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!      *FL1*    - INPUT SPECTRUM.
+!      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
 !      *IG*     - BLOCK NUMBER
 !      *IU25*   - OUTPUT UNIT FOR SPECTRA.
 !      *IU26*   - OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
@@ -117,27 +123,29 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ_OFFSET
-      INTEGER :: IJSLOC, IJLLOC, ITT, ITG, ICT
-      INTEGER :: IG
+      INTEGER, INTENT(IN) :: IJSLOC, IJLLOC
+      INTEGER, INTENT(IN) :: IJ_OFFSET
+      INTEGER, INTENT(IN) :: IG
+      INTEGER, INTENT(IN) :: IU25, IU26 
+      INTEGER, DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: MIJ
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: XLLWS 
+      LOGICAL, INTENT(OUT) :: LLOUTBS
+
+      INTEGER :: ITT, ITG, ICT
       INTEGER :: IJ, K, M 
       INTEGER :: IRA
-      INTEGER :: IU25, IU26 
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
 
       REAL :: SIG
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
 
 !     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
-!     *FL*   WORKING ARRAY FOR SWELL OUTPUT.
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL
 
       LOGICAL :: LLAK, LLPEAKF
       LOGICAL :: LLPARTITION
-      LOGICAL :: LLOUTBS
 
 !     LOGICAL FUNCTION
       LOGICAL :: LLALLOC_GRDFLD
@@ -310,7 +318,6 @@
         ENDIF
         IF(LSECONDORDER) THEN
           CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,1:NANG,1:NFRE),
-     &                               FL(KIJS:KIJL,1:NANG,1:NFRE),
      &                               KIJS,KIJL,
      &                               DEPTH(KIJS:KIJL,IG),
      &                               SIG)
@@ -530,11 +537,9 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
-        CALL SEPWISW (FL3(KIJS:KIJL,:,:),
-     &                FL(KIJS:KIJL,:,:),
-     &                KIJS, KIJL, THWOLD(KIJS,IG),
-     &                USOLD(KIJS,IG),USNEW(KIJS),
-     &                U10NEW(KIJS),THWNEW(KIJS),
+        CALL SEPWISW (KIJS, KIJL, MIJ(KIJS),
+     &                FL3(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),
+     &                USNEW(KIJS), U10NEW(KIJS), THWNEW(KIJS),
      &                LLPARTITION)
       ENDDO
 !$OMP END PARALLEL DO
@@ -556,7 +561,7 @@
 !        ------------------------------------------
 
       IF (CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
-        CALL OUTSPP (FL3, FL, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
+        CALL OUTSPP (FL3, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
         IF (ITEST.GE.3) THEN
           IF (ITESTB.GE.IG) THEN
             WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',

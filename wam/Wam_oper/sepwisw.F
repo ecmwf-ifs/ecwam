@@ -1,5 +1,6 @@
-      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, THWOLD, USOLD, USNEW,
-     &                    U10NEW, THWNEW, LLPARTITION)
+      SUBROUTINE SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
+     &                    USNEW, U10NEW, THWNEW,
+     &                    LLPARTITION)
 
 ! ----------------------------------------------------------------------
 
@@ -26,19 +27,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW,
-!                        U10NEW, THWNEW, LLPARTITION)*
-!          *FL3* - BLOCK OF SPECTRA
-!          *FL1* - SWELL FLAG ARRAY
-!                  = 1 IF COMPONENT IS SWELL
-!                  = 0 IF COMPONENT IS SEA
+!       *CALL* SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
+!    &                  USNEW, U10NEW, THWNEW,
+!    &                  LLPARTITION)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                      WIND VELOCITY.
-!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!          *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                      VELOCITY.
+!          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *FL3* - BLOCK OF SPECTRA
+!          *XLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
+!          *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !          *U10NEW* - LATESt WIND SPEED.
 !          *THWNEW* - LATEST WIND DIRECTION.
 !          *LLPARTITION* TRUE IF SPECTRAL PARTITIONING IS USED.
@@ -74,23 +71,20 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS,IJL
-      INTEGER :: IJ,K,M
-      INTEGER, DIMENSION(IJS:IJL) :: MIJ
-
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWOLD, USOLD
+      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, U10NEW, THWNEW
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: XLLWS 
+      LOGICAL, INTENT(IN) :: LLPARTITION
+
+      INTEGER :: IJ,K,M
+
       REAL, DIMENSION(NFRE) :: CM
       REAL :: CHECKTA
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
-      REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
-      REAL, DIMENSION(IJS:IJL) :: FL3WS
-      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1
 
-
-      LOGICAL, INTENT(IN) :: LLPARTITION
       LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
 
 ! ----------------------------------------------------------------------
@@ -102,28 +96,22 @@
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
-      DO IJ=IJS,IJL
-        EMWS(IJ) = EPSMIN
-        FMWS(IJ) = EPSMIN
-        FPWS(IJ) = FR(NFRE) 
-        EMAXWS(IJ) = EPSMIN
-        DUM(IJ) = 0.
-      ENDDO
-
       DO M=1,NFRE
         CM(M) = OLDWSFC*FRIC/C(M)
       ENDDO
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
+          THRESHOLD(IJ) = USNEW(IJ)*COS(TH(K)-THWNEW(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
             CHECKTA = CM(M)*THRESHOLD(IJ)
-            IF (CHECKTA.LT.1.) THEN
+            IF (CHECKTA.LT.1. .AND. XLLWS(IJ,K,M).EQ.0.) THEN
+              ! this is swell
               FL1(IJ,K,M)=1.
             ELSE
+              ! this is windsea 
               FL1(IJ,K,M)=0.
             ENDIF
           ENDDO
@@ -143,26 +131,6 @@
           ENDDO
         ENDDO
       ENDDO
-
-
-!     WINDSEA MEAN FREQUENCY CALCULATIONS:
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            FL3WS(IJ)=FL3(IJ,K,M)*MAX((1.-FL1(IJ,K,M)),0.)
-            EMWS(IJ) = EMWS(IJ)+FL3WS(IJ)*DFIM(M)
-            FMWS(IJ) = FMWS(IJ)+FL3WS(IJ)*DFIMOFR(M)
-            IF(FL3WS(IJ).GT.EMAXWS(IJ)) THEN
-               EMAXWS(IJ) = FL3WS(IJ)
-               FPWS(IJ) = FR(M)
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-      DO IJ=IJS,IJL
-        FMWS(IJ) = EMWS(IJ)/FMWS(IJ)
-      ENDDO
-
 
 !*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
 !         --------------------------------------------
@@ -219,7 +187,6 @@
 !         ------------------------------------------------------
 
       IF(LLPARTITION) THEN
-        CALL FRCUTINDEX(IJS, IJL, FPWS, FMWS, USNEW, DUM, MIJ,RHOWGDFTH)
         CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
       ENDIF
 
@@ -252,7 +219,7 @@
 !       to the wind direction.
         DO IJ=IJS,IJL
           IF(ESEA(IJ).LE.0.) THEN
-            THWISEA(IJ)=THWOLD(IJ)
+            THWISEA(IJ)=THWNEW(IJ)
           ENDIF
         ENDDO
       ENDIF

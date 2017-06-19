@@ -1,6 +1,7 @@
       SUBROUTINE UPDATEWD (FL1, IJS, IJL, THWNEW, USNEW,
      &                     USOLD, TAUW, CICVR,
-     &                     Z0NEW, U10NEW, ROAIRN, WSTAR)
+     &                     Z0NEW, U10NEW, ROAIRN, WSTAR,
+     &                     MIJ, XLLWS)       
 
 ! ----------------------------------------------------------------------
 
@@ -62,6 +63,7 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
@@ -69,10 +71,10 @@
       REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW, U10NEW
       REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER :: IJ, ILEV
       INTEGER :: ICODE_WND
-      INTEGER :: MIJ(IJS:IJL)
 
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
@@ -82,7 +84,6 @@
       REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
 ! ----------------------------------------------------------------------
 
