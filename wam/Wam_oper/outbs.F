@@ -297,7 +297,8 @@
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-          CALL INTPOL (FL1, FL3, KIJS, KIJL, IG, IRA)
+          CALL INTPOL (FL1(KIJS:KIJL,:,:), FL3(KIJS:KIJL,:,:),
+     &                 KIJS, KIJL, IG, IRA)
         ELSE
           DO M=1,NFRE
             DO K=1,NANG

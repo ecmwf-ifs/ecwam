@@ -77,8 +77,7 @@
       CHARACTER(LEN=12) CL_DATE
       CHARACTER(LEN=14) CL_TIME
 
-      LOGICAL :: FRSTIME
-
+      LOGICAL, SAVE :: FRSTIME
       DATA FRSTIME / .TRUE./
 
 ! ----------------------------------------------------------------------

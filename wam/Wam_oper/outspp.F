@@ -97,10 +97,6 @@
       CHARACTER(LEN=20) :: NAME
       CHARACTER(LEN=72) :: CPATH
 
-      LOGICAL :: FRSTIME
-
-      DATA FRSTIME/.TRUE./
-
 ! ----------------------------------------------------------------------
 
 !     0. GATHER THE FIELDS ON PROCESS 1 

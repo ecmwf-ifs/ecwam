@@ -162,13 +162,11 @@
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
-      LOGICAL :: LLFRSTNEMO
+      LOGICAL, SAVE :: LLFRSTNEMO
       LOGICAL :: LWCUR
-      LOGICAL :: LLFRST
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY, LLINIALL, LLOCAL
 
-      DATA LLFRST / .TRUE. /
       DATA LLFRSTNEMO / .TRUE. /
 
 ! ----------------------------------------------------------------------
@@ -198,7 +196,6 @@
 
       IF(CDAWIFL.LT.CDATEE) THEN
         CDTWIE = CDAWIFL
-        LLFRST = .FALSE.
       ELSE
         CDTWIE = CDATEE
       ENDIF
