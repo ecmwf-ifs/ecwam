@@ -86,6 +86,7 @@
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
       REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
+      REAL, DIMENSION(IJS:IJL) :: FL3WS
       REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 
 
@@ -124,17 +125,40 @@
               FL1(IJ,K,M)=1.
             ELSE
               FL1(IJ,K,M)=0.
-              EMWS(IJ) = EMWS(IJ)+FL3(IJ,K,M)*DFIM(M)
-              FMWS(IJ) = FMWS(IJ)+FL3(IJ,K,M)*DFIMOFR(M)
-              IF(FL3(IJ,K,M).GT.EMAXWS(IJ)) THEN
-                 EMAXWS(IJ) = FL3(IJ,K,M)
-                 FPWS(IJ) = FR(M)
-              ENDIF
             ENDIF
           ENDDO
         ENDDO
       ENDDO
 
+!     ADJUST THE LOW FREQUENCY BOUNDARY OF THE WINDSEAS AREA 
+!     TO TOPOLOGICALLY CONNECT IT TO THE WINDSEA
+      DO IJ=IJS,IJL
+        DO K=1,NANG
+          DO M=NFRE,2,-1
+            IF(FL1(IJ,K,M).EQ.1. .AND. FL1(IJ,K,M-1).EQ.1.) THEN
+              EXIT
+            ELSEIF(FL1(IJ,K,M).EQ.0. .AND. FL1(IJ,K,M-1).EQ.1.) THEN
+               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) FL1(IJ,K,M-1)=0. 
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
+
+!     WINDSEA MEAN FREQUENCY CALCULATIONS:
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL3WS(IJ)=FL3(IJ,K,M)*MAX((1.-FL1(IJ,K,M)),0.)
+            EMWS(IJ) = EMWS(IJ)+FL3WS(IJ)*DFIM(M)
+            FMWS(IJ) = FMWS(IJ)+FL3WS(IJ)*DFIMOFR(M)
+            IF(FL3WS(IJ).GT.EMAXWS(IJ)) THEN
+               EMAXWS(IJ) = FL3WS(IJ)
+               FPWS(IJ) = FR(M)
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
       DO IJ=IJS,IJL
         FMWS(IJ) = EMWS(IJ)/FMWS(IJ)
       ENDDO
