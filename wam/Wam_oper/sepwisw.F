@@ -56,6 +56,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWCOUP  , ONLY : ZALP
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,C        ,
      &            TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
@@ -97,16 +98,16 @@
 !        -----------------------------------
 
       DO M=1,NFRE
-        CM(M) = OLDWSFC*FRIC/C(M)
+        CM(M) = 1.0/C(M)
       ENDDO
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = USNEW(IJ)*COS(TH(K)-THWNEW(IJ))
+          THRESHOLD(IJ) = OLDWSFC*FRIC*COS(TH(K)-THWNEW(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            CHECKTA = CM(M)*THRESHOLD(IJ)
+            CHECKTA = (USNEW(IJ)*CM(M)+ZALP)*THRESHOLD(IJ)
             IF (CHECKTA.LT.1. .AND. XLLWS(IJ,K,M).EQ.0.) THEN
               ! this is swell
               FL1(IJ,K,M)=1.
