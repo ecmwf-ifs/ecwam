@@ -128,20 +128,6 @@
         ENDDO
       ENDDO
 
-!     ADJUST THE LOW FREQUENCY BOUNDARY OF THE WINDSEAS AREA 
-!     TO TOPOLOGICALLY CONNECT IT TO THE WINDSEA
-      DO IJ=IJS,IJL
-        DO K=1,NANG
-          DO M=NFRE,2,-1
-            IF(SWM(IJ,K,M).EQ.1. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
-              EXIT
-            ELSEIF(SWM(IJ,K,M).EQ.0. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
-               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) SWM(IJ,K,M-1)=0. 
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
 !     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
@@ -190,6 +176,19 @@
         ENDDO
       ENDDO
 
+!     ADJUST THE LOW FREQUENCY BOUNDARY OF THE WINDSEAS AREA 
+!     TO TOPOLOGICALLY CONNECT IT TO THE WINDSEA
+      DO IJ=IJS,IJL
+        DO K=1,NANG
+          DO M=NFRE,2,-1
+            IF(SWM(IJ,K,M).EQ.1. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
+              EXIT
+            ELSEIF(SWM(IJ,K,M).EQ.0. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
+               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) SWM(IJ,K,M-1)=0. 
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
 
 !*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
 !         --------------------------------------------
