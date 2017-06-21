@@ -144,7 +144,7 @@
 !            and in the absolute frame of reference if currents are used 
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
 
-      LOGICAL :: LLAK, LLPEAKF
+      LOGICAL :: LLPEAKF
       LOGICAL :: LLPARTITION
 
 !     LOGICAL FUNCTION
@@ -294,7 +294,6 @@
 
 !     COMPUTE MEAN PARAMETERS
 
-      LLAK=.FALSE.
       LLPEAKF = .FALSE.
       IRA=1
       SIG = +1.
@@ -331,7 +330,7 @@
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
         CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
-     &               EMEAN(KIJS), FMEAN(KIJS),LLAK)
+     &               EMEAN(KIJS), FMEAN(KIJS))
 
         IF(IPFGTBL(2).NE.0) THEN
           CALL STHQ (FL3(KIJS:KIJL,:,:),KIJS,KIJL,THQ(KIJS))

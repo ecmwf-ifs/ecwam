@@ -57,11 +57,9 @@
 
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWCOUP  , ONLY : ZALP
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,C        ,
-     &            TH       ,FRIC     ,OLDWSFC
+      USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWMEAN  , ONLY : EMEAN
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA
@@ -80,13 +78,16 @@
 
       INTEGER :: IJ,K,M
 
-      REAL, DIMENSION(NFRE) :: CM
+      REAL :: COEF
       REAL :: CHECKTA
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1
+      REAL, DIMENSION(NFRE) :: CM
+      REAL, DIMENSION(IJS:IJL) :: ETNP, RESET
+      REAL, DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
+      REAL, DIMENSION(IJS:IJL,NANG) :: DIRCOEF
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, FL1
 
-      LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
+      LOGICAL :: LLPEAKF
 
 ! ----------------------------------------------------------------------
 
@@ -97,23 +98,31 @@
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
+      COEF = OLDWSFC*FRIC
+
       DO M=1,NFRE
         CM(M) = 1.0/C(M)
+        DO IJ=IJS,IJL
+          XINVWVAGE(IJ,M)=(USNEW(IJ)*CM(M)+ZALP)
+        ENDDO
       ENDDO
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = OLDWSFC*FRIC*COS(TH(K)-THWNEW(IJ))
+          DIRCOEF(IJ,K) = COEF*COS(TH(K)-THWNEW(IJ))
         ENDDO
-        DO M=1,NFRE
+      ENDDO
+
+      DO M=1,NFRE
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            CHECKTA = (USNEW(IJ)*CM(M)+ZALP)*THRESHOLD(IJ)
+            CHECKTA = XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
             IF (CHECKTA.LT.1. .AND. XLLWS(IJ,K,M).EQ.0.) THEN
               ! this is swell
-              FL1(IJ,K,M)=1.
+              SWM(IJ,K,M)=1.
             ELSE
               ! this is windsea 
-              FL1(IJ,K,M)=0.
+              SWM(IJ,K,M)=0.
             ENDIF
           ENDDO
         ENDDO
@@ -124,14 +133,63 @@
       DO IJ=IJS,IJL
         DO K=1,NANG
           DO M=NFRE,2,-1
-            IF(FL1(IJ,K,M).EQ.1. .AND. FL1(IJ,K,M-1).EQ.1.) THEN
+            IF(SWM(IJ,K,M).EQ.1. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
               EXIT
-            ELSEIF(FL1(IJ,K,M).EQ.0. .AND. FL1(IJ,K,M-1).EQ.1.) THEN
-               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) FL1(IJ,K,M-1)=0. 
+            ELSEIF(SWM(IJ,K,M).EQ.0. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
+               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) SWM(IJ,K,M-1)=0. 
             ENDIF
           ENDDO
         ENDDO
       ENDDO
+
+!     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
+!     OTHERWISE RESET WIND SECTOR TO WINDSEA
+
+!     SWELL:
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M) = FL3(IJ,K,M)*SWM(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
+      CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS))
+
+!     WINDSEA:
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M) = MAX(FL3(IJ,K,M)-FL1(IJ,K,M),0.)
+          ENDDO
+        ENDDO
+      ENDDO
+      CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS))
+
+!     CHECK:
+      DO IJ=IJS,IJL
+         IF(FSWELL(IJS).GT.FSEA(IJS)) THEN
+           RESET(IJ)=1.
+         ELSE
+           RESET(IJ)=0.
+         ENDIF
+      ENDDO
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          DIRCOEF(IJ,K) = RESET(IJ)*COEF*SIGN(1.,COS(TH(K)-THWNEW(IJ)))
+        ENDDO
+      ENDDO
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            CHECKTA = XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
+            IF (CHECKTA.GE.1.) THEN
+              ! this is additional windsea 
+              SWM(IJ,K,M)=0.
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
 
 !*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
 !         --------------------------------------------
@@ -139,43 +197,26 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)*FL1(IJ,K,M)
+            FL1(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
 
-      IF(IPFGTBL(16).NE.0) THEN
-        LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS), LLAK)
-      ENDIF
-
-!     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(12).NE.0) THEN
-        LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        DO IJ=IJS,IJL
-          IF (USNEW(IJ).EQ.0.) ESWELL(IJ) = EMEAN(IJ)
-        ENDDO
+      IF(IPFGTBL(12).NE.0 .OR. IPFGTBL(16).NE.0 .OR.
+     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 ) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS))
       ENDIF
       
       IF(IPFGTBL(14).NE.0) THEN
-        CALL STHQ   (FL1, IJS, IJL, THSWELL(IJS))
+        CALL STHQ(FL1, IJS, IJL, THSWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(29).NE.0) THEN
-        IF(IPFGTBL(12).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESWELL(IJS), P1SWELL(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESWELL(IJS), P1SWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(31).NE.0) THEN
-        IF(IPFGTBL(12).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESWELL(IJS), P2SWELL(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESWELL(IJS), P2SWELL(IJS))
       ENDIF
 
       IF(IPFGTBL(33).NE.0) THEN
@@ -203,19 +244,14 @@
         ENDDO
       ENDDO
 
-      IF(IPFGTBL(15).NE.0) THEN
-        LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), LLAK)
-      ENDIF
-
-!     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0 ) THEN
-        LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
+      IF(IPFGTBL(15).NE.0 .OR. IPFGTBL(11).NE.0 .OR.
+     &   IPFGTBL(13).NE.0 .OR. IPFGTBL(28).NE.0 .OR.
+         IPFGTBL(30).NE.0) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS))
       ENDIF
 
       IF(IPFGTBL(13).NE.0) THEN
-        CALL STHQ   (FL1, IJS, IJL, THWISEA(IJS))
+        CALL STHQ(FL1, IJS, IJL, THWISEA(IJS))
 !       if there isn't any windsea energy, set the windsea mean direction
 !       to the wind direction.
         DO IJ=IJS,IJL
@@ -226,24 +262,16 @@
       ENDIF
 
       IF(IPFGTBL(28).NE.0) THEN
-        IF(IPFGTBL(11).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESEA(IJS), P1SEA(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESEA(IJS), P1SEA(IJS))
       ENDIF
 
       IF(IPFGTBL(30).NE.0) THEN
-        IF(IPFGTBL(11).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESEA(IJS), P2SEA(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESEA(IJS), P2SEA(IJS))
       ENDIF
 
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
+        CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
       ENDIF
 
 
@@ -268,5 +296,4 @@
       IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE SEPWISW

@@ -74,7 +74,6 @@
       REAL,DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
       REAL,DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
 
-      LOGICAL :: LLAK
 
 ! ----------------------------------------------------------------------
 
@@ -84,14 +83,13 @@
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      LLAK=.FALSE.
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=IJS,IJL,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
         CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),
-     &               FM(KIJS), LLAK)
+     &               FM(KIJS))
         CALL STHQ (FL3(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
       ENDDO
 !$OMP END PARALLEL DO

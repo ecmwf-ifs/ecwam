@@ -1,12 +1,8 @@
-      SUBROUTINE FEMEAN (F, IJS, IJL, EM, FM, LLAK)
+      SUBROUTINE FEMEAN (F, IJS, IJL, EM, FM)
 
 ! ----------------------------------------------------------------------
 
-!**** *FEMEAN* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT
-!                AND MEAN WAVE NUMBER .
-!                THE COMPUTATION OF THE MEAN WAVE ENERGU WAS ALSO
-!                ADDED SUCH THAT A CALL TO FEMEAN DOES NOT NEED
-!                TO BE PRECEDED BY A CALL TO SEMEAN.
+!**** *FEMEAN* - COMPUTATION OF VARIANCE and MEAN FREQUENCY AT EACH GRID POINT
 
 !     S.D. HASSELMANN
 !     MODIFIED : P.JANSSEN (INTEGRATION OF F**-4 TAIL)
@@ -21,13 +17,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, LLAK)*
+!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM)*
 !              *F*   - SPECTRUM.
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
-!              *EM*  - MEAN WAVE ENERGY (INPUT)
+!              *EM*  - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*  - MEAN WAVE FREQUENCY (OUTPUT)
-!              *LLAK*- TRUE IF MEAN WAVE NUMBER IS COMPUTED
 
 !     METHOD.
 !     -------
@@ -50,31 +45,32 @@
      &                WETAIL    ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWSTAT  , ONLY : ISHALLO
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER :: IJ, M, K
-
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
 
+      INTEGER :: IJ, M, K
       REAL :: DELT25, DELT2, DEL2
-      REAL,DIMENSION(IJS:IJL) :: TEMP1, TEMP2
-
-      LOGICAL, INTENT(IN) :: LLAK
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(IJS:IJL) :: TEMP2
 
 ! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('FEMEAN',0,ZHOOK_HANDLE)
+#endif
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
       DO IJ=IJS,IJL
-        EM(IJ) = EPSMIN
+        EM(IJ) = 0.
         FM(IJ) = EPSMIN
       ENDDO
 
@@ -84,73 +80,35 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
 
-      IF (ISHALLO.EQ.1 .OR. .NOT.LLAK) THEN
-
-!*    2.1 DEEP WATER INTEGRATION.
-!         -----------------------
-
-        DO M=1,NFRE
-          K=1
+      DO M=1,NFRE
+        K=1
+        DO IJ=IJS,IJL
+          TEMP2(IJ) = F(IJ,K,M)
+        ENDDO
+        DO K=2,NANG
           DO IJ=IJS,IJL
-            TEMP2(IJ) = F(IJ,K,M)
-          ENDDO
-          DO K=2,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
-            FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
+            TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
           ENDDO
         ENDDO
-
-      ELSE
-
-!*    2.2 SHALLOW WATER INTEGRATION.
-!         --------------------------
-
-        DO M=1,NFRE
-          K=1
-          DO IJ=IJS,IJL
-            TEMP1(IJ) = DFIM(M)/SQRT(TFAK(INDEP(IJ),M))
-            TEMP2(IJ) = F(IJ,K,M) 
-          ENDDO
-          DO K=2,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
-            FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
-          ENDDO
+        DO IJ=IJS,IJL
+          EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
+          FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
+      ENDDO
 
-      ENDIF
 
 !*    3. ADD TAIL CORRECTION TO MEAN FREQUENCY AND
 !*       NORMALIZE WITH TOTAL ENERGY.
 !        ------------------------------------------
 
-      IF (ISHALLO.EQ.1 .OR. .NOT.LLAK) THEN
+      DO IJ=IJS,IJL
+        EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
+        FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
+        FM(IJ) = EM(IJ)/FM(IJ)
+      ENDDO
 
-        DO IJ=IJS,IJL
-          EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
-          FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
-          FM(IJ) = EM(IJ)/FM(IJ)
-        ENDDO
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('FEMEAN',1,ZHOOK_HANDLE)
+#endif
 
-      ELSE
-
-        DEL2 = DELT2*SQRT(G)/ZPI
-        DO IJ=IJS,IJL
-          EM(IJ) = EM(IJ)+DELT25*TEMP2(IJ)
-          FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
-          FM(IJ) = EM(IJ)/FM(IJ)
-        ENDDO
-
-      ENDIF
-
-      RETURN
       END SUBROUTINE FEMEAN
