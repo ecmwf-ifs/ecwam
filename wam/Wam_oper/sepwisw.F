@@ -103,7 +103,7 @@
       DO M=1,NFRE
         CM(M) = 1.0/C(M)
         DO IJ=IJS,IJL
-          XINVWVAGE(IJ,M)=(USNEW(IJ)*CM(M)+ZALP)
+          XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)+ZALP
         ENDDO
       ENDDO
 
@@ -167,7 +167,7 @@
 
 !     CHECK:
       DO IJ=IJS,IJL
-         IF(FSWELL(IJS).GT.FSEA(IJS)) THEN
+         IF(FSWELL(IJ).GT.FSEA(IJ)) THEN
            RESET(IJ)=1.
          ELSE
            RESET(IJ)=0.
