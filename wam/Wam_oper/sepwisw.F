@@ -154,7 +154,8 @@
 !     CHECK:
       DO IJ=IJS,IJL
          IF(FSWELL(IJ).GT.FSEA(IJ)) THEN
-           RESET(IJ)=1.
+           ! small enhancement of the search area
+           RESET(IJ)=1.05
          ELSE
            RESET(IJ)=0.
          ENDIF
