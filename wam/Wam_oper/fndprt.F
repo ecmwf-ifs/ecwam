@@ -80,7 +80,7 @@
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
 
-      REAL, PARAMETER :: HSMIN=0.001  ! minimum Hs (m) value to keep a partition
+      REAL, PARAMETER :: HSMIN=0.01  ! minimum Hs (m) value to keep a partition
       REAL :: THRS
       REAL :: HALF_SECTOR
       REAL :: ZHOOK_HANDLE
