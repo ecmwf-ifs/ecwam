@@ -5,7 +5,7 @@
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
      &                    Z0NEW, ROAIRN, WSTARNEW,
-     &                    MIJ, XLLWS_T)
+     &                    MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -46,7 +46,7 @@
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
-!    &                    MIJ,  XLLWS_T)
+!    &                    MIJ,  XLLWS)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -71,7 +71,7 @@
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!      *XLLWS_T*   TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
+!      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 
 
 !     METHOD.
@@ -153,7 +153,7 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS_T
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
@@ -178,8 +178,6 @@
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
 !???
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
-
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       REAL, DIMENSION(IJS:IJL,NFRE) :: TLFR
 
@@ -268,7 +266,7 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, WSTARNEW, SL, XLLWS_T)
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
 
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
@@ -301,7 +299,7 @@
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS_T)
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
@@ -447,7 +445,7 @@
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS_T)
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
@@ -505,14 +503,6 @@
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-             XLLWS_T(IJ,K,M)=0.5*(XLLWS_T(IJ,K,M)+XLLWS(IJ,K,M))
-          ENDDO
-        ENDDO
-      ENDDO
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
