@@ -82,7 +82,7 @@
       REAL :: CHECKTA
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(NFRE) :: CM
-      REAL, DIMENSION(IJS:IJL) :: ETNP, RESET
+      REAL, DIMENSION(IJS:IJL) :: ETNP, R
       REAL, DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL, DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, FL1
@@ -101,7 +101,7 @@
       COEF = OLDWSFC*FRIC
 
       DO M=1,NFRE
-        CM(M) = 1.0/C(M)
+        CM(M)=1.0/C(M)
         DO IJ=IJS,IJL
           XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)+ZALP
         ENDDO
@@ -109,14 +109,14 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          DIRCOEF(IJ,K) = COEF*COS(TH(K)-THWNEW(IJ))
+          DIRCOEF(IJ,K)=COEF*COS(TH(K)-THWNEW(IJ))
         ENDDO
       ENDDO
 
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            CHECKTA = XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
+            CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
             IF (CHECKTA.LT.1. .AND. XLLWS(IJ,K,M).EQ.0.) THEN
               ! this is swell
               SWM(IJ,K,M)=1.
@@ -135,7 +135,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = FL3(IJ,K,M)*SWM(IJ,K,M)
+            FL1(IJ,K,M)=FL3(IJ,K,M)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -145,7 +145,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M)-FL1(IJ,K,M),0.)
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M),0.)
           ENDDO
         ENDDO
       ENDDO
@@ -154,15 +154,15 @@
 !     CHECK:
       DO IJ=IJS,IJL
          IF(FSWELL(IJ).GT.FSEA(IJ)) THEN
-           ! small enhancement of the search area
-           RESET(IJ)=1.1
+           R(IJ)=1.
          ELSE
-           RESET(IJ)=0.
+           R(IJ)=0.
          ENDIF
       ENDDO
       DO K=1,NANG
         DO IJ=IJS,IJL
-          DIRCOEF(IJ,K) = RESET(IJ)*COEF*SIGN(1.,COS(TH(K)-THWNEW(IJ)))
+          ! add 0.25 factor to extend windsea area
+          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.,0.25+COS(TH(K)-THWNEW(IJ)))
         ENDDO
       ENDDO
       DO M=1,NFRE
@@ -197,7 +197,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -239,7 +239,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.)
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.)
           ENDDO
         ENDDO
       ENDDO
