@@ -116,13 +116,18 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
-            IF (CHECKTA.LT.1. .AND. XLLWS(IJ,K,M).EQ.0.) THEN
-              ! this is swell
-              SWM(IJ,K,M)=1.
-            ELSE
+            IF (XLLWS(IJ,K,M).NE.0.) THEN
               ! this is windsea 
               SWM(IJ,K,M)=0.
+            ELSE
+              CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
+              IF (CHECKTA.GE.1.) THEN
+                ! this is extra windsea 
+                SWM(IJ,K,M)=0.
+              ELSE
+                ! this is swell
+                SWM(IJ,K,M)=1.
+              ENDIF
             ENDIF
           ENDDO
         ENDDO
