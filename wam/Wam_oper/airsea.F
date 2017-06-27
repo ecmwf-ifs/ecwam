@@ -35,7 +35,7 @@
 !     METHOD.
 !     -------
 
-!       USE TABLE TAUT(TAUW,U) AND LINEAR INTERPOLATION.
+!       CALL TAUT_Z0
 
 !     EXTERNALS.
 !     ----------
@@ -50,8 +50,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,TAUT     ,DELTAUW     ,
-     &              DELU   ,EPS1
+      USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWWIND  , ONLY : WSPMIN
 
@@ -65,10 +64,11 @@
       REAL,DIMENSION(IJS:IJL),INTENT(INOUT) :: U10, US
       REAL,DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0
 
-      INTEGER :: ILEV, IJ, I, J
+      INTEGER :: IJ, I, J
 
       REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1 
       REAL :: XKAPPAD, XLOGLEV
+      REAL :: XLEV
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -77,51 +77,41 @@
       IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
 #endif
 
-!*    1. SELECT TABLE ACCORDING TO WIND LEVEL.
-!        -------------------------------------
-
-      ILEV=KLEV
-
-!*    2. DETERMINE TOTAL STRESS FROM TABLE. (if needed)
+!*    2. DETERMINE TOTAL STRESS (if needed)
 !        ----------------------------------
 
       IF(ICODE_WND == 3 ) THEN
-        DO IJ=IJS,IJL
-          XI    = SQRT(TAUW(IJ))/DELTAUW
-          I     = MIN ( ITAUMAX-1, INT(XI) )
-          DELI1 = MIN(1.,XI - REAL(I))
-          DELI2 = 1. - DELI1
-          XJ    = U10(IJ)/DELU
-          J     = MIN ( JUMAX-1, INT(XJ) )
-          DELJ1 = MIN(1.,XJ - REAL(J))
-          DELJ2 = 1. - DELJ1
-          US(IJ)= (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2
-     &       +(TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
-        ENDDO
-      ENDIF
+         XLEV = XNLEV(KLEV)
+         CALL TAUT_Z0(IJS, IJL, XLEV, U10, TAUW, US, Z0)
 
-!*    3. DETERMINE ROUGHNESS LENGTH.
+      ELSE IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
+
+!*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-      CALL Z0WAVE (IJS, IJL, US, TAUW, Z0)
-
+        CALL Z0WAVE (IJS, IJL, US, TAUW, Z0)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
-      IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
 
         XKAPPAD=1.0/XKAPPA
-        XLOGLEV=LOG(XNLEV(ILEV))
+        XLOGLEV=LOG(XNLEV(KLEV))
 
         DO IJ=IJS,IJL
           U10(IJ) = XKAPPAD*US(IJ)*(XLOGLEV-LOG(Z0(IJ)))
           U10(IJ) = MAX(U10(IJ),WSPMIN)
         ENDDO
 
+      ELSE
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) ' + AIRSEA : INVALID VALUE OF ICODE_WND    +'
+        WRITE(IU06,*) ' ICODE_WND = ',ICODE_WND
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+        CALL ABORT1
       ENDIF
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
 #endif
-      RETURN
+
       END SUBROUTINE AIRSEA

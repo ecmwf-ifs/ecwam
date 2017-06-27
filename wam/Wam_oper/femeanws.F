@@ -60,8 +60,7 @@
 
       REAL :: DELT25, DELT2, CM, CHECKTA
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: TEMP2, THRESHOLD
-
+      REAL, DIMENSION(IJS:IJL) :: TEMP2
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -86,15 +85,15 @@
       DO M=1,NFRE
         K = 1
         DO IJ =IJS,IJL
-           TEMP2(IJ) = F(IJ,K,M)*XLLWS(IJ,K,M)
+           TEMP2(IJ) = XLLWS(IJ,K,M)*F(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)*XLLWS(IJ,K,M)
+            TEMP2(IJ) = TEMP2(IJ)+XLLWS(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          EM(IJ) = EM(IJ)+TEMP2(IJ)*DFIM(M)
+          EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
           FM(IJ) = FM(IJ)+DFIMOFR(M)*TEMP2(IJ)
         ENDDO
       ENDDO
@@ -113,5 +112,4 @@
       IF (LHOOK) CALL DR_HOOK('FEMEANWS',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE FEMEANWS

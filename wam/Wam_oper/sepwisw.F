@@ -60,7 +60,7 @@
 
       USE YOWCOUT  , ONLY : IPFGTBL
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,C        ,
-     &            TH       ,FRIC
+     &            TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWMEAN  , ONLY : EMEAN
@@ -86,6 +86,8 @@
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
       REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
+      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+
 
       LOGICAL, INTENT(IN) :: LLPARTITION
       LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
@@ -108,12 +110,12 @@
       ENDDO
 
       DO M=1,NFRE
-        CM(M) = FRIC/C(M)
+        CM(M) = OLDWSFC*FRIC/C(M)
       ENDDO
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = 1.2*USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
+          THRESHOLD(IJ) = USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -193,7 +195,7 @@
 !         ------------------------------------------------------
 
       IF(LLPARTITION) THEN
-        CALL FRCUTINDEX(IJS, IJL, FPWS, FMWS, DUM, MIJ)
+        CALL FRCUTINDEX(IJS, IJL, FPWS, FMWS, USNEW, DUM, MIJ,RHOWGDFTH)
         CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
       ENDIF
 

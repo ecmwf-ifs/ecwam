@@ -46,8 +46,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
-     &            XNLEV    ,TAUWSHELTER, ITSHELT
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+     &            BSWKM
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,
+     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,
+     &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -66,14 +70,12 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,
      &            IMDLGRDID 
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
-     &            TAUHFT2  ,ILEVTAIL ,DELTAIL  ,
-     &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
-     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
+      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
+     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
@@ -224,27 +226,17 @@
 !*    5. READ MODULE YOUCOUP.
 !        -------------------
 
-        READ(IU07) IPHYS,BETAMAX,ZALP,ALPHA,TAUWSHELTER,ITSHELT,
-     &    XKAPPA,XNLEV
+        READ(IU07) IPHYS,BETAMAX,ZALP,ALPHA,
+     &     ALPHAPMAX,
+     &     TAUWSHELTER,ITSHELT,
+     &     TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
 
-!*    6. READ MODULE YOWTABL (INDICES OF OUTPUT POINTS).
-!        ---------------------------------------------
+!*    5.1 READ MODULE YOWALTAS
+!         --------------------
 
-        READ(IU07) DELTAUW, DELU, DELUST, DELALP, DELTAIL
+        READ(IU07) EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
+     &             ESH,ASH,BSH,ASWKM,BSWKM
 
-        IF(.NOT.ALLOCATED(TAUT)) 
-     &      ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-        READ(IU07) TAUT
-
-        IF (ITSHELT.EQ.0) THEN
-          IF(.NOT.ALLOCATED(TAUHFT))
-     &        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE))
-          READ(IU07) TAUHFT
-        ELSE
-          IF(.NOT.ALLOCATED(TAUHFT2))
-     &        ALLOCATE(TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL))
-          READ(IU07) TAUHFT2
-        ENDIF
 
 !*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).
 !        --------------------------------------------

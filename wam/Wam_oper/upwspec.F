@@ -25,7 +25,7 @@
 !        *CALL* *UPWSPEC (F, ETFG, AKFG, ETA, FMWFG, FMWA, IJS, IJL)*          
 
 !          *F*      REAL     INPUT IS THE OLD SWELL SPECTRUM.           
-!                            OUTPUT IS  THE ANALISED SPECTRUM.          
+!                            OUTPUT IS  THE ANALYSED SPECTRUM.          
 !          *ETFG*   REAL     FIRST GUESS TOTAL ENERGY.                  
 !          *AKFG*   REAL     FIRST GUESS MEAN WAVE NUMBER.                  
 !          *ETA*    REAL     ANALYSED TOTAL ENERGY.                     
@@ -67,9 +67,10 @@
 
 !-----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : ASWKM    ,BSWKM 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : ZPI      ,EPSMIN   ,ASWKM    ,BSWKM 
+      USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -77,7 +78,12 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJ, IJS, IJL, M, K, ICOUNT 
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ETFG, AKFG
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ETA, FMWFG, FMWA
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: F
+
+      INTEGER :: IJ, M, K, ICOUNT 
       INTEGER :: NFREINF
       INTEGER :: IG 
       INTEGER :: M1(NFRE)
@@ -91,9 +97,7 @@
       REAL :: ESPAN, ESPAN_1D    
       REAL :: AKI 
       REAL :: ZHOOK_HANDLE
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) :: ETA, FMWFG, FMWA
-      REAL, DIMENSION(IJS:IJL) :: ETFG, AKFG, XR, XB 
+      REAL, DIMENSION(IJS:IJL) :: XR, XB 
       REAL :: FTEMP(NANG,NFRE), DFRE(NFRE), FU(NFRE)
 
 ! ----------------------------------------------------------------------
@@ -247,5 +251,4 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPWSPEC',1,ZHOOK_HANDLE)
 #endif
-      RETURN
       END SUBROUTINE UPWSPEC

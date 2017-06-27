@@ -8,7 +8,7 @@ MODULE WAV_netcdf
 !**********************************************************************
 # ifdef DEBUG
       SUBROUTINE PRINT_MINMAX_U10_NEWOLD
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC
       USE YOWSPEC, ONLY   : U10NEW   ,U10OLD
       implicit none
       REAL siz, avgHS, avgWindSpeed
@@ -50,7 +50,7 @@ MODULE WAV_netcdf
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAV_netcdf_init
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWMPP   , ONLY : NPROC, NPRECR, NINF, NSUP, IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMAP   , ONLY : IXLG     ,KXLT
@@ -259,7 +259,7 @@ MODULE WAV_netcdf
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAV_netcdf_setup_array_variables_V1
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWMPP   , ONLY : NPROC, NPRECR, NINF, NSUP, IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMAP   , ONLY : IXLG     ,KXLT
@@ -349,7 +349,7 @@ MODULE WAV_netcdf
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAV_netcdf_setup_array_variables
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWMPP   , ONLY : NPROC, NPRECR, NINF, NSUP, IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWMAP   , ONLY : IXLG     ,KXLT
@@ -516,12 +516,12 @@ MODULE WAV_netcdf
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAV_assign_netcdf_array
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC
       USE YOWSPEC, ONLY   : NSTART   ,NEND     ,                     &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    , &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,           &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,           &
-     &            FL1      ,FL2      ,FL3      ,SL
+     &            FL3
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ,FPMEAN
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG,     &
      &            USTARG, CDG
@@ -680,7 +680,7 @@ MODULE WAV_netcdf
       USE YOWPARAM , ONLY : NGX      ,NGY, NIBLO
       USE YOWSPEC, ONLY   : NSTART   ,NEND
       USE YOWMPP   , ONLY : NPROC, IRANK
-      USE YOWGRID, ONLY : IGL      ,IJS      ,IJL
+      USE YOWGRID, ONLY : IJS      ,IJL
       USE YOWSHAL  , ONLY : DEPTH
       USE yowdatapool, only : rkind
       USE yownodepool,     ONLY : nodes_global
@@ -725,7 +725,7 @@ MODULE WAV_netcdf
         ZMISS=-999
         DEPTHG_tot=0
         IRANKdepth=1
-        DO IG=1,IGL
+        IG=1
           DO IJ = IJS(IG),IJL(IG)
             TEMP(IJ) = DEPTH(IJ,IG)
           END DO
@@ -734,7 +734,6 @@ MODULE WAV_netcdf
           IF(IRANKdepth.EQ.IRANK) THEN
             CALL MAKEGRID (TEMP,DEPTHG_tot,IG,LSQRT,ZMISS)
           END IF
-        END DO 
       END IF
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'End of function GET_DEPTHG_tot'
@@ -796,7 +795,7 @@ MODULE WAV_netcdf
       USE YOWFRED, ONLY : FR, TH
       USE YOWSPEC, ONLY   : NSTART   ,NEND
       USE YOWMAP, ONLY : AMOWEP, AMONOP, XDELLA, XDELLO
-      USE YOWGRID, ONLY : IGL      ,IJS      ,IJL
+      USE YOWGRID, ONLY : IJS      ,IJL
       USE YOWMPP   , ONLY : NPROC, IRANK
       USE YOWPD,     ONLY : nodes_global
       USE yowelementpool, only : ne_global, INE_global
@@ -1384,10 +1383,10 @@ MODULE WAV_netcdf
 !**********************************************************************
       SUBROUTINE WAV_netcdf_output
       USE YOWSTAT  , ONLY : IDELT
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
+      USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWUNIT  , ONLY : IU25     ,IU26
-      USE YOWSPEC, ONLY   : FL1      ,FL2      ,FL3      ,SL
+      USE YOWSPEC, ONLY   : FL3
       IMPLICIT NONE
       integer IG
       LOGICAL DO_OUTPUT, TEST_CON, TEST_NETCDF
@@ -1425,11 +1424,9 @@ MODULE WAV_netcdf
         DoNETCDF_sync=.TRUE.
 # ifdef DEBUG
         WRITE(740+MyRankGlobal,*) 'minval(FL3)=', minval(FL3(IJSLOC:IJLLOC,:,:))
-        WRITE(740+MyRankGlobal,*) 'minval(SL)=',  minval( SL(IJSLOC:IJLLOC,:,:))
-        WRITE(740+MyRankGlobal,*) 'minval(FL1)=', minval(FL1(IJSLOC:IJLLOC,:,:))
         FLUSH(740+MyRankGlobal)
 # endif
-        CALL OUTBS (FL3, SL, FL1, IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IGL, IU25, IU26, LLOUTBS)
+        CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:), IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IU25, IU26, LLOUTBS)
         DoNETCDF_sync=.FALSE.
         CALL WAV_netcdf_export
 # ifdef DEBUG

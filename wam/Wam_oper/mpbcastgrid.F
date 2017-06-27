@@ -37,9 +37,12 @@
 !     -----------
 !         NONE
 ! -------------------------------------------------------------------
-
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+     &            BSWKM
       USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,
-     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT
+     &            XKAPPA  ,XNLEV    ,TAUWSHELTER, ITSHELT,
+     &            TAILFACTOR, TAILFACTOR_PM
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
@@ -58,13 +61,11 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   , 
-     &            JPLEVT   ,TAUT     ,DELTAUW  ,DELU     ,TAUHFT   ,
-     &            TAUHFT2  ,ILEVTAIL ,DELTAIL  ,
-     &            DELUST   ,DELALP   ,FAC0     ,FAC1     ,FAC2     ,
-     &            FAC3     ,FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
+      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
+     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
      &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
      &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
@@ -203,7 +204,6 @@
           NMAX=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           ITSHELT=ICOMBUF(IKCOUNT)
-
           IF(IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -218,11 +218,8 @@
 
         MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=27+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
+        MZC=35+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
      &      KFRH+JPLEVC+
-     &      JPLEVT*(1+JUMAX)*(1+ITAUMAX)+
-     &      (1-ITSHELT)*((1+IUSTAR)*(1+IALPHA)*NFRE)+
-     &      ITSHELT*((1+IUSTAR)*(1+IALPHA)*(1+ILEVTAIL))+
      &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
@@ -267,16 +264,6 @@
           IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
           IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
           IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
-          IF(.NOT.ALLOCATED(TAUT))
-     &       ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
-
-          IF(ITSHELT.EQ.0) THEN
-            IF(.NOT.ALLOCATED(TAUHFT))
-     &        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE))
-          ELSE
-            IF(.NOT.ALLOCATED(TAUHFT2))
-     &        ALLOCATE(TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL))
-          ENDIF
 
           IF(NGOUT.GT.0) THEN
             IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
@@ -514,51 +501,39 @@
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=ALPHA
           KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ALPHAPMAX
+          KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=TAUWSHELTER
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=TAILFACTOR
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=TAILFACTOR_PM
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=XKAPPA
           DO IC=1,JPLEVC
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=XNLEV(IC)
           ENDDO
-
-          DO ILEV=1,JPLEVT
-            DO J=0,JUMAX
-              DO I=0,ITAUMAX
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=TAUT(I,J,ILEV)
-              ENDDO
-            ENDDO
-          ENDDO
           KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELTAUW
+          ZCOMBUF(KCOUNT)=EGRCRV
           KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELU
+          ZCOMBUF(KCOUNT)=AGRCRV
           KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELUST
+          ZCOMBUF(KCOUNT)=BGRCRV
           KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELALP
+          ZCOMBUF(KCOUNT)=AFCRV
           KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=DELTAIL
-          IF(ITSHELT.EQ.0) THEN
-            DO M=1,NFRE
-              DO L=0,IALPHA
-                DO K=0,IUSTAR
-                  KCOUNT=KCOUNT+1
-                  ZCOMBUF(KCOUNT)=TAUHFT(K,L,M)
-                ENDDO
-              ENDDO
-            ENDDO
-          ELSE
-            DO L=0,IALPHA
-              DO K=0,IUSTAR
-                DO I=0,ILEVTAIL
-                  KCOUNT=KCOUNT+1
-                  ZCOMBUF(KCOUNT)=TAUHFT2(K,L,I)
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
+          ZCOMBUF(KCOUNT)=BFCRV
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ESH
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ASH
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=BSH
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=ASWKM
+          KCOUNT=KCOUNT+1
+          ZCOMBUF(KCOUNT)=BSWKM
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
@@ -943,51 +918,39 @@
           KCOUNT=KCOUNT+1
           ALPHA=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
+          ALPHAPMAX=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
           TAUWSHELTER=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          TAILFACTOR=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          TAILFACTOR_PM=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           XKAPPA=ZCOMBUF(KCOUNT)
           DO IC=1,JPLEVC
             KCOUNT=KCOUNT+1
             XNLEV(IC)=ZCOMBUF(KCOUNT)
           ENDDO
-
-          DO ILEV=1,JPLEVT
-            DO J=0,JUMAX
-              DO I=0,ITAUMAX
-                KCOUNT=KCOUNT+1
-                TAUT(I,J,ILEV)=ZCOMBUF(KCOUNT)
-              ENDDO
-            ENDDO
-          ENDDO
           KCOUNT=KCOUNT+1
-          DELTAUW=ZCOMBUF(KCOUNT)
+          EGRCRV=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
-          DELU=ZCOMBUF(KCOUNT)
+          AGRCRV=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
-          DELUST=ZCOMBUF(KCOUNT)
+          BGRCRV=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
-          DELALP=ZCOMBUF(KCOUNT)
+          AFCRV=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
-          DELTAIL=ZCOMBUF(KCOUNT)
-          IF(ITSHELT.EQ.0) THEN
-            DO M=1,NFRE
-              DO L=0,IALPHA
-                DO K=0,IUSTAR
-                  KCOUNT=KCOUNT+1
-                  TAUHFT(K,L,M)=ZCOMBUF(KCOUNT)
-                ENDDO
-              ENDDO
-            ENDDO
-          ELSE
-            DO L=0,IALPHA
-              DO K=0,IUSTAR
-                DO I=0,ILEVTAIL
-                  KCOUNT=KCOUNT+1
-                  TAUHFT2(K,L,I)=ZCOMBUF(KCOUNT)
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
+          BFCRV=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ESH=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ASH=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          BSH=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          ASWKM=ZCOMBUF(KCOUNT)
+          KCOUNT=KCOUNT+1
+          BSWKM=ZCOMBUF(KCOUNT)
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1

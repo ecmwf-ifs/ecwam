@@ -31,13 +31,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SNONLIN (F, FL, IJS, IJL, IG, SL)*
+!       *CALL* *SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN)*
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *IG*  - BLOCK NUMBER.
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
+!          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
 
 !     METHOD.
 !     -------

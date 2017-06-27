@@ -39,25 +39,36 @@
 
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
-     &                      COSTH    ,SINTH  
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+     &                      DFIM_SIM ,
+     &                      FRATIO   ,COSTH    ,SINTH  
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
        
 ! ----------------------------------------------------------------------
- 
       IMPLICIT NONE
 
-      INTEGER :: IJ, M, K, IJS, IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  USTOKES, VSTOKES 
 
+      INTEGER :: IJ, M, K
+
+      REAL, PARAMETER :: STMAX=1.5   ! maximum magnitude (this is for safety when coupled)
       REAL :: CONST, FAC, FAC1, FAC2, FAC3
-      REAL :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) ::  USTOKES,VSTOKES 
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: STFAC
+
+! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',0,ZHOOK_HANDLE)
+#endif
  
 !***  1. DETERMINE STOKE DRIFT VECTOR.
 !     --------------------------------
-       
-      CONST = 2.*ZPI**3/G*FR(NFRE)**4
- 
+
+      CONST = 2.*DELTH*ZPI**3/G*FR(NFRE_ODD)**4
+
 !***  1.1 PERFORM INTEGRATION.
 !     ------------------------
  
@@ -66,15 +77,15 @@
          VSTOKES(IJ) = 0.
       ENDDO
 
-      DO M=1,NFRE
-         FAC = DFIM(M)
+      DO M=1,NFRE_ODD
+         DO IJ = IJS,IJL
+           STFAC(IJ) = TFAC_ST(INDEP(IJ),M)*DFIM_SIM(M)
+         ENDDO
          DO K=1,NANG
-            FAC1 = FAC*SINTH(K)
-            FAC2 = FAC*COSTH(K)
             DO IJ = IJS,IJL
-               FAC3 = TFAC_ST(INDEP(IJ),M)*F3(IJ,K,M)
-               USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
-               VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
+               FAC3 = STFAC(IJ)*F3(IJ,K,M)
+               USTOKES(IJ) = USTOKES(IJ)+FAC3*SINTH(K)
+               VSTOKES(IJ) = VSTOKES(IJ)+FAC3*COSTH(K)
             ENDDO
          ENDDO
       ENDDO
@@ -83,14 +94,21 @@
 !     -----------------------------------------
  
       DO K=1,NANG
-         FAC1 = DELTH*SINTH(K)
-         FAC2 = DELTH*COSTH(K)
+         FAC1 = CONST*SINTH(K)
+         FAC2 = CONST*COSTH(K)
          DO IJ = IJS,IJL
-            FAC3 = CONST*F3(IJ,K,NFRE)
-            USTOKES(IJ) = USTOKES(IJ)+FAC1*FAC3
-            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FAC3
+            USTOKES(IJ) = USTOKES(IJ)+FAC1*F3(IJ,K,NFRE_ODD)
+            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*F3(IJ,K,NFRE_ODD)
          ENDDO
       ENDDO
 
-      RETURN
+      DO IJ = IJS,IJL
+         USTOKES(IJ) = MIN(MAX(USTOKES(IJ),-STMAX),STMAX)
+         VSTOKES(IJ) = MIN(MAX(VSTOKES(IJ),-STMAX),STMAX)
+      ENDDO
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',1,ZHOOK_HANDLE)
+#endif
+
       END SUBROUTINE STOKESDRIFT

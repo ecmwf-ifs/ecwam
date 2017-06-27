@@ -30,15 +30,10 @@
       IMPLICIT NONE
 
       INTEGER, PARAMETER      :: NITER=100
-      REAL   , PARAMETER      :: XM=0.50, EPS1=0.00001
       REAL,    PARAMETER      :: ABMIN = 0.3 
       REAL,    PARAMETER      :: ABMAX = 8., KAPPA = 0.40
 !     VARIABLE.   TYPE.     PURPOSE.
-!      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
-!      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
 !      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
-!      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
-!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
 ! ----------------------------------------------------------------------
       INTEGER :: I,ITER
       REAL :: DELAB
@@ -66,5 +61,4 @@
          SWELLFT(I)=FSUBW
       ENDDO
 
-      RETURN
       END SUBROUTINE TABU_SWELLFT

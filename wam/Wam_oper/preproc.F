@@ -156,12 +156,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+     &            BSWKM
       USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,
      &            NIBLC    ,NBLC
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
-     &            XNLEV    ,TAUWSHELTER
+     &            XNLEV    ,TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
      &            TH       ,COSTH    ,SINTH
@@ -170,6 +173,7 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
      &            XDELLO   ,ZDELLO   ,LAQUA
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -382,35 +386,67 @@
 !         --------------
       IF (IPHYS.EQ.0) THEN
 !       ECMWF PHYSICS:
-        BETAMAX = 1.20
-        ZALP    = 0.008
-        TAUWSHELTER=0.0
         IF(ML.GT.30) THEN
           ALPHA   = 0.0060
         ELSE
           ALPHA   = 0.0075
         ENDIF
-      ELSE IF (IPHYS.EQ.1) THEN
-!       METEO FRANCE PHYSICS:
-        BETAMAX = 1.52
-        ZALP    = 0.0060
-!!!!!!!        TAUWSHELTER=0.6
-        TAUWSHELTER=1.0
-        IF(ML.GT.30) THEN
-          ALPHA   = 0.0090
-        ELSE
-          ALPHA   = 0.0095
-        ENDIF
-      ELSE IF (IPHYS.EQ.2) THEN
-!       COMBINED ECMWF/METEO FRANCE PHYSICS:
-        BETAMAX = 1.52
-        ZALP    = 0.0060
+!!!        ALPHA   = 0.00525
+        BETAMAX = 1.20
+        ZALP    = 0.008
+        ALPHAPMAX = 0.03
         TAUWSHELTER=0.0
-        IF(ML.GT.30) THEN
-          ALPHA   = 0.003
-        ELSE
-          ALPHA   = 0.004
-        ENDIF
+        TAILFACTOR=2.5
+!!!        TAILFACTOR_PM=3.4
+        TAILFACTOR_PM=0.   ! i.e. not used
+
+!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+        EGRCRV = 1108.0
+        AGRCRV = 0.06E+6
+        BGRCRV = 9.70
+        AFCRV = 4.0E-4
+        BFCRV = -3.0
+        ESH = 1711.
+        ASH = 8.0E-4 
+        BSH = 0.96 
+        ASWKM=0.0981
+        BSWKM=0.425
+
+      ELSE IF (IPHYS.EQ.1) THEN
+!       METEO FRANCE PHYSICS WITH HIGH FREQUENCy TAIL FROM ECMWF PHYSICS
+!        ALPHA   = 0.0065
+!        BETAMAX = 1.52
+!        ZALP    = 0.0060
+!        ALPHAPMAX = 0.03
+!        TAUWSHELTER=0.5
+!        TAILFACTOR=2.5
+!        TAILFACTOR_PM=0.0
+!       TEST 471 adapted to ECWAM
+
+!!!        ALPHA   = 0.0054
+        ALPHA   = 0.0064
+        BETAMAX = 1.37
+        ZALP    = 0.006
+!!!        ALPHAPMAX = 0.035
+        ALPHAPMAX = 0.032
+!!!!        TAUWSHELTER=0.33
+        TAUWSHELTER=0.3
+        TAILFACTOR=2.5
+!!!        TAILFACTOR_PM=3.4
+        TAILFACTOR_PM=0.
+
+!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
+        EGRCRV = 1000.0
+        AGRCRV = 0.113E+6
+        BGRCRV = 4.97 
+        AFCRV = 4.5E-4
+        BFCRV = -3.0
+        ESH = 1711.
+        ASH = 8.0E-4 
+        BSH = 0.96 
+        ASWKM=0.0981
+        BSWKM=0.425
+
       ELSE
         WRITE (IU06,*) '*************************************'
         WRITE (IU06,*) '*                                   *'
@@ -431,8 +467,8 @@
 !*    4.4 MODULE TABLE (STRESS TABLES).
 !         -----------------------------
 
-      CALL STRESS(IU06,ITEST)
-      CALL TAUHF(ML)
+!!! HAS BEEN REPLACED WITH USING TAUT_Z0
+!!!!      CALL STRESS(IU06,ITEST)
 
 
 !*    4.5 HIGHER HARMONICS TABLES

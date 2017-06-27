@@ -88,9 +88,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
-      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EGRCRV   ,
-     &            AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV    ,EPSUS    ,
-     &            EPSU10
+      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CDTINTS  ,CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
@@ -122,7 +120,7 @@
       CHARACTER(LEN=100) :: TITL
 
       LOGICAL :: LFDBOPEN
-      LOGICAL :: FRSTIME30
+      LOGICAL, SAVE :: FRSTIME30
 
       DATA FRSTIME30 / .TRUE. /
 

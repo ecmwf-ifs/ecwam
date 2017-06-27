@@ -57,7 +57,11 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IJ, IJS, IJL, IG, IRA, M, K
+      INTEGER, INTENT(IN) :: IJS, IJL, IG, IRA
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F1
+
+      INTEGER :: IJ, M, K
       INTEGER :: NEWM, NEWM1, KH 
       INTEGER, DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
 
@@ -65,8 +69,8 @@
       REAL :: FNEW, GWH
       REAL :: ZHOOK_HANDLE
       REAL :: DFTH(NFRE)
+      REAL, DIMENSION(IJS:IJL) :: OLDFL 
       REAL, DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE) :: F3, F1
 
       LOGICAL :: LICE2SEA(IJS:IJL)
 ! ----------------------------------------------------------------------
@@ -112,16 +116,6 @@
         DO M=1,NFRE
           DO IJ = IJS, IJL
              IF(F3(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
-          ENDDO
-        ENDDO
-      ENDDO
-
-      DO M = 1, NFRE
-        DO K = 1, NANG
-          DO IJ = IJS, IJL
-            IF(LICE2SEA(IJ)) THEN
-              F3(IJ,K,M) = 0.0
-            ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -181,23 +175,30 @@
 
 !*    1.3.3 INTERPOLATED ENERGY DENSITIES AT ALL GRIDPOINTS.
 !           ------------------------------------------------
+          DO IJ = IJS, IJL
+            IF(LICE2SEA(IJ)) THEN
+              OLDFL(IJ)=0.
+            ELSE
+              OLDFL(IJ)=F3(IJ,K,M)
+            ENDIF
+          ENDDO
 
           DO IJ = IJS, IJL
             FNEW = FNEF(IJ)
             NEWM = NEWF(IJ)
             IF (NEWM.LT.NFRE.AND.NEWM.GE.1) THEN
               NEWM1 = NEWM + 1
-              GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *F3(IJ,K,M)
+              GWH = DFTH(M)/(FR(NEWM1)-FR(NEWM)) *OLDFL(IJ)
               GWM(IJ) = GWH*(FR(NEWM1)-FNEW)/DFTH(NEWM)
               GWP(IJ) = GWH*(FNEW-FR(NEWM))/DFTH(NEWM1)
               NEWF1(IJ) = NEWM1
             ELSEIF (NEWM.EQ.0) THEN
-              GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * F3(IJ,K,M)
+              GWH = FRATIO*DFTH(M)/(FRE0*FR(1)) * OLDFL(IJ)
               GWP(IJ) = GWH*(FNEW-FR(1)/FRATIO)/DFTH(1)
               NEWF (IJ) = -1
               NEWF1(IJ) = 1
             ELSEIF (NEWM.EQ.NFRE) THEN
-              GWH = DFTH(M)/(FRE0*FR(NFRE)) * F3(IJ,K,M)
+              GWH = DFTH(M)/(FRE0*FR(NFRE)) * OLDFL(IJ)
               GWM(IJ) = GWH*(FRATIO*FR(NFRE)-FNEW)/DFTH(NFRE)
               NEWF1(IJ) = -1
             ELSE
@@ -239,5 +240,4 @@
       IF (LHOOK) CALL DR_HOOK('INTPOL',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE INTPOL

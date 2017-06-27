@@ -1,13 +1,17 @@
-      SUBROUTINE WNFLUXES (IJS, IJL,
+      SUBROUTINE WRONG_WNFLUXES (IJS, IJL,
      &                     MIJ, RHOWGDFTH,
-     &                     SSURF,
+     &                     SINPUT, SSURF,
      &                     PHIWA,
      &                     EM, F1, U10, THW,
      &                     USNEW, ROAIRN, LNUPD)
 
 ! ----------------------------------------------------------------------
 
-!**** *WNFLUXES* - WAVE FLUXES CALCULATION
+!**** *WRONG_WNFLUXES* - WRONG WAVE FLUXES CALCULATION
+
+! this is intended to reproduce what we had before when the wave fluxes were calculated
+! Namelly, the contribution from Snl was neglected, AND
+! the contribution for Sdissip for momentum was computed as a scalar 
 
 !*    PURPOSE.
 !     --------
@@ -15,20 +19,20 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WNFLUXES* (IJS, IJL,
-!    &                     MIJ, RHOWGDFTH,
-!    &                     SSURF,
-!    &                     PHIWA,
-!    &                     EM, F1, U10, THW,
-!    &                     USNEW, ROAIRN, LNUPD)
+!       *CALL* *WRONG_WNFLUXES* (IJS, IJL,
+!    &                           MIJ, RHOWGDFTH,
+!    &                           SINPUT, SSURF,
+!    &                           PHIWA,
+!    &                           EM, F1, U10, THW,
+!    &                           USNEW, ROAIRN, LNUPD)
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
 !                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
-!          *SSURF*  - CONTRIBUTION OF ALL SOURCE TERMS ACTING ON 
-!                     THE SURFACE MOMENTUM AND ENERGY FLUXES.
+!          *SINPUT* - WIND INPUT TERM 
+!          *SSURF*  - SUM OF THE WIND INPUT AND THE WHITECAP DISSIPATION SOURCE TERMS 
 !          *PHIWA*  - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                     OVER THE FULL FREQUENCY RANGE.
 !          *EM*     - MEAN WAVE ENERGY.
@@ -70,7 +74,7 @@
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
       REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SINPUT, SSURF
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: PHIWA
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EM, F1, U10, THW
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, ROAIRN
@@ -84,13 +88,15 @@
       REAL :: ZHOOK_HANDLE
 
       REAL, DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
+      REAL, DIMENSION(IJS:IJL) :: TAUWD, TAUWLF
       REAL, DIMENSION(IJS:IJL) :: PHILF
       REAL, DIMENSION(IJS:IJL) :: CMRHOWGDFTH
       REAL, DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      REAL, DIMENSION(IJS:IJL) :: SUMD
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WRONG_WNFLUXES',0,ZHOOK_HANDLE)
 #endif
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
@@ -100,6 +106,7 @@
 !     MOMENTUM FLUX FROM SSURF
       DO IJ=IJS,IJL
         PHILF(IJ) = 0.
+        TAUWD(IJ) = 0.
         XSTRESS(IJ) = 0.
         YSTRESS(IJ) = 0.
       ENDDO
@@ -109,19 +116,22 @@
         K=1
         DO IJ=IJS,IJL
           SUMT(IJ) = SSURF(IJ,K,M)
-          SUMX(IJ) = SINTH(K)*SSURF(IJ,K,M)
-          SUMY(IJ) = COSTH(K)*SSURF(IJ,K,M)
+          SUMD(IJ) = SSURF(IJ,K,M)-SINPUT(IJ,K,M)
+          SUMX(IJ) = SINTH(K)*SINPUT(IJ,K,M)
+          SUMY(IJ) = COSTH(K)*SINPUT(IJ,K,M)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
             SUMT(IJ) = SUMT(IJ) + SSURF(IJ,K,M)
-            SUMX(IJ) = SUMX(IJ) + SINTH(K)*SSURF(IJ,K,M)
-            SUMY(IJ) = SUMY(IJ) + COSTH(K)*SSURF(IJ,K,M)
+            SUMD(IJ) = SUMD(IJ) + SSURF(IJ,K,M)-SINPUT(IJ,K,M)
+            SUMX(IJ) = SUMX(IJ) + SINTH(K)*SINPUT(IJ,K,M)
+            SUMY(IJ) = SUMY(IJ) + COSTH(K)*SINPUT(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
           PHILF(IJ)   = PHILF(IJ)   + SUMT(IJ)*RHOWGDFTH(IJ,M)
           CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWGDFTH(IJ,M)
+          TAUWD(IJ) = TAUWD(IJ) + SUMD(IJ)*CMRHOWGDFTH(IJ)
           XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
           YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
         ENDDO
@@ -134,10 +144,11 @@
         TAUX       = TAU*SIN(THW(IJ))
         TAUY       = TAU*COS(THW(IJ))
 
-        TAUOX      = TAUX-XSTRESS(IJ)
-        TAUOY      = TAUY-YSTRESS(IJ)
-        TAUO       = SQRT(TAUOX**2+TAUOY**2)
+        TAUWLF(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
+        TAUO       = TAU-TAUWLF(IJ)-TAUWD(IJ) 
         TAUOC(IJ)  = TAUO/TAU
+        TAUOX      = TAUO*SIN(THW(IJ))
+        TAUOY      = TAUO*COS(THW(IJ))
 
         XN        = ROAIRN(IJ)*USNEW(IJ)**3
         PHIOCD    = PHILF(IJ)-PHIWA(IJ)
@@ -176,7 +187,7 @@
 ! ----------------------------------------------------------------------
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WRONG_WNFLUXES',1,ZHOOK_HANDLE)
 #endif
 
-      END SUBROUTINE WNFLUXES
+      END SUBROUTINE WRONG_WNFLUXES

@@ -33,7 +33,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : TH       ,C      ,FRIC
+      USE YOWFRED  , ONLY : TH       ,C      ,FRIC     ,OLDWSFC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -43,15 +43,17 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJS,IJL,IJ,K,M,NWP,IG
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EMN, ETOI, USMO, THMO
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EWFG, FMWFG
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+
+      INTEGER :: IJ,K,M,NWP,IG
 
       REAL :: THRESHOLD,CHECKTA
       REAL :: ZHOOK_HANDLE
       REAL :: CM(NFRE)
-      REAL, DIMENSION(IJS:IJL) :: EMN
-      REAL, DIMENSION(IJS:IJL) :: EWFG, FMWFG, ETOI, THMO, USMO
       REAL, DIMENSION(NANG,NFRE) :: FSEA
-      REAL :: F(IJS:IJL,NANG,NFRE)
 
       LOGICAL :: LLFOUND
 
@@ -76,7 +78,7 @@
 !        ------------------------------------                           
 
       DO M=1,NFRE
-        CM(M) = FRIC/C(M)
+        CM(M) = OLDWSFC*FRIC/C(M)
       ENDDO
 
       DO IJ=IJS,IJL
@@ -84,7 +86,7 @@
 !       SKIP THE LAND POINTS.
         IF (EMN(IJ).GT.0.01 .AND. ETOI(IJ).GT.0.01) THEN
           DO K=1,NANG
-            THRESHOLD = 1.2*USMO(IJ)*COS(TH(K)-THMO(IJ))
+            THRESHOLD = USMO(IJ)*COS(TH(K)-THMO(IJ))
             DO M=1,NFRE
               CHECKTA = CM(M)*THRESHOLD
               IF (CHECKTA.LT.1.) THEN
@@ -110,5 +112,5 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FWSEA',1,ZHOOK_HANDLE)
 #endif
-      RETURN
+
       END SUBROUTINE FWSEA

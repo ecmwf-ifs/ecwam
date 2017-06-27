@@ -41,7 +41,6 @@
 !     ----------
 
 !       *FNDPRT*  - COMPUTE PARTITION MASKS
-!       *PARMEAN* - COMPUTE MEAN PARAMETERS.
 
 ! ----------------------------------------------------------------------
 
@@ -83,21 +82,17 @@
       REAL, DIMENSION(IJS:IJL) :: ETOT
       REAL, DIMENSION(IJS:IJL) :: ETT, ETNP
       REAL, DIMENSION(IJS:IJL) :: ENMAX
-      REAL, DIMENSION(NANG,NFRE) :: W2
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
       REAL, DIMENSION(IJS:IJL,0:NPMAX) :: DIR,PER,ENE
       REAL, DIMENSION(IJS:IJL,NTRAIN) :: TEMPDIR,TEMPPER,TEMPENE
-      REAL, DIMENSION(NANG,NFRE,NPMAX) :: SPEC
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL1
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: W1 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW 
 
       LOGICAL :: LLEPSMIN
       LOGICAL :: LLADDPART
       LOGICAL, DIMENSION(IJS:IJL,NTRAIN) :: LPWSECTOR
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
-      LOGICAL, DIMENSION(NANG,NFRE) :: LLW3
 
 ! ----------------------------------------------------------------------
 
@@ -215,90 +210,11 @@
 !*    2. GENERATE MASK FOR EACH PARTITION AND COMPUTE STATISTICS
 !        -------------------------------------------------------
 
-!     ENE must be initialised and index 0 must stay equal to 0
-      DO IP=0,NPMAX
-        DO IJ=IJS,IJL
-          ENE(IJ,IP)=0.
-          DIR(IJ,IP)=0.
-          PER(IJ,IP)=0.
-        ENDDO
-      ENDDO
-
-!     POINTS BELOW THE MINIMUM LEVEL BELONG TO THE WINDSEA PART
-!     AND CAN BE EXCLUDED FROM THE PARTITIONS OF THE SWELL SPECTRUM
-      DO IJ=IJS,IJL
-        MMIN(IJ)=NFRE
-        MMAX(IJ)=0
-      ENDDO
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            IF(FL3(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
-              W1(IJ,K,M) = 1.
-            ELSE
-              W1(IJ,K,M) = 0.
-              MMIN(IJ)=MIN(M,MMIN(IJ))
-              MMAX(IJ)=M
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-
-      DO IJ=IJS,IJL
-
-        DO M=1,NFRE
-          DO K=1,NANG
-            LLW3(K,M)= (W1(IJ,K,M).LT.1.0)
-          ENDDO
-        ENDDO
-        
-        DO IP=1,NPEAK(IJ)
-          CALL FNDPRT(NTHP(IJ,IP),NFRP(IJ,IP),
-     &                MIJ(IJ),MMIN(IJ),MMAX(IJ),
-     &                FL3(IJ,1:NANG,1:NFRE),LLW3,
-     &                W1(IJ,1:NANG,1:NFRE),W2)
-  
-          DO M=1,NFRE
-            DO K=1,NANG
-              SPEC(K,M,IP) = FL3(IJ,K,M)*W2(K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-
-!       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
-!       ADDED AS A PARTITION
-        LLADDPART=.FALSE.
-        IF(NPEAK(IJ).LT.NPMAX) THEN
-          DO K=1,NANG
-            DO M=1,NFRE
-              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0) THEN
-                W2(K,M) = 1.
-                LLADDPART=.TRUE.
-              ELSE
-                W2(K,M) = 0.
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDIF
-
-        IF(LLADDPART) THEN
-          NPEAK(IJ)=NPEAK(IJ)+1
-          IP=NPEAK(IJ)
-          DO M=1,NFRE
-            DO K=1,NANG
-              SPEC(K,M,IP) = FL3(IJ,K,M)*W2(K,M)
-            ENDDO
-          ENDDO
-        ENDIF
-
-
-        IF(NPEAK(IJ).GT.0) THEN
-          CALL PARMEAN(SPEC(1:NANG,1:NFRE,1:NPEAK(IJ)),
-     &                 NPEAK(IJ), ENE(IJ:IJ,1:NPEAK(IJ)),
-     &                 DIR(IJ:IJ,1:NPEAK(IJ)),PER(IJ:IJ,1:NPEAK(IJ)))
-        ENDIF
-
-      ENDDO
+      CALL FNDPRT(IJS, IJL, NPMAX,
+     &            NPEAK, MIJ, NTHP, NFRP,
+     &            FLLOW, LLCOSDIFF,
+     &            FL3,
+     &            ENE, DIR, PER)
 
 !*    5. SORT PARTITIONS ACCORDING TO ENERGY AND ASSIGN THE FIRST NTRAIN TRAINS
 !        WE ONLY NEED THE FIRST NTRAIN TO BE SORTED
@@ -450,5 +366,4 @@
       IF (LHOOK) CALL DR_HOOK('SEP3TR',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE SEP3TR

@@ -82,7 +82,7 @@
       INTEGER :: IFAIL, IRS, JRS
 
       CHARACTER(LEN=12) :: CTIME
-      CHARACTER(LEN=14) :: CDTGE1
+      CHARACTER(LEN=14), SAVE :: CDTGE1
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 

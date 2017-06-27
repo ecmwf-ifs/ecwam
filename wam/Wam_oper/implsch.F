@@ -1,11 +1,10 @@
-      SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG,
+      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,
      &                    THWOLD, USOLD,
      &                    TAUW, Z0OLD,
      &                    ROAIRO, WSTAROLD,
      &                    CICVR, CIWA,
      &                    U10NEW, THWNEW, USNEW,
-     &                    Z0NEW, ROAIRN, WSTARNEW,
-     &                    SL)
+     &                    Z0NEW, ROAIRN, WSTARNEW)
 
 ! ----------------------------------------------------------------------
 
@@ -45,10 +44,8 @@
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
-!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
-!    3                    SL)
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
-!          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
@@ -71,7 +68,6 @@
 !      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
-!      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
 
 !     METHOD.
 !     -------
@@ -119,7 +115,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
@@ -129,8 +125,8 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
-     &            IODP     ,IOBND 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS
+     &            IODP     ,IOBND    ,CINV 
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -155,21 +151,28 @@
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3, FL, SL
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
 
       REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
       REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
       REAL :: ZHOOK_HANDLE
+      REAL :: GAMOF
       REAL :: DELFL(NFRE)
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
-      REAL, DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,
-     &                            PHIWA 
+      REAL, DIMENSION(IJS:IJL) :: PHIWA
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
       REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
+      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+!     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!     *SL*  TOTAL SOURCE FUNCTION ARRAY.
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+!???
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+
       REAL, DIMENSION(IJS:IJL,NFRE) :: TLFR
 
       LOGICAL :: LCFLX
@@ -181,6 +184,10 @@
 
 !*    1. INITIALISATION.
 !        ---------------
+
+      DELT = IDELT
+      XIMP = 1.0
+      DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
 
@@ -203,6 +210,7 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
+
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
@@ -212,7 +220,12 @@
         ENDDO
       ENDDO
 
-!     COMPUTE DAMPING COEFFCIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
+      DO IJ=IJS,IJL
+        XJ=U10NEW(IJ)/DELU
+        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
+      ENDDO
+
+!     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF(LCIWABR) THEN
         CALL CIWABR(IJS, IJL, CICVR, FL3, CIWAB) 
@@ -243,19 +256,39 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      DO IJ=IJS,IJL
-        XJ=U10NEW(IJ)/DELU
-        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
-      ENDDO
-
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
+
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+!     in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+!     diagnostic (not coded efficiently)
+!!      DO IJ=IJS,IJL
+!!        DO M=1,NFRE
+!!          GAMOF=0. 
+!!          DO K=1,NANG
+!!            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
+!!          ENDDO
+!!          write(*,*) 'debile gamma ',CDTPRO," ",
+!!     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
+!!        ENDDO
+!!      ENDDO
+
+
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -263,12 +296,13 @@
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+     &                MIJ,RHOWGDFTH)
 
-      CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, 
-     &              PHIAWDIAG, PHIAWUNR, SL, 
-     &              MIJ, .FALSE.)
+      CALL STRESSO (FL3, SL, IJS, IJL,
+     &              MIJ, RHOWGDFTH,
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+     &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
@@ -282,20 +316,50 @@
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
+
+      CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
+     &              EMEANALL, F1MEAN, XKMEAN,
+     &              USNEW, THWNEW, ROAIRN)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+        CALL WRONG_WNFLUXES (IJS, IJL,
+     &                       MIJ, RHOWGDFTH,
+     &                       SSOURCE, SL,
+     &                       PHIWA,
+     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                       USNEW, ROAIRN, .TRUE.)
+      ENDIF
+
+
+      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
-     &              EMEANALL, F1MEAN, XKMEAN,
-     &              USNEW, THWNEW, ROAIRN,
-     &              PHIOC, TAUWD, MIJ, .FALSE.)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
-        CALL FLUSH (IU06)
+      IF(LCFLX .AND. LWVFLX_SNL) THEN
+!!!!!!  SL must only contain contributions contributed to fluxes into the oceans
+!       MODULATE SL BY IMPLICIT FACTOR
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+            ENDDO
+          ENDDO
+        ENDDO
+        CALL WNFLUXES (IJS, IJL,
+     &                 MIJ, RHOWGDFTH,
+     &                 SSOURCE,
+     &                 PHIWA,
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
+     &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
+
 
 !SHALLOW
       IF(ISHALLO.NE.1) THEN
@@ -313,9 +377,6 @@
 !       INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
 !       FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
 
-      DELT = IDELT
-      XIMP = 1.0
-      DELT5 = XIMP*DELT
 
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
@@ -342,6 +403,7 @@
             FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M)=
      &      MAX(IODP(IJ)*CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
+            FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
       ENDDO
@@ -349,7 +411,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.0)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
@@ -362,6 +424,7 @@
         ENDDO
       ENDDO
       ENDIF
+
 
 ! ----------------------------------------------------------------------
 
@@ -383,8 +446,8 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, CICVR, MIJ)
-
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+     &                MIJ,RHOWGDFTH)
 
       IF(ISHALLO.EQ.1) THEN
         DO M=1,NFRE
@@ -424,19 +487,13 @@
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
-            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)
-     &       + MAX(FL3(IJ,K,M),FLLOWEST)*TLFR(IJ,M)
+            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
           ENDDO
         ENDDO
       ENDDO
 
-
-!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
-!           -------------------------------------------------------
-
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &            F1MEAN, AKMEAN, XKMEAN)
+!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM
+!           ---------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
@@ -445,11 +502,11 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-      CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, 
-     &              PHIAWDIAG, PHIAWUNR, SL, MIJ, 
-     &              LCFLX)
 
+      CALL STRESSO (FL3, SL, IJS, IJL,
+     &              MIJ, RHOWGDFTH,
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+     &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -459,31 +516,6 @@
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
-      ENDIF
-
-      IF(LCFLX) THEN
-!     this call is only needed if we are to compute the fluxes
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, SL,
-     &                EMEANALL, F1MEAN, XKMEAN,
-     &                USNEW, THWNEW, ROAIRN,
-     &                PHIOC, TAUWD, MIJ, LCFLX)
-
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
-          CALL FLUSH (IU06)
-        ENDIF
-      ENDIF
-
-!*    2.5.6 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
-!           -------------------------------------------------------
-
-      IF(LCFLX) THEN
-        CALL WNFLUXES (IJS, IJL,
-     &                 TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR,
-     &                 PHIOC, TAUWD,
-     &                 EMEANALL, FMEANALL, U10NEW, THWNEW,
-     &                 USNEW, ROAIRN, .TRUE.)
-
       ENDIF
 
 ! ----------------------------------------------------------------------

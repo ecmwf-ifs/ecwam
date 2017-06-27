@@ -72,7 +72,6 @@
      &                   ROAIRN, WSTAR, SL, XLLWS)
       END SELECT 
 
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 #endif

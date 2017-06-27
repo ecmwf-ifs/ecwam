@@ -31,8 +31,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : G       ,EGRCRV   ,AGRCRV   ,BGRCRV    ,
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV    ,
      &            ESH      ,ASH     ,BSH
+      USE YOWPCONS , ONLY : G
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -43,7 +44,7 @@
 
       INTEGER, INTENT(IN) :: IJS, IJL
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EWFG, USMO 
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: T
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: T
 
       INTEGER :: IJ
       INTEGER :: IG
@@ -67,13 +68,6 @@
 
       IG=1
 
-!*    1. INITIALIZE DURATION.                                           
-!        -------------------                                            
-
-      DO IJ=IJS,IJL
-        T(IJ) = -9.
-      ENDDO
-
       G2=G*G
       BGRCRV_INV=1./BGRCRV
 
@@ -88,12 +82,10 @@
 
           ESTAR = EWFG(IJ)*G2/USMO(IJ)**4
 
-!!! test !!!
           IF (ISHALLO.NE.1) THEN
             DSTAR = DEPTH(IJ,IG)*G/USMO(IJ)**2
             ESTAR = MIN(EMAX(DSTAR),ESTAR)
           ENDIF
-!!!
 
           ERATIO= ESTAR/EGRCRV
 !!!!why? May not be necessary once we use emax
@@ -102,11 +94,13 @@
           ERATIO= ERATIO**BGRCRV_INV
           TSTAR = ERATIO*AGRCRV/(1.-ERATIO) 
           T(IJ) = USMO(IJ)/G*TSTAR
+        ELSE
+          T(IJ) = -9.
         ENDIF
       ENDDO
                                                                         
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FDUR',1,ZHOOK_HANDLE)
 #endif
-      RETURN
+
       END SUBROUTINE FDUR

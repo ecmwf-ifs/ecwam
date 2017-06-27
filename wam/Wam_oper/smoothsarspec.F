@@ -23,10 +23,12 @@
 
       IMPLICIT NONE
 
-      INTEGER :: LSPEC,NSPEC,NANG,NFRE,ISPEC,K,M,KM,KP
+      INTEGER, INTENT(IN) :: LSPEC,NSPEC,NANG,NFRE
+      REAL,INTENT(INOUT) :: SPEC(LSPEC:NSPEC,NANG,NFRE)
+
+      INTEGER :: ISPEC,K,M,KM,KP
 
       REAL :: C16
-      REAL :: SPEC(LSPEC:NSPEC,NANG,NFRE)
       REAL :: WORK(LSPEC:NSPEC,NANG,NFRE)
       REAL, DIMENSION(LSPEC:NSPEC) ::  EM, EW, TEMP
 
@@ -72,6 +74,18 @@
      &                        SPEC(ISPEC,KP,M+1)
           ENDDO
         ENDDO
+
+!       We assume zero energy for frequency below M=1
+        M=1
+          DO ISPEC = LSPEC,NSPEC 
+            WORK(ISPEC,K,M) =
+     &                     2.*SPEC(ISPEC,KM,M)   + 
+     &                        SPEC(ISPEC,KM,M+1) + 
+     &                     4.*SPEC(ISPEC,K,M)    + 
+     &                     2.*SPEC(ISPEC,K,M+1)  + 
+     &                     2.*SPEC(ISPEC,KP,M)   + 
+     &                        SPEC(ISPEC,KP,M+1)
+          ENDDO
       ENDDO
 
       C16=1./16
@@ -82,7 +96,7 @@
         KP = K + 1
         IF (KP.GT. NANG) KP = 1
 
-        DO M=2,NFRE-1
+        DO M=1,NFRE-1
           DO ISPEC = LSPEC,NSPEC 
             SPEC(ISPEC,K,M) = C16 * WORK(ISPEC,K,M)
           ENDDO
@@ -120,5 +134,4 @@
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE SMOOTHSARSPEC 
