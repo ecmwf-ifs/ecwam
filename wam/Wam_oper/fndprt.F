@@ -80,8 +80,11 @@
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
 
-      REAL, PARAMETER :: HSMIN=0.01  ! minimum Hs (m) value to keep a partition
+      ! minimum Hs (m) value to keep a partition HSMIN=HSMIN_INTER+HSMIN_SLOPE*PERIOD
+      REAL, PARAMETER :: HSMIN_INTER=0.03
+      REAL, PARAMETER :: HSMIN_SLOPE=-0.001
       REAL :: THRS
+      REAL :: HSMIN
       REAL :: HALF_SECTOR
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(NANG,NFRE) :: W2
@@ -290,9 +293,10 @@
 
 !     REMOVE PARTITION WITH Hs < HSMIN 
 
-      THRS=HSMIN**2/16.
       DO IP=1,NPMAX
         DO IJ=IJS,IJL
+          HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
+          THRS=HSMIN**2/16.
           IF(ENE(IJ,IP).LT.THRS) THEN
             ENE(IJ,IP)=0.
             DIR(IJ,IP)=0.

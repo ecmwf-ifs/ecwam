@@ -118,9 +118,10 @@
           KP=K+1
           IF (KP.GT.NANG) KP=1
           DO IJ=IJS,IJL
-            FL3(IJ,K,M) = 0.10*FL1(IJ,KM,M)+
-     &                    0.80*FL1(IJ,K,M) +
-     &                    0.10*FL1(IJ,KP,M)
+!            FL3(IJ,K,M) = 0.10*FL1(IJ,KM,M)+
+!     &                    0.80*FL1(IJ,K,M) +
+!     &                    0.10*FL1(IJ,KP,M)
+            FL3(IJ,K,M) = FL1(IJ,K,M)
 !          RE-IMPOSE THE WINDSEA MASK
            IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
           ENDDO
