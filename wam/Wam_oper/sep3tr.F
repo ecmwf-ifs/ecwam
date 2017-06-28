@@ -121,6 +121,8 @@
             FL3(IJ,K,M) = 0.10*FL1(IJ,KM,M)+
      &                    0.80*FL1(IJ,K,M) +
      &                    0.10*FL1(IJ,KP,M)
+!          RE-IMPOSE THE WINDSEA MASK
+           IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
           ENDDO
         ENDDO
       ENDDO
