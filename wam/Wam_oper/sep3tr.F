@@ -289,33 +289,33 @@
         ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
       ENDDO
 
-      DO IJ=IJS,IJL
-        SUMETRAIN(IJ)=EPSMIN
-      ENDDO
-      DO ISORT=1,NTRAIN
-        DO IJ=IJS,IJL
-          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0. .AND.
-     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
-            LPWSECTOR(IJ,ISORT)=.TRUE.
-            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
-          ELSE
-            LPWSECTOR(IJ,ISORT)=.FALSE.
-          ENDIF
-        ENDDO
-      ENDDO
-      DO IJ=IJS,IJL
-        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
-      ENDDO
+!      DO IJ=IJS,IJL
+!        SUMETRAIN(IJ)=EPSMIN
+!      ENDDO
+!      DO ISORT=1,NTRAIN
+!        DO IJ=IJS,IJL
+!          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0. .AND.
+!     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
+!            LPWSECTOR(IJ,ISORT)=.TRUE.
+!            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
+!          ELSE
+!            LPWSECTOR(IJ,ISORT)=.FALSE.
+!          ENDIF
+!        ENDDO
+!      ENDDO
+!      DO IJ=IJS,IJL
+!        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
+!      ENDDO
 
-      DO ISORT=1,NTRAIN
-        DO IJ=IJS,IJL
-          IF(LPWSECTOR(IJ,ISORT)) THEN
-            EMTRAIN(IJ,ISORT)=
-     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
-            ETNP(IJ)=0.
-          ENDIF
-        ENDDO
-      ENDDO
+!      DO ISORT=1,NTRAIN
+!        DO IJ=IJS,IJL
+!          IF(LPWSECTOR(IJ,ISORT)) THEN
+!            EMTRAIN(IJ,ISORT)=
+!     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
+!            ETNP(IJ)=0.
+!          ENDIF
+!        ENDDO
+!      ENDDO
 
 
 !     RE-ORDER SWELL SYSTEM ACCORDING TO TOTAL ENERGY
