@@ -56,7 +56,6 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : IPFGTBL
-      USE YOWCOUP  , ONLY : ZALP
       USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -103,7 +102,6 @@
       DO M=1,NFRE
         CM(M)=1.0/C(M)
         DO IJ=IJS,IJL
-!!!          XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)+ZALP
           XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)
         ENDDO
       ENDDO

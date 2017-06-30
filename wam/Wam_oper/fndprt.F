@@ -57,6 +57,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWFRED  , ONLY : FR
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -81,12 +82,13 @@
       INTEGER, DIMENSION(1-NANG:2*NANG) :: KLOC
 
       ! minimum Hs (m) value to keep a partition HSMIN=HSMIN_INTER+HSMIN_SLOPE*PERIOD
-      REAL, PARAMETER :: HSMIN_INTER=0.03
-      REAL, PARAMETER :: HSMIN_SLOPE=-0.001
+      REAL, PARAMETER :: HSMIN_INTER=0.05
+      REAL, PARAMETER :: HSMIN_SLOPE=-0.002
       REAL :: THRS
       REAL :: HSMIN
       REAL :: HALF_SECTOR
       REAL :: ZHOOK_HANDLE
+      REAL :: FRINVMIJ(IJS:IJL)
       REAL, DIMENSION(NANG,NFRE) :: W2
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: W1
       REAL, DIMENSION(NANG,NFRE,NPMAX,IJS:IJL) :: SPEC
@@ -112,6 +114,7 @@
       DO IJ=IJS,IJL
         MMIN(IJ)=NFRE
         MMAX(IJ)=0
+        FRINVMIJ(IJ)=1./FR(MIJ(IJ))
       ENDDO
       DO M=1,NFRE
         DO K=1,NANG
@@ -292,12 +295,13 @@
      &             ENE, DIR, PER)
 
 !     REMOVE PARTITION WITH Hs < HSMIN 
+!     MEAN PERIOD > 1/FR(MIJ)
 
       DO IP=1,NPMAX
         DO IJ=IJS,IJL
           HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
           THRS=HSMIN**2/16.
-          IF(ENE(IJ,IP).LT.THRS) THEN
+          IF(ENE(IJ,IP).LT.THRS .OR. PER(IJ,IP).LE.FRINVMIJ(IJ)) THEN
             ENE(IJ,IP)=0.
             DIR(IJ,IP)=0.
             PER(IJ,IP)=0.
