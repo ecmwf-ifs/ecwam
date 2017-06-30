@@ -117,11 +117,13 @@
           KP=K+1
           IF (KP.GT.NANG) KP=1
           DO IJ=IJS,IJL
-            FL3(IJ,K,M) = 0.10*FL1(IJ,KM,M)+
-     &                    0.80*FL1(IJ,K,M) +
-     &                    0.10*FL1(IJ,KP,M)
-!          RE-IMPOSE THE WINDSEA MASK
-           IF(FL1(IJ,K,M).LE.0.) FL3(IJ,K,M) = 0.
+!           RE-IMPOSE THE WINDSEA MASK
+            IF(FL1(IJ,K,M).LE.0.) THEN
+              FL3(IJ,K,M) = 0.
+            ELSE
+              FL3(IJ,K,M) = 0.10*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) +
+     &                      0.80*FL1(IJ,K,M)
+            ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -289,33 +291,33 @@
         ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
       ENDDO
 
-!      DO IJ=IJS,IJL
-!        SUMETRAIN(IJ)=EPSMIN
-!      ENDDO
-!      DO ISORT=1,NTRAIN
-!        DO IJ=IJS,IJL
-!          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0. .AND.
-!     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
-!            LPWSECTOR(IJ,ISORT)=.TRUE.
-!            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
-!          ELSE
-!            LPWSECTOR(IJ,ISORT)=.FALSE.
-!          ENDIF
-!        ENDDO
-!      ENDDO
-!      DO IJ=IJS,IJL
-!        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
-!      ENDDO
+      DO IJ=IJS,IJL
+        SUMETRAIN(IJ)=EPSMIN
+      ENDDO
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0.1 .AND.
+     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
+            LPWSECTOR(IJ,ISORT)=.TRUE.
+            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
+          ELSE
+            LPWSECTOR(IJ,ISORT)=.FALSE.
+          ENDIF
+        ENDDO
+      ENDDO
+      DO IJ=IJS,IJL
+        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
+      ENDDO
 
-!      DO ISORT=1,NTRAIN
-!        DO IJ=IJS,IJL
-!          IF(LPWSECTOR(IJ,ISORT)) THEN
-!            EMTRAIN(IJ,ISORT)=
-!     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
-!            ETNP(IJ)=0.
-!          ENDIF
-!        ENDDO
-!      ENDDO
+      DO ISORT=1,NTRAIN
+        DO IJ=IJS,IJL
+          IF(LPWSECTOR(IJ,ISORT)) THEN
+            EMTRAIN(IJ,ISORT)=
+     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
+            ETNP(IJ)=0.
+          ENDIF
+        ENDDO
+      ENDDO
 
 
 !     RE-ORDER SWELL SYSTEM ACCORDING TO TOTAL ENERGY
