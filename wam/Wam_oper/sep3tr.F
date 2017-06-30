@@ -77,6 +77,8 @@
       INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
       INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
+      REAL, PARAMETER :: XNOISELEVEL=0.003 ! relative value above max value that is considered above noise level
+      REAL :: FLNOISE
       REAL :: COSDIFF
       REAL :: DELDW
       REAL :: XJ, DELUINV 
@@ -109,6 +111,9 @@
       LLEPSMIN=.FALSE.
       CALL SEMEAN (FL1, IJS, IJL, ETOT, LLEPSMIN)
 
+      DO IJ=IJS,IJL
+        ENMAX(IJ)=EPSMIN
+      ENDDO
 !     SMOOTH INPUT SPECTRA (in direction only)
       DO M=1,NFRE
         DO K=1,NANG
@@ -123,6 +128,7 @@
             ELSE
               FL3(IJ,K,M) = 0.10*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) +
      &                      0.80*FL1(IJ,K,M)
+              ENMAX(IJ)=MAX(ENMAX(IJ),FL3(IJ,K,M))
             ENDIF
           ENDDO
         ENDDO
@@ -166,12 +172,13 @@
 
 
       DO IJ=IJS,IJL
+        FLNOISE = XNOISELEVEL*ENMAX(IJ)
         OUT: DO M= 2,MIJ(IJ)-1
           IFL    = MAX ( 1 , M-1 )
           IFH    = MIN ( NFRE , M+1 )
           DO K=1,NANG
 
-            FLLOWEST = FLLOW(IJ,K,M)
+            FLLOWEST = MAX(FLLOW(IJ,K,M),FLNOISE)
 
             IF(FL3(IJ,K,M) .GT. FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
