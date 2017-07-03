@@ -77,7 +77,8 @@
       INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
       INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
-      REAL, PARAMETER :: XNOISELEVEL=0.004 ! relative value above max value that is considered above noise level
+      ! relative value above max swell value that is considered above noise level
+      REAL, PARAMETER :: XNOISELEVEL=0.005
       REAL :: COSDIFF
       REAL :: DELDW
       REAL :: XJ, DELUINV 
@@ -134,7 +135,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        FLNOISE(IJ) = MAX(XNOISELEVEL*ENMAX(IJ),FLMIN)
+        FLNOISE(IJ) = XNOISELEVEL*ENMAX(IJ)
       ENDDO
 
       DO ISORT=1,NTRAIN
@@ -168,7 +169,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FLLOW(IJ,K,M)=MAX(FLMINFR(JU(IJ),M)*SPRD(IJ,K),FLNOISE(IJ))
+            FLLOW(IJ,K,M)=MAX(FLMINFR(JU(IJ),M)*SPRD(IJ,K),FLMIN)
           ENDDO
         ENDDO
       ENDDO
@@ -180,7 +181,7 @@
           IFH    = MIN ( NFRE , M+1 )
           DO K=1,NANG
 
-            FLLOWEST = FLLOW(IJ,K,M)
+            FLLOWEST = MAX(FLLOW(IJ,K,M),FLNOISE(IJ))
 
             IF(FL3(IJ,K,M) .GT. FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
