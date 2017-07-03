@@ -265,7 +265,9 @@
 !       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
 !       ADDED AS A PARTITION
         LLADDPART=.FALSE.
-        IF(NPEAK(IJ).LT.NPMAX) THEN
+!!1!        IF(NPEAK(IJ).LT.NPMAX) THEN
+!!!1debile to disable this check
+        IF(NPEAK(IJ).LT.-1000) THEN
           DO K=1,NANG
             DO M=1,NFRE
               IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0) THEN
