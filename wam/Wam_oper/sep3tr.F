@@ -78,7 +78,7 @@
       INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
       ! relative value above max swell value that is considered above noise level
-      REAL, PARAMETER :: XNOISELEVEL=0.005
+      REAL, PARAMETER :: XNOISELEVEL=0.01
       REAL :: COSDIFF
       REAL :: DELDW
       REAL :: XJ, DELUINV 
