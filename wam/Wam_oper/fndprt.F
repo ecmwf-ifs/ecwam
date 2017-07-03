@@ -1,6 +1,6 @@
       SUBROUTINE FNDPRT (IJS, IJL, NPMAX,
      &                   NPEAK, MIJ, NTHP, NFRP,
-     &                   FLLOW, LLCOSDIFF,
+     &                   FLLOW, LLCOSDIFF, FLNOISE,
      &                   FL3,
      &                   ENE, DIR, PER)
 
@@ -24,7 +24,7 @@
 
 !       *CALL* *FNDPRT (IJS, IJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
-!     &                 FLLOW, LLCOSDIFF,
+!     &                 FLLOW, LLCOSDIFF, FLNOISE,
 !     &                 FL3,
 !     &                 ENE, DIR, PER)
 
@@ -37,6 +37,7 @@
 !          *NFRP*   - FREQUENCY INDEX FOR ALL PEAKS
 !          *FLLOW*  - MINIMUM ENERGY LEVEL
 !          *LLCOSDIFF* LOGICAL (COSDIFF.LT.-0.4)
+!          *FLNOISE* - SPECTRAL NOISE LEVEL
 !          *FL3*    - BLOCK OF SPECTRA
 !          *EME*    - MEAN WAVE ENERGY FOR EACH WAVE SYSTEM 
 !          *DIR*    - MEAN WAVE DIRECTION FOR EACH WAVE SYSTEM
@@ -69,6 +70,7 @@
       INTEGER, INTENT(INOUT), DIMENSION(IJS:IJL) :: NPEAK
       INTEGER, INTENT(IN), DIMENSION(IJS:IJL,NPMAX) :: NTHP, NFRP
 
+      REAL, INTENT(IN), DIMENSION(IJS:IJL) :: FLNOISE
       REAL, INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL3
       REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
 
@@ -263,14 +265,13 @@
         ENDDO ! loop IP
 
 !       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
-!       ADDED AS A PARTITION
+!       ADDED AS A PARTITION IF ABOVE NOISE LEVEL
         LLADDPART=.FALSE.
-!!1!        IF(NPEAK(IJ).LT.NPMAX) THEN
-!!!1debile to disable this check
-        IF(NPEAK(IJ).LT.-1000) THEN
+        IF(NPEAK(IJ).LT.NPMAX) THEN
           DO K=1,NANG
             DO M=1,NFRE
-              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0) THEN
+              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0 .AND.
+     &           FL3(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
                 W2(K,M) = 1.
                 LLADDPART=.TRUE.
               ELSE

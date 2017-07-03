@@ -226,7 +226,7 @@
 
       CALL FNDPRT(IJS, IJL, NPMAX,
      &            NPEAK, MIJ, NTHP, NFRP,
-     &            FLLOW, LLCOSDIFF,
+     &            FLLOW, LLCOSDIFF, FLNOISE,
      &            FL3,
      &            ENE, DIR, PER)
 
