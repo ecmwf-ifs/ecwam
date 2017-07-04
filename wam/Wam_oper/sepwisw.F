@@ -207,11 +207,12 @@
       ENDDO
 
       IF(IPFGTBL(12).NE.0 .OR. IPFGTBL(16).NE.0 .OR.
-     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 ) THEN
+     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 .OR.
+     &   LLPARTITION ) THEN
         CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS))
       ENDIF
       
-      IF(IPFGTBL(14).NE.0) THEN
+      IF(IPFGTBL(14).NE.0 .OR. LLPARTITION) THEN
         CALL STHQ(FL1, IJS, IJL, THSWELL(IJS))
       ENDIF
 
@@ -233,7 +234,8 @@
 !         ------------------------------------------------------
 
       IF(LLPARTITION) THEN
-        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
+        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
+     &               ESWELL, FSWELL, THSWELL, ETNP)
       ENDIF
 
 

@@ -1,4 +1,5 @@
-      SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW , ETNP)
+      SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW ,
+     &                   ESWELL, FSWELL, THSWELL, ETNP)
 
 ! ----------------------------------------------------------------------
 
@@ -19,13 +20,17 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
+!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
+!                       ESWELL, FSWELL, THSWELL, ETNP)
 !          *FL1*    - BLOCK OF SPECTRA
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *U10NEW* - LATESt WIND SPEED.
 !          *THWNEW* - LATEST WIND DIRECTION.
+!          *ESWELL* - TOTAL SWELL ENERGY
+!          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
+!          *THSWELL*- TOTAL SWELL MEAN DIRECTION
 !          *ETNP*   - TOTAL ENERGY NOT HELD BY ALL PARTITIONS.
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
 !                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
@@ -62,15 +67,18 @@
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW 
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ETNP
 
       INTEGER, PARAMETER :: NPMAX=20
+      INTEGER :: NPMAX_LOC
       INTEGER :: IJ, M, K, IP
       INTEGER :: ISORT, I, IPLOC
       INTEGER :: IFL, IFH, ITHL, ITHH
       INTEGER :: KM, KP
-      INTEGER, DIMENSION(IJS:IJL) :: NPEAK
+      INTEGER, DIMENSION(IJS:IJL) :: NPEAK, NPK
+      INTEGER, DIMENSION(IJS:IJL) :: FRINVMIJ
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX 
       INTEGER, DIMENSION(IJS:IJL) :: IPNOW 
       INTEGER, DIMENSION(IJS:IJL) :: JU 
@@ -79,6 +87,12 @@
 
       ! relative value above max swell value that is considered above noise level
       REAL, PARAMETER :: XNOISELEVEL=0.005
+      ! minimum Hs (m) value to keep a partition HSMIN=HSMIN_INTER+HSMIN_SLOPE*PERIOD
+      REAL, PARAMETER :: HSMIN_INTER=0.05
+      REAL, PARAMETER :: HSMIN_SLOPE=-0.002
+      REAL :: THRS
+      REAL :: HSMIN
+
       REAL :: COSDIFF
       REAL :: DELDW
       REAL :: XJ, DELUINV 
@@ -106,6 +120,10 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEP3TR',0,ZHOOK_HANDLE)
 #endif
+
+      DO IJ=IJS,IJL
+        FRINVMIJ(IJ)=1./FR(MIJ(IJ))
+      ENDDO
 
 !     TOTAL ENERGY IN THE SWELL SPECTRA
       LLEPSMIN=.FALSE.
@@ -141,8 +159,12 @@
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
           EMTRAIN(IJ,ISORT) = 0. 
-          THTRAIN(IJ,ISORT) = THWNEW(IJ)
           PMTRAIN(IJ,ISORT) = 0.
+          IF(ESWELL(IJ).GT.0.) THEN
+            THTRAIN(IJ,ISORT) = THSWELL(IJ)
+          ELSE
+            THTRAIN(IJ,ISORT) = THWNEW(IJ)
+          ENDIF
         ENDDO
       ENDDO
 
@@ -230,14 +252,44 @@
      &            FL3,
      &            ENE, DIR, PER)
 
+
+!     REMOVE PARTITION WITH Hs < HSMIN 
+!     MEAN PERIOD > 1/FR(MIJ)
+      DO IJ=IJS,IJL
+        NPK(IJ)=NPEAK(IJ)
+        DO IP=1,NPEAK(IJ)
+          HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
+          THRS=0.0625*HSMIN**2
+          IF(ENE(IJ,IP).LT.THRS .OR. PER(IJ,IP).LE.FRINVMIJ(IJ)) THEN
+            ENE(IJ,IP)=0.
+            DIR(IJ,IP)=0.
+            PER(IJ,IP)=0.
+            NPK(IJ)=NPK(IJ)-1
+          ENDIF
+        ENDDO
+      ENDDO
+
+!     IF NO SWELL PARTITION BUT TOTAL SWELL EXIST THEN
+!     ASSIGN FIRST PARTITION TO TOTAL SWELL
+      DO IJ=IJS,IJL
+        IF(NPK(IJ).LE.0 .AND. ESWELL(IJ).GT.0.) THEN
+          NPEAK(IJ)=1
+          ENE(IJ,1)=ESWELL(IJ)
+          DIR(IJ,1)=THSWELL(IJ)
+          PER(IJ,1)=FSWELL(IJ)
+        ENDIF 
+      ENDDO
+
 !*    5. SORT PARTITIONS ACCORDING TO ENERGY AND ASSIGN THE FIRST NTRAIN TRAINS
 !        WE ONLY NEED THE FIRST NTRAIN TO BE SORTED
 !        -----------------------------------------------------------------
 
+      NPMAX_LOC=MAXVAL(NPEAK(:))
+
       DO IJ=IJS,IJL
         ETT(IJ)=ENE(IJ,1)
       ENDDO
-      DO IP=2,NPMAX
+      DO IP=2,NPMAX_LOC
         DO IJ=IJS,IJL
           ETT(IJ)=ETT(IJ)+ENE(IJ,IP)
         ENDDO
@@ -249,7 +301,7 @@
           ENMAX(IJ)=0.
         ENDDO
 
-        DO IP=1,NPMAX
+        DO IP=1,NPMAX_LOC
           DO IJ=IJS,IJL
             IF (ENE(IJ,IP).GT.ENMAX(IJ)) THEN
               IPNOW(IJ) = IP
