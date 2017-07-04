@@ -1,5 +1,7 @@
       SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW ,
-     &                   ESWELL, FSWELL, THSWELL, ETNP)
+     &                   ESWELL, FSWELL, THSWELL,
+     &                   ETNP,
+     &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
 
@@ -21,7 +23,9 @@
 !     ----------
 
 !       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
-!                       ESWELL, FSWELL, THSWELL, ETNP)
+!                       ESWELL, FSWELL, THSWELL,
+!                       ETNP,
+!                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
 !          *FL1*    - BLOCK OF SPECTRA
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -36,6 +40,9 @@
 !                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
 !                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
 !                     MIGHT NOT BE PARTITIONED.
+!          *EMTRAIN* - PARTITIONED ENERGY
+!          *THTRAIN* - PARTITIONED MEAN DIRECTION
+!          *PMTRAIN* - PARTITIONED MEAN PERIOD
 
 !     METHOD.
 !     -------
@@ -56,7 +63,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
       USE YOWTABL  , ONLY : JUMAX    ,DELU
-      USE YOWTRAINS ,ONLY : EMTRAIN  ,THTRAIN  ,PMTRAIN
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -70,6 +76,8 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ETNP
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN  ,PMTRAIN
 
       INTEGER, PARAMETER :: NPMAX=20
       INTEGER :: NPMAX_LOC
@@ -276,7 +284,7 @@
           NPEAK(IJ)=1
           ENE(IJ,1)=ESWELL(IJ)
           DIR(IJ,1)=THSWELL(IJ)
-          PER(IJ,1)=FSWELL(IJ)
+          PER(IJ,1)=1./FSWELL(IJ)
         ENDIF 
       ENDDO
 

@@ -1,5 +1,10 @@
       SUBROUTINE SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
      &                    USNEW, U10NEW, THWNEW,
+     &                    ESWELL   ,FSWELL   ,THSWELL  ,
+     &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,
+     &                    ESEA     ,FSEA     ,THWISEA  ,
+     &                    P1SEA    ,P2SEA    ,SPRDSEA  ,
+     &                    EMTRAIN  ,THTRAIN  ,PMTRAIN,
      &                    LLPARTITION)
 
 ! ----------------------------------------------------------------------
@@ -29,6 +34,11 @@
 
 !       *CALL* SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
 !    &                  USNEW, U10NEW, THWNEW,
+!    &                  ESWELL   ,FSWELL   ,THSWELL  ,
+!    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
+!    &                  ESEA     ,FSEA     ,THWISEA  ,
+!    &                  P1SEA    ,P2SEA    ,SPRDSEA  ,
+!    &                  EMTRAIN  ,THTRAIN  ,PMTRAIN,
 !    &                  LLPARTITION)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
@@ -38,6 +48,7 @@
 !          *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !          *U10NEW* - LATESt WIND SPEED.
 !          *THWNEW* - LATEST WIND DIRECTION.
+!          *        - SWELL and WINDSEA PARAMETERS.
 !          *LLPARTITION* TRUE IF SPECTRAL PARTITIONING IS USED.
 
 !     METHOD.
@@ -55,13 +66,10 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : IPFGTBL
+      USE YOWCOUT  , ONLY : IPFGTBL  ,NTRAIN
       USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
-     &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
-     &            P1SEA    ,P2SEA    ,SPRDSEA
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -----------------------------------------------------------------------
@@ -71,6 +79,12 @@
       INTEGER, INTENT(IN) :: IJS,IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, U10NEW, THWNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: P1SWELL,P2SWELL,SPRDSWELL
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ESEA   ,FSEA   ,THWISEA
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: P1SEA  ,P2SEA  ,SPRDSEA
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN, PMTRAIN
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: XLLWS 
       LOGICAL, INTENT(IN) :: LLPARTITION
@@ -93,6 +107,10 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEPWISH',0,ZHOOK_HANDLE)
 #endif
+
+      ESWELL(:)=0.0
+      ESEA(:)=0.0
+      EMTRAIN(:,:)=0.0
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
@@ -143,7 +161,7 @@
           ENDDO
         ENDDO
       ENDDO
-      CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS))
+      CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
 
 !     WINDSEA:
       DO M=1,NFRE
@@ -153,7 +171,7 @@
           ENDDO
         ENDDO
       ENDDO
-      CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS))
+      CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
 
 !     CHECK:
       DO IJ=IJS,IJL
@@ -209,24 +227,24 @@
       IF(IPFGTBL(12).NE.0 .OR. IPFGTBL(16).NE.0 .OR.
      &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 .OR.
      &   LLPARTITION ) THEN
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS))
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
       ENDIF
       
       IF(IPFGTBL(14).NE.0 .OR. LLPARTITION) THEN
-        CALL STHQ(FL1, IJS, IJL, THSWELL(IJS))
+        CALL STHQ(FL1, IJS, IJL, THSWELL)
       ENDIF
 
       IF(IPFGTBL(29).NE.0) THEN
-        CALL MWP1(FL1, IJS, IJL, ESWELL(IJS), P1SWELL(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESWELL, P1SWELL)
       ENDIF
 
       IF(IPFGTBL(31).NE.0) THEN
-        CALL MWP2(FL1, IJS, IJL, ESWELL(IJS), P2SWELL(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESWELL, P2SWELL)
       ENDIF
 
       IF(IPFGTBL(33).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL(IJS))
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
       ENDIF
 
 
@@ -235,7 +253,9 @@
 
       IF(LLPARTITION) THEN
         CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
-     &               ESWELL, FSWELL, THSWELL, ETNP)
+     &               ESWELL, FSWELL, THSWELL,
+     &               ETNP,
+     &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ENDIF
 
 
@@ -253,11 +273,11 @@
       IF(IPFGTBL(15).NE.0 .OR. IPFGTBL(11).NE.0 .OR.
      &   IPFGTBL(13).NE.0 .OR. IPFGTBL(28).NE.0 .OR.
      &   IPFGTBL(30).NE.0) THEN
-        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS))
+        CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
       ENDIF
 
       IF(IPFGTBL(13).NE.0) THEN
-        CALL STHQ(FL1, IJS, IJL, THWISEA(IJS))
+        CALL STHQ(FL1, IJS, IJL, THWISEA)
 !       if there isn't any windsea energy, set the windsea mean direction
 !       to the wind direction.
         DO IJ=IJS,IJL
@@ -268,16 +288,16 @@
       ENDIF
 
       IF(IPFGTBL(28).NE.0) THEN
-        CALL MWP1(FL1, IJS, IJL, ESEA(IJS), P1SEA(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESEA, P1SEA)
       ENDIF
 
       IF(IPFGTBL(30).NE.0) THEN
-        CALL MWP2(FL1, IJS, IJL, ESEA(IJS), P2SEA(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESEA, P2SEA)
       ENDIF
 
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
+        CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA)
       ENDIF
 
 
