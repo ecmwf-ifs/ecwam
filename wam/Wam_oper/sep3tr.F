@@ -1,5 +1,5 @@
       SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW ,
-     &                   ESWELL, FSWELL, THSWELL,
+     &                   ESWELL, FSWELL, THSWELL, FSEA,
      &                   ETNP,
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
@@ -23,7 +23,7 @@
 !     ----------
 
 !       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
-!                       ESWELL, FSWELL, THSWELL,
+!                       ESWELL, FSWELL, THSWELL, FSEA,
 !                       ETNP,
 !                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
 !          *FL1*    - BLOCK OF SPECTRA
@@ -35,6 +35,7 @@
 !          *ESWELL* - TOTAL SWELL ENERGY
 !          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
 !          *THSWELL*- TOTAL SWELL MEAN DIRECTION
+!          *FSEA*   - WINDSEA MEAN FREQUENCY
 !          *ETNP*   - TOTAL ENERGY NOT HELD BY ALL PARTITIONS.
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
 !                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
@@ -74,6 +75,7 @@
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW 
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: FSEA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ETNP
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
@@ -279,12 +281,15 @@
 
 !     IF NO SWELL PARTITION BUT TOTAL SWELL EXIST THEN
 !     ASSIGN FIRST PARTITION TO TOTAL SWELL
+!     IF IT HAS SWELL CHARACTERSITICS
       DO IJ=IJS,IJL
         IF(NPK(IJ).LE.0 .AND. ESWELL(IJ).GT.0.) THEN
-          NPEAK(IJ)=1
-          ENE(IJ,1)=ESWELL(IJ)
-          DIR(IJ,1)=THSWELL(IJ)
-          PER(IJ,1)=1./FSWELL(IJ)
+          IF(FSWELL(IJ).LT.FSEA(IJ)) THEN
+            NPEAK(IJ)=1
+            ENE(IJ,1)=ESWELL(IJ)
+            DIR(IJ,1)=THSWELL(IJ)
+            PER(IJ,1)=1./FSWELL(IJ)
+          ENDIF 
         ENDIF 
       ENDDO
 

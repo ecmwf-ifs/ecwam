@@ -253,7 +253,7 @@
 
       IF(LLPARTITION) THEN
         CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
-     &               ESWELL, FSWELL, THSWELL,
+     &               ESWELL, FSWELL, THSWELL, FSEA,
      &               ETNP,
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ENDIF
