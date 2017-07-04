@@ -302,8 +302,9 @@
 
       DO IP=1,NPMAX
         DO IJ=IJS,IJL
-          HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
-          THRS=0.0625*HSMIN**2
+!!1          HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
+!!!          THRS=0.0625*HSMIN**2
+          THRS=-1.
           IF(ENE(IJ,IP).LT.THRS .OR. PER(IJ,IP).LE.FRINVMIJ(IJ)) THEN
             ENE(IJ,IP)=0.
             DIR(IJ,IP)=0.
