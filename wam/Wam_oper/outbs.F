@@ -502,7 +502,8 @@
      &                P1SWELL(KIJS)  ,P2SWELL(KIJS)  ,SPRDSWELL(KIJS),
      &                ESEA(KIJS)     ,FSEA(KIJS)     ,THWISEA(KIJS)  ,
      &                P1SEA(KIJS)    ,P2SEA(KIJS)    ,SPRDSEA(KIJS)  ,
-     &                EMTRAIN(KIJS,:),THTRAIN(KIJS,:),PMTRAIN(KIJS,:),
+     &                EMTRAIN(KIJS:KIJL,:),
+     &                THTRAIN(KIJS:KIJL,:),PMTRAIN(KIJS:KIJL,:),
      &                LLPARTITION)
       ENDDO
 !$OMP END PARALLEL DO
