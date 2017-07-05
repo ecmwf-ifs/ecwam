@@ -188,7 +188,7 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           COSDIFF=COS(TH(K)-THWNEW(IJ))
-          LLCOSDIFF(IJ,K)=(COSDIFF.LT.-0.4)
+          LLCOSDIFF(IJ,K)=(COSDIFF.LT.0.)
           SPRD(IJ,K)=MAX(0.,COSDIFF)**2
         ENDDO
       ENDDO
