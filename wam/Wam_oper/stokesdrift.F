@@ -54,7 +54,7 @@
 
       INTEGER :: IJ, M, K
 
-      REAL, PARAMETER :: STMAX=1.5   ! maximum magnitude (this is for safety when coupled)
+      REAL, PARAMETER :: STMAX=1.0   ! maximum magnitude (this is for safety when coupled)
       REAL :: CONST, FAC, FAC1, FAC2, FAC3
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: STFAC
