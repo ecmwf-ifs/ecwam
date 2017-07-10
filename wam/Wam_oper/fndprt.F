@@ -1,7 +1,7 @@
       SUBROUTINE FNDPRT (IJS, IJL, NPMAX,
      &                   NPEAK, MIJ, NTHP, NFRP,
      &                   FLLOW, LLCOSDIFF, FLNOISE,
-     &                   FL3,
+     &                   FL3, SWM,
      &                   ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
@@ -25,7 +25,7 @@
 !       *CALL* *FNDPRT (IJS, IJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
 !     &                 FLLOW, LLCOSDIFF, FLNOISE,
-!     &                 FL3,
+!     &                 FL3, SWM,
 !     &                 ENE, DIR, PER)
 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -39,6 +39,11 @@
 !          *LLCOSDIFF* LOGICAL (COSDIFF.LT.-0.4)
 !          *FLNOISE* - SPECTRAL NOISE LEVEL
 !          *FL3*    - BLOCK OF SPECTRA
+!          *SWM*    - ORIGINAL SWELL MASK
+!                     IT MIGHT NEED TO BE ADJUSTED
+!                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
+!                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
+!                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
 !          *EME*    - MEAN WAVE ENERGY FOR EACH WAVE SYSTEM 
 !          *DIR*    - MEAN WAVE DIRECTION FOR EACH WAVE SYSTEM
 !          *PER*    - MEAN PERIOD BASED ON -1 MOMENT FOR EACH WAVE SYSTEM.
@@ -71,6 +76,7 @@
 
       REAL, INTENT(IN), DIMENSION(IJS:IJL) :: FLNOISE
       REAL, INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
       REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
 
       LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
@@ -265,6 +271,7 @@
               IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0 .AND.
      &           FL3(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
                 W2(K,M) = 1.
+                W1(IJ,K,M) = 1.
                 LLADDPART=.TRUE.
               ELSE
                 W2(K,M) = 0.
@@ -289,6 +296,15 @@
      &             SPEC,
      &             ENE, DIR, PER)
 
+
+!     UPDATE SWELL MASK
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            SWM(IJ,K,M)=SWM(IJ,K,M)*W1(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FNDPRT',1,ZHOOK_HANDLE)

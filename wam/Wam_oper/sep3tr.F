@@ -1,6 +1,6 @@
       SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW ,
      &                   ESWELL, FSWELL, THSWELL, FSEA,
-     &                   ETNP,
+     &                   SWM,
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 !       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
 !                       ESWELL, FSWELL, THSWELL, FSEA,
-!                       ETNP,
+!                       SWM,
 !                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
 !          *FL1*    - BLOCK OF SPECTRA
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -36,7 +36,8 @@
 !          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
 !          *THSWELL*- TOTAL SWELL MEAN DIRECTION
 !          *FSEA*   - WINDSEA MEAN FREQUENCY
-!          *ETNP*   - TOTAL ENERGY NOT HELD BY ALL PARTITIONS.
+!          *SWM*    - ORIGINAL SWELL MASK
+!                     IT MIGHT NEED TO BE ADJUSTED
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
 !                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
 !                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
@@ -77,7 +78,7 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: FSEA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ETNP
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN  ,PMTRAIN
 
@@ -259,7 +260,7 @@
       CALL FNDPRT(IJS, IJL, NPMAX,
      &            NPEAK, MIJ, NTHP, NFRP,
      &            FLLOW, LLCOSDIFF, FLNOISE,
-     &            FL3,
+     &            FL3, SWM,
      &            ENE, DIR, PER)
 
 
@@ -357,43 +358,6 @@
      &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
         ENDDO
       ENDDO
-
-!     6.2 Distribute the non-partioned energy proportionally to swell trains
-!         that are in the wind direction
-
-!     non-partitioned energy
-      DO IJ=IJS,IJL
-        ETNP(IJ)=MAX(ETOT(IJ)-ETT(IJ),0.)
-      ENDDO
-
-!      DO IJ=IJS,IJL
-!        SUMETRAIN(IJ)=EPSMIN
-!      ENDDO
-!      DO ISORT=1,NTRAIN
-!        DO IJ=IJS,IJL
-!          IF(COS(THWNEW(IJ)-THTRAIN(IJ,ISORT)).GT.0.1 .AND.
-!     &       EMTRAIN(IJ,ISORT).GT.EPSMIN) THEN
-!            LPWSECTOR(IJ,ISORT)=.TRUE.
-!            SUMETRAIN(IJ)=SUMETRAIN(IJ)+EMTRAIN(IJ,ISORT)
-!         ELSE
-!            LPWSECTOR(IJ,ISORT)=.FALSE.
-!          ENDIF
-!        ENDDO
-!      ENDDO
-!      DO IJ=IJS,IJL
-!        ENEX(IJ)=ETNP(IJ)/SUMETRAIN(IJ)
-!      ENDDO
-
-!      DO ISORT=1,NTRAIN
-!        DO IJ=IJS,IJL
-!          IF(LPWSECTOR(IJ,ISORT)) THEN
-!            EMTRAIN(IJ,ISORT)=
-!     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
-!            ETNP(IJ)=0.
-!          ENDIF
-!        ENDDO
-!      ENDDO
-
 
 !     RE-ORDER SWELL SYSTEM ACCORDING TO TOTAL ENERGY
 

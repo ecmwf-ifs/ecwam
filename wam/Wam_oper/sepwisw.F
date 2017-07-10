@@ -95,7 +95,7 @@
       REAL :: CHECKTA
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(NFRE) :: CM
-      REAL, DIMENSION(IJS:IJL) :: ETNP, R
+      REAL, DIMENSION(IJS:IJL) :: R
       REAL, DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL, DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, FL1
@@ -213,9 +213,7 @@
         ENDDO
       ENDDO
 
-!*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
-!         --------------------------------------------
-
+!     SWELL SPECTRUM
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
@@ -224,13 +222,37 @@
         ENDDO
       ENDDO
 
+!*    2.1 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
+!         ------------------------------------------------------
+
+      IF(LLPARTITION) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
+        CALL STHQ(FL1, IJS, IJL, THSWELL)
+        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
+     &               ESWELL, FSWELL, THSWELL, FSEA,
+     &               SWM,
+     &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
+
+        ! UPDATE SWELL SPECTRUM ??????
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+
+      ENDIF
+
+!*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
+!         --------------------------------------------
+
       IF(IPFGTBL(12).NE.0 .OR. IPFGTBL(16).NE.0 .OR.
-     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 .OR.
-     &   LLPARTITION ) THEN
+     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 ) THEN
         CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
       ENDIF
       
-      IF(IPFGTBL(14).NE.0 .OR. LLPARTITION) THEN
+      IF(IPFGTBL(14).NE.0) THEN
         CALL STHQ(FL1, IJS, IJL, THSWELL)
       ENDIF
 
@@ -245,17 +267,6 @@
       IF(IPFGTBL(33).NE.0) THEN
         LLPEAKF = .TRUE.
         CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
-      ENDIF
-
-
-!*    2.2 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
-!         ------------------------------------------------------
-
-      IF(LLPARTITION) THEN
-        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
-     &               ESWELL, FSWELL, THSWELL, FSEA,
-     &               ETNP,
-     &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ENDIF
 
 
@@ -298,24 +309,6 @@
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
         CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA)
-      ENDIF
-
-
-!     RE-ASSIGN THE NON PARTITONED ENERGY TO WINDSEA
-!!!!!! it does not work as it creates holes in the total swell field
-!!!!!! as feature that cannot be handled by our users
-!     AND REMOVE IT FROM THE SWELL
-      IF(LLPARTITION) THEN
-        IF(IPFGTBL(11).NE.0 ) THEN
-          DO IJ=IJS,IJL
-            ESEA(IJ) = ESEA(IJ)+ETNP(IJ)
-          ENDDO
-        ENDIF
-        IF(IPFGTBL(12).NE.0) THEN
-          DO IJ=IJS,IJL
-            ESWELL(IJ) = MAX(ESWELL(IJ)-ETNP(IJ),0.0)
-          ENDDO
-        ENDIF
       ENDIF
 
 #ifdef ECMWF
