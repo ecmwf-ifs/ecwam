@@ -228,20 +228,10 @@
       IF(LLPARTITION) THEN
         CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
         CALL STHQ(FL1, IJS, IJL, THSWELL)
-        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
+        CALL SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW,
      &               ESWELL, FSWELL, THSWELL, FSEA,
-     &               SWM,
+     &               FL1, SWM,
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
-
-        ! UPDATE SWELL SPECTRUM ??????
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-
       ENDIF
 
 !*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS

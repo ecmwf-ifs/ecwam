@@ -1,6 +1,6 @@
-      SUBROUTINE SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW ,
+      SUBROUTINE SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW ,
      &                   ESWELL, FSWELL, THSWELL, FSEA,
-     &                   SWM,
+     &                   FL1, SWM,
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
@@ -22,11 +22,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW,
+!       *CALL* *SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW,
 !                       ESWELL, FSWELL, THSWELL, FSEA,
-!                       SWM,
+!                       FL1, SWM,
 !                       EMTRAIN  ,THTRAIN  ,PMTRAIN)
-!          *FL1*    - BLOCK OF SPECTRA
+!          *FL3*    - BLOCK OF FULL SPECTRA
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -36,6 +36,7 @@
 !          *FSWELL* - TOTAL SWELL MEAN FREQUENCY
 !          *THSWELL*- TOTAL SWELL MEAN DIRECTION
 !          *FSEA*   - WINDSEA MEAN FREQUENCY
+!          *FL1*    - SWELL SPECTRA
 !          *SWM*    - ORIGINAL SWELL MASK
 !                     IT MIGHT NEED TO BE ADJUSTED
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
@@ -77,8 +78,8 @@
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW 
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: FSEA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1, SWM
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN  ,PMTRAIN
 
@@ -111,13 +112,12 @@
       REAL :: ZHOOK_HANDLE
       REAL :: FLLOWEST
       REAL, DIMENSION(IJS:IJL) :: ENEX, SUMETRAIN
-      REAL, DIMENSION(IJS:IJL) :: ETOT
       REAL, DIMENSION(IJS:IJL) :: ETT
       REAL, DIMENSION(IJS:IJL) :: ENMAX, FLNOISE
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
       REAL, DIMENSION(IJS:IJL,0:NPMAX) :: DIR,PER,ENE
       REAL, DIMENSION(IJS:IJL,NTRAIN) :: TEMPDIR,TEMPPER,TEMPENE
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL3, FLLOW
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, FLLOW
 
       LOGICAL :: LLEPSMIN
       LOGICAL :: LLADDPART
@@ -136,10 +136,6 @@
         FRINVMIJ(IJ)=1./FR(MIJ(IJ))
       ENDDO
 
-!     TOTAL ENERGY IN THE SWELL SPECTRA
-      LLEPSMIN=.FALSE.
-      CALL SEMEAN (FL1, IJS, IJL, ETOT, LLEPSMIN)
-
       DO IJ=IJS,IJL
         ENMAX(IJ)=0.
       ENDDO
@@ -153,11 +149,11 @@
           DO IJ=IJS,IJL
 !           RE-IMPOSE THE WINDSEA MASK
             IF(FL1(IJ,K,M).LE.0.) THEN
-              FL3(IJ,K,M) = 0.
+              FL(IJ,K,M) = 0.
             ELSE
-              FL3(IJ,K,M) = 0.10*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) +
+              FL(IJ,K,M) = 0.10*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) +
      &                      0.80*FL1(IJ,K,M)
-              ENMAX(IJ)=MAX(ENMAX(IJ),FL3(IJ,K,M))
+              ENMAX(IJ)=MAX(ENMAX(IJ),FL(IJ,K,M))
             ENDIF
           ENDDO
         ENDDO
@@ -216,27 +212,27 @@
 
             FLLOWEST = MAX(FLLOW(IJ,K,M),FLNOISE(IJ))
 
-            IF(FL3(IJ,K,M) .GT. FLLOWEST) THEN
+            IF(FL(IJ,K,M) .GT. FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
               ITHH   = 1 + MOD(K,NANG)
-              IF ( FL3(IJ,ITHL,M   ) .GT. 0.0 .AND.
-     &             FL3(IJ,ITHH,M   ) .GT. 0.0 .AND.
-     &             FL3(IJ,K   ,IFL ) .GT. 0.0 .AND.
-     &             FL3(IJ,K   ,IFH ) .GT. 0.0 .AND.
-     &             FL3(IJ,ITHL,IFL ) .GT. 0.0 .AND.
-     &             FL3(IJ,ITHL,IFH ) .GT. 0.0 .AND.
-     &             FL3(IJ,ITHH,IFL ) .GT. 0.0 .AND.
-     &             FL3(IJ,ITHH,IFH ) .GT. 0.0 ) THEN
+              IF ( FL(IJ,ITHL,M   ) .GT. 0.0 .AND.
+     &             FL(IJ,ITHH,M   ) .GT. 0.0 .AND.
+     &             FL(IJ,K   ,IFL ) .GT. 0.0 .AND.
+     &             FL(IJ,K   ,IFH ) .GT. 0.0 .AND.
+     &             FL(IJ,ITHL,IFL ) .GT. 0.0 .AND.
+     &             FL(IJ,ITHL,IFH ) .GT. 0.0 .AND.
+     &             FL(IJ,ITHH,IFL ) .GT. 0.0 .AND.
+     &             FL(IJ,ITHH,IFH ) .GT. 0.0 ) THEN
 
 
-                IF ( FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFL ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,K   ,IFH ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFL ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,M   ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHL,IFH ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFL ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,M   ) .AND.
-     &               FL3(IJ,K,M) .GE. FL3(IJ,ITHH,IFH ) ) THEN
+                IF ( FL(IJ,K,M) .GE. FL(IJ,K   ,IFL ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,K   ,IFH ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFL ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,M   ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFH ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,IFL ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,M   ) .AND.
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,IFH ) ) THEN
                     NPEAK(IJ) = NPEAK(IJ) + 1
                     IF(NPEAK(IJ).GT.NPMAX) EXIT OUT
                     NFRP(IJ,NPEAK(IJ)) = M
@@ -260,9 +256,21 @@
       CALL FNDPRT(IJS, IJL, NPMAX,
      &            NPEAK, MIJ, NTHP, NFRP,
      &            FLLOW, LLCOSDIFF, FLNOISE,
-     &            FL3, SWM,
+     &            FL, SWM,
      &            ENE, DIR, PER)
 
+      ! UPDATE SWELL SPECTRUM ??????
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+!     TOTAL ENERGY IN THE UPDATED SWELL SPECTRA
+      LLEPSMIN=.FALSE.
+      CALL SEMEAN (FL1, IJS, IJL, ETT, LLEPSMIN)
 
 !     REMOVE PARTITION WITH Hs < HSMIN 
 !     MEAN PERIOD > 1/FR(MIJ)
@@ -299,15 +307,6 @@
 !        -----------------------------------------------------------------
 
       NPMAX_LOC=MAXVAL(NPEAK(:))
-
-      DO IJ=IJS,IJL
-        ETT(IJ)=ENE(IJ,1)
-      ENDDO
-      DO IP=2,NPMAX_LOC
-        DO IJ=IJS,IJL
-          ETT(IJ)=ETT(IJ)+ENE(IJ,IP)
-        ENDDO
-      ENDDO
 
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
