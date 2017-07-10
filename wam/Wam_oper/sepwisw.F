@@ -183,7 +183,7 @@
       ENDDO
       DO K=1,NANG
         DO IJ=IJS,IJL
-          ! add 0.25 factor to extend windsea area
+          ! add factor to extend windsea area
           DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.,0.4+COS(TH(K)-THWNEW(IJ)))
         ENDDO
       ENDDO
