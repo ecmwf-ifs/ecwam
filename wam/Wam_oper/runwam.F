@@ -288,7 +288,7 @@
 
       IF (LWNEMOCOU) THEN
         IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
-#ifdef ECMWF
+#ifdef WITH_NEMO
         CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME, 
      &                         NEMOITINI, NEMOITEND, NEMOTSTEP,
      &                         .TRUE., -1, .FALSE. )

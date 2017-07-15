@@ -1510,7 +1510,7 @@
 
              DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
                ! Advance the NEMO model 1 time step
-#ifdef ECMWF
+#ifdef WITH_NEMO
                 CALL NEMOGCMCOUP_STEP( JSTPNEMO, IDATE, ITIME )
 #endif
                 WRITE(IU06,*)'NEMO TIME IS : ',JSTPNEMO, IDATE, ITIME

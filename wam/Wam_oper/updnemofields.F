@@ -95,7 +95,7 @@
            ZDUMV(IJS(IG):IJL(IG)) = 0.0
         ENDIF
 
-#ifdef ECMWF
+#ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,
      &       IJL(IG)-IJS(IG)+1,
      &       NSWH(IJS(IG):IJL(IG)),NMWP(IJS(IG):IJL(IG)),
