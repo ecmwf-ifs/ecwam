@@ -320,17 +320,6 @@
           ICLASS = 2
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
           IF (C12(1:4) == 'ewla' .OR. C12(1:4) == 'lwwv') THEN
-            IDATERES=DATE_TIME_WINDOW_END
-            IY1=IDATERES/1000000
-            IDATERES=IDATERES-IY1*1000000
-            IM1=IDATERES/10000
-            IDATERES=IDATERES-IM1*10000
-            ID1=IDATERES/100
-            IDATERES=IDATERES-ID1*100
-            IH1=IDATERES
-            IMN1=0
-            ISS1=0
-!
             IDATERES=IDATE*100+ITIME/100
             IY2=IDATERES/1000000
             IDATERES=IDATERES-IY2*1000000
@@ -341,11 +330,28 @@
             IH2=IDATERES
             IMN2=0
             ISS2=0
-!
-            WRITE(CDATE1,'(I4,5I2)')IY1,IM1,ID1,IH1,IMN1,ISS1
             WRITE(CDATE2,'(I4,5I2)')IY2,IM2,ID2,IH2,IMN2,ISS2
-            CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
-            NWINOFF=NWINOFF/3600
+
+            IDATERES=DATE_TIME_WINDOW_END
+            IF(IDATERES.NE.0) THEN
+              IY1=IDATERES/1000000
+              IDATERES=IDATERES-IY1*1000000
+              IM1=IDATERES/10000
+              IDATERES=IDATERES-IM1*10000
+              ID1=IDATERES/100
+              IDATERES=IDATERES-ID1*100
+              IH1=IDATERES
+              IMN1=0
+              ISS1=0
+              WRITE(CDATE1,'(I4,5I2)')IY1,IM1,ID1,IH1,IMN1,ISS1
+              CALL DIFDATE(CDATE2,CDATE1,NWINOFF)
+              NWINOFF=NWINOFF/3600
+            ELSE
+              NWINOFF=12-MOD(IH2+3,12)
+              IF(IPARAM.EQ.251) THEN
+                CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
+              ENDIF
+            ENDIF
 !           in hours
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
      &       'offsetToEndOf4DvarWindow',NWINOFF)          

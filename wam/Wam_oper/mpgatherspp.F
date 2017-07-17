@@ -1,5 +1,5 @@
       SUBROUTINE MPGATHERSPP(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     &                      IJS, IJL, FL3,FL1,FLPTS,
+     &                      IJS, IJL, FL3, FLPTS,
      &                      EMEAN,FMEAN,THQ,SMEAN,ESWELL,FSWELL,THSWELL,
      &                      THWISEA,U10,THW,US)
 
@@ -20,7 +20,7 @@
 !     ----------
 
 !     CALL *MPGATHERSPP*(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD, 
-!    1                   FL1,FL3,FLPTS,
+!    1                   FL3,FLPTS,
 !    2                   EMEAN,FMEAN,THQ,SMEAN,ESWELL,FSWELL,THSWELL, 
 !    3                   THWISEA,U10,THW,US)
 
@@ -36,7 +36,6 @@
 !     *NSPFLD*    NUMBER OF SPECTRUM FIELDS
 !     *NSCFLD*    NUMBER OF SCALAR FILEDS
 !     *FL3*       BLOCK OF SPECTRA.
-!     *FL1*       SWELL SPECTRUM.
 !     *FLPTS*     SPECTRA AT THE SELECTED GRID POINTS (OUTPUT) 
 !     *EMEAN*     TOTAL ENERGY.
 !     *FMEAN*     MEAN FREQUENCY (1./MEAN PERIOD).
@@ -84,7 +83,7 @@
       INTEGER, INTENT(INOUT) :: ITAG
       INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
 
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       REAL, DIMENSION(NSPFLD,NGOUT,NANG,NFRE), INTENT(OUT) :: FLPTS
       REAL,DIMENSION(NIBLO), INTENT(INOUT) :: EMEAN, FMEAN, THQ, SMEAN
       REAL,DIMENSION(NIBLO), INTENT(INOUT) :: ESWELL, FSWELL, THSWELL
@@ -111,11 +110,6 @@
           DO  M = 1, NFRE
             DO K = 1, NANG
               FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO  M = 1, NFRE
-            DO K = 1, NANG
-              FLPTS(2,NGOU,K,M)=FL1(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
@@ -160,12 +154,6 @@
               ENDDO
             ENDDO
 
-            DO  M = 1, NFRE
-              DO K = 1, NANG
-                KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FL1(IJ,K,M)
-              ENDDO
-            ENDDO
           ENDIF
 
         ENDDO
@@ -224,13 +212,6 @@
                 ENDDO
               ENDDO
 
-              DO  M = 1, NFRE
-                DO K = 1, NANG
-                  KCOUNT=KCOUNT+1
-                  FLPTS(2,NGOU,K,M)=ZCOMBUF(KCOUNT)
-                ENDDO
-              ENDDO
-
             ENDIF
           ENDDO
           IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
@@ -246,11 +227,6 @@
             DO  M = 1, NFRE
               DO K = 1, NANG
                 FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
-              ENDDO
-            ENDDO
-            DO  M = 1, NFRE
-              DO K = 1, NANG
-                FLPTS(2,NGOU,K,M)=FL1(IJ,K,M)
               ENDDO
             ENDDO
           ENDIF

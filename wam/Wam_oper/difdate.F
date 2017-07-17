@@ -223,6 +223,20 @@
         WRITE(6, '("           IHOUR2 ", I2 )') IHOUR2 
         WRITE(6, '("           IMIN2 ", I2 )') IMIN2 
         WRITE(6, '("           ISEC2 ", I2 )') ISEC2 
+        WRITE(*, '(" DIFDATE:  FATAL@! IRET= ", I3 )') IRET
+        WRITE(*, '("           INPUT DATE(S) INCORRECT,")')
+        WRITE(*, '("           IYEAR1 ", I4 )') IYEAR1 
+        WRITE(*, '("           IMON1 ", I2 )') IMON1 
+        WRITE(*, '("           IDAY1 ", I2 )') IDAY1 
+        WRITE(*, '("           IHOUR1 ", I2 )') IHOUR1 
+        WRITE(*, '("           IMIN1 ", I2 )') IMIN1 
+        WRITE(*, '("           ISEC1 ", I2 )') ISEC1 
+        WRITE(*, '("           IYEAR2 ", I4 )') IYEAR2 
+        WRITE(*, '("           IMON2 ", I2 )') IMON2 
+        WRITE(*, '("           IDAY2 ", I2 )') IDAY2 
+        WRITE(*, '("           IHOUR2 ", I2 )') IHOUR2 
+        WRITE(*, '("           IMIN2 ", I2 )') IMIN2 
+        WRITE(*, '("           ISEC2 ", I2 )') ISEC2 
         CALL ABORT1
       ENDIF
 

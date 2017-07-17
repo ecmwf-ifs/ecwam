@@ -1,4 +1,4 @@
-      SUBROUTINE OUTSPP (FL3, FL1, IJS, IJL, IJ_OFFSET, IG, IU25, IU26)
+      SUBROUTINE OUTSPP (FL3, IJS, IJL, IJ_OFFSET, IG, IU25, IU26)
 
 ! ----------------------------------------------------------------------
 
@@ -24,9 +24,8 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL  OUTSPP (FL3, FL1, IG, IU25, IU26)
+!        *CALL  OUTSPP (FL3, IG, IU25, IU26)
 !           *FL3*    -   BLOCK OF SPECTRA.
-!           *FL1*    -   SWELL SPECTRUM.
 !           *IJS*    - INDEX OF FIRST GRIDPOINT
 !           *IJL*    - INDEX OF LAST GRIDPOINT
 !           *IJ_OFFSET* 
@@ -75,7 +74,7 @@
 
       INTEGER, INTENT(IN) :: IG
       INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET, IU25, IU26
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3, FL1
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
 
 
       INTEGER :: IJ, M, K, NGOU
@@ -167,12 +166,12 @@
         ENDIF
 
         IRECV=1
-        NSPFLD=2 
+        NSPFLD=1 
         NSCFLD=11 
         ALLOCATE(FLPTS(NSPFLD,NGOUT,NANG,NFRE))
 !!!!! not ready for unstructured grid !!!
         CALL MPGATHERSPP(IRECV,25,NSTART,NEND,NSPFLD,NSCFLD,
-     &                   IJS, IJL, FL3,FL1,FLPTS,
+     &                   IJS, IJL, FL3, FLPTS,
      &                   EMEAN_G,FMEAN_G,THQ_G,SMEAN_G,ESWELL_G,
      &                   FSWELL_G,THSWELL_G,THWISEA_G,
      &                   U10_G,THW_G,US_G)
@@ -269,11 +268,6 @@
                 FWSEA=0.
               ENDIF
               EWSEA = 4.*SQRT(MAX(EWSEA,0.0))
-              DO M=1,NFRE
-                DO K=1,NANG
-                  SPEC(K,M) = FLPTS(2,NGOU,K,M)*FLPTS(1,NGOU,K,M)
-                ENDDO
-              ENDDO
 
 !*    1.2.1 FILE OUTPUT TO IU26.
 !           --------------------
@@ -287,7 +281,9 @@
                 WRITE(IU26) EWSEA, 4.*SQRT(MAX(ESWELL_G(IJ),0.0)),
      &           DEG*THWISEA_G(IJ), DEG*THSWELL_G(IJ),
      &           FWSEA, FSWELL_G(IJ)
-                WRITE(IU26) ((SPEC(K,M),K=1,NANG),M=1,NFRE)
+
+!       writing of swell specrtra was disabled
+                SPEC=0.0
               ENDIF
 
 !*    1.2.2 PRINT OUTPUT TO IU26.

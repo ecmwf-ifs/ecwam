@@ -1,7 +1,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,SIG)
+      SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,IJS,IJL,DEPTH,SIG)
 !
 !***  *CAL_SEC_ORDER_SPEC*   DETERMINES SECOND_ORDER SPECTRUM
 !
@@ -14,11 +14,10 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,F3,IJS,IJL,DEPTH,SIG)*
+!              *CALL*  *CAL_SEC_ORDER_SPEC(F1,IJS,IJL,DEPTH,SIG)*
 !
 !                       INPUT:
 !                            *F1*    - 2-D FREE WAVE SPECTRUM (at input)
-!                            *F3*    - WORK ARRAY FOR SPECTRUM
 !                            *IJS*   - FIRST GRIDPOINT              
 !                            *IJL*   - LAST GRIDPOINT 
 !                            *DEPTH* - DEPTH ARRAY (FROM IJS:IJL)
@@ -60,13 +59,13 @@
       REAL, INTENT(IN) :: SIG
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH
       REAL, DIMENSION(IJS:IJL,1:NANG,1:NFRE), INTENT(INOUT) :: F1
-      REAL, DIMENSION(IJS:IJL,1:NANG,1:NFRE), INTENT(INOUT) :: F3
 
       REAL :: FRAC,CO1,DEL,DELF,D1,D2,D3,D4,C1
       REAL :: C2,XM,XK,OMSTART,AREA,SUM,SUM1,SUM3,GAM_B_J,ZFAC
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN, EMAXL  
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: F3
       REAL, ALLOCATABLE ::  PF1(:,:,:),PF3(:,:,:)
 
 !-----------------------------------------------------------------------
