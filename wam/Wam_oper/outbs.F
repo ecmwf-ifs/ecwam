@@ -85,8 +85,8 @@
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,
-     &            SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,CDMEAN   ,
+     &            WVSTRMEAN,SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
@@ -94,7 +94,7 @@
      &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
      &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
       USE YOWMPP   , ONLY : NPROC
-      USE YOWSPEC  , ONLY : 
+      USE YOWSPEC  , ONLY : TAUW     , 
      &            U10NEW   ,THWNEW   ,THWOLD   ,USNEW    ,USOLD
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,
      &            NBLO
@@ -170,6 +170,10 @@
       CALL GSTATS(1502,0)
 
 !     ALLOCATE THE NECESSARY ARRAYS
+
+      IF(IPFGTBL(7).NE.0) ALLOCATE(CDMEAN(IJSLOC:IJLLOC))
+
+      IF(IPFGTBL(8).NE.0) ALLOCATE(WVSTRMEAN(IJSLOC:IJLLOC))
 
       IF(IPFGTBL(9).NE.0) THEN
         IF(.NOT.ALLOCATED(SMEAN)) ALLOCATE(SMEAN(IJSLOC:IJLLOC))
@@ -335,6 +339,18 @@
         IF(IPFGTBL(2).NE.0) THEN
           CALL STHQ (FL3(KIJS:KIJL,:,:),KIJS,KIJL,THQ(KIJS))
         ENDIF
+
+!!!! adapt !!!
+       DO IJ = IJS,IJL
+          TAU = MAX(USNEW(IJ)**2,EPSUS)
+          IF(IPFGTBL(8).NE.0) WVSTRMEAN(IJ) = TAUW(IJ,IG)/TAU
+!!       if the numerical computation of TAU and CD change, a similar
+!!       modification has to be put in buildstress where the friction
+!!       velocity is determined from U10 and CD.
+          CDMEAN(IJ) = TAU/MAX(U10NEW(IJ)**2,EPSU10)
+        ENDDO
+
+
 
 
         IF(IPFGTBL(9).NE.0) THEN
@@ -940,6 +956,8 @@
       CALL WAV_netcdf_export
 #endif
 
+      IF(ALLOCATED(CDMEAN)) DEALLOCATE(CDMEAN)
+      IF(ALLOCATED(WVSTRMEAN)) DEALLOCATE(WVSTRMEAN)
       IF(ALLOCATED(FPMEAN)) DEALLOCATE(FPMEAN)
       IF(ALLOCATED(SMEAN)) DEALLOCATE(SMEAN)
       IF(ALLOCATED(ALTWH)) DEALLOCATE(ALTWH)

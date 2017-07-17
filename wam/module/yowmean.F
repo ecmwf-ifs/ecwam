@@ -6,6 +6,8 @@
 
       REAL,ALLOCATABLE :: EMEAN(:) 
       REAL,ALLOCATABLE :: FMEAN(:) 
+      REAL,ALLOCATABLE :: CDMEAN(:)
+      REAL,ALLOCATABLE :: WVSTRMEAN(:)
       REAL,ALLOCATABLE :: NSWH(:) 
       REAL,ALLOCATABLE :: NMWP(:) 
       REAL,ALLOCATABLE :: THQ(:) 
@@ -50,6 +52,8 @@
 !      ---------      -------   --------
 !      *EMEAN*        REAL      TOTAL ENERGY.
 !      *FMEAN*        REAL      MEAN FREQUENCY (1./MEAN PERIOD).
+!      *CDMEAN*       REAL      DRAG COEFFICIENT
+!      *WVSTRMEAN*    REAL      WAVE INDUCED STRESS
 !      *NSWH*         REAL      SIGNIFICANT WAVE HEIGHT FOR NEMO
 !      *NMWP*         REAL      MEAN WAVE PERIOD FOR NEMO
 !      *THQ*          REAL      MEAN WAVE DIRECTION IN RADIANS.
