@@ -198,7 +198,9 @@
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
         FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-        TEMP1(IJ) = FCOSW2*COSW
+!!!        TEMP1(IJ) = FCOSW2*COSW
+!!!!debile test
+        TEMP1(IJ) = FCOSW2
         TEMP2(IJ) = FCOSW2 
       ENDDO
 
@@ -206,7 +208,9 @@
         DO IJ=IJS,IJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
           FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-          TEMP1(IJ) = TEMP1(IJ) + FCOSW2*COSW
+!!!          TEMP1(IJ) = TEMP1(IJ) + FCOSW2*COSW
+!!!!debile test
+          TEMP1(IJ) = TEMP1(IJ) + FCOSW2
           TEMP2(IJ) = TEMP2(IJ) + FCOSW2 
         ENDDO
       ENDDO
