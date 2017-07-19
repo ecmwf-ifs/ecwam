@@ -83,8 +83,8 @@
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,CDMEAN   ,
-     &            WVSTRMEAN,SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,
+     &            SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
@@ -97,7 +97,7 @@
       USE YOWPCONS , ONLY : ZMISS    ,EPSUS    ,EPSU10
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NBLKS   ,NBLKE     , 
-     &            U10NEW   ,THWNEW   ,USNEW    ,
+     &            U10NEW   ,THWNEW   ,USNEW    ,TAUW     ,
      &            ROAIRN   ,ZIDLNEW
       USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
@@ -136,14 +136,20 @@
       REAL :: TAU 
       REAL :: ZHOOK_HANDLE
       REAL :: ZDUM(2)
+      REAL :: CD(IJS:IJL)
       REAL :: ZCOMBUFR(MPMAXLENGTH)
       REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP 
+      REAL, ALLOCATABLE, DIMENSION(:) :: WVSTR
       REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
       REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
 
       LOGICAL :: LSQRT
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Begin OUTGRID'
+      FLUSH(740+MyRankGlobal)
+#endif
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
 #endif
@@ -161,9 +167,19 @@
           ENDIF
         ENDIF
       ENDDO
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'OUT_METHOD=', OUT_METHOD
+      FLUSH(740+MyRankGlobal)
+#endif
       IF (HaveMPI_arrays .eqv. .FALSE.) THEN
         IF (LLUNSTR .and. (OUT_METHOD .eq. 2)) THEN
+#ifdef DEBUG
+           WRITE(740+MyRankGlobal,*) 'Before call to NEXTGEN'
+#endif
            CALL INITIAL_OUTPUT_INITS_NEXTGEN
+#ifdef DEBUG
+           WRITE(740+MyRankGlobal,*) 'After call to NEXTGEN'
+#endif
         END IF
       END IF
       HaveMPI_arrays=.TRUE.
@@ -179,6 +195,16 @@
 
 !*    1. INTEGRATED PARAMETERS OF TOTAL SEA.
 !        -----------------------------------
+
+        IF(IPFGTBL(8).NE.0) ALLOCATE(WVSTR(IJS:IJL))
+        DO IJ = IJS,IJL
+          TAU = MAX(USNEW(IJ)**2,EPSUS)
+          IF(IPFGTBL(8).NE.0) WVSTR(IJ) = TAUW(IJ,IG)/TAU
+!!       if the numerical computation of TAU and CD change, a similar
+!!       modification has to be put in buildstress where the friction
+!!       velocity is determined from U10 and CD.
+          CD(IJ) = TAU/MAX(U10NEW(IJ)**2,EPSU10)
+        ENDDO
 
 !*    1.3 APPLY SEA ICE MASK (IF NEEDED) AND SEND TO DEDICATED OUTPUT PE
 !         -------------------------------------------------
@@ -211,12 +237,13 @@
 
         IF(IPFGTBL(7).NE.0) THEN 
 !         The drag coefficient is NOT set to missing over ice or land 
-          CALL SETWMASK(CDMEAN,TEMP(IJS,7),IJS,IJL,1.1,NIODP(IJS))
+          CALL SETWMASK(CD,TEMP(IJS,7),IJS,IJL,1.1,NIODP(IJS))
         ENDIF
 
         IF(IPFGTBL(8).NE.0) THEN
 !         The wave stress is NOT set to missing over ice 
-          CALL SETWMASK(WVSTRMEAN,TEMP(IJS,8),IJS,IJL,1.1,IODP(IJS))
+          CALL SETWMASK(WVSTR,TEMP(IJS,8),IJS,IJL,1.1,IODP(IJS))
+          DEALLOCATE(WVSTR)
         ENDIF
 
         IF(IPFGTBL(9).NE.0) THEN
@@ -226,6 +253,13 @@
         IF(IPFGTBL(10).NE.0) THEN
 !         The wind speed is NOT set to missing over ice or land 
           CALL SETWMASK(U10NEW(IJS),TEMP(IJS,10),IJS,IJL,1.1,NIODP(IJS))
+#ifdef DEBUG
+          WRITE(740+MyRankGlobal,*) 'minval(U10NEW)=',                  &
+     &       minval(U10NEW(IJS:IJL))
+          WRITE(740+MyRankGlobal,*) 'maxval(U10NEW)=',                  &
+     &       maxval(U10NEW(IJS:IJL))
+          FLUSH(740+MyRankGlobal)
+#endif          
         ENDIF
 
         IF(IPFGTBL(11).NE.0) THEN
@@ -544,6 +578,10 @@
         IF(IPFGTBL(ITG).NE.0) THEN
          CALL SETWMASK(WX5(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
         ENDIF
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After construction of TEMP'
+      FLUSH(740+MyRankGlobal)
+#endif          
 
 
 !     SENDING TO RELEVANT PE'S
@@ -557,6 +595,11 @@
         IRECVCOUNTS(IPR)=NFLDPPE(IRANK)*(NBLKE(IPR)-NBLKS(IPR)+1)
       ENDDO
 
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Before exchanges'
+      FLUSH(740+MyRankGlobal)
+#endif          
+      
       IF ((.NOT.LLUNSTR).OR.(OUT_METHOD.eq.1)) THEN
       
 !     LOADING THE COMMUNICATION BUFFER
@@ -577,8 +620,16 @@
       ELSE
         CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
       END IF
-
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After construction of ARR_OUT_RECV'
+      WRITE(740+MyRankGlobal,*) 'allocated(TEMP)=', allocated(TEMP)
+      FLUSH(740+MyRankGlobal)
+#endif          
       DEALLOCATE(TEMP)
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'After deallocation'
+      FLUSH(740+MyRankGlobal)
+#endif          
 
 !     GLOBAL EXCHANGE
 
@@ -947,7 +998,13 @@
       IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
       IF(ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
 
+#ifdef DEBUG
+      WRITE(740+MyRankGlobal,*) 'Now leaving OUTGRID'
+      FLUSH(740+MyRankGlobal)
+#endif          
+
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
 #endif
+      RETURN
       END SUBROUTINE OUTGRID
