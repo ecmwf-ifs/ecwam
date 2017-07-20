@@ -70,7 +70,7 @@
       REAL :: OMEGA, OMEGAC, OMEGACC
       REAL :: X0G, UST, UST0, TAUW, TAUW0, DELZTAUW0M1
       REAL :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
-      REAL :: DELZ, ZINF, ZSUP
+      REAL :: DELZ, ZINF
       REAL :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
       REAL :: ZHOOK_HANDLE
 
@@ -108,7 +108,7 @@
         UST      = UST0
         ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         DO J=1,JTOT_TAUHF
-          Y         = EXP(ZINF+REAL(J-1)*DELZ)
+          Y         = EXP(ZINF+REAL(J,-1)*DELZ)
           OMEGA     = Y*SQRTGZ0
           CM1       = OMEGA*GM1
           ZX        = UST*CM1 +ZALP
