@@ -108,7 +108,7 @@
         UST      = UST0
         ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         DO J=1,JTOT_TAUHF
-          Y         = EXP(ZINF+REAL(J,-1)*DELZ)
+          Y         = EXP(ZINF+REAL(J-1)*DELZ)
           OMEGA     = Y*SQRTGZ0
           CM1       = OMEGA*GM1
           ZX        = UST*CM1 +ZALP
