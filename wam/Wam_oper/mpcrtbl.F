@@ -35,7 +35,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM
+     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, NIPRMOUT, ITOBOUT
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
@@ -67,11 +67,14 @@
       COUPLFLAG(46)=.TRUE.   ! TAUOC
       COUPLFLAG(5)=.TRUE.    ! TWINDDIR
 #endif
+      NIPRMOUT=0
       IR=1
       DO IFLAG=1,JPPFLAG
         IF((IASSI.EQ.1).AND.
      &     ((IFLAG.EQ.1).OR.(IFLAG.EQ.7))) THEN
           IPFGTBL(IFLAG)=IR
+          NIPRMOUT=NIPRMOUT+1
+          ITOBOUT(IFLAG)=NIPRMOUT
           IR=IR+NWRTOUTWAM
           IF(IR.GT.NPROC) IR=1
 #if defined MODEL_COUPLING_ATM_WAV || defined NETCDF_OUTPUT_WAM || defined MODEL_COUPLING_OCN_WAV
@@ -82,10 +85,13 @@
      &         NFLAG(IFLAG) ) THEN
 #endif
           IPFGTBL(IFLAG)=IR
+          NIPRMOUT=NIPRMOUT+1
+          ITOBOUT(IFLAG)=NIPRMOUT
           IR=IR+NWRTOUTWAM
           IF(IR.GT.NPROC) IR=1
         ELSE
           IPFGTBL(IFLAG)=0
+          ITOBOUT(IFLAG)=0
         ENDIF
       ENDDO
 

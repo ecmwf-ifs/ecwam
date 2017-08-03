@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID (IJS, IJL, IJ_OFFSET, IODP)
+      SUBROUTINE OUTGRID (IJS, IJL, IJ_OFFSET, BOUT)
 ! ----------------------------------------------------------------------
 
 !**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
@@ -28,19 +28,17 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTGRID (IJS, IJL, IJ_OFFSET, IODP)
+!        *CALL* *OUTGRID (IJS, IJL, IJ_OFFSET, BOUT)
 !         *IJS*    - INDEX OF FIRST LOCAL GRIDPOINT.
 !         *IJL*    - INDEX OF LAST LOCAL GRIDPOINT.
 !         *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
 !                     only meaningful if unstructured grid
-!         *IODP*     LAND MASK IF IODP(IJ)=0
+!         *BOUT*   - BLOCk OF OUTPUT PARAMETERS
 
 
 !     EXTERNALS.
 !     ----------
 
-!       *SETWMASK*   - TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK 
-!                     ARRAY AND IMPOSES ICE MASK.
 !       *MAKEGRID*  - GENERATES GRIDDED FIELDS.
 !       *MPGATHERSCFLD* - GATHER SCALAR FIELD DISTRIBUTED ON DIFFERENT
 !                         PROCESSES
@@ -117,8 +115,10 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, PARAMETER :: IG=1
       INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET
+      REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
+
+      INTEGER, PARAMETER :: IG=1
       INTEGER :: IJ
       INTEGER :: ITT,ICT
       INTEGER :: NFLDTOT, NFLDPPEMAX
@@ -130,10 +130,7 @@
       INTEGER, DIMENSION(NPROC+JPPFLAG) :: IREQ
       INTEGER, DIMENSION(NPROC) :: NFLDPPE 
       INTEGER, DIMENSION(NPROC) :: ISENDCOUNTS,IRECVCOUNTS
-      INTEGER, DIMENSION(IJS:IJL) :: IODP
-      INTEGER, DIMENSION(IJS:IJL) :: NIODP
 
-      REAL :: TAU 
       REAL :: ZHOOK_HANDLE
       REAL :: ZDUM(2)
       REAL :: ZCOMBUFR(MPMAXLENGTH)
@@ -174,376 +171,6 @@
         RETURN
       ENDIF
  
-      ALLOCATE(TEMP(IJS:IJL,JPPFLAG))
-      NIODP(:)=1
-
-!*    1. INTEGRATED PARAMETERS OF TOTAL SEA.
-!        -----------------------------------
-
-!*    1.3 APPLY SEA ICE MASK (IF NEEDED) AND SEND TO DEDICATED OUTPUT PE
-!         -------------------------------------------------
-
-        IF(IPFGTBL(1).NE.0) THEN 
-         CALL SETWMASK(EMEAN(IJS),TEMP(IJS,1),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(2).NE.0) THEN 
-          CALL SETWMASK(THQ(IJS),TEMP(IJS,2),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(3).NE.0) THEN 
-         CALL SETWMASK(FMEAN(IJS),TEMP(IJS,3),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(4).NE.0) THEN
-!         The friction velocity is NOT set to missing over ice 
-          CALL SETWMASK(USNEW(IJS),TEMP(IJS,4),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(5).NE.0) THEN 
-!         The wind direction is NOT set to missing over ice or land 
-          CALL SETWMASK(THWNEW(IJS),TEMP(IJS,5),IJS,IJL,1.1,NIODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(6).NE.0) THEN
-          CALL SETWMASK(FPMEAN,TEMP(IJS,6),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(7).NE.0) THEN 
-!         The drag coefficient is NOT set to missing over ice or land 
-          CALL SETWMASK(CDMEAN,TEMP(IJS,7),IJS,IJL,1.1,NIODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(8).NE.0) THEN
-!         The wave stress is NOT set to missing over ice 
-          CALL SETWMASK(WVSTRMEAN,TEMP(IJS,8),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(9).NE.0) THEN
-         CALL SETWMASK(SMEAN(IJS),TEMP(IJS,9),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(10).NE.0) THEN
-!         The wind speed is NOT set to missing over ice or land 
-          CALL SETWMASK(U10NEW(IJS),TEMP(IJS,10),IJS,IJL,1.1,NIODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(11).NE.0) THEN
-          CALL SETWMASK(ESEA,TEMP(IJS,11),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(12).NE.0) THEN
-          CALL SETWMASK(ESWELL,TEMP(IJS,12),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(13).NE.0) THEN
-          CALL SETWMASK(THWISEA,TEMP(IJS,13),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(14).NE.0) THEN
-          CALL SETWMASK(THSWELL,TEMP(IJS,14),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(15).NE.0) THEN
-          CALL SETWMASK(FSEA,TEMP(IJS,15),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(16).NE.0) THEN
-          CALL SETWMASK(FSWELL,TEMP(IJS,16),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(22).NE.0) THEN
-          CALL SETWMASK(ALTWH,TEMP(IJS,22),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(23).NE.0) THEN
-          CALL SETWMASK(CALTWH,TEMP(IJS,23),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(24).NE.0) THEN
-          CALL SETWMASK(RALTCOR,TEMP(IJS,24),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(25).NE.0) THEN
-          CALL SETWMASK(P1MEAN,TEMP(IJS,25),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(26).NE.0) THEN
-          CALL SETWMASK(P2MEAN,TEMP(IJS,26),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(27).NE.0) THEN
-          CALL SETWMASK(SPRDMEAN,TEMP(IJS,27),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(28).NE.0) THEN
-          CALL SETWMASK(P1SEA,TEMP(IJS,28),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(29).NE.0) THEN
-          CALL SETWMASK(P1SWELL,TEMP(IJS,29),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(30).NE.0) THEN
-          CALL SETWMASK(P2SEA,TEMP(IJS,30),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(31).NE.0) THEN
-          CALL SETWMASK(P2SWELL,TEMP(IJS,31),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(32).NE.0) THEN
-          CALL SETWMASK(SPRDSEA,TEMP(IJS,32),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(33).NE.0) THEN
-         CALL SETWMASK(SPRDSWELL,TEMP(IJS,33),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(34).NE.0) THEN
-          CALL SETWMASK(C4MEAN,TEMP(IJS,34),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(35).NE.0) THEN
-          CALL SETWMASK(BFMEAN,TEMP(IJS,35),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(36).NE.0) THEN
-          CALL SETWMASK(QPMEAN,TEMP(IJS,36),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(37).NE.0) THEN
-!         The bathymetry is NOT set to missing over ice. 
-         CALL SETWMASK(DEPTH(IJS,IG),TEMP(IJS,37),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(38).NE.0) THEN
-          CALL SETWMASK(HMAXMEAN,TEMP(IJS,38),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(39).NE.0) THEN
-          CALL SETWMASK(TMAXMEAN,TEMP(IJS,39),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(40).NE.0) THEN
-          CALL SETWMASK(USTMEAN,TEMP(IJS,40),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(41).NE.0) THEN
-          CALL SETWMASK(VSTMEAN,TEMP(IJS,41),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(42).NE.0) THEN
-!         the ice mask does not apply to the imposed ocean current 
-          IF(ALLOCATED(U)) THEN
-            CALL SETWMASK(U(IJS,IG),TEMP(IJS,42),IJS,IJL,1.1,IODP(IJS))
-          ELSE
-            TEMP(:,42)=0.0
-          ENDIF
-        ENDIF
-
-        IF(IPFGTBL(43).NE.0) THEN
-!         the ice mask does not apply to the imposed ocean current 
-          IF(ALLOCATED(V)) THEN
-            CALL SETWMASK(V(IJS,IG),TEMP(IJS,43),IJS,IJL,1.1,IODP(IJS))
-          ELSE
-            TEMP(:,43)=0.0
-          ENDIF
-        ENDIF
-
-        IF(IPFGTBL(44).NE.0) THEN
-!         The energy flux into ocean is NOT set to missing over ice 
-          CALL SETWMASK(PHIEPS(IJS),TEMP(IJS,44),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(45).NE.0) THEN
-!         The energy flux into waves is NOT set to missing over ice 
-          CALL SETWMASK(PHIAW(IJS),TEMP(IJS,45),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        IF(IPFGTBL(46).NE.0) THEN
-!         The momentum flux into ocean is NOT set to missing over ice 
-          CALL SETWMASK(TAUOC(IJS),TEMP(IJS,46),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        ICT=46
-        DO ITT = 1, NTRAIN
-          ICT=ICT+1
-          IF(IPFGTBL(ICT).NE.0) THEN
-          CALL SETWMASK(EMTRAIN(:,ITT),TEMP(IJS,ICT),
-     &                    IJS,IJL,CITHRSH,IODP(IJS))
-          ENDIF
-
-          ICT=ICT+1
-          IF(IPFGTBL(ICT).NE.0) THEN
-          CALL SETWMASK(THTRAIN(:,ITT),TEMP(IJS,ICT),
-     &                    IJS,IJL,CITHRSH,IODP(IJS))
-          ENDIF
-
-          ICT=ICT+1
-          IF(IPFGTBL(ICT).NE.0) THEN
-          CALL SETWMASK(PMTRAIN(:,ITT),TEMP(IJS,ICT),
-     &                    IJS,IJL,CITHRSH,IODP(IJS))
-          ENDIF
-
-        ENDDO
-
-
-        ITG=46+3*NTRAIN+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-!         the ice mask does not apply to the mean square strain in the ice
-          CALL SETWMASK(STRNMS(IJS),TEMP(IJS,ITG),IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E10MEAN(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-!         the ice mask does not apply to air density or land 
-         CALL SETWMASK(ROAIRN(IJS),TEMP(IJS,ITG),IJS,IJL,1.1,NIODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-!         the ice mask does not apply to the imposed convective velocity scale
-        CALL SETWMASK(ZIDLNEW(IJS),TEMP(IJS,ITG),IJS,IJL,1.1,NIODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-!         the ice mask does not apply
-          CALL SETWMASK(CICOVER(IJS,IG),TEMP(IJS,ITG),
-     &                  IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          CALL SETWMASK(CITHICK(IJS,IG),TEMP(IJS,ITG),
-     &                  IJS,IJL,1.1,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          CALL SETWMASK(C3MEAN,TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          DO IJ = IJS,IJL
-            TEMP(IJ,ITG) = NEMOSST(IJ) 
-          ENDDO
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          DO IJ = IJS,IJL
-            TEMP(IJ,ITG) = NEMOCICOVER(IJ) 
-          ENDDO
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          IF (LNEMOCITHICK) THEN
-            DO IJ = IJS,IJL
-              TEMP(IJ,ITG) = NEMOCITHICK(IJ) 
-            ENDDO
-          ELSE
-            DO IJ = IJS,IJL
-              TEMP(IJ,ITG) = ZMISS
-            ENDDO
-          ENDIF
-        ENDIF
-          
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          DO IJ = IJS,IJL
-            TEMP(IJ,ITG) = NEMOUCUR(IJ) 
-          ENDDO
-        ENDIF
-        
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          DO IJ = IJS,IJL
-            TEMP(IJ,ITG) = NEMOVCUR(IJ) 
-          ENDDO
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WEFLXM(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WEFLXD(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E1012(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E1214(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E1417(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E1721(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E2125(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(E2530(IJS),TEMP(IJS,ITG),
-     &                 IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-
-
-!       EXTRA OUTPUT FIELDS:
-!       See *OUTBS* where they should have been calculated or pick them up from
-!       the forcing fields (see above if the sea ice mask has to be removed)
-        ITG=JPPFLAG-4
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WX1(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-        ITG=JPPFLAG-3
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WX2(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-        ITG=JPPFLAG-2
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WX3(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-        ITG=JPPFLAG-2
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WX4(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
-        ITG=JPPFLAG
-        IF(IPFGTBL(ITG).NE.0) THEN
-         CALL SETWMASK(WX5(IJS),TEMP(IJS,ITG),IJS,IJL,CITHRSH,IODP(IJS))
-        ENDIF
 
 
 !     SENDING TO RELEVANT PE'S
