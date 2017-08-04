@@ -35,7 +35,8 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, NIPRMOUT, ITOBOUT
+     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, NIPRMOUT, ITOBOUT,
+     &            NTRAIN   ,LLPARTITION, IFRSTPARTI
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
@@ -46,7 +47,7 @@
       LOGICAL :: COUPLFLAG(JPPFLAG+1)
 #endif
 
-      INTEGER :: IR, IFLAG
+      INTEGER :: IR, IFLAG, ITT
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -93,6 +94,18 @@
           IPFGTBL(IFLAG)=0
           ITOBOUT(IFLAG)=0
         ENDIF
+      ENDDO
+
+
+!     WILL THERE BE OUTPUT OF PARTITONED PARAMETERS
+      LLPARTITION=.FALSE.
+      IFLAG=IFRSTPARTI
+      DO ITT=1,3*NTRAIN
+        IF(IPFGTBL(IFLAG).NE.0) THEN
+          LLPARTITION=.TRUE.
+          EXIT
+        ENDIF
+        IFLAG=IFLAG+1
       ENDDO
 
 
