@@ -80,7 +80,7 @@
         LNEMOICEREST=.TRUE.
         LNEMOCITHICK=.TRUE.
       ELSE
-#ifdef ECMWF
+#ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_GET( IRANK-1, NPROC, MPL_COMM, 
      &                            IJL(IG)-IJS(IG)+1,
      &                            NEMOSST(IJS(IG):IJL(IG)),
