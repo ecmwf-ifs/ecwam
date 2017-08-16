@@ -387,9 +387,11 @@
       INTEGER :: JSTPNEMO, IDATE, ITIME
       INTEGER :: IERR
       INTEGER :: I_GET_UNIT
+      INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
       REAL :: siz, avgU10NEW, avgHS, sumHS
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -516,7 +518,8 @@
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
             CALL WDFLUXES (KIJS, KIJL, IG,
-     &                     FL1(KIJS:KIJL,:,:),
+     &                     MIJ(KIJS),
+     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),
      &                     CICOVER(KIJS,IG),
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
      &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS) )
@@ -529,6 +532,9 @@
 
           IF (LLUNSTR) CALL EXCHANGE_FOR_FL1_FL3_SL(FL1)
 
+        ELSE
+          MIJ(:) = NFRE
+          XLLWS(:,:,:)=0.
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
@@ -550,9 +556,10 @@
           CALL GSTATS(1439,1)
         ENDIF
 
-!       COMPUTE  OUTPUT PARAMETERS
-        CALL OUTBS (FL1(IJSLOC:IJLLOC,:,:),
-     &              IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+!       COMPUTE OUTPUT PARAMETERS
+        CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &              MIJ(IJSLOC),
+     &              FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
      &              IG, IU25, IU26, LLOUTBS)
 
 !       PRINT OUT NORMS
@@ -968,7 +975,8 @@
      &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
-     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS))
+     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),
+     &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
 
               ENDDO
 !$OMP       END PARALLEL DO
@@ -1151,8 +1159,9 @@
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
 
-            CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:),
-     &                  IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+            CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &                  MIJ(IJSLOC),
+     &                  FL3(IJSLOC:IJLLOC,:,:),XLLWS(IJSLOC:IJLLOC,:,:),
      &                  IG, IU25, IU26, LLOUTBS)
 
             IF (ITEST.GE.2) THEN

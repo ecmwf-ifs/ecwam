@@ -2,31 +2,17 @@
 
 ! ----------------------------------------------------------------------
 
-!**** *FEMEAN* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT
-!                AND MEAN WAVE NUMBER .
-!                THE COMPUTATION OF THE MEAN WAVE ENERGU WAS ALSO
-!                ADDED SUCH THAT A CALL TO FEMEAN DOES NOT NEED
-!                TO BE PRECEDED BY A CALL TO SEMEAN.
-
-!     S.D. HASSELMANN
-!     MODIFIED : P.JANSSEN (INTEGRATION OF F**-4 TAIL)
-!     OPTIMIZED BY : L. ZAMBRESKY AND H. GUENTHER
-
-
 !*    PURPOSE.
 !     --------
 
 !       COMPUTE MEAN FREQUENCY AT EACH GRID POINT.
+!       and performed some test
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, LLAK)*
+!       *CALL* *OUTUNWAMTEST (F, IJS, IJL, EM, FM, LLAK)*
 !              *F*   - SPECTRUM.
-!              *IJS* - INDEX OF FIRST GRIDPOINT
-!              *IJL* - INDEX OF LAST GRIDPOINT
-!              *EM*  - MEAN WAVE ENERGY 
-!              *FM*  - MEAN WAVE FREQUENCY 
 !              *LLAK*- TRUE IF MEAN WAVE NUMBER IS COMPUTED
 
 !     METHOD.

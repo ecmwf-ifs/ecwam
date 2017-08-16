@@ -1,5 +1,11 @@
-      SUBROUTINE SEPWISW (FL3, FL1, IJS, IJL, THWOLD, USOLD, USNEW,
-     &                    U10NEW, THWNEW, LLPARTITION)
+      SUBROUTINE SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
+     &                    USNEW, U10NEW, THWNEW,
+     &                    ESWELL   ,FSWELL   ,THSWELL  ,
+     &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,
+     &                    ESEA     ,FSEA     ,THWISEA  ,
+     &                    P1SEA    ,P2SEA    ,SPRDSEA  ,
+     &                    EMTRAIN  ,THTRAIN  ,PMTRAIN,
+     &                    LLPARTITION)
 
 ! ----------------------------------------------------------------------
 
@@ -26,21 +32,23 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SEPWISW (FL3, FL1, IJS, IJL, THWOLD,USOLD,USNEW,
-!                        U10NEW, THWNEW, LLPARTITION)*
-!          *FL3* - BLOCK OF SPECTRA
-!          *FL1* - SWELL FLAG ARRAY
-!                  = 1 IF COMPONENT IS SWELL
-!                  = 0 IF COMPONENT IS SEA
+!       *CALL* SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
+!    &                  USNEW, U10NEW, THWNEW,
+!    &                  ESWELL   ,FSWELL   ,THSWELL  ,
+!    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
+!    &                  ESEA     ,FSEA     ,THWISEA  ,
+!    &                  P1SEA    ,P2SEA    ,SPRDSEA  ,
+!    &                  EMTRAIN  ,THTRAIN  ,PMTRAIN,
+!    &                  LLPARTITION)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
-!                      WIND VELOCITY.
-!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
-!          *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
-!                      VELOCITY.
+!          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *FL3* - BLOCK OF SPECTRA
+!          *XLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
+!          *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !          *U10NEW* - LATESt WIND SPEED.
 !          *THWNEW* - LATEST WIND DIRECTION.
+!          *        - SWELL and WINDSEA PARAMETERS.
 !          *LLPARTITION* TRUE IF SPECTRAL PARTITIONING IS USED.
 
 !     METHOD.
@@ -58,15 +66,10 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : IPFGTBL
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,C        ,
-     &            TH       ,FRIC     ,OLDWSFC
+      USE YOWCOUT  , ONLY : IPFGTBL  ,NTRAIN
+      USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWMEAN  , ONLY : EMEAN
-      USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
-     &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
-     &            P1SEA    ,P2SEA    ,SPRDSEA
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -----------------------------------------------------------------------
@@ -74,23 +77,30 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS,IJL
-      INTEGER :: IJ,K,M
-      INTEGER, DIMENSION(IJS:IJL) :: MIJ
-
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWOLD, USOLD
+      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, U10NEW, THWNEW
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: P1SWELL,P2SWELL,SPRDSWELL
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: ESEA   ,FSEA   ,THWISEA
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: P1SEA  ,P2SEA  ,SPRDSEA
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
+      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN, PMTRAIN
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
-      REAL, DIMENSION(NFRE) :: CM
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: XLLWS 
+      LOGICAL, INTENT(IN) :: LLPARTITION
+
+      INTEGER :: IJ,K,M
+
+      REAL :: COEF
       REAL :: CHECKTA
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: THRESHOLD, ETNP
-      REAL, DIMENSION(IJS:IJL) :: EMWS, FMWS, FPWS, EMAXWS, DUM
-      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL, DIMENSION(NFRE) :: CM
+      REAL, DIMENSION(IJS:IJL) :: R
+      REAL, DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
+      REAL, DIMENSION(IJS:IJL,NANG) :: DIRCOEF
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, FL1
 
-
-      LOGICAL, INTENT(IN) :: LLPARTITION
-      LOGICAL :: LLEPSMIN, LLAK, LLPEAKF
+      LOGICAL :: LLPEAKF
 
 ! ----------------------------------------------------------------------
 
@@ -98,105 +108,155 @@
       IF (LHOOK) CALL DR_HOOK('SEPWISH',0,ZHOOK_HANDLE)
 #endif
 
+      ESWELL(:)=0.0
+      ESEA(:)=0.0
+      EMTRAIN(:,:)=0.0
+
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
-      DO IJ=IJS,IJL
-        EMWS(IJ) = EPSMIN
-        FMWS(IJ) = EPSMIN
-        FPWS(IJ) = FR(NFRE) 
-        EMAXWS(IJ) = EPSMIN
-        DUM(IJ) = 0.
-      ENDDO
+      COEF = OLDWSFC*FRIC
 
       DO M=1,NFRE
-        CM(M) = OLDWSFC*FRIC/C(M)
+        CM(M)=1.0/C(M)
+        DO IJ=IJS,IJL
+          XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)
+        ENDDO
       ENDDO
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          THRESHOLD(IJ) = USOLD(IJ)*COS(TH(K)-THWOLD(IJ))
+          DIRCOEF(IJ,K)=COEF*COS(TH(K)-THWNEW(IJ))
         ENDDO
-        DO M=1,NFRE
+      ENDDO
+
+      DO M=1,NFRE
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            CHECKTA = CM(M)*THRESHOLD(IJ)
-            IF (CHECKTA.LT.1.) THEN
-              FL1(IJ,K,M)=1.
+            IF (XLLWS(IJ,K,M).NE.0.) THEN
+              ! this is windsea 
+              SWM(IJ,K,M)=0.
             ELSE
-              FL1(IJ,K,M)=0.
-              EMWS(IJ) = EMWS(IJ)+FL3(IJ,K,M)*DFIM(M)
-              FMWS(IJ) = FMWS(IJ)+FL3(IJ,K,M)*DFIMOFR(M)
-              IF(FL3(IJ,K,M).GT.EMAXWS(IJ)) THEN
-                 EMAXWS(IJ) = FL3(IJ,K,M)
-                 FPWS(IJ) = FR(M)
+              CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
+              IF (CHECKTA.GE.1.) THEN
+                ! this is extra windsea 
+                SWM(IJ,K,M)=0.
+              ELSE
+                ! this is swell
+                SWM(IJ,K,M)=1.
               ENDIF
             ENDIF
           ENDDO
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
-        FMWS(IJ) = EMWS(IJ)/FMWS(IJ)
-      ENDDO
+!     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
+!     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
-
-!*    2.1 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
-!         --------------------------------------------
-
+!     SWELL:
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)*FL1(IJ,K,M)
+            FL1(IJ,K,M)=FL3(IJ,K,M)*SWM(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
+      CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
+
+!     WINDSEA:
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M),0.)
+          ENDDO
+        ENDDO
+      ENDDO
+      CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
+
+!     CHECK:
+      DO IJ=IJS,IJL
+         IF(FSWELL(IJ).GT.FSEA(IJ)) THEN
+           R(IJ)=1.
+         ELSE
+           R(IJ)=0.
+         ENDIF
+      ENDDO
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          ! add factor to extend windsea area
+          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.,0.4+COS(TH(K)-THWNEW(IJ)))
+        ENDDO
+      ENDDO
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            CHECKTA = XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
+            IF (CHECKTA.GE.1.) THEN
+              ! this is additional windsea 
+              SWM(IJ,K,M)=0.
+            ENDIF
           ENDDO
         ENDDO
       ENDDO
 
-      IF(IPFGTBL(16).NE.0) THEN
-        LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL(IJS), FSWELL(IJS), LLAK)
+!     ADJUST THE LOW FREQUENCY BOUNDARY OF THE WINDSEAS AREA 
+!     TO TOPOLOGICALLY CONNECT IT TO THE WINDSEA
+      DO IJ=IJS,IJL
+        DO K=1,NANG
+          DO M=NFRE,2,-1
+            IF(SWM(IJ,K,M).EQ.1. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
+              EXIT
+            ELSEIF(SWM(IJ,K,M).EQ.0. .AND. SWM(IJ,K,M-1).EQ.1.) THEN
+               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) SWM(IJ,K,M-1)=0. 
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
+!     SWELL SPECTRUM
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+!*    2.1 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
+!         ------------------------------------------------------
+
+      IF(LLPARTITION) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
+        CALL STHQ(FL1, IJS, IJL, THSWELL)
+        CALL SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW,
+     &               ESWELL, FSWELL, THSWELL, FSEA,
+     &               FL1, SWM,
+     &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ENDIF
 
-!     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(12).NE.0) THEN
-        LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        DO IJ=IJS,IJL
-          IF (USNEW(IJ).EQ.0.) ESWELL(IJ) = EMEAN(IJ)
-        ENDDO
+!*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
+!         --------------------------------------------
+
+      IF(IPFGTBL(12).NE.0 .OR. IPFGTBL(16).NE.0 .OR.
+     &   IPFGTBL(29).NE.0 .OR. IPFGTBL(31).NE.0 ) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
       ENDIF
       
       IF(IPFGTBL(14).NE.0) THEN
-        CALL STHQ   (FL1, IJS, IJL, THSWELL(IJS))
+        CALL STHQ(FL1, IJS, IJL, THSWELL)
       ENDIF
 
       IF(IPFGTBL(29).NE.0) THEN
-        IF(IPFGTBL(12).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESWELL(IJS), P1SWELL(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESWELL, P1SWELL)
       ENDIF
 
       IF(IPFGTBL(31).NE.0) THEN
-        IF(IPFGTBL(12).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESWELL(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESWELL(IJS), P2SWELL(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESWELL, P2SWELL)
       ENDIF
 
       IF(IPFGTBL(33).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL(IJS))
-      ENDIF
-
-
-!*    2.2 COMPUTATION OF THE PARTITIONED SWELL OUTPUT PARAMETERS
-!         ------------------------------------------------------
-
-      IF(LLPARTITION) THEN
-        CALL FRCUTINDEX(IJS, IJL, FPWS, FMWS, USNEW, DUM, MIJ,RHOWGDFTH)
-        CALL SEP3TR (FL1, IJS, IJL, MIJ, U10NEW, THWNEW, ETNP)
+        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
       ENDIF
 
 
@@ -206,75 +266,43 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M) = MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.)
+            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.)
           ENDDO
         ENDDO
       ENDDO
 
-      IF(IPFGTBL(15).NE.0) THEN
-        LLAK=.FALSE.
-        CALL FEMEAN(FL1, IJS, IJL, ESEA(IJS), FSEA(IJS), LLAK)
-      ENDIF
-
-!     femean must be called before semean since LLEPSMIN is false
-      IF(IPFGTBL(11).NE.0 .OR. IPFGTBL(13).NE.0 ) THEN
-        LLEPSMIN=.FALSE.
-        CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
+      IF(IPFGTBL(15).NE.0 .OR. IPFGTBL(11).NE.0 .OR.
+     &   IPFGTBL(13).NE.0 .OR. IPFGTBL(28).NE.0 .OR.
+     &   IPFGTBL(30).NE.0) THEN
+        CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
       ENDIF
 
       IF(IPFGTBL(13).NE.0) THEN
-        CALL STHQ   (FL1, IJS, IJL, THWISEA(IJS))
+        CALL STHQ(FL1, IJS, IJL, THWISEA)
 !       if there isn't any windsea energy, set the windsea mean direction
 !       to the wind direction.
         DO IJ=IJS,IJL
           IF(ESEA(IJ).LE.0.) THEN
-            THWISEA(IJ)=THWOLD(IJ)
+            THWISEA(IJ)=THWNEW(IJ)
           ENDIF
         ENDDO
       ENDIF
 
       IF(IPFGTBL(28).NE.0) THEN
-        IF(IPFGTBL(11).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP1 (FL1, IJS, IJL, ESEA(IJS), P1SEA(IJS))
+        CALL MWP1(FL1, IJS, IJL, ESEA, P1SEA)
       ENDIF
 
       IF(IPFGTBL(30).NE.0) THEN
-        IF(IPFGTBL(11).EQ.0) THEN
-          LLEPSMIN=.FALSE.
-          CALL SEMEAN(FL1, IJS, IJL, ESEA(IJS), LLEPSMIN)
-        ENDIF
-        CALL MWP2 (FL1, IJS, IJL, ESEA(IJS), P2SEA(IJS))
+        CALL MWP2(FL1, IJS, IJL, ESEA, P2SEA)
       ENDIF
 
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSEA(IJS))
+        CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA)
       ENDIF
-
-
-!     RE-ASSIGN THE NON PARTITONED ENERGY TO WINDSEA
-!!!!!! it does not work as it creates holes in the total swell field
-!!!!!! as feature that cannot be handled by our users
-!     AND REMOVE IT FROM THE SWELL
-!      IF(LLPARTITION) THEN
-!        IF(IPFGTBL(11).NE.0 ) THEN
-!          DO IJ=IJS,IJL
-!            ESEA(IJ) = ESEA(IJ)+ETNP(IJ)
-!          ENDDO
-!        ENDIF
-!        IF(IPFGTBL(12).NE.0) THEN
-!          DO IJ=IJS,IJL
-!            ESWELL(IJ) = MAX(ESWELL(IJ)-ETNP(IJ),0.0)
-!          ENDDO
-!        ENDIF
-!      ENDIF
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE SEPWISW

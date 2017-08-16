@@ -131,9 +131,11 @@
       INTEGER :: IG
       INTEGER :: I_GET_UNIT
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-      INTEGER :: IERR 
+      INTEGER :: IERR
+      INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT
@@ -166,7 +168,7 @@
       ENDIF
 
       IF(LALTAS) THEN
-        CALL ALTAS
+        CALL ALTAS(IJSLOC, IJLLOC, NANG, NFRE, MIJ, XLLWS)
         IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: ALTAS DONE'
       ENDIF
 
@@ -174,13 +176,13 @@
 !*    2. PREPARING OUTPUT AND UPDATE TO CHARNOCK PARAMETER
 !        -------------------------------------------------
 
-!*    2.1 LOOP OVER THE BLOCKS.
-!         ---------------------
-      BLOCK : DO IG=1,IGL
 
 !       UPDATE U10NEW,THWNEW,USNEW
 !       --------------------------
-        DO IJ=IJS(IG),IJL(IG)
+
+        IG=1
+
+        DO IJ=IJSLOC, IJLLOC
           U10NEW(IJ) = U10OLD(IJ,IG)
           THWNEW(IJ) = THWOLD(IJ,IG)
           USNEW(IJ) = USOLD(IJ,IG)
@@ -188,23 +190,22 @@
           ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
         ENDDO
 
-
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
         IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
      &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
 
-          CALL OUTBS (FL1(IJSLOC:IJLLOC,:,:),
-     &                IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+          CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
+     &                MIJ(IJSLOC),
+     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
      &                IG, IU25, IU26, LLOUTBS)
+
 
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
           ENDIF
         ENDIF
 
-!     BRANCHING BACK TO 2.1 FOR NEXT BLOCK OF LATITUDES
-      ENDDO BLOCK
 
 !*    3.1 SAVE FILES.
 !         -----------

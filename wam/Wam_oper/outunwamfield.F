@@ -2,10 +2,10 @@
 
 ! ----------------------------------------------------------------------
 
-!**** *FEMEAN* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT
+!**** *OUTUNWAMFIELD* - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT
 !                AND MEAN WAVE NUMBER .
 !                THE COMPUTATION OF THE MEAN WAVE ENERGU WAS ALSO
-!                ADDED SUCH THAT A CALL TO FEMEAN DOES NOT NEED
+!                ADDED SUCH THAT A CALL TO OUTUNWAMFIELD DOES NOT NEED
 !                TO BE PRECEDED BY A CALL TO SEMEAN.
 
 !     S.D. HASSELMANN
@@ -21,7 +21,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FEMEAN (F, IJS, IJL, EM, FM, LLAK)*
+!       *CALL* *OUTUNWAMFIELD (F, IJS, IJL, EM, FM, LLAK)*
 !              *F*   - SPECTRUM.
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT

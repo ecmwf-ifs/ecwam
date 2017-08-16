@@ -1,7 +1,7 @@
       SUBROUTINE FNDPRT (IJS, IJL, NPMAX,
      &                   NPEAK, MIJ, NTHP, NFRP,
-     &                   FLLOW, LLCOSDIFF,
-     &                   FL3,
+     &                   FLLOW, LLCOSDIFF, FLNOISE,
+     &                   FL3, SWM,
      &                   ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
@@ -24,8 +24,8 @@
 
 !       *CALL* *FNDPRT (IJS, IJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
-!     &                 FLLOW, LLCOSDIFF,
-!     &                 FL3,
+!     &                 FLLOW, LLCOSDIFF, FLNOISE,
+!     &                 FL3, SWM,
 !     &                 ENE, DIR, PER)
 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -37,7 +37,13 @@
 !          *NFRP*   - FREQUENCY INDEX FOR ALL PEAKS
 !          *FLLOW*  - MINIMUM ENERGY LEVEL
 !          *LLCOSDIFF* LOGICAL (COSDIFF.LT.-0.4)
+!          *FLNOISE* - SPECTRAL NOISE LEVEL
 !          *FL3*    - BLOCK OF SPECTRA
+!          *SWM*    - ORIGINAL SWELL MASK
+!                     IT MIGHT NEED TO BE ADJUSTED
+!                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
+!                     IN WHICH THE WIND SEA HAS BEEN REMOVED. SOME OF
+!                     THE ENERGY LEAKING OUT FROM THE WINDSEA SPECTRUM
 !          *EME*    - MEAN WAVE ENERGY FOR EACH WAVE SYSTEM 
 !          *DIR*    - MEAN WAVE DIRECTION FOR EACH WAVE SYSTEM
 !          *PER*    - MEAN PERIOD BASED ON -1 MOMENT FOR EACH WAVE SYSTEM.
@@ -68,7 +74,9 @@
       INTEGER, INTENT(INOUT), DIMENSION(IJS:IJL) :: NPEAK
       INTEGER, INTENT(IN), DIMENSION(IJS:IJL,NPMAX) :: NTHP, NFRP
 
+      REAL, INTENT(IN), DIMENSION(IJS:IJL) :: FLNOISE
       REAL, INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL3
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
       REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
 
       LOGICAL, INTENT(IN), DIMENSION(IJS:IJL,NANG) :: LLCOSDIFF
@@ -99,7 +107,7 @@
 !     AROUND THE PEAK
 !!!   THIS IS A STRONG ASSUMPTION ON THE DIRECTIONALITY OF SWELL !!!
 
-      HALF_SECTOR=70.
+      HALF_SECTOR=75.
       NANGH=NINT((HALF_SECTOR/360.)*NANG)+1
 
 !     POINTS BELOW THE MINIMUM LEVEL BELONG TO THE WINDSEA PART
@@ -255,13 +263,15 @@
         ENDDO ! loop IP
 
 !       CHECK THAT UNASSIGNED BINS ARE IN THE WIND SECTOR, OTHERWISE THEY SHOULD BE
-!       ADDED AS A PARTITION
+!       ADDED AS A PARTITION IF ABOVE NOISE LEVEL
         LLADDPART=.FALSE.
         IF(NPEAK(IJ).LT.NPMAX) THEN
           DO K=1,NANG
             DO M=1,NFRE
-              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0) THEN
+              IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0 .AND.
+     &           FL3(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
                 W2(K,M) = 1.
+                W1(IJ,K,M) = 1.
                 LLADDPART=.TRUE.
               ELSE
                 W2(K,M) = 0.
@@ -286,6 +296,17 @@
      &             SPEC,
      &             ENE, DIR, PER)
 
+
+!     UPDATE SWELL MASK (IF IN THE WIND DIRECTION)
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            IF(.NOT.LLCOSDIFF(IJ,K)) THEN
+              SWM(IJ,K,M)=SWM(IJ,K,M)*MAX(W1(IJ,K,M),1.)
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FNDPRT',1,ZHOOK_HANDLE)
