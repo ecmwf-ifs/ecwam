@@ -911,11 +911,6 @@
               ELSE IF (LLUNSTR) THEN 
                 CALL PROPAG_UNWAM(FL1, FL3)
               END IF
-#ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL1, "FL1 After PROPAG_UNWAM")
-              CALL COHERENCY_ERROR_3D(FL3, "FL3 After PROPAG_UNWAM")
-              WRITE(740+MyRankGlobal,*) "-------------------"
-#endif
 
               IF (ITEST.GE.2) THEN
                 WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
@@ -954,16 +949,7 @@
 
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
             CALL GSTATS(1431,0)
-#ifdef DEBUG
-            WRITE(740+MyRankGlobal,*) 'LLSOURCE=', LLSOURCE
-#endif
             IF(LLSOURCE) THEN
-#ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL1, "FL1 Before IMPLSCH")
-              CALL COHERENCY_ERROR_3D(FL3, "FL3 Before IMPLSCH")
-              WRITE(740+MyRankGlobal,*) "-------------------"
-#endif
-
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
@@ -980,11 +966,6 @@
 
               ENDDO
 !$OMP       END PARALLEL DO
-
-#ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL3, "FL3 after IMPLSCH")
-              WRITE(740+MyRankGlobal,*) "-------------------"
-#endif
 
               IF (LWNEMOCOU) THEN
                 NEMONTAU = NEMONTAU + 1
@@ -1003,9 +984,11 @@
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
                 DO IJ=KIJS,KIJL
+                  MIJ(IJ) = NFRE
                   DO K=1,NANG
                     DO M=1,NFRE
                       FL3(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)
+                      XLLWS(IJ,K,M) = 0.
                     ENDDO
                   ENDDO
                 ENDDO
@@ -1039,10 +1022,6 @@
           ENDIF
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
-#ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.5.4")
-              WRITE(740+MyRankGlobal,*) "-------------------"
-#endif
 
           IF (CDTIMPNEXT.LE.CDTPRO) GO TO 1550
 
@@ -1098,10 +1077,6 @@
 
 !*    1.5.9 OUTPUT OF BOUNDARY POINTS.
 !           --------------------------
-#ifdef DEBUG
-              CALL COHERENCY_ERROR_3D(FL3, "FL3 at 1.5.9")
-              WRITE(740+MyRankGlobal,*) "-------------------"
-#endif
 
           IF (IBOUNC.EQ.1) THEN
             CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19)

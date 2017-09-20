@@ -73,7 +73,7 @@
 
       REAL,DIMENSION(IJS:IJL),INTENT(IN) :: CICVR
       REAL,DIMENSION(IJS:IJL),INTENT(IN) :: U10NEW, THWNEW, ROAIRN,WSTAR
-      REAL,DIMENSION(IJS:IJL),INTENT(INOUT) :: USNEW, Z0NEW
+      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: USNEW, Z0NEW
       REAL,DIMENSION(IJS:IJL,NANG,NFRE),INTENT(IN) :: FL3
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -107,25 +107,29 @@
       LCFLX=LWFLUX.OR.LWFLUXOUT
 ! ----------------------------------------------------------------------
 
+!*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
+!         -----------------------------------------
+
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, WSTAR, SL, XLLWS)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!     MEAN FREQUENCY OF THE TOTAL SEA
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,
+     &                MIJ, RHOWGDFTH)
+
+
       IF(LCFLX) THEN
-
-!*      1.2 COMPUTE MEAN PARAMETERS.
-!          ------------------------
-
-        CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &              F1MEAN, AKMEAN, XKMEAN)
-
-! ----------------------------------------------------------------------
-
-!*      1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
-!           -----------------------------------------
-
-        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &               ROAIRN, WSTAR, SL, XLLWS)
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
   
        IF(.NOT. LWVFLX_SNL) THEN
 !      in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
@@ -138,13 +142,6 @@
          ENDDO
        ENDIF
 
-
-!       MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-        CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-!       COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-        CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,
-     &                  MIJ, RHOWGDFTH)
 
         CALL STRESSO (FL3, SL, IJS, IJL,
      &                MIJ, RHOWGDFTH,
