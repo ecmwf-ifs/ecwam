@@ -4047,10 +4047,14 @@
 !      WRITE(740+MyRankGlobal,*) 'CHECK ', TRIM(string)
       IF (LLUNSTR) THEN
         IF (ALLOCATED(FL1)) THEN
+#ifdef DEBUG
           CALL COHERENCY_ERROR_3D(FL1, "testing FL1")
+#endif
         END IF
         IF (ALLOCATED(FL3)) THEN
+#ifdef DEBUG
           CALL COHERENCY_ERROR_3D(FL3, "testing FL3")
+#endif
         END IF
       END IF
       WRITE(740+MyRankGlobal,*) 'allocated(FL3)=', allocated(FL3)
