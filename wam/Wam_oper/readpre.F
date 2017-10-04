@@ -81,7 +81,7 @@
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC
+      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LLR8TOR4
       USE UNWAM
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -102,13 +102,14 @@
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
 #endif
 
+      NKIND=0
       IREAD=1
       KTAG=1
 
       CALL GSTATS(1771,0)
       IF(IRANK.EQ.IREAD) THEN
 !       READ MODEL IDENTIFIERS
-        READ(IU07,ERR=1000) NKIND,KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+        CALL READREC(1)
         IF(KMDLGRDID.NE.IMDLGRDID) THEN
           WRITE(IU06,*) '*****************************************'
           WRITE(IU06,*) '*                                       *'
@@ -144,9 +145,7 @@
 !*    0. READ YOWPARAM (BLOCK SIZES). 
 !        ----------------------------
 
-        READ(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
-     &             KFRH, MFRSTLW, MLSTHG,
-     &             NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN 
+        CALL READREC(2)
 
 !*    1. READ MODULE YOWFRED (FREQUENCY DIRECTION GRID).
 !        ----------------------------------------------
@@ -159,8 +158,7 @@
         IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
         IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
 
-        READ(IU07) FR, DFIM, GOM, C,
-     &             DELTH, DELTR, TH, COSTH, SINTH
+        CALL READREC(3)
 
 !*    2. READ MODULE YOWGRID (GENERAL GRID ORGANISATION).
 !        ------------------------------------------------
@@ -175,8 +173,7 @@
         IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
         IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
 
-        READ(IU07) DELPHI, DELLAM, NLONRGG, SINPH, COSPH,
-     &             IGL, IJS, IJL2, IJLS, IJL, IJLT
+        CALL READREC(4)
 
 !*    3. READ MODULE YOWMAP (LONG. AND LAT. INDICES OF GRID POINTS).
 !        --------------------------------------------------------
@@ -187,9 +184,7 @@
         ALLOCATE(KXLT(NIBLO,NBLO))
         IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
-        READ(IU07) IXLG, KXLT, NX, NY, IPER,
-     &             AMOWEP, AMOSOP, AMOEAP, AMONOP, XDELLA, XDELLO,
-     &             ZDELLO, IRGG
+        CALL READREC(5)
 
 !     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
 !     LAT-LONG GRID (REGULAR OR IRREGULAR).
@@ -219,39 +214,33 @@
         IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
         IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
-        READ(IU07) IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
-     &             AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,
-     &             ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
+        CALL READREC(6)
 
 !*    5. READ MODULE YOUCOUP.
 !        -------------------
 
-        READ(IU07) IPHYS,BETAMAX,ZALP,ALPHA,
-     &     ALPHAPMAX,
-     &     TAUWSHELTER,ITSHELT,
-     &     TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
+        CALL READREC(7)
 
 !*    5.1 READ MODULE YOWALTAS
 !         --------------------
 
-        READ(IU07) EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
-     &             ESH,ASH,BSH,ASWKM,BSWKM
+        CALL READREC(8)
 
 
 !*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).
 !        --------------------------------------------
 
-        READ(IU07)  NGOUT
+        CALL READREC(12)
         IF(NGOUT.GT.0) THEN
           IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
           IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
-          READ(IU07)  IGAR, IJAR
+          CALL READREC(13)
         ENDIF
 
 !*    8. READ MODULE YOWSHAL (DEPTH AND SHALLOW WATER TABLES).
 !        ----------------------------------------------------
 
-        READ(IU07)  NDEPTH, DEPTHA, DEPTHD
+        CALL READREC(14)
 !!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
         IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
         ALLOCATE(DEPTH(NIBLO,NBLO))
@@ -260,7 +249,7 @@
         IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
-        READ(IU07)  DEPTH, TCGOND, TFAK, TSIHKD, TFAC_ST
+        CALL READREC(15)
 
 !*    9. READ MODULE YOWTABL (2ND AND 3RD part).
 !        -------------------
@@ -273,9 +262,9 @@
         IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
         IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
 
-        READ(IU07) FAC0,FAC1,FAC2,FAC3,FAK,FRHF,DFIMHF
+        CALL READREC(16)
 
-        READ(IU07) MR, XMR, MA, XMA, NFREH, NANGH, NMAX
+        CALL READREC(17)
 
         IF(.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
         IF(.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
@@ -294,9 +283,7 @@
      &         ALLOCATE(IM_M(NFREH,NFREH))
         IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
-        READ(IU07) OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M, 
-     &             TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
-
+        CALL READREC(18)
 
 !*      10. READ MODULE YOWCURR.
 !           --------------------
@@ -333,16 +320,388 @@
 #endif
       RETURN
 
-1000  CONTINUE
+      CONTAINS
+
+      SUBROUTINE READREC(KREC)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: KREC
+      INTEGER :: ISTAT
+      REAL(KIND=8) ::
+     & R8_ACL1,R8_ACL2,R8_AFCRV,R8_AGRCRV,R8_ALPHA,R8_ALPHAPMAX,
+     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_ASH,R8_ASWKM,
+     & R8_BETAMAX,R8_BFCRV,R8_BGRCRV,R8_BSH,R8_BSWKM,
+     & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,
+     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,R8_EGRCRV,R8_ESH,
+     & R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_TAUWSHELTER,
+     & R8_XDELLA,R8_XDELLO,R8_XKAPPA,R8_XMA,R8_XMR,R8_XNLEV,R8_ZALP
+      REAL(KIND=8), ALLOCATABLE, DIMENSION(:) ::
+     &     R8_FR,R8_DFIM,R8_GOM,R8_C,
+     &     R8_TH,R8_COSTH,R8_SINTH,
+     &     R8_DELLAM,R8_SINPH,R8_COSPH,
+     &     R8_ZDELLO,
+     &     R8_AF11,
+     &     R8_FKLAP,
+     &     R8_FKLAP1,
+     &     R8_FKLAM,
+     &     R8_FKLAM1,
+     &     R8_FRH,
+     &     R8_FRHF,
+     &     R8_DFIMHF,
+     &     R8_OMEGA,
+     &     R8_THH,
+     &     R8_DFDTH,
+     &     R8_FAK
+      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
+     &     R8_DEPTH,
+     &     R8_TCGOND,
+     &     R8_TFAK,
+     &     R8_TSIHKD,
+     &     R8_TFAC_ST,
+     &     R8_TFAKH
+      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
+     &     R8_FAC0,
+     &     R8_FAC1,
+     &     R8_FAC2,
+     &     R8_FAC3,
+     &     R8_TA,
+     &     R8_TB,
+     &     R8_TC_QL,
+     &     R8_TT_4M,
+     &     R8_TT_4P
+
+!23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
+      SELECT CASE(KREC)
+      CASE(1)
+         LLR8TOR4 = .FALSE.
+         READ(IU07,IOSTAT=ISTAT) NKIND,KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
+         IF (ISTAT /= 0) THEN
+            ! Is this legacy code i.e. NKIND missing from the 1st record ?
+            BACKSPACE(IU07)
+            READ(IU07,IOSTAT=ISTAT) KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
+            IF (ISTAT /= 0) GOTO 1000 ! Abort: Don't support this file format at all
+         ENDIF
+         IF (KIND(DELPHI) == 4) THEN
+            LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
+         ENDIF
+         NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
+         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,
+     &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
+ 1002    FORMAT(1X,A,I0,A,I0,A,L1)
+      CASE(2)
+         READ(IU07,IOSTAT=ISTAT)
+     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
+     &        KFRH, MFRSTLW, MLSTHG,
+     &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
+         IF (ISTAT /= 0) GOTO 1000
+      CASE(3)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_FR(NFRE),R8_DFIM(NFRE),R8_GOM(NFRE),R8_C(NFRE))
+            ALLOCATE(R8_TH(NANG),R8_COSTH(NANG),R8_SINTH(NANG))
+
+            READ(IU07,IOSTAT=ISTAT) R8_FR, R8_DFIM, R8_GOM, R8_C,
+     &           R8_DELTH, R8_DELTR, R8_TH, R8_COSTH, R8_SINTH
+            IF (ISTAT /= 0) GOTO 1000
+
+            FR = R8_FR
+            DFIM = R8_DFIM
+            GOM = R8_GOM
+            C = R8_C
+            DELTH = R8_DELTH
+            DELTR = R8_DELTR
+            TH = R8_TH
+            COSTH = R8_COSTH
+            SINTH = R8_SINTH
+            DEALLOCATE(R8_FR,R8_DFIM,R8_GOM, R8_C)
+            DEALLOCATE(R8_TH,R8_COSTH,R8_SINTH)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) FR, DFIM, GOM, C,
+     &           DELTH, DELTR, TH, COSTH, SINTH
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(4)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_DELLAM(NGY),R8_SINPH(NGY),R8_COSPH(NGY))
+
+            READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,
+     &           R8_SINPH, R8_COSPH,
+     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+            IF (ISTAT /= 0) GOTO 1000
+
+            DELPHI = R8_DELPHI
+            DELLAM = R8_DELLAM
+            SINPH = R8_SINPH
+            COSPH = R8_COSPH
+            DEALLOCATE(R8_DELLAM,R8_SINPH,R8_COSPH)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,
+     &           SINPH, COSPH,
+     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(5)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_ZDELLO(NGY))
+
+            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,
+     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,
+     &           R8_XDELLA, R8_XDELLO,
+     &           R8_ZDELLO, IRGG
+            IF (ISTAT /= 0) GOTO 1000
+
+            AMOWEP = R8_AMOWEP
+            AMOSOP = R8_AMOSOP
+            AMOEAP = R8_AMOEAP
+            AMONOP = R8_AMONOP
+            XDELLA = R8_XDELLA
+            XDELLO = R8_XDELLO
+            ZDELLO = R8_ZDELLO
+
+            DEALLOCATE(R8_ZDELLO)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,
+     &           XDELLA, XDELLO,
+     &           ZDELLO, IRGG
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(6)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_AF11(MFRSTLW:MLSTHG))
+            ALLOCATE(R8_FKLAP(MFRSTLW:MLSTHG))
+            ALLOCATE(R8_FKLAP1(MFRSTLW:MLSTHG))
+            ALLOCATE(R8_FKLAM(MFRSTLW:MLSTHG))
+            ALLOCATE(R8_FKLAM1(MFRSTLW:MLSTHG))
+            ALLOCATE(R8_FRH(KFRH))
+
+            READ(IU07,IOSTAT=ISTAT)
+     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
+     &           R8_AF11, R8_FKLAP, R8_FKLAP1, R8_FKLAM, R8_FKLAM1,
+     &           R8_ACL1, R8_ACL2,  R8_CL11, R8_CL21,
+     &           R8_DAL1, R8_DAL2, R8_FRH
+            IF (ISTAT /= 0) GOTO 1000
+
+            AF11 = R8_AF11
+            FKLAP = R8_FKLAP
+            FKLAP1 = R8_FKLAP1
+            FKLAM = R8_FKLAM
+            FKLAM1 = R8_FKLAM1
+            ACL1 = R8_ACL1
+            ACL2 = R8_ACL2
+            CL11 = R8_CL11
+            CL21 = R8_CL21
+            DAL1 = R8_DAL1
+            DAL2 = R8_DAL2
+            FRH = R8_FRH
+
+            DEALLOCATE(R8_AF11)
+            DEALLOCATE(R8_FKLAP)
+            DEALLOCATE(R8_FKLAP1)
+            DEALLOCATE(R8_FKLAM)
+            DEALLOCATE(R8_FKLAM1)
+            DEALLOCATE(R8_FRH)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT)
+     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
+     &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,
+     &           ACL1, ACL2,  CL11, CL21,
+     &           DAL1, DAL2, FRH
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(7)
+         IF (LLR8TOR4) THEN
+            READ(IU07,IOSTAT=ISTAT) IPHYS,R8_BETAMAX,R8_ZALP,R8_ALPHA,
+     &           R8_ALPHAPMAX,
+     &           R8_TAUWSHELTER,ITSHELT,
+     &           R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_XKAPPA,R8_XNLEV
+            IF (ISTAT /= 0) GOTO 1000
+            BETAMAX = R8_BETAMAX
+            ZALP = R8_ZALP
+            ALPHA = R8_ALPHA
+            ALPHAPMAX = R8_ALPHAPMAX
+            TAUWSHELTER = R8_TAUWSHELTER
+            TAILFACTOR = R8_TAILFACTOR
+            TAILFACTOR_PM = R8_TAILFACTOR_PM
+            XKAPPA = R8_XKAPPA
+            XNLEV = R8_XNLEV
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) IPHYS,BETAMAX,ZALP,ALPHA,
+     &           ALPHAPMAX,
+     &           TAUWSHELTER,ITSHELT,
+     &           TAILFACTOR,TAILFACTOR_PM,XKAPPA,XNLEV
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(8)
+         IF (LLR8TOR4) THEN
+            READ(IU07,IOSTAT=ISTAT)
+     &           R8_EGRCRV,R8_AGRCRV,R8_BGRCRV,R8_AFCRV,R8_BFCRV,
+     &           R8_ESH,R8_ASH,R8_BSH,R8_ASWKM,R8_BSWKM
+            IF (ISTAT /= 0) GOTO 1000
+            EGRCRV = R8_EGRCRV
+            AGRCRV  = R8_AGRCRV
+            BGRCRV = R8_BGRCRV
+            AFCRV = R8_AFCRV
+            BFCRV = R8_BFCRV
+            ESH = R8_ESH
+            ASH = R8_ASH
+            BSH = R8_BSH
+            ASWKM = R8_ASWKM
+            BSWKM = R8_BSWKM
+         ELSE
+            READ(IU07,IOSTAT=ISTAT)
+     &           EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
+     &           ESH,ASH,BSH,ASWKM,BSWKM
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(12)
+         READ(IU07,IOSTAT=ISTAT) NGOUT
+         IF (ISTAT /= 0) GOTO 1000
+      CASE(13)
+         READ(IU07,IOSTAT=ISTAT) IGAR, IJAR
+         IF (ISTAT /= 0) GOTO 1000
+      CASE(14)
+         IF (LLR8TOR4) THEN
+            READ(IU07,IOSTAT=ISTAT) NDEPTH, R8_DEPTHA, R8_DEPTHD
+            IF (ISTAT /= 0) GOTO 1000
+            DEPTHA = R8_DEPTHA
+            DEPTHD = R8_DEPTHD
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) NDEPTH, DEPTHA, DEPTHD
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(15)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_DEPTH(NIBLO,NBLO))
+            ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
+            ALLOCATE(R8_TFAK(NDEPTH,NFRE))
+            ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
+            ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
+            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,
+     &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
+            IF (ISTAT /= 0) GOTO 1000
+            DEPTH = R8_DEPTH
+            TCGOND = R8_TCGOND
+            TFAK = R8_TFAK
+            TSIHKD = R8_TSIHKD
+            TFAC_ST = R8_TFAC_ST
+
+            DEALLOCATE(R8_DEPTH)
+            DEALLOCATE(R8_TCGOND)
+            DEALLOCATE(R8_TFAK)
+            DEALLOCATE(R8_TSIHKD)
+            DEALLOCATE(R8_TFAC_ST)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,
+     &           TFAK, TSIHKD, TFAC_ST
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(16)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_FAC0(NANG,NANG,NFREHF,NFREHF))
+            ALLOCATE(R8_FAC1(NANG,NANG,NFREHF,NFREHF))
+            ALLOCATE(R8_FAC2(NANG,NANG,NFREHF,NFREHF))
+            ALLOCATE(R8_FAC3(NANG,NANG,NFREHF,NFREHF))
+            ALLOCATE(R8_FAK(NFREHF))
+            ALLOCATE(R8_FRHF(NFREHF))
+            ALLOCATE(R8_DFIMHF(NFREHF))
+            READ(IU07,IOSTAT=ISTAT) R8_FAC0,R8_FAC1,R8_FAC2,R8_FAC3,
+     &           R8_FAK,R8_FRHF,R8_DFIMHF
+            IF (ISTAT /= 0) GOTO 1000
+            FAC0 = R8_FAC0
+            FAC1 = R8_FAC1
+            FAC2 = R8_FAC2
+            FAC3 = R8_FAC3
+            FAK = R8_FAK
+            FRHF = R8_FRHF
+            DFIMHF = R8_DFIMHF
+
+            DEALLOCATE(R8_FAC0)
+            DEALLOCATE(R8_FAC1)
+            DEALLOCATE(R8_FAC2)
+            DEALLOCATE(R8_FAC3)
+            DEALLOCATE(R8_FAK)
+            DEALLOCATE(R8_FRHF)
+            DEALLOCATE(R8_DFIMHF)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) FAC0,FAC1,FAC2,FAC3,
+     &           FAK,FRHF,DFIMHF
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(17)
+         IF (LLR8TOR4) THEN
+            READ(IU07,IOSTAT=ISTAT) MR, R8_XMR, MA, R8_XMA,
+     &           NFREH, NANGH, NMAX
+            IF (ISTAT /= 0) GOTO 1000
+            XMR = R8_XMR
+            XMA = R8_XMA
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) MR, XMR, MA, XMA,
+     &           NFREH, NANGH, NMAX
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE(18)
+         IF (LLR8TOR4) THEN
+            ALLOCATE(R8_OMEGA(NFREH))
+            ALLOCATE(R8_THH(NANGH))
+            ALLOCATE(R8_DFDTH(NFREH))
+            ALLOCATE(R8_TA(NDEPTH,NANGH,NFREH,NFREH))
+            ALLOCATE(R8_TB(NDEPTH,NANGH,NFREH,NFREH))
+            ALLOCATE(R8_TC_QL(NDEPTH,NANGH,NFREH,NFREH))
+            ALLOCATE(R8_TT_4M(NDEPTH,NANGH,NFREH,NFREH))
+            ALLOCATE(R8_TT_4P(NDEPTH,NANGH,NFREH,NFREH))
+            ALLOCATE(R8_TFAKH(NFREH,NDEPTH))
+            READ(IU07,IOSTAT=ISTAT) R8_OMEGA, R8_DFDTH, R8_THH,
+     &           R8_DELTHH, IM_P, IM_M,
+     &           R8_TA, R8_TB, R8_TC_QL, R8_TT_4M, R8_TT_4P, R8_TFAKH
+            IF (ISTAT /= 0) GOTO 1000
+            OMEGA = R8_OMEGA
+            THH = R8_THH
+            DFDTH = R8_DFDTH
+            TA = R8_TA
+            TB = R8_TB
+            TC_QL = R8_TC_QL
+            TT_4M = R8_TT_4M
+            TT_4P = R8_TT_4P
+            TFAKH = R8_TFAKH
+
+            DEALLOCATE(R8_OMEGA)
+            DEALLOCATE(R8_THH)
+            DEALLOCATE(R8_DFDTH)
+            DEALLOCATE(R8_TA)
+            DEALLOCATE(R8_TB)
+            DEALLOCATE(R8_TC_QL)
+            DEALLOCATE(R8_TT_4M)
+            DEALLOCATE(R8_TT_4P)
+            DEALLOCATE(R8_TFAKH)
+         ELSE
+            READ(IU07,IOSTAT=ISTAT) OMEGA, DFDTH, THH,
+     &           DELTHH, IM_P, IM_M,
+     &           TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
+            IF (ISTAT /= 0) GOTO 1000
+         ENDIF
+      CASE DEFAULT
+         WRITE(IU06,*)'***ERROR IN READREC: INVALID RECORD NUMBER=',KREC
+         CALL FLUSH(IU06)
+         CALL ABORT1
+      END SELECT
+      RETURN
+
+ 1000 CONTINUE
+      WRITE(IU06,1001)'***ERROR IN READREC(',KREC,') : IOSTAT=',
+     &     ISTAT,', NKIND=',NKIND
+ 1001 FORMAT(1X,A,I0,A,I0,A,I0)
       WRITE(IU06,*) '*************************************'
       WRITE(IU06,*) '*                                   *'
-      WRITE(IU06,*) '*  READ ERROR IN SUB. READPRE       *'
+      WRITE(IU06,*) '*  READ ERROR IN SUB. READREC       *'
       WRITE(IU06,*) '*  ==========================       *'
       WRITE(IU06,*) '*                                   *'
-      WRITE(IU06,*) '*  READ ERROR TO UNIT fort.',IU07
+      WRITE(IU06,'(1X,A,I0)') '*  READ ERROR TO UNIT fort.',IU07
       WRITE(IU06,*) '*  IS THE FILE PRESENT ????         *' 
       WRITE(IU06,*) '*                                   *'
       WRITE(IU06,*) '*************************************'
+      CALL FLUSH(IU06)
       CALL ABORT1
+      RETURN
+
+      END
 
       END SUBROUTINE READPRE

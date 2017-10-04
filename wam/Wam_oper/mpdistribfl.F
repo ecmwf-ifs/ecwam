@@ -137,7 +137,7 @@
 !         --------------------------------------
 
       IF(IRANK.EQ.ISEND) THEN
-        CALL MPL_WAIT(ZCOMBUFS(1:MPLENGTH,1),KREQUEST=ISENDREQ,
+        CALL MPL_WAIT(KREQUEST=ISENDREQ,
      &                CDSTRING='MPDISTRIBFL:')
         DEALLOCATE(ZCOMBUFS)
       ENDIF
