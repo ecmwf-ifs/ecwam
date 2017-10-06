@@ -54,48 +54,56 @@
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
 
+      USE PARKIND1, ONLY : JPIM, JPRB, JPIB
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
       USE IOFLDDESC_MOD, ONLY : IOFLDDESC
       USE YOMIO_SERV, ONLY : IO_SERV_C001
       USE YOMIO_SERV_MAP_PLAN, ONLY : IO_SERV_SEND_PLAN
       USE GEOMETRY_MOD , ONLY : GEOMETRY
-
+      USE YOWGRIB_HANDLES, ONLY : NGRIB_HANDLE_WAM_S
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL, DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: SPEC
 
-      INTEGER :: IFCST
-      INTEGER :: IC, IST, ISTEP, IM, IK, J1, ICNT, IP, IR
-      INTEGER :: IJ, IX, IY, I, J, K
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: IPARAM, ITABLE
-      INTEGER :: IGLOBAL, ILOCAL
-      INTEGER :: ITAG, LFILE, IUOUT
-      INTEGER :: MAXOUTTASK, NN, IPREV
-      INTEGER :: II, NRCV_MSG, NRCV, IRCV, IWRT
-      INTEGER :: IGRIB_HANDLE, IGRBHNDL
-      INTEGER :: ISIZE, MAXMSGSIZE, MSIZE
-      INTEGER :: IERR, KRCOUNT, KRTAG, KFROM
-      INTEGER(KIND=JPKSIZE_T) :: KBYTES
-      INTEGER, DIMENSION(1) :: IMSG1
-      INTEGER, DIMENSION(NPROC) :: IPR, ISENDCOUNTS, IRECVCOUNTS
-      INTEGER, DIMENSION(NPROC) :: MSGSIZE
-      INTEGER, DIMENSION(NPROC) :: ISENDREQ
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: ISENDMSG
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: ISENDFROM, IRECVFROM
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IRECVMSG
+      ! INTEGER :: IFCST
+      ! INTEGER :: IC, IST, ISTEP, IM, IK, J1, ICNT, IP, IR
+      ! INTEGER :: IJ, IX, IY, I, J, K
+      ! INTEGER :: JKGLO, KIJS, KIJL, NPROMA
+      ! INTEGER :: IPARAM, ITABLE
+      ! INTEGER :: IGLOBAL, ILOCAL
+      ! INTEGER :: ITAG, LFILE, IUOUT
+      ! INTEGER :: MAXOUTTASK, NN, IPREV
+      ! INTEGER :: II, NRCV_MSG, NRCV, IRCV, IWRT
+      ! INTEGER :: IGRIB_HANDLE, IGRBHNDL
+      ! INTEGER :: ISIZE, MAXMSGSIZE, MSIZE
+      ! INTEGER :: IERR, KRCOUNT, KRTAG, KFROM
+      ! INTEGER(KIND=JPKSIZE_T) :: KBYTES
+      ! INTEGER, DIMENSION(1) :: IMSG1
+      ! INTEGER, DIMENSION(NPROC) :: IPR, ISENDCOUNTS, IRECVCOUNTS
+      ! INTEGER, DIMENSION(NPROC) :: MSGSIZE
+      ! INTEGER, DIMENSION(NPROC) :: ISENDREQ
+      ! INTEGER, ALLOCATABLE, DIMENSION(:) :: ISENDMSG
+      ! INTEGER, ALLOCATABLE, DIMENSION(:) :: ISENDFROM, IRECVFROM
+      ! INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IRECVMSG
 
       REAL :: ZHOOK_HANDLE
-      REAL :: FIELD(NGX, NGY)
-      REAL, ALLOCATABLE, DIMENSION(:) :: ZSENDBUF,ZRECVBUF
+      !REAL :: FIELD(NGX, NGY)
+      !REAL, ALLOCATABLE, DIMENSION(:) :: ZSENDBUF,ZRECVBUF
 
-      CHARACTER(LEN=14) :: CDATE 
-      CHARACTER(LEN=296) :: OUTFILEN
+      !CHARACTER(LEN=14) :: CDATE 
+      !CHARACTER(LEN=296) :: OUTFILEN
 
 
-      TYPE (IO_SERV_SEND_PLAN) :: YLIOSMPP  ! Send map plan
-      TYPE (GEOMETRY)          :: YDGEOMETRY  ! Geometry object
+      TYPE (IO_SERV_SEND_PLAN)      :: YLIOSMPP          ! Send map plan
+      TYPE (GEOMETRY)               :: YDGEOMETRY        ! Geometry object
+      TYPE (IOFLDDESC), ALLOCATABLE :: YLFLDSC (:)       ! Field descriptor array
+      INTEGER (KIND=JPIM)           :: IFNUM             ! Number of fields
+      INTEGER (KIND=JPIM)           :: IGPTOTG, IGPTOT   ! Number of points (global & local)
+      INTEGER (KIND=JPIM), PARAMETER :: ITAG_ECIO = 100001 ! [majh] What is this?
+      !INTEGER (KIND=JPIM) :: IFNUM_GRE, IFNUM_GRUE, IFNUM_GROE, IFNUM_GP, IFCUR, ITAG
+      INTEGER :: I
+
 
 !-----------------------------------------------------------------------
 
@@ -103,58 +111,45 @@
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC_IO_SERV',0,ZHOOK_HANDLE)
 #endif
       
-!       ILOCAL=0
-!       NN=NFRE*NANG
-!       MAXOUTTASK=MIN(NPROC,NN)
 
-!       IF (ITEST.GT.1) THEN
-!         WRITE(IU06,*) '*      THIS IS OUTWSPEC_IO_SERV     *'
-!         CALL FLUSH (IU06)
-!       ENDIF
+      IF (ITEST.GT.1) THEN
+        WRITE(IU06,*) '*      THIS IS OUTWSPEC_IO_SERV     *'
+        CALL FLUSH (IU06)
+      ENDIF
+      
+      ! -- Create field descriptors
+      IFNUM=NFRE*NANG
+      ALLOCATE (YLFLDSC (IFNUM))
+      
+      WRITE(*,*) 'Writing ', IFNUM, ' fields to IO server' ! [majh] to remove
 
-!       IF(CDTPRO.LE.CDATEF) THEN
-! !*    0.1.  THIS IS AN ANALYSIS DATE.
-!         IF (LWCOU .AND. MARSTYPE .EQ. 'fg') THEN
-!           CDATE=CDATEA
-!           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
-!           IFCST = IFCST/3600
-!         ELSEIF (LWCOU .AND. MARSTYPE .EQ. '4v') THEN
-!           CDATE=CDATEA
-!           CALL DIFDATE (CDATEA, CDTPRO, IFCST)
-!           IFCST = IFCST/3600
-!         ELSE
-!           CDATE=CDTPRO
-!           IFCST = 0
-!         ENDIF
-!       ELSE
-! !*    0.2.  THIS IS A  FORECAST DATE.
-!         CDATE=CDATEF
-!         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
-!         IFCST = IFCST/3600
-!       ENDIF
+      IGPTOTG = NEND(NPROC) - NSTART(1) + 1
+      IGPTOT  = NEND(IRANK) - NSTART(IRANK) + 1
 
- !     ASSOCIATE(YDDIM=>YDGEOMETRY%YRDIM,YDDIMV=>YDGEOMETRY%YRDIMV,YDGEM=>YDGEOMETRY%YRGEM, YDMP=>YDGEOMETRY%YRMP)
-!ASSOCIATE(NSPEC2=>YDDIM%NSPEC2, NSPEC2G=>YDDIM%NSPEC2G, &
- !& NGPTOT=>YDGEM%NGPTOT, NGPTOTG=>YDGEM%NGPTOTG)
+      DO I = 1, IFNUM
+        ! See IOCPTDESC_MOD
+        YLFLDSC(I)%CPREF = 's'      ! Field type
+        YLFLDSC(I)%NFLSZ = IGPTOTG  ! Global field size
+        !YLFLDSC(I)%IGRIB = NGRIB_HANDLE_WAM_S      ! Grib template ID
+        ! Add additional WAM parameters
+
+      ENDDO
 
       ! -- Create a geometry object, which contains information such as number of grid-points, etc.
       ! -- [majh] should be moved to a setup routine
-
-      !YDGEOMETRY%YRDIM           ! Not used by grid-point output
-      !YDGEOMETRY%YRDIM%NSPEC2    ! Not used by grid-point output
-      !YDGEOMETRY%YRDIM%NSPEC2G   ! Not used by grid-point output
-      YDGEOMETRY%YRGEM%NGPTOT   = NGX*NGY
-      YDGEOMETRY%YRGEM%NGPTOTG  = NEND(IRANK) - NSTART(IRANK)
+      ! See GEOMETRY_MOD
+      YDGEOMETRY%YRGEM%NGPTOTG   = IGPTOTG      ! Global number of elements per field
+      YDGEOMETRY%YRGEM%NGPTOT    = IGPTOT       ! Local  number of elements per field
 
 
       ! -- Part 1, distributes fields and sets up the send-plan
-      CALL IO_SERV_MAP_SEND_PART1(YDGEOMETRY,IO_SERV_C001, YLFLDSC_SP_L, ITAG_SP, YLIOSMPP,&
-                                 & PIOPROC1=ZIOPROC1, PIOPROC2=ZIOPROC2)
+      CALL IO_SERV_MAP_SEND_PART1(YDGEOMETRY,IO_SERV_C001, YLFLDSC,
+     &                            ITAG_ECIO, YLIOSMPP)
 
       ! -- Populate buffers
 
       ! -- Part 2, performs the actual send to IO server
-      CALL IO_SERV_MAP_SEND_PART2 (IO_SERV_C001, YLIOSMPP)
+      !CALL IO_SERV_MAP_SEND_PART2 (IO_SERV_C001, YLIOSMPP)
 
 !-----------------------------------------------------------------------
 
@@ -483,4 +478,4 @@
 
       RETURN
 
-      END SUBROUTINE OUTWSPEC
+      END SUBROUTINE OUTWSPEC_IO_SERV
