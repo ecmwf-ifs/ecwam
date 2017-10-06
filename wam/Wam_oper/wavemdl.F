@@ -213,8 +213,8 @@
       INTEGER :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
       INTEGER :: IC, IL, IST, IED, ICOUNT, JF, IP, IFLD
       INTEGER :: NCOMBUF, NCOMLOC, NTOT, NMASK
-      INTEGER :: ISENDREQ, ITAG
       INTEGER :: IFCST, IFCSTEP_HOUR 
+      INTEGER, ALLOCATABLE :: ZCOMCNT(:)
 
       
       REAL :: VAL
@@ -955,27 +955,15 @@
             ZCOMBUFS(ICOUNT)=FMAX(IFLD)
           ENDDO
 
-          ITAG=1
-          CALL MPL_SEND(ZCOMBUFS(IST:IED),KDEST=IRECV,KTAG=ITAG,
-     &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                  KREQUEST=ISENDREQ,
-     &                  CDSTRING='WAVEMDL: MPL_SEND' )
           IF(IRANK.EQ.IRECV) THEN
             ALLOCATE(ZCOMBUFR(NCOMBUF))
-            DO IP=1,NPROC
-              IST=1+(IP-1)*NCOMLOC
-              IED=IST+NCOMLOC-1
-              CALL MPL_RECV(ZCOMBUFR(IST:IED),
-     &                      KSOURCE=IP,KTAG=ITAG,
-     &                      KMP_TYPE=JP_BLOCKING_STANDARD,
-     &                      CDSTRING='WAVEMDL: MPL_RECV' )
-
-            ENDDO
           ENDIF
-
-          CALL MPL_WAIT(KREQUEST=ISENDREQ,
-     &                    CDSTRING='WAVEMDL: WAIT MPL_SEND')
-
+          ALLOCATE(ZCOMCNT(NPROC))
+          ZCOMCNT=NCOMLOC
+          CALL MPL_GATHERV(PSENDBUF=ZCOMBUFS(IST:IED),KROOT=IRECV,
+     &                    PRECVBUF=ZCOMBUFR(:),KRECVCOUNTS=ZCOMCNT,
+     &                    CDSTRING='WAVEMDL:')
+          DEALLOCATE(ZCOMCNT)
 
 !         COMPUTE PSEUDO GLOBAL NORM
           IF(IRANK.EQ.IRECV) THEN
