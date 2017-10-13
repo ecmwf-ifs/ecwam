@@ -57,6 +57,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWRB
       USE MPL_MPIF
       USE yowDatapool, only: comm
       USE OUTPUT_STRUCT, only : INITIAL_OUTPUT_INITS_NEXTGEN
@@ -141,7 +142,7 @@
       REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP 
       REAL, ALLOCATABLE, DIMENSION(:) :: WVSTR
       REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: TEMP
 
       LOGICAL :: LSQRT
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
