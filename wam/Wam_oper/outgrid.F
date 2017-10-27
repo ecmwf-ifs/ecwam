@@ -56,7 +56,7 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
-
+      USE UNWAM, only : JWRU
       USE MPL_MPIF
       USE yowDatapool, only: comm
       USE OUTPUT_STRUCT, only : INITIAL_OUTPUT_INITS_NEXTGEN
@@ -142,6 +142,7 @@
       REAL, ALLOCATABLE, DIMENSION(:) :: WVSTR
       REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
       REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: DTEMP
 
       LOGICAL :: LSQRT
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
@@ -618,7 +619,10 @@
           ENDIF
         ENDDO
       ELSE
-        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
+         ALLOCATE(DTEMP(IJS:IJL,JPPFLAG))
+         DTEMP=TEMP
+         CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
+         DEALLOCATE(DTEMP)
       END IF
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'After construction of ARR_OUT_RECV'
