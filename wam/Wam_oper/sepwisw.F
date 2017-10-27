@@ -69,7 +69,7 @@
       USE YOWCOUT  , ONLY : IPFGTBL  ,NTRAIN
       USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -----------------------------------------------------------------------
@@ -133,7 +133,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF (XLLWS(IJ,K,M).NE.0.) THEN
+            IF (XLLWS(IJ,K,M).NE.0. .AND. .NOT.(CLDOMAIN.EQ.'s') ) THEN
               ! this is windsea 
               SWM(IJ,K,M)=0.
             ELSE
@@ -150,6 +150,7 @@
         ENDDO
       ENDDO
 
+      IF(.NOT.(CLDOMAIN.EQ.'s')) THEN
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
 !     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
@@ -212,6 +213,8 @@
           ENDDO
         ENDDO
       ENDDO
+
+      ENDIF ! CLDOMAIN
 
 !     SWELL SPECTRUM
       DO M=1,NFRE

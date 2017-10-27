@@ -53,7 +53,7 @@
       INTEGER :: IU06, IU_INTP
       INTEGER :: ITIME, I, J
      
-      REAL :: CD, U10, HS, USTAR2, USTAR, SQTAUW, TSTAR, DSTAR
+      REAL :: CD, U10, HS, HSWS, USTAR2, USTAR, SQTAUW, TSTAR, DSTAR
       REAL :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
       REAL :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
       REAL :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
@@ -61,6 +61,7 @@
       REAL :: DEPTH, PHIOC, TAUOC
       REAL :: XLOGE_YV, XLOGF_YV
       REAL :: ZHOOK_HANDLE
+      REAL :: Tws, Ews, Fws  
 
       CHARACTER(LEN=72) :: CPATH
       CHARACTER(LEN=100) :: TITL
@@ -91,6 +92,7 @@
       CALL DIFDATE(CDATEA,CDTPRO,ITIME)
 
       LPARAM = ( ALLOCATED(WHGTTG).AND.ALLOCATED(CDG).AND.
+     &           ALLOCATED(WHGTWG).AND.ALLOCATED(MWP1WG).AND.
      &           ALLOCATED(U10G).AND.ALLOCATED(MWP1G).AND.
      &           ALLOCATED(TAUWG).AND.ALLOCATED(WPKFTG).AND.
      &           ALLOCATED(WMNFTG) )
@@ -123,6 +125,12 @@
             E     = HS**2/16.
             ESTAR = G**2*E/(USTAR**4)
             FMSTAR=USTAR/(MWP1G(I,J)*G)
+
+            HSWS  = WHGTWG(I,J) 
+            Tws   = G*ITIME/USTAR
+            E     = HSWS**2/16.
+            Ews   = G**2*E/(USTAR**4)
+            Fws   = USTAR/(MWP1WG(I,J)*G)
 
             TSTAR_0 = 4.26*10.**5
             XP      = 1.5
@@ -172,24 +180,24 @@
      &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,
      &                       USTAR,CD,BETA,T10,FETCH10,E10,
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,
-     &                       PHIOC, TAUOC 
+     &                       PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
 
             WRITE(IU06,61) NGY-J+1,DEPTHG(I,J),ITIME/3600.,
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,
      &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,
      &                     USTAR,CD,BETA,T10,FETCH10,E10,
      &                     TSTAR, FMSTAR, DSTAR, ESTAR,
-     &                     PHIOC, TAUOC 
+     &                     PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
 
           ENDIF
         ENDDO
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
       ENDIF
-   60 FORMAT(I4,F7.2,F7.2,2F7.3,2F8.3,4E12.4,F6.1,F8.4,
-     V       2F12.6,2E10.3,9(1x,F14.5))
-   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F8.4,
-     V       2F12.5,2E10.3,9(1x,F14.5))
+   60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,
+     V       2F12.5,2E10.3,13(1x,F14.5))
+   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,
+     V       2F12.5,2E10.3,13(1x,F14.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 

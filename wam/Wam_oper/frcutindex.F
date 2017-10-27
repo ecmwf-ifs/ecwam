@@ -60,14 +60,14 @@
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS,USNEW,CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
       REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
       INTEGER :: IJ, M
 
       REAL :: FPMH, FPPM, FM2, FPM, FPM4
-      REAL :: ROG
       REAL :: XLOGDFRTH
+      REAL :: ROG_XLOGDFRTH, HROG_XLOGDFRTH
       REAL :: ZHOOK_HANDLE
 
 #ifdef ECMWF
@@ -81,15 +81,18 @@
 !*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
 !     ------------------------------------------------------------
 
-      ROG = ROWATER*G
+      XLOGDFRTH=LOG(FRATIO)*DELTH
+      ROG_XLOGDFRTH = ROWATER*G*XLOGDFRTH
+      HROG_XLOGDFRTH = 0.5*ROG_XLOGDFRTH
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
 
-      IF (IPHYS.EQ.0) THEN
-!  this block is only here to insure that we can reproduce the default CY43R3
+      IF(IPHYS.EQ.0) THEN
         DO IJ=IJS,IJL
           IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
+            FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+            FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
+            FPM4 = MAX(FM2,FPM)
             MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
             MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
           ELSE
@@ -106,18 +109,17 @@
             MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
           ELSE
             MIJ(IJ) = NFRE
-         ENDIF
+          ENDIF
         ENDDO
       ENDIF
 
 !     COMPUTE RHOWGDFTH
-      XLOGDFRTH=LOG(FRATIO)*DELTH
       DO IJ=IJS,IJL
-        RHOWGDFTH(IJ,1) = 0.5*ROG*FR(1)*XLOGDFRTH
+        RHOWGDFTH(IJ,1) = HROG_XLOGDFRTH*FR(1)
         DO M=2,MIJ(IJ)-1
-          RHOWGDFTH(IJ,M) = ROG*FR(M)*XLOGDFRTH
+          RHOWGDFTH(IJ,M) = ROG_XLOGDFRTH*FR(M)
         ENDDO
-        RHOWGDFTH(IJ,MIJ(IJ)) = 0.5*ROG*FR(MIJ(IJ))*XLOGDFRTH
+        RHOWGDFTH(IJ,MIJ(IJ)) = HROG_XLOGDFRTH*FR(MIJ(IJ))
         DO M=MIJ(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.
         ENDDO

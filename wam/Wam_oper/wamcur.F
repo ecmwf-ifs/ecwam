@@ -1,4 +1,4 @@
-      SUBROUTINE WAMCUR (U, V, KINF, KSUP, IJS, IJL, IG)
+      SUBROUTINE WAMCUR (U, V, IJS, IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -16,14 +16,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL WAMCUR (U, V, KINF, KSUP, IJS, IJL, IG)*
+!       *CALL WAMCUR (U, V, IJS, IJL)*
 !          *U*   - INTERPOLATED U CURRENT AT ALL POINTS AND BLOCKS.
 !          *V*   - INTERPOLATED V CURRENT AT ALL POINTS.
-!          *KINF-1* - LOWER BOUND ON FIRST DIMENSION OF U AND V 
-!          *KSUP* - UPPER BOUND ON FIRST DIMENSION OF U AND V 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
-!          *IG*     - BLOCK NUMBER
 
 !     METHOD.
 !     -------
@@ -34,6 +31,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPARAM , ONLY : NGY      ,NBLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -44,10 +42,10 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJS, IJL, KINF, KSUP, IG 
-      INTEGER :: IJ, IX, JY
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
 
-      REAL, DIMENSION (KINF-1:KSUP,NBLO) :: U,V
+      INTEGER :: IJ, IX, JY
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -59,14 +57,15 @@
 #endif
 
       DO IJ = IJS,IJL
-        IX = IFROMIJ(IJ,IG)
-        JY = JFROMIJ(IJ,IG)
-        U(IJ,IG) = FIELDG(IX,JY)%UCUR
-        V(IJ,IG) = FIELDG(IX,JY)%VCUR
+        IX = IFROMIJ(IJ,1)
+        JY = JFROMIJ(IJ,1)
+        U(IJ) = FIELDG(IX,JY)%UCUR
+        U(IJ) = SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
+        V(IJ) = FIELDG(IX,JY)%VCUR
+        V(IJ) = SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
       ENDDO
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMCUR',1,ZHOOK_HANDLE)
 #endif
-      RETURN
       END SUBROUTINE WAMCUR
