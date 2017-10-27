@@ -32,7 +32,7 @@
 
 !---------------------------------------------------------------------
 
-      USE YOWCURR  , ONLY : U        ,V
+      USE YOWCURR  , ONLY : U        ,V        ,CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,
@@ -55,7 +55,6 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
-
 
       INTEGER, INTENT(IN) :: IREAD
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
@@ -98,7 +97,6 @@
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF
-
 
       LFILE = LEN_TRIM(FILNM)
 
@@ -221,6 +219,7 @@
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
                IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0
                IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0
+               U(IJ,IG)=SIGN(MIN(ABS(U(IJ,IG)),CURRENT_MAX),U(IJ,IG))
              ENDDO
              U(NINF-1,IG)=0.0
            ENDDO
@@ -237,6 +236,7 @@
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
                IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0
                IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0
+               V(IJ,IG)=SIGN(MIN(ABS(V(IJ,IG)),CURRENT_MAX),V(IJ,IG))
              ENDDO
              V(NINF-1,IG)=0.
            ENDDO
@@ -262,5 +262,4 @@
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE CURRENT2WAM
