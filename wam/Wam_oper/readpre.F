@@ -369,7 +369,7 @@
      &     R8_TT_4M,
      &     R8_TT_4P
 
-!23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
+!23456789-123456789-123456789-123456789-123456789-123456789-123456789-12 
       SELECT CASE(KREC)
       CASE(1)
          LLR8TOR4 = .FALSE.
@@ -380,7 +380,7 @@
             READ(IU07,IOSTAT=ISTAT) KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
             IF (ISTAT /= 0) GOTO 1000 ! Abort: Don't support this file format at all
          ENDIF
-         IF (KIND(DELPHI) == 4) THEN
+         IF (KIND(DELPHI) == 4.and.NKIND==8) THEN
             LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
          ENDIF
          NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
