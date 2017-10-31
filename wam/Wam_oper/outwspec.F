@@ -179,9 +179,9 @@
           CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
         ENDIF
 
-        ! [majh] because of all_to_all_v send buffer has to be huge because it maps to global vector
+        ! [majh] because of all_to_all_v send buffer has to be huge because it maps to global vector (hence *NPROC )
         ALLOCATE(ZSENDBUF(NPROC*(NEND(IRANK)-NSTART(IRANK)+1))) ! [majh] The contribution of each PE (from start to end)
-        ALLOCATE(ZRECVBUF(NEND(NPROC)))                         ! [majh] Size of contribution (same as position of end)
+        ALLOCATE(ZRECVBUF(NEND(NPROC)))                         ! [majh] Entire field (same as position of end)
         ZRECVBUF(:)=0.
 
         ISTEP=NPROC
