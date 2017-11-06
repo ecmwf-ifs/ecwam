@@ -380,7 +380,7 @@
             READ(IU07,IOSTAT=ISTAT) KMDLGRDID,KMDLGRBID_G,KMDLGRBID_M
             IF (ISTAT /= 0) GOTO 1000 ! Abort: Don't support this file format at all
          ENDIF
-         IF (KIND(DELPHI) == 4) THEN
+         IF (KIND(DELPHI) == 4 .AND. NKIND /= 4) THEN
             LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
          ENDIF
          NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
