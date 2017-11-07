@@ -1013,6 +1013,14 @@
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
+
+            IF (ITEST.GE.2) THEN
+              IF (ITESTB.GE.IG) THEN
+                WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
+     &           ' INTEGRATED:'
+                 CALL FLUSH(IU06)
+              ENDIF
+            ENDIF
           ENDIF
 
           IF (LLUNSTR .AND. LLUNBINOUT) THEN
@@ -1029,8 +1037,7 @@
 
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
-     &         ' INTEGRATED:'
+              WRITE(IU06,*) '   SUB. WAMODEL: TIME STEPS DONE.'
                CALL FLUSH(IU06)
             ENDIF
           ENDIF
