@@ -929,24 +929,23 @@
             CDATE=CDTPRO   
           ENDIF
 
+!*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
+!         ---------------------------------------------------------------
+          CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
+     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
+     &                 USOLD, USNEW,
+     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
+     &                 CICOVER, CITHICK, CIWA,
+     &                 TAUW, BETAOLD)
+
+          IF (ITEST.GE.2) THEN
+            WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
+            CALL FLUSH (IU06)
+          ENDIF
+
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
+!         ----------------------------------------
           IF(CDATE.GE.CDTIMPNEXT) THEN
-
-!*          RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
-!           ---------------------------------------------------------------
-
-            CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
-     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
-     &                   USOLD, USNEW,
-     &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
-     &                   CICOVER, CITHICK, CIWA,
-     &                   TAUW, BETAOLD)
-
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
-              CALL FLUSH (IU06)
-            ENDIF
-
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
             CALL GSTATS(1431,0)
             IF(LLSOURCE) THEN
