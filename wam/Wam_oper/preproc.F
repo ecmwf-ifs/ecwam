@@ -423,7 +423,7 @@
 !        TAILFACTOR_PM=0.0
 !       TEST 471 adapted to ECWAM
 
-        ALPHA   = 0.0055
+        ALPHA   = 0.0054
         BETAMAX = 1.45
         ZALP    = 0.008
         ALPHAPMAX = 0.031
