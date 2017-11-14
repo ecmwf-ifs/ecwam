@@ -142,8 +142,7 @@
 
 !     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
-!      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
-      REAL, DIMENSION(:,:,:), ALLOCATABLE :: FL3
+      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
 
       LOGICAL :: LLPEAKF
       LOGICAL :: LLPARTITION
@@ -295,7 +294,6 @@
 
 !     COMPUTE MEAN PARAMETERS
 
-      ALLOCATE(FL3(IJSLOC:IJLLOC,NANG,NFRE))
       LLPEAKF = .FALSE.
       IRA=1
       SIG = +1.
@@ -1012,7 +1010,6 @@
         ENDIF
       ENDIF
 
-      DEALLOCATE(FL3)
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
 #endif
