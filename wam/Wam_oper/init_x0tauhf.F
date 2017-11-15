@@ -59,6 +59,7 @@
         DF=ALPHA*FF*(2*X0-XKAPPA*(X0/(X0+ZALP))**2)
         X0=X0-F/DF
       ENDDO
+      X0TAUHF=X0
 
       CONST1 = (BETAMAX/XKAPPA**2)/3.
 
