@@ -216,7 +216,6 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
@@ -270,7 +269,7 @@
 
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!     in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -310,7 +309,13 @@
      &              THWNEW, USNEW, Z0NEW, ROAIRN,
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -377,12 +382,6 @@
 !       INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
 !       FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
@@ -435,7 +434,6 @@
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
-
 
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
