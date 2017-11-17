@@ -67,7 +67,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT
+      USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -92,8 +92,8 @@
 
       INTEGER :: IJ, M, K, I, J, II
 
-      REAL, PARAMETER :: PHIHF_REDUC=0.5
 
+      REAL :: PHIHF_REDUC=0.75
       REAL :: CONST, CNST
       REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL :: PHI2
@@ -117,6 +117,13 @@
 !        -----------------------------
 
       CONST = DELTH*(ZPI)**4/G
+
+!     REDUCTION OF FOR HIGH FREQUENCY ENERGY FLUX INTO OCEAN CONTRIBUTING TO UPPER OCEAN MIXING
+      IF(.NOT.LWVFLX_SNL) THEN
+        PHIHF_REDUC=1.0
+      ELSE
+        PHIHF_REDUC=0.75
+      ENDIF
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
 
