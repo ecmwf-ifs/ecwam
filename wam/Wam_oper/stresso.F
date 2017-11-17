@@ -225,7 +225,8 @@
      &                TAU1, PHI1)
       DO IJ=IJS,IJL
         TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1(IJ)
-        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*UST2(IJ)*PHI1(IJ)
+!!!        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*UST2(IJ)*PHI1(IJ)
+        PHIHF(IJ) = 0.
       ENDDO
 
       DO IJ=IJS,IJL
