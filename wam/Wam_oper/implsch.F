@@ -314,12 +314,6 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
@@ -358,6 +352,7 @@
             ENDDO
           ENDDO
         ENDDO
+
         CALL WNFLUXES (IJS, IJL,
      &                 MIJ, RHOWGDFTH,
      &                 SSOURCE,
@@ -436,6 +431,13 @@
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
+
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
 
 
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
