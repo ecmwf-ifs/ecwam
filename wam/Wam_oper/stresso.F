@@ -93,7 +93,7 @@
       INTEGER :: IJ, M, K, I, J, II
 
 
-      REAL :: PHIHF_REDUC=0.75
+      REAL :: PHIHF_REDUC
       REAL :: CONST, CNST
       REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL :: PHI2
