@@ -44,7 +44,7 @@ MODULE OUTPUT_STRUCT
       USE yownodepool, only : iplg
       IMPLICIT NONE
       integer, intent(in) :: IJS, IJL
-      REAL(KIND=JWRU), intent(IN) :: TEMP(IJS:IJL,JPPFLAG)
+      REAL(KIND=JWRB), intent(IN) :: TEMP(IJS:IJL,JPPFLAG)
       integer, intent(in) :: NFLDPPE(nproc)
       integer IP, eProcOut, fProcOut, iProcOut, jProcOut
       REAL(KIND=JWRB) eWI, eVal, eValIns
