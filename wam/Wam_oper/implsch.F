@@ -219,7 +219,8 @@
         CALL FEMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL)
         DO IJ=IJS,IJL
 ! 0.2 = 0.25 * GAMD
-          DPTHREDUC(IJ)= MIN((0.2*DEPTH(IJ,1))**2/EMEANALL(IJ),1.)
+          DPTHREDUC(IJ)=
+            MIN((0.2*DEPTH(IJ,1))**2/MAX(EMEANALL(IJ),EPSMIN),1.)
         ENDDO
         DO M=1,NFRE
           DO K=1,NANG
