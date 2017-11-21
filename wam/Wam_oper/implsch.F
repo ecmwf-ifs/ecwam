@@ -220,7 +220,7 @@
         DO IJ=IJS,IJL
 ! 0.2 = 0.25 * GAMD
           DPTHREDUC(IJ)=
-            MIN((0.2*DEPTH(IJ,1))**2/MAX(EMEANALL(IJ),EPSMIN),1.)
+     &      MIN((0.2*DEPTH(IJ,1))**2/MAX(EMEANALL(IJ),EPSMIN),1.)
         ENDDO
         DO M=1,NFRE
           DO K=1,NANG
