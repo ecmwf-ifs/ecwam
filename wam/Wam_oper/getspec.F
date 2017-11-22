@@ -57,7 +57,7 @@
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
      &            EPSMIN
-      USE YOWSHAL :: EMAXDPT
+      USE YOWSHAL  , ONLY : EMAXDPT
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NPROMA_WAM,IREFRA  ,
      &            LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST
