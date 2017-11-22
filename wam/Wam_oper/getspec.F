@@ -1,4 +1,4 @@
-      SUBROUTINE GETSPEC(FL,NBLKS,NBLKE,IREAD,DEPTH)
+      SUBROUTINE GETSPEC(FL,NBLKS,NBLKE,IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -57,6 +57,7 @@
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,
      &            EPSMIN
+      USE YOWSHAL :: EMAXDPT
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,NPROMA_WAM,IREFRA  ,
      &            LNSESTART
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -102,10 +103,8 @@
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZTHETA,ZFRE
-      REAL :: EMAX
       REAL :: ZHOOK_HANDLE
       REAL :: RMONOP
-      REAL, ALLOCATABLE, DIMENSION(:) :: EM
       REAL, ALLOCATABLE, DIMENSION(:) :: WORK
       REAL, ALLOCATABLE, DIMENSION(:) :: ZRECVBUF
       REAL, ALLOCATABLE, DIMENSION(:,:,:) :: RFL
@@ -587,35 +586,13 @@ C
 !       CHECK THAT INPUT SPECTRA ARE CONSISTENT WITH MODEL DEPTH
 !       RESCALE IF NOT
         IG=1
-        ALLOCATE(EM(IJS(IG):IJL(IG)))
-!$OMP   PARALLEL DO SCHEDULE(STATIC)
-!$OMP+  PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M,EMAX)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-
-          CALL SEMEAN (FL(KIJS:KIJL,:,:),KIJS,KIJL,EM(KIJS),LLEPSMIN)
-          DO IJ=KIJS,KIJL
-            EMAX = 0.0625*(0.8*DEPTH(IJ,IG))**2
-            IF(EM(IJ).GT.EMAX) THEN
-              EM(IJ)=EMAX/EM(IJ)
-            ELSE
-              EM(IJ)=1.
-            ENDIF
-          ENDDO
-
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL(IJ,K,M) = MAX(FL(IJ,K,M)*EM(IJ),EPSMIN) 
-              ENDDO
-            ENDDO
-          ENDDO
-
+          CALL SDEPTHLIM(KIJS,KIJL,EMAXDPT(KIJS),FL(KIJS:KIJL,:,:))
         ENDDO
 !$OMP   END PARALLEL DO
-        DEALLOCATE(EM)
-
 
 
       ELSE

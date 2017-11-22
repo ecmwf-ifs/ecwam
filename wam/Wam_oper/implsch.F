@@ -130,8 +130,9 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
-     &            IODP     ,IOBND    ,CINV 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO
+     &            IODP     ,IOBND    ,CINV     ,EMAXDPT 
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO   ,
+     &            LBIWBK
       USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -215,20 +216,8 @@
 
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
-      IF(ISHALLO.NE.1) THEN
-        CALL FEMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL)
-        DO IJ=IJS,IJL
-! 0.2 = 0.25 * GAMD
-          DPTHREDUC(IJ)=
-     &      MIN((0.2*DEPTH(IJ,1))**2/MAX(EMEANALL(IJ),EPSMIN),1.)
-        ENDDO
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              FL3(IJ,K,M) = FL3(IJ,K,M)*DPTHREDUC(IJ)
-            ENDDO
-          ENDDO
-        ENDDO
+      IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
+         CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL3)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
@@ -387,7 +376,7 @@
 !SHALLOW
       IF(ISHALLO.NE.1) THEN
         CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, 
-     &              DEPTH(IJS,1), EMEANALL, F1MEAN)
+     &              DEPTH(IJS,1), EMAXDPT(IJ), EMEANALL, F1MEAN)
         CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
       ENDIF
 !SHALLOW

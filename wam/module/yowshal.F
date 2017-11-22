@@ -9,6 +9,8 @@
       INTEGER, ALLOCATABLE :: IODP(:)
       INTEGER, ALLOCATABLE :: IOBND(:)
 
+      REAL, PARAMETER :: GAM_B_J = 0.8
+
       REAL :: DEPTHA
       REAL :: DEPTHD
       REAL :: TOOSHALLOW
@@ -18,6 +20,7 @@
       REAL, ALLOCATABLE :: TFAK(:,:)
       REAL, ALLOCATABLE :: TSIHKD(:,:)
       REAL, ALLOCATABLE :: TFAC_ST(:,:)
+      REAL, ALLOCATABLE :: EMAXDPT(:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -25,6 +28,7 @@
 !      *INDEP*     INTEGER   DEPTH INDEX FOR A BLOCK.
 !      *IODP*      INTEGER   : 0 OVER LAND, 1 OVER SEA.
 !      *IOBND*     INTEGER   : 0 OVER BOUNDARY POINTS, 1 OTHERWISE.
+!      *GAM_B_J    REAL      FACTIO OF THE DEPTH THAT DETERMINES THE MAXIMUM SIGNIFICANT WAVE HEIGHT ALLOWED
 !      *DEPTHA*    REAL      MINIMUM DEPTH FOR TABLES (METRES).
 !      *TOOSHALLOW REAL      MINIMUM DEPTH THAT WILL BE ALLOWED
 !                            USED TO POINT TO LAND POINTS
@@ -35,6 +39,9 @@
 !      *TFAK*      REAL      WAVE NUMBER TABLE.
 !      *TSIHKD*    REAL      TABLE FOR OMEGA/SINH(2KD).
 !      *TFAC_ST*   REAL      TABLE FOR 2*G*K**2/(OMEGA*TANH(2KD)).
+!      *EMAXDPT*   REAL      MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!                            EMAXDPT=0.0625*(GAM_B_J*DEPTH)**2
+
 
 ! ----------------------------------------------------------------------
       END MODULE YOWSHAL
