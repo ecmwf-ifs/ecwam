@@ -459,6 +459,9 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
      &                MIJ,RHOWGDFTH)
 
+!debile
+          write(*,*) 'debile MIJ ',MIJ(1)
+
       IF(ISHALLO.EQ.1) THEN
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -471,6 +474,9 @@
             AKM1 = 1./TFAK(INDEP(IJ),M)
             AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
             TEMP2(IJ,M) = AKM1*AK2VGM1
+!debile
+          write(*,*) 'debile ',M,TEMP2(IJ,M),FRM5(M)
+
           ENDDO
         ENDDO
       ENDIF
