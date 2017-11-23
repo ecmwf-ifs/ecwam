@@ -122,6 +122,9 @@
 !     ----------
 
       IMPLICIT NONE
+#include "combinepeaks.intfb.h"
+#include "means.intfb.h"
+#include "partitioning.intfb.h"
 
       INTEGER NSPEC  ! NUMBER OF SPECTRA TO BE PARTITIONED
       INTEGER MPART  ! MAXIMUM NUMBER OF PARTITIONING.

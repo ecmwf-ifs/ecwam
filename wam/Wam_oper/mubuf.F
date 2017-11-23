@@ -61,6 +61,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: IU01
       INTEGER :: NPROPAGS

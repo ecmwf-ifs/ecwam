@@ -72,6 +72,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "fndprt.intfb.h"
+#include "semean.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ

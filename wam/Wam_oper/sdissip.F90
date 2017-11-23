@@ -55,6 +55,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "sdissip_ard.intfb.h"
+#include "sdissip_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 

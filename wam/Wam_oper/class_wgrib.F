@@ -47,6 +47,7 @@
 !     ------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06
       CHARACTER(LEN=2), INTENT(IN) :: CDCLASS

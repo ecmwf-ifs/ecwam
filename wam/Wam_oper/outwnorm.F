@@ -56,6 +56,7 @@
       USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "wamnorm.intfb.h"
 
       INTEGER :: ITG, ITT, NAVG
       REAL :: ZHOOK_HANDLE

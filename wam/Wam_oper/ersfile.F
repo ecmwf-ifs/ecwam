@@ -61,6 +61,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "incdate.intfb.h"
 
       INTEGER, INTENT(IN) :: IU91, IU92
       LOGICAL, INTENT(IN) :: LLOUTPUT

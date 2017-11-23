@@ -50,6 +50,7 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "tables_2nd.intfb.h"
 
       INTEGER M,K,K0,M0,MP
 

@@ -66,6 +66,8 @@
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "incdate.intfb.h"
 
       INTEGER :: M, IL, ISI, IDUM, IRET, ISHIFT, KSHIFT
       INTEGER :: IYEAR ,IMON ,IDAY ,IHOUR ,IMIN ,ISEC

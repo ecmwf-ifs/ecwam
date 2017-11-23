@@ -52,6 +52,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "wamoi.intfb.h"
 
       INTEGER :: IG, IJ, K, KK, I, II, IC, IOBS, IALT, KALT, IIALT
       INTEGER :: IIMIN, IIMAX, KKMIN, KKMAX, NBLK

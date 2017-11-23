@@ -73,6 +73,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "peak.intfb.h"
+#include "spectra.intfb.h"
 
       INTEGER, INTENT(IN) :: IU12, IU14, IU15, IOPTI
 

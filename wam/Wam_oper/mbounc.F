@@ -53,6 +53,10 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "findb.intfb.h"
+#include "mboxb.intfb.h"
+#include "packi.intfb.h"
+#include "packr.intfb.h"
 
       INTEGER, INTENT(IN) :: IU09, IU19, IFORM
 

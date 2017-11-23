@@ -378,6 +378,36 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "bouinpt.intfb.h"
+#include "chesig.intfb.h"
+#include "cimsstrn.intfb.h"
+#include "clean_outbs.intfb.h"
+#include "closend.intfb.h"
+#include "ctuw.intfb.h"
+#include "difdate.intfb.h"
+#include "gsfile_new.intfb.h"
+#include "headbc.intfb.h"
+#include "implsch.intfb.h"
+#include "incdate.intfb.h"
+#include "mpexchng.intfb.h"
+#include "newwind.intfb.h"
+#include "outbc.intfb.h"
+#include "outbs.intfb.h"
+#include "outint.intfb.h"
+#include "outunwamtest.intfb.h"
+#include "outwnorm.intfb.h"
+#include "outwspec.intfb.h"
+#include "propag_wam.intfb.h"
+#include "savspec.intfb.h"
+#include "savstress.intfb.h"
+#include "setice.intfb.h"
+#include "stokesdrift.intfb.h"
+#include "unsetice.intfb.h"
+#include "updnemofields.intfb.h"
+#include "updnemostress.intfb.h"
+#include "wdfluxes.intfb.h"
+#include "writsta.intfb.h"
 
       INTEGER, INTENT(IN) :: NADV 
       INTEGER :: IG

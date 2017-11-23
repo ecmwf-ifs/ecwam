@@ -47,6 +47,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "jonswap.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER :: IJ, K, M

@@ -56,6 +56,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "outpp.intfb.h"
 
       INTEGER, INTENT(IN) :: ML, KL, IINPC
 

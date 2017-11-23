@@ -39,6 +39,8 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "findb.intfb.h"
+#include "mpexchngsarin.intfb.h"
 
       REAL :: TH0 ! FIRST DIRECTION IN WAM SPECTRUM.
 

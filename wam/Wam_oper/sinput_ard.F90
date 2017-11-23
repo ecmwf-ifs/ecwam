@@ -102,6 +102,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
       INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST

@@ -126,6 +126,18 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "altas.intfb.h"
+#include "clean_outbs.intfb.h"
+#include "difdate.intfb.h"
+#include "gsfile_new.intfb.h"
+#include "outbs.intfb.h"
+#include "outint.intfb.h"
+#include "outwnorm.intfb.h"
+#include "outwspec.intfb.h"
+#include "saras.intfb.h"
+#include "savspec.intfb.h"
+#include "savstress.intfb.h"
+#include "writsta.intfb.h"
 
       INTEGER :: IFIL, IJ, K, M
       INTEGER :: IG

@@ -11,6 +11,7 @@
 !        -------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: 
      &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,

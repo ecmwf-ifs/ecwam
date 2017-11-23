@@ -49,6 +49,7 @@
 !     ---------
 
       IMPLICIT NONE
+#include "wam_syminv.intfb.h"
 
 !     INTEGERS WAM - SAR INDICES
       INTEGER  

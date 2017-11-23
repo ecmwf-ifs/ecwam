@@ -75,6 +75,12 @@
 ! -----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "femean.intfb.h"
+#include "mwp1.intfb.h"
+#include "mwp2.intfb.h"
+#include "sep3tr.intfb.h"
+#include "sthq.intfb.h"
+#include "wdirspread.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS,IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ

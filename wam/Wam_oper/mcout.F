@@ -44,6 +44,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "findb.intfb.h"
 
       INTEGER :: IO, KX, IX, NG
       INTEGER :: NGOUTNEW

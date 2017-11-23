@@ -50,6 +50,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(OUT) :: NBOUN
       REAL, INTENT(IN) :: AMOWEB, AMOSOB, AMOEAB, AMONOB

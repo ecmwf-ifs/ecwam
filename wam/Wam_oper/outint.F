@@ -98,6 +98,15 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "incdate.intfb.h"
+#include "kurtosis.intfb.h"
+#include "mpgathergrdfld.intfb.h"
+#include "out_onegrdpt.intfb.h"
+#include "outpp.intfb.h"
+#include "stress.intfb.h"
+#include "wgribenout.intfb.h"
 
       INTEGER :: IU06, IU20, IU21, IU30, ITEST, KFDB
       INTEGER :: I, J, ITG

@@ -56,6 +56,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "unblkrord.intfb.h"
 
       INTEGER :: IG
       INTEGER :: IY, IX, J, I, IJ, IE, KI, IR, IP

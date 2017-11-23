@@ -44,6 +44,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "mblock.intfb.h"
 
       REAL, INTENT(INOUT) :: BATHY(NGX,NGY)
 

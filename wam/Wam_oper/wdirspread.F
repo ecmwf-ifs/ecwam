@@ -52,6 +52,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "peakfri.intfb.h"
+#include "scosfl.intfb.h"
 
       INTEGER :: IJ,M,IJS,IJL
       INTEGER :: IFRINDEX(IJS:IJL)

@@ -184,6 +184,22 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "check.intfb.h"
+#include "iniwcst.intfb.h"
+#include "mbounc.intfb.h"
+#include "mbounf.intfb.h"
+#include "mcout.intfb.h"
+#include "mfredir.intfb.h"
+#include "mgrid.intfb.h"
+#include "mtabs.intfb.h"
+#include "mubuf.intfb.h"
+#include "nlweigt.intfb.h"
+#include "outcom.intfb.h"
+#include "secondhh.intfb.h"
+#include "secondhh_gen.intfb.h"
+#include "topoar.intfb.h"
+#include "uiprep.intfb.h"
 
       INTEGER :: IU01, IU02, IU03, IU09, IU10, IU17, IU19, IU20 
       INTEGER :: IG

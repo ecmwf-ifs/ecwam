@@ -148,6 +148,9 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "jonswap.intfb.h"
+#include "wvwaminit.intfb.h"
 
       INTEGER :: NPR, MAXLEN 
       INTEGER :: IG

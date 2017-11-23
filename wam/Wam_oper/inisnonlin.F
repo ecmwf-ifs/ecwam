@@ -46,6 +46,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: ICOUNT, IRCOUNT
       INTEGER :: MC, MP, MP1, MM, MM1, IC, IP, IP1, IM , IM1, ITEMP

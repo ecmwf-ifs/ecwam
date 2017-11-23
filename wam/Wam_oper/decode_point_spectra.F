@@ -197,6 +197,7 @@
       USE GRIB_API
 
       IMPLICIT NONE
+#include "adjust.intfb.h"
 
       REAL, PARAMETER :: ZMISS=-999.0
       REAL, PARAMETER :: PI=3.1415927

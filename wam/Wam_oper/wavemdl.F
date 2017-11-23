@@ -135,6 +135,18 @@
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "cimsstrn.intfb.h"
+#include "difdate.intfb.h"
+#include "incdate.intfb.h"
+#include "initmdl.intfb.h"
+#include "mpfldtoifs.intfb.h"
+#include "outbeta.intfb.h"
+#include "prewind.intfb.h"
+#include "setmarstype.intfb.h"
+#include "stokesdrift.intfb.h"
+#include "wamassi.intfb.h"
+#include "wamodel.intfb.h"
 
 !     INITIAL DATE OF THE RUN
       CHARACTER(LEN=14), INTENT(IN) :: CBEGDAT
@@ -167,13 +179,13 @@
 !     INDICATES WHETHER THE PRODUCTION OF THE STOKES DRIFT IS REQUIRED FOR THE IFS
       LOGICAL, INTENT(INOUT) :: LWSTOKES
 !     NUMBER OF FIELDS RETURNED TO ATMOSPHERIC MODEL
-      INTEGER, INTENT(INOUT) :: NWVFIELDS
+      INTEGER, INTENT(IN) :: NWVFIELDS
 !     FIELDS RETURNED TO ATMOSPHERIC MODEL
       REAL, INTENT(OUT) :: WVFLDG(NLONW,NLATW,NWVFIELDS)
 !     FIRST DIMENSION OF WVFLDG
-      INTEGER, INTENT(INOUT) :: NLONW
+      INTEGER, INTENT(IN) :: NLONW
 !     SECOND DIMENSION OF WVFLDG
-      INTEGER, INTENT(INOUT) :: NLATW
+      INTEGER, INTENT(IN) :: NLATW
 !     SET .TRUE. IF STOP SIGNAL RECEIVED.
       LOGICAL, INTENT(INOUT) :: LDSTOP
 !     SET .TRUE. IF RESTART FILE SIGNAL RECEIVED.

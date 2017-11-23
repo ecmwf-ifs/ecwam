@@ -56,6 +56,8 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wstream_strg.intfb.h"
 
       INTEGER :: IC, JC, KST,JSN, KK, MM
       INTEGER :: ICLASS,ICENTRE,IFS_STREAM

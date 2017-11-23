@@ -60,6 +60,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: MIJS,MIJL,IG
       INTEGER :: IP,IJP
@@ -67,7 +68,7 @@
       INTEGER :: KP1,KM1,JH
       INTEGER :: ICL,ICR,ICC, ICRM, JCR
       INTEGER :: MP1, MM1
-      INTEGER :: ISAMESIGN
+!      INTEGER :: ISAMESIGN
       INTEGER :: ISSU(2),ISSV(2)
 
       REAL :: DELPRO, DTNEW
@@ -743,11 +744,13 @@
 #endif
 
       RETURN
-      END SUBROUTINE CTUW 
+
+      CONTAINS
 
       INTEGER FUNCTION ISAMESIGN(A,B)
 !       =1 IF A AND B HAVE THE SAME SIGN, 0 OTHERWISE
         IMPLICIT NONE
+
         REAL :: A,B
         IF(SIGN(1.,A).EQ.SIGN(1.,B)) THEN
           ISAMESIGN=1
@@ -755,3 +758,4 @@
           ISAMESIGN=0
         ENDIF
       END FUNCTION ISAMESIGN
+      END SUBROUTINE CTUW 

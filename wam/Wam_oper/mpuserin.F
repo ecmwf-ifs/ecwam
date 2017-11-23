@@ -113,6 +113,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wposnam.intfb.h"
 
       INTEGER :: IU05
       INTEGER :: ISAT, IC, II

@@ -49,6 +49,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "ersfile.intfb.h"
+#include "mpgatherersfile.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3

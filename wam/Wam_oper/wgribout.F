@@ -46,6 +46,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wgrib2fdb.intfb.h"
 
       INTEGER, INTENT(IN) :: IGRIB_HANDLE, ISIZE
       INTEGER, INTENT(IN) :: IU06, ITEST, IU

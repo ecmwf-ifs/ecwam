@@ -48,6 +48,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "sinput_ard.intfb.h"
+#include "sinput_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
 

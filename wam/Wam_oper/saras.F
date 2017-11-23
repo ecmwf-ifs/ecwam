@@ -141,6 +141,19 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "crossas.intfb.h"
+#include "crossw.intfb.h"
+#include "dev.intfb.h"
+#include "getwspec.intfb.h"
+#include "mergesarcor.intfb.h"
+#include "mnintw.intfb.h"
+#include "mpbcastsarin.intfb.h"
+#include "optint.intfb.h"
+#include "readsarspec.intfb.h"
+#include "rearrngsar.intfb.h"
+#include "smoothsarspec.intfb.h"
+#include "swellsep.intfb.h"
+#include "tustreas.intfb.h"
 
       INTEGER :: IU11,IU12,IU13, IU14
       INTEGER, ALLOCATABLE :: PART(:,:,:,:)

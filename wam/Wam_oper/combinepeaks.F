@@ -33,6 +33,14 @@
 !---------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "halfspread.intfb.h"
+#include "lasttwobins.intfb.h"
+#include "lowenergy.intfb.h"
+#include "means.intfb.h"
+#include "onestepapart.intfb.h"
+#include "sumenergy.intfb.h"
+#include "threshhold.intfb.h"
+#include "windsea.intfb.h"
 
 !     INTERFACE:
 !     ----------

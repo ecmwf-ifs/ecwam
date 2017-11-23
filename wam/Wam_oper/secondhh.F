@@ -45,11 +45,13 @@
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "vmin_d.intfb.h"
+#include "vplus_d.intfb.h"
 
       INTEGER :: K, M, K1, M1, K2, M2
 
       REAL, PARAMETER :: DEL1=1.0E-8
-      REAL :: VMIN_D, VPLUS_D
+!      REAL :: VMIN_D, VPLUS_D
       REAL :: CO1
       REAL :: XK1, XK1SQ, XK2, XK2SQ, XK3
       REAL :: COSDIFF

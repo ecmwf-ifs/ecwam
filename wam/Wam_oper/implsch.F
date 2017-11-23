@@ -140,6 +140,19 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "airsea.intfb.h"
+#include "ciwabr.intfb.h"
+#include "femeanws.intfb.h"
+#include "fkmean.intfb.h"
+#include "frcutindex.intfb.h"
+#include "sbottom.intfb.h"
+#include "sdissip.intfb.h"
+#include "sdiwbk.intfb.h"
+#include "sinput.intfb.h"
+#include "snonlin.intfb.h"
+#include "stresso.intfb.h"
+#include "wnfluxes.intfb.h"
+#include "wrong_wnfluxes.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL, IG
       INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)

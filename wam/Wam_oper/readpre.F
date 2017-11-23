@@ -88,6 +88,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "mpbcastgrid.intfb.h"
 
       INTEGER, INTENT(IN) :: IU07
       INTEGER :: IREAD

@@ -80,6 +80,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "tau_phi_hf.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ

@@ -48,6 +48,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "unblkrord.intfb.h"
 
       INTEGER, INTENT(IN) :: IJINF, IJSUP, NREAL
       REAL,DIMENSION(IJINF:IJSUP,NREAL),INTENT(IN) :: RFIELD

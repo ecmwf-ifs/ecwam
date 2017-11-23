@@ -56,6 +56,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, PARAMETER :: IG=1
       INTEGER, INTENT(IN) :: MIJS,MIJL

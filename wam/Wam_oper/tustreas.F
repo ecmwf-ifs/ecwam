@@ -20,6 +20,9 @@
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "fillgaps.intfb.h"
+#include "transmeans.intfb.h"
+#include "transpart.intfb.h"
 
 !     PURPOSE:
 !     --------

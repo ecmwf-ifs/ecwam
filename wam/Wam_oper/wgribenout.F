@@ -62,6 +62,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wgribencode.intfb.h"
+#include "wgribout.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
       INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM

@@ -42,6 +42,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
 
       INTEGER, INTENT(IN) :: IU02
       CHARACTER(LEN=14), INTENT(OUT) :: CDTCR 

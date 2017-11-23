@@ -35,6 +35,7 @@
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: IRECV, ITAG, IJS, IJL, NSCFLD
       INTEGER :: MAXLENGTH, MESLENGTH

@@ -58,6 +58,11 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "current2wam.intfb.h"
+#include "init_fieldg.intfb.h"
+#include "iniwcst.intfb.h"
+#include "mpdecomp.intfb.h"
+#include "wvwaminit.intfb.h"
 
       INTEGER :: IREAD, LIU, IJ, I, J, NPR, MAXLEN, IG
       INTEGER :: IU30, IPARAM, KFDB

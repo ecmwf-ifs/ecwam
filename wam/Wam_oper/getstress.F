@@ -64,6 +64,14 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "buildstress.intfb.h"
+#include "expand_string.intfb.h"
+#include "grstname.intfb.h"
+#include "mpdistribscfld.intfb.h"
+#include "mpexchng.intfb.h"
+#include "propdot.intfb.h"
+#include "readstress.intfb.h"
 
       INTEGER, INTENT(IN) :: IREAD
       INTEGER,DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE

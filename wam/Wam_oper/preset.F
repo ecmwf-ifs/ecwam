@@ -141,6 +141,17 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE 
+#include "abort1.intfb.h"
+#include "cigetdeac.intfb.h"
+#include "iniwcst.intfb.h"
+#include "mstart.intfb.h"
+#include "mswell.intfb.h"
+#include "outwspec.intfb.h"
+#include "preset_wgrib_template.intfb.h"
+#include "prewind.intfb.h"
+#include "readpre.intfb.h"
+#include "savspec.intfb.h"
+#include "savstress.intfb.h"
 
       INTEGER, PARAMETER :: NC=1
       INTEGER, PARAMETER :: NR=1

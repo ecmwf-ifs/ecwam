@@ -38,6 +38,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "propags.intfb.h"
+#include "propags1.intfb.h"
+#include "propags2.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
 

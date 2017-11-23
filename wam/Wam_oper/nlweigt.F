@@ -51,6 +51,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "jafu.intfb.h"
 !
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
 
@@ -66,7 +67,7 @@
 
       INTEGER :: I, ISP,ISM, M, K
       INTEGER :: KLP1, IC, KH, KLH, KS, ISG, K1, K11, K2, K21, IKN
-      INTEGER :: JAFU
+!      INTEGER :: JAFU
       INTEGER, ALLOCATABLE :: JA1(:,:)
       INTEGER, ALLOCATABLE :: JA2(:,:)
 

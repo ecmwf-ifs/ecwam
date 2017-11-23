@@ -47,8 +47,10 @@
 ! ---------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "gsfile_new.intfb.h"
 
-      INTEGER, INTENT(IN) ::IU06, IU04, IU12, IU14, IU15
+      INTEGER, INTENT(IN) ::IU06, IU04
+      INTEGER, INTENT(INOUT) ::IU12, IU14, IU15
       INTEGER, INTENT(IN) ::IGL
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF, CDATER

@@ -32,6 +32,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "confile.intfb.h"
+#include "resize_sarinput.intfb.h"
 
       INTEGER :: INUNIT, IFL300, INOSPEC
       INTEGER :: ISPEC, IANG, IFRE, IC, IDOUBLE, ISAR, KCOUNT, ISS

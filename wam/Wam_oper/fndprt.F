@@ -68,6 +68,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "parmean.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL, NPMAX
       INTEGER, INTENT(IN), DIMENSION(IJS:IJL) :: MIJ

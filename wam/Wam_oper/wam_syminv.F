@@ -42,7 +42,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NDIM, N, NDIA, ISAMAX_WAM, I, J, K, NM1, IMX 
+      INTEGER :: NDIM, N, NDIA, I, J, K, NM1, IMX 
       REAL :: COND, EPS, ZMX, X, S
       REAL :: A(NDIM,NDIM)
       REAL :: V(NDIM)
@@ -136,7 +136,8 @@
 91    CONTINUE
       COND=-FLOAT(J)
       RETURN
-      END SUBROUTINE WAM_SYMINV
+
+      CONTAINS
 
 ! ----------------------------------------------------------------------
       INTEGER FUNCTION ISAMAX_WAM(N,A,M)
@@ -144,6 +145,7 @@
 !     FIND THE LARGEST ABSOLUTE ELEMENT OF A , SPACED M WORDS APART
 
       IMPLICIT NONE
+
 
       INTEGER :: LARGE, N, M, I, INDEX
       REAL :: A(*)
@@ -158,3 +160,4 @@
 9     CONTINUE
       ISAMAX_WAM=LARGE
       END FUNCTION ISAMAX_WAM
+      END SUBROUTINE WAM_SYMINV

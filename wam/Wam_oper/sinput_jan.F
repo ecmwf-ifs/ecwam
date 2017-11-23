@@ -98,6 +98,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wsigstar.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, PARAMETER :: NSIN=2 

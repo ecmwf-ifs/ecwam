@@ -51,6 +51,7 @@
 
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: IU06, IUNIT
       INTEGER :: LNAME, LNF, LNT

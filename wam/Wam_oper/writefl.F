@@ -52,6 +52,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "unblkrord.intfb.h"
 
       INTEGER, INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
       INTEGER, INTENT(INOUT) :: IUNIT

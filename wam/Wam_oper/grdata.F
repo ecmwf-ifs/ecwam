@@ -95,6 +95,9 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "difdate.intfb.h"
+#include "incdate.intfb.h"
+#include "readsat.intfb.h"
 
       INTEGER, PARAMETER :: MAXSATBC=10
       INTEGER :: IDATAWL

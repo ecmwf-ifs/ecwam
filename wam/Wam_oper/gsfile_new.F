@@ -74,6 +74,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "file_transfer.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ICH
       INTEGER, INTENT(INOUT) :: IUNIT

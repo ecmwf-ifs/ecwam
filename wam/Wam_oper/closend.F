@@ -70,6 +70,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "incdate.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL, IG, IGL
       CHARACTER(LEN=14), INTENT(IN) :: CDATEWH, CDATE

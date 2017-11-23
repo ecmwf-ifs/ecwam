@@ -65,6 +65,12 @@
 ! --------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "current2wam.intfb.h"
+#include "incdate.intfb.h"
+#include "mpexchng.intfb.h"
+#include "propdot.intfb.h"
+#include "wamcur.intfb.h"
 
       INTEGER, INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR

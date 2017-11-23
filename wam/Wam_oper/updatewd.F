@@ -61,6 +61,12 @@
 
 ! -----------------------------------------------------------------------
       IMPLICIT NONE
+#include "airsea.intfb.h"
+#include "femeanws.intfb.h"
+#include "fkmean.intfb.h"
+#include "frcutindex.intfb.h"
+#include "sinput.intfb.h"
+#include "stresso.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)

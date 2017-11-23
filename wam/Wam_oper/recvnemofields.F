@@ -56,6 +56,7 @@
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK,
      &                      LNEMOICEREST
       IMPLICIT NONE
+#include "abort1.intfb.h"
       LOGICAL :: LREST ! RESTART SO UPDATE FROM RESTART VALUES
       LOGICAL :: LINIT ! UPDATE CICOVER and CITHICK AT INITIAL TIME
                        ! FOR OUTPUT

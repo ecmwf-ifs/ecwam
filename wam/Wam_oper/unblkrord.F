@@ -44,6 +44,7 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: NLTOG,IJS,IJL,KINF,KSUP,MINF,MSUP
       REAL,DIMENSION(IJS:IJL,KINF:KSUP,MINF:MSUP),INTENT(INOUT)::BLOCK

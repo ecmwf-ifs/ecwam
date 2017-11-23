@@ -319,6 +319,25 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "cigetdeac.intfb.h"
+#include "cireduce.intfb.h"
+#include "getspec.intfb.h"
+#include "getstress.intfb.h"
+#include "headbc.intfb.h"
+#include "incdate.intfb.h"
+#include "inisnonlin.intfb.h"
+#include "init_sdiss_ardh.intfb.h"
+#include "init_x0tauhf.intfb.h"
+#include "initnemocpl.intfb.h"
+#include "iniwcst.intfb.h"
+#include "preset_wgrib_template.intfb.h"
+#include "prewind.intfb.h"
+#include "propdot.intfb.h"
+#include "readbou.intfb.h"
+#include "setmarstype.intfb.h"
+#include "tabu_swellft.intfb.h"
+#include "userin.intfb.h"
 
       INTEGER :: NADV, IREAD, NFIELDS, NGPTOTG, NC, NR
       INTEGER :: IFORCA
