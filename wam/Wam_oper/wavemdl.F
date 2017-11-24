@@ -1027,6 +1027,10 @@
 
 !     4. END OF RUN ?
 !        -----------
+      IF (CDATEE .EQ. CDTPRO) THEN
+        CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
+        CALL FLUSH(IU06)
+      ENDIF
       IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         IF(LWCOU .AND. LNEWLVTP) THEN
 !         the fdb should be closed by IFS
@@ -1035,6 +1039,7 @@
             CALL FLUSH(IU06)
           ENDIF
         ELSE
+        WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSING FDB'
         CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDBSUBS (NWFDBREF)
         CALL GSTATS(1787,1)
