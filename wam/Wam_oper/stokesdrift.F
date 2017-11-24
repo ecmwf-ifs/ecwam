@@ -37,6 +37,7 @@
 !     MODULES:
 !     --------
 
+      USE PARKIND_WAVE, ONLY : JWRU
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &                      DFIM_SIM ,
@@ -50,12 +51,13 @@
 
       INTEGER, INTENT(IN) :: IJS, IJL
       REAL, INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  USTOKES, VSTOKES 
+      REAL(KIND=JWRU), DIMENSION(IJS:IJL), INTENT(OUT) ::  
+     & USTOKES, VSTOKES ! Must be REAL*8
 
       INTEGER :: IJ, M, K
 
-      REAL, PARAMETER :: STMAX=1.5   ! maximum magnitude (this is for safety when coupled)
-      REAL :: CONST, FAC, FAC1, FAC2, FAC3
+      REAL(KIND=JWRU), PARAMETER :: STMAX=1.5_JWRU   ! maximum magnitude (this is for safety when coupled)
+      REAL(KIND=JWRU) :: CONST, FAC, FAC1, FAC2, FAC3
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: STFAC
 
@@ -73,8 +75,8 @@
 !     ------------------------
  
       DO IJ = IJS,IJL
-         USTOKES(IJ) = 0.
-         VSTOKES(IJ) = 0.
+         USTOKES(IJ) = 0.0_JWRU
+         VSTOKES(IJ) = 0.0_JWRU
       ENDDO
 
       DO M=1,NFRE_ODD

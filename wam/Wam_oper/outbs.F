@@ -66,6 +66,7 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWRU
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
@@ -162,6 +163,9 @@
 !            and in the absolute frame of reference if currents are used 
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
 
+      REAL(KIND=JWRU), DIMENSION(:), ALLOCATABLE :: 
+     &     USTMEAN_R8, VSTMEAN_R8, STRNMS_R8
+
       LOGICAL :: LLPEAKF
       LOGICAL :: LLPARTITION
 
@@ -169,7 +173,7 @@
       LOGICAL :: LLALLOC_GRDFLD
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Begin OUTBS'
-      FLUSH(740+MyRankGlobal)
+      CALL FLUSH(740+MyRankGlobal)
 #endif
       
 ! ----------------------------------------------------------------------
@@ -239,10 +243,15 @@
       IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
         IF(.NOT.ALLOCATED(USTMEAN)) ALLOCATE(USTMEAN(IJSLOC:IJLLOC))
         IF(.NOT.ALLOCATED(VSTMEAN)) ALLOCATE(VSTMEAN(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(USTMEAN_R8)) 
+     &       ALLOCATE(USTMEAN_R8(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(VSTMEAN_R8)) 
+     &       ALLOCATE(VSTMEAN_R8(IJSLOC:IJLLOC))
       ENDIF
       ITG=46+3*NTRAIN+1
       IF(IPFGTBL(ITG).NE.0) THEN
         IF(.NOT.ALLOCATED(STRNMS)) ALLOCATE(STRNMS(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(STRNMS_R8)) ALLOCATE(STRNMS_R8(IJSLOC:IJLLOC))
       ENDIF
       ITG=ITG+1
       IF(IPFGTBL(ITG).NE.0) THEN
@@ -387,13 +396,17 @@
         IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
 !!!!!!!! the second order correction should not apply to the Stokes drift
           CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:),
-     &                     KIJS, KIJL, USTMEAN(KIJS), VSTMEAN(KIJS))
+     &                     KIJS, KIJL, 
+     &                     USTMEAN_R8(KIJS), VSTMEAN_R8(KIJS))
+          USTMEAN(KIJS:KIJL) = USTMEAN_R8(KIJS:KIJL)
+          VSTMEAN(KIJS:KIJL) = VSTMEAN_R8(KIJS:KIJL)
         ENDIF
 
         ITG=46+3*NTRAIN+1
         IF(IPFGTBL(ITG).NE.0) THEN
           CALL CIMSSTRN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,
-     &                   STRNMS(KIJS))
+     &                   STRNMS_R8(KIJS))
+          STRNMS(KIJS:KIJL) = STRNMS_R8(KIJS:KIJL)
         ENDIF
 
         ITG=ITG+1
@@ -974,7 +987,10 @@
       IF(ALLOCATED(TMAXMEAN)) DEALLOCATE(TMAXMEAN)
       IF(ALLOCATED(USTMEAN)) DEALLOCATE(USTMEAN)
       IF(ALLOCATED(VSTMEAN)) DEALLOCATE(VSTMEAN)
+      IF(ALLOCATED(USTMEAN_R8)) DEALLOCATE(USTMEAN_R8)
+      IF(ALLOCATED(VSTMEAN_R8)) DEALLOCATE(VSTMEAN_R8)
       IF(ALLOCATED(STRNMS)) DEALLOCATE(STRNMS)
+      IF(ALLOCATED(STRNMS_R8)) DEALLOCATE(STRNMS_R8)
       IF(ALLOCATED(E10MEAN)) DEALLOCATE(E10MEAN)
       IF(ALLOCATED(WEFLXM)) DEALLOCATE(WEFLXM)
       IF(ALLOCATED(WEFLXD)) DEALLOCATE(WEFLXD)

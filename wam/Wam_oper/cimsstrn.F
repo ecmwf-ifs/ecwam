@@ -40,6 +40,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWRU
       USE YOWICE   , ONLY : CITHICK  ,FLMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -53,11 +54,12 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL,IG,JD
+      INTEGER, INTENT(IN) :: IJS,IJL
+      INTEGER :: IJ,M,K,IG,JD
       REAL :: AKI_ICE
       REAL :: F1LIM 
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) :: STRN
+      REAL, INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRU), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN ! Has to be REAL*8
       REAL, DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
       REAL :: ZHOOK_HANDLE
 
