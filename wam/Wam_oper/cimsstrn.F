@@ -40,7 +40,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM,JWRB,JWRU
+      USE PARKIND_WAVE, ONLY : JWIM,JWRB
       USE YOWICE   , ONLY : CITHICK  ,FLMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -59,7 +59,7 @@
       REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRU), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN ! Has to be REAL*8
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
