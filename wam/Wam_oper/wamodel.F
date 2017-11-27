@@ -424,7 +424,7 @@
       REAL(KIND=JWRB) :: siz, avgU10NEW, avgHS, sumHS
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
-#ifdef PARKIND_SINGLE
+#ifdef PARKIND1_SINGLE
       REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE ::
      &     ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
 #endif
@@ -1518,7 +1518,7 @@
 
              IG=1
              IF(LWNEMOCOUSTK) THEN
-#ifdef PARKIND_SINGLE
+#ifdef PARKIND1_SINGLE
 !     Single precision -- needs tmp copies
                 ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG))
                 ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG))
@@ -1544,7 +1544,7 @@
                NEMOVSTOKES(:)=0
              ENDIF
              IF(LWNEMOCOUSTRN) THEN
-#ifdef PARKIND_SINGLE
+#ifdef PARKIND1_SINGLE
 !     Single precision -- needs a tmp copy
                 ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG))
                 CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
