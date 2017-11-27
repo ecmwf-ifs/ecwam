@@ -278,6 +278,7 @@
 
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,
      &            CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,
@@ -409,19 +410,24 @@
 #include "wdfluxes.intfb.h"
 #include "writsta.intfb.h"
 
-      INTEGER, INTENT(IN) :: NADV 
-      INTEGER :: IG
-      INTEGER :: IJ, K, M, J, IRA, KADV, ICH 
-      INTEGER :: IFIL, IC, ICL, ICR, II
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: JSTPNEMO, IDATE, ITIME
-      INTEGER :: IERR
-      INTEGER :: I_GET_UNIT
-      INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NADV 
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH 
+      INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
+      INTEGER(KIND=JWIM) :: IERR
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: siz, avgU10NEW, avgHS, sumHS
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: siz, avgU10NEW, avgHS, sumHS
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
+
+#ifdef PARKIND_SINGLE
+      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE ::
+     &     ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
+#endif
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -1512,18 +1518,47 @@
 
              IG=1
              IF(LWNEMOCOUSTK) THEN
-               CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
-     &                          IJS(IG),IJL(IG),
-     &                          NEMOUSTOKES(IJS(IG)),
-     &                          NEMOVSTOKES(IJS(IG)))
+#ifdef PARKIND_SINGLE
+!     Single precision -- needs tmp copies
+                ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG))
+                ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG))
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
+     &               IJS(IG),IJL(IG),
+     &               ZNEMOUSTOKES(IJS(IG)),
+     &               ZNEMOVSTOKES(IJS(IG)))
+                NEMOUSTOKES(IJS(IG):IJL(IG)) = 
+     &               ZNEMOUSTOKES(IJS(IG):IJL(IG))
+                NEMOVSTOKES(IJS(IG):IJL(IG)) = 
+     &               ZNEMOVSTOKES(IJS(IG):IJL(IG))
+                DEALLOCATE(ZNEMOUSTOKES)
+                DEALLOCATE(ZNEMOVSTOKES)
+#else
+!     Double precision
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
+     &               IJS(IG),IJL(IG),
+     &               NEMOUSTOKES(IJS(IG)),
+     &               NEMOVSTOKES(IJS(IG)))
+#endif
              ELSE
                NEMOUSTOKES(:)=0
                NEMOVSTOKES(:)=0
              ENDIF
              IF(LWNEMOCOUSTRN) THEN
+#ifdef PARKIND_SINGLE
+!     Single precision -- needs a tmp copy
+                ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG))
+                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
+     &               IJS(IG),IJL(IG),
+     &               ZNEMOSTRN(IJS(IG)))
+                NEMOSTRN(IJS(IG):IJL(IG)) = 
+     &               ZNEMOSTRN(IJS(IG):IJL(IG))
+                DEALLOCATE(ZNEMOSTRN)
+#else
+!     Double precision
                 CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
      &                        IJS(IG),IJL(IG),
      &                        NEMOSTRN(IJS(IG)))
+#endif
              ENDIF
              CALL UPDNEMOFIELDS
              CALL UPDNEMOSTRESS

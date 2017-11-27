@@ -93,7 +93,7 @@
 !          NONE                                                         
 
 ! -------------------------------------------------------------------   
-      USE PARKIND_WAVE, ONLY : JWIM,JWRB
+      USE PARKIND_WAVE, ONLY : JWIM,JWRB,JWRU
 #ifdef MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, ONLY : US_coupl, Z0_coupl
 #endif
@@ -240,6 +240,11 @@
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
+
+#ifdef PARKIND_SINGLE
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) :: 
+     &     ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
+#endif
 
       CHARACTER(LEN=7), PARAMETER :: CL_CPENV="SMSNAME"
       CHARACTER(LEN=8), PARAMETER :: CL_CPENV_ECF="ECF_NAME"
@@ -826,7 +831,12 @@
 
         IF(LWNEMOCOU.AND.LWNEMOCOUSEND.AND.LWCOU) THEN
           CALL GSTATS(1443,0)
+#ifdef PARKIND_SINGLE
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP+    PRIVATE(ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN)
+#else
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+#endif
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -837,8 +847,17 @@
                 NEMOVSTOKES(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,3)
               ELSE
 !               IT NEEDS TO BE COMPUTED
+#ifdef PARKIND_SINGLE
+!     Single precision -- needs tmp copies
                 CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &                           NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
+     &                ZNEMOUSTOKES(1),ZNEMOVSTOKES(1))
+                NEMOUSTOKES(KIJS:KIJL) = ZNEMOUSTOKES(1:KIJL-KIJS+1) 
+                NEMOVSTOKES(KIJS:KIJL) = ZNEMOVSTOKES(1:KIJL-KIJS+1) 
+#else
+!     Double precision
+                CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
+     &                NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
+#endif
               ENDIF
             ELSE
               NEMOUSTOKES(KIJS:KIJL)=0.
@@ -846,8 +865,16 @@
             ENDIF
 
             IF(LWNEMOCOUSTRN) THEN
+#ifdef PARKIND_SINGLE
+!     Single precision -- needs a tmp copy
               CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &                      NEMOSTRN(KIJS))
+     &              ZNEMOSTRN(1))
+              NEMOSTRN(KIJS:KIJL) = ZNEMOSTRN(1:KIJL-KIJS+1) 
+#else
+!     Double precision
+              CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
+     &              NEMOSTRN(KIJS))
+#endif
             ENDIF
 
           ENDDO
