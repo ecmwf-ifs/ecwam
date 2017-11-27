@@ -1520,8 +1520,8 @@
              IF(LWNEMOCOUSTK) THEN
 #ifdef PARKIND1_SINGLE
 !     Single precision -- needs tmp copies
-                ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG))
-                ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG))
+                ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG)))
+                ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG)))
                 CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
      &               IJS(IG),IJL(IG),
      &               ZNEMOUSTOKES(IJS(IG)),
@@ -1546,7 +1546,7 @@
              IF(LWNEMOCOUSTRN) THEN
 #ifdef PARKIND1_SINGLE
 !     Single precision -- needs a tmp copy
-                ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG))
+                ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG)))
                 CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
      &               IJS(IG),IJL(IG),
      &               ZNEMOSTRN(IJS(IG)))
