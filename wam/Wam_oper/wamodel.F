@@ -278,6 +278,7 @@
 
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,
      &            CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,
@@ -378,20 +379,55 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+!#include "abort1.intfb.h"
+!#include "bouinpt.intfb.h"
+!#include "chesig.intfb.h"
+!#include "cimsstrn.intfb.h"
+!#include "clean_outbs.intfb.h"
+!#include "closend.intfb.h"
+!#include "ctuw.intfb.h"
+!#include "difdate.intfb.h"
+!#include "gsfile_new.intfb.h"
+!#include "headbc.intfb.h"
+!#include "implsch.intfb.h"
+!#include "incdate.intfb.h"
+!#include "mpexchng.intfb.h"
+!#include "newwind.intfb.h"
+!#include "outbc.intfb.h"
+!#include "outbs.intfb.h"
+!#include "outint.intfb.h"
+!#include "outunwamtest.intfb.h"
+!#include "outwnorm.intfb.h"
+!#include "outwspec.intfb.h"
+!#include "propag_wam.intfb.h"
+!#include "savspec.intfb.h"
+!#include "savstress.intfb.h"
+!#include "setice.intfb.h"
+!#include "stokesdrift.intfb.h"
+!#include "unsetice.intfb.h"
+!#include "updnemofields.intfb.h"
+!#include "updnemostress.intfb.h"
+!#include "wdfluxes.intfb.h"
+!#include "writsta.intfb.h"
 
-      INTEGER, INTENT(IN) :: NADV 
-      INTEGER :: IG
-      INTEGER :: IJ, K, M, J, IRA, KADV, ICH 
-      INTEGER :: IFIL, IC, ICL, ICR, II
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: JSTPNEMO, IDATE, ITIME
-      INTEGER :: IERR
-      INTEGER :: I_GET_UNIT
-      INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NADV 
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH 
+      INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
+      INTEGER(KIND=JWIM) :: IERR
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: siz, avgU10NEW, avgHS, sumHS
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: siz, avgU10NEW, avgHS, sumHS
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
+
+#ifdef PARKIND1_SINGLE
+      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE ::
+     &     ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
+#endif
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -929,24 +965,23 @@
             CDATE=CDTPRO   
           ENDIF
 
+!*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
+!         ---------------------------------------------------------------
+          CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
+     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
+     &                 USOLD, USNEW,
+     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
+     &                 CICOVER, CITHICK, CIWA,
+     &                 TAUW, BETAOLD)
+
+          IF (ITEST.GE.2) THEN
+            WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
+            CALL FLUSH (IU06)
+          ENDIF
+
 !         IT IS TIME TO INTEGRATE THE SOURCE TERMS
+!         ----------------------------------------
           IF(CDATE.GE.CDTIMPNEXT) THEN
-
-!*          RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
-!           ---------------------------------------------------------------
-
-            CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
-     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
-     &                   USOLD, USNEW,
-     &                   ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
-     &                   CICOVER, CITHICK, CIWA,
-     &                   TAUW, BETAOLD)
-
-            IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: NEWWIND CALLED' 
-              CALL FLUSH (IU06)
-            ENDIF
-
 !           COMPUTE UPDATE DUE TO SOURCE TERMS
             CALL GSTATS(1431,0)
             IF(LLSOURCE) THEN
@@ -1013,6 +1048,14 @@
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
+
+            IF (ITEST.GE.2) THEN
+              IF (ITESTB.GE.IG) THEN
+                WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
+     &           ' INTEGRATED:'
+                 CALL FLUSH(IU06)
+              ENDIF
+            ENDIF
           ENDIF
 
           IF (LLUNSTR .AND. LLUNBINOUT) THEN
@@ -1029,8 +1072,7 @@
 
           IF (ITEST.GE.2) THEN
             IF (ITESTB.GE.IG) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
-     &         ' INTEGRATED:'
+              WRITE(IU06,*) '   SUB. WAMODEL: TIME STEPS DONE.'
                CALL FLUSH(IU06)
             ENDIF
           ENDIF
@@ -1476,18 +1518,47 @@
 
              IG=1
              IF(LWNEMOCOUSTK) THEN
-               CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
-     &                          IJS(IG),IJL(IG),
-     &                          NEMOUSTOKES(IJS(IG)),
-     &                          NEMOVSTOKES(IJS(IG)))
+#ifdef PARKIND1_SINGLE
+!     Single precision -- needs tmp copies
+                ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG)))
+                ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG)))
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
+     &               IJS(IG),IJL(IG),
+     &               ZNEMOUSTOKES(IJS(IG)),
+     &               ZNEMOVSTOKES(IJS(IG)))
+                NEMOUSTOKES(IJS(IG):IJL(IG)) = 
+     &               ZNEMOUSTOKES(IJS(IG):IJL(IG))
+                NEMOVSTOKES(IJS(IG):IJL(IG)) = 
+     &               ZNEMOVSTOKES(IJS(IG):IJL(IG))
+                DEALLOCATE(ZNEMOUSTOKES)
+                DEALLOCATE(ZNEMOVSTOKES)
+#else
+!     Double precision
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
+     &               IJS(IG),IJL(IG),
+     &               NEMOUSTOKES(IJS(IG)),
+     &               NEMOVSTOKES(IJS(IG)))
+#endif
              ELSE
                NEMOUSTOKES(:)=0
                NEMOVSTOKES(:)=0
              ENDIF
              IF(LWNEMOCOUSTRN) THEN
+#ifdef PARKIND1_SINGLE
+!     Single precision -- needs a tmp copy
+                ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG)))
+                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
+     &               IJS(IG),IJL(IG),
+     &               ZNEMOSTRN(IJS(IG)))
+                NEMOSTRN(IJS(IG):IJL(IG)) = 
+     &               ZNEMOSTRN(IJS(IG):IJL(IG))
+                DEALLOCATE(ZNEMOSTRN)
+#else
+!     Double precision
                 CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
      &                        IJS(IG),IJL(IG),
      &                        NEMOSTRN(IJS(IG)))
+#endif
              ENDIF
              CALL UPDNEMOFIELDS
              CALL UPDNEMOSTRESS
