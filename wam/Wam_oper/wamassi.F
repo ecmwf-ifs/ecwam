@@ -170,6 +170,9 @@
       IF(LALTAS) THEN
         CALL ALTAS(IJSLOC, IJLLOC, NANG, NFRE, MIJ, XLLWS)
         IF (ITEST.GE.1) WRITE(IU06,*) '   SUB. WAMASSI: ALTAS DONE'
+      ELSE
+         MIJ(:)=NFRE
+         XLLWS(:,:,:)=0.
       ENDIF
 
 
