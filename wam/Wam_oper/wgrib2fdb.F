@@ -37,11 +37,11 @@
 
 !     ------------------------------------------------------------------
 
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M,NWINOFF
-      USE YOWMPP   , ONLY : NPRECI
+      USE GRIB_API_INTERFACE
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G, IMDLGRBID_M, NWINOFF
+      USE YOWMPP   , ONLY : NPRECI,  IRANK    ,NPROC
 
       USE FDBSUBS_MOD
-      USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !     ------------------------------------------------------------------
@@ -52,14 +52,17 @@
       INTEGER, INTENT(INOUT) :: KFDB
       INTEGER, INTENT(OUT) :: KERR
       INTEGER, DIMENSION(KLEN), INTENT(INOUT) :: KGRIB
+      CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
+      LOGICAL, INTENT(INOUT) :: LFDBOPEN
+
       INTEGER :: ICDFDBSF
       INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP, ILEN
       INTEGER :: NLOCGRB, NENSFNB, NLEG, ICENTRE
       INTEGER :: ISTAT, ISTATUS
+      INTEGER(KIND=JPKSIZE_T) :: KBYTES
+      INTEGER, SAVE :: IFILE_HANDLE = -999
 
       REAL :: ZHOOK_HANDLE
-
-      CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
 
       CHARACTER(LEN=1) :: CLDOMAIN
       CHARACTER(LEN=1),save :: CLDOMAIN_PREV = " "
@@ -102,7 +105,7 @@
       CHARACTER(LEN=5) :: CLMETHOD
 
       CHARACTER(LEN=6) :: CLSTEP
-      CHARACTER(LEN=6),save :: CLSTEP_PREV
+      CHARACTER(LEN=6),save :: CLSTEP_PREV = "      "
 
       CHARACTER(LEN=8) :: CLDATE
       CHARACTER(LEN=8),save :: CLDATE_PREV = "        "
@@ -116,10 +119,7 @@
       CHARACTER(LEN=1),save :: CLLEVTY_PREV=" "
       CHARACTER(LEN=2),save :: CLREPR_PREV ="  "
 
-      LOGICAL, INTENT(INOUT) :: LFDBOPEN
-
-      real time
-      real,external :: timef
+      CHARACTER(LEN=64) :: CLFILE
 
 !     ------------------------------------------------------------------
 #ifdef ECMWF
@@ -129,19 +129,25 @@
 
 !     ------------------------------------------------------------------
 
+!for debugging
+!!      CLFILE = 'allfields_%p.grib'
+!!      CALL EXPAND_STRING(IRANK,NPROC,0,0,CLFILE,1)
+!!      IF(IFILE_HANDLE == -999) THEN
+!!        CALL IGRIB_OPEN_FILE(IFILE_HANDLE,TRIM(CLFILE),'w')
+!!      ENDIF
+
+
 !     THIS VALUE WILL BE RETURNED IF EVERYTHING GOES OK.
       KERR = 0
 
       ILEN = KLEN
 !*    OPEN FDB (only once)
-
-
       IF(.NOT.LFDBOPEN)  THEN
-!       OPEN THE APPROPRIATE FDB:
-
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',
      &                       NLOCGRB)
+
+!       OPEN THE APPROPRIATE FDB:
         IF (ISTREAM == 1082 .OR.
      &      ISTREAM == 1222 .OR.
      &      ISTREAM == 1095 .OR.
@@ -483,13 +489,13 @@
 
 !     ------------------------------------------------------------------
 
-!     time=timef()
-      ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, ILEN ) 
-!     time=timef()-time
-!     write(20,'(" pjtdiags WAVE IWRITEFDB took ",f8.0," ms writing ",
-!    &            i12," bytes")') time,ILEN*NPRECI
-      
+!for debugging
+!!      write(*,*) 'also writting to file the data destined to fdb !!!'
+!!      CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
+!!      CALL IGRIB_WRITE_BYTES(IFILE_HANDLE,KGRIB,KBYTES)
 
+
+      ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, ILEN ) 
       IF ( ISTAT .NE. 0 ) THEN
         WRITE(KUSO, '( "Error\ /WGRIB2FDB/ Failed to write to fdb")' )
         CALL GSTATS(1787,0)
@@ -501,13 +507,7 @@
       IF (KTEST.GT.1) WRITE(KUSO,'("\ /WGRIB2FDB/ iwritefdb ilen:", i10,
      &                      " status:", i4)') ILEN, ISTAT
 
-!     ------------------------------------------------------------------
-
-!*    4.  RETURN
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',1,ZHOOK_HANDLE)
 #endif
-
-      RETURN
       END SUBROUTINE WGRIB2FDB
