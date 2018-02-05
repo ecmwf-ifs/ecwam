@@ -163,7 +163,9 @@
 
 !     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
+
+! SS/2018: Reducing stack pressure
+      REAL(KIND=JWRB), DIMENSION(:,:,:), ALLOCATABLE :: FL3 ! IJSLOC:IJLLOC,NANG,NFRE
 
       LOGICAL :: LLPEAKF
       LOGICAL :: LLPARTITION
@@ -183,6 +185,8 @@
 !
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
+
+      ALLOCATE(FL3(IJSLOC:IJLLOC,NANG,NFRE))
 
       LLOUTBS=.TRUE.
 
@@ -1037,6 +1041,8 @@
           ENDIF
         ENDIF
       ENDIF
+
+      DEALLOCATE(FL3)
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
