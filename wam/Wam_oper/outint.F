@@ -1266,7 +1266,7 @@
 
 !     OUTPUT FILE FOR GRIB DATA (if not written to FDB)
 
-      IF(.NOT.LFDB) THEN
+      IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
         IF (GFLAG20 .OR. GFLAG21) THEN
           WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
           IF (FRSTIME30) THEN
@@ -2613,7 +2613,7 @@
          ENDIF
       ENDIF
 
-      IF(.NOT.LFDB) THEN
+      IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
         IF (GFLAG20 .OR. GFLAG21) THEN
           CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
