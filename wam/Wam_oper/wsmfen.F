@@ -137,13 +137,11 @@
 !*    3.1 AVERAGING THE ENERGY ESTIMATES
 !         -------------------------------
 
-!!debile: test without
-!!!!      EW = (EW+SPINTDI)*0.5
+      EW = (EW+SPINTDI)*0.5
 
 !*    3.2 AVERAGING THE MEAN FREQUENCY ESTIMATES.                       
 !         ---------------------------------------                       
 
-!!debile: test without
-!!!!      FM = (FM+FREQDI)*0.5
+      FM = (FM+FREQDI)*0.5
  
       END SUBROUTINE WSMFEN
