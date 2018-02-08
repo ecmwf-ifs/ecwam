@@ -75,6 +75,7 @@
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
      &            LRSTPARALR, LRSTPARALW,
+     &            COUTNAME,
      &            NTRAIN   ,
      &            IPFGTBL  ,
      &            LWAMANOUT,
@@ -993,155 +994,10 @@
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
       WRITE(IU06,*) '                           LOGFILE   FILE    GRIB',
      &'     OUT PE'
-      WRITE(IU06,*) '1  SIGNIFICANT WAVE HEIGHT ...', PFLAG( 1),
-     & '......', FFLAG( 1),'.....',GFLAG( 1),'.....',IPFGTBL( 1)
-      WRITE(IU06,*) '2  MEAN WAVE DIRECTION .......', PFLAG( 2),
-     & '......', FFLAG( 2),'.....',GFLAG( 2),'.....',IPFGTBL( 2)
-      WRITE(IU06,*) '3  WAVE MEAN PERIOD (-1) .....', PFLAG( 3),
-     & '......', FFLAG( 3),'.....',GFLAG( 3),'.....',IPFGTBL( 3)
-      WRITE(IU06,*) '4  FRICTION VELOCITY .........', PFLAG( 4),
-     & '......', FFLAG( 4),'.....',GFLAG( 4),'.....',IPFGTBL( 4)
-      WRITE(IU06,*) '5  WAVE MODEL WIND DIRECTION..', PFLAG( 5),
-     & '......', FFLAG( 5),'.....',GFLAG( 5),'.....',IPFGTBL( 5)
-      WRITE(IU06,*) '6  WAVE PEAK FREQUENCY .......', PFLAG( 6),
-     & '......', FFLAG( 6),'.....',GFLAG( 6),'.....',IPFGTBL( 6)
-      WRITE(IU06,*) '7  DRAG COEFFICIENT ..........', PFLAG( 7),
-     & '......', FFLAG( 7),'.....',GFLAG( 7),'.....',IPFGTBL( 7)
-      WRITE(IU06,*) '8  NORMALISED WAVE STRESS ....', PFLAG( 8),
-     & '......', FFLAG( 8),'.....',GFLAG( 8),'.....',IPFGTBL( 8)
-      WRITE(IU06,*) '9  MEAN SQUARE SLOPE..........', PFLAG( 9),
-     & '......', FFLAG( 9),'.....',GFLAG( 9),'.....',IPFGTBL( 9)
-      WRITE(IU06,*) '10 WAVE MODEL WIND SPEED......', PFLAG(10),
-     & '......', FFLAG(10),'.....',GFLAG(10),'.....',IPFGTBL(10)
-      WRITE(IU06,*) '11 WIND SEA WAVE HEIGHT.......', PFLAG(11),
-     & '......', FFLAG(11),'.....',GFLAG(11),'.....',IPFGTBL(11)
-      WRITE(IU06,*) '12 SWELL WAVE HEIGHT..........', PFLAG(12),
-     & '......', FFLAG(12),'.....',GFLAG(12),'.....',IPFGTBL(12)
-      WRITE(IU06,*) '13 WIND SEA DIRECTION.........', PFLAG(13),
-     & '......', FFLAG(13),'.....',GFLAG(13),'.....',IPFGTBL(13)
-      WRITE(IU06,*) '14 SWELL WAVE DIRECTION.......', PFLAG(14),
-     & '......', FFLAG(14),'.....',GFLAG(14),'.....',IPFGTBL(14)
-      WRITE(IU06,*) '15 WIND SEA MEAN PERIOD (-1) .', PFLAG(15),
-     & '......', FFLAG(15),'.....',GFLAG(15),'.....',IPFGTBL(15)
-      WRITE(IU06,*) '16 SWELL MEAN PERIOD (-1) ....', PFLAG(16),
-     & '......', FFLAG(16),'.....',GFLAG(16),'.....',IPFGTBL(16)
-      WRITE(IU06,*) ' '
-      WRITE(IU06,*) '22 ALTIMETER WAVE HEIGHT......', PFLAG(22),
-     & '......', FFLAG(22),'.....',GFLAG(22),'.....',IPFGTBL(22)
-      WRITE(IU06,*) '23 CORRECTED ALT WAVE HEIGHT..', PFLAG(23),
-     & '......', FFLAG(23),'.....',GFLAG(23),'.....',IPFGTBL(23)
-      WRITE(IU06,*) '24 ALTIMETER RANGE CORRECTION.', PFLAG(24),
-     & '......', FFLAG(24),'.....',GFLAG(24),'.....',IPFGTBL(24)
-      WRITE(IU06,*) ' '
-      WRITE(IU06,*) '25 WAVE MEAN PERIOD (1)  .....', PFLAG(25),
-     & '......', FFLAG(25),'.....',GFLAG(25),'.....',IPFGTBL(25)
-      WRITE(IU06,*) '26 WAVE MEAN PERIOD (2)  .....', PFLAG(26),
-     & '......', FFLAG(26),'.....',GFLAG(26),'.....',IPFGTBL(26)
-      WRITE(IU06,*) '27 WAVE DIRECTIONAL SPREAD ...', PFLAG(27),
-     & '......', FFLAG(27),'.....',GFLAG(27),'.....',IPFGTBL(27)
-      WRITE(IU06,*) '28 WIND SEA MEAN PERIOD (1) ..', PFLAG(28),
-     & '......', FFLAG(28),'.....',GFLAG(28),'.....',IPFGTBL(28)
-      WRITE(IU06,*) '29 SWELL MEAN PERIOD (1) .....', PFLAG(29),
-     & '......', FFLAG(29),'.....',GFLAG(29),'.....',IPFGTBL(29)
-      WRITE(IU06,*) '30 WIND SEA MEAN PERIOD (2) ..', PFLAG(30),
-     & '......', FFLAG(30),'.....',GFLAG(30),'.....',IPFGTBL(30)
-      WRITE(IU06,*) '31 SWELL MEAN PERIOD (2) .....', PFLAG(31),
-     & '......', FFLAG(31),'.....',GFLAG(31),'.....',IPFGTBL(31)
-      WRITE(IU06,*) '32 WIND SEA DIRECTIONAL SPREAD', PFLAG(32),
-     & '......', FFLAG(32),'.....',GFLAG(32),'.....',IPFGTBL(32)
-      WRITE(IU06,*) '33 SWELL DIRECTIONAL SPREAD ..', PFLAG(33),
-     & '......', FFLAG(33),'.....',GFLAG(33),'.....',IPFGTBL(33)
-      WRITE(IU06,*) '34 WAVE SPECTRAL KURTOSIS.....', PFLAG(34),
-     & '......', FFLAG(34),'.....',GFLAG(34),'.....',IPFGTBL(34)
-      WRITE(IU06,*) '35 BENJAMIN-FEIR INDEX   .....', PFLAG(35),
-     & '......', FFLAG(35),'.....',GFLAG(35),'.....',IPFGTBL(35)
-      WRITE(IU06,*) '36 WAVE SPECTRAL PEAKEDNESS...', PFLAG(36),
-     & '......', FFLAG(36),'.....',GFLAG(36),'.....',IPFGTBL(36)
-      WRITE(IU06,*) '37 BATHYMETRY ................', PFLAG(37),
-     & '......', FFLAG(37),'.....',GFLAG(37),'.....',IPFGTBL(37)
-      WRITE(IU06,*) '38 MAXIMUM WAVE HEIGHT........', PFLAG(38),
-     & '......', FFLAG(38),'.....',GFLAG(38),'.....',IPFGTBL(38)
-      WRITE(IU06,*) '39 MAXIMUM WAVE PERIOD........', PFLAG(39),
-     & '......', FFLAG(39),'.....',GFLAG(39),'.....',IPFGTBL(39)
-      WRITE(IU06,*) '40 U-COMP STOKES DRIFT........', PFLAG(40),
-     & '......', FFLAG(40),'.....',GFLAG(40),'.....',IPFGTBL(40)
-      WRITE(IU06,*) '41 V-COMP STOKES DRIFT........', PFLAG(41),
-     & '......', FFLAG(41),'.....',GFLAG(41),'.....',IPFGTBL(41)
-      WRITE(IU06,*) '42 U-COMP SURFACE CURRENT.....', PFLAG(42),
-     & '......', FFLAG(42),'.....',GFLAG(42),'.....',IPFGTBL(42)
-      WRITE(IU06,*) '43 V-COMP SURFACE CURRENT.....', PFLAG(43),
-     & '......', FFLAG(43),'.....',GFLAG(43),'.....',IPFGTBL(43)
-      WRITE(IU06,*) '44 ENERGYFLUX TO OCEAN........', PFLAG(44),
-     & '......', FFLAG(44),'.....',GFLAG(44),'.....',IPFGTBL(44)
-      WRITE(IU06,*) '45 ENERGYFLUX TO WAVES........', PFLAG(45),
-     & '......', FFLAG(45),'.....',GFLAG(45),'.....',IPFGTBL(45)
-      WRITE(IU06,*) '46 STRESS TO OCEAN............', PFLAG(46),
-     & '......', FFLAG(46),'.....',GFLAG(46),'.....',IPFGTBL(46)
-      WRITE(IU06,*) '47 TRAIN 1 WAVE HEIGHT........', PFLAG(47),
-     & '......', FFLAG(47),'.....',GFLAG(47),'.....',IPFGTBL(47)
-      WRITE(IU06,*) '48 TRAIN 1 DIRECTION..........', PFLAG(48),
-     & '......', FFLAG(48),'.....',GFLAG(48),'.....',IPFGTBL(48)
-      WRITE(IU06,*) '49 TRAIN 1 MEAN PERIOD (1)....', PFLAG(49),
-     & '......', FFLAG(49),'.....',GFLAG(49),'.....',IPFGTBL(49)
-      WRITE(IU06,*) '50 TRAIN 2 WAVE HEIGHT........', PFLAG(50),
-     & '......', FFLAG(50),'.....',GFLAG(50),'.....',IPFGTBL(50)
-      WRITE(IU06,*) '51 TRAIN 2 DIRECTION..........', PFLAG(51),
-     & '......', FFLAG(51),'.....',GFLAG(51),'.....',IPFGTBL(51)
-      WRITE(IU06,*) '52 TRAIN 2 MEAN PERIOD (1)....', PFLAG(52),
-     & '......', FFLAG(52),'.....',GFLAG(52),'.....',IPFGTBL(52)
-      WRITE(IU06,*) '53 TRAIN 3 WAVE HEIGHT........', PFLAG(53),
-     & '......', FFLAG(53),'.....',GFLAG(53),'.....',IPFGTBL(53)
-      WRITE(IU06,*) '54 TRAIN 3 DIRECTION..........', PFLAG(54),
-     & '......', FFLAG(54),'.....',GFLAG(54),'.....',IPFGTBL(54)
-      WRITE(IU06,*) '55 TRAIN 3 MEAN PERIOD (1)....', PFLAG(55),
-     & '......', FFLAG(55),'.....',GFLAG(55),'.....',IPFGTBL(55)
-      WRITE(IU06,*) '56 MEAN SQUARE STRAIN IN ICE..', PFLAG(56),
-     & '......', FFLAG(56),'.....',GFLAG(56),'.....',IPFGTBL(56)
-      WRITE(IU06,*) '57 WAVE HEIGHT W/ PERIOD > 10s', PFLAG(57),
-     & '......', FFLAG(57),'.....',GFLAG(57),'.....',IPFGTBL(57)
-      WRITE(IU06,*) '58 SURFACE AIR DENSITY   .....', PFLAG(58),
-     & '......', FFLAG(58),'.....',GFLAG(58),'.....',IPFGTBL(58)
-      WRITE(IU06,*) '59 CONVECTIVE VELOCITY SCALE..', PFLAG(59),
-     & '......', FFLAG(59),'.....',GFLAG(59),'.....',IPFGTBL(59)
-      WRITE(IU06,*) '60 SEA ICE COVER .............', PFLAG(60),
-     & '......', FFLAG(60),'.....',GFLAG(60),'.....',IPFGTBL(60)
-      WRITE(IU06,*) '61 SEA ICE THICKNESS .........', PFLAG(61),
-     & '......', FFLAG(61),'.....',GFLAG(61),'.....',IPFGTBL(61)
-      WRITE(IU06,*) '62 SPECTRAL SKWENESS .........', PFLAG(62),
-     & '......', FFLAG(62),'.....',GFLAG(62),'.....',IPFGTBL(62)
-      WRITE(IU06,*) '63 NEMO SST ..................', PFLAG(63),
-     & '......', FFLAG(63),'.....',GFLAG(63),'.....',IPFGTBL(63)
-      WRITE(IU06,*) '64 NEMO SEA ICE COVER ........', PFLAG(64),
-     & '......', FFLAG(64),'.....',GFLAG(64),'.....',IPFGTBL(64)
-      WRITE(IU06,*) '65 NEMO SEA ICE THICKNESS ....', PFLAG(65),
-     & '......', FFLAG(65),'.....',GFLAG(65),'.....',IPFGTBL(65)
-      WRITE(IU06,*) '66 NEMO ZONAL CURRENT ........', PFLAG(66),
-     & '......', FFLAG(66),'.....',GFLAG(66),'.....',IPFGTBL(66)
-      WRITE(IU06,*) '67 NEMO MERIDIONAL CURRENT ...', PFLAG(67),
-     & '......', FFLAG(67),'.....',GFLAG(67),'.....',IPFGTBL(67)
-      WRITE(IU06,*) '68 WAVE ENERGY FLUX MAGNITUDE.', PFLAG(68),
-     & '......', FFLAG(68),'.....',GFLAG(68),'.....',IPFGTBL(68)
-      WRITE(IU06,*) '69 WAVE ENERGY FLUX DIRECTION.', PFLAG(69),
-     & '......', FFLAG(69),'.....',GFLAG(69),'.....',IPFGTBL(69)
-      WRITE(IU06,*) '70 SIG. WAVE HEIGHT 10<=T<=12.', PFLAG(70),
-     & '......', FFLAG(70),'.....',GFLAG(70),'.....',IPFGTBL(70)
-      WRITE(IU06,*) '71 SIG. WAVE HEIGHT 12<=T<=14.', PFLAG(71),
-     & '......', FFLAG(71),'.....',GFLAG(71),'.....',IPFGTBL(71)
-      WRITE(IU06,*) '72 SIG. WAVE HEIGHT 14<=T<=17.', PFLAG(72),
-     & '......', FFLAG(72),'.....',GFLAG(72),'.....',IPFGTBL(72)
-      WRITE(IU06,*) '73 SIG. WAVE HEIGHT 17<=T<=21.', PFLAG(73),
-     & '......', FFLAG(73),'.....',GFLAG(73),'.....',IPFGTBL(73)
-      WRITE(IU06,*) '74 SIG. WAVE HEIGHT 21<=T<=25.', PFLAG(74),
-     & '......', FFLAG(74),'.....',GFLAG(74),'.....',IPFGTBL(74)
-      WRITE(IU06,*) '75 SIG. WAVE HEIGHT 25<=T<=30.', PFLAG(75),
-     & '......', FFLAG(75),'.....',GFLAG(75),'.....',IPFGTBL(75)
-
-      DO IC=1,5
-        ITG=JPPFLAG-5+IC
-      WRITE(IU06,*) ITG,'EXTRA FIELD ...............', PFLAG(ITG),
-     & '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
+      DO ITG = 1,JPPFLAG
+        WRITE(IU06,*) ITG,COUTNAME(ITG), PFLAG(ITG),
+     &   '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
       ENDDO
-      WRITE(IU06,*) ' '
 
       IF(LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''

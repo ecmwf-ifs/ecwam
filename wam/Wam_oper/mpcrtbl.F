@@ -35,7 +35,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM
+     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, COUTNAME
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
@@ -46,7 +46,7 @@
       LOGICAL :: COUPLFLAG(JPPFLAG+1)
 #endif
 
-      INTEGER :: IR, IFLAG
+      INTEGER :: IR, IFLAG, IC, ITG
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -67,6 +67,85 @@
       COUPLFLAG(46)=.TRUE.   ! TAUOC
       COUPLFLAG(5)=.TRUE.    ! TWINDDIR
 #endif
+
+!     OUTPUT VARIABLE NAMES
+      COUTNAME(:) =' VARIABLE NOT DEFINED, see MPCRTBL'
+      COUTNAME( 1)=' SIGNIFICANT WAVE HEIGHT .........'
+      COUTNAME( 2)=' MEAN WAVE DIRECTION .............'
+      COUTNAME( 3)=' WAVE MEAN PERIOD (-1) ...........'
+      COUTNAME( 4)=' FRICTION VELOCITY ...............'
+      COUTNAME( 5)=' WAVE MODEL WIND DIRECTION........'
+      COUTNAME( 6)=' WAVE PEAK FREQUENCY .............'
+      COUTNAME( 7)=' DRAG COEFFICIENT ................'
+      COUTNAME( 8)=' NORMALISED WAVE STRESS ..........'
+      COUTNAME( 9)=' MEAN SQUARE SLOPE................'
+      COUTNAME(10)=' WAVE MODEL WIND SPEED............'
+      COUTNAME(11)=' WIND SEA WAVE HEIGHT.............'
+      COUTNAME(12)=' SWELL WAVE HEIGHT................'
+      COUTNAME(13)=' WIND SEA DIRECTION...............'
+      COUTNAME(14)=' SWELL WAVE DIRECTION.............'
+      COUTNAME(15)=' WIND SEA MEAN PERIOD (-1) .......'
+      COUTNAME(16)=' SWELL MEAN PERIOD (-1) ..........'
+      COUTNAME(22)=' ALTIMETER WAVE HEIGHT............'
+      COUTNAME(23)=' CORRECTED ALT WAVE HEIGHT........'
+      COUTNAME(24)=' ALTIMETER RANGE CORRECTION.......'
+      COUTNAME(25)=' WAVE MEAN PERIOD (1) ............'
+      COUTNAME(26)=' WAVE MEAN PERIOD (2) ............'
+      COUTNAME(27)=' WAVE DIRECTIONAL SPREAD .........'
+      COUTNAME(28)=' WIND SEA MEAN PERIOD (1) ........'
+      COUTNAME(29)=' SWELL MEAN PERIOD (1) ...........'
+      COUTNAME(30)=' WIND SEA MEAN PERIOD (2) ........'
+      COUTNAME(31)=' SWELL MEAN PERIOD (2) ...........'
+      COUTNAME(32)=' WIND SEA DIRECTIONAL SPREAD......'
+      COUTNAME(33)=' SWELL DIRECTIONAL SPREAD ........'
+      COUTNAME(34)=' WAVE SPECTRAL KURTOSIS...........'
+      COUTNAME(35)=' BENJAMIN-FEIR INDEX .............'
+      COUTNAME(36)=' WAVE SPECTRAL PEAKEDNESS.........'
+      COUTNAME(37)=' BATHYMETRY ......................'
+      COUTNAME(38)=' MAXIMUM WAVE HEIGHT..............'
+      COUTNAME(39)=' MAXIMUM WAVE PERIOD..............'
+      COUTNAME(40)=' U-COMP STOKES DRIFT..............'
+      COUTNAME(41)=' V-COMP STOKES DRIFT..............'
+      COUTNAME(42)=' U-COMP SURFACE CURRENT...........'
+      COUTNAME(43)=' V-COMP SURFACE CURRENT...........'
+      COUTNAME(44)=' ENERGYFLUX TO OCEAN..............'
+      COUTNAME(45)=' ENERGYFLUX TO WAVES..............'
+      COUTNAME(46)=' STRESS TO OCEAN..................'
+      COUTNAME(47)=' TRAIN 1 WAVE HEIGHT..............'
+      COUTNAME(48)=' TRAIN 1 DIRECTION................'
+      COUTNAME(49)=' TRAIN 1 MEAN PERIOD (1)..........'
+      COUTNAME(50)=' TRAIN 2 WAVE HEIGHT..............'
+      COUTNAME(51)=' TRAIN 2 DIRECTION................'
+      COUTNAME(52)=' TRAIN 2 MEAN PERIOD (1)..........'
+      COUTNAME(53)=' TRAIN 3 WAVE HEIGHT..............'
+      COUTNAME(54)=' TRAIN 3 DIRECTION................'
+      COUTNAME(55)=' TRAIN 3 MEAN PERIOD (1)..........'
+      COUTNAME(56)=' MEAN SQUARE STRAIN IN ICE........'
+      COUTNAME(57)=' WAVE HEIGHT WITH PERIOD > 10s ...'
+      COUTNAME(58)=' SURFACE AIR DENSITY .............'
+      COUTNAME(59)=' CONVECTIVE VELOCITY SCALE........'
+      COUTNAME(60)=' SEA ICE COVER ...................'
+      COUTNAME(61)=' SEA ICE THICKNESS ...............'
+      COUTNAME(62)=' SPECTRAL SKWENESS ...............'
+      COUTNAME(63)=' NEMO SST ........................'
+      COUTNAME(64)=' NEMO SEA ICE COVER ..............'
+      COUTNAME(65)=' NEMO SEA ICE THICKNESS ..........'
+      COUTNAME(66)=' NEMO ZONAL CURRENT ..............'
+      COUTNAME(67)=' NEMO MERIDIONAL CURRENT .........'
+      COUTNAME(68)=' WAVE ENERGY FLUX MAGNITUDE.......'
+      COUTNAME(69)=' WAVE ENERGY FLUX DIRECTION.......'
+      COUTNAME(70)=' SIG. WAVE HEIGHT 10<=T<=12.......'
+      COUTNAME(71)=' SIG. WAVE HEIGHT 12<=T<=14.......'
+      COUTNAME(72)=' SIG. WAVE HEIGHT 14<=T<=17.......'
+      COUTNAME(73)=' SIG. WAVE HEIGHT 17<=T<=21.......'
+      COUTNAME(74)=' SIG. WAVE HEIGHT 21<=T<=25.......'
+      COUTNAME(75)=' SIG. WAVE HEIGHT 25<=T<=30.......'
+
+      DO IC=1,5
+        ITG=JPPFLAG-5+IC
+        COUTNAME(ITG)='EXTRA FIELD .....................'
+      ENDDO
+
       IR=1
       DO IFLAG=1,JPPFLAG
         IF((IASSI.EQ.1).AND.

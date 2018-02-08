@@ -1,5 +1,4 @@
-      SUBROUTINE WAMNORM(FIELD,NX,NY,ZMISS,ZMIN,FAVG,FMIN,FMAX,NAVG, 
-     &                   LMESSPASS,IRANK,ISEND,IRECV,ITAG)
+      SUBROUTINE WAMNORM(FIELD,NX,NY,WNORM)
 
 ! ----------------------------------------------------------------------
 
@@ -15,29 +14,17 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL*  WAMNORM(FIELD,NX,NY,ZMISS,FAVG,FMIN,FMAX) 
+!     *CALL*  WAMNORM(FIELD,NX,NY,WNORM)
 !          *FIELD*     REAL    INPUT FIELD
 !          *NX*        INTEGER FIRST DIMENSION OF FIELD
 !          *NY*        INTEGER SECOND DIMENSION OF FIELD
-!          *ZMISS*     REAL    VALUE EXCLUDED IN NORM COMPUTATION 
-!          *ZMIN*      REAL    ONLY VALUES GREATER THAN ZMIN WILL
-!                              CONSIDERED IN THE NORM COMPUTATION 
-!          *FAVG*      REAL    AVERAGE VALUE OF FIELD
-!          *FMIN*      REAL    MINIMUM VALUE OF FIELD
-!          *FMAX*      REAL    MAXIMUM VALUE OF FIELD
-!          *NAVG       INTEGER NUMBER OF POINTS USED TO COMPUTE FAVG
-!          *LMESSPASS* LOGICAL MESSAGE PASSING SWITCH
-!          *IRANK*     INTEGER CURRENT PE 
-!          *ISEND*     INTEGER PE WHERE FIELD IS DEFINED
-!          *IRECV*     INTEGER PE WHERE NORM SHOULD BE WRITTEN OUT 
-!          *ITAG*      INTEGER MESSAGE PASSING TAG
+!          *WNORM*     REAL    WAM NORM
 
 !     METHOD.
 !     -------
 
 !     COMPUTES THE AVERAGE, MINIMUM AND MAXIMUM OF FIELD FOR ALL VALUES
-!     DIFFERENT THAN ZMISS. FIELD IS SUPPOSED TO BE ON PE ISEND, THE 
-!     NORM WILL BE ON PE IRECV. 
+!     DIFFERENT THAN ZMISS.
 
 !     EXTERNALS.
 !     ----------
@@ -51,103 +38,41 @@
 
 ! ----------------------------------------------------------------------
 
-      USE MPL_MODULE
+      USE YOWPCONS , ONLY : ZMISS
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NX, NY, IRANK, ISEND, IRECV
-      INTEGER, INTENT(OUT) :: NAVG 
-      INTEGER, INTENT(INOUT) :: ITAG 
+      INTEGER, INTENT(IN) :: NX, NY
 
-      REAL, INTENT(IN) :: ZMISS, ZMIN
-      REAL, INTENT(OUT) ::FAVG, FMIN, FMAX
       REAL, INTENT(IN) :: FIELD(NX,NY)
-
-      LOGICAL, INTENT(IN) :: LMESSPASS
-
+      REAL, INTENT(OUT):: WNORM(4) ! average, minmum, maximum, number of points
 
       INTEGER :: I, J
-      INTEGER :: NTOT 
-      INTEGER :: KRCOUNT, KRTAG
-      REAL :: ZCOMBUF(4)
+      REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-!*    2. MAKE GRIDDED FIELD
-!     ---------------------
+      IF (LHOOK) CALL DR_HOOK('WAMNORM',0,ZHOOK_HANDLE)
 
-      NTOT=0
-      FAVG=0.
-      FMIN=9999999.
-      FMAX=-9999999.
-      IF(LMESSPASS) THEN
-        IF(IRANK.EQ.ISEND) THEN
-          IF(NX.EQ.1.AND.NY.EQ.1) THEN
-            FAVG=FIELD(1,1)
-            FMIN=FIELD(1,1)
-            FMAX=FIELD(1,1)
-            NAVG=1
-          ELSE
-            DO J=1,NY
-              DO I=1,NX
-                IF(FIELD(I,J).NE.ZMISS) THEN
-                  NTOT=NTOT+1
-                  FAVG=FAVG+FIELD(I,J)
-                  IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
-                  FMAX=MAX(FMAX,FIELD(I,J))
-                ENDIF
-              ENDDO
-            ENDDO
-            IF(NTOT.GT.0) FAVG=FAVG/NTOT
-            NAVG=NTOT
+      WNORM(1)=0.
+      WNORM(2)=FIELD(1,1)
+      WNORM(3)=FIELD(1,1)
+      WNORM(4)=0.
+      DO J=1,NY
+        DO I=1,NX
+          IF(FIELD(I,J).NE.ZMISS) THEN
+            WNORM(1)=WNORM(1)+FIELD(I,J)
+            WNORM(2)=MIN(WNORM(2),FIELD(I,J))
+            WNORM(3)=MAX(WNORM(3),FIELD(I,J))
+            WNORM(4)=WNORM(4)+1
           ENDIF
-        ENDIF
-        CALL GSTATS(675,0)
-        IF(ISEND.NE.IRECV) THEN
-          IF(IRANK.EQ.ISEND) THEN
-            ZCOMBUF(1)=FAVG
-            ZCOMBUF(2)=FMIN
-            ZCOMBUF(3)=FMAX
-            ZCOMBUF(4)=REAL(NAVG)
-            CALL MPL_SEND(ZCOMBUF,KDEST=IRECV,KTAG=ITAG,
-     &       CDSTRING='WAMNORM:')
-          ELSEIF(IRANK.EQ.IRECV) THEN
-            CALL MPL_RECV(ZCOMBUF,KSOURCE=ISEND,KTAG=ITAG,
-     &       KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='WAMNORM:')
-            IF(KRCOUNT.NE.4) CALL MPL_ABORT
-     &      ('MPL_RECV ERROR in WAMNORM:MISMATCHED MSG LENGTH')
-            IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &      ('MPL_RECV ERROR in WAMNORM MISMATCHED TAGS' )
+        ENDDO
+      ENDDO
+      WNORM(1)=WNORM(1)/MAX(WNORM(4),1.)
 
-            FAVG=ZCOMBUF(1)
-            FMIN=ZCOMBUF(2)
-            FMAX=ZCOMBUF(3)
-            NAVG=INT(ZCOMBUF(4))
-          ENDIF
-        ENDIF
-        CALL GSTATS(675,1)
-      ELSE
-        IF(NX.EQ.1.AND.NY.EQ.1) THEN
-          FAVG=FIELD(1,1)
-          FMIN=FIELD(1,1)
-          FMAX=FIELD(1,1)
-          NAVG=1
-        ELSE
-          DO J=1,NY
-            DO I=1,NX
-              IF(FIELD(I,J).NE.ZMISS) THEN
-                NTOT=NTOT+1
-                FAVG=FAVG+FIELD(I,J)
-                IF(FIELD(I,J).GT.ZMIN) FMIN=MIN(FMIN,FIELD(I,J))
-                FMAX=MAX(FMAX,FIELD(I,J))
-              ENDIF
-            ENDDO
-          ENDDO
-          IF(NTOT.GT.0) FAVG=FAVG/NTOT
-          NAVG=NTOT
-        ENDIF
-      ENDIF
+      IF (LHOOK) CALL DR_HOOK('WAMNORM',1,ZHOOK_HANDLE)
 
-      RETURN
       END SUBROUTINE WAMNORM
