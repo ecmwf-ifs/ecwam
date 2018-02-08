@@ -564,7 +564,6 @@
 
 !       PRINT OUT NORMS
         CALL OUTWNORM
-        CALL FLUSH(IU06)
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------

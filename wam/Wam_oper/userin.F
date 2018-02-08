@@ -76,6 +76,7 @@
      &            NASS     ,JPPFLAG  ,
      &            CIPRMNAME,
      &            LRSTPARALR, LRSTPARALW,
+     &            COUTNAME,
      &            NTRAIN   ,
      &            IPFGTBL  ,
      &            LWAMANOUT,
@@ -994,12 +995,10 @@
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
       WRITE(IU06,*) '                           LOGFILE   FILE    GRIB',
      &'     OUT PE'
-
-      DO ITG=1,JPPFLAG
-      WRITE(IU06,*) ITG,CIPRMNAME(ITG), PFLAG(ITG),
-     & '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
+      DO ITG = 1,JPPFLAG
+        WRITE(IU06,*) ITG,COUTNAME(ITG), PFLAG(ITG),
+     &   '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
       ENDDO
-      WRITE(IU06,*) ' '
 
       IF(LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''
