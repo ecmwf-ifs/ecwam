@@ -71,7 +71,7 @@
 
         LLPRNORM(:)=.FALSE.
         DO ITG = 1,JPPFLAG
-          IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
+        IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
             LLPRNORM(ITG)=.TRUE.
 !!!         all other cases are omitted until the output arrays are fused
             WNORM(:)=0.
@@ -93,7 +93,7 @@
             END SELECT 
 
             CALL WAMSENDNORM(WNORM,IPFGTBL(ITG),1)
-          ENDIF
+        ENDIF
         ENDDO
 
 
