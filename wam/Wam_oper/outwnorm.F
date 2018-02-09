@@ -52,10 +52,12 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
+      USE MPL_MODULE
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: ITG, ITT, I
+      INTEGER :: ISEND, IRECV
       INTEGER, DIMENSION(JPPFLAG) :: NAVG
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(JPPFLAG,4) :: WNORM
@@ -66,39 +68,49 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 #endif
-
       IF(NFLAGALL) THEN
 
+        IRECV=1
         LLPRNORM(:)=.FALSE.
         DO ITG = 1,JPPFLAG
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
-            LLPRNORM(ITG)=.TRUE.
-!!!         all other cases are omitted until the output arrays are fused
-            WNORM(:)=0.
-            CNORMNAME(ITG)='not available '//COUTNAME(ITG)
+          LLPRNORM(ITG)=.TRUE.
+!!!       all other cases are omitted until the output arrays are fused
+          WNORM(ITG,:)=0.
+          CNORMNAME(ITG)='not available '//COUTNAME(ITG)
 
-            SELECT CASE (ITG)
-            CASE(1)
-              CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
+          SELECT CASE (ITG)
+          CASE(1)
+            CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
        IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WHGTTG,NGX,NGY,WNORM(1,:))
-            CASE(6)
-              CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
+          CASE(6)
+            CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
        IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WPKFTG,NGX,NGY,WNORM(6,:))
-            CASE(7)
-              CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
+          CASE(7)
+            CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
        IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(CDG,NGX,NGY,WNORM(7,:))
-            CASE(10)
-              CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
+          CASE(10)
+            CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
        IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(U10G,NGX,NGY,WNORM(10,:))
-            END SELECT 
+          END SELECT 
 
-            CALL WAMSENDNORM(WNORM(ITG,:),IPFGTBL(ITG),1)
+          IRECV=IPFGTBL(ITG)
+
+          IF(ISEND.NE.IRECV) THEN
+            CALL GSTATS(675,0)
+            IF(IRANK.EQ.ISEND) THEN
+          CALL MPL_SEND(WNORM(ITG,:),KDEST=IRECV,CDSTRING='OUTWNORM:')
+            ELSEIF(IRANK.EQ.IRECV) THEN
+          CALL MPL_RECV(WNORM(ITG,:),KSOURCE=ISEND,CDSTRING='OUTWNORM:')
+            ENDIF
+            CALL GSTATS(675,1)
+          ENDIF
+
         ENDIF
         ENDDO
 
-
 !       WRITE NORM TO LOGFILE
-        IF(IRANK.EQ.1) THEN
+        IF(IRANK.EQ.IRECV) THEN
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '   WAMNORM ON ',CDTPRO
           WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
@@ -106,13 +118,13 @@
           DO ITG = 1, JPPFLAG
             IF(LLPRNORM(ITG)) THEN
               WRITE(IU06,*) CNORMNAME(ITG)
-              WRITE(IU06,*) '  ',(WNORM(I),I=1,4)
-              WRITE(IU06,111) (WNORM(I),I=1,4)
+              WRITE(IU06,*) '  ',(WNORM(ITG,I),I=1,4)
+              WRITE(IU06,111) (WNORM(ITG,I),I=1,4)
             ENDIF
           ENDDO
         ELSE
           WRITE(IU06,*) ' ' 
-          WRITE(IU06,*) '   WAMNORM ON ',CDTPRO,' SEE PE 1 OUTPUT'
+          WRITE(IU06,*) '   WAMNORM ON ',CDTPRO,' SEE OUTPUT PE',IRECV
         ENDIF
 111     FORMAT(4x,'HEX: ',4(Z16.16,2x))
         CALL FLUSH(IU06)
