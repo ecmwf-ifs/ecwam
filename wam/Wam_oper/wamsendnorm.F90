@@ -32,7 +32,7 @@
 
       USE YOWMPP   , ONLY : IRANK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE MPL_MODULE
+      USE MPL_MODULE,ONLY : MPL_SEND, MPL_RECV
 
 ! ----------------------------------------------------------------------
 
