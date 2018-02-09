@@ -48,7 +48,7 @@
      &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
-      USE YOWMPP   , ONLY : IRANK
+      USE YOWMPP   , ONLY : IRANK    ,KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
@@ -57,7 +57,7 @@
       IMPLICIT NONE
 
       INTEGER :: ITG, ITT, I
-      INTEGER :: ISEND, IRECV
+      INTEGER :: ISEND, IRECV, ITAG
       INTEGER, DIMENSION(JPPFLAG) :: NAVG
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(JPPFLAG,4) :: WNORM
@@ -97,11 +97,14 @@
           IRECV=IPFGTBL(ITG)
 
           IF(ISEND.NE.IRECV) THEN
+            ITAG=KTAG+ITG
             CALL GSTATS(675,0)
             IF(IRANK.EQ.ISEND) THEN
-          CALL MPL_SEND(WNORM(ITG,:),KDEST=IRECV,CDSTRING='OUTWNORM:')
+              CALL MPL_SEND(WNORM(ITG,:),KDEST=IRECV,KTAG=ITAG,         &
+     &                      CDSTRING='OUTWNORM:')
             ELSEIF(IRANK.EQ.IRECV) THEN
-          CALL MPL_RECV(WNORM(ITG,:),KSOURCE=ISEND,CDSTRING='OUTWNORM:')
+              CALL MPL_RECV(WNORM(ITG,:),KSOURCE=ISEND,KTAG=ITAG,       &
+     &                      CDSTRING='OUTWNORM:')
             ENDIF
             CALL GSTATS(675,1)
           ENDIF
