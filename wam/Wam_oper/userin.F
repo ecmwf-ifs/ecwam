@@ -154,6 +154,7 @@
       REAL :: WSPEED,WTHETA
 
       CHARACTER(LEN=2) :: MARSFCTYPE
+      CHARACTER(LEN=3) :: CITG
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=256) :: CLFORM
 
@@ -993,12 +994,14 @@
       ENDIF
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                           LOGFILE   FILE    GRIB',
-     &'     OUT PE'
+      WRITE(IU06,*) '                                LOGFILE   FILE   ',&
+     &'GRIB     OUT PE'
       DO ITG = 1,JPPFLAG
-        WRITE(IU06,*) ITG,COUTNAME(ITG), PFLAG(ITG),
+        WRITE(CITG,'(I3.3)') ITG
+        WRITE(IU06,*) CITG,COUTNAME(ITG), PFLAG(ITG),                   &
      &   '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
       ENDDO
+      WRITE(IU06,*) ''
 
       IF(LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''
