@@ -58,8 +58,8 @@
       IF (LHOOK) CALL DR_HOOK('WAMNORM',0,ZHOOK_HANDLE)
 
       WNORM(1)=0.
-      WNORM(2)=FIELD(1,1)
-      WNORM(3)=FIELD(1,1)
+      WNORM(2)=HUGE(FIELD(1,1))
+      WNORM(3)=-WNORM(2)
       WNORM(4)=0.
       DO J=1,NY
         DO I=1,NX
