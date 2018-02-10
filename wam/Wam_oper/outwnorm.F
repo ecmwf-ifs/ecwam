@@ -60,7 +60,7 @@
       INTEGER :: ISEND, IRECV, ITAG
       INTEGER, DIMENSION(JPPFLAG) :: NAVG
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(JPPFLAG,4) :: WNORM
+      REAL, DIMENSION(4,JPPFLAG) :: WNORM
       CHARACTER(LEN=47), DIMENSION(JPPFLAG) :: CNORMNAME
       LOGICAL, DIMENSION(JPPFLAG) :: LLPRNORM
 
@@ -76,22 +76,22 @@
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           LLPRNORM(ITG)=.TRUE.
 !!!       all other cases are omitted until the output arrays are fused
-          WNORM(ITG,:)=0.
+          WNORM(:,ITG)=0.
           CNORMNAME(ITG)='not available '//COUTNAME(ITG)
 
           SELECT CASE (ITG)
           CASE(1)
             CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
-       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WHGTTG,NGX,NGY,WNORM(1,:))
+       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WHGTTG,NGX,NGY,WNORM(:,1))
           CASE(6)
             CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
-       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WPKFTG,NGX,NGY,WNORM(6,:))
+       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(WPKFTG,NGX,NGY,WNORM(:,6))
           CASE(7)
             CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
-       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(CDG,NGX,NGY,WNORM(7,:))
+       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(CDG,NGX,NGY,WNORM(:,7))
           CASE(10)
             CNORMNAME(ITG)='   WAMNORM FOR'//COUTNAME(ITG)
-       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(U10G,NGX,NGY,WNORM(10,:))
+       IF(IPFGTBL(ITG).EQ.IRANK) CALL WAMNORM(U10G,NGX,NGY,WNORM(:,10))
           END SELECT 
 
           ISEND=IPFGTBL(ITG)
@@ -100,10 +100,10 @@
             ITAG=KTAG+ITG
             CALL GSTATS(675,0)
             IF(IRANK.EQ.ISEND) THEN
-              CALL MPL_SEND(WNORM(ITG,:),KDEST=IRECV,KTAG=ITAG,         &
+              CALL MPL_SEND(WNORM(:,ITG),KDEST=IRECV,KTAG=ITAG,         &
      &                      CDSTRING='OUTWNORM:')
             ELSEIF(IRANK.EQ.IRECV) THEN
-              CALL MPL_RECV(WNORM(ITG,:),KSOURCE=ISEND,KTAG=ITAG,       &
+              CALL MPL_RECV(WNORM(:,ITG),KSOURCE=ISEND,KTAG=ITAG,       &
      &                      CDSTRING='OUTWNORM:')
             ENDIF
             CALL GSTATS(675,1)
@@ -121,8 +121,8 @@
           DO ITG = 1, JPPFLAG
             IF(LLPRNORM(ITG)) THEN
               WRITE(IU06,*) CNORMNAME(ITG)
-              WRITE(IU06,*) '  ',(WNORM(ITG,I),I=1,4)
-              WRITE(IU06,111) (WNORM(ITG,I),I=1,4)
+              WRITE(IU06,*) '  ',(WNORM(I,ITG),I=1,4)
+              WRITE(IU06,111) (WNORM(I,ITG),I=1,4)
             ENDIF
           ENDDO
         ELSE
