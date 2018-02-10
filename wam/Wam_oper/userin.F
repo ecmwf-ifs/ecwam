@@ -994,8 +994,8 @@
       ENDIF
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                                LOGFILE   FILE   ',&
-     &'GRIB     OUT PE'
+      WRITE(IU06,*) '                                 LOGFILE    FILE ',&
+     &'   GRIB     OUT PE'
       DO ITG = 1,JPPFLAG
         WRITE(CITG,'(I3.3)') ITG
         WRITE(IU06,*) CITG,COUTNAME(ITG), PFLAG(ITG),                   &
