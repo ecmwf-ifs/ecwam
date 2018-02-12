@@ -257,7 +257,7 @@
       SB=9.000000E-02
 !      FETCH=MIN(0.5*DELPHI,25000.)
 ! make it very short fetch
-      FETCH=MIN(0.5*DELPHI,3000.)
+      FETCH=MIN(0.5*DELPHI,2000.)
       GX = G * FETCH
 
       FLMIN=0.000001
@@ -276,9 +276,9 @@
         ALPHJO = BJONS * FPK(J)** EJONS
         ALPHJO = MAX(ALPHJO, 0.0081)
         FPK(J) = FPK(J)*UG
-!       We are taking 1% of the JONSWAP value as it is intended to be
+!       We are taking 5% of the JONSWAP value as it is intended to be
 !       noise...
-        ALPHJO = 0.01*ALPHJO
+        ALPHJO = 0.05*ALPHJO
         ALPHAJinp(1)=ALPHJO
         FPinp(1)=FPK(J)
         CALL JONSWAP(ALPHAJinp, GAMMA, SA, SB, FPinp, 1, 1, ETinp)
