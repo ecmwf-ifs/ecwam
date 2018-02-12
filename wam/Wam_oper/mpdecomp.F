@@ -255,7 +255,9 @@
       GAMMA=3.000000
       SA=7.000000E-02
       SB=9.000000E-02
-      FETCH=MIN(0.5*DELPHI,25000.)
+!      FETCH=MIN(0.5*DELPHI,25000.)
+! make it very short fetch
+      FETCH=MIN(0.5*DELPHI,3000.)
       GX = G * FETCH
 
       FLMIN=0.000001
