@@ -260,7 +260,7 @@
       FETCH=MIN(0.5*DELPHI,2000.)
       GX = G * FETCH
 
-      FLMIN=0.0001
+      FLMIN=0.00001
       FPMAX=FR(NFRE)
       DELU=UMAX/REAL(JUMAX)
 
