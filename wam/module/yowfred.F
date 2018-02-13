@@ -30,11 +30,12 @@
       REAL, PARAMETER :: FRTAIL = 0.2
       REAL, PARAMETER :: WP1TAIL = 1./3. 
       REAL, PARAMETER :: WP2TAIL = 0.5
-      REAL, PARAMETER :: COEF4 = 3.0E-07
+      REAL, PARAMETER :: COEF4 = 5.0E-07
 
       REAL, PARAMETER ::  FRIC = 28.
       REAL, PARAMETER ::  OLDWSFC = 1.2
       REAL  :: FLOGSPRDM1
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
