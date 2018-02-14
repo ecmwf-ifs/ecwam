@@ -276,9 +276,12 @@
         ALPHJO = BJONS * FPK(J)** EJONS
         ALPHJO = MAX(ALPHJO, 0.0081)
         FPK(J) = FPK(J)*UG
-!       We are taking 5% of the JONSWAP value as it is intended to be
+!       We are taking 1% of the JONSWAP value as it is intended to be
 !       noise...
-        ALPHJO = 0.05*ALPHJO
+!!!        ALPHJO = 0.01*ALPHJO
+!!!debile
+        ALPHJO = 0.0
+
         ALPHAJinp(1)=ALPHJO
         FPinp(1)=FPK(J)
         CALL JONSWAP(ALPHAJinp, GAMMA_JONS, SA, SB, FPinp, 1, 1, ETinp)
