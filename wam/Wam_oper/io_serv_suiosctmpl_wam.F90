@@ -169,8 +169,8 @@ IF (LLBCAST) THEN
 ENDIF
 
 IF (.NOT. LLMODEL) CALL MKSORTCNT (YDIOS%MODELPAR%IWVSSORTL2G, &
-      & YDIOS%MODELPAR%IWVSSORTCNT, &
-      & YDIOS%MODELPAR%IWVSSORTOFF)
+& YDIOS%MODELPAR%IWVSSORTCNT, &
+& YDIOS%MODELPAR%IWVSSORTOFF)
 
 #endif
 
@@ -231,21 +231,21 @@ REAL (KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:MKWVSSORT_MODEL',0,ZHOOK_HANDLE)
 
-#ifdef ECMWF
-
 IF (MYPROC == I1PROC) THEN
-
+      
+      KWVSSORTL2G = -1
+      
       DO IPROC = 1, NPROC
             KWVSRANKSET (IPROC,1) = IPROC
 
             DO IGLOBALIDX = NSTART(IPROC), NEND(IPROC)
-                  ILOCALIDX = IGLOBALIDX - NSTART(IPROC)
+                  ILOCALIDX = IGLOBALIDX - NSTART(IPROC) + 1
 
                   ! Normally, in the wave model, the global index would be tracked in relation to a 2D array (FIELD)
                   ! but the IO server does not allow using a 2D array as a mapping; it requires a 1D array.
                   ! Furthermore, the mapping must be split into chunks depending on which processor owns that index
                   ! FIELD(IX,IY) = IGLOBALIDX
-                  
+
                   ! Note that IY is the fast moving index
                   IX = IXLG(IGLOBALIDX,1)
                   IY = NGY - KXLT(IGLOBALIDX,1) + 1
@@ -257,8 +257,6 @@ IF (MYPROC == I1PROC) THEN
       ENDDO
 
 ENDIF
-
-#endif
 
 IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKWVSSORT_MODEL',1,ZHOOK_HANDLE)
 
