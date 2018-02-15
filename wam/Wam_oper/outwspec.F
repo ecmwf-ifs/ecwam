@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWSPEC (SPEC)
+      SUBROUTINE OUTWSPEC (SPEC, YDEWCOU) 
 
 !----------------------------------------------------------------------
 
@@ -55,11 +55,13 @@
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
       USE YOMIO_SERV, ONLY : IO_SERV_C001
+      USE YOEWCOU  , ONLY : TEWCOU
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL, DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: SPEC
+      TYPE(TEWCOU),INTENT(INOUT) :: YDEWCOU
 
       INTEGER :: IFCST
       INTEGER :: IC, IST, ISTEP, IM, IK, J1, ICNT, IP, IR
@@ -130,7 +132,7 @@
 !     -------------------
       
       IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0) THEN ! If IO server enabled
-        CALL OUTWSPEC_IO_SERV(SPEC)
+        CALL OUTWSPEC_IO_SERV(SPEC, YDEWCOU)
       ELSE
 
         DO J = 1,NGY
