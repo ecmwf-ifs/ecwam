@@ -89,7 +89,7 @@
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
           Z0CH = ALPHAOG*TAUOLD/SQRT(1.-X)
-          Z0VIS = XNU*UTSM1
+          Z0VIS = XNU*USTM1
           Z0TOT = Z0CH+Z0VIS
 
           XOLOGZ0= 1./(XLOGXL-LOG(Z0TOT))
