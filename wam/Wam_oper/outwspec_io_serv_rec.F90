@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWSPEC_IO_SERV_REC (YDIOS,YDFLDSC,KGRIB_HANDLE,KSTEP, PFLD)
+      SUBROUTINE OUTWSPEC_IO_SERV_REC (YDIOS,FIELD,FLDDESC,KGRIB_HANDLE)
 
 !----------------------------------------------------------------------
 
@@ -41,10 +41,9 @@
       REAL :: ZHOOK_HANDLE
 
       TYPE (IO_SERV),      INTENT (INOUT) :: YDIOS
-      TYPE (IOFLDDESC),    INTENT (IN)    :: YDFLDSC
+      REAL,                INTENT (IN)    :: FIELD (:,:)
+      TYPE (IOFLDDESC),    INTENT (IN)    :: FLDDESC
       INTEGER (KIND=JPIM), INTENT (INOUT) :: KGRIB_HANDLE
-      INTEGER (KIND=JPIM), INTENT (IN)    :: KSTEP
-      REAL (KIND=JPRB),    INTENT (IN)    :: PFLD (:)
 
 !-----------------------------------------------------------------------
 
@@ -52,7 +51,9 @@
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC_IO_SERV_REC',0,ZHOOK_HANDLE)
 #endif
 
-      WRITE(*,*) "OUTWSPEC_IO_SERV_REC"      
+      WRITE(*,*) "OUTWSPEC_IO_SERV_REC"    
+      WRITE(*,*) "IANG, IFREQ RECEIVED", FLDDESC%IFREQ, FLDDESC%IANGLE
+      
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC_IO_SERV_REC',1,ZHOOK_HANDLE)
