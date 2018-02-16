@@ -1,5 +1,5 @@
 
-      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL, YDEWCOU)
+      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -119,7 +119,6 @@
 !        *LDSTOP*    LOGICAL   SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    LOGICAL   SET .TRUE. IF RESTART SIGNAL RECEIVED.
 !        *L1STCALL*  LOGICAL   SET .FALSE. AFTER FIRST CALL.
-!        *YDEWCOU*   TEWCOU    INFORMATION ABOUT IFS COUPLING
 
 !     METHOD.
 !     -------
@@ -365,7 +364,6 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWNODEPOOL, ONLY : NP, IPLG, IPGL
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      USE YOEWCOU  , ONLY : TEWCOU
       
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE pgmcl_lib_WAM, ONLY : WAV_all_import_export
@@ -407,8 +405,6 @@
       LOGICAL :: DO_UPDATE_WIND_FLUX
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
-
-      TYPE(TEWCOU),INTENT(INOUT) :: YDEWCOU
 
 
       DATA NEWFILE / .FALSE. /
@@ -599,7 +595,7 @@
             IF(NIPRMOUT.GT.0 ) CALL OUTWINT
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
-              CALL OUTWSPEC(FL1, YDEWCOU)
+              CALL OUTWSPEC(FL1)
             ENDIF
           ENDIF
 
@@ -1295,7 +1291,7 @@
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTWSPEC(FL1, YDEWCOU)
+              CALL OUTWSPEC(FL1)
 
               MARSTYPE=MARSTYPEBAK
 

@@ -10,7 +10,7 @@
      &                    NFDBREF,
      &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &                    RNU_ATM, RNUM_ATM,                            &
-     &                    IDATE_TIME_WINDOW_END, YDEWCOU)
+     &                    IDATE_TIME_WINDOW_END)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -134,7 +134,6 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE MPL_MODULE
-      USE YOEWCOU  , ONLY : TEWCOU
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
@@ -211,8 +210,6 @@
       REAL, INTENT(IN) :: RNUM_ATM 
 !     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
       INTEGER, INTENT(IN) :: IDATE_TIME_WINDOW_END
-!     USED TO PASS IFS INFORMATION TO OUTWSPEC, PARTICULARLY IFSTSTEP
-      TYPE(TEWCOU)      ,INTENT(INOUT) :: YDEWCOU
 
       INTEGER :: IG
       INTEGER :: I, J, K, ICPLEN,ICPLEN_ECF
@@ -593,7 +590,7 @@
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL, YDEWCOU)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
