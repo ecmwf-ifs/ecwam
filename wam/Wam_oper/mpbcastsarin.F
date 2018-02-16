@@ -34,7 +34,7 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : FLMINFR
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSARAS , ONLY : NSPEC    ,SPEC     ,LONG     ,LAT     ,
@@ -126,7 +126,7 @@
             DO IANG = 1,NANG
               DO ISPEC = 0,NSPEC
                 KCOUNT=KCOUNT+1
-                SPEC(ISPEC,IANG,IFRE,1)=0.25*FLMINFR(1,IFRE)
+                SPEC(ISPEC,IANG,IFRE,1)=0.25*FLMIN
               ENDDO 
             ENDDO 
           ENDDO 
