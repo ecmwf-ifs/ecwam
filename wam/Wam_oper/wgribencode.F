@@ -50,9 +50,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWGRIBHD, ONLY : PPMISS   , PPEPS    ,PPREC    ,NTENCODE ,
+      USE YOWFRED  , ONLY : FR       ,TH                                        ! NOT USED
+      USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S         ! HAVE
+      USE YOWGRIBHD, ONLY : PPMISS   , PPEPS    ,PPREC    ,NTENCODE ,           ! 
      &            NGRBRESS ,PPRESOL  ,LGRHDIFS ,LNEWLVTP  ,PPMIN_RESET,
      &            LPADPOLES, DATE_TIME_WINDOW_END,NWINOFF
       USE YOWGRID  , ONLY : NLONRGG
