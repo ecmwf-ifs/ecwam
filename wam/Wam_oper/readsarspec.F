@@ -239,7 +239,7 @@
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
              SPEC(ISPEC,IANG,IFRE,2)=
-     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25*FLMIN
+     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25*FLMIN)
             END DO
           END DO
         END DO
