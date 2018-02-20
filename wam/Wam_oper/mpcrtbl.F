@@ -47,6 +47,7 @@
 !                            IPRMINFO(:,3)  : GRIB REFERENCE LEVEL IN FULL METER.
 !                            IPRMINFO(:,4)  : 1 IF SEA ICE MASK IS IMPOSED ON OUTPUT FIELD.
 !                            IPRMINFO(:,5)  : 1 IF TOO SHALLOW POINTS ARE SET TO MISSING.
+
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
 
@@ -209,9 +210,6 @@
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
       IPRMINFO(IR,5)=1
-
-
-      IR=21
 
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')

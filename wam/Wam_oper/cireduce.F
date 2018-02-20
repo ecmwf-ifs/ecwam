@@ -8,7 +8,7 @@
 !           IF THERE IS NO SEA ICE INFORMATION OR
 !           ALL SEA ICE COVER POINTS WILL BE MASKED
 !           THEN CIWA WILL BE SET ON THE FIRST CALL. NOTHING WILL BE DONE
-!           IN ALL FOLLOWINF CALLS
+!           IN ALL FOLLOWING CALLS
 
 !!!! currently also setting parametric sea ice thickness !!!!
 
@@ -47,7 +47,8 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IG, IJ, JH, M 
+      INTEGER :: IG
+      INTEGER :: IJ, JH, M 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA
 
       REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER

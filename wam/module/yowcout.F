@@ -5,7 +5,7 @@
 !*    ** *COUT*  OUTPUT POINTS INDICES AND FLAGS.
 
       INTEGER, PARAMETER :: NTRAIN=3 
-      INTEGER, PARAMETER :: JPPFLAG=66+3*NTRAIN+5 !!!! change also in scripts: wave_setgflag
+      INTEGER, PARAMETER :: JPPFLAG=61+3*NTRAIN+5 !!!! change also in scripts: wave_setgflag
       INTEGER, PARAMETER :: NREAL=11 
       INTEGER, PARAMETER :: NIPRMINFO=5
 
