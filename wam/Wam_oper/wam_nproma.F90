@@ -14,11 +14,15 @@
 !       *NPROMA*  - MAXIMUM NUMBER OF POINTS PER THREAD PER CALL
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NTOT, MTHREADS
-      INTEGER, INTENT(INOUT) :: NPROMA
-      INTEGER :: NLOOP, NREMAIN, NPROMA_MAX
+      INTEGER(KIND=JWIM), INTENT(IN) :: NTOT, MTHREADS
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: NPROMA
+      INTEGER(KIND=JWIM) :: NLOOP, NREMAIN, NPROMA_MAX
 
 ! ----------------------------------------------------------------------
 
