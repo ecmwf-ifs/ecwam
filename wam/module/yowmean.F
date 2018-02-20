@@ -8,15 +8,10 @@
 
       REAL,ALLOCATABLE :: EMEAN(:) 
       REAL,ALLOCATABLE :: FMEAN(:) 
-<<<<<<< HEAD
-      REAL(NEMODP),ALLOCATABLE :: NSWH(:) 
-      REAL(NEMODP),ALLOCATABLE :: NMWP(:) 
-=======
       REAL,ALLOCATABLE :: CDMEAN(:)
       REAL,ALLOCATABLE :: WVSTRMEAN(:)
       REAL,ALLOCATABLE :: NSWH(:) 
       REAL,ALLOCATABLE :: NMWP(:) 
->>>>>>> wab_CY43R3_for_CY45R1_enhancement
       REAL,ALLOCATABLE :: THQ(:) 
       REAL,ALLOCATABLE :: SMEAN(:) 
       REAL,ALLOCATABLE :: ALTWH(:) 

@@ -74,7 +74,6 @@
      &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
-     &            CIPRMNAME,
      &            LRSTPARALR, LRSTPARALW,
      &            COUTNAME,
      &            NTRAIN   ,

@@ -35,12 +35,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, NIPRMOUT, ITOBOUT,
-     &            NTRAIN   ,LLPARTITION, IFRSTPARTI,
-     &            COUTNAME
+     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,
+     &            ITOBOUT  ,NTRAIN   ,LLPARTITION, IFRSTPARTI
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
-
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -48,7 +46,7 @@
       LOGICAL :: COUPLFLAG(JPPFLAG+1)
 #endif
 
-      INTEGER :: IR, IFLAG, ITT, IC, ITG
+      INTEGER :: IR, IFLAG, IC, ITG, ITT
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -69,8 +67,6 @@
       COUPLFLAG(46)=.TRUE.   ! TAUOC
       COUPLFLAG(5)=.TRUE.    ! TWINDDIR
 #endif
-
-      NIPRMOUT=0
 
 !     OUTPUT VARIABLE NAMES
       COUTNAME(:) =' VARIABLE NOT DEFINED, see MPCRTBL'
@@ -149,6 +145,8 @@
         ITG=JPPFLAG-5+IC
         COUTNAME(ITG)=' EXTRA FIELD .....................'
       ENDDO
+
+      NIPRMOUT=0
 
       IR=1
       DO IFLAG=1,JPPFLAG
