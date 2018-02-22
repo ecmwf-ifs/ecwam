@@ -105,14 +105,6 @@
       USE MPL_MODULE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE pgmcl_lib_WAM, ONLY : WAV_assign_var
-#endif
-#ifdef NETCDF_OUTPUT_WAM
-      USE WAV_netcdf, ONLY : WAV_netcdf_export
-#endif
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -173,30 +165,7 @@
 
       CALL GSTATS(1502,0)
 
-!     ALLOCATE THE NECESSARY ARRAYS
-
-      IF(IPFGTBL(22).NE.0) THEN
-        IF(.NOT.ALLOCATED(ALTWH)) THEN
-          ALLOCATE(ALTWH(IJSLOC:IJLLOC))
-          ALTWH(:)=ZMISS
-        ENDIF
-      ENDIF
-      IF(IPFGTBL(23).NE.0) THEN
-        IF(.NOT.ALLOCATED(CALTWH)) THEN
-          ALLOCATE(CALTWH(IJSLOC:IJLLOC))
-          CALTWH(:)=ZMISS
-        ENDIF
-      ENDIF
-
-      IF(IPFGTBL(24).NE.0) THEN
-        IF(.NOT.ALLOCATED(RALTCOR)) THEN
-          ALLOCATE(RALTCOR(IJSLOC:IJLLOC))
-          RALTCOR(:)=ZMISS
-        ENDIF
-      ENDIF
-
-
-!     COMPUTE MEAN PARAMETERS
+!     PREPARE THE WAVE SPECTRA THAt SHOULD BE USED FOR OUTPUT
 
       LLPEAKF = .FALSE.
       IRA=1
@@ -208,7 +177,7 @@
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-          CALL INTPOL (FL1(KIJS:KIJL,:,:), FL3(KIJS:KIJL,:,:),
+          CALL INTPOL (FL1(KIJS:KIJL,:,:), FL3(KIJS:KIJL,:,:),          &
      &                 KIJS, KIJL, IG, IRA)
         ELSE
           DO M=1,NFRE
@@ -220,25 +189,28 @@
           ENDDO
         ENDIF
         IF(LSECONDORDER) THEN
-          CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,1:NANG,1:NFRE),
-     &                               KIJS,KIJL,
-     &                               DEPTH(KIJS:KIJL,IG),
+          CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,:,:),               &
+     &                               KIJS,KIJL,                        &
+     &                               DEPTH(KIJS:KIJL,IG),              &
      &                               SIG)
         ENDIF
       ENDDO
 !$OMP   END PARALLEL DO
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IJ,ITG)
+
+
+!     COMPUTE MEAN PARAMETERS
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IJ,IR,ITG)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
-        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
-     &               EM(KIJS), FM(KIJS))
+        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL,EM(KIJS), FM(KIJS))
 
-        CALL KURTOSIS(FL3(KIJS:KIJL,:,:),KIJS,KIJL,IG,
-     &                C3(KIJS),C4(KIJS),BF(KIJS),
-     &                QP(KIJS),FP(KIJS),HMAX(KIJS),
+        CALL KURTOSIS(FL3(KIJS:KIJL,:,:),KIJS,KIJL,IG,                  &
+     &                C3(KIJS),C4(KIJS),BF(KIJS),                       &
+     &                QP(KIJS),FP(KIJS),HMAX(KIJS),                     &
      &                TMAX(KIJS))
 
 !       WIND/SWELL:
@@ -253,114 +225,208 @@
      &                THTRAIN(KIJS:KIJL,:),PMTRAIN(KIJS:KIJL,:))
 
 
+        IR=0
 !       LOAD THE OUTPUT BUFFER:
 
-        IF(IPFGTBL(1).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         SIGNIFICANT WAVE HEIGHT CONVERSION
-          BOUT(KIJS:KIJL,ITOBOUT(1))=4.*SQRT(EM(KIJS:KIJL))
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=4.*SQRT(MAX(EM(KIJS:KIJL),0.))
         ENDIF
 
-        IF(IPFGTBL(2).NE.0) THEN
-          ITG=ITOBOUT(2)
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          ITG=ITOBOUT(IR)
           CALL STHQ (FL3(KIJS:KIJL,:,:),KIJS,KIJL,BOUT(KIJS,ITG))
 !         CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
           BOUT(KIJS:KIJL,ITG)=MOD(DEG*BOUT(KIJS:KIJL,ITG)+180.,360.)
         ENDIF
 
-        IF(IPFGTBL(3).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERSION TO PERIOD
-          BOUT(KIJS:KIJL,ITOBOUT(3))=1./FM(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=1./FM(KIJS:KIJL)
         ENDIF
 
-        IF(IPFGTBL(4).NE.0) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(4))=USNEW(KIJS:KIJL)
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=USNEW(KIJS:KIJL)
         ENDIF
 
-        IF(IPFGTBL(5).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !        CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
-         BOUT(KIJS:KIJL,ITOBOUT(5))=MOD(DEG*THWNEW(KIJS:KIJL)+180.,360.)
+        BOUT(KIJS:KIJL,ITOBOUT(IR))=MOD(DEG*THWNEW(KIJS:KIJL)+180.,360.)
         ENDIF
 
-        IF(IPFGTBL(6).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERSION TO PERIOD
-          BOUT(KIJS:KIJL,ITOBOUT(6))=1./FP(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=1./FP(KIJS:KIJL)
         ENDIF
 
-        IF(IPFGTBL(7).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !!       if the numerical computation of TAU and CD change, a similar
 !!       modification has to be put in buildstress where the friction
 !!       velocity is determined from U10 and CD.
-          BOUT(KIJS:KIJL,ITOBOUT(7))=
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=
      &   MAX(USNEW(KIJS:KIJL)**2,EPSUS)/MAX(U10NEW(KIJS:KIJL)**2,EPSU10)
         ENDIF
 
-        IF(IPFGTBL(8).NE.0) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(8))=
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=                                  &
      &     TAUW(KIJS:KIJL,IG)/MAX(USNEW(KIJS:KIJL)**2,EPSUS)
         ENDIF
 
-        IF(IPFGTBL(9).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
           CALL MEANSQS (FL3(KIJS:KIJL,:,:),KIJS,KIJL,
-     &                  USNEW(KIJS),FM(KIJS),BOUT(KIJS,ITOBOUT(9)))
+     &                  USNEW(KIJS),FM(KIJS),BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
-        IF(IPFGTBL(10).NE.0) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(10))=U10NEW(KIJS:KIJL)
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=U10NEW(KIJS:KIJL)
         ENDIF
 
-        IF(IPFGTBL(11).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         WINDSEA SIGNIFICANT WAVE HEIGHT CONVERSION
-          BOUT(KIJS:KIJL,ITOBOUT(11))=4.*SQRT(MAX(ESEA(KIJS:KIJL),0.))
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=4.*SQRT(MAX(ESEA(KIJS:KIJL),0.))
         ENDIF
 
-        IF(IPFGTBL(12).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         TOTAL SWELL SIGNIFICANT WAVE HEIGHT CONVERSION
-          BOUT(KIJS:KIJL,ITOBOUT(12))=4.*SQRT(MAX(ESWELL(KIJS:KIJL),0.))
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=4.*SQRT(MAX(ESWELL(KIJS:KIJL),0.))
         ENDIF
 
-        IF(IPFGTBL(13).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
-          BOUT(KIJS:KIJL,ITOBOUT(13))=
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=                                  &
      &        MOD(DEG*THWISEA(KIJS:KIJL)+180.,360.)
         ENDIF
 
-        IF(IPFGTBL(14).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
-          BOUT(KIJS:KIJL,ITOBOUT(14))=
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=                                  &
      &        MOD(DEG*THSWELL(KIJS:KIJL)+180.,360.)
         ENDIF
 
-        IF(IPFGTBL(15).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERSION TO PERIOD
-          BOUT(KIJS:KIJL,ITOBOUT(15))=1./FSEA(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=1./FSEA(KIJS:KIJL)
         ENDIF
 
-        IF(IPFGTBL(16).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
 !         CONVERSION TO PERIOD
-          BOUT(KIJS:KIJL,ITOBOUT(16))=1./FSWELL(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=1./FSWELL(KIJS:KIJL)
         ENDIF
 
-??????? to continue
-
-        IF(IPFGTBL(25).NE.0) THEN
-          CALL MWP1 (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
-     &               EM(KIJS), P1MEAN(KIJS))
-        ENDIF
-        IF(IPFGTBL(26).NE.0) THEN
-          CALL MWP2 (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
-     &               EM(KIJS), P2MEAN(KIJS))
-        ENDIF
-        IF(IPFGTBL(27).NE.0) THEN
-          CALL WDIRSPREAD (FL3(KIJS:KIJL,:,:),
-     &                     KIJS, KIJL, LLPEAKF, SPRDMEAN(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF(.NOT.ALLOCATED(ALTWH)) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=ALTWH(KIJS:KIJL)
+          ENDIF
         ENDIF
 
-        IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF(.NOT.ALLOCATED(CALTWH)) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=CALTWH(KIJS:KIJL)
+          ENDIF
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF(.NOT.ALLOCATED(RALTCOR)) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=RALTCOR(KIJS:KIJL)
+          ENDIF
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL MWP1 (FL3(KIJS:KIJL,:,:), KIJS, KIJL,                    &
+     &               EM(KIJS),BOUT(KIJS,ITOBOUT(IR)))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL MWP2 (FL3(KIJS:KIJL,:,:), KIJS, KIJL,                    &
+     &               EM(KIJS),BOUT(KIJS,ITOBOUT(IR)))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL WDIRSPREAD (FL3(KIJS:KIJL,:,:),KIJS, KIJL,               &
+     &                     LLPEAKF, BOUT(KIJS,ITOBOUT(IR)))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=P1SEA(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=P1SWELL(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=P2SEA(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=P2SWELL(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=SPRDSEA(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=SPRDSWELL(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=C4(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=BF(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=QP(KIJS:KIJL)
+        ENDIF
+
+bathy
+different n umbers
+        IR=IR+1
+        IF(IPFGTBL(23).NE.0 .OR. IPFGTBL(24).NE.0) THEN
 !!!!!!!! the second order correction should not apply to the Stokes drift
-          CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:),
-     &                     KIJS, KIJL, USTMEAN(KIJS), VSTMEAN(KIJS))
+          CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:), KIJS, KIJL,              &
+     &                   BOUT(KIJS,ITOBOUT(23)),BOUT(KIJS,ITOBOUT(24)))
         ENDIF
-
 
 
         ITG=46+3*NTRAIN+1
@@ -867,20 +933,10 @@
         ENDIF
       ENDIF
 
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      CALL WAV_assign_var
-#endif
-#ifdef NETCDF_OUTPUT_WAM
-      CALL WAV_netcdf_export
-#endif
-
       IF(ALLOCATED(CDMEAN)) DEALLOCATE(CDMEAN)
       IF(ALLOCATED(WVSTRMEAN)) DEALLOCATE(WVSTRMEAN)
       IF(ALLOCATED(FPMEAN)) DEALLOCATE(FPMEAN)
       IF(ALLOCATED(SMEAN)) DEALLOCATE(SMEAN)
-      IF(ALLOCATED(ALTWH)) DEALLOCATE(ALTWH)
-      IF(ALLOCATED(CALTWH)) DEALLOCATE(CALTWH)
-      IF(ALLOCATED(RALTCOR)) DEALLOCATE(RALTCOR)
       IF(ALLOCATED(P1MEAN)) DEALLOCATE(P1MEAN)
       IF(ALLOCATED(P2MEAN)) DEALLOCATE(P2MEAN)
       IF(ALLOCATED(SPRDMEAN)) DEALLOCATE(SPRDMEAN)

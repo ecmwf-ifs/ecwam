@@ -24,7 +24,7 @@
 !     ----------
 
 !       *SETWMASK*   - TRANSFERS A LOCAL BLOCK ARRAY TO A GLOBAL BLOCK 
-!                     ARRAY AND IMPOSES ICE MASK.
+!                      ARRAY AND IMPOSES ICE MASK.
 
 !     METHOD.
 !     -------
