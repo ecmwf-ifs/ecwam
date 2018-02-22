@@ -69,6 +69,7 @@
 ! ----------------------------------------------------------------------
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER,
      &            NIPRMOUT, ITOBOUT
+      USE YOWCURR  , ONLY : U, V
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
 
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
@@ -89,7 +90,8 @@
      &            MWP1WG   ,MWP2WG   ,WSPRDWG
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
 
-      USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR 
+      USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
+     &            PHIEPS   ,PHIAW    ,TAUOC
 
       USE YOWMPP   , ONLY : NPROC
       USE YOWSPEC  , ONLY : TAUW     , 
@@ -123,7 +125,7 @@
       LOGICAL, INTENT(OUT) :: LLOUTBS
 
 
-      INTEGER :: ITT, ITG, ICT, IR
+      INTEGER :: ITT, ITG, ICT, IR, ITR
       INTEGER :: IJ, K, M 
       INTEGER :: IRA
       INTEGER :: JKGLO, KIJS, KIJL, NPROMA
@@ -133,6 +135,7 @@
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJSLOC:IJLLOC) :: EM, FM
       REAL, DIMENSION(IJSLOC:IJLLOC) :: C3, C4, BF, QP, FP, HMAX, TMAX
+      REAL, DIMENSION(IJSLOC:IJLLOC) :: UST, VST
       REAL, DIMENSION(IJSLOC:IJLLOC) :: ESWELL ,FSWELL ,THSWELL
       REAL, DIMENSION(IJSLOC:IJLLOC) :: P1SWELL,P2SWELL,SPRDSWELL
       REAL, DIMENSION(IJSLOC:IJLLOC) :: ESEA   ,FSEA   ,THWISEA
@@ -189,9 +192,9 @@
           ENDDO
         ENDIF
         IF(LSECONDORDER) THEN
-          CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,:,:),               &
-     &                               KIJS,KIJL,                        &
-     &                               DEPTH(KIJS:KIJL,IG),              &
+          CALL CAL_SECOND_ORDER_SPEC(FL3(KIJS:KIJL,:,:),                &
+     &                               KIJS,KIJL,                         &
+     &                               DEPTH(KIJS:KIJL,IG),               &
      &                               SIG)
         ENDIF
       ENDDO
@@ -223,6 +226,11 @@
      &                P1SEA(KIJS)    ,P2SEA(KIJS)    ,SPRDSEA(KIJS)  ,
      &                EMTRAIN(KIJS:KIJL,:),
      &                THTRAIN(KIJS:KIJL,:),PMTRAIN(KIJS:KIJL,:))
+
+!       STOKES DRIFT
+!!!!!!!! the second order correction should not apply to the Stokes drift
+        CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                &
+     &                   UST(KIJS), VST(KIJS))
 
 
         IR=0
@@ -419,14 +427,81 @@
           BOUT(KIJS:KIJL,ITOBOUT(IR))=QP(KIJS:KIJL)
         ENDIF
 
-bathy
-different n umbers
         IR=IR+1
-        IF(IPFGTBL(23).NE.0 .OR. IPFGTBL(24).NE.0) THEN
-!!!!!!!! the second order correction should not apply to the Stokes drift
-          CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:), KIJS, KIJL,              &
-     &                   BOUT(KIJS,ITOBOUT(23)),BOUT(KIJS,ITOBOUT(24)))
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=DEPTH(KIJS:KIJL,IG)
         ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=HMAX(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=TMAX(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=UST(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=VST(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF(.NOT.ALLOCATED(U)) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=0.
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=U(KIJS:KIJL,IG)
+          ENDIF
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF(.NOT.ALLOCATED(V)) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=0.
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=V(KIJS:KIJL,IG)
+          ENDIF
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=PHIEPS(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=PHIAW(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=TAUOC(KIJS:KIJL)
+        ENDIF
+
+        DO ITR=1,NTRAIN
+          IR=IR+1
+          IF(IPFGTBL(IR).NE.0) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=4.*SQRT(MAX(EMTRAIN(KIJS:KIJL,ITR),0.))
+          ENDIF
+
+          IR=IR+1
+          IF(IPFGTBL(IR).NE.0) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=MOD(DEG*THTRAIN(KIJS:KIJL,ITR)+180.,360.)
+          ENDIF
+
+          IR=IR+1
+          IF(IPFGTBL(IR).NE.0) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=PMTRAIN(KIJS:KIJL,ITR)
+          ENDIF
+        ENDDO
+
 
 
         ITG=46+3*NTRAIN+1
