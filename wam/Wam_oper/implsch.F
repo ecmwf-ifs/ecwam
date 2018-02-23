@@ -126,13 +126,13 @@
      &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
      &            C        ,FRIC     ,FLOGSPRDM1, FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWICE   , ONLY : FLMINFR  ,LCIWABR
+      USE YOWICE   , ONLY : FLMIN    ,LCIWABR
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
       USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
-     &            IODP     ,IOBND    ,CINV 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO
-      USE YOWTABL  , ONLY : JUMAX    ,DELU
+     &            IODP     ,IOBND    ,CINV     ,EMAXDPT 
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO   ,
+     &            LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -158,10 +158,9 @@
       INTEGER :: IJ, K, M
       INTEGER :: ILEV
       INTEGER :: ICODE_WND, ICODE_WAM
-      INTEGER :: JU(IJS:IJL)
 
-      REAL :: XJ, DELT, XIMP, DELT5, AKM1, AK2VGM1
-      REAL :: GTEMP1, GTEMP2, FLHAB, FLLOWEST
+      REAL :: DELT, XIMP, DELT5, AKM1, AK2VGM1
+      REAL :: GTEMP1, GTEMP2, FLHAB
       REAL :: ZHOOK_HANDLE
       REAL :: GAMOF
       REAL :: DELFL(NFRE)
@@ -169,7 +168,8 @@
       REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
       REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL, DIMENSION(IJS:IJL) :: PHIWA
-      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL, DIMENSION(IJS:IJL) :: DPTHREDUC
+      REAL, DIMENSION(IJS:IJL,NANG) :: FLM 
       REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
       REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 !     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
@@ -213,22 +213,21 @@
 !         OF LATITUDES BETWEEN PROPAGATION CALLS.
 
 
+!     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
+      IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
+         CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL3)
+      ENDIF
+
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
-
 
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+          FLM(IJ,K)=FLMIN*MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
-      ENDDO
-
-      DO IJ=IJS,IJL
-        XJ=U10NEW(IJ)/DELU
-        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
       ENDDO
 
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
@@ -270,7 +269,7 @@
 
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!     in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -310,7 +309,7 @@
      &              THWNEW, USNEW, Z0NEW, ROAIRN,
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -370,7 +369,7 @@
 !SHALLOW
       IF(ISHALLO.NE.1) THEN
         CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, 
-     &              DEPTH(IJS,1), EMEANALL, F1MEAN)
+     &              DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
         CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
       ENDIF
 !SHALLOW
@@ -382,7 +381,6 @@
 
 !       INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
 !       FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
-
 
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
@@ -406,9 +404,8 @@
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M)=
-     &      MAX(IODP(IJ)*CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
+     &      MAX(IODP(IJ)*CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
             FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -422,9 +419,8 @@
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
             FL3(IJ,K,M)=
-     &      MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLLOWEST)
+     &      MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
             FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -436,7 +432,6 @@
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
-
 
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
@@ -470,7 +465,6 @@
           ENDDO
         ENDDO
       ENDIF
-
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------

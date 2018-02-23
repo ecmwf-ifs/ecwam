@@ -20,7 +20,7 @@
 ! ----------------------------------------------------------------------
 !     MODULES:
 !     --------
-      USE YOWICE   , ONLY : FLMINFR
+      USE YOWICE   , ONLY : FLMIN
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : ZPI     ,RAD
       USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG     ,LAT      ,
@@ -68,7 +68,7 @@
         DO IANG=1,NANG
           DO IFRE=1,NFRE
             DO ISS=0,NSPEC
-            SPEC(ISS,IANG,IFRE,IC) = 0.25*FLMINFR(1,IFRE) 
+            SPEC(ISS,IANG,IFRE,IC) = 0.25*FLMIN
             ENDDO
           ENDDO
         ENDDO
@@ -239,7 +239,7 @@
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
              SPEC(ISPEC,IANG,IFRE,2)=
-     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25*FLMINFR(1,IFRE)) 
+     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25*FLMIN)
             END DO
           END DO
         END DO

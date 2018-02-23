@@ -1,6 +1,6 @@
       SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    IGRIB_HANDLE, RMISS, FIELDS,
+     &                    IGRIB_HANDLE, RMISS, PRCHAR, FIELDS,
      &                    NATMFLX, 
      &                    LWCUR, LWSTOKES,
      &                    NWVFIELDS, WVFLDG,
@@ -156,6 +156,8 @@
       INTEGER, INTENT(IN) :: IGRIB_HANDLE
 !     GRIB MISSING DATA INDICATOR
       REAL, INTENT(IN) :: RMISS
+!     DEFAULT VALUE FOR CHARNOCK
+      REAL, INTENT(IN) :: PRCHAR 
 !     FIELDS CONTAINING ATMOSPHERIC DATA
       REAL, INTENT(INOUT) :: FIELDS(NGPTOTG,NFIELDS)
 !     INDICATES WHICH PHYSICAL QUANTITY IS USED FOR WIND INPUT
@@ -698,7 +700,7 @@
 
 !       1. CHARNOCK FIELD
         FLABEL(1)=' Charnock'
-        DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+        DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
                          !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
                          ! BUT WELL OVER LAND POINTS.
@@ -1027,6 +1029,10 @@
 
 !     4. END OF RUN ?
 !        -----------
+      IF (CDATEE .EQ. CDTPRO) THEN
+        CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
+        CALL FLUSH(IU06)
+      ENDIF
       IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         IF(LWCOU .AND. LNEWLVTP) THEN
 !         the fdb should be closed by IFS
@@ -1035,6 +1041,7 @@
             CALL FLUSH(IU06)
           ENDIF
         ELSE
+        WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSING FDB'
         CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDBSUBS (NWFDBREF)
         CALL GSTATS(1787,1)

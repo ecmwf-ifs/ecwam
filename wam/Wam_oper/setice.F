@@ -39,10 +39,9 @@
 
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
       USE YOWFRED  , ONLY : TH
-      USE YOWICE   , ONLY : FLMINFR  ,CITHRSH
+      USE YOWICE   , ONLY : FLMIN    ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOWTABL  , ONLY : JUMAX    ,DELU
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -52,9 +51,7 @@
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
 
       INTEGER :: IJ, M, K
-      INTEGER, DIMENSION(IJS:IJL) :: JU 
 
-      REAL :: XJ
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: CIREDUC, TEMP, ICEFREE 
       REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
@@ -74,8 +71,6 @@
       ENDDO
 
       DO IJ = IJS,IJL
-        XJ=U10NEW(IJ)/DELU
-        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
         IF(CICVR(IJ).GT.CITHRSH) THEN
           CIREDUC(IJ)=MAX(EPSMIN,(1.-CICVR(IJ)))
           ICEFREE(IJ)=0.0
@@ -85,10 +80,10 @@
         ENDIF
       ENDDO
 
+      DO IJ = IJS,IJL
+        TEMP(IJ)=CIREDUC(IJ)*FLMIN
+      ENDDO
       DO M = 1, NFRE
-        DO IJ = IJS,IJL
-          TEMP(IJ)=CIREDUC(IJ)*FLMINFR(JU(IJ),M)
-        ENDDO
         DO K = 1, NANG
           DO IJ = IJS,IJL
             FL3(IJ,K,M)=FL3(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)

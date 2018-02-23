@@ -149,6 +149,7 @@
       REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL :: ZHOOK_HANDLE
       REAL :: RMISS
+      REAL :: ZRCHAR
       REAL :: time0, time
       REAL :: wam_user_clock
 
@@ -283,6 +284,7 @@
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999. ! missing data indicator
+      ZRCHAR=0.0155 ! default value for Charnock
 
       ! WAM-NEMO COUPLING
 
@@ -326,7 +328,7 @@
 
       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
      &             NFIELDS, NGPTOTG, NC, NR,
-     &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
+     &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,
      &             NATMFLX,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,

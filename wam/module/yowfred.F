@@ -35,6 +35,7 @@
       REAL, PARAMETER ::  FRIC = 28.
       REAL, PARAMETER ::  OLDWSFC = 1.2
       REAL  :: FLOGSPRDM1
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *FR*        REAL      FREQUENCIES IN HERTZ.
