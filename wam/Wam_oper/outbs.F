@@ -71,7 +71,7 @@
      &            NIPRMOUT, ITOBOUT
       USE YOWCURR  , ONLY : U, V
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
-
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
@@ -94,8 +94,10 @@
      &            PHIEPS   ,PHIAW    ,TAUOC
 
       USE YOWMPP   , ONLY : NPROC
-      USE YOWSPEC  , ONLY : TAUW     , 
-     &            U10NEW   ,THWNEW   ,THWOLD   ,USNEW    ,USOLD
+      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
+     &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
+      USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
+     &            ROAIRN   ,ZIDLNEW
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSHAL, ONLY: NDEPTH      ,DEPTH       ,INDEP    ,IODP  ,
@@ -140,6 +142,7 @@
       REAL, DIMENSION(IJSLOC:IJLLOC) :: P1SWELL,P2SWELL,SPRDSWELL
       REAL, DIMENSION(IJSLOC:IJLLOC) :: ESEA   ,FSEA   ,THWISEA
       REAL, DIMENSION(IJSLOC:IJLLOC) :: P1SEA  ,P2SEA  ,SPRDSEA
+      REAL, DIMENSION(IJSLOC:IJLLOC) :: E10
       REAL, DIMENSION(IJSLOC:IJLLOC,NTRAIN) :: EMTRAIN
       REAL, DIMENSION(IJSLOC:IJLLOC,NTRAIN) :: THTRAIN, PMTRAIN
 
@@ -502,22 +505,52 @@
           ENDIF
         ENDDO
 
-
-
-        ITG=46+3*NTRAIN+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          CALL CIMSSTRN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,
-     &                   STRNMS(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL CIMSSTRN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-          CALL SE10MEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,E10MEAN(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL SE10MEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,E10(KIJS))
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=4.*SQRT(MAX(E10(KIJS:KIJL),0.))
         ENDIF
 
-!       need to skip 10 because those fields are connected to the forcing
-!       (IFS or NEMO) or the spectral skewness
-        ITG=ITG+10
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=ROAIRN(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=ZIDLNEW(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=CICOVER(KIJS:KIJL,IG)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=CITHICK(KIJS:KIJL,IG)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=C3(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOSST(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCICOVER(KIJS:KIJL)
+        ENDIF
+
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
