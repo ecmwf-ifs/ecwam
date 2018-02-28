@@ -192,7 +192,7 @@
 !        ---------------
 
       DELT = IDELT
-      XIMP = 1.0
+      XIMP = 0.5
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
