@@ -323,7 +323,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-!!!!  re-impose the tail ???
+!!!!  re-impose the tail
       DO IJ=IJS,IJL
         DO M=1,MIJ(IJ)
           TLFR(IJ,M) = 1.
@@ -388,7 +388,6 @@
         CALL FLUSH (IU06)
       ENDIF
 
-!!! add tail again ??? (for SNL ???)
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
