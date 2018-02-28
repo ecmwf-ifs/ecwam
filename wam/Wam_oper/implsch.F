@@ -204,6 +204,23 @@
       ENDIF
       ICODE_WAM=3
 
+!??? compute and keep this once anf for all ?
+      IF(ISHALLO.EQ.1) THEN
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            TEMP2(IJ,M) = FRM5(M)
+          ENDDO
+        ENDDO
+      ELSE
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            AKM1 = 1./TFAK(INDEP(IJ),M)
+            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
+            TEMP2(IJ,M) = AKM1*AK2VGM1
+          ENDDO
+        ENDDO
+      ENDIF
+
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -252,7 +269,7 @@
 !*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
 !             ------------------------------------------------
 
-!!            FL AND SL ARE INITIALISED IN SINPUT
+!!    FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
       CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
@@ -267,18 +284,6 @@
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
-
-      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
-
 !     diagnostic (not coded efficiently)
 !!      DO IJ=IJS,IJL
 !!        DO M=1,NFRE
@@ -291,9 +296,8 @@
 !!        ENDDO
 !!      ENDDO
 
-
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALL'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -309,9 +313,81 @@
      &              THWNEW, USNEW, Z0NEW, ROAIRN,
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALL'
         CALL FLUSH (IU06)
       ENDIF
+
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!!!!  re-impose the tail ???
+      DO IJ=IJS,IJL
+        DO M=1,MIJ(IJ)
+          TLFR(IJ,M) = 1.
+          TEMP(IJ,M) = 0.
+        ENDDO
+        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
+        DO M=MIJ(IJ)+1,NFRE
+          TLFR(IJ,M) = 0.
+          TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
+        ENDDO
+      ENDDO
+
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
+        ENDDO
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+
+!*    REEVALUATE WIND INPUT SOURCE TERM
+!     ---------------------------------
+
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, WSTARNEW, SL, XLLWS)
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: 2nd SINPUT CALL'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+     &                MIJ, RHOWGDFTH)
+
+      CALL STRESSO (FL3, SL, IJS, IJL,
+     &              MIJ, RHOWGDFTH,
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+     &              TAUW, PHIWA)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 2nd CALL'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!!! add tail again ??? (for SNL ???)
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
@@ -373,8 +449,8 @@
 !*    2.4 COMPUTATION OF NEW SPECTRA.
 !         ---------------------------
 
-!       INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
-!       FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
+!     INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
+!     FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
 
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
@@ -421,7 +497,6 @@
       ENDDO
       ENDIF
 
-
 ! ----------------------------------------------------------------------
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
@@ -444,25 +519,8 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
      &                MIJ,RHOWGDFTH)
 
-      IF(ISHALLO.EQ.1) THEN
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            TEMP2(IJ,M) = FRM5(M)
-          ENDDO
-        ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            AKM1 = 1./TFAK(INDEP(IJ),M)
-            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
-            TEMP2(IJ,M) = AKM1*AK2VGM1
-          ENDDO
-        ENDDO
-      ENDIF
-
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
-
       DO IJ=IJS,IJL
         DO M=1,MIJ(IJ)
           TLFR(IJ,M) = 1.
@@ -485,50 +543,6 @@
           ENDDO
         ENDDO
       ENDDO
-
-!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM
-!           ---------------------------------
-
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AFTER UPDATE'
-        CALL FLUSH (IU06)
-      ENDIF
-
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-     &             ROAIRN, WSTARNEW, SL, XLLWS)
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
-        CALL FLUSH (IU06)
-      ENDIF
-
-!*    RECOMPUTE MEAN PARAMETERS.
-!     --------------------------
-
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &            F1MEAN, AKMEAN, XKMEAN)
-
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
-     &                MIJ,RHOWGDFTH)
-
-      CALL STRESSO (FL3, SL, IJS, IJL,
-     &              MIJ, RHOWGDFTH,
-     &              THWNEW, USNEW, Z0NEW, ROAIRN,
-     &              TAUW, PHIWA)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
-        CALL FLUSH (IU06)
-      ENDIF
-
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
-        CALL FLUSH (IU06)
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
