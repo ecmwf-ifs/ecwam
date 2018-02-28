@@ -508,6 +508,9 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
      &            F1MEAN, AKMEAN, XKMEAN)
 
+!!!debile
+      write(*,*) 'debile before ',EMEANALL(IJS),F1MEAN(IJS),MIJ(IJS)
+
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
@@ -543,6 +546,13 @@
           ENDDO
         ENDDO
       ENDDO
+
+!!!debile
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+!!!debile
+      write(*,*) 'debile after ',EMEANALL(IJS),F1MEAN(IJS),MIJ(IJS)
 
 ! ----------------------------------------------------------------------
 
