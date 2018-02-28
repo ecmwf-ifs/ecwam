@@ -192,7 +192,7 @@
 !        ---------------
 
       DELT = IDELT
-      XIMP = 0.5
+      XIMP = 1.0
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
@@ -343,6 +343,7 @@
         DO M=1,NFRE
           DO IJ=IJS,IJL
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
+            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
@@ -502,26 +503,6 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-!*    2.5.1 COMPUTE MEAN PARAMETERS.
-!           ------------------------
-
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &            F1MEAN, AKMEAN, XKMEAN)
-
-!!!debile
-      write(*,*) 'debile before ',EMEANALL(IJS),F1MEAN(IJS),MIJ(IJS)
-
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-!*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
-!           ---------------------------
-
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
-     &                MIJ,RHOWGDFTH)
-
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
       DO IJ=IJS,IJL
@@ -543,17 +524,10 @@
         DO M=1,NFRE
           DO IJ=IJS,IJL
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
+            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
-
-!!!debile
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &            F1MEAN, AKMEAN, XKMEAN)
-
-!!!debile
-      write(*,*) 'debile after ',EMEANALL(IJS),F1MEAN(IJS),MIJ(IJS)
-      write(*,*) '-------------'
 
 ! ----------------------------------------------------------------------
 
