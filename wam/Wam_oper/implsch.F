@@ -309,7 +309,7 @@
       ENDIF
 
 !     RE-IMPOSE HIGH FREQUENCY TAIL
-      CALL SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 
 
 !*    REEVALUATE WIND INPUT SOURCE TERM
@@ -463,7 +463,7 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-      CALL SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 
 ! ----------------------------------------------------------------------
 
