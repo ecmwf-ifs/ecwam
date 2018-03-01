@@ -130,7 +130,7 @@
 !     -------------------
       
       IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0) THEN ! If IO server enabled
-        CALL OUTWSPEC_IO_SERV(SPEC)
+        CALL OUTWSPEC_IO_SERV(SPEC, MARSTYPE, CDATE, IFCST)
       ELSE
 
         DO J = 1,NGY
@@ -255,7 +255,7 @@
             IM=(((IC-1)+IRANK-1)/NANG)+1
             IK=(IC-1)+IRANK-(IM-1)*NANG
             ! [majh] Create GRIB message with angle (IK) and frequency (IM)
-            CALL WGRIBENCODE(IU06, ITEST, NGX, NGY, FIELD,
+            CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, IK , IM, 
      &                     CDATE, IFCST, MARSTYPE,
      &                     IGRIB_HANDLE)
