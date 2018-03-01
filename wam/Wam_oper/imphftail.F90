@@ -1,5 +1,4 @@
-      SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
-
+      SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3) 
 ! ----------------------------------------------------------------------
 
 !**** *IMPHFTAIL* - IMPOSE A HIGH FREQUENCY TAIL TO THE SPECTRUM
@@ -41,7 +40,6 @@
       USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -99,5 +97,4 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('IMPHFTAIL',1,ZHOOK_HANDLE)
 #endif
-
       END SUBROUTINE IMPHFTAIL
