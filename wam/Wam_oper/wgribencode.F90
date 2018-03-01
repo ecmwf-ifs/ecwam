@@ -1,7 +1,19 @@
-      SUBROUTINE WGRIBENCODE (IU06, ITEST, I1, I2, FIELD,
-     &                        ITABLE, IPARAM, KLEV, IK, IM,
-     &                        CDATE, IFCST, MARSTYPE,
-     &                        IGRIB_HANDLE)
+      SUBROUTINE WGRIBENCODE (  IU06, ITEST, &
+                                I1, I2, &
+                                FIELD, &
+                                ITABLE, IPARAM, &
+                                KLEV, &
+                                IK, IM, &
+                                CDATE, IFCST, MARSTYPE, &
+                                PPMISS, PPEPS, PPREC, PPRESOL, PPMIN_RESET, NTENCODE, &
+                                LGRHDIFS, &
+                                DATE_TIME_WINDOW_END, &
+                                NGRBRESS, LNEWLVTP, LPADPOLES, &
+                                NLONRGG, IRGG, &
+                                AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
+                                KCOUSTEP, LRSTST0, &
+                                ZMISS, &
+                                IGRIB_HANDLE)
 
 ! ----------------------------------------------------------------------
 
@@ -12,32 +24,29 @@
 !       PURPOSE.
 !       --------
 !         SUBROUTINE PACKS WAVE FIELDS INTO THE GRIB CODE
-!         !!!! PRESET_WGRIB_TEMPLATE NEEDS to BE CALLED BEFORE TO
-!         !!!! INITIALISE THE GRIB TEMPLATES.
 
 !**    INTERFACE.
 !      ----------
-!        *CALL* *WGRIBENCODE (IU06, ITEST, I1, I2, FIELD,
-!                             ITABLE, IPARAM, KLEV, IK, IM,
-!                             CDATE, IFCST, MARSTYPE,
-!                             IGRIB_HANDLE)
-!          *IU06*    LOGFILE OUTPUT UNIT.
-!          *ITEST*   TEST OUTPUT GIVEN IF ITEST GT 2.
-!          *I1*      FIRST DIMENSION OF FIELD.
-!          *I2*      SECOND DIMENSION OF FIELD.
-!          *FIELD*   FIELD TO BE PACKED.
-!          *ITABLE*  GRIB TABLE NUMBER.
-!          *IPARAM*  PARAMETER IDENTIFIER.
-!          *KLEV*    REFERENCE LEVEL IN full METER
-!                    (SHOULD BE 0 EXCEPT FOR 233 AND 245)
-!          *IK*      DIRECTION INDEX,
-!                    ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
-!          *IM*      FREQUENCY INDEX,
-!                    ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
-!          *CDATE*   DATE AND TIME.
-!          *IFCST*   FORECAST STEP IN HOURS.
-!          *MARSTYPE* TYPE OF CURRENT FIELD
-!          *IGRIB_HANDLE  GRIB HANDLE CONTAINING THE DATA.
+
+!          *IU06*       LOGFILE OUTPUT UNIT.
+!          *ITEST*      TEST OUTPUT GIVEN IF ITEST GT 2.
+!          *I1*         FIRST DIMENSION OF FIELD.
+!          *I2*         SECOND DIMENSION OF FIELD.
+!          *FIELD*      FIELD TO BE PACKED.
+!          *ITABLE*     GRIB TABLE NUMBER.
+!          *IPARAM*     PARAMETER IDENTIFIER.
+!          *KLEV*       REFERENCE LEVEL IN full METER
+!                       (SHOULD BE 0 EXCEPT FOR 233 AND 245)
+!          *IK*         DIRECTION INDEX,
+!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
+!          *IM*         FREQUENCY INDEX,
+!                       ONLY MEANINGFUL FOR SPECTRAL PARAMETERS.
+!          *CDATE*      DATE AND TIME.
+!          *IFCST*      FORECAST STEP IN HOURS.
+!          *MARSTYPE*   TYPE OF CURRENT FIELD
+!          **           VARIOUS PARAMETERS, SEE BELOW
+!          *IGRIB_HANDLE  GRIB HANDLE TO BE POPULATED WITH THE DATA, THE HANDLE SHOULD BE
+!                         CLONED BEFORE SENDING TO THIS SUBROUTINE
 
 !      METHOD.
 !      -------
@@ -50,28 +59,15 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,TH                                        ! NOT USED
-      USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S         ! HAVE
-      USE YOWGRIBHD, ONLY : PPMISS   , PPEPS    ,PPREC    ,NTENCODE ,           ! 
-     &            NGRBRESS ,PPRESOL  ,LGRHDIFS ,LNEWLVTP  ,PPMIN_RESET,
-     &            LPADPOLES, DATE_TIME_WINDOW_END,NWINOFF
-      USE YOWGRID  , ONLY : NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,AMONOP   ,AMOSOP   ,XDELLA
-      USE YOWMPP   , ONLY : NPRECI   ,IRANK
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
-      USE YOWCOUP  , ONLY : KCOUSTEP
-      USE YOWCOUT  , ONLY : LRSTST0
-      USE YOWPCONS , ONLY : G        ,ZMISS    ,DEG
-      USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
       USE GRIB_API_INTERFACE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
       INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
-      INTEGER, INTENT(OUT) :: IGRIB_HANDLE
+      INTEGER, INTENT(INOUT) :: IGRIB_HANDLE
       INTEGER :: ICLASS, ISTEP, ISTEP_HRS 
       INTEGER :: IC, JC, ITABPAR, IDATE, ITIME
       INTEGER :: ICOUNT, NN, I, J, JSN, KK, MM
@@ -89,11 +85,43 @@
 
       CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
-      CHARACTER(LEN=4) :: CSTREAM
-      CHARACTER(LEN=4) :: CEXPVER
       CHARACTER(LEN=12) :: C12
       CHARACTER(LEN=14) :: CDATE1, CDATE2
-      CHARACTER(LEN=24) :: FILNM
+      INTEGER :: NWINOFF
+
+      ! From yowgribhd
+      LOGICAL, INTENT(IN)   :: LGRHDIFS         ! If true then grib header will use information as provided by the ifs.
+      REAL, INTENT(IN)      :: PPMISS           ! All spectral values less or equal ppmiss are replaced by the missing data indicator
+      REAL, INTENT(IN)      :: PPEPS            ! Small number used in spectral packing of 251
+      REAL, INTENT(IN)      :: PPREC            ! Reference value for spectral packing of 251
+      REAL, INTENT(IN)      :: PPRESOL          ! Maximun resolution possible when encoding spectra (parameter 251).
+      REAL, INTENT(IN)      :: PPMIN_RESET      ! Can be used to set the minimum of ppmin in wgribout to a lower value.
+      INTEGER, INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
+      INTEGER, INTENT(IN)   :: DATE_TIME_WINDOW_END
+      INTEGER, INTENT(IN)   :: NGRBRESS         ! Number of bits used to encode spectra
+      LOGICAL, INTENT(IN)   :: LNEWLVTP         ! If true the new levtype definition will be used.
+      LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
+
+      ! From yowgrid
+      INTEGER, INTENT(IN)   :: NLONRGG(:) 
+
+      ! From yowmap
+      INTEGER, INTENT(IN) :: IRGG                ! Grid code: 0 = regular, 1 = irregular.
+      REAL,    INTENT(IN) :: AMONOP              ! Most Northern latitude in grid (degree).
+      REAL,    INTENT(IN) :: AMOSOP              ! Most Southern latitude in grid (degree).
+      REAL,    INTENT(IN) :: XDELLA              ! Grid increment for latitude (degree).
+
+      ! From yowparam
+      CHARACTER*1, INTENT(IN) :: CLDOMAIN        ! Defines the domain of the model (for the fdb and for selection of some variables)
+
+      ! From yowcoup
+      INTEGER, INTENT(IN)     :: KCOUSTEP        ! Coupling time to the IFS (in seconds).
+
+      ! From yowcout
+      LOGICAL, INTENT(IN)     :: LRSTST0         ! True if GRIB header have to be reset such thatthe forecast step points to the start of the run.
+
+      ! From yowpcons
+      REAL                    :: ZMISS           ! Missing data indicator (set in chief or via the ifs).
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -105,24 +133,6 @@
       IF(ITEST.GT.0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',IPARAM
         CALL FLUSH(IU06)
-      ENDIF
-
-!     CLONE GRIB TEMPLATE:
-
-      IF(IPARAM.EQ.251) THEN
-        IF(LGRHDIFS) THEN
-          CALL PRESET_WGRIB_TEMPLATE("S",IGRIB_HANDLE)
-        ELSE
-          IGRIB_HANDLE=-99
-          CALL IGRIB_CLONE(NGRIB_HANDLE_WAM_S,IGRIB_HANDLE)
-        ENDIF
-      ELSE
-        IF(LGRHDIFS) THEN
-          CALL PRESET_WGRIB_TEMPLATE("I",IGRIB_HANDLE)
-        ELSE
-          IGRIB_HANDLE=-99
-          CALL IGRIB_CLONE(NGRIB_HANDLE_WAM_I,IGRIB_HANDLE)
-        ENDIF
       ENDIF
 
       ALLOCATE(VALUES(NTENCODE))
@@ -296,9 +306,9 @@
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
 
 
-      IF(.NOT. LGRHDIFS .OR. 
-     &   (MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR.
-     &   (MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
+      IF(.NOT. LGRHDIFS .OR. & 
+        (MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR. &
+        (MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
 
         READ(CDATE(1:8),'(I8)') IDATE
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'date',IDATE)
@@ -353,8 +363,8 @@
               ENDIF
             ENDIF
 !           in hours
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,
-     &       'offsetToEndOf4DvarWindow',NWINOFF)          
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE, &
+             'offsetToEndOf4DvarWindow',NWINOFF)
           ENDIF 
         ELSEIF ( MARSTYPE .EQ. 'cf' ) THEN
           ICLASS = 10 
@@ -366,8 +376,8 @@
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',ICLASS)
 
-        IF (ICLASS.NE.9.AND.ICLASS.NE.10.AND.ICLASS.NE.11
-     &     .AND.ICLASS.NE.6.AND.IFCST.GT.0) THEN
+        IF (ICLASS.NE.9.AND.ICLASS.NE.10.AND.ICLASS.NE.11 &
+           .AND.ICLASS.NE.6.AND.IFCST.GT.0) THEN
           WRITE(IU06,*)' SUB: WGRIBENCODE: THIS IS A FORECAST'
           WRITE(IU06,*)' BUT MARSTYPE DOES NOT KNOW ABOUT IT'
           WRITE(IU06,*)'  '
