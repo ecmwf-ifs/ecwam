@@ -41,7 +41,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
+!       *CALL* *IMPLSCH (FL3, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
@@ -111,6 +111,7 @@
 !           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
 !           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
 !       *FRCUTINDEX*
+!       *IMPHFTAIL*
 
 !     REFERENCE.
 !     ----------
@@ -122,17 +123,14 @@
 
       USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FR5      ,
-     &            FRM5     ,COFRM4   ,WETAIL   ,TH       ,
-     &            C        ,FRIC     ,FLOGSPRDM1, FLMAX
+      USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     ,
+     &            COFRM4   ,FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,PI       ,EPSMIN
-      USE YOWSHAL  , ONLY : DEPTH    ,TCGOND   ,TFAK     ,INDEP    ,
+      USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT 
-      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,IPHYS    ,CDTPRO   ,
-     &            LBIWBK
+      USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -159,7 +157,7 @@
       INTEGER :: ILEV
       INTEGER :: ICODE_WND, ICODE_WAM
 
-      REAL :: DELT, XIMP, DELT5, AKM1, AK2VGM1
+      REAL :: DELT, XIMP, DELT5
       REAL :: GTEMP1, GTEMP2, FLHAB
       REAL :: ZHOOK_HANDLE
       REAL :: GAMOF
@@ -170,16 +168,13 @@
       REAL, DIMENSION(IJS:IJL) :: PHIWA
       REAL, DIMENSION(IJS:IJL) :: DPTHREDUC
       REAL, DIMENSION(IJS:IJL,NANG) :: FLM 
-      REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
+      REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP
       REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 !     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
-!???
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
       REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
-
-      REAL, DIMENSION(IJS:IJL,NFRE) :: TLFR
 
       LOGICAL :: LCFLX
 
@@ -203,23 +198,6 @@
         ICODE_WND = ICODE
       ENDIF
       ICODE_WAM=3
-
-!??? compute and keep this once anf for all ?
-      IF(ISHALLO.EQ.1) THEN
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            TEMP2(IJ,M) = FRM5(M)
-          ENDDO
-        ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            AKM1 = 1./TFAK(INDEP(IJ),M)
-            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
-            TEMP2(IJ,M) = AKM1*AK2VGM1
-          ENDDO
-        ENDDO
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -250,12 +228,19 @@
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, CICVR, FL3, CIWAB) 
+        CALL CIWABR(IJS, IJL, CICVR, FL3, CIREDUC) 
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              CIREDUC(IJ,K,M)=CIWA(IJ,M)*CIREDUC(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
       ELSE
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              CIWAB(IJ,K,M) = 1. 
+              CIREDUC(IJ,K,M)=CIWA(IJ,M)
             ENDDO
           ENDDO
         ENDDO
@@ -323,30 +308,8 @@
         CALL FLUSH (IU06)
       ENDIF
 
-!!!!  re-impose the tail
-      DO IJ=IJS,IJL
-        DO M=1,MIJ(IJ)
-          TLFR(IJ,M) = 1.
-          TEMP(IJ,M) = 0.
-        ENDDO
-        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
-        DO M=MIJ(IJ)+1,NFRE
-          TLFR(IJ,M) = 0.
-          TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
-        ENDDO
-      ENDDO
-
-      DO K=1,NANG
-        DO IJ=IJS,IJL
-          GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
-        ENDDO
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLM(IJ,K))
-          ENDDO
-        ENDDO
-      ENDDO
+!     RE-IMPOSE HIGH FREQUENCY TAIL
+      CALL SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 
 
 !*    REEVALUATE WIND INPUT SOURCE TERM
@@ -370,7 +333,6 @@
           ENDDO
         ENDDO
       ENDIF
-
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
@@ -475,7 +437,7 @@
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
             FL3(IJ,K,M)=
-     &      MAX(IODP(IJ)*CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
+     &      MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
             FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -489,8 +451,7 @@
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FL3(IJ,K,M)=
-     &      MAX(CIWA(IJ,M)*CIWAB(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
+            FL3(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
             FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -502,31 +463,7 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-!*    2.5.4 MERGE TAIL INTO SPECTRA.
-!           ------------------------
-      DO IJ=IJS,IJL
-        DO M=1,MIJ(IJ)
-          TLFR(IJ,M) = 1.
-          TEMP(IJ,M) = 0.
-        ENDDO
-        GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
-        DO M=MIJ(IJ)+1,NFRE
-          TLFR(IJ,M) = 0.
-          TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
-        ENDDO
-      ENDDO
-
-      DO K=1,NANG
-        DO IJ=IJS,IJL
-          GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
-        ENDDO
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M)+FL3(IJ,K,M)*TLFR(IJ,M)
-            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLM(IJ,K))
-          ENDDO
-        ENDDO
-      ENDDO
+      CALL SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 
 ! ----------------------------------------------------------------------
 
