@@ -137,7 +137,7 @@
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJSLOC:IJLLOC) :: EM, FM
       REAL, DIMENSION(IJSLOC:IJLLOC) :: C3, C4, BF, QP, FP, HMAX, TMAX
-      REAL, DIMENSION(IJSLOC:IJLLOC) :: UST, VST
+      REAL, DIMENSION(IJSLOC:IJLLOC) :: FLD1, FLD2
       REAL, DIMENSION(IJSLOC:IJLLOC) :: ESWELL ,FSWELL ,THSWELL
       REAL, DIMENSION(IJSLOC:IJLLOC) :: P1SWELL,P2SWELL,SPRDSWELL
       REAL, DIMENSION(IJSLOC:IJLLOC) :: ESEA   ,FSEA   ,THWISEA
@@ -229,12 +229,6 @@
      &                P1SEA(KIJS)    ,P2SEA(KIJS)    ,SPRDSEA(KIJS)  ,
      &                EMTRAIN(KIJS:KIJL,:),
      &                THTRAIN(KIJS:KIJL,:),PMTRAIN(KIJS:KIJL,:))
-
-!       STOKES DRIFT
-!!!!!!!! the second order correction should not apply to the Stokes drift
-        CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                &
-     &                   UST(KIJS), VST(KIJS))
-
 
         IR=0
 !       LOAD THE OUTPUT BUFFER:
@@ -445,14 +439,20 @@
           BOUT(KIJS:KIJL,ITOBOUT(IR))=TMAX(KIJS:KIJL)
         ENDIF
 
+!       STOKES DRIFT
         IR=IR+1
+        IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
+!!!!!!!! the second order correction should not apply to the Stokes drift
+        CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                &
+     &                   FLD1(KIJS), FLD2(KIJS))
+        ENDIF
         IF(IPFGTBL(IR).NE.0) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=UST(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=FLD1(KIJS:KIJL)
         ENDIF
 
         IR=IR+1
         IF(IPFGTBL(IR).NE.0) THEN
-          BOUT(KIJS:KIJL,ITOBOUT(IR))=VST(KIJS:KIJL)
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=FLD2(KIJS:KIJL)
         ENDIF
 
         IR=IR+1
@@ -551,66 +551,101 @@
           BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCICOVER(KIJS:KIJL)
         ENDIF
 
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          IF (LNEMOCITHICK) THEN
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOCITHICK(KIJS:KIJL)
+          ELSE
+            BOUT(KIJS:KIJL,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOUCUR(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=NEMOVCUR(KIJS:KIJL)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
            CALL WEFLUX (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
      &                  NFRE, NANG, DFIM, DELTH,
      &                  COSTH, SINTH, NDEPTH, INDEP(KIJS), TCGOND,
-     &                  WEFLXM(KIJS), WEFLXD(KIJS))
+     &                  FLD1(KIJS), FLD2(KIJS))
         ENDIF
-        ITG=ITG+1
-
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,10.,12.,E1012(KIJS))
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=FLD1(KIJS:KIJL)
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,12.,14.,E1214(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=FLD2(KIJS:KIJL)
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,14.,17.,E1417(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,10.,12.,BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,17.,21.,E1721(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,12.,14.,BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,21.,25.,E2125(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,14.,17.,BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
-        ITG=ITG+1
-        IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,25.,30.,E2530(KIJS))
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,17.,21.,BOUT(KIJS,ITOBOUT(IR)))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,21.,25.,BOUT(KIJS,ITOBOUT(IR)))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,25.,30.,BOUT(KIJS,ITOBOUT(IR)))
         ENDIF
 
 
 !       COMPUTE OUTPUT EXTRA FIELDS
 !       add necessary code to compute the extra output fields
-        IF(IPFGTBL(JPPFLAG-4).NE.0) THEN
-          WX1(KIJS:KIJL)=1.0
-        ENDIF
-        IF(IPFGTBL(JPPFLAG-3).NE.0) THEN
-          WX2(KIJS:KIJL)=2.0
-        ENDIF
-        IF(IPFGTBL(JPPFLAG-2).NE.0) THEN
-          WX3(KIJS:KIJL)=3.0
-        ENDIF
-        IF(IPFGTBL(JPPFLAG-1).NE.0) THEN
-          WX4(KIJS:KIJL)=4.0
-        ENDIF
-        IF(IPFGTBL(JPPFLAG).NE.0) THEN
-          WX5(KIJS:KIJL)=5.0
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=1.0
         ENDIF
 
-!!!???debile
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=2.0
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=3.0
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=4.0
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(KIJS:KIJL,ITOBOUT(IR))=5.0
+        ENDIF
+
+
+!!!???debile still to do
         CALL OUTSETWMASK (KIJS, KIJL, IODP(KIJS), BOUT(KIJS,:))
 
       ENDDO
@@ -618,10 +653,8 @@
       CALL GSTATS(1502,1)
 
       IF (ITEST.GE.3) THEN
-        IF (ITESTB.GE.IG) THEN
           WRITE(IU06,*) '      SUB. OUTBS: INTEGRATED',
      &     ' PARAMETERS COMPUTED FOR OUTPUT'
-        ENDIF
       ENDIF
 
 
@@ -635,10 +668,8 @@
       IF (CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
         CALL OUTSPP (FL3, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
         IF (ITEST.GE.3) THEN
-          IF (ITESTB.GE.IG) THEN
             WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
      &       ' AT SELECTED POINTS DONE'
-          ENDIF
         ENDIF
       ENDIF
 
