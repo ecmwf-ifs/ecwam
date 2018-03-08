@@ -1,4 +1,4 @@
-      SUBROUTINE SETWMASK (X, Y, IJS, IJL, THRSCI, IODP)
+      SUBROUTINE SETWMASK (X, IJS, IJL, CICVR, THRSCI, ICM, IODP)
 ! ----------------------------------------------------------------------
 
 !**** *SETWMASK* - IMPOSES MASKS
@@ -9,23 +9,24 @@
 !*    PURPOSE.
 !     --------
 
-!    COPY X TO Y AND IMPOSE THE ICE MASK AND LAND MASK IF PRESENT
+!    IMPOSE THE ICE MASK AND LAND MASK IF PRESENT
 
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SETWMASK (X, Y, IJS, IJL, THRSCI, IODP )
+!       *CALL* *SETWMASK (X, IJS, IJL, CICVR, THRSCI, ICM, IODP)
 !         *X*      - INPUT BLOCK ARRAY.
-!         *Y*      - OUTPUT BLOCK ARRAY.
 !         *IJS*    - INDEX OF FIRST GRID POINT.
 !         *IJL*    - INDEX OF LAST GRID POINT.
+!         *CICVR*  - SEA ICE COVER FIELD.
 !         *THRSCI* - SEA ICE THRESHOLD FOR GIVEN PARAMETER.
-!         *IODP*   - SEA MASK (0 over LAND, 1 OVER SEA).
+!         *ICM*    - IF =1 SEA ICE MASK IS IMPOSED ON OUTPUT FIELD
+!         *IODP*   - SEA MASK FIELD (0 over LAND, 1 OVER SEA).
 
 ! ----------------------------------------------------------------------
 
-      USE YOWICE   , ONLY : LICERUN  , CICOVER
+      USE YOWICE   , ONLY : LICERUN
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : LLSOURCE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -34,15 +35,15 @@
 
       IMPLICIT NONE
 
-      INTEGER, PARAMETER :: IG=1
-      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(IN) :: IJS, IJL, ICM
       INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: IODP 
+      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: X
+      REAL, INTENT(IN) :: THRSCI
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
+
       INTEGER :: IJ
 
-      REAL, INTENT(IN) :: THRSCI
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: X
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: Y
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -51,15 +52,15 @@
 
       IF (LICERUN .AND. LLSOURCE) THEN
         DO IJ = IJS,IJL
-          IF (CICOVER(IJ,IG).GT.THRSCI) THEN
-             Y(IJ) = ZMISS
+          IF (CICVR(IJ).GT.THRSCI) THEN
+             X(IJ) = ZMISS
           ELSE
-             Y(IJ) = X(IJ)*IODP(IJ) + (1-IODP(IJ))*ZMISS
+             X(IJ) = X(IJ)*IODP(IJ) + (1-IODP(IJ))*ZMISS
           ENDIF
         ENDDO
       ELSE
         DO IJ = IJS,IJL
-          Y(IJ) = X(IJ)*IODP(IJ) + (1-IODP(IJ))*ZMISS
+          X(IJ) = X(IJ)*IODP(IJ) + (1-IODP(IJ))*ZMISS
         ENDDO
       ENDIF
 
