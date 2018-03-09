@@ -1,6 +1,6 @@
       SUBROUTINE WEFLUX (F, IJS, IJL,
      &                   NFRE, NANG, DFIM, DELTH,
-     &                   COSTH, SINTH, NDEPTH, INDEP, TCGOND,
+     &                   COSTH, SINTH, CGROUP,
      &                   WEFMAG, WEFDIR)
 !
 ! ----------------------------------------------------------------------
@@ -18,7 +18,7 @@
 
 !       *CALL* *WEFLUX* (F, IJS, IJL,
 !                        NFRE, NANG, DFIM, DELTH,
-!                        COSTH, SINTH, NDEPTH, INDEP, TCGOND,
+!                        COSTH, SINTH, CGROUP,
 !                        WEFMAG, WEFDIR)
 !              *F*      - SPECTRUM.
 !              *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -29,9 +29,7 @@
 !              *DELTH*  - DIRECTIONAL INCREMENT
 !              *COSTH*  - COS(THETA)
 !              *SINTH*  - SIN(THETA)
-!              *NDEPTH* - NUMBER OF DEPTHS
-!              *INDEP*  - DEPTH INDEX ARRAY
-!              *TCGOND* - GROUP VELOCITY TABLE
+!              *CGROUP* - GROUP VELOCITIES
 !              *WEFMAG* - WAVE ENERGY FLUX MAGNITUDE (W/m) 
 !              *WEFDIR* - WAVE ENERGY FLUX MEAN DIRECTION (radian oceanographic convention) 
 !
@@ -55,18 +53,17 @@
  
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,EPSMIN
       USE YOWFRED  , ONLY : FRTAIL
- 
+
 ! ----------------------------------------------------------------------
  
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, NFRE, NANG, NDEPTH
-      INTEGER,DIMENSION(IJS:IJL), INTENT(IN) :: INDEP
+      INTEGER, INTENT(IN) :: IJS, IJL, NFRE, NANG
 
       REAL,INTENT(IN) :: DELTH
       REAL,DIMENSION(NFRE), INTENT(IN) :: DFIM
       REAL,DIMENSION(NANG), INTENT(IN) :: COSTH, SINTH
-      REAL,DIMENSION(NDEPTH,NFRE), INTENT(IN) :: TCGOND 
+      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
       REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: WEFMAG, WEFDIR
@@ -76,7 +73,7 @@
       REAL :: ROG
       REAL :: FCG
       REAL :: DELT
-      REAL,DIMENSION(IJS:IJL) :: TEMP, TEMPX, TEMPY, CGROUP
+      REAL,DIMENSION(IJS:IJL) :: TEMP, TEMPX, TEMPY
       REAL,DIMENSION(IJS:IJL) :: WEFX, WEFY 
 !
 ! ----------------------------------------------------------------------
@@ -97,19 +94,16 @@
 !        ------------------------------------------
 
       DO M=1,NFRE
-         DO IJ=IJS,IJL
-            CGROUP(IJ)=TCGOND(INDEP(IJ),M)
-         ENDDO
          K=1
          DO IJ=IJS,IJL
-            FCG = F(IJ,K,M)*CGROUP(IJ)
+            FCG = F(IJ,K,M)*CGROUP(IJ,M)
             TEMP(IJ) = FCG
             TEMPX(IJ) = FCG*SINTH(K) 
             TEMPY(IJ) = FCG*COSTH(K) 
          ENDDO
          DO K=2,NANG
             DO IJ=IJS,IJL
-              FCG = F(IJ,K,M)*CGROUP(IJ)
+              FCG = F(IJ,K,M)*CGROUP(IJ,M)
               TEMP(IJ) = TEMP(IJ)+FCG
               TEMPX(IJ) = TEMPX(IJ)+FCG*SINTH(K)
               TEMPY(IJ) = TEMPY(IJ)+FCG*COSTH(K)

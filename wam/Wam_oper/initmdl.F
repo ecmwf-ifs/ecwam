@@ -806,15 +806,14 @@
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(NINF-1:NSUP))
-      DO IJ=NINF,NSUP
+      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP((IJS(1):IJL(1)))
+      DO IJ=IJS(1),IJL(1)
         IF(DEPTH(IJ,1).LE.TOOSHALLOW) THEN
           IODP(IJ) = 0
         ELSE
           IODP(IJ) = 1
         ENDIF
       ENDDO
-      IODP(NINF-1)=0
 
       IF(.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(NINF-1:NSUP))
       IF (.NOT. LLUNSTR) THEN

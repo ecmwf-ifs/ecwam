@@ -718,14 +718,7 @@
 
       IR=1
       DO IFLAG=1,JPPFLAG
-        IF((IASSI.EQ.1).AND.
-     &     ((IFLAG.EQ.1).OR.(IFLAG.EQ.7))) THEN                         &
-          IPFGTBL(IFLAG)=IR
-          NIPRMOUT=NIPRMOUT+1
-          ITOBOUT(IFLAG)=NIPRMOUT
-          IR=IR+NWRTOUTWAM
-          IF(IR.GT.NPROC) IR=1
-        ELSEIF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.         &
+        IF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.             &
      &         NFLAG(IFLAG) ) THEN
           IPFGTBL(IFLAG)=IR
           NIPRMOUT=NIPRMOUT+1
