@@ -41,10 +41,14 @@
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF
       USE YOWPARAM , ONLY : NANG
       USE YOWPCONS , ONLY : G        ,ZPI
-
+#ifdef __PGI
+      USE PARKIND_WAVE, ONLY : JWRB
+#endif
+      
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+      
 #include "vmin_d.intfb.h"
 #include "vplus_d.intfb.h"
 
