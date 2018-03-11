@@ -41,9 +41,6 @@
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF
       USE YOWPARAM , ONLY : NANG
       USE YOWPCONS , ONLY : G        ,ZPI
-#ifdef __PGI
-      USE PARKIND_WAVE, ONLY : JWRB
-#endif
       
 !-------------------------------------------------------------------
 
