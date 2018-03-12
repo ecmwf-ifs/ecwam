@@ -1,7 +1,7 @@
       SUBROUTINE OUTBS (IJSLOC, IJLLOC, IJ_OFFSET, MIJ,                 &
      &                  FL1, XLLWS,                                     &
-     &                  BOUTINFO, BOUT,                                 &
-     &                  IG, IU25, IU26, LLOUTBS)
+     &                  BOUT,                                           &
+     &                  IG, IU25, IU26
 ! ----------------------------------------------------------------------
 
 !**** *OUTBS* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
@@ -20,7 +20,7 @@
 !     ----------
 !      *CALL*OUTBS (IJSLOC, IJLLOC, IJ_OFFSET,
 !     &             MIJ, FL1, XLLWS,
-!     &             IG, IU25, IU26, LLOUTBS)
+!     &             IG, IU25, IU26)
 !      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
 !      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
 !      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
@@ -31,7 +31,6 @@
 !      *IG*     - BLOCK NUMBER
 !      *IU25*   - OUTPUT UNIT FOR SPECTRA.
 !      *IU26*   - OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
-!      *LLOUTBS - TRUE WHEN ACCESSING OUTBS
 
 !     EXTERNALS.
 !     ----------
@@ -71,12 +70,9 @@
       INTEGER, INTENT(IN) :: IU25, IU26 
       INTEGER, DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: MIJ
 
-      REAL, DIMENSION(JPPFLAG), INTENT(OUT) :: BOUTINFO
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: XLLWS 
       REAL, DIMENSION(IJSLOC:IJLLOC,JPPFLAG), INTENT(OUT) :: BOUT
-
-      LOGICAL, INTENT(OUT) :: LLOUTBS
 
       INTEGER :: ITT, ITG, ICT, IR, ITR
       INTEGER :: IJ, M 
@@ -100,8 +96,6 @@
 
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
-
-      LLOUTBS=.TRUE.
 
       NPROMA=NPROMA_WAM
 

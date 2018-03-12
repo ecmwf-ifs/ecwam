@@ -135,11 +135,11 @@
       INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJSLOC:IJLLOC,JPPFLAG) :: BOUT 
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT
-      LOGICAL :: LLOUTBS
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -152,7 +152,6 @@
      &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       WRITE (IU06,*) '  '
       LLFLUSH = .TRUE.
-      LLOUTBS=.FALSE.
 
 !     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
 !        ------------------------------------------
@@ -195,17 +194,15 @@
         IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
      &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
 
-          CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                MIJ(IJSLOC),
-     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
-     &                IG, IU25, IU26, LLOUTBS)
-
+          CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),     &
+     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),        &
+     &                BOUT(IJSLOC,:),                                   &
+     &                IG, IU25, IU26)
 
           IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
+            WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT PREPARED IN OUTBS'
           ENDIF
         ENDIF
-
 
 !*    3.1 SAVE FILES.
 !         -----------
@@ -379,12 +376,8 @@
       CALL MPL_BARRIER(CDSTRING='WAMASSI 4:')
       CALL GSTATS(752,1)
 
-!     DEALLOCATE OUTPUT ARRAYS
-      CALL CLEAN_OUTBS(LLOUTBS)
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMASSI',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE WAMASSI

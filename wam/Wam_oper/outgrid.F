@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID (IJS, IJL, IJ_OFFSET, BOUT)
+      SUBROUTINE OUTGRID (IJS, IJL, BOUT)
 ! ----------------------------------------------------------------------
 
 !**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
@@ -28,11 +28,9 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTGRID (IJS, IJL, IJ_OFFSET, BOUT)
+!        *CALL* *OUTGRID (IJS, IJL, BOUT)
 !         *IJS*    - INDEX OF FIRST LOCAL GRIDPOINT.
 !         *IJL*    - INDEX OF LAST LOCAL GRIDPOINT.
-!         *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
-!                     only meaningful if unstructured grid
 !         *BOUT*   - BLOCk OF OUTPUT PARAMETERS
 
 
@@ -61,34 +59,12 @@
       USE OUTPUT_STRUCT, only : SET_UP_ARR_OUT_RECV
       USE YOWPD, only : INE, npa, NP_RES =>np
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL
+      USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL,                &
+     &            NIPRMOUT, ITOBOUT
       USE YOWCURR  , ONLY : U, V 
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH  ,
      &            CIBLOCK ,CITHICK 
-      USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
-     &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,MWP1G    ,MWP2G    ,WSPRDG   ,C4G      ,
-     &            C3G      ,WHGTAG   ,CWHTAG   ,RANGAG   ,
-     &            BFG      ,QPG      ,DEPTHG   ,HMAXG    ,TMAXG    ,
-     &            USTOKESG ,VSTOKESG ,UCURG    ,VCURG    ,PHIEPSG  ,
-     &            PHIAWG   ,TAUOCG   ,STRNMSG  ,RHOAG    ,WSTARG   ,
-     &            CICG     ,CIHG     ,
-     &            E10G     ,WEFLXMG  ,WEFLXDG  ,E1012G   , 
-     &            E1214G   ,E1417G   ,E1721G   ,E2125G   ,E2530G   ,
-     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
-     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
-      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
-     &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
-     &            MWP1WG   ,MWP2WG   ,WSPRDWG
-      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,CDMEAN   ,
-     &            WVSTRMEAN,SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
-     &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
-     &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
-     &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
-     &            STRNMS   ,E10MEAN  ,WEFLXM   ,WEFLXD   ,E1012    ,
-     &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
-     &            WX1      ,WX2      ,WX3      ,WX4      ,WX5
+      USE YOWINTP  , ONLY : GOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH        ,
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
@@ -115,7 +91,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET
+      INTEGER, INTENT(IN) :: IJS, IJL, NGX, NGY, NIPRMOUT
       REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
 
       INTEGER, PARAMETER :: IG=1
@@ -136,7 +112,6 @@
       REAL :: ZCOMBUFR(MPMAXLENGTH)
       REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP 
       REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: TEMP
 
       LOGICAL :: LSQRT
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
@@ -191,21 +166,24 @@
 
         ICNT(:)=0
         DO ICT=1,JPPFLAG
-          IF(ICT.LE.16 .OR. ICT.GE.22) THEN
-            IF(IPFGTBL(ICT).NE.0) THEN 
-              IPR=IPFGTBL(ICT)
-              DO IJ=IJS,IJL
-                ICNT(IPR) = ICNT(IPR) + 1
-                ZSENDBUF(ICNT(IPR),IPR) = TEMP(IJ,ICT)
-              ENDDO
-            ENDIF
+          IF(IPFGTBL(ICT).NE.0) THEN 
+            IPR=IPFGTBL(ICT)
+            DO IJ=IJS,IJL
+              ICNT(IPR) = ICNT(IPR) + 1
+              ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
+            ENDDO
           ENDIF
         ENDDO
       ELSE
-        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
+!!!!! this will need to be adapted to use BOUT
+        WRITE(0,*) '!!! ********************************* !!'
+        WRITE(0,*) '!!! in outgrid. Not yet ready !!!' 
+        WRITE(0,*) '!!! ********************************* !!'
+        CALL ABORT1
+
+        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, BOUT, NFLDPPE)
       END IF
 
-      DEALLOCATE(TEMP)
 
 !     GLOBAL EXCHANGE
 
@@ -255,7 +233,7 @@
       ICT=1
       IFLD=0
       DO WHILE ( IFLD.LT.NFLDPPE(IRANK) .AND. ICT .LE. JPPFLAG )
-        IF((ICT.LE.16 .OR. ICT.GE.22).AND. IPFGTBL(ICT).EQ.IRANK ) THEN
+        IF(IPFGTBL(ICT).EQ.IRANK ) THEN
           IF (.NOT.(LLUNSTR) .or. (OUT_METHOD .eq. 1)) THEN
             DO IPR=1,NPROC
               ICOUNT=ICNT(IPR)
@@ -269,303 +247,11 @@
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
 
-!!! until I move all grid arrays to one work array, need to loop on all
-!!! special case
-          IF(ICT.EQ.1) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,WHGTTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.2) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WDIRTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.3) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WMNFTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.4) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,USTARG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.5) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,UDIRG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.6) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WPKFTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.7) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CDG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.8) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,TAUWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.9) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,SMEANG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.10) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,U10G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.11) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,WHGTWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.12) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,WHGTSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.13) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WDIRWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.14) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WDIRSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.15) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WMNFWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.16) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WMNFSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.22) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WHGTAG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.23) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CWHTAG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.24) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,RANGAG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.25) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP1G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.26) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP2G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.27) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WSPRDG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.28) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP1WG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.29) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP1SG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.30) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP2WG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.31) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,MWP2SG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.32) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WSPRDWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.33) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WSPRDSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.34) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,C4G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.35) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,BFG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.36) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,QPG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.37) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,DEPTHG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.38) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,HMAXG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.39) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,TMAXG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.40) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,USTOKESG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.41) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,VSTOKESG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.42) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,UCURG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.43) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,VCURG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.44) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,PHIEPSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.45) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,PHIAWG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.46) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,TAUOCG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ENDIF
+          LSQRT=.FALSE.
+          CALL MAKEGRID (GTEMP,GOUT(ITOBOUT(ICT),:,:),IG,ZMISS)
+          IFLD=IFLD+1
 
-          DO ITT = 1, NTRAIN
-            IF(ICT.EQ.(46+(ITT-1)*3+1) ) THEN
-              LSQRT=.TRUE.
-              CALL MAKEGRID (GTEMP,WHGTTRG(:,:,ITT),
-     &                   IG,LSQRT,ZMISS)
-              IFLD=IFLD+1
-
-            ELSEIF(ICT.EQ.(46+(ITT-1)*3+2) ) THEN
-              LSQRT=.FALSE.
-              CALL MAKEGRID (GTEMP,WDIRTRG(:,:,ITT),
-     &                   IG,LSQRT,ZMISS)
-              IFLD=IFLD+1
-
-            ELSEIF(ICT.EQ.(46+(ITT-1)*3+3) ) THEN
-              LSQRT=.FALSE.
-              CALL MAKEGRID (GTEMP,MWPMTRG(:,:,ITT),
-     &                   IG,LSQRT,ZMISS)
-              IFLD=IFLD+1
-            ENDIF
-          ENDDO
-
-          IF(ICT.EQ.(46+3*NTRAIN+1)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,STRNMSG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+2)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E10G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+3)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,RHOAG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+4)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WSTARG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+5)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CICG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+6)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,CIHG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+7)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,C3G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+8)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NSSTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+9)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NICCG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+10)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NICTG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+11)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NUCUG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+12)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,NVCUG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+13)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WEFLXMG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+14)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WEFLXDG,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+15)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E1012G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+16)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E1214G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+17)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E1417G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+18)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E1721G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+19)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E2125G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(46+3*NTRAIN+20)) THEN
-            LSQRT=.TRUE.
-            CALL MAKEGRID (GTEMP,E2530G,IG,LSQRT,ZMISS)
-            IFLD=IFLD+1
-          ENDIF
-
-!       EXTRA OUTPUT FIELDS:
-!       See *OUTBS* where they should have been calculated or pick them up from
-!       the forcing fields (see above if the sea ice mask has to be removed)
-          IF(ICT.EQ.(JPPFLAG-4)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX1G,IG,LSQRT,0.)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(JPPFLAG-3)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX2G,IG,LSQRT,0.)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(JPPFLAG-2)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX3G,IG,LSQRT,0.)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(JPPFLAG-1)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX4G,IG,LSQRT,0.)
-            IFLD=IFLD+1
-          ELSEIF(ICT.EQ.(JPPFLAG)) THEN
-            LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX5G,IG,LSQRT,0.)
-            IFLD=IFLD+1
-          ENDIF
-
-        ENDIF ! ( <=16 >=22  and IPFGTBL) 
+        ENDIF ! (IPFGTBL) 
 
         ICT=ICT+1
       ENDDO  ! WHILE

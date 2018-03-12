@@ -290,6 +290,7 @@
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
+     &            NIPRMOUT ,
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
      &            LRSTPARALW, LRSTINFDAT, 
@@ -391,6 +392,7 @@
 
       REAL :: ZHOOK_HANDLE
       REAL :: siz, avgU10NEW, avgHS, sumHS
+      REAL, DIMENSION(IJSLOC:IJLLOC,JPPFLAG) :: BOUT 
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
@@ -403,7 +405,6 @@
       LOGICAL :: LSV, LRST, LOUT
       LOGICAL :: NEWREAD
       LOGICAL, SAVE :: NEWFILE
-      LOGICAL :: LLOUTBS
       LOGICAL :: LLNONASSI
       LOGICAL :: DO_UPDATE_WIND_FLUX
       LOGICAL :: FFLAGBAK(JPPFLAG), PFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
@@ -419,7 +420,6 @@
 #endif
 
       CZERO = ' '
-      LLOUTBS=.FALSE.
 
 !*    0. WRITE OUT NORMS FOR WAVE ENERGY, PEAK PERIOD AND WIND SPEED
 !        -----------------------------------------------------------
@@ -557,13 +557,16 @@
         ENDIF
 
 !       COMPUTE OUTPUT PARAMETERS
-        CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &              MIJ(IJSLOC),
-     &              FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
-     &              IG, IU25, IU26, LLOUTBS)
+        CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),       &
+     &              FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),          &
+     &              BOUT(IJSLOC,:),                                     &
+     &              IG, IU25, IU26)
 
-!       PRINT OUT NORMS
-        CALL OUTWNORM
+        IF(NIPRMOUT.GT.0) THEN
+
+!         PRINT OUT NORMS
+          CALL OUTWNORM
+        ENDIF
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
@@ -603,7 +606,9 @@
           ENDIF
 
           IF( .NOT. LRESTARTED ) THEN
-            CALL OUTINT (IU06,IU20,IU21,IU30,ITEST,NWFDBREF,LFDBOPEN)
+            IF(NIPRMOUT.GT.0 ) THEN
+              CALL OUTINT (IU06,IU20,IU21,IU30,ITEST,NWFDBREF,LFDBOPEN)
+            ENDIF
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
               CALL OUTWSPEC(FL1)
@@ -640,8 +645,6 @@
           ENDIF
       
         ENDIF
-
-        CALL CLEAN_OUTBS(LLOUTBS)
 
       ENDIF ! DO_UPDATE_WIND_FLUX
 
@@ -1133,16 +1136,20 @@
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
 
-            CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                  MIJ(IJSLOC),
-     &                  FL3(IJSLOC:IJLLOC,:,:),XLLWS(IJSLOC:IJLLOC,:,:),
-     &                  IG, IU25, IU26, LLOUTBS)
+            CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),   &
+     &                  FL3(IJSLOC:IJLLOC,:,:),XLLWS(IJSLOC,:,:),       &
+     &                  BOUT(IJSLOC,:),                                 &
+     &                  IG, IU25, IU26)
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*)
-     &         '   SUB. WAMODEL: MODEL OUTPUT DONE IN SUB OUTBS'
+     &         '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
               CALL FLUSH (IU06)
             ENDIF
+
+            IF(NIPRMOUT.GT.0) THEN
+            ENDIF
+
           ENDIF
 
 !*    BRANCHING BACK TO 1.5 FOR NEXT BLOCK OF LATITUDES
@@ -1209,35 +1216,32 @@
 !         DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 
         IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
+          IF(NIPRMOUT.GT.0) THEN
 
-!       PRINTS OUT NORMS
+!           PRINTS OUT NORMS
+            CALL OUTWNORM
 
-          CALL OUTWNORM
-
-          IF (LWAMANOUT) THEN
-!           IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
-!           BECOMES TYPE AN (i.e. speudo analysis)
-            MARSTYPEBAK=MARSTYPE
-            IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
-     &         (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
-              MARSTYPE='an'
+            IF (LWAMANOUT) THEN
+!             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
+!             BECOMES TYPE AN (i.e. speudo analysis)
+              MARSTYPEBAK=MARSTYPE
+              IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+     &           (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+                MARSTYPE='an'
+              ENDIF
+              CALL OUTINT (IU06,IU20,IU21,IU30,ITEST, NWFDBREF,LFDBOPEN)
+              MARSTYPE=MARSTYPEBAK
             ENDIF
-            CALL OUTINT (IU06,IU20,IU21,IU30,ITEST, NWFDBREF,LFDBOPEN)
-            MARSTYPE=MARSTYPEBAK
-          ENDIF
 
-          IF(LMESSPASS) THEN
-            CALL GSTATS(753,0)
-            CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-            CALL GSTATS(753,1)
+            IF(LMESSPASS) THEN
+              CALL GSTATS(753,0)
+              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+             CALL GSTATS(753,1)
+            ENDIF
           ENDIF
-
         ENDIF
 
-!       DEALLOCATE ARRAYS WHICH WERE ALLOCATED IN OUTBS
-        CALL CLEAN_OUTBS(LLOUTBS)
-
-!         PRINT TIME.
+!       PRINT TIME.
         WRITE(IU06,112) CDTPRO
         IF (ITEST .GE. 1 .OR. .NOT.LWCOU) CALL FLUSH (IU06)
   112   FORMAT(/,3X,'!!!!!!!!!!!!!! ',
