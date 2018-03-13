@@ -339,7 +339,7 @@
           HS = 4._JWRB*SQRT(SUM0(IJ))
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE
-          HMAX(IJ) = 0.
+          HMAX(IJ) = 0._JWRB
         ENDIF
       ENDDO 
 
