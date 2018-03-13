@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM
+      SUBROUTINE OUTWNORM(IJSLOC, IJLLOC, BOUT)
 
 ! ----------------------------------------------------------------------
 
