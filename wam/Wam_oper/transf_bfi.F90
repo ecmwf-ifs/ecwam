@@ -1,4 +1,4 @@
-      REAL FUNCTION TRANSF_BFI(XK,D,XNU,SIG_TH)
+      FUNCTION TRANSF_BFI(XK,D,XNU,SIG_TH)
  
 !***  DETERMINE NARROW BAND LIMIT BENJAMIN-FEIR INDEX FOR
 !     THE FINITE DEPTH CASE             
@@ -23,6 +23,8 @@
                      
 !----------------------------------------------------------------------
       IMPLICIT NONE
+
+      REAL(KIND=JWRB) :: TRANSF_BFI
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM

@@ -268,8 +268,6 @@
 !***  3. DETERMINE EPS AND BFI^2.
 !     --------------------------
       DO IJ=IJS,IJL
-         write(*,*) 'debile ',SUM0(IJ), ZSQREPSILON
-
         IF (SUM0(IJ).GT.ZSQREPSILON) THEN
 
           F_M(IJ) = SUM1(IJ)/SUM0(IJ)
@@ -283,7 +281,6 @@
 
           TRANS  = TRANSF_BFI(XKP(IJ),DPTH(IJ),XNU(IJ),SIG_TH(IJ))
           BF2(IJ)= 2._JWRB*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2 *TRANS
-         write(*,*) 'debile BF2 ', XKP(IJ), EPS(IJ), BF2(IJ), TRANS
           BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
         ELSE
           F_M(IJ)    = 0._JWRB

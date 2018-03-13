@@ -1,4 +1,4 @@
-      REAL FUNCTION TRANSF_R(XK,D)
+      FUNCTION TRANSF_R(XK,D)
  
 !***  DETERMINE DEPTH-DEPENDENT RATIO OF ANGULAR WIDTH AND FREQUENCY WIDTH
  
@@ -21,6 +21,8 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+      REAL(KIND=JWRB) :: TRANSF_R
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE

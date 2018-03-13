@@ -1,4 +1,4 @@
-      REAL FUNCTION TRANSF_SNL(XK,D,XNU,SIG_TH)
+      FUNCTION TRANSF_SNL(XK,D,XNU,SIG_TH)
  
 !***  DETERMINE NARROW BAND LIMIT NONLINEAR TRANSFER FUNCTION            
  
@@ -18,6 +18,8 @@
                      
 !----------------------------------------------------------------------
       IMPLICIT NONE
+
+      REAL(KIND=JWRB) :: TRANSF_SNL
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
