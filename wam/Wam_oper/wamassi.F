@@ -74,6 +74,8 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
      &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT,
+     &            NGOUT    ,LLOUTERS ,                                  &
+     &            NIPRMOUT ,                                            &
      &            LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
@@ -135,7 +137,7 @@
       INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJSLOC:IJLLOC,JPPFLAG) :: BOUT 
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: BOUT 
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
@@ -194,11 +196,26 @@
         IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
      &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
 
-          CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),     &
-     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),        &
-     &                BOUT(IJSLOC,:),                                   &
-     &                IG, IU25, IU26)
+!         OUTPUT POINT SPECTRA
+          IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+            CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,              &
+     &                    FL1(IJSLOC:IJLLOC,:,:),                       &
+     &                    IG, IU25, IU26)
+          ENDIF
 
+!         COMPUTE OUTPUT PARAMETERS
+          IF(NIPRMOUT.GT.0) THEN
+            ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
+            CALL OUTBS (IJSLOC, IJLLOC, MIJ(IJSLOC), IG,                &
+     &                  FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),      &
+     &                  BOUT(IJSLOC,:))
+
+
+!           PRINT OUT NORMS
+            CALL OUTWNORM
+
+            DEALLOCATE(BOUT)
+          ENDIF
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT PREPARED IN OUTBS'
           ENDIF

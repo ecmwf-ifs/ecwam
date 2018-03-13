@@ -290,7 +290,8 @@
      &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
      &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            NIPRMOUT ,
+     &            NGOUT    ,LLOUTERS ,                                  &
+     &            NIPRMOUT ,                                            &
      &            LFDB     ,NOUTT    ,NOUTS    ,
      &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
      &            LRSTPARALW, LRSTINFDAT, 
@@ -392,7 +393,7 @@
 
       REAL :: ZHOOK_HANDLE
       REAL :: siz, avgU10NEW, avgHS, sumHS
-      REAL, DIMENSION(IJSLOC:IJLLOC,JPPFLAG) :: BOUT 
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: BOUT
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
@@ -556,16 +557,24 @@
           CALL GSTATS(1439,1)
         ENDIF
 
-!       COMPUTE OUTPUT PARAMETERS
-        CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),       &
-     &              FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),          &
-     &              BOUT(IJSLOC,:),                                     &
-     &              IG, IU25, IU26)
+!       OUTPUT POINT SPECTRA
+        IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+          CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,                &
+     &                  FL1(IJSLOC:IJLLOC,:,:),                         &
+     &                  IG, IU25, IU26)
+        ENDIF
 
+!       COMPUTE OUTPUT PARAMETERS
         IF(NIPRMOUT.GT.0) THEN
+          ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
+          CALL OUTBS (IJSLOC, IJLLOC, MIJ(IJSLOC), IG,                  &
+     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),        &
+     &                BOUT(IJSLOC,:))
 
 !         PRINT OUT NORMS
           CALL OUTWNORM
+
+          DEALLOCATE(BOUT)
         ENDIF
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
@@ -1136,18 +1145,29 @@
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
 
-            CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET, MIJ(IJSLOC),   &
-     &                  FL3(IJSLOC:IJLLOC,:,:),XLLWS(IJSLOC,:,:),       &
-     &                  BOUT(IJSLOC,:),                                 &
-     &                  IG, IU25, IU26)
+!           OUTPUT POINT SPECTRA
+            IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+              CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
+     &                      FL3(IJSLOC:IJLLOC,:,:),                     &
+     &                      IG, IU25, IU26)
+            ENDIF
+
+!           COMPUTE OUTPUT PARAMETERS
+            IF(NIPRMOUT.GT.0) THEN
+              ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
+              CALL OUTBS (IJSLOC, IJLLOC, MIJ(IJSLOC), IG,              &
+     &                    FL3(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),    &
+     &                    BOUT(IJSLOC,:))
+
+              CALL OUTWNORM
+
+              DEALLOCATE(BOUT)
+            ENDIF
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*)
      &         '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
               CALL FLUSH (IU06)
-            ENDIF
-
-            IF(NIPRMOUT.GT.0) THEN
             ENDIF
 
           ENDIF
@@ -1217,9 +1237,6 @@
 
         IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
           IF(NIPRMOUT.GT.0) THEN
-
-!           PRINTS OUT NORMS
-            CALL OUTWNORM
 
             IF (LWAMANOUT) THEN
 !             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
