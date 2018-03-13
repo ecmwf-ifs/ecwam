@@ -44,7 +44,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP    ,DEPTHA,   DEPTHD
+      USE YOWSHAL  , ONLY : TFAK     ,INDEP,DEPTHA,DEPTHD,BATHYMAX
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -84,7 +84,7 @@
       DO M=1,NFRE
         IF (ISHALLO.EQ.1) THEN
           DO IJ=IJS,IJL
-            DPTH(IJ)=999.
+            DPTH(IJ)=BATHYMAX
             XK(IJ)=(ZPI*FR(M))**2/G
           ENDDO
         ELSE

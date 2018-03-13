@@ -70,7 +70,7 @@
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
      &            LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX 
       USE YOWTEST  , ONLY : IU06, ITEST
 
 ! ----------------------------------------------------------------------
@@ -89,7 +89,7 @@
       INTEGER, ALLOCATABLE :: IDUM(:)
       INTEGER, ALLOCATABLE :: IA2H(:), IA1(:,:)
 
-      REAL :: BATHYMAX, TABLEMAX
+      REAL :: BATHYMAX_LOC, TABLEMAX
       REAL :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       REAL :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
       REAL, ALLOCATABLE :: XA2H(:), XA1(:,:)
@@ -482,20 +482,20 @@
       ENDIF
 
 !     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
-      BATHYMAX=999.
+      BATHYMAX_LOC=0.
       DO J=1,NY
         DO I=1,NX
-          BATHYMAX=MIN(BATHY(I,J),BATHYMAX)
+          BATHYMAX_LOC=MIN(MAX(BATHY(I,J),BATHYMAX_LOC),BATHYMAX)
         ENDDO
       ENDDO
       TABLEMAX=DEPTHA*DEPTHD**(NDEPTH-1)
-      IF(BATHYMAX.GT.TABLEMAX) THEN
+      IF(BATHYMAX_LOC.GT.TABLEMAX) THEN
         WRITE (IU06,*) ' ******************************************'
         WRITE (IU06,*) ' *                                        *'
         WRITE (IU06,*) ' *      WARNING ERROR IN SUB. TOPOAR      *'
         WRITE (IU06,*) ' *      ============================      *'
         WRITE (IU06,*) ' *                                        *'
-        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX 
+        WRITE (IU06,*) ' *  THE MAXIMUM DEPTH ',BATHYMAX_LOC
         WRITE (IU06,*) ' *  IS LARGER THAN '
         WRITE (IU06,*) ' *  THE MAXIMUM DEPTH IN TABLES ',TABLEMAX 
         WRITE (IU06,*) ' *  ADJUST DEPTHA, DEPTHD, NDEPTH !       *'

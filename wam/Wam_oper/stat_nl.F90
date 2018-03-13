@@ -132,7 +132,12 @@
 !         DYNAMIC KURTOSIS
  
           R(IJ) = TRANSF(IJ)*(SIG_TH(IJ)/XNU(IJ))**2
-          XJ    = BETA_R0*(CONST_THR-R(IJ))/(R(IJ)+R_0)
+          IF (R(IJ).GT.1._JWRB) THEN
+            XJ = BETA_R0*(1._JWRB-CONST_THR*R(IJ))/(R(IJ)*(1._JWRB+R_0*R(IJ)))
+          ELSE
+            XJ = BETA_R0*(CONST_THR-R(IJ))/(R(IJ)+R_0)
+          ENDIF
+
 
           C4_DYN(IJ)  = XJ*BF2(IJ)
  
