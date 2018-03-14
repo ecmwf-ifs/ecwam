@@ -1206,7 +1206,7 @@
       IF(.NOT.ALLOCATED(ENH))
      &   ALLOCATE(ENH(IJS(1):IJL(1),MLSTHG,IGL))
 
-      IF (ISNONLIN.NE.0) THEN
+      IF (ISNONLIN.EQ.1) THEN
         IF (ISHALLO.NE.1) THEN
           DO IG=1,IGL
             DO M=1,NFRE

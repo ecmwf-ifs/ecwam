@@ -1,4 +1,4 @@
-      SUBROUTINE SBOTTOM (F, FL, IJS, IJL, IG, SL)
+      SUBROUTINE SBOTTOM (IJS, IJL, DPTH, F, FL, SL)
 
 !SHALLOW
 ! ----------------------------------------------------------------------
@@ -17,12 +17,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SBOTTOM (F, FL, IJS, IJL, IG, SL)*
-!          *F*   - SPECTRUM.
-!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!       *CALL* *SBOTTOM (IJS, IJL, DPTH, F, FL, SL)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *IG*  - BLOCK NUMBER
+!          *DEPTH* - WATER DEPTH
+!          *F*   - SPECTRUM.
+!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 
 !     METHOD.
@@ -41,18 +41,19 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
-      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
+      USE YOWSHAL  , ONLY : TFAK     ,INDEP   ,BATHYMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG
-      INTEGER :: IJ, K, M
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: DPTH 
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
 
+      INTEGER :: IJ, K, M
       REAL :: CONST, ARG
       REAL :: ZHOOK_HANDLE
       REAL, DIMENSION(IJS:IJL) :: SBO
@@ -65,8 +66,8 @@
       CONST = -2.0*0.038/G
       DO M=1,NFRE
         DO IJ=IJS,IJL
-          IF(DEPTH(IJ,IG).LT.999) THEN
-            ARG = 2.* DEPTH(IJ,IG)*TFAK(INDEP(IJ),M)
+          IF(DPTH(IJ).LT.BATHYMAX) THEN
+            ARG = 2.* DPTH(IJ)*TFAK(INDEP(IJ),M)
             ARG = MIN(ARG,50.)
             SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
           ENDIF
@@ -74,7 +75,7 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF(DEPTH(IJ,IG).LT.999) THEN
+            IF(DPTH(IJ).LT.BATHYMAX) THEN
               SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ)
             ENDIF
@@ -85,6 +86,4 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
 #endif
-
-      RETURN
       END SUBROUTINE SBOTTOM
