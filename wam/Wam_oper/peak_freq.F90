@@ -63,10 +63,11 @@
 !     ------------------------------------------------
  
       DO M=1,NFRE
+        K=1
         DO IJ=IJS,IJL
-          F1D(IJ,M) = 0._JWRB
+          F1D(IJ,M) = F3(IJ,K,M)*DELTH
         ENDDO
-        DO K=1,NANG
+        DO K=2,NANG
           DO IJ=IJS,IJL
             F1D(IJ,M) = F1D(IJ,M)+F3(IJ,K,M)*DELTH
           ENDDO

@@ -167,8 +167,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,EPSMIN  ,      &
-     &             BF2MAX  ,BF2MIN
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,ZPISQRT ,      &
+     &             EPSMIN   ,BF2MAX  ,BF2MIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMOFR ,      &
      &             DFFR     ,DFFR2   ,                                  &
      &             WETAIL   ,WP1TAIL ,WP2TAIL ,FRTAIL
@@ -308,7 +308,7 @@
 !     DETERMINE NUMBER OF DEGREES OF FREEDOM
  
       DUR = 1200._JWRB
-      ZFAC = 2._JWRB*ZPI/SQRT(ZPI)
+      ZFAC = 2._JWRB*ZPI/ZPISQRT
       DO IJ=IJS,IJL
         IF (F_M(IJ).GT.0._JWRB) THEN
           XNU_LH(IJ) = SQRT(MAX(0._JWRB,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
@@ -335,11 +335,11 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (SUM0(IJ).GT.0.) THEN
+        IF (SUM0(IJ).GT.0._JWRB) THEN
           HS = 4._JWRB*SQRT(SUM0(IJ))
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE
-          HMAX(IJ) = 0.
+          HMAX(IJ) = 0._JWRB
         ENDIF
       ENDDO 
 

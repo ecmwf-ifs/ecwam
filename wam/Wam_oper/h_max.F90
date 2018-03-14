@@ -77,16 +77,16 @@
 ! 
       TWOG1 = -2._JWRB*GAM
       G2 = GAM**2+PI**2/6._JWRB
+      AE = 0.5_JWRB*EB*(EB-2._JWRB)
+      BE = 0.5_JWRB*EB*(EB**2-6._JWRB*EB+6._JWRB)
 
       DO IJ=IJS,IJL
         H_C(IJ) = 2._JWRB
-        E(IJ)   = 2._JWRB*H_C(IJ)**2
+        E(IJ)   = 2._JWRB*(IJ)**2
       ENDDO
 
       DO IJ=IJS,IJL
         IF (NSLC(IJ).GT.0) THEN
-          AE = 0.5_JWRB*EB*(EB-2._JWRB)
-          BE = 0.5_JWRB*EB*(EB**2-6._JWRB*EB+6._JWRB)
           F  = LOG(MAX(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE,0.1))
 
           AA(IJ) = ((EB-F)**2-2._JWRB*EB)/(2._JWRB*F)
@@ -109,7 +109,6 @@
         ENDIF
       ENDDO
 
-!
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('H_MAX',1,ZHOOK_HANDLE)
 #endif

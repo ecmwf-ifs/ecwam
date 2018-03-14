@@ -31,16 +31,11 @@
 !     P.A.E.M. JANSSEN, NOVEMBER 2017
  
 !----------------------------------------------------------------------
-
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,ZPISQRT   ,   &
-     &             BF2MAX  ,BF2MIN   ,C4MAX    ,C4MIN    ,DKMAX
-
+      USE YOWPCONS , ONLY : G        ,PI       ,C4MAX    ,C4MIN    ,DKMAX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
- 
       IMPLICIT NONE 
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -103,10 +98,8 @@
           ENDIF
           V_G_SQ=V_G**2
 
-
           ZFAC     = -0.25_JWRB*XK*C_S_SQ/(C_S_SQ-V_G_SQ)
           DELTA_1D = ZFAC*(2._JWRB*(1._JWRB-T0_SQ)/T0+1._JWRB/X)
-
 
           ZFAC1    = 0.5_JWRB*C_0*C_S_SQ*V_G/T0
 
@@ -137,7 +130,6 @@
           ELSE
             XJ = BETA_R0*(CONST_THR-R(IJ))/(R(IJ)+R_0)
           ENDIF
-
 
           C4_DYN(IJ)  = XJ*BF2(IJ)
  
