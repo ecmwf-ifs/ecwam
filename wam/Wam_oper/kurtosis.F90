@@ -224,7 +224,7 @@
 
 !     COMPUTES THE DIFFERENT MOMENTS 
       DO M=1,NFRE
-        FAC4(M) = 2._JWRB*DFFR(M)
+        FAC4(M) = 2._JWRB*DELTH*DFFR(M)
       ENDDO
  
       DO IJ=IJS,IJL
@@ -339,7 +339,7 @@
           HS = 4._JWRB*SQRT(SUM0(IJ))
           HMAX(IJ) = HMAXN(IJ)*HS
         ELSE
-          HMAX(IJ) = 0._JWRB
+          HMAX(IJ) = 0.
         ENDIF
       ENDDO 
 
