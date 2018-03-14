@@ -170,7 +170,7 @@
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,ZPISQRT ,      &
      &             EPSMIN   ,BF2MAX  ,BF2MIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMOFR ,      &
-     &             DFFR     ,DFFR2   ,                                  &
+     &             DFIMFR   ,DFIMFR2,                                   &
      &             WETAIL   ,WP1TAIL ,WP2TAIL ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -224,7 +224,7 @@
 
 !     COMPUTES THE DIFFERENT MOMENTS 
       DO M=1,NFRE
-        FAC4(M) = 2._JWRB*DELTH*DFFR(M)
+        FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
       ENDDO
  
       DO IJ=IJS,IJL
@@ -247,8 +247,8 @@
         ENDDO
         DO IJ=IJS,IJL
           SUM0(IJ) = SUM0(IJ)+TEMP(IJ)*DFIM(M)
-          SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFFR(M)
-          SUM2(IJ) = SUM2(IJ)+TEMP(IJ)*DFFR2(M)
+          SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFIMFR(M)
+          SUM2(IJ) = SUM2(IJ)+TEMP(IJ)*DFIMFR2(M)
           SUM4(IJ) = SUM4(IJ)+TEMP(IJ)**2*FAC4(M)
           SUM6(IJ) = SUM6(IJ)+TEMP(IJ)*DFIMOFR(M)
         ENDDO

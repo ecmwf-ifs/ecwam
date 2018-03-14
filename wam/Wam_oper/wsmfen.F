@@ -38,14 +38,13 @@
 
       USE YOWALTAS , ONLY : AFCRV   ,BFCRV     ,
      &            ESH      ,ASH     ,BSH
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFFR      ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMFR    ,    &
      &            WETAIL   ,WP1TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       REAL, INTENT(IN) :: USTT, DPT
@@ -93,7 +92,7 @@
           TEMP = TEMP+FSEA(K,M)
         ENDDO
         EW = EW+TEMP*DFIM(M)
-        FM = FM+TEMP*DFFR(M)
+        FM = FM+TEMP*DFIMFR(M)
       ENDDO
       DELT25 = WETAIL*FR(NFRE)*DELTH
       EW = EW+DELT25*TEMP                                               

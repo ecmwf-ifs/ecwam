@@ -32,9 +32,9 @@
 !-----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFFR    ,DFIMOFR ,      &
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMFR  ,DFIMOFR ,      &
      &               DELTH, TH       ,SINTH    ,COSTH   ,WETAIL  ,      &
-     &            WP1TAIL ,FRTAIL
+     &               WP1TAIL ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -84,7 +84,7 @@
         ENDDO
         DO IJ=IJS,IJL
           SUM0(IJ) = SUM0(IJ)+TEMP(IJ)*DFIM(M)
-          SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFFR(M)
+          SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFIMFR(M)
           SUM6(IJ) = SUM6(IJ)+TEMP(IJ)*DFIMOFR(M)
         ENDDO
       ENDDO

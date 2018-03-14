@@ -40,19 +40,20 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFFR2   ,DELTH  ,WP2TAIL
+      USE YOWFRED  , ONLY : FR       ,DFIMFR2   ,DELTH  ,WP2TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
-      INTEGER :: IJ,K,M,IJS,IJL
-      REAL :: F(IJS:IJL,NANG,NFRE)
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
+      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: MEANWP2
+
+      INTEGER :: IJ, K, M
       REAL,DIMENSION(IJS:IJL) :: TEMP
-      REAL,DIMENSION(IJS:IJL), intent(in) :: EMEAN
-      REAL,DIMENSION(IJS:IJL),intent(out) :: MEANWP2
       REAL :: COEF_FR
 
 ! ----------------------------------------------------------------------
@@ -71,7 +72,7 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          MEANWP2(IJ) = MEANWP2(IJ)+DFFR2(M)*TEMP(IJ)
+          MEANWP2(IJ) = MEANWP2(IJ)+DFIMFR2(M)*TEMP(IJ)
         ENDDO
       ENDDO
 
@@ -89,5 +90,4 @@
         ENDIF
       ENDDO
 
-      RETURN
       END SUBROUTINE MWP2
