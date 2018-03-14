@@ -1,11 +1,11 @@
       SUBROUTINE H_MAX(C3,C4,NSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
-!
+ 
 !***  DETERMINE EXPECTED MAXIMUM WAVE HEIGHT, NORMALISED WITH
 !     SIGNIFICANT WAVE HEIGHT.
-!
+ 
 !     PURPOSE:
 !     -------
-!
+ 
 !     DETERMINE EXPECTED MAXIMUM ENVELOPE WAVE HEIGHT WHICH IS OBTAINED
 !     FROM EXPECTED MAXIMUM WAVE ENERGY
 !                 /
@@ -17,7 +17,7 @@
 !
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
-!
+ 
 !     C_3            REAL         SKEWNESS
 !     C_4            REAL         KURTOSIS
 !     NSLC           INTEGER      NUMBER OF SIGNIFICANT LEVEL CROSSINGS
@@ -26,7 +26,7 @@
 !     IJL            INTEGER      LAST INDEX
 !     AA             REAL         FIRST PARAMETER OF RESIDORI PDF
 !     BB             REAL         =2(AA+1)
-!
+ 
 !     OUTPUT:
 !     ------
 !
@@ -36,18 +36,15 @@
 !
 !     AUTHOR:
 !     ------
-!
 !     P.A.E.M. JANSSEN, NOVEMBER 2017
-!
+ 
 !----------------------------------------------------------------------
-!
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : PI
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -82,7 +79,7 @@
 
       DO IJ=IJS,IJL
         H_C(IJ) = 2._JWRB
-        E(IJ)   = 2._JWRB*(IJ)**2
+        E(IJ)   = 2._JWRB*H_C(IJ)**2
       ENDDO
 
       DO IJ=IJS,IJL
