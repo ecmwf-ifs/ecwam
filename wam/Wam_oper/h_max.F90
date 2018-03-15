@@ -92,8 +92,17 @@
 
           XN = REAL(NSLC(IJ))
           DO I=1,NITER
+!!!debile
+           if(E(IJ).LE.0._JWRB) then
+             write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ)
+             HMAXN(IJ) = 0._JWRB
+             SIG_HM(IJ)= 0._JWRB
+             exit
+           else
             Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
+           endif
+
           ENDDO
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))
           SIG_HM(IJ) = PI*HMAXN(IJ)/(TWOSQRT6*(Z0+0.5_JWRB*GAM))

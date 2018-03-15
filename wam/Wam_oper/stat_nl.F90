@@ -80,7 +80,7 @@
       DO IJ = IJS,IJL
         OM  = OM0(IJ)
         XK  = XK0(IJ)
-        IF (XM0(IJ).GT.ZSQREPSILON .AND. XK.GT.0._JWRB) THEN
+        IF (XM0(IJ).GT.ZEPSILON .AND. XK.GT.0._JWRB) THEN
           D   = DPTH(IJ)
           X   = XK*D
           T0  = TANH(X)
