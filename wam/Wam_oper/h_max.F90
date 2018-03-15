@@ -14,7 +14,7 @@
 !     WHERE P_MAX(E) IS DERIVED IN JANSSEN (2015) AND BASED ON WORK DONE BY
 !     MONTINA ET AL (2009). MAXIMUM WAVE HEIGHT THEN FOLLOWS FROM
 !     <H_MAX>=SQRT(<E_MAX>/2. 
-!
+
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
  
@@ -29,11 +29,11 @@
  
 !     OUTPUT:
 !     ------
-!
+
 !     HMAXN          REAL         MAXIMUM WAVE HEIGHT NORMALIZED WITH
 !                                 SIGNIFICANT WAVE HEIGHT H_S. 
 !     SIG_HM         REAL         WIDTH OF HMAX DISTRIBUTION 
-!
+
 !     AUTHOR:
 !     ------
 !     P.A.E.M. JANSSEN, NOVEMBER 2017
@@ -71,7 +71,7 @@
 
 !*    1. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 !     -----------------------------------------
-! 
+
       TWOG1 = -2._JWRB*GAM
       G2 = GAM**2+PI**2/6._JWRB
       AE = 0.5_JWRB*EB*(EB-2._JWRB)
@@ -92,7 +92,7 @@
 
           XNLOG = LOG(REAL(NSLC(IJ)))
           DO I=1,NITER
-            Z0 = XNLOG+0.5_JWRB*LOG(E(IJ))
+            Z0 = XNLOG+0.5_JWRB*LOG(0.5_JWRB*E(IJ))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
           ENDDO
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))
@@ -100,7 +100,6 @@
         ELSE
           AA(IJ) = 0._JWRB
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
-          BBM1(IJ) = 1._JWRB/BB(IJ)
           HMAXN(IJ) = 0._JWRB
           SIG_HM(IJ)= 0._JWRB
         ENDIF
