@@ -61,7 +61,7 @@
       REAL(KIND=JWRB), PARAMETER :: EB = 10._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XNLOG
+      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, H_C, BBM1
 
 !----------------------------------------------------------------------
@@ -90,9 +90,9 @@
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
           BBM1(IJ) = 1._JWRB/BB(IJ)
 
-          XNLOG = LOG(REAL(NSLC(IJ)))
+          XN = REAL(NSLC(IJ))
           DO I=1,NITER
-            Z0 = XNLOG+0.5_JWRB*LOG(0.5_JWRB*E(IJ))
+            Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
           ENDDO
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))

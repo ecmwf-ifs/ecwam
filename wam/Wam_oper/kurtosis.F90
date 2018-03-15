@@ -268,9 +268,9 @@
 !***  3. DETERMINE EPS AND BFI^2.
 !     --------------------------
       DO IJ=IJS,IJL
-        IF (SUM0(IJ).GT.ZSQREPSILON) THEN
+        IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
 
-          F_M(IJ) = SUM1(IJ)/SUM0(IJ)
+          F_M(IJ) = MAX(MIN(SUM1(IJ)/SUM0(IJ),FRMAX),FRMIN)
 
           QP(IJ) = SUM4(IJ)/SUM0(IJ)**2
           SIG_OM(IJ) = CONST_SIG_SQRTPIM1/MAX(QP(IJ),ZEPSILON)
@@ -306,8 +306,10 @@
  
  
 !     DETERMINE NUMBER OF DEGREES OF FREEDOM
- 
+
+!     DURATION IN SECONDS: 
       DUR = 1200._JWRB
+
       ZFAC = 2._JWRB*ZPI/ZPISQRT
       DO IJ=IJS,IJL
         IF (F_M(IJ).GT.0._JWRB) THEN
