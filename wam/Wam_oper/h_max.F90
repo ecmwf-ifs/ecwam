@@ -97,6 +97,7 @@
              write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ)
              HMAXN(IJ) = 0._JWRB
              SIG_HM(IJ)= 0._JWRB
+             E(IJ)=0._JWRB
              exit
            else
             Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
