@@ -21,7 +21,6 @@
 !     C_3            REAL         SKEWNESS
 !     C_4            REAL         KURTOSIS
 !     NSLC           INTEGER      NUMBER OF SIGNIFICANT LEVEL CROSSINGS
-!     H_C            REAL         FIRST GUESS OF EXPECTED MAX WAVE HEIGHT
 !     IJS            INTEGER      FIRST INDEX
 !     IJL            INTEGER      LAST INDEX
 !     AA             REAL         FIRST PARAMETER OF RESIDORI PDF
@@ -56,6 +55,9 @@
       INTEGER(KIND=JWIM), PARAMETER :: NITER = 5
       INTEGER(KIND=JWIM) :: IJ, I
 
+!     H_C   FIRST GUESS OF EXPECTED NORMALISED MAX WAVE HEIGHT
+      REAL(KIND=JWRB), PARAMETER :: H_C= 2._JWRB 
+
       REAL(KIND=JWRB), PARAMETER :: TWOSQRT6=2._JWRB*SQRT(6._JWRB)
       REAL(KIND=JWRB), PARAMETER :: GAM = 0.5772_JWRB
       REAL(KIND=JWRB), PARAMETER :: EB = 10._JWRB
@@ -80,8 +82,7 @@
       BE = 0.5_JWRB*EB*(EB**2-6._JWRB*EB+6._JWRB)
 
       DO IJ=IJS,IJL
-        H_C(IJ) = 2._JWRB
-        E(IJ)   = 2._JWRB*H_C(IJ)**2
+        E(IJ) = 2._JWRB*H_C**2
       ENDDO
 
       DO IJ=IJS,IJL
