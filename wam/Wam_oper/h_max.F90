@@ -68,7 +68,7 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN, EMIN, EMAX
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, H_C, BBM1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1
 
 !----------------------------------------------------------------------
 #ifdef ECMWF
@@ -105,17 +105,16 @@
            if(E(IJ).LE.0._JWRB) then
              write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ),F
            endif
+!!!!
 
-           E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
-
+            E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
           ENDDO
-          E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))
           SIG_HM(IJ) = PI*HMAXN(IJ)/(TWOSQRT6*(Z0+0.5_JWRB*GAM))
         ELSE
           AA(IJ) = 0._JWRB
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
-          HMAXN(IJ) = 0._JWRB
+          HMAXN(IJ) = H_C_MIN
           SIG_HM(IJ)= 0._JWRB
         ENDIF
       ENDDO
