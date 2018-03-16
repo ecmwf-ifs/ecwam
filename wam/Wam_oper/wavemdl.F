@@ -136,18 +136,6 @@
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
-!#include "abort1.intfb.h"
-!#include "cimsstrn.intfb.h"
-!#include "difdate.intfb.h"
-!#include "incdate.intfb.h"
-!#include "initmdl.intfb.h"
-!#include "mpfldtoifs.intfb.h"
-!#include "outbeta.intfb.h"
-!#include "prewind.intfb.h"
-!#include "setmarstype.intfb.h"
-!#include "stokesdrift.intfb.h"
-!#include "wamassi.intfb.h"
-!#include "wamodel.intfb.h"
 
 !     INITIAL DATE OF THE RUN
       CHARACTER(LEN=14), INTENT(IN) :: CBEGDAT
