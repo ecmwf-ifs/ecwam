@@ -101,12 +101,6 @@
           DO I=1,NITER
             Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
-!!!debile
-           if(E(IJ).LE.0._JWRB) then
-             write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ),F
-           endif
-!!!!
-
             E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
           ENDDO
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))
