@@ -59,6 +59,8 @@
       REAL(KIND=JWRB), PARAMETER :: TWOSQRT6=2._JWRB*SQRT(6._JWRB)
       REAL(KIND=JWRB), PARAMETER :: GAM = 0.5772_JWRB
       REAL(KIND=JWRB), PARAMETER :: EB = 10._JWRB
+      REAL(KIND=JWRB), PARAMETER :: F_MIN = -0.1_JWRB
+      REAL(KIND=JWRB), PARAMETER :: AA_MAX = 1000._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN
@@ -84,9 +86,9 @@
 
       DO IJ=IJS,IJL
         IF (NSLC(IJ).GT.0) THEN
-          F  = LOG(MAX(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE,0.1))
+          F  = MAX(LOG(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE),F_MIN)
 
-          AA(IJ) = ((EB-F)**2-2._JWRB*EB)/(2._JWRB*F)
+          AA(IJ) = MIN(((EB-F)**2-2._JWRB*EB)/(2._JWRB*F),AA_MAX)
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
           BBM1(IJ) = 1._JWRB/BB(IJ)
 
