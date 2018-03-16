@@ -168,7 +168,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,ZPISQRT ,      &
-     &             EPSMIN   ,BF2MAX  ,BF2MIN
+     &             EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMOFR ,      &
      &             DFIMFR   ,DFIMFR2,                                   &
      &             WETAIL   ,WP1TAIL ,WP2TAIL ,FRTAIL
@@ -186,7 +186,11 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL):: NSLC
+
+      REAL(KIND=JWRB), PARAMETER :: BF2MIN = -5._JWRB
+      REAL(KIND=JWRB), PARAMETER :: BF2MAX = 5._JWRB
       REAL(KIND=JWRB), PARAMETER :: SQRT2=SQRT(2._JWRB)
+
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELT25, COEF_FR1, COEF_FR2, DELT2
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1,CONST_OM_ZPI,AKI

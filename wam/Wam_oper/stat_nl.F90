@@ -32,7 +32,7 @@
  
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWPCONS , ONLY : G        ,PI       ,C4MAX    ,C4MIN    ,DKMAX
+      USE YOWPCONS , ONLY : G        ,PI       ,DKMAX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
@@ -43,6 +43,10 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, C4_B, C4_DYN
 
       REAL(KIND=JWRB), PARAMETER :: XKDMIN = 0.05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C3MIN = 0._JWRB
+      REAL(KIND=JWRB), PARAMETER :: C3MAX = 0.25_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C4MIN = -0.33_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C4MAX = 0.33_JWRB
 
       REAL(KIND=JWRB), PARAMETER :: CONST_C3 = 1.12_JWRB*2._JWRB
       REAL(KIND=JWRB), PARAMETER :: CONST_C4 = 0.91_JWRB*8._JWRB  
@@ -116,6 +120,7 @@
 !         SKEWNESS
  
           C3(IJ) = CONST_C3*SQRT(XM0(IJ))*(ALPH+DELTA)
+          C3(IJ)  = MAX(MIN(C3MAX,C3(IJ)),C3MIN)
  
 !         BOUND KURTOSIS
  
