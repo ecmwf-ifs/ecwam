@@ -57,15 +57,17 @@
 
 !     H_C   FIRST GUESS OF EXPECTED NORMALISED MAX WAVE HEIGHT
       REAL(KIND=JWRB), PARAMETER :: H_C= 2._JWRB 
+      REAL(KIND=JWRB), PARAMETER :: H_C_MIN= 1._JWRB 
+      REAL(KIND=JWRB), PARAMETER :: H_C_MAX= 5._JWRB 
 
       REAL(KIND=JWRB), PARAMETER :: TWOSQRT6=2._JWRB*SQRT(6._JWRB)
       REAL(KIND=JWRB), PARAMETER :: GAM = 0.5772_JWRB
       REAL(KIND=JWRB), PARAMETER :: EB = 10._JWRB
-      REAL(KIND=JWRB), PARAMETER :: F_MIN = -0.1_JWRB
+      REAL(KIND=JWRB), PARAMETER :: FLOGMIN = 0.1_JWRB
       REAL(KIND=JWRB), PARAMETER :: AA_MAX = 1000._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN
+      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN, EMIN, EMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, H_C, BBM1
 
 !----------------------------------------------------------------------
@@ -81,13 +83,15 @@
       AE = 0.5_JWRB*EB*(EB-2._JWRB)
       BE = 0.5_JWRB*EB*(EB**2-6._JWRB*EB+6._JWRB)
 
+      EMIN = 2._JWRB*H_C_MIN**2
+      EMAX = 2._JWRB*H_C_MAX**2
       DO IJ=IJS,IJL
         E(IJ) = 2._JWRB*H_C**2
       ENDDO
 
       DO IJ=IJS,IJL
         IF (NSLC(IJ).GT.0) THEN
-          F  = MAX(LOG(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE),F_MIN)
+          F  = LOG(MAX(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE,FLOGMIN))
 
           AA(IJ) = MIN(((EB-F)**2-2._JWRB*EB)/(2._JWRB*F),AA_MAX)
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
@@ -95,19 +99,17 @@
 
           XN = REAL(NSLC(IJ))
           DO I=1,NITER
-!!!debile
-           if(E(IJ).LE.0._JWRB) then
-             write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ)
-             HMAXN(IJ) = 0._JWRB
-             SIG_HM(IJ)= 0._JWRB
-             E(IJ)=0._JWRB
-             exit
-           else
             Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
+!!!debile
+           if(E(IJ).LE.0._JWRB) then
+             write(*,*) 'debile E <= 0 !!! ',IJ,I,E(IJ),C4(IJ),C3(IJ),NSLC(IJ),F
            endif
 
+           E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
+
           ENDDO
+          E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
           HMAXN(IJ) = SQRT(0.5_JWRB*E(IJ))
           SIG_HM(IJ) = PI*HMAXN(IJ)/(TWOSQRT6*(Z0+0.5_JWRB*GAM))
         ELSE
