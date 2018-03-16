@@ -335,6 +335,7 @@
       REAL :: FAC, SCDF_L, SCDF_U
       REAL :: D, OM, XK
       REAL :: XLOGFRATIO
+      REAL :: GAM
       REAL, PARAMETER :: ENH_MAX=10.
       REAL, PARAMETER :: ENH_MIN=0.1   ! to prevent ENH to become too small
       REAL :: PRPLRADI
@@ -818,7 +819,13 @@
 !     COMPUTE THE MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
       IF(.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS(1):IJL(1)))
       DO IJ = IJS(1), IJL(1)
-         EMAXDPT(IJ)=0.0625*(GAM_B_J*DEPTH(IJ,1))**2
+!       REDUCE GAMMA FOR SMALL DEPTH ( < 3m)
+        IF (DEPTH(IJ,1).LT.3.) THEN
+          GAM=GAM_B_J*DEPTH(IJ,1)/3.
+        ELSE
+          GAM=GAM_B_J
+        ENDIF
+        EMAXDPT(IJ)=0.0625*(GAM*DEPTH(IJ,1))**2
       ENDDO
 
 

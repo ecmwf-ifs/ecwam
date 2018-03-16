@@ -42,7 +42,8 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, OM0, XK0, BF2, XNU, SIG_TH, DPTH
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, C4_B, C4_DYN
 
-      REAL(KIND=JWRB), PARAMETER :: EPS = 0.0001_JWRB  
+      REAL(KIND=JWRB), PARAMETER :: XKDMIN = 0.05_JWRB
+
       REAL(KIND=JWRB), PARAMETER :: CONST_C3 = 1.12_JWRB*2._JWRB
       REAL(KIND=JWRB), PARAMETER :: CONST_C4 = 0.91_JWRB*8._JWRB  
       REAL(KIND=JWRB), PARAMETER :: CONST_THR = 1.1_JWRB
@@ -82,7 +83,7 @@
         XK  = XK0(IJ)
         IF (XM0(IJ).GT.ZEPSILON .AND. XK.GT.0._JWRB) THEN
           D   = DPTH(IJ)
-          X   = XK*D
+          X   = MAX(XK*D,XKDMIN)
           T0  = TANH(X)
           T0_SQ = T0**2
           ALPH = XK/(4._JWRB*T0_SQ*T0)*(3._JWRB-T0_SQ)
@@ -91,8 +92,6 @@
           C_S_SQ   = G*D
           IF(X .GT. DKMAX) THEN
             V_G = 0.5_JWRB*C_0
-          ELSE IF(X .LT. EPS) THEN
-            V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
           ENDIF
