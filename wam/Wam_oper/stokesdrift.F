@@ -37,6 +37,7 @@
 !     MODULES:
 !     --------
 
+      USE PARKIND_WAVE, ONLY : JWIM,JWRB
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &                      DFIM_SIM ,
@@ -48,16 +49,17 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  USTOKES, VSTOKES 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::
+     & USTOKES, VSTOKES
 
-      INTEGER :: IJ, M, K
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL, PARAMETER :: STMAX=1.5   ! maximum magnitude (this is for safety when coupled)
-      REAL :: CONST, FAC, FAC1, FAC2, FAC3
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: STFAC
+      REAL(KIND=JWRB), PARAMETER :: STMAX=1.5_JWRB   ! maximum magnitude (this is for safety when coupled)
+      REAL(KIND=JWRB) :: CONST, FAC, FAC1, FAC2, FAC3
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: STFAC
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -73,8 +75,8 @@
 !     ------------------------
  
       DO IJ = IJS,IJL
-         USTOKES(IJ) = 0.
-         VSTOKES(IJ) = 0.
+         USTOKES(IJ) = 0.0_JWRB
+         VSTOKES(IJ) = 0.0_JWRB
       ENDDO
 
       DO M=1,NFRE_ODD

@@ -38,6 +38,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "mpclose_unit.intfb.h"
 
       CHARACTER(LEN=*),INTENT(IN) :: CDMESSAGE
 

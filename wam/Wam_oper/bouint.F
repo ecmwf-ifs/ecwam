@@ -84,6 +84,12 @@
  
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "gsfile_new.intfb.h"
+#include "incdate.intfb.h"
+#include "intspec.intfb.h"
+#include "uibou.intfb.h"
  
       INTEGER :: K, M, IJ 
       INTEGER :: NANG, NFRE, MBMAX

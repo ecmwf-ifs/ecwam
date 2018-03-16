@@ -76,6 +76,8 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "inwgrib.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, IREAD, IPARAM
       INTEGER, INTENT(IN) :: MIJS, MIJL

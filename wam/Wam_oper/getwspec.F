@@ -45,6 +45,7 @@
 !     INTERFACE
 !     ---------
       IMPLICIT NONE
+#include "resize_getwspec.intfb.h"
 
 !           
 !     VARIABLES

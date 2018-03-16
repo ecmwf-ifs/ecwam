@@ -47,6 +47,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: IU09, IU10, IU06
 

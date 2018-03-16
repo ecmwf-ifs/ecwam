@@ -76,6 +76,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE 
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ITEST, NCA, NRA
       INTEGER, INTENT(IN) :: NGX, NGY, KRGG

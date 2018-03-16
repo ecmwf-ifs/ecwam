@@ -43,6 +43,9 @@
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "avoidpeaks.intfb.h"
+#include "gapinterpol.intfb.h"
+#include "makeframes.intfb.h"
 
 !     INTERFACE:
 !     ----------

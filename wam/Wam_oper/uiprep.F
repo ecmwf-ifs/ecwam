@@ -68,6 +68,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
 
       INTEGER, INTENT(OUT) :: IFORM, ML, KL
       LOGICAL, INTENT(OUT) :: LLGRID

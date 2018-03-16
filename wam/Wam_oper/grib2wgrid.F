@@ -94,6 +94,10 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
+#include "incdate.intfb.h"
+#include "wstream_strg.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ITEST, KPROMA_WAM, KGRIB_HANDLE,ISIZE
       INTEGER, INTENT(IN) :: NXFF, NYFF, KRGG

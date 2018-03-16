@@ -68,6 +68,9 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "preset_wgrib_template.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
       INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST

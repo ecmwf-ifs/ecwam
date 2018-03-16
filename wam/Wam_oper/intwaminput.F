@@ -65,6 +65,15 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
+#include "grib2wgrid.intfb.h"
+#include "iniwcst.intfb.h"
+#include "kgribsize.intfb.h"
+#include "preset_wgrib_template.intfb.h"
+#include "readpre.intfb.h"
+#include "wgribenout.intfb.h"
+#include "wstream_strg.intfb.h"
 
       INTEGER :: NBIT = 1600000
 

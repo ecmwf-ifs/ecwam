@@ -116,6 +116,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "makegrid.intfb.h"
+#include "setwmask.intfb.h"
 
       INTEGER, PARAMETER :: IG=1
       INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET

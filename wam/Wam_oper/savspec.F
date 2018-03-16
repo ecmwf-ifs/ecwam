@@ -54,9 +54,13 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "expand_string.intfb.h"
+#include "grstname.intfb.h"
+#include "mpgatherfl.intfb.h"
+#include "writefl.intfb.h"
 
       INTEGER, DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL
+      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO,CDATEF,CDATER
 
       INTEGER :: IJ, K, M

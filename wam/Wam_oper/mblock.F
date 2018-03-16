@@ -49,6 +49,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER  :: KA, KE
       INTEGER  :: IC, IJ, IP, K, I 

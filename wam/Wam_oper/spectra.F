@@ -54,6 +54,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "jonswap.intfb.h"
+#include "spr.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(IN) :: IG

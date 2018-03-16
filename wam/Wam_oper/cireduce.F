@@ -41,6 +41,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "ciwaf.intfb.h"
 
       INTEGER :: IG, IJ, JH, M 
       INTEGER :: JKGLO,KIJS,KIJL,NPROMA

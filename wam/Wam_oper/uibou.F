@@ -62,6 +62,7 @@
  
 ! ------------------------------------------------------------------
       IMPLICIT NONE 
+#include "abort1.intfb.h"
 
       INTEGER :: IU05, IU06, IDELPRF, IDELFI  
       INTEGER :: ICOUNT, IOS

@@ -39,6 +39,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: ISPECS, ISPECE
       INTEGER, ALLOCATABLE :: I2DUM(:,:)

@@ -138,6 +138,8 @@
 !*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE.
 !        ------------------------------------------
 
+#if 0
+! -- this DO-loop currently does nothing  (see CONST1 & ALPHAP) -- commented out
       DO IJ=IJS,IJL      
         CONST1    = 0.*LOG(FC/FS)  
         CP        = G/(ZPI*FM(IJ))
@@ -146,6 +148,7 @@
         CONST3    = CONST2*DELTH*TEMP2(IJ)
         SM(IJ) = SM(IJ)+CONST1*CONST3
       ENDDO
+#endif
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)

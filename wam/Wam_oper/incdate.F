@@ -44,6 +44,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: ISHIFT
       CHARACTER(LEN=*), INTENT(INOUT) :: CDATE

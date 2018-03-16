@@ -116,6 +116,10 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "micep.intfb.h"
+#include "readwind.intfb.h"
+#include "wamwnd.intfb.h"
 
       INTEGER, INTENT(IN) :: IREAD
       INTEGER, INTENT(IN) :: MIJS, MIJL

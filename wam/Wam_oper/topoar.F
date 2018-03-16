@@ -76,6 +76,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "adjust.intfb.h"
 
       INTEGER, INTENT(IN) :: IU01
       REAL, DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY

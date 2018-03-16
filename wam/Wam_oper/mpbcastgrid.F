@@ -77,6 +77,7 @@
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, ISEND
       INTEGER, INTENT(INOUT) :: ITAG

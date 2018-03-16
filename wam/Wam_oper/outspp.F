@@ -71,6 +71,12 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "loc2glo.intfb.h"
+#include "mpgatherspp.intfb.h"
+#include "out_onegrdpt_sp.intfb.h"
+#include "prspp.intfb.h"
+#include "prspps.intfb.h"
 
       INTEGER, INTENT(IN) :: IG
       INTEGER, INTENT(IN) :: IJS, IJL, IJ_OFFSET, IU25, IU26

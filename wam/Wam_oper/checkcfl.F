@@ -44,6 +44,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER :: MIJS, MIJL, IJ, IC, ICP, ICL
       REAL,DIMENSION(MIJS:MIJL) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 

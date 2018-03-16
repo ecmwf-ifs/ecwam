@@ -38,6 +38,10 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "expand_string.intfb.h"
+#include "mpuserin.intfb.h"
+#include "readpre.intfb.h"
 
       INTEGER, INTENT(IN) :: IULOG
       INTEGER, INTENT(OUT) :: NLON, NLAT

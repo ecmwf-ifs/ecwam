@@ -31,6 +31,7 @@
 !-------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "resize_gap_array.intfb.h"
 
 !     INTERFACE:
 !     ----------

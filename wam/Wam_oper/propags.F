@@ -70,6 +70,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "checkcfl.intfb.h"
+#include "dotdc.intfb.h"
 
       INTEGER, PARAMETER :: IG=1
       INTEGER, INTENT(IN) :: MIJS, MIJL

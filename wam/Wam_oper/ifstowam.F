@@ -68,6 +68,8 @@
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
+#include "fldinter.intfb.h"
+#include "initialint.intfb.h"
 
       INTEGER, INTENT(IN) :: NFIELDS, NGPTOTG, NCA, NRA
       INTEGER, INTENT(INOUT) :: MASK_IN(NGPTOTG)

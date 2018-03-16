@@ -62,6 +62,7 @@
 ! -------------------------------------------------------------------   
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
 ! RECEIVE DATA FROM NEMO
       LOGICAL :: LRECV

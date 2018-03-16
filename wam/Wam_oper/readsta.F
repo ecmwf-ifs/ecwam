@@ -69,6 +69,7 @@
 
 !---------------------------------------------------------------------- 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: IUIN
       INTEGER, INTENT(OUT) :: ANALPD, FOREPD, IS, IASS, NF 

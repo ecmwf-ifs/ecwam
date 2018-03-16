@@ -68,6 +68,12 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "findb.intfb.h"
+#include "mboxb.intfb.h"
+#include "mintf.intfb.h"
+#include "packi.intfb.h"
+#include "packr.intfb.h"
 
       INTEGER, INTENT(IN) :: IU03, IU10, IU20, IFORM
       INTEGER, INTENT(OUT) :: IINPC

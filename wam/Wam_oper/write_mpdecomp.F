@@ -85,6 +85,9 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "iniwcst.intfb.h"
+#include "mpdecomp.intfb.h"
+#include "wvwaminit.intfb.h"
 
       INTEGER :: KOUTPUT
       INTEGER :: IJ, M, IH, IPR, JPR, IC, IP

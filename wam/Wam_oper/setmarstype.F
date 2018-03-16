@@ -34,6 +34,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wstream_strg.intfb.h"
 
       INTEGER :: KSTREAM
       REAL ::ZHOOK_HANDLE

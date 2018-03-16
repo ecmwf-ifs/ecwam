@@ -49,6 +49,7 @@
       USE YOWUNPOOL, ONLY : LLUNSTR
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "difdate.intfb.h"
 
       INTEGER :: IU06, IU_INTP
       INTEGER :: ITIME, I, J

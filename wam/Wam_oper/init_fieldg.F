@@ -43,6 +43,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       LOGICAL, INTENT(IN) :: LLALLOC_ONLY, LLINIALL, LLOCAL
 

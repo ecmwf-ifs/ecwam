@@ -59,6 +59,9 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "grib2wgrid.intfb.h"
+#include "kgribsize.intfb.h"
 
       INTEGER, INTENT(IN) :: IPARAM, IJS, IJL, IG
 

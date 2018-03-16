@@ -37,6 +37,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wam_syminv.intfb.h"
 
       INTEGER :: IJS, IJL, IJ
       INTEGER :: I1, I2, K1, K2

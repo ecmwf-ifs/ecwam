@@ -35,6 +35,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "mpabort.intfb.h"
 
       CHARACTER(LEN=30) :: CDMESSAGE
 

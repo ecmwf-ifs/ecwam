@@ -58,6 +58,9 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "gsfile_new.intfb.h"
+#include "intspec.intfb.h"
 
       INTEGER, INTENT(INOUT) :: IU02
       INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND

@@ -147,6 +147,14 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "getcurr.intfb.h"
+#include "ifstowam.intfb.h"
+#include "incdate.intfb.h"
+#include "init_fieldg.intfb.h"
+#include "notim.intfb.h"
+#include "recvnemofields.intfb.h"
+#include "timin.intfb.h"
+#include "wamadszidl.intfb.h"
 
       INTEGER :: NFIELDS, NGPTOTG, NC, NR
       INTEGER :: IDELWH, IREAD

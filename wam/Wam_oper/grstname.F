@@ -54,6 +54,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "difdate.intfb.h"
+#include "incdate.intfb.h"
 
       INTEGER :: KCPLEN
       CHARACTER(LEN=3), INTENT(IN) :: FILEID

@@ -52,6 +52,8 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "fkmean.intfb.h"
+#include "secspom.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER :: IJ,M,K,K0,M0,MP,KP,MM,KM,KL,KLL,ML

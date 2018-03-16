@@ -66,6 +66,7 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM,JWRB
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
@@ -122,27 +123,47 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "cal_second_order_spec.intfb.h"
+#include "cimsstrn.intfb.h"
+#include "femean.intfb.h"
+#include "intpol.intfb.h"
+#include "kurtosis.intfb.h"
+#include "meansqs.intfb.h"
+#include "mwp1.intfb.h"
+#include "mwp2.intfb.h"
+#include "outers.intfb.h"
+#include "outgrid.intfb.h"
+#include "outspp.intfb.h"
+#include "se10mean.intfb.h"
+#include "sebtmean.intfb.h"
+#include "sepwisw.intfb.h"
+#include "sthq.intfb.h"
+#include "stokesdrift.intfb.h"
+#include "wdirspread.intfb.h"
+#include "weflux.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJSLOC, IJLLOC
-      INTEGER, INTENT(IN) :: IJ_OFFSET
-      INTEGER, INTENT(IN) :: IG
-      INTEGER, INTENT(IN) :: IU25, IU26 
-      INTEGER, DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: MIJ
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: XLLWS 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJSLOC, IJLLOC
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJ_OFFSET
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU25, IU26
+      INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: MIJ
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: XLLWS
       LOGICAL, INTENT(OUT) :: LLOUTBS
 
-      INTEGER :: ITT, ITG, ICT
-      INTEGER :: IJ, K, M 
-      INTEGER :: IRA
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: ITT, ITG, ICT
+      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IRA
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
 
-      REAL :: SIG
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: SIG
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 !     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
 !            and in the absolute frame of reference if currents are used 
-      REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: FL3
+
+! SS/2018: Reducing stack pressure
+      REAL(KIND=JWRB), DIMENSION(:,:,:), ALLOCATABLE :: FL3 ! IJSLOC:IJLLOC,NANG,NFRE
 
       LOGICAL :: LLPEAKF
       LOGICAL :: LLPARTITION
@@ -151,7 +172,7 @@
       LOGICAL :: LLALLOC_GRDFLD
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Begin OUTBS'
-      FLUSH(740+MyRankGlobal)
+      CALL FLUSH(740+MyRankGlobal)
 #endif
       
 ! ----------------------------------------------------------------------
@@ -162,6 +183,8 @@
 !
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
+
+      ALLOCATE(FL3(IJSLOC:IJLLOC,NANG,NFRE))
 
       LLOUTBS=.TRUE.
 
@@ -369,7 +392,8 @@
         IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
 !!!!!!!! the second order correction should not apply to the Stokes drift
           CALL STOKESDRIFT(FL1(KIJS:KIJL,:,:),
-     &                     KIJS, KIJL, USTMEAN(KIJS), VSTMEAN(KIJS))
+     &                     KIJS, KIJL,
+     &                     USTMEAN(KIJS), VSTMEAN(KIJS))
         ENDIF
 
         ITG=46+3*NTRAIN+1
@@ -398,32 +422,38 @@
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,10.,12.,E1012(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,10.0_JWRB,12.0_JWRB,
+     &          E1012(KIJS))
         ENDIF
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,12.,14.,E1214(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,12.0_JWRB,14.0_JWRB,
+     &          E1214(KIJS))
         ENDIF
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,14.,17.,E1417(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,14.0_JWRB,17.0_JWRB,
+     &          E1417(KIJS))
         ENDIF
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,17.,21.,E1721(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,17.0_JWRB,21.0_JWRB,
+     &          E1721(KIJS))
         ENDIF
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,21.,25.,E2125(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,21.0_JWRB,25.0_JWRB,
+     &          E2125(KIJS))
         ENDIF
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0) THEN
-        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,25.,30.,E2530(KIJS))
+        CALL SEBTMEAN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,25.0_JWRB,30.0_JWRB,
+     &          E2530(KIJS))
         ENDIF
 
 
@@ -1009,6 +1039,8 @@
           ENDIF
         ENDIF
       ENDIF
+
+      DEALLOCATE(FL3)
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)

@@ -133,6 +133,14 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "mpcrtbl.intfb.h"
+#include "outxt.intfb.h"
+#include "readsta.intfb.h"
+#include "set_wflags.intfb.h"
+#include "wam_u2l1cr.intfb.h"
+#include "wstream_strg.intfb.h"
 
       INTEGER :: IFORCA 
       INTEGER :: ITG, IC, I, J, ISAT
@@ -158,7 +166,7 @@
       LOGICAL :: LERROR, LASTREAM
       LOGICAL :: LLNALTGO
       LOGICAL :: LWCUR
-      LOGICAL :: SET_WFLAGS
+!      LOGICAL :: SET_WFLAGS
       LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------

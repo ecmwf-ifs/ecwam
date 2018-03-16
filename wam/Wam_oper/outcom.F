@@ -100,6 +100,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "outnam.intfb.h"
  
       INTEGER, INTENT(IN) :: IU07, IU17, IFORM
       INTEGER :: IDUM, K, M, L

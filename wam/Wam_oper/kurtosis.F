@@ -126,6 +126,8 @@
 ! ----------------------------------------------------------------------
  
       IMPLICIT NONE
+#include "h_max.intfb.h"
+#include "peak_freq.intfb.h"
 
       INTEGER :: IJ, M, K, IJS, IJL, IG
 

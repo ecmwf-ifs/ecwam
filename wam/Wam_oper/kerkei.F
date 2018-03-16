@@ -7,6 +7,7 @@
 ! of eddy viscosity (See Grant and Madsen, 1979)
 !**********************************************************************
       IMPLICIT NONE
+#include "kzeone.intfb.h"
    
       DOUBLE PRECISION ZR,ZI,CYR,CYI,CYR1,CYI1
       INTEGER NZ,IERR

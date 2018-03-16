@@ -46,6 +46,11 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "fdur.intfb.h"
+#include "fkmean.intfb.h"
+#include "fustar.intfb.h"
+#include "fwsea.intfb.h"
+#include "upwspec.intfb.h"
 
       INTEGER :: IJ, IJS, IJL
 

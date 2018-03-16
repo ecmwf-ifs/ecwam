@@ -56,6 +56,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL, IG, IRA
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3

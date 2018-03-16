@@ -40,6 +40,7 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM,JWRB
       USE YOWICE   , ONLY : CITHICK  ,FLMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -53,13 +54,14 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL,IG,JD
-      REAL :: AKI_ICE
-      REAL :: F1LIM 
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) :: STRN
-      REAL, DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
-      REAL :: ZHOOK_HANDLE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      INTEGER(KIND=JWIM) :: IJ,M,K,IG,JD
+      REAL(KIND=JWRB) :: AKI_ICE
+      REAL(KIND=JWRB) :: F1LIM 
+      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF

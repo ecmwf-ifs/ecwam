@@ -52,11 +52,13 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "unblkrord.intfb.h"
 
       INTEGER, INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
       INTEGER, INTENT(INOUT) :: IUNIT
 
-      REAL, DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP), INTENT(IN) :: FL
+      REAL, DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),
+     &     INTENT(INOUT) :: FL
 
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
 

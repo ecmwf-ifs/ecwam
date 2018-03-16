@@ -42,6 +42,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wsmfen.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EMN, ETOI, USMO, THMO

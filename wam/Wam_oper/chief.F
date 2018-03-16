@@ -87,6 +87,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "runwam.intfb.h"
+#include "wamendnemoio.intfb.h"
+#include "wamininemoio.intfb.h"
 
       REAL :: ZHOOK_HANDLE
       LOGICAL :: LNEMOIO,LNEMOIOSERVER

@@ -42,6 +42,7 @@
 !     --------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       LOGICAL, INTENT(OUT)      :: LDEOF
       INTEGER, INTENT(IN)       :: KULNAM

@@ -28,6 +28,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "kerkei.intfb.h"
 
       INTEGER, PARAMETER      :: NITER=100
       REAL,    PARAMETER      :: ABMIN = 0.3 

@@ -57,6 +57,11 @@
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "grstname.intfb.h"
+#include "wgribencode.intfb.h"
+#include "wgribout.intfb.h"
 
       REAL, DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: SPEC
 

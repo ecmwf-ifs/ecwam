@@ -72,6 +72,15 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "expand_string.intfb.h"
+#include "grib2wgrid.intfb.h"
+#include "grstname.intfb.h"
+#include "init_fieldg.intfb.h"
+#include "kgribsize.intfb.h"
+#include "mpdistribfl.intfb.h"
+#include "readfl.intfb.h"
+#include "semean.intfb.h"
 
       INTEGER, INTENT(INOUT) :: IREAD
       INTEGER, DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE

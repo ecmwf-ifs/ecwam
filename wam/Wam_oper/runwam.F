@@ -117,6 +117,14 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "iniwcst.intfb.h"
+#include "mpclose_unit.intfb.h"
+#include "wavemdl.intfb.h"
+#include "wvalloc.intfb.h"
+#include "wvwamdecomp.intfb.h"
+#include "wvwaminit.intfb.h"
+#include "wvwaminit1.intfb.h"
       LOGICAL, INTENT(IN) :: LNEMOIO
 
 ! DIMENSION DUMMY COUPLED VARIABLES
@@ -233,7 +241,7 @@
 
       CALL INIWCST(PRPLRADI)
 
-      CALL WVWAMDECOMP(LWCUR)
+      CALL WVWAMDECOMP
 
 
 !     1.  ALLOCATE NECESSARY ARRAYS

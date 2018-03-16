@@ -69,6 +69,11 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "airsea.intfb.h"
+#include "getwnd.intfb.h"
+#include "init_fieldg.intfb.h"
+#include "readwgrib.intfb.h"
 
       INTEGER, INTENT(IN) :: MIJS, MIJL
       INTEGER, INTENT(IN) :: IREAD

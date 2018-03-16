@@ -12,6 +12,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "mpdecomp.intfb.h"
 
       INTEGER :: NPR, MAXLEN
 

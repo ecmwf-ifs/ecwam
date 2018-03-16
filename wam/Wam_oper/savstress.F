@@ -60,6 +60,10 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "expand_string.intfb.h"
+#include "grstname.intfb.h"
+#include "mpgatherscfld.intfb.h"
+#include "writestress.intfb.h"
 
       REAL,DIMENSION(NINF:NSUP,NBLO),INTENT(IN) ::
      &                                  U10OLD,THWOLD,USOLD,TAUW,Z0OLD,

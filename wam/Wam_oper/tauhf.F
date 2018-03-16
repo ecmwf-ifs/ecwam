@@ -46,6 +46,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "init_x0tauhf.intfb.h"
+#include "tau_phi_hf.intfb.h"
 
       INTEGER, INTENT(IN) :: ML
 

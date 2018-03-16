@@ -66,6 +66,8 @@
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "confile.intfb.h"
 
       INTEGER, INTENT(IN) :: IU06, IUME
       INTEGER, INTENT(INOUT) :: IDENTI, ISENSOR, IDES_HS, IDES_WS

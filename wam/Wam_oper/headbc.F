@@ -46,6 +46,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: NBOUNC, IDELPRO, IUOUT, IU06
       REAL, INTENT(IN) :: TH0, FR1

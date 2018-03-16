@@ -57,6 +57,9 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "femean.intfb.h"
+#include "mpgatherbc.intfb.h"
+#include "sthq.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL, IG 
       INTEGER,DIMENSION(GBOUNC), INTENT(IN) :: IU19

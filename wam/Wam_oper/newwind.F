@@ -89,6 +89,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "cireduce.intfb.h"
+#include "incdate.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL
       INTEGER, INTENT(IN) :: IG, IGL

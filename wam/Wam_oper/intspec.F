@@ -68,6 +68,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "rotspec.intfb.h"
+#include "strspec.intfb.h"
 
       INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
       REAL, INTENT(IN) :: DEL12,  DEL1L

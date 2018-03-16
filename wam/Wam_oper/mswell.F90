@@ -120,6 +120,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "init_fieldg.intfb.h"
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
       INTEGER(KIND=JWIM) :: IG

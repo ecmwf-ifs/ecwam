@@ -48,9 +48,10 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "unblkrord.intfb.h"
 
       INTEGER, INTENT(IN) :: IJINF, IJSUP, NREAL
-      REAL,DIMENSION(IJINF:IJSUP,NREAL),INTENT(IN) :: RFIELD
+      REAL,DIMENSION(IJINF:IJSUP,NREAL),INTENT(INOUT) :: RFIELD
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
       LOGICAL, INTENT(IN) :: LRSTPARAL
 

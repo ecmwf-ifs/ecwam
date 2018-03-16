@@ -39,6 +39,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 
       INTEGER, ALLOCATABLE :: I2DUM(:,:)
       INTEGER, ALLOCATABLE :: I1DUM(:)

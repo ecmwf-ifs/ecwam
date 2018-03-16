@@ -46,6 +46,7 @@
 
 !     ------------------------------------------------------------------
       IMPLICIT NONE
+#include "wam_u2l1cr.intfb.h"
 
       INTEGER, INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
       INTEGER, INTENT(IN) :: KLEN 

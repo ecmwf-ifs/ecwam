@@ -47,7 +47,7 @@
 
 
 ! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPHYS
@@ -55,6 +55,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "sdissip_ard.intfb.h"
+#include "sdissip_jan.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
