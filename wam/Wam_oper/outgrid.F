@@ -254,9 +254,9 @@
 !         The wind speed is NOT set to missing over ice or land 
           CALL SETWMASK(U10NEW(IJS),TEMP(IJS,10),IJS,IJL,1.1,NIODP(IJS))
 #ifdef DEBUG
-          WRITE(740+MyRankGlobal,*) 'minval(U10NEW)=',                  &
+          WRITE(740+MyRankGlobal,*) 'minval(U10NEW)=',
      &       minval(U10NEW(IJS:IJL))
-          WRITE(740+MyRankGlobal,*) 'maxval(U10NEW)=',                  &
+          WRITE(740+MyRankGlobal,*) 'maxval(U10NEW)=',
      &       maxval(U10NEW(IJS:IJL))
           FLUSH(740+MyRankGlobal)
 #endif          
