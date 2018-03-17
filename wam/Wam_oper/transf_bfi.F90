@@ -18,13 +18,16 @@
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOWSHAL , ONLY : BATHYMAX
+      USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
                      
 !----------------------------------------------------------------------
       IMPLICIT NONE
 
       REAL(KIND=JWRB) :: TRANSF_BFI
+
+      REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MIN = -4._JWRB
+      REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MAX = 4._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
@@ -43,7 +46,7 @@
         IF ( X .GT. DKMAX) THEN
           TRANSF_BFI = 1._JWRB 
         ELSE
-          X   = MAX(X,0.5_JWRB)
+          X   = MAX(X,XKDMIN)
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)
@@ -64,8 +67,7 @@
 !!          TRANSF_BFI = 4._JWRB*(V_G/C_0)**2*T_NL/XK**3*T_0/D2OM
           T_NL = XNL_1-XNL_2+XNL_3
           TRANSF_BFI = 4._JWRB*(V_G/C_0)**2*T_NL*T_0/D2OM
-          TRANSF_BFI = MIN(5._JWRB,TRANSF_BFI)
-          TRANSF_BFI = MAX(-5._JWRB,TRANSF_BFI)
+          TRANSF_BFI = MAX(MIN(TRANS_BFI_MAX,TRANSF_BFI),TRANS_BFI_MIN)
         ENDIF
       ELSE
         TRANSF_BFI = 1._JWRB

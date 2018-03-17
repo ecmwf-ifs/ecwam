@@ -13,7 +13,7 @@
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOWSHAL , ONLY : BATHYMAX
+      USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
                      
 !----------------------------------------------------------------------
@@ -22,8 +22,8 @@
       REAL(KIND=JWRB) :: TRANSF_SNL
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
-      REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MIN=0.1_JWRB
+      REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,V_G,V_G_SQ,DV_G
@@ -42,16 +42,13 @@
         IF ( X .GT. DKMAX) THEN
           TRANSF_SNL = 1._JWRB
         ELSE
+          X   = MAX(X,XKDMIN)
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          IF(X .LT. EPS) THEN
-            V_G = C_0
-          ELSE
-            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
-          ENDIF
+          V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
           V_G_SQ = V_G**2
           DV_G = (T_0-X*(1.-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)
       

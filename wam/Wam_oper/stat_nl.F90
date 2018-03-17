@@ -33,6 +33,7 @@
 !----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G        ,PI       ,DKMAX
+      USE YOWSHAL  , ONLY : XKDMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
@@ -42,11 +43,10 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, OM0, XK0, BF2, XNU, SIG_TH, DPTH
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, C4_B, C4_DYN
 
-      REAL(KIND=JWRB), PARAMETER :: XKDMIN = 0.5_JWRB
       REAL(KIND=JWRB), PARAMETER :: C3MIN = 0._JWRB
-      REAL(KIND=JWRB), PARAMETER :: C3MAX = 0.25_JWRB
-      REAL(KIND=JWRB), PARAMETER :: C4MIN = -0.33_JWRB
-      REAL(KIND=JWRB), PARAMETER :: C4MAX = 0.33_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C3MAX = 0.20_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C4MIN = -0.25_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C4MAX = 0.25_JWRB
 
       REAL(KIND=JWRB), PARAMETER :: CONST_C3 = 1.12_JWRB*2._JWRB
       REAL(KIND=JWRB), PARAMETER :: CONST_C4 = 0.91_JWRB*8._JWRB  

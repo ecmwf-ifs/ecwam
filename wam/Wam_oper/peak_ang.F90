@@ -36,7 +36,6 @@
      &               DELTH, TH       ,SINTH    ,COSTH   ,WETAIL  ,      &
      &               WP1TAIL ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : EPSMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
  
 ! ----------------------------------------------------------------------
@@ -47,13 +46,14 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XNU, SIG_TH
 
       INTEGER(KIND=JWIM), PARAMETER :: NSH = 5 
-      INTEGER(KIND=JWIM) :: IJ, M, K, MSTART, MSTOP
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX, MSTART, MSTOP
 
       REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 0.86_JWRB
       REAL(KIND=JWRB) :: R1
       REAL(KIND=JWRB) :: DELT25, COEF_FR, DELT2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZEPSILON
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SUM0, SUM1, SUM2, SUM4, SUM6, XMAX
       REAL,DIMENSION(IJS:IJL) :: TEMP
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE) :: THMEAN, SUM_S, SUM_C
@@ -66,8 +66,10 @@
 !***  1. DETERMINE L-H SPECTRAL WIDTH OF THE 2-D SPECTRUM.
 !     ---------------------------------------------------
 
+      ZEPSILON=10._JWRB*EPSILON(ZEPSILON)
+
       DO IJ=IJS,IJL
-        SUM0(IJ)= EPSMIN
+        SUM0(IJ)= ZEPSILON
         SUM1(IJ)= 0._JWRB
         SUM6(IJ)= 0._JWRB          
       ENDDO
@@ -100,10 +102,10 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (SUM0(IJ).GT.EPSMIN) THEN
+        IF (SUM0(IJ).GT.ZEPSILON) THEN
           XNU(IJ) = SQRT(MAX(0._JWRB,SUM1(IJ)*SUM6(IJ)/SUM0(IJ)**2-1._JWRB))
         ELSE
-          XNU(IJ) = EPSMIN
+          XNU(IJ) = ZEPSILON 
         ENDIF 
       ENDDO
 
@@ -129,14 +131,14 @@
       ENDDO
 
       DO IJ=IJS,IJL
-         SUM1(IJ) = 0._JWRB
-         SUM2(IJ) = 0._JWRB
+        SUM1(IJ) = ZEPSILON
+        SUM2(IJ) = 0._JWRB
       ENDDO
  
       DO M=1,NFRE
         DO IJ=IJS,IJL
           SUM_S(IJ,M) = 0._JWRB
-          SUM_C(IJ,M) = EPSMIN
+          SUM_C(IJ,M) = ZEPSILON 
         ENDDO
       ENDDO
 
@@ -156,10 +158,13 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        DO K=1,NANG
-          MSTART = MAX(1,MMAX(IJ)-NSH) 
-          MSTOP  = MIN(NFRE,MMAX(IJ)+NSH) 
-          DO M=MSTART,MSTOP
+        MSTART(IJ) = MAX(1,MMAX(IJ)-NSH) 
+        MSTOP(IJ)  = MIN(NFRE,MMAX(IJ)+NSH) 
+      ENDDO
+
+      DO IJ=IJS,IJL
+        DO M=MSTART(IJ),MSTOP(IJ)
+          DO K=1,NANG
             SUM1(IJ) = SUM1(IJ) +F1(IJ,K,M)*DFIM(M)
             SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ,M))*F1(IJ,K,M)*DFIM(M)
           ENDDO
@@ -167,7 +172,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (SUM1(IJ).GT.0._JWRB) THEN
+        IF (SUM1(IJ).GT.ZEPSILON) THEN
           R1 = SUM2(IJ)/SUM1(IJ)
           SIG_TH(IJ) = CONST_SIG*SQRT(2._JWRB*(1._JWRB-R1))
         ELSE

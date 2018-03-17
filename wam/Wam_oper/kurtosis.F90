@@ -167,11 +167,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,ZPISQRT ,      &
-     &             EPSMIN
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI     ,ZPISQRT
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMOFR ,      &
      &             DFIMFR   ,DFIMFR2,                                   &
-     &             WETAIL   ,WP1TAIL ,WP2TAIL ,FRTAIL
+     &             WETAIL   ,WP1TAIL ,WP2TAIL  ,QPTAIL  ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
@@ -192,7 +191,7 @@
       REAL(KIND=JWRB), PARAMETER :: SQRT2=SQRT(2._JWRB)
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: DELT25, COEF_FR1, COEF_FR2, DELT2
+      REAL(KIND=JWRB) :: DELT25, COEF_FR1, COEF_FR2, COEF_FR4, DELT2
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1,CONST_OM_ZPI,AKI
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, FRMAX, FRMIN
@@ -232,7 +231,7 @@
       ENDDO
  
       DO IJ=IJS,IJL
-        SUM0(IJ)= EPSMIN
+        SUM0(IJ)= ZEPSILON 
         SUM1(IJ)= 0._JWRB
         SUM2(IJ)= 0._JWRB
         SUM4(IJ)= 0._JWRB
@@ -258,14 +257,16 @@
         ENDDO
       ENDDO
 !     ADD HIGH FREQUENCY TAIL CONTRIBUTIONS
-      DELT25 = WETAIL*FR(NFRE)*DELTH
+      DELT25   = WETAIL*FR(NFRE)*DELTH
       COEF_FR1 = WP1TAIL*DELTH*FR(NFRE)**2
       COEF_FR2 = WP2TAIL*DELTH*FR(NFRE)**3
-      DELT2 = FRTAIL*DELTH
+      COEF_FR4 = QPTAIL*DELTH**2*FR(NFRE)**2
+      DELT2    = FRTAIL*DELTH
       DO IJ=IJS,IJL
         SUM0(IJ) = SUM0(IJ)+DELT25*TEMP(IJ)
         SUM1(IJ) = SUM1(IJ)+COEF_FR1*TEMP(IJ)
         SUM2(IJ) = SUM2(IJ)+COEF_FR2*TEMP(IJ)
+        SUM4(IJ) = SUM4(IJ)+COEF_FR4*TEMP(IJ)**2
         SUM6(IJ) = SUM6(IJ)+DELT2*TEMP(IJ)
       ENDDO
 
@@ -275,7 +276,6 @@
         IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
 
           F_M(IJ) = MAX(MIN(SUM1(IJ)/SUM0(IJ),FRMAX),FRMIN)
-
           QP(IJ) = SUM4(IJ)/SUM0(IJ)**2
           SIG_OM(IJ) = CONST_SIG_SQRTPIM1/MAX(QP(IJ),ZEPSILON)
 
@@ -284,13 +284,13 @@
           EPS(IJ) = XKP(IJ)*SQRT(SUM0(IJ))
 
           TRANS  = TRANSF_BFI(XKP(IJ),DPTH(IJ),XNU(IJ),SIG_TH(IJ))
-          BF2(IJ)= 2._JWRB*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2 *TRANS
+          BF2(IJ)= 2._JWRB*TRANS*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2
           BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
         ELSE
           F_M(IJ)    = 0._JWRB
           QP(IJ)     = 0._JWRB
           SIG_OM(IJ) = 0._JWRB
-          OM_MEAN(IJ) = CONST_OM_ZPI*FRMAX
+          OM_MEAN(IJ)= CONST_OM_ZPI*FRMAX
           XKP(IJ)    = OM_MEAN(IJ)**2/G
           EPS(IJ)    = 0._JWRB
           BF2(IJ)    = 0._JWRB

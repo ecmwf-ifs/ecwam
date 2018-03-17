@@ -15,7 +15,7 @@
  
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOWSHAL , ONLY : BATHYMAX
+      USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
@@ -23,7 +23,6 @@
       IMPLICIT NONE
 
       REAL(KIND=JWRB) :: TRANSF_R
-
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,V_G,D2OM
@@ -41,7 +40,7 @@
         IF ( X .GT. DKMAX) THEN
           TRANSF_R = 1._JWRB 
         ELSE
-          X   = MAX(X,0.5_JWRB)
+          X   = MAX(X,XKDMIN)
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)
