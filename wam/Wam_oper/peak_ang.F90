@@ -113,7 +113,6 @@
 !     ----------------------------------------------
  
 !     MAX OF 2-D SPECTRUM
- 
       DO IJ=IJS,IJL
         XMAX(IJ) = 0._JWRB
         MMAX(IJ) = 2
@@ -122,9 +121,9 @@
       DO M=2,NFRE-1
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF ((F1(IJ,K,M)*DFIM(M)).GT.XMAX(IJ)) THEN
+            IF (F1(IJ,K,M).GT.XMAX(IJ)) THEN
               MMAX(IJ) = M
-              XMAX(IJ) = F1(IJ,K,M)*DFIM(M)
+              XMAX(IJ) = F1(IJ,K,M)
             ENDIF
           ENDDO
         ENDDO
