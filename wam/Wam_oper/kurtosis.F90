@@ -172,11 +172,9 @@
      &             DFIMFR   ,DFIMFR2,                                   &
      &             WETAIL   ,WP1TAIL ,WP2TAIL  ,QPTAIL  ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
 !-----------------------------------------------------------------------
- 
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -187,6 +185,8 @@
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL):: NSLC
 
+      REAL(KIND=JWRB), PARAMETER :: QPMIN = 0.5_JWRB
+      REAL(KIND=JWRB), PARAMETER :: QPMAX = 4.5_JWRB
       REAL(KIND=JWRB), PARAMETER :: BF2MIN = -5._JWRB
       REAL(KIND=JWRB), PARAMETER :: BF2MAX = 5._JWRB
       REAL(KIND=JWRB), PARAMETER :: SQRT2=SQRT(2._JWRB)
@@ -228,8 +228,7 @@
 
 !     COMPUTES THE DIFFERENT MOMENTS 
       DO M=1,NFRE
-!!! deep water definition        FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
-        FAC4(M) = 2._JWRB*DELTH*DFIM(M)*SQRT(G)/ZPI
+        FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
       ENDDO
  
       DO IJ=IJS,IJL
@@ -254,8 +253,7 @@
           SUM0(IJ) = SUM0(IJ)+TEMP(IJ)*DFIM(M)
           SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFIMFR(M)
           SUM2(IJ) = SUM2(IJ)+TEMP(IJ)*DFIMFR2(M)
-!! deep water definition          SUM4(IJ) = SUM4(IJ)+TEMP(IJ)**2*FAC4(M)
-          SUM4(IJ) = SUM4(IJ)+SQRT(TFAK(INDEP(IJ),M))*TEMP(IJ)**2*FAC4(M)
+          SUM4(IJ) = SUM4(IJ)+TEMP(IJ)**2*FAC4(M)
           SUM6(IJ) = SUM6(IJ)+TEMP(IJ)*DFIMOFR(M)
         ENDDO
       ENDDO
@@ -279,8 +277,8 @@
         IF (SUM1(IJ).GT.ZSQREPSILON .AND. SUM0(IJ).GT.ZEPSILON) THEN
 
           F_M(IJ) = MAX(MIN(SUM1(IJ)/SUM0(IJ),FRMAX),FRMIN)
-          QP(IJ) = SUM4(IJ)/SUM0(IJ)**2
-          SIG_OM(IJ) = CONST_SIG_SQRTPIM1/MAX(QP(IJ),ZEPSILON)
+          QP(IJ) = MAX(MIN(SUM4(IJ)/SUM0(IJ)**2,QPMAX),QPMIN)
+          SIG_OM(IJ) = CONST_SIG_SQRTPIM1/QP(IJ)
 
           OM_MEAN(IJ) = CONST_OM_ZPI*MAX(MIN(SUM0(IJ)/SUM6(IJ),FRMAX),FRMIN)
           XKP(IJ) = AKI(OM_MEAN(IJ),DPTH(IJ))
