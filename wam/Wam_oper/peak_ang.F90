@@ -95,12 +95,11 @@
       DELT25 = WETAIL*FR(NFRE)*DELTH
       COEF_FR = WP1TAIL*DELTH*FR(NFRE)**2
       DELT2 = FRTAIL*DELTH
-!! testing without
-!!      DO IJ=IJS,IJL
-!!        SUM0(IJ) = SUM0(IJ)+DELT25*TEMP(IJ)
-!!        SUM1(IJ) = SUM1(IJ)+COEF_FR*TEMP(IJ)
-!!        SUM6(IJ) = SUM6(IJ)+DELT2*TEMP(IJ)
-!!      ENDDO
+      DO IJ=IJS,IJL
+        SUM0(IJ) = SUM0(IJ)+DELT25*TEMP(IJ)
+        SUM1(IJ) = SUM1(IJ)+COEF_FR*TEMP(IJ)
+        SUM6(IJ) = SUM6(IJ)+DELT2*TEMP(IJ)
+      ENDDO
 
       DO IJ=IJS,IJL
         IF (SUM0(IJ).GT.ZEPSILON) THEN
@@ -123,9 +122,9 @@
       DO M=2,NFRE-1
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF (F1(IJ,K,M).GT.XMAX(IJ)) THEN
+            IF ((F1(IJ,K,M)*DFIM(M)).GT.XMAX(IJ)) THEN
               MMAX(IJ) = M
-              XMAX(IJ) = F1(IJ,K,M)
+              XMAX(IJ) = F1(IJ,K,M)*DFIM(M)
             ENDIF
           ENDDO
         ENDDO
