@@ -172,6 +172,7 @@
      &             DFIMFR   ,DFIMFR2,                                   &
      &             WETAIL   ,WP1TAIL ,WP2TAIL  ,QPTAIL  ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
 !-----------------------------------------------------------------------
@@ -227,7 +228,8 @@
 
 !     COMPUTES THE DIFFERENT MOMENTS 
       DO M=1,NFRE
-        FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
+!!! deep water definition        FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
+        FAC4(M) = 2._JWRB*DELTH*DFIM(M)*SQRT(G)/ZPI
       ENDDO
  
       DO IJ=IJS,IJL
@@ -252,7 +254,8 @@
           SUM0(IJ) = SUM0(IJ)+TEMP(IJ)*DFIM(M)
           SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFIMFR(M)
           SUM2(IJ) = SUM2(IJ)+TEMP(IJ)*DFIMFR2(M)
-          SUM4(IJ) = SUM4(IJ)+TEMP(IJ)**2*FAC4(M)
+!! deep water definition          SUM4(IJ) = SUM4(IJ)+TEMP(IJ)**2*FAC4(M)
+          SUM4(IJ) = SUM4(IJ)+SQRT(TFAK(INDEP(IJ),M))*TEMP(IJ)**2*FAC4(M)
           SUM6(IJ) = SUM6(IJ)+TEMP(IJ)*DFIMOFR(M)
         ENDDO
       ENDDO
