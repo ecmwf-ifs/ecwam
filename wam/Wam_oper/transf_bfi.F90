@@ -30,11 +30,12 @@
       REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MIN = -4._JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MAX = 4._JWRB
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: XK0,D,XNU,SIG_TH
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4
-      REAL(KIND=JWRB) :: XNL,ALP,ZFAC
+      REAL(KIND=JWRB) :: XNL,ALP,ZFAC,T_NL
 !----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',0,ZHOOK_HANDLE)
