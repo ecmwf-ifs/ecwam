@@ -1,11 +1,11 @@
-      FUNCTION TRANSF_SNL(XK,D,XNU,SIG_TH)
+      FUNCTION TRANSF_SNL(XK0,D,XNU,SIG_TH)
  
 !***  DETERMINE NARROW BAND LIMIT NONLINEAR TRANSFER FUNCTION            
  
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
  
-!     XK             REAL         WAVE NUMBER
+!     XK0            REAL         WAVE NUMBER
 !     D              REAL         DEPTH
 !     XNU            REAL         RELATIVE SPECTRAL WIDTH
 !     SIG_TH         REAL         RELATIVE WIDTH in DIRECTION
@@ -26,9 +26,10 @@
       REAL(KIND=JWRB), PARAMETER :: TRANSF_SNL_MAX=10._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,V_G,V_G_SQ,DV_G
+      REAL(KIND=JWRB) :: XK0,D,XNU,SIG_TH
+      REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,V_G_SQ,DV_G
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4,XNL
-      REAL(KIND=JWRB) :: C_S_SQ,ALP,ZFAC,SIG_TH,XNU
+      REAL(KIND=JWRB) :: C_S_SQ,ALP,ZFAC
 
 !----------------------------------------------------------------------
 #ifdef ECMWF
@@ -38,17 +39,22 @@
 !     ------------------------------
 
       IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB) THEN
-        X   = XK*D
+        X   = XK0*D
         IF ( X .GT. DKMAX) THEN
           TRANSF_SNL = 1._JWRB
         ELSE
-          X   = MAX(X,XKDMIN)
+          XK  = MAX(XK0,XKDMIN/D)
+          X   = XK*D
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+          IF(X .LT. EPS) THEN
+            V_G = C_0
+          ELSE
+            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+          ENDIF
           V_G_SQ = V_G**2
           DV_G = (T_0-X*(1.-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)
       

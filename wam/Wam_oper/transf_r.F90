@@ -1,11 +1,11 @@
-      FUNCTION TRANSF_R(XK,D)
+      FUNCTION TRANSF_R(XK0,D)
  
 !***  DETERMINE DEPTH-DEPENDENT RATIO OF ANGULAR WIDTH AND FREQUENCY WIDTH
  
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
  
-!     XK             REAL         WAVE NUMBER
+!     XK0            REAL         WAVE NUMBER
 !     D              REAL         DEPTH
  
  
@@ -25,7 +25,8 @@
       REAL(KIND=JWRB) :: TRANSF_R
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,V_G,D2OM
+      REAL(KIND=JWRB) :: XK0,D
+      REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,D2OM
 
 !----------------------------------------------------------------------
 #ifdef ECMWF
@@ -35,12 +36,13 @@
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 
-      IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB .AND. XK.GT.0._JWRB) THEN
-        X = XK*D
+      IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB .AND. XK0.GT.0._JWRB) THEN
+        X = XK0*D
         IF ( X .GT. DKMAX) THEN
           TRANSF_R = 1._JWRB 
         ELSE
-          X   = MAX(X,XKDMIN)
+          XK  = MAX(XK0,XKDMIN/D)
+          X   = XK*D
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)

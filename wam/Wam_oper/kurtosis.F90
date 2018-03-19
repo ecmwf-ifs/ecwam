@@ -193,7 +193,7 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELT25, COEF_FR1, COEF_FR2, COEF_FR4, DELT2
-      REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1,CONST_OM_ZPI,AKI
+      REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1,CONST_OM_ZPI,AKI,OM_MEAN
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, FRMAX, FRMIN
       REAL(KIND=JWRB) :: TRANSF_BFI
@@ -203,7 +203,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUM0,SUM1,SUM2,SUM4,SUM6
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XKP,SIG_OM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_HM,EPS,SIG_TH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F_M,OM_MEAN,XNU,XNU_LH,OM_UP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F_M,XNU,XNU_LH,OM_UP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: AA,BB,C4_DYN,C4_B
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
      
@@ -280,8 +280,8 @@
           QP(IJ) = MAX(MIN(SUM4(IJ)/SUM0(IJ)**2,QPMAX),QPMIN)
           SIG_OM(IJ) = CONST_SIG_SQRTPIM1/QP(IJ)
 
-          OM_MEAN(IJ) = CONST_OM_ZPI*MAX(MIN(SUM0(IJ)/SUM6(IJ),FRMAX),FRMIN)
-          XKP(IJ) = AKI(OM_MEAN(IJ),DPTH(IJ))
+          OM_MEAN = CONST_OM_ZPI*MAX(MIN(SUM0(IJ)/SUM6(IJ),FRMAX),FRMIN)
+          XKP(IJ) = AKI(OM_MEAN,DPTH(IJ))
           EPS(IJ) = XKP(IJ)*SQRT(SUM0(IJ))
 
           TRANS  = TRANSF_BFI(XKP(IJ),DPTH(IJ),XNU(IJ),SIG_TH(IJ))
@@ -291,8 +291,8 @@
           F_M(IJ)    = 0._JWRB
           QP(IJ)     = 0._JWRB
           SIG_OM(IJ) = 0._JWRB
-          OM_MEAN(IJ)= CONST_OM_ZPI*FRMAX
-          XKP(IJ)    = OM_MEAN(IJ)**2/G
+          OM_MEAN    = CONST_OM_ZPI*FRMAX
+          XKP(IJ)    = OM_MEAN**2/G
           EPS(IJ)    = 0._JWRB
           BF2(IJ)    = 0._JWRB
         ENDIF 
@@ -302,7 +302,7 @@
 !     ----------------------
  
       CALL STAT_NL(IJS, IJL,                                            &
-     &             SUM0, OM_MEAN, XKP, BF2, XNU, SIG_TH, DPTH,          &
+     &             SUM0, XKP, BF2, XNU, SIG_TH, DPTH,                   &
      &             C3, C4, ETA_M, C4_B, C4_DYN)
 
   

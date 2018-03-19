@@ -1,4 +1,4 @@
-      FUNCTION TRANSF_BFI(XK,D,XNU,SIG_TH)
+      FUNCTION TRANSF_BFI(XK0,D,XNU,SIG_TH)
  
 !***  DETERMINE NARROW BAND LIMIT BENJAMIN-FEIR INDEX FOR
 !     THE FINITE DEPTH CASE             
@@ -7,7 +7,7 @@
 !     VARIABLE       TYPE         PURPOSE
 !     --------       ----         -------
  
-!     XK             REAL         WAVE NUMBER
+!     XK0            REAL         WAVE NUMBER
 !     D              REAL         DEPTH
  
 !     XNU            REAL         RELATIVE SPECTRAL WIDTH
@@ -26,13 +26,15 @@
 
       REAL(KIND=JWRB) :: TRANSF_BFI
 
+      REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MIN = -4._JWRB
       REAL(KIND=JWRB), PARAMETER :: TRANSF_BFI_MAX = 4._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: X,XK,D,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
+      REAL(KIND=JWRB) :: XK0,D,XNU,SIG_TH
+      REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4
-      REAL(KIND=JWRB) :: XNL,ALP,ZFAC,SIG_TH,XNU,T_NL
+      REAL(KIND=JWRB) :: XNL,ALP,ZFAC
 !----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',0,ZHOOK_HANDLE)
@@ -42,17 +44,22 @@
 !     ------------------------------
      
       IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB) THEN
-        X   = XK*D
+        X   = XK0*D
         IF ( X .GT. DKMAX) THEN
           TRANSF_BFI = 1._JWRB 
         ELSE
-          X   = MAX(X,XKDMIN)
+          XK  = MAX(XK0,XKDMIN/D)
+          X   = XK*D
           T_0 = TANH(X)
           T_0_SQ = T_0**2
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+          IF(X .LT. EPS) THEN
+            V_G = C_0
+          ELSE
+            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+          ELSE
           V_G_SQ = V_G**2
           D2OM = (T_0-X*(1._JWRB-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)
       

@@ -1,5 +1,5 @@
       SUBROUTINE STAT_NL(IJS, IJL,                                      &
-     &                   XM0, OM0, XK0, BF2, XNU, SIG_TH, DPTH,         &
+     &                   XM0, XK0, BF2, XNU, SIG_TH, DPTH,              &
      &                   C3, C4, ETA_M, C4_B, C4_DYN)
  
 !***  DETERMINE SKEWNESS AND ENVELOPE KURTOSIS FOR A NARROW-BAND WAVE 
@@ -40,9 +40,10 @@
       IMPLICIT NONE 
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, OM0, XK0, BF2, XNU, SIG_TH, DPTH
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, C4_B, C4_DYN
 
+      REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: RMIN = 0._JWRB
       REAL(KIND=JWRB), PARAMETER :: RMAX = 4.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: C3MIN = 0._JWRB
@@ -85,12 +86,12 @@
       ENDDO
 
       DO IJ = IJS,IJL
-        OM  = OM0(IJ)
-        XK  = XK0(IJ)
-        IF (XM0(IJ).GT.ZEPSILON .AND. XK.GT.0._JWRB) THEN
-          D   = DPTH(IJ)
-          X   = MAX(XK*D,XKDMIN)
+        D   = DPTH(IJ)
+        IF (XM0(IJ).GT.ZEPSILON .AND. D.GT.0._JWRB .AND. XK0(IJ).GT.0._JWRB) THEN
+          XK  = MAX(XK0(IJ),XKDMIN/D)
+          X   = XK*D
           T0  = TANH(X)
+          OM  = SQRT(G*XK*T0) 
           T0_SQ = T0**2
           ALPH = XK/(4._JWRB*T0_SQ*T0)*(3._JWRB-T0_SQ)
           GAM = -0.5_JWRB*ALPH**2
@@ -98,6 +99,8 @@
           C_S_SQ   = G*D
           IF(X .GT. DKMAX) THEN
             V_G = 0.5_JWRB*C_0
+          ELSE IF(X .LT. EPS) THEN
+            V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
           ENDIF
