@@ -819,9 +819,10 @@
 !     COMPUTE THE MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
       IF(.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS(1):IJL(1)))
       DO IJ = IJS(1), IJL(1)
-!       REDUCE GAMMA FOR SMALL DEPTH ( < 3m)
-        IF (DEPTH(IJ,1).LT.3.) THEN
-          GAM=GAM_B_J*DEPTH(IJ,1)/3.
+!       REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
+!       (might need to be revisted when grid is fine resolution)
+        IF (DEPTH(IJ,1).LT.4.) THEN
+          GAM=GAM_B_J*DEPTH(IJ,1)/4.
         ELSE
           GAM=GAM_B_J
         ENDIF
