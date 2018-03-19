@@ -11,7 +11,7 @@
 
       REAL, PARAMETER :: GAM_B_J = 0.8
       REAL, PARAMETER :: BATHYMAX = 999.
-      REAL, PARAMETER :: XKDMIN = 0.5 
+      REAL, PARAMETER :: XKDMIN = 0.7 
 
       REAL :: DEPTHA
       REAL :: DEPTHD
