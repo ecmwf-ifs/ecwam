@@ -391,7 +391,7 @@
         ENDDO
         CALL WNFLUXES (IJS, IJL,
      &                 MIJ, RHOWGDFTH,
-     &                 SSOURCE,
+     &                 SSOURCE, CICVR,
      &                 PHIWA,
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
      &                 USNEW, ROAIRN, .TRUE.)

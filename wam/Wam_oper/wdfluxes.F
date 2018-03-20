@@ -179,7 +179,7 @@
         IF(LWVFLX_SNL) THEN
           CALL WNFLUXES (IJS, IJL,
      &                   MIJ, RHOWGDFTH,
-     &                   SL,
+     &                   SL, CICVR,
      &                   PHIWA,
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,
      &                   USNEW, ROAIRN, .FALSE.)
