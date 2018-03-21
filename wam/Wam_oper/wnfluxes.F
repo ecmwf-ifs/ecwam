@@ -138,8 +138,9 @@
           IF(CICVR(IJ).GT.CITHRSH) THEN
 !           PERCENTAGE OF THE WAVE FLUXES THAT ARE ACCOUNTED FOR UNDER SEA ICE
             REDCI(IJ)=MAX(1.-CICVR(IJ),0.)
-!           FICTITIOUS VALUE OF THE WAVE ENERGY FLUX UNDER THE SEA ICE 
-            XM(IJ)=XMMIN+(XMMAX-XMMIN)*REDCI(IJ)
+!           FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
+!           (negative because it is defined as leaving the waves)
+            XM(IJ)=-XMMIN-(XMMAX-XMMIN)*REDCI(IJ)
           ELSE
             REDCI(IJ)=1.
             XM(IJ)=0.
