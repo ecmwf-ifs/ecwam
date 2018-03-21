@@ -620,7 +620,7 @@
           ENDIF
         ENDDO
       ELSE
-        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
+         CALL SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
       END IF
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'After construction of ARR_OUT_RECV'

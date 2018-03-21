@@ -850,13 +850,13 @@
 #ifdef PARKIND1_SINGLE
 !     Single precision -- needs tmp copies
                 CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &                ZNEMOUSTOKES(1),ZNEMOVSTOKES(1))
+     &                           ZNEMOUSTOKES(1),ZNEMOVSTOKES(1))
                 NEMOUSTOKES(KIJS:KIJL) = ZNEMOUSTOKES(1:KIJL-KIJS+1)
                 NEMOVSTOKES(KIJS:KIJL) = ZNEMOVSTOKES(1:KIJL-KIJS+1)
 #else
 !     Double precision
                 CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &                NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
+     &                           NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
 #endif
               ENDIF
             ELSE
@@ -868,12 +868,12 @@
 #ifdef PARKIND1_SINGLE
 !     Single precision -- needs a tmp copy
               CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &              ZNEMOSTRN(1))
+     &                      ZNEMOSTRN(1))
               NEMOSTRN(KIJS:KIJL) = ZNEMOSTRN(1:KIJL-KIJS+1)
 #else
 !     Double precision
               CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,
-     &              NEMOSTRN(KIJS))
+     &                      NEMOSTRN(KIJS))
 #endif
             ENDIF
 
