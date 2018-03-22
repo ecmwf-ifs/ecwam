@@ -10,7 +10,7 @@
      &                    NFDBREF,
      &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &                    RNU_ATM, RNUM_ATM,                            &
-     &                    IDATE_TIME_WINDOW_END)
+     &                    IDATE_TIME_WINDOW_END, NSTEP)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -102,7 +102,8 @@
      &         RNU      ,RNUM        ,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
-     &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, LWNEMOCOUSTRN
+     &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, 
+     &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWGRIBHD, ONLY : LNEWLVTP,
      &         DATE_TIME_WINDOW_END
@@ -210,6 +211,8 @@
       REAL, INTENT(IN) :: RNUM_ATM 
 !     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
       INTEGER, INTENT(IN) :: IDATE_TIME_WINDOW_END
+!     ATMOSPHERIC NSTEP (CT3)
+      INTEGER, INTENT(IN) :: NSTEP
 
       INTEGER :: IG
       INTEGER :: I, J, K, ICPLEN,ICPLEN_ECF
@@ -271,6 +274,8 @@
 
 
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
+      IFSTSTEP = PSTEP
+      IFSNSTEP = NSTEP
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
 
@@ -286,6 +291,7 @@
       IF(LWCOU) THEN
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
+
 
         IF(NGRIB_HANDLE_IFS < 0 ) THEN
           WRITE(IU06,*)' SUB: WAVEMDL:  NGRIB_HANDLE_IFS < 0 !'
