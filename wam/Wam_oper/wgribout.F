@@ -43,6 +43,7 @@
 
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOWGRIBHD, ONLY : IMDLGRBID_G, IMDLGRBID_M
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -99,6 +100,7 @@
         CALL WGRIB2FDB (IU06, ITEST,
      &                  IGRIB_HANDLE, ISIZE, KGRIB_BUFR,
      &                  CDFDBSF, KFDB, LFDBOPEN,
+     &                  IMDLGRBID_G, IMDLGRBID_M,
      &                  IERR)
         IF(ITEST.GT.0) THEN
           WRITE(IU06,*) '   SUB. WGRIBOUT: GRIB DATA WRITTEN TO FDB',

@@ -54,6 +54,7 @@ SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
         IGRIB_HANDLE = NGRIB_HANDLE_WAM_I
     ELSE
       ![majh] Need to throw error here
+      WRITE(*,*) "[majh] NO SUCH DOMAIN"
     END IF
 
 #ifdef ECMWF 

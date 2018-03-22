@@ -2,6 +2,7 @@
       SUBROUTINE WGRIB2FDB (KUSO, KTEST, 
      &                      IGRIB_HANDLE, KLEN, KGRIB,
      &                      CDFDBSF, KFDB, LFDBOPEN,
+     &                      IMDLGRBID_G,IMDLGRBID_M,
      &                      KERR)
 !=======================================================================
 !**
@@ -37,9 +38,8 @@
 
 !     ------------------------------------------------------------------
 
-      USE GRIB_API_INTERFACE
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G, IMDLGRBID_M, NWINOFF
-      USE YOWMPP   , ONLY : NPRECI,  IRANK    ,NPROC
+      USE YOWGRIBHD, ONLY : NWINOFF
+      USE YOWMPP   , ONLY : NPRECI
 
       USE FDBSUBS_MOD
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -49,6 +49,7 @@
 
       INTEGER, INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
       INTEGER, INTENT(IN) :: KLEN 
+      INTEGER, INTENT(IN) :: IMDLGRBID_M, IMDLGRBID_G 
       INTEGER, INTENT(INOUT) :: KFDB
       INTEGER, INTENT(OUT) :: KERR
       INTEGER, DIMENSION(KLEN), INTENT(INOUT) :: KGRIB

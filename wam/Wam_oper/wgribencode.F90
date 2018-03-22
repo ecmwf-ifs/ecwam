@@ -9,7 +9,7 @@
                                 LGRHDIFS, &
                                 DATE_TIME_WINDOW_END, &
                                 NGRBRESS, LNEWLVTP, LPADPOLES, &
-                                NLONRGG, IRGG, &
+                                NLONRGG_SIZE, NLONRGG, IRGG, &
                                 AMONOP, AMOSOP, XDELLA, CLDOMAIN, &
                                 KCOUSTEP, LRSTST0, &
                                 ZMISS, &
@@ -103,7 +103,8 @@
       LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
 
       ! From yowgrid
-      INTEGER, INTENT(IN)   :: NLONRGG(:) 
+      INTEGER, INTENT(IN)   :: NLONRGG_SIZE 
+      INTEGER, INTENT(IN)   :: NLONRGG(NLONRGG_SIZE) 
 
       ! From yowmap
       INTEGER, INTENT(IN) :: IRGG                ! Grid code: 0 = regular, 1 = irregular.
@@ -128,7 +129,7 @@
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',0,ZHOOK_HANDLE)
 #endif
 
-      CALL GSTATS(1709,0)
+      !CALL GSTATS(1709,0)
 
       IF(ITEST.GT.0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENCODE CALLED FOR ',IPARAM
@@ -220,8 +221,8 @@
           ENDDO
         ENDDO
 
-        CALL GSTATS(1709,2)
-        CALL GSTATS(1495,0)
+        !CALL GSTATS(1709,2)
+        !CALL GSTATS(1495,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC)
         DO JC=1,NTENCODE
           VALUES(JC) = LOG10(VALUES(JC)+PPEPS)+ABSPPREC
@@ -239,8 +240,8 @@
         ENDDO
 !$OMP END PARALLEL DO
 
-      CALL GSTATS(1495,1)
-      CALL GSTATS(1709,3)
+      !CALL GSTATS(1495,1)
+      !CALL GSTATS(1709,3)
 
       ELSE
         DO J=1,I2
@@ -421,7 +422,7 @@
 
       DEALLOCATE(VALUES)
 
-      CALL GSTATS(1709,1)
+      !CALL GSTATS(1709,1)
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',1,ZHOOK_HANDLE)
