@@ -1,5 +1,4 @@
       SUBROUTINE WGRIBENCODE_IO_SERV (I1, I2, FIELD, &
-                             IK, IM, &
                              YDIOS, FLDDESC, &
                              IGRIB_HANDLE)
 
@@ -41,13 +40,7 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)           :: I1, I2
-      INTEGER, INTENT(IN)           :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
       INTEGER, INTENT(INOUT)        :: IGRIB_HANDLE
-      CHARACTER(LEN=2), INTENT(IN)  :: MARSTYPE
-      CHARACTER(LEN=14), INTENT(IN) :: CDATE
-      INTEGER, INTENT(IN)           :: DATE_TIME_WINDOW_END
-      INTEGER, INTENT(IN)           :: KCOUSTEP
-      LOGICAL, INTENT(IN)           :: LRSTST0
       REAL, INTENT(INOUT)           :: FIELD(I1,I2)
       REAL                          :: ZHOOK_HANDLE
       TYPE (IO_SERV), INTENT (IN)   :: YDIOS
@@ -60,24 +53,29 @@
 
       CALL GSTATS(1709,0)
 
-      ASSOCIATE( IOS => YDIOS%MODELPAR )
+      ! Static variables, stored in IO server ( set in IO_SERV_SUIOSCTMPL_WAM )
+      ASSOCIATE( WAMPAR => YDIOS%MODELPAR%YWAM )
+      ! Field-specific data ( set in OUTWSPEC_IO_SERV )
+      ASSOCIATE ( WAMFLD => FLDDESC%YWAM )
 
-      CALL WGRIBENCODE( IOS%WV_IU06, IOS%WV_ITEST, &
-                    IOS%WV_NGX, IOS%WV_AMONOP_NGY, &
-                    FIELD, &
-                    FLDDESC%ITABLE, FLDDESC%IPARAM, &
-                    FLDDESC%KLEV, &
-                    FLDDESC%WV_ANG, FLDDESC%WV_FREQ, &
-                    FLDDESC%WV_CDATE, FLDDESC%IFCST, FLDDESC%WV_MARSTYPE, &
-                    IOS%WV_PPMISS, IOS%WV_PPEPS, IOS%WV_PPREC, IOS%WV_PPRESOL, IOS%WV_PPMIN_RESET, IOS%WV_NTENCODE, &
-                    FLDDESC%DATE_TIME_WINDOW_END, &
-                    IOS%WV_NGRBRESS, IOS%WV_LNEWLVTP, IOS%WV_LPADPOLES, &
-                    IOS%WV_NLONRGG, IOS%WV_IRGG, &
-                    IOS%WV_AMONOP, IOS%WV_AMOSOP, IOS%WV_XDELLA, IOS%WV_CLDOMAIN, &
-                    FLDDESC%KCOUSTEP, FLDDESC%LRSTST0, &
-                    IOS%WV_ZMISS, &
-                    IGRIB_HANDLE)
+      CALL WGRIBENCODE( WAMPAR%IU06, WAMPAR%ITEST, &
+                        I1, I2, &
+                        FIELD, &
+                        WAMFLD%ITABLE, WAMFLD%IPARAM, &
+                        WAMFLD%KLEV, &
+                        WAMFLD%IANGLE, WAMFLD%IFREQ, &
+                        WAMFLD%CDATE, WAMFLD%IFCST, WAMFLD%MARSTYPE, &
+                        WAMPAR%PPMISS, WAMPAR%PPEPS, WAMPAR%PPREC, WAMPAR%PPRESOL, WAMPAR%PPMIN_RESET, WAMPAR%NTENCODE, &
+                        .TRUE., &
+                        WAMFLD%DATE_TIME_WINDOW_END, &
+                        WAMPAR%NGRBRESS, WAMPAR%LNEWLVTP, WAMPAR%LPADPOLES, &
+                        SIZE(WAMPAR%NLONRGG), WAMPAR%NLONRGG, WAMPAR%IRGG, &
+                        WAMPAR%AMONOP, WAMPAR%AMOSOP, WAMPAR%XDELLA, WAMPAR%CLDOMAIN, &
+                        WAMFLD%KCOUSTEP, WAMFLD%LRSTST0, &
+                        WAMPAR%ZMISS, &
+                        IGRIB_HANDLE)
       
+      END ASSOCIATE
       END ASSOCIATE
 !     
 
