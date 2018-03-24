@@ -86,6 +86,7 @@
       INTEGER :: IS, KT, KB
       INTEGER :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER :: INVRES
+      INTEGER :: KEXTHRS
 
       INTEGER :: IDUM(15)
       INTEGER, DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -684,7 +685,12 @@
             IF(WAMDEPTH(IX,K).LT.0) THEN
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
-              IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
+              IF(ABS(WAMDEPTH(IX,K)).LT.150) THEN
+                KEXTHRS=10+10*(150-ABS(WAMDEPTH(IX,K)))/150
+              ELSE
+                KEXTHRS=10
+              ENDIF
+              IEXCLTHRSHOLD(IX,K)=MAX(KEXTHRS*ITHRSHOLD(IX,K),-998)
               IBLOCKDPT(IX,K)=INT(-0.025*XX)
             ENDIF
           ENDDO
