@@ -99,6 +99,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL, PARAMETER :: OLDPI = 3.1415927
+      REAL, PARAMETER :: SQRT2 = 2.0
       REAL :: AKI
       REAL :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
       REAL :: XDELLA, XDELLO
@@ -1917,7 +1918,7 @@
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSCOR(IX,K,IS)*ITEMPEW)
-                XX=SQRT(XX)
+                XX=SQRT2*SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
               ENDIF
