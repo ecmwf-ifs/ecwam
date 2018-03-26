@@ -254,8 +254,8 @@ IF (MYPROC == I1PROC) THEN
                   
                   ! Note that IY is the fast moving index
                   IX = IXLG(IGLOBALIDX,1)
-                  IY = NGY- KXLT(IGLOBALIDX,1) +1
-                  IMAPIDX = IX * NGY + IY
+                  IY = NGY - KXLT(IGLOBALIDX,1) + 1
+                  IMAPIDX = IX * NGY - IY
 
                   KWVSSORTL2G(ILOCALIDX, IPROC) = IMAPIDX
                   !WRITE(*,*) "PROC ", IPROC, " MAPS ", IX, ",", IY, "(", ILOCALIDX,")"," TO ", IMAPIDX ![majh]
