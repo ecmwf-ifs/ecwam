@@ -30,19 +30,17 @@
 !              NONE
  
 !-----------------------------------------------------------------------
-
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI      
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH        ,   &
-     &                 COSTH, FRATIO
+      USE YOWFRED  , ONLY : FR       ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
 ! ----------------------------------------------------------------------
- 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FP
 
@@ -104,9 +102,9 @@
         MMAX(IJ) = NFRE-1
       ENDDO
 
-      DO M=2,NFRE-1
+      DO M=1,NFRE
         DO IJ=IJS,IJL
-          IF (F1DSM(IJ,M).GT.XMAX(IJ)) THEN
+          IF (F1DSM(IJ,M).GE.XMAX(IJ)) THEN
             MMAX(IJ) = M
             XMAX(IJ) = F1DSM(IJ,M)
           ENDIF
@@ -119,19 +117,19 @@
 
 !     DETERMINE QUADRATIC FIT.
       DO IJ=IJS,IJL
-        IF (XMAX(IJ).GT.0._JWRB) THEN
+        IF (XMAX(IJ).GT.0._JWRB .AND. MMAX(IJ).GT.1 .AND. MMAX(IJ).LT.NFRE ) THEN
           XP1 = FR(MMAX(IJ)+1)-FR(MMAX(IJ))
           XM1 = FR(MMAX(IJ)-1)-FR(MMAX(IJ))
           F10  = F1DSM(IJ,MMAX(IJ))
-          F1P1 = F1DSM(IJ,MMAX(IJ)+1)-F10
-          F1M1 = F1DSM(IJ,MMAX(IJ)-1)-F10
+          F1P1 = (F1DSM(IJ,MMAX(IJ)+1)-F10)/XP1
+          F1M1 = (F1DSM(IJ,MMAX(IJ)-1)-F10)/XM1
 
 !!!          A = F10
-          B = 1._JWRB/(XM1-XP1)*(XM1*F1P1/XP1-XP1*F1M1/XM1)
-          C = 1._JWRB/(XM1-XP1)*(F1M1/XM1-F1P1/XP1)
+          B = (XM1*F1P1-XP1*F1M1)/(XM1-XP1)
+          C = (F1M1-F1P1)/(XM1-XP1)
         
           IF (C.LT.0._JWRB) THEN
-            FP(IJ) = MIN(1._JWRB,FR(MMAX(IJ))-B/(2._JWRB*C))
+            FP(IJ) = FR(MMAX(IJ))-B/(2._JWRB*C)
 !!!            XMAX(IJ) = A-B**2/(4._JWRB*C)
           ENDIF
         ENDIF
