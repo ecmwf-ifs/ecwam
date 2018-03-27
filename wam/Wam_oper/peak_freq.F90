@@ -11,7 +11,7 @@
  
 !     INTERFACE.
 !     ----------
-!              *CALL*  *PEAK_FR(F1D,IJS,IJL,FP)*
+!              *CALL*  *PEAK_FR(F3,IJS,IJL,FP)*
  
 !                       INPUT:
 !                            *F3*   - FREQUENCY SPECTRUM
@@ -34,7 +34,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI      
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH        ,   &
-     &                 COSTH
+     &                 COSTH, FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
@@ -49,9 +49,13 @@
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) ::  MMAX
 
+      REAL(KIND=JWRB), PARAMETER :: WL=0.1_JWRB
+      REAL(KIND=JWRB), PARAMETER :: WC=0.8_JWRB
+      REAL(KIND=JWRB), PARAMETER :: WR=0.1_JWRB
+
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: A,B,C,XP1,XM1,F1P1,F1M1,F10
-      REAL(KIND=JWRB) :: F1D(IJS:IJL,NFRE)
+      REAL(KIND=JWRB) :: A,B,C,XP1,XM1,F1P1,F1M1,F10,TF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1D, F1DSM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMAX
 
 ! ----------------------------------------------------------------------
@@ -73,6 +77,22 @@
           ENDDO
         ENDDO
       ENDDO
+
+!     SMOOTH F1D FOR A BETTER EXTIMATE OF THE PEAK
+      TF=1._JWRB/(FRATIO**5)
+      M=1
+      DO IJ=IJS,IJL
+        F1DSM(IJ,M)=WC*F1D(IJ,M)+WR*F1D(IJ,M+1)
+      ENDDO
+      DO M=2,NFRE-1
+        DO IJ=IJS,IJL
+          F1DSM(IJ,M)=WL*F1D(IJ,M-1)+WC*F1D(IJ,M)+WR*F1D(IJ,M+1)
+        ENDDO
+      ENDDO
+      M=NFRE
+      DO IJ=IJS,IJL
+        F1DSM(IJ,M)=WL*F1D(IJ,M-1)+(WC+WR*TF)*F1D(IJ,M)
+      ENDDO
  
 !***  2. DETERMINE F_PEAK USING QUADRATIC FIT.
 !     ---------------------------------------
@@ -86,9 +106,9 @@
 
       DO M=2,NFRE-1
         DO IJ=IJS,IJL
-          IF (F1D(IJ,M).GT.XMAX(IJ)) THEN
+          IF (F1DSM(IJ,M).GT.XMAX(IJ)) THEN
             MMAX(IJ) = M
-            XMAX(IJ) = F1D(IJ,M)
+            XMAX(IJ) = F1DSM(IJ,M)
           ENDIF
         ENDDO
       ENDDO
@@ -102,9 +122,9 @@
         IF (XMAX(IJ).GT.0._JWRB) THEN
           XP1 = FR(MMAX(IJ)+1)-FR(MMAX(IJ))
           XM1 = FR(MMAX(IJ)-1)-FR(MMAX(IJ))
-          F10  = F1D(IJ,MMAX(IJ))
-          F1P1 = F1D(IJ,MMAX(IJ)+1)-F10
-          F1M1 = F1D(IJ,MMAX(IJ)-1)-F10
+          F10  = F1DSM(IJ,MMAX(IJ))
+          F1P1 = F1DSM(IJ,MMAX(IJ)+1)-F10
+          F1M1 = F1DSM(IJ,MMAX(IJ)-1)-F10
 
 !!!          A = F10
           B = 1._JWRB/(XM1-XP1)*(XM1*F1P1/XP1-XP1*F1M1/XM1)
