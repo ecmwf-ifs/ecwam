@@ -78,8 +78,9 @@ SUBROUTINE IO_SERV_SUIOSCTMPL_WAM(YDIOS,LDMODEL, LDBCAST)
       LLMODEL = LDMODEL
       LLBCAST = LDBCAST
 
-      ! Wave model parameters [majh]
-      CALL EXPLOGI(LWCOU, YDIOS%MODELPAR%LWCOU)
+      ASSOCIATE( WAMPAR => YDIOS%MODELPAR%YWAM )
+
+      CALL EXPLOGI(LWCOU, WAMPAR%LWCOU)
 
       IF (YDIOS%MODELPAR%LWCOU) THEN
 
@@ -130,13 +131,6 @@ SUBROUTINE IO_SERV_SUIOSCTMPL_WAM(YDIOS,LDMODEL, LDBCAST)
             CALL EXPREAL( ZMISS, YDIOS%MODELPAR%WV_ZMISS)
             
             IF (LLMODEL) DEALLOCATE(WVCOUNT)
-
-            ! IF(YDIOS%LIO_SERV) THEN
-            !   WRITE(*,*) 'I GOT NGX = ', YDIOS%MODELPAR%WVNGX
-            !   WRITE(*,*) 'I GOT NGY = ', YDIOS%MODELPAR%WVNGY
-            !   WRITE(*,*) 'I GOT NWVTOTG = ', YDIOS%MODELPAR%NWVTOTG
-            !   WRITE(*,*) 'I GOT NWVTOTMX = ', YDIOS%MODELPAR%NWVTOTMX
-            ! ENDIF
 
             CALL MKWVSSORT
 
@@ -258,8 +252,6 @@ IF (MYPROC == I1PROC) THEN
                   IMAPIDX = IX * NGY - IY
 
                   KWVSSORTL2G(ILOCALIDX, IPROC) = IMAPIDX
-                  !WRITE(*,*) "PROC ", IPROC, " MAPS ", IX, ",", IY, "(", ILOCALIDX,")"," TO ", IMAPIDX ![majh]
-                  !WRITE(*,*) ILOCALIDX, "->", IMAPIDX
             ENDDO
 
       ENDDO

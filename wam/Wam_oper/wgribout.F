@@ -96,7 +96,6 @@
       IF(LFDB) THEN
 !*     2.1 WRITE DATA TO FDB
 !          -----------------
-      ! [majh] Write out to FDB with special keys set (from grib handle). Call this from IOS.
         CALL WGRIB2FDB (IU06, ITEST,
      &                  IGRIB_HANDLE, ISIZE, KGRIB_BUFR,
      &                  CDFDBSF, KFDB, LFDBOPEN,

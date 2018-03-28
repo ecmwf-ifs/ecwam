@@ -179,9 +179,8 @@
           CALL IGRIB_OPEN_FILE(IUOUT,OUTFILEN(1:LFILE),'w')
         ENDIF
 
-        ! [majh] because of all_to_all_v send buffer has to be huge because it maps to global vector (hence *NPROC )
-        ALLOCATE(ZSENDBUF(NPROC*(NEND(IRANK)-NSTART(IRANK)+1))) ! [majh] The contribution of each PE (from start to end)
-        ALLOCATE(ZRECVBUF(NEND(NPROC)))                         ! [majh] Entire field (same as position of end)
+        ALLOCATE(ZSENDBUF(NPROC*(NEND(IRANK)-NSTART(IRANK)+1)))
+        ALLOCATE(ZRECVBUF(NEND(NPROC)))
         ZRECVBUF(:)=0.
 
         ISTEP=NPROC
@@ -201,7 +200,7 @@
 
               DO J1=NSTART(IRANK),NEND(IRANK)
                 ICNT = ICNT + 1
-                ZSENDBUF(ICNT) = SPEC(J1,IK,IM) ! [majh] fills send buffer with part of Spec (  )
+                ZSENDBUF(ICNT) = SPEC(J1,IK,IM)
               ENDDO
                             
               ISENDCOUNTS(IP) = NEND(IRANK) - NSTART(IRANK) + 1
@@ -225,7 +224,6 @@
      &      WRITE(IU06,*) 'SUB OUTWSPEC: MPL_ALLTOALLV DONE' 
 
 
-          ! [majh] Fills land-points with missing, operates on full array (after gather)
           CALL GSTATS(1496,0)
           NPROMA=NPROMA_WAM
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
@@ -254,7 +252,6 @@
           IF(IRANK.LE.IST) THEN
             IM=(((IC-1)+IRANK-1)/NANG)+1
             IK=(IC-1)+IRANK-(IM-1)*NANG
-            ! [majh] Create GRIB message with angle (IK) and frequency (IM)
             CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD,
      &                     ITABLE, IPARAM, 0, IK , IM, 
      &                     CDATE, IFCST, MARSTYPE,
@@ -319,7 +316,6 @@
 
             ELSE
 !             OUTPUT GRIB DATA THAT ARE ALREADY THERE
-              ! [majh] Skip to wgrib2fdb
               CALL WGRIBOUT(IU06, ITEST,
      &                    LFDBIOOUT, CFDB2DSP, NWFDBREF, LFDBOPEN,
      &                    IUOUT,

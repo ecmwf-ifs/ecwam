@@ -53,8 +53,7 @@ SUBROUTINE GET_PRESET_WGRIB_TEMPLATE(CT,IGRIB_HANDLE)
     ELSE IF (CT.EQ."I") THEN
         IGRIB_HANDLE = NGRIB_HANDLE_WAM_I
     ELSE
-      ![majh] Need to throw error here
-      WRITE(*,*) "[majh] NO SUCH DOMAIN"
+      CALL ABOR1(' GET_PRESET_WGRIB_TEMPLATE: Value of CT not recognized.')
     END IF
 
 #ifdef ECMWF 
