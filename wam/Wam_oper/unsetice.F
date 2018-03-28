@@ -38,7 +38,8 @@
       USE YOWICE   , ONLY : FLMIN    ,LMASKICE ,CICOVER  ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWPCONS , ONLY : PI       ,G        ,R        ,EPSMIN
-      USE YOWSHAl  , ONLY : DEPTH
+      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT
+      USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
       USE MPL_MODULE
@@ -109,7 +110,9 @@
 
         DO IJ=IJS,IJL
           IF(LICE2SEA(IJ) .AND. CICOVER(IJ,1).LE.CILIMIT) THEN
-            IF(DEPTH(IJ,1).LE.50.) THEN
+            IF(DEPTH(IJ,1).LE.10.) THEN
+              FETCH=MIN(0.5*DELPHI,10000.)
+            ELSEIF(DEPTH(IJ,1).LE.50.) THEN
               FETCH=MIN(DELPHI,50000.)
             ELSEIF(DEPTH(IJ,1).LE.150.) THEN
               FETCH=MIN(2*DELPHI,100000.)
@@ -121,8 +124,7 @@
 
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
-            IF (U10OLD(IJ) .GT. 0.1E-08 .AND.
-     &          DEPTH(IJ,1) .GT. 10.) THEN
+            IF (U10OLD(IJ) .GT. 0.1E-08 ) THEN
               GX = G * FETCH
               U10 = U10OLD(IJ)
               GXU = GX/(U10*U10)
@@ -148,12 +150,20 @@
         DO K=1,NANG
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              FL(IJ,K,M) =  MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
-              FLLOWEST = FLMIN*COS2NOISE(IJ,K)
+              FL(IJ,K,M) = MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
+              FLLOWEST = 0.1*FLMIN*COS2NOISE(IJ,K)
               FL(IJ,K,M) = MAX(FL(IJ,K,M),FLLOWEST)
             ENDDO
           ENDDO
+          DO IJ=IJS,IJL
+            FL(IJ,K,NFRE) = FL(IJ,K,NFRE) + EPSMIN
+          ENDDO
         ENDDO
+
+        IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
+          CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL)
+        ENDIF
+
 
         IF (ITEST.GE.2) THEN
          WRITE(IU06,*) ' UNSETICE: SPECTRA INITIALISED OVER OLD SEA ICE'
