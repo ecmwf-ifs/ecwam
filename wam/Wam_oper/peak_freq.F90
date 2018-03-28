@@ -33,7 +33,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI      
-      USE YOWFRED  , ONLY : FR       ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,FRATIO   ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
