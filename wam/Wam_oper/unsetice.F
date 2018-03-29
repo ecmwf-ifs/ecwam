@@ -151,12 +151,9 @@
           DO M=1,NFRE
             DO IJ=IJS,IJL
               FL(IJ,K,M) = MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
-              FLLOWEST = 0.1*FLMIN*COS2NOISE(IJ,K)
+              FLLOWEST = FLMIN*COS2NOISE(IJ,K)
               FL(IJ,K,M) = MAX(FL(IJ,K,M),FLLOWEST)
             ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            FL(IJ,K,NFRE) = FL(IJ,K,NFRE) + EPSMIN
           ENDDO
         ENDDO
 
