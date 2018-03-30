@@ -53,6 +53,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV, 
+     &                      XNUM     ,
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
@@ -86,7 +87,8 @@
       INTEGER :: NWAVEWIND(1)
 
       REAL :: ZHOOK_HANDLE
-      REAL :: TEMPXNLEV, CDINV, CDSQRTINV, CHARNOCK
+      REAL :: TEMPXNLEV, CDINV, CDSQRTINV, Z0TOT, USTAR, CHARNOCK
+      REAL :: ALPHAOG
       REAL, DIMENSION(MIJS:MIJL) :: CD
 
       CHARACTER(LEN=24) :: FILNM
@@ -302,26 +304,31 @@
 
         ILEV=1
 
+        ALPHAOG=ALPHA/G
+
 ! Mod for OPENMP
           NPROMA=NPROMA_WAM
           CALL GSTATS(1444,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) 
-!$OMP+    PRIVATE(JKGLO,KIJS,KIJL,IJ,CDSQRTINV,CHARNOCK)
+!$OMP+    PRIVATE(JKGLO,KIJS,KIJL,IJ,CDSQRTINV,Z0TOT,USTAR,CHARNOCK)
           DO JKGLO=MIJS,MIJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,MIJL)
             DO IJ=KIJS,KIJL
-              CDSQRTINV = MIN(1./SQRT(CD(IJ)),100.0)
-              Z0OLD(IJ) = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !!            USOLD WILL FIRST CONTAIN ITS SQUARE
 !!            THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
 !!            ALWAYS BE AS IN OUTGRID
               USOLD(IJ) = CD(IJ)*MAX(U10OLD(IJ)**2,EPSU10)
               USOLD(IJ) = MAX(USOLD(IJ),EPSUS)
+              USTAR = SQRT(USOLD(IJ))
+              CDSQRTINV = MIN(1./SQRT(CD(IJ)),100.0)
+              Z0TOT = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
+!             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
+              Z0OLD(IJ) = MAX(Z0TOT - XNUM/USTAR,ALPHAOG*USTAR)
               CHARNOCK = G*Z0OLD(IJ)/USOLD(IJ)
               CHARNOCK = MAX(CHARNOCK,ALPHA)
-              TAUW(IJ) = USOLD(IJ)*(1.-(ALPHA/CHARNOCK)**2)
-              USOLD(IJ) = SQRT(USOLD(IJ))
+              TAUW(IJ) = MAX(USOLD(IJ)*(1.-(ALPHA/CHARNOCK)**2),0.)
+              USOLD(IJ) = USTAR 
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO

@@ -98,6 +98,7 @@
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
+     &         XNUM,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, LWNEMOCOUSTRN
@@ -261,6 +262,9 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 #endif
+
+!!!!debile need to get this from atm model
+      XNUM=0.11*1.5E-5
 
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       ZMISS=RMISS

@@ -43,7 +43,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA
+      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,XNUM
       USE YOWPCONS , ONLY : G        ,EPSUS   ,ACD      ,BCD
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -65,7 +65,7 @@
 
       REAL :: XLOGXL, ALPHAOG, XKUTOP, XOLOGZ0
       REAL :: USTOLD, TAUOLD, TAUNEW, X, F, DELF
-      REAL :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ, XNU
+      REAL :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -75,9 +75,6 @@
 
       XLOGXL=LOG(XLEV)
       ALPHAOG=ALPHA/G
-
-!!!!debile need to get this from atm model
-        XNU=0.11*1.5E-5
 
       DO IJ=IJS,IJL
         XKUTOP = XKAPPA*UTOP(IJ)
@@ -89,7 +86,7 @@
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
           Z0CH = ALPHAOG*TAUOLD/SQRT(1.-X)
-          Z0VIS = XNU*USTM1
+          Z0VIS = XNUM*USTM1
           Z0TOT = Z0CH+Z0VIS
 
           XOLOGZ0= 1./(XLOGXL-LOG(Z0TOT))
