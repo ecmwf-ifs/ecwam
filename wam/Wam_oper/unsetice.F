@@ -147,8 +147,8 @@
 
         CALL JONSWAP(ALPHAV, GAMMA, SA, SB, FPK, IJS, IJL, ET)
 
-        DO K=1,NANG
-          DO M=1,NFRE
+        DO M=1,NFRE
+          DO K=1,NANG
             DO IJ=IJS,IJL
               FL(IJ,K,M) = MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
               FLLOWEST = FLMIN*COS2NOISE(IJ,K)

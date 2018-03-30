@@ -98,7 +98,7 @@
  
 !     MAX OF 1-D SPECTRUM
  
-      XMAX_MIN = FLMIN*DELTH
+      XMAX_MIN = NANG*FLMIN*DELTH
       DO IJ=IJS,IJL
         XMAX(IJ) = XMAX_MIN 
         MMAX(IJ) = NFRE-1
