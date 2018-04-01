@@ -433,11 +433,11 @@
         TAILFACTOR_PM=3.0
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1000.0
-        AGRCRV = 0.047E+6
-        BGRCRV =  12.48
-        AFCRV = 5.6E-4
-        BFCRV = -2.938
+        EGRCRV = 1065.0
+        AGRCRV = 0.0655E+6
+        BGRCRV =  10.906
+        AFCRV = 2.453E-4
+        BFCRV = -3.1236
         ESH = 1711.
         ASH = 8.0E-4 
         BSH = 0.96 
