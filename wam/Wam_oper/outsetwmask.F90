@@ -59,7 +59,7 @@
 !           SEA MASK IS APPLIED
             DO IJ = IJS,IJL
               BOUT(IJ,ITG) = BOUT(IJ,ITG)*IODP(IJ) + (1-IODP(IJ))*ZMISS
-           ENDDO
+            ENDDO
           ENDIF
 
         ENDIF

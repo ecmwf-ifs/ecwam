@@ -50,11 +50,12 @@
 
       USE YOWMPP   , ONLY : NPROC
       USE YOWSTAT  , ONLY : IASSI
+      USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IR, IFLAG, IC, ITG, ITT, IZLEV, IR
+      INTEGER :: IR, IFLAG, IC, ITG, ITP, ITT, IZLEV, IR
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -83,7 +84,6 @@
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
       IPRMINFO(IR,5)=1
-
 
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
@@ -138,7 +138,6 @@
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
       IPRMINFO(IR,5)=1
-
 
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
@@ -438,8 +437,10 @@
       IPRMINFO(IR,5)=1
 
       IR=IR+1
+      ITP=0 ! total number of partitions parameters
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 1 WAVE HEIGHT ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=121
       IPRMINFO(IR,3)=0
@@ -451,6 +452,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 1 DIRECTION .....'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=122
       IPRMINFO(IR,3)=0
@@ -460,6 +462,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 1 MEAN PERIOD ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=123
       IPRMINFO(IR,3)=0
@@ -469,6 +472,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 2 WAVE HEIGHT ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=124
       IPRMINFO(IR,3)=0
@@ -478,6 +482,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 2 DIRECTION .....'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=125
       IPRMINFO(IR,3)=0
@@ -487,6 +492,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 2 MEAN PERIOD ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=126
       IPRMINFO(IR,3)=0
@@ -496,6 +502,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 3 WAVE HEIGHT ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=127
       IPRMINFO(IR,3)=0
@@ -505,6 +512,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 3 DIRECTION .....'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=128
       IPRMINFO(IR,3)=0
@@ -514,6 +522,7 @@
       IR=IR+1
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' SWELL PARTITION 3 MEAN PERIOD ...'
+      ITP=ITP+1
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=129
       IPRMINFO(IR,3)=0
@@ -738,9 +747,26 @@
       ENDDO
 
 !     WILL THERE BE OUTPUT OF PARTITONED PARAMETERS
+      IF(NTRAIN*(ITP/NTRAIN).NE.ITP) THEN
+        WRITE(0,*) '******************************************'
+        WRITE(0,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
+        WRITE(0,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'
+        WRITE(0,*) '*  DOES NOT MATCH !!!!                   *'
+        WRITE(0,*) '*  NTRAIN = ',NTRAIN
+        WRITE(0,*) '*  ITP = ',ITP
+        WRITE(0,*) '******************************************'
+        WRITE(IU06,*) '******************************************'
+        WRITE(IU06,*) '*  FATAL ERROR IN SUB. MPCRTBL           *'
+        WRITE(IU06,*) '*  THE NUMBER OF PARTITONED PARAMETERS   *'
+        WRITE(IU06,*) '*  DOES NOT MATCH !!!!                   *'
+        WRITE(IU06,*) '*  NTRAIN = ',NTRAIN
+        WRITE(IU06,*) '*  ITP = ',ITP
+        WRITE(IU06,*) '******************************************'
+        CALL ABORT1
+      ENDIF
       LLPARTITION=.FALSE.
       IFLAG=IFRSTPARTI
-      DO ITT=1,3*NTRAIN
+      DO ITT=1,ITP
         IF(IPFGTBL(IFLAG).NE.0) THEN
           LLPARTITION=.TRUE.
           EXIT
@@ -750,7 +776,6 @@
 
 
 ! FIND P.E. FOR OUTPUT OF RESTART FILES
-
       IFLAG=JPPFLAG
 !c
 !cc set to 1 in order to simplify ouput to FDB
