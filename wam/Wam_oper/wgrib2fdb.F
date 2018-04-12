@@ -38,6 +38,7 @@
 
 !     ------------------------------------------------------------------
 
+      USE GRIB_API_INTERFACE
       USE YOWGRIBHD, ONLY : NWINOFF
       USE YOWMPP   , ONLY : NPRECI
 
