@@ -89,7 +89,7 @@
      &            SMEAN    ,ALTWH    ,CALTWH   ,RALTCOR  ,
      &            P1MEAN   ,P2MEAN   ,SPRDMEAN ,C3MEAN   ,C4MEAN   ,
      &            BFMEAN   ,QPMEAN   ,HMAXMEAN ,FPMEAN   ,TMAXMEAN ,
-     &            ETAMEAN  ,                                            &
+     &            ETAMEAN  ,RMEAN    ,XNSLCMEAN,                        &
      &            USTMEAN  ,VSTMEAN  ,PHIEPS   ,PHIAW    ,TAUOC    ,
      &            STRNMS   ,E10MEAN  ,WEFLXM   ,WEFLXD   ,E1012    ,
      &            E1214    ,E1417    ,E1721    ,E2125    ,E2530    ,
@@ -221,6 +221,8 @@
         IF(.NOT.ALLOCATED(HMAXMEAN)) ALLOCATE(HMAXMEAN(IJSLOC:IJLLOC))
         IF(.NOT.ALLOCATED(TMAXMEAN)) ALLOCATE(TMAXMEAN(IJSLOC:IJLLOC))
         IF(.NOT.ALLOCATED(ETAMEAN)) ALLOCATE(ETAMEAN(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(RMEAN)) ALLOCATE(RMEAN(IJSLOC:IJLLOC))
+        IF(.NOT.ALLOCATED(XNSLCMEAN)) ALLOCATE(XNSLCMEAN(IJSLOC:IJLLOC))
       ENDIF
 
       IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
@@ -372,7 +374,7 @@
      &                  KIJS,KIJL,
      &                  C3MEAN(KIJS),C4MEAN(KIJS),BFMEAN(KIJS),
      &                  QPMEAN(KIJS),HMAXMEAN(KIJS),TMAXMEAN(KIJS),
-     &                  ETAMEAN(KIJS))
+     &                  TAMEAN(KIJS),RMEAN(KIJS),XNSLCMEAN(KIJS))
         ENDIF
 
         IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
@@ -439,13 +441,17 @@
 !       COMPUTE OUTPUT EXTRA FIELDS
 !       add necessary code to compute the extra output fields
         IF(IPFGTBL(JPPFLAG-4).NE.0) THEN
-          WX1(KIJS:KIJL)=1.0
+!!! for now output the 3 new parameters as extra output fields
+!!!          WX1(KIJS:KIJL)=1.0
+          WX1(KIJS:KIJL)=ETAMEAN(KIJS:KIJL)
         ENDIF
         IF(IPFGTBL(JPPFLAG-3).NE.0) THEN
-          WX2(KIJS:KIJL)=2.0
+!!!          WX2(KIJS:KIJL)=2.0
+          WX2(KIJS:KIJL)=RMEAN(KIJS:KIJL)
         ENDIF
         IF(IPFGTBL(JPPFLAG-2).NE.0) THEN
-          WX3(KIJS:KIJL)=3.0
+!!!          WX3(KIJS:KIJL)=3.0
+          WX3(KIJS:KIJL)=XNSLCMEAN(KIJS:KIJL)
         ENDIF
         IF(IPFGTBL(JPPFLAG-1).NE.0) THEN
           WX4(KIJS:KIJL)=4.0
@@ -964,6 +970,8 @@
       IF(ALLOCATED(HMAXMEAN)) DEALLOCATE(HMAXMEAN)
       IF(ALLOCATED(TMAXMEAN)) DEALLOCATE(TMAXMEAN)
       IF(ALLOCATED(ETAMEAN)) DEALLOCATE(ETAMEAN)
+      IF(ALLOCATED(RMEAN)) DEALLOCATE(RMEAN)
+      IF(ALLOCATED(XNSLCMEAN)) DEALLOCATE(XNSLCMEAN)
       IF(ALLOCATED(USTMEAN)) DEALLOCATE(USTMEAN)
       IF(ALLOCATED(VSTMEAN)) DEALLOCATE(VSTMEAN)
       IF(ALLOCATED(STRNMS)) DEALLOCATE(STRNMS)

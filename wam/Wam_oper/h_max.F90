@@ -1,4 +1,4 @@
-      SUBROUTINE H_MAX(C3,C4,NSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
+      SUBROUTINE H_MAX(C3,C4,XNSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
  
 !***  DETERMINE EXPECTED MAXIMUM WAVE HEIGHT, NORMALISED WITH
 !     SIGNIFICANT WAVE HEIGHT.
@@ -20,7 +20,7 @@
  
 !     C_3            REAL         SKEWNESS
 !     C_4            REAL         KURTOSIS
-!     NSLC           INTEGER      NUMBER OF SIGNIFICANT LEVEL CROSSINGS
+!     XNSLC          REAL         NUMBER OF SIGNIFICANT LEVEL CROSSINGS
 !     IJS            INTEGER      FIRST INDEX
 !     IJL            INTEGER      LAST INDEX
 !     AA             REAL         FIRST PARAMETER OF RESIDORI PDF
@@ -47,8 +47,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN):: NSLC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: C3, C4
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: C3, C4, XNSLC
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: AA, BB, HMAXN, SIG_HM
 
@@ -67,7 +66,7 @@
       REAL(KIND=JWRB), PARAMETER :: AA_MAX = 1000._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, XN, EMIN, EMAX
+      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, EMIN, EMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1
 
 !----------------------------------------------------------------------
@@ -90,16 +89,15 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (NSLC(IJ).GT.0) THEN
+        IF (XNSLC(IJ).GT.0._JWRB) THEN
           F  = LOG(MAX(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE,FLOGMIN))
 
           AA(IJ) = MIN(((EB-F)**2-2._JWRB*EB)/(2._JWRB*F),AA_MAX)
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
           BBM1(IJ) = 1._JWRB/BB(IJ)
 
-          XN = REAL(NSLC(IJ))
           DO I=1,NITER
-            Z0 = LOG(XN*SQRT(0.5_JWRB*E(IJ)))
+            Z0 = LOG(XNSLC(IJ)*SQRT(0.5_JWRB*E(IJ)))
             E(IJ) = (G2-TWOG1*(AA(IJ)+Z0)+(2._JWRB*AA(IJ)+Z0)*Z0)*BBM1(IJ)
             E(IJ)=MIN(MAX(E(IJ),EMIN),EMAX)
           ENDDO

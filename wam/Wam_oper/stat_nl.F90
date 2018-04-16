@@ -1,6 +1,6 @@
       SUBROUTINE STAT_NL(IJS, IJL,                                      &
      &                   XM0, XK0, BF2, XNU, SIG_TH, DPTH,              &
-     &                   C3, C4, ETA_M, C4_B, C4_DYN)
+     &                   C3, C4, ETA_M, R, C4_B, C4_DYN)
  
 !***  DETERMINE SKEWNESS AND ENVELOPE KURTOSIS FOR A NARROW-BAND WAVE 
 !     TRAIN IN ARBITRARY DEPTH.
@@ -21,6 +21,7 @@
 !     C3             REAL         SKEWNESS
 !     C4             REAL         ENVELOPE KURTOSIS
 !     ETA_M          REAL         WAVE-INDUCED MEAN SURFACE ELEVATION
+!     R              REAL         DIMENSIONLESS RATIO OF ANGULAR AND FREQUENCY WIDTH
 !     XNU            REAL         RELATIVE SPECTRAL WIDTH
 !     SIG_TH         REAL         RELATIVE WIDTH in DIRECTION
 
@@ -41,7 +42,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: XM0, XK0, BF2, XNU, SIG_TH, DPTH
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, C4_B, C4_DYN
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, ETA_M, R, C4_B, C4_DYN
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: RMIN = 0._JWRB
@@ -64,7 +65,7 @@
       REAL(KIND=JWRB) :: XKAPPA1,ALPHA,R_0,BETA_R0,XJ
       REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON
       REAL(KIND=JWRB) :: TRANSF_R
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF, R 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF
 
 !-----------------------------------------------------------------------
 #ifdef ECMWF
@@ -150,6 +151,7 @@
           ETA_M(IJ)  = 0._JWRB
           C3(IJ)     = 0._JWRB
           C4(IJ)     = 0._JWRB
+          R(IJ)      = 0._JWRB
           C4_DYN(IJ) = 0._JWRB
           C4_B(IJ)   = 0._JWRB
         ENDIF

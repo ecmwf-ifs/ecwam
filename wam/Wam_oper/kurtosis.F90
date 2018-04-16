@@ -1,6 +1,6 @@
       SUBROUTINE KURTOSIS(F3, DPTH, IJS, IJL,                           &
      &                    C3, C4, BF2, QP, HMAX, TMAX,                  &
-     &                    ETA_M)
+     &                    ETA_M, R, XNSLC)
  
 !***  *KURTOSIS*   DETERMINES SKEWNESS C3, KURTOSIS C4, THE SQUARE OF THE
 !                  BENJAMIN-FEIR INDEX BFI2, GODA'S PEAKEDNESS PARAMETER QP, 
@@ -25,7 +25,8 @@
 !     INTERFACE.
 !     ----------
 !           *CALL*  *KURTOSIS(F3, DPTH, IJS, IJL
-!                             C3, C4, BF, QP,  R,  HMAX, TMAX, ETA_M)
+!                             C3, C4, BF2, QP, HMAX, TMAX,
+!                             ETA_M, R, XNSLC)
 !                      INPUT:
 !                           *F3*    - 2-DIMENSIONAL SPECTRUM
 !                           *DPTH*  - WATER DEPTH
@@ -36,10 +37,12 @@
 !                           *C4*    - KURTOSIS
 !                           *BF*    - SQUARE OF BENJAMIN-FEIR INDEX
 !                           *QP*    - GODA'S QUALITY FACTOR
-!                           *R*     - RATIO OG ANG WIDTH TO FREQ WIDTH
 !                           *HMAX*  - MAXIMUM WAVE HEIGHT
 !                           *TMAX*  - MAXIMUM WAVE PERIOD
-!                           *ETA_M  - WAVE-INDUCED MEAN SURFACE ELEVATION
+!                           *ETA_M* - WAVE-INDUCED MEAN SURFACE ELEVATION
+!                           *R*     - DIMENSIONLESS RATIO OF ANGULAR AND FREQUENCY WIDTH
+!                           *XNSLC* - NUMBER OF EVENTS
+
  
 !     METHOD.
 !     -------
@@ -114,7 +117,7 @@
 !            3) THE MAXIMUM WAVE HEIGHT DISTRIBUTION IS NOW BASED ON THE WORK 
 !               OF NAESS (1982). THIS PDF INTRODUCES AS THE NUMBER OF INDEPENDENT 
 !               EVENTS THE NUMBER OF WAVE GROUPS (EWING, 1973) AT THE 
-!               SIGNIFICANT LEVEL, CALLED NSLC, IN A NATURAL WAY.
+!               SIGNIFICANT LEVEL, CALLED XNSLC, IN A NATURAL WAY.
  
 !            4) DEVIATIONS FROM NORMALITY ARE GIVEN BY THE EDGEWORTH 
 !               DISTRIBUTION. HOWEVER, THIS SMALL STEEPNESS EXPANSION IS 
@@ -180,10 +183,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DPTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX, ETA_M
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: C3, C4, BF2, QP, HMAX, TMAX, ETA_M, R, XNSLC
 
       INTEGER(KIND=JWIM) :: IJ, M, K
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL):: NSLC
 
       REAL(KIND=JWRB), PARAMETER :: QPMIN = 0.5_JWRB
       REAL(KIND=JWRB), PARAMETER :: QPMAX = 4.5_JWRB
@@ -303,7 +305,7 @@
  
       CALL STAT_NL(IJS, IJL,                                            &
      &             SUM0, XKP, BF2, XNU, SIG_TH, DPTH,                   &
-     &             C3, C4, ETA_M, C4_B, C4_DYN)
+     &             C3, C4, ETA_M, R, C4_B, C4_DYN)
 
   
 !***  5. DETERMINE HMAXN AND TMAX.
@@ -321,14 +323,14 @@
           XNU_LH(IJ) = SQRT(MAX(0._JWRB,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
           OM_UP(IJ) = ZFAC*XNU_LH(IJ)*F_M(IJ)
 
-          NSLC(IJ) = NINT(DUR*OM_UP(IJ))
+          XNSLC(IJ) = REAL(NINT(DUR*OM_UP(IJ)),JWRB)
         ELSE
           XNU_LH(IJ) = 0._JWRB
-          NSLC(IJ) = 0 
+          XNSLC(IJ) = 0._JWRB 
         ENDIF
       ENDDO
 
-      CALL H_MAX(C3,C4,NSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
+      CALL H_MAX(C3,C4,XNSLC,IJS,IJL,AA,BB,HMAXN,SIG_HM)
 
       DO IJ=IJS,IJL
         IF (SUM1(IJ).GT.ZEPSILON .AND. HMAXN(IJ).GT.ZEPSILON) THEN
