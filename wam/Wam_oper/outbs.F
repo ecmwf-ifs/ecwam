@@ -374,7 +374,7 @@
      &                  KIJS,KIJL,
      &                  C3MEAN(KIJS),C4MEAN(KIJS),BFMEAN(KIJS),
      &                  QPMEAN(KIJS),HMAXMEAN(KIJS),TMAXMEAN(KIJS),
-     &                  TAMEAN(KIJS),RMEAN(KIJS),XNSLCMEAN(KIJS))
+     &                  ETAMEAN(KIJS),RMEAN(KIJS),XNSLCMEAN(KIJS))
         ENDIF
 
         IF(IPFGTBL(40).NE.0 .OR. IPFGTBL(41).NE.0) THEN
