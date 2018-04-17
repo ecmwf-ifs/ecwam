@@ -969,23 +969,23 @@
 !       the forcing fields (see above if the sea ice mask has to be removed)
           IF(ICT.EQ.(JPPFLAG-4)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX1G,IG,LSQRT,0.)
+            CALL MAKEGRID (GTEMP,WX1G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(JPPFLAG-3)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX2G,IG,LSQRT,0.)
+            CALL MAKEGRID (GTEMP,WX2G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(JPPFLAG-2)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX3G,IG,LSQRT,0.)
+            CALL MAKEGRID (GTEMP,WX3G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(JPPFLAG-1)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX4G,IG,LSQRT,0.)
+            CALL MAKEGRID (GTEMP,WX4G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ELSEIF(ICT.EQ.(JPPFLAG)) THEN
             LSQRT=.FALSE.
-            CALL MAKEGRID (GTEMP,WX5G,IG,LSQRT,0.)
+            CALL MAKEGRID (GTEMP,WX5G,IG,LSQRT,ZMISS)
             IFLD=IFLD+1
           ENDIF
 
