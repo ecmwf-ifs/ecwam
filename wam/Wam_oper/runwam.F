@@ -145,6 +145,7 @@
       REAL :: PSTEP
       REAL :: RSOUTW, RNORTW
       REAL :: PRPLRADI, PRPLRG
+      REAL :: RNU_ATM, RNUM_ATM
       REAL :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL :: ZHOOK_HANDLE
@@ -221,6 +222,10 @@
       PRPLRADI=1.0
       PRPLRG=1.0
       LLRNL=.TRUE.
+
+!     KINEMATIC AIR VISCOSITY AND REDUCED VALUE FOR MOMENTUM TRANSFER
+      RNU_ATM=1.5E-5
+      RNUM_ATM=0.11*RNU_ATM
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
 
@@ -336,7 +341,9 @@
      &             LLRESTARTED, ZDELATM, KQGAUSS,
      &             LDWCOUNORMS, MASK_IN, MASK_OUT,
      &             NFDBREF,
-     &             FRSTIME, NADV, PRPLRADI, PRPLRG,IDUM)
+     &             FRSTIME, NADV, PRPLRADI,                             &
+     &             RNU_ATM, RNUM_ATM,                                   &
+     &             PRPLRG,IDUM)
 
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20

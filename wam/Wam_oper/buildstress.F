@@ -53,7 +53,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV, 
-     &                      XNUM     ,
+     &                      RNUM     ,
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
@@ -324,7 +324,7 @@
               CDSQRTINV = MIN(1./SQRT(CD(IJ)),100.0)
               Z0TOT = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
-              Z0OLD(IJ) = MAX(Z0TOT - XNUM/USTAR,ALPHAOG*USTAR)
+              Z0OLD(IJ) = MAX(Z0TOT - RNUM/USTAR,ALPHAOG*USTAR)
               CHARNOCK = G*Z0OLD(IJ)/USOLD(IJ)
               CHARNOCK = MAX(CHARNOCK,ALPHA)
               TAUW(IJ) = MAX(USOLD(IJ)*(1.-(ALPHA/CHARNOCK)**2),0.)

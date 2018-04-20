@@ -8,7 +8,8 @@
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
      &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
      &                    NFDBREF,
-     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,
+     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
+     &                    RNU_ATM, RNUM_ATM,                            &
      &                    IDATE_TIME_WINDOW_END)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
@@ -98,7 +99,7 @@
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
-     &         XNUM,
+     &         RNU      ,RNUM        ,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, LWNEMOCOUSTRN
@@ -203,6 +204,10 @@
       REAL, INTENT(IN) :: PRPLRADI
 !     MODIFICATION FACTOR FOR GRAVITY FOR SMALL PLANET RUNS
       REAL, INTENT(IN) :: PRPLRG
+!     KINEMATIC AIR DENSITY
+      REAL, INTENT(IN) :: RNU_ATM 
+!     REDUCED KINEMATIC AIR DENSITY FOR MOEMNTUM TRANSFER
+      REAL, INTENT(IN) :: RNUM_ATM 
 !     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
       INTEGER, INTENT(IN) :: IDATE_TIME_WINDOW_END
 
@@ -263,12 +268,14 @@
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 #endif
 
-!!!!debile need to get this from atm model
-      XNUM=0.11*1.5E-5
+
 
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
+
+      RNU=RNU_ATM
+      RNUM=RNUM_ATM
 
       KDELWI=NINT(PSTEP)*KSTPW
 

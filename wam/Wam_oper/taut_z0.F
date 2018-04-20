@@ -43,7 +43,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,XNUM
+      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,RNUM
       USE YOWPCONS , ONLY : G        ,EPSUS   ,ACD      ,BCD
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -86,7 +86,7 @@
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
           Z0CH = ALPHAOG*TAUOLD/SQRT(1.-X)
-          Z0VIS = XNUM*USTM1
+          Z0VIS = RNUM*USTM1
           Z0TOT = Z0CH+Z0VIS
 
           XOLOGZ0= 1./(XLOGXL-LOG(Z0TOT))
