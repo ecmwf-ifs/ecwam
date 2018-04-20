@@ -70,6 +70,8 @@
       IMPLICIT NONE
 #include "fldinter.intfb.h"
 #include "initialint.intfb.h"
+#include "_pe2set.intfb.h"
+#include "_set2pe.intfb.h"
 
       INTEGER, INTENT(IN) :: NFIELDS, NGPTOTG, NCA, NRA
       INTEGER, INTENT(INOUT) :: MASK_IN(NGPTOTG)
