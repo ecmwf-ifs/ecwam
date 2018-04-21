@@ -341,9 +341,9 @@
      &             LLRESTARTED, ZDELATM, KQGAUSS,
      &             LDWCOUNORMS, MASK_IN, MASK_OUT,
      &             NFDBREF,
-     &             FRSTIME, NADV, PRPLRADI,                             &
+     &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
-     &             PRPLRG,IDUM)
+     &             IDUM)
 
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20
