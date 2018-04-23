@@ -1,0 +1,82 @@
+      MODULE YOWFRED
+
+      IMPLICIT NONE
+
+!*    ** *FREDIR* - FREQUENCY AND DIRECTION GRID.
+
+      REAL, ALLOCATABLE :: FR(:)
+      REAL, ALLOCATABLE :: DFIM(:)
+      REAL, ALLOCATABLE :: DFIM_SIM(:)
+      REAL, ALLOCATABLE :: DFIMOFR(:)
+      REAL, ALLOCATABLE :: DFIM_END_L(:)
+      REAL, ALLOCATABLE :: DFIM_END_U(:)
+      REAL, ALLOCATABLE :: DFFR(:)
+      REAL, ALLOCATABLE :: DFFR2(:)
+      REAL, ALLOCATABLE :: GOM(:)
+      REAL, ALLOCATABLE :: C(:)
+      REAL :: DELTH
+      REAL :: DELTR
+      REAL, ALLOCATABLE :: TH(:)
+      REAL, ALLOCATABLE :: COSTH(:)
+      REAL, ALLOCATABLE :: SINTH(:)
+      REAL, ALLOCATABLE :: FR5(:)
+      REAL, ALLOCATABLE :: FRM5(:)
+      REAL, ALLOCATABLE :: COFRM4(:)
+
+      REAL, ALLOCATABLE :: FLMAX(:)
+
+      REAL, PARAMETER :: FRATIO = 1.1
+      REAL, PARAMETER :: WETAIL = 0.25
+      REAL, PARAMETER :: FRTAIL = 0.2
+      REAL, PARAMETER :: WP1TAIL = 1./3. 
+      REAL, PARAMETER :: WP2TAIL = 0.5
+      REAL, PARAMETER :: COEF4 = 5.0E-07
+
+      REAL, PARAMETER ::  FRIC = 28.
+      REAL, PARAMETER ::  OLDWSFC = 1.2
+      REAL  :: FLOGSPRDM1
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *FR*        REAL      FREQUENCIES IN HERTZ.
+!      *DFIM*      REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
+!                            FOR TRAPEZOIDAL RULE
+!      *DFIM_SIM*  REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL.
+!                            FOR SIMPSON RULE
+!      *DFIMOFR*   REAL      DFIM/FR
+!      *DFIM_END_L REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL
+!                            FOR LOWER BOUND FOR TRAPEZOIDAL INTEGRATION  WHERE
+!                            DFIM IS USED IN BETWEEN DFIM_END_L AND DFIM_END_U
+!      *DFIM_END_U REAL      FREQUENCY INTERVAL*DIRECTION INTERVAL
+!                            FOR UPPER BOUND FOR TRAPEZOIDAL INTEGRATION WHERE
+!                            DFIM IS USED IN BETWEEN DFIM_END_L AND DFIM_END_U
+!      *DFFR*      REAL      DFIM*FR
+!      *DFFR2*     REAL      DFIM*FR**2
+!      *GOM*       REAL      DEEP WATER GROUP VELOCITIES (M/S).
+!      *C*         REAL      DEEP WATER PHASE VELOCITIES (M/S).
+!      *DELTH*     REAL      ANGULAR INCREMENT OF SPECTRUM (RADIANS).
+!      *DELTR*     REAL      DELTH TIMES RADIUS OF EARTH (METRES).
+!      *TH*        REAL      DIRECTIONS IN RADIANS.
+!      *COSTH*     REAL      COS OF DIRECTION.
+!      *SINTH*     REAL      SIN OF DIRECTION.
+!      *FR5*       REAL      FR(M)**5 
+!      *FRM5*      REAL      (1./FR(M))**5 
+!      *COFRM4*    REAL      COEF4*G*FR(M)**(-4.) 
+!      *FLMAX*     REAL      MAXIMUM SPECTRAL COMPONENT ALLOWED.
+!                            (ALPHAPMAX/PI) (G**2/(2PI)**4) FR(M)**-5
+!                            ALPHAPMAX MAXIMUM PHILLIPS PARAMETER (SEE USERIN).  
+!      *FRATIO*    REAL      FREQUENCY RATIO.
+!      *WETAIL*    REAL      WAVE ENERGY TAIL CONSTANT FACTOR.
+!      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.
+!      *WP1TAIL*   REAL      PERIOD 1 TAIL CONSTANT FACTOR.
+!      *WP2TAIL*   REAL      PERIOD 2 TAIL CONSTANT FACTOR.
+!      *COEF4*     REAL      COEFFICIENT USED TO COMPUTE THE SPECTRAL
+!                            LIMITER IN IMPLSCH.
+!      *FRIC*      REAL      COEFFICIENT RELATING THE PIERSON-MOSKOVITCH
+!                            ANGULAR FREQUENCY OF THE SPECTRAL PEAK
+!                            TO THE FRICTION VELOCITY:
+!                            OMEGA_PM=G/(FRIC*USTAR) 
+!      *OLDWSFC*  REAL       OLD WIND SEA FACTOR USED TO DETERMINE THE THRESHOLD
+!                            FOR WINDSEA/SWELL SEPARATION
+!      *FLOGSPRDM1* REAL     FLOGSPRDM1=1./LOG10(FRATIO)
+! ----------------------------------------------------------------------
+      END MODULE YOWFRED

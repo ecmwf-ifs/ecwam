@@ -1,0 +1,40 @@
+      MODULE YOWSHAL
+
+      IMPLICIT NONE
+
+!*    ** *SHALLOW*   SHALLOW WATER TABLES.
+
+      INTEGER :: NDEPTH
+      INTEGER, ALLOCATABLE :: INDEP(:)
+      INTEGER, ALLOCATABLE :: IODP(:)
+      INTEGER, ALLOCATABLE :: IOBND(:)
+
+      REAL :: DEPTHA
+      REAL :: DEPTHD
+      REAL :: TOOSHALLOW
+      REAL, ALLOCATABLE :: DEPTH(:,:)
+      REAL, ALLOCATABLE :: TCGOND(:,:)
+      REAL, ALLOCATABLE :: CINV(:,:)
+      REAL, ALLOCATABLE :: TFAK(:,:)
+      REAL, ALLOCATABLE :: TSIHKD(:,:)
+      REAL, ALLOCATABLE :: TFAC_ST(:,:)
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *NDEPTH*    INTEGER   LENGTH OF SHALLOW WATER TABLES (see MTABS).
+!      *INDEP*     INTEGER   DEPTH INDEX FOR A BLOCK.
+!      *IODP*      INTEGER   : 0 OVER LAND, 1 OVER SEA.
+!      *IOBND*     INTEGER   : 0 OVER BOUNDARY POINTS, 1 OTHERWISE.
+!      *DEPTHA*    REAL      MINIMUM DEPTH FOR TABLES (METRES).
+!      *TOOSHALLOW REAL      MINIMUM DEPTH THAT WILL BE ALLOWED
+!                            USED TO POINT TO LAND POINTS
+!      *DEPTHD*    REAL      DEPTH INCREMENT (METRES).
+!      *DEPTH*     REAL      WATER DEPTH IN METRES.
+!      *TCGOND*    REAL      SHALLOW WATER GROUP VELOCITY TABLE.
+!      *CINV*      REAL      RECIPROCAL OF THE PHASE VELOCITY (1/c)
+!      *TFAK*      REAL      WAVE NUMBER TABLE.
+!      *TSIHKD*    REAL      TABLE FOR OMEGA/SINH(2KD).
+!      *TFAC_ST*   REAL      TABLE FOR 2*G*K**2/(OMEGA*TANH(2KD)).
+
+! ----------------------------------------------------------------------
+      END MODULE YOWSHAL

@@ -1,0 +1,120 @@
+      SUBROUTINE MPGATHERGRDFLD(ISEND,IRECV,ITAG,FIELD) 
+
+!****  *MPGATHERGRDFLD* - GATHER GRID DATA FIELD FROM PROCESS ISEND
+!****                     ONTO PROCESS IRECV 
+
+!     J. BIDLOT    ECMWF   APRIL 1996  MESSAGE PASSING
+
+!     PURPOSE.
+!     --------
+
+!     TRANSMIT GRID (2-D) DATA CONTAINED IN THE ARRAY FIELD THAT MIGHT
+!     BE ON A DIFFERENT PROCESS TO THE RECEIVING PROCESS
+
+!*    INTERFACE.
+!     ----------
+
+!     CALL *MPGATHERGRDFLD*(ISEND,IRECV,ITAG,FIELD) 
+
+!     *ISEND*     PROCESS RANK SENDING THE GRID FIELD 
+!     *IRECV*     PROCESS RANK RECEIVING THE GRID FIELD 
+!     *ITAG*      TAG USED TO DIFFERENTIATE THE CALLS TO THIS SUBROUTINE
+!     *FIELD*     INPUT/OUTPUT ARRAY CONTAINING THE FIELD
+
+!     METHOD.
+!     -------
+!     MPL SEND to PROCESS IRECV FROM PROCESS ISEND 
+
+!     EXTERNALS.
+!     ----------
+!     MPL PACKAGE :
+!         MPL_SEND
+!         MPL_RECV
+!         MPL_ABORT 
+
+!     REFERENCES.
+!     -----------
+!         NONE
+! -------------------------------------------------------------------
+
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NGX      ,NGY
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE MPL_MODULE
+
+!----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ISEND, IRECV
+      INTEGER, INTENT(INOUT) :: ITAG
+      REAL,DIMENSION(NGX,NGY), INTENT(INOUT) :: FIELD
+
+      INTEGER :: IJ, I, J
+      INTEGER :: KCOUNT
+      INTEGER :: KRCOUNT, KRTAG
+
+      REAL :: ZHOOK_HANDLE
+      REAL,DIMENSION(NGX*NGY):: ZCOMBUF
+
+!----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',0,ZHOOK_HANDLE)
+#endif
+
+
+      KCOUNT=NGX*NGY 
+
+      IF((ISEND.EQ.IRECV).OR.(NPROC.EQ.1)) THEN
+#ifdef ECMWF
+        IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',1,ZHOOK_HANDLE)
+#endif
+        RETURN
+
+      ELSEIF(IRANK.EQ.ISEND) THEN 
+
+!     1.1 SEND FIELD FROM PROCESS ISEND TO PROCESS IRECV
+!         -----------------------------------------------
+
+!        LOAD COMMUNICATION BUFFER
+        IJ=0
+        DO J=1,NGY
+          DO I=1,NGX
+            IJ=IJ+1
+            ZCOMBUF(IJ)=FIELD(I,J)
+          ENDDO
+        ENDDO
+
+        CALL GSTATS(672,0)
+        CALL MPL_SEND(ZCOMBUF(1:KCOUNT),KDEST=IRECV,KTAG=ITAG,
+     &   KMP_TYPE=JP_BLOCKING_STANDARD, 
+     &   CDSTRING='MPGATHERGRDFLD:')
+        CALL GSTATS(672,1)
+
+      ELSEIF(IRANK.EQ.IRECV) THEN
+!     1.2 RECEIVE FIELD FROM PROCESS ISEND ON PROCESS IRECV
+!         ------------------------------------------------- 
+        CALL GSTATS(672,0)
+        CALL MPL_RECV(ZCOMBUF(1:KCOUNT),KSOURCE=ISEND,KTAG=ITAG,
+     &   KOUNT=KRCOUNT,KRECVTAG=KRTAG,CDSTRING='MPGATHERGRDFLD:')
+        CALL GSTATS(672,1)
+        IF(KRCOUNT.NE.KCOUNT) CALL MPL_ABORT
+     &   ('MPL_RECV ERROR in MPGATHERGRDFLD:MISMATCHED MESSAGE LENGTH')
+        IF(KRTAG.NE.ITAG) CALL MPL_ABORT
+     &   ('MPL_RECV ERROR in MPGATHERGRDFLD: MISMATCHED TAGS' )
+
+!      DECODE COMMUNICATION BUFFER
+        IJ=0
+        DO J=1,NGY
+          DO I=1,NGX
+            IJ=IJ+1
+            FIELD(I,J)=ZCOMBUF(IJ)
+          ENDDO
+        ENDDO
+      ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('MPGATHERGRDFLD',1,ZHOOK_HANDLE)
+#endif
+      RETURN
+      END SUBROUTINE MPGATHERGRDFLD

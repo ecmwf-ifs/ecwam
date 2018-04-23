@@ -1,0 +1,151 @@
+      SUBROUTINE UPDATEWD (FL1, IJS, IJL, THWNEW, USNEW,
+     &                     USOLD, TAUW, CICVR,
+     &                     Z0NEW, U10NEW, ROAIRN, WSTAR,
+     &                     MIJ, XLLWS)       
+
+! ----------------------------------------------------------------------
+
+!**** *UPDATEWD* - COMPUTATION OF WINDSPEED UPDATE AFTER ASSIMILATION
+
+!     J. BIDLOT             ECMWF  APRIL 2001
+
+!*    PURPOSE.
+!     --------
+
+!       UPDATE THE WIND SPEED AND WAVE STRESS USING NEW USTAR AND
+!       SPRECTRUM.
+
+!**   INTERFACE.
+!     ----------
+
+!       *CALL* *UPDATEWD (FL1, IJS, IJL, THWNEW, USNEW,
+!                         TAUW, Z0NEW, U10NEW,ROAIRN, WSTAR)*
+!          *FL1* - SPECTRUM.
+!          *IJS* - INDEX OF FIRST GRIDPOINT.
+!          *IJL* - INDEX OF LAST GRIDPOINT.
+!          *THWNEW*    WIND DIRECTION.
+!          *USNEW*     NEW FRICTION VELOCITY IN M/S.
+!          *TAUW*      WAVE STRESS IN (M/S)**2
+!          *Z0NEW*     ROUGHNESS LENGTH IN M.
+!          *U10NEW*    10m WIND SPEED.
+!          *ROAIRN*    AIR DENSITY IN KG/M3.
+!          *WSTAR*     FREE CONVECTION VELOCITY SCALE (M/S).
+!          *CICVR*     SEA ICE COVER.
+
+!     METHOD.
+!     -------
+
+!     FIND THE NEW CHARNOCK PARAMETER BASED ON THE NEW USTAR AND TAUW
+!     AND THUS UPDATE THE ROUGHNESS LENGTH. WITH THIS NEW ROUGHNESS
+!     LENGTH AND THE NEW USTAR FIND THE NEW U10 USING THE LOGARITHMIC
+!     WIND PROFILE.
+
+!     EXTERNALS.
+!     -----------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+! ----------------------------------------------------------------------
+
+      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G
+      USE YOWTABL  , ONLY : UMAX
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWWIND  , ONLY : WSPMIN
+      USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! -----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
+
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: USOLD
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW, U10NEW
+      REAL,DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW
+      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+
+      INTEGER :: IJ, ILEV
+      INTEGER :: ICODE_WND
+
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: F1MEAN,  AKMEAN, XKMEAN 
+      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
+      REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL, DIMENSION(IJS:IJL) :: PHIWA
+      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SL
+      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: DUMMYFL
+
+! ----------------------------------------------------------------------
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('UPDATEWD',0,ZHOOK_HANDLE)
+#endif
+
+      IF(LWCOU) THEN
+        ICODE_WND = ICODE_CPL
+      ELSE
+        ICODE_WND = ICODE
+      ENDIF
+
+      IF (ICODE_WND == 3 ) THEN
+        DO IJ=IJS,IJL
+          U10NEW(IJ) = (USNEW(IJ)/USOLD(IJ))*U10NEW(IJ)
+          U10NEW(IJ) = MIN(U10NEW(IJ),UMAX)
+          U10NEW(IJ) = MAX(U10NEW(IJ),WSPMIN)
+        ENDDO
+      ENDIF
+
+      ILEV=1
+
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: AIRSEA CALLED '
+        CALL FLUSH (IU06)
+      ENDIF
+
+      CALL SINPUT (FL1, DUMMYFL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+     &             ROAIRN, WSTAR, SL, XLLWS)
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: SINPUT CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!*    2.2 COMPUTE MEAN PARAMETERS.
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+     &                MIJ,RHOWGDFTH)
+
+      CALL STRESSO (FL1, SL, IJS, IJL,
+     &              MIJ, RHOWGDFTH,
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+     &              TAUW, PHIWA)
+
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. UPDATEWD: STRESSO CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('UPDATEWD',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
+      END SUBROUTINE UPDATEWD
