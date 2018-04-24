@@ -346,7 +346,7 @@
         ENDIF
 
         IF(IPFGTBL(6).NE.0) THEN
-          CALL PEAK_FREQ (FL3(KIJS:KIJL,:,:),KIJS,KIJL,FPMEAN(KIJS))
+          CALL PEAK_FREQ (FL1(KIJS:KIJL,:,:),KIJS,KIJL,FPMEAN(KIJS))
         ENDIF
 
         IF(IPFGTBL(9).NE.0) THEN
@@ -372,7 +372,7 @@
      &     IPFGTBL(36).NE.0 .OR.
      &     IPFGTBL(38).NE.0 .OR.
      &     IPFGTBL(39).NE.0     ) THEN
-          CALL KURTOSIS(FL3(KIJS:KIJL,:,:),DEPTH(KIJS:KIJL,IG),
+          CALL KURTOSIS(FL1(KIJS:KIJL,:,:),DEPTH(KIJS:KIJL,IG),
      &                  KIJS,KIJL,
      &                  C3MEAN(KIJS),C4MEAN(KIJS),BFMEAN(KIJS),
      &                  QPMEAN(KIJS),HMAXMEAN(KIJS),TMAXMEAN(KIJS),
@@ -388,7 +388,7 @@
 
         ITG=46+3*NTRAIN+1
         IF(IPFGTBL(ITG).NE.0) THEN
-          CALL CIMSSTRN (FL3(KIJS:KIJL,:,:),KIJS,KIJL,
+          CALL CIMSSTRN (FL1(KIJS:KIJL,:,:),KIJS,KIJL,
      &                   STRNMS(KIJS))
         ENDIF
 
@@ -403,7 +403,7 @@
 
         ITG=ITG+1
         IF(IPFGTBL(ITG).NE.0 .OR. IPFGTBL(ITG+1).NE.0) THEN
-           CALL WEFLUX (FL3(KIJS:KIJL,:,:), KIJS, KIJL,
+           CALL WEFLUX (FL1(KIJS:KIJL,:,:), KIJS, KIJL,
      &                  NFRE, NANG, DFIM, DELTH,
      &                  COSTH, SINTH, NDEPTH, INDEP(KIJS), TCGOND,
      &                  WEFLXM(KIJS), WEFLXD(KIJS))
@@ -516,14 +516,14 @@
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
 
         CALL SEPWISW (KIJS, KIJL, MIJ(KIJS),
-     &                FL3(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),
-     &                USNEW(KIJS), U10NEW(KIJS), THWNEW(KIJS),
+     &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),
+     &                USNEW(KIJS)    ,U10NEW(KIJS)   ,THWNEW(KIJS)   ,
      &                ESWELL(KIJS)   ,FSWELL(KIJS)   ,THSWELL(KIJS)  ,
      &                P1SWELL(KIJS)  ,P2SWELL(KIJS)  ,SPRDSWELL(KIJS),
      &                ESEA(KIJS)     ,FSEA(KIJS)     ,THWISEA(KIJS)  ,
      &                P1SEA(KIJS)    ,P2SEA(KIJS)    ,SPRDSEA(KIJS)  ,
      &                EMTRAIN(KIJS:KIJL,:),
-     &                THTRAIN(KIJS:KIJL,:),PMTRAIN(KIJS:KIJL,:),
+     &                THTRAIN(KIJS:KIJL,:), PMTRAIN(KIJS:KIJL,:),
      &                LLPARTITION)
       ENDDO
 !$OMP END PARALLEL DO
@@ -545,7 +545,7 @@
 !        ------------------------------------------
 
       IF (CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
-        CALL OUTSPP (FL3, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
+        CALL OUTSPP (FL1, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
         IF (ITEST.GE.3) THEN
           IF (ITESTB.GE.IG) THEN
             WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
@@ -1025,7 +1025,7 @@
 
       IF (MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'4v') THEN
         IF (CDTPRO.NE.CDATEA) THEN
-          CALL OUTERS (FL3, IJSLOC, IJLLOC, CDTPRO)
+          CALL OUTERS (FL1, IJSLOC, IJLLOC, CDTPRO)
           IF (ITEST.GE.3) THEN
             IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '      SUB. OUTBS: OUTPUT OF SPECTRA',
