@@ -44,11 +44,11 @@
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
      
-!      IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB) THEN
+      IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB) THEN
         X   = XK0*D
-!        IF ( X .GT. DKMAX) THEN
-!          TRANSF_BFI = 1._JWRB 
-!        ELSE
+        IF ( X .GT. DKMAX) THEN
+          TRANSF_BFI = 1._JWRB 
+        ELSE
           XK  = MAX(XK0,XKDMIN/D)
           X   = XK*D
           T_0 = TANH(X)
@@ -56,9 +56,7 @@
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          IF ( X .GT. DKMAX) THEN
-            V_G = 0.5_JWRB*C_0
-          ELSEIF(X .LT. EPS) THEN
+          IF(X .LT. EPS) THEN
             V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
@@ -78,13 +76,10 @@
           T_NL = XNL_1-XNL_2+XNL_3
           TRANSF_BFI = 4._JWRB*(V_G/C_0)**2*T_NL*T_0/D2OM
           TRANSF_BFI = MAX(MIN(TRANSF_BFI_MAX,TRANSF_BFI),TRANSF_BFI_MIN)
-!        ENDIF
-!      ELSE
-!       TRANSF_BFI = 1._JWRB
-!      ENDIF
-
-!!1debile
-         write(*,*) 'debile ',TRANSF_BFI
+        ENDIF
+      ELSE
+        TRANSF_BFI = 1._JWRB
+      ENDIF
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',1,ZHOOK_HANDLE)
