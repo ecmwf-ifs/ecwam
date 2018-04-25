@@ -56,7 +56,9 @@
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           C_S_SQ = G*D
-          IF(X .LT. EPS) THEN
+          IF ( X .GT. DKMAX) THEN
+            V_G = 0.5_JWRB*C_0
+          ELSEIF(X .LT. EPS) THEN
             V_G = C_0
           ELSE
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
