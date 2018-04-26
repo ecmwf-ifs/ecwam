@@ -39,7 +39,7 @@
       IF(D.LT.BATHYMAX .AND. D.GT.0._JWRB .AND. XK0.GT.0._JWRB) THEN
         X = XK0*D
         IF ( X .GT. DKMAX) THEN
-          TRANSF_R = 1._JWRB 
+          TRANSF_R = 0.5_JWRB 
         ELSE
           XK  = MAX(XK0,XKDMIN/D)
           X   = XK*D
@@ -56,7 +56,7 @@
           TRANSF_R = 4._JWRB*(V_G/C_0)**3*T_0_SQ/D2OM
         ENDIF
       ELSE
-        TRANSF_R = 1._JWRB
+        TRANSF_R = 0.5_JWRB
       ENDIF
  
 #ifdef ECMWF
