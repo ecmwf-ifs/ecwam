@@ -107,6 +107,28 @@
       INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
 
       INTEGER (KIND=JWIM), PARAMETER :: NGST=2
+
+!     MFWAM:
+!      SWELLF = 0.8_JWRB
+!      SWELLF2 = -0.018_JWRB
+!      SWELLF3 = 0.015_JWRB
+!      SWELLF4 = 1.0E05_JWRB
+!      SWELLF5 = 1.2_JWRB
+!      SWELLF6 = 1.0_JWRB
+!      SWELLF7 = 2.3E05_JWRB
+!      Z0RAT = 0.04_JWRB
+
+!     TEST471 (modified SWELLF):
+      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.8_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 1.2_JWRB  ! controls the viscous swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF7 = 3.6E05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: Z0RAT = 0.04_JWRB
+      REAL(KIND=JWRB), PARAMETER :: Z0TUBMAX = 0.0005_JWRB
+
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: ABMAX = 8.0_JWRB 
 
@@ -156,28 +178,6 @@
       NU_AIR = RNU
       FAC_NU_AIR= RNUM
       FACM1_NU_AIR=4.0_JWRB/NU_AIR
-
-!     MFWAM:
-!      SWELLF = 0.8_JWRB
-!      SWELLF2 = -0.018_JWRB
-!      SWELLF3 = 0.015_JWRB
-!      SWELLF4 = 1.0E05_JWRB
-!      SWELLF5 = 1.2_JWRB
-!      SWELLF6 = 1.0_JWRB
-!      SWELLF7 = 2.3E05_JWRB
-!      Z0RAT = 0.04_JWRB
-
-!     TEST471:
-      SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
-      SWELLF2 = -0.018_JWRB
-      SWELLF3 = 0.022_JWRB
-      SWELLF4 = 1.5E05_JWRB
-      SWELLF5 = 1.3_JWRB  ! controls the viscous swell dissipation
-      SWELLF6 = 1.0_JWRB
-      SWELLF7 = 3.6E05_JWRB
-      Z0RAT = 0.04_JWRB
-      Z0TUBMAX = 0.0005_JWRB
-
 
       FU=ABS(SWELLF3)
       FUD=SWELLF2
@@ -250,7 +250,7 @@
         ENDDO
       ENDIF
 
-! Swell damping weight between viscuous and turbulent boundary layer
+! Swell damping weight between viscous and turbulent boundary layer
       IF (SWELLF7.GT.0.0_JWRB) THEN
         DO IJ=IJS,IJL
           SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
