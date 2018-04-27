@@ -168,11 +168,11 @@
 !      Z0RAT = 0.04_JWRB
 
 !     TEST471:
-      SWELLF = 0.67_JWRB ! controls the turbulent swell dissipation
+      SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
       SWELLF2 = -0.018_JWRB
       SWELLF3 = 0.022_JWRB
       SWELLF4 = 1.5E05_JWRB
-      SWELLF5 = 1.2_JWRB  ! controls the viscous swell dissipation
+      SWELLF5 = 1.3_JWRB  ! controls the viscous swell dissipation
       SWELLF6 = 1.0_JWRB
       SWELLF7 = 3.6E05_JWRB
       Z0RAT = 0.04_JWRB
