@@ -119,7 +119,7 @@
 !      Z0RAT = 0.04_JWRB
 
 !     TEST471 (modified SWELLF):
-      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.8_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.73_JWRB ! controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
