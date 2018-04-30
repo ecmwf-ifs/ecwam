@@ -1,6 +1,4 @@
       MODULE YOWNEMOP
-      
-      USE PARKIND_WAVE, ONLY : JWRU
 
       USE PARKIND_WAVE, ONLY : JWRU
 
