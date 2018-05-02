@@ -1,32 +1,12 @@
-      SUBROUTINE OUTWSPEC_IO_SERV_REC (YDIOS,FIELD,FLDDESC,KGRIB_HANDLE)
+      SUBROUTINE WV_IO_SERV_REC (YDIOS,FIELD,FLDDESC,KGRIB_HANDLE)
 
 !----------------------------------------------------------------------
 
-!**** *OUTWSPEC*  SECOND PART OF OUTWSPEC_IO_SERV, PERFORMED ON THE IO SERVER
+!**** *WV_IO_SERV_REC*
+!      SECOND PART OF OUTWSPEC_IO_SERV AND OUTINT_IO_SERV.
+!      PERFORMED BY THE IO SERVER
 
-!     J. HAWKES   ECMWF  OCTOBER 2017 
-
-!*    PURPOSE.
-!     --------
-
-!**   INTERFACE.
-!     ----------
-
-!     SUBROUTINE OUTWSPEC_IO_SERV_REC ()
-
-!*     VARIABLE.   TYPE.     PURPOSE.
-!      ---------   -------   --------
-
-!     METHOD.
-!     -------
-
-!     EXTERNALS.
-!     ----------
-
-!     REFERENCE.
-!     ----------
-
-!       NONE.
+!      J. HAWKES   ECMWF  OCTOBER 2017 
 
 !-------------------------------------------------------------------
 
@@ -59,7 +39,7 @@
 !-----------------------------------------------------------------------
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('OUTWSPEC_IO_SERV_REC',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',0,ZHOOK_HANDLE)
 #endif
 
       ASSOCIATE( &
@@ -129,9 +109,9 @@
       END ASSOCIATE
 
 #ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('OUTWSPEC_IO_SERV_REC',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',1,ZHOOK_HANDLE)
 #endif
 
       RETURN
 
-      END SUBROUTINE OUTWSPEC_IO_SERV_REC
+      END SUBROUTINE WV_IO_SERV_REC
