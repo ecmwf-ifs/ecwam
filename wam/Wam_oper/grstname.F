@@ -80,7 +80,8 @@
       IREP=KIND(IMAXYEAR)
       NDAY=366
       IYEARSEC=NDAY*86400
-      IMAXYEAR=(2**(8*IREP-1)-1)/IYEARSEC
+!      IMAXYEAR=(2**(8*IREP-1)-1)/IYEARSEC  ! integer overflow or invalid flp in 2**x -- depending on compiler impl. (SS/04-May-2018)
+      IMAXYEAR=HUGE(IMAXYEAR)/IYEARSEC ! desired coding
 
       FILENA = FILEID
       IF (CDATE.LE.CDATEF) THEN
