@@ -1159,6 +1159,9 @@
      &                    FL3(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),    &
      &                    BOUT(IJSLOC,:))
 
+!!! this where BOUT should be transfer to the IO server 
+
+
               CALL OUTWNORM
 
               DEALLOCATE(BOUT)
