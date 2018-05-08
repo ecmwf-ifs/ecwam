@@ -806,7 +806,7 @@
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP((IJS(1):IJL(1)))
+      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS(1):IJL(1)))
       DO IJ=IJS(1),IJL(1)
         IF(DEPTH(IJ,1).LE.TOOSHALLOW) THEN
           IODP(IJ) = 0
