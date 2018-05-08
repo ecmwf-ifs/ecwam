@@ -54,11 +54,11 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER :: IJ,M,K,K0,M0,MP,KP,MM,KM,KL,KLL,ML
-
-      REAL, INTENT(IN) :: SIG
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH
       REAL, DIMENSION(IJS:IJL,1:NANG,1:NFRE), INTENT(INOUT) :: F1
+      REAL, INTENT(IN) :: SIG
+
+      INTEGER :: IJ,M,K,K0,M0,MP,KP,MM,KM,KL,KLL,ML
 
       REAL :: FRAC,CO1,DEL,DELF,D1,D2,D3,D4,C1
       REAL :: C2,XM,XK,OMSTART,AREA,SUM,SUM1,SUM3,GAM_B_J,ZFAC
@@ -69,7 +69,6 @@
       REAL, ALLOCATABLE ::  PF1(:,:,:),PF3(:,:,:)
 
 !-----------------------------------------------------------------------
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CAL_SECOND_ORDER_SPEC',0,ZHOOK_HANDLE)
 #endif
@@ -114,15 +113,14 @@
 !
          ALLOCATE(PF1(IJS:IJL,NANGH,NFREH))
          ALLOCATE(PF3(IJS:IJL,NANGH,NFREH))
-         PF1 = 0.
+         PF1(:,:,:) = 0.
          DO M=1,NFREH
+            M0 = MR*M
             DO K=1,NANGH
+               K0 = MA*K+1
+               IF (K0.GT.NANG) K0 = K0-NANG
+               IF (K0.LT.1) K0 = K0+NANG
                DO IJ=IJS,IJL
-                  M0 = MR*M
-                  K0 = MA*K+1
-                  IF (K0.GT.NANG) K0 = K0-NANG
-                  IF (K0.LT.1) K0 = K0+NANG
-
                   PF1(IJ,K,M)=PF1(IJ,K,M)+F1(IJ,K0,M0)
                ENDDO
             ENDDO
@@ -131,8 +129,7 @@
 !
 !***     1.13 DETERMINE SECOND-ORDER SPEC
 !        --------------------------------
-!
-
+ 
          CALL SECSPOM(PF1,PF3,IJS,IJL,NFREH,NANGH,NMAX,NDEPTH,DEPTHA,
      &                DEPTHD,OMSTART,FRAC,MR,DFDTH,OMEGA,DEPTH,
      &                AKMEAN,TA,TB,TC_QL,TT_4M,TT_4P,IM_P,IM_M)
@@ -149,28 +146,35 @@
          ENDDO
 
          DO M=1,NFRE
+            XM = REAL(M/MR)
+!!!            D1 = REAL(M)/REAL(MR)-XM
+            M0 = INT(XM)
+            IF(M0.LT.1) THEN
+              M0 = 1
+              MP = M0+1
+              D1 = 1.
+            ELSE IF(M0.LT.NFREH) THEN
+              MP = M0+1
+              D1 = (FR(M)-FR(MR*M0))/(FR(MR*MP)-FR(MR*M0)) 
+            ELSE
+              M0 = NFREH
+              MP = M0
+              D1 = 0.
+            ENDIF
+            D2 = 1.-D1
+
             DO K=1,NANG
+               XK = REAL((K-1)/MA)
+               K0 = INT(XK)
+               D3 = REAL(K-1)/REAL(MA)-XK
+               D4 = 1.-D3
+               IF (K0.LT.1) K0 = K0+NANGH
+               KP = K0+1
+               IF (KP.GT.NANGH) KP = KP-NANGH
+
                DO IJ=IJS,IJL
-               
-                  XM = REAL(M/MR)
-                  XK = REAL((K-1)/MA)
-
-                  M0 = MAX(1,INT(XM))
-                  K0 = INT(XK)
-
-                  D1 = REAL(M)/REAL(MR)-XM
-                  D2 = 1.-D1
-                  D3 = REAL(K-1)/REAL(MA)-XK
-                  D4 = 1.-D3
-
-                  IF (K0.LT.1) K0 = K0+NANGH
-                  MP = MIN(NFREH,M0+1)
-                  KP = K0+1
-                  IF (KP.GT.NANGH) KP = KP-NANGH
-
                   C1 = PF3(IJ,K0,M0)*D4+PF3(IJ,KP,M0)*D3
                   C2 = PF3(IJ,KP,MP)*D3+PF3(IJ,K0,MP)*D4
-
                   DELF = C1*D2+C2*D1
 
                   F1(IJ,K,M)=MAX(MIN(0.000001,F1(IJ,K,M)),
@@ -187,5 +191,4 @@
       IF (LHOOK) CALL DR_HOOK('CAL_SECOND_ORDER_SPEC',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE CAL_SECOND_ORDER_SPEC
