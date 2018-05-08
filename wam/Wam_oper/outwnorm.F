@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM(IJSLOC, IJLLOC, BOUT)
+      SUBROUTINE OUTWNORM(IJS, IJL, NIPRMOUT, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -55,6 +55,9 @@
       USE MPL_MODULE
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IJS, IJL, NIPRMOUT
+      REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
 
       INTEGER :: ITG, ITT, I
       INTEGER :: ISEND, IRECV, ITAG

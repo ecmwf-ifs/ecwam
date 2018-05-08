@@ -212,7 +212,8 @@
 
 
 !           PRINT OUT NORMS
-            CALL OUTWNORM
+            CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT(IJSLOC,:))
+
 
             DEALLOCATE(BOUT)
           ENDIF

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID (IJS, IJL, BOUT)
+      SUBROUTINE OUTGRID (IJS, IJL, NIPRMOUT, BOUT)
 ! ----------------------------------------------------------------------
 
 !**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
@@ -91,7 +91,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, NGX, NGY, NIPRMOUT
+      INTEGER, INTENT(IN) :: IJS, IJL, NIPRMOUT
       REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
 
       INTEGER, PARAMETER :: IG=1

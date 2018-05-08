@@ -572,7 +572,7 @@
      &                BOUT(IJSLOC,:))
 
 !         PRINT OUT NORMS
-          CALL OUTWNORM
+          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT(IJSLOC,:))
 
           DEALLOCATE(BOUT)
         ENDIF
@@ -1161,8 +1161,7 @@
 
 !!! this where BOUT should be transfer to the IO server 
 
-
-              CALL OUTWNORM
+              CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT(IJSLOC,:))
 
               DEALLOCATE(BOUT)
             ENDIF
