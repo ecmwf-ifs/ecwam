@@ -40,8 +40,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIMFR  ,DELTH    ,WP1TAIL
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWFRED  , ONLY : FR       ,DFIMFR_SIM,DELTH    ,WP1TAIL
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWPCONS , ONLY : EPSMIN
 
 ! ----------------------------------------------------------------------
@@ -62,7 +62,7 @@
         MEANWP1(IJ) = 0.
       ENDDO
 
-      DO M=1,NFRE
+      DO M=1,NFRE_ODD
         DO IJ=IJS,IJL
           TEMP(IJ) = 0.
         ENDDO
@@ -72,14 +72,14 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          MEANWP1(IJ) = MEANWP1(IJ)+DFIMFR(M)*TEMP(IJ)
+          MEANWP1(IJ) = MEANWP1(IJ)+DFIMFR_SIM(M)*TEMP(IJ)
         ENDDO
       ENDDO
 
 !*    ADD TAIL CORRECTION TO MEAN PERIOD AND
 !     AND TRANSFORM TO PERIOD.
 
-      COEF_FR = WP1TAIL*DELTH*FR(NFRE)**2
+      COEF_FR = WP1TAIL*DELTH*FR(NFRE_ODD)**2
 
       DO IJ=IJS,IJL
         MEANWP1(IJ) = MEANWP1(IJ)+COEF_FR*TEMP(IJ)
