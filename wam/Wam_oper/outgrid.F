@@ -67,7 +67,8 @@
       USE YOWINTP  , ONLY : GOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,MPMAXLENGTH        ,
      &            KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
+     &                      NGX      ,NGY
       USE YOWPCONS , ONLY : ZMISS    ,EPSUS    ,EPSU10
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSPEC  , ONLY : NBLKS   ,NBLKE     , 
