@@ -67,7 +67,8 @@
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
+      USE YOWINTP  , ONLY : GOUT , 
+     &            WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
      &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
      &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
