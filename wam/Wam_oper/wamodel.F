@@ -568,7 +568,7 @@
         IF(NIPRMOUT.GT.0) THEN
           ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
           CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                          &
-     &                FL1, DEPTH(IJSLOC,1) XLLWS,                       &
+     &                FL1, DEPTH(IJSLOC,1), XLLWS,                      &
      &                BOUT)
 
 !         PRINT OUT NORMS
@@ -1156,7 +1156,7 @@
             IF(NIPRMOUT.GT.0) THEN
               ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
               CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                      &
-     &                    FL3, DEPTH(IJSLOC,1) XLLWS,                   &
+     &                    FL3, DEPTH(IJSLOC,1), XLLWS,                  &
      &                    BOUT)
 
 !!! this where BOUT should be transfer to the IO server 
