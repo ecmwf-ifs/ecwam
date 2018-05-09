@@ -567,12 +567,12 @@
 !       COMPUTE OUTPUT PARAMETERS
         IF(NIPRMOUT.GT.0) THEN
           ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
-          CALL OUTBS (IJSLOC, IJLLOC, MIJ(IJSLOC), IG,                  &
-     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),        &
-     &                BOUT(IJSLOC,:))
+          CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                          &
+     &                FL1, DEPTH(IJSLOC,1) XLLWS,                       &
+     &                BOUT)
 
 !         PRINT OUT NORMS
-          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT(IJSLOC,:))
+          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
 
           DEALLOCATE(BOUT)
         ENDIF
@@ -1155,13 +1155,13 @@
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
               ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
-              CALL OUTBS (IJSLOC, IJLLOC, MIJ(IJSLOC), IG,              &
-     &                    FL3(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC,:,:),    &
-     &                    BOUT(IJSLOC,:))
+              CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                      &
+     &                    FL3, DEPTH(IJSLOC,1) XLLWS,                   &
+     &                    BOUT)
 
 !!! this where BOUT should be transfer to the IO server 
 
-              CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT(IJSLOC,:))
+              CALL OUTWNORM(IJSLOC, IJLLOC, BOUT)
 
               DEALLOCATE(BOUT)
             ENDIF

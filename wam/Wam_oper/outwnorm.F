@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM(IJS, IJL, NIPRMOUT, BOUT)
+      SUBROUTINE OUTWNORM(IJS, IJL, BOUT)
 
 ! ----------------------------------------------------------------------
 
@@ -31,7 +31,8 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG    ,
-     &            NFLAGALL ,NTRAIN   ,IPFGTBL  ,JPPFLAG  ,COUTNAME
+     &            NFLAGALL ,NTRAIN   ,IPFGTBL  ,JPPFLAG  ,COUTNAME ,    &
+     &            NIPRMOUT, ITOBOUT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
      &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,

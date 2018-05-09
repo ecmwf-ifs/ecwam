@@ -1,4 +1,4 @@
-      SUBROUTINE KURTOSIS(F3, IJS, IJL, IG,
+      SUBROUTINE KURTOSIS(F3, IJS, IJL, DPTH, 
      &                    C3, C4, BF2, QP, FP, HMAX, TMAX)
  
 !***  *KURTOSIS*   DETERMINES SKEWNESS, KURTOSIS, BENJAMIN-FEIR INDEX
@@ -120,7 +120,6 @@
      &             BF2MAX  ,BF2MIN   ,C4MAX    ,C4MIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
        
 ! ----------------------------------------------------------------------
@@ -138,6 +137,7 @@
       REAL :: ZHOOK_HANDLE
       REAL :: F3(IJS:IJL,NANG,NFRE)
       REAL :: F1D(IJS:IJL,NFRE), F1A(IJS:IJL,NANG) 
+      REAL :: DPTH(IJS:IJL)
       REAL, DIMENSION(IJS:IJL) ::  C4,BF2,QP,HMAX,TMAX,ETA2,SUM0,SUM1,
      &                             SUM2,SUM4,XMAX,YMAX,XKP,FP,SIG_OM,
      &                             SIG_TH,EPS,C3,ZNU
@@ -193,7 +193,7 @@
 !***  2. DETERMINE PEAK PARAMETERS FP,SIG_OM AND SIG_TH.
 !     -------------------------------------------------
 !
-      CALL PEAK_FREQ(F1D,F1A,IJS,IJL,IG,XMAX,FP,SIG_OM,YMAX,SIG_TH)
+      CALL PEAK_FREQ(F1D,F1A,IJS,IJL,XMAX,FP,SIG_OM,YMAX,SIG_TH)
 
  
 !***  3. DETERMINE BF2, QP AND C4.
@@ -227,11 +227,11 @@
             QP(IJ)     = SUM4(IJ)/ETA2(IJ)**2
             SIG_OM1    = 1./MAX(QP(IJ)*ZPISQRT,ZEPSILON)
             SIG_OM(IJ) = MIN(SIG_OM(IJ),SIG_OM1)
-            XKP(IJ)    = AKI(ZPI*FP(IJ),DEPTH(IJ,IG))
+            XKP(IJ)    = AKI(ZPI*FP(IJ),DPTH(IJ))
             EPS(IJ)    = XKP(IJ)*SQRT(SUM0(IJ))
 
             BF2(IJ) = 2.*(EPS(IJ)/MAX(SIG_OM(IJ),ZEPSILON))**2 *
-     &                TRANSF2(XKP(IJ),DEPTH(IJ,IG))
+     &                TRANSF2(XKP(IJ),DPTH(IJ))
             BF2(IJ) = MAX(MIN(BF2(IJ),BF2MAX),BF2MIN)
          ELSE
             BF2(IJ)    = 0.

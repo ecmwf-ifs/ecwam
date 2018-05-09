@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK_FREQ(F1D,F1A,IJS,IJL,IG,
+      SUBROUTINE PEAK_FREQ(F1D,F1A,IJS,IJL,                             &
      &              XMAX,FP,SIG_OM,YMAX,SIG_TH)
 !
 !***  *PEAK*   DETERMINES PARAMETERS AT PEAK OF SPECTRUM.
@@ -12,7 +12,7 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *PEAK_FR(F1D,F1A,IJS,IJL,IG,
+!              *CALL*  *PEAK_FR(F1D,F1A,IJS,IJL,
 !                               XMAX,FP,SIG_OM,YMAX,SIG_TH)*
 !
 !
@@ -21,7 +21,6 @@
 !                            *F1A*   - DIRECTIONAL SPECTRUM
 !                            *IJS*   - FIRST GRIDPOINT              
 !                            *IJL*   - LAST GRIDPOINT  
-!                            *IG*    - BLOCK NUMBER            
 !
 !                       OUTPUT: 
 !                            *XMAX*   - MAX FREQ SPECTRUM
@@ -52,7 +51,7 @@
  
       IMPLICIT NONE
 
-      INTEGER :: IJ, M, K, IJS, IJL, IG, KPLUS, KMIN
+      INTEGER :: IJ, M, K, IJS, IJL, KPLUS, KMIN
 
       INTEGER, DIMENSION(IJS:IJL) ::  MMAX, KMAX
 
