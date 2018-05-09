@@ -107,7 +107,7 @@
      &            THWNEW   ,THWOLD   ,USNEW    ,USOLD    ,Z0NEW    ,
      &            Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
-     &,            FL1
+     &            FL1
       USE YOWSHAL  , ONLY : DEPTH 
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
