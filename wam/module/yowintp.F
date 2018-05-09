@@ -4,6 +4,8 @@
 
 !*    ** *INTPAR*  GRIDDED INTEGRATED PARAMETER TOTAL SPECTRUM.
 
+      REAL, ALLOCATABLE :: GOUT(:,:,:) 
+
       REAL, ALLOCATABLE :: WHGTTG(:,:) 
       REAL, ALLOCATABLE :: WDIRTG(:,:) 
       REAL, ALLOCATABLE :: WPKFTG(:,:) 
@@ -61,6 +63,8 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
+!      *GOUT*      REAL      GRIDDED OUTPUT PARAMETERS
+
 !      *WHGTTG*    REAL      GRIDDED MEAN ENERGY (M*M) CHANGED TO
 !                            WAVE HEIGHT (M) IN SUB MAKEGRID.
 !      *WDIRTG*    REAL      GRIDDED MEAN DIRECTION (RAD) CHANGED TO

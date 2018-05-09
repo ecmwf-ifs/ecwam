@@ -229,12 +229,17 @@
 !     RECEIVING AND TRANSFERING FROM BLOCK TO GRID
 !     --------------------------------------------
 
+      IF(NFLDPPE(IRANK).GT.0) THEN
+        IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
+        ALLOCATE(GOUT(NFLDPPE(IRANK),NGX,NGY))
+      ENDIF
+
       ICNT(:)=0
       ICT=1
       IFLD=0
       DO WHILE ( IFLD.LT.NFLDPPE(IRANK) .AND. ICT .LE. JPPFLAG )
         IF(IPFGTBL(ICT).EQ.IRANK ) THEN
-          IF (.NOT.(LLUNSTR) .or. (OUT_METHOD .eq. 1)) THEN
+          IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD .eq. 1)) THEN
             DO IPR=1,NPROC
               ICOUNT=ICNT(IPR)
               DO IJ=NBLKS(IPR),NBLKE(IPR)
