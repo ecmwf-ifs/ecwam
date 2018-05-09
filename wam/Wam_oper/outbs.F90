@@ -69,7 +69,7 @@
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NFRE) :: CGGROUP 
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NFRE) :: CGROUP 
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
