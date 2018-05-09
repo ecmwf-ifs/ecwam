@@ -57,7 +57,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, NIPRMOUT
+      INTEGER, INTENT(IN) :: IJS, IJL
       REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
 
       INTEGER :: ITG, ITT, I
