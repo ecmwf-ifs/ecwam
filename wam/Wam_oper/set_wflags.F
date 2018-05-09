@@ -65,18 +65,9 @@
           IFL=IFL+1
         ENDDO
 
-      ELSE IF(IFLAG.EQ.44) THEN
-        SET_WFLAGS = FLAG(44)
-        IFL=45
-        DO WHILE (.NOT. SET_WFLAGS .AND. IFL.LE.46)
-          SET_WFLAGS = FLAG(IFL)
-          IFL=IFL+1
-        ENDDO
-
       ELSE
         WRITE(*,*) 'Nothing was done in SET_WFLAG!'
         WRITE(*,*) 'Is it normal ?'
       ENDIF
 
-      RETURN
       END FUNCTION SET_WFLAGS

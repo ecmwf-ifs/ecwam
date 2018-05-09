@@ -60,8 +60,8 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV
-      USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,FFLAG21  ,PFLAG    ,
-     &            PFLAG20  ,PFLAG21  ,GFLAG    ,GFLAG20  ,GFLAG21  ,
+      USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,PFLAG    ,
+     &            PFLAG20  ,GFLAG    ,GFLAG20  ,
      &            NTRAIN   ,JPPFLAG  ,
      &            LFDB     ,IPFGTBL  ,LOUTINT
       USE YOWGRIBHD, ONLY : NTENCODE ,HOPERI
@@ -543,7 +543,7 @@
 
       ENDIF
 
-      IF(LMESSPASS.AND.(FFLAG21.OR.PFLAG21.OR.GFLAG21)) THEN
+      IF(LMESSPASS.AND.(FFLAG20.OR.PFLAG20.OR.GFLAG20)) THEN
 !       1.3 COLLECT SWELL, WIND SEA AND SWELL TRAINS PARAMETER ARRAYS TO PROCESS IRECV
 !           ----------------------------------------------------------------------
         IRECV=MIN(2,NPROC)
@@ -1052,7 +1052,7 @@
 !*      3.1 WRITE PARAMETERS OF SWELL, WIND DIRECTION AND SWELL TRAINS TO FILE.
 !           ---------------------------------------------------------------
 
-        IF(FFLAG21) THEN
+        IF(FFLAG20) THEN
           IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
      &     .OR.(.NOT.LMESSPASS)) THEN
 
@@ -1268,7 +1268,7 @@
 !     OUTPUT FILE FOR GRIB DATA (if not written to FDB)
 
       IF(.NOT.LFDB) THEN
-        IF (GFLAG20 .OR. GFLAG21) THEN
+        IF (GFLAG20) THEN
           WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
           IF (FRSTIME30) THEN
             CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
@@ -2282,7 +2282,7 @@
 !*    5.  PACK WIND SEA AND SWELL PARAMETERS INTO GRIB FM94.
 !         -------------------------------------------------
 
-      IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
+      IF (GFLAG20.AND.CDTINTS.EQ.CDTPRO) THEN
 
 !*      WIND SEA WAVE HEIGHTS.
 !       ---------------------
@@ -2536,7 +2536,7 @@
 !*    6.  PACK SWELL WAVE TRAINS PARAMETERS INTO GRIB FM94.
 !         ---------------------------------------------
 
-      IF (GFLAG21.AND.CDTINTS.EQ.CDTPRO) THEN
+      IF (GFLAG20.AND.CDTINTS.EQ.CDTPRO) THEN
         ITG=46
         IPARAM=120
         DO ITT=1,NTRAIN
@@ -2615,7 +2615,7 @@
       ENDIF
 
       IF(.NOT.LFDB) THEN
-        IF (GFLAG20 .OR. GFLAG21) THEN
+        IF (GFLAG20 .OR. GFLAG20) THEN
           CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
       ENDIF

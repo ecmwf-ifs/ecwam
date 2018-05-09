@@ -240,9 +240,8 @@
      &            GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,
      &                      LWNEMOCOU,LWNEMOCOURECV
-      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
-     &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
-     &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,
+     &            FFLAG20  ,PFLAG20  ,GFLAG20  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
      &            LWFLUXOUT,LOUTSPP
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
@@ -576,7 +575,7 @@
         ENDIF
 
         CDUM=CDATEA
-        IF (GFLAG21) THEN
+        IF (GFLAG20) THEN
           DO WHILE (CDUM.LE.CDATEE.AND.IDELINS.GT.0)
             CALL INCDATE (CDUM,IDELINS)
           ENDDO
@@ -596,23 +595,6 @@
 
       ITESTB = MIN(ITESTB,IGL)
 
-      IF (NGOUT.EQ.0.AND.(PFLAG25.OR.FFLAG25.OR.PFLAG26.OR.FFLAG26))THEN
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+    WARNING ERROR IN SUB. INITMDL          +'
-        WRITE(IU06,*) '+    =============================          +'
-        WRITE(IU06,*) '+ NUMBER OF OUTPUT POINT FOR SPECTRA        +'
-        WRITE(IU06,*) '+ READ FROM PREPROC OUTPUT IS ZERO.         +'
-        WRITE(IU06,*) '+ OUTPUT FLAGS CHANGED TO NO OUTPUT.        +'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+ MODEL CONTINUES.                          +'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-        PFLAG25 = .FALSE.
-        FFLAG25  = .FALSE.
-        PFLAG26 = .FALSE.
-        FFLAG26  = .FALSE.
-      ENDIF
 !NEST
 
       IF (.NOT.ALLOCATED(IUSCR)) THEN
@@ -759,29 +741,12 @@
       WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
       WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
       WRITE(IU06,*) '  '
-
-      IF(FFLAG25.OR.PFLAG25.OR.GFLAG25.OR.
-     & FFLAG26.OR.PFLAG26.OR.GFLAG26) THEN
-        WRITE(IU06,*) '  '
-        WRITE(IU06,*) ' OUTPUT POINTS:'
-        WRITE(IU06,*) ' TOTAL NUMBER OF OUTPUT POINTS IS: ',NGOUT
-        WRITE(IU06,'(/,4X,''BLOCK NO'',6X,''INDEX NO'',
-     &   8X,''LONGITUDE'',6X,''LATITUDE'')')
-        DO I=1,NGOUT
-          IX  = IXLG(IJAR(I),IGAR(I))
-          KX  = KXLT(IJAR(I),IGAR(I))
-          XLO = AMOWEP+REAL(IX-1)*ZDELLO(KX)
-          XLA = AMOSOP+REAL(KX-1)*XDELLA
-
-          WRITE(IU06,'((6X,I3,10X,I6,7X,F10.3,4X,F10.3))')
-     &     IGAR(I), IJAR(I), XLO, XLA
-        ENDDO
-      ENDIF
- 3002 FORMAT(3x,a,f9.3,a)
- 3003 FORMAT(3x,a,i8,  a)
-!NEST
       CALL FLUSH (IU06)
 
+ 3002 FORMAT(3x,a,f9.3,a)
+ 3003 FORMAT(3x,a,i8,  a)
+
+!NEST
       IF (IBOUNC .EQ. 1) THEN
         WRITE(IU06,*)
         WRITE(IU06,*) ' COARSE GRID: BOUNDARY OUTPUT POINTS :'
@@ -978,52 +943,26 @@
 
       IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) THEN
         CDTINTT= CBPLTDT
+        CDTINTS= CBPLTDT
         IF(LANAONLY) THEN
           CDTINTT=CDATEA
+          CDTINTS=CDATEA
         ELSE
           DO WHILE (CDTINTT.LE.CDTPRO)
             CALL INCDATE (CDTINTT, IDELINT)
           ENDDO
-        ENDIF
-      ELSE
-        CDTINTT = ZERO
-      ENDIF
-      IF (PFLAG21.OR.FFLAG21.OR.GFLAG21) THEN
-        CDTINTS= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTINTS=CDATEA
-        ELSE
           DO WHILE (CDTINTS.LE.CDTPRO)
             CALL INCDATE (CDTINTS, IDELINS)
           ENDDO
         ENDIF
       ELSE
+        CDTINTT = ZERO
         CDTINTS = ZERO
       ENDIF
-      IF (PFLAG25.OR.FFLAG25.OR.GFLAG25) THEN
-        CDTSPT= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTSPT=CDATEA
-        ELSE
-          DO WHILE (CDTSPT.LE.CDTPRO)
-            CALL INCDATE (CDTSPT, IDELSPT)
-          ENDDO
-        ENDIF
-      ELSE
+
         CDTSPT = ZERO
-      ENDIF
-      IF (PFLAG26.OR.FFLAG26.OR.GFLAG26) THEN
-        CDTSPS= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTSPS=CDATEA
-        ELSE
-          DO WHILE (CDTSPS.LE.CDTPRO)
-            CALL INCDATE (CDTSPS, IDELSPS)
-          ENDDO
-        ENDIF
-      ELSE
+
         CDTSPS = ZERO
-      ENDIF
 
 !*    5.2 FILE DISPOSE TIME AND RESTART TIME.
 !         -----------------------------------

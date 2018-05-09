@@ -286,9 +286,9 @@
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
-     &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
-     &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,
+     &            PFLAG20  ,
+     &            GFLAG20  ,
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            NGOUT    ,LLOUTERS ,                                  &
      &            NIPRMOUT ,                                            &
@@ -685,24 +685,16 @@
           DO J=1,NOUTT
             IF (CDTPRO.EQ.COUTT(J)) THEN
               IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
-              IF (PFLAG21.OR.FFLAG21.OR.GFLAG21) CDTINTS = COUTT(J)
-              IF (PFLAG25.OR.FFLAG25.OR.GFLAG25) CDTSPT  = COUTT(J)
-              IF (PFLAG26.OR.FFLAG26.OR.GFLAG26) CDTSPS  = COUTT(J)
+              IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) CDTINTS = COUTT(J)
             ENDIF
           ENDDO
         ELSE
           IF ((PFLAG20.OR.FFLAG20.OR.GFLAG20) .AND.
      &         CDTINTT.LT.CDTPRO)
      &     CALL INCDATE (CDTINTT,IDELINT)
-          IF ((PFLAG21.OR.FFLAG21.OR.GFLAG21) .AND.
+          IF ((PFLAG20.OR.FFLAG20.OR.GFLAG20) .AND.
      &         CDTINTS.LT.CDTPRO)
      &     CALL INCDATE (CDTINTS,IDELINS)
-          IF ((PFLAG25.OR.FFLAG25.OR.GFLAG25) .AND.
-     &         CDTSPT.LT.CDTPRO)
-     &     CALL INCDATE (CDTSPT,IDELSPT)
-          IF ((PFLAG26.OR.FFLAG26.OR.GFLAG26) .AND.
-     &         CDTSPS.LT.CDTPRO)
-     &     CALL INCDATE (CDTSPS,IDELSPS)
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
@@ -1295,7 +1287,7 @@
             ENDIF
           ENDIF
           IF (FFLAG20 .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) 
+            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) 
      &       THEN
               CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
             ENDIF
@@ -1304,30 +1296,13 @@
 !           SAVE INTEGRATED SWELL, SEA AND SWELL TRAINS DATA FILE.
 !           --------------------------------------------------
 
-          IF (FFLAG21 .AND. LOUTINT) THEN
+          IF (FFLAG20 .AND. LOUTINT) THEN
             IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
      &         .OR.(.NOT.LMESSPASS)) THEN
               CALL GSFILE (IU06, IU21, 0, CDTPRO, CDATEF, 'SWE', 'S')
             ENDIF
           ENDIF
 
-!         SAVE SPECTRA FILE.
-
-          IF (FFLAG25 .AND. LOUTSPP) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU25, 0, CDTPRO, CDATEF, 'OUT', 'S')
-            ENDIF
-          ENDIF
-
-!           SAVE SWELL SPECTRA FILE.
-
-          IF (FFLAG26 .AND. LOUTSPP) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU26, 0, CDTPRO, CDATEF, 'SWS', 'S')
-            ENDIF
-          ENDIF
-
- 
         END IF
 
 !NEST
