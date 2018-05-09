@@ -208,7 +208,7 @@
           IF(NIPRMOUT.GT.0) THEN
             ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
             CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                        &
-     &                  FL1, DEPTH(IJSLOC,1) XLLWS,                     &
+     &                  FL1, DEPTH(IJSLOC,1), XLLWS,                    &
      &                  BOUT)
 
 !           PRINT OUT NORMS
