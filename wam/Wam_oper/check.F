@@ -28,7 +28,6 @@
 !     ----------
 
 !       *ABORT1*     - TERMINATES PROCESSING.
-!       *OUTPP*     - WRITE OUT A GRID.
 
 !     REFERENCE.
 !     ----------
@@ -309,78 +308,6 @@
           ENDDO
           WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
         ENDDO
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    3. OUTPUT OF DEPTH FIELD.
-!        ----------------------
-
-      IF (ITEST.GE.3) THEN
-        DO K=1,NY
-          DO I=1,NX
-            GRID(I,K) = 99999
-          ENDDO
-        ENDDO
-
-        DO IG=1,IGL
-          DO IJ=IJS(IG),IJL(IG)
-            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) = MIN(DEPTH(IJ,IG),999.)
-          ENDDO
-        ENDDO
-
-        TITL = 'WATER DEPTH IN METERS. '//
-     &         '(DEPTH DEEPER THAN 999M ARE PRINTED AS 999)'
-        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,1.,GRID,
-     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    4. OUTPUT OF CURRENT FIELD.
-!        ------------------------
-
-
-      IF (ITEST.GE.3) THEN
-
-        IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
- 
-        DO K=1,NY
-          DO I=1,NX
-            GRID(I,K) = 99999
-          ENDDO
-        ENDDO
-
-        DO IG=1,IGL
-          DO IJ=IJS(IG),IJL(IG)
-            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
-     &       SQRT(U(IJ,IG)**2+V(IJ,IG)**2)
-          ENDDO
-        ENDDO
-
-        TITL = 'CURRENT SPEED IN 0.01 METRES/SECOND '
-        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,100.,GRID,
-     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
-
-        DO K=1,NY
-          DO I=1,NX
-            GRID(I,K) = 99999
-          ENDDO
-        ENDDO
-
-        DO IG=1,IGL
-          DO IJ=IJS(IG),IJL(IG)
-            GRID(IXLG(IJ,IG),NY+1-KXLT(IJ,IG)) =
-     &       MOD(ATAN2(U(IJ,IG),V(IJ,IG)+0.1E-10)*DEG+360.,360.)
-          ENDDO
-        ENDDO
-
-        TITL = 'CURRENT DIRECTIOM IN DEGREES (CLOCKWISE FROM NORTH)'
-        CALL OUTPP('00000000000000',IU06,NGX,NGY,NX,NY,TITL,1.,GRID,
-     &              AMOWEP,AMOSOP,AMOEAP,AMONOP)
-
-        ENDIF
-
       ENDIF
 
 ! ----------------------------------------------------------------------

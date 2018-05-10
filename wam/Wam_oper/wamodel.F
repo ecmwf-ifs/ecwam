@@ -209,8 +209,7 @@
 !       *OUTBC*     - OUTPUT OF BOUNDARY VALUES.
 !       *OUTBS*     - CONTROLS OUTPUT FROM BLOCKS.
 !       *OUTGRID*   - SAVE BLOCKED PARAMETERS INTO GRID ARRAYS.
-!       *OUTINT*    - OUTPUT OF INTEGRATED PARAMETERS.
-!       *OUTPP*     - WRITES GRIDDED FIELDS TO PRINTER.
+!       *OUTWINT*   - OUTPUT OF INTEGRATED PARAMETERS.
 !       *PEAKFR*    - COMUTE PEAK FREQUENCY.
 !       *PROPAG*    - PROPAGATION SCHEME.
 !       *PRSPP*     - PRINT A SPECTRUM.
@@ -353,9 +352,8 @@
      &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
      &            LUPDTWGHT 
-      USE YOWUNIT  , ONLY : IU02     ,IU08     ,IU11     ,IU12     ,
-     &            IU13     ,IU14     ,IU19     ,IU20     ,
-     &            IU04     ,IU30
+      USE YOWUNIT  , ONLY : IU02     ,IU04     ,IU08     ,              &
+     &            IU19     ,IU20     ,IU30
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
@@ -565,7 +563,7 @@
 !         PRINT OUT NORMS
 !!!1 to do: decide if there are cased where we might want LDREPROD false
           LDREPROD=.TRUE.
-          CALL OUTWNORM(IJSLOC, IJLLOC, BOUT, LDREPROD)
+          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT, LDREPROD)
 
         ENDIF
 
@@ -608,7 +606,7 @@
 
           IF( .NOT. LRESTARTED ) THEN
             IF(NIPRMOUT.GT.0 ) THEN
-              CALL OUTINT (IU06,IU20,IU30,ITEST,NWFDBREF,LFDBOPEN)
+              CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
             ENDIF
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
@@ -1126,7 +1124,7 @@
 
 !!!1 to do: decide if there are cased where we might want LDREPROD false
               LDREPROD=.TRUE.
-              CALL OUTWNORM(IJSLOC, IJLLOC, BOUT, LDREPROD)
+              CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT, LDREPROD)
 
             ENDIF
 
@@ -1201,25 +1199,22 @@
 !         WRITE INTEGRATED DATA TO FILE AND/OR PRINTER
 !         DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 
-        IF (CDTINTT.EQ.CDTPRO) THEN
-          IF(NIPRMOUT.GT.0) THEN
-
-            IF (LWAMANOUT) THEN
-!             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
-!             BECOMES TYPE AN (i.e. speudo analysis)
-              MARSTYPEBAK=MARSTYPE
-              IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
-     &           (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
-                MARSTYPE='an'
-              ENDIF
-              CALL OUTINT (IU06,IU20,IU30,ITEST, NWFDBREF,LFDBOPEN)
-              MARSTYPE=MARSTYPEBAK
-            ENDIF
-
-            CALL GSTATS(753,0)
-            CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-            CALL GSTATS(753,1)
+        IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
+!         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
+!         BECOMES TYPE AN (i.e. speudo analysis)
+          MARSTYPEBAK=MARSTYPE
+          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+            MARSTYPE='an'
           ENDIF
+
+          CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
+
+          MARSTYPE=MARSTYPEBAK
+
+          CALL GSTATS(753,0)
+          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+          CALL GSTATS(753,1)
         ENDIF
 
 !       PRINT TIME.
@@ -1323,6 +1318,7 @@
               CALL FLUSH(IU06)
             ENDIF  
 
+!           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
               CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
      &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,

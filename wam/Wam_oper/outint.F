@@ -1,8 +1,10 @@
-      SUBROUTINE OUTINT (IU06, IU20, IU30, ITEST, KFDB, LFDBOPEN)
+      SUBROUTINE OUTINT
 
 ! ----------------------------------------------------------------------
 
 !**** *OUTINT* - OUTPUT OF INTEGRATED FIELDS IS WRITTEN.
+
+!!               WITHOUT THE I/O SERVER
 
 !     H. GUNTHER       ECMWF  JUNE     1990
 !     A. GUILLAUME     ECMWF  JUNE     1992 HANDLING OF MISSING VALUES,
@@ -30,13 +32,7 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT (IU06, IU20, IU30, ITEST, KFDB)
-!          *IU06*   - PRINTER OUTPUT UNIT.
-!          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
-!          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
-!                     SPECTRUM.
-!          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
-!          *KFDB*   - REFERENCE TO THE FDB DATABASE.
+!       *CALL* *OUTINT
 
 !     EXTERNALS.
 !     ----------
@@ -92,14 +88,16 @@
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
      &            CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
-     &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER
+     &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER  ,
+     &            NWFDBREF ,LFDBOPEN
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWUNIT  , ONLY : IU20     ,IU30
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IU06, IU20, IU30, ITEST, KFDB
       INTEGER :: I, J, ITG
       INTEGER :: ITT, ICT, ITAG
       INTEGER :: JY, JX
@@ -119,7 +117,6 @@
       CHARACTER(LEN=24) :: OFILENAME
       CHARACTER(LEN=100) :: TITL
 
-      LOGICAL :: LFDBOPEN
       LOGICAL, SAVE :: FRSTIME30
 
       DATA FRSTIME30 / .TRUE. /
@@ -1296,7 +1293,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1314,7 +1311,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1345,7 +1342,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1364,7 +1361,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, UDIRG,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1395,7 +1392,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WPKFTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1414,7 +1411,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CDG,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1432,7 +1429,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, SMEANG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1451,7 +1448,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, U10G,
      &                    ITABLE, IPARAM, IZLEV, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1469,7 +1466,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTAG,
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                      LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1487,7 +1484,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CWHTAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1505,7 +1502,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, RANGAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1523,7 +1520,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1541,7 +1538,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1559,7 +1556,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1577,7 +1574,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, C4G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1595,7 +1592,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, BFG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1613,7 +1610,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, QPG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1631,7 +1628,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, DEPTHG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1649,7 +1646,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, HMAXG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1667,7 +1664,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TMAXG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1685,7 +1682,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, USTOKESG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1703,7 +1700,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, VSTOKESG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1721,7 +1718,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, UCURG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1739,7 +1736,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, VCURG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1757,7 +1754,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, PHIEPSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1775,7 +1772,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, PHIAWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1793,7 +1790,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, TAUOCG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1812,7 +1809,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, STRNMSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1831,7 +1828,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E10G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1850,7 +1847,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, RHOAG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1869,7 +1866,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSTARG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1889,7 +1886,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CICG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1908,7 +1905,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, CIHG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1927,7 +1924,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, C3G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1946,7 +1943,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NSSTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1965,7 +1962,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NICCG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -1984,7 +1981,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NICTG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2003,7 +2000,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NUCUG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2022,7 +2019,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, NVCUG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2041,7 +2038,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXMG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2060,7 +2057,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WEFLXDG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2079,7 +2076,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1012G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2098,7 +2095,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1214G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2117,7 +2114,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1417G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2136,7 +2133,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E1721G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2155,7 +2152,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2125G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2174,7 +2171,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, E2530G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2193,7 +2190,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX1G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2212,7 +2209,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX2G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2231,7 +2228,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX3G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2250,7 +2247,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX4G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2269,7 +2266,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WX5G,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2297,7 +2294,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2316,7 +2313,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2347,7 +2344,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2365,7 +2362,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2384,7 +2381,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2415,7 +2412,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WMNFSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2433,7 +2430,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1WG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2451,7 +2448,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2WG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2469,7 +2466,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDWG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2489,7 +2486,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP1SG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2507,7 +2504,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWP2SG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2525,7 +2522,7 @@
             CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WSPRDSG,
      &                    ITABLE, IPARAM, 0, 0 , 0,
      &                    CDATE, IFCST, MARSTYPE,
-     &                    LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                    LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
           ENDIF
         ENDIF
 
@@ -2553,7 +2550,7 @@
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WHGTTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                      LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
             ENDIF
           ENDIF
 
@@ -2572,7 +2569,7 @@
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, WDIRTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                      LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
             ENDIF
           ENDIF
 
@@ -2591,7 +2588,7 @@
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, MWPMTRG(:,:,ITT),
      &                      ITABLE, IPARAM, 0, 0 , 0,
      &                      CDATE, IFCST, MARSTYPE,
-     &                      LFDB, CFDBSF, KFDB, LFDBOPEN, IUOUT)
+     &                      LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
             ENDIF
           ENDIF
 
@@ -2602,7 +2599,7 @@
 ! ----------------------------------------------------------------------
 
       IF(LFDB.and.ILOCAL.gt.0) THEN
-         IERR = ISETFIELDCOUNTFDBSUBS(KFDB,IGLOBAL,ILOCAL)
+         IERR = ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL)
          IF(IERR.NE.0)THEN
             WRITE(IU06,*) ' ------------------------'
             WRITE(IU06,*) ' ERROR setting fdb field count '

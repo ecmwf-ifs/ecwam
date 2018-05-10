@@ -1,9 +1,9 @@
-      SUBROUTINE OUTWNORM(IJS, IJL, BOUT, LDREPROD)
+      SUBROUTINE OUTWNORM(IJS, IJL, NBOUT, BOUT, LDREPROD)
 
 ! ----------------------------------------------------------------------
 
-!**** *WAMNORM* - PRINTS AVERAGE, MINIMUM AND MAXIMUM VALUES OF
-!                 INTEGRATED PARAMETER FIELDS 
+!**** *OUTWNORM* - PRINTS AVERAGE, MINIMUM AND MAXIMUM VALUES OF
+!                  INTEGRATED PARAMETER FIELDS 
 
 !*    PURPOSE.
 !     --------
@@ -23,7 +23,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
-     &                      COUTNAME, NIPRMOUT, ITOBOUT
+     &                      COUTNAME, ITOBOUT
       USE YOWMPP   , ONLY : IRANK   ,NPROC
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : CDTPRO
@@ -34,22 +34,22 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NBOUT
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NBOUT), INTENT(IN) :: BOUT
       LOGICAL, INTENT(IN) :: LDREPROD
 
       INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(4,NIPRMOUT) :: WNORM
+      REAL(KIND=JWRB), DIMENSION(4,NBOUT) :: WNORM
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 #endif
-      IF(NFLAGALL .AND. NIPRMOUT > 0) THEN
+      IF(NFLAGALL .AND. NBOUT > 0) THEN
 
-       CALL MPMINMAXAVG(IJS, IJL, NIPRMOUT, BOUT, ZMISS, LDREPROD, WNORM)
+       CALL MPMINMAXAVG(IJS, IJL, NBOUT, BOUT, ZMISS, LDREPROD, WNORM)
 
         IRECV=1
 !       WRITE NORM TO LOGFILE
