@@ -24,7 +24,7 @@
 
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
      &                      COUTNAME, NIPRMOUT, ITOBOUT
-      USE YOWMPP   , ONLY : IRANK
+      USE YOWMPP   , ONLY : IRANK   ,NPROC
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
