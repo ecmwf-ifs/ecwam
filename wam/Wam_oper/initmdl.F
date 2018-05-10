@@ -268,7 +268,7 @@
      &            ROAIRO   ,ZIDLOLD  ,
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDTINTT  ,CDTINTS  ,CDTBC    ,
+     &            CDTINTT  ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
      &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
      &            ISHALLO  ,IREFRA   ,
@@ -926,21 +926,15 @@
 
       IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) THEN
         CDTINTT= CBPLTDT
-        CDTINTS= CBPLTDT
         IF(LANAONLY) THEN
           CDTINTT=CDATEA
-          CDTINTS=CDATEA
         ELSE
           DO WHILE (CDTINTT.LE.CDTPRO)
             CALL INCDATE (CDTINTT, IDELINT)
           ENDDO
-          DO WHILE (CDTINTS.LE.CDTPRO)
-            CALL INCDATE (CDTINTS, IDELINS)
-          ENDDO
         ENDIF
       ELSE
         CDTINTT = ZERO
-        CDTINTS = ZERO
       ENDIF
 
 !*    5.2 FILE DISPOSE TIME AND RESTART TIME.

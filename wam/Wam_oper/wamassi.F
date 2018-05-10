@@ -108,7 +108,7 @@
      &            FL1
       USE YOWSHAL  , ONLY : DEPTH 
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,
+     &            CDATER   ,CDATES   ,CDTINTT  ,
      &            CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
      &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
@@ -193,7 +193,7 @@
 
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
-        IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO) THEN
+        IF (CDTINTT.EQ.CDTPRO) THEN
 
 !         OUTPUT POINT SPECTRA
           IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
@@ -226,8 +226,7 @@
 !           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 !           --------------------------------------------
 
-      IF (LWAMANOUT .AND. 
-     &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
+      IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO ) THEN
 
 !       PRINTS OUT NORMS
         CALL OUTWNORM
@@ -353,8 +352,8 @@
         ENDIF
       ENDIF
 
-      IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. (
-     &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
+      IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND.                 &
+     &    CDTINTT.EQ.CDTPRO) THEN
         CALL GSTATS(1976,0)
         IERR = IFLUSHFDBSUBS (NWFDBREF)
         CALL GSTATS(1976,1)

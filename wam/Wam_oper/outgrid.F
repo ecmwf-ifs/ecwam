@@ -74,7 +74,6 @@
       USE YOWSPEC  , ONLY : NBLKS   ,NBLKE     , 
      &            U10NEW   ,THWNEW   ,USNEW    ,
      &            ROAIRN   ,ZIDLNEW
-      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTS
       USE YOWSWEL  , ONLY : ESWELL   ,FSWELL   ,THSWELL  ,ESEA     ,
      &            FSEA     ,THWISEA  ,P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &            P1SEA    ,P2SEA    ,SPRDSEA

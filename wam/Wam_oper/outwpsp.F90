@@ -51,7 +51,7 @@
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: USTAR 
 
-      INTEGER :: IJ, M, K,
+      INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------

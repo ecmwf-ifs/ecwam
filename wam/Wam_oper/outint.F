@@ -91,7 +91,7 @@
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS
       USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,
-     &            CDTINTS  ,CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
+     &            CFDBSF   ,ISHALLO  ,IASSI    ,NENSFNB  ,
      &            NTOTENS  ,MARSTYPE ,YCLASS   ,YEXPVER
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
@@ -183,7 +183,7 @@
 
       ENDIF
 
-      IF (CDTINTS.EQ.CDTPRO) THEN
+      IF (CDTINTT.EQ.CDTPRO) THEN
 
 !*      0.4 CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
 !           -----------------------------------------------------------
@@ -1046,7 +1046,7 @@
 !*    3. OUTPUT OF INTEGRATED PARAMETERS OF SEA, SWELL AND SWELL TRAINS.
 !        -----------------------------------------------------------
 
-      IF (CDTINTS.EQ.CDTPRO) THEN
+      IF (CDTINTT.EQ.CDTPRO) THEN
 
 !*      3.1 WRITE PARAMETERS OF SWELL, WIND DIRECTION AND SWELL TRAINS TO FILE.
 !           ---------------------------------------------------------------
@@ -2281,7 +2281,7 @@
 !*    5.  PACK WIND SEA AND SWELL PARAMETERS INTO GRIB FM94.
 !         -------------------------------------------------
 
-      IF (GFLAG20.AND.CDTINTS.EQ.CDTPRO) THEN
+      IF (GFLAG20.AND.CDTINTT.EQ.CDTPRO) THEN
 
 !*      WIND SEA WAVE HEIGHTS.
 !       ---------------------
@@ -2535,7 +2535,7 @@
 !*    6.  PACK SWELL WAVE TRAINS PARAMETERS INTO GRIB FM94.
 !         ---------------------------------------------
 
-      IF (GFLAG20.AND.CDTINTS.EQ.CDTPRO) THEN
+      IF (GFLAG20.AND.CDTINTT.EQ.CDTPRO) THEN
         ITG=46
         IPARAM=120
         DO ITT=1,NTRAIN
