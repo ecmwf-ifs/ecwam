@@ -354,7 +354,7 @@
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
      &            LUPDTWGHT 
       USE YOWUNIT  , ONLY : IU02     ,IU08     ,IU11     ,IU12     ,
-     &            IU13     ,IU14     ,IU19     ,IU20     ,IU21     ,
+     &            IU13     ,IU14     ,IU19     ,IU20     ,
      &            IU04     ,IU30
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
@@ -611,7 +611,7 @@
 
           IF( .NOT. LRESTARTED ) THEN
             IF(NIPRMOUT.GT.0 ) THEN
-              CALL OUTINT (IU06,IU20,IU21,IU30,ITEST,NWFDBREF,LFDBOPEN)
+              CALL OUTINT (IU06,IU20,IU30,ITEST,NWFDBREF,LFDBOPEN)
             ENDIF
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
@@ -1222,7 +1222,7 @@
      &           (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
                 MARSTYPE='an'
               ENDIF
-              CALL OUTINT (IU06,IU20,IU21,IU30,ITEST, NWFDBREF,LFDBOPEN)
+              CALL OUTINT (IU06,IU20,IU30,ITEST, NWFDBREF,LFDBOPEN)
               MARSTYPE=MARSTYPEBAK
             ENDIF
 
@@ -1272,16 +1272,6 @@
             IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) 
      &       THEN
               CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
-            ENDIF
-          ENDIF
-
-!           SAVE INTEGRATED SWELL, SEA AND SWELL TRAINS DATA FILE.
-!           --------------------------------------------------
-
-          IF (FFLAG20 .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
-     &         .OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU21, 0, CDTPRO, CDATEF, 'SWE', 'S')
             ENDIF
           ENDIF
 

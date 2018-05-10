@@ -108,9 +108,6 @@
 !           *IU20*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF THE TOTAL SPECTRUM (FIRST GUESS).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'MAP'
-!           *IU21*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF SWELL AND WIND WAVES (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'SWE'
 !ASSI
 !           *IU22*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF THE TOTAL SPECTRUM (ANALYSED).
@@ -290,7 +287,7 @@
      &            LSAMEDEPTH
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
-     &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
+     &            IU18     ,IU19     ,IU20     ,IU22     ,
      &            IU23     ,IU27     ,IU28     ,
      &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,
@@ -410,7 +407,6 @@
       IU18 = 18
 
       IU20 = 20
-      IU21 = 21
 !ASSI
       IU22 = 22
       IU23 = 23

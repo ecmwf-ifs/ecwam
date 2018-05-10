@@ -93,7 +93,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU21     ,IU23     ,
+      USE YOWUNIT  , ONLY : IU20     ,IU23     ,
      &            IU27     ,IU28     ,IU04     ,IU30     ,
      &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,
      &            IU37     ,IU38

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB, LFDBOPEN)
+      SUBROUTINE OUTINT (IU06, IU20, IU30, ITEST, KFDB, LFDBOPEN)
 
 ! ----------------------------------------------------------------------
 
@@ -30,10 +30,9 @@
 
 !**   INTERFACE.
 !     ----------
-!       *CALL* *OUTINT (IU06, IU20, IU21, IU30, ITEST, KFDB)
+!       *CALL* *OUTINT (IU06, IU20, IU30, ITEST, KFDB)
 !          *IU06*   - PRINTER OUTPUT UNIT.
 !          *IU20*   - OUTPUT UNIT OF PARAMETERS OF TOTAL SPECTRUM.
-!          *IU21    - OUTPUT UNIT OF SEA AND SWELL + 3 SWELL TRAINS PARAMETERS.
 !          *IU30    - OUTPUT UNIT OF GRIBBED PARAMETERS OF TOTAL
 !                     SPECTRUM.
 !          *ITEST*  - TESTOUTPUT GIVEN IF ITEST LT 2.
@@ -100,7 +99,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IU06, IU20, IU21, IU30, ITEST, KFDB
+      INTEGER :: IU06, IU20, IU30, ITEST, KFDB
       INTEGER :: I, J, ITG
       INTEGER :: ITT, ICT, ITAG
       INTEGER :: JY, JX
@@ -1059,31 +1058,31 @@
             DNGX = REAL(NGX)
             DNGY = REAL(NGY)
 
-            WRITE (IU21) CDTPRO, DNGX, DNGY, AMOWEP,AMOSOP,AMOEAP,
+            WRITE (IU20) CDTPRO, DNGX, DNGY, AMOWEP,AMOSOP,AMOEAP,
      &                   AMONOP, ZDELLO
-            WRITE (IU21) JPPFLAG
-            WRITE (IU21) (FFLAG(J),J=1,JPPFLAG)
-            IF (FFLAG(11)) WRITE (IU21) WHGTWG
-            IF (FFLAG(13)) WRITE (IU21) WDIRWG
-            IF (FFLAG(15)) WRITE (IU21) WMNFWG
-            IF (FFLAG(12)) WRITE (IU21) WHGTSG
-            IF (FFLAG(14)) WRITE (IU21) WDIRSG
-            IF (FFLAG(16)) WRITE (IU21) WMNFSG
-            IF (FFLAG(28)) WRITE (IU21) MWP1WG
-            IF (FFLAG(29)) WRITE (IU21) MWP1SG
-            IF (FFLAG(30)) WRITE (IU21) MWP2WG
-            IF (FFLAG(31)) WRITE (IU21) MWP2SG
-            IF (FFLAG(32)) WRITE (IU21) WSPRDWG
-            IF (FFLAG(33)) WRITE (IU21) WSPRDSG
+            WRITE (IU20) JPPFLAG
+            WRITE (IU20) (FFLAG(J),J=1,JPPFLAG)
+            IF (FFLAG(11)) WRITE (IU20) WHGTWG
+            IF (FFLAG(13)) WRITE (IU20) WDIRWG
+            IF (FFLAG(15)) WRITE (IU20) WMNFWG
+            IF (FFLAG(12)) WRITE (IU20) WHGTSG
+            IF (FFLAG(14)) WRITE (IU20) WDIRSG
+            IF (FFLAG(16)) WRITE (IU20) WMNFSG
+            IF (FFLAG(28)) WRITE (IU20) MWP1WG
+            IF (FFLAG(29)) WRITE (IU20) MWP1SG
+            IF (FFLAG(30)) WRITE (IU20) MWP2WG
+            IF (FFLAG(31)) WRITE (IU20) MWP2SG
+            IF (FFLAG(32)) WRITE (IU20) WSPRDWG
+            IF (FFLAG(33)) WRITE (IU20) WSPRDSG
 
             ICT=46
             DO ITT=1,NTRAIN
               ICT=ICT+1
-              IF (FFLAG(ICT)) WRITE (IU21) WHGTTRG(:,:,ITT)
+              IF (FFLAG(ICT)) WRITE (IU20) WHGTTRG(:,:,ITT)
               ICT=ICT+1
-              IF (FFLAG(ICT)) WRITE (IU21) WDIRTRG(:,:,ITT)
+              IF (FFLAG(ICT)) WRITE (IU20) WDIRTRG(:,:,ITT)
               ICT=ICT+1
-              IF (FFLAG(ICT)) WRITE (IU21) MWPMTRG(:,:,ITT)
+              IF (FFLAG(ICT)) WRITE (IU20) MWPMTRG(:,:,ITT)
             ENDDO
           ENDIF
         ENDIF
