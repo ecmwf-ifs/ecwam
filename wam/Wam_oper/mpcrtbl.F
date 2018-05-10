@@ -56,7 +56,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: IR, IFLAG, IC, ITG, ITP, ITT, IZLEV, IR
+      INTEGER :: IR, IFLAG, IC, ITG, ITP, ITT, IZLEV
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -229,7 +229,7 @@
 
       IR=IR+1
 !     PARAMETER 013
-      IF(IR.GT.JP3FLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
+      IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' WIND SEA MEAN DIRECTION..........'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=235
