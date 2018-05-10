@@ -74,7 +74,7 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,
      &            GFLAG20  ,LFDB     ,LOUTINT  ,LWAMANOUT, NGOUT   ,    &
-     &            LOUTERS  ,NIPRMOUT ,LRSTPARALW
+     &            LLOUTERS ,NIPRMOUT ,LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -97,7 +97,7 @@
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG 
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG
@@ -199,7 +199,6 @@
           IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
             CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,              &
      &                    FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
-
           ENDIF
 
 !         COMPUTE OUTPUT PARAMETERS
@@ -228,47 +227,35 @@
 
       IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO ) THEN
 
-!       PRINTS OUT NORMS
-        CALL OUTWNORM
-
         CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, NWFDBREF, LFDBOPEN)
 
-        IF(LMESSPASS) THEN
-          CALL GSTATS(752,0)
-          CALL MPL_BARRIER(CDSTRING='WAMASSI 1:')
-          CALL GSTATS(752,1)
-        ENDIF
+        CALL GSTATS(752,0)
+        CALL MPL_BARRIER(CDSTRING='WAMASSI 1:')
+        CALL GSTATS(752,1)
         IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTINT DONE'
       ENDIF
 
-      IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
-
-!*    3.1.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
-!           INTEGRATED PARAMETERS OF ENTIRE GRID.
-!           -------------------------------------
-
-!           SAVE INTEGRATED DATA FILE.
-
-        IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
-          ENDIF
+      IF ((CDATEE.EQ.CDTPRO.OR.LDWRRE).AND.LOUTINT) THEN
+!*    3.1.2 MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES 
+!           ------------------------------------------------------------
+!       GRIB DATA IF FDB IS NOT USED: 
+        IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+          CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
         ENDIF
-        IF (FFLAG20 .AND. LOUTINT) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
-          ENDIF
+!       PURE BINARY DATA:
+        IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+          CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
         ENDIF
 
       ENDIF
 
+
+!*    3.1.4 SAVE RESTART FIELDS.
+!           --------------------
       LSV=(CDTRES.EQ.CDTPRO .OR. CDATEE.EQ.CDTPRO 
      &                      .OR. CDTPRO.EQ.CDATER)
 
       IF (LSV.OR.LDWRRE) THEN
-
-!*    3.1.4 SAVE RESTART FIELDS.
-!           --------------------
         LOUT=(IREST.EQ.1 
      &        .AND. (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES)
      &        .AND. LWAMANOUT )
@@ -313,8 +300,7 @@
 !*    3.1.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
-          IF ((LDSTOP.OR.LDWRRE) .AND. 
-     &        (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
+          IF ((LDSTOP.OR.LDWRRE) .AND.  IRANK.EQ.1 ) THEN
             CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
             CALL DIFDATE (CDTPRO,CDATEF,IANALPD)
             IF (CDTPRO.LE.CDATEF) THEN
@@ -345,11 +331,9 @@
           ENDIF
         ENDIF
 
-        IF(LMESSPASS) THEN
-          CALL GSTATS(752,0)
-          CALL MPL_BARRIER(CDSTRING='WAMASSI 3:')
-          CALL GSTATS(752,1)
-        ENDIF
+        CALL GSTATS(752,0)
+        CALL MPL_BARRIER(CDSTRING='WAMASSI 3:')
+        CALL GSTATS(752,1)
       ENDIF
 
       IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND.                 &

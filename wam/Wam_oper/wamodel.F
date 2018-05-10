@@ -321,7 +321,7 @@
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
      &            LWAVEWIND
       USE YOWMLTSK , ONLY : NCHUNK
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
@@ -1216,11 +1216,9 @@
               MARSTYPE=MARSTYPEBAK
             ENDIF
 
-            IF(LMESSPASS) THEN
-              CALL GSTATS(753,0)
-              CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-             CALL GSTATS(753,1)
-            ENDIF
+            CALL GSTATS(753,0)
+            CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+            CALL GSTATS(753,1)
           ENDIF
         ENDIF
 
@@ -1244,46 +1242,33 @@
      &     " CDATES=", CDATES, "IREST=", IREST
         ENDIF
 
-        IF (CDATEE.EQ.CDTPRO) THEN
-
-!*    1.8.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
-!           INTEGRATED PARAMETERS OF ENTIRE GRID.
-!           ------------------------------------------
-
-!           SAVE INTEGRATED DATA FILE.
-
-          IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1))
-     &       .OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
-            ENDIF
-          ENDIF
-          IF (FFLAG20 .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) 
-     &       THEN
-              CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
-            ENDIF
+        IF (CDATEE.EQ.CDTPRO .AND. LOUTINT ) THEN
+!*    1.8.2 MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES
+!           ------------------------------------------------------------
+!         GRIB DATA IF FDB IS NOT USED: 
+          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+            CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
           ENDIF
 
-        END IF
-
-!NEST
-!       SAVE BOUNDARY VALUE FILE.
-
-        IF(CDTBC.EQ.CDTPRO) THEN
-          IF (IBOUNC.EQ.1) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              DO II=1,GBOUNC
-              CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
-     &          CBCPREF(II), 'S')
-              IF (CDTBC.LT.CDATEE)
-     &          CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
-     &                       TH(1), FR(1), IU19(II), IU06) 
-              ENDDO
-            ENDIF
+!         PURE BINARY DATA:
+          IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+            CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
           ENDIF
         ENDIF
 
+!NEST
+!       SAVE BOUNDARY VALUE FILE.
+        IF(CDTBC.EQ.CDTPRO) THEN
+          IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
+            DO II=1,GBOUNC
+            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
+     &        CBCPREF(II), 'S')
+            IF (CDTBC.LT.CDATEE)
+     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
+     &                     TH(1), FR(1), IU19(II), IU06) 
+            ENDDO
+          ENDIF
+        ENDIF
 !NEST
  
         LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
@@ -1357,8 +1342,7 @@
 !*    1.8.4 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
-            IF (LRST .AND.
-     &       (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
+            IF (LRST .AND. IRANK.EQ.1) THEN
               ICH = 7 
               CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
               IF (CDTPRO.LE.CDATEF) THEN
