@@ -138,7 +138,7 @@
       INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: BOUT 
+      REAL, DIMENSION(IJSLOC:IJLLOC,MAX(NIPRMOUT,1)) :: BOUT
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
@@ -206,7 +206,6 @@
 
 !         COMPUTE OUTPUT PARAMETERS
           IF(NIPRMOUT.GT.0) THEN
-            ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
             CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                        &
      &                  FL1, DEPTH(IJSLOC,1), XLLWS,                    &
      &                  BOUT)
@@ -214,8 +213,6 @@
 !           PRINT OUT NORMS
             CALL OUTWNORM(IJSLOC, IJLLOC, BOUT)
 
-
-            DEALLOCATE(BOUT)
           ENDIF
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT PREPARED IN OUTBS'

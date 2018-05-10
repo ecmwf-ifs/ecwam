@@ -393,7 +393,7 @@
 
       REAL :: ZHOOK_HANDLE
       REAL :: siz, avgU10NEW, avgHS, sumHS
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: BOUT
+      REAL, DIMENSION(IJSLOC:IJLLOC,MAX(NIPRMOUT,1)) :: BOUT
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
@@ -566,7 +566,6 @@
 
 !       COMPUTE OUTPUT PARAMETERS
         IF(NIPRMOUT.GT.0) THEN
-          ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
           CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                          &
      &                FL1, DEPTH(IJSLOC,1), XLLWS,                      &
      &                BOUT)
@@ -574,7 +573,6 @@
 !         PRINT OUT NORMS
           CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
 
-          DEALLOCATE(BOUT)
         ENDIF
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
@@ -1146,16 +1144,12 @@
 
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
-              ALLOCATE(BOUT(IJSLOC:IJLLOC,NIPRMOUT))
               CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                      &
      &                    FL3, DEPTH(IJSLOC,1), XLLWS,                  &
      &                    BOUT)
 
-!!! this where BOUT should be transfer to the IO server 
-
               CALL OUTWNORM(IJSLOC, IJLLOC, BOUT)
 
-              DEALLOCATE(BOUT)
             ENDIF
 
             IF (ITEST.GE.2) THEN

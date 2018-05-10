@@ -1,12 +1,9 @@
-      SUBROUTINE OUTWNORM(IJS, IJL, BOUT)
+      SUBROUTINE OUTWNORM(IJS,IJL,BOUT)
 
 ! ----------------------------------------------------------------------
 
 !**** *WAMNORM* - PRINTS AVERAGE, MINIMUM AND MAXIMUM VALUES OF
 !                 INTEGRATED PARAMETER FIELDS 
-
-!     J. BIDLOT       ECMWF   JULY  1998 
-!     D. PETTENUZZO   ADDED 9 NEW PARAMETERS FOR 3 WAVE TRAINS
 
 !*    PURPOSE.
 !     --------
@@ -57,8 +54,8 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
 
       INTEGER :: ITG, ITT, I
       INTEGER :: ISEND, IRECV, ITAG
