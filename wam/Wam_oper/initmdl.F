@@ -271,7 +271,7 @@
      &            ROAIRO   ,ZIDLOLD  ,
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,CDTBC    ,
+     &            CDTINTT  ,CDTINTS  ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
      &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
      &            ISHALLO  ,IREFRA   ,
@@ -946,10 +946,6 @@
         CDTINTT = ZERO
         CDTINTS = ZERO
       ENDIF
-
-        CDTSPT = ZERO
-
-        CDTSPS = ZERO
 
 !*    5.2 FILE DISPOSE TIME AND RESTART TIME.
 !         -----------------------------------

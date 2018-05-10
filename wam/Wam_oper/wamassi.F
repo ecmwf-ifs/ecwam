@@ -108,8 +108,8 @@
      &            FL1
       USE YOWSHAL  , ONLY : DEPTH 
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
+     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,
+     &            CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
      &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,
@@ -193,8 +193,7 @@
 
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
-        IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
-     &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
+        IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO) THEN
 
 !         OUTPUT POINT SPECTRA
           IF(NGOUT.GT.0 .OR. LLOUTERS) THEN

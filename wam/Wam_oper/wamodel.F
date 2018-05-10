@@ -332,8 +332,8 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            INDEP
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
+     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,
+     &            CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
      &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
      &            CDTBC    ,IDELBC   ,
@@ -397,7 +397,7 @@
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
-      CHARACTER(LEN=14) :: CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
+      CHARACTER(LEN=14) :: CDTINTTBAK,CDTINTSBAK
       CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
@@ -490,12 +490,8 @@
 
         CDTINTTBAK=CDTINTT
         CDTINTSBAK=CDTINTS
-        CDTSPTBAK=CDTSPT
-        CDTSPSBAK=CDTSPS
         CDTINTT=CDTPRO
         CDTINTS=CDTPRO
-        CDTSPT=CDTPRO
-        CDTSPS=CDTPRO
 
 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
@@ -679,8 +675,6 @@
         IF (NOUTT.GT.0) THEN
           CDTINTT = CZERO
           CDTINTS = CZERO
-          CDTSPT  = CZERO
-          CDTSPS  = CZERO
           DO J=1,NOUTT
             IF (CDTPRO.EQ.COUTT(J)) THEN
               IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
@@ -1091,19 +1085,12 @@
           ENDIF
 !NEST
 
-!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED IN COMMON.
-!*           SPECTRA ARE SAVED ON DISK AND PRINTED.
-!            -------------------------------------------------
+!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
+!            --------------------------------------
 
           IF (ITEST.GE.2) THEN
-            IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
      &         'OUTPUT? CDTINTT=',CDTINTT,' CDTINTS=',CDTINTS
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT? CDTSPT=',CDTSPT,' CDTSPS=',CDTSPS
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT? IG=',IG
-            ENDIF
           ENDIF
 
 #ifdef ECMWF
@@ -1131,7 +1118,6 @@
           CALL GSTATS(1909,1)
 
           IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
-     &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO .OR.
      &     LRST .OR.
      &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
