@@ -26,6 +26,7 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : FFLAG    ,PFLAG    ,GFLAG    ,NFLAG    ,
      &            NFLAGALL ,NTRAIN   ,IPFGTBL  ,JPPFLAG  ,COUTNAME ,    &
@@ -51,18 +52,22 @@
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
       USE MPL_MODULE
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(IN) :: BOUT
 
-      INTEGER :: ITG, ITT, I
-      INTEGER :: ISEND, IRECV, ITAG
-      INTEGER, DIMENSION(JPPFLAG) :: NAVG
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(4,JPPFLAG) :: WNORM
+      INTEGER(KIND=JWIM) :: ITG, ITT, I
+      INTEGER(KIND=JWIM) :: ISEND, IRECV, ITAG
+      INTEGER(KIND=JWIM), DIMENSION(JPPFLAG) :: NAVG
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(4,JPPFLAG) :: WNORM
+
       CHARACTER(LEN=47), DIMENSION(JPPFLAG) :: CNORMNAME
+
       LOGICAL, DIMENSION(JPPFLAG) :: LLPRNORM
 
 ! ----------------------------------------------------------------------
@@ -77,7 +82,7 @@
         IF(NFLAG(ITG).AND.(GFLAG(ITG).OR.FFLAG(ITG).OR.PFLAG(ITG))) THEN
           LLPRNORM(ITG)=.TRUE.
 !!!       all other cases are omitted until the output arrays are fused
-          WNORM(:,ITG)=0.
+          WNORM(:,ITG)=0._JWRB
           CNORMNAME(ITG)='not available '//COUTNAME(ITG)
 
           SELECT CASE (ITG)
@@ -117,7 +122,7 @@
         IF(IRANK.EQ.IRECV) THEN
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) '   WAMNORM ON ',CDTPRO
-          WRITE(IU06,*) '          AVERAGE            MINIMUM  ',
+          WRITE(IU06,*) '          AVERAGE            MINIMUM  ',       &
      &     '           MAXIMUM        SEA POINTS' 
           DO ITG = 1, JPPFLAG
             IF(LLPRNORM(ITG)) THEN
