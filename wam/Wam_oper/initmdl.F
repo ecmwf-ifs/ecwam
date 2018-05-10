@@ -118,11 +118,6 @@
 !           *IU23*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF SWELL AND WIND WAVES (ANALYSED)
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASS'
-!ASSI
-!           *IU25*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'OUT'
-!ASSI
 !           *IU27*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
 !                      (ANALYSED).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AUT'
@@ -296,7 +291,7 @@
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
      &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
-     &            IU23     ,IU25     ,IU27     ,IU28     ,
+     &            IU23     ,IU27     ,IU28     ,
      &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,
      &            IU38
@@ -419,9 +414,6 @@
 !ASSI
       IU22 = 22
       IU23 = 23
-!ASSI
-      IU25 = 25
-!ASSI
       IU27 = 27
       IU28 = 28
 !ASSI

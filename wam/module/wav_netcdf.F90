@@ -1426,7 +1426,10 @@ MODULE WAV_netcdf
         WRITE(740+MyRankGlobal,*) 'minval(FL3)=', minval(FL3(IJSLOC:IJLLOC,:,:))
         FLUSH(740+MyRankGlobal)
 # endif
-        CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:), IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IU25, IU26, LLOUTBS)
+!!!!!!!!!!        CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:), IJSLOC, IJLLOC, IJGLOBAL_OFFSET,)
+        write(*,*) '!!!!!!!!!!!! need to be adapted OUTBS has changed   !!!'
+        call abort
+
         DoNETCDF_sync=.FALSE.
         CALL WAV_netcdf_export
 # ifdef DEBUG

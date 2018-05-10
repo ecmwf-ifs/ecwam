@@ -117,7 +117,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
-     &            IU22     ,IU23     ,IU25     ,IU26     ,IU27     ,
+     &            IU22     ,IU23     ,IU27     ,
      &            IU28     ,IU04     ,IU32
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT

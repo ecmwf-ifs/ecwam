@@ -23,8 +23,6 @@
       INTEGER :: IU22
       INTEGER :: IU23
       INTEGER :: IU24
-      INTEGER :: IU25
-      INTEGER :: IU26
       INTEGER :: IU27
       INTEGER :: IU28
       INTEGER :: IUVELO

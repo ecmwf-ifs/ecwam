@@ -355,7 +355,7 @@
      &            LUPDTWGHT 
       USE YOWUNIT  , ONLY : IU02     ,IU08     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU19     ,IU20     ,IU21     ,
-     &            IU25     ,IU26     ,IU04     ,IU30
+     &            IU04     ,IU30
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
