@@ -19,11 +19,14 @@
 !     *N*    INTEGER  SIZE OF FLAG
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+ 
+! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: SET_WFLAGS
 
-      INTEGER :: N, IFLAG, IFL, NTRAIN
+      INTEGER(KIND=JWIM) :: N, IFLAG, IFL, NTRAIN
       LOGICAL :: FLAG(N)
 
       SET_WFLAGS=.FALSE.
