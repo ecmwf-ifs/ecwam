@@ -143,6 +143,7 @@
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT
+      LOGICAL :: LDREPROD
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -211,7 +212,9 @@
      &                  BOUT)
 
 !           PRINT OUT NORMS
-            CALL OUTWNORM(IJSLOC, IJLLOC, BOUT)
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+            LDREPROD=.TRUE.
+            CALL OUTWNORM(IJSLOC, IJLLOC, BOUT, LDREPROD)
 
           ENDIF
           IF (ITEST.GE.2) THEN

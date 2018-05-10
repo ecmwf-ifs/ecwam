@@ -404,6 +404,7 @@
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
+      LOGICAL :: LDREPROD
       LOGICAL :: NEWREAD
       LOGICAL, SAVE :: NEWFILE
       LOGICAL :: LLNONASSI
@@ -571,7 +572,9 @@
      &                BOUT)
 
 !         PRINT OUT NORMS
-          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+          LDREPROD=.TRUE.
+          CALL OUTWNORM(IJSLOC, IJLLOC, BOUT, LDREPROD)
 
         ENDIF
 
@@ -1148,7 +1151,9 @@
      &                    FL3, DEPTH(IJSLOC,1), XLLWS,                  &
      &                    BOUT)
 
-              CALL OUTWNORM(IJSLOC, IJLLOC, BOUT)
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+              LDREPROD=.TRUE.
+              CALL OUTWNORM(IJSLOC, IJLLOC, BOUT, LDREPROD)
 
             ENDIF
 
