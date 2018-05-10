@@ -211,7 +211,6 @@
 !       *OUTGRID*   - SAVE BLOCKED PARAMETERS INTO GRID ARRAYS.
 !       *OUTINT*    - OUTPUT OF INTEGRATED PARAMETERS.
 !       *OUTPP*     - WRITES GRIDDED FIELDS TO PRINTER.
-!       *OUTSPP*    - OUTPUT OF SPECTRA AT SELECTED POINTS.
 !       *PEAKFR*    - COMUTE PEAK FREQUENCY.
 !       *PROPAG*    - PROPAGATION SCHEME.
 !       *PRSPP*     - PRINT A SPECTRUM.
@@ -292,9 +291,9 @@
      &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
      &            NGOUT    ,LLOUTERS ,                                  &
      &            NIPRMOUT ,                                            &
-     &            LFDB     ,NOUTT    ,NOUTS    ,
-     &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
-     &            LRSTPARALW, LRSTINFDAT, 
+     &            LFDB     ,NOUTT    ,NOUTS    ,                        &
+     &            CASS     ,NASS     ,LOUTINT  ,                        &
+     &            LRSTPARALW, LRSTINFDAT,                               &
      &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
@@ -561,8 +560,7 @@
 !       OUTPUT POINT SPECTRA
         IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
           CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,                &
-     &                  FL1(IJSLOC:IJLLOC,:,:),                         &
-     &                  IG, IU25, IU26)
+     &                  FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
         ENDIF
 
 !       COMPUTE OUTPUT PARAMETERS
@@ -1141,8 +1139,7 @@
 !           OUTPUT POINT SPECTRA
             IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
               CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
-     &                      FL3(IJSLOC:IJLLOC,:,:),                     &
-     &                      IG, IU25, IU26)
+     &                      FL3(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
             ENDIF
 
 !           COMPUTE OUTPUT PARAMETERS

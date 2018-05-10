@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1, IG, IU25, IU26)
+      SUBROUTINE OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1, USTAR)
 ! ----------------------------------------------------------------------
 
 !**** *OUTWPSP* - MODEL OUTPUT OF SPECTRA AT GIVEN LOCATIONS 
@@ -11,21 +11,19 @@
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1, IG, IU25, IU26)
+!      *CALL*OUTWPSP (IJSLOC, IJLLOC, IJ_OFFSET, FL1
 !      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
 !      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
 !      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
 !                   only meaningful if unstructured grid
 !      *FL1*    - INPUT SPECTRUM.
-!      *IG*     - BLOCK NUMBER
-!      *IU25*   - OUTPUT UNIT FOR SPECTRA.
-!      *IU26*   - OUTPUT UNIT FOR SEA AND SWELL SPECTRA.
+!      *USTAR*  - FRICTION VELOCITY
 
 !     EXTERNALS.
 !     ----------
 
+!       *OUT_ONEGRDPT_SP* - ONE GRID POINT OUTPUT
 !       *OUTERS*    - OUTPUT OF SATELLITE COLOCATION SPECTRA.
-!       *OUTSPP*    - OUTPUT OF SPECTRA AT SELECTED POINTS.
 !   
 !     METHOD.
 !     -------
@@ -40,7 +38,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,CDTSPT   , CDTSPS  , MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -50,10 +48,10 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJSLOC, IJLLOC
       INTEGER(KIND=JWIM), INTENT(IN) :: IJ_OFFSET
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
-      INTEGER(KIND=JWIM), INTENT(IN) :: IU25, IU26 
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: USTAR 
 
+      INTEGER :: IJ, M, K,
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -61,20 +59,17 @@
       IF (LHOOK) CALL DR_HOOK('OUTWPSP',0,ZHOOK_HANDLE)
 #endif
 
-!*    1. OUTPUT OF SPECTRA AT SELECTED GRID POINTS.
-!        ------------------------------------------
+!*    OUTPUT OF SPECTRA FOR ONE GRID POINT SIMULATION
+!     -----------------------------------------------
 
-      IF (CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO) THEN
-        CALL OUTSPP (FL1, IJSLOC, IJLLOC, IJ_OFFSET, IG, IU25, IU26)
-        IF (ITEST.GE.3) THEN
-            WRITE(IU06,*) '      SUB. OUTWPSP: OUTPUT OF SPECTRA',      &
-     &       ' AT SELECTED POINTS DONE'
-        ENDIF
+      IF(CLDOMAIN.EQ.'s') THEN
+        DO IJ=IJSLOC, IJLLOC
+          CALL OUT_ONEGRDPT_SP(FL1(IJ:IJ,:,:),USTAR(IJ),CDTPRO)
+        ENDDO
       ENDIF
 
-
-!*    2. OUTPUT OF SPECTRA FOR SATELLITE COLLOCATION.
-!        --------------------------------------------
+!*    OUTPUT OF SPECTRA FOR SATELLITE COLLOCATION.
+!     --------------------------------------------
 
       IF (MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'4v') THEN
         IF (CDTPRO.NE.CDATEA) THEN

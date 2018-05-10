@@ -73,10 +73,8 @@
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWCOUT  , ONLY : FFLAG20  ,
-     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT,    &
-     &            NGOUT    ,LLOUTERS ,                                  &
-     &            NIPRMOUT ,                                            &
-     &            LRSTPARALW
+     &            GFLAG20  ,LFDB     ,LOUTINT  ,LWAMANOUT, NGOUT   ,    &
+     &            LOUTERS  ,NIPRMOUT ,LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -201,8 +199,8 @@
 !         OUTPUT POINT SPECTRA
           IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
             CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,              &
-     &                    FL1(IJSLOC:IJLLOC,:,:),                       &
-     &                    IG, IU25, IU26)
+     &                    FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+
           ENDIF
 
 !         COMPUTE OUTPUT PARAMETERS

@@ -1,83 +1,47 @@
-      SUBROUTINE OUT_ONEGRDPT_SP(SPEC,FR,TH,XLON,XLAT,CDTPRO,HS,
-     &              THQ,FMEAN,USTAR,THW,U10,IU06,IU25)
-!
+      SUBROUTINE OUT_ONEGRDPT_SP(SPEC,USTAR,CDTPRO)
+ 
 !--------------------------------------------------------------------
-!
+ 
 !*****OUT_ONEGRDPT_SP** OUTPUT OF A NUMBER OF INTEGRATED PARAMETERS AND
 !                       OF THE ONE AND TWO-DIMENSIONAL SPECTRUM AT
 !                       ONE GRID POINT.
 !
 !     P.JANSSEN JUNE 2005
-!
+ 
 !     PURPOSE
 !     -------
 !             TO OUTPUT INFORMATIONS AT A FIXED GRID POINT.
-!
+ 
 !     INTERFACE
 !     ---------
 !             *CALL* *OUT_ONEGRDPT_SP*
-!
+ 
 !           *SPEC*   -   TWO-DIMENSIONAL SPECTRA.
-!           *FR*     -   NFRE FREQUENCIES.
-!           *TH*     -   NANG DIRECTIONS.
-!           *XLON*   -   LONGITUDE.
-!           *XLAT*   -   LATITUDE.
-!           *CDTPRO* -   DATE TIME GROUP
-!           *HS*     -   SIGNIFICANT WAVE HEIGHT
-!           *TH_WA*  -   MEAN WAVE DIRECTION (DEGREES)
-!           *FMEAN*  -   MEAN PERIOD (F**-1 MOMENT)
 !           *USTAR*  -   FRICTION VELOCITY
-!           *THW*    -   WIND DIRECTION (DEGREES)
-!           *U10*    -   WINDSPEED AT 10 M HEIGHT
-!           *IU06*   -   FORMATTED WRITE UNIT 
-!           *IU25*   -   UNFORMATTED WRITE UNIT
-!
-!
-!
-!     METHOD
-!     ------
-!             NONE
-!
-!     EXTERNALS
-!     ---------
-!             NONE
-!
-!     REFERENCES
-!     ----------
-!             NONE
-!
+!           *CDTPRO* -   DATE TIME GROUP
 !--------------------------------------------------------------------
-!
-      USE YOWFRED  , ONLY : DELTH    ,FRATIO
+ 
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE     
       USE YOWPCONS , ONLY : G        ,ZPI      ,DEG      ,EPSMIN
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
  
-      INTEGER, INTENT(IN) :: IU06,IU25
-
-      REAL, INTENT(IN) :: XLON, XLAT, HS
-      REAL, INTENT(IN) :: THQ, FMEAN, USTAR, THW, U10
       REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: SPEC
-      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
-      REAL, DIMENSION(NANG), INTENT(IN) :: TH
+      REAL, INTENT(IN) :: USTAR
 
       CHARACTER(LEN=12), INTENT(IN) :: CDTPRO
-
 
       INTEGER ::  K, M
       INTEGER :: IU_SPEC
       INTEGER :: MMAX
-      REAL :: DUM, SUMMAX 
+      REAL :: SUMMAX 
       REAL :: FPK, X1, X2, X3, X4, X5, X6, AF, ASPF, AF2, ASPF2
       REAL, DIMENSION(NFRE) :: SPF
 
       CHARACTER(LEN=72) :: CPATH
-      CHARACTER(LEN=100) :: TITL
 
-      LOGICAL :: LPARAM
       LOGICAL, SAVE :: FRSTIME
 
       DATA FRSTIME/.TRUE./   
@@ -96,15 +60,6 @@
         FRSTIME = .FALSE.
       ENDIF
          
-      WRITE(IU25,60) XLAT,XLON,CDTPRO,U10,THW,USTAR
-
-      DUM=0.
-      WRITE(IU25,61) DUM,(TH(K)*DEG,K=1,NANG)
-
-      DO M=1,NFRE
-        WRITE(IU25,61) FR(M),(MIN(SPEC(K,M),999.),K=1,NANG)
-      ENDDO
-
       DO M=1,NFRE
         SPF(M) = 0.
         DO K=1,NANG 
@@ -119,7 +74,6 @@
           MMAX = M
         END IF
       ENDDO
-
 
       IF(SUMMAX.EQ.0.)THEN
          FPK=0.
@@ -142,16 +96,13 @@
          ASPF = (ZPI*FPK)**3/(G*USTAR)*SPF(M)
          AF2 = USTAR*FR(M)/G
          ASPF2 = ZPI**3*G**3/USTAR**5*SPF(M)
-!!         WRITE(IU_SPEC,62) XLON,XLAT,FR(M),SPF(M),AF,ASPF,AF2,ASPF2
-         WRITE(IU_SPEC,63) XLON,XLAT,FR(M),SPF(M)
+!!         WRITE(IU_SPEC,62) CDTPRO,FR(M),SPF(M),AF,ASPF,AF2,ASPF2
+         WRITE(IU_SPEC,63) CDTPRO,FR(M),SPF(M)
       ENDDO
 
- 60   FORMAT(1X,F7.3,1X,F8.3,1X,A12,3(1X,F8.4))
- 61   FORMAT(25(1X,F8.4))
- 62   FORMAT(4(1X,F8.4),1X,F10.6,E10.3)
- 63   FORMAT(2(1X,F8.4),2(1x,F14.10))
-!
+ 62   FORMAT(A12,1x,2(1X,F8.4),1X,F10.6,E10.3)
+ 63   FORMAT(A12,1x,2(1x,F14.10))
+ 
 ! -------------------------------------------------------------------
-!
-      RETURN
+ 
       END SUBROUTINE OUT_ONEGRDPT_SP

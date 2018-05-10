@@ -122,9 +122,6 @@
 !           *IU25*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
 !                      (FIRST GUESS).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'OUT'
-!           *IU26*   - OUTPUT UNIT OF SWELL SPECTRA AT CERTAIN POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'SWS'
 !ASSI
 !           *IU27*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
 !                      (ANALYSED).
@@ -243,7 +240,7 @@
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,
      &            FFLAG20  ,PFLAG20  ,GFLAG20  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
-     &            LWFLUXOUT,LOUTSPP
+     &            LWFLUXOUT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
      &            V
       USE YOWFPBO  , ONLY : IBOUNF
@@ -299,7 +296,7 @@
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
      &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
-     &            IU23     ,IU25     ,IU26     ,IU27     ,IU28     ,
+     &            IU23     ,IU25     ,IU27     ,IU28     ,
      &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,
      &            IU38
@@ -424,7 +421,6 @@
       IU23 = 23
 !ASSI
       IU25 = 25
-      IU26 = 26
 !ASSI
       IU27 = 27
       IU28 = 28
@@ -453,7 +449,6 @@
       ENDIF
 
       LOUTINT=.FALSE.
-      LOUTSPP=.FALSE.
 
       LUPDTWGHT=.TRUE.
 
