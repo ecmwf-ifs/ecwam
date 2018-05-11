@@ -270,6 +270,7 @@
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDTINTT  ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
+     &            IDELINT  ,
      &            ISHALLO  ,IREFRA   ,
      &            IPHYS    ,
      &            NPROMA_WAM,
