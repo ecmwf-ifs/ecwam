@@ -390,7 +390,6 @@
 
       REAL :: ZHOOK_HANDLE
       REAL :: siz, avgU10NEW, avgHS, sumHS
-      REAL, DIMENSION(IJSLOC:IJLLOC,MAX(NIPRMOUT,1)) :: BOUT
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
@@ -556,14 +555,12 @@
 
 !       COMPUTE OUTPUT PARAMETERS
         IF(NIPRMOUT.GT.0) THEN
-          CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                          &
-     &                FL1, DEPTH(IJSLOC,1), XLLWS,                      &
-     &                BOUT)
+          CALL OUTBS (MIJ, FL1, XLLWS)
 
 !         PRINT OUT NORMS
 !!!1 to do: decide if there are cased where we might want LDREPROD false
           LDREPROD=.TRUE.
-          CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT, LDREPROD)
+          CALL OUTWNORM
 
         ENDIF
 
@@ -606,7 +603,7 @@
 
           IF( .NOT. LRESTARTED ) THEN
             IF(NIPRMOUT.GT.0 ) THEN
-              CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
+              CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT)
             ENDIF
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
@@ -1118,13 +1115,11 @@
 
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
-              CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                      &
-     &                    FL3, DEPTH(IJSLOC,1), XLLWS,                  &
-     &                    BOUT)
+              CALL OUTBS (MIJ, FL3, XLLWS)
 
 !!!1 to do: decide if there are cased where we might want LDREPROD false
               LDREPROD=.TRUE.
-              CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT, LDREPROD)
+              CALL OUTWNORM
 
             ENDIF
 
@@ -1208,7 +1203,7 @@
             MARSTYPE='an'
           ENDIF
 
-          CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
+          CALL OUTWINT
 
           MARSTYPE=MARSTYPEBAK
 

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBLOCK (IJS, IJL, MIJ, IG,                           &
+      SUBROUTINE OUTBLOCK (IJS, IJL, MIJ,                               &
      &                     FL1, XLLWS, DPTH ,CGROUP,                    &
      &                     BOUT)
 ! ----------------------------------------------------------------------
@@ -14,13 +14,12 @@
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTBLOCK (IJS, IJL, MIJ, IG, 
+!      *CALL*OUTBLOCK (IJS, IJL, MIJ,
 !     &                FL1, XLLWS,  DPTH ,CGROUP,
 !     &                BOUT)
 !      *IJS* - INDEX OF FIRST LOCAL GRIDPOINT
 !      *IJL* - INDEX OF LAST LOCAL GRIDPOINT
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!      *IG*     - BLOCK NUMBER
 !      *FL1*    - INPUT SPECTRUM.
 !      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
 !      *DPTH*   - DEPTH
@@ -83,7 +82,6 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
@@ -91,6 +89,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,JPPFLAG), INTENT(OUT) :: BOUT
 
+      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM), PARAMETER :: NTEWH=6
       INTEGER(KIND=JWIM) :: IJ, K, M, ITG, IR, ITR, IH
       INTEGER(KIND=JWIM) :: IRA
@@ -125,6 +124,8 @@
 !     PREPARE THE WAVE SPECTRA THAt SHOULD BE USED FOR OUTPUT
 
       LLPEAKF = .FALSE.
+
+      IG =1
 
       IRA=1
       SIG = 1._JWRB

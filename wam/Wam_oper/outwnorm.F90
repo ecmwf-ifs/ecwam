@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWNORM(IJS, IJL, NBOUT, BOUT, LDREPROD)
+      SUBROUTINE OUTWNORM(LDREPROD)
 
 ! ----------------------------------------------------------------------
 
@@ -23,7 +23,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
-     &                      COUTNAME, ITOBOUT
+     &                      COUTNAME, ITOBOUT ,NIPRMOUT, BOUT
+      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP   , ONLY : IRANK   ,NPROC
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : CDTPRO
@@ -34,22 +35,20 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NBOUT
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NBOUT), INTENT(IN) :: BOUT
       LOGICAL, INTENT(IN) :: LDREPROD
 
       INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(4,NBOUT) :: WNORM
+      REAL(KIND=JWRB), DIMENSION(4,NIPRMOUT) :: WNORM
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
 #endif
-      IF(NFLAGALL .AND. NBOUT > 0) THEN
+      IF(NFLAGALL .AND. NIPRMOUT > 0) THEN
 
-       CALL MPMINMAXAVG(IJS, IJL, NBOUT, BOUT, ZMISS, LDREPROD, WNORM)
+       CALL MPMINMAXAVG(IJSLOC, IJLLOC, NIPRMOUT, BOUT, ZMISS, LDREPROD, WNORM)
 
         IRECV=1
 !       WRITE NORM TO LOGFILE

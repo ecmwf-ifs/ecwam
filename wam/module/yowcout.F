@@ -57,7 +57,9 @@
       INTEGER, PARAMETER :: MDEL=1
       INTEGER :: IPRMINFO(JPPFLAG,NIPRMINFO)
       INTEGER :: ITOBOUT(JPPFLAG)
-      INTEGER :: INFOBOUT(JPPFLAG,NINFOBOUT)
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: INFOBOUT
+
+      REAL, ALLOCATABLE, DIMENSION(:,:) :: BOUT
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -121,5 +123,6 @@
 !                            INFOBOUT(:,1)  : GRIB TABLE NUMBER.
 !                            INFOBOUT(:,2)  : GRIB PARAMETER IDENTIFIER.
 !                            INFOBOUT(:,3)  : GRIB REFERENCE LEVEL IN FULL METER.
+!      *BOUT*    REAL        CONTAINS THE LOCAL CONTRIBUTIONS OF INTEGRATED FIELDS THAT ARE ACTUALLY OUTPUT
 ! ----------------------------------------------------------------------
       END MODULE YOWCOUT

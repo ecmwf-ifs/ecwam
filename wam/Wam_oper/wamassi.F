@@ -136,7 +136,6 @@
       INTEGER, DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJSLOC:IJLLOC,MAX(NIPRMOUT,1)) :: BOUT
       REAL, DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
@@ -203,14 +202,12 @@
 
 !         COMPUTE OUTPUT PARAMETERS
           IF(NIPRMOUT.GT.0) THEN
-            CALL OUTBS (IJSLOC, IJLLOC, MIJ, IG,                        &
-     &                  FL1, DEPTH(IJSLOC,1), XLLWS,                    &
-     &                  BOUT)
+            CALL OUTBS (MIJ, FL1, XLLWS)
 
 !           PRINT OUT NORMS
 !!!1 to do: decide if there are cased where we might want LDREPROD false
             LDREPROD=.TRUE.
-            CALL OUTWNORM(IJSLOC, IJLLOC, NIPRMOUT, BOUT, LDREPROD)
+            CALL OUTWNORM
 
           ENDIF
           IF (ITEST.GE.2) THEN
@@ -227,7 +224,7 @@
 
       IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
 
-        CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT, BOUT)
+        CALL OUTWINT
 
         CALL GSTATS(752,0)
         CALL MPL_BARRIER(CDSTRING='WAMASSI 1:')

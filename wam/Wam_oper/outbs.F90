@@ -1,6 +1,4 @@
-      SUBROUTINE OUTBS (IJSLOC, IJLLOC, MIJ, IG,                        &
-     &                  FL1, DPTH, XLLWS,                               &
-     &                  BOUT)
+      SUBROUTINE OUTBS (MIJ, FL1, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *OUTBS* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
@@ -12,19 +10,10 @@
 
 !**   INTERFACE.
 !     ----------
-!      *CALL*OUTBS (IJSLOC, IJLLOC, MIJ, IG,
-!                   FL1, DPTH, XLLWS,
-!                   BOUT) 
-!      *IJSLOC* - INDEX OF FIRST LOCAL GRIDPOINT
-!      *IJLLOC* - INDEX OF LAST LOCAL GRIDPOINT
-!      *IJ_OFFSET* OFFSET to point IJSLOC and IJLLOC to the global block of data
-!                   only meaningful if unstructured grid
+!      *CALL*OUTBS (MIJ, FL1, XLLWS)
 !      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!      *IG*     - BLOCK NUMBER
 !      *FL1*    - INPUT SPECTRUM.
-!      *DPTH*   - DEPTH.
 !      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
-!      *BOUT*   - BLOCK OF SELECTED OUTPUT PARAMETERS.
 
 !     EXTERNALS.
 !     ----------
@@ -45,10 +34,11 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,NIPRMOUT
+      USE YOWCOUT  , ONLY : JPPFLAG  ,NIPRMOUT    ,BOUT
       USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : DEPTH       ,INDEP    , TCGOND
+      USE YOWSHAL  , ONLY : DEPTH       ,INDEP    ,TCGOND
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -56,14 +46,10 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJSLOC, IJLLOC
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
       INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: MIJ
            
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: DPTH 
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE), INTENT(IN) :: XLLWS 
-      REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NIPRMOUT), INTENT(OUT) :: BOUT
 
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
@@ -71,10 +57,8 @@
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NFRE) :: CGROUP 
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
-#endif
-!
+
 !  cgroup should be passed and used elsewhere
 !  to fix later !!!
       DO M=1,NFRE
@@ -95,9 +79,9 @@
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
-        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS), IG,                        &
+        CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                            &
      &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),         &
-     &                DPTH(KIJS), CGROUP(KIJS:KIJL,:),                  &
+     &                DEPTH(KIJS:KIJL,1), CGROUP(KIJS:KIJL,:),          &
      &                BOUT(KIJS:KIJL,:))
       ENDDO
 !$OMP END PARALLEL DO
@@ -108,8 +92,6 @@
      &     ' PARAMETERS COMPUTED FOR OUTPUT'
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBS',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE OUTBS
