@@ -222,18 +222,12 @@
 !     IDELALT: ALTIMETER DATA TIME WINDOW (in seconds).
 !     IDELINT: OUTPUT TIME STEP FOR INTEGRATED PARAMETER OF TOTAL SEA
 !              (if output times are not specified by namelist NAOT).
-!     IDELINS: OUTPUT TIME STEP INTEGRATED PARAMETER OF SWELL/WINDSEA
-!              (if output times are not specified by namelist NAOT).
-!     IDELSPT: OUTPUT TIME STEP for SPECTRUM OF TOTAL SEA AT SELECTED 
-!              GRID POINTS (see preproc).
-!     IDELSPS: OUTPUT TIME STEP for SPECTRUM OF SWELL AT SELECTED
-!              GRID POINTS (see preproc).
 !     IDELRES: OUTPUT TIME STEP for RESTART SPECTRA (if output times
 !              are not specified by namelist NAOS).
 !     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
-!     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT, IDELINS,
-!             IDELSPT, IDELSPS, IDELRES, IDELBC.
+!     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT,
+!             IDELRES, IDELBC.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
 !             are not specified by namelist NAOS).
 !     CDATES: LAST OUTPUT TIME ALLOWED BESIDE CDATER FOR RESTART SPECTRA
@@ -526,9 +520,13 @@
       IDELWI    =  0
       IDELALT   =  21600 
       IDELINT   =  0
+
+!!!! obsolete should be removed as soon as I can update scripts
       IDELINS   =  0
       IDELSPT   =  0
       IDELSPS   =  0
+!!!!
+
       IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
@@ -868,9 +866,6 @@
       IF (CLMTSU(4) .EQ. 'H') IDELWI  = IDELWI*3600
 !           **** OUTPUT TIME IN FIXED INTERVALS ****
       IF (CLOTSU(1) .EQ. 'H') IDELINT = IDELINT*3600
-      IF (CLOTSU(2) .EQ. 'H') IDELINS = IDELINS*3600
-      IF (CLOTSU(4) .EQ. 'H') IDELSPT = IDELSPT*3600
-      IF (CLOTSU(5) .EQ. 'H') IDELSPS = IDELSPS*3600
       IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
       IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
 

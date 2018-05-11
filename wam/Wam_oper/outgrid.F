@@ -1,4 +1,4 @@
-      SUBROUTINE OUTGRID (IJS, IJL, BOUT)
+      SUBROUTINE OUTGRID
 ! ----------------------------------------------------------------------
 
 !**** *OUTGRID* - OUTPUT OF WAVE ENERGY,MEAN ANGLE, MEAN FREQUENCY
@@ -28,11 +28,7 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *OUTGRID (IJS, IJL, BOUT)
-!         *IJS*    - INDEX OF FIRST LOCAL GRIDPOINT.
-!         *IJL*    - INDEX OF LAST LOCAL GRIDPOINT.
-!         *BOUT*   - BLOCk OF OUTPUT PARAMETERS
-
+!        *CALL* *OUTGRID
 
 !     EXTERNALS.
 !     ----------
@@ -60,8 +56,9 @@
       USE YOWPD, only : INE, npa, NP_RES =>np
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL,                &
-     &            NIPRMOUT, ITOBOUT
-      USE YOWCURR  , ONLY : U, V 
+     &            NIPRMOUT, ITOBOUT  ,BOUT
+      USE YOWCURR  , ONLY : U, V
+      USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC 
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH  ,
      &            CIBLOCK ,CITHICK 
       USE YOWINTP  , ONLY : GOUT
@@ -91,9 +88,6 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, INTENT(IN) :: BOUT(IJS:IJL,JPPFLAG)
-
       INTEGER, PARAMETER :: IG=1
       INTEGER :: IJ
       INTEGER :: ITT,ICT
@@ -113,12 +107,10 @@
       REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP 
       REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
 
-      LOGICAL :: LSQRT
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
-#endif
 
 !     FIND THE NUMBER OF FIELDS EACH PE HAS TO DEAL WITH
       NFLDPPE(:)=0
@@ -166,7 +158,7 @@
         DO ICT=1,JPPFLAG
           IF(IPFGTBL(ICT).NE.0) THEN 
             IPR=IPFGTBL(ICT)
-            DO IJ=IJS,IJL
+            DO IJ=IJSLOC,IJLLOC
               ICNT(IPR) = ICNT(IPR) + 1
               ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))
             ENDDO
@@ -179,7 +171,7 @@
         WRITE(0,*) '!!! ********************************* !!'
         CALL ABORT1
 
-        CALL SET_UP_ARR_OUT_RECV(IJS, IJL, BOUT, NFLDPPE)
+        CALL SET_UP_ARR_OUT_RECV(IJSLOC, IJLLOC, BOUT, NFLDPPE)
       END IF
 
 
@@ -234,7 +226,7 @@
 
       ICNT(:)=0
       ICT=1
-      IFLD=0
+      IFLD=1
       DO WHILE ( IFLD.LT.NFLDPPE(IRANK) .AND. ICT .LE. JPPFLAG )
         IF(IPFGTBL(ICT).EQ.IRANK ) THEN
           IF (.NOT.(LLUNSTR) .OR. (OUT_METHOD .eq. 1)) THEN
@@ -250,8 +242,7 @@
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
 
-          LSQRT=.FALSE.
-          CALL MAKEGRID (GTEMP,GOUT(ITOBOUT(ICT),:,:),IG,ZMISS)
+          CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),IG,ZMISS)
           IFLD=IFLD+1
 
         ENDIF ! (IPFGTBL) 
@@ -263,7 +254,6 @@
       IF(ALLOCATED(ZRECVBUF)) DEALLOCATE(ZRECVBUF)
       IF(ALLOCATED(ZSENDBUF)) DEALLOCATE(ZSENDBUF)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE OUTGRID

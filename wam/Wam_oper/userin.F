@@ -100,7 +100,7 @@
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELBC   ,
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
+     &            ICASE    ,ISHALLO  ,
      &            ISNONLIN ,
      &            IPHYS    ,
      &            IDAMPING ,
@@ -1458,37 +1458,6 @@
           WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
           WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ',
      &     IDELINT
-          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
-     &     IDELPRO
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND. IDELINS.EQ.0 ) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (SEA + SWELL) *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IDELINS                *'
-          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND.
-     &   MOD(IDELINS,IDELPRO).NE.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (SEA + SWELL) *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
-          WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINS = ',
-     &     IDELINS
           WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
      &     IDELPRO
           WRITE(IU06,*) '*                                         *'

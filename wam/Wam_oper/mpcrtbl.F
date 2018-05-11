@@ -37,10 +37,10 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : XNLEV
-      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,    &
-     &            NFLAG    ,IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,   &
-     &            ITOBOUT  ,NTRAIN   ,LLPARTITION, NIPRMINFO, IPRMINFO, &
-     &            NINFOBOUT,INFOBOUT ,IFRSTPARTI, BOUT
+      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
+     &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
+     &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
+     &            NINFOBOUT,INFOBOUT  ,IFRSTPARTI,BOUT
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
 !                            IPRMINFO(:,2)  : GRIB PARAMETER IDENTIFIER.
@@ -833,15 +833,14 @@
       ENDDO
 
 
+!     DETERMINE THE PROCERSSORS THAT WILL CARRY OUT THE OUTPUT
       NIPRMOUT=0
-
       IR=1
       DO IFLAG=1,JPPFLAG
-        IF(PFLAG(IFLAG).OR.FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.             &
-     &         NFLAG(IFLAG) ) THEN
+        IF(FFLAG(IFLAG).OR.GFLAG(IFLAG).OR.NFLAG(IFLAG)) THEN
 
-          IF(PFLAG(IFLAG).OR.FFLAG(IFLAG)) THEN
-!           in case of non grib output, redirect to PE 1 
+          IF(FFLAG(IFLAG)) THEN
+!!!!        IN CASE OF NON GRIB OUTPUT, REDIRECT TO PE 1 
             IPFGTBL(IFLAG)=1
           ELSE
             IPFGTBL(IFLAG)=IR

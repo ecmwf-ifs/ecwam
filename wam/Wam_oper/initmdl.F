@@ -270,7 +270,6 @@
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
      &            CDTINTT  ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
-     &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
      &            ISHALLO  ,IREFRA   ,
      &            IPHYS    ,
      &            NPROMA_WAM,
@@ -556,15 +555,6 @@
           ENDDO
           CALL INCDATE (COUTLST,-IDELINT)
         ENDIF
-
-        CDUM=CDATEA
-        IF (GFLAG20) THEN
-          DO WHILE (CDUM.LE.CDATEE.AND.IDELINS.GT.0)
-            CALL INCDATE (CDUM,IDELINS)
-          ENDDO
-          CALL INCDATE (CDUM,-IDELINS)
-        ENDIF
-        IF(CDUM.GT.COUTLST) COUTLST=CDUM
 
         IF(COUTLST.GT.CDATEE) COUTLST=CDATEE
       ENDIF
