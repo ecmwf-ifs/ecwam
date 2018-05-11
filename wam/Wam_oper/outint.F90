@@ -40,6 +40,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU20     ,IU30
       USE FDBSUBS_MOD
+      USE GRIB_API_INTERFACE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
