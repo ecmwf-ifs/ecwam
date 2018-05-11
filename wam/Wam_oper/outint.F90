@@ -27,7 +27,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
-     &            JPPFLAG  ,LFDB     ,IPFGTBL  ,LOUTINT
+     &            JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,INFOBOUT ,    &
+     &            LOUTINT
       USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
@@ -85,6 +86,7 @@
             WRITE (IU20) AMOWEP,AMOSOP,AMOEAP,AMONOP
             WRITE (IU20) ZDELLO, NLONRGG, DELPHI
             WRITE (IU20) GOUT(IFLAG,:,:)
+          ENDIF
         ENDDO
       ENDIF
 
