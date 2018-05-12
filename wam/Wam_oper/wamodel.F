@@ -603,7 +603,7 @@
 
           IF( .NOT. LRESTARTED ) THEN
             IF(NIPRMOUT.GT.0 ) THEN
-              CALL OUTWINT(IJSLOC, IJLLOC, NIPRMOUT)
+              CALL OUTWINT
             ENDIF
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
