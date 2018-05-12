@@ -31,18 +31,16 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NDIM
-      REAL(KIND=JWRB) :: ZMISS 
+      REAL(KIND=JWRB), INTENT(IN) :: ZMISS 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NDIM), INTENT(IN) :: BLOCK
       REAL(KIND=JWRB),DIMENSION(4,NDIM), INTENT(OUT) :: WNORM
       LOGICAL, INTENT(IN) :: LDREPROD
 
       INTEGER(KIND=JWIM) :: IJ, I
 
-      REAL(KIND=JWRB),DIMENSION(2*NDIM) :: ZMIN, ZMAX
+      REAL(KIND=JWRB),DIMENSION(NDIM) :: ZMIN, ZMAX
       REAL(KIND=JWRB),DIMENSION(2*NDIM) :: ZSUM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-
-
 !     -------------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)
 
@@ -54,7 +52,7 @@
         DO IJ=IJS,IJL
           IF(BLOCK(IJ,I) /= ZMISS) THEN
             ZSUM(I) = ZSUM(I) + BLOCK(IJ,I)
-            ZSUM(2*I) = ZSUM(2*I) + 1.0_JWRB
+            ZSUM(NDIM+I) = ZSUM(NDIM+I) + 1.0_JWRB
             ZMIN(I) = MIN(ZMIN(I), BLOCK(IJ,I))
             ZMAX(I) = MAX(ZMAX(I), BLOCK(IJ,I))
           ENDIF
@@ -71,7 +69,7 @@
       DO I=1,NDIM
         WNORM(1,I)=ZMIN(I)
         WNORM(2,I)=ZMAX(I)
-        WNORM(4,I)=ZSUM(2*I)
+        WNORM(4,I)=ZSUM(NDIM+I)
         IF (WNORM(4,I)<1.0_JWRB) THEN
           WNORM(3,I)=-HUGE(WNORM(3,I))
         ELSE

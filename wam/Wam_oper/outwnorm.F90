@@ -43,9 +43,8 @@
       REAL(KIND=JWRB), DIMENSION(4,NIPRMOUT) :: WNORM
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
-#endif
+
       IF(NFLAGALL .AND. NIPRMOUT > 0) THEN
 
        CALL MPMINMAXAVG(IJSLOC, IJLLOC, NIPRMOUT, BOUT, ZMISS, LDREPROD, WNORM)
@@ -78,8 +77,6 @@
 
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE OUTWNORM
