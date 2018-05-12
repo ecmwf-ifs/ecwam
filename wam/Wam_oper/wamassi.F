@@ -207,7 +207,7 @@
 !           PRINT OUT NORMS
 !!!1 to do: decide if there are cased where we might want LDREPROD false
             LDREPROD=.TRUE.
-            CALL OUTWNORM
+            CALL OUTWNORM(LDREPROD)
 
           ENDIF
           IF (ITEST.GE.2) THEN
