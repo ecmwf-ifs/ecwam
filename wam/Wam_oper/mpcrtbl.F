@@ -103,10 +103,12 @@
       COUTNAME(IR)=' FRICTION VELOCITY ...............'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=084   !!! use a spare extra parameter number
-      WRITE(IU06,*) ' ******************* NOTE ********************'
-      WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
-      WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
-      WRITE(IU06,*) ' '
+      IF(GFLAG(IR) ) THEN
+        WRITE(IU06,*) ' ******************* NOTE ********************'
+        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
+        WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
+        WRITE(IU06,*) ' '
+      ENDIF
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
       IPRMINFO(IR,5)=1
@@ -171,10 +173,12 @@
       COUTNAME(IR)=' WAVE STRESS ....................'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=083   !!! use a spare extra parameter number
-      WRITE(IU06,*) ' ******************* NOTE ********************'
-      WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
-      WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
-      WRITE(IU06,*) ' '
+      IF(GFLAG(IR) ) THEN
+        WRITE(IU06,*) ' ******************* NOTE ********************'
+        WRITE(IU06,*) ' GRIB OUTPUT POSSIBLE FOR ', COUTNAME(IR)
+        WRITE(IU06,*) ' USING SPARE PARAMETER NUMBER ', IPRMINFO(IR,2)
+        WRITE(IU06,*) ' '
+      ENDIF
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
       IPRMINFO(IR,5)=1

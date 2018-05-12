@@ -69,8 +69,8 @@
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV 
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
-     &            FFLAG20  ,PFLAG    ,
-     &            PFLAG20  ,GFLAG    ,
+     &            FFLAG20  ,
+     &            GFLAG    ,
      &            GFLAG20  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
@@ -336,7 +336,6 @@
       ENDIF
 
       FFLAG20 = SET_WFLAGS(FFLAG,JPPFLAG)
-      PFLAG20 = SET_WFLAGS(PFLAG,JPPFLAG)
       GFLAG20 = SET_WFLAGS(GFLAG,JPPFLAG)
       NFLAGALL= SET_WFLAGS(NFLAG,JPPFLAG) 
 
@@ -909,12 +908,13 @@
 
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                                 LOGFILE    FILE ',&
-     &'   GRIB     OUT PE'
+      WRITE(IU06,*) '                          FILE     GRIB     OUT PE'
       DO ITG = 1,JPPFLAG
+        IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
-        WRITE(IU06,*) CITG,COUTNAME(ITG), PFLAG(ITG),                   &
-     &   '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
+        WRITE(IU06,*) CITG,COUTNAME(ITG),                               &
+     &   '.....', FFLAG(ITG),'....',GFLAG(ITG),'....',IPFGTBL(ITG)
+        ENDIF
       ENDDO
       WRITE(IU06,*) ''
 
@@ -1433,7 +1433,7 @@
           ENDIF
         ENDDO
       ELSE
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
+        IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1446,7 +1446,7 @@
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND.
+        IF ((FFLAG20.OR.GFLAG20) .AND.
      &   MOD(IDELINT,IDELPRO).NE.0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'

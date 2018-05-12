@@ -106,7 +106,6 @@
         FM(IJ) = FM(IJ)+DELT2*TEMP2(IJ)
         FM(IJ) = EM(IJ)/FM(IJ)
         FM(IJ) = MAX(FM(IJ),FR(1))
-        IF(FM(IJ).LT.FR(1)) FM(IJ)=FR(NFRE)
       ENDDO
 
 #ifdef ECMWF

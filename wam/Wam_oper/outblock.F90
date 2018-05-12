@@ -59,7 +59,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NTRAIN   ,JPPFLAG  ,IPFGTBL  ,LSECONDORDER, &
+      USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
       USE YOWCURR  , ONLY : U, V
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
@@ -78,7 +78,6 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -87,7 +86,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DPTH 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,JPPFLAG), INTENT(OUT) :: BOUT
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(OUT) :: BOUT
 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM), PARAMETER :: NTEWH=6
@@ -170,7 +169,13 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
-        BOUT(IJS:IJL,ITOBOUT(IR))=1._JWRB/FM(IJS:IJL)
+        DO IJ=IJS,IJL
+          IF(FM(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
       ENDIF
 
       IR=IR+1
@@ -187,12 +192,18 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
-        BOUT(IJS:IJL,ITOBOUT(IR))=1._JWRB/FP(IJS:IJL)
+        DO IJ=IJS,IJL
+          IF(FP(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FP(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-!!     if the numerical computation of TAU and CD change, a similar
+!!     if the numerical computation of TAU and CD changes, a similar
 !!     modification has to be put in buildstress where the friction
 !!     velocity is determined from U10 and CD.
         BOUT(IJS:IJL,ITOBOUT(IR))=MAX(USNEW(IJS:IJL)**2,EPSUS)/MAX(U10NEW(IJS:IJL)**2,EPSU10)
@@ -240,13 +251,25 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
-        BOUT(IJS:IJL,ITOBOUT(IR))=1._JWRB/FSEA(IJS:IJL)
+        DO IJ=IJS,IJL
+          IF(FSEA(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
-        BOUT(IJS:IJL,ITOBOUT(IR))=1._JWRB/FSWELL(IJS:IJL)
+        DO IJ=IJS,IJL
+          IF(FSWELL(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSWELL(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
       ENDIF
 
       IR=IR+1
@@ -454,18 +477,30 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=NEMOSST(IJS:IJL)
+        IF(.NOT. ALLOCATED(NEMOSST)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOSST(IJS:IJL)
+        ENDIF
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCICOVER(IJS:IJL)
+        IF(.NOT. ALLOCATED(NEMOCICOVER)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCICOVER(IJS:IJL)
+        ENDIF
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
         IF (LNEMOCITHICK) THEN
-          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCITHICK(IJS:IJL)
+          IF(.NOT. ALLOCATED(NEMOCITHICK)) THEN
+            BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+          ELSE
+            BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCITHICK(IJS:IJL)
+          ENDIF
         ELSE
           BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
         ENDIF
@@ -473,12 +508,20 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=NEMOUCUR(IJS:IJL)
+        IF(.NOT. ALLOCATED(NEMOUCUR)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOUCUR(IJS:IJL)
+        ENDIF
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=NEMOVCUR(IJS:IJL)
+        IF(.NOT. ALLOCATED(NEMOVCUR)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOVCUR(IJS:IJL)
+        ENDIF
       ENDIF
 
       IR=IR+1
