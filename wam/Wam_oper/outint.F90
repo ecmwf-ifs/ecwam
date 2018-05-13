@@ -72,6 +72,9 @@
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
 !        i.e BOUT => GOUT
 !        ---------------------------------------------------------
+!!!debile
+        write(*,*) 'before OUTGRID'
+
       CALL OUTGRID
 
 !!!debile
