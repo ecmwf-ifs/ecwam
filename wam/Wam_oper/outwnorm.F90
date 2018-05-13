@@ -58,8 +58,8 @@
           ELSE
             WRITE(IU06,*) '  NON reproduceable WAMNORM ON ',CDTPRO
           ENDIF
-          WRITE(IU06,*) '          AVERAGE            MINIMUM  ',       &
-     &     '           MAXIMUM        NON MISSING POINTS   NPROC'
+          WRITE(IU06,*) '          AVERAGE               MINIMUM  ',    &
+     &     '           MAXIMUM        NON MISSING POINTS      NPROC'
           DO ITG=1,JPPFLAG
             IF(NFLAG(ITG)) THEN
               IT = ITOBOUT(ITG)

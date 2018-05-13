@@ -13,6 +13,7 @@
 
 !     EXTERNALS.
 !     ----------
+!       *OUTGRID*
 !       *WGRIBENOUT*
 
 !     METHOD.
@@ -47,7 +48,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
-      INTEGER(KIND=JWIM) :: IGLOBAL,ILOCAL      ! FDB field counters
+      INTEGER(KIND=JWIM) :: IGLOBAL, ILOCAL      ! FDB field counters
       INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV
       INTEGER(KIND=JWIM) :: IERR
       INTEGER(KIND=JWIM) :: IUOUT 
@@ -69,8 +70,12 @@
       LOUTINT=.TRUE.
 
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
+!        i.e BOUT => GOUT
 !        ---------------------------------------------------------
       CALL OUTGRID
+
+!!!debile
+        wrtite(*,*) 'after OUTGRID'
 
 
 !     2. ONE GRID POINT OUTPUT
@@ -203,6 +208,11 @@
         ENDIF
 
       ENDIF ! end grib output
+
+!     CLEAN-UP
+      IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
+
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('OUTINT',1,ZHOOK_HANDLE)

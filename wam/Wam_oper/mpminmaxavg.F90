@@ -67,13 +67,13 @@
       ENDIF
 
       DO I=1,NDIM
-        WNORM(1,I)=ZMIN(I)
-        WNORM(2,I)=ZMAX(I)
+        WNORM(2,I)=ZMIN(I)
+        WNORM(3,I)=ZMAX(I)
         WNORM(4,I)=ZSUM(NDIM+I)
         IF (WNORM(4,I)<1.0_JWRB) THEN
-          WNORM(3,I)=-HUGE(WNORM(3,I))
+          WNORM(1,I)=-HUGE(WNORM(3,I))
         ELSE
-          WNORM(3,I)=ZSUM(I)/WNORM(4,I)
+          WNORM(1,I)=ZSUM(I)/WNORM(4,I)
         ENDIF
       ENDDO
 
