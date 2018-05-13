@@ -616,7 +616,6 @@
           ENDIF
 
           CDTINTT=CDTINTTBAK
-          CDTINTS=CDTINTSBAK
 
           IF(LGRHDIFS) THEN
             LRSTST0=.FALSE.
