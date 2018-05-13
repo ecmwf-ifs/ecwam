@@ -75,7 +75,7 @@
       CALL OUTGRID
 
 !!!debile
-        wrtite(*,*) 'after OUTGRID'
+        write(*,*) 'after OUTGRID'
 
 
 !     2. ONE GRID POINT OUTPUT
