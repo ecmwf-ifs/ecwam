@@ -35,6 +35,7 @@
 
 !!!  BOUT(IJSLOC:IJLLOC,NIPRMOUT) contains the local contributions of the NIPRMOUT integrated parameters
 !!!  that will need to be output
+!!!! NIPRMOUT is not always the same as the model could output less at step 0
 !!!  These parameters are defined with INFOBOUT(NIPRMOUT,NINFOBOUT), where
 !    INFOBOUT(:,1)  : GRIB TABLE NUMBER.
 !    INFOBOUT(:,2)  : GRIB PARAMETER IDENTIFIER.

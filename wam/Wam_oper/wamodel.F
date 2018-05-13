@@ -284,10 +284,9 @@
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,
-     &            PFLAG20  ,
-     &            GFLAG20  ,
-     &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
+     &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
+     &            IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
      &            NGOUT    ,LLOUTERS ,                                  &
      &            NIPRMOUT ,                                            &
      &            LFDB     ,NOUTT    ,NOUTS    ,                        &
@@ -405,7 +404,7 @@
       LOGICAL, SAVE :: NEWFILE
       LOGICAL :: LLNONASSI
       LOGICAL :: DO_UPDATE_WIND_FLUX
-      LOGICAL :: FFLAGBAK(JPPFLAG), PFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
+      LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
 
@@ -553,17 +552,6 @@
      &                  FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
         ENDIF
 
-!       COMPUTE OUTPUT PARAMETERS
-        IF(NIPRMOUT.GT.0) THEN
-          CALL OUTBS (MIJ, FL1, XLLWS)
-
-!         PRINT OUT NORMS
-!!!1 to do: decide if there are cased where we might want LDREPROD false
-          LDREPROD=.TRUE.
-          CALL OUTWNORM(LDREPROD)
-
-        ENDIF
-
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
 
@@ -574,31 +562,39 @@
 
           IF(LFRSTFLD) THEN
             FFLAGBAK=FFLAG
-            PFLAGBAK=PFLAG
             GFLAGBAK=GFLAG
             MARSTYPEBAK=MARSTYPE
             IF(MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'an') THEN
               IF(.NOT.LNOCDIN) THEN
-                FFLAG(7)=.FALSE.
-                PFLAG(7)=.FALSE.
-                GFLAG(7)=.FALSE.
+                FFLAG(IRCD)=.FALSE.
+                GFLAG(IRCD)=.FALSE.
               ENDIF
               IF(LWAVEWIND) THEN
-                FFLAG(10)=.FALSE.
-                PFLAG(10)=.FALSE.
-                GFLAG(10)=.FALSE.
+                FFLAG(IRU10)=.FALSE.
+                GFLAG(IRU10)=.FALSE.
               ENDIF
-              GFLAG(22)=.FALSE.
-              GFLAG(23)=.FALSE.
-              GFLAG(24)=.FALSE.
+              GFLAG(IRALTHS)=.FALSE.
+              GFLAG(IRALTHSC)=.FALSE.
+              GFLAG(IRALTRC)=.FALSE.
               MARSTYPE='an'
             ENDIF
+!           change the output flags need to reset mapping
+            CALL MPCRTBL
           ENDIF
 !         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
 !         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
 !         THE START OF THE RUN.
           IF(LGRHDIFS) THEN
              LRSTST0=.TRUE.
+          ENDIF
+
+!         COMPUTE OUTPUT PARAMETERS
+          IF(NIPRMOUT.GT.0) THEN
+            CALL OUTBS (MIJ, FL1, XLLWS)
+!           PRINT OUT NORMS
+!!!1 to do: decide if there are cases where we might want LDREPROD false
+            LDREPROD=.TRUE.
+            CALL OUTWNORM(LDREPROD)
           ENDIF
 
           IF( .NOT. LRESTARTED ) THEN
@@ -620,9 +616,31 @@
           IF(LFRSTFLD) THEN
             MARSTYPE=MARSTYPEBAK
             FFLAG=FFLAGBAK
-            PFLAG=PFLAGBAK
             GFLAG=GFLAGBAK
             LFRSTFLD=.FALSE.
+!           change the output flags need to reset mapping
+            CALL MPCRTBL
+          ENDIF
+!         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
+!         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
+!         THE START OF THE RUN.
+          IF(LGRHDIFS) THEN
+             LRSTST0=.TRUE.
+          ENDIF
+
+!         COMPUTE OUTPUT PARAMETERS
+          IF(NIPRMOUT.GT.0) THEN
+            CALL OUTBS (MIJ, FL1, XLLWS)
+
+!           PRINT OUT NORMS
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+            LDREPROD=.TRUE.
+            CALL OUTWNORM(LDREPROD)
+          ENDIF
+
+          IF( .NOT. LRESTARTED ) THEN
+            IF(NIPRMOUT.GT.0 ) THEN
+            CALL MPCRTBL
           ENDIF
 
           CDTINTT=CDTINTTBAK
@@ -667,11 +685,11 @@
           CDTINTT = CZERO
           DO J=1,NOUTT
             IF (CDTPRO.EQ.COUTT(J)) THEN
-              IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
+              IF (FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
             ENDIF
           ENDDO
         ELSE
-          IF ((PFLAG20.OR.FFLAG20.OR.GFLAG20) .AND.
+          IF ((FFLAG20.OR.GFLAG20) .AND.
      &         CDTINTT.LT.CDTPRO)
      &     CALL INCDATE (CDTINTT,IDELINT)
         ENDIF

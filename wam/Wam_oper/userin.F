@@ -73,6 +73,7 @@
      &            GFLAG    ,
      &            GFLAG20  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
+     &            IRCD     ,IRU10    ,
      &            NASS     ,JPPFLAG  ,
      &            LRSTPARALR, LRSTPARALW,
      &            COUTNAME,
@@ -963,7 +964,8 @@
         GFLAG( 2) = .TRUE.
         GFLAG( 3) = .TRUE.
         GFLAG( 6) = .TRUE.
-        GFLAG( 7) = .TRUE.
+        GFLAG(IRCD) = .TRUE.
+        GFLAG(IRU10)= .TRUE.
         GFLAG(15) = .TRUE.
         GFLAG(16) = .TRUE.
         GFLAG(17) = .TRUE.
