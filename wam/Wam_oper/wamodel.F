@@ -480,10 +480,6 @@
 !#endif
 
       IF (DO_UPDATE_WIND_FLUX) THEN
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-        HAVE_NEW_COUPLING_FIELDS=.FALSE.
-#endif
-
         CDTINTTBAK=CDTINTT
         CDTINTT=CDTPRO
 
@@ -554,10 +550,9 @@
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
-
-        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.
-     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.
-     &      LANAONLY         .OR. LFRSTFLD             )
+        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.                 &
+     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.                 &
+     &      LANAONLY         .OR. LFRSTFLD             )                &
      &     .AND. LWAMANOUT) THEN
 
           IF(LFRSTFLD) THEN
@@ -598,9 +593,7 @@
           ENDIF
 
           IF( .NOT. LRESTARTED ) THEN
-            IF(NIPRMOUT.GT.0 ) THEN
-              CALL OUTWINT
-            ENDIF
+            IF(NIPRMOUT.GT.0 ) CALL OUTWINT
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
               CALL OUTWSPEC(FL1)
@@ -621,29 +614,9 @@
 !           change the output flags need to reset mapping
             CALL MPCRTBL
           ENDIF
-!         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
-!         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
-!         THE START OF THE RUN.
-          IF(LGRHDIFS) THEN
-             LRSTST0=.TRUE.
-          ENDIF
-
-!         COMPUTE OUTPUT PARAMETERS
-          IF(NIPRMOUT.GT.0) THEN
-            CALL OUTBS (MIJ, FL1, XLLWS)
-
-!           PRINT OUT NORMS
-!!!1 to do: decide if there are cased where we might want LDREPROD false
-            LDREPROD=.TRUE.
-            CALL OUTWNORM(LDREPROD)
-          ENDIF
-
-          IF( .NOT. LRESTARTED ) THEN
-            IF(NIPRMOUT.GT.0 ) THEN
-            CALL MPCRTBL
-          ENDIF
 
           CDTINTT=CDTINTTBAK
+          CDTINTS=CDTINTSBAK
 
           IF(LGRHDIFS) THEN
             LRSTST0=.FALSE.
