@@ -115,7 +115,7 @@
         ICNT(:)=0
         DO ICT=1,JPPFLAG
           IPR=IPFGTBL(ICT)
-          IF(IPR.NE.0) THEN 
+          IF(IPR.GT.0) THEN 
             DO IJ=IJSLOC,IJLLOC
               ICNT(IPR) = ICNT(IPR) + 1
               ZSENDBUF(ICNT(IPR),IPR) = BOUT(IJ,ITOBOUT(ICT))

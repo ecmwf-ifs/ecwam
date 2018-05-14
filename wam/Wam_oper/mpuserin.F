@@ -51,6 +51,7 @@
      &            GFLAG20  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
+     &            IRWDIR   , IRCD    ,IRU10    ,                        &
      &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,
      &            NTRAIN   ,
      &            IPFGTBL  ,
@@ -532,17 +533,18 @@
       CDATECURA = ZERO
       CDATER    = ZERO
       CDATES    = ZERO
-      PFLAG     = .FALSE. 
-      FFLAG     = .FALSE. 
-!     note: if IREST>0 then GFLAG(7) and GFLAG(10) will always be reset
+      PFLAG(:)  = .FALSE. 
+      FFLAG(:)  = .FALSE. 
+!     note: if IREST>0 then GFLAG(IR) for IR=IRWDIR, IRCD, IRU10 will always be reset
 !     true if grib restart files are requested (LGRIBOUT=.true.).
 !     see below.
-      GFLAG     = .FALSE.
-      NFLAG     = .FALSE. 
+      GFLAG(:)  = .FALSE.
+      NFLAG(:)  = .FALSE. 
       NFLAG(1)  = .TRUE. 
       NFLAG(6)  = .TRUE. 
-      NFLAG(7)  = .TRUE. 
-      NFLAG(10) = .TRUE. 
+      NFLAG(IRWDIR)= .TRUE. 
+      NFLAG(IRCD)  = .TRUE. 
+      NFLAG(IRU10) = .TRUE. 
 
       LLOUTERS = .FALSE.
 

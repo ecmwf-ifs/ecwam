@@ -75,13 +75,7 @@
 !     1. COLLECT INTEGRATED PARAMETERS FOR OUTPUT ON SELECTED PE's 
 !        i.e BOUT => GOUT
 !        ---------------------------------------------------------
-!!!debile
-        write(*,*) 'before OUTGRID'
-
       CALL OUTGRID
-
-!!!debile
-        write(*,*) 'after OUTGRID'
 
 
 !     2. ONE GRID POINT OUTPUT
@@ -137,9 +131,12 @@
               ENDIF
 
               IT=ITOBOUT(IFLAG)
-              IPARAM=INFOBOUT(IT,2)
               ITABLE=INFOBOUT(IT,1)
+              IPARAM=INFOBOUT(IT,2)
               IZLEV=INFOBOUT(IT,3)
+
+!!!1debile
+             write(*,*) 'debile outint ',IT,ITABLE,IPARAM,IZLEV
 
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ILOCAL,:,:),  &
      &                        ITABLE, IPARAM, IZLEV, 0 , 0,             &

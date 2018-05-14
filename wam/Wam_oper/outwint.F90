@@ -17,7 +17,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : JPPFLAG ,ITOBOUT, NIPRMOUT , NINFOBOUT,     &
+      USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
      &                      INFOBOUT,BOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,              &
