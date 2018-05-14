@@ -210,7 +210,7 @@
               TAUOC=1.0
             ENDIF
 
-            WRITE(IU_INTP,60) NGY-J+1,DEPTHG(I,J),ITIME/3600.,
+            WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.,
      &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,
      &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),
      &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,
@@ -218,7 +218,7 @@
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,
      &                       PHIOC, TAUOC 
 
-            WRITE(IU06,61) NGY-J+1,DEPTHG(I,J),ITIME/3600.,
+            WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.,
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,
      &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,
      &                     USTAR,CD,BETA,T10,FETCH10,E10,
