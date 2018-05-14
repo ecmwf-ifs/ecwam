@@ -45,18 +45,35 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-      IMPLICIT NONE
+     IMPLICIT NONE
+
+      INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
+      INTEGER(KIND=JWIM) :: IGLOBAL, ILOCAL      ! FDB field counters
+      INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV
+      INTEGER(KIND=JWIM) :: IERR
+      INTEGER(KIND=JWIM) :: IUOUT 
+      INTEGER(KIND=JWIM) :: IFCST, INHOUR, ISHIFT
+      INTEGER(KIND=JWIM) :: IY,IM,ID,IH,IMN,ISS
   
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
+      CHARACTER(LEN=14) :: CDATE, CDATE1, CDATE2
+      CHARACTER(LEN=24) :: OFILENAME
+
+      LOGICAL, SAVE :: FRSTIME30
+
+      DATA FRSTIME30 / .TRUE. /
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTINT',0,ZHOOK_HANDLE)
 
       write(*,*) ' hello world !'
 
+      LOUTINT=.TRUE
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('OUTINT',1,ZHOOK_HANDLE)
+
 
       END SUBROUTINE OUTINT
