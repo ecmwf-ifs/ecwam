@@ -84,6 +84,87 @@
         write(*,*) 'after OUTGRID'
 
 
+!     2. ONE GRID POINT OUTPUT
+!        ---------------------
+      IF(CLDOMAIN.EQ.'s') CALL OUT_ONEGRDPT(IU06)
+
+
+!*    3. OUTPUT IN PURE BINARY FORM
+!        --------------------------
+      IF(FFLAG20 .AND. CDTINTT.EQ.CDTPRO ) THEN
+        DO IFLAG=1,JPPFLAG
+          IF (FFLAG(IFLAG) .AND. IRANK.EQ.IPFGTBL(IFLAG)) THEN
+            WRITE (IU20) CDTPRO, NGX, NGY, IRGG
+            WRITE (IU20) AMOWEP,AMOSOP,AMOEAP,AMONOP
+            WRITE (IU20) ZDELLO, NLONRGG, DELPHI
+            WRITE (IU20) GOUT(IFLAG,:,:)
+          ENDIF
+        ENDDO
+      ENDIF
+
+!*    4.  PACK INTEGRATED PARAMETERS INTO GRIB AND OUTPUT
+!         -----------------------------------------------
+      IF (GFLAG20 .AND. CDTINTT.EQ.CDTPRO ) THEN
+
+!       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
+        IF(.NOT.LFDB) THEN
+            WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
+            IF (FRSTIME30) THEN
+              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
+              FRSTIME30=.FALSE.
+            ELSE
+              CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
+            ENDIF
+        ELSE
+          IUOUT=0
+        ENDIF
+
+!       OUTPUT:
+        IGLOBAL=0
+        ILOCAL=0
+        DO IFLAG=1,JPPFLAG
+          IF (GFLAG(IFLAG)) THEN
+            IGLOBAL=IGLOBAL+1
+            IF (IRANK.EQ.IPFGTBL(IFLAG)) THEN
+              ILOCAL=ILOCAL+1
+              IF(ILOCAL.GT. SIZE(GOUT,1)) THEN
+                WRITE(*,*) ' -------------------------------------'
+                WRITE(*,*) ' ERROR in OUTINT '
+                WRITE(*,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
+                WRITE(*,*) ' SIZE(GOUT,1) = ',SIZE(GOUT,1) 
+                WRITE(*,*) ' -------------------------------------'
+                CALL ABORT1
+              ENDIF
+
+              IT=ITOBOUT(IFLAG)
+              IPARAM=INFOBOUT(IT,2)
+              ITABLE=INFOBOUT(IT,1)
+              IZLEV=INFOBOUT(IT,3)
+
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ILOCAL,:,:),  &
+     &                        ITABLE, IPARAM, IZLEV, 0 , 0,             &
+     &                        CDATE, IFCST, MARSTYPE,                   &
+     &                        LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
+            ENDIF
+          ENDIF
+        ENDDO
+
+        IF(LFDB.AND.ILOCAL.GT.0) THEN
+          IERR = ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL)
+          IF(IERR.NE.0)THEN
+            WRITE(IU06,*) ' ------------------------'
+            WRITE(IU06,*) ' ERROR setting fdb field count '
+            WRITE(IU06,*) ' in routine OUTINT '
+            WRITE(IU06,*) ' FDB ERROR CODE IS ',IERR
+            WRITE(IU06,*) ' ------------------------'
+            CALL ABORT1
+          ENDIF
+        ELSEIF(.NOT.LFDB) THEN
+          CALL IGRIB_CLOSE_FILE(IUOUT)
+        ENDIF
+
+      ENDIF ! end grib output
+
 !     CLEAN-UP
       IF(ALLOCATED(GOUT)) DEALLOCATE(GOUT)
 
