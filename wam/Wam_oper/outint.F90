@@ -78,7 +78,7 @@
 !!!debile
         write(*,*) 'before OUTGRID'
 
-!!1      CALL OUTGRID
+      CALL OUTGRID
 
 !!!debile
         write(*,*) 'after OUTGRID'
