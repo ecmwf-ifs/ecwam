@@ -135,9 +135,6 @@
               IPARAM=INFOBOUT(IT,2)
               IZLEV=INFOBOUT(IT,3)
 
-!!!1debile
-             write(*,*) 'debile outint ',IT,ITABLE,IPARAM,IZLEV
-
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ILOCAL,:,:),  &
      &                        ITABLE, IPARAM, IZLEV, 0 , 0,             &
      &                        CDATE, IFCST, MARSTYPE,                   &

@@ -42,9 +42,8 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTSETWMASK',0,ZHOOK_HANDLE)
-#endif
+
       DO IR=1,JPPFLAG
         ITG=ITOBOUT(IR)
         IF(ITG.GT.0) THEN
@@ -65,7 +64,6 @@
         ENDIF
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTSETWMASK',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE OUTSETWMASK

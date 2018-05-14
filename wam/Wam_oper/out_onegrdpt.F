@@ -32,28 +32,28 @@
 !--------------------------------------------------------------------
 !
       USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA   ,XNLEV
+      USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
+     &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
+     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
+     &            IRBATHY 
       USE YOWGRID  , ONLY : DELPHI
-      USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
-     &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
-     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
-     &            DEPTHG   ,PHIEPSG  ,PHIAWG   ,TAUOCG
-      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
-     &            WDIRWG   ,WMNFWG   ,MWP1SG   ,MWP2SG   ,WSPRDSG  ,
-     &            MWP1WG   ,MWP2WG   ,WSPRDWG
+      USE YOWINTP  , ONLY : GOUT
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,
      &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
+
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: IU06, IU_INTP
       INTEGER :: ITIME, I, J
-     
-      REAL :: CD, U10, HS, USTAR2, USTAR, SQTAUW, TSTAR, DSTAR
+      INTEGER :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIOC, IPTAUOC
+      INTEGER :: IPBATHY 
+
+      REAL :: CD, U10, HS, USTAR2, USTAR, TSTAR, DSTAR
       REAL :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
       REAL :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
       REAL :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
@@ -72,9 +72,7 @@
       DATA FRSTIME/.TRUE./   
 !
 ! -------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUT_ONEGRDPT',0,ZHOOK_HANDLE)
-#endif
 !
 !       THE SWAMP CASE HAS BEEN REDUCED TO ONE LINE OF GRID POINTS
 !       NECESSARY PARAMETERS ARE OUTPUT HERE
@@ -90,39 +88,85 @@
          
       CALL DIFDATE(CDATEA,CDTPRO,ITIME)
 
-      LPARAM = ( ALLOCATED(WHGTTG).AND.ALLOCATED(CDG).AND.
-     &           ALLOCATED(U10G).AND.ALLOCATED(MWP1G).AND.
-     &           ALLOCATED(TAUWG).AND.ALLOCATED(WPKFTG).AND.
-     &           ALLOCATED(WMNFTG) )
+      IPHS=ITOBOUT(IRHS)
+      IF(IPHS.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
 
-      LDEPTH = ALLOCATED(DEPTHG)
-      LPHIOC = ALLOCATED(PHIEPSG)
-      LTAUOC = ALLOCATED(TAUOCG)
+      IPCD=ITOBOUT(IRCD)
+      IF(IPCD.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
+
+      IPU10=ITOBOUT(IRU10)
+      IF(IPU10.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
+
+      IPTP=ITOBOUT(IRTP)
+      IF(IPTP.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
+
+      IPT1=ITOBOUT(IRT1)
+      IF(IPT1.GT.0) THEN
+        LPARAM = .TRUE.
+      ELSE
+        LPARAM = .FALSE.
+      ENDIF
+
+      IPBATHY=ITOBOUT(IRBATHY)
+      IF(IPBATHY.GT.0) THEN
+        LDEPTH = .TRUE.
+      ELSE
+        LDEPTH = .FALSE.
+      ENDIF
+
+      IPPHIOC=ITOBOUT(IRPHIOC)
+      IF(IPPHIOC.GT.0) THEN
+        LPHIOC = .TRUE.
+      ELSE
+        LPHIOC = .FALSE.
+      ENDIF
+
+      IPTAUOC=ITOBOUT(IRTAUOC)
+      IF(IPTAUOC.GT.0) THEN
+        LTAUOC = .TRUE.
+      ELSE
+        LTAUOC = .FALSE.
+      ENDIF
 
       IF (LPARAM .and. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
-          IF (WHGTTG(I,J).NE.ZMISS) THEN
+          IF (GOUT(IPHS,I,J).NE.ZMISS) THEN
             IF(LDEPTH) THEN
-              DEPTH= DEPTHG(I,J)
+              DEPTH=GOUT(IPBATHY,I,J)
             ELSE
               DEPTH=999.0
             ENDIF
 !
 !            TAKE RELATION BETWEEN USTAR AND U10G FROM BUILDSTRESS
 !
-            CD     = CDG(I,J)
-            U10    = U10G(I,J)
-            HS     = WHGTTG(I,J) 
+            CD     = GOUT(IPCD,I,J)
+            U10    = GOUT(IPU10,I,J) 
+            HS     = GOUT(IPHS,I,J)
             USTAR2 = MAX(CD*MAX(U10**2,EPSU10),EPSUS)
             USTAR  = SQRT(USTAR2)
-            SQTAUW   = SQRT(TAUWG(I,J)*USTAR2)
 
             TSTAR = G*ITIME/USTAR
             DSTAR = G*DEPTH/(USTAR**2)
             E     = HS**2/16.
             ESTAR = G**2*E/(USTAR**4)
-            FMSTAR=USTAR/(MWP1G(I,J)*G)
+            FMSTAR=USTAR/(GOUT(IPT1,I,J)*G)
 
             TSTAR_0 = 4.26*10.**5
             XP      = 1.5
@@ -132,7 +176,7 @@
             E_LIM = BETA_K**2/16.
             E_STAR_OBS = E_LIM/(1.+TSTAR_0/TSTAR)**XP 
 
-            FP     = WPKFTG(I,J)
+            FP     = GOUT(IPTP,I,J)
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1./3.)
 
@@ -155,13 +199,13 @@
             E_OBS = E_LIM/(1.+T_0/T10)**XP
 
             IF(LPHIOC) THEN
-              PHIOC=PHIEPSG(I,J)
+              PHIOC=GOUT(IPPHIOC,I,J)
             ELSE
               PHIOC=3.5
             ENDIF
 
             IF(LTAUOC) THEN
-              TAUOC=TAUOCG(I,J)
+              TAUOC=GOUT(IPTAUOC,I,J)
             ELSE
               TAUOC=1.0
             ENDIF
@@ -208,9 +252,6 @@
 !
 ! -------------------------------------------------------------------
  
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUT_ONEGRDPT',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END

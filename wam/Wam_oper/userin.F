@@ -74,6 +74,8 @@
      &            GFLAG20  ,NFLAG    ,
      &            IPRMINFO ,                                            &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
+     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
+     &            IRBATHY  ,                                            &
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            IRCD     ,IRU10    ,
      &            NASS     ,JPPFLAG  ,
@@ -1008,19 +1010,12 @@
         WRITE(IU06,*)' * FOR PACKING                                  *'
         WRITE(IU06,*)' *                                              *'
         WRITE(IU06,*)' ************************************************'
-        GFLAG( 1) = .TRUE.
-        GFLAG( 2) = .TRUE.
-        GFLAG( 3) = .TRUE.
-        GFLAG( 6) = .TRUE.
+        GFLAG(IRHS) = .TRUE.
+        GFLAG(IRTP) = .TRUE.
+        GFLAG(IRT1) = .TRUE.
         GFLAG(IRCD) = .TRUE.
         GFLAG(IRU10)= .TRUE.
-        GFLAG(15) = .TRUE.
-        GFLAG(16) = .TRUE.
-        GFLAG(17) = .TRUE.
-        GFLAG(18) = .TRUE.
-        GFLAG(19) = .TRUE.
-        GFLAG(20) = .TRUE.
-        GFLAG(21) = .TRUE.
+        GFLAG(IRBATHY) = .TRUE.
         GFLAG20 = .TRUE.
       ENDIF
       IF (LFDB) THEN

@@ -540,6 +540,8 @@
 !     see below.
       GFLAG(:)  = .FALSE.
       NFLAG(:)  = .FALSE. 
+!     patial initialisation of the output table
+      CALL MPCRTBL
       NFLAG(1)  = .TRUE. 
       NFLAG(6)  = .TRUE. 
       NFLAG(IRWDIR)= .TRUE. 
