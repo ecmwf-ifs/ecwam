@@ -27,6 +27,21 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUT  , ONLY : FFLAG    ,FFLAG20  ,GFLAG    ,GFLAG20  ,    &
+     &            JPPFLAG  ,LFDB     ,IPFGTBL  ,ITOBOUT  ,INFOBOUT ,    &
+     &            LOUTINT
+      USE YOWGRID  , ONLY : NLONRGG  ,DELPHI
+      USE YOWINTP  , ONLY : GOUT
+      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
+     &            AMONOP   ,ZDELLO
+      USE YOWMPP   , ONLY : IRANK
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,CDTINTT  ,    &
+     &            CFDBSF   ,MARSTYPE ,NWFDBREF ,LFDBOPEN
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWUNIT  , ONLY : IU20     ,IU30
+      USE FDBSUBS_MOD
+      USE GRIB_API_INTERFACE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
