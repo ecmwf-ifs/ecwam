@@ -96,8 +96,9 @@
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: C3, C4, BF, QP, FP, HMAX, TMAX
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, FP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: C3, C4, BF, QP, HMAX, TMAX
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ETA_M, R, XNSLC, SIG_T H, EPS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
@@ -139,10 +140,15 @@
 
 !     COMPUTE MEAN PARAMETERS
       CALL FEMEAN (FL3, IJS, IJL, EM, FM)
-      CALL KURTOSIS(FL3,IJS,IJL,DPTH,C3,C4,BF,QP,FP,HMAX,TMAX)
+
+      CALL PEAK_FREQ (FL1, IJS, IJL, FP)
+
+      CALL KURTOSIS(FL1, DPTH, IJS, IJL,                                &
+     &              C3, C4, BF, QP, HMAX, TMAX,                         &
+     &              ETA_M, R, XNSLC, SIG_T H, EPS)
 
 !     WIND/SWELL PARAMETERS
-      CALL SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,                          &
+      CALL SEPWISW (IJS, IJL, MIJ, FL1, XLLWS,                          &
      &              USNEW(IJS), U10NEW(IJS), THWNEW(IJS),               &
      &              ESWELL, FSWELL, THSWELL,P1SWELL, P2SWELL, SPRDSWELL,&
      &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,         &
@@ -441,7 +447,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL CIMSSTRN (FL3,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
+        CALL CIMSSTRN (FL1,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -526,7 +532,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
-           CALL WEFLUX (FL3, IJS, IJL,                                  &
+           CALL WEFLUX (FL1, IJS, IJL,                                  &
      &                  NFRE, NANG, DFIM, DELTH,                        &
      &                  COSTH, SINTH, CGROUP,                           &
      &                  FLD1, FLD2)
