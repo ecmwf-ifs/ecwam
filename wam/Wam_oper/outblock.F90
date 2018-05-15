@@ -1,0 +1,585 @@
+      SUBROUTINE OUTBLOCK (IJS, IJL, MIJ,                               &
+     &                     FL1, XLLWS, DPTH ,CGROUP,                    &
+     &                     BOUT)
+! ----------------------------------------------------------------------
+
+!**** *OUTBLOCK* - MODEL OUTPUT FROM BLOCK TO FILE, PRINTER AND COMMON.
+
+
+!*    PURPOSE.
+!     --------
+
+!       PREPARE OUTPUT INTEGRATED PARAMETERS FOR ONE BLOCk OF DATA
+
+
+!**   INTERFACE.
+!     ----------
+!      *CALL*OUTBLOCK (IJS, IJL, MIJ,
+!     &                FL1, XLLWS,  DPTH ,CGROUP,
+!     &                BOUT)
+!      *IJS* - INDEX OF FIRST LOCAL GRIDPOINT
+!      *IJL* - INDEX OF LAST LOCAL GRIDPOINT
+!      *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!      *FL1*    - INPUT SPECTRUM.
+!      *XLLWS*  - WINDSEA MASK FROM INPUT SOURCE TERM
+!      *DPTH*   - DEPTH
+!      *CGROUP* - GROUP SPEED
+!      *BOUT*   - OUTPUT PARAMETER BUFFER
+
+!     EXTERNALS.
+!     ----------
+
+!       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
+!       *INTPOL*    - MAP SPECTRUM FROM SIGMA TO OMEGA SPACE.
+!       *OUTERS*    - OUTPUT OF SATELLITE COLOCATION SPECTRA.
+!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
+!       *SEPWISW*   - SEPARATION OF WINDSEA AND SWELL.
+!       *SEP3TR*    - SEPARATION OF WAVE SPECTRA INTO 3 WAVE TRAINS
+!       *STHQ*      - COMPUTATION OF MEAN WAVE DIRECTION AT EACH
+!                     GRID POINT.
+!       *MWP1*      - COMPUTATION OF MEAN PERIOD (1) AT EACH GRID POINT.
+!       *MWP2*      - COMPUTATION OF MEAN PERIOD (2) AT EACH GRID POINT.
+!       *WDIRSPREAD*- COMPUTATION OF MEAN DIRECTIONAL SPREAD AT EACH 
+!                     GRID POINT. 
+!       *KURTOSIS*  - COMPUTATION OF THE SURFACE ELEVATION KURTOSIS, 
+!                     THE BEJAMIN-FEIR INDEX, THE SPECTRAL PEAKEDNESS 
+!                     FACTOR AND THE MAXIMUM WAVE HEIGHT.
+!       *STOKESDRIFT*  - COMPUTATION OF THE STOKES DRIFT VECTOR. 
+!   
+!     METHOD.
+!     -------
+
+!       NONE.
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
+     &            NIPRMOUT, ITOBOUT
+      USE YOWCURR  , ONLY : U, V
+      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK
+      USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
+     &            PHIEPS   ,PHIAW    ,TAUOC
+      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
+     &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
+      USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
+     &            ROAIRN   ,ZIDLNEW
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10
+      USE YOWSHAL,   ONLY : IODP
+      USE YOWSTAT  , ONLY : IREFRA
+
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+      IMPLICIT NONE
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1, XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DPTH 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NIPRMOUT), INTENT(OUT) :: BOUT
+
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM), PARAMETER :: NTEWH=6
+      INTEGER(KIND=JWIM) :: IJ, K, M, ITG, IR, ITR, IH
+      INTEGER(KIND=JWIM) :: IRA
+      
+      REAL(KIND=JWRB) :: SIG
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: C3, C4, BF, QP, FP, HMAX, TMAX
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLD1, FLD2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: EMTRAIN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: THTRAIN, PMTRAIN
+
+!     *FL3*  SPECTRUM with second order effect added if LSECONDORDER is true .
+!            and in the absolute frame of reference if currents are used 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL3
+
+      LOGICAL :: LLPEAKF
+
+      DATA TEWH /10._JWRB,12._JWRB,14._JWRB,17._JWRB,21._JWRB,25._JWRB,30._JWRB/
+
+! ----------------------------------------------------------------------
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
+#endif
+!
+!*    1. COMPUTE MEAN PARAMETERS.
+!        ------------------------
+
+!     PREPARE THE WAVE SPECTRA THAt SHOULD BE USED FOR OUTPUT
+
+      LLPEAKF = .FALSE.
+
+      IG =1
+
+      IRA=1
+      SIG = 1._JWRB
+
+      IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
+        CALL INTPOL (FL1, FL3, IJS, IJL, IG, IRA)
+      ELSE
+        FL3(:,:,:) = FL1(:,:,:)
+      ENDIF
+      IF(LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(FL3,IJS,IJL,DPTH,SIG)
+
+
+!     COMPUTE MEAN PARAMETERS
+      CALL FEMEAN (FL3, IJS, IJL, EM, FM)
+      CALL KURTOSIS(FL3,IJS,IJL,DPTH,C3,C4,BF,QP,FP,HMAX,TMAX)
+
+!     WIND/SWELL PARAMETERS
+      CALL SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,                          &
+     &              USNEW(IJS), U10NEW(IJS), THWNEW(IJS),               &
+     &              ESWELL, FSWELL, THSWELL,P1SWELL, P2SWELL, SPRDSWELL,&
+     &              ESEA, FSEA, THWISEA, P1SEA, P2SEA, SPRDSEA,         &
+     &              EMTRAIN, THTRAIN, PMTRAIN)
+
+
+!     LOAD THE OUTPUT BUFFER:
+      IR=0
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       SIGNIFICANT WAVE HEIGHT CONVERSION
+        BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(EM(IJS:IJL),0._JWRB))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        ITG=ITOBOUT(IR)
+        CALL STHQ (FL3,IJS,IJL,BOUT(IJS,ITG))
+!       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+        BOUT(IJS:IJL,ITG)=MOD(DEG*BOUT(IJS:IJL,ITG)+180._JWRB,360._JWRB)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERSION TO PERIOD
+        DO IJ=IJS,IJL
+          IF(FM(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FM(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=USNEW(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!      CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+        BOUT(IJS:IJL,ITOBOUT(IR))=MOD(DEG*THWNEW(IJS:IJL)+180._JWRB,360._JWRB)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERSION TO PERIOD
+        DO IJ=IJS,IJL
+          IF(FP(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FP(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!!     if the numerical computation of TAU and CD changes, a similar
+!!     modification has to be put in buildstress where the friction
+!!     velocity is determined from U10 and CD.
+        BOUT(IJS:IJL,ITOBOUT(IR))=MAX(USNEW(IJS:IJL)**2,EPSUS)/MAX(U10NEW(IJS:IJL)**2,EPSU10)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUW(IJS:IJL,IG)/MAX(USNEW(IJS:IJL)**2,EPSUS)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL MEANSQS (FL3,IJS,IJL,USNEW(IJS),FM,BOUT(IJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=U10NEW(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       WINDSEA SIGNIFICANT WAVE HEIGHT CONVERSION
+        BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(ESEA(IJS:IJL),0._JWRB))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       TOTAL SWELL SIGNIFICANT WAVE HEIGHT CONVERSION
+        BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(ESWELL(IJS:IJL),0._JWRB))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+        BOUT(IJS:IJL,ITOBOUT(IR))=MOD(DEG*THWISEA(IJS:IJL)+180._JWRB,360._JWRB)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
+        BOUT(IJS:IJL,ITOBOUT(IR))=MOD(DEG*THSWELL(IJS:IJL)+180._JWRB,360._JWRB)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERSION TO PERIOD
+        DO IJ=IJS,IJL
+          IF(FSEA(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+!       CONVERSION TO PERIOD
+        DO IJ=IJS,IJL
+          IF(FSWELL(IJ).GT.0._JWRB) THEN
+            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSWELL(IJ)
+          ELSE
+            BOUT(IJ,ITOBOUT(IR))=ZMISS
+          ENDIF
+        ENDDO
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT.ALLOCATED(ALTWH)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=ALTWH(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT.ALLOCATED(CALTWH)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=CALTWH(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT.ALLOCATED(RALTCOR)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=RALTCOR(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL MWP1 (FL3,IJS,IJL,EM,BOUT(IJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL MWP2 (FL3,IJS,IJL,EM,BOUT(IJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL WDIRSPREAD (FL3,IJS,IJL,EM,LLPEAKF,BOUT(IJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=P1SEA(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=P1SWELL(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=P2SEA(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=P2SWELL(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=SPRDSEA(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=SPRDSWELL(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=C4(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=BF(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=QP(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=DPTH(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=HMAX(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TMAX(IJS:IJL)
+      ENDIF
+
+!     STOKES DRIFT
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
+!!!!!!!! the second order correction should not apply to the Stokes drift
+        CALL STOKESDRIFT(FL1, IJS, IJL, FLD1, FLD2)
+      ENDIF
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=FLD1(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=FLD2(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT.ALLOCATED(U)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=0._JWRB
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=U(IJS:IJL,IG)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT.ALLOCATED(V)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=0._JWRB
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=V(IJS:IJL,IG)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=PHIEPS(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=PHIAW(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUOC(IJS:IJL)
+      ENDIF
+
+      DO ITR=1,NTRAIN
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(EMTRAIN(IJS:IJL,ITR),0._JWRB))
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=MOD(DEG*THTRAIN(IJS:IJL,ITR)+180._JWRB,360._JWRB)
+        ENDIF
+
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=PMTRAIN(IJS:IJL,ITR)
+        ENDIF
+      ENDDO
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL CIMSSTRN (FL3,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        CALL SE10MEAN (FL3,IJS,IJL,FLD1(IJS))
+        BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(FLD1(IJS:IJL),0._JWRB))
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=ROAIRN(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=ZIDLNEW(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=CICOVER(IJS:IJL,IG)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=CITHICK(IJS:IJL,IG)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=C3(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT. ALLOCATED(NEMOSST)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOSST(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT. ALLOCATED(NEMOCICOVER)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCICOVER(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF (LNEMOCITHICK) THEN
+          IF(.NOT. ALLOCATED(NEMOCITHICK)) THEN
+            BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+          ELSE
+            BOUT(IJS:IJL,ITOBOUT(IR))=NEMOCITHICK(IJS:IJL)
+          ENDIF
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT. ALLOCATED(NEMOUCUR)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOUCUR(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        IF(.NOT. ALLOCATED(NEMOVCUR)) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=ZMISS
+        ELSE
+          BOUT(IJS:IJL,ITOBOUT(IR))=NEMOVCUR(IJS:IJL)
+        ENDIF
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
+           CALL WEFLUX (FL3, IJS, IJL,                                  &
+     &                  NFRE, NANG, DFIM, DELTH,                        &
+     &                  COSTH, SINTH, CGROUP,                           &
+     &                  FLD1, FLD2)
+      ENDIF
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=FLD1(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=FLD2(IJS:IJL)
+      ENDIF
+
+      DO IH=1,NTEWH
+        IR=IR+1
+        IF(IPFGTBL(IR).NE.0) THEN
+          CALL SEBTMEAN (FL3,IJS,IJL,TEWH(IH-1),TEWH(IH),BOUT(IJS,ITOBOUT(IR)))
+        ENDIF
+      ENDDO
+
+!     COMPUTE OUTPUT EXTRA FIELDS
+!     add necessary code to compute the extra output fields
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=1.0_JWRB
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=2.0_JWRB
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=3.0_JWRB
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=4.0_JWRB
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=5.0_JWRB
+      ENDIF
+
+
+!     APPLY SEA ICE MASK AND SEA MASK IF NECESSARY
+      CALL OUTSETWMASK (IJS, IJL, IODP(IJS), CICOVER(IJS,IG),BOUT)
+
+#ifdef ECMWF
+      IF (LHOOK) CALL DR_HOOK('OUTBLOCK',1,ZHOOK_HANDLE)
+#endif
+
+      END SUBROUTINE OUTBLOCK

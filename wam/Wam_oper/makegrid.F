@@ -1,4 +1,4 @@
-      SUBROUTINE MAKEGRID (BLOCK, GRID, IG, LSQRT, PMISS)
+      SUBROUTINE MAKEGRID (BLOCK, GRID, IG, PMISS)
 
 ! ----------------------------------------------------------------------
 
@@ -18,9 +18,6 @@
 !           *BLOCK*   REAL   DATA IN BLOCKED FORMAT
 !           *GRID*    REAL   DATA IN GRID FORMAT
 !           *IG*      INTEGER BLOCK NUMBER
-!           *LSQRT*   LOGICAL IF TRUE THE 4*SQUARE ROOT OF BLOCK IS
-!                     COMPUTED WHEN TRANSFERRING TO GRID EXCEPT IF
-!                     BLOCK EQUALS PMISS.
 !           *PMISS*   REAL  VALUE GIVEN FOR ALL NON SEA POINTS. 
 
 !     METHOD.
@@ -54,27 +51,25 @@
       USE OUTPUT_STRUCT, ONLY : INTELEMENT_IPOL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
-      INTEGER :: IG
+      INTEGER, INTENT(IN) :: IG
+      REAL, DIMENSION(NIBLO_OUT), INTENT(IN) :: BLOCK
+      REAL, INTENT(IN) :: PMISS
+      REAL, INTENT(OUT) :: GRID(NGX,NGY)
+
       INTEGER :: IY, IX, J, I, IJ, IE, KI, IR, IP
       INTEGER :: NI(3)
 
-      REAL    :: PMISS
       REAL    :: ZHOOK_HANDLE
-      REAL    :: GRID(NGX,NGY)
-      REAL, DIMENSION(NIBLO_OUT) :: BLOCK
       REAL, allocatable :: BLOCK_G(:)
       REAL*8  :: XLO, XLA
       REAL*8  :: BLOCK8, GRID8, PMS8
       REAL*8  :: XYELE(2,3), SKALAR(3)
 
-      LOGICAL :: LSQRT
       LOGICAL :: LLCLST
-      integer iNode
+      INTEGER :: iNode
 ! ----------------------------------------------------------------------
-      
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MAKEGRID',0,ZHOOK_HANDLE)
 #endif
@@ -91,16 +86,6 @@
           GRID(I,J) = PMISS
         ENDDO
       ENDDO
-
-      IF(LSQRT) THEN
-        DO IJ = 1,NIBLO_OUT
-          IF(BLOCK(IJ).NE.PMISS) THEN
-            BLOCK(IJ) = 4.*SQRT(BLOCK(IJ))
-          ELSE
-            BLOCK(IJ) = PMISS
-          ENDIF
-        ENDDO
-      ENDIF
 
 !*    2. MAKE GRIDDED FIELD
 !     ---------------------
@@ -142,10 +127,11 @@
             GRID(IX,IY) = BLOCK(iNode)
           END DO
         END IF
+
       ELSE
         DO IJ = 1, NIBLO 
           IX = IXLG(IJ,IG)
-          IY = NGY- KXLT(IJ,IG) +1
+          IY = NGY-KXLT(IJ,IG)+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF ! LLUNSTR
@@ -156,5 +142,4 @@
       IF (LHOOK) CALL DR_HOOK('MAKEGRID',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE MAKEGRID

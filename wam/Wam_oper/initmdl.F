@@ -108,9 +108,6 @@
 !           *IU20*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF THE TOTAL SPECTRUM (FIRST GUESS).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'MAP'
-!           *IU21*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
-!                      OF SWELL AND WIND WAVES (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'SWE'
 !ASSI
 !           *IU22*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF THE TOTAL SPECTRUM (ANALYSED).
@@ -118,14 +115,6 @@
 !           *IU23*   - OUTPUT UNIT OF INTEGRATED PARAMETERS
 !                      OF SWELL AND WIND WAVES (ANALYSED)
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASS'
-!ASSI
-!           *IU25*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'OUT'
-!           *IU26*   - OUTPUT UNIT OF SWELL SPECTRA AT CERTAIN POINTS
-!                      (FIRST GUESS).
-!                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'SWS'
-!ASSI
 !           *IU27*   - OUTPUT UNIT OF SPECTRA AT CERTAIN GRID POINTS
 !                      (ANALYSED).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'AUT'
@@ -240,11 +229,10 @@
      &            GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,
      &                      LWNEMOCOU,LWNEMOCOURECV
-      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,FFLAG21  ,
-     &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
-     &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,
+     &            FFLAG20  ,PFLAG20  ,GFLAG20  ,
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,
-     &            LWFLUXOUT,LOUTSPP
+     &            LWFLUXOUT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,
      &            V
       USE YOWFPBO  , ONLY : IBOUNF
@@ -280,11 +268,12 @@
      &            ROAIRO   ,ZIDLOLD  ,
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDTINTT  ,CDTINTS  ,CDTSPT   ,CDTSPS   ,CDTBC    ,
+     &            CDTINTT  ,CDTBC    ,
      &            IDELPRO  ,IDELT    ,IDELWI   ,IDELWO   ,IDELRES  ,
-     &            IDELBC   ,IDELINT  ,IDELINS  ,IDELSPT  ,IDELSPS  ,
+     &            IDELINT  ,
      &            ISHALLO  ,IREFRA   ,
      &            IPHYS    ,
+     &            NPROMA_WAM,
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
@@ -298,8 +287,8 @@
      &            LSAMEDEPTH
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,
-     &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,
-     &            IU23     ,IU25     ,IU26     ,IU27     ,IU28     ,
+     &            IU18     ,IU19     ,IU20     ,IU22     ,
+     &            IU23     ,IU27     ,IU28     ,
      &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,
      &            IU38
@@ -328,6 +317,9 @@
       INTEGER :: JD
       INTEGER :: IDELWH
       INTEGER :: IU05, IU09, IU10, I_GET_UNIT
+      INTEGER :: NTOT, MTHREADS, NPROMA
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+
       INTEGER :: MASK_IN(NGPTOTG)
 
       REAL :: FCRANGE, XD
@@ -361,6 +353,13 @@
 
       CALL INIWCST(PRPLRADI)
 
+!     ADJUST NPROMA_WAM
+      NTOT=IJL(1)-IJS(1)+1
+      MTHREADS=1
+!$    MTHREADS=OMP_GET_MAX_THREADS()
+      NPROMA=NPROMA_WAM
+      CALL WAM_NPROMA(NTOT, MTHREADS, NPROMA)
+      NPROMA_WAM=NPROMA
 
 !*    1. DEFINITION OF MODEL PARAMETERS.
 !        -------------------------------
@@ -409,14 +408,9 @@
       IU18 = 18
 
       IU20 = 20
-      IU21 = 21
 !ASSI
       IU22 = 22
       IU23 = 23
-!ASSI
-      IU25 = 25
-      IU26 = 26
-!ASSI
       IU27 = 27
       IU28 = 28
 !ASSI
@@ -444,7 +438,6 @@
       ENDIF
 
       LOUTINT=.FALSE.
-      LOUTSPP=.FALSE.
 
       LUPDTWGHT=.TRUE.
 
@@ -573,15 +566,6 @@
           CALL INCDATE (COUTLST,-IDELINT)
         ENDIF
 
-        CDUM=CDATEA
-        IF (GFLAG21) THEN
-          DO WHILE (CDUM.LE.CDATEE.AND.IDELINS.GT.0)
-            CALL INCDATE (CDUM,IDELINS)
-          ENDDO
-          CALL INCDATE (CDUM,-IDELINS)
-        ENDIF
-        IF(CDUM.GT.COUTLST) COUTLST=CDUM
-
         IF(COUTLST.GT.CDATEE) COUTLST=CDATEE
       ENDIF
 
@@ -594,23 +578,6 @@
 
       ITESTB = MIN(ITESTB,IGL)
 
-      IF (NGOUT.EQ.0.AND.(PFLAG25.OR.FFLAG25.OR.PFLAG26.OR.FFLAG26))THEN
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+    WARNING ERROR IN SUB. INITMDL          +'
-        WRITE(IU06,*) '+    =============================          +'
-        WRITE(IU06,*) '+ NUMBER OF OUTPUT POINT FOR SPECTRA        +'
-        WRITE(IU06,*) '+ READ FROM PREPROC OUTPUT IS ZERO.         +'
-        WRITE(IU06,*) '+ OUTPUT FLAGS CHANGED TO NO OUTPUT.        +'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+ MODEL CONTINUES.                          +'
-        WRITE(IU06,*) '+                                           +'
-        WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++'
-        PFLAG25 = .FALSE.
-        FFLAG25  = .FALSE.
-        PFLAG26 = .FALSE.
-        FFLAG26  = .FALSE.
-      ENDIF
 !NEST
 
       IF (.NOT.ALLOCATED(IUSCR)) THEN
@@ -750,28 +717,19 @@
      & NANG 
       WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES ............: ',
      & NFRE 
-      IF(FFLAG25.OR.PFLAG25.OR.GFLAG25.OR.
-     & FFLAG26.OR.PFLAG26.OR.GFLAG26) THEN
-        WRITE(IU06,*) '  '
-        WRITE(IU06,*) ' OUTPUT POINTS:'
-        WRITE(IU06,*) ' TOTAL NUMBER OF OUTPUT POINTS IS: ',NGOUT
-        WRITE(IU06,'(/,4X,''BLOCK NO'',6X,''INDEX NO'',
-     &   8X,''LONGITUDE'',6X,''LATITUDE'')')
-        DO I=1,NGOUT
-          IX  = IXLG(IJAR(I),IGAR(I))
-          KX  = KXLT(IJAR(I),IGAR(I))
-          XLO = AMOWEP+REAL(IX-1)*ZDELLO(KX)
-          XLA = AMOSOP+REAL(KX-1)*XDELLA
 
-          WRITE(IU06,'((6X,I3,10X,I6,7X,F10.3,4X,F10.3))')
-     &     IGAR(I), IJAR(I), XLO, XLA
-        ENDDO
-      ENDIF
- 3002 FORMAT(3x,a,f9.3,a)
- 3003 FORMAT(3x,a,i8,  a)
-!NEST
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' PARALLEL ORGANISATION : '
+      WRITE(IU06,*) ' NPROC      : ', NPROC
+      WRITE(IU06,*) ' MTHREADS   : ', MTHREADS
+      WRITE(IU06,*) ' NPROMA_WAM : ', NPROMA_WAM
+      WRITE(IU06,*) '  '
       CALL FLUSH (IU06)
 
+ 3002 FORMAT(3x,a,f9.3,a)
+ 3003 FORMAT(3x,a,i8,  a)
+
+!NEST
       IF (IBOUNC .EQ. 1) THEN
         WRITE(IU06,*)
         WRITE(IU06,*) ' COARSE GRID: BOUNDARY OUTPUT POINTS :'
@@ -796,15 +754,14 @@
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(NINF-1:NSUP))
-      DO IJ=NINF,NSUP
+      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS(1):IJL(1)))
+      DO IJ=IJS(1),IJL(1)
         IF(DEPTH(IJ,1).LE.TOOSHALLOW) THEN
           IODP(IJ) = 0
         ELSE
           IODP(IJ) = 1
         ENDIF
       ENDDO
-      IODP(NINF-1)=0
 
       IF(.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(NINF-1:NSUP))
       IF (.NOT. LLUNSTR) THEN
@@ -991,42 +948,6 @@
         ENDIF
       ELSE
         CDTINTT = ZERO
-      ENDIF
-      IF (PFLAG21.OR.FFLAG21.OR.GFLAG21) THEN
-        CDTINTS= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTINTS=CDATEA
-        ELSE
-          DO WHILE (CDTINTS.LE.CDTPRO)
-            CALL INCDATE (CDTINTS, IDELINS)
-          ENDDO
-        ENDIF
-      ELSE
-        CDTINTS = ZERO
-      ENDIF
-      IF (PFLAG25.OR.FFLAG25.OR.GFLAG25) THEN
-        CDTSPT= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTSPT=CDATEA
-        ELSE
-          DO WHILE (CDTSPT.LE.CDTPRO)
-            CALL INCDATE (CDTSPT, IDELSPT)
-          ENDDO
-        ENDIF
-      ELSE
-        CDTSPT = ZERO
-      ENDIF
-      IF (PFLAG26.OR.FFLAG26.OR.GFLAG26) THEN
-        CDTSPS= CBPLTDT
-        IF(LANAONLY) THEN
-          CDTSPS=CDATEA
-        ELSE
-          DO WHILE (CDTSPS.LE.CDTPRO)
-            CALL INCDATE (CDTSPS, IDELSPS)
-          ENDDO
-        ENDIF
-      ELSE
-        CDTSPS = ZERO
       ENDIF
 
 !*    5.2 FILE DISPOSE TIME AND RESTART TIME.

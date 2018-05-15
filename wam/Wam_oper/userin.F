@@ -69,10 +69,15 @@
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV 
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
-     &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
-     &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
-     &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
+     &            FFLAG20  ,
+     &            GFLAG    ,
+     &            GFLAG20  ,NFLAG    ,
+     &            IPRMINFO ,                                            &
+     &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
+     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
+     &            IRBATHY  ,                                            &
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
+     &            IRCD     ,IRU10    ,
      &            NASS     ,JPPFLAG  ,
      &            LRSTPARALR, LRSTPARALW,
      &            COUTNAME,
@@ -100,7 +105,7 @@
      &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
      &            IDELBC   ,
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
+     &            ICASE    ,ISHALLO  ,
      &            ISNONLIN ,
      &            IPHYS    ,
      &            IDAMPING ,
@@ -118,10 +123,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU21     ,IU23     ,IU25     ,
-     &            IU26     ,IU27     ,IU28     ,IU04     ,IU30     ,
-     &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,
-     &            IU37     ,IU38
+      USE YOWUNIT  , ONLY : IU04     ,IU20     ,IU30     ,IU32
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR   ,
      &            LLUNBINOUT
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
@@ -328,29 +330,10 @@
 
       ENDIF
 
-!   1 FORMAT(A,A3)
-!   2 FORMAT(A,A3,A,I10,A)
-
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
-
-      IF (GFLAG(4)) THEN
-        GFLAG(4) = .FALSE.
-        WRITE(IU06,*) ' ******************* NOTE ********************'
-        WRITE(IU06,*) ' NO GRIB OUTPUT POSSIBLE FOR FRICTION VELOCITY'
-        WRITE(IU06,*) ' NOT IMPLEMENTED IN OUTINT ' 
-        WRITE(IU06,*) ' '
-      ENDIF
-      IF (GFLAG(8)) THEN
-        GFLAG(8) = .FALSE.
-        WRITE(IU06,*) ' *********** NOTE *************** ' 
-        WRITE(IU06,*) ' NO GRIB OUTPUT POSSIBLE FOR' 
-        WRITE(IU06,*) ' NORMALISED WAVE STRESS'
-        WRITE(IU06,*) ' NOT IMPLEMENTED IN OUTINT ' 
-        WRITE(IU06,*) ' '
-      ENDIF
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(5)) THEN
-        GFLAG(5) = .TRUE.
+      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRWDIR)) THEN
+        GFLAG(IRWDIR) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
         WRITE(IU06,*) ' BUT DID NOT REQUEST OUTPUT OF WIND DIRECTION. '
@@ -360,8 +343,8 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(7)) THEN
-        GFLAG(7) = .TRUE.
+      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRCD)) THEN
+        GFLAG(IRCD) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
         WRITE(IU06,*) ' BUT FAILED TO ASK FOR OUTPUT OF THE DRAG COEF.'
@@ -371,8 +354,8 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(10)) THEN
-        GFLAG(10) = .TRUE.
+      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRU10)) THEN
+        GFLAG(IRU10) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
         WRITE(IU06,*) ' BUT FAILED TO ASK FOR OUTPUT OF U10wave'
@@ -382,42 +365,32 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (GFLAG(22).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
-        GFLAG(22) = .FALSE.
+      IF (GFLAG(IRALTHS).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+        GFLAG(IRALTHS) = .FALSE.
       ENDIF
-      IF (GFLAG(23).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
-        GFLAG(23) = .FALSE.
+      IF (GFLAG(IRALTHSC).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+        GFLAG(IRALTHSC) = .FALSE.
       ENDIF
-      IF (GFLAG(24).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
-        GFLAG(24) = .FALSE.
+      IF (GFLAG(IRALTRC).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+        GFLAG(IRALTRC) = .FALSE.
       ENDIF
 
-      FFLAG20 = SET_WFLAGS(FFLAG,JPPFLAG,NTRAIN,20)
-      PFLAG20 = SET_WFLAGS(PFLAG,JPPFLAG,NTRAIN,20)
-      GFLAG20 = SET_WFLAGS(GFLAG,JPPFLAG,NTRAIN,20)
-      FFLAG21 = SET_WFLAGS(FFLAG,JPPFLAG,NTRAIN,21)
-      PFLAG21 = SET_WFLAGS(PFLAG,JPPFLAG,NTRAIN,21)
-      GFLAG21 = SET_WFLAGS(GFLAG,JPPFLAG,NTRAIN,21)
-      
-      FFLAG25 = FFLAG(17)
-      PFLAG25 = PFLAG(17)
-      GFLAG25 = GFLAG(17)
-      FFLAG26 = FFLAG(18)
-      PFLAG26 = PFLAG(18)
-      GFLAG26 = GFLAG(18)
-      NFLAGALL= 
-     &  SET_WFLAGS(NFLAG,JPPFLAG,NTRAIN,20) .OR. 
-     &  SET_WFLAGS(NFLAG,JPPFLAG,NTRAIN,21)
+
+!     SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
+!     IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
+!     POINT TO THE PARAMETRE WHICH ARE OUTPUT.
+      CALL MPCRTBL
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
+        CALL FLUSH (IU06)
+      ENDIF
+
+      FFLAG20 = SET_WFLAGS(FFLAG,JPPFLAG)
+      GFLAG20 = SET_WFLAGS(GFLAG,JPPFLAG)
+      NFLAGALL= SET_WFLAGS(NFLAG,JPPFLAG) 
 
 !     ARE THE OCEAN FLUXES OUTPUT PARAMETERS:
-
-#if !defined MODEL_COUPLING_OCN_WAV && !defined MODEL_COUPLING_ATM_WAV
-      LWFLUXOUT = SET_WFLAGS(GFLAG,JPPFLAG,NTRAIN,44) .OR.
-     &            SET_WFLAGS(FFLAG,JPPFLAG,NTRAIN,44) .OR.
-     &            SET_WFLAGS(PFLAG,JPPFLAG,NTRAIN,44)
-#else
       LWFLUXOUT = .TRUE.
-#endif
 
 !     DEFINE GRIDDED OUTPUT ARRAYS WHICH ARE USED IN THE ASSIMILATION
       UFLAG=.FALSE.
@@ -989,22 +962,16 @@
         WRITE(IU06,*) '  '
       ENDIF
 
-!     SET INTEGRATED OUTPUT PARAMETER TABLE FOR MESSAGE PASSING
-!     IN CASE OF NO MESSAGE PASSING THE TABLE IS STILL USED TO
-!     POINT TO THE PARAMETRE WHICH ARE OUTPUT.
-      CALL MPCRTBL
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '    SUB. INITMDL: MPCRTBL DONE'
-        CALL FLUSH (IU06)
-      ENDIF
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                                 LOGFILE    FILE ',&
-     &'   GRIB     OUT PE'
+      WRITE(IU06,*) '                          FILE     GRIB     OUT PE'
       DO ITG = 1,JPPFLAG
+        IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
-        WRITE(IU06,*) CITG,COUTNAME(ITG), PFLAG(ITG),                   &
-     &   '......', FFLAG(ITG),'.....',GFLAG(ITG),'.....',IPFGTBL(ITG)
+        WRITE(IU06,*) CITG,COUTNAME(ITG),                               &
+     &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),         &
+     &   IPRMINFO(ITG,1)*1000+IPRMINFO(ITG,2)
+        ENDIF
       ENDDO
       WRITE(IU06,*) ''
 
@@ -1020,29 +987,6 @@
         WRITE(IU06,*) ' OCEAN FLUXES WILL NOT INCLUDE SNL CONTRIBUTION'
       ENDIF
       WRITE(IU06,*) ''
-
-      IF(FFLAG21) CALL OUTXT(IU06,IU21,IU31,IU23,IU33,IDELINS,IASSI,
-     & NOUTT,'IU21','IU31','IU23','IU33')
-      IF(FFLAG25) CALL OUTXT(IU06,IU25,IU35,IU27,IU37,IDELSPT,IASSI,
-     & NOUTT,'IU25','IU35','IU27','IU37')
-      IF(FFLAG26) CALL OUTXT(IU06,IU26,IU36,IU28,IU38,IDELSPS,IASSI,
-     & NOUTT,'IU26','IU36','IU28','IU38')
-
-      IF(ITEST.GT.0) THEN
-      WRITE(IU06,*) '                        LOGFILE   UNIT    GRIB'
-      WRITE(IU06,*) '17 SPECTRA OF TOTAL SEA .....', PFLAG(17),
-     & '......', FFLAG(17),'.....',GFLAG(17)
-      WRITE(IU06,*) ' SEE INSTEAD OUTPUT OF RESTART SPECTRA IN GRIB !!!'
-      WRITE(IU06,*) '  '
-
-      WRITE(IU06,*) '                        LOGFILE   UNIT    GRIB'
-      WRITE(IU06,*) '18 SWELL SPECTRA ............', PFLAG(18),
-     & '......', FFLAG(18),'.....',GFLAG(18)
-      WRITE(IU06,*) ' GRIBBING NOT YET IMPLEMENTED !!!'
-      WRITE(IU06,*) '  '
-      ENDIF
-
-      WRITE(IU06,*) '  '
 
       WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '
      & ,'    F = DISABLED   T = ENABLED    ', LFDB
@@ -1061,7 +1005,7 @@
       WRITE(IU06,*) '  '
 
 
-      IF ( LFDB .AND. .NOT. (GFLAG20.OR.GFLAG21))
+      IF ( LFDB .AND. .NOT. GFLAG20)
      &  THEN
         WRITE(IU06,*)' ************************************************'
         WRITE(IU06,*)' *                                              *'
@@ -1072,20 +1016,13 @@
         WRITE(IU06,*)' * FOR PACKING                                  *'
         WRITE(IU06,*)' *                                              *'
         WRITE(IU06,*)' ************************************************'
-        GFLAG( 1) = .TRUE.
-        GFLAG( 2) = .TRUE.
-        GFLAG( 3) = .TRUE.
-        GFLAG( 6) = .TRUE.
-        GFLAG( 7) = .TRUE.
-        GFLAG(15) = .TRUE.
-        GFLAG(16) = .TRUE.
-        GFLAG(17) = .TRUE.
-        GFLAG(18) = .TRUE.
-        GFLAG(19) = .TRUE.
-        GFLAG(20) = .TRUE.
-        GFLAG(21) = .TRUE.
+        GFLAG(IRHS) = .TRUE.
+        GFLAG(IRTP) = .TRUE.
+        GFLAG(IRT1) = .TRUE.
+        GFLAG(IRCD) = .TRUE.
+        GFLAG(IRU10)= .TRUE.
+        GFLAG(IRBATHY) = .TRUE.
         GFLAG20 = .TRUE.
-        GFLAG21 = .TRUE.
       ENDIF
       IF (LFDB) THEN
         WRITE(IU06,*) ' OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED'
@@ -1148,7 +1085,7 @@
 !     CFDB2DSP is reset to null since the FDB will be initialised
 !     with CFDBSF, provided it is used (ie grib output of integrated
 !     parameters.
-      IF(LFDB.AND.(GFLAG20.OR.GFLAG21)) CFDB2DSP  = "" 
+      IF(LFDB.AND.GFLAG20) CFDB2DSP  = "" 
       IF (LFDBIOOUT) THEN
         CLFORM='("  ITS ROOT DIRECTORY IS ", A256)'
         ILCFDB2DSP = LEN_TRIM(CFDB2DSP)
@@ -1547,7 +1484,7 @@
           ENDIF
         ENDDO
       ELSE
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
+        IF ((FFLAG20.OR.GFLAG20) .AND. IDELINT.EQ.0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1560,7 +1497,7 @@
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
-        IF ((FFLAG20.OR.PFLAG20.OR.GFLAG20) .AND.
+        IF ((FFLAG20.OR.GFLAG20) .AND.
      &   MOD(IDELINT,IDELPRO).NE.0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
@@ -1572,99 +1509,6 @@
           WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
           WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ',
      &     IDELINT
-          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
-     &     IDELPRO
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG21.OR.PFLAG21.OR.GFLAG21) .AND. IDELINS.EQ.0 ) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (SEA + SWELL) *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IDELINS                *'
-          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG21.OR.PFLAG21.OR.GFLAG21) .AND.
-     &   MOD(IDELINS,IDELPRO).NE.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF INTEGRATED DATA (SEA + SWELL) *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
-          WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINS = ',
-     &     IDELINS
-          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
-     &     IDELPRO
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG25.OR.PFLAG25.OR.GFLAG25) .AND. IDELSPT.EQ.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF SPECTRA (TOTAL SEA)           *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IDELSPT                *'
-          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG25.OR.PFLAG25.OR.GFLAG25) .AND.
-     &   MOD(IDELSPT,IDELPRO).NE.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF SPECTRA (TOTAL SEA)           *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
-          WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELSPT = ',
-     &     IDELSPT
-          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
-     &     IDELPRO
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG26.OR.PFLAG26.OR.GFLAG26) .AND. IDELSPS.EQ.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF SPECTRA (SEA + SWELL)         *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IDELSPS                *'
-          WRITE(IU06,*) '* HAS TO BE SPECIFIED IN NAMELIST         *'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*******************************************'
-          LERROR = .TRUE.
-        ENDIF
-        IF ((FFLAG26.OR.PFLAG26.OR.GFLAG26) .AND.
-     &   MOD(IDELSPS,IDELPRO).NE.0) THEN
-          WRITE(IU06,*) '*******************************************'
-          WRITE(IU06,*) '*                                         *'
-          WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
-          WRITE(IU06,*) '*    ==========================           *'
-          WRITE(IU06,*) '* OUTPUT OF SPECTRA (SEA + SWELL)         *'
-          WRITE(IU06,*) '* IS REQUESTED.                           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
-          WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELSPS = ',
-     &     IDELSPS
           WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
      &     IDELPRO
           WRITE(IU06,*) '*                                         *'
