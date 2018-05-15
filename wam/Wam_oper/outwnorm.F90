@@ -54,7 +54,8 @@
         IF(IRANK.EQ.IRECV) THEN
           WRITE(IU06,*) ' ' 
           IF(LDREPROD) THEN
-            WRITE(IU06,*) '  REPRODUCEABLE WAMNORM ON ',CDTPRO
+            WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
+            WRITE(IU06,*) '  !! REPRODUCEABLE IF SAME NPROC !!'
           ELSE
             WRITE(IU06,*) '  NON reproduceable WAMNORM ON ',CDTPRO
           ENDIF
