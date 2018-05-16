@@ -963,9 +963,9 @@
       ENDIF
 
 
-      WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                                   FILE     GRIB ',&
-     &               ' OUT PE   PARAMID'
+      WRITE(IU06,*) '###  NAME       OUTPUT OPTION :       FILE  GRIB ',&
+     &               ' OUT PE  PARAMID'
+      WRITE(IU06,*) '                            F = FALSE   T = TRUE '
       DO ITG = 1,JPPFLAG
         IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
