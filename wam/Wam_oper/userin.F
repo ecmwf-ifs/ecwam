@@ -958,18 +958,19 @@
 
       IF(LSECONDORDER) THEN
         WRITE(IU06,*) ' SECOND ORDER CORRECTION WILL BE APPLIED TO ',
-     &                ' OUTPUT INTEGRATED PARAMETERS.'
+     &                ' OUTPUT INTEGRATED PARAMETERS BASED ON MOMENTS'
         WRITE(IU06,*) '  '
       ENDIF
 
 
       WRITE(IU06,*) '    F = FALSE   T = TRUE '
-      WRITE(IU06,*) '                          FILE     GRIB     OUT PE'
+      WRITE(IU06,*) '                                   FILE     GRIB ',&
+     &               ' OUT PE   PARAMID'
       DO ITG = 1,JPPFLAG
         IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
         WRITE(IU06,*) CITG,COUTNAME(ITG),                               &
-     &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),         &
+     &   '...', FFLAG(ITG),'...',GFLAG(ITG),'...',IPFGTBL(ITG),'...',   &
      &   IPRMINFO(ITG,1)*1000+IPRMINFO(ITG,2)
         ENDIF
       ENDDO
