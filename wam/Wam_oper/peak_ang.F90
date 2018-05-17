@@ -33,8 +33,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMFR  ,DFIMOFR ,      &
-     &               DELTH, TH       ,SINTH    ,COSTH   ,WETAIL  ,      &
-     &               WP1TAIL ,FRTAIL
+     &               DFIMFR2  ,DELTH ,TH       ,SINTH    ,COSTH  ,      &
+     &               WETAIL   ,WP1TAIL         ,WP2TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
  
@@ -48,13 +48,12 @@
       INTEGER(KIND=JWIM), PARAMETER :: NSH = 5 
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX, MSTART, MSTOP
-
-!!!      REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
       REAL(KIND=JWRB) :: R1
-      REAL(KIND=JWRB) :: DELT25, COEF_FR, DELT2
+      REAL(KIND=JWRB) :: DELT25, COEF_FR, COEF_FR2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SUM0, SUM1, SUM2, SUM4, SUM6, XMAX
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SUM0, SUM1, SUM2, SUM4, XMAX
       REAL,DIMENSION(IJS:IJL) :: TEMP
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE) :: THMEAN, SUM_S, SUM_C
 
@@ -71,7 +70,7 @@
       DO IJ=IJS,IJL
         SUM0(IJ)= ZEPSILON
         SUM1(IJ)= 0._JWRB
-        SUM6(IJ)= 0._JWRB          
+        SUM2(IJ)= 0._JWRB          
       ENDDO
 
       DO M=1,NFRE
@@ -87,23 +86,23 @@
         DO IJ=IJS,IJL
           SUM0(IJ) = SUM0(IJ)+TEMP(IJ)*DFIM(M)
           SUM1(IJ) = SUM1(IJ)+TEMP(IJ)*DFIMFR(M)
-          SUM6(IJ) = SUM6(IJ)+TEMP(IJ)*DFIMOFR(M)
-        ENDDO
+          SUM2(IJ) = SUM2(IJ)+TEMP(IJ)*DFIMFR2(M)
+         ENDDO
       ENDDO
 
 !     ADD TAIL CORRECTIONS
       DELT25 = WETAIL*FR(NFRE)*DELTH
       COEF_FR = WP1TAIL*DELTH*FR(NFRE)**2
-      DELT2 = FRTAIL*DELTH
+      COEF_FR2 = WP2TAIL*DELTH*FR(NFRE)**3
       DO IJ=IJS,IJL
         SUM0(IJ) = SUM0(IJ)+DELT25*TEMP(IJ)
         SUM1(IJ) = SUM1(IJ)+COEF_FR*TEMP(IJ)
-        SUM6(IJ) = SUM6(IJ)+DELT2*TEMP(IJ)
+        SUM2(IJ) = SUM2(IJ)+COEF_FR2*TEMP(IJ)
       ENDDO
 
       DO IJ=IJS,IJL
         IF (SUM0(IJ).GT.ZEPSILON) THEN
-          XNU(IJ) = SQRT(MAX(0._JWRB,SUM1(IJ)*SUM6(IJ)/SUM0(IJ)**2-1._JWRB))
+          XNU(IJ) = SQRT(MAX(0._JWRB,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
         ELSE
           XNU(IJ) = ZEPSILON 
         ENDIF 
@@ -173,8 +172,7 @@
       DO IJ=IJS,IJL
         IF (SUM1(IJ).GT.ZEPSILON) THEN
           R1 = SUM2(IJ)/SUM1(IJ)
-          SIG_TH(IJ) = SQRT(2._JWRB*(1._JWRB-R1))
-!!!1          SIG_TH(IJ) = CONST_SIG*SQRT(2._JWRB*(1._JWRB-R1))
+          SIG_TH(IJ) = CONST_SIG*SQRT(2._JWRB*(1._JWRB-R1))
         ELSE
           SIG_TH(IJ) = 0._JWRB
         ENDIF
