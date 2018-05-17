@@ -15,10 +15,12 @@
 !     -------
 
 ! ----------------------------------------------------------------------
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LWCOU
+      USE YOMIO_SERV, ONLY : IO_SERV_C001
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
-     &                      INFOBOUT,BOUT
+     &                      INFOBOUT,BOUT,LIOSERV
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,              &
      &            CFDBSF   ,MARSTYPE ,NWFDBREF ,LFDBOPEN
@@ -88,30 +90,13 @@
         IFCST=INHOUR+IFCST
       ENDIF
 
+      ! Use IFS IO server?
+      IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0 .AND. LIOSERV) THEN
+          CALL OUTINT_IO_SERV(NIPRMOUT, IJSLOC, IJLLOC, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
+      ELSE
+          CALL OUTINT(CDATE, IFCST)
+      ENDIF
 
-!!!! if I/O server pass BOUT with INFOBOUT to it
+    IF (LHOOK) CALL DR_HOOK('OUTWINT',1,ZHOOK_HANDLE)
 
-!!!  BOUT(IJSLOC:IJLLOC,NIPRMOUT) contains the local contributions of the NIPRMOUT integrated parameters
-!!!  that will need to be output
-!!!! NIPRMOUT is not always the same as the model could output less at step 0
-!!!  These parameters are defined with INFOBOUT(NIPRMOUT,NINFOBOUT), where
-!    INFOBOUT(:,1)  : GRIB TABLE NUMBER.
-!    INFOBOUT(:,2)  : GRIB PARAMETER IDENTIFIER.
-!    INFOBOUT(:,3)  : GRIB REFERENCE LEVEL IN FULL METER.
-
-!    MARSTYPE IS AVAILABLE FROM MODULE
-!    CDATE, IFCST ARE DEFINED ABOVE
-
-
-
-
-!!!  else not not the i/o server
-
-       CALL OUTINT(CDATE, IFCST)
-
-!!!  endif
-
-
-      IF (LHOOK) CALL DR_HOOK('OUTWINT',1,ZHOOK_HANDLE)
-
-      END SUBROUTINE OUTWINT
+END SUBROUTINE OUTWINT
