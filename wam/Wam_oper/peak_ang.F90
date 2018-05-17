@@ -33,8 +33,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMFR  ,DFIMOFR ,      &
-     &               DELTH, TH       ,SINTH    ,COSTH   ,WETAIL  ,      &
-     &               WP1TAIL         ,WP2TAIL
+     &               DFIMFR2  ,DELTH ,TH       ,SINTH    ,COSTH  ,      &
+     &               WETAIL   ,WP1TAIL         ,WP2TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
  
