@@ -17,10 +17,10 @@ MODULE UNSTRUCT_CURR
       REAL(KIND=JWRU), ALLOCATABLE :: CURTXY (:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: CURTXY1(:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: CURTXY2(:,:)
-      integer recTime1, recTime2
+      INTEGER(KIND=JWIM) :: recTime1, recTime2
       TYPE(TIMEPERIOD) RecTimeCurr
       character(len=*), parameter :: eFileBnd = 'wwm_curr_format.nc'
-      real*8 :: WAV_CurrTime = 0
+      REAL(KIND=JWRU) :: WAV_CurrTime = 0.
       LOGICAL :: UseSingleFile = .FALSE.
       LOGICAL :: IsInitializedSingleFile = .FALSE.
       CONTAINS
@@ -33,18 +33,18 @@ MODULE UNSTRUCT_CURR
       USE WAV_NETCDF_FCT, ONLY : CF_EXTRACT_TIME
       IMPLICIT NONE
       character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
-      real*8, allocatable :: ListTime_mjd(:)
+      REAL(KIND=JWRU), allocatable :: ListTime_mjd(:)
       character (len=100) :: eStrUnitTime
-      real(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
-      INTEGER varid, ncid
-      integer, dimension(nf90_max_var_dims) :: dimids
-      integer istat
-      integer nbtime_mjd
-      integer iTime
-      real(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
-      real(KIND=JWRU) DeltaDiff, eDir
+      REAL(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
+      INTEGER(KIND=JWIM) :: varid, ncid
+      INTEGER(KIND=JWIM), dimension(nf90_max_var_dims) :: dimids
+      INTEGER(KIND=JWIM) :: istat
+      INTEGER(KIND=JWIM) :: nbtime_mjd
+      INTEGER(KIND=JWIM) :: iTime
+      REAL(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
+      REAL(KIND=JWRU) DeltaDiff, eDir
       logical IsAssigned
-      integer ID, ID1, ID2
+      INTEGER(KIND=JWIM) :: ID, ID1, ID2
       !
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'eFileBnd=', TRIM(eFileBnd)
@@ -78,12 +78,12 @@ MODULE UNSTRUCT_CURR
       IMPLICIT NONE
       character(len=*), intent(in) :: eFile
       REAL(KIND=JWRU), intent(out) :: CURT(2,MNP)
-      integer, intent(in) :: IT
+      INTEGER(KIND=JWIM), intent(in) :: IT
       REAL(KIND=JWRU) CURT_GL(2,np_global)
       REAL(KIND=JWRU) singleRead(np_global)
-      integer istat, ncid, var_id
-      integer IP, IS, ID, idx
-      integer IPglob
+      INTEGER(KIND=JWIM) :: istat, ncid, var_id
+      INTEGER(KIND=JWIM) :: IP, IS, ID, idx
+      INTEGER(KIND=JWIM) :: IPglob
       character(len=*), parameter :: CallFct = "SINGLE_READ_CURRENT"
       !
       ! We have this inversion of the order because that is so in WWM at
@@ -123,9 +123,9 @@ MODULE UNSTRUCT_CURR
       USE YOWSTAT  , ONLY : IDELT
       USE WAV_NETCDF_FCT, ONLY : WAV_GET_ETIMEDAY
       IMPLICIT NONE
-      REAL*8 eTimeDay
+      REAL(KIND=JWRU) eTimeDay
       REAL(KIND=JWRU) w1, w2
-      integer iTime1, iTime2
+      INTEGER(KIND=JWIM) :: iTime1, iTime2
       UseSingleFile = .TRUE.
       IF (IsInitializedSingleFile .eqv. .FALSE.) THEN
         IsInitializedSingleFile=.FALSE.
@@ -151,7 +151,7 @@ MODULE UNSTRUCT_CURR
       SUBROUTINE SET_CURTXY
       USE YOWCURR, ONLY : U, V
       IMPLICIT NONE
-      integer IP, IG
+      INTEGER(KIND=JWIM) :: IP, IG
       IF (UseSingleFile .eqv. .FALSE.) THEN
         IG=1
         DO IP=1,MNP

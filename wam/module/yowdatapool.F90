@@ -1,15 +1,16 @@
 !> Has fancy data
 module yowDatapool
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   use yowMpiModule
   implicit none
 
 
 #ifdef USE_SINGLE
   !> single precision. Enable with compiler flag -DUSE_SINGLE
-  integer,parameter :: rkind = 4
+  integer(KIND=JWIM),parameter :: rkind = JWRB
 #else
   !> double precision. Default real datatype
-  integer,parameter :: rkind = 8
+  integer(KIND=JWIM),parameter :: rkind = JWRU
 #endif
 
 
@@ -22,26 +23,26 @@ module yowDatapool
   logical, parameter :: debugPartition = .false.
 
   !> Number of threads
-  integer, save :: nTasks = 0
+  integer(KIND=JWIM), save :: nTasks = 0
 
   !> The thread id.
   !> starts by 0. The first Thread has rank 0
-  integer, save :: myrank = 0
+  integer(KIND=JWIM), save :: myrank = 0
 
   !> MPI Communicator.
   !> Should be MPI_COMM_WORLD. If pdlib is run into a existing MPI enviroment, comm is set to a new communicator
-  integer,public,save :: comm = MPI_COMM_WORLD
+  integer(KIND=JWIM),public,save :: comm = MPI_COMM_WORLD
 
-  !> MPI Integer Type.
-  !> Should be MPI_INTEGER
-  integer,parameter :: itype = MPI_INTEGER
+  !> MPI integer Type.
+  !> Should be MPI_integer
+  integer(KIND=JWIM),parameter :: itype = MPI_integer
 
   !> MPI Real Type
   !> Shpuld be MPI_REAL8
 #ifdef USE_SINGLE
-  integer, parameter :: rtype = MPI_REAL4
+  integer(KIND=JWIM), parameter :: rtype = MPI_REAL4
 #else
-  integer, parameter :: rtype = MPI_REAL8  
+  integer(KIND=JWIM), parameter :: rtype = MPI_REAL8  
 #endif
 
 end module yowDatapool

@@ -1,5 +1,6 @@
 !> Has data that belong to nodes
 module yowNodepool
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   use yowDatapool, only: rkind
   implicit none
   private
@@ -11,10 +12,10 @@ module yowNodepool
   type, public :: t_Node
 
     !> the local node number
-    integer :: id = 0
+    integer(KIND=JWIM) :: id = 0
 
     !> the global node number
-    integer :: id_global = 0
+    integer(KIND=JWIM) :: id_global = 0
 
     !> X Coordiante
     real(rkind) :: x = 0.0
@@ -26,11 +27,11 @@ module yowNodepool
     !> number of connected nodes.
     !> holds the number of neighbors conntected to this node.
     !> to get the connected nodes, iterate over the connNodes() Array
-    integer :: nConnNodes = 0
+    integer(KIND=JWIM) :: nConnNodes = 0
 
     !> The domain ID to which this node belongs.
     !> The first domain starts by 1. Fortran Stye
-    integer :: domainID = 0
+    integer(KIND=JWIM) :: domainID = 0
 
     contains
       !> Insert a node to the connected Nodes array. See Node_insertConnNode()
@@ -49,16 +50,16 @@ module yowNodepool
   real(rkind), public, target, allocatable :: x(:), y(:), z(:)
 
   !> number of nodes, global
-  integer, public :: np_global = 0
+  integer(KIND=JWIM), public :: np_global = 0
 
   !> number of nodes, local
-  integer, public :: np  = 0
+  integer(KIND=JWIM), public :: np  = 0
 
   !> number of ghost nodes this partition holds
-  integer, public :: ng = 0
+  integer(KIND=JWIM), public :: ng = 0
 
   !> number of ghost + resident nodes this partition holds
-  integer, public :: npa = 0
+  integer(KIND=JWIM), public :: npa = 0
 
   !> all nodes with their data.
   !> to iterate over all local nodes, use funtion node(local id) to get a pointer to t_node
@@ -66,58 +67,58 @@ module yowNodepool
 
 
   !> max number of conntected nodes to a node
-  integer, public :: maxConnNodes = 0
+  integer(KIND=JWIM), public :: maxConnNodes = 0
 
   !> conntected Node Array for global nodes
   !> 2D Array. Holds the global node numbers conntected to each other.
   !> \param 1 global node number from wich you want the neighbors
   !> \param 2 from 1 to t_Node::nConnNodes
-  integer, public, allocatable :: connNodes_data(:,:)
+  integer(KIND=JWIM), public, allocatable :: connNodes_data(:,:)
 
   !> Number of connected nodes per node. [1:np]
   !> this is the same as node%nConnNodes
-  integer, public, allocatable :: NCONN(:)
+  integer(KIND=JWIM), public, allocatable :: NCONN(:)
 
   !> Holds the local node numbers connected to the given local node number
   !> \param 1 i-th neighbor of node IP. [1:NCONN(IP)]
   !> \param 2 IP local node number from which you want the neighbors [1:np] 
   !> \note the neighbor nodes are sorted. If you iterate over all connected nodes, their x/y coord. 
   !> builds a valid, simple, non-selfintersecting polygon
-  integer, public, allocatable :: CONN(:,:)
+  integer(KIND=JWIM), public, allocatable :: CONN(:,:)
 
 
 
   !> Node local to global mapping.
   !> np long. give the gobal node id
-  integer, public, allocatable :: iplg(:)
+  integer(KIND=JWIM), public, allocatable :: iplg(:)
 
   !> Node global to local mapping
   !> np_global long. give the local node id but only for this rank. local node id for other ranks are set to 0!
-  integer, public, allocatable :: ipgl(:)
+  integer(KIND=JWIM), public, allocatable :: ipgl(:)
 
   !> Ghost local to global mapping
   !> ng long. give the global node id of nodes, which
   !> belong to adjacent domains
-  integer, public, allocatable :: ghostlg(:)
+  integer(KIND=JWIM), public, allocatable :: ghostlg(:)
 
   !> Ghost global to local mapping
   !> np_global long. give the local ghost node id. local ghost node ids for other ranks are set to 0!
-  integer, public, allocatable :: ghostgl(:)
+  integer(KIND=JWIM), public, allocatable :: ghostgl(:)
 
   !> Numbers of Nodes pro Processor.
   !> Has the number of nodes each thread ows. Array is nTasks long
-  integer, public, allocatable :: np_perProc(:)
+  integer(KIND=JWIM), public, allocatable :: np_perProc(:)
 
   !> Number of Nodes pro Processor totalize.
   !> Has the sum of nodes each thread owen. Array in nTasks+1 long
   !> Processor i stores np_perProcSum(i)::np_perProcSum(i+1)-1 nodes
-  integer, public, allocatable :: np_perProcSum(:)
+  integer(KIND=JWIM), public, allocatable :: np_perProcSum(:)
 
   !> Node to domain mapping.
   !> np_global long. give the domain number for die global node number
   !> will be allocated and filled in subroutine runparmetis
   !> The first rank starts by 1.
-  integer, public, allocatable :: node2rank(:)
+  integer(KIND=JWIM), public, allocatable :: node2rank(:)
 
   contains
 
@@ -127,7 +128,7 @@ module yowNodepool
   function connNodes(this, i)
     implicit none
     class(t_Node) :: this
-    integer, intent(in) :: i
+    integer(KIND=JWIM), intent(in) :: i
     type(t_Node), pointer :: connNodes
     connNodes => nodes_global(connNodes_data(this%id_global, i))
   end function
@@ -138,7 +139,7 @@ module yowNodepool
   !> \return poiner to the (global) node
   function nodes(id_local)
     implicit none
-    integer, intent(in) :: id_local
+    integer(KIND=JWIM), intent(in) :: id_local
     type(t_Node), pointer :: nodes
     nodes => nodes_global(iplg(id_local))
   end function
@@ -151,7 +152,7 @@ module yowNodepool
   !> \return pointer to the (global) node
   function ghosts(id)
     implicit none
-    integer, intent(in) :: id
+    integer(KIND=JWIM), intent(in) :: id
     type(t_Node), pointer :: ghosts
     ghosts => nodes_global(ghostlg(id))
   end function
@@ -161,8 +162,8 @@ module yowNodepool
   subroutine insertConnNode(this, ind)
     implicit none
     class(t_Node) :: this
-    integer    , intent(in), optional :: ind
-    integer :: i
+    integer(KIND=JWIM)    , intent(in), optional :: ind
+    integer(KIND=JWIM) :: i
     type(t_Node), pointer :: node
 
     ! if index is present, Check if the node has allreay be insert. Then insert it

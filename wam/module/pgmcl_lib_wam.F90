@@ -1,9 +1,10 @@
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
 #else
 MODULE PGMCL_LIB_WAM
-  implicit none
-  real, dimension(1) :: US_coupl, Z0_coupl
-  logical :: HAVE_NEW_COUPLING_FIELDS
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+  IMPLICIT NONE
+  REAL(KIND=JWRU), DIMENSION(1) :: US_coupl, Z0_coupl
+  LOGICAL :: HAVE_NEW_COUPLING_FIELDS
 
   contains
      SUBROUTINE WAV_initialize_all_coupling()

@@ -2,9 +2,10 @@
 
 !> Has some subroutine to make a nice error message
 module yowError
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   implicit none
 
-  integer, public :: stat = 0
+  integer(KIND=JWIM), public :: stat = 0
   
   contains
 
@@ -15,13 +16,13 @@ module yowError
     implicit none
 
     character(*),optional,intent(in) :: string !string to print
-    integer,optional,intent(in) :: error       !mpi errorcode
-    integer :: ierr,i
+    integer(KIND=JWIM),optional,intent(in) :: error       !mpi errorcode
+    integer(KIND=JWIM) :: ierr,i
     logical :: lopen
-    integer :: sl
+    integer(KIND=JWIM) :: sl
     ! MPI_MAX_ERROR_STRING = 1024
     character(1024) :: errorstring
-    integer :: myrank
+    integer(KIND=JWIM) :: myrank
 
     ! Get rank
     call mpi_comm_rank(comm, myrank,ierr)
@@ -70,22 +71,22 @@ module yowError
     ! Errorstring to print
     character(*), optional, intent(in) :: string
     ! Linenumber to print
-    integer,      optional, intent(in) :: line
+    integer(KIND=JWIM),      optional, intent(in) :: line
     ! Filename to print
     character(*), optional, intent(in) :: file
     ! MPI error number to translate
-    integer,      optional, intent(in) :: errno
+    integer(KIND=JWIM),      optional, intent(in) :: errno
     ! Linenumber as string
     character(50) :: lineNumber
     ! MPI_MAX_ERROR_STRING = 1024
     ! MPI Errorstring
     character(MPI_MAX_ERROR_STRING) :: errorstring
     ! The rank of this thread
-    integer :: myrank
+    integer(KIND=JWIM) :: myrank
     ! real MPI errorsting lengt
-    integer :: stringLengh
+    integer(KIND=JWIM) :: stringLengh
     !
-    integer :: ierr
+    integer(KIND=JWIM) :: ierr
 
     ! Get rank
     call mpi_comm_rank(comm, myrank,ierr)
@@ -156,15 +157,15 @@ module yowError
     ! Errorstring to print
     character(*), optional, intent(in) :: string
     ! Linenumber to print
-    integer,      optional, intent(in) :: line
+    integer(KIND=JWIM),      optional, intent(in) :: line
     ! Filename to print
     character(*), optional, intent(in) :: file
     ! Linenumber as string
     character(50) :: lineNumber
     ! The rank of this thread
-    integer :: myrank
+    integer(KIND=JWIM) :: myrank
     !
-    integer :: ierr
+    integer(KIND=JWIM) :: ierr
 
     ! Get rank
     call mpi_comm_rank(comm, myrank,ierr)

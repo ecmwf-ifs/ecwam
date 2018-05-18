@@ -2,7 +2,7 @@ MODULE WAV_NETCDF_FCT
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       TYPE TIMEPERIOD
-        integer nbTime
+        INTEGER(KIND=JWIM) :: nbTime
         REAL(KIND=JWRU), allocatable :: ListTime(:)
       END TYPE TIMEPERIOD
       CONTAINS
@@ -28,7 +28,7 @@ MODULE WAV_NETCDF_FCT
       IMPLICIT NONE
       TYPE(TIMEPERIOD), intent(in) :: RecTime
       REAL(KIND=JWRU), intent(in) :: eTime
-      integer, intent(out) :: iTime1, iTime2
+      INTEGER(KIND=JWIM), intent(out) :: iTime1, iTime2
       real(KIND=JWRU), intent(out) :: w1, w2
       REAL(KIND=JWRU), parameter :: tolDay = 0.00000001
       REAL(KIND=JWRU) :: DeltaTime
@@ -62,18 +62,18 @@ MODULE WAV_NETCDF_FCT
       SUBROUTINE READ_LIST_TIME(ncid, RecTime)
       USE NETCDF
       IMPLICIT NONE
-      integer, intent(in) :: ncid
+      INTEGER(KIND=JWIM), intent(in) :: ncid
       TYPE(TIMEPERIOD), intent(inout) :: RecTime
       character(len=*), parameter :: CallFct = "READ_LIST_TIME"
-      real*8, allocatable :: ListTime_mjd(:)
+      REAL(KIND=JWRU), allocatable :: ListTime_mjd(:)
       character (len=100) :: eStrUnitTime
-      real(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
-      REAL(KIND=JWRU) eTime
-      integer, dimension(nf90_max_var_dims) :: dimids
-      integer nbtime_mjd
-      integer istat
-      integer iTime
-      integer varid
+      REAL(KIND=JWRU) :: ConvertToDay, eTimeStart, eTimeBnd
+      REAL(KIND=JWRU) :: eTime
+      INTEGER(KIND=JWIM), dimension(nf90_max_var_dims) :: dimids
+      INTEGER(KIND=JWIM) :: nbtime_mjd
+      INTEGER(KIND=JWIM) :: istat
+      INTEGER(KIND=JWIM) :: iTime
+      INTEGER(KIND=JWIM) :: varid
       !
       ! reading the time
       !
@@ -114,7 +114,7 @@ MODULE WAV_NETCDF_FCT
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       USE NETCDF
       implicit none
-      integer, intent(in) :: iret, idx
+      INTEGER(KIND=JWIM), intent(in) :: iret, idx
       character(*), intent(in) :: CallFct
       character(len=500) :: CHRERR
       character(len=1500) :: CHRERR_tot
@@ -135,12 +135,12 @@ MODULE WAV_NETCDF_FCT
       USE YOWWAMI  , ONLY : CBPLTDT
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       IMPLICIT NONE
-      real*8, intent(out) :: eTimeDay
-      real*8, intent(in) :: Increment
-      real*8 eJD
+      REAL(KIND=JWRU), intent(out) :: eTimeDay
+      REAL(KIND=JWRU), intent(in) :: Increment
+      REAL(KIND=JWRU) :: eJD
       character(len=4) eYear
       character(len=2) eMonth, eDay, eHour, eMin, eSec
-      integer year, month, day, hour, min, sec
+      INTEGER(KIND=JWIM) :: year, month, day, hour, min, sec
       eYear(1:1)  = CBPLTDT(1:1)
       eYear(2:2)  = CBPLTDT(2:2)
       eYear(3:3)  = CBPLTDT(3:3)
@@ -192,9 +192,9 @@ MODULE WAV_NETCDF_FCT
       character(len=50) :: YnameB, YnameD, YnameE
       character(len=50) :: YnameDate, YnameTime, YnameTimeP
       character(len=15) :: eStrTime
-      integer alenB, alenC, alenD, alenE, alenTime, alenDate
-      integer alen, posBlank
-      integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
+      INTEGER(KIND=JWIM) :: alenB, alenC, alenD, alenE, alenTime, alenDate
+      INTEGER(KIND=JWIM) :: alen, posBlank
+      INTEGER(KIND=JWIM) :: lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
       alen=LEN_TRIM(eStrUnitTime)
 !      WRITE(740+MyRankGlobal,*) 'alen=', alen
       posBlank=INDEX(eStrUnitTime(1:alen), ' ')
