@@ -99,12 +99,12 @@
      &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,
      &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
+      USE UNSTRUCT_BOUND , ONLY : LBCWA
       USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,
      &            SOURCE_IMPL, WAE_SOLVERTHR, 
      &            LNONL, BLOCK_GAUSS_SEIDEL,
-     &            LLIMT, L_SOLVER_NORM, LCHKCONV,
-     $            LBCWA
+     &            LLIMT, L_SOLVER_NORM, LCHKCONV
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT

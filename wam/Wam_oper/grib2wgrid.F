@@ -640,6 +640,7 @@
          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER *'
          WRITE(IU06,*) '  ',IPARAM 
          WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  MODEL:             INPPUT:     *'
          WRITE(IU06,*) '*  PMOSOP: ', PMOSOP, 'RMOSOP : ',RMOSOP
          WRITE(IU06,*) '*  PMONOP: ', PMONOP, 'RMONOP : ',RMONOP
          WRITE(IU06,*) '*  PMOWEP: ', PMOWEP, 'RMOWEP : ',RMOWEP
