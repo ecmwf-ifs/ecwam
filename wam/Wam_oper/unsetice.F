@@ -47,6 +47,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "sdepthlim.intfb.h"
 #include "jonswap.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL

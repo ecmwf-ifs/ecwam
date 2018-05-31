@@ -138,6 +138,8 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "imphftail.intfb.h"
+#include "sdepthlim.intfb.h"
 #include "airsea.intfb.h"
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"

@@ -308,6 +308,7 @@
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wam_nproma.intfb.h"
 #include "abort1.intfb.h"
 #include "cigetdeac.intfb.h"
 #include "cireduce.intfb.h"

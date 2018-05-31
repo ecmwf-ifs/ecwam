@@ -61,6 +61,7 @@
 
 ! -----------------------------------------------------------------------
       IMPLICIT NONE
+#include "z0wave.intfb.h"
 #include "airsea.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"

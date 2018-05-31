@@ -376,6 +376,9 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "mpcrtbl.intfb.h"
+#include "outwint.intfb.h"
+#include "outwpsp.intfb.h"
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
 #include "chesig.intfb.h"

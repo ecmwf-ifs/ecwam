@@ -72,6 +72,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "sdepthlim.intfb.h"
 #include "abort1.intfb.h"
 #include "expand_string.intfb.h"
 #include "grib2wgrid.intfb.h"

@@ -127,6 +127,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "outwint.intfb.h"
+#include "outwpsp.intfb.h"
 #include "altas.intfb.h"
 #include "clean_outbs.intfb.h"
 #include "difdate.intfb.h"

@@ -56,6 +56,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 #include "mpabort.intfb.h"
 
       INTEGER :: IR, IFLAG, IT, IC, ITG, ITP, ITT, IZLEV
