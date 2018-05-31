@@ -45,6 +45,8 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "out_onegrdpt_sp.intfb.h"
+#include "outers.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJSLOC, IJLLOC
       INTEGER(KIND=JWIM), INTENT(IN) :: IJ_OFFSET

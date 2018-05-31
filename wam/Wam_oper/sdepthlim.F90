@@ -35,6 +35,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "semean.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EMAXDPT

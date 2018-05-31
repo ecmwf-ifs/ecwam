@@ -79,6 +79,23 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "cal_second_order_spec.intfb.h"
+#include "cimsstrn.intfb.h"
+#include "femean.intfb.h"
+#include "intpol.intfb.h"
+#include "kurtosis.intfb.h"
+#include "meansqs.intfb.h"
+#include "mwp1.intfb.h"
+#include "mwp2.intfb.h"
+#include "outsetwmask.intfb.h"
+#include "peak_freq.intfb.h"
+#include "se10mean.intfb.h"
+#include "sebtmean.intfb.h"
+#include "sepwisw.intfb.h"
+#include "sthq.intfb.h"
+#include "stokesdrift.intfb.h"
+#include "wdirspread.intfb.h"
+#include "weflux.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ

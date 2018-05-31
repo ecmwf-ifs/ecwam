@@ -40,6 +40,7 @@
  
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "mstart.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F1

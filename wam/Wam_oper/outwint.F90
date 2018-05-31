@@ -27,6 +27,10 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "difdate.intfb.h"
+#include "incdate.intfb.h"
+#include "outint.intfb.h"
 
       INTEGER(KIND=JWIM) :: IFCST, INHOUR, ISHIFT
       INTEGER(KIND=JWIM) :: IY,IM,ID,IH,IMN,ISS
