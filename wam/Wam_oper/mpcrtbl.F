@@ -56,6 +56,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "mpabort.intfb.h"
 
       INTEGER :: IR, IFLAG, IT, IC, ITG, ITP, ITT, IZLEV
 

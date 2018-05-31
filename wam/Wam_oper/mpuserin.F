@@ -116,6 +116,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
+#include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
       INTEGER :: IU05
@@ -927,5 +928,4 @@
       IF (LHOOK) CALL DR_HOOK('MPUSERIN',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE MPUSERIN
