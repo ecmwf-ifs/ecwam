@@ -102,6 +102,7 @@
       REAL :: OM0, OM0P, OM0M, OM0H, OM1
       REAL :: T_4M, T_4P, DELM1, XD, X_MIN, OMRT, XLOGD, OMG5
       REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(NMAX) :: OMEGA_EXT 
       REAL, DIMENSION(IJS:IJL) :: XINCR, DF2KP, DF2KM, PSUM
       REAL, DIMENSION(IJS:IJL,NANG,NMAX) :: F2
 
@@ -133,6 +134,7 @@
       ENDDO
 
       DO M=1,NFRE
+         OMEGA_EXT(M)=OMEGA(M)
          DO K=1,NANG
             DO IJ=IJS,IJL
                F2(IJ,K,M) = F1(IJ,K,M)
@@ -143,6 +145,7 @@
       OMG5 = OMEGA(NFRE)**5
       DO M=NFRE+1,NMAX
          OM0 = OMSTART*(1.+FRAC)**(MR*M-1)
+         OMEGA_EXT(M)=OM0
          OMRT = OMG5/OM0**5
          DO K=1,NANG
             DO IJ=IJS,IJL
@@ -167,8 +170,9 @@
       DO M=1,NFRE
          OM0 = OMEGA(M)
          OM0H = 0.5*OM0      
-         MP   = MIN(M+1,NFRE)
-         OM0P = OMEGA(MP)
+!!!         MP   = MIN(M+1,NFRE)
+         MP   = MIN(M+1,NMAX)
+         OM0P = OMEGA_EXT(MP)
          MM   = MAX(M-1,1) 
          OM0M = OMEGA(MM)
          DELM1 = 1./(OM0P-OM0M)
@@ -282,5 +286,4 @@
       IF (LHOOK) CALL DR_HOOK('SECSPOM',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE SECSPOM

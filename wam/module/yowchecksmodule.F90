@@ -6,6 +6,7 @@
 #include "yowincludes.h"
 
 module yowChecksModule  
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   implicit none
 
   contains
@@ -22,9 +23,9 @@ module yowChecksModule
     implicit none
     real(rkind), intent(in) :: ACin(npa)
     
-    integer :: fhdl, oRank, IP, IPglobal
-    integer :: status(MPI_STATUS_SIZE), ierr
-    integer :: nTimeSeen(np_global)
+    integer(KIND=JWIM) :: fhdl, oRank, IP, IPglobal
+    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE), ierr
+    integer(KIND=JWIM) :: nTimeSeen(np_global)
     real(rkind) :: newVal, sumError
     real(rkind) :: ACtotal(np_global)
     real(rkind), allocatable :: ACloc(:)
@@ -86,9 +87,9 @@ module yowChecksModule
     use yowMpiModule
     implicit none
     real(rkind), intent(in) :: ACin(npa)
-    integer :: oRank, IP, IPglobal
-    integer :: status(MPI_STATUS_SIZE), ierr
-    integer :: nTimeSeen(np_global)
+    integer(KIND=JWIM) :: oRank, IP, IPglobal
+    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE), ierr
+    integer(KIND=JWIM) :: nTimeSeen(np_global)
     real(rkind) :: newVal, GlobalSum
     real(rkind) :: ACtotal(np_global)
     real(rkind), allocatable :: ACloc(:)

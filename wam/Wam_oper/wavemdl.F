@@ -1,6 +1,6 @@
       SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,
      &                    NFIELDS, NGPTOTG, NC, NR,
-     &                    IGRIB_HANDLE, RMISS, FIELDS,
+     &                    IGRIB_HANDLE, RMISS, PRCHAR, FIELDS,
      &                    NATMFLX, 
      &                    LWCUR, LWSTOKES,
      &                    NWVFIELDS, WVFLDG,
@@ -8,7 +8,8 @@
      &                    LDRESTARTED, ZDELATM, KQGAUSS,
      &                    LDWCOUNORMS, MASK_IN, MASK_OUT,
      &                    NFDBREF,
-     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,
+     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
+     &                    RNU_ATM, RNUM_ATM,                            &
      &                    IDATE_TIME_WINDOW_END)
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
@@ -99,6 +100,7 @@
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,
+     &         RNU      ,RNUM        ,
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, LWNEMOCOUSTRN
@@ -169,6 +171,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE
 !     GRIB MISSING DATA INDICATOR
       REAL(KIND=JWRB), INTENT(IN) :: RMISS
+!     DEFAULT VALUE FOR CHARNOCK
+      REAL, INTENT(IN) :: PRCHAR 
 !     FIELDS CONTAINING ATMOSPHERIC DATA
       REAL(KIND=JWRB), INTENT(INOUT) :: FIELDS(NGPTOTG,NFIELDS)
 !     INDICATES WHICH PHYSICAL QUANTITY IS USED FOR WIND INPUT
@@ -213,6 +217,10 @@
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
 !     MODIFICATION FACTOR FOR GRAVITY FOR SMALL PLANET RUNS
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRG
+!     KINEMATIC AIR DENSITY
+      REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM 
+!     REDUCED KINEMATIC AIR DENSITY FOR MOEMNTUM TRANSFER
+      REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM 
 !     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATE_TIME_WINDOW_END
 
@@ -279,9 +287,14 @@
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 #endif
 
+
+
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
+
+      RNU=RNU_ATM
+      RNUM=RNUM_ATM
 
       KDELWI=NINT(PSTEP)*KSTPW
 
@@ -717,7 +730,7 @@
 
 !       1. CHARNOCK FIELD
         FLABEL(1)=' Charnock'
-        DEFVAL(1)=0.018  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+        DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
                          !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
                          ! BUT WELL OVER LAND POINTS.
@@ -1068,6 +1081,10 @@
 
 !     4. END OF RUN ?
 !        -----------
+      IF (CDATEE .EQ. CDTPRO) THEN
+        CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
+        CALL FLUSH(IU06)
+      ENDIF
       IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
         IF(LWCOU .AND. LNEWLVTP) THEN
 !         the fdb should be closed by IFS
@@ -1076,6 +1093,7 @@
             CALL FLUSH(IU06)
           ENDIF
         ELSE
+        WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSING FDB'
         CALL GSTATS(1787,0)
         ISTAT = ICLOSEFDBSUBS (NWFDBREF)
         CALL GSTATS(1787,1)

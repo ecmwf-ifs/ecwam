@@ -209,9 +209,7 @@
 !       *OUTBC*     - OUTPUT OF BOUNDARY VALUES.
 !       *OUTBS*     - CONTROLS OUTPUT FROM BLOCKS.
 !       *OUTGRID*   - SAVE BLOCKED PARAMETERS INTO GRID ARRAYS.
-!       *OUTINT*    - OUTPUT OF INTEGRATED PARAMETERS.
-!       *OUTPP*     - WRITES GRIDDED FIELDS TO PRINTER.
-!       *OUTSPP*    - OUTPUT OF SPECTRA AT SELECTED POINTS.
+!       *OUTWINT*   - OUTPUT OF INTEGRATED PARAMETERS.
 !       *PEAKFR*    - COMUTE PEAK FREQUENCY.
 !       *PROPAG*    - PROPAGATION SCHEME.
 !       *PRSPP*     - PRINT A SPECTRUM.
@@ -287,13 +285,14 @@
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,FFLAG21  ,
-     &            FFLAG25  ,FFLAG26  ,PFLAG20  ,PFLAG21  ,PFLAG25  ,
-     &            PFLAG26  ,GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,
-     &            JPPFLAG  ,FFLAG    ,PFLAG    ,GFLAG    ,
-     &            LFDB     ,NOUTT    ,NOUTS    ,
-     &            CASS     ,NASS     ,LOUTINT  ,LOUTSPP  ,
-     &            LRSTPARALW, LRSTINFDAT, 
+      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
+     &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
+     &            IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
+     &            NGOUT    ,LLOUTERS ,                                  &
+     &            NIPRMOUT ,                                            &
+     &            LFDB     ,NOUTT    ,NOUTS    ,                        &
+     &            CASS     ,NASS     ,LOUTINT  ,                        &
+     &            LRSTPARALW, LRSTINFDAT,                               &
      &            LRSTST0  ,LWAMANOUT
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFPBO  , ONLY : IBOUNF
@@ -321,7 +320,7 @@
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
      &            LWAVEWIND
       USE YOWMLTSK , ONLY : NCHUNK
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
@@ -332,10 +331,10 @@
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
      &            INDEP
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
-     &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,IDELINS  ,
-     &            IDELSPT  ,IDELSPS  ,ISHALLO  ,IREFRA   ,IASSI    ,
+     &            CDATER   ,CDATES   ,CDTINTT  ,
+     &            CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
+     &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,
+     &            ISHALLO  ,IREFRA   ,IASSI    ,
      &            CDTBC    ,IDELBC   ,
      &            IPROPAGS ,
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
@@ -353,14 +352,12 @@
      &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
      &            LUPDTWGHT 
-      USE YOWUNIT  , ONLY : IU02     ,IU08     ,IU11     ,IU12     ,
-     &            IU13     ,IU14     ,IU19     ,IU20     ,IU21     ,
-     &            IU25     ,IU26     ,IU04     ,IU30
+      USE YOWUNIT  , ONLY : IU02     ,IU04     ,IU08     ,              &
+     &            IU19     ,IU20     ,IU30
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
-      USE UNWAM, ONLY : PROPAG_UNWAM
-      USE UNWAM, ONLY : COHERENCY_ERROR_3D, EXCHANGE_FOR_FL1_FL3_SL
+      USE UNWAM, ONLY : PROPAG_UNWAM, EXCHANGE_FOR_FL1_FL3_SL
       USE YOWUNPOOL ,ONLY : LLUNSTR, DBG, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
       USE MPL_MODULE
@@ -431,18 +428,18 @@
 
       CHARACTER(LEN=2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
-      CHARACTER(LEN=14) :: CDTINTTBAK,CDTINTSBAK,CDTSPTBAK,CDTSPSBAK 
+      CHARACTER(LEN=14) :: CDTINTTBAK
       CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LRST, LOUT
+      LOGICAL :: LDREPROD
       LOGICAL :: NEWREAD
       LOGICAL, SAVE :: NEWFILE
-      LOGICAL :: LLOUTBS
       LOGICAL :: LLNONASSI
       LOGICAL :: DO_UPDATE_WIND_FLUX
-      LOGICAL :: FFLAGBAK(JPPFLAG), PFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
+      LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
 
@@ -455,7 +452,6 @@
 #endif
 
       CZERO = ' '
-      LLOUTBS=.FALSE.
 
 !*    0. WRITE OUT NORMS FOR WAVE ENERGY, PEAK PERIOD AND WIND SPEED
 !        -----------------------------------------------------------
@@ -519,19 +515,8 @@
 !#endif
 
       IF (DO_UPDATE_WIND_FLUX) THEN
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-        HAVE_NEW_COUPLING_FIELDS=.FALSE.
-#endif
-
         CDTINTTBAK=CDTINTT
-        CDTINTSBAK=CDTINTS
-        CDTSPTBAK=CDTSPT
-        CDTSPSBAK=CDTSPS
         CDTINTT=CDTPRO
-        CDTINTS=CDTPRO
-        CDTSPT=CDTPRO
-        CDTSPS=CDTPRO
-
 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
@@ -592,45 +577,39 @@
           CALL GSTATS(1439,1)
         ENDIF
 
-!       COMPUTE OUTPUT PARAMETERS
-        CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &              MIJ(IJSLOC),
-     &              FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
-     &              IG, IU25, IU26, LLOUTBS)
-
-!       PRINT OUT NORMS
-        CALL OUTWNORM
-        CALL FLUSH(IU06)
+!       OUTPUT POINT SPECTRA
+        IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+          CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,                &
+     &                  FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+        ENDIF
 
 !*    0.1 SAVE INITIAL INTEGRATED FIELDS
 !         ------------------------------
-
-        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.
-     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.
-     &      LANAONLY         .OR. LFRSTFLD             )
+        IF((MARSTYPE.EQ.'cf' .OR. MARSTYPE.EQ.'pf' .OR.                 &
+     &      MARSTYPE.EQ.'fc' .OR. MARSTYPE.EQ.'4v' .OR.                 &
+     &      LANAONLY         .OR. LFRSTFLD             )                &
      &     .AND. LWAMANOUT) THEN
 
           IF(LFRSTFLD) THEN
             FFLAGBAK=FFLAG
-            PFLAGBAK=PFLAG
             GFLAGBAK=GFLAG
             MARSTYPEBAK=MARSTYPE
             IF(MARSTYPE.EQ.'fg'.OR.MARSTYPE.EQ.'an') THEN
               IF(.NOT.LNOCDIN) THEN
-                FFLAG(7)=.FALSE.
-                PFLAG(7)=.FALSE.
-                GFLAG(7)=.FALSE.
+                FFLAG(IRCD)=.FALSE.
+                GFLAG(IRCD)=.FALSE.
               ENDIF
               IF(LWAVEWIND) THEN
-                FFLAG(10)=.FALSE.
-                PFLAG(10)=.FALSE.
-                GFLAG(10)=.FALSE.
+                FFLAG(IRU10)=.FALSE.
+                GFLAG(IRU10)=.FALSE.
               ENDIF
-              GFLAG(22)=.FALSE.
-              GFLAG(23)=.FALSE.
-              GFLAG(24)=.FALSE.
+              GFLAG(IRALTHS)=.FALSE.
+              GFLAG(IRALTHSC)=.FALSE.
+              GFLAG(IRALTRC)=.FALSE.
               MARSTYPE='an'
             ENDIF
+!           change the output flags need to reset mapping
+            CALL MPCRTBL
           ENDIF
 !         NEED TO TEMPORARLY RESET THE IFS FORECAST STEP
 !         IF THE IFS GRIB HEADER IS USED SUCH THAT IT POINTS TO
@@ -639,8 +618,17 @@
              LRSTST0=.TRUE.
           ENDIF
 
+!         COMPUTE OUTPUT PARAMETERS
+          IF(NIPRMOUT.GT.0) THEN
+            CALL OUTBS (MIJ, FL1, XLLWS)
+!           PRINT OUT NORMS
+!!!1 to do: decide if there are cases where we might want LDREPROD false
+            LDREPROD=.TRUE.
+            CALL OUTWNORM(LDREPROD)
+          ENDIF
+
           IF( .NOT. LRESTARTED ) THEN
-            CALL OUTINT (IU06,IU20,IU21,IU30,ITEST,NWFDBREF,LFDBOPEN)
+            IF(NIPRMOUT.GT.0 ) CALL OUTWINT
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
               CALL OUTWSPEC(FL1)
@@ -656,13 +644,13 @@
           IF(LFRSTFLD) THEN
             MARSTYPE=MARSTYPEBAK
             FFLAG=FFLAGBAK
-            PFLAG=PFLAGBAK
             GFLAG=GFLAGBAK
             LFRSTFLD=.FALSE.
+!           change the output flags need to reset mapping
+            CALL MPCRTBL
           ENDIF
 
           CDTINTT=CDTINTTBAK
-          CDTINTS=CDTINTSBAK
 
           IF(LGRHDIFS) THEN
             LRSTST0=.FALSE.
@@ -677,8 +665,6 @@
           ENDIF
       
         ENDIF
-
-        CALL CLEAN_OUTBS(LLOUTBS)
 
       ENDIF ! DO_UPDATE_WIND_FLUX
 
@@ -704,30 +690,15 @@
 
         IF (NOUTT.GT.0) THEN
           CDTINTT = CZERO
-          CDTINTS = CZERO
-          CDTSPT  = CZERO
-          CDTSPS  = CZERO
           DO J=1,NOUTT
             IF (CDTPRO.EQ.COUTT(J)) THEN
-              IF (PFLAG20.OR.FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
-              IF (PFLAG21.OR.FFLAG21.OR.GFLAG21) CDTINTS = COUTT(J)
-              IF (PFLAG25.OR.FFLAG25.OR.GFLAG25) CDTSPT  = COUTT(J)
-              IF (PFLAG26.OR.FFLAG26.OR.GFLAG26) CDTSPS  = COUTT(J)
+              IF (FFLAG20.OR.GFLAG20) CDTINTT = COUTT(J)
             ENDIF
           ENDDO
         ELSE
-          IF ((PFLAG20.OR.FFLAG20.OR.GFLAG20) .AND.
+          IF ((FFLAG20.OR.GFLAG20) .AND.
      &         CDTINTT.LT.CDTPRO)
      &     CALL INCDATE (CDTINTT,IDELINT)
-          IF ((PFLAG21.OR.FFLAG21.OR.GFLAG21) .AND.
-     &         CDTINTS.LT.CDTPRO)
-     &     CALL INCDATE (CDTINTS,IDELINS)
-          IF ((PFLAG25.OR.FFLAG25.OR.GFLAG25) .AND.
-     &         CDTSPT.LT.CDTPRO)
-     &     CALL INCDATE (CDTSPT,IDELSPT)
-          IF ((PFLAG26.OR.FFLAG26.OR.GFLAG26) .AND.
-     &         CDTSPS.LT.CDTPRO)
-     &     CALL INCDATE (CDTSPS,IDELSPS)
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
@@ -1131,19 +1102,12 @@
           ENDIF
 !NEST
 
-!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED IN COMMON.
-!*           SPECTRA ARE SAVED ON DISK AND PRINTED.
-!            -------------------------------------------------
+!*    1.5.10 MODEL OUTPUT INTEGRATED DATA ARE SAVED
+!            --------------------------------------
 
           IF (ITEST.GE.2) THEN
-            IF (ITESTB.GE.IG) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT? CDTINTT=',CDTINTT,' CDTINTS=',CDTINTS
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT? CDTSPT=',CDTSPT,' CDTSPS=',CDTSPS
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT? IG=',IG
-            ENDIF
+     &         'OUTPUT CDTINTT=',CDTINTT
           ENDIF
 
 #ifdef ECMWF
@@ -1170,22 +1134,32 @@
           ENDIF
           CALL GSTATS(1909,1)
 
-          IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO .OR.
-     &     CDTSPT.EQ.CDTPRO .OR. CDTSPS.EQ.CDTPRO .OR.
-     &     LRST .OR.
-     &     (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
+          IF (CDTINTT.EQ.CDTPRO. OR. LRST .OR.                          &
+     &       (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
      &    THEN
 
-            CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                  MIJ(IJSLOC),
-     &                  FL3(IJSLOC:IJLLOC,:,:),XLLWS(IJSLOC:IJLLOC,:,:),
-     &                  IG, IU25, IU26, LLOUTBS)
+!           OUTPUT POINT SPECTRA
+            IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+              CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
+     &                      FL3(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+            ENDIF
+
+!           COMPUTE OUTPUT PARAMETERS
+            IF(NIPRMOUT.GT.0) THEN
+              CALL OUTBS (MIJ, FL3, XLLWS)
+
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+              LDREPROD=.TRUE.
+              CALL OUTWNORM(LDREPROD)
+
+            ENDIF
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*)
-     &         '   SUB. WAMODEL: MODEL OUTPUT DONE IN SUB OUTBS'
+     &         '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
               CALL FLUSH (IU06)
             ENDIF
+
           ENDIF
 
 !*    BRANCHING BACK TO 1.5 FOR NEXT BLOCK OF LATITUDES
@@ -1251,36 +1225,25 @@
 !         WRITE INTEGRATED DATA TO FILE AND/OR PRINTER
 !         DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 
-        IF (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) THEN
-
-!       PRINTS OUT NORMS
-
-          CALL OUTWNORM
-
-          IF (LWAMANOUT) THEN
-!           IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
-!           BECOMES TYPE AN (i.e. speudo analysis)
-            MARSTYPEBAK=MARSTYPE
-            IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
-     &         (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
-              MARSTYPE='an'
-            ENDIF
-            CALL OUTINT (IU06,IU20,IU21,IU30,ITEST, NWFDBREF,LFDBOPEN)
-            MARSTYPE=MARSTYPEBAK
+        IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
+!         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
+!         BECOMES TYPE AN (i.e. speudo analysis)
+          MARSTYPEBAK=MARSTYPE
+          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+            MARSTYPE='an'
           ENDIF
 
-          IF(LMESSPASS) THEN
-            CALL GSTATS(753,0)
-            CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-            CALL GSTATS(753,1)
-          ENDIF
+          CALL OUTWINT
 
+          MARSTYPE=MARSTYPEBAK
+
+          CALL GSTATS(753,0)
+          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+          CALL GSTATS(753,1)
         ENDIF
 
-!       DEALLOCATE ARRAYS WHICH WERE ALLOCATED IN OUTBS
-        CALL CLEAN_OUTBS(LLOUTBS)
-
-!         PRINT TIME.
+!       PRINT TIME.
         WRITE(IU06,112) CDTPRO
         IF (ITEST .GE. 1 .OR. .NOT.LWCOU) CALL FLUSH (IU06)
   112   FORMAT(/,3X,'!!!!!!!!!!!!!! ',
@@ -1300,73 +1263,33 @@
      &     " CDATES=", CDATES, "IREST=", IREST
         ENDIF
 
-        IF (CDATEE.EQ.CDTPRO) THEN
-
-!*    1.8.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
-!           INTEGRATED PARAMETERS OF ENTIRE GRID.
-!           ------------------------------------------
-
-!           SAVE INTEGRATED DATA FILE.
-
-          IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1))
-     &       .OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
-            ENDIF
-          ENDIF
-          IF (FFLAG20 .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) 
-     &       THEN
-              CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
-            ENDIF
+        IF (CDATEE.EQ.CDTPRO .AND. LOUTINT ) THEN
+!*    1.8.2 MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES
+!           ------------------------------------------------------------
+!         GRIB DATA IF FDB IS NOT USED: 
+          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+            CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
           ENDIF
 
-!           SAVE INTEGRATED SWELL, SEA AND SWELL TRAINS DATA FILE.
-!           --------------------------------------------------
-
-          IF (FFLAG21 .AND. LOUTINT) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
-     &         .OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU21, 0, CDTPRO, CDATEF, 'SWE', 'S')
-            ENDIF
-          ENDIF
-
-!         SAVE SPECTRA FILE.
-
-          IF (FFLAG25 .AND. LOUTSPP) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU25, 0, CDTPRO, CDATEF, 'OUT', 'S')
-            ENDIF
-          ENDIF
-
-!           SAVE SWELL SPECTRA FILE.
-
-          IF (FFLAG26 .AND. LOUTSPP) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              CALL GSFILE (IU06, IU26, 0, CDTPRO, CDATEF, 'SWS', 'S')
-            ENDIF
-          ENDIF
-
- 
-        END IF
-
-!NEST
-!       SAVE BOUNDARY VALUE FILE.
-
-        IF(CDTBC.EQ.CDTPRO) THEN
-          IF (IBOUNC.EQ.1) THEN
-            IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-              DO II=1,GBOUNC
-              CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
-     &          CBCPREF(II), 'S')
-              IF (CDTBC.LT.CDATEE)
-     &          CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
-     &                       TH(1), FR(1), IU19(II), IU06) 
-              ENDDO
-            ENDIF
+!         PURE BINARY DATA:
+          IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+            CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
           ENDIF
         ENDIF
 
+!NEST
+!       SAVE BOUNDARY VALUE FILE.
+        IF(CDTBC.EQ.CDTPRO) THEN
+          IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
+            DO II=1,GBOUNC
+            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
+     &        CBCPREF(II), 'S')
+            IF (CDTBC.LT.CDATEE)
+     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
+     &                     TH(1), FR(1), IU19(II), IU06) 
+            ENDDO
+          ENDIF
+        ENDIF
 !NEST
  
         LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
@@ -1421,6 +1344,7 @@
               CALL FLUSH(IU06)
             ENDIF  
 
+!           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
               CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
      &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
@@ -1440,8 +1364,7 @@
 !*    1.8.4 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
-            IF (LRST .AND.
-     &       (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
+            IF (LRST .AND. IRANK.EQ.1) THEN
               ICH = 7 
               CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
               IF (CDTPRO.LE.CDATEF) THEN
@@ -1496,7 +1419,7 @@
 
         IF( LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. 
      &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
-     &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
+     &    CDTINTT.EQ.CDTPRO ) THEN
           CALL GSTATS(1976,0)
           IERR = IFLUSHFDBSUBS (NWFDBREF)
           CALL GSTATS(1976,1)

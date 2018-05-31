@@ -49,7 +49,7 @@
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
       USE YOWNEMOFLDS,ONLY: NEMOUCUR, NEMOVCUR
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,
-     &             LLCHKCFL,LLCHKCFLA
+     &             LLCHKCFL,LLCHKCFLA, CURRENT_MAX
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -118,7 +118,7 @@
 !             --------------------------------
               IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
 
-                DO IG=1,IGL
+                IG=1
 !!!               from NINF to NSUP as the halo has to be included
 !!!               for the calculation of the gradients !!!
 ! Mod for OPENMP
@@ -128,13 +128,12 @@
                   DO JKGLO=NINF,NSUP,NPROMA
                     KIJS=JKGLO
                     KIJL=MIN(KIJS+NPROMA-1,NSUP)
-                    CALL WAMCUR (U, V, NINF, NSUP, KIJS, KIJL, IG)
+                    CALL WAMCUR (U(KIJS,1), V(KIJS,1), KIJS, KIJL)
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
                   U(NINF-1,IG)=0.
                   V(NINF-1,IG)=0.
-                ENDDO ! END LOOP ON IG
 
                 IF (ITEST.GE.1) THEN
                    WRITE (IU06,*) ' '
@@ -148,8 +147,10 @@
                 WRITE(IU06,*)'NEMO CURRENTS'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)
-                  U(IJ,IG) = NEMOUCUR(IJ)
-                  V(IJ,IG) = NEMOVCUR(IJ)
+                  U(IJ,IG) =
+     &             SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                  V(IJ,IG) = 
+     &             SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ENDDO
                 U(NINF-1,IG)=0.
                 V(NINF-1,IG)=0.
@@ -248,5 +249,4 @@
       IF (LHOOK) CALL DR_HOOK('GETCURR',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN                                                            
       END SUBROUTINE GETCURR 

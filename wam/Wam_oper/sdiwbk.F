@@ -1,4 +1,5 @@
-      SUBROUTINE SDIWBK (IJS, IJL, F, FL, SL, DEPTH, EMEAN, F1MEAN)
+      SUBROUTINE SDIWBK (IJS, IJL, F, FL, SL,
+     &                   DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -14,13 +15,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDIWBK (IJS, IJL, F, FL, SL, F1MEAN)*
+!       *CALL* *SDIWBK (IJS, IJL, F, FL, SL,
+!    &                   DEPTH, EMAXDPT, EMEAN, F1MEAN)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY
 !          *DEPTH* WATER DEPTH
+!          *EMAXDPT* MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
 !          *EMEAN* - MEAN ENERGY DENSITY
 !          *F1MEAN* - MEAN FREQUENCY BASED ON 1st MOMENT.
 
@@ -51,16 +54,15 @@
 
       INTEGER :: IJ, K, M, IC
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH, EMEAN, F1MEAN
+      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH,EMAXDPT,EMEAN,F1MEAN
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
 
       REAL :: ZHOOK_HANDLE
-      REAL :: EMAX, ALPH, ARG, Q, Q_OLD, REL_ERR, EXPQ
+      REAL :: ALPH, ARG, Q, Q_OLD, REL_ERR, EXPQ
       REAL,DIMENSION(IJS:IJL) :: SDS
 
       REAL, PARAMETER :: ALPH_B_J = 1.0
-      REAL, PARAMETER :: GAM_B_J = 0.8
       REAL, PARAMETER :: COEF_B_J=2*ALPH_B_J
       REAL, PARAMETER :: DEPTHTRS=50. 
 
@@ -77,8 +79,7 @@
 !       (FOLLOWING BATTJES-JANSSEN AND BEJI)
         DO IJ=IJS,IJL
            IF(DEPTH(IJ).LT.DEPTHTRS) THEN
-             EMAX = (GAM_B_J*DEPTH(IJ))**2/16.
-             ALPH = 2.*EMAX/(EMEAN(IJ))
+             ALPH = 2.*EMAXDPT(IJ)/EMEAN(IJ)
              ARG  = MIN(ALPH,50.)
              Q_OLD = EXP(-ARG)
 !            USE NEWTON-RAPHSON METHOD
@@ -111,5 +112,4 @@
       IF (LHOOK) CALL DR_HOOK('SDIWBK',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE SDIWBK

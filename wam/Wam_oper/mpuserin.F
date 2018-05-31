@@ -46,14 +46,16 @@
      &            LWNEMOCOUCUR, 
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
-     &            FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,PFLAG    ,
-     &            PFLAG20  ,PFLAG21  ,PFLAG25  ,PFLAG26  ,GFLAG    ,
-     &            GFLAG20  ,GFLAG21  ,GFLAG25  ,GFLAG26  ,NFLAG    ,
+     &            FFLAG20  ,PFLAG    ,
+     &            PFLAG20  ,GFLAG    ,
+     &            GFLAG20  ,NFLAG    ,
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
      &            NASS     ,JPPFLAG  ,
+     &            IRWDIR   , IRCD    ,IRU10    ,                        &
      &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,
      &            NTRAIN   ,
      &            IPFGTBL  ,
+     &            LLOUTERS ,
      &            LWAMANOUT,
      &            NWRTOUTWAM,
      &            LWFLUXOUT,
@@ -92,17 +94,17 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU21     ,IU23     ,IU25     ,
-     &            IU26     ,IU27     ,IU28     ,IU04     ,IU30     ,
+      USE YOWUNIT  , ONLY : IU20     ,IU23     ,
+     &            IU27     ,IU28     ,IU04     ,IU30     ,
      &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,
      &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
+      USE UNSTRUCT_BOUND , ONLY : LBCWA
       USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,
      &            SOURCE_IMPL, WAE_SOLVERTHR, 
      &            LNONL, BLOCK_GAUSS_SEIDEL,
-     &            LLIMT, L_SOLVER_NORM, LCHKCONV,
-     $            LBCWA
+     &            LLIMT, L_SOLVER_NORM, LCHKCONV
       USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
      &            IASSIM   ,NFCST    ,ISTAT
@@ -139,6 +141,7 @@
      &   IDELCUR, CDATECURA,
      &   CLOTSU, CDATER, CDATES,
      &   PFLAG,  FFLAG,  GFLAG, NFLAG,
+     &   LLOUTERS,
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT, 
      &   LWAMANOUT,
@@ -222,18 +225,12 @@
 !     IDELALT: ALTIMETER DATA TIME WINDOW (in seconds).
 !     IDELINT: OUTPUT TIME STEP FOR INTEGRATED PARAMETER OF TOTAL SEA
 !              (if output times are not specified by namelist NAOT).
-!     IDELINS: OUTPUT TIME STEP INTEGRATED PARAMETER OF SWELL/WINDSEA
-!              (if output times are not specified by namelist NAOT).
-!     IDELSPT: OUTPUT TIME STEP for SPECTRUM OF TOTAL SEA AT SELECTED 
-!              GRID POINTS (see preproc).
-!     IDELSPS: OUTPUT TIME STEP for SPECTRUM OF SWELL AT SELECTED
-!              GRID POINTS (see preproc).
 !     IDELRES: OUTPUT TIME STEP for RESTART SPECTRA (if output times
 !              are not specified by namelist NAOS).
 !     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
-!     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT, IDELINS,
-!             IDELSPT, IDELSPS, IDELRES, IDELBC.
+!     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT,
+!             IDELRES, IDELBC.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
 !             are not specified by namelist NAOS).
 !     CDATES: LAST OUTPUT TIME ALLOWED BESIDE CDATER FOR RESTART SPECTRA
@@ -243,6 +240,7 @@
 !     GFLAG: OUTPUT FLAG FOR OUTPUT TO GRIB OF EACH OUTPUT TYPE.
 !     NFLAG: OUTPUT FLAG FOR USER OUTPUT DISPLAY OF FIELD NORM FOR
 !            EACH OUTPUT TYPE.
+!     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
 !     TYPE OF INTEGRATED PARAMETERS IN PFLAG FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
 !     2  : MEAN WAVE DIRECTION (DEG.)
@@ -352,6 +350,7 @@
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
+!                ONLY MEANINGFUl FOR IPHYS=0
 !     IBOUNC: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (COARSE GRID).
 !     IBOUNF: 1 FOR RUN WHICH INCLUDES BOUNDARY POINTS (FINE GRID).
 !     IDELBC: TIMESTEP FOR THE DISPOSAL OF OUTPUT BC FILE(S) INTO PERMANENT
@@ -525,25 +524,34 @@
       IDELWI    =  0
       IDELALT   =  21600 
       IDELINT   =  0
+
+!!!! obsolete should be removed as soon as I can update scripts
       IDELINS   =  0
       IDELSPT   =  0
       IDELSPS   =  0
+!!!!
+
       IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
       CDATER    = ZERO
       CDATES    = ZERO
-      PFLAG     = .FALSE. 
-      FFLAG     = .FALSE. 
-!     note: if IREST>0 then GFLAG(7) and GFLAG(10) will always be reset
+      PFLAG(:)  = .FALSE. 
+      FFLAG(:)  = .FALSE. 
+!     note: if IREST>0 then GFLAG(IR) for IR=IRWDIR, IRCD, IRU10 will always be reset
 !     true if grib restart files are requested (LGRIBOUT=.true.).
 !     see below.
-      GFLAG     = .FALSE.
-      NFLAG     = .FALSE. 
+      GFLAG(:)  = .FALSE.
+      NFLAG(:)  = .FALSE. 
+!     patial initialisation of the output table
+      CALL MPCRTBL
       NFLAG(1)  = .TRUE. 
       NFLAG(6)  = .TRUE. 
-      NFLAG(7)  = .TRUE. 
-      NFLAG(10) = .TRUE. 
+      NFLAG(IRWDIR)= .TRUE. 
+      NFLAG(IRCD)  = .TRUE. 
+      NFLAG(IRU10) = .TRUE. 
+
+      LLOUTERS = .FALSE.
 
       LSECONDORDER = .TRUE.
 
@@ -865,9 +873,6 @@
       IF (CLMTSU(4) .EQ. 'H') IDELWI  = IDELWI*3600
 !           **** OUTPUT TIME IN FIXED INTERVALS ****
       IF (CLOTSU(1) .EQ. 'H') IDELINT = IDELINT*3600
-      IF (CLOTSU(2) .EQ. 'H') IDELINS = IDELINS*3600
-      IF (CLOTSU(4) .EQ. 'H') IDELSPT = IDELSPT*3600
-      IF (CLOTSU(5) .EQ. 'H') IDELSPS = IDELSPS*3600
       IF (CLOTSU(7) .EQ. 'H') IDELRES = IDELRES*3600
       IF (CLOTSU(8) .EQ. 'H') IDELBC  = IDELBC*3600
 

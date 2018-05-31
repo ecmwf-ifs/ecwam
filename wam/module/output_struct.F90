@@ -1,39 +1,76 @@
 MODULE OUTPUT_STRUCT
-      USE UNWAM, only : JWRU, JWRB, JWIM
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE UNWAM, only : SPHERICAL_COORDINATE_DISTANCE
       USE YOWCOUT, ONLY : JPPFLAG, IPFGTBL
       USE YOWPCONS , ONLY : ZMISS
-      integer, dimension(:), pointer :: out_recv_rqst
-      integer, dimension(:), pointer :: out_send_rqst
-      integer, dimension(:,:), pointer :: out_recv_stat
-      integer, dimension(:,:), pointer :: out_send_stat
-      integer, dimension(:), pointer :: block_type
-      integer :: NbProcOut, NbProcOutRed
-      integer :: nbPointCovered
+      INTEGER(KIND=JWIM), dimension(:), pointer :: out_recv_rqst
+      INTEGER(KIND=JWIM), dimension(:), pointer :: out_send_rqst
+      INTEGER(KIND=JWIM), dimension(:,:), pointer :: out_recv_stat
+      INTEGER(KIND=JWIM), dimension(:,:), pointer :: out_send_stat
+      INTEGER(KIND=JWIM), dimension(:), pointer :: block_type
+      INTEGER(KIND=JWIM) :: NbProcOut, NbProcOutRed
+      INTEGER(KIND=JWIM) :: nbPointCovered
       TYPE CONTAINER_ARR
       real(KIND=JWRB), allocatable :: ARR(:,:)
       END TYPE CONTAINER_ARR
       TYPE(CONTAINER_ARR), allocatable :: ARR_OUT_SEND_C(:)
       real(KIND=JWRB), allocatable :: ARR_OUT_RECV(:,:)
       real(KIND=JWRB), allocatable :: ARR_OUT_RECV_SEP(:,:)
-      integer, allocatable :: ListIEfind(:)
-      integer, allocatable :: ListICTpos(:)
-      integer, allocatable :: ListICTposRev(:)
-      integer, allocatable :: LocalPosICT(:)
-      integer, allocatable :: ListICT_to_ProcOut(:)
-      integer, allocatable :: ListProcOut(:)
-      integer, allocatable :: ListProcOutRev(:)
-      integer, allocatable :: ListStartIDXout(:)
-      integer, allocatable :: MapFD_locglob(:)
-      integer, allocatable :: MapIPexp_IP(:)
-      integer, allocatable :: NbEntries(:)
-      integer, allocatable :: MAP_CovToExp(:,:)
-      integer, allocatable :: IXarr(:), IYarr(:)
-      real(kind=JWRB), allocatable :: WIarr(:,:)
+      INTEGER(KIND=JWIM), allocatable :: ListIEfind(:)
+      INTEGER(KIND=JWIM), allocatable :: ListICTpos(:)
+      INTEGER(KIND=JWIM), allocatable :: ListICTposRev(:)
+      INTEGER(KIND=JWIM), allocatable :: LocalPosICT(:)
+      INTEGER(KIND=JWIM), allocatable :: ListICT_to_ProcOut(:)
+      INTEGER(KIND=JWIM), allocatable :: ListProcOut(:)
+      INTEGER(KIND=JWIM), allocatable :: ListProcOutRev(:)
+      INTEGER(KIND=JWIM), allocatable :: ListStartIDXout(:)
+      INTEGER(KIND=JWIM), allocatable :: MapFD_locglob(:)
+      INTEGER(KIND=JWIM), allocatable :: MapIPexp_IP(:)
+      INTEGER(KIND=JWIM), allocatable :: NbEntries(:)
+      INTEGER(KIND=JWIM), allocatable :: MAP_CovToExp(:,:)
+      INTEGER(KIND=JWIM), allocatable :: IXarr(:), IYarr(:)
+      real(KIND=JWRB), allocatable :: WIarr(:,:)
       logical, allocatable :: ApplyZMISS(:)
-      integer MPI_EXCH_STR
-      integer MaxLen
-      integer NIBLO_FD_EXP
+      INTEGER(KIND=JWIM) :: MPI_EXCH_STR
+      INTEGER(KIND=JWIM) :: MaxLen
+      INTEGER(KIND=JWIM) :: NIBLO_FD_EXP
+
+PUBLIC :: SET_UP_ARR_OUT_RECV, &
+     &    INITIAL_OUTPUT_INITS, &
+     &    INITIAL_OUTPUT_INITS_NEXTGEN, &
+     &    FIND_ELE, &
+     &    INTELEMENT_IPOL, &
+     &    IPELEMENT_CLOSEST, &
+     &    INTELEMENT
+
+INTERFACE SET_UP_ARR_OUT_RECV 
+  MODULE PROCEDURE SET_UP_ARR_OUT_RECV
+END INTERFACE
+
+INTERFACE INITIAL_OUTPUT_INITS
+  MODULE PROCEDURE INITIAL_OUTPUT_INITS
+END INTERFACE
+
+INTERFACE INITIAL_OUTPUT_INITS_NEXTGEN
+  MODULE PROCEDURE INITIAL_OUTPUT_INITS_NEXTGEN
+END INTERFACE
+
+INTERFACE FIND_ELE 
+  MODULE PROCEDURE FIND_ELE
+END INTERFACE
+
+INTERFACE INTELEMENT_IPOL
+  MODULE PROCEDURE INTELEMENT_IPOL
+END INTERFACE
+
+INTERFACE IPELEMENT_CLOSEST  
+  MODULE PROCEDURE IPELEMENT_CLOSEST 
+END INTERFACE
+
+INTERFACE INTELEMENT  
+  MODULE PROCEDURE INTELEMENT
+END INTERFACE
+
       CONTAINS
       SUBROUTINE SET_UP_ARR_OUT_RECV(IJS, IJL, TEMP, NFLDPPE)
       USE yowDatapool, only: comm
@@ -43,22 +80,22 @@ MODULE OUTPUT_STRUCT
       USE YOWUNPOOL, only : NIBLO_FD
       USE yownodepool, only : iplg
       IMPLICIT NONE
-      integer, intent(in) :: IJS, IJL
+      INTEGER(KIND=JWIM), intent(in) :: IJS, IJL
       REAL(KIND=JWRB), intent(IN) :: TEMP(IJS:IJL,JPPFLAG)
-      integer, intent(in) :: NFLDPPE(nproc)
-      integer IP, eProcOut, fProcOut, iProcOut, jProcOut
-      REAL(KIND=JWRB) eWI, eVal, eValIns
-      integer I, ICTpos, IEfind, idx
-      integer iStart, iEnd, pos, ierr, iProc
-      integer IPR, IJ
-      integer iNode, iNodeGlob, IPexp
-      integer eLen, iVar, NbEnt
-      integer nbZmiss
+      INTEGER(KIND=JWIM), intent(in) :: NFLDPPE(nproc)
+      INTEGER(KIND=JWIM) :: IP, eProcOut, fProcOut, iProcOut, jProcOut
+      REAL(KIND=JWRB) :: eWI, eVal, eValIns
+      INTEGER(KIND=JWIM) :: I, ICTpos, IEfind, idx
+      INTEGER(KIND=JWIM) :: iStart, iEnd, pos, ierr, iProc
+      INTEGER(KIND=JWIM) :: IPR, IJ
+      INTEGER(KIND=JWIM) :: iNode, iNodeGlob, IPexp
+      INTEGER(KIND=JWIM) :: eLen, iVar, NbEnt
+      INTEGER(KIND=JWIM) :: nbZmiss
       logical, save :: FirstTime = .TRUE.
-      integer idxHS, posHS
-      integer IPglob
+      INTEGER(KIND=JWIM) :: idxHS, posHS
+      INTEGER(KIND=JWIM) :: IPglob
 #ifdef DEBUG
-      integer iLen
+      INTEGER(KIND=JWIM) :: iLen
 #endif
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'JWRU=', JWRU
@@ -394,33 +431,33 @@ MODULE OUTPUT_STRUCT
         FLUSH(740+MyRankGlobal)
 #endif
       END IF
-      END SUBROUTINE
+      END SUBROUTINE SET_UP_ARR_OUT_RECV
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIAL_OUTPUT_INITS
 !     PREPARE OUTPUT OF UNSTRUCTURED GRID TO STRUCTURED GRID (as read in)
-      use yowpd, only: ne_global, np_global, INE_GLOBAL, nodes_global
-      USE YOWUNPOOL, only : IE_OUTPTS
+      USE YOWPD, ONLY: NE_GLOBAL, NP_GLOBAL, INE_GLOBAL, NODES_GLOBAL
+      USE YOWUNPOOL, ONLY : IE_OUTPTS
       USE YOWMAP   , ONLY : AMOWEP, AMONOP, XDELLA, ZDELLO, IPER
       USE YOWPARAM, ONLY : NGX, NGY
       IMPLICIT NONE
-      integer IX, IY
-      REAL(KIND=JWRB) XLA, XLO
+      INTEGER(KIND=JWIM) :: IX, IY
+      REAL(KIND=JWRU) :: XLA, XLO
       IF(ALLOCATED(IE_OUTPTS)) DEALLOCATE(IE_OUTPTS)
       ALLOCATE(IE_OUTPTS(NGX,NGY))
       !AR: add openmp here but better it would be if you would have only one loop over ngx*ngy
       DO IY=1,NGY
-        XLA = AMONOP-REAL(IY-1)*XDELLA
+        XLA = REAL(AMONOP-REAL(IY-1)*XDELLA,JWRU)
         DO IX=1,NGX
-          XLO = AMOWEP+REAL(IX-1)*ZDELLO(IY)
+          XLO = REAL(AMOWEP+REAL(IX-1)*ZDELLO(IY),JWRU)
           !!debile
 !!! need to find out unstructured grid left longitude (I assume -180 for now)
-          IF(XLO.GE.180.d0) XLO=max(XLO-IPER*360.d0,-180.d0)
-          CALL FIND_ELE(ne_global, np_global, np_global, INE_GLOBAL, nodes_global, DBLE(XLO), DBLE(XLA), IE_OUTPTS(IX,IY))
+          IF(XLO.GE.180._JWRU) XLO=max(XLO-IPER*360._JWRU,-180._JWRU)
+          CALL FIND_ELE(NE_GLOBAL, NP_GLOBAL, NP_GLOBAL, INE_GLOBAL, NODES_GLOBAL, XLO, XLA, IE_OUTPTS(IX,IY))
         ENDDO
       ENDDO
-      END SUBROUTINE
+      END SUBROUTINE INITIAL_OUTPUT_INITS
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -437,40 +474,40 @@ MODULE OUTPUT_STRUCT
       USE YOWMAP   , ONLY : AMOWEP, AMONOP, XDELLA, ZDELLO, IPER
       USE YOWPARAM, ONLY : NGX, NGY
       IMPLICIT NONE
-      integer IX, IY
-      REAL(JWRB) XLA, XLO
-      integer(KIND=JWIM) :: istatus(MPI_STATUS_SIZE)
-      real, allocatable :: XLOmat(:,:), XLAmat(:,:)
-      integer, allocatable :: eInt(:)
-      integer, allocatable :: ListPointCovered(:)
-      integer, allocatable :: IE_OUTPTS_LOC(:,:)
-      integer, allocatable :: POSblock(:,:)
-      integer, allocatable :: MapXY_iNode(:,:)
-      integer, allocatable :: dspl_send(:), LandCovered(:,:)
+      INTEGER(KIND=JWIM) :: IX, IY
+      REAL(JWRB) :: XLA, XLO
+      INTEGER(KIND=JWIM) :: istatus(MPI_STATUS_SIZE)
+      real(KIND=JWRB), allocatable :: XLOmat(:,:), XLAmat(:,:)
+      INTEGER(KIND=JWIM), allocatable :: eInt(:)
+      INTEGER(KIND=JWIM), allocatable :: ListPointCovered(:)
+      INTEGER(KIND=JWIM), allocatable :: IE_OUTPTS_LOC(:,:)
+      INTEGER(KIND=JWIM), allocatable :: POSblock(:,:)
+      INTEGER(KIND=JWIM), allocatable :: MapXY_iNode(:,:)
+      INTEGER(KIND=JWIM), allocatable :: dspl_send(:), LandCovered(:,:)
       real(KIND=JWRU) :: X(3), Y(3)
       real(KIND=JWRU) :: eWI(3)
-      integer, allocatable :: ListFirst(:)
-      integer, allocatable :: ListNbVarOut(:)
-      integer, allocatable :: List_dspl_send(:)
-      integer, allocatable :: dspl_sendMPI(:)
-      integer, allocatable :: CoveringMap(:,:)
-      integer, allocatable :: PointStatus(:)
-      integer sumSIZ, ePos, eProcOut
-      integer ICT, idx1, idx2, idx, IPglob, IPR, len
-      integer idxPosBlock, I, iProc
-      integer ierr, IP, IEfind
-      integer iProcOut, istat
-      integer nbPointCoveredLoc
-      integer TotalOutVar
-      integer iNode, IXY
-      integer TheIE, iNodeExp
-      integer Ifound, eFirst
-      integer I1, I2, iProc1, iProc2
-      integer eEnt
-      integer iVarOut
-      logical HasOutputNode
+      INTEGER(KIND=JWIM), allocatable :: ListFirst(:)
+      INTEGER(KIND=JWIM), allocatable :: ListNbVarOut(:)
+      INTEGER(KIND=JWIM), allocatable :: List_dspl_send(:)
+      INTEGER(KIND=JWIM), allocatable :: dspl_sendMPI(:)
+      INTEGER(KIND=JWIM), allocatable :: CoveringMap(:,:)
+      INTEGER(KIND=JWIM), allocatable :: PointStatus(:)
+      INTEGER(KIND=JWIM) :: sumSIZ, ePos, eProcOut
+      INTEGER(KIND=JWIM) :: ICT, idx1, idx2, idx, IPglob, IPR, len
+      INTEGER(KIND=JWIM) :: idxPosBlock, I, iProc
+      INTEGER(KIND=JWIM) :: ierr, IP, IEfind
+      INTEGER(KIND=JWIM) :: iProcOut, istat
+      INTEGER(KIND=JWIM) :: nbPointCoveredLoc
+      INTEGER(KIND=JWIM) :: TotalOutVar
+      INTEGER(KIND=JWIM) :: iNode, IXY
+      INTEGER(KIND=JWIM) :: TheIE, iNodeExp
+      INTEGER(KIND=JWIM) :: Ifound, eFirst
+      INTEGER(KIND=JWIM) :: I1, I2, iProc1, iProc2
+      INTEGER(KIND=JWIM) :: eEnt
+      INTEGER(KIND=JWIM) :: iVarOut
+      logical :: HasOutputNode
       TYPE(t_Node), allocatable :: nodes_loc(:)
-      REAL(KIND=JWRU) eX, eY
+      REAL(KIND=JWRU) :: eX, eY
       IF (JWRB .eq. 4) THEN
         MPI_EXCH_STR = MPI_REAL4
       ELSE
@@ -988,7 +1025,7 @@ MODULE OUTPUT_STRUCT
       WRITE(740+MyRankGlobal,*) 'After alloc ARR_OUT_RECV'
       FLUSH(740+MyRankGlobal)
 #endif
-      END SUBROUTINE
+      END SUBROUTINE INITIAL_OUTPUT_INITS_NEXTGEN
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1004,11 +1041,11 @@ MODULE OUTPUT_STRUCT
 
 ! Dummy arguments
 !
-      integer, intent(in) :: MNEloc, MNPloc, NP_RESloc
-      integer, intent(in) :: INEloc(3,MNEloc)
+      INTEGER(KIND=JWIM), intent(in) :: MNEloc, MNPloc, NP_RESloc
+      INTEGER(KIND=JWIM), intent(in) :: INEloc(3,MNEloc)
       TYPE(t_Node) :: NODESloc(MNPloc)
-      REAL(KIND=JWRU), INTENT(IN)       :: Xo , Yo
-      INTEGER(KIND=JWIM), INTENT(INOUT)   :: IE 
+      REAL(KIND=JWRU), INTENT(IN) :: Xo , Yo
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IE 
 !
 ! Local variables
 !
@@ -1155,7 +1192,7 @@ MODULE OUTPUT_STRUCT
 
       IE = -1
 
-      END SUBROUTINE
+      END SUBROUTINE FIND_ELE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1219,6 +1256,75 @@ MODULE OUTPUT_STRUCT
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE IPELEMENT_CLOSEST(Xo,Yo,IP,IE,Xn,Yn,distmin)
+
+      USE YOWUNPOOL, ONLY : DEGRAD
+      USE YOWPD,     ONLY : NE_GLOBAL, NP_GLOBAL, INE_GLOBAL, NODES_GLOBAL
+      USE YOWPD,     ONLY : NODES=>nodes_global
+      USE YOWMAP   , ONLY : IPER
+
+
+      IMPLICIT NONE
+
+!    Finds the GLOBAL node index that is closest to a point(Xo,Yo) contained in an element
+!     Xo, Yo is the point of interest
+!     IE is the global element number the contains this point
+!     IP is the global node index
+!     distmin is the distance on a sphere of radius 1 between that point and node IP
+!
+! Dummy arguments
+!
+      INTEGER(KIND=JWIM), INTENT(OUT)  :: IP, IE
+
+      REAL(KIND=JWRU),  INTENT(IN)  :: Xo, Yo
+      REAL(KIND=JWRU),  INTENT(OUT)  :: Xn, Yn, distmin
+
+!
+! Local variables
+
+      INTEGER(KIND=JWIM) :: i, ic
+      INTEGER(KIND=JWIM) :: NI(3)
+      REAL(KIND=JWRU), DIMENSION(3) :: x, y, dist
+
+
+!     FIND IF  POINT (Xo, Yo) is INSIDE AN ELEMENT
+      CALL FIND_ELE(NE_GLOBAL, NP_GLOBAL, NP_GLOBAL, INE_GLOBAL, NODES_GLOBAL, Xo, Yo, IE)
+
+!     IF INSIDE AN ELEMENT, FIND THE CLOSED NODE
+      IF(IE.GT.-1) THEN
+        NI = INE_GLOBAL(:,IE)
+        X(:)=NODES(NI)%X
+        Y(:)=NODES(NI)%Y
+
+        do i=1,3
+          CALL SPHERICAL_COORDINATE_DISTANCE(Xo, x(i), Yo, y(i), dist(i))
+        enddo
+
+        distmin = minval(dist)
+        IP=NI(1)
+        ic=1
+        if(dist(2) == distmin) then
+          IP=NI(2)
+          ic=2
+        else if(dist(3) == distmin) then
+          IP=NI(3)
+          ic=3
+        endif
+
+        Xn=X(ic)
+        Yn=Y(ic)
+
+      ELSE
+        IP=0
+        Xn=Xo
+        Yn=Yo
+        distmin=-1._JWRU
+      ENDIF
+
+      END SUBROUTINE IPELEMENT_CLOSEST
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       subroutine linearInterpolationTriangle(x1, y1, z1, x2, y2,       &
      &                             z2, x3, y3, z3, Xo, Yo, zout)
       !> calc a linear interpolation of a triangle.
@@ -1278,7 +1384,7 @@ MODULE OUTPUT_STRUCT
       ErrY=Yp - y1*Wi(1) - y2*Wi(2) - y3*Wi(3)
 !      WRITE(740+MyRankGlobal,*) 'ErrX/Y=', ErrX, ErrY
 #endif
-      END SUBROUTINE
+      END SUBROUTINE INTELEMENT_COEFF
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

@@ -103,9 +103,6 @@
         CALL MPUSERIN
         LFRST=.FALSE.
       ENDIF
-      IF(.NOT.LLRNL) THEN
-        IPROPAGS=0
-      ENDIF
 
       WRITE(IU06,*) ' WAM SOFTWARE VERSION: ', KWAMVER
 

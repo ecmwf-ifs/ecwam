@@ -48,8 +48,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFFR     ,
-     &              DFFR2  ,DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL  ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFIMFR   ,    &
+     &              DFIMFR2,DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL  ,    &
      &              WP2TAIL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -115,7 +115,7 @@
           DO IJ=IJS,IJL
             EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
             FM1(IJ)= FM1(IJ)+DFIMOFR(M)*TEMP2(IJ)
-            F1(IJ) = F1(IJ)+DFFR(M)*TEMP2(IJ)
+            F1(IJ) = F1(IJ)+DFIMFR(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 
@@ -142,7 +142,7 @@
           DO IJ=IJS,IJL
             EM(IJ) = EM(IJ)+DFIM(M)*TEMP2(IJ)
             FM1(IJ)= FM1(IJ)+DFIMOFR(M)*TEMP2(IJ)
-            F1(IJ) = F1(IJ)+DFFR(M)*TEMP2(IJ)
+            F1(IJ) = F1(IJ)+DFIMFR(M)*TEMP2(IJ)
             AK(IJ) = AK(IJ)+TEMPA(IJ)*TEMP2(IJ)
             XK(IJ) = XK(IJ)+TEMPX(IJ)*TEMP2(IJ)
           ENDDO
@@ -184,5 +184,4 @@
       IF (LHOOK) CALL DR_HOOK('FKMEAN',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE FKMEAN

@@ -160,6 +160,7 @@
       CHARACTER(LEN=12) :: CGRIDTYPE
 
       LOGICAL :: LLINTERPOL, LLNEAREST, LLNONWAVE, LLOCEAN, LASTREAM
+      LOGICAL :: LLNEAREST_LOC
       LOGICAL :: LLSCANNS
       LOGICAL :: LLDIRFLD
       LOGICAL :: LLSKIP
@@ -643,6 +644,7 @@
          WRITE(IU06,*) '*  THE INPUT DOMAIN FOR PARAMETER *'
          WRITE(IU06,*) '  ',IPARAM 
          WRITE(IU06,*) '*                                 *'
+         WRITE(IU06,*) '*  MODEL:             INPPUT:     *'
          WRITE(IU06,*) '*  PMOSOP: ', PMOSOP, 'RMOSOP : ',RMOSOP
          WRITE(IU06,*) '*  PMONOP: ', PMONOP, 'RMONOP : ',RMONOP
          WRITE(IU06,*) '*  PMOWEP: ', PMOWEP, 'RMOWEP : ',RMOWEP
@@ -925,6 +927,7 @@
             IF(YLAT(I,K).EQ.PMISS .OR. XLON(I,K).EQ.PMISS) CYCLE 
 
             LLSKIP=.FALSE.
+            LLNEAREST_LOC=.FALSE.
             IF(.NOT.LLOCEAN) THEN
               XK = RMONOP - YLAT(I,K) 
               XK = (XK/DELLA)+0.5*(1.+SIGN(1.,XK))
@@ -965,7 +968,9 @@
             IF(II < 1-IPERIODIC .OR. II > RLONRGG(KSNLIM)) LLSKIP=.TRUE.
             II = MIN(MAX(1-IPERIODIC,II),RLONRGG(KSNLIM))
             II1= II+1
-            IF(II1 > RLONRGG(KSNLIM)+IPERIODIC) LLSKIP=.TRUE.
+            IF(II1 > RLONRGG(KSNLIM)+IPERIODIC) THEN
+               IF(.NOT.LLSKIP) LLNEAREST_LOC=.TRUE.
+            ENDIF
             II1= MIN(II1,RLONRGG(KSNLIM)+IPERIODIC)
             DII1=XII-REAL(II)
             DII2=1.-DII1
@@ -982,14 +987,16 @@
             IF(IIP<1-IPERIODIC .OR. IIP>RLONRGG(KSN1LIM)) LLSKIP=.TRUE.
             IIP = MIN(MAX(1-IPERIODIC,IIP),RLONRGG(KSN1LIM))
             IIP1 = IIP+1
-            IF(IIP1 > RLONRGG(KSN1LIM)+IPERIODIC) LLSKIP=.TRUE.
+            IF(IIP1 > RLONRGG(KSN1LIM)+IPERIODIC) THEN
+               IF(.NOT.LLSKIP) LLNEAREST_LOC=.TRUE.
+            ENDIF
             IIP1 = MIN(IIP1,RLONRGG(KSN1LIM)+IPERIODIC) 
             DIIP1=XIIP-REAL(IIP)
             DIIP2=1.-DIIP1
 
             IF(LLSKIP) THEN
               FIELD(I,K)=PMISS
-            ELSE IF(LLNEAREST) THEN
+            ELSE IF(LLNEAREST .OR. LLNEAREST_LOC) THEN
 !             DETERMINE WHETHER ANY OF THE 4 CONERS HAS A MISSING DATA
 !             IF SO USE THE CLOSEST GRID POINT VALUE.
               IF(WORK(II,KK,1).EQ.PMISS.OR.

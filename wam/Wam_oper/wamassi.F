@@ -72,9 +72,9 @@
 ! ----------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCOUT  , ONLY : FFLAG20  ,FFLAG21  ,FFLAG25  ,FFLAG26  ,
-     &            GFLAG20  ,LFDB     ,LOUTINT  ,LOUTSPP  ,LWAMANOUT,
-     &            LRSTPARALW
+      USE YOWCOUT  , ONLY : FFLAG20  ,
+     &            GFLAG20  ,LFDB     ,LOUTINT  ,LWAMANOUT, NGOUT   ,    &
+     &            LLOUTERS ,NIPRMOUT ,LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
@@ -97,7 +97,7 @@
       USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG 
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG
@@ -106,9 +106,10 @@
      &            Z0OLD    ,TAUW     ,
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
      &            FL1
+      USE YOWSHAL  , ONLY : DEPTH 
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,CDTINTS  ,CDTSPT   ,
-     &            CDTSPS   ,CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
+     &            CDATER   ,CDATES   ,CDTINTT  ,
+     &            CFDBSF   ,CFDB2DSP ,NWFDBREF ,IDELWI   ,
      &            IREST    ,IREFRA   ,IASSI    ,NTASKS   ,NSIZE    ,
      &            NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,
      &            MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,
@@ -116,7 +117,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU11     ,IU12     ,IU13     ,IU14     ,
-     &            IU22     ,IU23     ,IU25     ,IU26     ,IU27     ,
+     &            IU22     ,IU23     ,IU27     ,
      &            IU28     ,IU04     ,IU32
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
      &            IDELWIN  ,NFCST    ,ISTAT
@@ -151,7 +152,7 @@
 
       LOGICAL :: LDSTOP, LDWRRE, LLFLUSH
       LOGICAL :: LSV, LOUT
-      LOGICAL :: LLOUTBS
+      LOGICAL :: LDREPROD
 
 ! ----------------------------------------------------------------------
 #ifdef ECMWF
@@ -164,7 +165,6 @@
      &   ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       WRITE (IU06,*) '  '
       LLFLUSH = .TRUE.
-      LLOUTBS=.FALSE.
 
 !     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
 !        ------------------------------------------
@@ -207,20 +207,28 @@
 
 !       MODEL OUTPUT INTEGRATED DATA ARE SAVED IN MODULES.
 !       --------------------------------------------------
-        IF (CDTINTT.EQ.CDTPRO .OR. CDTINTS.EQ.CDTPRO .OR.
-     &       CDTSPT .EQ.CDTPRO .OR. CDTSPS .EQ.CDTPRO    ) THEN
+        IF (CDTINTT.EQ.CDTPRO) THEN
 
-          CALL OUTBS (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,
-     &                MIJ(IJSLOC),
-     &                FL1(IJSLOC:IJLLOC,:,:), XLLWS(IJSLOC:IJLLOC,:,:),
-     &                IG, IU25, IU26, LLOUTBS)
+!         OUTPUT POINT SPECTRA
+          IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
+            CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,              &
+     &                    FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+          ENDIF
 
+!         COMPUTE OUTPUT PARAMETERS
+          IF(NIPRMOUT.GT.0) THEN
+            CALL OUTBS (MIJ, FL1, XLLWS)
 
+!           PRINT OUT NORMS
+!!!1 to do: decide if there are cased where we might want LDREPROD false
+            LDREPROD=.TRUE.
+            CALL OUTWNORM(LDREPROD)
+
+          ENDIF
           IF (ITEST.GE.2) THEN
-            WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT DONE IN SUB OUTBS'
+            WRITE(IU06,*) '   SUB. WAMASSI: OUTPUT PREPARED IN OUTBS'
           ENDIF
         ENDIF
-
 
 !*    3.1 SAVE FILES.
 !         -----------
@@ -229,75 +237,37 @@
 !           DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 !           --------------------------------------------
 
-      IF (LWAMANOUT .AND. 
-     &    (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO) ) THEN
+      IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
 
-!       PRINTS OUT NORMS
-        CALL OUTWNORM
+        CALL OUTWINT
 
-        CALL OUTINT (IU06, IU22, IU23, IU32, ITEST, NWFDBREF, LFDBOPEN)
-
-        IF(LMESSPASS) THEN
-          CALL GSTATS(752,0)
-          CALL MPL_BARRIER(CDSTRING='WAMASSI 1:')
-          CALL GSTATS(752,1)
-        ENDIF
-        IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTINT DONE'
+        CALL GSTATS(752,0)
+        CALL MPL_BARRIER(CDSTRING='WAMASSI 1:')
+        CALL GSTATS(752,1)
+        IF (ITEST.GE.2) WRITE(IU06,*) '   SUB. WAMASSI: OUTWINT DONE'
       ENDIF
 
-      IF (CDATEE.EQ.CDTPRO.OR.LDWRRE) THEN
-
-!*    3.1.2 STORE 2-D SPECTRA AT SELECTED GRID POINTS,
-!           INTEGRATED PARAMETERS OF ENTIRE GRID.
-!           -------------------------------------
-
-!           SAVE INTEGRATED DATA FILE.
-
-        IF (GFLAG20 .AND. .NOT. LFDB .AND. LOUTINT) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
-          ENDIF
+      IF ((CDATEE.EQ.CDTPRO.OR.LDWRRE).AND.LOUTINT) THEN
+!*    3.1.2 MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES 
+!           ------------------------------------------------------------
+!       GRIB DATA IF FDB IS NOT USED: 
+        IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+          CALL GSFILE (IU06, IU32, 0, CDTPRO, CDATEF, 'APP', 'S')
         ENDIF
-        IF (FFLAG20 .AND. LOUTINT) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.NPROC)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
-          ENDIF
+!       PURE BINARY DATA:
+        IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+          CALL GSFILE (IU06, IU22, 0, CDTPRO, CDATEF, 'AMP', 'S')
         ENDIF
 
-!           SAVE INTEGRATED SWELL AND SEA DATA FILE.
-!           ----------------------------------------
-
-        IF (FFLAG21 .AND. LOUTINT) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.MIN(2,NPROC)))
-     &     .OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU23, 0, CDTPRO, CDATEF, 'ASS', 'S')
-          ENDIF
-        ENDIF
-
-!           SAVE SPECTRA FILE.
-
-        IF (FFLAG25 .AND. LOUTSPP) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU27, 0, CDTPRO, CDATEF, 'AUT', 'S')
-          ENDIF
-        ENDIF
-
-!           SAVE SWELL SPECTRA FILE. 
-
-        IF (FFLAG26 .AND. LOUTSPP) THEN
-          IF((LMESSPASS.AND.(IRANK.EQ.1)).OR.(.NOT.LMESSPASS)) THEN
-            CALL GSFILE (IU06, IU28, 0, CDTPRO, CDATEF, 'ASW', 'S')
-          ENDIF
-        ENDIF
       ENDIF
 
+
+!*    3.1.4 SAVE RESTART FIELDS.
+!           --------------------
       LSV=(CDTRES.EQ.CDTPRO .OR. CDATEE.EQ.CDTPRO 
      &                      .OR. CDTPRO.EQ.CDATER)
 
       IF (LSV.OR.LDWRRE) THEN
-
-!*    3.1.4 SAVE RESTART FIELDS.
-!           --------------------
         LOUT=(IREST.EQ.1 
      &        .AND. (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES)
      &        .AND. LWAMANOUT )
@@ -309,6 +279,7 @@
           IF ( LOUT.AND.LGRIBOUT ) THEN
 !           SAVE SPECTRUM IN GRIB
             CALL OUTWSPEC(FL1)
+
             CALL GSTATS(1976,0)
             IF (NWFDBREF.NE.-5 ) IERR = IFLUSHFDBSUBS (NWFDBREF)
             CALL GSTATS(1976,1)
@@ -323,6 +294,7 @@
             CALL FLUSH(IU06)
           ENDIF
 
+!         SAVE RESTART FILES IN PURE BINARY FORM
           IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
             CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
      &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,
@@ -342,8 +314,7 @@
 !*    3.1.5 UPDATE, WRITE AND SAVE WAMINFO FILE.
 !           ------------------------------------
 
-          IF ((LDSTOP.OR.LDWRRE) .AND. 
-     &        (LMESSPASS .AND. IRANK .EQ. 1 .OR. .NOT. LMESSPASS )) THEN
+          IF ((LDSTOP.OR.LDWRRE) .AND.  IRANK.EQ.1 ) THEN
             CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
             CALL DIFDATE (CDTPRO,CDATEF,IANALPD)
             IF (CDTPRO.LE.CDATEF) THEN
@@ -374,15 +345,13 @@
           ENDIF
         ENDIF
 
-        IF(LMESSPASS) THEN
-          CALL GSTATS(752,0)
-          CALL MPL_BARRIER(CDSTRING='WAMASSI 3:')
-          CALL GSTATS(752,1)
-        ENDIF
+        CALL GSTATS(752,0)
+        CALL MPL_BARRIER(CDSTRING='WAMASSI 3:')
+        CALL GSTATS(752,1)
       ENDIF
 
-      IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. (
-     &  (CDTINTT.EQ.CDTPRO. OR. CDTINTS.EQ.CDTPRO))) THEN
+      IF (LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND.                 &
+     &    CDTINTT.EQ.CDTPRO) THEN
         CALL GSTATS(1976,0)
         IERR = IFLUSHFDBSUBS (NWFDBREF)
         CALL GSTATS(1976,1)
@@ -394,12 +363,8 @@
       CALL MPL_BARRIER(CDSTRING='WAMASSI 4:')
       CALL GSTATS(752,1)
 
-!     DEALLOCATE OUTPUT ARRAYS
-      CALL CLEAN_OUTBS(LLOUTBS)
-
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMASSI',1,ZHOOK_HANDLE)
 #endif
 
-      RETURN
       END SUBROUTINE WAMASSI

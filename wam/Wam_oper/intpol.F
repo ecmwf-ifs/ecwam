@@ -46,7 +46,6 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
      &              DELTH  ,FRATIO   ,FLOGSPRDM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN

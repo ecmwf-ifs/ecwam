@@ -86,6 +86,7 @@
       INTEGER :: IS, KT, KB
       INTEGER :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER :: INVRES
+      INTEGER :: KEXTHRS
 
       INTEGER :: IDUM(15)
       INTEGER, DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -98,6 +99,7 @@
       INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL, PARAMETER :: OLDPI = 3.1415927
+      REAL, PARAMETER :: SQRT2 = 2.0
       REAL :: AKI
       REAL :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
       REAL :: XDELLA, XDELLO
@@ -684,7 +686,12 @@
             IF(WAMDEPTH(IX,K).LT.0) THEN
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
-              IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
+              IF(ABS(WAMDEPTH(IX,K)).LT.150) THEN
+                KEXTHRS=10+10*(150-ABS(WAMDEPTH(IX,K)))/150
+              ELSE
+                KEXTHRS=10
+              ENDIF
+              IEXCLTHRSHOLD(IX,K)=MAX(KEXTHRS*ITHRSHOLD(IX,K),-998)
               IBLOCKDPT(IX,K)=INT(-0.025*XX)
             ENDIF
           ENDDO
@@ -1911,7 +1918,7 @@
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSCOR(IX,K,IS)*ITEMPEW)
-                XX=SQRT(XX)
+                XX=SQRT2*SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
               ENDIF

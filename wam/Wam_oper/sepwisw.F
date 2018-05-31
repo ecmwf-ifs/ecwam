@@ -4,8 +4,7 @@
      &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,
      &                    ESEA     ,FSEA     ,THWISEA  ,
      &                    P1SEA    ,P2SEA    ,SPRDSEA  ,
-     &                    EMTRAIN  ,THTRAIN  ,PMTRAIN,
-     &                    LLPARTITION)
+     &                    EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
 
@@ -38,8 +37,7 @@
 !    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
 !    &                  ESEA     ,FSEA     ,THWISEA  ,
 !    &                  P1SEA    ,P2SEA    ,SPRDSEA  ,
-!    &                  EMTRAIN  ,THTRAIN  ,PMTRAIN,
-!    &                  LLPARTITION)
+!    &                  EMTRAIN  ,THTRAIN  ,PMTRAIN)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -49,7 +47,6 @@
 !          *U10NEW* - LATESt WIND SPEED.
 !          *THWNEW* - LATEST WIND DIRECTION.
 !          *        - SWELL and WINDSEA PARAMETERS.
-!          *LLPARTITION* TRUE IF SPECTRAL PARTITIONING IS USED.
 
 !     METHOD.
 !     -------
@@ -66,10 +63,10 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : IPFGTBL  ,NTRAIN
+      USE YOWCOUT  , ONLY : IPFGTBL  ,NTRAIN   ,LLPARTITION
       USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! -----------------------------------------------------------------------
@@ -93,7 +90,6 @@
       REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN, PMTRAIN
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: XLLWS 
-      LOGICAL, INTENT(IN) :: LLPARTITION
 
       INTEGER :: IJ,K,M
 
@@ -139,7 +135,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF (XLLWS(IJ,K,M).NE.0.) THEN
+            IF (XLLWS(IJ,K,M).NE.0. .AND. .NOT.(CLDOMAIN.EQ.'s') ) THEN
               ! this is windsea 
               SWM(IJ,K,M)=0.
             ELSE
@@ -156,6 +152,7 @@
         ENDDO
       ENDDO
 
+      IF(.NOT.(CLDOMAIN.EQ.'s')) THEN
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
 !     OTHERWISE RESET WIND SECTOR TO WINDSEA
 
@@ -219,6 +216,8 @@
         ENDDO
       ENDDO
 
+      ENDIF ! CLDOMAIN
+
 !     SWELL SPECTRUM
       DO M=1,NFRE
         DO K=1,NANG
@@ -262,7 +261,7 @@
 
       IF(IPFGTBL(33).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD (FL1, IJS, IJL, LLPEAKF, SPRDSWELL)
+        CALL WDIRSPREAD (FL1, IJS, IJL, ESWELL, LLPEAKF, SPRDSWELL)
       ENDIF
 
 
@@ -304,7 +303,7 @@
 
       IF(IPFGTBL(32).NE.0) THEN
         LLPEAKF = .TRUE.
-        CALL WDIRSPREAD(FL1, IJS, IJL, LLPEAKF, SPRDSEA)
+        CALL WDIRSPREAD(FL1, IJS, IJL, ESEA, LLPEAKF, SPRDSEA)
       ENDIF
 
 #ifdef ECMWF

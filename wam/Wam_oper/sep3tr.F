@@ -62,10 +62,9 @@
       USE YOWCOUT  , ONLY : NTRAIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
      &            TH       ,COSTH    ,SINTH    ,FRIC
-      USE YOWICE   , ONLY : FLMIN    ,FLMINFR 
+      USE YOWICE   , ONLY : FLMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
-      USE YOWTABL  , ONLY : JUMAX    ,DELU
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -95,7 +94,6 @@
       INTEGER, DIMENSION(IJS:IJL) :: FRINVMIJ
       INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX 
       INTEGER, DIMENSION(IJS:IJL) :: IPNOW 
-      INTEGER, DIMENSION(IJS:IJL) :: JU 
       INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
       INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
@@ -109,7 +107,6 @@
 
       REAL :: COSDIFF
       REAL :: DELDW
-      REAL :: XJ, DELUINV 
       REAL :: COSDIR, FRLIMIT 
       REAL :: ZHOOK_HANDLE
       REAL :: FLLOWEST
@@ -191,16 +188,11 @@
           SPRD(IJ,K)=MAX(0.,COSDIFF)**2
         ENDDO
       ENDDO
-      DELUINV=1./DELU
-      DO IJ=IJS,IJL
-        XJ=U10NEW(IJ)*DELUINV
-        JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
-      ENDDO
 
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FLLOW(IJ,K,M)=MAX(FLMINFR(JU(IJ),M)*SPRD(IJ,K),FLMIN)
+            FLLOW(IJ,K,M)=FLMIN
           ENDDO
         ENDDO
       ENDDO

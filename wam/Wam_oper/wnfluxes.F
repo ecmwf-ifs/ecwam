@@ -1,6 +1,6 @@
       SUBROUTINE WNFLUXES (IJS, IJL,
      &                     MIJ, RHOWGDFTH,
-     &                     SSURF,
+     &                     SSURF, CICVR,
      &                     PHIWA,
      &                     EM, F1, U10, THW,
      &                     USNEW, ROAIRN, LNUPD)
@@ -17,7 +17,7 @@
 
 !       *CALL* *WNFLUXES* (IJS, IJL,
 !    &                     MIJ, RHOWGDFTH,
-!    &                     SSURF,
+!    &                     SSURF, CICVR,
 !    &                     PHIWA,
 !    &                     EM, F1, U10, THW,
 !    &                     USNEW, ROAIRN, LNUPD)
@@ -29,6 +29,7 @@
 !                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
 !          *SSURF*  - CONTRIBUTION OF ALL SOURCE TERMS ACTING ON 
 !                     THE SURFACE MOMENTUM AND ENERGY FLUXES.
+!          *CICVR*  - SEA ICE COVER.
 !          *PHIWA*  - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                     OVER THE FULL FREQUENCY RANGE.
 !          *EM*     - MEAN WAVE ENERGY.
@@ -55,6 +56,7 @@
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY,
      &                      NEMONEW10, NEMOPHIF
       USE YOWFRED  , ONLY : COSTH    ,SINTH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    , 
      &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -71,6 +73,7 @@
 
       REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: PHIWA
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EM, F1, U10, THW
       REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, ROAIRN
@@ -79,12 +82,15 @@
 
       INTEGER :: IJ, K, M
 
+      REAL, PARAMETER :: XMMIN=0.5
+      REAL, PARAMETER :: XMMAX=3.0
       REAL :: TAU, XN, TAUO, PHIOCD
       REAL :: TAUX, TAUY, TAUOX, TAUOY, CNST
       REAL :: ZHOOK_HANDLE
 
       REAL, DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
       REAL, DIMENSION(IJS:IJL) :: PHILF
+      REAL, DIMENSION(IJS:IJL) :: REDCI, XM 
       REAL, DIMENSION(IJS:IJL) :: CMRHOWGDFTH
       REAL, DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
@@ -127,6 +133,23 @@
         ENDDO
       ENDDO
 
+      IF (LICERUN .AND. LMASKICE) THEN
+        DO IJ=IJS,IJL
+          IF(CICVR(IJ).GT.CITHRSH) THEN
+!           PERCENTAGE OF THE WAVE FLUXES THAT ARE ACCOUNTED FOR UNDER SEA ICE
+            REDCI(IJ)=MAX(1.-CICVR(IJ),0.)
+!           FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
+!           (negative because it is defined as leaving the waves)
+            XM(IJ)=-XMMIN-(XMMAX-XMMIN)*REDCI(IJ)
+          ELSE
+            REDCI(IJ)=1.
+            XM(IJ)=0.
+          ENDIF
+        ENDDO
+      ELSE
+        REDCI(:)=1.
+        XM(:)=0.
+      ENDIF
 
       DO IJ=IJS,IJL
 
@@ -134,13 +157,13 @@
         TAUX       = TAU*SIN(THW(IJ))
         TAUY       = TAU*COS(THW(IJ))
 
-        TAUOX      = TAUX-XSTRESS(IJ)
-        TAUOY      = TAUY-YSTRESS(IJ)
+        TAUOX      = TAUX-REDCI(IJ)*XSTRESS(IJ)
+        TAUOY      = TAUY-REDCI(IJ)*YSTRESS(IJ)
         TAUO       = SQRT(TAUOX**2+TAUOY**2)
         TAUOC(IJ)  = TAUO/TAU
 
         XN        = ROAIRN(IJ)*USNEW(IJ)**3
-        PHIOCD    = PHILF(IJ)-PHIWA(IJ)
+        PHIOCD    = REDCI(IJ)*(PHILF(IJ)-PHIWA(IJ))+XM(IJ)*XN
 
         PHIEPS(IJ)= PHIOCD/XN 
         PHIEPS(IJ)= MIN(MAX(PHIEPS(IJ),PHIEPSMIN),PHIEPSMAX)

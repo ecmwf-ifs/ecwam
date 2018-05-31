@@ -4,11 +4,13 @@
 
 !*    ** *CURRENT* - CURRENT FIELD.
 
+      REAL, PARAMETER :: CURRENT_MAX=2.0
+
       REAL, ALLOCATABLE :: U(:,:) 
       REAL, ALLOCATABLE :: V(:,:) 
 
-      CHARACTER*14 :: CDTCUR
-      CHARACTER*14 :: CDATECURA
+      CHARACTER(LEN=14) :: CDTCUR
+      CHARACTER(LEN=14) :: CDATECURA
 
       INTEGER :: IDELCUR
 
@@ -17,6 +19,7 @@
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -----     --------
+!      CURRENT_MAX REAL      MAXIMUM VALUE ALLOWED FOR EACH CURRENT COMPONENT (M/S)
 !      *U*         REAL      U - COMPONENT OF CURRENT (M/S).
 !      *V*         REAL      V - COMPONENT OF CURRENT (M/S).
 !      *CDTCUR*    CHAR*14   REFERENCE DATE FOR U AN V.

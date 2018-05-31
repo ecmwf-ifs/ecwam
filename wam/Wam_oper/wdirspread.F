@@ -1,4 +1,4 @@
-      SUBROUTINE WDIRSPREAD (F, IJS, IJL, LLPEAKF, WDIRSPRD)
+      SUBROUTINE WDIRSPREAD (F, IJS, IJL, EMEAN, LLPEAKF, WDIRSPRD)
 
 ! ----------------------------------------------------------------------
 
@@ -11,8 +11,6 @@
 
 !     TO COMPUTE THE DIRECTIONAL SPREAD EITHER FOR THE WHOLE FREQUENCY
 !     RANGE OR BASED ON THE PEAK FREQUENCY.
-!     IT MUST BE CALLED AFTER A CALL THE SEMEAN IF THE FULL FREQUENCY
-!     RANGE IS USED.
 
 !**   INTERFACE.
 !     ----------
@@ -21,6 +19,7 @@
 !          *F*     - SPECTRUM.
 !          *IJS*   - INDEX OF FIRST GRIDPOINT.
 !          *IJL*   - INDEX OF LAST GRIDPOINT.
+!          *EMEAN* - MEAN WAVE ENERGY FOR THE WAVE SYSTEM (INPUT).
 !          *LLPEAKF* - TRUE IF THE DIRECTIONAL SPREAD IS BASED ON 
 !                      THE PEAK FREQUENCY.
 !          *WDIRSPRD* - DIRECTIONAL SPREAD.
@@ -45,22 +44,29 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
-      USE YOWMEAN  , ONLY : EMEAN
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 #include "peakfri.intfb.h"
 #include "scosfl.intfb.h"
 
-      INTEGER :: IJ,M,IJS,IJL
+      INTEGER, INTENT(IN) :: IJS, IJL
+      REAL, INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
+      LOGICAL, INTENT(IN) :: LLPEAKF
+      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: WDIRSPRD
+
+      INTEGER :: IJ,M
       INTEGER :: IFRINDEX(IJS:IJL)
       REAL :: COEF_FR,ONE
-      REAL, DIMENSION(IJS:IJL) :: TEMP, WDIRSPRD
-      REAL :: F(IJS:IJL,NANG,NFRE)
-      LOGICAL :: LLPEAKF
+      REAL :: ZHOOK_HANDLE
+      REAL, DIMENSION(IJS:IJL) :: TEMP
+
+! ----------------------------------------------------------------------
+      IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',0,ZHOOK_HANDLE)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------
@@ -118,5 +124,6 @@
         WDIRSPRD(IJ) = SQRT(2.*(ONE-WDIRSPRD(IJ)))
       ENDDO
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',1,ZHOOK_HANDLE)
+
       END SUBROUTINE WDIRSPREAD

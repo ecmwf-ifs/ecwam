@@ -43,8 +43,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA
-      USE YOWPCONS , ONLY : G        ,ACD      ,BCD
+      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,RNUM
+      USE YOWPCONS , ONLY : G        ,EPSUS   ,ACD      ,BCD
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -65,6 +65,7 @@
 
       REAL :: XLOGXL, ALPHAOG, XKUTOP, XOLOGZ0
       REAL :: USTOLD, TAUOLD, TAUNEW, X, F, DELF
+      REAL :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ
       REAL :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -80,19 +81,28 @@
         USTOLD = UTOP(IJ)*SQRT(ACD+BCD*UTOP(IJ))
         TAUOLD = MAX(USTOLD**2,TAUW(IJ)+EPS1)
         USTAR(IJ) = SQRT(TAUOLD)
+        USTM1 = 1./MAX(USTAR(IJ),EPSUS) 
 
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
-          Z0(IJ) = ALPHAOG*TAUOLD/SQRT(1.-X)
-          XOLOGZ0= 1./(XLOGXL-LOG(Z0(IJ)))
+          Z0CH = ALPHAOG*TAUOLD/SQRT(1.-X)
+          Z0VIS = RNUM*USTM1
+          Z0TOT = Z0CH+Z0VIS
+
+          XOLOGZ0= 1./(XLOGXL-LOG(Z0TOT))
           F = USTAR(IJ)-XKUTOP*XOLOGZ0
-          DELF = 1.-XKUTOP*XOLOGZ0**2*(2.-TWOXMP1*X)/(USTAR(IJ)*(1.-X))
+          ZZ = USTM1*(Z0CH*(2.-TWOXMP1*X)/(1.-X)-Z0VIS)/Z0TOT
+          DELF= 1.-XKUTOP*XOLOGZ0**2*ZZ
+
           USTAR(IJ) = USTAR(IJ)-F/DELF
           TAUNEW = MAX(USTAR(IJ)**2,TAUW(IJ)+EPS1)
           USTAR(IJ) = SQRT(TAUNEW)
           IF(TAUNEW.EQ.TAUOLD) EXIT
+          USTM1 = 1./MAX(USTAR(IJ),EPSUS) 
           TAUOLD = TAUNEW
         ENDDO
+
+        Z0(IJ)=Z0CH
 
       ENDDO
 

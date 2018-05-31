@@ -139,7 +139,6 @@
 !       *MUBUF*     - COMPUTES MODULE UBUF.
 !       *NLWEIGT*   - COMPUTES NON LINEAR WEIGHTS IN MODULE INDNL
 !       *OUTCOM*    - OUTPUT OF COMPUTED MODULES
-!       *OUTPP*     - OUTPUT OF GRID.
 !       *PACKI*     - PACKS AN INTEGER ARRAY.
 !       *PACKR*     - PACKS A REAL ARRAY.
 !       *READCUR*   - READ A CURRENT FIELD.
@@ -175,6 +174,7 @@
      &            XDELLO   ,ZDELLO   ,LAQUA
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSTAT  , ONLY : IPHYS
+      USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
       USE YOWUNIT  , ONLY : NPROPAGS ,IU07     ,IU08
@@ -439,24 +439,20 @@
 !        TAILFACTOR_PM=0.0
 !       TEST 471 adapted to ECWAM
 
-!!!        ALPHA   = 0.0054
-        ALPHA   = 0.0064
-        BETAMAX = 1.37
-        ZALP    = 0.006
-!!!        ALPHAPMAX = 0.035
-        ALPHAPMAX = 0.032
-!!!!        TAUWSHELTER=0.33
-        TAUWSHELTER=0.3
+        ALPHA   = 0.0065
+        BETAMAX = 1.42
+        ZALP    = 0.008
+        ALPHAPMAX = 0.031
+        TAUWSHELTER=0.24
         TAILFACTOR=2.5
-!!!        TAILFACTOR_PM=3.4
-        TAILFACTOR_PM=0.
+        TAILFACTOR_PM=3.0
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1000.0
-        AGRCRV = 0.113E+6
-        BGRCRV = 4.97 
-        AFCRV = 4.5E-4
-        BFCRV = -3.0
+        EGRCRV = 1065.0
+        AGRCRV = 0.0655E+6
+        BGRCRV =  10.906
+        AFCRV = 2.453E-4
+        BFCRV = -3.1236
         ESH = 1711.
         ASH = 8.0E-4 
         BSH = 0.96 
@@ -519,7 +515,7 @@
       ELSE
 !       AQUA PLANET SET TO DEEP EVERYWHERE
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
-        BATHY(:,:)=999.
+        BATHY(:,:)=BATHYMAX
         DO IX=1,NX
           BATHY(IX,1)=-999.
           BATHY(IX,NY)=-999.

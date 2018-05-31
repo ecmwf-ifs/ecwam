@@ -90,7 +90,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,TAUWSHELTER, XKAPPA
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,TAUWSHELTER, XKAPPA, RNU      ,RNUM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
@@ -108,6 +108,28 @@
       INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
 
       INTEGER (KIND=JWIM), PARAMETER :: NGST=2
+
+!     MFWAM:
+!      SWELLF = 0.8_JWRB
+!      SWELLF2 = -0.018_JWRB
+!      SWELLF3 = 0.015_JWRB
+!      SWELLF4 = 1.0E05_JWRB
+!      SWELLF5 = 1.2_JWRB
+!      SWELLF6 = 1.0_JWRB
+!      SWELLF7 = 2.3E05_JWRB
+!      Z0RAT = 0.04_JWRB
+
+!     TEST471 (modified SWELLF):
+      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 1.2_JWRB  ! controls the viscous swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SWELLF7 = 3.6E05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: Z0RAT = 0.04_JWRB
+      REAL(KIND=JWRB), PARAMETER :: Z0TUBMAX = 0.0005_JWRB
+
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: ABMAX = 8.0_JWRB 
 
@@ -120,9 +142,7 @@
       REAL(KIND=JWRB) :: CONST1
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
-      REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SWELLF,SWELLF2,SWELLF3,SWELLF4,SWELLF5
-      REAL(KIND=JWRB) :: SWELLF6, SWELLF7, SMOOTH, HFTSWELLF6
-      REAL(KIND=JWRB) :: Z0RAT
+      REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
       REAL(KIND=JWRB) :: FAC_NU_AIR,FACM1_NU_AIR
       REAL(KIND=JWRB) :: ARG, DELABM1
       REAL(KIND=JWRB) :: TAUPX,TAUPY
@@ -139,6 +159,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK, SH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
@@ -151,30 +172,9 @@
       ROG = ROWATER*G
       AVG_GST = 1.0_JWRB/NGST
       CONST1  = BETAMAX/XKAPPA**2 /ROWATER
-      NU_AIR = 1.4E-05_JWRB
-      FAC_NU_AIR=0.1_JWRB*NU_AIR
+      NU_AIR = RNU
+      FAC_NU_AIR= RNUM
       FACM1_NU_AIR=4.0_JWRB/NU_AIR
-
-!     MFWAM:
-!      SWELLF = 0.8_JWRB
-!      SWELLF2 = -0.018_JWRB
-!      SWELLF3 = 0.015_JWRB
-!      SWELLF4 = 1.0E05_JWRB
-!      SWELLF5 = 1.2_JWRB
-!      SWELLF6 = 1.0_JWRB
-!      SWELLF7 = 2.3E05_JWRB
-!      Z0RAT = 0.04_JWRB
-
-!     TEST471:
-      SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
-      SWELLF2 = -0.018_JWRB
-      SWELLF3 = 0.022_JWRB
-      SWELLF4 = 1.5E05_JWRB
-      SWELLF5 = 1.2_JWRB  ! controls the viscous swell dissipation
-      SWELLF6 = 1.0_JWRB
-      SWELLF7 = 3.6E05_JWRB
-      Z0RAT = 0.04_JWRB
-
 
       FU=ABS(SWELLF3)
       FUD=SWELLF2
@@ -222,7 +222,8 @@
         AORB(IJ)  = 2.0_JWRB*SQRT(AORB(IJ))   ! this 1/2 Hs
         RE(IJ)    = FACM1_NU_AIR*UORBT(IJ)*AORB(IJ) ! this is the Reynolds number 
         Z0VIS(IJ) = FAC_NU_AIR/MAX(USNEW(IJ),0.0001_JWRB)
-        Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0RAT*Z0NEW(IJ))
+        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0NEW(IJ))
+        Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0TUB)
         ZORB(IJ)  = AORB(IJ)/Z0NOZ(IJ)
 
 ! conpute fww
@@ -246,7 +247,7 @@
         ENDDO
       ENDIF
 
-! Swell damping weight between viscuous and turbulent boundary layer
+! Swell damping weight between viscous and turbulent boundary layer
       IF (SWELLF7.GT.0.0_JWRB) THEN
         DO IJ=IJS,IJL
           SMOOTH=0.5_JWRB*TANH((RE(IJ)-RE_C(IJ))/SWELLF7)
@@ -353,7 +354,8 @@
 
         DO IGST=1,NGST
           DO IJ=IJS,IJL
-            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M) + ZALP
+            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M)
+            UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
@@ -375,7 +377,7 @@
             DO IJ=IJS,IJL
               IF (COSLP(IJ,K,IGST).GT.0.01_JWRB) THEN
                 X    = COSLP(IJ,K,IGST)*UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + XKAPPA/X
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X

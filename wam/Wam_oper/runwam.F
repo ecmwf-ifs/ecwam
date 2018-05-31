@@ -153,10 +153,12 @@
       REAL :: PSTEP
       REAL :: RSOUTW, RNORTW
       REAL :: PRPLRADI, PRPLRG
+      REAL :: RNU_ATM, RNUM_ATM
       REAL :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
       REAL :: FIELDS(NGPTOTG,NFIELDS)
       REAL :: ZHOOK_HANDLE
       REAL :: RMISS
+      REAL :: ZRCHAR
       REAL :: time0, time
       REAL :: wam_user_clock
 
@@ -229,6 +231,10 @@
       PRPLRG=1.0
       LLRNL=.TRUE.
 
+!     KINEMATIC AIR VISCOSITY AND REDUCED VALUE FOR MOMENTUM TRANSFER
+      RNU_ATM=1.5E-5
+      RNUM_ATM=0.11*RNU_ATM
+
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
 
       CALL WVWAMINIT1 (LWCOU,LDWCOU2W,LWFLUX,LWCUR,LFDBIFS)
@@ -291,6 +297,7 @@
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
       RMISS=-999. ! missing data indicator
+      ZRCHAR=0.0155 ! default value for Charnock
 
       ! WAM-NEMO COUPLING
 
@@ -334,7 +341,7 @@
 
       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
      &             NFIELDS, NGPTOTG, NC, NR,
-     &             IGRIB_HANDLE_DUM, RMISS, FIELDS,
+     &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,
      &             NATMFLX,
      &             LWCUR, LWSTOKES,
      &             NWVFIELDS, WVFLDG,
@@ -342,7 +349,9 @@
      &             LLRESTARTED, ZDELATM, KQGAUSS,
      &             LDWCOUNORMS, MASK_IN, MASK_OUT,
      &             NFDBREF,
-     &             FRSTIME, NADV, PRPLRADI, PRPLRG,IDUM)
+     &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
+     &             RNU_ATM, RNUM_ATM,                                   &
+     &             IDUM)
 
       IF (LLSTOP) GOTO 30
       IF (CDTPRO.LT.CDATEE) GOTO 20

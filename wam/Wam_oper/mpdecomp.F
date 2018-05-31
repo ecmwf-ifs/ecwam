@@ -108,13 +108,11 @@
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,
-     &             DFFR     ,DFFR2   ,COSTH     ,SINTH
+     &             DFIMFR  ,DFIMFR2  ,COSTH     ,SINTH
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
-      USE YOWICE   , ONLY : FLMIN    ,FLMINFR
-      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,
@@ -131,7 +129,6 @@
      &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
      &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,
      &            IJ2NEWIJ ,NBLKS    ,NBLKE
-      USE YOWTABL  , ONLY : JUMAX    ,UMAX     ,DELU
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,
      &            KRLAT    ,KRLON    ,
@@ -192,17 +189,12 @@
 
       REAL :: ZHOOK_HANDLE
       REAL :: RS_sekf, RN_sekf
-      REAL :: GAMMA, SA, SB, FETCH, GX, FPMAX, U10, GXU, UG, ALPHJO
       REAL :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
       REAL :: THETAMAX, SINTHMAX, DELTA
       REAL :: X4(2)
-      REAL :: FPK(JUMAX)
       REAL,ALLOCATABLE :: RCOMBUF_S(:)
       REAL,ALLOCATABLE :: RCOMBUF_R(:)
       REAL,ALLOCATABLE :: RDUM(:), RDUM2(:,:)
-      REAL :: ALPHAJinp(1)
-      REAL :: FPinp(1)
-      REAL :: ETinp(1, NFRE)
 
       CHARACTER(LEN=80) :: LOGFILENAME
 
@@ -238,59 +230,15 @@
 !     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
       IF(ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
       ALLOCATE(DFIMOFR(NFRE))
-      IF(ALLOCATED(DFFR)) DEALLOCATE(DFFR)
-      ALLOCATE(DFFR(NFRE))
-      IF(ALLOCATED(DFFR2)) DEALLOCATE(DFFR2)
-      ALLOCATE(DFFR2(NFRE))
+      IF(ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
+      ALLOCATE(DFIMFR(NFRE))
+      IF(ALLOCATED(DFIMFR2)) DEALLOCATE(DFIMFR2)
+      ALLOCATE(DFIMFR2(NFRE))
 
       DO M=1,NFRE
         DFIMOFR(M) = DFIM(M)/FR(M)
-        DFFR(M) = DFIM(M)*FR(M)
-        DFFR2(M) = DFIM(M)*FR(M)**2
-      ENDDO
-
-
-!     MINIMUM ENERGY IN SPECTRAL BINS 
-
-      IF(ALLOCATED(FLMINFR)) DEALLOCATE(FLMINFR)
-      ALLOCATE(FLMINFR(JUMAX,NFRE))
-
-      GAMMA=3.000000
-      SA=7.000000E-02
-      SB=9.000000E-02
-      FETCH=MIN(0.5*DELPHI,25000.)
-      GX = G * FETCH
-
-      FLMIN=0.000001
-      FPMAX=FR(NFRE)
-      DELU=UMAX/REAL(JUMAX)
-
-      DO J = 1,JUMAX
-        U10=REAL(J)*DELU
-!       find peak period  from fetch law
-!       the same formulation as in subroutine peak is used.
-        GXU = GX/(U10*U10)
-        UG = G/U10
-        FPK(J) = AJONS * GXU ** DJONS
-        FPK(J) = MAX(0.13, FPK(J))
-        FPK(J) = MIN(FPK(J), MAX(FPMAX/UG,0.13))
-        ALPHJO = BJONS * FPK(J)** EJONS
-        ALPHJO = MAX(ALPHJO, 0.0081)
-        FPK(J) = FPK(J)*UG
-!       We are taking 1% of the JONSWAP value as it is intended to be
-!       noise...
-        ALPHJO = 0.01*ALPHJO
-        ALPHAJinp(1)=ALPHJO
-        FPinp(1)=FPK(J)
-        CALL JONSWAP(ALPHAJinp, GAMMA, SA, SB, FPinp, 1, 1, ETinp)
-        FLMINFR(J,:)=ETinp(1,:)
-
-
-!       AVOID TOO SMALL NUMBERS
-        DO M = 1,NFRE
-          FLMINFR(J,M)=MAX(FLMINFR(J,M),FLMIN)
-        ENDDO
-
+        DFIMFR(M)  = DFIM(M)*FR(M)
+        DFIMFR2(M) = DFIM(M)*FR(M)**2
       ENDDO
 
       IF (LLUNSTR) THEN

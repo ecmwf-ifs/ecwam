@@ -17,11 +17,11 @@ MODULE UNSTRUCT_WIND
       REAL(KIND=JWRU), ALLOCATABLE :: WIND (:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: WIND1(:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: WIND2(:,:)
-      integer recTime1, recTime2
-      integer, allocatable :: Indexes_boundary(:)
+      INTEGER(KIND=JWIM) :: recTime1, recTime2
+      INTEGER(KIND=JWIM), allocatable :: Indexes_boundary(:)
       TYPE(TIMEPERIOD) RecTimeWind
       character(len=*), parameter :: eFileWind = 'wwm_wind_format.nc'
-      real*8 :: WAV_WindTime = 0
+      REAL(KIND=JWRU) :: WAV_WindTime =  0._JWRU
       LOGICAL :: WIND_UseSingleFile = .FALSE.
       LOGICAL :: WIND_IsInitializedSingleFile = .FALSE.
       CONTAINS
@@ -34,18 +34,18 @@ MODULE UNSTRUCT_WIND
       USE WAV_NETCDF_FCT, ONLY : CF_EXTRACT_TIME
       IMPLICIT NONE
       character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
-      real*8, allocatable :: ListTime_mjd(:)
+      REAL(KIND=JWRU), allocatable :: ListTime_mjd(:)
       character (len=100) :: eStrUnitTime
-      real(KIND=JWRU) ConvertToDay, eTimeStart, eTimeBnd
-      INTEGER varid, ncid
-      integer, dimension(nf90_max_var_dims) :: dimids
-      integer istat
-      integer nbtime_mjd
-      integer iTime
-      real(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
-      real(KIND=JWRU) DeltaDiff, eDir
+      REAL(KIND=JWRU) :: ConvertToDay, eTimeStart, eTimeBnd
+      INTEGER(KIND=JWIM) :: varid, ncid
+      INTEGER(KIND=JWIM), dimension(nf90_max_var_dims) :: dimids
+      INTEGER(KIND=JWIM) :: istat
+      INTEGER(KIND=JWIM) :: nbtime_mjd
+      INTEGER(KIND=JWIM) :: iTime
+      REAL(KIND=JWRU) :: eWD1, eWD2, eDiff, eDiff1, eDiff2
+      REAL(KIND=JWRU) :: DeltaDiff, eDir
       logical IsAssigned
-      integer ID, ID1, ID2
+      INTEGER(KIND=JWIM) :: ID, ID1, ID2
       !
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'eFileWind=', TRIM(eFileWind)
@@ -79,12 +79,12 @@ MODULE UNSTRUCT_WIND
       IMPLICIT NONE
       character(len=*), intent(in) :: eFile
       REAL(KIND=JWRU), intent(out) :: WIND(2,MNP)
-      integer, intent(in) :: IT
-      REAL(KIND=JWRU) WIND_GL(2,np_global)
-      REAL(KIND=JWRU) singleRead(np_global)
-      integer istat, ncid, var_id
-      integer IP, IS, ID, idx
-      integer IPglob
+      INTEGER(KIND=JWIM), intent(in) :: IT
+      REAL(KIND=JWRU) :: WIND_GL(2,np_global)
+      REAL(KIND=JWRU) :: singleRead(np_global)
+      INTEGER(KIND=JWIM) :: istat, ncid, var_id
+      INTEGER(KIND=JWIM) :: IP, IS, ID, idx
+      INTEGER(KIND=JWIM) :: IPglob
       character(len=*), parameter :: CallFct = "SINGLE_READ_WIND"
       !
       ! We have this inversion of the order because that is so in WWM at
@@ -124,10 +124,10 @@ MODULE UNSTRUCT_WIND
       USE YOWSTAT  , ONLY : IDELT
       USE WAV_NETCDF_FCT, ONLY : WAV_GET_ETIMEDAY
       IMPLICIT NONE
-      REAL*8 eTimeDay
+      REAL(KIND=JWRU) :: eTimeDay
       CHARACTER(LEN=15) STIME
-      REAL(KIND=JWRU) w1, w2
-      integer iTime1, iTime2
+      REAL(KIND=JWRU) :: w1, w2
+      INTEGER(KIND=JWIM) :: iTime1, iTime2
       WIND_UseSingleFile = .TRUE.
       IF (WIND_IsInitializedSingleFile .eqv. .FALSE.) THEN
         WIND_IsInitializedSingleFile=.FALSE.
@@ -163,17 +163,17 @@ MODULE UNSTRUCT_WIND
       USE YOWWIND  , ONLY : NSTORE   , CDA, CDTNEXT, CDATEFL,           &
      &            FF_NEXT  ,RWFAC
       IMPLICIT NONE
-      REAL,intent(inout), DIMENSION(NINF:NSUP,NBLO) :: USOLD, Z0OLD, TAUW
-      REAL,intent(out), DIMENSION(NINF:NSUP,NBLO) :: U10OLD, THWOLD
-      REAL,intent(out), DIMENSION(NINF:NSUP,NBLO) :: ROAIRO, ZIDLOLD
-      REAL,intent(out), DIMENSION(NINF:NSUP,NBLO) :: CICOVER, CITHICK
+      REAL(KIND=JWRB),intent(inout), DIMENSION(NINF:NSUP,NBLO) :: USOLD, Z0OLD, TAUW
+      REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: CICOVER, CITHICK
       !
-      integer IP, IJ
-      integer ISTORE, IG
-      real eAIRD, eDS, UU, VV, eWindSpeedRaw
-      real eWindDir, eWindSpeed
-      real UU_wind, VV_wind
-      real eCICOVER, eCITHICK, eZIDL, eUS
+      INTEGER(KIND=JWIM) :: IP, IJ
+      INTEGER(KIND=JWIM) :: ISTORE, IG
+      REAL(KIND=JWRB) :: eAIRD, eDS, UU, VV, eWindSpeedRaw
+      REAL(KIND=JWRB) :: eWindDir, eWindSpeed
+      REAL(KIND=JWRB) :: UU_wind, VV_wind
+      REAL(KIND=JWRB) :: eCICOVER, eCITHICK, eZIDL, eUS
       logical UseCurrent
       logical HaveUV
       !
@@ -232,7 +232,7 @@ MODULE UNSTRUCT_WIND
       SUBROUTINE SET_WIND_UNSTRUCTURED
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
       IMPLICIT NONE
-      INTEGER :: I, J, IP
+      INTEGER(KIND=JWIM) :: I, J, IP
       CALL SET_WIND_SINGLEFILE
       DO J=1,NYFF
         DO I=1,NXFF

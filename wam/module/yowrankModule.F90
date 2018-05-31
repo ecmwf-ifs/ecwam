@@ -7,6 +7,7 @@
 
 !> Provides access to some information of all threads e.g. iplg
 module yowRankModule
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   use yowError
   implicit none
   private
@@ -14,17 +15,17 @@ module yowRankModule
 
   type, public :: t_rank
     !> number of local nodes of this rank
-    integer :: np = 0
+    integer(KIND=JWIM) :: np = 0
 
     !> nummer of ghost + resident nodes of this rank
-    integer :: npa = 0
+    integer(KIND=JWIM) :: npa = 0
 
     !> Node local to gloabl mapping of this rank
     !> rank%npa long
-    integer, allocatable :: iplg(:)
+    integer(KIND=JWIM), allocatable :: iplg(:)
 
     !> global start node number for every thread
-    integer:: IStart = 0
+    integer(KIND=JWIM):: IStart = 0
   end type
 
   !> Provides access to some information of all threads e.g. iplg
@@ -38,7 +39,7 @@ module yowRankModule
   subroutine initRankModule()
     use yowDatapool, only: nTasks
     implicit none
-    integer :: stat
+    integer(KIND=JWIM) :: stat
 
     if(allocated(rank)) deallocate(rank)
     allocate(rank(nTasks), stat=stat)
@@ -55,9 +56,9 @@ module yowRankModule
     use yowDatapool, only: nTasks, myrank, comm, itype
     use yowMpiModule
     implicit none
-    integer :: i, ierr, stat
-    integer :: sendRqst(nTasks), recvRqst(nTasks)
-    integer :: recvStat(MPI_STATUS_SIZE, nTasks), sendStat(MPI_STATUS_SIZE, nTasks)
+    integer(KIND=JWIM) :: i, ierr, stat
+    integer(KIND=JWIM) :: sendRqst(nTasks), recvRqst(nTasks)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nTasks), sendStat(MPI_STATUS_SIZE, nTasks)
 
     ! step1 exchange np
     ! step2 exchange npa
@@ -220,7 +221,7 @@ module yowRankModule
   subroutine calcISTART()
     use yowDatapool, only: nTasks
     implicit none
-    integer :: ir
+    integer(KIND=JWIM) :: ir
 
     rank(1)%IStart = 1
     do ir=2, nTasks
@@ -230,7 +231,7 @@ module yowRankModule
 
   subroutine finalizeRankModule()
     implicit none
-    integer :: i
+    integer(KIND=JWIM) :: i
   
     if(allocated(rank)) then
       do i=1, size(rank)

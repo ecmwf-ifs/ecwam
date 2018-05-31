@@ -37,7 +37,7 @@
 
       PI = 4.*ATAN(1.)
       ZPI= 2.*PI
-      ZPISQRT = SQRT(PI)
+      ZPISQRT = SQRT(ZPI)
       G2ZPI4 = G**2/ZPI**4
 
       ZCONST=1./(8.*PI*SQRT(2.))
