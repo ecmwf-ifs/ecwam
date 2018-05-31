@@ -35,6 +35,7 @@
       CHARACTER (LEN=2) :: CLREPR
       CHARACTER (LEN=3) :: CLTYPE
       REAL(KIND=JPRB) :: ZDUMMY(1)
+      LOGICAL :: LLDUM
 
 !-----------------------------------------------------------------------
 
@@ -64,7 +65,7 @@
             ECPAR%LVAREPS, ECPAR%NLEG, &
             ECPAR%NFCHO_TRUNC_INI, ECPAR%NFCLENGTH_INI, &
             ECPAR%NREFERENCE, ECPAR%NSTREAM, &
-            'fc', -1, IGRIBCD )
+            'fc', -1, IGRIBCD, LLDUM )
 
       CALL GRIB_SET_PARAMETER(KGRIB_HANDLE,IGRIBCD,ILEV,&
             & IDUMMY,IDUMMY,IDUMMY,IDUMMY,ZDUMMY)
