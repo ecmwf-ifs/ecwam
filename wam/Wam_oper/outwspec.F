@@ -37,8 +37,8 @@
 
 !-------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCOUT  , ONLY : NWRTOUTWAM, LIOSERV
+      USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED
+      USE YOWCOUT  , ONLY : NWRTOUTWAM, LWAM_USE_IO_SERV
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LFDBIOOUT
@@ -54,7 +54,6 @@
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
-      USE YOMIO_SERV, ONLY : IO_SERV_C001
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -137,7 +136,7 @@
 !     -------------------
       
       ! Use IFS IO server?
-      IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0 .AND. LIOSERV) THEN
+      IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
         CALL OUTWSPEC_IO_SERV(SPEC, MARSTYPE, CDATE, IFCST)
         CALL GSTATS(2080,1)
         RETURN

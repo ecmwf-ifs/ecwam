@@ -66,6 +66,7 @@
 
       INTEGER :: IFSNSTEP
       REAL    :: IFSTSTEP
+      LOGICAL :: LIFS_IO_SERV_ENABLED
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -155,6 +156,7 @@
 
 !      *IFSTSTEP*    TIME STEP OF ATMOSPHERIC MODEL
 !      *IFSNSTEP*    CURRENT STEP OF ATMOSPHERIC MODEL
+!      *LIFS_IO_SERV_ENABLED* LOGICAL TRUE IF IFS IO SERVER ENABLED
 
 ! ----------------------------------------------------------------------
       END MODULE YOWCOUP

@@ -10,7 +10,8 @@
      &                    NFDBREF,
      &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &                    RNU_ATM, RNUM_ATM,                            &
-     &                    IDATE_TIME_WINDOW_END, NSTEP)
+     &                    IDATE_TIME_WINDOW_END, NSTEP,
+     &                    IFS_IO_SERV_ENABLED )
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -104,7 +105,8 @@
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU, 
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK, 
-     &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP
+     &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP,
+     &         LIFS_IO_SERV_ENABLED
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWGRIBHD, ONLY : LNEWLVTP,
      &         DATE_TIME_WINDOW_END
@@ -226,6 +228,8 @@
       INTEGER, INTENT(IN) :: IDATE_TIME_WINDOW_END
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER, INTENT(IN) :: NSTEP
+!     IFS IO SERVER ENABLED
+      LOGICAL, INTENT(IN) :: IFS_IO_SERV_ENABLED
 
       INTEGER :: IG
       INTEGER :: I, J, K, ICPLEN,ICPLEN_ECF
@@ -295,6 +299,7 @@
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       IFSTSTEP = PSTEP
       IFSNSTEP = NSTEP
+      LIFS_IO_SERV_ENABLED = IFS_IO_SERV_ENABLED
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
 

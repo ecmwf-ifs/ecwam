@@ -16,11 +16,10 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU
-      USE YOMIO_SERV, ONLY : IO_SERV_C001
+      USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
-     &                      INFOBOUT,BOUT,LIOSERV
+     &                      INFOBOUT,BOUT,LWAM_USE_IO_SERV
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,              &
      &            CFDBSF   ,MARSTYPE ,NWFDBREF ,LFDBOPEN
@@ -95,7 +94,7 @@
       ENDIF
 
       ! Use IFS IO server?
-      IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0 .AND. LIOSERV) THEN
+      IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
           CALL OUTINT_IO_SERV(NIPRMOUT, IJSLOC, IJLLOC, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
       ELSE
           CALL OUTINT(CDATE, IFCST)
