@@ -30,7 +30,7 @@
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
 
-   
+
 
 !     METHOD.
 !     -------
@@ -49,45 +49,43 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
-      USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWWIND  , ONLY : WSPMIN
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUP, ONLY: XKAPPA, XNLEV
+      USE YOWTEST, ONLY: IU06
+      USE YOMHOOK, ONLY: LHOOK, DR_HOOK
+      USE YOWWIND, ONLY: WSPMIN
 
 ! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL, KLEV, ICODE_WND
+      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KLEV, ICODE_WND
 
-      REAL,DIMENSION(IJS:IJL),INTENT(IN)  ::  TAUW
-      REAL,DIMENSION(IJS:IJL),INTENT(INOUT) :: U10, US
-      REAL,DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: TAUW
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (INOUT) :: U10, US
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0
 
-      INTEGER :: IJ, I, J
+      INTEGER(KIND=JWIM) :: IJ, I, J
 
-      REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1 
-      REAL :: XKAPPAD, XLOGLEV
-      REAL :: XLEV
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1
+      REAL(KIND=JWRB) :: XKAPPAD, XLOGLEV
+      REAL(KIND=JWRB) :: XLEV
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('AIRSEA',0,ZHOOK_HANDLE)
-#endif
+      IF (LHOOK) CALL DR_HOOK ('AIRSEA', 0, ZHOOK_HANDLE)
 
 !*    2. DETERMINE TOTAL STRESS (if needed)
 !        ----------------------------------
 
-      IF(ICODE_WND == 3 ) THEN
-         XLEV = XNLEV(KLEV)
-         CALL TAUT_Z0(IJS, IJL, XLEV, U10, TAUW, US, Z0)
+      IF (ICODE_WND == 3) THEN
+        XLEV = XNLEV (KLEV)
+        CALL TAUT_Z0 (IJS, IJL, XLEV, U10, TAUW, US, Z0)
 
-      ELSE IF(ICODE_WND == 1 .OR. ICODE_WND == 2 ) THEN
+      ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
@@ -97,24 +95,22 @@
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
 
-        XKAPPAD=1.0/XKAPPA
-        XLOGLEV=LOG(XNLEV(KLEV))
+        XKAPPAD = 1.0_JWRB / XKAPPA
+        XLOGLEV = LOG (XNLEV (KLEV))
 
-        DO IJ=IJS,IJL
-          U10(IJ) = XKAPPAD*US(IJ)*(XLOGLEV-LOG(Z0(IJ)))
-          U10(IJ) = MAX(U10(IJ),WSPMIN)
+        DO IJ = IJS, IJL
+          U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))
+          U10 (IJ) = MAX (U10 (IJ), WSPMIN)
         ENDDO
 
       ELSE
-        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
-        WRITE(IU06,*) ' + AIRSEA : INVALID VALUE OF ICODE_WND    +'
-        WRITE(IU06,*) ' ICODE_WND = ',ICODE_WND
-        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
+        WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
+        WRITE (IU06, * ) ' + AIRSEA : INVALID VALUE OF ICODE_WND    +'
+        WRITE (IU06, * ) ' ICODE_WND = ', ICODE_WND
+        WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
         CALL ABORT1
       ENDIF
 
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
-#endif
+      IF (LHOOK) CALL DR_HOOK ('AIRSEA', 1, ZHOOK_HANDLE)
 
       END SUBROUTINE AIRSEA
