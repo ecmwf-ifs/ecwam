@@ -1,4 +1,4 @@
-      REAL FUNCTION AKI (OM, BETA)
+      FUNCTION AKI (OM, BETA)
 
 ! ----------------------------------------------------------------------
 
@@ -37,25 +37,34 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G     ,DKMAX
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-!*    *PARAMETER*  RELATIVE ERROR LIMIT OF NEWTON'S METHOD.
-      REAL, PARAMETER :: EBS = 0.0001
+      REAL(KIND=JWRB) :: AKI
 
-      REAL, INTENT(IN) :: OM, BETA
-      REAL :: AKM1, AKM2, AO, AKP, BO, TH, STH  
+!*    *PARAMETER*  RELATIVE ERROR LIMIT OF NEWTON'S METHOD.
+      REAL(KIND=JWRB), PARAMETER :: EBS = 0.0001_JWRB
+
+      REAL(KIND=JWRB), INTENT(IN) :: OM, BETA
+
+      REAL(KIND=JWRB) :: AKM1, AKM2, AO, AKP, BO, TH, STH  
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('AKI',0,ZHOOK_HANDLE)
 
 !*    1. START VALUE:  MAXIMUM FROM DEEP  AND EXTREM SHALLOW WATER
 !                      WAVE NUMBER.
 !        ---------------------------------------------------------
 
-      AKM1=OM**2/(4.*G)
-      AKM2=OM/(2.*SQRT(G*BETA))
+      AKM1=OM**2/(4.0_JWRB*G)
+      AKM2=OM/(2.0_JWRB*SQRT(G*BETA))
       AO=MAX(AKM1,AKM2)
 
 ! ----------------------------------------------------------------------
@@ -71,14 +80,11 @@
       ELSE
         TH = G*AO*TANH(BO)
         STH = SQRT(TH)
-        AO = AO+(OM-STH)*STH*2./(TH/AO+G*BO/COSH(BO)**2)
+        AO = AO+(OM-STH)*STH*2.0_JWRB/(TH/AO+G*BO/COSH(BO)**2)
         IF (ABS(AKP-AO).GT.EBS*AO) GO TO 2000
         AKI = AO
       ENDIF
 
-      RETURN
-      END
+      IF (LHOOK) CALL DR_HOOK('AKI',1,ZHOOK_HANDLE)
 
-
-
-
+      END FUNCTION AKI
