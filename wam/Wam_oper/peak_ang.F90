@@ -40,7 +40,6 @@
  
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-#include "mstart.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F1
@@ -48,7 +47,7 @@
 
       INTEGER(KIND=JWIM), PARAMETER :: NSH = 5 
       INTEGER(KIND=JWIM) :: IJ, M, K
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX, MSTART, MSTOP
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX, MMSTART, MMSTOP
       REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
       REAL(KIND=JWRB) :: R1
       REAL(KIND=JWRB) :: DELT25, COEF_FR, COEF_FR2
@@ -59,9 +58,7 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE) :: THMEAN, SUM_S, SUM_C
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PEAK_ANG',0,ZHOOK_HANDLE)
-#endif
 
 !***  1. DETERMINE L-H SPECTRAL WIDTH OF THE 2-D SPECTRUM.
 !     ---------------------------------------------------
@@ -157,12 +154,12 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        MSTART(IJ) = MAX(1,MMAX(IJ)-NSH) 
-        MSTOP(IJ)  = MIN(NFRE,MMAX(IJ)+NSH) 
+        MMSTART(IJ) = MAX(1,MMAX(IJ)-NSH) 
+        MMSTOP(IJ)  = MIN(NFRE,MMAX(IJ)+NSH) 
       ENDDO
 
       DO IJ=IJS,IJL
-        DO M=MSTART(IJ),MSTOP(IJ)
+        DO M=MMSTART(IJ),MMSTOP(IJ)
           DO K=1,NANG
             SUM1(IJ) = SUM1(IJ) +F1(IJ,K,M)*DFIM(M)
             SUM2(IJ) = SUM2(IJ) +COS(TH(K)-THMEAN(IJ,M))*F1(IJ,K,M)*DFIM(M)
@@ -179,7 +176,6 @@
         ENDIF
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PEAK_ANG',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE PEAK_ANG

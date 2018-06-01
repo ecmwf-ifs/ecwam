@@ -55,7 +55,7 @@
 #include "unblkrord.intfb.h"
 
       INTEGER, INTENT(IN) :: IG
-      REAL, DIMENSION(NIBLO_OUT), INTENT(IN) :: BLOCK
+      REAL, DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
       REAL, INTENT(IN) :: PMISS
       REAL, INTENT(OUT) :: GRID(NGX,NGY)
 

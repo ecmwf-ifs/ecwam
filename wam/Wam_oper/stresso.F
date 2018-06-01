@@ -80,7 +80,6 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "tauhf.intfb.h"
 #include "tau_phi_hf.intfb.h"
 
       INTEGER, INTENT(IN) :: IJS, IJL

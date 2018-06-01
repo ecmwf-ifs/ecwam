@@ -1,4 +1,4 @@
-      FUNCTION SET_WFLAGS(FLAG,N)
+      LOGICAL FUNCTION SET_WFLAGS(FLAG,N)
 
 ! ----------------------------------------------------------------------
 
