@@ -64,6 +64,9 @@
       INTEGER :: NEMOCSTEP
       INTEGER :: NEMOWSTEP
 
+      INTEGER :: IFSNSTEP
+      REAL    :: IFSTSTEP
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *JPLEVC*    INTEGER   NUMBER OF REFERENCE LEVEL FOR WINDS.
@@ -149,6 +152,9 @@
 !      *NEMONSTEP*   INTEGER NEMO COUPLING FREQ IN NEMO TIME STEPS
 !      *NEMOCSTEP*   INTEGER NEMO CURRENT TIME STEP
 !      *NEMOWSTEP*   INTEGER WAM  CURRENT TIME STEP
+
+!      *IFSTSTEP*    TIME STEP OF ATMOSPHERIC MODEL
+!      *IFSNSTEP*    CURRENT STEP OF ATMOSPHERIC MODEL
 
 ! ----------------------------------------------------------------------
       END MODULE YOWCOUP

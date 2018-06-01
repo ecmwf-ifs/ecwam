@@ -1,4 +1,4 @@
-      SUBROUTINE OUTWSPEC (SPEC)
+      SUBROUTINE OUTWSPEC (SPEC) 
 
 !----------------------------------------------------------------------
 
@@ -38,7 +38,7 @@
 !-------------------------------------------------------------------
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWCOUT  , ONLY : NWRTOUTWAM
+      USE YOWCOUT  , ONLY : NWRTOUTWAM, LIOSERV
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
      &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
       USE YOWMESPAS, ONLY : LFDBIOOUT
@@ -54,6 +54,7 @@
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
+      USE YOMIO_SERV, ONLY : IO_SERV_C001
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -98,6 +99,8 @@
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC',0,ZHOOK_HANDLE)
 #endif
+      
+      CALL GSTATS(2080,0)
 
       ILOCAL=0
       NN=NFRE*NANG
@@ -132,6 +135,13 @@
 
 !*    3. OUTPUT GRIB DATA (USING A MAXIMUM OF NPROC/NWRTOUTWAM TASKS)
 !     -------------------
+      
+      ! Use IFS IO server?
+      IF (LWCOU .AND. IO_SERV_C001%NPROC_IO > 0 .AND. LIOSERV) THEN
+        CALL OUTWSPEC_IO_SERV(SPEC, MARSTYPE, CDATE, IFCST)
+        CALL GSTATS(2080,1)
+        RETURN
+      ENDIF
 
       DO J = 1,NGY
         DO I = 1,NGX
@@ -139,8 +149,8 @@
         ENDDO
       ENDDO
 
-!     IPR: for a given PE, it gives the PE to which data should be sent
-!     in order to do the writing to FDB or to file.
+!       IPR: for a given PE, it gives the PE to which data should be sent
+!       in order to do the writing to FDB or to file.
       IF (LFDBIOOUT) THEN
         IPREV=1
         DO IP=1,MAXOUTTASK
@@ -158,7 +168,7 @@
         IPR(:)=1
       ENDIF
 
-!     Number of other PE's that will send data to PE IRANK
+!       Number of other PE's that will send data to PE IRANK
       NRCV_MSG=0
       DO IR=1,IRANK-1
         IF (IPR(IR).EQ.IRANK) THEN
@@ -190,8 +200,8 @@
         IST=ISTEP
         IF(IC+ISTEP.GT.NN ) IST=NN-IC+1
 
-!       COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less spectral fields
-!       ---------------------------------- than PE's)
+!         COLLECT CONTRIBUTIONS ON ALL PE's (or a subset if less spectral fields
+!         ---------------------------------- than PE's)
         ICNT = 0
         DO IP=1,NPROC
           IF (IP <= IST) THEN
@@ -211,21 +221,22 @@
           IF (IRANK <= IST) THEN
             IRECVCOUNTS(IP) = NEND(IP) - NSTART(IP) + 1
           ELSE
-             IRECVCOUNTS(IP) = 0 
+            IRECVCOUNTS(IP) = 0 
           ENDIF
         ENDDO
 
         CALL GSTATS(692,0)
         CALL MPL_ALLTOALLV(ZSENDBUF,ISENDCOUNTS,
-     &                     ZRECVBUF,IRECVCOUNTS,
-     &                     CDSTRING='OUTWSPEC:')
+     &                    ZRECVBUF,IRECVCOUNTS,
+     &                    CDSTRING='OUTWSPEC:')
         CALL GSTATS(692,1)
         IF (ITEST.GT.1)
-     &    WRITE(IU06,*) 'SUB OUTWSPEC: MPL_ALLTOALLV DONE' 
+     &     WRITE(IU06,*) 'SUB OUTWSPEC: MPL_ALLTOALLV DONE' 
+
 
         CALL GSTATS(1496,0)
         NPROMA=NPROMA_WAM
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,IY)
         DO JKGLO=1,NEND(NPROC),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,NEND(NPROC))
@@ -235,87 +246,86 @@
             FIELD(IX,IY) = ZRECVBUF(IJ)
           ENDDO
         ENDDO
-!$OMP   END PARALLEL DO
+!$OMP     END PARALLEL DO
         CALL GSTATS(1496,1)
 
 !-----------------------------------------------------------------------
 
-!       OUTPUT FROM ALL PE's WHICH CONTAIN A CONTRIBUTION
-!       -------------------------------------------------
+!         OUTPUT FROM ALL PE's WHICH CONTAIN A CONTRIBUTION
+!         -------------------------------------------------
 
         IPARAM=251
         ITABLE=140
 
-!       GRIB ENCODING
+!         GRIB ENCODING
         MSGSIZE(:)=0
         IF(IRANK.LE.IST) THEN
           IM=(((IC-1)+IRANK-1)/NANG)+1
           IK=(IC-1)+IRANK-(IM-1)*NANG
-
-          CALL WGRIBENCODE(IU06, ITEST, NGX, NGY, FIELD,
-     &                     ITABLE, IPARAM, 0, IK , IM, 
-     &                     CDATE, IFCST, MARSTYPE,
-     &                     IGRIB_HANDLE)
+          CALL WGRIBENCODE_MODEL(IU06, ITEST, NGX, NGY, FIELD,
+     &                    ITABLE, IPARAM, 0, IK , IM, 
+     &                    CDATE, IFCST, MARSTYPE,
+     &                    IGRIB_HANDLE)
 
           CALL IGRIB_GET_MESSAGE_SIZE(IGRIB_HANDLE,KBYTES)
           MSGSIZE(IRANK)=(KBYTES+NPRECI-1)/NPRECI
         ENDIF
 
 
-!       SHARE MESSAGE SIZES WITH OUTPUT PE
+!         SHARE MESSAGE SIZES WITH OUTPUT PE
         ITAG=IC
         IF (IPR(IRANK).NE.IRANK .AND. IPR(IRANK).NE.0) THEN
           ALLOCATE(ISENDMSG(1))
           ISENDMSG(1)=MSGSIZE(IRANK)
           CALL MPL_SEND(ISENDMSG(1:1),
-     &                  KDEST=IPR(IRANK),KTAG=ITAG,
-     &                  KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                  KREQUEST=ISENDREQ(1),
-     &                  KERROR=IERR,CDSTRING='OUTWSPEC: MSG SIZE')
+     &                 KDEST=IPR(IRANK),KTAG=ITAG,
+     &                 KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                 KREQUEST=ISENDREQ(1),
+     &                 KERROR=IERR,CDSTRING='OUTWSPEC: MSG SIZE')
           IF(IERR.LT.0) CALL MPL_ABORT('MPL_SEND ERROR IN OUTWSPEC')
         ENDIF
-!       RECEIVE FROM RELEVANT PE's
+!         RECEIVE FROM RELEVANT PE's
         DO IR=1,NRCV_MSG
           CALL MPL_RECV(IMSG1,KFROM=KFROM,KTAG=ITAG,
-     &                  KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
-     &                  CDSTRING='OUTWSPEC : GRIB MSG')
+     &                 KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
+     &                 CDSTRING='OUTWSPEC : GRIB MSG')
           IF(IERR.LT.0) CALL MPL_ABORT('MPL_RECV ERROR IN OUTWSPEC ')
           IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &        ('MPL_RECV ERROR OUTWSPEC GRIB MSG:  MISMATCHED TAGS' )
+     &         ('MPL_RECV ERROR OUTWSPEC GRIB MSG:  MISMATCHED TAGS' )
           IF(KRCOUNT.NE.1) THEN
-             WRITE(0,*) 'SUB OUTWSPEC GRIB MSG: MISMATCHED MSG LENGTH`' 
-             WRITE(0,*) 'IRANK, IR, KFROM, KRCOUNT ',
-     &                   IRANK, IR, KFROM, KRCOUNT 
-             CALL MPL_ABORT
+            WRITE(0,*) 'SUB OUTWSPEC GRIB MSG: MISMATCHED MSG LENGTH`' 
+            WRITE(0,*) 'IRANK, IR, KFROM, KRCOUNT ',
+     &                  IRANK, IR, KFROM, KRCOUNT 
+            CALL MPL_ABORT
      &       ('MPL_RECV ERROR OUTWSPEC GRIB MSG:MISMATCHED MSG LENGTH')
           ENDIF
           MSGSIZE(KFROM)=IMSG1(1)
         ENDDO
-!       IS THE SEND FINISHED?
+!         IS THE SEND FINISHED?
         IF (IPR(IRANK).NE.IRANK .AND. IPR(IRANK).NE.0) THEN
           CALL MPL_WAIT(KREQUEST=ISENDREQ(1),
-     &           CDSTRING='OUTWSPEC: WAIT FOR SEND MSG')
-            DEALLOCATE(ISENDMSG)
+     &          CDSTRING='OUTWSPEC: WAIT FOR SEND MSG')
+          DEALLOCATE(ISENDMSG)
         ENDIF
- 
 
-!       OUTPUT GRIB DATA
-        ITAG=NN+IC
-        IF (MSGSIZE(IRANK).NE.0) THEN 
-          ALLOCATE(ISENDMSG(MSGSIZE(IRANK)))
-          CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,ISENDMSG)
+
+!         OUTPUT GRIB DATA
+      ITAG=NN+IC
+      IF (MSGSIZE(IRANK).NE.0) THEN 
+        ALLOCATE(ISENDMSG(MSGSIZE(IRANK)))
+        CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,ISENDMSG)
 
 !         SEND GRIB MESSAGE TO RELEVANT OUTPUT PE (IF IT IS NOT ONE)
-          IF (IPR(IRANK).NE.IRANK .AND. IPR(IRANK).NE.0) THEN
-            CALL MPL_SEND(ISENDMSG(1:MSGSIZE(IRANK)),
-     &                    KDEST=IPR(IRANK),KTAG=ITAG,
-     &                    KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                    KREQUEST=ISENDREQ(1),
-     &                    KERROR=IERR,CDSTRING='OUTWSPEC: GRIB MSG')
-            IF(IERR.LT.0) CALL MPL_ABORT('MPL_SEND ERROR IN OUTWSPEC')
+        IF (IPR(IRANK).NE.IRANK .AND. IPR(IRANK).NE.0) THEN
+          CALL MPL_SEND(ISENDMSG(1:MSGSIZE(IRANK)),
+     &                   KDEST=IPR(IRANK),KTAG=ITAG,
+     &                   KMP_TYPE=JP_NON_BLOCKING_STANDARD,
+     &                   KREQUEST=ISENDREQ(1),
+     &                   KERROR=IERR,CDSTRING='OUTWSPEC: GRIB MSG')
+          IF(IERR.LT.0) CALL MPL_ABORT('MPL_SEND ERROR IN OUTWSPEC')
 
           ELSE
-!           OUTPUT GRIB DATA THAT ARE ALREADY THERE
+!             OUTPUT GRIB DATA THAT ARE ALREADY THERE
             CALL WGRIBOUT(IU06, ITEST,
      &                    LFDBIOOUT, CFDB2DSP, NWFDBREF, LFDBOPEN,
      &                    IUOUT,
@@ -328,7 +338,7 @@
           CALL IGRIB_RELEASE(IGRIB_HANDLE)
         ENDIF
 
-!       ANYTHING TO RECEIVE ON PE IRANK FROM OTHER PEs ?
+!         ANYTHING TO RECEIVE ON PE IRANK FROM OTHER PEs ?
         NRCV=0
         MAXMSGSIZE=0
         ALLOCATE(ISENDFROM(NPROC))
@@ -351,58 +361,58 @@
         IF(MAXMSGSIZE.GT.0) THEN
           ALLOCATE(IRECVMSG(MAXMSGSIZE,NRCV))
           ALLOCATE(IRECVFROM(NRCV))
-!         RECEIVE FROM RELEVANT PE's
+!           RECEIVE FROM RELEVANT PE's
           DO IRCV=1,NRCV
             CALL MPL_RECV(IRECVMSG(1:MAXMSGSIZE,IRCV:IRCV),
-     &                    KFROM=KFROM,KTAG=ITAG,
-     &                    KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
-     &                    CDSTRING='OUTWSPEC : GRIB MSG')
-            IF(IERR.LT.0) CALL MPL_ABORT('MPL_RECV ERROR IN OUTWSPEC ')
+     &                   KFROM=KFROM,KTAG=ITAG,
+     &                   KOUNT=KRCOUNT,KRECVTAG=KRTAG,KERROR=IERR,
+     &                   CDSTRING='OUTWSPEC : GRIB MSG')
+          IF(IERR.LT.0) CALL MPL_ABORT('MPL_RECV ERROR IN OUTWSPEC ')
             IF(KRTAG.NE.ITAG) CALL MPL_ABORT
      &          ('MPL_RECV ERROR OUTWSPEC:MISMATCHED TAGS' )
             IF(KRCOUNT.NE.MSGSIZE(KFROM)) THEN
-               WRITE(0,*) 'SUB OUTWSPEC: MISMATCHED MSG LENGTH`' 
-               WRITE(0,*) 'IRANK,IRCV,KFROM,KRCOUNT, MSGSIZE(KFROM)= ',
-     &                     IRANK,IRCV,KFROM,KRCOUNT, MSGSIZE(KFROM) 
-               CALL MPL_ABORT
-     &          ('MPL_RECV ERROR OUTWSPEC:MISMATCHED MSG LENGTH')
+              WRITE(0,*) 'SUB OUTWSPEC: MISMATCHED MSG LENGTH`' 
+              WRITE(0,*) 'IRANK,IRCV,KFROM,KRCOUNT, MSGSIZE(KFROM)= ',
+     &                    IRANK,IRCV,KFROM,KRCOUNT, MSGSIZE(KFROM) 
+              CALL MPL_ABORT
+     &           ('MPL_RECV ERROR OUTWSPEC:MISMATCHED MSG LENGTH')
             ENDIF
             IRECVFROM(IRCV)=KFROM
 
           ENDDO
         ENDIF
 
-!       ARE THE SENDS FINISHED?
+!         ARE THE SENDS FINISHED?
         IF (MSGSIZE(IRANK).NE.0 .AND.
-     &      IPR(IRANK).NE.IRANK .AND.IPR(IRANK).NE.0 ) THEN
-          CALL MPL_WAIT(KREQUEST=ISENDREQ(1),
-     &           CDSTRING='OUTWSPEC: WAIT FOR SEND')
+     &       IPR(IRANK).NE.IRANK .AND.IPR(IRANK).NE.0 ) THEN
+        CALL MPL_WAIT(KREQUEST=ISENDREQ(1),
+     &            CDSTRING='OUTWSPEC: WAIT FOR SEND')
             DEALLOCATE(ISENDMSG)
         ENDIF
 
-!       OUTPUT GRIB DATA (IF ANY)
+!         OUTPUT GRIB DATA (IF ANY)
         IF(MAXMSGSIZE.GT.0) THEN
           DO IWRT=1,NRCV
             DO IRCV=1,NRCV
               IF(ISENDFROM(IWRT).EQ.IRECVFROM(IRCV)) EXIT
             ENDDO
             IF(IRCV.LE.0 .OR. IRCV.GT.NRCV) THEN
-               WRITE(0,*) 'SUB OUTWSPEC: MISMATCHED ISENDFROM `' 
-               DO II=1,NRCV
-                 WRITE(0,*) 'II, ISENDFROM(II), IRECVFROM(II) = ',
-     &                       II, ISENDFROM(II), IRECVFROM(II)
-               ENDDO
-               CALL MPL_ABORT
-     &          ('MPL_RECV ERROR OUTWSPEC:MISMATCHED ISENDFROM')
+              WRITE(0,*) 'SUB OUTWSPEC: MISMATCHED ISENDFROM `' 
+              DO II=1,NRCV
+                WRITE(0,*) 'II, ISENDFROM(II), IRECVFROM(II) = ',
+     &                      II, ISENDFROM(II), IRECVFROM(II)
+              ENDDO
+              CALL MPL_ABORT
+     &           ('MPL_RECV ERROR OUTWSPEC:MISMATCHED ISENDFROM')
             ENDIF
 
             MSIZE=MSGSIZE(IRECVFROM(IRCV))
 
-            CALL IGRIB_NEW_FROM_MESSAGE(IGRBHNDL,IRECVMSG(1:MSIZE,IRCV))
-            CALL WGRIBOUT(IU06, ITEST,
-     &                    LFDBIOOUT, CFDB2DSP, NWFDBREF, LFDBOPEN,
-     &                    IUOUT,
-     &                    IGRBHNDL,MSIZE,IRECVMSG(1,IRCV))
+          CALL IGRIB_NEW_FROM_MESSAGE(IGRBHNDL,IRECVMSG(1:MSIZE,IRCV))
+          CALL WGRIBOUT(IU06, ITEST,
+     &                   LFDBIOOUT, CFDB2DSP, NWFDBREF, LFDBOPEN,
+     &                   IUOUT,
+     &                   IGRBHNDL,MSIZE,IRECVMSG(1,IRCV))
 
             ILOCAL=ILOCAL+1
 
@@ -419,7 +429,7 @@
       DEALLOCATE(ZSENDBUF)
       DEALLOCATE(ZRECVBUF)
 
-!     MAKE SURE EVERYTHING IS FINISHED
+!       MAKE SURE EVERYTHING IS FINISHED
       CALL MPL_BARRIER(CDSTRING='OUTWSPEC:')
 
       IF(LFDBIOOUT.AND.ILOCAL.GT.0) THEN
@@ -437,13 +447,15 @@
             CALL ABORT1
           ENDIF
       ELSEIF (.NOT.LFDBIOOUT .AND. IPR(IRANK).EQ.IRANK) THEN
-!       done writing to file
+!         done writing to file
         CALL IGRIB_CLOSE_FILE(IUOUT)
       ENDIF
 
 #ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC',1,ZHOOK_HANDLE)
 #endif
+
+      CALL GSTATS(2080,1)
 
       RETURN
 

@@ -17,8 +17,6 @@
 
       CHARACTER(LEN=33) :: COUTNAME(JPPFLAG)
 
-      CHARACTER(LEN=33) :: COUTNAME(JPPFLAG)
-
 #ifdef MODEL_COUPLING_ATM_WAV
       LOGICAL COUPLFLAG(JPPFLAG) 
 !        COUPLFLAG is for the statistics that we should compute 
@@ -44,6 +42,7 @@
       LOGICAL :: LRSTPARALW
       LOGICAL :: LRSTINFDAT
       LOGICAL :: LLPARTITION
+      LOGICAL :: LIOSERV
 
       INTEGER :: NWRTOUTWAM=1
       INTEGER :: NIPRMOUT 
@@ -143,5 +142,6 @@
 !                            INFOBOUT(:,2)  : GRIB PARAMETER IDENTIFIER.
 !                            INFOBOUT(:,3)  : GRIB REFERENCE LEVEL IN FULL METER.
 !      *BOUT*    REAL        CONTAINS THE LOCAL CONTRIBUTIONS OF INTEGRATED FIELDS THAT ARE ACTUALLY OUTPUT
+!      *LIOSERV*   LOGICAL   CONTROLS WHETHER WAVE MODEL SHOULD USE IFS IO SERVER
 ! ----------------------------------------------------------------------
       END MODULE YOWCOUT
