@@ -1,0 +1,361 @@
+SUBROUTINE IO_SERV_SUIOSCTMPL_WAM(YDIOS,LDMODEL, LDBCAST, YDEWCOU)
+
+!----------------------------------------------------------------------
+
+!**** *IO_SERV_SUIOSCTMPL_WAM* sets up IO server parameters during
+!     IO_SERV_SUIOSCTMPL. Note that this has been extracted into a
+!     separate function in order to use wave model modules, which
+!     are not available directly from IFS.
+!
+!     Note that WAM depends on IFS, not the other way around, so IFS
+!     cannot use wave model modules
+
+!     J. HAWKES    ECMWF NVOEMBER 20017
+
+!*    PURPOSE.
+!     --------
+
+!**   INTERFACE.
+!     ----------
+
+!     SUBROUTINE IO_SERV_SUIOSCTMPL_WAM()
+!                INPUT:
+!                OUTPUT:
+
+!     METHOD.
+!     -------
+
+!     EXTERNALS.
+!     ----------
+
+!     REFERENCE.
+!     ----------
+
+!       NONE.
+
+!-------------------------------------------------------------------
+
+      ! WAM modules
+      USE YOWCOUP  ,    ONLY : LWCOU
+      USE YOWPARAM,     ONLY : NGX, NGY
+      USE YOWSPEC,      ONLY : NSTART, NEND
+      USE YOWTEST,      ONLY : IU06, ITEST
+      USE YOWGRIBHD,    ONLY : PPMISS, PPEPS, PPREC, NTENCODE, &
+                               NGRBRESS, PPRESOL, LGRHDIFS, LNEWLVTP, PPMIN_RESET, &
+                               LPADPOLES, DATE_TIME_WINDOW_END, NWINOFF, IMDLGRBID_G, IMDLGRBID_M
+      USE YOWGRID,      ONLY : NLONRGG
+      USE YOWMAP   ,    ONLY : IRGG     ,AMONOP   ,AMOSOP   ,XDELLA
+      USE YOWPARAM ,    ONLY : CLDOMAIN
+      USE YOWPCONS ,    ONLY : ZMISS
+      USE YOEWCOU,      ONLY : TEWCOU
+      USE YOWSTAT,      ONLY : CFDB2DSP
+      USE YOWMPP,       ONLY : NPRECI
+
+      ! IFS modules
+      USE YOMIO_SERV,   ONLY : IO_SERV
+      USE MPL_MODULE,   ONLY : MPL_BROADCAST, MPL_COMM
+      USE YOMHOOK,      ONLY : LHOOK, DR_HOOK
+      USE PARKIND1,     ONLY : JPIM, JPRB
+      USE YOMMP0,       ONLY : MYPROC
+
+      IMPLICIT NONE
+
+      REAL :: ZHOOK_HANDLE
+      LOGICAL, INTENT(IN) :: LDMODEL, LDBCAST
+
+      TYPE (IO_SERV), INTENT(INOUT) :: YDIOS
+      TYPE(TEWCOU)   , INTENT (IN)  :: YDEWCOU
+      
+      LOGICAL :: LLMODEL, LLBCAST
+      INTEGER (KIND=JPIM), PARAMETER  :: I1PROC = 1_JPIM
+      INTEGER (KIND=JPIM), PARAMETER  :: ITAGBC = 0_JPIM
+      INTEGER(KIND=JPIM), ALLOCATABLE :: WVCOUNT (:)
+      INTEGER(KIND=JPIM)              :: WVCOUNTG
+      INTEGER(KIND=JPIM)              :: WVCOUNTMX
+      INTEGER(KIND=JPIM)              :: NLONRGG_SIZE_M, NLONRGG_SIZE_IO
+
+
+!-------------------------------------------------------------------
+
+#ifdef ECMWF 
+      IF (LHOOK) CALL DR_HOOK('IO_SERV_SUIOSCTMPL_WAM',0,ZHOOK_HANDLE)
+#endif
+      
+      LLMODEL = LDMODEL
+      LLBCAST = LDBCAST
+
+      ASSOCIATE( WAMPAR => YDIOS%MODELPAR%YWAM )
+
+      CALL EXPLOGI(LWCOU, WAMPAR%LWCOU)
+
+      IF (WAMPAR%LWCOU) THEN
+
+            IF (LLMODEL) THEN
+                  ALLOCATE(WVCOUNT(YDIOS%NPROC_WR))
+                  WVCOUNT = NEND - NSTART + 1
+                  WVCOUNTG = NEND(YDIOS%NPROC_WR)-NSTART(1)+1
+                  WVCOUNTMX = MAXVAL(WVCOUNT)
+            ENDIF
+
+            CALL EXPINT( WVCOUNTG, WAMPAR%NTOTG)
+            CALL EXPINT( WVCOUNTMX, WAMPAR%NTOTMX)
+
+            ! YOWTEST
+            CALL EXPINT( IU06, WAMPAR%IU06 )
+            CALL EXPINT( ITEST, WAMPAR%ITEST )
+            
+            ! YOWGRIBHD
+            CALL EXPREAL( PPMISS, WAMPAR%PPMISS )
+            CALL EXPREAL( PPEPS, WAMPAR%PPEPS )
+            CALL EXPREAL( PPREC, WAMPAR%PPREC )
+            CALL EXPREAL( PPRESOL, WAMPAR%PPRESOL )
+            CALL EXPREAL( PPMIN_RESET, WAMPAR%PPMIN_RESET )
+            CALL EXPINT ( NTENCODE, WAMPAR%NTENCODE )
+            CALL EXPINT ( NGRBRESS, WAMPAR%NGRBRESS )
+            CALL EXPLOGI( LNEWLVTP, WAMPAR%LNEWLVTP )
+            CALL EXPLOGI( LPADPOLES, WAMPAR%LPADPOLES )
+            CALL EXPLOGI( LGRHDIFS, WAMPAR%LGRHDIFS )
+            CALL EXPINT ( IMDLGRBID_G, WAMPAR%IMDLGRBID_G )
+            CALL EXPINT ( IMDLGRBID_M, WAMPAR%IMDLGRBID_M )
+            
+            ! YOWGRID
+            IF (LLMODEL) NLONRGG_SIZE_M = SIZE(NLONRGG)
+            CALL EXPINT ( NLONRGG_SIZE_M, NLONRGG_SIZE_IO )
+            ALLOCATE(WAMPAR%NLONRGG(NLONRGG_SIZE_IO))
+            CALL EXPINTS( NLONRGG_SIZE_IO, NLONRGG, WAMPAR%NLONRGG )
+
+            ! YOWMAP
+            CALL EXPINT(IRGG, WAMPAR%IRGG)
+            CALL EXPREAL( AMONOP, WAMPAR%AMONOP )
+            CALL EXPREAL( AMOSOP, WAMPAR%AMOSOP )
+            CALL EXPREAL( XDELLA, WAMPAR%XDELLA )
+
+            ! YOWPARAM
+            CALL EXPINT(NGX, WAMPAR%NGX)
+            CALL EXPINT(NGY, WAMPAR%NGY)
+            CALL EXPCHAR( CLDOMAIN, WAMPAR%CLDOMAIN )
+
+            ! YOWPCONS
+            CALL EXPREAL( ZMISS, WAMPAR%ZMISS)
+
+            ! YOEWCOU
+            CALL EXPINT( YDEWCOU%NSTPW, WAMPAR%NSTPW )
+
+            ! YOWSTAT
+            CALL EXPCHAR ( CFDB2DSP, WAMPAR%CFDB2DSP )
+
+            ! YOWMPP
+            CALL EXPINT ( NPRECI, WAMPAR%NPRECI )
+            
+            IF (LLMODEL) DEALLOCATE(WVCOUNT)
+
+            CALL MKWVSSORT
+
+      ENDIF
+
+      END ASSOCIATE
+
+#ifdef ECMWF 
+      IF (LHOOK) CALL DR_HOOK('IO_SERV_SUIOSCTMPL_WAM',1,ZHOOK_HANDLE)
+#endif
+
+      RETURN
+      
+      contains
+
+      ! ---------------------------------------------------------------------
+! -- Communicate local to global (L2G) mapping for wave-model spectral fields
+! ---------------------------------------------------------------------
+
+SUBROUTINE MKWVSSORT
+
+REAL (KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKWVSSORT',0,ZHOOK_HANDLE)
+
+ASSOCIATE( WAMPAR => YDIOS%MODELPAR%YWAM )
+
+ALLOCATE ( WAMPAR%ISORTL2G ( WAMPAR%NTOTMX,YDIOS%NPROC_WR), &
+         & WAMPAR%IRANKSET ( YDIOS%NPROC_WR, 1))
+
+IF (LLMODEL) CALL MKWVSSORT_MODEL (WAMPAR%ISORTL2G, WAMPAR%IRANKSET)
+
+IF (LLBCAST) THEN
+      CALL MPL_BROADCAST (WAMPAR%ISORTL2G, KROOT = I1PROC, KTAG = ITAGBC, &
+      & KCOMM = YDIOS%NCOMM_W1IO, CDSTRING = 'MKWVSSORT')
+      CALL MPL_BROADCAST (WAMPAR%IRANKSET, KROOT = I1PROC, KTAG = ITAGBC, &
+      & KCOMM = YDIOS%NCOMM_W1IO, CDSTRING = 'MKWVSSORT')
+ENDIF
+
+IF (.NOT. LLMODEL) CALL MKSORTCNT (WAMPAR%ISORTL2G, &
+& WAMPAR%ISORTCNT, &
+& WAMPAR%ISORTOFF)
+
+END ASSOCIATE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKWVSSORT',1,ZHOOK_HANDLE)
+
+END SUBROUTINE MKWVSSORT
+
+! ---------------------------------------------------------------------
+! -- Count offset and quantity of values on each process
+! ---------------------------------------------------------------------
+
+SUBROUTINE MKSORTCNT (KSORTL2G, KSORTCNT, KSORTOFF)
+
+INTEGER (KIND=JPIM), INTENT (IN) :: KSORTL2G (:,:)
+INTEGER (KIND=JPIM), POINTER     :: KSORTCNT (:)
+INTEGER (KIND=JPIM), POINTER     :: KSORTOFF (:)
+INTEGER (KIND=JPIM) :: I
+REAL (KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKSORTCNT',0,ZHOOK_HANDLE)
+
+ALLOCATE (KSORTCNT (SIZE (KSORTL2G, 2)), KSORTOFF (SIZE (KSORTL2G, 2)))
+
+KSORTCNT  = COUNT (KSORTL2G > 0, DIM=1)
+KSORTOFF (1) = 0
+DO I = 2, SIZE (KSORTOFF)
+  KSORTOFF (I) = KSORTOFF (I-1) + KSORTCNT (I-1)
+ENDDO
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKSORTCNT',1,ZHOOK_HANDLE)
+
+END SUBROUTINE MKSORTCNT
+
+
+! ---------------------------------------------------------------------
+! -- Compute local to global (L2G) mapping for wave model spectral fields
+! ---------------------------------------------------------------------
+
+SUBROUTINE MKWVSSORT_MODEL (KWVSSORTL2G, KWVSRANKSET)
+
+
+USE PARKIND1, ONLY : JPIB
+
+USE YOMMP0,  ONLY : NPROC
+USE YOWSPEC, ONLY : NSTART, NEND
+USE YOWMAP,  ONLY : IXLG, KXLT
+USE YOWPARAM,ONLY : NGX, NGY
+
+
+INTEGER (KIND=JPIM), INTENT (INOUT) :: KWVSSORTL2G (:,:) ! NWVSTOTMX, NPROC
+INTEGER (KIND=JPIM), INTENT (INOUT) :: KWVSRANKSET (:,:) ! NPROC, 1
+INTEGER (KIND=JPIB) :: IPROC,IGLOBALIDX, ILOCALIDX, IMAPIDX
+INTEGER (KIND=JPIB) :: IX, IY
+
+REAL (KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:MKWVSSORT_MODEL',0,ZHOOK_HANDLE)
+
+IF (MYPROC == I1PROC) THEN
+      
+      KWVSSORTL2G = -1
+      
+      DO IPROC = 1, NPROC
+            KWVSRANKSET (IPROC,1) = IPROC
+
+            DO IGLOBALIDX = NSTART(IPROC), NEND(IPROC)
+                  ILOCALIDX = IGLOBALIDX - NSTART(IPROC) + 1
+
+                  ! Normally, in the wave model, the global index would be tracked in relation to a 2D array (FIELD)
+                  ! but the IO server does not allow using a 2D array as a mapping; it requires a 1D array.
+                  ! Furthermore, the mapping must be split into chunks depending on which processor owns that index
+                  ! FIELD(IX,IY) = IGLOBALIDX
+
+                  ! Note that IY is the fast moving index
+                  IX = IXLG(IGLOBALIDX,1)
+                  IY = NGY - KXLT(IGLOBALIDX,1) + 1
+                  IMAPIDX = IX * NGY - IY
+
+                  KWVSSORTL2G(ILOCALIDX, IPROC) = IMAPIDX
+            ENDDO
+
+      ENDDO
+
+ENDIF
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:MKWVSSORT_MODEL',1,ZHOOK_HANDLE)
+
+END SUBROUTINE MKWVSSORT_MODEL
+
+!==============================================================================================
+SUBROUTINE EXPINT(KFROM,KTO)
+INTEGER(KIND=JPIM),INTENT(IN)  :: KFROM
+INTEGER(KIND=JPIM),INTENT(OUT) :: KTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPINT',0,ZHOOK_HANDLE)
+
+IF(LLMODEL) KTO = KFROM
+IF (LLBCAST) THEN
+  CALL MPL_BROADCAST(KTO, KTAG=ITAGBC,  &
+   & KROOT=I1PROC, KCOMM=YDIOS%NCOMM_W1IO,           &
+   & CDSTRING = 'IO_SERV_SUIOSCTMPL_WAM:EXPINT')
+ENDIF
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPINT',1,ZHOOK_HANDLE)
+END SUBROUTINE EXPINT
+!==============================================================================================
+SUBROUTINE EXPINTS(N, KFROM,KTO)
+INTEGER(KIND=JPIM),INTENT(IN)  :: N
+INTEGER(KIND=JPIM),INTENT(IN)  :: KFROM(N)
+INTEGER(KIND=JPIM),INTENT(OUT) :: KTO(N)
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPINTS',0,ZHOOK_HANDLE)
+
+IF(LLMODEL) KTO = KFROM
+IF (LLBCAST) THEN
+  CALL MPL_BROADCAST(KTO, KTAG=ITAGBC,  &
+   & KROOT=I1PROC, KCOMM=YDIOS%NCOMM_W1IO,           &
+   & CDSTRING = 'IO_SERV_SUIOSCTMPL_WAM:EXPINTS')
+ENDIF
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPINTS',1,ZHOOK_HANDLE)
+END SUBROUTINE EXPINTS
+!==============================================================================================
+SUBROUTINE EXPLOGI(LDFROM,LDTO)
+LOGICAL,INTENT(IN)  :: LDFROM
+LOGICAL,INTENT(OUT) :: LDTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPLOGI',0,ZHOOK_HANDLE)
+IF(LLMODEL) LDTO = LDFROM
+IF (LLBCAST) THEN
+  CALL MPL_BROADCAST(LDTO, KTAG=ITAGBC,  &
+   & KROOT=I1PROC, KCOMM=YDIOS%NCOMM_W1IO,           &
+   & CDSTRING = 'IO_SERV_SUIOSCTMPL_WAM:EXPLOGI')
+ENDIF
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL_WAM:EXPLOGI',1,ZHOOK_HANDLE)
+END SUBROUTINE EXPLOGI
+!==============================================================================================
+SUBROUTINE EXPREAL(PFROM,PTO)
+REAL(KIND=JPRB),INTENT(IN)  :: PFROM
+REAL(KIND=JPRB),INTENT(OUT) :: PTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:EXPREAL',0,ZHOOK_HANDLE)
+IF(LLMODEL) PTO = PFROM
+IF (LLBCAST) THEN
+  CALL MPL_BROADCAST(PTO, KTAG=ITAGBC,&
+   & KROOT=I1PROC, KCOMM=YDIOS%NCOMM_W1IO,&
+   & CDSTRING = 'IO_SERV_SUIOSCTMPL:EXPREAL')
+ENDIF
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:EXPREAL',1,ZHOOK_HANDLE)
+END SUBROUTINE EXPREAL
+!==============================================================================================
+SUBROUTINE EXPCHAR(CDFROM,CDTO)
+CHARACTER(LEN=*),INTENT(IN)  :: CDFROM
+CHARACTER(LEN=*),INTENT(OUT) :: CDTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:EXPCHAR',0,ZHOOK_HANDLE)
+IF(LLMODEL) CDTO = CDFROM
+IF (LLBCAST) THEN
+  CALL MPL_BROADCAST(CDTO, KTAG=ITAGBC,&
+   & KROOT=I1PROC, KCOMM=YDIOS%NCOMM_W1IO,&
+   & CDSTRING = 'IO_SERV_SUIOSCTMPL:EXPCHAR')
+ENDIF
+IF (LHOOK) CALL DR_HOOK ('IO_SERV_SUIOSCTMPL:EXPCHAR',1,ZHOOK_HANDLE)
+END SUBROUTINE EXPCHAR
+!==============================================================================================
+
+
+END SUBROUTINE IO_SERV_SUIOSCTMPL_WAM 

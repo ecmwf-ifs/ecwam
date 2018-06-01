@@ -102,7 +102,7 @@
 !*    1. ENCODE RESULT
 !        -------------
 
-      CALL WGRIBENCODE(IU06, ITEST, I1, I2, FIELD,
+      CALL WGRIBENCODE_MODEL(IU06, ITEST, I1, I2, FIELD,
      &                 ITABLE, IPARAM, KLEV, IK , IM, 
      &                 CDATE, IFCST, MARSTYPE,
      &                 IGRIB_HANDLE)

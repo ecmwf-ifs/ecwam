@@ -24,7 +24,7 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      LOGICAL :: SET_WFLAGS
+      !LOGICAL :: SET_WFLAGS
 
       INTEGER(KIND=JWIM) :: N, IFLAG, IFL, NTRAIN
       LOGICAL :: FLAG(N)
