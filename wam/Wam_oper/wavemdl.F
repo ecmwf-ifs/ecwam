@@ -94,7 +94,7 @@
 !          NONE                                                         
 
 ! -------------------------------------------------------------------   
-      USE PARKIND_WAVE, ONLY : JWIM,JWRB,JWRU
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 #ifdef MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, ONLY : US_coupl, Z0_coupl
 #endif
