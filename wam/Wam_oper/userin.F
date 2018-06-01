@@ -170,7 +170,7 @@
       LOGICAL :: LERROR, LASTREAM
       LOGICAL :: LLNALTGO
       LOGICAL :: LWCUR
-!      LOGICAL :: SET_WFLAGS
+      LOGICAL :: SET_WFLAGS
       LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------
