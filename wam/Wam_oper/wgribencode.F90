@@ -58,6 +58,7 @@
 !      -----------
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
@@ -68,69 +69,71 @@
 #include "difdate.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
-      INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
-      INTEGER, INTENT(INOUT) :: IGRIB_HANDLE
-      INTEGER :: ICLASS, ISTEP, ISTEP_HRS 
-      INTEGER :: IC, JC, ITABPAR, IDATE, ITIME
-      INTEGER :: ICOUNT, NN, I, J, JSN, KK, MM
-      INTEGER :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET
-      INTEGER :: IY2,IM2,ID2,IH2,IMN2,ISS2
-      INTEGER :: IERR
-      INTEGER :: ISIZE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
+      INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IGRIB_HANDLE
 
-      REAL, INTENT(INOUT) :: FIELD(I1,I2)
-      REAL :: TEMP
-      REAL :: PMISS 
-      REAL :: PPMAX, PPMIN, DELTAPP, ABSPPREC
-      REAL :: ZHOOK_HANDLE
-      REAL, ALLOCATABLE :: VALUES(:)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
       CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
-      CHARACTER(LEN=12) :: C12
-      CHARACTER(LEN=14) :: CDATE1, CDATE2
-      INTEGER :: NWINOFF
 
       ! From yowgribhd
       LOGICAL, INTENT(IN)   :: LGRHDIFS         ! If true then grib header will use information as provided by the ifs.
-      REAL, INTENT(IN)      :: PPMISS           ! All spectral values less or equal ppmiss are replaced by the missing data indicator
-      REAL, INTENT(IN)      :: PPEPS            ! Small number used in spectral packing of 251
-      REAL, INTENT(IN)      :: PPREC            ! Reference value for spectral packing of 251
-      REAL, INTENT(IN)      :: PPRESOL          ! Maximun resolution possible when encoding spectra (parameter 251).
-      REAL, INTENT(IN)      :: PPMIN_RESET      ! Can be used to set the minimum of ppmin in wgribout to a lower value.
-      INTEGER, INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
-      INTEGER, INTENT(IN)   :: DATE_TIME_WINDOW_END
-      INTEGER, INTENT(IN)   :: NGRBRESS         ! Number of bits used to encode spectra
+      REAL(KIND=JWRB), INTENT(IN)      :: PPMISS  ! All spectral values less or equal ppmiss are replaced by the missing data indicator
+      REAL(KIND=JWRB), INTENT(IN)      :: PPEPS   ! Small number used in spectral packing of 251
+      REAL(KIND=JWRB), INTENT(IN)      :: PPREC   ! Reference value for spectral packing of 251
+      REAL(KIND=JWRB), INTENT(IN)      :: PPRESOL ! Maximun resolution possible when encoding spectra (parameter 251).
+      REAL(KIND=JWRB), INTENT(IN)      :: PPMIN_RESET      ! Can be used to set the minimum of ppmin in wgribout to a lower value.
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NTENCODE         ! Total number of grid points for encoding
+      INTEGER(KIND=JWIM), INTENT(IN)   :: DATE_TIME_WINDOW_END
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NGRBRESS         ! Number of bits used to encode spectra
       LOGICAL, INTENT(IN)   :: LNEWLVTP         ! If true the new levtype definition will be used.
       LOGICAL, INTENT(IN)   :: LPADPOLES        ! True if poles are padded when savind to grib.
 
       ! From yowgrid
-      INTEGER, INTENT(IN)   :: NLONRGG_SIZE 
-      INTEGER, INTENT(IN)   :: NLONRGG(NLONRGG_SIZE) 
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG_SIZE 
+      INTEGER(KIND=JWIM), INTENT(IN)   :: NLONRGG(NLONRGG_SIZE) 
 
       ! From yowmap
-      INTEGER, INTENT(IN) :: IRGG                ! Grid code: 0 = regular, 1 = irregular.
-      REAL,    INTENT(IN) :: AMONOP              ! Most Northern latitude in grid (degree).
-      REAL,    INTENT(IN) :: AMOSOP              ! Most Southern latitude in grid (degree).
-      REAL,    INTENT(IN) :: XDELLA              ! Grid increment for latitude (degree).
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRGG                ! Grid code: 0 = regular, 1 = irregular.
+      REAL(KIND=JWRB),    INTENT(IN) :: AMONOP              ! Most Northern latitude in grid (degree).
+      REAL(KIND=JWRB),    INTENT(IN) :: AMOSOP              ! Most Southern latitude in grid (degree).
+      REAL(KIND=JWRB),    INTENT(IN) :: XDELLA              ! Grid increment for latitude (degree).
 
       ! From yowparam
-      CHARACTER*1, INTENT(IN) :: CLDOMAIN        ! Defines the domain of the model (for the fdb and for selection of some variables)
+      CHARACTER(LEN=1), INTENT(IN) :: CLDOMAIN   ! Defines the domain of the model (for the fdb and for selection of some variables)
 
       ! From yowcoup
-      INTEGER, INTENT(IN)     :: KCOUSTEP        ! Coupling time to the IFS (in seconds).
+      INTEGER(KIND=JWIM), INTENT(IN)     :: KCOUSTEP        ! Coupling time to the IFS (in seconds).
 
       ! From yowcout
-      LOGICAL, INTENT(IN)     :: LRSTST0         ! True if GRIB header have to be reset such thatthe forecast step points to the start of the run.
+      LOGICAL, INTENT(IN)     :: LRSTST0      ! True if GRIB header have to be reset such thatthe forecast step points to the start of the run.
 
       ! From yowpcons
-      REAL                    :: ZMISS           ! Missing data indicator (set in chief or via the ifs).
+      REAL(KIND=JWRB), INTENT(IN)        :: ZMISS           ! Missing data indicator (set in chief or via the ifs).
+
+
+      INTEGER(KIND=JWIM) :: ICLASS, ISTEP, ISTEP_HRS 
+      INTEGER(KIND=JWIM) :: IC, JC, ITABPAR, IDATE, ITIME
+      INTEGER(KIND=JWIM) :: ICOUNT, NN, I, J, JSN, KK, MM
+      INTEGER(KIND=JWIM) :: IY1,IM1,ID1,IH1,IMN1,ISS1,IDATERES,IRET
+      INTEGER(KIND=JWIM) :: IY2,IM2,ID2,IH2,IMN2,ISS2
+      INTEGER(KIND=JWIM) :: IERR
+      INTEGER(KIND=JWIM) :: ISIZE
+      INTEGER(KIND=JWIM) :: NWINOFF
+
+      REAL(KIND=JWRB) :: TEMP
+      REAL(KIND=JWRB) :: PMISS 
+      REAL(KIND=JWRB) :: PPMAX, PPMIN, DELTAPP, ABSPPREC
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
+
+      CHARACTER(LEN=12) :: C12
+      CHARACTER(LEN=14) :: CDATE1, CDATE2
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',0,ZHOOK_HANDLE)
-#endif
 
       !CALL GSTATS(1709,0)
 
@@ -182,8 +185,8 @@
             FIELD(I,J)=TEMP
           ENDDO
         ENDIF
-        IF((NINT((-90. - AMOSOP ) / XDELLA)).EQ.0) THEN
-          TEMP=0.
+        IF((NINT((-90._JWRB - AMOSOP ) / XDELLA)).EQ.0) THEN
+          TEMP=0._JWRB
           NN=0
           J=I2-1
           JSN=I2-J+1
@@ -427,9 +430,6 @@
 
       !CALL GSTATS(1709,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE WGRIBENCODE

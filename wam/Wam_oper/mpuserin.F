@@ -702,7 +702,7 @@
 
       LWNEMOCOUDEBUG = .FALSE.
 
-      LWAM_USE_IO_SERV = .TRUE.
+      LWAM_USE_IO_SERV = .FALSE.
 
       LWCOUNORMS = .FALSE.
 
