@@ -9,7 +9,7 @@
 
 !*    PURPOSE.
 !     --------
-!     TO ABORT AFTER FLUSHING OPENED UNITS 
+!     TO ABORT AFTER FLUSHING OPENED UNITS
 
 !**   INTERFACE.
 !     ----------
@@ -17,7 +17,7 @@
 
 !     METHOD.
 !     -------
-!     CALL MPABORT OR ABORT 
+!     CALL MPABORT OR ABORT
 
 !     EXTERNALS.
 !     ----------
@@ -30,19 +30,18 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWTEST  , ONLY : IU06
+      USE YOWTEST, ONLY: IU06
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "mpabort.intfb.h"
 
-      CHARACTER(LEN=30) :: CDMESSAGE
+      CHARACTER (LEN = 30) :: CDMESSAGE
 
-      CALL FLUSH(IU06)
+      CALL FLUSH (IU06)
 
-      CDMESSAGE='!! *** WAVE MODEL HAS ABORTED *** !!!!'
-      CALL MPABORT(CDMESSAGE)
+      CDMESSAGE = '!! *** WAVE MODEL HAS ABORTED *** !!!!'
+      CALL MPABORT (CDMESSAGE)
 
-      RETURN
       END SUBROUTINE ABORT1
