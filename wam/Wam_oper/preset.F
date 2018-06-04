@@ -146,7 +146,7 @@
 #include "iniwcst.intfb.h"
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
-#include "outwspec.intfb.h"
+#include "outspec.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readpre.intfb.h"
@@ -614,7 +614,7 @@
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO  = CDATEA
-        CALL OUTWSPEC(FL1)
+        CALL OUTSPEC(FL1)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
       ELSE
         CALL SAVSPEC(FL1,NBLKS,NBLKE,CDATEA,CDATEA,CDUM)

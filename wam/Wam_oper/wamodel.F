@@ -398,7 +398,7 @@
 #include "outint.intfb.h"
 #include "outunwamtest.intfb.h"
 #include "outwnorm.intfb.h"
-#include "outwspec.intfb.h"
+#include "outspec.intfb.h"
 #include "propag_wam.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
@@ -634,7 +634,7 @@
             IF(NIPRMOUT.GT.0 ) CALL OUTWINT
 
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
-              CALL OUTWSPEC(FL1)
+              CALL OUTSPEC(FL1)
             ENDIF
           ENDIF
 
@@ -1330,7 +1330,7 @@
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTWSPEC(FL1)
+              CALL OUTSPEC(FL1)
 
               MARSTYPE=MARSTYPEBAK
 

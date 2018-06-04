@@ -15,6 +15,7 @@
 !     -------
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
@@ -103,4 +104,4 @@
 
     IF (LHOOK) CALL DR_HOOK('OUTWINT',1,ZHOOK_HANDLE)
 
-END SUBROUTINE OUTWINT
+    END SUBROUTINE OUTWINT

@@ -136,7 +136,7 @@
 #include "outbs.intfb.h"
 #include "outint.intfb.h"
 #include "outwnorm.intfb.h"
-#include "outwspec.intfb.h"
+#include "outspec.intfb.h"
 #include "saras.intfb.h"
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
@@ -280,7 +280,7 @@
 
           IF ( LOUT.AND.LGRIBOUT ) THEN
 !           SAVE SPECTRUM IN GRIB
-            CALL OUTWSPEC(FL1)
+            CALL OUTSPEC(FL1)
 
             CALL GSTATS(1976,0)
             IF (NWFDBREF.NE.-5 ) IERR = IFLUSHFDBSUBS (NWFDBREF)
