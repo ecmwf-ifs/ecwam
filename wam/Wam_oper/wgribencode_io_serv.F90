@@ -1,4 +1,4 @@
-      SUBROUTINE WGRIBENCODE_IO_SERV (I1, I2, FIELD, &
+SUBROUTINE WGRIBENCODE_IO_SERV (I1, I2, FIELD, &
                              YDIOS, FLDDESC, &
                              IGRIB_HANDLE)
 
@@ -60,21 +60,21 @@
       ASSOCIATE ( WAMFLD => FLDDESC%YWAM )
 
       CALL WGRIBENCODE( WAMPAR%IU06, WAMPAR%ITEST, &
-                        I1, I2, &
-                        FIELD, &
-                        WAMFLD%ITABLE, WAMFLD%IPARAM, &
-                        WAMFLD%KLEV, &
-                        WAMFLD%IANGLE, WAMFLD%IFREQ, &
-                        WAMFLD%CDATE, WAMFLD%IFCST, WAMFLD%MARSTYPE, &
-                        WAMPAR%PPMISS, WAMPAR%PPEPS, WAMPAR%PPREC, WAMPAR%PPRESOL, WAMPAR%PPMIN_RESET, WAMPAR%NTENCODE, &
-                        .TRUE., &
-                        WAMFLD%DATE_TIME_WINDOW_END, &
-                        WAMPAR%NGRBRESS, WAMPAR%LNEWLVTP, WAMPAR%LPADPOLES, &
-                        SIZE(WAMPAR%NLONRGG), WAMPAR%NLONRGG, WAMPAR%IRGG, &
-                        WAMPAR%AMONOP, WAMPAR%AMOSOP, WAMPAR%XDELLA, WAMPAR%CLDOMAIN, &
-                        WAMFLD%KCOUSTEP, WAMFLD%LRSTST0, &
-                        WAMPAR%ZMISS, &
-                        IGRIB_HANDLE)
+ &                      I1, I2, &
+ &                      FIELD, &
+ &                      WAMFLD%ITABLE, WAMFLD%IPARAM, &
+ &                      WAMFLD%KLEV, &
+ &                      WAMFLD%IANGLE, WAMFLD%IFREQ, &
+ &                      WAMFLD%CDATE, WAMFLD%IFCST, WAMFLD%MARSTYPE, &
+ &                      WAMPAR%PPMISS, WAMPAR%PPEPS, WAMPAR%PPREC, WAMPAR%PPRESOL, WAMPAR%PPMIN_RESET, WAMPAR%NTENCODE, &
+ &                      .TRUE., &
+ &                      WAMFLD%DATE_TIME_WINDOW_END, &
+ &                      WAMPAR%NGRBRESS, WAMPAR%LNEWLVTP, WAMPAR%LPADPOLES, &
+ &                      SIZE(WAMPAR%NLONRGG), WAMPAR%NLONRGG, WAMPAR%IRGG, &
+ &                      WAMPAR%AMONOP, WAMPAR%AMOSOP, WAMPAR%XDELLA, WAMPAR%CLDOMAIN, &
+ &                      WAMFLD%KCOUSTEP, WAMFLD%LRSTST0, &
+ &                      WAMPAR%ZMISS, &
+ &                      IGRIB_HANDLE)
       
       END ASSOCIATE
       END ASSOCIATE
@@ -84,4 +84,4 @@
 
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_IO_SERV',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE WGRIBENCODE_IO_SERV
+END SUBROUTINE WGRIBENCODE_IO_SERV

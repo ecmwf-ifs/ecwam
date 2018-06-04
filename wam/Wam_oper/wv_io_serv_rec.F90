@@ -1,4 +1,4 @@
-      SUBROUTINE WV_IO_SERV_REC (YDIOS,FIELD,FLDDESC,KGRIB_HANDLE)
+SUBROUTINE WV_IO_SERV_REC (YDIOS,FIELD,FLDDESC,KGRIB_HANDLE)
 
 !----------------------------------------------------------------------
 
@@ -24,32 +24,35 @@
 #include "abort1.intfb.h"
 #include "wgrib2fdb.intfb.h"
 
-      REAL :: ZHOOK_HANDLE
 
       TYPE (IO_SERV),      INTENT (INOUT) :: YDIOS
-      REAL,                INTENT (IN)    :: FIELD (YDIOS%MODELPAR%YWAM%NGX,YDIOS%MODELPAR%YWAM%NGY)
+      REAL(KIND=JWRB),     INTENT (IN)    :: FIELD (YDIOS%MODELPAR%YWAM%NGX,YDIOS%MODELPAR%YWAM%NGY)
       TYPE (IOFLDDESC),    INTENT (IN)    :: FLDDESC
-      INTEGER (KIND=JWIM), INTENT (INOUT) :: KGRIB_HANDLE
+      INTEGER(KIND=JWIM),  INTENT (INOUT) :: KGRIB_HANDLE
       
       INTEGER(KIND=JPKSIZE_T)             :: KBYTES
       INTEGER(KIND=JWIM)                  :: ISIZE, IERR
-      INTEGER, ALLOCATABLE                :: KGRIB_BUFR(:)
+      INTEGER(KIND=JWIM)                  :: ILEV, IGRIBCD, IDUMMY(1), LPPSTEPS
+      INTEGER(KIND=JWIM), ALLOCATABLE     :: KGRIB_BUFR(:)
       
-      INTEGER(KIND=JWIM) :: ILEV, IGRIBCD, IDUMMY(1), LPPSTEPS
-      CHARACTER (LEN=2) :: CLREPR
-      CHARACTER (LEN=3) :: CLTYPE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZDUMMY(1)
+
+      CHARACTER(LEN=2) :: CLREPR
+      CHARACTER(LEN=3) :: CLTYPE
+
       LOGICAL :: LLDUM
+      LOGICAL :: LFDBOPEN_IO
 
 !-----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',0,ZHOOK_HANDLE)
 
       ASSOCIATE( &
-            WAMPAR => YDIOS%MODELPAR%YWAM, &
-            ECPAR  => YDIOS%MODELPAR%YECGRIB, &
-            WAMHDR => FLDDESC%YWAM &
-      )
+ &          WAMPAR => YDIOS%MODELPAR%YWAM, &
+ &          ECPAR  => YDIOS%MODELPAR%YECGRIB, &
+ &          WAMHDR => FLDDESC%YWAM &
+ &    )
 
       ! This is a limited version of WVCOUPLE_UPDATE_GRIB_HANDLES/GRIB_CODE_MESSAGE
       IF(ECPAR%NLOCGRB == 1 .OR. ECPAR%NLOCGRB == 36) THEN
@@ -59,15 +62,15 @@
       IGRIBCD  = 165
       LPPSTEPS = -1
       CALL GRIB_SET_TIME( &
-            KGRIB_HANDLE, &
-            ECPAR%LPPSTEPS, &
-            WAMHDR%NSTEP, &
-            ECPAR%TSTEP, &
-            ECPAR%NSTEPINI, &
-            ECPAR%LVAREPS, ECPAR%NLEG, &
-            ECPAR%NFCHO_TRUNC_INI, ECPAR%NFCLENGTH_INI, &
-            ECPAR%NREFERENCE, ECPAR%NSTREAM, &
-            'fc', -1, IGRIBCD, LLDUM )
+ &          KGRIB_HANDLE, &
+ &          ECPAR%LPPSTEPS, &
+ &          WAMHDR%NSTEP, &
+ &          ECPAR%TSTEP, &
+ &          ECPAR%NSTEPINI, &
+ &          ECPAR%LVAREPS, ECPAR%NLEG, &
+ &          ECPAR%NFCHO_TRUNC_INI, ECPAR%NFCLENGTH_INI, &
+ &          ECPAR%NREFERENCE, ECPAR%NSTREAM, &
+ &          'fc', -1, IGRIBCD, LLDUM )
 
       CALL GRIB_SET_PARAMETER(KGRIB_HANDLE,IGRIBCD,ILEV,&
             & IDUMMY,IDUMMY,IDUMMY,IDUMMY,ZDUMMY)
@@ -75,7 +78,7 @@
       ZDUMMY=0.0_JWRB
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'values',ZDUMMY)
 
-      CALL WGRIBENCODE_IO_SERV( WAMPAR%NGX, WAMPAR%NGY, FIELD, YDIOS, FLDDESC, KGRIB_HANDLE  )
+      CALL WGRIBENCODE_IO_SERV( WAMPAR%NGX, WAMPAR%NGY, FIELD, YDIOS, FLDDESC, KGRIB_HANDLE )
 
       CALL IGRIB_GET_MESSAGE_SIZE( KGRIB_HANDLE, KBYTES )
 
@@ -86,14 +89,15 @@
       CALL IGRIB_GET_MESSAGE( KGRIB_HANDLE, KGRIB_BUFR )
 
       ! Use the the FDB opened by the IO server
+      LFDBOPEN_IO=.TRUE.
       CALL WGRIB2FDB ( &
-            WAMPAR%IU06, WAMPAR%ITEST, &
-            KGRIB_HANDLE, ISIZE, KGRIB_BUFR, &
-            WAMPAR%CFDB2DSP, ECPAR%NFDBREF, &
-            .TRUE., &
-            WAMPAR%IMDLGRBID_G, WAMPAR%IMDLGRBID_M, &
-            IERR &
-      )
+ &           WAMPAR%IU06, WAMPAR%ITEST, &
+ &           KGRIB_HANDLE, ISIZE, KGRIB_BUFR, &
+ &           WAMPAR%CFDB2DSP, ECPAR%NFDBREF, &
+ &          LFDBOPEN_IO, &
+ &          WAMPAR%IMDLGRBID_G, WAMPAR%IMDLGRBID_M, &
+ &          IERR &
+ &    )
 
       IF(IERR.NE.0)THEN
           WRITE(WAMPAR%IU06,*) ' ------------------------'
@@ -113,4 +117,4 @@
 
       IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE WV_IO_SERV_REC
+END SUBROUTINE WV_IO_SERV_REC
