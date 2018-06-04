@@ -30,6 +30,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOMIO_SERV, ONLY : IO_SERV
       USE IOFLDDESC_MOD,  ONLY : IOFLDDESC
 
@@ -40,17 +42,15 @@
       IMPLICIT NONE
 #include "wgribencode.intfb.h"
 
-      INTEGER, INTENT(IN)           :: I1, I2
-      INTEGER, INTENT(INOUT)        :: IGRIB_HANDLE
-      REAL, INTENT(INOUT)           :: FIELD(I1,I2)
-      REAL                          :: ZHOOK_HANDLE
+      INTEGER(KIND=JWIM), INTENT(IN)     :: I1, I2
+      INTEGER(KIND=JWIM), INTENT(INOUT)  :: IGRIB_HANDLE
+      REAL(KIND=JWRB), INTENT(INOUT)     :: FIELD(I1,I2)
+      REAL(KIND=JWRB)                    :: ZHOOK_HANDLE
       TYPE (IO_SERV), INTENT (IN)   :: YDIOS
       TYPE (IOFLDDESC), INTENT (IN) :: FLDDESC
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_IO_SERV',0,ZHOOK_HANDLE)
-#endif
 
       CALL GSTATS(1709,0)
 
@@ -82,9 +82,6 @@
 
       CALL GSTATS(1709,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENCODE_IO_SERV',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE WGRIBENCODE_IO_SERV

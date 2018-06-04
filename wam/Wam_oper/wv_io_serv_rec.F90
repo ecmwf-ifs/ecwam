@@ -10,7 +10,8 @@
 
 !-------------------------------------------------------------------
 
-      USE PARKIND1,       ONLY : JPRB, JPIM
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
       USE YOMIO_SERV, ONLY : IO_SERV
       USE IOFLDDESC_MOD,  ONLY : IOFLDDESC
@@ -28,23 +29,21 @@
       TYPE (IO_SERV),      INTENT (INOUT) :: YDIOS
       REAL,                INTENT (IN)    :: FIELD (YDIOS%MODELPAR%YWAM%NGX,YDIOS%MODELPAR%YWAM%NGY)
       TYPE (IOFLDDESC),    INTENT (IN)    :: FLDDESC
-      INTEGER (KIND=JPIM), INTENT (INOUT) :: KGRIB_HANDLE
+      INTEGER (KIND=JWIM), INTENT (INOUT) :: KGRIB_HANDLE
       
       INTEGER(KIND=JPKSIZE_T)             :: KBYTES
-      INTEGER(KIND=JPIM)                  :: ISIZE, IERR
+      INTEGER(KIND=JWIM)                  :: ISIZE, IERR
       INTEGER, ALLOCATABLE                :: KGRIB_BUFR(:)
       
-      INTEGER(KIND=JPIM) :: ILEV, IGRIBCD, IDUMMY(1), LPPSTEPS
+      INTEGER(KIND=JWIM) :: ILEV, IGRIBCD, IDUMMY(1), LPPSTEPS
       CHARACTER (LEN=2) :: CLREPR
       CHARACTER (LEN=3) :: CLTYPE
-      REAL(KIND=JPRB) :: ZDUMMY(1)
+      REAL(KIND=JWRB) :: ZDUMMY(1)
       LOGICAL :: LLDUM
 
 !-----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',0,ZHOOK_HANDLE)
-#endif
 
       ASSOCIATE( &
             WAMPAR => YDIOS%MODELPAR%YWAM, &
@@ -73,7 +72,7 @@
       CALL GRIB_SET_PARAMETER(KGRIB_HANDLE,IGRIBCD,ILEV,&
             & IDUMMY,IDUMMY,IDUMMY,IDUMMY,ZDUMMY)
 
-      ZDUMMY=0.0_JPRB
+      ZDUMMY=0.0_JWRB
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'values',ZDUMMY)
 
       CALL WGRIBENCODE_IO_SERV( WAMPAR%NGX, WAMPAR%NGY, FIELD, YDIOS, FLDDESC, KGRIB_HANDLE  )
@@ -112,10 +111,6 @@
 
       END ASSOCIATE
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WV_IO_SERV_REC',1,ZHOOK_HANDLE)
-#endif
-
-      RETURN
 
       END SUBROUTINE WV_IO_SERV_REC

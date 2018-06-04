@@ -55,6 +55,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NPRECI
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -66,15 +68,15 @@
 #include "wgribencode.intfb.h"
 #include "wgribout.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
-      INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM
-      INTEGER, INTENT(IN) :: IFCST
-      INTEGER, INTENT(IN) :: IU 
-      INTEGER, INTENT(INOUT) :: KFDB
-      INTEGER, ALLOCATABLE :: KGRIB_BUFR(:)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, I1, I2
+      INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM
+      INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU 
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB_BUFR(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL, INTENT(INOUT) :: FIELD(I1,I2)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
       CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
@@ -83,15 +85,13 @@
       LOGICAL, INTENT(IN) :: LFDB
       LOGICAL, INTENT(INOUT) :: LFDBOPEN
 
-      INTEGER :: IGRIB_HANDLE
-      INTEGER :: ISIZE
+      INTEGER(KIND=JWIM) :: IGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: ISIZE
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENOUT',0,ZHOOK_HANDLE)
-#endif
 
       IF(ITEST.GT.0) THEN
         WRITE(IU06,*) '   SUB. WGRIBENOUT CALLED FOR ',IPARAM
@@ -103,9 +103,9 @@
 !*    1. ENCODE RESULT
 !        -------------
 
-      CALL WGRIBENCODE_MODEL(IU06, ITEST, I1, I2, FIELD,
-     &                 ITABLE, IPARAM, KLEV, IK , IM, 
-     &                 CDATE, IFCST, MARSTYPE,
+      CALL WGRIBENCODE_MODEL(IU06, ITEST, I1, I2, FIELD, &
+     &                 ITABLE, IPARAM, KLEV, IK , IM,    &
+     &                 CDATE, IFCST, MARSTYPE,           &
      &                 IGRIB_HANDLE)
 
 
@@ -117,9 +117,9 @@
       ALLOCATE(KGRIB_BUFR(ISIZE))
       CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,KGRIB_BUFR)
 
-      CALL WGRIBOUT(IU06, ITEST,
-     &              LFDB, CDFDBSF, KFDB, LFDBOPEN,
-     &              IU,
+      CALL WGRIBOUT(IU06, ITEST,                       &
+     &              LFDB, CDFDBSF, KFDB, LFDBOPEN,     &
+     &              IU,                                &
      &              IGRIB_HANDLE, ISIZE, KGRIB_BUFR )
 
 
@@ -127,8 +127,6 @@
       CALL IGRIB_RELEASE(IGRIB_HANDLE)
       DEALLOCATE(KGRIB_BUFR)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIBENOUT',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE WGRIBENOUT

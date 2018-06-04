@@ -147,7 +147,7 @@
 !*    0. PUT FIELD INTO GLOBAL MATRIX VALUES.
 !        -----------------------------------
       IF(IPARAM.EQ.251) THEN
-        PMISS=0.
+        PMISS=0._JWRB
       ELSE
         PMISS=ZMISS
       ENDIF
@@ -157,14 +157,14 @@
       ELSEIF(CLDOMAIN == 's' ) THEN
         ICOUNT=1
       ELSE
-        ICOUNT = (NINT((90. - AMONOP ) / XDELLA))*I1 + 1
+        ICOUNT = (NINT((90._JWRB - AMONOP ) / XDELLA))*I1 + 1
         VALUES=PMISS
       ENDIF
 
 !     PAD THE POLES IF INCLUDED IN THE GRID
       IF(LPADPOLES) THEN
-        IF((NINT((90. - AMONOP ) / XDELLA)).EQ.0) THEN
-          TEMP=0.
+        IF((NINT((90._JWRB - AMONOP ) / XDELLA)).EQ.0) THEN
+          TEMP=0._JWRB
           NN=0
           J=2
           JSN=I2-J+1

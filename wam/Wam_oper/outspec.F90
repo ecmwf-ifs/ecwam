@@ -1,4 +1,4 @@
-      SUBROUTINE OUTSPEC (SPEC) 
+SUBROUTINE OUTSPEC (SPEC) 
 
 !----------------------------------------------------------------------
 
@@ -43,7 +43,7 @@
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,
+      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
      &            MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
@@ -108,4 +108,4 @@
 
       IF (LHOOK) CALL DR_HOOK('OUTWSPEC',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE OUTSPEC
+END SUBROUTINE OUTSPEC
