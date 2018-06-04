@@ -1,6 +1,6 @@
-      SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,
-     &                       ITABLE, IPARAM, KLEV, IK, IM,
-     &                       CDATE, IFCST, MARSTYPE,
+SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
+     &                       ITABLE, IPARAM, KLEV, IK, IM,              &
+     &                       CDATE, IFCST, MARSTYPE,                    &
      &                       LFDB, CDFDBSF, KFDB, LFDBOPEN, IU)
 
 ! ----------------------------------------------------------------------
@@ -73,8 +73,6 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
       INTEGER(KIND=JWIM), INTENT(IN) :: IU 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
-      INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB_BUFR(:)
-      INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
@@ -87,6 +85,8 @@
 
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE
       INTEGER(KIND=JWIM) :: ISIZE
+      INTEGER(KIND=JPKSIZE_T) :: KBYTES
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB_BUFR(:)
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -129,4 +129,4 @@
 
       IF (LHOOK) CALL DR_HOOK('WGRIBENOUT',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE WGRIBENOUT
+END SUBROUTINE WGRIBENOUT
