@@ -38,6 +38,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "wgribencode.intfb.h"
 
       INTEGER, INTENT(IN)           :: I1, I2
       INTEGER, INTENT(INOUT)        :: IGRIB_HANDLE

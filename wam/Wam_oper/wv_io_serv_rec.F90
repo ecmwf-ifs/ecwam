@@ -19,6 +19,8 @@
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "wgrib2fdb.intfb.h"
 
       REAL :: ZHOOK_HANDLE
 

@@ -65,6 +65,8 @@ SUBROUTINE WGRIBENCODE_MODEL (IU06, ITEST, I1, I2, FIELD, &
 
 ! ----------------------------------------------------------------------
  IMPLICIT NONE
+#include "preset_wgrib_template.intfb.h"
+#include "wgribencode.intfb.h"
 
  INTEGER, INTENT(IN) :: IU06, ITEST, I1, I2
  INTEGER, INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM, IFCST
