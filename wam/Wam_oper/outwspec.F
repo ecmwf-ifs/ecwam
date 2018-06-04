@@ -57,6 +57,8 @@
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
+#include "outwspec_io_serv.intfb.h"
+#include "wgribencode_model.intfb.h"
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "grstname.intfb.h"

@@ -19,6 +19,7 @@
 
 !-----------------------------------------------------------------------
       IMPLICIT NONE
+#include "wgribencode_io_serv.intfb.h"
 #include "abort1.intfb.h"
 #include "wgrib2fdb.intfb.h"
 

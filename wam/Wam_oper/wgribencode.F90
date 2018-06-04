@@ -80,7 +80,7 @@
 
       ! From yowgribhd
       LOGICAL, INTENT(IN)   :: LGRHDIFS         ! If true then grib header will use information as provided by the ifs.
-      REAL(KIND=JWRB), INTENT(IN)      :: PPMISS  ! All spectral values less or equal ppmiss are replaced by the missing data indicator
+      REAL(KIND=JWRB), INTENT(IN)      :: PPMISS  ! every spectral values less or equal ppmiss are replaced by the missing data indicator
       REAL(KIND=JWRB), INTENT(IN)      :: PPEPS   ! Small number used in spectral packing of 251
       REAL(KIND=JWRB), INTENT(IN)      :: PPREC   ! Reference value for spectral packing of 251
       REAL(KIND=JWRB), INTENT(IN)      :: PPRESOL ! Maximun resolution possible when encoding spectra (parameter 251).

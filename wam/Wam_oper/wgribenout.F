@@ -62,6 +62,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "wgribencode_model.intfb.h"
 #include "wgribencode.intfb.h"
 #include "wgribout.intfb.h"
 

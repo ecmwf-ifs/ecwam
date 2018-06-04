@@ -28,6 +28,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "outint_io_serv.intfb.h"
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
