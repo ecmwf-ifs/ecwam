@@ -1,6 +1,6 @@
 SUBROUTINE WGRIBENCODE_IO_SERV (I1, I2, FIELD, &
-                             YDIOS, FLDDESC, &
-                             IGRIB_HANDLE)
+&                               YDIOS, FLDDESC, &
+&                               IGRIB_HANDLE)
 
 ! ----------------------------------------------------------------------
 
