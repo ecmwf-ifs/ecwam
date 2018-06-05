@@ -17,7 +17,8 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED
+      USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
+                            OUTINT_IO_SERV_CALLBACK
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWCOUT  , ONLY : JPPFLAG ,NIPRMOUT , NINFOBOUT,              &
      &                      INFOBOUT,BOUT,LWAM_USE_IO_SERV
@@ -97,7 +98,7 @@
 
       ! Use IFS IO server?
       IF (LWCOU .AND. LIFS_IO_SERV_ENABLED .AND. LWAM_USE_IO_SERV) THEN
-          CALL OUTINT_IO_SERV(NIPRMOUT, IJSLOC, IJLLOC, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
+          CALL OUTINT_IO_SERV_CALLBACK(NIPRMOUT, IJSLOC, IJLLOC, BOUT, INFOBOUT, MARSTYPE, CDATE, IFCST)
       ELSE
           CALL OUTINT(CDATE, IFCST)
       ENDIF

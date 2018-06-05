@@ -1,11 +1,16 @@
+
       MODULE YOWCOUP
-
+      
       USE YOWNEMOP
-
+      
+      
       IMPLICIT NONE
-
-!*    ** *COUPL* - PARAMETERS FOR COUPLING.
-
+      
+#include "outwspec_io_serv.intfb.h"
+#include "outint_io_serv.intfb.h"
+      
+      !*    ** *COUPL* - PARAMETERS FOR COUPLING.
+      
       INTEGER, PARAMETER :: JPLEVC=1
       LOGICAL LWCOU
       LOGICAL LWNEMOCOU
@@ -67,6 +72,8 @@
       INTEGER :: IFSNSTEP
       REAL    :: IFSTSTEP
       LOGICAL :: LIFS_IO_SERV_ENABLED
+      PROCEDURE(OUTWSPEC_IO_SERV), POINTER :: OUTWSPEC_IO_SERV_CALLBACK => NULL()
+      PROCEDURE(OUTINT_IO_SERV)  , POINTER :: OUTINT_IO_SERV_CALLBACK   => NULL()
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
