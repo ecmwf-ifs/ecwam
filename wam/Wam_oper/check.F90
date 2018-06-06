@@ -35,18 +35,19 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
      &            NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : DEG
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJLS     ,
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJLS     ,    &
      &            IJL      ,IJLT
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLO
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH
       USE YOWSTAT  , ONLY : IREFRA
@@ -57,16 +58,16 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: ML, KL, IINPC
+      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL, IINPC
 
-      INTEGER :: IG
-      INTEGER :: IU1, IU2, IO, IO1, IO2
-      INTEGER :: I, K, IJ, IERR
-      INTEGER :: ILEN, IPAGE, LAST, L, IA, IE
-      INTEGER :: IJFLAT, IJLLAT, IJMAX, ISEA, IPOI, IOV 
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IU1, IU2, IO, IO1, IO2
+      INTEGER(KIND=JWIM) :: I, K, IJ, IERR
+      INTEGER(KIND=JWIM) :: ILEN, IPAGE, LAST, L, IA, IE
+      INTEGER(KIND=JWIM) :: IJFLAT, IJLLAT, IJMAX, ISEA, IPOI, IOV 
 
-      REAL :: BMOWEP, BMOEAP
-      REAL,  ALLOCATABLE :: GRID(:,:)
+      REAL(KIND=JWRB) :: BMOWEP, BMOEAP
+      REAL(KIND=JWRB),  ALLOCATABLE :: GRID(:,:)
 
       CHARACTER(LEN=100) :: TITL
       CHARACTER(LEN=1), ALLOCATABLE :: LST(:,:)
@@ -136,7 +137,7 @@
       IERR = 0
       DO IG=1,IGL
         DO IJ=IJS(IG),IJL(IG)
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)
+          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
      &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = 'S'
         ENDDO
       ENDDO
@@ -181,7 +182,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR.GT.20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)
+          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
      &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = '+'
         ENDDO
       ENDIF
@@ -226,7 +227,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR.GT.20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)
+          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
      &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = '/'
         ENDDO
       ENDIF
@@ -271,7 +272,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR.GT.20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)
+          IF (IXLG(IJ,IG).NE.0.OR.KXLT(IJ,IG).NE.0)                     &
      &     LST(IXLG(IJ,IG),KXLT(IJ,IG)) = 'B'
         ENDDO
       ENDIF
@@ -296,12 +297,12 @@
           IA = IA + 1
           BMOWEP = AMOWEP +REAL(IA-1)*XDELLO
           BMOEAP = AMOWEP +REAL(IE-1)*XDELLO
-          WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',
-     &     ''   L = LAND  S = SEA  + = OUTPUT POINT'',
+          WRITE (IU06,'(1H1,'' LAND SEA MAP OF FULL GRID '',            &
+     &     ''   L = LAND  S = SEA  + = OUTPUT POINT'',                  &
      &     ''                PAGE: '',I2)') L
-          WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)')
+          WRITE (IU06,'(2X,''LONGITUDE IS FROM '',F7.2,'' TO '',F7.2)') &
      &     BMOWEP, BMOEAP
-          WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)')
+          WRITE (IU06,'(2X,''LATITUDE  IS FROM '',F7.2,'' TO '',F7.2)') &
      &     AMONOP, AMOSOP
           WRITE (IU06,'(2X,130I1)') (MOD(I,10),I=IA,IE)
           DO K=NY,1,-1
@@ -344,47 +345,46 @@
 !*    6. OUTPUT OF OPTIMAL DIMENSIONS.
 !        -----------------------------
 
-      WRITE (IU06,'(//,'' DIMENSIONS OF ARRAYS, WHICH ARE USED'',
+      WRITE (IU06,'(//,'' DIMENSIONS OF ARRAYS, WHICH ARE USED'',       &
      &             '' IN PRESET AND CHIEF '',/)')
-      WRITE (IU06,'(''                                     DEFINED'',
+      WRITE (IU06,'(''                                     DEFINED'',   &
      &           ''      USED'',''  REQUIRED'')')
-      WRITE (IU06,'('' NUMBER OF DIRECTIONS        NANG '', 3I10)')
+      WRITE (IU06,'('' NUMBER OF DIRECTIONS        NANG '', 3I10)')     &
      &           NANG, KL, KL
-      WRITE (IU06,'('' NUMBER OF FREQUENCIES       NFRE '', 3I10)')
+      WRITE (IU06,'('' NUMBER OF FREQUENCIES       NFRE '', 3I10)')     &
      &           NFRE, ML, ML
-      WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')
+      WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')     &
      &           NGX, NX, NX
-      WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')
+      WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')     &
      &           NGY, NY, NY
-      WRITE (IU06,'('' NUMBER OF BLOCKS            NBLO '', 3I10)')
+      WRITE (IU06,'('' NUMBER OF BLOCKS            NBLO '', 3I10)')     &
      &           NBLO, IGL, NBLO
-      WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')
+      WRITE (IU06,'('' MAXIMUM BLOCK LENGTH       NIBLO '', 3I10)')     &
      &           NIBLO, IJMAX, NIBLO
-      WRITE (IU06,'('' NUMBER POINTS IN FIRST LAT NOVER '', 3I10)')
+      WRITE (IU06,'('' NUMBER POINTS IN FIRST LAT NOVER '', 3I10)')     &
      &           NOVER, MAX(1,IJFLAT), MAX(1,IJFLAT)
-      WRITE (IU06,'('' NUMBER OF OUTPUT POINTS    NGOUT '', 3I10)')
+      WRITE (IU06,'('' NUMBER OF OUTPUT POINTS    NGOUT '', 3I10)')     &
      &           NGOUT, MAX(1,NGOUT), NGOUT 
 
       IF (IGL.EQ.1) THEN
-        WRITE (IU06,'('' 1 BLOCK VERSION            NIBL1 '', 3I10)')
+        WRITE (IU06,'('' 1 BLOCK VERSION            NIBL1 '', 3I10)')   &
      &   NIBL1, 1, 1
       ELSE
-        WRITE (IU06,'('' MULTI BLOCK VERSION        NIBL1 '', 3I10)')
+        WRITE (IU06,'('' MULTI BLOCK VERSION        NIBL1 '', 3I10)')   &
      &   NIBL1, IJMAX, NIBLO
       ENDIF
 
-      WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')
+      WRITE (IU06,'('' SHALLOW WATER TABLE LEN.  NDEPTH '', 3I10)')     &
      &           NDEPTH, NDEPTH, NDEPTH
 
-      WRITE (IU06,'(/,'' THE DIMENSIONS IN PRESET AND CHIEF HAVE TO '',
+      WRITE (IU06,'(/,'' THE DIMENSIONS IN PRESET AND CHIEF HAVE TO '', &
      &             '' BE THE VALUES IN COLUMN - REQUIRED - '')')
-      WRITE (IU06,'(  '' IF YOU WANT TO USE THE OPTIMAL DIMENSION'',
-     &             '' LENGTH IN THE WAMODEL, THEN  '',/,
-     &             '' RERUN PREPROC WITH THE DIMENSION'',
+      WRITE (IU06,'(  '' IF YOU WANT TO USE THE OPTIMAL DIMENSION'',    &
+     &             '' LENGTH IN THE WAMODEL, THEN  '',/,                &
+     &             '' RERUN PREPROC WITH THE DIMENSION'',               &
      &             '' GIVEN AS -USED-'')')
 
       DEALLOCATE(LST)
       DEALLOCATE(GRID)
 
-      RETURN
       END SUBROUTINE CHECK
