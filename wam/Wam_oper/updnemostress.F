@@ -81,6 +81,11 @@
           NEMONEW10(IJS(IG):IJL(IG))=NEMONEW10(IJS(IG):IJL(IG))/NEMONTAU
           NEMOPHIF(IJS(IG):IJL(IG))=NEMOPHIF(IJS(IG):IJL(IG))/NEMONTAU
         ELSE
+!!!debile
+        if(.not. allocated(NEMOTAUX)) then
+          write(*,*) 'updnemostress, we have a serious problem !!!!'
+        endif
+
           NEMOTAUX(IJS(IG):IJL(IG)) = 0.0
           NEMOTAUY(IJS(IG):IJL(IG)) = 0.0
           NEMONEW10(IJS(IG):IJL(IG)) = 0.0 
