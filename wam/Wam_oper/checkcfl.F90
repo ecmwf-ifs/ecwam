@@ -1,5 +1,5 @@
-      SUBROUTINE CHECKCFL (MIJS, MIJL, DTC,
-     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2, 
+      SUBROUTINE CHECKCFL (MIJS, MIJL, DTC,                             &
+     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2,       &
      &                     CFLTP,CFLTM,CFLOP,CFLOM)
 
 ! ----------------------------------------------------------------------
@@ -36,6 +36,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NINF
       USE YOWSHAL  , ONLY : INDEP    ,DEPTH
       USE YOWTEST  , ONLY : IU06
@@ -46,10 +48,10 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER :: MIJS, MIJL, IJ, IC, ICP, ICL
-      REAL,DIMENSION(MIJS:MIJL) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
-      REAL,DIMENSION(MIJS:MIJL) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
-      REAL,DIMENSION(MIJS:MIJL) :: DTC
+      INTEGER(KIND=JWIM) :: MIJS, MIJL, IJ, IC, ICP, ICL
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2 
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: CFLSO2,CFLTP,CFLTM,CFLOP,CFLOM
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: DTC
       LOGICAL :: LLABORTCFL
 
 ! ----------------------------------------------------------------------
@@ -149,13 +151,13 @@
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF(ICP.NE.NINF-1)
+              IF(ICP.NE.NINF-1)                                         &
      &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF(ICP.NE.NINF-1)
+            IF(ICP.NE.NINF-1)                                           &
      &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP,1)
           ENDDO
           WRITE(IU06,*) ' *                              *'
@@ -175,13 +177,13 @@
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
-              IF(ICP.NE.NINF-1)
+              IF(ICP.NE.NINF-1)                                         &
      &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
-            IF(ICP.NE.NINF-1)
+            IF(ICP.NE.NINF-1)                                           &
      &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP,1)
           ENDDO
           WRITE(IU06,*) ' *                              *'
@@ -236,5 +238,4 @@
         ENDIF
       ENDDO
 
-      RETURN
       END SUBROUTINE CHECKCFL
