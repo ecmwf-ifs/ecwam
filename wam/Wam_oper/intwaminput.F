@@ -536,8 +536,8 @@
          LLWAIT=.TRUE.
          ISYSTEM_STAT=-1
          ISTAT=-1
-         CALL EXECUTE_COMMAND_LINE('cp '//IFILENAME//' '//OFILENAME,
-     &        WAIT=LLWAIT, EXITSTAT=ISYSTEM_STAT,CMDSTAT=ISTAT)
+!WPG         CALL EXECUTE_COMMAND_LINE('cp '//IFILENAME//' '//OFILENAME,
+!WPG     &        WAIT=LLWAIT, EXITSTAT=ISYSTEM_STAT,CMDSTAT=ISTAT)
          IF(ISTAT.NE.0) THEN
             WRITE(IU06,*) '*************************************'
             WRITE(IU06,*) '* INTWAMINPUT: FILE COPYING ERROR !'
