@@ -50,6 +50,8 @@
 
 !     ------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWSTAT  , ONLY : ISIGHUP  ,ISIGINT
       USE MPL_MODULE
 
@@ -57,19 +59,19 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: KU06, KTST, KRANK, KPROC
+      INTEGER(KIND=JWIM), INTENT(IN) :: KU06, KTST, KRANK, KPROC
       LOGICAL, INTENT(OUT) :: LDSIGSTOP, LDSIGREST
 
-      INTEGER :: JE, ITAG, IPROC
-      INTEGER :: IBUF(2)
-      INTEGER, PARAMETER :: JPSIGTAG=1000
+      INTEGER(KIND=JWIM) :: JE, ITAG, IPROC
+      INTEGER(KIND=JWIM) :: IBUF(2)
+      INTEGER(KIND=JWIM), PARAMETER :: JPSIGTAG=1000
 
 ! ----------------------------------------------------------------------
 
 !*    1. UNBLOCK SIGNALS.
 !        ----------------
 
-      IF (KTST.GE.2)
+      IF (KTST.GE.2)                                                    &
      & WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' START'
 
       CALL IFSSIGB
@@ -91,13 +93,13 @@
           ITAG=JPSIGTAG+JE
           IBUF(1)=ISIGHUP
           IBUF(2)=ISIGINT
-          CALL MPL_SEND(IBUF,KDEST=JE,KTAG=ITAG,
+          CALL MPL_SEND(IBUF,KDEST=JE,KTAG=ITAG,                        &
      &                  CDSTRING='CHESIG:') 
         ENDDO
       ELSE
         ITAG=JPSIGTAG+KRANK
         IPROC=1
-        CALL MPL_RECV(IBUF,KSOURCE=IPROC,KTAG=ITAG,
+        CALL MPL_RECV(IBUF,KSOURCE=IPROC,KTAG=ITAG,                     &
      &                CDSTRING='CHESIG:') 
         ISIGHUP=IBUF(1)
         ISIGINT=IBUF(2)
@@ -111,7 +113,7 @@
 
       IF (KTST.GE.2) THEN
         WRITE(KU06,*) '   CHESIG:  FOR PE ', KRANK, ' DONE'
-        WRITE(KU06,*) '   CHESIG:  LDSIGSTOP:', LDSIGSTOP,
+        WRITE(KU06,*) '   CHESIG:  LDSIGSTOP:', LDSIGSTOP,              &
      &                ' LDSIGREST: ', LDSIGREST
         CALL FLUSH(KU06)
       ENDIF
