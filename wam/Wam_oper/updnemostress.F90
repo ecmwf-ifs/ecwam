@@ -41,6 +41,8 @@
 
 ! -------------------------------------------------------------------   
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
 ! MODULES NEED FOR GRID DEFINTION      
       USE YOWGRID  , ONLY : IJS, IJL
 ! MPP INFORMATION
@@ -50,7 +52,7 @@
       USE YOWPCONS , ONLY : EPSUS, EPSU10
 ! DR. HOOK
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
-! INFORMATION FO OPTIONAL DEBUGGING
+! INFORMATION FOR OPTIONAL DEBUGGING
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG, KCOUSTEP,
      &                      NEMOTAUX, NEMOTAUY, NEMONEW10, 
      &                      NEMOPHIF, NEMONTAU
@@ -60,18 +62,16 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IG, IJ
+      INTEGER(KIND=JWIM) :: IG, IJ
 
-      REAL :: TAU
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: TAU
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 
 ! -------------------------------------------------------------------   
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOSTRESS',0,ZHOOK_HANDLE)
-#endif
 
-      IF (LWNEMOCOU) THEN
+      IF (LWNEMOCOU .AND. ALLOCATED(NEMOTAUX)) THEN
 
         IG=1
 
@@ -81,15 +81,11 @@
           NEMONEW10(IJS(IG):IJL(IG))=NEMONEW10(IJS(IG):IJL(IG))/NEMONTAU
           NEMOPHIF(IJS(IG):IJL(IG))=NEMOPHIF(IJS(IG):IJL(IG))/NEMONTAU
         ELSE
-!!!debile
-        if(.not. allocated(NEMOTAUX)) then
-          write(*,*) 'updnemostress, we have a serious problem !!!!'
-        endif
 
-          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0
-          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0
-          NEMONEW10(IJS(IG):IJL(IG)) = 0.0 
-          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0 
+          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0_JWRB
+          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0_JWRB
+          NEMONEW10(IJS(IG):IJL(IG)) = 0.0_JWRB 
+          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0_JWRB 
         ENDIF
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE_STRESS( IRANK-1, NPROC, MPL_COMM,
@@ -99,15 +95,13 @@
         ! INITIALIZE STRESS FOR ACCUMULATION
 
         NEMONTAU = 0
-        NEMOTAUX(:) = 0.0
-        NEMOTAUY(:) = 0.0
-        NEMONEW10(:) = 0.0
-        NEMOPHIF(:) = 0.0
+        NEMOTAUX(:) = 0.0_JWRB
+        NEMOTAUY(:) = 0.0_JWRB
+        NEMONEW10(:) = 0.0_JWRB
+        NEMOPHIF(:) = 0.0_JWRB
 
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UPDNEMOSTRESS',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE UPDNEMOSTRESS
