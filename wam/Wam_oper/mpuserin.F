@@ -511,9 +511,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPUSERIN',0,ZHOOK_HANDLE)
-#endif
 
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
 !        ---------------------------------------------
@@ -928,11 +926,10 @@
         WRITE(6,*) '*** LPREPROC= ',LPREPROC
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
+        WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
         WRITE(6,*) '==============================================='
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPUSERIN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE MPUSERIN
