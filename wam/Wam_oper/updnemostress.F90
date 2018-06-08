@@ -42,21 +42,20 @@
 ! -------------------------------------------------------------------   
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWNEMOP    , ONLY : NEMODP
 
 ! MODULES NEED FOR GRID DEFINTION      
       USE YOWGRID  , ONLY : IJS, IJL
 ! MPP INFORMATION
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
-! CONSTANTS
-      USE YOWPCONS , ONLY : EPSUS, EPSU10
 ! DR. HOOK
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
-! INFORMATION FOR OPTIONAL DEBUGGING
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG, KCOUSTEP,
-     &                      NEMOTAUX, NEMOTAUY, NEMONEW10, 
+! DATA FOR NEMO 
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG, KCOUSTEP,        &
+     &                      NEMOTAUX, NEMOTAUY, NEMONEW10,              &
      &                      NEMOPHIF, NEMONTAU
-      USE YOWSTAT  , ONLY : CDATEF, CDTPRO
+      USE YOWSTAT  , ONLY : CDTPRO
 
 ! -------------------------------------------------------------------   
 
@@ -82,23 +81,23 @@
           NEMOPHIF(IJS(IG):IJL(IG))=NEMOPHIF(IJS(IG):IJL(IG))/NEMONTAU
         ELSE
 
-          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0_JWRB
-          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0_JWRB
-          NEMONEW10(IJS(IG):IJL(IG)) = 0.0_JWRB 
-          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0_JWRB 
+          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0_NEMODP
+          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0_NEMODP
+          NEMONEW10(IJS(IG):IJL(IG)) = 0.0_NEMODP
+          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0_NEMODP
         ENDIF
 #ifdef WITH_NEMO
-        CALL NEMOGCMCOUP_WAM_UPDATE_STRESS( IRANK-1, NPROC, MPL_COMM,
-     &      IJL(IG)-IJS(IG)+1, NEMOTAUX, NEMOTAUY, NEMONEW10, NEMOPHIF,
+        CALL NEMOGCMCOUP_WAM_UPDATE_STRESS( IRANK-1, NPROC, MPL_COMM,   &
+     &      IJL(IG)-IJS(IG)+1, NEMOTAUX, NEMOTAUY, NEMONEW10, NEMOPHIF, &
      &      CDTPRO, LWNEMOCOUDEBUG )
 #endif
         ! INITIALIZE STRESS FOR ACCUMULATION
 
         NEMONTAU = 0
-        NEMOTAUX(:) = 0.0_JWRB
-        NEMOTAUY(:) = 0.0_JWRB
-        NEMONEW10(:) = 0.0_JWRB
-        NEMOPHIF(:) = 0.0_JWRB
+        NEMOTAUX(:) = 0.0_NEMODP
+        NEMOTAUY(:) = 0.0_NEMODP
+        NEMONEW10(:) = 0.0_NEMODP
+        NEMOPHIF(:) = 0.0_NEMODP
 
       ENDIF
 

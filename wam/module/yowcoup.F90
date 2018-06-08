@@ -1,16 +1,15 @@
       MODULE YOWCOUP
-     
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWNEMOP
-      
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWNEMOP    , ONLY : NEMODP
+
       IMPLICIT NONE
-      
+
 #include "outwspec_io_serv.intfb.h"
 #include "outint_io_serv.intfb.h"
-      
+
       !*    ** *COUPL* - PARAMETERS FOR COUPLING.
-      
+
       INTEGER(KIND=JWIM), PARAMETER :: JPLEVC=1
       LOGICAL :: LWCOU
       LOGICAL :: LWNEMOCOU
