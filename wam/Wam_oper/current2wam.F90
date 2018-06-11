@@ -32,13 +32,15 @@
 
 !---------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : U        ,V        ,CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
-      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,
+      USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            NPRECI
       USE YOWPCONS , ONLY : ZMISS    ,EPSMIN
       USE YOWSTAT  , ONLY : NPROMA_WAM 
@@ -59,27 +61,28 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      INTEGER, INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEIN
 
-      INTEGER :: NBIT = 1000000
+      INTEGER(KIND=JWIM) :: NBIT = 1000000
 
-      INTEGER :: KFILE_HANDLE1
-      INTEGER :: LFILE, KGRIB_HANDLE
-      INTEGER :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
-      INTEGER :: IRET, ISIZE
-      INTEGER :: KK, MM
-      INTEGER :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
-      INTEGER :: IBUF(2)
-      INTEGER, ALLOCATABLE :: INGRIB(:)
-      INTEGER :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: KFILE_HANDLE1
+      INTEGER(KIND=JWIM) :: LFILE, KGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
+      INTEGER(KIND=JWIM) :: IRET, ISIZE
+      INTEGER(KIND=JWIM) :: KK, MM
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
+      INTEGER(KIND=JWIM) :: IBUF(2)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL, PARAMETER :: WLOWEST=0.0001
-      REAL :: ZDUM
-      REAL :: ZHOOK_HANDLE
-      REAL :: FIELD(NXFF,NYFF)
+      REAL(KIND=JWRB), PARAMETER :: WLOWEST=0.0001_JWRB
+      REAL(KIND=JWRB) :: ZDUM
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: FIELD(NXFF,NYFF)
 
       CHARACTER(LEN=14) :: CDATEIN_OLD 
 
@@ -103,8 +106,7 @@
 
       LFILE = LEN_TRIM(FILNM)
 
-      IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
-     &    .NOT.LMESSPASS) THEN
+      IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR. .NOT.LMESSPASS) THEN
 
         IF (FRSTIME) THEN
           KFILE_HANDLE1=-99
@@ -118,7 +120,7 @@
 
       READCURRENT: DO IVAR=1,2
 
-        IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.
+        IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR.                     &
      &      .NOT.LMESSPASS) THEN
 1021        ISIZE=NBIT
             KBYTES=ISIZE*NPRECI
@@ -157,7 +159,7 @@
             IBUF(1)=ISIZE
             IBUF(2)=KLEN
           ENDIF
-          CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=IVAR,
+          CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=IVAR,           &
      &                       CDSTRING='CURRENT2WAM IBUF:')
           IF(IRANK.NE.IREAD) THEN
             ISIZE=IBUF(1)
@@ -165,7 +167,7 @@
             ALLOCATE(INGRIB(ISIZE))
           ENDIF
 
-          CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,
+          CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,     &
      &                       CDSTRING='CURRENT2WAM INGRIB:')
 
         ENDIF
@@ -178,13 +180,13 @@
 
         KK=0
         MM=0
-        CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
-     &                   KGRIB_HANDLE, INGRIB, ISIZE,
-     &                   LLUNSTR,
-     &                   NXFF, NYFF, NLONRGG_LOC,
-     &                   IRGG, XDELLA, ZDELLO,
-     &                   FIELDG%XLON, FIELDG%YLAT,
-     &                   ZMISS, ZDUM, ZDUM,
+        CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                       &
+     &                   KGRIB_HANDLE, INGRIB, ISIZE,                   &
+     &                   LLUNSTR,                                       &
+     &                   NXFF, NYFF, NLONRGG_LOC,                       &
+     &                   IRGG, XDELLA, ZDELLO,                          &
+     &                   FIELDG%XLON, FIELDG%YLAT,                      &
+     &                   ZMISS, ZDUM, ZDUM,                             &
      &                   CDATEIN, IFORP, IPARAM,KZLEV,KK,MM, FIELD)
 
 
@@ -220,11 +222,11 @@
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0
-               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0
+               IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0_JWRB
+               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0_JWRB
                U(IJ,IG)=SIGN(MIN(ABS(U(IJ,IG)),CURRENT_MAX),U(IJ,IG))
              ENDDO
-             U(NINF-1,IG)=0.0
+             U(NINF-1,IG)=0.0_JWRB
            ENDDO
         ELSEIF(IPARAM.EQ.132) THEN
            DO IG = 1,IGL
@@ -237,11 +239,11 @@
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0
-               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0
+               IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0_JWRB
+               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0_JWRB
                V(IJ,IG)=SIGN(MIN(ABS(V(IJ,IG)),CURRENT_MAX),V(IJ,IG))
              ENDDO
-             V(NINF-1,IG)=0.
+             V(NINF-1,IG)=0.0_JWRB
            ENDDO
         ELSE
           WRITE(IU06,*) ' *****************************************'
