@@ -37,6 +37,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DFIM     , DELTH     ,GOM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE , CDICWA
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -50,27 +52,28 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER :: K, M, IJ, IJS, IJL 
-      REAL :: ZPI4G2 
-      REAL :: EWH 
-      REAL :: X, ALP
-      REAL,DIMENSION(NFRE) :: XK2 
-      REAL,DIMENSION(IJS:IJL) :: CICOVER
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE) :: FL
-      REAL :: ZHOOK_HANDLE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: CIWAB
+
+      INTEGER(KIND=JWIM) :: K, M, IJ
+      REAL(KIND=JWRB) :: ZPI4G2 
+      REAL(KIND=JWRB) :: EWH 
+      REAL(KIND=JWRB) :: X, ALP
+      REAL(KIND=JWRB),DIMENSION(NFRE) :: XK2 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('CIWABR',0,ZHOOK_HANDLE)
-#endif
 
       IF( .NOT. LICERUN .OR. LMASKICE ) THEN
 
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              CIWAB(IJ,K,M)=1.
+              CIWAB(IJ,K,M)=1.0_JWRB
             ENDDO
           ENDDO
         ENDDO
@@ -81,11 +84,11 @@
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=IJS,IJL
-                EWH=4.*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
+                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
                 XK2(M)=TFAK(INDEP(IJ),M)**2
                 ALP=CDICWA*XK2(M)*EWH
                 X=ALP*TCGOND(INDEP(IJ),M)*IDELT
-                CIWAB(IJ,K,M)=1.-CICOVER(IJ)*(1.-EXP(-MIN(X,50.)))
+                CIWAB(IJ,K,M)=1.0_JWRB-CICOVER(IJ)*(1.0_JWRB-EXP(-MIN(X,50.0_JWRB)))
               ENDDO
             ENDDO
           ENDDO
@@ -97,18 +100,16 @@
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=IJS,IJL
-                EWH=4.*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
+                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
                 ALP=CDICWA*XK2(M)*EWH
                 X=ALP*GOM(M)*IDELT
-                CIWAB(IJ,K,M)=1.-CICOVER(IJ)*(1.-EXP(-MIN(X,50.)))
+                CIWAB(IJ,K,M)=1.0_JWRB-CICOVER(IJ)*(1.0_JWRB-EXP(-MIN(X,50.0_JWRB)))
               ENDDO
             ENDDO
           ENDDO
         ENDIF
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIWABR',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE CIWABR
