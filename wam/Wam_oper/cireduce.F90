@@ -35,6 +35,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE 
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -48,24 +50,23 @@
       IMPLICIT NONE
 #include "ciwaf.intfb.h"
 
-      INTEGER :: IG
-      INTEGER :: IJ, JH, M 
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, JH, M 
+      INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
 
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CITHICK
-      REAL,DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CITHICK
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL, SAVE :: LLFRST
 
       DATA LLFRST / .TRUE. /
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
-#endif
 
       IG=1
 
@@ -83,7 +84,7 @@
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
               DO M=1,NFRE
                 DO IJ=KIJS,KIJL
-                  CIWA(IJ,M,IG)=1.0
+                  CIWA(IJ,M,IG)=1.0_JWRB
                 ENDDO
               ENDDO
             ENDDO
@@ -99,15 +100,12 @@
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            CALL CIWAF(KIJS,KIJL,CICOVER(KIJS:KIJL,IG),
-     &                 CITHICK(KIJS:KIJL,IG), CIWA(KIJS:KIJL,:,IG))
+            CALL CIWAF(KIJS,KIJL,CICOVER(KIJS:KIJL,IG),CITHICK(KIJS:KIJL,IG), CIWA(KIJS:KIJL,:,IG))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)
         ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIREDUCE',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE CIREDUCE
