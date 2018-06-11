@@ -40,7 +40,8 @@
 
 ! ----------------------------------------------------------------------
 
-      USE PARKIND_WAVE, ONLY : JWIM,JWRB
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWICE   , ONLY : CITHICK  ,FLMIN
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -55,18 +56,18 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN
+
       INTEGER(KIND=JWIM) :: IJ,M,K,IG,JD
       REAL(KIND=JWRB) :: AKI_ICE
       REAL(KIND=JWRB) :: F1LIM 
-      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: STRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTH, XK, XKI, E, SUME 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('CIMSSTRN',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. INITIALISE
 !        ----------
@@ -75,7 +76,7 @@
       F1LIM=FLMIN/DELTH
 
       DO IJ=IJS,IJL
-        STRN(IJ) = 0.0
+        STRN(IJ) = 0.0_JWRB
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -99,11 +100,11 @@
 
         DO IJ=IJS,IJL
           XKI(IJ)=AKI_ICE(G,XK(IJ),DPTH(IJ),ROWATER,CITHICK(IJ,IG))
-          E(IJ)=0.5*CITHICK(IJ,IG)*XKI(IJ)**3/XK(IJ)
+          E(IJ)=0.5_JWRB*CITHICK(IJ,IG)*XKI(IJ)**3/XK(IJ)
         ENDDO
 
         DO IJ=IJS,IJL
-          SUME(IJ) = 0.
+          SUME(IJ) = 0.0_JWRB
         ENDDO
         DO K=1,NANG
           DO IJ=IJS,IJL
@@ -119,8 +120,6 @@
 
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CIMSSTRN',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE CIMSSTRN
