@@ -1,5 +1,5 @@
-      SUBROUTINE CLOSEND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
-     &                    U10OLD,THWOLD,ROAIRO,ZIDLOLD,
+      SUBROUTINE CLOSEND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE, &
+     &                    U10OLD,THWOLD,ROAIRO,ZIDLOLD,                 &
      &                    U10NEW,THWNEW,ROAIRN,ZIDLNEW) 
 
 ! ----------------------------------------------------------------------
@@ -59,6 +59,8 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NBLO
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -70,20 +72,19 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "incdate.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG, IGL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG, IGL
       CHARACTER(LEN=14), INTENT(IN) :: CDATEWH, CDATE
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
 
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::       &
      &        U10OLD, THWOLD, ROAIRO, ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP), INTENT(IN) ::
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) ::               &
      &     U10NEW, THWNEW, ROAIRN, ZIDLNEW
 
-      INTEGER :: IJ, JKGLO, KIJS, KIJL, NPROMA, IDELWH
+      INTEGER(KIND=JWIM) :: IJ, JKGLO, KIJS, KIJL, NPROMA, IDELWH
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LLEX
 
@@ -91,9 +92,8 @@
 
 !*    1. SAVE WIND INTO INTERMEDIATE STORAGE.
 !     ----------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('CLOSEND',0,ZHOOK_HANDLE)
-#endif
 
       IF (NEWREAD) THEN
         NPROMA=NPROMA_WAM
@@ -114,7 +114,7 @@
         NEWREAD = .FALSE.
         IF (ITEST.GE.2) THEN
           IF (ITESTB.GE.IG) THEN
-            WRITE(IU06,*) '       SUB. CLOSEND: STORE WIND ',
+            WRITE(IU06,*) '       SUB. CLOSEND: STORE WIND ',           &
      &       ' AT CDATE = ',CDATE
           ENDIF
         ENDIF
@@ -134,9 +134,9 @@
           CALL INCDATE(CDATEFL,IDELWH)
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) '      SUB. CLOSEND: NEW WINDFILE DATES'
-            WRITE(IU06,*) '        DATE OF NEXT WIND FILE IS ',
+            WRITE(IU06,*) '        DATE OF NEXT WIND FILE IS ',         &
      &       'CDAWIFL = ', CDAWIFL
-            WRITE(IU06,*) '        FILE WILL BE ACCESSED  AT ',
+            WRITE(IU06,*) '        FILE WILL BE ACCESSED  AT ',         &
      &       'CDATEFL = ', CDATEFL
           ENDIF
         ENDIF
@@ -145,8 +145,6 @@
         CDATEWO=CDATEWH
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CLOSEND',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE CLOSEND
