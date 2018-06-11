@@ -34,33 +34,34 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,
+      USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,
+      USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
       USE YOWMPP   , ONLY : NINF
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH   ,
+      USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH   ,     &
      &               TSIHKD
       USE YOWSTAT  , ONLY : IDELPRO  ,ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,
-     &            KCOR     ,WCOR     ,
-     &            SUMWN    ,WLATN    ,WLONN    ,WCORN    ,
-     &            WKPMN    ,WMPMN    ,OBSLAT   ,OBSLON   ,OBSCOR   ,
-     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
-     &            JXO      ,JYO      ,KCR      ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,              &
+     &            KCOR     ,WCOR     ,                                  &
+     &            SUMWN    ,WLATN    ,WLONN    ,WCORN    ,              &
+     &            WKPMN    ,WMPMN    ,OBSLAT   ,OBSLON   ,OBSCOR   ,    &
+     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
+     &            JXO      ,JYO      ,KCR      ,                        &
      &            LSAMEDEPTH
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "abort1.intfb.h"
 
       INTEGER, INTENT(IN) :: MIJS,MIJL,IG
       INTEGER :: IP,IJP
@@ -68,7 +69,7 @@
       INTEGER :: KP1,KM1,JH
       INTEGER :: ICL,ICR,ICC, ICRM, JCR
       INTEGER :: MP1, MM1
-!      INTEGER :: ISAMESIGN
+      INTEGER :: ISAMESIGN
       INTEGER :: ISSU(2),ISSV(2)
 
       REAL :: DELPRO, DTNEW
@@ -104,7 +105,7 @@
 ! ----------------------------------------------------------------------
 
       DELPRO = REAL(IDELPRO)   
-      CMTODEG = 360./CIRC
+      CMTODEG = 360.0_JWRB/CIRC
 
       DO IJ=MIJS,MIJL
         LCFLFAIL(IJ)=.FALSE.
@@ -126,40 +127,40 @@
 
       DO IC=1,2
         DO IJ = MIJS,MIJL
-          IF (KLAT(IJ,IC,1).GT. NINF-1 .AND.
+          IF (KLAT(IJ,IC,1).GT. NINF-1 .AND.                            &
      &        KLAT(IJ,IC,2).GT. NINF-1) THEN
 !           BOTH CLOSEST AND SECOND CLOSEST POINTS ARE OVER THE OCEAN
             WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
           ELSE IF (KLAT(IJ,IC,1).EQ. NINF-1) THEN
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           CLOSEST POINT IS OVER LAND
-            IF(WLAT(IJ,IC).LE.0.75) WLAT(IJ,IC)=0.
-            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+            IF(WLAT(IJ,IC).LE.0.75_JWRB) WLAT(IJ,IC)=0.0_JWRB
+            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
           ELSE
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           SECOND CLOSEST POINT IS OVER LAND
-            IF(WLAT(IJ,IC).GE.0.5) WLAT(IJ,IC)=1.
-            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+            IF(WLAT(IJ,IC).GE.0.5_JWRB) WLAT(IJ,IC)=1.0_JWRB
+            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
           ENDIF
         ENDDO
       ENDDO
 
       DO ICR=1,4
         DO IJ = MIJS,MIJL
-          IF(KCOR(IJ,ICR,1).GT.NINF-1 .AND. 
+          IF(KCOR(IJ,ICR,1).GT.NINF-1 .AND.                             &
      &       KCOR(IJ,ICR,2).GT.NINF-1) THEN
 !           BOTH CLOSEST AND SECOND CLOSEST CORNER POINTS ARE OVER THE OCEAN
-            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
           ELSE IF(KCOR(IJ,ICR,1).EQ.NINF-1) THEN
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           CLOSEST CORNER POINT IS OVER LAND
-            IF(WCOR(IJ,ICR).LE.0.75) WCOR(IJ,ICR)=0.
-            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+            IF(WCOR(IJ,ICR).LE.0.75_JWRB) WCOR(IJ,ICR)=0.0_JWRB
+            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
           ELSE
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           SECOND CLOSEST CORNER POINT IS OVER LAND
-            IF(WCOR(IJ,ICR).GT.0.5) WCOR(IJ,ICR)=1. 
-            WCORM1(IJ,ICR) = 1. - WCOR(IJ,ICR)
+            IF(WCOR(IJ,ICR).GT.0.5_JWRB) WCOR(IJ,ICR)=1.0_JWRB 
+            WCORM1(IJ,ICR) = 1.0_JWRB - WCOR(IJ,ICR)
           ENDIF
         ENDDO
       ENDDO
@@ -169,7 +170,7 @@
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=MIJS,MIJL
-                WLATN(IJ,K,M,IC,ICL)=0.
+                WLATN(IJ,K,M,IC,ICL)=0.0_JWRB
               ENDDO
             ENDDO
           ENDDO
@@ -180,7 +181,7 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=MIJS,MIJL
-              WLONN(IJ,K,M,IC)=0.
+              WLONN(IJ,K,M,IC)=0.0_JWRB
             ENDDO
           ENDDO
         ENDDO
@@ -191,7 +192,7 @@
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=MIJS,MIJL
-                WCORN(IJ,K,M,ICR,ICL)=0.
+                WCORN(IJ,K,M,ICR,ICL)=0.0_JWRB
               ENDDO
             ENDDO
           ENDDO
@@ -239,20 +240,20 @@
                   DO IJ=MIJS,MIJL
                     IF(LSAMEDEPTH(IJ)) THEN
                       CGX(IJ,IC)=CGR(IJ,M)*SINTH(K)*COSPHM1(IJ,IG)
-                      CGY(IJ,IC)=0.5*CGR(IJ,M)*COSTH(K)*(1.+DP(IJ,IC))
+                      CGY(IJ,IC)=0.5_JWRB*CGR(IJ,M)*COSTH(K)*(1.+DP(IJ,IC))
                     ELSE
-                      CGX(IJ,IC)=
-     &                   0.5*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M))
+                      CGX(IJ,IC)=                                          &
+     &                   0.5_JWRB*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M)) &
      &                      *SINTH(K)*COSPHM1(IJ,IG)
 !                     IRREGULAR GRID
                       IF(IRGG.EQ.1) THEN
-                        CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+
-     &                   (1.-WLAT(IJ,IC))*TCGOND(INDEP(KLAT(IJ,IC,2)),M)
+                        CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+       &
+     &                   (1.0_JWRB-WLAT(IJ,IC))*TCGOND(INDEP(KLAT(IJ,IC,2)),M)
                       ELSE
 !                     REGULAR GRID
                         CGYP=TCGOND(INDEP(KLAT(IJ,IC,1)),M)
                       ENDIF
-                      CGY(IJ,IC)=0.5*(CGR(IJ,M)+DP(IJ,IC)*CGYP)*COSTH(K)
+                      CGY(IJ,IC)=0.5_JWRB*(CGR(IJ,M)+DP(IJ,IC)*CGYP)*COSTH(K)
                     ENDIF
                   ENDDO
                 ENDDO
@@ -261,7 +262,7 @@
                 DO IC=1,2
                   DO IJ=MIJS,MIJL
                     CGX(IJ,IC)=GOM(M)*SINTH(K)*COSPHM1(IJ,IG)
-                    CGY(IJ,IC)=0.5*GOM(M)*COSTH(K)*(1.+DP(IJ,IC))
+                    CGY(IJ,IC)=0.5_JWRB*GOM(M)*COSTH(K)*(1.0_JWRB+DP(IJ,IC))
                   ENDDO
                 ENDDO
               ENDIF
@@ -281,7 +282,7 @@
                     UU=U(IJ,IG)*COSPHM1(IJ,IG)
                     UREL=CGX(IJ,IC)+UU
                     ISSU(IC)=ISAMESIGN(UREL,CGX(IJ,IC))
-                    VV=V(IJ,IG)*0.5*(1.+DP(IJ,IC))
+                    VV=V(IJ,IG)*0.5_JWRB*(1.0_JWRB+DP(IJ,IC))
                     VREL=CGY(IJ,IC)+VV
                     ISSV(IC)=ISAMESIGN(VREL,CGY(IJ,IC))
                   ELSE
@@ -306,7 +307,7 @@
                     WRITE (IU06,*) '* ADXP = ',ADXP(IC),IC
                     WRITE (IU06,*) '* ZDELLO = ',ZDELLO(KY)
                     DTNEW=ZDELLO(KY)*DELPRO/ADXP(IC)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO',
+                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO',  &
      &                              DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
@@ -320,7 +321,7 @@
                     WRITE (IU06,*) '* ADYP = ',ADYP(IC),IC
                     WRITE (IU06,*) '* XDELLA = ',XDELLA
                     DTNEW=XDELLA*DELPRO/ADYP(IC)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BEREDUCED TO',
+                    WRITE (IU06,*) '* TIME STEP SHOULD BEREDUCED TO',   &
      &                              DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
@@ -362,17 +363,17 @@
                   WEIGHT(3)=DXUP(JXO(K,1))*DYDW(JYO(K,2))/GRIDAREA
                   WEIGHT(4)=DXDW(JXO(K,2))*DYDW(JYO(K,2))/GRIDAREA
                   DO ICR=1,4
-                  WCORN(IJ,K,M,ICR,1)=WCOR(IJ,KCR(K,ICR))*WEIGHT(ICR)
-                  WCORN(IJ,K,M,ICR,2)=WCORM1(IJ,KCR(K,ICR))*WEIGHT(ICR)
+                    WCORN(IJ,K,M,ICR,1)=WCOR(IJ,KCR(K,ICR))*WEIGHT(ICR)
+                    WCORN(IJ,K,M,ICR,2)=WCORM1(IJ,KCR(K,ICR))*WEIGHT(ICR)
                   ENDDO
 
 !                 CONTRIBUTIONS FOR IJ
-                  SUMWN(IJ,K,M)=(ZDELLO(KY)*
-     &                            (DYDW(JYO(K,1))+DYUP(JYO(K,2))) +
-     &                           XDELLA*
-     &                            (DXUP(JXO(K,2))+DXDW(JXO(K,1))) -
-     &                           (DXDW(JXO(K,1))+DXUP(JXO(K,2)))*
-     &                           (DYDW(JYO(K,1))+DYUP(JYO(K,2)))  )
+                  SUMWN(IJ,K,M)=(ZDELLO(KY)*                            &
+     &                            (DYDW(JYO(K,1))+DYUP(JYO(K,2))) +     &
+     &                           XDELLA*                                &
+     &                            (DXUP(JXO(K,2))+DXDW(JXO(K,1))) -     &
+     &                           (DXDW(JXO(K,1))+DXUP(JXO(K,2)))*       &
+     &                           (DYDW(JYO(K,1))+DYUP(JYO(K,2)))  )     &
      &                           /GRIDAREA
 
                 ENDDO  ! END LOOP OVER GRID POINTS
@@ -518,7 +519,7 @@
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
 
-          DELFR0 = 0.25*DELPRO/((FRATIO-1)*ZPI)
+          DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
 
 !*        DEEP WATER 
 !         ----------
@@ -527,7 +528,7 @@
               DFP = PI*(1.+FRATIO)*DELFR0
               DO IJ=MIJS,MIJL
                 DTHP    = SDOT(IJ,K,NFRE) * DFP
-                WMPMN(IJ,K,M,0) =2.* ABS(DTHP)
+                WMPMN(IJ,K,M,0) =2.0_JWRB* ABS(DTHP)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=( DTHP+ABS(DTHP))*FRATIO
               ENDDO
@@ -567,13 +568,13 @@
           DO IJ=MIJS,MIJL
             DO IC=1,2
               DO ICL=1,2
-              IF(WLATN(IJ,K,M,IC,ICL).GT.1.0 .OR. 
-     &           WLATN(IJ,K,M,IC,ICL).LT.0.0) THEN
+              IF(WLATN(IJ,K,M,IC,ICL).GT.1.0 .OR.                       &
+     &           WLATN(IJ,K,M,IC,ICL).LT.0.0      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN Y DIRECTION     *'
                 WRITE (IU06,*) '* WLATN SHOULD BE < 1 AND > 0, BUT*'
-                WRITE (IU06,*) '* WLATN(IJ,K,M,IC,ICL)=',IJ,K,M,IC,ICL,
+                WRITE (IU06,*) '* WLATN(IJ,K,M,IC,ICL)=',IJ,K,M,IC,ICL, &
      &                            WLATN(IJ,K,M,IC,ICL)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
@@ -583,13 +584,13 @@
             ENDDO
 
             DO IC=1,2
-              IF(WLONN(IJ,K,M,IC).GT.1.0 .OR.
-     &           WLONN(IJ,K,M,IC).LT.0.0) THEN
+              IF(WLONN(IJ,K,M,IC).GT.1.0 .OR.                           &
+     &           WLONN(IJ,K,M,IC).LT.0.0      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN X DIRECTION     *'
                 WRITE (IU06,*) '* WLONN SHOULD BE < 1 AND > 0, BUT*'
-                WRITE (IU06,*) '* WLONN(IJ,K,M,IC)= ',IJ,K,M,IC,
+                WRITE (IU06,*) '* WLONN(IJ,K,M,IC)= ',IJ,K,M,IC,        &
      &                          WLONN(IJ,K,M,IC)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
@@ -599,13 +600,13 @@
 
             DO ICR=1,4
               DO ICL=1,2
-              IF(WCORN(IJ,K,M,ICR,ICL).GT.1.0 .OR. 
-     &           WCORN(IJ,K,M,ICR,ICL).LT.0.0) THEN
+              IF(WCORN(IJ,K,M,ICR,ICL).GT.1.0 .OR.                      &
+     &           WCORN(IJ,K,M,ICR,ICL).LT.0.0     ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN CORNER DIRECTION*'
                 WRITE (IU06,*) '* WCORN SHOULD BE < 1 AND > 0, BUT*'
-                WRITE (IU06,*) '*WCORN(IJ,K,M,ICR,ICL)=',IJ,K,M,ICR,ICL,
+                WRITE (IU06,*) '*WCORN(IJ,K,M,ICR,ICL)=',IJ,K,M,ICR,ICL, &
      &                            WCORN(IJ,K,M,ICR,ICL)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
@@ -615,13 +616,13 @@
             ENDDO
 
             DO IC=-1,1
-              IF(WKPMN(IJ,K,M,IC).GT.1.0 .OR. 
-     &           WKPMN(IJ,K,M,IC).LT.0.0) THEN
+              IF(WKPMN(IJ,K,M,IC).GT.1.0 .OR.                           &
+     &           WKPMN(IJ,K,M,IC).LT.0.0      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN DIRECTION SPACE *'
                 WRITE (IU06,*) '* WKPMN SHOULD BE < 1 AND > 0, BUT*'
-                WRITE (IU06,*) '* WKPMN(IJ,K,M,IC)= ',IJ,K,M,IC,
+                WRITE (IU06,*) '* WKPMN(IJ,K,M,IC)= ',IJ,K,M,IC,        &
      &                            WKPMN(IJ,K,M,IC)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
@@ -635,13 +636,13 @@
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
 
               DO IC=-1,1
-                IF(WMPMN(IJ,K,M,IC).GT.1.0 .OR. 
-     &             WMPMN(IJ,K,M,IC).LT.0.0) THEN
+                IF(WMPMN(IJ,K,M,IC).GT.1.0 .OR.                         &
+     &             WMPMN(IJ,K,M,IC).LT.0.0      ) THEN
                   WRITE (IU06,*) '***********************************'
                   WRITE (IU06,*) '* CTUW:                           *'
                   WRITE (IU06,*) '* CFL VIOLATED IN FREQUENCY SPACE *'
                   WRITE (IU06,*) '* WMPMN SHOULD BE < 1 AND > 0, BUT*'
-                  WRITE (IU06,*) '* WMPMN(IJ,K,M,IC)= ',IJ,K,M,IC,
+                  WRITE (IU06,*) '* WMPMN(IJ,K,M,IC)= ',IJ,K,M,IC,      &
      &                              WMPMN(IJ,K,M,IC)
                   WRITE (IU06,*) '*                                 *'
                   WRITE (IU06,*) '***********************************'
@@ -715,7 +716,7 @@
 !           POINTS ON SURROUNDING LATITUDES 
             DO IC=1,2
               DO ICL=1,2
-                WLATN(IJ,K,M,IC,ICL)=
+                WLATN(IJ,K,M,IC,ICL)=                                   &
      &                   WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC)
               ENDDO
             ENDDO
@@ -728,7 +729,7 @@
 !           SURROUNDING CORNER POINTS
             DO ICR=1,4
               DO ICL=1,2
-                WCORN(IJ,K,M,ICR,ICL)=
+                WCORN(IJ,K,M,ICR,ICL)=                                  &
      &                   WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
               ENDDO
             ENDDO
@@ -744,13 +745,11 @@
 #endif
 
       RETURN
-
-      CONTAINS
+      END SUBROUTINE CTUW 
 
       INTEGER FUNCTION ISAMESIGN(A,B)
 !       =1 IF A AND B HAVE THE SAME SIGN, 0 OTHERWISE
         IMPLICIT NONE
-
         REAL :: A,B
         IF(SIGN(1.,A).EQ.SIGN(1.,B)) THEN
           ISAMESIGN=1
@@ -758,4 +757,3 @@
           ISAMESIGN=0
         ENDIF
       END FUNCTION ISAMESIGN
-      END SUBROUTINE CTUW 
