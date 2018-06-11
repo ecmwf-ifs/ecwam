@@ -63,70 +63,70 @@
  
 !**************************************************************************
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
  
-      INTEGER, PARAMETER :: ILON=21601
-      INTEGER, PARAMETER :: ILAT=10801
-      INTEGER, PARAMETER :: NREF=500
-      INTEGER, PARAMETER :: NDPT=1000
+      INTEGER(KIND=JWIM), PARAMETER :: ILON=21601
+      INTEGER(KIND=JWIM), PARAMETER :: ILAT=10801
+      INTEGER(KIND=JWIM), PARAMETER :: NREF=500
+      INTEGER(KIND=JWIM), PARAMETER :: NDPT=1000
 
-      INTEGER :: I_GET_UNIT
-      INTEGER :: IU06, IU, IUNIT
-      INTEGER :: I, J, IJ, K, KSN, M
-      INTEGER :: NX, NY
-      INTEGER :: IPER, IRGG, NFRE, IFRE1, ISPECTRUNC
-      INTEGER :: NLANDCENTREPM, NLANDCENTREMAX, NLANDCENTRE, NIOBSLAT
-      INTEGER :: NSEA, NLAND, NSEASH
-      INTEGER :: ILONL, ILONR, ILATB, ILATT
-      INTEGER :: NTOT, ICOUNT, IC, IR
-      INTEGER :: NREFERENCE
-      INTEGER :: IX, NJM, NJP, NIM, NIP, IH
-      INTEGER :: II, JJ, IK, NPTS, IDPT
-      INTEGER :: IREINF, ITEMPEW
-      INTEGER :: IS, KT, KB
-      INTEGER :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
-      INTEGER :: INVRES
-      INTEGER :: KEXTHRS
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IU06, IU, IUNIT
+      INTEGER(KIND=JWIM) :: I, J, IJ, K, KSN, M
+      INTEGER(KIND=JWIM) :: NX, NY
+      INTEGER(KIND=JWIM) :: IPER, IRGG, NFRE, IFRE1, ISPECTRUNC
+      INTEGER(KIND=JWIM) :: NLANDCENTREPM, NLANDCENTREMAX, NLANDCENTRE, NIOBSLAT
+      INTEGER(KIND=JWIM) :: NSEA, NLAND, NSEASH
+      INTEGER(KIND=JWIM) :: ILONL, ILONR, ILATB, ILATT
+      INTEGER(KIND=JWIM) :: NTOT, ICOUNT, IC, IR
+      INTEGER(KIND=JWIM) :: NREFERENCE
+      INTEGER(KIND=JWIM) :: IX, NJM, NJP, NIM, NIP, IH
+      INTEGER(KIND=JWIM) :: II, JJ, IK, NPTS, IDPT
+      INTEGER(KIND=JWIM) :: IREINF, ITEMPEW
+      INTEGER(KIND=JWIM) :: IS, KT, KB
+      INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
+      INTEGER(KIND=JWIM) :: INVRES
 
-      INTEGER :: IDUM(15)
-      INTEGER, DIMENSION(NREF) :: LEVEL, NDEPTH
-      INTEGER, ALLOCATABLE :: NLONRGG(:)
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: ITHRSHOLD, IEXCLTHRSHOLD
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IBLOCKDPT
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IDEPTH, WAMDEPTH
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSLAT, IOBSLON
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
+      INTEGER(KIND=JWIM) :: IDUM(15)
+      INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
+      INTEGER(KIND=JWIM), ALLOCATABLE :: NLONRGG(:)
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ITHRSHOLD, IEXCLTHRSHOLD
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IBLOCKDPT
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IDEPTH, WAMDEPTH
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSLAT, IOBSLON
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL, PARAMETER :: OLDPI = 3.1415927
-      REAL, PARAMETER :: SQRT2 = 2.0
-      REAL :: AKI
-      REAL :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
-      REAL :: XDELLA, XDELLO
-      REAL :: AMOSOP, AMONOP, AMOWEP, AMOEAP
-      REAL :: ALONL, ALONR, ALATB, ALATT, XLON
-      REAL :: PLANDTRHS, PSHALLOWTRHS 
-      REAL :: PLONS, XLO, XLA, XI, YJ 
-      REAL :: SEA, XLAND, SEASH 
-      REAL :: OMEGA, XKDEEP, XKDMAX, XX, DEPTH
-      REAL :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
-      REAL :: STEPLAT, STEPLON
-      REAL :: RESOL
-      REAL, DIMENSION(ILON) :: ALON
-      REAL, DIMENSION(ILAT) :: ALAT
-      REAL, DIMENSION(NDPT) :: XK 
-      REAL, DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
-      REAL, ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
-      REAL, ALLOCATABLE, DIMENSION(:) :: XLAT
-      REAL, ALLOCATABLE, DIMENSION(:) :: FR
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
+      REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
+      REAL(KIND=JWRB) :: AKI
+      REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
+      REAL(KIND=JWRB) :: XDELLA, XDELLO
+      REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
+      REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
+      REAL(KIND=JWRB) :: PLANDTRHS, PSHALLOWTRHS 
+      REAL(KIND=JWRB) :: PLONS, XLO, XLA, XI, YJ 
+      REAL(KIND=JWRB) :: SEA, XLAND, SEASH 
+      REAL(KIND=JWRB) :: OMEGA, XKDEEP, XKDMAX, XX, DEPTH
+      REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
+      REAL(KIND=JWRB) :: STEPLAT, STEPLON
+      REAL(KIND=JWRB) :: RESOL
+      REAL(KIND=JWRB), DIMENSION(ILON) :: ALON
+      REAL(KIND=JWRB), DIMENSION(ILAT) :: ALAT
+      REAL(KIND=JWRB), DIMENSION(NDPT) :: XK 
+      REAL(KIND=JWRB), DIMENSION(NREF) :: XINF, XSUP, YINF, YSUP
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: FR
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
 
-      CHARACTER(LEN=2) :: CFR
-      CHARACTER(LEN=5) :: CWAMRESOL
-      CHARACTER(LEN=4) :: CX
-      CHARACTER(LEN=10) :: FORMAT
-      CHARACTER(LEN=32) :: FILENM
-      CHARACTER(LEN=72) :: LOCATION(NREF)
+      CHARACTER(LEN=  2) :: CFR
+      CHARACTER(LEN=  5) :: CWAMRESOL
+      CHARACTER(LEN=  4) :: CX
+      CHARACTER(LEN= 10) :: FORMAT
+      CHARACTER(LEN= 32) :: FILENM
+      CHARACTER(LEN= 72) :: LOCATION(NREF)
       CHARACTER(LEN=144) :: CLINE,FILENAME
 
       LOGICAL :: LORIGINAL, LLPRINT
@@ -135,17 +135,17 @@
       LOGICAL :: LLWAMDEPTH(NDPT)
 
 
-      PI=4.*ATAN(1.)
-      RAD=PI/180.
-      OLDRAD=OLDPI/180.
-      G=9.806
-      X60=60.
+      PI=4.0_JWRB*ATAN(1.0_JWRB)
+      RAD=PI/180.0_JWRB
+      OLDRAD=OLDPI/180.0_JWRB
+      G=9.806_JWRB
+      X60=60.0_JWRB
 
 !     ETOPO1 RESOLUTION
       INVRES=60
-      RESOL=1./INVRES
+      RESOL=1.0_JWRB/INVRES
 
-      FRATIO=1.1
+      FRATIO=1.1_JWRB
 
       IU06=6
 
@@ -236,15 +236,16 @@
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF(.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
-     &         AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
+            IF(XDELLA .EQ. 0.25 .AND.                                   &
+     &         AMOWEP .EQ. -98. .AND. AMOSOP .EQ.  9. .AND.             &
+     &         AMOEAP .EQ. 42.0 .AND. AMONOP .EQ. 81.       ) THEN
 !         the old value for pi has to be taken in order to reproduce
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
             ELSE
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
-             NLONRGG(K)=
+             NLONRGG(K)=                                                &
      &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2.*COS(X60*RAD)))),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
@@ -276,12 +277,12 @@
 !     DATASET:
 !     --------
  
-      IF(ALONL.LT.-180..OR.ALONR.GT.180.) THEN
+      IF(ALONL.LT.-180. .OR. ALONR.GT.180.) THEN
         WRITE(*,*) ' LONGITUDE SPECIFICATION ERROR +- 180'
         WRITE(*,*) ' ALONL, ALONR : ',ALONL,ALONR
         STOP
       ENDIF
-      IF(ALATT.GT.90..OR.ALATB.LT.-90.) THEN
+      IF(ALATT.GT.90. .OR. ALATB.LT.-90.) THEN
         WRITE(*,*) ' LATITUDE SPECIFICATION ERROR +- 90'
         WRITE(*,*) ' ALATT, ALATB : ',ALATT,ALATB
         STOP
@@ -324,7 +325,7 @@
         write(*,*) ILONL,ILONR
         DO J=ILATT,ILATB
           DO I=ILONL,ILONR
-            IF(IDEPTH(I,J).GE. -300 .and. 
+            IF(IDEPTH(I,J).GE. -300 .and.                               &
      &         IDEPTH(I,J).LE. 2000 ) THEN
             WRITE(11,'(2(1X,F8.3),1X,I4)')ALON(I),ALAT(J),IDEPTH(I,J)
             ENDIF
@@ -341,8 +342,8 @@
       OPEN(15,FILE='reference_levels',STATUS='OLD')
 
       DO IR=1,NREF
-         READ(15,*,END=1000,ERR=1000)
-     &        XINF(IR),YINF(IR),XSUP(IR),YSUP(IR),LEVEL(IR),NDEPTH(IR),
+         READ(15,*,END=1000,ERR=1000)                                   &
+     &        XINF(IR),YINF(IR),XSUP(IR),YSUP(IR),LEVEL(IR),NDEPTH(IR), &
      &        LOCATION(IR)
       ENDDO
 
@@ -351,8 +352,8 @@
       WRITE(6,*) 'READ ',NREFERENCE,' NEW REFERENCE LEVELS'
 
       DO IR=1,NREFERENCE
-        WRITE(*,*)
-     &        XINF(IR),YINF(IR),XSUP(IR),YSUP(IR),LEVEL(IR),NDEPTH(IR),
+        WRITE(*,*)                                                      &
+     &        XINF(IR),YINF(IR),XSUP(IR),YSUP(IR),LEVEL(IR),NDEPTH(IR), &
      &        LOCATION(IR)
         DO J=1,ILAT
           YJ=ALAT(J)
@@ -404,7 +405,7 @@
 !        WE ASSUME THAT WAMGRID IS ALWAYS WITHIN ETOPO1
 !        DETERMINE CLOSEST ETOPO1 J INDEX TO WAM POINT
          DO J=ILAT-1,1,-1
-           IF(ALAT(J+1).LT.XLAT(K).AND.
+           IF(ALAT(J+1).LT.XLAT(K).AND.                                 &
      &        XLAT(K).LE.ALAT(J) ) EXIT
          ENDDO
          J=MIN(MAX(J,1),ILAT)
@@ -419,7 +420,7 @@
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
            DO I=1,ILON-1
-             IF(ALON(I).LE.XLON.AND.
+             IF(ALON(I).LE.XLON.AND.                                    &
      &          XLON.LT.ALON(I+1) ) EXIT
            ENDDO
 
@@ -479,7 +480,7 @@
 !          OR THE CENTER OF THE GRID BOX IS LAND.
 !          ELSE AVERAGE OVER SEA POINTS
            PERCENTLAND(IX,K)=FLOAT(NLAND)/FLOAT(NLAND+NSEA)
-           IF(PERCENTLAND(IX,K).GT.0.60 .OR.
+           IF(PERCENTLAND(IX,K).GT.0.60 .OR.                            &
      &        NLANDCENTRE.GE.NLANDCENTREMAX ) THEN
              WAMDEPTH(IX,K)=XLAND/NLAND
            ELSE
@@ -530,7 +531,7 @@
          READ(35,*,END=111,ERR=111) XLO,XLA,IX,K,IDPT
          IDPT=-IDPT
          XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-         IF(ABS(XLON-XLO).GT.ZDELLO(K) .OR.
+         IF(ABS(XLON-XLO).GT.ZDELLO(K) .OR.                             &
      &      ABS(XLAT(K)-XLA).GT.XDELLA ) THEN
            WRITE(*,*) 'PROBLEM !!!!'
            WRITE(*,*) 'THE CORRECTION TO WAM GRID IS NOT A WAM POINT'
@@ -573,11 +574,11 @@
              IF(XLON.GT.180.) then
                XLON=XLON-360.
              ENDIF
-            IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+            IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.            &
      &         ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-               IF(WAMDEPTH(IX,K).LT.0 .AND.
+               IF(WAMDEPTH(IX,K).LT.0 .AND.                             &
      &            WAMDEPTH(IX,K).GT.-999 ) THEN
-                  WRITE(12,'(2(1X,F8.3),1X,I4)') 
+                  WRITE(12,'(2(1X,F8.3),1X,I4)')                        &
      &            XLON,XLAT(K),WAMDEPTH(IX,K)
                ENDIF
             ENDIF
@@ -686,12 +687,7 @@
             IF(WAMDEPTH(IX,K).LT.0) THEN
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
-              IF(ABS(WAMDEPTH(IX,K)).LT.150) THEN
-                KEXTHRS=10+10*(150-ABS(WAMDEPTH(IX,K)))/150
-              ELSE
-                KEXTHRS=10
-              ENDIF
-              IEXCLTHRSHOLD(IX,K)=MAX(KEXTHRS*ITHRSHOLD(IX,K),-998)
+              IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
               IBLOCKDPT(IX,K)=INT(-0.025*XX)
             ENDIF
           ENDDO
@@ -762,7 +758,7 @@
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -780,14 +776,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                         .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                         .NEQV.L1ST)                              &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
@@ -812,10 +808,10 @@
 
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSLAT(IX,K,IS)=
+                  IOBSLAT(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -825,7 +821,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -838,14 +834,14 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSLAT(IX,K,IS)=
+                  IOBSLAT(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
@@ -912,7 +908,7 @@
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -930,14 +926,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                        .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                        .NEQV.L1ST)                               &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
@@ -961,9 +957,9 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  IOBSLON(IX,K,IS)=
+                  IOBSLON(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -973,7 +969,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 1111 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -982,7 +978,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -990,7 +986,7 @@
 1111                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  IOBSLON(IX,K,IS)=
+                  IOBSLON(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
@@ -1068,7 +1064,7 @@
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1086,14 +1082,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                        .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                        .NEQV.L1ST)                               &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
@@ -1116,10 +1112,10 @@
 
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSRLAT(IX,K,IS)=
+                  IOBSRLAT(IX,K,IS)=                                    &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -1129,7 +1125,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1142,14 +1138,14 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSRLAT(IX,K,IS)=
+                  IOBSRLAT(IX,K,IS)=                                    &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
@@ -1214,7 +1210,7 @@
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1232,14 +1228,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                         .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                         .NEQV.L1ST)                              &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
@@ -1263,7 +1259,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
@@ -1274,7 +1270,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 2222 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1283,7 +1279,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1371,7 +1367,7 @@
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1389,14 +1385,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                        .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                        .NEQV.L1ST)                               &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
@@ -1419,10 +1415,10 @@
 
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSRLON(IX,K,IS)=
+                  IOBSRLON(IX,K,IS)=                                    &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -1432,7 +1428,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1445,14 +1441,14 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSRLON(IX,K,IS)=
+                  IOBSRLON(IX,K,IS)=                                    &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
@@ -1517,7 +1513,7 @@
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1535,14 +1531,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                         .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                         .NEQV.L1ST)                              &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
@@ -1566,7 +1562,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
@@ -1577,7 +1573,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 3333 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1586,7 +1582,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1687,7 +1683,7 @@
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1705,15 +1701,15 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                          .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                          .NEQV.L1ST)                             &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
-     &                       .NOT. LNSW ) THEN
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
+     &                       .NOT. LNSW ) THEN 
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1735,10 +1731,10 @@
 
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
-                  IOBSCOR(IX,K,IS)=
+                  IOBSCOR(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
@@ -1748,7 +1744,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
@@ -1761,14 +1757,14 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
-                  IOBSCOR(IX,K,IS)=
+                  IOBSCOR(IX,K,IS)=                                     &
      &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
@@ -1838,7 +1834,7 @@
                         LLAND=.TRUE.
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
-                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
      &                        WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
@@ -1856,14 +1852,14 @@
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))
-     &                         .NEQV.L1ST)
-     &                         .AND.
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
+     &                         .NEQV.L1ST)                              &
+     &                         .AND.                                    &
      &                         LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)
-     &                        .AND.
+                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST)&
+     &                        .AND.                                     &
      &                       .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
@@ -1887,7 +1883,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
 
-                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
@@ -1898,7 +1894,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 4444 
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1907,7 +1903,7 @@
                       IF(IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) THEN
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
-                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.
+                      ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
      &                       WAMDEPTH(IX,K).LT.IEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
@@ -1918,7 +1914,7 @@
                   ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSCOR(IX,K,IS)*ITEMPEW)
-                XX=SQRT2*SQRT(XX)
+                XX=SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
               ENDIF
@@ -2024,11 +2020,11 @@
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0 .AND.
+                   IF(WAMDEPTH(IX,K).LT.0 .AND.                         &
      &                IOBSLAT(IX,K,IS).LT.1000 ) THEN
-                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)') 
+                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSLAT(IX,K,IS)
                    ENDIF
                 ENDIF
@@ -2049,11 +2045,11 @@
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0 .AND.
+                   IF(WAMDEPTH(IX,K).LT.0 .AND.                         &
      &                IOBSLON(IX,K,IS).LT.1000 ) THEN
-                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)') 
+                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSLON(IX,K,IS)
                    ENDIF
                 ENDIF
@@ -2074,11 +2070,11 @@
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0 .AND.
+                   IF(WAMDEPTH(IX,K).LT.0 .AND.                         &
      &                IOBSRLAT(IX,K,IS).LT.1000 ) THEN
-                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)') 
+                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON,XLAT(K)+STEPLAT,IOBSRLAT(IX,K,IS)
                    ENDIF
                 ENDIF
@@ -2099,11 +2095,11 @@
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0 .AND.
+                   IF(WAMDEPTH(IX,K).LT.0 .AND.                         &
      &                IOBSRLON(IX,K,IS).LT.1000 ) THEN
-                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)') 
+                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSRLON(IX,K,IS)
                    ENDIF
                 ENDIF
@@ -2124,11 +2120,11 @@
                  IF(XLON.GT.180.) then
                    XLON=XLON-360.
                  ENDIF
-                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.
+                IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
-                   IF(WAMDEPTH(IX,K).LT.0 .AND.
+                   IF(WAMDEPTH(IX,K).LT.0 .AND.                         &
      &                IOBSRLON(IX,K,IS).LT.1000 ) THEN
-                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)') 
+                      WRITE(IUNIT,'(2(1X,F8.3),1X,I4)')                 &
      &                XLON+STEPLON,XLAT(K),IOBSCOR(IX,K,IS)
                    ENDIF
                 ENDIF
@@ -2179,4 +2175,4 @@
 
       ENDDO ! END LOOP ON FREQUENCIES
 
-      END PROGRAM
+      END PROGRAM CREATE_BATHY_ETOPO1 
