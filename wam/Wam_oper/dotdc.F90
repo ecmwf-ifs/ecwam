@@ -38,6 +38,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NFRE
       USE YOWSHAL  , ONLY : TSIHKD   ,INDEP
@@ -45,9 +47,9 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, ISHALLO
-      INTEGER :: IJ, M
-      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT):: SHLFAC
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, ISHALLO
+      INTEGER(KIND=JWIM) :: IJ, M
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT):: SHLFAC
 
 ! ----------------------------------------------------------------------
 
