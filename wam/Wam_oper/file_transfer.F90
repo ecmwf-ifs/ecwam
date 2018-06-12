@@ -47,14 +47,16 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
 
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER :: IU06, IUNIT
-      INTEGER :: LNAME, LNF, LNT
+      INTEGER(KIND=JWIM) :: IU06, IUNIT
+      INTEGER(KIND=JWIM) :: LNAME, LNF, LNT
 
       CHARACTER(LEN=1) :: MODE, CDOPT 
       CHARACTER(LEN=*) :: FILENA
@@ -112,13 +114,12 @@
         FILENAMEF = FILENAM
       ENDIF
 
-      WRITE(IU06,*) 'FILE_TRANSFER: MOVE FILE ',
-     & FILENAMEF(1:LEN_TRIM(FILENAMEF)), ' TO ',
-     & FILENAMET(1:LEN_TRIM(FILENAMET))
+      WRITE(IU06,*) 'FILE_TRANSFER: MOVE FILE ',                        &
+     &              FILENAMEF(1:LEN_TRIM(FILENAMEF)), ' TO ',           &
+     &              FILENAMET(1:LEN_TRIM(FILENAMET))
 
       LNF = LEN_TRIM(FILENAMEF)
       LNT = LEN_TRIM(FILENAMET)
       CALL SYSTEM('mv '//FILENAMEF(1:LNF)//' '//FILENAMET(1:LNT))
 
-      RETURN
       END SUBROUTINE FILE_TRANSFER

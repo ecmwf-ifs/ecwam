@@ -1,9 +1,9 @@
-      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS,
-     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-     &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
-     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
-     &                     ILONRGG, IJBLOCK, PMISS,
-     &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
+      SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS, &
+     &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,      &
+     &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,  &
+     &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
+     &                     ILONRGG, IJBLOCK, PMISS,                      &
+     &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL, &
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -96,41 +96,47 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWWIND  , ONLY : FIELDG    ,LLNEWCURR
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
-      INTEGER, INTENT(IN) :: IGL
-      INTEGER, INTENT(IN) :: NGX, NGY, KRGG, NINF, NSUP, IJS, IJL
-      INTEGER, INTENT(IN) :: IPERIODIC
-      INTEGER, DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
-      INTEGER, DIMENSION(NR), INTENT(IN) :: ILONRGG
-      INTEGER, DIMENSION(NINF-1:NSUP,IGL), INTENT(IN) :: IFROMIJ,JFROMIJ
-      INTEGER, DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
-      INTEGER, DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
-      INTEGER, DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IGL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, NINF, NSUP, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPERIODIC
+      INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
+      INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
+      INTEGER(KIND=JWIM), DIMENSION(NINF-1:NSUP,IGL), INTENT(IN) :: IFROMIJ,JFROMIJ
+      INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
+      INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
+      INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
 
-      REAL, INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
-      REAL, INTENT(IN) :: ROAIR, WSTAR0
-      REAL, DIMENSION(NGY), INTENT(IN) :: ZDELLO, DJ1M
-      REAL, DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
-      REAL, DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
+      REAL(KIND=JWRB), INTENT(IN) :: XDELLA, AMOWEP, AMOSOP, AMOEAP, AMONOP, PMISS
+      REAL(KIND=JWRB), INTENT(IN) :: ROAIR, WSTAR0
+      REAL(KIND=JWRB), DIMENSION(NGY), INTENT(IN) :: ZDELLO, DJ1M
+      REAL(KIND=JWRB), DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+      REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
 
       LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLINTERPOL
 
 
-      INTEGER :: IG
-      INTEGER :: IJ, I, J
-      INTEGER :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
-      INTEGER :: NCOUNT
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, I, J
+      INTEGER(KIND=JWIM) :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
+      INTEGER(KIND=JWIM) :: NCOUNT
 
-      REAL :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
-      REAL :: F00, F10, F01, F11, CI
+      REAL(KIND=JWRB) :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
+      REAL(KIND=JWRB) :: F00, F10, F01, F11, CI
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('FLDINTER',0,ZHOOK_HANDLE)
 
       IF(.NOT.LLINTERPOL) THEN
 
@@ -160,15 +166,15 @@
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0
+            FIELDG(I,J)%CITH = 0.0_JWRB
 
             IF(LLNEWCURR) THEN
               IF(LWCUR) THEN
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),6)
                 FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),7)
               ELSE
-                FIELDG(I,J)%UCUR = 0.
-                FIELDG(I,J)%VCUR = 0.
+                FIELDG(I,J)%UCUR = 0.0_JWRB
+                FIELDG(I,J)%VCUR = 0.0_JWRB
               ENDIF
             ENDIF
 
@@ -191,45 +197,45 @@
             JJ1= MIN(JJ+1,NR)
             JSN1=NR-JJ1+1
             DJ1= DJ1M(J) 
-            DJ2=1.-DJ1
+            DJ2=1.0_JWRB-DJ1
 
             II = IIM(I,J)
             II1 = MIN(II+1,ILONRGG(JSN)+IPERIODIC)
             DII1=DII1M(I,J) 
-            DII2=1.-DII1
+            DII2=1.0_JWRB-DII1
 
             IIP = IIPM(I,J) 
             IIP1 = MIN(IIP+1,ILONRGG(JSN1)+IPERIODIC)
             DIIP1= DIIP1M(I,J) 
-            DIIP2=1.-DIIP1
+            DIIP2=1.0_JWRB-DIIP1
 
             MASK_IN(IJBLOCK(II,JJ))=1
             MASK_IN(IJBLOCK(II1,JJ))=1
             MASK_IN(IJBLOCK(IIP,JJ1))=1
             MASK_IN(IJBLOCK(IIP1,JJ1))=1
 
-            FIELDG(I,J)%UWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +
-     &                      DII1*FIELDS(IJBLOCK(II1,JJ),1) ) +
-     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),1) +
+            FIELDG(I,J)%UWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),1) +      &
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),1) ) +          &
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),1) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),1) )
 
-            FIELDG(I,J)%VWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +
-     &                      DII1*FIELDS(IJBLOCK(II1,JJ),2) ) +
-     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),2) +
+            FIELDG(I,J)%VWND=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),2) +      &
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),2) ) +          &
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),2) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),2) )
 
             IF (LADEN) THEN
-              FIELDG(I,J)%AIRD=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +
-     &                        DII1*FIELDS(IJBLOCK(II1,JJ),3) ) +
-     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),3) +
+              FIELDG(I,J)%AIRD=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),3) +    &
+     &                        DII1*FIELDS(IJBLOCK(II1,JJ),3) ) +        &
+     &                  DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),3) +        &
      &                        DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),3) )
             ELSE
               FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +
-     &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +
-     &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +
+              FIELDG(I,J)%ZIDL=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),4) +    &
+     &                         DII1*FIELDS(IJBLOCK(II1,JJ),4) ) +       &
+     &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),4) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),4) )
             ELSE
               FIELDG(I,J)%ZIDL = WSTAR0 
@@ -242,42 +248,42 @@
             F10=FIELDS(IJBLOCK(II1,JJ),5)
             F01=FIELDS(IJBLOCK(IIP,JJ1),5)
             F11=FIELDS(IJBLOCK(IIP1,JJ1),5)
-            IF(F00.EQ.PMISS.OR.
-     &         F10.EQ.PMISS.OR.
-     &         F01.EQ.PMISS.OR.
-     &         F11.EQ.PMISS) THEN
-              IF(DJ1.LE.0.5) THEN
+            IF (F00.EQ.PMISS .OR.                                       &
+     &          F10.EQ.PMISS .OR.                                       &
+     &          F01.EQ.PMISS .OR.                                       &
+     &          F11.EQ.PMISS     ) THEN
+              IF (DJ1.LE.0.5_JWRB) THEN
                 JCL=JJ
                 ICL=II1
-                IF(DII1.LE.0.5) ICL=II
+                IF (DII1.LE.0.5_JWRB) ICL=II
               ELSE
                 JCL=JJ1
                 ICL=IIP1
-                IF(DIIP1.LE.0.5) ICL=IIP
+                IF (DIIP1.LE.0.5_JWRB) ICL=IIP
               ENDIF
               CI=FIELDS(IJBLOCK(ICL,JCL),5)
 
 !             NON MISSING VALUE OVER SEA IS NEEDED
-              IF(CI.EQ.PMISS) THEN
+              IF (CI.EQ.PMISS) THEN
                 NCOUNT=0
                 CI=0.
-                IF(F00.NE.PMISS) THEN
+                IF (F00.NE.PMISS) THEN
                   CI=CI+F00
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF(F10.NE.PMISS) THEN
+                IF (F10.NE.PMISS) THEN
                   CI=CI+F10
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF(F01.NE.PMISS) THEN
+                IF (F01.NE.PMISS) THEN
                   CI=CI+F01
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF(F11.NE.PMISS) THEN
+                IF (F11.NE.PMISS) THEN
                   CI=CI+F11
                   NCOUNT=NCOUNT+1
                 ENDIF
-                IF(NCOUNT.GT.0) THEN
+                IF (NCOUNT.GT.0) THEN
                   CI=CI/NCOUNT
                 ELSE
                   CI=PMISS
@@ -285,29 +291,28 @@
               ENDIF
               FIELDG(I,J)%CIFR=CI
             ELSE
-              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +
-     &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +
-     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +
+              FIELDG(I,J)%CIFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),5) +    &
+     &                      DII1*FIELDS(IJBLOCK(II1,JJ),5) ) +          &
+     &                DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),5) +          &
      &                      DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),5) )
             ENDIF
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
-            FIELDG(I,J)%CITH = 0.0
+            FIELDG(I,J)%CITH = 0.0_JWRB
 
-            IF(LLNEWCURR) THEN
-              IF(LWCUR) THEN
-                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +
+            IF (LLNEWCURR) THEN
+              IF (LWCUR) THEN
+                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
 
-                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +
+                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
               ELSE
-                FIELDG(I,J)%UCUR = 0.
-                FIELDG(I,J)%VCUR = 0.
+                FIELDG(I,J)%UCUR = 0.0_JWRB
+                FIELDG(I,J)%VCUR = 0.0_JWRB
               ENDIF
             ENDIF
 
@@ -316,6 +321,6 @@
 
       ENDIF
 
-      RETURN
-      END SUBROUTINE FLDINTER
+      IF (LHOOK) CALL DR_HOOK('FLDINTER',1,ZHOOK_HANDLE)
 
+      END SUBROUTINE FLDINTER

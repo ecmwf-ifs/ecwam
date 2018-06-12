@@ -51,7 +51,9 @@
 
 !---------------------------------------------------------------------- 
 
-      USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IDELERS  ,IERS     ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IDELERS  ,IERS     ,    &
      &            IJERS    ,IGERS
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDATEA   ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -63,28 +65,26 @@
       IMPLICIT NONE
 #include "incdate.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU91, IU92
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU91, IU92
       LOGICAL, INTENT(IN) :: LLOUTPUT
 
-      INTEGER :: I, JC
-      INTEGER :: IERR, IOS, NERSOLD
-      INTEGER, ALLOCATABLE :: IDUM(:)
+      INTEGER(KIND=JWIM) :: I, JC
+      INTEGER(KIND=JWIM) :: IERR, IOS, NERSOLD
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
 
-      REAL :: ZLATIS, ZLONGS, ZLATIW, ZLONGW
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZLATIS, ZLONGS, ZLATIW, ZLONGW
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      CHARACTER(LEN=2) CLH       ! HELPER STRING TO STORE HOUR.            
-      CHARACTER(LEN=15) FNAME
-      CHARACTER(LEN=12) CL_DATE
-      CHARACTER(LEN=14) CL_TIME
+      CHARACTER(LEN= 2) :: CLH       ! HELPER STRING TO STORE HOUR.            
+      CHARACTER(LEN=15) :: FNAME
+      CHARACTER(LEN=12) :: CL_DATE
+      CHARACTER(LEN=14) :: CL_TIME
 
       LOGICAL, SAVE :: FRSTIME
       DATA FRSTIME / .TRUE./
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('ERSFILE',0,ZHOOK_HANDLE)
-#endif
 
 !*    1.  SAVE SPECTRA FILE.                                            
 !         ------------------                                            
@@ -98,16 +98,14 @@
         IF(IRANK.EQ.1) THEN
           CLOSE (IU92,STATUS='KEEP')
           IF(ITEST.GT.0) THEN
-          WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',
+          WRITE (IU06,*) '      SUB. ERSFILE: UNIT ',                   &
      &     IU92, '  CLOSED    '
           WRITE (IU06,*) '                                      '
           CALL FLUSH (IU06)
           ENDIF
         ENDIF
         IERS = 0
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
-#endif
         RETURN
       ENDIF
 
@@ -122,14 +120,14 @@
         IDELERS = 21600
         CDTERS  = CDATEA
         CLH=CDATEA(9:10)
-        IF (CLH.EQ.'09'.OR.CLH.EQ.'15'.OR.
-     &   CLH.EQ.'21'.OR.CLH.EQ.'03') THEN
+        IF (CLH.EQ.'09' .OR. CLH.EQ.'15' .OR.                           &
+     &      CLH.EQ.'21' .OR. CLH.EQ.'03'     ) THEN
           CALL INCDATE (CDTERS, -10800)
         ENDIF
         FRSTIME = .FALSE.
         IF (ITEST.GE.3) THEN
-          WRITE(IU06,*) " SUB: ERSFILE (for the first time) "//
-     &     " CDATEA=", CDATEA, " CDTERS=", CDTERS, " CDATEF=", CDATEF
+          WRITE(IU06,*) ' SUB: ERSFILE (for the first time) '//         &
+     &     ' CDATEA=', CDATEA, ' CDTERS=', CDTERS, ' CDATEF=', CDATEF
           CALL FLUSH (IU06)
         ENDIF
       ENDIF                                                             
@@ -145,9 +143,7 @@
 
 !     DO NOT DEAL WITH IU91 AND IU92 IF NOT ON PE 1
       IF(IRANK.NE.1) THEN
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
-#endif
         RETURN
       ENDIF
 
@@ -157,45 +153,41 @@
 !     DO NOT DEAL WITH IU91 AND IU92 IF IT IS NOT COLLOCATION TIME 
       IF (CDTPRO.NE.CDTERS) THEN
         IERS=0
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
-#endif
         RETURN
       ENDIF
 
       IERS = 0
-      IF (CDTERS.LE.CDATEF.OR.MARSTYPE.EQ.'an'.OR.MARSTYPE.EQ.'fg'
-     &    .OR.MARSTYPE.EQ.'4v') THEN
+      IF (CDTERS.LE.CDATEF .OR. MARSTYPE.EQ.'an' .OR.                   &
+     &    MARSTYPE.EQ.'fg' .OR. MARSTYPE.EQ.'4v'      ) THEN
         WRITE(FNAME,'(''COL'',A12)') CDTERS(1:12)
-        OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD',
+        OPEN (UNIT=IU91, FILE=FNAME, FORM='UNFORMATTED', STATUS='OLD',  &
      &   IOSTAT=IERR)
         IF (IERR.NE.0) THEN
           IF(IRANK.EQ.1) THEN
             IF(ITEST.GT.0) THEN
             WRITE (IU06,*) '                                     '
-            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
+            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
      &       FNAME, ' NOT OPENED'
             WRITE (IU06,*) '                                     ' 
             CALL FLUSH (IU06)
             ENDIF
           ENDIF
-#ifdef ECMWF
           IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
-#endif
           RETURN
         ELSE
           READ(IU91)CL_DATE
           IF(IRANK.EQ.1) THEN
             WRITE (IU06,*) '                                     '
-            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
+            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
      &       FNAME, ' OPENED    '
           ENDIF
 
           WRITE(FNAME,'(''COS'',A12)') CDTERS(1:12)
-          OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,
+          OPEN (UNIT=IU92, FILE=FNAME(1:LEN_TRIM(FNAME))//MARSTYPE,     &
      &     FORM='UNFORMATTED', STATUS='UNKNOWN')
           IF(ITEST.GT.0) THEN
-            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',
+            WRITE (IU06,*) '      SUB. ERSFILE: FILE ',                 &
      &       FNAME, ' OPENED'
             CALL FLUSH (IU06)
           ENDIF
@@ -239,7 +231,7 @@
 
         ENDIF
 
-        READ (IU91, END=3002, ERR=3002, IOSTAT=IOS) CL_TIME,
+        READ (IU91, END=3002, ERR=3002, IOSTAT=IOS) CL_TIME,            &
      &   ZLATIS, ZLONGS, ZLATIW, ZLONGW, IGERS(IERS), IJERS(IERS)
         IF (IGERS(IERS).EQ.0) THEN
           IERS = IERS-1
@@ -247,7 +239,7 @@
         ENDIF
         IF (IERS.GT.1) THEN
           DO I=1,IERS-1
-            IF (IGERS(I).EQ.IGERS(IERS) .AND.
+            IF (IGERS(I).EQ.IGERS(IERS) .AND.                           &
      &       IJERS(I).EQ.IJERS(IERS)) THEN
               IERS = IERS-1
               GOTO 3001
@@ -260,16 +252,14 @@
         CLOSE (IU91, STATUS='KEEP')
         IF(IRANK.EQ.1) THEN
           IF(ITEST.GT.0) THEN
-            WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',
-     &       ' POINTS FOR SATELLITE COLOCATION.  IERS = ', IERS,
+            WRITE(IU06,*) '      SUB. ERSFILE: NEW OUTPUT',             &
+     &       ' POINTS FOR SATELLITE COLOCATION.  IERS = ', IERS,        &
      &       ' LAST READ STATUS = ', IOS
             CALL FLUSH (IU06)
           ENDIF
         ENDIF
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('ERSFILE',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE ERSFILE

@@ -1,9 +1,9 @@
-      SUBROUTINE EXPAND_STRING(
-     &     myproc,              ! %p
-     &     nproc,               ! %n
-     &     timestep,            ! %t
-     &     max_timestep,
-     &     s,                   ! %s
+      SUBROUTINE EXPAND_STRING(     &
+     &     myproc,                  &     ! %p
+     &     nproc,                   &     ! %n
+     &     timestep,                &     ! %t
+     &     max_timestep,            &
+     &     s,                       &     ! %s
      &     n)
 
 !    S. SAARINEM   ECMWF   MAY 1996   MESSAGE PASSING
@@ -64,17 +64,20 @@
 !       NONE
 
 !-----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       implicit none
-      integer, intent(in)          :: myproc, nproc
-      integer, intent(in)          :: timestep, max_timestep
-      integer, intent(in)          :: n
-      character*(*), intent(inout) :: s(n)
+      integer(KIND=JWIM), intent(in)  :: myproc, nproc
+      integer(KIND=JWIM), intent(in)  :: timestep, max_timestep
+      integer(KIND=JWIM), intent(in)  :: n
+      character(len=*), intent(inout) :: s(n)
 ! === END OF INTERFACE BLOCK ===
-      character(len=len(s))   t
-      character(len=2*len(s)) tt
-      integer i, j, jj, loc_p, len_t
-      integer ndigs(4), num(4)
-      character*6 fmt(4)
+      character(len=len(s))   :: t
+      character(len=2*len(s)) :: tt
+      integer(KIND=JWIM) :: i, j, jj, loc_p, len_t
+      integer(KIND=JWIM) :: ndigs(4), num(4)
+      character(len=6)   :: fmt(4)
 
       if (n < 1) return
 
@@ -172,9 +175,3 @@
       enddo
 
       END SUBROUTINE expand_string
-
-
-
-
-
-

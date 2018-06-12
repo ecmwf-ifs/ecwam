@@ -1,4 +1,4 @@
-      SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB,
+      SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB,        &
      &                  NPROC, NSTART,NEND, IRANK)
 
 ! ----------------------------------------------------------------------
@@ -49,9 +49,11 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX   ,
-     &            IPER     ,AMOWEP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX   ,   &
+     &            IPER     ,AMOWEP   ,                                  &
      &            AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
       USE YOWMESPAS, ONLY : LMESSPASS
 
@@ -61,19 +63,19 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NDIM, NBOUN, NPROC, IRANK
+      INTEGER(KIND=JWIM), INTENT(IN) :: NDIM, NBOUN, NPROC, IRANK
 
-      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
-      INTEGER, DIMENSION(NDIM), INTENT(INOUT) :: IGARB, IJARB
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
+      INTEGER(KIND=JWIM), DIMENSION(NDIM), INTENT(INOUT) :: IGARB, IJARB
 
-      REAL, DIMENSION(NDIM),INTENT(IN) :: BLATB, BLNGB
+      REAL(KIND=JWRB), DIMENSION(NDIM),INTENT(IN) :: BLATB, BLNGB
 
 
-      INTEGER :: IG
-      INTEGER :: IJ
-      INTEGER :: ILATS, ILATN, IO, IOLT, IOLG
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ
+      INTEGER(KIND=JWIM) :: ILATS, ILATN, IO, IOLT, IOLG
 
-      REAL :: ZDEL, ALONG 
+      REAL(KIND=JWRB) :: ZDEL, ALONG 
 ! ----------------------------------------------------------------------
 
 !*    1. LOOP OVER INPUT LATITUDES, LONGITUDES.
@@ -92,18 +94,18 @@
 !*    1.1 COMPUTE GRID MATRIX INDICES.
 !         ----------------------------
 
-        IOLT = NINT((BLATB(IO)-AMOSOP)/XDELLA+1.0)
-        ALONG = MOD(BLNGB(IO)-AMOWEP+720.,360.)
-        IF(IOLT.LT.ILATS.OR.IOLT.GT.ILATN ) THEN
+        IOLT = NINT((BLATB(IO)-AMOSOP)/XDELLA+1.0_JWRB)
+        ALONG = MOD(BLNGB(IO)-AMOWEP+720.0_JWRB,360.0_JWRB)
+        IF(IOLT.LT.ILATS .OR. IOLT.GT.ILATN) THEN
           ZDEL=XDELLO
         ELSE
           ZDEL=ZDELLO(IOLT)
         ENDIF
-        IOLG = NINT(ALONG/ZDEL+1.0)
+        IOLG = NINT(ALONG/ZDEL+1.0_JWRB)
         IF (IOLG.EQ.(NLONRGG(IOLT)+1) .AND. IPER.EQ.1) IOLG = 1
 
-        IF(IOLG.LT.1.OR.IOLG.GT.NLONRGG(IOLT).OR.
-     &     IOLT.LT.ILATS.OR.IOLT.GT.ILATN ) THEN
+        IF(IOLG.LT.1     .OR. IOLG.GT.NLONRGG(IOLT).OR.                 &
+     &     IOLT.LT.ILATS .OR. IOLT.GT.ILATN             ) THEN
           IGARB(IO) = 0
           IJARB(IO) = 0
         ELSE
@@ -135,5 +137,4 @@
         ENDIF
       ENDDO
 
-      RETURN
       END SUBROUTINE FINDB

@@ -49,8 +49,7 @@
 ! ----------------------------------------------------------------------
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFIMFR   ,    &
-     &              DFIMFR2,DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL  ,    &
-     &              WP2TAIL
+     &            DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
@@ -61,21 +60,20 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS,IJL
-      INTEGER :: IJ, M, K
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM1, F1, AK, XK
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM1, F1, AK, XK
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      REAL ZHOOK_HANDLE
-      REAL :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
-      REAL,DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
 
-
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('FKMEAN',0,ZHOOK_HANDLE)
-#endif
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('FKMEAN',0,ZHOOK_HANDLE)
+
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
@@ -180,8 +178,6 @@
 
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FKMEAN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE FKMEAN

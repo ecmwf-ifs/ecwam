@@ -41,7 +41,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,    &
      &                WETAIL    ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
@@ -51,26 +53,24 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
 
-      INTEGER :: IJ, M, K
-      REAL :: DELT25, DELT2, DEL2
-      REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJS:IJL) :: TEMP2
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB) :: DELT25, DELT2, DEL2
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: TEMP2
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FEMEAN',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
       DO IJ=IJS,IJL
-        EM(IJ) = 0.
+        EM(IJ) = 0.0_JWRB
         FM(IJ) = EPSMIN
       ENDDO
 
@@ -108,8 +108,6 @@
         FM(IJ) = MAX(FM(IJ),FR(1))
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FEMEAN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE FEMEAN

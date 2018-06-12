@@ -1,4 +1,4 @@
-      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, USNEW, CICVR,
+      SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, USNEW, CICVR,          &
      &                       MIJ, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
@@ -44,36 +44,36 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
-      USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1,
+      USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
      &                DELTH          ,DFIM_END_U ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ROWATER    ,ZPI      ,EPSMIN
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
-      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
-      INTEGER :: IJ, M
+      INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL :: FPMH, FPPM, FM2, FPM, FPM4
-      REAL :: XLOGDFRTH
-      REAL :: ROG_XLOGDFRTH, HROG_XLOGDFRTH
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4
+      REAL(KIND=JWRB) :: XLOGDFRTH
+      REAL(KIND=JWRB) :: ROG_XLOGDFRTH, HROG_XLOGDFRTH
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
-#endif
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
 
 !*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !*    FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
@@ -83,35 +83,21 @@
 
       XLOGDFRTH=LOG(FRATIO)*DELTH
       ROG_XLOGDFRTH = ROWATER*G*XLOGDFRTH
-      HROG_XLOGDFRTH = 0.5*ROG_XLOGDFRTH
+      HROG_XLOGDFRTH = 0.5_JWRB*ROG_XLOGDFRTH
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
 
-      IF(IPHYS.EQ.0) THEN
-        DO IJ=IJS,IJL
-          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-            FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
-            FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
-            FPM4 = MAX(FM2,FPM)
-            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
-          ELSE
-            MIJ(IJ) = NFRE
-          ENDIF
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-            FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
-            FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
-            FPM4 = MAX(FM2,FPM)
-            MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
-          ELSE
-            MIJ(IJ) = NFRE
-          ENDIF
-        ENDDO
-      ENDIF
+      DO IJ=IJS,IJL
+        IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
+          FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
+          FPM4 = MAX(FM2,FPM)
+          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+        ELSE
+          MIJ(IJ) = NFRE
+        ENDIF
+      ENDDO
 
 !     COMPUTE RHOWGDFTH
       DO IJ=IJS,IJL
@@ -121,12 +107,10 @@
         ENDDO
         RHOWGDFTH(IJ,MIJ(IJ)) = HROG_XLOGDFRTH*FR(MIJ(IJ))
         DO M=MIJ(IJ)+1,NFRE
-          RHOWGDFTH(IJ,M) = 0.
+          RHOWGDFTH(IJ,M) = 0._JWRB
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE FRCUTINDEX
