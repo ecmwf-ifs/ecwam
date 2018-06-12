@@ -1,4 +1,4 @@
-      REAL FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
+      FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
 
 ! ----------------------------------------------------------------------
 
@@ -48,24 +48,29 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
+      REAL(KIND=JWRB) :: AKI_ICE
+
 !     ICE PROPERTIES (assumed fixed for now) 
-      REAL, PARAMETER :: YMICE=5.5E+9   ! typical value of Young modulus of sea ice
-      REAL, PARAMETER :: RMUICE=0.3      ! Poisson's ratio of sea ice
-      REAL, PARAMETER :: RHOI=922.5     ! typical value of the sea ice density
+      REAL(KIND=JWRB), PARAMETER :: YMICE=5.5E+9_JWRB   ! typical value of Young modulus of sea ice
+      REAL(KIND=JWRB), PARAMETER :: RMUICE=0.3_JWRB      ! Poisson's ratio of sea ice
+      REAL(KIND=JWRB), PARAMETER :: RHOI=922.5_JWRB     ! typical value of the sea ice density
 
 !     RELATIVE ERROR LIMIT OF NEWTONS METHOD.
-      REAL, PARAMETER :: EBS = 0.000001
+      REAL(KIND=JWRB), PARAMETER :: EBS = 0.000001_JWRB
 !     MAXIMUM WAVE NUMBER
-      REAL, PARAMETER :: AKI_MAX = 20.
+      REAL(KIND=JWRB), PARAMETER :: AKI_MAX = 20.0_JWRB
 
-      REAL, INTENT(IN) :: G, XK, DEPTH, RHOW, CITH
-      REAL :: FICSTF, RDH
-      REAL :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
+      REAL(KIND=JWRB), INTENT(IN) :: G, XK, DEPTH, RHOW, CITH
+      REAL(KIND=JWRB) :: FICSTF, RDH
+      REAL(KIND=JWRB) :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
 
 
-      IF(CITH.LE.0.0) THEN
+      IF(CITH.LE.0.0_JWRB) THEN
         AKI=XK
       ELSE
 !       BENDING STIFFNESS / WATER DENSITY
@@ -80,24 +85,23 @@
 !*      2. ITERATION LOOP.
 !          ---------------
 
-        AKIOLD=0.
-        AKI=MIN(XK ,(OM2/MAX(FICSTF,1.))**0.2)
+        AKIOLD=0.0_JWRB
+        AKI=MIN(XK ,(OM2/MAX(FICSTF,1.0_JWRB))**0.2_JWRB)
 
-        DO WHILE (ABS(AKI-AKIOLD).GT.EBS*AKIOLD .AND.
-     &            AKI.LT.AKI_MAX
+        DO WHILE (ABS(AKI-AKIOLD).GT.EBS*AKIOLD .AND.                   &
+     &            AKI.LT.AKI_MAX                                        &
      &           )
           AKIOLD=AKI 
-          AKID=MIN(DEPTH*AKI,50.)
+          AKID=MIN(DEPTH*AKI,50.0_JWRB)
           F=FICSTF*AKI**5+G*AKI-OM2*(RDH*AKI+1./TANH(AKID))
-          FPRIME=5.*FICSTF*AKI**4+G-OM2*(RDH-DEPTH/(SINH(AKID)**2))
+          FPRIME=5._JWRB*FICSTF*AKI**4+G-OM2*(RDH-DEPTH/(SINH(AKID)**2))
           AKI = AKI-F/FPRIME
 !         in case of overshoot because it is trying to find a very large wave number
-          IF(AKI.LE.0.) AKI=AKI_MAX
+          IF(AKI.LE.0.0_JWRB) AKI=AKI_MAX
         ENDDO
 
       ENDIF
 
       AKI_ICE = AKI
 
-      RETURN
-      END
+      END FUNCTION AKI_ICE
