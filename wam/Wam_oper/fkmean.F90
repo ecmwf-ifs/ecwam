@@ -48,6 +48,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DFIMFR   ,    &
      &            DELTH    ,WETAIL   ,FRTAIL   ,WP1TAIL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
