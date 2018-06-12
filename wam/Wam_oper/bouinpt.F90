@@ -44,13 +44,16 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
-      USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IBFL     ,
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IBFL     ,              &
      &            IBFR     ,BFW
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,
+      USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -62,33 +65,33 @@
 #include "gsfile_new.intfb.h"
 #include "intspec.intfb.h"
 
-      INTEGER, INTENT(INOUT) :: IU02
-      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
-      INTEGER :: I, M, K, IP, IJ, IJF, IC, KL, ML, IDELINP
-      INTEGER, SAVE :: NBOINP
-      INTEGER :: ISEND, IREQ
-      INTEGER :: ICOUNT, NZCOMBUF, NINTFLD
-      INTEGER :: KRCOUNT, KRTAG
-      INTEGER :: ILOC, IBCL, IBCR
-      INTEGER :: ISENDREQ(NPROC)
-      INTEGER :: NIJB
-      INTEGER, DIMENSION(NBOUNF) :: IJB, IBND
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IU02
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
+      INTEGER(KIND=JWIM) :: I, M, K, IP, IJ, IJF, IC, KL, ML, IDELINP
+      INTEGER(KIND=JWIM), SAVE :: NBOINP
+      INTEGER(KIND=JWIM) :: ISEND, IREQ
+      INTEGER(KIND=JWIM) :: ICOUNT, NZCOMBUF, NINTFLD
+      INTEGER(KIND=JWIM) :: KRCOUNT, KRTAG
+      INTEGER(KIND=JWIM) :: ILOC, IBCL, IBCR
+      INTEGER(KIND=JWIM) :: ISENDREQ(NPROC)
+      INTEGER(KIND=JWIM) :: NIJB
+      INTEGER(KIND=JWIM), DIMENSION(NBOUNF) :: IJB, IBND
 
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
-      REAL :: XANG, XFRE, TH0, FR1, CO, XNBO, XDELIN  
-      REAL :: XLON, XLAT
-      REAL :: DEL12, DEL1L
-      REAL :: FMEAN, EMEAN, THQ
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB) :: XANG, XFRE, TH0, FR1, CO, XNBO, XDELIN  
+      REAL(KIND=JWRB) :: XLON, XLAT
+      REAL(KIND=JWRB) :: DEL12, DEL1L
+      REAL(KIND=JWRB) :: FMEAN, EMEAN, THQ
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 !      *FMEAN1*    REAL      MEAN FREQUENCIES FROM COARSE GRID.
 !      *EMEAN1*    REAL      TOTAL ENERGIES FROM COARSE GRID.
 !      *THQ1*      REAL      MEAN DIRECTIONS FROM COARSE GRID (RAD).
 !      *NBOINP*    REAL      NUMBER OF INPUT SPECTRA.
 !      *FL*        REAL      INTERPOLATED SPECTRUM.
-      REAL, ALLOCATABLE :: FMEAN1(:), EMEAN1(:), THQ1(:) 
-      REAL, ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
-      REAL, ALLOCATABLE :: FL(:,:)
-      REAL, ALLOCATABLE :: F1(:,:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: FMEAN1(:), EMEAN1(:), THQ1(:) 
+      REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: FL(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: F1(:,:,:)
 
       CHARACTER(LEN=14) :: CDTLAST, CDATE1
       CHARACTER(LEN=120) :: FILENAME
@@ -99,9 +102,8 @@
       LOGICAL :: LLBC(NPROC)
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('BOUINPT',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. INITIALIZATION.
 !        ---------------
@@ -147,7 +149,7 @@
           READ (IU02, ERR=5000, END=5000) (ZCOMBUFS(IC), IC=1,NZCOMBUF)
         ENDIF
 
-        CALL MPL_BROADCAST(ZCOMBUFS,KROOT=ISEND,KTAG=KTAG,
+        CALL MPL_BROADCAST(ZCOMBUFS,KROOT=ISEND,KTAG=KTAG,              &
      &       CDSTRING='BOUINPT:')
         KTAG=KTAG+1
 
@@ -181,8 +183,8 @@
 
 !*      CHECK CONSISTENCY.
 
-        IF (KL.NE.NANG .OR. ML.NE.NFRE .OR.
-     &     FR1.NE.FR(1) .OR. TH0.NE.TH(1) .OR. MOD(IDELINP,IDELPRO)
+        IF (KL.NE.NANG .OR. ML.NE.NFRE .OR.                             &
+     &     FR1.NE.FR(1) .OR. TH0.NE.TH(1) .OR. MOD(IDELINP,IDELPRO)     &
      &     .NE. 0 .OR. IDELINP.LT.IDELPRO) THEN
           WRITE (IU06,*) '****************************************'
           WRITE (IU06,*) '*                                      *'
@@ -247,10 +249,10 @@
       IF(IRANK.EQ.ISEND)THEN
  2100   CONTINUE
         DO IJ=1,NBOINP
-          READ (IU02, ERR=5001, END=5001)
-     &     XLON, XLAT, CDATE1,
+          READ (IU02, ERR=5001, END=5001)                               &
+     &     XLON, XLAT, CDATE1,                                          &
      &     EMEAN1(IJ), THQ1(IJ), FMEAN1(IJ)
-          READ (IU02, ERR=5002, END=5002)
+          READ (IU02, ERR=5002, END=5002)                               &
      &     ((F1(K,M,IJ),K=1,NANG),M=1,NFRE)
         ENDDO
         IF (ITEST.GT.3) THEN
@@ -325,9 +327,9 @@
           IF(LLBC(IP)) THEN
             IREQ=IREQ+1
             CALL GSTATS(673,0)
-            CALL MPL_SEND(ZCOMBUFS(1:NZCOMBUF),KDEST=IP,KTAG=KTAG,
-     &                    KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                    KREQUEST=ISENDREQ(IREQ),
+            CALL MPL_SEND(ZCOMBUFS(1:NZCOMBUF),KDEST=IP,KTAG=KTAG,      &
+     &                    KMP_TYPE=JP_NON_BLOCKING_STANDARD,            &
+     &                    KREQUEST=ISENDREQ(IREQ),                      &
      &                    CDSTRING='BOUINPT:')
             CALL GSTATS(673,1)
           ENDIF
@@ -338,12 +340,12 @@
       IF(LLBC(IRANK)) THEN
         CALL GSTATS(673,0)
         ALLOCATE(ZCOMBUFR(NZCOMBUF))
-        CALL MPL_RECV(ZCOMBUFR(1:NZCOMBUF),
-     &                KSOURCE=ISEND, KTAG=KTAG,
-     &                KOUNT=KRCOUNT, KRECVTAG=KRTAG,
-     &                KMP_TYPE=JP_BLOCKING_STANDARD,
+        CALL MPL_RECV(ZCOMBUFR(1:NZCOMBUF),                             &
+     &                KSOURCE=ISEND, KTAG=KTAG,                         &
+     &                KOUNT=KRCOUNT, KRECVTAG=KRTAG,                    &
+     &                KMP_TYPE=JP_BLOCKING_STANDARD,                    &
      &                CDSTRING='BOUINPT:')
-        IF(KRCOUNT.NE.NZCOMBUF) CALL MPL_ABORT
+        IF(KRCOUNT.NE.NZCOMBUF) CALL MPL_ABORT                          &
      &    ('MPL_RECV ERROR in BOUINPT: WRONG MESSAGE LENGTH')
 
         CALL GSTATS(673,1)
@@ -379,7 +381,7 @@
 
       IF( IREQ .GT. 0 )THEN
         CALL GSTATS(673,0)
-        CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),
+        CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                        &
      &                CDSTRING='BOUINPT: WAIT MPL_SEND')
         CALL GSTATS(673,1)
       ENDIF
@@ -408,9 +410,9 @@
 
 !*    3.2.1. WEIGHT IS GT ZERO, INTERPOLATE.
 !            -------------------------------
-          CALL INTSPEC (NFRE, NANG, NFRE, NANG, FR, DEL12, DEL1L,
-     &       F1(1,1,IBCL), FMEAN1(IBCL), EMEAN1(IBCL), THQ1(IBCL),
-     &       F1(1,1,IBCR), FMEAN1(IBCR), EMEAN1(IBCR), THQ1(IBCR),
+          CALL INTSPEC (NFRE, NANG, NFRE, NANG, FR, DEL12, DEL1L,       &
+     &       F1(1,1,IBCL), FMEAN1(IBCL), EMEAN1(IBCL), THQ1(IBCL),      &
+     &       F1(1,1,IBCR), FMEAN1(IBCR), EMEAN1(IBCR), THQ1(IBCR),      &
      &       FL3(IJF,:,:), FMEAN, EMEAN, THQ)
         ELSE
 
@@ -425,7 +427,7 @@
         ENDIF
       ENDDO
 
-      IF (ITEST.GE.1)
+      IF (ITEST.GE.1)                                                   &
      &   WRITE(IU06,*) '  SUB. BOUINPT: BC SPECTRUM COLLECTED'
 
 ! ----------------------------------------------------------------------
@@ -492,7 +494,6 @@
       WRITE (IU06,*) '*******************************************'
       CALL ABORT1
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('BOUINPT',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE BOUINPT

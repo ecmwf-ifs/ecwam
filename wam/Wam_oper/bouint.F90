@@ -79,35 +79,31 @@
  
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWTEXT  , ONLY : PATH
 
  
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-#include "abort1.intfb.h"
-#include "difdate.intfb.h"
-#include "gsfile_new.intfb.h"
-#include "incdate.intfb.h"
-#include "intspec.intfb.h"
-#include "uibou.intfb.h"
  
-      INTEGER :: K, M, IJ 
-      INTEGER :: NANG, NFRE, MBMAX
-      INTEGER :: KL, ML, NBOUNC, IDELPRC
-      INTEGER :: IU01, IU02, IU05, IU06
-      INTEGER :: IDELPRF, IDELFI, NEWOUT
-      INTEGER :: IDEL12, IDEL1L
+      INTEGER(KIND=JWIM) :: K, M, IJ 
+      INTEGER(KIND=JWIM) :: NANG, NFRE, MBMAX
+      INTEGER(KIND=JWIM) :: KL, ML, NBOUNC, IDELPRC
+      INTEGER(KIND=JWIM) :: IU01, IU02, IU05, IU06
+      INTEGER(KIND=JWIM) :: IDELPRF, IDELFI, NEWOUT
+      INTEGER(KIND=JWIM) :: IDEL12, IDEL1L
 
-      REAL :: FMEAN_PT, EMEAN_PT, THQ_PT
-      REAL :: XANG, XFRE, TH0, FR1, CO, XBOU, XDELC, XDELF
-      REAL :: DEL12, DEL1L
-      REAL, ALLOCATABLE, DIMENSION(:) :: XLAT, XLON
-      REAL, ALLOCATABLE, DIMENSION(:) :: FR
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: FMEAN, EMEAN, THQ 
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: FL
-      REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: F
+      REAL(KIND=JWRB) :: FMEAN_PT, EMEAN_PT, THQ_PT
+      REAL(KIND=JWRB) :: XANG, XFRE, TH0, FR1, CO, XBOU, XDELC, XDELF
+      REAL(KIND=JWRB) :: DEL12, DEL1L
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT, XLON
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: FR
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FMEAN, EMEAN, THQ 
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: FL
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: F
 
-      CHARACTER(LEN=14) :: CDATE1, CDATE2, CDTOUT, CDATEA, CDATEE, 
+      CHARACTER(LEN=14) :: CDATE1, CDATE2, CDTOUT, CDATEA, CDATEE,      &
      &          CDATES, CDATE
       CHARACTER(LEN=3) :: USERID, RUNDI, FILEDI, RUNDO, FILEDO
       CHARACTER(LEN=60) :: PATHI, PATHO
@@ -147,9 +143,9 @@
 !*    1.2 READ USER INPUT.
 !         ----------------
  
-      CALL UIBOU (IU05, IU06, CDATEA, CDATEE, IDELPRF,
-     1                  CDATES, IDELFI, USERID,
-     2                  RUNDI, FILEDI, PATHI, RUNDO, FILEDO, PATHO,
+      CALL UIBOU (IU05, IU06, CDATEA, CDATEE, IDELPRF,                  &
+     &                  CDATES, IDELFI, USERID,                         &
+     &                  RUNDI, FILEDI, PATHI, RUNDO, FILEDO, PATHO,     &
      &                  LREAL, LSWAN)
       CDTOUT = CDATEA
       CDATE = CDATES
@@ -170,7 +166,7 @@
 !*    2.2 READ BOUNDARY FILE HEADER.
 !         --------------------------
  
-      READ (IU01, ERR=6000, END=6000)
+      READ (IU01, ERR=6000, END=6000)                                   &
      &     XANG, XFRE, TH0, FR1, CO, XBOU, XDELC
       KL = NINT(XANG)
       ML = NINT(XFRE)
@@ -238,7 +234,7 @@
 
          XDELF = FLOAT(IDELPRF)
          IF(LREAL)THEN
-           WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4), 
+           WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4),         &
      &       REAL(FR(1),4), REAL(CO,4), REAL(XBOU,4), REAL(XDELF,4)
          ELSE
            WRITE(IU02) XANG, XFRE, TH0, FR(1), CO, XBOU, XDELF
@@ -257,8 +253,8 @@
 !         ---------------------
  
       DO IJ=1,NBOUNC
-         READ (IU01, ERR=6001, END=6001)
-     &     XLON(IJ), XLAT(IJ), CDATE1, EMEAN(IJ,1),
+         READ (IU01, ERR=6001, END=6001)                                &
+     &     XLON(IJ), XLAT(IJ), CDATE1, EMEAN(IJ,1),                     &
      &     THQ(IJ,1), FMEAN(IJ,1)
          READ (IU01, ERR=6002, END=6002) ((F(IJ,K,M,1),K=1,KL),M=1,ML)
       ENDDO
@@ -311,20 +307,20 @@
         DO IJ=1,NBOUNC
           IF(LREAL) THEN
             IF(LSWAN)THEN
-            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4),CDTOUT(3:14),
+            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4),CDTOUT(3:14), &
      &      REAL(EMEAN(IJ,1),4), REAL(THQ(IJ,1),4), REAL(FMEAN(IJ,1),4)
             WRITE(IU02) ((REAL(F(IJ,K,M,1),4),K=1,KL),M=1,ML)
             ELSE
-            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4), CDTOUT,
+            WRITE(IU02) REAL(XLON(IJ),4), REAL(XLAT(IJ),4), CDTOUT,      &
      &       REAL(EMEAN(IJ,1),4), REAL(THQ(IJ,1),4), REAL(FMEAN(IJ,1),4)
             WRITE(IU02) ((REAL(F(IJ,K,M,1),4),K=1,KL),M=1,ML)
             ENDIF
           ELSE
             IF(LSWAN)THEN
-            WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),
+            WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),                &
      &        EMEAN(IJ,1), THQ(IJ,1), FMEAN(IJ,1)
             ELSE
-            WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,
+            WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,                      &
      &        EMEAN(IJ,1), THQ(IJ,1), FMEAN(IJ,1)
             ENDIF
             WRITE(IU02) ((F(IJ,K,M,1),K=1,KL),M=1,ML)
@@ -356,10 +352,10 @@
         CLOSE (UNIT=IU01)
         CALL GSFILE (IU06, IU01, 0, CDATE, CDATE, FILEDI, 'G')
 
-        READ (IU01, ERR=6000, END=6000)
+        READ (IU01, ERR=6000, END=6000)                                 &
      &        XANG, XFRE, TH0, FR(1), CO, XBOU, XDELC
         IF(LREAL)THEN
-          WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4), 
+          WRITE(IU02) REAL(XANG,4), REAL(XFRE,4), REAL(TH0,4),          &
      &      REAL(FR(1),4), REAL(CO,4), REAL(XBOU,4), REAL(XDELF,4)
         ELSE
           WRITE(IU02) XANG, XFRE, TH0, FR(1), CO, XBOU, XDELF
@@ -370,10 +366,10 @@
 !           ----------------
  
       DO IJ=1,NBOUNC
-        READ (IU01, ERR=6003, END=6003)
-     &    XLON(IJ), XLAT(IJ), CDATE2, EMEAN(IJ,2),
+        READ (IU01, ERR=6003, END=6003)                                 &
+     &    XLON(IJ), XLAT(IJ), CDATE2, EMEAN(IJ,2),                      &
      &    THQ(IJ,2), FMEAN(IJ,2)
-        READ (IU01, ERR=6004, END=6004) 
+        READ (IU01, ERR=6004, END=6004)                                 &
      &   ((F(IJ,K,M,2),K=1,KL),M=1,ML)
       ENDDO
       WRITE(IU06,*) ' DATE OF SECOND INPUT IS CDATE2 = ', CDATE2
@@ -416,11 +412,11 @@
 !*      4.4.1.1 INTERPOLATE.
 !               ------------
  
-         CALL INTSPEC (NFRE, NANG, ML, KL, FR, DEL12, DEL1L,
-     &                 F(IJ,:,:,1), FMEAN(IJ,1), 
-     &                 EMEAN(IJ,1), THQ(IJ,1),
-     &                 F(IJ,:,:,2), FMEAN(IJ,2), 
-     &                 EMEAN(IJ,2), THQ(IJ,2),
+         CALL INTSPEC (NFRE, NANG, ML, KL, FR, DEL12, DEL1L,            &
+     &                 F(IJ,:,:,1), FMEAN(IJ,1),                        &
+     &                 EMEAN(IJ,1), THQ(IJ,1),                          &
+     &                 F(IJ,:,:,2), FMEAN(IJ,2),                        &
+     &                 EMEAN(IJ,2), THQ(IJ,2),                          &
      &                 FL, FMEAN_PT, EMEAN_PT, THQ_PT)
  
 !*      4.4.1.2 WRITE TO OUTPUT FILE.
@@ -428,19 +424,19 @@
  
          IF(LREAL)THEN
            IF(LSWAN)THEN
-             WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4),CDTOUT(3:14),
+             WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4),CDTOUT(3:14), &
      &       REAL(EMEAN_PT,4), REAL(THQ_PT,4), REAL(FMEAN_PT,4)
            ELSE
-              WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4), CDTOUT,
+              WRITE(IU02) REAL(XLON(IJ),4),REAL(XLAT(IJ),4), CDTOUT,     &
      &        REAL(EMEAN_PT,4), REAL(THQ_PT,4), REAL(FMEAN_PT,4)
            ENDIF
            WRITE(IU02) ((REAL(FL(K,M),4),K=1,KL),M=1,ML)
          ELSE
            IF(LSWAN)THEN
-             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),
+             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT(3:14),               &
      &       EMEAN_PT, THQ_PT, FMEAN_PT
            ELSE
-             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,
+             WRITE(IU02) XLON(IJ), XLAT(IJ), CDTOUT,                     &
      &       EMEAN_PT, THQ_PT, FMEAN_PT
            ENDIF
            WRITE(IU02) ((FL(K,M),K=1,KL),M=1,ML)
@@ -577,4 +573,4 @@
          WRITE(IU06,*) '*******************************************'
          CALL ABORT1
 
-      END
+      END PROGRAM BOUINT

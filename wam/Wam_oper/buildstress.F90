@@ -1,8 +1,8 @@
-      SUBROUTINE BUILDSTRESS(MIJS, MIJL,
-     &                       U10OLD, THWOLD,
-     &                       USOLD, TAUW, Z0OLD,
-     &                       ROAIRO, ZIDLOLD,
-     &                       CICOVER, CITHICK,
+      SUBROUTINE BUILDSTRESS(MIJS, MIJL,                                &
+     &                       U10OLD, THWOLD,                            &
+     &                       USOLD, TAUW, Z0OLD,                        &
+     &                       ROAIRO, ZIDLOLD,                           &
+     &                       CICOVER, CITHICK,                          &
      &                       IREAD)
 
 ! ----------------------------------------------------------------------
@@ -52,15 +52,17 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV, 
-     &                      RNUM     ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV,        &
+     &                      RNUM     ,                                  &
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
       USE YOWPCONS , ONLY : G        ,ROAIR    ,EPSUS    ,EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG   ,
+      USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL  ,FIELDG   ,    &
      &                      NXFF     ,NYFF
       USE YOWNEMOFLDS,ONLY: NEMOCICOVER, NEMOCITHICK
 
@@ -76,25 +78,25 @@
 #include "init_fieldg.intfb.h"
 #include "readwgrib.intfb.h"
 
-      INTEGER, INTENT(IN) :: MIJS, MIJL
-      INTEGER, INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
-      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: U10OLD, THWOLD
-      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW
-      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
-      REAL, DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: U10OLD, THWOLD
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
 
 
-      INTEGER :: ICODE_WND
-      INTEGER :: ILEN, LIU, IPARAM, ILEV, KZLEVUWAVE, KZLEVCD 
-      INTEGER :: IJ
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: NWAVEWIND(1)
+      INTEGER(KIND=JWIM) :: ICODE_WND
+      INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, ILEV, KZLEVUWAVE, KZLEVCD
+      INTEGER(KIND=JWIM) :: IJ
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: NWAVEWIND(1)
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: TEMPXNLEV, CDINV, CDSQRTINV, Z0TOT, USTAR, CHARNOCK
-      REAL :: ALPHAOG
-      REAL, DIMENSION(MIJS:MIJL) :: CD
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: TEMPXNLEV, CDINV, CDSQRTINV, Z0TOT, USTAR, CHARNOCK
+      REAL(KIND=JWRB) :: ALPHAOG
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: CD
 
       CHARACTER(LEN=24) :: FILNM
 
@@ -106,9 +108,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',0,ZHOOK_HANDLE)
-#endif
 
       CDATEWO = ' '
       CDAWIFL = ' '
@@ -131,16 +131,16 @@
 
       IF(LWNEMOCOUCIC.OR.LWNEMOCOUCIT) THEN
         ALLOCATE(NEMOCICOVER(MIJS:MIJL),NEMOCITHICK(MIJS:MIJL))
-        NEMOCICOVER(MIJS:MIJL)=0.0
-        NEMOCITHICK(MIJS:MIJL)=0.0
+        NEMOCICOVER(MIJS:MIJL)=0.0_JWRB
+        NEMOCITHICK(MIJS:MIJL)=0.0_JWRB
       ENDIF
 
-      CALL GETWND (MIJS, MIJL,
-     &             U10OLD(MIJS), USOLD(MIJS),
-     &             THWOLD(MIJS),
-     &             ROAIRO(MIJS), ZIDLOLD(MIJS),
-     &             CICOVER(MIJS), CITHICK(MIJS),
-     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,
+      CALL GETWND (MIJS, MIJL,                                          &
+     &             U10OLD(MIJS), USOLD(MIJS),                           &
+     &             THWOLD(MIJS),                                        &
+     &             ROAIRO(MIJS), ZIDLOLD(MIJS),                         &
+     &             CICOVER(MIJS), CITHICK(MIJS),                        &
+     &             CDTPRO, LWNDFILE, LCLOSEWND, IREAD,                  &
      &             LCR, ICODE_WND)
 
       IF(LWNEMOCOUCIC.OR.LWNEMOCOUCIT) THEN
@@ -172,7 +172,7 @@
 !     USE MESSAGE PASSING TO SEND FILE STATUS TO THE OTHER PE'S
       CALL GSTATS(696,0)
       IF(NPROC.GT.1) THEN
-        CALL MPL_BROADCAST(NWAVEWIND,KROOT=IREAD,KTAG=KTAG,
+        CALL MPL_BROADCAST(NWAVEWIND,KROOT=IREAD,KTAG=KTAG,             &
      &    CDSTRING='BUILDSTRESS :')
         KTAG=KTAG+1
         IF(NWAVEWIND(1).EQ.1) THEN
@@ -186,7 +186,7 @@
       IF(LWAVEWIND) THEN
         IPARAM=245
         LLONLYPOS=.FALSE.
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,         &
      &                 U10OLD(MIJS), KZLEVUWAVE, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
@@ -196,7 +196,7 @@
         WRITE(IU06,*) ' WAS USED TO UPDATE THE INPUT ATMOSPHERIC WINDS'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WINDS AND DRAG COEFFICIENT ARE FOUND'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
      &                  KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
@@ -215,7 +215,7 @@
         WRITE(IU06,*) ' WAS POSSIBLE'
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' THE INPUT WIND AND DRAG COEFFICIENT ARE ASSUMED'
-        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',
+        WRITE(IU06,*) ' TO HAVE BEEN DETERMINED FOR HEIGHT AT ',        &
      &                  KZLEVUWAVE,' m'
 
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
@@ -257,18 +257,18 @@
         KIJL=MIN(KIJS+NPROMA-1,MIJL)
 
         DO IJ=KIJS,KIJL
-          TAUW(IJ)=0.
+          TAUW(IJ)=0._JWRB
         ENDDO
 
-        CALL AIRSEA (U10OLD(KIJS),TAUW(KIJS),USOLD(KIJS),
+        CALL AIRSEA (U10OLD(KIJS),TAUW(KIJS),USOLD(KIJS),               &
      &               Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
 
         DO IJ=KIJS,KIJL
 !!        THE NUMERICAL RELATION BETWEEN USOLD AND U10OLD SHOULD
 !!        ALWAYS BE AS IN OUTGRID
           CDINV = MAX(U10OLD(IJ)**2,EPSU10)/MAX(USOLD(IJ)**2,EPSUS)
-          CDINV = MIN(CDINV,10000.) 
-          CD(IJ) = 1./CDINV
+          CDINV = MIN(CDINV,10000.0_JWRB) 
+          CD(IJ) = 1._JWRB/CDINV
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
@@ -282,7 +282,7 @@
         LLONLYPOS=.TRUE.
         FILNM='cdwavein'
 !       !!!! CD was initialised above !!!!
-        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,
+        CALL READWGRIB(IU06, FILNM, IPARAM, CDTPRO, MIJS, MIJL,         &
      &                 CD(MIJS), KZLEVCD, LLONLYPOS, IREAD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. READWGRIB DONE FOR ',FILNM
 
@@ -326,13 +326,13 @@
               USOLD(IJ) = CD(IJ)*MAX(U10OLD(IJ)**2,EPSU10)
               USOLD(IJ) = MAX(USOLD(IJ),EPSUS)
               USTAR = SQRT(USOLD(IJ))
-              CDSQRTINV = MIN(1./SQRT(CD(IJ)),100.0)
+              CDSQRTINV = MIN(1._JWRB/SQRT(CD(IJ)),100.0_JWRB)
               Z0TOT = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
               Z0OLD(IJ) = MAX(Z0TOT - RNUM/USTAR,ALPHAOG*USTAR)
               CHARNOCK = G*Z0OLD(IJ)/USOLD(IJ)
               CHARNOCK = MAX(CHARNOCK,ALPHA)
-              TAUW(IJ) = MAX(USOLD(IJ)*(1.-(ALPHA/CHARNOCK)**2),0.)
+              TAUW(IJ) = MAX(USOLD(IJ)*(1._JWRB-(ALPHA/CHARNOCK)**2),0._JWRB)
               USOLD(IJ) = USTAR 
             ENDDO
           ENDDO
@@ -348,8 +348,6 @@
 
       WRITE(IU06,*) ' SUB. BUILDSTRESS: INPUT OF RESTART FILES DONE'
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('BUILDSTRESS',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE BUILDSTRESS
