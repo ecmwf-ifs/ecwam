@@ -19,28 +19,28 @@
        CALL ABORT1
 
        RETURN
-       END
+       END SUBROUTINE ABOR1
 
        SUBROUTINE IFSSIG
        WRITE(*,*) 'THE ROUTINE IFSSIG WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'IFSSIG is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE IFSSIG
 
        SUBROUTINE CHESIG 
        WRITE(*,*) 'THE ROUTINE CHESIG WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'CHESIG is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE CHESIG
 
        SUBROUTINE SIGMASTER 
        WRITE(*,*) 'THE ROUTINE SIGMASTER WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'SIGMASTER is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE SIGMASTER
 
        SUBROUTINE GSTATS(KNUM,KSWITCH)
 
@@ -48,30 +48,30 @@
 !                 it was replaced here by a dummy to limit the amount
 !                 of routines that should otherwise be obtained from
 !                 the ifsaux library.
-
-       INTEGER :: KNUM
-       INTEGER :: KSWITCH
+       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+       INTEGER(KIND=JWIM) :: KNUM
+       INTEGER(KIND=JWIM) :: KSWITCH
 
        RETURN
-       END
+       END SUBROUTINE GSTATS
 
        SUBROUTINE JFH_BIND 
        WRITE(*,*) 'THE ROUTINE JFH_BIND WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'It is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE JFH_BIND
 
        SUBROUTINE EC_BIND 
        WRITE(*,*) 'THE ROUTINE EC_BIND WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'It is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE EC_BIND
 
        SUBROUTINE C_DRHOOK_PRINT 
        WRITE(*,*) 'THE ROUTINE C_DRHOOK_PRINT WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'It is specific to signal handling for runs'
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
-       END
+       END SUBROUTINE C_DRHOOK_PRINT

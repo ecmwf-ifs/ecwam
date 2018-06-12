@@ -33,4 +33,4 @@
        WRITE(*,*) ' NO MESSAGE PASSING'
        WRITE(*,*) ' NO MESSAGE PASSING'
        CALL ABORT
-       END
+       END SUBROUTINE dummy_mp
