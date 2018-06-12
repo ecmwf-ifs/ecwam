@@ -60,6 +60,8 @@
 
 !----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
 #ifdef ECMWF
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 #endif
@@ -69,13 +71,13 @@
 #include "abort1.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER :: M, IL, ISI, IDUM, IRET, ISHIFT, KSHIFT
-      INTEGER :: IYEAR ,IMON ,IDAY ,IHOUR ,IMIN ,ISEC
-      INTEGER :: IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
-      INTEGER :: IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
-      INTEGER :: MON(12)
+      INTEGER(KIND=JWIM) :: M, IL, ISI, IDUM, IRET, ISHIFT, KSHIFT
+      INTEGER(KIND=JWIM) :: IYEAR ,IMON ,IDAY ,IHOUR ,IMIN ,ISEC
+      INTEGER(KIND=JWIM) :: IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
+      INTEGER(KIND=JWIM) :: IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
+      INTEGER(KIND=JWIM) :: MON(12)
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=*) :: CDATE1, CDATE2
       CHARACTER(LEN=14) :: CDT1, CDT2
@@ -99,7 +101,7 @@
 
       IL = LEN_TRIM(CDATE1)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A49, I2.2, A2)')
+        WRITE(CLFMT,'(A49, I2.2, A2)')                                  &
      &     '(" DIFDATE : NON-Y2K COMPLIANT DATE1 IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE1
         WRITE(*, CLFMT ) CDATE1
@@ -123,7 +125,7 @@
           IMIN=IMIN1
           ISEC=ISEC1-1
           ISHIFT=1
-          WRITE(CDT1,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,
+          WRITE(CDT1,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,          &
      &                               IMIN, ISEC
           CALL INCDATE(CDT1, ISHIFT)
           READ(CDT1,'(I4, 5I2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
@@ -137,8 +139,8 @@
         CALL ABORT1
       ELSE
         WRITE(6, *) ' '
-        WRITE(CLFMT,'(A61, I2.2, A2)')
-     &  '(" DIFDATE :  FATAL@! DATE1 IS ",I2," CHARACTERS LONG!!= ",A',
+        WRITE(CLFMT,'(A61, I2.2, A2)')                                  &
+     &  '(" DIFDATE :  FATAL@! DATE1 IS ",I2," CHARACTERS LONG!!= ",A', &
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE1
         WRITE(6, *) ' '
@@ -149,7 +151,7 @@
 
       IL = LEN_TRIM(CDATE2)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A49, I2.2, A2)')
+        WRITE(CLFMT,'(A49, I2.2, A2)')                                  &
      &     '(" DIFDATE : NON-Y2K COMPLIANT DATE2 IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE2
         WRITE(*, CLFMT ) CDATE2
@@ -173,7 +175,7 @@
           IMIN=IMIN2
           ISEC=ISEC2-1
           ISHIFT=1
-          WRITE(CDT2,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,
+          WRITE(CDT2,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,          &
      &                               IMIN, ISEC
           CALL INCDATE(CDT2, ISHIFT)
           READ(CDT2,'(I4, 5I2)')IYEAR1,IMON1,IDAY1,IHOUR1,IMIN1,ISEC1
@@ -187,7 +189,7 @@
         CALL ABORT1
       ELSE
         WRITE(6, *) ' '
-        WRITE(CLFMT,'(A61, I2.2, A2)')
+        WRITE(CLFMT,'(A61, I2.2, A2)')                                  &
      &  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A',
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
@@ -282,7 +284,7 @@
  
 !     3.1 DIFFERENCE BETWEEN DAY, HOUR ,MINUTE, SECOND.
  
-      KSHIFT = (((IDAY2-IDAY1)*24+IHOUR2-IHOUR1)*60+IMIN2-IMIN1)*60+
+      KSHIFT = (((IDAY2-IDAY1)*24+IHOUR2-IHOUR1)*60+IMIN2-IMIN1)*60+    &
      &         ISEC2-ISEC1
  
 !     3.2 ADD DIFFERENCE FROM MONTH.
