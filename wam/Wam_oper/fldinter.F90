@@ -308,6 +308,7 @@
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
 
                 FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
      &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
               ELSE
