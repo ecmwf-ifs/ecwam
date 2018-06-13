@@ -62,9 +62,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-#ifdef ECMWF
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-#endif
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
@@ -89,9 +87,8 @@
 
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('DIFDATE',0,ZHOOK_HANDLE)
-#endif
 
 !*    1.0 SPLIT DATE TIME GROUPS INTO SECOND, MINUTE, HOUR, DAY, MONTH,
 !*        YEAR DEPENDENT ON THE FORMAT OF CDATE.
@@ -190,7 +187,7 @@
       ELSE
         WRITE(6, *) ' '
         WRITE(CLFMT,'(A61, I2.2, A2)')                                  &
-     &  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A',
+     &  '(" DIFDATE :  FATAL@! DATE2 IS ",I2," CHARACTERS LONG!!= ",A', &
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE2
         WRITE(6, *) ' '
@@ -327,9 +324,8 @@
  
       KSHIFT = KSHIFT*ISI
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('DIFDATE',1,ZHOOK_HANDLE)
-#endif
+
       RETURN
 
       CONTAINS
