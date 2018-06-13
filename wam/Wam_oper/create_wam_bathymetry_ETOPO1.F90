@@ -1,4 +1,4 @@
-      PROGRAM CREATE_WAM_BATHYMETRY_ETOPO1 
+PROGRAM CREATE_WAM_BATHYMETRY_ETOPO1 
 
 !     CREATES THE WAM BATHYMETRY AND THE REDUCTION FACTORS
 !     DUE TO SUB-GRID BATHYMETRIC FEATURES USING
@@ -220,8 +220,8 @@
       NLANDCENTREPM=MAX(NLANDCENTREPM,1)
       NLANDCENTREMAX=(2*NLANDCENTREPM+1)**2
 
-      PLANDTRHS=0.3
-      PSHALLOWTRHS=0.8
+      PLANDTRHS=0.3_JWRB
+      PSHALLOWTRHS=0.8_JWRB
 
       ALLOCATE(ZDELLO(NY))
       ALLOCATE(COSPH(NY))
@@ -236,9 +236,9 @@
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF(.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA .EQ. 0.25 .AND.                                   &
-     &         AMOWEP .EQ. -98. .AND. AMOSOP .EQ.  9. .AND.             &
-     &         AMOEAP .EQ. 42.0 .AND. AMONOP .EQ. 81.       ) THEN
+            IF(XDELLA .EQ. 0.25)JWRB .AND.                              &
+     &         AMOWEP .EQ. -98._JWRB .AND. AMOSOP .EQ.  9._JWRB .AND.   &
+     &         AMOEAP .EQ. 42.0_JWRB .AND. AMONOP .EQ. 81._JWRB       ) THEN
 !         the old value for pi has to be taken in order to reproduce
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
@@ -246,7 +246,7 @@
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
              NLONRGG(K)=                                                &
-     &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2.*COS(X60*RAD)))),2)
+     &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
             ENDIF
             IF(MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
@@ -277,22 +277,22 @@
 !     DATASET:
 !     --------
  
-      IF(ALONL.LT.-180. .OR. ALONR.GT.180.) THEN
+      IF(ALONL.LT.-180._JWRB .OR. ALONR.GT.180._JWRB) THEN
         WRITE(*,*) ' LONGITUDE SPECIFICATION ERROR +- 180'
         WRITE(*,*) ' ALONL, ALONR : ',ALONL,ALONR
         STOP
       ENDIF
-      IF(ALATT.GT.90. .OR. ALATB.LT.-90.) THEN
+      IF(ALATT.GT.90.0_JWRB .OR. ALATB.LT.-90.0_JWRB) THEN
         WRITE(*,*) ' LATITUDE SPECIFICATION ERROR +- 90'
         WRITE(*,*) ' ALATT, ALATB : ',ALATT,ALATB
         STOP
       ENDIF
      
-      ILONL = NINT((ALONL + 180.)*INVRES) + 1
-      ILONR = NINT((ALONR + 180.)*INVRES) + 1
-      ILATB = NINT((90.- ALATB)*INVRES) + 1
+      ILONL = NINT((ALONL + 180._JWRB)*INVRES) + 1
+      ILONR = NINT((ALONR + 180._JWRB)*INVRES) + 1
+      ILATB = NINT((90.0_JWRB- ALATB)*INVRES) + 1
       ILATB = MAX(1,MIN(ILATB,ILAT))
-      ILATT = NINT((90.- ALATT)*INVRES) + 1
+      ILATT = NINT((90.0_JWRB- ALATT)*INVRES) + 1
       ILATT = MAX(1,MIN(ILATT,ILAT))
       IF(ILONR.EQ.ILON+1)ILONR=ILON
       IF(ILATB.EQ.ILAT+1)ILATB=ILAT
@@ -380,7 +380,7 @@
 !     THE PROBLEM WITH PERMANENT ICE SHEET
         DO J=1,ILAT
           YJ=ALAT(J)
-          IF(YJ.LE.-64.0) THEN
+          IF(YJ.LE.-64.0_JWRB) THEN
             DO I=1,ILON
               IF(IDEPTH(I,J).GE.-250) THEN
                 IDEPTH(I,J)=1
@@ -398,8 +398,8 @@
       ENDDO
 
 
-      NJM=INT(0.5*XDELLA*INVRES)
-      NJP=NINT(0.5*XDELLA*INVRES)
+      NJM=INT(0.5_JWRB*XDELLA*INVRES)
+      NJP=NINT(0.5_JWRB*XDELLA*INVRES)
 
       DO K=1,NY
 !        WE ASSUME THAT WAMGRID IS ALWAYS WITHIN ETOPO1
@@ -414,8 +414,8 @@
 
 !          ETOPO1 STARTS AT -180
            XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-           IF(XLON.GT.180.) THEN
-             XLON=XLON-360.
+           IF(XLON.GT.180._JWRB) THEN
+             XLON=XLON-360._JWRB
            ENDIF
 
 !          DETERMINE CLOSEST ETOPO1 I INDEX TO WAM POINT
@@ -424,15 +424,15 @@
      &          XLON.LT.ALON(I+1) ) EXIT
            ENDDO
 
-           NIM=INT(0.5*ZDELLO(K)*INVRES)
-           NIP=NINT(0.5*ZDELLO(K)*INVRES)
+           NIM=INT(0.5_JWRB*ZDELLO(K)*INVRES)
+           NIP=NINT(0.5_JWRB*ZDELLO(K)*INVRES)
 
            NSEA=0
-           SEA=0.
+           SEA=0._JWRB
            NLAND=0
-           XLAND=0.
+           XLAND=0._JWRB
            NSEASH=0
-           SEASH=0.
+           SEASH=0._JWRB
 
 !          AVERAGE OVER LAND AND SEA SEPARATELY
 !          AROUND POINT I,J
@@ -480,16 +480,16 @@
 !          OR THE CENTER OF THE GRID BOX IS LAND.
 !          ELSE AVERAGE OVER SEA POINTS
            PERCENTLAND(IX,K)=FLOAT(NLAND)/FLOAT(NLAND+NSEA)
-           IF(PERCENTLAND(IX,K).GT.0.60 .OR.                            &
+           IF(PERCENTLAND(IX,K).GT.0.60_JWRB .OR.                            &
      &        NLANDCENTRE.GE.NLANDCENTREMAX ) THEN
              WAMDEPTH(IX,K)=XLAND/NLAND
            ELSE
 !            IF THERE IS A PERCENTAGE OF SHALLOWER POINTS THEN
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
              PERCENTSHALLOW(IX,K)=FLOAT(NSEASH)/FLOAT(NSEA)
-             IF(PERCENTSHALLOW(IX,K).GE.0.3) THEN
+             IF(PERCENTSHALLOW(IX,K).GE.0.3_JWRB) THEN
                WAMDEPTH(IX,K)=NINT(SEASH/NSEASH)
-               IF(PERCENTLAND(IX,K).LT.0.10) THEN
+               IF(PERCENTLAND(IX,K).LT.0.10_JWRB) THEN
 !                IF MOSTLY SEA THEN IT SHOULD BE SEA AND NOT 0 
                  WAMDEPTH(IX,K)=MIN(WAMDEPTH(IX,K),-1)
                ENDIF
@@ -571,8 +571,8 @@
         DO K=1,NY
            DO IX=1,NLONRGG(K)
              XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-             IF(XLON.GT.180.) then
-               XLON=XLON-360.
+             IF(XLON.GT.180._JWRB) then
+               XLON=XLON-360._JWRB
              ENDIF
             IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.            &
      &         ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -632,7 +632,7 @@
 
 !     IREINF IS USED TO REINFORCE LAND OBSTRUCTIONS FOR
 !     SMALL GRID SPACING.
-      IF(XDELLA.LE.0.5) THEN
+      IF(XDELLA.LE.0.5_JWRB) THEN
         IREINF=2
       ELSE
         IREINF=1
@@ -681,14 +681,14 @@
 !       EXCEPT IF WAM DEPTH OF THE SAME ORDER OF MAGITUDE.
 !       ALSO COMPUTE THE DEPTH THAT IS CONSIDERED TO BE FULLY BLOCKING
 !       AS IF IT WAS LAND.
-        XKDMAX=1.5
+        XKDMAX=1.5_JWRB
         DO K=1,NY
           DO IX=1,NLONRGG(K)
             IF(WAMDEPTH(IX,K).LT.0) THEN
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
               IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
-              IBLOCKDPT(IX,K)=INT(-0.025*XX)
+              IBLOCKDPT(IX,K)=INT(-0.025_JWRB*XX)
             ENDIF
           ENDDO
         ENDDO
@@ -700,11 +700,11 @@
 !       IS=2 is for the north-south advection
         WRITE(*,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -719,26 +719,26 @@
             ENDIF
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLONL=AMOWEP + (REAL(IX-1)-0.5)*ZDELLO(K)
-                IF(XLONL.GT.180.) then
-                  XLONL=XLONL-360.
+                XLONL=AMOWEP + (REAL(IX-1)-0.5_JWRB)*ZDELLO(K)
+                IF(XLONL.GT.180._JWRB) then
+                  XLONL=XLONL-360._JWRB
                 ENDIF
-                XLONR=AMOWEP + (REAL(IX-1)+0.5)*ZDELLO(K)
-                IF(XLONR.GT.180.) then
-                  XLONR=XLONR-360.
+                XLONR=AMOWEP + (REAL(IX-1)+0.5_JWRB)*ZDELLO(K)
+                IF(XLONR.GT.180._JWRB) then
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -812,7 +812,7 @@
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -842,7 +842,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -857,17 +857,17 @@
 !       IS=2 is for the east-west advection
         WRITE(*,*) 'CREATE EAST-WEST  OBSTRUCTIONS '
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
-            XLATT=XLAT(K)+0.5*XDELLA
-            XLATB=XLAT(K)-0.5*XDELLA
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            XLATT=XLAT(K)+0.5_JWRB*XDELLA
+            XLATB=XLAT(K)-0.5_JWRB*XDELLA
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -880,15 +880,15 @@
                   XLONL=AMOWEP + (REAL(IX-1))*ZDELLO(K) +RESOL
                   XLONR=AMOWEP + (REAL(IX))*ZDELLO(K)
                 ENDIF
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -960,7 +960,7 @@
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
                   IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -987,7 +987,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
                   IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1006,11 +1006,11 @@
 
 !       first search north-south
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -1025,9 +1025,9 @@
             ENDIF
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1035,16 +1035,16 @@
               IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*XDELLA
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +(2-IS)*XDELLA
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1116,7 +1116,7 @@
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1146,7 +1146,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1158,17 +1158,17 @@
 
 !       then search east-west and average 
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1182,15 +1182,15 @@
                   XLONL=XLON -  XDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1261,7 +1261,7 @@
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1287,7 +1287,7 @@
 2222                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSRLAT(IX,K,IS)*ITEMPEW)
                 XX=SQRT(XX)
@@ -1309,11 +1309,11 @@
 
 !       first search north-south
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN
               KT=K
@@ -1328,9 +1328,9 @@
             ENDIF
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1338,16 +1338,16 @@
               IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*XDELLA
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +(IS-1)*XDELLA
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1419,7 +1419,7 @@
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1449,7 +1449,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1461,17 +1461,17 @@
 
 !       then search east-west and average 
         DO IS=1,2
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             XLATT=XLAT(K)+(IS-1)*XDELLA
             XLATB=XLAT(K)-(2-IS)*XDELLA
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1485,15 +1485,15 @@
                   XLONL=XLON - XDELLA
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1564,7 +1564,7 @@
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1590,7 +1590,7 @@
 3333                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSRLON(IX,K,IS)*ITEMPEW)
                 XX=SQRT(XX)
@@ -1614,11 +1614,11 @@
 
 !       first search north-south
         DO IS=1,4
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(I,NIOBSLON,LLAND,LREALLAND,J,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
           DO K=1,NY
             IF(IS.EQ.1) THEN 
               KT=K+1
@@ -1644,9 +1644,9 @@
 
             XLATT=XLAT(KT)+STEPT
             XLATB=XLAT(KB)+STEPB
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1654,16 +1654,16 @@
               IF(WAMDEPTH(IX,K).LT.0) THEN
                 XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
                 XLONR=XLON +((4-IS)/2)*ZDELLO(K)
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1735,7 +1735,7 @@
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1765,7 +1765,7 @@
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1777,11 +1777,11 @@
 
 !       then search east-west and average 
         DO IS=1,4
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-!$OMP+PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX)
-!$OMP+PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND)
-!$OMP+PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST)
-!$OMP+PRIVATE(NTOTPTS,ITEMPEW,XX)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLON,XLONL,XLONR,ILONL,ILONR,NOBSTRCT,NBLOCKLAND) &
+!$OMP& PRIVATE(J,NIOBSLAT,LLAND,LREALLAND,I,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS,ITEMPEW,XX)
           DO K=1,NY
             IF(IS.EQ.1 .OR. IS.EQ.4) THEN
               XLATT=XLAT(K)+XDELLA
@@ -1790,9 +1790,9 @@
               XLATT=XLAT(K)
               XLATB=XLAT(K)-XDELLA
             ENDIF
-            ILATT = NINT((90.- XLATT)*INVRES) + 1
+            ILATT = NINT((90.0_JWRB- XLATT)*INVRES) + 1
             ILATT = MAX(1,MIN(ILATT,ILAT))
-            ILATB = NINT((90.- XLATB)*INVRES) + 1
+            ILATB = NINT((90.0_JWRB- XLATB)*INVRES) + 1
             ILATB = MAX(1,MIN(ILATB,ILAT))
             IF(ILATB.EQ.ILAT+1)ILATB=ILAT
 
@@ -1806,15 +1806,15 @@
                   XLONL=XLON - ZDELLO(K) 
                   XLONR=XLON - RESOL
                 ENDIF
-                IF(XLONL.GT.180.) THEN
-                  XLONL=XLONL-360.
+                IF(XLONL.GT.180._JWRB) THEN
+                  XLONL=XLONL-360._JWRB
                 ENDIF
-                IF(XLONR.GT.180.) THEN
-                  XLONR=XLONR-360.
+                IF(XLONR.GT.180._JWRB) THEN
+                  XLONR=XLONR-360._JWRB
                 ENDIF
 
-                ILONL = NINT((XLONL + 180.)*INVRES) + 1
-                ILONR = NINT((XLONR + 180.)*INVRES) + 1
+                ILONL = NINT((XLONL + 180._JWRB)*INVRES) + 1
+                ILONR = NINT((XLONR + 180._JWRB)*INVRES) + 1
 
                 NOBSTRCT=0
 
@@ -1885,7 +1885,7 @@
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1911,7 +1911,7 @@
 4444                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1.-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
                 ENDIF
                 XX=FLOAT(IOBSCOR(IX,K,IS)*ITEMPEW)
                 XX=SQRT(XX)
@@ -2010,15 +2010,15 @@
           DO IS =1,2
             IUNIT=IUNIT+1
             IF(IS.EQ.1) THEN
-              STEPLAT=-0.25*XDELLA
+              STEPLAT=-0.25_JWRB*XDELLA
             ELSE
-              STEPLAT=0.25*XDELLA
+              STEPLAT=0.25_JWRB*XDELLA
             ENDIF 
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180.) then
-                   XLON=XLON-360.
+                 IF(XLON.GT.180._JWRB) then
+                   XLON=XLON-360._JWRB
                  ENDIF
                 IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -2035,15 +2035,15 @@
           DO IS =1,2
             IUNIT=IUNIT+1
             IF(IS.EQ.1) THEN
-              STEPLON=-0.25*XDELLO
+              STEPLON=-0.25_JWRB*XDELLO
             ELSE
-              STEPLON=0.25*XDELLO
+              STEPLON=0.25_JWRB*XDELLO
             ENDIF 
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180.) then
-                   XLON=XLON-360.
+                 IF(XLON.GT.180._JWRB) then
+                   XLON=XLON-360._JWRB
                  ENDIF
                 IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -2060,15 +2060,15 @@
           DO IS =1,2
             IUNIT=IUNIT+1
             IF(IS.EQ.1) THEN
-              STEPLAT=-0.25*XDELLA
+              STEPLAT=-0.25_JWRB*XDELLA
             ELSE
-              STEPLAT=0.25*XDELLA
+              STEPLAT=0.25_JWRB*XDELLA
             ENDIF 
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180.) then
-                   XLON=XLON-360.
+                 IF(XLON.GT.180._JWRB) then
+                   XLON=XLON-360._JWRB
                  ENDIF
                 IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -2085,15 +2085,15 @@
           DO IS =1,2
             IUNIT=IUNIT+1
             IF(IS.EQ.1) THEN
-              STEPLON=-0.25*XDELLO
+              STEPLON=-0.25_JWRB*XDELLO
             ELSE
-              STEPLON=0.25*XDELLO
+              STEPLON=0.25_JWRB*XDELLO
             ENDIF 
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180.) then
-                   XLON=XLON-360.
+                 IF(XLON.GT.180._JWRB) then
+                   XLON=XLON-360._JWRB
                  ENDIF
                 IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -2110,15 +2110,15 @@
           DO IS =1,4
             IUNIT=IUNIT+1
             IF(IS.EQ.1) THEN
-              STEPLON=-0.25*XDELLO
+              STEPLON=-0.25_JWRB*XDELLO
             ELSE
-              STEPLON=0.25*XDELLO
+              STEPLON=0.25_JWRB*XDELLO
             ENDIF 
             DO K=1,NY
                DO IX=1,NLONRGG(K)
                  XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
-                 IF(XLON.GT.180.) then
-                   XLON=XLON-360.
+                 IF(XLON.GT.180._JWRB) then
+                   XLON=XLON-360._JWRB
                  ENDIF
                 IF(ALATB.LE.XLAT(K) .AND. XLAT(K).LE.ALATT .AND.        &
      &             ALONL.LE.XLON .AND. XLON.LE.ALONR ) THEN
@@ -2175,4 +2175,4 @@
 
       ENDDO ! END LOOP ON FREQUENCIES
 
-      END PROGRAM CREATE_WAM_BATHYMETRY_ETOPO1 
+END PROGRAM CREATE_WAM_BATHYMETRY_ETOPO1 
