@@ -46,9 +46,11 @@
 
 ! ------------------------------------------------------------------- 
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCUR
       USE YOWNEMOFLDS,ONLY: NEMOUCUR, NEMOVCUR
-      USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,
+      USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,    &
      &             LLCHKCFL,LLCHKCFLA, CURRENT_MAX
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -72,14 +74,14 @@
 #include "propdot.intfb.h"
 #include "wamcur.intfb.h"
 
-      INTEGER, INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
 
-      INTEGER :: IG
-      INTEGER :: LIU
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA,IJ
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: LIU
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
@@ -87,9 +89,8 @@
       LOGICAL :: LLCURRENT
 
 ! --------------------------------------------------------------------- 
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('GETCURR',0,ZHOOK_HANDLE)
-#endif
 
 !     1.0  GET NEW CURRENTS IF IT IS REQUIRED.
 !          ----------------------------------
@@ -97,7 +98,7 @@
       CALL GSTATS(1984,0)
 
       IF (LLNEWCURR) THEN
-        IF ( (LWCOU .AND. LWCUR ) .OR.
+        IF ( (LWCOU .AND. LWCUR ) .OR.                                  &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 
           IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
@@ -132,12 +133,12 @@
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
-                  U(NINF-1,IG)=0.
-                  V(NINF-1,IG)=0.
+                  U(NINF-1,IG)=0.0_JWRB
+                  V(NINF-1,IG)=0.0_JWRB
 
                 IF (ITEST.GE.1) THEN
                    WRITE (IU06,*) ' '
-                   WRITE (IU06,*) '  SUB. GETCURR:',
+                   WRITE (IU06,*) '  SUB. GETCURR:',                    &
      &             ' INPUT CURRENTS FIELDS CONVERTED TO BLOCKS'
                    CALL FLUSH(IU06)
                 ENDIF
@@ -147,18 +148,16 @@
                 WRITE(IU06,*)'NEMO CURRENTS'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)
-                  U(IJ,IG) =
-     &             SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                  V(IJ,IG) = 
-     &             SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                  U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                  V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ENDDO
-                U(NINF-1,IG)=0.
-                V(NINF-1,IG)=0.
+                U(NINF-1,IG)=0.0_JWRB
+                V(NINF-1,IG)=0.0_JWRB
                 CALL MPEXCHNG(U,1,1)
                 CALL MPEXCHNG(V,1,1)
               ELSE
-                U=0.
-                V=0.
+                U=0.0_JWRB
+                V=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     IREFRA = ',IREFRA
@@ -178,7 +177,7 @@
 
               IF (LLCURRENT) THEN
                 WRITE(IU06,*) ' '
-                WRITE(IU06,*) ' SUB. GETCURR: GETTING OCEAN CURRENTS',
+                WRITE(IU06,*) ' SUB. GETCURR: GETTING OCEAN CURRENTS',  &
      &                        ' FOR DATE ',CDTCUR
                 CALL FLUSH(IU06)
 
@@ -203,8 +202,8 @@
                 CALL ABORT1
                 ENDIF
               ELSE
-                U=0.
-                V=0.
+                U=0.0_JWRB
+                V=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     FILE ',FILNM,' NOT FOUND '
@@ -221,7 +220,7 @@
             IF (IREFRA .NE. 0) THEN
               CALL PROPDOT
               IF (ITEST.GE.2) THEN
-                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',
+                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',             &
      &         ' TERMS INITIALIZED'
                 CALL FLUSH(IU06)
               END IF
@@ -245,8 +244,6 @@
 
       CALL GSTATS(1984,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GETCURR',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE GETCURR 
