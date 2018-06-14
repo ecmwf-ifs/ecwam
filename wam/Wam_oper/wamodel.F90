@@ -1,5 +1,4 @@
-
-      SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
+SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
 ! ----------------------------------------------------------------------
 
@@ -277,11 +276,12 @@
 ! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,
+
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,
-     &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,
-     &                      NEMOWSTEP, NEMOFRCO     ,
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,    &
+     &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,                &
+     &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
       USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
@@ -298,63 +298,42 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
-     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
-     &            IJL      ,IJLT     ,
+      USE YOWGRIBHD, ONLY : LGRHDIFS 
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL       ,             &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
      &            CIWA
-      USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG   ,
-     &            USTARG   ,UDIRG    ,TAUWG    ,CDG      ,SMEANG   ,
-     &            U10G     ,WHGTAG   ,CWHTAG   ,RANGAG   ,MWP1G    ,
-     &            MWP2G    ,WSPRDG   ,C4G      ,BFG      ,QPG      ,
-     &            DEPTHG   ,HMAXG    ,TMAXG    ,USTOKESG ,VSTOKESG ,
-     &            UCURG    ,VCURG    ,PHIEPSG  ,PHIAWG   ,TAUOCG   ,
-     &            STRNMSG  ,RHOAG    ,WSTARG   ,CICG     ,CIHG     ,
-     &            C3G      ,
-     &            WX1G     ,WX2G     ,WX3G     ,WX4G     ,WX5G     ,
-     &            NSSTG    ,NICCG    ,NICTG    ,NUCUG    ,NVCUG
-      USE YOWINTS  , ONLY : WHGTSG   ,WDIRSG   ,WMNFSG   ,WHGTWG   ,
-     &            WDIRWG   ,WMNFWG
-      USE YOWINTT  , ONLY : WHGTTRG  ,WDIRTRG  ,MWPMTRG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
-     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,
-     &            LWAVEWIND
-      USE YOWMLTSK , ONLY : NCHUNK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+      USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
-     &            INDEP
-      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,
-     &            CDATER   ,CDATES   ,CDTINTT  ,
-     &            CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,
-     &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,
-     &            ISHALLO  ,IREFRA   ,IASSI    ,
-     &            CDTBC    ,IDELBC   ,
-     &            IPROPAGS ,
-     &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,
-     &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,
-     &            LLSOURCE ,
+      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
+     &            CDATER   ,CDATES   ,CDTINTT  ,                        &
+     &            CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,              &
+     &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
+     &            ISHALLO  ,IREFRA   ,IASSI    ,                        &
+     &            CDTBC    ,IDELBC   ,                                  &
+     &            IPROPAGS ,                                            &
+     &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,    &
+     &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
+     &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN
-      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,
-     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
-     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
+      USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
+     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
      &            FL1      ,FL3
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,
-     &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,
-     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,SUMWN    ,              &
+     &            WLATN    ,WLONN    ,WCORN    ,WKPMN    ,WMPMN    ,    &
+     &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN  ,    &
      &            LUPDTWGHT 
       USE YOWUNIT  , ONLY : IU02     ,IU04     ,IU08     ,              &
      &            IU19     ,IU20     ,IU30
-      USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,
+      USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
       USE UNWAM, ONLY : PROPAG_UNWAM, EXCHANGE_FOR_FL1_FL3_SL
@@ -421,18 +400,16 @@
       INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: siz, avgU10NEW, avgHS, sumHS
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
 
 #ifdef PARKIND1_SINGLE
-      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE ::
-     &     ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
+      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE :: ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
 #endif
 
-      CHARACTER(LEN=2) :: MARSTYPEBAK
+      CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
       CHARACTER(LEN=14) :: CDTINTTBAK
-      CHARACTER(LEN=14) CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
+      CHARACTER(LEN=14) :: CDATE, CDTPRA, CDTIMP, CDTIMPNEXT, CDTRCF
 
       LOGICAL, INTENT(INOUT) :: LDSTOP, LDWRRE, L1STCALL
       LOGICAL :: LLFLUSH
@@ -445,14 +422,11 @@
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
-
       DATA NEWFILE / .FALSE. /
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
-#endif
 
       CZERO = ' '
 
@@ -485,8 +459,7 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,
-     &                  U10OLD(KIJS,1), THWOLD(KIJS,1))
+          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,U10OLD(KIJS,1), THWOLD(KIJS,1))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -541,11 +514,11 @@
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            CALL WDFLUXES (KIJS, KIJL, IG,
-     &                     MIJ(KIJS),
-     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),
-     &                     CICOVER(KIJS,IG),
-     &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
+            CALL WDFLUXES (KIJS, KIJL, IG,                              &
+     &                     MIJ(KIJS),                                   &
+     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
+     &                     CICOVER(KIJS,IG),                            &
+     &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
@@ -558,14 +531,13 @@
 
         ELSE
           MIJ(:) = NFRE
-          XLLWS(:,:,:)=0.
+          XLLWS(:,:,:)=0._JWRB
         ENDIF
 
 !       SET FL1 ON ICE POINTS TO ZERO
         IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
           IF (ITEST.GE.1) THEN
-            WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT',
-     &       ' ICEPOINTS'
+            WRITE(IU06,*) '   SUB. WAMODEL: INITIAL SPECTRUM = 0 AT ICE POINTS'
           ENDIF
 ! Mod for OPENMP
           CALL GSTATS(1439,0)
@@ -573,7 +545,7 @@
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,
+            CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                 &
      &                  CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
@@ -699,9 +671,7 @@
             ENDIF
           ENDDO
         ELSE
-          IF ((FFLAG20.OR.GFLAG20) .AND.
-     &         CDTINTT.LT.CDTPRO)
-     &     CALL INCDATE (CDTINTT,IDELINT)
+          IF ((FFLAG20.OR.GFLAG20) .AND. CDTINTT.LT.CDTPRO) CALL INCDATE (CDTINTT,IDELINT)
         ENDIF
 
 !       UPDATE SPECTRA OUTPUT DATE
@@ -721,7 +691,7 @@
           IF (CDTRES.LT.CDTPRO) CALL INCDATE(CDTRES,IDELRES)
         ENDIF
 
-        IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1).AND.CDTBC.LT.CDTPRO)
+        IF ((IBOUNC.EQ.1.OR.IBOUNF.EQ.1).AND.CDTBC.LT.CDTPRO)           &
      &  CALL INCDATE(CDTBC,IDELBC)
 
 
@@ -741,7 +711,7 @@
 
  1550     CONTINUE                       
 
-!*    1.5.5.2 COMPUTATION OF PROPAGATION &&& 
+!*    1.5.5.2 COMPUTATION OF PROPAGATION
 !*            INTEGRATION OF SOURCE TERMS OVER SUB TIME STEPS BETWEEN
 !*            PROPAGATION TIME STEPS.
 !             -------------------------------------------------------
@@ -768,33 +738,22 @@
             IF(IPROPAGS.EQ.2. AND. LUPDTWGHT) THEN
               ALLOCATE(LCFLFAIL(IJS(IG):IJL(IG)))
 
-              IF(.NOT. ALLOCATED(SUMWN))
-     &           ALLOCATE(SUMWN(IJS(IG):IJL(IG),NANG,NFRE))
-              IF(.NOT. ALLOCATED(WLATN))
-     &           ALLOCATE(WLATN(IJS(IG):IJL(IG),NANG,NFRE,2,2))
-              IF(.NOT. ALLOCATED(LLWLATN))
-     &           ALLOCATE(LLWLATN(NANG,NFRE,2,2))
+              IF(.NOT. ALLOCATED(SUMWN)) ALLOCATE(SUMWN(IJS(IG):IJL(IG),NANG,NFRE))
+              IF(.NOT. ALLOCATED(WLATN)) ALLOCATE(WLATN(IJS(IG):IJL(IG),NANG,NFRE,2,2))
+              IF(.NOT. ALLOCATED(LLWLATN)) ALLOCATE(LLWLATN(NANG,NFRE,2,2))
 
-              IF(.NOT. ALLOCATED(WLONN))
-     &           ALLOCATE(WLONN(IJS(IG):IJL(IG),NANG,NFRE,2))
-              IF(.NOT. ALLOCATED(LLWLONN))
-     &           ALLOCATE(LLWLONN(NANG,NFRE,2))
+              IF(.NOT. ALLOCATED(WLONN)) ALLOCATE(WLONN(IJS(IG):IJL(IG),NANG,NFRE,2))
+              IF(.NOT. ALLOCATED(LLWLONN))  ALLOCATE(LLWLONN(NANG,NFRE,2))
 
-              IF(.NOT. ALLOCATED(WCORN))
-     &           ALLOCATE(WCORN(IJS(IG):IJL(IG),NANG,NFRE,4,2))
-              IF(.NOT. ALLOCATED(LLWCORN))
-     &           ALLOCATE(LLWCORN(NANG,NFRE,4,2))
+              IF(.NOT. ALLOCATED(WCORN)) ALLOCATE(WCORN(IJS(IG):IJL(IG),NANG,NFRE,4,2))
+              IF(.NOT. ALLOCATED(LLWCORN)) ALLOCATE(LLWCORN(NANG,NFRE,4,2))
 
-              IF(.NOT. ALLOCATED(WKPMN))
-     &           ALLOCATE(WKPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
-              IF(.NOT. ALLOCATED(LLWKPMN))
-     &           ALLOCATE(LLWKPMN(NANG,NFRE,-1:1))
+              IF(.NOT. ALLOCATED(WKPMN)) ALLOCATE(WKPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
+              IF(.NOT. ALLOCATED(LLWKPMN)) ALLOCATE(LLWKPMN(NANG,NFRE,-1:1))
 
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-                IF(.NOT. ALLOCATED(WMPMN))
-     &             ALLOCATE(WMPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
-                IF(.NOT. ALLOCATED(LLWMPMN))
-     &             ALLOCATE(LLWMPMN(NANG,NFRE,-1:1))
+                IF(.NOT. ALLOCATED(WMPMN)) ALLOCATE(WMPMN(IJS(IG):IJL(IG),NANG,NFRE,-1:1))
+                IF(.NOT. ALLOCATED(LLWMPMN)) ALLOCATE(LLWMPMN(NANG,NFRE,-1:1))
               ENDIF
 
 
@@ -941,11 +900,11 @@
 
 !*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
 !         ---------------------------------------------------------------
-          CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
-     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,
-     &                 USOLD, USNEW,
-     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,
-     &                 CICOVER, CITHICK, CIWA,
+          CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,           &
+     &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,     &
+     &                 USOLD, USNEW,                                    &
+     &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,                &
+     &                 CICOVER, CITHICK, CIWA,                          &
      &                 TAUW, BETAOLD)
 
           IF (ITEST.GE.2) THEN
@@ -963,14 +922,14 @@
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                CALL IMPLSCH (FL3(KIJS:KIJL,:,:),
-     &                        KIJS, KIJL, IG,
-     &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),
-     &                        TAUW(KIJS,IG), Z0OLD(KIJS,IG),
-     &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),
-     &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),
-     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),
-     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),
+                CALL IMPLSCH (FL3(KIJS:KIJL,:,:),                       &
+     &                        KIJS, KIJL, IG,                           &
+     &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),          &
+     &                        TAUW(KIJS,IG), Z0OLD(KIJS,IG),            &
+     &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),        &
+     &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
+     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
+     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS), &
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
 
               ENDDO
@@ -987,8 +946,7 @@
 
             ELSE
 !             NO SOURCE TERM CONTRIBUTION
-!$OMP         PARALLEL DO SCHEDULE(STATIC)  
-!$OMP+        PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
+!$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)  
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -997,7 +955,7 @@
                   DO K=1,NANG
                     DO M=1,NFRE
                       FL3(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)
-                      XLLWS(IJ,K,M) = 0.
+                      XLLWS(IJ,K,M) = 0._JWRB
                     ENDDO
                   ENDDO
                 ENDDO
@@ -1010,8 +968,8 @@
 !*          COPY AND CLOSE FILES IF NEEDED.
 !           -------------------------------
 
-            CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,
-     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,
+            CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,         &
+     &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,  &
      &                   U10NEW,THWNEW,ROAIRN,ZIDLNEW)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN
@@ -1025,8 +983,7 @@
 
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS',
-     &           ' INTEGRATED:'
+                WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS INTEGRATED:'
                  CALL FLUSH(IU06)
               ENDIF
             ENDIF
@@ -1057,8 +1014,7 @@
 
           IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
             IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT',
-     &         ' ICEPOINTS'
+              WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT ICE POINTS'
                CALL FLUSH(IU06)
             ENDIF
             CALL GSTATS(1439,0)
@@ -1066,7 +1022,7 @@
             DO JKGLO=IJS(IG),IJL(IG),NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS, KIJL,
+              CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS, KIJL,                &
      &                    CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
             ENDDO
 !$OMP       END PARALLEL DO
@@ -1083,8 +1039,7 @@
           IF (IBOUNF.EQ.1) THEN
             CALL BOUINPT (FL3, IU02, NBLKS, NBLKE)
             IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*)
-     &         '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
+              IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
                CALL FLUSH(IU06)
             ENDIF
           ENDIF
@@ -1097,8 +1052,7 @@
           IF (IBOUNC.EQ.1) THEN
             CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19)
             IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*)
-     &         '   SUB. WAMODEL: BOUNDARY OUTPUT',
+              IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY OUTPUT', &
      &         '  (COARSE GRID) DONE IN SUB OUTBC'
                CALL FLUSH(IU06)
             ENDIF
@@ -1109,8 +1063,7 @@
 !            --------------------------------------
 
           IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ',
-     &         'OUTPUT CDTINTT=',CDTINTT
+              WRITE(IU06,*) '   SUB. WAMODEL: MODEL ', 'OUTPUT CDTINTT=',CDTINTT
           ENDIF
 
 #ifdef ECMWF
@@ -1138,8 +1091,7 @@
           CALL GSTATS(1909,1)
 
           IF (CDTINTT.EQ.CDTPRO. OR. LRST .OR.                          &
-     &       (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF ))
-     &    THEN
+     &       (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF )) THEN
 
 !           OUTPUT POINT SPECTRA
             IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
@@ -1158,8 +1110,7 @@
             ENDIF
 
             IF (ITEST.GE.2) THEN
-              WRITE(IU06,*)
-     &         '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
+              WRITE(IU06,*) '   SUB. WAMODEL: MODEL OUTPUT PREPARED IN OUTBS'
               CALL FLUSH (IU06)
             ENDIF
 
@@ -1185,8 +1136,7 @@
 !!!
         IG=1
         CALL GSTATS(1432,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) 
-!$OMP+  PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ)
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
@@ -1204,12 +1154,9 @@
 !       SET THE DUMMY LAND POINTS TO 0.
         DO M=1,NFRE
           DO K=1,NANG
-             FL1(NINF-1,K,M) = 0. 
+             FL1(NINF-1,K,M) = 0._JWRB 
           ENDDO
         ENDDO
-
-        IF (ITEST.GE.2)
-     &   WRITE(IU06,*) '   SUB. WAMODEL: BLOCK COPIED'
 
 !*    1.7 ONE PROPAGATION TIMESTEP DONE FOR ALL BLOCKS.
 !         ---------------------------------------------
@@ -1232,7 +1179,7 @@
 !         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !         BECOMES TYPE AN (i.e. speudo analysis)
           MARSTYPEBAK=MARSTYPE
-          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.                 &
      &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
             MARSTYPE='an'
           ENDIF
@@ -1249,8 +1196,8 @@
 !       PRINT TIME.
         WRITE(IU06,112) CDTPRO
         IF (ITEST .GE. 1 .OR. .NOT.LWCOU) CALL FLUSH (IU06)
-  112   FORMAT(/,3X,'!!!!!!!!!!!!!! ',
-     &   'WAVE FIELDS INTEGRATED.  DATE IS: ',A14,
+  112   FORMAT(/,3X,'!!!!!!!!!!!!!! ',                                  &
+     &   'WAVE FIELDS INTEGRATED.  DATE IS: ',A14,                      &
      &   '  !!!!!!!!!!!! ')
 
 !*    1.8 OUTPUT FILES AND RECOVERY FILES ARE DISPOSED WHEN
@@ -1259,10 +1206,10 @@
 !         -------------------------------------------------
 
         IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) " WAMODEL: 1.8  CDTRES=", CDTRES, " CDTPRO=",
+          WRITE(IU06,*) " WAMODEL: 1.8  CDTRES=", CDTRES, " CDTPRO=",   &
      &     CDTPRO, " LDWRRE=", LDWRRE, "KADV=", KADV, " NADV=", NADV
-          WRITE(IU06,*)
-     &     " CDATEF=", CDATEF, "CDATEE=", CDATEE, " CDATER=", CDATER,
+          WRITE(IU06,*)                                                 &
+     &     " CDATEF=", CDATEF, "CDATEE=", CDATEE, " CDATER=", CDATER,   &
      &     " CDATES=", CDATES, "IREST=", IREST
         ENDIF
 
@@ -1285,10 +1232,10 @@
         IF(CDTBC.EQ.CDTPRO) THEN
           IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
             DO II=1,GBOUNC
-            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,
+            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,                &
      &        CBCPREF(II), 'S')
-            IF (CDTBC.LT.CDATEE)
-     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,
+            IF (CDTBC.LT.CDATEE)                                        &
+     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,            &
      &                     TH(1), FR(1), IU19(II), IU06) 
             ENDDO
           ENDIF
@@ -1308,11 +1255,7 @@
 !         until the end of the advection loop.
 !         OTHERWISE THE OUTPUT WILL OCCUR IN WAMASSI.
 
-          LOUT=((IREST.EQ.1)
-     &            .AND.
-     &          (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES))
-     &            .AND.
-     &             LSV .AND. LWAMANOUT
+          LOUT= ((IREST.EQ.1) .AND. (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES)) .AND. LSV .AND. LWAMANOUT
 
 
           IF ( LOUT .OR. LRST ) THEN
@@ -1325,7 +1268,7 @@
 !             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !             BECOMES TYPE AN (i.e. pseudo analysis)
               MARSTYPEBAK=MARSTYPE
-              IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.
+              IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.             &
      &           (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
                 MARSTYPE='an'
               ENDIF
@@ -1341,7 +1284,7 @@
               ENDIF
               LLFLUSH = .FALSE.
               WRITE(IU06,*) ' '
-              WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........',
+              WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........',  &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)
@@ -1349,15 +1292,15 @@
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-              CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+              CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,        &
+     &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,         &
      &                       NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
-              WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',
+              WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL SAVSPEC(FL1,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
-              WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........',
+              WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........', &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
               CALL FLUSH(IU06)
@@ -1388,15 +1331,15 @@
 
               IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
 
-              CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
-     &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                      IASSI, NFCST, ISTAT, CDTCUR,
+              CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,     &
+     &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,  &
+     &                      IASSI, NFCST, ISTAT, CDTCUR,                &
      &                      LRSTPARALW, NPROC)
  
               CLOSE (IU04)
-              WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',
+              WRITE(IU06,*) ' WAMINFO FILE WRITTEN FOR RESTART...',     &
      &         ' CDTPRO  = ', CDTPRO
-              WRITE(IU06,*) '                                    ',
+              WRITE(IU06,*) '                                    ',     &
      &         ' CDATEF  = ', CDATEF
               WRITE(IU06,*) ' TO ', CWI(1:ICPLEN+8)
               CALL FLUSH(IU06)
@@ -1404,12 +1347,12 @@
               IF (LRSTINFDAT) THEN
                 CDTRCF=CDTPRO
                 CALL INCDATE(CDTRCF,IDELPRO)
-                IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//
-     &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),
+                IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//         &
+     &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),     &
      &                              'w', 'f', 0)
-                CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,
-     &                        IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,
-     &                        IASSI, NFCST, ISTAT, CDTCUR,
+                CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,   &
+     &                        IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,&
+     &                        IASSI, NFCST, ISTAT, CDTCUR,              &
      &                        LRSTPARALW, NPROC)
                 CLOSE (IU04)
               ENDIF
@@ -1420,14 +1363,14 @@
 
         ENDIF  ! END SAVE
 
-        IF( LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND. 
-     &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.
+        IF( LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND.  &
+     &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.         &
      &    CDTINTT.EQ.CDTPRO ) THEN
           CALL GSTATS(1976,0)
           IERR = IFLUSHFDBSUBS (NWFDBREF)
           CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
-          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ',
+          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ', &
      &    CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
         ENDIF
@@ -1448,22 +1391,16 @@
 !     Single precision -- needs tmp copies
                 ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG)))
                 ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG)))
-                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
-     &                           IJS(IG),IJL(IG),
-     &                           ZNEMOUSTOKES(IJS(IG)),
-     &                           ZNEMOVSTOKES(IJS(IG)))
-                NEMOUSTOKES(IJS(IG):IJL(IG)) =
-     &               ZNEMOUSTOKES(IJS(IG):IJL(IG))
-                NEMOVSTOKES(IJS(IG):IJL(IG)) =
-     &               ZNEMOVSTOKES(IJS(IG):IJL(IG))
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:), IJS(IG),IJL(IG), &
+     &                           ZNEMOUSTOKES(IJS(IG)), ZNEMOVSTOKES(IJS(IG)))
+                NEMOUSTOKES(IJS(IG):IJL(IG)) = ZNEMOUSTOKES(IJS(IG):IJL(IG))
+                NEMOVSTOKES(IJS(IG):IJL(IG)) = ZNEMOVSTOKES(IJS(IG):IJL(IG))
                 DEALLOCATE(ZNEMOUSTOKES)
                 DEALLOCATE(ZNEMOVSTOKES)
 #else
 !     Double precision
-                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:),
-     &                           IJS(IG),IJL(IG),
-     &                           NEMOUSTOKES(IJS(IG)),
-     &                           NEMOVSTOKES(IJS(IG)))
+                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:), IJS(IG),IJL(IG), &
+     &                           NEMOUSTOKES(IJS(IG)), NEMOVSTOKES(IJS(IG)))
 #endif
              ELSE
                NEMOUSTOKES(:)=0
@@ -1473,17 +1410,14 @@
 #ifdef PARKIND1_SINGLE
 !     Single precision -- needs a tmp copy
                 ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG)))
-                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
-     &                        IJS(IG),IJL(IG),
-     &                        ZNEMOSTRN(IJS(IG)))
-                NEMOSTRN(IJS(IG):IJL(IG)) =
-     &               ZNEMOSTRN(IJS(IG):IJL(IG))
+                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),       &
+     &                        IJS(IG),IJL(IG), ZNEMOSTRN(IJS(IG)))
+                NEMOSTRN(IJS(IG):IJL(IG)) = ZNEMOSTRN(IJS(IG):IJL(IG))
                 DEALLOCATE(ZNEMOSTRN)
 #else
 !     Double precision
-                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),
-     &                        IJS(IG),IJL(IG),
-     &                        NEMOSTRN(IJS(IG)))
+                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),       &
+     &                        IJS(IG),IJL(IG), NEMOSTRN(IJS(IG)))
 #endif
              ENDIF
              CALL UPDNEMOFIELDS
@@ -1505,8 +1439,6 @@
 
       ENDDO ADVECTION
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)
-#endif
 
-      END SUBROUTINE WAMODEL
+END SUBROUTINE WAMODEL

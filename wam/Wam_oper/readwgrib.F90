@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,
+      SUBROUTINE READWGRIB(IU06, FILNM, IPARAM, CDATE, MIJS, MIJL,      &
      &                     FIELD, KZLEV, LLONLYPOS, IREAD )
 
 !-----------------------------------------------------------------------
@@ -64,6 +64,8 @@
 
 !-------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -79,11 +81,11 @@
 #include "abort1.intfb.h"
 #include "inwgrib.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU06, IREAD, IPARAM
-      INTEGER, INTENT(IN) :: MIJS, MIJL
-      INTEGER, INTENT(INOUT) :: KZLEV
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, IREAD, IPARAM
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KZLEV
 
-      REAL,DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) :: FIELD 
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
@@ -91,13 +93,13 @@
       LOGICAL, INTENT(IN) :: LLONLYPOS
 
 
-      INTEGER :: KPARAM
-      INTEGER :: IJ, IX, JY
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: KLONRGG(NGY)
+      INTEGER(KIND=JWIM) :: KPARAM
+      INTEGER(KIND=JWIM) :: IJ, IX, JY
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: KLONRGG(NGY)
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: WORK(NGX,NGY)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: WORK(NGX,NGY)
 
       CHARACTER(LEN=14) :: CCDDATE
       CHARACTER(LEN=40) MSG
@@ -108,9 +110,7 @@
 !*    1. INPUT OF GRIB DATA.
 !     -----------------------
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
-#endif
 
       CALL INWGRIB  (FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
 
@@ -153,16 +153,14 @@
 
           IF(LLONLYPOS) THEN
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(STATIC)
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
+!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
             DO JKGLO=MIJS,MIJL,NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,MIJL)
               DO IJ = KIJS, KIJL
                 IX = IFROMIJ(IJ,1)
                 JY = JFROMIJ(IJ,1)
-                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY) .GT. 0.)
-     &               FIELD(IJ)=WORK(IX,JY)
+                IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY).GT.0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
 !$OMP       END PARALLEL DO
@@ -170,8 +168,7 @@
 
           ELSE
             CALL GSTATS(1444,0)
-!$OMP       PARALLEL DO SCHEDULE(STATIC) 
-!$OMP+      PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
+!$OMP       PARALLEL DO SCHEDULE(STATIC)  PRIVATE(JKGLO,KIJS,KIJL,IJ,IX,JY)
             DO JKGLO=MIJS,MIJL,NPROMA
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,MIJL)
@@ -185,9 +182,6 @@
             CALL GSTATS(1444,1)
           ENDIF
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE READWGRIB

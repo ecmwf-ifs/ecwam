@@ -88,6 +88,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM) :: IS, KT, KB
       INTEGER(KIND=JWIM) :: NOBSTRCT, NIOBSLON, NBLOCKLAND, NTOTPTS
       INTEGER(KIND=JWIM) :: INVRES
+      INTEGER(KIND=JWIM) :: KEXTHRS 
 
       INTEGER(KIND=JWIM) :: IDUM(15)
       INTEGER(KIND=JWIM), DIMENSION(NREF) :: LEVEL, NDEPTH
@@ -100,6 +101,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
       REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SQRT2 = 2.0
       REAL(KIND=JWRB) :: AKI
       REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FRATIO, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
@@ -228,7 +230,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       ALLOCATE(XLAT(0:NY+1))
 
       DO K=0,NY+1
-        XLAT(K) = (AMOSOP + REAL(K-1)*XDELLA)
+        XLAT(K) = (AMOSOP + REAL(K-1,JWRB)*XDELLA)
       ENDDO
 
       DO K=1,NY
@@ -241,7 +243,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &         AMOEAP .EQ. 42.0_JWRB .AND. AMONOP .EQ. 81._JWRB       ) THEN
 !         the old value for pi has to be taken in order to reproduce
 !         exactly the irregular grid of the operational LAW model 0.25
-              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
+              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1,JWRB)*XDELLA)*OLDRAD))
             ELSE
 !            The silly division by cos(x60*RAD) is an attempt at making sure
 !            that exactly 0.5 is used for cosine of 60 degrees.
@@ -257,9 +259,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
         IF(IPER.EQ.1) THEN
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K))
+          ZDELLO(K)  = PLONS/REAL(NLONRGG(K),JWRB)
         ELSE
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
+          ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1,JWRB)
         ENDIF
       ENDDO
 
@@ -413,7 +415,7 @@ PROGRAM CREATE_BATHY_ETOPO1
          DO IX=1,NLONRGG(K)
 
 !          ETOPO1 STARTS AT -180
-           XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+           XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
            IF(XLON.GT.180._JWRB) THEN
              XLON=XLON-360._JWRB
            ENDIF
@@ -479,14 +481,14 @@ PROGRAM CREATE_BATHY_ETOPO1
 !          IF 40% OR MORE LAND, THEN AVERAGE OVER LAND POINTS
 !          OR THE CENTER OF THE GRID BOX IS LAND.
 !          ELSE AVERAGE OVER SEA POINTS
-           PERCENTLAND(IX,K)=FLOAT(NLAND)/FLOAT(NLAND+NSEA)
+           PERCENTLAND(IX,K)=REAL(NLAND,JWRB)/REAL((NLAND+NSEA),JWRB)
            IF(PERCENTLAND(IX,K).GT.0.60_JWRB .OR.                            &
      &        NLANDCENTRE.GE.NLANDCENTREMAX ) THEN
              WAMDEPTH(IX,K)=XLAND/NLAND
            ELSE
 !            IF THERE IS A PERCENTAGE OF SHALLOWER POINTS THEN
 !            THE AVERAGE IS TAKEN OVER THOSE POINTS ALONE.
-             PERCENTSHALLOW(IX,K)=FLOAT(NSEASH)/FLOAT(NSEA)
+             PERCENTSHALLOW(IX,K)=REAL(NSEASH,JWRB)/REAL(NSEA,JWRB)
              IF(PERCENTSHALLOW(IX,K).GE.0.3_JWRB) THEN
                WAMDEPTH(IX,K)=NINT(SEASH/NSEASH)
                IF(PERCENTLAND(IX,K).LT.0.10_JWRB) THEN
@@ -530,7 +532,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       DO WHILE(.TRUE.)
          READ(35,*,END=111,ERR=111) XLO,XLA,IX,K,IDPT
          IDPT=-IDPT
-         XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+         XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
          IF(ABS(XLON-XLO).GT.ZDELLO(K) .OR.                             &
      &      ABS(XLAT(K)-XLA).GT.XDELLA ) THEN
            WRITE(*,*) 'PROBLEM !!!!'
@@ -570,7 +572,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         WRITE(12,'(a5)') '#DATA'
         DO K=1,NY
            DO IX=1,NLONRGG(K)
-             XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+             XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
              IF(XLON.GT.180._JWRB) then
                XLON=XLON-360._JWRB
              ENDIF
@@ -668,7 +670,7 @@ PROGRAM CREATE_BATHY_ETOPO1
         XKDEEP=OMEGA**2/G
         DO IDPT=1,NDPT
           IF(LLWAMDEPTH(IDPT)) THEN
-            DEPTH=FLOAT(IDPT)
+            DEPTH=REAL(IDPT,JWRB)
             XK(IDPT)=AKI(OMEGA,DEPTH)
           ELSE
             XK(IDPT)=XKDEEP
@@ -687,7 +689,12 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF(WAMDEPTH(IX,K).LT.0) THEN
               XX=XKDMAX/XK(MIN(-WAMDEPTH(IX,K),NDPT))
               ITHRSHOLD(IX,K)=NINT(-XX)
-              IEXCLTHRSHOLD(IX,K)=MAX(10*ITHRSHOLD(IX,K),-998)
+              IF(ABS(WAMDEPTH(IX,K)).LT.150) THEN
+                KEXTHRS=10+10*(150-ABS(WAMDEPTH(IX,K)))/150
+              ELSE
+                KEXTHRS=10
+              ENDIF
+              IEXCLTHRSHOLD(IX,K)=MAX(KEXTHRS*ITHRSHOLD(IX,K),-998)
               IBLOCKDPT(IX,K)=INT(-0.025_JWRB*XX)
             ENDIF
           ENDDO
@@ -727,11 +734,11 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLONL=AMOWEP + (REAL(IX-1)-0.5_JWRB)*ZDELLO(K)
+                XLONL=AMOWEP + (REAL(IX-1,JWRB)-0.5_JWRB)*ZDELLO(K)
                 IF(XLONL.GT.180._JWRB) then
                   XLONL=XLONL-360._JWRB
                 ENDIF
-                XLONR=AMOWEP + (REAL(IX-1)+0.5_JWRB)*ZDELLO(K)
+                XLONR=AMOWEP + (REAL(IX-1,JWRB)+0.5_JWRB)*ZDELLO(K)
                 IF(XLONR.GT.180._JWRB) then
                   XLONR=XLONR-360._JWRB
                 ENDIF
@@ -807,7 +814,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -837,7 +844,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSLAT(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -869,11 +876,11 @@ PROGRAM CREATE_BATHY_ETOPO1
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
                 IF(IS.EQ.1) THEN
-                  XLONL=AMOWEP + (REAL(IX-2))*ZDELLO(K)
-                  XLONR=AMOWEP + (REAL(IX-1))*ZDELLO(K) -RESOL
+                  XLONL=AMOWEP + (REAL(IX-2,JWRB))*ZDELLO(K)
+                  XLONR=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) -RESOL
                 ELSE
-                  XLONL=AMOWEP + (REAL(IX-1))*ZDELLO(K) +RESOL
-                  XLONR=AMOWEP + (REAL(IX))*ZDELLO(K)
+                  XLONL=AMOWEP + (REAL(IX-1,JWRB))*ZDELLO(K) +RESOL
+                  XLONR=AMOWEP + (REAL(IX,JWRB))*ZDELLO(K)
                 ENDIF
                 IF(XLONL.GT.180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -950,7 +957,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
                   IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -977,7 +984,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
                   IOBSLON(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1023,7 +1030,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(IS-1)*XDELLA
                 IF(XLONL.GT.180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -1101,7 +1108,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1131,7 +1138,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLAT(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1159,7 +1166,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF(IS.EQ.1) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + XDELLA
@@ -1241,7 +1248,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1267,9 +1274,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 2222                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
-                XX=FLOAT(IOBSRLAT(IX,K,IS)*ITEMPEW)
+                XX=REAL((IOBSRLAT(IX,K,IS)*ITEMPEW),JWRB)
                 XX=SQRT(XX)
                 IOBSRLAT(IX,K,IS)=MIN(NINT(XX),1000)
 
@@ -1316,7 +1323,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -(2-IS)*XDELLA
                 IF(XLONL.GT.180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -1394,7 +1401,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1424,7 +1431,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSRLON(IX,K,IS)=                                    &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1452,7 +1459,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF(IS.EQ.1) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + XDELLA
@@ -1534,7 +1541,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1560,9 +1567,9 @@ PROGRAM CREATE_BATHY_ETOPO1
 3333                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
-                XX=FLOAT(IOBSRLON(IX,K,IS)*ITEMPEW)
+                XX=REAL((IOBSRLON(IX,K,IS)*ITEMPEW),JWRB)
                 XX=SQRT(XX)
                 IOBSRLON(IX,K,IS)=MIN(NINT(XX),1000)
 
@@ -1622,7 +1629,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 XLONL=XLON -((IS-1)/2)*ZDELLO(K)
                 IF(XLONL.GT.180._JWRB) THEN
                   XLONL=XLONL-360._JWRB
@@ -1700,7 +1707,7 @@ PROGRAM CREATE_BATHY_ETOPO1
      &                    (IREINF-1)*NBLOCKLAND*(ILATB-ILATT+1)
 
                   IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO I=1,ILONR
@@ -1730,7 +1737,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                     NOBSTRCT=NOBSTRCT+NIOBSLON
                   ENDDO
                   IOBSCOR(IX,K,IS)=                                     &
-     &               NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+     &               NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
 
               ENDIF
@@ -1763,7 +1770,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
             DO IX=1,NLONRGG(K)
               IF(WAMDEPTH(IX,K).LT.0) THEN
-                XLON=AMOWEP + REAL(IX-1)*ZDELLO(K)
+                XLON=AMOWEP + REAL(IX-1,JWRB)*ZDELLO(K)
                 IF(IS.EQ.1 .OR. IS.EQ.2) THEN
                   XLONL=XLON + RESOL
                   XLONR=XLON + ZDELLO(K) 
@@ -1845,7 +1852,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)+              &
      &                    (IREINF-1)*NBLOCKLAND*(ILONR-ILONL+1)
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ELSE
                   NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
                   DO J=ILATT,ILATB
@@ -1871,10 +1878,10 @@ PROGRAM CREATE_BATHY_ETOPO1
 4444                CONTINUE
                     NOBSTRCT=NOBSTRCT+NIOBSLAT
                   ENDDO
-                  ITEMPEW=NINT((1._JWRB-FLOAT(NOBSTRCT)/NTOTPTS)*1000)
+                  ITEMPEW=NINT((1._JWRB-REAL(NOBSTRCT,JWRB)/NTOTPTS)*1000)
                 ENDIF
-                XX=FLOAT(IOBSCOR(IX,K,IS)*ITEMPEW)
-                XX=SQRT(XX)
+                XX=REAL((IOBSCOR(IX,K,IS)*ITEMPEW),JWRB)
+                XX=SQRT2*SQRT(XX)
                 IOBSCOR(IX,K,IS)=MIN(NINT(XX),1000)
 
               ENDIF
