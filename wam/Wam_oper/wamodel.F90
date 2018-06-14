@@ -434,7 +434,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !        -----------------------------------------------------------
       IF (ITEST .GE. 2) THEN
         WRITE(IU06,*)
-        WRITE(IU06,*) '   SUB. WAMODEL: JUST ENTERED FOR CDTPRO= ',
+        WRITE(IU06,*) '   SUB. WAMODEL: JUST ENTERED FOR CDTPRO= ',     &
      &   CDTPRO, ' AND CDATEA= ', CDATEA
         CALL FLUSH(IU06)
       ENDIF
@@ -735,7 +735,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
             IF (.NOT. LLUNSTR) THEN
 
 !           IF CTU SCHEME IS USED, COMPUTE THE WEIGHTS
-            IF(IPROPAGS.EQ.2. AND. LUPDTWGHT) THEN
+            IF(IPROPAGS.EQ.2. .AND. LUPDTWGHT) THEN
               ALLOCATE(LCFLFAIL(IJS(IG):IJL(IG)))
 
               IF(.NOT. ALLOCATED(SUMWN)) ALLOCATE(SUMWN(IJS(IG):IJL(IG),NANG,NFRE))
@@ -955,7 +955,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                   DO K=1,NANG
                     DO M=1,NFRE
                       FL3(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)
-                      XLLWS(IJ,K,M) = 0._JWRB
+                      XLLWS(IJ,K,M) = 0.0_JWRB
                     ENDDO
                   ENDDO
                 ENDDO
@@ -1090,7 +1090,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
           ENDIF
           CALL GSTATS(1909,1)
 
-          IF (CDTINTT.EQ.CDTPRO. OR. LRST .OR.                          &
+          IF (CDTINTT.EQ.CDTPRO. .OR. LRST .OR.                          &
      &       (IASSI.EQ.1 .AND. KADV.EQ.NADV .AND. CDTPRO.LE.CDATEF )) THEN
 
 !           OUTPUT POINT SPECTRA
@@ -1154,7 +1154,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !       SET THE DUMMY LAND POINTS TO 0.
         DO M=1,NFRE
           DO K=1,NANG
-             FL1(NINF-1,K,M) = 0._JWRB 
+             FL1(NINF-1,K,M) = 0.0_JWRB 
           ENDDO
         ENDDO
 
@@ -1403,8 +1403,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &                           NEMOUSTOKES(IJS(IG)), NEMOVSTOKES(IJS(IG)))
 #endif
              ELSE
-               NEMOUSTOKES(:)=0
-               NEMOVSTOKES(:)=0
+               NEMOUSTOKES(:)=0.
+               NEMOVSTOKES(:)=0.
              ENDIF
              IF(LWNEMOCOUSTRN) THEN
 #ifdef PARKIND1_SINGLE
