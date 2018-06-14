@@ -80,7 +80,7 @@
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JWRB), PARAMETER :: WLOWEST=0.0001_JWRB
-      REAL(KIND=JWRB) :: ZDUM
+      REAL(KIND=JWRB) :: ZDUM1, ZDUM2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: FIELD(NXFF,NYFF)
 
@@ -105,6 +105,8 @@
       ENDIF
 
       LFILE = LEN_TRIM(FILNM)
+      ZDUM1 = 0._JWRB
+      ZDUM2 = 0._JWRB
 
       IF ((LMESSPASS .AND. (IRANK.EQ.IREAD)) .OR. .NOT.LMESSPASS) THEN
 
@@ -186,7 +188,7 @@
      &                   NXFF, NYFF, NLONRGG_LOC,                       &
      &                   IRGG, XDELLA, ZDELLO,                          &
      &                   FIELDG%XLON, FIELDG%YLAT,                      &
-     &                   ZMISS, ZDUM, ZDUM,                             &
+     &                   ZMISS, ZDUM1, ZDUM2,                           &
      &                   CDATEIN, IFORP, IPARAM,KZLEV,KK,MM, FIELD)
 
 
