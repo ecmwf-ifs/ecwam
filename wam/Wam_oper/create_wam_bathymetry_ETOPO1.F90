@@ -236,7 +236,7 @@ PROGRAM CREATE_WAM_BATHYMETRY_ETOPO1
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF(.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA .EQ. 0.25)JWRB .AND.                              &
+            IF(XDELLA .EQ. 0.25_JWRB .AND.                              &
      &         AMOWEP .EQ. -98._JWRB .AND. AMOSOP .EQ.  9._JWRB .AND.   &
      &         AMOEAP .EQ. 42.0_JWRB .AND. AMONOP .EQ. 81._JWRB       ) THEN
 !         the old value for pi has to be taken in order to reproduce
