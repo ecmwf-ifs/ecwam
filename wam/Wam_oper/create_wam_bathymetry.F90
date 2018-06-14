@@ -71,7 +71,7 @@ PROGRAM CREATE_BATHY
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       IMPLICIT NONE
- 
+
       INTEGER(KIND=JWIM), PARAMETER :: ILON=10801
       INTEGER(KIND=JWIM), PARAMETER :: ILAT=5400
       INTEGER(KIND=JWIM), PARAMETER :: NREF=300
@@ -786,15 +786,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                         .NEQV.L1ST)                              &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -936,15 +931,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                        .NEQV.L1ST)                               &
-     &                         .AND.                                     
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1092,15 +1082,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                        .NEQV.L1ST)                               &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1238,15 +1223,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                         .NEQV.L1ST)                              &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1395,15 +1375,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                        .NEQV.L1ST)                               &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1541,15 +1516,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                         .NEQV.L1ST)                              &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1711,15 +1681,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO J=ILATT+1,ILATB
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                          .NEQV.L1ST)                             &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)) .NEQV.L1ST) .AND. LNSW ) THEN
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN
 !                           LAND IS BLOCKING
                             NIOBSLON=IREINF*(ILATB-ILATT+1)
                             NBLOCKLAND=NBLOCKLAND+1
@@ -1862,15 +1827,10 @@ PROGRAM CREATE_BATHY
                           L1ST=.FALSE.
                         ENDIF
                         DO I=ILONL+1,ILONR
-                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K))         &
-     &                         .NEQV.L1ST)                              &
-     &                         .AND.                                    &
-     &                         LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).NEQV.L1ST) .AND. LNSW ) THEN 
                             LNSW=.FALSE.
                           ENDIF
-                          IF(((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) &
-     &                        .AND.                                      &
-     &                       .NOT. LNSW ) THEN
+                          IF( ((IDEPTH(I,J).GE.IBLOCKDPT(IX,K)).EQV.L1ST) .AND. .NOT. LNSW ) THEN 
 !                           LAND IS BLOCKING
                             NIOBSLAT=IREINF*(ILONR-ILONL+1)
                             NBLOCKLAND=NBLOCKLAND+1
