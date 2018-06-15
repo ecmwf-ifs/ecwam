@@ -1,9 +1,9 @@
-      SUBROUTINE GETWND (MIJS, MIJL,
-     &                   U10, US,
-     &                   THW,
-     &                   ADS, ZIDL,
-     &                   CICVR, CITH,
-     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,
+      SUBROUTINE GETWND (MIJS, MIJL,                                    &
+     &                   U10, US,                                       &
+     &                   THW,                                           &
+     &                   ADS, ZIDL,                                     &
+     &                   CICVR, CITH,                                   &
+     &                   CDTWIS, LWNDFILE, LCLOSEWND, IREAD,            &
      &                   LWCUR, ICODE_WND)
 
 ! ----------------------------------------------------------------------
@@ -45,26 +45,6 @@
 !                     U10: ICODE_WND=3
 !                     US:  ICODE_WND=1 OR 2
 
-! ----------------------------------------------------------------------
-
-!**** *GETWND* - ROUTINE TO READ AND PROCESS ONE WINDFIELD.
-
-!*    PURPOSE.
-!     --------
-
-!        READ A WINDFIELD FROM THE WINDFILE (SEARCH FOR IT)
-!        AND CALCULATES THE WIND VELOCITY  AND DIRECTION
-!        FOR ALL WAM BLOCKS.
-!        ALSO INPUT THE OTHER FORCING FIELD.
-
-!**   INTERFACE.
-!     ----------
-
-!       *CALL* *GETWND (MIJS, MIJL,
-!                       U10, THW, ADS, ZIDL, CICVR, CITH,
-!                       CDTWIS, LWNDFILE, LCLOSEWND,
-!                       LWCUR, ICODE_WND)*
-!         *MIJS*    - INDEX OF F
 !     METHOD.
 !     -------
 
@@ -99,6 +79,9 @@
 !                 READWIND WAS SPLIT BETWEEN READWIND AND IFSTOWAM:
 !                 IN COUPLED RUNS, READWIND IS NOT CALLED 
 ! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWICE   , ONLY : IPARAMCI
       USE YOWMPP   , ONLY : IRANK
@@ -121,24 +104,24 @@
 #include "readwind.intfb.h"
 #include "wamwnd.intfb.h"
 
-      INTEGER, INTENT(IN) :: IREAD
-      INTEGER, INTENT(IN) :: MIJS, MIJL
-      INTEGER, INTENT(OUT) :: ICODE_WND
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: ICODE_WND
 
-      REAL, DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
-      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
-      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
-      REAL, DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
+      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(INOUT) :: U10, US 
+      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: THW
+      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: ADS, ZIDL
+      REAL(KIND=JWRB), DIMENSION (MIJS:MIJL), INTENT(OUT) :: CICVR, CITH
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS
 
       LOGICAL, INTENT(IN) :: LWNDFILE, LCLOSEWND, LWCUR
 
 
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-      INTEGER :: I, J
+      INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: I, J
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LLNOTOPENED
       LOGICAL, SAVE :: LONLYONCE
@@ -156,9 +139,8 @@
 
 !*    1. WIND DATA ARE READ
 !        ------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
-#endif
 
  1000 CONTINUE
 
@@ -179,7 +161,7 @@
       END IF
 
 
-      IF(LWNDFILE .and. (IsAssigned .eqv. .FALSE.)) THEN
+      IF(LWNDFILE .AND. (IsAssigned .EQV. .FALSE.)) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
         ICODE_WND = ICODE
@@ -233,14 +215,13 @@
           CALL ABORT1
         ENDIF
 
-        IF (LCLOSEWND .AND. LWNDFILE .AND. 
+        IF (LCLOSEWND .AND. LWNDFILE .AND.                              &
      &     .NOT.(CLDOMAIN.EQ.'s' .OR. LWDINTS) ) THEN
           IF(IRANK.EQ.IREAD) THEN
             CALL IGRIB_CLOSE_FILE(IUNITW)
             LLNOTOPENED = .TRUE.
             IUNITW=0
-            IF (ITEST.GT.1)
-     &        WRITE(IU06,*) ' SUB. GETWND - CLOSE ',FILNM
+            IF (ITEST.GT.1) WRITE(IU06,*) ' SUB. GETWND - CLOSE ', FILNM
           ENDIF
         ENDIF
 
@@ -258,9 +239,9 @@
         DO JKGLO=MIJS,MIJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,MIJL)
-          CALL WAMWND (KIJS, KIJL,
-     &                 U10(KIJS), US(KIJS),
-     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS),
+          CALL WAMWND (KIJS, KIJL,                                      &
+     &                 U10(KIJS), US(KIJS),                             &
+     &                 THW(KIJS), ADS(KIJS), ZIDL(KIJS), CITH(KIJS),    &
      &                 LWCUR, ICODE_WND)
         ENDDO
 !$OMP   END PARALLEL DO
@@ -290,10 +271,6 @@
 !$OMP   END PARALLEL DO
         CALL GSTATS(1444,1)
 
-
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GETWND',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE GETWND
