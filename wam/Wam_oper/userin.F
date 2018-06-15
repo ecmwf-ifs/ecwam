@@ -86,7 +86,8 @@
      &            LWAMANOUT,
      &            NWRTOUTWAM,
      &            LWFLUXOUT,
-     &            LSECONDORDER
+     &            LSECONDORDER,                                         &
+     &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : IBOUNC
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
@@ -973,6 +974,9 @@
       WRITE(IU06,*) '###  NAME       OUTPUT OPTION :       FILE  GRIB ',&
      &               ' OUT PE  PARAMID'
       WRITE(IU06,*) '                            F = FALSE   T = TRUE '
+      IF(LWAM_USE_IO_SERV) THEN
+        WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
+      ENDIF
       DO ITG = 1,JPPFLAG
         IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
         WRITE(CITG,'(I3.3)') ITG
@@ -1085,7 +1089,11 @@
       IF(LFDBIOOUT) THEN
         WRITE (IU06,*)
      &   ' FDB SOFTWARE IS USED TO WRITE OUTPUT SPECTRA FILES' 
+        IF(LWAM_USE_IO_SERV) THEN
+          WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
+        ELSE
         WRITE (IU06,*) ' OUTPUT TASK SELECTED WITH STRIDE = ',NWRTOUTWAM
+        ENDIF
       ELSE
         WRITE (IU06,*)
      &   ' OUTPUT SPECTRA FILES ARE WRITTEN OUT TO DISK' 
