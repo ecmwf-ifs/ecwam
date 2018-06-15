@@ -1,9 +1,9 @@
-      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                    ROAIRO, ZIDLOLD,
-     &                    CICOVER, CITHICK, CIWA,
-     &                    LLINIT, LLALLOC_FIELDG_ONLY,
-     &                    IREAD,
-     &                    NFIELDS, NGPTOTG, NC, NR,
+      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,           &
+     &                    ROAIRO, ZIDLOLD,                              &
+     &                    CICOVER, CITHICK, CIWA,                       &
+     &                    LLINIT, LLALLOC_FIELDG_ONLY,                  &
+     &                    IREAD,                                        &
+     &                    NFIELDS, NGPTOTG, NC, NR,                     &
      &                    FIELDS, LWCUR, MASK_IN)
 
 ! ----------------------------------------------------------------------
@@ -126,11 +126,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
-      USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,
+      USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
@@ -156,17 +158,18 @@
 #include "timin.intfb.h"
 #include "wamadszidl.intfb.h"
 
-      INTEGER :: NFIELDS, NGPTOTG, NC, NR
-      INTEGER :: IDELWH, IREAD
-      INTEGER :: ISTORE, IJ, IG, IIG
-      INTEGER :: MASK_IN(NGPTOTG)
+      INTEGER(KIND=JWIM) :: NFIELDS, NGPTOTG, NC, NR
+      INTEGER(KIND=JWIM) :: IDELWH, IREAD
+      INTEGER(KIND=JWIM) :: ISTORE, IJ, IG, IIG
+      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: FIELDS(NGPTOTG,NFIELDS)
-      REAL,DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,Z0OLD,TAUW,
-     &                                  ROAIRO,ZIDLOLD,
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,  &
+     &                                  Z0OLD,TAUW,                      &
+     &                                  ROAIRO,ZIDLOLD,                  &
      &                                  CICOVER,CITHICK
-      REAL,DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
@@ -178,9 +181,8 @@
       DATA LLFRSTNEMO / .TRUE. /
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('PREWIND',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. BEGIN AND END DATES OF WIND FIELDS TO BE PROCESSED.
 !        ---------------------------------------------------
@@ -222,14 +224,13 @@
 !     2.1 IN COUPLED RUNS, TRANSFORM INPUT FORCING FIELDS TO WAM GRID.
 !         -----------------------------------------------------------
 
-      CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR,
-     &               FIELDS, LWCUR, MASK_IN)
+      CALL IFSTOWAM (NFIELDS, NGPTOTG, NC, NR, FIELDS, LWCUR, MASK_IN)
 
 !     2.1.1 GET DATA FROM NEMO (OR BINARY RESTART).
 !           -------------------------------------
  
       IF(LWNEMOCOU.AND.LWNEMOCOURECV) THEN
-        CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,
+        CALL RECVNEMOFIELDS(LLFRSTNEMO.AND.LRESTARTED,                  &
      &                      LLFRSTNEMO.AND..NOT.LRESTARTED)
         LLFRSTNEMO=.FALSE.
       ENDIF
@@ -268,12 +269,12 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL NOTIM (CDTWIS, CDTWIE,
-     &              IJS(1), IJL(1),
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
-     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+        CALL NOTIM (CDTWIS, CDTWIE,                                     &
+     &              IJS(1), IJL(1),                                     &
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),   &
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
      &              IREAD, LWCUR)
 
       ELSE
@@ -290,22 +291,22 @@
           WRITE (IU06,*) '     WIND OUTPUT TIME STEP IDELWO = ',IDELWO
           FLUSH (IU06)
         ENDIF
-        CALL TIMIN (CDTWIS, CDTWIE,
-     &              IJS(1), IJL(1),
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),
-     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),
+        CALL TIMIN (CDTWIS, CDTWIE,                                     &
+     &              IJS(1), IJL(1),                                     &
+     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
+     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),   &
+     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
+     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
      &              IREAD, LWCUR)
 
       ENDIF
 #else
-      CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,          
-     &                       ROAIRO, ZIDLOLD,                         
-     &                       CICOVER, CITHICK, CIWA,                  
-     &                       LLINIT,                                  
-     &                       IREAD,                                   
-     &                       NFIELDS, NGPTOTG, NC, NR,                
+      CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,            &
+     &                       ROAIRO, ZIDLOLD,                           &
+     &                       CICOVER, CITHICK, CIWA,                    &
+     &                       LLINIT,                                    &
+     &                       IREAD,                                     &
+     &                       NFIELDS, NGPTOTG, NC, NR,                  &
      &                       FIELDS, LWCUR, MASK_IN)
 #endif
 
@@ -315,10 +316,6 @@
 
       DEALLOCATE(FIELDG)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PREWIND',1,ZHOOK_HANDLE)
-#endif
-
-      RETURN
 
       END SUBROUTINE PREWIND

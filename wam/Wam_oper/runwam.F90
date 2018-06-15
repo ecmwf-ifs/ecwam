@@ -82,30 +82,33 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE MPL_MPIF
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   ,LWNEMOCOU          ,
-     &                      NEMOINIDATE, NEMOINITIME               ,
-     &                      NEMOITINI,   NEMOITEND                 ,
-     &                      NEMOTSTEP,   NEMOFRCO                  ,
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   ,LWNEMOCOU          ,    &
+     &                      NEMOINIDATE, NEMOINITIME               ,    &
+     &                      NEMOITINI,   NEMOITEND                 ,    &
+     &                      NEMOTSTEP,   NEMOFRCO                  ,    &
      &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,    &
      &                      PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS 
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
      &            NINF     ,NSUP     ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
      &            LL1D
-      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,
+      USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
-     &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,
-     &            NFROMPELST,
-     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,
-     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,    &
+     &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,    &
+     &            NFROMPELST,                                           &
+     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,              &
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
      &            FL1      ,FL3
+      USE YOWALTAS , ONLY : LODBRALT
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -125,42 +128,43 @@
 #include "wvwamdecomp.intfb.h"
 #include "wvwaminit.intfb.h"
 #include "wvwaminit1.intfb.h"
+
       LOGICAL, INTENT(IN) :: LNEMOIO
 
 ! DIMENSION DUMMY COUPLED VARIABLES
-      INTEGER, PARAMETER :: NLONW=1
-      INTEGER, PARAMETER :: NLATW=1
-      INTEGER, PARAMETER :: NWVFIELDS=8
-      INTEGER, PARAMETER :: NC=1
-      INTEGER, PARAMETER :: NR=1
-      INTEGER, PARAMETER :: NGPTOTG=NC*NR
-      INTEGER, PARAMETER :: NFIELDS=7
+      INTEGER(KIND=JWIM), PARAMETER :: NLONW=1
+      INTEGER(KIND=JWIM), PARAMETER :: NLATW=1
+      INTEGER(KIND=JWIM), PARAMETER :: NWVFIELDS=8
+      INTEGER(KIND=JWIM), PARAMETER :: NC=1
+      INTEGER(KIND=JWIM), PARAMETER :: NR=1
+      INTEGER(KIND=JWIM), PARAMETER :: NGPTOTG=NC*NR
+      INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=7
 
-      INTEGER :: NATMFLX
-      INTEGER :: NLON, NLAT
-      INTEGER :: IGRIB_HANDLE_DUM
-      INTEGER :: NADV
-      INTEGER :: KSTOP, KSTPW
-      INTEGER :: IDUM
-      INTEGER :: KQGAUSS
-      INTEGER :: NFDBREF, NPR
-      INTEGER :: MAXLEN, IU06
-      INTEGER :: KERROR
-      INTEGER :: I_GET_UNIT
-      INTEGER :: MASK_IN(NGPTOTG)
-      INTEGER :: MASK_OUT(NLONW,NLATW)
+      INTEGER(KIND=JWIM) :: NATMFLX
+      INTEGER(KIND=JWIM) :: NLON, NLAT
+      INTEGER(KIND=JWIM) :: IGRIB_HANDLE_DUM
+      INTEGER(KIND=JWIM) :: NADV
+      INTEGER(KIND=JWIM) :: KSTOP, KSTPW
+      INTEGER(KIND=JWIM) :: IDUM
+      INTEGER(KIND=JWIM) :: KQGAUSS
+      INTEGER(KIND=JWIM) :: NFDBREF, NPR
+      INTEGER(KIND=JWIM) :: MAXLEN, IU06
+      INTEGER(KIND=JWIM) :: KERROR
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
+      INTEGER(KIND=JWIM) :: MASK_OUT(NLONW,NLATW)
 
-      REAL :: PSTEP
-      REAL :: RSOUTW, RNORTW
-      REAL :: PRPLRADI, PRPLRG
-      REAL :: RNU_ATM, RNUM_ATM
-      REAL :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
-      REAL :: FIELDS(NGPTOTG,NFIELDS)
-      REAL :: ZHOOK_HANDLE
-      REAL :: RMISS
-      REAL :: ZRCHAR
-      REAL :: time0, time
-      REAL :: wam_user_clock
+      REAL(KIND=JWRB) :: PSTEP
+      REAL(KIND=JWRB) :: RSOUTW, RNORTW
+      REAL(KIND=JWRB) :: PRPLRADI, PRPLRG
+      REAL(KIND=JWRB) :: RNU_ATM, RNUM_ATM
+      REAL(KIND=JWRB) :: WVFLDG(NLONW,NLATW,NWVFIELDS), ZDELATM(NLATW)
+      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: RMISS
+      REAL(KIND=JWRB) :: ZRCHAR
+      REAL(KIND=JWRB) :: time0, time
+      REAL(KIND=JWRB) :: wam_user_clock
 
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
@@ -175,10 +179,12 @@
 
       DATA LLSTOP, LLWRRE / 2*.FALSE. /
 
+!     For ODB:
+      INTEGER(KIND=JWIM) :: INFO(1)
+
 ! ----------------------------------------------------------------------
-#ifdef ECMWF 
+
       IF (LHOOK) CALL DR_HOOK('RUNWAM',0,ZHOOK_HANDLE)
-#endif
 
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       LMPLUSERCOMM = .TRUE.
@@ -227,13 +233,13 @@
       LFDBIFS=.FALSE.
 
 
-      PRPLRADI=1.0
-      PRPLRG=1.0
+      PRPLRADI=1.0_JWRB
+      PRPLRG=1.0_JWRB
       LLRNL=.TRUE.
 
 !     KINEMATIC AIR VISCOSITY AND REDUCED VALUE FOR MOMENTUM TRANSFER
       RNU_ATM=1.5E-5
-      RNUM_ATM=0.11*RNU_ATM
+      RNUM_ATM=0.11_JWRB*RNU_ATM
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
 
@@ -250,13 +256,13 @@
       CALL WVWAMDECOMP
 
 
-!     1.  ALLOCATE NECESSARY ARRAYS
-!         -------------------------
+!     1.1  ALLOCATE NECESSARY ARRAYS
+!          -------------------------
 
       CALL WVALLOC(LWCUR)
 
 
-!     0.4 INITIALIZE SIGNAL HANDLER.
+!     1.2 INITIALIZE SIGNAL HANDLER.
 !         --------------------------
 
       ISIGHUP = 0  !    1 /* hangup */
@@ -273,6 +279,9 @@
       WRITE(IU06,*) ' SIGNAL HANDLER on PE ', IRANK, ' OK'
 #endif
 
+!     1.3 OPEN ODB DATABASE TO RETRIEVE SATELLITE DATA
+!         --------------------------------------------
+      IF (LODBRALT) CALL OPENDB('ECMA','OLD',INFO,0)
 
 !     ------------------------------------------------------------------
 
@@ -287,7 +296,7 @@
 !* DEFINE DUMMY PARAMETERS TO FILL COUPLED ARRAYS
 
       CBEGDAT='99999999999999'
-      PSTEP=0. ! only used in coupled model
+      PSTEP=0.0_JWRB ! only used in coupled model
       KSTOP=0  ! only used in coupled model
       KSTPW=0  ! only used in coupled model
       IDUM=0
@@ -296,16 +305,16 @@
       NATMFLX=0
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LWSTOKES=.FALSE.  ! only used in coupled runs with atmospheric model
-      RMISS=-999. ! missing data indicator
-      ZRCHAR=0.0155 ! default value for Charnock
+      RMISS=-999.0_JWRB ! missing data indicator
+      ZRCHAR=0.0155_JWRB ! default value for Charnock
 
       ! WAM-NEMO COUPLING
 
       IF (LWNEMOCOU) THEN
         IF(IRANK.EQ.1) WRITE (IU06,*)'CALLING NEMOGCMCOUP_INIT'
 #ifdef WITH_NEMO
-        CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME, 
-     &                         NEMOITINI, NEMOITEND, NEMOTSTEP,
+        CALL NEMOGCMCOUP_INIT( MPL_COMM, NEMOINIDATE, NEMOINITIME,      &
+     &                         NEMOITINI, NEMOITEND, NEMOTSTEP,         &
      &                         .TRUE., -1, .FALSE. )
 #endif
         IF(IRANK.EQ.1) THEN
@@ -331,7 +340,7 @@
         ELSE
           IF (IRANK.EQ.1) THEN
             WRITE(IU06,*)'NEMONSTEP                 : ',NEMONSTEP
-            WRITE(IU06,*)'NEMO coupling interval is : ',
+            WRITE(IU06,*)'NEMO coupling interval is : ',                &
      &                   NEMOTSTEP*NEMONSTEP
           ENDIF
         ENDIF
@@ -339,26 +348,31 @@
 
  20   CONTINUE
 
-      CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,
-     &             NFIELDS, NGPTOTG, NC, NR,
-     &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,
-     &             NATMFLX,
-     &             LWCUR, LWSTOKES,
-     &             NWVFIELDS, WVFLDG,
-     &             NLONW, NLATW, LLSTOP, LLWRRE,
-     &             LLRESTARTED, ZDELATM, KQGAUSS,
-     &             LDWCOUNORMS, MASK_IN, MASK_OUT,
-     &             NFDBREF,
+      DO WHILE (CDTPRO.LT.CDATEE)
+       CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
+     &             NFIELDS, NGPTOTG, NC, NR,                            &
+     &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
+     &             NATMFLX,                                             &
+     &             LWCUR, LWSTOKES,                                     &
+     &             NWVFIELDS, WVFLDG,                                   &
+     &             NLONW, NLATW, LLSTOP, LLWRRE,                        &
+     &             LLRESTARTED, ZDELATM, KQGAUSS,                       &
+     &             LDWCOUNORMS, MASK_IN, MASK_OUT,                      &
+     &             NFDBREF,                                             &
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)
 
-      IF (LLSTOP) GOTO 30
-      IF (CDTPRO.LT.CDATEE) GOTO 20
+        IF (LLSTOP) EXIT
+      ENDDO
 
- 30   CONTINUE
 
-!    3.  TERMINATE MESSAGE PASSING PROTOCOL 
+!     3. CLOSE ODB DATABASE OF SATELLITE DATA
+!        ------------------------------------
+      IF (LODBRALT) CALL CLOSEDB(.TRUE.)
+
+
+!    4.  TERMINATE MESSAGE PASSING PROTOCOL 
 !        -----------------------------------
 
       time=time0+wam_user_clock()
@@ -377,8 +391,6 @@
       CALL MPCLOSE_UNIT
       IF (.NOT.LNEMOIO) CALL MPL_END
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE RUNWAM
