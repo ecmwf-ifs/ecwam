@@ -1091,7 +1091,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
             CALL FLUSH(IU06)
           ENDIF
-!        ENDIF
+        ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)
