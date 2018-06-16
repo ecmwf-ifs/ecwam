@@ -252,7 +252,7 @@
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,MIJL)
             DO IJ=KIJS,KIJL
-              U10(IJ) = U10(IJ)+REAL(N)*DEL*(U102(IJ)-U10(IJ))
+              U103(IJ) = U10(IJ)+REAL(N)*DEL*(U102(IJ)-U10(IJ))
               US3(IJ) = US(IJ)+REAL(N)*DEL*(US2(IJ)-US(IJ))
               D = DS2(IJ)-DS(IJ)
               IF (ABS(D).GT.PI) D = D-ZPI*SIGN(1.,D)
