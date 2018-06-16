@@ -289,8 +289,8 @@
      &            LSAMEDEPTH
       USE YOWUNIT  , ONLY : IU02     ,IU11     ,IU12     ,              &
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,    &
-     &            IU18     ,IU19     ,IU20     ,IU21     ,IU22     ,    &
-     &            IU23     ,IU25     ,IU26     ,IU27     ,IU28     ,    &
+     &            IU18     ,IU19     ,IU20     ,IU22     ,              &
+     &            IU23     ,IU27     ,IU28     ,                        &
      &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,              &
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,    &
      &            IU38
@@ -349,6 +349,7 @@
       REAL(KIND=JWRB) :: FAC, SCDF_L, SCDF_U
       REAL(KIND=JWRB) :: D, OM, XK
       REAL(KIND=JWRB) :: XLOGFRATIO
+      REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
       REAL(KIND=JWRB) :: PRPLRADI
