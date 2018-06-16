@@ -291,6 +291,7 @@
 !        ---------------------------------------------------
 
       ZERO   = ' '
+      CDATEE = ZERO
       CDTPRO = ZERO
 
 !* DEFINE DUMMY PARAMETERS TO FILL COUPLED ARRAYS
@@ -348,7 +349,7 @@
 
  20   CONTINUE
 
-      DO WHILE (CDTPRO.LT.CDATEE)
+      DO WHILE (CDTPRO.LT.CDATEE .OR. CDTPRO.EQ. ZERO)
        CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, RMISS, ZRCHAR, FIELDS,             &
