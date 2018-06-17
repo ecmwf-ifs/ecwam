@@ -975,7 +975,10 @@
      &               ' OUT PE  PARAMID'
       WRITE(IU06,*) '                            F = FALSE   T = TRUE '
       IF(LWAM_USE_IO_SERV) THEN
+        WRITE(IU06,*) ''
         WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
+        WRITE (IU06,*) ' INFORMATION ON OUT PE (below) HAS NO MEANING' 
+        WRITE(IU06,*) ''
       ENDIF
       DO ITG = 1,JPPFLAG
         IF(FFLAG(ITG) .OR. GFLAG(ITG)) THEN
