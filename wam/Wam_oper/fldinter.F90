@@ -3,7 +3,8 @@
      &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,  &
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
      &                     ILONRGG, IJBLOCK, PMISS,                      &
-     &                     LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL, &
+     &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,     &
+     *                     LLINTERPOL,                                   &
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -35,7 +36,8 @@
 !    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    ILONRGG, IJBLOCK, PMISS,
-!    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR,LLINTERPOL,
+!    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
+!    &                    LLINTERPOL,
 !    &                    DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 !
 !        *IU06*   - OUTPUT UNIT.
@@ -51,6 +53,7 @@
 !                   FIELDS(:,3) = AIR DENSITY
 !                   FIELDS(:,4) = ZI/L USED FOR GUSTINESS
 !                   FIELDS(:,5) = SEA ICE FRACTION 
+!                   FIELDS(:,6) = LAKE FRACTION 
 
 !        WAVE MODEL GRID SPECIFICATION (INPUT):
 !        *NGX*    - NUMBER OF COLUMNS IN ARRAY FIELD USED.              
@@ -81,6 +84,7 @@
 !        *LGUST*  - GUSTINESS IS USED.
 !        *WSTAR0* - DEFAULT VALUE FOR w*. 
 !        *LWCUR*  - SURFACE CURRENTS ARE USED.
+!        *LLKC*   - GRAB LAKE COVER INFORMATION
 !        *LLINTERPOL* - FLAG (TRUE=DO INTERPOLATION, FALSE=ASSIGN ONLY)
 !        *DJ1M*   - COEFFICIENT
 !        *DII1M*  - COEFFICIENT
@@ -122,7 +126,7 @@
       REAL(KIND=JWRB), DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
       REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(IN) :: DII1M, DIIP1M
 
-      LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLINTERPOL
+      LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLKC, LLINTERPOL
 
 
       INTEGER(KIND=JWIM) :: IG
@@ -150,28 +154,34 @@
 
             MASK_IN(IJBLOCK(I,J))=1
 
-            FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1) 
-            FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2) 
+            FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
+            FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
             IF (LADEN) THEN
-              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3) 
+              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3)
             ELSE
               FIELDG(I,J)%AIRD = ROAIR
             ENDIF
             IF (LGUST) THEN
-              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4) 
+              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4)
             ELSE
-              FIELDG(I,J)%ZIDL = WSTAR0 
+              FIELDG(I,J)%ZIDL = WSTAR0
             ENDIF
 
-            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5) 
+            FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG(I,J)%CITH = 0.0_JWRB
 
+            IF (LLKC) THEN
+              FIELDG(I,J)%LKFR = FIELDS(IJBLOCK(I,J),6)
+            ELSE
+              FIELDG(I,J)%LKFR = 0.0_JWRB
+            ENDIF
+
             IF(LLNEWCURR) THEN
               IF(LWCUR) THEN
-                FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),6)
-                FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),7)
+                FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
+                FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
               ELSE
                 FIELDG(I,J)%UCUR = 0.0_JWRB
                 FIELDG(I,J)%VCUR = 0.0_JWRB
@@ -300,17 +310,27 @@
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG(I,J)%CITH = 0.0_JWRB
 
+
+            IF (LLKC) THEN
+              FIELDG(I,J)%LKFR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +    &
+     &                         DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +       &
+     &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +       &
+     &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
+            ELSE
+              FIELDG(I,J)%CKFR = 0.0_JWRB
+            ENDIF
+
             IF (LLNEWCURR) THEN
               IF (LWCUR) THEN
-                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),6) +  &
-     &                           DII1*FIELDS(IJBLOCK(II1,JJ),6) ) +     &
-     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +     &
-     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
-
-                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
+                FIELDG(I,J)%UCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),7) +  &
      &                           DII1*FIELDS(IJBLOCK(II1,JJ),7) ) +     &
      &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),7) +     &
      &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),7) )
+
+                FIELDG(I,J)%VCUR=DJ2*( DII2*FIELDS(IJBLOCK(II,JJ),8) +  &
+     &                           DII1*FIELDS(IJBLOCK(II1,JJ),8) ) +     &
+     &                     DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),8) +     &
+     &                           DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),8) )
               ELSE
                 FIELDG(I,J)%UCUR = 0.0_JWRB
                 FIELDG(I,J)%VCUR = 0.0_JWRB

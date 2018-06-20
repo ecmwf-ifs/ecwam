@@ -80,6 +80,7 @@
             FIELDG(IX,JY)%USTAR  = 0.
             FIELDG(IX,JY)%CIFR   = 0.
             FIELDG(IX,JY)%CITH   = 0.
+            FIELDG(IX,JY)%LKFR   = 0.
             FIELDG(IX,JY)%AIRD   = ROAIR
             FIELDG(IX,JY)%ZIDL   = WSTAR0
             FIELDG(IX,JY)%UCUR   = 0.

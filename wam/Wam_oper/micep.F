@@ -93,8 +93,17 @@
 
 
       IF(LWNEMOCOUCIC) THEN
+!       get the lake ice information from atmopsheric model
+!       It should only be for lakes 
         DO IJ=IJS,IJL
-          CICVR(IJ) = NEMOCICOVER(IJ)
+          IX = IFROMIJ(IJ,1)
+          IY = JFROMIJ(IJ,1)
+          IF (FIELDG(IX,IY)%LKFR .EQ. 0. ) THEN
+!          if no lake cover, get it from NEMO 
+            CICVR(IJ) = NEMOCICOVER(IJ)
+          ELSE
+            CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+          ENDIF
         ENDDO
       ELSEIF (IPARAM.EQ.31) THEN
         DO IJ=IJS,IJL
