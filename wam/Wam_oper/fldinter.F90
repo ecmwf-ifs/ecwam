@@ -4,7 +4,7 @@
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
      &                     ILONRGG, IJBLOCK, PMISS,                      &
      &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,     &
-     *                     LLINTERPOL,                                   &
+     &                     LLINTERPOL,                                   &
      &                     DJ1M, DII1M, DIIP1M, JJM, IIM, IIPM, MASK_IN)
 ! ----------------------------------------------------------------------    
 
@@ -317,7 +317,7 @@
      &                   DJ1*( DIIP2*FIELDS(IJBLOCK(IIP,JJ1),6) +       &
      &                         DIIP1*FIELDS(IJBLOCK(IIP1,JJ1),6) )
             ELSE
-              FIELDG(I,J)%CKFR = 0.0_JWRB
+              FIELDG(I,J)%LKFR = 0.0_JWRB
             ENDIF
 
             IF (LLNEWCURR) THEN
