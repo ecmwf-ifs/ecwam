@@ -70,7 +70,7 @@
                        ! FOR OUTPUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: IX, IY 
+      INTEGER(KIND=JWIM) :: IX, IY, IJ 
 ! -------------------------------------------------------------------   
 
       IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
