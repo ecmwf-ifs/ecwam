@@ -53,13 +53,14 @@
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,    &
      &             LLCHKCFL,LLCHKCFLA, CURRENT_MAX
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NIBLO    ,NBLO
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
-      USE YOWWIND  , ONLY : LLNEWCURR 
+      USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
       USE UNSTRUCT_CURR, ONLY : SET_CURTXY, SET_CURTXY_SINGLEFILE
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -79,7 +80,7 @@
 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: LIU
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -148,8 +149,17 @@
                 WRITE(IU06,*)'NEMO CURRENTS'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)
-                  U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                  V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                  IX = IFROMIJ(IJ,IG)
+                  IY = JFROMIJ(IJ,IG)
+                  IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!                   if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+                    U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                    V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                  ELSE
+!                   no currents over lakes and land
+                    U(IJ,IG) = 0.0_JWRB
+                    V(IJ,IG) = 0.0_JWRB
+                  ENDIF
                 ENDDO
                 U(NINF-1,IG)=0.0_JWRB
                 V(NINF-1,IG)=0.0_JWRB
