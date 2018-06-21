@@ -1,4 +1,4 @@
-      SUBROUTINE GRADI (IG, MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,
+      SUBROUTINE GRADI (IG, MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,    &
      &                  DULAM, DVPHI, DVLAM)
 
 ! ----------------------------------------------------------------------
@@ -46,6 +46,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM
       USE YOWMAP   , ONLY : KXLT
@@ -60,18 +62,19 @@
 
       IMPLICIT NONE 
 
-      INTEGER :: IG 
-      INTEGER :: MIJS, MIJL, IREFRA
-      INTEGER :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM, KX
+      INTEGER(KIND=JWIM) :: IG 
+      INTEGER(KIND=JWIM) :: MIJS, MIJL, IREFRA
+      INTEGER(KIND=JWIM) :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM,  &
+     &                      KX
 
-      REAL :: DPTP, DPTM, UP, UM, VP, VM 
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(MIJS:MIJL) :: DDPHI,DDLAM,DUPHI,DULAM,DVPHI,DVLAM
+      REAL(KIND=JWRB) :: DPTP, DPTM, UP, UM, VP, VM 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: DDPHI, DDLAM, DUPHI,     &
+     &                                         DULAM,DVPHI,DVLAM
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('GRADI',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. INITIALISE.
 !        -----------
@@ -89,35 +92,35 @@
           IPM = KLAT(IJ,1,1)
           IPP2 = KLAT(IJ,2,2)
           IPM2 = KLAT(IJ,1,2)
-          IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.
-     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
+          IF (IPP.NE.NLAND  .AND. IPM.NE.NLAND .AND.                    &
+     &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND      ) THEN
             DPTP=WLAT(IJ,2)*DEPTH(IPP,IG)+(1.-WLAT(IJ,2))*DEPTH(IPP2,IG)
             DPTM=WLAT(IJ,1)*DEPTH(IPM,IG)+(1.-WLAT(IJ,1))*DEPTH(IPM2,IG)
-            DDPHI(IJ) = (DPTP-DPTM)/(2.*DELPHI)
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND ) THEN
+            DDPHI(IJ) = (DPTP-DPTM)/(2.0_JWRB*DELPHI)
+          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
             DPTP=DEPTH(IPP,IG)
             DPTM=DEPTH(IPM,IG)
-            DDPHI(IJ) = (DPTP-DPTM)/(2.*DELPHI)
-          ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND ) THEN
+            DDPHI(IJ) = (DPTP-DPTM)/(2.0_JWRB*DELPHI)
+          ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
             DPTP=DEPTH(IPP2,IG)
             DPTM=DEPTH(IPM2,IG)
-            DDPHI(IJ) = (DPTP-DPTM)/(2.*DELPHI)
+            DDPHI(IJ) = (DPTP-DPTM)/(2.0_JWRB*DELPHI)
           ELSE
-            DDPHI(IJ) = 0.0
+            DDPHI(IJ) = 0.0_JWRB
           ENDIF
           ILP = KLON(IJ,2)
           ILM = KLON(IJ,1)
           KX  = KXLT(IJ,IG)
           IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DDLAM(IJ) = (DEPTH(ILP,IG)-DEPTH(ILM,IG))/(2.*DELLAM(KX))
+            DDLAM(IJ)=(DEPTH(ILP,IG)-DEPTH(ILM,IG))/(2._JWRB*DELLAM(KX))
           ELSE
-            DDLAM(IJ) = 0.0 
+            DDLAM(IJ) = 0.0_JWRB 
           ENDIF
         ENDDO
       ELSE
         DO IJ=MIJS,MIJL
-          DDPHI(IJ) = 0.0
-          DDLAM(IJ) = 0.0
+          DDPHI(IJ) = 0.0_JWRB
+          DDLAM(IJ) = 0.0_JWRB
         ENDDO
       ENDIF
 
@@ -131,65 +134,67 @@
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF(U(IPP,IG).EQ.0. .AND. V(IPP,IG).EQ.0.) IPP=NLAND 
+          IF (U(IPP,IG).EQ.0.0_JWRB .AND. V(IPP,IG).EQ.0.0_JWRB)        &
+     &        IPP = NLAND
           IPM = KLAT(IJ,1,1)
-          IF(U(IPM,IG).EQ.0. .AND. V(IPM,IG).EQ.0.) IPM=NLAND 
+          IF (U(IPM,IG).EQ.0.0_JWRB .AND. V(IPM,IG).EQ.0.0_JWRB)        &
+     &        IPM = NLAND
           IPP2 = KLAT(IJ,2,2)
-          IF(U(IPP2,IG).EQ.0. .AND. V(IPP2,IG).EQ.0.) IPP2=NLAND 
+          IF (U(IPP2,IG).EQ.0.0_JWRB .AND. V(IPP2,IG).EQ.0.0_JWRB)      &
+     &        IPP2 = NLAND 
           IPM2 = KLAT(IJ,1,2)
-          IF(U(IPM2,IG).EQ.0. .AND. V(IPM2,IG).EQ.0.) IPM2=NLAND 
-          IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.
+          IF (U(IPM2,IG).EQ.0.0_JWRB .AND. V(IPM2,IG).EQ.0.0_JWRB)      &
+     &        IPM2 = NLAND 
+          IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.                     &
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
-            UP=WLAT(IJ,2)*U(IPP,IG)+(1.-WLAT(IJ,2))*U(IPP2,IG)
-            VP=WLAT(IJ,2)*V(IPP,IG)+(1.-WLAT(IJ,2))*V(IPP2,IG)
-            UM=WLAT(IJ,1)*U(IPM,IG)+(1.-WLAT(IJ,1))*U(IPM2,IG)
-            VM=WLAT(IJ,1)*V(IPM,IG)+(1.-WLAT(IJ,1))*V(IPM2,IG)
-            DUPHI(IJ) = (UP-UM)/(2.*DELPHI)
-            DVPHI(IJ) = (VP-VM)/(2.*DELPHI)
-          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND ) THEN
-            UP=U(IPP,IG)
-            VP=V(IPP,IG)
-            UM=U(IPM,IG)
-            VM=V(IPM,IG)
-            DUPHI(IJ) = (UP-UM)/(2.*DELPHI)
-            DVPHI(IJ) = (VP-VM)/(2.*DELPHI)
+            UP = WLAT(IJ,2)*U(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*U(IPP2,IG)
+            VP = WLAT(IJ,2)*V(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*V(IPP2,IG)
+            UM = WLAT(IJ,1)*U(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*U(IPM2,IG)
+            VM = WLAT(IJ,1)*V(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*V(IPM2,IG)
+            DUPHI(IJ) = (UP-UM)/(2.0_JWRB*DELPHI)
+            DVPHI(IJ) = (VP-VM)/(2.0_JWRB*DELPHI)
+          ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
+            UP = U(IPP,IG)
+            VP = V(IPP,IG)
+            UM = U(IPM,IG)
+            VM = V(IPM,IG)
+            DUPHI(IJ) = (UP-UM)/(2.0_JWRB*DELPHI)
+            DVPHI(IJ) = (VP-VM)/(2.0_JWRB*DELPHI)
           ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND ) THEN
-            UP=U(IPP2,IG)
-            VP=V(IPP2,IG)
-            UM=U(IPM2,IG)
-            VM=V(IPM2,IG)
-            DUPHI(IJ) = (UP-UM)/(2.*DELPHI)
-            DVPHI(IJ) = (VP-VM)/(2.*DELPHI)
+            UP = U(IPP2,IG)
+            VP = V(IPP2,IG)
+            UM = U(IPM2,IG)
+            VM = V(IPM2,IG)
+            DUPHI(IJ) = (UP-UM)/(2.0_JWRB*DELPHI)
+            DVPHI(IJ) = (VP-VM)/(2.0_JWRB*DELPHI)
           ELSE
-            DUPHI(IJ) = 0.0
-            DVPHI(IJ) = 0.0
+            DUPHI(IJ) = 0.0_JWRB
+            DVPHI(IJ) = 0.0_JWRB
           ENDIF
           ILP = KLON(IJ,2)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF(U(ILP,IG).EQ.0. .AND. V(ILP,IG).EQ.0.) ILP=NLAND 
+          IF (U(ILP,IG).EQ.0._JWRB .AND. V(ILP,IG).EQ.0._JWRB) ILP=NLAND
           ILM = KLON(IJ,1)
-          IF(U(ILM,IG).EQ.0. .AND. V(ILM,IG).EQ.0.) ILM=NLAND 
+          IF (U(ILM,IG).EQ.0._JWRB .AND. V(ILM,IG).EQ.0._JWRB) ILM=NLAND
           KX  = KXLT(IJ,IG)
           IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DULAM(IJ) = (U(ILP,IG)-U(ILM,IG))/(2.*DELLAM(KX))
-            DVLAM(IJ) = (V(ILP,IG)-V(ILM,IG))/(2.*DELLAM(KX))
+            DULAM(IJ) = (U(ILP,IG)-U(ILM,IG))/(2.0_JWRB*DELLAM(KX))
+            DVLAM(IJ) = (V(ILP,IG)-V(ILM,IG))/(2.0_JWRB*DELLAM(KX))
           ELSE
-            DULAM(IJ) = 0.0
-            DVLAM(IJ) = 0.0
+            DULAM(IJ) = 0.0_JWRB
+            DVLAM(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
       ELSE
         DO IJ=MIJS,MIJL
-          DUPHI(IJ) = 0.0
-          DVPHI(IJ) = 0.0
-          DULAM(IJ) = 0.0
-          DVLAM(IJ) = 0.0
+          DUPHI(IJ) = 0.0_JWRB
+          DVPHI(IJ) = 0.0_JWRB
+          DULAM(IJ) = 0.0_JWRB
+          DVLAM(IJ) = 0.0_JWRB
         ENDDO
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('GRADI',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE GRADI

@@ -69,6 +69,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWTEXT  , ONLY : LRESTARTED,USERID   ,PATH
 
 ! ----------------------------------------------------------------------
@@ -78,15 +80,15 @@
 #include "difdate.intfb.h"
 #include "file_transfer.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU06, ICH
-      INTEGER, INTENT(INOUT) :: IUNIT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ICH
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IUNIT
       CHARACTER(LEN=1), INTENT(IN) :: OPT
       CHARACTER(LEN=3), INTENT(IN) :: FILEID
       CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF
 
-      INTEGER :: I_GET_UNIT
-      INTEGER, PARAMETER :: KKNAME=7
-      INTEGER :: IL, LIU, LIP, LUSI, LNAME, INDXF, ISHIFT, IFAIL
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM), PARAMETER :: KKNAME=7
+      INTEGER(KIND=JWIM) :: IL, LIU, LIP, LUSI, LNAME, INDXF, ISHIFT, IFAIL
 
       CHARACTER(LEN=8) :: IU
       CHARACTER(LEN=8) :: PLIST
@@ -102,15 +104,15 @@
 !*    1.1 FILE NAMES FOR RESTART FIELDS FROM AN ANALYSIS RUN.
 !         ---------------------------------------------------
 
-      DATA NAME( 1) / 'blspanal' / ,
-     &     NAME( 2) / 'slatanal' / ,
+      DATA NAME( 1) / 'blspanal' / ,                                    &
+     &     NAME( 2) / 'slatanal' / ,                                    &
      &     NAME( 3) / 'lawianal' / 
 
 !*    1.2 FILE NAMES FOR RESTART FIELDS FROM A FORECAST RUN.
 !         --------------------------------------------------
 
-      DATA NAME( 4) / 'blspforc' / ,
-     &     NAME( 5) / 'slatforc' / ,
+      DATA NAME( 4) / 'blspforc' / ,                                    &
+     &     NAME( 5) / 'slatforc' / ,                                    &
      &     NAME( 6) / 'lawiforc' /
 
 !*    1.3 MANAGEMENT FILE.
@@ -197,7 +199,7 @@
         ELSE
           CALL SYSTEM('chmod go+r '// IU(1:LIU))
         ENDIF
-        PLIST = '-o '//IU(1:LIU)//' ec:'
+        PLIST = '-o '//IU(1:LIU)//' ec:'                                &
      &   //PATH(1:LIP)//'/'//FILENA(1:LNAME)
 
 
@@ -205,7 +207,7 @@
 !         ---------
 
       ELSEIF (OPT.EQ.'G' .AND. LIP .GT. 0) THEN
-        PLIST = '-n ec:'//PATH(1:LIP)//'/'//FILENA(1:LNAME)
+        PLIST = '-n ec:'//PATH(1:LIP)//'/'//FILENA(1:LNAME)             &
      &   //' '//IU(1:LIU)
 
 !*    5.3 ERROR IN OPTION.
@@ -222,10 +224,10 @@
         WRITE(IU06,*) ' *                                         *'
         WRITE(IU06,*) ' *******************************************'
         CALL ABORT1
-      ELSEIF ( OPT.EQ.'G' .AND. LRESTARTED ) THEN
+      ELSEIF (OPT.EQ.'G' .AND. LRESTARTED) THEN
         WRITE(IU06,*) '  '
-        WRITE(IU06,*) ' * W A R N I N G in --GSFILE-- '//
-     &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '//
+        WRITE(IU06,*) ' * W A R N I N G in --GSFILE-- '//                &
+     &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '// &
      &                 ' RESTART FILES' 
       ELSEIF (OPT.EQ.'G' .AND. LIP .EQ. 0) THEN
         IUNIT=I_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0)
@@ -236,7 +238,7 @@
 !*    6.0 EXECUTE ECFILE COMMAND.
 !         -----------------------
 
-      IF ( LIP .GT. 0 ) THEN
+      IF (LIP .GT. 0) THEN
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' --Ecp COMMAND IN GSFILE--'
         WRITE(IU06,*) '  ',PLIST
@@ -249,7 +251,7 @@
 !*    7.0 CHECK ECFILE RETURN CODE.
 !         -------------------------
 
-        IF(IFAIL.NE.0) THEN
+        IF (IFAIL.NE.0) THEN
           WRITE(IU06,*) ' *******************************************'
           WRITE(IU06,*) ' *                                         *'
           WRITE(IU06,*) ' *        FATAL ERROR IN --GSFILE--        *'
@@ -261,7 +263,7 @@
           WRITE(IU06,*) ' *******************************************'
           CALL ABORT1
         ENDIF
-      ELSEIF ( LIP .EQ. 0 .AND. OPT .EQ. 'S' ) THEN
+      ELSEIF (LIP .EQ. 0 .AND. OPT .EQ. 'S') THEN
 
 ! ----------------------------------------------------------------------
 
@@ -272,12 +274,11 @@
 
         CALL FILE_TRANSFER(IU06,IUNIT,FILENA(1:LNAME),OPT)
 
-      ELSEIF ( LIP .EQ. 0 .AND. OPT .EQ. 'G' ) THEN
+      ELSEIF (LIP .EQ. 0 .AND. OPT .EQ. 'G') THEN
         IF (LRESTARTED) THEN
           CALL FILE_TRANSFER(IU06,IUNIT,FILENA(1:LNAME),OPT)
         ENDIF
 
       ENDIF
 
-      RETURN
       END SUBROUTINE GSFILE

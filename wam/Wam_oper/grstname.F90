@@ -1,6 +1,6 @@
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,
+      SUBROUTINE GRSTNAME (CDATE, CDATEF, FILEID, KCPLEN, CPAD,         &
      &                     FILENAME)
 
 ! ----------------------------------------------------------------------
@@ -53,23 +53,23 @@
 
 ! ----------------------------------------------------------------------
 
-      IMPLICIT NONE
-#include "difdate.intfb.h"
-#include "incdate.intfb.h"
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      INTEGER :: KCPLEN
+      IMPLICIT NONE
+
+      INTEGER(KIND=JWIM) :: KCPLEN
       CHARACTER(LEN=3), INTENT(IN) :: FILEID
       CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF
       CHARACTER(LEN=*), INTENT(IN) :: CPAD
       CHARACTER(LEN=*), INTENT(OUT) :: FILENAME
 
 
-      INTEGER :: IC, IREP, NDAY, ISHIFT, ISHIFTDAY, IYRDIF
-      INTEGER :: IYEARSEC, IMAXYEAR
-      INTEGER :: NCHUNCK, ISFT, LNAME
-      INTEGER :: IYEAR1, IMON1, IDAY1, IHOUR1, IMIN1, ISEC1
-      INTEGER :: IYEAR2, IMON2, IDAY2, IHOUR2, IMIN2, ISEC2
-      INTEGER :: IDDDDDD, IHH, IMIMI, ISS
+      INTEGER(KIND=JWIM) :: IC, IREP, NDAY, ISHIFT, ISHIFTDAY, IYRDIF
+      INTEGER(KIND=JWIM) :: IYEARSEC, IMAXYEAR
+      INTEGER(KIND=JWIM) :: NCHUNCK, ISFT, LNAME
+      INTEGER(KIND=JWIM) :: IYEAR1, IMON1, IDAY1, IHOUR1, IMIN1, ISEC1
+      INTEGER(KIND=JWIM) :: IYEAR2, IMON2, IDAY2, IHOUR2, IMIN2, ISEC2
+      INTEGER(KIND=JWIM) :: IDDDDDD, IHH, IMIMI, ISS
 
       CHARACTER(LEN=14) :: CDATEH, CDT
       CHARACTER(LEN=30) :: FILENA
@@ -130,5 +130,4 @@
         FILENAME=CPAD(1:KCPLEN)//'/'//FILENA(1:LNAME)
       ENDIF
 
-      RETURN
       END SUBROUTINE GRSTNAME
