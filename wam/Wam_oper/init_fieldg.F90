@@ -1,4 +1,4 @@
-      SUBROUTINE INIT_FIELDG(LLALLOC_ONLY,LLINIALL,LLOCAL)
+      SUBROUTINE INIT_FIELDG(LLALLOC_ONLY, LLINIALL, LLOCAL)
 
 ! ----------------------------------------------------------------------
 
@@ -27,7 +27,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO  ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,XDELLA   ,ZDELLO  ,     &
      &            IFROMIJ  ,JFROMIJ
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
@@ -48,16 +50,15 @@
       LOGICAL, INTENT(IN) :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 
-      INTEGER :: IG, IJ, IX, JY, JSN
-      INTEGER:: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: IG, IJ, IX, JY, JSN
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LLOCAL_EXIST
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
-#endif
 
       IG=1
 
@@ -73,18 +74,18 @@
           DO IX=1,NXFF
             FIELDG(IX,JY)%XLON   = ZMISS 
             FIELDG(IX,JY)%YLAT   = ZMISS
-            FIELDG(IX,JY)%UWND   = 0.
-            FIELDG(IX,JY)%VWND   = 0.
+            FIELDG(IX,JY)%UWND   = 0.0_JWRB
+            FIELDG(IX,JY)%VWND   = 0.0_JWRB
             FIELDG(IX,JY)%WSWAVE = WSPMIN 
-            FIELDG(IX,JY)%WDWAVE = 0.
-            FIELDG(IX,JY)%USTAR  = 0.
-            FIELDG(IX,JY)%CIFR   = 0.
-            FIELDG(IX,JY)%CITH   = 0.
-            FIELDG(IX,JY)%LKFR   = 0.
+            FIELDG(IX,JY)%WDWAVE = 0.0_JWRB
+            FIELDG(IX,JY)%USTAR  = 0.0_JWRB
+            FIELDG(IX,JY)%CIFR   = 0.0_JWRB
+            FIELDG(IX,JY)%CITH   = 0.0_JWRB
+            FIELDG(IX,JY)%LKFR   = 0.0_JWRB
             FIELDG(IX,JY)%AIRD   = ROAIR
             FIELDG(IX,JY)%ZIDL   = WSTAR0
-            FIELDG(IX,JY)%UCUR   = 0.
-            FIELDG(IX,JY)%VCUR   = 0.
+            FIELDG(IX,JY)%UCUR   = 0.0_JWRB
+            FIELDG(IX,JY)%VCUR   = 0.0_JWRB
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
@@ -147,10 +148,6 @@
 
       ENDIF ! LLALLOC_ONLY
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',1,ZHOOK_HANDLE)
-#endif
-
-      RETURN
 
       END SUBROUTINE INIT_FIELDG
