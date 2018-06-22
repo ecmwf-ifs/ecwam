@@ -1,10 +1,10 @@
-      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,
-     &                    THWOLD, USOLD,
-     &                    TAUW, Z0OLD,
-     &                    ROAIRO, WSTAROLD,
-     &                    CICVR, CIWA,
-     &                    U10NEW, THWNEW, USNEW,
-     &                    Z0NEW, ROAIRN, WSTARNEW,
+      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
+     &                    THWOLD, USOLD,                                &
+     &                    TAUW, Z0OLD,                                  &
+     &                    ROAIRO, WSTAROLD,                             &
+     &                    CICVR, CIWA,                                  &
+     &                    U10NEW, THWNEW, USNEW,                        &
+     &                    Z0NEW, ROAIRN, WSTARNEW,                      &
      &                    MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -41,7 +41,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (FL3, IJS, IJL, IG,
+!       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
@@ -121,15 +121,17 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     ,
+      USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     , &
      &            COFRM4   ,FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,
-     &            IODP     ,IOBND    ,CINV     ,EMAXDPT 
+      USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
+     &            IODP     ,IOBND    ,CINV     ,EMAXDPT
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -154,60 +156,59 @@
 #include "wnfluxes.intfb.h"
 #include "wrong_wnfluxes.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG
-      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL, DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
-      REAL, DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
-      INTEGER :: IJ, K, M
-      INTEGER :: ILEV
-      INTEGER :: ICODE_WND, ICODE_WAM
+      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: ILEV
+      INTEGER(KIND=JWIM) :: ICODE_WND, ICODE_WAM
 
-      REAL :: DELT, XIMP, DELT5
-      REAL :: GTEMP1, GTEMP2, FLHAB
-      REAL :: ZHOOK_HANDLE
-      REAL :: GAMOF
-      REAL :: DELFL(NFRE)
-      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
-      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
-      REAL, DIMENSION(IJS:IJL) :: PHIWA
-      REAL, DIMENSION(IJS:IJL) :: DPTHREDUC
-      REAL, DIMENSION(IJS:IJL,NANG) :: FLM 
-      REAL, DIMENSION(IJS:IJL,NFRE) :: TEMP
-      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL(KIND=JWRB) :: DELT, XIMP, DELT5
+      REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: GAMOF
+      REAL(KIND=JWRB) :: DELFL(NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTHREDUC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 !     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. INITIALISATION.
 !        ---------------
 
       DELT = IDELT
-      XIMP = 1.0
+      XIMP = 1.0_JWRB
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
         ICODE_WND = ICODE_CPL
       ELSE
         ICODE_WND = ICODE
@@ -231,12 +232,12 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
-     &            F1MEAN, AKMEAN, XKMEAN)
+
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          FLM(IJ,K)=FLMIN*MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
       ENDDO
 
@@ -281,23 +282,23 @@
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
 !     diagnostic (not coded efficiently)
 !!      DO IJ=IJS,IJL
 !!        DO M=1,NFRE
-!!          GAMOF=0. 
+!!          GAMOF=0.0_JWRB
 !!          DO K=1,NANG
 !!            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
 !!          ENDDO
-!!          write(*,*) 'debile gamma ',CDTPRO," ",
+!!          write(*,*) 'debile gamma ',CDTPRO," ",                     &
 !!     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
 !!        ENDDO
 !!      ENDDO
 
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALL'
+        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -305,15 +306,15 @@
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, IJS, IJL,
-     &              MIJ, RHOWGDFTH,
-     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+     &              MIJ, RHOWGDFTH,                                     &
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALL'
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
@@ -330,7 +331,7 @@
 !*    REEVALUATE WIND INPUT SOURCE TERM
 !     ---------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
       IF (ITEST.GE.2) THEN
@@ -353,12 +354,12 @@
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, IJS, IJL,
-     &              MIJ, RHOWGDFTH,
-     &              THWNEW, USNEW, Z0NEW, ROAIRN,
+      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+     &              MIJ, RHOWGDFTH,                                     &
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 2nd CALL'
@@ -369,8 +370,8 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
-     &              EMEANALL, F1MEAN, XKMEAN,
+      CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,                              &
+     &              EMEANALL, F1MEAN, XKMEAN,                           &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
@@ -378,11 +379,11 @@
       ENDIF
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-        CALL WRONG_WNFLUXES (IJS, IJL,
-     &                       MIJ, RHOWGDFTH,
-     &                       SSOURCE, SL,
-     &                       PHIWA,
-     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,
+        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
+     &                       MIJ, RHOWGDFTH,                            &
+     &                       SSOURCE, SL,                               &
+     &                       PHIWA,                                     &
+     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
      &                       USNEW, ROAIRN, .TRUE.)
       ENDIF
 
@@ -399,24 +400,23 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
               SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
-        CALL WNFLUXES (IJS, IJL,
-     &                 MIJ, RHOWGDFTH,
-     &                 SSOURCE, CICVR,
-     &                 PHIWA,
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,
+        CALL WNFLUXES (IJS, IJL,                                        &
+     &                 MIJ, RHOWGDFTH,                                  &
+     &                 SSOURCE, CICVR,                                  &
+     &                 PHIWA,                                           &
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
      &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 
 !SHALLOW
       IF(ISHALLO.NE.1) THEN
-        CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, 
-     &              DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
+        CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
         CALL SBOTTOM (IJS, IJL, DEPTH(IJS,1), FL3, FL, SL)
       ENDIF
 !SHALLOW
@@ -446,13 +446,12 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+            GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-            FL3(IJ,K,M)=
-     &      MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
+            FL3(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
             FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -461,7 +460,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.0)
+            GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
@@ -493,8 +492,7 @@
       ENDDO
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE IMPLSCH

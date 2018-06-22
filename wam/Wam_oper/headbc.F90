@@ -40,6 +40,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
 
@@ -48,10 +50,10 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: NBOUNC, IDELPRO, IUOUT, IU06
-      REAL, INTENT(IN) :: TH0, FR1
+      INTEGER(KIND=JWIM), INTENT(IN) :: NBOUNC, IDELPRO, IUOUT, IU06
+      REAL(KIND=JWRB), INTENT(IN) :: TH0, FR1
 
-      REAL :: XANG, XFRE, XBOU, XDEL
+      REAL(KIND=JWRB) :: XANG, XFRE, XBOU, XDEL
 
 !*    1. FORMAT AND WRITE HEADER.
 !        ------------------------
