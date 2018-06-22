@@ -34,49 +34,50 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,
-     &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,
-     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,
-     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
-     &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,
+      USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
+     &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
+     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
+     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
+     &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
      &            KFRH     ,NINL     ,NRNL     ,INLCOEF  ,RNLCOEF
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER :: ICOUNT, IRCOUNT
-      INTEGER :: MC, MP, MP1, MM, MM1, IC, IP, IP1, IM , IM1, ITEMP
+      INTEGER(KIND=JWIM) :: ICOUNT, IRCOUNT
+      INTEGER(KIND=JWIM) :: MC, MP, MP1, MM, MM1, IC, IP, IP1, IM , IM1, ITEMP
 
-      REAL :: ALPH, FRR
-      REAL :: FFACP, FFACP1, FFACM, FFACM1, FTAIL, FKLAMP, FKLAMP1
-      REAL :: FKLAMPA, FKLAMPB, FKLAMP2, FKLAPA2, FKLAPB2
-      REAL :: FKLAP12, FKLAP22, FKLAMM, FKLAMM1, FKLAMMA, FKLAMMB
-      REAL :: FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
-      REAL :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
+      REAL(KIND=JWRB) :: ALPH, FRR
+      REAL(KIND=JWRB) :: FFACP, FFACP1, FFACM, FFACM1, FTAIL, FKLAMP, FKLAMP1
+      REAL(KIND=JWRB) :: FKLAMPA, FKLAMPB, FKLAMP2, FKLAPA2, FKLAPB2
+      REAL(KIND=JWRB) :: FKLAP12, FKLAP22, FKLAMM, FKLAMM1, FKLAMMA, FKLAMMB 
+      REAL(KIND=JWRB) :: FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
+      REAL(KIND=JWRB) :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
 
-      REAL ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 !     INLINE FUNCTION (PIERSON-MOSKOWITZ SMOOTH CUT-OFF)
 !     X == FR(1)/FREQUENCY
-      REAL :: EPMMA, X
-      EPMMA(X)= EXP(-MIN(1.25*X**4,50.))*(X**5)
+      REAL(KIND=JWRB) :: EPMMA, X
+      EPMMA(X)= EXP(-MIN(1.25_JWRB*X**4,50.0_JWRB))*(X**5)
 
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('INISNONLIN',0,ZHOOK_HANDLE)
-#endif
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('INISNONLIN',0,ZHOOK_HANDLE)
 
 
 !     1. FRONT SPECTRAL TAIL REDUCTION COEFFICIENTS
 
-      IF(.NOT.ALLOCATED(FTRF))
-     &   ALLOCATE(FTRF(MFRSTLW:1))
-      ALPH=1./EPMMA(1.)
-      FRR=1.
+      IF (.NOT.ALLOCATED(FTRF)) ALLOCATE(FTRF(MFRSTLW:1))
+      ALPH=1.0_JWRB/EPMMA(1.0_JWRB)
+      FRR=1.0_JWRB
       DO MC=1,MFRSTLW,-1
          FTRF(MC)=ALPH*EPMMA(FRR)
          FRR=FRR*FRATIO
@@ -94,11 +95,11 @@
         MP1 = IKP1(MC)
         MM  = IKM (MC)
         MM1 = IKM1(MC)
-        FFACP  = 1.
-        FFACP1 = 1.
-        FFACM  = 1.
-        FFACM1 = 1.
-        FTAIL  = 1.
+        FFACP  = 1.0_JWRB
+        FFACP1 = 1.0_JWRB
+        FFACM  = 1.0_JWRB
+        FFACM1 = 1.0_JWRB
+        FTAIL  = 1.0_JWRB
         IC  = MC
         IP  = MP
         IP1 = MP1
@@ -252,8 +253,6 @@
         CALL ABORT1
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INISNONLIN',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE INISNONLIN

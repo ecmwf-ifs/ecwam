@@ -42,16 +42,17 @@
 
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: ISHIFT
+      INTEGER(KIND=JWIM), INTENT(IN) :: ISHIFT
       CHARACTER(LEN=*), INTENT(INOUT) :: CDATE
 
-      INTEGER :: IL, IRET
-      INTEGER :: IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
-      INTEGER :: MON(12)
+      INTEGER(KIND=JWIM) :: IL, IRET
+      INTEGER(KIND=JWIM) :: IYEAR, IMON, IDAY, IHOUR, IMIN, ISEC
+      INTEGER(KIND=JWIM) :: MON(12)
 
       CHARACTER(LEN=80) :: CLFMT
 
@@ -67,7 +68,7 @@
 
       IL = LEN_TRIM(CDATE)
       IF (IL==10) THEN
-        WRITE(CLFMT,'(A49, I2.2, A2)')
+        WRITE(CLFMT,'(A49, I2.2, A2)')                                  &
      &     '(" INCDATE : NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
         WRITE(6, CLFMT ) CDATE
         WRITE(*, CLFMT ) CDATE
@@ -85,8 +86,8 @@
         WRITE(*, *) ' INCDATE:  FATAL@! DATE IS 0 CHARACTER LONG'
         CALL ABORT1
       ELSE
-        WRITE(CLFMT,'(A59, I2.2, A2)')
-     &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',
+        WRITE(CLFMT,'(A59, I2.2, A2)')                                  &
+     &  '(" INCDATE:  FATAL@! DATE IS ",I2," CHARACTERS LONG!!= ",A',   &
      &    IL, ' )'
         WRITE(6, CLFMT) IL, CDATE
         WRITE(*, CLFMT) IL, CDATE
@@ -217,10 +218,10 @@
 
       IF (LLND) THEN
         IF (IL==12) THEN
-          WRITE(CDATE,'(I4.4, 4I2.2)')IYEAR, IMON, IDAY, IHOUR,
+          WRITE(CDATE,'(I4.4, 4I2.2)')IYEAR, IMON, IDAY, IHOUR,         &
      &                                IMIN
         ELSEIF (IL==14) THEN
-          WRITE(CDATE,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,
+          WRITE(CDATE,'(I4.4, 5I2.2)')IYEAR, IMON, IDAY, IHOUR,         &
      &                                IMIN, ISEC
         ELSE
           WRITE(6,'(" THE LENGTH OF THE INPUT CHARACTER CHANGED @!")')
@@ -229,7 +230,7 @@
       ELSE
         IYEAR = IYEAR - 1900
         IF (IYEAR >= 100) THEN
-          WRITE(CLFMT,'(A39, I2.2, A2)')
+          WRITE(CLFMT,'(A39, I2.2, A2)')                                &
      &     '(" NON-Y2K COMPLIANT  DATE IN USE ", A', IL, ' )'
           WRITE(6, CLFMT ) CDATE
           WRITE(6,'(" THIS CANNOT BE DONE ANY LONGER")')
