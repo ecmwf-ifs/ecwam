@@ -155,22 +155,24 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
      &            BSWKM
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,
+      USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,    &
      &            NIBLC    ,NBLC
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,    &
      &            XNLEV    ,TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
      &            NLONRGG  ,IGL
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,
+      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
+     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &            XDELLO   ,ZDELLO   ,LAQUA
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSTAT  , ONLY : IPHYS
@@ -201,15 +203,15 @@
 #include "topoar.intfb.h"
 #include "uiprep.intfb.h"
 
-      INTEGER :: IU01, IU02, IU03, IU09, IU10, IU17, IU19, IU20 
-      INTEGER :: IG
-      INTEGER :: K, IX, ICL, IFORM, ML, KL, LNAME, IINPC, LFILE
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU09, IU10, IU17,IU19,IU20
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, ML, KL, LNAME,IINPC,LFILE
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL :: PRPLRADI
-      REAL :: OLDRAD
-      REAL :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
-      REAL, ALLOCATABLE :: BATHY(:,:)
+      REAL(KIND=JWRB) :: PRPLRADI
+      REAL(KIND=JWRB) :: OLDRAD
+      REAL(KIND=JWRB) :: XLAT, XLATD, XLATMAX,PLONS, COSPHMIN
+      REAL(KIND=JWRB), ALLOCATABLE :: BATHY(:,:)
 
       CHARACTER(LEN=1) :: C1 
       CHARACTER(LEN=80) :: FILENAME
@@ -220,7 +222,7 @@
 ! ----------------------------------------------------------------------
 
       LMESSPASS=.FALSE.
-      PRPLRADI=1.0
+      PRPLRADI=1.0_JWRB
 
       CALL INIWCST(PRPLRADI)
 
@@ -302,11 +304,9 @@
       IF (IBOUNF.EQ.1) THEN
 !       Information of the nested grid(s) that were produced by a coarse grid run
         IF (IFORM.NE.2) THEN
-          IU03=I_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info',
-     &                    'r', 'u', 0)
+          IU03=I_GET_UNIT(IU06,'wam_nested_grids_from_coarse_info','r', 'u', 0)
         ELSE
-          IU03=I_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form',
-     &                    'r','f',0)
+          IU03=I_GET_UNIT(IU06,'wam_nested_grids_info_from_coarse_form', 'r','f',0)
         ENDIF
 
 !       Information about the boundary points that will be needed for a fine
@@ -325,8 +325,8 @@
 !        ------------------------------------------
 
       IGL=0
-      DELPHI = XDELLA*CIRC/360.
-      OLDRAD=OLDPI/180.
+      DELPHI = XDELLA*CIRC/360.0_JWRB
+      OLDRAD=OLDPI/180.0_JWRB
       DO K=1,NY
         XLAT       = (AMOSOP + REAL(K-1)*XDELLA)*RAD
         XLATD      = (AMOSOP + REAL(K-1)*XDELLA)
@@ -334,8 +334,9 @@
         COSPH(K)   = COS(XLAT)
         IF(.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA.EQ.0.25.AND.AMOWEP.EQ.-98..AND.AMOSOP.EQ.9..AND.
-     &         AMOEAP.EQ.42..AND.AMONOP.EQ.81.) THEN
+            IF (XDELLA.EQ.0.25_JWRB .AND. AMOWEP.EQ.-98.0_JWRB .AND.    &
+     &          AMOSOP.EQ.9.0_JWRB .AND. AMOEAP.EQ.42.0_JWRB .AND.      &
+     &          AMONOP.EQ.81.0_JWRB) THEN
 !         the old value for pi has to be taken in order to reproduce
 !         exactly the irregular grid of the operational LAW model 0.25
               NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
@@ -356,19 +357,19 @@
         IF(NX.EQ.1.AND.NY.EQ.1) THEN
           NLONRGG(K) = NX
           ZDELLO(K)  = XDELLO
-          DELLAM(K)  = ZDELLO(K)*CIRC/360.
+          DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
           EXIT
         ENDIF
         IF(IPER.EQ.1) THEN
-          ZDELLO(K)  = 360./REAL(NLONRGG(K))
+          ZDELLO(K)  = 360.0_JWRB/REAL(NLONRGG(K))
         ELSE
           ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
         ENDIF
-        DELLAM(K)  = ZDELLO(K)*CIRC/360.
+        DELLAM(K)  = ZDELLO(K)*CIRC/360.0_JWRB
       ENDDO
 
 !     IF THE POLES ARE INCLUDED, ARTIFICIALLY REMOVE THE SINGULARITY
-      XLATMAX=87.5
+      XLATMAX=87.5_JWRB
       COSPHMIN=COS(XLATMAX*RAD)
       DO K=1,NY
         IF(COSPH(K).LE.COSPHMIN) THEN
@@ -403,30 +404,30 @@
       IF (IPHYS.EQ.0) THEN
 !       ECMWF PHYSICS:
         IF(ML.GT.30) THEN
-          ALPHA   = 0.0060
+          ALPHA   = 0.0060_JWRB
         ELSE
-          ALPHA   = 0.0075
+          ALPHA   = 0.0075_JWRB
         ENDIF
 !!!        ALPHA   = 0.00525
-        BETAMAX = 1.20
-        ZALP    = 0.008
-        ALPHAPMAX = 0.03
-        TAUWSHELTER=0.0
-        TAILFACTOR=2.5
+        BETAMAX = 1.20_JWRB
+        ZALP    = 0.008_JWRB
+        ALPHAPMAX = 0.03_JWRB
+        TAUWSHELTER=0.0_JWRB
+        TAILFACTOR=2.5_JWRB
 !!!        TAILFACTOR_PM=3.4
-        TAILFACTOR_PM=0.   ! i.e. not used
+        TAILFACTOR_PM=0.0_JWRB   ! i.e. not used
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1108.0
-        AGRCRV = 0.06E+6
-        BGRCRV = 9.70
-        AFCRV = 4.0E-4
-        BFCRV = -3.0
-        ESH = 1711.
-        ASH = 8.0E-4 
-        BSH = 0.96 
-        ASWKM=0.0981
-        BSWKM=0.425
+        EGRCRV = 1108.0_JWRB
+        AGRCRV = 0.06E+6_JWRB
+        BGRCRV = 9.70_JWRB
+        AFCRV = 4.0E-4_JWRB
+        BFCRV = -3.0_JWRB
+        ESH = 1711.0_JWRB
+        ASH = 8.0E-4_JWRB 
+        BSH = 0.96_JWRB 
+        ASWKM=0.0981_JWRB
+        BSWKM=0.425_JWRB
 
       ELSE IF (IPHYS.EQ.1) THEN
 !       METEO FRANCE PHYSICS WITH HIGH FREQUENCy TAIL FROM ECMWF PHYSICS
@@ -439,25 +440,25 @@
 !        TAILFACTOR_PM=0.0
 !       TEST 471 adapted to ECWAM
 
-        ALPHA   = 0.0065
-        BETAMAX = 1.42
-        ZALP    = 0.008
-        ALPHAPMAX = 0.031
-        TAUWSHELTER=0.24
-        TAILFACTOR=2.5
-        TAILFACTOR_PM=3.0
+        ALPHA   = 0.0065_JWRB
+        BETAMAX = 1.42_JWRB
+        ZALP    = 0.008_JWRB
+        ALPHAPMAX = 0.031_JWRB
+        TAUWSHELTER=0.24_JWRB
+        TAILFACTOR=2.5_JWRB
+        TAILFACTOR_PM=3.0_JWRB
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1065.0
-        AGRCRV = 0.0655E+6
-        BGRCRV =  10.906
-        AFCRV = 2.453E-4
-        BFCRV = -3.1236
-        ESH = 1711.
-        ASH = 8.0E-4 
-        BSH = 0.96 
-        ASWKM=0.0981
-        BSWKM=0.425
+        EGRCRV = 1065.0_JWRB
+        AGRCRV = 0.0655E+6_JWRB
+        BGRCRV =  10.906_JWRB
+        AFCRV = 2.453E-4_JWRB
+        BFCRV = -3.1236_JWRB
+        ESH = 1711.0_JWRB
+        ASH = 8.0E-4_JWRB 
+        BSH = 0.96_JWRB 
+        ASWKM=0.0981_JWRB
+        BSWKM=0.425_JWRB
 
       ELSE
         WRITE (IU06,*) '*************************************'
@@ -470,11 +471,11 @@
         CALL ABORT1
       ENDIF
 
-      XKAPPA  = 0.40
+      XKAPPA  = 0.40_JWRB
 
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
 
-      XNLEV(1)= 10.0
+      XNLEV(1)= 10.0_JWRB
 
 !*    4.4 MODULE TABLE (STRESS TABLES).
 !         -----------------------------
@@ -517,8 +518,8 @@
 !       EXCEPT AT THE POLES THAT ARE EXCLUDED AS LAND.
         BATHY(:,:)=BATHYMAX
         DO IX=1,NX
-          BATHY(IX,1)=-999.
-          BATHY(IX,NY)=-999.
+          BATHY(IX,1)=-999.0_JWRB
+          BATHY(IX,NY)=-999.0_JWRB
         ENDDO
       ENDIF
 
@@ -592,8 +593,7 @@
         DO IG=1,IGL
           CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
           IF (ITEST.GT.0) THEN
-            IF (IG.LE.ITESTB) WRITE (IU06,*)
-     &       ' SUB MUBUF DONE FOR BLOCK ',IG
+            WRITE (IU06,*) ' SUB MUBUF DONE FOR BLOCK ',IG
           ENDIF
         ENDDO
 !

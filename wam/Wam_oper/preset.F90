@@ -91,46 +91,48 @@
 !       NONE.
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
-      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,
+      USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
-      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS, IJL, IJLT    ,
+      USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS, IJL, IJLT    ,     &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : CICOVER  ,CITHICK   ,CIWA
-      USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,
+      USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,
-     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
+     &            AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS,LFDBIOOUT,LGRIBOUT
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG     ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,SWAMPWIND,CLDOMAIN ,LL1D
-      USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,
+      USE YOWPCONS , ONLY : G        ,RAD      ,DEG      ,ZMISS    ,    &
      &            ROAIR
-      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,
-     &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,
+      USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
+     &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
      &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,
-     &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
+     &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,              &
      &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
-      USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,
-     &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,
-     &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,
+      USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
+     &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
+     &            DFDTH    ,IM_P      ,IM_M     ,TA       ,TB      ,    &
      &            TC_QL    ,TT_4M     ,TT_4P    ,TFAKH
 
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,
+      USE YOWTEXT  , ONLY : ICPLEN   ,USERID   ,RUNID    ,PATH     ,    &
      &            CPATH
       USE YOWUNPOOL ,ONLY : LLUNSTR  ,LPREPROC
-      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,
+      USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,              &
      &            IUSCR
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,
+      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,NXFF     ,NYFF    
       USE FDBSUBS_MOD
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
@@ -153,23 +155,23 @@
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
 
-      INTEGER, PARAMETER :: NC=1
-      INTEGER, PARAMETER :: NR=1
-      INTEGER, PARAMETER :: NGPTOTG=NC*NR
-      INTEGER, PARAMETER :: NFIELDS=1
-      INTEGER :: ILEN, IREAD, IOPTI
-      INTEGER :: IG
-      INTEGER :: IJ, K, M
-      INTEGER :: IU05, IU07 
-      INTEGER :: I4(2)
-      INTEGER :: MASK_IN(NGPTOTG)
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM), PARAMETER :: NC=1
+      INTEGER(KIND=JWIM), PARAMETER :: NR=1
+      INTEGER(KIND=JWIM), PARAMETER :: NGPTOTG=NC*NR
+      INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=1
+      INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IU05, IU07 
+      INTEGER(KIND=JWIM) :: I4(2)
+      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL :: PRPLRADI
-      REAL :: THETA, FETCH, FRMAX 
-      REAL :: ZHOOK_HANDLE
-      REAL :: X4(2)
-      REAL :: FIELDS(NGPTOTG,NFIELDS)
+      REAL(KIND=JWRB) :: PRPLRADI
+      REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: X4(2)
+      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
 
       CHARACTER(LEN=1) :: CLTUNIT
       CHARACTER(LEN=14) :: ZERO, CDUM
@@ -185,15 +187,15 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ HEADER,
-     &          IOPTI, ITEST, ITESTB,
-     &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,
-     &          USERID, RUNID, PATH, CPATH,
-     &          USE_DIRECT_WIND_FILE,
-     &          CDATEA, IDELWI, CLTUNIT,
-     &          LLUNSTR, LPREPROC,
-     &          LGRIBOUT,
-     &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,
+      NAMELIST /NALINE/ HEADER,                                         &
+     &          IOPTI, ITEST, ITESTB,                                   &
+     &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
+     &          USERID, RUNID, PATH, CPATH,                             &
+     &          USE_DIRECT_WIND_FILE,                                   &
+     &          CDATEA, IDELWI, CLTUNIT,                                &
+     &          LLUNSTR, LPREPROC,                                      &
+     &          LGRIBOUT,                                               &
+     &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,                    &
      &          NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
@@ -220,13 +222,12 @@
 
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
-#endif
 
       CALL MPL_INIT(KOUTPUT=1)
 
-      PRPLRADI=1.0
+      PRPLRADI=1.0_JWRB
       CALL INIWCST(PRPLRADI)
 
 !*    0. SET DEFAULT VALUES FOR THE NAMELIST ELEMENTS.
@@ -236,14 +237,14 @@
       IOPTI  =    1
       ITEST  =   -9
       ITESTB =   -9
-      ALFA   =    0.0
-      FM     =    0.0
-      GAMMA  =    0.0
-      SA     =    0.0
-      SB     =    0.0
-      THETA  =    0.0
-      FETCH  =    0.0
-      SWAMPWIND = 18.45
+      ALFA   =    0.0_JWRB
+      FM     =    0.0_JWRB
+      GAMMA  =    0.0_JWRB
+      SA     =    0.0_JWRB
+      SB     =    0.0_JWRB
+      THETA  =    0.0_JWRB
+      FETCH  =    0.0_JWRB
+      SWAMPWIND = 18.45_JWRB
       USERID = ZERO
       RUNID  = ZERO
       PATH   = ZERO
@@ -286,7 +287,7 @@
       IRANK=1
       NPROC=1
       LL1D=.FALSE.
-      X4(:)=1.
+      X4(:)=1.0_JWRB
       NPRECR = KIND(X4)
       I4(:)=1
       NPRECI = KIND(I4)
@@ -442,18 +443,18 @@
       WRITE (IU06,*)'  '
 
       IF (IOPTI.EQ.0) THEN
-        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
+        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' INPUT PARAMETERS.'')')
       ELSEIF (IOPTI.EQ.1) THEN
-        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
+        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' WAVE ENERGY IS ZERO IN CALM WIND AREAS.'')')
       ELSEIF (IOPTI.EQ.2) THEN
-        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
+        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' LOCAL WIND.'')')
         WRITE (IU06,'('' PARAMETERS USED IN CALM WIND AREAS.'')')
       ELSEIF (IOPTI.EQ.3) THEN
-        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',
+        WRITE (IU06,'('' INITIAL VALUES ARE COMPUTED FROM'',            &
      &   '' IMPOSED SWELL SYSTEMS.'')')
       ELSE
         WRITE (IU06,'('' INVALID INPUT OPTION. PROGRAM WILL ABORT '')')
@@ -466,10 +467,10 @@
       WRITE (IU06,*) ' TEST OUTPUT IN BLOCK LOOP UPTO ITESTB = ', ITESTB
 
       WRITE (IU06,'('' JONSWAP PARAMETERS  :'',/)')
-      WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',
-     &              F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')
+      WRITE (IU06,'('' ALFA : '',F10.5,'' FM : '',F10.5,'' GAMMA : '',  &
+     &              F10.5,'' SA : '',F10.5,'' SB : '',F10.5)')          &
      &              ALFA, FM, GAMMA, SA, SB
-      WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,
+      WRITE (IU06,'('' MEAN WAVE DIRECTION :  THETA = '',F10.5,         &
      &              '' DEGREE'')')  THETA
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' WIND INPUT TIMESTEP (SECONDS)      : ',IDELWI
@@ -507,19 +508,19 @@
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CIWA)) ALLOCATE(CIWA(NIBLO,NFRE,NBLO))
-      U10OLD(:,:) = 0.
-      THWOLD(:,:) = 0.
-      USOLD(:,:) = 0.
-      TAUW(:,:) = 0.
-      Z0OLD(:,:) = 0.
+      U10OLD(:,:) = 0.0_JWRB
+      THWOLD(:,:) = 0.0_JWRB
+      USOLD(:,:) = 0.0_JWRB
+      TAUW(:,:) = 0.0_JWRB
+      Z0OLD(:,:) = 0.0_JWRB
       ROAIRO(:,:) = ROAIR      
-      ZIDLOLD(:,:) = 0.
-      CICOVER(:,:) = 0.
-      CITHICK(:,:) = 0.
-      CIWA(:,:,:) = 1.
+      ZIDLOLD(:,:) = 0.0_JWRB
+      CICOVER(:,:) = 0.0_JWRB
+      CITHICK(:,:) = 0.0_JWRB
+      CIWA(:,:,:) = 1.0_JWRB
 
 
-      IF (IOPTI.GT.0.AND.IOPTI.NE.3) THEN
+      IF (IOPTI.GT.0 .AND. IOPTI.NE.3) THEN
 
 !!!! might need to restict call when needed !!!
 !!! remove that call in 40R3
@@ -528,12 +529,12 @@
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
-     &                ROAIRO, ZIDLOLD,
-     &                CICOVER, CITHICK, CIWA,
-     &                LLINIT, LLALLOC_FIELDG_ONLY, 
-     &                IREAD,
-     &                NFIELDS, NGPTOTG, NC, NR,
+        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                   &
+     &                ROAIRO, ZIDLOLD,                                  &
+     &                CICOVER, CITHICK, CIWA,                           &
+     &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
+     &                IREAD,                                            &
+     &                NFIELDS, NGPTOTG, NC, NR,                         &
      &                FIELDS, LWCUR, MASK_IN)
 
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
@@ -548,7 +549,7 @@
 !        ----------------------------------------
 
 
-      IF (FETCH.LT.0.1E-5) FETCH = 0.5*DELPHI
+      IF (FETCH.LT.0.1E-5_JWRB) FETCH = 0.5_JWRB*DELPHI
       FRMAX = FM
       IF (IOPTI.NE.0 .AND. IOPTI.NE.3) THEN
         WRITE (IU06,*) ' FETCH USED (METRES)       : ', FETCH
@@ -562,7 +563,7 @@
 
       IF(IOPTI.NE.3) THEN
         THETAQ = THETA * RAD
-        CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
+        CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
      &              FL1,U10OLD,THWOLD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
       ELSE
@@ -590,8 +591,8 @@
       WRITE(IU06,*) 'MINVAL OF U10OLD = ',MINVAL(U10OLD)
       WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,              &
+     &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,               &
      &                 NBLKS, NBLKE, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
       ENDIF
@@ -631,7 +632,6 @@
 
       CALL MPL_END()
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PRESET',1,ZHOOK_HANDLE)
-#endif
+
       END
