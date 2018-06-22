@@ -115,7 +115,7 @@
      &            ROAIR
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
-     &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,
+     &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,              &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
