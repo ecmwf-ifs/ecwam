@@ -42,8 +42,10 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,COSTH    ,SINTH     ,   &
      &              DELTH  ,FRATIO   ,FLOGSPRDM1
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -57,46 +59,43 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG, IRA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F1
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG, IRA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F1
 
-      INTEGER :: IJ, M, K
-      INTEGER :: NEWM, NEWM1, KH 
-      INTEGER, DIMENSION(IJS:IJL) :: NEWF,NEWF1,KNEW
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      INTEGER(KIND=JWIM) :: NEWM, NEWM1, KH 
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NEWF, NEWF1, KNEW
 
-      REAL :: PI2G, FRE0, CDF 
-      REAL :: FNEW, GWH
-      REAL :: ZHOOK_HANDLE
-      REAL :: DFTH(NFRE)
-      REAL, DIMENSION(IJS:IJL) :: OLDFL 
-      REAL, DIMENSION(IJS:IJL) :: FNEF,GWP,GWM,WAVN
+      REAL(KIND=JWRB) :: PI2G, FRE0, CDF 
+      REAL(KIND=JWRB) :: FNEW, GWH
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DFTH(NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OLDFL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FNEF, GWP, GWM, WAVN
 
       LOGICAL :: LICE2SEA(IJS:IJL)
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INTPOL',0,ZHOOK_HANDLE)
-#endif
-
 
 !*    0. INITIAL OUTPUT ARRAY WITH ZERO.
 !        -------------------------------
 
       PI2G = ZPI/G 
-      FRE0 = FRATIO-1.
+      FRE0 = FRATIO-1.0_JWRB
 
 !!!??? I believe that in order to be energy conserving, since
 !!! DFIM(1) is only the part above FR(1)
 !!! purpose of trapezoidal rule, one has to take DFTH(1) which 
 !!! define on both side of FR(1). Similarly for FR(NFRE)
 !!! Redefine the centered frequency-direction intervals
-      CDF= 0.5*(FRATIO-1./FRATIO)*DELTH
+      CDF= 0.5_JWRB*(FRATIO-1.0_JWRB/FRATIO)*DELTH
       DO M=1,NFRE
         DFTH(M)= FR(M)*CDF
       ENDDO
 
-      IF(ABS(IRA).NE.1) THEN
+      IF (ABS(IRA).NE.1) THEN
         WRITE (IU06,*) '**************************************'
         WRITE (IU06,*) '* SUBROUTINE INTPOL:                  '
         WRITE (IU06,*) '* IRA MUST BE = 1 OR -1               '
@@ -115,7 +114,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ = IJS, IJL
-             IF(F3(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
+             IF (F3(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
           ENDDO
         ENDDO
       ENDDO
@@ -124,7 +123,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS, IJL
-            F1(IJ,K,M) = 0.0
+            F1(IJ,K,M) = 0.0_JWRB
           ENDDO
         ENDDO
       ENDDO
@@ -152,9 +151,8 @@
 !           ----------------------------------------------
 
           DO IJ = IJS, IJL
-            FNEF(IJ) = FR(M)
-     &       + IRA*WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
-            IF (FNEF(IJ).GT.0.) THEN
+            FNEF(IJ) = FR(M) + IRA*WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
+            IF (FNEF(IJ).GT.0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE
               KNEW(IJ) = MOD(K+NANG/2-1,NANG) + 1
@@ -176,8 +174,8 @@
 !*    1.3.3 INTERPOLATED ENERGY DENSITIES AT ALL GRIDPOINTS.
 !           ------------------------------------------------
           DO IJ = IJS, IJL
-            IF(LICE2SEA(IJ)) THEN
-              OLDFL(IJ)=0.
+            IF (LICE2SEA(IJ)) THEN
+              OLDFL(IJ)=0.0_JWRB
             ELSE
               OLDFL(IJ)=F3(IJ,K,M)
             ENDIF
@@ -214,9 +212,9 @@
             NEWM  = NEWF (IJ)
             NEWM1 = NEWF1(IJ)
             KH = KNEW(IJ)
-            IF (NEWM .NE.-1)
+            IF (NEWM .NE.-1)                                            &
      &       F1(IJ,KH,NEWM ) = F1(IJ,KH,NEWM ) + GWM(IJ)
-            IF (NEWM1.NE.-1)
+            IF (NEWM1.NE.-1)                                            &
      &       F1(IJ,KH,NEWM1) = F1(IJ,KH,NEWM1) + GWP(IJ)
           ENDDO
 
@@ -236,8 +234,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INTPOL',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE INTPOL

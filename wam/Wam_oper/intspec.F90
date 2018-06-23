@@ -1,6 +1,6 @@
-      SUBROUTINE INTSPEC (NFRE, NANG, ML, KL, FR, DEL12, DEL1L,
-     &                    F1, FMEAN1, EMEAN1, THETM1,
-     &                    F2, FMEAN2, EMEAN2, THETM2,
+      SUBROUTINE INTSPEC (NFRE, NANG, ML, KL, FR, DEL12, DEL1L,         &
+     &                    F1, FMEAN1, EMEAN1, THETM1,                   &
+     &                    F2, FMEAN2, EMEAN2, THETM2,                   &
      &                    FL, FMEAN,  EMEAN,  THETM )
 
 ! ----------------------------------------------------------------------
@@ -64,6 +64,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : ZPI
 ! ----------------------------------------------------------------------
 
@@ -71,22 +73,22 @@
 #include "rotspec.intfb.h"
 #include "strspec.intfb.h"
 
-      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
-      REAL, INTENT(IN) :: DEL12,  DEL1L
-      REAL, INTENT(IN) :: FMEAN1, EMEAN1, THETM1
-      REAL, INTENT(IN) :: FMEAN2, EMEAN2, THETM2
-      REAL, INTENT(OUT) :: FMEAN, EMEAN, THETM
-      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
-      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: F1
-      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: F2
-      REAL, DIMENSION(NANG,NFRE), INTENT(OUT) :: FL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL(KIND=JWRB), INTENT(IN) :: DEL12,  DEL1L
+      REAL(KIND=JWRB), INTENT(IN) :: FMEAN1, EMEAN1, THETM1
+      REAL(KIND=JWRB), INTENT(IN) :: FMEAN2, EMEAN2, THETM2
+      REAL(KIND=JWRB), INTENT(OUT) :: FMEAN, EMEAN, THETM
+      REAL(KIND=JWRB), DIMENSION(NFRE), INTENT(IN) :: FR
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: F1
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: F2
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(OUT) :: FL
 
-      INTEGER :: M, K
+      INTEGER(KIND=JWIM) :: M, K
 
-      REAL :: GW1, GW2 
-      REAL :: CM1, CM2, SM1, SM2, CM,  SM 
-      REAL :: RTHET1,RTHET2, GAMMA, EMEANH
-      REAL, DIMENSION(NANG,NFRE) :: F3, F4
+      REAL(KIND=JWRB) :: GW1, GW2 
+      REAL(KIND=JWRB) :: CM1, CM2, SM1, SM2, CM,  SM 
+      REAL(KIND=JWRB) :: RTHET1,RTHET2, GAMMA, EMEANH
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE) :: F3, F4
 
 ! ----------------------------------------------------------------------
 
@@ -101,7 +103,7 @@
 !*    2. INTERPOLATE MEAN VALUES.
 !        ------------------------
 
-      IF (EMEAN1.EQ.0.) THEN
+      IF (EMEAN1.EQ.0.0_JWRB) THEN
 
 !*    2.1 ENERGY OF SPECTRUM 1 IS ZERO.
 !         -----------------------------
@@ -117,7 +119,7 @@
 
         RETURN
 
-      ELSEIF (EMEAN2.EQ.0.) THEN
+      ELSEIF (EMEAN2.EQ.0.0_JWRB) THEN
 
 !*    2.2 ENERGY OF SPECTRUM 2 IS ZERO.
 !         -----------------------------

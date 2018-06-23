@@ -38,6 +38,10 @@
 
 ! -------------------------------------------------------------------   
 
+! MODULES NEED FOR KIND DEFINITION
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWNEMOP    , ONLY : NEMODP
+
 ! MODULES NEED FOR GRID DEFINTION      
       USE YOWPARAM , ONLY : NGX, NGY, NBLO
       USE YOWGRID  , ONLY : IJS, IJL, NLONRGG
@@ -46,15 +50,15 @@
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
 ! ACCUMULATED STRESSES
-      USE YOWCOUP  , ONLY : NEMOTAUX, NEMOTAUY, NEMONEW10, 
+      USE YOWCOUP  , ONLY : NEMOTAUX, NEMOTAUY, NEMONEW10,              &
      &                      NEMOPHIF, NEMONTAU
 ! INTEGRATED PARAMETERS
       USE YOWMEAN  , ONLY : NPHIEPS, NTAUOC, NSWH, NMWP
 ! FOR PRINTING
       USE YOWTEST  , ONLY : IU06
 ! NEMO FIELDS ON WAVE GRID
-      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK, 
-     &                      NEMOUCUR, NEMOVCUR, NEMOSTRN, NEMOUSTOKES,
+      USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
+     &                      NEMOUCUR, NEMOVCUR, NEMOSTRN, NEMOUSTOKES,  &
      &                      NEMOVSTOKES      
 ! DR. HOOK
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -65,21 +69,19 @@
 #include "abort1.intfb.h"
 
 ! RECEIVE DATA FROM NEMO
-      LOGICAL :: LRECV
+      LOGICAL, INTENT(IN) :: LRECV
 ! GLOBAL INDEX DEFINITON.      
-      INTEGER :: IGLOBAL(NGX,NGY)
+      INTEGER(KIND=JWIM) :: IGLOBAL(NGX,NGY)
 ! INDICES
-      INTEGER :: IG,IJ,IX,JSN,I,J,K
+      INTEGER(KIND=JWIM) :: IG, IJ, IX, JSN, I, J, K
 ! TEMPORARY ARRAYS FOR LOCAL MASK AND GLOBAL INDICES
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: NLOCMSK, NGLOIND
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLOCMSK, NGLOIND
 ! MISC
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! -------------------------------------------------------------------   
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',0,ZHOOK_HANDLE)
-#endif
 
       WRITE(IU06,*)
       WRITE(IU06,*)' **************************************************'
@@ -136,10 +138,10 @@
       ALLOCATE( NEMOTAUY(IJS(IG):IJL(IG)) )
       ALLOCATE( NEMONEW10(IJS(IG):IJL(IG)) )
       ALLOCATE( NEMOPHIF(IJS(IG):IJL(IG)) )
-      NEMOTAUX(:)  = 0.0
-      NEMOTAUY(:)  = 0.0
-      NEMONEW10(:) = 0.0
-      NEMOPHIF(:) = 0.0
+      NEMOTAUX(:)  = 0.0_NEMODP
+      NEMOTAUY(:)  = 0.0_NEMODP
+      NEMONEW10(:) = 0.0_NEMODP
+      NEMOPHIF(:)  = 0.0_NEMODP
       NEMONTAU     = 0
 
 ! INTEGRATED PARAMETERS
@@ -148,10 +150,10 @@
       ALLOCATE(NTAUOC(IJS(IG):IJL(IG)))
       ALLOCATE(NSWH(IJS(IG):IJL(IG)))
       ALLOCATE(NMWP(IJS(IG):IJL(IG)))
-      NPHIEPS(:)  = 0.0
-      NTAUOC(:)  = 0.0
-      NSWH(:) = 0.0
-      NMWP(:) = 0.0      
+      NPHIEPS(:)  = 0.0_JWRB
+      NTAUOC(:)  = 0.0_JWRB
+      NSWH(:) = 0.0_JWRB
+      NMWP(:) = 0.0_JWRB 
 
 ! CALL COUPLING INTERFACE.
 ! THE TASKS RANK CONVENTION IS 0 TO NPROC-1 SO WE SUBTRACT ONE FOR IRANK
@@ -159,8 +161,8 @@
 ! POINTS AS THE SUM OF NLOGRGG
 
 #ifdef WITH_NEMO
-      CALL NEMOGCMCOUP_WAM_COUPINIT( IRANK-1, NPROC, MPL_COMM, 
-     &     IJL(IG)-IJS(IG)+1, SUM(NLONRGG(1:NGY)),
+      CALL NEMOGCMCOUP_WAM_COUPINIT( IRANK-1, NPROC, MPL_COMM,          &
+     &     IJL(IG)-IJS(IG)+1, SUM(NLONRGG(1:NGY)),                      &
      &     NLOCMSK(IJS(IG):IJL(IG)), NGLOIND(IJS(IG):IJL(IG)), 0)
 #endif
 
@@ -174,10 +176,10 @@
 
       IF (LRECV) THEN
          IG=1
-         ALLOCATE(NEMOSST(IJS(IG):IJL(IG)),
-     &            NEMOCICOVER(IJS(IG):IJL(IG)),
-     &            NEMOCITHICK(IJS(IG):IJL(IG)), 
-     &            NEMOUCUR(IJS(IG):IJL(IG)),
+         ALLOCATE(NEMOSST(IJS(IG):IJL(IG)),                             &
+     &            NEMOCICOVER(IJS(IG):IJL(IG)),                         &
+     &            NEMOCITHICK(IJS(IG):IJL(IG)),                         &
+     &            NEMOUCUR(IJS(IG):IJL(IG)),                            &
      &            NEMOVCUR(IJS(IG):IJL(IG)))
       ENDIF
 
@@ -190,8 +192,6 @@
       
 #endif
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INITNEMOCPL',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE INITNEMOCPL

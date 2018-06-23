@@ -25,14 +25,18 @@
 !     ----------
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE GRIB_API_INTERFACE
 
       IMPLICIT NONE
 
-      INTEGER ::  IU06
+      INTEGER(KIND=JWIM) ::  IU06
+      INTEGER(KIND=JWIM) ::  ISIZE
+
       INTEGER(KIND=JPKSIZE_T) ::  KLEN
-      INTEGER ::  ISIZE
-      CHARACTER*(*) :: CALLINGSUB
+
+      CHARACTER (LEN=*) :: CALLINGSUB
 
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' ***** WARNING IN ',CALLINGSUB
@@ -50,5 +54,4 @@
       WRITE(IU06,*) ' '
       CALL FLUSH(IU06)
 
-      RETURN
       END SUBROUTINE KGRIBSIZE

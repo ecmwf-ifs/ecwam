@@ -25,25 +25,26 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,
-     &            RAD      ,DEG      ,R        ,ZPISQRT  ,G2ZPI4   ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
+     &            RAD      ,DEG      ,R        ,ZPISQRT  ,G2ZPI4   ,    &
      &            G
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL, INTENT(IN) :: PRPLRADI
+      REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
 
-      PI = 4.*ATAN(1.)
-      ZPI= 2.*PI
+      PI = 4.0_JWRB*ATAN(1.0_JWRB)
+      ZPI= 2.0_JWRB*PI
       ZPISQRT = SQRT(ZPI)
       G2ZPI4 = G**2/ZPI**4
 
-      ZCONST=1./(8.*PI*SQRT(2.))
-      RAD = PI/180.
+      ZCONST=1.0_JWRB/(8.0_JWRB*PI*SQRT(2.0_JWRB))
+      RAD = PI/180.0_JWRB
       DEG = 180./PI
       R = CIRC/ZPI*PRPLRADI
 
-      RETURN
       END SUBROUTINE INIWCST

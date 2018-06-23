@@ -1,4 +1,4 @@
-      SUBROUTINE INWGRIB (FILNM, IREAD,
+      SUBROUTINE INWGRIB (FILNM, IREAD,                                 &
      &                    CDATE, IPARAM, KZLEV, FIELD)
 
 ! -----------------------------------------------------------------     
@@ -34,6 +34,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWPARAM , ONLY : NIBLO
@@ -57,50 +59,48 @@
 #include "grib2wgrid.intfb.h"
 #include "kgribsize.intfb.h"
 
-      INTEGER, INTENT(IN) :: IREAD
-      INTEGER, INTENT(INOUT) :: IPARAM, KZLEV
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IPARAM, KZLEV
 
-      REAL, INTENT(INOUT) :: FIELD(NXFF,NYFF)
+      REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(NXFF,NYFF)
 
       CHARACTER(LEN=24), INTENT(IN) :: FILNM
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATE
 
-      INTEGER :: NBIT
+      INTEGER(KIND=JWIM) :: NBIT
 
-      INTEGER :: IFORP
-      INTEGER :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
-      INTEGER :: IRET, ISIZE
-      INTEGER :: KK, MM
-      INTEGER :: IBUF(2) 
-      INTEGER, ALLOCATABLE :: INGRIB(:)
-      INTEGER :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: IFORP
+      INTEGER(KIND=JWIM) :: LFILE, KFILE_HANDLE, KGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IRET, ISIZE
+      INTEGER(KIND=JWIM) :: KK, MM
+      INTEGER(KIND=JWIM) :: IBUF(2) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL :: ZHOOK_HANDLE
-
 
       LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INWGRIB',0,ZHOOK_HANDLE)
-#endif
 
       NBIT=NIBLO
 
-      IF(LLUNSTR) THEN
+      IF (LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
       ELSE
         NLONRGG_LOC(:)=NLONRGG(:)
       ENDIF
 
 !     READ DATA ON PE IREAD
-      IF(IRANK.EQ.IREAD) THEN
+      IF (IRANK.EQ.IREAD) THEN
         LLEXIST=.FALSE.
         LFILE = LEN_TRIM(FILNM)
         INQUIRE(FILE=FILNM(1:LFILE),EXIST=LLEXIST)
-        IF(.NOT. LLEXIST) THEN
+        IF (.NOT. LLEXIST) THEN
           WRITE (IU06,*) '*************************************'
           WRITE (IU06,*) '*                                   *'
           WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
@@ -122,21 +122,21 @@
 
 1021    ISIZE=NBIT
         KBYTES=ISIZE*NPRECI
-        IF(.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+        IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
-        IF(IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
+        IF (IRET.EQ.JPGRIB_BUFFER_TOO_SMALL) THEN
 !!!       *IGRIB_READ_FROM_FILE* does not read through the file if
 !!!       the size is too small, so figure out the size and read again.
           CALL KGRIBSIZE(IU06, KBYTES, NBIT, 'INWGRIB')
           DEALLOCATE(INGRIB)
           GOTO 1021
-        ELSEIF(IRET.EQ.JPGRIB_END_OF_FILE) THEN
+        ELSEIF (IRET.EQ.JPGRIB_END_OF_FILE) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: END OF FILE ENCOUNTED'
           WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
           WRITE(IU06,*) '**********************************'
           CALL ABORT1
-          ELSEIF(IRET.NE.JPGRIB_SUCCESS) THEN
+          ELSEIF (IRET.NE.JPGRIB_SUCCESS) THEN
           WRITE(IU06,*) '**********************************'
           WRITE(IU06,*) '* INWGRIB: FILE HANDLING ERROR'
           WRITE(IU06,*) '* FILE: ',FILNM(1:LFILE)
@@ -150,21 +150,21 @@
       CALL MPL_BARRIER(CDSTRING='INWGRIB: DATA READ IN')
 
 !     SEND GRIB DATA TO THE OTHER PE'S
-      IF(NPROC.GT.1) THEN
+      IF (NPROC.GT.1) THEN
         CALL GSTATS(619,0)
-        IF(IRANK.EQ.IREAD) THEN
+        IF (IRANK.EQ.IREAD) THEN
           IBUF(1)=ISIZE
           IBUF(2)=KBYTES
         ENDIF
-        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=1,
+        CALL MPL_BROADCAST(IBUF(1:2),KROOT=IREAD,KTAG=1,                &
      &                     CDSTRING='INWGRIB IBUF:')
-        IF(IRANK.NE.IREAD) THEN
+        IF (IRANK.NE.IREAD) THEN
           ISIZE=IBUF(1)
           KBYTES=IBUF(2)
           ALLOCATE(INGRIB(ISIZE))
         ENDIF
 
-        CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD,KTAG=2,
+        CALL MPL_BROADCAST(INGRIB(1:ISIZE),KROOT=IREAD,KTAG=2,          &
      &                     CDSTRING='INWGRIB: INGRIB')
         CALL GSTATS(619,1)
       ENDIF
@@ -175,22 +175,19 @@
       KGRIB_HANDLE=-99
       CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
 
-      CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
-     &                 KGRIB_HANDLE, INGRIB, ISIZE,
-     &                 LLUNSTR,
-     &                 NXFF, NYFF, NLONRGG_LOC,
-     &                 IRGG, XDELLA, ZDELLO,
-     &                 FIELDG%XLON, FIELDG%YLAT,
-     &                 ZMISS, PPREC, PPEPS,
+      CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                         &
+     &                 KGRIB_HANDLE, INGRIB, ISIZE,                     &
+     &                 LLUNSTR,                                         &
+     &                 NXFF, NYFF, NLONRGG_LOC,                         &
+     &                 IRGG, XDELLA, ZDELLO,                            &
+     &                 FIELDG%XLON, FIELDG%YLAT,                        &
+     &                 ZMISS, PPREC, PPEPS,                             &
      &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
 
       CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-      IF(ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+      IF (ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INWGRIB',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE INWGRIB

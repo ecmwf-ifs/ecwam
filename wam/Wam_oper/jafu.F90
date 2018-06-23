@@ -39,11 +39,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER :: J, IAN
-      INTEGER :: IDPH, JA
-      REAL:: CL
+      INTEGER(KIND=JWIM) :: J, IAN
+      INTEGER(KIND=JWIM) :: IDPH, JA
+      REAL(KIND=JWRB):: CL
 
       IDPH = CL
       JA = J+IDPH
@@ -52,4 +54,4 @@
       JAFU = JA
 
       RETURN
-      END
+      END FUNCTION JAFU

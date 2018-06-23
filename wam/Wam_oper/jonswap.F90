@@ -42,6 +42,9 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,G2ZPI4
@@ -49,13 +52,13 @@
 
       IMPLICIT NONE
 
-      INTEGER :: M, IJ, IJS, IJL
+      INTEGER(KIND=JWIM) :: M, IJ, IJS, IJL
 
-      REAL :: GAMMA, SA, SB, SIGMA, G2ZPI4FRH5M
-      REAL :: FRH, EARG, FJON, FMPF, FJONH
+      REAL(KIND=JWRB) :: GAMMA, SA, SB, SIGMA, G2ZPI4FRH5M
+      REAL(KIND=JWRB) :: FRH, EARG, FJON, FMPF, FJONH
 
-      REAL :: ALPHAJ(IJS:IJL), FP(IJS:IJL)
-      REAL :: ET(IJS:IJL,NFRE)
+      REAL(KIND=JWRB) :: ALPHAJ(IJS:IJL), FP(IJS:IJL)
+      REAL(KIND=JWRB) :: ET(IJS:IJL,NFRE)
 
 ! ----------------------------------------------------------------------
 
@@ -63,24 +66,23 @@
         FRH = FR(M)
         G2ZPI4FRH5M=G2ZPI4/FRH**5
         DO IJ=IJS,IJL
-          IF (ALPHAJ(IJ).NE.0. .AND. FP(IJ).NE.0.) THEN
+          IF (ALPHAJ(IJ).NE.0.0_JWRB .AND. FP(IJ).NE.0.0_JWRB) THEN
             IF (FRH.GT.FP(IJ)) THEN
               SIGMA = SB
             ELSE
               SIGMA = SA
             ENDIF
-            EARG = .5*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
-            EARG = MIN(EARG,50.)
+            EARG = 0.5_JWRB*((FRH-FP(IJ)) / (SIGMA*FP(IJ)))**2
+            EARG = MIN(EARG,50.0_JWRB)
             FJON = GAMMA**EXP(-EARG)
-            FMPF = 1.25*(FP(IJ)/FRH)**4
-            FMPF = MIN(FMPF,50.)
+            FMPF = 1.25_JWRB*(FP(IJ)/FRH)**4
+            FMPF = MIN(FMPF,50.0_JWRB)
             FJONH = EXP(-FMPF)
             ET(IJ,M) = ALPHAJ(IJ)*G2ZPI4FRH5M*FJONH*FJON
           ELSE
-            ET(IJ,M) = 0.
+            ET(IJ,M) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE JONSWAP
