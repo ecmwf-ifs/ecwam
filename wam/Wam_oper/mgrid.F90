@@ -36,7 +36,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NBLO     ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NBLO     ,    &
      &            NOVER    ,NIBL1
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : NY
@@ -46,10 +48,10 @@
       IMPLICIT NONE
 #include "mblock.intfb.h"
 
-      REAL, INTENT(INOUT) :: BATHY(NGX,NGY)
+      REAL(KIND=JWRB), INTENT(INOUT) :: BATHY(NGX,NGY)
 
-      INTEGER :: K, I, IL, KA, KE
-      INTEGER, DIMENSION(NGY) :: IPP
+      INTEGER(KIND=JWIM) :: K, I, IL, KA, KE
+      INTEGER(KIND=JWIM), DIMENSION(NGY) :: IPP
 
 ! ----------------------------------------------------------------------
 
@@ -60,18 +62,18 @@
       DO K=1,NY
         IPP(K) = 0
         DO I=1,NLONRGG(K)
-          IF (BATHY(I,K).GT.-990.) THEN
+          IF (BATHY(I,K).GT.-990.0_JWRB) THEN
             IPP(K) = IPP(K) + 1
           ENDIF
         ENDDO
       ENDDO
 
-      IF(NIBLO.LE.0) THEN
+      IF (NIBLO.LE.0) THEN
         NIBLO=0
         DO K=1,NY
           NIBLO=NIBLO+IPP(K)
         ENDDO
-        IF(NBLO.GT.1)  NIBLO=NIBLO/NBLO+1
+        IF (NBLO.GT.1)  NIBLO=NIBLO/NBLO+1
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -92,7 +94,7 @@
       ENDDO
       CALL MBLOCK (BATHY, KA, NY, IPP)
 
-      IF(NBLO.GT.1) THEN
+      IF (NBLO.GT.1) THEN
         NOVER=1
         DO K=1,NY
           NOVER=MAX(NOVER,IPP(K)) 
@@ -103,5 +105,4 @@
         NIBL1=1
       ENDIF
 
-      RETURN
       END SUBROUTINE MGRID

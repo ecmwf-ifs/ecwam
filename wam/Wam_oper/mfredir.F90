@@ -40,10 +40,12 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
-     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
+     &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH    ,    &
      &            FRATIO
-      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,DEG      ,
+      USE YOWPCONS , ONLY : G        ,PI       ,ZPI      ,DEG      ,    &
      &            R
       USE YOWTEST  , ONLY : IU06
 
@@ -51,10 +53,11 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: ML, KL
+      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL
 
-      INTEGER :: M, K
-      REAL :: CO1
+      INTEGER(KIND=JWIM) :: M, K
+
+      REAL(KIND=JWRB) :: CO1
 
 !*    1. FREQUENCY DEPENDENT CONSTANTS.
 !        ------------------------------
@@ -70,7 +73,7 @@
 !        ------------------------------------
 
       DO M=1,ML
-        GOM(M) = G/(4.*PI*FR(M))
+        GOM(M) = G/(4.0_JWRB*PI*FR(M))
       ENDDO
 
 !*    1.3 COMPUTE PHASE VELOCITY IN DEEP WATER.
@@ -85,13 +88,13 @@
 !*    2. COMPUTATION OF DIRECTIONS, BANDWIDTH, SIN AND COS.
 !        --------------------------------------------------
 
-      DELTH = ZPI/REAL(KL)
+      DELTH = ZPI/REAL(KL,JWRB)
       DELTR = DELTH*R
       DO K=1,KL
-!CCC        TH(K) = REAL(K-1)*DELTH
+!CCC        TH(K) = REAL(K-1,JWRB)*DELTH
 !CCC the previous line should be used if spectra should not be rotated.
 !CCC the next line should be used if rotated spectra are used
-        TH(K) = REAL(K-1)*DELTH + 0.5*DELTH
+        TH(K) = REAL(K-1,JWRB)*DELTH + 0.5_JWRB*DELTH
         COSTH(K) = COS(TH(K))
         SINTH(K) = SIN(TH(K))
       ENDDO
@@ -101,7 +104,7 @@
 !*    3. COMPUTATION FREQUENCY DIRECTION AREAS
 !        -------------------------------------
 
-      CO1 = 0.5*(FRATIO-1.)*DELTH
+      CO1 = 0.5_JWRB*(FRATIO-1.0_JWRB)*DELTH
       DFIM(1)= CO1*FR(1)
       DO M=2,ML-1
         DFIM(M)=CO1 * (FR(M)+FR(M-1))
@@ -118,16 +121,15 @@
       WRITE (IU06,'('' NUMBER OF DIRECTIONS  IS  KL = '',I3)') KL
       WRITE (IU06,'(''0MODEL FREQUENCIES IN HERTZ:'')')
       WRITE (IU06,'(1X,13F10.5)') (FR(M),M=1,ML)
-      WRITE (IU06,'(''0MODEL FREQUENCY INTERVALLS TIMES DIRECTION'',
+      WRITE (IU06,'(''0MODEL FREQUENCY INTERVALLS TIMES DIRECTION'',    &
      &              '' INTERVALL IN HERTZ*RADIENS'')')
       WRITE (IU06,'(1X,13F10.5)') (DFIM(M),M=1,ML)
       WRITE (IU06,'(''0MODEL DEEP WATER GROUPVELOCITY IN M/S:'')')
       WRITE (IU06,'(1X,13F10.5)') (GOM(M),M=1,ML)
       WRITE (IU06,'(''0MODEL DEEP WATER PHASEVELOCITY IN M/S:'')')
       WRITE (IU06,'(1X,13F10.5)') (C(M),M=1,ML)
-      WRITE (IU06,'(''0MODEL DIRECTIONS IN DEGREE'',
+      WRITE (IU06,'(''0MODEL DIRECTIONS IN DEGREE'',                    &
      &              '' (CLOCKWISE FROM NORTH):'')')
       WRITE (IU06,'(1X,13F10.5)') (TH(K)*DEG,K=1,KL)
 
-      RETURN
       END SUBROUTINE MFREDIR

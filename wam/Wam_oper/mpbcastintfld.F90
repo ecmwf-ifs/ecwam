@@ -1,4 +1,4 @@
-      SUBROUTINE MPBCASTINTFLD(ISEND,ITAG,NXF,NYF,IFIELD) 
+      SUBROUTINE MPBCASTINTFLD(ISEND, ITAG, NXF, NYF, IFIELD) 
 
 !****  *MPBCASTINTFLD* - BROADCAST 2-D INTEGER DATA FIELD FROM 1 PE 
 !                        TO ALL OTHERS.
@@ -37,32 +37,38 @@
 !     -----------
 !         NONE
 ! -------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
  
       USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: ISEND, NXF, NYF
-      INTEGER, INTENT(IN) :: ITAG
-      INTEGER,DIMENSION(NXF,NYF), INTENT(INOUT) :: IFIELD
+      INTEGER(KIND=JWIM), INTENT(IN) :: ISEND, NXF, NYF
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
+      INTEGER(KIND=JWIM),DIMENSION(NXF,NYF), INTENT(INOUT) :: IFIELD
 
-      INTEGER :: I, J, KCOUNT
-      INTEGER :: MPLENGTH
+      INTEGER(KIND=JWIM) :: I, J, KCOUNT
+      INTEGER(KIND=JWIM) :: MPLENGTH
 
-      INTEGER,ALLOCATABLE :: ICOMBUF(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+!----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('MPBCASTINTFLD',0,ZHOOK_HANDLE)
 
       MPLENGTH=NXF*NYF
 
-      IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
-        RETURN
-      ELSE
+      IF (ISEND.NE.0 .AND. NPROC.NE.1) THEN
         ALLOCATE(ICOMBUF(MPLENGTH))
 
-        IF(IRANK.EQ.ISEND) THEN
+        IF (IRANK.EQ.ISEND) THEN
           KCOUNT=0
           DO J=1,NYF
             DO I=1,NXF
@@ -73,12 +79,12 @@
         ENDIF
 
         CALL GSTATS(617,0)
-        CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=ISEND,
+        CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=ISEND,             &
      &   KTAG=ITAG,CDSTRING='MPBCASTINTFLD:')
         CALL GSTATS(617,1)
 
 
-        IF(IRANK.NE.ISEND) THEN
+        IF (IRANK.NE.ISEND) THEN
           KCOUNT=0
           DO J=1,NYF
             DO I=1,NXF
@@ -92,5 +98,6 @@
 
       ENDIF
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('MPBCASTINTFLD',1,ZHOOK_HANDLE)
+
       END SUBROUTINE MPBCASTINTFLD

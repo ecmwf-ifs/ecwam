@@ -1,4 +1,4 @@
-      SUBROUTINE MPBCASTGRID(IU06,ISEND,ITAG)
+SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
 ! ----------------------------------------------------------------------
 !**** *MPBCASTGRID* - BROADCAST THE CONTENT OF THE GRID FILE READ BY
@@ -37,38 +37,41 @@
 !     -----------
 !         NONE
 ! -------------------------------------------------------------------
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
      &            BSWKM
-      USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,
-     &            XKAPPA  ,XNLEV    ,TAUWSHELTER, ITSHELT,
+      USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,    &
+     &            XKAPPA  ,XNLEV    ,TAUWSHELTER, ITSHELT,              &
      &            TAILFACTOR, TAILFACTOR_PM
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
+     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
      &            IJL      ,IJLT
-      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,
-     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,
-     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,
-     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,
+      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
+     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
+     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
+     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
-     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
-     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
-     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
-     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
+      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
+     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
+     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    ,    &
+     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,    &
+     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -79,24 +82,24 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU06, ISEND
-      INTEGER, INTENT(INOUT) :: ITAG
-      INTEGER, PARAMETER :: MFIRST=20
-      INTEGER :: IG 
-      INTEGER :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,ILEV,KDEPTH,NGOU
-      INTEGER :: IKCOUNT, KCOUNT
-      INTEGER :: MIC, MZC 
-      INTEGER,ALLOCATABLE :: ICOMBUF(:)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=20
+      INTEGER(KIND=JWIM) :: IG 
+      INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,      &
+     &                      ILEV, KDEPTH, NGOU
+      INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
+      INTEGER(KIND=JWIM) :: MIC, MZC 
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
 
-      REAL :: ZHOOK_HANDLE
-      REAL,ALLOCATABLE :: ZCOMBUF(:)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),ALLOCATABLE :: ZCOMBUF(:)
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',0,ZHOOK_HANDLE)
-#endif
 
-      IF((ISEND.EQ.0).OR.(NPROC.EQ.1)) THEN
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',0,ZHOOK_HANDLE)
+
+      IF (ISEND.EQ.0 .OR. NPROC.EQ.1) THEN
          WRITE (IU06,*) ''
 !     1.1 SEND TO ALL PROCESSORS OTHER THAN ISEND
 !         ------------------------------------------------
@@ -106,7 +109,7 @@
 !       ALLOCATE ALL ARRAYS
         ALLOCATE(ICOMBUF(MFIRST))
 
-        IF(IRANK.EQ.ISEND) THEN
+        IF (IRANK.EQ.ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NANG
@@ -148,7 +151,7 @@
           ICOMBUF(IKCOUNT)=NMAX
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=ITSHELT
-          IF(IKCOUNT.NE.MFIRST) THEN
+          IF (IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
@@ -159,11 +162,10 @@
           ENDIF
         ENDIF
 
-        CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,
-     &   CDSTRING='MPBCASTGRID:')
+        CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,CDSTRING='MPBCASTGRID:')
         ITAG=ITAG+1
 
-        IF(IRANK.NE.ISEND) THEN
+        IF (IRANK.NE.ISEND) THEN
           IKCOUNT=0
           IKCOUNT=IKCOUNT+1
           NANG=ICOMBUF(IKCOUNT)
@@ -205,7 +207,7 @@
           NMAX=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           ITSHELT=ICOMBUF(IKCOUNT)
-          IF(IKCOUNT.NE.MFIRST) THEN
+          IF (IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
             WRITE (IU06,*) '* ON IRANK = ',IRANK
@@ -217,11 +219,11 @@
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+
+        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=35+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+
-     &      KFRH+JPLEVC+
-     &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+
+        MZC=35+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
+     &      KFRH+JPLEVC+                                                &
+     &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
@@ -230,83 +232,83 @@
         ALLOCATE(ICOMBUF(MIC))
         ALLOCATE(ZCOMBUF(MZC))
 
-        IF(IRANK.NE.ISEND) THEN
+        IF (IRANK.NE.ISEND) THEN
 
-          IF(.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
-          IF(.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
-          IF(.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
-          IF(.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
-          IF(.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
-          IF(.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
-          IF(.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
-          IF(.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
-          IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
-          IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
-          IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-          IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-          IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-          IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-          IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-          IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
-          IF(.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
-          IF(.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
-          IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
-          IF(.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
-          IF(.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
-          IF(.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
-          IF(.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
-          IF(.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
-          IF(.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
+          IF (.NOT.ALLOCATED(FR)) ALLOCATE(FR(NFRE))
+          IF (.NOT.ALLOCATED(DFIM)) ALLOCATE(DFIM(NFRE))
+          IF (.NOT.ALLOCATED(GOM)) ALLOCATE(GOM(NFRE))
+          IF (.NOT.ALLOCATED(C)) ALLOCATE(C(NFRE))
+          IF (.NOT.ALLOCATED(TH)) ALLOCATE(TH(NANG))
+          IF (.NOT.ALLOCATED(COSTH)) ALLOCATE(COSTH(NANG))
+          IF (.NOT.ALLOCATED(SINTH)) ALLOCATE(SINTH(NANG))
+          IF (.NOT.ALLOCATED(DELLAM)) ALLOCATE(DELLAM(NGY))
+          IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
+          IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
+          IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
+          IF (.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
+          IF (.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
+          IF (.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
+          IF (.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
+          IF (.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
+          IF (.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
+          IF (.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
+          IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
+          IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(IKM)) ALLOCATE(IKM(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(IKM1)) ALLOCATE(IKM1(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(K1W)) ALLOCATE(K1W(NANG,2))
+          IF (.NOT.ALLOCATED(K2W)) ALLOCATE(K2W(NANG,2))
+          IF (.NOT.ALLOCATED(K11W)) ALLOCATE(K11W(NANG,2))
+          IF (.NOT.ALLOCATED(K21W)) ALLOCATE(K21W(NANG,2))
+          IF (.NOT.ALLOCATED(AF11)) ALLOCATE(AF11(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(FKLAP)) ALLOCATE(FKLAP(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(FKLAP1)) ALLOCATE(FKLAP1(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(FKLAM)) ALLOCATE(FKLAM(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(FKLAM1)) ALLOCATE(FKLAM1(MFRSTLW:MLSTHG))
+          IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
-          IF(NGOUT.GT.0) THEN
-            IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
-            IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
+          IF (NGOUT.GT.0) THEN
+            IF (.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
+            IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           ENDIF
 
-          IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
+          IF (ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
           ALLOCATE(DEPTH(NIBLO,NBLO))
 
-          IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
-          IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
-          IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
-          IF(.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
+          IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
+          IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
+          IF (.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
+          IF (.NOT.ALLOCATED(TFAC_ST)) ALLOCATE(TFAC_ST(NDEPTH,NFRE))
 
-          IF(.NOT.ALLOCATED(FAC0))
+          IF (.NOT.ALLOCATED(FAC0))                                     &
      &       ALLOCATE(FAC0(NANG,NANG,NFREHF,NFREHF))
-          IF(.NOT.ALLOCATED(FAC1))
+          IF (.NOT.ALLOCATED(FAC1))                                     &
      &       ALLOCATE(FAC1(NANG,NANG,NFREHF,NFREHF))
-          IF(.NOT.ALLOCATED(FAC2))
+          IF (.NOT.ALLOCATED(FAC2))                                     &
      &       ALLOCATE(FAC2(NANG,NANG,NFREHF,NFREHF))
-          IF(.NOT.ALLOCATED(FAC3))
+          IF (.NOT.ALLOCATED(FAC3))                                     &
      &       ALLOCATE(FAC3(NANG,NANG,NFREHF,NFREHF))
-          IF(.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
-          IF(.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
-          IF(.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
+          IF (.NOT.ALLOCATED(FAK)) ALLOCATE(FAK(NFREHF))
+          IF (.NOT.ALLOCATED(FRHF)) ALLOCATE(FRHF(NFREHF))
+          IF (.NOT.ALLOCATED(DFIMHF)) ALLOCATE(DFIMHF(NFREHF))
 
-          IF(.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
-          IF(.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
-          IF(.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
-          IF(.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
-          IF(.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
-          IF(.NOT.ALLOCATED(TC_QL)) 
+          IF (.NOT.ALLOCATED(OMEGA)) ALLOCATE(OMEGA(NFREH))
+          IF (.NOT.ALLOCATED(THH))   ALLOCATE(THH(NANGH))
+          IF (.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
+          IF (.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
+          IF (.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
+          IF (.NOT.ALLOCATED(TC_QL))                                    &
      &                    ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-          IF(.NOT.ALLOCATED(TT_4M))
+          IF (.NOT.ALLOCATED(TT_4M))                                    &
      &                    ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-          IF(.NOT.ALLOCATED(TT_4P))
+          IF (.NOT.ALLOCATED(TT_4P))                                    &
      &                    ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-          IF(.NOT.ALLOCATED(IM_P))
+          IF (.NOT.ALLOCATED(IM_P))                                     &
      &                    ALLOCATE(IM_P(NFREH,NFREH))
-          IF(.NOT.ALLOCATED(IM_M)) 
+          IF (.NOT.ALLOCATED(IM_M))                                     &
      &                    ALLOCATE(IM_M(NFREH,NFREH))
-          IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
+          IF (.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
         ELSE 
           KCOUNT=0
@@ -694,7 +696,7 @@
             ENDDO
           ENDDO
 
-          IF(IKCOUNT.NE.MIC) THEN
+          IF (IKCOUNT.NE.MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* IKCOUNT NE MIC PRIOR   *'
@@ -704,7 +706,7 @@
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF 
-          IF(KCOUNT.NE.MZC) THEN
+          IF (KCOUNT.NE.MZC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* KCOUNT NE MZC PRIOR    *'
@@ -716,15 +718,15 @@
           ENDIF 
         ENDIF
 
-        CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,
+        CALL MPL_BROADCAST(ICOMBUF,KROOT=ISEND,KTAG=ITAG,               &
      &                     CDSTRING='MPBCASTGRID 1:')
         ITAG=ITAG+1
 
-        CALL MPL_BROADCAST(ZCOMBUF,KROOT=ISEND,KTAG=ITAG,
+        CALL MPL_BROADCAST(ZCOMBUF,KROOT=ISEND,KTAG=ITAG,               &
      &                     CDSTRING='MPBCASTGRID 2:')
         ITAG=ITAG+1
 
-        IF(IRANK.NE.ISEND) THEN
+        IF (IRANK.NE.ISEND) THEN
           KCOUNT=0
           IKCOUNT=0
           DO M=1,NFRE
@@ -1111,7 +1113,7 @@
             ENDDO
           ENDDO
 
-          IF(IKCOUNT.NE.MIC) THEN
+          IF (IKCOUNT.NE.MIC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* IKCOUNT NE MIC AFTER   *'
@@ -1121,7 +1123,7 @@
             WRITE (IU06,*) '**************************'
             CALL ABORT1
           ENDIF 
-          IF(KCOUNT.NE.MZC) THEN
+          IF (KCOUNT.NE.MZC) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* ERROR IN MPBCASTGRID   *'
             WRITE (IU06,*) '* KCOUNT NE MZC AFTER    *'
@@ -1136,9 +1138,7 @@
         DEALLOCATE(ICOMBUF,ZCOMBUF)
 
       ENDIF
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
-      END SUBROUTINE MPBCASTGRID
+      IF (LHOOK) CALL DR_HOOK('MPBCASTGRID',1,ZHOOK_HANDLE)
+
+END SUBROUTINE MPBCASTGRID

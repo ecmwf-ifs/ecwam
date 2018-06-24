@@ -47,12 +47,11 @@
 !     FLUSH UNITS
       CALL MPCLOSE_UNIT
 
-      IF(LWCOU) THEN
+      IF (LWCOU) THEN
         CALL ABOR1(CDMESSAGE)
         STOP 2
       ELSE
         STOP 1
       ENDIF
 
-      RETURN
       END SUBROUTINE MPABORT

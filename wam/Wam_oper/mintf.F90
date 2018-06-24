@@ -35,19 +35,23 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCPBO  , ONLY : NBOUNC   ,DLAMAC   ,DPHIAC   ,BLATC    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCPBO  , ONLY : NBOUNC   ,DLAMAC   ,DPHIAC   ,BLATC    ,    &
      &            BLNGC
       USE YOWFPBO  , ONLY : IBFL     ,IBFR     ,BFW
-      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,
+      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: I, K, M, N, IS, IE
-      INTEGER :: IDELLA, IDELLO, NI, NSTEP
-      REAL :: PHI, XLAMDA
+
+      INTEGER(KIND=JWIM) :: I, K, M, N, IS, IE
+      INTEGER(KIND=JWIM) :: IDELLA, IDELLO, NI, NSTEP
+
+      REAL(KIND=JWRB) :: PHI, XLAMDA
 
 !*    1. RATIOS OF GRID INCREMENTS.
 !        --------------------------
@@ -71,7 +75,7 @@
 
         IF (I.NE.NX) THEN
           DO N = 1, NI
-            BFW (I+N) = REAL(N) / REAL(IDELLO)
+            BFW (I+N) = REAL(N,JWRB) / REAL(IDELLO,JWRB)
           ENDDO
         ENDIF
 
@@ -79,10 +83,10 @@
 !*    2.3 INDICES OF COARSE GRID OUTPUT POINTS.
 !         -------------------------------------
 
-        XLAMDA = AMOWEP + REAL(I-1) * XDELLO
+        XLAMDA = AMOWEP + REAL(I-1,JWRB) * XDELLO
         DO M=1,NBOUNC
-          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
-     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10_JWRB .AND.                   &
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10_JWRB) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -116,7 +120,7 @@
 
         IF (I.NE.IE) THEN
           DO N = 1, NI
-            BFW (I+N) = REAL(N) / REAL(IDELLO)
+            BFW (I+N) = REAL(N,JWRB) / REAL(IDELLO,JWRB)
           ENDDO
         ENDIF
 
@@ -125,8 +129,8 @@
 
         XLAMDA = AMOWEP + (I-IS) * XDELLO
         DO M=1,NBOUNC
-          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
-     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10_JWRB .AND.                   &
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10_JWRB) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -158,7 +162,7 @@
 
       DO N = 1, NI
         IBFL(NX-1+2*N) = IBFL(1)
-        BFW (NX-1+2*N) = REAL(N) / REAL(IDELLA)
+        BFW (NX-1+2*N) = REAL(N,JWRB) / REAL(IDELLA,JWRB)
       ENDDO
 
 !*    4.2 LOOP OVER COARSE GRID POINTS.
@@ -170,7 +174,7 @@
 !         ---------------------------------------------
 
         DO N = 1, NI
-          BFW (I+2*N) = REAL(N) / REAL(IDELLA)
+          BFW (I+2*N) = REAL(N,JWRB) / REAL(IDELLA,JWRB)
         ENDDO
 
 !*    4.4 INDICES OF COARSE GRID OUTPUT POINTS.
@@ -180,8 +184,8 @@
         PHI = AMOSOP + (K-1) * DPHIAC
          
         DO M=1,NBOUNC
-          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
-     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10_JWRB .AND.                   &
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10_JWRB) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -217,7 +221,7 @@
 
       DO N = 1, NI
         IBFL(NX+2*N) = IBFL(NX)
-        BFW (NX+2*N) = REAL(N) / REAL(IDELLA)
+        BFW (NX+2*N) = REAL(N,JWRB) / REAL(IDELLA,JWRB)
       ENDDO
 
 !*    5.2 LOOP OVER COARSE GRID POINTS.
@@ -229,7 +233,7 @@
 !         ---------------------------------------------
 
         DO N = 1, NI
-          BFW (I+2*N) = REAL(N) / REAL(IDELLA)
+          BFW (I+2*N) = REAL(N,JWRB) / REAL(IDELLA,JWRB)
         ENDDO
 
 !*    5.4 INDICES OF COARSE GRID OUTPUT POINTS.
@@ -238,8 +242,8 @@
         K = K + 1
         PHI = AMOSOP + (K-1) * DPHIAC
         DO M=1,NBOUNC
-          IF (ABS(BLATC(M)-PHI).LT.0.1E-10 .AND.
-     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10) THEN
+          IF (ABS(BLATC(M)-PHI).LT.0.1E-10_JWRB .AND.                   &
+     &        ABS(BLNGC(M)-XLAMDA).LT.0.1E-10_JWRB) THEN
             IBFL(I) = M
             IBFR(I) = M
             DO N = 1, NI
@@ -263,5 +267,4 @@
         ENDDO
       ENDIF
 
-      RETURN
       END SUBROUTINE MINTF

@@ -1,8 +1,8 @@
-      SUBROUTINE  MNINTW (
+      SUBROUTINE  MNINTW (                                              &
 !                     DIMENSIONS
-     &                  NSPECW , MPARTSW ,
+     &                  NSPECW, MPARTSW,                                &
 !                     INPUT
-     &                  NPARTW, NIPARTINFW,
+     &                  NPARTW, NIPARTINFW,                             &
 !                     OUTPUT
      &                  NINTW)
 
@@ -43,15 +43,20 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      INTEGER NSPECW , MPARTSW
+      INTEGER(KIND=JWIM) :: NSPECW , MPARTSW
 
-      INTEGER
-     & NPARTW(NSPECW) , NINTW(NSPECW),
-     & NIPARTINFW(NSPECW,MPARTSW)
+      INTEGER(KIND=JWIM) :: NPARTW(NSPECW) , NINTW(NSPECW),             &
+     &                      NIPARTINFW(NSPECW,MPARTSW)
 
-      INTEGER IPART, ISPEC
+      INTEGER(KIND=JWIM) :: IPART, ISPEC
+
+! ----------------------------------------------------------------------
 
       DO ISPEC = 1, NSPECW
          NINTW(ISPEC) = 0
@@ -59,10 +64,9 @@
 
       DO ISPEC = 1, NSPECW
         DO IPART = 1,NPARTW(ISPEC)
-          IF(NIPARTINFW(ISPEC,IPART).NE.0)
+          IF(NIPARTINFW(ISPEC,IPART).NE.0)                              &
      &       NINTW(ISPEC)=IPART
-        END DO
-      END DO
+        ENDDO
+      ENDDO
 
-      RETURN
       END SUBROUTINE MNINTW
