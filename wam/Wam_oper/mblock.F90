@@ -39,10 +39,12 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
-      USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,
+      USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL2     ,    &
      &            IJLS     ,IJL      ,IJLT
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,AMOSOP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,AMOSOP   ,    &
      &            XDELLA
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWTEST  , ONLY : IU06
@@ -51,13 +53,13 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER  :: KA, KE
-      INTEGER  :: IC, IJ, IP, K, I 
-      INTEGER :: IPP(NGY)
-      INTEGER, ALLOCATABLE :: IDUM(:), JDUM(:,:)
+      INTEGER(KIND=JWIM) :: KA, KE
+      INTEGER(KIND=JWIM) :: IC, IJ, IP, K, I 
+      INTEGER(KIND=JWIM) :: IPP(NGY)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:), JDUM(:,:)
 
-      REAL :: BATHY(NGX, NGY)
-      REAL, ALLOCATABLE :: ZDUM(:,:)
+      REAL(KIND=JWRB) :: BATHY(NGX, NGY)
+      REAL(KIND=JWRB), ALLOCATABLE :: ZDUM(:,:)
 
 ! ----------------------------------------------------------------------
 
@@ -66,7 +68,7 @@
 
       IGL = IGL + 1
 
-      IF(ALLOCATED(IJS)) THEN
+      IF (ALLOCATED(IJS)) THEN
         ALLOCATE(IDUM(IGL-1))
         DO IC=1,IGL-1
           IDUM(IC)=IJS(IC)
@@ -81,7 +83,7 @@
         ALLOCATE(IJS(IGL))
       ENDIF
 
-      IF(ALLOCATED(IJL2)) THEN
+      IF (ALLOCATED(IJL2)) THEN
         ALLOCATE(IDUM(IGL-1))
         DO IC=1,IGL-1
           IDUM(IC)=IJL2(IC)
@@ -96,7 +98,7 @@
         ALLOCATE(IJL2(IGL))
       ENDIF
 
-      IF(ALLOCATED(IJLS)) THEN
+      IF (ALLOCATED(IJLS)) THEN
         ALLOCATE(IDUM(IGL-1))
         DO IC=1,IGL-1
           IDUM(IC)=IJLS(IC)
@@ -111,7 +113,7 @@
         ALLOCATE(IJLS(IGL))
       ENDIF
 
-      IF(ALLOCATED(IJL)) THEN
+      IF (ALLOCATED(IJL)) THEN
         ALLOCATE(IDUM(IGL-1))
         DO IC=1,IGL-1
           IDUM(IC)=IJL(IC)
@@ -126,7 +128,7 @@
         ALLOCATE(IJL(IGL))
       ENDIF
 
-      IF(ALLOCATED(IJLT)) THEN
+      IF (ALLOCATED(IJLT)) THEN
         ALLOCATE(IDUM(IGL-1))
         DO IC=1,IGL-1
           IDUM(IC)=IJLT(IC)
@@ -141,7 +143,7 @@
         ALLOCATE(IJLT(IGL))
       ENDIF
 
-      IF(ALLOCATED(DEPTH)) THEN
+      IF (ALLOCATED(DEPTH)) THEN
         ALLOCATE(ZDUM(NIBLO,IGL-1))
         DO IC=1,IGL-1
           DO IJ=1,NIBLO
@@ -160,7 +162,7 @@
         ALLOCATE(DEPTH(NIBLO,IGL))
       ENDIF
 
-      IF(ALLOCATED(IXLG)) THEN
+      IF (ALLOCATED(IXLG)) THEN
         ALLOCATE(JDUM(NIBLO,IGL-1))
         DO IC=1,IGL-1
           DO IJ=1,NIBLO
@@ -179,7 +181,7 @@
         ALLOCATE(IXLG(NIBLO,IGL))
       ENDIF
 
-      IF(ALLOCATED(KXLT)) THEN
+      IF (ALLOCATED(KXLT)) THEN
         ALLOCATE(JDUM(NIBLO,IGL-1))
         DO IC=1,IGL-1
           DO IJ=1,NIBLO
@@ -198,7 +200,7 @@
         ALLOCATE(KXLT(NIBLO,IGL))
       ENDIF
 
-      IF(NBLO.LE.0) NBLO = IGL
+      IF (NBLO.LE.0) NBLO = IGL
 
       IF (IGL.GT.NBLO) THEN
         WRITE (IU06,*) '**********************************************'
@@ -219,7 +221,7 @@
       ENDIF
 
       DO IJ=1,NIBLO
-        DEPTH(IJ,IGL) = 0.
+        DEPTH(IJ,IGL) = 0.0_JWRB
         IXLG(IJ,IGL) = 0
         KXLT(IJ,IGL) = 0
       ENDDO
@@ -230,13 +232,13 @@
 !*       ALL OTHER BLOCKS MORE  THAN 3 LATITUDES.
 !        -------------------------------------------------
 
-      IF( KA.EQ.1 .AND. KE.EQ.1 .AND. NY.EQ.1 ) THEN
+      IF (KA.EQ.1 .AND. KE.EQ.1 .AND. NY.EQ.1) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '* ALLOWS FOR THE 1 GRID POINT MODEL          *'
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '**********************************************'
-      ELSE IF ((KE.EQ.1) .OR. (KA.EQ.NY) .OR.
+      ELSEIF ((KE.EQ.1) .OR. (KA.EQ.NY) .OR.                            &
      &    ((KA.NE.1) .AND. (KE.EQ.NY) .AND. (KE-KA.LT.2))) THEN
         WRITE (IU06,*) '**********************************************'
         WRITE (IU06,*) '*                                            *'
@@ -281,7 +283,7 @@
       ELSE
         IJL (IGL) = IJLT(IGL)-IPP(KE)
       ENDIF
-      IF(KE.GT.1) THEN
+      IF (KE.GT.1) THEN
         IJLS(IGL) = IJL(IGL)-IPP(KE-1)+1
       ELSE
         IJLS(IGL) = IJL(IGL)+1
@@ -295,7 +297,7 @@
       IP = 0
       DO K=KA,KE
         DO I=1,NLONRGG(K)
-          IF (BATHY(I,K).GT.-990.) THEN
+          IF (BATHY(I,K).GT.-990.0_JWRB) THEN
             IP = IP+1
             DEPTH(IP,IGL) = BATHY(I,K)
             IXLG(IP,IGL) = I
@@ -312,7 +314,7 @@
         WRITE (IU06,*) '* TOTAL NUMBER OF SEAPOINTS DO NOT MATCH.    *'
         WRITE (IU06,*) '* BLOCK NUMBER                    IGL = ', IGL
         WRITE (IU06,*) '* NO. OF SEAPOINTS COUNTED         IP = ', IP
-        WRITE (IU06,*) '* NO. OF SEAPOINTS EXPECTED IJLT(IGL) = ',
+        WRITE (IU06,*) '* NO. OF SEAPOINTS EXPECTED IJLT(IGL) = ',      &
      &   IJLT(IGL)
         WRITE (IU06,*) '*                                            *'
         WRITE (IU06,*) '*  PROGRAM WILL BE ABORTED                   *'
@@ -328,18 +330,17 @@
 
       IF (IGL.EQ.1) THEN
         WRITE (IU06,'(1H0,'' BLOCKING INFORMATION:'')')
-        WRITE (IU06,'(1H ,''            LATITUDES   '',
-     &   ''   SECOND LAT. INDEX '',
-     &   '' SECOND TO LAST LAT  '',
+        WRITE (IU06,'(1H ,''            LATITUDES   '',                 &
+     &   ''   SECOND LAT. INDEX '',                                     &
+     &   '' SECOND TO LAST LAT  '',                                     &
      &   ''   TOTAL'')')
-        WRITE (IU06,'(1H ,''  NO     SOUTH     NORTH'',
-     &   ''     START       END'',
-     &   ''     START       END'',
+        WRITE (IU06,'(1H ,''  NO     SOUTH     NORTH'',                 &
+     &   ''     START       END'',                                      &
+     &   ''     START       END'',                                      &
      &   ''    POINTS'')')
       ENDIF
-      WRITE (IU06,'(1X,I4,2F10.2,5I10)')
-     &        IGL, AMOSOP+(KA-1)*XDELLA, AMOSOP+(KE-1)*XDELLA,
+      WRITE (IU06,'(1X,I4,2F10.2,5I10)')                                &
+     &        IGL, AMOSOP+(KA-1)*XDELLA, AMOSOP+(KE-1)*XDELLA,          &
      &        IJS(IGL), IJL2(IGL), IJLS(IGL), IJL(IGL), IJLT(IGL)
 
-      RETURN
       END SUBROUTINE MBLOCK

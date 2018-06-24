@@ -42,9 +42,11 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,
-     &            DPHIAC   ,AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC   ,
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,    &
+     &            DPHIAC   ,AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC   ,    &
      &            BLATC    ,BLNGC    ,GBOUNC   ,IPOGBO
       USE YOWMAP   , ONLY : XDELLA   ,XDELLO
       USE YOWPRPROC,ONLY : NBMAX
@@ -58,12 +60,12 @@
 #include "packi.intfb.h"
 #include "packr.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU09, IU19, IFORM
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU09, IU19, IFORM
 
-      INTEGER :: I, II, IO, INI 
-      INTEGER :: NBOUNEW
-      INTEGER :: ListSTART(1), ListEND(1)
-      INTEGER, ALLOCATABLE :: IPOGBN(:)
+      INTEGER(KIND=JWIM) :: I, II, IO, INI 
+      INTEGER(KIND=JWIM) :: NBOUNEW
+      INTEGER(KIND=JWIM) :: ListSTART(1), ListEND(1)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IPOGBN(:)
 
 ! ----------------------------------------------------------------------
 
@@ -82,13 +84,13 @@
 
       ALLOCATE(IPOGBO(0:GBOUNC))
       ALLOCATE(IPOGBN(0:GBOUNC))
-      if(ALLOCATED(IJARC))DEALLOCATE(IJARC)
+      IF (ALLOCATED(IJARC)) DEALLOCATE(IJARC)
       ALLOCATE(IJARC(NBMAX))
-      if(ALLOCATED(IGARC))DEALLOCATE(IGARC)
+      IF (ALLOCATED(IGARC)) DEALLOCATE(IGARC)
       ALLOCATE(IGARC(NBMAX))
-      if(ALLOCATED(BLATC))DEALLOCATE(BLATC)
+      IF (ALLOCATED(BLATC)) DEALLOCATE(BLATC)
       ALLOCATE(BLATC(NBMAX))
-      if(ALLOCATED(BLNGC))DEALLOCATE(BLNGC)
+      IF (ALLOCATED(BLNGC)) DEALLOCATE(BLNGC)
       ALLOCATE(BLNGC(NBMAX))
 
       IPOGBN(0) = 0
@@ -96,8 +98,8 @@
       DO I = 1,NBMAX
         IJARC(I) = 0
         IGARC(I) = 0
-        BLATC(I) = 0.
-        BLNGC(I) = 0.
+        BLATC(I) = 0.0_JWRB
+        BLNGC(I) = 0.0_JWRB
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -106,7 +108,7 @@
 !        ------------------------
       DO II=1,GBOUNC
 
-        CALL MBOXB (NBOUNC,AMOWEC(II),AMOSOC(II),AMOEAC(II),AMONOC(II), 
+        CALL MBOXB (NBOUNC,AMOWEC(II),AMOSOC(II),AMOEAC(II),AMONOC(II), &
      &   BLATC(IPOGBN(II-1)+1), BLNGC(IPOGBN(II-1)+1))
        
         IPOGBN(II)=IPOGBN(II-1)+NBOUNC
@@ -116,9 +118,9 @@
 !        -----------------------------------------
         ListSTART(1)=1
         ListEND(1)=1
-        CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1), 
-     &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1), 
-     &    IJARC(IPOGBN(II-1)+1),
+        CALL FINDB (NBMAX, NBOUNC, BLATC(IPOGBN(II-1)+1),               &
+     &    BLNGC(IPOGBN(II-1)+1), IGARC(IPOGBN(II-1)+1),                 &
+     &    IJARC(IPOGBN(II-1)+1),                                        &
      &     1, ListSTART,ListEND, 1)
 
 ! ----------------------------------------------------------------------
@@ -126,13 +128,13 @@
 !*    4. PACKED ALL ARRAYS.
 !        -------------------
 
-        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),
+        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),      &
      &    BLATC(IPOGBN(II-1)+1))
-        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+        CALL PACKR (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),      &
      &    BLNGC(IPOGBN(II-1)+1))
-        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),      &
      &   IJARC(IPOGBN(II-1)+1))
-        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1), 
+        CALL PACKI (NBOUNC, NBOUNEW, NBMAX, IGARC(IPOGBN(II-1)+1),      &
      &   IGARC(IPOGBN(II-1)+1))
         IPOGBO(II) = IPOGBO(II-1)+NBOUNEW
         IPOGBN(II) = IPOGBO(II)
@@ -144,15 +146,15 @@
 
         WRITE (IU06,'(''1BOUNDARY OUTPUT POINTS OF THIS GRID:'')')
         WRITE (IU06,*) '===================================='
-        WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNC = ', 
+        WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNC = ',      &
      &    NBOUNEW
-        WRITE (IU06,'(4X,''     |-----INPUT-----|'',
+        WRITE (IU06,'(4X,''     |-----INPUT-----|'',                    &
      &                 ''-POINT INDEX--|'')')
-        WRITE (IU06,'(4X,''  NO.    LAT.   LONG.  BLOCK.'',
+        WRITE (IU06,'(4X,''  NO.    LAT.   LONG.  BLOCK.'',             &
      &              ''  POINT.'')')
         DO IO=IPOGBO(II-1)+1,IPOGBO(II)
-          WRITE (IU06,'(4X,I5,2F8.2,2I8)')
-     &     IO-IPOGBO(II-1), BLATC(IO), BLNGC(IO), 
+          WRITE (IU06,'(4X,I5,2F8.2,2I8)')                              &
+     &     IO-IPOGBO(II-1), BLATC(IO), BLNGC(IO),                       &
      &     IGARC(IO), IJARC(IO)
         ENDDO
 
@@ -178,21 +180,20 @@
           WRITE(IU09)NBOUNC-INI+1
           WRITE(IU09)(IGARC(I),I=INI,NBOUNC)
           WRITE(IU09)(IJARC(I),I=INI,NBOUNC)
-          WRITE(IU09)DLAMAC, DPHIAC, AMOSOC(II), AMONOC(II), 
-     &     AMOEAC(II), AMOWEC(II),
+          WRITE(IU09)DLAMAC, DPHIAC, AMOSOC(II), AMONOC(II),            &
+     &     AMOEAC(II), AMOWEC(II),                                      &
      &     (BLNGC(I),I=INI,NBOUNC), (BLATC(I),I=INI,NBOUNC)
         ENDIF
         IF (IFORM.NE.1) THEN
           WRITE(IU19,998)NBOUNC-INI+1
           WRITE(IU19,998)(IGARC(I),I=INI,NBOUNC)
           WRITE(IU19,998)(IJARC(I),I=INI,NBOUNC)
-          WRITE(IU19,999)DLAMAC,DPHIAC, AMOSOC(II), AMONOC(II), 
-     &     AMOEAC(II), AMOWEC(II),
+          WRITE(IU19,999)DLAMAC,DPHIAC, AMOSOC(II), AMONOC(II),         &
+     &     AMOEAC(II), AMOWEC(II),                                      &
      &     (BLNGC(I),I=INI,NBOUNC), (BLATC(I),I=INI,NBOUNC)
         ENDIF
       ENDDO
 
 ! ----------------------------------------------------------------------
 
-      RETURN
       END SUBROUTINE MBOUNC

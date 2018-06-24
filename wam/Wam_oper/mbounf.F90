@@ -54,13 +54,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,
-     &            DPHIAC   ,BLATC    ,BLNGC    ,
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,DLAMAC   ,    &
+     &            DPHIAC   ,BLATC    ,BLNGC    ,                        &
      &            GBOUNC   ,IPOGBO
-      USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IGARF    ,IBFL     ,
+      USE YOWFPBO  , ONLY : NBOUNF   ,IJARF    ,IGARF    ,IBFL     ,    &
      &            IBFR     ,BFW
-      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
+      USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,    &
      &            XDELLA   ,XDELLO   ,NX       ,NY
       USE YOWPRPROC,ONLY : NBMAX
       USE YOWTEST  ,ONLY : IU06
@@ -75,19 +77,19 @@
 #include "packi.intfb.h"
 #include "packr.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU03, IU10, IU20, IFORM
-      INTEGER, INTENT(OUT) :: IINPC
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU03, IU10, IU20, IFORM
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IINPC
 
-      INTEGER :: I, II, IRATIO, IO
-      INTEGER :: NBOUNC_LOC
-      INTEGER :: NBOUNEW
-      INTEGER :: GBOUNC_LOC
-      INTEGER :: ListSTART(1), ListEND(1)
+      INTEGER(KIND=JWIM) :: I, II, IRATIO, IO
+      INTEGER(KIND=JWIM) :: NBOUNC_LOC
+      INTEGER(KIND=JWIM) :: NBOUNEW
+      INTEGER(KIND=JWIM) :: GBOUNC_LOC
+      INTEGER(KIND=JWIM) :: ListSTART(1), ListEND(1)
 
-      REAL, PARAMETER :: GRDTOL = 0.000001
-      REAL :: GRDDIFF
-      REAL :: AMOSOA, AMONOA, AMOEAA, AMOWEA
-      REAL, ALLOCATABLE :: BLATF(:), BLNGF(:)
+      REAL(KIND=JWRB), PARAMETER :: GRDTOL = 0.000001_JWRB
+      REAL(KIND=JWRB) :: GRDDIFF
+      REAL(KIND=JWRB) :: AMOSOA, AMONOA, AMOEAA, AMOWEA
+      REAL(KIND=JWRB), ALLOCATABLE :: BLATF(:), BLNGF(:)
 
 ! ----------------------------------------------------------------------
 
@@ -114,9 +116,9 @@
         IGARF(I) = 0
         IBFL (I) = 0
         IBFR (I) = 0
-        BFW  (I) = 0.
-        BLATF(I) = 0.
-        BLNGF(I) = 0.
+        BFW  (I) = 0.0_JWRB
+        BLATF(I) = 0.0_JWRB
+        BLNGF(I) = 0.0_JWRB
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -138,10 +140,10 @@
           ALLOCATE(BLATC(NBOUNC_LOC))
           READ (IU03) (IGARC(I),I=1,NBOUNC_LOC)
           READ (IU03) (IJARC(I),I=1,NBOUNC_LOC)
-          READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,
+          READ (IU03) DLAMAC, DPHIAC, AMOSOA, AMONOA, AMOEAA, AMOWEA,   &
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
 
-          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+
+          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+              &
      &              ABS(AMONOP-AMONOA)+ABS(AMOSOP-AMOSOA)
           IF (GRDDIFF < GRDTOL) THEN
 !           FOUND THE RIGHT ONE
@@ -164,10 +166,10 @@
           ALLOCATE(BLATC(NBOUNC_LOC))
           READ (IU03,998) (IGARC(I),I=1,NBOUNC_LOC)
           READ (IU03,998) (IJARC(I),I=1,NBOUNC_LOC)
-          READ (IU03,999) DLAMAC, DPHIAC, AMOSOA,
-     &      AMONOA, AMOEAA, AMOWEA,
+          READ (IU03,999) DLAMAC, DPHIAC, AMOSOA,                       &
+     &      AMONOA, AMOEAA, AMOWEA,                                     &
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
-          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+
+          GRDDIFF = ABS(AMOWEP-AMOWEA)+ABS(AMOEAP-AMOEAA)+              &
      &              ABS(AMONOP-AMONOA)+ABS(AMOSOP-AMOSOA)
           IF (GRDDIFF < GRDTOL) THEN
 !           FOUND THE RIGHT ONE
@@ -212,7 +214,7 @@
 !     IS THE STEP OF LAT. AND LONG. OF THE FINE GRID A MULTIPLE
 !              OF THE COARSE GRID ?
       IRATIO=NINT(DPHIAC/XDELLA)
-      IF(ABS(IRATIO*XDELLA-DPHIAC)/DPHIAC.GT.1.E-6) THEN
+      IF (ABS(IRATIO*XDELLA-DPHIAC)/DPHIAC.GT.1.E-6_JWRB) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -233,7 +235,7 @@
       ENDIF
 
       IRATIO=NINT(DLAMAC/XDELLO)
-      IF(ABS(IRATIO*XDELLO-DLAMAC)/DLAMAC.GT.1.E-6) THEN
+      IF (ABS(IRATIO*XDELLO-DLAMAC)/DLAMAC.GT.1.E-6_JWRB) THEN
         WRITE(IU06,*) '***********************************'
         WRITE(IU06,*) '*                                 *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. MBOUNF     *'
@@ -266,8 +268,8 @@
 !        -----------------------------------------
       ListSTART(1)=0
       ListEND(1)=0
-      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,
-     & 1,ListSTART,ListEND,1)
+      CALL FINDB (NBMAX, NBOUNF, BLATF, BLNGF, IGARF, IJARF,            &
+     &            1, ListSTART, ListEND, 1)
 
 ! ----------------------------------------------------------------------
 
@@ -298,14 +300,14 @@
       WRITE (IU06,'(''1BOUNDARY INPUT POINTS FOR THIS GRID:'')')
       WRITE (IU06,*) '===================================='
       WRITE (IU06,*) '  NUMBER OF BOUNDARY POINTS IS NBOUNF = ', NBOUNF
-      WRITE (IU06,*) '        |-----FINE GRID INPUT POINTS-----|',
+      WRITE (IU06,*) '        |-----FINE GRID INPUT POINTS-----|',      &
      &              '-RELATED COARSE GRID INDICES--|'
-      WRITE (IU06,*) '      NO.    LAT.   LONG.  BLOCK.  POINT. ',
+      WRITE (IU06,*) '      NO.    LAT.   LONG.  BLOCK.  POINT. ',      &
      &              '   LEFT   RIGHT   WEIGHT '
 
       DO IO = 1, NBOUNF
-        WRITE (IU06,'(4X,I5,2F8.2,4I8,F10.4)')
-     &   IO, BLATF(IO), BLNGF(IO), IGARF(IO), IJARF(IO),
+        WRITE (IU06,'(4X,I5,2F8.2,4I8,F10.4)')                          &
+     &   IO, BLATF(IO), BLNGF(IO), IGARF(IO), IJARF(IO),                &
      &   IBFL(IO), IBFR(IO), BFW(IO)
       ENDDO
 
@@ -322,16 +324,15 @@
 
       IF (IFORM.NE.2) THEN
         WRITE(IU10) NBOUNF
-        WRITE(IU10) (IGARF(I),I=1,NBOUNF), (IJARF(I),I=1,NBOUNF),
-     &   (IBFL(I),I=1,NBOUNF), (IBFR(I),I=1,NBOUNF),
+        WRITE(IU10) (IGARF(I),I=1,NBOUNF), (IJARF(I),I=1,NBOUNF),       &
+     &   (IBFL(I),I=1,NBOUNF), (IBFR(I),I=1,NBOUNF),                    &
      &   (BFW(I),I=1,NBOUNF)
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE(IU20,998) NBOUNF
-        WRITE(IU20,998) (IGARF(I),I=1,NBOUNF), (IJARF(I),I=1,NBOUNF),
+        WRITE(IU20,998) (IGARF(I),I=1,NBOUNF), (IJARF(I),I=1,NBOUNF),   &
      &   (IBFL(I),I=1,NBOUNF), (IBFR(I),I=1,NBOUNF)
         WRITE(IU20,999) (BFW(I),I=1,NBOUNF)
       ENDIF
 
-      RETURN
       END SUBROUTINE MBOUNF

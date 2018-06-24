@@ -1,10 +1,10 @@
-      SUBROUTINE MEANS(
+      SUBROUTINE MEANS(                                                 &
 !                   DIMENSIONS
-     &                NSPEC , MPART , NPART , NANG, NFRE ,
+     &                NSPEC , MPART , NPART , NANG, NFRE ,              &
 !                   INPUT
-     &                SPEC , PART ,
+     &                SPEC , PART ,                                     &
 !                   OUTPUT
-     &                MEANE , MEANANG , MEANFRE , PKFRE ,
+     &                MEANE , MEANANG , MEANFRE , PKFRE ,               &
 !                   WORK SPACE.
      &                SUM0 , SUMX0 , SUMY0 )
 
@@ -22,7 +22,9 @@
 !     MODULE :
 !     --------
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,    &
      &           COSTH    ,SINTH     ,FRTAIL
 
 !-----------------------------------------------------------------------
@@ -32,27 +34,27 @@
 !     INTERFACE:
 !     ----------
 
-      INTEGER NSPEC, MPART, NPART(NSPEC), NANG, NFRE
+      INTEGER(KIND=JWIM) :: NSPEC, MPART, NPART(NSPEC), NANG, NFRE
 !                 ARRAY DIMENSIONS.
-      REAL SPEC(0:NSPEC,NANG,NFRE)
+      REAL(KIND=JWRB) :: SPEC(0:NSPEC,NANG,NFRE)
 !                 2D SPECTRA.
-      INTEGER PART(NSPEC,NANG,NFRE)
+      INTEGER(KIND=JWIM) :: PART(NSPEC,NANG,NFRE)
 !          PART(..) GIVES NUMBER OF PARTITIONING FOR EACH SPECTRAL BIN.
-      REAL MEANE(NSPEC,MPART),
+      REAL(KIND=JWRB) :: MEANE(NSPEC,MPART),                            &
      &     MEANANG(NSPEC,MPART), MEANFRE(NSPEC,MPART)
 !                 INTEGRATED VALUES OF PARTITIONINGS.
-      REAL ::  PKFRE(NSPEC,MPART)
+      REAL(KIND=JWRB) ::  PKFRE(NSPEC,MPART)
 !                 PEAK FREQUENCY OF PARTITIONINGS.
-      REAL SUM0(NSPEC,MPART),
-     &     SUMX0(NSPEC,MPART),SUMY0(NSPEC,MPART)
+      REAL(KIND=JWRB) :: SUM0(NSPEC,MPART),                             &
+     &     SUMX0(NSPEC,MPART), SUMY0(NSPEC,MPART)
 !                 FOR TEMPORARY SUMS
 
 !     LOCAL VARIABLES:
 !     ----------------
 
-      INTEGER ISPEC, IPART, IANG, IFRE
+      INTEGER(KIND=JWIM) :: ISPEC, IPART, IANG, IFRE
 !                   LOOP INDEXES.
-      REAL FACTOR_TAIL
+      REAL(KIND=JWRB) :: FACTOR_TAIL
 
 !-----------------------------------------------------------------------
 
@@ -61,40 +63,40 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          SUMX0(ISPEC,IPART) = 0.
-          SUMY0(ISPEC,IPART) = 0.
-        END DO
-      END DO
+          SUMX0(ISPEC,IPART) = 0.0_JWRB
+          SUMY0(ISPEC,IPART) = 0.0_JWRB
+        ENDDO
+      ENDDO
 
       DO IANG = 1,NANG
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
-            SUM0(ISPEC,IPART) = 0.
-          END DO
-        END DO
+            SUM0(ISPEC,IPART) = 0.0_JWRB
+          ENDDO
+        ENDDO
         DO IFRE=1,NFRE
           DO ISPEC=1,NSPEC
-            SUM0(ISPEC,PART(ISPEC,IANG,IFRE))
-     &          = SUM0(ISPEC,PART(ISPEC,IANG,IFRE))
+            SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                           &
+     &          = SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                     &
      &          + SPEC(ISPEC,IANG,IFRE) * DFIM(IFRE)
-          END DO
-        END DO
+          ENDDO
+        ENDDO
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
-            SUMX0(ISPEC,IPART) = SUMX0(ISPEC,IPART) 
+            SUMX0(ISPEC,IPART) = SUMX0(ISPEC,IPART)                     &
      &          + COSTH(IANG) * SUM0(ISPEC,IPART)
-            SUMY0(ISPEC,IPART) = SUMY0(ISPEC,IPART) 
+            SUMY0(ISPEC,IPART) = SUMY0(ISPEC,IPART)                     &
      &          + SINTH(IANG) * SUM0(ISPEC,IPART)
-          END DO
-        END DO
-      END DO
+          ENDDO
+        ENDDO
+      ENDDO
 
       DO ISPEC = 1,NSPEC
         DO IPART = 1,NPART(ISPEC)
-          MEANANG(ISPEC,IPART)
+          MEANANG(ISPEC,IPART)                                          &
      &        = ATAN2(SUMY0(ISPEC,IPART),SUMX0(ISPEC,IPART))
-        END DO
-      END DO
+        ENDDO
+      ENDDO
 
 !----------------------------------------------------------------------
 
@@ -103,30 +105,30 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          MEANFRE(ISPEC,IPART) = 0.
-        END DO
-      END DO
+          MEANFRE(ISPEC,IPART) = 0.0_JWRB
+        ENDDO
+      ENDDO
 
       DO IFRE = 1,NFRE
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
-            SUM0(ISPEC,IPART) = 0.
-          END DO
-        END DO
+            SUM0(ISPEC,IPART) = 0.0_JWRB
+          ENDDO
+        ENDDO
         DO IANG = 1,NANG
           DO ISPEC = 1,NSPEC
-            SUM0(ISPEC,PART(ISPEC,IANG,IFRE))
-     &          = SUM0(ISPEC,PART(ISPEC,IANG,IFRE))
+            SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                           &
+     &          = SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                     &
      &          + SPEC(ISPEC,IANG,IFRE)
-          END DO
-        END DO
+          ENDDO
+        ENDDO
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
-            MEANFRE(ISPEC,IPART) = MEANFRE(ISPEC,IPART)
+            MEANFRE(ISPEC,IPART) = MEANFRE(ISPEC,IPART)                 &
      &          + DFIMOFR(IFRE)  * SUM0(ISPEC,IPART)
-          END DO
-        END DO
-      END DO
+          ENDDO
+        ENDDO
+      ENDDO
 
 !     ADD TAIL CONTRIBUTION.
 
@@ -134,17 +136,17 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          MEANFRE(ISPEC,IPART) = MEANFRE(ISPEC,IPART)
+          MEANFRE(ISPEC,IPART) = MEANFRE(ISPEC,IPART)                   &
      &        + FACTOR_TAIL * SUM0(ISPEC,IPART)
-          IF(MEANFRE(ISPEC,IPART).GT.0.) THEN
-            MEANFRE(ISPEC,IPART)
+          IF (MEANFRE(ISPEC,IPART).GT.0.0_JWRB) THEN
+            MEANFRE(ISPEC,IPART)                                        &
      &          = MEANE(ISPEC,IPART) / MEANFRE(ISPEC,IPART)
           ELSE
-            MEANFRE(ISPEC,IPART)=0.
+            MEANFRE(ISPEC,IPART)=0.0_JWRB
           ENDIF
           MEANFRE(ISPEC,IPART) = MAX(MEANFRE(ISPEC,IPART),FR(1))
-        END DO
-      END DO
+        ENDDO
+      ENDDO
 
 !----------------------------------------------------------------------
 
@@ -154,22 +156,20 @@
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
           PKFRE(ISPEC,IPART) = FR(NFRE) 
-          SUM0(ISPEC,IPART) = 0.
-        END DO
-      END DO
+          SUM0(ISPEC,IPART) = 0.0_JWRB
+        ENDDO
+      ENDDO
 
       DO IFRE = 1,NFRE
         DO IANG = 1,NANG
           DO ISPEC = 1,NSPEC
             IPART=PART(ISPEC,IANG,IFRE)
-            IF( SPEC(ISPEC,IANG,IFRE) .GT. SUM0(ISPEC,IPART) ) THEN 
+            IF (SPEC(ISPEC,IANG,IFRE) .GT. SUM0(ISPEC,IPART)) THEN 
               PKFRE(ISPEC,IPART) = FR(IFRE) 
               SUM0(ISPEC,IPART) = SPEC(ISPEC,IANG,IFRE) 
             ENDIF
-          END DO
-        END DO
-      END DO
-
-      RETURN
+          ENDDO
+        ENDDO
+      ENDDO
 
       END SUBROUTINE MEANS

@@ -1,4 +1,4 @@
-      SUBROUTINE MBOXB (NBOUN, AMOWEB, AMOSOB, AMOEAB,
+      SUBROUTINE MBOXB (NBOUN, AMOWEB, AMOSOB, AMOEAB,                  &
      &                  AMONOB, BLATB, BLNGB)
 
 ! ----------------------------------------------------------------------
@@ -43,6 +43,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMAP   , ONLY : XDELLA   ,XDELLO
       USE YOWPRPROC, ONLY : NBMAX
       USE YOWTEST  , ONLY : IU06
@@ -52,12 +54,12 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(OUT) :: NBOUN
-      REAL, INTENT(IN) :: AMOWEB, AMOSOB, AMOEAB, AMONOB
-      REAL, DIMENSION(NBMAX), INTENT(INOUT) :: BLNGB, BLATB
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NBOUN
+      REAL(KIND=JWRB), INTENT(IN) :: AMOWEB, AMOSOB, AMOEAB, AMONOB
+      REAL(KIND=JWRB), DIMENSION(NBMAX), INTENT(INOUT) :: BLNGB, BLATB
 
-      INTEGER :: I, K
-      INTEGER :: NLNGB, NLATB
+      INTEGER(KIND=JWIM) :: I, K
+      INTEGER(KIND=JWIM) :: NLNGB, NLATB
 
 ! ----------------------------------------------------------------------
 
@@ -92,7 +94,7 @@
       K = NLATB + NLNGB
       DO I = 1, NLNGB
         BLATB(I) = AMOSOB
-        BLNGB(I) = AMOWEB + REAL(I-1) * XDELLO
+        BLNGB(I) = AMOWEB + REAL(I-1,JWRB) * XDELLO
         BLATB(K+I) = AMONOB
         BLNGB(K+I) = BLNGB(I)
       ENDDO
@@ -103,11 +105,10 @@
       K = 0
       DO I = 2,NLATB,2
         K = K + 1
-        BLATB(NLNGB+I-1) = AMOSOB + REAL(K) * XDELLA
+        BLATB(NLNGB+I-1) = AMOSOB + REAL(K,JWRB) * XDELLA
         BLNGB(NLNGB+I-1) = AMOWEB
         BLATB(NLNGB+I)   = BLATB(NLNGB+I-1)
         BLNGB(NLNGB+I)   = AMOEAB
       ENDDO
 
-      RETURN
       END SUBROUTINE MBOXB

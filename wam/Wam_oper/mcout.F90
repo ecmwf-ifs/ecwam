@@ -33,9 +33,11 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCINP  , ONLY : OUTLONG  ,OUTLAT
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
       USE YOWPARAM , ONLY : NIBLO
       USE YOWSPEC,   ONLY : NSTART   ,NEND
@@ -46,11 +48,12 @@
       IMPLICIT NONE
 #include "findb.intfb.h"
 
-      INTEGER :: IO, KX, IX, NG
-      INTEGER :: NGOUTNEW
-      INTEGER, ALLOCATABLE :: IDUM(:)
-      INTEGER :: ListSTART(1), ListEND(1)
-      REAL :: ALONG, ALAT
+      INTEGER(KIND=JWIM) :: IO, KX, IX, NG
+      INTEGER(KIND=JWIM) :: NGOUTNEW
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
+      INTEGER(KIND=JWIM) :: ListSTART(1), ListEND(1)
+
+      REAL(KIND=JWRB) :: ALONG, ALAT
 
 !*    1. NO OUTPUT POINTS SPECIFIED.
 !        ---------------------------
@@ -71,7 +74,7 @@
 
       ListSTART(1)=1
       ListEND(1)=1
-      CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,
+      CALL FINDB (NGOUT, NGOUT, OUTLAT, OUTLONG, IGAR, IJAR,            &
      &            1, ListSTART,ListEND,1)
 
 ! ----------------------------------------------------------------------
@@ -80,11 +83,11 @@
 !        -----------------
 
       WRITE(IU06,'(1H1,'' SPECIAL OUTPUT POINTS FOR SPECTRA:'')')
-      WRITE(IU06,'(''    NUMBER OF OUTPUT POINTS IS NGOUT = '',I4)')
+      WRITE(IU06,'(''    NUMBER OF OUTPUT POINTS IS NGOUT = '',I4)')    &
      &      NGOUT
-      WRITE(IU06,'(4X,''     |-----INPUT-----|-NEAREST POINT-|'',
+      WRITE(IU06,'(4X,''     |-----INPUT-----|-NEAREST POINT-|'',       &
      &              ''-POINT INDEX--|'')')
-      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  BLOCK.'',
+      WRITE(IU06,'(4X,''  NO.    LAT.   LONG.    LAT.   LONG.  BLOCK.'', &
      &             ''  POINT.'')')
       DO IO=1,NGOUT
         IF (IJAR(IO).GT.0) THEN
@@ -96,7 +99,7 @@
           ALONG = 9999999
           ALAT  = 9999999
         ENDIF
-        WRITE(IU06,'(4X,I5,4F8.2,2I8)')
+        WRITE(IU06,'(4X,I5,4F8.2,2I8)')                                 &
      &   IO, OUTLAT(IO), OUTLONG(IO), ALAT, ALONG, IGAR(IO), IJAR(IO)
       ENDDO
 
@@ -147,5 +150,4 @@
         NGOUT = NGOUTNEW
       ENDIF
 
-      RETURN
       END SUBROUTINE MCOUT

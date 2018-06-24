@@ -41,6 +41,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
@@ -51,20 +53,20 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      REAL, PARAMETER :: XLAMBDAC=0.0628
-      REAL, PARAMETER :: SURFT=0.000075
+      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
+      REAL(KIND=JWRB), PARAMETER :: SURFT=0.000075_JWRB
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER :: IJ, M, K
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, FM
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) ::  SM
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, FM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  SM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      REAL :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NFRE_ODD) :: FD
-      REAL, DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
+      REAL(KIND=JWRB) :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
@@ -93,7 +95,7 @@
 
         DO M=1,NFRE_ODD
           DO IJ=IJS,IJL
-            TEMP2(IJ) = 0.
+            TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -113,7 +115,7 @@
         DO M=1,NFRE_ODD
           DO IJ=IJS,IJL
             TEMP1(IJ) = DFIM_SIM(M)*TFAK(INDEP(IJ),M)**2
-            TEMP2(IJ) = 0.
+            TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -136,10 +138,10 @@
 !!      FC     = SQRT(G*XKC+SURFT*XKC**3)/ZPI
 !!      CONST2 = ZPI**4*FS**5/G**2
 !!      DO IJ=IJS,IJL      
-!!        CONST1    = 0.*LOG(FC/FS)  
+!!        CONST1    = 0.0_JWRB*LOG(FC/FS)  
 !!        CP        = G/(ZPI*FM(IJ))
 !!        XI        = CP/USNEW(IJ)
-!!        ALPHAP    = MAX(0.21/XI,0.0040)
+!!        ALPHAP    = MAX(0.21_JWRB/XI,0.0040_JWRB)
 !!        CONST3    = CONST2*DELTH*TEMP2(IJ)
 !!        SM(IJ) = SM(IJ)+CONST1*CONST3
 !!      ENDDO
