@@ -40,7 +40,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMONOP   ,    &
      &            XDELLA   ,ZDELLO   ,IPER
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
@@ -54,26 +56,28 @@
       IMPLICIT NONE
 #include "unblkrord.intfb.h"
 
-      INTEGER, INTENT(IN) :: IG
-      REAL, DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
-      REAL, INTENT(IN) :: PMISS
-      REAL, INTENT(OUT) :: GRID(NGX,NGY)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG
+      REAL(KIND=JWRB), DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
+      REAL(KIND=JWRB), INTENT(IN) :: PMISS
+      REAL(KIND=JWRB), INTENT(OUT) :: GRID(NGX,NGY)
 
-      INTEGER :: IY, IX, J, I, IJ, IE, KI, IR, IP
-      INTEGER :: NI(3)
+      INTEGER(KIND=JWIM) :: IY, IX, J, I, IJ, IE, KI, IR, IP
+      INTEGER(KIND=JWIM) :: NI(3)
 
-      REAL    :: ZHOOK_HANDLE
-      REAL, allocatable :: BLOCK_G(:)
-      REAL*8  :: XLO, XLA
-      REAL*8  :: BLOCK8, GRID8, PMS8
-      REAL*8  :: XYELE(2,3), SKALAR(3)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: BLOCK_G(:)
+
+      REAL(KIND=JWRU) :: XLO, XLA
+      REAL(KIND=JWRU) :: BLOCK8, GRID8, PMS8
+      REAL(KIND=JWRU) :: XYELE(2,3), SKALAR(3)
 
       LOGICAL :: LLCLST
-      INTEGER :: iNode
+
+      INTEGER(KIND=JWIM) :: iNode
+
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('MAKEGRID',0,ZHOOK_HANDLE)
-#endif
 
       CALL GSTATS(1996,0)
 
@@ -92,43 +96,41 @@
 !     ---------------------
 
       IF (LLUNSTR) THEN
-        IF (OUT_METHOD .eq. 1) THEN
-          allocate(BLOCK_G(NIBLO_OUT))
-          CALL UNBLKRORD(1,1,NIBLO,1,1,1,1,BLOCK(1),BLOCK_G(1))
+        IF (OUT_METHOD .EQ. 1) THEN
+          ALLOCATE(BLOCK_G(NIBLO_OUT))
+          CALL UNBLKRORD(1, 1, NIBLO, 1, 1, 1, 1, BLOCK(1), BLOCK_G(1))
 !!! I believe one could have an openmp loop here !!!!
           DO IY=1,NGY
-            XLA = AMONOP-REAL(IY-1)*XDELLA
+            XLA = REAL(AMONOP-REAL(IY-1,JWRB)*XDELLA,JWRU)
             DO IX=1,NGX
-              XLO = AMOWEP+REAL(IX-1)*ZDELLO(IY)
+              XLO = REAL(AMOWEP+REAL(IX-1,JWRB)*ZDELLO(IY),JWRU)
 !!debile
 !!! need to find out unstructured grid left longitude (I assume -180 for now)
-              IF(XLO.GE.180.d0) XLO=max(XLO-IPER*360.d0,-180.d0)
+              IF (XLO.GE.180.0_JWRU) XLO=MAX(XLO-IPER*360.0_JWRU,-180.0_JWRU)
 
               IE=IE_OUTPTS(IX,IY)
-              IF(IE.NE.-1) THEN
+              IF (IE.NE.-1) THEN
 !!! this is not very efficient
                 LLCLST=.FALSE.
                 NI = INE_GLOBAL(:,IE)
                 XYELE(1,:)=NODES(NI)%X
                 XYELE(2,:)=NODES(NI)%Y
                 SKALAR(:)=BLOCK_G(NI)
-                IF(ANY(BLOCK_G(NI).EQ.PMISS)) LLCLST=.TRUE.
-                CALL INTELEMENT_IPOL(LLCLST,XYELE,SKALAR,XLO,XLA,IE,
-     &                               PMS8,GRID8)
+                IF (ANY(BLOCK_G(NI).EQ.PMISS)) LLCLST=.TRUE.
+                CALL INTELEMENT_IPOL(LLCLST, XYELE, SKALAR, XLO, XLA, IE, PMS8, GRID8)
                 GRID(IX,IY)=GRID8
               ENDIF
             ENDDO
           ENDDO
-          deallocate(BLOCK_G)
+          DEALLOCATE(BLOCK_G)
         ENDIF
-        IF (OUT_METHOD .eq. 2) THEN
+        IF (OUT_METHOD .EQ. 2) THEN
           DO iNode=1,NIBLO_OUT
             IX=IXarr(iNode)
             IY=IYarr(iNode)
             GRID(IX,IY) = BLOCK(iNode)
-          END DO
-        END IF
-
+          ENDDO
+        ENDIF
       ELSE
         DO IJ = 1, NIBLO 
           IX = IXLG(IJ,IG)
@@ -139,8 +141,6 @@
 
       CALL GSTATS(1996,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MAKEGRID',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE MAKEGRID
