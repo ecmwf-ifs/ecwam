@@ -43,11 +43,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
-      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,GBOUNC   ,
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,GBOUNC   ,    &
      &            IPOGBO
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWMPP   , ONLY : NINF     ,NSUP     , NPROC  , IRANK
@@ -61,21 +63,21 @@
 #include "mpgatherbc.intfb.h"
 #include "sthq.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG 
-      INTEGER,DIMENSION(GBOUNC), INTENT(IN) :: IU19
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG 
+      INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
-      REAL, INTENT(IN) :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(IN) :: FL3(NINF-1:NSUP,NANG,NFRE)
 
-      INTEGER, PARAMETER :: NSCFLD=3
+      INTEGER(KIND=JWIM), PARAMETER :: NSCFLD=3
 
-      INTEGER:: IJ, II, NGOU, IX, KX, K ,M 
-      INTEGER:: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: IRECV
+      INTEGER(KIND=JWIM):: IJ, II, NGOU, IX, KX, K ,M 
+      INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: IRECV
 
-      REAL :: XLON, XLAT
-      REAL,DIMENSION(IJS:IJL) :: EM, FM, TQ
-      REAL,DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
-      REAL,DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
+      REAL(KIND=JWRB) :: XLON, XLAT
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: EM, FM, TQ
+      REAL(KIND=JWRB),DIMENSION(NBOUNC) :: EMPTS, FMPTS, TQPTS
+      REAL(KIND=JWRB),DIMENSION(NBOUNC,NANG,NFRE) :: FLPTS
 
 
 ! ----------------------------------------------------------------------
@@ -91,21 +93,21 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),
+        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),          &
      &               FM(KIJS))
         CALL STHQ (FL3(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
       ENDDO
 !$OMP END PARALLEL DO
 
       IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',
+        WRITE(IU06,*) '      SUB. OUTBC: INTEGRATED',                   &
      &   ' PARAMETERS COMPUTED FOR BOUNDARY POINTS OUTPUT'
         CALL FLUSH(IU06)
       ENDIF
 
       IRECV=1
-      CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,
-     &                FL3(IJS:IJL,:,:), EM, TQ, FM,
+      CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
+     &                FL3(IJS:IJL,:,:), EM, TQ, FM,                     &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 
@@ -125,12 +127,11 @@
             XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
             XLAT = AMOSOP + REAL(KX-1)*XDELLA
 
-            WRITE(IU19(II)) XLON, XLAT, CDTPRO,
+            WRITE(IU19(II)) XLON, XLAT, CDTPRO,                         &
      &          EMPTS(NGOU), TQPTS(NGOU), FMPTS(NGOU) 
             WRITE(IU19(II)) ((FLPTS(NGOU,K,M),K=1,NANG),M=1,NFRE)
           ENDDO
         ENDDO
       ENDIF
 
-      RETURN
       END SUBROUTINE OUTBC

@@ -32,6 +32,8 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+      
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL ,NIPRMOUT ,ITOBOUT  ,BOUT
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
@@ -54,17 +56,17 @@
 #include "abort1.intfb.h"
 #include "makegrid.intfb.h"
 
-      INTEGER :: IG
-      INTEGER :: IJ, ITT, ICT, ITG, IFLD, IR, IPR, ICOUNT
-      INTEGER :: NFLDTOT, NFLDPPEMAX
-      INTEGER, DIMENSION(NPROC) :: ICNT, NFLDPPE
-      INTEGER, DIMENSION(NPROC+JPPFLAG) :: IREQ
-      INTEGER, DIMENSION(NPROC) :: ISENDCOUNTS,IRECVCOUNTS
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, ITT, ICT, ITG, IFLD, IR, IPR, ICOUNT
+      INTEGER(KIND=JWIM) :: NFLDTOT, NFLDPPEMAX
+      INTEGER(KIND=JWIM), DIMENSION(NPROC) :: ICNT, NFLDPPE
+      INTEGER(KIND=JWIM), DIMENSION(NPROC+JPPFLAG) :: IREQ
+      INTEGER(KIND=JWIM), DIMENSION(NPROC) :: ISENDCOUNTS,IRECVCOUNTS
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: ZDUM(2)
-      REAL, ALLOCATABLE, DIMENSION(:) :: GTEMP
-      REAL, ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZDUM(2)
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: GTEMP
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: ZSENDBUF, ZRECVBUF
 
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
@@ -90,9 +92,7 @@
       END IF
       HaveMPI_arrays=.TRUE.
       IF(NFLDTOT.EQ.0) THEN
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('OUTGRID',1,ZHOOK_HANDLE)
-#endif
         RETURN
       ENDIF
  
@@ -143,18 +143,18 @@
           ALLOCATE(ZRECVBUF(NFLDPPE(IRANK)*MPMAXLENGTH,NPROC))
           DO IPR=1,NPROC
             IR=IR+1
-            CALL MPL_RECV(ZRECVBUF(1:IRECVCOUNTS(IPR),IPR),KSOURCE=IPR,
-     &        KTAG=KTAG,
-     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+            CALL MPL_RECV(ZRECVBUF(1:IRECVCOUNTS(IPR),IPR),KSOURCE=IPR, &
+     &        KTAG=KTAG,                                                &
+     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
      &        CDSTRING='OUTGRID:')
           ENDDO
         ENDIF
         DO IPR=1,NPROC
           IF(NFLDPPE(IPR).GT.0) THEN
             IR=IR+1
-            CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,
-     &        KTAG=KTAG,
-     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),
+            CALL MPL_SEND(ZSENDBUF(1:ICNT(IPR),IPR),KDEST=IPR,          &
+     &        KTAG=KTAG,                                                &
+     &        KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),      &
      &        CDSTRING='OUTGRID:')
           ENDIF
         ENDDO
@@ -167,7 +167,7 @@
 !     RETRIEVE THE INFORMATION
 !     ------------------------
 
-      IF (LLUNSTR .and. (OUT_METHOD .eq. 2)) THEN
+      IF (LLUNSTR .AND. (OUT_METHOD .EQ. 2)) THEN
         NIBLO_OUT = NIBLO_FD
       ELSE
         NIBLO_OUT = NIBLO

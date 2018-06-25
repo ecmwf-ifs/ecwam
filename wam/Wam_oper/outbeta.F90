@@ -44,6 +44,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -51,22 +53,21 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10, US, Z0
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, US, Z0
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
 
-      REAL, PARAMETER :: ALPHAMAX=0.1
-      REAL, PARAMETER :: AMAX=0.02
-      REAL, PARAMETER :: BMAX=0.01
-      INTEGER :: IJ
+      REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
+      REAL(KIND=JWRB), PARAMETER :: AMAX=0.02_JWRB
+      REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
+      INTEGER(KIND=JWIM) :: IJ
 
-      REAL :: ALPHAMAXU10
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ALPHAMAXU10
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
-#endif
 
 !*    COMPUTE CHARNOCK 'CONSTANT' BETA.
 !     ---------------------------------
@@ -77,9 +78,7 @@
         BETA(IJ) = MIN(BETA(IJ),ALPHAMAXU10)
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
-#endif
 
 ! ----------------------------------------------------------------------
       END SUBROUTINE OUTBETA

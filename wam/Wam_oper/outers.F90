@@ -32,16 +32,18 @@
 
 !---------------------------------------------------------------------- 
 
-      USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOER  , ONLY : NERS     ,CDTERS   ,IERS     ,IJERS    ,    &
      &            IGERS
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
-      USE YOWSPEC, ONLY   : NSTART   ,NEND     , 
+      USE YOWSPEC, ONLY   : NSTART   ,NEND     ,                        &
      &            U10NEW   ,THWNEW   ,USNEW
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE MPL_MODULE
@@ -52,21 +54,21 @@
 #include "ersfile.intfb.h"
 #include "mpgatherersfile.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
 
-      INTEGER :: IG
-      INTEGER :: NGOU, KCOUNT, IJ, K, M 
-      INTEGER :: IU91, IU92, ITAG
-      INTEGER :: KBUFRLENGTH
-      INTEGER :: IRECV, NSPFLD, NSCFLD
-      INTEGER,ALLOCATABLE :: IBUFF(:)
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: NGOU, KCOUNT, IJ, K, M 
+      INTEGER(KIND=JWIM) :: IU91, IU92, ITAG
+      INTEGER(KIND=JWIM) :: KBUFRLENGTH
+      INTEGER(KIND=JWIM) :: IRECV, NSPFLD, NSCFLD
+      INTEGER(KIND=JWIM),ALLOCATABLE :: IBUFF(:)
 
-      REAL :: XANG, XFRE, XLAT, XLON
-      REAL,ALLOCATABLE :: FLPTS(:,:,:,:)
-      REAL,ALLOCATABLE,DIMENSION(:) :: EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,
-     &                                 USPTS
+      REAL(KIND=JWRB) :: XANG, XFRE, XLAT, XLON
+      REAL(KIND=JWRB),ALLOCATABLE :: FLPTS(:,:,:,:)
+      REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: EMPTS, FMPTS, THQPTS, &
+     &                                U10PTS, THWPTS, USPTS
 
 ! ----------------------------------------------------------------------
 
@@ -112,7 +114,7 @@
               ENDDO
             ENDIF
 
-            CALL MPL_BROADCAST(IBUFF(1:KBUFRLENGTH),KROOT=1,KTAG=ITAG,
+            CALL MPL_BROADCAST(IBUFF(1:KBUFRLENGTH),KROOT=1,KTAG=ITAG,  &
      &       CDSTRING='OUTERS 1:')
 
             IF(IRANK.NE.1) THEN
@@ -156,9 +158,9 @@
 
           ALLOCATE(FLPTS(NSPFLD,IERS,NANG,NFRE))
 
-          CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     &                         IJS, IJL, FL3,FLPTS,
-     &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),
+          CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,    &
+     &                         IJS, IJL, FL3,FLPTS,                     &
+     &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),      &
      &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
 
         IF(IRANK.EQ.1) THEN
@@ -176,11 +178,11 @@
                 WRITE(IU06,*)' SUB : outers  LOOP 1002 ngou=', ngou
                 CALL FLUSH (IU06)
               ENDIF
-              WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               
+              WRITE(IU92) XLON, XLAT, CDTPRO, XANG, XFRE,               &
      &                    TH(1), FR(1), FRATIO
               IF (EMPTS(NGOU) .GT. 0.0 ) THEN
-                WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),
-     &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),
+                WRITE(IU92) 4.*SQRT(EMPTS(NGOU)), DEG*THQPTS(NGOU),     &
+     &                    FMPTS(NGOU), USPTS(NGOU), DEG*THWPTS(NGOU),   &
      &                    U10PTS(NGOU)
               ELSE
                 WRITE(IU92) ZMISS, ZMISS, ZMISS, ZMISS, ZMISS, ZMISS

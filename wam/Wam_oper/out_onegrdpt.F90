@@ -234,19 +234,19 @@
               TAUOC=1.0_JWRB
             ENDIF
 
-            WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,
-     &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,
-     &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),
-     &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,
-     &                       USTAR,CD,BETA,T10,FETCH10,E10,
-     &                       TSTAR, FMSTAR, DSTAR, ESTAR,
+            WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,          &
+     &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,          &
+     &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),         &
+     &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,         &
+     &                       USTAR,CD,BETA,T10,FETCH10,E10,             &
+     &                       TSTAR, FMSTAR, DSTAR, ESTAR,               &
      &                       PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
 
-            WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,
-     &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,
-     &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,
-     &                     USTAR,CD,BETA,T10,FETCH10,E10,
-     &                     TSTAR, FMSTAR, DSTAR, ESTAR,
+            WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,             &
+     &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,                 &
+     &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,              &
+     &                     USTAR,CD,BETA,T10,FETCH10,E10,               &
+     &                     TSTAR, FMSTAR, DSTAR, ESTAR,                 &
      &                     PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
 
           ENDIF
@@ -254,9 +254,9 @@
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
       ENDIF
-   60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,  &
+   60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
      &       2F12.5,2E10.3,13(1x,F14.5))
-   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3, &
+   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,          &
      &       2F12.5,2E10.3,13(1x,F14.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
