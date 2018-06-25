@@ -1,7 +1,9 @@
-      SUBROUTINE MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,
-     &                           IJS, IJL, FL3,FLPTS,
-     &                           U10,THW,US,
-     &                           EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
+      SUBROUTINE MPGATHERERSFILE(IRECV, ITAG, NSTART, NEND, NSPFLD,     &
+     &                           NSCFLD,                                &
+     &                           IJS, IJL, FL3, FLPTS,                  &
+     &                           U10, THW, US,                          &
+     &                           EMPTS, FMPTS, THQPTS,                  &
+     &                           U10PTS, THWPTS, USPTS)
 
 !****  *MPGATHERERSFILE* - GATHERS SPECTRUM AND SCALAR FIELDS ONTO 
 !****                      A SINGLE PE FOR COLLOCATION FILE IN OUTERS
@@ -68,6 +70,8 @@
 !         NONE
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOER  , ONLY : IERS     ,IJERS
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -77,31 +81,32 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IRECV, NSPFLD, NSCFLD
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, INTENT(IN) ::  ITAG
-      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) ::  FL3
-      REAL,DIMENSION(NSPFLD,IERS,NANG,NFRE), INTENT(OUT) :: FLPTS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRECV, NSPFLD, NSCFLD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) ::  ITAG
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10,THW,US
-      REAL, DIMENSION(IERS), INTENT(OUT) :: EMPTS, FMPTS
-      REAL, DIMENSION(IERS), INTENT(OUT) :: THQPTS, U10PTS, THWPTS,USPTS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) ::  FL3
+      REAL(KIND=JWRB), DIMENSION(NSPFLD,IERS,NANG,NFRE), INTENT(OUT) :: FLPTS
 
-      INTEGER :: NGOU, IJ, M, K, KCOUNT, IP
-      INTEGER :: MAXLENGTH
-      INTEGER :: KRCOUNT, KRFROM, KRTAG
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10,THW,US
+      REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: EMPTS, FMPTS
+      REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: THQPTS, U10PTS, THWPTS, USPTS
+
+      INTEGER(KIND=JWIM) :: NGOU, IJ, M, K, KCOUNT, IP
+      INTEGER(KIND=JWIM) :: MAXLENGTH
+      INTEGER(KIND=JWIM) :: KRCOUNT, KRFROM, KRTAG
+
+      REAL(KIND=JWRB),ALLOCATABLE :: ZCOMBUF(:)
 
 !----------------------------------------------------------------------
-
-      REAL,ALLOCATABLE :: ZCOMBUF(:)
 
       MAXLENGTH=(NSCFLD+NSPFLD*NANG*NFRE)*IERS
       ALLOCATE(ZCOMBUF(MAXLENGTH))
 
 !     1.0 DEFAULT ACTION IF NO FIELD GATHERING 
 !         ------------------------------------
-      IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) THEN
+      IF (IRECV.EQ.0 .OR. NPROC.EQ.1) THEN
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
           EMPTS(NGOU) = EMEAN(IJ)
@@ -117,7 +122,7 @@
           ENDDO
         ENDDO
 
-      ELSEIF(IRANK.NE.IRECV) THEN
+      ELSEIF (IRANK.NE.IRECV) THEN
 !     1.1 SEND TO THE PROCESS THAT GATHERS THE WHOLE FIELD
 !         ------------------------------------------------
 
@@ -126,7 +131,7 @@
         DO NGOU=1,IERS
 
           IJ=IJERS(NGOU)
-          IF(IJ.GE.IJS .AND. IJ.LE.IJL) THEN
+          IF (IJ.GE.IJS .AND. IJ.LE.IJL) THEN
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=EMEAN(IJ)
             KCOUNT=KCOUNT+1
@@ -152,23 +157,23 @@
         ENDDO
 
 !     SEND BUFFER
-        CALL MPL_SEND(ZCOMBUF(1:KCOUNT),KDEST=IRECV,KTAG=ITAG,
-     &   CDSTRING='MPGATHERERSFILE:')
+        CALL MPL_SEND(ZCOMBUF(1:KCOUNT),KDEST=IRECV,KTAG=ITAG,          &
+     &                CDSTRING='MPGATHERERSFILE:')
       ELSE
 !     1.2.1  RECEIVE CONTRIBUTION TO THE FIELD FROM THE OTHER PROCESSES
 !            ---------------------------------------------------------- 
         DO IP=1,NPROC-1
-          CALL MPL_RECV(ZCOMBUF(1:MAXLENGTH),KTAG=ITAG,KOUNT=KRCOUNT,
-     &     KFROM=KRFROM,KRECVTAG=KRTAG,CDSTRING='MPGATHERERSFILE:')
-          IF(KRTAG.NE.ITAG) CALL MPL_ABORT
-     &     ('MPL_RECV ERROR in MPGATHERERSFILE:  MISMATCHED TAGS' )
+          CALL MPL_RECV(ZCOMBUF(1:MAXLENGTH),KTAG=ITAG,KOUNT=KRCOUNT,   &
+     &         KFROM=KRFROM,KRECVTAG=KRTAG,CDSTRING='MPGATHERERSFILE:')
+          IF (KRTAG.NE.ITAG) CALL MPL_ABORT                             &
+     &         ('MPL_RECV ERROR in MPGATHERERSFILE:  MISMATCHED TAGS' )
 
 !  DECODE BUFFER
           KCOUNT=0
 
           DO NGOU=1,IERS
             IJ=IJERS(NGOU)
-            IF((IJ.GE.NSTART(KRFROM)).AND.(IJ.LE.NEND(KRFROM))) THEN
+            IF (IJ.GE.NSTART(KRFROM) .AND. IJ.LE.NEND(KRFROM)) THEN
               KCOUNT=KCOUNT+1
               EMPTS(NGOU)=ZCOMBUF(KCOUNT)
               KCOUNT=KCOUNT+1
@@ -192,12 +197,12 @@
             ENDIF
           ENDDO
 
-          IF(KRCOUNT.NE.KCOUNT) THEN
-            WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,
-     &       ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',
-     &       KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),
-     &       ' NEND(KRFROM): ', NEND(KRFROM), ' IJERS(*): ', IJERS
-            CALL MPL_ABORT
+          IF (KRCOUNT.NE.KCOUNT) THEN
+            WRITE(*,*) ' PE: ', IRANK, ' KRCOUNT: ', KRCOUNT,           &
+     &          ' KCOUNT: ', KCOUNT, ' IERS: ', IERS, ' KRFROM: ',      &
+     &          KRFROM, ' NSTART(KRFROM): ', NSTART(KRFROM),            &
+     &          ' NEND(KRFROM): ', NEND(KRFROM), ' IJERS(*): ', IJERS
+            CALL MPL_ABORT                                              &
      &       ('MPL_RECV ERROR in MPGATHERFILE: WRONG LENGTH OF MESSAGE')
           ENDIF
 
@@ -207,7 +212,7 @@
 
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
-          IF(IJ.GE.IJS .AND. IJ.LE.IJL)THEN
+          IF (IJ.GE.IJS .AND. IJ.LE.IJL)THEN
             EMPTS(NGOU) = EMEAN(IJ)
             FMPTS(NGOU) = FMEAN(IJ)
             THQPTS(NGOU) = THQ(IJ)

@@ -1,4 +1,5 @@
-      SUBROUTINE MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,FL)
+      SUBROUTINE MPGATHERFL(IRECV, NBLKS, NBLKE, KINF, KSUP, MINF,      &
+     &                      MSUP, FL)
 
 !****  *MPGATHERFL* - GATHER FL ONTO A SINGLE PROCESS 
 
@@ -43,6 +44,8 @@
 !         NONE
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NIBLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWUNPOOL, ONLY : LLUNSTR
@@ -54,23 +57,24 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IRECV, KINF, KSUP, MINF, MSUP
-      INTEGER :: N23, ILEN, KCOUNT, M, K, IJ, ILENR, IP
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRECV, KINF, KSUP, MINF, MSUP
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
-      INTEGER,DIMENSION(NPROC) :: NBLKS,NBLKE
-      INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
+      REAL(KIND=JWRB), DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP), INTENT(INOUT) :: FL
 
-      REAL :: ZHOOK_HANDLE
-      REAL,ALLOCATABLE,DIMENSION(:) :: PSENDBUF,PRECVBUF
-      REAL,DIMENSION(0:NIBLO,KINF:KSUP,MINF:MSUP) :: FL
+
+      INTEGER(KIND=JWIM) :: N23, ILEN, KCOUNT, M, K, IJ, ILENR, IP
+
+      INTEGER(KIND=JWIM), DIMENSION(NPROC) :: KRECVCOUNTS
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:) :: PSENDBUF, PRECVBUF
 
 !----------------------------------------------------------------------
 
-      IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) RETURN
+      IF (IRECV.EQ.0 .OR. NPROC.EQ.1) RETURN
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPGATHERFL',0,ZHOOK_HANDLE)
-#endif
 
       N23=(KSUP-KINF+1)*(MSUP-MINF+1)
 
@@ -93,13 +97,13 @@
       ENDDO
       ALLOCATE(PRECVBUF(ILENR))
 
-      CALL MPL_GATHERV(PSENDBUF=PSENDBUF,
-     &                 KRECVCOUNTS=KRECVCOUNTS,
-     &                 PRECVBUF=PRECVBUF,
-     &                 KROOT=IRECV,
+      CALL MPL_GATHERV(PSENDBUF=PSENDBUF,                               &
+     &                 KRECVCOUNTS=KRECVCOUNTS,                         &
+     &                 PRECVBUF=PRECVBUF,                               &
+     &                 KROOT=IRECV,                                     &
      &                 CDSTRING='MPGATHERFL:')
 
-      IF(IRANK.EQ.IRECV) THEN
+      IF (IRANK.EQ.IRECV) THEN
         KCOUNT=0
         DO IP=1,NPROC
           DO M=MINF,MSUP
@@ -116,8 +120,6 @@
       DEALLOCATE(PSENDBUF)
       DEALLOCATE(PRECVBUF)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPGATHERFL',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE MPGATHERFL

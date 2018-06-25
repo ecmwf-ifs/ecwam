@@ -35,79 +35,81 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
-     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,
-     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
+     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX ,
-     &            LWVFLX_SNL,
-     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, 
-     &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT, 
-     &            LWNEMOCOUCUR, 
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX ,    &
+     &            LWVFLX_SNL,                                           &
+     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
+     &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
+     &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO
-      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
-     &            FFLAG20  ,PFLAG    ,
-     &            PFLAG20  ,GFLAG    ,
-     &            GFLAG20  ,NFLAG    ,
-     &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
-     &            NASS     ,JPPFLAG  ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
+     &            FFLAG20  ,PFLAG    ,                                  &
+     &            PFLAG20  ,GFLAG    ,                                  &
+     &            GFLAG20  ,NFLAG    ,                                  &
+     &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,    &
+     &            NASS     ,JPPFLAG  ,                                  &
      &            IRWDIR   , IRCD    ,IRU10    ,                        &
-     &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,
-     &            NTRAIN   ,
-     &            IPFGTBL  ,
-     &            LLOUTERS ,
-     &            LWAMANOUT,
-     &            NWRTOUTWAM,
-     &            LWFLUXOUT,
-     &            LSECONDORDER,
+     &            LRSTPARALW,LRSTPARALR,LRSTINFDAT,                     &
+     &            NTRAIN   ,                                            &
+     &            IPFGTBL  ,                                            &
+     &            LLOUTERS ,                                            &
+     &            LWAMANOUT,                                            &
+     &            NWRTOUTWAM,                                           &
+     &            LWFLUXOUT,                                            &
+     &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
+      USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
+     &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
-      USE YOWMESPAS, ONLY : LMESSPASS,
+      USE YOWMESPAS, ONLY : LMESSPASS,                                  &
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
+      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
-      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
-     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
-     &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
-     &            IDELBC   ,
-     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,
-     &            ISNONLIN ,
-     &            IDAMPING ,
-     &            LBIWBK   ,
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,
-     &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
-     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
-     &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
-     &            LGUST    ,LADEN    ,NPROMA_WAM,LSUBGRID ,LLSOURCE ,
-     &            LNSESTART,
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,
-     &            LRELWIND ,
+      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
+     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,    &
+     &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
+     &            IDELBC   ,                                            &
+     &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            ISNONLIN ,                                            &
+     &            IDAMPING ,                                            &
+     &            LBIWBK   ,                                            &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
+     &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
+     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
+     &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
+     &            LGUST    ,LADEN    ,NPROMA_WAM,LSUBGRID ,LLSOURCE ,   &
+     &            LNSESTART,                                            &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
+     &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
+      USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
-      USE YOWUNIT  , ONLY : IU20     ,IU23     ,
-     &            IU27     ,IU28     ,IU04     ,IU30     ,
-     &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,
+      USE YOWUNIT  , ONLY : IU20     ,IU23     ,                        &
+     &            IU27     ,IU28     ,IU04     ,IU30     ,              &
+     &            IU31     ,IU32     ,IU33     ,IU35     ,IU36     ,    &
      &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
       USE UNSTRUCT_BOUND , ONLY : LBCWA
       USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
-      USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,
-     &            SOURCE_IMPL, WAE_SOLVERTHR, 
-     &            LNONL, BLOCK_GAUSS_SEIDEL,
-     &            LLIMT, L_SOLVER_NORM, LCHKCONV
-      USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
-     &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
+      USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
+     &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
+     &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
+     &            LLIMT, L_SOLVER_NORM, LCHKCONV,                       &
+      USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,    &
+     &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -120,11 +122,11 @@
 #include "mpcrtbl.intfb.h"
 #include "wposnam.intfb.h"
 
-      INTEGER :: IU05
-      INTEGER :: ISAT, IC, II
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IU05
+      INTEGER(KIND=JWIM) :: ISAT, IC, II
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14), PARAMETER :: ZERO = ' '
       CHARACTER(LEN=1) :: CLMTSU(4), CLOTSU(8)
@@ -136,61 +138,61 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLHEADER,
-     &   CBPLTDT, CEPLTDT, CDATEF,
-     &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,
-     &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,
-     &   IDELCUR, CDATECURA,
-     &   CLOTSU, CDATER, CDATES,
-     &   PFLAG,  FFLAG,  GFLAG, NFLAG,
-     &   LLOUTERS,
-     &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,
-     &   LRSTPARALW, LRSTPARALR, LRSTINFDAT, 
-     &   LWAMANOUT,
-     &   NWRTOUTWAM,
-     &   LSECONDORDER,
-     &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,
-     &   IPROPAGS,
-     &   IREFRA,
-     &   ISNONLIN,
-     &   IDAMPING,
-     &   LBIWBK  ,
-     &   LMASKICE,
-     &   IBOUNC, IBOUNF,
-     &   IDELBC, CBCPREF,
-     &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,
-     &   IMDLGRBID_G, IMDLGRBID_M,
-     &   NENSFNB, NTOTENS, NSYSNB, NMETNB,
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,
-     &   LODBRALT,
-     &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,
-     &   IBUFRSAT, CSATNAME,
-     &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,
-     &   DTNEWWIND, LTURN90,
-     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT,
-     &   ISTREAM, NLOCGRB, IREFDATE,
-     &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,
-     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,
-     &   LLSOURCE,
-     &   LNSESTART,
-     &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,
-     &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR, 
-     &   USE_DIRECT_WIND_FILE,
-     &   LIMPLICIT,
-     &   SOURCE_IMPL,
-     &   LNONL, BLOCK_GAUSS_SEIDEL,
-     &   LLIMT, L_SOLVER_NORM, LCHKCONV,
-     &   LBCWA, 
-     &   LSMSSIG_WAM,CMETER,CEVENT,
-     &   LLWSWAVE, LLWDWAVE,
-     &   NPROMA_WAM, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,
-     &   LICERUN, LCIWABR, LICETH,
-     &   LWVFLX_SNL,
-     &   LWNEMOCOU, NEMOFRCO,
-     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOTAUOC,
-     &   LWNEMOCOURECV,
-     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,
-     &   LWNEMOCOUDEBUG,
+      NAMELIST /NALINE/ CLHEADER,                                       &
+     &   CBPLTDT, CEPLTDT, CDATEF,                                      &
+     &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,               &
+     &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
+     &   IDELCUR, CDATECURA,                                            &
+     &   CLOTSU, CDATER, CDATES,                                        &
+     &   PFLAG,  FFLAG,  GFLAG, NFLAG,                                  &
+     &   LLOUTERS,                                                      &
+     &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
+     &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
+     &   LWAMANOUT,                                                     &
+     &   NWRTOUTWAM,                                                    &
+     &   LSECONDORDER,                                                  &
+     &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
+     &   IPROPAGS,                                                      &
+     &   IREFRA,                                                        &
+     &   ISNONLIN,                                                      &
+     &   IDAMPING,                                                      &
+     &   LBIWBK  ,                                                      &
+     &   LMASKICE,                                                      &
+     &   IBOUNC, IBOUNF,                                                &
+     &   IDELBC, CBCPREF,                                               &
+     &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
+     &   IMDLGRBID_G, IMDLGRBID_M,                                      &
+     &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
+     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,    &
+     &   LODBRALT,                                                      &
+     &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
+     &   IBUFRSAT, CSATNAME,                                            &
+     &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
+     &   DTNEWWIND, LTURN90,                                            &
+     &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,HSALTCUT, &
+     &   ISTREAM, NLOCGRB, IREFDATE,                                    &
+     &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
+     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
+     &   LLSOURCE,                                                      &
+     &   LNSESTART,                                                     &
+     &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
+     &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
+     &   USE_DIRECT_WIND_FILE,                                          &
+     &   LIMPLICIT,                                                     &
+     &   SOURCE_IMPL,                                                   &
+     &   LNONL, BLOCK_GAUSS_SEIDEL,                                     &
+     &   LLIMT, L_SOLVER_NORM, LCHKCONV,                                &
+     &   LBCWA,                                                         &
+     &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
+     &   LLWSWAVE, LLWDWAVE,                                            &
+     &   NPROMA_WAM, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,              &
+     &   LICERUN, LCIWABR, LICETH,                                      &
+     &   LWVFLX_SNL,                                                    &
+     &   LWNEMOCOU, NEMOFRCO,                                           &
+     &   LWNEMOCOUSEND, LWNEMOCOUSTK, LWNEMOCOUSTRN, LWNEMOTAUOC,       &
+     &   LWNEMOCOURECV,                                                 &
+     &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
+     &   LWNEMOCOUDEBUG,                                                &
      &   LWAM_USE_IO_SERV
 
 
@@ -611,15 +613,15 @@
         CSATNAME(ISAT) = 'SATELLITE NAME MISSING'
         LALTPAS(ISAT)   = .FALSE. 
         LALTCOR(ISAT)   = .FALSE. 
-        XKAPPA2(ISAT)   = 0.0700
+        XKAPPA2(ISAT)   = 0.0700_JWRB
         LALTLRGR(ISAT)  = .FALSE.
-        HSCOEFCOR(ISAT) = 1.
-        HSCONSCOR(ISAT) = 0.
+        HSCOEFCOR(ISAT) = 1.0_JWRB
+        HSCONSCOR(ISAT) = 0.0_JWRB
 
-        ALTBGTHRSH(ISAT) = 1.
+        ALTBGTHRSH(ISAT) = 1.0_JWRB
 !       if no value is provided in the namelist ALTSDTHRSH will
 !       be set in grfield.
-        ALTSDTHRSH(ISAT) = -1.
+        ALTSDTHRSH(ISAT) = -1.0_JWRB
 
 !       HSALTCUT is used in combination with the error estimate of
 !       the altimeter data to determine the minimum Hs allowed for
@@ -638,11 +640,11 @@
 
       LWAMANOUT = .TRUE.
 
-      SWAMPWIND = 18.45
-      SWAMPWIND2 = 0.
-      DTNEWWIND = 0.
-      SWAMPCIFR = 0.
-      SWAMPCITH = 0.
+      SWAMPWIND = 18.45_JWRB
+      SWAMPWIND2 = 0.0_JWRB
+      DTNEWWIND = 0.0_JWRB
+      SWAMPCIFR = 0.0_JWRB
+      SWAMPCITH = 0.0_JWRB
       LTURN90 = .FALSE.
 
       ISTREAM   = 0
@@ -737,8 +739,8 @@
       IVECTOR=1
       LPREPROC=.FALSE.
       USE_DIRECT_WIND_FILE=.FALSE.
-      JGS_DIFF_SOLVERTHR = 1.e-5
-      WAE_SOLVERTHR = 1.e-10
+      JGS_DIFF_SOLVERTHR = 1.E-5_JWRU
+      WAE_SOLVERTHR = 1.E-10_JWRU
       LIMPLICIT = .FALSE.
       SOURCE_IMPL = .FALSE.
       LNONL = .FALSE.
@@ -773,7 +775,7 @@
         CALL ABORT1
       ENDIF
 
-      IF(LWCOU) LSMSSIG_WAM=.FALSE.
+      IF (LWCOU) LSMSSIG_WAM=.FALSE.
 
 
 !           **** OUTPUT TIME AT SPECIFIED TIMES ****
@@ -839,7 +841,7 @@
       ENDDO SPA
 1912  CONTINUE
 
-      IF(.NOT.LWCOU) THEN
+      IF (.NOT.LWCOU) THEN
 !           **** FORCING TIME STEPPING AT SPECIFIED TIMES ****
         REWIND(IU05)
         SPWI: DO
@@ -886,19 +888,19 @@
 !     RESET CERTAIN FLAGS:
 
 !     WE SHOULD RECEIVE DATA FROM NEMO
-      IF(LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR) 
+      IF (LWNEMOCOUCIC.OR.LWNEMOCOUCIT.OR.LWNEMOCOUCUR)                 &
      &   LWNEMOCOURECV = .TRUE.
 
 
 ! Here we set LL1D = .TRUE. for the case of LLUNSTR in order to omit the mapping for the parallel strucutured grid
       IF (LLUNSTR) LL1D = .TRUE.
-      IF(LWCOU) LSMSSIG_WAM =.FALSE. ! by definition
+      IF (LWCOU) LSMSSIG_WAM =.FALSE. ! by definition
 
 !     Most of the namelist selection will be written to the logfiles in userin.
 
 !     Some are printed below
 
-      IF(IRANK.EQ.1) THEN
+      IF (IRANK.EQ.1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
         WRITE(6,*) '*** LMESSPASS = ',LMESSPASS

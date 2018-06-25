@@ -37,6 +37,8 @@
 !         NONE
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : IRANK     ,NPROC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
@@ -45,23 +47,24 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IRECV
-      INTEGER :: IP, IJ
-      INTEGER :: NLEN, NST, NND 
-      INTEGER,DIMENSION(NPROC) :: NBLKS, NBLKE
-      INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IRECV
+      INTEGER(KIND=JWIM), INTENT(IN) :: NLEN
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NLEN) :: FIELD
-      REAL, ALLOCATABLE, DIMENSION(:) :: ZSENDBUF
+      REAL(KIND=JWRB), DIMENSION(NLEN), INTENT(INOUT) :: FIELD
+
+      INTEGER(KIND=JWIM) :: IP, IJ
+      INTEGER(KIND=JWIM) :: NST, NND
+      INTEGER(KIND=JWIM), DIMENSION(NPROC) :: KRECVCOUNTS
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZSENDBUF
 
 !----------------------------------------------------------------------
 
-        IF((IRECV.EQ.0).OR.(NPROC.EQ.1)) RETURN
+        IF (IRECV.EQ.0 .OR. NPROC.EQ.1) RETURN
 
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('MPGATHERSCFLD',0,ZHOOK_HANDLE)
-#endif
 
         CALL GSTATS(674,0)
 
@@ -76,11 +79,11 @@
         DO IJ=NBLKS(IRANK),NBLKE(IRANK)
           ZSENDBUF(IJ)=FIELD(IJ)
         ENDDO
-        CALL MPL_GATHERV(ZSENDBUF(NST:NND),
-     &                 KRECVCOUNTS=KRECVCOUNTS,
-     &                 PRECVBUF=FIELD,
-     &                 KROOT=IRECV,
-     &                 CDSTRING='MPGATHERSCFLD:')
+        CALL MPL_GATHERV(ZSENDBUF(NST:NND),                             &
+     &                   KRECVCOUNTS=KRECVCOUNTS,                       &
+     &                   PRECVBUF=FIELD,                                &
+     &                   KROOT=IRECV,                                   &
+     &                   CDSTRING='MPGATHERSCFLD:')
 
         DEALLOCATE(ZSENDBUF)
 
@@ -88,9 +91,6 @@
 
         CALL GSTATS(674,1)
 
-#ifdef ECMWF
         IF (LHOOK) CALL DR_HOOK('MPGATHERSCFLD',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE MPGATHERSCFLD
