@@ -36,6 +36,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
@@ -59,7 +61,7 @@
 #include "abort1.intfb.h"
 #include "mpabort.intfb.h"
 
-      INTEGER :: IR, IFLAG, IT, IC, ITG, ITP, ITT, IZLEV
+      INTEGER(KIND=JWIM) :: IR, IFLAG, IT, IC, ITG, ITP, ITT, IZLEV
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------

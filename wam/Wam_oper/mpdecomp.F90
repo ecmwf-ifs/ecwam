@@ -1,4 +1,4 @@
-      SUBROUTINE MPDECOMP(NPR,MAXLEN,LLIRANK)
+      SUBROUTINE MPDECOMP(NPR, MAXLEN, LLIRANK)
 
 !****  *MPDECOMP* - EVEN DECOMPOSITION OF THE GRID DOMAIN
 !****               AMONG PROCESSES AFTER INPUT OF PREPROC GRID
@@ -105,34 +105,36 @@
 
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,
+      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,             &
      &             DFIMFR  ,DFIMFR2  ,COSTH     ,SINTH
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,
-     &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,
-     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,
+      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,    &
+     &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
+     &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,    &
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX  ,    &
+     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,    &
      &            KMNOP    ,KMSOP    ,IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,
+      USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
      &            NGX      ,NGY      ,LL1D     ,KWAMVER
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,
-     &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,
-     &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,    &
+     &            NFROMPE  ,NFROMPEMAX,NTOPE   ,NTOPEMAX ,NIJSTART ,    &
+     &            IJTOPE   ,NGBTOPE  ,NTOPELST ,NGBFROMPE,NFROMPELST,   &
      &            IJ2NEWIJ ,NBLKS    ,NBLKE
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,
-     &            KRLAT    ,KRLON    ,
-     &            WLAT     ,WCOR     ,WRLAT    ,WRLON    ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
+     &            KRLAT    ,KRLON    ,                                  &
+     &            WLAT     ,WCOR     ,WRLAT    ,WRLON    ,              &
      &            OBSLAT   ,OBSLON   ,OBSCOR   ,OBSRLAT  ,OBSRLON
       USE YOWUNIT  , ONLY : IREADG   ,IU07     ,IU08     ,LWVWAMINIT
       USE YOWWIND  , ONLY : NXFF     ,NYFF
@@ -149,52 +151,51 @@
 #include "jonswap.intfb.h"
 #include "wvwaminit.intfb.h"
 
-      INTEGER :: NPR, MAXLEN 
-      INTEGER :: IG
-      INTEGER :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
-      INTEGER :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH
-      INTEGER :: ITAG, IREAD 
-      INTEGER :: NTEMP(1)
-      INTEGER :: NLENHALO_MAX
-      INTEGER :: ICOUNTS(NPR)
-      INTEGER :: NPLEN(NPR)
-      INTEGER :: NLON_sekf, NLAT_sekf
-      INTEGER :: MPLENGTH, KCOUNT, ICL, ICR, ICOUNT, IPROC
-      INTEGER :: NXDECOMP, NYDECOMP, NYCUT
-      INTEGER :: ISTAGGER, NIJ, NTOT, NAREA
-      INTEGER :: NMEAN, NREST, NPTS, IXLONMAX
-      INTEGER :: KLATBOT, KLATTOP, KXLAT, NLONGMAX, KMIN, IXLONMIN 
-      INTEGER :: MAXPERMLEN, MXPRLEN 
-      INTEGER,ALLOCATABLE :: ICOMBUF(:)
-      INTEGER,ALLOCATABLE :: ICOMBUF_S(:)
-      INTEGER,ALLOCATABLE :: ICOMBUF_R(:)
-      INTEGER,ALLOCATABLE :: ISENDREQ(:)
-      INTEGER,ALLOCATABLE :: IDUM(:)
-      INTEGER,ALLOCATABLE :: KDUM(:), KDUM2(:,:), KDUM3(:,:,:)
-      INTEGER,ALLOCATABLE, DIMENSION(:) :: INDEX,IJNDEX,NTOTSUB
-      INTEGER,ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
-      INTEGER,ALLOCATABLE, DIMENSION(:) :: NSTART1D,NEND1D
-      INTEGER,ALLOCATABLE, DIMENSION(:) :: KSTART1,KEND1, NLON, ILON
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IXLON
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: ITEMP,NLENHALO,IJHALO
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: KTEMP
-      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE,IPROCFROM
-      INTEGER, ALLOCATABLE, DIMENSION(:)   :: IJFROMPEX
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
+      INTEGER(KIND=JWIM) :: NPR, MAXLEN 
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
+      INTEGER(KIND=JWIM) :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH 
+      INTEGER(KIND=JWIM) :: ITAG, IREAD 
+      INTEGER(KIND=JWIM) :: NTEMP(1)
+      INTEGER(KIND=JWIM) :: NLENHALO_MAX
+      INTEGER(KIND=JWIM) :: ICOUNTS(NPR)
+      INTEGER(KIND=JWIM) :: NPLEN(NPR)
+      INTEGER(KIND=JWIM) :: NLON_sekf, NLAT_sekf
+      INTEGER(KIND=JWIM) :: MPLENGTH, KCOUNT, ICL, ICR, ICOUNT, IPROC
+      INTEGER(KIND=JWIM) :: NXDECOMP, NYDECOMP, NYCUT
+      INTEGER(KIND=JWIM) :: ISTAGGER, NIJ, NTOT, NAREA
+      INTEGER(KIND=JWIM) :: NMEAN, NREST, NPTS, IXLONMAX
+      INTEGER(KIND=JWIM) :: KLATBOT, KLATTOP, KXLAT, NLONGMAX, KMIN, IXLONMIN
+      INTEGER(KIND=JWIM) :: MAXPERMLEN, MXPRLEN 
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF_S(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF_R(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: ISENDREQ(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: IDUM(:)
+      INTEGER(KIND=JWIM),ALLOCATABLE :: KDUM(:), KDUM2(:,:), KDUM3(:,:,:)
+      INTEGER(KIND=JWIM),ALLOCATABLE, DIMENSION(:) :: INDEX, IJNDEX, NTOTSUB
+      INTEGER(KIND=JWIM),ALLOCATABLE, DIMENSION(:) :: NEWIJ2IJ
+      INTEGER(KIND=JWIM),ALLOCATABLE, DIMENSION(:) :: NSTART1D, NEND1D
+      INTEGER(KIND=JWIM),ALLOCATABLE, DIMENSION(:) :: KSTART1, KEND1, NLON, ILON
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IXLON
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: ITEMP, NLENHALO, IJHALO 
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: KTEMP
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IJFROMPE, IPROCFROM
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:)   :: IJFROMPEX
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) :: 
-     &     R8_WLAT, R8_WRLAT, R8_WRLON, R8_WCOR
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: R8_WLAT, R8_WRLAT, R8_WRLON, R8_WCOR
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: RS_sekf, RN_sekf
-      REAL :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
-      REAL :: THETAMAX, SINTHMAX, DELTA
-      REAL :: X4(2)
-      REAL,ALLOCATABLE :: RCOMBUF_S(:)
-      REAL,ALLOCATABLE :: RCOMBUF_R(:)
-      REAL,ALLOCATABLE :: RDUM(:), RDUM2(:,:)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: RS_sekf, RN_sekf
+      REAL(KIND=JWRB) :: XDELLOINV, STAGGER, XLON, SQRT2O2, A, B
+      REAL(KIND=JWRB) :: THETAMAX, SINTHMAX, DELTA
+      REAL(KIND=JWRB) :: X4(2)
+      REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_S(:)
+      REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_R(:)
+      REAL(KIND=JWRB),ALLOCATABLE :: RDUM(:), RDUM2(:,:)
 
       CHARACTER(LEN=80) :: LOGFILENAME
 
@@ -204,9 +205,8 @@
       LOGICAL :: LLRNL
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',0,ZHOOK_HANDLE)
-#endif
 
 !     0. READ GRID INPUT FROM PREPROC 
 !        ----------------------------
@@ -217,10 +217,10 @@
 
 !     CALL TO *READPRE* HAS BEEN MOVED TO WVWAMINIT
 !     Re-initilize for SEKF surface analysis loops
-      IF(LWVWAMINIT) THEN
+      IF (LWVWAMINIT) THEN
         LL_sekf = .True.
         LLRNL=.TRUE.
-        CALL WVWAMINIT(LL_sekf,IU06,LLRNL,
+        CALL WVWAMINIT(LL_sekf,IU06,LLRNL,                              &
      &                 NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
       ENDIF
 
@@ -228,7 +228,7 @@
       CALL FLUSH (IU06)
 
 !     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
-      IF(ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
+      IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
       ALLOCATE(DFIMOFR(NFRE))
       IF(ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
       ALLOCATE(DFIMFR(NFRE))
@@ -281,9 +281,9 @@
 !       when unstructured grid is used and only limited to the local+ghost points
         NXFF=MNP
         NYFF=1
-        IF(ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
+        IF (ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
         ALLOCATE(IFROMIJ(NINF-1:NSUP,IGL))
-        IF(ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
+        IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
         ALLOCATE(JFROMIJ(NINF-1:NSUP,IGL))
 
         IFROMIJ(NINF-1,:)=0
@@ -311,47 +311,47 @@
         ENDDO
       ENDDO
 
-      IF(ALLOCATED(KLAT)) DEALLOCATE(KLAT)
+      IF (ALLOCATED(KLAT)) DEALLOCATE(KLAT)
       ALLOCATE(KLAT(NIBLO,2,2))  ! THE SIZE OF KLAT IS READJUSTED SEE BELOW
 
-      IF(ALLOCATED(KLON)) DEALLOCATE(KLON)
+      IF (ALLOCATED(KLON)) DEALLOCATE(KLON)
       ALLOCATE(KLON(NIBLO,2))  ! THE SIZE OF KLON IS READJUSTED SEE BELOW
 
-      IF(IPROPAGS.EQ.2) THEN
-        IF(ALLOCATED(KCOR)) DEALLOCATE(KCOR)
+      IF (IPROPAGS.EQ.2) THEN
+        IF (ALLOCATED(KCOR)) DEALLOCATE(KCOR)
         ALLOCATE(KCOR(NIBLO,4,2)) ! THE SIZE OF KCOR IS READJUSTED SEE BELOW
                                   ! WILL ONLY BE KEPT IF IPROPAGS=2
       ENDIF
 
-      IF(IPROPAGS.EQ.1) THEN
-        IF(ALLOCATED(KRLAT)) DEALLOCATE(KRLAT)
+      IF (IPROPAGS.EQ.1) THEN
+        IF (ALLOCATED(KRLAT)) DEALLOCATE(KRLAT)
         ALLOCATE(KRLAT(NIBLO,2,2))  ! THE SIZE IS READJUSTED SEE BELOW
                                     ! WILL ONLY BE KEPT IF IPROPAGS=1
-        IF(ALLOCATED(KRLON)) DEALLOCATE(KRLON)
+        IF (ALLOCATED(KRLON)) DEALLOCATE(KRLON)
         ALLOCATE(KRLON(NIBLO,2,2))  ! THE SIZE IS READJUSTED SEE BELOW
       ENDIF
 
-      IF(LMESSPASS) THEN
+      IF (LMESSPASS) THEN
 
 !       READ FIRST PART OF IOU8 ON PE IREAD
-        IF(IRANK.EQ.IREAD) THEN
+        IF (IRANK.EQ.IREAD) THEN
           READ (IU08(IPROPAGS)) KLAT
           READ (IU08(IPROPAGS)) KLON
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
             READ (IU08(IPROPAGS)) KRLAT
             READ (IU08(IPROPAGS)) KRLON
           ENDIF
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
           READ (IU08(IPROPAGS)) KCOR
           ENDIF
         ENDIF
 
 !       SEND KLAT AND KLON TO OTHER PE'S
-        IF(NPR.GT.1) THEN
+        IF (NPR.GT.1) THEN
           ITAG=KTAG
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             MPLENGTH=(6+8)*NIBLO
-          ELSE IF(IPROPAGS.EQ.1) THEN
+          ELSEIF (IPROPAGS.EQ.1) THEN
             MPLENGTH=(6+8)*NIBLO
           ELSE
             MPLENGTH=6*NIBLO
@@ -359,7 +359,7 @@
           ALLOCATE(ICOMBUF(MPLENGTH))
 
 
-          IF(IRANK.EQ.IREAD) THEN
+          IF (IRANK.EQ.IREAD) THEN
             KCOUNT=0
             DO ICL=1,2
               DO IC=1,2
@@ -376,7 +376,7 @@
               ENDDO
             ENDDO
 
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               DO ICL=1,2
                 DO ICR=1,4
                   DO IJ=1,NIBLO
@@ -385,7 +385,7 @@
                   ENDDO
                 ENDDO
               ENDDO
-            ELSE IF(IPROPAGS.EQ.1) THEN
+            ELSEIF (IPROPAGS.EQ.1) THEN
               DO ICL=1,2
                 DO IC=1,2
                   DO IJ=1,NIBLO
@@ -402,11 +402,11 @@
           ENDIF
 
           CALL GSTATS(694,0)
-          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,
+          CALL MPL_BROADCAST(ICOMBUF(1:MPLENGTH),KROOT=IREAD,           &
      &     KTAG=ITAG,CDSTRING='MPDECOMP:')
           CALL GSTATS(694,1)
 
-          IF(IRANK.NE.IREAD) THEN
+          IF (IRANK.NE.IREAD) THEN
             KCOUNT=0
             DO ICL=1,2
               DO IC=1,2
@@ -422,7 +422,7 @@
                 KLON(IJ,IC)=ICOMBUF(KCOUNT)
               ENDDO
             ENDDO
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               DO ICL=1,2
                 DO ICR=1,4
                   DO IJ=1,NIBLO
@@ -431,7 +431,7 @@
                   ENDDO
                 ENDDO
               ENDDO
-            ELSE IF(IPROPAGS.EQ.1) THEN
+            ELSEIF (IPROPAGS.EQ.1) THEN
               DO ICL=1,2
                 DO IC=1,2
                   DO IJ=1,NIBLO
@@ -452,14 +452,14 @@
 
         ENDIF
 
-      ELSEIF(.NOT.LMESSPASS) THEN
+      ELSEIF (.NOT.LMESSPASS) THEN
         READ (IU08(IPROPAGS)) KLAT
         READ (IU08(IPROPAGS)) KLON
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           READ (IU08(IPROPAGS)) KRLAT
           READ (IU08(IPROPAGS)) KRLON
         ENDIF
-        IF(IPROPAGS.EQ.2) THEN
+        IF (IPROPAGS.EQ.2) THEN
         READ (IU08(IPROPAGS)) KCOR
         ENDIF
       ENDIF
@@ -490,18 +490,18 @@
 
 !     DETERMINE THE SRUCTURE OF THE MODEL DECOMPOSITION
 
-      IF(LL1D) THEN
+      IF (LL1D) THEN
 !     1D DECOMPOSITION ONLY (old)
         NXDECOMP=1
         NYDECOMP=NPR
         NYCUT=NYDECOMP
       ELSE
 !     2D DECOMPOSITION (new)
-        IF(NPR.EQ.1) THEN
+        IF (NPR.EQ.1) THEN
           NXDECOMP=1
           NYDECOMP=1
           NYCUT=1
-        ELSEIF(NPR.EQ.2) THEN
+        ELSEIF (NPR.EQ.2) THEN
           NXDECOMP=2
           NYDECOMP=1
           NYCUT=1
@@ -518,7 +518,7 @@
             ICOUNT=ICOUNT+1
             IPROC=2*ICOUNT**2
           ENDDO
-          IF(IPROC.EQ.NPR) THEN
+          IF (IPROC.EQ.NPR) THEN
             NYDECOMP=INT(SQRT(FLOAT(NPR)/2))
             NXDECOMP=2*NYDECOMP
             NYCUT=NYDECOMP
@@ -534,11 +534,11 @@
             DO NXDECOMP=2*NYDECOMP,NYDECOMP,-1
               DO NYCUT=NYDECOMP,1,-1
                 IPROC=NYDECOMP*(NXDECOMP-1)+NYCUT
-                IF(IPROC.EQ.npr) EXIT
+                IF (IPROC.EQ.npr) EXIT
               ENDDO
-              IF(IPROC.EQ.NPR) EXIT
+              IF (IPROC.EQ.NPR) EXIT
             ENDDO
-            IF(IPROC.NE.NPR) THEN
+            IF (IPROC.NE.NPR) THEN
               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!!'
               CALL ABORT1
             ENDIF
@@ -553,7 +553,7 @@
       IF (ALLOCATED(NEND1D)) DEALLOCATE(NEND1D)
       ALLOCATE(NEND1D(NYDECOMP))
 
-      IF(NYCUT.EQ.NYDECOMP) THEN
+      IF (NYCUT.EQ.NYDECOMP) THEN
 !       if the number of subareas per latitunal bands is the same
 !       in all bands then the number of sea points in each band will
 !       be determined to be as even as possible
@@ -562,7 +562,7 @@
 
      
         NSTART1D(1)=1
-        IF(NREST.GT.0) THEN
+        IF (NREST.GT.0) THEN
           NPTS=NMEAN+1
           NREST=NREST-1 
         ELSE
@@ -572,7 +572,7 @@
 
         DO IP=2,NYDECOMP
           NSTART1D(IP)=NSTART1D(IP-1)+NPTS
-          IF(NREST.GT.0) THEN
+          IF (NREST.GT.0) THEN
             NPTS=NMEAN+1
             NREST=NREST-1 
           ELSE
@@ -605,7 +605,7 @@
 
         DO IP=NYCUT+1,NYDECOMP
           NSTART1D(IP)=NSTART1D(IP-1)+NPTS
-          IF(NREST.GT.0) THEN
+          IF (NREST.GT.0) THEN
             NPTS=NMEAN+1
             NREST=NREST-1 
           ELSE
@@ -618,7 +618,7 @@
 
 !     SECOND 1-D DECOMPOSITION IN EACH LATITUDINAL BAND
 
-      IF(LL1D.OR.NPR.EQ.1) THEN
+      IF (LL1D.OR.NPR.EQ.1) THEN
 !       not needed
         DO IP=1,NYDECOMP
           NSTART(IP)=NSTART1D(IP)
@@ -628,16 +628,16 @@
 
         ALLOCATE(NEWIJ2IJ(0:NIBLO))
 
-        IF(ALLOCATED(IJ2NEWIJ)) DEALLOCATE(IJ2NEWIJ)
+        IF (ALLOCATED(IJ2NEWIJ)) DEALLOCATE(IJ2NEWIJ)
         ALLOCATE(IJ2NEWIJ(0:NIBLO))
         NEWIJ2IJ(0)=0
         IJ2NEWIJ(0)=0
 
-        XDELLOINV=1.0/XDELLO
+        XDELLOINV=1.0_JWRB/XDELLO
 
 
-        STAGGER=0.5*(AMOEAP-AMOWEP+IPER*XDELLO)/NXDECOMP
-        STAGGER=FLOAT(NINT(100*STAGGER))/100.
+        STAGGER=0.5_JWRB*(AMOEAP-AMOWEP+IPER*XDELLO)/NXDECOMP
+        STAGGER=FLOAT(NINT(100*STAGGER))/100.0_JWRB
         ISTAGGER=NINT(STAGGER*XDELLOINV)
 
         IG=1
@@ -649,7 +649,7 @@
           NTOT=NEND1D(IPR)-NSTART1D(IPR)+1
 
 !         find number of points per subarea
-          IF(IPR.LE.NYCUT) THEN
+          IF (IPR.LE.NYCUT) THEN
             NAREA=NXDECOMP
           ELSE
             NAREA=NXDECOMP-1
@@ -659,7 +659,7 @@
           NMEAN=NTOT/NAREA
           NREST=NTOT-NMEAN*NAREA
           DO IAR=1,NAREA
-            IF(NREST.GT.0) THEN
+            IF (NREST.GT.0) THEN
               NTOTSUB(IAR)=NMEAN+1
               NREST=NREST-1
             ELSE
@@ -684,7 +684,7 @@
           KXLAT=KLATBOT
           KSTART1(KXLAT) = NSTART1D(IPR)
           DO IJ=NSTART1D(IPR)+1,NEND1D(IPR)
-            IF(KXLAT.LT.KXLT(IJ,IG)) THEN
+            IF (KXLAT.LT.KXLT(IJ,IG)) THEN
               KXLAT = KXLT(IJ,IG)
               KSTART1(KXLAT) = IJ 
               KEND1(KXLAT-1) = IJ-1
@@ -705,14 +705,14 @@
           ENDDO
           KXLAT=KLATBOT
           DO IJ=NSTART1D(IPR),NEND1D(IPR)
-            IF(KXLAT.LT.KXLT(IJ,IG)) THEN
+            IF (KXLAT.LT.KXLT(IJ,IG)) THEN
               KXLAT = KXLT(IJ,IG)
             ENDIF
             NLON(KXLAT)=NLON(KXLAT)+1
             IX = IXLG(IJ,IG)
             JSN= KXLT(IJ,IG)
             XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
-            XLON=FLOAT(NINT(100*XLON))/100.
+            XLON=FLOAT(NINT(100*XLON))/100.0_JWRB
             IXLON(NLON(KXLAT),KXLAT)=NINT(XLON*XDELLOINV)
             IXLONMAX=MAX(IXLONMAX,IXLON(NLON(KXLAT),KXLAT))
           ENDDO
@@ -729,14 +729,14 @@
             IXLONMIN=IXLONMAX+1
             KMIN=0
             DO KXLAT=KLATBOT,KLATTOP
-              IF(ILON(KXLAT).LE.NLON(KXLAT)) THEN
-                IF(IXLON(ILON(KXLAT),KXLAT).LT.IXLONMIN) THEN
+              IF (ILON(KXLAT).LE.NLON(KXLAT)) THEN
+                IF (IXLON(ILON(KXLAT),KXLAT).LT.IXLONMIN) THEN
                   KMIN=KXLAT
                   IXLONMIN=IXLON(ILON(KXLAT),KXLAT)
                 ENDIF
               ENDIF
             ENDDO
-            IF(KMIN.GT.0) THEN
+            IF (KMIN.GT.0) THEN
               IJ=KSTART1(KMIN)+ILON(KMIN)-1 
               JC=JC+1
               IJNDEX(JC)=IJ
@@ -747,13 +747,13 @@
 !         find which points belong to a subarea
 
           JCS=1
-          IF(MOD(IPR,2).EQ.0) THEN
+          IF (MOD(IPR,2).EQ.0) THEN
 !         staggering
             JCM=1
             DO KXLAT=KLATBOT,KLATTOP
               IIL=1
-              DO WHILE (IXLON(MIN(IIL,NLON(KXLAT)),KXLAT).LT.ISTAGGER
-     &                  .AND.   IIL.LE.NLON(KXLAT)
+              DO WHILE (IXLON(MIN(IIL,NLON(KXLAT)),KXLAT).LT.ISTAGGER   &
+     &                  .AND.   IIL.LE.NLON(KXLAT)                      &
      &                  .AND.   NLON(KXLAT).GT.0 )
                 IIL=IIL+1
                 JCM=JCM+1 
@@ -768,9 +768,9 @@
           DO JC=JCM,NTOT 
             NIJ=NIJ+1
             IC=IC+1 
-            IF(IC.EQ.NTOTSUB(IAR)) THEN
+            IF (IC.EQ.NTOTSUB(IAR)) THEN
               NEND(IPROC)=NIJ
-            ELSEIF(IC.GT.NTOTSUB(IAR)) THEN
+            ELSEIF (IC.GT.NTOTSUB(IAR)) THEN
               IC=1
               IAR=IAR+1
               IPROC=IPROC+1
@@ -784,9 +784,9 @@
           DO JC=JCS,JCM-1
             NIJ=NIJ+1
             IC=IC+1 
-            IF(IC.EQ.NTOTSUB(IAR)) THEN
+            IF (IC.EQ.NTOTSUB(IAR)) THEN
               NEND(IPROC)=NIJ
-            ELSEIF(IC.GT.NTOTSUB(IAR)) THEN
+            ELSEIF (IC.GT.NTOTSUB(IAR)) THEN
               IC=1
               IAR=IAR+1
               IPROC=IPROC+1
@@ -816,7 +816,7 @@
         DO ICL=1,2
           DO IC=1,2
             DO IJ=NSTART(1),NEND(NPR)
-              IF(KLAT(IJ,IC,ICL).GT.0 .AND. KLAT(IJ,IC,ICL).LE.NIBLO)
+              IF (KLAT(IJ,IC,ICL).GT.0 .AND. KLAT(IJ,IC,ICL).LE.NIBLO)  &
      &           KLAT(IJ,IC,ICL) = IJ2NEWIJ(KLAT(IJ,IC,ICL))
             ENDDO
           ENDDO
@@ -824,27 +824,27 @@
 
         DO IC=1,2
           DO IJ=NSTART(1),NEND(NPR)
-            IF(KLON(IJ,IC).GT.0 .AND. KLON(IJ,IC).LE.NIBLO)
+            IF (KLON(IJ,IC).GT.0 .AND. KLON(IJ,IC).LE.NIBLO)            &
      &         KLON(IJ,IC) = IJ2NEWIJ(KLON(IJ,IC))
           ENDDO
         ENDDO
 
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           DO ICL=1,2
             DO IC=1,2
               DO IJ=NSTART(1),NEND(NPR)
-                IF(KRLON(IJ,IC,ICL).GT.0.AND.KRLON(IJ,IC,ICL).LE.NIBLO)
+                IF (KRLON(IJ,IC,ICL).GT.0.AND.KRLON(IJ,IC,ICL).LE.NIBLO) &
      &             KRLON(IJ,IC,ICL) = IJ2NEWIJ(KRLON(IJ,IC,ICL))
-                IF(KRLAT(IJ,IC,ICL).GT.0.AND.KRLAT(IJ,IC,ICL).LE.NIBLO)
+                IF (KRLAT(IJ,IC,ICL).GT.0.AND.KRLAT(IJ,IC,ICL).LE.NIBLO) &
      &             KRLAT(IJ,IC,ICL) = IJ2NEWIJ(KRLAT(IJ,IC,ICL))
               ENDDO
             ENDDO
           ENDDO
-        ELSE IF(IPROPAGS.EQ.2) THEN
+        ELSEIF (IPROPAGS.EQ.2) THEN
           DO ICL=1,2
             DO ICR=1,4
               DO IJ=NSTART(1),NEND(NPR)
-                IF(KCOR(IJ,ICR,ICL).GT.0.AND.KCOR(IJ,ICR,ICL).LE.NIBLO)
+                IF (KCOR(IJ,ICR,ICL).GT.0.AND.KCOR(IJ,ICR,ICL).LE.NIBLO) &
      &             KCOR(IJ,ICR,ICL) = IJ2NEWIJ(KCOR(IJ,ICR,ICL))
               ENDDO
             ENDDO
@@ -872,7 +872,7 @@
         ENDDO
         DEALLOCATE(KDUM)
 
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           ALLOCATE(KDUM(NIBLO))
           DO ICL=1,2
             DO IC=1,2
@@ -891,7 +891,7 @@
             ENDDO
           ENDDO
           DEALLOCATE(KDUM)
-        ELSE IF(IPROPAGS.EQ.2) THEN
+        ELSEIF (IPROPAGS.EQ.2) THEN
           ALLOCATE(KDUM(NIBLO))
           DO ICL=1,2
             DO ICR=1,4
@@ -956,9 +956,9 @@
 
 !     FIND INDEX AND PE OF THE POINTS IN THE HALO
       MAXPERMLEN=2*MAX(MAXLEN,NGX)+12
-      IF(IPROPAGS.EQ.0) THEN
+      IF (IPROPAGS.EQ.0) THEN
         MXPRLEN=6*MAXPERMLEN
-      ELSEIF(IPROPAGS.EQ.1) THEN
+      ELSEIF (IPROPAGS.EQ.1) THEN
         MXPRLEN=8*MAXPERMLEN
       ELSE
         MXPRLEN=12*MAXPERMLEN
@@ -996,12 +996,12 @@
       DO IC=1,2
         DO IJ=NSTART(IP),NEND(IP)
 
-          IF(  KLON(IJ,IC).GT.0 .AND.
-     &         KLON(IJ,IC).LE.NIBLO .AND.
-     &        (KLON(IJ,IC).LT.NSTART(IP).OR.
+          IF (  KLON(IJ,IC).GT.0 .AND.                                  &
+     &         KLON(IJ,IC).LE.NIBLO .AND.                               &
+     &        (KLON(IJ,IC).LT.NSTART(IP).OR.                            &
      &         KLON(IJ,IC).GT.NEND(IP)       ) ) THEN
              IH=IH+1
-             IF(IH.GT.MXPRLEN) THEN
+             IF (IH.GT.MXPRLEN) THEN
                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
                WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                CALL ABORT1
@@ -1016,12 +1016,12 @@
         DO IC=1,2
           DO IJ=NSTART(IP),NEND(IP)
 
-          IF(  KLAT(IJ,IC,ICL).GT.0 .AND.
-     &         KLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &        (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+          IF (  KLAT(IJ,IC,ICL).GT.0 .AND.                              &
+     &         KLAT(IJ,IC,ICL).LE.NIBLO .AND.                           &
+     &        (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.                        &
      &         KLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
              IH=IH+1
-             IF(IH.GT.MXPRLEN) THEN
+             IF (IH.GT.MXPRLEN) THEN
                WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
                WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                CALL ABORT1
@@ -1040,12 +1040,12 @@
           DO ICR=1,4
             DO IJ=NSTART(IP),NEND(IP)
 
-              IF(  KCOR(IJ,ICR,ICL).GT.0 .AND.
-     &             KCOR(IJ,ICR,ICL).LE.NIBLO .AND.
-     &            (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.
+              IF (KCOR(IJ,ICR,ICL).GT.0 .AND.                           &
+     &             KCOR(IJ,ICR,ICL).LE.NIBLO .AND.                      &
+     &            (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.                   &
      &             KCOR(IJ,ICR,ICL).GT.NEND(IP)      ) ) THEN
                  IH=IH+1
-                 IF(IH.GT.MXPRLEN) THEN
+                 IF (IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP : DECOMPOSITION PROBLEM !'
                    WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
@@ -1056,19 +1056,19 @@
             ENDDO ! END DO ON IJ
           ENDDO ! END DO ON IC
         ENDDO ! END DO ON ICL
-      ELSE IF (IPROPAGS.EQ.1) THEN
+      ELSEIF (IPROPAGS.EQ.1) THEN
 !       CONTRIBUTION FROM ROTATED GRID
 !       (NEEDED FOR DUAL ROTATED SCHEME SCHEME: IPROPAGS=1)
         DO ICL=1,2
           DO IC=1,2
             DO IJ=NSTART(IP),NEND(IP)
 
-              IF(  KRLON(IJ,IC,ICL).GT.0 .AND. 
-     &             KRLON(IJ,IC,ICL).LE.NIBLO .AND.
-     &            (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.
+              IF (KRLON(IJ,IC,ICL).GT.0 .AND.                           &
+     &             KRLON(IJ,IC,ICL).LE.NIBLO .AND.                      &
+     &            (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.                   &
      &             KRLON(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN
                  IH=IH+1
-                 IF(IH.GT.MXPRLEN) THEN
+                 IF (IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
                    WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
@@ -1076,12 +1076,12 @@
                  ITEMP(IH)=KRLON(IJ,IC,ICL)
               ENDIF
 
-              IF(  KRLAT(IJ,IC,ICL).GT.0 .AND.
-     &             KRLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &            (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+              IF (KRLAT(IJ,IC,ICL).GT.0 .AND.                           &
+     &             KRLAT(IJ,IC,ICL).LE.NIBLO .AND.                      &
+     &            (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.                   &
      &             KRLAT(IJ,IC,ICL).GT.NEND(IP)       ) ) THEN 
                  IH=IH+1
-                 IF(IH.GT.MXPRLEN) THEN
+                 IF (IH.GT.MXPRLEN) THEN
                    WRITE(IU06,*) 'MPDECOMP: decomposition problem !!'
                    WRITE(IU06,*) 'MXPRLEN TOO SMALL !!!'
                    CALL ABORT1
@@ -1096,19 +1096,19 @@
 
       NH=IH
 
-      IF(NH.GT.1) THEN
+      IF (NH.GT.1) THEN
         CALL SORTINI(ITEMP,INDEX,NH)
         CALL SORTI(ITEMP,INDEX,NH)
       ENDIF
 
       JH=0
-      IF(NH.GT.1) THEN
+      IF (NH.GT.1) THEN
         JH=1
         IJFROMPE(JH,IP)=ITEMP(1)
         DO IH=2,NH
-          IF(ITEMP(IH).GT.ITEMP(IH-1))THEN
+          IF (ITEMP(IH).GT.ITEMP(IH-1))THEN
             JH=JH+1
-            IF(JH.GT.MAXPERMLEN) THEN
+            IF (JH.GT.MAXPERMLEN) THEN
               WRITE(IU06,*) 'MPDECOMP :  decomposition problem !!!'
               WRITE(IU06,*) 'MAXPERMLEN TOO SMALL !!!'
               WRITE(IU06,*) 'IH = ',IH,' JH = ',JH
@@ -1127,7 +1127,7 @@
       ICOUNTS(:)=1
       CALL GSTATS(694,0)
       NTEMP(1)=NLENHALO(IP)
-      CALL MPL_ALLGATHERV(NTEMP,NLENHALO,ICOUNTS,
+      CALL MPL_ALLGATHERV(NTEMP,NLENHALO,ICOUNTS,                       &
      &     CDSTRING='MPDECOMP:')
       CALL GSTATS(694,1)
       NLENHALO_MAX=MAXVAL(NLENHALO(:))
@@ -1136,7 +1136,7 @@
       ICOUNTS(:)=MAXPERMLEN
       ALLOCATE(IJFROMPEX(MAXPERMLEN*NPR))
       CALL GSTATS(694,0)
-      CALL MPL_ALLGATHERV(IJFROMPE(:,IP),IJFROMPEX,ICOUNTS,
+      CALL MPL_ALLGATHERV(IJFROMPE(:,IP),IJFROMPEX,ICOUNTS,             &
      &     CDSTRING='MPDECOMP:')
       CALL GSTATS(694,1)
       DO J=1,NPR
@@ -1184,12 +1184,12 @@
         KLENTOP(IP)=0
         DO IH=1,NLENHALO(IP)
           DO IPROC=1,NPR
-            IF( IJFROMPE(IH,IP).GE.NSTART(IPROC) .AND.
+            IF (IJFROMPE(IH,IP).GE.NSTART(IPROC) .AND.                  &
      &          IJFROMPE(IH,IP).LE. NEND(IPROC) ) THEN
               IPROCFROM(IH,IP)=IPROC
-              IF(IPROC.LT.IP) THEN
+              IF (IPROC.LT.IP) THEN
                 KLENBOT(IP)=KLENBOT(IP)+1
-              ELSEIF(IPROC.GT.IP) THEN
+              ELSEIF (IPROC.GT.IP) THEN
                 KLENTOP(IP)=KLENTOP(IP)+1
               ENDIF
               EXIT
@@ -1207,10 +1207,10 @@
       DO IP=1,NPR
         NTOPE(IP)=0
       ENDDO
-      IF(LMESSPASS .OR. LLIRANK) THEN
+      IF (LMESSPASS .OR. LLIRANK) THEN
         DO IP=1,NPR
           DO IH=1,NLENHALO(IP)
-            IF(IPROCFROM(IH,IP).EQ.IRANK) THEN
+            IF (IPROCFROM(IH,IP).EQ.IRANK) THEN
               NTOPE(IP)=NTOPE(IP)+1
             ENDIF
           ENDDO
@@ -1228,7 +1228,7 @@
       DO IP=1,NPR
         NFROMPE(IP)=0
       ENDDO
-      IF(LMESSPASS .OR. LLIRANK) THEN
+      IF (LMESSPASS .OR. LLIRANK) THEN
         DO IH=1,NLENHALO(IRANK)
           NFROMPE(IPROCFROM(IH,IRANK))=NFROMPE(IPROCFROM(IH,IRANK))+1
         ENDDO
@@ -1245,14 +1245,14 @@
 
       NGBTOPE=0
       DO IP=1,NPR
-        IF(NTOPE(IP).GT.0) NGBTOPE=NGBTOPE+1
+        IF (NTOPE(IP).GT.0) NGBTOPE=NGBTOPE+1
       ENDDO
 
       IF (ALLOCATED(NTOPELST)) DEALLOCATE(NTOPELST)
       ALLOCATE(NTOPELST(NGBTOPE))
       INBNGH=0
       DO IP=1,NPR
-        IF(NTOPE(IP).GT.0) THEN 
+        IF (NTOPE(IP).GT.0) THEN 
           INBNGH=INBNGH+1
           NTOPELST(INBNGH)=IP
         ENDIF
@@ -1262,14 +1262,14 @@
 
       NGBFROMPE=0 
       DO IP=1,NPR
-        IF(NFROMPE(IP).GT.0) NGBFROMPE=NGBFROMPE+1
+        IF (NFROMPE(IP).GT.0) NGBFROMPE=NGBFROMPE+1
       ENDDO
 
       IF (ALLOCATED(NFROMPELST)) DEALLOCATE(NFROMPELST)
       ALLOCATE(NFROMPELST(MAX(1,NGBFROMPE)))
       INBNGH=0
       DO IP=1,NPR
-        IF(NFROMPE(IP).GT.0) THEN 
+        IF (NFROMPE(IP).GT.0) THEN 
           INBNGH=INBNGH+1
           NFROMPELST(INBNGH)=IP
         ENDIF
@@ -1277,7 +1277,7 @@
 
 
 !     DETERMINE WHICH IJ's NEED TO BE SEND TO THE OTHER PE'S
-      IF(LMESSPASS .OR. LLIRANK) THEN
+      IF (LMESSPASS .OR. LLIRANK) THEN
         IF (ALLOCATED(IJTOPE)) DEALLOCATE(IJTOPE)
         ALLOCATE(IJTOPE(NTOPEMAX,NPR))
         DO IP=1,NPR
@@ -1288,7 +1288,7 @@
         DO IP=1,NPR
           JH=0
           DO IH=1,NLENHALO(IP)
-            IF(IPROCFROM(IH,IP).EQ.IRANK) THEN
+            IF (IPROCFROM(IH,IP).EQ.IRANK) THEN
               JH=JH+1
               IJTOPE(JH,IP)=IJFROMPE(IH,IP)
             ENDIF
@@ -1299,9 +1299,9 @@
       ALLOCATE(IJHALO(MAX(1,NLENHALO(IRANK))))
 
       DO IH=1,NLENHALO(IRANK)
-        IF(IPROCFROM(IH,IRANK).LT.IRANK) THEN
+        IF (IPROCFROM(IH,IRANK).LT.IRANK) THEN
           IJHALO(IH)=NINF+IH-1
-        ELSEIF(IPROCFROM(IH,IRANK).GT.IRANK) THEN
+        ELSEIF (IPROCFROM(IH,IRANK).GT.IRANK) THEN
           IJHALO(IH)=NEND(IRANK)+IH-KLENBOT(IRANK)
         ENDIF
       ENDDO
@@ -1311,12 +1311,12 @@
 !     KRLON DEPTH FOR POINTS IN THE HALO
 !     NOTE THAT THIS IMPLIES THAT THESE ARRAYS ARE LOCAL BECAUSE THEY
 !     ARE DIFFERENT IN THE HALO REGIONS
-      IF((LMESSPASS.AND.NPR.GT.1).OR. LLIRANK) THEN
+      IF ((LMESSPASS.AND.NPR.GT.1).OR. LLIRANK) THEN
 
         DO IC=1,2
           DO IJ=NSTART(IRANK),NEND(IRANK)
             DO IH=1,NLENHALO(IRANK)
-              IF(KLON(IJ,IC).EQ.IJFROMPE(IH,IRANK)) THEN
+              IF (KLON(IJ,IC).EQ.IJFROMPE(IH,IRANK)) THEN
                 KLON(IJ,IC)=IJHALO(IH)
                 EXIT
               ENDIF
@@ -1328,7 +1328,7 @@
           DO IC=1,2
             DO IJ=NSTART(IRANK),NEND(IRANK)
               DO IH=1,NLENHALO(IRANK)
-                IF(KLAT(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
+                IF (KLAT(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
                   KLAT(IJ,IC,ICL)=IJHALO(IH)
                   EXIT
                 ENDIF
@@ -1337,13 +1337,13 @@
           ENDDO
         ENDDO
 
-        IF(IPROPAGS.EQ.2) THEN
+        IF (IPROPAGS.EQ.2) THEN
 !       (NEEDED FOR CTU SCHEME: IPROPAGS=2)
           DO ICL=1,2
             DO ICR=1,4
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 DO IH=1,NLENHALO(IRANK)
-                  IF(KCOR(IJ,ICR,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
+                  IF (KCOR(IJ,ICR,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
                     KCOR(IJ,ICR,ICL)=IJHALO(IH)
                     EXIT
                   ENDIF
@@ -1351,19 +1351,19 @@
               ENDDO
             ENDDO
           ENDDO
-        ELSE IF(IPROPAGS.EQ.1) THEN
+        ELSEIF (IPROPAGS.EQ.1) THEN
 !       (NEEDED FOR DUAL ROTATED SCHEME SCHEME: IPROPAGS=1)
           DO ICL=1,2
             DO IC=1,2
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 DO IH=1,NLENHALO(IRANK)
-                  IF(KRLON(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
+                  IF (KRLON(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
                     KRLON(IJ,IC,ICL)=IJHALO(IH)
                     EXIT
                   ENDIF
                 ENDDO
                 DO IH=1,NLENHALO(IRANK)
-                  IF(KRLAT(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
+                  IF (KRLAT(IJ,IC,ICL).EQ.IJFROMPE(IH,IRANK)) THEN
                     KRLAT(IJ,IC,ICL)=IJHALO(IH)
                     EXIT
                   ENDIF
@@ -1393,18 +1393,18 @@
       DO IP=1,NPR
         NIJSTART(IP)=NINF-1
       ENDDO
-      IF((LMESSPASS.AND.NPR.GT.1) .OR. LLIRANK) THEN
-        IF(IPROCFROM(1,IRANK).LT.IRANK) THEN
+      IF ((LMESSPASS.AND.NPR.GT.1) .OR. LLIRANK) THEN
+        IF (IPROCFROM(1,IRANK).LT.IRANK) THEN
           NIJSTART(IPROCFROM(1,IRANK))=NINF
-        ELSEIF(IPROCFROM(1,IRANK).GT.IRANK) THEN
+        ELSEIF (IPROCFROM(1,IRANK).GT.IRANK) THEN
           NIJSTART(IPROCFROM(1,IRANK))=NEND(IRANK)+1
         ENDIF
         DO IH=2,NLENHALO(IRANK)
-          IF(IPROCFROM(IH,IRANK).NE.IPROCFROM(IH-1,IRANK))THEN
-            IF(IPROCFROM(IH,IRANK).LT.IRANK) THEN
+          IF (IPROCFROM(IH,IRANK).NE.IPROCFROM(IH-1,IRANK)) THEN
+            IF (IPROCFROM(IH,IRANK).LT.IRANK) THEN
               NIJSTART(IPROCFROM(IH,IRANK))=NINF+IH-1
-            ELSEIF(IPROCFROM(IH,IRANK).GT.IRANK) THEN
-              NIJSTART(IPROCFROM(IH,IRANK))=
+            ELSEIF (IPROCFROM(IH,IRANK).GT.IRANK) THEN
+              NIJSTART(IPROCFROM(IH,IRANK))=                            &
      &                NEND(IRANK)+IH-KLENBOT(IRANK)
             ENDIF
           ENDIF
@@ -1420,7 +1420,7 @@
       IF (ALLOCATED(COSPHM1)) DEALLOCATE(COSPHM1)
       ALLOCATE(COSPHM1(NINF-1:NSUP,IGL))
 
-      IF(IPROPAGS.EQ.1) THEN
+      IF (IPROPAGS.EQ.1) THEN
         IF (ALLOCATED(CDR)) DEALLOCATE(CDR)
         ALLOCATE(CDR(NINF-1:NSUP,NANG,IGL))
         IF (ALLOCATED(SDR)) DEALLOCATE(SDR)
@@ -1430,39 +1430,39 @@
         ALLOCATE(PRQRT(NSTART(IRANK):NEND(IRANK),IGL))
       ENDIF
 
-      SQRT2O2=SIN(0.25*PI)
+      SQRT2O2=SIN(0.25_JWRB*PI)
 
       DO IG=1,IGL
-        DELLAM1(NINF-1,IG) = 0.
-        IF((LMESSPASS.AND.NPR.GT.1)) THEN
+        DELLAM1(NINF-1,IG) = 0.0_JWRB
+        IF ((LMESSPASS.AND.NPR.GT.1)) THEN
           DO IJ=NSTART(IRANK),NEND(IRANK)
             JH = KXLT(IJ,IG)
-            DELLAM1(IJ,IG)=1./DELLAM(JH)
-            COSPHM1(IJ,IG)=1./COSPH(JH)
+            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
+            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
           ENDDO 
           DO IH=1,NLENHALO(IRANK)
             IJ=IJFROMPE(IH,IRANK)
             JH = KXLT(IJ,IG)
             IJ=IJHALO(IH)
-            DELLAM1(IJ,IG)=1./DELLAM(JH)
-            COSPHM1(IJ,IG)=1./COSPH(JH)
+            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
+            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
           ENDDO
         ELSE
           DO IJ=NINF,NSUP
             JH = KXLT(IJ,IG)
-            DELLAM1(IJ,IG)=1./DELLAM(JH)
-            COSPHM1(IJ,IG)=1./COSPH(JH)
+            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
+            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
           ENDDO 
         ENDIF
       ENDDO
 
-      IF(IPROPAGS.EQ.1) THEN
+      IF (IPROPAGS.EQ.1) THEN
         DO IG=1,IGL
           DO K=1,NANG
-            CDR(NINF-1,K,IG) = 0.
-            SDR(NINF-1,K,IG) = 0.
+            CDR(NINF-1,K,IG) = 0.0_JWRB
+            SDR(NINF-1,K,IG) = 0.0_JWRB
           ENDDO
-          IF((LMESSPASS.AND.NPR.GT.1)) THEN
+          IF ((LMESSPASS.AND.NPR.GT.1)) THEN
             DO IJ=NSTART(IRANK),NEND(IRANK)
               JH = KXLT(IJ,IG)
               DO K=1,NANG
@@ -1472,17 +1472,17 @@
                 SDR(IJ,K,IG)=A+B
               ENDDO
             ENDDO 
-            IF(IRGG.EQ.1) THEN
+            IF (IRGG.EQ.1) THEN
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 JH = KXLT(IJ,IG)
-                THETAMAX=ATAN2(1.,COSPH(JH))
+                THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
                 SINTHMAX=SIN(THETAMAX)
-                DELTA=COSPH(JH)/(SINTHMAX*(1.+COSPH(JH)**2))
-                PRQRT(IJ,IG)=MIN(0.5,DELTA)
+                DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
+                PRQRT(IJ,IG)=MIN(0.5_JWRB,DELTA)
               ENDDO
             ELSE
               DO IJ=NSTART(IRANK),NEND(IRANK)
-                PRQRT(IJ,IG)=0.5
+                PRQRT(IJ,IG)=0.5_JWRB
               ENDDO
             ENDIF
             DO IH=1,NLENHALO(IRANK)
@@ -1506,17 +1506,17 @@
                 SDR(IJ,K,IG)=A+B
               ENDDO
             ENDDO 
-            IF(IRGG.EQ.1) THEN
+            IF (IRGG.EQ.1) THEN
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 JH = KXLT(IJ,IG)
-                THETAMAX=ATAN2(1.,COSPH(JH))
+                THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
                 SINTHMAX=SIN(THETAMAX)
-                DELTA=COSPH(JH)/(SINTHMAX*(1.+COSPH(JH)**2))
-                PRQRT(IJ,IG)=MIN(0.5,DELTA)
+                DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
+                PRQRT(IJ,IG)=MIN(0.5_JWRB,DELTA)
               ENDDO
             ELSE
               DO IJ=NSTART(IRANK),NEND(IRANK)
-                PRQRT(IJ,IG)=0.5
+                PRQRT(IJ,IG)=0.5_JWRB
               ENDDO
             ENDIF
           ENDIF
@@ -1526,9 +1526,9 @@
 !     CREATE IFROMIJ, JFROMIJ
 !     !!!! IT IS ONLY DEFINED FOR GRID POINTS ON A GIVEN PE AND THEIR HALO !!!!
 
-      IF(ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
+      IF (ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
       ALLOCATE(IFROMIJ(NINF-1:NSUP,IGL))
-      IF(ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
+      IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
       ALLOCATE(JFROMIJ(NINF-1:NSUP,IGL))
 
       IFROMIJ(NINF-1,:)=0
@@ -1536,7 +1536,7 @@
 
       IG=1
 
-      IF((LMESSPASS.AND.NPR.GT.1)) THEN
+      IF ((LMESSPASS.AND.NPR.GT.1)) THEN
 !       LOCAL POINTS
         DO IJ=NSTART(IRANK),NEND(IRANK)
           IFROMIJ(IJ,IG)=IXLG(IJ,IG)
@@ -1574,9 +1574,9 @@
 
         DO IC=1,2
           DO IJ=NSTART(IP),NEND(IP)
-           IF(  KLON(IJ,IC).GT.0 .AND.
-     &          KLON(IJ,IC).LE.NIBLO .AND.
-     &         (KLON(IJ,IC).LT.NSTART(IP).OR.
+           IF (KLON(IJ,IC).GT.0 .AND.                                   &
+     &          KLON(IJ,IC).LE.NIBLO .AND.                              &
+     &         (KLON(IJ,IC).LT.NSTART(IP).OR.                           &
      &          KLON(IJ,IC).GT.NEND(IP) ) ) LLBOUND(IJ)=.TRUE.
           ENDDO
         ENDDO
@@ -1584,36 +1584,36 @@
         DO ICL=1,2
           DO IC=1,2
             DO IJ=NSTART(IP),NEND(IP)
-             IF(  KLAT(IJ,IC,ICL).GT.0 .AND.
-     &            KLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &           (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+             IF (KLAT(IJ,IC,ICL).GT.0 .AND.                             &
+     &            KLAT(IJ,IC,ICL).LE.NIBLO .AND.                        &
+     &           (KLAT(IJ,IC,ICL).LT.NSTART(IP).OR.                     &
      &            KLAT(IJ,IC,ICL).GT.NEND(IP) ) ) LLBOUND(IJ)=.TRUE.
             ENDDO
           ENDDO
         ENDDO
 
-        IF(IPROPAGS.EQ.2) THEN
+        IF (IPROPAGS.EQ.2) THEN
           DO ICL=1,2
             DO ICR=1,4
               DO IJ=NSTART(IP),NEND(IP)
-               IF(  KCOR(IJ,ICR,ICL).GT.0 .AND.
-     &              KCOR(IJ,ICR,ICL).LE.NIBLO .AND.
-     &             (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.
+               IF (KCOR(IJ,ICR,ICL).GT.0 .AND.                          &
+     &              KCOR(IJ,ICR,ICL).LE.NIBLO .AND.                     &
+     &             (KCOR(IJ,ICR,ICL).LT.NSTART(IP).OR.                  &
      &              KCOR(IJ,ICR,ICL).GT.NEND(IP) ) ) LLBOUND(IJ)=.TRUE.
               ENDDO
             ENDDO
           ENDDO
-        ELSE IF(IPROPAGS.EQ.1) THEN
+        ELSEIF (IPROPAGS.EQ.1) THEN
           DO ICL=1,2
             DO IC=1,2
               DO IJ=NSTART(IP),NEND(IP)
-               IF(  KRLON(IJ,IC,ICL).GT.0 .AND.
-     &              KRLON(IJ,IC,ICL).LE.NIBLO .AND.
-     &             (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.
+               IF (KRLON(IJ,IC,ICL).GT.0 .AND.                          &
+     &              KRLON(IJ,IC,ICL).LE.NIBLO .AND.                     &
+     &             (KRLON(IJ,IC,ICL).LT.NSTART(IP).OR.                  &
      &              KRLON(IJ,IC,ICL).GT.NEND(IP)) ) LLBOUND(IJ)=.TRUE.
-               IF(  KRLAT(IJ,IC,ICL).GT.0 .AND.
-     &              KRLAT(IJ,IC,ICL).LE.NIBLO .AND.
-     &             (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.
+               IF (KRLAT(IJ,IC,ICL).GT.0 .AND.                          &
+     &              KRLAT(IJ,IC,ICL).LE.NIBLO .AND.                     &
+     &             (KRLAT(IJ,IC,ICL).LT.NSTART(IP).OR.                  &
      &              KRLAT(IJ,IC,ICL).GT.NEND(IP)) ) LLBOUND(IJ)=.TRUE.
               ENDDO
             ENDDO
@@ -1627,7 +1627,7 @@
 !        ----------------------------------------------------------
 
 
-      IF(LMESSPASS.AND.NPR.GT.1) THEN
+      IF (LMESSPASS.AND.NPR.GT.1) THEN
 
         ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),2,2))
 
@@ -1669,7 +1669,7 @@
 
         DEALLOCATE(KDUM2)
 
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),2,2))
 
           DO ICL=1,2
@@ -1711,7 +1711,7 @@
           ENDDO
 
           DEALLOCATE(KDUM3)
-        ELSE IF(IPROPAGS.EQ.2) THEN
+        ELSEIF (IPROPAGS.EQ.2) THEN
           ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),4,2))
           DO ICL=1,2
             DO ICR=1,4
@@ -1757,35 +1757,35 @@
 !        ---------------------------------------------------------
 
 
-      IF(.NOT.LMESSPASS) NSUP=NIBLO
+      IF (.NOT.LMESSPASS) NSUP=NIBLO
 
-      IF(LMESSPASS) THEN
+      IF (LMESSPASS) THEN
         DO ICL=1,2
           DO IC=1,2
             DO IJ = NSTART(IRANK),NEND(IRANK)
-              IF(KLAT(IJ,IC,ICL).EQ.0) KLAT(IJ,IC,ICL) = NINF-1
+              IF (KLAT(IJ,IC,ICL).EQ.0) KLAT(IJ,IC,ICL) = NINF-1
             ENDDO
           ENDDO
         ENDDO
         DO IC=1,2
           DO IJ = NSTART(IRANK),NEND(IRANK)
-            IF(KLON(IJ,IC).EQ.0) KLON(IJ,IC) = NINF-1
+            IF (KLON(IJ,IC).EQ.0) KLON(IJ,IC) = NINF-1
           ENDDO
         ENDDO
-        IF(IPROPAGS.EQ.2) THEN
+        IF (IPROPAGS.EQ.2) THEN
           DO ICL=1,2
             DO ICR=1,4
               DO IJ = NSTART(IRANK),NEND(IRANK)
-                IF(KCOR(IJ,ICR,ICL).EQ.0) KCOR(IJ,ICR,ICL) = NINF-1
+                IF (KCOR(IJ,ICR,ICL).EQ.0) KCOR(IJ,ICR,ICL) = NINF-1
               ENDDO
             ENDDO
           ENDDO
-        ELSE IF(IPROPAGS.EQ.1) THEN
+        ELSEIF (IPROPAGS.EQ.1) THEN
           DO ICL=1,2
             DO IC=1,2
               DO IJ = NSTART(IRANK),NEND(IRANK)
-                IF(KRLAT(IJ,IC,ICL).EQ.0) KRLAT(IJ,IC,ICL) = NINF-1
-                IF(KRLON(IJ,IC,ICL).EQ.0) KRLON(IJ,IC,ICL) = NINF-1
+                IF (KRLAT(IJ,IC,ICL).EQ.0) KRLAT(IJ,IC,ICL) = NINF-1
+                IF (KRLON(IJ,IC,ICL).EQ.0) KRLON(IJ,IC,ICL) = NINF-1
               ENDDO
             ENDDO
           ENDDO
@@ -1804,18 +1804,18 @@
 
       ALLOCATE(ISENDREQ(MAX(1,NPR-1)))
 
-      IF(LMESSPASS) THEN
+      IF (LMESSPASS) THEN
 
 !       READ SECOND PART OF IU08 ON PE IREAD
 
-        IF(IRANK.EQ.IREAD) THEN
+        IF (IRANK.EQ.IREAD) THEN
 !         THEIR SIZE IS READJUSTED (SEE BELOW)
           ALLOCATE(WLAT(NIBLO,2))
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
             ALLOCATE(WRLAT(NIBLO,2))
             ALLOCATE(WRLON(NIBLO,2))
           ENDIF
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             ALLOCATE(WCOR(NIBLO,4))
           ENDIF
           CALL GSTATS(1771,0)
@@ -1827,7 +1827,7 @@
           ELSE
              READ (IU08(IPROPAGS)) WLAT
           ENDIF
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
             IF (LLR8TOR4) THEN
                ALLOCATE(R8_WRLAT(NIBLO,2),R8_WRLON(NIBLO,2))
                READ (IU08(IPROPAGS)) R8_WRLAT
@@ -1840,7 +1840,7 @@
                READ (IU08(IPROPAGS)) WRLON
             ENDIF
           ENDIF
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             IF (LLR8TOR4) THEN
                ALLOCATE(R8_WCOR(NIBLO,4))
                READ (IU08(IPROPAGS)) R8_WCOR
@@ -1853,7 +1853,7 @@
           CALL GSTATS(1771,1)
 
 !         RELABELLING OF THE ARRAYS
-          IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+          IF (.NOT.LL1D.AND.NPR.GT.1) THEN
 
             ALLOCATE(RDUM(NIBLO))
             DO IC=1,2
@@ -1866,7 +1866,7 @@
             ENDDO
             DEALLOCATE(RDUM)
 
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               ALLOCATE(RDUM(NIBLO))
               DO ICR=1,4
                 DO NIJ=NSTART(1),NEND(NPR)
@@ -1879,7 +1879,7 @@
               DEALLOCATE(RDUM)
             ENDIF
 
-            IF(IPROPAGS.EQ.1) THEN
+            IF (IPROPAGS.EQ.1) THEN
               ALLOCATE(RDUM(NIBLO))
               DO IC=1,2
                 DO NIJ=NSTART(1),NEND(NPR)
@@ -1906,11 +1906,11 @@
 
 !       SEND WLAT WRLAT WRLON TO OTHER PE'S
 
-        IF(NPR.GT.1) THEN
+        IF (NPR.GT.1) THEN
           ITAG=KTAG+1
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             MPLENGTH=6*MAXLEN
-          ELSEIF(IPROPAGS.EQ.1) THEN
+          ELSEIF (IPROPAGS.EQ.1) THEN
             MPLENGTH=6*MAXLEN
           ELSE
             MPLENGTH=2*MAXLEN
@@ -1919,7 +1919,7 @@
           ALLOCATE(RCOMBUF_S(MPLENGTH*NPR))
           ALLOCATE(RCOMBUF_R(MPLENGTH))
 
-          IF(IRANK.EQ.IREAD) THEN
+          IF (IRANK.EQ.IREAD) THEN
 !           SEND TO OTHER PE'S
 
 !           FILL THE SEND BUFFER
@@ -1932,14 +1932,14 @@
                 ENDDO
               ENDDO
 
-              IF(IPROPAGS.EQ.2) THEN
+              IF (IPROPAGS.EQ.2) THEN
                 DO ICR=1,4
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
                     RCOMBUF_S(KCOUNT)=WCOR(IJ,ICR)
                   ENDDO
                 ENDDO
-              ELSE IF(IPROPAGS.EQ.1) THEN
+              ELSEIF (IPROPAGS.EQ.1) THEN
                 DO IC=1,2
                   DO IJ=NSTART(IP),NEND(IP)
                     KCOUNT=KCOUNT+1
@@ -1956,35 +1956,35 @@
             ENDDO
 
             DEALLOCATE(WLAT)
-            IF(IPROPAGS.EQ.1) THEN
+            IF (IPROPAGS.EQ.1) THEN
               DEALLOCATE(WRLAT)
               DEALLOCATE(WRLON)
             ENDIF
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               DEALLOCATE(WCOR)
             ENDIF
 
           ENDIF
 
-          IF(NPR.GT.1) THEN
+          IF (NPR.GT.1) THEN
             CALL GSTATS(694,0)
             ICOUNTS(:)=MPLENGTH
-            CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S,
-     &       KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
+            CALL MPL_SCATTERV(RCOMBUF_R,KROOT=IREAD,PSENDBUF=RCOMBUF_S, &
+     &        KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP:')
             CALL GSTATS(694,1)
           ENDIF
 
 
 !         KEEP THE RELEVANT PART OF WLAT
           ALLOCATE(WLAT(NSTART(IRANK):NEND(IRANK),2))
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             ALLOCATE(WCOR(NSTART(IRANK):NEND(IRANK),4))
-          ELSE IF(IPROPAGS.EQ.1) THEN
+          ELSEIF (IPROPAGS.EQ.1) THEN
             ALLOCATE(WRLAT(NSTART(IRANK):NEND(IRANK),2))
             ALLOCATE(WRLON(NSTART(IRANK):NEND(IRANK),2))
           ENDIF
 
-          IF(IRANK.EQ.IREAD) THEN
+          IF (IRANK.EQ.IREAD) THEN
             KCOUNT=(IRANK-1)*MPLENGTH
             DO IC=1,2
               DO IJ=NSTART(IRANK),NEND(IRANK)
@@ -1993,14 +1993,14 @@
               ENDDO
             ENDDO
 
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               DO ICR=1,4
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
                   WCOR(IJ,ICR)=RCOMBUF_S(KCOUNT)
                 ENDDO
               ENDDO
-            ELSE IF(IPROPAGS.EQ.1) THEN
+            ELSEIF (IPROPAGS.EQ.1) THEN
               DO IC=1,2
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
@@ -2023,14 +2023,14 @@
                 WLAT(IJ,IC)=RCOMBUF_R(KCOUNT)
               ENDDO
             ENDDO
-            IF(IPROPAGS.EQ.2) THEN
+            IF (IPROPAGS.EQ.2) THEN
               DO ICR=1,4
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
                   WCOR(IJ,ICR)=RCOMBUF_R(KCOUNT)
                 ENDDO
               ENDDO
-            ELSE IF(IPROPAGS.EQ.1) THEN
+            ELSEIF (IPROPAGS.EQ.1) THEN
               DO IC=1,2
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
@@ -2046,8 +2046,8 @@
             ENDIF
           ENDIF
 
-          IF(ALLOCATED(RCOMBUF_S)) DEALLOCATE(RCOMBUF_S)
-          IF(ALLOCATED(RCOMBUF_R)) DEALLOCATE(RCOMBUF_R)
+          IF (ALLOCATED(RCOMBUF_S)) DEALLOCATE(RCOMBUF_S)
+          IF (ALLOCATED(RCOMBUF_R)) DEALLOCATE(RCOMBUF_R)
 
         ENDIF
 
@@ -2055,7 +2055,7 @@
 !       READ THE REST OF IU08
 !       =====================
 
-        IF(.NOT.LL1D.AND.NPR.GT.1) ALLOCATE(KDUM(NIBLO))
+        IF (.NOT.LL1D.AND.NPR.GT.1) ALLOCATE(KDUM(NIBLO))
 
         MPLENGTH=MAXLEN
         ALLOCATE(ICOMBUF_S(MPLENGTH*NPR))
@@ -2065,11 +2065,11 @@
 
         ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
         ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
           ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
         ENDIF
-        IF(IPROPAGS.EQ.2) THEN
+        IF (IPROPAGS.EQ.2) THEN
           ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
         ENDIF
 
@@ -2079,14 +2079,14 @@
 !       ---------------
           DO IC=1,2
             ITAG=ITAG+1
-            IF(IRANK.EQ.IREAD) THEN
+            IF (IRANK.EQ.IREAD) THEN
 
               CALL GSTATS(1771,0)
               READ (IU08(IPROPAGS)) IDUM 
               CALL GSTATS(1771,1)
 
 !             RELABELLING OF THE ARRAY
-              IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+              IF (.NOT.LL1D.AND.NPR.GT.1) THEN
                 DO NIJ=NSTART(1),NEND(NPR)
                   KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                 ENDDO
@@ -2105,17 +2105,17 @@
               ENDDO
             ENDIF
 
-            IF(NPR.GT.1) THEN
+            IF (NPR.GT.1) THEN
               CALL GSTATS(694,0)
               ICOUNTS(:)=MPLENGTH
-              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
-     &          KSENDBUF=ICOMBUF_S,
+              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                  &
+     &          KSENDBUF=ICOMBUF_S,                                     &
      &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 1:')
               CALL GSTATS(694,1)
             ENDIF
 
 !           KEEP THE RELEVANT PART OF KOBSLAT
-            IF(IRANK.EQ.IREAD) THEN
+            IF (IRANK.EQ.IREAD) THEN
               KCOUNT=(IRANK-1)*MPLENGTH
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 KCOUNT=KCOUNT+1
@@ -2137,13 +2137,13 @@
           DO IC=1,2
 
             ITAG=ITAG+1
-            IF(IRANK.EQ.IREAD) THEN
+            IF (IRANK.EQ.IREAD) THEN
               CALL GSTATS(1771,0)
               READ (IU08(IPROPAGS)) IDUM 
               CALL GSTATS(1771,1)
 
 !             RELABELLING OF THE ARRAY
-              IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+              IF (.NOT.LL1D.AND.NPR.GT.1) THEN
                 DO NIJ=NSTART(1),NEND(NPR)
                    KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                 ENDDO
@@ -2161,17 +2161,17 @@
               ENDDO
             ENDIF
 
-            IF(NPR.GT.1) THEN
+            IF (NPR.GT.1) THEN
               CALL GSTATS(694,0)
               ICOUNTS(:)=MPLENGTH
-              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
-     &          KSENDBUF=ICOMBUF_S,
+              CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                  &
+     &          KSENDBUF=ICOMBUF_S,                                     &
      &          KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 2:')
               CALL GSTATS(694,1)
             ENDIF
 
 !           KEEP THE RELEVANT PART OF KOBSLON
-            IF(IRANK.EQ.IREAD) THEN
+            IF (IRANK.EQ.IREAD) THEN
               KCOUNT=(IRANK-1)*MPLENGTH
               DO IJ=NSTART(IRANK),NEND(IRANK)
                 KCOUNT=KCOUNT+1
@@ -2190,18 +2190,18 @@
 
 !       READING KOBSRLAT
 !       ----------------
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
 
             DO IC=1,2
               ITAG=ITAG+1
 
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 CALL GSTATS(1771,0)
                 READ (IU08(IPROPAGS)) IDUM 
                 CALL GSTATS(1771,1)
 
 !               RELABELLING OF THE ARRAY
-                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+                IF (.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
                     KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
@@ -2220,17 +2220,17 @@
                 ENDDO
               ENDIF
 
-              IF(NPR.GT.1) THEN
+              IF (NPR.GT.1) THEN
                 CALL GSTATS(694,0)
                 ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
-     &           KSENDBUF=ICOMBUF_S,
-     &           KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 3:')
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
+     &            KSENDBUF=ICOMBUF_S,                                   &
+     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 3:')
                 CALL GSTATS(694,1)
               ENDIF
 
 !             KEEP THE RELEVANT PART OF KOBSRLAT
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 KCOUNT=(IRANK-1)*MPLENGTH
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
@@ -2249,18 +2249,18 @@
 
 !       READING KOBSRLON
 !       ----------------
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
 
             DO IC=1,2
               ITAG=ITAG+1
 
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 CALL GSTATS(1771,0)
                 READ (IU08(IPROPAGS)) IDUM 
                 CALL GSTATS(1771,1)
 
 !               RELABELLING OF THE ARRAY
-                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+                IF (.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
                      KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
@@ -2279,17 +2279,17 @@
                 ENDDO
               ENDIF
 
-              IF(NPR.GT.1) THEN
+              IF (NPR.GT.1) THEN
                 CALL GSTATS(694,0)
                 ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
-     &           KSENDBUF=ICOMBUF_S,
-     &           KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 4:')
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
+     &            KSENDBUF=ICOMBUF_S,                                   &
+     &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 4:')
                 CALL GSTATS(694,1)
               ENDIF
 
 !             KEEP THE RELEVANT PART OF KOBSRLON
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 KCOUNT=(IRANK-1)*MPLENGTH
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
@@ -2309,17 +2309,17 @@
 
 !       READING KOBSCOR
 !       ---------------
-          IF(IPROPAGS.EQ.2) THEN
+          IF (IPROPAGS.EQ.2) THEN
             DO IC=1,4
               ITAG=ITAG+1
 
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 CALL GSTATS(1771,0)
                 READ (IU08(IPROPAGS)) IDUM 
                 CALL GSTATS(1771,1)
 
 !               RELABELLING OF THE ARRAY
-                IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+                IF (.NOT.LL1D.AND.NPR.GT.1) THEN
                   DO NIJ=NSTART(1),NEND(NPR)
                    KDUM(NIJ)=IDUM(NEWIJ2IJ(NIJ))
                   ENDDO
@@ -2338,17 +2338,17 @@
                 ENDDO
               ENDIF
 
-              IF(NPR.GT.1) THEN
+              IF (NPR.GT.1) THEN
                 CALL GSTATS(694,0)
                 ICOUNTS(:)=MPLENGTH
-                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,
-     &            KSENDBUF=ICOMBUF_S,
+                CALL MPL_SCATTERV(ICOMBUF_R,KROOT=IREAD,                &
+     &            KSENDBUF=ICOMBUF_S,                                   &
      &            KSENDCOUNTS=ICOUNTS,CDSTRING='MPDECOMP 5:')
                 CALL GSTATS(694,1)
               ENDIF           
 
 !             KEEP THE RELEVANT PART OF KOBSCOR
-              IF(IRANK.EQ.IREAD) THEN
+              IF (IRANK.EQ.IREAD) THEN
                 KCOUNT=(IRANK-1)*MPLENGTH
                 DO IJ=NSTART(IRANK),NEND(IRANK)
                   KCOUNT=KCOUNT+1
@@ -2367,14 +2367,14 @@
 
         ENDDO ! end loop on frequencies
 
-        IF(ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
-        IF(ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
+        IF (ALLOCATED(ICOMBUF_S)) DEALLOCATE(ICOMBUF_S)
+        IF (ALLOCATED(ICOMBUF_R)) DEALLOCATE(ICOMBUF_R)
 
         DEALLOCATE(IDUM)
 
-        IF(.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
+        IF (.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
 
-      ELSEIF(.NOT.LMESSPASS) THEN
+      ELSEIF (.NOT.LMESSPASS) THEN
         CALL GSTATS(1771,0)
         IF (LLR8TOR4) THEN ! Legacy input R8 conv. to R4
            ALLOCATE(R8_WLAT(NIBLO,2))
@@ -2382,7 +2382,7 @@
            READ (IU08(IPROPAGS)) R8_WLAT
            WLAT = R8_WLAT
            DEALLOCATE(R8_WLAT)
-           IF(IPROPAGS.EQ.1) THEN
+           IF (IPROPAGS.EQ.1) THEN
               ALLOCATE(R8_WRLAT(NIBLO,2))
               ALLOCATE(R8_WRLON(NIBLO,2))
               ALLOCATE(WRLAT(NIBLO,2))
@@ -2394,7 +2394,7 @@
               DEALLOCATE(R8_WRLAT)
               DEALLOCATE(R8_WRLON)
            ENDIF
-           IF(IPROPAGS.EQ.2) THEN
+           IF (IPROPAGS.EQ.2) THEN
               ALLOCATE(R8_WCOR(NIBLO,4))
               ALLOCATE(WCOR(NIBLO,4))
               READ (IU08(IPROPAGS)) R8_WCOR
@@ -2404,13 +2404,13 @@
         ELSE ! Normal situation
            ALLOCATE(WLAT(NIBLO,2))
            READ (IU08(IPROPAGS)) WLAT
-           IF(IPROPAGS.EQ.1) THEN
+           IF (IPROPAGS.EQ.1) THEN
               ALLOCATE(WRLAT(NIBLO,2))
               ALLOCATE(WRLON(NIBLO,2))
               READ (IU08(IPROPAGS)) WRLAT
               READ (IU08(IPROPAGS)) WRLON
            ENDIF
-           IF(IPROPAGS.EQ.2) THEN
+           IF (IPROPAGS.EQ.2) THEN
               ALLOCATE(WCOR(NIBLO,4))
               READ (IU08(IPROPAGS)) WCOR
            ENDIF
@@ -2418,7 +2418,7 @@
 
         ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
         ALLOCATE(KOBSLON(NIBLO,NFRE,2))
-        IF(IPROPAGS.EQ.1) THEN
+        IF (IPROPAGS.EQ.1) THEN
           ALLOCATE(KOBSRLAT(NIBLO,NFRE,2))
           ALLOCATE(KOBSRLON(NIBLO,NFRE,2))
         ELSEIF (IPROPAGS.EQ.2) THEN
@@ -2432,14 +2432,14 @@
           DO IC=1,2
             READ (IU08(IPROPAGS)) KOBSLON(:,M,IC)
           ENDDO
-          IF(IPROPAGS.EQ.1) THEN
+          IF (IPROPAGS.EQ.1) THEN
             DO IC=1,2
               READ (IU08(IPROPAGS)) KOBSRLAT(:,M,IC)
             ENDDO
             DO IC=1,2
               READ (IU08(IPROPAGS)) KOBSRLON(:,M,IC)
             ENDDO
-          ELSEIF(IPROPAGS.EQ.2) THEN
+          ELSEIF (IPROPAGS.EQ.2) THEN
             DO IC=1,4
               READ (IU08(IPROPAGS)) KOBSCOR(:,M,IC)
             ENDDO
@@ -2451,7 +2451,7 @@
       WRITE(IU06,*) ' PREPROC UBUF INFORMATION READ IN  (second part)'
       CALL FLUSH (IU06)
 
-      IF(.NOT.LL1D.AND.NPR.GT.1) THEN
+      IF (.NOT.LL1D.AND.NPR.GT.1) THEN
         DEALLOCATE(NEWIJ2IJ)
       ENDIF
 
@@ -2475,28 +2475,28 @@
         IC=ICC
         DO M=1,NFRE
           DO IJ=NSTART(IRANK),NEND(IRANK)
-            IF(.NOT. LSUBGRID) THEN
-              OBSLON(IJ,M,IC)=1.0
-            ELSEIF(KOBSLON(IJ,M,IC).EQ.0) THEN
-              OBSLON(IJ,M,IC)=0.0
-            ELSEIF(MOD(KOBSLON(IJ,M,IC),1000).EQ.0) THEN
-              OBSLON(IJ,M,IC)=1.0
+            IF (.NOT. LSUBGRID) THEN
+              OBSLON(IJ,M,IC)=1.0_JWRB
+            ELSEIF (KOBSLON(IJ,M,IC).EQ.0) THEN
+              OBSLON(IJ,M,IC)=0.0_JWRB
+            ELSEIF (MOD(KOBSLON(IJ,M,IC),1000).EQ.0) THEN
+              OBSLON(IJ,M,IC)=1.0_JWRB
             ELSE
-              OBSLON(IJ,M,IC)=FLOAT(KOBSLON(IJ,M,IC))*0.001
+              OBSLON(IJ,M,IC)=FLOAT(KOBSLON(IJ,M,IC))*0.001_JWRB
             ENDIF
           ENDDO
         ENDDO
 
         DO M=1,NFRE
           DO IJ=NSTART(IRANK),NEND(IRANK)
-            IF(.NOT. LSUBGRID) THEN
-              OBSLAT(IJ,M,IC)=1.0
-            ELSE IF(KOBSLAT(IJ,M,IC).EQ.0) THEN
-              OBSLAT(IJ,M,IC)=0.0
-            ELSEIF(MOD(KOBSLAT(IJ,M,IC),1000).EQ.0) THEN
-              OBSLAT(IJ,M,IC)=1.0
+            IF (.NOT. LSUBGRID) THEN
+              OBSLAT(IJ,M,IC)=1.0_JWRB
+            ELSEIF (KOBSLAT(IJ,M,IC).EQ.0) THEN
+              OBSLAT(IJ,M,IC)=0.0_JWRB
+            ELSEIF (MOD(KOBSLAT(IJ,M,IC),1000).EQ.0) THEN
+              OBSLAT(IJ,M,IC)=1.0_JWRB
             ELSE
-              OBSLAT(IJ,M,IC)=FLOAT(KOBSLAT(IJ,M,IC))*0.001
+              OBSLAT(IJ,M,IC)=FLOAT(KOBSLAT(IJ,M,IC))*0.001_JWRB
             ENDIF
           ENDDO
         ENDDO
@@ -2507,12 +2507,12 @@
       DEALLOCATE(KOBSLON)
       DEALLOCATE(KOBSLAT)
 
-      IF(IPROPAGS.EQ.1) THEN
+      IF (IPROPAGS.EQ.1) THEN
 !       NOTE: THE VALUE OF OBSRLON WILL NOT BE RESET IN THE FIRST
-        IF(ALLOCATED(OBSRLON)) DEALLOCATE(OBSRLON)
+        IF (ALLOCATED(OBSRLON)) DEALLOCATE(OBSRLON)
         ALLOCATE(OBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
 !       NOTE: THE VALUE OF OBSRLAT WILL NOT BE RESET IN THE FIRST
-        IF(ALLOCATED(OBSRLAT)) DEALLOCATE(OBSRLAT)
+        IF (ALLOCATED(OBSRLAT)) DEALLOCATE(OBSRLAT)
         ALLOCATE(OBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
         CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
@@ -2520,28 +2520,28 @@
           IC=ICC
           DO M=1,NFRE
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF(.NOT. LSUBGRID) THEN
-                OBSRLON(IJ,M,IC)=1.0
-              ELSEIF(KOBSRLON(IJ,M,IC).EQ.0) THEN
-                OBSRLON(IJ,M,IC)=0.0
-              ELSEIF(MOD(KOBSRLON(IJ,M,IC),1000).EQ.0) THEN
-                OBSRLON(IJ,M,IC)=1.0
+              IF (.NOT. LSUBGRID) THEN
+                OBSRLON(IJ,M,IC)=1.0_JWRB
+              ELSEIF (KOBSRLON(IJ,M,IC).EQ.0) THEN
+                OBSRLON(IJ,M,IC)=0.0_JWRB
+              ELSEIF (MOD(KOBSRLON(IJ,M,IC),1000).EQ.0) THEN
+                OBSRLON(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSRLON(IJ,M,IC)=FLOAT(KOBSRLON(IJ,M,IC))*0.001
+                OBSRLON(IJ,M,IC)=FLOAT(KOBSRLON(IJ,M,IC))*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO
 
           DO M=1,NFRE
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF(.NOT. LSUBGRID) THEN
-                OBSRLAT(IJ,M,IC)=1.0
-              ELSE IF(KOBSRLAT(IJ,M,IC).EQ.0) THEN
-                OBSRLAT(IJ,M,IC)=0.0
-               ELSEIF(MOD(KOBSRLAT(IJ,M,IC),1000).EQ.0) THEN
-              OBSRLAT(IJ,M,IC)=1.0
+              IF (.NOT. LSUBGRID) THEN
+                OBSRLAT(IJ,M,IC)=1.0_JWRB
+              ELSEIF (KOBSRLAT(IJ,M,IC).EQ.0) THEN
+                OBSRLAT(IJ,M,IC)=0.0_JWRB
+               ELSEIF (MOD(KOBSRLAT(IJ,M,IC),1000).EQ.0) THEN
+              OBSRLAT(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSRLAT(IJ,M,IC)=FLOAT(KOBSRLAT(IJ,M,IC))*0.001
+                OBSRLAT(IJ,M,IC)=FLOAT(KOBSRLAT(IJ,M,IC))*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -2553,8 +2553,8 @@
         DEALLOCATE(KOBSRLAT)
       ENDIF
 
-      IF(IPROPAGS.EQ.2) THEN
-        IF(ALLOCATED(OBSCOR)) DEALLOCATE(OBSCOR)
+      IF (IPROPAGS.EQ.2) THEN
+        IF (ALLOCATED(OBSCOR)) DEALLOCATE(OBSCOR)
         ALLOCATE(OBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
         CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
@@ -2562,14 +2562,14 @@
           IC=ICC
           DO M=1,NFRE
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              IF(.NOT. LSUBGRID) THEN
-                OBSCOR(IJ,M,IC)=1.0
-              ELSEIF(KOBSCOR(IJ,M,IC).EQ.0) THEN
-                OBSCOR(IJ,M,IC)=0.0
-              ELSEIF(MOD(KOBSCOR(IJ,M,IC),1000).EQ.0) THEN
-                OBSCOR(IJ,M,IC)=1.0
+              IF (.NOT. LSUBGRID) THEN
+                OBSCOR(IJ,M,IC)=1.0_JWRB
+              ELSEIF (KOBSCOR(IJ,M,IC).EQ.0) THEN
+                OBSCOR(IJ,M,IC)=0.0_JWRB
+              ELSEIF (MOD(KOBSCOR(IJ,M,IC),1000).EQ.0) THEN
+                OBSCOR(IJ,M,IC)=1.0_JWRB
               ELSE
-                OBSCOR(IJ,M,IC)=FLOAT(KOBSCOR(IJ,M,IC))*0.001
+                OBSCOR(IJ,M,IC)=FLOAT(KOBSCOR(IJ,M,IC))*0.001_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -2598,9 +2598,8 @@
 !     8. TEST AND RESET
 !        -------------- 
 
-
-      IF(LMESSPASS) THEN
-        IF(IGL.GT.1) THEN
+      IF (LMESSPASS) THEN
+        IF (IGL.GT.1) THEN
           WRITE (IU06,*) '******************************************'
           WRITE (IU06,*) '*                                        *'
           WRITE (IU06,*) '*    FATAL ERROR                         *'
@@ -2634,20 +2633,17 @@
 
       KTAG=KTAG+1
 
-
-      IF(IRANK.EQ.IREAD) CLOSE (UNIT=IU08(IPROPAGS))
+      IF (IRANK.EQ.IREAD) CLOSE (UNIT=IU08(IPROPAGS))
       ! For the SEKF surface analysis
       LWVWAMINIT=.TRUE.
 
       DEALLOCATE(ISENDREQ)
 
-      END IF ! LLUNSTR
+      ENDIF ! LLUNSTR
 
       WRITE(IU06,*) ' MODEL DECOMPOSITION FINISHED.'
       CALL FLUSH(IU06)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE MPDECOMP

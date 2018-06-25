@@ -29,14 +29,18 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER :: IU
+      INTEGER(KIND=JWIM) :: IU
       LOGICAL :: LOPENED
+
+! ----------------------------------------------------------------------
 
       DO IU=1,99
         INQUIRE(UNIT=IU,OPENED=LOPENED)
-        IF(LOPENED) THEN 
+        IF (LOPENED) THEN 
           CALL FLUSH(IU)
 !!!!          CLOSE(IU)
         ENDIF

@@ -1,4 +1,4 @@
-      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,
+      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,             &
      &                      GRID, DEFVAL, MASK_OUT, LLGLOBAL)
 
 !****  *MPFLDTOIFS* - TRANSFORMS BLOCK DATA TO GRID DATA FOR
@@ -44,8 +44,11 @@
 !         NONE
 ! -------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOUNORMS,LMASK_OUT_NOT_SET,LMASK_TASK_STR,
-     &            LFROMTASK,IJFROMTASK,NFROMTASKS,ISTFROMTASK,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUP  , ONLY : LWCOUNORMS,LMASK_OUT_NOT_SET,               &
+     &            LMASK_TASK_STR,                                       &
+     &            LFROMTASK,IJFROMTASK,NFROMTASKS,ISTFROMTASK,          &
      &            LTOTASK  ,IJTOTASK  ,NTOTASKS  ,ISTTOTASK
       USE YOWMAP   , ONLY : IXLG     ,KXLT
       USE YOWMPP   , ONLY : IRANK    ,NPROC
@@ -59,27 +62,28 @@
 
       IMPLICIT NONE
 
-      INTEGER :: MASK_OUT(NGX,NGY)
-      INTEGER :: IG, IJS, IJL, NWVFIELDS
-      INTEGER :: IFLD, IP, IP1, IJ, I, J, IX, IY
-      INTEGER :: ITAG, IREQ, ICOUNT, IC, IST, IEND
-      INTEGER,DIMENSION(NPROC) :: KRECVCOUNTS
-      INTEGER :: ISENDREQ(NPROC)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IJS, IJL, NWVFIELDS
+      INTEGER(KIND=JWIM), INTENT(IN) :: MASK_OUT(NGX,NGY)
 
-      REAL,DIMENSION(NWVFIELDS) :: DEFVAL 
-      REAL,DIMENSION(IJS:IJL,NWVFIELDS) :: BLOCK 
-      REAL,DIMENSION(NGX,NGY,NWVFIELDS) :: GRID 
-      REAL,ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
-      REAL,ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
-      REAL ZHOOK_HANDLE
-      REAL ZHOOK_HANDLE1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NWVFIELDS), INTENT(IN) :: BLOCK
+      REAL(KIND=JWRB), DIMENSION(NGX,NGY,NWVFIELDS), INTENT(OUT) :: GRID
+      REAL(KIND=JWRB), DIMENSION(NWVFIELDS), INTENT(IN) :: DEFVAL 
 
-      LOGICAL :: LLGLOBAL
+      LOGICAL, INTENT(OUT) :: LLGLOBAL
+
+      INTEGER(KIND=JWIM) :: IFLD, IP, IP1, IJ, I, J, IX, IY
+      INTEGER(KIND=JWIM) :: ITAG, IREQ, ICOUNT, IC, IST, IEND
+      INTEGER(KIND=JWIM), DIMENSION(NPROC) :: KRECVCOUNTS
+      INTEGER(KIND=JWIM) :: ISENDREQ(NPROC)
+
+      REAL(KIND=JWRB), ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
+      REAL(KIND=JWRB) ZHOOK_HANDLE
+      REAL(KIND=JWRB) ZHOOK_HANDLE1
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',0,ZHOOK_HANDLE)
-#endif
 
       CALL GSTATS_BARRIER(734)
 
@@ -105,11 +109,11 @@
 
       DO IFLD=1,NWVFIELDS
 
-        IF(NPROC.GT.1) THEN
+        IF (NPROC.GT.1) THEN
 
 !         GLOBAL EXCHANGE
 
-          IF(LLGLOBAL) THEN
+          IF (LLGLOBAL) THEN
 
             ALLOCATE(ZBUFS(NIBLO))
             ALLOCATE(ZBUFR(NIBLO))
@@ -122,8 +126,8 @@
               KRECVCOUNTS(IP)=NEND(IP) - NSTART(IP)+1
             ENDDO
 
-            CALL MPL_ALLGATHERV(ZBUFS(NSTART(IRANK):NEND(IRANK)),
-     &                          ZBUFR(1:NIBLO),KRECVCOUNTS,
+            CALL MPL_ALLGATHERV(ZBUFS(NSTART(IRANK):NEND(IRANK)),       &
+     &                          ZBUFR(1:NIBLO),KRECVCOUNTS,             &
      &                          CDSTRING='MPFLDTOIFS:')
 
 !           TRANSFORM FROM BLOCK TO GRID
@@ -145,11 +149,11 @@
 !           INITIALISE THE TASK STRUCTURE FOR OPTIMAL DATA EXCHANGE
 !           FOR FIELDS RETURNED TO IFS.
 
-            IF(LMASK_TASK_STR) THEN
+            IF (LMASK_TASK_STR) THEN
 
               LMASK_TASK_STR=.FALSE.
 
-              IF(ALLOCATED(LFROMTASK)) DEALLOCATE(LFROMTASK)
+              IF (ALLOCATED(LFROMTASK)) DEALLOCATE(LFROMTASK)
               ALLOCATE(LFROMTASK(NPROC))
 
               DO IP=1,NPROC
@@ -157,15 +161,15 @@
                 DO IJ = NSTART(IP), NEND(IP)
                   IX = IXLG(IJ,IG)
                   IY = NGY- KXLT(IJ,IG) +1
-                  IF(MASK_OUT(IX,IY).EQ.1)LFROMTASK(IP)=LFROMTASK(IP)+1
+                  IF (MASK_OUT(IX,IY).EQ.1) LFROMTASK(IP)=LFROMTASK(IP)+1
                 ENDDO
               ENDDO
 
               NFROMTASKS=SUM(LFROMTASK)
-              IF(ALLOCATED(IJFROMTASK)) DEALLOCATE(IJFROMTASK)
+              IF (ALLOCATED(IJFROMTASK)) DEALLOCATE(IJFROMTASK)
               ALLOCATE(IJFROMTASK(NFROMTASKS))
 
-              IF(ALLOCATED(ISTFROMTASK)) DEALLOCATE(ISTFROMTASK)
+              IF (ALLOCATED(ISTFROMTASK)) DEALLOCATE(ISTFROMTASK)
               ALLOCATE(ISTFROMTASK(NPROC))
               DO IP=1,NPROC
                 ISTFROMTASK(IP)=0
@@ -173,12 +177,12 @@
 
               ICOUNT=0
               DO IP=1,NPROC
-                IF(LFROMTASK(IP).GT.0) THEN
+                IF (LFROMTASK(IP).GT.0) THEN
                   ISTFROMTASK(IP)=ICOUNT+1
                   DO IJ = NSTART(IP), NEND(IP)
                     IX = IXLG(IJ,IG)
                     IY = NGY- KXLT(IJ,IG) +1
-                    IF(MASK_OUT(IX,IY).EQ.1) THEN
+                    IF (MASK_OUT(IX,IY).EQ.1) THEN
                       ICOUNT=ICOUNT+1
                       IJFROMTASK(ICOUNT)=IJ
                     ENDIF
@@ -186,7 +190,7 @@
                 ENDIF
               ENDDO
 
-              IF(ALLOCATED(LTOTASK)) DEALLOCATE(LTOTASK)
+              IF (ALLOCATED(LTOTASK)) DEALLOCATE(LTOTASK)
               ALLOCATE(LTOTASK(NPROC))
               DO IP=1,NPROC
                 LTOTASK(IP)=0
@@ -196,29 +200,29 @@
 !             FROM THEM ARE NEEDED.
               ITAG=1
               DO IP=1,NPROC
-                CALL MPL_SEND(LFROMTASK(IP),KDEST=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                        KREQUEST=ISENDREQ(IP),
+                CALL MPL_SEND(LFROMTASK(IP),KDEST=IP,KTAG=ITAG,         &
+     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,        &
+     &                        KREQUEST=ISENDREQ(IP),                    &
      &                        CDSTRING='MPFLDTOIFS: SEND COUNT ' )
               ENDDO
 !             RECEIVE INFORMATION ON WHICH TASKS WILL NEED TO BE SENT
 !             SOME CONTRIBUTIONS.
               DO IP=1,NPROC
-                CALL MPL_RECV(LTOTASK(IP),KSOURCE=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_BLOCKING_STANDARD,
+                CALL MPL_RECV(LTOTASK(IP),KSOURCE=IP,KTAG=ITAG,         &
+     &                        KMP_TYPE=JP_BLOCKING_STANDARD,            &
      &                        CDSTRING='MPFLDTOIFS: RECV COUNT ' )
               ENDDO
 
-              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:NPROC),
+              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:NPROC),                 &
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND COUNT')
 
 
               NTOTASKS=SUM(LTOTASK)
 
-              IF(ALLOCATED(IJTOTASK)) DEALLOCATE(IJTOTASK)
+              IF (ALLOCATED(IJTOTASK)) DEALLOCATE(IJTOTASK)
               ALLOCATE(IJTOTASK(NTOTASKS))
 
-              IF(ALLOCATED(ISTTOTASK)) DEALLOCATE(ISTTOTASK)
+              IF (ALLOCATED(ISTTOTASK)) DEALLOCATE(ISTTOTASK)
               ALLOCATE(ISTTOTASK(NPROC))
               DO IP=1,NPROC
                 ISTTOTASK(IP)=0
@@ -230,15 +234,15 @@
               IREQ=0
 
               DO IP=1,NPROC
-                IF(LFROMTASK(IP).GT.0) THEN
+                IF (LFROMTASK(IP).GT.0) THEN
                   IREQ=IREQ+1
 
                   IST=ISTFROMTASK(IP)
                   IEND=IST+LFROMTASK(IP)-1
-                  CALL MPL_SEND(IJFROMTASK(IST:IEND),
-     &                          KDEST=IP,KTAG=ITAG,
-     &                          KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                          KREQUEST=ISENDREQ(IREQ),
+                  CALL MPL_SEND(IJFROMTASK(IST:IEND),                   &
+     &                          KDEST=IP,KTAG=ITAG,                     &
+     &                          KMP_TYPE=JP_NON_BLOCKING_STANDARD,      &
+     &                          KREQUEST=ISENDREQ(IREQ),                &
      &                          CDSTRING='MPFLDTOIFS: SEND IJ ' )
                 ENDIF
               ENDDO
@@ -246,29 +250,29 @@
 !             SENT.
               IST=1
               DO IP=1,NPROC
-                IF(LTOTASK(IP).GT.0) THEN
+                IF (LTOTASK(IP).GT.0) THEN
                   IEND=IST+LTOTASK(IP)-1
                   ISTTOTASK(IP)=IST
-                  CALL MPL_RECV(IJTOTASK(IST:IEND),
-     &                          KSOURCE=IP,KTAG=ITAG,
-     &                          KMP_TYPE=JP_BLOCKING_STANDARD,
+                  CALL MPL_RECV(IJTOTASK(IST:IEND),                     &
+     &                          KSOURCE=IP,KTAG=ITAG,                   &
+     &                          KMP_TYPE=JP_BLOCKING_STANDARD,          &
      &                          CDSTRING='MPFLDTOIFS: RECV IJ ' )
                   IST=IST+LTOTASK(IP)
                 ENDIF
               ENDDO
 
-              IF( IREQ .GT. 0 )THEN
-                CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),
+              IF ( IREQ .GT. 0 )THEN
+                CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                &
      &                        CDSTRING='MPFLDTOIFS: WAIT SEND IJ')
               ENDIF
 
 !             DO IP1=1,NPROC
-!               IF(IRANK.EQ.IP1)THEN
+!               IF (IRANK.EQ.IP1)THEN
 !                 DO IP=1,NPROC
-!                   IF( LTOTASK(IP)>0.OR.LFROMTASK(IP)>0 )THEN
-!                     WRITE(0,
-!    &                  '("MPFLDTOIFS: IP=",I6," LTOTASK=",I10,
-!    &                  " LFROMTASK=",I10)') IP,LTOTASK(IP),
+!                   IF ( LTOTASK(IP)>0.OR.LFROMTASK(IP)>0 )THEN
+!                     WRITE(0,                                    &
+!    &                  '("MPFLDTOIFS: IP=",I6," LTOTASK=",I10,   &
+!    &                  " LFROMTASK=",I10)') IP,LTOTASK(IP),      &
 !    &                  LFROMTASK(IP)
 !                   ENDIF
 !                 ENDDO
@@ -285,7 +289,7 @@
 
             ALLOCATE(ZSENDBUF(MAX(1,NTOTASKS)))
             DO IP=1,NPROC
-              IF(LTOTASK(IP).GT.0) THEN
+              IF (LTOTASK(IP).GT.0) THEN
                 IST=ISTTOTASK(IP)
                 IEND=IST+LTOTASK(IP)-1
                 DO IC=IST,IEND
@@ -298,15 +302,15 @@
             IREQ=0
 
             DO IP=1,NPROC
-              IF(LTOTASK(IP).GT.0) THEN
+              IF (LTOTASK(IP).GT.0) THEN
                 IREQ=IREQ+1
                 IST=ISTTOTASK(IP)
                 IEND=IST+LTOTASK(IP)-1
-                CALL MPL_SEND(ZSENDBUF(IST:IEND),
-     &                        KDEST=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,
-     &                        KREQUEST=ISENDREQ(IREQ),
-     &                        CDSTRING='MPFLDTOIFS: SEND DATA' )
+                CALL MPL_SEND(ZSENDBUF(IST:IEND),                       &
+     &                        KDEST=IP,KTAG=ITAG,                       &
+     &                        KMP_TYPE=JP_NON_BLOCKING_STANDARD,        &
+     &                        KREQUEST=ISENDREQ(IREQ),                  &
+     &                        CDSTRING='MPFLDTOIFS: SEND DATA')
               ENDIF
             ENDDO
 
@@ -315,26 +319,26 @@
 !           RECEIVE INFORMATION FROM OTHER TASKS (IF NEEDED)
             DO IP=1,NPROC
 
-              IF(LFROMTASK(IP).GT.0) THEN
+              IF (LFROMTASK(IP).GT.0) THEN
                 IST=ISTFROMTASK(IP)
                 IEND=IST+LFROMTASK(IP)-1
-                CALL MPL_RECV(ZRECVBUF(IST:IEND),
-     &                        KSOURCE=IP,KTAG=ITAG,
-     &                        KMP_TYPE=JP_BLOCKING_STANDARD,
-     &                        CDSTRING='MPFLDTOIFS: RECV DATA ' )
+                CALL MPL_RECV(ZRECVBUF(IST:IEND),                       &
+     &                        KSOURCE=IP,KTAG=ITAG,                     &
+     &                        KMP_TYPE=JP_BLOCKING_STANDARD,            &
+     &                        CDSTRING='MPFLDTOIFS: RECV DATA ')
 
               ENDIF
             ENDDO
 
 !           ENSURE ALL SENDS ARE FINISHED.
 
-            IF(IREQ.GT.0) THEN
-              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),
+            IF (IREQ.GT.0) THEN
+              CALL MPL_WAIT(KREQUEST=ISENDREQ(1:IREQ),                  &
      &                      CDSTRING='MPFLDTOIFS: WAIT SEND DATA ')
             ENDIF
 
             DO IP=1,NPROC
-              IF(LFROMTASK(IP).GT.0) THEN
+              IF (LFROMTASK(IP).GT.0) THEN
                 IST=ISTFROMTASK(IP)
                 IEND=IST+LFROMTASK(IP)-1
 !               TRANSFORM FROM BLOCK TO GRID
@@ -369,8 +373,6 @@
 
       CALL GSTATS(686,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('MPFLDTOIFS',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE MPFLDTOIFS
