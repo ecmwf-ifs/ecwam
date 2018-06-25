@@ -38,10 +38,12 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,   &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTEST  , ONLY : IU06
 
@@ -49,11 +51,12 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: ML, KL
+      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL
 
-      INTEGER :: M, JD, NAN, NSTP
-      REAL :: AKI
-      REAL :: GH, OM, AD, AK, AKD, DEPTHE
+      INTEGER(KIND=JWIM) :: M, JD, NAN, NSTP
+
+      REAL(KIND=JWRB) :: AKI
+      REAL(KIND=JWRB) :: GH, OM, AD, AK, AKD, DEPTHE
 
 ! ----------------------------------------------------------------------
 
@@ -71,7 +74,7 @@
 !*    1.1 LOOP OVER FREQUENCIES.
 !         ----------------------
 
-      GH = G/(4.*PI)
+      GH = G/(4.0_JWRB*PI)
       DO M=1,ML
         OM=ZPI*FR(M)
 
@@ -83,15 +86,15 @@
           AK=AKI(OM,AD)
           TFAK(JD,M)=AK
           AKD=AK*AD
-          IF(AKD.LE.10.0) THEN
-            TCGOND(JD,M) = 0.5*SQRT(G*TANH(AKD)/AK)*
-     &       (1.0+2.0*AKD/SINH(2.*AKD))
-            TSIHKD(JD,M) = OM/SINH(2.*AKD)
-            TFAC_ST(JD,M) = 2.*G*AK**2/(OM*TANH(2.*AKD))
+          IF (AKD.LE.10.0_JWRB) THEN
+            TCGOND(JD,M) = 0.5_JWRB*SQRT(G*TANH(AKD)/AK)*               &
+     &                     (1.0_JWRB+2.0_JWRB*AKD/SINH(2.0_JWRB*AKD))
+            TSIHKD(JD,M) = OM/SINH(2.0_JWRB*AKD)
+            TFAC_ST(JD,M) = 2.0_JWRB*G*AK**2/(OM*TANH(2.0_JWRB*AKD))
           ELSE
             TCGOND(JD,M) = GH/FR(M)
-            TSIHKD(JD,M) = 0.
-            TFAC_ST(JD,M) = 2./G*OM**3
+            TSIHKD(JD,M) = 0.0_JWRB
+            TFAC_ST(JD,M) = 2.0_JWRB/G*OM**3
           ENDIF
         ENDDO
       ENDDO
@@ -109,8 +112,8 @@
       Print *, 'DEPTHE=', DEPTHE
       Print *, 'DEPTHD=', DEPTHD
       WRITE (IU06,'(1H1, '' SHALLOW WATER TABLES:'',/)')
-      WRITE (IU06,'(''  LOGARITHMIC DEPTH FROM: DEPTHA = '',F6.1,
-     &  '' TO DEPTHE  = '',F6.1, ''IN STEPS OF DEPTHD = '',F6.1)')
+      WRITE (IU06,'(''  LOGARITHMIC DEPTH FROM: DEPTHA = '',F6.1,      &
+     &  '' TO DEPTHE  = '',F6.1, ''IN STEPS OF DEPTHD = '',F6.1)')     &
      &    DEPTHA, DEPTHE, DEPTHD
       WRITE (IU06,'(''  PRINTED IN STEPS OF '',I3,'' ENTRIES'',/)') NSTP
       DO JD=1,NDEPTH,NSTP
@@ -126,5 +129,4 @@
         WRITE (IU06,'(1x,13F10.5)') (TFAC_ST(JD,M),M=1,ML)
       ENDDO
 
-      RETURN
       END SUBROUTINE MTABS

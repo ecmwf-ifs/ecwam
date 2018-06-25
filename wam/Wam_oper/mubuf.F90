@@ -49,13 +49,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWGRID  , ONLY : NLONRGG  ,IJLT
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,IPER     ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,IRGG     ,LLOBSTRCT
       USE YOWTEST  , ONLY : IU06
-      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,
-     &                      KRLAT    ,KRLON    ,
+      USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR     ,              &
+     &                      KRLAT    ,KRLON    ,                        &
      &                      WLAT     ,WCOR     ,WRLAT    ,WRLON
 
 ! ----------------------------------------------------------------------
@@ -63,23 +65,23 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER :: IU01
-      INTEGER :: NPROPAGS
-      INTEGER :: NFREMAX, IX
-      INTEGER :: IG,IJ,IJP,I,K,IP,IH,IS,ML,M
-      INTEGER :: IMIN,IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
-      INTEGER :: IC, ICP, ICL, ICR
-      INTEGER :: IU08(0:NPROPAGS)
-      INTEGER, DIMENSION(NGX, NGY) :: IDUM
-      INTEGER, ALLOCATABLE, DIMENSION(:) :: KDUM
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
-      INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
+      INTEGER(KIND=JWIM) :: IU01
+      INTEGER(KIND=JWIM) :: NPROPAGS
+      INTEGER(KIND=JWIM) :: NFREMAX, IX
+      INTEGER(KIND=JWIM) :: IG, IJ, IJP, I, K, IP, IH, IS, ML, M
+      INTEGER(KIND=JWIM) :: IMIN, IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
+      INTEGER(KIND=JWIM) :: IC, ICP, ICL, ICR
+      INTEGER(KIND=JWIM) :: IU08(0:NPROPAGS)
+      INTEGER(KIND=JWIM), DIMENSION(NGX, NGY) :: IDUM
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KDUM
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
-      REAL :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
-      REAL :: XLON, XL, XP, TWOXDELLA
-      REAL :: XLL, XPL, XLR, XPR
-      REAL ::  BATHY(NGX, NGY)
+      REAL(KIND=JWRB) :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
+      REAL(KIND=JWRB) :: XLON, XL, XP, TWOXDELLA
+      REAL(KIND=JWRB) :: XLL, XPL, XLR, XPR
+      REAL(KIND=JWRB) ::  BATHY(NGX, NGY)
 
       CHARACTER(LEN=4) :: CX
       CHARACTER(LEN=10) :: FORMAT
@@ -88,9 +90,7 @@
 
 ! ----------------------------------------------------------------------
 
-      TWOXDELLA=2*XDELLA
-
-
+      TWOXDELLA=2.0_JWRB*XDELLA
 
 !*    2. COMPUTE INDICES OF NEIGHBOUR SEA POINTS.
 !        ----------------------------------------
@@ -115,34 +115,32 @@
           IMIN = NINT(XMIN) + 1
 
 !         CLOSEST GRID POINT
-          IF (BATHY(IMIN,K-1).GT.-990.) THEN
+          IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
             DO IH = IP,1,-1
-              IF (IXLG(IH,IG).EQ.IMIN .AND.
-     &            KXLT(IH,IG).EQ.K-1) EXIT
+              IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT 
             ENDDO
             KLAT(IP,1,1) = IH
           ENDIF
 
 !         SECOND CLOSEST GRID POINT
-          IF(IRGG.EQ.1) THEN
-            IF(XMIN.LE.FLOAT(IMIN-1)) THEN
-              IF(IMIN.LE.1) THEN
+          IF (IRGG.EQ.1) THEN
+            IF (XMIN.LE.FLOAT(IMIN-1)) THEN
+              IF (IMIN.LE.1) THEN
                 IMIN2=1
               ELSE
                 IMIN2=IMIN-1
               ENDIF
             ELSE
-              IF(IMIN.GE.NLONRGG(K-1)) THEN
+              IF (IMIN.GE.NLONRGG(K-1)) THEN
                 IMIN2=NLONRGG(K-1)
               ELSE
                 IMIN2=IMIN+1
               ENDIF
             ENDIF
 
-            IF (BATHY(IMIN2,K-1).GT.-990.) THEN
+            IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND.
-     1              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT 
               ENDDO
               KLAT(IP,1,2) = IH
             ENDIF
@@ -155,33 +153,31 @@
         IF (K.LT.NY) THEN
           XPLUS = REAL(I-1)*ZDELLO(K)/ZDELLO(K+1)
           IPLUS = NINT(XPLUS) + 1
-          IF (BATHY(IPLUS,K+1).GT.-990.) THEN
+          IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
             DO IH = IP,IJLT(IG)
-              IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     &            KXLT(IH,IG).EQ.K+1) EXIT
+              IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT 
             ENDDO
             KLAT(IP,2,1) = IH
           ENDIF
 
-          IF(IRGG.EQ.1) THEN
-            IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
-              IF(IPLUS.LE.1) THEN
+          IF (IRGG.EQ.1) THEN
+            IF (XPLUS.LE.FLOAT(IPLUS-1)) THEN
+              IF (IPLUS.LE.1) THEN
                 IPLUS2=1
               ELSE
                 IPLUS2=IPLUS-1
               ENDIF
             ELSE
-              IF(IPLUS.GE.NLONRGG(K+1)) THEN
+              IF (IPLUS.GE.NLONRGG(K+1)) THEN
                 IPLUS2=NLONRGG(K+1)
               ELSE
                 IPLUS2=IPLUS+1
               ENDIF
             ENDIF
 
-            IF (BATHY(IPLUS2,K+1).GT.-990.) THEN
+            IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND.
-     1              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS2 .AND.  KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KLAT(IP,2,2) = MIN(IH,IJLT(IG))
             ENDIF
@@ -212,22 +208,22 @@
         I = IXLG(IP,IG)
         K = KXLT(IP,IG)
         IF (I.GT.1) THEN
-          IF (BATHY(I-1,K).GT.-990.) KLON(IP,1) = IP-1
+          IF (BATHY(I-1,K).GT.-990.0_JWRB) KLON(IP,1) = IP-1
         ELSE
-          IF (IPER.EQ.1 .AND. BATHY(NLONRGG(K),K).GT.-990.) THEN
+          IF (IPER.EQ.1 .AND. BATHY(NLONRGG(K),K).GT.-990.0_JWRB) THEN
             KLON(IP,1) = IP
             DO IH=2,NLONRGG(K)
-              IF (BATHY(IH,K).GT.-990.) KLON(IP,1) = KLON(IP,1)+1
+              IF (BATHY(IH,K).GT.-990.0_JWRB) KLON(IP,1) = KLON(IP,1)+1
             ENDDO
           ENDIF
         ENDIF
         IF (I.LT.NLONRGG(K)) THEN
-          IF (BATHY(I+1,K).GT.-990.) KLON(IP,2) = IP+1
+          IF (BATHY(I+1,K).GT.-990.0_JWRB) KLON(IP,2) = IP+1
         ELSE
-          IF (IPER.EQ.1 .AND. BATHY(1,K).GT.-990.) THEN
+          IF (IPER.EQ.1 .AND. BATHY(1,K).GT.-990.0_JWRB) THEN
             KLON(IP,2) = IP
             DO IH=NLONRGG(K)-1,1,-1
-              IF (BATHY(IH,K).GT.-990.) KLON(IP,2) = KLON(IP,2)-1
+              IF (BATHY(IH,K).GT.-990.0_JWRB) KLON(IP,2) = KLON(IP,2)-1
             ENDDO
           ENDIF
         ENDIF
@@ -270,10 +266,9 @@
             XMIN = XMIN + FLOAT(NLONRGG(K-1))
           ENDIF
           IF (IMIN .GE. 1)  THEN
-            IF (BATHY(IMIN,K-1).GT.-990) THEN
+            IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND.
-     &              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
              KCOR(IP,3,1) = IH
             END IF
@@ -281,9 +276,9 @@
 
 !         SECOND CLOSEST GRID POINT IN SW GRID CORNER POINT
           IF (IMIN .GE. 1)  THEN
-            IF(XMIN.LE.FLOAT(IMIN-1)) THEN
+            IF (XMIN.LE.FLOAT(IMIN-1)) THEN
               IMIN2=IMIN-1
-              IF(IMIN.LE.1) THEN
+              IF (IMIN.LE.1) THEN
 !!test                IMIN2=1
                 IMIN2=NLONRGG(K-1)
               ELSE
@@ -291,7 +286,7 @@
               ENDIF
             ELSE
                IMIN2=IMIN+1
-              IF(IMIN.GE.NLONRGG(K-1)) THEN
+              IF (IMIN.GE.NLONRGG(K-1)) THEN
 !!test                IMIN2=NLONRGG(K-1)
                 IMIN2=1
               ELSE
@@ -299,10 +294,9 @@
               ENDIF
             ENDIF
 
-            IF (BATHY(IMIN2,K-1).GT.-990) THEN
+            IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND.
-     1              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
               KCOR(IP,3,2) = IH
             ENDIF
@@ -319,10 +313,9 @@
             XMIN = XMIN - FLOAT(NLONRGG(K-1))
           ENDIF
           IF (IMIN .LE. NLONRGG(K-1))  THEN
-            IF (BATHY(IMIN,K-1).GT.-990) THEN
+            IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND.
-     &              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
              KCOR(IP,2,1) = IH
             END IF
@@ -330,9 +323,9 @@
 
 !         SECOND CLOSEST GRID POINT IN SE GRID CORNER
           IF (IMIN .LE. NLONRGG(K-1))  THEN
-            IF(XMIN.LE.FLOAT(IMIN-1)) THEN
+            IF (XMIN.LE.FLOAT(IMIN-1)) THEN
                IMIN2=IMIN-1
-              IF(IMIN.LE.1) THEN
+              IF (IMIN.LE.1) THEN
 !!test                IMIN2=1
                 IMIN2=NLONRGG(K-1)
               ELSE
@@ -340,7 +333,7 @@
               ENDIF
             ELSE
                IMIN2=IMIN+1
-              IF(IMIN.GE.NLONRGG(K-1)) THEN
+              IF (IMIN.GE.NLONRGG(K-1)) THEN
 !!test                IMIN2=NLONRGG(K-1)
                 IMIN2=1
               ELSE
@@ -348,10 +341,9 @@
               ENDIF
             ENDIF
 
-            IF (BATHY(IMIN2,K-1).GT.-990) THEN
+            IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND.
-     1              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
               KCOR(IP,2,2) = IH
             ENDIF
@@ -372,10 +364,9 @@
           ENDIF
 
           IF (IPLUS .GE. 1)  THEN
-            IF (BATHY(IPLUS,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     &              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,4,1) = IH
             ENDIF
@@ -383,9 +374,9 @@
 
 !         SECOND CLOSEST GRID POINT IN NW GRID CORNER 
           IF (IPLUS .GE. 1)  THEN
-            IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
+            IF (XPLUS.LE.FLOAT(IPLUS-1)) THEN
                IPLUS2=IPLUS-1
-              IF(IPLUS.LE.1) THEN
+              IF (IPLUS.LE.1) THEN
 !!test                IPLUS2=1
                 IPLUS2=NLONRGG(K+1)
               ELSE
@@ -393,7 +384,7 @@
               ENDIF
             ELSE
                IPLUS2=IPLUS+1
-              IF(IPLUS.GE.NLONRGG(K+1)) THEN
+              IF (IPLUS.GE.NLONRGG(K+1)) THEN
 !!test                IPLUS2=NLONRGG(K+1)
                 IPLUS2=1
               ELSE
@@ -401,10 +392,9 @@
               ENDIF
             ENDIF
  
-            IF (BATHY(IPLUS2,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND.
-     1              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,4,2) = MIN(IH,IJLT(IG))
             ENDIF
@@ -421,10 +411,9 @@
           ENDIF
 
           IF (IPLUS .LE. NLONRGG(K+1))  THEN
-            IF (BATHY(IPLUS,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     &              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,1,1) = IH
             ENDIF
@@ -432,9 +421,9 @@
 
 !         SECOND CLOSEST GRID POINT IN NE GRID CORNER 
           IF (IPLUS .LE. NLONRGG(K+1))  THEN
-            IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
+            IF (XPLUS.LE.FLOAT(IPLUS-1)) THEN
                IPLUS2=IPLUS-1
-              IF(IPLUS.LE.1) THEN
+              IF (IPLUS.LE.1) THEN
 !!test                IPLUS2=1
                 IPLUS2=NLONRGG(K+1)
               ELSE
@@ -442,7 +431,7 @@
               ENDIF
             ELSE
                IPLUS2=IPLUS+1
-              IF(IPLUS.GE.NLONRGG(K+1)) THEN
+              IF (IPLUS.GE.NLONRGG(K+1)) THEN
 !!test                IPLUS2=NLONRGG(K+1)
                 IPLUS2=1
               ELSE
@@ -450,10 +439,9 @@
               ENDIF
             ENDIF
 
-            IF (BATHY(IPLUS2,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND.
-     1              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,1,2) = MIN(IH,IJLT(IG))
             ENDIF
@@ -499,36 +487,34 @@
             XMIN = XMIN + FLOAT(NLONRGG(K-1))
           ENDIF
           IF (IMIN .GE. 1)  THEN
-            IF (BATHY(IMIN,K-1).GT.-990) THEN
+            IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND.
-     &              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
              KRLON(IP,1,1) = IH
             END IF
           ENDIF
 
 !         SECOND CLOSEST GRID POINT IN SW CORNER
-          IF(IRGG.EQ.1) THEN
+          IF (IRGG.EQ.1) THEN
             IF (IMIN .GE. 1)  THEN
-              IF(XMIN.LE.FLOAT(IMIN-1)) THEN
-                IF(IMIN.LE.1) THEN
+              IF (XMIN.LE.FLOAT(IMIN-1)) THEN
+                IF (IMIN.LE.1) THEN
                   IMIN2=1
                 ELSE
                   IMIN2=IMIN-1
                 ENDIF
               ELSE
-                IF(IMIN.GE.NLONRGG(K-1)) THEN
+                IF (IMIN.GE.NLONRGG(K-1)) THEN
                   IMIN2=NLONRGG(K-1)
                 ELSE
                   IMIN2=IMIN+1
                 ENDIF
               ENDIF
 
-              IF (BATHY(IMIN2,K-1).GT.-990) THEN
+              IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (IXLG(IH,IG).EQ.IMIN2 .AND.
-     1                KXLT(IH,IG).EQ.K-1) EXIT
+                  IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
                 ENDDO
                 KRLON(IP,1,2) = IH
               ENDIF
@@ -546,36 +532,34 @@
             XMIN = XMIN - FLOAT(NLONRGG(K-1))
           ENDIF
           IF (IMIN .LE. NLONRGG(K-1))  THEN
-            IF (BATHY(IMIN,K-1).GT.-990) THEN
+            IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND.
-     &              KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
               ENDDO
              KRLAT(IP,1,1) = IH
             END IF
           ENDIF
 
 !         SECOND CLOSEST GRID POINT IN SE CORNER
-          IF(IRGG.EQ.1) THEN
+          IF (IRGG.EQ.1) THEN
             IF (IMIN .LE. NLONRGG(K-1))  THEN
-              IF(XMIN.LE.FLOAT(IMIN-1)) THEN
-                IF(IMIN.LE.1) THEN
+              IF (XMIN.LE.FLOAT(IMIN-1)) THEN
+                IF (IMIN.LE.1) THEN
                   IMIN2=1
                 ELSE
                   IMIN2=IMIN-1
                 ENDIF
               ELSE
-                IF(IMIN.GE.NLONRGG(K-1)) THEN
+                IF (IMIN.GE.NLONRGG(K-1)) THEN
                   IMIN2=NLONRGG(K-1)
                 ELSE
                   IMIN2=IMIN+1
                 ENDIF
               ENDIF
 
-              IF (BATHY(IMIN2,K-1).GT.-990) THEN
+              IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (IXLG(IH,IG).EQ.IMIN2 .AND.
-     1                KXLT(IH,IG).EQ.K-1) EXIT
+                  IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
                 ENDDO
                 KRLAT(IP,1,2) = IH
               ENDIF
@@ -597,36 +581,34 @@
           ENDIF
 
           IF (IPLUS .GE. 1)  THEN
-            IF (BATHY(IPLUS,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     &              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KRLAT(IP,2,1) = IH
             ENDIF
           ENDIF
 
 !         SECOND CLOSEST GRID POINT IN NW CORNER 
-          IF(IRGG.EQ.1) THEN
+          IF (IRGG.EQ.1) THEN
             IF (IPLUS .GE. 1)  THEN
-              IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
-                IF(IPLUS.LE.1) THEN
+              IF (XPLUS.LE.FLOAT(IPLUS-1)) THEN
+                IF (IPLUS.LE.1) THEN
                   IPLUS2=1
                 ELSE
                   IPLUS2=IPLUS-1
                 ENDIF
               ELSE
-                IF(IPLUS.GE.NLONRGG(K+1)) THEN
+                IF (IPLUS.GE.NLONRGG(K+1)) THEN
                   IPLUS2=NLONRGG(K+1)
                 ELSE
                   IPLUS2=IPLUS+1
                 ENDIF
               ENDIF
  
-              IF (BATHY(IPLUS2,K+1).GT.-990) THEN
+              IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
                 DO IH = IP,IJLT(IG)
-                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND.
-     1                KXLT(IH,IG).EQ.K+1) EXIT
+                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
                 ENDDO
                 KRLAT(IP,2,2) = MIN(IH,IJLT(IG))
               ENDIF
@@ -645,36 +627,34 @@
           ENDIF
 
           IF (IPLUS .LE. NLONRGG(K+1))  THEN
-            IF (BATHY(IPLUS,K+1).GT.-990) THEN
+            IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
               DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND.
-     &              KXLT(IH,IG).EQ.K+1) EXIT
+                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
               ENDDO
               KRLON(IP,2,1) = IH
             ENDIF
           ENDIF
 
 !         SECOND CLOSEST GRID POINT IN NE CORNER 
-          IF(IRGG.EQ.1) THEN
+          IF (IRGG.EQ.1) THEN
             IF (IPLUS .LE. NLONRGG(K+1))  THEN
-              IF(XPLUS.LE.FLOAT(IPLUS-1)) THEN
-                IF(IPLUS.LE.1) THEN
+              IF (XPLUS.LE.FLOAT(IPLUS-1)) THEN
+                IF (IPLUS.LE.1) THEN
                   IPLUS2=1
                 ELSE
                   IPLUS2=IPLUS-1
                 ENDIF
               ELSE
-                IF(IPLUS.GE.NLONRGG(K+1)) THEN
+                IF (IPLUS.GE.NLONRGG(K+1)) THEN
                   IPLUS2=NLONRGG(K+1)
                 ELSE
                   IPLUS2=IPLUS+1
                 ENDIF
               ENDIF
 
-              IF (BATHY(IPLUS2,K+1).GT.-990) THEN
+              IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
                 DO IH = IP,IJLT(IG)
-                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND.
-     1                KXLT(IH,IG).EQ.K+1) EXIT
+                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
                 ENDDO
                 KRLON(IP,2,2) = MIN(IH,IJLT(IG))
               ENDIF
@@ -704,47 +684,47 @@
 
       DO IJP=1,2
         DO IJ=1,NIBLO
-           WLAT(IJ,IJP)=1.
-           WRLAT(IJ,IJP)=1.
-           WRLON(IJ,IJP)=1.
+           WLAT(IJ,IJP)=1.0_JWRB
+           WRLAT(IJ,IJP)=1.0_JWRB
+           WRLON(IJ,IJP)=1.0_JWRB
         ENDDO
       ENDDO
       DO ICR=1,4
         DO IJ=1,NIBLO
-           WCOR(IJ,ICR)=1.
+           WCOR(IJ,ICR)=1.0_JWRB
         ENDDO
       ENDDO
 
-      IF(IRGG.EQ.1) THEN
+      IF (IRGG.EQ.1) THEN
         DO IP = 1,IJLT(IG)
           I = IXLG(IP,IG)
           K = KXLT(IP,IG)
           D0 = FLOAT(I-1)*ZDELLO(K)
-          D3=D0-0.5*ZDELLO(K)
-          D5=D0+0.5*ZDELLO(K)
+          D3=D0-0.5_JWRB*ZDELLO(K)
+          D5=D0+0.5_JWRB*ZDELLO(K)
 
           IF (K.GT.1) THEN
 !           SOUTHERN POINT 
             XMIN = D0/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
             XP=FLOAT(IMIN-1)*ZDELLO(K-1)
-            D4=XP-0.5*ZDELLO(K-1)
-            D6=XP+0.5*ZDELLO(K-1)
-            IF(D0.LE.XP) THEN
-              IF(D4.LE.D3.OR.D6.LE.D5) THEN
-                 WLAT(IP,1) = 1.
+            D4=XP-0.5_JWRB*ZDELLO(K-1)
+            D6=XP+0.5_JWRB*ZDELLO(K-1)
+            IF (D0.LE.XP) THEN
+              IF (D4.LE.D3 .OR. D6.LE.D5) THEN
+                 WLAT(IP,1) = 1.0_JWRB
               ELSE
                  D2=D4-D3
                  D1=ZDELLO(K)-D2
-                 WLAT(IP,1)=MIN(1.,D1/ZDELLO(K))
+                 WLAT(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K))
               ENDIF
             ELSE
-              IF(D4.GE.D3.OR.D6.GE.D5) THEN
-                 WLAT(IP,1) = 1.
+              IF (D4.GE.D3 .OR. D6.GE.D5) THEN
+                 WLAT(IP,1) = 1.0_JWRB
               ELSE
                  D2=D5-D6
                  D1=ZDELLO(K)-D2
-                 WLAT(IP,1)=MIN(1.,D1/ZDELLO(K))
+                 WLAT(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K))
               ENDIF
             ENDIF
 
@@ -754,52 +734,52 @@
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
             XP=FLOAT(IMIN-1)*ZDELLO(K-1)
-            D4=XP-0.5*ZDELLO(K-1)
-            D6=XP+0.5*ZDELLO(K-1)
-            IF(XL.LE.XP) THEN
-              IF(D4.LE.D0-TWOXDELLA) THEN
-                 WRLON(IP,1)=1.
-              ELSE IF(D6.LE.D0) THEN
+            D4=XP-0.5_JWRB*ZDELLO(K-1)
+            D6=XP+0.5_JWRB*ZDELLO(K-1)
+            IF (XL.LE.XP) THEN
+              IF (D4.LE.D0-TWOXDELLA) THEN
+                 WRLON(IP,1)=1.0_JWRB
+              ELSEIF (D6.LE.D0) THEN
                  D2=XP-XL
                  D1=ZDELLO(K-1)-D2
-                 WRLON(IP,1)=MIN(1.,D1/ZDELLO(K-1))
+                 WRLON(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K-1))
               ELSE
                  D2=D4-(D0-TWOXDELLA)
                  D1=TWOXDELLA-D2
-                 WRLON(IP,1)=MIN(1.,D1/TWOXDELLA)
+                 WRLON(IP,1)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ELSE
-              IF(D6.GE.D0) THEN
-                 WRLON(IP,1)=1.
-              ELSE IF(D4.GE.D0-TWOXDELLA) THEN
+              IF (D6.GE.D0) THEN
+                 WRLON(IP,1)=1.0_JWRB
+              ELSE IF (D4.GE.D0-TWOXDELLA) THEN
                  D2=XL-XP
                  D1=ZDELLO(K-1)-D2
-                 WRLON(IP,1)=MIN(1.,D1/ZDELLO(K-1))
+                 WRLON(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K-1))
               ELSE
                  D2=D0-D6
                  D1=TWOXDELLA-D2
-                 WRLON(IP,1)=MIN(1.,D1/TWOXDELLA)
+                 WRLON(IP,1)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ENDIF
 
 !           FOR CORNER TRANSPORT SCHEME
 !           SOUTH-WEST CORNER 
             XL=D0-ZDELLO(K)
-            XLL=XL-0.5*ZDELLO(K)
-            XLR=XL+0.5*ZDELLO(K)
+            XLL=XL-0.5_JWRB*ZDELLO(K)
+            XLR=XL+0.5_JWRB*ZDELLO(K)
 
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
             XP=FLOAT(IMIN-1)*ZDELLO(K-1)
-            XPL=XP-0.5*ZDELLO(K-1)
-            XPR=XP+0.5*ZDELLO(K-1)
+            XPL=XP-0.5_JWRB*ZDELLO(K-1)
+            XPR=XP+0.5_JWRB*ZDELLO(K-1)
 
-            IF(XPL.GT.XLL .AND. XPR.LT.XLR) THEN
+            IF (XPL.GT.XLL .AND. XPR.LT.XLR) THEN
               D1=ZDELLO(K)
             ELSE
               D1=MIN(XLR,XPR)-MAX(XLL,XPL)
             ENDIF
-            WCOR(IP,3)=MIN(1.,D1/ZDELLO(K))
+            WCOR(IP,3)=MIN(1.0_JWRB,D1/ZDELLO(K))
 
 !           SOUTH-EAST CORNER 
 !           FOR DUAL ROTATED SCHEME
@@ -807,52 +787,52 @@
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
             XP=FLOAT(IMIN-1)*ZDELLO(K-1)
-            D4=XP-0.5*ZDELLO(K-1)
-            D6=XP+0.5*ZDELLO(K-1)
-            IF(XL.LE.XP) THEN
-              IF(D4.LE.D0) THEN
-                 WRLAT(IP,1)=1.
-              ELSE IF(D6.LE.D0+TWOXDELLA) THEN
+            D4=XP-0.5_JWRB*ZDELLO(K-1)
+            D6=XP+0.5_JWRB*ZDELLO(K-1)
+            IF (XL.LE.XP) THEN
+              IF (D4.LE.D0) THEN
+                 WRLAT(IP,1)=1.0_JWRB
+              ELSE IF (D6.LE.D0+TWOXDELLA) THEN
                  D2=XP-XL
                  D1=ZDELLO(K-1)-D2
-                 WRLAT(IP,1)=MIN(1.,D1/ZDELLO(K-1))
+                 WRLAT(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K-1))
               ELSE
                  D2=D4-D0
                  D1=TWOXDELLA-D2
-                 WRLAT(IP,1)=MIN(1.,D1/TWOXDELLA)
+                 WRLAT(IP,1)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ELSE
-              IF(D6.GE.D0+TWOXDELLA) THEN
-                 WRLAT(IP,1)=1.
-              ELSE IF(D4.GE.D0) THEN
+              IF (D6.GE.D0+TWOXDELLA) THEN
+                 WRLAT(IP,1)=1.0_JWRB
+              ELSE IF (D4.GE.D0) THEN
                  D2=XL-XP
                  D1=ZDELLO(K-1)-D2
-                 WRLAT(IP,1)=MIN(1.,D1/ZDELLO(K-1))
+                 WRLAT(IP,1)=MIN(1.0_JWRB,D1/ZDELLO(K-1))
               ELSE
                  D2=D0+TWOXDELLA-D6
                  D1=TWOXDELLA-D2
-                 WRLAT(IP,1)=MIN(1.,D1/TWOXDELLA)
+                 WRLAT(IP,1)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ENDIF
 
 !           FOR CORNER TRANSPORT SCHEME
 !           SOUTH-EAST CORNER 
             XL=D0+ZDELLO(K)
-            XLL=XL-0.5*ZDELLO(K)
-            XLR=XL+0.5*ZDELLO(K)
+            XLL=XL-0.5_JWRB*ZDELLO(K)
+            XLR=XL+0.5_JWRB*ZDELLO(K)
 
             XMIN = XL/ZDELLO(K-1)
             IMIN = NINT(XMIN) + 1
             XP=FLOAT(IMIN-1)*ZDELLO(K-1)
-            XPL=XP-0.5*ZDELLO(K-1)
-            XPR=XP+0.5*ZDELLO(K-1)
+            XPL=XP-0.5_JWRB*ZDELLO(K-1)
+            XPR=XP+0.5_JWRB*ZDELLO(K-1)
 
-            IF(XPL.GT.XLL .AND. XPR.LT.XLR) THEN
+            IF (XPL.GT.XLL .AND. XPR.LT.XLR) THEN
               D1=ZDELLO(K)
             ELSE
               D1=MIN(XLR,XPR)-MAX(XLL,XPL)
             ENDIF
-            WCOR(IP,2)=MIN(1.,D1/ZDELLO(K))
+            WCOR(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K))
 
           ENDIF
 
@@ -861,23 +841,23 @@
             XPLUS = D0/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
             XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
-            D4=XP-0.5*ZDELLO(K+1)
-            D6=XP+0.5*ZDELLO(K+1)
-            IF(D0.LE.XP) THEN
-              IF(D4.LE.D3.OR.D6.LE.D5) THEN
-                 WLAT(IP,2) = 1.
+            D4=XP-0.5_JWRB*ZDELLO(K+1)
+            D6=XP+0.5_JWRB*ZDELLO(K+1)
+            IF (D0.LE.XP) THEN
+              IF (D4.LE.D3.OR.D6.LE.D5) THEN
+                 WLAT(IP,2) = 1.0_JWRB
               ELSE
                  D2=D4-D3
                  D1=ZDELLO(K)-D2
-                 WLAT(IP,2)=MIN(1.,D1/ZDELLO(K))
+                 WLAT(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K))
               ENDIF
             ELSE
-              IF(D4.GE.D3.OR.D6.GE.D5) THEN
-                 WLAT(IP,2) = 1.
+              IF (D4.GE.D3 .OR. D6.GE.D5) THEN
+                 WLAT(IP,2) = 1.0_JWRB
               ELSE
                  D2=D5-D6
                  D1=ZDELLO(K)-D2
-                 WLAT(IP,2)=MIN(1.,D1/ZDELLO(K))
+                 WLAT(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K))
               ENDIF
             ENDIF
 
@@ -887,52 +867,52 @@
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
             XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
-            D4=XP-0.5*ZDELLO(K+1)
-            D6=XP+0.5*ZDELLO(K+1)
-            IF(XL.LE.XP) THEN
-              IF(D4.LE.D0-TWOXDELLA) THEN
-                 WRLAT(IP,2)=1.
-              ELSE IF(D6.LE.D0) THEN
+            D4=XP-0.5_JWRB*ZDELLO(K+1)
+            D6=XP+0.5_JWRB*ZDELLO(K+1)
+            IF (XL.LE.XP) THEN
+              IF (D4.LE.D0-TWOXDELLA) THEN
+                 WRLAT(IP,2)=1.0_JWRB
+              ELSE IF (D6.LE.D0) THEN
                  D2=XP-XL
                  D1=ZDELLO(K+1)-D2
-                 WRLAT(IP,2)=MIN(1.,D1/ZDELLO(K+1))
+                 WRLAT(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K+1))
               ELSE
                  D2=D4-(D0-TWOXDELLA)
                  D1=TWOXDELLA-D2
-                 WRLAT(IP,2)=MIN(1.,D1/TWOXDELLA)
+                 WRLAT(IP,2)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ELSE
-              IF(D6.GE.D0) THEN
-                 WRLAT(IP,2)=1.
-              ELSE IF(D4.GE.D0-TWOXDELLA) THEN
+              IF (D6.GE.D0) THEN
+                 WRLAT(IP,2)=1.0_JWRB
+              ELSE IF (D4.GE.D0-TWOXDELLA) THEN
                  D2=XL-XP
                  D1=ZDELLO(K+1)-D2
-                 WRLAT(IP,2)=MIN(1.,D1/ZDELLO(K+1))
+                 WRLAT(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K+1))
               ELSE
                  D2=D0-D6
                  D1=TWOXDELLA-D2
-                 WRLAT(IP,2)=MIN(1.,D1/TWOXDELLA)
+                 WRLAT(IP,2)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ENDIF
 
 !           FOR CORNER TRANSPORT SCHEME
 !           NORTH-WEST CORNER 
             XL=D0-ZDELLO(K)
-            XLL=XL-0.5*ZDELLO(K)
-            XLR=XL+0.5*ZDELLO(K)
+            XLL=XL-0.5_JWRB*ZDELLO(K)
+            XLR=XL+0.5_JWRB*ZDELLO(K)
 
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
             XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
-            XPL=XP-0.5*ZDELLO(K+1)
-            XPR=XP+0.5*ZDELLO(K+1)
+            XPL=XP-0.5_JWRB*ZDELLO(K+1)
+            XPR=XP+0.5_JWRB*ZDELLO(K+1)
 
-            IF(XPL.GT.XLL .AND. XPR.LT.XLR) THEN
+            IF (XPL.GT.XLL .AND. XPR.LT.XLR) THEN
               D1=ZDELLO(K)
             ELSE
               D1=MIN(XLR,XPR)-MAX(XLL,XPL)
             ENDIF
-            WCOR(IP,4)=MIN(1.,D1/ZDELLO(K))
+            WCOR(IP,4)=MIN(1.0_JWRB,D1/ZDELLO(K))
 
 
 !           NORTH-EAST CORNER 
@@ -941,47 +921,47 @@
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
             XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
-            D4=XP-0.5*ZDELLO(K+1)
-            D6=XP+0.5*ZDELLO(K+1)
-            IF(XL.LE.XP) THEN
-              IF(D4.LE.D0) THEN
-                 WRLON(IP,2)=1.
-              ELSE IF(D6.LE.D0+TWOXDELLA) THEN
+            D4=XP-0.5_JWRB*ZDELLO(K+1)
+            D6=XP+0.5_JWRB*ZDELLO(K+1)
+            IF (XL.LE.XP) THEN
+              IF (D4.LE.D0) THEN
+                 WRLON(IP,2)=1.0_JWRB
+              ELSE IF (D6.LE.D0+TWOXDELLA) THEN
                  D2=XP-XL
                  D1=ZDELLO(K+1)-D2
-                 WRLON(IP,2)=MIN(1.,D1/ZDELLO(K+1))
+                 WRLON(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K+1))
               ELSE
                  D2=D4-D0
                  D1=TWOXDELLA-D2
-                 WRLON(IP,2)=MIN(1.,D1/TWOXDELLA)
+                 WRLON(IP,2)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ELSE
-              IF(D6.GE.D0+TWOXDELLA) THEN
-                 WRLON(IP,2)=1.
-              ELSE IF(D4.GE.D0) THEN
+              IF (D6.GE.D0+TWOXDELLA) THEN
+                 WRLON(IP,2)=1.0_JWRB
+              ELSE IF (D4.GE.D0) THEN
                  D2=XL-XP
                  D1=ZDELLO(K+1)-D2
-                 WRLON(IP,2)=MIN(1.,D1/ZDELLO(K+1))
+                 WRLON(IP,2)=MIN(1.0_JWRB,D1/ZDELLO(K+1))
               ELSE
                  D2=D0+TWOXDELLA-D6
                  D1=TWOXDELLA-D2
-                 WRLON(IP,2)=MIN(1.,D1/TWOXDELLA)
+                 WRLON(IP,2)=MIN(1.0_JWRB,D1/TWOXDELLA)
               ENDIF
             ENDIF
 
 !           FOR CORNER TRANSPORT SCHEME
 !           NORTH-EAST CORNER 
             XL=D0+ZDELLO(K)
-            XLL=XL-0.5*ZDELLO(K)
-            XLR=XL+0.5*ZDELLO(K)
+            XLL=XL-0.5_JWRB*ZDELLO(K)
+            XLR=XL+0.5_JWRB*ZDELLO(K)
 
             XPLUS = XL/ZDELLO(K+1)
             IPLUS = NINT(XPLUS) + 1
             XP=FLOAT(IPLUS-1)*ZDELLO(K+1)
-            XPL=XP-0.5*ZDELLO(K+1)
-            XPR=XP+0.5*ZDELLO(K+1)
+            XPL=XP-0.5_JWRB*ZDELLO(K+1)
+            XPR=XP+0.5_JWRB*ZDELLO(K+1)
 
-            IF(XPL.GT.XLL .AND. XPR.LT.XLR) THEN
+            IF (XPL.GT.XLL .AND. XPR.LT.XLR) THEN
               D1=ZDELLO(K)
             ELSE
               D1=MIN(XLR,XPR)-MAX(XLL,XPL)
@@ -993,19 +973,22 @@
         ENDDO
       ENDIF
 
-      IF(IRGG.EQ.1) THEN
+      IF (IRGG.EQ.1) THEN
         LLABORT=.FALSE.
         DO IS=1,2
           DO IP = 1,IJLT(IG)
-            IF(WLAT(IP,IS).LT.0. .OR. WLAT(IP,IS).GT.1.) THEN
+            IF (WLAT(IP,IS).LT.0.0_JWRB .OR.                            &
+     &          WLAT(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WLAT < 0 or > 1 !!!! ',IP,IS,WLAT(IP,IS)
               LLABORT=.TRUE.
             ENDIF
-            IF(WRLON(IP,IS).LT.0. .OR. WRLON(IP,IS).GT.1.) THEN
+            IF (WRLON(IP,IS).LT.0.0_JWRB .OR.                           &
+     &          WRLON(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WRLON < 0 or > 1 !!!! ',IP,IS,WRLON(IP,IS)
               LLABORT=.TRUE.
             ENDIF
-            IF(WRLAT(IP,IS).LT.0. .OR. WRLAT(IP,IS).GT.1.) THEN
+            IF (WRLAT(IP,IS).LT.0.0_JWRB .OR.                           &
+     &          WRLAT(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WRLAT < 0 or > 1 !!!! ',IP,IS,WRLAT(IP,IS)
               LLABORT=.TRUE.
             ENDIF
@@ -1013,13 +996,14 @@
         ENDDO
         DO IS=1,4
           DO IP = 1,IJLT(IG)
-            IF(WCOR(IP,IS).LT.0. .OR. WCOR(IP,IS).GT.1.) THEN
+            IF (WCOR(IP,IS).LT.0.0_JWRB .OR.                            &
+     &          WCOR(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WCOR < 0 or > 1 !!!! ',IP,IS,WCOR(IP,IS)
               LLABORT=.TRUE.
             ENDIF
           ENDDO
         ENDDO
-        IF(LLABORT) THEN
+        IF (LLABORT) THEN
           WRITE(IU06,*) ' ' 
           WRITE(IU06,*) ' PROBLEM IN MUBUF  (see above) !!!! '
           WRITE(IU06,*) ' ' 
@@ -1045,9 +1029,9 @@
 !     DETERMINE THE REAL REDUCTION FACTORS TO BE USED IN THE PROPAGATION
 
 !     CHECK INOUT IS CONSISTENT WITH CURRENT SETUP
-      IF(LLOBSTRCT) THEN
+      IF (LLOBSTRCT) THEN
         READ (IU01,'(I4)') NFREMAX
-        IF(NFREMAX.NE.ML ) THEN
+        IF (NFREMAX.NE.ML ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. MUBUF         *'
@@ -1071,7 +1055,7 @@
           DO IJ=1,NIBLO
             KDUM(IJ)=1000
           ENDDO
-          IF(LLOBSTRCT) THEN
+          IF (LLOBSTRCT) THEN
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
@@ -1093,7 +1077,7 @@
           DO IJ=1,NIBLO
             KDUM(IJ)=1000
           ENDDO
-          IF(LLOBSTRCT) THEN
+          IF (LLOBSTRCT) THEN
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
@@ -1115,7 +1099,7 @@
           DO IJ=1,NIBLO
             KDUM(IJ)=1000
           ENDDO
-          IF(LLOBSTRCT) THEN
+          IF (LLOBSTRCT) THEN
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
@@ -1135,7 +1119,7 @@
           DO IJ=1,NIBLO
             KDUM(IJ)=1000
           ENDDO
-          IF(LLOBSTRCT) THEN
+          IF (LLOBSTRCT) THEN
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
@@ -1155,7 +1139,7 @@
           DO IJ=1,NIBLO
             KDUM(IJ)=1000
           ENDDO
-          IF(LLOBSTRCT) THEN
+          IF (LLOBSTRCT) THEN
             DO K=1,NY
               WRITE(CX,'(I4.4)') NLONRGG(K)
               FORMAT='('//CX//'I4)'
@@ -1174,5 +1158,4 @@
 
       DEALLOCATE(KDUM)
 
-      RETURN
       END SUBROUTINE MUBUF

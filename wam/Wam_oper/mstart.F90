@@ -1,4 +1,4 @@
-      SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,
+      SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,         &
      &                   FL1, U10OLD, THWOLD)
 ! ----------------------------------------------------------------------
 
@@ -59,11 +59,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
       USE YOWPCONS , ONLY : DEG
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
-      USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,
+      USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
      &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : CDTPRO
@@ -76,14 +78,14 @@
 #include "peak.intfb.h"
 #include "spectra.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU12, IU14, IU15, IOPTI
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU12, IU14, IU15, IOPTI
 
-      REAL, INTENT(IN) :: FETCH, FRMAX
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1 
+      REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
 
-      INTEGER :: IG
-      INTEGER :: M, K, IJ, NGOU
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
@@ -101,12 +103,12 @@
 
       DO M=1,NFRE
         DO K=1,NANG
-          FL1(NINF-1,K,M) = 0.
+          FL1(NINF-1,K,M) = 0.0_JWRB
         ENDDO
       ENDDO
 
       WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
-      WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',
+      WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',          &
      &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
 
 ! ----------------------------------------------------------------------
@@ -125,8 +127,8 @@
 
         IF (IOPTI.EQ.1) THEN
           DO IJ = IJS(IG), IJL(IG)
-            FP(IJ) = 0.
-            ALPHJ(IJ) = 0.
+            FP(IJ) = 0.0_JWRB
+            ALPHJ(IJ) = 0.0_JWRB
             THES(IJ) = THWOLD(IJ,IG)
           ENDDO
         ELSE IF (IOPTI.EQ.0) THEN
@@ -139,10 +141,10 @@
           DO IJ = IJS(IG), IJL(IG)
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
-            IF (U10OLD(IJ,IG) .GT. 0.1E-08) THEN
+            IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
               THES(IJ) = THWOLD(IJ,IG)
             ELSE
-              THES(IJ) = 0.
+              THES(IJ) = 0.0_JWRB
             ENDIF
           ENDDO
         ENDIF
@@ -163,8 +165,8 @@
         DO NGOU = 1, NGOUT
           IF (IG.EQ.IGAR(NGOU)) THEN
             IJ = IJAR(NGOU)
-            WRITE (IU06,'(1X,3I6,F8.2,F8.2,5F8.4)')  NGOU, IG, IJ,
-     &       U10OLD(IJ,IG), THWOLD(IJ,IG)*DEG, FP(IJ), ALPHJ(IJ),
+            WRITE (IU06,'(1X,3I6,F8.2,F8.2,5F8.4)')  NGOU, IG, IJ,      &
+     &       U10OLD(IJ,IG), THWOLD(IJ,IG)*DEG, FP(IJ), ALPHJ(IJ),       &
      &       GAMMA, SA, SB
           ENDIF
         ENDDO
@@ -191,5 +193,4 @@
       CDAWIFL = ZERO
       CDATEFL = ZERO
 
-      RETURN
       END SUBROUTINE MSTART
