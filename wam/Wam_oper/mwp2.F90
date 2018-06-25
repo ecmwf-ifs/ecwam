@@ -45,22 +45,23 @@
       USE YOWFRED  , ONLY : FR       ,DFIMFR2_SIM,DELTH  ,WP2TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(OUT) :: MEANWP2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: MEANWP2
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: TEMP
-      REAL KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: COEF_FR
 
 ! ----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('MWP2',0,ZHOOK_HANDLE)
 
       DO IJ=IJS,IJL
@@ -91,7 +92,7 @@
         IF(EMEAN(IJ).GT.EPSMIN .AND. MEANWP2(IJ).GT.EPSMIN ) THEN
           MEANWP2(IJ) = SQRT(EMEAN(IJ)/MEANWP2(IJ))
         ELSE
-          MEANWP2(IJ) = 0. 
+          MEANWP2(IJ) = 0.0_JWRB 
         ENDIF
       ENDDO
 
