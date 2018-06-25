@@ -1,8 +1,9 @@
-      SUBROUTINE NEWWIND (IJS,IJL,IG,IGL,CDATE,CDATEWH,NEWREAD,NEWFILE,
-     &                    U10OLD,THWOLD,U10NEW,THWNEW,
-     &                    USOLD, USNEW,
-     &                    ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
-     &                    CICOVER, CITHICK, CIWA,
+      SUBROUTINE NEWWIND (IJS, IJL, IG, IGL, CDATE, CDATEWH,            &
+     &                    NEWREAD, NEWFILE,                             &
+     &                    U10OLD, THWOLD, U10NEW, THWNEW,               &
+     &                    USOLD, USNEW,                                 &
+     &                    ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,             &
+     &                    CICOVER, CITHICK, CIWA,                       &
      &                    TAUW, BETAOLD)
 ! ----------------------------------------------------------------------
 
@@ -74,14 +75,16 @@
 
 !*    *PARAMETER*  FOR ARRAY DIMENSIONS.
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA
       USE YOWPARAM , ONLY : NFRE     ,NBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,
-     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,
+      USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,    &
+     &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
      &            USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -93,37 +96,36 @@
 #include "cireduce.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, INTENT(IN) :: IG, IGL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IGL
 
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
-      REAL,DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
-      REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
-      REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
-      REAL,DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER, CITHICK 
-      REAL,DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER, CITHICK 
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH
 
       LOGICAL, INTENT(INOUT) :: NEWREAD, NEWFILE
 
-      INTEGER, SAVE :: ISTORE = 0
+      INTEGER(KIND=JWIM), SAVE :: ISTORE = 0
 
-      INTEGER :: ICODE_WND
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA, IJ
+      INTEGER(KIND=JWIM) :: ICODE_WND
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
-      REAL :: WGHT, TLWMAX
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: WGHT, TLWMAX
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
-#endif
 
       NPROMA=NPROMA_WAM
 
@@ -133,7 +135,7 @@
         ICODE_WND = ICODE
       ENDIF
 
-      WGHT=1./MAX(WSPMIN_RESET_TAUW,EPSMIN)
+      WGHT=1.0_JWRB/MAX(WSPMIN_RESET_TAUW,EPSMIN)
 
 !*    1. WINDS ARE TAKEN FROM INTERMEDIATE STORAGE.
 !        ------------------------------------------
@@ -161,7 +163,7 @@
             NEWFILE = .TRUE.
             ISTORE=1
             IF (ITEST.GE.2) THEN
-              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',
+              WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',            &
      &         ' AT CDATE = ', CDATE
             ENDIF
           ENDIF
@@ -169,7 +171,7 @@
 
 !*    2.2 NEW WINDS ARE READ IN.
 !         ----------------------
-        IF(ISTORE.GT.NSTORE) THEN
+        IF (ISTORE.GT.NSTORE) THEN
           WRITE(IU06,*) ' ********************************************'
           WRITE(IU06,*) '      FATAL ERROR IN SUB. NEWWIND:           '
           WRITE(IU06,*) '      ISTORE > NSTORE !!!                    '
@@ -201,9 +203,9 @@
             DO IJ = KIJS, KIJL
               USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
 ! update the estimate of TAUW
-              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0-(ALPHA/BETAOLD(IJ))**2)
+              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
-              IF(USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0
+              IF (USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0_JWRB
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL
@@ -219,15 +221,14 @@
 
         ISTORE=ISTORE+1
 
-        CALL INCDATE(CDATEWH,IDELWO)
+        CALL INCDATE(CDATEWH, IDELWO)
         NEWREAD = .TRUE.   
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-        CALL CIREDUCE (CICOVER,CITHICK,CIWA)
+        CALL CIREDUCE (CICOVER, CITHICK, CIWA)
 
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('NEWWIND',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE NEWWIND

@@ -39,11 +39,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DELTH    ,FRATIO
-      USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,
-     &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,
-     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,
-     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,
+      USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
+     &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
+     &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
+     &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : PI       ,DEG
@@ -55,8 +57,8 @@
 !
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
 
-      REAL, PARAMETER :: ALAMD=0.25
-      REAL, PARAMETER :: CON=3000.
+      REAL(KIND=JWRB), PARAMETER :: ALAMD=0.25_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CON=3000.0_JWRB
 !
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -65,15 +67,15 @@
 !                            NONLINEAR TRANSFER
 ! ----------------------------------------------------------------------
 
-      INTEGER :: I, ISP,ISM, M, K
-      INTEGER :: KLP1, IC, KH, KLH, KS, ISG, K1, K11, K2, K21, IKN
-!      INTEGER :: JAFU
-      INTEGER, ALLOCATABLE :: JA1(:,:)
-      INTEGER, ALLOCATABLE :: JA2(:,:)
+      INTEGER(KIND=JWIM) :: I, ISP, ISM, M, K
+      INTEGER(KIND=JWIM) :: KLP1, IC, KH, KLH, KS, ISG, K1, K11, K2, K21, IKN
+!!      INTEGER(KIND=JWIM) :: JAFU
+      INTEGER(KIND=JWIM), ALLOCATABLE :: JA1(:,:)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: JA2(:,:)
 
-      REAL :: F1P1, XF, COSTH3, DELPHI1, COSTH4, DELPHI2, CL1, CL2, CH
-      REAL :: CL1H, CL2H, FRG, FLP, FLM, FKP, FKM, DELTHA, AL11, AL12 
-      REAL, ALLOCATABLE :: FRLON(:)
+      REAL(KIND=JWRB) :: F1P1, XF, COSTH3, DELPHI1, COSTH4, DELPHI2, CL1, CL2, CH
+      REAL(KIND=JWRB) :: CL1H, CL2H, FRG, FLP, FLM, FKP, FKM, DELTHA, AL11, AL12 
+      REAL(KIND=JWRB), ALLOCATABLE :: FRLON(:)
 
 ! ----------------------------------------------------------------------
 
@@ -81,8 +83,8 @@
 !        ---------------
 
       F1P1 = LOG10(FRATIO)
-      ISP = INT(LOG10(1.+ALAMD)/F1P1+.000001)
-      ISM = FLOOR(LOG10(1.-ALAMD)/F1P1+.0000001)
+      ISP = INT(LOG10(1.0_JWRB+ALAMD)/F1P1+.000001_JWRB)
+      ISM = FLOOR(LOG10(1.0_JWRB-ALAMD)/F1P1+.0000001_JWRB)
 
       MFRSTLW=1+ISM
       MLSTHG=NFRE-ISM
@@ -114,11 +116,11 @@
 !*    1.1 DETERMINE ANGLES DELPHI USING RESONANCE CONDITION.
 !         --------------------------------------------------
 !     
-      XF      = ((1.+ALAMD)/(1.-ALAMD))**4
-      COSTH3  = (1.+2.*ALAMD+2.*ALAMD**3)/(1.+ALAMD)**2
-      DELPHI1 = -180./PI*ACOS(COSTH3)
-      COSTH4  = SQRT(1.-XF+XF*COSTH3**2)
-      DELPHI2 = 180./PI*ACOS(COSTH4)
+      XF      = ((1.0_JWRB+ALAMD)/(1.0_JWRB-ALAMD))**4
+      COSTH3  = (1.0_JWRB+2.0_JWRB*ALAMD+2.0_JWRB*ALAMD**3)/(1.0_JWRB+ALAMD)**2
+      DELPHI1 = -180.0_JWRB/PI*ACOS(COSTH3)
+      COSTH4  = SQRT(1.0_JWRB-XF+XF*COSTH3**2)
+      DELPHI2 = 180.0_JWRB/PI*ACOS(COSTH4)
 
       DELTHA = DELTH*DEG
       CL1 = DELPHI1/DELTHA
@@ -152,12 +154,12 @@
       CL2  = CL2-INT(CL2)
       ACL1 = ABS(CL1)
       ACL2 = ABS(CL2)
-      CL11 = 1.-ACL1
-      CL21 = 1.-ACL2
-      AL11 = (1.+ALAMD)**4
-      AL12 = (1.-ALAMD)**4
-      DAL1 = 1./AL11
-      DAL2 = 1./AL12
+      CL11 = 1.0_JWRB-ACL1
+      CL21 = 1.0_JWRB-ACL2
+      AL11 = (1.0_JWRB+ALAMD)**4
+      AL12 = (1.0_JWRB-ALAMD)**4
+      DAL1 = 1.0_JWRB/AL11
+      DAL2 = 1.0_JWRB/AL12
 
 !*    1.3 COMPUTATION OF ANGULAR INDICES.
 !         -------------------------------
@@ -169,10 +171,10 @@
         DO K=1,NANG
           KS = K
           IF (KH.EQ.2) KS = NANG-K+2
-          IF(K.EQ.1) KS = 1
+          IF (K.EQ.1) KS = 1
           K1 = JA1(K,KH)
           K1W(KS,KH) = K1
-          IF (CL1H.LT.0.) THEN
+          IF (CL1H.LT.0.0_JWRB) THEN
             K11 = K1-1
             IF (K11.LT.1) K11 = NANG 
           ELSE
@@ -184,7 +186,7 @@
           K2W(KS,KH) = K2
           IF (CL2H.LT.0) THEN
             K21 = K2-1
-            IF(K21.LT.1) K21 = NANG 
+            IF (K21.LT.1) K21 = NANG 
           ELSE
             K21 = K2+1
             IF (K21.GT.NANG) K21 = 1
@@ -209,29 +211,29 @@
       DO M=MFRSTLW,MLSTHG
         FRG = FRLON(M)
         AF11(M) = CON * FRG**11
-        FLP = FRG*(1.+ALAMD)
-        FLM = FRG*(1.-ALAMD)
+        FLP = FRG*(1.0_JWRB+ALAMD)
+        FLM = FRG*(1.0_JWRB-ALAMD)
         IKN = M+ISP
         IKP(M) = IKN
         FKP = FRLON(IKP(M))
         IKP1(M) = IKP(M)+1
         FKLAP(M) = (FLP-FKP)/(FRLON(IKP1(M))-FKP)
-        FKLAP1(M) = 1.-FKLAP(M)
+        FKLAP1(M) = 1.0_JWRB-FKLAP(M)
         IF (FRLON(MFRSTLW).GE.FLM) THEN
           IKM(M) = 1
           IKM1(M) = 1
-          FKLAM(M) = 0.
-          FKLAM1(M) = 0.
+          FKLAM(M) = 0.0_JWRB
+          FKLAM1(M) = 0.0_JWRB
         ELSE
           IKN = M+ISM
           IKM(M) = IKN
           FKM = FRLON(IKM(M))
           IKM1(M) = IKM(M)+1
           FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
-          FKLAM1(M) = 1.-FKLAM(M)
+          FKLAM1(M) = 1.0_JWRB-FKLAM(M)
           IF (IKN.LT.MFRSTLW) THEN
             IKM(M) = 1
-            FKLAM1(M) = 0.
+            FKLAM1(M) = 0.0_JWRB
           ENDIF
         ENDIF
       ENDDO
@@ -253,28 +255,28 @@
       WRITE(IU06,*)'      CON = ', CON
       WRITE(IU06,*)'  DELPHI1 = ',DELPHI1
       WRITE(IU06,*)'  DELPHI2 = ',DELPHI2
-      WRITE(IU06,'(1X,''    ACL1       ACL2   '',
-     &             ''    CL11       CL21   '',
+      WRITE(IU06,'(1X,''    ACL1       ACL2   '',                       &
+     &             ''    CL11       CL21   '',                          &
      &             ''    DAL1       DAL2'')')
       WRITE(IU06,'(1X,6F11.8)') ACL1, ACL2, CL11, CL21, DAL1, DAL2
 
       WRITE(IU06,'(1H0,'' COMMON INDNL: FREQUENCY ARRAYS'')')
-      WRITE(IU06,'(1X,'' M   IKP IKP1  IKM IKM1'',
-     &          ''   FKLAP       FKLAP1 '',
+      WRITE(IU06,'(1X,'' M   IKP IKP1  IKM IKM1'',                      &
+     &          ''   FKLAP       FKLAP1 '',                             &
      &          ''   FKLAM       FKLAM1     AF11'')')
       DO M=MFRSTLW,MLSTHG
-        WRITE(IU06,'(1X,I2,4I5,4F11.8,E11.3)')
-     &   M, IKP(M), IKP1(M), IKM(M), IKM1(M),
+        WRITE(IU06,'(1X,I2,4I5,4F11.8,E11.3)')                          &
+     &   M, IKP(M), IKP1(M), IKM(M), IKM1(M),                           &
      &   FKLAP(M), FKLAP1(M), FKLAM(M), FKLAM1(M), AF11(M)
       ENDDO
 
       WRITE(IU06,'(1H0,'' COMMON INDNL: ANGULAR ARRAYS'')')
-      WRITE(IU06,'(1X,''  |--------KH = 1----------|'',
+      WRITE(IU06,'(1X,''  |--------KH = 1----------|'',                 &
      &              ''|--------KH = 2----------|'')')
-      WRITE(IU06,'(1X,'' K   K1W   K2W  K11W  K21W'',
+      WRITE(IU06,'(1X,'' K   K1W   K2W  K11W  K21W'',                   &
      &              ''   K1W   K2W  K11W  K21W'')')
       DO K=1,NANG
-        WRITE(IU06,'(1X,I2,8I6)') K,(K1W(K,KH), K2W(K,KH), K11W(K,KH),
+        WRITE(IU06,'(1X,I2,8I6)') K,(K1W(K,KH), K2W(K,KH), K11W(K,KH),  &
      &   K21W(K,KH),KH=1,2)
       ENDDO
       WRITE(IU06,'(1H0,'' COMMON INDNL: TAIL ARRAY FRH'')')
@@ -287,5 +289,4 @@
       DEALLOCATE(JA2)
       DEALLOCATE(FRLON)
 
-      RETURN
       END SUBROUTINE NLWEIGT

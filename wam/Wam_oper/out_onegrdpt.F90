@@ -30,7 +30,9 @@
 !             NONE
 !
 !--------------------------------------------------------------------
-!
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA   ,XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
@@ -39,7 +41,7 @@
       USE YOWGRID  , ONLY : DELPHI
       USE YOWINTP  , ONLY : GOUT
       USE YOWPARAM , ONLY : NGX      ,NGY
-      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,
+      USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -49,20 +51,20 @@
       IMPLICIT NONE
 #include "difdate.intfb.h"
 
-      INTEGER :: IU06, IU_INTP
-      INTEGER :: ITIME, I, J
-      INTEGER :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIOC, IPTAUOC
-      INTEGER :: IPHSWS, IPT1WS, IPBATHY
+      INTEGER(KIND=JWIM) :: IU06, IU_INTP
+      INTEGER(KIND=JWIM) :: ITIME, I, J
+      INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIOC, IPTAUOC
+      INTEGER(KIND=JWIM) :: IPHSWS, IPT1WS, IPBATHY
 
-      REAL :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR
-      REAL :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
-      REAL :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
-      REAL :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
-      REAL :: T10, E10, FP10, FETCH10, T_0, E_OBS 
-      REAL :: DEPTH, PHIOC, TAUOC
-      REAL :: XLOGE_YV, XLOGF_YV
-      REAL :: ZHOOK_HANDLE
-      REAL :: Tws, Ews, Fws  
+      REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR
+      REAL(KIND=JWRB) :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
+      REAL(KIND=JWRB) :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
+      REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
+      REAL(KIND=JWRB) :: T10, E10, FP10, FETCH10, T_0, E_OBS 
+      REAL(KIND=JWRB) :: DEPTH, PHIOC, TAUOC
+      REAL(KIND=JWRB) :: XLOGE_YV, XLOGF_YV
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: Tws, Ews, Fws  
 
       CHARACTER(LEN=72) :: CPATH
       CHARACTER(LEN=100) :: TITL
@@ -167,7 +169,7 @@
             IF(LDEPTH) THEN
               DEPTH=GOUT(IPBATHY,I,J)
             ELSE
-              DEPTH=999.0
+              DEPTH=999.0_JWRB
             ENDIF
 !
 !            TAKE RELATION BETWEEN USTAR AND U10G FROM BUILDSTRESS
@@ -180,29 +182,29 @@
 
             TSTAR = G*ITIME/USTAR
             DSTAR = G*DEPTH/(USTAR**2)
-            E     = HS**2/16.
+            E     = HS**2/16.0_JWRB
             ESTAR = G**2*E/(USTAR**4)
             FMSTAR=USTAR/(GOUT(IPT1,I,J)*G)
 
             HSWS  = GOUT(IPHSWS,I,J) 
             Tws   = G*ITIME/USTAR
-            E     = HSWS**2/16.
+            E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
             Fws   = USTAR/(GOUT(IPT1WS,I,J)*G)
 
-            TSTAR_0 = 4.26*10.**5
-            XP      = 1.5
-            BETA_K  = 100.
-            ALPHA_K = 2.25/10000.
+            TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
+            XP      = 1.5_JWRB
+            BETA_K  = 100.0_JWRB
+            ALPHA_K = 2.25_JWRB/10000.0_JWRB
               
-            E_LIM = BETA_K**2/16.
+            E_LIM = BETA_K**2/16.0_JWRB
             E_STAR_OBS = E_LIM/(1.+TSTAR_0/TSTAR)**XP 
 
             FP     = GOUT(IPTP,I,J)
             XNUSTAR = USTAR*FP/G
-            XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1./3.)
+            XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
-            CDSQRTINV = MIN(1./SQRT(CD),100.0)
+            CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV(1)*EXP(-XKAPPA*CDSQRTINV)
             BETA      = MAX(G*Z0/USTAR2,ALPHA)
 
@@ -214,25 +216,25 @@
             FP10 = U10*FP/G
             FETCH10 = G*DFETCH/U10**2
 
-            T_0 = 1.93*10.**4
-            XP      = 1.5
-            BETA_K  = 0.22
-            E_LIM = BETA_K**2/16.
+            T_0 = 1.93_JWRB*10.0_JWRB**4
+            XP      = 1.5_JWRB
+            BETA_K  = 0.22_JWRB
+            E_LIM = BETA_K**2/16.0_JWRB
             E_OBS = E_LIM/(1.+T_0/T10)**XP
 
             IF(LPHIOC) THEN
               PHIOC=GOUT(IPPHIOC,I,J)
             ELSE
-              PHIOC=3.5
+              PHIOC=3.5_JWRB
             ENDIF
 
             IF(LTAUOC) THEN
               TAUOC=GOUT(IPTAUOC,I,J)
             ELSE
-              TAUOC=1.0
+              TAUOC=1.0_JWRB
             ENDIF
 
-            WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.,
+            WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,
      &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,
      &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),
      &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,
@@ -240,7 +242,7 @@
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,
      &                       PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
 
-            WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.,
+            WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,
      &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,
      &                     USTAR,CD,BETA,T10,FETCH10,E10,
@@ -252,10 +254,10 @@
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
       ENDIF
-   60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,
-     V       2F12.5,2E10.3,13(1x,F14.5))
-   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,
-     V       2F12.5,2E10.3,13(1x,F14.5))
+   60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,  &
+     &       2F12.5,2E10.3,13(1x,F14.5))
+   61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3, &
+     &       2F12.5,2E10.3,13(1x,F14.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 
@@ -276,4 +278,4 @@
  
       IF (LHOOK) CALL DR_HOOK('OUT_ONEGRDPT',1,ZHOOK_HANDLE)
 
-      END
+      END SUBROUTINE OUT_ONEGRDPT
