@@ -327,7 +327,7 @@
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'legNumber',0)
 
           CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,                         &
-     &                         'oceanAtmosphereCoupling',
+     &                         'oceanAtmosphereCoupling',                &
      &                         IDUM,KRET=IRET)
           IF(IRET.NE.0)                                                  &
      &      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                           &

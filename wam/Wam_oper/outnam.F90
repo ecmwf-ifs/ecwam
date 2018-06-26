@@ -31,7 +31,7 @@
 
       LOGICAL :: llper          !  the land sea mask is periodic (T)
 
-      NAMELIST /PARWAM/
+      NAMELIST /PARWAM/                                                 &
      &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,         &
      &  ifrh, ifrstlw, ilsthg,                                          &
      &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,          &

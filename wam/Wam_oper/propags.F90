@@ -329,15 +329,13 @@
               DO IJ=MIJS,MIJL
                 CDD = CD*DELPH0
                 DPH(IJ) = CDD*(CGOND(KLAT(IJ,1,1),M) + CGOND(IJ,M))
-                DTC(IJ) = DTC(IJ)
-     &           + CDD*(CGOND(KLAT(IJ,2,1),M) + CGOND(IJ,M))
+                DTC(IJ) = DTC(IJ) + CDD*(CGOND(KLAT(IJ,2,1),M) + CGOND(IJ,M))
               ENDDO
             ELSE
               DO IJ=MIJS,MIJL
                 CDD = CD*DELPH0
                 DPH(IJ) =-CDD*(CGOND(KLAT(IJ,2,1),M) + CGOND(IJ,M))
-                DTC(IJ) = DTC(IJ)
-     &           -CDD*(CGOND(KLAT(IJ,1,1),M) + CGOND(IJ,M))
+                DTC(IJ) = DTC(IJ) - CDD*(CGOND(KLAT(IJ,1,1),M) + CGOND(IJ,M))
               ENDDO
             ENDIF
             IF (IREFRA.EQ.1) THEN
@@ -354,14 +352,14 @@
 !               ---------------------
 
             DO IJ = MIJS,MIJL
-              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )
-     &         + DPH(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)
+              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )               &
+     &         + DPH(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)                    &
      &         + DLA(IJ) * F1(KLON(IJ,IJLA),K  ,M)
             ENDDO
             IF (IREFRA.EQ.1) THEN
               DO IJ = MIJS,MIJL
-                F3(IJ,K,M) = F3(IJ,K,M )
-     &           + DTP(IJ) * F1(IJ,KP1,M)
+                F3(IJ,K,M) = F3(IJ,K,M )                                &
+     &           + DTP(IJ) * F1(IJ,KP1,M)                               &
      &           + DTM(IJ) * F1(IJ,KM1,M)
               ENDDO
             ENDIF
@@ -554,14 +552,14 @@
 !             ---------------------
 
           DO IJ = MIJS,MIJL
-            F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )
-     &       + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
-     &       + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
-     &       + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
-     &       + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
-     &       + DTP(IJ) * F1(IJ        ,KP1,M)
-     &       + DTM(IJ) * F1(IJ        ,KM1,M)
-     &       + DOP(IJ) * F1(IJ        ,K  ,MP1)
+            F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )                 &
+     &       + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)                         &
+     &       + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)                         &
+     &       + DLE(IJ) * F1(KLON(IJ,2),K  ,M)                           &
+     &       + DLW(IJ) * F1(KLON(IJ,1),K  ,M)                           &
+     &       + DTP(IJ) * F1(IJ        ,KP1,M)                           &
+     &       + DTM(IJ) * F1(IJ        ,KM1,M)                           &
+     &       + DOP(IJ) * F1(IJ        ,K  ,MP1)                         &
      &       + DOM(IJ) * F1(IJ        ,K  ,MM1)
           ENDDO
 
@@ -648,8 +646,8 @@
               IF(LSAMEDEPTH(IJ)) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.0_JWRB)
               ELSE
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*
-     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP1(IJ)*                &
+     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
      &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
@@ -660,8 +658,8 @@
               IF(LSAMEDEPTH(IJ)) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.0_JWRB)
               ELSE
-                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*
-     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +
+                CGKLAT(IJ,M,IC) = CGOND(IJ,M) + DP2(IJ)*                &
+     &                           (WLAT(IJ,IC)*CGOND(KLAT(IJ,IC,1),M) +  &
      &                            WLATM1(IJ,IC)*CGOND(KLAT(IJ,IC,2),M))
               ENDIF
             ENDDO
@@ -781,11 +779,11 @@
                 DTT = 1.0_JWRB - DTC(IJ)*GOM(M)
                 YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
                 XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
-                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &            (YY * WLAT(IJ,IJPH) * F1(KLAT(IJ,IJPH,1),K  ,M)
-     &           + YY * WLATM1(IJ,IJPH) * F1(KLAT(IJ,IJPH,2),K,M)
-     &           + XX * F1(KLON(IJ,IJLA),K  ,M)
-     &           + DTP(IJ) * F1(IJ           ,KP1,M)
+                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *                 &
+     &            (YY * WLAT(IJ,IJPH) * F1(KLAT(IJ,IJPH,1),K  ,M)       &
+     &           + YY * WLATM1(IJ,IJPH) * F1(KLAT(IJ,IJPH,2),K,M)       &
+     &           + XX * F1(KLON(IJ,IJLA),K  ,M)                         &
+     &           + DTP(IJ) * F1(IJ           ,KP1,M)                    &
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
               ENDDO
             ELSE
@@ -794,10 +792,10 @@
                 DTT = 1.0_JWRB - DTC(IJ)*GOM(M)
                 YY=DPN(IJ)*OBSLAT(IJ,M,IJPH)
                 XX=DLE(IJ)*OBSLON(IJ,M,IJLA)
-                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *
-     &            (YY * F1(KLAT(IJ,IJPH,1),K  ,M)
-     &           + XX * F1(KLON(IJ,IJLA),K  ,M)
-     &           + DTP(IJ) * F1(IJ           ,KP1,M)
+                F3(IJ,K,M) = DTT*F1(IJ,K,M ) + GOM(M) *                 &
+     &            (YY * F1(KLAT(IJ,IJPH,1),K  ,M)                       &
+     &           + XX * F1(KLON(IJ,IJLA),K  ,M)                         &
+     &           + DTP(IJ) * F1(IJ           ,KP1,M)                    &
      &           + DTM(IJ) * F1(IJ           ,KM1,M))
               ENDDO
             ENDIF
@@ -818,8 +816,8 @@
                CFLTM(IJ) = CFLTM(IJ)*GOM(M)
                DTC(IJ) = DTC(IJ)*GOM(M)
             ENDDO
-            CALL CHECKCFL (MIJS, MIJL, DTC,
-     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO, 
+            CALL CHECKCFL (MIJS, MIJL, DTC,                             &
+     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO,         &
      &                     CFLTP,CFLTM,CFLTP,CFLTM)
           ENDIF
 
@@ -917,19 +915,19 @@
 !               ---------------------
 
             DO IJ = MIJS,MIJL
-              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)
-     &         + DPN2(IJ)* F1(KLAT(IJ,IJPH,2),K  ,M)
-     &         + DLE(IJ) * F1(KLON(IJ,IJLA),K  ,M)
-     &         + DTP(IJ) * F1(IJ           ,KP1,M)
+              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )               &
+     &         + DPN(IJ) * F1(KLAT(IJ,IJPH,1),K  ,M)                    &
+     &         + DPN2(IJ)* F1(KLAT(IJ,IJPH,2),K  ,M)                    &
+     &         + DLE(IJ) * F1(KLON(IJ,IJLA),K  ,M)                      &
+     &         + DTP(IJ) * F1(IJ           ,KP1,M)                      &
      &         + DTM(IJ) * F1(IJ           ,KM1,M)
             ENDDO
 
 !         TEST THE STABILITY OF THE ADVECTION SCHEME
 !         ------------------------------------------
           IF(LLCHKCFL .AND. M.EQ.1) THEN
-            CALL CHECKCFL (MIJS, MIJL, DTC,
-     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO, 
+            CALL CHECKCFL (MIJS, MIJL, DTC,                             &
+     &                     CFLEA,CFLEA,CFLNO,CFLNO,CFLNO,CFLNO,         &
      &                     CFLTP,CFLTM,CFLTP,CFLTM)
           ENDIF
 
@@ -1116,7 +1114,7 @@
                 CFLSO(IJ) =  -DPSO+ABS(DPSO)
                 CFLNO2(IJ) =  DPNO2+ABS(DPNO2)
                 CFLSO2(IJ) = -DPSO2+ABS(DPSO2)
-                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+             &
      &                               CFLNO2(IJ) + CFLSO2(IJ)
               ELSE
 !             REGULAR GRID
@@ -1189,7 +1187,7 @@
                 CFLSO(IJ) =  -DPSO+ABS(DPSO)
                 CFLNO2(IJ) =  DPNO2+ABS(DPNO2)
                 CFLSO2(IJ) = -DPSO2+ABS(DPSO2)
-                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+
+                DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)+             &
      &                               CFLNO2(IJ) + CFLSO2(IJ)
               ELSE
 !             REGULAR GRID
@@ -1204,9 +1202,9 @@
                 DTC(IJ) = DTC(IJ) +  CFLNO(IJ) + CFLSO(IJ)
               ENDIF
 
-              DTHP=DRGP(IJ)*CGOND(IJ,M)
+              DTHP=DRGP(IJ)*CGOND(IJ,M)                                 &
      &         +SHLFAC(IJ,M)*DRDP(IJ)+DRCP(IJ)
-              DTHM=DRGM(IJ)*CGOND(IJ,M)
+              DTHM=DRGM(IJ)*CGOND(IJ,M)                                 &
      &         +SHLFAC(IJ,M)*DRDM(IJ)+DRCM(IJ)
               CFLTP(IJ) = DTHP+ABS(DTHP)
               CFLTM(IJ) = -DTHM+ABS(DTHM) 
@@ -1229,8 +1227,8 @@
 !         TEST THE STABILITY OF THE ADVECTION SCHEME
 !         ------------------------------------------
           IF(LLCHKCFL .AND. M.EQ.1) THEN
-            CALL CHECKCFL (MIJS, MIJL, DTC,
-     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2, 
+            CALL CHECKCFL (MIJS, MIJL, DTC,                             &
+     &                     CFLEA,CFLWE,CFLNO,CFLSO,CFLNO2,CFLSO2,       &
      &                     CFLTP,CFLTM,CFLOP,CFLOM)
           ENDIF
 
@@ -1240,29 +1238,29 @@
 !         IRREGULAR GRID
           IF(IRGG.EQ.1) THEN
             DO IJ = MIJS,MIJL
-              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
-     &         + DPN2(IJ)* F1(KLAT(IJ,2,2),K  ,M)
-     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
-     &         + DPS2(IJ)* F1(KLAT(IJ,1,2),K  ,M)
-     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
-     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
-     &         + DTP(IJ) * F1(IJ        ,KP1,M)
-     &         + DTM(IJ) * F1(IJ        ,KM1,M)
-     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)
+              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )               &
+     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)                       &
+     &         + DPN2(IJ)* F1(KLAT(IJ,2,2),K  ,M)                       &
+     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)                       &
+     &         + DPS2(IJ)* F1(KLAT(IJ,1,2),K  ,M)                       &
+     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)                         &
+     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)                         &
+     &         + DTP(IJ) * F1(IJ        ,KP1,M)                         &
+     &         + DTM(IJ) * F1(IJ        ,KM1,M)                         &
+     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)                       &
      &         + DOM(IJ) * F1(IJ        ,K  ,MM1)
             ENDDO
           ELSE
 !           REGULAR GRID
             DO IJ = MIJS,MIJL
-              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )
-     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)
-     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)
-     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)
-     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)
-     &         + DTP(IJ) * F1(IJ        ,KP1,M)
-     &         + DTM(IJ) * F1(IJ        ,KM1,M)
-     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)
+              F3(IJ,K,M) = (1.0_JWRB-DTC(IJ))*F1(IJ,K,M )               &
+     &         + DPN(IJ) * F1(KLAT(IJ,2,1),K  ,M)                       &
+     &         + DPS(IJ) * F1(KLAT(IJ,1,1),K  ,M)                       &
+     &         + DLE(IJ) * F1(KLON(IJ,2),K  ,M)                         &
+     &         + DLW(IJ) * F1(KLON(IJ,1),K  ,M)                         &
+     &         + DTP(IJ) * F1(IJ        ,KP1,M)                         &
+     &         + DTM(IJ) * F1(IJ        ,KM1,M)                         &
+     &         + DOP(IJ) * F1(IJ        ,K  ,MP1)                       &
      &         + DOM(IJ) * F1(IJ        ,K  ,MM1)
             ENDDO
           ENDIF
