@@ -1265,7 +1265,7 @@
             ENDDO
           ENDIF
 
-*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
+!*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
 
         ENDDO
 
