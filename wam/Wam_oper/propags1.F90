@@ -600,7 +600,7 @@
      &       + DLW(IJ) * F1(KLON(IJ,1),K  ,M)                           &
      &       + DTP(IJ) * F1(IJ        ,KP1,M)                           &
      &       + DTM(IJ) * F1(IJ        ,KM1,M)                           &
-     &       + DOP(IJ) * F1(IJ        ,K  ,MP1                          &
+     &       + DOP(IJ) * F1(IJ        ,K  ,MP1)                         &
      &       + DOM(IJ) * F1(IJ        ,K  ,MM1)
           ENDDO
 
@@ -1534,7 +1534,7 @@
             ENDDO
           ENDIF
 
-*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
+!*    BRANCH BACK TO 4.1.4 FOR NEXT FREQUENCY.
 
         ENDDO
 
