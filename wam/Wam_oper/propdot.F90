@@ -42,6 +42,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : U        ,V
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWGRID  , ONLY : COSPHM1   ,IGL      ,IJS      ,IJL
@@ -53,6 +55,7 @@
       USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -60,23 +63,27 @@
 #include "abort1.intfb.h"
 #include "gradi.intfb.h"
 
-      INTEGER :: IG
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL :: CD, SD, SS, SC, CC
+      REAL(KIND=JWRB) :: CD, SD, SS, SC, CC
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL, ALLOCATABLE, DIMENSION(:) :: DDPHI, DDLAM, DUPHI, DULAM
-      REAL, ALLOCATABLE, DIMENSION(:) :: DVPHI, DVLAM, DCO, OMDD
+      REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: DDPHI,DDLAM,DUPHI,DULAM
+      REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: DVPHI,DVLAM,DCO,OMDD
 
 ! ----------------------------------------------------------------------
 
+      IF (LHOOK) CALL DR_HOOK('PROPDOT',0,ZHOOK_HANDLE)
+
+
 !     ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
 !     AND SIGMA DOT
-      IF(.NOT.ALLOCATED(THDC))
+      IF (.NOT.ALLOCATED(THDC))                                         &
      &     ALLOCATE(THDC(NSTART(IRANK):NEND(IRANK),NANG))
-      IF(.NOT.ALLOCATED(THDD))
+      IF (.NOT.ALLOCATED(THDD))                                         &
      &    ALLOCATE(THDD(NSTART(IRANK):NEND(IRANK),NANG))
-      IF(.NOT.ALLOCATED(SDOT))
+      IF (.NOT.ALLOCATED(SDOT))                                         &
      &    ALLOCATE(SDOT(NSTART(IRANK):NEND(IRANK),NANG,NFRE))
 
 
@@ -107,7 +114,7 @@
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
 
-        CALL GRADI (IG, IJS(IG),IJL(IG),IREFRA, DDPHI, DDLAM, DUPHI,
+        CALL GRADI (IG, IJS(IG),IJL(IG),IREFRA, DDPHI, DDLAM, DUPHI,    &
      &              DULAM, DVPHI, DVLAM)
 
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
@@ -119,7 +126,7 @@
           ENDDO
         ELSE
           DO IJ = IJS(IG),IJL(IG)
-            DCO(IJ) = 1.
+            DCO(IJ) = 1.0_JWRB
           ENDDO
         ENDIF
 
@@ -133,7 +140,7 @@
             ENDDO
           ELSEIF (IREFRA.EQ.2) THEN
             DO IJ = IJS(IG),IJL(IG)
-              OMDD(IJ) = 0.0
+              OMDD(IJ) = 0.0_JWRB
             ENDDO
           ENDIF
         ENDIF
@@ -155,7 +162,7 @@
               ENDDO
             ELSE
               DO IJ = IJS(IG),IJL(IG)
-                THDD(IJ,K) = 0.0
+                THDD(IJ,K) = 0.0_JWRB
               ENDDO
             ENDIF
           ENDIF
@@ -168,9 +175,9 @@
             SC  = SD*CD
             CC  = CD**2
             DO IJ = IJS(IG),IJL(IG)
-              SDOT(IJ,K,NFRE) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)
+              SDOT(IJ,K,NFRE) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)            &
      &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
-              THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)
+              THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)                 &
      &                    - (SC*DULAM(IJ) + CC*DVLAM(IJ))*DCO(IJ)
             ENDDO
 
@@ -180,8 +187,8 @@
             IF (ISHALLO.NE.1) THEN
               DO M=1,NFRE
                 DO IJ=IJS(IG),IJL(IG)
-                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE)*TCGOND(INDEP(IJ),M)
-     &             + OMDD(IJ)*TSIHKD(INDEP(IJ),M))
+                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE)*TCGOND(INDEP(IJ),M)   &
+     &             + OMDD(IJ)*TSIHKD(INDEP(IJ),M))                      &
      &             * TFAK(INDEP(IJ),M)
                 ENDDO
 
@@ -201,6 +208,6 @@
 !*    BRANCH BACK TO 2. FOR NEXT BLOCK.
       ENDDO
 
+      IF (LHOOK) CALL DR_HOOK('PROPDOT',1,ZHOOK_HANDLE)
 
-      RETURN
       END SUBROUTINE PROPDOT

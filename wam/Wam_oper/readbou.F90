@@ -36,9 +36,11 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC, 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC, IPOGBO
-      USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF    ,
+      USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF    ,    &
      &            IBFL     ,IBFR     ,BFW
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : LL1D
@@ -49,14 +51,14 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU09, IU10, IU06
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU09, IU10, IU06
 
 
-      INTEGER :: I, II
-      INTEGER :: NBOUNC_LOC
+      INTEGER(KIND=JWIM) :: I, II
+      INTEGER(KIND=JWIM) :: NBOUNC_LOC
 
-      REAL :: DLA, DPH, AMOS, AMON, AMOE, AMOW
-      REAL, DIMENSION(:), ALLOCATABLE :: BLNGC, BLATC
+      REAL(KIND=JWRB) :: DLA, DPH, AMOS, AMON, AMOE, AMOW
+      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE :: BLNGC, BLATC
 
 ! ----------------------------------------------------------------------
 
@@ -75,7 +77,7 @@
           READ(IU09, ERR=2000) NBOUNC_LOC
           READ (IU09,ERR=2000) (IGARC(IPOGBO(II-1)+I),I=1,NBOUNC_LOC)
           READ (IU09,ERR=2000) (IJARC(IPOGBO(II-1)+I),I=1,NBOUNC_LOC)
-          READ(IU09,ERR=2000) DLA, DPH, AMOS, AMON, AMOE, AMOW, 
+          READ(IU09,ERR=2000) DLA, DPH, AMOS, AMON, AMOE, AMOW,         &
      &     (BLNGC(I),I=1,NBOUNC_LOC), (BLATC(I),I=1,NBOUNC_LOC)
         ENDDO
       ENDIF
@@ -92,10 +94,10 @@
         ALLOCATE(IBFR(NBOUNF))
         ALLOCATE(BFW(NBOUNF))
 
-        READ (IU10,ERR=2000) (IGARF(I),I=1,NBOUNF),
-     &   (IJARF(I),I=1,NBOUNF),
-     &   (IBFL(I),I=1,NBOUNF),
-     &   (IBFR(I),I=1,NBOUNF),
+        READ (IU10,ERR=2000) (IGARF(I),I=1,NBOUNF),                     &
+     &   (IJARF(I),I=1,NBOUNF),                                         &
+     &   (IBFL(I),I=1,NBOUNF),                                          &
+     &   (IBFR(I),I=1,NBOUNF),                                          &
      &   (BFW(I),I=1,NBOUNF)
 
 !       CONVERT IJARF TO NEW ORDER IF 2D DECOMPOSITION
@@ -118,4 +120,5 @@
       WRITE(IU06,*) '*        PROGRAM ABORTS                *'
       WRITE(IU06,*) '****************************************'
       CALL ABORT1
+
       END SUBROUTINE READBOU
