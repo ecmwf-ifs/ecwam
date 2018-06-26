@@ -51,7 +51,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,    &
      &            FP       ,ALPHJ
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NBLO
@@ -61,14 +63,14 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IG
-      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
-      REAL, INTENT(IN) :: FETCH, FPMAX
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD
+      REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD
 
-      INTEGER :: IJ
-      REAL :: GX, U10, GXU, UG
+      INTEGER(KIND=JWIM) :: IJ
+      REAL(KIND=JWRB) :: GX, U10, GXU, UG
 
 ! ----------------------------------------------------------------------
 
@@ -77,20 +79,19 @@
 
       GX = G * FETCH
       DO IJ = IJS, IJL
-        IF (U10OLD(IJ,IG) .GT. 0.1E-08) THEN
+        IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
           U10 = U10OLD(IJ,IG)
           GXU = GX/(U10*U10)
           UG = G/U10
           FP(IJ) = AJONS * GXU ** DJONS
-          FP(IJ) = MAX(0.13, FP(IJ))
+          FP(IJ) = MAX(0.13_JWRB, FP(IJ))
           FP(IJ) = MIN(FP(IJ), FPMAX/UG)
           ALPHJ(IJ) = BJONS * FP(IJ)** EJONS
-          ALPHJ(IJ) = MAX(ALPHJ(IJ), 0.0081)
+          ALPHJ(IJ) = MAX(ALPHJ(IJ), 0.0081_JWRB)
           FP(IJ) = FP(IJ)*UG
         ELSE
-          FP(IJ) = 0.
+          FP(IJ) = 0.0_JWRB
         ENDIF
       ENDDO
 
-      RETURN
       END SUBROUTINE PEAK

@@ -1,8 +1,8 @@
 
-      SUBROUTINE OUTNAM (
-     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,
-     &  KFRH, MFRSTLW, MLSTHG,
-     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
+      SUBROUTINE OUTNAM (                                                &
+     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT, &
+     &  KFRH, MFRSTLW, MLSTHG,                                           &
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,   &
      &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper)
 
 ! ----------------------------------------------------------------------
@@ -10,22 +10,24 @@
 !*       PARAMETER NAMELIST AS IN COMMON PARAM OF THE WAM-MODEL.
 !        -------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: 
-     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,
-     &  KFRH, MFRSTLW, MLSTHG,
-     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,
+      INTEGER(KIND=JWIM), INTENT(IN) ::                                  &
+     &  KNANG, KNFRE, KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT, &
+     &  KFRH, MFRSTLW, MLSTHG,                                           &
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,   &
      &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper
 
-      INTEGER :: 
-     &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,
-     &  ifrh, ifrstlw, ilsthg,
-     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,
+      INTEGER(KIND=JWIM) ::                                              &
+     &  iang, ifre, igx, igy, iblo, iiblo, iover, ioutp, ioutt,          &
+     &  ifrh, ifrstlw, ilsthg,                                           &
+     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,           &
      &  itaumax, iumax, iustar, ialpha, idepth, irefra
 
-      INTEGER :: IU06
+      INTEGER(KIND=JWIM) :: IU06
 
       LOGICAL :: llper          !  the land sea mask is periodic (T)
 
@@ -95,5 +97,4 @@
       WRITE (91,PARWAM)
       CLOSE (UNIT=91)
 
-      RETURN
       END SUBROUTINE OUTNAM

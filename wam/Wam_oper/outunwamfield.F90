@@ -46,6 +46,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWUNPOOL, ONLY : FILEDEF, XFN_TEST, DBG 
 
 
@@ -53,10 +55,10 @@
 
       IMPLICIT NONE
 
-      REAL    :: ARRAY(IJS:IJL)
-      INTEGER :: IJ,IJS,IJL
+      REAL(KIND=JWRB)    :: ARRAY(IJS:IJL)
+      INTEGER(KIND=JWIM) :: IJ, IJS, IJL
 
-      REAL, SAVE :: XFNOUTTIME
+      REAL(KIND=JWRB), SAVE :: XFNOUTTIME
  
       DATA XFNOUTTIME /0./
 
@@ -72,5 +74,4 @@
       WRITE(XFN_TEST%FHNDL) XFNOUTTIME 
       WRITE(XFN_TEST%FHNDL) (0., 0., ARRAY(IJ), IJ = IJS, IJL)
 
-      RETURN
       END SUBROUTINE OUTUNWAMFIELD

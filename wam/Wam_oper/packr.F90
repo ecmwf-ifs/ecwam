@@ -1,25 +1,25 @@
-      SUBROUTINE PACKI (NIN, NOUT, NDIM, IFLAG, IPACK)
+      SUBROUTINE PACKR (NIN, NOUT, NDIM, IFLAG, RPACK)
 
 ! ----------------------------------------------------------------------
 
-!**** *PACKI* - PACKS A INTEGER ARRAY.
+!**** *PACKR* - PACKS A REAL ARRAY.
 
 !     R. PORTZ     MPI         15/01/1991
 
 !*    PURPOSE.
-!     --------
+!     -------
 
-!       TO REMOVE FLAGGED POINTS FROM AN INTEGER ARRAY.
+!       TO REMOVE FLAGGED POINTS FROM AN REAL ARRAY.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PACKI (NIN, NOUT, NDIM, IFLAG, IPACK)*
+!       *CALL* *PACKR (NIN, NOUT, NDIM, IFLAG, RPACK)*
 !          *NIN*   -  NUMBER OP POINTS IN ARRAYS BEFORE PACKING.
 !          *NOUT*  -  NUMBER OF POINTS IN ARRAYES AFTER PACKING.
 !          *NDIM*  -  DIMENSION OF ARRAYS.
 !          *IFLAG* -  FLAG ARRAY.
-!          *IPACK* -  ARRAY TO BE PACKED / PACKED ARRAY AT OUTPUT.
+!          *RPACK* -  ARRAY TO BE PACKED / PACKED ARRAY AT OUTPUT.
 
 !     METHOD.
 !     -------
@@ -38,14 +38,17 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NIN, NDIM
-      INTEGER, INTENT(OUT) :: NOUT
-      INTEGER, DIMENSION(NDIM), INTENT(INOUT) :: IFLAG, IPACK
+      INTEGER(KIND=JWIM), INTENT(IN) :: NIN, NDIM
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NOUT
+      INTEGER(KIND=JWIM), DIMENSION(NDIM), INTENT(INOUT) :: IFLAG
+      REAL(KIND=JWRB), DIMENSION(NDIM), INTENT(INOUT) :: RPACK
 
 
-      INTEGER :: K, I
+      INTEGER(KIND=JWIM) :: K, I
 
 ! ----------------------------------------------------------------------
 
@@ -58,7 +61,7 @@
         IF (IFLAG(I).EQ.0) THEN
           K = K + 1
         ELSE
-          IPACK(I-K) = IPACK(I)
+          RPACK(I-K) = RPACK(I)
         ENDIF
       ENDDO
 
@@ -67,5 +70,4 @@
 
       NOUT = NIN - K
 
-      RETURN
-      END SUBROUTINE PACKI
+      END SUBROUTINE PACKR

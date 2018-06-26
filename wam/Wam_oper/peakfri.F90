@@ -42,23 +42,34 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : DELTH    ,FR
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IPEAKF(IJS:IJL) 
-      INTEGER :: IJ,K,M,IJS,IJL
-      REAL, DIMENSION(IJS:IJL) :: TEMP, EPEAKF
-      REAL :: F(IJS:IJL,NANG,NFRE)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IPEAKF(IJS:IJL) 
+      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EPEAKF
+
+      INTEGER(KIND=JWIM) :: IJ, K, M
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('PEAKFRI',0,ZHOOK_HANDLE)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------
 
       DO IJ = IJS,IJL
-        EPEAKF(IJ) = 0.
+        EPEAKF(IJ) = 0.0_JWRB
         IPEAKF(IJ) = NFRE 
       ENDDO
 
@@ -71,7 +82,7 @@
 !        -------------------------------------------
 
         DO IJ = IJS,IJL
-          TEMP(IJ) = 0.
+          TEMP(IJ) = 0.0_JWRB
         ENDDO
         DO K = 1,NANG
           DO IJ = IJS,IJL
@@ -97,5 +108,6 @@
         EPEAKF(IJ) = EPEAKF(IJ)*DELTH 
       ENDDO
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('PEAKFRI',1,ZHOOK_HANDLE)
+
       END SUBROUTINE PEAKFRI

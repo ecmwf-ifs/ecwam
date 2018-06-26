@@ -31,31 +31,34 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE MPL_MPIF
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,    &
      &                WETAIL    ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWPD, ONLY     : MNP => npa, iplg, comm, myrank, np, 
+      USE YOWPD, ONLY     : MNP => npa, iplg, comm, myrank, np,         &
      & np_global
       USE YOWUNPOOL, ONLY : FILEDEF, XFN_HS, XFN_TM, DBG
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K
-      REAL :: DELT25, DELT2, DEL2
-      REAL :: F(MNP,NANG,NFRE)
-      REAL,DIMENSION(np) :: TEMP1, TEMP2, EM, FM
-      REAL,DIMENSION(np_global) :: EM_GLOBAL, EM_GLO_red
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB) :: DELT25, DELT2, DEL2
+      REAL(KIND=JWRB) :: F(MNP,NANG,NFRE)
+      REAL(KIND=JWRB),DIMENSION(np) :: TEMP1, TEMP2, EM, FM
+      REAL(KIND=JWRB),DIMENSION(np_global) :: EM_GLOBAL, EM_GLO_red
       LOGICAL :: LLAK
-      REAL, SAVE :: XFNOUTTIME
+      REAL(KIND=JWRB), SAVE :: XFNOUTTIME
  
       DATA XFNOUTTIME /0./
 
-      integer :: i, ierr
+      INTEGER(KIND=JWIM) :: i, ierr
 
 ! ----------------------------------------------------------------------
 
@@ -166,10 +169,10 @@
       EM_GLO_red = 0
 
 #ifdef C2A 
-      call mpi_reduce(EM_GLOBAL, EM_GLO_red, np_global, MPI_REAL8,
+      call mpi_reduce(EM_GLOBAL, EM_GLO_red, np_global, MPI_REAL8,      &
      &                 MPI_SUM, 0, COMM, IERR)
 #else
-      call mpi_reduce(EM_GLOBAL, EM_GLO_red, np_global, MPI_REAL4,
+      call mpi_reduce(EM_GLOBAL, EM_GLO_red, np_global, MPI_REAL4,      &
      &                 MPI_SUM, 0, COMM, IERR)
 #endif
 
@@ -178,5 +181,4 @@
         WRITE(XFN_HS%FHNDL) (0., 0., EM_GLO_red(IJ),IJ = 1, np_global)
       endif
 
-      RETURN
       END SUBROUTINE OUTUNWAMTEST 

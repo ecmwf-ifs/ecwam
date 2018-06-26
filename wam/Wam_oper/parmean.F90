@@ -1,5 +1,5 @@
-      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPEAK,
-     &                    SPEC,
+      SUBROUTINE PARMEAN (IJS, IJL, NPMAX, NPEAK,                       &
+     &                    SPEC,                                         &
      &                    ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
@@ -47,6 +47,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
       USE YOWPARAM ,ONLY : NANG, NFRE
       USE YOWPCONS ,ONLY : EPSMIN, ZPI
@@ -56,27 +58,27 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, NPMAX
-      INTEGER, INTENT(IN), DIMENSION(IJS:IJL) :: NPEAK
-      REAL, INTENT(IN) :: SPEC(NANG,NFRE,NPMAX,IJS:IJL)
-      REAL, INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) ::  ENE, DIR, PER
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NPMAX
+      INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(IJS:IJL) :: NPEAK
+      REAL(KIND=JWRB), INTENT(IN) :: SPEC(NANG,NFRE,NPMAX,IJS:IJL)
+      REAL(KIND=JWRB), INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: ENE, DIR, PER
 
-      INTEGER :: IPK, IJ, K, M, IP
-      REAL :: ZHOOK_HANDLE
-      REAL    :: F1D(NFRE)
-      REAL, DIMENSION(NPMAX) :: TEMP, SI, CI, EM, FM, THQ
+      INTEGER(KIND=JWIM) :: IPK, IJ, K, M, IP
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB)    :: F1D(NFRE)
+      REAL(KIND=JWRB), DIMENSION(NPMAX) :: TEMP, SI, CI, EM, FM, THQ
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('PARMEAN',0,ZHOOK_HANDLE)
-#endif
+
 
 !     ENE must be initialised and index 0 must stay equal to 0
       DO IP=0,NPMAX
         DO IJ=IJS,IJL
-          ENE(IJ,IP)=0.
-          DIR(IJ,IP)=0.
-          PER(IJ,IP)=0.
+          ENE(IJ,IP)=0.0_JWRB
+          DIR(IJ,IP)=0.0_JWRB
+          PER(IJ,IP)=0.0_JWRB
         ENDDO
       ENDDO
 
@@ -94,8 +96,8 @@
             FM(IPK) = FM(IPK)+F1D(M)*DFIMOFR(M)
           ENDDO
 
-          SI(IPK) = 0.
-          CI(IPK) = 0.
+          SI(IPK) = 0.0_JWRB
+          CI(IPK) = 0.0_JWRB
           DO K=1,NANG
             TEMP(IPK) = SPEC(K,1,IPK,IJ)*DFIM(1)
             DO M=2,NFRE
@@ -103,9 +105,9 @@
             ENDDO
             SI(IPK) = SI(IPK)+SINTH(K)*TEMP(IPK)
             CI(IPK) = CI(IPK)+COSTH(K)*TEMP(IPK)
-            IF (CI(IPK).EQ.0.) CI(IPK) = EPSMIN
+            IF (CI(IPK).EQ.0.0_JWRB) CI(IPK) = EPSMIN
             THQ(IPK) = ATAN2(SI(IPK),CI(IPK))
-            IF (THQ(IPK).LT.0.) THQ(IPK) = THQ(IPK) + ZPI
+            IF (THQ(IPK).LT.0.0_JWRB) THQ(IPK) = THQ(IPK) + ZPI
           ENDDO
         ENDDO
 
@@ -119,8 +121,6 @@
 
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PARMEAN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE PARMEAN

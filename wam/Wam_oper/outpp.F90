@@ -1,4 +1,4 @@
-      SUBROUTINE OUTPP (CDATE, IUOUT, ID1, ID2, NGX, NGY, TITL, CONST,
+      SUBROUTINE OUTPP (CDATE, IUOUT, ID1, ID2, NGX, NGY, TITL, CONST,  &
      &                  ARRAY, AMOWEP, AMOSOP, AMOEAP, AMONOP)
 
 ! ---------------------------------------------------------------
@@ -49,25 +49,27 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IUOUT, ID1, ID2, NGX, NGY
+      INTEGER(KIND=JWIM), INTENT(IN) :: IUOUT, ID1, ID2, NGX, NGY
 
-      REAL, INTENT(IN) :: CONST
-      REAL, INTENT(IN) :: AMOWEP, AMOSOP, AMOEAP, AMONOP
-      REAL, DIMENSION(ID1,ID2), INTENT(IN) :: ARRAY
+      REAL(KIND=JWRB), INTENT(IN) :: CONST
+      REAL(KIND=JWRB), INTENT(IN) :: AMOWEP, AMOSOP, AMOEAP, AMONOP
+      REAL(KIND=JWRB), DIMENSION(ID1,ID2), INTENT(IN) :: ARRAY
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=100), INTENT(IN) :: TITL
 
 
-      INTEGER :: I, J, NP
-      INTEGER :: NPTS, NPAGE, ISTART, IEND
-      INTEGER, DIMENSION(NGX) :: ILON
-      INTEGER, DIMENSION(ID1,ID2) :: IARRAY
+      INTEGER(KIND=JWIM) :: I, J, NP
+      INTEGER(KIND=JWIM) :: NPTS, NPAGE, ISTART, IEND
+      INTEGER(KIND=JWIM), DIMENSION(NGX) :: ILON
+      INTEGER(KIND=JWIM), DIMENSION(ID1,ID2) :: IARRAY
 
-      REAL :: DLAMA, DPHIA
-      REAL, DIMENSION(NGY) :: YLAT
+      REAL(KIND=JWRB) :: DLAMA, DPHIA
+      REAL(KIND=JWRB), DIMENSION(NGY) :: YLAT
 
 ! ----------------------------------------------------------------------
 
@@ -124,5 +126,4 @@
  304  FORMAT('   J LAT',/)
  305  FORMAT(1X,I2,F5.1,1X,30I4)
 
-      RETURN
       END SUBROUTINE OUTPP

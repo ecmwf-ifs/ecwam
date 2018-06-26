@@ -1,4 +1,4 @@
-      SUBROUTINE OUTXT (KU06,KU1,KU2,KU3,KU4,KDEL,KASSIM,KOUT,
+      SUBROUTINE OUTXT (KU06, KU1, KU2, KU3, KU4, KDEL, KASSIM, KOUT,   &
      &                       YA1,YA2,YA3,YA4)
 ! ----------------------------------------------------------------------
 
@@ -43,17 +43,22 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: KU06,KU1,KU2,KU3,KU4,KDEL,KASSIM,KOUT
-      CHARACTER(LEN=4), INTENT(IN) :: YA1,YA2,YA3,YA4
+      INTEGER(KIND=JWIM), INTENT(IN) :: KU06, KU1, KU2, KU3, KU4, KDEL, &
+     &                                  KASSIM, KOUT
+      CHARACTER(LEN=4), INTENT(IN) :: YA1, YA2, YA3, YA4
 
-      INTEGER :: J
-      INTEGER :: KU(4)
+      INTEGER(KIND=JWIM) :: J
+      INTEGER(KIND=JWIM) :: KU(4)
 
       CHARACTER(LEN=3) :: YOU(4)
       CHARACTER(LEN=10) :: YOKDEL
       CHARACTER(LEN=26) :: YUL
+
+! ----------------------------------------------------------------------
 
 !*    1. NOT MUCH TO SAY.
 !        ----------------
@@ -76,15 +81,15 @@
         YUL=' '
       ENDIF
       IF ( KASSIM .EQ.0 ) THEN
-        WRITE(KU06,*)'   TO PRINTER AND/OR UNIT '//YA1//' = '//YOU(1)
+        WRITE(KU06,*)'   TO PRINTER AND/OR UNIT '//YA1//' = '//YOU(1)   &
      &             //' AND/OR'
-        WRITE(KU06,*)'   GRIBBED DATA TO UNIT   '//YA2//' = '//YOU(2)
+        WRITE(KU06,*)'   GRIBBED DATA TO UNIT   '//YA2//' = '//YOU(2)   &
      &             //YUL
       ELSE
-        WRITE(KU06,*)'   TO PRINTER AND/OR UNIT '//YA1//' = '//YOU(1)
+        WRITE(KU06,*)'   TO PRINTER AND/OR UNIT '//YA1//' = '//YOU(1)   &
      &             //' ('//YA3//' = '//YOU(3)//') AND/OR'
-        WRITE(KU06,*)'   GRIBBED DATA TO UNIT   '//YA2//' = '//YOU(2)
+        WRITE(KU06,*)'   GRIBBED DATA TO UNIT   '//YA2//' = '//YOU(2)   &
      &             //' ('//YA4//' = '//YOU(4)//') '//YUL
       ENDIF
-      RETURN
+
       END SUBROUTINE OUTXT
