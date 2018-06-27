@@ -1,5 +1,4 @@
-      SUBROUTINE READSTRESS(IJINF, IJSUP, NREAL, RFIELD,
-     &                      FILENAME, LRSTPARAL)
+      SUBROUTINE READSTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARAL)
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -27,6 +26,8 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : LL1D
       USE YOWSTAT  , ONLY : CDTPRO
@@ -42,27 +43,26 @@
 #include "abort1.intfb.h"
 #include "unblkrord.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJINF, IJSUP, NREAL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, NREAL
  
-      REAL,DIMENSION(IJINF:IJSUP,NREAL), INTENT(OUT) :: RFIELD 
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,NREAL),INTENT(OUT) :: RFIELD
 
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
 
       LOGICAL, INTENT(IN) :: LRSTPARAL
 
-      INTEGER :: LFILE, IUNIT
-      INTEGER :: IFLD, IJ
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: LFILE, IUNIT
+      INTEGER(KIND=JWIM) :: IFLD, IJ
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJINF:IJSUP) :: RFIELD_G 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP) :: RFIELD_G 
 
       LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('READSTRESS',0,ZHOOK_HANDLE)
-#endif
 
       IF (ITEST.GE.2) THEN
           WRITE(IU06,*) ' SUB. READSTRESS: ABOUT TO INPUT RESTART FILES'
@@ -98,8 +98,7 @@
       IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
         DO IFLD=1,NREAL
           READ(IUNIT)(RFIELD_G(IJ),IJ=IJINF,IJSUP)
-          CALL UNBLKRORD(-1,IJINF,IJSUP,1,1,1,1,
-     &                   RFIELD(1,IFLD),RFIELD_G(1))
+          CALL UNBLKRORD(-1,IJINF,IJSUP,1,1,1,1,RFIELD(1,IFLD),RFIELD_G(1))
         ENDDO
       ELSE IF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
 !     ALL PE'S READ OR 1D DECOMPOSITION 
@@ -121,9 +120,6 @@
         CALL FLUSH(IU06)
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READSTRESS',1,ZHOOK_HANDLE)
-#endif
-      RETURN
 
       END SUBROUTINE READSTRESS

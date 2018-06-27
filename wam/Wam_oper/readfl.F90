@@ -1,4 +1,4 @@
-      SUBROUTINE READFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,
+      SUBROUTINE READFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,       &
      &                  FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARAL)
 
 ! ----------------------------------------------------------------------
@@ -42,6 +42,8 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : LL1D
       USE YOWSPEC  , ONLY : IJ2NEWIJ
@@ -55,28 +57,26 @@
 #include "abort1.intfb.h"
 #include "unblkrord.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
-      INTEGER, INTENT(INOUT) :: IUNIT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IUNIT
 
-      REAL, DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),INTENT(OUT) :: FL
+      REAL(KIND=JWRB), DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP), INTENT(OUT) :: FL
 
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
 
       LOGICAL, INTENT(IN) :: LOUNIT, LCUNIT, LRSTPARAL
 
-      INTEGER :: LFILE, IJ, J2, J3
-      INTEGER :: I_GET_UNIT 
+      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3
+      INTEGER(KIND=JWIM) :: I_GET_UNIT 
 
-      REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
 
       LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READFL',0,ZHOOK_HANDLE)
-#endif
 
       LFILE=0
       IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
@@ -105,27 +105,27 @@
       ENDIF
 
       IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
-        READ(IUNIT) (((FL_G(IJ,J2,J3),
-     &                  IJ=IJINF,IJSUP),
-     &                  J2=KINF,KSUP),
+        READ(IUNIT) (((FL_G(IJ,J2,J3),                                  &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
      &                  J3=MINF,MSUP)
 
-        CALL UNBLKRORD(-1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,
-     &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),
+        CALL UNBLKRORD(-1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,              &
+     &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),             &
      &               FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP))
 
       
-      ELSE IF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
-        READ(IUNIT) (((FL(IJ,J2,J3),
-     &                  IJ=IJINF,IJSUP),
-     &                  J2=KINF,KSUP),
+      ELSEIF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
+        READ(IUNIT) (((FL(IJ,J2,J3),                                    &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
      &                  J3=MINF,MSUP)
       ELSE
 !       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !       BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
-        READ(IUNIT) (((FL(IJ2NEWIJ(IJ),J2,J3),
-     &                  IJ=IJINF,IJSUP),
-     &                  J2=KINF,KSUP),
+        READ(IUNIT) (((FL(IJ2NEWIJ(IJ),J2,J3),                          &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
      &                  J3=MINF,MSUP)
 
       ENDIF
@@ -133,8 +133,6 @@
 
       IF (ITEST.GE.2) WRITE(IU06,*) ' SUB. READFL: INPUT OF FL DONE'
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READFL',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE READFL

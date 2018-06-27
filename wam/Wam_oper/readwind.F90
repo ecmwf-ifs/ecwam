@@ -79,24 +79,26 @@
 
 ! --------------------------------------------------------------------- 
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : IGL      ,NLONRGG
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
-      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     , 
+      USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     ,    &
      &            KXLT
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECI
-      USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,
-     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,
+      USE YOWPARAM , ONLY : NIBLO    ,CLDOMAIN ,                        &
+     &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,LWDINTS  ,    &
      &            SWAMPCIFR
-      USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,
+      USE YOWSTAT  , ONLY : CDATEA   ,IDELWI   ,LADEN    ,LGUST    ,    &
      &            NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,
-     &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,
+      USE YOWWNDG  , ONLY : DLAM     ,DPHI     ,RLATS    ,RLATN    ,    &
+     &            RLONL    ,RLONR    ,KCOL     ,KROW     ,ICODE    ,    &
      &            IWPER    ,ICOORD
-      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG   ,IUNITW   ,
+      USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG   ,IUNITW   ,    &
      &            NBITW    ,CWDFILE  ,LLWSWAVE ,LLWDWAVE
       USE YOWWIND  , ONLY : FIELDG_coupl
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
@@ -114,29 +116,30 @@
 #include "incdate.intfb.h"
 #include "kgribsize.intfb.h"
 
-      INTEGER, INTENT(IN) :: IREAD 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD 
       CHARACTER(LEN=14), INTENT(INOUT) :: CDTWIR
       CHARACTER(LEN=24), INTENT(INOUT) :: FILNM
       LOGICAL, INTENT(INOUT) :: LLNOTOPENED
 
-      INTEGER :: NFLD  
-      INTEGER :: I, J, IVAR, JSN
-      INTEGER :: ISIZE
-      INTEGER :: IFORP, IPARAM, KZLEV, IDM 
-      INTEGER :: IWTIME, IDTTURN
-      INTEGER :: LNAME 
-      INTEGER :: I_GET_UNIT
-      INTEGER :: IRET
-      INTEGER :: KGRIB_HANDLE
-      INTEGER :: IDUM(2)
-      INTEGER, ALLOCATABLE :: KGRIB(:)
-      INTEGER :: NLONRGG_LOC(NYFF)
+      INTEGER(KIND=JWIM) :: NFLD  
+      INTEGER(KIND=JWIM) :: I, J, IVAR, JSN
+      INTEGER(KIND=JWIM) :: ISIZE
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IDM 
+      INTEGER(KIND=JWIM) :: IWTIME, IDTTURN
+      INTEGER(KIND=JWIM) :: LNAME 
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IRET
+      INTEGER(KIND=JWIM) :: KGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IDUM(2)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB(:)
+      INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
+
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL :: ZDUM
-      REAL :: UWIND, VWIND, WSPEED, WTHETA
-      REAL :: ZHOOK_HANDLE
-      REAL, ALLOCATABLE :: WORK(:,:)  
+      REAL(KIND=JWRB) :: ZDUM
+      REAL(KIND=JWRB) :: UWIND, VWIND, WSPEED, WTHETA
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: WORK(:,:)  
 
       CHARACTER(LEN=14) :: CDTTURN
       CHARACTER(LEN=14), SAVE :: CWDDATE
@@ -146,9 +149,7 @@
       LOGICAL, ALLOCATABLE :: LLNOTREAD(:)
 ! --------------------------------------------------------------------  
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',0,ZHOOK_HANDLE)
-#endif
 
       IF (ITEST.GT.1) THEN
         WRITE(IU06,*) ' SUB. READWIND - STARTING ' 
@@ -295,14 +296,14 @@
             IF(IRANK.EQ.IREAD) THEN
               IDUM(1)=ISIZE
             ENDIF
-            CALL MPL_BROADCAST(IDUM(1:1),KROOT=IREAD,KTAG=IVAR,
+            CALL MPL_BROADCAST(IDUM(1:1),KROOT=IREAD,KTAG=IVAR,         &
      &                         CDSTRING='READWIND IDUM:')
             IF(IRANK.NE.IREAD) THEN
               ISIZE=IDUM(1)
               ALLOCATE(KGRIB(ISIZE))
             ENDIF
 
-            CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,
+            CALL MPL_BROADCAST(KGRIB(1:ISIZE),KROOT=IREAD,KTAG=IVAR,    &
      &                         CDSTRING='READWIND KGRIB:')
 
           ENDIF
@@ -314,19 +315,19 @@
 !             -------------------
           KGRIB_HANDLE=-99
           CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,KGRIB)
-          ZDUM=0.
-          CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM, 
-     &                     KGRIB_HANDLE, KGRIB, ISIZE,
-     &                     LLUNSTR,
-     &                     NXFF, NYFF, NLONRGG_LOC,
-     &                     IRGG, XDELLA, ZDELLO,
-     &                     FIELDG%XLON, FIELDG%YLAT,
-     &                     ZMISS, ZDUM, ZDUM,
+          ZDUM=0.0_JWRB
+          CALL GRIB2WGRID (IU06, ITEST, NPROMA_WAM,                     &
+     &                     KGRIB_HANDLE, KGRIB, ISIZE,                  &
+     &                     LLUNSTR,                                     &
+     &                     NXFF, NYFF, NLONRGG_LOC,                     &
+     &                     IRGG, XDELLA, ZDELLO,                        &
+     &                     FIELDG%XLON, FIELDG%YLAT,                    &
+     &                     ZMISS, ZDUM, ZDUM,                           &
      &                     CDTWIR, IFORP, IPARAM, KZLEV,IDM,IDM,WORK)
 
           CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-          IF (IPARAM.EQ.165 .OR. IPARAM.EQ.33 .OR. IPARAM.EQ.131 .OR.
+          IF (IPARAM.EQ.165 .OR. IPARAM.EQ.33 .OR. IPARAM.EQ.131 .OR.   &
      &        IPARAM.EQ.180 ) THEN
 
             IF(LLNOTREAD(IVAR)) THEN
@@ -346,7 +347,7 @@
             ELSE
               ICODE = 3
             ENDIF
-          ELSEIF (IPARAM.EQ.166 .OR. IPARAM.EQ.34 .OR. IPARAM.EQ.132
+          ELSEIF (IPARAM.EQ.166 .OR. IPARAM.EQ.34 .OR. IPARAM.EQ.132    &
      &            .OR. IPARAM.EQ.181 ) THEN
 
             IF(LLNOTREAD(IVAR)) THEN 
@@ -378,8 +379,8 @@
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
-            ELSEIF (.NOT.LICERUN .AND.
-     &              (IPARAM.EQ.31.OR.IPARAM.EQ.139) ) THEN
+            ELSEIF (.NOT.LICERUN .AND.                                  &
+     &              (IPARAM.EQ.31 .OR. IPARAM.EQ.139) ) THEN
 !             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
               GOTO 2002
             ELSE
@@ -396,7 +397,7 @@
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
-            ELSEIF (.NOT.LICETH .AND.
+            ELSEIF (.NOT.LICETH .AND.                                   &
      &              (IPARAM.EQ.92) ) THEN
 !             SKIP SEA ICE THICKNESS INFORMATION AS IT IS NOT NEEDED
               GOTO 2002
@@ -412,7 +413,7 @@
                   JSN=NYFF-J+1
                   DO I=1,NLONRGG_LOC(JSN)
                     IF(WORK(I,J).EQ.ZMISS) THEN
-                      FIELDG(I,J)%WSWAVE=0. 
+                      FIELDG(I,J)%WSWAVE=0.0_JWRB
                     ELSE
                       FIELDG(I,J)%WSWAVE=WORK(I,J)
                     ENDIF
@@ -432,10 +433,10 @@
                   JSN=NYFF-J+1
                   DO I=1,NLONRGG_LOC(JSN)
                     IF(WORK(I,J).EQ.ZMISS) THEN
-                      FIELDG(I,J)%WDWAVE=0. 
+                      FIELDG(I,J)%WDWAVE=0.0_JWRB
                     ELSE
 !                     re-convert to WAM convention
-                      FIELDG(I,J)%WDWAVE=RAD*(WORK(I,J)-180.)
+                      FIELDG(I,J)%WDWAVE=RAD*(WORK(I,J)-180.0_JWRB)
                     ENDIF
                   ENDDO
                 ENDDO
@@ -540,12 +541,12 @@
           IF(KCOL.NE.1) THEN
             DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
           ELSE
-            DLAM  = 0.
+            DLAM  = 0.0_JWRB
           ENDIF
           IF(KROW.NE.1) THEN
             DPHI  = (RLATN-RLATS)/REAL(KROW-1)
           ELSE
-            DPHI  = 0.
+            DPHI  = 0.0_JWRB
           ENDIF
 
           DEALLOCATE(KGRIB)
@@ -578,12 +579,12 @@
            IF(KCOL.NE.1) THEN
              DLAM  = (RLONR-RLONL)/REAL(KCOL-1)
            ELSE
-             DLAM  = 0.
+             DLAM  = 0.0_JWRB
            ENDIF
            IF(KROW.NE.1) THEN
              DPHI  = (RLATN-RLATS)/REAL(KROW-1)
            ELSE
-             DPHI  = 0.
+             DPHI  = 0.0_JWRB
            ENDIF
 
            IF(LWDINTS) THEN
@@ -605,7 +606,7 @@
            READ(IUNITW,*,END=110,ERR=120) IWTIME,WSPEED,WTHETA
 
            CALL INCDATE(CWDDATE,IWTIME)
-           WRITE(IU06,'(a28,a14,1x,f6.2,1x,f6.1)')
+           WRITE(IU06,'(a28,a14,1x,f6.2,1x,f6.1)')                      &
      &     '  WIND INPUT TIME SERIES AT ', CWDDATE,WSPEED,WTHETA
 
            WTHETA=RAD*WTHETA
@@ -617,19 +618,19 @@
           CDTTURN = CDATEA
           IDTTURN=DTNEWWIND*3600
           CALL INCDATE(CDTTURN,IDTTURN)
-          IF(SWAMPWIND2.LE.0. .OR. CDTWIR.LE.CDTTURN) THEN
-            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
+          IF(SWAMPWIND2.LE.0.0_JWRB .OR. CDTWIR.LE.CDTTURN) THEN
+            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',  &
      &                    SWAMPWIND 
-            UWIND=0.0
+            UWIND=0.0_JWRB
             VWIND=SWAMPWIND
           ELSE
-            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',
+            WRITE(IU06,*) ' READWIND - SWAMP CASE WITH WIND SPEED = ',  &
      &                    SWAMPWIND2 
             IF(LTURN90) THEN
               UWIND=SWAMPWIND2
-              VWIND=0.0
+              VWIND=0.0_JWRB
             ELSE
-              UWIND=0.0
+              UWIND=0.0_JWRB
               VWIND=SWAMPWIND2
             ENDIF
           ENDIF
@@ -667,7 +668,7 @@
         ENDDO
         DO J=NYFF/2+1,NYFF
           DO I=1,NXFF
-            FIELDG(I,J)%CIFR=0.
+            FIELDG(I,J)%CIFR=0.0_JWRB
           ENDDO
         ENDDO
 
@@ -687,9 +688,8 @@
         ENDDO
 #endif
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
-#endif
+
       RETURN
 
 110   CONTINUE
@@ -714,8 +714,7 @@
       WRITE(IU06,*) '****************************************'
       CALL ABORT1
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
-#endif
+
       RETURN
       END SUBROUTINE READWIND

@@ -1,5 +1,5 @@
-      SUBROUTINE READSTA (IUIN, CBDT, CEDT, ANALPD, FOREPD, IS,
-     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
+      SUBROUTINE READSTA (IUIN, CBDT, CEDT, ANALPD, FOREPD, IS,         &
+     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,  &
      &                    CCURA, LRSTPARAL, NPROC_RST )
                                                                         
 ! -------------------------------------------------------------------   
@@ -64,23 +64,32 @@
 
 !---------------------------------------------------------------------- 
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCARD  , ONLY : JPCL     ,CARD
       USE YOWTEST  , ONLY : IU06 
+
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 !---------------------------------------------------------------------- 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER, INTENT(IN) :: IUIN
-      INTEGER, INTENT(OUT) :: ANALPD, FOREPD, IS, IASS, NF 
-      INTEGER, INTENT(OUT) :: NPROC_RST
-      INTEGER, INTENT(OUT) :: ISTAT(3)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IUIN
+      INTEGER(KIND=JWIM), INTENT(OUT) :: ANALPD, FOREPD, IS, IASS, NF 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NPROC_RST
+      INTEGER(KIND=JWIM), INTENT(OUT) :: ISTAT(3)
       CHARACTER(LEN=14), INTENT(OUT) :: CBDT, CEDT
       CHARACTER(LEN=14), INTENT(OUT) :: CRSDT, CLSDT, CABDT, CAEDT 
       CHARACTER(LEN=14), INTENT(OUT) :: CCURA 
       LOGICAL, INTENT(OUT) :: LRSTPARAL
 
-      INTEGER :: I, L
+      INTEGER(KIND=JWIM) :: I, L
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+!---------------------------------------------------------------------- 
+
+      IF (LHOOK) CALL DR_HOOK('READSTA',0,ZHOOK_HANDLE)
 
 
 !*    1.0  READ WAMINFO FILE FROM IUIN.
@@ -136,6 +145,7 @@
 
       READ (CARD(17), '(27X,I10)') NPROC_RST 
 
+      IF (LHOOK) CALL DR_HOOK('READSTA',1,ZHOOK_HANDLE)
       RETURN                                                            
 
 !*    3.0  ERROR EXIT
@@ -160,5 +170,6 @@
       WRITE(IU06,*) ' *************************************************'
       CALL ABORT1
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('READSTA',1,ZHOOK_HANDLE)
+
       END SUBROUTINE READSTA

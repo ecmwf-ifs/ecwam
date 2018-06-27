@@ -46,39 +46,41 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
+     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
      &            BSWKM
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,
-     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
+     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,             &
      &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
+     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
      &            IJL      ,IJLT
-      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,
-     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,
-     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,
-     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,
+      USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
+     &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
+     &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
+     &            ACL1     ,ACL2     ,CL11     ,CL21     ,DAL1     ,    &
      &            DAL2     ,FRH      ,MFRSTLW  ,MLSTHG
-      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,
-     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,
+      USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
+     &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      , 
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
      &            IMDLGRDID 
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,
-     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,
-     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    , 
-     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,
-     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,
+      USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
+     &            FAK      ,FRHF     ,DFIMHF   ,NFREHF   ,              &
+     &            MR       ,XMR      ,MA       ,XMA      ,NFREH    ,    &
+     &            NANGH    ,NMAX     ,OMEGA    ,DFDTH    ,THH      ,    &
+     &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
       USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LLR8TOR4
@@ -91,18 +93,17 @@
 #include "abort1.intfb.h"
 #include "mpbcastgrid.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU07
-      INTEGER :: IREAD
-      INTEGER :: IDUM, KIBLD, KBLD, KIBLC, KBLC
-      INTEGER :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
-      INTEGER :: NKIND !Precision of file when reading
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU07
+      INTEGER(KIND=JWIM) :: IREAD
+      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KBLD, KIBLC, KBLC
+      INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
+      INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('READPRE',0,ZHOOK_HANDLE)
-#endif
 
       NKIND=0
       IREAD=1
@@ -191,7 +192,7 @@
 !     DETERMINE IF WE ARE USING A QUASI GAUSSIAN GRID OR 
 !     LAT-LONG GRID (REGULAR OR IRREGULAR).
 
-        IF(IPER.EQ.1 .AND. AMONOP.EQ.ABS(AMOSOP) .AND.
+        IF(IPER.EQ.1 .AND. AMONOP.EQ.ABS(AMOSOP) .AND.                  &
      &     MOD(NY,2).EQ.0 .AND. IRGG.EQ.1 ) THEN
           IQGAUSS=1
         ELSE
@@ -273,15 +274,15 @@
         IF(.NOT.ALLOCATED(DFDTH)) ALLOCATE(DFDTH(NFREH))
         IF(.NOT.ALLOCATED(TA)) ALLOCATE(TA(NDEPTH,NANGH,NFREH,NFREH))
         IF(.NOT.ALLOCATED(TB)) ALLOCATE(TB(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TC_QL)) 
+        IF(.NOT.ALLOCATED(TC_QL))                                       &
      &         ALLOCATE(TC_QL(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TT_4M))
+        IF(.NOT.ALLOCATED(TT_4M))                                       &
      &         ALLOCATE(TT_4M(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(TT_4P))
+        IF(.NOT.ALLOCATED(TT_4P))                                       &
      &         ALLOCATE(TT_4P(NDEPTH,NANGH,NFREH,NFREH))
-        IF(.NOT.ALLOCATED(IM_P))
+        IF(.NOT.ALLOCATED(IM_P))                                        &
      &         ALLOCATE(IM_P(NFREH,NFREH))
-        IF(.NOT.ALLOCATED(IM_M)) 
+        IF(.NOT.ALLOCATED(IM_M))                                        &
      &         ALLOCATE(IM_M(NFREH,NFREH))
         IF(.NOT.ALLOCATED(TFAKH)) ALLOCATE(TFAKH(NFREH,NDEPTH))
 
@@ -309,7 +310,7 @@
       CALL MPBCASTGRID(IU06,IREAD,KTAG)
       CALL GSTATS(694,1)
 
-      TOOSHALLOW=0.1*DEPTHA
+      TOOSHALLOW=0.1_JWRB*DEPTHA
 
 !     RECALCULATE THE UNSTRUCTURED BITS (if not read in)
 
@@ -317,61 +318,64 @@
         CALL INIT_UNWAM
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('READPRE',1,ZHOOK_HANDLE)
-#endif
+
       RETURN
 
       CONTAINS
 
       SUBROUTINE READREC(KREC)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: KREC
-      INTEGER :: ISTAT
-      REAL(KIND=8) ::
-     & R8_ACL1,R8_ACL2,R8_AFCRV,R8_AGRCRV,R8_ALPHA,R8_ALPHAPMAX,
-     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_ASH,R8_ASWKM,
-     & R8_BETAMAX,R8_BFCRV,R8_BGRCRV,R8_BSH,R8_BSWKM,
-     & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,
-     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,R8_EGRCRV,R8_ESH,
-     & R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_TAUWSHELTER,
+      INTEGER(KIND=JWIM), INTENT(IN) :: KREC
+      INTEGER(KIND=JWIM) :: ISTAT
+      !REAL(KIND=8) ::                     &
+      REAL(KIND=JWRU) ::                                                &
+     & R8_ACL1,R8_ACL2,R8_AFCRV,R8_AGRCRV,R8_ALPHA,R8_ALPHAPMAX,        &
+     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_ASH,R8_ASWKM,         &
+     & R8_BETAMAX,R8_BFCRV,R8_BGRCRV,R8_BSH,R8_BSWKM,                   &
+     & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
+     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,R8_EGRCRV,R8_ESH,                   &
+     & R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_TAUWSHELTER,                   &
      & R8_XDELLA,R8_XDELLO,R8_XKAPPA,R8_XMA,R8_XMR,R8_XNLEV,R8_ZALP
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:) ::
-     &     R8_FR,R8_DFIM,R8_GOM,R8_C,
-     &     R8_TH,R8_COSTH,R8_SINTH,
-     &     R8_DELLAM,R8_SINPH,R8_COSPH,
-     &     R8_ZDELLO,
-     &     R8_AF11,
-     &     R8_FKLAP,
-     &     R8_FKLAP1,
-     &     R8_FKLAM,
-     &     R8_FKLAM1,
-     &     R8_FRH,
-     &     R8_FRHF,
-     &     R8_DFIMHF,
-     &     R8_OMEGA,
-     &     R8_THH,
-     &     R8_DFDTH,
-     &     R8_FAK
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
-     &     R8_DEPTH,
-     &     R8_TCGOND,
-     &     R8_TFAK,
-     &     R8_TSIHKD,
-     &     R8_TFAC_ST,
+      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:) ::
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) ::                     &
+     &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
+     &     R8_TH,R8_COSTH,R8_SINTH,                                     &
+     &     R8_DELLAM,R8_SINPH,R8_COSPH,                                 &
+     &     R8_ZDELLO,                                                   &
+     &     R8_AF11,                                                     &
+     &     R8_FKLAP,                                                    &
+     &     R8_FKLAP1,                                                   &
+     &     R8_FKLAM,                                                    &
+     &     R8_FKLAM1,                                                   &
+     &     R8_FRH,                                                      &
+     &     R8_FRHF,                                                     &
+     &     R8_DFIMHF,                                                   &
+     &     R8_OMEGA,                                                    &
+     &     R8_THH,                                                      &
+     &     R8_DFDTH,                                                    &
+     &     R8_FAK                
+      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
+     &     R8_DEPTH,                                                    &
+     &     R8_TCGOND,                                                   &
+     &     R8_TFAK,                                                     &
+     &     R8_TSIHKD,                                                   &
+     &     R8_TFAC_ST,                                                  &
      &     R8_TFAKH
-      REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
-     &     R8_FAC0,
-     &     R8_FAC1,
-     &     R8_FAC2,
-     &     R8_FAC3,
-     &     R8_TA,
-     &     R8_TB,
-     &     R8_TC_QL,
-     &     R8_TT_4M,
+      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:,:,:) ::               &
+     &     R8_FAC0,                                                     &
+     &     R8_FAC1,                                                     &
+     &     R8_FAC2,                                                     &
+     &     R8_FAC3,                                                     &
+     &     R8_TA,                                                       &
+     &     R8_TB,                                                       &
+     &     R8_TC_QL,                                                    &
+     &     R8_TT_4M,                                                    &
      &     R8_TT_4P
 
-!23456789-123456789-123456789-123456789-123456789-123456789-123456789-12 
+!23456789-123456789-123456789-123456789-123456789-123456789-123456789-12
       SELECT CASE(KREC)
       CASE(1)
          LLR8TOR4 = .FALSE.
@@ -386,13 +390,13 @@
             LLR8TOR4 = .TRUE.   ! Input REALs are indeed legacy REAL*8, but KIND(DELPHI) == 4
          ENDIF
          NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
-         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,
+         WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,             &
      &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
  1002    FORMAT(1X,A,I0,A,I0,A,L1)
       CASE(2)
-         READ(IU07,IOSTAT=ISTAT)
-     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,
-     &        KFRH, MFRSTLW, MLSTHG,
+         READ(IU07,IOSTAT=ISTAT)                                        &
+     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,                 &
+     &        KFRH, MFRSTLW, MLSTHG,                                    &
      &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
@@ -400,7 +404,7 @@
             ALLOCATE(R8_FR(NFRE),R8_DFIM(NFRE),R8_GOM(NFRE),R8_C(NFRE))
             ALLOCATE(R8_TH(NANG),R8_COSTH(NANG),R8_SINTH(NANG))
 
-            READ(IU07,IOSTAT=ISTAT) R8_FR, R8_DFIM, R8_GOM, R8_C,
+            READ(IU07,IOSTAT=ISTAT) R8_FR, R8_DFIM, R8_GOM, R8_C,       &
      &           R8_DELTH, R8_DELTR, R8_TH, R8_COSTH, R8_SINTH
             IF (ISTAT /= 0) GOTO 1000
 
@@ -416,7 +420,7 @@
             DEALLOCATE(R8_FR,R8_DFIM,R8_GOM, R8_C)
             DEALLOCATE(R8_TH,R8_COSTH,R8_SINTH)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) FR, DFIM, GOM, C,
+            READ(IU07,IOSTAT=ISTAT) FR, DFIM, GOM, C,                   &
      &           DELTH, DELTR, TH, COSTH, SINTH
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -424,8 +428,8 @@
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_DELLAM(NGY),R8_SINPH(NGY),R8_COSPH(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,
-     &           R8_SINPH, R8_COSPH,
+            READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,      &
+     &           R8_SINPH, R8_COSPH,                                    &
      &           IGL, IJS, IJL2, IJLS, IJL, IJLT
             IF (ISTAT /= 0) GOTO 1000
 
@@ -435,8 +439,8 @@
             COSPH = R8_COSPH
             DEALLOCATE(R8_DELLAM,R8_SINPH,R8_COSPH)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,
-     &           SINPH, COSPH,
+            READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,            &
+     &           SINPH, COSPH,                                          &
      &           IGL, IJS, IJL2, IJLS, IJL, IJLT
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -444,9 +448,9 @@
          IF (LLR8TOR4) THEN
             ALLOCATE(R8_ZDELLO(NGY))
 
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,
-     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,
-     &           R8_XDELLA, R8_XDELLO,
+            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
+     &           R8_AMOWEP, R8_AMOSOP, R8_AMOEAP, R8_AMONOP,            &
+     &           R8_XDELLA, R8_XDELLO,                                  &
      &           R8_ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
 
@@ -460,9 +464,9 @@
 
             DEALLOCATE(R8_ZDELLO)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,
-     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,
-     &           XDELLA, XDELLO,
+            READ(IU07,IOSTAT=ISTAT) IXLG, KXLT, NX, NY, IPER,           &
+     &           AMOWEP, AMOSOP, AMOEAP, AMONOP,                        &
+     &           XDELLA, XDELLO,                                        &
      &           ZDELLO, IRGG
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -475,10 +479,10 @@
             ALLOCATE(R8_FKLAM1(MFRSTLW:MLSTHG))
             ALLOCATE(R8_FRH(KFRH))
 
-            READ(IU07,IOSTAT=ISTAT)
-     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
-     &           R8_AF11, R8_FKLAP, R8_FKLAP1, R8_FKLAM, R8_FKLAM1,
-     &           R8_ACL1, R8_ACL2,  R8_CL11, R8_CL21,
+            READ(IU07,IOSTAT=ISTAT)                                     &
+     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,            &
+     &           R8_AF11, R8_FKLAP, R8_FKLAP1, R8_FKLAM, R8_FKLAM1,     &
+     &           R8_ACL1, R8_ACL2,  R8_CL11, R8_CL21,                   &
      &           R8_DAL1, R8_DAL2, R8_FRH
             IF (ISTAT /= 0) GOTO 1000
 
@@ -502,18 +506,18 @@
             DEALLOCATE(R8_FKLAM1)
             DEALLOCATE(R8_FRH)
          ELSE
-            READ(IU07,IOSTAT=ISTAT)
-     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,
-     &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,
-     &           ACL1, ACL2,  CL11, CL21,
+            READ(IU07,IOSTAT=ISTAT)                                     &
+     &           IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W,            &
+     &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,                    &
+     &           ACL1, ACL2,  CL11, CL21,                               &
      &           DAL1, DAL2, FRH
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(7)
          IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT) IPHYS,R8_BETAMAX,R8_ZALP,R8_ALPHA,
-     &           R8_ALPHAPMAX,
-     &           R8_TAUWSHELTER,ITSHELT,
+            READ(IU07,IOSTAT=ISTAT) IPHYS,R8_BETAMAX,R8_ZALP,R8_ALPHA,  &
+     &           R8_ALPHAPMAX,                                          &
+     &           R8_TAUWSHELTER,ITSHELT,                                &
      &           R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_XKAPPA,R8_XNLEV
             IF (ISTAT /= 0) GOTO 1000
             BETAMAX = R8_BETAMAX
@@ -526,16 +530,16 @@
             XKAPPA = R8_XKAPPA
             XNLEV = R8_XNLEV
          ELSE
-            READ(IU07,IOSTAT=ISTAT) IPHYS,BETAMAX,ZALP,ALPHA,
-     &           ALPHAPMAX,
-     &           TAUWSHELTER,ITSHELT,
+            READ(IU07,IOSTAT=ISTAT) IPHYS,BETAMAX,ZALP,ALPHA,           &
+     &           ALPHAPMAX,                                             &
+     &           TAUWSHELTER,ITSHELT,                                   &
      &           TAILFACTOR,TAILFACTOR_PM,XKAPPA,XNLEV
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(8)
          IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT)
-     &           R8_EGRCRV,R8_AGRCRV,R8_BGRCRV,R8_AFCRV,R8_BFCRV,
+            READ(IU07,IOSTAT=ISTAT)                                     &
+     &           R8_EGRCRV,R8_AGRCRV,R8_BGRCRV,R8_AFCRV,R8_BFCRV,       &
      &           R8_ESH,R8_ASH,R8_BSH,R8_ASWKM,R8_BSWKM
             IF (ISTAT /= 0) GOTO 1000
             EGRCRV = R8_EGRCRV
@@ -549,8 +553,8 @@
             ASWKM = R8_ASWKM
             BSWKM = R8_BSWKM
          ELSE
-            READ(IU07,IOSTAT=ISTAT)
-     &           EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,
+            READ(IU07,IOSTAT=ISTAT)                                     &
+     &           EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,                      &
      &           ESH,ASH,BSH,ASWKM,BSWKM
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -577,7 +581,7 @@
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))
             ALLOCATE(R8_TFAC_ST(NDEPTH,NFRE))
-            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,
+            READ(IU07,IOSTAT=ISTAT) R8_DEPTH, R8_TCGOND,                &
      &           R8_TFAK, R8_TSIHKD, R8_TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
             DEPTH = R8_DEPTH
@@ -592,7 +596,7 @@
             DEALLOCATE(R8_TSIHKD)
             DEALLOCATE(R8_TFAC_ST)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,
+            READ(IU07,IOSTAT=ISTAT) DEPTH, TCGOND,                      &
      &           TFAK, TSIHKD, TFAC_ST
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -605,7 +609,7 @@
             ALLOCATE(R8_FAK(NFREHF))
             ALLOCATE(R8_FRHF(NFREHF))
             ALLOCATE(R8_DFIMHF(NFREHF))
-            READ(IU07,IOSTAT=ISTAT) R8_FAC0,R8_FAC1,R8_FAC2,R8_FAC3,
+            READ(IU07,IOSTAT=ISTAT) R8_FAC0,R8_FAC1,R8_FAC2,R8_FAC3,    &
      &           R8_FAK,R8_FRHF,R8_DFIMHF
             IF (ISTAT /= 0) GOTO 1000
             FAC0 = R8_FAC0
@@ -624,19 +628,19 @@
             DEALLOCATE(R8_FRHF)
             DEALLOCATE(R8_DFIMHF)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) FAC0,FAC1,FAC2,FAC3,
+            READ(IU07,IOSTAT=ISTAT) FAC0,FAC1,FAC2,FAC3,                &
      &           FAK,FRHF,DFIMHF
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(17)
          IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT) MR, R8_XMR, MA, R8_XMA,
+            READ(IU07,IOSTAT=ISTAT) MR, R8_XMR, MA, R8_XMA,             &
      &           NFREH, NANGH, NMAX
             IF (ISTAT /= 0) GOTO 1000
             XMR = R8_XMR
             XMA = R8_XMA
          ELSE
-            READ(IU07,IOSTAT=ISTAT) MR, XMR, MA, XMA,
+            READ(IU07,IOSTAT=ISTAT) MR, XMR, MA, XMA,                   &
      &           NFREH, NANGH, NMAX
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -651,8 +655,8 @@
             ALLOCATE(R8_TT_4M(NDEPTH,NANGH,NFREH,NFREH))
             ALLOCATE(R8_TT_4P(NDEPTH,NANGH,NFREH,NFREH))
             ALLOCATE(R8_TFAKH(NFREH,NDEPTH))
-            READ(IU07,IOSTAT=ISTAT) R8_OMEGA, R8_DFDTH, R8_THH,
-     &           R8_DELTHH, IM_P, IM_M,
+            READ(IU07,IOSTAT=ISTAT) R8_OMEGA, R8_DFDTH, R8_THH,         &
+     &           R8_DELTHH, IM_P, IM_M,                                 &
      &           R8_TA, R8_TB, R8_TC_QL, R8_TT_4M, R8_TT_4P, R8_TFAKH
             IF (ISTAT /= 0) GOTO 1000
             OMEGA = R8_OMEGA
@@ -675,8 +679,8 @@
             DEALLOCATE(R8_TT_4P)
             DEALLOCATE(R8_TFAKH)
          ELSE
-            READ(IU07,IOSTAT=ISTAT) OMEGA, DFDTH, THH,
-     &           DELTHH, IM_P, IM_M,
+            READ(IU07,IOSTAT=ISTAT) OMEGA, DFDTH, THH,                  &
+     &           DELTHH, IM_P, IM_M,                                    &
      &           TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
@@ -688,7 +692,7 @@
       RETURN
 
  1000 CONTINUE
-      WRITE(IU06,1001)'***ERROR IN READREC(',KREC,') : IOSTAT=',
+      WRITE(IU06,1001)'***ERROR IN READREC(',KREC,') : IOSTAT=',        &
      &     ISTAT,', NKIND=',NKIND
  1001 FORMAT(1X,A,I0,A,I0,A,I0)
       WRITE(IU06,*) '*************************************'
