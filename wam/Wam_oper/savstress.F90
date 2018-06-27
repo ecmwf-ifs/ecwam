@@ -178,7 +178,7 @@
       WRITE(IU06,*) ' NEXT WIND FILE NAME IS ...........',              &
      & ' CDAWIFL = ', CDAWIFL
       WRITE(IU06,*) ' NEXT WIND FILE WILL BE ACCESSED AT',              &
-     & ' CDATEFL = ',DATEFL
+     & ' CDATEFL = ',CDATEFL
       CALL FLUSH(IU06)
 
       IF (LHOOK) CALL DR_HOOK('SAVSTRESS',1,ZHOOK_HANDLE)
