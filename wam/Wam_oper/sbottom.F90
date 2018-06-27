@@ -38,6 +38,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G
@@ -48,27 +50,26 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: DPTH 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DPTH 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
 
-      INTEGER :: IJ, K, M
-      REAL :: CONST, ARG
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: SBO
+      INTEGER(KIND=JWIM):: IJ, K, M
+      REAL(KIND=JWRB) :: CONST, ARG
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SBO
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
-#endif
 
-      CONST = -2.0*0.038/G
+      IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
+
+      CONST = -2.0_JWRB*0.038_JWRB/G
       DO M=1,NFRE
         DO IJ=IJS,IJL
           IF(DPTH(IJ).LT.BATHYMAX) THEN
-            ARG = 2.* DPTH(IJ)*TFAK(INDEP(IJ),M)
-            ARG = MIN(ARG,50.)
+            ARG = 2.0_JWRB* DPTH(IJ)*TFAK(INDEP(IJ),M)
+            ARG = MIN(ARG,50.0_JWRB)
             SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
           ENDIF
         ENDDO
@@ -83,7 +84,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE SBOTTOM

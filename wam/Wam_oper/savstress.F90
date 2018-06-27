@@ -1,5 +1,5 @@
-      SUBROUTINE SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,
+      SUBROUTINE SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,          &
+     &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,           &
      &                     NBLKS, NBLKE, CDTPRO, CDATEF)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
@@ -46,6 +46,8 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUT  , ONLY : NREAL    ,JPPFLAG  ,IPFGTBL, LRSTPARALW
       USE YOWCURR  , ONLY : U        ,V
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
@@ -59,36 +61,35 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpgatherscfld.intfb.h"
 #include "writestress.intfb.h"
 
-      REAL,DIMENSION(NINF:NSUP,NBLO),INTENT(IN) ::
-     &                                  U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO),INTENT(IN) ::           &
+     &                                  U10OLD,THWOLD,USOLD,TAUW,Z0OLD, &
      &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
-      INTEGER, DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
+      INTEGER(KIND=JWIM), DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF
 
-      INTEGER :: IG
-      INTEGER :: IFLD, IJ, IRECV
-      INTEGER :: IJINF, IJSUP, MIJS, MIJL, IJOFFSET
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER :: LNAME
+      INTEGER(KIND=JWIM) :: IG
+      INTEGER(KIND=JWIM) :: IFLD, IJ, IRECV
+      INTEGER(KIND=JWIM) :: IJINF, IJSUP, MIJS, MIJL, IJOFFSET
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: LNAME
 
-      REAL :: ZHOOK_HANDLE
-      REAL, ALLOCATABLE,DIMENSION(:,:) :: RDUM 
-      REAL, ALLOCATABLE,DIMENSION(:,:) :: RFIELD
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:,:) :: RDUM 
+      REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:,:) :: RFIELD
 
       CHARACTER(LEN=296) :: FILENAME
 
       LOGICAL :: LUAL, LVAL
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SAVSTRESS',0,ZHOOK_HANDLE)
-#endif
 
       IRECV=1
 
@@ -131,12 +132,12 @@
           IF(LUAL) THEN
             RFIELD(IJ,10) = U(IJ,IG) 
           ELSE
-            RFIELD(IJ,10) = 0.
+            RFIELD(IJ,10) = 0.0_JWRB
           ENDIF
           IF(LVAL) THEN
             RFIELD(IJ,11) = V(IJ,IG) 
           ELSE
-            RFIELD(IJ,11) = 0.
+            RFIELD(IJ,11) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDDO
@@ -146,11 +147,11 @@
 !       COLLECT THE DIFFERENT CONTRIBUTIONS FROM THE PROCESSES
 !       SINCE THE FILES ARE NOT SAVED IN SPLIT MODE
         DO IFLD=1,NREAL
-          CALL MPGATHERSCFLD(IRECV,NBLKS,NBLKE,
+          CALL MPGATHERSCFLD(IRECV,NBLKS,NBLKE,                         &
      &                       RFIELD(IJINF:IJSUP,IFLD),IJSUP-IJINF+1)
         ENDDO
 
-        IF (ITEST.GE.2)
+        IF (ITEST.GE.2)                                                 &
      &     WRITE(IU06,*) '   SUB. SAVSTRESS: RESTART FILES COLLECTED'
       ENDIF
 
@@ -164,7 +165,7 @@
       ENDIF
 
       IF(LRSTPARALW .OR. IRANK.EQ.IRECV) THEN
-          CALL WRITESTRESS(IJINF, IJSUP, NREAL, RFIELD,
+          CALL WRITESTRESS(IJINF, IJSUP, NREAL, RFIELD,                 &
      &                     FILENAME, LRSTPARALW)
       ENDIF
       DEALLOCATE(RFIELD)
@@ -172,17 +173,14 @@
       WRITE(IU06,*) ' '
       WRITE(IU06,*) 'SUB. SAVSTRESS: WIND FIELD SAVED FOR RESTART'
       WRITE(IU06,*) ' '
-      WRITE(IU06,*) ' WIND FIELD WILL BE USED UNTIL ....',
+      WRITE(IU06,*) ' WIND FIELD WILL BE USED UNTIL ....',              &
      & ' CDATEWO = ', CDATEWO
-      WRITE(IU06,*) ' NEXT WIND FILE NAME IS ...........',
+      WRITE(IU06,*) ' NEXT WIND FILE NAME IS ...........',              &
      & ' CDAWIFL = ', CDAWIFL
-      WRITE(IU06,*) ' NEXT WIND FILE WILL BE ACCESSED AT',
-     & ' CDATEFL = ', CDATEFL
+      WRITE(IU06,*) ' NEXT WIND FILE WILL BE ACCESSED AT',              &
+     & ' CDATEFL = ',0DATEFL
       CALL FLUSH(IU06)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SAVSTRESS',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE SAVSTRESS

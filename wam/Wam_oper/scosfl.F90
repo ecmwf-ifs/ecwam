@@ -40,28 +40,37 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DELTH    ,TH       ,COSTH    ,SINTH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,K,IJS,IJL
-      INTEGER,DIMENSION(IJS:IJL) :: MM
-      REAL,DIMENSION(IJS:IJL) :: MEANDIR, MEANCOSFL
-      REAL :: SI(IJS:IJL), CI(IJS:IJL), F(IJS:IJL,NANG,NFRE)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: MEANCOSFL
+
+
+      INTEGER(KIND=JWIM) :: IJ, K
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: MEANDIR, SI, CI
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('SCOSFL',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISE ARRAYS
 !        -----------------
 
       DO IJ=IJS,IJL
-        SI(IJ) = 0.
-        CI(IJ) = 0.
-        MEANCOSFL(IJ) = 0.
+        SI(IJ) = 0.0_JWRB
+        CI(IJ) = 0.0_JWRB
+        MEANCOSFL(IJ) = 0.0_JWRB
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -77,8 +86,8 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (CI(IJ).EQ.0. .AND. SI(IJ).EQ.0.) THEN
-          MEANDIR(IJ) = 0.
+        IF (CI(IJ).EQ.0.0_JWRB .AND. SI(IJ).EQ.0.0_JWRB) THEN
+          MEANDIR(IJ) = 0.0_JWRB
         ELSE
           MEANDIR(IJ) = ATAN2(SI(IJ),CI(IJ))
         ENDIF
@@ -89,13 +98,13 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          MEANCOSFL(IJ)=MEANCOSFL(IJ)+
-     &                  COS(TH(K)-MEANDIR(IJ))*F(IJ,K,MM(IJ))
+          MEANCOSFL(IJ)=MEANCOSFL(IJ)+COS(TH(K)-MEANDIR(IJ))*F(IJ,K,MM(IJ)) 
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
         MEANCOSFL(IJ) = DELTH*MEANCOSFL(IJ)
       ENDDO
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('SCOSFL',1,ZHOOK_HANDLE)
+
       END SUBROUTINE SCOSFL

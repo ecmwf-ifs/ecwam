@@ -41,27 +41,29 @@
 
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
-      REAL, INTENT(IN) :: RTHET
-      REAL, DIMENSION(NANG,NFRE), INTENT(IN) :: FL1
-      REAL, DIMENSION(NANG,NFRE), INTENT(OUT) :: FL3
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL(KIND=JWRB), INTENT(IN) :: RTHET
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(OUT) :: FL3
 
 
-      INTEGER :: K, M
-      INTEGER :: INC, KC, KC1
-      REAL :: ZPI, FTH, ADIF, BDIF
+      INTEGER(KIND=JWIM) :: K, M
+      INTEGER(KIND=JWIM) :: INC, KC, KC1
+      REAL(KIND=JWRB) :: ZPI, FTH, ADIF, BDIF
 
 ! --------------------------------------------------------------------
 
-      ZPI=8.*ATAN(1.)
+      ZPI=8.0_JWRB*ATAN(1._JWRB)
 
       FTH = MOD(RTHET+ZPI,ZPI)
       FTH = FTH * REAL(KL) / ZPI
       INC = INT(FTH)
       ADIF = FTH - INC
-      BDIF = 1. - ADIF
+      BDIF = 1.0_JWRB - ADIF
 
       DO K=1,KL
         KC  = K  - INC
@@ -74,5 +76,4 @@
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE ROTSPEC

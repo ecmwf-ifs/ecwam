@@ -1,5 +1,4 @@
-      SUBROUTINE SDISSIP_JAN (F, FL, SL, IJS, IJL,
-     &                    EMEAN, F1MEAN, XKMEAN)
+      SUBROUTINE SDISSIP_JAN (F, FL, SL, IJS, IJL, EMEAN, F1MEAN, XKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -51,6 +50,8 @@
 
 ! ---------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
@@ -63,33 +64,31 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN, F1MEAN, XKMEAN
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN):: EMEAN, F1MEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: FL, SL
 
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL :: SCDFM, CONSD, CONSS, DELTAM1
-      REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJS:IJL) :: CM, TEMP1, SDS, X
+      REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTAM1
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: CM, TEMP1, SDS, X
 
 
-      REAL, PARAMETER :: CDIS = 1.33
-      REAL, PARAMETER :: DELTA = 0.5
+      REAL(KIND=JWRB), PARAMETER :: CDIS = 1.33_JWRB
+      REAL(KIND=JWRB), PARAMETER :: DELTA = 0.5_JWRB
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
 
-      DELTAM1=1.-DELTA
+      DELTAM1=1.0_JWRB-DELTA
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. SDISSIP_JAN: START DO-LOOP (ISHALLO=0)'
@@ -136,9 +135,6 @@
 
       ENDDO
 
-
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDISSIP_JAN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SDISSIP_JAN

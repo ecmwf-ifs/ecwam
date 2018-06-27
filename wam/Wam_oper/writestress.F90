@@ -1,5 +1,4 @@
-      SUBROUTINE WRITESTRESS(IJINF, IJSUP, NREAL, RFIELD,
-     &                       FILENAME, LRSTPARAL)
+      SUBROUTINE WRITESTRESS(IJINF, IJSUP, NREAL, RFIELD, FILENAME, LRSTPARAL) 
 
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      APRIL 1997
@@ -37,6 +36,8 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : NBLO    ,LL1D
       USE YOWSTAT  , ONLY : CDTPRO
@@ -47,28 +48,27 @@
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "unblkrord.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJINF, IJSUP, NREAL
-      REAL,DIMENSION(IJINF:IJSUP,NREAL),INTENT(INOUT) :: RFIELD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, NREAL
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,NREAL),INTENT(INOUT) :: RFIELD
       CHARACTER(LEN=296), INTENT(IN) :: FILENAME
       LOGICAL, INTENT(IN) :: LRSTPARAL
 
-      INTEGER :: IFLD, IJ, IG
-      INTEGER :: LFILE, IUNIT
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IFLD, IJ, IG
+      INTEGER(KIND=JWIM) :: LFILE, IUNIT
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL :: ZHOOK_HANDLE
-      REAL,DIMENSION(IJINF:IJSUP) :: RFIELD_G
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP) :: RFIELD_G
 
       CHARACTER(LEN=1) :: MODE
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WRITESTRESS',0,ZHOOK_HANDLE)
-#endif
 
       LFILE=0
       IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
@@ -79,8 +79,7 @@
 
       IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
         DO IFLD=1,NREAL
-          CALL UNBLKRORD(1,IJINF,IJSUP,1,1,1,1,
-     &                   RFIELD(1,IFLD),RFIELD_G(1))
+          CALL UNBLKRORD(1,IJINF,IJSUP,1,1,1,1,RFIELD(1,IFLD),RFIELD_G(1))
           WRITE(IUNIT)(RFIELD_G(IJ),IJ=IJINF,IJSUP)
         ENDDO
       ELSE IF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
@@ -95,12 +94,8 @@
 
       CLOSE(IUNIT)
 
-      IF (ITEST.GE.2)
-     &    WRITE(IU06,*) ' SUB. WRITESTRESS: OUTPUT DONE'
+      IF (ITEST.GE.2) WRITE(IU06,*) ' SUB. WRITESTRESS: OUTPUT DONE' 
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WRITESTRESS',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE WRITESTRESS

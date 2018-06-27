@@ -1,4 +1,5 @@
-      SUBROUTINE SAVSPEC(FL,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
+      SUBROUTINE SAVSPEC(FL, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      MARCH 1997
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 : use PBIO SOFTWARE
@@ -41,11 +42,13 @@
 !     NONE
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUT  , ONLY : JPPFLAG  ,IPFGTBL  ,KDEL    ,MDEL      ,    &
      &           LRSTPARALW
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            NPRECR
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -53,23 +56,24 @@
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "expand_string.intfb.h"
 #include "grstname.intfb.h"
 #include "mpgatherfl.intfb.h"
 #include "writefl.intfb.h"
 
-      INTEGER, DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
-      REAL, DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL
-      CHARACTER(LEN=14), INTENT(IN) :: CDTPRO,CDATEF,CDATER
+      INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL
+      CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF, CDATER
 
-      INTEGER :: IJ, K, M
-      INTEGER :: IUNIT
-      INTEGER :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
-      INTEGER :: LNAME
+      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IUNIT
+      INTEGER(KIND=JWIM) :: IRECV, MLOOP, KLOOP, MINF, MSUP, KINF, KSUP 
+      INTEGER(KIND=JWIM) :: LNAME
 
-      REAL :: ZHOOK_HANDLE
-      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: RFL
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: RFL
 
       CHARACTER(LEN=296) :: FILENAME
 
@@ -77,9 +81,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',0,ZHOOK_HANDLE)
-#endif
 
       LOUNIT = .TRUE.
 
@@ -91,7 +93,7 @@
          FILENAME=FILENAME(1:LNAME)//'.%p_%n'
          CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
 
-         CALL WRITEFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,
+         CALL WRITEFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,               &
      &                FILENAME, IUNIT, LOUNIT, LRSTPARALW)
 
       ELSE
@@ -111,7 +113,7 @@
             IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
 
             ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
-            RFL(0,:,:)=0.
+            RFL(0,:,:)=0.0_JWRB
             DO M=MINF,MSUP
               DO K=KINF,KSUP
                 DO IJ = IJSLOC, IJLLOC
@@ -122,12 +124,12 @@
 
             CALL MPGATHERFL(IRECV,NBLKS,NBLKE,KINF,KSUP,MINF,MSUP,RFL)
 
-            IF (ITEST.GE.2)
-     &       WRITE(IU06,*)
+            IF (ITEST.GE.2)                                             &
+     &       WRITE(IU06,*)                                              &
      &       'SUB. SAVSPEC: RESTART SPECTRUM COLLECTED, :',MLOOP,KLOOP
 
             IF (IRANK.EQ.IPFGTBL(JPPFLAG+1) .OR. NPROC.EQ.1) THEN
-              CALL WRITEFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,
+              CALL WRITEFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,       &
      &                     FILENAME, IUNIT, LOUNIT, LRSTPARALW)
             ENDIF
             DEALLOCATE(RFL)
@@ -135,12 +137,9 @@
         ENDDO
       ENDIF
 
-      WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',
+      WRITE(IU06,*) ' SPECTRUM FILE DISPOSED AT........',               &
      &                ' CDTPRO  = ', CDTPRO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SAVSPEC',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE SAVSPEC
