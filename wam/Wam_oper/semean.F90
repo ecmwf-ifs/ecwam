@@ -39,6 +39,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
@@ -48,23 +50,21 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER :: IJ, M, K
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: EM
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
 
-      REAL :: DELT25
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB) :: DELT25
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 
       LOGICAL, INTENT(IN) :: LLEPSMIN
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('SEMEAN',0,ZHOOK_HANDLE)
-#endif
 
+      IF (LHOOK) CALL DR_HOOK('SEMEAN',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISE ENERGY ARRAY.
 !        ------------------------
@@ -75,7 +75,7 @@
         ENDDO
       ELSE
         DO IJ=IJS,IJL
-          EM(IJ) = 0.
+          EM(IJ) = 0.0_JWRB
         ENDDO
       ENDIF
 
@@ -109,9 +109,6 @@
         EM(IJ) = EM(IJ)+DELT25*TEMP(IJ)
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEMEAN',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE SEMEAN
