@@ -1,9 +1,9 @@
 !-----------------------------------------------------------------------
 
-!***  *REAL FUNCTION* *VMIN_D(XI,XJ,XK,THI,THJ,THK,OI,OJ,OK)
+!***  *REAL(KIND=JWRB) FUNCTION* *VMIN_D(XI,XJ,XK,THI,THJ,THK,OI,OJ,OK)
 
 !-----------------------------------------------------------------------
-      REAL FUNCTION VMIN_D(XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK)
+      REAL(KIND=JWRB) FUNCTION VMIN_D(XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK)
 
 !***  *VMIN_D*  DETERMINES THE NONLINEAR TRANSFER COEFFICIENT FOR THREE
 !               WAVE INTERACTIONS OF DEEP WATER WAVES.
@@ -33,17 +33,19 @@
 
 !-----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : ZCONST
 
 !-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL :: XI,XJ,XK,XIJ,XIK,XJK,XOI,XOJ,XOK
+      REAL(KIND=JWRB) :: XI, XJ, XK, XIJ, XIK, XJK, XOI, XOJ, XOK
 
-      REAL, PARAMETER :: DEL1=1.0E-10
+      REAL(KIND=JWRB), PARAMETER :: DEL1=1.0E-10_JWRB
 
-      REAL :: RI,RJ,RK,OI,OJ,OK,SQIJK,SQIKJ,SQJKI
+      REAL(KIND=JWRB) :: RI, RJ, RK, OI, OJ, OK, SQIJK, SQIKJ, SQJKI
 
 !***  1. DETERMINE NONLINEAR TRANSFER.
 !     --------------------------------
@@ -57,8 +59,7 @@
       SQIJK=SQRT(OI*OJ*RK/(OK*RI*RJ))
       SQIKJ=SQRT(OI*OK*RJ/(OJ*RI*RK))
       SQJKI=SQRT(OJ*OK*RI/(OI*RJ*RK))
-      VMIN_D=ZCONST*( (XIJ-RI*RJ)*SQIJK + (XIK-RI*RK)*SQIKJ
+      VMIN_D=ZCONST*( (XIJ-RI*RJ)*SQIJK + (XIK-RI*RK)*SQIKJ             &
      &                + (XJK+RJ*RK)*SQJKI )
 
-      RETURN
       END FUNCTION VMIN_D

@@ -34,10 +34,11 @@
 !          V E ZAKHAROV(1967)
 
 !-------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO   ,
+      USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO   ,    &
      &            COSTH    ,SINTH 
-      USE YOWTABL  , ONLY : NFREHF   ,FAC0     ,FAC1     ,FAC2     ,
+      USE YOWTABL  , ONLY : NFREHF   ,FAC0     ,FAC1     ,FAC2     ,    &
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF
       USE YOWPARAM , ONLY : NANG
       USE YOWPCONS , ONLY : G        ,ZPI
@@ -46,23 +47,20 @@
 
       IMPLICIT NONE
 
-#include "vmin_d.intfb.h"
-#include "vplus_d.intfb.h"
+      INTEGER(KIND=JWIM) :: K, M, K1, M1, K2, M2
 
-      INTEGER :: K, M, K1, M1, K2, M2
+      REAL(KIND=JWRB), PARAMETER :: DEL1=1.0E-8_JWRB
+      REAL(KIND=JWRB) :: VMIN_D, VPLUS_D
+      REAL(KIND=JWRB) :: CO1
+      REAL(KIND=JWRB) :: XK1, XK1SQ, XK2, XK2SQ, XK3
+      REAL(KIND=JWRB) :: COSDIFF
+      REAL(KIND=JWRB) :: X12, X13, X32, OM1, OM2, OM3, F1, F2, F3
+      REAL(KIND=JWRB) :: VM, VP
+      REAL(KIND=JWRB) :: DELOM1, DELOM2
+      REAL(KIND=JWRB) :: DELOM321, DELOM312
+      REAL(KIND=JWRB) :: C22, S22
 
-      REAL, PARAMETER :: DEL1=1.0E-8
-!      REAL :: VMIN_D, VPLUS_D
-      REAL :: CO1
-      REAL :: XK1, XK1SQ, XK2, XK2SQ, XK3
-      REAL :: COSDIFF
-      REAL :: X12, X13, X32, OM1, OM2, OM3, F1, F2, F3
-      REAL :: VM, VP
-      REAL :: DELOM1, DELOM2
-      REAL :: DELOM321, DELOM312
-      REAL :: C22, S22
-
-      REAL, DIMENSION(NANG,NANG,NFREHF,NFREHF) :: B
+      REAL(KIND=JWRB), DIMENSION(NANG,NANG,NFREHF,NFREHF) :: B
 
 !-----------------------------------------------------------------------
 
@@ -87,7 +85,7 @@
          FAK(M) = (ZPI*FRHF(M))**2/G
       ENDDO
 
-      CO1 = 0.5*(FRATIO-1.)*DELTH
+      CO1 = 0.5_JWRB*(FRATIO-1.)*DELTH
       DFIMHF(1) = CO1*FRHF(1)
       DO M=2,NFREHF-1
          DFIMHF(M)=CO1*(FRHF(M)+FRHF(M-1))
@@ -104,21 +102,21 @@
             DO K2=1,NANG
               COSDIFF = COS(TH(K1)-TH(K2))
               X12 = XK1*XK2*COSDIFF
-              XK3 = XK1SQ + XK2SQ +2.*X12 +DEL1
+              XK3 = XK1SQ + XK2SQ +2.0_JWRB*X12 +DEL1
               XK3 = SQRT(XK3)
               X13 = XK1SQ+X12
               X32 = X12+XK2SQ
               OM1 = SQRT(G*XK1)
               OM2 = SQRT(G*XK2)
               OM3 = SQRT(G*XK3)
-              F1 = SQRT(XK1/(2.*OM1))
-              F2 = SQRT(XK2/(2.*OM2))
-              F3 = SQRT(XK3/(2.*OM3))
+              F1 = SQRT(XK1/(2.0_JWRB*OM1))
+              F2 = SQRT(XK2/(2.0_JWRB*OM2))
+              F3 = SQRT(XK3/(2.0_JWRB*OM3))
               VM = ZPI*VMIN_D(XK3,XK1,XK2,X13,X32,X12,OM3,OM1,OM2)
               VP = ZPI*VPLUS_D(-XK3,XK1,XK2,-X13,-X32,X12,OM3,OM1,OM2)
               DELOM1 = OM3-OM1-OM2+DEL1
               DELOM2 = OM3+OM1+OM2+DEL1
-              FAC0(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM1)+
+              FAC0(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM1)+             &
      &                            VP/(DELOM2))
             ENDDO
           ENDDO
@@ -142,14 +140,14 @@
               OM1 = SQRT(G*XK1)
               OM2 = SQRT(G*XK2)
               OM3 = SQRT(G*XK3)+DEL1
-              F1 = SQRT(XK1/(2.*OM1))
-              F2 = SQRT(XK2/(2.*OM2))
-              F3 = SQRT(ABS(XK3)/(2.*OM3))
+              F1 = SQRT(XK1/(2.0_JWRB*OM1))
+              F2 = SQRT(XK2/(2.0_JWRB*OM2))
+              F3 = SQRT(ABS(XK3)/(2.0_JWRB*OM3))
               VM = ZPI*VMIN_D(XK1,XK3,XK2,X13,X12,X32,OM1,OM3,OM2)
               VP = ZPI*VMIN_D(XK2,-XK3,XK1,-X32,X12,-X13,OM2,OM3,OM1)
               DELOM321 = OM3+OM2-OM1+DEL1
               DELOM312 = OM3+OM1-OM2+DEL1
-              B(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM321)+
+              B(K1,K2,M1,M2) = -F3/(F1*F2)*(VM/(DELOM321)+              &
      &                         VP/(DELOM312))
             ENDDO
           ENDDO
@@ -164,15 +162,15 @@
             DO K1=1,NANG
               C22 = FAC0(K1,K2,M1,M2)+B(K1,K2,M1,M2)
               S22 = B(K1,K2,M1,M2)-FAC0(K1,K2,M1,M2)
-              FAC1(K1,K2,M1,M2) =
-     &             (XK1SQ*COSTH(K1)**2 + XK2SQ*COSTH(K2)**2)*C22
+              FAC1(K1,K2,M1,M2) =                                       &
+     &             (XK1SQ*COSTH(K1)**2 + XK2SQ*COSTH(K2)**2)*C22        &
      &             -FAK(M1)*FAK(M2)*COSTH(K1)*COSTH(K2)*S22
-              FAC2(K1,K2,M1,M2) =
-     &             (XK1SQ*SINTH(K1)**2 + XK2SQ*SINTH(K2)**2)*C22
+              FAC2(K1,K2,M1,M2) =                                       &
+     &             (XK1SQ*SINTH(K1)**2 + XK2SQ*SINTH(K2)**2)*C22        &
      &             -FAK(M1)*FAK(M2)*SINTH(K1)*SINTH(K2)*S22
-              FAC3(K1,K2,M1,M2) =
-     &             (XK1SQ*SINTH(K1)*COSTH(K1) +
-     &              XK2SQ*SINTH(K2)*COSTH(K2))*C22
+              FAC3(K1,K2,M1,M2) =                                       &
+     &             (XK1SQ*SINTH(K1)*COSTH(K1) +                         &
+     &              XK2SQ*SINTH(K2)*COSTH(K2))*C22                      &
      &             -FAK(M1)*FAK(M2)*COSTH(K1)*SINTH(K2)*S22
               FAC0(K1,K2,M1,M2) = C22
             ENDDO
@@ -182,5 +180,4 @@
 
 !     -----------------------------------------------------------------
 
-      RETURN
       END SUBROUTINE SECONDHH

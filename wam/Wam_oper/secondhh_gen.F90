@@ -1,5 +1,3 @@
-!
-!
 !-----------------------------------------------------------------------
 !
       SUBROUTINE SECONDHH_GEN
@@ -39,9 +37,11 @@
 
 !----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DELTH    ,TH       ,FRATIO 
-      USE YOWTABL  , ONLY : MR, XMR, MA, XMA, NFREH, NANGH, NMAX, 
-     &                      OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M, 
+      USE YOWTABL  , ONLY : MR, XMR, MA, XMA, NFREH, NANGH, NMAX,       &
+     &                      OMEGA, DFDTH, THH, DELTHH, IM_P, IM_M,      &
      &                      TA, TB, TC_QL, TT_4M, TT_4P, TFAKH
       USE YOWPARAM , ONLY : NANG, NFRE
       USE YOWPCONS , ONLY : G, PI, ZPI
@@ -52,9 +52,9 @@
       IMPLICIT NONE
 #include "tables_2nd.intfb.h"
 
-      INTEGER M,K,K0,M0,MP
+      INTEGER(KIND=JWIM) :: M,K,K0,M0,MP
 
-      REAL FRAC,CO1,OMSTART,OM0,OM1,XK0,XK1,XK2,A,B,C_QL
+      REAL(KIND=JWRB) :: FRAC,CO1,OMSTART,OM0,OM1,XK0,XK1,XK2,A,B,C_QL
 !
 !-----------------------------------------------------------------------
 ! 
@@ -64,12 +64,12 @@
       NFREH = NFRE/2
       NANGH = NANG/2
 
-      FRAC = FRATIO-1.
+      FRAC = FRATIO-1.0_JWRB
       OMSTART = ZPI*FR(1)
       MR = NFRE/NFREH
-      XMR = 1./FLOAT(MR)
+      XMR = 1.0_JWRB/FLOAT(MR)
       MA = NANG/NANGH
-      XMA = 1./FLOAT(MA)
+      XMA = 1.0_JWRB/FLOAT(MA)
       DELTHH = FLOAT(MA)*DELTH
 
       ALLOCATE(OMEGA(NFREH))
@@ -86,7 +86,7 @@
          THH(K) = TH(K0)
       ENDDO
 
-      CO1   = 1./2.*DELTHH/ZPI
+      CO1   = 1.0_JWRB/2.0_JWRB*DELTHH/ZPI
       DFDTH(1) = CO1*(OMEGA(2)-OMEGA(1))
       DO M=2,NFREH-1
          DFDTH(M)=CO1*(OMEGA(M+1)-OMEGA(M-1))
@@ -107,9 +107,9 @@
       ALLOCATE(IM_M(NFREH,NFREH))
       ALLOCATE(TFAKH(NFREH,NDEPTH))
 
-      CALL TABLES_2ND(NFREH,NANGH,NDEPTH,OMSTART,FRAC,XMR,
-     V                DFDTH,OMEGA,THH,TA,TB,TC_QL,TT_4M,TT_4P,
-     V                IM_P,IM_M,TFAKH)
+      CALL TABLES_2ND(NFREH,NANGH,NDEPTH,OMSTART,FRAC,XMR,              &
+     &                DFDTH,OMEGA,THH,TA,TB,TC_QL,TT_4M,TT_4P,          &
+     &                IM_P,IM_M,TFAKH)
 
 ! ----------------------------------------------------------------------
 
@@ -130,12 +130,12 @@
       DO M=1,NFREH
          OM0 = OMEGA(M)
          OM1 = OMEGA(2)
-         IF (OM1.LT.OM0/2.) THEN
+         IF (OM1.LT.OM0/2.0_JWRB) THEN
             XK1 = OM1**2/G
             XK2 = (OM0-OM1)**2/G
-            A = (ABS(XK1+XK2)/2.)**2
-            WRITE(IU06,'(I5,2F16.9)')
-     V                 M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A 
+            A = (ABS(XK1+XK2)/2.0_JWRB)**2
+            WRITE(IU06,'(I5,2F16.9)')                                   &
+     &                 M,TA(NDEPTH,NANGH,2,M)/DFDTH(2),A 
          ENDIF
       ENDDO 
 
@@ -147,8 +147,8 @@
          XK1 = OM1**2/G
          XK2 = (OM0+OM1)**2/G
          B = (ABS(XK1-XK2)/2.)**2
-         WRITE(IU06,'(I5,2F16.9)')
-     V              M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B 
+         WRITE(IU06,'(I5,2F16.9)')                                      &
+     &              M,TB(NDEPTH,NANGH,M,M)/DFDTH(M),B 
       ENDDO 
 
       WRITE (IU06,'('' '')')
@@ -157,11 +157,10 @@
          OM0 = OMEGA(M)
          XK0 = OM0**2/G
          C_QL = -XK0**2
-         WRITE(IU06,'(I5,2F16.9)')
-     V              M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL  
+         WRITE(IU06,'(I5,2F16.9)')                                      &
+     &              M,TC_QL(NDEPTH,NANGH,M,M)/DFDTH(M),C_QL  
       ENDDO
 !
 !----------------------------------------------------------------------
 !
-      RETURN
       END SUBROUTINE SECONDHH_GEN 
