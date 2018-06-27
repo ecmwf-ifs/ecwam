@@ -536,8 +536,12 @@
          LLWAIT=.TRUE.
          ISYSTEM_STAT=-1
          ISTAT=-1
-!WPG         CALL EXECUTE_COMMAND_LINE('cp '//IFILENAME//' '//OFILENAME,
-!WPG     &        WAIT=LLWAIT, EXITSTAT=ISYSTEM_STAT,CMDSTAT=ISTAT)
+#if defined(__PGI)
+! Not supported by the PGI compiler yet
+#else
+         CALL EXECUTE_COMMAND_LINE('cp '//IFILENAME//' '//OFILENAME,
+     &        WAIT=LLWAIT, EXITSTAT=ISYSTEM_STAT,CMDSTAT=ISTAT)
+#endif
          IF(ISTAT.NE.0) THEN
             WRITE(IU06,*) '*************************************'
             WRITE(IU06,*) '* INTWAMINPUT: FILE COPYING ERROR !'
