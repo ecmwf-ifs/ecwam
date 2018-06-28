@@ -29,6 +29,8 @@
 
 ! -------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
@@ -42,25 +44,23 @@
 #include "propags1.intfb.h"
 #include "propags2.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
 
       LOGICAL, INTENT(IN) :: L1STCALL
 
-      INTEGER :: IJ, K, M, J
-      INTEGER :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
+      INTEGER(KIND=JWIM) :: IJ, K, M, J
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
-      REAL :: ZHOOK_HANDLE
-      REAL,ALLOCATABLE :: TMPFL3(:,:,:)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: TMPFL3(:,:,:)
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
-#endif
 
       CALL GSTATS(1430,0)
       NPROMA=NPROMA_WAM
@@ -110,9 +110,6 @@
       ENDIF
       CALL GSTATS(1430,1)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE PROPAG_WAM
