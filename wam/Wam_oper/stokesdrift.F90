@@ -38,9 +38,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
-     &                      DFIM_SIM ,
-     &                      FRATIO   ,COSTH    ,SINTH  
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
+     &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

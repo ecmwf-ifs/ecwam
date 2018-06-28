@@ -1,6 +1,6 @@
-      SUBROUTINE STRESSO (F, SL, IJS, IJL,
-     &                    MIJ, RHOWGDFTH,
-     &                    THWNEW, USNEW, Z0NEW, ROAIRN,
+      SUBROUTINE STRESSO (F, SL, IJS, IJL,                              &
+     &                    MIJ, RHOWGDFTH,                               &
+     &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, PHIWA)
 
 ! ----------------------------------------------------------------------
@@ -66,9 +66,10 @@
 !       P. JANSSEN, JPO, 1985
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -82,37 +83,35 @@
       IMPLICIT NONE
 #include "tau_phi_hf.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL
-      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW,ROAIRN
-      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
-
-
-      INTEGER :: IJ, M, K, I, J, II
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
 
 
-      REAL :: PHIHF_REDUC
-      REAL :: CONST, CNST
-      REAL :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
-      REAL :: PHI2
-      REAL :: ABS_TAUWSHELTER, GM1
-      REAL :: COSW, FCOSW2
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: TAUHF, TEMP1, CONST1, XSTRESS, YSTRESS
-      REAL, DIMENSION(IJS:IJL) :: PHIHF, TEMP2, CONST2
-      REAL, DIMENSION(IJS:IJL) :: TAU1, PHI1, XLEVTAIL 
-      REAL, DIMENSION(IJS:IJL) :: CMRHOWGDFTH
-      REAL, DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
-      REAL, DIMENSION(IJS:IJL) :: USDIRP, UST, UST2 
-      REAL, DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
+
+      REAL(KIND=JWRB) :: PHIHF_REDUC
+      REAL(KIND=JWRB) :: CONST, CNST
+      REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
+      REAL(KIND=JWRB) :: PHI2
+      REAL(KIND=JWRB) :: ABS_TAUWSHELTER, GM1
+      REAL(KIND=JWRB) :: COSW, FCOSW2
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, TEMP1, CONST1, XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIHF, TEMP2, CONST2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAU1, PHI1, XLEVTAIL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST, UST2 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
@@ -121,14 +120,14 @@
 
 !     REDUCTION OF FOR HIGH FREQUENCY ENERGY FLUX INTO OCEAN CONTRIBUTING TO UPPER OCEAN MIXING
       IF(.NOT.LWVFLX_SNL) THEN
-        PHIHF_REDUC=1.0
+        PHIHF_REDUC=1.0_JWRB
       ELSE
-        PHIHF_REDUC=0.85
+        PHIHF_REDUC=0.85_JWRB
       ENDIF
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
 
-      GM1 = 1./G
+      GM1 = 1.0_JWRB/G
 
       DO IJ=IJS,IJL
         CONST1(IJ)  = CONST*FR5(MIJ(IJ))*GM1
@@ -142,17 +141,17 @@
 !         --------------------------------------------------------------
 
       DO IJ=IJS,IJL
-        PHIWA(IJ)   = 0.
-        XSTRESS(IJ) = 0.
-        YSTRESS(IJ) = 0.
+        PHIWA(IJ)   = 0.0_JWRB
+        XSTRESS(IJ) = 0.0_JWRB
+        YSTRESS(IJ) = 0.0_JWRB
       ENDDO
       DO M=1,MAXVAL(MIJ(:))
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ)   = SL(IJ,K,M)
+          SUMT(IJ) = SL(IJ,K,M)
 !         until we have figure out how to deal with negative input
-          CNST = MAX(SL(IJ,K,M),0.)
+          CNST = MAX(SL(IJ,K,M),0.0_JWRB)
           SUMX(IJ) = CNST*SINTH(K)
           SUMY(IJ) = CNST*COSTH(K)
         ENDDO
@@ -160,7 +159,7 @@
           DO IJ=IJS,IJL
             SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)
 !           until we have figure out how to deal with negative input
-            CNST = MAX(SL(IJ,K,M),0.)
+            CNST = MAX(SL(IJ,K,M),0.0_JWRB)
             SUMX(IJ) = SUMX(IJ) + CNST*SINTH(K)
             SUMY(IJ) = SUMY(IJ) + CNST*COSTH(K)
           ENDDO
@@ -175,8 +174,8 @@
 
 !     TAUW is the kinematic wave stress !
       DO IJ=IJS,IJL
-        XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
-        YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
+        XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
+        YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
       ENDDO
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
@@ -206,7 +205,7 @@
 
       K=1
       DO IJ=IJS,IJL
-        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
+        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
         FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
         TEMP1(IJ) = FCOSW2*COSW
         TEMP2(IJ) = FCOSW2 
@@ -214,7 +213,7 @@
 
       DO K=2,NANG
         DO IJ=IJS,IJL
-          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
+          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
           FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
           TEMP1(IJ) = TEMP1(IJ) + FCOSW2*COSW
           TEMP2(IJ) = TEMP2(IJ) + FCOSW2 
@@ -223,7 +222,7 @@
 
       IF (ITSHELT.EQ.0) THEN
         DO IJ=IJS,IJL
-          XLEVTAIL(IJ)=0.
+          XLEVTAIL(IJ)=0.0_JWRB
         ENDDO
       ELSE
         DO IJ=IJS,IJL
@@ -231,8 +230,8 @@
         ENDDO
       ENDIF
 
-      CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL,
-     &                TAU1, PHI1)
+      CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL, TAU1, PHI1)
+
       DO IJ=IJS,IJL
         TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1(IJ)
         PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*UST2(IJ)*PHI1(IJ)
@@ -245,11 +244,9 @@
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
 
         TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)-EPS1)
-        TAUW(IJ) = MAX(TAUW(IJ),0.)
+        TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE STRESSO
