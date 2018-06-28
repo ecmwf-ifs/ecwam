@@ -25,8 +25,11 @@
 !       NONE.
 
 ! ----------------------------------------------------------------------
-      USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,
-     &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,    &
+     &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
      &            LANAONLY ,L4VTYPE  ,ISTREAM
       USE YOWTEST  , ONLY : IU06 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -37,15 +40,14 @@
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER :: KSTREAM
-      REAL ::ZHOOK_HANDLE
+      INTEGER(KIND=JWIM) :: KSTREAM
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
       CHARACTER(LEN=4):: CSTREAM
       LOGICAL :: LASTREAM
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
-#endif
 
       IF (IASSI .EQ. 0 ) THEN
         MARSTYPE = 'an'
@@ -57,8 +59,8 @@
         ENDIF
       ENDIF
 
-      IF (CDTPRO.GE.CDATEF.OR.CDATEA.EQ.CDATEF) THEN
-        CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE,
+      IF (CDTPRO.GE.CDATEF .OR. CDATEA.EQ.CDATEF) THEN
+        CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSTYPE,     &
      &                    KSTREAM, LASTREAM)
         IF(CSTREAM.EQ.'****') THEN
           WRITE(IU06,*) '*****************************************' 
@@ -81,9 +83,6 @@
         ENDIF
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE SETMARSTYPE

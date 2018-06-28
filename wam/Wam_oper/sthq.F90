@@ -38,26 +38,35 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,EPSMIN
       USE YOWFRED  , ONLY : DFIM     ,COSTH    ,SINTH
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
-      REAL :: F3(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL) :: TEMP, THQ, SI, CI
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: THQ
+
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, SI, CI
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('STHQ',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISE SIN AND COS ARRAYS.
 !        ------------------------------
 
       DO IJ=IJS,IJL
-        SI(IJ) = 0.
-        CI(IJ) = 0.
+        SI(IJ) = 0.0_JWRB
+        CI(IJ) = 0.0_JWRB
       ENDDO
 
 ! ----------------------------------------------------------------------
@@ -67,7 +76,7 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          TEMP(IJ) = 0.
+          TEMP(IJ) = 0.0_JWRB
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -86,14 +95,15 @@
 !        -----------------------
 
       DO IJ=IJS,IJL
-        IF (CI(IJ).EQ.0.) CI(IJ) = EPSMIN
+        IF (CI(IJ).EQ.0.0_JWRB) CI(IJ) = EPSMIN
       ENDDO
       DO IJ=IJS,IJL
         THQ(IJ) = ATAN2(SI(IJ),CI(IJ))
       ENDDO
       DO IJ=IJS,IJL
-        IF (THQ(IJ).LT.0.) THQ(IJ) = THQ(IJ) + ZPI
+        IF (THQ(IJ).LT.0.0_JWRB) THQ(IJ) = THQ(IJ) + ZPI
       ENDDO
 
-      RETURN
+      IF (LHOOK) CALL DR_HOOK('STHQ',1,ZHOOK_HANDLE)
+
       END SUBROUTINE STHQ

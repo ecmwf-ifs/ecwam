@@ -44,8 +44,10 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,GAMMA    ,
+      USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,GAMMA    ,    &
      &            SA       ,SB
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -57,15 +59,15 @@
 #include "jonswap.intfb.h"
 #include "spr.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, INTENT(IN) :: IG
-      REAL,DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IG
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT):: FL1
 
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL, DIMENSION(NANG) :: STH
-      REAL, DIMENSION(IJS:IJL,NANG) :: ST
-      REAL, DIMENSION(IJS:IJL,NFRE) :: ET
+      REAL(KIND=JWRB), DIMENSION(NANG) :: STH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: ST
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: ET
 
 
 ! ----------------------------------------------------------------------
@@ -101,5 +103,4 @@
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE SPECTRA

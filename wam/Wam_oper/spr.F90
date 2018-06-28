@@ -38,36 +38,37 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : PI
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NANG
-      REAL, INTENT(IN) :: THETAQ
-      REAL, DIMENSION(NANG), INTENT(IN) :: THETA
-      REAL, DIMENSION(NANG), INTENT(OUT) :: ST
+      INTEGER(KIND=JWIM), INTENT(IN) :: NANG
+      REAL(KIND=JWRB), INTENT(IN) :: THETAQ
+      REAL(KIND=JWRB), DIMENSION(NANG), INTENT(IN) :: THETA
+      REAL(KIND=JWRB), DIMENSION(NANG), INTENT(OUT) :: ST
 
-      INTEGER :: K
+      INTEGER(KIND=JWIM) :: K
 
-      REAL :: ZDP, THE
+      REAL(KIND=JWRB) :: ZDP, THE
 
 ! ----------------------------------------------------------------------
 
-      ZDP=2./PI
+      ZDP=2.0_JWRB/PI
 
 !     SPREAD FCT. WITH COS**2.
 
       DO K=1,NANG
         THE = COS(THETA(K)-THETAQ)
-        IF (THE.GT.0.) THEN
+        IF (THE.GT.0.0_JWRB) THEN
           ST(K) = ZDP*THE**2
-          IF(ST(K).LT.0.1E-08) ST(K)=0.
+          IF(ST(K).LT.0.1E-08_JWRB) ST(K)=0.0_JWRB
         ELSE
-          ST(K) = 0.
+          ST(K) = 0.0_JWRB
         ENDIF
       ENDDO
 
-      RETURN
       END SUBROUTINE SPR

@@ -37,6 +37,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
       USE YOWFRED  , ONLY : TH
       USE YOWICE   , ONLY : FLMIN    ,CITHRSH
@@ -46,37 +48,35 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
 
-      INTEGER :: IJ, M, K
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: CIREDUC, TEMP, ICEFREE 
-      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CIREDUC, TEMP, ICEFREE 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SPRD
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETICE',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. SET SPECTRA TO NOISE LEVEL OVER ICE POINTS.
 !     ----------------------------------------------
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+          SPRD(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
       ENDDO
 
       DO IJ = IJS,IJL
         IF(CICVR(IJ).GT.CITHRSH) THEN
-          CIREDUC(IJ)=MAX(EPSMIN,(1.-CICVR(IJ)))
-          ICEFREE(IJ)=0.0
+          CIREDUC(IJ)=MAX(EPSMIN,(1.0_JWRB-CICVR(IJ)))
+          ICEFREE(IJ)=0.0_JWRB
         ELSE
-          CIREDUC(IJ)=0.0
-          ICEFREE(IJ)=1.0
+          CIREDUC(IJ)=0.0_JWRB
+          ICEFREE(IJ)=1.0_JWRB
         ENDIF
       ENDDO
 
@@ -91,8 +91,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SETICE',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SETICE

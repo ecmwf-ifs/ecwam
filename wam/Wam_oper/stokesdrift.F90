@@ -34,10 +34,9 @@
 !
 !
 !-----------------------------------------------------------------------
-!     MODULES:
-!     --------
 
-      USE PARKIND_WAVE, ONLY : JWIM,JWRB
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,
      &                      DFIM_SIM ,
@@ -50,9 +49,9 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), INTENT(IN) :: F3(IJS:IJL,NANG,NFRE)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::
-     & USTOKES, VSTOKES
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES
+
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
@@ -62,14 +61,14 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: STFAC
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',0,ZHOOK_HANDLE)
-#endif
+
  
 !***  1. DETERMINE STOKE DRIFT VECTOR.
 !     --------------------------------
 
-      CONST = 2.*DELTH*ZPI**3/G*FR(NFRE_ODD)**4
+      CONST = 2.0_JWRB*DELTH*ZPI**3/G*FR(NFRE_ODD)**4
 
 !***  1.1 PERFORM INTEGRATION.
 !     ------------------------
@@ -109,8 +108,6 @@
          VSTOKES(IJ) = MIN(MAX(VSTOKES(IJ),-STMAX),STMAX)
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('STOKESDRIFT',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE STOKESDRIFT

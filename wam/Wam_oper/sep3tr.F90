@@ -1,6 +1,6 @@
-      SUBROUTINE SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW ,
-     &                   ESWELL, FSWELL, THSWELL, FSEA,
-     &                   FL1, SWM,
+      SUBROUTINE SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW ,           &
+     &                   ESWELL, FSWELL, THSWELL, FSEA,                 &
+     &                   FL1, SWM,                                      &
      &                   EMTRAIN  ,THTRAIN  ,PMTRAIN)
 
 ! ----------------------------------------------------------------------
@@ -58,9 +58,10 @@
 !       *FNDPRT*  - COMPUTE PARTITION MASKS
 
 ! ----------------------------------------------------------------------
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NTRAIN
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,C        ,              &
      &            TH       ,COSTH    ,SINTH    ,FRIC
       USE YOWICE   , ONLY : FLMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -74,49 +75,49 @@
 #include "fndprt.intfb.h"
 #include "semean.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL, FSWELL, THSWELL
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: FSEA
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1, SWM
-      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN
-      REAL, DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: THTRAIN  ,PMTRAIN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ESWELL,  FSWELL, THSWELL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: FSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1, SWM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
 
-      INTEGER, PARAMETER :: NPMAX=20
-      INTEGER :: NPMAX_LOC
-      INTEGER :: IJ, M, K, IP
-      INTEGER :: ISORT, I, IPLOC
-      INTEGER :: IFL, IFH, ITHL, ITHH
-      INTEGER :: KM, KP
-      INTEGER, DIMENSION(IJS:IJL) :: NPEAK, NPK
-      INTEGER, DIMENSION(IJS:IJL) :: FRINVMIJ
-      INTEGER, DIMENSION(IJS:IJL) :: MMIN, MMAX 
-      INTEGER, DIMENSION(IJS:IJL) :: IPNOW 
-      INTEGER, DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
-      INTEGER, DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
+
+      INTEGER(KIND=JWIM), PARAMETER :: NPMAX=20
+      INTEGER(KIND=JWIM) :: NPMAX_LOC
+      INTEGER(KIND=JWIM) :: IJ, M, K, IP
+      INTEGER(KIND=JWIM) :: ISORT, I, IPLOC
+      INTEGER(KIND=JWIM) :: IFL, IFH, ITHL, ITHH
+      INTEGER(KIND=JWIM) :: KM, KP
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NPEAK, NPK
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: FRINVMIJ
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMIN, MMAX 
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: IPNOW 
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL,NTRAIN) :: IENERGY
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL,NPMAX) :: NFRP, NTHP
 
       ! relative value above max swell value that is considered above noise level
-      REAL, PARAMETER :: XNOISELEVEL=0.005
+      REAL(KIND=JWRB), PARAMETER :: XNOISELEVEL=0.005_JWRB
       ! minimum Hs (m) value to keep a partition HSMIN=HSMIN_INTER+HSMIN_SLOPE*PERIOD
-      REAL, PARAMETER :: HSMIN_INTER=0.05
-      REAL, PARAMETER :: HSMIN_SLOPE=-0.0017
-      REAL :: THRS
-      REAL :: HSMIN
+      REAL(KIND=JWRB), PARAMETER :: HSMIN_INTER=0.05_JWRB
+      REAL(KIND=JWRB), PARAMETER :: HSMIN_SLOPE=-0.0017_JWRB
+      REAL(KIND=JWRB) :: THRS
+      REAL(KIND=JWRB) :: HSMIN
 
-      REAL :: COSDIFF
-      REAL :: DELDW
-      REAL :: COSDIR, FRLIMIT 
-      REAL :: ZHOOK_HANDLE
-      REAL :: FLLOWEST
-      REAL, DIMENSION(IJS:IJL) :: ENEX, SUMETRAIN
-      REAL, DIMENSION(IJS:IJL) :: ETT
-      REAL, DIMENSION(IJS:IJL) :: ENMAX, FLNOISE
-      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD
-      REAL, DIMENSION(IJS:IJL,0:NPMAX) :: DIR,PER,ENE
-      REAL, DIMENSION(IJS:IJL,NTRAIN) :: TEMPDIR,TEMPPER,TEMPENE
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, FLLOW
+      REAL(KIND=JWRB) :: COSDIFF
+      REAL(KIND=JWRB) :: DELDW
+      REAL(KIND=JWRB) :: COSDIR, FRLIMIT 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: FLLOWEST
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ENEX, SUMETRAIN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ETT
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ENMAX, FLNOISE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: TEMPDIR, TEMPPER, TEMPENE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, FLLOW
 
       LOGICAL :: LLEPSMIN
       LOGICAL :: LLADDPART
@@ -127,16 +128,15 @@
 
 !*    LOOP THROUGH THE GRID POINTS
 !     ----------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SEP3TR',0,ZHOOK_HANDLE)
-#endif
 
       DO IJ=IJS,IJL
-        FRINVMIJ(IJ)=1./FR(MIJ(IJ))
+        FRINVMIJ(IJ)=1.0_JWRB/FR(MIJ(IJ))
       ENDDO
 
       DO IJ=IJS,IJL
-        ENMAX(IJ)=0.
+        ENMAX(IJ)=0.0_JWRB
       ENDDO
 !     SMOOTH INPUT SPECTRA (in direction only)
       DO M=1,NFRE
@@ -147,11 +147,10 @@
           IF (KP.GT.NANG) KP=1
           DO IJ=IJS,IJL
 !           RE-IMPOSE THE WINDSEA MASK
-            IF(FL1(IJ,K,M).LE.0.) THEN
-              FL(IJ,K,M) = 0.
+            IF(FL1(IJ,K,M).LE.0.0_JWRB) THEN
+              FL(IJ,K,M) = 0.0_JWRB
             ELSE
-              FL(IJ,K,M) = 0.10*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) +
-     &                      0.80*FL1(IJ,K,M)
+              FL(IJ,K,M) = 0.10_JWRB*(FL1(IJ,KM,M)+FL1(IJ,KP,M)) + 0.80_JWRB*FL1(IJ,K,M) 
               ENMAX(IJ)=MAX(ENMAX(IJ),FL(IJ,K,M))
             ENDIF
           ENDDO
@@ -164,9 +163,9 @@
 
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
-          EMTRAIN(IJ,ISORT) = 0. 
-          PMTRAIN(IJ,ISORT) = 0.
-          IF(ESWELL(IJ).GT.0.) THEN
+          EMTRAIN(IJ,ISORT) = 0.0_JWRB
+          PMTRAIN(IJ,ISORT) = 0.0_JWRB
+          IF(ESWELL(IJ).GT.0.0_JWRB) THEN
             THTRAIN(IJ,ISORT) = THSWELL(IJ)
           ELSE
             THTRAIN(IJ,ISORT) = THWNEW(IJ)
@@ -184,8 +183,8 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           COSDIFF=COS(TH(K)-THWNEW(IJ))
-          LLCOSDIFF(IJ,K)=(COSDIFF.LT.-0.4)
-          SPRD(IJ,K)=MAX(0.,COSDIFF)**2
+          LLCOSDIFF(IJ,K)=(COSDIFF.LT.-0.4_JWRB)
+          SPRD(IJ,K)=MAX(0.0_JWRB,COSDIFF)**2
         ENDDO
       ENDDO
 
@@ -209,23 +208,23 @@
             IF(FL(IJ,K,M) .GT. FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
               ITHH   = 1 + MOD(K,NANG)
-              IF ( FL(IJ,ITHL,M   ) .GT. 0.0 .AND.
-     &             FL(IJ,ITHH,M   ) .GT. 0.0 .AND.
-     &             FL(IJ,K   ,IFL ) .GT. 0.0 .AND.
-     &             FL(IJ,K   ,IFH ) .GT. 0.0 .AND.
-     &             FL(IJ,ITHL,IFL ) .GT. 0.0 .AND.
-     &             FL(IJ,ITHL,IFH ) .GT. 0.0 .AND.
-     &             FL(IJ,ITHH,IFL ) .GT. 0.0 .AND.
-     &             FL(IJ,ITHH,IFH ) .GT. 0.0 ) THEN
+              IF ( FL(IJ,ITHL,M   ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,M   ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,K   ,IFL ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,K   ,IFH ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHL,IFL ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHL,IFH ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,IFL ) .GT. 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,IFH ) .GT. 0.0_JWRB ) THEN
 
 
-                IF ( FL(IJ,K,M) .GE. FL(IJ,K   ,IFL ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,K   ,IFH ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFL ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,M   ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFH ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,IFL ) .AND.
-     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,M   ) .AND.
+                IF ( FL(IJ,K,M) .GE. FL(IJ,K   ,IFL ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,K   ,IFH ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFL ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,M   ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHL,IFH ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,IFL ) .AND.             &
+     &               FL(IJ,K,M) .GE. FL(IJ,ITHH,M   ) .AND.             &
      &               FL(IJ,K,M) .GE. FL(IJ,ITHH,IFH ) ) THEN
                     NPEAK(IJ) = NPEAK(IJ) + 1
                     IF(NPEAK(IJ).GT.NPMAX) EXIT OUT
@@ -247,10 +246,10 @@
 !*    2. GENERATE MASK FOR EACH PARTITION AND COMPUTE STATISTICS
 !        -------------------------------------------------------
 
-      CALL FNDPRT(IJS, IJL, NPMAX,
-     &            NPEAK, MIJ, NTHP, NFRP,
-     &            FLLOW, LLCOSDIFF, FLNOISE,
-     &            FL, SWM,
+      CALL FNDPRT(IJS, IJL, NPMAX,                                      &
+     &            NPEAK, MIJ, NTHP, NFRP,                               &
+     &            FLLOW, LLCOSDIFF, FLNOISE,                            &
+     &            FL, SWM,                                              &
      &            ENE, DIR, PER)
 
       ! UPDATE SWELL SPECTRUM ??????
@@ -272,7 +271,7 @@
         NPK(IJ)=NPEAK(IJ)
         DO IP=1,NPEAK(IJ)
           HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
-          THRS=0.0625*HSMIN**2
+          THRS=0.0625_JWRB*HSMIN**2
           IF(ENE(IJ,IP).LT.THRS .OR. PER(IJ,IP).LE.FRINVMIJ(IJ)) THEN
             ENE(IJ,IP)=0.
             DIR(IJ,IP)=0.
@@ -291,7 +290,7 @@
             NPEAK(IJ)=1
             ENE(IJ,1)=ESWELL(IJ)
             DIR(IJ,1)=THSWELL(IJ)
-            PER(IJ,1)=1./FSWELL(IJ)
+            PER(IJ,1)=1.0_JWRB/FSWELL(IJ)
           ENDIF 
         ENDIF 
       ENDDO
@@ -305,7 +304,7 @@
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
           IPNOW(IJ)=0
-          ENMAX(IJ)=0.
+          ENMAX(IJ)=0.0_JWRB
         ENDDO
 
         DO IP=1,NPMAX_LOC
@@ -321,7 +320,7 @@
           EMTRAIN(IJ,ISORT)=ENE(IJ,IPNOW(IJ))
           THTRAIN(IJ,ISORT)=DIR(IJ,IPNOW(IJ))
           PMTRAIN(IJ,ISORT)=PER(IJ,IPNOW(IJ))
-          ENE(IJ,IPNOW(IJ))=0.
+          ENE(IJ,IPNOW(IJ))=0.0_JWRB
           IENERGY(IJ,ISORT)=MIN(IPNOW(IJ),1)
         ENDDO
       ENDDO
@@ -342,13 +341,12 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        ENEX(IJ)=MAX((ETT(IJ)-SUMETRAIN(IJ)),0.)/SUMETRAIN(IJ)
+        ENEX(IJ)=MAX((ETT(IJ)-SUMETRAIN(IJ)),0.0_JWRB)/SUMETRAIN(IJ)
       ENDDO
 
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
-          EMTRAIN(IJ,ISORT)=
-     &      EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
+          EMTRAIN(IJ,ISORT)=EMTRAIN(IJ,ISORT)+ENEX(IJ)*EMTRAIN(IJ,ISORT)
         ENDDO
       ENDDO
 
@@ -365,7 +363,7 @@
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
           IPNOW(IJ)=0
-          ENMAX(IJ)=0.
+          ENMAX(IJ)=0.0_JWRB
         ENDDO
 
         DO IP=1,NTRAIN
@@ -382,7 +380,7 @@
           EMTRAIN(IJ,ISORT)=TEMPENE(IJ,IPLOC)
           THTRAIN(IJ,ISORT)=TEMPDIR(IJ,IPLOC)
           PMTRAIN(IJ,ISORT)=TEMPPER(IJ,IPLOC)
-          TEMPENE(IJ,IPLOC)=0.
+          TEMPENE(IJ,IPLOC)=0.0_JWRB
         ENDDO
       ENDDO
 
@@ -391,16 +389,13 @@
       DO ISORT=1,NTRAIN
         DO IJ=IJS,IJL
           IF(IENERGY(IJ,ISORT).EQ.0) THEN
-            EMTRAIN(IJ,ISORT) = 0.0
+            EMTRAIN(IJ,ISORT) = 0.0_JWRB
             THTRAIN(IJ,ISORT) = THWNEW(IJ)
-            PMTRAIN(IJ,ISORT) = 0.0 
+            PMTRAIN(IJ,ISORT) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDDO
 
-
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SEP3TR',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SEP3TR

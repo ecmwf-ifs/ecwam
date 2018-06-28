@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+      SUBROUTINE SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,     &
      &                       ROAIRN, WSTAR, SL, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -87,6 +87,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,XKAPPA
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -97,50 +99,48 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "wsigstar.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, PARAMETER :: NSIN=2 
-      INTEGER :: IJ, IG, K, M
-      INTEGER :: ISIN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), PARAMETER :: NSIN=2 
+      INTEGER(KIND=JWIM) :: IJ, IG, K, M
+      INTEGER(KIND=JWIM) :: ISIN
 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, XLLWS
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR
 
-      REAL :: CONST1, CONST3, XKAPPAD
-      REAL :: RWINV
 
-      REAL :: X, ZLOG, ZLOG2X, ZBETA
-
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(NSIN) :: WSIN
-      REAL, DIMENSION(NFRE) :: FAC, CONST
-      REAL, DIMENSION(IJS:IJL) :: CM
-      REAL, DIMENSION(IJS:IJL) :: SH, XK
-      REAL, DIMENSION(IJS:IJL) :: SIG_N
-      REAL, DIMENSION(IJS:IJL) :: CNSN
-      REAL, DIMENSION(IJS:IJL) :: EPSIL 
-      REAL, DIMENSION(IJS:IJL,NSIN) :: SIGDEV, US, Z0, UCN, ZCN 
-      REAL, DIMENSION(IJS:IJL,NSIN) :: XVD, UCND, CONST3_UCN2 
-      REAL, DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
-      REAL, DIMENSION(IJS:IJL,NANG) :: TEMPD
+      REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
+      REAL(KIND=JWRB) :: RWINV
+      REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(NSIN) :: WSIN
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SH, XK
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: SIGDEV,US,Z0,UCN,ZCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: XVD, UCND, CONST3_UCN2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
 
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT_JAN',0,ZHOOK_HANDLE)
-#endif
 
       CONST1   = BETAMAX/XKAPPA**2 
-      CONST3   = 2.*XKAPPA/CONST1  ! SEE IDAMPING
-      XKAPPAD  = 1.D0/XKAPPA
-      RWINV = 1.0/ROWATER
+      CONST3   = 2.0_JWRB*XKAPPA/CONST1  ! SEE IDAMPING
+      XKAPPAD  = 1.E0_JWRB/XKAPPA
+      RWINV = 1.0_JWRB/ROWATER
 
       CONST3 = IDAMPING*CONST3
 
@@ -151,7 +151,7 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
-          IF(TEMP1(IJ,K) .GT. 0.01) THEN
+          IF(TEMP1(IJ,K) .GT. 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
             TEMPD(IJ,K) = XKAPPA/TEMP1(IJ,K)
           ELSE
@@ -170,16 +170,16 @@
 !     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
 
       IF(NSIN.EQ.1) THEN
-        WSIN(1) = 1.0 
+        WSIN(1) = 1.0_JWRB 
         DO IJ=IJS,IJL
-          SIGDEV(IJ,1) = 1.0
+          SIGDEV(IJ,1) = 1.0_JWRB
         ENDDO
       ELSE IF (NSIN.EQ.2) THEN
-        WSIN(1) = 0.5 
-        WSIN(2) = 0.5 
+        WSIN(1) = 0.5_JWRB 
+        WSIN(2) = 0.5_JWRB 
         DO IJ=IJS,IJL
-          SIGDEV(IJ,1) = 1.-SIG_N(IJ)
-          SIGDEV(IJ,2) = 1.+SIG_N(IJ)
+          SIGDEV(IJ,1) = 1.0_JWRB-SIG_N(IJ)
+          SIGDEV(IJ,2) = 1.0_JWRB+SIG_N(IJ)
         ENDDO
       ELSE
          WRITE (IU06,*) '**************************************'
@@ -229,7 +229,7 @@
           DO IJ=IJS,IJL
             XK(IJ) = FAC(M)**2/G
             CM(IJ) = FAC(M)/G
-            SH(IJ) = 1.0
+            SH(IJ) = 1.0_JWRB
           ENDDO
         ELSE
           DO IJ=IJS,IJL
@@ -250,10 +250,9 @@
           DO IJ=IJS,IJL
             UCN(IJ,ISIN) = US(IJ,ISIN)*CM(IJ) + ZALP
             CONST3_UCN2(IJ,ISIN) = CONST3*UCN(IJ,ISIN)**2
-            UCND(IJ,ISIN) = 1.D0/ UCN(IJ,ISIN)
+            UCND(IJ,ISIN) = 1.0_JWRB/ UCN(IJ,ISIN)
             ZCN(IJ,ISIN)  = LOG(XK(IJ)*Z0(IJ,ISIN))
-            XVD(IJ,ISIN) =
-     &          1.D0/(-US(IJ,ISIN)*XKAPPAD*ZCN(IJ,ISIN)*CM(IJ))
+            XVD(IJ,ISIN) = 1.0_JWRB/(-US(IJ,ISIN)*XKAPPAD*ZCN(IJ,ISIN)*CM(IJ))
           ENDDO
         ENDDO
 
@@ -263,7 +262,7 @@
         DO K=1,NANG
 
           DO IJ=IJS,IJL
-            XLLWS(IJ,K,M)= 0.
+            XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
           DO ISIN=1,1
@@ -283,12 +282,11 @@
             DO IJ=IJS,IJL
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
-                IF (ZLOG.LT.0.) THEN
+                IF (ZLOG.LT.0.0_JWRB) THEN
                   X=TEMP1(IJ,K)*UCN(IJ,ISIN)
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC2(IJ,K) = UFAC2(IJ,K)+
-     &                          WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  XLLWS(IJ,K,M)= 1.
+                  UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  XLLWS(IJ,K,M)= 1.0_JWRB
                 ENDIF
               ENDIF
             ENDDO
@@ -308,8 +306,6 @@
 
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT_JAN',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SINPUT_JAN
