@@ -1,4 +1,4 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, MIJ, USTAR, Z0, XLEVTAIL,
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, MIJ, USTAR, Z0, XLEVTAIL,         &
      &                      TAUHF, PHIHF)
 
 ! ----------------------------------------------------------------------
@@ -49,7 +49,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,       &
      &               X0TAUHF, JTOT_TAUHF, WTAUHF
       USE YOWFRED  , ONLY : FR
       USE YOWPCONS , ONLY : G        ,ZPI
@@ -59,27 +61,27 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER, INTENT(IN) :: MIJ(IJS:IJL)
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
-      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
+      REAL(KIND=JWRB) ,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
 
-      INTEGER :: J, IJ
 
-      REAL, PARAMETER :: ZSUP = 0.  !  LOG(1.)
-      REAL :: OMEGA, OMEGAC, OMEGACC
-      REAL :: X0G, UST, UST0, TAUW, TAUW0, DELZTAUW0M1
-      REAL :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
-      REAL :: DELZ, ZINF
-      REAL :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
-      REAL :: ZHOOK_HANDLE
+      INTEGER(KIND=JWIM) :: J, IJ
+
+      REAL(KIND=JWRB), PARAMETER :: ZSUP = 0.0_JWRB  !  LOG(1.)
+      REAL(KIND=JWRB) :: OMEGA, OMEGAC, OMEGACC
+      REAL(KIND=JWRB) :: X0G, UST, UST0, TAUW, TAUW0, DELZTAUW0M1
+      REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
+      REAL(KIND=JWRB) :: DELZ, ZINF
+      REAL(KIND=JWRB) :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
-#endif
 
-      GM1= 1./G
+      IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
+
+      GM1= 1.0_JWRB/G
 
 !     See INIT_X0TAUHF
       X0G=X0TAUHF*G
@@ -95,29 +97,29 @@
         XLOGGZ0   = LOG(GZ0)
         OMEGACC   = MAX(OMEGAC,X0G/UST0)
         SQRTZ0OG  = SQRT(Z0(IJ)*GM1)
-        SQRTGZ0   = 1./SQRTZ0OG
+        SQRTGZ0   = 1.0_JWRB/SQRTZ0OG
         YC        = OMEGACC*SQRTZ0OG
         ZINF      = LOG(YC)
-        DELZ      = MAX((ZSUP-ZINF)/REAL(JTOT_TAUHF-1),0.)
+        DELZ      = MAX((ZSUP-ZINF)/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
 
-        TAUHF(IJ)= 0.
-        PHIHF(IJ)= 0.
+        TAUHF(IJ)= 0.0_JWRB
+        PHIHF(IJ)= 0.0_JWRB
 
         TAUW     = TAUW0
         DELZTAUW0M1  = DELZ/TAUW0
         UST      = UST0
         ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         DO J=1,JTOT_TAUHF
-          Y         = EXP(ZINF+REAL(J-1)*DELZ)
+          Y         = EXP(ZINF+REAL(J-1,JWRB)*DELZ)
           OMEGA     = Y*SQRTGZ0
           CM1       = OMEGA*GM1
           ZX        = UST*CM1 +ZALP
           ZARG      = XKAPPA/ZX
-          ZLOG      = XLOGGZ0+2.*LOG(CM1)+ZARG 
-          ZLOG      = MIN(ZLOG,0.)
+          ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
+          ZLOG      = MIN(ZLOG,0.0_JWRB)
           ZBETA     = EXP(ZLOG)*ZLOG**4
           FNC2      = WTAUHF(J)*ZBETA*TAUW*DELZTAUW0M1
-          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2*TAUW0,0.)
+          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2*TAUW0,0.0_JWRB)
           UST       = SQRT(TAUW)
           TAUHF(IJ) = TAUHF(IJ) + FNC2
           PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
@@ -126,7 +128,6 @@
 
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE TAU_PHI_HF

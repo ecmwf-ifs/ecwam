@@ -1,9 +1,8 @@
-!
 !--------------------------------------------------------------------
 !
-      SUBROUTINE TABLES_2ND(NFRE,NANG,NDEPTH,OMSTART,FRAC,XMR,
-     V                      DFDTH,OMEGA,TH,TA,TB,TC_QL,
-     V                      TT_4M,TT_4P,IM_P,IM_M,TFAK)
+      SUBROUTINE TABLES_2ND(NFRE,NANG,NDEPTH,OMSTART,FRAC,XMR,          &
+     &                      DFDTH,OMEGA,TH,TA,TB,TC_QL,                 &
+     &                      TT_4M,TT_4P,IM_P,IM_M,TFAK)
 !
 !--------------------------------------------------------------------
 !
@@ -64,24 +63,33 @@
 !
 !
 !--------------------------------------------------------------------
-!
-!
-!  
+ 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWSHAL, ONLY: DEPTHA,DEPTHD
       USE YOWPCONS , ONLY : G, ZPI
       USE YOWCONST_2ND, ONLY: DPTH 
 
+!--------------------------------------------------------------------
+
       IMPLICIT NONE
    
-      INTEGER NFRE,NANG,NDEPTH,JD,M,K,M1,K1,MP,MM,L
-      INTEGER IM_P(NFRE,NFRE),IM_M(NFRE,NFRE)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, NDEPTH
+      INTEGER(KIND=JWIM), DIMENSION(NFRE,NFRE), INTENT(IN) :: IM_P, IM_M
 
-      REAL OM0,TH0,XK0,OM1,TH1,XK1,OM2,XK2,OM0P,XK0P,OM0M,XK0M,OMSTART,
-     V     FRAC,XMR,XM2,AKI,A,B,C_QL,FAC,W2,V2
-      REAL OMEGA(NFRE),DFDTH(NFRE),TH(NANG)
-      REAL TA(NDEPTH,NANG,NFRE,NFRE),TB(NDEPTH,NANG,NFRE,NFRE),
-     V     TC_QL(NDEPTH,NANG,NFRE,NFRE),TT_4M(NDEPTH,NANG,NFRE,NFRE),
-     V     TT_4P(NDEPTH,NANG,NFRE,NFRE),TFAK(NFRE,NDEPTH)
+      REAL(KIND=JWRB), INTENT(IN) :: OMSTART, FRAC, XMR
+      REAL(KIND=JWRB), DIMENSION(NFRE), INTENT(IN) :: DFDTH, OMEGA
+      REAL(KIND=JWRB), DIMENSION(NANG), INTENT(IN) :: TH
+      REAL(KIND=JWRB), DIMENSION(NDEPTH,NANG,NFRE,NFRE), INTENT(OUT) :: TA,TB,TC_QL,TT_4M,TT_4P
+      REAL(KIND=JWRB), DIMENSION(NFRE,NDEPTH), INTENT(OUT) :: TFAK
+
+
+      INTEGER(KIND=JWIM) :: JD,M,K,M1,K1,MP,MM,L
+
+      REAL(KIND=JWRB) :: OM0,TH0,XK0,OM1,TH1,XK1,OM2,XK2,OM0P,XK0P,OM0M
+      REAL(KIND=JWRB) :: XK0M,XM2,A,B,C_QL,FAC,W2,V2 
+      REAL(KIND=JWRB) :: AKI
+
 !
 !     1. COMPUTATION OF WAVENUMBER ARRAY TFAK
 !     ---------------------------------------
@@ -125,23 +133,23 @@
                   OM2 = OM0-OM1
          
              
-                  IF (ABS(OM1).LT.OM0/2.) THEN
-                     XM2  = LOG(OM2/OMSTART)/LOG(1.+FRAC)
-                     IM_M(M1,M) = NINT(XMR*(XM2+1.))
+                  IF (ABS(OM1).LT.OM0/2.0_JWRB) THEN
+                     XM2  = LOG(OM2/OMSTART)/LOG(1.0_JWRB+FRAC)
+                     IM_M(M1,M) = NINT(XMR*(XM2+1.0_JWRB))
                      XK1 = TFAK(M1,JD)
                      XK2 = AKI(OM2,DPTH) 
 
                      TA(JD,L,M1,M) = DFDTH(M1)*A(XK1,XK2,TH1,TH0)**2
                   ELSE
-                     TA(JD,L,M1,M) = 0.
+                     TA(JD,L,M1,M) = 0.0_JWRB
                      IM_M(M1,M) = 1
                   ENDIF 
 !
 !              XK1+XK0 CASE 
 !           
                   OM2 = OM1+OM0 
-                  XM2  = LOG(OM2/OMSTART)/LOG(1.+FRAC)
-                  IM_P(M1,M) = NINT(XMR*(XM2+1.))
+                  XM2  = LOG(OM2/OMSTART)/LOG(1.0_JWRB+FRAC)
+                  IM_P(M1,M) = NINT(XMR*(XM2+1.0_JWRB))
                   XK1 = TFAK(M1,JD)
                   XK2 = AKI(OM2,DPTH)
 
@@ -155,21 +163,17 @@
 !              STOKES-FREQUENCY CORRECTION 
 !
 !      
-                  FAC = 2.*G/OM1*DFDTH(M1)
-                  TT_4M(JD,L,M1,M) = 
-     V                  FAC*(W2(XK0M,XK1,XK1,XK0M,TH0,TH1,TH1,TH0)+
-     V                       V2(XK0M,XK1,XK1,XK0M,TH0,TH1,TH1,TH0))
-                  TT_4P(JD,L,M1,M) = 
-     V                  FAC*(W2(XK0P,XK1,XK1,XK0P,TH0,TH1,TH1,TH0)+
-     V                       V2(XK0P,XK1,XK1,XK0P,TH0,TH1,TH1,TH0))
+                  FAC = 2.0_JWRB*G/OM1*DFDTH(M1)
+                  TT_4M(JD,L,M1,M) =                                    &
+     &                  FAC*(W2(XK0M,XK1,XK1,XK0M,TH0,TH1,TH1,TH0)+     &
+     &                       V2(XK0M,XK1,XK1,XK0M,TH0,TH1,TH1,TH0))
+                  TT_4P(JD,L,M1,M) =                                    &
+     &                  FAC*(W2(XK0P,XK1,XK1,XK0P,TH0,TH1,TH1,TH0)+     &
+     &                       V2(XK0P,XK1,XK1,XK0P,TH0,TH1,TH1,TH0))
 
                ENDDO
             ENDDO
          ENDDO
        ENDDO
 ! 
-!
-!--------------------------------------------------------------------
-!      
-      RETURN
-      END
+      END SUBROUTINE TABLES_2ND

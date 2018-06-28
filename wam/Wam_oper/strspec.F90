@@ -40,33 +40,36 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: NFRE, NANG, ML, KL
-      REAL, INTENT(IN) :: GAMMA
-      REAL, DIMENSION(NFRE), INTENT(IN) :: FR
-      REAL, DIMENSION(NANG,NFRE), INTENT(INOUT) :: FL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, ML, KL
+      REAL(KIND=JWRB), INTENT(IN) :: GAMMA
+      REAL(KIND=JWRB), DIMENSION(NFRE), INTENT(IN) :: FR
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(INOUT) :: FL
 
 
-      INTEGER :: M, K
-      INTEGER :: INC, MC, IFR, IFRP1
-      REAL :: ALO, GAMS, Z, ADIF, BDIF
-      REAL, DIMENSION(ML) :: AR2
-      REAL, DIMENSION(KL,ML) :: AR1
+      INTEGER(KIND=JWIM) :: M, K
+      INTEGER(KIND=JWIM) :: INC, MC, IFR, IFRP1
+      REAL(KIND=JWRB) :: ALO, GAMS, Z, ADIF, BDIF
+      REAL(KIND=JWRB), DIMENSION(ML) :: AR2
+      REAL(KIND=JWRB), DIMENSION(KL,ML) :: AR1
 
 !---------------------------------------------------------------------
 
-      IF (GAMMA.EQ.1.0) RETURN
+      IF (GAMMA.EQ.1.0_JWRB) RETURN
 
 !*    1. INITIALIZATION.
 !        ---------------
 
       DO M=1,ML
         DO K=1,KL
-          AR1(K,M) = 0.0
+          AR1(K,M) = 0.0_JWRB
         ENDDO
       ENDDO
-      ALO = LOG10(1.1)
+!!!!! 1.1 should actually be FRATIO !!!!
+      ALO = LOG10(1.1_JWRB)
       GAMS = GAMMA
 
 !*    2. DETERMINE ACROSS HOW MANY FREQUENCY BINS THE
@@ -74,7 +77,8 @@
 !        ---------------------------------------------------
 
       INC = INT(LOG10(GAMS)/ALO)
-      Z = ABS(1.1**INC - GAMS)
+!!!!! 1.1 should actually be FRATIO !!!!
+      Z = ABS(1.1_JWRB**INC - GAMS)
       DO M=1,ML
         AR2(M) = FR(M) * GAMS
       ENDDO
@@ -82,12 +86,12 @@
 !*    3. STRECH SPECTRUM.
 !        ----------------
 
-      IF (Z.LE.0.001) THEN
+      IF (Z.LE.0.001_JWRB) THEN
 
 !*    3.1 SHIFT SPECTRUM IF GAMMA IS A POWER OF 1.1.
 !         ------------------------------------------
 
-        IF (GAMS.GT.1.0) THEN
+        IF (GAMS.GT.1.0_JWRB) THEN
 
 !*    3.1.1 SHIFT TO LOWER FREQUENIES.
 !           --------------------------
@@ -118,13 +122,13 @@
 !*        (SPECTRUM HAS ZERO ENERGY AT FREQUENCY FR(NFRE) )
 !         -------------------------------------------------
 
-        IF (GAMS.GT.1.0) THEN
+        IF (GAMS.GT.1.0_JWRB) THEN
 
 !*    3.2.1 SHIFT TO LOWER FREQUENCIES.
 !           ---------------------------
 
           DO M=1,ML-INC-1
-            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.)
+            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.0_JWRB)
             IFRP1 = IFR+1
             MC = M + INC
             ADIF = (FR(IFRP1)-AR2(M)) / (FR(IFRP1)-FR(IFR))
@@ -139,7 +143,7 @@
 !            ----------------------------
 
           DO M = 2-INC,ML
-            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.)
+            IFR = INT(LOG10(AR2(M)/FR(1))/ALO+1.0_JWRB)
             IFRP1 = IFR+1
             MC = M + INC - 1
             ADIF = (FR(IFRP1)-AR2(M)) / (FR(IFRP1)-FR(IFR))
@@ -161,5 +165,4 @@
         ENDDO
       ENDDO
 
-      RETURN
       END SUBROUTINE STRSPEC

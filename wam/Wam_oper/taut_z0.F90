@@ -43,35 +43,36 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,RNUM
       USE YOWPCONS , ONLY : G        ,EPSUS   ,ACD      ,BCD
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, INTENT(IN) :: XLEV
-      REAL,DIMENSION(IJS:IJL), INTENT(IN) :: UTOP, TAUW
-      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: USTAR, Z0
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), INTENT(IN) :: XLEV
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UTOP, TAUW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTAR, Z0
 
-      INTEGER, PARAMETER :: NITER=15
+      INTEGER(KIND=JWIM), PARAMETER :: NITER=15
 
-      REAL, PARAMETER :: TWOXMP1=3.
+      REAL(KIND=JWRB), PARAMETER :: TWOXMP1=3.0_JWRB
 
-      INTEGER :: IJ, ITER
+      INTEGER(KIND=JWIM) :: IJ, ITER
 
-      REAL :: XLOGXL, ALPHAOG, XKUTOP, XOLOGZ0
-      REAL :: USTOLD, TAUOLD, TAUNEW, X, F, DELF
-      REAL :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: XLOGXL, ALPHAOG, XKUTOP, XOLOGZ0
+      REAL(KIND=JWRB) :: USTOLD, TAUOLD, TAUNEW, X, F, DELF
+      REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
-#endif
 
       XLOGXL=LOG(XLEV)
       ALPHAOG=ALPHA/G
@@ -81,24 +82,24 @@
         USTOLD = UTOP(IJ)*SQRT(ACD+BCD*UTOP(IJ))
         TAUOLD = MAX(USTOLD**2,TAUW(IJ)+EPS1)
         USTAR(IJ) = SQRT(TAUOLD)
-        USTM1 = 1./MAX(USTAR(IJ),EPSUS) 
+        USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 
         DO ITER=1,NITER
           X = TAUW(IJ)/TAUOLD
-          Z0CH = ALPHAOG*TAUOLD/SQRT(1.-X)
+          Z0CH = ALPHAOG*TAUOLD/SQRT(1.0_JWRB-X)
           Z0VIS = RNUM*USTM1
           Z0TOT = Z0CH+Z0VIS
 
-          XOLOGZ0= 1./(XLOGXL-LOG(Z0TOT))
+          XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0TOT))
           F = USTAR(IJ)-XKUTOP*XOLOGZ0
-          ZZ = USTM1*(Z0CH*(2.-TWOXMP1*X)/(1.-X)-Z0VIS)/Z0TOT
-          DELF= 1.-XKUTOP*XOLOGZ0**2*ZZ
+          ZZ = USTM1*(Z0CH*(2.0_JWRB-TWOXMP1*X)/(1.0_JWRB-X)-Z0VIS)/Z0TOT
+          DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
 
           USTAR(IJ) = USTAR(IJ)-F/DELF
           TAUNEW = MAX(USTAR(IJ)**2,TAUW(IJ)+EPS1)
           USTAR(IJ) = SQRT(TAUNEW)
           IF(TAUNEW.EQ.TAUOLD) EXIT
-          USTM1 = 1./MAX(USTAR(IJ),EPSUS) 
+          USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
           TAUOLD = TAUNEW
         ENDDO
 
@@ -106,7 +107,6 @@
 
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TAUT_Z0',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE TAUT_Z0
