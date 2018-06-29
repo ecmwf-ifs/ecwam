@@ -31,6 +31,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : DELPHI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -50,34 +52,34 @@
 #include "sdepthlim.intfb.h"
 #include "jonswap.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD,THWOLD
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL
-      REAL :: ZHOOK_HANDLE
-      REAL :: CILIMIT
-      REAL :: GAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
-      REAL :: U10, GXU, UG, FLLOWEST 
-      REAL :: STK(NANG)
-      REAL, DIMENSION(IJS:IJL,NFRE) :: ET
-      REAL, DIMENSION(IJS:IJL,NANG) :: SPRD, COS2NOISE
-      REAL, DIMENSION(IJS:IJL) :: FPK, ALPHAV
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD,THWOLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL
+
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: CILIMIT
+      REAL(KIND=JWRB) :: GAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
+      REAL(KIND=JWRB) :: U10, GXU, UG, FLLOWEST 
+      REAL(KIND=JWRB) :: STK(NANG)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FPK, ALPHAV
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: ET
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SPRD, COS2NOISE
 
       LOGICAL :: LICE2SEA(IJS:IJL)
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UNSETICE',0,ZHOOK_HANDLE)
-#endif
 
       IF(.NOT.LRESTARTED .AND. CLDOMAIN.NE.'s') THEN
 
-        ZDP=2./PI
+        ZDP=2.0_JWRB/PI
         DO K=1,NANG
           DO IJ=IJS,IJL
-            COS2NOISE(IJ,K)=MAX(0.,COS(TH(K)-THWOLD(IJ)))**2
+            COS2NOISE(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWOLD(IJ)))**2
             SPRD(IJ,K)=ZDP*COS2NOISE(IJ,K)
           ENDDO
         ENDDO
@@ -87,7 +89,7 @@
         ELSE
 !         WHEN WE ARE NOT IMPOSING A FIXED ICE BOUNDARY THEN
 !         ONLY POINTS WITH NO ICE WILL BE RESET
-          CILIMIT=0.0
+          CILIMIT=0.0_JWRB
         ENDIF
 
 !       TRY TO CREATE A JONSWAP SPECTRUM AT POINTS WHICH WERE ICE IN THE
@@ -105,45 +107,45 @@
           ENDDO
         ENDDO
 
-        GAMMA=3.000000
-        SA=7.000000E-02
-        SB=9.000000E-02
+        GAMMA=3.0_JWRB
+        SA=7.0E-02_JWRB
+        SB=9.0E-02_JWRB
         FPMAX=FR(NFRE-1)
 
         DO IJ=IJS,IJL
           IF(LICE2SEA(IJ) .AND. CICOVER(IJ,1).LE.CILIMIT) THEN
-            IF(DEPTH(IJ,1).LE.10.) THEN
-              FETCH=MIN(0.5*DELPHI,10000.)
-            ELSEIF(DEPTH(IJ,1).LE.50.) THEN
-              FETCH=MIN(DELPHI,50000.)
-            ELSEIF(DEPTH(IJ,1).LE.150.) THEN
-              FETCH=MIN(2*DELPHI,100000.)
-            ELSEIF(DEPTH(IJ,1).LE.250.) THEN
-              FETCH=MIN(3*DELPHI,200000.)
+            IF(DEPTH(IJ,1).LE.10.0_JWRB) THEN
+              FETCH=MIN(0.5_JWRB*DELPHI,10000.0_JWRB)
+            ELSEIF(DEPTH(IJ,1).LE.50.0_JWRB) THEN
+              FETCH=MIN(DELPHI,50000.0_JWRB)
+            ELSEIF(DEPTH(IJ,1).LE.150.0_JWRB) THEN
+              FETCH=MIN(2*DELPHI,100000.0_JWRB)
+            ELSEIF(DEPTH(IJ,1).LE.250.0_JWRB) THEN
+              FETCH=MIN(3*DELPHI,200000.0_JWRB)
             ELSE
-              FETCH=MIN(5*DELPHI,250000.)
+              FETCH=MIN(5*DELPHI,250000.0_JWRB)
             ENDIF
 
 !           FIND PEAK PERIOD AND ENERGY LEVEL FROM FETCH LAW
 !           THE SAME FORMULATION AS IN SUBROUTINE PEAK IS USED.
-            IF (U10OLD(IJ) .GT. 0.1E-08 ) THEN
+            IF (U10OLD(IJ) .GT. 0.1E-08_JWRb ) THEN
               GX = G * FETCH
               U10 = U10OLD(IJ)
               GXU = GX/(U10*U10)
               UG = G/U10
               FPK(IJ) = AJONS * GXU ** DJONS
-              FPK(IJ) = MAX(0.13, FPK(IJ))
+              FPK(IJ) = MAX(0.13_JWRB, FPK(IJ))
               FPK(IJ) = MIN(FPK(IJ), FPMAX/UG)
               ALPHAV(IJ) = BJONS * FPK(IJ)** EJONS
-              ALPHAV(IJ) = MAX(ALPHAV(IJ), 0.0081)
+              ALPHAV(IJ) = MAX(ALPHAV(IJ), 0.0081_JWRB)
               FPK(IJ) = FPK(IJ)*UG
             ELSE
               FPK(IJ)=0.
-              ALPHAV(IJ)=0.
+              ALPHAV(IJ)=0.0_JWRB
             ENDIF
           ELSE
             FPK(IJ)=FPMAX 
-            ALPHAV(IJ)=0.
+            ALPHAV(IJ)=0.0_JWRB
           ENDIF
         ENDDO
 
@@ -163,7 +165,6 @@
           CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL)
         ENDIF
 
-
         IF (ITEST.GE.2) THEN
          WRITE(IU06,*) ' UNSETICE: SPECTRA INITIALISED OVER OLD SEA ICE'
          WRITE(IU06,*) ' '
@@ -171,9 +172,6 @@
 
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('UNSETICE',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE UNSETICE

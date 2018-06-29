@@ -40,15 +40,18 @@
 
 ! -------------------------------------------------------------------   
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
 ! MODULES NEED FOR GRID DEFINTION      
       USE YOWGRID  , ONLY : IJS, IJL
 ! MPP INFORMATION
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
 ! COUPLING INFORMATION
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG, 
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG,                  &
      &                      LWNEMOCOUSTK, LWNEMOCOUSTRN, KCOUSTEP
-      USE YOWNEMOFLDS, ONLY : NEMODP, NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+      USE YOWNEMOP   , ONLY : NEMODP
+      USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
 ! DATA TO BE SEND
       USE YOWMEAN  , ONLY : NSWH, NMWP, NPHIEPS, NTAUOC
 ! DR. HOOK
@@ -60,16 +63,15 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IG, IJ
+      INTEGER(KIND=JWIM) :: IG, IJ
 
-      REAL :: TAU
-      REAL :: ZHOOK_HANDLE
-      REAL(NEMODP), ALLOCATABLE, DIMENSION(:) :: ZDUMU, ZDUMV, ZDUMSTRN
+      REAL(KIND=JWRB) :: TAU
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=NEMODP), ALLOCATABLE,DIMENSION(:) :: ZDUMU, ZDUMV, ZDUMSTRN
 
 ! -------------------------------------------------------------------   
-#ifdef ECMWF 
+
       IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)
-#endif
 
       IF (LWNEMOCOU) THEN
 
@@ -81,7 +83,7 @@
         IF (LWNEMOCOUSTRN) THEN
            ZDUMSTRN(IJS(IG):IJL(IG)) = NEMOSTRN(IJS(IG):IJL(IG))
         ELSE
-           ZDUMSTRN(IJS(IG):IJL(IG)) = 0.0
+           ZDUMSTRN(IJS(IG):IJL(IG)) = 0.0_NEMODP
         ENDIF
   
 ! STOKES DRIFT
@@ -91,17 +93,17 @@
            ZDUMU(IJS(IG):IJL(IG)) = NEMOUSTOKES(IJS(IG):IJL(IG))
            ZDUMV(IJS(IG):IJL(IG)) = NEMOVSTOKES(IJS(IG):IJL(IG))
         ELSE
-           ZDUMU(IJS(IG):IJL(IG)) = 0.0
-           ZDUMV(IJS(IG):IJL(IG)) = 0.0
+           ZDUMU(IJS(IG):IJL(IG)) = 0.0_NEMODP
+           ZDUMV(IJS(IG):IJL(IG)) = 0.0_NEMODP
         ENDIF
 
 #ifdef WITH_NEMO
-        CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,
-     &       IJL(IG)-IJS(IG)+1,
-     &       NSWH(IJS(IG):IJL(IG)),NMWP(IJS(IG):IJL(IG)),
-     &       NPHIEPS(IJS(IG):IJL(IG)), NTAUOC(IJS(IG):IJL(IG)),  
-     &       ZDUMSTRN(IJS(IG):IJL(IG)), 
-     &       ZDUMU(IJS(IG):IJL(IG)), ZDUMV(IJS(IG):IJL(IG)),
+        CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,          &
+     &       IJL(IG)-IJS(IG)+1,                                         &
+     &       NSWH(IJS(IG):IJL(IG)), NMWP(IJS(IG):IJL(IG)),              &
+     &       NPHIEPS(IJS(IG):IJL(IG)), NTAUOC(IJS(IG):IJL(IG)),         &
+     &       ZDUMSTRN(IJS(IG):IJL(IG)),                                 &
+     &       ZDUMU(IJS(IG):IJL(IG)), ZDUMV(IJS(IG):IJL(IG)),            &
      &       CDTPRO, LWNEMOCOUDEBUG )
 #endif
 
@@ -109,9 +111,6 @@
 
       ENDIF
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE UPDNEMOFIELDS
