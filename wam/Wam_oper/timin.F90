@@ -1,7 +1,7 @@
-      SUBROUTINE TIMIN (CDTWIS, CDTWIE,
-     &                  MIJS, MIJL,
-     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
-     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
+      SUBROUTINE TIMIN (CDTWIS, CDTWIE,                                 &
+     &                  MIJS, MIJL,                                     &
+     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,             &
+     &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,       &
      &                  LWCUR)
 
 ! ----------------------------------------------------------------------
@@ -70,13 +70,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPCONS , ONLY : PI       ,ZPI
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -86,11 +88,11 @@
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
-      INTEGER, INTENT(IN) :: MIJS, MIJL
-      INTEGER, INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       
-      REAL,DIMENSION(MIJS:MIJL), INTENT(INOUT) ::
-     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) ::            &
+     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,                &
      &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
@@ -98,16 +100,16 @@
       LOGICAL, INTENT(IN) :: LWCUR
 
 
-      INTEGER :: JKGLO,KIJS,KIJL,NPROMA
-      INTEGER :: ILEV, IJ
-      INTEGER :: ICODE_WND
-      INTEGER :: NTS, N
+      INTEGER(KIND=JWIM) :: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: ILEV, IJ
+      INTEGER(KIND=JWIM) :: ICODE_WND
+      INTEGER(KIND=JWIM) :: NTS, N
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: DEL, D
-      REAL,DIMENSION(MIJS:MIJL) :: U10,US,DS,ADS,ZIDL,CICR,CITH
-      REAL,DIMENSION(MIJS:MIJL) :: U102,US2,DS2,ADS2,ZIDL2,CICR2,CITH2
-      REAL,DIMENSION(MIJS:MIJL) :: U103,US3, DS3,ADS3,ZIDL3,CICR3,CITH3
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: DEL, D
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U10,US,DS,ADS,ZIDL,CICR,CITH
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U102,US2,DS2,ADS2,ZIDL2,CICR2,CITH2
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U103,US3, DS3,ADS3,ZIDL3,CICR3,CITH3
 
       CHARACTER(LEN=14) :: CDTH, CDT1, CDT2, ZERO
       CHARACTER(LEN=80) :: FILENAME
@@ -118,9 +120,8 @@
 
 !*    1. INITIALIZE TIMECOUNTER.
 !        -----------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TIMIN',0,ZHOOK_HANDLE)
-#endif
 
       ZERO= ' '
 
@@ -136,12 +137,12 @@
 
       IF (CDA.EQ.ZERO) THEN
         CDT1 = CDTWIS
-        CALL GETWND (MIJS, MIJL,
-     &               U10(MIJS), US(MIJS),
-     &               DS(MIJS),
-     &               ADS(MIJS), ZIDL(MIJS),
-     &               CICR(MIJS), CITH(MIJS),
-     &               CDT1, LWNDFILE, LCLOSEWND, IREAD,
+        CALL GETWND (MIJS, MIJL,                                        &
+     &               U10(MIJS), US(MIJS),                               &
+     &               DS(MIJS),                                          &
+     &               ADS(MIJS), ZIDL(MIJS),                             &
+     &               CICR(MIJS), CITH(MIJS),                            &
+     &               CDT1, LWNDFILE, LCLOSEWND, IREAD,                  &
      &               LWCUR, ICODE_WND)
 
         CALL GSTATS(1494,0)
@@ -159,7 +160,7 @@
             CITHICK(IJ)= CITH(IJ)
           ENDDO
 
-          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),
+          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),           &
      &                 Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
 
         ENDDO
@@ -167,7 +168,7 @@
         CALL GSTATS(1494,1)
 
         IF (ITEST.GE.3) THEN
-          WRITE(IU06,'(''       SUB. TIMIN: FIRST WIND FIELD '',
+          WRITE(IU06,'(''       SUB. TIMIN: FIRST WIND FIELD '',        &
      &     ''SAVED IN COMMON WIND'')')
           CALL FLUSH(IU06)
         ENDIF
@@ -199,10 +200,8 @@
           WRITE(IU06,*) ' *        FATAL ERROR IN --TIMIN--         *'
           WRITE(IU06,*) ' *        =========================        *'
           WRITE(IU06,*) ' * DATES DO NOT MATCH.                     *'
-          WRITE(IU06,*) ' * START DATE FOR WIND IS       CDTWIS = ',
-     &     CDTWIS
-          WRITE(IU06,*) ' * LAST DATE SAVED IN COM WIND IS CDT1 = ',
-     &     CDT1
+          WRITE(IU06,*) ' * START DATE FOR WIND IS       CDTWIS = ', CDTWIS
+          WRITE(IU06,*) ' * LAST DATE SAVED IN COM WIND IS CDT1 = ', CDT1
           WRITE(IU06,*) ' * PROCESSING WILL BE ABORTED              *'
           WRITE(IU06,*) ' *                                         *'
           WRITE(IU06,*) ' *******************************************'
@@ -213,7 +212,7 @@
       CALL INCDATE(CDT2,IDELWI)
 
       NTS = IDELWI/IDELWO
-      DEL = REAL(IDELWO)/REAL(IDELWI)
+      DEL = REAL(IDELWO,JWRB)/REAL(IDELWI,JWRB)
 
 !*    2. LOOP OVER INPUT WINDFIELDS.
 !        ---------------------------
@@ -225,12 +224,12 @@
 
       CDT2 = CDT1
       CALL INCDATE(CDT2,IDELWI)
-      CALL GETWND (MIJS, MIJL,
-     &             U102(MIJS), US2(MIJS),
-     &             DS2(MIJS),
-     &             ADS2(MIJS), ZIDL2(MIJS),
-     &             CICR2(MIJS), CITH2(MIJS),
-     &             CDT2, LWNDFILE, LCLOSEWND, IREAD,
+      CALL GETWND (MIJS, MIJL,                                          &
+     &             U102(MIJS), US2(MIJS),                               &
+     &             DS2(MIJS),                                           &
+     &             ADS2(MIJS), ZIDL2(MIJS),                             &
+     &             CICR2(MIJS), CITH2(MIJS),                            &
+     &             CDT2, LWNDFILE, LCLOSEWND, IREAD,                    &
      &             LWCUR, ICODE_WND)
 
 !*    2.2 SAVE BLOCKED WIND FIELD ON SCRATCH UNITS.
@@ -239,8 +238,7 @@
       NSTORE=NTS
 
       IF(.NOT.ALLOCATED(CDTNEXT)) ALLOCATE(CDTNEXT(NSTORE))
-        IF(.NOT.ALLOCATED(FF_NEXT))
-     &          ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
+        IF(.NOT.ALLOCATED(FF_NEXT)) ALLOCATE(FF_NEXT(MIJS:MIJL,NSTORE))
 
         CDTH = CDT1
         DO N=1,NTS
@@ -255,17 +253,13 @@
               U103(IJ) = U10(IJ)+REAL(N)*DEL*(U102(IJ)-U10(IJ))
               US3(IJ) = US(IJ)+REAL(N)*DEL*(US2(IJ)-US(IJ))
               D = DS2(IJ)-DS(IJ)
-              IF (ABS(D).GT.PI) D = D-ZPI*SIGN(1.,D)
+              IF (ABS(D).GT.PI) D = D-ZPI*SIGN(1.0_JWRB,D)
               D = DS(IJ)+REAL(N)*DEL*D
               DS3(IJ) = MOD(D+ZPI,ZPI)
-              ADS3(IJ) = ADS(IJ)+
-     &                        REAL(N)*DEL*(ADS2(IJ)-ADS(IJ))
-              ZIDL3(IJ) = ZIDL(IJ)+
-     &                         REAL(N)*DEL*(ZIDL2(IJ)-ZIDL(IJ))
-              CICR3(IJ) = CICR(IJ)+
-     &                         REAL(N)*DEL*(CICR2(IJ)-CICR(IJ))
-              CITH3(IJ) = CITH(IJ)+
-     &                         REAL(N)*DEL*(CITH2(IJ)-CITH(IJ))
+              ADS3(IJ) = ADS(IJ)+REAL(N,JWRB)*DEL*(ADS2(IJ)-ADS(IJ))
+              ZIDL3(IJ) = ZIDL(IJ)+REAL(N,JWRB)*DEL*(ZIDL2(IJ)-ZIDL(IJ))
+              CICR3(IJ) = CICR(IJ)+REAL(N,JWRB)*DEL*(CICR2(IJ)-CICR(IJ))
+              CITH3(IJ) = CITH(IJ)+REAL(N,JWRB)*DEL*(CITH2(IJ)-CITH(IJ))
 
               FF_NEXT(IJ,N)%WSWAVE=U103(IJ)
               FF_NEXT(IJ,N)%USTAR=US3(IJ)
@@ -292,7 +286,7 @@
 
       CDT1 = CDT2
       IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '       SUB. TIMIN: LAST WIND FIELD AT ',
+        WRITE(IU06,*) '       SUB. TIMIN: LAST WIND FIELD AT ',         &
      &   'CDTH = ', CDTH,' WRITTEN TO SCRATCH UNITS'
           CALL FLUSH (IU06)
       ENDIF
@@ -306,13 +300,11 @@
 
 
       IF (ITEST.GE.3) THEN
-        WRITE(IU06,*) '       SUB. TIMIN: LAST WIND FIELD AT ',
+        WRITE(IU06,*) '       SUB. TIMIN: LAST WIND FIELD AT ',         &
      &   'CDTH = ', CDTH,' WRITTEN TO OUTPUT UNIT'
           CALL FLUSH (IU06)
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TIMIN',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+
       END SUBROUTINE TIMIN

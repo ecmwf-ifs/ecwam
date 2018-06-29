@@ -63,11 +63,13 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWGRID  , ONLY : NLONRGG
-      USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,
+      USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD
-      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,
-     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,
+      USE YOWMAP   , ONLY : NX       ,NY       ,AMOWEP   ,AMOSOP   ,    &
+     &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            LLOBSTRCT
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX 
@@ -79,22 +81,22 @@
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
-      INTEGER, INTENT(IN) :: IU01
-      REAL, DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU01
+      REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
 
-      INTEGER :: I, J, K, JH, L, IX, IAA
-      INTEGER :: KLONRGG  
-      INTEGER :: MLON, NLATMAX, KMAX, NLAT, N1, N2, LAST
-      INTEGER :: NMINADJT
-      INTEGER :: ILW, NLON, IH, NJ, JJ, NL, JRGG, KXLO, KAMOEAP
-      INTEGER :: ILEN, IPAGE, IA, IE
-      INTEGER, ALLOCATABLE :: IDUM(:)
-      INTEGER, ALLOCATABLE :: IA2H(:), IA1(:,:)
+      INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA
+      INTEGER(KIND=JWIM) :: KLONRGG  
+      INTEGER(KIND=JWIM) :: MLON, NLATMAX, KMAX, NLAT, N1, N2, LAST
+      INTEGER(KIND=JWIM) :: NMINADJT
+      INTEGER(KIND=JWIM) :: ILW, NLON, IH, NJ, JJ, NL, JRGG, KXLO, KAMOEAP
+      INTEGER(KIND=JWIM) :: ILEN, IPAGE, IA, IE
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IA2H(:), IA1(:,:)
 
-      REAL :: BATHYMAX_LOC, TABLEMAX
-      REAL :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
-      REAL :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
-      REAL, ALLOCATABLE :: XA2H(:), XA1(:,:)
+      REAL(KIND=JWRB) :: BATHYMAX_LOC, TABLEMAX
+      REAL(KIND=JWRB) :: XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+      REAL(KIND=JWRB) :: XLAT, XLON, XLAG, XLW, XLA, XLO, XLOH, XLOG
+      REAL(KIND=JWRB), ALLOCATABLE :: XA2H(:), XA1(:,:)
 
       CHARACTER(LEN=1), ALLOCATABLE :: AX(:), AXX(:)
       CHARACTER(LEN=4) :: CX
@@ -139,11 +141,11 @@
 
       WRITE (IU06,'(1H1,'' INPUT GRID''/)')
       WRITE (IU06,'(3X,''RESOLUTION LAT-LON '',2F8.3)') XDELA, XDELO
-      WRITE (IU06,'(3X,'' SOUTHERN LAT '','' NORTHERN LAT '',
-     &                 '' WESTERN LONG '','' EASTERN LONG'',
+      WRITE (IU06,'(3X,'' SOUTHERN LAT '','' NORTHERN LAT '',           &
+     &                 '' WESTERN LONG '','' EASTERN LONG'',            &
      &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
 
-      BATHY(:,:) = 999.
+      BATHY(:,:) = 999.0_JWRB
 
       IF(LLOBSTRCT) THEN
 !     NEW TREATMENT OF BATHYMETRY INPUT
@@ -151,11 +153,11 @@
         WRITE (IU06,*) '  NEW TREATMENT OF BATHYMETRY INPUT '
         WRITE (IU06,*) ' '
 !       TEST DOMAIN
-        IF(NINT(10000*XDELA).NE.NINT(10000*XDELLA) .OR.
-     &     NINT(10000*XDELO).NE.NINT(10000*XDELLO) .OR.
-     &     NINT(10000*XLAS).NE.NINT(10000*AMOSOP) .OR.
-     &     NINT(10000*XLAN).NE.NINT(10000*AMONOP) .OR.
-     &     NINT(10000*XLOW).NE.NINT(10000*AMOWEP) .OR.
+        IF(NINT(10000*XDELA).NE.NINT(10000*XDELLA) .OR.                 &
+     &     NINT(10000*XDELO).NE.NINT(10000*XDELLO) .OR.                 &
+     &     NINT(10000*XLAS).NE.NINT(10000*AMOSOP) .OR.                  &
+     &     NINT(10000*XLAN).NE.NINT(10000*AMONOP) .OR.                  &
+     &     NINT(10000*XLOW).NE.NINT(10000*AMOWEP) .OR.                  &
      &     NINT(10000*XLOE).NE.NINT(10000*AMOEAP) ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
@@ -207,7 +209,7 @@
             FORMT='('//CX//'I4)'
             READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
             DO IX=1,NLONRGG(K)
-              BATHY(IX,K)=REAL(IDUM(IX))
+              BATHY(IX,K)=REAL(IDUM(IX),JWRB)
             ENDDO
           ENDIF
         ENDDO
@@ -218,9 +220,9 @@
       ELSE
 !     OLD TREATMENT OF BATHYMETRY INPUT
 !     ---------------------------------
-      MLON = NINT((XLOE-XLOW)/XDELO+1.0)
+      MLON = NINT((XLOE-XLOW)/XDELO+1.0_JWRB)
 
-      NLATMAX=NINT((XLAN-XLAS)/XDELA+1.0)
+      NLATMAX=NINT((XLAN-XLAS)/XDELA+1.0_JWRB)
 
       ALLOCATE(AX(MLON))
       ALLOCATE(IA2H(MLON), IA1(MLON,NLATMAX))
@@ -253,26 +255,22 @@
         N1 = 12*(K-1)+1
         N2 = MIN(12*K,MLON)
         IF(LLREALIN) THEN
-          READ (IU01, '(12(F9.2))', END=1017)
-     &     (XA1(IAA,NLAT),IAA=N1,N2)
+          READ (IU01, '(12(F9.2))', END=1017) (XA1(IAA,NLAT),IAA=N1,N2)
         ELSE
-          READ (IU01, '(12(I5,A1))', END=1017)
-     &     (IA1(IAA,NLAT),AX(IAA),IAA=N1,N2)
+          READ (IU01, '(12(I5,A1))', END=1017) (IA1(IAA,NLAT),AX(IAA),IAA=N1,N2)
         ENDIF
       ENDDO
 
-      IF (XLAT+0.5*XDELA.LE.AMOSOP) GO TO 1010
+      IF (XLAT+0.5_JWRB*XDELA.LE.AMOSOP) GO TO 1010
       IF(NLAT.EQ.1) XLAG=XLAT
       IF(.NOT.LLREALIN) THEN
       DO I=1,MLON
-          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).LT.0)
-     &     IA1(I,NLAT)=-IA1(I,NLAT)
-          IF (AX(I).EQ.'D'.AND.IA1(I,NLAT).GT.0)
-     &     IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).LT.0) IA1(I,NLAT)=-IA1(I,NLAT)
+          IF (AX(I).EQ.'D'.AND.IA1(I,NLAT).GT.0) IA1(I,NLAT)=-IA1(I,NLAT)
           IF (AX(I).EQ.'E'.AND.IA1(I,NLAT).EQ.0) IA1(I,NLAT)=1
         ENDDO
       ENDIF
-      IF(XLAT+0.5*XDELA.GT.AMONOP) GO TO 1020
+      IF(XLAT+0.5_JWRB*XDELA.GT.AMONOP) GO TO 1020
       GO TO 1005
 1017  CONTINUE
       NLAT=NLAT-1
@@ -298,11 +296,11 @@
 !       IH,IH1   -  GRID LONGITUDE NUMBER.
 
 
-      XLW= MOD(AMOWEP-XLOW+720.,360.)
-!!!!      ILW= NINT(XLW/XDELO-0.0001)
+      XLW= MOD(AMOWEP-XLOW+720.0_JWRB,360.0_JWRB)
+!!!!      ILW= NINT(XLW/XDELO-0.0001_JWRB)
       ILW= NINT(XLW/XDELO)
 
-      NLON=NINT((AMOEAP-AMOWEP)/XDELO+1.0)
+      NLON=NINT((AMOEAP-AMOWEP)/XDELO+1.0_JWRB)
       DO J=1,NLAT
         IH=ILW
         DO I=1,NLON
@@ -319,7 +317,7 @@
           IF(LLREALIN) THEN
             XA1(I,J)=XA2H(I)
           ELSE
-            XA1(I,J)=REAL(IA2H(I))
+            XA1(I,J)=REAL(IA2H(I),JWRB)
           ENDIF
         ENDDO
       ENDDO
@@ -344,7 +342,7 @@
       DO J=1,NLAT
         XLAG=XLAG+XDELA
  3010   CONTINUE
-        IF(XLA.LT.XLAG-0.5*XDELA.OR.XLA.GE.XLAG+0.5*XDELA) GO TO 3070
+        IF(XLA.LT.XLAG-0.5_JWRB*XDELA.OR.XLA.GE.XLAG+0.5_JWRB*XDELA) GO TO 3070
         NJ=NJ+1
         IF(NJ.GT.NGY) THEN
           WRITE (IU06,*) ' ******************************************'
@@ -367,14 +365,14 @@
 !  LOOP THROUGH LONGITUDES
 
         NL=0
-        XLOH = XLOW + (REAL(ILW)-1.5000)*XDELO+720.
+        XLOH = XLOW + (REAL(ILW,JWRB)-1.5_JWRB)*XDELO+720.0_JWRB
         XLO=AMOWEP
-        IF(XLO .LT.0.) XLO =XLO +360.
+        IF(XLO .LT.0.0_JWRB) XLO =XLO +360.0_JWRB
         DO I=1,NLON
-          XLO = MOD(XLO+720.,360.)
-          XLOG = MOD(XLOH + REAL(I)*XDELO,360.)
+          XLO = MOD(XLO+720.0_JWRB,360.0_JWRB)
+          XLOG = MOD(XLOH + REAL(I,JWRB)*XDELO,360.0_JWRB)
  3030     CONTINUE
-          IF (XLO.LT.XLOG) XLO  = XLO  + 360.
+          IF (XLO.LT.XLOG) XLO  = XLO  + 360.0_JWRB
 
           IF (XLO.LE.XLOG+XDELO) THEN
             NL=NL+1
@@ -400,25 +398,25 @@
             ENDIF
             BATHY(NL,NJ)=XA1(I,J)
             JRGG = 1 +NINT((XLA-AMOSOP)/XDELLA)
-            XLO = AMOWEP + REAL(NL)*ZDELLO(JRGG)
-            KXLO=NINT(XLO*100.)
-            KAMOEAP=NINT(AMOEAP*100.)
+            XLO = AMOWEP + REAL(NL,JWRB)*ZDELLO(JRGG)
+            KXLO=NINT(XLO*100.0_JWRB)
+            KAMOEAP=NINT(AMOEAP*100.0_JWRB)
             IF (KXLO.LE.KAMOEAP) THEN
-              XLO = MOD(XLO+720.,360.)
+              XLO = MOD(XLO+720.0_JWRB,360.0_JWRB)
               GOTO 3030
             ENDIF
           ENDIF
         ENDDO
 
         JJ=JJ+1
-        XLA=AMOSOP+REAL(JJ)*XDELLA
+        XLA=AMOSOP+REAL(JJ,JWRB)*XDELLA
 
-        IF((XLA-0.5*XDELLA).GT.AMONOP) THEN
+        IF((XLA-0.5_JWRB*XDELLA).GT.AMONOP) THEN
           GOTO 3080
         ELSE
           GOTO 3010
         ENDIF
- 3070   continue
+ 3070   CONTINUE
       ENDDO
  3080 CONTINUE
       IF (NJ.NE.NY .OR. NL.GT.NX) THEN
@@ -450,10 +448,10 @@
 
       DO J=1,NY
         DO I=1,NX
-          IF (BATHY(I,J).LT.0.) THEN
+          IF (BATHY(I,J).LT.0.0_JWRB) THEN
             BATHY(I,J) = -BATHY(I,J)
           ELSE
-            BATHY(I,J) = -999.
+            BATHY(I,J) = -999.0_JWRB
           ENDIF
         ENDDO
       ENDDO
@@ -462,7 +460,7 @@
       NMINADJT=0
       DO J=1,NY
         DO I=1,NX
-          IF (BATHY(I,J).GT.0. .AND. BATHY(I,J).LT. DEPTHA ) THEN
+          IF (BATHY(I,J).GT.0.0_JWRB .AND. BATHY(I,J).LT. DEPTHA ) THEN
             BATHY(I,J) = DEPTHA 
             NMINADJT=NMINADJT+1
           ENDIF
@@ -484,7 +482,7 @@
       ENDIF
 
 !     CHECK THAT THE MAXIMUM DEPTH IN TABLES IS SUFFICIENTLY LARGE
-      BATHYMAX_LOC=0.
+      BATHYMAX_LOC=0.0_JWRB
       DO J=1,NY
         DO I=1,NX
           BATHYMAX_LOC=MIN(MAX(BATHY(I,J),BATHYMAX_LOC),BATHYMAX)
@@ -518,16 +516,16 @@
         DO J=1,NY
           XLAT=XLAT+XDELLA
           XLON=AMOWEP-ZDELLO(J)
-          IF (XLON.LT.0.) XLON=360.+XLON
+          IF (XLON.LT.0.0_JWRB) XLON=360.0_JWRB+XLON
           DO I=1,NX
             XLON=XLON+ZDELLO(J)
-            IF (XLON.GE.360.) XLON=XLON-360.
+            IF (XLON.GE.360.0_JWRB) XLON=XLON-360.0_JWRB
             DO JH = 1,NOUT
-              IF (XLON.LT.XOUTW(JH)) XLON=XLON+360.
-              IF (XLON.GT.XOUTE(JH)) XLON=XLON-360.
-              IF (XLON.GE.XOUTW(JH) .AND. XLAT.GE.XOUTS(JH) .AND.
-     &         XLON.LE.XOUTE(JH) .AND. XLAT.LE.XOUTN(JH))
-     &         BATHY(I,J) = REAL(NOUTD(JH))
+              IF (XLON.LT.XOUTW(JH)) XLON=XLON+360.0_JWRB
+              IF (XLON.GT.XOUTE(JH)) XLON=XLON-360.0_JWRB
+              IF (XLON.GE.XOUTW(JH) .AND. XLAT.GE.XOUTS(JH) .AND.       &
+     &         XLON.LE.XOUTE(JH) .AND. XLAT.LE.XOUTN(JH))               &
+     &         BATHY(I,J) = REAL(NOUTD(JH),JWRB)
             ENDDO
           ENDDO
         ENDDO
@@ -539,18 +537,13 @@
 !        ------------------------------------
 
       WRITE (IU06,'(''0NUMBER OF LATITUDES IS        NY = '',I5)') NY
-      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)')
-     &           AMOSOP
-      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)')
-     &           AMONOP
-      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)')
-     &           XDELLA
+      WRITE (IU06,'('' MOST SOUTHERN LATITUDE IS AMOSOP = '',F7.3)') AMOSOP
+      WRITE (IU06,'('' MOST NORTHERN LATITUDE IS AMONOP = '',F7.3)') AMONOP 
+      WRITE (IU06,'('' LATITUDE INCREMENT IS     XDELLA = '',F7.3)') XDELLA
       WRITE (IU06,'(''0MAX NUMBER OF LONGITUDES IS   NX = '',I5)') NX
-      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)')
-     &           AMOWEP
-      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)')
-     &           AMOEAP
-      WRITE (IU06,
+      WRITE (IU06,'('' MOST WESTERN LONGITUDE IS AMOWEP = '',F7.3)') AMOWEP
+      WRITE (IU06,'('' MOST EASTERN LONGITUDE IS AMOEAP = '',F7.3)') AMOEAP
+      WRITE (IU06,                                                      &
      &     '('' LONGITUDE INCREMENT AS FUNCTION OF LATITUDE IS'')')
       WRITE (IU06,'(10F8.3)') ZDELLO
 
@@ -571,7 +564,7 @@
           IA = (L-1)*ILEN
           IE = MIN(IA+ILEN,NX)
           IA = IA+1
-          WRITE (IU06,'(''0UNBLOCKED GRID               N'',
+          WRITE (IU06,'(''0UNBLOCKED GRID               N'',            &
      &     40X,''PAGE'',I2)') L
           WRITE (IU06,'(''   L = LAND               W -   - E'')')
           WRITE (IU06,'(''   S = SEA                    S'',/)')
@@ -595,5 +588,4 @@
       IF(ALLOCATED(IA1)) DEALLOCATE(IA1)
       IF(ALLOCATED(XA1)) DEALLOCATE(XA1)
 
-      RETURN
       END SUBROUTINE TOPOAR
