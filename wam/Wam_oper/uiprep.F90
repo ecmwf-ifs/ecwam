@@ -46,19 +46,21 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,CLDOMAIN
-      USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,
+      USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
-      USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,
+      USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
      &            XOUTN    ,NOUTD    ,OUTLONG  ,OUTLAT
       USE YOWCOUT  , ONLY : NGOUT
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,FRATIO
       USE YOWGRID  , ONLY : NLONRGG
 
-      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,
-     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,
+      USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
+     &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,              &
      &            XDELLA   ,XDELLO   ,LLOBSTRCT,LAQUA
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD 
       USE YOWSTAT  , ONLY : IPHYS
@@ -71,35 +73,35 @@
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
-      INTEGER, INTENT(OUT) :: IFORM, ML, KL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM, ML, KL
       LOGICAL, INTENT(OUT) :: LLGRID
 
-      INTEGER :: I_GET_UNIT
-      INTEGER :: K, M, I, II, KSN
-      INTEGER :: IU05, IU
-      INTEGER :: IFRE1, ISPECTRUNC
-      INTEGER :: MOUTP, MOUTPNEW 
-      INTEGER :: IOS, IOUTA, IOUTANEW, IDUM
-      INTEGER, ALLOCATABLE :: NDUMP(:)
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: K, M, I, II, KSN
+      INTEGER(KIND=JWIM) :: IU05, IU
+      INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
+      INTEGER(KIND=JWIM) :: MOUTP, MOUTPNEW 
+      INTEGER(KIND=JWIM) :: IOS, IOUTA, IOUTANEW, IDUM
+      INTEGER(KIND=JWIM), ALLOCATABLE :: NDUMP(:)
 
-      REAL :: FR1 
-      REAL :: DEPTHMAX
-      REAL :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
-      REAL :: ZOUTLAT, ZOUTLONG 
-      REAL :: WEST, EAST, DW, DE, DS, DN
-      REAL, ALLOCATABLE :: XDUMP(:)
+      REAL(KIND=JWRB) :: FR1 
+      REAL(KIND=JWRB) :: DEPTHMAX
+      REAL(KIND=JWRB) :: ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
+      REAL(KIND=JWRB) :: ZOUTLAT, ZOUTLONG 
+      REAL(KIND=JWRB) :: WEST, EAST, DW, DE, DS, DN
+      REAL(KIND=JWRB), ALLOCATABLE :: XDUMP(:)
 
       CHARACTER(LEN=70) :: CLINE, FILENAME
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,
-     &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,
-     &                  IFORM, ITEST, ITESTB,
-     &                  IPHYS,
-     &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC,
-     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,
-     &                  NDEPTH   ,DEPTHA   ,DEPTHD,
+      NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,       &
+     &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
+     &                  IFORM, ITEST, ITESTB,                           &
+     &                  IPHYS,                                          &
+     &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
+     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,                &
+     &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
      &                  IFRE1, LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
@@ -119,29 +121,29 @@
       IVECTOR   = 1
       ML     =   0
       KL     =   0
-      FR1    =   0.0
+      FR1    =   0.0_JWRB
       IRGG   =  -1
-      XDELLA =   0.0
-      XDELLO =   0.0
-      AMOSOP =-100.0
-      AMONOP =-100.0
-      AMOWEP =   0.0
-      AMOEAP =   0.0
+      XDELLA =   0.0_JWRB
+      XDELLO =   0.0_JWRB
+      AMOSOP =-100.0_JWRB
+      AMONOP =-100.0_JWRB
+      AMOWEP =   0.0_JWRB
+      AMOEAP =   0.0_JWRB
       IFORM  =  -1
       ITEST  =  -1
       ITESTB =  -1
-      IPHYS  =   0  ! ECMWF PHYSICS
-      !IPHYS  =   1  ! ARDHUIN PHYSICS
+!      IPHYS  =   0  ! ECMWF PHYSICS
+      IPHYS  =   1  ! ARDHUIN PHYSICS
       IBOUNC =  -1
       IBOUNF =  -1
-      AMOSOC =-100.0
-      AMONOC =-100.0
-      AMOWEC =   0.0
-      AMOEAC =   0.0
+      AMOSOC =-100.0_JWRB
+      AMONOC =-100.0_JWRB
+      AMOWEC =   0.0_JWRB
+      AMOEAC =   0.0_JWRB
       LLOBSTRCT = .TRUE.
       NDEPTH = 74
-      DEPTHA = 1.
-      DEPTHD = 1.1
+      DEPTHA = 1.0_JWRB
+      DEPTHD = 1.1_JWRB
       IFRE1 = 1
       LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
@@ -214,8 +216,8 @@
 
       GBOUNC = 0
       DO II=1,GBOUNC_MAX
-        IF(AMOSOC(II).EQ.-100.AND.AMONOC(II).EQ.-100..AND.
-     &    AMOWEC(II).EQ.0..AND.AMOEAC(II).EQ.0.)EXIT
+        IF(AMOSOC(II).EQ.-100.0_JWRB .AND. AMONOC(II).EQ.-100.0_JWRB .AND. &
+     &    AMOWEC(II).EQ.0.0_JWRB .AND. AMOEAC(II).EQ.0.0_JWRB)EXIT
         GBOUNC=II
       ENDDO
       IF(IBOUNC .EQ. 1 .AND. GBOUNC.LE.0 ) THEN
@@ -284,14 +286,14 @@
         IF(LAQUA) THEN
           NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
           WRITE (IU06,*) ' !! RESETING TO AQUA PLANET CONFIGURATION !!'
-          AMONOP=90.
-          AMOSOP=-90.
+          AMONOP=90.0_JWRB
+          AMOSOP=-90.0_JWRB
           NY=INT((AMONOP-AMOSOP)/XDELLA)+1
           IRGG=1
         ENDIF
 
         IPER = 0
-        IF (ABS(AMOEAP-AMOWEP+1.5*XDELLO) .GE. 360. ) IPER = 1
+        IF (ABS(AMOEAP-AMOWEP+1.5_JWRB*XDELLO) .GE. 360.0_JWRB ) IPER = 1
         NX = NINT((AMOEAP-AMOWEP)/XDELLO) + 1
         NY = NINT((AMONOP-AMOSOP)/XDELLA) + 1
 
@@ -303,8 +305,8 @@
       ENDIF
 
       WRITE (IU06,'("   RESOLUTION LAT-LON ",2F12.7)') XDELLA, XDELLO
-      WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",
-     &  " WESTERN LONG "," EASTERN LONG",
+      WRITE (IU06,'("    SOUTHERN LAT  NORTHERN LAT ",                  &
+     &  " WESTERN LONG "," EASTERN LONG",                               &
      &  /,2X,4F14.3)') AMOSOP, AMONOP, AMOWEP, AMOEAP
       IF (IPER.EQ.1) WRITE (IU06,*) '   THE GRID IS EAST-WEST PERIODIC'
 
@@ -344,10 +346,10 @@
         ALLOCATE(XOUTE(IOUTA))
         ALLOCATE(XOUTN(IOUTA))
         ALLOCATE(NOUTD(IOUTA))
-        XOUTS  =-100.0
-        XOUTN  =-100.0
-        XOUTW  =   0.0
-        XOUTE  =   0.0
+        XOUTS  =-100.0_JWRB
+        XOUTN  =-100.0_JWRB
+        XOUTW  =   0.0_JWRB
+        XOUTE  =   0.0_JWRB
         NOUTD  =   0
         CORR: DO
         READ(IU05, NACORR, ERR=3000, IOSTAT=IOS, END=2300)
@@ -424,13 +426,13 @@
       ENDDO CORR
       ENDIF
  2300 IF (NOUT.GT.0) THEN
-        WRITE (IU06,'(/4X," AREAS TO BE CORRECTED IN OUTPUT GRID",
-     &   /,4X,"  NO.   SOUTHERN LAT ",
-     &   " NORTHERN LAT  WESTERN LONG ",
+        WRITE (IU06,'(/4X," AREAS TO BE CORRECTED IN OUTPUT GRID",      &
+     &   /,4X,"  NO.   SOUTHERN LAT ",                                  &
+     &   " NORTHERN LAT  WESTERN LONG ",                                &
      &   " EASTERN LONG  DEPTH")')
         DO I=1,NOUT
           CALL ADJUST (XOUTW(I), XOUTE(I))
-          WRITE (IU06,'(4X,I5,1X,4F14.3,I7 )') I, XOUTS(I),
+          WRITE (IU06,'(4X,I5,1X,4F14.3,I7 )') I, XOUTS(I),             &
      &     XOUTN(I), XOUTW(I), XOUTE(I), NOUTD(I)
         ENDDO
       ENDIF
@@ -444,8 +446,8 @@
       MOUTP = 100 
       ALLOCATE(OUTLAT(MOUTP))
       ALLOCATE(OUTLONG(MOUTP))
-      OUTLAT =-100.0
-      OUTLONG=   0.0
+      OUTLAT =-100.0_JWRB
+      OUTLONG=   0.0_JWRB
       NGOUT = 0
       OUTPP: DO
         READ(IU05, NAOUTP, ERR=3000, IOSTAT=IOS, END=2400)
@@ -488,8 +490,8 @@
         ENDIF
       ENDDO OUTPP
  2400 IF (NGOUT.GT.0) THEN
-        WRITE (IU06,'(" OUTPUT POINTS FOR SPECTRA AS DEFINED",
-     &   " BY USER INPUT",/,
+        WRITE (IU06,'(" OUTPUT POINTS FOR SPECTRA AS DEFINED",          &
+     &   " BY USER INPUT",/,                                            &
      &   "     NO.    LAT.   LONG.")')
         DO I=1,NGOUT
           WRITE (IU06,'(3X,I5,2F8.2)') I,OUTLAT(I),OUTLONG(I)
@@ -522,11 +524,11 @@
 !*    2.5 MODEL OPTIONS.
 !         --------------
 
-      WRITE (IU06,'(" OUTPUT OPTION IS       IFORM =",I3,
+      WRITE (IU06,'(" OUTPUT OPTION IS       IFORM =",I3,               &
      &         " (1: UNFORM.  2: FORM.  3: BOTH)")') IFORM
-      WRITE (IU06,'(" TEST OUTPUT OPTION IS  ITEST =",I3,
+      WRITE (IU06,'(" TEST OUTPUT OPTION IS  ITEST =",I3,               &
      &         " (0: NO  >0: UP TO LEVEL ITEST)")') ITEST
-      WRITE (IU06,'(" BLOCK TEST OPTION IS  ITESTB =",I3,
+      WRITE (IU06,'(" BLOCK TEST OPTION IS  ITESTB =",I3,               &
      &         " (0: NO  >0: UP TO BLOCK ITESTB)")') ITESTB
 
 ! ----------------------------------------------------------------------
@@ -560,30 +562,28 @@
 
         DO I=1,GBOUNC
           CALL ADJUST (AMOWEC(I), AMOEAC(I))
-          WRITE (IU06,*) '   THIS IS A COARSE GRID RUN  INFORMATION',
+          WRITE (IU06,*) '   THIS IS A COARSE GRID RUN  INFORMATION',   &
      &     ' FOR A FOLLOW UP FINE GRID WILL BE GENERATED'
-          WRITE (IU06,'(/4X," NEST AREA IN COARSE GIRD IS",
-     &     /,4X,"  SOUTHERN LAT  NORTHERN LAT ",
+          WRITE (IU06,'(/4X," NEST AREA IN COARSE GIRD IS",             &
+     &     /,4X,"  SOUTHERN LAT  NORTHERN LAT ",                        &
      &     " WESTERN LONG  EASTERN LONG ")')
-          WRITE (IU06,'(4X,4F14.3)') AMOSOC(I), AMONOC(I), AMOWEC(I), 
+          WRITE (IU06,'(4X,4F14.3)') AMOSOC(I), AMONOC(I), AMOWEC(I),   &
      &     AMOEAC(I)
 
 !*    2.6.1.1 ARE ALL CORNER POINTS OF THE NEST GRID POINTS?
 !             ----------------------------------------------
 
-          WEST = MOD(AMOWEC(I) - AMOWEP + 720., 360.)
-          EAST = MOD(AMOEAC(I) - AMOEAP + 720., 360.)
+          WEST = MOD(AMOWEC(I) - AMOWEP + 720.0_JWRB, 360.0_JWRB)
+          EAST = MOD(AMOEAC(I) - AMOEAP + 720.0_JWRB, 360.0_JWRB)
           DW=ABS(NINT(WEST/ XDELLO)-(WEST/ XDELLO)) 
           DE=ABS(NINT(EAST/ XDELLO)-(EAST/ XDELLO))
-          DS=ABS(NINT((AMOSOC(I) - AMOSOP)/ XDELLA)-((AMOSOC(I)
-     &       - AMOSOP)/ XDELLA))
-          DN= ABS(NINT((AMONOC(I) - AMONOP)/ XDELLA)-((AMONOC(I) 
-     &       - AMONOP)/ XDELLA))
+          DS=ABS(NINT((AMOSOC(I) - AMOSOP)/ XDELLA)-((AMOSOC(I)-AMOSOP)/ XDELLA))
+          DN=ABS(NINT((AMONOC(I) - AMONOP)/ XDELLA)-((AMONOC(I)-AMONOP)/ XDELLA))
 
-          IF ((DW .GT. 1.E-10) .OR.
-     &        (DE .GT. 1.E-10) .OR.
-     &        (DS .GT. 1.E-10) .OR.
-     &        (DN .GT. 1.E-10)) THEN
+          IF ((DW .GT. 1.E-10_JWRB) .OR.                                &
+     &        (DE .GT. 1.E-10_JWRB) .OR.                                &
+     &        (DS .GT. 1.E-10_JWRB) .OR.                                &
+     &        (DN .GT. 1.E-10_JWRB)) THEN
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) '+                                        +'
             WRITE (IU06,*) '+    WARNING ERROR IN SUB. UIPREP        +'
@@ -605,9 +605,9 @@
 !*    2.6.1.2 INCLUDES THE COARSE GRID THE NEST GRID?
 !             ---------------------------------------
 
-          IF ((IPER.NE.1) .AND.
-     &     (AMOWEP.GT.AMOWEC(I)     .OR. AMOEAC(I).GT.AMOEAP     ) .AND.
-     &     (AMOWEP.GT.AMOWEC(I)+360..OR. AMOEAC(I)+360..GT.AMOEAP) .AND.
+          IF ((IPER.NE.1) .AND.                                          &
+     &     (AMOWEP.GT.AMOWEC(I)     .OR. AMOEAC(I).GT.AMOEAP     ) .AND. &
+     &     (AMOWEP.GT.AMOWEC(I)+360..OR. AMOEAC(I)+360..GT.AMOEAP) .AND. &
      &     (AMOWEP.GT.AMOWEC(I)-360..OR. AMOEAC(I)-360..GT.AMOEAP)) THEN
 
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
@@ -625,7 +625,7 @@
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             IBOUNC = 0
           ENDIF
-          IF (AMOSOP .GT. AMOSOC(I) .OR. AMONOC(I) .GT. AMONOP .OR.
+          IF (AMOSOP .GT. AMOSOC(I) .OR. AMONOC(I) .GT. AMONOP .OR.     &
      &     AMOSOC(I) .GE. AMONOC(I)) THEN
             WRITE (IU06,*) '++++++++++++++++++++++++++++++++++++++++++'
             WRITE (IU06,*) '+                                        +'
@@ -654,10 +654,10 @@
 
       WRITE (IU06,'(" FINE GRID OPTION IS   IBOUNF = ",I3)') IBOUNF
       IF (IBOUNF .EQ. 1) THEN
-        WRITE (IU06,*) '   THIS IS A FINE GRID RUN, INPUT FROM',
+        WRITE (IU06,*) '   THIS IS A FINE GRID RUN, INPUT FROM',        &
      &   ' A COARSE GRID IS EXPECTED'
       ELSE
-        WRITE (IU06,*) '   BOUNDARY VALUES FROM A COARSE GRID',
+        WRITE (IU06,*) '   BOUNDARY VALUES FROM A COARSE GRID',         &
      &   ' ARE NOT EXPECTED'
       ENDIF
 

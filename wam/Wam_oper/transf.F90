@@ -1,4 +1,4 @@
-      REAL FUNCTION TRANSF(XK,D)
+      REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
 !
 !***  DETERMINE NARROW BAND LIMIT NONLINEAR TRANSFER FUNCTION            
 !     BASED ON TECH MEMO 464 BY P. JANSSEN AND M. ONORATO
@@ -15,44 +15,45 @@
 !
 !----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G     ,DKMAX
 
 !----------------------------------------------------------------------
  
       IMPLICIT NONE
 
-      REAL :: EPS,D,X,XK,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
+      REAL(KIND=JWRB) :: EPS,D,X,XK,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
 
-      EPS=0.0001
+      EPS=0.0001_JWRB
 !
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 !     
-      IF(D.LT.999. .AND. D.GT.0.) THEN
+      IF(D.LT.999.0_JWRB .AND. D.GT.0.0_JWRB) THEN
         X   = XK*D
         IF ( X .GT. DKMAX) THEN
-          TRANSF = 1. 
+          TRANSF = 1.0_JWRB 
         ELSE
           T_0 = TANH(X)
           OM  = SQRT(G*XK*T_0)
           C_0 = OM/XK
           IF(X .LT. EPS) THEN
-            V_G = 0.5*C_0
+            V_G = 0.5_JWRB*C_0
             V_G = C_0
           ELSE
-            V_G = 0.5*C_0*(1.+2.*X/SINH(2.*X))
+            V_G = 0.5_JWRB*C_0*(1.0_JWRB+2.0_JWRB*X/SINH(2.0_JWRB*X))
           ENDIF
-          DV_G = (T_0-X*(1.-T_0**2))**2+4.*X**2*T_0**2*(1.-T_0**2)
+          DV_G = (T_0-X*(1.0_JWRB-T_0**2))**2+4.0_JWRB*X**2*T_0**2*(1.0_JWRB-T_0**2)
        
-          XNL_1 = (9.*T_0**4-10.*T_0**2+9.)/(8.*T_0**3)
-          XNL_2 = ((2.*V_G-0.5*C_0)**2/(G*D-V_G**2)+1.)/X
+          XNL_1 = (9.0_JWRB*T_0**4-10.0_JWRB*T_0**2+9.0_JWRB)/(8.0_JWRB*T_0**3)
+          XNL_2 = ((2.0_JWRB*V_G-0.5_JWRB*C_0)**2/(G*D-V_G**2)+1.0_JWRB)/X
 
           XNL = XNL_1-XNL_2
           TRANSF = XNL**2/(DV_G*T_0**8)
         ENDIF
       ELSE
-        TRANSF = 1. 
+        TRANSF = 1.0_JWRB 
       ENDIF
 !
-      RETURN
-      END
+      END FUNCTION TRANSF

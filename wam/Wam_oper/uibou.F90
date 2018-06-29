@@ -1,6 +1,6 @@
-      SUBROUTINE UIBOU (IU05, IU06, CDATEA, CDATEE, IDELPRF,
-     &                  CDATES, IDELFI, USERID,
-     &                  RUNDI, FILEDI, PATHI, RUNDO, FILEDO, PATHO,
+      SUBROUTINE UIBOU (IU05, IU06, CDATEA, CDATEE, IDELPRF,            &
+     &                  CDATES, IDELFI, USERID,                         &
+     &                  RUNDI, FILEDI, PATHI, RUNDO, FILEDO, PATHO,     &
      &                  LREAL, LSWAN)
 
 ! -----------------------------------------------------------------
@@ -61,11 +61,16 @@
 !       NONE.
  
 ! ------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+! ------------------------------------------------------------------
+
       IMPLICIT NONE 
 #include "abort1.intfb.h"
 
-      INTEGER :: IU05, IU06, IDELPRF, IDELFI  
-      INTEGER :: ICOUNT, IOS
+      INTEGER(KIND=JWIM) :: IU05, IU06, IDELPRF, IDELFI  
+      INTEGER(KIND=JWIM) :: ICOUNT, IOS
  
       CHARACTER(LEN=3) :: USERID, RUNDI, FILEDI, RUNDO, FILEDO 
       CHARACTER(LEN=14) :: CDATEA, CDATEE, CDATES
@@ -120,8 +125,8 @@
  2000 CONTINUE
       WRITE(IU06,*) ' USER INPUT:'
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' START  DATE (FORMAT:YYMMDDHHMM) : ',CDATEA,
-     1           ' END DATE :',CDATEE
+      WRITE(IU06,*) ' START  DATE (FORMAT:YYMMDDHHMM) : ',CDATEA,       &
+     &           ' END DATE :',CDATEE
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' OUTPUT EVERY ',IDELPRF ,' SECONDS'
       WRITE(IU06,*) '  '
@@ -131,8 +136,8 @@
       WRITE(IU06,*) ' FILE ID IS ..................... ', FILEDI
       WRITE(IU06,*) ' DIRECTORY NAME IS .............. ', PATHI
       WRITE(IU06,*) ' DATE OF LAST FIELD IN FIRST FILE ', CDATES
-      WRITE(IU06,*) ' A NEW FILE WILL BE FETCHED EVERY ', IDELFI,
-     1              ' SECONDS'
+      WRITE(IU06,*) ' A NEW FILE WILL BE FETCHED EVERY ', IDELFI,       &
+     &              ' SECONDS'
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' OUTPUT DATA WILL BE STORED WITH:'
       WRITE(IU06,*) ' USER ID IS ..................... ', USERID
@@ -140,8 +145,8 @@
       WRITE(IU06,*) ' FILE ID IS ..................... ', FILEDO
       WRITE(IU06,*) ' DIRECTORY NAME IS .............. ', PATHO
       WRITE(IU06,*) ' DATE OF LAST FIELD IN FIRST FILE ', CDATES
-      WRITE(IU06,*) ' A NEW FILE WILL BE FETCHED EVERY ', IDELFI,
-     1              ' SECONDS'
+      WRITE(IU06,*) ' A NEW FILE WILL BE FETCHED EVERY ', IDELFI,       &
+     &              ' SECONDS'
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' LREAL = ', LREAL
       WRITE(IU06,*) ' LSWAN = ', LSWAN
