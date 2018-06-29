@@ -62,30 +62,32 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH,
-     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,
-     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
+     &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
+     &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV 
-      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,
-     &            FFLAG20  ,
-     &            GFLAG    ,
-     &            GFLAG20  ,NFLAG    ,
+      USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
+     &            FFLAG20  ,                                            &
+     &            GFLAG    ,                                            &
+     &            GFLAG20  ,NFLAG    ,                                  &
      &            IPRMINFO ,                                            &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
      &            IRBATHY  ,                                            &
-     &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,
-     &            IRCD     ,IRU10    ,
-     &            NASS     ,JPPFLAG  ,
-     &            LRSTPARALR, LRSTPARALW,
-     &            COUTNAME,
-     &            NTRAIN   ,
-     &            IPFGTBL  ,
-     &            LWAMANOUT,
-     &            NWRTOUTWAM,
-     &            LWFLUXOUT,
+     &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,    &
+     &            IRCD     ,IRU10    ,                                  &
+     &            NASS     ,JPPFLAG  ,                                  &
+     &            LRSTPARALR, LRSTPARALW,                               &
+     &            COUTNAME,                                             &
+     &            NTRAIN   ,                                            &
+     &            IPFGTBL  ,                                            &
+     &            LWAMANOUT,                                            &
+     &            NWRTOUTWAM,                                           &
+     &            LWFLUXOUT,                                            &
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : IBOUNC
@@ -93,42 +95,42 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
+     &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
-      USE YOWMESPAS, ONLY : LMESSPASS,
+      USE YOWMESPAS, ONLY : LMESSPASS,                                  &
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : NPROC
-      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,
+      USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,
-     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,
-     &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,
-     &            IDELBC   ,
-     &            ICASE    ,ISHALLO  ,
-     &            ISNONLIN ,
-     &            IPHYS    ,
-     &            IDAMPING ,
-     &            LBIWBK   ,
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,
-     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,
-     &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,
-     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,
-     &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,
-     &            LNSESTART,
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,
-     &            LRELWIND ,
+      USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
+     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,    &
+     &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
+     &            IDELBC   ,                                            &
+     &            ICASE    ,ISHALLO  ,                                  &
+     &            ISNONLIN ,                                            &
+     &            IPHYS    ,                                            &
+     &            IDAMPING ,                                            &
+     &            LBIWBK   ,                                            &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
+     &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
+     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
+     &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
+     &            LNSESTART,                                            &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
+     &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
-      USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,
+      USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
      &            PATH     ,CPATH    ,CWI
       USE YOWUNIT  , ONLY : IU04     ,IU20     ,IU30     ,IU32
-      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR   ,
+      USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR   ,    &
      &            LLUNBINOUT
-      USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,
-     &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,
+      USE YOWWAMI  , ONLY : CBEGDT   ,CENDDT   ,CBPLTDT  ,CEPLTDT  ,    &
+     &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -136,6 +138,7 @@
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
@@ -146,22 +149,22 @@
 #include "wam_u2l1cr.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER :: IFORCA 
-      INTEGER :: ITG, IC, I, J, ISAT
-      INTEGER :: LEN, ILCFDB2DSP, ILCFDBSF
-      INTEGER :: IFS_STREAM, KSTREAM
-      INTEGER :: IDELT_NEW
-      INTEGER :: ISHIFT
-      INTEGER :: IDELPRO_NEW
-      INTEGER :: MINBUFRSAT, MAXBUFRSAT
-      INTEGER :: INITFDB_STAT
-      INTEGER :: IUWDFILE
-      INTEGER :: IWTIME, IWTIME_old
-      INTEGER :: I_GET_UNIT
-      INTEGER :: NPROC_RST
+      INTEGER(KIND=JWIM) :: IFORCA 
+      INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
+      INTEGER(KIND=JWIM) :: LEN, ILCFDB2DSP, ILCFDBSF
+      INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
+      INTEGER(KIND=JWIM) :: IDELT_NEW
+      INTEGER(KIND=JWIM) :: ISHIFT
+      INTEGER(KIND=JWIM) :: IDELPRO_NEW
+      INTEGER(KIND=JWIM) :: MINBUFRSAT, MAXBUFRSAT
+      INTEGER(KIND=JWIM) :: INITFDB_STAT
+      INTEGER(KIND=JWIM) :: IUWDFILE
+      INTEGER(KIND=JWIM) :: IWTIME, IWTIME_old
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: NPROC_RST
 
-      REAL :: ZHOOK_HANDLE
-      REAL :: WSPEED,WTHETA
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: WSPEED, WTHETA
 
       CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=3) :: CITG
@@ -174,9 +177,8 @@
       LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('USERIN',0,ZHOOK_HANDLE)
-#endif
 
 ! !!!!!! THE READING OF NALINE HAS BEEN MOVED TO MPUSERIN !!!!!!!
 
@@ -206,7 +208,7 @@
 !       GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
         CALL IGRIB_GET_VALUE(NGRIB_HANDLE_IFS,'stream',IFS_STREAM)
         IF(.NOT.LNEWLVTP) THEN
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,
+          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,      &
      &                      MARSFCTYPE, ISTREAM, LASTREAM)
           IF(CSTREAM.EQ.'****') THEN
             WRITE(IU06,*) '*****************************************'
@@ -305,16 +307,14 @@
   
             DO IC=1,IDELT
             IDELPRO_NEW=IDELT/IC
-              IF(IDELPRO_NEW*IC.EQ.IDELT .AND.
-     &           IDELPRO_NEW.LE.IDELPRO) EXIT
+              IF(IDELPRO_NEW*IC.EQ.IDELT .AND. IDELPRO_NEW.LE.IDELPRO) EXIT
             ENDDO
             IDELPRO=IDELPRO_NEW
 
           ELSE
             DO IC=1,KCOUSTEP
             IDELPRO_NEW=KCOUSTEP/IC
-              IF(IDELPRO_NEW*IC.EQ.KCOUSTEP .AND.
-     &           IDELPRO_NEW.LE.IDELPRO) EXIT
+              IF(IDELPRO_NEW*IC.EQ.KCOUSTEP .AND. IDELPRO_NEW.LE.IDELPRO) EXIT
             ENDDO
             IDELPRO=IDELPRO_NEW
 
@@ -340,7 +340,7 @@
 
 !* CHECK FLAG FOR GRIBING AS SOME OPTIONS ARE NOT IMPLEMENTED
 !* IN OUTINT
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRWDIR)) THEN
+      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRWDIR)) THEN
         GFLAG(IRWDIR) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -351,7 +351,7 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRCD)) THEN
+      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRCD)) THEN
         GFLAG(IRCD) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -362,7 +362,7 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (IREST.GT.0.AND.LGRIBOUT.AND..NOT.GFLAG(IRU10)) THEN
+      IF (IREST.GT.0 .AND. LGRIBOUT .AND. .NOT.GFLAG(IRU10)) THEN
         GFLAG(IRU10) = .TRUE.
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' YOU HAVE REQUESTED RESTART FILE IN GRIB FORMAT' 
@@ -373,13 +373,13 @@
         WRITE(IU06,*) ' ******** NOTE *** NOTE **** NOTE *************' 
         WRITE(IU06,*) ' '
       ENDIF
-      IF (GFLAG(IRALTHS).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTHS) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
         GFLAG(IRALTHS) = .FALSE.
       ENDIF
-      IF (GFLAG(IRALTHSC).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTHSC) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
         GFLAG(IRALTHSC) = .FALSE.
       ENDIF
-      IF (GFLAG(IRALTRC).AND.(IASSI.NE.1.OR..NOT.LALTAS)) THEN
+      IF (GFLAG(IRALTRC) .AND. (IASSI.NE.1.OR..NOT.LALTAS)) THEN
         GFLAG(IRALTRC) = .FALSE.
       ENDIF
 
@@ -430,8 +430,8 @@
       INQUIRE(FILE=CWI,EXIST=LRESTARTED)
       IF (LRESTARTED) THEN
         IU04 =  I_GET_UNIT (IU06, CWI(1:ICPLEN+8) , 'r', 'f', 0)
-        CALL READSTA(IU04, CBEGDT, CENDDT, IANALPD, IFOREPD, IDELWIN,
-     &               CRSTDT, CLSPDT, CBPLTDT, CEPLTDT, IASSIM, NFCST,
+        CALL READSTA(IU04, CBEGDT, CENDDT, IANALPD, IFOREPD, IDELWIN,   &
+     &               CRSTDT, CLSPDT, CBPLTDT, CEPLTDT, IASSIM, NFCST,   &
      &               ISTAT, CDATECURA, LRSTPARAL, NPROC_RST)
         CLOSE (IU04)
         WRITE(IU06,*)'+++++++++++++++++++++++++++++++++++++++++++++'
@@ -580,7 +580,7 @@
 !     1.3 CHECK IF IDELALT WAS SET ELSE SET IT TO IDELWO
 !         ----------------------------------------------
 
-      IF (IDELALT.EQ.0.AND.IASSI.EQ.1) THEN
+      IF (IDELALT.EQ.0 .AND. IASSI.EQ.1) THEN
         IDELALT=IDELWO
         WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) '+                                             +'
@@ -613,26 +613,26 @@
       ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' MODEL TIME STEPS:'
-      WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ',
+      WRITE(IU06,*) ' SOURCE TERM INTEGRATION TIME STEP : ', &
      & IDELT,' SECS'
-      WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ',
+      WRITE(IU06,*) ' PROPAGATION TIME STEP ............: ', &
      & IDELPRO,' SECS'
       IF(.NOT.LWCOU) THEN
         IF(NDELW_LST.LE.0) THEN
-          WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ',
+          WRITE(IU06,*) ' MODEL WIND INPUT TIME STEP .......: ', &
      &     IDELWI,' SECS'
-          WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ',
+          WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP.......: ', &
      &     IDELWO,' SECS'
         ELSE
           DO IC=1,NDELW_LST
-            WRITE(IU06,*) ' MODEL WIND INPUT  TIME STEP UNTIL ',
+            WRITE(IU06,*) ' MODEL WIND INPUT  TIME STEP UNTIL ', &
      &      CDTW_LST(IC),' IS ',IDELWI_LST(IC),' SECS'
-            WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP UNTIL ',
+            WRITE(IU06,*) ' MODEL WIND OUTPUT TIME STEP UNTIL ', &
      &      CDTW_LST(IC),' IS ',IDELWO_LST(IC),' SECS'
           ENDDO
         ENDIF
       ELSE
-        WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ',
+        WRITE(IU06,*) ' IFS COUPLING TIME STEP . .........: ',   &
      & KCOUSTEP,' SECS'
       ENDIF
       WRITE(IU06,*) '  '
@@ -686,8 +686,8 @@
         WRITE(IU06,*) ' PROPAGATION: DUAL ROTATED QUADRANTS SCHEME'
 !!!! PROPAGS1 has not yet been adapted for anything else then
 !!! propgation on a spherical coordinates without currents.
-        IF(ICASE.NE.1 .OR.
-     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3))
+        IF(ICASE.NE.1 .OR.                                              &
+     &     (ICASE.EQ.1 .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3))            &
      &    ) THEN
           WRITE(IU06,*) ' !!!! WARNING: '
           WRITE(IU06,*) ' !!!! THIS OPTION IS NOT YET AVAILABLE !!!'
@@ -718,14 +718,14 @@
       ELSEIF (IREFRA.EQ.2) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH CURRENT REFRACTION ONLY'
         IF(.NOT.LWCOU) THEN
-        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
+        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
         ENDIF
       ELSEIF (IREFRA.EQ.3) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
         IF(.NOT.LWCOU) THEN
-        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,
+        WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
         ENDIF
@@ -741,10 +741,10 @@
         ELSE
           DO IC=1,NDELW_LST
             IF (IDELWO_LST(IC).GE.IDELWI_LST(IC)) THEN
-              WRITE(IU06,*)' WIND FIELDS ARE NOT INTERPOLATED IN TIME',
+              WRITE(IU06,*)' WIND FIELDS ARE NOT INTERPOLATED IN TIME', &
      &                     ' UNTIL ', CDTW_LST(IC)
             ELSE
-              WRITE(IU06,*)' WIND FIELDS ARE INTERPOLATED IN TIME',
+              WRITE(IU06,*)' WIND FIELDS ARE INTERPOLATED IN TIME',     &
      &                     ' UNTIL ', CDTW_LST(IC)
             ENDIF
           ENDDO
@@ -761,7 +761,7 @@
         IF (LADEN) THEN
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
         ENDIF
-        IF ( (LWCOU .AND. LWCUR) .OR.
+        IF ( (LWCOU .AND. LWCUR) .OR.                                   &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
           WRITE(IU06,*) ' SURFACE CURRENTS ARE PROVIDED,'
           IF ( LWCOU ) THEN 
@@ -787,22 +787,22 @@
 
 !     WHEN IMPOSING THE ICE MASK SET THRESHOLD TO 0.3
       IF(LMASKICE) THEN
-        CITHRSH=0.3
+        CITHRSH=0.3_JWRB
         CITHRSH_SAT=CITHRSH
-        CIBLOCK=1.0
+        CIBLOCK=1.0_JWRB
         CITHRSH_TAIL=CITHRSH
-        CDICWA=0.0
+        CDICWA=0.0_JWRb
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
-        CITHRSH=0.70
+        CITHRSH=0.70_JWRB
 !     EXCEPT FOR DATA ASSIMILATION
-        CITHRSH_SAT=0.01
+        CITHRSH_SAT=0.01_JWRB
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
-        CIBLOCK=0.70
+        CIBLOCK=0.70_JWRB
 !     HIGH FREQUENCY SPECTRAL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
-        CITHRSH_TAIL=0.01
+        CITHRSH_TAIL=0.01_JWRB
 !     ICE WATER DRAG COEFFICIENT
-        CDICWA=0.01
+        CDICWA=0.01_JWRB
       ENDIF
 
       IF (LICERUN) THEN
@@ -810,16 +810,16 @@
         IF(LMASKICE) THEN
           WRITE(IU06,*) ' AT A FIXED SEA ICE THRESHOLD OF ',CITHRSH
           WRITE(IU06,*) ' WITH FULL BLOCKING THRESHOLD OF ',CIBLOCK
-          WRITE(IU06,*) ' AT A FIXED SEA ICE ASSIMLATION THRESHOLD OF ',
+          WRITE(IU06,*) ' AT A FIXED SEA ICE ASSIMLATION THRESHOLD OF ',&
      &                     CITHRSH_SAT
-          WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',
+          WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',  &
      &                    CITHRSH_TAIL
         ELSE
           WRITE(IU06,*) ' WITH AN OUPUT SEA ICE THRESHOLD OF ',CITHRSH
           WRITE(IU06,*) ' WITH FULL BLOCKING THRESHOLD OF ',CIBLOCK
-          WRITE(IU06,*) ' WITH AN ASSIMILATION SEA ICE THRESHOLD OF ',
+          WRITE(IU06,*) ' WITH AN ASSIMILATION SEA ICE THRESHOLD OF ',  &
      &                    CITHRSH_SAT
-          WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',
+          WRITE(IU06,*) ' WITH A SPECTRAL TAIL SEA ICE THRESHOLD OF ',  &
      &                    CITHRSH_TAIL
           IF(LCIWABR) THEN
           WRITE(IU06,*) ' WITH AN ICE-WATER DRAG COEFFICENT OF ',CDICWA
@@ -836,7 +836,7 @@
           WRITE(IU06,*) ' MODEL PRODUCES BOUNDARY DATA (COARSE GRID)'
         ELSE
           IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
+          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',          &
      &     ' (COARSE GRID)'
           ENDIF
         ENDIF
@@ -844,7 +844,7 @@
           WRITE(IU06,*) ' MODEL RUNS WITH BOUNDARY POINTS (FINE GRID)'
         ELSE
           IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',
+          WRITE(IU06,*) ' MODEL RUNS WITHOUT BOUNDARY POINTS',          &
      &     ' (FINE GRID)'
           ENDIF
         ENDIF
@@ -898,7 +898,7 @@
 
           WRITE(IU06,*) '  '
           DO ISAT=1,NUMALT
-             WRITE(IU06,*) ' THE ALTIMETER DATA FROM ',
+             WRITE(IU06,*) ' THE ALTIMETER DATA FROM ',                 &
      &                     TRIM(CSATNAME(ISAT)),' (',IBUFRSAT(ISAT),')'
             IF(LALTPAS(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL ONLY BE USED PASSIVELY !!! '
@@ -907,20 +907,20 @@
             IF(LALTLRGR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO FOLLOWING LINEAR REGRESSION'
-              WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',
+              WRITE(IU06,*) ' Hsnew= ',HSCOEFCOR(ISAT),' Hs + ',        &
      &                                 HSCONSCOR(ISAT) 
             ENDIF
             IF(LALTCOR(ISAT)) THEN
               WRITE(IU06,*) ' THE DATA WILL BE CORRECTED ' 
               WRITE(IU06,*) ' ACCORDING TO THE MODEL SEA STATE.' 
             ENDIF
-            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',
+            WRITE(IU06,*) ' THE THRESHOLD FOR BACKGROUND CHECK IS ',    &
      &                      ALTBGTHRSH(ISAT)
             IF(HSALTCUT(ISAT).LT.999999.) THEN
-              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',
+              WRITE(IU06,*) ' THE INPUT MINIMUM WAVE HEIGHT IS ',       &
      &                        HSALTCUT(ISAT)
             ELSE
-              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',
+              WRITE(IU06,*) ' THE MINIMUM WAVE HEIGHT WILL BE',         &
      &                      ' THE OBSERVATION ERROR.'
             ENDIF
             IF(LALTGRDOUT(ISAT)) THEN
@@ -961,11 +961,11 @@
         WRITE(IU06,'(6(2X,A14))') (COUTT(I),I=1,NOUTT)
         WRITE(IU06,*) '  '
       ENDIF
-      IF(FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,
+      IF(FFLAG20) CALL OUTXT(IU06,IU20,IU30,IU20,IU32,IDELINT,IASSI,    &
      & NOUTT,'IU20','IU30','IU20','IU32')
 
       IF(LSECONDORDER) THEN
-        WRITE(IU06,*) ' SECOND ORDER CORRECTION WILL BE APPLIED TO ',
+        WRITE(IU06,*) ' SECOND ORDER CORRECTION WILL BE APPLIED TO ',   
      &                ' OUTPUT INTEGRATED PARAMETERS BASED ON MOMENTS'
         WRITE(IU06,*) '  '
       ENDIF
@@ -1003,7 +1003,7 @@
       ENDIF
       WRITE(IU06,*) ''
 
-      WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '
+      WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '                  &
      & ,'    F = DISABLED   T = ENABLED    ', LFDB
       IF (LFDB) THEN
         ILCFDBSF = LEN_TRIM(CFDBSF)
@@ -1020,8 +1020,7 @@
       WRITE(IU06,*) '  '
 
 
-      IF ( LFDB .AND. .NOT. GFLAG20)
-     &  THEN
+      IF ( LFDB .AND. .NOT. GFLAG20) THEN
         WRITE(IU06,*)' ************************************************'
         WRITE(IU06,*)' *                                              *'
         WRITE(IU06,*)' * ACCESS TO THE FIELD DATA BASE REQUIRES GRIB  *'
@@ -1040,7 +1039,7 @@
         GFLAG20 = .TRUE.
       ENDIF
       IF (LFDB) THEN
-        WRITE(IU06,*) ' OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED'
+        WRITE(IU06,*) ' OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED' &
      &   ,' TO THE FIELD DATA BASE'
         WRITE(IU06,*) '                    '
       ENDIF
@@ -1050,26 +1049,25 @@
       WRITE(IU06,*) ' BINARY RESTART WRITE PARALLEL = ', LRSTPARALW 
       WRITE(IU06,*) '  '
       IF (NOUTS.GT.0.AND.IREST.EQ.1) THEN
-        WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ',
-     &   NOUTS
+        WRITE(IU06,*) ' NUMBER OF SPECTRA OUTPUT TIMES IS NOUTS = ', NOUTS
         WRITE(IU06,*) ' SPECTRA OUTPUT WILL BE PROCESSED AT:'
         WRITE(IU06,'(6(2X,A14))') (COUTS(I),I=1,NOUTS)
         WRITE(IU06,*) '  '
 
       ELSEIF (IREST.EQ.1) THEN
         IF(.NOT.LGRIBOUT) THEN
-          WRITE(IU06,*) ' SPECTRA FILES WILL BE WRITTEN OUT TO DISK '
+          WRITE(IU06,*) ' SPECTRA FILES WILL BE WRITTEN OUT TO DISK '   &
      &    ,'EVERY ...', IDELRES, ' SECONDS AND AT THE END OF THE RUN'
         ELSE
-          WRITE(IU06,*) ' WAVE SPECTRA WILL BE DISPOSED '
+          WRITE(IU06,*) ' WAVE SPECTRA WILL BE DISPOSED '               &
      &    ,'EVERY ...', IDELRES
           WRITE(IU06,*) '  AND AT THE END OF THE RUN.'
         ENDIF
-        IF(CDATER.LT.CDATEE.AND..NOT.LGRIBOUT) WRITE(IU06,*)
-     &   ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',
+        IF(CDATER.LT.CDATEE.AND..NOT.LGRIBOUT) WRITE(IU06,*)            &
+     &   ' !! HOWEVER BOTH RESTART FILES WILL ONLY BE SAVED',           &
      &   ' AT ...', CDATER 
-        IF(CDATES.LT.CDATEE) WRITE(IU06,*)
-     &   ' BUT SPECTRA FILES ALONE  WILL BE SAVED UNTIL '
+        IF(CDATES.LT.CDATEE) WRITE(IU06,*)                              &
+     &   ' BUT SPECTRA FILES ALONE  WILL BE SAVED UNTIL '               &
      &   ,'...', CDATES 
       ELSE
         WRITE(IU06,*) ' SPECTRA FILES WILL NOT BE WRITTEN OUT TO DISK'
@@ -1078,28 +1076,24 @@
       WRITE(IU06,*) '  '
       IF(LNOCDIN.AND.LGRIBIN) THEN
         WRITE(IU06,*) '  '
-        WRITE (IU06,*) 
-     &   ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
+        WRITE (IU06,*) ' NO DRAG COEFFICIENT FIELD IS PROVIDED AS INPUT'
         WRITE (IU06,*) ' THE FIELD WILL BE INITIALISED BY TAKING' 
         WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)' 
       ENDIF
       IF(LGRIBIN.AND.ITEST.GT.0) THEN
         WRITE(IU06,*) '  '
-        WRITE (IU06,*)
-     &   ' GRIB SPECTRA FIELD ARE USED AS INPUT' 
+        WRITE (IU06,*) ' GRIB SPECTRA FIELD ARE USED AS INPUT'
       ENDIF
       WRITE(IU06,*) '  '
       IF(LFDBIOOUT) THEN
-        WRITE (IU06,*)
-     &   ' FDB SOFTWARE IS USED TO WRITE OUTPUT SPECTRA FILES' 
+        WRITE (IU06,*) ' FDB SOFTWARE IS USED TO WRITE OUTPUT SPECTRA FILES' 
         IF(LWAM_USE_IO_SERV) THEN
           WRITE (IU06,*) ' OUTPUT TASK WILL USE THE IFS IOSERVER' 
         ELSE
         WRITE (IU06,*) ' OUTPUT TASK SELECTED WITH STRIDE = ',NWRTOUTWAM
         ENDIF
       ELSE
-        WRITE (IU06,*)
-     &   ' OUTPUT SPECTRA FILES ARE WRITTEN OUT TO DISK' 
+        WRITE (IU06,*) ' OUTPUT SPECTRA FILES ARE WRITTEN OUT TO DISK' 
       ENDIF
 !     CFDB2DSP is reset to null since the FDB will be initialised
 !     with CFDBSF, provided it is used (ie grib output of integrated
@@ -1122,7 +1116,7 @@
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
 
-      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,
+      CALL WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,MARSFCTYPE,     &
      &                  KSTREAM, LASTREAM)
 
       WRITE(IU06,'("  HARD DRIVE PATH NAME : ",/,5X,A70)') CPATH
@@ -1146,7 +1140,7 @@
         WRITE(IU06,*) '  SWAMPCITH = ',SWAMPCITH
       ENDIF
 
-      IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.
+      IF ( ISTREAM .EQ. 1082 .OR. ISTREAM .EQ. 1095 .OR.                &
      &     ISTREAM .EQ. 1203 .OR. ISTREAM .EQ. 1204 ) THEN
         WRITE(IU06,*) '  '
         IF(ISTREAM.EQ.1095 .OR. ISTREAM.EQ.1203 ) THEN
@@ -1207,14 +1201,13 @@
       ENDIF
 
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' TEST OUTPUT LEVEL IS .............. ITEST = ',
+      WRITE(IU06,*) ' TEST OUTPUT LEVEL IS .............. ITEST = ',    &
      & ITEST
-      WRITE(IU06,*) ' TEST OUTPUT OF IN BLOCK LOOPS UPTO ITESTB = ',
+      WRITE(IU06,*) ' TEST OUTPUT OF IN BLOCK LOOPS UPTO ITESTB = ',    &
      & ITESTB
       WRITE(IU06,*) '  '
 
-      IF (.NOT. LWCOU .AND.
-     & (  (LFDB .OR. LFDBIOOUT ))) THEN
+      IF (.NOT. LWCOU .AND. (LFDB .OR. LFDBIOOUT ) ) THEN
         WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
         WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
         WRITE(IU06,*) ' '
@@ -1228,7 +1221,7 @@
           WRITE(IU06,'("*    FIELD DATA BASE                   *")')
           WRITE(IU06,'("*     F A I L E D .                    *")')
           WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')
+          WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')    &
      &     INITFDB_STAT
           WRITE(IU06,'("*                                      *")')
           WRITE(IU06,'("****************************************")')
@@ -1253,7 +1246,7 @@
 !*    2.1 WIND OUTPUT AND PROPAGATION TIME STEP.
 !         --------------------------------------
 
-      IF ((IDELWO.LT.IDELPRO.AND.MOD(IDELPRO,IDELWO).NE.0) .OR.
+      IF ((IDELWO.LT.IDELPRO.AND.MOD(IDELPRO,IDELWO).NE.0) .OR.         &
      &    (IDELWO.GE.IDELPRO.AND.MOD(IDELWO,IDELPRO).NE.0)) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
@@ -1358,13 +1351,13 @@
             WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++++'
             IDELWI_LST(IC) = IDELWO_LST(IC)
           ENDIF
-          IF ((IDELWO_LST(IC).LE.IDELWI_LST(IC).AND.
+          IF ((IDELWO_LST(IC).LE.IDELWI_LST(IC).AND.                    &
      &         MOD(IDELWI_LST(IC),IDELWO_LST(IC)).NE.0)) THEN
             WRITE(IU06,*) '*******************************************'
             WRITE(IU06,*) '*                                         *'
             WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
             WRITE(IU06,*) '*    ==========================           *'
-            WRITE(IU06,*) '* WIND INPUT AND WIND OUTPUT UNTIL ',
+            WRITE(IU06,*) '* WIND INPUT AND WIND OUTPUT UNTIL ',        &
      &                       CDTW_LST(IC)
             WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO OR  *'
             WRITE(IU06,*) '* WIND INPUT TIMESTEP   = ', IDELWI_LST(IC)
@@ -1382,7 +1375,7 @@
               WRITE(IU06,*) '* TIMES FOR WIND INPUT STEPS MUST BE  *'
               WRITE(IU06,*) '* CHRONOLOGICALLY ORDERED IN NAMELIST *' 
               WRITE(IU06,*) '* NAWI !!!!!                          *'
-              WRITE(IU06,*) '* IC-1, CDTW_LST(IC-1): ',IC-1,' ',
+              WRITE(IU06,*) '* IC-1, CDTW_LST(IC-1): ',IC-1,' ',        &
      &                         CDTW_LST(IC-1) 
               WRITE(IU06,*) '* IC, CDTW_LST(IC): ',IC,' ',CDTW_LST(IC) 
               WRITE(IU06,*) '*                                     *'
@@ -1449,8 +1442,7 @@
         LERROR = .TRUE.
       ENDIF
 
-      IF (MOD(IDELBC,IDELPRO).NE.0 .AND.
-     &    MOD(IDELBC,IDELWI).NE.0) THEN
+      IF (MOD(IDELBC,IDELPRO).NE.0 .AND. MOD(IDELBC,IDELWI).NE.0) THEN
         WRITE(IU06,*) '*******************************************'
         WRITE(IU06,*) '*                                         *'
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1516,8 +1508,7 @@
           WRITE(IU06,*) '*******************************************'
           LERROR = .TRUE.
         ENDIF
-        IF ((FFLAG20.OR.GFLAG20) .AND.
-     &   MOD(IDELINT,IDELPRO).NE.0) THEN
+        IF ((FFLAG20.OR.GFLAG20) .AND. MOD(IDELINT,IDELPRO).NE.0) THEN
           WRITE(IU06,*) '*******************************************'
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
@@ -1526,9 +1517,9 @@
           WRITE(IU06,*) '* IS REQUESTED.                           *'
           WRITE(IU06,*) '* OUTPUT TIME STEP HAS TO BE A MULTIPLE   *'
           WRITE(IU06,*) '* OF THE PROPAGATION TIME STEP.           *'
-          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ',
+          WRITE(IU06,*) '* OUTPUT TIME STEP IS      IDELINT = ',        &
      &     IDELINT
-          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',
+          WRITE(IU06,*) '* PROPAGATION TIME STEP IS IDELPRO = ',        &
      &     IDELPRO
           WRITE(IU06,*) '*                                         *'
           WRITE(IU06,*) '*******************************************'
@@ -1592,11 +1583,10 @@
         WRITE(IU06,*) '*******************************************'
         CALL ABORT1
       ELSE
-#ifdef ECMWF
-        IF (LHOOK) CALL DR_HOOK('USERIN',1,ZHOOK_HANDLE)
-#endif
-      ENDIF
 
+        IF (LHOOK) CALL DR_HOOK('USERIN',1,ZHOOK_HANDLE)
+
+      ENDIF
 
 ! ----------------------------------------------------------------------
 
