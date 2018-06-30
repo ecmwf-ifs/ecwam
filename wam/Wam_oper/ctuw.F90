@@ -98,11 +98,9 @@
 
       LOGICAL, DIMENSION(MIJS:MIJL), INTENT(INOUT) :: LCFLFAIL
 
-
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
-#endif
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
       DELPRO = REAL(IDELPRO)   
       CMTODEG = 360.0_JWRB/CIRC
@@ -740,9 +738,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
-#endif
 
       RETURN
       END SUBROUTINE CTUW 

@@ -78,6 +78,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
@@ -131,9 +132,9 @@
       DATA TEWH /10._JWRB,12._JWRB,14._JWRB,17._JWRB,21._JWRB,25._JWRB,30._JWRB/
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
-#endif
+
 !
 !*    1. COMPUTE MEAN PARAMETERS.
 !        ------------------------
@@ -604,8 +605,6 @@
 !     APPLY SEA ICE MASK AND SEA MASK IF NECESSARY
       CALL OUTSETWMASK (IJS, IJL, IODP(IJS), CICOVER(IJS,IG),BOUT)
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTBLOCK',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE OUTBLOCK

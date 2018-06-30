@@ -47,6 +47,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "sinput_ard.intfb.h"
 #include "sinput_jan.intfb.h"
@@ -61,9 +62,8 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
-#endif
 
       SELECT CASE (IPHYS)
       CASE(0)
@@ -74,8 +74,6 @@
      &                   ROAIRN, WSTAR, SL, XLLWS)
       END SELECT 
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SINPUT

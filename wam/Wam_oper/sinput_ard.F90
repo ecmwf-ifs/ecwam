@@ -101,6 +101,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "wsigstar.intfb.h"
 
@@ -165,9 +166,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
-#endif
 
       ROG = ROWATER*G
       AVG_GST = 1.0_JWRB/NGST
@@ -453,8 +453,6 @@
 
       ENDDO ! END LOOP OVER FREQUENCIES
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SINPUT_ARD

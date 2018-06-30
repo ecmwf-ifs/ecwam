@@ -180,6 +180,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
 !-----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "peak_ang.intfb.h"
 #include "stat_nl.intfb.h"
@@ -219,9 +220,7 @@
      
 !-----------------------------------------------------------------------
  
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('KURTOSIS',0,ZHOOK_HANDLE)
-#endif
 
       ZEPSILON=10._JWRB*EPSILON(ZEPSILON)
       ZSQREPSILON=SQRT(ZEPSILON)
@@ -382,8 +381,6 @@
         ENDIF
       ENDDO 
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('KURTOSIS',1,ZHOOK_HANDLE)
-#endif
      
       END SUBROUTINE KURTOSIS

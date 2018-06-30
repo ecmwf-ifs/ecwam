@@ -94,9 +94,7 @@
 
 ! --------------------------------------------------------------------  
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',0,ZHOOK_HANDLE)
-#endif
 
       IF(LLUNSTR) THEN
         NLONRGG_LOC(:)=MNP
@@ -265,8 +263,6 @@
 
       ENDDO READCURRENT 
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('CURRENT2WAM',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE CURRENT2WAM

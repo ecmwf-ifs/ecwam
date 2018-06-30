@@ -44,6 +44,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 #include "out_onegrdpt_sp.intfb.h"
 #include "outers.intfb.h"
@@ -57,9 +58,8 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('OUTWPSP',0,ZHOOK_HANDLE)
-#endif
 
 !*    OUTPUT OF SPECTRA FOR ONE GRID POINT SIMULATION
 !     -----------------------------------------------
@@ -83,8 +83,6 @@
         ENDIF
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('OUTWPSP',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE OUTWPSP

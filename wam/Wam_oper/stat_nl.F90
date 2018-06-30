@@ -38,6 +38,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
+
       IMPLICIT NONE 
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -69,9 +70,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TRANSF
 
 !-----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('STAT_NL',0,ZHOOK_HANDLE)
-#endif
 
 !     CONSTANTS.
 
@@ -164,7 +164,6 @@
         ENDIF
       ENDDO
  
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('STAT_NL',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE STAT_NL

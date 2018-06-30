@@ -22,6 +22,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
                      
 !----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       REAL(KIND=JWRB) :: TRANSF_BFI
@@ -37,9 +38,8 @@
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4
       REAL(KIND=JWRB) :: XNL,ALP,ZFAC,T_NL
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
@@ -81,7 +81,6 @@
         TRANSF_BFI = 1._JWRB
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',1,ZHOOK_HANDLE)
-#endif
+
       END FUNCTION TRANSF_BFI

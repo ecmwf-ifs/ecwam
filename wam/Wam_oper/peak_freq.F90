@@ -39,6 +39,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
  
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -58,9 +59,9 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMAX
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('PEAK_FREQ',0,ZHOOK_HANDLE)
-#endif
+
 
 !***  1. DETERMINE ONE-DIMENSIONAL FREQUENCY SPECTRUM.
 !     ------------------------------------------------
@@ -137,7 +138,6 @@
         ENDIF
       ENDDO 
  
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('PEAK_FREQ',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE PEAK_FREQ

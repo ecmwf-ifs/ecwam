@@ -29,9 +29,8 @@
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,D2OM
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TRANSF_R',0,ZHOOK_HANDLE)
-#endif
  
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
@@ -59,7 +58,6 @@
         TRANSF_R = 0.5_JWRB
       ENDIF
  
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('TRANSF_R',1,ZHOOK_HANDLE)
-#endif
+
       END FUNCTION TRANSF_R

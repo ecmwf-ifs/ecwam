@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP (F, FL, SL, IJS, IJL, &
+      SUBROUTINE SDISSIP (F, FL, SL, IJS, IJL,   &
      &                    EMEAN, F1MEAN, XKMEAN, &
      &                    USNEW, THWNEW, ROAIRN)
 ! ----------------------------------------------------------------------
@@ -68,23 +68,20 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
-#endif
+
 
       SELECT CASE (IPHYS)
       CASE(0)
-         CALL SDISSIP_JAN (F ,FL, SL, IJS, IJL, &
+         CALL SDISSIP_JAN (F ,FL, SL, IJS, IJL,  &
      &                     EMEAN, F1MEAN, XKMEAN)
 
       CASE(1) 
-         CALL SDISSIP_ARD (F ,FL, SL, IJS, IJL, &
+         CALL SDISSIP_ARD (F ,FL, SL, IJS, IJL,  &
      &                     USNEW, THWNEW, ROAIRN)
       END SELECT 
 
-
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SDISSIP

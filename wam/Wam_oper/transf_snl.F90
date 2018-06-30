@@ -11,12 +11,15 @@
 !     SIG_TH         REAL         RELATIVE WIDTH in DIRECTION
  
 !----------------------------------------------------------------------
+
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWPCONS , ONLY : G     ,DKMAX
       USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
                      
 !----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       REAL(KIND=JWRB) :: TRANSF_SNL
@@ -32,9 +35,9 @@
       REAL(KIND=JWRB) :: C_S_SQ,ALP,ZFAC
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TRANSF_SNL',0,ZHOOK_HANDLE)
-#endif
+
 !*    1. DETERMINE TRANSFER FUNCTION.
 !     ------------------------------
 
@@ -73,7 +76,7 @@
         TRANSF_SNL = 1._JWRB
       ENDIF
 
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('TRANSF_SNL',1,ZHOOK_HANDLE)
-#endif
+
       END FUNCTION TRANSF_SNL

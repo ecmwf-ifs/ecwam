@@ -48,9 +48,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDEPTHLIM',0,ZHOOK_HANDLE)
-#endif
 
       LLEPSMIN=.TRUE.
       CALL SEMEAN (FL, IJS, IJL, EM, LLEPSMIN)
@@ -67,8 +65,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDEPTHLIM',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SDEPTHLIM

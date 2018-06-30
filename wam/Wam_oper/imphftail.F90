@@ -40,6 +40,7 @@
       USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -54,9 +55,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: TEMP2
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('IMPHFTAIL',0,ZHOOK_HANDLE)
-#endif
 
 !*    DIAGNOSTIC TAIL.
 !     ----------------
@@ -94,7 +94,7 @@
       ENDDO
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('IMPHFTAIL',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE IMPHFTAIL

@@ -59,6 +59,7 @@
       USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -92,9 +93,8 @@
       LOGICAL :: LLSSDSC3,  LLSSDSC5
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',0,ZHOOK_HANDLE)
-#endif
 
       ! INITIALISATION
 
@@ -283,8 +283,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SDISSIP_ARD

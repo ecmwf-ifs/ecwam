@@ -44,6 +44,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -70,9 +71,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1
 
 !----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('H_MAX',0,ZHOOK_HANDLE)
-#endif
 
 !*    1. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 !     -----------------------------------------
@@ -111,7 +111,6 @@
         ENDIF
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('H_MAX',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE H_MAX
