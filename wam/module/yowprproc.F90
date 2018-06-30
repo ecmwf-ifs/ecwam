@@ -1,8 +1,10 @@
       MODULE YOWPRPROC
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER NBMAX
+      INTEGER(KIND=JWIM) :: NBMAX
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

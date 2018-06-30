@@ -1,22 +1,24 @@
       MODULE YOWWAMI
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !     **  *WAMINFO*                                               
 
-      CHARACTER*14 CBEGDT 
-      CHARACTER*14 CENDDT 
-      CHARACTER*14 CBPLTDT 
-      CHARACTER*14 CEPLTDT 
+      CHARACTER(LEN=14)  :: CBEGDT 
+      CHARACTER(LEN=14)  :: CENDDT 
+      CHARACTER(LEN=14)  :: CBPLTDT 
+      CHARACTER(LEN=14)  :: CEPLTDT 
 
-      CHARACTER*14 CLSPDT 
-      CHARACTER*14 CRSTDT 
-      INTEGER IANALPD 
-      INTEGER IFOREPD 
-      INTEGER IDELWIN 
-      INTEGER IASSIM 
-      INTEGER NFCST 
-      INTEGER ISTAT(3) 
+      CHARACTER(LEN=14)  :: CLSPDT 
+      CHARACTER(LEN=14)  :: CRSTDT 
+      INTEGER(KIND=JWIM) :: IANALPD 
+      INTEGER(KIND=JWIM) :: IFOREPD 
+      INTEGER(KIND=JWIM) :: IDELWIN 
+      INTEGER(KIND=JWIM) :: IASSIM 
+      INTEGER(KIND=JWIM) :: NFCST 
+      INTEGER(KIND=JWIM) :: ISTAT(3) 
 
 !     VARIABLE   TYPE     PURPOSE                                  
 !     --------   ----     -------                                  
