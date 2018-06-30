@@ -44,10 +44,12 @@
  
 !           None.
 !     ----------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
  
       IMPLICIT NONE
 
-      INTEGER :: ILEN, J, ICH, IA, IZ, INULL
+      INTEGER(KIND=JWIM) :: ILEN, J, ICH, IA, IZ, INULL
  
       CHARACTER(LEN=*) :: CSTRNG
  
@@ -70,5 +72,4 @@
         IF (ICH.EQ.INULL) CSTRNG (J:J) = CHAR (32)
       ENDDO
  
-      RETURN
       END SUBROUTINE WAM_U2L1CR

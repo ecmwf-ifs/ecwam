@@ -2,19 +2,22 @@
 
 !   Returns system clock converted to micro-seconds
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
-      INTEGER :: ICOUNT,ICOUNT_RATE,ICOUNT_MAX
+      INTEGER(KIND=JWIM) :: ICOUNT,ICOUNT_RATE,ICOUNT_MAX
 
       CALL SYSTEM_CLOCK(ICOUNT,ICOUNT_RATE,ICOUNT_MAX)
       IF(ICOUNT.NE.HUGE(0)) THEN
-        WAM_USER_CLOCK = REAL(ICOUNT) * 1.E6 / REAL(ICOUNT_RATE)
+        WAM_USER_CLOCK = REAL(ICOUNT+0.0_JWRB) * 1.E6_JWRB /            &
+     &                   REAL(ICOUNT_RATE+0.0_JWRB)
       ELSE
         WAM_USER_CLOCK = 0.0
       ENDIF    
 
       RETURN
-      END
+      END FUNCTION WAM_USER_CLOCK
 
 
 

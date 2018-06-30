@@ -15,6 +15,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -25,18 +27,17 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      REAL,DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ADS, ZIDL 
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT):: ADS, ZIDL
 
-      INTEGER :: IG, IJ, IX, JY
-      INTEGER:: JKGLO,KIJS,KIJL,NPROMA
+      INTEGER(KIND=JWIM) :: IG, IJ, IX, JY
+      INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
 
-      REAL:: ZHOOK_HANDLE
+      REAL(KIND=JWRB):: ZHOOK_HANDLE
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',0,ZHOOK_HANDLE)
-#endif
 
 !     KEEP CORRESPONDING CONTRIBUTION 
       IF(LWCOU) THEN
@@ -57,8 +58,6 @@
         ENDDO
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',1,ZHOOK_HANDLE)
-#endif
-      RETURN
+ 
       END SUBROUTINE WAMADSZIDL

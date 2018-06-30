@@ -38,9 +38,12 @@
 !     -----------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE MPL_MODULE
       USE MPL_MPIF
       
+!     -----------------------------------------------------------
+
       IMPLICIT NONE
 
       LOGICAL, INTENT(OUT) :: LNEMOIOSERVER
@@ -67,7 +70,7 @@
       CASE ('yes') 
          LNEMOIO    =.TRUE.
       CASE DEFAULT
-         CALL ABOR1('Invalid value of NEMOIO environment variable'//
+         CALL ABOR1('Invalid value of NEMOIO environment variable'//    &
      &              'in ininemoio.F90')
       END SELECT
 

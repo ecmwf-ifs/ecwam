@@ -31,6 +31,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCURR  , ONLY : CURRENT_MAX
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWPARAM , ONLY : NGY      ,NBLO
@@ -42,19 +44,18 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
 
-      INTEGER :: IJ, IX, JY
-      REAL :: ZHOOK_HANDLE
+      INTEGER (KIND=JWIM):: IJ, IX, JY
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
 !*    1. TRANSFORM GRIDDED WIND INPUT INTO BLOCK
 !        ----------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
-#endif
 
       DO IJ = IJS,IJL
         IX = IFROMIJ(IJ,1)
@@ -65,7 +66,6 @@
         V(IJ) = SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WAMCUR',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE WAMCUR
