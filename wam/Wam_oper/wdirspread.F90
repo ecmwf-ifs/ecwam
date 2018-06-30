@@ -43,39 +43,42 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "peakfri.intfb.h"
 #include "scosfl.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL, INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EMEAN
       LOGICAL, INTENT(IN) :: LLPEAKF
-      REAL, DIMENSION(IJS:IJL), INTENT(OUT) :: WDIRSPRD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WDIRSPRD
 
-      INTEGER :: IJ,M
-      INTEGER :: IFRINDEX(IJS:IJL)
-      REAL :: COEF_FR,ONE
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: TEMP
+      INTEGER(KIND=JWIM) :: IJ, M
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: IFRINDEX
+      REAL(KIND=JWRB) :: COEF_FR, ONE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 
 ! ----------------------------------------------------------------------
+
       IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',0,ZHOOK_HANDLE)
 
 !*    1. INITIALIZE ARRAYS
 !        -----------------
 
-      ONE=1.
+      ONE=1.0_JWRB
       COEF_FR=WETAIL*FR(NFRE)
 
       DO IJ = IJS,IJL
-        WDIRSPRD(IJ) = 0.
+        WDIRSPRD(IJ) = 0.0_JWRB
       ENDDO
 
       IF(LLPEAKF) THEN
@@ -83,7 +86,7 @@
         CALL PEAKFRI (F, IJS, IJL, IFRINDEX, TEMP)
         CALL SCOSFL (F, IJS, IJL, IFRINDEX, WDIRSPRD)
         DO IJ = IJS,IJL
-          IF(TEMP(IJ).GT.0.) THEN
+          IF(TEMP(IJ).GT.0.0_JWRB) THEN
             WDIRSPRD(IJ) = MIN(WDIRSPRD(IJ)/TEMP(IJ),ONE)
           ELSE
             WDIRSPRD(IJ) = ONE 
@@ -121,7 +124,7 @@
 !     COMPUTE THE ACTUAL SPREAD
 
       DO IJ = IJS,IJL
-        WDIRSPRD(IJ) = SQRT(2.*(ONE-WDIRSPRD(IJ)))
+        WDIRSPRD(IJ) = SQRT(2.0_JWRB*(ONE-WDIRSPRD(IJ)))
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('WDIRSPREAD',1,ZHOOK_HANDLE)

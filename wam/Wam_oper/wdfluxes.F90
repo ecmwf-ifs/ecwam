@@ -1,8 +1,8 @@
-      SUBROUTINE WDFLUXES (IJS, IJL, IG,
-     &                     MIJ,
-     &                     FL3, XLLWS,
-     &                     CICVR,
-     &                     U10NEW, THWNEW, USNEW,
+      SUBROUTINE WDFLUXES (IJS, IJL, IG,                                &
+     &                     MIJ,                                         &
+     &                     FL3, XLLWS,                                  &
+     &                     CICVR,                                       &
+     &                     U10NEW, THWNEW, USNEW,                       &
      &                     Z0NEW, ROAIRN, WSTAR)
 
 ! ----------------------------------------------------------------------
@@ -57,6 +57,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -77,38 +79,37 @@
 #include "wnfluxes.intfb.h"
 #include "wrong_wnfluxes.intfb.h"
 
-      INTEGER, INTENT(IN) :: IJS,IJL,IG
-      INTEGER, INTENT(OUT) :: MIJ(IJS:IJL)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
-      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: CICVR
-      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: U10NEW, THWNEW, ROAIRN,WSTAR
-      REAL,DIMENSION(IJS:IJL),INTENT(IN) :: USNEW, Z0NEW
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE),INTENT(IN) :: FL3
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW, ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL :: TAU, XN, PHIDIAG, TAUO
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL, DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
-      REAL, DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL, DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL, DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
-      REAL, DIMENSION(IJS:IJL) :: PHIWA
-      REAL, DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
 
 !????
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
-#endif
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -119,7 +120,7 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTAR, SL, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
@@ -127,14 +128,14 @@
       ENDIF
 
 !     MEAN FREQUENCY OF THE TOTAL SEA
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,                    &
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,         &
      &                MIJ, RHOWGDFTH)
 
 
@@ -151,10 +152,9 @@
          ENDDO
        ENDIF
 
-
-        CALL STRESSO (FL3, SL, IJS, IJL,
-     &                MIJ, RHOWGDFTH,
-     &                THWNEW, USNEW, Z0NEW, ROAIRN,
+        CALL STRESSO (FL3, SL, IJS, IJL,                                &
+     &                MIJ, RHOWGDFTH,                                   &
+     &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
 
         IF (ITEST.GE.2) THEN
@@ -162,8 +162,8 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,
-     &                EMEANALL, F1MEAN, XKMEAN,
+        CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,                            &
+     &                EMEANALL, F1MEAN, XKMEAN,                         &
      &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SDISSIP CALLED'
@@ -171,11 +171,11 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WRONG_WNFLUXES (IJS, IJL,
-     &                         MIJ, RHOWGDFTH,
-     &                         SSOURCE, SL,
-     &                         PHIWA,
-     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,
+          CALL WRONG_WNFLUXES (IJS, IJL,                                &
+     &                         MIJ, RHOWGDFTH,                          &
+     &                         SSOURCE, SL,                             &
+     &                         PHIWA,                                   &
+     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
      &                         USNEW, ROAIRN, .FALSE.)
         ENDIF
 
@@ -186,19 +186,17 @@
         ENDIF
 
         IF(LWVFLX_SNL) THEN
-          CALL WNFLUXES (IJS, IJL,
-     &                   MIJ, RHOWGDFTH,
-     &                   SL, CICVR,
-     &                   PHIWA,
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,
+          CALL WNFLUXES (IJS, IJL,                                      &
+     &                   MIJ, RHOWGDFTH,                                &
+     &                   SL, CICVR,                                     &
+     &                   PHIWA,                                         &
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
       ENDIF
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WDFLUXES',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE WDFLUXES

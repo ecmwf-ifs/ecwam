@@ -1,8 +1,8 @@
 !=======================================================================
-      SUBROUTINE WGRIB2FDB (KUSO, KTEST, 
-     &                      IGRIB_HANDLE, KLEN, KGRIB,
-     &                      CDFDBSF, KFDB, LFDBOPEN,
-     &                      IMDLGRBID_G,IMDLGRBID_M,
+      SUBROUTINE WGRIB2FDB (KUSO, KTEST,                                &
+     &                      IGRIB_HANDLE, KLEN, KGRIB,                  &
+     &                      CDFDBSF, KFDB, LFDBOPEN,                    &
+     &                      IMDLGRBID_G,IMDLGRBID_M,                    &
      &                      KERR)
 !=======================================================================
 !**
@@ -38,6 +38,8 @@
 
 !     ------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE GRIB_API_INTERFACE
       USE YOWGRIBHD, ONLY : NWINOFF
       USE YOWMPP   , ONLY : NPRECI
@@ -49,57 +51,57 @@
       IMPLICIT NONE
 #include "wam_u2l1cr.intfb.h"
 
-      INTEGER, INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
-      INTEGER, INTENT(IN) :: KLEN 
-      INTEGER, INTENT(IN) :: IMDLGRBID_M, IMDLGRBID_G 
-      INTEGER, INTENT(INOUT) :: KFDB
-      INTEGER, INTENT(OUT) :: KERR
-      INTEGER, DIMENSION(KLEN), INTENT(INOUT) :: KGRIB
+      INTEGER(KIND=JWIM), INTENT(IN) :: KUSO, KTEST, IGRIB_HANDLE
+      INTEGER(KIND=JWIM), INTENT(IN) :: KLEN 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IMDLGRBID_M, IMDLGRBID_G 
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
+      INTEGER(KIND=JWIM), INTENT(OUT) :: KERR
+      INTEGER(KIND=JWIM), DIMENSION(KLEN), INTENT(INOUT) :: KGRIB
       CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
       LOGICAL, INTENT(INOUT) :: LFDBOPEN
 
-      INTEGER :: ICDFDBSF
-      INTEGER :: ISTREAM, IMDL, ISTEP, ILVTP, ILEN
-      INTEGER :: NLOCGRB, NENSFNB, NLEG, ICENTRE
-      INTEGER :: ISTAT, ISTATUS
+      INTEGER(KIND=JWIM) :: ICDFDBSF
+      INTEGER(KIND=JWIM) :: ISTREAM, IMDL, ISTEP, ILVTP, ILEN
+      INTEGER(KIND=JWIM) :: NLOCGRB, NENSFNB, NLEG, ICENTRE
+      INTEGER(KIND=JWIM) :: ISTAT, ISTATUS
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
-      INTEGER, SAVE :: IFILE_HANDLE = -999
+      INTEGER(KIND=JWIM), SAVE :: IFILE_HANDLE = -999
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=1) :: CLDOMAIN
-      CHARACTER(LEN=1),save :: CLDOMAIN_PREV = " "
+      CHARACTER(LEN=1),SAVE :: CLDOMAIN_PREV = " "
       CHARACTER(LEN=1) :: CLEG
 
       CHARACTER(LEN=2) :: CLTYPE
-      CHARACTER(LEN=2),save :: CLTYPE_PREV = "  "
+      CHARACTER(LEN=2),SAVE :: CLTYPE_PREV = "  "
 
       CHARACTER(LEN=2) :: CLCLASS
-      CHARACTER(LEN=2),save :: CLCLASS_PREV ="  "
+      CHARACTER(LEN=2),SAVE :: CLCLASS_PREV ="  "
 
 
       CHARACTER(LEN=2) :: CLDIR
-      CHARACTER(LEN=2),save :: CLDIR_PREV ="  "
+      CHARACTER(LEN=2),SAVE :: CLDIR_PREV ="  "
 
       CHARACTER(LEN=2) :: CLFRE
-      CHARACTER(LEN=2),save :: CLFRE_PREV="  "
+      CHARACTER(LEN=2),SAVE :: CLFRE_PREV="  "
 
       CHARACTER(LEN=3) :: CLPARAM
-      CHARACTER(LEN=3),save :: CLPARAM_PREV="   "
+      CHARACTER(LEN=3),SAVE :: CLPARAM_PREV="   "
 
       CHARACTER(LEN=3) :: CLNUMBER
 
       CHARACTER(LEN=3) :: CLWINOFF
-      CHARACTER(LEN=3),save :: CLWINOFF_PREV="   "
+      CHARACTER(LEN=3),SAVE :: CLWINOFF_PREV="   "
 
       CHARACTER(LEN=4) :: CLTIME
-      CHARACTER(LEN=4),save :: CLTIME_PREV ="    "
+      CHARACTER(LEN=4),SAVE :: CLTIME_PREV ="    "
 
       CHARACTER(LEN=4) :: CLEXPVER
-      CHARACTER(LEN=4),save :: CLEXPVER_PREV ="    "
+      CHARACTER(LEN=4),SAVE :: CLEXPVER_PREV ="    "
 
       CHARACTER(LEN=4) :: CLSTREAM
-      CHARACTER(LEN=4),save :: CLSTREAM_PREV ="    "
+      CHARACTER(LEN=4),SAVE :: CLSTREAM_PREV ="    "
 
       CHARACTER(LEN=4) :: CDORIGIN
 
@@ -108,10 +110,10 @@
       CHARACTER(LEN=5) :: CLMETHOD
 
       CHARACTER(LEN=6) :: CLSTEP
-      CHARACTER(LEN=6),save :: CLSTEP_PREV = "      "
+      CHARACTER(LEN=6),SAVE :: CLSTEP_PREV = "      "
 
       CHARACTER(LEN=8) :: CLDATE
-      CHARACTER(LEN=8),save :: CLDATE_PREV = "        "
+      CHARACTER(LEN=8),SAVE :: CLDATE_PREV = "        "
 
       CHARACTER(LEN=8) :: HDATE
 
@@ -119,15 +121,15 @@
 
       CHARACTER(LEN=12) :: C12
 
-      CHARACTER(LEN=1),save :: CLLEVTY_PREV=" "
-      CHARACTER(LEN=2),save :: CLREPR_PREV ="  "
+      CHARACTER(LEN=1),SAVE :: CLLEVTY_PREV=" "
+      CHARACTER(LEN=2),SAVE :: CLREPR_PREV ="  "
 
       CHARACTER(LEN=64) :: CLFILE
 
 !     ------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',0,ZHOOK_HANDLE)
-#endif
+
 !*    1.   DERIVE FIELD DATA BASE VARIABLES FROM GRIB_HANDLE
 
 !     ------------------------------------------------------------------
@@ -147,21 +149,20 @@
 !*    OPEN FDB (only once)
       IF(.NOT.LFDBOPEN)  THEN
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',
-     &                       NLOCGRB)
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'localDefinitionNumber',NLOCGRB)
 
 !       OPEN THE APPROPRIATE FDB:
-        IF (ISTREAM == 1082 .OR.
-     &      ISTREAM == 1222 .OR.
-     &      ISTREAM == 1095 .OR.
-     &      ISTREAM == 1203 .OR.
+        IF (ISTREAM == 1082 .OR.  &
+     &      ISTREAM == 1222 .OR.  &
+     &      ISTREAM == 1095 .OR.  &
+     &      ISTREAM == 1203 .OR.  &
      &      ISTREAM == 1204) THEN
           ISTAT = IOPENFDBSUBS( 'seas', KFDB, 'w' )
         ELSE
           ISTAT = IOPENFDBSUBS( 'fdb', KFDB, 'w' )
         ENDIF
         IF ( ISTAT /= 0 ) THEN
-          WRITE(kuso,'("Error\ /WGRIB2FDB/ iopenfdb return status:",
+          WRITE(kuso,'("Error\ /WGRIB2FDB/ iopenfdb return status:",    &
      &    I3)') ISTAT
           KERR = 1
           RETURN
@@ -175,28 +176,27 @@
         IF (ICDFDBSF > 0 ) THEN
           ISTAT = ISET_FDBSUBS_ROOT(KFDB, CDFDBSF(1:ICDFDBSF) )
           IF ( ISTAT /= 0 ) THEN
-            WRITE(KUSO,'("Error\ /WGRIB2FDB/ Root dir specified: ",a)')
+            WRITE(KUSO,'("Error\ /WGRIB2FDB/ Root dir specified: ",a)') &
      &      CDFDBSF(1:ICDFDBSF)
-            WRITE(kuso,'("Error\ /WGRIB2FDB/ iopenfdb return status:",
+            WRITE(kuso,'("Error\ /WGRIB2FDB/ iopenfdb return status:",  &
      &      I3)') ISTAT
             KERR = 1
             RETURN
           ELSEIF (KTEST > 1) THEN
-            WRITE(KUSO,'("\ /WGRIB2FDB/ iset_fdb_root status:", i3,
+            WRITE(KUSO,'("\ /WGRIB2FDB/ iset_fdb_root status:", i3,     &
      &      " Root: ", a25)') ISTAT, CDFDBSF(1:ICDFDBSF)
           ENDIF
         ENDIF
 
 !       ENSEMBLE NUMBER AND LEG (ONLY SET WHEN NEEDED !):
-        IF(ISTREAM == 1081 .OR.
-     &     ISTREAM == 1083 .OR.
-     &     ISTREAM == 1084 .OR.
-     &     ISTREAM == 1078 .OR.
-     &     ISTREAM == 1079 .OR.
+        IF(ISTREAM == 1081 .OR.  &
+     &     ISTREAM == 1083 .OR.  &
+     &     ISTREAM == 1084 .OR.  &
+     &     ISTREAM == 1078 .OR.  &
+     &     ISTREAM == 1079 .OR.  &
      &     ISTREAM == 1086 ) THEN
 
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber',
-     &                         NENSFNB)
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber', NENSFNB)
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
           IF ( NENSFNB > 0 ) THEN
             ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
@@ -211,29 +211,27 @@
           ENDIF
 
         ELSE IF(ISTREAM == 1203 .OR. ISTREAM == 1204) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber',
-     &                         NENSFNB)
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber', NENSFNB) 
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
           CLTYPE=C12(1:2)
           IF ( NENSFNB > 0 .OR. CLTYPE == 'an') THEN
             ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
           ENDIF
-        ELSE IF(ISTREAM == 1082 .OR.
-     &          ISTREAM == 1088 .OR.
-     &          ISTREAM == 1250 .OR.
-     &          ISTREAM == 1095 .OR.
+        ELSE IF(ISTREAM == 1082 .OR.  &
+     &          ISTREAM == 1088 .OR.  &
+     &          ISTREAM == 1250 .OR.  &
+     &          ISTREAM == 1095 .OR.  &
      &          ISTREAM == 1222) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber',
-     &                         NENSFNB)
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber', NENSFNB)
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
           ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
         ENDIF
 !       SYSTEM AND METHOD:
-        IF (ISTREAM == 1082 .OR.
-     &      ISTREAM == 1095 .OR.
-     &      ISTREAM == 1222 .OR.
-     &      ISTREAM == 1203 .OR.
+        IF (ISTREAM == 1082 .OR.  &
+     &      ISTREAM == 1095 .OR.  &
+     &      ISTREAM == 1222 .OR.  &
+     &      ISTREAM == 1203 .OR.  &
      &      ISTREAM == 1204) THEN
 !!        if the class is not od then system is set to off
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'class',C12)
@@ -251,14 +249,13 @@
           ISTAT = ISETVALFDBSUBS( KFDB, 'method', CLMETHOD)
           ISTAT = ISETVALFDBSUBS( KFDB, 'level','0000')
 
-          IF (KTEST.GT.3) WRITE(KUSO,'("\ /WGRIB2FDB/ system:", a5,
+          IF (KTEST.GT.3) WRITE(KUSO,'("\ /WGRIB2FDB/ system:", a5,     &
      &                    " method ", a5)') CLSYSTEM,CLMETHOD 
         ENDIF
 
 !       CENTRE ORIGIN :
         IF (NLOCGRB == 18) THEN
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'consensusCount',ICENTRE,
-     &                         ISTATUS)
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'consensusCount',ICENTRE, ISTATUS)
           IF(ISTATUS /= 0 ) ICENTRE=0
 
           IF(ICENTRE == 0 ) then
@@ -274,8 +271,7 @@
           IF(ICENTRE == 98) then
             CDORIGIN = 'ecmf'
           ELSE
-            WRITE(kuso,'( "Error\ /WGRIB2FDB/ origin unknown ", i4)' )
-     &            ICENTRE 
+            WRITE(kuso,'( "Error\ /WGRIB2FDB/ origin unknown ", i4)' ) ICENTRE
             KERR = 1
             RETURN
           ENDIF
@@ -288,12 +284,12 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'refdate',C12)
           CDATEREF=c12(1:8)
           ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
-        ELSE IF(ISTREAM == 1084 .OR.
+        ELSE IF(ISTREAM == 1084 .OR.   &
      &          ISTREAM == 1085 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'referenceDate',C12)
           CDATEREF=c12(1:8)
           ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
-        ELSE IF (ISTREAM == 1078 .OR.
+        ELSE IF (ISTREAM == 1078 .OR.   &
      &           ISTREAM == 1079 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
           HDATE=C12(1:8)
@@ -334,8 +330,7 @@
       endif
 
 !     DOMAIN:
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier',
-     &                     IMDL)
+      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDL)
       IF(IMDL == IMDLGRBID_G) THEN
         CLDOMAIN = 'g' 
       ELSEIF(IMDL == IMDLGRBID_M) THEN
@@ -442,10 +437,10 @@
       ELSE
         CLDIR="00"
         CLFRE="00"
-        IF (ISTREAM /= 1082 .AND.
-     &      ISTREAM /= 1095 .AND.
-     &      ISTREAM /= 1203 .AND.
-     &      ISTREAM /= 1204 .AND.
+        IF (ISTREAM /= 1082 .AND. &
+     &      ISTREAM /= 1095 .AND. &
+     &      ISTREAM /= 1203 .AND. &
+     &      ISTREAM /= 1204 .AND. &
      &      ISTREAM /= 1222) THEN
          if(CLDIR.ne.cldir_prev) then
             ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
@@ -476,8 +471,7 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
           CLTYPE=C12(1:2)
 !          IF (CLTYPE /= 'an') THEN
-            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,
-     &      'offsetToEndOf4DvarWindow',NWINOFF)
+            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF)
 !          ENDIF
           WRITE(CLWINOFF,'(I3.3)') NWINOFF
           if(CLWINOFF.ne.clwinoff_prev) then
@@ -507,10 +501,9 @@
         KERR = 1
         RETURN
       ENDIF
-      IF (KTEST.GT.1) WRITE(KUSO,'("\ /WGRIB2FDB/ iwritefdb ilen:", i10,
+      IF (KTEST.GT.1) WRITE(KUSO,'("\ /WGRIB2FDB/ iwritefdb ilen:", i10, &
      &                      " status:", i4)') ILEN, ISTAT
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WGRIB2FDB',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE WGRIB2FDB

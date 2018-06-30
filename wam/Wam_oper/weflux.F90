@@ -1,6 +1,6 @@
-      SUBROUTINE WEFLUX (F, IJS, IJL,
-     &                   NFRE, NANG, DFIM, DELTH,
-     &                   COSTH, SINTH, CGROUP,
+      SUBROUTINE WEFLUX (F, IJS, IJL,                                   &
+     &                   NFRE, NANG, DFIM, DELTH,                       &
+     &                   COSTH, SINTH, CGROUP,                          &
      &                   WEFMAG, WEFDIR)
 !
 ! ----------------------------------------------------------------------
@@ -50,31 +50,31 @@
 !       NONE.
 !
 ! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
  
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,EPSMIN
       USE YOWFRED  , ONLY : FRTAIL
-
+ 
 ! ----------------------------------------------------------------------
  
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL, NFRE, NANG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NFRE, NANG
 
-      REAL,INTENT(IN) :: DELTH
-      REAL,DIMENSION(NFRE), INTENT(IN) :: DFIM
-      REAL,DIMENSION(NANG), INTENT(IN) :: COSTH, SINTH
-      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP 
-      REAL,DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), INTENT(IN) :: DELTH
+      REAL(KIND=JWRB), DIMENSION(NFRE), INTENT(IN) :: DFIM
+      REAL(KIND=JWRB), DIMENSION(NANG), INTENT(IN) :: COSTH, SINTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CGROUP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      REAL,DIMENSION(IJS:IJL), INTENT(OUT) :: WEFMAG, WEFDIR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WEFMAG, WEFDIR
 
-      INTEGER :: IJ,M,K
+      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL :: ROG
-      REAL :: FCG
-      REAL :: DELT
-      REAL,DIMENSION(IJS:IJL) :: TEMP, TEMPX, TEMPY
-      REAL,DIMENSION(IJS:IJL) :: WEFX, WEFY 
+      REAL(KIND=JWRB) :: ROG, FCG, DELT
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, TEMPX, TEMPY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: WEFX, WEFY 
 !
 ! ----------------------------------------------------------------------
 
@@ -82,13 +82,13 @@
 !        ------------------------------------------------
 
       DO IJ=IJS,IJL
-         WEFMAG(IJ)= 0.
-         WEFX(IJ)  = 0.
-         WEFY(IJ)  = 0.
+        WEFMAG(IJ)= 0.0_JWRB
+        WEFX(IJ)  = 0.0_JWRB
+        WEFY(IJ)  = 0.0_JWRB
       ENDDO
 
       ROG = ROWATER*G  
-      DELT = FRTAIL*DELTH*G/(2.*ZPI)
+      DELT = FRTAIL*DELTH*G/(2.0_JWRB*ZPI)
 !
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
@@ -96,10 +96,10 @@
       DO M=1,NFRE
          K=1
          DO IJ=IJS,IJL
-            FCG = F(IJ,K,M)*CGROUP(IJ,M)
-            TEMP(IJ) = FCG
-            TEMPX(IJ) = FCG*SINTH(K) 
-            TEMPY(IJ) = FCG*COSTH(K) 
+           FCG = F(IJ,K,M)*CGROUP(IJ,M)
+           TEMP(IJ) = FCG
+           TEMPX(IJ) = FCG*SINTH(K) 
+           TEMPY(IJ) = FCG*COSTH(K) 
          ENDDO
          DO K=2,NANG
             DO IJ=IJS,IJL
@@ -110,9 +110,9 @@
             ENDDO
          ENDDO
          DO IJ=IJS,IJL
-            WEFMAG(IJ)  = WEFMAG(IJ)+DFIM(M)*TEMP(IJ)
-            WEFX(IJ)  = WEFX(IJ)+DFIM(M)*TEMPX(IJ)
-            WEFY(IJ)  = WEFY(IJ)+DFIM(M)*TEMPY(IJ)
+           WEFMAG(IJ)  = WEFMAG(IJ)+DFIM(M)*TEMP(IJ)
+           WEFX(IJ)  = WEFX(IJ)+DFIM(M)*TEMPX(IJ)
+           WEFY(IJ)  = WEFY(IJ)+DFIM(M)*TEMPY(IJ)
          ENDDO
       ENDDO
 
@@ -122,10 +122,10 @@
 
        K=1
        DO IJ=IJS,IJL
-          FCG = F(IJ,K,NFRE)
-          TEMP(IJ) = FCG
-          TEMPX(IJ) = FCG*SINTH(K) 
-          TEMPY(IJ) = FCG*COSTH(K) 
+         FCG = F(IJ,K,NFRE)
+         TEMP(IJ) = FCG
+         TEMPX(IJ) = FCG*SINTH(K) 
+         TEMPY(IJ) = FCG*COSTH(K) 
        ENDDO
        DO K=2,NANG
           DO IJ=IJS,IJL
@@ -136,9 +136,9 @@
           ENDDO
        ENDDO
        DO IJ=IJS,IJL
-          WEFMAG(IJ) = WEFMAG(IJ)+DELT*TEMP(IJ)
-          WEFX(IJ)  = WEFX(IJ)+DELT*TEMPX(IJ)
-          WEFY(IJ)  = WEFY(IJ)+DELT*TEMPY(IJ)
+         WEFMAG(IJ) = WEFMAG(IJ)+DELT*TEMP(IJ)
+         WEFX(IJ)  = WEFX(IJ)+DELT*TEMPX(IJ)
+         WEFY(IJ)  = WEFY(IJ)+DELT*TEMPY(IJ)
        ENDDO
 
 !*    4. MULTIPLY MAGNITUDE BY ROG:
@@ -151,7 +151,7 @@
 !        -------------------
 
       DO IJ=IJS,IJL
-        IF (WEFY(IJ).EQ.0.) WEFY(IJ) = EPSMIN
+        IF (WEFY(IJ).EQ.0.0_JWRB) WEFY(IJ) = EPSMIN
       ENDDO
 
       DO IJ=IJS,IJL
@@ -159,7 +159,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (WEFDIR(IJ).LT.0.) WEFDIR(IJ) = WEFDIR(IJ) + ZPI
+        IF (WEFDIR(IJ).LT.0.0_JWRB) WEFDIR(IJ) = WEFDIR(IJ) + ZPI
       ENDDO
 
       END SUBROUTINE WEFLUX
