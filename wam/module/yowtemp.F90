@@ -1,5 +1,7 @@
       MODULE YOWTEMP
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 !!!!
 !!!! this module should now be obsolete !!!!!
@@ -7,18 +9,18 @@
 
 !*    ** *TEMP* TEMPERATURE GRID
 
-      INTEGER, PARAMETER :: NXT=720 
-      INTEGER, PARAMETER :: NYT=325 
+      INTEGER(KIND=JWIM), PARAMETER :: NXT=720 
+      INTEGER(KIND=JWIM), PARAMETER :: NYT=325 
 
-      CHARACTER*14 CTDATE 
-      INTEGER NGXT 
-      INTEGER NGYT 
-      REAL TMOWEP 
-      REAL TMOSOP 
-      REAL TMOEAP 
-      REAL TMONOP 
-      REAL DELLA 
-      REAL DELLO 
+      CHARACTER(LEN=14)  :: CTDATE 
+      INTEGER(KIND=JWIM) :: NGXT 
+      INTEGER(KIND=JWIM) :: NGYT 
+      REAL(KIND=JWRB)    :: TMOWEP 
+      REAL(KIND=JWRB)    :: TMOSOP 
+      REAL(KIND=JWRB)    :: TMOEAP 
+      REAL(KIND=JWRB)    :: TMONOP 
+      REAL(KIND=JWRB)    :: DELLA 
+      REAL(KIND=JWRB)    :: DELLO 
 
 !-----------------------------------------------------------------------
 
