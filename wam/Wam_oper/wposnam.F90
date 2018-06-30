@@ -70,7 +70,7 @@
       IND1=INDEX(CLINE,'&'//CDNAML)
       IF(IND1.EQ.0) GO TO 102
       CLTEST=CLINE(IND1+ILEN+1:IND1+ILEN+1)
-      IF((LGE(CLTEST,'0').AND.LLE(CLTEST,'9')).OR.
+      IF((LGE(CLTEST,'0').AND.LLE(CLTEST,'9')).OR.                      &
      &   (LGE(CLTEST,'A').AND.LLE(CLTEST,'Z'))) GO TO 102
       BACKSPACE(KULNAM)
 
