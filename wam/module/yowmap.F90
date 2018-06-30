@@ -1,33 +1,37 @@
       MODULE YOWMAP
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !*    ** *MAP*  LON/LAT INDEX OF EACH SEA POINT.
 
-      INTEGER, ALLOCATABLE :: IXLG(:,:) 
-      INTEGER, ALLOCATABLE :: KXLT(:,:) 
-      INTEGER NX 
-      INTEGER NY 
-      INTEGER IPER 
-      INTEGER IRGG 
-      INTEGER IQGAUSS
-      INTEGER KMNOP
-      INTEGER KMSOP
-      INTEGER, PARAMETER :: MIKOFST=4
-      INTEGER, ALLOCATABLE :: KXLTMIN(:) 
-      INTEGER, ALLOCATABLE :: KXLTMAX(:) 
-      INTEGER, ALLOCATABLE :: IFROMIJ(:,:) 
-      INTEGER, ALLOCATABLE :: JFROMIJ(:,:) 
-      REAL AMOWEP 
-      REAL AMOSOP 
-      REAL AMOEAP 
-      REAL AMONOP 
-      REAL XDELLA 
-      REAL XDELLO 
-      REAL, ALLOCATABLE :: ZDELLO(:) 
-      LOGICAL :: LLOBSTRCT
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IXLG(:,:) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KXLT(:,:) 
+      INTEGER(KIND=JWIM)              :: NX 
+      INTEGER(KIND=JWIM)              :: NY 
+      INTEGER(KIND=JWIM)              :: IPER 
+      INTEGER(KIND=JWIM)              :: IRGG 
+      INTEGER(KIND=JWIM)              :: IQGAUSS
+      INTEGER(KIND=JWIM)              :: KMNOP
+      INTEGER(KIND=JWIM)              :: KMSOP
+      INTEGER(KIND=JWIM), PARAMETER   :: MIKOFST=4
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KXLTMIN(:) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: KXLTMAX(:) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IFROMIJ(:,:) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: JFROMIJ(:,:) 
+
+      REAL(KIND=JWRB)                 :: AMOWEP 
+      REAL(KIND=JWRB)                 :: AMOSOP 
+      REAL(KIND=JWRB)                 :: AMOEAP 
+      REAL(KIND=JWRB)                 :: AMONOP 
+      REAL(KIND=JWRB)                 :: XDELLA 
+      REAL(KIND=JWRB)                 :: XDELLO 
+      REAL(KIND=JWRB), ALLOCATABLE    :: ZDELLO(:) 
+
+      LOGICAL              :: LLOBSTRCT
       LOGICAL, ALLOCATABLE :: LLBOUND(:)
-      LOGICAL :: LAQUA
+      LOGICAL              :: LAQUA
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

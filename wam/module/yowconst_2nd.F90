@@ -1,11 +1,13 @@
       MODULE YOWCONST_2ND
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !*    MODULE TO PASS DEPTH VALUE TO THE FUNCTION OMEG(X) THAT CALCULATES
 !     ANGULAR FREQUENCY FOR GIVEN WAVENUMBER AND DEPTH. 
 
-      REAL :: DPTH 
+      REAL(KIND=JWRB) :: DPTH 
 
 !----------------------------------------------------------------------
 

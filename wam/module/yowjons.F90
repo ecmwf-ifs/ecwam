@@ -1,22 +1,24 @@
       MODULE YOWJONS
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWR
+
       IMPLICIT NONE
 
 !*    **  *JONS* - JONSWAP PARAMETERS.
 
-      REAL, PARAMETER :: AJONS = 2.84	
-      REAL, PARAMETER :: BJONS = 0.033
-      REAL, PARAMETER :: DJONS = -3./10.
-      REAL, PARAMETER :: EJONS = 2./3.
-      REAL, ALLOCATABLE :: FP(:) 
-      REAL, ALLOCATABLE :: ALPHJ(:) 
-      REAL, ALLOCATABLE :: THES(:) 
-      REAL FM 
-      REAL ALFA 
-      REAL GAMMA 
-      REAL SA 
-      REAL SB 
-      REAL THETAQ 
+      REAL(KIND=JWRB), PARAMETER :: AJONS = 2.84_JWRB
+      REAL(KIND=JWRB), PARAMETER :: BJONS = 0.033_JWRB
+      REAL(KIND=JWRB), PARAMETER :: DJONS = -3.0_JWRB/10.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: EJONS = 2.0_JWRB/3.0_JWRB
+      REAL(KIND=JWRB), ALLOCATABLE :: FP(:) 
+      REAL(KIND=JWRB), ALLOCATABLE :: ALPHJ(:) 
+      REAL(KIND=JWRB), ALLOCATABLE :: THES(:) 
+      REAL(KIND=JWRB)              :: FM 
+      REAL(KIND=JWRB)              :: ALFA 
+      REAL(KIND=JWRB)              :: GAMMA 
+      REAL(KIND=JWRB)              :: SA 
+      REAL(KIND=JWRB)              :: SB 
+      REAL(KIND=JWRB)              :: THETAQ 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

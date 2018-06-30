@@ -1,12 +1,14 @@
       MODULE YOWTEST
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !*    ** *TESTO* - PRINTER OUTPUT UNIT AND TEST FLAGS.
 
-      INTEGER IU06 
-      INTEGER ITEST 
-      INTEGER ITESTB 
+      INTEGER(KIND=JWIM) :: IU06 
+      INTEGER(KIND=JWIM) :: ITEST 
+      INTEGER(KIND=JWIM) :: ITESTB 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
