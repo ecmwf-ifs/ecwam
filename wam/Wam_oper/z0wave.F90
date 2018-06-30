@@ -34,6 +34,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : ALPHA
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : EPS1
@@ -43,19 +45,17 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS, IJL
-      REAL,DIMENSION(IJS:IJL),INTENT(IN)  ::  US, TAUW
-      REAL,DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(IN)  ::  US, TAUW
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0
 
-      INTEGER :: IJ
-      REAL :: UST2, UST3, ARG, ALPHAOG
-      REAL :: ZHOOK_HANDLE
+      INTEGER(KIND=JWIM) :: IJ
+      REAL(KIND=JWRB) :: UST2, UST3, ARG, ALPHAOG
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',0,ZHOOK_HANDLE)
-#endif
 
       ALPHAOG=ALPHA/G
 
@@ -66,8 +66,6 @@
         Z0(IJ) = ALPHAOG*UST3/SQRT(ARG)
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE Z0WAVE

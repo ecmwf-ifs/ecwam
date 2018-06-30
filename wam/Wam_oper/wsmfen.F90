@@ -36,7 +36,9 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWALTAS , ONLY : AFCRV   ,BFCRV     ,
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWALTAS , ONLY : AFCRV   ,BFCRV     ,                        &
      &            ESH      ,ASH     ,BSH
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH   ,DFIMFR    ,    &
      &            WETAIL   ,WP1TAIL
@@ -45,16 +47,17 @@
       USE YOWSTAT  , ONLY : ISHALLO
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      REAL, INTENT(IN) :: USTT, DPT
-      REAL, INTENT(IN) :: FSEA(NANG,NFRE)
-      REAL, INTENT(OUT) :: EW, FM
+      REAL(KIND=JWRB), INTENT(IN) :: USTT, DPT
+      REAL(KIND=JWRB), INTENT(IN) :: FSEA(NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(OUT) :: EW, FM
 
-      INTEGER :: M, K
-      REAL :: EN, YNU, EMAX, X
-      REAL :: DELT25, COEF1, XTEMP, TEMP, SPFB
-      REAL :: ESTAR, DSTAR, SPINTDI, FREQDI 
+      INTEGER(KIND=JWIM) :: M, K
+      REAL(KIND=JWRB) :: EN, YNU, EMAX, X
+      REAL(KIND=JWRB) :: DELT25, COEF1, XTEMP, TEMP, SPFB
+      REAL(KIND=JWRB) :: ESTAR, DSTAR, SPINTDI, FREQDI 
 
 ! ----------------------------------------------------------------------
 
@@ -67,7 +70,7 @@
 
 !     MEAN FREQUENCY AS FUNCTION OF ENERGY.
 
-      YNU(X)=(X/AFCRV)**(1./BFCRV)
+      YNU(X)=(X/AFCRV)**(1.0_JWRB/BFCRV)
 
 !     DIMENSIONLESS ENERGY LIMIT AS FUNCTION OF DIMENSIONLESS DEPTH 
 
@@ -87,7 +90,7 @@
       EW = EPSMIN
       FM = EPSMIN
       DO M=1,NFRE
-        TEMP = 0.
+        TEMP = 0.0_JWRB
         DO K=1,NANG
           TEMP = TEMP+FSEA(K,M)
         ENDDO
@@ -136,11 +139,11 @@
 !*    3.1 AVERAGING THE ENERGY ESTIMATES
 !         -------------------------------
 
-      EW = (EW+SPINTDI)*0.5
+      EW = (EW+SPINTDI)*0.5_JWRB
 
 !*    3.2 AVERAGING THE MEAN FREQUENCY ESTIMATES.                       
 !         ---------------------------------------                       
 
-      FM = (FM+FREQDI)*0.5
+      FM = (FM+FREQDI)*0.5_JWRB
  
       END SUBROUTINE WSMFEN

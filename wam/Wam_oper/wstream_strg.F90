@@ -1,4 +1,4 @@
-      SUBROUTINE WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,
+      SUBROUTINE WSTREAM_STRG(ISTREAM,CSTREAM,NENSFNB,NTOTENS,          &
      &                        MARSFCTYPE, KSTREAM, LASTREAM)
 
 ! ----------------------------------------------------------------------
@@ -26,10 +26,14 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: ISTREAM, NENSFNB, NTOTENS
-      INTEGER, INTENT(OUT) :: KSTREAM
+      INTEGER(KIND=JWIM), INTENT(IN) :: ISTREAM, NENSFNB, NTOTENS
+      INTEGER(KIND=JWIM), INTENT(OUT) :: KSTREAM
 
       CHARACTER(LEN=2), INTENT(OUT) :: MARSFCTYPE
       CHARACTER(LEN=4), INTENT(OUT) :: CSTREAM
@@ -616,5 +620,4 @@
         LASTREAM=.TRUE.
       ENDIF
 
-      RETURN
       END SUBROUTINE WSTREAM_STRG

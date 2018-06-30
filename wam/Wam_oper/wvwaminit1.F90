@@ -6,9 +6,11 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
       USE YOWCOUT  , ONLY : LFDB
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
      &         MPMAXLENGTH
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -19,15 +21,14 @@
 
       IMPLICIT NONE
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      LOGICAL :: LFDBOPIFS,LDWCOUIFS, LDWCOU2W, LDWFLUX
+      LOGICAL :: LFDBOPIFS, LDWCOUIFS, LDWCOU2W, LDWFLUX
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF 
+ 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT1',0,ZHOOK_HANDLE)
-#endif
 
 ! RE-INITIALIZE LOGICALS IF COUPLED TO IFS
 
@@ -50,8 +51,6 @@
         NNEXT=IRANK+1
       ENDIF
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT1',1,ZHOOK_HANDLE)
-#endif
  
       END SUBROUTINE WVWAMINIT1

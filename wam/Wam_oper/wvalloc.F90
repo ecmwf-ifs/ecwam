@@ -6,20 +6,22 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX
       USE YOWCURR  , ONLY : U        ,V
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,    &
      &                      PHIAW    ,TAUOC
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
      &            NINF     ,NSUP     ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
      &            LL1D
-      USE YOWSPEC, ONLY : NSTART   ,NEND     ,
-     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,
-     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,
+      USE YOWSPEC, ONLY : NSTART   ,NEND     ,                          &
+     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
+     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
      &            FL1      ,FL3
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWTEST  , ONLY : IU06
@@ -31,16 +33,15 @@
 
       IMPLICIT NONE
 
-      INTEGER :: NPR, MAXLEN
+      INTEGER(KIND=JWIM) :: NPR, MAXLEN
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       LOGICAL :: LWCUR
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF 
+ 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',0,ZHOOK_HANDLE)
-#endif
 
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
@@ -73,35 +74,32 @@
       IF(.NOT.ALLOCATED(FL1)) ALLOCATE(FL1(NINF-1:NSUP,NANG,NFRE))
       IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
 
-      IF(.NOT.ALLOCATED(EMEAN))
-     &  ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
-      IF(.NOT.ALLOCATED(FMEAN))
-     &  ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))
-      IF(.NOT.ALLOCATED(THQ)) 
-     &  ALLOCATE(THQ(NSTART(IRANK):NEND(IRANK)))
+      IF(.NOT.ALLOCATED(EMEAN)) ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
+      IF(.NOT.ALLOCATED(FMEAN)) ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))
+      IF(.NOT.ALLOCATED(THQ)) ALLOCATE(THQ(NSTART(IRANK):NEND(IRANK)))
 
         IF(.NOT.ALLOCATED(PHIEPS)) THEN 
           ALLOCATE(PHIEPS(NSTART(IRANK):NEND(IRANK)))
-          PHIEPS(:) = 0.
+          PHIEPS(:) = 0.0_JWRB
         ENDIF
         IF(.NOT.ALLOCATED(PHIAW)) THEN 
           ALLOCATE(PHIAW(NSTART(IRANK):NEND(IRANK)))
-          PHIAW(:) = 0.
+          PHIAW(:) = 0.0_JWRB
         ENDIF
         IF(.NOT.ALLOCATED(TAUOC)) THEN
           ALLOCATE(TAUOC(NSTART(IRANK):NEND(IRANK)))
-          TAUOC(:) = 0.
+          TAUOC(:) = 0.0_JWRB
         ENDIF
 
-      IF ( (LWCOU .AND. LWCUR) .OR.
+      IF ( (LWCOU .AND. LWCUR) .OR.                                     &
      &      IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
         IF(.NOT.ALLOCATED(U)) THEN
           ALLOCATE(U(NINF-1:NSUP,NBLO))
-          U=0.
+          U=0.0_JWRB
         ENDIF
         IF(.NOT.ALLOCATED(V)) THEN
           ALLOCATE(V(NINF-1:NSUP,NBLO))
-          V=0.
+          V=0.0_JWRB
         ENDIF
       ENDIF
 
@@ -109,8 +107,6 @@
       ALLOCATE(FIELDG_coupl(NXFF,NYFF))
 #endif
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVALLOC',1,ZHOOK_HANDLE)
-#endif
  
       END SUBROUTINE WVALLOC

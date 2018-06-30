@@ -46,38 +46,38 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCOUP  , ONLY : XKAPPA
       USE YOWWIND  , ONLY : WSPMIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
-      REAL, PARAMETER :: BG_GUST = 0.0 ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
-      REAL, PARAMETER :: ONETHIRD = 1./3.
-      REAL, PARAMETER :: LOG10 = LOG(10.)
-      REAL, PARAMETER :: C1 = 1.03E-3
-      REAL, PARAMETER :: C2 = 0.04E-3
-      REAL, PARAMETER :: P1 = 1.48
-      REAL, PARAMETER :: P2 = -0.21
+      REAL(KIND=JWRB), PARAMETER :: BG_GUST = 0.0_JWRB ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
+      REAL(KIND=JWRB), PARAMETER :: ONETHIRD = 1.0_JWRB/3.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: LOG10 = LOG(10.0_JWRB)
+      REAL(KIND=JWRB), PARAMETER :: C1 = 1.03E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2 = 0.04E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P1 = 1.48_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P2 = -0.21_JWRB
 
-      INTEGER :: IJ,IJS,IJL
+      INTEGER(KIND=JWIM) :: IJ,IJS,IJL
 
-      REAL :: U10, C_D, DC_DDU, SIG_CONV
-      REAL :: XKAPPAD
-      REAL :: U10M1, C2U10P1, U10P2
-      REAL :: ZHOOK_HANDLE
-      REAL, DIMENSION(IJS:IJL) :: USNEW, Z0NEW, WSTAR
-      REAL, DIMENSION(IJS:IJL) :: SIG_N
-
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
-#endif
+      REAL(KIND=JWRB) :: U10, C_D, DC_DDU, SIG_CONV
+      REAL(KIND=JWRB) :: XKAPPAD
+      REAL(KIND=JWRB) :: U10M1, C2U10P1, U10P2
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USNEW, Z0NEW, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
 
 ! ----------------------------------------------------------------------
 
+      IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
 
-      XKAPPAD=1.0/XKAPPA
+      XKAPPAD=1.0_JWRB/XKAPPA
       DO IJ=IJS,IJL
 !
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
@@ -85,21 +85,16 @@
 !
         U10 = USNEW(IJ)*XKAPPAD*(LOG10-LOG(Z0NEW(IJ)))
         U10 = MAX(U10,WSPMIN)
-        U10M1=1./U10
+        U10M1=1.0_JWRB/U10
         C2U10P1=C2*U10**P1
         U10P2=U10**P2
         C_D = (C1 + C2U10P1)*U10P2
         DC_DDU = (P2*C1+(P1+P2)*C2U10P1)*U10P2*U10M1
-        SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-        SIG_N(IJ) = MIN(0.1, SIG_CONV * U10M1 * 
-     &                        (BG_GUST*USNEW(IJ)**3+
-     &                         0.5*XKAPPA*WSTAR(IJ)**3)**ONETHIRD
-     &                 )
+        SIG_CONV = 1.0_JWRB + 0.5_JWRB*U10/C_D*DC_DDU
+        SIG_N(IJ) = MIN(0.1_JWRB, SIG_CONV * U10M1*(BG_GUST*USNEW(IJ)**3 + &
+     &                  0.5_JWRB*XKAPPA*WSTAR(IJ)**3)**ONETHIRD )
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WSIGSTAR',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE WSIGSTAR

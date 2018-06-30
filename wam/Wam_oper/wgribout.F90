@@ -1,6 +1,6 @@
-      SUBROUTINE WGRIBOUT (IU06, ITEST,
-     &                     LFDB, CDFDBSF, KFDB, LFDBOPEN,
-     &                     IU,
+      SUBROUTINE WGRIBOUT (IU06, ITEST,                                 &
+     &                     LFDB, CDFDBSF, KFDB, LFDBOPEN,               &
+     &                     IU,                                          &
      &                     IGRIB_HANDLE, ISIZE, KGRIB_BUFR) 
 ! ----------------------------------------------------------------------
 
@@ -41,6 +41,8 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE YOWGRIBHD, ONLY : IMDLGRBID_G, IMDLGRBID_M
@@ -50,10 +52,10 @@
 #include "abort1.intfb.h"
 #include "wgrib2fdb.intfb.h"
 
-      INTEGER, INTENT(IN) :: IGRIB_HANDLE, ISIZE
-      INTEGER, INTENT(IN) :: IU06, ITEST, IU
-      INTEGER, INTENT(INOUT) :: KFDB
-      INTEGER, DIMENSION(ISIZE), INTENT(INOUT) :: KGRIB_BUFR
+      INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE, ISIZE
+      INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, IU
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
+      INTEGER(KIND=JWIM), DIMENSION(ISIZE), INTENT(INOUT) :: KGRIB_BUFR
       CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
       LOGICAL, INTENT(IN) :: LFDB
       LOGICAL, INTENT(INOUT) :: LFDBOPEN
@@ -61,7 +63,7 @@
       INTEGER :: IERR, ITABPAR, ICLASS
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=4) :: CEXPVER
@@ -70,9 +72,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WGRIBOUT',0,ZHOOK_HANDLE)
-#endif
 
       CALL GSTATS(1709,0)
 
@@ -87,9 +87,9 @@
         CSTREAM=C12(1:4)
         CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',ICLASS)
         WRITE(IU06,*)'  '
-        WRITE(IU06,*)'   SUB. WGRIBOUT : PARAMETER ',ITABPAR,
-     &                                 ' EXPVER=',CEXPVER,
-     &                                 ' STREAM= ', CSTREAM,
+        WRITE(IU06,*)'   SUB. WGRIBOUT : PARAMETER ',ITABPAR,           &
+     &                                 ' EXPVER=',CEXPVER,              &
+     &                                 ' STREAM= ', CSTREAM,            &
      &                                 ' CLASS = ', ICLASS
         CALL FLUSH(IU06)
       ENDIF
@@ -98,13 +98,13 @@
       IF(LFDB) THEN
 !*     2.1 WRITE DATA TO FDB
 !          -----------------
-        CALL WGRIB2FDB (IU06, ITEST,
-     &                  IGRIB_HANDLE, ISIZE, KGRIB_BUFR,
-     &                  CDFDBSF, KFDB, LFDBOPEN,
-     &                  IMDLGRBID_G, IMDLGRBID_M,
+        CALL WGRIB2FDB (IU06, ITEST,                                    &
+     &                  IGRIB_HANDLE, ISIZE, KGRIB_BUFR,                &
+     &                  CDFDBSF, KFDB, LFDBOPEN,                        &
+     &                  IMDLGRBID_G, IMDLGRBID_M,                       &
      &                  IERR)
         IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) '   SUB. WGRIBOUT: GRIB DATA WRITTEN TO FDB',
+          WRITE(IU06,*) '   SUB. WGRIBOUT: GRIB DATA WRITTEN TO FDB',   &
      &     '(REFERENCE=',KFDB,')'
            CALl FLUSH(IU06)
         ENDIF
@@ -136,7 +136,6 @@
 
       CALL GSTATS(1709,1)
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WGRIBOUT',1,ZHOOK_HANDLE)
-#endif
+
       END SUBROUTINE WGRIBOUT

@@ -1,5 +1,5 @@
-      SUBROUTINE WRITSTA (IDIN, CBDT, CEDT, ANALPD, FOREPD, IS,
-     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,
+      SUBROUTINE WRITSTA (IDIN, CBDT, CEDT, ANALPD, FOREPD, IS,         &
+     &                    CRSDT, CLSDT, CABDT, CAEDT, IASS, NF, ISTAT,  &
      &                    CCURA, LRSTPARAL, NPROC_RST )
 
                                                                         
@@ -54,22 +54,25 @@
 
 !---------------------------------------------------------------------- 
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWCARD  , ONLY : JPCL     ,CARD
 
 ! --------------------------------------------------------------------- 
+
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IDIN, IS, IASS, NF 
-      INTEGER, INTENT(IN) :: ANALPD, FOREPD
-      INTEGER, INTENT(IN) :: ISTAT(3)
-      INTEGER, INTENT(IN) :: NPROC_RST
+      INTEGER(KIND=JWIM), INTENT(IN) :: IDIN, IS, IASS, NF 
+      INTEGER(KIND=JWIM), INTENT(IN) :: ANALPD, FOREPD
+      INTEGER(KIND=JWIM), INTENT(IN) :: ISTAT(3)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NPROC_RST
 
       CHARACTER(LEN=14), INTENT(IN) :: CBDT,CEDT,CABDT,CAEDT,CRSDT,CLSDT
       CHARACTER(LEN=14), INTENT(IN) :: CCURA
 
       LOGICAL, INTENT(IN) :: LRSTPARAL
 
-      INTEGER :: I
+      INTEGER(KIND=JWIM) :: I
 ! --------------------------------------------------------------------- 
 
 !*    1.0  FILL CARD ARRAY.                                             
@@ -140,5 +143,4 @@
         WRITE(IDIN,'(A72)') CARD(I)                                    
       ENDDO
 
-      RETURN                                                            
       END SUBROUTINE WRITSTA

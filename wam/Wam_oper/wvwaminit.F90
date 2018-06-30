@@ -1,4 +1,4 @@
-      SUBROUTINE WVWAMINIT (LLCOUPLED, IULOG, LLRNL,
+      SUBROUTINE WVWAMINIT (LLCOUPLED, IULOG, LLRNL,                    &
      &                      NLON, NLAT, RSOUTW, RNORTW)
 
 !****  *WVWAMINIT* - INITIALISES A FEW VARIABLE AND READ WAVE MODEL
@@ -23,13 +23,15 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOWMAP   , ONLY : AMOSOP   ,AMONOP
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI   ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NGX      ,NGY      ,KWAMVER 
       
       USE YOWTEST  , ONLY : IU06
-      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,
+      USE YOWUNIT  , ONLY : IREADG   ,NPROPAGS ,IU07     ,IU08     ,    &
      &            LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
       USE MPL_MODULE
@@ -43,15 +45,15 @@
 #include "mpuserin.intfb.h"
 #include "readpre.intfb.h"
 
-      INTEGER, INTENT(IN) :: IULOG
-      INTEGER, INTENT(OUT) :: NLON, NLAT
-      INTEGER :: IREAD, LFILE
-      INTEGER :: I4(2)
-      INTEGER :: I_GET_UNIT
+      INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NLON, NLAT
+      INTEGER(KIND=JWIM) :: IREAD, LFILE
+      INTEGER(KIND=JWIM) :: I4(2)
+      INTEGER(KIND=JWIM) :: I_GET_UNIT
 
-      REAL, INTENT(OUT) :: RSOUTW, RNORTW
-      REAL :: X4(2)
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
+      REAL(KIND=JWRB) :: X4(2)
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=1) :: C1 
       CHARACTER(LEN=80) :: FILENAME
@@ -66,9 +68,7 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT',0,ZHOOK_HANDLE)
-#endif
 
       LWVWAMINIT=.FALSE.
 
@@ -109,7 +109,7 @@
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------
 
-      X4=1.
+      X4=1.0_JWRB
       NPRECR = KIND(X4)
       I4=1
       NPRECI = KIND(I4)
@@ -132,9 +132,9 @@
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
           WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),  &
      &    ' IS MISSING !!!!'
-          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),     &
      &    ' IS MISSING !!!!'
           WRITE(IU06,*) '*                                  *'
          WRITE(IU06,*) '************************************'
@@ -165,9 +165,9 @@
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. WVWAMINIT   *'
           WRITE(IU06,*) '*  =============================   *'
-          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+          WRITE(IU06,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),  &
      &    ' IS MISSING !!!!'
-          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),
+          WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),     &
      &    ' IS MISSING !!!!'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '************************************'
@@ -192,9 +192,6 @@
       RSOUTW=AMOSOP
       RNORTW=AMONOP
 
-#ifdef ECMWF 
       IF (LHOOK) CALL DR_HOOK('WVWAMINIT',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE WVWAMINIT

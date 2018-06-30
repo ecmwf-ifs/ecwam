@@ -1,8 +1,8 @@
-      SUBROUTINE WNFLUXES (IJS, IJL,
-     &                     MIJ, RHOWGDFTH,
-     &                     SSURF, CICVR,
-     &                     PHIWA,
-     &                     EM, F1, U10, THW,
+      SUBROUTINE WNFLUXES (IJS, IJL,                                    &
+     &                     MIJ, RHOWGDFTH,                              &
+     &                     SSURF, CICVR,                                &
+     &                     PHIWA,                                       &
+     &                     EM, F1, U10, THW,                            &
      &                     USNEW, ROAIRN, LNUPD)
 
 ! ----------------------------------------------------------------------
@@ -52,12 +52,14 @@
 
 ! ----------------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY,
+      USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
      &                      NEMONEW10, NEMOPHIF
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    , 
+      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
      &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : PHIEPSMIN,PHIEPSMAX
@@ -68,36 +70,36 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: IJS,IJL
-      INTEGER, DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
-      REAL,DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
-      REAL, DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: PHIWA
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: EM, F1, U10, THW
-      REAL, DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EM, F1, U10, THW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, ROAIRN
 
       LOGICAL, INTENT(IN) :: LNUPD
 
-      INTEGER :: IJ, K, M
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL, PARAMETER :: XMMIN=0.5
-      REAL, PARAMETER :: XMMAX=3.0
-      REAL :: TAU, XN, TAUO, PHIOCD
-      REAL :: TAUX, TAUY, TAUOX, TAUOY, CNST
-      REAL :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), PARAMETER :: XMMIN=0.5_JWRB
+      REAL(KIND=JWRB), PARAMETER :: XMMAX=3.0_JWRB
+      REAL(KIND=JWRB) :: TAU, XN, TAUO, PHIOCD
+      REAL(KIND=JWRB) :: TAUX, TAUY, TAUOX, TAUOY, CNST
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      REAL, DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
-      REAL, DIMENSION(IJS:IJL) :: PHILF
-      REAL, DIMENSION(IJS:IJL) :: REDCI, XM 
-      REAL, DIMENSION(IJS:IJL) :: CMRHOWGDFTH
-      REAL, DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHILF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: REDCI, XM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
-#endif
+
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
@@ -105,9 +107,9 @@
 !     ENERGY FLUX from SSURF
 !     MOMENTUM FLUX FROM SSURF
       DO IJ=IJS,IJL
-        PHILF(IJ) = 0.
-        XSTRESS(IJ) = 0.
-        YSTRESS(IJ) = 0.
+        PHILF(IJ) = 0.0_JWRB
+        XSTRESS(IJ) = 0.0_JWRB
+        YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
@@ -137,18 +139,18 @@
         DO IJ=IJS,IJL
           IF(CICVR(IJ).GT.CITHRSH) THEN
 !           PERCENTAGE OF THE WAVE FLUXES THAT ARE ACCOUNTED FOR UNDER SEA ICE
-            REDCI(IJ)=MAX(1.-CICVR(IJ),0.)
+            REDCI(IJ)=MAX(1.0_JWRB-CICVR(IJ),0.0_JWRB)
 !           FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
 !           (negative because it is defined as leaving the waves)
             XM(IJ)=-XMMIN-(XMMAX-XMMIN)*REDCI(IJ)
           ELSE
-            REDCI(IJ)=1.
-            XM(IJ)=0.
+            REDCI(IJ)=1.0_JWRB
+            XM(IJ)=0.0_JWRB
           ENDIF
         ENDDO
       ELSE
-        REDCI(:)=1.
-        XM(:)=0.
+        REDCI(:)=1.0_JWRB
+        XM(:)=0.0_JWRB
       ENDIF
 
       DO IJ=IJS,IJL
@@ -173,23 +175,23 @@
         IF (LWNEMOCOU.AND.LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
-          IF (EM(IJ)/=0.) THEN
-             NSWH(IJ) = 4.0*SQRT(EM(IJ))
+          IF (EM(IJ)/=0.0_JWRB) THEN
+             NSWH(IJ) = 4.0_JWRB*SQRT(EM(IJ))
           ELSE
-             NSWH(IJ) = 0.0
+             NSWH(IJ) = 0.0_JWRB
           ENDIF
-          IF (F1(IJ)/=0.) THEN
-             NMWP(IJ) = 1.0/F1(IJ)
+          IF (F1(IJ)/=0.0_JWRB) THEN
+             NMWP(IJ) = 1.0_JWRB/F1(IJ)
           ELSE
-             NMWP(IJ) = 0.0
+             NMWP(IJ) = 0.0_JWRB
           ENDIF
 
           IF (LWNEMOTAUOC) THEN
-            NEMOTAUX(IJ)  = NEMOTAUX(IJ) + TAUOX
-            NEMOTAUY(IJ)  = NEMOTAUY(IJ) + TAUOY
+            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUOX
+            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUOY
           ELSE
-            NEMOTAUX(IJ)  = NEMOTAUX(IJ) + TAUX
-            NEMOTAUY(IJ)  = NEMOTAUY(IJ) + TAUY
+            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUX
+            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUY
           ENDIF 
           NEMONEW10(IJ) = NEMONEW10(IJ) + U10(IJ)
           NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD 
@@ -198,8 +200,6 @@
 
 ! ----------------------------------------------------------------------
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WNFLUXES',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE WNFLUXES

@@ -1,4 +1,4 @@
-      SUBROUTINE WPOSNAM(KULNAM,CDNAML,LDEOF)
+      SUBROUTINE WPOSNAM(KULNAM, CDNAML, LDEOF)
 
 !**** *WPOSNAM* - position namelist file for reading
 
@@ -41,14 +41,18 @@
 !        Original : 93-06-22 from Mats Hamrud as posnam
 !     --------------------------------------------------------------
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+!     --------------------------------------------------------------
+
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
       LOGICAL, INTENT(OUT)      :: LDEOF
-      INTEGER, INTENT(IN)       :: KULNAM
+      INTEGER(KIND=JWIM), INTENT(IN)       :: KULNAM
       CHARACTER(LEN=*), INTENT(IN) :: CDNAML
 
-      INTEGER :: ILEN, IND1
+      INTEGER(KIND=JWIM) :: ILEN, IND1
 
 ! === END OF INTERFACE BLOCK ===
 
