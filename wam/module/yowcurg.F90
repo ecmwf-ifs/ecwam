@@ -1,20 +1,22 @@
       MODULE YOWCURG
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !*    ** *CURGRD* - INPUT GRID CURRENT SPECFICATIONS.
 
-      REAL DUCLO 
-      REAL DUCLA 
-      REAL UCLO 
-      REAL UCLH 
-      REAL UCLW 
-      REAL UCLE 
-      REAL,ALLOCATABLE :: UCUR(:,:)
-      REAL,ALLOCATABLE :: VCUR(:,:)
-      INTEGER KRCI 
-      INTEGER KCCI 
-      INTEGER IPCUR 
+      REAL(KIND_JWRB) :: DUCLO 
+      REAL(KIND_JWRB) :: DUCLA 
+      REAL(KIND_JWRB) :: UCLO 
+      REAL(KIND_JWRB) :: UCLH 
+      REAL(KIND_JWRB) :: UCLW 
+      REAL(KIND_JWRB) :: UCLE 
+      REAL(KIND_JWRB), ALLOCATABLE :: UCUR(:,:)
+      REAL(KIND_JWRB), ALLOCATABLE :: VCUR(:,:)
+      INTEGER(KIND=JWIM) :: KRCI 
+      INTEGER(KIND=JWIM) :: KCCI 
+      INTEGER(KIND=JWIM) :: IPCUR 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
