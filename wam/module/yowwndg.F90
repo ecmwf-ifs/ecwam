@@ -1,21 +1,23 @@
       MODULE YOWWNDG
 
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
       IMPLICIT NONE
 
 !*    ** *WNDGRD* -  INPUT WIND GRID SPECIFICATIONS.
 
-      REAL :: DLAM 
-      REAL :: DPHI 
-      REAL :: RLATS 
-      REAL :: RLATN 
-      REAL :: RLONL 
-      REAL :: RLONR 
-      INTEGER :: KCOL 
-      INTEGER :: KROW 
-      INTEGER :: ICODE 
-      INTEGER :: ICODE_CPL 
-      INTEGER :: IWPER 
-      INTEGER :: ICOORD 
+      REAL(KIND=JWRB) :: DLAM 
+      REAL(KIND=JWRB) :: DPHI 
+      REAL(KIND=JWRB) :: RLATS 
+      REAL(KIND=JWRB) :: RLATN 
+      REAL(KIND=JWRB) :: RLONL 
+      REAL(KIND=JWRB) :: RLONR 
+      INTEGER(KIND=JWIM) :: KCOL 
+      INTEGER(KIND=JWIM) :: KROW 
+      INTEGER(KIND=JWIM) :: ICODE 
+      INTEGER(KIND=JWIM) :: ICODE_CPL 
+      INTEGER(KIND=JWIM) :: IWPER 
+      INTEGER(KIND=JWIM) :: ICOORD 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
