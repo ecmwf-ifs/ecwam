@@ -165,7 +165,7 @@
       INTEGER(KIND=JWIM) :: IU05, IU07 
       INTEGER(KIND=JWIM) :: I4(2)
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
-      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: THETA, FETCH, FRMAX 
@@ -273,7 +273,7 @@
       IU05 = 5
       IU06 = 6
 
-      IU07 = I_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
+      IU07 = IWAM_GET_UNIT(IU06, 'wam_grid_tables', 'r', 'u', 0)
 
       IU12 = 12
       IU14 = 14

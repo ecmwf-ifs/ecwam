@@ -49,7 +49,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: NLON, NLAT
       INTEGER(KIND=JWIM) :: IREAD, LFILE
       INTEGER(KIND=JWIM) :: I4(2)
-      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: X4(2)
@@ -140,7 +140,7 @@
          WRITE(IU06,*) '************************************'
           CALL ABORT1
         ENDIF
-        IU07 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+        IU07 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
 
         IF(IPROPAGS.LT.0 .OR. IPROPAGS.GT.NPROPAGS) THEN
           WRITE(IU06,*) '************************************'
@@ -173,7 +173,7 @@
           WRITE(IU06,*) '************************************'
           CALL ABORT1
         ENDIF
-        IU08(IPROPAGS) = I_GET_UNIT(IU06, FILENAME(1:LFILE) ,'r','u',0)
+        IU08(IPROPAGS) = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) ,'r','u',0)
       ENDIF
 
       KTAG=1

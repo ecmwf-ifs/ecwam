@@ -76,7 +76,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM, ML, KL
       LOGICAL, INTENT(OUT) :: LLGRID
 
-      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: K, M, I, II, KSN
       INTEGER(KIND=JWIM) :: IU05, IU
       INTEGER(KIND=JWIM) :: IFRE1, ISPECTRUNC
@@ -159,7 +159,7 @@
 !        ---------------------
 
 
-      IU05 =  I_GET_UNIT (IU06, 'procin', 'r', 'f', 0)
+      IU05 =  IWAM_GET_UNIT (IU06, 'procin', 'r', 'f', 0)
 
       READ (IU05, NALINE)
 
@@ -179,7 +179,7 @@
       FILENAME='grid_description'
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF(LLGRID) THEN
-        IU=I_GET_UNIT(IU06,FILENAME,'S','F',0)
+        IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
         READ (IU,'(I4)') ISPECTRUNC 
         READ (IU,'(F8.3)') AMONOP

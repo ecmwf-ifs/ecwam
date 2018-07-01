@@ -86,7 +86,7 @@
       CHARACTER(LEN=3), INTENT(IN) :: FILEID
       CHARACTER(LEN=14), INTENT(IN) :: CDATE, CDATEF
 
-      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM), PARAMETER :: KKNAME=7
       INTEGER(KIND=JWIM) :: IL, LIU, LIP, LUSI, LNAME, INDXF, ISHIFT, IFAIL
 
@@ -230,7 +230,7 @@
      &                 ' MODEL RESTART --> USE FILE_TRANSFER TO COPY '// &
      &                 ' RESTART FILES' 
       ELSEIF (OPT.EQ.'G' .AND. LIP .EQ. 0) THEN
-        IUNIT=I_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0)
+        IUNIT=IWAM_GET_UNIT(IU06, FILENA(1:LNAME) , 'r', 'u', 0)
       ENDIF
 
 ! ----------------------------------------------------------------------

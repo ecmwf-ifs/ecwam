@@ -394,7 +394,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IERR
-      INTEGER(KIND=JWIM) :: I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM), DIMENSION(IJSLOC:IJLLOC) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -1327,7 +1327,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
               CEPLTDT = CDATEF
 
-              IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
+              IU04 = IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8) , 'w', 'f', 0)
 
               CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,     &
      &                      IDELWIN, CDATER, CDATES, CBPLTDT, CEPLTDT,  &
@@ -1345,7 +1345,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
               IF (LRSTINFDAT) THEN
                 CDTRCF=CDTPRO
                 CALL INCDATE(CDTRCF,IDELPRO)
-                IU04 =  I_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//         &
+                IU04 =  IWAM_GET_UNIT (IU06,CWI(1:ICPLEN+8)//'.'//      &
      &                              CDTRCF(1:8)//'_'//CDTRCF(9:14),     &
      &                              'w', 'f', 0)
                 CALL WRITSTA (IU04, CDTPRO, CDATEE, IANALPD, IFOREPD,   &

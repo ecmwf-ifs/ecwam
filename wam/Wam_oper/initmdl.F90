@@ -338,7 +338,8 @@
       INTEGER(KIND=JWIM) :: KM1, KP1
       INTEGER(KIND=JWIM) :: JD
       INTEGER(KIND=JWIM) :: IDELWH
-      INTEGER(KIND=JWIM) :: IU05, IU09, IU10, I_GET_UNIT
+      INTEGER(KIND=JWIM) :: IU05, IU09, IU10
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
       INTEGER(KIND=JWIM) :: NTOT, MTHREADS, NPROMA
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
@@ -637,7 +638,7 @@
             WRITE(IU06,*) '************************************'
             CALL ABORT1
           ENDIF
-          IU09 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+          IU09 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
         ELSE
           IU09 = 9
         ENDIF
@@ -663,7 +664,7 @@
             WRITE(IU06,*) '************************************'
             CALL ABORT1
           ENDIF
-          IU10 = I_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
+          IU10 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
         ELSE
           IU10 = 10 
         ENDIF
@@ -1347,7 +1348,7 @@
       IF (IBOUNC.EQ.1) THEN
         IF ((LMESSPASS.AND.IRANK.EQ.1).OR..NOT.LMESSPASS) THEN
           DO II=1,GBOUNC
-            IU19(II)=I_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
+            IU19(II)=IWAM_GET_UNIT(IU06, CBCPREF(II), 'w', 'u', 0)
 !           make the unit available for a silly fort.unit output
 !           we will need to recode this a bit better !!!
 
