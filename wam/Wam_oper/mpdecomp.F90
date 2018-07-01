@@ -150,6 +150,8 @@
 #include "abort1.intfb.h"
 #include "jonswap.intfb.h"
 #include "wvwaminit.intfb.h"
+#include "wam_sortini.intfb.h"
+#include "wam_sorti.intfb.h"
 
       INTEGER(KIND=JWIM) :: NPR, MAXLEN 
       INTEGER(KIND=JWIM) :: IG
@@ -1097,8 +1099,8 @@
       NH=IH
 
       IF (NH.GT.1) THEN
-        CALL SORTINI(ITEMP,INDEX,NH)
-        CALL SORTI(ITEMP,INDEX,NH)
+        CALL WAM_SORTINI(ITEMP,INDEX,NH)
+        CALL WAM_SORTI(ITEMP,INDEX,NH)
       ENDIF
 
       JH=0
