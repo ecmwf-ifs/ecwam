@@ -68,7 +68,7 @@
         MEANWP1(IJ) = 0.0_JWRB
       ENDDO
 
-      DO M=1,NFRE
+      DO M=1,NFRE_ODD
         DO IJ=IJS,IJL
           TEMP(IJ) = 0.0_JWRB
         ENDDO
