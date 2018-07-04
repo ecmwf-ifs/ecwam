@@ -60,7 +60,6 @@
      &            LLOUTERS ,                                            &
      &            LWAMANOUT,                                            &
      &            NWRTOUTWAM,                                           &
-     &            LWFLUXOUT,                                            &
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF

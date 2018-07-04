@@ -62,6 +62,8 @@
      &                      NEMONEW10, NEMOPHIF
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
+     &                      TAUXD    ,TAUYD    ,                        &
+     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
      &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : PHIEPSMIN,PHIEPSMAX
@@ -85,8 +87,8 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: TAU, XN, TAUO, PHIOCD
-      REAL(KIND=JWRB) :: TAUX, TAUY, TAUOX, TAUOY, CNST
+      REAL(KIND=JWRB) :: TAU, XN, TAUO
+      REAL(KIND=JWRB) :: CNST
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
@@ -143,19 +145,19 @@
       DO IJ=IJS,IJL
 
         TAU        = ROAIRN(IJ)*USNEW(IJ)**2
-        TAUX       = TAU*SIN(THW(IJ))
-        TAUY       = TAU*COS(THW(IJ))
+        TAUXD(IJ)  = TAU*SIN(THW(IJ))
+        TAUYD(IJ)  = TAU*COS(THW(IJ))
 
         TAUWLF(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         TAUO       = TAU-TAUWLF(IJ)-TAUWD(IJ) 
         TAUOC(IJ)  = TAUO/TAU
-        TAUOX      = TAUO*SIN(THW(IJ))
-        TAUOY      = TAUO*COS(THW(IJ))
+        TAUOCXD(IJ)= TAUO*SIN(THW(IJ))
+        TAUOCYD(IJ)= TAUO*COS(THW(IJ))
 
         XN        = ROAIRN(IJ)*USNEW(IJ)**3
-        PHIOCD    = PHILF(IJ)-PHIWA(IJ)
+        PHIOCD(IJ)= PHILF(IJ)-PHIWA(IJ)
 
-        PHIEPS(IJ)= PHIOCD/XN 
+        PHIEPS(IJ)= PHIOCD(IJ)/XN 
         PHIEPS(IJ)= MIN(MAX(PHIEPS(IJ),PHIEPSMIN),PHIEPSMAX)
 
         PHIAW(IJ) = PHIWA(IJ)/XN
@@ -175,14 +177,14 @@
           ENDIF
 
           IF (LWNEMOTAUOC) THEN
-            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUOX
-            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUOY
+            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUOCXD(IJ)
+            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUOCYD(IJ)
           ELSE
-            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUX
-            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUY
+            NEMOTAUX(IJ) = NEMOTAUX(IJ) + TAUXD(IJ)
+            NEMOTAUY(IJ) = NEMOTAUY(IJ) + TAUYD(IJ)
           ENDIF 
           NEMONEW10(IJ) = NEMONEW10(IJ) + U10(IJ)
-          NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD 
+          NEMOPHIF(IJ)  = NEMOPHIF(IJ) + PHIOCD(IJ) 
         ENDIF
       ENDDO
 

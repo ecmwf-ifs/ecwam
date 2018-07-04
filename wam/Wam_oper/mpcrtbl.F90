@@ -809,9 +809,104 @@
       IPRMINFO(IR,4)=1
       IPRMINFO(IR,5)=1
 
+      IR=IR+1
+!     PARAMETER 071
+      COUTNAME(IR)=' WAVE INDUCED SEA LEVEL CORRECTION'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=098
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=080
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=1
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 072
+      COUTNAME(IR)=' RATIO ANGULAR to FREQUENCY WIDTH '
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=099
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=081
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=1
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 073
+      COUTNAME(IR)=' NUMBER OF FREAK WAVES EVENT .....'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=100
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=082
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=1
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 074
+      COUTNAME(IR)=' U-COMP ATMOSPHERIC STRESS .......'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=101
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=080
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 075
+      COUTNAME(IR)=' V-COMP ATMOSPHERIC STRESS .......'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=102
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=081
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 076
+      COUTNAME(IR)=' U-COMP STRESS INTO OCEANS .......'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=103
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=082
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 077
+      COUTNAME(IR)=' V-COMP STRESS INTO OCEANS .......'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=104
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=083
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,5)=1
+
+      IR=IR+1
+!     PARAMETER 078
+      COUTNAME(IR)=' TURB ENERGY FLUX INTO OCEANS ....'
+      IPRMINFO(IR,1)=140
+      IPRMINFO(IR,2)=105
+!!!! until grib table is updated !!!!
+      IPRMINFO(IR,2)=084
+
+      IPRMINFO(IR,3)=0
+      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,5)=1
+
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG-5 IN MPCRTBL')
