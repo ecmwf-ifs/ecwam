@@ -65,7 +65,9 @@
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
-     &            PHIEPS   ,PHIAW    ,TAUOC
+     &            PHIEPS   ,PHIAW    ,TAUOC    ,TAUXD    ,TAUYD     ,   &
+     &            TAUOCXD  ,TAUOCYD  ,PHIOCD
+
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR, LNEMOCITHICK
       USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
@@ -573,6 +575,47 @@
           BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(BOUT(IJS:IJL,ITOBOUT(IR)),0._JWRB))
         ENDIF
       ENDDO
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=ETA_M(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=R(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=XNSLC(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUXD(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUYD(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUOCXD(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=TAUOCYD(IJS:IJL)
+      ENDIF
+
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=PHIOCD(IJS:IJL)
+      ENDIF
+
 
 !     COMPUTE OUTPUT EXTRA FIELDS
 !     add necessary code to compute the extra output fields
