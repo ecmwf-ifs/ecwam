@@ -21,7 +21,7 @@
 !     C3             REAL         SKEWNESS
 !     C4             REAL         ENVELOPE KURTOSIS
 !     ETA_M          REAL         WAVE-INDUCED MEAN SURFACE ELEVATION
-!     R              REAL         DIMENSIONLESS RATIO OF ANGULAR AND FREQUENCY WIDTH
+!     R              REAL         SPECTRAL WIDTH INDEX
 !     XNU            REAL         RELATIVE SPECTRAL WIDTH
 !     SIG_TH         REAL         RELATIVE WIDTH in DIRECTION
 

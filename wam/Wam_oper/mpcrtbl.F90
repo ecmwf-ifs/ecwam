@@ -823,7 +823,7 @@
 
       IR=IR+1
 !     PARAMETER 072
-      COUTNAME(IR)=' RATIO ANGULAR to FREQUENCY WIDTH '
+      COUTNAME(IR)=' SPECTRAL WIDTH INDEX ........... '
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=099
 !!!! until grib table is updated !!!!

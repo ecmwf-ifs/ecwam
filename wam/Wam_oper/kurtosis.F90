@@ -40,7 +40,7 @@
 !                           *HMAX*  - MAXIMUM WAVE HEIGHT
 !                           *TMAX*  - MAXIMUM WAVE PERIOD
 !                           *ETA_M* - WAVE-INDUCED MEAN SURFACE ELEVATION
-!                           *R*     - DIMENSIONLESS RATIO OF ANGULAR AND FREQUENCY WIDTH
+!                           *R*     - SPECTRAL WIDTH INDEX
 !                           *XNSLC* - NUMBER OF EVENTS
 !                           *SIG_TH*- RELATIVE WIDTH IN DIRECTION
 !                           *EPS*   - WAVE STEEPNESS

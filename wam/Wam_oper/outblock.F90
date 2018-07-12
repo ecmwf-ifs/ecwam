@@ -613,7 +613,8 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=PHIOCD(IJS:IJL)
+!      !!! make the energy flux positive
+        BOUT(IJS:IJL,ITOBOUT(IR))=-PHIOCD(IJS:IJL)
       ENDIF
 
 
