@@ -49,6 +49,7 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
+#include "abort1.intfb.h"
 #include "difdate.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU06, IU_INTP
@@ -162,7 +163,7 @@
         LTAUOC = .FALSE.
       ENDIF
 
-      IF (LPARAM .and. (.NOT. LLUNSTR)) THEN
+      IF (LPARAM .AND. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
           IF (GOUT(IPHS,I,J).NE.ZMISS) THEN
@@ -253,6 +254,14 @@
         ENDDO
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
+      ELSE IF (.NOT. LLUNSTR) THEN
+        WRITE(IU06,*) '***************************************'
+        WRITE(IU06,*) '*                                     *'
+        WRITE(IU06,*) '*  FATAL ERROR IN SUB. OUT_ONEGRDPT   *'
+        WRITE(IU06,*) '*                                     *'
+        WRITE(IU06,*) '*  MISSING SOME OUTPUT VARIABLES !    *'
+        WRITE(IU06,*) '***************************************'
+        CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
      &       2F12.5,2E10.3,13(1x,F14.5))

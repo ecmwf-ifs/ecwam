@@ -48,8 +48,7 @@
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
-     &            FFLAG20  ,PFLAG    ,                                  &
-     &            PFLAG20  ,GFLAG    ,                                  &
+     &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,    &
      &            NASS     ,JPPFLAG  ,                                  &
@@ -143,7 +142,7 @@
      &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
      &   IDELCUR, CDATECURA,                                            &
      &   CLOTSU, CDATER, CDATES,                                        &
-     &   PFLAG,  FFLAG,  GFLAG, NFLAG,                                  &
+     &   FFLAG,  GFLAG, NFLAG,                                          &
      &   LLOUTERS,                                                      &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
@@ -239,13 +238,12 @@
 !             are not specified by namelist NAOS).
 !     CDATES: LAST OUTPUT TIME ALLOWED BESIDE CDATER FOR RESTART SPECTRA
 !             (if output times are not specified by namelist NAOS).
-!     PFLAG: OUTPUT FLAG FOR OUTPUT TO FILE OF EACH OUTPUT TYPE.
 !     FFLAG: OUTPUT FLAG FOR OUTPUT TO USER OUTPUT OF EACH OUTPUT TYPE.
 !     GFLAG: OUTPUT FLAG FOR OUTPUT TO GRIB OF EACH OUTPUT TYPE.
 !     NFLAG: OUTPUT FLAG FOR USER OUTPUT DISPLAY OF FIELD NORM FOR
 !            EACH OUTPUT TYPE.
 !     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
-!     TYPE OF INTEGRATED PARAMETERS IN PFLAG FFLAG GFLAG (see OUTINT) :
+!     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
 !     2  : MEAN WAVE DIRECTION (DEG.)
 !     3  : WAVE MEAN PERIOD BASED ON THE 1/f INTEGRATION OF F (s.)
@@ -541,7 +539,6 @@
       CDATECURA = ZERO
       CDATER    = ZERO
       CDATES    = ZERO
-      PFLAG(:)  = .FALSE. 
       FFLAG(:)  = .FALSE. 
 !     note: if IREST>0 then GFLAG(IR) for IR=IRWDIR, IRCD, IRU10 will always be reset
 !     true if grib restart files are requested (LGRIBOUT=.true.).

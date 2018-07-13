@@ -232,7 +232,7 @@
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,              &
      &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
-     &            FFLAG20  ,PFLAG20  ,GFLAG20  ,                        &
+     &            FFLAG20  ,GFLAG20  ,                                  &
      &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,    &
      &            LWFLUXOUT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,    &
@@ -969,7 +969,7 @@
 !*    5.1 OUTPUT TIME VARIABLES.
 !         ----------------------
 
-      IF (PFLAG20 .OR. FFLAG20 .OR. GFLAG20) THEN
+      IF (FFLAG20 .OR. GFLAG20) THEN
         CDTINTT= CBPLTDT
         IF (LANAONLY) THEN
           CDTINTT=CDATEA
