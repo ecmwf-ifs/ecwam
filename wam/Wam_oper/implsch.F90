@@ -400,11 +400,8 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-!!!!debile
-!!!              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-!!!              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-!!
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
