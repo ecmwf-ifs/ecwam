@@ -815,7 +815,7 @@
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=098
 !!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=080
+      IPRMINFO(IR,2)=241
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
@@ -827,7 +827,7 @@
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=099
 !!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=081
+      IPRMINFO(IR,2)=242
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
@@ -839,7 +839,7 @@
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=100
 !!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=082
+      IPRMINFO(IR,2)=243
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
