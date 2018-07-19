@@ -397,11 +397,35 @@
       IF(LCFLX .AND. LWVFLX_SNL) THEN
 !!!!!!  SL must only contain contributions contributed to fluxes into the oceans
 !       MODULATE SL BY IMPLICIT FACTOR
+
+!!!debile
+      DO M=1,NFRE
+!!!!        DELFL(M) = COFRM4(M)*DELT
+!!!! not delt
+        DELFL(M) = COFRM4(M)
+      ENDDO
+      DO IJ=IJS,IJL
+        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEANALL(IJ))
+      ENDDO
+
+      DO M=1,NFRE
+        DO IJ=IJS,IJL
+          TEMP(IJ,M) = USFM(IJ)*DELFL(M)
+        ENDDO
+      ENDDO
+!!!debile
+
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+!!!debile
+            GTEMP2 = SL(IJ,K,M)/GTEMP1
+            FLHAB = ABS(GTEMP2)
+            FLHAB = MIN(FLHAB,TEMP(IJ,M))
+            SSOURCE(IJ,K,M) = SIGN(FLHAB,GTEMP2)
+!!!debile
+!!!!!!!!!!!!!              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
