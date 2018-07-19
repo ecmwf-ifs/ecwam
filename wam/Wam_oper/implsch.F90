@@ -193,6 +193,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SINPUT 
+
       LOGICAL :: LCFLX
 
 ! ----------------------------------------------------------------------
@@ -334,6 +336,16 @@
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTARNEW, SL, XLLWS)
 
+!!!debile
+! keep source term for stresso later
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SINPUT(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: 2nd SINPUT CALL'
         CALL FLUSH (IU06)
@@ -357,6 +369,7 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
+!!!debile not necessary
       CALL STRESSO (FL3, SL, IJS, IJL,                                  &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
@@ -365,6 +378,7 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 2nd CALL'
         CALL FLUSH (IU06)
       ENDIF
+!!!debile
 
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
@@ -394,38 +408,34 @@
         CALL FLUSH (IU06)
       ENDIF
 
+!!!debile
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
+              SINPUT(IJ,K,M) = SINPUT(IJ,K,M)/GTEMP1
+            ENDDO
+          ENDDO
+        ENDDO
+      CALL STRESSO (FL3, SINPUT, IJS, IJL,                              &
+     &              MIJ, RHOWGDFTH,                                     &
+     &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
+     &              TAUW, PHIWA)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 2nd CALL'
+        CALL FLUSH (IU06)
+      ENDIF
+!!!debile
+
       IF(LCFLX .AND. LWVFLX_SNL) THEN
 !!!!!!  SL must only contain contributions contributed to fluxes into the oceans
 !       MODULATE SL BY IMPLICIT FACTOR
-
-!!!debile
-      DO M=1,NFRE
-!!!!        DELFL(M) = COFRM4(M)*DELT
-!!!! not delt
-        DELFL(M) = COFRM4(M)
-      ENDDO
-      DO IJ=IJS,IJL
-        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEANALL(IJ))
-      ENDDO
-
-      DO M=1,NFRE
-        DO IJ=IJS,IJL
-          TEMP(IJ,M) = USFM(IJ)*DELFL(M)
-        ENDDO
-      ENDDO
-!!!debile
 
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-!!!debile
-            GTEMP2 = SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            SSOURCE(IJ,K,M) = SIGN(FLHAB,GTEMP2)
-!!!debile
-!!!!!!!!!!!!!              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
