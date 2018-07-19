@@ -193,7 +193,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SINPUT 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SNPT 
 
       LOGICAL :: LCFLX
 
@@ -341,7 +341,7 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              SINPUT(IJ,K,M) = SL(IJ,K,M)
+              SNPT(IJ,K,M) = SL(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
@@ -413,11 +413,11 @@
           DO K=1,NANG
             DO IJ=IJS,IJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-              SINPUT(IJ,K,M) = SINPUT(IJ,K,M)/GTEMP1
+              SNPT(IJ,K,M) = SNPT(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
-      CALL STRESSO (FL3, SINPUT, IJS, IJL,                              &
+      CALL STRESSO (FL3, SNPT, IJS, IJL,                                &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
