@@ -392,7 +392,7 @@
          NKIND = KIND(DELPHI)   ! Pretend NKIND is in "right precision"
          WRITE(IU06,1002) 'READPRE(READREC): NKIND=',NKIND,             &
      &        ', KIND(DELPHI)=',KIND(DELPHI),', LLR8TOR4=',LLR8TOR4
- 1002    FORMAT(1X,A,I0,A,I0,A,L1)
+ 1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
      &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,                 &
