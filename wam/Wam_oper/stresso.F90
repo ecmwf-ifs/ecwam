@@ -73,7 +73,7 @@
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,YINVEPS
+      USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
