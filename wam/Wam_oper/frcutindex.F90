@@ -28,6 +28,11 @@
 !*    COMPUTES LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !*    FREQUENCIES LE 2.5*MAX(FMWS,FM).
 
+
+!!! be aware that if this is not used, for iphys=1, the cumulative dissipation has to be
+!!! re-activated (see module yowphys) !!!
+
+
 !     EXTERNALS.
 !     ---------
 
