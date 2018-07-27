@@ -1,4 +1,4 @@
-      SUBROUTINE STRESSO (F, SL, IJS, IJL,                              &
+      SUBROUTINE STRESSO (F, SPOS, IJS, IJL,                            &
      &                    MIJ, RHOWGDFTH,                               &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, PHIWA)
@@ -23,12 +23,12 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *STRESSO (F, SL, IJS, IJL,
+!        *CALL* *STRESSO (F, SPOS, IJS, IJL,
 !    &                    MIJ, RHOWGDFTH,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
 !    &                    TAUW, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
-!         *SL*          - TOTAL SOURCE FUNCTION ARRAY.
+!         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -50,8 +50,8 @@
 
 !       THE INPUT SOURCE FUNCTION IS INTEGRATED OVER FREQUENCY
 !       AND DIRECTIONS.
-!       BECAUSE ARRAY *SL* IS USED, ONLY THE INPUT SOURCE
-!       HAS TO BE STORED IN *SL* (CALL FIRST SINPUT, THEN
+!       BECAUSE ARRAY *SPOS* IS USED, ONLY THE INPUT SOURCE
+!       HAS TO BE STORED IN *SPOS* (CALL FIRST SINPUT, THEN
 !       STRESSO, AND THEN THE REST OF THE SOURCE FUNCTIONS)
 
 !     EXTERNALS.
@@ -86,7 +86,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
@@ -95,7 +95,7 @@
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
       REAL(KIND=JWRB) :: PHIHF_REDUC
-      REAL(KIND=JWRB) :: CONST, CNST
+      REAL(KIND=JWRB) :: CONST
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
       REAL(KIND=JWRB) :: ABS_TAUWSHELTER, GM1
@@ -149,19 +149,15 @@
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ) = SL(IJ,K,M)
-!         until we have figure out how to deal with negative input
-          CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-          SUMX(IJ) = CNST*SINTH(K)
-          SUMY(IJ) = CNST*COSTH(K)
+          SUMT(IJ) = SPOS(IJ,K,M)
+          SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
+          SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)
-!           until we have figure out how to deal with negative input
-            CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-            SUMX(IJ) = SUMX(IJ) + CNST*SINTH(K)
-            SUMY(IJ) = SUMY(IJ) + CNST*COSTH(K)
+            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+            SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
+            SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL

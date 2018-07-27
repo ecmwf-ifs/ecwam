@@ -189,7 +189,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 !     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+!     *SPOS* : POSITIVE SINPUT ONLY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
@@ -283,7 +284,7 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
 !     diagnostic (not coded efficiently)
 !!      DO IJ=IJS,IJL
@@ -309,7 +310,7 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -332,15 +333,14 @@
 !     ---------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: 2nd SINPUT CALL'
         CALL FLUSH (IU06)
       ENDIF
 
-      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
+      IF(LCFLX) THEN
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -357,7 +357,7 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -400,6 +400,9 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
+!!!1          SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M)/GTEMP1
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
               SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO

@@ -100,7 +100,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
 !????
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
@@ -121,7 +121,7 @@
 !         -----------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTAR, SL, XLLWS)
+     &             ROAIRN, WSTAR, SL, SPOS, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
         CALL FLUSH (IU06)
@@ -141,18 +141,15 @@
 
       IF(LCFLX) THEN
   
-       IF(.NOT. LWVFLX_SNL) THEN
-!      in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
-         DO M=1,NFRE
-           DO K=1,NANG
-             DO IJ=IJS,IJL
-               SSOURCE(IJ,K,M) = SL(IJ,K,M)
-             ENDDO
+       DO M=1,NFRE
+         DO K=1,NANG
+           DO IJ=IJS,IJL
+             SSOURCE(IJ,K,M) = SL(IJ,K,M)
            ENDDO
          ENDDO
-       ENDIF
+       ENDDO
 
-        CALL STRESSO (FL3, SL, IJS, IJL,                                &
+        CALL STRESSO (FL3, SPOS, IJS, IJL,                              &
      &                MIJ, RHOWGDFTH,                                   &
      &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
@@ -186,9 +183,18 @@
         ENDIF
 
         IF(LWVFLX_SNL) THEN
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+!!!           SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
+     &                   SSOURCE, CICVR,                                &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
