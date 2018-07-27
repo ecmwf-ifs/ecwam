@@ -1053,6 +1053,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             NTOT=N_MASK_OUT
             WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
           ENDIF
+
+          DEALLOCATE(ZCOMBUFS)
       ELSE
          WRITE(IU06,*) ' ONLY Local NORM OF FIELDS RETURNED TO IFS :'
       ENDIF
@@ -1064,7 +1066,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
           ENDDO
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
-          DEALLOCATE(ZCOMBUFS)
         ENDIF
 
 
