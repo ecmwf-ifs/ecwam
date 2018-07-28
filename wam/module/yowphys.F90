@@ -25,13 +25,13 @@
 
 
 !     Cumulative dissipation coefficient
-      REAL(KIND=JWRB), PARAMETER :: SSDSC3 = -0.40344_JWRB 
+!!!      REAL(KIND=JWRB), PARAMETER :: SSDSC3 = -0.40344_JWRB 
 !!!   This is quite an expensive computation. Setting it to 0 will disable its calculation.
 !!!   It was found that if the high frequency tail is prescribed (see frcutindex),
 !!!   then the results are very similar.
 !!!   Converserly, it will be required, in particular for the wave modified fluxes to NEMO
 !!!   when the high frequency tail is not prescribed and used in all calculation
-!!!! debile      REAL(KIND=JWRB), PARAMETER :: SSDSC3 = 0.0_JWRB 
+      REAL(KIND=JWRB), PARAMETER :: SSDSC3 = 0.0_JWRB 
       REAL(KIND=JWRB), PARAMETER :: SSDSBRF1   = 0.5_JWRB
 !     28.16 = 22.0 * 1.6² * 1/2 with  
 !     22.0 (Banner & al. 2000, figure 6) 
