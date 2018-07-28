@@ -69,10 +69,7 @@
       SELECT CASE (IPHYS)
       CASE(0)
         CALL SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, WSTAR, SL, XLLWS)
-!!!1 for the time being, unitl I test it
-        SPOS=SL
-
+     &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
       CASE(1) 
         CALL SINPUT_ARD (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)

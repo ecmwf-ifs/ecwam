@@ -452,8 +452,6 @@
             SPOS(IJ,K,M) = AVG_GST*SLP_AVG(IJ)*F(IJ,K,M)
             FL(IJ,K,M) = AVG_GST*FLP_AVG(IJ)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-!!!!debile
-            SPOS(IJ,K,M) = SL(IJ,K,M)
           ENDDO
 
         ENDDO
