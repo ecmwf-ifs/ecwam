@@ -428,6 +428,14 @@
             ENDDO
           ENDDO
 
+          DO IGST=1,NGST
+            DO IJ=IJS,IJL
+              SLP(IJ,IGST) = SLP(IJ,IGST)*F(IJ,K,M)
+              XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
+              YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
+            ENDDO
+          ENDDO
+
           IGST=1
             DO IJ=IJS,IJL
               SLP_AVG(IJ) = SLP(IJ,IGST)
@@ -440,16 +448,11 @@
             ENDDO
           ENDDO
 
-          DO IGST=1,NGST
-            DO IJ=IJS,IJL
-              SLP(IJ,IGST) = SLP(IJ,IGST)*F(IJ,K,M)
-              XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
-              YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
-            ENDDO
+          DO IJ=IJS,IJL
+            SPOS(IJ,K,M) = AVG_GST*SLP_AVG(IJ)
           ENDDO
 
           DO IJ=IJS,IJL
-            SPOS(IJ,K,M) = AVG_GST*SLP_AVG(IJ)*F(IJ,K,M)
             FL(IJ,K,M) = AVG_GST*FLP_AVG(IJ)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
