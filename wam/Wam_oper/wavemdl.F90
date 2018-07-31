@@ -103,7 +103,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         RNU      ,RNUM        ,                                  &
+     &         LLNORMWAM2IFS, RNU      ,RNUM                            &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -279,8 +279,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
-
-      LOGICAL :: LLONLY_LOCAL_NORM
 
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
@@ -708,8 +706,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       ENDIF
 #endif
 
-
-
 !----------------------------------------------------------------------
 
 !     3. PREPARE FIELDS THAT ARE RETURNED TO IFS (if coupled).
@@ -902,8 +898,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
 
 !       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
-        WRITE(IU06,*) ' '
         IF(LLGLOBAL_WVFLDG)THEN
+          WRITE(IU06,*) ' '
           WRITE(IU06,*) ' GLOBAL NORM OF FIELDS RETURNED TO IFS :'
 
           N_MASK_OUT_GLOBAL=NLATW*NLONW
@@ -934,9 +930,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
           WRITE(IU06,*) ' '
           CALL FLUSH(IU06)
 
-        ELSE
-
-
+        ELSEIF (LLNORMWAM2IFS) THEN
 !         Local NORM OF FIELDS RETURNED TO IFS :
 !         INITIALISE I,J POINTER TO MASK_OUT
           IF(LFRST) THEN
@@ -982,10 +976,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             FAVG(JF)=FAVG(JF)/MAX(N_MASK_OUT,1)
           ENDDO
 
-!!!!debile
-      LLONLY_LOCAL_NORM=.FALSE.
-
-      IF(LLONLY_LOCAL_NORM) THEN
 !         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.
  
@@ -1019,7 +1009,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
 !         COMPUTE PSEUDO GLOBAL NORM
           IF(IRANK.EQ.IRECV) THEN
-          WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
+            WRITE(IU06,*) ' '
+            WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
             IST=1+(IRANK-1)*NCOMLOC
             ICOUNT=IST
             NMASK=ZCOMBUFR(ICOUNT)
@@ -1051,13 +1042,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             ENDDO
           ELSE
             NTOT=N_MASK_OUT
+            WRITE(IU06,*) ' '
             WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
           ENDIF
 
           DEALLOCATE(ZCOMBUFS)
-      ELSE
-         WRITE(IU06,*) ' ONLY Local NORM OF FIELDS RETURNED TO IFS :'
-      ENDIF
 
           DO IFLD=1,NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD), FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT, &
@@ -1066,12 +1055,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
           ENDDO
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
-        ENDIF
+        ENDIF  ! end of norm production
 
 
 !       TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
         LDWCOUNORMS=LWCOUNORMS
-      ENDIF
+      ENDIF ! end lwcou
 
 #ifdef MODEL_COUPLING_ATM_WAV
       Z0_coupl=Z0OLD

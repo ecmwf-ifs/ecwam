@@ -277,7 +277,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,    &
+      USE YOWCOUP  , ONLY : LWCOU    ,LLNORMWAMOUT,                     &
+     &                      KCOUSTEP, LWNEMOCOU, NEMONTAU,              &
      &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,                &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
@@ -597,7 +598,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !           PRINT OUT NORMS
 !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
-            CALL OUTWNORM(LDREPROD)
+            IF(LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
           ENDIF
 
           IF( .NOT. LRESTARTED ) THEN

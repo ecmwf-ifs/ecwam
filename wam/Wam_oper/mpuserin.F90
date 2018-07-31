@@ -41,8 +41,8 @@
      &            HSALTCUT, LALTGRDOUT, LALTPAS, LALTPASSIV,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOUNORMS,KCOUSTEP  ,LWFLUX ,    &
-     &            LWVFLX_SNL,                                           &
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
+     &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
@@ -183,7 +183,8 @@
      &   LBCWA,                                                         &
      &   LSMSSIG_WAM,CMETER,CEVENT,                                     &
      &   LLWSWAVE, LLWDWAVE,                                            &
-     &   NPROMA_WAM, LL1D, LWCOUNORMS, LGRHDIFS ,LNEWLVTP,              &
+     &   NPROMA_WAM, LL1D, LGRHDIFS ,LNEWLVTP,                          &
+     &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LICERUN, LCIWABR, LICETH,                                      &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
@@ -470,6 +471,9 @@
 !                  ARE PRODUCED FOR THE DIFFERENT FIELDS EXCHANGED 
 !                  BETWEEN WAM AND THE COUPLED ATMOSPHERIC MODEL.
 !                  IT IS FALSE BY DEFAULT.
+!     LLNORMIFS2WAM : IF TRUE NORMS FOR FIELDS PASSED FROM IFS TO WAM WILL BE PRODUCED
+!     LLNORMWAM2IFS : IF TRUE NORMS FOR FIELDS PASSED FROM WAM TO IFS WILL BE PRODUCED
+!     LLNORMWAMOUT : IF TRUE NORMS OF SELECTED OUPTUT FIELDS WILL BE PRODUCED
 !     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
 !                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
 !                COUPLED TO THE IFS).
@@ -701,6 +705,9 @@
       LWAM_USE_IO_SERV = .FALSE.
 
       LWCOUNORMS = .FALSE.
+      LLNORMIFS2WAM = .FALSE.
+      LLNORMWAM2IFS = .FALSE.
+      LLNORMWAMOUT = .FALSE.
 
       LGRHDIFS = .FALSE.
 
@@ -923,6 +930,9 @@
         WRITE(6,*) '*** IVECTOR= ',IVECTOR
         WRITE(6,*) '*** LPREPROC= ',LPREPROC
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
+        WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM
+        WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS
+        WRITE(6,*) '*** LLNORMWAMOUT= ',LLNORMWAMOUT
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
         WRITE(6,*) '==============================================='
