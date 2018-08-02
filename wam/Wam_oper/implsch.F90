@@ -134,8 +134,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     , &
      &            COFRM4   ,FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWGRID  , ONLY : LICERUN
-      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LMASKICE
+      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
