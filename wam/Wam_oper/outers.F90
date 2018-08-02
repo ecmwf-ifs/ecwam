@@ -39,7 +39,6 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,FRATIO
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG      ,ZMISS
@@ -67,6 +66,7 @@
 
       REAL(KIND=JWRB) :: XANG, XFRE, XLAT, XLON
       REAL(KIND=JWRB),ALLOCATABLE :: FLPTS(:,:,:,:)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, THQ
       REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: EMPTS, FMPTS, THQPTS, &
      &                                U10PTS, THWPTS, USPTS
 
@@ -142,6 +142,10 @@
 
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
+!       COMPUTE MEAN PARAMETERS
+        CALL FEMEAN (FL3, IJS, IJL, EM, FM)
+        CALL STHQ (FL3, IJS, IJL, THQ)
+
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 
           IRECV=1
@@ -161,6 +165,7 @@
           CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,    &
      &                         IJS, IJL, FL3,FLPTS,                     &
      &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),      &
+     &                         EM, FM, THQ,                             &
      &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
 
         IF(IRANK.EQ.1) THEN
