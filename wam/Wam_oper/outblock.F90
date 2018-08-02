@@ -61,10 +61,12 @@
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
+      USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWCURR  , ONLY : U, V
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
+     &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
      &            PHIEPS   ,PHIAW    ,TAUOC    ,TAUXD    ,TAUYD     ,   &
      &            TAUOCXD  ,TAUOCYD  ,PHIOCD
 
@@ -96,7 +98,6 @@
 #include "sebtmean.intfb.h"
 #include "sepwisw.intfb.h"
 #include "sthq.intfb.h"
-#include "stokesdrift.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
 
@@ -400,19 +401,14 @@
         BOUT(IJS:IJL,ITOBOUT(IR))=TMAX(IJS:IJL)
       ENDIF
 
-!     STOKES DRIFT
-      IR=IR+1
-      IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
-!!!!!!!! the second order correction should not apply to the Stokes drift
-        CALL STOKESDRIFT(FL1, IJS, IJL, FLD1, FLD2)
-      ENDIF
-      IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=FLD1(IJS:IJL)
-      ENDIF
-
+!     SURFACE STOKES DRIFT U and V
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=FLD2(IJS:IJL)
+        BOUT(IJS:IJL,ITOBOUT(IR))=USTOKES(IJS:IJL)
+      ENDIF
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=VSTOKES(IJS:IJL)
       ENDIF
 
       IR=IR+1
@@ -467,7 +463,11 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL CIMSSTRN (FL1,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
+        IF(LWNEMOCOUSTRN)
+          BOUT(IJS:IJL,ITOBOUT(IR))=STRNMS(IJS:IJL)
+        ELSE
+          CALL CIMSSTRN (FL1,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
+        ENDIF
       ENDIF
 
       IR=IR+1

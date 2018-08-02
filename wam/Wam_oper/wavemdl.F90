@@ -117,7 +117,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,     &
-     &            TAUOC
+     &            TAUOC    ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
@@ -134,16 +134,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
      &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
      &            NSTART ,NEND     ,FL1      ,FL3
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
+      USE YOWNEMOP , ONLY : NEMODP
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
+      USE YOWUNPOOL,ONLY : LLUNSTR
       USE MPL_MODULE
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "cimsstrn.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
 #include "initmdl.intfb.h"
@@ -151,7 +151,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 #include "outbeta.intfb.h"
 #include "prewind.intfb.h"
 #include "setmarstype.intfb.h"
-#include "stokesdrift.intfb.h"
 #include "wamassi.intfb.h"
 #include "wamodel.intfb.h"
 
@@ -256,10 +255,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
-
-#ifdef PARKIND1_SINGLE
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) ::  ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
-#endif
 
       CHARACTER(LEN=7), PARAMETER :: CL_CPENV="SMSNAME"
       CHARACTER(LEN=8), PARAMETER :: CL_CPENV_ECF="ECF_NAME"
@@ -795,23 +790,28 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
           IFLDOFFSET=1
           IF(LWSTOKES) THEN
-             CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL, &
-     &                        WVBLOCK(KIJS,2),WVBLOCK(KIJS,3))
-             IFLDOFFSET=IFLDOFFSET+2
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=VSTOKES(KIJS:KIJL)
           ENDIF
 
           IF(LWFLUX) THEN
-             IFLDOFFSET=IFLDOFFSET+1
-             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIEPS(KIJS:KIJL)
-             IFLDOFFSET=IFLDOFFSET+1
-             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIAW(KIJS:KIJL)
-             IFLDOFFSET=IFLDOFFSET+1
-             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOC(KIJS:KIJL)
-             IFLDOFFSET=IFLDOFFSET+1
-             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=EMEAN(KIJS:KIJL)
-             IFLDOFFSET=IFLDOFFSET+1
-             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=FMEAN(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIEPS(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIAW(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOC(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=EMEAN(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=FMEAN(KIJS:KIJL)
           ENDIF
+
+          DO IFLD=IFLDOFFSET+1,NWVFIELDS
+            WVBLOCK(KIJS:KIJL,2)=0.0_JWRB
+          ENDDO
 
         ENDDO
 !$OMP   END PARALLEL DO
@@ -823,48 +823,20 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
         IF(LWNEMOCOU.AND.LWNEMOCOUSEND.AND.LWCOU) THEN
           CALL GSTATS(1443,0)
-#ifdef PARKIND1_SINGLE
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-!$OMP&    PRIVATE(ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN)
-#else
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-#endif
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
             IF(LWNEMOCOUSTK) THEN
-              IF(LWSTOKES) THEN
-!               IT WAS ALREADY COMPUTED FOR THE IFS
-                NEMOUSTOKES(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,2)
-                NEMOVSTOKES(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,3)
-              ELSE
-!               IT NEEDS TO BE COMPUTED
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs tmp copies
-                CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,&
-     &                           ZNEMOUSTOKES(1),ZNEMOVSTOKES(1))
-                NEMOUSTOKES(KIJS:KIJL) = ZNEMOUSTOKES(1:KIJL-KIJS+1)
-                NEMOVSTOKES(KIJS:KIJL) = ZNEMOVSTOKES(1:KIJL-KIJS+1)
-#else
-!     Double precision
-                CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL, &
-     &                           NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
-#endif
-              ENDIF
+              NEMOUSTOKES(KIJS:KIJL)=USTOKES(KIJS:KIJL)
+              NEMOVSTOKES(KIJS:KIJL)=VSTOKES(KIJS:KIJL)
             ELSE
-              NEMOUSTOKES(KIJS:KIJL)=0.
-              NEMOVSTOKES(KIJS:KIJL)=0.
+              NEMOUSTOKES(KIJS:KIJL)=0.0_NEMODP
+              NEMOVSTOKES(KIJS:KIJL)=0.0_NEMODP
             ENDIF
 
             IF(LWNEMOCOUSTRN) THEN
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs a tmp copy
-              CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,ZNEMOSTRN(1))
-              NEMOSTRN(KIJS:KIJL) = ZNEMOSTRN(1:KIJL-KIJS+1)
-#else
-!     Double precision
-              CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,NEMOSTRN(KIJS))
-#endif
+              NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
             ENDIF
 
           ENDDO

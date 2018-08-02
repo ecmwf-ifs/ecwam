@@ -56,11 +56,11 @@
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
-     &                      NEMONEW10, NEMOPHIF
+     &                      NEMONEW10, NEMOPHIF   , LWFLUX
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
-      USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
-     &                      TAUXD    ,TAUYD    ,                        &
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
+     &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
      &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -153,6 +153,13 @@
       ELSE
         REDCI(:)=1.0_JWRB
         XM(:)=0.0_JWRB
+      ENDIF
+
+      IF(LWFLUX) THEN
+        DO IJ=IJS,IJL
+          EMEAN(IJ)  = EM(IJ) 
+          FMEAN(IJ)  = F1(IJ) 
+        ENDDO
       ENDIF
 
       DO IJ=IJS,IJL

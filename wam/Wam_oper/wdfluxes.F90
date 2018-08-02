@@ -3,7 +3,8 @@
      &                     FL3, XLLWS,                                  &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
-     &                     Z0NEW, ROAIRN, WSTAR)
+     &                     Z0NEW, ROAIRN, WSTAR,                        &
+     &                     USTOKES, VSTOKES, STRNMS )
 
 ! ----------------------------------------------------------------------
 
@@ -11,6 +12,7 @@
 !****              FOR THE CALCULATION OF OUTPUT WAVE DEPENDANT FLUXES.
 !****              THIS IS NORMALLY DONE IN *IMPLSCH* BUT AT INITILISATION,
 !****              THE SOURCES TERMS ARE NOT YET EVALUATED.
+!****              ALSO DETERMINE THE SURFACE STOKES DRIFT ANd STRIN IN THE ICE.
 
 !*    PURPOSE.
 !     --------
@@ -20,7 +22,8 @@
 
 !       *CALL* *WDFLUXES (FL3, IJS, IJL, IG,
 !    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR)
+!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR,
+!    &                    USTOKES, VSTOKES, STRNMS)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
@@ -31,6 +34,10 @@
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
 !          *ROAIRN* - AIR DENSITY IN KG/M3.
 !          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
+!          *USTOKES*   U-COMP SURFACE STOKES DRIFT.
+!          *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
+!          *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
+
 
 
 !     METHOD.
@@ -59,7 +66,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
@@ -69,12 +76,14 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+#include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "frcutindex.intfb.h"
 #include "sdissip.intfb.h"
 #include "sinput.intfb.h"
 #include "snonlin.intfb.h"
+#include "stokesdrift.intfb.h"
 #include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
 #include "wrong_wnfluxes.intfb.h"
@@ -85,6 +94,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
@@ -193,6 +203,11 @@
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
+
+      CALL STOKESDRIFT(FL3, IJS, IJL, USTOKES, VSTOKES)
+
+      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+
 
       ENDIF
 ! ----------------------------------------------------------------------
