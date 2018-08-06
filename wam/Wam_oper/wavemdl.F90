@@ -103,7 +103,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         RNU      ,RNUM        ,                                  &
+     &         LLNORMWAM2IFS, RNU    ,RNUM     ,                        &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -117,7 +117,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,     &
-     &            TAUOC
+     &            TAUOC    ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
@@ -134,16 +134,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
      &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
      &            NSTART ,NEND     ,FL1      ,FL3
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
+      USE YOWNEMOP , ONLY : NEMODP
       USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
+      USE YOWUNPOOL,ONLY : LLUNSTR
       USE MPL_MODULE
 ! --------------------------------------------------------------------- 
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "cimsstrn.intfb.h"
 #include "difdate.intfb.h"
 #include "incdate.intfb.h"
 #include "initmdl.intfb.h"
@@ -151,7 +151,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 #include "outbeta.intfb.h"
 #include "prewind.intfb.h"
 #include "setmarstype.intfb.h"
-#include "stokesdrift.intfb.h"
 #include "wamassi.intfb.h"
 #include "wamodel.intfb.h"
 
@@ -239,6 +238,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       INTEGER(KIND=JWIM) :: N_MASK_OUT_GLOBAL
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: IREAD, ISTAT, IRECV
+      INTEGER(KIND=JWIM) :: IFLDOFFSET
       INTEGER(KIND=JWIM) :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
       INTEGER(KIND=JWIM) :: IC, IL, IST, IED, ICOUNT, JF, IP, IFLD
       INTEGER(KIND=JWIM) :: NCOMBUF, NCOMLOC, NTOT, NMASK
@@ -255,10 +255,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
-
-#ifdef PARKIND1_SINGLE
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) ::  ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
-#endif
 
       CHARACTER(LEN=7), PARAMETER :: CL_CPENV="SMSNAME"
       CHARACTER(LEN=8), PARAMETER :: CL_CPENV_ECF="ECF_NAME"
@@ -279,8 +275,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
-
-      LOGICAL :: LLONLY_LOCAL_NORM
 
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
@@ -708,8 +702,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       ENDIF
 #endif
 
-
-
 !----------------------------------------------------------------------
 
 !     3. PREPARE FIELDS THAT ARE RETURNED TO IFS (if coupled).
@@ -733,53 +725,52 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
                          !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
                          ! BUT WELL OVER LAND POINTS.
 
-!       2. U-STOKESDRIFT
-        IF(NWVFIELDS.GT.1) THEN
-          FLABEL(2)=' U-Stokes'
-          DEFVAL(2)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
+          IFLDOFFSET=1
+
+        IF(LWSTOKES) THEN
+!         2. U-STOKESDRIFT
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' U-Stokes'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
+
+!         3. V-STOKESDRIFT
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' V-Stokes'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
-!       3. V-STOKESDRIFT
-        IF(NWVFIELDS.GT.2) THEN
-          FLABEL(3)=' V-Stokes'
-          DEFVAL(3)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
-        ENDIF
+        IF(LWFLUX) THEN
+!         4. ENERGY FLUX TO OCEAN
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Phi_oc'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!       4. ENERGY FLUX TO OCEAN
-        IF(NWVFIELDS.GT.3) THEN
-          FLABEL(4)=' Phi_oc'
-          DEFVAL(4)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                         ! THE WAVE MODEL ICE FREE SEA POINTS.
-        ENDIF
+!         5. ENERGY FLUX TO WAVES
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Phi_aw'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!       5. ENERGY FLUX TO WAVES
-        IF(NWVFIELDS.GT.4) THEN
-          FLABEL(5)=' Phi_aw'
-          DEFVAL(5)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
-        ENDIF
+!         6. MOMENTUM FLUX TO OCEAN
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Tau_oc'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!       6. MOMENTUM FLUX TO OCEAN
-        IF(NWVFIELDS.GT.5) THEN
-          FLABEL(6)=' Tau_oc'
-          DEFVAL(6)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
-        ENDIF
-
-!       7. WAVE VARIANCE
-        IF(NWVFIELDS.GT.6) THEN
-          FLABEL(7)=' Emean'
-          DEFVAL(7)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
-        ENDIF
+!         7. WAVE VARIANCE
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Emean'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
   
-!       8. MEAN FREQUENCY
-        IF(NWVFIELDS.GT.7) THEN
-          FLABEL(8)=' Fmean'
-          DEFVAL(8)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                              ! THE WAVE MODEL ICE FREE SEA POINTS.
+!         8. MEAN FREQUENCY
+          IFLDOFFSET=IFLDOFFSET+1
+          FLABEL(IFLDOFFSET)=' Fmean'
+          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
         NPROMA=NPROMA_WAM
@@ -797,41 +788,31 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
 
+          IFLDOFFSET=1
           IF(LWSTOKES) THEN
-             CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL, &
-     &                        WVBLOCK(KIJS,2),WVBLOCK(KIJS,3))
-          ELSE
-             IF(NWVFIELDS.GT.1) THEN
-               WVBLOCK(KIJS:KIJL,2)=DEFVAL(2)
-             ENDIF
-             IF(NWVFIELDS.GT.2) THEN
-               WVBLOCK(KIJS:KIJL,3)=DEFVAL(3)
-             ENDIF
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=VSTOKES(KIJS:KIJL)
           ENDIF
 
           IF(LWFLUX) THEN
-             WVBLOCK(KIJS:KIJL,4)=PHIEPS(KIJS:KIJL)
-             WVBLOCK(KIJS:KIJL,5)=PHIAW(KIJS:KIJL)
-             WVBLOCK(KIJS:KIJL,6)=TAUOC(KIJS:KIJL)
-             WVBLOCK(KIJS:KIJL,7)=EMEAN(KIJS:KIJL)
-             WVBLOCK(KIJS:KIJL,8)=FMEAN(KIJS:KIJL)
-          ELSE
-             IF(NWVFIELDS.GT.3) THEN
-               WVBLOCK(KIJS:KIJL,4)=DEFVAL(4)
-             ENDIF
-             IF(NWVFIELDS.GT.4) THEN
-               WVBLOCK(KIJS:KIJL,5)=DEFVAL(5)
-             ENDIF
-             IF(NWVFIELDS.GT.5) THEN
-               WVBLOCK(KIJS:KIJL,6)=DEFVAL(6)
-             ENDIF             
-             IF(NWVFIELDS.GT.6) THEN
-               WVBLOCK(KIJS:KIJL,7)=DEFVAL(7)
-             ENDIF    
-             IF(NWVFIELDS.GT.7) THEN
-               WVBLOCK(KIJS:KIJL,8)=DEFVAL(8)
-             ENDIF    
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIEPS(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIAW(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOC(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=EMEAN(KIJS:KIJL)
+            IFLDOFFSET=IFLDOFFSET+1
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=FMEAN(KIJS:KIJL)
           ENDIF
+
+          DO IFLD=IFLDOFFSET+1,NWVFIELDS
+            WVBLOCK(KIJS:KIJL,2)=0.0_JWRB
+          ENDDO
+
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -842,48 +823,20 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
         IF(LWNEMOCOU.AND.LWNEMOCOUSEND.AND.LWCOU) THEN
           CALL GSTATS(1443,0)
-#ifdef PARKIND1_SINGLE
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-!$OMP&    PRIVATE(ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN)
-#else
-!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-#endif
           DO JKGLO=IJS(IG),IJL(IG),NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
             IF(LWNEMOCOUSTK) THEN
-              IF(LWSTOKES) THEN
-!               IT WAS ALREADY COMPUTED FOR THE IFS
-                NEMOUSTOKES(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,2)
-                NEMOVSTOKES(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,3)
-              ELSE
-!               IT NEEDS TO BE COMPUTED
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs tmp copies
-                CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,&
-     &                           ZNEMOUSTOKES(1),ZNEMOVSTOKES(1))
-                NEMOUSTOKES(KIJS:KIJL) = ZNEMOUSTOKES(1:KIJL-KIJS+1)
-                NEMOVSTOKES(KIJS:KIJL) = ZNEMOVSTOKES(1:KIJL-KIJS+1)
-#else
-!     Double precision
-                CALL STOKESDRIFT(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL, &
-     &                           NEMOUSTOKES(KIJS),NEMOVSTOKES(KIJS))
-#endif
-              ENDIF
+              NEMOUSTOKES(KIJS:KIJL)=USTOKES(KIJS:KIJL)
+              NEMOVSTOKES(KIJS:KIJL)=VSTOKES(KIJS:KIJL)
             ELSE
-              NEMOUSTOKES(KIJS:KIJL)=0.
-              NEMOVSTOKES(KIJS:KIJL)=0.
+              NEMOUSTOKES(KIJS:KIJL)=0.0_NEMODP
+              NEMOVSTOKES(KIJS:KIJL)=0.0_NEMODP
             ENDIF
 
             IF(LWNEMOCOUSTRN) THEN
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs a tmp copy
-              CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,ZNEMOSTRN(1))
-              NEMOSTRN(KIJS:KIJL) = ZNEMOSTRN(1:KIJL-KIJS+1)
-#else
-!     Double precision
-              CALL CIMSSTRN(FL1(KIJS:KIJL,1:NANG,1:NFRE),KIJS,KIJL,NEMOSTRN(KIJS))
-#endif
+              NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
             ENDIF
 
           ENDDO
@@ -902,8 +855,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
 
 !       COMPUTATION OF THE NORMS OF OUTPUT FIELDS
-        WRITE(IU06,*) ' '
         IF(LLGLOBAL_WVFLDG)THEN
+          WRITE(IU06,*) ' '
           WRITE(IU06,*) ' GLOBAL NORM OF FIELDS RETURNED TO IFS :'
 
           N_MASK_OUT_GLOBAL=NLATW*NLONW
@@ -934,9 +887,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
           WRITE(IU06,*) ' '
           CALL FLUSH(IU06)
 
-        ELSE
-
-
+        ELSEIF (LLNORMWAM2IFS) THEN
 !         Local NORM OF FIELDS RETURNED TO IFS :
 !         INITIALISE I,J POINTER TO MASK_OUT
           IF(LFRST) THEN
@@ -982,10 +933,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             FAVG(JF)=FAVG(JF)/MAX(N_MASK_OUT,1)
           ENDDO
 
-!!!!debile
-      LLONLY_LOCAL_NORM=.FALSE.
-
-      IF(LLONLY_LOCAL_NORM) THEN
 !         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.
  
@@ -1019,7 +966,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 
 !         COMPUTE PSEUDO GLOBAL NORM
           IF(IRANK.EQ.IRECV) THEN
-          WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
+            WRITE(IU06,*) ' '
+            WRITE(IU06,*) ' Local NORM OF global FIELDS RETURNED TO IFS :'
             IST=1+(IRANK-1)*NCOMLOC
             ICOUNT=IST
             NMASK=ZCOMBUFR(ICOUNT)
@@ -1051,13 +999,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
             ENDDO
           ELSE
             NTOT=N_MASK_OUT
+            WRITE(IU06,*) ' '
             WRITE(IU06,*) ' Local NORM OF FIELDS RETURNED TO IFS :'
           ENDIF
 
           DEALLOCATE(ZCOMBUFS)
-      ELSE
-         WRITE(IU06,*) ' ONLY Local NORM OF FIELDS RETURNED TO IFS :'
-      ENDIF
 
           DO IFLD=1,NWVFIELDS
             WRITE(IU06,*) FLABEL(IFLD), FAVG(IFLD),FMIN(IFLD),FMAX(IFLD),NTOT, &
@@ -1066,12 +1012,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
           ENDDO
           IF (ITEST.GE.1)  CALL FLUSH(IU06)
 
-        ENDIF
+        ENDIF  ! end of norm production
 
 
 !       TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
         LDWCOUNORMS=LWCOUNORMS
-      ENDIF
+      ENDIF ! end lwcou
 
 #ifdef MODEL_COUPLING_ATM_WAV
       Z0_coupl=Z0OLD

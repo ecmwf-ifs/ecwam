@@ -90,26 +90,10 @@
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
      &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
-      USE YOWCURR  , ONLY : U        ,V
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ      ,PHIEPS   ,    &
-     &                      PHIAW    ,TAUOC
-      USE YOWMESPAS, ONLY : LMESSPASS 
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,NNEXT    ,    &
-     &            NINF     ,NSUP     ,MPMAXLENGTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
-     &            LL1D
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWSTAT  , ONLY : CDATEE   ,CDTPRO   ,ISIGHUP  ,ISIGINT  ,    &
      &            IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,KLENTOP  ,KLENBOT  ,    &
-     &            NFROMPE  ,NTOPE    ,NIJSTART ,IJTOPE   ,NTOPELST ,    &
-     &            NFROMPELST,                                           &
-     &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,              &
-     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
-     &            FL1      ,FL3
       USE YOWALTAS , ONLY : LODBRALT
-      USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV

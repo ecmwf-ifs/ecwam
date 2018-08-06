@@ -61,10 +61,12 @@
 
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT
+      USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWCURR  , ONLY : U, V
       USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
+     &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
      &            PHIEPS   ,PHIAW    ,TAUOC    ,TAUXD    ,TAUYD     ,   &
      &            TAUOCXD  ,TAUOCYD  ,PHIOCD
 
@@ -96,7 +98,6 @@
 #include "sebtmean.intfb.h"
 #include "sepwisw.intfb.h"
 #include "sthq.intfb.h"
-#include "stokesdrift.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
 
@@ -187,7 +188,7 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
         ITG=ITOBOUT(IR)
-        CALL STHQ (FL3,IJS,IJL,BOUT(IJS,ITG))
+        CALL STHQ (FL3, IJS, IJL, BOUT(IJS,ITG))
 !       CONVERT DIRECTIONS TO DEGREES AND METEOROLOGICAL CONVENTION
         BOUT(IJS:IJL,ITG)=MOD(DEG*BOUT(IJS:IJL,ITG)+180._JWRB,360._JWRB)
       ENDIF
@@ -242,7 +243,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MEANSQS (FL3,IJS,IJL,USNEW(IJS),FM,BOUT(IJS,ITOBOUT(IR)))
+        CALL MEANSQS (FL3, IJS, IJL, USNEW(IJS), FM, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -327,17 +328,17 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP1 (FL3,IJS,IJL,EM,BOUT(IJS,ITOBOUT(IR)))
+        CALL MWP1 (FL3, IJS, IJL, EM, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP2 (FL3,IJS,IJL,EM,BOUT(IJS,ITOBOUT(IR)))
+        CALL MWP2 (FL3, IJS, IJL, EM, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL WDIRSPREAD (FL3,IJS,IJL,EM,LLPEAKF,BOUT(IJS,ITOBOUT(IR)))
+        CALL WDIRSPREAD (FL3, IJS, IJL, EM, LLPEAKF, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -400,19 +401,14 @@
         BOUT(IJS:IJL,ITOBOUT(IR))=TMAX(IJS:IJL)
       ENDIF
 
-!     STOKES DRIFT
-      IR=IR+1
-      IF(IPFGTBL(IR).NE.0 .OR. IPFGTBL(IR+1).NE.0) THEN
-!!!!!!!! the second order correction should not apply to the Stokes drift
-        CALL STOKESDRIFT(FL1, IJS, IJL, FLD1, FLD2)
-      ENDIF
-      IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=FLD1(IJS:IJL)
-      ENDIF
-
+!     SURFACE STOKES DRIFT U and V
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=FLD2(IJS:IJL)
+        BOUT(IJS:IJL,ITOBOUT(IR))=USTOKES(IJS:IJL)
+      ENDIF
+      IR=IR+1
+      IF(IPFGTBL(IR).NE.0) THEN
+        BOUT(IJS:IJL,ITOBOUT(IR))=VSTOKES(IJS:IJL)
       ENDIF
 
       IR=IR+1
@@ -467,12 +463,16 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL CIMSSTRN (FL1,IJS,IJL,BOUT(IJS,ITOBOUT(IR)))
+        IF(LWNEMOCOUSTRN) THEN
+          BOUT(IJS:IJL,ITOBOUT(IR))=STRNMS(IJS:IJL)
+        ELSE
+          CALL CIMSSTRN (FL1, IJS, IJL, BOUT(IJS,ITOBOUT(IR)))
+        ENDIF
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL SE10MEAN (FL3,IJS,IJL,FLD1(IJS))
+        CALL SE10MEAN (FL3, IJS, IJL, FLD1(IJS))
         BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(FLD1(IJS:IJL),0._JWRB))
       ENDIF
 
@@ -570,7 +570,7 @@
       DO IH=1,NTEWH
         IR=IR+1
         IF(IPFGTBL(IR).NE.0) THEN
-          CALL SEBTMEAN (FL3,IJS,IJL,TEWH(IH-1),TEWH(IH),BOUT(IJS,ITOBOUT(IR)))
+          CALL SEBTMEAN (FL3, IJS, IJL, TEWH(IH-1), TEWH(IH), BOUT(IJS,ITOBOUT(IR)))
 !         SIGNIFICANT WAVE HEIGHT CONVERSION
           BOUT(IJS:IJL,ITOBOUT(IR))=4._JWRB*SQRT(MAX(BOUT(IJS:IJL,ITOBOUT(IR)),0._JWRB))
         ENDIF

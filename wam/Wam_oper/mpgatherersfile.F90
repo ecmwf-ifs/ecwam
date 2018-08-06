@@ -1,6 +1,7 @@
       SUBROUTINE MPGATHERERSFILE(IRECV, ITAG, NSTART, NEND, NSPFLD,     &
      &                           NSCFLD,                                &
      &                           IJS, IJL, FL3, FLPTS,                  &
+     &                           EM, FM, THQ,                           &
      &                           U10, THW, US,                          &
      &                           EMPTS, FMPTS, THQPTS,                  &
      &                           U10PTS, THWPTS, USPTS)
@@ -24,6 +25,7 @@
 !     CALL *MPGATHERERSFILE*(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD, 
 !    1                   FL1,FLPTS,
 !    2                   U10,THW,US,
+!    &                   EM, FM, THQ,                           &
 !    3                   EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)
 
 
@@ -42,6 +44,9 @@
 !     *U10*       WIND SPEED IN M/S.
 !     *THW*       WIND DIRECTION IN RADIANS
 !     *US*        FRICTION VELOCITY IN M/S.
+!     *EM*        TOTAL ENERGY AT SELECTED GRID POINTS (OUTPUT).
+!     *FM*        MEAN FREQUENCY AT SELECTED GRID POINTS (OUTPUT). 
+!     *THQ*       MEAN WAVE DIRECTION AT SELECTED GRID POINTS (OUTPUT).
 !     *EMPTS*     TOTAL ENERGY AT SELECTED GRID POINTS (OUTPUT).
 !     *FMPTS*     MEAN FREQUENCY AT SELECTED GRID POINTS (OUTPUT). 
 !     *THQPTS*    MEAN WAVE DIRECTION AT SELECTED GRID POINTS (OUTPUT).
@@ -73,7 +78,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOER  , ONLY : IERS     ,IJERS
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE MPL_MODULE
@@ -90,6 +94,7 @@
       REAL(KIND=JWRB), DIMENSION(NSPFLD,IERS,NANG,NFRE), INTENT(OUT) :: FLPTS
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10,THW,US
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: EM, FM, THQ
       REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: EMPTS, FMPTS
       REAL(KIND=JWRB), DIMENSION(IERS), INTENT(OUT) :: THQPTS, U10PTS, THWPTS, USPTS
 
@@ -109,8 +114,8 @@
       IF (IRECV.EQ.0 .OR. NPROC.EQ.1) THEN
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
-          EMPTS(NGOU) = EMEAN(IJ)
-          FMPTS(NGOU) = FMEAN(IJ)
+          EMPTS(NGOU) = EM(IJ)
+          FMPTS(NGOU) = FM(IJ)
           THQPTS(NGOU) = THQ(IJ)
           U10PTS(NGOU) = U10(IJ)
           THWPTS(NGOU) = THW(IJ)
@@ -133,9 +138,9 @@
           IJ=IJERS(NGOU)
           IF (IJ.GE.IJS .AND. IJ.LE.IJL) THEN
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=EMEAN(IJ)
+            ZCOMBUF(KCOUNT)=EM(IJ)
             KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=FMEAN(IJ)
+            ZCOMBUF(KCOUNT)=FM(IJ)
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=THQ(IJ)
             KCOUNT=KCOUNT+1
@@ -213,8 +218,8 @@
         DO NGOU=1,IERS
           IJ=IJERS(NGOU)
           IF (IJ.GE.IJS .AND. IJ.LE.IJL)THEN
-            EMPTS(NGOU) = EMEAN(IJ)
-            FMPTS(NGOU) = FMEAN(IJ)
+            EMPTS(NGOU) = EM(IJ)
+            FMPTS(NGOU) = FM(IJ)
             THQPTS(NGOU) = THQ(IJ)
             U10PTS(NGOU) = U10(IJ)
             THWPTS(NGOU) = THW(IJ)

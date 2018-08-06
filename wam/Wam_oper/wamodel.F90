@@ -277,7 +277,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC    ,GBOUNC  , IPOGBO  ,    &
      &            CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP, LWNEMOCOU, NEMONTAU,    &
+      USE YOWCOUP  , ONLY : LWCOU    ,LLNORMWAMOUT,                     &
+     &                      KCOUSTEP, LWNEMOCOU, NEMONTAU,              &
      &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,                &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP
@@ -301,6 +302,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
      &            CIWA
+      USE YOWMEAN  , ONLY : USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
@@ -334,6 +336,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
+      USE YOWNEMOP , ONLY : NEMODP
       USE UNWAM, ONLY : PROPAG_UNWAM, EXCHANGE_FOR_FL1_FL3_SL
       USE YOWUNPOOL ,ONLY : LLUNSTR, DBG, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
@@ -359,7 +362,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
 #include "chesig.intfb.h"
-#include "cimsstrn.intfb.h"
 #include "clean_outbs.intfb.h"
 #include "closend.intfb.h"
 #include "ctuw.intfb.h"
@@ -380,7 +382,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 #include "savspec.intfb.h"
 #include "savstress.intfb.h"
 #include "setice.intfb.h"
-#include "stokesdrift.intfb.h"
 #include "unsetice.intfb.h"
 #include "updnemofields.intfb.h"
 #include "updnemostress.intfb.h"
@@ -399,10 +400,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NANG,NFRE) :: XLLWS
-
-#ifdef PARKIND1_SINGLE
-      REAL(KIND=JWRB), DIMENSION(:), ALLOCATABLE :: ZNEMOUSTOKES,ZNEMOVSTOKES,ZNEMOSTRN
-#endif
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -517,7 +514,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
      &                     CICOVER(KIJS,IG),                            &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
-     &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS) )
+     &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),    &
+     &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
           IF (ITEST.GE.2) THEN
@@ -928,6 +926,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS), &
+     &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
 
               ENDDO
@@ -992,9 +991,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !MDS: Most likely ultra bugged.
             CALL OUTUNWAMTEST (FL3(1:MNP,:,:), .FALSE.)
           ENDIF
+
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
 !             ---------------------------------------------
-
           IF (CDTIMPNEXT.LE.CDTPRO) GO TO 1550
 
 !        END OF TIME LOOP ALL TIME STEPS DONE
@@ -1005,31 +1004,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                CALL FLUSH(IU06)
             ENDIF
           ENDIF
-!ICE
 
-!*    1.5.6 SET FL3 ON ICE POINTS TO ZERO
-!           -----------------------------
-
-          IF (LICERUN .AND. LMASKICE .AND. LLSOURCE) THEN
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: SPECTRUM = 0 AT ICE POINTS'
-               CALL FLUSH(IU06)
-            ENDIF
-            CALL GSTATS(1439,0)
-!$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
-              KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-              CALL SETICE(FL3(KIJS:KIJL,:,:),KIJS, KIJL,                &
-     &                    CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
-            ENDDO
-!$OMP       END PARALLEL DO
-            CALL GSTATS(1439,1)
-          ENDIF
-
-!ICE
 !NEST
-
 !*    1.5.7 INPUT OF BOUNDARY VALUES.
 !           -------------------------
 
@@ -1103,7 +1079,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
 !!!1 to do: decide if there are cased where we might want LDREPROD false
               LDREPROD=.TRUE.
-              CALL OUTWNORM(LDREPROD)
+              IF(LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
 
             ENDIF
 
@@ -1373,68 +1349,46 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
           CALL FLUSH (IU06)
         ENDIF
 
-!*    WAM-NEMO COUPLING (no atmospheric model !!!!!!)
-
-!!!  could use an openmp loop
-
+!*      WAM-NEMO COUPLING (NO atmospheric model !!!!!!)
         IF (LWNEMOCOU.AND.(.NOT.LWCOU)) THEN
-          
           NEMOWSTEP=NEMOWSTEP+1
 
           IF (MOD(NEMOWSTEP,NEMOFRCO)==0) THEN
+            IG=1
+            CALL GSTATS(1432,0)
+!$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
+            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              KIJS=JKGLO
+              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              IF(LWNEMOCOUSTK) THEN
+                NEMOUSTOKES(KIJS:KIJL) = USTOKES(KIJS:KIJL)
+                NEMOVSTOKES(KIJS:KIJL) = VSTOKES(KIJS:KIJL)
+              ELSE
+                NEMOUSTOKES(KIJS:KIJL) = 0.0_NEMODP
+                NEMOVSTOKES(KIJS:KIJL) = 0.0_NEMODP
+              ENDIF
+              IF(LWNEMOCOUSTRN)  NEMOSTRN(KIJS:KIJL) = STRNMS(KIJS:KIJL)
+            ENDDO
+!$OMP       END PARALLEL DO
+            CALL GSTATS(1432,1)
 
-             IG=1
-             IF(LWNEMOCOUSTK) THEN
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs tmp copies
-                ALLOCATE(ZNEMOUSTOKES(IJS(IG):IJL(IG)))
-                ALLOCATE(ZNEMOVSTOKES(IJS(IG):IJL(IG)))
-                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:), IJS(IG),IJL(IG), &
-     &                           ZNEMOUSTOKES(IJS(IG)), ZNEMOVSTOKES(IJS(IG)))
-                NEMOUSTOKES(IJS(IG):IJL(IG)) = ZNEMOUSTOKES(IJS(IG):IJL(IG))
-                NEMOVSTOKES(IJS(IG):IJL(IG)) = ZNEMOVSTOKES(IJS(IG):IJL(IG))
-                DEALLOCATE(ZNEMOUSTOKES)
-                DEALLOCATE(ZNEMOVSTOKES)
-#else
-!     Double precision
-                CALL STOKESDRIFT(FL1(IJS(IG):IJL(IG),:,:), IJS(IG),IJL(IG), &
-     &                           NEMOUSTOKES(IJS(IG)), NEMOVSTOKES(IJS(IG)))
-#endif
-             ELSE
-               NEMOUSTOKES(:)=0.
-               NEMOVSTOKES(:)=0.
-             ENDIF
-             IF(LWNEMOCOUSTRN) THEN
-#ifdef PARKIND1_SINGLE
-!     Single precision -- needs a tmp copy
-                ALLOCATE(ZNEMOSTRN(IJS(IG):IJL(IG)))
-                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),       &
-     &                        IJS(IG),IJL(IG), ZNEMOSTRN(IJS(IG)))
-                NEMOSTRN(IJS(IG):IJL(IG)) = ZNEMOSTRN(IJS(IG):IJL(IG))
-                DEALLOCATE(ZNEMOSTRN)
-#else
-!     Double precision
-                CALL CIMSSTRN(FL1(IJS(IG):IJL(IG),1:NANG,1:NFRE),       &
-     &                        IJS(IG),IJL(IG), NEMOSTRN(IJS(IG)))
-#endif
-             ENDIF
-             CALL UPDNEMOFIELDS
-             CALL UPDNEMOSTRESS
+            CALL UPDNEMOFIELDS
+            CALL UPDNEMOSTRESS
 
-             DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
+            DO JSTPNEMO=NEMOCSTEP,NEMOCSTEP+NEMONSTEP-1
                ! Advance the NEMO model 1 time step
 #ifdef WITH_NEMO
-                CALL NEMOGCMCOUP_STEP( JSTPNEMO, IDATE, ITIME )
+               CALL NEMOGCMCOUP_STEP( JSTPNEMO, IDATE, ITIME )
 #endif
-                WRITE(IU06,*)'NEMO TIME IS : ',JSTPNEMO, IDATE, ITIME
+               WRITE(IU06,*)'NEMO TIME IS : ',JSTPNEMO, IDATE, ITIME
             ENDDO
             NEMOCSTEP=NEMOCSTEP+NEMONSTEP
 
           ENDIF
 
         ENDIF
-!*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
 
+!*    BRANCHING BACK TO 1.0 FOR NEXT PROPAGATION STEP.
       ENDDO ADVECTION
 
       IF (LHOOK) CALL DR_HOOK('WAMODEL',1,ZHOOK_HANDLE)

@@ -523,7 +523,7 @@ MODULE WAV_netcdf
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,           &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,           &
      &            FL3
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ,FPMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG,     &
      &            USTARG, CDG
       USE YOWPCONS , ONLY : EPSUS    ,EPSU10
@@ -572,8 +572,12 @@ MODULE WAV_netcdf
         gzValue=gValue*eSingZ0
         eAlpha=gzValue/(eUstarE*eUstarE)
         eHS=4*SQRT(EMEAN(IJ))
-        eDir=THQ(IJ)
-        ePeakFreq=FPMEAN(IJ)
+!!! debile: THQ and FPMEAN no longer exist !
+ !!!1 this all lot need to ne rewritten since we change out integrated parameters are produced !!!
+        eDir=0.0
+        ePeakFreq=0.0
+!!        eDir=THQ(IJ)
+!!        ePeakFreq=FPMEAN(IJ)
         eMeanFreq=FMEAN(IJ)
         eTAU = MAX(USNEW(IJ)**2,EPSUS)
         eCD = eTAU/MAX(U10NEW(IJ)**2,EPSU10)

@@ -5,6 +5,7 @@
      &                    CICVR, CIWA,                                  &
      &                    U10NEW, THWNEW, USNEW,                        &
      &                    Z0NEW, ROAIRN, WSTARNEW,                      &
+     &                    USTOKES, VSTOKES, STRNMS,                     &
      &                    MIJ, XLLWS)
 
 ! ----------------------------------------------------------------------
@@ -46,6 +47,7 @@
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
+!    &                    USTOKES, VSTOKES, STRNMS,                     &
 !    &                    MIJ,  XLLWS)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -70,6 +72,9 @@
 !      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
+!      *USTOKES*   U-COMP SURFACE STOKES DRIFT.
+!      *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
+!      *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
 !      *MIJ*       LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !      *XLLWS*     TOTAL WINDSEA MASK FROM INPUT SOURCE TERM
 
@@ -123,12 +128,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU, &
+     &            LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     , &
      &            COFRM4   ,FLMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE YOWICE   , ONLY : FLMIN    ,LCIWABR
+      USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
@@ -143,6 +149,7 @@
 #include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
 #include "airsea.intfb.h"
+#include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
@@ -150,8 +157,10 @@
 #include "sbottom.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
+#include "setice.intfb.h"
 #include "sinput.intfb.h"
 #include "snonlin.intfb.h"
+#include "stokesdrift.intfb.h"
 #include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
 #include "wrong_wnfluxes.intfb.h"
@@ -166,6 +175,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -484,9 +494,28 @@
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 
-! ----------------------------------------------------------------------
 
-!*    2.6 SAVE WINDS INTO INTERMEDIATE STORAGE.
+!*    2.6 SET FL3 ON ICE POINTS TO ZERO
+!         -----------------------------
+
+      IF (LICERUN .AND. LMASKICE) THEN
+        IF (ITEST.GE.1) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: SPECTRUM = 0 AT ICE POINTS'
+           CALL FLUSH(IU06)
+        ENDIF
+        CALL SETICE(FL3, IJS, IJL, CICVR, U10NEW, THWNEW)
+      ENDIF
+
+
+!*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
+!         ------------------------------------------
+
+      CALL STOKESDRIFT(FL3, IJS, IJL, USTOKES, VSTOKES)
+
+      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+
+
+!*    2.8 SAVE WINDS INTO INTERMEDIATE STORAGE.
 !         -------------------------------------
 
       DO IJ=IJS,IJL

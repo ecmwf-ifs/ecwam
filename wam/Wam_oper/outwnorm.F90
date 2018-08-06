@@ -55,7 +55,7 @@
           WRITE(IU06,*) ' ' 
           IF(LDREPROD) THEN
             WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
-            WRITE(IU06,*) '  !!!!!!!!! REPRODUCEABLE ONLY IF SAME NPROC'
+            WRITE(IU06,*) '  !!!!!!!!! REPRODUCEABLE ONLY IF SAME NPROC !!!!!!'
           ELSE
             WRITE(IU06,*) '  !!!!!!!!!!!! NON reproduceable WAMNORM ON ',CDTPRO
           ENDIF
@@ -70,7 +70,6 @@
             ENDIF
           ENDDO
 111     FORMAT(4x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
-        CALL FLUSH(IU06)
 
       ENDIF
 
