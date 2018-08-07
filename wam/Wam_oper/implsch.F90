@@ -310,7 +310,7 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
+      CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -350,7 +350,7 @@
         ENDDO
       ENDIF
 
-      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
+      CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
