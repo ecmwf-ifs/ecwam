@@ -1,4 +1,4 @@
-      SUBROUTINE STRESSO (F, SPOS, SL, IJS, IJL,                        &
+      SUBROUTINE STRESSO (F, SPOS, IJS, IJL,                            &
      &                    MIJ, RHOWGDFTH,                               &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, PHIWA)
@@ -29,7 +29,6 @@
 !    &                    TAUW, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
-!         *SL*          - FULL WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -87,7 +86,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SPOS, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
@@ -149,13 +148,13 @@
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ) = SL(IJ,K,M)
+          SUMT(IJ) = SPOS(IJ,K,M)
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
           SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)
+            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
             SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
             SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO

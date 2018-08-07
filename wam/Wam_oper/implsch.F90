@@ -1,4 +1,4 @@
-      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
+      S    iBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, Z0OLD,                                  &
      &                    ROAIRO, WSTAROLD,                             &
@@ -310,7 +310,7 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                            &
+      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -340,18 +340,18 @@
         CALL FLUSH (IU06)
       ENDIF
 
-! only if wrong flux used
-!      IF(LCFLX) THEN
-!        DO M=1,NFRE
-!          DO K=1,NANG
-!            DO IJ=IJS,IJL
-!              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-!            ENDDO
-!          ENDDO
-!        ENDDO
-!      ENDIF
+      IF(LCFLX) THEN
+!       save SL
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
-      CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                            &
+      CALL STRESSO (FL3, SPOS, IJS, IJL,                                &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -380,9 +380,19 @@
 !     &                       PHIWA,                                     &
 !     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
 !     &                       USNEW, ROAIRN, .TRUE.)
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+!!!1          SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M)/GTEMP1
+            ENDDO
+          ENDDO
+        ENDDO
         CALL WNFLUXES (IJS, IJL,                                        &
      &                 MIJ, RHOWGDFTH,                                  &
-     &                 SL, CICVR,                                       &
+     &                 SSOURCE, CICVR,                                  &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
      &                 USNEW, ROAIRN, .TRUE.)
@@ -401,8 +411,10 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
+!!!1          SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
+              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO

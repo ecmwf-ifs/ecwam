@@ -142,16 +142,15 @@
 
       IF(LCFLX) THEN
   
-! only if wrong flux used
-!       DO M=1,NFRE
-!         DO K=1,NANG
-!           DO IJ=IJS,IJL
-!             SSOURCE(IJ,K,M) = SL(IJ,K,M)
-!           ENDDO
-!         ENDDO
-!       ENDDO
+       DO M=1,NFRE
+         DO K=1,NANG
+           DO IJ=IJS,IJL
+             SSOURCE(IJ,K,M) = SL(IJ,K,M)
+           ENDDO
+         ENDDO
+       ENDDO
 
-        CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                          &
+        CALL STRESSO (FL3, SPOS, IJS, IJL,                              &
      &                MIJ, RHOWGDFTH,                                   &
      &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
@@ -177,9 +176,17 @@
 !     &                         PHIWA,                                   &
 !     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
 !     &                         USNEW, ROAIRN, .FALSE.)
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+!!!           SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
+     &                   SSOURCE, CICVR,                                &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
@@ -192,9 +199,18 @@
         ENDIF
 
         IF(LWVFLX_SNL) THEN
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+!!!           SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
+     &                   SSOURCE, CICVR,                                &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
