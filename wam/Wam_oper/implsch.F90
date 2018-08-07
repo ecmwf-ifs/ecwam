@@ -340,15 +340,16 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      IF(LCFLX) THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
+! only if wrong flux used
+!      IF(LCFLX) THEN
+!        DO M=1,NFRE
+!          DO K=1,NANG
+!            DO IJ=IJS,IJL
+!              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+!            ENDDO
+!          ENDDO
+!        ENDDO
+!      ENDIF
 
       CALL STRESSO (FL3, SPOS, SL, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
@@ -372,24 +373,16 @@
       ENDIF
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-
+! only if wrong flux used
 !        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
 !     &                       MIJ, RHOWGDFTH,                            &
 !     &                       SSOURCE, SL,                               &
 !     &                       PHIWA,                                     &
 !     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
 !     &                       USNEW, ROAIRN, .TRUE.)
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-!!!1          SSOURCE should only contain the positive contribution from sinput
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
         CALL WNFLUXES (IJS, IJL,                                        &
      &                 MIJ, RHOWGDFTH,                                  &
-     &                 SSOURCE, CICVR,                                  &
+     &                 SL, CICVR,                                       &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
      &                 USNEW, ROAIRN, .TRUE.)
@@ -408,10 +401,8 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-!!!1          SSOURCE should only contain the positive contribution from sinput
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
               GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M)/GTEMP1
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
