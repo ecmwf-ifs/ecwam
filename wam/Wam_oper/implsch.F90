@@ -1,4 +1,4 @@
-      S    iBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
+      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, Z0OLD,                                  &
      &                    ROAIRO, WSTAROLD,                             &
@@ -385,8 +385,6 @@
             DO IJ=IJS,IJL
 !!!1          SSOURCE should only contain the positive contribution from sinput
               SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
-              GTEMP1 = MAX((1.0_JWRB-DELT5*FL(IJ,K,M)),1.0_JWRB)
-              SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M)/GTEMP1
             ENDDO
           ENDDO
         ENDDO
