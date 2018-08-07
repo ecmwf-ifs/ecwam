@@ -120,6 +120,7 @@
           ZBETA     = EXP(ZLOG)*ZLOG**4
           FNC2      = WTAUHF(J)*ZBETA*TAUW*DELZTAUW0M1
           TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2*TAUW0,0.0_JWRB)
+          FNC2      = TAUW*FNC2
           UST       = SQRT(TAUW)
           TAUHF(IJ) = TAUHF(IJ) + FNC2
           PHIHF(IJ) = PHIHF(IJ) + FNC2/Y

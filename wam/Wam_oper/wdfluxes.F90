@@ -112,7 +112,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-!????
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
@@ -178,12 +177,27 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WRONG_WNFLUXES (IJS, IJL,                                &
-     &                         MIJ, RHOWGDFTH,                          &
-     &                         SSOURCE, SL,                             &
-     &                         PHIWA,                                   &
-     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
-     &                         USNEW, ROAIRN, .FALSE.)
+! only if wrong flux used
+!          CALL WRONG_WNFLUXES (IJS, IJL,                                &
+!     &                         MIJ, RHOWGDFTH,                          &
+!     &                         SSOURCE, SL,                             &
+!     &                         PHIWA,                                   &
+!     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
+!     &                         USNEW, ROAIRN, .FALSE.)
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+!!!           SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+          CALL WNFLUXES (IJS, IJL,                                      &
+     &                   MIJ, RHOWGDFTH,                                &
+     &                   SSOURCE, CICVR,                                &
+     &                   PHIWA,                                         &
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
+     &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
         CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)

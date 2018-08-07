@@ -351,6 +351,7 @@
       ENDIF
 
       IF(LCFLX) THEN
+!       save SL
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -382,12 +383,27 @@
       ENDIF
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
-     &                       MIJ, RHOWGDFTH,                            &
-     &                       SSOURCE, SL,                               &
-     &                       PHIWA,                                     &
-     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
-     &                       USNEW, ROAIRN, .TRUE.)
+! only if wrong flux used
+!        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
+!     &                       MIJ, RHOWGDFTH,                            &
+!     &                       SSOURCE, SL,                               &
+!     &                       PHIWA,                                     &
+!     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
+!     &                       USNEW, ROAIRN, .TRUE.)
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+!!!1          SSOURCE should only contain the positive contribution from sinput
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+        CALL WNFLUXES (IJS, IJL,                                        &
+     &                 MIJ, RHOWGDFTH,                                  &
+     &                 SSOURCE, CICVR,                                  &
+     &                 PHIWA,                                           &
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
+     &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 
