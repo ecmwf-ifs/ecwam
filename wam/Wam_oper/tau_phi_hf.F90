@@ -117,9 +117,9 @@
           ZARG      = XKAPPA/ZX
           ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
           ZLOG      = MIN(ZLOG,0.0_JWRB)
-          ZBETA     = DELZ*EXP(ZLOG)*ZLOG**4
+          ZBETA     = DELZ*TAUW*EXP(ZLOG)*ZLOG**4
           TAUW      = MAX(TAUW-XLEVTAILH*ZBETA,0.0_JWRB)
-          FNC2      = TAUW*WTAUHF(J)*ZBETA
+          FNC2      = WTAUHF(J)*ZBETA
           UST       = SQRT(TAUW)
           TAUHF(IJ) = TAUHF(IJ) + FNC2
           PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
