@@ -97,14 +97,6 @@
         XLOGGZ0   = LOG(GZ0)
         OMEGACC   = MAX(OMEGAC,X0G/UST0)
 
-!!!debile
-        if(OMEGACC.eq.OMEGAC) then
-          write(*,*) 'debile OMEGAC ',OMEGAC,X0G/UST0
-        else
-          write(*,*) 'debile X0G/UST0 ',OMEGAC,X0G/UST0
-        endif
-!!!debile
-
         SQRTZ0OG  = SQRT(Z0(IJ)*GM1)
         SQRTGZ0   = 1.0_JWRB/SQRTZ0OG
         YC        = OMEGACC*SQRTZ0OG
@@ -126,12 +118,12 @@
           ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
           ZLOG      = MIN(ZLOG,0.0_JWRB)
           ZBETA     = EXP(ZLOG)*ZLOG**4
-          FNC2      = ZBETA*TAUW*DELZ
-          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
-          FNC       = TAUW*WTAUHF(J)*FNC2
-          UST       = SQRT(TAUW)
+          FNC2      = ZBETA*TAUW*WTAUHF(J)*DELZ
+          FNC       = TAUW*FNC2
           TAUHF(IJ) = TAUHF(IJ) + FNC 
           PHIHF(IJ) = PHIHF(IJ) + FNC/Y
+          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+          UST       = SQRT(TAUW)
         ENDDO
         TAUHF(IJ) = TAUHF(IJ)/TAUW0
         PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)/TAUW0
