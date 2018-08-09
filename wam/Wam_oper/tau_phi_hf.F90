@@ -73,8 +73,8 @@
       REAL(KIND=JWRB) :: OMEGA, OMEGAC, OMEGACC
       REAL(KIND=JWRB) :: X0G, UST, UST0, TAUW, TAUW0, DELZTAUW0M1
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
-      REAL(KIND=JWRB) :: DELZ, XLEVTAILH, ZINF
-      REAL(KIND=JWRB) :: FNC, FNC2, FNC2OLD, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
+      REAL(KIND=JWRB) :: DELZ, ZINF
+      REAL(KIND=JWRB) :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -101,7 +101,6 @@
         YC        = OMEGACC*SQRTZ0OG
         ZINF      = LOG(YC)
         DELZ      = MAX((ZSUP-ZINF)/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
-        XLEVTAILH = 0.5_JWRB*XLEVTAIL(IJ)
 
         TAUHF(IJ)= 0.0_JWRB
         PHIHF(IJ)= 0.0_JWRB
@@ -109,8 +108,6 @@
         TAUW     = TAUW0
         DELZTAUW0M1  = DELZ/TAUW0
         UST      = UST0
-        FNC2OLD  = 0.0_JWRB
-
         ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         DO J=1,JTOT_TAUHF
           Y         = EXP(ZINF+REAL(J-1,JWRB)*DELZ)
@@ -121,13 +118,12 @@
           ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
           ZLOG      = MIN(ZLOG,0.0_JWRB)
           ZBETA     = EXP(ZLOG)*ZLOG**4
-          FNC2      = ZBETA*TAUW*DELZTAUW0M1
-          TAUW      = MAX(TAUW-XLEVTAILH*(FNC2+FNC2OLD)*TAUW0,0.0_JWRB)
-          FNC2OLD   = FNC2
-          FNC       = WTAUHF(J)*TAUW*FNC2
+          FNC       = WTAUHF(J)*ZBETA*TAUW*DELZ
+          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC ,0.0_JWRB)
+          FNC2      = TAUW*FNC
           UST       = SQRT(TAUW)
-          TAUHF(IJ) = TAUHF(IJ) + FNC
-          PHIHF(IJ) = PHIHF(IJ) + FNC/Y
+          TAUHF(IJ) = TAUHF(IJ) + FNC2
+          PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
         ENDDO
         PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)
 
