@@ -96,6 +96,15 @@
         GZ0       = G*Z0(IJ)
         XLOGGZ0   = LOG(GZ0)
         OMEGACC   = MAX(OMEGAC,X0G/UST0)
+
+!!!debile
+        if(OMEGACC.eq.OMEGAC) then
+          write(*,*) 'debile OMEGAC ',OMEGAC,X0G/UST0
+        else
+          write(*,*) 'debile X0G/UST0 ',OMEGAC,X0G/UST0
+        endif
+!!!debile
+
         SQRTZ0OG  = SQRT(Z0(IJ)*GM1)
         SQRTGZ0   = 1.0_JWRB/SQRTZ0OG
         YC        = OMEGACC*SQRTZ0OG
