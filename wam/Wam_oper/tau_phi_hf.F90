@@ -71,7 +71,7 @@
 
       REAL(KIND=JWRB), PARAMETER :: ZSUP = 0.0_JWRB  !  LOG(1.)
       REAL(KIND=JWRB) :: OMEGA, OMEGAC, OMEGACC
-      REAL(KIND=JWRB) :: X0G, UST, UST0, TAUW, TAUW0, DELZTAUW0M1
+      REAL(KIND=JWRB) :: X0G, UST, UST0, TAUW, TAUW0
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: DELZ, ZINF
       REAL(KIND=JWRB) :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
@@ -106,7 +106,6 @@
         PHIHF(IJ)= 0.0_JWRB
 
         TAUW     = TAUW0
-        DELZTAUW0M1  = DELZ/TAUW0
         UST      = UST0
         ! Intergrals are integrated following a change of variable : Z=LOG(Y)
         DO J=1,JTOT_TAUHF
@@ -118,14 +117,15 @@
           ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
           ZLOG      = MIN(ZLOG,0.0_JWRB)
           ZBETA     = EXP(ZLOG)*ZLOG**4
-          FNC       = WTAUHF(J)*ZBETA*TAUW*DELZ
-          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC ,0.0_JWRB)
-          FNC2      = TAUW*FNC
+          FNC2      = ZBETA*TAUW*DELZ
+          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+          FNC       = TAUW*WTAUHF(J)*FNC2
           UST       = SQRT(TAUW)
-          TAUHF(IJ) = TAUHF(IJ) + FNC2
-          PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+          TAUHF(IJ) = TAUHF(IJ) + FNC 
+          PHIHF(IJ) = PHIHF(IJ) + FNC/Y
         ENDDO
-        PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)
+        TAUHF(IJ) = TAUHF(IJ)/TAUW0
+        PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)/TAUW0
 
       ENDDO
 
