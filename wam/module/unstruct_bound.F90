@@ -11,29 +11,31 @@ MODULE UNSTRUCT_BOUND
       USE yowpd, only: exchange
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       USE WAV_NETCDF_FCT
+
       IMPLICIT NONE
+
       REAL(KIND=JWRU), ALLOCATABLE :: SPSIG(:)
       REAL(KIND=JWRU), ALLOCATABLE :: WBAC (:,:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: WBAC1(:,:,:)
       REAL(KIND=JWRU), ALLOCATABLE :: WBAC2(:,:,:)
-      integer nbDirWWM, nbFreqWWM
+      INTEGER(KIND=JWIM) :: nbDirWWM, nbFreqWWM
       REAL(KIND=JWRU), ALLOCATABLE :: SPDIR_WWM(:)
       REAL(KIND=JWRU), ALLOCATABLE :: SPSIG_WWM(:)
       REAL(KIND=JWRU), ALLOCATABLE :: SPDIR_WAM(:)
-      integer, allocatable :: WWM_ID1(:), WWM_ID2(:)
-      REAL(KIND=JWRU), allocatable :: WWM_WD1(:), WWM_WD2(:)
-      integer recTime1, recTime2
-      integer, allocatable :: Indexes_boundary(:)
+      INTEGER(KIND=JWIM), ALLOCATABLE :: WWM_ID1(:), WWM_ID2(:)
+      REAL(KIND=JWRU), ALLOCATABLE :: WWM_WD1(:), WWM_WD2(:)
+      INTEGER(KIND=JWIM) :: recTime1, recTime2
+      INTEGER(KIND=JWIM), ALLOCATABLE :: Indexes_boundary(:)
       TYPE(TIMEPERIOD) RecTimeBnd
-      real*8 :: WAV_BoucTime = 0
-      character(len=*), parameter :: eFileBnd = 'wwm_bouc_format.nc'
-      INTEGER                :: IWBMNP ! number of wave boundary points
-      INTEGER                :: IWBMNPGL
-      INTEGER, ALLOCATABLE   :: IWBNDLC(:) ! local wave boundary index
-      INTEGER, ALLOCATABLE   :: IWBNDLC_REV(:) ! local wave boundary index
-      INTEGER, ALLOCATABLE   :: IOBPD(:,:) ! boundary direction pointer
-      INTEGER, ALLOCATABLE   :: IOBWB(:)   ! gl. wave boundary index ... will vanish in the decomp.
-      INTEGER, ALLOCATABLE   :: IOBP(:)    ! boundary points index
+      REAL(KIND=JWRU) :: WAV_BoucTime = 0._JWRU
+      CHARACTER(LEN=*), PARAMETER :: eFileBnd = 'wwm_bouc_format.nc'
+      INTEGER(KIND=JWIM)                :: IWBMNP ! number of wave boundary points
+      INTEGER(KIND=JWIM)                :: IWBMNPGL
+      INTEGER(KIND=JWIM), ALLOCATABLE   :: IWBNDLC(:) ! local wave boundary index
+      INTEGER(KIND=JWIM), ALLOCATABLE   :: IWBNDLC_REV(:) ! local wave boundary index
+      INTEGER(KIND=JWIM), ALLOCATABLE   :: IOBPD(:,:) ! boundary direction pointer
+      INTEGER(KIND=JWIM), ALLOCATABLE   :: IOBWB(:)   ! gl. wave boundary index ... will vanish in the decomp.
+      INTEGER(KIND=JWIM), ALLOCATABLE   :: IOBP(:)    ! boundary points index
       LOGICAL                :: LBCWA = .FALSE.
       CONTAINS
 !**********************************************************************
@@ -153,13 +155,13 @@ MODULE UNSTRUCT_BOUND
 !**********************************************************************
       SUBROUTINE COMPUTE_STATUS(STATUS)
       IMPLICIT NONE
-      integer, intent(out) :: STATUS(MNP)
-      integer COLLECTED(MNP)
-      integer PREVVERT(MNP)
-      integer NEXTVERT(MNP)
-      integer IE, I, IPREV, INEXT, IP
-      integer IPPREV, IPNEXT
-      integer ZNEXT
+      INTEGER(KIND=JWIM), intent(out) :: STATUS(MNP)
+      INTEGER(KIND=JWIM) :: COLLECTED(MNP)
+      INTEGER(KIND=JWIM) :: PREVVERT(MNP)
+      INTEGER(KIND=JWIM) :: NEXTVERT(MNP)
+      INTEGER(KIND=JWIM) :: IE, I, IPREV, INEXT, IP
+      INTEGER(KIND=JWIM) :: IPPREV, IPNEXT
+      INTEGER(KIND=JWIM) :: ZNEXT
       LOGICAL IsFinished
       STATUS(:) = 0
       DO IE=1,MNE
@@ -239,9 +241,9 @@ MODULE UNSTRUCT_BOUND
       INTEGER(KIND=JWIM) :: I1, I2, I3, IE, IP, ID, IFSTAT, IPglob
       INTEGER(KIND=JWIM) :: ZNEXT, ITMP
       INTEGER(KIND=JWIM) :: IOBPcopy(MNP), eDiff, nbDiff
-      integer STATUS(MNP)
-      integer istat
-      integer, allocatable :: Indexes(:)
+      INTEGER(KIND=JWIM) :: STATUS(MNP)
+      INTEGER(KIND=JWIM) :: istat
+      INTEGER(KIND=JWIM), ALLOCATABLE :: Indexes(:)
       REAL(KIND=JWRB) :: BNDTMP
       REAL(KIND=JWRU) :: x1, y1, x2, y2
       REAL(KIND=JWRU) :: EVX, EVY
@@ -249,9 +251,9 @@ MODULE UNSTRUCT_BOUND
       REAL(KIND=JWRU) :: ATMP, BTMP
       REAL(KIND=JWRU) :: rtemp(MNP)
       LOGICAL :: LFLIVE
-      integer IOBPglobal(np_global)
-      integer idx
-      integer eIOBP
+      INTEGER(KIND=JWIM) :: IOBPglobal(np_global)
+      INTEGER(KIND=JWIM) :: idx
+      INTEGER(KIND=JWIM) :: eIOBP
 !
 ! open and read boundary nodes file ...
 !
@@ -375,18 +377,18 @@ MODULE UNSTRUCT_BOUND
 !        Original : Aron Roland, 11,2011
 !     --------------------------------------------------------------
 
-        USE YOWUNPOOL
-        USE YOWFRED, ONLY : DFIM, COSTH, SINTH
+      USE YOWUNPOOL
+      USE YOWFRED, ONLY : DFIM, COSTH, SINTH
 
-        IMPLICIT NONE
+      IMPLICIT NONE
 
-        INTEGER(KIND=JWIM) :: I1, I2, I3, IE, IP, ID
-        INTEGER(KIND=JWIM) :: I, IWILD(MNP)
-        REAL(KIND=JWRU) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
-        REAL(KIND=JWRU) :: x1, y1, x2, y2
-        REAL(KIND=JWRU) :: EVX, EVY
-        REAL(KIND=JWRU) :: eDet1, eDet2
-        REAL(KIND=JWRU) :: rtemp(MNP)
+      INTEGER(KIND=JWIM) :: I1, I2, I3, IE, IP, ID
+      INTEGER(KIND=JWIM) :: I, IWILD(MNP)
+      REAL(KIND=JWRU) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
+      REAL(KIND=JWRU) :: x1, y1, x2, y2
+      REAL(KIND=JWRU) :: EVX, EVY
+      REAL(KIND=JWRU) :: eDet1, eDet2
+      REAL(KIND=JWRU) :: rtemp(MNP)
 !
 ! SET IOBPD ...
 !
@@ -460,15 +462,15 @@ MODULE UNSTRUCT_BOUND
       USE YOWPCONS , ONLY : ZPI
       USE NETCDF
       IMPLICIT NONE
-      character(len=*), intent(in) :: eFile
-      REAL(KIND=JWRU), intent(out) :: WBAC(NANG,NFRE,IWBMNP)
-      integer, intent(in) :: IT
+      CHARACTER(LEN=*), INTENT(IN) :: eFile
+      REAL(KIND=JWRU), INTENT(OUT) :: WBAC(NANG,NFRE,IWBMNP)
+      INTEGER(KIND=JWIM), INTENT(IN) :: IT
       REAL(KIND=JWRU) WBAC_GL(NFRE,NANG,IWBMNPGL)
       REAL(KIND=JWRU) eAC, eFL
-      integer istat, ncid, var_id
-      integer IP, IS, ID, idx
-      character(len=*), parameter :: CallFct = "SINGLE_READ_BOUNDARY"
-      integer ID1, ID2
+      INTEGER(KIND=JWIM) :: istat, ncid, var_id
+      INTEGER(KIND=JWIM) :: IP, IS, ID, idx
+      CHARACTER(LEN=*), PARAMETER :: CallFct = "SINGLE_READ_BOUNDARY"
+      INTEGER(KIND=JWIM) :: ID1, ID2
       REAL(KIND=JWRU) eWD1, eWD2
       !
       ! We have this inversion of the order because that is so in WWM at 
@@ -518,9 +520,9 @@ MODULE UNSTRUCT_BOUND
       SUBROUTINE SET_UP_WBAC
       USE YOWSTAT  , ONLY : IDELT
       IMPLICIT NONE
-      REAL*8 eTimeDay
+      REAL(KIND=JWRU) :: eTimeDay
       REAL(KIND=JWRU) w1, w2
-      integer iTime1, iTime2
+      INTEGER(KIND=JWIM) :: iTime1, iTime2
       CALL WAV_GET_ETIMEDAY(eTimeDay, WAV_BoucTime)
       CALL FIND_MATCH_TIME(RecTimeBnd, eTimeDay, iTime1, w1, iTime2, w2)
       IF (iTime1 .ne. recTime1) THEN
@@ -541,7 +543,7 @@ MODULE UNSTRUCT_BOUND
       USE YOWMPP   , ONLY : NINF, NSUP
       IMPLICIT NONE
       REAL(KIND=JWRB), INTENT(INOUT) :: FL(NINF-1:NSUP,NANG,NFRE)
-      integer ID, IS, IP, idx
+      INTEGER(KIND=JWIM) :: ID, IS, IP, idx
       DO IS=1,NFRE
         DO ID=1,NANG
           DO idx=1,IWBMNP
@@ -560,14 +562,14 @@ MODULE UNSTRUCT_BOUND
       USE NETCDF
       IMPLICIT NONE
       character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
-      INTEGER varid, ncid
-      integer, dimension(nf90_max_var_dims) :: dimids
-      integer istat
-      integer iTime
-      real(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
-      real(KIND=JWRU) DeltaDiff, eDir
+      INTEGER(KIND=JWIM) :: varid, ncid
+      INTEGER(KIND=JWIM), dimension(nf90_max_var_dims) :: dimids
+      INTEGER(KIND=JWIM) :: istat
+      INTEGER(KIND=JWIM) :: iTime
+      REAL(KIND=JWRU) eWD1, eWD2, eDiff, eDiff1, eDiff2
+      REAL(KIND=JWRU) DeltaDiff, eDir
       logical IsAssigned
-      integer ID, ID1, ID2
+      INTEGER(KIND=JWIM) :: ID, ID1, ID2
       !
 #ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'eFileBnd=', TRIM(eFileBnd)

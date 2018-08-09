@@ -6,6 +6,7 @@
 #include "yowincludes.h"
 
 module yowpdlibMain
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   use yowError
   use yowDatapool, only: rkind
   implicit none
@@ -46,10 +47,10 @@ module yowpdlibMain
   subroutine initPD2(filename, MPIcomm)
     implicit none
     character(len=*), intent(in) :: filename
-    integer, intent(in) :: MPIcomm
+    integer(KIND=JWIM), intent(in) :: MPIcomm
 
-    integer :: MNP, MNE
-    integer, allocatable :: INE(:,:)
+    integer(KIND=JWIM) :: MNP, MNE
+    integer(KIND=JWIM), allocatable :: INE(:,:)
     real(kind=rkind), allocatable :: XP(:), YP(:), DEP(:)
 
     call readMesh(filename, MNP, XP, YP, DEP, MNE, INE)
@@ -75,10 +76,10 @@ module yowpdlibMain
   subroutine initFromGrid(MNP, XP, YP, DEP, MNE, INE, MPIcomm)
     use yowExchangeModule, only : n2ndDim, n3ndDim
     implicit none
-    integer, intent(in) :: MNP, MNE
-    integer, intent(in) :: INE(3,MNE)
+    integer(KIND=JWIM), intent(in) :: MNP, MNE
+    integer(KIND=JWIM), intent(in) :: INE(3,MNE)
     real(kind=rkind), intent(in) :: XP(MNP), YP(MNP), DEP(MNP)
-    integer, intent(in) :: MPIcomm
+    integer(KIND=JWIM), intent(in) :: MPIcomm
 
     
     call initFromGridDim(MNP, XP, YP, DEP, MNE, INE, n2ndDim, n3ndDim, MPIcomm)
@@ -102,11 +103,11 @@ module yowpdlibMain
       use yowExchangeModule, only: nConnDomains, setDimSize
       use yowRankModule,     only: initRankModule
     implicit none
-    integer, intent(in) :: MNP, MNE
-    integer, intent(in) :: INE(3,MNE)
+    integer(KIND=JWIM), intent(in) :: MNP, MNE
+    integer(KIND=JWIM), intent(in) :: INE(3,MNE)
     real(kind=rkind), intent(in) :: XP(MNP), YP(MNP), DEP(MNP)
-    integer, intent(in) :: secDim, thirdDim
-    integer, intent(in) :: MPIcomm
+    integer(KIND=JWIM), intent(in) :: secDim, thirdDim
+    integer(KIND=JWIM), intent(in) :: MPIcomm
 
     call setDimSize(secDim, thirdDim)
     call initMPI(MPIcomm)
@@ -164,9 +165,9 @@ module yowpdlibMain
     use yowError
     use yowMpiModule
     implicit none
-    integer, intent(in) :: MPIcomm
+    integer(KIND=JWIM), intent(in) :: MPIcomm
     logical :: flag
-    integer :: ierr
+    integer(KIND=JWIM) :: ierr
 
     if(MPIcomm == MPI_COMM_NULL) then
       ABORT("A null communicator is not allowed")
@@ -206,12 +207,12 @@ module yowpdlibMain
 #endif
     implicit none
     character(len=*), intent(in) :: filename
-    integer, intent(inout) :: MNP, MNE
-    integer, allocatable, intent(inout) :: INE(:,:)
+    integer(KIND=JWIM), intent(inout) :: MNP, MNE
+    integer(KIND=JWIM), allocatable, intent(inout) :: INE(:,:)
     real(kind=rkind), allocatable, intent(inout) :: XP(:), YP(:), DEP(:)
 
-    integer :: itemp
-    integer :: i, fd
+    integer(KIND=JWIM) :: itemp
+    integer(KIND=JWIM) :: i, fd
 
 #ifdef ECMWF
     fd = GRID%FHNDL!newunit()
@@ -282,11 +283,11 @@ module yowpdlibMain
     use yowNodepool,    only: nodes_global, np_global, t_Node
     use yowElementpool, only: ne_global, INE_global
     implicit none
-    integer, intent(in) :: MNP, MNE
-    integer, intent(in) :: INE(3,MNE)
+    integer(KIND=JWIM), intent(in) :: MNP, MNE
+    integer(KIND=JWIM), intent(in) :: INE(3,MNE)
     real(kind=rkind), intent(in) :: XP(MNP), YP(MNP), DEP(MNP)
 
-    integer :: i
+    integer(KIND=JWIM) :: i
     logical :: nodeIDexist(MNP)
 
     character(len=1000) :: errstr
@@ -317,6 +318,14 @@ module yowpdlibMain
     do i=1, ne_global
       nodeIDexist(INE(:,i)) = .true.
     end do
+
+!!!debile
+    do i=1, MNP 
+      if( .not. nodeIDexist(i) ) then
+        write(*,*) 'debile in yowpdlibmain, node not in any element : ',i
+      endif
+    end do
+
 
     if(any(nodeIDexist(:) .eqv. .false.) .eqv. .true.) then
       ABORT("assignMesh() INE does not contains all node IDs")
@@ -363,7 +372,7 @@ module yowpdlibMain
     use yowNodepool, only: np_global, np, np_perProc, np_perProcSum, iplg
     implicit none
 
-    integer :: i
+    integer(KIND=JWIM) :: i
 
     ! determine equal number of nodes in each processor (except for the last one).
     ! and create a provisional node local to global mapping iplg
@@ -414,7 +423,7 @@ module yowpdlibMain
     use yowSidepool,    only: ns, ns_global
     implicit none
 
-    integer :: i, j
+    integer(KIND=JWIM) :: i, j
     type(t_Node), pointer :: node
     character(len=1000) :: errstr
 
@@ -503,13 +512,13 @@ module yowpdlibMain
 
     ! Parmetis
     ! Node neighbor information
-    integer :: wgtflag, numflag, ndims, nparts, edgecut, ncon
-    integer, allocatable :: xadj(:), part(:), vwgt(:), adjwgt(:), vtxdist(:), options(:), adjncy(:)
+    integer(KIND=JWIM) :: wgtflag, numflag, ndims, nparts, edgecut, ncon
+    integer(KIND=JWIM), allocatable :: xadj(:), part(:), vwgt(:), adjwgt(:), vtxdist(:), options(:), adjncy(:)
     ! parmetis need single precision
     real(4), allocatable :: xyz(:), tpwgts(:), ubvec(:)
 
     ! Mics
-    integer :: i, j, ierr
+    integer(KIND=JWIM) :: i, j, ierr
     type(t_Node), pointer :: node, nodeNeighbor
     character(len=1000) :: errstr
 
@@ -691,7 +700,7 @@ module yowpdlibMain
     use yowSidepool, only: ns
     implicit none
 
-    integer :: i, j
+    integer(KIND=JWIM) :: i, j
     type(t_Node), pointer :: node
 
     ! determine how many nodes now belong to which thread
@@ -752,10 +761,10 @@ module yowpdlibMain
     use yowDatapool, only: myrank
     use yowNodepool, only: t_Node, np, nodes, ghosts, nodes_global, ng, ghostlg, ghostgl, npa, np_global, iplg
     implicit none
-    integer :: i, j, k
+    integer(KIND=JWIM) :: i, j, k
     type(t_Node), pointer :: node, nodeNeighbor, nodeGhost
     !> temporary hold the ghost numbers
-    integer, save, allocatable :: ghostTemp(:)
+    integer(KIND=JWIM), save, allocatable :: ghostTemp(:)
 
     ! iterate over all local nodes and look at their neighbors
     ! has the neighbor another domain id, than it is a ghost
@@ -869,13 +878,13 @@ module yowpdlibMain
     use yowExchangeModule, only: neighborDomains, initNbrDomains
     implicit none
 
-    integer :: i, itemp
+    integer(KIND=JWIM) :: i, itemp
     type(t_Node), pointer :: ghost
 
     ! # of ghost per neighbor domain
-    integer, allocatable :: numberGhostPerNeighborDomainTemp(:)
+    integer(KIND=JWIM), allocatable :: numberGhostPerNeighborDomainTemp(:)
     ! look up table. domainID to neighbor (ID)
-    integer, allocatable :: domainID2NeighborTemp(:)
+    integer(KIND=JWIM), allocatable :: domainID2NeighborTemp(:)
 
     ! Part 1) find # neighbor domains
 
@@ -954,17 +963,17 @@ module yowpdlibMain
     use yowMpiModule
     implicit none
 
-    integer :: i, j, k
-    integer :: ierr
+    integer(KIND=JWIM) :: i, j, k
+    integer(KIND=JWIM) :: ierr
     ! uniq tag that identify the sender and which information he sends
-    integer :: tag
+    integer(KIND=JWIM) :: tag
     ! we use non-blocking send and recv subroutines
     ! store the send status
-    integer :: sendRequest(nConnDomains)
+    integer(KIND=JWIM) :: sendRequest(nConnDomains)
     ! store the revc status
-    integer :: recvRequest(nConnDomains)
+    integer(KIND=JWIM) :: recvRequest(nConnDomains)
     ! status to verify if one communication fails or not
-    integer :: status(MPI_STATUS_SIZE, nConnDomains);
+    integer(KIND=JWIM) :: status(MPI_STATUS_SIZE, nConnDomains);
 
 
     type(t_node) , pointer :: node
@@ -1088,7 +1097,7 @@ module yowpdlibMain
     use yowNodepool,    only: x, y, z
     implicit none
 
-    integer :: i, j, k
+    integer(KIND=JWIM) :: i, j, k
     type(t_Node), pointer :: node
     logical :: assigned
 
@@ -1219,20 +1228,20 @@ module yowpdlibMain
     use yowNodepool, only: np, ng, npa, np_global, ipgl, iplg, ghostlg, nodes, maxConnNodes, CONN, NCONN, t_Node
     use yowElementpool, only: INE_global, ne_global
     implicit none
-    integer :: IP_global, IE_global, IP, i, iteration
+    integer(KIND=JWIM) :: IP_global, IE_global, IP, i, iteration
 
     ! to create a sorted patch, we need the connected elements per node
-    integer :: maxNCONE
-    integer, allocatable :: NCONE(:), CONE(:,:)
+    integer(KIND=JWIM) :: maxNCONE
+    integer(KIND=JWIM), allocatable :: NCONE(:), CONE(:,:)
     
     ! the three node IDs of an element
-    integer :: eleNodes(3), lut(npa)
+    integer(KIND=JWIM) :: eleNodes(3), lut(npa)
 
     logical :: skipElement(maxConnNodes)
-    integer :: curNode, nextNode
+    integer(KIND=JWIM) :: curNode, nextNode
   
     ! remove this later ;)
-    integer, allocatable :: myipgl(:)
+    integer(KIND=JWIM), allocatable :: myipgl(:)
     type(t_node), pointer :: node
 
     ! create connected elements array
@@ -1439,12 +1448,12 @@ module yowpdlibMain
   !> @return next free unit number. If no units are available, -1 is returned.
   integer function newunit(unit)
     implicit none
-    integer, intent(out), optional :: unit
+    integer(KIND=JWIM), intent(out), optional :: unit
 
   ! LUN_MIN and LUN_MAX define the range of possible LUNs to check.
-    integer, parameter :: LUN_MIN=10, LUN_MAX=1000
+    integer(KIND=JWIM), parameter :: LUN_MIN=10, LUN_MAX=1000
     logical :: opened
-    integer :: lun
+    integer(KIND=JWIM) :: lun
 
     newunit=-1
     do lun=LUN_MIN, LUN_MAX

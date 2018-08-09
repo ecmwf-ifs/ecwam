@@ -1,4 +1,5 @@
 MODULE WAV_netcdf
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 #ifdef NETCDF_OUTPUT_WAM
       USE WAV_netcdf_var
       USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
@@ -11,11 +12,11 @@ MODULE WAV_netcdf
       USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC
       USE YOWSPEC, ONLY   : U10NEW   ,U10OLD
       implicit none
-      REAL siz, avgHS, avgWindSpeed
+      REAL(KIND=JWRB) :: siz, avgHS, avgWindSpeed
       logical IsFirst
-      REAL minU10new, maxU10new
-      REAL minU10old, maxU10old
-      INTEGER IG, IJ
+      REAL(KIND=JWRB) :: minU10new, maxU10new
+      REAL(KIND=JWRB) :: minU10old, maxU10old
+      INTEGER(KIND=JWIM) :: IG, IJ
       IG=1
       IsFirst=.TRUE.
       DO IJ=IJSLOC,IJLLOC
@@ -61,13 +62,13 @@ MODULE WAV_netcdf
       USE MPL_MPIF 
 !# endif
       implicit none
-      integer rbuf_int(3), ierr, istat
-      integer IG, idx_loc
-      integer IX, IY, IXY, IPROC, NB_loc, IJ
-      real, allocatable :: dspl_recv(:)
-      integer :: status(MPI_STATUS_SIZE)
-      integer, allocatable :: AttainedMatrix(:,:), eInt(:)
-      integer :: MNPloc, NP_RESloc, IP, idx
+      INTEGER(KIND=JWIM) :: rbuf_int(3), ierr, istat
+      INTEGER(KIND=JWIM) :: IG, idx_loc
+      INTEGER(KIND=JWIM) :: IX, IY, IXY, IPROC, NB_loc, IJ
+      REAL(KIND=JWRB), allocatable :: dspl_recv(:)
+      INTEGER(KIND=JWIM) :: status(MPI_STATUS_SIZE)
+      INTEGER(KIND=JWIM), allocatable :: AttainedMatrix(:,:), eInt(:)
+      INTEGER(KIND=JWIM) :: MNPloc, NP_RESloc, IP, idx
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       MPI_COMM_NETCDF=WAV_COMM_WORLD
 # else
@@ -109,7 +110,7 @@ MODULE WAV_netcdf
           ListNP_RESloc(1)=NP_RES
           DO iProc=2,nproc
             allocate(eInt(2), stat=istat)
-            CALL MPI_RECV(eInt,2,MPI_INTEGER,iProc-1, 53, MPI_COMM_NETCDF, status,ierr)
+            CALL MPI_RECV(eInt,2,MPI_INTEGER(KIND=JWIM),iProc-1, 53, MPI_COMM_NETCDF, status,ierr)
 # ifdef DEBUG
             WRITE(740+MyRankGlobal,*) 'After MPI_RECV 53, ierr=', ierr
             FLUSH(740+MyRankGlobal)
@@ -128,7 +129,7 @@ MODULE WAV_netcdf
           DO iProc=2,nproc
             MNPloc=ListMNPloc(iProc)
             allocate(eInt(MNPloc), stat=istat)
-            CALL MPI_RECV(eInt,MNPloc,MPI_INTEGER,iProc-1, 54, MPI_COMM_NETCDF, status,ierr)
+            CALL MPI_RECV(eInt,MNPloc,MPI_INTEGER(KIND=JWIM),iProc-1, 54, MPI_COMM_NETCDF, status,ierr)
 # ifdef DEBUG
             WRITE(740+MyRankGlobal,*) 'After MPI_RECV 54, ierr=', ierr
             FLUSH(740+MyRankGlobal)
@@ -142,7 +143,7 @@ MODULE WAV_netcdf
           allocate(eInt(2))
           eInt(1)=MNP
           eInt(2)=NP_RES
-          CALL MPI_SEND(eInt,2,MPI_INTEGER, 0, 53, MPI_COMM_NETCDF, ierr)
+          CALL MPI_SEND(eInt,2,MPI_INTEGER(KIND=JWIM), 0, 53, MPI_COMM_NETCDF, ierr)
 # ifdef DEBUG
           WRITE(740+MyRankGlobal,*) 'After MPI_SEND 53, ierr=', ierr
           FLUSH(740+MyRankGlobal)
@@ -153,7 +154,7 @@ MODULE WAV_netcdf
           DO IP=1,MNP
             eInt(IP)=iplg(IP)
           END DO
-          CALL MPI_SEND(eInt,MNP,MPI_INTEGER, 0, 54, MPI_COMM_NETCDF, ierr)
+          CALL MPI_SEND(eInt,MNP,MPI_INTEGER(KIND=JWIM), 0, 54, MPI_COMM_NETCDF, ierr)
 # ifdef DEBUG
           WRITE(740+MyRankGlobal,*) 'After MPI_SEND 54, ierr=', ierr
           FLUSH(740+MyRankGlobal)
@@ -268,9 +269,9 @@ MODULE WAV_netcdf
       USE MPL_MPIF
 !#endif
       implicit none
-      integer IG, idx_loc, IX, IY, IXY, IJ
-      integer IPROC, NB_loc, IJglob
-      integer ierr, istatus, nbWait
+      INTEGER(KIND=JWIM) :: IG, idx_loc, IX, IY, IXY, IJ
+      INTEGER(KIND=JWIM) :: IPROC, NB_loc, IJglob
+      INTEGER(KIND=JWIM) :: ierr, istatus, nbWait
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Begin WAV_netcdf_setup_array_variables'
       FLUSH(740+MyRankGlobal)
@@ -360,14 +361,14 @@ MODULE WAV_netcdf
       USE MPL_MPIF 
 !#endif
       implicit none
-      integer IG, idx_loc, IX, IY, IXY, IJ, IP
-      integer IPROC, NB_loc, NB_loc_side
-      integer ierr, istatus, nbWait
-      real, allocatable :: TheRecv(:,:)
-      integer :: status(MPI_STATUS_SIZE)
-      integer iVar, IPglob, NP_RESloc, IJglob
-      integer VertStatus(np_global)
-      real eMin, eMax, eAvg
+      INTEGER(KIND=JWIM) :: IG, idx_loc, IX, IY, IXY, IJ, IP
+      INTEGER(KIND=JWIM) :: IPROC, NB_loc, NB_loc_side
+      INTEGER(KIND=JWIM) :: ierr, istatus, nbWait
+      REAL(KIND=JWRB), allocatable :: TheRecv(:,:)
+      INTEGER(KIND=JWIM) :: status(MPI_STATUS_SIZE)
+      INTEGER(KIND=JWIM) :: iVar, IPglob, NP_RESloc, IJglob
+      INTEGER(KIND=JWIM) :: VertStatus(np_global)
+      REAL(KIND=JWRB) :: eMin, eMax, eAvg
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Before WAV_netcdf_setup_array_variables'
       WRITE(740+MyRankGlobal,*) 'minWind min(NETCDF_var(3,:))=', minval(NETCDF_var(3,:))
@@ -522,13 +523,12 @@ MODULE WAV_netcdf
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,           &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,           &
      &            FL3
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,THQ,FPMEAN
+      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG,     &
      &            USTARG, CDG
       USE YOWPCONS , ONLY : EPSUS    ,EPSU10
       USE YOWUNPOOL, ONLY : LLUNSTR, LCFL, CFLCXY
       USE yowpd    , only : NP_RES => np
-      USE unwam, only : COHERENCY_ERROR_KERNEL
 #if defined MODEL_COUPLING_ATM_WAV
       USE pgmcl_lib_WAM, only : Uwind_atm, Vwind_atm
 #endif
@@ -537,20 +537,20 @@ MODULE WAV_netcdf
       USE coupling_var, only : NlevelVert
 #endif
       implicit none
-      integer IG, idx_loc, IJ
-      integer idx
-      REAL eSingZ0, eUstarE, gzValue, eAlpha, eHS, eDir
-      REAL ePeakFreq, eMeanFreq, eTAU, eCD
-      REAL eU_10, eV_10, eWndMag, gValue
-      REAL eWindSpeed, eWindDir
-      REAL diffU, diffV, diffUV
-      REAL eU_10_wam, eV_10_wam
-      integer k, IJfirst, IJlast
-      REAL SumError, MaxError, TotalSum, MinValue
+      INTEGER(KIND=JWIM) :: IG, idx_loc, IJ
+      INTEGER(KIND=JWIM) :: idx
+      REAL(KIND=JWRB) :: eSingZ0, eUstarE, gzValue, eAlpha, eHS, eDir
+      REAL(KIND=JWRB) :: ePeakFreq, eMeanFreq, eTAU, eCD
+      REAL(KIND=JWRB) :: eU_10, eV_10, eWndMag, gValue
+      REAL(KIND=JWRB) :: eWindSpeed, eWindDir
+      REAL(KIND=JWRB) :: diffU, diffV, diffUV
+      REAL(KIND=JWRB) :: eU_10_wam, eV_10_wam
+      INTEGER(KIND=JWIM) :: k, IJfirst, IJlast
+      REAL(KIND=JWRB) :: SumError, MaxError, TotalSum, MinValue
 # ifdef DEBUG
-      REAL siz, avgHS, avgWindSpeed
+      REAL(KIND=JWRB) :: siz, avgHS, avgWindSpeed
       logical IsFirst
-      REAL minU10new, maxU10new
+      REAL(KIND=JWRB) :: minU10new, maxU10new
 # endif
       gValue=9.806
       IG=1
@@ -572,8 +572,12 @@ MODULE WAV_netcdf
         gzValue=gValue*eSingZ0
         eAlpha=gzValue/(eUstarE*eUstarE)
         eHS=4*SQRT(EMEAN(IJ))
-        eDir=THQ(IJ)
-        ePeakFreq=FPMEAN(IJ)
+!!! debile: THQ and FPMEAN no longer exist !
+ !!!1 this all lot need to ne rewritten since we change out integrated parameters are produced !!!
+        eDir=0.0
+        ePeakFreq=0.0
+!!        eDir=THQ(IJ)
+!!        ePeakFreq=FPMEAN(IJ)
         eMeanFreq=FMEAN(IJ)
         eTAU = MAX(USNEW(IJ)**2,EPSUS)
         eCD = eTAU/MAX(U10NEW(IJ)**2,EPSU10)
@@ -644,10 +648,6 @@ MODULE WAV_netcdf
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)=', minval(U10NEW), maxval(U10NEW)
       WRITE(740+MyRankGlobal,*) 'U10NEW(min/max)sel=', minU10new, maxU10new
-      IF (LLUNSTR) THEN
-        CALL COHERENCY_ERROR_KERNEL(U10NEW, SumError, MaxError, TotalSum, MinValue)
-        WRITE(740+MyRankGlobal,*) 'U10NEW(SumError,TotalSum)=', SumError, TotalSum
-      END IF
       WRITE(740+MyRankGlobal,*) 'From NETCDF_var'
       WRITE(740+MyRankGlobal,*) 'U_10(min/max)=', minval(NETCDF_var(1,:)), maxval(NETCDF_var(1,:))
       WRITE(740+MyRankGlobal,*) 'V_10(min/max)=', minval(NETCDF_var(2,:)), maxval(NETCDF_var(2,:))
@@ -682,19 +682,18 @@ MODULE WAV_netcdf
       USE YOWMPP   , ONLY : NPROC, IRANK
       USE YOWGRID, ONLY : IJS      ,IJL
       USE YOWSHAL  , ONLY : DEPTH
-      USE yowdatapool, only : rkind
       USE yownodepool,     ONLY : nodes_global
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE yowpd    , only : np_global, MNP=>npa
       IMPLICIT NONE
-      integer i, j, IX
-      integer IRANKdepth, IG, IJ
-      REAL, intent(inout) :: DEPTHG_tot(NETCDF_X, NETCDF_Y)
-      REAL :: TEMP(NIBLO)
+      INTEGER(KIND=JWIM) :: i, j, IX
+      INTEGER(KIND=JWIM) :: IRANKdepth, IG, IJ
+      REAL(KIND=JWRB), intent(inout) :: DEPTHG_tot(NETCDF_X, NETCDF_Y)
+      REAL(KIND=JWRB) :: TEMP(NIBLO)
       logical LSQRT
-      REAL(rkind) :: eReal_8
-      REAL :: eReal_4
-      real ZMISS
+      REAL(KIND=JWRU) :: eREAL_8
+      REAL(KIND=JWRB) :: eREAL_4
+      REAL(KIND=JWRB) :: ZMISS
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'Begin of function GET_DEPTHG_tot'
       WRITE(740+MyRankGlobal,*) 'LLUNSTR=', LLUNSTR
@@ -713,9 +712,9 @@ MODULE WAV_netcdf
         FLUSH(740+MyRankGlobal)
 # endif
         DO IX=1,np_global
-          eReal_8=nodes_global(IX)%z
-          eReal_4=SNGL(eReal_8)
-          DEPTHG_tot(IX,1)=eReal_4
+          eREAL_8=nodes_global(IX)%z
+          eREAL_4=SNGL(eREAL_8)
+          DEPTHG_tot(IX,1)=eREAL_4
         END DO
 # ifdef DEBUG
         WRITE(740+MyRankGlobal,*) 'After IX loop'
@@ -747,9 +746,9 @@ MODULE WAV_netcdf
       USE netcdf
       USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
-      REAL :: TheFillVal
-      integer var_id, iret
-      integer, intent(in) :: ncid, nx_wav_dims, ny_wav_dims, ntime_dims
+      REAL(KIND=JWRB) :: TheFillVal
+      INTEGER(KIND=JWIM) :: var_id, iret
+      INTEGER(KIND=JWIM), intent(in) :: ncid, nx_wav_dims, ny_wav_dims, ntime_dims
       character (len = *), intent(in) :: eVarName
       character (len = *), intent(in) :: eVarUnit
       character (len = *), intent(in) :: LongName
@@ -804,24 +803,24 @@ MODULE WAV_netcdf
       USE pgmcl_lib_WAM, only : MSK_att_ocn_uv, MSK_att_ocn_rho
 # endif
       implicit none
-      integer, intent(in) :: idxFile
-      REAL, intent(in) :: DEPTHG_tot(NETCDF_X,NETCDF_Y)
+      INTEGER(KIND=JWIM), intent(in) :: idxFile
+      REAL(KIND=JWRB), intent(in) :: DEPTHG_tot(NETCDF_X,NETCDF_Y)
       character (len = 400) :: FILE_NAME
       character(len=4) eStr
       character (len = *), parameter :: CallFct="WAV_create_netcdf"
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: LONG_NAME = "longname"
       character (len = *), parameter :: FILLVAL = "_FillValue"
-      integer iret, ncid, ntime_dims, fifteen_dims
-      integer mne_dims, three_dims
-      integer nx_wav_dims, ny_wav_dims
-      integer irec_dim, var_id, nfre_dims, nang_dims, one_dims
-      real eFieldOne(1)
-      integer eInt(1)
-      REAL :: TheFillVal
-      REAL LON_wav_loc(NETCDF_X,NETCDF_Y), LAT_wav_loc(NETCDF_X,NETCDF_Y), MSK_wav_loc(NETCDF_X,NETCDF_Y)
-      integer i, j, IX
-      real ZMISS
+      INTEGER(KIND=JWIM) :: iret, ncid, ntime_dims, fifteen_dims
+      INTEGER(KIND=JWIM) :: mne_dims, three_dims
+      INTEGER(KIND=JWIM) :: nx_wav_dims, ny_wav_dims
+      INTEGER(KIND=JWIM) :: irec_dim, var_id, nfre_dims, nang_dims, one_dims
+      REAL(KIND=JWRB) :: eFieldOne(1)
+      INTEGER(KIND=JWIM) :: eInt(1)
+      REAL(KIND=JWRB) :: TheFillVal
+      REAL(KIND=JWRB) :: LON_wav_loc(NETCDF_X,NETCDF_Y), LAT_wav_loc(NETCDF_X,NETCDF_Y), MSK_wav_loc(NETCDF_X,NETCDF_Y)
+      INTEGER(KIND=JWIM) :: i, j, IX
+      REAL(KIND=JWRB) :: ZMISS
       ZMISS=-999
       TheFillVal=-999
       !
@@ -1235,12 +1234,12 @@ MODULE WAV_netcdf
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
-      integer, intent(in) :: ncid, idx, idVar
+      INTEGER(KIND=JWIM), intent(in) :: ncid, idx, idVar
       character(len = *), intent(in) :: VarName
-      integer var_id, iret
-      real TheFieldNC(NETCDF_X,NETCDF_Y)
+      INTEGER(KIND=JWIM) :: var_id, iret
+      REAL(KIND=JWRB) :: TheFieldNC(NETCDF_X,NETCDF_Y)
       character (len = *), parameter :: CallFct="WAV_create_netcdf"
-      real TheFieldUnstruct(NETCDF_X)
+      REAL(KIND=JWRB) :: TheFieldUnstruct(NETCDF_X)
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*)  'WAV_WRITE_VAR, begin'
       WRITE(740+MyRankGlobal,*)  'LLUNSTR=', LLUNSTR
@@ -1283,15 +1282,15 @@ MODULE WAV_netcdf
       implicit none
       character (len = 400) :: FILE_NAME
       character (len=4) :: eStr
-      integer, intent(in) :: idxOutput, idxFile, idxInfile
-      real*8, intent(in) :: Increment
-      integer iret, ncid, var_id, idx
-      integer eVarInt(1)
+      INTEGER(KIND=JWIM), intent(in) :: idxOutput, idxFile, idxInfile
+      REAL(KIND=JWRU), intent(in) :: Increment
+      INTEGER(KIND=JWIM) :: iret, ncid, var_id, idx
+      INTEGER(KIND=JWIM) :: eVarInt(1)
       character (len = *), parameter :: CallFct="wav_single_write_netcdf"
-      integer IX, IY
-      real eU, eV, eSpeed
-      integer I, J
-      real*8 eTimeDay
+      INTEGER(KIND=JWIM) :: IX, IY
+      REAL(KIND=JWRB) :: eU, eV, eSpeed
+      INTEGER(KIND=JWIM) :: I, J
+      REAL(KIND=JWRU):: eTimeDay
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*)  'allocated(FIELDG)=', allocated(FIELDG)
       WRITE(740+MyRankGlobal,*)  'allocated(FIELDG_coupl)=', allocated(FIELDG_coupl)
@@ -1388,9 +1387,9 @@ MODULE WAV_netcdf
       USE YOWUNIT  , ONLY : IU25     ,IU26
       USE YOWSPEC, ONLY   : FL3
       IMPLICIT NONE
-      integer IG
+      INTEGER(KIND=JWIM) :: IG
       LOGICAL DO_OUTPUT, TEST_CON, TEST_NETCDF
-      real, allocatable :: DEPTHG_tot(:,:)
+      REAL(KIND=JWRB), allocatable :: DEPTHG_tot(:,:)
       LOGICAL LLOUTBS
 # ifdef DEBUG
       WRITE(740+MyRankGlobal,*) 'wav_netcdf_output, NETCDF_X=', NETCDF_X
@@ -1494,8 +1493,8 @@ MODULE WAV_netcdf
       SUBROUTINE WAV_GetString (TheNb, eStr)
       implicit none
       character*4, intent(out) :: eStr
-      integer, intent(in) :: TheNb
-      integer STAT_VALUE
+      INTEGER(KIND=JWIM), intent(in) :: TheNb
+      INTEGER(KIND=JWIM) :: STAT_VALUE
       character*1 eStr1
       character*2 eStr2
       character*3 eStr3

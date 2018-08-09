@@ -1,40 +1,41 @@
 MODULE WAV_netcdf_var
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 #ifdef NETCDF_OUTPUT_WAM
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD
 # endif
       implicit none
-      integer :: idxOutput = 0
-      integer :: idxFile = 1
-      integer :: idxInfile = 1
-      integer :: DoOutput
+      INTEGER(KIND=JWIM) :: idxOutput = 0
+      INTEGER(KIND=JWIM) :: idxFile = 1
+      INTEGER(KIND=JWIM) :: idxInfile = 1
+      INTEGER(KIND=JWIM) :: DoOutput
 # ifndef MODEL_COUPLING_ATM_WAV
-      integer :: NHIS = 1
-      integer :: NDEFHIS = 6
+      INTEGER(KIND=JWIM) :: NHIS = 1
+      INTEGER(KIND=JWIM) :: NDEFHIS = 6
 # endif
-      integer :: NETCDF_nbVar = 11
-      real, allocatable :: NETCDF_var(:,:)
-      real, allocatable :: NETCDF_var_gridded(:,:,:)
+      INTEGER(KIND=JWIM) :: NETCDF_nbVar = 11
+      REAL(KIND=JWRB), allocatable :: NETCDF_var(:,:)
+      REAL(KIND=JWRB), allocatable :: NETCDF_var_gridded(:,:,:)
       logical :: NETCDF_initialized = .FALSE.
-      integer, allocatable :: NETCDF_var_rqst(:)
-      integer, allocatable :: NETCDF_var_stat(:,:)
-      integer, allocatable :: NETCDF_var_type(:)
-!      integer, dimension(:), pointer :: NETCDF_rqst
-!      integer, dimension(:,:), pointer :: NETCDF_stat
-!      integer, dimension(:), pointer :: NETCDF_type
-      integer, allocatable :: ListIJS(:), ListIJL(:), ListIJ_OFFSET(:)
+      INTEGER(KIND=JWIM), allocatable :: NETCDF_var_rqst(:)
+      INTEGER(KIND=JWIM), allocatable :: NETCDF_var_stat(:,:)
+      INTEGER(KIND=JWIM), allocatable :: NETCDF_var_type(:)
+!      INTEGER(KIND=JWIM), dimension(:), pointer :: NETCDF_rqst
+!      INTEGER(KIND=JWIM), dimension(:,:), pointer :: NETCDF_stat
+!      INTEGER(KIND=JWIM), dimension(:), pointer :: NETCDF_type
+      INTEGER(KIND=JWIM), allocatable :: ListIJS(:), ListIJL(:), ListIJ_OFFSET(:)
       LOGICAL DoNETCDF_sync
-      integer MPI_COMM_NETCDF
-      real*8 :: DeltaTimeNetcdfWAV = -1
-      real*8 :: FileSizeTimeWAV = -1
-      integer :: NDEFHIS_WAV = -1
-      real*8 :: WAV_NetcdfPresTime = 0
-      integer idxUcurr, idxVcurr, idxZeta
-      integer idxcfl1, idxcfl2, idxcfl3
-      integer NETCDF_X, NETCDF_Y
-      integer MaxMNPloc
-      integer, allocatable :: ListMNPloc(:), ListNP_RESloc(:)
-      integer, allocatable :: ListIPLGloc(:,:)
+      INTEGER(KIND=JWIM) :: MPI_COMM_NETCDF
+      REAL(KIND=JWRU) :: DeltaTimeNetcdfWAV = -1
+      REAL(KIND=JWRU) :: FileSizeTimeWAV = -1
+      INTEGER(KIND=JWIM) :: NDEFHIS_WAV = -1
+      REAL(KIND=JWRU) :: WAV_NetcdfPresTime = 0
+      INTEGER(KIND=JWIM) :: idxUcurr, idxVcurr, idxZeta
+      INTEGER(KIND=JWIM) :: idxcfl1, idxcfl2, idxcfl3
+      INTEGER(KIND=JWIM) :: NETCDF_X, NETCDF_Y
+      INTEGER(KIND=JWIM) :: MaxMNPloc
+      INTEGER(KIND=JWIM), allocatable :: ListMNPloc(:), ListNP_RESloc(:)
+      INTEGER(KIND=JWIM), allocatable :: ListIPLGloc(:,:)
 #endif
 END MODULE WAV_netcdf_var

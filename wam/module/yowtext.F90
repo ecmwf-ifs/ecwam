@@ -1,0 +1,28 @@
+      MODULE YOWTEXT
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      IMPLICIT NONE
+
+!*    ** *TEXT* - FILE NAME INFORMATION.
+
+      INTEGER(KIND=JWIM) :: ICPLEN 
+      CHARACTER(LEN=  3) :: USERID
+      CHARACTER(LEN=  3) :: RUNID
+      CHARACTER(LEN= 60) :: PATH
+      CHARACTER(LEN=256) :: CPATH
+      LOGICAL            :: LRESTARTED 
+      CHARACTER(LEN=263) :: CWI
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *ICPLEN*    INTEGER   LENGTH OF CPATH.
+!      *USERID*    CHARACTER USERID FOR ECFS FILE NAMES.
+!      *RUNID*     CHARACTER RUN IDENTIFIER FOR ECFS FILE NAMES.
+!      *PATH*      CHARACTER ECFS PATH NAME FOR FILES.
+!      *CPATH*     CHARACTER PATH FOR OUTPUT TO DISK.
+!      *LRESTARTED*CHARACTER INDICATED WHETHER RUN IS IN RESTARTED MODE.
+!      *CWI*       CHARACTER PATH AND NAME OF THE RESTART INFORMATION.
+!                            FILE.
+! ----------------------------------------------------------------------
+      END MODULE YOWTEXT

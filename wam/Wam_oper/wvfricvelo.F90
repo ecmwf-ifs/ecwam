@@ -68,10 +68,8 @@
       REAL(KIND=JWRB) :: BOG, XKU10, XLOGZ, XLOGINV
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
-      IF (LHOOK) CALL DR_HOOK('WVFRICVELO',0,ZHOOK_HANDLE)
-#endif
 
+      IF (LHOOK) CALL DR_HOOK('WVFRICVELO',0,ZHOOK_HANDLE)
 
       XLOGZ=LOG(ZREF)
       DO IJ=IJS,IJL
@@ -102,8 +100,6 @@
         Z0W(IJ) = BOG*UST**2
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('WVFRICVELO',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE WVFRICVELO

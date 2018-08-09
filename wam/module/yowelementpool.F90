@@ -1,32 +1,33 @@
 module yowElementpool
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   implicit none
   private
   public :: finalizeElementpool, eleBelongTo
 
   !> number of elements, global
-  integer, public :: ne_global = 0
+  integer(KIND=JWIM), public :: ne_global = 0
 
   !> number of local elements
-  integer, public :: ne = 0
+  integer(KIND=JWIM), public :: ne = 0
 
   !> local element array. it stores the local node IDs
   !> first index from 1 to 3.
   !> second index from 1 to ne.
   !> local node IDs in [1:np]. local ghost IDs in [np+1:np+ng]
-  integer, public, target, allocatable :: INE(:,:)
+  integer(KIND=JWIM), public, target, allocatable :: INE(:,:)
 
   !> global element array. it stored the global node IDs
   !> first index from 1 to 3.
   !> second index from 1 to ne_global
-  integer, public, allocatable :: INE_global(:,:)
+  integer(KIND=JWIM), public, allocatable :: INE_global(:,:)
 
   !> Element local to global mapping
   !> ne long. give the global element id
-  integer, public, target, allocatable :: ielg(:)
+  integer(KIND=JWIM), public, target, allocatable :: ielg(:)
 
   !> Element global to local mapping
   !> ne_global long. give the local element id but only for this rank. local element id for other ranks are set to 0!
-  integer, public, allocatable :: iegl(:)
+  integer(KIND=JWIM), public, allocatable :: iegl(:)
 
   contains
 
@@ -39,10 +40,10 @@ module yowElementpool
     use yowDatapool, only: nTasks
     use yowNodepool, only: t_Node, nodes_global
     implicit none
-    integer, intent(in) :: ele_global(3)
-    integer :: domainID
+    integer(KIND=JWIM), intent(in) :: ele_global(3)
+    integer(KIND=JWIM) :: domainID
 
-    integer :: j, itemp, ranks
+    integer(KIND=JWIM) :: j, itemp, ranks
     type(t_Node) ::  nodes(3)
 
     domainID = -1
@@ -80,11 +81,11 @@ module yowElementpool
     use yowDatapool, only: myrank
     use yowNodepool, only: t_Node, nodes_global
     implicit none
-    integer, intent(in) :: ele_global(3)
-    integer, intent(in), optional :: rank
+    integer(KIND=JWIM), intent(in) :: ele_global(3)
+    integer(KIND=JWIM), intent(in), optional :: rank
     logical :: belongTo
 
-    integer :: myDomainID
+    integer(KIND=JWIM) :: myDomainID
     type(t_Node) ::  nodes(3)
 
     belongTo = .false.

@@ -1,0 +1,247 @@
+!-------------------------------------------------------------------
+
+      SUBROUTINE MICEP (IPARAM, CICVR, CITH, IJS, IJL)
+
+!-------------------------------------------------------------------
+
+!**** *MICEP* - CLEAN UP SEA FRACTION FOR ALL SEA POINTS.
+!               DETERNINE THE SEA ICE THICKNESS IF NOT SUPPLIED
+!               AND CHECk THE CONSISTENCY BETWEEN SEA ICE COVER AND
+!               THICKNESS. IMPOSE MINIMUM THICKNESS.
+
+!     R. PORTZ     MPI HAMBURG   OCTOBER 1992
+!     J. BIDLOT    ECMWF         JUNE 1996    MESSAGE PASSING
+!     J. BIDLOT    ECMWF         JANUARY 1998 : CORRECT THRESHOLD FOR
+!                                               ICE TO BE LT 271.50
+!     J. BIDLOT    ECMWF         FEBRUARY 2000 : USE OF SEA ICE FRACTION
+!     J. BIDLOT    ECMWF         AUG 2006 :  
+
+
+!     PURPOSE.
+!     --------
+!            SELECTS POINTS (TEMP < 271.5 KELVIN) IN THE TEMPERATURE
+!            GRID AND DEFINE SEA COVER AS 1., OTHERWISE 0. 
+!            BUT IF SEA ICE FRACTION IS GIVEN DEFINE MODEL SEA ICE
+!            COVER MAKING SURE IT IS ALWAYS >=0. AND <=1. 
+
+!**   INTERFACE
+!     ---------
+!             *CALL MICEP* *(IPARAM, CICVR, CITH, IJS, IJL)
+
+!*     VARIABLE.   TYPE.     PURPOSE.
+!      ---------   -------   --------
+!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CIFR
+!      *CICVR*     REAL      SEA ICE COVER.
+!      *CITH*      REAL      SEA ICE THICKNESS.
+!      *IJS*       INDEX OF FIRST GRIDPOINT
+!      *IJL*       INDEX OF LAST GRIDPOINT
+
+
+!     METHOD.
+!     -------
+!             NONE
+
+!    EXTERNAL.
+!    ---------
+!             *NONE* 
+
+!---------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
+     &               HICMIN
+      USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
+      USE YOWMPP   , ONLY : IRANK    ,NPROC
+      USE YOWPARAM , ONLY : NGX      ,NGY     ,CLDOMAIN   ,SWAMPCITH
+      USE YOWPCONS , ONLY : ZMISS
+      USE YOWTEST  , ONLY : IU06     ,ITEST 
+      USE YOWWIND  , ONLY : FIELDG 
+      USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK
+      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
+      USE YOWNEMOFLDS, ONLY : NEMOCICOVER, NEMOCITHICK, LNEMOICEREST
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, IJS, IJL
+
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(INOUT) :: CICVR, CITH
+
+      INTEGER(KIND=JWIM) :: IJ, IX, IY
+      INTEGER(KIND=JWIM) :: NICE
+
+!     CONSTANTS FOR PARAMETRISATION OF SEA ICE THICKNESS:
+      REAL(KIND=JWRB), PARAMETER :: C1=0.2_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2=0.4_JWRB
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+!     1. INITIALIZATION
+!     ------------------
+
+      IF (LHOOK) CALL DR_HOOK('MICEP',0,ZHOOK_HANDLE)
+
+!*    2. WE DEFINE ICE FOR THOSE POINTS WHERE SST < 271.5 KELVIN). 
+!        OR CLEAN SEA ICE FRACTION TO DEFINE MODEL SEA ICE COVER.
+!        -------------------------------------------------------
+
+      IF(LWNEMOCOUCIC) THEN
+        IF(LWCOU) THEN
+          DO IJ=IJS,IJL
+            IX = IFROMIJ(IJ,1)
+            IY = JFROMIJ(IJ,1)
+            IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
+              CICVR(IJ) = NEMOCICOVER(IJ)
+            ELSE
+!            get ice information from atmopsheric model
+              CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+            ENDIF
+          ENDDO
+        ELSE
+          DO IJ=IJS,IJL
+            IX = IFROMIJ(IJ,1)
+            IY = JFROMIJ(IJ,1)
+            CICVR(IJ) = NEMOCICOVER(IJ)
+          ENDDO
+        ENDIF
+      ELSEIF (IPARAM.EQ.31) THEN
+        DO IJ=IJS,IJL
+          IX = IFROMIJ(IJ,1)
+          IY = JFROMIJ(IJ,1)
+          IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR.                        &
+     &        FIELDG(IX,IY)%CIFR .LT. 0.01_JWRB .OR.                    &
+     &        FIELDG(IX,IY)%CIFR .GT. 1.01_JWRB ) THEN 
+            CICVR(IJ) = 0.0_JWRB
+          ELSEIF (FIELDG(IX,IY)%CIFR .GT. 0.95_JWRB) THEN 
+            CICVR(IJ) = 1.0_JWRB
+          ELSE
+            CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+          ENDIF
+        ENDDO
+      ELSEIF (IPARAM.EQ.139) THEN
+        DO IJ=IJS,IJL
+          IX = IFROMIJ(IJ,1)
+          IY = JFROMIJ(IJ,1)
+          IF (FIELDG(IX,IY)%CIFR .LT. 271.5_JWRB) THEN
+            CICVR(IJ) = 1.0_JWRB
+          ELSE
+            CICVR(IJ) = 0.0_JWRB
+          ENDIF
+        ENDDO
+      ENDIF 
+
+
+      IF (.NOT. LICERUN .OR. LMASKICE) THEN
+!       SEA ICE THICKNESS IN CASE IT IS NOT SUPPLIED AS INPUT:
+        DO IJ=IJS,IJL
+          CITH(IJ)=0.0_JWRB
+        ENDDO
+      ELSEIF (CLDOMAIN == 's') THEN
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).GT.0.0_JWRB) THEN
+            CITH(IJ)=SWAMPCITH
+          ELSE
+            CITH(IJ)=0.0_JWRB
+          ENDIF
+        ENDDO
+      ELSEIF ((.NOT.LICETH).AND.(.NOT.LWNEMOCOUCIT)) THEN
+!       SEA ICE THICKNESS IS PARAMETERISED:
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).GT.0.0_JWRB) THEN
+            CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+          ELSE
+            CITH(IJ)=0.0_JWRB
+          ENDIF
+        ENDDO
+
+      ELSEIF (LWNEMOCOUCIT) THEN
+        IF(LWCOU) THEN
+          DO IJ=IJS,IJL
+            IX = IFROMIJ(IJ,1)
+            IY = JFROMIJ(IJ,1)
+            IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
+              IF (LNEMOICEREST) THEN
+                CITH(IJ)=NEMOCITHICK(IJ)
+              ELSE
+                CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+              ENDIF
+            ELSE
+!           We should get ice thickness information from atmopsheric model
+!           but it is not yet coded. For now, parameterise it from the cover...
+              IF (CICVR(IJ).GT.0.0_JWRB) THEN
+                CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+              ELSE
+               CITH(IJ)=0.0_JWRB
+              ENDIF
+            ENDIF
+          ENDDO
+
+        ELSE
+          IF (LNEMOICEREST) THEN
+            DO IJ=IJS,IJL
+               CITH(IJ)=NEMOCITHICK(IJ)
+            ENDDO
+          ELSE
+            DO IJ=IJS,IJL
+               CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+            ENDDO
+          ENDIF
+        ENDIF
+
+!       CONSISTENCY CHECK:
+!       no ice if thickness < 0.5*HICMIN
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).GT.0.0_JWRB .AND. CITH(IJ).LT.0.5_JWRB*HICMIN) THEN
+            CICVR(IJ)=0.0_JWRB
+            CITH(IJ)=0.0_JWRB
+          ENDIF
+        ENDDO
+
+      ELSE
+
+!!!!   define a representative sea ice thickness that account for sea ice coverage
+        DO IJ=IJS,IJL
+          CITH(IJ)=CICVR(IJ)*CITH(IJ)
+        ENDDO
+
+!       CONSISTENCY CHECK:
+!       no ice if thickness < 0.5*HICMIN
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ).GT.0.0_JWRB .AND. CITH(IJ).LT.0.5_JWRB*HICMIN) THEN
+            CICVR(IJ)=0.0_JWRB
+            CITH(IJ)=0.0_JWRB
+          ENDIF
+        ENDDO
+
+      ENDIF
+
+
+      IF (ITEST.GE.1) THEN
+        NICE = 0
+        DO IJ=IJS,IJL
+          IF (CICVR(IJ) .GT. CITHRSH) NICE = NICE + 1 
+        ENDDO
+        IF (IPARAM.EQ.139) THEN
+          WRITE(IU06,*)' SUB. MICEP: POINTS WITH TEMP < 271.5 K :',     &
+     &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
+        ELSEIF (IPARAM.EQ.31) THEN
+          WRITE(IU06,*)' SUB. MICEP: ',                                 &
+     &           'POINTS WITH SEA ICE FRACTION > ', CITHRSH, ': ',      &
+     &     NICE,' ON PE ',IRANK, ' OUT OF A TOTAL OF ',NPROC, 'PEs'
+        ELSE
+          WRITE(IU06,*)' ********************************************'
+          WRITE(IU06,*)' SUB. MICEP: PARAMETER FOR ICE MASK NOT KNOWN'
+          WRITE(IU06,*)' SUB. MICEP: NO ICE MASK WAS SET UP'
+          WRITE(IU06,*)' ********************************************'
+        ENDIF
+      ENDIF
+
+      IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE MICEP

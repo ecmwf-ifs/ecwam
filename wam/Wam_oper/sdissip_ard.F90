@@ -59,6 +59,7 @@
       USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
@@ -70,7 +71,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL,SL
 
       REAL(KIND=JWRB) :: XK(IJS:IJL,NFRE)
-      REAL(KIND=JWRB) :: TPIINV, TMP01, TMP03
+      REAL(KIND=JWRB) :: TPIINV, TPIINVH, TMP01, TMP03
       REAL(KIND=JWRB) :: EPSR
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: SSDSC6M1
@@ -92,15 +93,15 @@
       LOGICAL :: LLSSDSC3,  LLSSDSC5
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',0,ZHOOK_HANDLE)
-#endif
 
       ! INITIALISATION
 
       EPSR=SQRT(SDSBR)
 
       TPIINV = 1.0_JWRB/ZPI
+      TPIINVH= 0.5_JWRB*TPIINV
 
       NANGD=NANG/2
 
@@ -130,7 +131,7 @@
         DO M=1, NFRE
           DO IJ=IJS,IJL
             XK(IJ,M) = (SIG(M)**2)/G
-            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINV*G/SIG(M)
+            FACSAT(IJ,M) = XK(IJ,M)**3*TPIINVH*G/SIG(M)
           ENDDO
         ENDDO
       ENDIF
@@ -282,8 +283,6 @@
         ENDDO
       ENDDO
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('SDISSIP_ARD',1,ZHOOK_HANDLE)
-#endif
 
       END SUBROUTINE SDISSIP_ARD

@@ -1,0 +1,115 @@
+      SUBROUTINE PROPAG_WAM (FL1, FL3, IJS, IJL, L1STCALL)
+
+! ----------------------------------------------------------------------
+
+!**** *PROPAG_WAM* - PROPGATION ON STRUCTURED GRID. 
+
+!*    PURPOSE.
+!     --------
+
+!     PROPAGATION ON STRUCTURED GRID.     
+
+!**   INTERFACE.
+!     ----------
+
+!     *CALL* *PROPAG_WAM (FL1,FL3,IJS,IJL,L1STCALL)*
+!          *FL1*  - SPECTRUM AT TIME T.
+!          *FL3*  - SPECTRUM AT TIME T+DELT.
+!          *IJS*  - INDEX OF FIRST POINT
+!          *IJL*  - INDEX OF LAST POINT
+!          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
+
+
+!     METHOD.
+!     -------
+
+!     EXTERNALS.
+!     ----------
+
+
+! -------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
+      USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+#include "propags.intfb.h"
+#include "propags1.intfb.h"
+#include "propags2.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
+
+      LOGICAL, INTENT(IN) :: L1STCALL
+
+      INTEGER(KIND=JWIM) :: IJ, K, M, J
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE :: TMPFL3(:,:,:)
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
+
+      CALL GSTATS(1430,0)
+      NPROMA=NPROMA_WAM
+
+      IF(IPROPAGS.EQ.1) THEN
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL PROPAGS1(FL1,FL3(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+        ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS1 CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ELSEIF(IPROPAGS.EQ.2) THEN
+        MTHREADS=1
+!$      MTHREADS=OMP_GET_MAX_THREADS()
+        NPROMA=(IJL-IJS+1)/MTHREADS + 1
+!$OMP   PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL,TMPFL3)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          ALLOCATE(TMPFL3(KIJS:KIJL,NANG,NFRE))
+          CALL PROPAGS2(FL1,TMPFL3,KIJS,KIJL)
+          FL3(KIJS:KIJL,:,:) = TMPFL3(KIJS:KIJL,:,:)
+          DEALLOCATE(TMPFL3)
+        ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS2 CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ELSE
+!$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL PROPAGS(FL1,FL3(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+          ENDDO
+!$OMP   END PARALLEL DO
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS CALLED'
+          CALL FLUSH (IU06)
+        ENDIF
+      ENDIF
+      CALL GSTATS(1430,1)
+
+      IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE PROPAG_WAM

@@ -48,6 +48,7 @@
       USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
 
 ! ----------------------------------------------------------------------
+
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: JD, K, M, I_INT, J_INT, M2, KK, NANGD
@@ -62,9 +63,8 @@
       REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, C_, C_C, CGM1, DSIP, TRPZ_DSIP 
 
 ! ----------------------------------------------------------------------
-#ifdef ECMWF
+
       IF (LHOOK) CALL DR_HOOK('INIT_SDISS_ARDH',0,ZHOOK_HANDLE)
-#endif
 
       TPIINV = 1.0_JWRB/ZPI
 
@@ -168,9 +168,6 @@
         CUMULW(:,:,:,:)=0.0_JWRB
       ENDIF
 
-#ifdef ECMWF
       IF (LHOOK) CALL DR_HOOK('INIT_SDISS_ARDH',1,ZHOOK_HANDLE)
-#endif
 
-      RETURN
       END SUBROUTINE INIT_SDISS_ARDH

@@ -2,6 +2,7 @@
 
 !> Has only the ghost nodes assign to a neighbor domain
 module yowExchangeModule
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
   use yowMpiModule
   implicit none
   private
@@ -13,40 +14,40 @@ module yowExchangeModule
     
     !> the domain ID
     !> The domain ID of the neighbor domain. Starts by 1
-    integer :: domainID = 0
+    integer(KIND=JWIM) :: domainID = 0
 
     !> number of ghosts nodes.
     !> holds the number of ghosts nodes the two domains share together
     !> (the neighbor domain has a copy of the ghosts. when you change some
     !> value in a ghost node, it dosen't change in the node on the other domain)
-    integer :: numNodesToReceive = 0
+    integer(KIND=JWIM) :: numNodesToReceive = 0
 
     !> this are the ghosts that we.
     !> has in this neighbor domain. global node IDs
-    integer, allocatable :: nodesToReceive(:)
+    integer(KIND=JWIM), allocatable :: nodesToReceive(:)
 
     !> number of nodes we have to send to this neighbor
-    integer :: numNodesToSend = 0
+    integer(KIND=JWIM) :: numNodesToSend = 0
 
     !> this are the ghosts from this neighbor.
     !> global node IDs to send
-    integer, allocatable :: nodesToSend(:)
+    integer(KIND=JWIM), allocatable :: nodesToSend(:)
 
     !> MPI datatypes for 1D exchange
-    integer :: p1DRsendType = MPI_DATATYPE_NULL
-    integer :: p1DRrecvType = MPI_DATATYPE_NULL
-    integer :: p1DIsendType = MPI_DATATYPE_NULL
-    integer :: p1DIrecvType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p1DRsendType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p1DRrecvType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p1DIsendType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p1DIrecvType = MPI_DATATYPE_NULL
     !> MPI datatypes for 2D exchange
-    integer :: p2DRsendType1 = MPI_DATATYPE_NULL
-    integer :: p2DRrecvType1 = MPI_DATATYPE_NULL
-    integer :: p2DRsendType2 = MPI_DATATYPE_NULL
-    integer :: p2DRrecvType2 = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p2DRsendType1 = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p2DRrecvType1 = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p2DRsendType2 = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p2DRrecvType2 = MPI_DATATYPE_NULL
     !> MPI datatypes for 3D exchange
-    integer :: p3DR8sendType = MPI_DATATYPE_NULL
-    integer :: p3DR8recvType = MPI_DATATYPE_NULL
-    integer :: p3DR4sendType = MPI_DATATYPE_NULL
-    integer :: p3DR4recvType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p3DR8sendType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p3DR8recvType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p3DR4sendType = MPI_DATATYPE_NULL
+    integer(KIND=JWIM) :: p3DR4recvType = MPI_DATATYPE_NULL
 
     contains
 !     procedure :: exchangeGhostIds
@@ -61,13 +62,13 @@ module yowExchangeModule
   type(t_neighborDomain), public, allocatable :: neighborDomains(:)
 
   !> Number of neighbor domains
-  integer, public :: nConnDomains = 0
+  integer(KIND=JWIM), public :: nConnDomains = 0
 
   !> number of the second dimension for exchange
-  integer, public :: n2ndDim = 1
+  integer(KIND=JWIM), public :: n2ndDim = 1
 
   !> number fo the third dimension for exchange
-  integer, public :: n3ndDim = 1
+  integer(KIND=JWIM), public :: n3ndDim = 1
 
   interface exchange
     module procedure exchange1Dreal, exchange1Dint, exchange2Dreal, exchange3Dreal4, exchange3Dreal8
@@ -85,7 +86,7 @@ module yowExchangeModule
     use yowMpiModule
     implicit none
     class(t_neighborDomain), intent(inout) :: this
-    integer :: ierr
+    integer(KIND=JWIM) :: ierr
 
     if(allocated(this%nodesToSend))    deallocate(this%nodesToSend)
     if(allocated(this%nodesToReceive)) deallocate(this%nodesToReceive)
@@ -125,9 +126,9 @@ module yowExchangeModule
     implicit none
     class(t_neighborDomain), intent(inout) :: this
 
-    integer :: ierr
-    integer :: dsplSend(this%numNodesToSend)
-    integer :: dsplRecv(this%numNodesToReceive)
+    integer(KIND=JWIM) :: ierr
+    integer(KIND=JWIM) :: dsplSend(this%numNodesToSend)
+    integer(KIND=JWIM) :: dsplRecv(this%numNodesToReceive)
 
     
     dsplSend = ipgl(this%nodesToSend)-1
@@ -211,7 +212,7 @@ module yowExchangeModule
   subroutine initNbrDomains(nConnD)
     use yowError
     implicit none
-    integer, intent(in) :: nConnD
+    integer(KIND=JWIM), intent(in) :: nConnD
 
     call finalizeExchangeModule()
     nConnDomains = nConnD
@@ -221,7 +222,7 @@ module yowExchangeModule
 
   subroutine createMPITypes()    
     implicit none
-    integer :: i
+    integer(KIND=JWIM) :: i
 
     do i=1, nConnDomains
       call neighborDomains(i)%createMPIType()
@@ -242,9 +243,9 @@ module yowExchangeModule
     implicit none
     real(kind=rkind), intent(inout) :: U(:)
 
-    integer :: i, ierr, tag
-    integer :: sendRqst(nConnDomains), recvRqst(nConnDomains)
-    integer :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+    integer(KIND=JWIM) :: i, ierr, tag
+    integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
     character(len=200) errstr
 
     if(size(U) /= npa) then
@@ -300,11 +301,11 @@ module yowExchangeModule
     use yowError
     use yowMpiModule
     implicit none
-    integer, intent(inout) :: U(:)
+    integer(KIND=JWIM), intent(inout) :: U(:)
 
-    integer :: i, ierr, tag
-    integer :: sendRqst(nConnDomains), recvRqst(nConnDomains)
-    integer :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+    integer(KIND=JWIM) :: i, ierr, tag
+    integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
     character(len=200) errstr
 
     if(size(U) /= npa) then
@@ -363,9 +364,9 @@ module yowExchangeModule
     implicit none
     real(kind=rkind), intent(inout) :: U(:,:)
 
-    integer :: i, ierr, tag
-    integer :: sendRqst(nConnDomains), recvRqst(nConnDomains)
-    integer :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+    integer(KIND=JWIM) :: i, ierr, tag
+    integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
     character(len=200) errstr
 
     if(size(U,2) /= npa) then
@@ -465,9 +466,9 @@ module yowExchangeModule
     implicit none
     real(kind=8), intent(inout) :: U(:,:,:)
 
-    integer :: i, ierr, tag
-    integer :: sendRqst(nConnDomains), recvRqst(nConnDomains)
-    integer :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+    integer(KIND=JWIM) :: i, ierr, tag
+    integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
     character(len=200) errstr
 
     if(size(U,3) /= npa) then
@@ -535,9 +536,9 @@ module yowExchangeModule
     implicit none
     real(kind=4), intent(inout) :: U(:,:,:)
 
-    integer :: i, ierr, tag
-    integer :: sendRqst(nConnDomains), recvRqst(nConnDomains)
-    integer :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
+    integer(KIND=JWIM) :: i, ierr, tag
+    integer(KIND=JWIM) :: sendRqst(nConnDomains), recvRqst(nConnDomains)
+    integer(KIND=JWIM) :: recvStat(MPI_STATUS_SIZE, nConnDomains), sendStat(MPI_STATUS_SIZE, nConnDomains)
     character(len=200) errstr
 
     if(size(U,3) /= npa) then
@@ -598,14 +599,14 @@ module yowExchangeModule
   !> \note call this before initPD()
   subroutine setDimSize(second, third)
     implicit none
-    integer, intent(in) :: second, third
+    integer(KIND=JWIM), intent(in) :: second, third
     n2ndDim = second
     n3ndDim = third
   end subroutine setDimSize
 
   subroutine finalizeExchangeModule()
     implicit none
-    integer :: i
+    integer(KIND=JWIM) :: i
 
     if(allocated(neighborDomains)) then
       do i=1, size(neighborDomains)
@@ -626,12 +627,12 @@ module yowExchangeModule
     use yowDatapool, only: nTasks
     implicit none
     real(kind=4), intent(in) :: U(:)
-    integer, intent(in) :: globalIDs(:)
+    integer(KIND=JWIM), intent(in) :: globalIDs(:)
     real(kind=4), intent(inout) :: values(:)
 
     character(len=200) errstr
-    integer :: i, rank
-    integer :: nToGetPerRank(nTasks)
+    integer(KIND=JWIM) :: i, rank
+    integer(KIND=JWIM) :: nToGetPerRank(nTasks)
 
     if(size(U) /= npa) then
       write(errstr, *) "size(U) /= npa", size(U), "should be", npa

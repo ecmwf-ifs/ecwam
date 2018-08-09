@@ -1,0 +1,138 @@
+      SUBROUTINE READFL(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,       &
+     &                  FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARAL)
+
+! ----------------------------------------------------------------------
+!     J. BIDLOT    ECMWF      SEPTEMBER 1997
+
+!*    PURPOSE.
+!     --------
+!     READS ARRAY FL
+
+!**   INTERFACE.
+!     ----------
+!     CALL *READFL*(FL, IJINF, IJSUP, KINF, KSUP, MINF, MSUP,
+!                   FILENAME, IUNIT, LOUNIT, LCUNI, LRSTPARAL)
+!     *FL*       ARRAY TO BE WRITTEN TO FILE
+!     *IJINF*    FIRST LOWER DIMENSION OF FL
+!     *IJSUP*    FIRST UPPER DIMENSION OF FL
+!     *KINF*     SECOND LOWER DIMENSION BOUND OF FL
+!     *KSUP*     SECOND UPPER DIMENSION BOUND OF FL
+!     *MINF*     THIRD LOWER DIMENSION BOUND OF FL
+!     *MSUP*     THIRD UPPER DIMENSION BOUND OF FL
+!     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE
+!     *IUNIT*    FILE UNIT (ONLY ACTIVE IF PBIO OUTPUT)
+!     *LOUNIT*  LOGICAL, TRUE IF FREE UNIT HAS TO BE FOUND
+!     *LCUNIT* LOGICAL, TRUE IF UNIT HAs TO BE CLOSED 
+!     *LRSTPARAL* LOGICAL, TRUE THEN READ IN PARALLEL
+
+
+!     METHOD.
+!     -------
+!     READS ARRAY FL FROM FILE (FORTRAN READ)
+
+!     IF PBIO IS USED, THEN PBREAD IS CALLED TO READ (MSUP-MINF+1) 
+!     FREQUENCY CONTRIBUTION TO FL.
+
+
+!     EXTERNALS.
+!     ----------
+
+!     REFERENCE.
+!     ----------
+!     NONE
+! ----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWMPP   , ONLY : NPROC
+      USE YOWPARAM , ONLY : LL1D
+      USE YOWSPEC  , ONLY : IJ2NEWIJ
+      USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOWUNPOOL, ONLY : LLUNSTR
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+#include "abort1.intfb.h"
+#include "unblkrord.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJINF, IJSUP, KINF, KSUP, MINF, MSUP
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: IUNIT
+
+      REAL(KIND=JWRB), DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP), INTENT(OUT) :: FL
+
+      CHARACTER(LEN=296), INTENT(IN) :: FILENAME
+
+      LOGICAL, INTENT(IN) :: LOUNIT, LCUNIT, LRSTPARAL
+
+      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3
+      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT 
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
+
+      LOGICAL :: LLEXIST
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('READFL',0,ZHOOK_HANDLE)
+
+      LFILE=0
+      IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+
+      IF(LOUNIT) THEN
+        LLEXIST=.FALSE.
+        INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
+        IF(.NOT. LLEXIST) THEN
+          WRITE (IU06,*) '*************************************'
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+          WRITE (IU06,*) '*  IN READFL :                      *'
+          WRITE (IU06,*) '*  COULD NOT FIND FILE ',FILENAME
+          WRITE (IU06,*) '*                                   *'
+          WRITE (IU06,*) '*************************************'
+          WRITE (*,*) '*************************************'
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*  ERROR FOLLOWING CALL TO INQUIRE  *'
+          WRITE (*,*) '*  IN READFL :                      *'
+          WRITE (*,*) '*  COULD NOT FIND FILE ',FILENAME
+          WRITE (*,*) '*                                   *'
+          WRITE (*,*) '*************************************'
+          CALL ABORT1
+        ENDIF
+        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0)
+      ENDIF
+
+      IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN
+        READ(IUNIT) (((FL_G(IJ,J2,J3),                                  &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
+     &                  J3=MINF,MSUP)
+
+        CALL UNBLKRORD(-1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,              &
+     &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),             &
+     &               FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP))
+
+      
+      ELSEIF(LRSTPARAL .OR. LL1D .OR. NPROC.EQ.1) THEN
+        READ(IUNIT) (((FL(IJ,J2,J3),                                    &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
+     &                  J3=MINF,MSUP)
+      ELSE
+!       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
+!       BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
+        READ(IUNIT) (((FL(IJ2NEWIJ(IJ),J2,J3),                          &
+     &                  IJ=IJINF,IJSUP),                                &
+     &                  J2=KINF,KSUP),                                  &
+     &                  J3=MINF,MSUP)
+
+      ENDIF
+      IF(LCUNIT) CLOSE(IUNIT)
+
+      IF (ITEST.GE.2) WRITE(IU06,*) ' SUB. READFL: INPUT OF FL DONE'
+
+      IF (LHOOK) CALL DR_HOOK('READFL',1,ZHOOK_HANDLE)
+
+      END SUBROUTINE READFL
