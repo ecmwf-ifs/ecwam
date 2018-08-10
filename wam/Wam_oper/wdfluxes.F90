@@ -149,6 +149,7 @@
      &                MIJ, RHOWGDFTH)
 
 
+      IF(LCFLX) THEN
 ! only if wrong flux used
 !      IF(LCFLX) THEN
 !  
@@ -188,7 +189,7 @@
 !     &                         USNEW, ROAIRN, .FALSE.)
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SLS, CICVR,                                    &
+     &                   SL, CICVR,                                     &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
@@ -200,6 +201,7 @@
           CALL FLUSH (IU06)
         ENDIF
 
+        IF(LWVFLX_SNL) THEN
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
      &                   SL, CICVR,                                     &
