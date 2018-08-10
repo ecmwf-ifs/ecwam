@@ -262,7 +262,7 @@
      &            NFRE_ODD ,                                            &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
-      USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,
+      USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &            RAD      ,ROWATER
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
