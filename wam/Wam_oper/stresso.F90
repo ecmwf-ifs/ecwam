@@ -74,7 +74,7 @@
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
@@ -159,7 +159,7 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*DFIM(M)
+          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*ROWATER*G*DFIM(M)
         ENDDO
       ENDDO
 
