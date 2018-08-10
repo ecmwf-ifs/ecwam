@@ -112,7 +112,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+! only if wrong flux used
+!!!      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
@@ -148,17 +149,18 @@
      &                MIJ, RHOWGDFTH)
 
 
-      IF(LCFLX) THEN
-  
-       DO M=1,NFRE
-         DO K=1,NANG
-           DO IJ=IJS,IJL
-             SSOURCE(IJ,K,M) = SL(IJ,K,M)
-           ENDDO
-         ENDDO
-       ENDDO
+! only if wrong flux used
+!      IF(LCFLX) THEN
+!  
+!       DO M=1,NFRE
+!         DO K=1,NANG
+!           DO IJ=IJS,IJL
+!             SSOURCE(IJ,K,M) = SL(IJ,K,M)
+!           ENDDO
+!         ENDDO
+!       ENDDO
 
-        CALL STRESSO (FL3, SPOS, IJS, IJL,                              &
+        CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                          &
      &                MIJ, RHOWGDFTH,                                   &
      &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
@@ -184,17 +186,9 @@
 !     &                         PHIWA,                                   &
 !     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
 !     &                         USNEW, ROAIRN, .FALSE.)
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-!!!           SSOURCE should only contain the positive contribution from sinput
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SSOURCE, CICVR,                                &
+     &                   SLS, CICVR,                                    &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
@@ -206,19 +200,9 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        IF(LWVFLX_SNL) THEN
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-!!!           SSOURCE should only contain the positive contribution from sinput
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)-SSOURCE(IJ,K,M)+SPOS(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
-
           CALL WNFLUXES (IJS, IJL,                                      &
      &                   MIJ, RHOWGDFTH,                                &
-     &                   SSOURCE, CICVR,                                &
+     &                   SL, CICVR,                                     &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
      &                   USNEW, ROAIRN, .FALSE.)
