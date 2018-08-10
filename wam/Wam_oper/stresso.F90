@@ -171,18 +171,14 @@
         K=1
         DO IJ=IJS,IJL
           SUMT(IJ) = SPOS(IJ,K,M)
-!         until we have figure out how to deal with negative input
-          CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-          SUMX(IJ) = CNST*SINTH(K)
-          SUMY(IJ) = CNST*COSTH(K)
+          SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
+          SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
             SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
-!           until we have figure out how to deal with negative input
-            CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-            SUMX(IJ) = SUMX(IJ) + CNST*SINTH(K)
-            SUMY(IJ) = SUMY(IJ) + CNST*COSTH(K)
+            SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
+            SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
