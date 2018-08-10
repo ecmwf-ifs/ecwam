@@ -70,7 +70,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
+      USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -159,7 +159,7 @@
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*ROWATER*G*DFIM(M)
+          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
         ENDDO
       ENDDO
 
