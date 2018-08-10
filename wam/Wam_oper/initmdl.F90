@@ -241,7 +241,7 @@
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH   ,FR5      ,     &
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,    &
-     &            COSTH    ,SINTH    ,FLMAX    ,                        &
+     &            COSTH    ,SINTH    ,FLMAX    ,RHOWG_DFIM,             &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
@@ -262,7 +262,8 @@
      &            NFRE_ODD ,                                            &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
-      USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,RAD
+      USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,
+     &            RAD      ,ROWATER
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW,   &
@@ -523,12 +524,18 @@
 
       FLOGSPRDM1=1.0_JWRB/LOG10(FRATIO)
 
-!     
+      XLOGFRATIO=LOG(FRATIO)
+
+      IF (.NOT.ALLOCATED(RHOWG_DFIM)) ALLOCATE(RHOWG_DFIM(NFRE))
+      RHOWG_DFIM(1) = 0.5_JWRB*ROWATER*G*DELTH*XLOGFRATIO*FR(1)
+      DO M=2,NFRE-1
+        RHOWG_DFIM(M) = ROWATER*G*DELTH*XLOGFRATIO*FR(M)
+      ENDDO
+      RHOWG_DFIM(NFRE) = 0.5_JWRB*ROWATER*G*DELTH*XLOGFRATIO*FR(NFRE)
+
       IF (.NOT.ALLOCATED(DFIM_SIM)) ALLOCATE(DFIM_SIM(NFRE))
       NFRE_ODD=NFRE-1+MOD(NFRE,2)
       DFIM_SIM(NFRE)=0.0_JWRB
-
-      XLOGFRATIO=LOG(FRATIO)
       DFIM_SIM(1)=DELTH*XLOGFRATIO*FR(1)/3.0_JWRB
       DO M=2,NFRE_ODD-1,2
         DFIM_SIM(M)=4.0_JWRB*DELTH*XLOGFRATIO*FR(M)/3.0_JWRB
