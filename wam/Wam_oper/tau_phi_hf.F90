@@ -121,12 +121,11 @@
           FNC2      = ZBETA*TAUW*WTAUHF(J)*DELZ
           TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
           UST       = SQRT(TAUW)
-          FNC       = TAUW*FNC2
-          TAUHF(IJ) = TAUHF(IJ) + FNC 
-          PHIHF(IJ) = PHIHF(IJ) + FNC/Y
+          TAUHF(IJ) = TAUHF(IJ) + FNC2 
+          PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
         ENDDO
-        TAUHF(IJ) = TAUHF(IJ)/TAUW0
-        PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)/TAUW0
+        TAUHF(IJ) = TAUHF(IJ)
+        PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)
 
       ENDDO
 
