@@ -599,6 +599,7 @@
             WRITE (IU06,*) DS, AMOSOC(I), AMOSOP
             WRITE (IU06,*) DN, AMONOC(I), AMONOP
             IBOUNC = 0
+            CALL ABORT1 
           ENDIF
 
 

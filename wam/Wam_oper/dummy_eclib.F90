@@ -21,6 +21,21 @@
        RETURN
        END SUBROUTINE ABOR1
 
+       SUBROUTINE ABOR1FL(CDFILE, KLINENUM, CDTEXT)
+!      This is a substitute routine for ABOR1 that is normally found
+!      in the IFS library !
+       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+       CHARACTER(LEN=*) :: CDFILE, CDTEXT
+       INTEGER(KIND=JWIM), INTENT(IN) :: KLINENUM
+
+       WRITE(*,*) CDFILE
+       WRITE(*,*) CDTEXT
+
+       CALL ABORT1
+
+       RETURN
+       END SUBROUTINE ABOR1FL
+
        SUBROUTINE IFSSIG
        WRITE(*,*) 'THE ROUTINE IFSSIG WAS REPLACED BY A DUMMY'
        WRITE(*,*) 'IFSSIG is specific to signal handling for runs'
@@ -68,10 +83,3 @@
        WRITE(*,*) 'at  ECMWF, it can be commented out.'
        RETURN
        END SUBROUTINE EC_BIND
-
-       SUBROUTINE C_DRHOOK_PRINT 
-       WRITE(*,*) 'THE ROUTINE C_DRHOOK_PRINT WAS REPLACED BY A DUMMY'
-       WRITE(*,*) 'It is specific to signal handling for runs'
-       WRITE(*,*) 'at  ECMWF, it can be commented out.'
-       RETURN
-       END SUBROUTINE C_DRHOOK_PRINT

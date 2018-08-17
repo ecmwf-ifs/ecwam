@@ -5,6 +5,8 @@ MODULE WAV_NETCDF_FCT
         INTEGER(KIND=JWIM) :: nbTime
         REAL(KIND=JWRU), allocatable :: ListTime(:)
       END TYPE TIMEPERIOD
+#ifdef NETCDF_OUTPUT_WAM
+
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -349,6 +351,7 @@ MODULE WAV_NETCDF_FCT
       WRITE(740+MyRankGlobal,*) 'eStrTime=', eStrTime
       CALL CT2MJD(eStrTime, eTimeStart)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

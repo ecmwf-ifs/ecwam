@@ -2315,27 +2315,27 @@ END INTERFACE
         USE YOWMPP   , ONLY : IRANK, NPROC
         IMPLICIT NONE
 
-        INTEGER(KIND=JWIM) :: I_GET_UNIT
+        INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
 !        GRID%FNAME = 'system.dat'
-!        GRID%FHNDL = I_GET_UNIT(IU06, GRID%FNAME, 'r', 'f', 0) 
+!        GRID%FHNDL = IWAM_GET_UNIT(IU06, GRID%FNAME, 'r', 'f', 0) 
 
         BND%FNAME = 'sysbnd.dat'
-!        BND%FHNDL = I_GET_UNIT(IU06, BND%FNAME, 'w', 'f', 0)
+!        BND%FHNDL = IWAM_GET_UNIT(IU06, BND%FNAME, 'w', 'f', 0)
 
         DBG%FNAME = 'unwamdbg.%p.dat'
         CALL EXPAND_STRING(IRANK,NPROC,0,0,DBG%FNAME,1)
-        DBG%FHNDL = I_GET_UNIT(IU06, DBG%FNAME, 'w', 'f', 0)
+        DBG%FHNDL = IWAM_GET_UNIT(IU06, DBG%FNAME, 'w', 'f', 0)
 
         IF(LLUNBINOUT) THEN
           XFN_HS%FNAME = 'erghs.bin'
-          XFN_HS%FHNDL = I_GET_UNIT(IU06, XFN_HS%FNAME, 'w', 'u', 0)
+          XFN_HS%FHNDL = IWAM_GET_UNIT(IU06, XFN_HS%FNAME, 'w', 'u', 0)
 
           XFN_TM%FNAME = 'ergtm.bin'
-          XFN_TM%FHNDL = I_GET_UNIT(IU06, XFN_TM%FNAME, 'w', 'u', 0)
+          XFN_TM%FHNDL = IWAM_GET_UNIT(IU06, XFN_TM%FNAME, 'w', 'u', 0)
 
           XFN_TEST%FNAME = 'ergtest.bin'
-          XFN_TEST%FHNDL = I_GET_UNIT(IU06, XFN_TEST%FNAME, 'w', 'u', 0)
+          XFN_TEST%FHNDL = IWAM_GET_UNIT(IU06, XFN_TEST%FNAME, 'w', 'u', 0)
         ENDIF
 
       END SUBROUTINE SET_UNWAM_HANDLES

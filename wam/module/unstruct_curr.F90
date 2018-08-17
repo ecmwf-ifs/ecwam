@@ -23,6 +23,8 @@ MODULE UNSTRUCT_CURR
       REAL(KIND=JWRU) :: WAV_CurrTime = 0.
       LOGICAL :: UseSingleFile = .FALSE.
       LOGICAL :: IsInitializedSingleFile = .FALSE.
+#ifdef NETCDF_OUTPUT_WAM
+
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -161,6 +163,7 @@ MODULE UNSTRUCT_CURR
         LCALC=.TRUE.
       END IF
       END SUBROUTINE SET_CURTXY
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

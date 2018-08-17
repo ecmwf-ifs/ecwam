@@ -24,6 +24,7 @@ MODULE UNSTRUCT_WIND
       REAL(KIND=JWRU) :: WAV_WindTime =  0._JWRU
       LOGICAL :: WIND_UseSingleFile = .FALSE.
       LOGICAL :: WIND_IsInitializedSingleFile = .FALSE.
+#ifdef NETCDF_OUTPUT_WAM
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -242,4 +243,7 @@ MODULE UNSTRUCT_WIND
         ENDDO
       ENDDO
       END SUBROUTINE
+
+#endif
+
 END MODULE

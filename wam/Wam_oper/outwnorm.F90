@@ -69,7 +69,7 @@
               WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(I,IT)),NPROC
             ENDIF
           ENDDO
-111     FORMAT(4x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
+111     FORMAT(6x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
 
       ENDIF
 
