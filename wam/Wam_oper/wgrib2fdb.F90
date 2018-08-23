@@ -44,7 +44,8 @@
       USE YOWGRIBHD, ONLY : NWINOFF
       USE YOWMPP   , ONLY : NPRECI
 
-      USE FDBSUBS_MOD
+      USE FDBSUBS_MOD, ONLY : IOPENFDBSUBS, ISET_FDBSUBS_ROOT, ISETVALFDBSUBS, &
+      &                       ICLOSEFDBSUBS, IWRITEFDBSUBS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !     ------------------------------------------------------------------
@@ -157,9 +158,9 @@
      &      ISTREAM == 1095 .OR.  &
      &      ISTREAM == 1203 .OR.  &
      &      ISTREAM == 1204) THEN
-          ISTAT = IOPENFDBSUBS( 'seas', KFDB, 'w' )
+          CALL IOPENFDBSUBS( 'seas', KFDB, 'w', ISTAT )
         ELSE
-          ISTAT = IOPENFDBSUBS( 'fdb', KFDB, 'w' )
+          CALL IOPENFDBSUBS( 'fdb', KFDB, 'w', ISTAT )
         ENDIF
         IF ( ISTAT /= 0 ) THEN
           WRITE(kuso,'("Error\ /WGRIB2FDB/ iopenfdb return status:",    &
@@ -174,7 +175,7 @@
 !       DEFINE FDB ROOT DIR:
         ICDFDBSF = LEN_TRIM(CDFDBSF)
         IF (ICDFDBSF > 0 ) THEN
-          ISTAT = ISET_FDBSUBS_ROOT(KFDB, CDFDBSF(1:ICDFDBSF) )
+          CALL ISET_FDBSUBS_ROOT(KFDB, CDFDBSF(1:ICDFDBSF), ISTAT )
           IF ( ISTAT /= 0 ) THEN
             WRITE(KUSO,'("Error\ /WGRIB2FDB/ Root dir specified: ",a)') &
      &      CDFDBSF(1:ICDFDBSF)
@@ -199,14 +200,14 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber', NENSFNB)
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
           IF ( NENSFNB > 0 ) THEN
-            ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
+            CALL ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
           ENDIF
 
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'legNumber',NLEG,ISTATUS)
           IF(ISTATUS == 0 ) THEN
             IF( NLEG > 0 ) THEN
               WRITE( CLEG, '(I1.1)' ) NLEG 
-              ISTAT = ISETVALFDBSUBS( KFDB, 'leg', CLEG)
+              CALL ISETVALFDBSUBS( KFDB, 'leg', CLEG)
             ENDIF
           ENDIF
 
@@ -216,7 +217,7 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
           CLTYPE=C12(1:2)
           IF ( NENSFNB > 0 .OR. CLTYPE == 'an') THEN
-            ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
+            CALL ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
           ENDIF
         ELSE IF(ISTREAM == 1082 .OR.  &
      &          ISTREAM == 1088 .OR.  &
@@ -225,7 +226,7 @@
      &          ISTREAM == 1222) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'perturbationNumber', NENSFNB)
           WRITE( CLNUMBER, '(I3.3)' ) NENSFNB
-          ISTAT = ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
+          CALL ISETVALFDBSUBS( KFDB, 'number', CLNUMBER)
         ENDIF
 !       SYSTEM AND METHOD:
         IF (ISTREAM == 1082 .OR.  &
@@ -242,12 +243,12 @@
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'system',C12)
             CLSYSTEM=C12(1:5)
           ENDIF
-          ISTAT = ISETVALFDBSUBS( KFDB, 'system', CLSYSTEM)
+          CALL ISETVALFDBSUBS( KFDB, 'system', CLSYSTEM)
 
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'method',C12)
           CLMETHOD=C12(1:5)
-          ISTAT = ISETVALFDBSUBS( KFDB, 'method', CLMETHOD)
-          ISTAT = ISETVALFDBSUBS( KFDB, 'level','0000')
+          CALL ISETVALFDBSUBS( KFDB, 'method', CLMETHOD)
+          CALL ISETVALFDBSUBS( KFDB, 'level','0000')
 
           IF (KTEST.GT.3) WRITE(KUSO,'("\ /WGRIB2FDB/ system:", a5,     &
      &                    " method ", a5)') CLSYSTEM,CLMETHOD 
@@ -262,9 +263,9 @@
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'origin',C12)
             CDORIGIN = C12(1:4)
             CALL WAM_U2L1CR(CDORIGIN)
-            ISTAT = ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
+            CALL ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
           ELSE
-            ISTAT = ISETVALFDBSUBS( KFDB, 'origin', 'consensus' )
+            CALL ISETVALFDBSUBS( KFDB, 'origin', 'consensus' )
           ENDIF
         ELSE IF (NLOCGRB == 23) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'centre',ICENTRE)
@@ -275,7 +276,7 @@
             KERR = 1
             RETURN
           ENDIF
-          ISTAT = ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
+          CALL ISETVALFDBSUBS( KFDB, 'origin', CDORIGIN )
         ENDIF
 
 !       HINDCAST REFERENCE DATE:
@@ -283,17 +284,17 @@
         IF ( ISTREAM == 1204 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'refdate',C12)
           CDATEREF=c12(1:8)
-          ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
+          CALL ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
         ELSE IF(ISTREAM == 1084 .OR.   &
      &          ISTREAM == 1085 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'referenceDate',C12)
           CDATEREF=c12(1:8)
-          ISTAT = ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
+          CALL ISETVALFDBSUBS(KFDB, 'refdate', CDATEREF)
         ELSE IF (ISTREAM == 1078 .OR.   &
      &           ISTREAM == 1079 ) THEN
           CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
           HDATE=C12(1:8)
-          ISTAT = ISETVALFDBSUBS(KFDB,'hdate', HDATE)
+          CALL ISETVALFDBSUBS(KFDB,'hdate', HDATE)
         ENDIF
 
       ENDIF
@@ -308,7 +309,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
       CLSTREAM=C12(1:4)
       if(clstream.ne.clstream_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
+        CALL ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
         clstream_prev=clstream
       endif
 
@@ -317,7 +318,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'class',C12)
       CLCLASS=C12(1:2)
       if(clclass.ne.clclass_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
+        CALL ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
         clclass_prev=clclass
       endif
 
@@ -325,7 +326,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'expver',C12)
       CLEXPVER=C12(1:4)
       if(clexpver.ne.clexpver_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
+        CALL ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
         clexpver_prev=clexpver
       endif
 
@@ -341,14 +342,14 @@
         RETURN
       ENDIF
       if(cldomain.ne.cldomain_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
+        CALL ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
         cldomain_prev=cldomain
       endif
 
 !     REPRESENTATION:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'gridType',C12)
       if(c12(9:10).ne.clrepr_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
+        CALL ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
         clrepr_prev=c12(9:10)
       endif
 
@@ -356,7 +357,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
       CLTYPE=C12(1:2)
       if(CLTYPE.ne.cltype_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
+        CALL ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
         cltype_prev=c12(1:2)
       endif
 
@@ -364,7 +365,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'param',C12)
       CLPARAM=C12(1:3)
       if(CLPARAM.ne.clparam_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
+        CALL ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
         clparam_prev=CLPARAM
       endif
 
@@ -379,7 +380,7 @@
         CLDATE=C12(1:8)
       ENDIF
       if(CLDATE.ne.cldate_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'date', CLDATE )
+        CALL ISETVALFDBSUBS( KFDB, 'date', CLDATE )
         cldate_prev=cldate
       endif
 
@@ -387,7 +388,7 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'time',C12)
       CLTIME=C12(1:4)
       if(CLTIME.ne.cltime_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'time', CLTIME )
+        CALL ISETVALFDBSUBS( KFDB, 'time', CLTIME )
         cltime_prev=cltime
       endif
 !     FC STEP:
@@ -397,7 +398,7 @@
       ISTEP=ISTEP
       WRITE(CLSTEP, '( I6.6 )' ) ISTEP 
       if(CLSTEP.ne.clstep_prev) then
-        ISTAT = ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
+        CALL ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
         clstep_prev=CLSTEP
       endif
 
@@ -405,17 +406,17 @@
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ilvtp)
       IF(ILVTP == 209) THEN
         if('wv'.ne.cllevty_prev) then
-          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
+          CALL ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
           cllevty_prev='wv'
         endif
       ELSE IF(ILVTP == 212) THEN
         if('ws'.ne.cllevty_prev) then
-          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
+          CALL ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
           cllevty_prev='ws'
         endif
       ELSE
         if('s'.ne.cllevty_prev) then
-          ISTAT = ISETVALFDBSUBS( KFDB, 'levty', 's'   )
+          CALL ISETVALFDBSUBS( KFDB, 'levty', 's'   )
           cllevty_prev='s'
         endif
       ENDIF 
@@ -425,13 +426,13 @@
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'directionNumber',C12)
          CLDIR=C12(1:2)
          if(CLDIR.ne.cldir_prev) then
-           ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+           CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
            cldir_prev=CLDIR
          endif
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'frequencyNumber',C12)
          CLFRE=C12(1:2)
          if(CLFRE.ne.clfre_prev) then
-           ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+           CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
            clfre_prev=CLFRE
          endif
       ELSE
@@ -443,11 +444,11 @@
      &      ISTREAM /= 1204 .AND. &
      &      ISTREAM /= 1222) THEN
          if(CLDIR.ne.cldir_prev) then
-            ISTAT = ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+            CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
             cldir_prev=CLDIR
          endif
          if(CLFRE.ne.clfre_prev) then
-            ISTAT = ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
+            CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
             clfre_prev=CLFRE
          endif
         ENDIF
@@ -475,7 +476,7 @@
 !          ENDIF
           WRITE(CLWINOFF,'(I3.3)') NWINOFF
           if(CLWINOFF.ne.clwinoff_prev) then
-            ISTAT = ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
+            CALL ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
             clwinoff_prev=clwinoff
           endif
         ENDIF
@@ -492,11 +493,11 @@
 !!      CALL IGRIB_WRITE_BYTES(IFILE_HANDLE,KGRIB,KBYTES)
 
 
-      ISTAT = IWRITEFDBSUBS( KFDB, KGRIB, ILEN ) 
+      CALL IWRITEFDBSUBS( KFDB, KGRIB, ILEN, ISTAT ) 
       IF ( ISTAT .NE. 0 ) THEN
         WRITE(KUSO, '( "Error\ /WGRIB2FDB/ Failed to write to fdb")' )
         CALL GSTATS(1787,0)
-        ISTAT = ICLOSEFDBSUBS( KFDB )
+        CALL ICLOSEFDBSUBS( KFDB )
         CALL GSTATS(1787,1)
         KERR = 1
         RETURN

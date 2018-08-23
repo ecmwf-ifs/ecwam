@@ -111,7 +111,6 @@
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE FDBSUBS_MOD
 
 ! ----------------------------------------------------------------------
 

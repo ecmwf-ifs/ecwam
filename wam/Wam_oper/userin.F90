@@ -134,7 +134,7 @@
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE FDBSUBS_MOD
+      USE FDBSUBS_MOD, ONLY : IINITFDBSUBS
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -1211,7 +1211,7 @@
         WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
         WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
         WRITE(IU06,*) ' '
-        INITFDB_STAT = IINITFDBSUBS()
+        CALL IINITFDBSUBS(INITFDB_STAT)
         IF (INITFDB_STAT .NE. 0) THEN
           WRITE(IU06,'("****************************************")')
           WRITE(IU06,'("*                                      *")')

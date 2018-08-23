@@ -134,7 +134,6 @@
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
      &            LLNEWCURR,NXFF     ,NYFF    
-      USE FDBSUBS_MOD
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE UNWAM, ONLY : USE_DIRECT_WIND_FILE

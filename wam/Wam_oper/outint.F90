@@ -44,7 +44,7 @@
       USE YOWUNIT  , ONLY : IU20     ,IU30
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE FDBSUBS_MOD
+      USE FDBSUBS_MOD, ONLY : ISETFIELDCOUNTFDBSUBS
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -148,7 +148,7 @@
         ENDDO
 
         IF(LFDB.AND.ILOCAL.GT.0) THEN
-          IERR = ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL)
+          CALL ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL,IERR)
           IF(IERR.NE.0)THEN
             WRITE(IU06,*) ' ------------------------'
             WRITE(IU06,*) ' ERROR setting fdb field count '

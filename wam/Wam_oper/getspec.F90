@@ -68,7 +68,6 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE MPL_MODULE
-      USE FDBSUBS_MOD
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
