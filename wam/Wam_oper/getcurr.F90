@@ -61,7 +61,9 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
+#ifdef NETCDF_OUTPUT_WAM
       USE UNSTRUCT_CURR, ONLY : SET_CURTXY, SET_CURTXY_SINGLEFILE
+#endif
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -192,7 +194,9 @@
                 CALL FLUSH(IU06)
 
                 IF (LLUNSTR) THEN
+#ifdef NETCDF_OUTPUT_WAM
                   CALL SET_CURTXY_SINGLEFILE
+#endif
                 ELSE
                   CALL CURRENT2WAM (FILNM,IREAD,CDATEIN)
                 END IF
@@ -245,7 +249,9 @@
             LLCHKCFLA=.FALSE.
           ENDIF
           IF (LLUNSTR) THEN
+#ifdef NETCDF_OUTPUT_WAM
             CALL SET_CURTXY
+#endif
           END IF
         ENDIF
       ELSE
