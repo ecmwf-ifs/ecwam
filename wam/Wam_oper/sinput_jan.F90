@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,     &
-     &                       ROAIRN, WSTAR, SL, XLLWS)
+     &                       ROAIRN, WSTAR, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_JAN* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -44,7 +44,7 @@
 !     ----------
 
 !     *CALL* *SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN, WSTAR, SL, XLLWS)
+!    &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -57,6 +57,7 @@
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
+!         *SPOS* - ONLY POSITIVE PART OF INPUT SOURCE FUNCTION ARRAY.
 !         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
 
 
@@ -110,7 +111,7 @@
       INTEGER(KIND=JWIM) :: ISIN
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS, XLLWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR
 
@@ -128,7 +129,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: SIGDEV,US,Z0,UCN,ZCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
 
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
@@ -261,10 +262,29 @@
 
         DO K=1,NANG
 
+!         WIND INPUT:
           DO IJ=IJS,IJL
             XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
+          DO IJ=IJS,IJL
+            UFAC1(IJ,K) = 0.0_JWRB
+          ENDDO
+          DO ISIN=1,NSIN
+            DO IJ=IJS,IJL
+              IF (LZ(IJ,K)) THEN
+                ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
+                IF (ZLOG.LT.0.0_JWRB) THEN
+                  X=TEMP1(IJ,K)*UCN(IJ,ISIN)
+                  ZLOG2X=ZLOG*ZLOG*X
+                  UFAC1(IJ,K) = UFAC1(IJ,K)+WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  XLLWS(IJ,K,M)= 1.0_JWRB
+                ENDIF
+              ENDIF
+            ENDDO
+          ENDDO
+
+!         SWELL DAMPING:
           DO ISIN=1,1
             DO IJ=IJS,IJL
               ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
@@ -278,20 +298,6 @@
             ENDDO
           ENDDO
 
-          DO ISIN=1,NSIN
-            DO IJ=IJS,IJL
-              IF (LZ(IJ,K)) THEN
-                ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
-                IF (ZLOG.LT.0.0_JWRB) THEN
-                  X=TEMP1(IJ,K)*UCN(IJ,ISIN)
-                  ZLOG2X=ZLOG*ZLOG*X
-                  UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  XLLWS(IJ,K,M)= 1.0_JWRB
-                ENDIF
-              ENDIF
-            ENDDO
-          ENDDO
-
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
@@ -299,7 +305,9 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL(IJ,K,M) = CNSN(IJ)*UFAC2(IJ,K)
+            SPOS(IJ,K,M) = CNSN(IJ)*UFAC1(IJ,K)
+            FL(IJ,K,M) = SPOS(IJ,K,M)+CNSN(IJ)*UFAC2(IJ,K)
+            SPOS(IJ,K,M) = SPOS(IJ,K,M)*F(IJ,K,M)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO

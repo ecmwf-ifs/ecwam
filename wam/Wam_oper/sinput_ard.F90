@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT_ARD (F,FL,IJS,IJL,THWNEW,USNEW,Z0NEW,&
-     &                       ROAIRN,WSTAR,SL,XLLWS)
+     &                       ROAIRN,WSTAR,SL,SPOS,XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -47,7 +47,7 @@
 !     ----------
 
 !     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,WSTAR, SL, XLLWS)
+!    &                   ROAIRN,WSTAR, SL, SPOS, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -60,6 +60,7 @@
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
+!         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
 !         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
 
 !     METHOD.
@@ -136,7 +137,7 @@
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL,SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
@@ -156,7 +157,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ZCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N, UORBT, AORB, TEMP, RE, RE_C, ZORB
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
@@ -305,7 +306,7 @@
           DO IJ=IJS,IJL
             CM(IJ,M) = SIG(M)/G
             XK(IJ,M) = SIG2(M)/G
-            SH(IJ,M) = 1.0
+            SH(IJ,M) = 1.0_JWRB
           ENDDO
         ENDDO
       ELSE
@@ -368,7 +369,7 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            XLLWS(IJ,K,M)= 0.0_JWRB
+            XLLWS(IJ,K,M)=0.0_JWRB
           ENDDO
         ENDDO
 
@@ -381,12 +382,12 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  XLLWS(IJ,K,M)= 1.0_JWRB
+                  XLLWS(IJ,K,M)=1.0_JWRB
                 ELSE
-                  UFAC(IJ,K,IGST) = 0.0_JWRB
+                  UFAC(IJ,K,IGST)=0.0_JWRB
                 ENDIF
               ELSE
-                UFAC(IJ,K,IGST) = 0.0_JWRB
+                UFAC(IJ,K,IGST)=0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -421,27 +422,34 @@
 
           DO IGST=1,NGST
             DO IJ=IJS,IJL
-              FLP(IJ,IGST) = CNSN(IJ)*UFAC(IJ,K,IGST)+DSTAB(IJ,K,IGST)
-            ENDDO
-          ENDDO
-
-          IGST=1
-            DO IJ=IJS,IJL
-              FLP_AVG(IJ) = FLP(IJ,IGST)
-            ENDDO
-          DO IGST=2,NGST
-            DO IJ=IJS,IJL
-              FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ,IGST)
+              ! SLP: only the positive contributions
+              SLP(IJ,IGST) = CNSN(IJ)*UFAC(IJ,K,IGST)
+              FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
 
           DO IGST=1,NGST
             DO IJ=IJS,IJL
-              ! only the positive contributions
-              SLP(IJ,IGST) = MAX(FLP(IJ,IGST)*F(IJ,K,M),0.0_JWRB)
+              SLP(IJ,IGST) = SLP(IJ,IGST)*F(IJ,K,M)
               XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
               YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
             ENDDO
+          ENDDO
+
+          IGST=1
+            DO IJ=IJS,IJL
+              SLP_AVG(IJ) = SLP(IJ,IGST)
+              FLP_AVG(IJ) = FLP(IJ,IGST)
+            ENDDO
+          DO IGST=2,NGST
+            DO IJ=IJS,IJL
+              SLP_AVG(IJ) = SLP_AVG(IJ)+SLP(IJ,IGST)
+              FLP_AVG(IJ) = FLP_AVG(IJ)+FLP(IJ,IGST)
+            ENDDO
+          ENDDO
+
+          DO IJ=IJS,IJL
+            SPOS(IJ,K,M) = AVG_GST*SLP_AVG(IJ)
           ENDDO
 
           DO IJ=IJS,IJL

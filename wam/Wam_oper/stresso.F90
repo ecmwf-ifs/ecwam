@@ -1,4 +1,4 @@
-      SUBROUTINE STRESSO (F, SL, IJS, IJL,                              &
+      SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
      &                    MIJ, RHOWGDFTH,                               &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, PHIWA)
@@ -23,12 +23,13 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *STRESSO (F, SL, IJS, IJL,
+!        *CALL* *STRESSO (F, SPOS, IJS, IJL,
 !    &                    MIJ, RHOWGDFTH,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
 !    &                    TAUW, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
-!         *SL*          - TOTAL SOURCE FUNCTION ARRAY.
+!         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
+!         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
@@ -50,8 +51,8 @@
 
 !       THE INPUT SOURCE FUNCTION IS INTEGRATED OVER FREQUENCY
 !       AND DIRECTIONS.
-!       BECAUSE ARRAY *SL* IS USED, ONLY THE INPUT SOURCE
-!       HAS TO BE STORED IN *SL* (CALL FIRST SINPUT, THEN
+!       BECAUSE ARRAY *SPOS* IS USED, ONLY THE INPUT SOURCE
+!       HAS TO BE STORED IN *SPOS* (CALL FIRST SINPUT, THEN
 !       STRESSO, AND THEN THE REST OF THE SOURCE FUNCTIONS)
 
 !     EXTERNALS.
@@ -69,7 +70,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
+      USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5      ,FRATIO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -86,7 +87,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
@@ -95,7 +96,7 @@
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
       REAL(KIND=JWRB) :: PHIHF_REDUC
-      REAL(KIND=JWRB) :: CONST, CNST
+      REAL(KIND=JWRB) :: CONST
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
       REAL(KIND=JWRB) :: ABS_TAUWSHELTER, GM1
@@ -116,7 +117,8 @@
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
 
-      CONST = DELTH*(ZPI)**4/G
+      GM1 = 1.0_JWRB/G
+      CONST = DELTH*(ZPI)**4*GM1
 
 !     REDUCTION OF FOR HIGH FREQUENCY ENERGY FLUX INTO OCEAN CONTRIBUTING TO UPPER OCEAN MIXING
       IF(.NOT.LWVFLX_SNL) THEN
@@ -126,8 +128,6 @@
       ENDIF
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-
-      GM1 = 1.0_JWRB/G
 
       DO IJ=IJS,IJL
         CONST1(IJ)  = CONST*FR5(MIJ(IJ))*GM1
@@ -145,23 +145,40 @@
         XSTRESS(IJ) = 0.0_JWRB
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
+
+!     full energy flux due to negative Sinput (SL-SPOS)
+!     we assume that above NFRE, the contibutions can be negleted
+      DO M=1,NFRE
+        K=1
+        DO IJ=IJS,IJL
+          SUMT(IJ) = SL(IJ,K,M)-SPOS(IJ,K,M)
+        ENDDO
+        DO K=2,NANG
+          DO IJ=IJS,IJL
+            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)-SPOS(IJ,K,M) 
+          ENDDO
+        ENDDO
+        DO IJ=IJS,IJL
+          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
+        ENDDO
+      ENDDO
+
+
+!*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
+!     --------------------------------------------------------------------------------------
       DO M=1,MAXVAL(MIJ(:))
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ) = SL(IJ,K,M)
-!         until we have figure out how to deal with negative input
-          CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-          SUMX(IJ) = CNST*SINTH(K)
-          SUMY(IJ) = CNST*COSTH(K)
+          SUMT(IJ) = SPOS(IJ,K,M)
+          SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
+          SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)
-!           until we have figure out how to deal with negative input
-            CNST = MAX(SL(IJ,K,M),0.0_JWRB)
-            SUMX(IJ) = SUMX(IJ) + CNST*SINTH(K)
-            SUMY(IJ) = SUMY(IJ) + CNST*COSTH(K)
+            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+            SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
+            SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
@@ -178,8 +195,8 @@
         YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
       ENDDO
 
-!*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
-!     ----------------------------------------------------
+!*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
+!     --------------------------------------------------------------------------------------
 
       DO IJ=IJS,IJL
         US2(IJ)=USNEW(IJ)**2
@@ -233,8 +250,8 @@
       CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL, TAU1, PHI1)
 
       DO IJ=IJS,IJL
-        TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1(IJ)
-        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*UST2(IJ)*PHI1(IJ)
+        TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*TAU1(IJ)
+        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*PHI1(IJ)
       ENDDO
 
       DO IJ=IJS,IJL
