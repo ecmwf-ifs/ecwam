@@ -3789,7 +3789,6 @@ END INTERFACE
       SUBROUTINE CHECKS_GROWTH
       USE YOWMPP   , ONLY : NINF, NSUP
       USE YOWSPEC, ONLY   : FL1, FL3
-      USE YOWUNPOOL ,ONLY : LLUNSTR
       IMPLICIT NONE
       IF (allocated(FL1) .and. allocated(FL3)) THEN
         WRITE(740+MyRankGlobal,*) 'sum(FL1/FL3)=', sum(FL1), sum(FL3)
