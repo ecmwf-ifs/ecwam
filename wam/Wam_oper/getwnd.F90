@@ -93,9 +93,7 @@
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
-#ifdef NETCDF_OUTPUT_WAM
       USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
-#endif
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -159,9 +157,7 @@
       IsAssigned=.FALSE.
       IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
         IsAssigned=.TRUE.
-#ifdef NETCDF_OUTPUT_WAM
         CALL SET_WIND_UNSTRUCTURED
-#endif
       END IF
 
 
