@@ -3,32 +3,34 @@ MODULE UNSTRUCT_WIND
   ! Rule of conversion of angle in WAM.
   ! theta_{WAM} = 90 - theta_{trigonometric}
   !
-      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWPARAM , ONLY : NANG, NFRE
-      USE YOWSTAT,  ONLY : IREFRA
-      USE YOWUNPOOL, ONLY : LCALC
-      USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES => np
-      USE yowpd, only: XP=>x, YP=>y, DEP=>z
-      USE yowpd, only: exchange, np_global
-      USE yownodepool, only : iplg
-      USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
-      USE WAV_NETCDF_FCT
-      IMPLICIT NONE
-      REAL(KIND=JWRU), ALLOCATABLE :: WIND (:,:)
-      REAL(KIND=JWRU), ALLOCATABLE :: WIND1(:,:)
-      REAL(KIND=JWRU), ALLOCATABLE :: WIND2(:,:)
-      INTEGER(KIND=JWIM) :: recTime1, recTime2
-      INTEGER(KIND=JWIM), allocatable :: Indexes_boundary(:)
-      TYPE(TIMEPERIOD) RecTimeWind
-      character(len=*), parameter :: eFileWind = 'wwm_wind_format.nc'
-      REAL(KIND=JWRU) :: WAV_WindTime =  0._JWRU
-      LOGICAL :: WIND_UseSingleFile = .FALSE.
-      LOGICAL :: WIND_IsInitializedSingleFile = .FALSE.
-      CONTAINS
+  USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+  USE YOWPARAM , ONLY : NANG, NFRE
+  USE YOWSTAT,  ONLY : IREFRA
+  USE YOWUNPOOL, ONLY : LCALC
+  USE yowpd, only: MNE=>ne, INE, MNP=>npa, NP_RES => np
+  USE yowpd, only: XP=>x, YP=>y, DEP=>z
+  USE yowpd, only: exchange, np_global
+  USE yownodepool, only : iplg
+  USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
+  USE WAV_NETCDF_FCT
+  IMPLICIT NONE
+  REAL(KIND=JWRU), ALLOCATABLE :: WIND (:,:)
+  REAL(KIND=JWRU), ALLOCATABLE :: WIND1(:,:)
+  REAL(KIND=JWRU), ALLOCATABLE :: WIND2(:,:)
+  INTEGER(KIND=JWIM) :: recTime1, recTime2
+  INTEGER(KIND=JWIM), allocatable :: Indexes_boundary(:)
+  TYPE(TIMEPERIOD) RecTimeWind
+  character(len=*), parameter :: eFileWind = 'wwm_wind_format.nc'
+  REAL(KIND=JWRU) :: WAV_WindTime =  0._JWRU
+  LOGICAL :: WIND_UseSingleFile = .FALSE.
+  LOGICAL :: WIND_IsInitializedSingleFile = .FALSE.
+  
+  CONTAINS
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_WIND
+#ifdef NETCDF_OUTPUT_WAM
+    SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_WIND
       USE NETCDF
       USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
       USE WAV_NETCDF_FCT, ONLY : CF_EXTRACT_TIME
@@ -69,11 +71,11 @@ MODULE UNSTRUCT_WIND
       recTime1=-1
       recTime2=-1
       ALLOCATE(WIND(2,MNP), WIND1(2,MNP), WIND2(2,MNP), stat=istat)
-      END SUBROUTINE
+    END SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_WIND
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SINGLE_READ_WIND(eFile, WIND, IT)
+    SUBROUTINE SINGLE_READ_WIND(eFile, WIND, IT)
       USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
       USE NETCDF
       IMPLICIT NONE
@@ -116,11 +118,11 @@ MODULE UNSTRUCT_WIND
         IPglob=iplg(IP)
         WIND(:,IP) = WIND_GL(:,IPglob)
       END DO
-      END SUBROUTINE
+    END SUBROUTINE SINGLE_READ_WIND
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WIND_SINGLEFILE
+    SUBROUTINE SET_WIND_SINGLEFILE
       USE YOWSTAT  , ONLY : IDELT
       USE WAV_NETCDF_FCT, ONLY : WAV_GET_ETIMEDAY
       IMPLICIT NONE
@@ -150,11 +152,11 @@ MODULE UNSTRUCT_WIND
       WRITE(740+MyRankGlobal,*) 'WIND(min/max)=', minval(WIND), maxval(WIND)
       WRITE(740+MyRankGlobal,*) 'SET_WIND_SINGLEFILE, STIME=', TRIM(STIME)
       FLUSH(740+MyRankGlobal)
-      END SUBROUTINE
+    END SUBROUTINE SET_WIND_SINGLEFILE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_VARIABLES_UNSTRUCTURED(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,  &
+    SUBROUTINE SET_VARIABLES_UNSTRUCTURED(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,  &
      &                    ROAIRO, ZIDLOLD, CICOVER, CITHICK)
       USE YOWWIND  , ONLY : WSPMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -225,11 +227,11 @@ MODULE UNSTRUCT_WIND
         FF_NEXT(IJ,ISTORE)%CIFR=eCICOVER
         FF_NEXT(IJ,ISTORE)%CITH=eCITHICK
       END DO
-      END SUBROUTINE
+    END SUBROUTINE SET_VARIABLES_UNSTRUCTURED
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WIND_UNSTRUCTURED
+    SUBROUTINE SET_WIND_UNSTRUCTURED
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: I, J, IP
@@ -241,5 +243,52 @@ MODULE UNSTRUCT_WIND
           FIELDG(I,J)%VWND = WIND(2,IP)
         ENDDO
       ENDDO
-      END SUBROUTINE
+    END SUBROUTINE SET_WIND_UNSTRUCTURED
+
+#else
+
+  SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_WIND
+#include "abort1.intfb.h"
+      WRITE (6,'(''INIT_UNSTRUCT_SINGLEFILE_WIND should not be called without NETCDF_OUTPUT_WAM '')')
+      CALL ABORT1
+  END SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_WIND
+
+  SUBROUTINE SINGLE_READ_WIND(eFile, WIND, IT)
+    USE yowpd, only: MNP=>npa
+    character(len=*), intent(in) :: eFile
+    REAL(KIND=JWRU), intent(out) :: WIND(2,MNP)
+    INTEGER(KIND=JWIM), intent(in) :: IT
+
+#include "abort1.intfb.h"
+      WRITE (6,'(''SINGLE_READ_WIND should not be called without NETCDF_OUTPUT_WAM '')')
+      CALL ABORT1
+  END SUBROUTINE SINGLE_READ_WIND
+
+  SUBROUTINE SET_WIND_SINGLEFILE
+#include "abort1.intfb.h"
+      WRITE (6,'(''SET_WIND_SINGLEFILE should not be called without NETCDF_OUTPUT_WAM '')')
+      CALL ABORT1
+  END SUBROUTINE SET_WIND_SINGLEFILE
+
+  SUBROUTINE SET_VARIABLES_UNSTRUCTURED(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,  &
+    &                    ROAIRO, ZIDLOLD, CICOVER, CITHICK)
+    USE YOWMPP   , ONLY : NINF     ,NSUP
+    USE YOWPARAM , ONLY : NBLO
+    REAL(KIND=JWRB),intent(inout), DIMENSION(NINF:NSUP,NBLO) :: USOLD, Z0OLD, TAUW
+    REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: U10OLD, THWOLD
+    REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: ROAIRO, ZIDLOLD
+    REAL(KIND=JWRB),intent(out), DIMENSION(NINF:NSUP,NBLO) :: CICOVER, CITHICK
+
+#include "abort1.intfb.h"
+      WRITE (6,'(''SET_VARIABLES_UNSTRUCTURED should not be called without NETCDF_OUTPUT_WAM '')')
+      CALL ABORT1
+  END SUBROUTINE SET_VARIABLES_UNSTRUCTURED
+
+  SUBROUTINE SET_WIND_UNSTRUCTURED
+#include "abort1.intfb.h"
+      WRITE (6,'(''SET_WIND_UNSTRUCTURED should not be called without NETCDF_OUTPUT_WAM '')')
+      CALL ABORT1
+  END SUBROUTINE SET_WIND_UNSTRUCTURED
+#endif
+
 END MODULE

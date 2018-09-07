@@ -346,6 +346,11 @@
       ALLOCATE(JFROMIJ(NINF-1:NSUP,NBLO))
 
       IF (LLUNSTR) THEN
+
+#if !defined NETCDF_OUTPUT_WAM
+        WRITE (IU06,'(''LLUNSTR=T needs to be compiled with NETCDF_OUTPUT_WAM '')')
+        CALL ABORT1
+#endif
         IJS(1) = 1
         IJL(1) = NIBLO
         IJLT(1)= NIBLO

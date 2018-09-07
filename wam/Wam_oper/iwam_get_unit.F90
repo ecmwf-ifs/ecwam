@@ -39,14 +39,14 @@ FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL)
 
       ILEN=LEN(CDNAME)
       if(ILEN == 0) then
-        WRITE(KUSO,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-        WRITE(KUSO,*) '!!!!!!!!! LENGTH OF FILENAME=0  !!!!!!'
+        WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+        WRITE(*,*) '!!!!!!!!! LENGTH OF FILENAME=0  !!!!!!'
         CALL ABORT1
       ENDIF
       ILEN=LEN_TRIM(CDNAME)
       if(ILEN == 0) then
-        WRITE(KUSO,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-        WRITE(KUSO,*) '!!!!!!!!! FILENAME ALL BLANKS   !!!!!!'
+        WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+        WRITE(*,*) '!!!!!!!!! FILENAME ALL BLANKS   !!!!!!'
         CALL ABORT1
       ENDIF
          
@@ -63,10 +63,10 @@ FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL)
         ENDDO
  
         IF(JUME.GT.MAXUNIT) THEN
-          WRITE(KUSO,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
-          WRITE(KUSO,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
-          WRITE(KUSO,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
-          WRITE(KUSO,*) '!!!!!!!!! CALL ABORT                 !'
+          WRITE(*,*) '!!!!!!!!! PROBLEM IN WAM IWAM_GET_UNIT !!!!!!'
+          WRITE(*,*) '!!!!!!!!! NO FREE UNIT FOUND BETWEEN !'
+          WRITE(*,*) '!!!!!!!!! ',MINUNIT,' AND ',MAXUNIT
+          WRITE(*,*) '!!!!!!!!! CALL ABORT                 !'
           CALL ABORT1
         ENDIF
         IF (KUSO .GE. 0 ) WRITE(KUSO,2004)        &

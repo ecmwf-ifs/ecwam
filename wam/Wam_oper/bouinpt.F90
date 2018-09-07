@@ -428,7 +428,7 @@
       ENDDO
 
       IF (ITEST.GE.1)                                                   &
-     &   WRITE(IU06,*) '  SUB. BOUINPT: BC SPECTRUM COLLECTED'
+     &   WRITE(IU06,*) '   SUB. BOUINPT: BC SPECTRUM COLLECTED'
 
 ! ----------------------------------------------------------------------
 

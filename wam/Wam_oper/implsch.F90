@@ -199,7 +199,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
 !     *FL*  DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+!     *SPOS* : POSITIVE SINPUT ONLY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: CIREDUC 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
@@ -293,7 +294,7 @@
 !           -------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
 !     diagnostic (not coded efficiently)
 !!      DO IJ=IJS,IJL
@@ -313,13 +314,13 @@
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+      CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -342,32 +343,26 @@
 !     ---------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, XLLWS)
+     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: 2nd SINPUT CALL'
         CALL FLUSH (IU06)
       ENDIF
 
-      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-!       in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
+! only if wrong flux used
+!      IF(LCFLX) THEN
+!!       save SL
+!        DO M=1,NFRE
+!          DO K=1,NANG
+!            DO IJ=IJS,IJL
+!              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+!            ENDDO
+!          ENDDO
+!        ENDDO
+!      ENDIF
 
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
-
-      CALL STRESSO (FL3, SL, IJS, IJL,                                  &
+      CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -389,12 +384,19 @@
       ENDIF
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
-     &                       MIJ, RHOWGDFTH,                            &
-     &                       SSOURCE, SL,                               &
-     &                       PHIWA,                                     &
-     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
-     &                       USNEW, ROAIRN, .TRUE.)
+! only if wrong flux used
+!        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
+!     &                       MIJ, RHOWGDFTH,                            &
+!     &                       SSOURCE, SL,                               &
+!     &                       PHIWA,                                     &
+!     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
+!     &                       USNEW, ROAIRN, .TRUE.)
+        CALL WNFLUXES (IJS, IJL,                                        &
+     &                 MIJ, RHOWGDFTH,                                  &
+     &                 SL, CICVR,                                       &
+     &                 PHIWA,                                           &
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
+     &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 
@@ -486,6 +488,16 @@
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
+
+      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
+     &                MIJ, RHOWGDFTH)
+
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
 

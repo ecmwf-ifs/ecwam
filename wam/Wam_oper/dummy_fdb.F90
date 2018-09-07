@@ -28,6 +28,7 @@
        ENTRY iinitfdb
        ENTRY iinitfdb_vpp
        ENTRY iclosefdb
+       ENTRY isetcommfdb
        ENTRY iwritefdb
        ENTRY ireadfdb
        ENTRY iopenfdb

@@ -166,7 +166,7 @@
 
           IF (ITEST.GE.2)                                               &
      &     WRITE(IU06,*)                                                &
-     &     'SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
+     &     ' SUB. GETSTRESS: RESTART WIND AND STRESS COLLECTED'
         ENDIF
 
 

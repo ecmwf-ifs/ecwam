@@ -1448,7 +1448,7 @@
         WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
         WRITE(IU06,*) '*    ==========================           *'
         WRITE(IU06,*) '* NEW OUTPUT FILES ARE REQUESTED EVERY    *'
-        WRITE(IU06,*) '*    IDELRES = ',IDELBC,' SECONDS'
+        WRITE(IU06,*) '*    IDELBC = ',IDELBC,' SECONDS'
         WRITE(IU06,*) '* IDELRES MUST BE MULTIPLES OF            *'
         WRITE(IU06,*) '* THE WIND INPUT TIMESTEP   IDELWI = ', IDELWI
         WRITE(IU06,*) '* THE PROPAGATION TIMESTEP IDELPRO = ',IDELPRO

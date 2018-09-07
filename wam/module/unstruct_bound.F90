@@ -458,6 +458,7 @@ MODULE UNSTRUCT_BOUND
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NETCDF_OUTPUT_WAM
       SUBROUTINE SINGLE_READ_BOUNDARY(eFile, WBAC, IT)
       USE YOWPCONS , ONLY : ZPI
       USE NETCDF
@@ -514,6 +515,7 @@ MODULE UNSTRUCT_BOUND
 !      FLUSH(740+MyRankGlobal)
 !#endif
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -523,14 +525,20 @@ MODULE UNSTRUCT_BOUND
       REAL(KIND=JWRU) :: eTimeDay
       REAL(KIND=JWRU) w1, w2
       INTEGER(KIND=JWIM) :: iTime1, iTime2
+#ifdef NETCDF_OUTPUT_WAM
       CALL WAV_GET_ETIMEDAY(eTimeDay, WAV_BoucTime)
       CALL FIND_MATCH_TIME(RecTimeBnd, eTimeDay, iTime1, w1, iTime2, w2)
+#endif
       IF (iTime1 .ne. recTime1) THEN
+#ifdef NETCDF_OUTPUT_WAM
         CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC1, iTime1)
+#endif
         recTime1 = iTime1
       END IF
       IF (iTime2 .ne. recTime2) THEN
+#ifdef NETCDF_OUTPUT_WAM
         CALL SINGLE_READ_BOUNDARY(eFileBnd, WBAC2, iTime2)
+#endif
         recTime2 = iTime2
       END IF
       WBAC = w1*WBAC1 + w2*WBAC2
@@ -559,6 +567,7 @@ MODULE UNSTRUCT_BOUND
       SUBROUTINE INIT_FILE_BOUNDARY
       USE YOWPCONS, ONLY : PI, ZPI
       USE YOWFRED, ONLY : FR, TH
+#ifdef NETCDF_OUTPUT_WAM
       USE NETCDF
       IMPLICIT NONE
       character(len=*), parameter :: CallFct = "INIT_FILE_BOUNDARY"
@@ -702,6 +711,7 @@ MODULE UNSTRUCT_BOUND
         eDiff = eDiff + ZPI
       END IF
       END SUBROUTINE
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

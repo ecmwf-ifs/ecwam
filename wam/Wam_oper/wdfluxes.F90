@@ -110,10 +110,10 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-!????
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+! only if wrong flux used
+!!!      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
@@ -131,7 +131,7 @@
 !         -----------------------------------------
 
       CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTAR, SL, XLLWS)
+     &             ROAIRN, WSTAR, SL, SPOS, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
         CALL FLUSH (IU06)
@@ -150,19 +150,18 @@
 
 
       IF(LCFLX) THEN
-  
-       IF(.NOT. LWVFLX_SNL) THEN
-!      in order to reproduce the wrong way to compute the wave fluxes, we need the wind input source term
-         DO M=1,NFRE
-           DO K=1,NANG
-             DO IJ=IJS,IJL
-               SSOURCE(IJ,K,M) = SL(IJ,K,M)
-             ENDDO
-           ENDDO
-         ENDDO
-       ENDIF
+! only if wrong flux used
+!      IF(LCFLX) THEN
+!  
+!       DO M=1,NFRE
+!         DO K=1,NANG
+!           DO IJ=IJS,IJL
+!             SSOURCE(IJ,K,M) = SL(IJ,K,M)
+!           ENDDO
+!         ENDDO
+!       ENDDO
 
-        CALL STRESSO (FL3, SL, IJS, IJL,                                &
+        CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                          &
      &                MIJ, RHOWGDFTH,                                   &
      &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
@@ -181,12 +180,19 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WRONG_WNFLUXES (IJS, IJL,                                &
-     &                         MIJ, RHOWGDFTH,                          &
-     &                         SSOURCE, SL,                             &
-     &                         PHIWA,                                   &
-     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
-     &                         USNEW, ROAIRN, .FALSE.)
+! only if wrong flux used
+!          CALL WRONG_WNFLUXES (IJS, IJL,                                &
+!     &                         MIJ, RHOWGDFTH,                          &
+!     &                         SSOURCE, SL,                             &
+!     &                         PHIWA,                                   &
+!     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
+!     &                         USNEW, ROAIRN, .FALSE.)
+          CALL WNFLUXES (IJS, IJL,                                      &
+     &                   MIJ, RHOWGDFTH,                                &
+     &                   SL, CICVR,                                     &
+     &                   PHIWA,                                         &
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
+     &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
         CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)

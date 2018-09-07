@@ -66,7 +66,7 @@
 
       LOGICAL, INTENT(IN) :: LOUNIT, LCUNIT, LRSTPARAL
 
-      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3
+      INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3, IULOG
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT 
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -80,6 +80,13 @@
 
       LFILE=0
       IF (FILENAME.NE. ' ') LFILE=LEN_TRIM(FILENAME)
+
+      IF (ITEST.GE.1) THEN
+        IULOG=IU06
+      ELSE
+        IULOG=-1
+      ENDIF
+
 
       IF(LOUNIT) THEN
         LLEXIST=.FALSE.
@@ -101,7 +108,7 @@
           WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
-        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0)
+        IUNIT=IWAM_GET_UNIT(IULOG, FILENAME(1:LFILE), 'r', 'u',0)
       ENDIF
 
       IF(LLUNSTR .AND. .NOT.LRSTPARAL) THEN

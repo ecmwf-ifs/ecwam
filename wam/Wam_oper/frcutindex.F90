@@ -53,10 +53,10 @@
 
       USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
-     &                DELTH          ,DFIM_END_U ,FRIC
+     &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ROWATER    ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -72,8 +72,6 @@
       INTEGER(KIND=JWIM) :: IJ, M
 
       REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4
-      REAL(KIND=JWRB) :: XLOGDFRTH
-      REAL(KIND=JWRB) :: ROG_XLOGDFRTH, HROG_XLOGDFRTH
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -86,9 +84,6 @@
 !*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
 !     ------------------------------------------------------------
 
-      XLOGDFRTH=LOG(FRATIO)*DELTH
-      ROG_XLOGDFRTH = ROWATER*G*XLOGDFRTH
-      HROG_XLOGDFRTH = 0.5_JWRB*ROG_XLOGDFRTH
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
 
@@ -104,15 +99,14 @@
         ENDIF
       ENDDO
 
-!     COMPUTE RHOWGDFTH
+!     SET RHOWGDFTH
       DO IJ=IJS,IJL
-        RHOWGDFTH(IJ,1) = HROG_XLOGDFRTH*FR(1)
-        DO M=2,MIJ(IJ)-1
-          RHOWGDFTH(IJ,M) = ROG_XLOGDFRTH*FR(M)
+        DO M=1,MIJ(IJ)
+          RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
-        RHOWGDFTH(IJ,MIJ(IJ)) = HROG_XLOGDFRTH*FR(MIJ(IJ))
+        IF(MIJ(IJ).NE.NFRE) RHOWGDFTH(IJ,NFRE)=0.5_JWRB*RHOWGDFTH(IJ,NFRE)
         DO M=MIJ(IJ)+1,NFRE
-          RHOWGDFTH(IJ,M) = 0._JWRB
+          RHOWGDFTH(IJ,M) = 0.0_JWRB
         ENDDO
       ENDDO
 
