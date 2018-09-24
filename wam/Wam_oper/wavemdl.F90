@@ -1,17 +1,17 @@
-SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
-     &                    NFIELDS, NGPTOTG, NC, NR,                     &
-     &                    IGRIB_HANDLE, RMISS, PRCHAR, FIELDS,          &
-     &                    NATMFLX,                                      &
-     &                    LWCUR, LWSTOKES,                              &
-     &                    NWVFIELDS, WVFLDG,                            &
-     &                    NLONW, NLATW, LDSTOP, LDWRRE,                 &
-     &                    LDRESTARTED, ZDELATM, KQGAUSS,                &
-     &                    LDWCOUNORMS, MASK_IN, MASK_OUT,               &
-     &                    NFDBREF,                                      &
-     &                    FRSTIME, NADV, PRPLRADI, PRPLRG,              &
-     &                    RNU_ATM, RNUM_ATM,                            &
-     &                    IDATE_TIME_WINDOW_END, NSTEP,                 &
-     &                    IFS_IO_SERV_ENABLED )
+SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
+     &              NFIELDS, NGPTOTG, NC, NR,                     &
+     &              IGRIB_HANDLE, RMISS, PRCHAR, FIELDS,          &
+     &              NATMFLX,                                      &
+     &              LWCUR, LWSTOKES,                              &
+     &              NWVFIELDS, WVFLDG,                            &
+     &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
+     &              LDRESTARTED, ZDELATM, KQGAUSS,                &
+     &              LDWCOUNORMS, MASK_IN, MASK_OUT,               &
+     &              NFDBREF,                                      &
+     &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
+     &              RNU_ATM, RNUM_ATM,                            &
+     &              IDATE_TIME_WINDOW_END, NSTEP,                 &
+     &              LDIFS_IO_SERV_ENABLED )
 
 !****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
 !****              OF THE WAVE MODEL                                    
@@ -229,7 +229,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
 !     IFS IO SERVER ENABLED
-      LOGICAL, INTENT(IN) :: IFS_IO_SERV_ENABLED
+      LOGICAL, INTENT(IN) :: LDIFS_IO_SERV_ENABLED
 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: I, J, K, ICPLEN,ICPLEN_ECF
@@ -289,7 +289,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                       &
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       IFSTSTEP = PSTEP
       IFSNSTEP = NSTEP
-      LIFS_IO_SERV_ENABLED = IFS_IO_SERV_ENABLED
+      LIFS_IO_SERV_ENABLED = LDIFS_IO_SERV_ENABLED
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
 
