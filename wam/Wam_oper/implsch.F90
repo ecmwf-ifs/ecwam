@@ -351,16 +351,16 @@
       ENDIF
 
 ! only if wrong flux used
-!      IF(LCFLX) THEN
-!!       save SL
-!        DO M=1,NFRE
-!          DO K=1,NANG
-!            DO IJ=IJS,IJL
-!              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-!            ENDDO
-!          ENDDO
-!        ENDDO
-!      ENDIF
+      IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
+!       save SL
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
       CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
@@ -385,18 +385,12 @@
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
 ! only if wrong flux used
-!        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
-!     &                       MIJ, RHOWGDFTH,                            &
-!     &                       SSOURCE, SL,                               &
-!     &                       PHIWA,                                     &
-!     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
-!     &                       USNEW, ROAIRN, .TRUE.)
-        CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
-     &                 SL, CICVR,                                       &
-     &                 PHIWA,                                           &
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
-     &                 USNEW, ROAIRN, .TRUE.)
+        CALL WRONG_WNFLUXES (IJS, IJL,                                  &
+     &                       MIJ, RHOWGDFTH,                            &
+     &                       SSOURCE, SL,                               &
+     &                       PHIWA,                                     &
+     &                       EMEANALL, F1MEAN, U10NEW, THWNEW,          &
+     &                       USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 
