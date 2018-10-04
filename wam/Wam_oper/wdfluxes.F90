@@ -112,8 +112,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-! only if wrong flux used
-!!!      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
 
@@ -150,16 +149,14 @@
 
 
       IF(LCFLX) THEN
-! only if wrong flux used
-!      IF(LCFLX) THEN
-!  
-!       DO M=1,NFRE
-!         DO K=1,NANG
-!           DO IJ=IJS,IJL
-!             SSOURCE(IJ,K,M) = SL(IJ,K,M)
-!           ENDDO
-!         ENDDO
-!       ENDDO
+
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
 
         CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                          &
      &                MIJ, RHOWGDFTH,                                   &
@@ -180,19 +177,12 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-! only if wrong flux used
-!          CALL WRONG_WNFLUXES (IJS, IJL,                                &
-!     &                         MIJ, RHOWGDFTH,                          &
-!     &                         SSOURCE, SL,                             &
-!     &                         PHIWA,                                   &
-!     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
-!     &                         USNEW, ROAIRN, .FALSE.)
-          CALL WNFLUXES (IJS, IJL,                                      &
-     &                   MIJ, RHOWGDFTH,                                &
-     &                   SL, CICVR,                                     &
-     &                   PHIWA,                                         &
-     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
-     &                   USNEW, ROAIRN, .FALSE.)
+          CALL WRONG_WNFLUXES (IJS, IJL,                                &
+     &                         MIJ, RHOWGDFTH,                          &
+     &                         SSOURCE, SL,                             &
+     &                         PHIWA,                                   &
+     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
+     &                         USNEW, ROAIRN, .FALSE.)
         ENDIF
 
         CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
