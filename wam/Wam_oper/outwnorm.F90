@@ -65,8 +65,8 @@
             IF(NFLAG(ITG)) THEN
               IT = ITOBOUT(ITG)
               WRITE(IU06,*) '  WAMNORM FOR ',COUTNAME(ITG)
-              WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(I,IT)),NPROC
-              WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(I,IT)),NPROC
+              WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
+              WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
             ENDIF
           ENDDO
 111     FORMAT(6x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
