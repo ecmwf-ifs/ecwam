@@ -1031,7 +1031,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
       ENDIF
-      IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
+      IF ( NWFDBREF .NE. -5 .AND. CDATEE .EQ. CDTPRO) THEN
         IF(LWCOU .AND. LNEWLVTP) THEN
 !         the fdb should be closed by IFS
           IF (ITEST.GE.1) THEN
