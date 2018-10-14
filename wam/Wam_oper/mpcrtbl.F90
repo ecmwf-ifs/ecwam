@@ -941,16 +941,16 @@
             IPFGTBL(IFLAG)=1
           ELSE IF (GFLAG(IFLAG)) THEN
             IPFGTBL(IFLAG)=IR
+            IR=IR+NWRTOUTWAM
+            IF(IR.GT.NPROC) IR=1
           ELSE
-!!!       IF NFLAG byt not FFLAG and not GFLAG, no output, but still need to be onthe list
+!!!       IF NFLAG but not FFLAG and not GFLAG, no output, but still need to be on the list
             IPFGTBL(IFLAG)=-1
           ENDIF
 
           NIPRMOUT=NIPRMOUT+1
           ITOBOUT(IFLAG)=NIPRMOUT
 
-          IR=IR+NWRTOUTWAM
-          IF(IR.GT.NPROC) IR=1
         ELSE
           IPFGTBL(IFLAG)=0
           ITOBOUT(IFLAG)=0

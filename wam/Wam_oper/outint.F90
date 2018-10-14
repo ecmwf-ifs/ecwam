@@ -147,7 +147,7 @@
           ENDIF
         ENDDO
 
-        IF(LFDB.AND.ILOCAL.GT.0) THEN
+        IF(LFDB .AND. NWFDBREF.GE.0 .AND. IGLOBAL.GT.0) THEN
           IERR = ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL)
           IF(IERR.NE.0)THEN
             WRITE(IU06,*) ' ------------------------'
