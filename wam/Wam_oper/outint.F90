@@ -68,6 +68,7 @@
       CHARACTER(LEN=24) :: OFILENAME
 
       LOGICAL, SAVE :: FRSTIME30
+      LOGICAL :: LLIUOUTOPEN
 
       DATA FRSTIME30 / .TRUE. /
 
@@ -106,6 +107,7 @@
 
 !       DEFINE OUTPUT FILE FOR GRIB DATA (if not written to FDB)
         IF(.NOT.LFDB .AND.(IRANK.EQ.1)) THEN
+            LLIUOUTOPEN=.TRUE.
             WRITE(OFILENAME,'(A,I2)') 'fort.',IU30
             IF (FRSTIME30) THEN
               CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'w')
@@ -114,6 +116,7 @@
               CALL IGRIB_OPEN_FILE(IUOUT,OFILENAME,'a')
             ENDIF
         ELSE
+          LLIUOUTOPEN=.FALSE.
           IUOUT=0
         ENDIF
 
@@ -157,7 +160,7 @@
             WRITE(IU06,*) ' ------------------------'
             CALL ABORT1
           ENDIF
-        ELSEIF(.NOT.LFDB) THEN
+        ELSEIF(LLIUOUTOPEN) THEN
           CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
 
