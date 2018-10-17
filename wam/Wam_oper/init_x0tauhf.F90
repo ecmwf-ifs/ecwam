@@ -55,7 +55,7 @@
 !     ALPHA*X0**2*EXP(XKAPPA/(X0+ZALP))=1
       X0=0.005_JWRB
       DO J=1,30
-        FF=EXP(XKAPPA/(X0+ZALP))-1.0_JWRB
+        FF=EXP(XKAPPA/(X0+ZALP))
         F=ALPHA*X0**2*FF-1.0_JWRB
         IF (F.EQ.0.0_JWRB) EXIT
         DF=ALPHA*FF*(2.0_JWRB*X0-XKAPPA*(X0/(X0+ZALP))**2)

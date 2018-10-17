@@ -40,6 +40,7 @@
 
       USE YOWCOUP  , ONLY : XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
+     &            LFDB     ,                                            &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
@@ -940,17 +941,22 @@
 !!!!        IN CASE OF NON GRIB OUTPUT, REDIRECT TO PE 1 
             IPFGTBL(IFLAG)=1
           ELSE IF (GFLAG(IFLAG)) THEN
-            IPFGTBL(IFLAG)=IR
+            IF(LFDB) THEN
+              IPFGTBL(IFLAG)=IR
+              IR=IR+NWRTOUTWAM
+              IF(IR.GT.NPROC) IR=1
+            ELSE
+!!!!        IN CASE OF NO FDB REDIRECT TO PE 1 
+              IPFGTBL(IFLAG)=1
+            ENDIF
           ELSE
-!!!       IF NFLAG byt not FFLAG and not GFLAG, no output, but still need to be onthe list
+!!!       IF NFLAG but not FFLAG and not GFLAG, no output, but still need to be on the list
             IPFGTBL(IFLAG)=-1
           ENDIF
 
           NIPRMOUT=NIPRMOUT+1
           ITOBOUT(IFLAG)=NIPRMOUT
 
-          IR=IR+NWRTOUTWAM
-          IF(IR.GT.NPROC) IR=1
         ELSE
           IPFGTBL(IFLAG)=0
           ITOBOUT(IFLAG)=0

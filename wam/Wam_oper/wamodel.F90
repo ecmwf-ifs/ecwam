@@ -432,7 +432,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &   CDTPRO, ' AND CDATEA= ', CDATEA
         CALL FLUSH(IU06)
       ENDIF
-      LLFLUSH = .TRUE.
+      LLFLUSH = .FALSE.
 
       IG=1
 
@@ -598,17 +598,23 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
           ENDIF
 
           IF( .NOT. LRESTARTED ) THEN
-            IF(NIPRMOUT.GT.0 ) CALL OUTWINT
-
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
               CALL OUTSPEC(FL1)
+              LLFLUSH = .TRUE.
             ENDIF
+
+            IF(NIPRMOUT.GT.0 ) THEN
+              CALL OUTWINT
+              LLFLUSH = .TRUE.
+            ENDIF
+
           ENDIF
 
-          IF (NWFDBREF.NE.-5.AND.LFDB) THEN
+          IF (NWFDBREF.NE.-5.AND.LFDB.AND.LLFLUSH) THEN
              CALL GSTATS(1976,0)
              CALL IFLUSHFDBSUBS (NWFDBREF)
              CALL GSTATS(1976,1)
+             LLFLUSH=.FALSE.
           ENDIF
 
           IF(LFRSTFLD) THEN
@@ -1134,6 +1140,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !*    1.7 ONE PROPAGATION TIMESTEP DONE FOR ALL BLOCKS.
 !         ---------------------------------------------
 
+        WRITE(IU06,*) ' !!!!!!!!!!!!!! WAVE FIELDS INTEGRATED FOR DATE : ', CDTPRO
+        IF (ITEST.GE.1) CALL FLUSH (IU06)
+
         LLNONASSI=.TRUE.
         IF (IASSI.EQ.1) THEN
 !         IS THIS AN ANALYSIS TIME FROM THE INPUT LIST ?
@@ -1145,83 +1154,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
           ENDDO
         ENDIF
 
-!         WRITE INTEGRATED DATA TO FILE AND/OR PRINTER
-!         DATA WERE COLLECTED INSIDE THE BLOCK LOOP.
 
-        IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
-!         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
-!         BECOMES TYPE AN (i.e. speudo analysis)
-          MARSTYPEBAK=MARSTYPE
-          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.                 &
-     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
-            MARSTYPE='an'
-          ENDIF
-
-          CALL OUTWINT
-
-          MARSTYPE=MARSTYPEBAK
-
-          CALL GSTATS(753,0)
-          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
-          CALL GSTATS(753,1)
-        ENDIF
-
-!       PRINT TIME.
-        WRITE(IU06,112) CDTPRO
-        IF (ITEST .GE. 1 .OR. .NOT.LWCOU) CALL FLUSH (IU06)
-  112   FORMAT(/,3X,'!!!!!!!!!!!!!! ',                                  &
-     &   'WAVE FIELDS INTEGRATED.  DATE IS: ',A14,                      &
-     &   '  !!!!!!!!!!!! ')
-
-!*    1.8 OUTPUT FILES AND RECOVERY FILES ARE DISPOSED WHEN
-!         TIME REACHES THE DISPOSE DATE OR WHEN THE MODEL
-!         HAS BEEN SIGNALLED TO DO SO.
-!         -------------------------------------------------
-
-        IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) " WAMODEL: 1.8  CDTRES=", CDTRES, " CDTPRO=",   &
-     &     CDTPRO, " LDWRRE=", LDWRRE, "KADV=", KADV, " NADV=", NADV
-          WRITE(IU06,*)                                                 &
-     &     " CDATEF=", CDATEF, "CDATEE=", CDATEE, " CDATER=", CDATER,   &
-     &     " CDATES=", CDATES, "IREST=", IREST
-        ENDIF
-
-        IF (CDATEE.EQ.CDTPRO .AND. LOUTINT ) THEN
-!*    1.8.2 MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES
-!           ------------------------------------------------------------
-!         GRIB DATA IF FDB IS NOT USED: 
-          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
-            CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
-          ENDIF
-
-!         PURE BINARY DATA:
-          IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
-            CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
-          ENDIF
-        ENDIF
-
-!NEST
-!       SAVE BOUNDARY VALUE FILE.
-        IF(CDTBC.EQ.CDTPRO) THEN
-          IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
-            DO II=1,GBOUNC
-            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,                &
-     &        CBCPREF(II), 'S')
-            IF (CDTBC.LT.CDATEE)                                        &
-     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,            &
-     &                     TH(1), FR(1), IU19(II), IU06) 
-            ENDDO
-          ENDIF
-        ENDIF
-!NEST
- 
+!*      SAVE 2D SPECTRA AND/OR RESTART FIELDS.
+!       --------------------------------------
         LSV=(CDTRES.EQ.CDTPRO.OR.CDATEE.EQ.CDTPRO.OR.CDTPRO.EQ.CDATER)
 
         IF (LSV.OR.LRST) THEN
 
-
-!*        1.8.3 SAVE RESTART FIELDS.
-!               --------------------
 !         THIS WILL HAPPEN WHEN IT IS NOT IN DATA ASSIMILATION MODE AND
 !         IT IS EITHER A DETERMINED OUTPUT TIME
 !         OR THE INTERUPT SIGNAL HAS BEEN TRIGGERED and it will wait
@@ -1230,10 +1169,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
           LOUT= ((IREST.EQ.1) .AND. (CDTPRO.EQ.CDATER .OR. CDTPRO.LE.CDATES)) .AND. LSV .AND. LWAMANOUT
 
-
           IF ( LOUT .OR. LRST ) THEN
+
+!           SAVE SPECTRUM IN GRIB
             IF(LOUT.AND.LGRIBOUT) THEN
-!             SAVE SPECTRUM IN GRIB
 !             we have insured that the spectra will be written to FDB
 !             even when the restart option is triggered and it is an
 !             output step for the spectra.
@@ -1247,20 +1186,14 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
               ENDIF
 
               CALL OUTSPEC(FL1)
+              LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
 
-              IF (NWFDBREF.NE.-5.AND.LFDB) THEN
-                CALL GSTATS(1976,0)
-                CALL IFLUSHFDBSUBS (NWFDBREF)
-                CALL GSTATS(1976,1)
-              ENDIF
-              LLFLUSH = .FALSE.
               WRITE(IU06,*) ' '
-              WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........',  &
-     &         ' CDTPRO  = ', CDTPRO
+              WRITE(IU06,*) '  GRIB WAVE SPECTRA DISPOSED AT........ CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-              CALL FLUSH(IU06)
+              IF (ITEST.GE.1) CALL FLUSH (IU06)
             ENDIF  
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
@@ -1280,9 +1213,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
             ENDIF
 
 
-!*    1.8.4 UPDATE, WRITE AND SAVE WAMINFO FILE.
-!           ------------------------------------
-
+!*          UPDATE, WRITE AND SAVE WAMINFO FILE.
             IF (LRST .AND. IRANK.EQ.1) THEN
               ICH = 7 
               CALL DIFDATE (CDATEF,CDATEE,IFOREPD)
@@ -1336,19 +1267,78 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
         ENDIF  ! END SAVE
 
-        IF( LFDB .AND. LLFLUSH .AND. NWFDBREF.NE.-5 .AND.  &
-     &    (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) .AND.         &
-     &    CDTINTT.EQ.CDTPRO ) THEN
+
+!       WRITE INTEGRATED DATA TO FDB OR TO FILE
+!       ---------------------------------------
+        IF (LWAMANOUT .AND. CDTINTT.EQ.CDTPRO .AND. NIPRMOUT.GT.0 ) THEN
+!         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
+!         BECOMES TYPE AN (i.e. speudo analysis)
+          MARSTYPEBAK=MARSTYPE
+          IF((MARSTYPE.EQ.'fg' .AND. KADV.LT.NADV) .OR.                 &
+     &       (MARSTYPE.EQ.'4v' .AND. LLNONASSI) ) THEN
+            MARSTYPE='an'
+          ENDIF
+
+          CALL OUTWINT
+          LLFLUSH = .TRUE.
+          IF (ITEST.GE.1) CALL FLUSH (IU06)
+
+          MARSTYPE=MARSTYPEBAK
+
+          CALL GSTATS(753,0)
+          CALL MPL_BARRIER(CDSTRING='WAMODEL:')
+          CALL GSTATS(753,1)
+        ENDIF
+
+!*      FLUSH FDB IF IT HAS BEEN USED AND IT IS NOT AN ANALYSIS
+!       -------------------------------------------------------
+
+        IF( LFDB .AND. NWFDBREF.NE.-5 .AND. LLFLUSH .AND. (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) ) THEN
           CALL GSTATS(1976,0)
           CALL IFLUSHFDBSUBS (NWFDBREF)
           CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
-          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ', &
-     &    CDTPRO, ' FROM WAMODEL. '
+          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ',  CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
+          LLFLUSH=.FALSE.
         ENDIF
 
-!*      WAM-NEMO COUPLING (NO atmospheric model !!!!!!)
+
+!*      OUTPUT FILES AND RECOVERY FILES ARE DISPOSED WHEN
+!       TIME REACHES THE DISPOSE DATE OR WHEN THE MODEL
+!       HAS BEEN SIGNALLED TO DO SO.
+!       -------------------------------------------------
+
+        IF (CDATEE.EQ.CDTPRO .AND. LOUTINT ) THEN
+!       MOVE INTEGRATED PARAMETERS OF ENTIRE GRID TO PERMANENT FILES
+
+!         GRIB DATA IF FDB IS NOT USED: 
+          IF (GFLAG20 .AND. .NOT. LFDB .AND. IRANK.EQ.1) THEN
+            CALL GSFILE (IU06, IU30, 0, CDTPRO, CDATEF, 'MPP', 'S')
+          ENDIF
+
+!         PURE BINARY DATA:
+          IF (FFLAG20 .AND. IRANK.EQ.1 ) THEN
+            CALL GSFILE (IU06, IU20, 0, CDTPRO, CDATEF, 'MAP', 'S')
+          ENDIF
+        ENDIF
+
+!       SAVE BOUNDARY VALUE FILE.
+        IF(CDTBC.EQ.CDTPRO) THEN
+          IF (IBOUNC.EQ.1 .AND. IRANK.EQ.1 ) THEN
+            DO II=1,GBOUNC
+            CALL GSFILE(IU06, IU19(II), 0, CDTBC, CDTBC,                &
+     &        CBCPREF(II), 'S')
+            IF (CDTBC.LT.CDATEE)                                        &
+     &        CALL HEADBC (IPOGBO(II)-IPOGBO(II-1), IDELPRO,            &
+     &                     TH(1), FR(1), IU19(II), IU06) 
+            ENDDO
+          ENDIF
+        ENDIF
+ 
+
+!*      WAM-NEMO COUPLING (WHEN NO atmospheric model !!!!!!)
+!       ----------------------------------------------------
         IF (LWNEMOCOU.AND.(.NOT.LWCOU)) THEN
           NEMOWSTEP=NEMOWSTEP+1
 
