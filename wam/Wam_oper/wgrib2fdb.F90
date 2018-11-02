@@ -250,6 +250,16 @@
           CALL ISETVALFDBSUBS( KFDB, 'method', CLMETHOD)
           CALL ISETVALFDBSUBS( KFDB, 'level','0000')
 
+          ! For FDB5 to work we need the core metadata for the wave stream to
+          ! be compatible with the atmosphere stream. For seasonal experiments
+          ! this means adding 'origin' as a metdata key even though this is not
+          ! part of the wasf stream's schema. This will work without consequence
+          ! in FDB5 but it will produce in incorrectly named index for FDB4...
+          ! Therefore the seasonal experiments will only function correctly with
+          ! FDB5. In the long term the way I/O is handled for FDB5 should be
+          ! revised once FDB4 is unsupported and this complexity will go away.
+          CALL ISETVALFDBSUBS( KFDB, 'origin', 'ecmf' )
+
           IF (KTEST.GT.3) WRITE(KUSO,'("\ /WGRIB2FDB/ system:", a5,     &
      &                    " method ", a5)') CLSYSTEM,CLMETHOD 
         ENDIF
