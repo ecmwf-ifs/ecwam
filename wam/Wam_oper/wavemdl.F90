@@ -1030,24 +1030,26 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IF (CDATEE .EQ. CDTPRO) THEN
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
-      ENDIF
-      IF ( NWFDBREF .GT. 0 .AND. CDATEE .EQ. CDTPRO) THEN
-        IF(LWCOU .AND. LNEWLVTP) THEN
-!         the fdb should be closed by IFS
-          IF (ITEST.GE.1) THEN
-            WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
-            CALL FLUSH(IU06)
-          ENDIF
-        ELSE
-        WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSING FDB'
-        CALL GSTATS(1787,0)
-        CALL ICLOSEFDBSUBS (NWFDBREF)
-        CALL GSTATS(1787,1)
-          IF (ITEST.GE.1) THEN
-            WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
-            CALL FLUSH(IU06)
+
+        IF ((NWFDBREF .GT. 0) .OR. (NFDBREF .EQ. -5 .AND. NWFDBREF .EQ. 0)) THEN
+          IF(LWCOU .AND. LNEWLVTP) THEN
+            ! The fdb should be closed by IFS, don't close it:
+            IF (ITEST.GE.1) THEN
+              WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
+              CALL FLUSH(IU06)
+            ENDIF
+          ELSE
+            ! WAM should close the FDB:
+            CALL GSTATS(1787,0)
+            CALL ICLOSEFDBSUBS (NWFDBREF)
+            CALL GSTATS(1787,1)
+            IF (ITEST.GE.1) THEN
+              WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
+              CALL FLUSH(IU06)
+            ENDIF
           ENDIF
         ENDIF
+
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)
