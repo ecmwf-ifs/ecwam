@@ -56,13 +56,14 @@
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
-     &                      NEMONEW10, NEMOPHIF   , LWFLUX
+     &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
+     &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
-     &                      NPHIEPS  ,NTAUOC   ,NSWH     ,NMWP
+     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
+      USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : PHIEPSMIN,PHIEPSMAX
       USE YOWSHAL  , ONLY : CINV     ,INDEP
@@ -185,14 +186,14 @@
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
           IF (EM(IJ)/=0.0_JWRB) THEN
-             NSWH(IJ) = 4.0_JWRB*SQRT(EM(IJ))
+             NSWH(IJ) = 4.0_NEMODP*SQRT(EM(IJ))
           ELSE
-             NSWH(IJ) = 0.0_JWRB
+             NSWH(IJ) = 0.0_NEMODP
           ENDIF
           IF (F1(IJ)/=0.0_JWRB) THEN
-             NMWP(IJ) = 1.0_JWRB/F1(IJ)
+             NMWP(IJ) = 1.0_NEMODP/F1(IJ)
           ELSE
-             NMWP(IJ) = 0.0_JWRB
+             NMWP(IJ) = 0.0_NEMODP
           ENDIF
 
           IF (LWNEMOTAUOC) THEN

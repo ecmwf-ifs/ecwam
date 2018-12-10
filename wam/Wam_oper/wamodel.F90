@@ -281,8 +281,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &                      KCOUSTEP, LWNEMOCOU, NEMONTAU,              &
      &                      LWNEMOCOUSTK ,LWNEMOCOUSTRN,                &
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
-     &                      NEMOCSTEP, NEMONSTEP
-      USE YOWNEMOFLDS, ONLY : NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
+     &                      NEMOCSTEP, NEMONSTEP   ,                    &
+     &                      NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
