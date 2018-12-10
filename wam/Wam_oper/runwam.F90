@@ -284,7 +284,7 @@
       KSTOP=0  ! only used in coupled model
       KSTPW=0  ! only used in coupled model
       IDUM=0
-      NFDBREF=0  ! only used in coupled model
+      NFDBREF=-5  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       NATMFLX=0
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
