@@ -65,7 +65,9 @@
           WRITE(IU06,*) '*  FATAL ERROR IN SUB. MPMINMAXAVG *'
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '* IJSLOC.NE.NBLKS(IRANK) .OR.      *'
+          WRITE(IU06,*)  IJSLOC, NBLKS(IRANK)
           WRITE(IU06,*) '* IJLLOC.NE.NBLKE(IRANK)           *'
+          WRITE(IU06,*)  IJLLOC, NBLKE(IRANK)
           WRITE(IU06,*) '*                                  *'
           WRITE(IU06,*) '* THIS SHOULD NOT HAPPEN  !        *'
           WRITE(IU06,*) '************************************'
@@ -79,7 +81,7 @@
           IF(NFLAG(ITG)) THEN
             IT = ITOBOUT(ITG)
             DO IJ=IJSLOC,IJLLOC
-              ZGLOBAL(IJ)= BOUT(IJ,IT)
+              ZGLOBAL(IJ)=BOUT(IJ,IT)
             ENDDO
             CALL MPGATHERSCFLD(IRECV, NBLKS, NBLKE, ZGLOBAL, NIBLO)
 
