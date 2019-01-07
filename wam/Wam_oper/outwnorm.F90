@@ -15,6 +15,8 @@
 !     LDREPROD -  Reproducibility flag for SUMmation-operator.
 !                 .TRUE. ==> Use home-written binary tree, No MPI_ALLREDUCE used.
 !                 .FALSE. ==> let MPI_ALLREDUCE do the summation.
+!                 NOTE that it is overuled when global norms have been reuested
+!                 see namelist LLNORMWAMOUT_GLOBAL
 
 !     METHOD.
 !     -------
@@ -23,10 +25,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NFLAG, NFLAGALL, JPPFLAG,                   &
-     &                      COUTNAME, ITOBOUT ,NIPRMOUT, BOUT
+     &                      COUTNAME, ITOBOUT ,NIPRMOUT
+      USE YOWCOUP  , ONLY : LLNORMWAMOUT_GLOBAL
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP   , ONLY : IRANK   ,NPROC
-      USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
       USE MPL_MODULE
@@ -48,27 +50,38 @@
 
       IF(NFLAGALL .AND. NIPRMOUT > 0) THEN
 
-       CALL MPMINMAXAVG(IJSLOC, IJLLOC, NIPRMOUT, BOUT, ZMISS, LDREPROD, WNORM)
-
         IRECV=1
-!       WRITE NORM TO LOGFILE
-          WRITE(IU06,*) ' ' 
-          IF(LDREPROD) THEN
-            WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
-            WRITE(IU06,*) '  !!!!!!!!! REPRODUCEABLE ONLY IF SAME NPROC !!!!!!'
+        CALL MPMINMAXAVG(LLNORMWAMOUT_GLOBAL, IRECV, LDREPROD, WNORM)
+
+        WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
+        WRITE(IU06,*) ' ' 
+
+        IF(LLNORMWAMOUT_GLOBAL) THEN
+          IF(IRANK.EQ.IRECV) THEN
+            WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE NORMS !!!!!!'
           ELSE
-            WRITE(IU06,*) '  !!!!!!!!!!!! NON reproduceable WAMNORM ON ',CDTPRO
+            WRITE(IU06,*) '  !!!!!!!!! SEE LOG PE ', IRECV,' FOR NORMS'
           ENDIF
-          WRITE(IU06,*) '          AVERAGE               MINIMUM  ',    &
-     &     '           MAXIMUM    NON MISSING POINTS  NPROC'
-          DO ITG=1,JPPFLAG
-            IF(NFLAG(ITG)) THEN
-              IT = ITOBOUT(ITG)
-              WRITE(IU06,*) '  WAMNORM FOR ',COUTNAME(ITG)
-              WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
-              WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
-            ENDIF
-          ENDDO
+        ELSE
+          IF(LDREPROD) THEN
+            WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE ONLY IF SAME NPROC!'
+          ELSE
+             WRITE(IU06,*) '  !!!!!!!!! NON reproducible WAMNORM ON !!!'
+          ENDIF
+        ENDIF
+
+        WRITE(IU06,*) '          AVERAGE               MINIMUM  ',    &
+     &   '           MAXIMUM    NON MISSING POINTS  NPROC'
+
+!       WRITE NORM TO LOGFILE
+        DO ITG=1,JPPFLAG
+          IF(NFLAG(ITG)) THEN
+            IT = ITOBOUT(ITG)
+            WRITE(IU06,*) '  WAMNORM FOR ',COUTNAME(ITG)
+            WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
+            WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
+          ENDIF
+        ENDDO
 111     FORMAT(6x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
 
       ENDIF
