@@ -26,10 +26,11 @@
       USE YOWCOUT   , ONLY : NFLAG    ,JPPFLAG , ITOBOUT ,NIPRMOUT, BOUT
       USE YOWGRID   , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP    , ONLY : IRANK    ,NPROC
-      USE YOWPARAM  , ONLY : NIBLO
+      USE YOWPARAM  , ONLY : NIBLO    ,LL1D
       USE YOWPCONS  , ONLY : ZMISS
-      USE YOWSPEC   , ONLY : NBLKS    ,NBLKE
+      USE YOWSPEC   , ONLY : NBLKS    ,NBLKE   ,IJ2NEWIJ
       USE YOWTEST   , ONLY : IU06
+      USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
       USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK
 
@@ -43,7 +44,7 @@
       LOGICAL, INTENT(IN) :: LLGLOBAL
       LOGICAL, INTENT(IN) :: LDREPROD
 
-      INTEGER(KIND=JWIM) :: IJ, I, IP, ITG, IT
+      INTEGER(KIND=JWIM) :: IJ, IJOLD, I, IP, ITG, IT
 
       REAL(KIND=JWRB),DIMENSION(NIPRMOUT) :: ZMIN, ZMAX
       REAL(KIND=JWRB),DIMENSION(2*NIPRMOUT) :: ZSUM
@@ -57,6 +58,19 @@
       ZMAX(:)=-HUGE(ZMAX(:))
 
       IF(LLGLOBAL) THEN
+
+        IF(LLUNSTR) THEN
+          WRITE(IU06,*) '************************************'
+          WRITE(IU06,*) '*                                  *'
+          WRITE(IU06,*) '*  FATAL ERROR IN SUB. MPMINMAXAVG *'
+          WRITE(IU06,*) '*                                  *'
+          WRITE(IU06,*) '* GLOBAL NORM NOT YET CODED        *'
+          WRITE(IU06,*) '* FOR UNSTRUCTURED GRID            *'
+          WRITE(IU06,*) '*                                  *'
+          WRITE(IU06,*) '************************************'
+          CALL ABORT1
+        ENDIF
+
 
         WNORM(:,:)=0.0_JWRB
 
@@ -87,7 +101,12 @@
             CALL MPGATHERSCFLD(IRECV, NBLKS, NBLKE, ZGLOBAL, NIBLO)
 
             IF(IRANK.EQ.IRECV) THEN
-              DO IJ=1,NIBLO
+              DO IJOLD=1,NIBLO
+                IF(LL1D .OR. LLUNSTR) THEN
+                  IJ=IJOLD
+                ELSE
+                  IJ=IJ2NEWIJ(IJOLD)
+                ENDIF
                 IF(ZGLOBAL(IJ) /= ZMISS) THEN
                   ZSUM(IT) = ZSUM(IT) + ZGLOBAL(IJ)
                   ZMIN(IT) = MIN(ZMIN(IT), ZGLOBAL(IJ))

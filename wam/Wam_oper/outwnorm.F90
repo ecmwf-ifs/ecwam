@@ -53,8 +53,8 @@
         IRECV=1
         CALL MPMINMAXAVG(LLNORMWAMOUT_GLOBAL, IRECV, LDREPROD, WNORM)
 
-        WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
         WRITE(IU06,*) ' ' 
+        WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
 
         IF(LLNORMWAMOUT_GLOBAL) THEN
           IF(IRANK.EQ.IRECV) THEN
@@ -66,7 +66,7 @@
           IF(LDREPROD) THEN
             WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE ONLY IF SAME NPROC!'
           ELSE
-             WRITE(IU06,*) '  !!!!!!!!! NON reproducible WAMNORM ON !!!'
+             WRITE(IU06,*) '  !!!!!!!!! NON reproducible WAMNORM !!!'
           ENDIF
         ENDIF
 
