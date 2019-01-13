@@ -40,10 +40,12 @@
 
       LOGICAL, INTENT(IN) :: LDREPROD
 
-      INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV
+      INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV, INFO
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(4,NIPRMOUT) :: WNORM
+
+      CHARACTER(LEN=5) :: CINFO
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTWNORM',0,ZHOOK_HANDLE)
@@ -57,12 +59,16 @@
         WRITE(IU06,*) '  WAMNORM ON ',CDTPRO
 
         IF(LLNORMWAMOUT_GLOBAL) THEN
+          CINFO='IRECV'
+          INFO=IRECV
           IF(IRANK.EQ.IRECV) THEN
             WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE NORMS !!!!!!'
           ELSE
             WRITE(IU06,*) '  !!!!!!!!! SEE LOG PE ', IRECV,' FOR NORMS'
           ENDIF
         ELSE
+          CINFO='NPROC'
+          INFO=NPROC
           IF(LDREPROD) THEN
             WRITE(IU06,*) '  !!!!!!!!! REPRODUCIBLE ONLY IF SAME NPROC!'
           ELSE
@@ -71,15 +77,15 @@
         ENDIF
 
         WRITE(IU06,*) '          AVERAGE               MINIMUM  ',    &
-     &   '           MAXIMUM    NON MISSING POINTS  NPROC'
+     &   '           MAXIMUM    NON MISSING POINTS ',CINFO
 
 !       WRITE NORM TO LOGFILE
         DO ITG=1,JPPFLAG
           IF(NFLAG(ITG)) THEN
             IT = ITOBOUT(ITG)
             WRITE(IU06,*) '  WAMNORM FOR ',COUTNAME(ITG)
-            WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
-            WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),NPROC
+            WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),INFO
+            WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),INFO
           ENDIF
         ENDDO
 111     FORMAT(6x,'HEX: ',3(Z16.16,2x),1x,i8,1x,i6)
