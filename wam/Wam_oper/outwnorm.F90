@@ -76,8 +76,8 @@
           ENDIF
         ENDIF
 
-        WRITE(IU06,*) '          AVERAGE               MINIMUM  ',    &
-     &   '           MAXIMUM    NON MISSING POINTS ',CINFO
+        WRITE(IU06,*) '          AVERAGE,              MINIMUM,  ',    &
+     &   '           MAXIMUM,   NON MISSING POINTS, ',CINFO
 
 !       WRITE NORM TO LOGFILE
         DO ITG=1,JPPFLAG
