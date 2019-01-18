@@ -67,8 +67,9 @@
       REAL(KIND=JWRB), PARAMETER :: AA_MAX = 1000._JWRB
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, EMIN, EMAX
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1
+      REAL(KIND=JWRB) :: ZEPSILON
+      REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, EMIN, EMAX, EVAL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1, DFNORMA
 
 !----------------------------------------------------------------------
 
@@ -77,6 +78,7 @@
 !*    1. DETERMINE EXPECTED MAXIMUM WAVE HEIGHT.
 !     -----------------------------------------
 
+      ZEPSILON=10._JWRB*EPSILON(ZEPSILON)
       TWOG1 = -2._JWRB*GAM
       G2 = GAM**2+PI**2/6._JWRB
       AE = 0.5_JWRB*EB*(EB-2._JWRB)
@@ -84,17 +86,19 @@
 
       EMIN = 2._JWRB*H_C_MIN**2
       EMAX = 2._JWRB*H_C_MAX**2
+      EVAL = 2._JWRB*H_C**2
       DO IJ=IJS,IJL
-        E(IJ) = 2._JWRB*H_C**2
+        E(IJ) = EVAL
       ENDDO
 
       DO IJ=IJS,IJL
-        IF (XNSLC(IJ).GT.0._JWRB) THEN
-          F  = LOG(MAX(1._JWRB+C4(IJ)*AE+C3(IJ)**2*BE,FLOGMIN))
+        DFNORMA(IJ)=C4(IJ)*AE+C3(IJ)**2*BE
+        IF (XNSLC(IJ).GT.0._JWRB .AND. ABS(DFNORMA(IJ)).GT.ZEPSILON) THEN
+          F  = LOG(MAX(1._JWRB+DFNORMA(IJ),FLOGMIN))
 
           AA(IJ) = MIN(((EB-F)**2-2._JWRB*EB)/(2._JWRB*F),AA_MAX)
           BB(IJ) = 2._JWRB*(1._JWRB+AA(IJ))
-          BBM1(IJ) = 1._JWRB/BB(IJ)
+          BBM1(IJ) = 1._JWRB/(BB(IJ)+ZEPSILON*SIGN(1.0_JWRB,BB(IJ)))
 
           DO I=1,NITER
             Z0 = LOG(XNSLC(IJ)*SQRT(0.5_JWRB*E(IJ)))
