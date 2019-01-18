@@ -158,7 +158,7 @@ SUBROUTINE CAL_SECOND_ORDER_SPEC(F1,IJS,IJL,DEPTH,SIG)
               MP = M0
               D1 = 0._JWRB
             ENDIF
-            D2 = 1.-D1
+            D2 = 1.0_JWRB-D1
 
             DO K=1,NANG
                XK = REAL((K-1)/MA)
