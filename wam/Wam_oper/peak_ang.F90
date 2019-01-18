@@ -100,7 +100,7 @@
 
       DO IJ=IJS,IJL
         IF (SUM0(IJ).GT.ZEPSILON) THEN
-          XNU(IJ) = SQRT(MAX(0._JWRB,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
+          XNU(IJ) = SQRT(MAX(ZEPSILON,SUM2(IJ)*SUM0(IJ)/SUM1(IJ)**2-1._JWRB))
         ELSE
           XNU(IJ) = ZEPSILON 
         ENDIF 

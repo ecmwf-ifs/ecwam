@@ -291,7 +291,7 @@
         FAC4(M) = 2._JWRB*DELTH*DFIMFR(M)
       ENDDO
       DO IJ=IJS,IJL
-        SUM40(IJ)= ZEPSILON
+        SUM40(IJ)= ZSQREPSILON 
         SUM4(IJ)= 0._JWRB
         FFMAX(IJ)=FLTHRS*FFMAX(IJ)
       ENDDO
