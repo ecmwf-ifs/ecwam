@@ -42,7 +42,7 @@
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
-
+      USE MPL_MODULE  , ONLY : MPL_BARRIER
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "outblock.intfb.h"
@@ -76,7 +76,7 @@
 !     COMPUTE MEAN PARAMETERS
 
       CALL GSTATS(1502,0)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
       DO JKGLO=IJSLOC,IJLLOC,NPROMA
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
@@ -85,9 +85,9 @@
      &                DEPTH(KIJS:KIJL,1), CGROUP(KIJS:KIJL,:),          &
      &                BOUT(KIJS:KIJL,:))
       ENDDO
-!$OMP END PARALLEL DO
+!!! !$OMP END PARALLEL DO
       CALL GSTATS(1502,1)
-
+      CALL MPL_BARRIER(CDSTRING='OUTBS')
       IF (ITEST.GE.3) THEN
           WRITE(IU06,*) '      SUB. OUTBS: INTEGRATED',                 &
      &     ' PARAMETERS COMPUTED FOR OUTPUT'
