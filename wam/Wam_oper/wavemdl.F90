@@ -6,7 +6,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              NWVFIELDS, WVFLDG,                            &
      &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
      &              LDRESTARTED, ZDELATM, KQGAUSS,                &
-     &              LDWCOUNORMS, MASK_IN, MASK_OUT,               &
+     &              LDWCOUNORMS, LDNORMWAMOUT_GLOBAL,             &
+     &              MASK_IN, MASK_OUT,                            &
      &              NFDBREF,                                      &
      &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &              RNU_ATM, RNUM_ATM,                            &
@@ -103,7 +104,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         LLNORMWAM2IFS, RNU    ,RNUM     ,                        &
+     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS, RNU, RNUM,           &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -206,6 +207,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(OUT) :: KQGAUSS
 !     TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
       LOGICAL, INTENT(INOUT) :: LDWCOUNORMS
+!     TELL WAM TO PROCUCE REPRODUCIBLE GLOBAL NORMS
+      LOGICAL, INTENT(IN) :: LDNORMWAMOUT_GLOBAL
 !     MASK TO INDICATE WHICH PART OF ARRAY FIELDS IS RELEVANT 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
 !     MASK TO INDICATE WHICH PART OF ARRAY WVFLDG IS RELEVANT 
@@ -339,6 +342,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &                  ' TYPE=', CTYPE
            LLGRAPI=.FALSE.
         ENDIF
+
+        LLNORMWAMOUT_GLOBAL = LLNORMWAMOUT_GLOBAL .OR. LDNORMWAMOUT_GLOBAL
 
       ENDIF
 

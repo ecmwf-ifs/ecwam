@@ -152,7 +152,7 @@
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
 
-      LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK
+      LOGICAL :: LLSTOP, LLWRRE, LLRESTARTED, LLIRANK, LLNORMWAMOUT_GLOBAL
       LOGICAL :: LDWCOUNORMS
       LOGICAL :: FRSTIME
       LOGICAL :: LWCUR
@@ -160,7 +160,7 @@
       LOGICAL :: LLRNL
       LOGICAL :: LDWCOU2W, LFDBIFS
 
-      DATA LLSTOP, LLWRRE / 2*.FALSE. /
+      DATA LLSTOP, LLWRRE, LLNORMWAMOUT_GLOBAL  / 3*.FALSE. /
 
 !     For ODB:
       INTEGER(KIND=JWIM) :: INFO(1)
@@ -341,7 +341,8 @@
      &             NWVFIELDS, WVFLDG,                                   &
      &             NLONW, NLATW, LLSTOP, LLWRRE,                        &
      &             LLRESTARTED, ZDELATM, KQGAUSS,                       &
-     &             LDWCOUNORMS, MASK_IN, MASK_OUT,                      &
+     &             LDWCOUNORMS, LLNORMWAMOUT_GLOBAL,                    &
+     &             MASK_IN, MASK_OUT,                                   &
      &             NFDBREF,                                             &
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
