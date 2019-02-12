@@ -201,7 +201,7 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_STAR_OBS = E_LIM/(1.+TSTAR_0/TSTAR)**XP 
 
-            FP     = GOUT(IPTP,I,J)
+            FP     = 1.0_JWRB/GOUT(IPTP,I,J)
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
