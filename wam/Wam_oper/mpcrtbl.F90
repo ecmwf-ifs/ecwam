@@ -817,8 +817,6 @@
       COUTNAME(IR)=' WAVE INDUCED SEA LEVEL CORRECTION'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=098
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=241
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
@@ -830,8 +828,6 @@
       COUTNAME(IR)=' SPECTRAL WIDTH INDEX ........... '
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=099
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=242
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
@@ -843,8 +839,6 @@
       COUTNAME(IR)=' NUMBER OF FREAK WAVES EVENT .....'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=100
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=243
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=1
@@ -856,8 +850,6 @@
       COUTNAME(IR)=' U-COMP ATMOSPHERIC STRESS .......'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=101
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=080
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
@@ -869,8 +861,6 @@
       COUTNAME(IR)=' V-COMP ATMOSPHERIC STRESS .......'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=102
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=081
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
@@ -882,8 +872,6 @@
       COUTNAME(IR)=' U-COMP STRESS INTO OCEANS .......'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=103
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=082
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
@@ -895,8 +883,6 @@
       COUTNAME(IR)=' V-COMP STRESS INTO OCEANS .......'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=104
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=083
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
@@ -908,8 +894,6 @@
       COUTNAME(IR)=' TURB ENERGY FLUX INTO OCEANS ....'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=105
-!!!! until grib table is updated !!!!
-      IPRMINFO(IR,2)=084
 
       IPRMINFO(IR,3)=0
       IPRMINFO(IR,4)=0
