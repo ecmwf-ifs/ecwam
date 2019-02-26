@@ -189,6 +189,12 @@
           ENDIF
         ENDIF
 
+
+!       UNSET IN CASE THE IO-SERVER LAST FIELD WAS A SIMULATED SATELLITE IMAGE
+        CALL ISETVALFDBSUBS( KFDB, 'ident', 'off')
+        CALL ISETVALFDBSUBS( KFDB, 'instrument', 'off')
+        CALL ISETVALFDBSUBS( KFDB, 'channel', 'off')
+
 !       ENSEMBLE NUMBER AND LEG (ONLY SET WHEN NEEDED !):
         IF(ISTREAM == 1081 .OR.  &
      &     ISTREAM == 1083 .OR.  &
