@@ -71,60 +71,25 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=1) :: CLDOMAIN
-      CHARACTER(LEN=1),SAVE :: CLDOMAIN_PREV = " "
       CHARACTER(LEN=1) :: CLEG
-
       CHARACTER(LEN=2) :: CLTYPE
-      CHARACTER(LEN=2),SAVE :: CLTYPE_PREV = "  "
-
       CHARACTER(LEN=2) :: CLCLASS
-      CHARACTER(LEN=2),SAVE :: CLCLASS_PREV ="  "
-
-
       CHARACTER(LEN=2) :: CLDIR
-      CHARACTER(LEN=2),SAVE :: CLDIR_PREV ="  "
-
       CHARACTER(LEN=2) :: CLFRE
-      CHARACTER(LEN=2),SAVE :: CLFRE_PREV="  "
-
       CHARACTER(LEN=3) :: CLPARAM
-      CHARACTER(LEN=3),SAVE :: CLPARAM_PREV="   "
-
       CHARACTER(LEN=3) :: CLNUMBER
-
       CHARACTER(LEN=3) :: CLWINOFF
-      CHARACTER(LEN=3),SAVE :: CLWINOFF_PREV="   "
-
       CHARACTER(LEN=4) :: CLTIME
-      CHARACTER(LEN=4),SAVE :: CLTIME_PREV ="    "
-
       CHARACTER(LEN=4) :: CLEXPVER
-      CHARACTER(LEN=4),SAVE :: CLEXPVER_PREV ="    "
-
-      CHARACTER(LEN=4) :: CLSTREAM
-      CHARACTER(LEN=4),SAVE :: CLSTREAM_PREV ="    "
-
       CHARACTER(LEN=4) :: CDORIGIN
-
       CHARACTER(LEN=5) :: CLSYSTEM
-
       CHARACTER(LEN=5) :: CLMETHOD
-
       CHARACTER(LEN=6) :: CLSTEP
-      CHARACTER(LEN=6),SAVE :: CLSTEP_PREV = "      "
-
       CHARACTER(LEN=8) :: CLDATE
-      CHARACTER(LEN=8),SAVE :: CLDATE_PREV = "        "
-
       CHARACTER(LEN=8) :: HDATE
-
       CHARACTER(LEN=8) :: CDATEREF
 
       CHARACTER(LEN=12) :: C12
-
-      CHARACTER(LEN=1),SAVE :: CLLEVTY_PREV=" "
-      CHARACTER(LEN=2),SAVE :: CLREPR_PREV ="  "
-
       CHARACTER(LEN=64) :: CLFILE
 
 !     ------------------------------------------------------------------
@@ -189,11 +154,6 @@
           ENDIF
         ENDIF
 
-
-!       UNSET IN CASE THE IO-SERVER LAST FIELD WAS A SIMULATED SATELLITE IMAGE
-        CALL ISETVALFDBSUBS( KFDB, 'ident', 'off')
-        CALL ISETVALFDBSUBS( KFDB, 'instrument', 'off')
-        CALL ISETVALFDBSUBS( KFDB, 'channel', 'off')
 
 !       ENSEMBLE NUMBER AND LEG (ONLY SET WHEN NEEDED !):
         IF(ISTREAM == 1081 .OR.  &
@@ -319,32 +279,26 @@
 
 !*    2. MAKE DATA BASE NAME.
 
+!     RESET THESE IN CASE THE IO-SERVER'S LAST FIELD WAS A SIMULATED SATELLITE IMAGE:
+      CALL ISETVALFDBSUBS( KFDB, 'ident', 'off')
+      CALL ISETVALFDBSUBS( KFDB, 'instrument', 'off')
+      CALL ISETVALFDBSUBS( KFDB, 'channel', 'off')
+
 !     SET:
 
 !     STREAM:
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',C12)
-      CLSTREAM=C12(1:4)
-      if(clstream.ne.clstream_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'stream', CLSTREAM )
-        clstream_prev=clstream
-      endif
-
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
+      CALL ISETVALFDBSUBS( KFDB, 'stream', ISTREAM )
+
 !     CLASS:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'class',C12)
       CLCLASS=C12(1:2)
-      if(clclass.ne.clclass_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
-        clclass_prev=clclass
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'class',  CLCLASS )
 
 !     EXPVER:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'expver',C12)
       CLEXPVER=C12(1:4)
-      if(clexpver.ne.clexpver_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
-        clexpver_prev=clexpver
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'expver', CLEXPVER )
 
 !     DOMAIN:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'generatingProcessIdentifier', IMDL)
@@ -357,33 +311,21 @@
         KERR = 1
         RETURN
       ENDIF
-      if(cldomain.ne.cldomain_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
-        cldomain_prev=cldomain
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'domain', CLDOMAIN )
 
 !     REPRESENTATION:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'gridType',C12)
-      if(c12(9:10).ne.clrepr_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
-        clrepr_prev=c12(9:10)
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'repr', c12(9:10) )
 
 !     TYPE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'type',C12)
       CLTYPE=C12(1:2)
-      if(CLTYPE.ne.cltype_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
-        cltype_prev=c12(1:2)
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'type', CLTYPE )
 
 !     PARAMETER:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'param',C12)
       CLPARAM=C12(1:3)
-      if(CLPARAM.ne.clparam_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
-        clparam_prev=CLPARAM
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'param', CLPARAM )
 
 !     DATE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'dataDate',C12)
@@ -395,62 +337,38 @@
       IF(ISTATUS == 0 .AND. C12(1:1).NE. '0' ) THEN
         CLDATE=C12(1:8)
       ENDIF
-      if(CLDATE.ne.cldate_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'date', CLDATE )
-        cldate_prev=cldate
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'date', CLDATE )
 
 !     TIME:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'time',C12)
       CLTIME=C12(1:4)
-      if(CLTIME.ne.cltime_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'time', CLTIME )
-        cltime_prev=cltime
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'time', CLTIME )
 !     FC STEP:
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stepUnits','h')
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'endStep',ISTEP)
 !     make sure the step is in hours
       ISTEP=ISTEP
       WRITE(CLSTEP, '( I6.6 )' ) ISTEP 
-      if(CLSTEP.ne.clstep_prev) then
-        CALL ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
-        clstep_prev=CLSTEP
-      endif
+      CALL ISETVALFDBSUBS( KFDB, 'step', CLSTEP )
 
 !     LEVEL TYPE:
       CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'levtype',ilvtp)
       IF(ILVTP == 209) THEN
-        if('wv'.ne.cllevty_prev) then
-          CALL ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
-          cllevty_prev='wv'
-        endif
+        CALL ISETVALFDBSUBS( KFDB, 'levty', 'wv'  )
       ELSE IF(ILVTP == 212) THEN
-        if('ws'.ne.cllevty_prev) then
-          CALL ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
-          cllevty_prev='ws'
-        endif
+        CALL ISETVALFDBSUBS( KFDB, 'levty', 'ws'  )
       ELSE
-        if('s'.ne.cllevty_prev) then
-          CALL ISETVALFDBSUBS( KFDB, 'levty', 's'   )
-          cllevty_prev='s'
-        endif
+        CALL ISETVALFDBSUBS( KFDB, 'levty', 's'   )
       ENDIF 
 
 !     DIRECTION AND FREQUENCY:
       IF(CLPARAM == '251' ) THEN
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'directionNumber',C12)
          CLDIR=C12(1:2)
-         if(CLDIR.ne.cldir_prev) then
-           CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
-           cldir_prev=CLDIR
-         endif
+         CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'frequencyNumber',C12)
          CLFRE=C12(1:2)
-         if(CLFRE.ne.clfre_prev) then
-           CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
-           clfre_prev=CLFRE
-         endif
+         CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
       ELSE
         CLDIR="00"
         CLFRE="00"
@@ -459,14 +377,8 @@
      &      ISTREAM /= 1203 .AND. &
      &      ISTREAM /= 1204 .AND. &
      &      ISTREAM /= 1222) THEN
-         if(CLDIR.ne.cldir_prev) then
-            CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
-            cldir_prev=CLDIR
-         endif
-         if(CLFRE.ne.clfre_prev) then
-            CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
-            clfre_prev=CLFRE
-         endif
+          CALL ISETVALFDBSUBS( KFDB, 'direction', CLDIR )
+          CALL ISETVALFDBSUBS( KFDB, 'frequency', CLFRE )
         ENDIF
       ENDIF
 
@@ -491,10 +403,7 @@
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF)
 !          ENDIF
           WRITE(CLWINOFF,'(I3.3)') NWINOFF
-          if(CLWINOFF.ne.clwinoff_prev) then
-            CALL ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
-            clwinoff_prev=clwinoff
-          endif
+          CALL ISETVALFDBSUBS( KFDB, 'anoffset', CLWINOFF)
         ENDIF
 
 !     ------------------------------------------------------------------
