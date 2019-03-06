@@ -439,7 +439,7 @@
 !       TEST 471 adapted to ECWAM
 
         ALPHA   = 0.0062_JWRB
-        BETAMAX = 1.42_JWRB
+        BETAMAX = 1.41_JWRB
         ZALP    = 0.008_JWRB
         ALPHAPMAX = 0.031_JWRB
         TAUWSHELTER=0.25_JWRB
