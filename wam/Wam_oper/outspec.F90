@@ -1,4 +1,4 @@
-SUBROUTINE OUTSPEC (SPEC) 
+SUBROUTINE OUTSPEC (FL, CICVR)
 
 !----------------------------------------------------------------------
 
@@ -15,11 +15,12 @@ SUBROUTINE OUTSPEC (SPEC)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (SPEC)
+!     SUBROUTINE OUTSPEC (FL, CICVR)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *SPEC*     REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *FL*        REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *CICVR*     REAL      SEA ICE COVER.
 
 !     METHOD.
 !     -------
@@ -42,10 +43,11 @@ SUBROUTINE OUTSPEC (SPEC)
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
                             OUTWSPEC_IO_SERV_HANDLER
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
+      USE YOWICE   , ONLY : LICERUN  ,CITHRSH  ,FLMIN
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
-     &            MARSTYPE
+     &            MARSTYPE ,LLSOURCE ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
@@ -55,11 +57,15 @@ SUBROUTINE OUTSPEC (SPEC)
 #include "outwspec.intfb.h"
 #include "difdate.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: SPEC
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: FL 
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP), INTENT(IN) :: CICVR
 
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IFCST
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE) :: SPEC
 
       CHARACTER(LEN=14) :: CDATE 
 
@@ -72,6 +78,32 @@ SUBROUTINE OUTSPEC (SPEC)
         WRITE(IU06,*) '*      THIS IS OUTSPEC         *'
         CALL FLUSH (IU06)
       ENDIF
+
+!*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
+      IF (LICERUN .AND. LLSOURCE) THEN
+        NPROMA=NPROMA_WAM
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
+        DO JKGLO=NINF,NSUP,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,NSUP)
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                IF (CICVR(IJ).GT.CITHRSH) THEN
+                  SPEC(IJ,K,M) = FLMIN 
+                ELSE
+                  SPEC(IJ,K,M) = FL(IJ,K,M)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+        SPEC(NINF-1,:,:) = 0.0_JWRB
+      ELSE
+        SPEC(:,:,:) = FL(:,:,:)
+      ENDIF
+
 
       IF(CDTPRO.LE.CDATEF) THEN
 !*    0.1.  THIS IS AN ANALYSIS DATE.

@@ -599,7 +599,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
           IF( .NOT. LRESTARTED ) THEN
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
-              CALL OUTSPEC(FL1)
+              CALL OUTSPEC(FL1,CICOVER(:,1))
               LLFLUSH = .TRUE.
             ENDIF
 
@@ -1185,7 +1185,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(FL1)
+              CALL OUTSPEC(FL1, CICOVER(:,1))
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
