@@ -1,4 +1,4 @@
-SUBROUTINE OUTSPEC (FL, CICVR)
+SUBROUTINE OUTSPEC (FL, CICOVER)
 
 !----------------------------------------------------------------------
 
@@ -15,12 +15,12 @@ SUBROUTINE OUTSPEC (FL, CICVR)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (FL, CICVR)
+!     SUBROUTINE OUTSPEC (FL, CICOVER)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *FL*        REAL      LOCAL SPECTRA OF CURRENT PE.
-!      *CICVR*     REAL      SEA ICE COVER.
+!      *CICOVER*   REAL      SEA ICE COVER.
 
 !     METHOD.
 !     -------
@@ -58,8 +58,9 @@ SUBROUTINE OUTSPEC (FL, CICVR)
 #include "difdate.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: FL 
-      REAL(KIND=JWRB), DIMENSION(NINF:NSUP), INTENT(IN) :: CICVR
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
 
+      INTEGER(KIND=JWIM) :: IG 
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IFCST
@@ -79,6 +80,8 @@ SUBROUTINE OUTSPEC (FL, CICVR)
         CALL FLUSH (IU06)
       ENDIF
 
+      IG=1
+
 !*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
       IF (LICERUN .AND. LLSOURCE) THEN
         NPROMA=NPROMA_WAM
@@ -89,7 +92,7 @@ SUBROUTINE OUTSPEC (FL, CICVR)
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=KIJS,KIJL
-                IF (CICVR(IJ).GT.CITHRSH) THEN
+                IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
                   SPEC(IJ,K,M) = FLMIN 
                 ELSE
                   SPEC(IJ,K,M) = FL(IJ,K,M)
