@@ -44,8 +44,9 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
                             OUTWSPEC_IO_SERV_HANDLER
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
       USE YOWICE   , ONLY : LICERUN  ,CITHRSH  ,FLMIN
-      USE YOWMPP   , ONLY : NINF     ,NSUP
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
      &            MARSTYPE ,LLSOURCE
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -85,14 +86,13 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
       IF (LICERUN .AND. LLSOURCE) THEN
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=NINF,NSUP
+            DO IJ=NSTART(IRANK),NEND(IRANK)
               IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
                 SPEC(IJ,K,M) = FLMIN 
               ELSE
                 SPEC(IJ,K,M) = FL(IJ,K,M)
               ENDIF
             ENDDO
-            SPEC(NINF-1,K,M) = 0.0_JWRB
           ENDDO
         ENDDO
       ELSE
