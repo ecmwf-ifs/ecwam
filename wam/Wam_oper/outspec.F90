@@ -47,7 +47,7 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
-     &            MARSTYPE ,LLSOURCE ,NPROMA_WAM
+     &            MARSTYPE ,LLSOURCE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
@@ -61,7 +61,6 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
       REAL(KIND=JWRB), DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
 
       INTEGER(KIND=JWIM) :: IG 
-      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IFCST
 
@@ -84,29 +83,21 @@ SUBROUTINE OUTSPEC (FL, CICOVER)
 
 !*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
       IF (LICERUN .AND. LLSOURCE) THEN
-        NPROMA=NPROMA_WAM
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
-        DO JKGLO=NINF,NSUP,NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,NSUP)
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
-                  SPEC(IJ,K,M) = FLMIN 
-                ELSE
-                  SPEC(IJ,K,M) = FL(IJ,K,M)
-                ENDIF
-              ENDDO
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=NINF,NSUP
+              IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
+                SPEC(IJ,K,M) = FLMIN 
+              ELSE
+                SPEC(IJ,K,M) = FL(IJ,K,M)
+              ENDIF
             ENDDO
+            SPEC(NINF-1,K,M) = 0.0_JWRB
           ENDDO
         ENDDO
-!$OMP   END PARALLEL DO
-        SPEC(NINF-1,:,:) = 0.0_JWRB
       ELSE
         SPEC(:,:,:) = FL(:,:,:)
       ENDIF
-
 
       IF(CDTPRO.LE.CDATEF) THEN
 !*    0.1.  THIS IS AN ANALYSIS DATE.
