@@ -55,7 +55,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV,        &
-     &                      RNUM     ,                                  &
+     &                      RNUM     ,LLCAPCHNK,                        &
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
@@ -95,8 +95,9 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TEMPXNLEV, CDINV, CDSQRTINV, Z0TOT, USTAR, CHARNOCK
-      REAL(KIND=JWRB) :: ALPHAOG
+      REAL(KIND=JWRB) :: GM1 
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: CD
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: ALPHAOG
 
       CHARACTER(LEN=24) :: FILNM
 
@@ -115,6 +116,7 @@
       CDATEFL = ' '
       CDTPRO = CDATEA
       LCR=.FALSE.
+      GM1= 1.0_JWRB/G
 
 !     GETWND AND READWGRIB REQUIRES FIELDG TO BE ALLOCATED !
       LLALLOC_ONLY=.FALSE.
@@ -308,7 +310,16 @@
 
         ILEV=1
 
-        ALPHAOG=ALPHA/G
+        IF(LLCAPCHNK) THEN
+          DO IJ=MIJS,MIJL
+            ALPHAOG(IJ)= CHNKMIN(U10OLD(IJ))*GM1
+          ENDDO
+        ELSE
+          DO IJ=MIJS,MIJL
+            ALPHAOG(IJ)= ALPHA*GM1
+          ENDDO
+        ENDIF
+
 
 ! Mod for OPENMP
           NPROMA=NPROMA_WAM
@@ -328,7 +339,7 @@
               CDSQRTINV = MIN(1._JWRB/SQRT(CD(IJ)),100.0_JWRB)
               Z0TOT = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
-              Z0OLD(IJ) = MAX(Z0TOT - RNUM/USTAR,ALPHAOG*USTAR)
+              Z0OLD(IJ) = MAX(Z0TOT - RNUM/USTAR,ALPHAOG(IJ)*USTAR)
               CHARNOCK = G*Z0OLD(IJ)/USOLD(IJ)
               CHARNOCK = MAX(CHARNOCK,ALPHA)
               TAUW(IJ) = MAX(USOLD(IJ)*(1._JWRB-(ALPHA/CHARNOCK)**2),0._JWRB)

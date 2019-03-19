@@ -46,7 +46,8 @@
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
-     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO
+     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
+     &            LLCAPCHNK
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -191,6 +192,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
+     &   LLCAPCHNK,                                                     &
      &   LWAM_USE_IO_SERV
 
 
@@ -395,6 +397,7 @@
 !
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
+!     LLCAPCHNK : CAP cHANOCK FOR HIGH WINDS.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
@@ -700,6 +703,8 @@
       LWNEMOCOUCUR=.FALSE.
 
       LWNEMOCOUDEBUG = .FALSE.
+
+      LLCAPCHNK = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
 

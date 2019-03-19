@@ -69,7 +69,7 @@
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
-     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV 
+     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, LLCAPCHNK
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
@@ -673,6 +673,7 @@
           CALL ABORT1
         ENDIF
       ENDIF
+      IF(LLCAPCHNK) WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
       WRITE(IU06,*) ' MAXIMUM PHILLIPS PARAMETER ALLOWED: ',ALPHAPMAX
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
