@@ -292,7 +292,7 @@
       ENDIF
 ! debile
 DO IJ=IJS,IJL
-  write(iu06,*) 'debile 1 : ',TAUW(IJ), USNEW(IJ),TAUW(IJ)/USNEW(IJ),G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
+  write(iu06,*) 'debile 1 : ',U10NEW(IJ),TAUW(IJ),USNEW(IJ),TAUW(IJ)/USNEW(IJ)**2,G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
 ENDDO
 
 
@@ -342,7 +342,7 @@ ENDDO
       ENDIF
 ! debile
 DO IJ=IJS,IJL
-  write(iu06,*) 'debile 2 : ',TAUW(IJ), USNEW(IJ),TAUW(IJ)/USNEW(IJ),G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
+  write(iu06,*) 'debile 2 : ',U10NEW(IJ),TAUW(IJ),USNEW(IJ),TAUW(IJ)/USNEW(IJ)**2,G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
 ENDDO
 
 
