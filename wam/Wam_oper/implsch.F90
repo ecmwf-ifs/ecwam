@@ -139,6 +139,7 @@
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
+      USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -289,6 +290,11 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
+! debile
+DO IJ=IJS,IJL
+  write(iu06,*) 'debile 1 : ',TAUW(IJ), USNEW(IJ),TAUW(IJ)/USNEW(IJ),G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
+ENDDO
+
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
@@ -334,6 +340,11 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
+! debile
+DO IJ=IJS,IJL
+  write(iu06,*) 'debile 2 : ',TAUW(IJ), USNEW(IJ),TAUW(IJ)/USNEW(IJ),G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
+ENDDO
+
 
 !     RE-IMPOSE HIGH FREQUENCY TAIL
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
