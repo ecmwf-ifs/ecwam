@@ -84,8 +84,6 @@
 
 !     See INIT_X0TAUHF
       X0G=X0TAUHF*G
-!!!debile
-      X0G=0.0_JWRB
 
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
