@@ -290,11 +290,6 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
-! debile
-DO IJ=IJS,IJL
-  write(iu06,*) 'debile 1 : ',U10NEW(IJ),TAUW(IJ),USNEW(IJ),TAUW(IJ)/USNEW(IJ)**2,G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
-ENDDO
-
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
@@ -340,11 +335,6 @@ ENDDO
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
-! debile
-DO IJ=IJS,IJL
-  write(iu06,*) 'debile 2 : ',U10NEW(IJ),TAUW(IJ),USNEW(IJ),TAUW(IJ)/USNEW(IJ)**2,G*Z0NEW(IJ)/MAX(USNEW(IJ)**2,EPSUS)
-ENDDO
-
 
 !     RE-IMPOSE HIGH FREQUENCY TAIL
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
