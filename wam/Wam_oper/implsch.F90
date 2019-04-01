@@ -139,7 +139,6 @@
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
-      USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
