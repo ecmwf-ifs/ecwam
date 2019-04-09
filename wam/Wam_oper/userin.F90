@@ -113,7 +113,7 @@
      &            IPHYS    ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -601,10 +601,6 @@
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' COUPLING WITH ATMOS. MODEL (LWCOU) : ',LWCOU
       WRITE(IU06,*) ' COUPLING WITH NEMO MOD.(LWNEMOCOU) : ',LWNEMOCOU
-      IF(.NOT.LMESSPASS) THEN
-        WRITE(IU06,*) ' USING ',NTASKS,' PROCESSORS'
-        WRITE(IU06,*) ' WITH A WORKLOAD OF ',NSIZE,' PER PROCESSOR'
-      ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
       WRITE(IU06,*) ' END DATE ................ : ',CDATEE

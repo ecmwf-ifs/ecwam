@@ -316,7 +316,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &            ISHALLO  ,IREFRA   ,IASSI    ,                        &
      &            CDTBC    ,IDELBC   ,                                  &
      &            IPROPAGS ,                                            &
-     &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,    &
+     &            NENSFNB  ,NTOTENS  ,NSYSNB   ,                        &
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
      &            LLSOURCE ,                                            &
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN

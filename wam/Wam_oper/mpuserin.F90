@@ -83,7 +83,7 @@
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -161,7 +161,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,    &
+     &   LMESSPASS, LWCOU, CFDBSF, CFDB2DSP, LNOCDIN,                   &
      &   LODBRALT,                                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
@@ -401,8 +401,6 @@
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
-!     NTASKS: NUMBER OF PROCESSORS FOR PARALELL RUN ON CRAY (OBSOLETE).
-!     NSIZE: WORK LOAD PER PROCESSOR FOR PARALELL RUN ON CRAY (OBSOLETE)
 !     CFDBSF: FDB ROOT DIRECTORY FOR SCALAR GRIB FIELDS.
 !     CFDB2DSP : FDB ROOT DIRECTORY FOR 2D SPECTRA. 
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
@@ -600,8 +598,6 @@
       NSYSNB    = -1
       NMETNB    = -1
       LMESSPASS = .TRUE.
-      NTASKS    = 0
-      NSIZE     = 0
 
       NOUTT     = 0
 
