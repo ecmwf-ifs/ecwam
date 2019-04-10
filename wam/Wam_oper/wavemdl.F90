@@ -114,7 +114,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,     &
      &            TAUOC    ,USTOKES  ,VSTOKES  ,STRNMS
@@ -584,7 +584,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
         CALL PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,               &
      &                ROAIRO, ZIDLOLD,                                  &
-     &                CICOVER, CITHICK, CIWA,                           &
+     &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
      &                IREAD,                                            &
      &                NFIELDS, NGPTOTG, NC, NR,                         &

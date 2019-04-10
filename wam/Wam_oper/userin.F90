@@ -149,7 +149,10 @@
 #include "wam_u2l1cr.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IFORCA 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORCA 
+      LOGICAL, INTENT(IN) :: LWCUR
+
+
       INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
       INTEGER(KIND=JWIM) :: LEN, ILCFDB2DSP, ILCFDBSF
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
@@ -173,7 +176,6 @@
 
       LOGICAL :: LERROR, LASTREAM
       LOGICAL :: LLNALTGO
-      LOGICAL :: LWCUR
       LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------

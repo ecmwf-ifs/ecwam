@@ -333,7 +333,14 @@
 #include "tabu_swellft.intfb.h"
 #include "userin.intfb.h"
 
-      INTEGER(KIND=JWIM) :: NADV, IREAD, NFIELDS, NGPTOTG, NC, NR
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD, NFIELDS, NGPTOTG, NC, NR
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
+      REAL(KIND=JWRB), INTENT(IN) :: FIELDS(NGPTOTG,NFIELDS)
+      LOGICAL, INTENT(IN) :: LWCUR
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
+      REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+
+
       INTEGER(KIND=JWIM) :: IFORCA
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
@@ -346,7 +353,6 @@
       INTEGER(KIND=JWIM) :: NTOT, MTHREADS, NPROMA
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
-      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
       REAL(KIND=JWRB) :: FCRANGE, XD
       REAL(KIND=JWRB) :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
@@ -356,9 +362,7 @@
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
-      REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB) :: AKI, TRANSF
 
       REAL(KIND=JWRB) :: XLA, XLO 
@@ -367,7 +371,6 @@
       CHARACTER(LEN=24) :: FILNM
       CHARACTER(LEN=80) :: FILENAME
 
-      LOGICAL :: LWCUR
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
@@ -1127,7 +1130,7 @@
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                     &
      &              ROAIRO, ZIDLOLD,                                    &
-     &              CICOVER, CITHICK, CIWA,                             &
+     &              CICOVER, CITHICK,                                   &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &
      &              IREAD,                                              &
      &              NFIELDS, NGPTOTG, NC, NR,                           &

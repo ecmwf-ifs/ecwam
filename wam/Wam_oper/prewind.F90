@@ -1,6 +1,6 @@
       SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,           &
      &                    ROAIRO, ZIDLOLD,                              &
-     &                    CICOVER, CITHICK, CIWA,                       &
+     &                    CICOVER, CITHICK,                             &
      &                    LLINIT, LLALLOC_FIELDG_ONLY,                  &
      &                    IREAD,                                        &
      &                    NFIELDS, NGPTOTG, NC, NR,                     &
@@ -57,7 +57,6 @@
 !                                   L: MONIN-OBUKHOV LENGTH).
 !      *CICOVER*   REAL      SEA ICE COVER.
 !      *CITHICK*   REAL      SEA ICE THICKNESS.
-!      *CIWA*      REAL      SEA ICE WAVE ATTENUATION FACTOR.
 !      *LLINIT*    LOGICAL   TRUE IF WAMADSZIDL NEEDS TO BE CALLED.   
 !      *LLALLOC_FIELDG_ONLY  LOGICAL IF TRUE THEN FIELDG DATA STRUCTURE WILL
 !                            ONLY BE ALLOCATED BUT NOT INITIALISED.
@@ -158,25 +157,26 @@
 #include "timin.intfb.h"
 #include "wamadszidl.intfb.h"
 
-      INTEGER(KIND=JWIM) :: NFIELDS, NGPTOTG, NC, NR
-      INTEGER(KIND=JWIM) :: IDELWH, IREAD
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) ::            &
+     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,                &
+     &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
+      LOGICAL, INTENT(IN) :: LLINIT
+      LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS, NGPTOTG, NC, NR
+      REAL(KIND=JWRB), INTENT(IN) :: FIELDS(NGPTOTG,NFIELDS)
+      LOGICAL, INTENT(IN) :: LWCUR
+      INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
+
+      INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: ISTORE, IJ, IG, IIG
-      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO) :: U10OLD,THWOLD,USOLD,  &
-     &                                  Z0OLD,TAUW,                      &
-     &                                  ROAIRO,ZIDLOLD,                  &
-     &                                  CICOVER,CITHICK
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP, NFRE, NBLO) :: CIWA 
 
       CHARACTER(LEN=14) :: CDTWIE, CDTWIS, ZERO
 
       LOGICAL, SAVE :: LLFRSTNEMO
-      LOGICAL :: LWCUR
-      LOGICAL :: LLINIT
-      LOGICAL :: LLALLOC_FIELDG_ONLY, LLINIALL, LLOCAL
+      LOGICAL :: LLINIALL, LLOCAL
 
       DATA LLFRSTNEMO / .TRUE. /
 
@@ -240,8 +240,6 @@
 !!!   AS PART OF THE GRIB RESTART FILES.
       IF (LLINIT) CALL WAMADSZIDL(ROAIRO,ZIDLOLD)
 
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
@@ -300,15 +298,6 @@
      &              IREAD, LWCUR)
 
       ENDIF
-#else
-      CALL WAV_coupl_prewind(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,            &
-     &                       ROAIRO, ZIDLOLD,                           &
-     &                       CICOVER, CITHICK, CIWA,                    &
-     &                       LLINIT,                                    &
-     &                       IREAD,                                     &
-     &                       NFIELDS, NGPTOTG, NC, NR,                  &
-     &                       FIELDS, LWCUR, MASK_IN)
-#endif
 
 
 !*    2.5 DEALLOCATE GRID ARRAYS FOR INPUT FORCING FIELDS

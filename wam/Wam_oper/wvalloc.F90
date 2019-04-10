@@ -39,7 +39,7 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
-      LOGICAL :: LWCUR
+      LOGICAL, INTENT(IN) :: LWCUR
 
 ! ----------------------------------------------------------------------
  
