@@ -99,9 +99,10 @@
      &                            NEMOUCUR(IJS(IG):IJL(IG)),            &
      &                            NEMOVCUR(IJS(IG):IJL(IG)),            &
      &                            LNEMOCITHICK )
+
+        LLNEWCURR=.TRUE. 
 #endif
         LNEMOICEREST=.FALSE.
-        LLNEWCURR=.TRUE. 
       ENDIF
 
 !     UPDATE CICOVER, CITHICK AND U and V CURRENTS AT INITIAL TIME ONLY !!!!
