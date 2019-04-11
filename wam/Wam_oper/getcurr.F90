@@ -160,7 +160,7 @@
 !             CURRENTS FROM NEMO
 !             ------------------
               ELSEIF(LWNEMOCOUCUR) THEN
-                WRITE(IU06,*)'NEMO CURRENTS'!
+                WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)
                   IX = IFROMIJ(IJ,IG)
