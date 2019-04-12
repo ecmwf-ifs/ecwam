@@ -83,13 +83,11 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: OLDU, OLDV
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
 
       LOGICAL :: LLCURRENT
-      LOGICAL :: LLUPDATE
 
 ! --------------------------------------------------------------------- 
 
@@ -101,29 +99,17 @@
       CALL GSTATS(1984,0)
 
       IF (LLNEWCURR) THEN
-        IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR.                &
+        IF ( (LWCOU .AND. LWCUR ) .OR.                                  &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 
-          IF(.NOT.ALLOCATED(U)) THEN 
-            ALLOCATE(U(NINF-1:NSUP,NBLO))
-            U(:,:)=0.0_JWRB
-          ENDIF
-
-          IF(.NOT.ALLOCATED(V)) THEN
-            ALLOCATE(V(NINF-1:NSUP,NBLO))
-            V(:,:)=0.0_JWRB
-          ENDIF
+          IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
+          IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
 
           CDTNEWCUR=CDTCUR
 
           IF(.NOT.LWCOU) CALL INCDATE(CDTNEWCUR,IDELCUR/2)
 
           IF(CDTPRO.GE.CDTNEWCUR) THEN
-
-            ALLOCATE(OLDU(NINF-1:NSUP,NBLO))
-            OLDU(:,:)=U(:,:)
-            ALLOCATE(OLDV(NINF-1:NSUP,NBLO))
-            OLDV(:,:)=V(:,:)
 
             LLCURRENT=.FALSE.
 
@@ -160,7 +146,7 @@
 !             CURRENTS FROM NEMO
 !             ------------------
               ELSEIF(LWNEMOCOUCUR) THEN
-                WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
+                WRITE(IU06,*)'NEMO CURRENTS'!
                 IG=1
                 DO IJ = IJS(IG),IJL(IG)
                   IX = IFROMIJ(IJ,IG)
@@ -239,39 +225,21 @@
 
             ENDIF
 
+
 !           COMPUTE REFRACTION TERMS
-!           ------------------------
-!           CHECK IF UPDATE IS NEEDED
-            LLUPDATE=.FALSE.
-            IG=1
-            DO IJ = NINF, NSUP
-              IF( U(IJ,IG)/=OLDU(IJ,IG) .OR. V(IJ,IG)/=OLDV(IJ,IG) ) THEN
-                LLUPDATE=.TRUE.
-                EXIT
-              ENDIF 
-            ENDDO
-
-            IF(LLUPDATE) THEN
-              IF (IREFRA .NE. 0) THEN
-                CALL PROPDOT
-                IF (ITEST.GE.2) THEN
-                  WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',           &
-     &           ' TERMS INITIALIZED'
-                  CALL FLUSH(IU06)
-                END IF
+            IF (IREFRA .NE. 0) THEN
+              CALL PROPDOT
+              IF (ITEST.GE.2) THEN
+                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',             &
+     &         ' TERMS INITIALIZED'
+                CALL FLUSH(IU06)
               END IF
+            END IF
 
-              LLCHKCFLA=.TRUE.
+            LLCHKCFLA=.TRUE.
 
-!             SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
-              LUPDTWGHT=.TRUE.
-
-            ELSE
-              LLCHKCFLA=.FALSE.
-            ENDIF
-
-            DEALLOCATE(OLDU)
-            DEALLOCATE(OLDV)
+!           SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+            LUPDTWGHT=.TRUE.
 
           ELSE
             LLCHKCFLA=.FALSE.
