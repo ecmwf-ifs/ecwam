@@ -254,7 +254,7 @@
             IF(LLUPDATE) THEN
               IF (IREFRA .NE. 0) THEN
                 CALL PROPDOT
-                IF (ITEST.GE.2) THEN
+                IF (ITEST.GE.0) THEN
                   WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',           &
      &           ' TERMS INITIALIZED'
                   CALL FLUSH(IU06)
