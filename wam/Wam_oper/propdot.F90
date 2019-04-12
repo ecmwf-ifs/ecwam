@@ -115,10 +115,7 @@
 !         ----------------------------
 
         CALL GRADI (IG, IJS(IG),IJL(IG),IREFRA, DDPHI, DDLAM, DUPHI,    &
-
      &              DULAM, DVPHI, DVLAM)
-!!!debile
-       write(0,*) 'debile propdot ',maxval(ABS(DUPHI(:))),maxval(ABS(DVPHI(:))),maxval(ABS(DULAM(:))),maxval(abs(DVLAM(:)))
 
 !*    2.3 COSINE OF LATITUDES IF SPHERICAL PROPAGATION.
 !         ---------------------------------------------
