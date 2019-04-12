@@ -646,6 +646,9 @@
      &                              WMPMN(IJ,K,M,IC)
                   WRITE (IU06,*) '*                                 *'
                   WRITE (IU06,*) '***********************************'
+
+                  WRITE (0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ,IG),V(IJ,IG)
+
                   LCFLFAIL(IJ)=.TRUE.
                 ENDIF
               ENDDO
@@ -666,6 +669,7 @@
               WRITE (IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
               WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
               WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+              WRITE (0,*) '* CTUW: SUMW SHOULD BE < 1 AND > 0, BUT*',IJ,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
               DO IP=1,2
               DO IC=1,2
                 IJP = KLAT(IJ,IC,IP)
@@ -702,7 +706,10 @@
       ENDDO  ! END LOOP OVER DIRECTIONS
 
       DO IJ=MIJS,MIJL
-        IF(LCFLFAIL(IJ)) RETURN
+        IF(LCFLFAIL(IJ)) THEN
+          IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
+          RETURN
+        ENDIF
       ENDDO
 
 

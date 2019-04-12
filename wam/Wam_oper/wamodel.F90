@@ -774,6 +774,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
               DO IJ=IJS(IG),IJL(IG)
                 IF(LCFLFAIL(IJ)) THEN
+                  CALL FLUSH (IU06)
                   WRITE(0,*) '!!! ********************************* !!'
                   WRITE(0,*) '!!! WAVE MODEL HAS ABORTED !!!'
                   WRITE(0,*) '!!! FOLLOWING CFL CRITERION VIOLATION !!'
