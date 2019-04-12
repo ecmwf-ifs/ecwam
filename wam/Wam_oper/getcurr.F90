@@ -98,8 +98,6 @@
 !     1.0  GET NEW CURRENTS IF IT IS REQUIRED.
 !          ----------------------------------
 
-      write(0,*) 'debile in getcur LLNEWCURR :', LLNEWCURR 
-
       CALL GSTATS(1984,0)
 
       IF (LLNEWCURR) THEN
