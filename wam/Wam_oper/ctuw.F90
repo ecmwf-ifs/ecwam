@@ -109,6 +109,12 @@
      IF(.not.ALLOCATED(THDD)) write(0,*) 'debile in CTUW wrt THDD'
      IF(.not.ALLOCATED(THDC)) write(0,*) 'debile in CTUW wrt THDC'
      IF(.not.ALLOCATED(SDOT)) write(0,*) 'debile in CTUW wrt SDOT'
+     IF(ALLOCATED(THDD)) write(0,*) 'debile in CTUW allocated THDD'
+     IF(ALLOCATED(THDC)) write(0,*) 'debile in CTUW allocated THDC'
+     IF(ALLOCATED(SDOT)) write(0,*) 'debile in CTUW allocated SDOT'
+
+     write(0,*) 'debile in CTUW THDC ',THDC
+     write(0,*) 'debile in CTUW SDOT ',SDOT
 
       DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
