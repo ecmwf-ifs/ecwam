@@ -75,6 +75,8 @@
 
       IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
 
+      write(0,*) 'debile in recvnemofields LLNEWCURR :', LLNEWCURR 
+
       IG=1
       ! IF WE ARE IN RESTART JUST COPY THE RESTART FILE INFO.
       IF (LREST) THEN
@@ -100,7 +102,7 @@
      &                            NEMOVCUR(IJS(IG):IJL(IG)),            &
      &                            LNEMOCITHICK )
 
-        LLNEWCURR=.TRUE. 
+!!!!!!!!!!!!! debile        LLNEWCURR=.TRUE. 
 #endif
         LNEMOICEREST=.FALSE.
       ENDIF

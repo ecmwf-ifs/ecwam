@@ -98,6 +98,8 @@
 !     1.0  GET NEW CURRENTS IF IT IS REQUIRED.
 !          ----------------------------------
 
+      write(0,*) 'debile in getcur LLNEWCURR :', LLNEWCURR 
+
       CALL GSTATS(1984,0)
 
       IF (LLNEWCURR) THEN
@@ -254,7 +256,7 @@
             IF(LLUPDATE) THEN
               IF (IREFRA .NE. 0) THEN
                 CALL PROPDOT
-                IF (ITEST.GE.2) THEN
+                IF (ITEST.GE.0) THEN
                   WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',           &
      &           ' TERMS INITIALIZED'
                   CALL FLUSH(IU06)
