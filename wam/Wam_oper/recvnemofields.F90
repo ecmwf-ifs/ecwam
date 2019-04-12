@@ -103,6 +103,19 @@
         LLNEWCURR=.TRUE. 
 #endif
         LNEMOICEREST=.FALSE.
+
+!       MASK CURRENTS IF SEA ICE FROM NEMO
+        IF (LWNEMOCOUCUR) THEN
+          IF (LWNEMOCOUCIC) THEN
+            DO IJ = IJS(IG),IJL(IG)
+              IF(NEMOCICOVER(IJ,IG).GT.0.0_JWRB) THEN
+                NEMOUCUR(IJ,IG)=0.0_JWRB
+                NEMOVCUR(IJ,IG)=0.0_JWRB
+              ENDIF
+            ENDDO
+          ENDIF 
+        ENDIF 
+
       ENDIF
 
 !     UPDATE CICOVER, CITHICK AND U and V CURRENTS AT INITIAL TIME ONLY !!!!
@@ -152,6 +165,7 @@
                   V(IJ,IG)=0.0_JWRB
                 ENDIF
               ENDDO
+
             ENDIF
           ENDIF
 
@@ -166,11 +180,12 @@
           ENDIF
           IF (LWNEMOCOUCUR) THEN
              IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-                U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
+               U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
                 V(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
              ENDIF
           ENDIF
         ENDIF
+
       ENDIF
 
       IF (LWNEMOCOUCIT.AND.(.NOT.LNEMOCITHICK)) THEN

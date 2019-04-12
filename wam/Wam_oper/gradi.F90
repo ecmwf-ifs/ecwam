@@ -164,13 +164,6 @@
             VM = V(IPM,IG)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
-          ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND ) THEN
-            UP = U(IPP2,IG)
-            VP = V(IPP2,IG)
-            UM = U(IPM2,IG)
-            VM = V(IPM2,IG)
-            DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
-            DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
           ELSE
             DUPHI(IJ) = 0.0_JWRB
             DVPHI(IJ) = 0.0_JWRB
