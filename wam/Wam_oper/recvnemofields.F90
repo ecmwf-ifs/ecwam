@@ -102,17 +102,6 @@
 
         LLNEWCURR=.TRUE. 
 
-!       MASK CURRENTS IF SEA ICE FROM NEMO
-        IF (LWNEMOCOUCUR) THEN
-          IF (LWNEMOCOUCIC) THEN
-            DO IJ = IJS(IG),IJL(IG)
-              IF(NEMOCICOVER(IJ).GT.0.0_JWRB) THEN
-                NEMOUCUR(IJ)=0.0_JWRB
-                NEMOVCUR(IJ)=0.0_JWRB
-              ENDIF
-            ENDDO
-          ENDIF 
-        ENDIF 
 #endif
         LNEMOICEREST=.FALSE.
 
