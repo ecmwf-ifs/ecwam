@@ -101,8 +101,6 @@
      &                            LNEMOCITHICK )
 
         LLNEWCURR=.TRUE. 
-#endif
-        LNEMOICEREST=.FALSE.
 
 !       MASK CURRENTS IF SEA ICE FROM NEMO
         IF (LWNEMOCOUCUR) THEN
@@ -115,6 +113,8 @@
             ENDDO
           ENDIF 
         ENDIF 
+#endif
+        LNEMOICEREST=.FALSE.
 
       ENDIF
 
