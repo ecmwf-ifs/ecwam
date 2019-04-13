@@ -472,6 +472,10 @@
 !       ---------------------------
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
+
+!!!!debile
+          THDC(1849111,:)=0.0_JWRB
+   
           DO IJ = MIJS,MIJL
             DRCP(IJ) = (THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
             DRCM(IJ) = (THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
