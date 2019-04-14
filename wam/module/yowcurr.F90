@@ -19,6 +19,7 @@
 
       LOGICAL :: LLCHKCFL
       LOGICAL :: LLCHKCFLA
+      LOGICAL :: LLCFLCUROFF
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -----     --------
@@ -32,6 +33,10 @@
 !      *LLCHKCFL*  LOGICAL   TRUE IF THE CFL CRITERIA HAVE TO BE CHECKED 
 !      *LLCHKCFLA* LOGICAL   TRUE IF THE CFL CRITERIA HAVE TO BE CHECKED
 !                            AT ALL TIME STEPS (when currents are updated). 
-
+!      *LLCFLCUROFF* LOGICAL IF TRUE THEN THE CURRENT REFRACTION TERMS WILL BE SET TO 0
+!                            TO SATISFY THE CFL CRITERIA
+!                            THIS SHOULD ONLY BE USED IN THE OPERATIONAL CONTEXT (to avoid crash)
+!                            BUT NOT IN DEVELOPMENT MODE !!!!!!
+!                            !!!!!!!!!!! ONLY CODED FOR IPROPAGS = 2 !!!!!!!!!!!!
 ! ----------------------------------------------------------------------
       END MODULE YOWCURR

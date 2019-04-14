@@ -1,4 +1,4 @@
-      SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL)
+SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
 ! ----------------------------------------------------------------------
 
 !**** *CTUW* - COMPUTATION OF THE CONER TRANSPORT SCHEME WEIGHTS.
@@ -13,11 +13,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CTUW(MIJS, MIJL, IG, LCFLFAIL)*
+!       *CALL* *CTUW(MIJS, MIJL, IG, LCFLFAIL, ICALL)*
 !          *MIJS*     - INDEX OF FIRST POINT.
 !          *MIJL*     - INDEX OF LAST POINT.
 !          *IG*       - BLOCK NUMBER.
 !          *LCFLFAIL* - TRUE IF CFL CRITERION WAS VIOLATED.
+!          *ICALL*    - INDICATES IF IT IS THE FIRST OR SECOND CALL
+!                       THE SECOND CALL WILL TRY TO TEST WHETHER OR NOT
+!                       CFL IS VIOLATED WHEN THE CURRENT REFRACTION TERMS ARE SET TO 0
+!                       FOR THOSE POINTS WHERE IT WAS VIOLATED AT THE FIRST CALL  
 
 !     METHOD.
 !     -------
@@ -63,8 +67,12 @@
 
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN) :: MIJS,MIJL,IG
-      LOGICAL, DIMENSION(MIJS:MIJL), INTENT(INOUT) :: LCFLFAIL
+      INTEGER(KIND=JWIM),INTENT(IN) :: MIJS
+      INTEGER(KIND=JWIM),INTENT(IN) :: MIJL
+      INTEGER(KIND=JWIM),INTENT(IN) :: IG
+      INTEGER(KIND=JWIM),INTENT(IN) :: ICALL
+      LOGICAL,DIMENSION(MIJS:MIJL),INTENT(INOUT) :: LCFLFAIL
+
 
       INTEGER(KIND=JWIM) :: IP,IJP
       INTEGER(KIND=JWIM) :: K,M,IJ,IC,IX,KY,KK,KKM
@@ -77,7 +85,7 @@
       REAL(KIND=JWRB) :: DELPRO, DTNEW
       REAL(KIND=JWRB) :: DXP, DYP, XM 
       REAL(KIND=JWRB) :: CMTODEG
-      REAL(KIND=JWRB) :: GRIDAREA
+      REAL(KIND=JWRB) :: GRIDAREAM1
       REAL(KIND=JWRB) :: CGYP, CGTH
       REAL(KIND=JWRB) :: DELTH0, DELFR0, SP, SM, DTHP, DTHM, DFP, DFM 
       REAL(KIND=JWRB) :: TANPH
@@ -92,6 +100,7 @@
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: DRGP,DRGM
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: DRDP,DRDM
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: DRCP,DRCM
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,2) :: CGX, CGY
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,2) :: DP 
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,2) :: WLATM1 
@@ -104,12 +113,24 @@
 
       IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
-      DELPRO = REAL(IDELPRO)   
+      DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
 
-      DO IJ=MIJS,MIJL
-        LCFLFAIL(IJ)=.FALSE.
-      ENDDO
+      IF(ICALL.EQ.1) THEN
+        LCFLFAIL(:) = .FALSE.
+        CURMASK(:) = 1.0_JWRB
+      ELSE
+!       determine mask to turn off current refraction where it had failed before
+        DO IJ=MIJS,MIJL
+          IF(LCFLFAIL(IJ)) THEN
+            CURMASK(IJ) = 0.0_JWRB
+          ELSE
+            CURMASK(IJ) = 1.0_JWRB
+          ENDIF
+        ENDDO
+!       reset
+        LCFLFAIL(:) = .FALSE.
+      ENDIF
 
       IF (ISHALLO.NE.1) THEN
         DO M=1,NFRE
@@ -130,7 +151,7 @@
           IF (KLAT(IJ,IC,1).GT. NINF-1 .AND.                            &
      &        KLAT(IJ,IC,2).GT. NINF-1) THEN
 !           BOTH CLOSEST AND SECOND CLOSEST POINTS ARE OVER THE OCEAN
-            WLATM1(IJ,IC) = 1. - WLAT(IJ,IC)
+            WLATM1(IJ,IC) = 1.0_JWRB - WLAT(IJ,IC)
           ELSE IF (KLAT(IJ,IC,1).EQ. NINF-1) THEN
 !           ADAPT CORNER POINT INTERPOLATION WEIGHT IF LAND IS PRESENT
 !           CLOSEST POINT IS OVER LAND
@@ -340,12 +361,12 @@
                   DXX=ZDELLO(KY)-DXUP(JXO(K,2))-DXDW(JXO(K,1))
                   DYY=XDELLA-DYUP(JYO(K,2))-DYDW(JYO(K,1))
 
-                  GRIDAREA =  ZDELLO(KY)*XDELLA
+                  GRIDAREAM1 =  1.0_JWRB/(ZDELLO(KY)*XDELLA)
 
 !                 WEIGHTED CONTRIBUTION FROM NORTH-SOUTH DIRECTION (WLATN)
 
-                  WEIGHT(JYO(K,1))=DXX*DYUP(JYO(K,1))/GRIDAREA
-                  WEIGHT(JYO(K,2))=DXX*DYDW(JYO(K,2))/GRIDAREA
+                  WEIGHT(JYO(K,1))=DXX*DYUP(JYO(K,1))*GRIDAREAM1
+                  WEIGHT(JYO(K,2))=DXX*DYDW(JYO(K,2))*GRIDAREAM1
                   DO IC=1,2
                     WLATN(IJ,K,M,IC,1)=WLAT(IJ,IC)*WEIGHT(IC)
                     WLATN(IJ,K,M,IC,2)=WLATM1(IJ,IC)*WEIGHT(IC)
@@ -353,15 +374,15 @@
 
 !                 WEIGHTED CONTRIBUTION FROM EAST-WEST DIRECTION (WLONN)
 
-                  WLONN(IJ,K,M,JXO(K,1))=DYY*DXUP(JXO(K,1))/GRIDAREA
-                  WLONN(IJ,K,M,JXO(K,2))=DYY*DXDW(JXO(K,2))/GRIDAREA
+                  WLONN(IJ,K,M,JXO(K,1))=DYY*DXUP(JXO(K,1))*GRIDAREAM1
+                  WLONN(IJ,K,M,JXO(K,2))=DYY*DXDW(JXO(K,2))*GRIDAREAM1
 
 
 !                 CONTRIBUTION FROM CORNERS (KCOR)
-                  WEIGHT(1)=DXUP(JXO(K,1))*DYUP(JYO(K,1))/GRIDAREA
-                  WEIGHT(2)=DXDW(JXO(K,2))*DYUP(JYO(K,1))/GRIDAREA
-                  WEIGHT(3)=DXUP(JXO(K,1))*DYDW(JYO(K,2))/GRIDAREA
-                  WEIGHT(4)=DXDW(JXO(K,2))*DYDW(JYO(K,2))/GRIDAREA
+                  WEIGHT(1)=DXUP(JXO(K,1))*DYUP(JYO(K,1))*GRIDAREAM1
+                  WEIGHT(2)=DXDW(JXO(K,2))*DYUP(JYO(K,1))*GRIDAREAM1
+                  WEIGHT(3)=DXUP(JXO(K,1))*DYDW(JYO(K,2))*GRIDAREAM1
+                  WEIGHT(4)=DXDW(JXO(K,2))*DYDW(JYO(K,2))*GRIDAREAM1
                   DO ICR=1,4
                     WCORN(IJ,K,M,ICR,1)=WCOR(IJ,KCR(K,ICR))*WEIGHT(ICR)
                     WCORN(IJ,K,M,ICR,2)=WCORM1(IJ,KCR(K,ICR))*WEIGHT(ICR)
@@ -374,7 +395,7 @@
      &                            (DXUP(JXO(K,2))+DXDW(JXO(K,1))) -     &
      &                           (DXDW(JXO(K,1))+DXUP(JXO(K,2)))*       &
      &                           (DYDW(JYO(K,1))+DYUP(JYO(K,2)))  )     &
-     &                           /GRIDAREA
+     &                           *GRIDAREAM1
 
                 ENDDO  ! END LOOP OVER GRID POINTS
 
@@ -399,6 +420,7 @@
           WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
           WRITE (IU06,*) '*                                        *'
           WRITE (IU06,*) '******************************************'
+          IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
           CALL ABORT1
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
@@ -411,6 +433,7 @@
           WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
           WRITE (IU06,*) '*                                        *'
           WRITE (IU06,*) '******************************************'
+          IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
           CALL ABORT1
         ENDIF
 
@@ -463,8 +486,8 @@
           ENDDO
         ELSE
           DO IJ = MIJS,MIJL
-            DRDP(IJ) =  0.
-            DRDM(IJ) =  0.
+            DRDP(IJ) =  0.0_JWRB
+            DRDM(IJ) =  0.0_JWRB
           ENDDO
         ENDIF
 
@@ -472,22 +495,14 @@
 !       ---------------------------
 
         IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
-
           DO IJ = MIJS,MIJL
-!!!!debile
-          if(IJ.eq.1849111) then
-            DRCP(IJ) = 0.
-            DRCM(IJ) = 0.
-          else
-            DRCP(IJ) = (THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
-            DRCM(IJ) = (THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
-          endif
-!!!!
+            DRCP(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
+            DRCM(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
           ENDDO
         ELSE
           DO IJ = MIJS,MIJL
-            DRCP(IJ) = 0. 
-            DRCM(IJ) = 0.
+            DRCP(IJ) = 0.0_JWRB 
+            DRCM(IJ) = 0.0_JWRB
           ENDDO
         ENDIF
 
@@ -535,7 +550,7 @@
             DO M=1,NFRE
               DFP = PI*(1.+FRATIO)*DELFR0
               DO IJ=MIJS,MIJL
-                DTHP    = SDOT(IJ,K,NFRE) * DFP
+                DTHP = CURMASK(IJ) * SDOT(IJ,K,NFRE) * DFP
                 WMPMN(IJ,K,M,0) =2.0_JWRB* ABS(DTHP)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=( DTHP+ABS(DTHP))*FRATIO
@@ -551,8 +566,8 @@
               DFM = DELFR0/FR(MM1)
 
               DO IJ=MIJS,MIJL
-                DTHP = (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
-                DTHM = (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
+                DTHP = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MP1))*DFP
+                DTHM = CURMASK(IJ) * (SDOT(IJ,K,M) + SDOT(IJ,K,MM1))*DFM
                 WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
@@ -576,24 +591,25 @@
           DO IJ=MIJS,MIJL
             DO IC=1,2
               DO ICL=1,2
-              IF(WLATN(IJ,K,M,IC,ICL).GT.1.0 .OR.                       &
-     &           WLATN(IJ,K,M,IC,ICL).LT.0.0      ) THEN
-                WRITE (IU06,*) '***********************************'
-                WRITE (IU06,*) '* CTUW:                           *'
-                WRITE (IU06,*) '* CFL VIOLATED IN Y DIRECTION     *'
-                WRITE (IU06,*) '* WLATN SHOULD BE < 1 AND > 0, BUT*'
-                WRITE (IU06,*) '* WLATN(IJ,K,M,IC,ICL)=',IJ,K,M,IC,ICL, &
+              IF(WLATN(IJ,K,M,IC,ICL).GT.1.0_JWRB .OR.                       &
+     &           WLATN(IJ,K,M,IC,ICL).LT.0.0_JWRB     ) THEN
+                WRITE(IU06,*) '***********************************'
+                WRITE(IU06,*) '* CTUW:                           *'
+                WRITE(IU06,*) '* CFL VIOLATED IN Y DIRECTION     *'
+                WRITE(IU06,*) '* ICALL = ', ICALL
+                WRITE(IU06,*) '* WLATN SHOULD BE < 1 AND > 0, BUT*'
+                WRITE(IU06,*) '* WLATN(IJ,K,M,IC,ICL)=',IJ,K,M,IC,ICL, &
      &                            WLATN(IJ,K,M,IC,ICL)
-                WRITE (IU06,*) '*                                 *'
-                WRITE (IU06,*) '***********************************'
+                WRITE(IU06,*) '*                                 *'
+                WRITE(IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
               ENDIF
               ENDDO
             ENDDO
 
             DO IC=1,2
-              IF(WLONN(IJ,K,M,IC).GT.1.0 .OR.                           &
-     &           WLONN(IJ,K,M,IC).LT.0.0      ) THEN
+              IF(WLONN(IJ,K,M,IC).GT.1.0_JWRB .OR.                           &
+     &           WLONN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN X DIRECTION     *'
@@ -608,8 +624,8 @@
 
             DO ICR=1,4
               DO ICL=1,2
-              IF(WCORN(IJ,K,M,ICR,ICL).GT.1.0 .OR.                      &
-     &           WCORN(IJ,K,M,ICR,ICL).LT.0.0     ) THEN
+              IF(WCORN(IJ,K,M,ICR,ICL).GT.1.0_JWRB .OR.                      &
+     &           WCORN(IJ,K,M,ICR,ICL).LT.0.0_JWRB     ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN CORNER DIRECTION*'
@@ -624,8 +640,8 @@
             ENDDO
 
             DO IC=-1,1
-              IF(WKPMN(IJ,K,M,IC).GT.1.0 .OR.                           &
-     &           WKPMN(IJ,K,M,IC).LT.0.0      ) THEN
+              IF(WKPMN(IJ,K,M,IC).GT.1.0_JWRB .OR.                           &
+     &           WKPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
                 WRITE (IU06,*) '***********************************'
                 WRITE (IU06,*) '* CTUW:                           *'
                 WRITE (IU06,*) '* CFL VIOLATED IN DIRECTION SPACE *'
@@ -644,18 +660,19 @@
             IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
 
               DO IC=-1,1
-                IF(WMPMN(IJ,K,M,IC).GT.1.0 .OR.                         &
-     &             WMPMN(IJ,K,M,IC).LT.0.0      ) THEN
-                  WRITE (IU06,*) '***********************************'
-                  WRITE (IU06,*) '* CTUW:                           *'
-                  WRITE (IU06,*) '* CFL VIOLATED IN FREQUENCY SPACE *'
-                  WRITE (IU06,*) '* WMPMN SHOULD BE < 1 AND > 0, BUT*'
-                  WRITE (IU06,*) '* WMPMN(IJ,K,M,IC)= ',IJ,K,M,IC,      &
+                IF(WMPMN(IJ,K,M,IC).GT.1.0_JWRB .OR.                         &
+     &             WMPMN(IJ,K,M,IC).LT.0.0_JWRB      ) THEN
+                  WRITE(IU06,*) '***********************************'
+                  WRITE(IU06,*) '* CTUW:                           *'
+                  WRITE(IU06,*) '* CFL VIOLATED IN FREQUENCY SPACE *'
+                  WRITE(IU06,*) '* ICALL = ', ICALL
+                  WRITE(IU06,*) '* WMPMN SHOULD BE < 1 AND > 0, BUT*'
+                  WRITE(IU06,*) '* WMPMN(IJ,K,M,IC)= ',IJ,K,M,IC,      &
      &                              WMPMN(IJ,K,M,IC)
-                  WRITE (IU06,*) '*                                 *'
-                  WRITE (IU06,*) '***********************************'
+                  WRITE(IU06,*) '*                                 *'
+                  WRITE(IU06,*) '***********************************'
 
-                  WRITE (0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ,IG),V(IJ,IG)
+                  WRITE(0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ,IG),V(IJ,IG)
 
                   LCFLFAIL(IJ)=.TRUE.
                 ENDIF
@@ -665,47 +682,48 @@
             ENDIF
 
 !           SUM < 1  ?
-            IF(SUMWN(IJ,K,M).GT.1.0 .OR. SUMWN(IJ,K,M).LT.0.0) THEN
+            IF(SUMWN(IJ,K,M).GT.1.0_JWRB .OR. SUMWN(IJ,K,M).LT.0.0_JWRB) THEN
               IX=IXLG(IJ,IG)
               KY=KXLT(IJ,IG)
               XLON=AMOWEP+(IX-1)*ZDELLO(KY)
               XLAT=AMOSOP+(KY-1)*XDELLA
-              WRITE (IU06,*) '***********************************'
-              WRITE (IU06,*) '* CTUW:                           *'
-              WRITE (IU06,*) '* CFL VIOLATED                    *'
-              WRITE (IU06,*) '* SUMW SHOULD BE < 1 AND > 0, BUT*'
-              WRITE (IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
-              WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
-              WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
-              WRITE (0,*) '* CTUW: SUMW SHOULD BE < 1 AND > 0, BUT*',IJ,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
+              WRITE(IU06,*) '***********************************'
+              WRITE(IU06,*) '* CTUW:                           *'
+              WRITE(IU06,*) '* CFL VIOLATED                    *'
+              WRITE(IU06,*) '* ICALL = ', ICALL
+              WRITE(IU06,*) '* SUMW SHOULD BE < 1 AND > 0, BUT*'
+              WRITE(IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
+              WRITE(IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
+              WRITE(IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+              WRITE(0,*) '* CTUW: SUMW IS NOT < 1 AND >0, BUT*',ICALL,IJ,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
               DO IP=1,2
               DO IC=1,2
                 IJP = KLAT(IJ,IC,IP)
                 IF(IJP.NE.NINF-1) THEN
-                  WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP,IG)
-                  WRITE (IU06,*) '*     U= ',U(IJP,IG)
-                  WRITE (IU06,*) '*     V= ',V(IJP,IG)
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP,IG)
+                  WRITE(IU06,*) '*     U= ',U(IJP,IG)
+                  WRITE(IU06,*) '*     V= ',V(IJP,IG)
                 ELSE
-                  WRITE (IU06,*) '* DEPTH= ',IJP,IP,IC,'LAND'
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,'LAND'
                 ENDIF
               ENDDO
               ENDDO
               DO IC=1,2
                 IJP = KLON(IJ,IC)
                 IF(IJP.NE.NINF-1) THEN
-                  WRITE (IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP,IG)
-                  WRITE (IU06,*) '*     U= ',U(IJP,IG)
-                  WRITE (IU06,*) '*     V= ',V(IJP,IG)
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP,IG)
+                  WRITE(IU06,*) '*     U= ',U(IJP,IG)
+                  WRITE(IU06,*) '*     V= ',V(IJP,IG)
                 ELSE
-                  WRITE (IU06,*) '* DEPTH= ',IJP,IC,'LAND'
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IC,'LAND'
                 ENDIF
               ENDDO
 
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
-              WRITE (IU06,*) '* U = ',U(IJ,IG),' V = ',V(IJ,IG)
+              WRITE(IU06,*) '* U = ',U(IJ,IG),' V = ',V(IJ,IG)
               ENDIF
-              WRITE (IU06,*) '*                                 *'
-              WRITE (IU06,*) '***********************************'
+              WRITE(IU06,*) '*                                 *'
+              WRITE(IU06,*) '***********************************'
               LCFLFAIL(IJ)=.TRUE.
             ENDIF
 
@@ -758,7 +776,7 @@
       IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
       RETURN
-      END SUBROUTINE CTUW 
+END SUBROUTINE CTUW 
 
       INTEGER FUNCTION ISAMESIGN(A,B)
 !       =1 IF A AND B HAVE THE SAME SIGN, 0 OTHERWISE
