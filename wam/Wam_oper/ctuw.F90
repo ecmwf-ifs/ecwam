@@ -40,7 +40,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCURR  , ONLY : U        ,V
+      USE YOWCURR  , ONLY : U        ,V        ,LLCFLCUROFF
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : SINPH    ,COSPH    ,COSPHM1
@@ -695,7 +695,9 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
               WRITE(IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
               WRITE(IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
               WRITE(IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
-              WRITE(0,*) '* CTUW: SUMW IS NOT < 1 AND >0, BUT*',ICALL,IJ,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
+              IF (.NOT. LLCFLCUROFF .OR. ICALL > 1 ) THEN 
+                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
+              ENDIF
               DO IP=1,2
               DO IC=1,2
                 IJP = KLAT(IJ,IC,IP)
