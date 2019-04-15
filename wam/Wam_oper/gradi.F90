@@ -193,11 +193,6 @@
           DVPHI(IJ) = SIGN(MIN(ABS(DVPHI(IJ)),CGMAX),DVPHI(IJ))
           DULAM(IJ) = SIGN(MIN(ABS(DULAM(IJ)),CGMAX),DULAM(IJ))
           DVLAM(IJ) = SIGN(MIN(ABS(DVLAM(IJ)),CGMAX),DVLAM(IJ))
-!!!! silly test
-          DUPHI(IJ) = SIGN(CGMAX,DUPHI(IJ))
-          DVPHI(IJ) = SIGN(CGMAX,DVPHI(IJ))
-          DULAM(IJ) = SIGN(CGMAX,DULAM(IJ))
-          DVLAM(IJ) = SIGN(CGMAX,DVLAM(IJ))
         ENDDO
 
       ELSE
