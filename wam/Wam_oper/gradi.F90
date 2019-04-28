@@ -1,4 +1,4 @@
-      SUBROUTINE GRADI (IG, MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,    &
+      SUBROUTINE GRADI (MIJS, MIJL, IREFRA, DDPHI, DDLAM, DUPHI,       &
      &                  DULAM, DVPHI, DVLAM)
 
 ! ----------------------------------------------------------------------
@@ -16,9 +16,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *GRADI (IG, MIJS, MIJL,IREFRA, DDPHI, DDLAM, DUPHI,
+!       *CALL* *GRADI (MIJS, MIJL,IREFRA, DDPHI, DDLAM, DUPHI,
 !                      DULAM, DVPHI, DVLAM)*
-!          *IG*     - BLOCK NUMBER.
 !          *MIJS*   - STARTING INDEX
 !          *MIJL*   - ENDING INDEX
 !          *IREFRA* - REFRACTION OPTION.
@@ -61,7 +60,6 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJS
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IREFRA
@@ -73,6 +71,7 @@
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DVLAM
 
 
+      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM, KX
       REAL(KIND=JWRB) :: DPTP, DPTM, UP, UM, VP, VM 
       REAL(KIND=JWRB) :: CGMAX
@@ -86,6 +85,7 @@
 !*    1. INITIALISE.
 !        -----------
 
+      IG = 1
       NLAND=NINF-1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
 
