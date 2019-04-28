@@ -170,7 +170,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
                   IX = IFROMIJ(JKGLO,IG)
-                  IY = JFROMIJ(JKCLO,IG)
+                  IY = JFROMIJ(JKGLO,IG)
                   IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
 !                   if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
                     U(JKGLO,IG) = SIGN(MIN(ABS(NEMOUCUR(JKGLO)),CURRENT_MAX),NEMOUCUR(JKGLO))
