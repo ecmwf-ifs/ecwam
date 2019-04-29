@@ -274,7 +274,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 DO JKGLO = IJS(IG), IJL(IG), NPROMA
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                  CALL PROPDOT(KIJS, KIJL, THDC(KIJS,:), THDD(KIJS,:), SDOT(KIJS,:,:))
+                  CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
