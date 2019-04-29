@@ -53,7 +53,7 @@
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
-      USE YOWPARAM , ONLY : NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,    &
      &            NPROMA_WAM,LNSESTART
