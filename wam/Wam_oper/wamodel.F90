@@ -283,7 +283,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &                      NEMOWSTEP, NEMOFRCO     ,                   &
      &                      NEMOCSTEP, NEMONSTEP   ,                    &
      &                      NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
-      USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
+      USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA,LLCFLCUROFF
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,FFLAG20  ,GFLAG20  ,    &
      &            JPPFLAG  ,FFLAG    ,GFLAG    ,                        &
      &            IRCD     ,IRU10    , IRALTHS  ,IRALTHSC  ,IRALTRC ,   &
@@ -390,7 +390,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
       INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH
+      INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH, ICALL
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
@@ -413,6 +413,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
       LOGICAL, SAVE :: NEWFILE
       LOGICAL :: LLNONASSI
       LOGICAL :: DO_UPDATE_WIND_FLUX
+      LOGICAL :: LL2NDCALL
       LOGICAL :: FFLAGBAK(JPPFLAG), GFLAGBAK(JPPFLAG)
       LOGICAL,ALLOCATABLE,DIMENSION(:) :: LCFLFAIL
 
@@ -759,11 +760,29 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
 
               CALL GSTATS(1430,0)
-!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+!$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,ICALL,IJ,LL2NDCALL)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                CALL CTUW(KIJS,KIJL,IG,LCFLFAIL(JKGLO))
+                ICALL = 1
+                CALL CTUW(KIJS,KIJL,IG,LCFLFAIL(KIJS),ICALL)
+
+!               WHEN SURFACE CURRENTS ARE USED AND LLCFLCUROFF IS TRUE
+!               THEN TRY TO SATISFY THE CFL CONDITION WITHOUT THE CURRENTS
+!               IF IT WAS VIOLATE IN THE FIRST PLACE
+                IF (LLCFLCUROFF .AND. (IREFRA.EQ.2 .OR. IREFRA.EQ.3)) THEN
+                  LL2NDCALL=.FALSE.
+                  DO IJ=KIJS,KIJL
+                    IF(LCFLFAIL(IJ)) THEN
+                      LL2NDCALL=.TRUE.
+                      EXIT
+                    ENDIF
+                  ENDDO
+                  IF(LL2NDCALL) THEN
+                    ICALL = 2
+                    CALL CTUW(KIJS,KIJL,IG,LCFLFAIL(KIJS),ICALL)
+                  ENDIF
+                ENDIF
               ENDDO
 !$OMP         END PARALLEL DO
               CALL GSTATS(1430,1)
@@ -793,7 +812,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                     DO M=1,NFRE
                       LLWLATN(K,M,IC,ICL)=.FALSE.
                       DO IJ=IJS(IG),IJL(IG)
-                        IF(WLATN(IJ,K,M,IC,ICL).GT.0.) THEN
+                        IF(WLATN(IJ,K,M,IC,ICL).GT.0.0_JWRB) THEN
                           LLWLATN(K,M,IC,ICL)=.TRUE.
                           EXIT
                         ENDIF
@@ -808,7 +827,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                   DO K=1,NANG
                     LLWLONN(K,M,IC)=.FALSE.
                     DO IJ=IJS(IG),IJL(IG)
-                      IF(WLONN(IJ,K,M,IC).GT.0.) THEN
+                      IF(WLONN(IJ,K,M,IC).GT.0.0_JWRB) THEN
                         LLWLONN(K,M,IC)=.TRUE.
                         EXIT
                       ENDIF
@@ -823,7 +842,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                     DO K=1,NANG
                       LLWCORN(K,M,ICR,ICL)=.FALSE.
                       DO IJ=IJS(IG),IJL(IG)
-                        IF(WCORN(IJ,K,M,ICR,ICL).GT.0.) THEN
+                        IF(WCORN(IJ,K,M,ICR,ICL).GT.0.0_JWRB) THEN
                           LLWCORN(K,M,ICR,ICL)=.TRUE.
                           EXIT
                         ENDIF
@@ -838,7 +857,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                   DO K=1,NANG
                    LLWKPMN(K,M,IC)=.FALSE.
                     DO IJ=IJS(IG),IJL(IG)
-                      IF(WKPMN(IJ,K,M,IC).GT.0.) THEN
+                      IF(WKPMN(IJ,K,M,IC).GT.0.0_JWRB) THEN
                         LLWKPMN(K,M,IC)=.TRUE.
                         EXIT
                       ENDIF
@@ -853,7 +872,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
                     DO K=1,NANG
                      LLWMPMN(K,M,IC)=.FALSE.
                       DO IJ=IJS(IG),IJL(IG)
-                        IF(WMPMN(IJ,K,M,IC).GT.0.) THEN
+                        IF(WMPMN(IJ,K,M,IC).GT.0.0_JWRB) THEN
                           LLWMPMN(K,M,IC)=.TRUE.
                           EXIT
                         ENDIF

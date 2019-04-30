@@ -63,7 +63,7 @@
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
-      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
+      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -141,6 +141,7 @@
      &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,               &
      &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
      &   IDELCUR, CDATECURA,                                            &
+     &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
      &   LLOUTERS,                                                      &
@@ -234,6 +235,9 @@
 !              are not specified by namelist NAOS).
 !     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
+!     LLCFLCUROFF: IF TRUE PREVENT CFL CRITERIA FAILURE DUE TO SURFACE CURRENTS
+!                  IT RESETS THE CURRENT REFRACTION TERMS TO 0 FOR THOSE POINTS
+!                  WHERE CFL WAS NOT SATISFIED (it should only be used in operational applications)
 !     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT,
 !             IDELRES, IDELBC.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
@@ -541,6 +545,7 @@
       IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
+      LLCFLCUROFF = .TRUE.
       CDATER    = ZERO
       CDATES    = ZERO
       FFLAG(:)  = .FALSE. 

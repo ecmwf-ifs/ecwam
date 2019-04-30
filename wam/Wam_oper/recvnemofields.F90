@@ -53,7 +53,7 @@
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR
 ! ICE AND CURRENT INFORMATION 
       USE YOWICE   , ONLY : CITHICK, CICOVER
-      USE YOWCURR  , ONLY : U        ,V
+      USE YOWCURR  , ONLY : U        ,V        , CURRENT_MAX
 ! OUTPUT FORTRAN UNIT
       USE YOWTEST  , ONLY : IU06
 ! NEMO FIELDS ON WAVE GRID
@@ -100,9 +100,11 @@
      &                            NEMOVCUR(IJS(IG):IJL(IG)),            &
      &                            LNEMOCITHICK )
 
-!!!!!!!!!!!!! debile        LLNEWCURR=.TRUE. 
+        LLNEWCURR=.TRUE. 
+
 #endif
         LNEMOICEREST=.FALSE.
+
       ENDIF
 
 !     UPDATE CICOVER, CITHICK AND U and V CURRENTS AT INITIAL TIME ONLY !!!!
@@ -145,13 +147,14 @@
                 IY = JFROMIJ(IJ,IG)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
                 IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-                  U(IJ,IG)=NEMOUCUR(IJ)
-                  V(IJ,IG)=NEMOVCUR(IJ)
+                  U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                  V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ELSE
                   U(IJ,IG)=0.0_JWRB
                   V(IJ,IG)=0.0_JWRB
                 ENDIF
               ENDDO
+
             ENDIF
           ENDIF
 
@@ -166,11 +169,12 @@
           ENDIF
           IF (LWNEMOCOUCUR) THEN
              IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-                U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
+               U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
                 V(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
              ENDIF
           ENDIF
         ENDIF
+
       ENDIF
 
       IF (LWNEMOCOUCIT.AND.(.NOT.LNEMOCITHICK)) THEN

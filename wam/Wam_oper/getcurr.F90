@@ -1,4 +1,4 @@
-      SUBROUTINE GETCURR(LWCUR, IREAD)
+SUBROUTINE GETCURR(LWCUR, IREAD)
 
 !****  *GETCURR* - READS SURFACE CURRENTS FROM FILE (IF UNCOUPLED)
 !                  OR EXTRACT THEM FROM FORCING_FIELDS DATA STRUCTURE (IF COUPLED)
@@ -56,7 +56,8 @@
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
@@ -100,6 +101,8 @@
 
       CALL GSTATS(1984,0)
 
+      IG=1
+
       IF (LLNEWCURR) THEN
         IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR.                &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
@@ -134,7 +137,6 @@
 !             --------------------------------
               IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
 
-                IG=1
 !!!               from NINF to NSUP as the halo has to be included
 !!!               for the calculation of the gradients !!!
 ! Mod for OPENMP
@@ -161,22 +163,32 @@
 !             ------------------
               ELSEIF(LWNEMOCOUCUR) THEN
                 WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
-                IG=1
-                DO IJ = IJS(IG),IJL(IG)
-                  IX = IFROMIJ(IJ,IG)
-                  IY = JFROMIJ(IJ,IG)
-                  IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-!                   if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                    U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                    V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
-                  ELSE
-!                   no currents over lakes and land
-                    U(IJ,IG) = 0.0_JWRB
-                    V(IJ,IG) = 0.0_JWRB
-                  ENDIF
+                CALL GSTATS(1444,0)
+                NPROMA=NPROMA_WAM
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
+                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  DO IJ=KIJS,KIJL
+                    IX = IFROMIJ(IJ,IG)
+                    IY = JFROMIJ(IJ,IG)
+                    IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+                      U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                      V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                    ELSE
+!                     no currents over lakes and land
+                      U(IJ,IG) = 0.0_JWRB
+                      V(IJ,IG) = 0.0_JWRB
+                    ENDIF
+                  ENDDO
                 ENDDO
+!$OMP           END PARALLEL DO
+                CALL GSTATS(1444,1)
+
                 U(NINF-1,IG)=0.0_JWRB
                 V(NINF-1,IG)=0.0_JWRB
+
                 CALL MPEXCHNG(U,1,1)
                 CALL MPEXCHNG(V,1,1)
               ELSE
@@ -243,7 +255,6 @@
 !           ------------------------
 !           CHECK IF UPDATE IS NEEDED
             LLUPDATE=.FALSE.
-            IG=1
             DO IJ = NINF, NSUP
               IF( U(IJ,IG)/=OLDU(IJ,IG) .OR. V(IJ,IG)/=OLDV(IJ,IG) ) THEN
                 LLUPDATE=.TRUE.
@@ -253,12 +264,23 @@
 
             IF(LLUPDATE) THEN
               IF (IREFRA .NE. 0) THEN
-                CALL PROPDOT
-                IF (ITEST.GE.0) THEN
-                  WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',           &
-     &           ' TERMS INITIALIZED'
-                  CALL FLUSH(IU06)
-                END IF
+                IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(IG):IJL(IG),NANG))
+                IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(IG):IJL(IG),NANG))
+                IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(IG):IJL(IG),NANG,NFRE))
+
+                CALL GSTATS(1444,0)
+                NPROMA=NPROMA_WAM
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
+                ENDDO
+!$OMP           END PARALLEL DO
+                CALL GSTATS(1444,1)
+
+                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION TERMS INITIALIZED'
+                CALL FLUSH(IU06)
               END IF
 
               LLCHKCFLA=.TRUE.
@@ -288,4 +310,4 @@
 
       IF (LHOOK) CALL DR_HOOK('GETCURR',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE GETCURR 
+END SUBROUTINE GETCURR 
