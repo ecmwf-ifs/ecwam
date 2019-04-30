@@ -165,21 +165,23 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 IG=1
                 CALL GSTATS(1444,0)
                 NPROMA=NPROMA_WAM
-!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,IX,IY)
                 DO JKGLO = IJS(IG), IJL(IG), NPROMA
                   KIJS=JKGLO
                   KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                  IX = IFROMIJ(JKGLO,IG)
-                  IY = JFROMIJ(JKGLO,IG)
-                  IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-!                   if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                    U(JKGLO,IG) = SIGN(MIN(ABS(NEMOUCUR(JKGLO)),CURRENT_MAX),NEMOUCUR(JKGLO))
-                    V(JKGLO,IG) = SIGN(MIN(ABS(NEMOVCUR(JKGLO)),CURRENT_MAX),NEMOVCUR(JKGLO))
-                  ELSE
-!                   no currents over lakes and land
-                    U(JKGLO,IG) = 0.0_JWRB
-                    V(JKGLO,IG) = 0.0_JWRB
-                  ENDIF
+                  DO IJ=KIJS,KIJL
+                    IX = IFROMIJ(IJ,IG)
+                    IY = JFROMIJ(IJ,IG)
+                    IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+                      U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                      V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                    ELSE
+!                     no currents over lakes and land
+                      U(IJ,IG) = 0.0_JWRB
+                      V(IJ,IG) = 0.0_JWRB
+                    ENDIF
+                  ENDDO
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
