@@ -166,7 +166,7 @@
         WRITE(IU06,*) ' '
       ENDIF
       IPRMINFO(IR,3)=0
-      IPRMINFO(IR,4)=0
+      IPRMINFO(IR,4)=1
       IPRMINFO(IR,5)=1
 
       IR=IR+1
