@@ -43,6 +43,7 @@
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
+     &            LLNORMWAMOUT_GLOBAL,                                  &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
@@ -184,6 +185,7 @@
      &   LLWSWAVE, LLWDWAVE,                                            &
      &   NPROMA_WAM, LL1D, LGRHDIFS ,LNEWLVTP,                          &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
+     &   LLNORMWAMOUT_GLOBAL,                                           &
      &   LICERUN, LCIWABR, LICETH,                                      &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
@@ -473,6 +475,7 @@
 !     LLNORMIFS2WAM : IF TRUE NORMS FOR FIELDS PASSED FROM IFS TO WAM WILL BE PRODUCED
 !     LLNORMWAM2IFS : IF TRUE NORMS FOR FIELDS PASSED FROM WAM TO IFS WILL BE PRODUCED
 !     LLNORMWAMOUT : IF TRUE NORMS OF SELECTED OUPTUT FIELDS WILL BE PRODUCED
+!     LLNORMWAMOUT_GLOBAL : IF TRUE NORMS FOR SELECTED OUPTUT FIELDS WILL BE GLOBAL (see above)
 !     LGRHDIFS : FLAGS CONTROLLING WHETHER OR NOT GRIB HEADER INFORMATION
 !                IS COPIED FROM THE ATMOSPHERIC MODEL (ONLY USEFULL IF
 !                COUPLED TO THE IFS).
@@ -707,6 +710,7 @@
       LLNORMIFS2WAM = .FALSE.
       LLNORMWAM2IFS = .FALSE.
       LLNORMWAMOUT = .FALSE.
+      LLNORMWAMOUT_GLOBAL = .FALSE.
 
       LGRHDIFS = .FALSE.
 
@@ -932,6 +936,7 @@
         WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM
         WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS
         WRITE(6,*) '*** LLNORMWAMOUT= ',LLNORMWAMOUT
+        WRITE(6,*) '*** LLNORMWAMOUT_GLOBAL= ',LLNORMWAMOUT_GLOBAL
         WRITE(6,*) '*** LSMSSIG_WAM= ',LSMSSIG_WAM
         WRITE(6,*) '*** LWAM_USE_IO_SERV = ',LWAM_USE_IO_SERV
         WRITE(6,*) '==============================================='
