@@ -328,12 +328,12 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP1 (FL3, IJS, IJL, EM, BOUT(IJS,ITOBOUT(IR)))
+        CALL MWP1 (FL3, IJS, IJL, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MWP2 (FL3, IJS, IJL, EM, BOUT(IJS,ITOBOUT(IR)))
+        CALL MWP2 (FL3, IJS, IJL, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
@@ -614,7 +614,7 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !      !!! make the energy flux positive
-        BOUT(IJS:IJL,ITOBOUT(IR))=-PHIOCD(IJS:IJL)
+        BOUT(IJS:IJL,ITOBOUT(IR))=MAX(-PHIOCD(IJS:IJL),0.0_JWRB)
       ENDIF
 
 
