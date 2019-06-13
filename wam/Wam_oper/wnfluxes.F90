@@ -59,13 +59,12 @@
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : COSTH    ,SINTH
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : PHIEPSMIN,PHIEPSMAX
+      USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX, EPSUS
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
@@ -87,15 +86,13 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB), PARAMETER :: XMMIN=0.5_JWRB
-      REAL(KIND=JWRB), PARAMETER :: XMMAX=3.0_JWRB
       REAL(KIND=JWRB) :: TAU, XN, TAUO
       REAL(KIND=JWRB) :: CNST
+      REAL(KIND=JWRB) :: EPSUS3 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHILF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: REDCI, XM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
@@ -103,6 +100,8 @@
 
       IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
+
+      EPSUS3 =  EPSUS*SQRT(EPSUS)
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
@@ -138,24 +137,6 @@
         ENDDO
       ENDDO
 
-      IF (LICERUN .AND. LMASKICE) THEN
-        DO IJ=IJS,IJL
-          IF(CICVR(IJ).GT.CITHRSH) THEN
-!           PERCENTAGE OF THE WAVE FLUXES THAT ARE ACCOUNTED FOR UNDER SEA ICE
-            REDCI(IJ)=MAX(1.0_JWRB-CICVR(IJ),0.0_JWRB)
-!           FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
-!           (negative because it is defined as leaving the waves)
-            XM(IJ)=-XMMIN-(XMMAX-XMMIN)*REDCI(IJ)
-          ELSE
-            REDCI(IJ)=1.0_JWRB
-            XM(IJ)=0.0_JWRB
-          ENDIF
-        ENDDO
-      ELSE
-        REDCI(:)=1.0_JWRB
-        XM(:)=0.0_JWRB
-      ENDIF
-
       IF(LWFLUX) THEN
         DO IJ=IJS,IJL
           EMEAN(IJ)  = EM(IJ) 
@@ -165,17 +146,17 @@
 
       DO IJ=IJS,IJL
 
-        TAU        = ROAIRN(IJ)*USNEW(IJ)**2
+        TAU        = ROAIRN(IJ)*MAX(USNEW(IJ)**2,EPSUS)
         TAUXD(IJ)  = TAU*SIN(THW(IJ))
         TAUYD(IJ)  = TAU*COS(THW(IJ))
 
-        TAUOCXD(IJ)= TAUXD(IJ)-REDCI(IJ)*XSTRESS(IJ)
-        TAUOCYD(IJ)= TAUYD(IJ)-REDCI(IJ)*YSTRESS(IJ)
+        TAUOCXD(IJ)= TAUXD(IJ)-XSTRESS(IJ)
+        TAUOCYD(IJ)= TAUYD(IJ)-YSTRESS(IJ)
         TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
-        TAUOC(IJ)  = TAUO/TAU
+        TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
 
-        XN        = ROAIRN(IJ)*USNEW(IJ)**3
-        PHIOCD(IJ)= REDCI(IJ)*(PHILF(IJ)-PHIWA(IJ))+XM(IJ)*XN
+        XN        = ROAIRN(IJ)*MAX(USNEW(IJ)**3,EPSUS3)
+        PHIOCD(IJ)= PHILF(IJ)-PHIWA(IJ)
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
         PHIEPS(IJ)= MIN(MAX(PHIEPS(IJ),PHIEPSMIN),PHIEPSMAX)
