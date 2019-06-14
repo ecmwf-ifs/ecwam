@@ -1,4 +1,4 @@
-      SUBROUTINE USERIN (IFORCA, LWCUR)
+SUBROUTINE USERIN (IFORCA, LWCUR)
 
 ! ----------------------------------------------------------------------
 
@@ -69,7 +69,7 @@
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
-     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV 
+     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, LLCAPCHNK
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
@@ -91,7 +91,7 @@
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : IBOUNC
-      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
+      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -113,7 +113,7 @@
      &            IPHYS    ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -149,7 +149,10 @@
 #include "wam_u2l1cr.intfb.h"
 #include "wstream_strg.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IFORCA 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORCA 
+      LOGICAL, INTENT(IN) :: LWCUR
+
+
       INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
       INTEGER(KIND=JWIM) :: LEN, ILCFDB2DSP, ILCFDBSF
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
@@ -173,7 +176,6 @@
 
       LOGICAL :: LERROR, LASTREAM
       LOGICAL :: LLNALTGO
-      LOGICAL :: LWCUR
       LOGICAL :: LRSTPARAL
 
 ! ----------------------------------------------------------------------
@@ -601,10 +603,6 @@
       WRITE(IU06,*) ' '
       WRITE(IU06,*) ' COUPLING WITH ATMOS. MODEL (LWCOU) : ',LWCOU
       WRITE(IU06,*) ' COUPLING WITH NEMO MOD.(LWNEMOCOU) : ',LWNEMOCOU
-      IF(.NOT.LMESSPASS) THEN
-        WRITE(IU06,*) ' USING ',NTASKS,' PROCESSORS'
-        WRITE(IU06,*) ' WITH A WORKLOAD OF ',NSIZE,' PER PROCESSOR'
-      ENDIF
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' STARTING DATE ........... : ',CDATEA
       WRITE(IU06,*) ' END DATE ................ : ',CDATEE
@@ -673,6 +671,7 @@
           CALL ABORT1
         ENDIF
       ENDIF
+      IF(LLCAPCHNK) WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
       WRITE(IU06,*) ' MAXIMUM PHILLIPS PARAMETER ALLOWED: ',ALPHAPMAX
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
@@ -717,6 +716,7 @@
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH REFRACTION ONLY'
       ELSEIF (IREFRA.EQ.2) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH CURRENT REFRACTION ONLY'
+        IF(LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
         IF(.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
@@ -724,6 +724,7 @@
         ENDIF
       ELSEIF (IREFRA.EQ.3) THEN
         WRITE(IU06,*) ' MODEL RUNS WITH DEPTH AND CURRENT REFRACTION'
+        IF(LLCFLCUROFF)  WRITE(IU06,*) ' IF CFL CRITERIA IS NOT SATISFIED, CURRENT REFRACTION WILL BE TURNED OFF LOCALLY'
         IF(.NOT.LWCOU) THEN
         WRITE(IU06,*) ' WITH A CURRENT INPUT TIME STEP OF ',IDELCUR,    &
      &                ' SECONDS.'
@@ -1590,4 +1591,4 @@
 
 ! ----------------------------------------------------------------------
 
-      END SUBROUTINE USERIN
+END SUBROUTINE USERIN

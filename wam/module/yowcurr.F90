@@ -6,7 +6,8 @@
 
 !*    ** *CURRENT* - CURRENT FIELD.
 
-      REAL(KIND=JWRB), PARAMETER :: CURRENT_MAX=2.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CURRENT_MAX=1.5_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CURRENT_GRADIENT_MAX=0.00001_JWRB
 
       REAL(KIND=JWRB), ALLOCATABLE :: U(:,:) 
       REAL(KIND=JWRB), ALLOCATABLE :: V(:,:) 
@@ -18,10 +19,12 @@
 
       LOGICAL :: LLCHKCFL
       LOGICAL :: LLCHKCFLA
+      LOGICAL :: LLCFLCUROFF
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -----     --------
 !      CURRENT_MAX REAL      MAXIMUM VALUE ALLOWED FOR EACH CURRENT COMPONENT (M/S)
+!      CURRENT_GRADIENT_MAX  MAXIMUM VALUE FOR THE CURRENT GRADIENT (1/S)
 !      *U*         REAL      U - COMPONENT OF CURRENT (M/S).
 !      *V*         REAL      V - COMPONENT OF CURRENT (M/S).
 !      *CDTCUR*    CHAR*14   REFERENCE DATE FOR U AN V.
@@ -30,6 +33,10 @@
 !      *LLCHKCFL*  LOGICAL   TRUE IF THE CFL CRITERIA HAVE TO BE CHECKED 
 !      *LLCHKCFLA* LOGICAL   TRUE IF THE CFL CRITERIA HAVE TO BE CHECKED
 !                            AT ALL TIME STEPS (when currents are updated). 
-
+!      *LLCFLCUROFF* LOGICAL IF TRUE THEN THE CURRENT REFRACTION TERMS WILL BE SET TO 0
+!                            TO SATISFY THE CFL CRITERIA
+!                            THIS SHOULD ONLY BE USED IN THE OPERATIONAL CONTEXT (to avoid crash)
+!                            BUT NOT IN DEVELOPMENT MODE !!!!!!
+!                            !!!!!!!!!!! ONLY CODED FOR IPROPAGS = 2 !!!!!!!!!!!!
 ! ----------------------------------------------------------------------
       END MODULE YOWCURR

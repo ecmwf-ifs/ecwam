@@ -42,7 +42,7 @@
       USE YOWGRID  , ONLY : IJS, IJL
 ! MODULES NEEDED FOR LAKE MASK HANDLING
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWWIND  , ONLY : FIELDG 
+      USE YOWWIND  , ONLY : FIELDG   ,LLNEWCURR 
 ! MPP INFORMATION
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
@@ -53,7 +53,7 @@
       USE YOWCOUP  , ONLY : LWCOU, LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR
 ! ICE AND CURRENT INFORMATION 
       USE YOWICE   , ONLY : CITHICK, CICOVER
-      USE YOWCURR  , ONLY : U        ,V
+      USE YOWCURR  , ONLY : U        ,V        , CURRENT_MAX
 ! OUTPUT FORTRAN UNIT
       USE YOWTEST  , ONLY : IU06
 ! NEMO FIELDS ON WAVE GRID
@@ -65,9 +65,9 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-      LOGICAL :: LREST ! RESTART SO UPDATE FROM RESTART VALUES
-      LOGICAL :: LINIT ! UPDATE CICOVER and CITHICK AT INITIAL TIME
-                       ! FOR OUTPUT
+      LOGICAL, INTENT(IN) :: LREST ! RESTART SO UPDATE FROM RESTART VALUES
+      LOGICAL, INTENT(IN) :: LINIT ! UPDATE CICOVER, CITHICK, And U and V CURRENTS AT INITIAL TIME
+                                   ! IF NEEDED.
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IX, IY, IJ 
@@ -99,11 +99,15 @@
      &                            NEMOUCUR(IJS(IG):IJL(IG)),            &
      &                            NEMOVCUR(IJS(IG):IJL(IG)),            &
      &                            LNEMOCITHICK )
+
+        LLNEWCURR=.TRUE. 
+
 #endif
         LNEMOICEREST=.FALSE.
+
       ENDIF
 
-!     UPDATE CICOVER and CITHICK AT INITIAL TIME
+!     UPDATE CICOVER, CITHICK AND U and V CURRENTS AT INITIAL TIME ONLY !!!!
       IF (LINIT) THEN
 
         WRITE(IU06,*)' RECVNEMOFIELDS: INITIALISE OCEAN FIELDS'
@@ -143,13 +147,14 @@
                 IY = JFROMIJ(IJ,IG)
 !              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
                 IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-                  U(IJ,IG)=NEMOUCUR(IJ)
-                  V(IJ,IG)=NEMOVCUR(IJ)
+                  U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                  V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                 ELSE
                   U(IJ,IG)=0.0_JWRB
                   V(IJ,IG)=0.0_JWRB
                 ENDIF
               ENDDO
+
             ENDIF
           ENDIF
 
@@ -164,11 +169,12 @@
           ENDIF
           IF (LWNEMOCOUCUR) THEN
              IF(ALLOCATED(U) .AND. ALLOCATED(V) ) THEN
-                U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
+               U(IJS(IG):IJL(IG),IG)=NEMOUCUR(IJS(IG):IJL(IG))
                 V(IJS(IG):IJL(IG),IG)=NEMOVCUR(IJS(IG):IJL(IG))
              ENDIF
           ENDIF
         ENDIF
+
       ENDIF
 
       IF (LWNEMOCOUCIT.AND.(.NOT.LNEMOCITHICK)) THEN

@@ -100,7 +100,7 @@
      &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
       USE YOWGRID  , ONLY : DELPHI   ,NLONRGG  ,IJS, IJL, IJLT    ,     &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK   ,CIWA
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWJONS  , ONLY : FM       ,ALFA     ,GAMMA    ,SA       ,    &
      &            SB       ,THETAQ
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,AMOWEP   ,    &
@@ -510,7 +510,6 @@
       IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
-      IF(.NOT.ALLOCATED(CIWA)) ALLOCATE(CIWA(NIBLO,NFRE,NBLO))
       U10OLD(:,:) = 0.0_JWRB
       THWOLD(:,:) = 0.0_JWRB
       USOLD(:,:) = 0.0_JWRB
@@ -520,7 +519,6 @@
       ZIDLOLD(:,:) = 0.0_JWRB
       CICOVER(:,:) = 0.0_JWRB
       CITHICK(:,:) = 0.0_JWRB
-      CIWA(:,:,:) = 1.0_JWRB
 
 
       IF (IOPTI.GT.0 .AND. IOPTI.NE.3) THEN
@@ -534,7 +532,7 @@
 
         CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                   &
      &                ROAIRO, ZIDLOLD,                                  &
-     &                CICOVER, CITHICK, CIWA,                           &
+     &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
      &                IREAD,                                            &
      &                NFIELDS, NGPTOTG, NC, NR,                         &
@@ -609,7 +607,6 @@
       IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
       IF(ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)
       IF(ALLOCATED(CITHICK)) DEALLOCATE(CITHICK)
-      IF(ALLOCATED(CIWA)) DEALLOCATE(CIWA)
 
       WRITE (IU06,*) ' SAVING SPECTRA '
 
@@ -618,7 +615,7 @@
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO  = CDATEA
-        CALL OUTSPEC(FL1)
+        CALL OUTSPEC(FL1, CICOVER)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. OUTSPEC DONE'
       ELSE
         CALL SAVSPEC(FL1,NBLKS,NBLKE,CDATEA,CDATEA,CDUM)

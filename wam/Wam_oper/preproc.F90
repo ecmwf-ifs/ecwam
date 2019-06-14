@@ -438,8 +438,8 @@
 !        TAILFACTOR_PM=0.0
 !       TEST 471 adapted to ECWAM
 
-        ALPHA   = 0.0062_JWRB
-        BETAMAX = 1.42_JWRB
+        ALPHA   = 0.0065_JWRB
+        BETAMAX = 1.40_JWRB
         ZALP    = 0.008_JWRB
         ALPHAPMAX = 0.031_JWRB
         TAUWSHELTER=0.25_JWRB

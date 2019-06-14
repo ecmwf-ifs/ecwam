@@ -265,6 +265,7 @@
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &            RAD      ,ROWATER
       USE YOWPHYS  , ONLY : ALPHAPMAX
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW,   &
      &            CINV     ,TFAK     ,GAM_B_J  ,EMAXDPT
@@ -333,7 +334,18 @@
 #include "tabu_swellft.intfb.h"
 #include "userin.intfb.h"
 
-      INTEGER(KIND=JWIM) :: NADV, IREAD, NFIELDS, NGPTOTG, NC, NR
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NADV
+      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFIELDS
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGPTOTG
+      INTEGER(KIND=JWIM), INTENT(IN) :: NC
+      INTEGER(KIND=JWIM), INTENT(IN) :: NR
+      REAL(KIND=JWRB), INTENT(IN) :: PRPLRADI
+      LOGICAL, INTENT(IN) :: LWCUR
+      INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
+      REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
+
+
       INTEGER(KIND=JWIM) :: IFORCA
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
@@ -343,10 +355,10 @@
       INTEGER(KIND=JWIM) :: IDELWH
       INTEGER(KIND=JWIM) :: IU05, IU09, IU10
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
-      INTEGER(KIND=JWIM) :: NTOT, MTHREADS, NPROMA
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
+      INTEGER(KIND=JWIM) :: NTOT, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
-      INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
 
       REAL(KIND=JWRB) :: FCRANGE, XD
       REAL(KIND=JWRB) :: GVE, DPH, CFLP, CFLL, DLH, DLH_KX
@@ -356,9 +368,7 @@
       REAL(KIND=JWRB) :: GAM
       REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
-      REAL(KIND=JWRB) :: PRPLRADI
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB) :: AKI, TRANSF
 
       REAL(KIND=JWRB) :: XLA, XLO 
@@ -367,7 +377,6 @@
       CHARACTER(LEN=24) :: FILNM
       CHARACTER(LEN=80) :: FILENAME
 
-      LOGICAL :: LWCUR
       LOGICAL :: LLEXIST
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
@@ -1092,7 +1101,21 @@
 !     COMPUTE BOTTOM REFRACTION TERMS
       IF (IREFRA .NE. 0) THEN
         IF (.NOT. LLUNSTR) THEN
-          CALL PROPDOT
+!         ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
+!         AND SIGMA DOT
+          IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(1):IJL(1),NANG))
+          IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(1):IJL(1),NANG))
+          IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(1):IJL(1),NANG,NFRE))
+
+          NPROMA=NPROMA_WAM
+!$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+          DO JKGLO = IJS(1), IJL(1), NPROMA
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA-1,IJL(1))
+            CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
+          ENDDO
+!$OMP     END PARALLEL DO
+
           IF (ITEST.GE.2) THEN
             WRITE(IU06,*) ' SUB. INITMDL: REFRACTION TERMS INITIALIZED '
             CALL FLUSH(IU06)
@@ -1127,7 +1150,7 @@
 
       CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                     &
      &              ROAIRO, ZIDLOLD,                                    &
-     &              CICOVER, CITHICK, CIWA,                             &
+     &              CICOVER, CITHICK,                                   &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &
      &              IREAD,                                              &
      &              NFIELDS, NGPTOTG, NC, NR,                           &
@@ -1179,7 +1202,7 @@
 
       IF (ISNONLIN.EQ.1) THEN
         IF (ISHALLO.NE.1) THEN
-          DO IG=1,IGL
+          IG=1
             DO M=1,NFRE
                DO IJ = IJS(1), IJL(1) 
                  D = DEPTH(IJ,IG)
@@ -1198,7 +1221,6 @@
                  ENH(IJ,M,IG) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
                ENDDO
             ENDDO
-          ENDDO
         ELSE
           DO IG=1,IGL
             DO M=1,MLSTHG

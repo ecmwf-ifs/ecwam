@@ -201,13 +201,13 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_STAR_OBS = E_LIM/(1.+TSTAR_0/TSTAR)**XP 
 
-            FP     = GOUT(IPTP,I,J)
+            FP     = 1.0_JWRB/GOUT(IPTP,I,J)
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
             CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV(1)*EXP(-XKAPPA*CDSQRTINV)
-            BETA      = MAX(G*Z0/USTAR2,ALPHA)
+            BETA      = G*Z0/USTAR2
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2

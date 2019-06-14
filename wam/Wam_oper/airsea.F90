@@ -90,7 +90,7 @@
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (IJS, IJL, US, TAUW, Z0)
+        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------

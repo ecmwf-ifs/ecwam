@@ -1,4 +1,4 @@
-      SUBROUTINE GETCURR(LWCUR, IREAD)
+SUBROUTINE GETCURR(LWCUR, IREAD)
 
 !****  *GETCURR* - READS SURFACE CURRENTS FROM FILE (IF UNCOUPLED)
 !                  OR EXTRACT THEM FROM FORCING_FIELDS DATA STRUCTURE (IF COUPLED)
@@ -56,7 +56,8 @@
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
+      USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUBUF  , ONLY : LUPDTWGHT
@@ -83,11 +84,13 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: OLDU, OLDV
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
 
       LOGICAL :: LLCURRENT
+      LOGICAL :: LLUPDATE
 
 ! --------------------------------------------------------------------- 
 
@@ -98,18 +101,32 @@
 
       CALL GSTATS(1984,0)
 
+      IG=1
+
       IF (LLNEWCURR) THEN
-        IF ( (LWCOU .AND. LWCUR ) .OR.                                  &
+        IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR.                &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 
-          IF(.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
-          IF(.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
+          IF(.NOT.ALLOCATED(U)) THEN 
+            ALLOCATE(U(NINF-1:NSUP,NBLO))
+            U(:,:)=0.0_JWRB
+          ENDIF
+
+          IF(.NOT.ALLOCATED(V)) THEN
+            ALLOCATE(V(NINF-1:NSUP,NBLO))
+            V(:,:)=0.0_JWRB
+          ENDIF
 
           CDTNEWCUR=CDTCUR
 
           IF(.NOT.LWCOU) CALL INCDATE(CDTNEWCUR,IDELCUR/2)
 
           IF(CDTPRO.GE.CDTNEWCUR) THEN
+
+            ALLOCATE(OLDU(NINF-1:NSUP,NBLO))
+            OLDU(:,:)=U(:,:)
+            ALLOCATE(OLDV(NINF-1:NSUP,NBLO))
+            OLDV(:,:)=V(:,:)
 
             LLCURRENT=.FALSE.
 
@@ -120,7 +137,6 @@
 !             --------------------------------
               IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
 
-                IG=1
 !!!               from NINF to NSUP as the halo has to be included
 !!!               for the calculation of the gradients !!!
 ! Mod for OPENMP
@@ -146,23 +162,33 @@
 !             CURRENTS FROM NEMO
 !             ------------------
               ELSEIF(LWNEMOCOUCUR) THEN
-                WRITE(IU06,*)'NEMO CURRENTS'!
-                IG=1
-                DO IJ = IJS(IG),IJL(IG)
-                  IX = IFROMIJ(IJ,IG)
-                  IY = JFROMIJ(IJ,IG)
-                  IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
-!                   if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                    U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                    V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
-                  ELSE
-!                   no currents over lakes and land
-                    U(IJ,IG) = 0.0_JWRB
-                    V(IJ,IG) = 0.0_JWRB
-                  ENDIF
+                WRITE(IU06,*)' NEMO CURRENTS OBTAINED'!
+                CALL GSTATS(1444,0)
+                NPROMA=NPROMA_WAM
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
+                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  DO IJ=KIJS,KIJL
+                    IX = IFROMIJ(IJ,IG)
+                    IY = JFROMIJ(IJ,IG)
+                    IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
+!                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+                      U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                      V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                    ELSE
+!                     no currents over lakes and land
+                      U(IJ,IG) = 0.0_JWRB
+                      V(IJ,IG) = 0.0_JWRB
+                    ENDIF
+                  ENDDO
                 ENDDO
+!$OMP           END PARALLEL DO
+                CALL GSTATS(1444,1)
+
                 U(NINF-1,IG)=0.0_JWRB
                 V(NINF-1,IG)=0.0_JWRB
+
                 CALL MPEXCHNG(U,1,1)
                 CALL MPEXCHNG(V,1,1)
               ELSE
@@ -225,21 +251,49 @@
 
             ENDIF
 
-
 !           COMPUTE REFRACTION TERMS
-            IF (IREFRA .NE. 0) THEN
-              CALL PROPDOT
-              IF (ITEST.GE.2) THEN
-                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION ',             &
-     &         ' TERMS INITIALIZED'
+!           ------------------------
+!           CHECK IF UPDATE IS NEEDED
+            LLUPDATE=.FALSE.
+            DO IJ = NINF, NSUP
+              IF( U(IJ,IG)/=OLDU(IJ,IG) .OR. V(IJ,IG)/=OLDV(IJ,IG) ) THEN
+                LLUPDATE=.TRUE.
+                EXIT
+              ENDIF 
+            ENDDO
+
+            IF(LLUPDATE) THEN
+              IF (IREFRA .NE. 0) THEN
+                IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(IG):IJL(IG),NANG))
+                IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(IG):IJL(IG),NANG))
+                IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(IG):IJL(IG),NANG,NFRE))
+
+                CALL GSTATS(1444,0)
+                NPROMA=NPROMA_WAM
+!$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                  KIJS=JKGLO
+                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
+                ENDDO
+!$OMP           END PARALLEL DO
+                CALL GSTATS(1444,1)
+
+                WRITE(IU06,*) ' SUB. GETCURR: REFRACTION TERMS INITIALIZED'
                 CALL FLUSH(IU06)
               END IF
-            END IF
 
-            LLCHKCFLA=.TRUE.
+              LLCHKCFLA=.TRUE.
 
-!           SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
-            LUPDTWGHT=.TRUE.
+!             SET LOGICAL TO RECOMPUTE THE WEIGHTS IN CTUW.
+              LUPDTWGHT=.TRUE.
+
+            ELSE
+              LLCHKCFLA=.FALSE.
+            ENDIF
+
+            DEALLOCATE(OLDU)
+            DEALLOCATE(OLDV)
 
           ELSE
             LLCHKCFLA=.FALSE.
@@ -256,4 +310,4 @@
 
       IF (LHOOK) CALL DR_HOOK('GETCURR',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE GETCURR 
+END SUBROUTINE GETCURR 

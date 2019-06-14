@@ -47,7 +47,8 @@
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
-     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO
+     &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
+     &            LLCAPCHNK
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -63,7 +64,7 @@
      &            LSECONDORDER,                                         &
      &            LWAM_USE_IO_SERV
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
-      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA
+      USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
@@ -83,7 +84,7 @@
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
-     &            IREFRA   ,IPROPAGS ,IASSI    ,NTASKS   ,NSIZE    ,    &
+     &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -141,6 +142,7 @@
      &   IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU, IDELALT,               &
      &   IDELINT, IDELINS, IDELSPT, IDELSPS, IDELRES,                   &
      &   IDELCUR, CDATECURA,                                            &
+     &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
      &   LLOUTERS,                                                      &
@@ -161,7 +163,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,    &
+     &   LMESSPASS, LWCOU, CFDBSF, CFDB2DSP, LNOCDIN,                   &
      &   LODBRALT,                                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
@@ -193,6 +195,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
+     &   LLCAPCHNK,                                                     &
      &   LWAM_USE_IO_SERV
 
 
@@ -234,6 +237,9 @@
 !              are not specified by namelist NAOS).
 !     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
+!     LLCFLCUROFF: IF TRUE PREVENT CFL CRITERIA FAILURE DUE TO SURFACE CURRENTS
+!                  IT RESETS THE CURRENT REFRACTION TERMS TO 0 FOR THOSE POINTS
+!                  WHERE CFL WAS NOT SATISFIED (it should only be used in operational applications)
 !     CLOTSU: STEP UNIT (S : seconds or H : hours) FOR IDELINT,
 !             IDELRES, IDELBC.
 !     CDATER: ONE SPECIFIC OUTPUT TIME FOR RESTART FILES if output times
@@ -397,11 +403,10 @@
 !
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
+!     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
-!     NTASKS: NUMBER OF PROCESSORS FOR PARALELL RUN ON CRAY (OBSOLETE).
-!     NSIZE: WORK LOAD PER PROCESSOR FOR PARALELL RUN ON CRAY (OBSOLETE)
 !     CFDBSF: FDB ROOT DIRECTORY FOR SCALAR GRIB FIELDS.
 !     CFDB2DSP : FDB ROOT DIRECTORY FOR 2D SPECTRA. 
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
@@ -543,6 +548,7 @@
       IDELRES   =  0
       IDELCUR   =  0
       CDATECURA = ZERO
+      LLCFLCUROFF = .TRUE.
       CDATER    = ZERO
       CDATES    = ZERO
       FFLAG(:)  = .FALSE. 
@@ -600,8 +606,6 @@
       NSYSNB    = -1
       NMETNB    = -1
       LMESSPASS = .TRUE.
-      NTASKS    = 0
-      NSIZE     = 0
 
       NOUTT     = 0
 
@@ -703,6 +707,8 @@
       LWNEMOCOUCUR=.FALSE.
 
       LWNEMOCOUDEBUG = .FALSE.
+
+      LLCAPCHNK = .FALSE.
 
       LWAM_USE_IO_SERV = .FALSE.
 

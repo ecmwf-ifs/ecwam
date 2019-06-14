@@ -1,4 +1,4 @@
-SUBROUTINE OUTSPEC (SPEC) 
+SUBROUTINE OUTSPEC (FL, CICOVER)
 
 !----------------------------------------------------------------------
 
@@ -15,11 +15,12 @@ SUBROUTINE OUTSPEC (SPEC)
 !**   INTERFACE.
 !     ----------
 
-!     SUBROUTINE OUTSPEC (SPEC)
+!     SUBROUTINE OUTSPEC (FL, CICOVER)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *SPEC*     REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *FL*        REAL      LOCAL SPECTRA OF CURRENT PE.
+!      *CICOVER*   REAL      SEA ICE COVER.
 
 !     METHOD.
 !     -------
@@ -42,10 +43,12 @@ SUBROUTINE OUTSPEC (SPEC)
       USE YOWCOUP  , ONLY : LWCOU, LIFS_IO_SERV_ENABLED,                &
                             OUTWSPEC_IO_SERV_HANDLER
       USE YOWCOUT  , ONLY : LWAM_USE_IO_SERV
-      USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWICE   , ONLY : LICERUN  ,CITHRSH  ,FLMIN
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
+      USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDATEA   ,    &
-     &            MARSTYPE
+     &            MARSTYPE ,LLSOURCE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 
@@ -55,11 +58,15 @@ SUBROUTINE OUTSPEC (SPEC)
 #include "outwspec.intfb.h"
 #include "difdate.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: SPEC
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE), INTENT(IN) :: FL 
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CICOVER
 
+      INTEGER(KIND=JWIM) :: IG 
+      INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: IFCST
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP, NANG, NFRE) :: SPEC
 
       CHARACTER(LEN=14) :: CDATE 
 
@@ -71,6 +78,25 @@ SUBROUTINE OUTSPEC (SPEC)
       IF (ITEST.GT.1) THEN
         WRITE(IU06,*) '*      THIS IS OUTSPEC         *'
         CALL FLUSH (IU06)
+      ENDIF
+
+      IG=1
+
+!*    APPLY SEA ICE MASK TO THE OUTPUT SPECTRA (IF NEEDED)
+      IF (LICERUN .AND. LLSOURCE) THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              IF (CICOVER(IJ,IG).GT.CITHRSH) THEN
+                SPEC(IJ,K,M) = FLMIN 
+              ELSE
+                SPEC(IJ,K,M) = FL(IJ,K,M)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ELSE
+        SPEC(:,:,:) = FL(:,:,:)
       ENDIF
 
       IF(CDTPRO.LE.CDATEF) THEN
