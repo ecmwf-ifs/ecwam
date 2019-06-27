@@ -682,7 +682,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
         IF(IRANK==1) THEN
-          WRITE(CLSETEV,' (A20,'' step '',I5,''&'') ') CMETER,IFCSTEP_HOUR 
+          WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR 
           CLSMSNAME="                                             "
           CLECFNAME="                                             "
           CALL UTIL_CGETENV(CL_CPENV,'NOSMS',CLSMSNAME, ICPLEN)
@@ -690,9 +690,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           & 
      &        (ICPLEN_ECF > 0.AND.CLECFNAME(1:5) /= 'NOECF') ) THEN
             CALL SYSTEM(CLSETEV)
-            WRITE(IU06,'(2X,A20,I5,'' posted '')') CMETER,IFCSTEP_HOUR 
+            WRITE(IU06,'(2X,A25,I8,'' posted '')') CMETER,IFCSTEP_HOUR 
           ELSE
-            WRITE(IU06,'(A20,I5)') CMETER,IFCSTEP_HOUR
+            WRITE(IU06,'(A25,I8)') CMETER,IFCSTEP_HOUR
             WRITE(IU06,*) 'not posted  because neither SMSNAME'
             WRITE(IU06,*) ICPLEN, CLSMSNAME
             WRITE(IU06,*) 'nor ECF_NAME  is defined. '
