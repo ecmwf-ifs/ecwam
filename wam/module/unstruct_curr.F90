@@ -23,13 +23,12 @@ MODULE UNSTRUCT_CURR
       REAL(KIND=JWRU) :: WAV_CurrTime = 0.
       LOGICAL :: UseSingleFile = .FALSE.
       LOGICAL :: IsInitializedSingleFile = .FALSE.
+#ifdef NETCDF_OUTPUT_WAM
 
       CONTAINS
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef NETCDF_OUTPUT_WAM
-
       SUBROUTINE INIT_UNSTRUCT_SINGLEFILE_CURRENT
       USE NETCDF
       USE WAV_NETCDF_FCT, ONLY : WAV_GENERIC_NETCDF_ERROR
@@ -147,7 +146,7 @@ MODULE UNSTRUCT_CURR
       CURTXY = w1*CURTXY1 + w2*CURTXY2
       WAV_CurrTime = WAV_CurrTime + DBLE(IDELT)
       LCALC=.TRUE.
-    END SUBROUTINE SET_CURTXY_SINGLEFILE
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -164,18 +163,6 @@ MODULE UNSTRUCT_CURR
         LCALC=.TRUE.
       END IF
       END SUBROUTINE SET_CURTXY
-#else
-    SUBROUTINE SET_CURTXY_SINGLEFILE
-#include "abort1.intfb.h"
-      WRITE (6,'(''SET_CURTXY_SINGLEFILE should not be called without NETCDF_OUTPUT_WAM '')')
-      CALL ABORT1
-    END SUBROUTINE SET_CURTXY_SINGLEFILE
-
-    SUBROUTINE SET_CURTXY
-#include "abort1.intfb.h"
-      WRITE (6,'(''SET_CURTXY should not be called without NETCDF_OUTPUT_WAM '')')
-      CALL ABORT1
-    END SUBROUTINE SET_CURTXY
 #endif
 !**********************************************************************
 !*                                                                    *
