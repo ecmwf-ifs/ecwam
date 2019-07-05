@@ -66,8 +66,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NTRAIN   ,LLPARTITION
-      USE YOWFRED  , ONLY : C        ,TH       ,FRIC     ,OLDWSFC
-      USE YOWPCONS , ONLY : EPSMIN
+      USE YOWFRED  , ONLY : FR       ,TH       ,FRIC     ,OLDWSFC
+      USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
+      USE YOWSHAL  , ONLY : TFAK     ,INDEP
+      USE YOWSTAT  , ONLY : ISHALLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -96,7 +98,8 @@
       REAL(KIND=JWRB) :: COEF
       REAL(KIND=JWRB) :: CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: CM
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: R
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
@@ -114,9 +117,19 @@
       COEF = OLDWSFC*FRIC
 
       DO M=1,NFRE
-        CM(M)=1.0_JWRB/C(M)
+        FAC(M) = ZPI*FR(M)
+        IF (ISHALLO.EQ.1) THEN
+          DO IJ=IJS,IJL
+            CM(IJ) = FAC(M)/G
+          ENDDO
+        ELSE
+          DO IJ=IJS,IJL
+            CM(IJ) = TFAK(INDEP(IJ),M)/FAC(M)
+          ENDDO
+        ENDIF
+
         DO IJ=IJS,IJL
-          XINVWVAGE(IJ,M)=USNEW(IJ)*CM(M)
+          XINVWVAGE(IJ,M)=USNEW(IJ)*CM(IJ)
         ENDDO
       ENDDO
 
@@ -172,7 +185,7 @@
 
 !     CHECK:
       DO IJ=IJS,IJL
-         IF(FSWELL(IJ).GT.FSEA(IJ)) THEN
+         IF(FSWELL(IJ).GT.0.96_JWRB*FSEA(IJ)) THEN
            R(IJ)=1.0_JWRB
          ELSE
            R(IJ)=0.0_JWRB
