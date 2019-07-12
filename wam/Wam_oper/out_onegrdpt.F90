@@ -207,7 +207,7 @@
 
             CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV(1)*EXP(-XKAPPA*CDSQRTINV)
-            BETA      = G*Z0/USTAR2
+            BETA      = MAX(G*Z0/USTAR2,ALPHA)
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2

@@ -162,7 +162,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK, SH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
@@ -306,19 +306,13 @@
           DO IJ=IJS,IJL
             CM(IJ,M) = SIG(M)/G
             XK(IJ,M) = SIG2(M)/G
-            SH(IJ,M) = 1.0_JWRB
           ENDDO
         ENDDO
       ELSE
         DO M=1,NFRE
           DO IJ=IJS,IJL
             XK(IJ,M) = TFAK(INDEP(IJ),M)
-          ENDDO
-        ENDDO
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
             CM(IJ,M) = XK(IJ,M)*SIGM1(M)
-            SH(IJ,M) = SIG2(M)/(G*XK(IJ,M)) ! tanh(kh) 
           ENDDO
         ENDDO
       ENDIF
@@ -361,7 +355,7 @@
         ENDDO
         DO IJ=IJS,IJL
           ZCN(IJ) = LOG(XK(IJ,M)*Z0NEW(IJ))
-          CNSN(IJ) = CONST(M)*SH(IJ,M)*ROAIRN(IJ)
+          CNSN(IJ) = CONST(M)*ROAIRN(IJ)
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
