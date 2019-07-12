@@ -86,7 +86,6 @@
 #include "stokesdrift.intfb.h"
 #include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
-#include "wrong_wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
@@ -177,12 +176,12 @@
         ENDIF
 
         IF(.NOT. LWVFLX_SNL) THEN
-          CALL WRONG_WNFLUXES (IJS, IJL,                                &
-     &                         MIJ, RHOWGDFTH,                          &
-     &                         SSOURCE, SL,                             &
-     &                         PHIWA,                                   &
-     &                         EMEANALL, F1MEAN, U10NEW, THWNEW,        &
-     &                         USNEW, ROAIRN, .FALSE.)
+          CALL WNFLUXES (IJS, IJL,                                      &
+     &                   MIJ, RHOWGDFTH,                                &
+     &                   SL, CICVR,                                     &
+     &                   PHIWA,                                         &
+     &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
+     &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
         CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
