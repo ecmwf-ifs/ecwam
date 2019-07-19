@@ -614,7 +614,7 @@
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
 !      !!! make the energy flux positive
-        BOUT(IJS:IJL,ITOBOUT(IR))=-PHIOCD(IJS:IJL)
+        BOUT(IJS:IJL,ITOBOUT(IR))=MAX(-PHIOCD(IJS:IJL),0.0_JWRB)
       ENDIF
 
 
