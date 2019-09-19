@@ -111,7 +111,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP,                       &
      &         LIFS_IO_SERV_ENABLED,                                    &
      &         NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
-      USE YOWGRIBHD, ONLY : LNEWLVTP, DATE_TIME_WINDOW_END
+      USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
@@ -456,14 +456,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       if new levtype is used in coupled run than it assumed
 !       that WAM and IFS will be sharing the same stream, therefore
 !       the FDB should be open on the IFS side.
-        IF(LWCOU .AND. LNEWLVTP) THEN
-          IF(NFDBREF .GT. 0) THEN
-            NWFDBREF=NFDBREF 
-            LFDBOPEN=.TRUE.
-          ELSE
-            NWFDBREF = -5
-            LFDBOPEN=.FALSE.
-          ENDIF          
+        IF(LWCOU .AND. NFDBREF .GE. 0) THEN
+          NWFDBREF=NFDBREF
+          LFDBOPEN=.TRUE.
         ELSE
 !       if you change the -5 value, do the same in wamodel
           NWFDBREF = -5
@@ -574,11 +569,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
         KQGAUSS=IQGAUSS
-
-        IF(LWCOU .AND. LNEWLVTP .AND. NFDBREF .GT. 0) THEN
-          NWFDBREF=NFDBREF 
-          LFDBOPEN=.TRUE.
-        ENDIF
 
         L1STCALL = .FALSE.
 
@@ -1036,23 +1026,16 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
 
-        IF ((NWFDBREF .GT. 0) .OR. (NFDBREF .EQ. -5 .AND. NWFDBREF .EQ. 0)) THEN
-          IF(LWCOU .AND. LNEWLVTP) THEN
-            ! The fdb should be closed by IFS, don't close it:
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
-              CALL FLUSH(IU06)
-            ENDIF
-          ELSE
-            ! WAM should close the FDB:
-            CALL GSTATS(1787,0)
-            CALL ICLOSEFDBSUBS (NWFDBREF)
-            CALL GSTATS(1787,1)
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
-              CALL FLUSH(IU06)
-            ENDIF
-          ENDIF
+        IF (.NOT. LWCOU .AND. LFDBOPEN) THEN
+          ! WAM should close the FDB:
+          CALL GSTATS(1787,0)
+          CALL ICLOSEFDBSUBS (NWFDBREF)
+          CALL GSTATS(1787,1)
+        ENDIF
+
+        IF (ITEST.GE.1) THEN
+          WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN'
+          CALL FLUSH(IU06)
         ENDIF
 
       ENDIF
