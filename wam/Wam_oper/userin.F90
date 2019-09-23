@@ -51,7 +51,6 @@
 
 !       *ABORT1*    - TERMINATES PROCESSING.
 !       *DIFDATE*   - COMPUTES A TIME DIFFERENCE.
-!       *IINITFDB*  - INITIALISE DATA BASE.
 !       *WPOSNAM*   - POSITION NAMELIST FOR READING AND CONTROLLED
 !                     TRAPPING OF EOF.
 
@@ -105,7 +104,7 @@
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
-     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,    &
+     &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            ICASE    ,ISHALLO  ,                                  &
@@ -134,7 +133,6 @@
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE FDBSUBS_MOD, ONLY : IINITFDBSUBS
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -151,13 +149,12 @@
 
       INTEGER(KIND=JWIM) :: IFORCA 
       INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
-      INTEGER(KIND=JWIM) :: LEN, ILCFDB2DSP, ILCFDBSF
+      INTEGER(KIND=JWIM) :: LEN
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
       INTEGER(KIND=JWIM) :: ISHIFT
       INTEGER(KIND=JWIM) :: IDELPRO_NEW
       INTEGER(KIND=JWIM) :: MINBUFRSAT, MAXBUFRSAT
-      INTEGER(KIND=JWIM) :: INITFDB_STAT
       INTEGER(KIND=JWIM) :: IUWDFILE
       INTEGER(KIND=JWIM) :: IWTIME, IWTIME_old
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
@@ -1005,18 +1002,6 @@
 
       WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '                  &
      & ,'    F = DISABLED   T = ENABLED    ', LFDB
-      IF (LFDB) THEN
-        ILCFDBSF = LEN_TRIM(CFDBSF)
-        IF(ILCFDBSF.GT.0) THEN
-          CLFORM='("  ITS ROOT DIRECTORY IS ", A256)'
-          WRITE (CLFORM(31:33), '(I3.3)') ILCFDBSF
-          WRITE(IU06,CLFORM) CFDBSF(1:ILCFDBSF)
-        ELSE
-          WRITE(IU06,*)' **********************************************'
-          WRITE(IU06,*)'   WARNING : FDB ROOT DIRECTORY NOT SPECIFIED ' 
-          WRITE(IU06,*)' **********************************************'
-        ENDIF
-      ENDIF
       WRITE(IU06,*) '  '
 
 
@@ -1094,24 +1079,6 @@
         ENDIF
       ELSE
         WRITE (IU06,*) ' OUTPUT SPECTRA FILES ARE WRITTEN OUT TO DISK' 
-      ENDIF
-!     CFDB2DSP is reset to null since the FDB will be initialised
-!     with CFDBSF, provided it is used (ie grib output of integrated
-!     parameters.
-      IF(LFDB.AND.GFLAG20) CFDB2DSP  = "" 
-      IF (LFDBIOOUT) THEN
-        CLFORM='("  ITS ROOT DIRECTORY IS ", A256)'
-        ILCFDB2DSP = LEN_TRIM(CFDB2DSP)
-        IF ( ILCFDB2DSP .EQ. 0 ) THEN
-          ILCFDBSF = LEN_TRIM(CFDBSF)
-          IF(ILCFDBSF.GT.0) THEN
-            WRITE (CLFORM(31:33), '(I3.3)') ILCFDBSF
-            WRITE(IU06,CLFORM) CFDBSF(1:ILCFDBSF)
-          ENDIF
-        ELSE
-          WRITE (CLFORM(31:33), '(I3.3)') ILCFDB2DSP
-          WRITE(IU06,CLFORM) CFDB2DSP(1:ILCFDB2DSP)
-        ENDIF
       ENDIF
       WRITE(IU06,*) '  '
       CALL FLUSH(IU06)
@@ -1206,28 +1173,6 @@
       WRITE(IU06,*) ' TEST OUTPUT OF IN BLOCK LOOPS UPTO ITESTB = ',    &
      & ITESTB
       WRITE(IU06,*) '  '
-
-      IF (.NOT. LWCOU .AND. (LFDB .OR. LFDBIOOUT ) ) THEN
-        WRITE(IU06,*) ' ACCESS TO FIELD DATA BASE REQUESTED '
-        WRITE(IU06,*) ' DATA BASE WILL BE INITIALIZED '
-        WRITE(IU06,*) ' '
-        CALL IINITFDBSUBS(INITFDB_STAT)
-        IF (INITFDB_STAT .NE. 0) THEN
-          WRITE(IU06,'("****************************************")')
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("*    FATAL ERROR IN SUB. USERIN        *")')
-          WRITE(IU06,'("*    ==========================        *")')
-          WRITE(IU06,'("*    INITIALIZATIO OF THE              *")')
-          WRITE(IU06,'("*    FIELD DATA BASE                   *")')
-          WRITE(IU06,'("*     F A I L E D .                    *")')
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("*  ERROR CODE (ISTAT) =",i7, "         *")')    &
-     &     INITFDB_STAT
-          WRITE(IU06,'("*                                      *")')
-          WRITE(IU06,'("****************************************")')
-          CALL ABORT1
-        ENDIF
-      ENDIF
 
       IF(LSMSSIG_WAM) THEN
         WRITE(IU06,*) '  '

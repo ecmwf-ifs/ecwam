@@ -7,7 +7,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
      &              LDRESTARTED, ZDELATM, KQGAUSS,                &
      &              LDWCOUNORMS, MASK_IN, MASK_OUT,               &
-     &              NFDBREF,                                      &
      &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
      &              RNU_ATM, RNUM_ATM,                            &
      &              IDATE_TIME_WINDOW_END, NSTEP,                 &
@@ -110,7 +109,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &         LWNEMOCOUSTRN, IFSTSTEP, IFSNSTEP,                       &
      &         LIFS_IO_SERV_ENABLED,                                    &
      &         NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
-      USE YOWGRIBHD, ONLY : LNEWLVTP, DATE_TIME_WINDOW_END
+      USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
@@ -124,8 +123,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPCONS , ONLY : ZMISS    ,G
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
-     &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
-     &            NWFDBREF ,LFDBOPEN ,LSARINV  ,NPROMA_WAM,             &
+     &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : ICODE_CPL
@@ -135,7 +133,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &            NSTART ,NEND     ,FL1      ,FL3
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
-      USE FDBSUBS_MOD, ONLY : ICLOSEFDBSUBS
       USE GRIB_API_INTERFACE
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL,ONLY : LLUNSTR
@@ -210,8 +207,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
 !     MASK TO INDICATE WHICH PART OF ARRAY WVFLDG IS RELEVANT 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_OUT(NLONW,NLATW)
-!     ATMOSPHERIC MODEL FDB ADDRESS 
-      INTEGER(KIND=JWIM), INTENT(IN) :: NFDBREF
 !     CONTROLS FIRST CALL
       LOGICAL, INTENT(INOUT) :: FRSTIME
 !     NUMBER OF ADVECTION STEPS
@@ -448,22 +443,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLCHKCFL=.FALSE.
 
         KQGAUSS=IQGAUSS
-!       if new levtype is used in coupled run than it assumed
-!       that WAM and IFS will be sharing the same stream, therefore
-!       the FDB should be open on the IFS side.
-        IF(LWCOU .AND. LNEWLVTP) THEN
-          IF(NFDBREF .GT. 0) THEN
-            NWFDBREF=NFDBREF 
-            LFDBOPEN=.TRUE.
-          ELSE
-            NWFDBREF = -5
-            LFDBOPEN=.FALSE.
-          ENDIF          
-        ELSE
-!       if you change the -5 value, do the same in wamodel
-          NWFDBREF = -5
-          LFDBOPEN=.FALSE.
-        ENDIF
 
         FRSTIME = .FALSE.                                              
         L1STCALL = .TRUE.
@@ -569,11 +548,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
         KQGAUSS=IQGAUSS
-
-        IF(LWCOU .AND. LNEWLVTP .AND. NFDBREF .GT. 0) THEN
-          NWFDBREF=NFDBREF 
-          LFDBOPEN=.TRUE.
-        ENDIF
 
         L1STCALL = .FALSE.
 
@@ -1031,25 +1005,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL MPL_BARRIER(CDSTRING='WAVEMDL: END')
         CALL FLUSH(IU06)
 
-        IF ((NWFDBREF .GT. 0) .OR. (NFDBREF .EQ. -5 .AND. NWFDBREF .EQ. 0)) THEN
-          IF(LWCOU .AND. LNEWLVTP) THEN
-            ! The fdb should be closed by IFS, don't close it:
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
-              CALL FLUSH(IU06)
-            ENDIF
-          ELSE
-            ! WAM should close the FDB:
-            CALL GSTATS(1787,0)
-            CALL ICLOSEFDBSUBS (NWFDBREF)
-            CALL GSTATS(1787,1)
-            IF (ITEST.GE.1) THEN
-              WRITE(IU06,*) ' SUB. WAVEMDL: END OF RUN: CLOSE FDB'
-              CALL FLUSH(IU06)
-            ENDIF
-          ENDIF
+        IF (ITEST.GE.1) THEN
+          WRITE(IU06,*) ' SUB. WAVEMDL: END OF WAVE MODEL RUN'
+          CALL FLUSH(IU06)
         ENDIF
-
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',1,ZHOOK_HANDLE)

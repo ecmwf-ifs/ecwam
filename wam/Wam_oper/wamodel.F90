@@ -310,8 +310,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &            NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
-     &            CDATER   ,CDATES   ,CDTINTT  ,                        &
-     &            CFDB2DSP ,NWFDBREF ,IDELPRO  ,IDELT    ,              &
+     &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
      &            ISHALLO  ,IREFRA   ,IASSI    ,                        &
      &            CDTBC    ,IDELBC   ,                                  &
@@ -319,7 +318,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
      &            NTASKS   ,NSIZE    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,    &
      &            NMETNB   ,CDATEA   ,MARSTYPE ,YCLASS   ,YEXPVER  ,    &
      &            LLSOURCE ,                                            &
-     &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE ,LFDBOPEN
+     &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
@@ -610,9 +609,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 
           ENDIF
 
-          IF (NWFDBREF.NE.-5.AND.LFDB.AND.LLFLUSH) THEN
+          IF (LFDB.AND.LLFLUSH) THEN
              CALL GSTATS(1976,0)
-             CALL IFLUSHFDBSUBS (NWFDBREF)
+             CALL IFLUSHFDBSUBS()
              CALL GSTATS(1976,1)
              LLFLUSH=.FALSE.
           ENDIF
@@ -1293,12 +1292,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 !*      FLUSH FDB IF IT HAS BEEN USED AND IT IS NOT AN ANALYSIS
 !       -------------------------------------------------------
 
-        IF( LFDB .AND. NWFDBREF.NE.-5 .AND. LLFLUSH .AND. (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) ) THEN
+        IF( LFDB .AND. LLFLUSH .AND. (IASSI.NE.1 .OR. CDTPRO.GT.CDATEF) ) THEN
           CALL GSTATS(1976,0)
-          CALL IFLUSHFDBSUBS (NWFDBREF)
+          CALL IFLUSHFDBSUBS()
           CALL GSTATS(1976,1)
           WRITE(IU06,*) ' ' 
-          WRITE(IU06,*) '  DB ', NWFDBREF , ' FLUSHED AT ',  CDTPRO, ' FROM WAMODEL. '
+          WRITE(IU06,*) '  FDB FLUSHED AT ',  CDTPRO, ' FROM WAMODEL. '
           CALL FLUSH (IU06)
           LLFLUSH=.FALSE.
         ENDIF

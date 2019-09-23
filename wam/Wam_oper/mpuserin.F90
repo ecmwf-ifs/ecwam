@@ -75,7 +75,7 @@
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
-     &            CFDBSF   ,CFDB2DSP ,IDELPRO  ,IDELT    ,IDELWI   ,    &
+     &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
@@ -160,8 +160,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   IMDLGRBID_G, IMDLGRBID_M,                                      &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LMESSPASS, LWCOU, NTASKS, NSIZE, CFDBSF, CFDB2DSP, LNOCDIN,    &
-     &   LODBRALT,                                                      &
+     &   LMESSPASS, LWCOU, NTASKS, NSIZE, LNOCDIN, LODBRALT,            &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -400,8 +399,6 @@
 !
 !     NTASKS: NUMBER OF PROCESSORS FOR PARALELL RUN ON CRAY (OBSOLETE).
 !     NSIZE: WORK LOAD PER PROCESSOR FOR PARALELL RUN ON CRAY (OBSOLETE)
-!     CFDBSF: FDB ROOT DIRECTORY FOR SCALAR GRIB FIELDS.
-!     CFDB2DSP : FDB ROOT DIRECTORY FOR 2D SPECTRA. 
 !     LNOCDIN: IF TRUE THEN GRIB INPUT OF A DRAG COEFFICIENT FIELD IS
 !              NOT REQUIRED.  
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
@@ -601,9 +598,6 @@
       NSIZE     = 0
 
       NOUTT     = 0
-
-      CFDBSF    = ""
-      CFDB2DSP  = ""
 
       LNOCDIN   = .FALSE. 
 

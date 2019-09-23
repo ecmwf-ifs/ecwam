@@ -115,7 +115,7 @@
      &            ROAIR
       USE YOWSTAT  , ONLY : MARSTYPE ,YCLASS   ,YEXPVER  ,CDATEA   ,    &
      &            CDATEE   ,CDATEF   ,CDTPRO   ,CDATER   ,CDATES   ,    &
-     &            CFDB2DSP ,IDELPRO  ,IDELWI   ,IDELWO   ,              &
+     &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
@@ -179,7 +179,6 @@
 
       PARAMETER (ZERO=' ', CDUM='00000000000000')
 
-      LOGICAL :: LFDBOPEN
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
       LOGICAL :: LWCUR
@@ -194,8 +193,7 @@
      &          CDATEA, IDELWI, CLTUNIT,                                &
      &          LLUNSTR, LPREPROC,                                      &
      &          LGRIBOUT,                                               &
-     &          MARSTYPE, YCLASS, YEXPVER, CFDB2DSP,                    &
-     &          NPROMA_WAM
+     &          MARSTYPE, YCLASS, YEXPVER, NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
 !             (0, 1, or 2 see MSTART)
@@ -215,7 +213,6 @@
 !     MARSTYPE : DATA TYPE USED TO CODE DATA IN GRIB
 !     YCLASS   : DATA CLASS USED TO CODE DATA IN GRIB.
 !     YEXPVER : EXPERIMENT VERSION USED TO CODE DATA IN GRIB.
-!     CFDB2DSP : FDB ROOT USED TO WRITE GRIB OUTPUT TO FDB.
 !     NPROMA_WAM: NUMBER OF THE GRID POINTS PER LOOP WHEN CUT INTO CHUNKS
 
 
@@ -261,7 +258,6 @@
       MARSTYPE = 'an'
       YCLASS   = 'rd'
       YEXPVER  = USERID//'a'
-      CFDB2DSP = "/hpca/fdb"
 
       NPROMA_WAM = 1
       NPROMA_WAM = HUGE(NPROMA_WAM)/2

@@ -1,7 +1,6 @@
 SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
      &                       ITABLE, IPARAM, KLEV, IK, IM,              &
-     &                       CDATE, IFCST, MARSTYPE,                    &
-     &                       LFDB, CDFDBSF, KFDB, LFDBOPEN, IU)
+     &                       CDATE, IFCST, MARSTYPE, LFDB, IU)
 
 ! ----------------------------------------------------------------------
 
@@ -20,8 +19,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 !      ----------
 !        *CALL* *WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,
 !                          ITABLE, IPARAM, KLEV, IK, IM,
-!                          CDATE, IFCST,
-!                          LFDB, CDFDBSF, KFDB, LFDBOPEN, IU,
+!                          CDATE, IFCST, LFDB, IU,
 !          *IU06*    LOGFILE OUTPUT UNIT.
 !          *ITEST*   TEST OUTPUT GIVEN IF ITEST GT 2.
 !          *I1*      FIRST DIMENSION OF FIELD.
@@ -72,16 +70,13 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
       INTEGER(KIND=JWIM), INTENT(IN) :: ITABLE, IPARAM, KLEV, IK, IM
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
       INTEGER(KIND=JWIM), INTENT(IN) :: IU 
-      INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
 
       REAL(KIND=JWRB), INTENT(INOUT) :: FIELD(I1,I2)
 
       CHARACTER(LEN=2), INTENT(IN) :: MARSTYPE
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
-      CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
 
       LOGICAL, INTENT(IN) :: LFDB
-      LOGICAL, INTENT(INOUT) :: LFDBOPEN
 
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE
       INTEGER(KIND=JWIM) :: ISIZE
@@ -117,10 +112,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
       ALLOCATE(KGRIB_BUFR(ISIZE))
       CALL IGRIB_GET_MESSAGE(IGRIB_HANDLE,KGRIB_BUFR)
 
-      CALL WGRIBOUT(IU06, ITEST,                       &
-     &              LFDB, CDFDBSF, KFDB, LFDBOPEN,     &
-     &              IU,                                &
-     &              IGRIB_HANDLE, ISIZE, KGRIB_BUFR )
+      CALL WGRIBOUT(IU06, ITEST, LFDB, IU, IGRIB_HANDLE, ISIZE, KGRIB_BUFR )
 
 
 !     RELEASE GRIB HANDLE
