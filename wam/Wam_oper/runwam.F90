@@ -131,7 +131,7 @@
       INTEGER(KIND=JWIM) :: KSTOP, KSTPW
       INTEGER(KIND=JWIM) :: IDUM
       INTEGER(KIND=JWIM) :: KQGAUSS
-      INTEGER(KIND=JWIM) :: NFDBREF, NPR
+      INTEGER(KIND=JWIM) :: NPR
       INTEGER(KIND=JWIM) :: MAXLEN, IU06
       INTEGER(KIND=JWIM) :: KERROR
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
@@ -284,7 +284,6 @@
       KSTOP=0  ! only used in coupled model
       KSTPW=0  ! only used in coupled model
       IDUM=0
-      NFDBREF=-5  ! only used in coupled model
       IGRIB_HANDLE_DUM=-99 ! only used in coupled model
       NATMFLX=0
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
@@ -343,7 +342,6 @@
      &             LLRESTARTED, ZDELATM, KQGAUSS,                       &
      &             LDWCOUNORMS, LLNORMWAMOUT_GLOBAL,                    &
      &             MASK_IN, MASK_OUT,                                   &
-     &             NFDBREF,                                             &
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)

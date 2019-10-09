@@ -38,13 +38,11 @@
      &            AMONOP   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : NGX      ,NGY      ,CLDOMAIN
-      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTT  ,                        &
-     &            CFDBSF   ,MARSTYPE ,NWFDBREF ,LFDBOPEN
+      USE YOWSTAT  , ONLY : CDTPRO   ,CDTINTT  ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU20     ,IU30
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE FDBSUBS_MOD, ONLY : ISETFIELDCOUNTFDBSUBS
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -58,7 +56,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IFCST
 
       INTEGER(KIND=JWIM) :: I, J, ITG, IFLAG, IT
-      INTEGER(KIND=JWIM) :: IGLOBAL, ILOCAL      ! FDB field counters
+      INTEGER(KIND=JWIM) :: ICOUNT      ! Field counter
       INTEGER(KIND=JWIM) :: IPARAM, ITABLE, IZLEV
       INTEGER(KIND=JWIM) :: IERR
       INTEGER(KIND=JWIM) :: IUOUT 
@@ -121,14 +119,12 @@
         ENDIF
 
 !       OUTPUT:
-        IGLOBAL=0
-        ILOCAL=0
+        ICOUNT=0
         DO IFLAG=1,JPPFLAG
           IF (GFLAG(IFLAG)) THEN
-            IGLOBAL=IGLOBAL+1
             IF (IRANK.EQ.IPFGTBL(IFLAG)) THEN
-              ILOCAL=ILOCAL+1
-              IF(ILOCAL.GT. SIZE(GOUT,1)) THEN
+              ICOUNT=ICOUNT+1
+              IF(ICOUNT.GT. SIZE(GOUT,1)) THEN
                 WRITE(*,*) ' -------------------------------------'
                 WRITE(*,*) ' ERROR in OUTINT '
                 WRITE(*,*) ' ACCESSING MORE FIELDS THAN AVAILABLE'
@@ -142,25 +138,14 @@
               IPARAM=INFOBOUT(IT,2)
               IZLEV=INFOBOUT(IT,3)
 
-              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ILOCAL,:,:),  &
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, GOUT(ICOUNT,:,:),  &
      &                        ITABLE, IPARAM, IZLEV, 0 , 0,             &
-     &                        CDATE, IFCST, MARSTYPE,                   &
-     &                        LFDB, CFDBSF, NWFDBREF, LFDBOPEN, IUOUT)
+     &                        CDATE, IFCST, MARSTYPE, LFDB, IUOUT)
             ENDIF
           ENDIF
         ENDDO
 
-        IF(LFDB .AND. NWFDBREF.GE.0 .AND. IGLOBAL.GT.0) THEN
-          CALL ISETFIELDCOUNTFDBSUBS(NWFDBREF,IGLOBAL,ILOCAL,IERR)
-          IF(IERR.NE.0)THEN
-            WRITE(IU06,*) ' ------------------------'
-            WRITE(IU06,*) ' ERROR setting fdb field count '
-            WRITE(IU06,*) ' in routine OUTINT '
-            WRITE(IU06,*) ' FDB ERROR CODE IS ',IERR
-            WRITE(IU06,*) ' ------------------------'
-            CALL ABORT1
-          ENDIF
-        ELSEIF(LLIUOUTOPEN) THEN
+        IF(LLIUOUTOPEN) THEN
           CALL IGRIB_CLOSE_FILE(IUOUT)
         ENDIF
 

@@ -1,7 +1,4 @@
-      SUBROUTINE WGRIBOUT (IU06, ITEST,                                 &
-     &                     LFDB, CDFDBSF, KFDB, LFDBOPEN,               &
-     &                     IU,                                          &
-     &                     IGRIB_HANDLE, ISIZE, KGRIB_BUFR) 
+      SUBROUTINE WGRIBOUT (IU06, ITEST, LFDB, IU, IGRIB_HANDLE, ISIZE, KGRIB_BUFR)
 ! ----------------------------------------------------------------------
 
 !****  *WGRIBOUT* OUTPUT GRIB MESSAGE. 
@@ -13,16 +10,11 @@
 
 !**    INTERFACE.
 !      ----------
-!        *CALL* *WGRIBOUT (IU06, ITEST,
-!                          LFDB, CDFDBSF, KFDB, LFDBOPEN, IU,
-!                          IGRIB_HANDLE, ISIZE, KGRIB_BUFR) 
+!        *CALL* *WGRIBOUT (IU06, ITEST, LFDB, IU, IGRIB_HANDLE, ISIZE, KGRIB_BUFR)
 !          *IU06*    LOGFILE OUTPUT UNIT.
 !          *ITEST*   TEST OUTPUT GIVEN IF ITEST GT 2.
 !          *LFDB*    LOGICAL SWITCH TO ACTIVATE FDB PROCESSING
 !                    .T. TO ACTIVATE, .F. TO IGNORE
-!          *CDFDBSF* FDB ROOT DIRECTORY.
-!          *KFDB*    FDB DATA BASE REFERENCE.
-!          *LFDBOPEN*  TRUE IF DATA BASE IS OPENED.
 !          *IU*      UNIT TO WRITE O FILE
 !                    !!! IT WILL NEED TO BE OPEN AN
 !                    !!! WITH GRIB_API SOFTWARE !!!
@@ -45,7 +37,6 @@
 
       USE GRIB_API_INTERFACE
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G, IMDLGRBID_M
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -54,11 +45,8 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IGRIB_HANDLE, ISIZE
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, IU
-      INTEGER(KIND=JWIM), INTENT(INOUT) :: KFDB
       INTEGER(KIND=JWIM), DIMENSION(ISIZE), INTENT(INOUT) :: KGRIB_BUFR
-      CHARACTER(LEN=*), INTENT(INOUT) :: CDFDBSF
       LOGICAL, INTENT(IN) :: LFDB
-      LOGICAL, INTENT(INOUT) :: LFDBOPEN
 
       INTEGER :: IERR, ITABPAR, ICLASS
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
@@ -100,13 +88,10 @@
 !          -----------------
         CALL WGRIB2FDB (IU06, ITEST,                                    &
      &                  IGRIB_HANDLE, ISIZE, KGRIB_BUFR,                &
-     &                  CDFDBSF, KFDB, LFDBOPEN,                        &
-     &                  IMDLGRBID_G, IMDLGRBID_M,                       &
      &                  IERR)
         IF(ITEST.GT.0) THEN
-          WRITE(IU06,*) '   SUB. WGRIBOUT: GRIB DATA WRITTEN TO FDB',   &
-     &     '(REFERENCE=',KFDB,')'
-           CALl FLUSH(IU06)
+          WRITE(IU06,*) '   SUB. WGRIBOUT: GRIB DATA WRITTEN TO FDB'
+          CALL FLUSH(IU06)
         ENDIF
 
         IF(IERR.NE.0)THEN
