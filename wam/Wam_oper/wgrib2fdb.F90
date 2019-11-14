@@ -38,7 +38,7 @@
       USE GRIB_API_INTERFACE
       USE YOWMPP   , ONLY : NPRECI
 
-      USE FDBSUBS_MOD, ONLY : IWRITEFDBSUBS
+      USE FDBSUBS_MOD, ONLY : IWRITEFDBSUBS, IFLUSHFDBSUBS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 !     ------------------------------------------------------------------
@@ -90,6 +90,7 @@
       CALL IWRITEFDBSUBS( KGRIB, KLEN, ISTAT ) 
       IF ( ISTAT .NE. 0 ) THEN
         WRITE(KUSO, '( "Error\ /WGRIB2FDB/ Failed to write to fdb")' )
+        CALL IFLUSHFDBSUBS()
         KERR = 1
         RETURN
       ENDIF
