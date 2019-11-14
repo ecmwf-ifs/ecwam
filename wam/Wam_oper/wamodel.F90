@@ -361,7 +361,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
 #include "abort1.intfb.h"
 #include "bouinpt.intfb.h"
 #include "chesig.intfb.h"
-#include "clean_outbs.intfb.h"
 #include "closend.intfb.h"
 #include "ctuw.intfb.h"
 #include "difdate.intfb.h"
