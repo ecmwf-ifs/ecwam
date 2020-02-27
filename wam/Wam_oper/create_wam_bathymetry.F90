@@ -179,14 +179,14 @@ PROGRAM CREATE_BATHY
       IF(LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,'(I4)') ISPECTRUNC
-        READ (IU,'(F8.3)') AMONOP
-        READ (IU,'(F8.3)') AMOSOP
-        READ (IU,'(F8.3)') AMOWEP
-        READ (IU,'(F8.3)') AMOEAP
-        READ (IU,'(I4)') IPER
-        READ (IU,'(I4)') IRGG
-        READ (IU,'(I4)') NY
+        READ (IU,*) ISPECTRUNC
+        READ (IU,*) AMONOP
+        READ (IU,*) AMOSOP
+        READ (IU,*) AMOWEP
+        READ (IU,*) AMOEAP
+        READ (IU,*) IPER
+        READ (IU,*) IRGG
+        READ (IU,*) NY
       ENDIF
 
 
@@ -197,7 +197,7 @@ PROGRAM CREATE_BATHY
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,'(I4)') NLONRGG(KSN)
+          READ(IU,*) NLONRGG(KSN)
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
