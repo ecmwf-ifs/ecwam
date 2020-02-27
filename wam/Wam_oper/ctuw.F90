@@ -316,6 +316,7 @@
                   IF(ADYP(IC).GT.XDELLA)THEN
                     XLON=AMOWEP+(IX-1)*ZDELLO(KY)
                     XLAT=AMOSOP+(KY-1)*XDELLA
+                    DTNEW=XDELLA*DELPRO/ADYP(IC)
                     WRITE (IU06,*) '********************************'
                     WRITE (IU06,*) '* CTUW:                        *'
                     WRITE (IU06,*) '* CFL VIOLATED IN Y DIRECTION. *'
@@ -324,9 +325,7 @@
                     WRITE (IU06,*) '* XDELLA = ',XDELLA
                     WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
                     WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
-                    DTNEW=XDELLA*DELPRO/ADYP(IC)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BEREDUCED TO',   &
-     &                              DTNEW
+                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO', DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
@@ -583,6 +582,7 @@
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
               ENDDO
             ENDDO
@@ -599,6 +599,7 @@
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
             ENDDO
 
@@ -615,6 +616,7 @@
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
               ENDDO
             ENDDO
@@ -631,6 +633,7 @@
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
             ENDDO
 
@@ -651,6 +654,7 @@
                   WRITE (IU06,*) '*                                 *'
                   WRITE (IU06,*) '***********************************'
                   LCFLFAIL(IJ)=.TRUE.
+                  CALl FLUSH(IU06)
                 ENDIF
               ENDDO
 
@@ -699,6 +703,8 @@
               WRITE (IU06,*) '*                                 *'
               WRITE (IU06,*) '***********************************'
               LCFLFAIL(IJ)=.TRUE.
+
+              CALl FLUSH(IU06)
             ENDIF
 
           ENDDO  ! END LOOP OVER GRID POINTS
