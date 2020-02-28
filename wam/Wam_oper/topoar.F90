@@ -179,7 +179,7 @@
 
         DO K=1,NY
 !       READ THE NUMBER OF POINTS PER LATITUDE
-          READ (IU01,'(I4.4)') KLONRGG  
+          READ (IU01,*) KLONRGG  
           IF(KLONRGG.NE.NLONRGG(K)) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'

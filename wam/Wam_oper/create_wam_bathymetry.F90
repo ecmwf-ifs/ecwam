@@ -175,6 +175,7 @@ PROGRAM CREATE_BATHY
 !     IF IT IS THERE IT WILL SUPERSEDE THE OTHER INPUT
 
       FILENAME='grid_description'
+!!!!!!!!!! grid_description is alsoread in uiprep  !!!!!!!!!!
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF(LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
@@ -613,7 +614,7 @@ PROGRAM CREATE_BATHY
       OPEN(1,FILE=FILENAME,FORM='FORMATTED')
       WRITE(1,'(6F10.5)')XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
       DO K=1,NY
-         WRITE(1,'(I4.4)') NLONRGG(K) 
+         WRITE(1,*) NLONRGG(K) 
       ENDDO
       DO K=1,NY
          WRITE(CX,'(I4.4)') NLONRGG(K) 

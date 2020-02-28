@@ -181,14 +181,14 @@
       IF(LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,'(I4)') ISPECTRUNC 
-        READ (IU,'(F8.3)') AMONOP
-        READ (IU,'(F8.3)') AMOSOP
-        READ (IU,'(F8.3)') AMOWEP
-        READ (IU,'(F8.3)') AMOEAP
-        READ (IU,'(I4)') IPER
-        READ (IU,'(I4)') IRGG
-        READ (IU,'(I4)') NY
+        READ (IU,*) ISPECTRUNC
+        READ (IU,*) AMONOP
+        READ (IU,*) AMOSOP
+        READ (IU,*) AMOWEP
+        READ (IU,*) AMOEAP
+        READ (IU,*) IPER
+        READ (IU,*) IRGG
+        READ (IU,*) NY
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -270,11 +270,17 @@
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,'(I4)') NLONRGG(KSN)
+          READ(IU,*) NLONRGG(KSN)
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        IF(IPER.EQ.1) THEN
+          XDELLO  = 360._JWRB/REAL(NX)
+          AMOWEP = AMOEAP + 360._JWRB - XDELLO
+        ELSE
+          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        ENDIF
+
 
         NGX = NX
         NGY = NY
