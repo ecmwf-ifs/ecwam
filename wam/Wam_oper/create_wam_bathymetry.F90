@@ -201,7 +201,11 @@ PROGRAM CREATE_BATHY
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        IF(IPER.EQ.1) THEN
+          XDELLO  = 360._JWRB/REAL(NX)
+        ELSE
+          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        ENDIF
 
         CLOSE(IU)
 
@@ -256,7 +260,7 @@ PROGRAM CREATE_BATHY
 
         PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
         IF(IPER.EQ.1) THEN
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K))
+          ZDELLO(K)  = 360._JWRB/REAL(NLONRGG(K))
         ELSE
           ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
         ENDIF
