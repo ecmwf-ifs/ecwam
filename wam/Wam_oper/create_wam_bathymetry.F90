@@ -204,6 +204,7 @@ PROGRAM CREATE_BATHY
 
         IF(IPER.EQ.1) THEN
           XDELLO  = 360._JWRB/REAL(NX)
+          AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
           XDELLO = (AMOEAP-AMOWEP)/(NX-1)
         ENDIF
@@ -261,7 +262,6 @@ PROGRAM CREATE_BATHY
 
         IF(IPER.EQ.1) THEN
           ZDELLO(K)  = 360._JWRB/REAL(NLONRGG(K))
-          AMOWEP = AMOEAP + 360._JWRB - XDELLO
         ELSE
           ZDELLO(K)  = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1)
         ENDIF
