@@ -135,7 +135,7 @@
         READ (IU01,'(a14)') CHEADER 
         READ (IU01,'(8F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       ELSE
-        READ (IU01,'(8F10.5)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+        READ (IU01,'(8F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       ENDIF
       CALL ADJUST (XLOW, XLOE)
 
@@ -143,7 +143,7 @@
       WRITE (IU06,'(3X,''RESOLUTION LAT-LON '',2F8.3)') XDELA, XDELO
       WRITE (IU06,'(3X,'' SOUTHERN LAT '','' NORTHERN LAT '',           &
      &                 '' WESTERN LONG '','' EASTERN LONG'',            &
-     &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
+     &                 /,2X,4F13.8)') XLAS, XLAN, XLOW, XLOE
 
       BATHY(:,:) = 999.0_JWRB
 
