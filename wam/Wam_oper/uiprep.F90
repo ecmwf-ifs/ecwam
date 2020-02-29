@@ -189,6 +189,7 @@
         READ (IU,*) IPER
         READ (IU,*) IRGG
         READ (IU,*) NY
+        WRITE(IU06,*) "grid_description read in "
       ENDIF
 
 ! ----------------------------------------------------------------------
