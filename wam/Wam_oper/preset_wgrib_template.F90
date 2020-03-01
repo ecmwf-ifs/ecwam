@@ -409,10 +409,12 @@
 
 !     GEOGRAPHY
 
-      IF (IRGG .EQ. 0) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
+      IF( IQGAUSS.NE.1 ) THEN
+        IF (IRGG .EQ. 0) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
+        ENDIF
       ENDIF
 
 
@@ -480,8 +482,10 @@
       ENDIF
 
       ! LATITUDE INCREMENT
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+      IF( IQGAUSS.NE.1 ) THEN 
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
      &                     'jDirectionIncrementInDegrees',XDELLA)
+      ENDIF
 
 
       ! BITMAP PRESENT:

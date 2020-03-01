@@ -198,6 +198,8 @@
         ELSE
           IQGAUSS=0
         ENDIF
+!!! debile
+         write(*,*) 'debile in readpre IQGAUSS = ',IQGAUSS
 
 !*    4. READ MODULE YOWINDNL (NON-LINEAR INTERACTION).
 !       -----------------------------------------------
