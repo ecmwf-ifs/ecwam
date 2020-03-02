@@ -277,7 +277,7 @@
 
         IF(IPER.EQ.1) THEN
           XDELLO  = 360._JWRB/REAL(NX)
-!!          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+          AMOEAP = AMOWEP + 360._JWRB - XDELLO
         ELSE
           XDELLO = (AMOEAP-AMOWEP)/(NX-1)
         ENDIF

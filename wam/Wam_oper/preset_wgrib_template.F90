@@ -74,6 +74,7 @@
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: RMOEAP
       REAL(KIND=JWRB) :: ZTHETA(NANG)
       REAL(KIND=JWRB) :: ZFREQ(NFRE)
       REAL(KIND=JWRB), ALLOCATABLE :: SCFR(:), SCTH(:)
@@ -95,6 +96,7 @@
       IF(.NOT. LGRHDIFS) THEN
         IGRIB_HANDLE=-99
         CALL IGRIB_NEW_FROM_SAMPLES(IGRIB_HANDLE,'gg_sfc_grib1')
+        !!! see below : this is a limitation of grib1   !!!!
       ELSE
          IGRIB_HANDLE=-99
          CALL IGRIB_CLONE(NGRIB_HANDLE_IFS,IGRIB_HANDLE)
@@ -485,8 +487,14 @@
       ENDIF
 
       ! LONGITUDE OF EXTREME POINT (WEST)
+      IF( IQGAUSS.NE.1 ) THEN
+        RMOEAP = AMOEAP
+      ELSE
+        !!! this is a limitation of grib1   !!!!
+        RMOEAP = REAL(NINT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+      ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                    'longitudeOfLastGridPointInDegrees',AMOEAP)
+     &                    'longitudeOfLastGridPointInDegrees',RMOEAP)
 
       ! LONGITUDE INCREMENT
       IF (IRGG .EQ. 0) THEN
