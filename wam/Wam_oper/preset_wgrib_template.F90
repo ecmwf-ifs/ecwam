@@ -25,7 +25,7 @@
 !     METHOD.
 !     -------
 
-!     EXTERNALS.
+!     EXTERNALS./
 !     ----------
 
 !     REFERENCE.
@@ -64,6 +64,7 @@
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE
+      INTEGER(KIND=JWIM) :: IGTYPE, ISOCTAHEDRAL, IRESFLAGS
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
@@ -409,7 +410,15 @@
 
 !     GEOGRAPHY
 
-      IF( IQGAUSS.NE.1 ) THEN
+      IF( IQGAUSS.EQ.1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
+!!! IGTYPE will need to be supplied
+          IGTYPE=4
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IGTYPE)
+!!! isOctahedral will need to be supplied
+          ISOCTAHEDRAL=1
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'isOctahedral',ISOCTAHEDRAL)
+      ELSE
         IF (IRGG .EQ. 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
         ELSE
@@ -425,13 +434,16 @@
         NY = NGY
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
+      IF( IQGAUSS.EQ.1 ) THEN
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NY/2)
+      ENDIF
 
       ! NUMBER OF POINTS PER LATITUDE
       IF (IRGG .EQ. 0) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
       ELSE
         ALLOCATE(PL(NY))
-        PL=0
+        PL(:)=0
         IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
           KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
         ELSE
@@ -446,8 +458,13 @@
       ENDIF
 
 !     RESOLUTION AND COMPONENT FLAGS
+      IF( IQGAUSS.EQ.1 ) THEN
+        IRESFLAGS=0
+      ELSE
+        IRESFLAGS=128
+      ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                     'resolutionAndComponentFlags',128)
+     &                     'resolutionAndComponentFlags',IRESFLAGS)
 
       ! LATITUDE OF THE FIRST GRID POINT
       IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
