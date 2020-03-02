@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE
-      INTEGER(KIND=JWIM) :: IGTYPE, IRESFLAGS
+      INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
@@ -412,9 +412,8 @@
 
       IF( IQGAUSS.EQ.1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
-!!! IGTYPE will need to be supplied
-          IGTYPE=4
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IGTYPE)
+          IREPR=4
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
       ELSE
         IF (IRGG .EQ. 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
@@ -464,7 +463,7 @@
      &                     'resolutionAndComponentFlags',IRESFLAGS)
 
       ! LATITUDE OF THE FIRST GRID POINT
-      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
      &                       'latitudeOfFirstGridPointInDegrees',90.)
       ELSE
@@ -477,7 +476,7 @@
      &                     'longitudeOfFirstGridPointInDegrees',AMOWEP)
 
       ! LATITUDE OF THE LAST GRID POINT
-      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
      &                       'latitudeOfLastGridPointInDegrees',-90.)
       ELSE
