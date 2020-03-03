@@ -100,7 +100,7 @@
 
       CHARACTER(LEN=1), ALLOCATABLE :: AX(:), AXX(:)
       CHARACTER(LEN=5) :: CX
-      CHARACTER(LEN=10) :: FORMT
+      CHARACTER(LEN=11) :: FORMT
       CHARACTER(LEN=14) :: CHEADER 
 
       LOGICAL :: LLREALIN
@@ -203,6 +203,7 @@
 
         ALLOCATE(IDUM(NGX))
         CX='     '
+        FORMT='          ' 
         DO K=1,NY
           IF(LLREALIN) THEN
             WRITE(CX,'(I5.5)') NLONRGG(1)
