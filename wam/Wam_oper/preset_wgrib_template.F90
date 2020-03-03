@@ -4,7 +4,7 @@
 
 !**** *PRESET_WGRIB_TEMPLATE* SETS DEFAULT VALUES FOR GRIB TEMPLATES
 
-!     J. BIDLOT    ECMWF JUNE 2009 
+!     J. BIDLOT    ECMWF JUNE 2009
 
 !*    PURPOSE.
 !     --------
@@ -61,9 +61,12 @@
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
+      CHARACTER(LEN=1), INTENT(IN) :: CT 
+
+
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
       INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
-      INTEGER(KIND=JWIM) :: IGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
       INTEGER(KIND=JWIM) :: NY
@@ -82,7 +85,6 @@
 ! The following must NOT be changed from a 4 byte real
       REAL(KIND=4) :: REAL4
 
-      CHARACTER(LEN=1) :: CT 
       CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=96) :: CLWORD
@@ -491,7 +493,7 @@
         RMOEAP = AMOEAP
       ELSE
         !!! this is a limitation of grib1   !!!!
-        RMOEAP = REAL(NINT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+        RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
       ENDIF
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
      &                    'longitudeOfLastGridPointInDegrees',RMOEAP)

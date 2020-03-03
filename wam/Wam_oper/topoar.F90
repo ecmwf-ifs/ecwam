@@ -178,8 +178,10 @@
         ENDIF
 
         DO K=1,NY
+
 !       READ THE NUMBER OF POINTS PER LATITUDE
           READ (IU01,*) KLONRGG  
+
           IF(KLONRGG.NE.NLONRGG(K)) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'
@@ -201,11 +203,12 @@
 
         ALLOCATE(IDUM(NGX))
         DO K=1,NY
-          WRITE(CX,'(I4.4)') NLONRGG(K)
           IF(LLREALIN) THEN
+            WRITE(CX,'(I5.5)') NLONRGG(K)
             FORMT='('//CX//'F9.2)'
             READ (IU01,FORMT) (BATHY(IX,K),IX=1,NLONRGG(K))
           ELSE
+            WRITE(CX,'(I4.4)') NLONRGG(K)
             FORMT='('//CX//'I4)'
             READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
             DO IX=1,NLONRGG(K)
