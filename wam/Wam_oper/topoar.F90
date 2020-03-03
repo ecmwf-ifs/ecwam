@@ -99,7 +99,7 @@
       REAL(KIND=JWRB), ALLOCATABLE :: XA2H(:), XA1(:,:)
 
       CHARACTER(LEN=1), ALLOCATABLE :: AX(:), AXX(:)
-      CHARACTER(LEN=4) :: CX
+      CHARACTER(LEN=5) :: CX
       CHARACTER(LEN=10) :: FORMT
       CHARACTER(LEN=14) :: CHEADER 
 
@@ -202,18 +202,19 @@
 !       READ THE BATHYMETRY DATA
 
         ALLOCATE(IDUM(NGX))
+        CX='     '
         DO K=1,NY
           IF(LLREALIN) THEN
-            WRITE(CX,'(I5.5)') KLONRGG(1)
+            WRITE(CX,'(I5.5)') NLONRGG(1)
             FORMT='('//CX//'F9.2)'
-            DO IS = 1,KLONRGG(K),KLONRGG(1)
-              READ (IU01,FORMT) (BATHY(IX,K),IX=IS,MIN(IS+KLONRGG(1)-1,KLONRGG(K)))
+            DO IS = 1,NLONRGG(K),NLONRGG(1)
+              READ (IU01,FORMT) (BATHY(IX,K),IX=IS,MIN(IS+NLONRGG(1)-1,NLONRGG(K)))
             ENDDO
           ELSE
-            WRITE(CX,'(I4.4)') KLONRGG(K)
+            WRITE(CX,'(I4.4)') NLONRGG(K)
             FORMT='('//CX//'I4)'
-            READ (IU01,FORMT) (IDUM(IX),IX=1,KLONRGG(K))
-            DO IX=1,KLONRGG(K)
+            READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
+            DO IX=1,NLONRGG(K)
               BATHY(IX,K)=REAL(IDUM(IX),JWRB)
             ENDDO
           ENDIF
