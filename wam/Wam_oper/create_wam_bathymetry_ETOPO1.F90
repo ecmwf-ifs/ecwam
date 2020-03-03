@@ -107,6 +107,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
+      REAL(KIND=JWRB) :: REXCLTHRSHOLD
       REAL(KIND=JWRB) :: PLANDTRHS, PSHALLOWTRHS 
       REAL(KIND=JWRB) :: XLO, XLA, XI, YJ 
       REAL(KIND=JWRB) :: SEA, XLAND, SEASH 
@@ -121,7 +122,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZDELLO,COSPH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: FR
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH, REXCLTHRSHOLD
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
 
       CHARACTER(LEN=  2) :: CFR
@@ -135,6 +136,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LORIGINAL, LLPRINT
       LOGICAL :: LLAND, LREALLAND, L1ST, LNSW
       LOGICAL :: LLGRID
+      LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
 
 
       PI=4.0_JWRB*ATAN(1.0_JWRB)
@@ -560,8 +562,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 !     SET MIN AND MAX TO +-999
       DO K=1,NY
          DO IX=1,NLONRGG(K)
-           WAMDEPTH(IX,K)=MAX(-999._JWRB,WAMDEPTH(IX,K))
-           WAMDEPTH(IX,K)=MIN(999._JWRB,WAMDEPTH(IX,K))
+           WAMDEPTH(IX,K)=MIN(999._JWRB,MAX(-999._JWRB,WAMDEPTH(IX,K)))
         ENDDO
       ENDDO
 
@@ -652,7 +653,7 @@ PROGRAM CREATE_BATHY_ETOPO1
 
       ALLOCATE(ITHRSHOLD(NX,NY))
       ALLOCATE(IBLOCKDPT(NX,NY))
-      ALLOCATE(REXCLTHRSHOLD(NX,NY))
+      ALLOCATE(LLEXCLTHRSHOLD(NX,NY))
 
       IOBSLAT(:,:,:)=1000
       IOBSLON(:,:,:)=1000
@@ -700,7 +701,8 @@ PROGRAM CREATE_BATHY_ETOPO1
               ELSE
                 KEXTHRS=10
               ENDIF
-              REXCLTHRSHOLD(IX,K)=MAX(KEXTHRS*ITHRSHOLD(IX,K),-998._JWRB)
+              REXCLTHRSHOLD=REAL(MAX(KEXTHRS*ITHRSHOLD(IX,K)),-998),JWRB)
+              LLEXCLTHRSHOLD(IX,K)=(WAMDEPTH(IX,K).LT.REXCLTHRSHOLD)
               IBLOCKDPT(IX,K)=INT(-0.025_JWRB*XX)
             ENDIF
           ENDDO
@@ -723,11 +725,11 @@ PROGRAM CREATE_BATHY_ETOPO1
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0.
+              STEPB=0._JWRB
             ELSE
               KT=K+1
               KB=K
-              STEPT=0.
+              STEPT=0._JWRB
               STEPB=RESOL
             ENDIF
             XLATT=XLAT(KT)+STEPT
@@ -772,7 +774,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -830,7 +832,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -843,7 +845,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -917,7 +919,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -973,7 +975,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 1111 
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -982,7 +984,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1019,11 +1021,11 @@ PROGRAM CREATE_BATHY_ETOPO1
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0.
+              STEPB=0._JWRB
             ELSE
               KT=K+1
               KB=K
-              STEPT=0.
+              STEPT=0._JWRB
               STEPB=RESOL
             ENDIF
             XLATT=XLAT(KT)+STEPT
@@ -1068,7 +1070,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1124,7 +1126,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1137,7 +1139,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1209,7 +1211,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1264,7 +1266,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 2222 
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1273,7 +1275,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1312,11 +1314,11 @@ PROGRAM CREATE_BATHY_ETOPO1
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0.
+              STEPB=0._JWRB
             ELSE
               KT=K+1
               KB=K
-              STEPT=0.
+              STEPT=0._JWRB
               STEPB=RESOL
             ENDIF
             XLATT=XLAT(KT)+STEPT
@@ -1361,7 +1363,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1417,7 +1419,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1430,7 +1432,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1502,7 +1504,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1557,7 +1559,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 3333 
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1566,7 +1568,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1606,22 +1608,22 @@ PROGRAM CREATE_BATHY_ETOPO1
             IF(IS.EQ.1) THEN 
               KT=K+1
               KB=K
-              STEPT=0.
+              STEPT=0._JWRB
               STEPB=RESOL
             ELSE IF(IS.EQ.2) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0.
+              STEPB=0._JWRB
             ELSE IF(IS.EQ.3) THEN
               KT=K
               KB=K-1
               STEPT=-RESOL
-              STEPB=0.
+              STEPB=0._JWRB
             ELSE IF (IS.EQ.4) THEN
               KT=K+1
               KB=K
-              STEPT=0.
+              STEPT=0._JWRB
               STEPB=RESOL
             ENDIF
 
@@ -1667,7 +1669,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         LLAND=.TRUE.
                         NIOBSLON=NIOBSLON+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1723,7 +1725,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1736,7 +1738,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLON=ILATB-ILATT+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLON=NIOBSLON+1 
                       ENDIF
                     ENDDO
@@ -1813,7 +1815,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         IF(IDEPTH(I,J).GT.0 ) LREALLAND=.TRUE. 
                         NIOBSLAT=NIOBSLAT+1 
                       ELSEIF (IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.      &
-     &                        WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                        LLEXCLTHRSHOLD(IX,K))THEN
 !                     IF SEA ABOVE THE THRESHOLD THEN ONLY THAT
 !                     GRID POINTS BLOCKS
 !                     ------------------------------------------
@@ -1868,7 +1870,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         GOTO 4444 
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
@@ -1877,7 +1879,7 @@ PROGRAM CREATE_BATHY_ETOPO1
                         NIOBSLAT=ILONR+ILON-ILONL+1
                         EXIT
                       ELSEIF(IDEPTH(I,J).GE.ITHRSHOLD(IX,K) .AND.       &
-     &                       WAMDEPTH(IX,K).LT.REXCLTHRSHOLD(IX,K))THEN
+     &                       LLEXCLTHRSHOLD(IX,K))THEN
                         NIOBSLAT=NIOBSLAT+1 
                       ENDIF
                     ENDDO
