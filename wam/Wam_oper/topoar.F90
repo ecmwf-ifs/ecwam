@@ -84,7 +84,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IU01
       REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
 
-      INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA
+      INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA, IS
       INTEGER(KIND=JWIM) :: KLONRGG  
       INTEGER(KIND=JWIM) :: MLON, NLATMAX, KMAX, NLAT, N1, N2, LAST
       INTEGER(KIND=JWIM) :: NMINADJT
@@ -204,14 +204,16 @@
         ALLOCATE(IDUM(NGX))
         DO K=1,NY
           IF(LLREALIN) THEN
-            WRITE(CX,'(I5.5)') NLONRGG(K)
+            WRITE(CX,'(I5.5)') KLONRGG(1)
             FORMT='('//CX//'F9.2)'
-            READ (IU01,FORMT) (BATHY(IX,K),IX=1,NLONRGG(K))
+            DO IS = 1,KLONRGG(K),KLONRGG(1)
+              READ (IU01,FORMT) (BATHY(IX,K),IX=IS,MIN(IS+KLONRGG(1)-1,KLONRGG(K)))
+            ENDDO
           ELSE
-            WRITE(CX,'(I4.4)') NLONRGG(K)
+            WRITE(CX,'(I4.4)') KLONRGG(K)
             FORMT='('//CX//'I4)'
-            READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
-            DO IX=1,NLONRGG(K)
+            READ (IU01,FORMT) (IDUM(IX),IX=1,KLONRGG(K))
+            DO IX=1,KLONRGG(K)
               BATHY(IX,K)=REAL(IDUM(IX),JWRB)
             ENDDO
           ENDIF

@@ -615,10 +615,12 @@ PROGRAM CREATE_BATHY_ETOPO1
         DO K=1,NY
            WRITE(1,'(I5.5)') NLONRGG(K) 
         ENDDO
+        WRITE(CX,'(I5.5)') NLONRGG(1)
+        FORMAT='('//CX//'F9.2)'
         DO K=1,NY
-          WRITE(CX,'(I5.5)') NLONRGG(K) 
-          FORMAT='('//CX//'F9.2)'
-          WRITE(1,FORMAT) (WAMDEPTH(IX,K),IX=1,NLONRGG(K)) 
+          DO IS = 1,NLONRGG(K),NLONRGG(1)
+            WRITE(1,FORMAT) (WAMDEPTH(IX,K),IX=IS,MIN(IS+NLONRGG(1)-1,NLONRGG(K))) 
+          ENDDO
         ENDDO
       ELSE
         DO K=1,NY
