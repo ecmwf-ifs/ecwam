@@ -72,6 +72,10 @@
       INTEGER(KIND=JWIM) :: JJK, JJY, JJX
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+!!debile !!! will need to make sure that NFRE_PROPAG <= NFRE
+!!! it is currently only a feature without current or depth refraction
+      REAL(KIND=JWRB), PARAMETER :: NFRE_PROPAG = 27
+
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
 ! ----------------------------------------------------------------------
@@ -89,12 +93,16 @@
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
+!!! debile test
+          F3(:,:,NFRE_PROPAG+1:NFRE) = F1(:,:,NFRE_PROPAG+1:NFRE)
+
           DO K=1,NANG
             JJX=JXO(K,1)
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-            DO M=1,NFRE
+!!! debile test
+            DO M=1,NFRE_PROPAG
               DO IJ=MIJS,MIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
@@ -136,6 +144,8 @@
 
             ENDDO
           ENDDO
+
+          CALL  IMPHFTAIL (IJS, IJL, MIJ_PROPAG, FLM_PROPAG, FL3) 
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
