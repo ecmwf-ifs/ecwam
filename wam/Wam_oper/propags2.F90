@@ -95,7 +95,6 @@
 
 !!! debile test
        NFRE_PROPAG = 27
-       NFRE_PROPAG = NFRE
 
           F3(:,:,NFRE_PROPAG+1:NFRE) = F1(:,:,NFRE_PROPAG+1:NFRE)
 
