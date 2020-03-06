@@ -70,11 +70,11 @@
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
       INTEGER(KIND=JWIM) :: JJK, JJY, JJX
-
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 !!debile !!! will need to make sure that NFRE_PROPAG <= NFRE
 !!! it is currently only a feature without current or depth refraction
-      REAL(KIND=JWRB) :: NFRE_PROPAG
+      INTEGER(KIND=JWIM) :: NFRE_PROPAG
+
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
@@ -147,8 +147,6 @@
 
             ENDDO
           ENDDO
-
-          CALL  IMPHFTAIL (IJS, IJL, MIJ_PROPAG, FLM_PROPAG, FL3) 
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
