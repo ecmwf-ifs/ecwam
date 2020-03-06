@@ -84,7 +84,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IU01
       REAL(KIND=JWRB), DIMENSION(NGX,NGY), INTENT(OUT) :: BATHY
 
-      INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA
+      INTEGER(KIND=JWIM) :: I, J, K, JH, L, IX, IAA, IS
       INTEGER(KIND=JWIM) :: KLONRGG  
       INTEGER(KIND=JWIM) :: MLON, NLATMAX, KMAX, NLAT, N1, N2, LAST
       INTEGER(KIND=JWIM) :: NMINADJT
@@ -99,8 +99,8 @@
       REAL(KIND=JWRB), ALLOCATABLE :: XA2H(:), XA1(:,:)
 
       CHARACTER(LEN=1), ALLOCATABLE :: AX(:), AXX(:)
-      CHARACTER(LEN=4) :: CX
-      CHARACTER(LEN=10) :: FORMT
+      CHARACTER(LEN=5) :: CX
+      CHARACTER(LEN=11) :: FORMT
       CHARACTER(LEN=14) :: CHEADER 
 
       LOGICAL :: LLREALIN
@@ -133,9 +133,9 @@
 
       IF(LLREALIN) THEN
         READ (IU01,'(a14)') CHEADER 
-        READ (IU01,'(8F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+        READ (IU01,'(6F13.8)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       ELSE
-        READ (IU01,'(8F10.5)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
+        READ (IU01,'(6F10.5)') XDELA, XDELO, XLAS, XLAN, XLOW, XLOE
       ENDIF
       CALL ADJUST (XLOW, XLOE)
 
@@ -143,7 +143,7 @@
       WRITE (IU06,'(3X,''RESOLUTION LAT-LON '',2F8.3)') XDELA, XDELO
       WRITE (IU06,'(3X,'' SOUTHERN LAT '','' NORTHERN LAT '',           &
      &                 '' WESTERN LONG '','' EASTERN LONG'',            &
-     &                 /,2X,4F14.3)') XLAS, XLAN, XLOW, XLOE
+     &                 /,2X,4F13.8)') XLAS, XLAN, XLOW, XLOE
 
       BATHY(:,:) = 999.0_JWRB
 
@@ -178,8 +178,10 @@
         ENDIF
 
         DO K=1,NY
+
 !       READ THE NUMBER OF POINTS PER LATITUDE
-          READ (IU01,'(I4.4)') KLONRGG  
+          READ (IU01,*) KLONRGG  
+
           IF(KLONRGG.NE.NLONRGG(K)) THEN
             WRITE (IU06,*) ' ******************************************'
             WRITE (IU06,*) ' *                                        *'
@@ -200,12 +202,17 @@
 !       READ THE BATHYMETRY DATA
 
         ALLOCATE(IDUM(NGX))
+        CX='     '
+        FORMT='          ' 
         DO K=1,NY
-          WRITE(CX,'(I4.4)') NLONRGG(K)
           IF(LLREALIN) THEN
+            WRITE(CX,'(I5.5)') NLONRGG(1)
             FORMT='('//CX//'F9.2)'
-            READ (IU01,FORMT) (BATHY(IX,K),IX=1,NLONRGG(K))
+            DO IS = 1,NLONRGG(K),NLONRGG(1)
+              READ (IU01,FORMT) (BATHY(IX,K),IX=IS,MIN(IS+NLONRGG(1)-1,NLONRGG(K)))
+            ENDDO
           ELSE
+            WRITE(CX,'(I4.4)') NLONRGG(K)
             FORMT='('//CX//'I4)'
             READ (IU01,FORMT) (IDUM(IX),IX=1,NLONRGG(K))
             DO IX=1,NLONRGG(K)
