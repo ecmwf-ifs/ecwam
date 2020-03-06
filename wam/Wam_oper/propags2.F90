@@ -74,7 +74,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 !!debile !!! will need to make sure that NFRE_PROPAG <= NFRE
 !!! it is currently only a feature without current or depth refraction
-      REAL(KIND=JWRB), PARAMETER :: NFRE_PROPAG = 27
+      REAL(KIND=JWRB) :: NFRE_PROPAG
 
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
@@ -94,6 +94,9 @@
 !       ----------------------------------------
 
 !!! debile test
+       NFRE_PROPAG = 27
+       NFRE_PROPAG = NFRE
+
           F3(:,:,NFRE_PROPAG+1:NFRE) = F1(:,:,NFRE_PROPAG+1:NFRE)
 
           DO K=1,NANG
