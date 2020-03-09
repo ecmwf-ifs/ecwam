@@ -96,7 +96,14 @@
 !!! debile test
        NFRE_PROPAG = 27
 
-          F3(:,:,NFRE_PROPAG+1:NFRE) = F1(:,:,NFRE_PROPAG+1:NFRE)
+          DO M=NFRE_PROPAG+1,NFRE
+            DO K=1,NANG
+              DO IJ=MIJS,MIJL
+!               !!! F3 AND F1 do not have the same length for the first dimension !!!1
+                F3(IJ,K,M) = F1(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
 
           DO K=1,NANG
             JJX=JXO(K,1)
