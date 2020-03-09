@@ -70,12 +70,8 @@
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
       INTEGER(KIND=JWIM) :: JJK, JJY, JJX
-!!debile !!! will need to make sure that NFRE_PROPAG <= NFRE
-!!! it is currently only a feature without current or depth refraction
-      INTEGER(KIND=JWIM) :: NFRE_PROPAG
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
 ! ----------------------------------------------------------------------
@@ -93,25 +89,12 @@
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-!!! debile test
-       NFRE_PROPAG = 27
-
-          DO M=NFRE_PROPAG+1,NFRE
-            DO K=1,NANG
-              DO IJ=MIJS,MIJL
-!               !!! F3 AND F1 do not have the same length for the first dimension !!!1
-                F3(IJ,K,M) = F1(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
-
           DO K=1,NANG
             JJX=JXO(K,1)
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-!!! debile test
-            DO M=1,NFRE_PROPAG
+            DO M=1,NFRE
               DO IJ=MIJS,MIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
