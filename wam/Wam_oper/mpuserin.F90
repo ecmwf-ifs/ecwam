@@ -48,7 +48,7 @@
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
-     &            LLCAPCHNK
+     &            LLCAPCHNK, LLGCBZ0
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -194,7 +194,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK,                                                     &
+     &   LLCAPCHNK, LLGCBZ0,                                            &
      &   LWAM_USE_IO_SERV
 
 
@@ -403,6 +403,7 @@
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
+!     LLGCBZ0 : USE MODEL FOR BACKGROUND ROUGHNESS.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
@@ -703,6 +704,7 @@
       LWNEMOCOUDEBUG = .FALSE.
 
       LLCAPCHNK = .FALSE.
+      LLGCBZ0 = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
 

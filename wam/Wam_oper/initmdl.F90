@@ -230,6 +230,7 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,              &
+     &                      LLGCBZ0,                                    &
      &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
      &            FFLAG20  ,GFLAG20  ,                                  &
@@ -323,6 +324,7 @@
 #include "incdate.intfb.h"
 #include "inisnonlin.intfb.h"
 #include "init_sdiss_ardh.intfb.h"
+#include "initgc.intfb.h"
 #include "init_x0tauhf.intfb.h"
 #include "initnemocpl.intfb.h"
 #include "iniwcst.intfb.h"
@@ -560,6 +562,10 @@
         DFIMFR_SIM(M)  = DFIM_SIM(M)*FR(M)
         DFIMFR2_SIM(M) = DFIM_SIM(M)*FR(M)**2
       ENDDO
+
+
+      ! INITIALISATION FOR GRAVITY-CAPILLARY
+      IF(LLGCBZ0) CALL INITGC
 
       CALL TABU_SWELLFT
 
