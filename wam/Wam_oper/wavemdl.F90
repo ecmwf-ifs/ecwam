@@ -269,7 +269,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LLGRAPI
-      LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
@@ -450,7 +449,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         KQGAUSS=IQGAUSS
 
         FRSTIME = .FALSE.                                              
-        L1STCALL = .TRUE.
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'                 
@@ -554,8 +552,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
         KQGAUSS=IQGAUSS
 
-        L1STCALL = .FALSE.
-
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
 !       ---------------------------------------------------
         LLINIT=.FALSE.
@@ -588,7 +584,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'

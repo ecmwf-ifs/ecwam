@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAG_WAM (FL1, FL3, IJS, IJL, L1STCALL)
+      SUBROUTINE PROPAG_WAM (FL1, FL3, IJS, IJL)
 
 ! ----------------------------------------------------------------------
 
@@ -12,12 +12,11 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PROPAG_WAM (FL1,FL3,IJS,IJL,L1STCALL)*
+!     *CALL* *PROPAG_WAM (FL1,FL3,IJS,IJL)*
 !          *FL1*  - SPECTRUM AT TIME T.
 !          *FL3*  - SPECTRUM AT TIME T+DELT.
 !          *IJS*  - INDEX OF FIRST POINT
 !          *IJL*  - INDEX OF LAST POINT
-!          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
 
 
 !     METHOD.
@@ -31,15 +30,20 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
+      USE YOWUBUF  , ONLY : LUPDTWGHT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+#include "ctuwupdt.intfb.h"
+#include "mpexchng.intfb.h"
 #include "propags.intfb.h"
 #include "propags1.intfb.h"
 #include "propags2.intfb.h"
@@ -49,8 +53,6 @@
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
 
-      LOGICAL, INTENT(IN) :: L1STCALL
-
       INTEGER(KIND=JWIM) :: IJ, K, M, J
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
@@ -58,14 +60,29 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: TMPFL3(:,:,:)
 
+      LOGICAL :: L1STCALL
+
+      DATA L1STCALL / .TRUE. /
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
+
+!     OBTAIN INFORMATION AT NEIGHBORING GRID POINTS
+      CALL MPEXCHNG(FL1,NANG,NFRE)
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. PROPAG_WAM: MPEXCHNG CALLED' 
+        CALL FLUSH (IU06)
+      ENDIF
+
+
+!     PROPAGATION BY ONE TIME STEP
       CALL GSTATS(1430,0)
       NPROMA=NPROMA_WAM
 
       IF(IPROPAGS.EQ.1) THEN
+        IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
@@ -77,7 +94,14 @@
           WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS1 CALLED'
           CALL FLUSH (IU06)
         ENDIF
+
       ELSEIF(IPROPAGS.EQ.2) THEN
+
+        IF(LUPDTWGHT) THEN
+          CALL CTUWUPDT(IJS, IJL)
+          LUPDTWGHT=.FALSE.
+        ENDIF
+
         MTHREADS=1
 !$      MTHREADS=OMP_GET_MAX_THREADS()
         NPROMA=(IJL-IJS+1)/MTHREADS + 1
@@ -96,6 +120,7 @@
           CALL FLUSH (IU06)
         ENDIF
       ELSE
+        IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
@@ -109,6 +134,9 @@
         ENDIF
       ENDIF
       CALL GSTATS(1430,1)
+
+      L1STCALL=.FALSE.
+      LLCHKCFL=.FALSE.
 
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',1,ZHOOK_HANDLE)
 
