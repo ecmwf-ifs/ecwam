@@ -1,4 +1,4 @@
-SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRR)
+SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 ! ----------------------------------------------------------------------
 
