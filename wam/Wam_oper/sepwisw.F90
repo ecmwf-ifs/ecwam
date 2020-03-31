@@ -1,4 +1,4 @@
-      SUBROUTINE SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,                    &
+      SUBROUTINE SEPWISW (IJS, IJL, MIJ, F3, XLLWS,                    &
      &                    USNEW, U10NEW, THWNEW,                        &
      &                    ESWELL   ,FSWELL   ,THSWELL  ,                &
      &                    P1SWELL  ,P2SWELL  ,SPRDSWELL,                &
@@ -31,7 +31,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* SEPWISW (IJS, IJL, MIJ, FL3, XLLWS,
+!       *CALL* SEPWISW (IJS, IJL, MIJ, F3, XLLWS,
 !    &                  USNEW, U10NEW, THWNEW,
 !    &                  ESWELL   ,FSWELL   ,THSWELL  ,
 !    &                  P1SWELL  ,P2SWELL  ,SPRDSWELL,
@@ -41,7 +41,7 @@
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!          *FL3* - BLOCK OF SPECTRA
+!          *F3* - BLOCK OF SPECTRA
 !          *XLLWS* - WINDSEA MASK FROM INPUT SOURCE TERM
 !          *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !          *U10NEW* - LATESt WIND SPEED.
@@ -90,7 +90,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN), INTENT(OUT) :: EMTRAIN, THTRAIN, PMTRAIN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -103,7 +103,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: R
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, FL1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SWM, F1
 
       LOGICAL :: LLPEAKF
 
@@ -167,21 +167,21 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M)=FL3(IJ,K,M)*SWM(IJ,K,M)
+            F1(IJ,K,M)=F3(IJ,K,M)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
-      CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
+      CALL FEMEAN(F1, IJS, IJL, ESWELL, FSWELL)
 
 !     WINDSEA:
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M),0.0_JWRB)
+            F1(IJ,K,M)=MAX(F3(IJ,K,M)-F1(IJ,K,M),0.0_JWRB)
           ENDDO
         ENDDO
       ENDDO
-      CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
+      CALL FEMEAN(F1, IJS, IJL, ESEA, FSEA)
 
 !     CHECK:
       DO IJ=IJS,IJL
@@ -217,7 +217,7 @@
             IF(SWM(IJ,K,M).EQ.1.0_JWRB .AND. SWM(IJ,K,M-1).EQ.1.0_JWRB) THEN
               EXIT
             ELSEIF(SWM(IJ,K,M).EQ.0.0_JWRB .AND. SWM(IJ,K,M-1).EQ.1.0_JWRB) THEN
-               IF(FL3(IJ,K,M).GE.FL3(IJ,K,M-1)) SWM(IJ,K,M-1)=0.0_JWRB
+               IF(F3(IJ,K,M).GE.F3(IJ,K,M-1)) SWM(IJ,K,M-1)=0.0_JWRB
             ENDIF
           ENDDO
         ENDDO
@@ -229,7 +229,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M)=MAX(FL3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
+            F1(IJ,K,M)=MAX(F3(IJ,K,M),EPSMIN)*SWM(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -238,11 +238,11 @@
 !         ------------------------------------------------------
 
       IF(LLPARTITION) THEN
-        CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
-        CALL STHQ(FL1, IJS, IJL, THSWELL)
-        CALL SEP3TR (FL3, IJS, IJL, MIJ, U10NEW, THWNEW,                &
+        CALL FEMEAN(F1, IJS, IJL, ESWELL, FSWELL)
+        CALL STHQ(F1, IJS, IJL, THSWELL)
+        CALL SEP3TR (F3, IJS, IJL, MIJ, U10NEW, THWNEW,                &
      &               ESWELL, FSWELL, THSWELL, FSEA,                     &
-     &               FL1, SWM,                                          &
+     &               F1, SWM,                                          &
      &               EMTRAIN  ,THTRAIN  ,PMTRAIN)
       ELSE
         EMTRAIN(:,:)=0.0_JWRB
@@ -253,16 +253,16 @@
 !*    2.2 COMPUTATION OF TOTAL SWELL OUTPUT PARAMETERS
 !         --------------------------------------------
 
-      CALL FEMEAN(FL1, IJS, IJL, ESWELL, FSWELL)
+      CALL FEMEAN(F1, IJS, IJL, ESWELL, FSWELL)
       
-      CALL STHQ(FL1, IJS, IJL, THSWELL)
+      CALL STHQ(F1, IJS, IJL, THSWELL)
 
-      CALL MWP1(FL1, IJS, IJL, P1SWELL)
+      CALL MWP1(F1, IJS, IJL, P1SWELL)
 
-      CALL MWP2(FL1, IJS, IJL, P2SWELL)
+      CALL MWP2(F1, IJS, IJL, P2SWELL)
 
       LLPEAKF = .TRUE.
-      CALL WDIRSPREAD (FL1, IJS, IJL, ESWELL, LLPEAKF, SPRDSWELL)
+      CALL WDIRSPREAD (F1, IJS, IJL, ESWELL, LLPEAKF, SPRDSWELL)
 
 
 !*    3. COMPUTATION OF WIND SEA OUTPUT PARAMETERS
@@ -271,14 +271,14 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL1(IJ,K,M)=MAX(FL3(IJ,K,M)-FL1(IJ,K,M)+EPSMIN,0.0_JWRB)
+            F1(IJ,K,M)=MAX(F3(IJ,K,M)-F1(IJ,K,M)+EPSMIN,0.0_JWRB)
           ENDDO
         ENDDO
       ENDDO
 
-      CALL FEMEAN(FL1, IJS, IJL, ESEA, FSEA)
+      CALL FEMEAN(F1, IJS, IJL, ESEA, FSEA)
 
-      CALL STHQ(FL1, IJS, IJL, THWISEA)
+      CALL STHQ(F1, IJS, IJL, THWISEA)
 !     if there isn't any windsea energy, set the windsea mean direction
 !     to the wind direction.
       DO IJ=IJS,IJL
@@ -287,12 +287,12 @@
         ENDIF
       ENDDO
 
-      CALL MWP1(FL1, IJS, IJL, P1SEA)
+      CALL MWP1(F1, IJS, IJL, P1SEA)
 
-      CALL MWP2(FL1, IJS, IJL, P2SEA)
+      CALL MWP2(F1, IJS, IJL, P2SEA)
 
       LLPEAKF = .TRUE.
-      CALL WDIRSPREAD(FL1, IJS, IJL, ESEA, LLPEAKF, SPRDSEA)
+      CALL WDIRSPREAD(F1, IJS, IJL, ESEA, LLPEAKF, SPRDSEA)
 
       IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
 

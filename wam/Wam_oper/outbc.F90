@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBC (FL3, IJS, IJL, IG, IU19)
+      SUBROUTINE OUTBC (FL1, IJS, IJL, IG, IU19)
 
 ! ----------------------------------------------------------------------
 
@@ -15,8 +15,8 @@
 !**   INTERFACE.
 !     ----------
 
-!    *CALL* *OUTBC (FL3, IJS, IJL, IG, IU19)*
-!      *FL3*     - BLOCK OF SPECTRA.
+!    *CALL* *OUTBC (FL1, IJS, IJL, IG, IU19)*
+!      *FL1*     - BLOCK OF SPECTRA.
 !      *IJS*     - INDEX OF FIRST GRIDPOINT.
 !      *IJL*     - INDEX OF LAST GRIDPOINT.
 !      *IG*      - BLOCK NUMBER.
@@ -66,7 +66,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG 
       INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
-      REAL(KIND=JWRB), INTENT(IN) :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(IN) :: FL1(NINF-1:NSUP,NANG,NFRE)
 
       INTEGER(KIND=JWIM), PARAMETER :: NSCFLD=3
 
@@ -93,9 +93,9 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,IJL)
 
-        CALL FEMEAN (FL3(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),          &
+        CALL FEMEAN (FL1(KIJS:KIJL,:,:), KIJS, KIJL, EM(KIJS),          &
      &               FM(KIJS))
-        CALL STHQ (FL3(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
+        CALL STHQ (FL1(KIJS:KIJL,:,:), KIJS, KIJL, TQ(KIJS))
       ENDDO
 !$OMP END PARALLEL DO
 
@@ -107,7 +107,7 @@
 
       IRECV=1
       CALL MPGATHERBC(IRECV, IJS, IJL, NSCFLD,                          &
-     &                FL3(IJS:IJL,:,:), EM, TQ, FM,                     &
+     &                FL1(IJS:IJL,:,:), EM, TQ, FM,                     &
      &                FLPTS, EMPTS, TQPTS, FMPTS)
 
 

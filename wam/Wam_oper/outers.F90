@@ -1,4 +1,4 @@
-      SUBROUTINE OUTERS (FL3, IJS, IJL, CDTPRO)
+      SUBROUTINE OUTERS (FL1, IJS, IJL, CDTPRO)
 ! -----------------------------------------------------------------     
 
 !**** *OUTERS* -  OUTPUT OF SATELLITE COLOCATION SPECTRA.
@@ -11,8 +11,8 @@
 !*** INTERFACE.                                                         
 !    ----------                                                         
 
-!       *CALL  OUTERS (FL3, CDTPRO)
-!          *FL3*    -   SPECTRUM.                                       
+!       *CALL  OUTERS (FL1, CDTPRO)
+!          *FL1*    -   SPECTRUM.                                       
 !          *CDTPRO* -   MODEL PROPAGATION TIME.                         
 
 !    EXTERNALS.                                                         
@@ -54,7 +54,7 @@
 #include "mpgatherersfile.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
 
       INTEGER(KIND=JWIM) :: IG
@@ -143,8 +143,8 @@
       IF (CDTPRO.EQ.CDTERS.AND.IERS.GT.0) THEN                          
 
 !       COMPUTE MEAN PARAMETERS
-        CALL FEMEAN (FL3, IJS, IJL, EM, FM)
-        CALL STHQ (FL3, IJS, IJL, THQ)
+        CALL FEMEAN (FL1, IJS, IJL, EM, FM)
+        CALL STHQ (FL1, IJS, IJL, THQ)
 
 !       COLLECT NECESSARY FIELDS TO PROCESS 1
 
@@ -163,7 +163,7 @@
           ALLOCATE(FLPTS(NSPFLD,IERS,NANG,NFRE))
 
           CALL MPGATHERERSFILE(IRECV,ITAG,NSTART,NEND,NSPFLD,NSCFLD,    &
-     &                         IJS, IJL, FL3,FLPTS,                     &
+     &                         IJS, IJL, FL1,FLPTS,                     &
      &                         U10NEW(IJS),THWNEW(IJS),USNEW(IJS),      &
      &                         EM, FM, THQ,                             &
      &                         EMPTS,FMPTS,THQPTS,U10PTS,THWPTS,USPTS)

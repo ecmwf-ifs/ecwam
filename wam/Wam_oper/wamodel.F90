@@ -319,7 +319,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
-     &            FL1      ,FL3
+     &            FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
       USE YOWUNIT  , ONLY : IU02     ,IU04     ,              &
@@ -328,7 +328,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            IDELWIN  ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CDATEWO
       USE YOWNEMOP , ONLY : NEMODP
-      USE UNWAM, ONLY : PROPAG_UNWAM, EXCHANGE_FOR_FL1_FL3_SL
+      USE UNWAM, ONLY : EXCHANGE_FOR_FL1
       USE YOWUNPOOL ,ONLY : LLUNSTR, DBG, LLUNBINOUT
       USE YOWPD, ONLY : MNP => npa
       USE MPL_MODULE
@@ -511,7 +511,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
            CALL FLUSH (IU06)
           ENDIF
 
-          IF (LLUNSTR) CALL EXCHANGE_FOR_FL1_FL3_SL(FL1)
+          IF (LLUNSTR) CALL EXCHANGE_FOR_FL1(FL1)
 
         ELSE
           MIJ(:) = NFRE
@@ -709,22 +709,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 ! IF CDATE CORRESPONDS TO A PROPAGATION TIME
           IF (CDATE.EQ.CDTPRA) THEN
 
-            IF(NIBLO.GT.1) THEN
+            CALL PROPAG_WAM(FL1)
 
-              IF (.NOT. LLUNSTR) THEN
-                CALL PROPAG_WAM(FL1, FL3, IJS(IG), IJL(IG))
-              ELSE IF (LLUNSTR) THEN 
-                CALL PROPAG_UNWAM(FL1, FL3)
-              END IF
-
-              IF (ITEST.GE.2) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
-                CALL FLUSH (IU06)
-              ENDIF
-
-            ELSE
-!             ONE GRID POINT
-              FL3 = FL1
+            IF (ITEST.GE.2) THEN
+              WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
+              CALL FLUSH (IU06)
             ENDIF
 
             CDATE=CDTPRO   
@@ -754,7 +743,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS(IG),IJL(IG),NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-                CALL IMPLSCH (FL3(KIJS:KIJL,:,:),                       &
+                CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
      &                        KIJS, KIJL, IG,                           &
      &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),          &
      &                        TAUW(KIJS,IG), Z0OLD(KIJS,IG),            &
@@ -787,7 +776,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                   MIJ(IJ) = NFRE
                   DO K=1,NANG
                     DO M=1,NFRE
-                      FL3(IJ,K,M) = MAX(FL3(IJ,K,M),EPSMIN)
+                      FL1(IJ,K,M) = MAX(FL1(IJ,K,M),EPSMIN)
                       XLLWS(IJ,K,M) = 0.0_JWRB
                     ENDDO
                   ENDDO
@@ -825,7 +814,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           IF (LLUNSTR .AND. LLUNBINOUT) THEN
 !AR: TEST OUTPUT FOR THE UNSTRUCTURED 
 !MDS: Most likely ultra bugged.
-            CALL OUTUNWAMTEST (FL3(1:MNP,:,:), .FALSE.)
+            CALL OUTUNWAMTEST (FL1(1:MNP,:,:), .FALSE.)
           ENDIF
 
 !*    1.5.5.4 UPDATE TIME;IF TIME LEFT BRANCH BACK TO 1.5.5 
@@ -847,7 +836,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           CALL GSTATS(1909,0)
           IF (IBOUNF.EQ.1) THEN
-            CALL BOUINPT (FL3, IU02, NBLKS, NBLKE)
+            CALL BOUINPT (FL1, IU02, NBLKS, NBLKE)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
                CALL FLUSH(IU06)
@@ -860,7 +849,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !           --------------------------
 
           IF (IBOUNC.EQ.1) THEN
-            CALL OUTBC (FL3, IJS(IG), IJL(IG), IG, IU19)
+            CALL OUTBC (FL1, IJS(IG), IJL(IG), IG, IU19)
             IF (ITEST.GE.2) THEN
               IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY OUTPUT', &
      &         '  (COARSE GRID) DONE IN SUB OUTBC'
@@ -905,12 +894,12 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !           OUTPUT POINT SPECTRA
             IF(NGOUT.GT.0 .OR. LLOUTERS) THEN
               CALL OUTWPSP (IJSLOC, IJLLOC, IJGLOBAL_OFFSET,            &
-     &                      FL3(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
+     &                      FL1(IJSLOC:IJLLOC,:,:),USNEW(IJSLOC))
             ENDIF
 
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
-              CALL OUTBS (MIJ, FL3, XLLWS)
+              CALL OUTBS (MIJ, FL1, XLLWS)
 
 !!!1 to do: decide if there are cased where we might want LDREPROD false
               LDREPROD=.TRUE.
@@ -935,37 +924,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !*    1.6 IF ONE BLOCK VERSION COPY RESULTS.
 !         ----------------------------------
-!!!
-!!!   note in case of Alt and SAR assimilation both FL1 and FL3
-!!!   are needed since FL1 will be first modified by the altimeter
-!!!   data assimilation and FL3 is needed to keep the first guess
-!!!   (unaltered by the alt data assimilation) for the calculation
-!!!   of the difference between SAR data and model values
-!!!   (see rearrangsar)
-!!!
-        IG=1
-        CALL GSTATS(1432,0)
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL1(IJ,K,M) = FL3(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-!$OMP   END PARALLEL DO
-        CALL GSTATS(1432,1)
-
-!       SET THE DUMMY LAND POINTS TO 0.
-        DO M=1,NFRE
-          DO K=1,NANG
-             FL1(NINF-1,K,M) = 0.0_JWRB 
-          ENDDO
-        ENDDO
 
 !*    1.7 ONE PROPAGATION TIMESTEP DONE FOR ALL BLOCKS.
 !         ---------------------------------------------

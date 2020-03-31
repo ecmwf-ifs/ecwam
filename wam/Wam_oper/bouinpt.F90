@@ -1,4 +1,4 @@
-      SUBROUTINE BOUINPT (FL3, IU02, NSTART, NEND)
+      SUBROUTINE BOUINPT (FL1, IU02, NSTART, NEND)
 
 ! ----------------------------------------------------------------------
 
@@ -14,8 +14,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *BOUINPT (FL3, IU02)*
-!          *FL3*     REAL         BLOCK OF SPECTRA.
+!       *CALL* *BOUINPT (FL1, IU02)*
+!          *FL1*     REAL         BLOCK OF SPECTRA.
 !          *IU02*    INTEGER      UNIT FOR INPUT OF BOUNDARY VALUES.
 !          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
@@ -77,7 +77,7 @@
       INTEGER(KIND=JWIM) :: NIJB
       INTEGER(KIND=JWIM), DIMENSION(NBOUNF) :: IJB, IBND
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB) :: XANG, XFRE, TH0, FR1, CO, XNBO, XDELIN  
       REAL(KIND=JWRB) :: XLON, XLAT
       REAL(KIND=JWRB) :: DEL12, DEL1L
@@ -413,14 +413,14 @@
           CALL INTSPEC (NFRE, NANG, NFRE, NANG, FR, DEL12, DEL1L,       &
      &       F1(1,1,IBCL), FMEAN1(IBCL), EMEAN1(IBCL), THQ1(IBCL),      &
      &       F1(1,1,IBCR), FMEAN1(IBCR), EMEAN1(IBCR), THQ1(IBCR),      &
-     &       FL3(IJF,:,:), FMEAN, EMEAN, THQ)
+     &       FL1(IJF,:,:), FMEAN, EMEAN, THQ)
         ELSE
 
 !*    3.2.2. WEIGHT IS ZERO COPY LEFT POINT.
 !            -------------------------------
           DO M=1,NFRE
             DO K=1,NANG
-              FL3(IJF,K,M)=F1(K,M,IBCL)
+              FL1(IJF,K,M)=F1(K,M,IBCL)
             ENDDO
           ENDDO
 

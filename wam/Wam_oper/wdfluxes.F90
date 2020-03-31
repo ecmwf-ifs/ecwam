@@ -1,6 +1,6 @@
       SUBROUTINE WDFLUXES (IJS, IJL, IG,                                &
      &                     MIJ,                                         &
-     &                     FL3, XLLWS,                                  &
+     &                     FL1, XLLWS,                                  &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
      &                     Z0NEW, ROAIRN, WSTAR,                        &
@@ -20,11 +20,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (FL3, IJS, IJL, IG,
+!       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR,
 !    &                    USTOKES, VSTOKES, STRNMS)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT).
+!          *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
 !          *IG*     - BLOCK NUMBER.
@@ -94,7 +94,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
@@ -128,7 +128,7 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
+      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTAR, SL, SPOS, XLLWS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
@@ -136,11 +136,11 @@
       ENDIF
 
 !     MEAN FREQUENCY OF THE TOTAL SEA
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,                    &
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,                    &
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,         &
@@ -157,7 +157,7 @@
           ENDDO
         ENDDO
 
-        CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                          &
+        CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                          &
      &                MIJ, RHOWGDFTH,                                   &
      &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
      &                TAUW_LOC, PHIWA)
@@ -167,7 +167,7 @@
           CALL FLUSH (IU06)
         ENDIF
 
-        CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,                            &
+        CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                            &
      &                EMEANALL, F1MEAN, XKMEAN,                         &
      &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
@@ -184,7 +184,7 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+        CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
           CALL FLUSH (IU06)
@@ -199,9 +199,9 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-      CALL STOKESDRIFT(FL3, IJS, IJL, USTOKES, VSTOKES)
+      CALL STOKESDRIFT(FL1, IJS, IJL, USTOKES, VSTOKES)
 
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
 
       ENDIF

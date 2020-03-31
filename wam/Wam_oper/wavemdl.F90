@@ -131,7 +131,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
      &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
-     &            NSTART ,NEND     ,FL1      ,FL3
+     &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
       USE GRIB_API_INTERFACE
@@ -345,8 +345,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       IREAD=1
       IF(NPROC.EQ.1) IREAD=1
-
-      IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
 
       IF (FRSTIME) THEN
@@ -571,10 +569,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ENDIF
 
       ENDIF
-
-!!test: reallocating the memory that was freed
-
-      IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
 
 
 ! --------------------------------------------------------------------  

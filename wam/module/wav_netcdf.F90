@@ -522,7 +522,7 @@ MODULE WAV_netcdf
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    , &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,           &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,           &
-     &            FL3
+     &            FL1
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN
       USE YOWINTP  , ONLY : WHGTTG   ,WDIRTG   ,WPKFTG   ,WMNFTG,     &
      &            USTARG, CDG
@@ -1385,7 +1385,7 @@ MODULE WAV_netcdf
       USE YOWGRID  , ONLY : IJS      ,IJL, IJSLOC, IJLLOC, IJGLOBAL_OFFSET
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWUNIT  , ONLY : IU25     ,IU26
-      USE YOWSPEC, ONLY   : FL3
+      USE YOWSPEC, ONLY   : FL1
       IMPLICIT NONE
       INTEGER(KIND=JWIM) :: IG
       LOGICAL DO_OUTPUT, TEST_CON, TEST_NETCDF
@@ -1422,10 +1422,10 @@ MODULE WAV_netcdf
         IG=1
         DoNETCDF_sync=.TRUE.
 # ifdef DEBUG
-        WRITE(740+MyRankGlobal,*) 'minval(FL3)=', minval(FL3(IJSLOC:IJLLOC,:,:))
+        WRITE(740+MyRankGlobal,*) 'minval(FL1)=', minval(FL1(IJSLOC:IJLLOC,:,:))
         FLUSH(740+MyRankGlobal)
 # endif
-        CALL OUTBS (FL3(IJSLOC:IJLLOC,:,:), IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IU25, IU26, LLOUTBS)
+        CALL OUTBS (FL1(IJSLOC:IJLLOC,:,:), IJSLOC, IJLLOC, IJGLOBAL_OFFSET, IG, IU25, IU26, LLOUTBS)
         DoNETCDF_sync=.FALSE.
         CALL WAV_netcdf_export
 # ifdef DEBUG

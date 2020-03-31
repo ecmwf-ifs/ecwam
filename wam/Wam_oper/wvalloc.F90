@@ -24,7 +24,7 @@
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
      &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
-     &            FL1      ,FL3
+     &            FL1
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND, ONLY   : NXFF     ,NYFF     ,FIELDG_coupl
@@ -77,7 +77,6 @@
         ALLOCATE(FL1(NINF-1:NSUP,NANG,NFRE))
         FL1(:,:,:)=0.0_JWRB
       ENDIF
-      IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
 
       IF(.NOT.ALLOCATED(EMEAN)) ALLOCATE(EMEAN(NSTART(IRANK):NEND(IRANK)))
       IF(.NOT.ALLOCATED(FMEAN)) ALLOCATE(FMEAN(NSTART(IRANK):NEND(IRANK)))

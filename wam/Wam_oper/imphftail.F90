@@ -1,4 +1,4 @@
-      SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3) 
+      SUBROUTINE IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1) 
 ! ----------------------------------------------------------------------
 
 !**** *IMPHFTAIL* - IMPOSE A HIGH FREQUENCY TAIL TO THE SPECTRUM
@@ -13,13 +13,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!       *CALL* *IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
+!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *FLM*    - SPECTAL DENSITY MINIMUM VALUE
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 
 !     METHOD.
 !     -------
@@ -46,7 +46,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG), INTENT(IN) :: FLM 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
@@ -86,9 +86,9 @@
 !     ------------------------
       DO K=1,NANG
         DO IJ=IJS,IJL
-          TFAC = FL3(IJ,K,MIJ(IJ))
+          TFAC = FL1(IJ,K,MIJ(IJ))
           DO M=MIJ(IJ)+1,NFRE
-            FL3(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
+            FL1(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO

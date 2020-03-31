@@ -20,7 +20,7 @@
      &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,    &
-     &            ROAIRN   ,ZIDLNEW  ,FL3
+     &            ROAIRN   ,ZIDLNEW
       USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -42,8 +42,6 @@
 
       IF(ALLOCATED(ROAIRN)) DEALLOCATE(ROAIRN)
       IF(ALLOCATED(ZIDLNEW)) DEALLOCATE(ZIDLNEW)
-
-      IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
 
       IF(ALLOCATED(CDTNEXT)) DEALLOCATE(CDTNEXT)

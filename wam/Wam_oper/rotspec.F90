@@ -1,4 +1,4 @@
-      SUBROUTINE ROTSPEC (NFRE, NANG, ML, KL, FL1, FL3, RTHET)
+      SUBROUTINE ROTSPEC (NFRE, NANG, ML, KL, F1, F3, RTHET)
 
 !----------------------------------------------------------------------
 
@@ -15,13 +15,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *ROTSPEC (NFRE, NANG, ML, KL, FL1, FL3, RTHET)*
+!       *CALL* *ROTSPEC (NFRE, NANG, ML, KL, F1, F3, RTHET)*
 !          *NFRE*  - FREQUENCY DIMENSION OF SPECTRA.
 !          *NANG*  - DIRECTION DIMENSION OF SPECTRA.
 !          *ML*    - NUMBER OF FREQUENCIES.
 !          *KL*    - NUMBER OF DIRECTIONS.
-!          *FL1*   - SPECTRUM TO BE ROTATED.
-!          *FL3*   - ROTATED SPECTRUM.
+!          *F1*   - SPECTRUM TO BE ROTATED.
+!          *F3*   - ROTATED SPECTRUM.
 !          *RTHET* - TURNING ANGLE IN RADIANS, CLOCKWISE.
 
 !     METHOD.
@@ -47,8 +47,8 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NFRE, NANG, ML, KL
       REAL(KIND=JWRB), INTENT(IN) :: RTHET
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(OUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(IN) :: F1
+      REAL(KIND=JWRB), DIMENSION(NANG,NFRE), INTENT(OUT) :: F3
 
 
       INTEGER(KIND=JWIM) :: K, M
@@ -72,7 +72,7 @@
         IF (KC1.LT. 1) KC1 = KC1+ KL
 
         DO M=1,ML
-          FL3(K,M) = BDIF * FL1(KC,M) + ADIF * FL1(KC1,M)
+          F3(K,M) = BDIF * F1(KC,M) + ADIF * F1(KC1,M)
         ENDDO
       ENDDO
 
