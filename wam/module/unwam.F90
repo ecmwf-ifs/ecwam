@@ -3780,7 +3780,7 @@ END INTERFACE
       ENDDO
  
       DO ip = 1 , mnp
-         fl3(ip,:,:) = REAL(u(:,:,ip),JWRB)
+         flnew(ip,:,:) = REAL(u(:,:,ip),JWRB)
       ENDDO
       END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
 !**********************************************************************
