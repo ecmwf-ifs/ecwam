@@ -30,11 +30,12 @@
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUBUF  , ONLY : LUPDTWGHT
       USE UNWAM    , ONLY : PROPAG_UNWAM
+      USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -77,9 +78,8 @@
 
         ELSE
 
-!         SET THE DUMMY LAND POINTS TO 0.
-          FL1(NINF-1,:,:) = 0.0_JWRB 
-
+!          SET THE DUMMY LAND POINTS TO 0.
+           FL1(NINF-1,:,:) = 0.0_JWRB 
 
 !          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS
            CALL MPEXCHNG(FL1,NANG,NFRE)
