@@ -74,9 +74,6 @@
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
 
-!*    COMPUTE CHARNOCK 'CONSTANT' BETA.
-!     ---------------------------------
-
       DO IJ = IJS,IJL
         BETA(IJ) = G*Z0(IJ)/MAX(US(IJ)**2,EPSUS)
         ALPHAMAXU10=MIN(ALPHAMAX,AMAX+BMAX*U10(IJ))
@@ -87,7 +84,7 @@
         DO IJ = IJS,IJL
           BETA(IJ) = (1.0_JWRB-CICVR(IJ))*BETA(IJ) + CICVR(IJ)*PRCHAR
         ENDDO
-      ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
 
