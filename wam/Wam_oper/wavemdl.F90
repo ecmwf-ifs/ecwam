@@ -702,8 +702,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FLABEL(1)=' Charnock'
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
-                         !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
-                         ! BUT WELL OVER LAND POINTS.
 
           IFLDOFFSET=1
 
