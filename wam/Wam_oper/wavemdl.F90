@@ -436,6 +436,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
+     &                  CICOVER(KIJS,IG), PRCHAR,                       &
      &                  BETAOLD(KIJS)) 
         ENDDO
 !$OMP   END PARALLEL DO
@@ -760,6 +761,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
+     &                  CICOVER(KIJS,IG), PRCHAR,                       &
      &                  WVBLOCK(KIJS,1))
 
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
