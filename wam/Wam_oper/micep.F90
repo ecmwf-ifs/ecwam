@@ -99,7 +99,15 @@
               CICVR(IJ) = NEMOCICOVER(IJ)
             ELSE
 !            get ice information from atmopsheric model
-              CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+              IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR.                    &
+     &            FIELDG(IX,IY)%CIFR .LT. 0.01_JWRB .OR.                &
+     &            FIELDG(IX,IY)%CIFR .GT. 1.01_JWRB ) THEN 
+                CICVR(IJ) = 0.0_JWRB
+              ELSEIF (FIELDG(IX,IY)%CIFR .GT. 0.95_JWRB) THEN 
+                CICVR(IJ) = 1.0_JWRB
+              ELSE
+                CICVR(IJ) = FIELDG(IX,IY)%CIFR 
+              ENDIF
             ENDIF
           ENDDO
         ELSE

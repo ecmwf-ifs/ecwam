@@ -82,7 +82,10 @@
 
       IF (LICERUN .AND. LMASKICE) THEN
         DO IJ = IJS,IJL
-       write(*,*) 'debile ',IJ, CICVR(IJ),BETA(IJ),PRCHAR
+!!!!debile
+          if(CICVR(IJ) > 1.0_JWRB .or. CICVR(IJ) < 0.0_JWRB ) then
+            write(*,*) 'debile in outbeta ',IJ, CICVR(IJ)
+          endif
 
           BETA(IJ) = (1.0_JWRB-CICVR(IJ))*BETA(IJ) + CICVR(IJ)*PRCHAR
         ENDDO
