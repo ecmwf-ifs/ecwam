@@ -82,6 +82,8 @@
 
       IF (LICERUN .AND. LMASKICE) THEN
         DO IJ = IJS,IJL
+       write(*,*) 'debile ',IJ, CICVR(IJ),BETA(IJ),PRCHAR
+
           BETA(IJ) = (1.0_JWRB-CICVR(IJ))*BETA(IJ) + CICVR(IJ)*PRCHAR
         ENDDO
       ENDIF
