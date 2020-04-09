@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBETA (IJS, IJL, U10, US, Z0, CICVR, PRCHAR, BETA)
+      SUBROUTINE OUTBETA (IJS, IJL, U10, PRCHAR, US, Z0, CICVR, BETA)
 
 ! ----------------------------------------------------------------------
 
@@ -18,14 +18,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, US, Z0, CICVR, BETA)
+!       *CALL* *OUTBETA (IJS, IJL, PRCHAR, US, Z0, CICVR, BETA)
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
+!         *PRCHAR* - DEFAULT VALUE FOR CHARNOCK
 !         *U10*    - WIND SPEED IN M/S.
 !         *US*     - FRICTION VELOCITY IN M/S.
 !         *Z0*     - ROUGHNESS LENGTH IN M.
 !         *CICVR*  - SEA ICE COVER.
-!         *PRCHAR* - DEFAULT VALUE FOR CHARNOCK
 !         *BETA*   - CHARNOCK FIELD (BLOCK ARRAY)
 !         
 
@@ -57,9 +57,9 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), INTENT(IN) :: PRCHAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, US, Z0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL(KIND=JWRB), INTENT(IN) :: PRCHAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: BETA
 
       REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
