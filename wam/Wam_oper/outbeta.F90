@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBETA (IJS, IJL, U10, PRCHAR, US, Z0, CICVR, BETA)
+      SUBROUTINE OUTBETA (IJS, IJL, PRCHAR, U10, US, Z0, CICVR, BETA)
 
 ! ----------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *OUTBETA (IJS, IJL, PRCHAR, US, Z0, CICVR, BETA)
+!       *CALL* *OUTBETA (IJS, IJL, PRCHAR, U10, US, Z0, CICVR, BETA)
 !         *IJS*    - INDEX OF FIRST GRIDPOINT.
 !         *IJL*    - INDEX OF LAST GRIDPOINT.
 !         *PRCHAR* - DEFAULT VALUE FOR CHARNOCK
