@@ -1,0 +1,48 @@
+      SUBROUTINE OMEGAGC(UST, NS, XKS, OMS)
+
+!***  DETERMINE THE CUT-OFF ANGULAR FREQUENCY FOR THE GRAV-CAP WAVES
+
+!     AUTHOR: PETER JANSSEN
+!     ------
+
+!     REFERENCES:
+!     ----------
+
+!     VIERS PAPER EQ.(29)
+
+!----------------------------------------------------------------------
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFRED  , ONLY : KRATIO_GC, XK_GC
+      USE YOWPCONS , ONLY : G, SURFT
+
+      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
+
+!----------------------------------------------------------------------
+
+      IMPLICIT NONE
+
+      REAL(KIND=JWRB), INTENT(IN) :: UST
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS
+      REAL(KIND=JWRB), INTENT(OUT) :: XKS   ! cut-off wave number
+      REAL(KIND=JWRB), INTENT(OUT) :: OMS   ! cut-off angular frequency
+
+      REAL(KIND=JWRB) :: Y
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+   
+!     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
+#include "gc_dispersion.h"
+
+! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('OMEGAGC',0,ZHOOK_HANDLE)
+
+      Y = 1.0_JWRB/(1.48_JWRB+2.05_JWRB*UST)
+      XKS = Y*SQRT(G/SURFT)
+      NS = LOG(XKS/XK_GC(1))/LOG(KRATIO_GC)+1
+      OMS = OMEG_GC(XKS)
+
+      IF (LHOOK) CALL DR_HOOK('OMEGAGC',1,ZHOOK_HANDLE)
+ 
+      END SUBROUTINE OMEGAGC

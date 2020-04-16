@@ -32,7 +32,7 @@
 
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, XKS_GC, XKL_GC,  &
      &                      OMEGA_GC, XK_GC, DELK_GC
-      USE YOWPCONS , ONLY : G, SURFT
+      USE YOWPCONS , ONLY : G
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
