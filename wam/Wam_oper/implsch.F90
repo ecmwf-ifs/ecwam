@@ -1,4 +1,4 @@
-      SUBROUTINE IMPLSCH (FL3, IJS, IJL, IG,                            &
+      SUBROUTINE IMPLSCH (FL1, IJS, IJL, IG,                            &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, Z0OLD,                                  &
      &                    ROAIRO, WSTAROLD,                             &
@@ -42,14 +42,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
+!       *CALL* *IMPLSCH (FL1, FL, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
 !    &                    USTOKES, VSTOKES, STRNMS,                     &
 !    &                    MIJ,  XLLWS)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
@@ -88,7 +88,7 @@
 !       TERMS OF THE FUNCTIONAL MATRIX DS/DF ARE YOWPUTED, THE
 !       NONDIAGONAL TERMS ARE NEGLIGIBLE.
 !       THE ROUTINE IS CALLED AFTER PROPAGATION FOR TIME PERIOD
-!       BETWEEN TWO PROPAGATION CALLS - ARRAY FL3 CONTAINS THE
+!       BETWEEN TWO PROPAGATION CALLS - ARRAY FL1 CONTAINS THE
 !       SPECTRUM AND FL IS USED AS AN INTERMEDIATE STORAGE FOR THE
 !       DIAGONAL TERM OF THE FUNCTIONAL MATRIX.
 
@@ -176,7 +176,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
@@ -236,14 +236,14 @@
 
 !     REDUCE WAVE ENERGY IF LARGER THAN DEPTH LIMITED WAVE HEIGHT
       IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
-         CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL3)
+         CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL1)
       ENDIF
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
       DO K=1,NANG
         DO IJ=IJS,IJL
@@ -254,7 +254,7 @@
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, CICVR, FL3, CIREDUC) 
+        CALL CIWABR(IJS, IJL, CICVR, FL1, CIREDUC) 
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -283,7 +283,7 @@
 !!    FL AND SL ARE INITIALISED IN SINPUT
 
       ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      CALL AIRSEA (FL1, U10NEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
@@ -292,7 +292,7 @@
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
+      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
 !     diagnostic (not coded efficiently)
@@ -313,13 +313,13 @@
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
+      CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                            &
+      CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -328,20 +328,20 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
+      CALL AIRSEA (FL1, U10NEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
 !     RE-IMPOSE HIGH FREQUENCY TAIL
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
 
 !*    REEVALUATE WIND INPUT SOURCE TERM
 !     ---------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
+      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
      &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
 
       IF (ITEST.GE.2) THEN
@@ -349,7 +349,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                            &
+      CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
@@ -362,7 +362,7 @@
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
 
-      CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,                              &
+      CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                              &
      &              EMEANALL, F1MEAN, XKMEAN,                           &
      &              USNEW, THWNEW, ROAIRN)
       IF (ITEST.GE.2) THEN
@@ -380,7 +380,7 @@
       ENDIF
 
 
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+      CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
@@ -408,8 +408,8 @@
 
 !SHALLOW
       IF(ISHALLO.NE.1) THEN
-        CALL SDIWBK(IJS, IJL, FL3 ,FL, SL, DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
-        CALL SBOTTOM (IJS, IJL, DEPTH(IJS,1), FL3, FL, SL)
+        CALL SDIWBK(IJS, IJL, FL1 ,FL, SL, DEPTH(IJS,1), EMAXDPT(IJS), EMEANALL, F1MEAN)
+        CALL SBOTTOM (IJS, IJL, DEPTH(IJS,1), FL1, FL, SL)
       ENDIF
 !SHALLOW
 
@@ -442,9 +442,9 @@
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
-            FL3(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
-            FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
+            FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
+            FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
       ENDDO
@@ -456,9 +456,9 @@
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2)
-            FL3(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL3(IJ,K,M),FLM(IJ,K))
-            FL3(IJ,K,M) = MIN(FL3(IJ,K,M),FLMAX(M))
+            FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
+            FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+            FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
       ENDDO
@@ -469,20 +469,20 @@
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
+      CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
 
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL3)
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
 
-!*    2.6 SET FL3 ON ICE POINTS TO ZERO
+!*    2.6 SET FL1 ON ICE POINTS TO ZERO
 !         -----------------------------
 
       IF (LICERUN .AND. LMASKICE) THEN
@@ -490,16 +490,16 @@
           WRITE(IU06,*) '   SUB. IMPLSCH: SPECTRUM = 0 AT ICE POINTS'
            CALL FLUSH(IU06)
         ENDIF
-        CALL SETICE(FL3, IJS, IJL, CICVR, U10NEW, THWNEW)
+        CALL SETICE(FL1, IJS, IJL, CICVR, U10NEW, THWNEW)
       ENDIF
 
 
 !*    2.7 SURFACE STOKES DRIFT AND STRAIN IN SEA ICE
 !         ------------------------------------------
 
-      CALL STOKESDRIFT(FL3, IJS, IJL, USTOKES, VSTOKES)
+      CALL STOKESDRIFT(FL1, IJS, IJL, USTOKES, VSTOKES)
 
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
 
 !*    2.8 SAVE WINDS INTO INTERMEDIATE STORAGE.

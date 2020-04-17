@@ -40,6 +40,12 @@
       REAL(KIND=JWRB), PARAMETER :: ACD=8.0E-4_JWRB
       REAL(KIND=JWRB), PARAMETER :: BCD=8.0E-5_JWRB
 
+      REAL(KIND=JWRB), PARAMETER :: C1CD = 1.03E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2CD = 0.04E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P1CD = 1.48_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P2CD = -0.21_JWRB
+
+      REAL(KIND=JWRB), PARAMETER :: CDMAX=0.0045_JWRB
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
@@ -76,8 +82,14 @@
 !                           WHEN COMPUTING CD OR THE CHARNOCK COEF.
 !     *EPSU10*    REAL      SMALL NUMBER ADDED TO THE SQUARE OF U10
 !                           WHEN COMPUTING CD.
+
 !     *ACD*       REAL      COEFFICIENTS FOR SIMPLE CD(U10) RELATION
 !     *BCD*       REAL      CD = ACD + BCD*U10
+
+!     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
+!     C_D = (C1CD + C2CD*U10**P1CD)*U10**P2CD
+
+!     *CDMAX*    REAL      MAXIMUM CD ALLOWED FOR ALL CD(U10) REALATIONS
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

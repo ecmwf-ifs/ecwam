@@ -72,7 +72,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU
+      USE YOWCOUP  , ONLY : LWCOU    ,XNLEV
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPCONS , ONLY : PI       ,ZPI
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWI   ,IDELWO   ,NPROMA_WAM
@@ -84,7 +84,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "airsea.intfb.h"
+#include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
@@ -107,7 +107,7 @@
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DEL, D
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U10,US,DS,ADS,ZIDL,CICR,CITH
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U10,US,DS,ADS,ZIDL,CICR,CITH,CD
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U102,US2,DS2,ADS2,ZIDL2,CICR2,CITH2
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL) :: U103,US3, DS3,ADS3,ZIDL3,CICR3,CITH3
 
@@ -160,8 +160,9 @@
             CITHICK(IJ)= CITH(IJ)
           ENDDO
 
-          CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),           &
-     &                 Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
+          CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV(ILEV),        &
+     &                    CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
+
 
         ENDDO
 !$OMP   END PARALLEL DO
