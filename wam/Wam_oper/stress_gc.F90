@@ -26,8 +26,12 @@
 
 #include "omegagc.intfb.h"
 
-      REAL(KIND=JWRB), INTENT(IN) :: UST, EPS, Z0, ALPHAP
-      REAL(KIND=JWRB), INTENT(OUT) :: XMSSCG, TAUWCG
+      REAL(KIND=JWRB), INTENT(IN) :: UST ! friction velocity
+      REAL(KIND=JWRB), INTENT(IN) :: EPS ! ration of air density to water density
+      REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
+      REAL(KIND=JWRB), INTENT(IN) :: ALPHAP  ! Phillips parameter
+      REAL(KIND=JWRB), INTENT(OUT) :: XMSSCG  ! mean squre slope for gravity-capillary waves
+      REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced stress for gravity-capillary waves
 
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I

@@ -33,7 +33,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA   ,XNLEV
+      USE YOWCOUP  , ONLY : XKAPPA   ,XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
@@ -207,7 +207,7 @@
 
             CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV(1)*EXP(-XKAPPA*CDSQRTINV)
-            BETA      = MAX(G*Z0/USTAR2,ALPHA)
+            BETA      = G*Z0/USTAR2
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2

@@ -54,6 +54,8 @@ SUBROUTINE TAUT_Z0(IJS, IJL, XLEV, FL1, UTOP, ROAIRN, TAUW, USTAR, Z0)
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
+      USE YOWTEST  , ONLY : IU06
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -141,6 +143,12 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
         ENDDO
         Z0(IJ)  = MAX(XLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MIN)
+
+!!!!debile
+       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), G*Z0(IJ)/USTAR(IJ)**2, ITER 
+       write(IU06,*) 'stress ',TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ)
+       CALL FLUSH(IU06)
+       
 
       ENDDO
 
