@@ -53,7 +53,7 @@
 
       USE YOWCOUP  , ONLY : ZALP     ,XKAPPA,X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0
       USE YOWFRED  , ONLY : FR
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI , SURFT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
