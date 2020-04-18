@@ -42,6 +42,7 @@ REAL(KIND=JWRB), INTENT(IN) :: Z0     ! roughness length
 REAL(KIND=JWRB), INTENT(IN) :: EPS    ! ratio of air density to water density
 
 REAL(KIND=JWRB) :: CONST1, CM, ZFAK, X, X1, XLOG, ZLOG, ZLOG2X, ZBETA
+REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

@@ -64,7 +64,7 @@
 
       DELK_GC(NS) = 0.5*(XK_GC(NS+1)-XK_GC(NS))
       DO I=NS+1,NWAV_GC-1
-        DELK_GC(N) = 0.5_JWRB*(XK_GC(I+1)-XK_GC(I-1))
+        DELK_GC(I) = 0.5_JWRB*(XK_GC(I+1)-XK_GC(I-1))
       ENDDO
       DELK_GC(NWAV_GC) = 0.5_JWRB*(XK_GC(NWAV_GC)-XK_GC(NWAV_GC-1))
 
@@ -75,7 +75,7 @@
         BB    = SQRT(EPS0ALPHA3M*VG_GC(I))/C_GC(I)**2
         F1    = BB/(X*X3)
         SUMS  = SUMS + X3 * F1 * DELK_GC(I)
-        GAM_W = ANG * GAMMA_WAM(OMEGA_GC(I), X, UST, Z0, EPS)
+        GAM_W = ANG * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0, EPS)
         SUMT  = SUMT + ( OMEGA_GC(I) * GAM_W * BB * DELK_GC(I) ) / (X3*EPS)
       ENDDO
  

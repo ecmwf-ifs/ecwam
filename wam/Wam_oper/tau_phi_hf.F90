@@ -94,7 +94,7 @@
 
       SQRTZ0OG(:)  = SQRT(Z0(:)*GM1)
 
-      IF(LLGCBZ0)
+      IF(LLGCBZ0) THEN
         DO IJ=IJS,IJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
           ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)

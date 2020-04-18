@@ -78,7 +78,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "cdustarz0.h"
+#include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 

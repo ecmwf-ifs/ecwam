@@ -130,7 +130,7 @@ IF (LLGCBZ0) THEN
           ZB(IJ)  = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD) 
 !         TOTAL STRESS:
           ! Viscous stress rho_air*nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-          TAUV = RNUEFF(IJ)*USTAR(I)/(XKAPPA*Z0(IJ))
+          TAUV = RNUEFF(IJ)*USTAR(IJ)/(XKAPPA*Z0(IJ))
           TAUNEW  = US2TOTAUW*TAUW(IJ) + TAUV + TAUUNR(IJ)
           USTNEW  = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW 
