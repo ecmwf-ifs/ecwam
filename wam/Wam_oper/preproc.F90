@@ -162,7 +162,7 @@
      &            NIBLC    ,NBLC
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,    &
+      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
      &            XNLEV    ,TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
@@ -468,8 +468,6 @@
         WRITE (IU06,*) '*************************************'
         CALL ABORT1
       ENDIF
-
-      XKAPPA  = 0.40_JWRB
 
 !*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
 

@@ -26,7 +26,7 @@ FUNCTION GAMMA_WAM(OMEGA, XK, USTAR, Z0, EPS)
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
 USE YOWPCONS , ONLY : G
-USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,XKAPPA
+USE YOWCOUP  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -41,7 +41,7 @@ REAL(KIND=JWRB), INTENT(IN) :: USTAR  ! friction velocity
 REAL(KIND=JWRB), INTENT(IN) :: Z0     ! roughness length
 REAL(KIND=JWRB), INTENT(IN) :: EPS    ! ratio of air density to water density
 
-REAL(KIND=JWRB) :: CONST1, CM, ZFAK, X, X1, XLOG, ZLOG, ZLOG2X, ZBETA
+REAL(KIND=JWRB) :: CM, ZFAK, X, XLOG, ZLOG, ZLOG2X, ZBETA
 REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -51,18 +51,14 @@ IF (LHOOK) CALL DR_HOOK('GAMMA_WAM',0,ZHOOK_HANDLE)
 !* 1. DETERMINE GROWTH ACCORDING TO JANSSEN-MILES
 !     -------------------------------------------
  
-CONST1 = EPS*BETAMAX/XKAPPA**2
-
 CM   = XK/OMEGA
 ZFAK = OMEGA**2/(G*XK)
 
-X    = USTAR*CM 
-X1   = X + ZALP
-
-XLOG     = LOG(XK*Z0) + XKAPPA/X1 
-ZLOG     = MIN(XLOG,0.0_JWRB)
-ZLOG2X   = ZLOG*ZLOG*X
-ZBETA    = CONST1*EXP(ZLOG)*ZLOG2X**2
+X       = USTAR*CM 
+XLOG    = LOG(XK*Z0) + XKAPPA/(X + ZALP) 
+ZLOG    = MIN(XLOG,0.0_JWRB)
+ZLOG2X  = ZLOG*ZLOG*X
+ZBETA   = EPS*BETAMAXOXKAPPA2*EXP(ZLOG)*ZLOG2X**2
 
 GAMMA_WAM = ZBETA*ZFAK*OMEGA
  

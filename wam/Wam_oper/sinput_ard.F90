@@ -91,7 +91,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,TAUWSHELTER, XKAPPA, RNU      ,RNUM
+      USE YOWCOUP  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
@@ -172,7 +172,7 @@
 
       ROG = ROWATER*G
       AVG_GST = 1.0_JWRB/NGST
-      CONST1  = BETAMAX/XKAPPA**2 /ROWATER
+      CONST1  = BETAMAXOXKAPPA2 /ROWATER
       NU_AIR = RNU
       FAC_NU_AIR= RNUM
       FACM1_NU_AIR=4.0_JWRB/NU_AIR

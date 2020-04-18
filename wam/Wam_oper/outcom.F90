@@ -67,7 +67,7 @@
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
-     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,             &
+     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
      &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
@@ -243,13 +243,13 @@
         WRITE (IU07) IPHYS,BETAMAX,ZALP,ALPHA,                          &
      &      ALPHAPMAX,                                                  &
      &      TAUWSHELTER,ITSHELT,                                        &
-     &      TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
+     &      TAILFACTOR, TAILFACTOR_PM, XNLEV
       ENDIF
       IF (IFORM.NE.1) THEN
        WRITE (IU17,999)IPHYS,BETAMAX,ZALP,ALPHA,                        &
      &      ALPHAPMAX,                                                  &
      &      TAUWSHELTER,ITSHELT,                                        &
-     &      TAILFACTOR, TAILFACTOR_PM, XKAPPA,XNLEV
+     &      TAILFACTOR, TAILFACTOR_PM, XNLEV
       ENDIF
 
 

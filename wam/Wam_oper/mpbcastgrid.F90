@@ -44,7 +44,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
      &            BSWKM
       USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,    &
-     &            XKAPPA  ,XNLEV    ,TAUWSHELTER, ITSHELT,              &
+     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
      &            TAILFACTOR, TAILFACTOR_PM
       USE YOWSTAT  , ONLY : IPHYS
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
@@ -221,7 +221,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
         MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=35+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
+        MZC=34+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+JPLEVC+                                                &
      &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
@@ -511,8 +511,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ZCOMBUF(KCOUNT)=TAILFACTOR
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=TAILFACTOR_PM
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=XKAPPA
           DO IC=1,JPLEVC
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=XNLEV(IC)
@@ -928,8 +926,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           TAILFACTOR=ZCOMBUF(KCOUNT)
           KCOUNT=KCOUNT+1
           TAILFACTOR_PM=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          XKAPPA=ZCOMBUF(KCOUNT)
           DO IC=1,JPLEVC
             KCOUNT=KCOUNT+1
             XNLEV(IC)=ZCOMBUF(KCOUNT)

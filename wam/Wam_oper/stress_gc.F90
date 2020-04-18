@@ -16,7 +16,7 @@
 
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC
-      USE YOWPCONS , ONLY : G, ZPI
+      USE YOWPCONS , ONLY : G, THREEZPI
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -37,8 +37,8 @@
       REAL(KIND=JWRB) :: GAMMA_WAM
 
       REAL(KIND=JWRB) :: XKS, OMS
-      REAL(KIND=JWRB) :: X, X3, BB, EPS0ALPHA3M
-      REAL(KIND=JWRB) :: SUMT, SUMS, GAM_W, BS, ALPHA3, OM, F1
+      REAL(KIND=JWRB) :: X, X3, BB, EPS0THREEZPIM
+      REAL(KIND=JWRB) :: SUMT, SUMS, GAM_W, BS, OM, F1
       REAL(KIND=JWRB) :: DELK_GC(NWAV_GC)
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -53,12 +53,10 @@
 !*    1.0  DETERMINE GRAV_CAP SPECTRUM, MSS AND TAUWHF.
 !          -------------------------------------------
 
-      ALPHA3 = 3._JWRB*ZPI
-
       CALL OMEGAGC(UST, NS, XKS, OMS)
 
       BS  = 0.5_JWRB*ALPHAP
-      EPS0ALPHA3M = (ALPHA3*FC_GC(XKS)**4/FVG_GC(XKS)*BS**2)/ALPHA3   
+      EPS0THREEZPIM = (THREEZPI*FC_GC(XKS)**4/FVG_GC(XKS)*BS**2)/THREEZPI   
       SUMS = 0.0_JWRB
       SUMT = 0.0_JWRB
 
@@ -72,7 +70,7 @@
         X     = XK_GC(I)
         X3    = X**3
 !       ANALYTICAL FORM INERTIAL SUB RANGE
-        BB    = SQRT(EPS0ALPHA3M*VG_GC(I))/C_GC(I)**2
+        BB    = SQRT(EPS0THREEZPIM*VG_GC(I))/C_GC(I)**2
         F1    = BB/(X*X3)
         SUMS  = SUMS + X3 * F1 * DELK_GC(I)
         GAM_W = ANG * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0, EPS)

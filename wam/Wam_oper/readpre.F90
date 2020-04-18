@@ -52,7 +52,7 @@
      &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
      &            BSWKM
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
-     &            XKAPPA   ,XNLEV    ,TAUWSHELTER, ITSHELT,             &
+     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
      &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
@@ -336,7 +336,7 @@
      & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
      & R8_DELTR,R8_DEPTHA,R8_DEPTHD,R8_EGRCRV,R8_ESH,                   &
      & R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_TAUWSHELTER,                   &
-     & R8_XDELLA,R8_XDELLO,R8_XKAPPA,R8_XMA,R8_XMR,R8_XNLEV,R8_ZALP
+     & R8_XDELLA,R8_XDELLO,R8_XMA,R8_XMR,R8_XNLEV,R8_ZALP
       !REAL(KIND=8), ALLOCATABLE, DIMENSION(:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) ::                     &
      &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
@@ -518,7 +518,7 @@
             READ(IU07,IOSTAT=ISTAT) IPHYS,R8_BETAMAX,R8_ZALP,R8_ALPHA,  &
      &           R8_ALPHAPMAX,                                          &
      &           R8_TAUWSHELTER,ITSHELT,                                &
-     &           R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_XKAPPA,R8_XNLEV
+     &           R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_XNLEV
             IF (ISTAT /= 0) GOTO 1000
             BETAMAX = R8_BETAMAX
             ZALP = R8_ZALP
@@ -527,13 +527,12 @@
             TAUWSHELTER = R8_TAUWSHELTER
             TAILFACTOR = R8_TAILFACTOR
             TAILFACTOR_PM = R8_TAILFACTOR_PM
-            XKAPPA = R8_XKAPPA
             XNLEV = R8_XNLEV
          ELSE
             READ(IU07,IOSTAT=ISTAT) IPHYS,BETAMAX,ZALP,ALPHA,           &
      &           ALPHAPMAX,                                             &
      &           TAUWSHELTER,ITSHELT,                                   &
-     &           TAILFACTOR,TAILFACTOR_PM,XKAPPA,XNLEV
+     &           TAILFACTOR,TAILFACTOR_PM,XNLEV
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(8)
