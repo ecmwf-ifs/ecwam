@@ -158,7 +158,7 @@
      &     NINT(10000*XLAS).NE.NINT(10000*AMOSOP) .OR.                  &
      &     NINT(10000*XLAN).NE.NINT(10000*AMONOP) .OR.                  &
      &     NINT(10000*XLOW).NE.NINT(10000*AMOWEP) .OR.                  &
-     &     NINT(10000*XLOE).NE.NINT(10000*AMOEAP) ) THEN
+     &     NINT(1000*XLOE).NE.NINT(1000*AMOEAP) ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. TOPOAR        *'
