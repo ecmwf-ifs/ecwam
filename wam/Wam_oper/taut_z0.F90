@@ -82,10 +82,10 @@ SUBROUTINE TAUT_Z0(IJS, IJL, XLEV, FL1, UTOP, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ, GM1
       REAL(KIND=JWRB) :: CONST0, TAUV, DEL
-      REAL(KIND=JWRB) :: RWINV
+      REAL(KIND=JWRB) :: RWINV, RNUEFF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL, RNUEFF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, W1, XMSS, TAUUNR, ZB
 
 ! ----------------------------------------------------------------------
@@ -110,8 +110,8 @@ IF (LLGCBZ0) THEN
       RWINV = 1.0_JWRB/ROWATER
       DO IJ = IJS, IJL
         EPSIL(IJ) = ROAIRN(IJ)*RWINV
-        RNUEFF(IJ) = 0.04_JWRB*ROAIRN(IJ)*RNU
       ENDDO
+      RNUEFF = 0.04_JWRB*RNU
 
       DO IJ = IJS, IJL
         W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
@@ -131,9 +131,9 @@ IF (LLGCBZ0) THEN
 !         GRAVITY CAPILLARY CONTRIBUTION:
           CALL STRESS_GC(USTAR(IJ),EPSIL(IJ),Z0(IJ),ALPHAP(IJ),XMSS(IJ),TAUUNR(IJ))
           ZB(IJ)  = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD) 
-!         TOTAL STRESS:
-          ! Viscous stress rho_air*nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-          TAUV = RNUEFF(IJ)*USTAR(IJ)/(XKAPPA*Z0(IJ))
+!         TOTAL kinematic STRESS:
+          ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
+          TAUV = RNUEFF*USTAR(IJ)/(XKAPPA*Z0(IJ))
           TAUNEW  = US2TOTAUW*TAUW(IJ) + TAUV + TAUUNR(IJ)
           USTNEW  = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW 
