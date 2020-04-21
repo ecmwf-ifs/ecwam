@@ -20,6 +20,8 @@
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
+      USE YOWTEST  , ONLY : IU06
+
 !----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -58,6 +60,11 @@
 !          -------------------------------------------
 
       CALL OMEGAGC(UST, NS, XKS, OMS)
+
+!!!! debile 
+        write(IU06,*) 'OMS in stress_gc ',OMS
+
+
 
       BS  = 0.5_JWRB*ALPHAP
       EPS0THREEZPIM = (THREEZPI*FC_GC(XKS)**4/FVG_GC(XKS)*BS**2)/THREEZPI

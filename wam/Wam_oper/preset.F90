@@ -133,7 +133,7 @@
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,              &
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,NXFF     ,NYFF    
+     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN    
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
@@ -502,11 +502,11 @@
       IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
-      U10OLD(:,:) = 0.0_JWRB
+      U10OLD(:,:) = WSPMIN
       THWOLD(:,:) = 0.0_JWRB
-      USOLD(:,:) = 0.0_JWRB
-      TAUW(:,:) = 0.0_JWRB
-      Z0OLD(:,:) = 0.0_JWRB
+      USOLD(:,:) =  U10OLD(:,:)*0.035847_JWRB
+      TAUW(:,:) = 0.1_JWRB*USOLD(:,:)
+      Z0OLD(:,:) = 0.00001_JWRB
       ROAIRO(:,:) = ROAIR      
       ZIDLOLD(:,:) = 0.0_JWRB
       CICOVER(:,:) = 0.0_JWRB
@@ -530,13 +530,14 @@
      &                NFIELDS, NGPTOTG, NC, NR,                         &
      &                FIELDS, LWCUR, MASK_IN)
 
+      TAUW(:,:) = 0.1_JWRB * USOLD(:,:)**2
+
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSE
         IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
       ENDIF
 
-      TAUW(:,:) = 0.1_JWRB * USOLD(:,:)**2
 ! ----------------------------------------------------------------------
 
 !*    6. DEFINE FETCH AND MAXIMUM PEAK FREQUENCY.

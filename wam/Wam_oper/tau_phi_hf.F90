@@ -56,6 +56,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI , SURFT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
+      USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -97,6 +98,9 @@
       IF(LLGCBZ0) THEN
         DO IJ=IJS,IJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
+!!!! debile 
+        write(IU06,*) 'OMS in tau_phi ',OMS
+
           ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
       ELSE
