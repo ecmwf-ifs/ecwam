@@ -315,7 +315,7 @@
 
         IF (LLGCBZ0) THEN
           RUSE = 0.0_JWRB
-        THEN
+        ELSE 
           RUSE = 1.0_JWRB
         ENDIF
 
