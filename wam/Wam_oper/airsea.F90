@@ -1,4 +1,4 @@
-      SUBROUTINE AIRSEA (FL1, U10, ROAIRN, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)
+      SUBROUTINE AIRSEA (FL1, U10, ROAIRN, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (FL1, U10, ROAIRN, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)*
+!       *CALL* *AIRSEA (FL1, U10, ROAIRN, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND, IUSFG)*
 !          *FL1*  - SPECTRA
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *ROAIRN* - AIR DENSITY IN KG/M3
@@ -28,9 +28,11 @@
 !          *IJS*  - INDEX OF FIRST GRIDPOINT.
 !          *IJL*  - INDEX OF LAST GRIDPOINT.
 !          *KLEV* - LEVEL HEIGHT INDEX
-!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
+!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
+!          *IUSFG* - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
+!                         0 DO NOT USE THE FIELD US 
 
 
 
@@ -65,7 +67,7 @@
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KLEV, ICODE_WND
+      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KLEV, ICODE_WND, IUSFG
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: ROAIRN, TAUW
@@ -87,7 +89,7 @@
 
       IF (ICODE_WND == 3) THEN
         XLEV = XNLEV (KLEV)
-        CALL TAUT_Z0 (IJS, IJL, XLEV, FL1, U10, ROAIRN, TAUW, US, Z0)
+        CALL TAUT_Z0 (IJS, IJL, IUSFG, XLEV, FL1, U10, ROAIRN, TAUW, US, Z0)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 

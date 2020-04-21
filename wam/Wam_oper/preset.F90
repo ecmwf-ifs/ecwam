@@ -343,10 +343,6 @@
 
       IF (LLUNSTR) THEN
 
-#if !defined NETCDF_OUTPUT_WAM
-        WRITE (IU06,'(''LLUNSTR=T needs to be compiled with NETCDF_OUTPUT_WAM '')')
-        CALL ABORT1
-#endif
         IJS(1) = 1
         IJL(1) = NIBLO
         IJLT(1)= NIBLO
@@ -540,6 +536,7 @@
         IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
       ENDIF
 
+      TAUW(:,:) = 0.1_JWRB * USOLD(:,:)**2
 ! ----------------------------------------------------------------------
 
 !*    6. DEFINE FETCH AND MAXIMUM PEAK FREQUENCY.
