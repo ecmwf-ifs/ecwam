@@ -535,7 +535,7 @@
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSE
-        IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
+        IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO LOW DEFAULTS'
       ENDIF
 
 ! ----------------------------------------------------------------------
