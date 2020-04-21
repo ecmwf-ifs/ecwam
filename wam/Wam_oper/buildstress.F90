@@ -55,7 +55,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU    ,ALPHA    ,XKAPPA   ,XNLEV,        &
-     &                      RNUM     ,LLCAPCHNK,                        &
+     &                      RNUM     ,LLCAPCHNK,LLGCBZ0  ,              &
      &                      LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWMPP   , ONLY : NPROC    ,IRANK    ,KTAG
       USE YOWMESPAS, ONLY : LMESSPASS,LNOCDIN  ,LWAVEWIND
@@ -93,6 +93,7 @@
       INTEGER(KIND=JWIM) :: NWAVEWIND(1)
 
       REAL(KIND=JWRB) :: CHNKMIN
+      REAL(KIND=JWRB) :: RUSE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TEMPXNLEV, CDSQRTINV, Z0TOT, USTAR, CHARNOCKOG
       REAL(KIND=JWRB) :: GM1 
@@ -257,11 +258,11 @@
         KIJS=JKGLO
         KIJL=MIN(KIJS+NPROMA-1,MIJL)
 
-        DO IJ=KIJS,KIJL
-          TAUW(IJ)=0._JWRB
-        ENDDO
-
         CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV(ILEV), CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
+
+        DO IJ=KIJS,KIJL
+          TAUW(IJ) = 0.1_JWRB * USOLD(KIJS)**2
+        ENDDO
 
       ENDDO
 !$OMP END PARALLEL DO
@@ -312,6 +313,11 @@
           ENDDO
         ENDIF
 
+        IF (LLGCBZ0) THEN
+          RUSE = 0.0_JWRB
+        THEN
+          RUSE = 1.0_JWRB
+        ENDIF
 
 ! Mod for OPENMP
           NPROMA=NPROMA_WAM
@@ -331,7 +337,7 @@
               CDSQRTINV = MIN(1._JWRB/SQRT(CD(IJ)),100.0_JWRB)
               Z0TOT = XNLEV(ILEV)*EXP(-XKAPPA*CDSQRTINV)
 !             Z0OLD ONLY CONTAINS CHARNOCK CONTRIBUTION (see taut_z0)
-              Z0OLD(IJ) = MAX(Z0TOT - RNUM/USTAR,ALPHAOG(IJ)*USOLD(IJ))
+              Z0OLD(IJ) = MAX(Z0TOT - RUSE*RNUM/USTAR,ALPHAOG(IJ)*USOLD(IJ))
               CHARNOCKOG = Z0OLD(IJ)/USOLD(IJ)
               CHARNOCKOG = MAX(CHARNOCKOG,ALPHAOG(IJ))
               TAUW(IJ) = MAX(USOLD(IJ)*(1._JWRB-(ALPHAOG(IJ)/CHARNOCKOG)**2),0._JWRB)
