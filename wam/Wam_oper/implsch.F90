@@ -321,6 +321,10 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
+!     RE-IMPOSE HIGH FREQUENCY TAIL
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
+
+
       CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
      &              MIJ, RHOWGDFTH,                                     &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
@@ -329,9 +333,6 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
         CALL FLUSH (IU06)
       ENDIF
-
-!     RE-IMPOSE HIGH FREQUENCY TAIL
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
       IUSFG=1
       CALL AIRSEA (FL1, U10NEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM, IUSFG)
@@ -480,7 +481,6 @@
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
-
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
