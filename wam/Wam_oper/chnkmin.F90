@@ -42,8 +42,9 @@
 
       REAL(KIND=JWRB), PARAMETER :: A = 33.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: ALPHAMIN=0.0001_JWRB
-      ! Charnock values for winds below 5m/s not properly resolved by the model
-      REAL(KIND=JWRB), PARAMETER :: ALPHA0=0.01_JWRB
+      ! Parameter for the linear correction of Charnock values for winds below 5m/s
+      ! i.e Minimum Charnock: ALPHA0 for U10=0, ramping down to ALPHA for U10=5, then ALPHA for U10>5m/s
+      REAL(KIND=JWRB), PARAMETER :: ALPHA0=0.015_JWRB
 
 
       REAL(KIND=JWRB), INTENT(IN) :: U10
