@@ -183,6 +183,7 @@
       INTEGER(KIND=JWIM) :: ILEV
       INTEGER(KIND=JWIM) :: IUSFG
       INTEGER(KIND=JWIM) :: ICODE_WND, ICODE_WAM
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX 
 
       REAL(KIND=JWRB) :: DELT, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
@@ -319,14 +320,14 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
+     &                MIJ, MIJFLX, RHOWGDFTH)
 
 !     RE-IMPOSE HIGH FREQUENCY TAIL
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
 
       CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJ, RHOWGDFTH,                                     &
+     &              MIJFLX, RHOWGDFTH,                                  &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
@@ -354,7 +355,7 @@
       ENDIF
 
       CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJ, RHOWGDFTH,                                     &
+     &              MIJFLX, RHOWGDFTH,                                  &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
@@ -376,7 +377,7 @@
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SL, CICVR,                                       &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -402,7 +403,7 @@
           ENDDO
         ENDDO
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SSOURCE, CICVR,                                  &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -480,7 +481,7 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
+     &                MIJ, MIJFLX, RHOWGDFTH)
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
