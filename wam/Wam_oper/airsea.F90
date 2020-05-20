@@ -55,11 +55,11 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP, ONLY: XKAPPA, XNLEV
-      USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWTEST, ONLY: IU06
-      USE YOMHOOK, ONLY: LHOOK, DR_HOOK
-      USE YOWWIND, ONLY: WSPMIN
+      USE YOWPARAM, ONLY : NANG     ,NFRE
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV
+      USE YOWTEST,  ONLY : IU06
+      USE YOWWIND,  ONLY : WSPMIN
+      USE YOMHOOK,  ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -88,8 +88,7 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        XLEV = XNLEV (KLEV)
-        CALL TAUT_Z0 (IJS, IJL, IUSFG, XLEV, FL1, U10, ROAIRN, TAUW, US, Z0)
+        CALL TAUT_Z0 (IJS, IJL, IUSFG, FL1, U10, ROAIRN, TAUW, US, Z0)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
@@ -102,7 +101,7 @@
 !        ---------------------------
 
         XKAPPAD = 1.0_JWRB / XKAPPA
-        XLOGLEV = LOG (XNLEV (KLEV))
+        XLOGLEV = LOG (XNLEV)
 
         DO IJ = IJS, IJL
           U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))

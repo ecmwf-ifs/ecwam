@@ -38,7 +38,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : XNLEV
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            LFDB     ,                                            &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
@@ -55,6 +54,7 @@
 !                            IPRMINFO(:,5)  : 1 IF TOO SHALLOW POINTS ARE SET TO MISSING.
       USE YOWGRID  , ONLY : IJSLOC   ,IJLLOC
       USE YOWMPP   , ONLY : NPROC
+      USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -67,7 +67,7 @@
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
 
-      IZLEV=NINT(XNLEV(1))
+      IZLEV=NINT(XNLEV)
 
       IR=0
       COUTNAME(:) =' VARIABLE NOT DEFINED, see MPCRTBL'

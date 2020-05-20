@@ -469,15 +469,6 @@
         CALL ABORT1
       ENDIF
 
-!*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
-
-      XNLEV(1)= 10.0_JWRB
-
-!*    4.4 MODULE TABLE (STRESS TABLES).
-!         -----------------------------
-
-!!! HAS BEEN REPLACED WITH USING TAUT_Z0
-
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
