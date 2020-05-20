@@ -112,14 +112,14 @@
 
 !***  1.3 Sea Ice exception
 !     ---------------------
-      IF (LICERUN .AND. LMASKICE) THEN
-        DO IJ=IJS,IJL
-          IF(CICVR(IJ) .GT. CITHRSH) THEN
-            USTOKES(IJ) = 0.016_JWRB*U10(IJ)*SIN(THW(IJ))
-            VSTOKES(IJ) = 0.016_JWRB*U10(IJ)*COS(THW(IJ))
-          ENDIF
-        ENDDO
-      ENDIF
+!      IF (LICERUN .AND. LMASKICE) THEN
+!       DO IJ=IJS,IJL
+!         IF(CICVR(IJ) .GT. CITHRSH) THEN
+!           USTOKES(IJ) = 0.016_JWRB*U10(IJ)*SIN(THW(IJ))
+!           VSTOKES(IJ) = 0.016_JWRB*U10(IJ)*COS(THW(IJ))
+!         ENDIF
+!       ENDDO
+!     ENDIF
 
 !***  1.4 Protection
 !     --------------
