@@ -13,21 +13,21 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              IDATE_TIME_WINDOW_END, NSTEP,                 &
      &              LDIFS_IO_SERV_ENABLED )
 
-!****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES                 
-!****              OF THE WAVE MODEL                                    
+!****  *WAVEMDL* - SUPERVISES EXECUTION OF MAIN MODULES
+!****              OF THE WAVE MODEL
 
-!      LIANA ZAMBRESKY    GKSS/ECMWF    OCTOBER 1988                    
+!      LIANA ZAMBRESKY    GKSS/ECMWF    OCTOBER 1988
 
 !      MODIFICATION.
 !      -------------
-!         H. GUNTHER   ECMWF  MARCH    1990                      
-!         P. LIONELLO  ECMWF  APRIL    1990  DATA ASSIMILATION   
+!         H. GUNTHER   ECMWF  MARCH    1990
+!         P. LIONELLO  ECMWF  APRIL    1990  DATA ASSIMILATION
 !                                            MODULE WAMASSI ADDED.
 !         J. BIDLOT    ECMWF  FEBRUARY 1996  MESSAGE PASSING.
 !         J. DOYLE     ECMWF  OCTOBER  1996  ATMOSPHERIC COUPLING  .
 !         J. BIDLOT    ECMWF  FEBRUARY 1997  MESSAGE PASSING.
 !         B. HANSEN    ECMWF  MARCH    1997  SIGNAL HANDLING.
-!         J. BIDLOT    ECMWF  April    1997  ADD ZDELATM IN PARAM. LIST 
+!         J. BIDLOT    ECMWF  April    1997  ADD ZDELATM IN PARAM. LIST
 !         S. ABDALLA   ECMWF  OCTOBER  2001  INCLUSION OF AIR DENSITY & Zi/L
 !                                            GENERALIZE THE INTERFACE WITH
 !                                            THE ATMOSPHERIC MODEL
@@ -35,66 +35,66 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !         J BIDLOT     ECMWF  August 2006  PASS RMISS TO SPECIFY MISSING DATA.
 !         M. Drusch    ECMWF  Sep 2007  Re-initialize through FRSTIME and NADV
 !         J BIDLOT     ECMWF  August 2008 ADD LWCUR, MOVE PREWIND.
-!         J BIDLOT     ECMWF  June 2009 ADD LWSTOKES. 
+!         J BIDLOT     ECMWF  June 2009 ADD LWSTOKES.
 !         J BIDLOT     ECMWF  August 2010 ADD IGRIB_HANDLE.
 !         P Bechtold   ECMWF  March 2012 ADD SMALL PLANET RADIUS&GRAVITY FACTOR
-!                                            
+!
 
-!     PURPOSE.                                                          
-!     --------                                                          
+!     PURPOSE.
+!     --------
 
-!          THIS SUBROUTINE SUPERVISES THE EXECUTION OF                  
-!          MAIN MODULES FOR WAM MODEL INITIALIZATION,                   
-!          WIND FIELD PREPROCESSING, WAM MODEL EXECUTION,               
-!          AND WAVE DATA ASSIMILATION.                                  
+!          THIS SUBROUTINE SUPERVISES THE EXECUTION OF
+!          MAIN MODULES FOR WAM MODEL INITIALIZATION,
+!          WIND FIELD PREPROCESSING, WAM MODEL EXECUTION,
+!          AND WAVE DATA ASSIMILATION.
 
-!*    INTERFACE.                                                        
-!     ----------                                                        
+!*    INTERFACE.
+!     ----------
 
-!          SEE MAIN MODULES SUB INITMDL, PREWIND, WAMODEL, WAMASSI.     
+!          SEE MAIN MODULES SUB INITMDL, PREWIND, WAMODEL, WAMASSI.
 
-!     METHOD.                                                           
-!     -------                                                           
+!     METHOD.
+!     -------
 
-!          THE FIRST TIME WAVEMDL IS CALLED, THE WAM MODEL IS           
-!          INITIALIZED. THIS INITIALIZATION INCLUDES GETTING            
-!          FROM ECFILE THE INITIAL SEA STATE FILES, FILLING             
-!          COMMON BLOCKS DEFINING THE GRID AND SETTING GENERAL          
-!          PARAMETERS. IN THE FIRST AND ALL SUBSEQUENT CALLS TO         
-!          WAVEMDL  PREWIND REFORMATS THE WINDS INTO THE WAM            
-!          MODEL BLOCKED STRUCTURE AND THE WAM MODEL IS EXECUTED.       
-!          EACH CALL TO WAMODEL INTEGRATES THE WAVE SPECTRA FORWARD     
-!          IN TIME BY ONE INPUT WIND TIME STEP OR PROPAGATION TIME      
-!          STEP, WHAT EVER IS GREATER.                                  
+!          THE FIRST TIME WAVEMDL IS CALLED, THE WAM MODEL IS
+!          INITIALIZED. THIS INITIALIZATION INCLUDES GETTING
+!          FROM ECFILE THE INITIAL SEA STATE FILES, FILLING
+!          COMMON BLOCKS DEFINING THE GRID AND SETTING GENERAL
+!          PARAMETERS. IN THE FIRST AND ALL SUBSEQUENT CALLS TO
+!          WAVEMDL  PREWIND REFORMATS THE WINDS INTO THE WAM
+!          MODEL BLOCKED STRUCTURE AND THE WAM MODEL IS EXECUTED.
+!          EACH CALL TO WAMODEL INTEGRATES THE WAVE SPECTRA FORWARD
+!          IN TIME BY ONE INPUT WIND TIME STEP OR PROPAGATION TIME
+!          STEP, WHAT EVER IS GREATER.
 
-!     EXTERNALS.                                                        
-!     ----------                                                        
+!     EXTERNALS.
+!     ----------
 
-!          INITMDL  -  INITIALIZES THE WAM MODEL.                       
-!                      GETS RECOVERY FILES OUT OF ECFILE,               
-!                      SETS COMMON BLOCKS NECESSARY TO DEFINE           
-!                      THE GRID AND BLOCKING STRUCTURE.                 
-!                      DEFINES GENERAL PARAMETERS.                      
+!          INITMDL  -  INITIALIZES THE WAM MODEL.
+!                      GETS RECOVERY FILES OUT OF ECFILE,
+!                      SETS COMMON BLOCKS NECESSARY TO DEFINE
+!                      THE GRID AND BLOCKING STRUCTURE.
+!                      DEFINES GENERAL PARAMETERS.
 
-!          PREWIND  -  REFORMATS WINDS ON THE GAUSSIAN GRID             
-!                      INTO THE WAM MODEL BLOCKED STRUCTURE.            
+!          PREWIND  -  REFORMATS WINDS ON THE GAUSSIAN GRID
+!                      INTO THE WAM MODEL BLOCKED STRUCTURE.
 
-!          WAMODEL  -  INTEGRATES THE WAVE SPECTRA FORWARD IN TIME BY   
-!                      ONE WIND INPUT TIME STEP OR ONE PROPAGATION      
-!                      TIME STEP, WHATEVER IS GREATER.                  
+!          WAMODEL  -  INTEGRATES THE WAVE SPECTRA FORWARD IN TIME BY
+!                      ONE WIND INPUT TIME STEP OR ONE PROPAGATION
+!                      TIME STEP, WHATEVER IS GREATER.
 
-!          WAMASSI  -  SUPERVISES DATA ASSIMILATION:                    
-!                      PREPROCESSES DATA; PRODUCES ANALYSED             
-!                      INTEGRATED QUANTITIES BY OPTIMAL INTERPOLATION;  
-!                      ANALYSES WAVE SPECTRA ; SAVE ANALYSIS FOR        
-!                      OUTPUT AND NEXT TIME STEP MODEL COMPUTATION.     
+!          WAMASSI  -  SUPERVISES DATA ASSIMILATION:
+!                      PREPROCESSES DATA; PRODUCES ANALYSED
+!                      INTEGRATED QUANTITIES BY OPTIMAL INTERPOLATION;
+!                      ANALYSES WAVE SPECTRA ; SAVE ANALYSIS FOR
+!                      OUTPUT AND NEXT TIME STEP MODEL COMPUTATION.
 
-!     REFERENCES.                                                       
-!     -----------                                                       
+!     REFERENCES.
+!     -----------
 
-!          NONE                                                         
+!          NONE
 
-! -------------------------------------------------------------------   
+! -------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
@@ -138,7 +138,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL,ONLY : LLUNSTR
       USE MPL_MODULE
-! --------------------------------------------------------------------- 
+      USE ALGORITHM_STATE_MOD,ONLY : GET_NUPTRA, GET_MUPTRA, GET_ALGOR_TYPE
+! ---------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
@@ -206,9 +207,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, INTENT(INOUT) :: LDWCOUNORMS
 !     TELL WAM TO PROCUCE REPRODUCIBLE GLOBAL NORMS
       LOGICAL, INTENT(IN) :: LDNORMWAMOUT_GLOBAL
-!     MASK TO INDICATE WHICH PART OF ARRAY FIELDS IS RELEVANT 
+!     MASK TO INDICATE WHICH PART OF ARRAY FIELDS IS RELEVANT
       INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_IN(NGPTOTG)
-!     MASK TO INDICATE WHICH PART OF ARRAY WVFLDG IS RELEVANT 
+!     MASK TO INDICATE WHICH PART OF ARRAY WVFLDG IS RELEVANT
       INTEGER(KIND=JWIM), INTENT(INOUT) :: MASK_OUT(NLONW,NLATW)
 !     CONTROLS FIRST CALL
       LOGICAL, INTENT(INOUT) :: FRSTIME
@@ -219,10 +220,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     MODIFICATION FACTOR FOR GRAVITY FOR SMALL PLANET RUNS
       REAL(KIND=JWRB), INTENT(IN) :: PRPLRG
 !     KINEMATIC AIR DENSITY
-      REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM 
+      REAL(KIND=JWRB), INTENT(IN) :: RNU_ATM
 !     REDUCED KINEMATIC AIR DENSITY FOR MOEMNTUM TRANSFER
-      REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM 
-!     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED 
+      REAL(KIND=JWRB), INTENT(IN) :: RNUM_ATM
+!     USED TO SPECIFY THE END OF THE 4DVAr ANALYSIS WINDOW WHEN COUPLED
       INTEGER(KIND=JWIM), INTENT(IN) :: IDATE_TIME_WINDOW_END
 !     ATMOSPHERIC NSTEP (CT3)
       INTEGER(KIND=JWIM), INTENT(IN) :: NSTEP
@@ -240,7 +241,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM) :: IYYYYMMDD, IHHMM, ISTEP, IRET, KRET
       INTEGER(KIND=JWIM) :: IC, IL, IST, IED, ICOUNT, JF, IP, IFLD
       INTEGER(KIND=JWIM) :: NCOMBUF, NCOMLOC, NTOT, NMASK
-      INTEGER(KIND=JWIM) :: IFCST, IFCSTEP_HOUR 
+      INTEGER(KIND=JWIM) :: IFCST, IFCSTEP_HOUR
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
 
       REAL(KIND=JWRB) :: VAL
@@ -277,10 +278,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
 
-! --------------------------------------------------------------------- 
+! ---------------------------------------------------------------------
 
-!*    1.  THE FIRST CALL TO WAVEMDL PERFORMS INITIALIZATION.            
-!         --------------------------------------------------  
+!*    1.  THE FIRST CALL TO WAVEMDL PERFORMS INITIALIZATION.
+!         --------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
 
@@ -397,7 +398,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           WRITE (IU06,1011)
           WRITE (IU06,1016) CDATEA
           WRITE (IU06,1018) CDATEE
-          WRITE (IU06,1019) NINT(PSTEP) 
+          WRITE (IU06,1019) NINT(PSTEP)
           WRITE (IU06,1020) KSTOP
           WRITE (IU06,1021) KDELWI
           WRITE (IU06,1011)
@@ -436,7 +437,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  BETAOLD(KIJS)) 
+     &                  BETAOLD(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -449,11 +450,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         KQGAUSS=IQGAUSS
 
-        FRSTIME = .FALSE.                                              
+        FRSTIME = .FALSE.
         L1STCALL = .TRUE.
 
         IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'                 
+          WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'
         ENDIF
 
         IF(LWCOU) THEN
@@ -500,8 +501,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
             WRITE (IU06,*) ' ***********************************'
             WRITE (IU06,*) ' *                                 *'
             WRITE (IU06,*) ' * IN WAVEMDL :                    *'
-            WRITE (IU06,*) ' * INTERACTION TIME STEP WAS RESET *' 
-            WRITE (IU06,*) ' * KDELWI = ', KDELWI 
+            WRITE (IU06,*) ' * INTERACTION TIME STEP WAS RESET *'
+            WRITE (IU06,*) ' * KDELWI = ', KDELWI
             WRITE (IU06,*) ' *                                 *'
             WRITE (IU06,*) ' ***********************************'
             CALL FLUSH(IU06)
@@ -511,8 +512,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
               WRITE (IU06,*) ' * PROBLEM IN WAVEMDL :                *'
               WRITE (IU06,*) ' * THE NEW INTERACTION TIME STEP IS NOT*'
               WRITE (IU06,*) ' * A MULTIPLE OF IDELPRO  !!!          *'
-              WRITE (IU06,*) ' * KDELWI = ', KDELWI 
-              WRITE (IU06,*) ' * IDELPRO = ', IDELPRO 
+              WRITE (IU06,*) ' * KDELWI = ', KDELWI
+              WRITE (IU06,*) ' * IDELPRO = ', IDELPRO
               WRITE (IU06,*) ' *                                     *'
               WRITE (IU06,*) ' ***************************************'
               CALL ABORT1
@@ -535,9 +536,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
                   WRITE (IU06,*) ' **********************************'
                   WRITE (IU06,*) ' *                                *'
                   WRITE (IU06,*) ' * IN WAVEMDL :                   *'
-                  WRITE (IU06,*) ' * WIND INPUT TIME STEP WAS RESET *' 
-                  WRITE (IU06,*) ' * IDELWI = ', IDELWI 
-                  WRITE (IU06,*) ' * IDELWO = ', IDELWO 
+                  WRITE (IU06,*) ' * WIND INPUT TIME STEP WAS RESET *'
+                  WRITE (IU06,*) ' * IDELWI = ', IDELWI
+                  WRITE (IU06,*) ' * IDELWO = ', IDELWO
                   WRITE (IU06,*) ' *                                *'
                   WRITE (IU06,*) ' **********************************'
                   CALL FLUSH(IU06)
@@ -556,7 +557,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         L1STCALL = .FALSE.
 
-!*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
+!*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.
 !       ---------------------------------------------------
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
@@ -571,7 +572,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 
         IF (ITEST.GE.1) THEN
-          WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'                   
+          WRITE(IU06,*) ' SUB. WAVEMDL: PREWIND DONE'
         ENDIF
 
       ENDIF
@@ -581,10 +582,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
 
 
-! --------------------------------------------------------------------  
+! --------------------------------------------------------------------
 
-!*    2.1  INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.                  
-!          -------------------------------------------                  
+!*    2.1  INTEGRATE THE WAVE SPECTRA FORWARD IN TIME.
+!          -------------------------------------------
 
       CALL SETMARSTYPE
 
@@ -602,6 +603,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !          ---------------------------------------------
 
 #ifdef ECMWF
+      IF (GET_ALGOR_TYPE() == 'OOPS' .AND. GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
+        ! OOPS-IFS may do wave assimilation only in the final outer loop
+        IASSI = 0
+      ENDIF
       IF (IASSI.EQ.1) THEN
 
         MARSTYPE = 'an'
@@ -661,21 +666,21 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         CALL DIFDATE (CDATEF, CDTPRO, IFCST)
         IFCSTEP_HOUR=IFCST/3600
         IF(IRANK==1) THEN
-          WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR 
+          WRITE(CLSETEV,' (A25,'' step '',I8,''&'') ') CMETER,IFCSTEP_HOUR
           CLSMSNAME="                                             "
           CLECFNAME="                                             "
           CALL UTIL_CGETENV(CL_CPENV,'NOSMS',CLSMSNAME, ICPLEN)
           CALL UTIL_CGETENV(CL_CPENV_ECF,'NOECF',CLECFNAME,ICPLEN_ECF)
-          IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           & 
+          IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           &
      &        (ICPLEN_ECF > 0.AND.CLECFNAME(1:5) /= 'NOECF') ) THEN
             CALL SYSTEM(CLSETEV)
-            WRITE(IU06,'(2X,A25,I8,'' posted '')') CMETER,IFCSTEP_HOUR 
+            WRITE(IU06,'(2X,A25,I8,'' posted '')') CMETER,IFCSTEP_HOUR
           ELSE
             WRITE(IU06,'(A25,I8)') CMETER,IFCSTEP_HOUR
             WRITE(IU06,*) 'not posted  because neither SMSNAME'
             WRITE(IU06,*) ICPLEN, CLSMSNAME
             WRITE(IU06,*) 'nor ECF_NAME  is defined. '
-            WRITE(IU06,*) ICPLEN_ECF, CLECFNAME  
+            WRITE(IU06,*) ICPLEN_ECF, CLECFNAME
           ENDIF
         ENDIF
       ENDIF
@@ -744,7 +749,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           FLABEL(IFLDOFFSET)=' Emean'
           DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
-  
+
 !         8. MEAN FREQUENCY
           IFLDOFFSET=IFLDOFFSET+1
           FLABEL(IFLDOFFSET)=' Fmean'
@@ -765,7 +770,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
-!         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
+!         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!!
 
           IFLDOFFSET=1
           IF(LWSTOKES) THEN
@@ -823,7 +828,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           CALL GSTATS(1443,1)
         ENDIF
 
-!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY 
+!       GRIDDED FIELDS ARE NEEDED FOR IFS, GATHERING OF THE NECESSARY
 !       INFORMATION
 
         CALL MPFLDTOIFS(IG, IJS(IG), IJL(IG), NWVFIELDS, WVBLOCK,       &
@@ -914,7 +919,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
 !         FOR PRIMARY PE (IRECV), COLLECT ALL THE NORMS TO PRODUCE A
 !         PSEUDO GLOBAL NORM.
- 
+
           IRECV=1
           NCOMLOC=1+3*NWVFIELDS
           NCOMBUF=NCOMLOC*NPROC
