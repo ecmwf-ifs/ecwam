@@ -603,6 +603,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !          ---------------------------------------------
 
 #ifdef ECMWF
+      IF (ITEST.GE.1) THEN
+        WRITE(IU06,*) ' SUB. WAVEMDL DEBUG GET_ALGOR_TYPE():', GET_ALGOR_TYPE()
+        WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           NUPTRA:', GET_NUPTRA()
+        WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           MUPTRA:', GET_MUPTRA()
+      ENDIF
       IF (GET_ALGOR_TYPE() == 'OOPS' .AND. GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
         ! OOPS-IFS may do wave assimilation only in the final outer loop
         IASSI = 0
