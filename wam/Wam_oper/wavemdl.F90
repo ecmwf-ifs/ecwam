@@ -606,6 +606,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IF (GET_ALGOR_TYPE() == 'OOPS' .AND. GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
         ! OOPS-IFS may do wave assimilation only in the final outer loop
         IASSI = 0
+        IF (ITEST.GE.1) THEN
+          WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM OOPS: IASSI reset to 0'
+        ENDIF
       ENDIF
       IF (IASSI.EQ.1) THEN
 
