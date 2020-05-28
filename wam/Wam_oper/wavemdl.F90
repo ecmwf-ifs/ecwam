@@ -270,12 +270,14 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LLGRAPI
+      LOGICAL, SAVE :: LFRST_OOPS
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
 
       DATA LFRST /.TRUE./
+      DATA LFRST_OOPS /.TRUE./
       DATA LLGRAPI /.TRUE./
 
 ! ---------------------------------------------------------------------
@@ -606,10 +608,18 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       WRITE(IU06,*) ' SUB. WAVEMDL DEBUG GET_ALGOR_TYPE():', GET_ALGOR_TYPE()
       WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           NUPTRA:', GET_NUPTRA()
       WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           MUPTRA:', GET_MUPTRA()
-      IF (GET_ALGOR_TYPE() == 'OOPS' .AND. GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
+      IF (GET_ALGOR_TYPE() == 'OOPS') THEN
         ! OOPS-IFS may do wave assimilation only in the final outer loop
-        IASSI = 0
-        WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM OOPS: IASSI reset to 0'
+        IF (LFRST_OOPS) THEN
+          LFRST_OOPS = .FALSE.
+          IASSI_ORIG = IASSI
+        ENDIF
+        IF (GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
+          IASSI = 0
+        ELSE
+          IASSI = IASSI_ORIG
+        ENDIF
+        WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM ', GET_ALGOR_TYPE(), ': IASSI reset to', IASSI
       ENDIF
       IF (IASSI.EQ.1) THEN
 
