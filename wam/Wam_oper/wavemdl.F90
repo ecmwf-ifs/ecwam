@@ -609,6 +609,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           NUPTRA:', GET_NUPTRA()
       WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           MUPTRA:', GET_MUPTRA()
       IF (GET_ALGOR_TYPE() == 'OOPS') THEN
+        MARSTYPE = '4v'
         ! OOPS-IFS may do wave assimilation only in the final outer loop
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.
@@ -619,7 +620,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ELSE
           IASSI = IASSI_ORIG
         ENDIF
-        WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM ', GET_ALGOR_TYPE(), ': IASSI reset to', IASSI
+        WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM ', GET_ALGOR_TYPE(), &
+          &           ' FOR NUPTRA: ', GET_NUPTRA(), ' AND MUPTRA: ', GET_MUPTRA(), &
+          &           ' --> IASSI reset to', IASSI
       ENDIF
       IF (IASSI.EQ.1) THEN
 
