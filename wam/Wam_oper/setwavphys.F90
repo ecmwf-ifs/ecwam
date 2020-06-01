@@ -13,17 +13,18 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
+USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
+REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
-
 
       IF (IPHYS.EQ.0) THEN
 !       JANSSSEN WIND INPUT PHYSICS:
@@ -44,8 +45,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ESH = 1711.0_JWRB
         ASH = 8.0E-4_JWRB 
         BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
+        ASWKM = 0.0981_JWRB
+        BSWKM = 0.425_JWRB
 
       ELSE IF (IPHYS.EQ.1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
@@ -66,8 +67,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ESH = 1711.0_JWRB
         ASH = 8.0E-4_JWRB 
         BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
+        ASWKM = 0.0981_JWRB
+        BSWKM = 0.425_JWRB
 
       ELSE
         WRITE (IU06,*) '*************************************'
@@ -80,7 +81,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         CALL ABORT1
       ENDIF
 
-  
 IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',1,ZHOOK_HANDLE)
 
 END SUBROUTINE SETWAVPHYS
