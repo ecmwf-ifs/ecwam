@@ -30,7 +30,7 @@
 
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEF   ,CDTPRO   ,    &
      &            IASSI    ,NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
-     &            LANAONLY ,L4VTYPE  ,ISTREAM
+     &            LANAONLY ,L4VTYPE  ,ISTREAM  ,IASSI_ORIG
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE ALGORITHM_STATE_MOD, ONLY : GET_NUPTRA, GET_MUPTRA, &
@@ -46,6 +46,13 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       CHARACTER(LEN=4):: CSTREAM
       LOGICAL :: LASTREAM
+      LOGICAL, SAVE :: LFRST_OOPS
+
+      DATA LFRST_OOPS /.TRUE./
+
+! ---------------------------------------------------------------------
+
+!*    1.  THE FIRST CALL TO WAVEMDL PERFORMS INITIALIZATION.
 
 ! ----------------------------------------------------------------------
 

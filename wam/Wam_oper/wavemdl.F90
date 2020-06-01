@@ -270,14 +270,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LLGRAPI
-      LOGICAL, SAVE :: LFRST_OOPS
       LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
 
       DATA LFRST /.TRUE./
-      DATA LFRST_OOPS /.TRUE./
       DATA LLGRAPI /.TRUE./
 
 ! ---------------------------------------------------------------------
