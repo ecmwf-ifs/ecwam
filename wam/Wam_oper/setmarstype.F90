@@ -35,6 +35,7 @@
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE ALGORITHM_STATE_MOD, ONLY : GET_NUPTRA, GET_MUPTRA, &
      &                                GET_ALGOR_TYPE
+      USE YOWCOUT  , ONLY : NOUTT, NOUTS, NOUTT_ORIG, NOUTS_ORIG
 
 ! ----------------------------------------------------------------------
 
@@ -63,11 +64,17 @@
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.
           IASSI_ORIG = IASSI
+          NOUTS_ORIG = NOUTS
+          NOUTT_ORIG = NOUTT
         ENDIF
         IF (GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
           IASSI = 0
+          NOUTS = 0
+          NOUTT = 0
         ELSE
           IASSI = IASSI_ORIG
+          NOUTS = NOUTS_ORIG
+          NOUTT = NOUTT_ORIG
         ENDIF
         WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM ', GET_ALGOR_TYPE(), &
           &           ' FOR NUPTRA: ', GET_NUPTRA(), ' AND MUPTRA: ', &
