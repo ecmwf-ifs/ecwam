@@ -315,6 +315,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
       IF(.NOT. LGRHDIFS .OR. & 
         (MARSTYPE .EQ. 'an' .AND. IFCST .EQ. 0) .OR. &
+        (MARSTYPE .EQ. '4v') .OR. &
         (MARSTYPE .EQ. 'fg' .AND. IFCST .EQ. 0) ) THEN
 
         READ(CDATE(1:8),'(I8)') IDATE
