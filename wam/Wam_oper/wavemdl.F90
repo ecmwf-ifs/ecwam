@@ -103,7 +103,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS, RNU, RNUM,           &
+     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,                      &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -122,6 +122,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G
+      USE YOWPHYS  , ONLY : RNU      ,RNUM
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
