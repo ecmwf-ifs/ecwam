@@ -59,16 +59,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
-     &            BSWKM
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
-     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
-     &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -226,43 +220,6 @@
      &   (FKLAP1(M),M=MFRSTLW,MLSTHG), (FKLAM(M),M=MFRSTLW,MLSTHG),     &
      &   (FKLAM1(M),M=MFRSTLW,MLSTHG),                                  &
      &   ACL1, ACL2,  CL11, CL21, DAL1, DAL2, FRH
-      ENDIF
-
-! ----------------------------------------------------------------------
-
-!*    5. WRITE MODULE YOWCOUPL.
-!        ----------------------
-
-      IF (ABS(TAUWSHELTER).LE.0.0_JWRB) THEN
-        ITSHELT=0
-      ELSE
-        ITSHELT=1
-      ENDIF
-
-      IF (IFORM.NE.2) THEN
-        WRITE (IU07) IPHYS,BETAMAX,ZALP,ALPHA,                          &
-     &      ALPHAPMAX,                                                  &
-     &      TAUWSHELTER,ITSHELT,                                        &
-     &      TAILFACTOR, TAILFACTOR_PM, XNLEV
-      ENDIF
-      IF (IFORM.NE.1) THEN
-       WRITE (IU17,999)IPHYS,BETAMAX,ZALP,ALPHA,                        &
-     &      ALPHAPMAX,                                                  &
-     &      TAUWSHELTER,ITSHELT,                                        &
-     &      TAILFACTOR, TAILFACTOR_PM, XNLEV
-      ENDIF
-
-
-!*    5.1 WRITE MODULE YOWALTAS.
-!         ----------------------
-
-      IF (IFORM.NE.2) THEN
-        WRITE (IU07) EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,                  &
-     &               ESH,ASH,BSH,ASWKM,BSWKM
-      ENDIF
-      IF (IFORM.NE.1) THEN
-       WRITE (IU17,999)EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,                &
-     &                 ESH,ASH,BSH,ASWKM,BSWKM
       ENDIF
 
 ! ----------------------------------------------------------------------

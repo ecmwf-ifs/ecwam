@@ -48,12 +48,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
-     &            BSWKM
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,              &
-     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
-     &            TAILFACTOR, TAILFACTOR_PM
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -72,7 +66,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
      &            IMDLGRDID 
-      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWSTAT  , ONLY : IPHYS
@@ -219,16 +212,6 @@
 
         CALL READREC(6)
 
-!*    5. READ MODULE YOUCOUP.
-!        -------------------
-
-        CALL READREC(7)
-
-!*    5.1 READ MODULE YOWALTAS
-!         --------------------
-
-        CALL READREC(8)
-
 
 !*    7. READ MODULE YOWCOUT (INDICES OF OUTPUT POINTS).
 !        --------------------------------------------
@@ -330,14 +313,11 @@
       INTEGER(KIND=JWIM) :: ISTAT
       !REAL(KIND=8) ::                     &
       REAL(KIND=JWRU) ::                                                &
-     & R8_ACL1,R8_ACL2,R8_AFCRV,R8_AGRCRV,R8_ALPHA,R8_ALPHAPMAX,        &
-     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,R8_ASH,R8_ASWKM,         &
-     & R8_BETAMAX,R8_BFCRV,R8_BGRCRV,R8_BSH,R8_BSWKM,                   &
+     & R8_ACL1,R8_ACL2,                                                 &
+     & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
      & R8_CL11,R8_CL21,R8_DAL1,R8_DAL2,R8_DELPHI,R8_DELTH,R8_DELTHH,    &
-     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,R8_EGRCRV,R8_ESH,                   &
-     & R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_TAUWSHELTER,                   &
-     & R8_XDELLA,R8_XDELLO,R8_XMA,R8_XMR,R8_XNLEV,R8_ZALP
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:) ::
+     & R8_DELTR,R8_DEPTHA,R8_DEPTHD,                                    &
+     & R8_XDELLA,R8_XDELLO,R8_XMA,R8_XMR
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) ::                     &
      &     R8_FR,R8_DFIM,R8_GOM,R8_C,                                   &
      &     R8_TH,R8_COSTH,R8_SINTH,                                     &
@@ -511,50 +491,6 @@
      &           AF11, FKLAP, FKLAP1, FKLAM, FKLAM1,                    &
      &           ACL1, ACL2,  CL11, CL21,                               &
      &           DAL1, DAL2, FRH
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
-      CASE(7)
-         IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT) IPHYS,R8_BETAMAX,R8_ZALP,R8_ALPHA,  &
-     &           R8_ALPHAPMAX,                                          &
-     &           R8_TAUWSHELTER,ITSHELT,                                &
-     &           R8_TAILFACTOR,R8_TAILFACTOR_PM,R8_XNLEV
-            IF (ISTAT /= 0) GOTO 1000
-            BETAMAX = R8_BETAMAX
-            ZALP = R8_ZALP
-            ALPHA = R8_ALPHA
-            ALPHAPMAX = R8_ALPHAPMAX
-            TAUWSHELTER = R8_TAUWSHELTER
-            TAILFACTOR = R8_TAILFACTOR
-            TAILFACTOR_PM = R8_TAILFACTOR_PM
-            XNLEV = R8_XNLEV
-         ELSE
-            READ(IU07,IOSTAT=ISTAT) IPHYS,BETAMAX,ZALP,ALPHA,           &
-     &           ALPHAPMAX,                                             &
-     &           TAUWSHELTER,ITSHELT,                                   &
-     &           TAILFACTOR,TAILFACTOR_PM,XNLEV
-            IF (ISTAT /= 0) GOTO 1000
-         ENDIF
-      CASE(8)
-         IF (LLR8TOR4) THEN
-            READ(IU07,IOSTAT=ISTAT)                                     &
-     &           R8_EGRCRV,R8_AGRCRV,R8_BGRCRV,R8_AFCRV,R8_BFCRV,       &
-     &           R8_ESH,R8_ASH,R8_BSH,R8_ASWKM,R8_BSWKM
-            IF (ISTAT /= 0) GOTO 1000
-            EGRCRV = R8_EGRCRV
-            AGRCRV  = R8_AGRCRV
-            BGRCRV = R8_BGRCRV
-            AFCRV = R8_AFCRV
-            BFCRV = R8_BFCRV
-            ESH = R8_ESH
-            ASH = R8_ASH
-            BSH = R8_BSH
-            ASWKM = R8_ASWKM
-            BSWKM = R8_BSWKM
-         ELSE
-            READ(IU07,IOSTAT=ISTAT)                                     &
-     &           EGRCRV,AGRCRV,BGRCRV,AFCRV,BFCRV,                      &
-     &           ESH,ASH,BSH,ASWKM,BSWKM
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(12)

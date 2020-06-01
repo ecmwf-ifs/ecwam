@@ -91,11 +91,11 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN
+      USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTABL  , ONLY : IAB      ,SWELLFT

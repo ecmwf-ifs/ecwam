@@ -48,10 +48,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : XKAPPA
       USE YOWPCONS , ONLY : C1CD,    C2CD,     P1CD,     P2CD
+      USE YOWPHYS  , ONLY : XKAPPA
       USE YOWWIND  , ONLY : WSPMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 

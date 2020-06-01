@@ -96,7 +96,7 @@
 
 
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER(KIND=JWIM) :: ILEV, IJ
+      INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -127,7 +127,6 @@
         LWNDFILE=.TRUE.
       ENDIF
 
-      ILEV=1
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
         CALL GETWND (MIJS, MIJL,                                        &

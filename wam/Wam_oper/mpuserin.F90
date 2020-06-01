@@ -76,11 +76,15 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            IPHYS    ,                                            &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -154,6 +158,7 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
+     &   IPHYS,                                                         &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
@@ -357,6 +362,7 @@
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASFORSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
+!     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
@@ -578,6 +584,7 @@
       LODBRALT  = .FALSE.
       ICASE     = 1 
       ISHALLO   = 0 
+      IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 

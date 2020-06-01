@@ -87,7 +87,7 @@
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
 
       INTEGER(KIND=JWIM) :: ICODE_WND
-      INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, ILEV, KZLEVUWAVE, KZLEVCD
+      INTEGER(KIND=JWIM) :: ILEN, LIU, IPARAM, KZLEVUWAVE, KZLEVCD
       INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: NWAVEWIND(1)
@@ -202,11 +202,9 @@
      &                  KZLEVUWAVE,' m'
         IF (ITEST.GT.0) CALL FLUSH(IU06) 
 
-        ILEV=1
 
       ELSE
 
-        ILEV=1
         KZLEVUWAVE=10
         WRITE(IU06,*) ' '
         WRITE(IU06,*) '          !!!! NOTE !!!!'
@@ -297,8 +295,6 @@
 
 !       1.5 COMPUTE TAUW,USOLD AND Z0OLD
 !           ----------------------------
-
-        ILEV=1
 
         IF(LLCAPCHNK) THEN
           DO IJ=MIJS,MIJL

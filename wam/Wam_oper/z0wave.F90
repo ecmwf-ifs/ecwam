@@ -37,10 +37,11 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ALPHA, LLCAPCHNK
+      USE YOWCOUP  , ONLY : LLCAPCHNK
       USE YOWPCONS , ONLY : G
+      USE YOWPHYS  , ONLY : ALPHA
       USE YOWTABL  , ONLY : EPS1
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 

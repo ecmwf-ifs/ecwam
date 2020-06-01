@@ -90,14 +90,14 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ZALP     ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
+      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 

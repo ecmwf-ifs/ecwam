@@ -30,8 +30,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,       &
-     &             X0TAUHF, JTOT_TAUHF, WTAUHF, BETAMAXOXKAPPA2
+      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

@@ -40,13 +40,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
-     &            BSWKM
-      USE YOWCOUP  , ONLY : JPLEVC   ,BETAMAX  ,ZALP     ,ALPHA    ,    &
-     &            XNLEV    ,TAUWSHELTER, ITSHELT,                       &
-     &            TAILFACTOR, TAILFACTOR_PM
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
@@ -64,7 +57,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
-      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
@@ -84,10 +76,10 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=20
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=19
       INTEGER(KIND=JWIM) :: IG 
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,      &
-     &                      ILEV, KDEPTH, NGOU
+     &                      KDEPTH, NGOU
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
       INTEGER(KIND=JWIM) :: MIC, MZC 
       INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
@@ -149,8 +141,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NANGH
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NMAX
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=ITSHELT
           IF (IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -205,8 +195,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           NANGH=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NMAX=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
-          ITSHELT=ICOMBUF(IKCOUNT)
           IF (IKCOUNT.NE.MFIRST) THEN
             WRITE (IU06,*) '**************************'
             WRITE (IU06,*) '* IKCOUNT .NE. MFIRST !!!*' 
@@ -219,10 +207,10 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
+        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
-        MZC=34+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
-     &      KFRH+JPLEVC+                                                &
+        MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
+     &      KFRH+                                                       &
      &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
@@ -494,47 +482,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             KCOUNT=KCOUNT+1
             ZCOMBUF(KCOUNT)=FRH(IC)
           ENDDO
-
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IPHYS
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=BETAMAX
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ZALP
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ALPHA
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ALPHAPMAX
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=TAUWSHELTER
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=TAILFACTOR
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=TAILFACTOR_PM
-          DO IC=1,JPLEVC
-            KCOUNT=KCOUNT+1
-            ZCOMBUF(KCOUNT)=XNLEV(IC)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=EGRCRV
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=AGRCRV
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=BGRCRV
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=AFCRV
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=BFCRV
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ESH
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ASH
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=BSH
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=ASWKM
-          KCOUNT=KCOUNT+1
-          ZCOMBUF(KCOUNT)=BSWKM
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
@@ -909,47 +856,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             KCOUNT=KCOUNT+1
             FRH(IC)=ZCOMBUF(KCOUNT)
           ENDDO
-
-          IKCOUNT=IKCOUNT+1
-          IPHYS=ICOMBUF(IKCOUNT)
-          KCOUNT=KCOUNT+1
-          BETAMAX=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ZALP=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ALPHA=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ALPHAPMAX=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          TAUWSHELTER=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          TAILFACTOR=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          TAILFACTOR_PM=ZCOMBUF(KCOUNT)
-          DO IC=1,JPLEVC
-            KCOUNT=KCOUNT+1
-            XNLEV(IC)=ZCOMBUF(KCOUNT)
-          ENDDO
-          KCOUNT=KCOUNT+1
-          EGRCRV=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          AGRCRV=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          BGRCRV=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          AFCRV=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          BFCRV=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ESH=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ASH=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          BSH=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          ASWKM=ZCOMBUF(KCOUNT)
-          KCOUNT=KCOUNT+1
-          BSWKM=ZCOMBUF(KCOUNT)
 
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1

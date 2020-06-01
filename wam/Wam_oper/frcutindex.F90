@@ -51,12 +51,12 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

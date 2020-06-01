@@ -86,7 +86,7 @@
 !      *COFRM4*    REAL      COEF4*G*FR(M)**(-4.) 
 !      *FLMAX*     REAL      MAXIMUM SPECTRAL COMPONENT ALLOWED.
 !                            (ALPHAPMAX/PI) (G**2/(2PI)**4) FR(M)**-5
-!                            ALPHAPMAX MAXIMUM PHILLIPS PARAMETER (SEE USERIN).  
+!                            ALPHAPMAX MAXIMUM PHILLIPS PARAMETER (SEE YOWPHYS).  
 !      *FRATIO*    REAL      FREQUENCY RATIO.
 !      *WETAIL*    REAL      WAVE ENERGY TAIL CONSTANT FACTOR.
 !      *FRTAIL*    REAL      FREQUENCY TAIL CONSTANT FACTOR.
