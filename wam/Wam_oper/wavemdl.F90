@@ -605,25 +605,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !          ---------------------------------------------
 
 #ifdef ECMWF
-      WRITE(IU06,*) ' SUB. WAVEMDL DEBUG GET_ALGOR_TYPE():', GET_ALGOR_TYPE()
-      WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           NUPTRA:', GET_NUPTRA()
-      WRITE(IU06,*) ' SUB. WAVEMDL DEBUG           MUPTRA:', GET_MUPTRA()
-      IF (GET_ALGOR_TYPE() == 'OOPS') THEN
-        MARSTYPE = '4v'
-        ! OOPS-IFS may do wave assimilation only in the final outer loop
-        IF (LFRST_OOPS) THEN
-          LFRST_OOPS = .FALSE.
-          IASSI_ORIG = IASSI
-        ENDIF
-        IF (GET_NUPTRA() /= GET_MUPTRA() - 1) THEN
-          IASSI = 0
-        ELSE
-          IASSI = IASSI_ORIG
-        ENDIF
-        WRITE(IU06,*) ' SUB. WAVEMDL CALLED FROM ', GET_ALGOR_TYPE(), &
-          &           ' FOR NUPTRA: ', GET_NUPTRA(), ' AND MUPTRA: ', GET_MUPTRA(), &
-          &           ' --> IASSI reset to', IASSI
-      ENDIF
+      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM GET_ALGOR_TYPE(): ', GET_ALGOR_TYPE()
+      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM           NUPTRA: ', GET_NUPTRA()
+      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM           MUPTRA: ', GET_MUPTRA()
+      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM            IASSI: ', IASSI
+
       IF (IASSI.EQ.1) THEN
 
         MARSTYPE = 'an'
