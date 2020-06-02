@@ -25,7 +25,7 @@
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *USTAR* FRICTION VELOCITY
 !          *Z0*    ROUGHNESS LENGTH 
-!          *XLEVTAIL* TAIL LEVEL (METEO FRANCE PHYSICS)
+!          *XLEVTAIL* TAIL LEVEL
 !          *TAUHF* HIGH-FREQUENCY STRESS
 !          *PHIHF* HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
 
@@ -99,9 +99,6 @@
       IF(LLGCBZ0) THEN
         DO IJ=IJS,IJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
-!!!! debile 
-        write(IU06,*) 'OMS in tau_phi ',OMS
-
           ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
       ELSE

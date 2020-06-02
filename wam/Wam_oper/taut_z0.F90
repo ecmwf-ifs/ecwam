@@ -87,7 +87,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB) :: RWINV, RNUEFF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, W1, XMSS, TAUUNR, ZB
 
 ! ----------------------------------------------------------------------
@@ -110,9 +109,6 @@ IF (LLGCBZ0) THEN
       ENDDO
 
       RWINV = 1.0_JWRB/ROWATER
-      DO IJ = IJS, IJL
-        EPSIL(IJ) = ROAIRN(IJ)*RWINV
-      ENDDO
       RNUEFF = 0.04_JWRB*RNU
 
       DO IJ = IJS, IJL
@@ -130,7 +126,7 @@ IF (LLGCBZ0) THEN
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MIN)
 !         GRAVITY CAPILLARY CONTRIBUTION:
-          CALL STRESS_GC(USTAR(IJ),EPSIL(IJ),Z0(IJ),ALPHAP(IJ),XMSS(IJ),TAUUNR(IJ))
+          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
           ZB(IJ)  = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD) 
 !         TOTAL kinematic STRESS:
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
