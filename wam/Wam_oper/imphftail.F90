@@ -88,7 +88,9 @@
         DO IJ=IJS,IJL
           TFAC = FL3(IJ,K,MIJ(IJ))
           DO M=MIJ(IJ)+1,NFRE
-            FL3(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
+!!!            FL3(IJ,K,M) = MAX(TEMP2(IJ,M)*TFAC,FLM(IJ,K))
+!!untest
+            FL3(IJ,K,M) = TEMP2(IJ,M)*TFAC
           ENDDO
         ENDDO
       ENDDO
