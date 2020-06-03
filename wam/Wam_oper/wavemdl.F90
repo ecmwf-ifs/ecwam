@@ -243,6 +243,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       INTEGER(KIND=JWIM) :: NCOMBUF, NCOMLOC, NTOT, NMASK
       INTEGER(KIND=JWIM) :: IFCST, IFCSTEP_HOUR
       INTEGER(KIND=JWIM), ALLOCATABLE :: ZCOMCNT(:)
+      INTEGER(KIND=JWIM), SAVE :: INUPTRA
 
       REAL(KIND=JWRB) :: VAL
       REAL(KIND=JWRB) :: STEP
@@ -277,6 +278,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       DATA LFRST /.TRUE./
       DATA LLGRAPI /.TRUE./
+      DATA INUPTRA /-1/
 
 ! ---------------------------------------------------------------------
 
@@ -284,6 +286,11 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !         --------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('WAVEMDL',0,ZHOOK_HANDLE)
+
+      IF (GET_ALGOR_TYPE() == "OOPS" .AND. GET_NUPTRA() /= INUPTRA) THEN
+        INUPTRA = GET_NUPTRA()
+        LFRST = .TRUE.
+      ENDIF
 
       DATE_TIME_WINDOW_END=IDATE_TIME_WINDOW_END
       IFSTSTEP = PSTEP
