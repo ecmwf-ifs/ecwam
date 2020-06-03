@@ -43,7 +43,7 @@
       NS = MIN(INT(LOG(XKS/XK_GC(1))/LOG(KRATIO_GC))+1,NWAV_GC-1)
 !!!      OMS = FOMEG_GC(XKS)
 ! test rounding it down
-      NS = MAX(NS-1,1)
+!!! untest      NS = MAX(NS-1,1)
       XKS = XK_GC(NS)
       OMS = OMEGA_GC(NS) 
 
