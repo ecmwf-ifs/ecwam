@@ -38,7 +38,7 @@
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
 
-      REAL(KIND=JWRB), PARAMETER :: ANG = 0.5_JWRB   ! factor to account for angular spreading.
+      REAL(KIND=JWRB), PARAMETER :: ANG = 0.4_JWRB   ! factor to account for angular spreading.
 
       REAL(KIND=JWRB) :: GAMMA_WAM
 
