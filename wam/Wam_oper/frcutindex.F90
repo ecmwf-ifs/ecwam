@@ -103,6 +103,8 @@
           FPM4 = MAX(FM2,FPM)
           MIJFLX(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
           MIJFLX(IJ) = MIN(MAX(1,MIJFLX(IJ)),NFRE)
+!! debile untest
+          MIJFLX(IJ) = MIJ(IJ)
         ELSE
           MIJ(IJ) = NFRE
           MIJFLX(IJ) = NFRE
