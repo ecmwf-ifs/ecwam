@@ -167,8 +167,6 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &            XDELLO   ,ZDELLO   ,LAQUA
-      USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
