@@ -1,4 +1,4 @@
-      SUBROUTINE SETMARSTYPE
+      SUBROUTINE SETMARSTYPE(LDUPDATEOOPS)
 
 ! ----------------------------------------------------------------------
 
@@ -43,10 +43,12 @@
 #include "abort1.intfb.h"
 #include "wstream_strg.intfb.h"
 
+      LOGICAL, OPTIONAL, INTENT(IN) :: LDUPDATEOOPS
       INTEGER(KIND=JWIM) :: KSTREAM
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       CHARACTER(LEN=4):: CSTREAM
       LOGICAL :: LASTREAM
+      LOGICAL :: LUPDATEOOPS
       LOGICAL, SAVE :: LFRST_OOPS
 
       DATA LFRST_OOPS /.TRUE./
@@ -59,7 +61,10 @@
 
       IF (LHOOK) CALL DR_HOOK('SETMARSTYPE',0,ZHOOK_HANDLE)
 
-      IF (GET_ALGOR_TYPE() == 'OOPS') THEN
+      LUPDATEOOPS = .FALSE.
+      IF(PRESENT(LDUPDATEOOPS)) LUPDATEOOPS = LDUPDATEOOPS
+
+      IF (LUPDATEOOPS .AND. GET_ALGOR_TYPE() == 'OOPS') THEN
         ! OOPS-IFS may do wave assimilation only in the final outer loop
         IF (LFRST_OOPS) THEN
           LFRST_OOPS = .FALSE.

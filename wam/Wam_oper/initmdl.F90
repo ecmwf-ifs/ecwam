@@ -13,8 +13,8 @@
 !                    J. BIDLOT     FEBRUARY 1996-1997
 !                    J. DOYLE      SEPTEMBER 1996
 !                    J. BIDLOT     APRIL 1997
-!                    J. BIDLOT     SEPTEMBER : MODIFY PARALLEL INPUT 
-!                    S. ABDALLA    OCTOBER 2001: INCLUSION OF AIR 
+!                    J. BIDLOT     SEPTEMBER : MODIFY PARALLEL INPUT
+!                    S. ABDALLA    OCTOBER 2001: INCLUSION OF AIR
 !                                                DENSITY AND Zi/L
 !                    J. BIDLOT     AUGUST 2008. ADD CALL TO PREWIND
 !                                  TO GET CURRENTS EARLIER
@@ -215,7 +215,7 @@
 !       *READBOU*   - READS PREPROC BOUNDARY FILES.
 !NEST
 !       *SETMARSTYPE* SETS VARIABLE MARSTYPE
-!       *SETWGRIBHD*- SETS DEFAULT GRIB HEADERS  
+!       *SETWGRIBHD*- SETS DEFAULT GRIB HEADERS
 !       *USERIN*    - READS USER INPUT.
 
 !     REFERENCE
@@ -371,7 +371,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: AKI, TRANSF
 
-      REAL(KIND=JWRB) :: XLA, XLO 
+      REAL(KIND=JWRB) :: XLA, XLO
 
       CHARACTER(LEN=14) :: ZERO, CDUM
       CHARACTER(LEN=24) :: FILNM
@@ -489,11 +489,11 @@
       ENDIF
 
       IF (LWFLUXOUT) THEN
-        IF (.NOT.ALLOCATED(PHIEPS)) THEN 
+        IF (.NOT.ALLOCATED(PHIEPS)) THEN
           ALLOCATE(PHIEPS(IJS(1):IJL(1)))
           PHIEPS(:) = 0.0_JWRB
         ENDIF
-        IF (.NOT.ALLOCATED(PHIAW)) THEN 
+        IF (.NOT.ALLOCATED(PHIAW)) THEN
           ALLOCATE(PHIAW(IJS(1):IJL(1)))
           PHIAW(:) = 0.0_JWRB
         ENDIF
@@ -574,7 +574,7 @@
 
         KTAG=100
 
-!      1.3 OUTPUT MODEL DECOMPOSITION DETAILS 
+!      1.3 OUTPUT MODEL DECOMPOSITION DETAILS
 !          ----------------------------------
 
         IF (ITEST.GE.1) THEN
@@ -635,7 +635,7 @@
       GBOUNC = 1
 
       IF (.NOT. LLUNSTR) THEN
- 
+
       IF (IBOUNC.EQ.1 .OR. IBOUNF.EQ.1) THEN
         IF (IBOUNC.EQ.1) THEN
 !         READ INFORMATION ABOUT WHERE THE FINE GRID(S) ARE
@@ -649,8 +649,8 @@
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
             WRITE(IU06,*) '*  =============================   *'
-            WRITE(IU06,*) '*  WITH OPTION IBOUNC = 1          *' 
-            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '*  WITH OPTION IBOUNC = 1          *'
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
             WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
      &        ' IS MISSING !!!!'
@@ -664,7 +664,7 @@
         ENDIF
 
         IF (IBOUNF.EQ.1) THEN
-!         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE 
+!         READ INFORMATION ABOUT WHERE THE BOUNDARY VALUES ARE
           FILENAME='wam_boundary_grid_info'
           LFILE=0
           LLEXIST=.FALSE.
@@ -675,8 +675,8 @@
             WRITE(IU06,*) '*                                  *'
             WRITE(IU06,*) '*  FATAL ERROR IN SUB. INITMDL     *'
             WRITE(IU06,*) '*  =============================   *'
-            WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *' 
-            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *' 
+            WRITE(IU06,*) '*  WITH OPTION IBOUNF = 1          *'
+            WRITE(IU06,*) '*  YOU MUST PROVIDE THE FILE:      *'
             WRITE(IU06,*) '* ',FILENAME(1:LFILE)
             WRITE(*,*) '*  WAVE MODEL INPUT FILE ',FILENAME(1:LFILE),   &
      &        ' IS MISSING !!!!'
@@ -686,7 +686,7 @@
           ENDIF
           IU10 = IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0)
         ELSE
-          IU10 = 10 
+          IU10 = 10
         ENDIF
 
         CALL READBOU (IU09, IU10, IU06)
@@ -710,12 +710,12 @@
       LANAONLY=.FALSE.
       IF ((CDATEA.EQ.CDATEE).AND.(CDATEA.EQ.CDATEF)) LANAONLY=.TRUE.
 
-      CALL SETMARSTYPE
+      CALL SETMARSTYPE(.TRUE.)
 
       IF (.NOT. LGRHDIFS) THEN
 !       FOR INTEGRATED PARAMETERS
         CALL PRESET_WGRIB_TEMPLATE("I",NGRIB_HANDLE_WAM_I)
-!       FOR SPECTRA 
+!       FOR SPECTRA
         CALL PRESET_WGRIB_TEMPLATE("S",NGRIB_HANDLE_WAM_S)
       ENDIF
 
@@ -757,9 +757,9 @@
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
       WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ',   &
-     & NANG 
+     & NANG
       WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES ............: ',   &
-     & NFRE 
+     & NFRE
 
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' PARALLEL ORGANISATION : '
@@ -938,8 +938,8 @@
       ENDIF
 
       IF (LWCOU) THEN
-        IDELWO = KCOUSTEP 
-        IDELWI = KCOUSTEP 
+        IDELWO = KCOUSTEP
+        IDELWI = KCOUSTEP
         IDELCUR= KCOUSTEP
       ELSE
         IF (NDELW_LST.GT.0) THEN
@@ -1017,7 +1017,7 @@
       ELSE
         CFLP= IDELPRO*GVE/DPH
       ENDIF
-      DLH = CIRC 
+      DLH = CIRC
 !     FIND THE SMALLEST DLH
       DO KX=KMSOP,KMNOP
         DLH_KX = DELLAM(KX)*COSPH(KX)
@@ -1143,7 +1143,7 @@
 !     *GETCURR* IS CALLED (SEE *PREWIND*).
 !     A CALL TO PREWIND IS NEEDED TO GET THE SURFACE CURRENTS
 !     BEFORE A CALL TO GETSPEC DUE TO THE TRANSFORMATION FROM
-!     ABSOLUTE TO RELATIVE FRAME OF REFERENCE. 
+!     ABSOLUTE TO RELATIVE FRAME OF REFERENCE.
 
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
@@ -1156,7 +1156,7 @@
      &              NFIELDS, NGPTOTG, NC, NR,                           &
      &              FIELDS, LWCUR, MASK_IN)
 
-      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'                   
+      WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
       CALL FLUSH (IU06)
 
 
@@ -1171,7 +1171,7 @@
 !     DETERMINE THE SEA ICE REDUCTION FACTOR
       CALL CIREDUCE (CICOVER,CITHICK,CIWA)
 
-      WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'                   
+      WRITE(IU06,*) ' SUB. INITMDL: CIREDUCE DONE'
       CALL FLUSH (IU06)
 
 
@@ -1188,14 +1188,14 @@
 
 !     9.2 COMPUTE FREQUENCY DEPENDENT INDICES AND COEFFICIENTS FOR SNONLIN
 !         AND THE FREQUENCY FRONT TAIl REDUCTION COEFFICIENTS.
-!         ------------------------------------------------------------ 
+!         ------------------------------------------------------------
 
       CALL INISNONLIN
 
 
 !     9.2 COMPUTE THE NONLINEAR TRANSFER FUNCTION COEFFIxCIENTS FOR SNL
 !         VALID FOR THE NEW FORMULATION AND OTHER STUFFS
-!         ------------------------------------------------------------ 
+!         ------------------------------------------------------------
 
       IF (.NOT.ALLOCATED(ENH))                                          &
      &   ALLOCATE(ENH(IJS(1):IJL(1),MLSTHG,IGL))
@@ -1204,7 +1204,7 @@
         IF (ISHALLO.NE.1) THEN
           IG=1
             DO M=1,NFRE
-               DO IJ = IJS(1), IJL(1) 
+               DO IJ = IJS(1), IJL(1)
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(M)
                  XK = AKI(OM,D)
@@ -1212,7 +1212,7 @@
                ENDDO
             ENDDO
             DO M=NFRE+1,MLSTHG
-               DO IJ = IJS(1), IJL(1) 
+               DO IJ = IJS(1), IJL(1)
                  D = DEPTH(IJ,IG)
                  OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
 !                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
@@ -1224,7 +1224,7 @@
         ELSE
           DO IG=1,IGL
             DO M=1,MLSTHG
-               DO IJ = IJS(1), IJL(1) 
+               DO IJ = IJS(1), IJL(1)
                  ENH(IJ,M,IG) = 1.0_JWRB
                ENDDO
             ENDDO
@@ -1241,7 +1241,7 @@
      &    ALLOCATE(LSAMEDEPTH(IJS(1):IJL(1)))
 
       IF (IPROPAGS.EQ.2) THEN
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS(1), IJL(1)
            IF (INDEP(IJ).EQ.INDEP(KLON(IJ,1))   .AND.                   &
      &         INDEP(IJ).EQ.INDEP(KLON(IJ,2))   .AND.                   &
      &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.                   &
@@ -1258,14 +1258,14 @@
                  IF (INDEP(IJ).NE.INDEP(KCOR(IJ,ICR,IC))) THEN
                    LSAMEDEPTH(IJ) = .FALSE.
                    EXIT OUTER
-                 ENDIF 
+                 ENDIF
                ENDDO
              ENDDO OUTER
            ENDIF
 
          ENDDO
       ELSEIF (IPROPAGS.EQ.1) THEN
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS(1), IJL(1)
            IF (INDEP(IJ) .EQ. INDEP(KLON (IJ,1))   .AND.                &
      &         INDEP(IJ) .EQ. INDEP(KLON (IJ,2))   .AND.                &
      &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,1,1)) .AND.                &
@@ -1286,7 +1286,7 @@
            ENDIF
          ENDDO
       ELSE
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS(1), IJL(1)
            IF (INDEP(IJ) .EQ. INDEP(KLON(IJ,1))   .AND.                 &
      &         INDEP(IJ) .EQ. INDEP(KLON(IJ,2))   .AND.                 &
      &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,1,1)) .AND.                 &
