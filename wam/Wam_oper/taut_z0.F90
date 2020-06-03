@@ -109,7 +109,7 @@ IF (LLGCBZ0) THEN
           ALPHAP(IJ) = ALPHAP(IJ) + CONST0*FL1(IJ,K,IFRPH)
         ENDDO
       ENDDO
-      write(*,*) 'debile ALPHAP(IJ) ', ALPHAP(IJ)
+      write(*,*) 'debile ALPHAP(IJ) ', ALPHAP(1)
 
       RNUEFF = 0.04_JWRB*RNU
 
