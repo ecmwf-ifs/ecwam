@@ -17,7 +17,7 @@
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC
       USE YOWPCONS , ONLY : G,      SURFT
-      USE YOWPHYS  , ONLY : TAUWSHELTER
+      USE YOWPHYS  , ONLY : TAUWSHELTER,  ANG_GC
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -37,8 +37,6 @@
 
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
-
-      REAL(KIND=JWRB), PARAMETER :: ANG = 0.25_JWRB   ! factor to account for angular spreading.
 
       REAL(KIND=JWRB) :: GAMMA_WAM
 
@@ -87,8 +85,8 @@
 !       but gamma is computed wihtout the rhoa/rhow factor so
 !       Tauwcg : integral of omega * gammma_wam * F(k)  k dk
 !       It should be done in vector form with actual directional spreading information
-!       It simplfied here by using the ANG factor.
-        GAM_W = ANG * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0)
+!       It simplfied here by using the ANG_GC factor.
+        GAM_W = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0)
         TAUCT = OMEGA_GC(I) * GAM_W * BBDELK * XM**3
         TAU = MAX(TAU - TAUWSHELTER*TAUCT, 0.0_JWRB)
         UST = SQRT(TAU)

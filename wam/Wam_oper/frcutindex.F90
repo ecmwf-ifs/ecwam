@@ -57,7 +57,7 @@
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM, TAILFACTOR_FLX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -74,7 +74,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL(KIND=JWRB), PARAMETER :: TAILFACTOR_FLX=4.0_JWRB
       REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, FPMF 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 

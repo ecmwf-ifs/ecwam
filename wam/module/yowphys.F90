@@ -43,6 +43,15 @@
 !     VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
       REAL(KIND=JWRB) :: TAILFACTOR
       REAL(KIND=JWRB) :: TAILFACTOR_PM
+!     TO COMPUTE THE FLUXES AND USE THE HIGH FREQUENCY APPROXIMAION FOR TAUW
+      REAL(KIND=JWRB) :: TAILFACTOR_FLX
+
+
+!     GRAVITY-CAPILLARY INPUT:
+!     ========================
+
+
+      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.40_JWRB   ! factor to account for angular spreading of the input.
 
 
 !     WHITECAP DISSIPATION ::
