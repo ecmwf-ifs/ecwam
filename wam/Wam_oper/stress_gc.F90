@@ -59,7 +59,7 @@
 
       CALL OMEGAGC(USTAR, NS, XKS, OMS)
 
-      BS  = 0.5_JWRB*ALPHAP
+      BS = 0.5_JWRB*ALPHAP
       COEF = FC_GC(XKS)**4/FVG_GC(XKS)*BS**2
       XMSSCG = 0.0_JWRB
       TAUWCG = 0.0_JWRB
@@ -73,12 +73,12 @@
       UST = USTAR
       TAU = USTAR**2
       DO I = NS, NWAV_GC
-        XM    = 1.0_JWRB/XK_GC(I)
+        XM  = 1.0_JWRB/XK_GC(I)
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !        BB = SQRT(COEF*VG_GC(I))/C_GC(I)**2
-        BBDELK    = DELK_GC(I)*SQRT(COEF*VG_GC(I))/C_GC(I)**2
+        BBDELK = DELK_GC(I)*SQRT(COEF*VG_GC(I))/C_GC(I)**2
 !       mss :  integral of k**2 F(k)  k dk
-        XMSSCG  = XMSSCG + BBDELK * XM
+        XMSSCG = XMSSCG + BBDELK * XM
 !       Tauwcg : (rhow * g /rhoa) * integral of (1/c) * gammma * F(k)  k dk 
 !       with omega=g*k and omega=k*c,  then
 !       Tauwcg : (rhow /rhoa) * integral of omega * gammma * F(k)  k dk
@@ -90,7 +90,7 @@
         TAUCT = OMEGA_GC(I) * GAM_W * BBDELK * XM**3
         TAU = MAX(TAU - TAUWSHELTER*TAUCT, 0.0_JWRB)
         UST = SQRT(TAU)
-        TAUWCG  = TAUWCG + TAUCT 
+        TAUWCG = TAUWCG + TAUCT 
       ENDDO
  
       IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
