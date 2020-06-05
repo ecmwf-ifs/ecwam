@@ -1,5 +1,5 @@
       SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
-     &                    MIJ, RHOWGDFTH,                               &
+     &                    MIJFLX, RHOWGDFTH,                            &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, PHIWA)
 
@@ -12,7 +12,7 @@
 !     J. BIDLOT            ECMWF FEBRUARY   1996-97
 !     S. ABDALLA           ECMWF OCTOBER    2001 INTRODUCTION OF VARIABLE
 !                                                AIR DENSITY
-!     J. BIDLOT            ECMWF            2007  ADD MIJ
+!     J. BIDLOT            ECMWF            2007  ADD MIJFLX
 !     P.A.E.M. JANSSEN     ECMWF            2011  ADD FLUX CALULATIONS
 
 !*    PURPOSE.
@@ -24,7 +24,7 @@
 !     ----------
 
 !        *CALL* *STRESSO (F, SPOS, IJS, IJL,
-!    &                    MIJ, RHOWGDFTH,
+!    &                    MIJFLX, RHOWGDFTH,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
 !    &                    TAUW, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
@@ -32,10 +32,10 @@
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
-!         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!         *MIJFLX*      - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for fluxes calculation.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
-!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
-!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
+!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJFLX) 
+!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJFLX)
 !         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
@@ -69,15 +69,15 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ALPHA    ,TAUWSHELTER, ITSHELT,LWVFLX_SNL
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
-     &            COSTH    ,SINTH    ,FR5      ,FRATIO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+     &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -85,7 +85,7 @@
 #include "tau_phi_hf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJFLX
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
@@ -99,7 +99,7 @@
       REAL(KIND=JWRB) :: CONST
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
-      REAL(KIND=JWRB) :: ABS_TAUWSHELTER, GM1
+      REAL(KIND=JWRB) :: GM1
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, TEMP1, CONST1, XSTRESS, YSTRESS
@@ -121,11 +121,9 @@
       CONST = DELTH*(ZPI)**4*GM1
       TAUTOUS2 = 1.0_JWRB-EPS1
 
-      ABS_TAUWSHELTER=ABS(TAUWSHELTER)
-
       DO IJ=IJS,IJL
-        CONST1(IJ)  = CONST*FR5(MIJ(IJ))*GM1
-        CONST2(IJ)  = ROAIRN(IJ)*CONST*FR5(MIJ(IJ))
+        CONST1(IJ)  = CONST*FR5(MIJFLX(IJ))*GM1
+        CONST2(IJ)  = ROAIRN(IJ)*CONST*FR5(MIJFLX(IJ))
       ENDDO
 
 !*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
@@ -160,8 +158,8 @@
 
 !*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     --------------------------------------------------------------------------------------
-      DO M=1,MAXVAL(MIJ(:))
-!     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+      DO M=1,MAXVAL(MIJFLX(:))
+!     THE INTEGRATION ONLY UP TO FR=MIJFLX SINCE RHOWGDFTH=0 FOR FR>MIJFLX
         K=1
         DO IJ=IJS,IJL
           SUMT(IJ) = SPOS(IJ,K,M)
@@ -196,7 +194,7 @@
         US2(IJ)=USNEW(IJ)**2
       ENDDO
 
-      IF (IPHYS.EQ.0 .OR. ITSHELT.EQ.0) THEN
+      IF ( IPHYS.EQ.0 ) THEN
         DO IJ=IJS,IJL
           USDIRP(IJ)=THWNEW(IJ)
           UST(IJ)=USNEW(IJ)
@@ -206,8 +204,8 @@
         DO IJ=IJS,IJL
           TAUX(IJ)=US2(IJ)*SIN(THWNEW(IJ))
           TAUY(IJ)=US2(IJ)*COS(THWNEW(IJ))
-          TAUPX(IJ)=TAUX(IJ)-ABS_TAUWSHELTER*XSTRESS(IJ)
-          TAUPY(IJ)=TAUY(IJ)-ABS_TAUWSHELTER*YSTRESS(IJ)
+          TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
+          TAUPY(IJ)=TAUY(IJ)-TAUWSHELTER*YSTRESS(IJ)
           USDIRP(IJ)=ATAN2(TAUPX(IJ),TAUPY(IJ))
           UST2(IJ)=SQRT(TAUPX(IJ)**2+TAUPY(IJ)**2)
           UST(IJ)=SQRT(UST2(IJ))
@@ -217,7 +215,7 @@
       K=1
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
+        FCOSW2   = F(IJ,K,MIJFLX(IJ))*COSW**2
         TEMP1(IJ) = FCOSW2*COSW
         TEMP2(IJ) = FCOSW2 
       ENDDO
@@ -225,23 +223,17 @@
       DO K=2,NANG
         DO IJ=IJS,IJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
+          FCOSW2   = F(IJ,K,MIJFLX(IJ))*COSW**2
           TEMP1(IJ) = TEMP1(IJ) + FCOSW2*COSW
           TEMP2(IJ) = TEMP2(IJ) + FCOSW2 
         ENDDO
       ENDDO
 
-      IF (ITSHELT.EQ.0) THEN
-        DO IJ=IJS,IJL
-          XLEVTAIL(IJ)=0.0_JWRB
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
-        ENDDO
-      ENDIF
+      DO IJ=IJS,IJL
+        XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
+      ENDDO
 
-      CALL TAU_PHI_HF(IJS, IJL, MIJ, UST, Z0NEW, XLEVTAIL, TAU1, PHI1)
+      CALL TAU_PHI_HF(IJS, IJL, MIJFLX, UST, Z0NEW, XLEVTAIL, TAU1, PHI1)
 
       DO IJ=IJS,IJL
         TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*TAU1(IJ)

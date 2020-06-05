@@ -180,8 +180,9 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: ILEV
+      INTEGER(KIND=JWIM) :: IUSFG
       INTEGER(KIND=JWIM) :: ICODE_WND, ICODE_WAM
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX 
 
       REAL(KIND=JWRB) :: DELT, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
@@ -282,8 +283,8 @@
 
 !!    FL AND SL ARE INITIALISED IN SINPUT
 
-      ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WND)
+      IUSFG=0
+      CALL AIRSEA (FL1, U10NEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ICODE_WND, IUSFG)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
@@ -317,10 +318,14 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
+     &                MIJ, MIJFLX, RHOWGDFTH)
+
+!     RE-IMPOSE HIGH FREQUENCY TAIL
+      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
+
 
       CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJ, RHOWGDFTH,                                     &
+     &              MIJFLX, RHOWGDFTH,                                  &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
@@ -328,14 +333,12 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, IJS, IJL, ILEV,ICODE_WAM)
+      IUSFG=1
+      CALL AIRSEA (FL1, U10NEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ICODE_WAM, IUSFG)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
-
-!     RE-IMPOSE HIGH FREQUENCY TAIL
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 
 
 !*    REEVALUATE WIND INPUT SOURCE TERM
@@ -350,7 +353,7 @@
       ENDIF
 
       CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJ, RHOWGDFTH,                                     &
+     &              MIJFLX, RHOWGDFTH,                                  &
      &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
      &              TAUW, PHIWA)
       IF (ITEST.GE.2) THEN
@@ -372,7 +375,7 @@
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SL, CICVR,                                       &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -398,7 +401,7 @@
           ENDDO
         ENDDO
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SSOURCE, CICVR,                                  &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -476,8 +479,7 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
-
+     &                MIJ, MIJFLX, RHOWGDFTH)
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 

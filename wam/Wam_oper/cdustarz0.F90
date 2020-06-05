@@ -1,0 +1,60 @@
+SUBROUTINE CDUSTARZ0(IJS, IJL, U10, ZREF, CD, USTAR, Z0)
+
+! ----------------------------------------------------------------------
+
+!**** *CDUSTARZ0* - COMPUTATION OF FRICTION VELOCITY OVER SEA
+
+
+!*    PURPOSE.
+!     ---------
+
+!       TO COMPUTE CD, USTAR AND Z0 USING CD(U10) RELATION
+
+!*    METHOD.
+!     -------
+
+!     FIND CD USIND CD v U10 RELATION, THEN USTAR.
+!     Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: U10 = (USTAR/XKAPPA)*LOG((ZREF+Z0)/Z0)
+
+!     NOTE. THIS IS ONLY VALID FOR ZREF=10m.
+
+!     REFERENCE.
+!     ----------
+
+!     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
+
+
+! ----------------------------------------------------------------------
+
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+USE YOWPCONS , ONLY : C1CD, C2CD, P1CD, P2CD, CDMAX, EPSUS
+USE YOWPHYS  , ONLY : XKAPPA
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+
+! ----------------------------------------------------------------------
+
+IMPLICIT NONE
+
+INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+REAL(KIND=JWRB), INTENT(IN) :: ZREF
+REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10
+REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  CD, USTAR, Z0
+
+INTEGER(KIND=JWIM) :: IJ
+
+REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('CDUSTARZ0',0,ZHOOK_HANDLE)
+
+DO IJ=IJS,IJL
+  CD(IJ) = MIN((C1CD + C2CD*U10(IJ)**P1CD)*U10(IJ)**P2CD,CDMAX)
+  USTAR(IJ) = MAX(SQRT(CD(IJ))*U10(IJ), EPSUS)
+  Z0(IJ) = ZREF /(EXP(XKAPPA*U10(IJ)/USTAR(IJ))-1.0_JWRB)
+ENDDO
+
+IF (LHOOK) CALL DR_HOOK('CDUSTARZ0',1,ZHOOK_HANDLE)
+
+END SUBROUTINE CDUSTARZ0

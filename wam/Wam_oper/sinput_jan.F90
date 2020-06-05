@@ -90,14 +90,14 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,XKAPPA
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
+      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -138,7 +138,7 @@
 
       IF (LHOOK) CALL DR_HOOK('SINPUT_JAN',0,ZHOOK_HANDLE)
 
-      CONST1   = BETAMAX/XKAPPA**2 
+      CONST1   = BETAMAXOXKAPPA2 
       CONST3   = 2.0_JWRB*XKAPPA/CONST1  ! SEE IDAMPING
       XKAPPAD  = 1.E0_JWRB/XKAPPA
       RWINV = 1.0_JWRB/ROWATER

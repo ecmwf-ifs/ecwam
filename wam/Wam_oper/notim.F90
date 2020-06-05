@@ -70,6 +70,7 @@
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWSTAT  , ONLY : IDELPRO  ,IDELWO   ,NPROMA_WAM
+      USE YOWPHYS  , ONLY : XNLEV
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDA      ,CDTNEXT  ,NSTORE   ,FF_NEXT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -78,7 +79,7 @@
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "airsea.intfb.h"
+#include "cdustarz0.intfb.h"
 #include "getwnd.intfb.h"
 #include "incdate.intfb.h"
 
@@ -95,12 +96,12 @@
 
 
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
-      INTEGER(KIND=JWIM) :: ILEV, IJ
+      INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: ICODE_WND
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: U10, US, THW, ADS, ZIDL,  &
-     &                                        CICR, CITH
+     &                                        CICR, CITH, CD
 
       CHARACTER(LEN=14) :: CDTWIH, CDT, ZERO
 
@@ -126,7 +127,6 @@
         LWNDFILE=.TRUE.
       ENDIF
 
-      ILEV=1
       IF (CDA.EQ.ZERO) THEN
         CDA = CDTWIS
         CALL GETWND (MIJS, MIJL,                                        &
@@ -142,8 +142,8 @@
           DO JKGLO=MIJS,MIJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,MIJL)
-            CALL AIRSEA (U10OLD(KIJS), TAUW(KIJS), USOLD(KIJS),         &
-     &                   Z0OLD(KIJS), KIJS, KIJL, ILEV, ICODE_WND)
+            CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), XNLEV,            &
+     &                      CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1493,1)

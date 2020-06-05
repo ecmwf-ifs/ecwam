@@ -30,8 +30,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,       &
-     &             X0TAUHF, JTOT_TAUHF, WTAUHF
+      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -47,6 +47,7 @@
 
       IF (LHOOK) CALL DR_HOOK('INIT_X0TAUHF',0,ZHOOK_HANDLE)
 
+      BETAMAXOXKAPPA2 = BETAMAX / XKAPPA**2
 
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
@@ -63,7 +64,7 @@
       ENDDO
       X0TAUHF=X0
 
-      CONST1 = (BETAMAX/XKAPPA**2)/3.0_JWRB
+      CONST1 = BETAMAXOXKAPPA2/3.0_JWRB
 
       ! Simpson Integration weights (JTOT_TAUHF must be odd) !
       WTAUHF(1)=CONST1

@@ -155,15 +155,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,    &
-     &            BFCRV    ,ESH      ,ASH      ,BSH      ,ASWKM    ,    &
-     &            BSWKM
       USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,    &
      &            NIBLC    ,NBLC
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA   ,    &
-     &            XNLEV    ,TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            TH       ,COSTH    ,SINTH
@@ -172,8 +167,6 @@
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &            XDELLO   ,ZDELLO   ,LAQUA
-      USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOWSHAL  , ONLY : BATHYMAX
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD
@@ -396,90 +389,6 @@
 !         --------------------------------------
 
       CALL MTABS (ML, KL)
-
-!*    4.4 MODULE COUPLE.
-!         --------------
-      IF (IPHYS.EQ.0) THEN
-!       ECMWF PHYSICS:
-        IF(ML.GT.30) THEN
-          ALPHA   = 0.0060_JWRB
-        ELSE
-          ALPHA   = 0.0075_JWRB
-        ENDIF
-!!!        ALPHA   = 0.00525
-        BETAMAX = 1.20_JWRB
-        ZALP    = 0.008_JWRB
-        ALPHAPMAX = 0.03_JWRB
-        TAUWSHELTER=0.0_JWRB
-        TAILFACTOR=2.5_JWRB
-!!!        TAILFACTOR_PM=3.4
-        TAILFACTOR_PM=0.0_JWRB   ! i.e. not used
-
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1108.0_JWRB
-        AGRCRV = 0.06E+6_JWRB
-        BGRCRV = 9.70_JWRB
-        AFCRV = 4.0E-4_JWRB
-        BFCRV = -3.0_JWRB
-        ESH = 1711.0_JWRB
-        ASH = 8.0E-4_JWRB 
-        BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
-
-      ELSE IF (IPHYS.EQ.1) THEN
-!       METEO FRANCE PHYSICS WITH HIGH FREQUENCy TAIL FROM ECMWF PHYSICS
-!        ALPHA   = 0.0065
-!        BETAMAX = 1.52
-!        ZALP    = 0.0060
-!        ALPHAPMAX = 0.03
-!        TAUWSHELTER=0.5
-!        TAILFACTOR=2.5
-!        TAILFACTOR_PM=0.0
-!       TEST 471 adapted to ECWAM
-
-        ALPHA   = 0.0065_JWRB
-        BETAMAX = 1.40_JWRB
-        ZALP    = 0.008_JWRB
-        ALPHAPMAX = 0.031_JWRB
-        TAUWSHELTER=0.25_JWRB
-        TAILFACTOR=2.5_JWRB
-        TAILFACTOR_PM=3.0_JWRB
-
-!!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1065.0_JWRB
-        AGRCRV = 0.0655E+6_JWRB
-        BGRCRV =  10.906_JWRB
-        AFCRV = 2.453E-4_JWRB
-        BFCRV = -3.1236_JWRB
-        ESH = 1711.0_JWRB
-        ASH = 8.0E-4_JWRB 
-        BSH = 0.96_JWRB 
-        ASWKM=0.0981_JWRB
-        BSWKM=0.425_JWRB
-
-      ELSE
-        WRITE (IU06,*) '*************************************'
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*  ERROR IN PREPROC                 *'
-        WRITE (IU06,*) '*  UKNOWN PHYSICS SELECTION :       *'
-        WRITE (IU06,*) '*  IPHYS =' , IPHYS
-        WRITE (IU06,*) '*                                   *'
-        WRITE (IU06,*) '*************************************'
-        CALL ABORT1
-      ENDIF
-
-      XKAPPA  = 0.40_JWRB
-
-!*    UP TO JPLEVC LEVELS CAN BE SPECIFIED.
-
-      XNLEV(1)= 10.0_JWRB
-
-!*    4.4 MODULE TABLE (STRESS TABLES).
-!         -----------------------------
-
-!!! HAS BEEN REPLACED WITH USING TAUT_Z0
-
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------

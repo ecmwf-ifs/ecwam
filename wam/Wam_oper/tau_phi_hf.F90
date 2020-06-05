@@ -25,7 +25,7 @@
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *USTAR* FRICTION VELOCITY
 !          *Z0*    ROUGHNESS LENGTH 
-!          *XLEVTAIL* TAIL LEVEL (METEO FRANCE PHYSICS)
+!          *XLEVTAIL* TAIL LEVEL
 !          *TAUHF* HIGH-FREQUENCY STRESS
 !          *PHIHF* HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
 
@@ -51,30 +51,36 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : ZALP     ,XKAPPA,X0TAUHF, JTOT_TAUHF, WTAUHF
+      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0
       USE YOWFRED  , ONLY : FR
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI , SURFT
+      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
+      USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+#include "omegagc.intfb.h"
+
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
-      REAL(KIND=JWRB) ,DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
 
-
+      INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: J, IJ
 
-      REAL(KIND=JWRB), PARAMETER :: ZSUP = 0.0_JWRB  !  LOG(1.)
+      REAL(KIND=JWRB), PARAMETER :: ZSUPMAX = 0.0_JWRB  !  LOG(1.)
+      REAL(KIND=JWRB) :: XKS, OMS
       REAL(KIND=JWRB) :: OMEGA, OMEGAC, OMEGACC
       REAL(KIND=JWRB) :: X0G, UST, UST0, TAUW, TAUW0
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: DELZ, ZINF
-      REAL(KIND=JWRB) :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
+      REAL(KIND=JWRB) :: FNC, FNC2, SQRTGZ0, GM1, GZ0, XLOGGZ0
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP
 
 ! ----------------------------------------------------------------------
 
@@ -88,6 +94,17 @@
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
 
+      SQRTZ0OG(:)  = SQRT(Z0(:)*GM1)
+
+      IF(LLGCBZ0) THEN
+        DO IJ=IJS,IJL
+          CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
+          ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)
+        ENDDO
+      ELSE
+        ZSUP(:) = ZSUPMAX
+      ENDIF
+
       DO IJ=IJS,IJL
         OMEGAC    = ZPI*FR(MIJ(IJ))
         UST0      = USTAR(IJ)
@@ -96,11 +113,10 @@
         XLOGGZ0   = LOG(GZ0)
         OMEGACC   = MAX(OMEGAC,X0G/UST0)
 
-        SQRTZ0OG  = SQRT(Z0(IJ)*GM1)
-        SQRTGZ0   = 1.0_JWRB/SQRTZ0OG
-        YC        = OMEGACC*SQRTZ0OG
+        SQRTGZ0   = 1.0_JWRB/SQRTZ0OG(IJ)
+        YC        = OMEGACC*SQRTZ0OG(IJ)
         ZINF      = LOG(YC)
-        DELZ      = MAX((ZSUP-ZINF)/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
+        DELZ      = MAX((ZSUP(IJ)-ZINF)/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
 
         TAUHF(IJ)= 0.0_JWRB
         PHIHF(IJ)= 0.0_JWRB
@@ -124,7 +140,7 @@
           PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
         ENDDO
         TAUHF(IJ) = TAUHF(IJ)
-        PHIHF(IJ) = SQRTZ0OG*PHIHF(IJ)
+        PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)
 
       ENDDO
 

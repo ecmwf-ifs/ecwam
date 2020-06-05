@@ -1,5 +1,5 @@
       SUBROUTINE FRCUTINDEX (IJS, IJL, FM, FMWS, USNEW, CICVR,          &
-     &                       MIJ, RHOWGDFTH)
+     &                       MIJ, MIJFLX, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
 
@@ -16,7 +16,8 @@
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *USNEW*  - FRICTION VELOCITY IN M/S
 !          *CICVR*  - CICVR 
-!          *MIJ*    - LAST FREQUENCY INDEX
+!          *MIJ*    - LAST FREQUENCY INDEX used to impose the high frequency tail
+!          *MIJFLX* - LAST FREQUENCY INDEX used to compute the fluxes
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
@@ -51,12 +52,12 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM, TAILFACTOR_FLX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -65,13 +66,15 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
+!!! test a different MIJ for all fluxes calculation
+      INTEGER(KIND=JWIM), INTENT(OUT) :: MIJFLX(IJS:IJL)
 
       REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: FM, FMWS, USNEW, CICVR
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
       INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4
+      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, FPMF 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -86,26 +89,34 @@
 
       FPMH = TAILFACTOR/FR(1)
       FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
+      FPMF = TAILFACTOR_FLX/FR(1)
 
       DO IJ=IJS,IJL
         IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
-          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+!!!          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
           MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+!!! 
+          FM2 = MAX(FMWS(IJ),FM(IJ))*FPMF
+          FPM4 = MAX(FM2,FPM)
+          MIJFLX(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJFLX(IJ) = MIN(MAX(1,MIJFLX(IJ)),NFRE)
         ELSE
           MIJ(IJ) = NFRE
+          MIJFLX(IJ) = NFRE
         ENDIF
       ENDDO
 
 !     SET RHOWGDFTH
       DO IJ=IJS,IJL
-        DO M=1,MIJ(IJ)
+        DO M=1,MIJFLX(IJ)
           RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
-        IF(MIJ(IJ).NE.NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
-        DO M=MIJ(IJ)+1,NFRE
+        IF(MIJFLX(IJ).NE.NFRE) RHOWGDFTH(IJ,MIJFLX(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJFLX(IJ))
+        DO M=MIJFLX(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.0_JWRB
         ENDDO
       ENDDO

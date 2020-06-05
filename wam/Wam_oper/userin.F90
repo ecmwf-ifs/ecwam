@@ -68,7 +68,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
-     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, LLCAPCHNK
+     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
+     &            LLCAPCHNK, LLGCBZ0
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
@@ -102,7 +103,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
-      USE YOWPHYS  , ONLY : ALPHAPMAX
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM, TAILFACTOR_FLX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -652,6 +654,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' 2D DECOMPOSITION OF THE DOMAIN ' 
       ENDIF
       WRITE(IU06,*) ' MODEL PHYSICS: IPHYS = ', IPHYS
+      WRITE(IU06,*) '                BETAMAX = ', BETAMAX
+      WRITE(IU06,*) '                ZALP = ', ZALP
+      WRITE(IU06,*) '                ALPHA = ', ALPHA
+      WRITE(IU06,*) '                ALPHAPMAX = ', ALPHAPMAX
+      WRITE(IU06,*) '                TAUWSHELTER = ', TAUWSHELTER
+      WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
+      WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
+      WRITE(IU06,*) '                TAILFACTOR_FLX = ', TAILFACTOR_FLX
+      WRITE(IU06,*) '' 
       IF (ISHALLO.EQ.1) THEN
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
       ELSE
@@ -668,8 +679,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           CALL ABORT1
         ENDIF
       ENDIF
-      IF(LLCAPCHNK) WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
-      WRITE(IU06,*) ' MAXIMUM PHILLIPS PARAMETER ALLOWED: ',ALPHAPMAX
+      IF(LLGCBZ0) THEN
+        WRITE(IU06,*) ' USE GRAVITY-CAPILLARY MODEL FOR THE BACKGROUND ROUGHNESS'
+      ELSE IF(LLCAPCHNK) THEN
+        WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
+      ENDIF
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
       ENDIF

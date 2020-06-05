@@ -29,7 +29,7 @@
 
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
      &            RAD      ,DEG      ,R        ,ZPISQRT  ,G2ZPI4   ,    &
-     &            G
+     &            G        ,THREEZPI
 
 ! ----------------------------------------------------------------------
 
@@ -39,6 +39,7 @@
 
       PI = 4.0_JWRB*ATAN(1.0_JWRB)
       ZPI= 2.0_JWRB*PI
+      THREEZPI = 3.0_JWRB*ZPI
       ZPISQRT = SQRT(ZPI)
       G2ZPI4 = G**2/ZPI**4
 

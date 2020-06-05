@@ -42,6 +42,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWPCONS , ONLY : C1CD,    C2CD,     P1CD,     P2CD
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -54,12 +55,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  USTAR, Z0W
 
       INTEGER(KIND=JWIM), PARAMETER :: NITER=10
-
-!     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
-      REAL(KIND=JWRB), PARAMETER :: C1 = 1.03E-3
-      REAL(KIND=JWRB), PARAMETER :: C2 = 0.04E-3
-      REAL(KIND=JWRB), PARAMETER :: P1 = 1.48
-      REAL(KIND=JWRB), PARAMETER :: P2 = -0.21
 
       INTEGER(KIND=JWIM) :: IJ, ITER
 
@@ -75,7 +70,7 @@
       DO IJ=IJS,IJL
         BOG=BETA(IJ)/G
         XKU10=XKAPPA*U10(IJ)
-        C_D = (C1 + C2*U10(IJ)**P1)*U10(IJ)**P2
+        C_D = (C1CD + C2CD*U10(IJ)**P1CD)*U10(IJ)**P2CD
 
         USTFG=SQRT(C_D)*U10(IJ)
         UST=USTFG

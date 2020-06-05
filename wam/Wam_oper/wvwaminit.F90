@@ -43,6 +43,7 @@
 #include "abort1.intfb.h"
 #include "expand_string.intfb.h"
 #include "mpuserin.intfb.h"
+#include "setwavphys.intfb.h"
 #include "readpre.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IULOG
@@ -105,6 +106,12 @@
       ENDIF
 
       WRITE(IU06,*) ' WAM SOFTWARE VERSION: ', KWAMVER
+
+
+!     SET WAVE PHYSICS PACKAGE
+!     ------------------------
+
+      CALL SETWAVPHYS
 
 !     DETERMINE BYTE STORAGE REPRESENTATION OF REAL NUMBERS
 !     -----------------------------------------------------

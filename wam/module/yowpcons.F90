@@ -12,6 +12,7 @@
       REAL(KIND=JWRB) :: PI = OLDPI 
       REAL(KIND=JWRB), PARAMETER :: CIRC = 40000000.0_JWRB
       REAL(KIND=JWRB) :: ZPI = 6.2831854_JWRB
+      REAL(KIND=JWRB) :: THREEZPI = 18.849555922_JWRB
       REAL(KIND=JWRB) :: G2ZPI4 = 0.987152585_JWRB
       REAL(KIND=JWRB) :: ZPISQRT = 1.7724539_JWRB
       REAL(KIND=JWRB) :: ZCONST = 0.0281349_JWRB 
@@ -29,16 +30,23 @@
       REAL(KIND=JWRB), PARAMETER :: ROWATER = 1000.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: YEPS = ROAIR/ROWATER
       REAL(KIND=JWRB), PARAMETER :: YINVEPS = 1.0_JWRB/YEPS
+      REAL(KIND=JWRB), PARAMETER :: GAM_SURF = 0.0717_JWRB   !!!! will need to be adapted if you change ROWATER
+      REAL(KIND=JWRB), PARAMETER :: SURFT =  GAM_SURF/ROWATER
       REAL(KIND=JWRB), PARAMETER :: WSTAR0 = 0.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: Rconstant = 287.16_JWRB   ! The gas constant
-      REAL(KIND=JWRB), PARAMETER :: EpsWaterVapor = 0.61_JWRB ! The mass ratio of 
-                                              ! water vapor to dry air
+      REAL(KIND=JWRB), PARAMETER :: EpsWaterVapor = 0.61_JWRB ! The mass ratio of  water vapor to dry air
       REAL(KIND=JWRB), PARAMETER :: EPSUS = 1.0E-6_JWRB
       REAL(KIND=JWRB), PARAMETER :: EPSU10 = 1.0E-3_JWRB
 
       REAL(KIND=JWRB), PARAMETER :: ACD=8.0E-4_JWRB
       REAL(KIND=JWRB), PARAMETER :: BCD=8.0E-5_JWRB
 
+      REAL(KIND=JWRB), PARAMETER :: C1CD = 1.03E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2CD = 0.04E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P1CD = 1.48_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P2CD = -0.21_JWRB
+
+      REAL(KIND=JWRB), PARAMETER :: CDMAX=0.0025_JWRB
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
@@ -66,6 +74,8 @@
 !                          (SET IN CHIEF OR VIA THE IFS).
 !     *ROAIR*     REAL      AIR DENSITY.
 !     *ROWATER*   REAL      WATER DENSITY.
+!     *GAM_SURF*  REAL      SURFACE TENSION (in N/m)
+!     *SURFT*     REAL      SURFACE TENSION divided by water density (in m**3 s**-2)
 !     *YEPS*      REAL      ROAIR/ROWATER.
 !     *YINVEPS*   REAL      1./YEPS.
 !     *WSTAR0*    REAL      DEFAULT VALUE FOR w*.
@@ -73,8 +83,14 @@
 !                           WHEN COMPUTING CD OR THE CHARNOCK COEF.
 !     *EPSU10*    REAL      SMALL NUMBER ADDED TO THE SQUARE OF U10
 !                           WHEN COMPUTING CD.
+
 !     *ACD*       REAL      COEFFICIENTS FOR SIMPLE CD(U10) RELATION
 !     *BCD*       REAL      CD = ACD + BCD*U10
+
+!     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
+!     C_D = (C1CD + C2CD*U10**P1CD)*U10**P2CD
+
+!     *CDMAX*    REAL      MAXIMUM CD ALLOWED FOR ALL CD(U10) REALATIONS
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

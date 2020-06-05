@@ -14,7 +14,6 @@
 !     ----------
 
 !       *CALL* *IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
-!          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.

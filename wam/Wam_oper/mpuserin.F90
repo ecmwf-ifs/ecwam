@@ -48,7 +48,7 @@
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
-     &            LLCAPCHNK
+     &            LLCAPCHNK, LLGCBZ0
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -76,11 +76,15 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            IPHYS    ,                                            &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -154,6 +158,7 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
+     &   IPHYS,                                                         &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
@@ -194,7 +199,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK,                                                     &
+     &   LLCAPCHNK, LLGCBZ0,                                            &
      &   LWAM_USE_IO_SERV
 
 
@@ -356,7 +361,8 @@
 !     ITEST: TEST OUTPUT LEVEL.
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
-!     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
+!     IASFORSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
+!     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
@@ -403,6 +409,7 @@
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
+!     LLGCBZ0 : USE MODEL FOR BACKGROUND ROUGHNESS.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
@@ -577,6 +584,7 @@
       LODBRALT  = .FALSE.
       ICASE     = 1 
       ISHALLO   = 0 
+      IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
@@ -703,6 +711,7 @@
       LWNEMOCOUDEBUG = .FALSE.
 
       LLCAPCHNK = .FALSE.
+      LLGCBZ0 = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
 
