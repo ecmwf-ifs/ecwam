@@ -32,7 +32,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPHYS  , ONLY : ALPHA 
+      USE YOWPHYS  , ONLY : ALPHA, ALPHAMIN 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
@@ -41,8 +41,6 @@
       REAL(KIND=JWRB) :: CHNKMIN
 
       REAL(KIND=JWRB), PARAMETER :: A = 33.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ALPHAMIN=0.0001_JWRB
-
 
       REAL(KIND=JWRB), INTENT(IN) :: U10
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
