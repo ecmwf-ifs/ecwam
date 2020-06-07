@@ -111,8 +111,6 @@ IF (LLGCBZ0) THEN
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
 
       RNUEFF = 0.04_JWRB*RNU
-!!!1 silly test
-      RNUEFF = RNUM
 
       DO IJ = IJS, IJL
         W1 = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
@@ -131,8 +129,8 @@ IF (LLGCBZ0) THEN
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
 !         GRAVITY CAPILLARY CONTRIBUTION:
           CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
-          Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
 !!!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MINDYN)
+          Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
           ZB(IJ) = MAX((Z0(IJ)-Z0VIS)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MINDYN)
 !         TOTAL kinematic STRESS:
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
