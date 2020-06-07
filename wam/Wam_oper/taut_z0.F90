@@ -129,11 +129,11 @@ IF (LLGCBZ0) THEN
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
-          Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
-          Z0(IJ) = MAX(Z0(IJ)-Z0VIS,Z0MINDYN)
 !         GRAVITY CAPILLARY CONTRIBUTION:
           CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
-          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MINDYN)
+          Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
+!!!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MINDYN)
+          ZB(IJ) = MAX((Z0(IJ)-Z0VIS)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MINDYN)
 !         TOTAL kinematic STRESS:
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUEFF*USTAR(IJ)/(XKAPPA*Z0(IJ))
@@ -148,12 +148,10 @@ IF (LLGCBZ0) THEN
           Z0MINDYN = MAX(ALPHAMIN*GM1*TAUOLD,Z0MIN)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
-        Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
-        Z0(IJ) = MAX(Z0(IJ)-Z0VIS,Z0MINDYN)
 
 !!!!debile
           Z0VIS = RNUM/USTAR(IJ)
-       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), Z0VIS, G*Z0(IJ)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
+       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), Z0VIS, G*(Z0(IJ)-Z0VIS)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
        write(IU06,*) 'stress ',TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ)
        CALL FLUSH(IU06)
        
