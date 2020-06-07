@@ -147,7 +147,7 @@ IF (LLGCBZ0) THEN
 
 !!!!debile
           Z0VIS = RNUM/USTAR(IJ)
-       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), ZVIS, G*(Z0(IJ)-Z0VIS)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
+       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), Z0VIS, G*(Z0(IJ)-Z0VIS)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
        write(IU06,*) 'stress ',TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ)
        CALL FLUSH(IU06)
        
