@@ -111,6 +111,8 @@ IF (LLGCBZ0) THEN
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
 
       RNUEFF = 0.04_JWRB*RNU
+!!!1 silly test
+      RNUEFF = 0.11_JWRB*RNU
 
       DO IJ = IJS, IJL
         W1 = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
