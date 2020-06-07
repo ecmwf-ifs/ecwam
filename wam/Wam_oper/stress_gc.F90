@@ -32,7 +32,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: ALPHAP  ! Phillips parameter
-      REAL(KIND=JWRB), INTENT(OUT) :: XMSSCG  ! mean squre slope for gravity-capillary waves
+      REAL(KIND=JWRB), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
       REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
 
       INTEGER(KIND=JWIM) :: NS
