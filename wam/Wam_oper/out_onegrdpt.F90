@@ -33,6 +33,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
@@ -42,7 +43,7 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10
-      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV
+      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
@@ -63,6 +64,7 @@
       REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
       REAL(KIND=JWRB) :: T10, E10, FP10, FETCH10, T_0, E_OBS 
       REAL(KIND=JWRB) :: DEPTH, PHIOC, TAUOC
+      REAL(KIND=JWRB) :: Z0VIS 
       REAL(KIND=JWRB) :: XLOGE_YV, XLOGF_YV
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: Tws, Ews, Fws  
@@ -207,7 +209,12 @@
 
             CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV*EXP(-XKAPPA*CDSQRTINV)
-            BETA      = G*Z0/USTAR2
+            IF(LLGCBZ0) THEN
+              Z0VIS   = RNUM/USTAR
+            ELSE
+              Z0VIS   =  0.0_JWRB
+            ENDIF
+            BETA      = G*(Z0-Z0VIS)/USTAR2
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2
@@ -264,9 +271,9 @@
         CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
-     &       2F12.5,2E10.3,13(1x,F14.5))
+     &       2F12.5,2E10.3,13(1x,F15.5))
    61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,          &
-     &       2F12.5,2E10.3,13(1x,F14.5))
+     &       2F12.5,2E10.3,13(1x,F15.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 
