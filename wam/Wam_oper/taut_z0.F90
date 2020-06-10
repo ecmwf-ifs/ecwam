@@ -143,11 +143,11 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
           Z0MINDYN = MAX(ALPHAMIN*GM1*TAUOLD,Z0MIN)
         ENDDO
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
-
 !!!!debile
-        Z0VIS = RNUM/USTAR(IJ)
-       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), Z0VIS, G*(Z0(IJ)-Z0VIS)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
+        Z0VIS = RNUM/MAX(USTAR(IJ),EPSUS)
+        Z0(IJ)  = MAX((XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB))-Z0VIS,Z0MINDYN)
+
+       write(IU06,*) 'debile ',USTAR(IJ), Z0(IJ), ZB(IJ), Z0VIS, G*Z0(IJ)/USTAR(IJ)**2, G*ZB(IJ)/USTAR(IJ)**2,ITER 
        write(IU06,*) 'stress ',TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ)
        CALL FLUSH(IU06)
        
