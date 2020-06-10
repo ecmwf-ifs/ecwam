@@ -46,8 +46,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOWPHYS  , ONLY : ALPHAMIN ,ALPHAMAX
+      USE YOWPHYS  , ONLY : RNUM     ,ALPHAMIN     ,ALPHAMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -62,6 +63,7 @@
       REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
       INTEGER(KIND=JWIM) :: IJ
 
+      REAL(KIND=JWRB) :: Z0VIS, ZN
       REAL(KIND=JWRB) :: ALPHAMAXU10
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -72,8 +74,15 @@
 !*    COMPUTE CHARNOCK 'CONSTANT' BETA.
 !     ---------------------------------
 
+      IF (LLGCBZ0) THEN
+        ZN = RNUM
+      ELSE
+        ZN = 0.0_JWRB
+      ENDIF
+
       DO IJ = IJS,IJL
-        BETA(IJ) = G*Z0(IJ)/MAX(US(IJ)**2,EPSUS)
+        Z0VIS =  ZN/MAX(US(IJ),EPSUS)
+        BETA(IJ) = G*(Z0(IJ)-Z0VIS)/MAX(US(IJ)**2,EPSUS)
         ALPHAMAXU10=MIN(ALPHAMAX,AMAX+BMAX*U10(IJ))
         BETA(IJ) = MAX(MIN(BETA(IJ),ALPHAMAXU10),ALPHAMIN)
       ENDDO
