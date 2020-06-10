@@ -33,7 +33,6 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
      &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
@@ -43,7 +42,7 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10
-      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM
+      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
@@ -209,12 +208,7 @@
 
             CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
             Z0        = XNLEV*EXP(-XKAPPA*CDSQRTINV)
-            IF(LLGCBZ0) THEN
-              Z0VIS   = RNUM/USTAR
-            ELSE
-              Z0VIS   =  0.0_JWRB
-            ENDIF
-            BETA      = G*(Z0-Z0VIS)/USTAR2
+            BETA      = G*Z0/USTAR2
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2
