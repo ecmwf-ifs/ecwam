@@ -206,8 +206,8 @@
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
-            CDSQRTINV = MIN(1./SQRT(CD),100.0_JWRB)
-            Z0        = XNLEV*EXP(-XKAPPA*CDSQRTINV)
+            CDSQRTINV = MIN(1./SQRT(CD),50.0_JWRB)
+            Z0        = XNLEV/(EXP(XKAPPA*CDSQRTINV)-1.0_JWRB)
             BETA      = G*Z0/USTAR2
 
             DFETCH = (NGY-J+1)*DELPHI
