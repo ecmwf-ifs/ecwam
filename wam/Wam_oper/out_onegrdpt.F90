@@ -42,7 +42,7 @@
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10
-      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV
+      USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
@@ -63,7 +63,7 @@
       REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
       REAL(KIND=JWRB) :: T10, E10, FP10, FETCH10, T_0, E_OBS 
       REAL(KIND=JWRB) :: DEPTH, PHIOC, TAUOC
-      REAL(KIND=JWRB) :: Z0VIS 
+      REAL(KIND=JWRB) :: Z0VIS
       REAL(KIND=JWRB) :: XLOGE_YV, XLOGF_YV
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: Tws, Ews, Fws  
@@ -208,7 +208,8 @@
 
             CDSQRTINV = MIN(1./SQRT(CD),50.0_JWRB)
             Z0        = XNLEV/(EXP(XKAPPA*CDSQRTINV)-1.0_JWRB)
-            BETA      = G*Z0/USTAR2
+            Z0VIS     = RNUM/USTAR 
+            BETA      = MAX(G*(Z0-Z0VIS)/USTAR2,ALPHAMIN)
 
             DFETCH = (NGY-J+1)*DELPHI
             FETCHSTAR = G*DFETCH/USTAR2
