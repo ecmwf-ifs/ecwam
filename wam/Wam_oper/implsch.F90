@@ -249,8 +249,6 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
-!!!debile
-          FLM(IJ,K)=0.0_JWRB
         ENDDO
       ENDDO
 
