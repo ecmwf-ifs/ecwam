@@ -99,9 +99,6 @@
       IF(LLGCBZ0) THEN
         DO IJ=IJS,IJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
-!!!debile
-         write(*,*) "in tau_phi_hf ",NS, XKS, OMS/ZPI
-
           ZSUP(IJ) = MIN(LOG(OMS*SQRTZ0OG(IJ)),ZSUPMAX)
         ENDDO
       ELSE
