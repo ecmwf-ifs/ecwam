@@ -95,7 +95,6 @@
 !     EXTERNALS.
 !     ---------
 
-!       *AIRSEA*    - SURFACE LAYER STRESS AND ROUGHNESS LENGTH.
 !       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
 !       *INCDATE*   - UPDATE DATE TIME GROUP.
 !SHALLOW
@@ -128,27 +127,25 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWFLUX   , LWVFLX_SNL , LWNEMOCOU, &
-     &            LWNEMOCOUSTRN
+      USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     , &
      &            COFRM4   ,FLMAX
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOWUNPOOL ,ONLY : LLUNSTR
+      USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
-#include "airsea.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
@@ -158,10 +155,9 @@
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
 #include "setice.intfb.h"
-#include "sinput.intfb.h"
+#include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokesdrift.intfb.h"
-#include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
@@ -180,14 +176,12 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: IUSFG
-      INTEGER(KIND=JWIM) :: ICODE_WND, ICODE_WAM
+      INTEGER(KIND=JWIM) :: ICALL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX 
 
       REAL(KIND=JWRB) :: DELT, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: GAMOF
       REAL(KIND=JWRB) :: DELFL(NFRE)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
@@ -205,6 +199,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
 
       LOGICAL :: LCFLX
+      LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
@@ -218,13 +213,6 @@
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
-
-      IF (LWCOU) THEN
-        ICODE_WND = ICODE_CPL
-      ELSE
-        ICODE_WND = ICODE
-      ENDIF
-      ICODE_WAM=3
 
 ! ----------------------------------------------------------------------
 
@@ -242,7 +230,6 @@
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
-
 
       CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL, F1MEAN, AKMEAN, XKMEAN)
 
@@ -278,89 +265,26 @@
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
 !         --------------------------------
 
-!*      2.3.1 INITIALISE SOURCE FUNCTION AND DERIVATIVE ARRAY.
-!             ------------------------------------------------
+!*    2.3.1 ITERATIVELY UPDATE STRESS AND COMPUTE WIND INPUT TERMS. 
+!           -------------------------------------------------------
 
-!!    FL AND SL ARE INITIALISED IN SINPUT
+     LUPDTUS = .TRUE.
+     DO ICALL = 1, 3
+        CALL SINFLX (ICALL, IJS, IJL, &
+     &               LUPDTUS, &
+     &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
+     &               CICVR, &
+     &               FL1, &
+     &               FMEANALL, FLM, &
+     &               USNEW, TAUW, Z0NEW, PHIWA, &
+     &               FL, SL, SPOS, &
+     &               MIJ, MIJFLX, RHOWGDFTH, XLLWS)
 
-      IUSFG=0
-      CALL AIRSEA (FL1, U10NEW, THWNEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ICODE_WND, IUSFG)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
-        CALL FLUSH (IU06)
-      ENDIF
-
-!*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
-!           -------------------------------------
-
-      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
-
-!     diagnostic (not coded efficiently)
-!!      DO IJ=IJS,IJL
-!!        DO M=1,NFRE
-!!          GAMOF=0.0_JWRB
-!!          DO K=1,NANG
-!!            GAMOF=GAMOF+FL(IJ,K,M)*DELTH
-!!          ENDDO
-!!          write(*,*) 'debile gamma ',CDTPRO," ",                     &
-!!     &        USNEW(IJ)*CINV(INDEP(IJ),M),GAMOF/FR(M)
-!!        ENDDO
-!!      ENDDO
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: 1st SINPUT CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
-
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, MIJFLX, RHOWGDFTH)
-
-!     RE-IMPOSE HIGH FREQUENCY TAIL
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
-
-
-      CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJFLX, RHOWGDFTH,                                  &
-     &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
-     &              TAUW, PHIWA)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 1st CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
-      IUSFG=1
-      CALL AIRSEA (FL1, U10NEW, THWNEW, ROAIRN, TAUW, USNEW, Z0NEW, IJS, IJL, ICODE_WAM, IUSFG)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
-
-!*    REEVALUATE WIND INPUT SOURCE TERM
-!     ---------------------------------
-
-      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTARNEW, SL, SPOS, XLLWS)
-
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: 2nd SINPUT CALL'
-        CALL FLUSH (IU06)
-      ENDIF
-
-      CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                            &
-     &              MIJFLX, RHOWGDFTH,                                  &
-     &              THWNEW, USNEW, Z0NEW, ROAIRN,                       &
-     &              TAUW, PHIWA)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO 2nd CALL'
-        CALL FLUSH (IU06)
-      ENDIF
-
+        IF (ITEST.GE.2) THEN
+          WRITE(IU06,*) '   SUB. IMPLSCH: SINFLX CALLED ', ICALL
+          CALL FLUSH (IU06)
+        ENDIF
+      ENDDO
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
