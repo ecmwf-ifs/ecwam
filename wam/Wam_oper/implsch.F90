@@ -269,7 +269,7 @@
 !           -------------------------------------------------------
 
      LUPDTUS = .TRUE.
-     DO ICALL = 1, 2
+     DO ICALL = 1, 3
         CALL SINFLX (ICALL, IJS, IJL, &
      &               LUPDTUS, &
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
