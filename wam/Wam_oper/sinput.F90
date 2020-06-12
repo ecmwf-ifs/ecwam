@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,&
+      SUBROUTINE SINPUT (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,&
      &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -8,8 +8,10 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+!     *CALL* *SINPUT (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN,WSTAR, SL, SPOS, XLLWS)
+!            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                   - IF = 2 THEN GUSTINESS PARAMETERISATION
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -53,6 +55,7 @@
 #include "sinput_ard.intfb.h"
 #include "sinput_jan.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
@@ -68,10 +71,10 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-        CALL SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
       CASE(1) 
-        CALL SINPUT_ARD (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_ARD (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
       END SELECT 
 

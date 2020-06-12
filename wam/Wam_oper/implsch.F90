@@ -176,6 +176,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: NCALL
       INTEGER(KIND=JWIM) :: ICALL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX 
 
@@ -269,8 +270,10 @@
 !           -------------------------------------------------------
 
      LUPDTUS = .TRUE.
-     DO ICALL = 1, 3
-        CALL SINFLX (ICALL, IJS, IJL, &
+!!!! debile test !!!!
+     NCALL = 3
+     DO ICALL = 1, NCALL 
+        CALL SINFLX (ICALL, NCALL, IJS, IJL, &
      &               LUPDTUS, &
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
      &               CICVR, &

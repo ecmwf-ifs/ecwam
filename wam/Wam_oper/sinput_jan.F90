@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,     &
+      SUBROUTINE SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,     &
      &                       ROAIRN, WSTAR, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -43,8 +43,10 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_JAN (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+!     *CALL* *SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
+!            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                   - IF = 2 THEN GUSTINESS PARAMETERISATION
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -105,30 +107,31 @@
 #include "abort1.intfb.h"
 #include "wsigstar.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGST 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), PARAMETER :: NSIN=2 
-      INTEGER(KIND=JWIM) :: IJ, IG, K, M
-      INTEGER(KIND=JWIM) :: ISIN
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS, XLLWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS, XLLWS
 
+
+      INTEGER(KIND=JWIM) :: IJ, IG, K, M
+      INTEGER(KIND=JWIM) :: ISIN
 
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
       REAL(KIND=JWRB) :: RWINV
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NSIN) :: WSIN
+      REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SH, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: SIGDEV,US,Z0,UCN,ZCN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NSIN) :: XVD, UCND, CONST3_UCN2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV,US,Z0,UCN,ZCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XVD, UCND, CONST3_UCN2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
 
@@ -164,18 +167,18 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NSIN.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NGST.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
 
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
 !     DEFINE ALSO THE RELATIVE WEIGHT OF EACH.
 
-      IF(NSIN.EQ.1) THEN
+      IF(NGST.EQ.1) THEN
         WSIN(1) = 1.0_JWRB 
         DO IJ=IJS,IJL
           SIGDEV(IJ,1) = 1.0_JWRB
         ENDDO
-      ELSE IF (NSIN.EQ.2) THEN
+      ELSE IF (NGST.EQ.2) THEN
         WSIN(1) = 0.5_JWRB 
         WSIN(2) = 0.5_JWRB 
         DO IJ=IJS,IJL
@@ -186,8 +189,8 @@
          WRITE (IU06,*) '**************************************'
          WRITE (IU06,*) '*    FATAL ERROR                     *'
          WRITE (IU06,*) '*    ===========                     *'
-         WRITE (IU06,*) '* IN SINPUT_JAN: NSIN > 2            *'
-         WRITE (IU06,*) '* NSIN = ', NSIN
+         WRITE (IU06,*) '* IN SINPUT_JAN: NGST > 2            *'
+         WRITE (IU06,*) '* NGST = ', NGST
          WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
          WRITE (IU06,*) '*                                    *'
          WRITE (IU06,*) '**************************************'
@@ -195,13 +198,13 @@
       ENDIF
 
 
-      IF(NSIN.EQ.1) THEN
+      IF(NGST.EQ.1) THEN
         DO IJ=IJS,IJL
           US(IJ,1) = USNEW(IJ)
           Z0(IJ,1) = Z0NEW(IJ)
         ENDDO
       ELSE
-        DO ISIN=1,NSIN
+        DO ISIN=1,NGST
           DO IJ=IJS,IJL
             US(IJ,ISIN) = USNEW(IJ)*SIGDEV(IJ,ISIN)
             Z0(IJ,ISIN) = Z0NEW(IJ)
@@ -247,7 +250,7 @@
           CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
         ENDDO
 
-        DO ISIN=1,NSIN
+        DO ISIN=1,NGST
           DO IJ=IJS,IJL
             UCN(IJ,ISIN) = US(IJ,ISIN)*CM(IJ) + ZALP
             CONST3_UCN2(IJ,ISIN) = CONST3*UCN(IJ,ISIN)**2
@@ -270,7 +273,7 @@
           DO IJ=IJS,IJL
             UFAC1(IJ,K) = 0.0_JWRB
           ENDDO
-          DO ISIN=1,NSIN
+          DO ISIN=1,NGST
             DO IJ=IJS,IJL
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
@@ -291,7 +294,7 @@
               UFAC2(IJ,K) = WSIN(ISIN)*ZBETA
             ENDDO
           ENDDO
-          DO ISIN=2,NSIN
+          DO ISIN=2,NGST
             DO IJ=IJS,IJL
               ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
               UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(ISIN)*ZBETA

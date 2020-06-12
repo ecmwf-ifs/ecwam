@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT_ARD (F,FL,IJS,IJL,THWNEW,USNEW,Z0NEW,&
+      SUBROUTINE SINPUT_ARD (NGST,F,FL,IJS,IJL,THWNEW,USNEW,Z0NEW,&
      &                       ROAIRN,WSTAR,SL,SPOS,XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -46,8 +46,10 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
+!     *CALL* *SINPUT (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN,WSTAR, SL, SPOS, XLLWS)
+!            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                   - IF = 2 THEN GUSTINESS PARAMETERISATION
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -98,6 +100,7 @@
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -106,22 +109,15 @@
       IMPLICIT NONE
 #include "wsigstar.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
-      INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
 
-      INTEGER (KIND=JWIM), PARAMETER :: NGST=2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
-!     MFWAM:
-!      SWELLF = 0.8_JWRB
-!      SWELLF2 = -0.018_JWRB
-!      SWELLF3 = 0.015_JWRB
-!      SWELLF4 = 1.0E05_JWRB
-!      SWELLF5 = 1.2_JWRB
-!      SWELLF6 = 1.0_JWRB
-!      SWELLF7 = 2.3E05_JWRB
-!      Z0RAT = 0.04_JWRB
 
-!     TEST471 (modified SWELLF):
       REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
@@ -135,10 +131,8 @@
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
       REAL(KIND=JWRB), PARAMETER :: ABMAX = 8.0_JWRB 
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
+      INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
+
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
@@ -184,7 +178,7 @@
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NGST.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
 ! computation of Uorb and Aorb
@@ -276,10 +270,27 @@
           YSTRESS(IJ,IGST)=0.0_JWRB
         ENDDO
       ENDDO
-      DO IJ=IJS,IJL
-        USG2(IJ,1)=(USNEW(IJ)*(1.0_JWRB+SIG_N(IJ)))**2
-        USG2(IJ,2)=(USNEW(IJ)*(1.0_JWRB-SIG_N(IJ)))**2
-      ENDDO
+
+      IF(NGST.EQ.1) THEN
+        DO IJ=IJS,IJL
+          USG2(IJ,1)=USNEW(IJ)
+        ENDDO
+      ELSE IF (NGST.EQ.2) THEN
+        DO IJ=IJS,IJL
+          USG2(IJ,1)=(USNEW(IJ)*(1.0_JWRB+SIG_N(IJ)))**2
+          USG2(IJ,2)=(USNEW(IJ)*(1.0_JWRB-SIG_N(IJ)))**2
+        ENDDO
+      ELSE
+         WRITE (IU06,*) '**************************************'
+         WRITE (IU06,*) '*    FATAL ERROR                     *'
+         WRITE (IU06,*) '*    ===========                     *'
+         WRITE (IU06,*) '* IN SINPUT_ARD: NGST > 2            *'
+         WRITE (IU06,*) '* NGST = ', NGST
+         WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.  *'
+         WRITE (IU06,*) '*                                    *'
+         WRITE (IU06,*) '**************************************'
+         CALL ABORT1
+      ENDIF
 
       DO IGST=1,NGST
         DO IJ=IJS,IJL
