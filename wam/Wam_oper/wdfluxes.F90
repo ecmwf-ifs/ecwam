@@ -122,23 +122,25 @@
         ENDDO
       ENDDO
 
-     LUPDTUS = .FALSE.
-     NCALL = 1
-     ICALL = 1
-        CALL SINFLX (ICALL, NCALL, IJS, IJL, &
-     &               LUPDTUS, &
-     &               U10NEW, THWNEW, ROAIRN, WSTAR, &
-     &               CICVR, &
-     &               FMEANALL, FLM, &
-     &               FL1, &
-     &               USNEW, TAUW, Z0NEW, PHIWA, &
-     &               FL, SL, SPOS, &
-     &               MIJ, MIJFLX, RHOWGDFTH, XLLWS)
+      TAUW_LOC(:) = 0.0_JWRB
 
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
-          CALL FLUSH (IU06)
-        ENDIF
+      LUPDTUS = .FALSE.
+      NCALL = 1
+      ICALL = 1
+      CALL SINFLX (ICALL, NCALL, IJS, IJL, &
+     &             LUPDTUS, &
+     &             U10NEW, THWNEW, ROAIRN, WSTAR, &
+     &             CICVR, &
+     &             FMEANALL, FLM, &
+     &             FL1, &
+     &             USNEW, TAUW_LOC, Z0NEW, PHIWA, &
+     &             FL, SL, SPOS, &
+     &             MIJ, MIJFLX, RHOWGDFTH, XLLWS)
+
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
+        CALL FLUSH (IU06)
+      ENDIF
 
       IF(LCFLX) THEN
 
