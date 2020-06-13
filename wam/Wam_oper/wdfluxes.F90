@@ -43,22 +43,6 @@
 !     METHOD.
 !     -------
 
-!     EXTERNALS.
-!     ---------
-
-!       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
-!       *SDISSIP*   - COMPUTATION OF DISSIPATION SOURCE FUNCTION
-!                     AND LINEAR CONTRIBUTION OF DISSIPATION TO
-!                     FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *SINPUT*    - COMPUTATION OF INPUT SOURCE FUNCTION, AND
-!                     LINEAR CONTRIBUTION OF INPUT SOURCE FUNCTION
-!                     TO FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *STRESSO*   - COMPUTATION NORMALISED WAVE STRESS.
-!           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
-!           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
-!       *FRCUTINDEX*
-
 !     REFERENCE.
 !     ----------
 
@@ -68,23 +52,22 @@
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWFRED  , ONLY : TH
+      USE YOWICE   , ONLY : FLMIN
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "cimsstrn.intfb.h"
-#include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
-#include "frcutindex.intfb.h"
 #include "sdissip.intfb.h"
-#include "sinput.intfb.h"
+#include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokesdrift.intfb.h"
-#include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
@@ -92,13 +75,14 @@
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: USNEW, Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: ICALL, NCALL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX
 
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
@@ -109,12 +93,12 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
-
       LOGICAL :: LCFLX
+      LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
@@ -129,44 +113,34 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL SINPUT (FL1, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTAR, SL, SPOS, XLLWS)
-      IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
-        CALL FLUSH (IU06)
-      ENDIF
-
-!     MEAN FREQUENCY OF THE TOTAL SEA
       CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,                    &
      &            F1MEAN, AKMEAN, XKMEAN)
 
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,         &
-     &                MIJ, MIJFLX, RHOWGDFTH)
-
-
-      IF(LCFLX) THEN
-
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-            ENDDO
-          ENDDO
+      DO K=1,NANG
+        DO IJ=IJS,IJL
+          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
+      ENDDO
 
-        CALL STRESSO (FL1, SL, SPOS, IJS, IJL,                          &
-     &                MIJFLX, RHOWGDFTH,                                &
-     &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
-     &                TAUW_LOC, PHIWA)
+     LUPDTUS = .FALSE.
+     NCALL = 1
+     ICALL = 1
+        CALL SINFLX (ICALL, NCALL, IJS, IJL, &
+     &               LUPDTUS, &
+     &               U10NEW, THWNEW, ROAIRN, WSTAR, &
+     &               CICVR, &
+     &               FMEANALL, FLM, &
+     &               FL1, &
+     &               USNEW, TAUW, Z0NEW, PHIWA, &
+     &               FL, SL, SPOS, &
+     &               MIJ, MIJFLX, RHOWGDFTH, XLLWS)
 
         IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: STRESSO CALLED'
+          WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
           CALL FLUSH (IU06)
         ENDIF
+
+      IF(LCFLX) THEN
 
         CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                            &
      &                EMEANALL, F1MEAN, XKMEAN,                         &
@@ -200,10 +174,9 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-      CALL STOKESDRIFT(FL1, IJS, IJL, USTOKES, VSTOKES)
+        CALL STOKESDRIFT(FL1, IJS, IJL, USTOKES, VSTOKES)
 
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
-
+        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
       ENDIF
 ! ----------------------------------------------------------------------

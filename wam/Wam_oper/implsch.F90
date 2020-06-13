@@ -176,8 +176,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      INTEGER(KIND=JWIM) :: NCALL
-      INTEGER(KIND=JWIM) :: ICALL
+      INTEGER(KIND=JWIM) :: ICALL, NCALL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJFLX 
 
       REAL(KIND=JWRB) :: DELT, XIMP, DELT5
@@ -269,16 +268,16 @@
 !*    2.3.1 ITERATIVELY UPDATE STRESS AND COMPUTE WIND INPUT TERMS. 
 !           -------------------------------------------------------
 
-     LUPDTUS = .TRUE.
+      LUPDTUS = .TRUE.
 !!!! debile test !!!!
-     NCALL = 3
-     DO ICALL = 1, NCALL 
+      NCALL = 3
+      DO ICALL = 1, NCALL 
         CALL SINFLX (ICALL, NCALL, IJS, IJL, &
      &               LUPDTUS, &
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
      &               CICVR, &
-     &               FL1, &
      &               FMEANALL, FLM, &
+     &               FL1, &
      &               USNEW, TAUW, Z0NEW, PHIWA, &
      &               FL, SL, SPOS, &
      &               MIJ, MIJFLX, RHOWGDFTH, XLLWS)
@@ -308,7 +307,6 @@
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
      &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
-
 
       CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
       IF (ITEST.GE.2) THEN
