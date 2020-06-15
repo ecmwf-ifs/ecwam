@@ -45,8 +45,8 @@
 
 !     *CALL* *SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
-!            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
-!                   - IF = 2 THEN GUSTINESS PARAMETERISATION
+!         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
+!                - IF = 2 THEN GUSTINESS PARAMETERISATION
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !          *IJS* - INDEX OF FIRST GRIDPOINT.
@@ -60,7 +60,7 @@
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - ONLY POSITIVE PART OF INPUT SOURCE FUNCTION ARRAY.
-!         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
+!        *XLLWS* - 1 WHERE SINPUT IS POSITIVE.
 
 
 !     METHOD.
@@ -117,7 +117,7 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, IG, K, M
-      INTEGER(KIND=JWIM) :: ISIN
+      INTEGER(KIND=JWIM) :: IGST
 
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
       REAL(KIND=JWRB) :: RWINV
@@ -204,10 +204,10 @@
           Z0(IJ,1) = Z0NEW(IJ)
         ENDDO
       ELSE
-        DO ISIN=1,NGST
+        DO IGST=1,NGST
           DO IJ=IJS,IJL
-            US(IJ,ISIN) = USNEW(IJ)*SIGDEV(IJ,ISIN)
-            Z0(IJ,ISIN) = Z0NEW(IJ)
+            US(IJ,IGST) = USNEW(IJ)*SIGDEV(IJ,IGST)
+            Z0(IJ,IGST) = Z0NEW(IJ)
           ENDDO
         ENDDO
       ENDIF
@@ -250,13 +250,13 @@
           CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
         ENDDO
 
-        DO ISIN=1,NGST
+        DO IGST=1,NGST
           DO IJ=IJS,IJL
-            UCN(IJ,ISIN) = US(IJ,ISIN)*CM(IJ) + ZALP
-            CONST3_UCN2(IJ,ISIN) = CONST3*UCN(IJ,ISIN)**2
-            UCND(IJ,ISIN) = 1.0_JWRB/ UCN(IJ,ISIN)
-            ZCN(IJ,ISIN)  = LOG(XK(IJ)*Z0(IJ,ISIN))
-            XVD(IJ,ISIN) = 1.0_JWRB/(-US(IJ,ISIN)*XKAPPAD*ZCN(IJ,ISIN)*CM(IJ))
+            UCN(IJ,IGST) = US(IJ,IGST)*CM(IJ) + ZALP
+            CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
+            UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
+            ZCN(IJ,IGST)  = LOG(XK(IJ)*Z0(IJ,IGST))
+            XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CM(IJ))
           ENDDO
         ENDDO
 
@@ -273,14 +273,14 @@
           DO IJ=IJS,IJL
             UFAC1(IJ,K) = 0.0_JWRB
           ENDDO
-          DO ISIN=1,NGST
+          DO IGST=1,NGST
             DO IJ=IJS,IJL
               IF (LZ(IJ,K)) THEN
-                ZLOG = ZCN(IJ,ISIN) + TEMPD(IJ,K)*UCND(IJ,ISIN)
+                ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
                 IF (ZLOG.LT.0.0_JWRB) THEN
-                  X=TEMP1(IJ,K)*UCN(IJ,ISIN)
+                  X=TEMP1(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC1(IJ,K) = UFAC1(IJ,K)+WSIN(ISIN)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  UFAC1(IJ,K) = UFAC1(IJ,K)+WSIN(IGST)*EXP(ZLOG)*ZLOG2X*ZLOG2X
                   XLLWS(IJ,K,M)= 1.0_JWRB
                 ENDIF
               ENDIF
@@ -288,16 +288,16 @@
           ENDDO
 
 !         SWELL DAMPING:
-          DO ISIN=1,1
+          DO IGST=1,1
             DO IJ=IJS,IJL
-              ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
-              UFAC2(IJ,K) = WSIN(ISIN)*ZBETA
+              ZBETA = CONST3_UCN2(IJ,IGST)*(TEMP1(IJ,K)-XVD(IJ,IGST))
+              UFAC2(IJ,K) = WSIN(IGST)*ZBETA
             ENDDO
           ENDDO
-          DO ISIN=2,NGST
+          DO IGST=2,NGST
             DO IJ=IJS,IJL
-              ZBETA = CONST3_UCN2(IJ,ISIN)*(TEMP1(IJ,K)-XVD(IJ,ISIN))
-              UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(ISIN)*ZBETA
+              ZBETA = CONST3_UCN2(IJ,IGST)*(TEMP1(IJ,K)-XVD(IJ,IGST))
+              UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
             ENDDO
           ENDDO
 
