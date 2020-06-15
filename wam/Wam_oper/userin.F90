@@ -133,6 +133,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE ALGORITHM_STATE_MOD, ONLY : GET_ALGOR_TYPE
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------

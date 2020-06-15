@@ -33,9 +33,9 @@
      &            LANAONLY ,L4VTYPE  ,ISTREAM  ,IASSI_ORIG
       USE YOWTEST  , ONLY : IU06
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOWCOUT  , ONLY : LWAMANOUT, LWAMANOUT_ORIG
       USE ALGORITHM_STATE_MOD, ONLY : GET_NUPTRA, GET_MUPTRA, &
      &                                GET_ALGOR_TYPE
-      USE YOWCOUT  , ONLY : LWAMANOUT, LWAMANOUT_ORIG
 
 ! ----------------------------------------------------------------------
 
