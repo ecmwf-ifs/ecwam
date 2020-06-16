@@ -88,7 +88,7 @@
 !       It simplfied here by using the ANG_GC factor.
         GAM_W = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0)
         TAUCT = OMEGA_GC(I) * GAM_W * BBDELK * XM**3
-        TAU = MAX(TAU - TAUWSHELTER*TAUCT, 0.0_JWRB)
+!!! debile        TAU = MAX(TAU - TAUWSHELTER*TAUCT, 0.0_JWRB)
         UST = SQRT(TAU)
         TAUWCG = TAUWCG + TAUCT 
       ENDDO
