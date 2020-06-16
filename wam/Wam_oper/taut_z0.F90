@@ -158,8 +158,6 @@ IF (LLGCBZ0) THEN
           Z0MINDYN = MAX(ALPMGM1*TAUOLD,Z0MIN)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINDYN)
-!!!debile
-        write(*,*) 'debile ',iter, TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ), ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij)
 
       ENDDO
 
