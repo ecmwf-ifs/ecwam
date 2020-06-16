@@ -17,7 +17,7 @@
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC
       USE YOWPCONS , ONLY : G,      SURFT
-      USE YOWPHYS  , ONLY : TAUWSHELTER,  ANG_GC
+      USE YOWPHYS  , ONLY : ANG_GC
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -40,7 +40,7 @@
 
       REAL(KIND=JWRB) :: GAMMA_WAM
 
-      REAL(KIND=JWRB) :: TAU, TAUCT, UST, XKS, OMS
+      REAL(KIND=JWRB) :: UST, XKS, OMS
       REAL(KIND=JWRB) :: XM, BBDELK, COEF
       REAL(KIND=JWRB) :: GAM_W, BS, OM
       REAL(KIND=JWRB) :: DELK_GC(NWAV_GC)
@@ -71,7 +71,6 @@
       DELK_GC(NWAV_GC) = 0.5_JWRB*(XK_GC(NWAV_GC)-XK_GC(NWAV_GC-1))
 
       UST = USTAR
-      TAU = USTAR**2
       DO I = NS, NWAV_GC
         XM  = 1.0_JWRB/XK_GC(I)
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
@@ -87,10 +86,7 @@
 !       It should be done in vector form with actual directional spreading information
 !       It simplfied here by using the ANG_GC factor.
         GAM_W = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0)
-        TAUCT = OMEGA_GC(I) * GAM_W * BBDELK * XM**3
-!!! debile        TAU = MAX(TAU - TAUWSHELTER*TAUCT, 0.0_JWRB)
-        UST = SQRT(TAU)
-        TAUWCG = TAUWCG + TAUCT 
+        TAUWCG = TAUWCG + OMEGA_GC(I) * GAM_W * BBDELK * XM**3 
       ENDDO
  
       IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
