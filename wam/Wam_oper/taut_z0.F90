@@ -58,12 +58,18 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
+!debile
+      USE YOWSTAT  , ONLY : IDELT
+
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 #include "stress_gc.intfb.h"
+!!!!debile
+#include "semean.intfb.h"
+
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IUSFG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -93,6 +99,10 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
+!!! debile
+      REAL(KIND=JWRB) :: time
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean
+      DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
 
@@ -105,6 +115,9 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
 
 !  USING THE CG MODEL:
 IF (LLGCBZ0) THEN
+
+!!!debile
+      call semean(FL1, IJS, IJS, emean, .false.)
 
 !     COMPUTE THE PHILLIPS PARAMETER (only in the wind direction)
       IFRPH=NFRE
@@ -159,7 +172,10 @@ IF (LLGCBZ0) THEN
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINDYN)
 !!!debile
-        write(*,*) 'debile ',iter, TAUNEW, TAUW(IJ) , TAUV , TAUUNR(IJ), ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij)
+        if(iusfg == 1) then
+        time=time+idelt
+        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),sqrt(TAUNEW), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij)
+        endif
 
       ENDDO
 
