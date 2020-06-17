@@ -125,7 +125,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
-     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST, IASSI_ORIG
+     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
@@ -138,7 +138,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL,ONLY : LLUNSTR
       USE MPL_MODULE
-      USE ALGORITHM_STATE_MOD,ONLY : GET_NUPTRA, GET_MUPTRA, GET_ALGOR_TYPE
 ! ---------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -603,10 +602,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !          ---------------------------------------------
 
 #ifdef ECMWF
-      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM GET_ALGOR_TYPE(): ', GET_ALGOR_TYPE()
-      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM           NUPTRA: ', GET_NUPTRA()
-      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM           MUPTRA: ', GET_MUPTRA()
-      WRITE(IU06,*) ' SUB. WAVEMDL ASSIM            IASSI: ', IASSI
 
       IF (IASSI.EQ.1) THEN
 
