@@ -30,8 +30,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF
-      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,  BETAMAXOXKAPPA2
+      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF,LLCAPCHNK, LLGCBZ
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA, ALPHAMIN, XKAPPA,  BETAMAXOXKAPPA2
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -40,7 +40,7 @@
 
       INTEGER(KIND=JWIM) :: J
 
-      REAL(KIND=JWRB) :: CONST1, X0, FF, F, DF
+      REAL(KIND=JWRB) :: CONST1, X0, FF, F, DF, ALPH
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -51,15 +51,20 @@
 
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------
+      IF(LLGCBZ0 .OR. LLCAPCHNK ) THEN
+        ALPH = ALPHAMIN
+      ELSE
+        ALPH = ALPHA
+      ENDIF
 
 !     find lowest limit for integration X0 *(G/USTAR)
 !     ALPHA*X0**2*EXP(XKAPPA/(X0+ZALP))=1
       X0=0.005_JWRB
       DO J=1,30
         FF=EXP(XKAPPA/(X0+ZALP))
-        F=ALPHA*X0**2*FF-1.0_JWRB
+        F=ALPH*X0**2*FF-1.0_JWRB
         IF (F.EQ.0.0_JWRB) EXIT
-        DF=ALPHA*FF*(2.0_JWRB*X0-XKAPPA*(X0/(X0+ZALP))**2)
+        DF=ALPH*FF*(2.0_JWRB*X0-XKAPPA*(X0/(X0+ZALP))**2)
         X0=X0-F/DF
       ENDDO
       X0TAUHF=X0
@@ -74,7 +79,6 @@
         WTAUHF(J+1)=2.0_JWRB*CONST1
       ENDDO
       WTAUHF(JTOT_TAUHF)=CONST1
-
 
       IF (LHOOK) CALL DR_HOOK('INIT_X0TAUHF',1,ZHOOK_HANDLE)
 
