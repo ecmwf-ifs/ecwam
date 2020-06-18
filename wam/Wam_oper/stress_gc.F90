@@ -59,9 +59,6 @@
 
       CALL OMEGAGC(USTAR, NS, XKS, OMS)
 
-!!!1 debile
-      write(*,*) 'stress_gc ',NS, OMS/6.2831_JWRB
-
       BS = 0.5_JWRB*ALPHAP
       COEF = FC_GC(XKS)**4/FVG_GC(XKS)*BS**2
       XMSSCG = 0.0_JWRB

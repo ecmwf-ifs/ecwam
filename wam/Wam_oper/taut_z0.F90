@@ -101,7 +101,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
       REAL(KIND=JWRB) :: time
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fp
       DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
@@ -118,6 +118,7 @@ IF (LLGCBZ0) THEN
 
 !!!debile
       call semean(FL1, IJS, IJS, emean, .false.)
+      call peak_freq(FL1, IJS, IJS, fp)
 
 !     COMPUTE THE PHILLIPS PARAMETER (only in the wind direction)
       IFRPH=NFRE
@@ -175,7 +176,7 @@ IF (LLGCBZ0) THEN
 !!!debile
         if(iusfg == 1) then
         time=time+idelt
-        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),sqrt(TAUNEW), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij)
+        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),sqrt(TAUNEW), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij), (g/(zpi*fp))/sqrt(TAUNEW)
         endif
 
       ENDDO
