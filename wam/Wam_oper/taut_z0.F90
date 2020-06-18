@@ -172,6 +172,8 @@ IF (LLGCBZ0) THEN
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINDYN)
 !!!debile
+        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))), Z0MINDYN)
+!!!debile
         if(iusfg == 1) then
         time=time+idelt
         write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),sqrt(TAUNEW), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij)
