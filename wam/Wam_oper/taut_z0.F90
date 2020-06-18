@@ -171,8 +171,7 @@ IF (LLGCBZ0) THEN
           Z0MINDYN = MAX(ALPMGM1*TAUOLD,Z0MIN)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINDYN)
-!!!debile
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))), Z0MINDYN)
+
 !!!debile
         if(iusfg == 1) then
         time=time+idelt
