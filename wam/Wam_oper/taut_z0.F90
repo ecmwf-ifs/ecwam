@@ -176,8 +176,9 @@ IF (LLGCBZ0) THEN
 
 !!!debile
         if(iusfg == 1) then
+          TAUNEW = USTAR(IJ)**2
         time=time+idelt
-        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),sqrt(TAUNEW), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij), (g/(zpi*fp))/sqrt(TAUNEW)
+        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij), (g/(zpi*fp))/ustar(ij)
         endif
 
       ENDDO
