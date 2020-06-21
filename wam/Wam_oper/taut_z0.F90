@@ -68,7 +68,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       IMPLICIT NONE
 #include "stress_gc.intfb.h"
 !!!!debile
-#include "semean.intfb.h"
+#include "femean.intfb.h"
 #include "peak_freq.intfb.h"
 
 
@@ -90,6 +90,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: ALPMGM1, Z0MINDYN
+      REAL(KIND=JWRB) :: ALPHAPMIN
       REAL(KIND=JWRB) :: US2TOTAUW
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, W1, CDFG
@@ -102,7 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
       REAL(KIND=JWRB) :: time
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fp
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fmean, fp
       DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
@@ -118,8 +119,10 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
 IF (LLGCBZ0) THEN
 
 !!!debile
-      call semean(FL1, IJS, IJS, emean, .false.)
+      call femean(FL1, IJS, IJS, emean, fmean, .false.)
       call peak_freq(FL1, IJS, IJS, fp)
+      write(*,*) 'toto ',emean(1),fmean(1),fp(1)
+
 
 !     COMPUTE THE PHILLIPS PARAMETER (only in the wind direction)
       IFRPH=NFRE
@@ -159,7 +162,13 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTAR(IJ)/Z0(IJ)
 !         GRAVITY CAPILLARY CONTRIBUTION:
-          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
+!!!debite test
+          ALPHAPMIN = ALPHAPMAX*TANH(ZPI*0.24_JWRB*0.9_JWRB*FMEAN(IJ)*USTOLD/(ALPHAPMAX*G))
+          ALPHAPMIN = MAX(ALPHAPMIN,ALPHAP(IJ)) 
+          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPMIN, XMSS(IJ), TAUUNR(IJ))
+
+!!!          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
+
           ZB(IJ) = MAX(Z0(IJ)*SQRT((TAUV+TAUUNR(IJ))/TAUOLD), Z0MINDYN)
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUW(IJ) + TAUV + TAUUNR(IJ)
