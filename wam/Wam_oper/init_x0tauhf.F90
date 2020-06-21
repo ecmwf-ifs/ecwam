@@ -68,7 +68,6 @@
         X0=X0-F/DF
       ENDDO
       X0TAUHF=X0
-      write(*,*) 'toto X0TAUHF = ',X0TAUHF
 
       CONST1 = BETAMAXOXKAPPA2/3.0_JWRB
 

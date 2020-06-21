@@ -90,7 +90,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: ALPMGM1, Z0MINDYN
-      REAL(KIND=JWRB) :: ALPHAPMIN
+      REAL(KIND=JWRB) :: ALPHAPMIN, ALPHAPEFF
       REAL(KIND=JWRB) :: US2TOTAUW
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, CDFG
@@ -163,10 +163,10 @@ IF (LLGCBZ0) THEN
           TAUV = RNUKAPPAM1*USTAR(IJ)/Z0(IJ)
 !         GRAVITY CAPILLARY CONTRIBUTION:
 !!!debite test
-          ALPHAPMIN = ALPHAPMAX*TANH(ZPI*0.24_JWRB*0.9_JWRB*FMEAN(IJ)*USTOLD/(ALPHAPMAX*G))
+          ALPHAPMIN = ALPHAPMAX*TANH(ZPI*0.24_JWRB*0.85_JWRB*FMEAN(IJ)*USTOLD/(ALPHAPMAX*G))
       write(*,*) 'titi ',iter, ALPHAPMIN,ALPHAP(IJ)
-          ALPHAPMIN = MAX(ALPHAPMIN,ALPHAP(IJ)) 
-          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPMIN, XMSS(IJ), TAUUNR(IJ))
+          ALPHAPEFF = MAX(ALPHAPMIN,ALPHAP(IJ)) 
+          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPEFF, XMSS(IJ), TAUUNR(IJ))
 
 !!!          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
 
@@ -188,7 +188,7 @@ IF (LLGCBZ0) THEN
         if(iusfg == 1) then
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
-        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(ij), (g/(zpi*fp))/ustar(ij)
+        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff, (g/(zpi*fp))/ustar(ij)
         endif
 
       ENDDO
