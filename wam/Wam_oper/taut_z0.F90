@@ -103,7 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
       REAL(KIND=JWRB) :: time
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fmean, fp
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fp
       DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
@@ -138,7 +138,7 @@ IF (LLGCBZ0) THEN
       !                              alp = 0.24 * (cp/u*)**-1 (Phillips parameter from JONSWAP, Gunther 1981)
       !                              cp = g/(ZPI*fp)
       !                              fp = 0.85*fmeanws
-      CONST = ZPI*0.24_JWRB*0.85_JWRB*/(ALPHAPMAX*G)
+      CONST = ZPI*0.24_JWRB*0.85_JWRB/(ALPHAPMAX*G)
       COEF(:) = CONST*MAX(FMEAN(:),FMEANWS(:))
 
       RNUEFF = 0.04_JWRB*RNU
@@ -194,7 +194,8 @@ IF (LLGCBZ0) THEN
         if(iusfg == 1) then
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
-        write(*,*) 'debile ',time/3600._jwrb, 4.0_JWRB*sqrt(emean(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff, (g/(zpi*fp))/ustar(ij)
+        emean(ij)=0.0_JWRB
+        write(*,*) 'debile ',time/3600._jwrb, emean(ij),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff, (g/(zpi*fp))/ustar(ij)
         endif
 
       ENDDO
