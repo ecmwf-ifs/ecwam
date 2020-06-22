@@ -125,6 +125,7 @@
       TAUW_LOC(:) = 0.0_JWRB
 
       LUPDTUS = .FALSE.
+      FMEANWS(:) = FMEANALL(:)
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, IJS, IJL, &
