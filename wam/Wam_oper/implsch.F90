@@ -276,7 +276,7 @@
      &               LUPDTUS, &
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
      &               CICVR, &
-     &               FMEANALL, FLM, &
+     &               FMEANALL, &
      &               FMEANWS, FL1, &
      &               USNEW, TAUW, Z0NEW, PHIWA, &
      &               FL, SL, SPOS, &

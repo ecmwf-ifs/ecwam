@@ -103,7 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
       REAL(KIND=JWRB) :: time
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean, fp
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean
       DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
@@ -118,10 +118,6 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
 
 !  USING THE CG MODEL:
 IF (LLGCBZ0) THEN
-
-!!!debile
-      call peak_freq(FL1, IJS, IJS, fp)
-
 
 !     COMPUTE THE PHILLIPS PARAMETER (only in the wind direction)
       IFRPH=NFRE
@@ -195,7 +191,7 @@ IF (LLGCBZ0) THEN
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
         emean(ij)=0.0_JWRB
-        write(*,*) 'debile ',time/3600._jwrb, emean(ij),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff, (g/(zpi*fp))/ustar(ij)
+        write(*,*) 'debile ',time/3600._jwrb, emean(ij),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff
         endif
 
       ENDDO
