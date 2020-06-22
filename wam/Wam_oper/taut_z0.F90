@@ -1,4 +1,4 @@
-SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
+SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
 
 ! ----------------------------------------------------------------------
 
@@ -68,12 +68,12 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       IMPLICIT NONE
 #include "stress_gc.intfb.h"
 !!!!debile
-#include "femean.intfb.h"
 #include "peak_freq.intfb.h"
 
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IUSFG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: FMEAN, FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0
@@ -95,10 +95,10 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, THW, ROAIRN, TAUW, USTAR, Z0)
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, CDFG
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ, GM1
-      REAL(KIND=JWRB) :: CONST0, TAUV, DEL
+      REAL(KIND=JWRB) :: CONST, TAUV, DEL
       REAL(KIND=JWRB) :: RNUEFF, RNUKAPPAM1
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN, COEF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
@@ -115,25 +115,31 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       GM1= 1.0_JWRB/G
       ALPMGM1 = ALPHAMIN*GM1
 
+
 !  USING THE CG MODEL:
 IF (LLGCBZ0) THEN
 
 !!!debile
-      call femean(FL1, IJS, IJS, emean, fmean)
       call peak_freq(FL1, IJS, IJS, fp)
-      write(*,*) 'toto ',emean(1),fmean(1),fp(1)
 
 
 !     COMPUTE THE PHILLIPS PARAMETER (only in the wind direction)
       IFRPH=NFRE
-      CONST0 = DELTH*ZPI**4*FR5(IFRPH)*GM1**2
+      CONST = DELTH*ZPI**4*FR5(IFRPH)*GM1**2
       ALPHAP(:) = 0.0_JWRB
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          ALPHAP(IJ) = ALPHAP(IJ) + CONST0*FL1(IJ,K,IFRPH)*SIGN(1.0_JWRB, COS(TH(K)-THW(IJ)) )
+          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,IFRPH)*SIGN(1.0_JWRB, COS(TH(K)-THW(IJ)) )
         ENDDO
       ENDDO
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
+
+      ! Lower bound for the ALPHAP:  ALPHAPMAX * tanh (alp/ALPHAPMAX)      
+      !                              alp = 0.24 * (cp/u*)**-1 (Phillips parameter from JONSWAP, Gunther 1981)
+      !                              cp = g/(ZPI*fp)
+      !                              fp = 0.85*fmeanws
+      CONST = ZPI*0.24_JWRB*0.85_JWRB*/(ALPHAPMAX*G)
+      COEF(:) = CONST*MAX(FMEAN(:),FMEANWS(:))
 
       RNUEFF = 0.04_JWRB*RNU
       RNUKAPPAM1 = RNUEFF/XKAPPA
@@ -161,20 +167,20 @@ IF (LLGCBZ0) THEN
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTAR(IJ)/Z0(IJ)
+
 !         GRAVITY CAPILLARY CONTRIBUTION:
-!!!debite test
-          ALPHAPMIN = ALPHAPMAX*TANH(ZPI*0.24_JWRB*0.85_JWRB*FMEAN(IJ)*USTOLD/(ALPHAPMAX*G))
-      write(*,*) 'titi ',iter, ALPHAPMIN,ALPHAP(IJ)
+!         impose a lower bound limit of Phillips parameters in case the spectrum is not resolved
+          ALPHAPMIN = ALPHAPMAX*TANH(COEF(IJ)*USTOLD)
           ALPHAPEFF = MAX(ALPHAPMIN,ALPHAP(IJ)) 
+
           CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPEFF, XMSS(IJ), TAUUNR(IJ))
-
-!!!          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
-
           ZB(IJ) = MAX(Z0(IJ)*SQRT((TAUV+TAUUNR(IJ))/TAUOLD), Z0MINDYN)
+
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUW(IJ) + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW 
+
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 

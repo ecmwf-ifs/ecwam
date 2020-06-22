@@ -90,7 +90,7 @@
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
@@ -132,7 +132,7 @@
      &             U10NEW, THWNEW, ROAIRN, WSTAR, &
      &             CICVR, &
      &             FMEANALL, FLM, &
-     &             FL1, &
+     &             FMEANWS, FL1, &
      &             USNEW, TAUW_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
      &             MIJ, MIJFLX, RHOWGDFTH, XLLWS)
