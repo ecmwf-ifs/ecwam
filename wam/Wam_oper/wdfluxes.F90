@@ -53,7 +53,6 @@
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : TH
-      USE YOWICE   , ONLY : FLMIN
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -93,7 +92,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
@@ -116,12 +114,6 @@
       CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,                    &
      &            F1MEAN, AKMEAN, XKMEAN)
 
-      DO K=1,NANG
-        DO IJ=IJS,IJL
-          FLM(IJ,K)=FLMIN*MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
-        ENDDO
-      ENDDO
-
       TAUW_LOC(:) = 0.0_JWRB
 
       LUPDTUS = .FALSE.
@@ -132,7 +124,7 @@
      &             LUPDTUS, &
      &             U10NEW, THWNEW, ROAIRN, WSTAR, &
      &             CICVR, &
-     &             FMEANALL, FLM, &
+     &             FMEANALL, &
      &             FMEANWS, FL1, &
      &             USNEW, TAUW_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
