@@ -33,7 +33,7 @@
       REAL(KIND=JWRB), PARAMETER :: ALPHAMIN=0.0001_JWRB
       REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
 
-!     *TAUWSHELTER* SHELTERING COEFFICIENT in METEO FRANCE PHYSICS
+!     *TAUWSHELTER* SHELTERING COEFFICIENT in Ardhuin et al. PHYSICS
       REAL(KIND=JWRB) :: TAUWSHELTER
 
 !     MAXIMUM PHILLIPS PARAMETER USED TO CONTROL MAXIMUM STEEPNESS
@@ -52,7 +52,7 @@
 !     GRAVITY-CAPILLARY INPUT:
 !     ========================
 
-      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.35_JWRB   ! factor to account for angular spreading of the input.
+      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.5_JWRB   ! factor to account for angular spreading of the input.
 
 
 !     WHITECAP DISSIPATION ::
