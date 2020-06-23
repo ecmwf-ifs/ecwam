@@ -70,18 +70,12 @@
       X0TAUHF=X0
 
       CONST1 = BETAMAXOXKAPPA2/3.0_JWRB
-!!!debile
-      CONST1 = BETAMAXOXKAPPA2/2.0_JWRB
 
       ! Simpson Integration weights (JTOT_TAUHF must be odd) !
       WTAUHF(1)=CONST1
-!!!!debile
-!      DO J=2,JTOT_TAUHF-1,2
-!        WTAUHF(J)=4.0_JWRB*CONST1
-!        WTAUHF(J+1)=2.0_JWRB*CONST1
-!      ENDDO
-      DO J=2,JTOT_TAUHF-1
-        WTAUHF(J)=2.0_JWRB*CONST1
+      DO J=2,JTOT_TAUHF-1,2
+        WTAUHF(J)=4.0_JWRB*CONST1
+        WTAUHF(J+1)=2.0_JWRB*CONST1
       ENDDO
       WTAUHF(JTOT_TAUHF)=CONST1
 

@@ -130,7 +130,7 @@ IF (LLGCBZ0) THEN
       ENDDO
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
 
-      ! Lower bound for the ALPHAP:  ALPHAPMAX * tanh (alp/ALPHAPMAX)      
+      ! Lower bound for the ALPHAP:  0.5 * ALPHAPMAX * tanh (alp/ALPHAPMAX)      
       !                              alp = 0.24 * (cp/u*)**-1 (Phillips parameter from JONSWAP, Gunther 1981)
       !                              cp = g/(ZPI*fp)
       !                              fp = 0.85*fmeanws
@@ -166,7 +166,7 @@ IF (LLGCBZ0) THEN
 
 !         GRAVITY CAPILLARY CONTRIBUTION:
 !         impose a lower bound limit of Phillips parameters in case the spectrum is not resolved
-          ALPHAPMIN = ALPHAPMAX*TANH(COEF(IJ)*USTOLD)
+          ALPHAPMIN = 0.5_JWRB*ALPHAPMAX*TANH(COEF(IJ)*USTOLD)
           ALPHAPEFF = MAX(ALPHAPMIN,ALPHAP(IJ)) 
 
           CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPEFF, XMSS(IJ), TAUUNR(IJ))

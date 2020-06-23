@@ -96,8 +96,7 @@
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
-!!!          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-          MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
           MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
 !!! 
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMF
