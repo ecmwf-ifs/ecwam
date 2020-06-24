@@ -54,7 +54,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       USE YOWFRED  , ONLY : TH       , FR5      ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G, ZPI, EPSUS, ACD, BCD, CDMAX
-      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAPMAX, ALPHAMIN
+      USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAPMAX
       USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -89,8 +89,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.00000001_JWRB
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
-      REAL(KIND=JWRB) :: ALPMGM1, Z0MINDYN
-      REAL(KIND=JWRB) :: ALPHAPMIN, ALPHAPEFF
       REAL(KIND=JWRB) :: US2TOTAUW
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, CDFG
@@ -98,12 +96,12 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB) :: CONST, TAUV, DEL
       REAL(KIND=JWRB) :: RNUEFF, RNUKAPPAM1
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN, COEF 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
 !!! debile
       REAL(KIND=JWRB) :: time
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: emean
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: fp
       DATA time /0.0_jwrb/
 
 ! ----------------------------------------------------------------------
@@ -113,7 +111,6 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       XLOGXL=LOG(XNLEV)
       US2TOTAUW=1.0_JWRB+EPS1
       GM1= 1.0_JWRB/G
-      ALPMGM1 = ALPHAMIN*GM1
 
 
 !  USING THE CG MODEL:
@@ -130,13 +127,6 @@ IF (LLGCBZ0) THEN
       ENDDO
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
 
-      ! Lower bound for the ALPHAP:  0.5 * ALPHAPMAX * tanh (alp/ALPHAPMAX)      
-      !                              alp = 0.24 * (cp/u*)**-1 (Phillips parameter from JONSWAP, Gunther 1981)
-      !                              cp = g/(ZPI*fp)
-      !                              fp = 0.85*fmeanws
-      CONST = ZPI*0.24_JWRB*0.85_JWRB/(ALPHAPMAX*G)
-      COEF(:) = CONST*MAX(FMEAN(:),FMEANWS(:))
-
       RNUEFF = 0.04_JWRB*RNU
       RNUKAPPAM1 = RNUEFF/XKAPPA
 
@@ -147,8 +137,6 @@ IF (LLGCBZ0) THEN
       DO IJ = IJS, IJL
         CDFG = MAX(MIN(0.00008_JWRB*UTOP(IJ), 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB))),0.0005_JWRB)
         USTOLD = (1-IUSFG)*UTOP(IJ)*SQRT(CDFG) + IUSFG*USTAR(IJ)
-!!!        TAUUNR(IJ) = ALPHAMIN*GM1*USTOLD**2
-!!!        TAUOLD = MAX(USTOLD**2,TAUW(IJ)+TAUUNR(IJ))
         TAUOLD = MAX(USTOLD**2,TAUW(IJ)*US2TOTAUW)
         USTAR(IJ) = SQRT(TAUOLD)
       ENDDO
@@ -157,45 +145,36 @@ IF (LLGCBZ0) THEN
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
-!!!        Z0MINDYN = MAX(ALPMGM1*TAUOLD,Z0MIN)
-        Z0MINDYN = Z0MIN
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB),Z0MINDYN)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-          TAUV = RNUKAPPAM1*USTAR(IJ)/Z0(IJ)
+          TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-!         GRAVITY CAPILLARY CONTRIBUTION:
-!         impose a lower bound limit of Phillips parameters in case the spectrum is not resolved
-          ALPHAPMIN = 0.5_JWRB*ALPHAPMAX*TANH(COEF(IJ)*USTOLD)
-          ALPHAPEFF = MAX(ALPHAPMIN,ALPHAP(IJ)) 
-
-          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAPEFF, XMSS(IJ), TAUUNR(IJ))
-!!!          ZB(IJ) = MAX(Z0(IJ)*SQRT((TAUV+TAUUNR(IJ))/TAUOLD), Z0MINDYN)
-          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUV/TAUOLD), Z0MINDYN)
+          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
+!! ZB is diagnostic, so could be removed when not needed
+          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
 !         TOTAL kinematic STRESS:
-!!!          TAUNEW = TAUW(IJ) + TAUV + TAUUNR(IJ)
           TAUNEW = TAUW(IJ)*US2TOTAUW + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
-          USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW 
+          USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
-!!!          Z0MINDYN = MAX(ALPMGM1*TAUOLD,Z0MIN)
         ENDDO
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINDYN)
+        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
 !!!debile
         if(iusfg == 1) then
+           CALL PEAK_FREQ (FL1, IJS, IJL, FP)
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
-        emean(ij)=0.0_JWRB
-        write(*,*) 'debile ',time/3600._jwrb, emean(ij),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphapeff
+        write(*,*) 'debile ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(IJ), ITER
         endif
 
       ENDDO
