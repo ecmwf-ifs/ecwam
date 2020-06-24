@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IJ
 
       REAL(KIND=JWRB) :: Z0VIS, ZN
-      REAL(KIND=JWRB) :: ALPHAMAXU10
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL)  :: ALPHAMAXU10
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -76,15 +76,16 @@
 
       IF (LLGCBZ0) THEN
         ZN = RNUM
+        ALPHAMAXU10(:)=ALPHAMAX
       ELSE
         ZN = 0.0_JWRB
+        ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*U10(:))
       ENDIF
 
       DO IJ = IJS,IJL
         Z0VIS =  ZN/MAX(US(IJ),EPSUS)
         BETA(IJ) = G*(Z0(IJ)-Z0VIS)/MAX(US(IJ)**2,EPSUS)
-        ALPHAMAXU10=MIN(ALPHAMAX,AMAX+BMAX*U10(IJ))
-        BETA(IJ) = MAX(MIN(BETA(IJ),ALPHAMAXU10),ALPHAMIN)
+        BETA(IJ) = MAX(MIN(BETA(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('OUTBETA',1,ZHOOK_HANDLE)
