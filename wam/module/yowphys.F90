@@ -52,7 +52,7 @@
 !     GRAVITY-CAPILLARY INPUT:
 !     ========================
 
-      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.25_JWRB   ! factor to account for angular spreading of the input.
+      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 1.0_JWRB   ! factor to account for angular spreading of the input.
 
 
 !     WHITECAP DISSIPATION ::
