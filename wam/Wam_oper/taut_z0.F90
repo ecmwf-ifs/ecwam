@@ -175,6 +175,7 @@ IF (LLGCBZ0) THEN
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
         write(*,*) 'debile ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(IJ), ITER
+        write(*,*) 'toto   ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),UTOP, taunew, tauw(IJ)
         endif
 
       ENDDO
