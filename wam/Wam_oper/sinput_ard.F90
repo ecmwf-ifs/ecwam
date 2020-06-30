@@ -133,6 +133,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
+      LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
@@ -149,6 +150,11 @@
       DELABM1= REAL(IAB)/(ABMAX-ABMIN)
 
       ABS_TAUWSHELTER=ABS(TAUWSHELTER)
+      IF(ABS_TAUWSHELTER .EQ. 0.0_JWRB ) THEN
+        LTAUWSHELTER = .FALSE.
+      ELSE
+        LTAUWSHELTER = .TRUE.
+      ENDIF
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       IF(NGST.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
@@ -237,21 +243,14 @@
 
 ! Initialisation
 
-      DO IGST=1,NGST
-        DO IJ=IJS,IJL
-          XSTRESS(IJ,IGST)=0.0_JWRB
-          YSTRESS(IJ,IGST)=0.0_JWRB
-        ENDDO
-      ENDDO
-
       IF(NGST.EQ.1) THEN
         DO IJ=IJS,IJL
-          USG2(IJ,1)=USNEW(IJ)**2
+          USTP(IJ,1) = USNEW(IJ)
         ENDDO
       ELSE IF (NGST.EQ.2) THEN
         DO IJ=IJS,IJL
-          USG2(IJ,1)=(USNEW(IJ)*(1.0_JWRB+SIG_N(IJ)))**2
-          USG2(IJ,2)=(USNEW(IJ)*(1.0_JWRB-SIG_N(IJ)))**2
+          USTP(IJ,1) = USNEW(IJ)*(1.0_JWRB+SIG_N(IJ))
+          USTP(IJ,2) = USNEW(IJ)*(1.0_JWRB-SIG_N(IJ))
         ENDDO
       ELSE
          WRITE (IU06,*) '**************************************'
@@ -265,12 +264,25 @@
          CALL ABORT1
       ENDIF
 
-      DO IGST=1,NGST
-        DO IJ=IJS,IJL
-          TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(THWNEW(IJ))
-          TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(THWNEW(IJ))
+      IF(LTAUWSHELTER) THEN
+        DO IGST=1,NGST
+          DO IJ=IJS,IJL
+            XSTRESS(IJ,IGST)=0.0_JWRB
+            YSTRESS(IJ,IGST)=0.0_JWRB
+            USG2(IJ,IGST)=USTP(IJ,IGST)**2
+            TAUX(IJ,IGST)=USG2(IJ,IGST)*SIN(THWNEW(IJ))
+            TAUY(IJ,IGST)=USG2(IJ,IGST)*COS(THWNEW(IJ))
+          ENDDO
         ENDDO
-      ENDDO
+      ELSE
+        DO IGST=1,NGST
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              COSLP(IJ,K,IGST) = COS(TH(K)-THWNEW(IJ))
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
       DO IJ=IJS,IJL
         GZ0(IJ) = G*Z0NEW(IJ)
@@ -303,30 +315,31 @@
 
 !*    2. MAIN LOOP OVER FREQUENCIES.
 !        ---------------------------
-
       DO M=1,NFRE
 
-        DO IGST=1,NGST
-          DO IJ=IJS,IJL
-            TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
-            TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
-            USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
-            USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
-          ENDDO
-        ENDDO
-
-        DO IJ=IJS,IJL
-          CONSTF(IJ) = ROGOROAIR(IJ)*CINV(INDEP(IJ),M)*DFIM(M)
-        ENDDO
-
-
-        DO IGST=1,NGST
-          DO K=1,NANG
+        IF(LTAUWSHELTER) THEN
+          DO IGST=1,NGST
             DO IJ=IJS,IJL
-              COSLP(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
+              TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
+              TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
+              USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
+              USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
             ENDDO
           ENDDO
-        ENDDO
+
+          DO IGST=1,NGST
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                COSLP(IJ,K,IGST) = COS(TH(K)-USDIRP(IJ,IGST))
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO IJ=IJS,IJL
+            CONSTF(IJ) = ROGOROAIR(IJ)*CINV(INDEP(IJ),M)*DFIM(M)
+          ENDDO
+        ENDIF
+
 
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
@@ -393,10 +406,6 @@
 !         ---------------------------------------------------------
 
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            CONST11(IJ)=CONSTF(IJ)*SINTH(K)
-            CONST22(IJ)=CONSTF(IJ)*COSTH(K)
-          ENDDO
 
           DO IGST=1,NGST
             DO IJ=IJS,IJL
@@ -409,10 +418,21 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               SLP(IJ,IGST) = SLP(IJ,IGST)*F(IJ,K,M)
-              XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
-              YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
             ENDDO
           ENDDO
+
+          IF(LTAUWSHELTER) THEN
+            DO IJ=IJS,IJL
+              CONST11(IJ)=CONSTF(IJ)*SINTH(K)
+              CONST22(IJ)=CONSTF(IJ)*COSTH(K)
+            ENDDO
+            DO IGST=1,NGST
+              DO IJ=IJS,IJL
+                XSTRESS(IJ,IGST)=XSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST11(IJ)
+                YSTRESS(IJ,IGST)=YSTRESS(IJ,IGST)+SLP(IJ,IGST)*CONST22(IJ)
+              ENDDO
+            ENDDO
+          ENDIF
 
           IGST=1
             DO IJ=IJS,IJL
