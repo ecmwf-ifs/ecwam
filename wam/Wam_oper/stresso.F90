@@ -110,6 +110,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
+      LOGICAL :: LTAUWSHELTER
+
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
@@ -190,17 +192,16 @@
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     --------------------------------------------------------------------------------------
 
-      DO IJ=IJS,IJL
-        US2(IJ)=USNEW(IJ)**2
-      ENDDO
-
-      IF ( IPHYS.EQ.0 ) THEN
+      IF ( IPHYS.EQ.0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
+        LTAUWSHELTER = .FALSE.
         DO IJ=IJS,IJL
           USDIRP(IJ)=THWNEW(IJ)
           UST(IJ)=USNEW(IJ)
         ENDDO
       ELSE
+        LTAUWSHELTER = .TRUE.
         DO IJ=IJS,IJL
+          US2(IJ)=USNEW(IJ)**2
           TAUX(IJ)=US2(IJ)*SIN(THWNEW(IJ))
           TAUY(IJ)=US2(IJ)*COS(THWNEW(IJ))
           TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
@@ -227,11 +228,15 @@
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
-        XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
-      ENDDO
-
-      CALL TAU_PHI_HF(IJS, IJL, MIJFLX, USNEW, Z0NEW, XLEVTAIL, UST, TAU1, PHI1)
+      IF( LTAUWSHELTER ) THEN
+        DO IJ=IJS,IJL
+          XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*TEMP1(IJ)
+        ENDDO
+      ELSE
+        XLEVTAIL(:) = 0.0_JWRB
+      ENDIF
+  
+      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USNEW, Z0NEW, XLEVTAIL, UST, TAU1, PHI1)
 
       DO IJ=IJS,IJL
         TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*TAU1(IJ)
