@@ -49,12 +49,6 @@
       REAL(KIND=JWRB) :: TAILFACTOR_FLX
 
 
-!     GRAVITY-CAPILLARY INPUT:
-!     ========================
-
-      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.30_JWRB   ! factor to account for angular spreading of the input.
-
-
 !     WHITECAP DISSIPATION ::
 !     ====================
 
@@ -66,7 +60,7 @@
 !     Saturation dissipation coefficient
       INTEGER(KIND=JWIM), PARAMETER :: ISDSDTH = 80_JWIM 
       INTEGER(KIND=JWIM), PARAMETER :: ISB=2_JWIM
-      INTEGER(KIND=JWIM), PARAMETER :: IPSAT=2_JWIM
+      INTEGER(KIND=JWIM), PARAMETER :: IPSAT=2_JWIMANG_GC
       REAL(KIND=JWRB), PARAMETER :: SSDSC2 = -2.2E-5_JWRB 
       REAL(KIND=JWRB), PARAMETER :: SSDSC4 = 1.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: SSDSC6 = 0.3_JWRB 

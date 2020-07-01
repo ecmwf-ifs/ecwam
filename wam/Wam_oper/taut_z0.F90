@@ -145,6 +145,7 @@ IF (LLGCBZ0) THEN
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
+        ANG_GC = MIN(0.025_JWRB*UTOP(IJ)+0.125_JWRB, 0.68_JWRB)
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -152,7 +153,7 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          CALL STRESS_GC(USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
+          CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
 !! ZB is diagnostic, so could be removed when not needed
           ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
@@ -174,7 +175,7 @@ IF (LLGCBZ0) THEN
            CALL PEAK_FREQ (FL1, IJS, IJL, FP)
           TAUNEW = USTAR(IJ)**2
         time=time+idelt
-        write(*,*) 'debile ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),ustar(ij), taunew/utop**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(IJ), ITER
+        write(*,*) 'debile ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),ustar(ij), taunew/utop(ij)**2, ZB(IJ)*G/TAUNEW, Z0(IJ)*G/TAUNEW, alphap(IJ), ITER
         write(*,*) 'toto   ',time/3600._jwrb, G/(ZPI*fp(ij)*ustar(ij)),UTOP, taunew, tauw(IJ)
         endif
 

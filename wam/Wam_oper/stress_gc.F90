@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(USTAR, Z0, ALPHAP, XMSSCG, TAUWCG)
+      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, ALPHAP, XMSSCG, TAUWCG)
 
 !***  DETERMINE MSS AND WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -17,7 +17,6 @@
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC
       USE YOWPCONS , ONLY : G,      SURFT
-      USE YOWPHYS  , ONLY : ANG_GC
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -29,6 +28,7 @@
 
 #include "omegagc.intfb.h"
 
+      REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: ALPHAP  ! Phillips parameter
