@@ -25,6 +25,7 @@
       REAL(KIND=JWRB), ALLOCATABLE :: TH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: COSTH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: SINTH(:)
+      REAL(KIND=JWRB), ALLOCATABLE :: ZPIFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: FR5(:)
       REAL(KIND=JWRB), ALLOCATABLE :: FRM5(:)
       REAL(KIND=JWRB), ALLOCATABLE :: COFRM4(:)
@@ -81,6 +82,7 @@
 !      *TH*        REAL      DIRECTIONS IN RADIANS.
 !      *COSTH*     REAL      COS OF DIRECTION.
 !      *SINTH*     REAL      SIN OF DIRECTION.
+!      *ZPIFR*     REAL      ZPI*FR(M) 
 !      *FR5*       REAL      FR(M)**5 
 !      *FRM5*      REAL      (1./FR(M))**5 
 !      *COFRM4*    REAL      COEF4*G*FR(M)**(-4.) 

@@ -75,8 +75,7 @@
 !     ---------------------------------
 
       IF (LLGCBZ0) THEN
-!!        ZN = RNUM
-        ZN = 0.0_JWRB
+        ZN = RNUM
         ALPHAMAXU10(:)=ALPHAMAX
       ELSE
         ZN = 0.0_JWRB

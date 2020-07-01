@@ -1,5 +1,5 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, MIJ, USTAR, Z0, XLEVTAIL,        &
-     &                      UST, TAUHF, PHIHF)
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, Z0,    &
+     &                      XLEVTAIL, UST, TAUHF, PHIHF)
 
 ! ----------------------------------------------------------------------
 
@@ -13,15 +13,15 @@
 !     ---------
 
 !       COMPUTE HIGH-FREQUENCY WAVE STRESS AND ENERGY FLUX
-!       FOR BOTH ECMWF PHYSICS AND METREO FRANCE PHYSICS.
 
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, MIJ, USTAR, UST, Z0, XLEVTAIL,
+!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, UST, Z0, XLEVTAIL,
 !                          TAUHF, PHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
+!          *LTAUWSHELTER* - if true then XLEVTAIL are non zeros.
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !          *USTAR* FRICTION VELOCITY
 !          *UST*   REDUCED FRICTION VELOCITY DUE TO SHELTERING
@@ -53,10 +53,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0
-      USE YOWFRED  , ONLY : FR
-      USE YOWPCONS , ONLY : G        ,ZPI , SURFT
-      USE YOWPHYS  , ONLY : ZALP     ,XKAPPA
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWFRED  , ONLY : ZPIFR
+      USE YOWPCONS , ONLY : G
+      USE YOWPHYS  , ONLY : ZALP   , XKAPPA
+      USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
 
       USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
@@ -66,6 +66,7 @@
 #include "omegagc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      LOGICAL, INTENT(IN) :: LTAUWSHELTER
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
@@ -76,13 +77,13 @@
 
       REAL(KIND=JWRB), PARAMETER :: ZSUPMAX = 0.0_JWRB  !  LOG(1.)
       REAL(KIND=JWRB) :: XKS, OMS
-      REAL(KIND=JWRB) :: OMEGA, OMEGAC, OMEGACC
-      REAL(KIND=JWRB) :: X0G, TAUW, TAUW0
+      REAL(KIND=JWRB) :: OMEGA, OMEGACC
+      REAL(KIND=JWRB) :: X0G
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
-      REAL(KIND=JWRB) :: DELZ, ZINF
-      REAL(KIND=JWRB) :: FNC, FNC2, SQRTGZ0, GM1, GZ0, XLOGGZ0
+      REAL(KIND=JWRB) :: FNC, FNC2, GM1
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW, XLOGGZ0, SQRTGZ0
 
 ! ----------------------------------------------------------------------
 
@@ -108,41 +109,58 @@
       ENDIF
 
       DO IJ=IJS,IJL
-        OMEGAC    = ZPI*FR(MIJ(IJ))
-        TAUW0     = UST(IJ)**2
-        GZ0       = G*Z0(IJ)
-        XLOGGZ0   = LOG(GZ0)
-        OMEGACC   = MAX(OMEGAC,X0G/UST(IJ))
+        TAUW(IJ) = UST(IJ)**2
+        XLOGGZ0(IJ) = LOG(G*Z0(IJ))
+        OMEGACC = MAX(ZPIFR(MIJ(IJ)), X0G/UST(IJ))
 
-        SQRTGZ0   = 1.0_JWRB/SQRTZ0OG(IJ)
-        YC        = OMEGACC*SQRTZ0OG(IJ)
-        ZINF      = LOG(YC)
-        DELZ      = MAX((ZSUP(IJ)-ZINF)/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
+        SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
+        YC = OMEGACC*SQRTZ0OG(IJ)
+        ZINF(IJ) = LOG(YC)
+        DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
 
-        TAUHF(IJ)= 0.0_JWRB
-        PHIHF(IJ)= 0.0_JWRB
-
-        TAUW     = TAUW0
-        ! Intergrals are integrated following a change of variable : Z=LOG(Y)
-        DO J=1,JTOT_TAUHF
-          Y         = EXP(ZINF+REAL(J-1,JWRB)*DELZ)
-          OMEGA     = Y*SQRTGZ0
-          CM1       = OMEGA*GM1
-          ZX        = UST(IJ)*CM1 +ZALP
-          ZARG      = XKAPPA/ZX
-          ZLOG      = XLOGGZ0+2.0_JWRB*LOG(CM1)+ZARG 
-          ZLOG      = MIN(ZLOG,0.0_JWRB)
-          ZBETA     = EXP(ZLOG)*ZLOG**4
-          FNC2      = ZBETA*TAUW*WTAUHF(J)*DELZ
-          TAUW      = MAX(TAUW-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
-          UST(IJ)   = SQRT(TAUW)
-          TAUHF(IJ) = TAUHF(IJ) + FNC2 
-          PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
-        ENDDO
-        TAUHF(IJ) = TAUHF(IJ)
-        PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)
-
+        TAUHF(IJ) = 0.0_JWRB
+        PHIHF(IJ) = 0.0_JWRB
       ENDDO
+
+     ! Intergrals are integrated following a change of variable : Z=LOG(Y)
+      IF( LTAUWSHELTER ) THEN
+        DO IJ=IJS,IJL
+          DO J=1,JTOT_TAUHF
+            Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
+            OMEGA     = Y*SQRTGZ0(IJ)
+            CM1       = OMEGA*GM1
+            ZX        = UST(IJ)*CM1 +ZALP
+            ZARG      = XKAPPA/ZX
+            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+            ZLOG      = MIN(ZLOG,0.0_JWRB)
+            ZBETA     = EXP(ZLOG)*ZLOG**4
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
+            TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+            UST(IJ)   = SQRT(TAUW(IJ))
+            TAUHF(IJ) = TAUHF(IJ) + FNC2 
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+          ENDDO
+          PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          DO J=1,JTOT_TAUHF
+            Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
+            OMEGA     = Y*SQRTGZ0(IJ)
+            CM1       = OMEGA*GM1
+            ZX        = UST(IJ)*CM1 +ZALP
+            ZARG      = XKAPPA/ZX
+            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+            ZLOG      = MIN(ZLOG,0.0_JWRB)
+            ZBETA     = EXP(ZLOG)*ZLOG**4
+            FNC2      = ZBETA*WTAUHF(J)
+            TAUHF(IJ) = TAUHF(IJ) + FNC2 
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+          ENDDO
+          TAUHF(IJ) = TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
+          PHIHF(IJ) = SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
+        ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)
 

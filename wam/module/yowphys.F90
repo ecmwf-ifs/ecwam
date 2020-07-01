@@ -49,12 +49,6 @@
       REAL(KIND=JWRB) :: TAILFACTOR_FLX
 
 
-!     GRAVITY-CAPILLARY INPUT:
-!     ========================
-
-      REAL(KIND=JWRB), PARAMETER :: ANG_GC = 0.30_JWRB   ! factor to account for angular spreading of the input.
-
-
 !     WHITECAP DISSIPATION ::
 !     ====================
 
