@@ -15,7 +15,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LLGCBZ0
-      USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC
+      USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, VG_GC, C_GC, C2OSQRTVG, ZFAK_GC 
       USE YOWPCONS , ONLY : G,      SURFT
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
@@ -40,7 +40,7 @@
 
       REAL(KIND=JWRB) :: GAMMA_WAM
 
-      REAL(KIND=JWRB) :: UST, XKS, OMS
+      REAL(KIND=JWRB) :: XKS, OMS
       REAL(KIND=JWRB) :: XM, BBDELK, COEF
       REAL(KIND=JWRB) :: GAM_W, BS, OM
       REAL(KIND=JWRB) :: DELK_GC(NWAV_GC)
@@ -59,23 +59,23 @@
 
       CALL OMEGAGC(USTAR, NS, XKS, OMS)
 
+      COEF = C2OSQRTVG(NS)*BS
+
       BS = 0.5_JWRB*ALPHAP
-      COEF = FC_GC(XKS)**4/FVG_GC(XKS)*BS**2
       XMSSCG = 0.0_JWRB
       TAUWCG = 0.0_JWRB
 
-      DELK_GC(NS) = 0.5*(XK_GC(NS+1)-XK_GC(NS))
+      DELK_GC(NS) = 0.5*(XK_GC(NS+1)-XK_GC(NS))/C2OSQRTVG(I)
       DO I=NS+1,NWAV_GC-1
-        DELK_GC(I) = 0.5_JWRB*(XK_GC(I+1)-XK_GC(I-1))
+        DELK_GC(I) = 0.5_JWRB*(XK_GC(I+1)-XK_GC(I-1))/C2OSQRTVG(I)
       ENDDO
-      DELK_GC(NWAV_GC) = 0.5_JWRB*(XK_GC(NWAV_GC)-XK_GC(NWAV_GC-1))
+      DELK_GC(NWAV_GC) = 0.5_JWRB*(XK_GC(NWAV_GC)-XK_GC(NWAV_GC-1))/C2OSQRTVG(I)
 
-      UST = USTAR
       DO I = NS, NWAV_GC
         XM  = 1.0_JWRB/XK_GC(I)
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
-!        BB = SQRT(COEF*VG_GC(I))/C_GC(I)**2
-        BBDELK = DELK_GC(I)*SQRT(COEF*VG_GC(I))/C_GC(I)**2
+!        BB = COEF*SQRT(VG_GC(I))/C_GC(I)**2
+        BBDELK = COEF*DELK_GC(I)
 !       mss :  integral of k**2 F(k)  k dk
         XMSSCG = XMSSCG + BBDELK * XM
 !       Tauwcg : (rhow * g /rhoa) * integral of (1/c) * gammma * F(k)  k dk 
@@ -85,7 +85,7 @@
 !       Tauwcg : integral of omega * gammma_wam * F(k)  k dk
 !       It should be done in vector form with actual directional spreading information
 !       It simplfied here by using the ANG_GC factor.
-        GAM_W = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), UST, Z0)
+        GAM_W = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), C_GC(I), ZFAK_GC(I), USTAR, Z0)
         TAUWCG = TAUWCG + OMEGA_GC(I) * GAM_W * BBDELK * XM**3 
       ENDDO
  
