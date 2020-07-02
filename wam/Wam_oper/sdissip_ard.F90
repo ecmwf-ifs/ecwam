@@ -47,7 +47,7 @@
 
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWFRED  , ONLY : FR      , TH
+      USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR
       USE YOWPCONS , ONLY : G        ,ZPI    ,ROWATER
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
@@ -116,7 +116,7 @@
       SSDSC6M1=1._JWRB-SSDSC6
 
       DO M=1,NFRE
-        SIG(M) = ZPI*FR(M)
+        SIG(M) = ZPIFR(M)
         SSDSC2_SIG(M)=SSDSC2*SIG(M)
       END DO
 

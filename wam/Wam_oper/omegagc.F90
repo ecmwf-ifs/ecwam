@@ -1,6 +1,7 @@
       SUBROUTINE OMEGAGC(UST, NS, XKS, OMS)
 
 !***  DETERMINE THE CUT-OFF ANGULAR FREQUENCY FOR THE GRAV-CAPILLARY WAVES
+!     !!!! rounded to the closest index of XK_GC  !!!!!
 
 !     AUTHOR: PETER JANSSEN
 !     ------
@@ -24,7 +25,7 @@
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: UST
-      INTEGER(KIND=JWIM), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS
+      INTEGER(KIND=JWIM), INTENT(OUT) :: NS ! index in array XK_GC corresponding to XKS and OMS
       REAL(KIND=JWRB), INTENT(OUT) :: XKS   ! cut-off wave number
       REAL(KIND=JWRB), INTENT(OUT) :: OMS   ! cut-off angular frequency
 
@@ -42,7 +43,7 @@
       XKS = Y*SQRT(G/SURFT)
       NS = MIN(INT(LOG(XKS/XK_GC(1))/LOG(KRATIO_GC))+1,NWAV_GC-1)
       XKS = XK_GC(NS)
-      OMS = OMEGA_GC(NS) 
+      OMS = OMEGA_GC(NS)
 
       IF (LHOOK) CALL DR_HOOK('OMEGAGC',1,ZHOOK_HANDLE)
  

@@ -53,10 +53,11 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
+     &                ZPIFR,                                            &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM, TAILFACTOR_FLX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -88,7 +89,7 @@
 !     ------------------------------------------------------------
 
       FPMH = TAILFACTOR/FR(1)
-      FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
       FPMF = TAILFACTOR_FLX/FR(1)
 
       DO IJ=IJS,IJL

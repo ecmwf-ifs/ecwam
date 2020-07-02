@@ -66,10 +66,10 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH
+      USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER  ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ROWATER  ,EPSMIN
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
@@ -168,7 +168,7 @@
       ENDDO
 
       DO M=1,NFRE
-        SIG(M) = ZPI*FR(M)
+        SIG(M) = ZPIFR(M)
         SIGM1(M) = 1.0_JWRB/SIG(M)
         SIG2(M) = SIG(M)**2
         DFIM_SIG2(M)=DFIM(M)*SIG2(M)

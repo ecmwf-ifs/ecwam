@@ -66,8 +66,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : NTRAIN   ,LLPARTITION
-      USE YOWFRED  , ONLY : FR       ,TH       ,FRIC     ,OLDWSFC
-      USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
+      USE YOWFRED  , ONLY : FR       ,TH       ,FRIC     ,OLDWSFC, ZPIFR
+      USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
@@ -98,7 +98,6 @@
       REAL(KIND=JWRB) :: COEF
       REAL(KIND=JWRB) :: CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: R
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
@@ -117,14 +116,13 @@
       COEF = OLDWSFC*FRIC
 
       DO M=1,NFRE
-        FAC(M) = ZPI*FR(M)
         IF (ISHALLO.EQ.1) THEN
           DO IJ=IJS,IJL
-            CM(IJ) = FAC(M)/G
+            CM(IJ) = ZPIFR(M)/G
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            CM(IJ) = TFAK(INDEP(IJ),M)/FAC(M)
+            CM(IJ) = TFAK(INDEP(IJ),M)/ZPIFR(M)
           ENDDO
         ENDIF
 

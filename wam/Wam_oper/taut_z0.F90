@@ -92,7 +92,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, THW, ROAIRN, TAUW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWEFF 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, XMSS, TAUUNR, ZB
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, HALPHAP, TAUUNR, ZB
 
 ! ----------------------------------------------------------------------
 
@@ -119,6 +119,7 @@ IF (LLGCBZ0) THEN
         ENDDO
       ENDDO
       ALPHAP(:) = MIN(ALPHAP(:), ALPHAPMAX)
+      HALPHAP(:) = 0.5_JWRB*ALPHAP(:)
 
       RNUEFF = 0.04_JWRB*RNU
       RNUKAPPAM1 = RNUEFF/XKAPPA
@@ -146,7 +147,7 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), ALPHAP(IJ), XMSS(IJ), TAUUNR(IJ))
+          CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALPHAP(IJ), TAUUNR(IJ))
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
