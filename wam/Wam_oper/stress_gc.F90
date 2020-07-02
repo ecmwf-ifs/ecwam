@@ -60,11 +60,6 @@
 
       DO I = NS, NWAV_GC
         GAM_W(I) = ANG_GC * GAMMA_WAM(OMEGA_GC(I), XK_GC(I), C_GC(I), ZFAK_GC(I), USTAR, Z0)
-
-
-!!! debile
-      write(*,*) "in stress_gc ",I,GAM_W(I)
-
       ENDDO
 
       COEF = C2OSQRTVG(NS)*HALPHAP
