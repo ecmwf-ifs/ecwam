@@ -15,7 +15,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, XKM_GC, &
-     &                      OMXKM3_GC, VG_GC, C_GC, C2OSQRTVG, ZFAK_GC,  &
+     &                      OMXKM3_GC, VG_GC, C_GC, C2OSQRTVG_GC,           &
      &                      DELKCC_GC
       USE YOWPCONS , ONLY : G,      SURFT
 
@@ -38,7 +38,6 @@
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
 
-      REAL(KIND=JWRB) :: GAMMA_WAM
 
       REAL(KIND=JWRB) :: XKS, OMS
       REAL(KIND=JWRB) :: COEF
@@ -57,7 +56,7 @@
 
       CALL OMEGAGC(USTAR, NS, XKS, OMS)
 
-      COEF = C2OSQRTVG(NS)*HALPHAP
+      COEF = C2OSQRTVG_GC(NS)*HALPHAP
       XMSSCG = 0.0_JWRB
       DO I = NS, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB

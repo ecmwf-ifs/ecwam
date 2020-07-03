@@ -1,4 +1,4 @@
-FUNCTION GAMMA_WAM(OMEGA, XK, C, ZFAK, USTAR, Z0)
+FUNCTION GAMMA_WAM(XK, C, OM3GMKM, USTAR, Z0)
  
 !---------------------------------------------------------------------
  
@@ -35,10 +35,9 @@ IMPLICIT NONE
 
 REAL(KIND=JWRB) :: GAMMA_WAM 
 
-REAL(KIND=JWRB), INTENT(IN) :: OMEGA  ! angular frequency
 REAL(KIND=JWRB), INTENT(IN) :: XK     ! wave number
 REAL(KIND=JWRB), INTENT(IN) :: C      ! phase speed
-REAL(KIND=JWRB), INTENT(IN) :: ZFAK   ! OMEGA**2/(g*xk) 
+REAL(KIND=JWRB), INTENT(IN) :: OM3GMKM   ! OMEGA * OMEGA**2/(g*xk) 
 REAL(KIND=JWRB), INTENT(IN) :: USTAR  ! friction velocity
 REAL(KIND=JWRB), INTENT(IN) :: Z0     ! roughness length
 
@@ -58,7 +57,7 @@ ZLOG    = MIN(XLOG,0.0_JWRB)
 ZLOG2X  = ZLOG*ZLOG*X
 ZBETA   = BETAMAXOXKAPPA2*EXP(ZLOG)*ZLOG2X**2
 
-GAMMA_WAM = ZBETA*ZFAK*OMEGA
+GAMMA_WAM = ZBETA*OM3GMKM
  
 ! -----------------------------------------------------------------
  
