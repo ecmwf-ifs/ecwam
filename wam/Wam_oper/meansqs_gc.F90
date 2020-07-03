@@ -15,8 +15,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, XKM_GC, &
-     &                      OMXKM3_GC, VG_GC, C_GC, C2OSQRTVG_GC,           &
-     &                      DELKCC_GC
+     &                      VG_GC, C2OSQRTVG_GC, DELKCC_GC
       USE YOWPCONS , ONLY : G,      SURFT
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
