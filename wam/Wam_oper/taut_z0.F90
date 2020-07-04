@@ -152,6 +152,9 @@ IF (LLGCBZ0) THEN
 
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
+!!!debile
+       write(*,*) 'debile taunew ',ij,iter, taunew, TAUWEFF(IJ) , TAUV , TAUUNR(IJ), z0(ij)
+
           USTNEW = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 
