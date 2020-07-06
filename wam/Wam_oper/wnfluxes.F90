@@ -60,7 +60,7 @@
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    ,FRIC
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
@@ -164,7 +164,7 @@
         ENDDO
       ENDDO
 
-      IF (LICERUN .AND. LMASKICE) THEN
+      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
         DO IJ=IJS,IJL
           IF(CICVR(IJ) .GT. 0.0_JWRB) THEN
             OOVAL(IJ)=EXP(-MIN((CICVR(IJ)*CITHRSH_INV)**4,10._JWRB))
@@ -191,8 +191,8 @@
           ENDIF
         ENDDO
       ELSE
-        OOVAL(:)=1.0_JWRB
-        USTAR(:)=USNEW(:)
+        OOVAL(:) = 1.0_JWRB
+        USTAR(:) = USNEW(:)
         EM_OC(:) = EM(:)
         F1_OC(:) = F1(:)
       ENDIF

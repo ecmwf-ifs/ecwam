@@ -49,7 +49,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G        ,EPSUS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  ,CITHRSH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -80,7 +80,7 @@
         BETA(IJ) = MIN(BETA(IJ),ALPHAMAXU10)
       ENDDO
 
-      IF (LICERUN .AND. LMASKICE) THEN
+      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
         DO IJ = IJS,IJL
           BETA(IJ) = (1.0_JWRB-CICVR(IJ))*BETA(IJ) + CICVR(IJ)*PRCHAR
         ENDDO
