@@ -92,9 +92,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWFRED  , ONLY : ZPIFR    ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER   ,YEPS
+      USE YOWPCONS , ONLY : G        ,ROWATER   ,YEPS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA,  BETAMAXOXKAPPA2
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
@@ -223,7 +223,7 @@
 
       DO M=1,NFRE
 
-        FAC(M) = ZPI*FR(M)
+        FAC(M) = ZPIFR(M)
         CONST(M)=FAC(M)*CONST1
 
 !*      INVERSE OF PHASE VELOCITIES.

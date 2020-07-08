@@ -1,5 +1,5 @@
       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, Z0,    &
-     &                      XLEVTAIL, UST, TAUHF, PHIHF)
+     &                      XLEVTAIL, UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 !     ----------
 
 !       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, UST, Z0, XLEVTAIL,
-!                          TAUHF, PHIHF)
+!                          TAUHF, PHIHF, LLPHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *LTAUWSHELTER* - if true then XLEVTAIL are non zeros.
@@ -29,6 +29,7 @@
 !          *XLEVTAIL* TAIL LEVEL
 !          *TAUHF* HIGH-FREQUENCY STRESS
 !          *PHIHF* HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
+!          *LLPHIHF* TRUE IF PHIHF NEEDS TO COMPUTED
 
 
 
@@ -71,6 +72,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
+      LOGICAL, INTENT(IN) :: LLPHIHF
 
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: J, IJ
@@ -97,8 +99,17 @@
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
 
-      SQRTZ0OG(:)  = SQRT(Z0(:)*GM1)
+      DO IJ=IJS,IJL
+        XLOGGZ0(IJ) = LOG(G*Z0(IJ))
+        OMEGACC = MAX(ZPIFR(MIJ(IJ)), X0G/UST(IJ))
+        SQRTZ0OG(IJ)  = SQRT(Z0(IJ)*GM1)
+        SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
+        YC = OMEGACC*SQRTZ0OG(IJ)
+        ZINF(IJ) = LOG(YC)
+      ENDDO
 
+
+!     TAUHF :
       IF(LLGCBZ0) THEN
         DO IJ=IJS,IJL
           CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
@@ -110,16 +121,9 @@
 
       DO IJ=IJS,IJL
         TAUW(IJ) = UST(IJ)**2
-        XLOGGZ0(IJ) = LOG(G*Z0(IJ))
-        OMEGACC = MAX(ZPIFR(MIJ(IJ)), X0G/UST(IJ))
-
-        SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
-        YC = OMEGACC*SQRTZ0OG(IJ)
-        ZINF(IJ) = LOG(YC)
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
 
         TAUHF(IJ) = 0.0_JWRB
-        PHIHF(IJ) = 0.0_JWRB
       ENDDO
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)
@@ -134,13 +138,12 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2 
-            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-          PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)
+          TAUHF(IJ) = TAUHF(IJ)*DELZ(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
@@ -155,11 +158,59 @@
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 
-            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
           TAUHF(IJ) = TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
+        ENDDO
+      ENDIF
+
+
+      PHIHF(:) = 0.0_JWRB
+      IF (LLPHIHF) THEN
+!     PHIHF:
+!     We are neglecting the gravity-capillary contribution 
+
+      DO IJ=IJS,IJL
+        TAUW(IJ) = UST(IJ)**2
+        ZSUP(IJ) = ZSUPMAX
+        DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
+      ENDDO
+
+     ! Intergrals are integrated following a change of variable : Z=LOG(Y)
+      IF( LTAUWSHELTER ) THEN
+        DO IJ=IJS,IJL
+          DO J=1,JTOT_TAUHF
+            Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
+            OMEGA     = Y*SQRTGZ0(IJ)
+            CM1       = OMEGA*GM1
+            ZX        = UST(IJ)*CM1 +ZALP
+            ZARG      = XKAPPA/ZX
+            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+            ZLOG      = MIN(ZLOG,0.0_JWRB)
+            ZBETA     = EXP(ZLOG)*ZLOG**4
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)
+            TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+            UST(IJ)   = SQRT(TAUW(IJ))
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+          ENDDO
+          PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)*DELZ(IJ)
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          DO J=1,JTOT_TAUHF
+            Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
+            OMEGA     = Y*SQRTGZ0(IJ)
+            CM1       = OMEGA*GM1
+            ZX        = UST(IJ)*CM1 +ZALP
+            ZARG      = XKAPPA/ZX
+            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+            ZLOG      = MIN(ZLOG,0.0_JWRB)
+            ZBETA     = EXP(ZLOG)*ZLOG**4
+            FNC2      = ZBETA*WTAUHF(J)
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+          ENDDO
           PHIHF(IJ) = SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO
+      ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',1,ZHOOK_HANDLE)

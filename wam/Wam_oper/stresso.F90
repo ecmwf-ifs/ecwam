@@ -1,7 +1,7 @@
       SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
      &                    MIJFLX, RHOWGDFTH,                            &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
-     &                    TAUW, PHIWA)
+     &                    TAUW, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
 
@@ -45,6 +45,7 @@
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
 !         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                         OVER THE FULL FREQUENCY RANGE.
+!         *LLPHIWA*     - TRUE IF PHIWA NEEDS TO BE COMPUTED
 
 !     METHOD.
 !     -------
@@ -91,6 +92,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
+      LOGICAL, INTENT(IN) :: LLPHIWA
 
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
@@ -124,8 +126,7 @@
       TAUTOUS2 = 1.0_JWRB-EPS1
 
       DO IJ=IJS,IJL
-        CONST1(IJ)  = CONST*FR5(MIJFLX(IJ))*GM1
-        CONST2(IJ)  = ROAIRN(IJ)*CONST*FR5(MIJFLX(IJ))
+        CONST1(IJ) = CONST*FR5(MIJFLX(IJ))*GM1
       ENDDO
 
 !*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
@@ -140,6 +141,7 @@
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
+      IF ( LLPHIWA ) THEN
 !     full energy flux due to negative Sinput (SL-SPOS)
 !     we assume that above NFRE, the contibutions can be negleted
       DO M=1,NFRE
@@ -156,6 +158,7 @@
           PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
         ENDDO
       ENDDO
+      ENDDO
 
 
 !*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
@@ -164,30 +167,43 @@
 !     THE INTEGRATION ONLY UP TO FR=MIJFLX SINCE RHOWGDFTH=0 FOR FR>MIJFLX
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ) = SPOS(IJ,K,M)
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
           SUMY(IJ) = SPOS(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
             SUMX(IJ) = SUMX(IJ) + SPOS(IJ,K,M)*SINTH(K)
             SUMY(IJ) = SUMY(IJ) + SPOS(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          PHIWA(IJ)   =  PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
           CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWGDFTH(IJ,M)
           XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
           YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+!     TAUW is the kinematic wave stress !
+          XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
+          YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
         ENDDO
       ENDDO
 
-!     TAUW is the kinematic wave stress !
-      DO IJ=IJS,IJL
-        XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
-        YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.0_JWRB)
+
+      IF ( LLPHIWA ) THEN
+      DO M=1,MAXVAL(MIJFLX(:))
+!     THE INTEGRATION ONLY UP TO FR=MIJFLX SINCE RHOWGDFTH=0 FOR FR>MIJFLX
+        K=1
+        DO IJ=IJS,IJL
+          SUMT(IJ) = SPOS(IJ,K,M)
+        ENDDO
+        DO K=2,NANG
+          DO IJ=IJS,IJL
+            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+          ENDDO
+        ENDDO
+        DO IJ=IJS,IJL
+          PHIWA(IJ)   =  PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
+        ENDDO
       ENDDO
+      ENDIF
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     --------------------------------------------------------------------------------------
@@ -236,20 +252,22 @@
         XLEVTAIL(:) = 0.0_JWRB
       ENDIF
   
-      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USNEW, Z0NEW, XLEVTAIL, UST, TAU1, PHI1)
+      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USNEW, Z0NEW, XLEVTAIL, UST, TAU1, PHI1, LLPHIWA)
 
       DO IJ=IJS,IJL
         TAUHF(IJ) = CONST1(IJ)*TEMP1(IJ)*TAU1(IJ)
-        PHIHF(IJ) = CONST2(IJ)*TEMP2(IJ)*PHI1(IJ)
-      ENDDO
-
-      DO IJ=IJS,IJL
-        PHIWA(IJ)   = PHIWA(IJ)   + PHIHF(IJ)
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
+
+      IF ( LLPHIWA ) THEN
+        DO IJ=IJS,IJL
+          CONST2(IJ) = ROAIRN(IJ)*CONST*FR5(MIJFLX(IJ))
+          PHIWA(IJ) = PHIWA(IJ) + CONST2(IJ)*TEMP2(IJ)*PHI1(IJ)
+        ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
 

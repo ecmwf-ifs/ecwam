@@ -44,7 +44,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN, SURFT
-      USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DELTH
+      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM_SIM ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
@@ -89,7 +89,7 @@
 !         -----------------------
 
         DO M=1,NFRE_ODD
-          FD(M) = DFIM_SIM(M)*(ZPI*FR(M))**4/G**2
+          FD(M) = DFIM_SIM(M)*(ZPIFR(M))**4/G**2
         ENDDO
 
         DO M=1,NFRE_ODD
