@@ -67,6 +67,8 @@ INTEGER(KIND=JWIM) :: NGST
 REAL(KIND=JWRB) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS
 
+LOGICAL :: LLPHIWA
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SINFLX',0,ZHOOK_HANDLE)
