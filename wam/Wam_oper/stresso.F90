@@ -158,7 +158,7 @@
           PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
         ENDDO
       ENDDO
-      ENDDO
+      ENDIF
 
 
 !*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
