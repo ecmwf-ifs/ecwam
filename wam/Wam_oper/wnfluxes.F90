@@ -1,5 +1,5 @@
       SUBROUTINE WNFLUXES (IJS, IJL,                                    &
-     &                     MIJFLX, RHOWGDFTH,                           &
+     &                     MIJ, RHOWGDFTH,                           &
      &                     SSURF, CICVR,                                &
      &                     PHIWA,                                       &
      &                     EM, F1, U10, THW,                            &
@@ -16,17 +16,17 @@
 !     ----------
 
 !       *CALL* *WNFLUXES* (IJS, IJL,
-!    &                     MIJFLX, RHOWGDFTH,
+!    &                     MIJ, RHOWGDFTH,
 !    &                     SSURF, CICVR,
 !    &                     PHIWA,
 !    &                     EM, F1, U10, THW,
 !    &                     USNEW, ROAIRN, LNUPD)
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
-!         *MIJFLX*  - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for flux calculation
+!          *MIJ*    - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for flux calculation
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
-!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJFLX)
-!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJFLX)
+!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ)
+!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
 !          *SSURF*  - CONTRIBUTION OF ALL SOURCE TERMS ACTING ON 
 !                     THE SURFACE MOMENTUM AND ENERGY FLUXES.
 !          *CICVR*  - SEA ICE COVER.
@@ -73,7 +73,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJFLX
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: SSURF
@@ -114,8 +114,8 @@
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
-!     THE INTEGRATION ONLY UP TO FR=MIJFLX SINCE RHOWGDFTH=0 FOR FR>MIJFLX
-      DO M=1,MAXVAL(MIJFLX(:))
+!     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+      DO M=1,MAXVAL(MIJ(:))
         K=1
         DO IJ=IJS,IJL
           SUMT(IJ) = SSURF(IJ,K,M)
