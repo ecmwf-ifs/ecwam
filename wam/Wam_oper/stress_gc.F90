@@ -23,8 +23,6 @@
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
-      USE YOWTEST  , ONLY : IU06
-
 !----------------------------------------------------------------------
 
       IMPLICIT NONE

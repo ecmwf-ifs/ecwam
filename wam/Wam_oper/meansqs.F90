@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS(F, IJS, IJL, USNEW, FM, SM)
+      SUBROUTINE MEANSQS(IJS, IJL, F, USTAR, THW, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -6,6 +6,8 @@
 
 !     P.A.E.M. JANSSEN
 !     J. BIDLOT  ECMWF  FEBRUARY 1996  MESSAGE PASSING
+
+!     July 2020, add gravity capillary contribution
 
 
 !*    PURPOSE.
@@ -16,13 +18,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (F, IJS, IJL, USNEW, FM, SM)*
-!              *F*   - SPECTRUM.
+!       *CALL* *MEANSQS (IJS, IJL, F, USTAR, THW, XMSS)*
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
-!              *USNEW*     NEW FRICTION VELOCITY IN M/S (INPUT).
-!              *FM*  - MEAN WAVE FREQUENCY (INPUT).
-!              *SM*  - MEAN SQUARE SLOPE (OUTPUT).
+!              *F*   - SPECTRUM.
+!              *USTAR* - NEW FRICTION VELOCITY IN M/S (INPUT).
+!              *THW*  - WIND DIRECTION
+!              *XMSS* - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -43,7 +45,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN, SURFT
+      USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM_SIM ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
@@ -52,33 +54,37 @@
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-
-      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
+#include "halphap.intfb.h"
+#include "meansqs_gc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, FM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  SM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THW 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+
+      INTEGER(KIND=JWIM) :: IJ, M, K
+      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
 
       REAL(KIND=JWRB) :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALPHAP, FRGC
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
+!*    1. COMPUTE THE GRAVITY-CAPILLARY CONTRIBUTION TO MSS 
+!        -------------------------------------------------
 
-!*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
-!        ------------------------------------------------
+!     COMPUTE THE PHILLIPS PARAMETER
+      CALL HALPHAP(IJS, IJL, F, THW, HALPHAP)
 
-      DO IJ=IJS,IJL
-        SM(IJ) = EPSMIN
-      ENDDO
+!     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
+      CALL MEANSQS_GC(IJS, IJL, HALPHAP, USTAR, XMSS, FRGC)
 
-! ----------------------------------------------------------------------
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------

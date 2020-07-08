@@ -230,7 +230,6 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC,        &
      &            GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,              &
-     &                      LLGCBZ0,                                    &
      &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
      &            FFLAG20  ,GFLAG20  ,                                  &
@@ -568,7 +567,7 @@
 
 
       ! INITIALISATION FOR GRAVITY-CAPILLARY
-      IF(LLGCBZ0) CALL INITGC
+      CALL INITGC
 
       CALL TABU_SWELLFT
 
