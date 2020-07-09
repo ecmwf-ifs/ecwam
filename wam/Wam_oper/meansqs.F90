@@ -73,7 +73,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 !!! debile
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: c1, c2 c3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: c1, c2
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
