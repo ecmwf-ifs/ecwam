@@ -72,6 +72,9 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
+!!! debile
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: c1, c2 c3
+
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
@@ -83,6 +86,10 @@
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(IJS, IJL, HALP, USTAR, XMSS, FRGC)
+
+
+!!!debile
+       c1(:) = xmss(:)
 
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
@@ -135,6 +142,9 @@
 
 !*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_ODD) and FRGC).
 !        ------------------------------------------
+!!!debile
+       c2(:) = xmss(:)
+
 
       XLOGFS = LOG(FR(NFRE_ODD))
       CONST2 = DELTH*ZPI4GM2*FR5(NFRE_ODD)
@@ -144,7 +154,8 @@
         XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
 
 !!!debile
-        write(*,*) 'debile meansqs ',XMSS(IJ)
+        write(*,*) 'debile meansqs ',XMSS(IJ),c2(ij)-c1(ij), xmss(ij)-c2(ij),c1(ij)
+
 
       ENDDO
 
