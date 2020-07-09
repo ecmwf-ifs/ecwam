@@ -71,7 +71,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALPHAP, FRGC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
@@ -80,10 +80,10 @@
 !        -------------------------------------------------
 
 !     COMPUTE THE PHILLIPS PARAMETER
-      CALL HALPHAP(IJS, IJL, F, THW, HALPHAP)
+      CALL HALPHAP(IJS, IJL, F, THW, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
-      CALL MEANSQS_GC(IJS, IJL, HALPHAP, USTAR, XMSS, FRGC)
+      CALL MEANSQS_GC(IJS, IJL, HALP, USTAR, XMSS, FRGC)
 
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
@@ -108,7 +108,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+FD(M)*TEMP2(IJ)
+            XMSS(IJ) = XMSS(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 !SHALLOW
@@ -128,7 +128,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+TEMP1(IJ)*TEMP2(IJ)
+            XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
       ENDIF
@@ -148,7 +148,7 @@
 !!        XI        = CP/USNEW(IJ)
 !!        ALPHAP    = MAX(0.21_JWRB/XI,0.0040_JWRB)
 !!        CONST3    = CONST2*DELTH*TEMP2(IJ)
-!!        SM(IJ) = SM(IJ)+CONST1*CONST3
+!!        XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
 !!      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)

@@ -31,7 +31,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FRCG  ! Frequency from which the gravity-capillary spectrum is approximated
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
 
       INTEGER(KIND=JWIM) :: IJ, I, NS
       REAL(KIND=JWRB) :: XKS, OMS, COEF
@@ -46,7 +46,7 @@
 
       DO IJ = IJS, IJL
         CALL OMEGAGCD(USTAR(IJ), NS, XKS, OMS)
-        FRCG(IJ) = OMS/ZPI
+        FRGC(IJ) = OMS/ZPI
         COEF = C2OSQRTVG_GC(NS)*HALPHAP(IJ)
         XMSSCG(IJ) = 0.0_JWRB
         DO I = NS, NWAV_GC
