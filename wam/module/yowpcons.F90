@@ -8,12 +8,13 @@
 !     THE NON PARAMETRIC CONSTANTS WILL BE RESET BY CALLING INIWCST !!!!
 
       REAL(KIND=JWRB) :: G = 9.806_JWRB
+      REAL(KIND=JWRB) :: GM1 = 0.101978381_JWRB 
       REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB 
       REAL(KIND=JWRB) :: PI = OLDPI 
       REAL(KIND=JWRB), PARAMETER :: CIRC = 40000000.0_JWRB
       REAL(KIND=JWRB) :: ZPI = 6.2831854_JWRB
       REAL(KIND=JWRB) :: THREEZPI = 18.849555922_JWRB
-      REAL(KIND=JWRB) :: G2ZPI4 = 0.987152585_JWRB
+      REAL(KIND=JWRB) :: ZPI4GM2 = 16.208233910_JWRB
       REAL(KIND=JWRB) :: ZPISQRT = 1.7724539_JWRB
       REAL(KIND=JWRB) :: ZCONST = 0.0281349_JWRB 
       REAL(KIND=JWRB) :: RAD = 0.017453293_JWRB 
@@ -51,13 +52,14 @@
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     *G*         REAL      ACCELLERATION OF GRAVITY.
+!     *GM1*       REAL      1/G.
 !     *OLDPI*     REAL      OLD VALUE USED FOR PI (PRIOR TO CY21R3). 
 !     *PI*        REAL      PI (See SUB. INIWCST).
 !     *CIRC*      REAL      EARTH CIRCUMFERENCE (METRES).
 !     *RAD*       REAL      PI / 180.
 !     *DEG*       REAL      180. / PI.
 !     *ZPI*       REAL      2. * PI.
-!     *G2ZPI4*    REAL      G**2/ZPI**4 
+!     *ZPI4GM2*   REAL      ZPI**4/G**2 
 !     *ZPISQRT*   REAL      SQRT(PI)
 !     *ZCONST*    REAL      1./(8.*PI*SQRT(2.))
 !     *R*         REAL      EARTH RADIUS        (METRES).

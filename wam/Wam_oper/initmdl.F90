@@ -264,7 +264,7 @@
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
-     &            RAD      ,ROWATER
+     &            RAD      ,ROWATER  ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
@@ -530,7 +530,7 @@
         FR5(M) = FR(M)**5
         FRM5(M) = 1.0_JWRB/FR5(M)
         COFRM4(M) = COEF4*G/FR(M)**4
-        FLMAX(M) = (ALPHAPMAX/PI)*(G**2/ZPI**4)/FR5(M)
+        FLMAX(M) = (ALPHAPMAX/PI)/(ZPI4GM2*FR5(M))
         DFIM_END_L(M) = SCDF_L*FR(M)
         DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO

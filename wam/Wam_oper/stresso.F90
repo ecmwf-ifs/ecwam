@@ -73,7 +73,7 @@
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTABL  , ONLY : EPS1
@@ -101,7 +101,6 @@
       REAL(KIND=JWRB) :: CONST
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
-      REAL(KIND=JWRB) :: GM1
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, TEMP1, CONST1, XSTRESS, YSTRESS
@@ -121,7 +120,6 @@
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
 
-      GM1 = 1.0_JWRB/G
       CONST = DELTH*(ZPI)**4*GM1
       TAUTOUS2 = 1.0_JWRB-EPS1
 

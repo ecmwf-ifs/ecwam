@@ -28,7 +28,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : PI       ,CIRC     ,ZPI      ,ZCONST   ,    &
-     &            RAD      ,DEG      ,R        ,ZPISQRT  ,G2ZPI4   ,    &
+     &            RAD      ,DEG      ,R        ,ZPISQRT  ,ZPI4GM2  ,    &
      &            G        ,THREEZPI
 
 ! ----------------------------------------------------------------------
@@ -41,7 +41,7 @@
       ZPI= 2.0_JWRB*PI
       THREEZPI = 3.0_JWRB*ZPI
       ZPISQRT = SQRT(ZPI)
-      G2ZPI4 = G**2/ZPI**4
+      ZPI4GM2 = ZPI**4/G**2
 
       ZCONST=1.0_JWRB/(8.0_JWRB*PI*SQRT(2.0_JWRB))
       RAD = PI/180.0_JWRB

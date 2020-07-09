@@ -121,7 +121,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
-      USE YOWPCONS , ONLY : ZMISS    ,G
+      USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
       USE YOWPHYS  , ONLY : RNU      ,RNUM
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
@@ -290,6 +290,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LIFS_IO_SERV_ENABLED = LDIFS_IO_SERV_ENABLED
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
+      GM1 = 1.0_JWRB/G
 
       RNU=RNU_ATM
       RNUM=RNUM_ATM

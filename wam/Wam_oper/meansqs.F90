@@ -45,8 +45,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM_SIM ,DELTH
+      USE YOWPCONS , ONLY : GM1      ,ZPI4GM2
+      USE YOWFRED  , ONLY : FR       ,FR5      ,ZPIFR    ,DFIM_SIM ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
@@ -65,12 +65,11 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
       INTEGER(KIND=JWIM) :: IJ, M, K
-      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
 
-      REAL(KIND=JWRB) :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      REAL(KIND=JWRB) :: XLOGFS, CONST1, CONST2, CONST3 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
@@ -95,7 +94,7 @@
 !         -----------------------
 
         DO M=1,NFRE_ODD
-          FD(M) = DFIM_SIM(M)*(ZPIFR(M))**4/G**2
+          FD(M) = DFIM_SIM(M)*(ZPIFR(M))**4*GM1**2
         ENDDO
 
         DO M=1,NFRE_ODD
@@ -134,22 +133,20 @@
       ENDIF
 !SHALLOW
 
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE.
+!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_ODD) and FRGC).
 !        ------------------------------------------
 
-!! not applied !!
-!!      FS     = FR(NFRE_ODD)      
-!!      XKC    = ZPI/XLAMBDAC
-!!      FC     = SQRT(G*XKC+SURFT*XKC**3)/ZPI
-!!      CONST2 = ZPI**4*FS**5/G**2
-!!      DO IJ=IJS,IJL      
-!!        CONST1    = 0.0_JWRB*LOG(FC/FS)  
-!!        CP        = G/(ZPI*FM(IJ))
-!!        XI        = CP/USNEW(IJ)
-!!        ALPHAP    = MAX(0.21_JWRB/XI,0.0040_JWRB)
-!!        CONST3    = CONST2*DELTH*TEMP2(IJ)
-!!        XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
-!!      ENDDO
+      XLOGFS = LOG(FR(NFRE_ODD))
+      CONST2 = DELTH*ZPI4GM2*FR5(NFRE_ODD)
+      DO IJ=IJS,IJL
+        CONST1   = LOG(FRGC(IJ)) - XLOGFS
+        CONST3   = CONST2*TEMP2(IJ)
+        XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
+
+!!!debile
+        write(*,*) 'debile meansqs ',XMSS(IJ)
+
+      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
 
