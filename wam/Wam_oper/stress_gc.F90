@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, HALPHAP, TAUWCG)
+      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, HALP, TAUWCG)
 
 !***  DETERMINE WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -32,7 +32,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
-      REAL(KIND=JWRB), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
 
       INTEGER(KIND=JWIM) :: NS
@@ -70,7 +70,7 @@
       TAUWCG = 0.0_JWRB
       DO I = NS, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
-!       BB = HALPHAP * C2OSQRTVG_GC(NS)*SQRT(VG_GC(I))/C_GC(I)**2
+!       BB = HALP * C2OSQRTVG_GC(NS)*SQRT(VG_GC(I))/C_GC(I)**2
 !       Tauwcg : (rhow * g /rhoa) * integral of (1/c) * gammma * F(k)  k dk 
 !       with omega=g*k and omega=k*c,  then
 !       Tauwcg : (rhow /rhoa) * integral of omega * gammma * F(k)  k dk
@@ -80,7 +80,7 @@
 !       It simplified here by using the ANG_GC factor.
         TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) 
       ENDDO
-      TAUWCG = MAX(ANG_GC * BETAMAXOXKAPPA2 * HALPHAP * C2OSQRTVG_GC(NS) * TAUWCG, TAUWCG_MIN)
+      TAUWCG = MAX(ANG_GC * BETAMAXOXKAPPA2 * HALP * C2OSQRTVG_GC(NS) * TAUWCG, TAUWCG_MIN)
 
       IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
  
