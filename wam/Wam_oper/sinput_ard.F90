@@ -411,7 +411,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) = CNSN(IJ)*UFAC(IJ,K,IGST)
+              SLP(IJ,IGST) = UFAC(IJ,K,IGST)*CNSN(IJ)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
