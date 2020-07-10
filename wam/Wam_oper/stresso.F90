@@ -77,6 +77,7 @@
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWSTAT  , ONLY : IPHYS
+      USE YOWTABL  , ONLY : EPS1
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
