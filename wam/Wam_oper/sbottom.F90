@@ -42,7 +42,7 @@
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G
+      USE YOWPCONS , ONLY : GM1
       USE YOWSHAL  , ONLY : TFAK     ,INDEP   ,BATHYMAX
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
@@ -58,28 +58,30 @@
       INTEGER(KIND=JWIM):: IJ, K, M
       REAL(KIND=JWRB) :: CONST, ARG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SBO
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: SBO
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
 
-      CONST = -2.0_JWRB*0.038_JWRB/G
+      CONST = -2.0_JWRB*0.038_JWRB*GM1
       DO M=1,NFRE
         DO IJ=IJS,IJL
           IF(DPTH(IJ).LT.BATHYMAX) THEN
             ARG = 2.0_JWRB* DPTH(IJ)*TFAK(INDEP(IJ),M)
             ARG = MIN(ARG,50.0_JWRB)
-            SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
+            SBO(IJ,M) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
+          ELSE
+            SBO(IJ,M) = 0.0_JWRB
           ENDIF
         ENDDO
+      ENDDO
 
+      DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF(DPTH(IJ).LT.BATHYMAX) THEN
-              SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*F(IJ,K,M)
-              FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ)
-            ENDIF
+            SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ,M)*F(IJ,K,M)
+            FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ,M)
           ENDDO
         ENDDO
       ENDDO
