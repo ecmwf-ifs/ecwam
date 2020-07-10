@@ -77,7 +77,6 @@
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWSTAT  , ONLY : IPHYS
-      USE YOWTABL  , ONLY : EPS1
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -97,7 +96,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
-      REAL(KIND=JWRB) :: TAUTOUS2
       REAL(KIND=JWRB) :: C1, C2 
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
@@ -119,8 +117,6 @@
 
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
-
-      TAUTOUS2 = 1.0_JWRB-EPS1
 
       C1 = DELTH*ZPI4GM2
       DO IJ=IJS,IJL
@@ -260,10 +256,6 @@
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
-!!!!debile
-        US2(IJ)=USNEW(IJ)**2
-        TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
-!!!!
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
 
