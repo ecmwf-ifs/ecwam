@@ -214,6 +214,7 @@
         DO IJ=IJS,IJL
           USDIRP(IJ)=THWNEW(IJ)
           UST(IJ)=USNEW(IJ)
+        ENDDO
       ELSE
         LTAUWSHELTER = .TRUE.
         DO IJ=IJS,IJL
