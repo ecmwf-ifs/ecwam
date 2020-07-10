@@ -26,7 +26,6 @@ SUBROUTINE HALPHAP(IJS, IJL, FL1, THW, HALP)
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
-      USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------

@@ -73,10 +73,9 @@
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI        ,ZPI4GM2
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
-      USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -98,7 +97,7 @@
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
       REAL(KIND=JWRB) :: TAUTOUS2
-      REAL(KIND=JWRB) :: CONST
+      REAL(KIND=JWRB) :: C1, C2 
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
       REAL(KIND=JWRB) :: COSW, FCOSW2
@@ -120,11 +119,11 @@
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
 
-      CONST = DELTH*(ZPI)**4*GM1
       TAUTOUS2 = 1.0_JWRB-EPS1
 
+      C1 = DELTH*ZPI4GM2
       DO IJ=IJS,IJL
-        CONST1(IJ) = CONST*FR5(MIJ(IJ))*GM1
+        CONST1(IJ) = C1*FR5(MIJ(IJ))
       ENDDO
 
 !*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
@@ -214,7 +213,6 @@
         DO IJ=IJS,IJL
           USDIRP(IJ)=THWNEW(IJ)
           UST(IJ)=USNEW(IJ)
-        ENDDO
       ELSE
         LTAUWSHELTER = .TRUE.
         DO IJ=IJS,IJL
@@ -260,12 +258,17 @@
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
+!!!!debile
+        US2(IJ)=USNEW(IJ)**2
+        TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+!!!!
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
 
       IF ( LLPHIWA ) THEN
+        C2 = DELTH*(ZPI)**4*GM1
         DO IJ=IJS,IJL
-          CONST2(IJ) = ROAIRN(IJ)*CONST*FR5(MIJ(IJ))
+          CONST2(IJ) = ROAIRN(IJ)*C2*FR5(MIJ(IJ))
           PHIWA(IJ) = PHIWA(IJ) + CONST2(IJ)*TEMP2(IJ)*PHI1(IJ)
         ENDDO
       ENDIF
