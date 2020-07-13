@@ -71,7 +71,7 @@
 
       DO IJ=IJS,IJL
         EM(IJ) = 0.0_JWRB
-        FM(IJ) = EPSMIN
+        FM(IJ) = 0.0_JWRB
       ENDDO
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
@@ -83,11 +83,11 @@
       DO M=1,NFRE
         K=1
         DO IJ=IJS,IJL
-          TEMP2(IJ) = F(IJ,K,M)
+          TEMP2(IJ) = MAX(F(IJ,K,M), EPSMIN)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
+            TEMP2(IJ) = TEMP2(IJ)+ MAX(F(IJ,K,M), EPSMIN)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
