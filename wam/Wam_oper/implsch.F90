@@ -268,7 +268,7 @@
 !           -------------------------------------------------------
 
       LUPDTUS = .TRUE.
-      NCALL = 2
+      NCALL = 3
       FMEANWS(:) = 0.0_JWRB    ! setting to zero so that it is not used in the first call to sinflx
       DO ICALL = 1, NCALL 
         CALL SINFLX (ICALL, NCALL, IJS, IJL, &
