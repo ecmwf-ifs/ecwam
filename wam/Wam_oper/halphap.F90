@@ -1,4 +1,4 @@
-SUBROUTINE HALPHAP(IJS, IJL, FL1, THW, HALP)
+SUBROUTINE HALPHAP(IJS, IJL, FL1, HALP)
 
 ! ----------------------------------------------------------------------
 
@@ -8,11 +8,10 @@ SUBROUTINE HALPHAP(IJS, IJL, FL1, THW, HALP)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *HALPHAP(IJS, IJL, FL1, THW, HALP)
+!       *CALL* *HALPHAP(IJS, IJL, FL1, HALP)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *FL1*  - SPECTRA
-!          *THW*  - WIND DIRECTION
 !          *HALP*   - 1/2 PHILLIPS PARAMETER 
 
 !     METHOD.
@@ -34,7 +33,6 @@ SUBROUTINE HALPHAP(IJS, IJL, FL1, THW, HALP)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: HALP
 
       REAL(KIND=JWRB), PARAMETER :: ALPHAPMIN=0.004_JWRB
@@ -55,15 +53,9 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ALPHAP(:) = 0.0_JWRB
       DO K = 1, NANG
         DO IJ = IJS, IJL
-!!!          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,IFRPH)*SIGN(1.0_JWRB, COS(TH(K)-THW(IJ)) )
           ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,IFRPH)
         ENDDO
       ENDDO
-
-!!!! debile
-      write(*,*) 'alphap ', ALPHAP(1)
-
-
 
       HALP(:) = 0.5_JWRB*MIN(MAX(ALPHAP(:),ALPHAPMIN), ALPHAPMAX)
 
