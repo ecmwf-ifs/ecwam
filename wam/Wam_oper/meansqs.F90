@@ -71,6 +71,8 @@
       REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
+!!!debilr
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: xmss_gc 
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
@@ -84,6 +86,8 @@
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(IJS, IJL, HALP, USTAR, XMSS, FRGC)
 
+!!!1debile
+       xmss_gc(:) = xmss(:)
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
@@ -142,6 +146,8 @@
         CONST1   = LOG(FRGC(IJ)) - XLOGFS
         CONST3   = CONST2*TEMP2(IJ)
         XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
+!!!debile
+       write(*,*) 'debile mss ',xmss(ij),XMSS(IJ)-CONST1*CONST3-xmss_gc(ij), CONST1*CONST3, xmss_gc(ij)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
