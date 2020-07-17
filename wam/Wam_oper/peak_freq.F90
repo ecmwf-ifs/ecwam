@@ -11,10 +11,10 @@
  
 !     INTERFACE.
 !     ----------
-!              *CALL*  *PEAK_FR(F3,IJS,IJL,FP)*
+!              *CALL*  *PEAK_FREQ(F3,IJS,IJL,FP)*
  
 !                       INPUT:
-!                            *F3*   - FREQUENCY SPECTRUM
+!                            *F3*   -  2D-SPECTRUM
 !                            *IJS*   - FIRST GRIDPOINT              
 !                            *IJL*   - LAST GRIDPOINT  
  
