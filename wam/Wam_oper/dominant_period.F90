@@ -49,9 +49,11 @@
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: DP
 
+      REAL(KIND=JWRB), PARAMETER :: FLTHRS = 0.4_JWRB
+
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM, FMAX
 
 ! ----------------------------------------------------------------------
 
@@ -60,7 +62,19 @@
       DO IJ=IJS,IJL
         EM(IJ) = 0.0_JWRB
         DP(IJ) = 0.0_JWRB
+        FMAX(IJ) = 0.0_JWRB
       ENDDO
+
+      DO M=1,NFRE_ODD
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            IF( F(IJ,K,M) > FMAX(IJ) ) THEN
+               FMAX(IJ) = F(IJ,K,M)
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+      FMAX(:) = FLTHRS*FMAX(:)
 
       DO M=1,NFRE_ODD
         DO IJ=IJS,IJL
@@ -68,7 +82,9 @@
         ENDDO
         DO K=1,NANG
           DO IJ=IJS,IJL
-            TEMP(IJ) = TEMP(IJ)+F(IJ,K,M)
+            IF( F(IJ,K,M) > FMAX(IJ) ) THEN
+              TEMP(IJ) = TEMP(IJ)+F(IJ,K,M)
+            ENDIF
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
