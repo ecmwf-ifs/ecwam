@@ -1,4 +1,4 @@
-      SUBROUTINE STOKESDRIFT(F3, IJS, IJL, USTOKES, VSTOKES)
+      SUBROUTINE STOKESDRIFT(F3, IJS, IJL, U10, THW, CICVR, USTOKES, VSTOKES)
  
 !
 !***  *STOKESDRIFT*   DETERMINES THE STOKES DRIFT
@@ -12,12 +12,17 @@
 !
 !     INTERFACE.
 !     ----------
-!              *CALL*  *STOKESDRIFT(F3,IJS,IJL,USTOKES,VSTOKES)*
+!              *CALL*  *STOKESDRIFT(F3,IJS,IJL,U10,THW,CICVR,USTOKES,VSTOKES)*
 !
 !                       INPUT:
 !                            *F3*    - 2-D SPECTRUM
 !                            *IJS*   - FIRST GRIDPOINT              
 !                            *IJL*   - LAST GRIDPOINT              
+!                            Auxilliary fields to specify Stokes when model sea ice cover the blocking threshold
+!                            as 0.016*U10, aligned in the wind direction
+!                            *U10*    - WIND SPEED IN M/S.
+!                            *THW*    - WIND DIRECTION IN RADIANS.
+!                            *CICVR*  - SEA ICE COVER.
 !
 !                       OUTPUT: 
 !                            *USTOKES*   - U-COMPONENT STOKES DRIFT
@@ -40,6 +45,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
      &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -48,6 +54,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10, THW, CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES
 
@@ -101,6 +108,21 @@
             VSTOKES(IJ) = VSTOKES(IJ)+FAC2*F3(IJ,K,NFRE_ODD)
          ENDDO
       ENDDO
+
+
+!***  1.3 Sea Ice exception
+!     ---------------------
+      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
+       DO IJ=IJS,IJL
+         IF(CICVR(IJ) .GT. CITHRSH) THEN
+           USTOKES(IJ) = 0.016_JWRB*U10(IJ)*SIN(THW(IJ))*(1.0_JWRB - CICVR(IJ))
+           VSTOKES(IJ) = 0.016_JWRB*U10(IJ)*COS(THW(IJ))*(1.0_JWRB - CICVR(IJ))
+         ENDIF
+       ENDDO
+     ENDIF
+
+!***  1.4 Protection
+!     --------------
 
       DO IJ = IJS,IJL
          USTOKES(IJ) = MIN(MAX(USTOKES(IJ),-STMAX),STMAX)

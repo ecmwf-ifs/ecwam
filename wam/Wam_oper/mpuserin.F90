@@ -68,7 +68,7 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
      &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
       USE YOWMESPAS, ONLY : LMESSPASS,                                  &
@@ -163,6 +163,7 @@
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
+     &   LWAMRSETCI,                                                    &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
@@ -732,6 +733,8 @@
       LCIWABR = .TRUE.
 
       LMASKICE = .FALSE.
+
+      LWAMRSETCI = .TRUE.
 
       LICETH = .FALSE.
 
