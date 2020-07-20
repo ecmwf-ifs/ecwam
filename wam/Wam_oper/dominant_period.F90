@@ -86,9 +86,9 @@
 
       DO M=1,NFRE
         DO IJ=IJS,IJL
-          F1D4(IJ,K) = F1D4(IJ,M)**4
+          F1D4(IJ,M) = F1D4(IJ,M)**4
           EM(IJ) = EM(IJ)+DFIM(M)*F1D4(IJ,M)
-          DP(IJ) = DP(IJ)+DFIMFR(M)*F1D4(IJ,K)
+          DP(IJ) = DP(IJ)+DFIMFR(M)*F1D4(IJ,M)
         ENDDO
       ENDDO
 
