@@ -168,9 +168,9 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL STOKESDRIFT(FL3, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+        CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
 
-        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
       ENDIF
 ! ----------------------------------------------------------------------
