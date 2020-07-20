@@ -79,7 +79,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF(F(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+F(IJ,K,M)
+            IF(F(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+F(IJ,K,M)*DELTH
           ENDDO
         ENDDO
       ENDDO
