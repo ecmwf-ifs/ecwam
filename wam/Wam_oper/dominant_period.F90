@@ -54,6 +54,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM, FMAX
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FTR
 
 ! ----------------------------------------------------------------------
 
@@ -77,14 +78,20 @@
       FMAX(:) = FLTHRS*FMAX(:)
 
       DO M=1,NFRE_ODD
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+             FTR(IJ,K,M) = MAX(F(IJ,K,M)-FMAX(IJ), 0.0_JWRB)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M=1,NFRE_ODD
         DO IJ=IJS,IJL
           TEMP(IJ) = 0.0_JWRB
         ENDDO
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF( F(IJ,K,M) > FMAX(IJ) ) THEN
-              TEMP(IJ) = TEMP(IJ)+F(IJ,K,M)
-            ENDIF
+            TEMP(IJ) = TEMP(IJ)+FTR(IJ,K,M)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
