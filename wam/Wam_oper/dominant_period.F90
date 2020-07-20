@@ -37,8 +37,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DFIMFR_SIM,DELTH  ,WETAIL, WP1TAIL
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMFR   ,DELTH
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -46,58 +46,49 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: DP
 
       REAL(KIND=JWRB), PARAMETER :: FLTHRS = 0.1_JWRB
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM, FMAX
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FTR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP, EM, FCROP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1D4
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('DOMINANT_PERIOD',0,ZHOOK_HANDLE)
 
-      DO IJ=IJS,IJL
-        EM(IJ) = 0.0_JWRB
-        DP(IJ) = 0.0_JWRB
-        FMAX(IJ) = 0.0_JWRB
-      ENDDO
+      F1D4(:,:) = 0.0_JWRB
+      EM(:) = 0.0_JWRB
+      DP(:) = 0.0_JWRB
+      FCROP(:) = 0.0_JWRB
 
-      DO M=1,NFRE_ODD
+      DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF( F(IJ,K,M) > FMAX(IJ) ) THEN
-               FMAX(IJ) = F(IJ,K,M)
+            IF( F(IJ,K,M) > FCROP(IJ) ) THEN
+               FCROP(IJ) = F(IJ,K,M)
             ENDIF
           ENDDO
         ENDDO
       ENDDO
-      FMAX(:) = FLTHRS*FMAX(:)
+      FCROP(:) = FLTHRS*FCROP(:)
 
-      DO M=1,NFRE_ODD
+      DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-             FTR(IJ,K,M) = MAX(F(IJ,K,M)-FMAX(IJ), 0.0_JWRB)
+            IF(F(IJ,K,M) > FCROP(IJ)) F1D4(IJ,M) = F1D4(IJ,M)+F(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
 
-      DO M=1,NFRE_ODD
+      DO M=1,NFRE
         DO IJ=IJS,IJL
-          TEMP(IJ) = 0.0_JWRB
-        ENDDO
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            TEMP(IJ) = TEMP(IJ)+FTR(IJ,K,M)
-          ENDDO
-        ENDDO
-        DO IJ=IJS,IJL
-          TEMP(IJ) = TEMP(IJ)**4
-          EM(IJ) = EM(IJ)+DFIM_SIM(M)*TEMP(IJ)
-          DP(IJ) = DP(IJ)+DFIMFR_SIM(M)*TEMP(IJ)
+          F1D4(IJ,K) = F1D4(IJ,M)**4
+          EM(IJ) = EM(IJ)+DFIM(M)*F1D4(IJ,M)
+          DP(IJ) = DP(IJ)+DFIMFR(M)*F1D4(IJ,K)
         ENDDO
       ENDDO
 
