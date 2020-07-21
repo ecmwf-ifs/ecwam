@@ -197,7 +197,8 @@
         AORB(IJ)  = 2.0_JWRB*SQRT(AORB(IJ))   ! this 1/2 Hs
         RE(IJ)    = FACM1_NU_AIR*UORBT(IJ)*AORB(IJ) ! this is the Reynolds number 
         Z0VIS(IJ) = FAC_NU_AIR/MAX(USNEW(IJ),0.0001_JWRB)
-        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0NEW(IJ))
+!!!!        Z0TUB = Z0RAT*MIN(Z0TUBMAX,Z0NEW(IJ))
+        Z0TUB = Z0RAT*Z0NEW(IJ)
         Z0NOZ(IJ) = MAX(Z0VIS(IJ),Z0TUB)
         ZORB(IJ)  = AORB(IJ)/Z0NOZ(IJ)
 
