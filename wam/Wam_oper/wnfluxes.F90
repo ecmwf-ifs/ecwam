@@ -1,5 +1,5 @@
       SUBROUTINE WNFLUXES (IJS, IJL,                                    &
-     &                     MIJ, RHOWGDFTH,                           &
+     &                     MIJ, RHOWGDFTH,                              &
      &                     SSURF, CICVR,                                &
      &                     PHIWA,                                       &
      &                     EM, F1, U10, THW,                            &
