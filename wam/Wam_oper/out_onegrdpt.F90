@@ -239,7 +239,8 @@
             ENDIF
 
             IF(LPHIOC) THEN
-              PHIOC=GOUT(IPPHIOC,I,J)
+!             make it positive for comparison with PHIAW
+              PHIOC=-GOUT(IPPHIOC,I,J)
             ELSE
               PHIOC=3.5_JWRB
             ENDIF
