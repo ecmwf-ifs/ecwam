@@ -75,8 +75,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            GFLAG    ,                                            &
      &            GFLAG20  ,NFLAG    ,                                  &
      &            IPRMINFO ,                                            &
-     &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
-     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
+     &            IRWDIR, IRCD ,IRALTHS ,IRALTHSC ,IRALTRC ,            &
+     &            IRHS     ,IRTP     ,IRT1     ,                        &
      &            IRBATHY  ,                                            &
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,    &
      &            IRCD     ,IRU10    ,                                  &

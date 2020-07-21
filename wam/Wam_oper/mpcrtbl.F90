@@ -43,8 +43,8 @@
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
      &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
-     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
-     &            IRHSWS   ,IRT1WS   ,IRBATHY  ,                        &
+     &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
+     &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,            &
      &            IFRSTPARTI, NINFOBOUT,INFOBOUT  ,BOUT
 !      *IPRMINFO* INTEGER    AUXILIARY INFORMATION FOR OUTPUT OF INTEGRATED PARAMETERS
 !                            IPRMINFO(:,1)  : GRIB TABLE NUMBER.
@@ -490,6 +490,7 @@
 
       IR=IR+1
 !     PARAMETER 040
+      IRPHIAW=IR
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
       COUTNAME(IR)=' NORMALISED ENERGY FLUX TO WAVES .'
       IPRMINFO(IR,1)=140
