@@ -136,12 +136,11 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2 
           ENDDO
-          TAUHF(IJ) = TAUHF(IJ)*DELZ(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
