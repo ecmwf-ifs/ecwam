@@ -104,7 +104,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
-     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
+     &            SWELLF7  ,SSDSC2
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -661,6 +662,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                TAUWSHELTER = ', TAUWSHELTER
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
+      WRITE(IU06,*) '                SWELLF7 = ', SWELLF7
+      WRITE(IU06,*) '                SSDSC2 = ', SSDSC2 
       WRITE(IU06,*) '' 
       IF (ISHALLO.EQ.1) THEN
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
