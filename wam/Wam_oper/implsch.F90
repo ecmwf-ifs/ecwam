@@ -128,8 +128,7 @@
 
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUSTRN 
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOWFRED  , ONLY : FR       ,TH       ,DELTH       ,FRM5     , &
-     &            COFRM4   ,FLMAX
+      USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4      ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &

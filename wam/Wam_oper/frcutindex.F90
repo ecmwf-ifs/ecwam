@@ -16,7 +16,7 @@
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *USNEW*  - FRICTION VELOCITY IN M/S
 !          *CICVR*  - CICVR 
-!          *MIJ*    - LAST FREQUENCY INDEX used to impose the high frequency tail
+!          *MIJ*    - LAST FREQUENCY INDEX
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)

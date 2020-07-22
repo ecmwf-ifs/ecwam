@@ -39,7 +39,6 @@
 !          *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
 
 
-
 !     METHOD.
 !     -------
 
