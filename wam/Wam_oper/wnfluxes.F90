@@ -60,7 +60,7 @@
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    ,FRIC
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH, CIBLOCK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
@@ -165,9 +165,9 @@
         ENDDO
       ENDDO
 
-      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
+      IF (LICERUN .AND. LWAMRSETCI) THEN
         DO IJ=IJS,IJL
-          IF(CICVR(IJ) .GT. 0.0_JWRB) THEN
+          IF(CICVR(IJ) .GT. CIBLOCK) THEN
             OOVAL(IJ)=EXP(-MIN((CICVR(IJ)*CITHRSH_INV)**4,10._JWRB))
 !           ADJUST USTAR FOR THE PRESENCE OF SEA ICE
             U10P = MAX(U10(IJ),EPSU10)

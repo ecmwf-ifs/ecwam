@@ -51,7 +51,7 @@
       USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWPCONS , ONLY : G        ,EPSUS
       USE YOWPHYS  , ONLY : RNUM     ,ALPHAMIN  , ALPHAMAX
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH
+      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -93,7 +93,7 @@
         BETA(IJ) = MAX(MIN(BETA(IJ),ALPHAMAXU10(IJ)),ALPHAMIN)
       ENDDO
 
-      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
+      IF (LICERUN .AND. LWAMRSETCI) THEN
         DO IJ = IJS,IJL
           BETA(IJ) = (1.0_JWRB-CICVR(IJ))*BETA(IJ) + CICVR(IJ)*PRCHAR
         ENDDO
