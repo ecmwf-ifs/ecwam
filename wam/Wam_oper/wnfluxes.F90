@@ -60,7 +60,7 @@
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    ,FRIC
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH, CIBLOCK
+      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD

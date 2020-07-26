@@ -730,7 +730,7 @@
 
       LICERUN = .TRUE.
 
-      LCIWABR = .TRUE.
+      LCIWABR = .FALSE.
 
       LMASKICE = .FALSE.
 
