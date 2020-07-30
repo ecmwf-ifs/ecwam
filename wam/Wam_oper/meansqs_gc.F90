@@ -15,7 +15,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, XKM_GC, &
-     &                      VG_GC, C2OSQRTVG_GC, DELKCC_GC
+     &                      VG_GC, C2OSQRTVG_GC, DELKCC_GC, DELKCC_GC_NS
       USE YOWPCONS , ONLY : G, ZPI,  SURFT
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
@@ -48,8 +48,8 @@
         CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
         FRGC(IJ) = OMS/ZPI
         COEF = C2OSQRTVG_GC(NS)*HALPHAP(IJ)
-        XMSSCG(IJ) = 0.0_JWRB
-        DO I = NS, NWAV_GC
+        XMSSCG(IJ) = DELKCC_GC_NS(NS) * XKM_GC(NS) 
+        DO I = NS+1, NWAV_GC
 !         ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !         BB = COEF*SQRT(VG_GC(I))/C_GC(I)**2
 !         mss :  integral of k**2 F(k)  k dk
