@@ -385,6 +385,9 @@
             DO IJ=IJS,IJL
               DSTAB2 = TEMP1(IJ)*(TEMP2(IJ)+(FU+FUD*COSLP(IJ,K,IGST))*USTP(IJ,IGST))
               DSTAB(IJ,K,IGST) = DSTAB1(IJ)+PTURB(IJ)*DSTAB2
+!debile silly test
+              DSTAB(IJ,K,IGST) = 0.0_JWRB
+
             ENDDO
           ENDDO
         ENDDO
