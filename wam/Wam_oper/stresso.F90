@@ -108,6 +108,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SNEG
 
       LOGICAL :: LTAUWSHELTER
 
@@ -135,25 +136,45 @@
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
-      IF ( LLPHIWA ) THEN
-!     full energy flux due to negative Sinput (SL-SPOS)
-!     we assume that above NFRE, the contibutions can be negleted
+!     Contribution to the wave stress from the negative part of the wind input
+!     ------------------------------------------------------------------------
+      DO M=1,NFRE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            SNEG(IJ,K,M) = SL(IJ,K,M)-SPOS(IJ,K,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
       DO M=1,NFRE
         K=1
         DO IJ=IJS,IJL
-          SUMT(IJ) = SL(IJ,K,M)-SPOS(IJ,K,M)
+          SUMX(IJ) = SNEG(IJ,K,M)*SINTH(K)
+          SUMY(IJ) = SNEG(IJ,K,M)*COSTH(K)
         ENDDO
         DO K=2,NANG
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SL(IJ,K,M)-SPOS(IJ,K,M) 
+            SUMX(IJ) = SUMX(IJ) + SNEG(IJ,K,M)*SINTH(K)
+            SUMY(IJ) = SUMY(IJ) + SNEG(IJ,K,M)*COSTH(K)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
-          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWG_DFIM(M)
+          CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
+          XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
+          YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
         ENDDO
       ENDDO
-      ENDIF
 
+      IF ( LLPHIWA ) THEN
+!     full energy flux due to negative Sinput (SL-SPOS)
+!     we assume that above NFRE, the contibutions can be negleted
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              PHIWA(IJ) = PHIWA(IJ) + SNEG(IJ,K,M)*RHOWG_DFIM(M)
+            ENDDO
+          ENDDO
+      ENDIF
 
 !*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     --------------------------------------------------------------------------------------
@@ -184,21 +205,21 @@
       ENDDO
 
       IF ( LLPHIWA ) THEN
-      DO M=1,MAXVAL(MIJ(:))
-!     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
-        K=1
-        DO IJ=IJS,IJL
-          SUMT(IJ) = SPOS(IJ,K,M)
-        ENDDO
-        DO K=2,NANG
+        DO M=1,MAXVAL(MIJ(:))
+!       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+          K=1
           DO IJ=IJS,IJL
-            SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+            SUMT(IJ) = SPOS(IJ,K,M)
+          ENDDO
+          DO K=2,NANG
+            DO IJ=IJS,IJL
+              SUMT(IJ) = SUMT(IJ) + SPOS(IJ,K,M)
+            ENDDO
+          ENDDO
+          DO IJ=IJS,IJL
+            PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
-          PHIWA(IJ) = PHIWA(IJ) + SUMT(IJ)*RHOWGDFTH(IJ,M)
-        ENDDO
-      ENDDO
       ENDIF
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
