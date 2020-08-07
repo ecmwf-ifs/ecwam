@@ -70,6 +70,7 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -137,26 +138,29 @@
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
-!     Wave stress for the negative input
-!     we assume that above NFRE, the contibutions can be negleted
-        K=1
-        DO IJ=IJS,IJL
-          SUMX(IJ) = SNEG(IJ,K,M)*SINTH(K)
-          SUMY(IJ) = SNEG(IJ,K,M)*COSTH(K)
-        ENDDO
-        DO K=2,NANG
+      IF (LLGCBZ0) THEN
+!       using the negative Sinput was only tested with the gc model (it might make sense all the time, but it was tested)
+        DO M=1,NFRE
+!       Wave stress for the negative input
+!       we assume that above NFRE, the contibutions can be negleted
+          K=1
           DO IJ=IJS,IJL
-            SUMX(IJ) = SUMX(IJ) + SNEG(IJ,K,M)*SINTH(K)
-            SUMY(IJ) = SUMY(IJ) + SNEG(IJ,K,M)*COSTH(K)
+            SUMX(IJ) = SNEG(IJ,K,M)*SINTH(K)
+            SUMY(IJ) = SNEG(IJ,K,M)*COSTH(K)
+          ENDDO
+          DO K=2,NANG
+            DO IJ=IJS,IJL
+              SUMX(IJ) = SUMX(IJ) + SNEG(IJ,K,M)*SINTH(K)
+              SUMY(IJ) = SUMY(IJ) + SNEG(IJ,K,M)*COSTH(K)
+            ENDDO
+          ENDDO
+          DO IJ=IJS,IJL
+            CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
+            XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
+            YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
           ENDDO
         ENDDO
-        DO IJ=IJS,IJL
-          CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
-          XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
-          YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
-        ENDDO
-      ENDDO
+      ENDIF
 
       IF ( LLPHIWA ) THEN
 !     full energy flux due to negative Sinput (SL-SPOS)

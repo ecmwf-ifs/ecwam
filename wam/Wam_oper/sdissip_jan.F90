@@ -10,7 +10,7 @@
 !     J. BIDLOT   ECMWF  FEBRUARY 1997   ADD SL IN SUBROUTINE CALL
 !     J. BIDLOT   ECMWF  NOVEMBER 2004  REFORMULATION BASED ON XKMEAN
 !                                       AND F1MEAN.
-!     P. JANSSEN  ECMWF  JANUARY 2006   ADD BOTTOM-INDUCED DISSIPATION.
+!                        AUGUST 2020 Added small viscous dissipation term
 
 !*    PURPOSE.
 !     --------
@@ -54,7 +54,8 @@
 
       USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
+      USE YOWPHYS  , ONLY : RNU
       USE YOWSHAL  , ONLY : DEPTH    ,CINV     ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
@@ -73,8 +74,10 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTAM1
+      REAL(KIND=JWRB) :: CDISVIS
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: CM, TEMP1, SDS, X
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SDSVIS, XK2
 
 
       REAL(KIND=JWRB), PARAMETER :: CDIS = 0.9_JWRB
@@ -89,6 +92,8 @@
 !        --------------------------------------------------------------
 
       DELTAM1=1.0_JWRB-DELTA
+
+      CDISVIS = -4.0_JWRB * RNU
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. SDISSIP_JAN: START DO-LOOP (ISHALLO=0)'
@@ -114,16 +119,18 @@
         IF (ISHALLO.EQ.1) THEN
           DO IJ=IJS,IJL
             X(IJ) = (FR(M)/F1MEAN(IJ))**2
+            XK2(IJ) = ZPI4GM2 * FR(M)**4 
           ENDDO
         ELSE
 !         SHALLOW
           DO IJ=IJS,IJL
             X(IJ) = TFAK(INDEP(IJ),M)/XKMEAN(IJ)
+            XK2(IJ) = TFAK(INDEP(IJ),M)**2
           ENDDO
         ENDIF
 
         DO IJ=IJS,IJL
-          TEMP1(IJ) = SDS(IJ)*X(IJ)*(DELTAM1 + DELTA*X(IJ))
+          TEMP1(IJ) = SDS(IJ)*X(IJ)*(DELTAM1 + DELTA*X(IJ)) + SDSVIS(IJ)*XK2(IJ)
         ENDDO
 
         DO K=1,NANG
