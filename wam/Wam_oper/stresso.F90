@@ -116,19 +116,10 @@
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
 
-!*    1. PRECOMPUTE FREQUENCY SCALING.
-!        -----------------------------
-
       C1 = DELTH*ZPI4GM2
       DO IJ=IJS,IJL
         CONST1(IJ) = C1*FR5(MIJ(IJ))
       ENDDO
-
-!*    2. COMPUTE WAVE STRESS OF ACTUAL BLOCK.
-!        ------------------------------------
-
-!*    2.2 INTEGRATE INPUT SOURCE FUNCTION OVER FREQUENCY AND DIRECTIONS.
-!         --------------------------------------------------------------
 
       DO IJ=IJS,IJL
         PHIWA(IJ)   = 0.0_JWRB
@@ -136,7 +127,7 @@
         YSTRESS(IJ) = 0.0_JWRB
       ENDDO
 
-!     Contribution to the wave stress from the negative part of the wind input
+!*    CONTRIBUTION TO THE WAVE STRESS FROM THE NEGATIVE PART OF THE WIND INPUT
 !     ------------------------------------------------------------------------
       DO M=1,NFRE
         DO K=1,NANG
@@ -147,6 +138,8 @@
       ENDDO
 
       DO M=1,NFRE
+!     Wave stress for the negative input
+!     we assume that above NFRE, the contibutions can be negleted
         K=1
         DO IJ=IJS,IJL
           SUMX(IJ) = SNEG(IJ,K,M)*SINTH(K)
@@ -174,12 +167,13 @@
               PHIWA(IJ) = PHIWA(IJ) + SNEG(IJ,K,M)*RHOWG_DFIM(M)
             ENDDO
           ENDDO
+        ENDDO
       ENDIF
 
-!*    2.2 CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
-!     --------------------------------------------------------------------------------------
+!*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
+!     ---------------------------------------------------------------------------------
       DO M=1,MAXVAL(MIJ(:))
-!     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+!     The integration only up to FR=MIJ since RHOWGDFTH=0 for FR>MIJ
         K=1
         DO IJ=IJS,IJL
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
@@ -222,8 +216,8 @@
         ENDDO
       ENDIF
 
-!*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
-!     --------------------------------------------------------------------------------------
+!*    CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
+!     ----------------------------------------------------------------------------------
 
       IF ( IPHYS.EQ.0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
         LTAUWSHELTER = .FALSE.
