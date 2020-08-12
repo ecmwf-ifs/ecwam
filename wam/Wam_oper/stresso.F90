@@ -139,7 +139,7 @@
       ENDDO
 
       IF (LLGCBZ0) THEN
-!       using the negative Sinput was only tested with the gc model (it might make sense all the time, but it was tested)
+!       using the negative Sinput was only tested with the gc model (it might make sense all the time, but it was not tested)
         DO M=1,NFRE
 !       Wave stress for the negative input
 !       we assume that above NFRE, the contibutions can be negleted
@@ -157,7 +157,7 @@
           DO IJ=IJS,IJL
             CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
 !!!debile
-      write(*,*) 'sneg contributions M=', M, SUMX(IJ)*CMRHOWGDFTH(IJ), SUMY(IJ)*CMRHOWGDFTH(IJ)
+      write(*,*) 'sneg contributions M=', M, SUMX(IJ)*CMRHOWGDFTH(IJ), SUMY(IJ)*CMRHOWGDFTH(IJ), SUMY(IJ)
 
             XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
             YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
