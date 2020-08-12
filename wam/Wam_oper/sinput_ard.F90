@@ -165,8 +165,6 @@
         COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
         COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
 
-!!!debile
-        if(M <= 36) then
         K=1
         DO IJ=IJS,IJL
           TEMP(IJ) = F(IJ,K,M)
@@ -180,9 +178,6 @@
           UORBT(IJ) = UORBT(IJ)+DFIM_SIG2(M)*TEMP(IJ)
           AORB(IJ) = AORB(IJ)+DFIM(M)*TEMP(IJ)
         ENDDO
-!!!debile
-        endif
-
       ENDDO
 
       DO IJ=IJS,IJL
