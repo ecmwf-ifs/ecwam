@@ -109,7 +109,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SNEG
 
       LOGICAL :: LTAUWSHELTER
 
@@ -130,37 +129,6 @@
 
 !*    CONTRIBUTION TO THE WAVE STRESS FROM THE NEGATIVE PART OF THE WIND INPUT
 !     ------------------------------------------------------------------------
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            SNEG(IJ,K,M) = SL(IJ,K,M)-SPOS(IJ,K,M)
-          ENDDO
-        ENDDO
-      ENDDO
-
-      IF (LLGCBZ0) THEN
-!       using the negative Sinput was only tested with the gc model (it might make sense all the time, but it was not tested)
-        DO M=1,NFRE
-!       Wave stress for the negative input
-!       we assume that above NFRE, the contibutions can be negleted
-          K=1
-          DO IJ=IJS,IJL
-            SUMX(IJ) = SNEG(IJ,K,M)*SINTH(K)
-            SUMY(IJ) = SNEG(IJ,K,M)*COSTH(K)
-          ENDDO
-          DO K=2,NANG
-            DO IJ=IJS,IJL
-              SUMX(IJ) = SUMX(IJ) + SNEG(IJ,K,M)*SINTH(K)
-              SUMY(IJ) = SUMY(IJ) + SNEG(IJ,K,M)*COSTH(K)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
-            XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
-            YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
-          ENDDO
-        ENDDO
-      ENDIF
 
       IF ( LLPHIWA ) THEN
 !     full energy flux due to negative Sinput (SL-SPOS)
@@ -168,7 +136,7 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              PHIWA(IJ) = PHIWA(IJ) + SNEG(IJ,K,M)*RHOWG_DFIM(M)
+              PHIWA(IJ) = PHIWA(IJ) + (SL(IJ,K,M)-SPOS(IJ,K,M))*RHOWG_DFIM(M)
             ENDDO
           ENDDO
         ENDDO
