@@ -64,7 +64,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP2
 !!debile
-      REAL(KIND=JWRB) :: nfre_cut
+      integer(KIND=JWIM) :: nfre_cut
 
 ! ----------------------------------------------------------------------
 
