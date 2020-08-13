@@ -17,7 +17,7 @@
 
       USE YOWFRED  , ONLY : NWAV_GC, OMEGA_GC, XK_GC, &
      &                      OMXKM3_GC, CM_GC, C2OSQRTVG_GC, OM3GMKM_GC, &
-     &                      DELKCC_GC
+     &                      DELKCC_GC, DELKCC_GC_NS
       USE YOWPCONS , ONLY : G,      SURFT
       USE YOWPHYS  , ONLY : XKAPPA, ZALP,   BETAMAXOXKAPPA2
 
@@ -67,8 +67,8 @@
         GAM_W(I)= ZLOG2X*EXP(ZLOG)*ZLOG2X*OM3GMKM_GC(I)
       ENDDO
 
-      TAUWCG = 0.0_JWRB
-      DO I = NS, NWAV_GC
+      TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) 
+      DO I = NS+1, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !       BB = HALP * C2OSQRTVG_GC(NS)*SQRT(VG_GC(I))/C_GC(I)**2
 !       Tauwcg : (rhow * g /rhoa) * integral of (1/c) * gammma * F(k)  k dk 

@@ -45,8 +45,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : GM1      ,ZPI4GM2
-      USE YOWFRED  , ONLY : FR       ,FR5      ,ZPIFR    ,DFIM_SIM ,DELTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
+      USE YOWFRED  , ONLY : FR       ,FR5      ,ZPIFR    ,DFIM ,   DELTH
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -64,10 +64,11 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL(KIND=JWRB) :: XLOGFS, CONST1, CONST2, CONST3 
+      REAL(KIND=JWRB) :: XLOGFS
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS_TAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
@@ -90,11 +91,11 @@
 !*    2.1 DEEP WATER INTEGRATION.
 !         -----------------------
 
-        DO M=1,NFRE_ODD
-          FD(M) = DFIM_SIM(M)*(ZPIFR(M))**4*GM1**2
+        DO M=1,NFRE
+          FD(M) = DFIM(M)*(ZPIFR(M))**4*GM1**2
         ENDDO
 
-        DO M=1,NFRE_ODD
+        DO M=1,NFRE
           DO IJ=IJS,IJL
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
@@ -113,9 +114,9 @@
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
-        DO M=1,NFRE_ODD
+        DO M=1,NFRE
           DO IJ=IJS,IJL
-            TEMP1(IJ) = DFIM_SIM(M)*TFAK(INDEP(IJ),M)**2
+            TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K=1,NANG
@@ -130,15 +131,13 @@
       ENDIF
 !SHALLOW
 
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_ODD) and FRGC).
+!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE) and FRGC).
 !        ------------------------------------------
 
-      XLOGFS = LOG(FR(NFRE_ODD))
-      CONST2 = DELTH*ZPI4GM2*FR5(NFRE_ODD)
+      XLOGFS = LOG(FR(NFRE))
       DO IJ=IJS,IJL
-        CONST1   = LOG(FRGC(IJ)) - XLOGFS
-        CONST3   = CONST2*TEMP2(IJ)
-        XMSS(IJ) = XMSS(IJ)+CONST1*CONST3
+        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*(LOG(FRGC(IJ)) - XLOGFS)
+        XMSS(IJ) = XMSS(IJ) + XMSS_TAIL(IJ)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
