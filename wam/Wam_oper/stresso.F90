@@ -161,6 +161,9 @@
 
             XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
             YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+!super debile
+            XSTRESS(IJ) = 0.0_JWRB
+            YSTRESS(IJ) = 0.0_JWRB 
           ENDDO
         ENDDO
       ENDIF
