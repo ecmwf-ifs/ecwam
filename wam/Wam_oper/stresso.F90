@@ -156,9 +156,6 @@
           ENDDO
           DO IJ=IJS,IJL
             CMRHOWGDFTH(IJ) = CINV(INDEP(IJ),M)*RHOWG_DFIM(M)
-!!!debile
-      write(*,*) 'sneg contributions M=', M, SUMX(IJ)*CMRHOWGDFTH(IJ), SUMY(IJ)*CMRHOWGDFTH(IJ), SUMY(IJ)
-
             XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
             YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
           ENDDO
@@ -167,7 +164,7 @@
 
       IF ( LLPHIWA ) THEN
 !     full energy flux due to negative Sinput (SL-SPOS)
-!     we assume that above NFRE, the contibutions can be negleted
+!     we assume that above NFRE, the contibutions can be neglected
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
