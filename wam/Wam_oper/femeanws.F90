@@ -63,6 +63,8 @@
       REAL(KIND=JWRB) :: DELT25, DELT2, CM, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP2
+!!debile
+      REAL(KIND=JWRB) :: nfre_cut
 
 ! ----------------------------------------------------------------------
 
@@ -76,14 +78,21 @@
         FM(IJ) = EPSMIN
       ENDDO
 
-      DELT25 = WETAIL*FR(NFRE)*DELTH
-      DELT2 = FRTAIL*DELTH
+!!debile
+      nfre_cut=39
 
+      DELT25 = WETAIL*FR(NFRE)*DELTH
+!!debile
+      DELT25 = WETAIL*FR(NFRE_cut)*DELTH
+      DELT2 = FRTAIL*DELTH
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
       
-      DO M=1,NFRE
+!!!      DO M=1,NFRE
+!!!debile
+      DO M=1,NFRE_cut
+
         K = 1
         DO IJ =IJS,IJL
            TEMP2(IJ) = XLLWS(IJ,K,M)*F(IJ,K,M)
