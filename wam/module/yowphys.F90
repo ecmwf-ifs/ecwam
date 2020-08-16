@@ -48,7 +48,6 @@
 
 !     Negative wind input, ARDHUIN et al. 2010:
       REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
-
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
