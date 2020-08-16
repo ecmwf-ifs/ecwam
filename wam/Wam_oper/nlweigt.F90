@@ -57,7 +57,7 @@
 !
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
 
-      REAL(KIND=JWRB), PARAMETER :: ALAMD=0.20_JWRB
+      REAL(KIND=JWRB), PARAMETER :: ALAMD=0.25_JWRB
       REAL(KIND=JWRB), PARAMETER :: CON=4000.0_JWRB
 !
 !*     VARIABLE.   TYPE.     PURPOSE.
@@ -137,12 +137,12 @@
         DO K=1,KLH
           KS = K
           IF (KH.GT.1) KS=KLP1-K+1
-          IF (KS.GT.NANG) GO TO 1002
-          CH = IC*CL1
-          JA1(KS,KH) = JAFU(CH,K,KLP1)
-          CH = IC*CL2
-          JA2(KS,KH) = JAFU(CH,K,KLP1)
- 1002     CONTINUE
+          IF (KS.LE.NANG) THEN
+            CH = IC*CL1
+            JA1(KS,KH) = JAFU(CH,K,KLP1)
+            CH = IC*CL2
+            JA2(KS,KH) = JAFU(CH,K,KLP1)
+          ENDIF
         ENDDO
         IC = -1
       ENDDO
