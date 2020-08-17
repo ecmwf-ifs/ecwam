@@ -59,7 +59,7 @@
 
       REAL(KIND=JWRB), PARAMETER :: ALAMD=0.25_JWRB
 !!!      REAL(KIND=JWRB), PARAMETER :: CON=3000.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: CON=2700.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CON=3000.0_JWRB
 !
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
