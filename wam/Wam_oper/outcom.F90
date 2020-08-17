@@ -81,7 +81,6 @@
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
-      USE YOWSTAT  , ONLY : IPHYS
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,    &
      &            FAC0     ,FAC1     ,FAC2     ,FAC3     ,              &
      &            FAK      ,FRHF     ,DFIMHF   ,                        &
