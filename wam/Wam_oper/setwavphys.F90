@@ -30,7 +30,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
       IF (IPHYS.EQ.0) THEN
 !       JANSSSEN WIND INPUT PHYSICS:
-        ALPHA   = 0.0065_JWRB
+        ALPHA   = 0.0060_JWRB
         ZALP    = 0.008_JWRB
         ALPHAPMAX = 0.03_JWRB
         TAUWSHELTER = 0.0_JWRB
@@ -38,7 +38,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           BETAMAX = 1.30_JWRB
           TAILFACTOR = 2.0_JWRB
         ELSE 
-          BETAMAX = 1.30_JWRB
+          BETAMAX = 1.20_JWRB
           TAILFACTOR = 2.5_JWRB
         ENDIF
         TAILFACTOR_PM = 0.0_JWRB   ! i.e. not used
