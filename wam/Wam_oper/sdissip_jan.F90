@@ -80,8 +80,10 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: XK2
 
 
-      REAL(KIND=JWRB), PARAMETER :: CDIS = 1.33_JWRB
-      REAL(KIND=JWRB), PARAMETER :: DELTA = 0.5_JWRB
+!      REAL(KIND=JWRB), PARAMETER :: CDIS = 1.33_JWRB
+!      REAL(KIND=JWRB), PARAMETER :: DELTA = 0.5_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CDIS = 0.9_JWRB
+      REAL(KIND=JWRB), PARAMETER :: DELTA = 0.6_JWRB
 
 ! ----------------------------------------------------------------------
 
