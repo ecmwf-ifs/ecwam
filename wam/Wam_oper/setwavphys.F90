@@ -67,7 +67,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
           SWELLF7 = 4.14E05_JWRB
 
-          SSDSC2 = -2.0E-5_JWRB
+          SSDSC2 = -2.2E-5_JWRB
         ELSE 
           ALPHAPMAX = 0.031_JWRB
           BETAMAX = 1.40_JWRB
