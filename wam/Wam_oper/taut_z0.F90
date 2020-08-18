@@ -107,7 +107,7 @@ IF (LLGCBZ0) THEN
 
       CASE(0)
         DO IJ = IJS, IJL
-          ANG_GC(IJ) = MAX(0.3_JWRB+0.30_JWRB*TANH(0.1_JWRB*(UTOP(IJ)-10.0_JWRB)),0.1_JWRB)
+          ANG_GC(IJ) = MAX(0.31_JWRB+0.29_JWRB*TANH(0.18_JWRB*(UTOP(IJ)-10.0_JWRB)),0.1_JWRB)
         ENDDO
       CASE(1) 
         DO IJ = IJS, IJL
