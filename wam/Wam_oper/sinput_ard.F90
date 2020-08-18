@@ -335,8 +335,11 @@
 
         DO IGST=1,NGST
           DO IJ=IJS,IJL
-            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M)
-            UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
+!!            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M)
+!!            UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
+!! debile silly test
+            UCN(IJ,IGST) = USTP(IJ,IGST)*CM(IJ,M) + ZALP
+            UCNZALPD(IJ,IGST) = XKAPPA/UCN(IJ,IGST)
           ENDDO
         ENDDO
         DO IJ=IJS,IJL
