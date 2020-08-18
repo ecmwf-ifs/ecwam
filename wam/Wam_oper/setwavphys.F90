@@ -62,11 +62,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 0.03_JWRB
           TAUWSHELTER = 0.25_JWRB
           BETAMAX = 1.42_JWRB
-          TAILFACTOR = 2.4_JWRB
+          TAILFACTOR = 2.5_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
-!!!          SWELLF7 = 4.14E05_JWRB
-          SWELLF7 = 3.6E05_JWRB
+          SWELLF7 = 4.14E05_JWRB
 
           SSDSC2 = -2.0E-5_JWRB
         ELSE 
