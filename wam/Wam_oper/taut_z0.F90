@@ -181,6 +181,7 @@ ELSE
 !!!        USTOLD = (1-IUSFG)*UTOP(IJ)*SQRT(MIN(ACD+BCD*UTOP(IJ),CDMAX)) + IUSFG*USTAR(IJ)
 !!!        USTOLD = UTOP(IJ)*SQRT(MIN(ACD+BCD*UTOP(IJ),CDMAX))
         USTOLD = UTOP(IJ)*SQRT(MIN(ACD+BCD*UTOP(IJ),0.0045_JWRB))
+        write(*,*) 'debile ustold ',iusfg, USTOLD,CHARNOCK_MIN, XMIN(IJ)
 
         TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
         USTAR(IJ) = SQRT(TAUOLD)
@@ -204,6 +205,8 @@ ELSE
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
           TAUOLD = TAUNEW
         ENDDO
+
+        write(*,*) 'debile iter ',iusfg, iter
 
         Z0(IJ)=Z0CH
 
