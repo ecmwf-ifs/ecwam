@@ -92,7 +92,7 @@
 !     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
 !     C_D = (C1CD + C2CD*U10**P1CD)*U10**P2CD
 
-!     *CDMAX*    REAL      MAXIMUM CD ALLOWED FOR ALL CD(U10) REALATIONS
+!     *CDMAX*    REAL      MAXIMUM CD ALLOWED FOR ALL CD(U10) RELATIONS
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS
