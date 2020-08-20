@@ -77,6 +77,7 @@
       USE YOWPCONS , ONLY : G        ,GM1      ,ZPI        ,ZPI4GM2
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
+      USE YOWTABL  , ONLY : EPS1
       USE YOWSTAT  , ONLY : IPHYS
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -97,6 +98,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
+      REAL(KIND=JWRB) :: TAUTOUS2
       REAL(KIND=JWRB) :: C1, C2 
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
@@ -191,6 +193,10 @@
 !*    CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS and energy flux (positive sinput).
 !     ----------------------------------------------------------------------------------
 
+      DO IJ=IJS,IJL
+        US2(IJ)=USNEW(IJ)**2
+      ENDDO
+
       IF ( IPHYS.EQ.0 .OR. TAUWSHELTER == 0.0_JWRB) THEN
         LTAUWSHELTER = .FALSE.
         DO IJ=IJS,IJL
@@ -200,7 +206,6 @@
       ELSE
         LTAUWSHELTER = .TRUE.
         DO IJ=IJS,IJL
-          US2(IJ)=USNEW(IJ)**2
           TAUX(IJ)=US2(IJ)*SIN(THWNEW(IJ))
           TAUY(IJ)=US2(IJ)*COS(THWNEW(IJ))
           TAUPX(IJ)=TAUX(IJ)-TAUWSHELTER*XSTRESS(IJ)
@@ -244,6 +249,13 @@
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
+
+      IF (.NOT. LLGCBZ0) THEN
+        TAUTOUS2 = 1.0_JWRB-EPS1
+        DO IJ=IJS,IJL
+          TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+        ENDDO
+      ENDIF
 
       IF ( LLPHIWA ) THEN
         C2 = DELTH*(ZPI)**4*GM1

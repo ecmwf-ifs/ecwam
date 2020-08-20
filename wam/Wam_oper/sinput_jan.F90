@@ -252,9 +252,9 @@
 
         DO IGST=1,NGST
           DO IJ=IJS,IJL
-            UCN(IJ,IGST) = US(IJ,IGST)*CM(IJ)
+            UCN(IJ,IGST) = US(IJ,IGST)*CM(IJ) + ZALP
             CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
-            UCND(IJ,IGST) = 1.0_JWRB/ (UCN(IJ,IGST) + ZALP)
+            UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
             ZCN(IJ,IGST)  = LOG(XK(IJ)*Z0(IJ,IGST))
             XVD(IJ,IGST) = 1.0_JWRB/(-US(IJ,IGST)*XKAPPAD*ZCN(IJ,IGST)*CM(IJ))
           ENDDO
