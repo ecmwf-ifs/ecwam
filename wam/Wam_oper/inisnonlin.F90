@@ -108,11 +108,17 @@
         IM  = MM
         IM1 = MM1
 !       LOW FREQUENCY FRONT TAIL
-        IF (IM.LT.1) THEN
+        IF (IM.LT.MFRSTLW) THEN
+          FFACM = 0.0_JWRB 
+          IM = 1
+        ELSE IF (IM.LT.1) THEN
           FFACM = FTRF(IM)
           IM = 1
         ENDIF
-        IF (IM1.LT.1) THEN
+        IF (IM1.LT.MFRSTLW) THEN
+          FFACM1 = 0.0_JWRB 
+          IM1 = 1
+        ELSE IF (IM1.LT.1) THEN
           FFACM1 = FTRF(IM1)
           IM1 = 1
         ENDIF
