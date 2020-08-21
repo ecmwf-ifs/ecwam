@@ -177,7 +177,7 @@
 
 
         IF (MC.GT.MFR1STFR .AND. MC.LT.MFRLSTFR ) THEN
-!       MC is within the fully resolved spectral domain
+!       the interactions for MC are all within the fully resolved spectral domain
 
           DO KH=1,2
             DO K=1,NANG
