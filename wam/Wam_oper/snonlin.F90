@@ -376,6 +376,12 @@
      &              + GW3*F(IJ,K1 ,IP1) + GW4*F(IJ,K11,IP1)
                 SAM = GW5*F(IJ,K2 ,IM ) + GW6*F(IJ,K21,IM )             &
      &              + GW7*F(IJ,K2 ,IM1) + GW8*F(IJ,K21,IM1)
+
+!!!debile
+          if(mc .eq. 1) then
+             write(*,*) 'debile ',IM,IM1,GW5,GW6,GW7,GW8,SAM
+
+          endif
                 FIJ = F(IJ,K  ,IC )*FTAIL
                 FAD1 = FIJ*(SAP+SAM)
                 FAD2 = FAD1-2.0_JWRB*SAP*SAM
@@ -387,8 +393,7 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-!!!debile              IF (MM1.GE.1) THEN
-              IF (MM1.GT.1) THEN
+              IF (MM1.GE.1) THEN
                 DO IJ=IJS,IJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
