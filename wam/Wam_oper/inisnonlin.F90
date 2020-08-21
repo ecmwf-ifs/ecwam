@@ -101,6 +101,8 @@
         FFACM1 = 1.0_JWRB
         FTAIL  = 1.0_JWRB
         IC  = MC
+!       front tail protection (keep IC >=1)
+        IF(IC .LT. 1 ) IC = 1
         IP  = MP
         IP1 = MP1
         IM  = MM
