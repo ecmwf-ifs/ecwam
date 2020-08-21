@@ -87,6 +87,7 @@
       ISM = FLOOR(LOG10(1.0_JWRB-ALAMD)/F1P1+.0000001_JWRB)
 
       MFRSTLW=1+ISM
+
       MLSTHG=NFRE-ISM
 
       KFRH=-ISM+ISP+2
@@ -137,12 +138,12 @@
         DO K=1,KLH
           KS = K
           IF (KH.GT.1) KS=KLP1-K+1
-          IF (KS.LE.NANG) THEN
-            CH = IC*CL1
-            JA1(KS,KH) = JAFU(CH,K,KLP1)
-            CH = IC*CL2
-            JA2(KS,KH) = JAFU(CH,K,KLP1)
-          ENDIF
+          IF (KS.GT.NANG) GO TO 1002
+          CH = IC*CL1
+          JA1(KS,KH) = JAFU(CH,K,KLP1)
+          CH = IC*CL2
+          JA2(KS,KH) = JAFU(CH,K,KLP1)
+ 1002     CONTINUE
         ENDDO
         IC = -1
       ENDDO
@@ -219,23 +220,45 @@
         IKP1(M) = IKP(M)+1
         FKLAP(M) = (FLP-FKP)/(FRLON(IKP1(M))-FKP)
         FKLAP1(M) = 1.0_JWRB-FKLAP(M)
-        IF (FRLON(MFRSTLW).GE.FLM) THEN
-          IKM(M) = 1
-          IKM1(M) = 1
-          FKLAM(M) = 0.0_JWRB
-          FKLAM1(M) = 0.0_JWRB
-        ELSE
-          IKN = M+ISM
+
+!        IF (FRLON(MFRSTLW).GE.FLM) THEN
+!         IKM(M) = 1
+!         FKLAM(M) = 0.0_JWRB
+!         IKM1(M) = 1
+!         FKLAM1(M) = 0.0_JWRB
+!       ELSE
+!         IKN = M+ISM
+!         IKM(M) = IKN
+!         FKM = FRLON(IKM(M))
+!         IKM1(M) = IKM(M)+1
+!         FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+!         FKLAM1(M) = 1.0_JWRB-FKLAM(M)
+!         IF (IKN.LT.MFRSTLW) THEN
+!           IKM(M) = 1
+!           FKLAM1(M) = 0.0_JWRB
+!         ENDIF
+!       ENDIF
+
+        IKN = M+ISM
+        IF (IKN .GE. MFRSTLW) THEN
           IKM(M) = IKN
           FKM = FRLON(IKM(M))
           IKM1(M) = IKM(M)+1
           FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
           FKLAM1(M) = 1.0_JWRB-FKLAM(M)
-          IF (IKN.LT.MFRSTLW) THEN
-            IKM(M) = 1
-            FKLAM1(M) = 0.0_JWRB
-          ENDIF
+        ELSEIF (IKN+1 .EQ. MFRSTLW) THEN
+          IKM(M) = 1 
+          FKLAM(M) = 0.0_JWRB
+          IKM1(M) = MFRSTLW 
+          FKM = FRLON(IKM1(M))/FRATIO
+          FKLAM1(M) = 1.0_JWRB- (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+        ELSE
+          IKM(M) = 1
+          FKLAM(M) = 0.0_JWRB
+          IKM1(M) = 1
+          FKLAM1(M) = 0.0_JWRB
         ENDIF
+
       ENDDO
 
 !*    3. COMPUTE TAIL FREQUENCY RATIOS.
