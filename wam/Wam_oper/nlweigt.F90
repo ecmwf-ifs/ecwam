@@ -248,10 +248,10 @@
           FKLAM1(M) = 1.0_JWRB-FKLAM(M)
         ELSEIF (IKN+1 .EQ. MFRSTLW) THEN
           IKM(M) = 1 
-          FKLAM(M) = 0.0_JWRB
           IKM1(M) = MFRSTLW 
           FKM = FRLON(IKM1(M))/FRATIO
-          FKLAM1(M) = 1.0_JWRB- (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+          FKLAM(M) = 1.0_JWRB- (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+          FKLAM1(M) = 0.0_JWRB
         ELSE
           IKM(M) = 1
           FKLAM(M) = 0.0_JWRB
