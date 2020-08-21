@@ -387,7 +387,8 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              IF (MM1.GE.1) THEN
+!!!debile              IF (MM1.GE.1) THEN
+              IF (MM1.GT.1) THEN
                 DO IJ=IJS,IJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
