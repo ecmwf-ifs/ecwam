@@ -250,7 +250,7 @@
           IKM(M) = 1 
           IKM1(M) = MFRSTLW 
           FKM = FRLON(IKM1(M))/FRATIO
-          FKLAM(M) = 1.0_JWRB- (FLM-FKM)/(FRLON(IKM1(M))-FKM)
+          FKLAM(M) = (FLM-FKM)/(FRLON(IKM1(M))-FKM)
           FKLAM1(M) = 0.0_JWRB
         ELSE
           IKM(M) = 1
