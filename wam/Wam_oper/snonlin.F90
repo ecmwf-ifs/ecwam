@@ -122,8 +122,7 @@
       MFR1STFR=-MFRSTLW+1
       MFRLSTFR=NFRE-KFRH+MFR1STFR
 
-!!      DO MC=MFRSTLW,MLSTHG
-      DO MC=1,MLSTHG
+      DO MC=MFRSTLW,MLSTHG
         MP  = IKP (MC)
         MP1 = IKP1(MC)
         MM  = IKM (MC)
