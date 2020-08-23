@@ -108,6 +108,14 @@
         IM  = MM
         IM1 = MM1
 !       LOW FREQUENCY FRONT TAIL
+        IF (IP.LT.1) THEN
+          FFACP = FTRF(IP)
+          IP=1
+        ENDIF
+        IF (IP1.LT.1) THEN
+          FFACP1 = FTRF(IP1)
+          IP1=1
+        ENDIF
         IF (IM.LT.MFRSTLW) THEN
           FFACM = 0.0_JWRB
           IM = 1

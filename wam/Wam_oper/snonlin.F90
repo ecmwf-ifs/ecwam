@@ -438,6 +438,9 @@
                 ENDDO
                 DO IJ=IJS,IJL
                   FL(IJ,K11,MP1) = FL(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
+
+      if( MC .eq. MFRSTLW) write(*,*) 'debile ', MC,MP1,SL(IJ,K1 ,MP1),  SL(IJ,K11,MP1)
+
                 ENDDO
               ENDIF
 
