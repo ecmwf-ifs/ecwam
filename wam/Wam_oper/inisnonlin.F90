@@ -80,6 +80,10 @@
       FRR=1.0_JWRB
       DO MC=1,MFRSTLW,-1
          FTRF(MC)=ALPH*EPMMA(FRR)
+!!!debile
+         FTRF(MC)=1.0_JWRB
+
+
          FRR=FRR*FRATIO
       ENDDO
 
