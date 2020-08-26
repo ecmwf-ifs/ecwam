@@ -85,8 +85,8 @@
 
 !     2. WORK ARRAYS STORING THE DIFFERENT INDICES AND COEFFICIENTS
 
-      IF(.NOT.ALLOCATED(INLCOEF)) ALLOCATE(INLCOEF(NINL,1:MLSTHG)) 
-      IF(.NOT.ALLOCATED(RNLCOEF)) ALLOCATE(RNLCOEF(NRNL,1:MLSTHG)) 
+      IF(.NOT.ALLOCATED(INLCOEF)) ALLOCATE(INLCOEF(NINL,1:MLSTHG))
+      IF(.NOT.ALLOCATED(RNLCOEF)) ALLOCATE(RNLCOEF(NRNL,1:MLSTHG))
 
 !*    3. FREQUENCY LOOP.
 !        ---------------
@@ -101,19 +101,36 @@
         FFACM1 = 1.0_JWRB
         FTAIL  = 1.0_JWRB
         IC  = MC
+!       front tail protection (keep IC >=1)
+        IF(IC .LT. 1 ) IC = 1
         IP  = MP
         IP1 = MP1
         IM  = MM
         IM1 = MM1
 !       LOW FREQUENCY FRONT TAIL
-        IF (IM.LT.1) THEN
-           FFACM = FTRF(IM)
-           IM = 1
-           IF (IM1.LT.1) THEN
-             FFACM1 = FTRF(IM1)
-             IM1 = 1
-           ENDIF
+        IF (IP.LT.1) THEN
+          FFACP = FTRF(IP)
+          IP=1
         ENDIF
+        IF (IP1.LT.1) THEN
+          FFACP1 = FTRF(IP1)
+          IP1=1
+        ENDIF
+        IF (IM.LT.MFRSTLW) THEN
+          FFACM = 0.0_JWRB
+          IM = 1
+        ELSE IF (IM.LT.1) THEN
+          FFACM = FTRF(IM)
+          IM = 1
+        ENDIF
+        IF (IM1.LT.MFRSTLW) THEN
+          FFACM1 = 0.0_JWRB
+          IM1 = 1
+        ELSE IF (IM1.LT.1) THEN
+          FFACM1 = FTRF(IM1)
+          IM1 = 1
+        ENDIF
+
 !       HIGH FREQUENCY TAIL
         IF (IP1.GT.NFRE) THEN
 ! Quick fix from Deborah
