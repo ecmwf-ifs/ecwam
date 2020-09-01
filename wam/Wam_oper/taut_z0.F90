@@ -139,8 +139,8 @@ IF (LLGCBZ0) THEN
 
           CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
 !!! static test
-          ZB(IJ) = ALPHA*TAUOLD*GM1
-          TAUUNR(IJ) = (ZB(IJ)/Z0(IJ))**2*TAUOLD
+!!          ZB(IJ) = ALPHA*TAUOLD*GM1
+!!          TAUUNR(IJ) = (ZB(IJ)/Z0(IJ))**2*TAUOLD
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
