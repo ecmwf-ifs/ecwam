@@ -141,6 +141,9 @@ IF (LLGCBZ0) THEN
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
+!!!
+         write(*,*) 'debile ', Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD, Z0(IJ), TAUUNR(IJ)
+
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
