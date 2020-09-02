@@ -125,6 +125,19 @@ IF (LLGCBZ0) THEN
         USTAR(IJ) = SQRT(TAUOLD)
       ENDDO
 
+!! needed if static test
+      IF(LLCAPCHNK) THEN
+        DO IJ=IJS,IJL
+          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
+          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          ALPHAOG(IJ)= ALPHA*GM1
+        ENDDO
+      ENDIF
+!!
+
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
@@ -138,9 +151,10 @@ IF (LLGCBZ0) THEN
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
           CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
-!!! static test
-!!          ZB(IJ) = ALPHA*TAUOLD*GM1
-!!          TAUUNR(IJ) = (ZB(IJ)/Z0(IJ))**2*TAUOLD
+!!! static test (need the lines above for the calculation of ALPHAOG
+          ZB(IJ) = ALPHAOG(IJ)*TAUOLD
+          TAUUNR(IJ) = (ZB(IJ)/Z0(IJ))**2*TAUOLD
+!!
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
