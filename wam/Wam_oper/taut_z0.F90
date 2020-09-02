@@ -159,7 +159,7 @@ IF (LLGCBZ0) THEN
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
 !!!
-         write(*,*) 'debile ', Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0(IJ), TAUUNR(IJ)
+         write(*,*) 'debile ', iter, Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0(IJ), TAUUNR(IJ)
 
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
