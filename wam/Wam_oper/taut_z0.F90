@@ -170,6 +170,9 @@ IF (LLGCBZ0) THEN
           DEL = USTAR(IJ)-USTOLD
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           TAUOLD = USTAR(IJ)**2
+!!!!debile static
+          TAUOLD = MAX(TAUOLD,TAUWEFF(IJ))
+!!!!debile static
           USTOLD = USTAR(IJ)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
