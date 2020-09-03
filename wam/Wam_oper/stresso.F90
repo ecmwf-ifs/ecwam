@@ -250,12 +250,12 @@
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
       ENDDO
 
-!      IF (.NOT. LLGCBZ0) THEN
+      IF (.NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB-EPS1
         DO IJ=IJS,IJL
           TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
         ENDDO
-!      ENDIF
+      ENDIF
 
       IF ( LLPHIWA ) THEN
         C2 = DELTH*(ZPI)**4*GM1
