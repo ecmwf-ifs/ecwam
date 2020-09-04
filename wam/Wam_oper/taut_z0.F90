@@ -197,7 +197,7 @@ IF (LLGCBZ0) THEN
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
-          TAUOLD = USTAR(IJ)**2
+          TAUOLD = TAUNEW 
           USTOLD = USTAR(IJ)
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 
