@@ -193,9 +193,13 @@ IF (LLGCBZ0) THEN
           USTAR(IJ) = USTAR(IJ)-F/DELF
           TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
           USTAR(IJ) = SQRT(TAUNEW)
-          IF(TAUNEW.EQ.TAUOLD) EXIT
+
+!         CONVERGENCE ?
+          DEL = USTAR(IJ)-USTOLD
+          IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
+          TAUOLD = USTAR(IJ)**2
+          USTOLD = USTAR(IJ)
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
-          TAUOLD = TAUNEW
 
 !!!
          write(*,*) 'debile ', iter, ZB(IJ), Z0(IJ), TAUUNR(IJ)
