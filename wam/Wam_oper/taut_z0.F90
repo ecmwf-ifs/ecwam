@@ -145,9 +145,6 @@ IF (LLGCBZ0) THEN
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
-!!!
-         write(*,*) 'debile ', iter, Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0(IJ), TAUUNR(IJ)
-
 !         TOTAL kinematic STRESS:
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
@@ -160,6 +157,9 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+!!!
+         write(*,*) 'debile ', iter, Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0(IJ), TAUUNR(IJ)
+
 
       ENDDO
 
@@ -178,10 +178,6 @@ IF (LLGCBZ0) THEN
 
           CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
           ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
-
-!!!debile no waves
-          ZB(IJ)= ALPHA*GM1*TAUOLD
-
           X = TAUW(IJ)/TAUOLD
           Z0CH = ZB(IJ)/SQRT(1.0_JWRB-X)
           Z0VIS = RNUM*USTM1
@@ -203,11 +199,11 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 
+        ENDDO
+        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 !!!
          write(*,*) 'debile ', iter, ZB(IJ), Z0(IJ), TAUUNR(IJ), X
 
-        ENDDO
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
       ENDDO
 
