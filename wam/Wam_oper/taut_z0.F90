@@ -93,6 +93,8 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, ROAIRN, TAUW, UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWEFF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, HALP, TAUUNR, ZB
 
+      LOGICAL, PARAMETER :: LLSIMPLE=.FALSE.
+
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
@@ -125,19 +127,8 @@ IF (LLGCBZ0) THEN
         USTAR(IJ) = SQRT(TAUOLD)
       ENDDO
 
-!! needed if static test
-      IF(LLCAPCHNK) THEN
-        DO IJ=IJS,IJL
-          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
-          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          ALPHAOG(IJ)= ALPHA*GM1
-        ENDDO
-      ENDIF
-!!
 
+      IF( LLSIMPLE ) THEN
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
@@ -151,10 +142,6 @@ IF (LLGCBZ0) THEN
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
           CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
-!!! static test (need the lines above for the calculation of ALPHAOG
-          ZB(IJ) = ALPHAOG(IJ)*TAUOLD
-          TAUUNR(IJ) = (ZB(IJ)/Z0(IJ))**2*TAUOLD
-!!
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
@@ -175,6 +162,50 @@ IF (LLGCBZ0) THEN
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
       ENDDO
+
+      ELSE
+
+      DO IJ = IJS, IJL
+        XKUTOP = XKAPPA*UTOP(IJ)
+        USTOLD = USTAR(IJ)
+        USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
+        TAUOLD = USTOLD**2
+        ANG_GC = MAX(ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(UTOP(IJ)-ANG_GC_D)),ANG_GC_E)
+
+        DO ITER=1,NITER
+!         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
+
+          CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
+          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
+
+          X = TAUW(IJ)/TAUOLD
+          Z0CH = ZB(IJ)/SQRT(1.0_JWRB-X)
+          Z0VIS = RNUM*USTM1
+!         approximate z0 as the sum of the viscous z0 without waves and Charnock term with waves
+          Z0TOT = Z0CH+Z0VIS
+
+          XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0TOT))
+          F = USTAR(IJ)-XKUTOP*XOLOGZ0
+          ZZ = USTM1*(Z0CH*(2.0_JWRB-TWOXMP1*X)/(1.0_JWRB-X)-Z0VIS)/Z0TOT
+          DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
+
+          USTAR(IJ) = USTAR(IJ)-F/DELF
+          TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
+          USTAR(IJ) = SQRT(TAUNEW)
+          IF(TAUNEW.EQ.TAUOLD) EXIT
+          USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
+          TAUOLD = TAUNEW
+
+!!!
+         write(*,*) 'debile ', iter, ZB(IJ), Z0(IJ), TAUUNR(IJ)
+
+        ENDDO
+        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+
+      ENDDO
+
+      ENDIF
 
 ELSE
 
