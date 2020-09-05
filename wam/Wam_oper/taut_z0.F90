@@ -81,7 +81,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, ROAIRN, TAUW, UST
       REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
-      REAL(KIND=JWRB) :: US2TOTAUW, USMAX, ANG_GC
+      REAL(KIND=JWRB) :: US2TOTAUW, USMAX, ANG_GC, TAUUNRMAX
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, USTNEW, TAUOLD, TAUNEW, X, F, DELF, CDFG
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ
@@ -92,8 +92,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, ROAIRN, TAUW, UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWEFF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP, HALP, TAUUNR, ZB
-
-      LOGICAL, PARAMETER :: LLSIMPLE=.TRUE.
 
 ! ----------------------------------------------------------------------
 
@@ -120,17 +118,25 @@ IF (LLGCBZ0) THEN
         W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
       ENDDO
 
+      IF(LLCAPCHNK) THEN
+        DO IJ=IJS,IJL
+          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
+          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          ALPHAOG(IJ)= ALPHA*GM1
+        ENDDO
+      ENDIF
+
       DO IJ = IJS, IJL
         CDFG = MAX(MIN(0.00008_JWRB*UTOP(IJ), 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB))),0.0005_JWRB)
-        USTOLD = (1-IUSFG)*UTOP(IJ)*SQRT(CDFG) + IUSFG*USTAR(IJ)
-!!! do not pre-condition
- !!!       TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-!!!        USTAR(IJ) = SQRT(TAUOLD)
-        USTAR(IJ) = USTOLD 
+        USTAR(IJ) = (1-IUSFG)*UTOP(IJ)*SQRT(CDFG) + IUSFG*USTAR(IJ)
+!!!!        USTOLD = (1-IUSFG)*UTOP(IJ)*SQRT(CDFG) + IUSFG*USTAR(IJ)
+!!!!        TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+!!!!        USTAR(IJ) = SQRT(TAUOLD)
       ENDDO
 
-
-      IF( LLSIMPLE ) THEN
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
@@ -148,7 +154,11 @@ IF (LLGCBZ0) THEN
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
 !         TOTAL kinematic STRESS:
-          TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
+          TAUUNRMAX = (ALPHAOG(IJ)*USTOLD**3/Z0(IJ))**2
+!!!debile
+          write(*,*) 'debile ',iter,TAUUNR(IJ),TAUUNRMAX,z0(ij)
+
+          TAUNEW = TAUWEFF(IJ) + TAUV + MIN(TAUUNR(IJ),TAUUNRMAX)
           USTNEW = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 
@@ -159,57 +169,8 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-!!!
-         write(*,*) 'debile ', iter, Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0(IJ), TAUUNR(IJ)
-
 
       ENDDO
-
-      ELSE
-
-      DO IJ = IJS, IJL
-        XKUTOP = XKAPPA*UTOP(IJ)
-        USTOLD = USTAR(IJ)
-        USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
-        TAUOLD = USTOLD**2
-        ANG_GC = MAX(ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(UTOP(IJ)-ANG_GC_D)),ANG_GC_E)
-
-        DO ITER=1,NITER
-!         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
-
-          CALL STRESS_GC(ANG_GC, USTAR(IJ), Z0(IJ), HALP(IJ), TAUUNR(IJ))
-          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
-          X = TAUW(IJ)/TAUOLD
-          Z0CH = ZB(IJ)/SQRT(1.0_JWRB-X)
-          Z0VIS = RNUM*USTM1
-!         approximate z0 as the sum of the viscous z0 without waves and Charnock term with waves
-          Z0TOT = Z0CH+Z0VIS
-
-          XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0TOT))
-          F = USTAR(IJ)-XKUTOP*XOLOGZ0
-          ZZ = USTM1*(Z0CH*(2.0_JWRB-TWOXMP1*X)/(1.0_JWRB-X)-Z0VIS)/Z0TOT
-          DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-
-          USTAR(IJ) = USTAR(IJ)-F/DELF
-          TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
-          USTAR(IJ) = SQRT(TAUNEW)
-
-!         CONVERGENCE ?
-          IF (TAUNEW.EQ.TAUOLD) EXIT
-          TAUOLD = TAUNEW 
-          USTOLD = USTAR(IJ)
-          USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
-
-        ENDDO
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-!!!
-         write(*,*) 'debile ', iter, ZB(IJ), Z0(IJ), TAUUNR(IJ), X
-
-
-      ENDDO
-
-      ENDIF
 
 ELSE
 
