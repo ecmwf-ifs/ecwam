@@ -146,7 +146,7 @@ IF (LLGCBZ0) THEN
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           X = MIN(TAUW(IJ)/TAUOLD,0.9999_JWRB)
-          Z0MAX = RNUM*USTM1 + ALPHAOG(IJ)*TAUOLD**2/SQRT(1.0_JWRB-X)
+          Z0MAX = RNUM*USTM1 + ALPHAOG(IJ)*TAUOLD/SQRT(1.0_JWRB-X)
           Z0(IJ) = MIN(MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN),Z0MAX)
 
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
@@ -157,9 +157,6 @@ IF (LLGCBZ0) THEN
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
 !         TOTAL kinematic STRESS:
-!!!debile
-          write(*,*) 'debile ',iter,TAUUNR(IJ),TAUUNRMAX,z0(ij)
-
           TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
           USTNEW = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
