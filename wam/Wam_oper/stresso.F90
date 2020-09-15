@@ -251,10 +251,10 @@
       ENDDO
 
 !      IF (.NOT. LLGCBZ0) THEN
-!        TAUTOUS2 = 1.0_JWRB-EPS1
-!        DO IJ=IJS,IJL
-!          TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
-!       ENDDO
+      TAUTOUS2 = 1.0_JWRB-EPS1
+      DO IJ=IJS,IJL
+        TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+      ENDDO
 !      ENDIF
 
       IF ( LLPHIWA ) THEN
