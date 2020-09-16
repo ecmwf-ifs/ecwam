@@ -19,7 +19,7 @@
 !     --------
 
 !       COMPUTE NORMALIZED WAVE STRESS FROM INPUT SOURCE FUNCTION
-j
+ 
 !**   INTERFACE.
 !     ----------
 
