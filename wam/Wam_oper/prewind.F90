@@ -1,4 +1,4 @@
-      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,           &
+      SUBROUTINE PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                 &
      &                    ROAIRO, ZIDLOLD,                              &
      &                    CICOVER, CITHICK,                             &
      &                    LLINIT, LLALLOC_FIELDG_ONLY,                  &
@@ -35,7 +35,7 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+!     *CALL* *PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, CICOVER,
 !    &                 LLINIT,
 !    &                 IREAD,
@@ -51,7 +51,6 @@
 !                            VELOCITY.
 !      *Z0OLD*     REAL      INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                            M.
-!      *TAUW*      REAL      WAVE STRESS IN (M/S)**2
 !      *ROAIRO*    REAL      AIR DENSITY IN KG/M3.
 !      *ZIDLOLD*   REAL      Zi/L (Zi: INVERSION HEIGHT,
 !                                   L: MONIN-OBUKHOV LENGTH).
@@ -171,7 +170,6 @@
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: THWOLD
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: USOLD
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: Z0OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ROAIRO
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ZIDLOLD
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER
@@ -254,12 +252,6 @@
 !         -------------------------------------------
 
       CALL GETCURR(LWCUR, IREAD)
-!      Print *, 'LLUNSTR=', LLUNSTR
-!      Print *, 'USE_DIRECT_WIND_FILE=', USE_DIRECT_WIND_FILE
-!      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
-!        CALL SET_WIND_UNSTRUCTURED(U10OLD,THWOLD,USOLD,                 &
-!     &    TAUW,Z0OLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK)
-!      ELSE
 
 !*    PROCESS THE OTHER FORCING FIELDS.
 !     ---------------------------------
@@ -280,7 +272,7 @@
         CALL NOTIM (CDTWIS, CDTWIE,                                     &
      &              IJS(1), IJL(1),                                     &
      &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),   &
+     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
      &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
      &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
      &              IREAD, LWCUR)
@@ -302,7 +294,7 @@
         CALL TIMIN (CDTWIS, CDTWIE,                                     &
      &              IJS(1), IJL(1),                                     &
      &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), TAUW(IJS(1),1), Z0OLD(IJS(1),1),   &
+     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
      &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
      &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
      &              IREAD, LWCUR)

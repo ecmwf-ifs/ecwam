@@ -1,7 +1,7 @@
       SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
      &                    MIJ, RHOWGDFTH,                               &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
-     &                    TAUW, PHIWA, LLPHIWA)
+     &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
 
@@ -15,18 +15,18 @@
 !     J. BIDLOT            ECMWF            2007  ADD MIJ
 !     P.A.E.M. JANSSEN     ECMWF            2011  ADD FLUX CALULATIONS
 
-!*    PURPOSE.
+!*    PURPOSE.jjjj
 !     --------
 
 !       COMPUTE NORMALIZED WAVE STRESS FROM INPUT SOURCE FUNCTION
-
+j
 !**   INTERFACE.
 !     ----------
 
 !        *CALL* *STRESSO (F, SPOS, IJS, IJL,
 !    &                    MIJ, RHOWGDFTH,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
-!    &                    TAUW, PHIWA)*
+!    &                    TAUW, TAUWDIR, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
@@ -43,6 +43,7 @@
 !         *Z0NEW*       - ROUGHNESS LENGTH IN M.
 !         *ROAIRN*      - AIR DENSITY IN KG/M**3.
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
+!         *TAUWDIR*     - KINEMATIC WAVE STRESS DIRECTION
 !         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
 !                         OVER THE FULL FREQUENCY RANGE.
 !         *LLPHIWA*     - TRUE IF PHIWA NEEDS TO BE COMPUTED
@@ -92,7 +93,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
       LOGICAL, INTENT(IN) :: LLPHIWA
 
 
@@ -248,6 +249,7 @@
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
+        TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
 
 !      IF (.NOT. LLGCBZ0) THEN

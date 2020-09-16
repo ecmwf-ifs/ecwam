@@ -119,7 +119,7 @@
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
-     &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,              &
+     &            USOLD    ,Z0OLD    ,TAUW     ,TAUWDIR  ,FL1      ,    &
      &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
@@ -498,6 +498,7 @@
       IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(TAUWDIR)) ALLOCATE(TAUWDIR(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
@@ -506,6 +507,7 @@
       THWOLD(:,:) = 0.0_JWRB
       USOLD(:,:) =  U10OLD(:,:)*0.035847_JWRB
       TAUW(:,:) = 0.1_JWRB*USOLD(:,:)
+      TAUWDIR(:,:) = THWOLD(:,:)
       Z0OLD(:,:) = 0.00001_JWRB
       ROAIRO(:,:) = ROAIR      
       ZIDLOLD(:,:) = 0.0_JWRB
@@ -522,7 +524,7 @@
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                   &
+        CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                        &
      &                ROAIRO, ZIDLOLD,                                  &
      &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
@@ -586,7 +588,7 @@
       WRITE(IU06,*) 'MINVAL OF U10OLD = ',MINVAL(U10OLD)
       WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,              &
+        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,     &
      &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,               &
      &                 NBLKS, NBLKE, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
@@ -597,6 +599,7 @@
       IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
       IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
       IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
+      IF(ALLOCATED(TAUWDIR)) DEALLOCATE(TAUWDIR)
       IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
       IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
       IF(ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)

@@ -1,6 +1,6 @@
       SUBROUTINE BUILDSTRESS(MIJS, MIJL,                                &
      &                       U10OLD, THWOLD,                            &
-     &                       USOLD, TAUW, Z0OLD,                        &
+     &                       USOLD, TAUW, TAUWDIR, Z0OLD,               &
      &                       ROAIRO, ZIDLOLD,                           &
      &                       CICOVER, CITHICK,                          &
      &                       IREAD)
@@ -21,7 +21,7 @@
 !**   INTERFACE.
 !     ----------
 !     CALL *BUILDSTRESS*(MIJS, MIJL,
-!    &                   U10OLD,THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,
+!    &                   U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,ROAIRO,
 !    &                   ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !    &                   IREAD)*
 !     *MIJS*      INDEX OF FIRST GRIDPOINT
@@ -29,7 +29,8 @@
 !     *U10OLD*   WIND SPEED.
 !     *THWOLD*   WIND DIRECTION (RADIANS).
 !     *USOLD*    FRICTION VELOCITY.
-!     *TAUW*     WAVE STRESS.
+!     *TAUW*     WAVE STRESS MAGNITUDE.
+!     *TAUWDIR*  WAVE STRESS DIRECTION.
 !     *Z0OLD*    ROUGHNESS LENGTH IN M.
 !     *RAD0OLD*   AIR DENSITY IN KG/M3.
 !     *RZIDL0OLD* Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
@@ -82,7 +83,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: U10OLD, THWOLD
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: USOLD, Z0OLD, TAUW, TAUWDIR
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: ROAIRO, ZIDLOLD
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL), INTENT(OUT) :: CICOVER,CITHICK
 
@@ -254,7 +255,8 @@
         CALL CDUSTARZ0 (KIJS, KIJL, U10OLD(KIJS), TEMPXNLEV, CD(KIJS), USOLD(KIJS), Z0OLD(KIJS))
 
         DO IJ=KIJS,KIJL
-          TAUW(IJ) = 0.1_JWRB * USOLD(KIJS)**2
+          TAUW(IJ) = 0.1_JWRB * USOLD(IJ)**2
+          TAUWDIR(IJ) = THWOLD(IJ)
         ENDDO
 
       ENDDO
@@ -332,6 +334,7 @@
               CHARNOCKOG = Z0OLD(IJ)/USOLD(IJ)
               CHARNOCKOG = MAX(CHARNOCKOG,ALPHAOG(IJ))
               TAUW(IJ) = MAX(USOLD(IJ)*(1._JWRB-(ALPHAOG(IJ)/CHARNOCKOG)**2),0._JWRB)
+              TAUWDIR(IJ) = THWOLD(IJ)
               USOLD(IJ) = USTAR 
             ENDDO
           ENDDO

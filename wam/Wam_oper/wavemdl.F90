@@ -131,7 +131,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
-     &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
+     &            BETAOLD   ,ROAIRO   ,ZIDLOLD  ,                       &
      &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
@@ -557,7 +557,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,               &
+        CALL PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                     &
      &                ROAIRO, ZIDLOLD,                                  &
      &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &

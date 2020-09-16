@@ -1,6 +1,6 @@
       SUBROUTINE TIMIN (CDTWIS, CDTWIE,                                 &
      &                  MIJS, MIJL,                                     &
-     &                  U10OLD, THWOLD, USOLD, TAUW, Z0OLD,             &
+     &                  U10OLD, THWOLD, USOLD, Z0OLD,                   &
      &                  ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,       &
      &                  LWCUR)
 
@@ -26,7 +26,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,TAUW,Z0OLD,
+!       *CALL* *TIMIN (CDTWIS, CDTWIE,U10OLD,THWOLD,USOLD,Z0OLD,
 !    &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK, IREAD,
 !    &                 LWCUR)*
 !          *CDTWIS* - DATE OF FIRST WIND FIELD.
@@ -34,7 +34,6 @@
 !          *U10OLD* - WIND SPEED.
 !          *THWOLD* - WIND DIRECTION (RADIANS).
 !          *USOLD*  - FRICTION VELOCITY.
-!          *TAUW*   - WAVE STRESS.
 !          *Z0OLD*  - ROUGHNESS LENGTH IN M.
 !          *ROAIRO* - AIR DENSITY IN KG/M3.
 !          *ZIDLOLD*- Zi/L
@@ -93,7 +92,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(INOUT) ::            &
-     &               U10OLD, THWOLD, USOLD, Z0OLD, TAUW,                &
+     &               U10OLD, THWOLD, USOLD, Z0OLD,                      &
      &               ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       CHARACTER(LEN=14), INTENT(IN) :: CDTWIS, CDTWIE
