@@ -86,6 +86,7 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
@@ -113,6 +114,7 @@
      &            F1MEAN, AKMEAN, XKMEAN)
 
       TAUW_LOC(:) = 0.0_JWRB
+      TAUWDIR_LOC(:) = THWNEW(:)
 
       LUPDTUS = .FALSE.
       FMEANWS(:) = FMEANALL(:)
@@ -124,7 +126,7 @@
      &             CICVR, &
      &             FMEANALL, &
      &             FMEANWS, FL1, &
-     &             USNEW, TAUW_LOC, Z0NEW, PHIWA, &
+     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
      &             MIJ, RHOWGDFTH, XLLWS)
 

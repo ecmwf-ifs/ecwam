@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, HALP, TAUWCG)
+      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, HALP, ZBREDUC, TAUWCG)
 
 !***  DETERMINE WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -33,6 +33,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), INTENT(IN) :: ZBREDUC  ! reduction factor for the gravity-capillary stress
       REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
 
       INTEGER(KIND=JWIM) :: NS
@@ -80,7 +81,7 @@
 !       It simplified here by using the ANG_GC factor.
         TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) 
       ENDDO
-      TAUWCG = MAX(ANG_GC * BETAMAXOXKAPPA2 * HALP * C2OSQRTVG_GC(NS) * TAUWCG, TAUWCG_MIN)
+      TAUWCG = MAX(ANG_GC * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS) * TAUWCG, TAUWCG_MIN)
 
       IF (LHOOK) CALL DR_HOOK('STRESS_GC',1,ZHOOK_HANDLE)
  

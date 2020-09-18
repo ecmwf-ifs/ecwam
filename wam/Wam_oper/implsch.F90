@@ -1,6 +1,6 @@
       SUBROUTINE IMPLSCH (FL1, IJS, IJL, IG,                            &
      &                    THWOLD, USOLD,                                &
-     &                    TAUW, Z0OLD,                                  &
+     &                    TAUW, TAUWDIR, Z0OLD,                         &
      &                    ROAIRO, WSTAROLD,                             &
      &                    CICVR, CIWA,                                  &
      &                    U10NEW, THWNEW, USNEW,                        &
@@ -43,7 +43,7 @@
 !     ----------
 
 !       *CALL* *IMPLSCH (FL1, FL, IJS, IJL, IG,
-!    1                    THWOLD,USOLD,TAUW,Z0OLD,
+!    1                    THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,WSTARNEW,
@@ -66,6 +66,7 @@
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
 !      *TAUW*      WAVE STRESS IN (M/S)**2
+!      *TAUWDIR*   WAVE STRESS DIRECTION. 
 !      *ROAIRN*    AIR DENSITY IN KG/M3.
 !      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
 !      *WSTARNEW*  FREE CONVECTION VELOCITY SCALE (M/S)
@@ -162,7 +163,7 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, ROAIRO, WSTAROLD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: TAUW, TAUWDIR, ROAIRO, WSTAROLD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
@@ -275,7 +276,7 @@
      &               CICVR, &
      &               FMEANALL, &
      &               FMEANWS, FL1, &
-     &               USNEW, TAUW, Z0NEW, PHIWA, &
+     &               USNEW, TAUW, TAUWDIR, Z0NEW, PHIWA, &
      &               FL, SL, SPOS, &
      &               MIJ, RHOWGDFTH, XLLWS)
 

@@ -272,7 +272,7 @@
      &            CINV     ,TFAK     ,GAM_B_J  ,EMAXDPT
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
-     &            ROAIRO   ,ZIDLOLD  ,                                  &
+     &            TAUWDIR,  ROAIRO   ,ZIDLOLD  ,                        &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -896,7 +896,7 @@
       ENDIF
 
 
-      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                    &
+      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,            &
      &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,                    &
      &               NBLKS,NBLKE,IREAD)
 
@@ -1156,7 +1156,7 @@
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                     &
+      CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                          &
      &              ROAIRO, ZIDLOLD,                                    &
      &              CICOVER, CITHICK,                                   &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &

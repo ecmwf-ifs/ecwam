@@ -315,8 +315,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            LANAONLY ,LFRSTFLD ,NPROMA_WAM,IREFDATE
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
-     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,BETAOLD  ,    &
-     &            ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,              &
+     &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,TAUWDIR  ,    &
+     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,   &
      &            FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -744,7 +744,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
      &                        KIJS, KIJL, IG,                           &
      &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),          &
-     &                        TAUW(KIJS,IG), Z0OLD(KIJS,IG),            &
+     &                        TAUW(KIJS,IG), TAUWDIR(KIJS,IG),          &
+     &                        Z0OLD(KIJS,IG),                           &
      &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),        &
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
@@ -984,8 +985,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !           SAVE RESTART FILES IN PURE BINARY FORM
             IF ( .NOT.LGRIBOUT .OR. LDWRRE ) THEN
-              CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,        &
-     &                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,         &
+              CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR,     &
+     &                       Z0OLD, ROAIRO, ZIDLOLD, CICOVER, CITHICK, &
      &                       NBLKS, NBLKE, CDTPRO, CDATEF)
               WRITE(IU06,*) ' '
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &
