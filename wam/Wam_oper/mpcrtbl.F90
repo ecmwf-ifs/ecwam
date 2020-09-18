@@ -156,7 +156,7 @@
       IR=IR+1
 !     PARAMETER 008
       IF(IR.GT.JPPFLAG) CALL MPABORT('IR > JPPFLAG IN MPCRTBL')
-      COUTNAME(IR)=' WAVE STRESS ....................'
+      COUTNAME(IR)=' NORMALISED WAVE STRESS .........'
       IPRMINFO(IR,1)=140
       IPRMINFO(IR,2)=083   !!! use a spare extra parameter number
       IF(GFLAG(IR) ) THEN
