@@ -141,6 +141,10 @@ IF (LLGCBZ0) THEN
         DO IJ = IJS, IJL
           ZBREDUC(IJ) = 0.05_JWRB + 0.475_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
         ENDDO
+      ELSE
+        DO IJ = IJS, IJL
+          ZBREDUC(IJ) = 1.0_JWRB
+        ENDDO
       ENDIF
 
       DO IJ = IJS, IJL
