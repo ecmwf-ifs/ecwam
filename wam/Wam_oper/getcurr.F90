@@ -139,21 +139,23 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !             --------------------------------
               IF(LWCUR.AND..NOT.LWNEMOCOUCUR) THEN
 
-!!!               from NINF to NSUP as the halo has to be included
-!!!               for the calculation of the gradients !!!
 ! Mod for OPENMP
                   CALL GSTATS(1444,0)
                   NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                  DO JKGLO=NINF,NSUP,NPROMA
+                  DO JKGLO = IJS(IG), IJL(IG), NPROMA
                     KIJS=JKGLO
-                    KIJL=MIN(KIJS+NPROMA-1,NSUP)
+                    KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
                     CALL WAMCUR (U(KIJS,1), V(KIJS,1), KIJS, KIJL)
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
                   U(NINF-1,IG)=0.0_JWRB
                   V(NINF-1,IG)=0.0_JWRB
+
+!!!               The halo has to be included for the calculation of the gradients !!!
+                  CALL MPEXCHNG(U,1,1)
+                  CALL MPEXCHNG(V,1,1)
 
                 IF (ITEST.GE.1) THEN
                    WRITE (IU06,*) ' '
@@ -191,6 +193,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 U(NINF-1,IG)=0.0_JWRB
                 V(NINF-1,IG)=0.0_JWRB
 
+!!!             The halo has to be included for the calculation of the gradients !!!
                 CALL MPEXCHNG(U,1,1)
                 CALL MPEXCHNG(V,1,1)
               ELSE
