@@ -123,18 +123,36 @@
       LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLKC, LLINTERPOL
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, I, J
       INTEGER(KIND=JWIM) :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
       INTEGER(KIND=JWIM) :: NCOUNT
 
       REAL(KIND=JWRB) :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
       REAL(KIND=JWRB) :: F00, F10, F01, F11, CI
+      REAL(KIND=JWRB) :: ZLADEN, ZLGUST, ZLLKC
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('FLDINTER',0,ZHOOK_HANDLE)
+
+      IF (LADEN) THEN
+        ZLADEN = 1.0_JWRB
+      ELSE
+        ZLADEN = 0.0_JWRB
+      ENDIF
+
+      IF (LGUST) THEN
+        ZLGUST=1.0_JWRB
+      ELSE
+        ZLGUST=0.0_JWRB
+      ENDIF
+
+      IF (LLKC) THEN
+        ZLLKC=1.0_JWRB
+      ELSE
+        ZLLKC=0.0_JWRB
+      ENDIF
 
       IF(.NOT.LLINTERPOL) THEN
 
@@ -149,54 +167,14 @@
 
             FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
             FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
-
+            FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
+            FIELDG(I,J)%ZIDL = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
+            FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG(I,J)%CITH = 0.0_JWRB
           ENDDO
-
-          IF (LADEN) THEN
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3)
-            ENDDO
-          ELSE
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%AIRD = ROAIR
-            ENDDO
-          ENDIF
-
-          IF (LGUST) THEN
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4)
-            ENDDO
-          ELSE
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%ZIDL = WSTAR0
-            ENDDO
-          ENDIF
-
-          IF (LLKC) THEN
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%LKFR = FIELDS(IJBLOCK(I,J),6)
-            ENDDO
-          ELSE
-            DO IJ = IJS,IJL
-              I = IFROMIJ(IJ)
-              J = JFROMIJ(IJ)
-              FIELDG(I,J)%LKFR = 0.0_JWRB
-            ENDDO
-          ENDIF
 
           IF(LLNEWCURR) THEN
             IF(LWCUR) THEN
