@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS2 (F1, F3, MIJS, MIJL)
+      SUBROUTINE PROPAGS2 (F1, F3, IJS, IJL, MIJS, MIJL)
 
 ! ----------------------------------------------------------------------
 
@@ -17,9 +17,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS2(F1, F3, MIJS, MIJL)*
+!       *CALL* *PROPAGS2(F1, F3, IJS, IJL, MIJS, MIJL)*
 !          *F1*   - BLOCK SPECTRUM AT TIME T.
-!          *F3*   - CHUNCK SPECTRUM AT TIME T+DELT.
+!          *F3(IJS:IJL,:,:)*   - SPECTRUM AT TIME T+DELT.
 !          *MIJS* - INDEX OF FIRST POINT
 !          *MIJL* - INDEX OF LAST POINT
 
@@ -60,12 +60,11 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL, IJS, IJL
 
       REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL,NANG,NFRE), INTENT(OUT) :: F3
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT)  :: F3
 
-      INTEGER(KIND=JWIM), PARAMETER :: IG=1
       INTEGER(KIND=JWIM) :: K, M, IJ
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
