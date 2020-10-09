@@ -1,6 +1,6 @@
       SUBROUTINE FLDINTER (IU06, ITEST, NGPTOTG, NC, NR, NFIELDS,FIELDS, &
      &                     NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,      &
-     &                     IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,  &
+     &                     IFROMIJ, JFROMIJ, IJS, IJL,                   &
      &                     AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,    &
      &                     ILONRGG, IJBLOCK, PMISS,                      &
      &                     LADEN, ROAIR, LGUST, WSTAR0, LLKC, LWCUR,     &
@@ -33,7 +33,7 @@
 
 !      *CALL* *FLDINTER* (IU06, ITEST, NGPTOTG, NC, NR, FIELDS,
 !    &                    NGX, NGY, KRGG, KLONRGG, XDELLA, ZDELLO,
-!    &                    IFROMIJ ,JFROMIJ, NINF, NSUP, IGL, IJS, IJL,
+!    &                    IFROMIJ ,JFROMIJ, IJS, IJL,
 !    &                    AMOWEP, AMOSOP, AMOEAP, AMONOP, IPERIODIC,
 !    &                    ILONRGG, IJBLOCK, PMISS,
 !    &                    LADEN, ROAIR, LGUST, WSTAR0,LWCUR, LLKC,
@@ -64,11 +64,6 @@
 !        *ZDELLO* - GRID POINT SPACING PER LATITUDES. 
 !        *IFROMIJ*- INTEGER  !!! LOCAL !!! LONG. GRID INDEX.
 !        *JFROMIJ*- INTEGER  !!! LOCAL !!! LAT. GRID INDEX (NORTH-SOUTH).
-!        *NINF *  - INTEGER INDEX OF FIRST POINT IN BLOCKS 
-!                   INCLUDING HALO.
-!        *NSUP *  - INTEGER INDEX OF LAST POINT IN BLOCKS 
-!                   INCLUDING HALO.
-!        *IGL*    - SECOND DIMENSION OF IFROMIJ AND JFROMIJ.
 !        *IJS*    - SMALLEST WAM GRID POINT INDEX USED BY THE PE.
 !        *IJL*    - LARGEST WAM GRID POINT INDEX USED BY THE PE.
 !        *AMOWEP* - MOST WESTERN LONGITUDE IN GRID (  1, ? ).           
@@ -110,12 +105,11 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ITEST, NGPTOTG, NC, NR, NFIELDS
-      INTEGER(KIND=JWIM), INTENT(IN) :: IGL
-      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, NINF, NSUP, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NGX, NGY, KRGG, IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: IPERIODIC
       INTEGER(KIND=JWIM), DIMENSION(NGY), INTENT(IN) :: KLONRGG, JJM
       INTEGER(KIND=JWIM), DIMENSION(NR), INTENT(IN) :: ILONRGG
-      INTEGER(KIND=JWIM), DIMENSION(NINF-1:NSUP,IGL), INTENT(IN) :: IFROMIJ,JFROMIJ
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       INTEGER(KIND=JWIM), DIMENSION(0:NC+1,NR), INTENT(IN) :: IJBLOCK
       INTEGER(KIND=JWIM), DIMENSION(NGX,NGY), INTENT(IN) :: IIM, IIPM
       INTEGER(KIND=JWIM), DIMENSION(NGPTOTG), INTENT(INOUT) :: MASK_IN
@@ -129,77 +123,85 @@
       LOGICAL, INTENT(IN):: LADEN, LGUST, LWCUR, LLKC, LLINTERPOL
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, I, J
       INTEGER(KIND=JWIM) :: JJ, JSN, JJ1, JSN1, II, II1, IIP, IIP1, JCL, ICL
       INTEGER(KIND=JWIM) :: NCOUNT
 
       REAL(KIND=JWRB) :: DJ1, DJ2, DII1, DII2, DIIP1, DIIP2 
       REAL(KIND=JWRB) :: F00, F10, F01, F11, CI
+      REAL(KIND=JWRB) :: ZLADEN, ZLGUST, ZLLKC
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('FLDINTER',0,ZHOOK_HANDLE)
 
+      IF (LADEN) THEN
+        ZLADEN = 1.0_JWRB
+      ELSE
+        ZLADEN = 0.0_JWRB
+      ENDIF
+
+      IF (LGUST) THEN
+        ZLGUST=1.0_JWRB
+      ELSE
+        ZLGUST=0.0_JWRB
+      ENDIF
+
+      IF (LLKC) THEN
+        ZLLKC=1.0_JWRB
+      ELSE
+        ZLLKC=0.0_JWRB
+      ENDIF
+
       IF(.NOT.LLINTERPOL) THEN
 
 !       REARRANGE DATA FIELD.
 !       --------------------
 
-        DO IG=1,IGL
           DO IJ = IJS,IJL
-            I = IFROMIJ(IJ,IG)
-            J = JFROMIJ(IJ,IG)
+            I = IFROMIJ(IJ)
+            J = JFROMIJ(IJ)
 
             MASK_IN(IJBLOCK(I,J))=1
 
             FIELDG(I,J)%UWND = FIELDS(IJBLOCK(I,J),1)
             FIELDG(I,J)%VWND = FIELDS(IJBLOCK(I,J),2)
-            IF (LADEN) THEN
-              FIELDG(I,J)%AIRD = FIELDS(IJBLOCK(I,J),3)
-            ELSE
-              FIELDG(I,J)%AIRD = ROAIR
-            ENDIF
-            IF (LGUST) THEN
-              FIELDG(I,J)%ZIDL = FIELDS(IJBLOCK(I,J),4)
-            ELSE
-              FIELDG(I,J)%ZIDL = WSTAR0
-            ENDIF
-
+            FIELDG(I,J)%AIRD = ZLADEN*FIELDS(IJBLOCK(I,J),3) + (1.0_JWRB-ZLADEN)*ROAIR
+            FIELDG(I,J)%ZIDL = ZLGUST*FIELDS(IJBLOCK(I,J),4) + (1.0_JWRB-ZLGUST)*WSTAR0
             FIELDG(I,J)%CIFR = FIELDS(IJBLOCK(I,J),5)
+            FIELDG(I,J)%LKFR = ZLLKC*FIELDS(IJBLOCK(I,J),6)
 
 !!!!!!!!!!! not yet in place to receive from IFS the sea ice thickness !!!!!!!!!!!
             FIELDG(I,J)%CITH = 0.0_JWRB
+          ENDDO
 
-            IF (LLKC) THEN
-              FIELDG(I,J)%LKFR = FIELDS(IJBLOCK(I,J),6)
-            ELSE
-              FIELDG(I,J)%LKFR = 0.0_JWRB
-            ENDIF
-
-            IF(LLNEWCURR) THEN
-              IF(LWCUR) THEN
+          IF(LLNEWCURR) THEN
+            IF(LWCUR) THEN
+              DO IJ = IJS,IJL
+                I = IFROMIJ(IJ)
+                J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = FIELDS(IJBLOCK(I,J),7)
                 FIELDG(I,J)%VCUR = FIELDS(IJBLOCK(I,J),8)
-              ELSE
+              ENDDO
+            ELSE
+              DO IJ = IJS,IJL
+                I = IFROMIJ(IJ)
+                J = JFROMIJ(IJ)
                 FIELDG(I,J)%UCUR = 0.0_JWRB
                 FIELDG(I,J)%VCUR = 0.0_JWRB
-              ENDIF
+              ENDDO
             ENDIF
-
-          ENDDO
-        ENDDO
+          ENDIF
 
       ELSE
 
 !       INTERPOLATE TO WAVE MODEL GRID
 !       ------------------------------
 
-        DO IG=1,IGL
           DO IJ = IJS,IJL 
-            I = IFROMIJ(IJ,IG)
-            J = JFROMIJ(IJ,IG)
+            I = IFROMIJ(IJ)
+            J = JFROMIJ(IJ)
 
 
             JJ = JJM(J)
@@ -338,7 +340,6 @@
             ENDIF
 
           ENDDO
-        ENDDO
 
       ENDIF
 
