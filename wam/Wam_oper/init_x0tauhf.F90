@@ -31,7 +31,9 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF,LLCAPCHNK, LLGCBZ0
-      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA, ALPHAMIN, XKAPPA,  BETAMAXOXKAPPA2
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA, ALPHAMIN, XKAPPA, &
+     &                      BETAMAXOXKAPPA2, GAMNCONST
+      USE YOWPCONS , ONLY : GM1      ,ZPI 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -40,6 +42,8 @@
 
       INTEGER(KIND=JWIM) :: J
 
+      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA = 0.53_JWRB  ! directionality correction factor in the 
+                                                             ! gowth rate renormalisation (see Janssen tbd)
       REAL(KIND=JWRB) :: CONST1, X0, FF, F, DF, ALPH
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -48,6 +52,8 @@
       IF (LHOOK) CALL DR_HOOK('INIT_X0TAUHF',0,ZHOOK_HANDLE)
 
       BETAMAXOXKAPPA2 = BETAMAX / XKAPPA**2
+
+      GAMNCONST = DELTA_THETA*0.5_JWRB*ZPI**4*GM1*3*BETAMAXOXKAPPA2/XKAPPA
 
 !*    1. PRELIMINARY CALCULATIONS.
 !        -------------------------

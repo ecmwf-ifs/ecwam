@@ -1,4 +1,4 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, Z0,    &
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USTAR, Z0,    &
      &                      XLEVTAIL, UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -17,12 +17,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, UST, Z0, XLEVTAIL,
+!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USTAR, UST, Z0, XLEVTAIL,
 !                          TAUHF, PHIHF, LLPHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *LTAUWSHELTER* - if true then XLEVTAIL are non zeros.
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *F1DCOS2* - SPEUDO 1D SPECTRUM WEIGHTED BY MAX(COS(),0)**2 
 !          *USTAR* FRICTION VELOCITY
 !          *UST*   REDUCED FRICTION VELOCITY DUE TO SHELTERING
 !          *Z0*    ROUGHNESS LENGTH 
@@ -53,10 +54,10 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0
-      USE YOWFRED  , ONLY : ZPIFR
+      USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
+      USE YOWFRED  , ONLY : ZPIFR  , FR5
       USE YOWPCONS , ONLY : G      , GM1
-      USE YOWPHYS  , ONLY : ZALP   , XKAPPA
+      USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
 
       USE YOWTEST  , ONLY : IU06
@@ -69,7 +70,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0, XLEVTAIL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: F1DCOS2, USTAR, Z0, XLEVTAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
       LOGICAL, INTENT(IN) :: LLPHIHF
@@ -83,9 +84,12 @@
       REAL(KIND=JWRB) :: X0G
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
+      REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW, XLOGGZ0, SQRTGZ0
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST
 
 ! ----------------------------------------------------------------------
 
@@ -93,6 +97,8 @@
 
 !     See INIT_X0TAUHF
       X0G=X0TAUHF*G
+
+      IF (LLPHIHF) USTPH(:) = UST(:)
 
 !*    COMPUTE THE INTEGRALS 
 !     ---------------------
@@ -105,6 +111,14 @@
         YC = OMEGACC*SQRTZ0OG(IJ)
         ZINF(IJ) = LOG(YC)
       ENDDO
+
+      IF(LLNORMAGAM) THEN
+        DO IJ=IJS,IJL
+          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)
+        ENDDO
+      ELSE
+        CONST(:) = 0.0_JWRB
+      ENDIF
 
 
 !     TAUHF :
@@ -137,9 +151,14 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
+!!!debile
+         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ) 
+         GAMNORMA = 1.0_JWRB
+!!!!
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
-            TAUHF(IJ) = TAUHF(IJ) + FNC2 
+            TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
         ENDDO
       ELSE
@@ -154,7 +173,8 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
-            TAUHF(IJ) = TAUHF(IJ) + FNC2 
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
+            TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
           TAUHF(IJ) = TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
         ENDDO
@@ -165,9 +185,9 @@
       IF (LLPHIHF) THEN
 !     PHIHF:
 !     We are neglecting the gravity-capillary contribution 
-
+!     Recompute DELZ over the full interval
       DO IJ=IJS,IJL
-        TAUW(IJ) = UST(IJ)**2
+        TAUW(IJ) = USTPH(IJ)**2
         ZSUP(IJ) = ZSUPMAX
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
       ENDDO
@@ -179,15 +199,16 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = UST(IJ)*CM1 +ZALP
+            ZX        = USTPH(IJ)*CM1 +ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
-            UST(IJ)   = SQRT(TAUW(IJ))
-            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+            USTPH(IJ)   = SQRT(TAUW(IJ))
+            PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
           ENDDO
           PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO
@@ -197,13 +218,14 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = UST(IJ)*CM1 +ZALP
+            ZX        = USTPH(IJ)*CM1 +ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
-            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
+            PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
           ENDDO
           PHIHF(IJ) = SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO

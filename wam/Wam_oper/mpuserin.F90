@@ -48,7 +48,7 @@
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
-     &            LLCAPCHNK, LLGCBZ0
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -200,7 +200,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK, LLGCBZ0,                                            &
+     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV
 
 
@@ -411,6 +411,7 @@
 !
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
 !     LLGCBZ0 : USE MODEL FOR BACKGROUND ROUGHNESS.
+!     LLNORMAGAM : USE THE RENORMALISTION OF THE GROWTH RATE.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
@@ -713,6 +714,7 @@
 
       LLCAPCHNK = .FALSE.
       LLGCBZ0 = .TRUE.
+      LLNORMAGAM = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
 
