@@ -66,14 +66,16 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LLNORMAGAM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,ROWATER  ,EPSMIN
-      USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2, RNU      ,RNUM, &
+      USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN
+      USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
+     &                      BMAXOKAPDTH, RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
-      USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP
+      USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
@@ -119,6 +121,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
@@ -144,6 +148,33 @@
       ELSE
         LTAUWSHELTER = .TRUE.
       ENDIF
+
+      XNGAMCONST(:,:) = 0.0_JWRB
+      IF(LLNORMAGAM) THEN
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + BMAXOKAPDTH*F(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
+
+        IF (ISHALLO.EQ.1) THEN
+          DO M=1,NFRE
+            DO IJ=IJS,IJL
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+            ENDDO
+          ENDDO
+        ELSE
+          DO M=1,NFRE
+            DO IJ=IJS,IJL
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+            ENDDO
+          ENDDO
+        ENDIF
+
+      ENDIF
+
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       IF(NGST.GT.1) CALL WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
@@ -362,16 +393,27 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB / (1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)/USTP(IJ,IGST) )
+!!!debile
+!!!! do we need to protect 1/ustp term ????
+         write(*,*) 'debile in sinput_adh ',M,K,IGST, GAMNORMA(IJ,K,IGST)
+                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB
+!!!!1
+
+
                   XLLWS(IJ,K,M)=1.0_JWRB
                 ELSE
                   UFAC(IJ,K,IGST)=0.0_JWRB
+                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB
                 ENDIF
               ELSE
                 UFAC(IJ,K,IGST)=0.0_JWRB
+                GAMNORMA(IJ,K,IGST) = 1.0_JWRB
               ENDIF
             ENDDO
           ENDDO
         ENDDO
+
 
 !       SWELL DAMPING:
 
@@ -399,7 +441,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) = UFAC(IJ,K,IGST)*CNSN(IJ)
+              SLP(IJ,IGST) =  GAMNORMA(IJ,K,IGST) * UFAC(IJ,K,IGST)*CNSN(IJ)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
