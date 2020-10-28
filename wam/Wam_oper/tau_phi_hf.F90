@@ -123,7 +123,9 @@
 
       F1DMIJ(:) = 0.0_JWRB 
       DO K = 1, NANG 
-         F1DMIJ(IJ) = F1DMIJ(IJ) + DELTH*F(IJ,K,MIJ(IJ))
+        DO IJ=IJS,IJL
+          F1DMIJ(IJ) = F1DMIJ(IJ) + DELTH*F(IJ,K,MIJ(IJ))
+        ENDDO
       ENDDO
 
       DO K=1,NANG 
