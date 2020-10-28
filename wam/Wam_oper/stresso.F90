@@ -246,14 +246,10 @@
       ENDIF
   
       CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USNEW, Z0NEW, &
-     &                F, THWNEW, &
      &                XLEVTAIL, UST, TAU1, PHI1, LLPHIWA)
 
       DO IJ=IJS,IJL
-!!!debile full calculation        TAUHF(IJ) = CONST1(IJ)*F1DCOS3(IJ)*TAU1(IJ)
-!!!1 also do phioc
-        TAUHF(IJ) = CONST1(IJ)*TAU1(IJ)
-
+        TAUHF(IJ) = CONST1(IJ)*F1DCOS3(IJ)*TAU1(IJ)
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
