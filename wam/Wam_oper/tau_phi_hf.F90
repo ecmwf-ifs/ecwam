@@ -172,7 +172,8 @@
             ZTOT = 0.0_JWRB
             DO K=1,NANG
               IF ( COS1(IJ,K) > 0.0_JWRB ) THEN
-                ZX        = (UST(IJ)*CM1 +ZALP)*COS1(IJ,K)
+!debile as before                 ZX        = (UST(IJ)*CM1 +ZALP)*COS1(IJ,K)
+                ZX        = UST(IJ)*CM1 +ZALP
                 ZARG      = XKAPPA/ZX
                 ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
                 ZLOG      = MIN(ZLOG,0.0_JWRB)
