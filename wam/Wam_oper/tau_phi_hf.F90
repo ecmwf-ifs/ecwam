@@ -1,4 +1,5 @@
       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USTAR, Z0,    &
+     &                      F, THWNEW, &
      &                      XLEVTAIL, UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -55,7 +56,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
-      USE YOWFRED  , ONLY : ZPIFR  , FR5
+      USE YOWFRED  , ONLY : ZPIFR  , FR5,   TH    ,DELTH
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
@@ -71,12 +73,16 @@
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: F1DCOS2, USTAR, Z0, XLEVTAIL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUHF, PHIHF
       LOGICAL, INTENT(IN) :: LLPHIHF
 
       INTEGER(KIND=JWIM) :: NS
-      INTEGER(KIND=JWIM) :: J, IJ
+      INTEGER(KIND=JWIM) :: J, IJ, K
 
       REAL(KIND=JWRB), PARAMETER :: ZSUPMAX = 0.0_JWRB  !  LOG(1.)
       REAL(KIND=JWRB) :: XKS, OMS
@@ -85,11 +91,14 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB) :: ZTOT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMIJ
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS1, COS2, COS3
 
 ! ----------------------------------------------------------------------
 
@@ -112,11 +121,21 @@
         ZINF(IJ) = LOG(YC)
       ENDDO
 
+      F1DMIJ(:) = 0.0_JWRB 
+      DO K = 1, NANG 
+         F1DMIJ(IJ) = F1DMIJ(IJ) + DELTH*F(IJ,K,MIJ(IJ))
+      ENDDO
+
+      DO K=1,NANG 
+         COS1(IJ,K) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
+         COS2(IJ,K) = COS1(IJ,K)**2
+         COS3(IJ,K) = COS2(IJ,K)*COS1(IJ,K)
+      ENDDO
+
       IF(LLNORMAGAM) THEN
         DO IJ=IJS,IJL
-!!!debile
-!!1          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)/64._JWRB
-          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)/64._JWRB
+!!1debile full          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*SQRTGZ0(IJ)
         ENDDO
       ELSE
         CONST(:) = 0.0_JWRB
@@ -147,17 +166,29 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = UST(IJ)*CM1 +ZALP
-            ZARG      = XKAPPA/ZX
-            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-            ZLOG      = MIN(ZLOG,0.0_JWRB)
-            ZBETA     = EXP(ZLOG)*ZLOG**4
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
+!!debile full            ZX        = UST(IJ)*CM1 +ZALP
+            ZTOT = 0.0_JWRB
+            DO K=1,NANG
+              IF ( COS1(IJ,K) > 0.0_JWRB ) THEN
+                ZX        = (UST(IJ)*CM1 +ZALP)*COS1(IJ,K)
+                ZARG      = XKAPPA/ZX
+                ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+                ZLOG      = MIN(ZLOG,0.0_JWRB)
+                ZBETA     = EXP(ZLOG)*ZLOG**4
+
+!!1debile full            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*F1DMIJ(IJ)*COS2(IJ,K)*UST(IJ)*Y)
 !!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ), GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
+         write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ),K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
+                ZTOT      = ZTOT + ZBETA * GAMNORMA * F(IJ,K,MIJ(IJ))*COS3(IJ,K)
+              ENDIF
+            ENDDO
+            ZTOT = DELTH*ZTOT
+
+!!debile full            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
+            FNC2      = ZTOT*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
