@@ -218,7 +218,7 @@
       K=1
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = DELTH*F(IJ,K,MIJ(IJ))*COSW**2
+        FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
       ENDDO
@@ -226,10 +226,15 @@
       DO K=2,NANG
         DO IJ=IJS,IJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = DELTH*F(IJ,K,MIJ(IJ))*COSW**2
+          FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
         ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+          F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
+          F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
       ENDDO
 
       IF( LTAUWSHELTER ) THEN

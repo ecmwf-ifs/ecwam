@@ -55,7 +55,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
-      USE YOWFRED  , ONLY : ZPIFR  , FR5
+      USE YOWFRED  , ONLY : ZPI, ZPIFR  , FR5
       USE YOWPCONS , ONLY : G      , GM1
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
@@ -153,7 +153,7 @@
             FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ) 
+         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ), SQRTZ0OG(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
