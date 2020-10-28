@@ -153,7 +153,7 @@
             FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
+         write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ), GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
