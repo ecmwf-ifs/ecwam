@@ -256,7 +256,7 @@
             USTPH(IJ)   = SQRT(TAUW(IJ))
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)*DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
