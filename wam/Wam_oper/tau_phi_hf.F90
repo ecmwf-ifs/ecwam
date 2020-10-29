@@ -248,6 +248,9 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
+!!!debile
+            GAMNORMA  = 1.0_JWRB
+!!11
             FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUW(IJ))

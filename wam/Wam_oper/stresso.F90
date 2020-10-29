@@ -15,11 +15,11 @@
 !     J. BIDLOT            ECMWF            2007  ADD MIJ
 !     P.A.E.M. JANSSEN     ECMWF            2011  ADD FLUX CALULATIONS
 
-!*    PURPOSE.jjjj
+!*    PURPOSE.
 !     --------
 
 !       COMPUTE NORMALIZED WAVE STRESS FROM INPUT SOURCE FUNCTION
- 
+
 !**   INTERFACE.
 !     ----------
 
@@ -32,7 +32,7 @@
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
-!         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for fluxes calculation.
+!         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
 !                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
