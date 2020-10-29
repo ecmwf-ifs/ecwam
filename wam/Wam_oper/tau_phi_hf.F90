@@ -1,6 +1,6 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USTAR, Z0,    &
-     &                      F, THWNEW, &
-     &                      XLEVTAIL, UST, TAUHF, PHIHF, LLPHIHF)
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, Z0,    &
+     &                      F, THWNEW, ROAIRN, &
+     &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
 
@@ -16,19 +16,21 @@
 !       COMPUTE HIGH-FREQUENCY WAVE STRESS AND ENERGY FLUX
 
 !**   INTERFACE.
-!     ----------
+!     ---------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USTAR, UST, Z0, XLEVTAIL,
-!                          TAUHF, PHIHF, LLPHIHF)
+!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, UST, Z0,
+!                          F, THWNEW, ROAIRN, &
+!                          UST, TAUHF, PHIHF, LLPHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *LTAUWSHELTER* - if true then XLEVTAIL are non zeros.
+!          *LTAUWSHELTER* - if true then TAUWSHELTER 
 !          *MIJ* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!          *F1DCOS2* - SPEUDO 1D SPECTRUM WEIGHTED BY MAX(COS(),0)**2 
+!          *F*           - WAVE SPECTRUM.
+!          *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!          *ROAIRN*      - AIR DENSITY IN KG/M**3.
 !          *USTAR* FRICTION VELOCITY
 !          *UST*   REDUCED FRICTION VELOCITY DUE TO SHELTERING
 !          *Z0*    ROUGHNESS LENGTH 
-!          *XLEVTAIL* TAIL LEVEL
 !          *TAUHF* HIGH-FREQUENCY STRESS
 !          *PHIHF* HIGH-FREQUENCY ENERGY FLUX INTO OCEAN
 !          *LLPHIHF* TRUE IF PHIHF NEEDS TO COMPUTED
@@ -58,8 +60,8 @@
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
       USE YOWFRED  , ONLY : ZPIFR  , FR5,   TH    ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G      , GM1       ,ZPI
-      USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,GAMNCONST
+      USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM2
+      USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
 
       USE YOWTEST  , ONLY : IU06
@@ -72,9 +74,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(IJS:IJL)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: F1DCOS2, USTAR, Z0, XLEVTAIL
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
@@ -91,14 +92,14 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB) :: ZTOT
+      REAL(KIND=JWRB) :: COSW, FCOSW2 
+      REAL(KIND=JWRB) :: C2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMIJ
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS1, F1DMIJCOS2, FMIJCOS3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST, CONSTTAU, CONSTPHI
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
 
 ! ----------------------------------------------------------------------
 
@@ -121,25 +122,35 @@
         ZINF(IJ) = LOG(YC)
       ENDDO
 
-      F1DMIJ(:) = 0.0_JWRB 
-      DO K = 1, NANG 
-        DO IJ=IJS,IJL
-          F1DMIJ(IJ) = F1DMIJ(IJ) + DELTH*F(IJ,K,MIJ(IJ))
-        ENDDO
+      DO IJ=IJS,IJL
+        CONSTTAU(IJ) = ZPI4GM2*FR5(MIJ(IJ))
       ENDDO
 
-      DO K=1,NANG 
+
+      K=1
+      DO IJ=IJS,IJL
+        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
+        FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
+        F1DCOS3(IJ) = FCOSW2*COSW
+        F1DCOS2(IJ) = FCOSW2
+      ENDDO
+
+      DO K=2,NANG
         DO IJ=IJS,IJL
-         COS1(IJ,K) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-         F1DMIJCOS2(IJ,K) = COS1(IJ,K)**2 * F1DMIJ(IJ)
-         FMIJCOS3(IJ,K) =  COS1(IJ,K)**3 * F(IJ,K,MIJ(IJ))
+          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
+          FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
+          F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
+          F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
         ENDDO
+      ENDDO
+      DO IJ=IJS,IJL
+        F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
+        F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
       ENDDO
 
       IF(LLNORMAGAM) THEN
         DO IJ=IJS,IJL
-!!1debile full          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)
-          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*SQRTGZ0(IJ)
+          CONST(IJ) = GAMNCONST*FR5(MIJ(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
         CONST(:) = 0.0_JWRB
@@ -170,30 +181,20 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-!!debile full            ZX        = UST(IJ)*CM1 +ZALP
-            ZTOT = 0.0_JWRB
-            DO K=1,NANG
-              IF ( COS1(IJ,K) > 0.0_JWRB ) THEN
-                ZX        = (UST(IJ)*CM1 + ZALP)*COS1(IJ,K)
-                ZARG      = XKAPPA/ZX
-                ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
-                ZLOG      = MIN(ZLOG,0.0_JWRB)
-                ZBETA     = EXP(ZLOG)*ZLOG**4
+            ZX        = UST(IJ)*CM1 +ZALP
+            ZARG      = XKAPPA/ZX
+            ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
+            ZLOG      = MIN(ZLOG,0.0_JWRB)
+            ZBETA     = EXP(ZLOG)*ZLOG**4
 
-!!1debile full            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*F1DMIJCOS2(IJ,K)*UST(IJ)*Y)
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!!debile
          write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ),K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
-                ZTOT      = ZTOT + ZBETA * GAMNORMA * FMIJCOS3(IJ,K)
-              ENDIF
-            ENDDO
-            ZTOT = DELTH*ZTOT
 
-!!debile full            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
-            FNC2      = ZTOT*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
-            TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
           ENDDO
@@ -213,7 +214,7 @@
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
-          TAUHF(IJ) = TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
+          TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
         ENDDO
       ENDIF
 
@@ -229,6 +230,11 @@
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
       ENDDO
 
+      C2 = (ZPI)**4*GM1
+      DO IJ=IJS,IJL
+        CONSTPHI(IJ) = ROAIRN(IJ)*C2*FR5(MIJ(IJ))
+      ENDDO
+
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)
       IF( LTAUWSHELTER ) THEN
         DO IJ=IJS,IJL
@@ -241,13 +247,13 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
-            TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUW(IJ))
-            PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-          PHIHF(IJ) = SQRTZ0OG(IJ)*PHIHF(IJ)*DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
@@ -260,11 +266,11 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            FNC2      = ZBETA*WTAUHF(J)
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
+            FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
             PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
           ENDDO
-          PHIHF(IJ) = SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO
       ENDIF
       ENDIF

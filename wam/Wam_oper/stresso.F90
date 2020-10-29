@@ -75,7 +75,7 @@
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI        ,ZPI4GM2
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
       USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTABL  , ONLY : EPS1
@@ -100,14 +100,12 @@
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
       REAL(KIND=JWRB) :: TAUTOUS2
-      REAL(KIND=JWRB) :: C2 
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, XK, DELK1, DELK2
       REAL(KIND=JWRB) :: PHI2
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, F1DCOS3, CONST1, XSTRESS, YSTRESS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIHF, F1DCOS2, CONST2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAU1, PHI1, XLEVTAIL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUHF, PHIHF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: US2, TAUX, TAUY, TAUPX, TAUPY
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USDIRP, UST
@@ -118,10 +116,6 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
-
-      DO IJ=IJS,IJL
-        CONST1(IJ) = ZPI4GM2*FR5(MIJ(IJ))
-      ENDDO
 
       DO IJ=IJS,IJL
         PHIWA(IJ)   = 0.0_JWRB
@@ -215,46 +209,11 @@
         ENDDO
       ENDIF
 
-      K=1
-      DO IJ=IJS,IJL
-        COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-        F1DCOS3(IJ) = FCOSW2*COSW
-        F1DCOS2(IJ) = FCOSW2
-      ENDDO
-
-      DO K=2,NANG
-        DO IJ=IJS,IJL
-          COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = F(IJ,K,MIJ(IJ))*COSW**2
-          F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
-          F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-        ENDDO
-      ENDDO
+      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USNEW, Z0NEW, &
+     &                F, THWNEW, ROAIRN,                         &
+     &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=IJS,IJL
-          F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
-          F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
-      ENDDO
-
-      IF( LTAUWSHELTER ) THEN
-        DO IJ=IJS,IJL
-!!1debile full calculation          XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)*F1DCOS3(IJ)
-          XLEVTAIL(IJ)=TAUWSHELTER*CONST1(IJ)
-        ENDDO
-      ELSE
-        XLEVTAIL(:) = 0.0_JWRB
-      ENDIF
-  
-      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, F1DCOS2, USNEW, Z0NEW, &
-     &                F, THWNEW, &
-     &                XLEVTAIL, UST, TAU1, PHI1, LLPHIWA)
-
-      DO IJ=IJS,IJL
-!!!debile full calculation        TAUHF(IJ) = CONST1(IJ)*F1DCOS3(IJ)*TAU1(IJ)
-!!!1 also do phioc
-        TAUHF(IJ) = CONST1(IJ)*TAU1(IJ)
-
         XSTRESS(IJ) = XSTRESS(IJ) + TAUHF(IJ)*SIN(USDIRP(IJ))
         YSTRESS(IJ) = YSTRESS(IJ) + TAUHF(IJ)*COS(USDIRP(IJ))
         TAUW(IJ) = SQRT(XSTRESS(IJ)**2+YSTRESS(IJ)**2)
@@ -270,10 +229,8 @@
 !      ENDIF
 
       IF ( LLPHIWA ) THEN
-        C2 = (ZPI)**4*GM1
         DO IJ=IJS,IJL
-          CONST2(IJ) = ROAIRN(IJ)*C2*FR5(MIJ(IJ))
-          PHIWA(IJ) = PHIWA(IJ) + CONST2(IJ)*F1DCOS2(IJ)*PHI1(IJ)
+          PHIWA(IJ) = PHIWA(IJ) + PHIHF(IJ)
         ENDDO
       ENDIF
 
