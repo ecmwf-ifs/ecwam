@@ -185,10 +185,12 @@
          write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ),K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
-                ZTOT      = ZTOT + ZBETA * GAMNORMA * F(IJ,K,MIJ(IJ))*COS3(IJ,K)
+!!1 totally debile                ZTOT      = ZTOT + ZBETA * GAMNORMA * F(IJ,K,MIJ(IJ))*COS3(IJ,K)
+                ZTOT      = ZTOT + F(IJ,K,MIJ(IJ))*COS3(IJ,K)
               ENDIF
             ENDDO
-            ZTOT = DELTH*ZTOT
+!! totally debile            ZTOT = DELTH*ZTOT
+            ZTOT = DELTH*ZTOT*ZBETA
 
 !!debile full            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             FNC2      = ZTOT*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
