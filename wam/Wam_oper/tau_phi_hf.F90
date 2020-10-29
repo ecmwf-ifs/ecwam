@@ -98,7 +98,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMIJ
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS1, COS2, COS3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS1, F1DMIJCOS2, FMIJCOS3
 
 ! ----------------------------------------------------------------------
 
@@ -129,9 +129,11 @@
       ENDDO
 
       DO K=1,NANG 
+        DO IJ=IJS,IJL
          COS1(IJ,K) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-         COS2(IJ,K) = COS1(IJ,K)**2
-         COS3(IJ,K) = COS2(IJ,K)*COS1(IJ,K)
+         F1DMIJCOS2(IJ,K) = COS1(IJ,K)**2 * F1DMIJ(IJ)
+         FMIJCOS3(IJ,K) =  COS1(IJ,K)**3 * F(IJ,K,MIJ(IJ))
+        ENDDO
       ENDDO
 
       IF(LLNORMAGAM) THEN
@@ -172,31 +174,29 @@
             ZTOT = 0.0_JWRB
             DO K=1,NANG
               IF ( COS1(IJ,K) > 0.0_JWRB ) THEN
-!debile as before                 ZX        = (UST(IJ)*CM1 +ZALP)*COS1(IJ,K)
-                ZX        = UST(IJ)*CM1 +ZALP
+!!debile as before                ZX        = (UST(IJ)*CM1 + ZALP)*COS1(IJ,K)
+                ZX        = UST(IJ)*CM1 + ZALP
                 ZARG      = XKAPPA/ZX
                 ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
                 ZLOG      = MIN(ZLOG,0.0_JWRB)
                 ZBETA     = EXP(ZLOG)*ZLOG**4
 
 !!1debile full            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*F1DMIJ(IJ)*COS2(IJ,K)*UST(IJ)*Y)
+            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*F1DMIJCOS2(IJ,K)*UST(IJ)*Y)
 !!!debile
          write(*,*) 'debile tau_phi ',IJ,J, MIJ(IJ),K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
-!!1 totally debile                ZTOT      = ZTOT + ZBETA * GAMNORMA * F(IJ,K,MIJ(IJ))*COS3(IJ,K)
-                ZTOT      = ZTOT + F(IJ,K,MIJ(IJ))*COS3(IJ,K)
+                ZTOT      = ZTOT + ZBETA * GAMNORMA * FMIJCOS3(IJ,K)
               ENDIF
             ENDDO
-!! totally debile            ZTOT = DELTH*ZTOT
-            ZTOT = DELTH*ZTOT*ZBETA
+            ZTOT = DELTH*ZTOT
 
 !!debile full            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             FNC2      = ZTOT*TAUW(IJ)*WTAUHF(J)*DELZ(IJ)
             TAUW(IJ)  = MAX(TAUW(IJ)-XLEVTAIL(IJ)*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUW(IJ))
-            TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
+            TAUHF(IJ) = TAUHF(IJ) + FNC2
           ENDDO
         ENDDO
       ELSE
