@@ -180,7 +180,7 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = UST(IJ)*CM1 +ZALP
+            ZX        = UST(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
@@ -204,7 +204,7 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = UST(IJ)*CM1 +ZALP
+            ZX        = UST(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
@@ -241,7 +241,7 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = USTPH(IJ)*CM1 +ZALP
+            ZX        = USTPH(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
@@ -263,7 +263,7 @@
             Y         = EXP(ZINF(IJ)+REAL(J-1,JWRB)*DELZ(IJ))
             OMEGA     = Y*SQRTGZ0(IJ)
             CM1       = OMEGA*GM1
-            ZX        = USTPH(IJ)*CM1 +ZALP
+            ZX        = USTPH(IJ)*CM1 + ZALP
             ZARG      = XKAPPA/ZX
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
