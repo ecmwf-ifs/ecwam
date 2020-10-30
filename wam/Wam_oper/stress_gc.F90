@@ -99,7 +99,7 @@
 
         GAMNORMA  = 1.0_JWRB / (1.0_JWRB + CONST*XKMSQRTVGOC2_GC(I)*GAM_W(I)/USTAR )
 !!!debile
-         write(*,*) 'stress_gc ',J, GAMNORMA, USTAR, CONST, XKMSQRTVGOC2_GC(I), GAM_W(I)
+         write(*,*) 'stress_gc ',I, GAMNORMA, USTAR, CONST, XKMSQRTVGOC2_GC(I), GAM_W(I)
          GAMNORMA = 1.0_JWRB
 !!!!
 
