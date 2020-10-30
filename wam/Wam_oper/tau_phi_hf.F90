@@ -225,6 +225,9 @@
 !     We are neglecting the gravity-capillary contribution 
 !     Recompute DELZ over the full interval
       DO IJ=IJS,IJL
+!!debile bug back in
+        USTPH(IJ) = UST(IJ)
+
         TAUW(IJ) = USTPH(IJ)**2
         ZSUP(IJ) = ZSUPMAX
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
@@ -251,12 +254,14 @@
 !!!debile
             GAMNORMA  = 1.0_JWRB
 !!11
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+!! bugfix            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J) * GAMNORMA
             TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUW(IJ))
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
+!! bugfix          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ) * DELZ(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
