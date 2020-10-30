@@ -1,5 +1,5 @@
       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USTAR, Z0,    &
-     &                      F, THWNEW, ROAIRN, &
+     &                      F, THWNEW, ROAIRN,                         &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
