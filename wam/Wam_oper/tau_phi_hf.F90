@@ -96,7 +96,7 @@
       REAL(KIND=JWRB) :: C2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW, XLOGGZ0, SQRTGZ0
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST, CONSTTAU, CONSTPHI
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
@@ -168,9 +168,8 @@
       ENDIF
 
       DO IJ=IJS,IJL
-        TAUW(IJ) = UST(IJ)**2
+        TAUL(IJ) = UST(IJ)**2
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
-
         TAUHF(IJ) = 0.0_JWRB
       ENDDO
 
@@ -193,9 +192,9 @@
          GAMNORMA = 1.0_JWRB
 !!!!
 
-            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-            TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
-            UST(IJ)   = SQRT(TAUW(IJ))
+            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
+            UST(IJ)   = SQRT(TAUL(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
           ENDDO
         ENDDO
@@ -214,7 +213,7 @@
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
-          TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUW(IJ)*TAUHF(IJ)*DELZ(IJ)
+          TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
         ENDDO
       ENDIF
 
@@ -225,10 +224,7 @@
 !     We are neglecting the gravity-capillary contribution 
 !     Recompute DELZ over the full interval
       DO IJ=IJS,IJL
-!!debile bug back in
-        USTPH(IJ) = UST(IJ)
-
-        TAUW(IJ) = USTPH(IJ)**2
+        TAUL(IJ) = USTPH(IJ)**2
         ZSUP(IJ) = ZSUPMAX
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
       ENDDO
@@ -254,14 +250,12 @@
 !!!debile
             GAMNORMA  = 1.0_JWRB
 !!11
-!! bugfix            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J) * GAMNORMA
-            TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
-            USTPH(IJ)   = SQRT(TAUW(IJ))
+            FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
+            USTPH(IJ)   = SQRT(TAUL(IJ))
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-!! bugfix          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
-          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ) * DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
@@ -278,7 +272,7 @@
             FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
             PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
           ENDDO
-          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*TAUW(IJ)*PHIHF(IJ)*DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*TAUL(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO
       ENDIF
       ENDIF
