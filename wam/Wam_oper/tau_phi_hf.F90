@@ -251,14 +251,12 @@
 !!!debile
             GAMNORMA  = 1.0_JWRB
 !!11
-!!debile unbug            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)* GAMNORMA
+            FNC2      = ZBETA*TAUW(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUW(IJ)  = MAX(TAUW(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUW(IJ))
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
-!! debile inbug          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
-          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ) * DELZ(IJ)
+          PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*PHIHF(IJ)
         ENDDO
       ELSE
         DO IJ=IJS,IJL
