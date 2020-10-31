@@ -176,6 +176,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
+      INTEGER(KIND=JWIM) :: MIJFLX(IJS:IJL)
 
       REAL(KIND=JWRB) :: DELT, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
@@ -278,7 +279,7 @@
      &               FMEANWS, FL1, &
      &               USNEW, TAUW, TAUWDIR, Z0NEW, PHIWA, &
      &               FL, SL, SPOS, &
-     &               MIJ, RHOWGDFTH, XLLWS)
+     &               MIJ, MIJFLX, RHOWGDFTH, XLLWS)
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. IMPLSCH: SINFLX CALLED ', ICALL
@@ -299,7 +300,7 @@
 
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                               &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SL, CICVR,                                       &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -324,7 +325,7 @@
           ENDDO
         ENDDO
         CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                               &
+     &                 MIJFLX, RHOWGDFTH,                               &
      &                 SSOURCE, CICVR,                                  &
      &                 PHIWA,                                           &
      &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
@@ -402,7 +403,7 @@
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-     &                MIJ, RHOWGDFTH)
+     &                MIJ, MIJFLX, RHOWGDFTH)
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
 

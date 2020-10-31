@@ -1,5 +1,5 @@
       SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
-     &                    MIJ, RHOWGDFTH,                               &
+     &                    MIJFLX, RHOWGDFTH,                            &
      &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
@@ -12,7 +12,7 @@
 !     J. BIDLOT            ECMWF FEBRUARY   1996-97
 !     S. ABDALLA           ECMWF OCTOBER    2001 INTRODUCTION OF VARIABLE
 !                                                AIR DENSITY
-!     J. BIDLOT            ECMWF            2007  ADD MIJ
+!     J. BIDLOT            ECMWF            2007  ADD MIJFLX
 !     P.A.E.M. JANSSEN     ECMWF            2011  ADD FLUX CALULATIONS
 
 !*    PURPOSE.
@@ -24,7 +24,7 @@
 !     ----------
 
 !        *CALL* *STRESSO (F, SPOS, IJS, IJL,
-!    &                    MIJ, RHOWGDFTH,
+!    &                    MIJFLX, RHOWGDFTH,
 !    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
 !    &                    TAUW, TAUWDIR, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
@@ -32,10 +32,10 @@
 !         *SPOS*        - POSITIVE WIND INPUT SOURCE FUNCTION ARRAY.
 !         *IJS*         - INDEX OF FIRST GRIDPOINT.
 !         *IJL*         - INDEX OF LAST GRIDPOINT.
-!         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!         *MIJFLX*      - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for the fluxes calculation.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
-!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
-!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
+!                         FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJFLX) 
+!                         !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJFLX)
 !         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
@@ -88,7 +88,7 @@
 #include "tau_phi_hf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJFLX
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: RHOWGDFTH
@@ -140,8 +140,8 @@
 
 !*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
 !     ---------------------------------------------------------------------------------
-      DO M=1,MAXVAL(MIJ(:))
-!     The integration only up to FR=MIJ since RHOWGDFTH=0 for FR>MIJ
+      DO M=1,MAXVAL(MIJFLX(:))
+!     The integration only up to FR=MIJFLX since RHOWGDFTH=0 for FR>MIJFLX
         K=1
         DO IJ=IJS,IJL
           SUMX(IJ) = SPOS(IJ,K,M)*SINTH(K)
@@ -167,8 +167,8 @@
       ENDDO
 
       IF ( LLPHIWA ) THEN
-        DO M=1,MAXVAL(MIJ(:))
-!       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
+        DO M=1,MAXVAL(MIJFLX(:))
+!       THE INTEGRATION ONLY UP TO FR=MIJFLX SINCE RHOWGDFTH=0 FOR FR>MIJFLX
           K=1
           DO IJ=IJS,IJL
             SUMT(IJ) = SPOS(IJ,K,M)
@@ -209,8 +209,8 @@
         ENDDO
       ENDIF
 
-      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJ, USNEW, Z0NEW, &
-     &                F, THWNEW, ROAIRN,                         &
+      CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USNEW, Z0NEW, &
+     &                F, THWNEW, ROAIRN,                            &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=IJS,IJL
