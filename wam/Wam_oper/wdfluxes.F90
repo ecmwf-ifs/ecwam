@@ -81,7 +81,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
-      INTEGER(KIND=JWIM) :: MIJFLX(IJS:IJL)
 
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -129,7 +128,7 @@
      &             FMEANWS, FL1, &
      &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
-     &             MIJ, MIJFLX, RHOWGDFTH, XLLWS)
+     &             MIJ, RHOWGDFTH, XLLWS)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
@@ -148,7 +147,7 @@
 
         IF(.NOT. LWVFLX_SNL) THEN
           CALL WNFLUXES (IJS, IJL,                                      &
-     &                   MIJFLX, RHOWGDFTH,                             &
+     &                   MIJ, RHOWGDFTH,                                &
      &                   SL, CICVR,                                     &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &
@@ -163,7 +162,7 @@
 
         IF(LWVFLX_SNL) THEN
           CALL WNFLUXES (IJS, IJL,                                      &
-     &                   MIJFLX, RHOWGDFTH,                             &
+     &                   MIJ, RHOWGDFTH,                                &
      &                   SL, CICVR,                                     &
      &                   PHIWA,                                         &
      &                   EMEANALL, F1MEAN, U10NEW, THWNEW,              &

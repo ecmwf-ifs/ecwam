@@ -1,4 +1,4 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USTAR, Z0, &
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
      &                      F, THWNEW, ROAIRN,                         &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
@@ -18,13 +18,12 @@
 !**   INTERFACE.
 !     ---------
 
-!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, MIJFLX, USTAR, UST, Z0,
+!       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, UST, Z0,
 !                          F, THWNEW, ROAIRN, &
 !                          UST, TAUHF, PHIHF, LLPHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
-!          *MIJFLX* - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE for fluxes.
 !          *F*           - WAVE SPECTRUM.
 !          *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !          *ROAIRN*      - AIR DENSITY IN KG/M**3.
@@ -73,7 +72,6 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJFLX(IJS:IJL)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
@@ -115,7 +113,7 @@
 
       DO IJ=IJS,IJL
         XLOGGZ0(IJ) = LOG(G*Z0(IJ))
-        OMEGACC = MAX(ZPIFR(MIJFLX(IJ)), X0G/UST(IJ))
+        OMEGACC = MAX(ZPIFR(NFRE), X0G/UST(IJ))
         SQRTZ0OG(IJ)  = SQRT(Z0(IJ)*GM1)
         SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
         YC = OMEGACC*SQRTZ0OG(IJ)
@@ -123,14 +121,14 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        CONSTTAU(IJ) = ZPI4GM2*FR5(MIJFLX(IJ))
+        CONSTTAU(IJ) = ZPI4GM2*FR5(NFRE)
       ENDDO
 
 
       K=1
       DO IJ=IJS,IJL
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-        FCOSW2   = F(IJ,K,MIJFLX(IJ))*COSW**2
+        FCOSW2   = F(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
       ENDDO
@@ -138,7 +136,7 @@
       DO K=2,NANG
         DO IJ=IJS,IJL
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
-          FCOSW2   = F(IJ,K,MIJFLX(IJ))*COSW**2
+          FCOSW2   = F(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
         ENDDO
@@ -150,7 +148,7 @@
 
       IF(LLNORMAGAM) THEN
         DO IJ=IJS,IJL
-          CONST(IJ) = GAMNCONST*FR5(MIJFLX(IJ))*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
         CONST(:) = 0.0_JWRB
@@ -188,7 +186,7 @@
 
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, MIJFLX(IJ),K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
+         write(*,*) 'debile tau_phi ',IJ,J, K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
 
@@ -231,7 +229,7 @@
 
       C2 = (ZPI)**4*GM1
       DO IJ=IJS,IJL
-        CONSTPHI(IJ) = ROAIRN(IJ)*C2*FR5(MIJFLX(IJ))
+        CONSTPHI(IJ) = ROAIRN(IJ)*C2*FR5(NFRE)
       ENDDO
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)
