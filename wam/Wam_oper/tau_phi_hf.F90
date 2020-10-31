@@ -59,7 +59,7 @@
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
       USE YOWFRED  , ONLY : ZPIFR  , FR5,   TH    ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM2
+      USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
 
@@ -91,7 +91,6 @@
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB) :: COSW, FCOSW2 
-      REAL(KIND=JWRB) :: C2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
@@ -186,7 +185,7 @@
 
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, K, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
+         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
          GAMNORMA = 1.0_JWRB
 !!!!
 
@@ -227,9 +226,8 @@
         DELZ(IJ) = MAX((ZSUP(IJ)-ZINF(IJ))/REAL(JTOT_TAUHF-1,JWRB),0.0_JWRB)
       ENDDO
 
-      C2 = (ZPI)**4*GM1
       DO IJ=IJS,IJL
-        CONSTPHI(IJ) = ROAIRN(IJ)*C2*FR5(NFRE)
+        CONSTPHI(IJ) = ROAIRN(IJ)*ZPI4GM1*FR5(NFRE)
       ENDDO
 
      ! Intergrals are integrated following a change of variable : Z=LOG(Y)

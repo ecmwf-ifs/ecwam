@@ -14,6 +14,7 @@
       REAL(KIND=JWRB), PARAMETER :: CIRC = 40000000.0_JWRB
       REAL(KIND=JWRB) :: ZPI = 6.2831854_JWRB
       REAL(KIND=JWRB) :: THREEZPI = 18.849555922_JWRB
+      REAL(KIND=JWRB) :: ZPI4GM1 = 158.93794172_JWRB
       REAL(KIND=JWRB) :: ZPI4GM2 = 16.208233910_JWRB
       REAL(KIND=JWRB) :: ZPISQRT = 1.7724539_JWRB
       REAL(KIND=JWRB) :: ZCONST = 0.0281349_JWRB 
@@ -59,6 +60,7 @@
 !     *RAD*       REAL      PI / 180.
 !     *DEG*       REAL      180. / PI.
 !     *ZPI*       REAL      2. * PI.
+!     *ZPI4GM1*   REAL      ZPI**4/G*
 !     *ZPI4GM2*   REAL      ZPI**4/G**2 
 !     *ZPISQRT*   REAL      SQRT(PI)
 !     *ZCONST*    REAL      1./(8.*PI*SQRT(2.))
