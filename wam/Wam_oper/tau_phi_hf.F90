@@ -182,13 +182,7 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
-!!!debile
-         write(*,*) 'debile tau_phi ',IJ,J, GAMNORMA, UST(IJ), SQRTGZ0(IJ)*Y/ZPI, CONST(IJ),ZBETA 
-         GAMNORMA = 1.0_JWRB
-!!!!
-
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUL(IJ))
@@ -243,9 +237,6 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
-!!!debile
-            GAMNORMA  = 1.0_JWRB
-!!11
             FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUL(IJ))

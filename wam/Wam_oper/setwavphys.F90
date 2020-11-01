@@ -9,7 +9,7 @@ USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
 USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
      &                ESH      ,ASH      ,BSH      ,ASWKM    ,BSWKM
-USE YOWCOUP  , ONLY : LLGCBZ0
+USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,        &
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
@@ -35,6 +35,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAPMAX = 0.03_JWRB
         TAUWSHELTER = 0.0_JWRB
         TAILFACTOR = 2.5_JWRB
+          IF(LLNORMAGAM) THEN
+           write(*,*) ' not yet tested !!!!!'
+           CALL ABORT1
+          ENDIF
         IF(LLGCBZ0) THEN
           BETAMAX = 1.22_JWRB
         ELSE 
@@ -65,15 +69,26 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ALPHA   = 0.0065_JWRB
         ZALP    = 0.008_JWRB
-        TAUWSHELTER = 0.25_JWRB
         TAILFACTOR = 2.5_JWRB
         IF(LLGCBZ0) THEN
           ALPHAPMAX = 0.03_JWRB
-          BETAMAX = 1.46_JWRB
+          IF(LLNORMAGAM) THEN
+            BETAMAX = 1.60_JWRB
+            TAUWSHELTER = 0.0_JWRB
+          ELSE
+            BETAMAX = 1.46_JWRB
+            TAUWSHELTER = 0.25_JWRB
+          ENDIF
           TAILFACTOR_PM = 0.0_JWRB
         ELSE 
           ALPHAPMAX = 0.031_JWRB
-          BETAMAX = 1.40_JWRB
+          IF(LLNORMAGAM) THEN
+            BETAMAX = 1.60_JWRB
+            TAUWSHELTER = 0.0_JWRB
+          ELSE
+            BETAMAX = 1.40_JWRB
+            TAUWSHELTER = 0.25_JWRB
+          ENDIF
           TAILFACTOR_PM = 3.0_JWRB
         ENDIF
 

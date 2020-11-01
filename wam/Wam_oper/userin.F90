@@ -69,7 +69,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
-     &            LLCAPCHNK, LLGCBZ0
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
@@ -683,7 +683,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       IF(LLGCBZ0) THEN
         WRITE(IU06,*) ' USE GRAVITY-CAPILLARY MODEL FOR THE BACKGROUND ROUGHNESS'
-      ELSE IF(LLCAPCHNK) THEN
+      ENDIF
+      IF(LLNORMAGAM) THEN
+        WRITE(IU06,*) ' RE-NORMALISATION OF WIND INPUT GROWTH RATE'
+        IF(LLCAPCHNK) THEN
+          WRITE(IU06,*) ' !!!! CAP CHARNOCK FOR HIGH WINDS WAS FORCED TO BE FALSE !!!!'
+          LLCAPCHNK = .FALSE.
+        ENDIF
+      ENDIF
+      IF(LLCAPCHNK) THEN
         WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
       ENDIF
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN

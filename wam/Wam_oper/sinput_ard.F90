@@ -394,13 +394,6 @@
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB / (1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)/USTP(IJ,IGST) )
-!!!debile
-!!!! do we need to protect 1/ustp term ????
-         write(*,*) 'debile in sinput_adh ',M,K,IGST, GAMNORMA(IJ,K,IGST)
-                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB
-!!!!1
-
-
                   XLLWS(IJ,K,M)=1.0_JWRB
                 ELSE
                   UFAC(IJ,K,IGST)=0.0_JWRB

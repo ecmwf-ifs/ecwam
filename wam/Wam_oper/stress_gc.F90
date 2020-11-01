@@ -78,13 +78,7 @@
         GAM_W(I)= ZLOG2X*EXP(ZLOG)*ZLOG2X*OM3GMKM_GC(I)
       ENDDO
 
-
       GAMNORMA  = 1.0_JWRB / (1.0_JWRB + CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)/USTAR )
-!!!debile
-         write(*,*) 'stress_gc ',NS, GAMNORMA, USTAR, CONST, XKMSQRTVGOC2_GC(NS), GAM_W(NS)
-         GAMNORMA = 1.0_JWRB
-!!!!
-
       TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) * GAMNORMA
       DO I = NS+1, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
@@ -96,13 +90,7 @@
 !       Tauwcg : integral of omega * gammma_wam * F(k)  k dk
 !       It should be done in vector form with actual directional spreading information
 !       It simplified here by using the ANG_GC factor.
-
         GAMNORMA  = 1.0_JWRB / (1.0_JWRB + CONST*XKMSQRTVGOC2_GC(I)*GAM_W(I)/USTAR )
-!!!debile
-         write(*,*) 'stress_gc ',I, GAMNORMA, USTAR, CONST, XKMSQRTVGOC2_GC(I), GAM_W(I)
-         GAMNORMA = 1.0_JWRB
-!!!!
-
         TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) * GAMNORMA
       ENDDO
       TAUWCG = MAX(ZABHRC * TAUWCG, TAUWCG_MIN)
