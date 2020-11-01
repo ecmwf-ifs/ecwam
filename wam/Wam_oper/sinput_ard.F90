@@ -154,7 +154,7 @@
       IF(LLNORMAGAM) THEN
         DO K=1,NANG
           DO IJ=IJS,IJL
-            COS2(IJ,M) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
+            COS2(IJ,K) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
           ENDDO
         ENDDO
         DO M=1,NFRE
