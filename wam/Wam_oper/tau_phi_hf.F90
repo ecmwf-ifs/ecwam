@@ -204,8 +204,8 @@
             GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
 !!1debilet
        if (J == 1) then
-          F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
        write(*,*) 'debile tau_phi ',GAMNORMA,UST(IJ),CONST(IJ),ZBETA,Y,F1DCOS2(IJ)*FR5(NFRE)*ZPI4GM2
+            GAMNORMA  = 1.0_JWRB
        endif
 !!!
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
