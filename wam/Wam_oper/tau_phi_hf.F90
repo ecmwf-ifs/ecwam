@@ -182,8 +182,8 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
-            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            GAMNORMA  = 1.0_JWRB + CONST(IJ)*ZBETA*UST(IJ)*Y
+            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) / GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUL(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
@@ -201,13 +201,13 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*UST(IJ)*Y)
+            GAMNORMA  = 1.0_JWRB + CONST(IJ)*ZBETA*UST(IJ)*Y
 !!1debile
        if (J == 1) then
-       write(*,*) 'debile tau_phi ',GAMNORMA,UST(IJ),CONST(IJ),ZBETA,Y,F1DCOS2(IJ)*FR5(NFRE)*ZPI4GM2
+       write(*,*) 'debile tau_phi ',1.0_JWRB/GAMNORMA,UST(IJ),CONST(IJ),ZBETA,Y,F1DCOS2(IJ)*FR5(NFRE)*ZPI4GM2
        endif
 !!!
-            TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
+            TAUHF(IJ) = TAUHF(IJ) + FNC2 / GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
         ENDDO
@@ -241,8 +241,8 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
-            FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            GAMNORMA  = 1.0_JWRB + CONST(IJ)*ZBETA*USTPH(IJ)*Y
+            FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) / GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUL(IJ))
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
@@ -260,9 +260,9 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            GAMNORMA  = 1.0_JWRB / (1.0_JWRB+CONST(IJ)*ZBETA*USTPH(IJ)*Y)
-            FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
-            PHIHF(IJ) = PHIHF(IJ) + FNC2*GAMNORMA/Y
+            GAMNORMA  = 1.0_JWRB + CONST(IJ)*ZBETA*USTPH(IJ)*Y
+            FNC2      = ZBETA*WTAUHF(J) / GAMNORMA
+            PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO
           PHIHF(IJ) = F1DCOS2(IJ)*CONSTPHI(IJ) * SQRTZ0OG(IJ)*TAUL(IJ)*PHIHF(IJ)*DELZ(IJ)
         ENDDO

@@ -70,7 +70,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      BMAXOKAPDTH, RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
@@ -118,7 +118,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USDIRP, UCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
@@ -290,6 +290,12 @@
          CALL ABORT1
       ENDIF
 
+      DO IGST=1,NGST
+        DO IJ=IJS,IJL
+          USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+        ENDDO
+      ENDDO
+
       IF(LTAUWSHELTER) THEN
         DO IGST=1,NGST
           DO IJ=IJS,IJL
@@ -349,6 +355,7 @@
               TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
               TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
               USTP(IJ,IGST)=(TAUPX**2+TAUPY**2)**0.25_JWRB
+              USTPM1(IJ,IGST)=1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
               USDIRP(IJ,IGST)=ATAN2(TAUPX,TAUPY)
             ENDDO
           ENDDO
@@ -399,10 +406,10 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB / (1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)/USTP(IJ,IGST) )
+                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
 !!debile
        if (M == NFRE .AND. K == 1  .AND. IGST == 2 ) then
-         write(*,*) 'debile sinput_ard ',GAMNORMA(IJ,K,IGST), USTP(IJ,IGST)
+         write(*,*) 'debile sinput_ard ',1.0_JWRB /GAMNORMA(IJ,K,IGST), USTP(IJ,IGST)
        endif
                   XLLWS(IJ,K,M)=1.0_JWRB
                 ELSE
@@ -444,7 +451,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  GAMNORMA(IJ,K,IGST) * UFAC(IJ,K,IGST)*CNSN(IJ)
+              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) /GAMNORMA(IJ,K,IGST)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO

@@ -19,8 +19,8 @@
       USE YOWFRED  , ONLY : NWAV_GC, OMEGA_GC, XK_GC, &
      &                      OMXKM3_GC, CM_GC, C2OSQRTVG_GC, XKMSQRTVGOC2_GC, &
      &                      OM3GMKM_GC, DELKCC_GC, DELKCC_GC_NS
-      USE YOWPCONS , ONLY : G,      SURFT
-      USE YOWPHYS  , ONLY : XKAPPA, ZALP,   BETAMAXOXKAPPA2
+      USE YOWPCONS , ONLY : G, EPSUS, SURFT
+      USE YOWPHYS  , ONLY : XKAPPA, ZALP,   BETAMAXOXKAPPA2, DELTA_THETA_RN
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -43,7 +43,7 @@
       REAL, PARAMETER :: TAUWCG_MIN = 0.00001_JWRB
       REAL(KIND=JWRB) :: XKS, OMS, ZABHRC
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
-      REAL(KIND=JWRB) :: CONST 
+      REAL(KIND=JWRB) :: CONST, USTM 
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NWAV_GC) :: GAM_W
@@ -63,10 +63,12 @@
 
       ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS)
       IF(LLNORMAGAM) THEN
-        CONST = ZABHRC/XKAPPA
+        CONST = DELTA_THETA_RN * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS) /XKAPPA
       ELSE
         CONST = 0.0_JWRB
       ENDIF
+
+      USTM = 1.0_JWRB / MAX(USTAR,EPSUS) 
 
       DO I = NS, NWAV_GC
 !       GROWTHRATE BY WIND WITHOUT the multiplicative representing the ratio of air density to water density (eps)
@@ -78,8 +80,8 @@
         GAM_W(I)= ZLOG2X*EXP(ZLOG)*ZLOG2X*OM3GMKM_GC(I)
       ENDDO
 
-      GAMNORMA  = 1.0_JWRB / (1.0_JWRB + CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)/USTAR )
-      TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) * GAMNORMA
+      GAMNORMA  = 1.0_JWRB + CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)*USTM
+      TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) / GAMNORMA
       DO I = NS+1, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !       BB = HALP * C2OSQRTVG_GC(NS)*SQRT(VG_GC(I))/C_GC(I)**2
@@ -90,8 +92,8 @@
 !       Tauwcg : integral of omega * gammma_wam * F(k)  k dk
 !       It should be done in vector form with actual directional spreading information
 !       It simplified here by using the ANG_GC factor.
-        GAMNORMA  = 1.0_JWRB / (1.0_JWRB + CONST*XKMSQRTVGOC2_GC(I)*GAM_W(I)/USTAR )
-        TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) * GAMNORMA
+        GAMNORMA  = 1.0_JWRB + CONST*XKMSQRTVGOC2_GC(I)*GAM_W(I)*USTM
+        TAUWCG = TAUWCG + GAM_W(I) * DELKCC_GC(I) * OMXKM3_GC(I) / GAMNORMA
       ENDDO
       TAUWCG = MAX(ZABHRC * TAUWCG, TAUWCG_MIN)
 
