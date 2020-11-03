@@ -68,7 +68,7 @@
         CONST = 0.0_JWRB
       ENDIF
 
-      USTM = 1.0_JWRB / MAX(USTAR,EPSUS) 
+      USTM = 1.0_JWRB / MAX(USTAR,EPSUS)
 
       DO I = NS, NWAV_GC
 !       GROWTHRATE BY WIND WITHOUT the multiplicative representing the ratio of air density to water density (eps)
@@ -81,6 +81,9 @@
       ENDDO
 
       GAMNORMA  = 1.0_JWRB + CONST*XKMSQRTVGOC2_GC(NS)*GAM_W(NS)*USTM
+!!!debile
+      write(*,*) 'debile stress_gc ',1.0_JWRB/GAMNORMA
+!!!!!
       TAUWCG = GAM_W(NS) * DELKCC_GC_NS(NS) * OMXKM3_GC(NS) / GAMNORMA
       DO I = NS+1, NWAV_GC
 !       ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
