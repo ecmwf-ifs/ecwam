@@ -202,11 +202,6 @@
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
             GAMNORMA  = 1.0_JWRB + CONST(IJ)*ZBETA*UST(IJ)*Y
-!!1debile
-       if (J == 1) then
-       write(*,*) 'debile tau_phi ',1.0_JWRB/GAMNORMA,UST(IJ),CONST(IJ),ZBETA,Y,F1DCOS2(IJ)*FR5(NFRE)*ZPI4GM2
-       endif
-!!!
             TAUHF(IJ) = TAUHF(IJ) + FNC2 / GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)

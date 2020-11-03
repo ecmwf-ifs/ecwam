@@ -407,10 +407,6 @@
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
-!!debile
-       if (M == NFRE .AND. K == 1  .AND. IGST == 2 ) then
-         write(*,*) 'debile sinput_ard ',1.0_JWRB /GAMNORMA(IJ,K,IGST), USTP(IJ,IGST)
-       endif
                   XLLWS(IJ,K,M)=1.0_JWRB
                 ELSE
                   UFAC(IJ,K,IGST)=0.0_JWRB
