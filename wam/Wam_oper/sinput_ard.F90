@@ -100,6 +100,7 @@
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
+      REAL(KIND=JWRB) :: ZN 
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
       REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
@@ -406,15 +407,16 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB + XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
-                  XLLWS(IJ,K,M)=1.0_JWRB
+                  ZN = XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
+                  GAMNORMA(IJ,K,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
+                  XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
-                  UFAC(IJ,K,IGST)=0.0_JWRB
                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB
+                  UFAC(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                UFAC(IJ,K,IGST)=0.0_JWRB
                 GAMNORMA(IJ,K,IGST) = 1.0_JWRB
+                UFAC(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -447,7 +449,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) /GAMNORMA(IJ,K,IGST)
+              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) *GAMNORMA(IJ,K,IGST)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
