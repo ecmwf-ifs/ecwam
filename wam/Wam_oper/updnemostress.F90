@@ -42,7 +42,7 @@
 ! -------------------------------------------------------------------   
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWNEMOP    , ONLY : NEMODP
+      USE PARKIND1    , ONLY : JPRO
 
 ! MODULES NEED FOR GRID DEFINTION      
       USE YOWGRID  , ONLY : IJS, IJL
@@ -81,10 +81,10 @@
           NEMOPHIF(IJS(IG):IJL(IG))=NEMOPHIF(IJS(IG):IJL(IG))/NEMONTAU
         ELSE
 
-          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0_NEMODP
-          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0_NEMODP
-          NEMONEW10(IJS(IG):IJL(IG)) = 0.0_NEMODP
-          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0_NEMODP
+          NEMOTAUX(IJS(IG):IJL(IG)) = 0.0_JPRO
+          NEMOTAUY(IJS(IG):IJL(IG)) = 0.0_JPRO
+          NEMONEW10(IJS(IG):IJL(IG)) = 0.0_JPRO
+          NEMOPHIF(IJS(IG):IJL(IG)) = 0.0_JPRO
         ENDIF
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE_STRESS( IRANK-1, NPROC, MPL_COMM,   &
@@ -94,10 +94,10 @@
         ! INITIALIZE STRESS FOR ACCUMULATION
 
         NEMONTAU = 0
-        NEMOTAUX(:) = 0.0_NEMODP
-        NEMOTAUY(:) = 0.0_NEMODP
-        NEMONEW10(:) = 0.0_NEMODP
-        NEMOPHIF(:) = 0.0_NEMODP
+        NEMOTAUX(:) = 0.0_JPRO
+        NEMOTAUY(:) = 0.0_JPRO
+        NEMONEW10(:) = 0.0_JPRO
+        NEMOPHIF(:) = 0.0_JPRO
 
       ENDIF
 
