@@ -161,7 +161,8 @@
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + COS2(IJ,K)*F(IJ,K,M)
+!!              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + COS2(IJ,K)*F(IJ,K,M)
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + F(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO

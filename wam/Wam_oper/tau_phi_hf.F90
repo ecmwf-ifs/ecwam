@@ -97,7 +97,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST, CONSTTAU, CONSTPHI
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1D, F1DCOS2, F1DCOS3 
 
 ! ----------------------------------------------------------------------
 
@@ -127,6 +127,7 @@
 
       K=1
       DO IJ=IJS,IJL
+        F1D(IJ)  = F(IJ,K,NFRE)
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
         FCOSW2   = F(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
@@ -135,6 +136,7 @@
 
       DO K=2,NANG
         DO IJ=IJS,IJL
+          F1D(IJ)  = F1D(IJ) + F(IJ,K,NFRE)
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
           FCOSW2   = F(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
@@ -142,13 +144,15 @@
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
+        F1D(IJ) = DELTH*F1D(IJ)
         F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
         F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
       ENDDO
 
       IF(LLNORMAGAM) THEN
         DO IJ=IJS,IJL
-          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+!!          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1D(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
         CONST(:) = 0.0_JWRB
