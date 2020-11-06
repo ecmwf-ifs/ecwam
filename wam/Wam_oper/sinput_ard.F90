@@ -100,7 +100,7 @@
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
-      REAL(KIND=JWRB) :: ZN 
+      REAL(KIND=JWRB) :: UFAC0, ZN 
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
       REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
@@ -123,7 +123,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
@@ -407,24 +407,37 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  ZN = XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
-                  GAMNORMA(IJ,K,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
-!! debile
-     if ( M == nfre .and. K == 1 .and. igst == 1)  then
-         write(*,*) 'debile sinput_ard ',GAMNORMA(IJ,K,IGST)
-     endif
                   XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
-                  GAMNORMA(IJ,K,IGST) = 1.0_JWRB
                   UFAC(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                GAMNORMA(IJ,K,IGST) = 1.0_JWRB
                 UFAC(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
         ENDDO
+
+      IF(LLNORMAGAM) THEN
+        DO IGST=1,NGST
+            DO IJ=IJS,IJL
+                X    = UCN(IJ,IGST)
+                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
+                IF (ZLOG.LT.0.0_JWRB) THEN
+                  ZLOG2X=ZLOG*ZLOG*X
+                  UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)
+                  GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
+!! debile
+     if ( M == nfre .and. igst == 1)  then
+         write(*,*) 'debile sinput_ard ',GAMNORMA(IJ,IGST)
+     endif
+                ENDIF
+            ENDDO
+        ENDDO
+      ELSE
+        GAMNORMA(:,:) = 1.0_JWRB
+      ENDIF
 
 
 !       SWELL DAMPING:
@@ -453,7 +466,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) *GAMNORMA(IJ,K,IGST)
+              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) * GAMNORMA(IJ,IGST)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
