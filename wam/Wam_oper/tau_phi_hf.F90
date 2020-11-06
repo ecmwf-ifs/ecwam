@@ -207,7 +207,7 @@
             GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
 !! debile
      if ( J == 1 .or. J  == JTOT_TAUHF)  then
-         write(*,*) 'debile tau_phi ',J,GAMNORMA
+         write(*,*) 'debile tau_phi ',J,GAMNORMA,CONST(IJ),ZBETA,UST(IJ),Y,F1DCOS2(IJ),SQRTGZ0(IJ)
      endif
 
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
