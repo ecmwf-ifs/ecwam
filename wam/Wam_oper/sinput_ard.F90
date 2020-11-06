@@ -409,6 +409,10 @@
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
                   ZN = XNGAMCONST(IJ,M)*UFAC(IJ,K,IGST)*USTPM1(IJ,IGST)
                   GAMNORMA(IJ,K,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
+!! debile
+     if ( M == nfre .and. K == 1 .and. igst == 1)  then
+         write(*,*) 'debile sinput_ard ',GAMNORMA(IJ,K,IGST)
+     endif
                   XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
                   GAMNORMA(IJ,K,IGST) = 1.0_JWRB
