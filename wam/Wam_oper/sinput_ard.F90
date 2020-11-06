@@ -125,7 +125,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COS2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
       LOGICAL :: LTAUWSHELTER
@@ -153,16 +152,10 @@
 
       XNGAMCONST(:,:) = 0.0_JWRB
       IF(LLNORMAGAM) THEN
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            COS2(IJ,K) = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
-          ENDDO
-        ENDDO
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
-!!              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + COS2(IJ,K)*F(IJ,K,M)
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + F(IJ,K,M)
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + BMAXOKAPDTH*F(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
@@ -170,17 +163,16 @@
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*BMAXOKAPDTH*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*BMAXOKAPDTH*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
             ENDDO
           ENDDO
         ENDIF
-
       ENDIF
 
 
@@ -420,6 +412,7 @@
         ENDDO
 
       IF(LLNORMAGAM) THEN
+!       Computes the growth rate in the wind direction
         DO IGST=1,NGST
             DO IJ=IJS,IJL
                 X    = UCN(IJ,IGST)
@@ -429,10 +422,6 @@
                   UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
                   ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)
                   GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
-!! debile
-     if ( M == nfre .and. igst == 1)  then
-         write(*,*) 'debile sinput_ard ',GAMNORMA(IJ,IGST)
-     endif
                 ENDIF
             ENDDO
         ENDDO

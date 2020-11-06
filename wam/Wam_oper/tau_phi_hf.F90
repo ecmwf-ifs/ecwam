@@ -124,19 +124,15 @@
         CONSTTAU(IJ) = ZPI4GM2*FR5(NFRE)
       ENDDO
 
-
       K=1
       DO IJ=IJS,IJL
-        F1D(IJ)  = F(IJ,K,NFRE)
         COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
         FCOSW2   = F(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
       ENDDO
-
       DO K=2,NANG
         DO IJ=IJS,IJL
-          F1D(IJ)  = F1D(IJ) + F(IJ,K,NFRE)
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)
           FCOSW2   = F(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
@@ -144,14 +140,22 @@
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
-        F1D(IJ) = DELTH*F1D(IJ)
         F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
         F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
       ENDDO
 
       IF(LLNORMAGAM) THEN
+        K=1
         DO IJ=IJS,IJL
-!!          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          F1D(IJ) = DELTH*F(IJ,K,NFRE)
+        ENDDO
+        DO K=2,NANG
+          DO IJ=IJS,IJL
+            F1D(IJ) = F1D(IJ) + DELTH*F(IJ,K,NFRE)
+          ENDDO
+        ENDDO
+
+        DO IJ=IJS,IJL
           CONST(IJ) = GAMNCONST*FR5(NFRE)*F1D(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
@@ -209,11 +213,6 @@
             FNC2      = ZBETA*WTAUHF(J)
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
             GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
-!! debile
-     if ( J == 1 .or. J  == JTOT_TAUHF)  then
-         write(*,*) 'debile tau_phi ',J,GAMNORMA,CONST(IJ),ZBETA,UST(IJ),Y,F1DCOS2(IJ),SQRTGZ0(IJ)
-     endif
-
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
