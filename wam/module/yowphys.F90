@@ -47,7 +47,6 @@
 
 !     directionality correction factor in the gowth rate renormalisation (see Janssen tbd)
       REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.53_JWRB
-      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN_HF = 0.005_JWRB
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !     FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
