@@ -140,7 +140,7 @@ IF (LLGCBZ0) THEN
       IF(LLCAPCHNK) THEN
         DO IJ = IJS, IJL
 !!          ZBREDUC(IJ) = 0.05_JWRB + 0.475_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
-          ZBREDUC(IJ) = 0.25_JWRB + 0.375_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
+          ZBREDUC(IJ) = 0.2_JWRB + 0.4_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
         ENDDO
       ELSE
         DO IJ = IJS, IJL
