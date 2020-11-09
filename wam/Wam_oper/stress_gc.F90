@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, HALP, ZBREDUC, TAUWCG)
+      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, ZBREDUC, TAUWCG)
 
 !***  DETERMINE WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -33,6 +33,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
+      REAL(KIND=JWRB), INTENT(IN) :: Z0MIN ! minimum surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), INTENT(IN) :: ZBREDUC  ! reduction factor for the gravity-capillary stress
       REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
@@ -40,7 +41,7 @@
       INTEGER(KIND=JWIM) :: NS
       INTEGER(KIND=JWIM) :: I
 
-      REAL, PARAMETER :: TAUWCG_MIN = 0.00001_JWRB
+      REAL(KIND=JWRB) :: TAUWCG_MIN
       REAL(KIND=JWRB) :: XKS, OMS, ZABHRC
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
       REAL(KIND=JWRB) :: CONST, ZN 
@@ -60,6 +61,9 @@
 
 !     FIND NS:
       CALL OMEGAGC(USTAR, NS, XKS, OMS)
+
+      TAUWCG_MIN = (USTAR*(Z0MIN/Z0))**2
+!!!      TAUWCG_MIN = 0.00001_JWRB
 
       ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS)
       IF(LLNORMAGAM) THEN

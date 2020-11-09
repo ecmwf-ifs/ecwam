@@ -81,7 +81,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, UDIR, ROAIRN, TAU
       INTEGER(KIND=JWIM) :: IFRPH
 
       REAL(KIND=JWRB), PARAMETER :: PCE_GC = 0.001_JWRB
-      REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
+      REAL(KIND=JWRB) :: Z0MIN
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: US2TOTAUW, USMAX
@@ -148,10 +148,16 @@ IF (LLGCBZ0) THEN
         ENDDO
       ENDIF
 
+      DO IJ=IJS,IJL
+        CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
+        ALPHAOG(IJ) = CHARNOCK_MIN*GM1
+      ENDDO
+
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
+        Z0MIN = ALPHAOG(IJ)*TAUOLD 
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -159,7 +165,7 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), HALP(IJ), ZBREDUC(IJ), TAUUNR(IJ))
+          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), ZBREDUC(IJ), TAUUNR(IJ))
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
@@ -173,6 +179,7 @@ IF (LLGCBZ0) THEN
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
+          Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
         Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
