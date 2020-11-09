@@ -58,6 +58,8 @@
 !     FOR THE GRAVITY-CAPILLARY MODEL, ONE NEEDS TO SPECIFY ANGULAR ADJUSTMENT ANG_GC (SEE *SETWAVPHYS*)
 !     ANG_GC = MAX(ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(UTOP(IJ)-ANG_GC_D)),ANG_GC_E)
       REAL(KIND=JWRB) :: ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
+!     if LLCAPCHNK, ANG_GC is reduced by reduction factor ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
+      REAL(KIND=JWRB) :: ANG_GC_F, ANG_GC_G, ANG_GC_H
 
 !     Negative wind input, ARDHUIN et al. 2010:
       REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation

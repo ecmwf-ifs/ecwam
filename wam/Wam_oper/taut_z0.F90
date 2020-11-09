@@ -55,7 +55,8 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, FMEAN, FMEANWS, UTOP, UDIR, ROAIRN, TAU
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G, GM1, EPSUS, ACD, BCD, CDMAX
       USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, &
-&                           ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
+&                           ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
+&                           ANG_GC_F, ANG_GC_G, ANG_GC_H
       USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -139,8 +140,7 @@ IF (LLGCBZ0) THEN
 
       IF(LLCAPCHNK) THEN
         DO IJ = IJS, IJL
-!!          ZBREDUC(IJ) = 0.05_JWRB + 0.475_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
-          ZBREDUC(IJ) = 0.2_JWRB + 0.4_JWRB * (1.0_JWRB - TANH(UTOP(IJ)-35.0_JWRB))
+          ZBREDUC(IJ) = ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
         ENDDO
       ELSE
         DO IJ = IJS, IJL
