@@ -72,7 +72,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
-     &                      BMAXOKAPDTH, RNU      ,RNUM, &
+     &                      BMAXOKAPDTH, DELTA_THETA_RN, RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
@@ -100,7 +100,7 @@
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
-      REAL(KIND=JWRB) :: UFAC0, ZN 
+      REAL(KIND=JWRB) :: UFAC0, ZN, ZN1, ZN2 
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
       REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
@@ -116,6 +116,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ZCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N, UORBT, AORB, TEMP, RE, RE_C, ZORB
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GAMF1, GAMF2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
@@ -128,9 +129,13 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
       LOGICAL :: LTAUWSHELTER
+      LOGICAL :: LLNORMA2D
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
+
+!!debile
+      LLNORMA2D=.TRUE.
 
       ROG = ROWATER*G
       AVG_GST = 1.0_JWRB/NGST
@@ -152,13 +157,18 @@
 
       XNGAMCONST(:,:) = 0.0_JWRB
       IF(LLNORMAGAM) THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + BMAXOKAPDTH*F(IJ,K,M)
+        IF(LLNORMA2D) THEN
+!!debile
+          XNGAMCONST(:,:) = BMAXOKAPDTH/DELTA_THETA_RN
+        ELSE
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + BMAXOKAPDTH*F(IJ,K,M)
+              ENDDO
             ENDDO
           ENDDO
-        ENDDO
+        ENDIF
 
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
@@ -412,19 +422,39 @@
         ENDDO
 
       IF(LLNORMAGAM) THEN
-!       Computes the growth rate in the wind direction
-        DO IGST=1,NGST
-            DO IJ=IJS,IJL
-                X    = UCN(IJ,IGST)
-                ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
-                IF (ZLOG.LT.0.0_JWRB) THEN
-                  ZLOG2X=ZLOG*ZLOG*X
-                  UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                  ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)
-                  GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
-                ENDIF
+        IF(LLNORMA2D) THEN
+          DO IGST=1,NGST
+            GAMF1(:) = 0.0_JWRB
+            GAMF2(:) = 0.0_JWRB
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                GAMF2(IJ) = GAMF2(IJ) + UFAC(IJ,K,IGST)*F(IJ,K,M)
+                GAMF1(IJ) = GAMF1(IJ) + UFAC(IJ,K,IGST)*F(IJ,K,M)*SINTH(K)**2
+              ENDDO
             ENDDO
-        ENDDO
+
+            DO IJ=IJS,IJL
+                ZN1 = XNGAMCONST(IJ,M)*GAMF1(IJ)*USTPM1(IJ,IGST)
+                ZN2 = XNGAMCONST(IJ,M)*GAMF2(IJ)*USTPM1(IJ,IGST)
+                GAMNORMA(IJ,IGST) = (2.0_JWRB + ZN1)/(2.0_JWRB + ZN2)
+              ENDIF
+            ENDDO
+          ENDDO
+        ELSE
+!         Computes the growth rate in the wind direction
+          DO IGST=1,NGST
+            DO IJ=IJS,IJL
+              X    = UCN(IJ,IGST)
+              ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
+              IF (ZLOG.LT.0.0_JWRB) THEN
+                ZLOG2X=ZLOG*ZLOG*X
+                UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
+                ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)
+                GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDIF
       ELSE
         GAMNORMA(:,:) = 1.0_JWRB
       ENDIF
