@@ -424,6 +424,7 @@
       IF(LLNORMAGAM) THEN
         IF(LLNORMA2D) THEN
           DO IGST=1,NGST
+
             GAMF1(:) = 0.0_JWRB
             GAMF2(:) = 0.0_JWRB
             DO K=1,NANG
@@ -434,10 +435,9 @@
             ENDDO
 
             DO IJ=IJS,IJL
-                ZN1 = XNGAMCONST(IJ,M)*GAMF1(IJ)*USTPM1(IJ,IGST)
-                ZN2 = XNGAMCONST(IJ,M)*GAMF2(IJ)*USTPM1(IJ,IGST)
-                GAMNORMA(IJ,IGST) = (2.0_JWRB + ZN1)/(2.0_JWRB + ZN2)
-              ENDIF
+              ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*GAMF1(IJ)
+              ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*GAMF2(IJ)
+              GAMNORMA(IJ,IGST) = (2.0_JWRB + ZN1)/(2.0_JWRB + ZN2)
             ENDDO
           ENDDO
         ELSE
