@@ -115,7 +115,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PVISC, PTURB
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ZCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N, UORBT, AORB, TEMP, RE, RE_C, ZORB
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN, SUMF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
@@ -152,24 +152,16 @@
 
       XNGAMCONST(:,:) = 0.0_JWRB
       IF(LLNORMAGAM) THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M) + BMAXOKAPDTH*F(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+              XNGAMCONST(IJ,M) = BMAXOKAPDTH*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = XNGAMCONST(IJ,M)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+              XNGAMCONST(IJ,M) = BMAXOKAPDTH*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
             ENDDO
           ENDDO
         ENDIF
@@ -412,6 +404,15 @@
         ENDDO
 
       IF(LLNORMAGAM) THEN
+
+!       windsea part of the spectrum
+        SUMF(:) = 0.0_JWRB
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)
+          ENDDO
+        ENDDO
+
 !       Computes the growth rate in the wind direction
         DO IGST=1,NGST
             DO IJ=IJS,IJL
@@ -420,7 +421,7 @@
               IF (ZLOG.LT.0.0_JWRB) THEN
                 ZLOG2X=ZLOG*ZLOG*X
                 UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)
+                ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
                 GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
               ENDIF
             ENDDO
@@ -447,7 +448,7 @@
         ENDDO
 
 
-!*    2.2 UPDATE THE SHELTERING STRESS,
+!*    2.2 UPDATE THE SHELTERING STRESS (in any),
 !         AND THEN ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ---------------------------------------------------------
 
