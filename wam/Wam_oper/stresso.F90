@@ -208,7 +208,7 @@
       ENDDO
 
       IF (LLGCBZ0) THEN
-        TAUTOUS2 = 1.01_JWRB
+        TAUTOUS2 = 1.0_JWRB
       ELSE
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
       ENDIF
