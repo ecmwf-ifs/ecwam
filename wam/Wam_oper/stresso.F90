@@ -207,14 +207,12 @@
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
 
-      IF (LLGCBZ0) THEN
-        TAUTOUS2 = 1.005_JWRB
-      ELSE
+      IF ( .NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
+        DO IJ=IJS,IJL
+          TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
+        ENDDO
       ENDIF
-      DO IJ=IJS,IJL
-        TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
-      ENDDO
 
       IF ( LLPHIWA ) THEN
         DO IJ=IJS,IJL
