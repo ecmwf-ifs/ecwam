@@ -82,7 +82,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.001_JWRB
           ALPHAPMAX = 0.03_JWRB
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.42_JWRB
+            BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
             BETAMAX = 1.46_JWRB
@@ -108,8 +108,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_E = 0.1_JWRB
 
         ! for high winds if LLCAPCHNK
-        ANG_GC_F = 0.1_JWRB
-        ANG_GC_G = 0.45_JWRB
+        ANG_GC_F = 0.2_JWRB
+        ANG_GC_G = 0.4_JWRB
         ANG_GC_H = 33.0_JWRB
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
