@@ -48,18 +48,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ENDIF
         TAILFACTOR_PM = 0.0_JWRB   ! i.e. not used
 
-!       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.31_JWRB
-        ANG_GC_B = 0.29_JWRB
-        ANG_GC_C = 0.18_JWRB
-        ANG_GC_D = 10._JWRB
-        ANG_GC_E = 0.15_JWRB
-
-        ! for high winds if LLCAPCHNK
-        ANG_GC_F = 0.1_JWRB
-        ANG_GC_G = 0.45_JWRB
-        ANG_GC_H = 33.0_JWRB
-
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1108.0_JWRB
         AGRCRV = 0.06E+6_JWRB
@@ -75,7 +63,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
       ELSE IF (IPHYS.EQ.1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
-        TAILFACTOR = 2.4_JWRB
         TAILFACTOR_PM = 3.0_JWRB
 
         IF(LLGCBZ0) THEN
@@ -84,33 +71,49 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
+            TAILFACTOR = 2.4_JWRB
+            ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+            ANG_GC_A = 0.28_JWRB
+            ANG_GC_B = 0.32_JWRB
+            ANG_GC_C = 0.115_JWRB
+            ANG_GC_D = 10._JWRB
+            ANG_GC_E = 0.1_JWRB
+            ! for high winds if LLCAPCHNK
+            ANG_GC_F = 0.2_JWRB
+            ANG_GC_G = 0.4_JWRB
+            ANG_GC_H = 35.0_JWRB
           ELSE
             BETAMAX = 1.46_JWRB
             TAUWSHELTER = 0.25_JWRB
+            TAILFACTOR = 2.5_JWRB
+            ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+            ANG_GC_A = 0.28_JWRB
+            ANG_GC_B = 0.32_JWRB
+            ANG_GC_C = 0.115_JWRB
+            ANG_GC_D = 10._JWRB
+            ANG_GC_E = 0.1_JWRB
+            ! for high winds if LLCAPCHNK
+            ANG_GC_F = 0.05_JWRB
+            ANG_GC_G = 0.475_JWRB
+            ANG_GC_H = 35.0_JWRB
           ENDIF
         ELSE 
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
           IF(LLNORMAGAM) THEN
+           write(*,*) ' not yet tested !!!!!'
+           CALL ABORT1
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
+            TAILFACTOR = 2.4_JWRB
           ELSE
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.25_JWRB
+            TAILFACTOR = 2.5_JWRB
           ENDIF
         ENDIF
 
-!       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.28_JWRB
-        ANG_GC_B = 0.32_JWRB
-        ANG_GC_C = 0.115_JWRB
-        ANG_GC_D = 10._JWRB
-        ANG_GC_E = 0.1_JWRB
 
-        ! for high winds if LLCAPCHNK
-        ANG_GC_F = 0.2_JWRB
-        ANG_GC_G = 0.4_JWRB
-        ANG_GC_H = 35.0_JWRB
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB
