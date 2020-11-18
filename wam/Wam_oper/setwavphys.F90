@@ -37,6 +37,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAILFACTOR = 2.5_JWRB
           IF(LLNORMAGAM) THEN
            write(*,*) ' not yet tested !!!!!'
+           write(iu06,*) ' not yet tested !!!!!'
            CALL ABORT1
           ENDIF
         IF(LLGCBZ0) THEN
@@ -102,6 +103,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 0.031_JWRB
           IF(LLNORMAGAM) THEN
            write(*,*) ' not yet tested !!!!!'
+           write(iu06,*) ' not yet tested !!!!!'
            CALL ABORT1
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
