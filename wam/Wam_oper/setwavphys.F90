@@ -88,9 +88,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             TAUWSHELTER = 0.25_JWRB
             TAILFACTOR = 2.5_JWRB
             ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-            ANG_GC_A = 0.28_JWRB
-            ANG_GC_B = 0.32_JWRB
-            ANG_GC_C = 0.115_JWRB
+            ANG_GC_A = 0.25_JWRB
+            ANG_GC_B = 0.35_JWRB
+            ANG_GC_C = 0.1_JWRB
             ANG_GC_D = 10._JWRB
             ANG_GC_E = 0.1_JWRB
             ! for high winds if LLCAPCHNK
