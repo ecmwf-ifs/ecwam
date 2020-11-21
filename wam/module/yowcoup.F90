@@ -14,6 +14,7 @@
       LOGICAL :: LLGCBZ0
       LOGICAL :: LLNORMAGAM
       LOGICAL :: LWCOU
+      LOGICAL :: LWCOUSAMEGRID=.FALSE.
       LOGICAL :: LWNEMOCOU=.FALSE.
       LOGICAL :: LWNEMOCOUSEND
       LOGICAL :: LWNEMOTAUOC
@@ -77,6 +78,7 @@
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *LWCOU*     LOGICAL   CONTROLS COUPLING WITH ATMOSPHERIC MODEL
+!      *LWCOUSAMEGRID        TRUE when coupled and the atmospheric grid and the wave grid is the same
 !      *LWNEMOCOUSEND* L     SENDS DATA TO THE NEMO MODEL.
 !      *LWNEMOCOUSTK LOGI.   SEND SURFACE STOKES DRIFT TO NEMO
 !      *LWNEMOCOUSTRN LOGI.  SEND ICE WAVE STRAIN TO NEMO

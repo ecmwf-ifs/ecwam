@@ -37,6 +37,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LWCOUSAMEGRID
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY :                                             &
      &            NTENCODE ,IMDLGRBID_G,IMDLGRBID_M      ,NGRBRESI ,    &
@@ -414,100 +415,104 @@
 
 !     GEOGRAPHY
 
-      IF( IQGAUSS.EQ.1 ) THEN
+      IF(.NOT. LGRHDIFS .AND. .NOT. LWCOUSAMEGRID ) THEN
+
+        IF( IQGAUSS.EQ.1 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_gg')
           IREPR=4
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
-      ELSE
-        IF (IRGG .EQ. 0) THEN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
         ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
+          IF (IRGG .EQ. 0) THEN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
+          ELSE
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','reduced_ll')
+          ENDIF
         ENDIF
-      ENDIF
 
 
-      ! NUMBER OF POINTS ALONG A MERIDIAN
-      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
-        NY = NINT(180.0_JWRB/XDELLA) + 1
-      ELSE
-        NY = NGY
-      ENDIF
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
-      IF( IQGAUSS.EQ.1 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NY/2)
-      ENDIF
-
-      ! NUMBER OF POINTS PER LATITUDE
-      IF (IRGG .EQ. 0) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
-      ELSE
-        ALLOCATE(PL(NY))
-        PL(:)=0
+        ! NUMBER OF POINTS ALONG A MERIDIAN
         IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
-          KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
+          NY = NINT(180.0_JWRB/XDELLA) + 1
         ELSE
-          KST = 0
+          NY = NGY
         ENDIF
-        DO JC = 1, NGY
-          JSN=NGY-JC+1
-          PL(JC+KST) = NLONRGG(JSN)
-        ENDDO
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'pl',PL)
-        DEALLOCATE(PL)
-      ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Nj',NY)
+        IF( IQGAUSS.EQ.1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'N',NY/2)
+        ENDIF
 
-!     RESOLUTION AND COMPONENT FLAGS
-      IF( IQGAUSS.EQ.1 ) THEN
-        IRESFLAGS=0
-      ELSE
-        IRESFLAGS=128
-      ENDIF
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                     'resolutionAndComponentFlags',IRESFLAGS)
+        ! NUMBER OF POINTS PER LATITUDE
+        IF (IRGG .EQ. 0) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'Ni',NGX)
+        ELSE
+          ALLOCATE(PL(NY))
+          PL(:)=0
+          IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN 
+            KST = NINT((90.0_JWRB - AMONOP ) / XDELLA)
+          ELSE
+            KST = 0
+          ENDIF
+          DO JC = 1, NGY
+            JSN=NGY-JC+1
+            PL(JC+KST) = NLONRGG(JSN)
+          ENDDO
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'pl',PL)
+          DEALLOCATE(PL)
+        ENDIF
 
-      ! LATITUDE OF THE FIRST GRID POINT
-      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'latitudeOfFirstGridPointInDegrees',90.)
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'latitudeOfFirstGridPointInDegrees',AMONOP)
-      ENDIF
+!       RESOLUTION AND COMPONENT FLAGS
+        IF( IQGAUSS.EQ.1 ) THEN
+          IRESFLAGS=0
+        ELSE
+          IRESFLAGS=128
+        ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+     &                       'resolutionAndComponentFlags',IRESFLAGS)
 
-      ! LONGITUDE OF ORIGIN (WEST -)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                     'longitudeOfFirstGridPointInDegrees',AMOWEP)
+        ! LATITUDE OF THE FIRST GRID POINT
+        IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                         'latitudeOfFirstGridPointInDegrees',90.)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                         'latitudeOfFirstGridPointInDegrees',AMONOP)
+        ENDIF
 
-      ! LATITUDE OF THE LAST GRID POINT
-      IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'latitudeOfLastGridPointInDegrees',-90.)
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                       'latitudeOfLastGridPointInDegrees',AMOSOP)
-      ENDIF
+        ! LONGITUDE OF ORIGIN (WEST -)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'longitudeOfFirstGridPointInDegrees',AMOWEP)
 
-      ! LONGITUDE OF EXTREME POINT (WEST)
-      IF( IQGAUSS.NE.1 ) THEN
-        RMOEAP = AMOEAP
-      ELSE
-        !!! this is a limitation of grib1   !!!!
-        RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
-      ENDIF
-      CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
-     &                    'longitudeOfLastGridPointInDegrees',RMOEAP)
+        ! LATITUDE OF THE LAST GRID POINT
+        IF( CLDOMAIN == 'g' .AND. IQGAUSS.NE.1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                         'latitudeOfLastGridPointInDegrees',-90.)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                         'latitudeOfLastGridPointInDegrees',AMOSOP)
+        ENDIF
 
-      ! LONGITUDE INCREMENT
-      IF (IRGG .EQ. 0) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                     'iDirectionIncrementInDegrees',XDELLO)
-      ENDIF
+        ! LONGITUDE OF EXTREME POINT (WEST)
+        IF( IQGAUSS.NE.1 ) THEN
+          RMOEAP = AMOEAP
+        ELSE
+          !!! this is a limitation of grib1   !!!!
+          RMOEAP = REAL(INT(1000._JWRB*AMOEAP),JWRB)/1000._JWRB
+        ENDIF
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                                 &
+     &                      'longitudeOfLastGridPointInDegrees',RMOEAP)
 
-      ! LATITUDE INCREMENT
-      IF( IQGAUSS.NE.1 ) THEN 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
-     &                     'jDirectionIncrementInDegrees',XDELLA)
+        ! LONGITUDE INCREMENT
+        IF (IRGG .EQ. 0) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'iDirectionIncrementInDegrees',XDELLO)
+        ENDIF
+
+        ! LATITUDE INCREMENT
+        IF( IQGAUSS.NE.1 ) THEN 
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,                               &
+     &                       'jDirectionIncrementInDegrees',XDELLA)
+        ENDIF
+
       ENDIF
 
 
