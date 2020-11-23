@@ -192,7 +192,7 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
+            GAMNORMA  = (1.0_JWRB + 0.1666_JWRB*ZN)/(1.0_JWRB + ZN)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
             UST(IJ)   = SQRT(TAUL(IJ))
@@ -212,7 +212,7 @@
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
+            GAMNORMA  = (1.0_JWRB + 0.1666_JWRB*ZN)/(1.0_JWRB + ZN)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
@@ -248,7 +248,7 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*USTPH(IJ)*Y
-            GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
+            GAMNORMA  = (1.0_JWRB + 0.1666_JWRB*ZN)/(1.0_JWRB + ZN)
             FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUL(IJ))
@@ -268,7 +268,7 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*USTPH(IJ)*Y
-            GAMNORMA  = (2.0_JWRB + 0.1666_JWRB*ZN)/(2.0_JWRB + ZN)
+            GAMNORMA  = (1.0_JWRB + 0.1666_JWRB*ZN)/(1.0_JWRB + ZN)
             FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO

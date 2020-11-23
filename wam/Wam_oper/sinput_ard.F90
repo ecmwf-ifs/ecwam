@@ -422,7 +422,7 @@
                 ZLOG2X=ZLOG*ZLOG*X
                 UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
                 ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
-                GAMNORMA(IJ,IGST) = (2.0_JWRB + 0.16666_JWRB*ZN)/(2.0_JWRB + ZN)
+                GAMNORMA(IJ,IGST) = (1.0_JWRB + 0.16666_JWRB*ZN)/(1.0_JWRB + ZN)
               ENDIF
             ENDDO
         ENDDO
