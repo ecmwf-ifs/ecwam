@@ -119,6 +119,10 @@ IF (LLGCBZ0) THEN
 !     COMPUTE THE PHILLIPS PARAMETER
       CALL HALPHAP(IJS, IJL, FL1, HALP) 
 
+!! debile
+      write(*,*) 'debile taut_z0 alpha ',2*HALP(1)
+
+
       RNUEFF = 0.04_JWRB*RNU
       RNUKAPPAM1 = RNUEFF/XKAPPA
 
