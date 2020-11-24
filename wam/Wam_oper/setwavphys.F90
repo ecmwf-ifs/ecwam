@@ -77,7 +77,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
             ANG_GC_A = 0.37_JWRB
             ANG_GC_B = 0.23_JWRB
-            ANG_GC_C = 0.21_JWRB
+            ANG_GC_C = 0.30_JWRB
             ANG_GC_D = 10._JWRB
             ANG_GC_E = 0.1_JWRB
             ! for high winds if LLCAPCHNK
