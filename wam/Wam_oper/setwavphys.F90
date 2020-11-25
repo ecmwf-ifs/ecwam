@@ -64,12 +64,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
       ELSE IF (IPHYS.EQ.1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
-        TAILFACTOR_PM = 3.0_JWRB
 
         IF(LLGCBZ0) THEN
           ALPHA   = 0.001_JWRB
           ALPHAPMAX = 0.035_JWRB
           TAILFACTOR = 2.5_JWRB
+          TAILFACTOR_PM = 4.0_JWRB
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.42_JWRB
             TAUWSHELTER = 0.0_JWRB
@@ -100,17 +100,17 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ELSE 
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
+          TAILFACTOR = 2.5_JWRB
+          TAILFACTOR_PM = 3.0_JWRB
           IF(LLNORMAGAM) THEN
            write(*,*) ' not yet tested !!!!!'
            write(iu06,*) ' not yet tested !!!!!'
            CALL ABORT1
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
-            TAILFACTOR = 2.4_JWRB
           ELSE
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.25_JWRB
-            TAILFACTOR = 2.5_JWRB
           ENDIF
         ENDIF
 
