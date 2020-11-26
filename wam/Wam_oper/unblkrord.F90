@@ -40,7 +40,7 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD, ONLY : RANK
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -54,7 +54,7 @@
 
       INTEGER(KIND=JWIM) :: IR, IP, M, K, ISTART
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !----------------------------------------------------------------------
 

@@ -53,7 +53,7 @@
      &                      NSWH, NMWP, NPHIEPS, NTAUOC,                &
      &                      NEMOSTRN, NEMOUSTOKES, NEMOVSTOKES
 ! DR. HOOK
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! INFORMATION FOR OPTIONAL DEBUGGING
       USE YOWSTAT  , ONLY : CDTPRO
 
@@ -63,7 +63,7 @@
 
       INTEGER(KIND=JWIM) :: IG
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 ! -------------------------------------------------------------------   
 
       IF (LHOOK) CALL DR_HOOK('UPDNEMOFIELDS',0,ZHOOK_HANDLE)

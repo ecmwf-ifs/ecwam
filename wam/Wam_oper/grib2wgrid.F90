@@ -91,7 +91,7 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE GRIB_API_INTERFACE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
                                                                         
 ! ----------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       REAL(KIND=JWRB) :: FCST, STEP, START_STEP, END_STEP
       REAL(KIND=JWRB) :: XK, DK1, DK2, XI, XII, RMOWEP_KK, DII1, DII2
       REAL(KIND=JWRB) :: XIIP, DIIP1, DIIP2
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: WK(2)
       REAL(KIND=JWRB), ALLOCATABLE :: RDELLO(:), WORK(:,:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: RLAT(:)

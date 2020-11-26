@@ -57,7 +57,7 @@
      &            IJERS    ,IGERS
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDATEA   ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWMPP   , ONLY : IRANK
 
 ! ----------------------------------------------------------------------
@@ -73,7 +73,7 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: IDUM(:)
 
       REAL(KIND=JWRB) :: ZLATIS, ZLONGS, ZLATIW, ZLONGW
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN= 2) :: CLH       ! HELPER STRING TO STORE HOUR.            
       CHARACTER(LEN=15) :: FNAME

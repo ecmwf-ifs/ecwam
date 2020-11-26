@@ -33,14 +33,14 @@
      &              DTIC   ,DHIC    ,CIDEAC
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM) :: IT, IH
       REAL(KIND=JWRB) :: DHI, DCI
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

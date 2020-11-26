@@ -53,7 +53,7 @@
      &            LLWLATN  ,LLWLONN  ,LLWCORN  ,LLWKPMN  ,LLWMPMN   ,   &
      &            SUMWN    ,                                            &
      &            JXO      ,JYO      ,KCR      ,KPM      ,MPM
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -71,7 +71,7 @@
       INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
       INTEGER(KIND=JWIM) :: JJK, JJY, JJX
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL) :: FJ1, FJ2, FJ3, FJ4, FJ5
 
 ! ----------------------------------------------------------------------

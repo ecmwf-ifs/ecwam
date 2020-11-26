@@ -22,12 +22,12 @@
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,    &
      &            ROAIRN   ,ZIDLNEW  ,FL3
       USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

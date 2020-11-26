@@ -41,7 +41,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,FLOGSPRDM1
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -57,7 +57,7 @@
 
       REAL(KIND=JWRB), PARAMETER :: FCUT=0.1_JWRB
       REAL(KIND=JWRB) :: DFCUT
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: DFIMLOC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 

@@ -41,7 +41,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : PI
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
 
@@ -66,7 +66,7 @@
       REAL(KIND=JWRB), PARAMETER :: FLOGMIN = 0.1_JWRB
       REAL(KIND=JWRB), PARAMETER :: AA_MAX = 1000._JWRB
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
       REAL(KIND=JWRB) :: TWOG1, G2, AE, BE, F, Z0, EMIN, EMAX, EVAL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL):: E, BBM1, DFNORMA

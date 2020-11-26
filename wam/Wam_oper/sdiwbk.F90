@@ -44,7 +44,7 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSTAT  , ONLY : LBIWBK
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -58,7 +58,7 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M, IC
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ALPH, ARG, Q, Q_OLD, REL_ERR, EXPQ
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SDS
 

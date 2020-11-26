@@ -35,7 +35,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
       USE YOWUNPOOL, ONLY : LLUNSTR
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@
       INTEGER(KIND=JWIM) :: IFLD, IJ
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP) :: RFIELD_G 
 
       LOGICAL :: LLEXIST

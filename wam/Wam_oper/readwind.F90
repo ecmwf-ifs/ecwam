@@ -105,7 +105,7 @@
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE GRIB_API_INTERFACE
 
 ! --------------------------------------------------------------------- 
@@ -138,7 +138,7 @@
 
       REAL(KIND=JWRB) :: ZDUM
       REAL(KIND=JWRB) :: UWIND, VWIND, WSPEED, WTHETA
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: WORK(:,:)  
 
       CHARACTER(LEN=14) :: CDTTURN

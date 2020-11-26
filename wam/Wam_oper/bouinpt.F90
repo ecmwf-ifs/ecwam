@@ -56,7 +56,7 @@
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 ! ----------------------------------------------------------------------
@@ -82,7 +82,7 @@
       REAL(KIND=JWRB) :: XLON, XLAT
       REAL(KIND=JWRB) :: DEL12, DEL1L
       REAL(KIND=JWRB) :: FMEAN, EMEAN, THQ
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !      *FMEAN1*    REAL      MEAN FREQUENCIES FROM COARSE GRID.
 !      *EMEAN1*    REAL      TOTAL ENERGIES FROM COARSE GRID.
 !      *THQ1*      REAL      MEAN DIRECTIONS FROM COARSE GRID (RAD).

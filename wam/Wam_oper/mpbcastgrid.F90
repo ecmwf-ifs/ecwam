@@ -74,7 +74,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            DELTHH   ,IM_P     ,IM_M     ,TA       ,TB       ,    &
      &            TC_QL    ,TT_4M    ,TT_4P    ,TFAKH
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -92,7 +92,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       INTEGER(KIND=JWIM) :: MIC, MZC 
       INTEGER(KIND=JWIM),ALLOCATABLE :: ICOMBUF(:)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),ALLOCATABLE :: ZCOMBUF(:)
 
 !----------------------------------------------------------------------

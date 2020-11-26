@@ -56,7 +56,7 @@
 &                  INDICESSAT, SATWEIGHTS, CUMULW
       USE YOWSHAL  , ONLY : TFAK    ,INDEP, TCGOND
       USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -75,7 +75,7 @@
       REAL(KIND=JWRB) :: EPSR
       REAL(KIND=JWRB) :: ROG
       REAL(KIND=JWRB) :: SSDSC6M1
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: SIG(NFRE)
       REAL(KIND=JWRB) :: SSDSC2_SIG(NFRE)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FACTURB

@@ -67,7 +67,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,G        ,EPSMIN
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -109,7 +109,7 @@
       REAL(KIND=JWRB) :: COSDIFF
       REAL(KIND=JWRB) :: DELDW
       REAL(KIND=JWRB) :: COSDIR, FRLIMIT 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: FLLOWEST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ENEX, SUMETRAIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ETT

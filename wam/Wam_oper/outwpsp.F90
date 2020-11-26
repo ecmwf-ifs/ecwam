@@ -41,7 +41,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO   ,MARSTYPE
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC), INTENT(IN) :: USTAR 
 
       INTEGER(KIND=JWIM) :: IJ
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

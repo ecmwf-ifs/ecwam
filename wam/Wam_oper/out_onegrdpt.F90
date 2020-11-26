@@ -44,7 +44,7 @@
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
      &            EPSU10
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
 
 ! ----------------------------------------------------------------------
@@ -64,7 +64,7 @@
       REAL(KIND=JWRB) :: T10, E10, FP10, FETCH10, T_0, E_OBS 
       REAL(KIND=JWRB) :: DEPTH, PHIOC, TAUOC
       REAL(KIND=JWRB) :: XLOGE_YV, XLOGF_YV
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: Tws, Ews, Fws  
 
       CHARACTER(LEN=72) :: CPATH

@@ -767,7 +767,7 @@ END INTERFACE
          use yowdatapool, only: myrank
          USE yowpd, only: comm
          USE YOWMPP   , ONLY : NINF, NSUP, IRANK
-         USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+         USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !     -------------------------------------------------------------------------
 
@@ -801,7 +801,7 @@ END INTERFACE
 ! local parameter
 !
          REAL(KIND=JWRU) :: TMP
-         REAL(KIND=JWRB) :: ZHOOK_HANDLE
+         REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
          INTEGER(KIND=JWIM) :: ierr
 
@@ -1373,13 +1373,13 @@ END INTERFACE
 !**********************************************************************
       SUBROUTINE CADVXY(IS,ID,C)
       USE YOWUNPOOL, ONLY : LADVTEST, LCUR, LSPHE, CG, DEGRAD, REARTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN)  :: IS, ID
       REAL(KIND=JWRU), INTENT(OUT)  :: C(2,MNP)
       INTEGER(KIND=JWIM) :: IP
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRU) :: eCX, eCY
 
 ! ----------------------------------------------------------------------

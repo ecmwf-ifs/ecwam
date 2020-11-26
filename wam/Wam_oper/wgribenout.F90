@@ -57,7 +57,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
 
       USE YOWMPP   , ONLY : NPRECI
       USE GRIB_API_INTERFACE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -83,7 +83,7 @@ SUBROUTINE WGRIBENOUT (IU06, ITEST, I1, I2, FIELD,                      &
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
       INTEGER(KIND=JWIM), ALLOCATABLE :: KGRIB_BUFR(:)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('WGRIBENOUT',0,ZHOOK_HANDLE)

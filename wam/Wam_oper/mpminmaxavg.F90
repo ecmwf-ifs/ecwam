@@ -32,7 +32,7 @@
       USE YOWTEST   , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE MPL_MODULE, ONLY : MPL_ALLREDUCE
-      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -48,7 +48,7 @@
 
       REAL(KIND=JWRB),DIMENSION(NIPRMOUT) :: ZMIN, ZMAX
       REAL(KIND=JWRB),DIMENSION(2*NIPRMOUT) :: ZSUM
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: ZGLOBAL(:)
 !     -------------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MPMINMAXAVG',0,ZHOOK_HANDLE)

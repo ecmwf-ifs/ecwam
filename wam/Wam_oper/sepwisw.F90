@@ -71,7 +71,7 @@
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! -----------------------------------------------------------------------
 
@@ -97,7 +97,7 @@
 
       REAL(KIND=JWRB) :: COEF
       REAL(KIND=JWRB) :: CHECKTA
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: R

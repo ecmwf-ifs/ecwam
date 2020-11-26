@@ -48,7 +48,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,WETAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : EPSMIN
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IJ, M
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: IFRINDEX
       REAL(KIND=JWRB) :: COEF_FR, ONE
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 
 ! ----------------------------------------------------------------------

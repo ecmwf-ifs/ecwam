@@ -82,7 +82,7 @@
      &            KRLON    ,WLAT     ,WRLAT     ,                       &
      &            WRLON    ,OBSLAT   ,OBSLON   ,OBSRLAT  ,OBSRLON   ,   &
      &            LSAMEDEPTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -104,7 +104,7 @@
      &                      IJLA1, IJPH1
       INTEGER(KIND=JWIM),ALLOCATABLE,DIMENSION(:) :: IJRLA, IJRPH
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELPRO, DELPH0, DELTH0, DELFR0
       REAL(KIND=JWRB) :: SD, CD, SDA, CDA, DNO, DTT, SDD, CDD, DTHP,    &
      &                   DTHM, DFP, DFM

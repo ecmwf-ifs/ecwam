@@ -51,7 +51,7 @@
       USE OUTPUT_STRUCT, ONLY : IXarr, IYarr
       USE YOWPD,     ONLY : NODES=>nodes_global,INE_GLOBAL,rank, np
       USE OUTPUT_STRUCT, ONLY : INTELEMENT_IPOL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "unblkrord.intfb.h"
@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IY, IX, J, I, IJ, IE, KI, IR, IP
       INTEGER(KIND=JWIM) :: NI(3)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: BLOCK_G(:)
 
       REAL(KIND=JWRU) :: XLO, XLA

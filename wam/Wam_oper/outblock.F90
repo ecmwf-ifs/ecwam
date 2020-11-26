@@ -79,7 +79,7 @@
       USE YOWSHAL,   ONLY : IODP
       USE YOWSTAT  , ONLY : IREFRA
 
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -115,7 +115,7 @@
       INTEGER(KIND=JWIM) :: IRA
       
       REAL(KIND=JWRB) :: SIG
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, FP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: C3, C4, BF, QP, HMAX, TMAX

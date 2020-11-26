@@ -38,7 +38,7 @@
       USE YOWPARAM , ONLY : NGY      ,NBLO
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : FIELDG
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -48,7 +48,7 @@
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT(OUT) :: U, V
 
       INTEGER (KIND=JWIM):: IJ, IX, JY
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

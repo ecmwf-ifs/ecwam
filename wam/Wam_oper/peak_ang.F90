@@ -36,7 +36,7 @@
      &               DFIMFR2  ,DELTH ,TH       ,SINTH    ,COSTH  ,      &
      &               WETAIL   ,WP1TAIL         ,WP2TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
  
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -51,7 +51,7 @@
       REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
       REAL(KIND=JWRB) :: R1
       REAL(KIND=JWRB) :: DELT25, COEF_FR, COEF_FR2
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: ZEPSILON
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: SUM0, SUM1, SUM2, SUM4, XMAX
       REAL,DIMENSION(IJS:IJL) :: TEMP

@@ -55,7 +55,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWTABL  , ONLY : NFREHF   ,FAC0     ,FAC1     ,FAC2     ,    &
      &            FAC3     ,FAK      ,FRHF     ,DFIMHF
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !--------------------------------------------------------------------
 
@@ -72,7 +72,7 @@
    
       REAL(KIND=JWRB) :: FH, DELF, XK1
       REAL(KIND=JWRB) :: XPI, XPJ, XPK, XN, DELTA, XFAC
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NCOLL,NANG,NFREHF) :: F2
       REAL(KIND=JWRB), DIMENSION(NCOLL,0:3,0:2,0:2) :: XMU, XLAMBDA
 

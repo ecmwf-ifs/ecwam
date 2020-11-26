@@ -44,7 +44,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWSTAT  , ONLY : NPROMA_WAM
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -58,7 +58,7 @@
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: CITHICK
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL, SAVE :: LLFRST
 

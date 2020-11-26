@@ -40,7 +40,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPCONS , ONLY : G     ,DKMAX
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -53,7 +53,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: OM, BETA
 
       REAL(KIND=JWRB) :: AKM1, AKM2, AO, AKP, BO, TH, STH  
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

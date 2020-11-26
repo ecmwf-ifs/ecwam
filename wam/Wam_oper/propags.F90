@@ -67,7 +67,7 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,              &
      &            OBSLAT   ,OBSLON   ,LSAMEDEPTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -81,7 +81,7 @@
       INTEGER(KIND=JWIM) :: IC, IJLA, IJPH, KP1, KM1, MP1, MM1
 
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELPRO, DELPH0, DELTH0, DELFR0, DELPH0_CDA 
       REAL(KIND=JWRB) :: SD, CD, SDA, CDA, DNO, DTT, SDD, CDD, DTHP,    &
      &                   DTHM, DFP, DFM

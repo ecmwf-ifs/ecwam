@@ -85,7 +85,7 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LLR8TOR4
       USE UNWAM
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -99,7 +99,7 @@
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

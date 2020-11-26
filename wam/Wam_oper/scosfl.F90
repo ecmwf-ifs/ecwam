@@ -44,7 +44,7 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWFRED  , ONLY : DELTH    ,TH       ,COSTH    ,SINTH
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -57,7 +57,7 @@
 
 
       INTEGER(KIND=JWIM) :: IJ, K
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: MEANDIR, SI, CI
 
 ! ----------------------------------------------------------------------

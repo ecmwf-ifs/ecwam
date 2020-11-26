@@ -54,7 +54,7 @@
       USE YOWCOUP  , ONLY : ZALP     ,XKAPPA,X0TAUHF, JTOT_TAUHF, WTAUHF
       USE YOWFRED  , ONLY : FR
       USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -74,7 +74,7 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: DELZ, ZINF
       REAL(KIND=JWRB) :: FNC, FNC2, SQRTZ0OG, SQRTGZ0, GM1, GZ0, XLOGGZ0
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

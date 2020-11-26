@@ -28,7 +28,7 @@
 
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -42,7 +42,7 @@
 !      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
 ! ----------------------------------------------------------------------
       INTEGER(KIND=JWIM) :: I,ITER
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELAB
       REAL(KIND=JWRB) :: KER, KEI
       REAL(KIND=JWRB) :: ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,DZETA0,DZETA0MEMO

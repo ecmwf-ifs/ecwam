@@ -29,7 +29,7 @@
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND, ONLY   : NXFF     ,NYFF     ,FIELDG_coupl
       USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -37,7 +37,7 @@
 
       INTEGER(KIND=JWIM) :: NPR, MAXLEN
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL, INTENT(IN) :: LWCUR
 

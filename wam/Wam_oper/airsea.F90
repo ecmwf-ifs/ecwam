@@ -53,7 +53,7 @@
 
       USE YOWCOUP, ONLY: XKAPPA, XNLEV
       USE YOWTEST, ONLY: IU06
-      USE YOMHOOK, ONLY: LHOOK, DR_HOOK
+      USE YOMHOOK, ONLY: LHOOK, DR_HOOK, JPHOOK
       USE YOWWIND, ONLY: WSPMIN
 
 ! ----------------------------------------------------------------------
@@ -73,7 +73,7 @@
       REAL(KIND=JWRB) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1
       REAL(KIND=JWRB) :: XKAPPAD, XLOGLEV
       REAL(KIND=JWRB) :: XLEV
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK ('AIRSEA', 0, ZHOOK_HANDLE)

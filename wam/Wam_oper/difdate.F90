@@ -62,7 +62,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
       IMPLICIT NONE
@@ -75,7 +75,7 @@
       INTEGER(KIND=JWIM) :: IYEAR2,IMON2,IDAY2,IHOUR2,IMIN2,ISEC2
       INTEGER(KIND=JWIM) :: MON(12)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=*) :: CDATE1, CDATE2
       CHARACTER(LEN=14) :: CDT1, CDT2

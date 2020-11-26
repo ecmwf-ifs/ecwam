@@ -45,7 +45,7 @@
       USE YOWSTAT  , ONLY : ISHALLO
 
       USE YOWTEST  , ONLY : IU06    ,ITEST
-      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -58,7 +58,7 @@
       REAL(KIND=JWRB) :: DTURB
       REAL(KIND=JWRB) :: XLOGDFRTH
       REAL(KIND=JWRB) :: BRLAMBDA
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NANG/2) :: COSDTH
       REAL(KIND=JWRB), DIMENSION(NFRE) :: SIG, C_, C_C, CGM1, DSIP, TRPZ_DSIP 
 

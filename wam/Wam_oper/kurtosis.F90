@@ -177,7 +177,7 @@
      &             DFIMFR   ,DFIMFR2,                                   &
      &             WETAIL   ,WP1TAIL ,WP2TAIL  ,QPTAIL  ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
  
 !-----------------------------------------------------------------------
 
@@ -201,7 +201,7 @@
       REAL(KIND=JWRB), PARAMETER :: FLTHRS = 0.4_JWRB
       REAL(KIND=JWRB), PARAMETER :: SQRT2 = SQRT(2._JWRB)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELT25, COEF_FR1, COEF_FR2, DELT2
       REAL(KIND=JWRB) :: CONST_SIG_SQRTPIM1, CONST_OM_ZPI, OM_MEAN
       REAL(KIND=JWRB) :: TRANS, DUR, TAU, ZFAC, ZEPS, HS

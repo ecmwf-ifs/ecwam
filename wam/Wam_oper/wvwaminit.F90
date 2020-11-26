@@ -35,7 +35,7 @@
      &            LWVWAMINIT
       USE YOWSTAT  , ONLY : IPROPAGS
       USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
 
 ! ----------------------------------------------------------------------
@@ -53,7 +53,7 @@
 
       REAL(KIND=JWRB), INTENT(OUT) :: RSOUTW, RNORTW
       REAL(KIND=JWRB) :: X4(2)
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=1) :: C1 
       CHARACTER(LEN=80) :: FILENAME

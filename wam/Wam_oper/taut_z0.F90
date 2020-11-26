@@ -48,7 +48,7 @@
       USE YOWCOUP  , ONLY : ALPHA    ,XKAPPA  ,RNUM     ,LLCAPCHNK
       USE YOWPCONS , ONLY : G        ,EPSUS   ,ACD      ,BCD
       USE YOWTABL  , ONLY : JPLEVT   ,EPS1 
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -72,7 +72,7 @@
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
       REAL(KIND=JWRB) :: USTOLD, TAUOLD, TAUNEW, X, F, DELF
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, ZZ, GM1
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG, XMIN
 
 ! ----------------------------------------------------------------------

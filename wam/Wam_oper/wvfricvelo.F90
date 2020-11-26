@@ -42,7 +42,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, ITER
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: C_D, UST, USTFG, Z0, F, DELFM1, FOLD
       REAL(KIND=JWRB) :: BOG, XKU10, XLOGZ, XLOGINV
 

@@ -47,7 +47,7 @@
       USE YOWSTAT  , ONLY : IDELT   ,ISHALLO 
       USE YOWTEST  , ONLY : IU06    ,ITEST
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -62,7 +62,7 @@
       REAL(KIND=JWRB) :: EWH 
       REAL(KIND=JWRB) :: X, ALP
       REAL(KIND=JWRB),DIMENSION(NFRE) :: XK2 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

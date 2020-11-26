@@ -32,7 +32,7 @@
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06
       USE MPL_MODULE
-      USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -42,7 +42,7 @@
 
       INTEGER(KIND=JWIM) :: ITG, IT, I, IRECV, INFO
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(4,NIPRMOUT) :: WNORM
 
       CHARACTER(LEN=5) :: CINFO

@@ -54,7 +54,7 @@
       USE YOWSHAL  , ONLY : DEPTH
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -76,7 +76,7 @@
       REAL(KIND=JWRB) :: DPTP, DPTM, UP, UM, VP, VM 
       REAL(KIND=JWRB) :: CGMAX
       REAL(KIND=JWRB) :: ONEO2DELPHI
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

@@ -24,7 +24,7 @@
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWWIND  , ONLY : FIELDG
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -35,7 +35,7 @@
       INTEGER(KIND=JWIM) :: IG, IJ, IX, JY
       INTEGER(KIND=JWIM):: JKGLO, KIJS, KIJL, NPROMA
 
-      REAL(KIND=JWRB):: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK):: ZHOOK_HANDLE
 
       IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',0,ZHOOK_HANDLE)
 

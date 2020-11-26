@@ -40,7 +40,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : IRANK     ,NPROC
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -57,7 +57,7 @@
       INTEGER(KIND=JWIM) :: NST, NND
       INTEGER(KIND=JWIM), DIMENSION(NPROC) :: KRECVCOUNTS
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ZSENDBUF
 
 !----------------------------------------------------------------------

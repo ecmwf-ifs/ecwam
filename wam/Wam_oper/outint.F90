@@ -42,7 +42,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNIT  , ONLY : IU20     ,IU30
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -61,7 +61,7 @@
       INTEGER(KIND=JWIM) :: IERR
       INTEGER(KIND=JWIM) :: IUOUT 
   
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=24) :: OFILENAME
 

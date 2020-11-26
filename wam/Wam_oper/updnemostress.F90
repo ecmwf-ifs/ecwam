@@ -50,7 +50,7 @@
       USE YOWMPP   , ONLY : IRANK, NPROC
       USE MPL_DATA_MODULE, ONLY : MPL_COMM
 ! DR. HOOK
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! DATA FOR NEMO 
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOCOUDEBUG, KCOUSTEP,        &
      &                      NEMOTAUX, NEMOTAUY, NEMONEW10,              &
@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IG, IJ
 
       REAL(KIND=JWRB) :: TAU
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 
 ! -------------------------------------------------------------------   

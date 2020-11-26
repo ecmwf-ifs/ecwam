@@ -112,7 +112,7 @@
      &            CLSPDT   ,CRSTDT   ,IANALPD  ,IFOREPD  ,IDELWIN  ,    &
      &            IASSIM   ,NFCST    ,ISTAT
       USE YOWWIND  , ONLY : CWDFILE  ,LLWSWAVE ,LLWDWAVE ,RWFAC
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -125,7 +125,7 @@
       INTEGER(KIND=JWIM) :: ISAT, IC, II
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14), PARAMETER :: ZERO = ' '
       CHARACTER(LEN=1) :: CLMTSU(4), CLOTSU(8)

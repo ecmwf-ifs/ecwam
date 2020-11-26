@@ -60,7 +60,7 @@
       USE YOWNEMOFLDS,ONLY: NEMOSST, NEMOCICOVER, NEMOCITHICK,          &
      &                      NEMOUCUR, NEMOVCUR
 ! DR. HOOK
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! -------------------------------------------------------------------   
 
@@ -76,7 +76,7 @@
 ! TEMPORARY ARRAYS FOR LOCAL MASK AND GLOBAL INDICES
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLOCMSK, NGLOIND
 ! MISC
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! -------------------------------------------------------------------   
 

@@ -41,7 +41,7 @@
       USE YOWSHAL  , ONLY : DEPTH       ,INDEP    ,TCGOND
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -54,7 +54,7 @@
 
       INTEGER(KIND=JWIM) :: M, IJ, JKGLO, KIJS, KIJL, NPROMA
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJSLOC:IJLLOC,NFRE) :: CGROUP 
 
 ! ----------------------------------------------------------------------

@@ -42,7 +42,7 @@
      &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : TFAC_ST  ,INDEP
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
        
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -56,7 +56,7 @@
 
       REAL(KIND=JWRB), PARAMETER :: STMAX=1.5_JWRB   ! maximum magnitude (this is for safety when coupled)
       REAL(KIND=JWRB) :: CONST, FAC, FAC1, FAC2, FAC3
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: STFAC
 
 ! ----------------------------------------------------------------------

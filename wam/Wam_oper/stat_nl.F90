@@ -35,7 +35,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G        ,PI       ,DKMAX
       USE YOWSHAL  , ONLY : XKDMIN
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !----------------------------------------------------------------------
 
@@ -60,7 +60,7 @@
 
       INTEGER(KIND=JWIM) :: IJ
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,D,T0,T0_SQ,OM,ALPH,GAM,DELTA,DELTA_1D
       REAL(KIND=JWRB) :: C4_CONST,ZC1,ZC2,ZC3,ZR
       REAL(KIND=JWRB) :: DELTA_2D,C_0,C_S_SQ,V_G,V_G_SQ,ZFAC,ZFAC1,ZFAC2

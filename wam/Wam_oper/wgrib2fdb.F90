@@ -39,7 +39,7 @@
       USE YOWMPP   , ONLY : NPRECI
 
       USE FDBSUBS_MOD, ONLY : IWRITEFDBSUBS, IFLUSHFDBSUBS
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !     ------------------------------------------------------------------
       IMPLICIT NONE
@@ -56,7 +56,7 @@
 !!      INTEGER(KIND=JWIM), SAVE :: IFILE_HANDLE = -999
 !!      CHARACTER(LEN=64) :: CLFILE
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !     ------------------------------------------------------------------
 

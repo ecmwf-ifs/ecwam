@@ -49,7 +49,7 @@
       USE YOWSPEC  , ONLY : IJ2NEWIJ
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWUNPOOL, ONLY : LLUNSTR
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -69,7 +69,7 @@
       INTEGER(KIND=JWIM) :: LFILE, IJ, J2, J3, IULOG
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT 
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
 
       LOGICAL :: LLEXIST

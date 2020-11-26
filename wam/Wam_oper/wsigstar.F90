@@ -50,7 +50,7 @@
 
       USE YOWCOUP  , ONLY : XKAPPA
       USE YOWWIND  , ONLY : WSPMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -69,7 +69,7 @@
       REAL(KIND=JWRB) :: U10, C_D, DC_DDU, SIG_CONV
       REAL(KIND=JWRB) :: XKAPPAD
       REAL(KIND=JWRB) :: U10M1, C2U10P1, U10P2
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USNEW, Z0NEW, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
 

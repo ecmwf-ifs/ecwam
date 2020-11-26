@@ -73,7 +73,7 @@
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !-----------------------------------------------------------------------
 
@@ -98,7 +98,7 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: KLONRGG(NGY)
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: WORK(NGX,NGY)
 
       CHARACTER(LEN=14) :: CCDDATE

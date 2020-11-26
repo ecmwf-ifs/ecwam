@@ -58,7 +58,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -80,7 +80,7 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: LNAME
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:,:) :: RDUM 
       REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:,:) :: RFIELD
 

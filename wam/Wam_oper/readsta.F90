@@ -69,7 +69,7 @@
       USE YOWCARD  , ONLY : JPCL     ,CARD
       USE YOWTEST  , ONLY : IU06 
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !---------------------------------------------------------------------- 
       IMPLICIT NONE
@@ -85,7 +85,7 @@
       LOGICAL, INTENT(OUT) :: LRSTPARAL
 
       INTEGER(KIND=JWIM) :: I, L
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !---------------------------------------------------------------------- 
 

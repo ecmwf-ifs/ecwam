@@ -32,7 +32,7 @@
 
       USE YOWCOUP  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,XKAPPA,       &
      &             X0TAUHF, JTOT_TAUHF, WTAUHF
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -41,7 +41,7 @@
       INTEGER(KIND=JWIM) :: J
 
       REAL(KIND=JWRB) :: CONST1, X0, FF, F, DF
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

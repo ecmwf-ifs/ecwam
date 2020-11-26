@@ -36,7 +36,7 @@
       USE YOWFRED  , ONLY : FR       ,FRATIO   ,DELTH
       USE YOWICE   , ONLY : FLMIN
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
  
 ! ----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@
       REAL(KIND=JWRB), PARAMETER :: WC=0.8_JWRB
       REAL(KIND=JWRB), PARAMETER :: WR=0.1_JWRB
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: A,B,C,XP1,XM1,F1P1,F1M1,F10,TF,XMAX_MIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1D, F1DSM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMAX

@@ -57,7 +57,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWSHAL  , ONLY : DEPTH    ,CINV     ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
 ! ----------------------------------------------------------------------
@@ -73,7 +73,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTAM1
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: CM, TEMP1, SDS, X
 
 

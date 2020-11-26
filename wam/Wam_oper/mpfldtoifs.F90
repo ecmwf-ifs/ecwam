@@ -56,7 +56,7 @@
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWTEST  , ONLY : IU06
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
 !----------------------------------------------------------------------
 
@@ -78,8 +78,8 @@
 
       REAL(KIND=JWRB), ALLOCATABLE :: ZBUFS(:) ,ZBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: ZSENDBUF(:), ZRECVBUF(:) 
-      REAL(KIND=JWRB) ZHOOK_HANDLE
-      REAL(KIND=JWRB) ZHOOK_HANDLE1
+      REAL(KIND=JPHOOK) ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) ZHOOK_HANDLE1
 
 !----------------------------------------------------------------------
 

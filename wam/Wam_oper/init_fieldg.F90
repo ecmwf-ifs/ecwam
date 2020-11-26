@@ -35,12 +35,12 @@
       USE YOWPCONS , ONLY : ZMISS    ,ROAIR    ,WSTAR0
       USE YOWMPP   , ONLY : IRANK
       USE YOWWIND  , ONLY : FIELDG   ,NXFF     ,NYFF    ,WSPMIN
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE YOWSTAT  , ONLY : NPROMA_WAM
       USE YOWSPEC  , ONLY : NSTART   ,NEND
       USE YOWUNPOOL ,ONLY : LLUNSTR
       USE YOWPD    , ONLY : MNP=>npa , XP=>x, YP=>y
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@
       INTEGER(KIND=JWIM) :: IG, IJ, IX, JY, JSN
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL :: LLOCAL_EXIST
 ! ----------------------------------------------------------------------

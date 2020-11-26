@@ -19,7 +19,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
       USE YOWPCONS , ONLY : G     ,DKMAX
       USE YOWSHAL , ONLY : BATHYMAX, XKDMIN
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
                      
 !----------------------------------------------------------------------
 
@@ -33,7 +33,7 @@
 
       REAL(KIND=JWRB) :: XK0,D,XNU,SIG_TH
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4
       REAL(KIND=JWRB) :: XNL,ALP,ZFAC,T_NL

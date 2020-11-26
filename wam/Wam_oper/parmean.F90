@@ -52,7 +52,7 @@
       USE YOWFRED  ,ONLY : FR , DFIM , DFIMOFR, COSTH, SINTH
       USE YOWPARAM ,ONLY : NANG, NFRE
       USE YOWPCONS ,ONLY : EPSMIN, ZPI
-      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +64,7 @@
       REAL(KIND=JWRB), INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: ENE, DIR, PER
 
       INTEGER(KIND=JWIM) :: IPK, IJ, K, M, IP
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB)    :: F1D(NFRE)
       REAL(KIND=JWRB), DIMENSION(NPMAX) :: TEMP, SI, CI, EM, FM, THQ
 

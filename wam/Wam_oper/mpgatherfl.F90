@@ -50,7 +50,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD, ONLY : RANK, MYRANK, NP
-      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -67,7 +67,7 @@
 
       INTEGER(KIND=JWIM), DIMENSION(NPROC) :: KRECVCOUNTS
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE,DIMENSION(:) :: PSENDBUF, PRECVBUF
 
 !----------------------------------------------------------------------

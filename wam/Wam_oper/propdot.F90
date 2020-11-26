@@ -47,7 +47,7 @@
       USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,TSIHKD   ,INDEP 
       USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +64,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: CD, SD, SS, SC, CC
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DDPHI, DDLAM, DUPHI, DULAM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DVPHI, DVLAM, DCO, OMDD

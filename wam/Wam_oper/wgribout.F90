@@ -36,7 +36,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE GRIB_API_INTERFACE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -51,7 +51,7 @@
       INTEGER :: IERR, ITABPAR, ICLASS
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=4) :: CEXPVER

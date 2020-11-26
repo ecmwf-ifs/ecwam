@@ -67,7 +67,7 @@
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWWIND  , ONLY : CDAWIFL  ,CDATEWO  ,CDATEFL
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -84,7 +84,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, JKGLO, KIJS, KIJL, NPROMA, IDELWH
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL :: LLEX
 

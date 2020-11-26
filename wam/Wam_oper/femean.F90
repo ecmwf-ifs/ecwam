@@ -47,7 +47,7 @@
      &                WETAIL    ,FRTAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -59,7 +59,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K
       REAL(KIND=JWRB) :: DELT25, DELT2, DEL2
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: TEMP2
 
 ! ----------------------------------------------------------------------

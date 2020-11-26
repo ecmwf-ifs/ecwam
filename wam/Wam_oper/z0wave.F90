@@ -40,7 +40,7 @@
       USE YOWCOUP  , ONLY : ALPHA, LLCAPCHNK
       USE YOWPCONS , ONLY : G
       USE YOWTABL  , ONLY : EPS1
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@
       INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: UST2, UST3, ARG, GM1
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAOG
 
 ! ----------------------------------------------------------------------

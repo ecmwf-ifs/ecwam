@@ -87,7 +87,7 @@
      &            NSTORE   ,FF_NEXT  ,WSPMIN_RESET_TAUW  ,              &
      &            USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -121,7 +121,7 @@
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ
 
       REAL(KIND=JWRB) :: WGHT, TLWMAX
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 

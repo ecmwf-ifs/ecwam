@@ -27,7 +27,7 @@
       USE YOWICE   , ONLY : LICERUN  ,CITHRSH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : LLSOURCE
-      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -39,7 +39,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, ITG, IR
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTSETWMASK',0,ZHOOK_HANDLE)

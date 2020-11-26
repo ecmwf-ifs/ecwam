@@ -52,7 +52,7 @@
       USE YOWPARAM , ONLY : NIBLO
       USE YOWUNPOOL, ONLY : LLUNSTR
       USE YOWPD,     ONLY : RANK, MYRANK, NP,  MNP=>NPA, EXCHANGE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE
 
 !----------------------------------------------------------------------
@@ -69,7 +69,7 @@
      &                      KRCOUNT
       INTEGER(KIND=JWIM),DIMENSION(NPROC) :: ISENDREQ
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:,:), ZCOMBUFR(:)
 
       REAL(KIND=JWRU), ALLOCATABLE :: AC(:,:,:)

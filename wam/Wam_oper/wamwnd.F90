@@ -70,7 +70,7 @@
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWWIND  , ONLY : WSPMIN   ,FIELDG   ,LLWSWAVE ,LLWDWAVE ,    &
      &            RWFAC
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -85,7 +85,7 @@
       INTEGER(KIND=JWIM) :: IJ, IX, JY
 
       REAL(KIND=JWRB) :: RESCALE
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION (IJS:IJL) :: UU, VV, WSPEED
 
       LOGICAL :: LCORREL

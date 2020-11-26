@@ -46,7 +46,7 @@
 
       USE YOWFRED  , ONLY : DELTH    ,FR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
 
@@ -58,7 +58,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EPEAKF
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 
 ! ----------------------------------------------------------------------

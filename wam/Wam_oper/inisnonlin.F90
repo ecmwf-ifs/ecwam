@@ -45,7 +45,7 @@
      &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
      &            KFRH     ,NINL     ,NRNL     ,INLCOEF  ,RNLCOEF
       USE YOWTEST  , ONLY : IU06
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -61,7 +61,7 @@
       REAL(KIND=JWRB) :: FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(KIND=JWRB) :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
 
-      REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 !     INLINE FUNCTION (PIERSON-MOSKOWITZ SMOOTH CUT-OFF)
 !     X == FR(1)/FREQUENCY
