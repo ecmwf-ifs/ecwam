@@ -240,7 +240,7 @@
 !     COMPUTE DAMPING COEFFICIENT DUE TO FRICTION ON BOTTOM OF THE SEA ICE.
 !!! testing sea ice attenuation (might need to restrict usage when needed)
       IF(LCIWABR) THEN
-        CALL CIWABR(IJS, IJL, CICVR, FL1, CIREDUC) 
+        CALL CIWABR(IJS, IJL, CICVR, FL1, CIREDUC)
         DO M=1,NFRE
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -275,7 +275,7 @@
      &               U10NEW, THWNEW, ROAIRN, WSTARNEW, &
      &               CICVR, &
      &               FMEANALL, &
-     &               FMEANWS, FL1, &
+     &               FMEANWS, FLM, FL1, &
      &               USNEW, TAUW, TAUWDIR, Z0NEW, PHIWA, &
      &               FL, SL, SPOS, &
      &               MIJ, RHOWGDFTH, XLLWS)
