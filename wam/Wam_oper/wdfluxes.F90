@@ -91,6 +91,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
@@ -118,6 +119,7 @@
 
       LUPDTUS = .FALSE.
       FMEANWS(:) = FMEANALL(:)
+      FLM(:,:) = 0.0_JWRB
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, IJS, IJL, &
@@ -125,7 +127,7 @@
      &             U10NEW, THWNEW, ROAIRN, WSTAR, &
      &             CICVR, &
      &             FMEANALL, &
-     &             FMEANWS, FL1, &
+     &             FMEANWS, FLM, FL1, &
      &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
      &             MIJ, RHOWGDFTH, XLLWS)
