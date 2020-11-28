@@ -126,8 +126,8 @@
      &             LUPDTUS, &
      &             U10NEW, THWNEW, ROAIRN, WSTAR, &
      &             CICVR, &
-     &             FMEANALL, &
-     &             FMEANWS, FLM, FL1, &
+     &             FMEANALL, FMEANWS, &
+     &             FLM, FL1, &
      &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, PHIWA, &
      &             FL, SL, SPOS, &
      &             MIJ, RHOWGDFTH, XLLWS)
