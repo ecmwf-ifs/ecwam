@@ -147,19 +147,9 @@ IF (LLGCBZ0) THEN
         ENDDO
       ENDIF
 
-!!!      DO IJ=IJS,IJL
-!!!        ALPHAOG(IJ) = ALPHAMIN*GM1
-!!!      ENDDO
-      IF(LLCAPCHNK) THEN
-        DO IJ=IJS,IJL
-          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
-          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          ALPHAOG(IJ)= ALPHA*GM1
-        ENDDO
-      ENDIF
+      DO IJ=IJS,IJL
+        ALPHAOG(IJ) = ALPHAMIN*GM1
+      ENDDO
 
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)

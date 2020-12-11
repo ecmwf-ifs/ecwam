@@ -10,7 +10,7 @@ USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
      &                ESH      ,ASH      ,BSH      ,ASWKM    ,BSWKM
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
-USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,        &
+USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
      &                ANG_GC_F, ANG_GC_G, ANG_GC_H
@@ -41,9 +41,11 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
            CALL ABORT1
           ENDIF
         IF(LLGCBZ0) THEN
+          ALPHAMIN = 0.002_JWRB
           ALPHA   = 0.001_JWRB
           BETAMAX = 1.22_JWRB
         ELSE 
+          ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           BETAMAX = 1.20_JWRB
         ENDIF
@@ -68,6 +70,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAILFACTOR_PM = 3.0_JWRB
 
         IF(LLGCBZ0) THEN
+          ALPHAMIN = 0.002_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
           IF(LLNORMAGAM) THEN
@@ -98,6 +101,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             ANG_GC_H = 35.0_JWRB
           ENDIF
         ELSE 
+          ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
           IF(LLNORMAGAM) THEN
