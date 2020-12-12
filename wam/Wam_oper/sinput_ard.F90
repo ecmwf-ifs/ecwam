@@ -409,7 +409,7 @@
         SUMF(:) = 0.0_JWRB
         DO K=1,NANG
           DO IJ=IJS,IJL
-            SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)
+            SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)*MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
           ENDDO
         ENDDO
 
