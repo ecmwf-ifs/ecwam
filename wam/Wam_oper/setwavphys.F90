@@ -82,6 +82,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             ANG_GC_C = 0.22_JWRB
             ANG_GC_D = 10._JWRB
             ANG_GC_E = 0.1_JWRB
+ !!! debile test 2
+            ANG_GC_A = 0.53_JWRB
+            ANG_GC_B = 0.0_JWRB
+
             ! for high winds if LLCAPCHNK
             ANG_GC_F = 0.3_JWRB
             ANG_GC_G = 0.35_JWRB
