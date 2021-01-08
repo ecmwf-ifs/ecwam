@@ -76,8 +76,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           IF(LLNORMAGAM) THEN
 !!            BETAMAX = 1.40_JWRB
  !!! debile test 2
-            BETAMAX = 1.32_JWRB
-            TAUWSHELTER = 0.0_JWRB
+            BETAMAX = 1.42_JWRB
+            TAUWSHELTER = 0.25_JWRB
             ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
             ANG_GC_A = 0.38_JWRB
             ANG_GC_B = 0.30_JWRB
