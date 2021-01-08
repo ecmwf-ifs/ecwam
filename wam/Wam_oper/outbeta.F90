@@ -80,7 +80,9 @@
 !     ---------------------------------
 
       IF (LLGCBZ0) THEN
-        ZN = RNUM
+!!        ZN = RNUM
+!! debile test2
+        ZN = 0.0_JWRB
       ELSE
         ZN = 0.0_JWRB
       ENDIF
