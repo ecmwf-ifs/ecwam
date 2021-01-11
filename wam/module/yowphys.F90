@@ -47,7 +47,7 @@
       REAL(KIND=JWRB) :: ALPHAPMAX
 
 !     directionality correction factors in the gowth rate renormalisation (see Janssen tbd)
-      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.75_JWRB
+      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.25_JWRB
       REAL(KIND=JWRB), PARAMETER :: RN1_RN = 0.25_JWRB
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
