@@ -187,9 +187,6 @@
         CONST(M)=SIG(M)*CONST1
         COEF(M) =-SWELLF*16._JWRB*SIG2(M)/(G*ROWATER)
         COEF5(M)=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG(M))/ROWATER
-!!!debile test
-        COEF(M) = 0.0_JWRB
-        COEF5(M)= 0.0_JWRB
 
         K=1
         DO IJ=IJS,IJL
