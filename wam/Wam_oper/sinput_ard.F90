@@ -72,7 +72,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
-     &                      BMAXOKAPDTH, RNU      ,RNUM, &
+     &                      BMAXOKAPDTH, RN1_RN  , RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
@@ -418,12 +418,11 @@
             DO IJ=IJS,IJL
               X    = UCN(IJ,IGST)
               ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
-              IF (ZLOG.LT.0.0_JWRB) THEN
-                ZLOG2X=ZLOG*ZLOG*X
-                UFAC0 = EXP(ZLOG)*ZLOG2X*ZLOG2X
-                ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
-                GAMNORMA(IJ,IGST) = (1.0_JWRB + 0.16666_JWRB*ZN)/(1.0_JWRB + ZN)
-              ENDIF
+              ZLOG = MIN(ZLOG,0.0_JWRB)
+              ZLOG2X = ZLOG*ZLOG*X
+              UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
+              ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
             ENDDO
         ENDDO
       ELSE

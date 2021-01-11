@@ -73,34 +73,26 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAMIN = 0.0005_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.030_JWRB
-          IF(LLNORMAGAM) THEN
-            BETAMAX = 1.44_JWRB
-            TAUWSHELTER = 0.25_JWRB
-            ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-            ANG_GC_A = 0.60_JWRB
-            ANG_GC_B = 0.08_JWRB
-            ANG_GC_C = 1.00_JWRB
-            ANG_GC_D = 9._JWRB
-            ANG_GC_E = 0.1_JWRB
+          TAUWSHELTER = 0.25_JWRB
 
-            ! for high winds if LLCAPCHNK
+          ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+          ANG_GC_A = 0.60_JWRB
+          ANG_GC_B = 0.08_JWRB
+          ANG_GC_C = 1.00_JWRB
+          ANG_GC_D = 9.0_JWRB
+          ANG_GC_E = 0.1_JWRB
+
+          ! for high winds if LLCAPCHNK
             ANG_GC_F = 0.3_JWRB
             ANG_GC_G = 0.35_JWRB
             ANG_GC_H = 35.0_JWRB
+
+          IF(LLNORMAGAM) THEN
+            BETAMAX = 1.44_JWRB
           ELSE
-            BETAMAX = 1.42_JWRB
-            TAUWSHELTER = 0.25_JWRB
-            ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-            ANG_GC_A = 0.25_JWRB
-            ANG_GC_B = 0.35_JWRB
-            ANG_GC_C = 0.1_JWRB
-            ANG_GC_D = 10._JWRB
-            ANG_GC_E = 0.1_JWRB
-            ! for high winds if LLCAPCHNK
-            ANG_GC_F = 0.05_JWRB
-            ANG_GC_G = 0.475_JWRB
-            ANG_GC_H = 35.0_JWRB
+            BETAMAX = 1.44_JWRB
           ENDIF
+
         ELSE 
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB

@@ -46,10 +46,9 @@
 !     MAXIMUM PHILLIPS PARAMETER USED TO CONTROL MAXIMUM STEEPNESS
       REAL(KIND=JWRB) :: ALPHAPMAX
 
-!     directionality correction factor in the gowth rate renormalisation (see Janssen tbd)
-!!!      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.53_JWRB
-!!debile test 2
-      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.25_JWRB
+!     directionality correction factors in the gowth rate renormalisation (see Janssen tbd)
+      REAL(KIND=JWRB), PARAMETER :: DELTA_THETA_RN = 0.75_JWRB
+      REAL(KIND=JWRB), PARAMETER :: RN1_RN = 0.25_JWRB
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !     FREQUENCIES LE MAX(TAILFACTOR*MAX(FMNWS,FM),TAILFACTOR_PM*FPM),
@@ -65,8 +64,7 @@
       REAL(KIND=JWRB) :: ANG_GC_F, ANG_GC_G, ANG_GC_H
 
 !     Negative wind input, ARDHUIN et al. 2010:
-!debile test2      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
-      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.60_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
