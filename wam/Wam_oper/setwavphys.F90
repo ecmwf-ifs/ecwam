@@ -79,7 +79,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_A = 0.53_JWRB
           ANG_GC_B = 0.20_JWRB
           ANG_GC_C = 0.50_JWRB
-          ANG_GC_D = 10.0_JWRB
+          ANG_GC_D = 11.0_JWRB
           ANG_GC_E = 0.1_JWRB
 
           ! for high winds if LLCAPCHNK
