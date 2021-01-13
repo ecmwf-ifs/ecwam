@@ -67,13 +67,13 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
         TAILFACTOR = 2.5_JWRB
-        TAILFACTOR_PM = 3.0_JWRB
 
         IF(LLGCBZ0) THEN
-          ALPHAMIN = 0.0005_JWRB
+          ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.030_JWRB
           TAUWSHELTER = 0.25_JWRB
+          TAILFACTOR_PM = 0.0_JWRB
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
           ANG_GC_A = 0.50_JWRB
@@ -97,6 +97,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
+          TAILFACTOR_PM = 3.0_JWRB
           IF(LLNORMAGAM) THEN
            write(*,*) ' not yet tested !!!!!'
            write(iu06,*) ' not yet tested !!!!!'
