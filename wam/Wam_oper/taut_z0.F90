@@ -102,6 +102,16 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       XLOGXL=LOG(XNLEV)
       US2TOTAUW=1.0_JWRB+EPS1
 
+      IF(LLCAPCHNK) THEN
+        DO IJ = IJS, IJL
+          ZBREDUC(IJ) = ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
+        ENDDO
+      ELSE
+        DO IJ = IJS, IJL
+          ZBREDUC(IJ) = 1.0_JWRB
+        ENDDO
+      ENDIF
+
 !     ONLY take the contribution of TAUW that is in the wind direction
       DO IJ = IJS, IJL
         TAUWACT(IJ) = MAX(TAUW(IJ)*COS(UDIR(IJ)-TAUWDIR(IJ)), 0.0_JWRB )
@@ -112,7 +122,9 @@ IF (LLGCBZ0) THEN
 
       DO IJ = IJS, IJL
         USMAX = MAX(-0.21339_JWRB + 0.093698_JWRB*UTOP(IJ) -0.0020944_JWRB*UTOP(IJ)**2 + 5.5091E-5_JWRB*UTOP(IJ)**3, 0.03_JWRB)
-        TAUWEFF(IJ) = MIN(TAUWACT(IJ)*US2TOTAUW, USMAX**2 )
+!!! debile test
+!!!        TAUWEFF(IJ) = MIN(TAUWACT(IJ)*US2TOTAUW, USMAX**2 )
+        TAUWEFF(IJ) = MIN(ZBREDUC(IJ)*TAUWACT(IJ)*US2TOTAUW, USMAX**2 )
       ENDDO
 
 !     COMPUTE THE PHILLIPS PARAMETER
@@ -137,16 +149,6 @@ IF (LLGCBZ0) THEN
       DO IJ = IJS, IJL
         ANG_GC(IJ) = MAX(ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(UTOP(IJ)-ANG_GC_D)),ANG_GC_E)
       ENDDO
-
-      IF(LLCAPCHNK) THEN
-        DO IJ = IJS, IJL
-          ZBREDUC(IJ) = ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
-        ENDDO
-      ELSE
-        DO IJ = IJS, IJL
-          ZBREDUC(IJ) = 1.0_JWRB
-        ENDDO
-      ENDIF
 
       DO IJ=IJS,IJL
         ALPHAOG(IJ) = ALPHAMIN*GM1
