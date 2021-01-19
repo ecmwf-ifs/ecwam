@@ -102,16 +102,6 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       XLOGXL=LOG(XNLEV)
       US2TOTAUW=1.0_JWRB+EPS1
 
-      IF(LLCAPCHNK) THEN
-        DO IJ = IJS, IJL
-          ZBREDUC(IJ) = ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
-        ENDDO
-      ELSE
-        DO IJ = IJS, IJL
-          ZBREDUC(IJ) = 1.0_JWRB
-        ENDDO
-      ENDIF
-
 !     ONLY take the contribution of TAUW that is in the wind direction
       DO IJ = IJS, IJL
         TAUWACT(IJ) = MAX(TAUW(IJ)*COS(UDIR(IJ)-TAUWDIR(IJ)), 0.0_JWRB )
@@ -148,6 +138,16 @@ IF (LLGCBZ0) THEN
         ANG_GC(IJ) = MAX(ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(UTOP(IJ)-ANG_GC_D)),ANG_GC_E)
       ENDDO
 
+      IF(LLCAPCHNK) THEN
+        DO IJ = IJS, IJL
+          ZBREDUC(IJ) = ANG_GC_F + ANG_GC_G * (1.0_JWRB - TANH(UTOP(IJ)-ANG_GC_H))
+        ENDDO
+      ELSE
+        DO IJ = IJS, IJL
+          ZBREDUC(IJ) = 1.0_JWRB
+        ENDDO
+      ENDIF
+
       DO IJ=IJS,IJL
         ALPHAOG(IJ) = ALPHAMIN*GM1
       ENDDO
@@ -160,11 +160,11 @@ IF (LLGCBZ0) THEN
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
+          Z0(IJ) = MAX(ZBREDUC(IJ)*XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), ZBREDUC(IJ), TAUUNR(IJ))
+          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), TAUUNR(IJ))
 !! ZB is diagnostic, so could be removed when not needed
 !!          ZB(IJ) = MAX(Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD), Z0MIN)
 
