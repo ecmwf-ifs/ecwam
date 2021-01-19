@@ -160,7 +160,7 @@ IF (LLGCBZ0) THEN
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(ZBREDUC(IJ)*XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB),Z0MIN)
+          Z0(IJ) = MAX(ZBREDUC(IJ)*XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
@@ -180,7 +180,7 @@ IF (LLGCBZ0) THEN
           USTOLD = USTAR(IJ)
           Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
-        Z0(IJ)  = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+        Z0(IJ) = MAX(ZBREDUC(IJ)*XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
       ENDDO
 
