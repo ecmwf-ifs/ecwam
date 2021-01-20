@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS(IJS, IJL, F, USTAR, XMSS)
+      SUBROUTINE MEANSQS(IJS, IJL, F, USTAR, UDIR, XMSS)
 
 ! ----------------------------------------------------------------------
 
@@ -18,11 +18,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (IJS, IJL, F, USTAR, XMSS)*
+!       *CALL* *MEANSQS (IJS, IJL, F, USTAR, UDIR, XMSS)*
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
 !              *F*   - SPECTRUM.
 !              *USTAR* - NEW FRICTION VELOCITY IN M/S (INPUT).
+!              *UDIR* - WIND SPEED DIRECTION
 !              *XMSS* - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
@@ -59,6 +60,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
@@ -78,7 +80,7 @@
 !        -------------------------------------------------
 
 !     COMPUTE THE PHILLIPS PARAMETER
-      CALL HALPHAP(IJS, IJL, F, HALP)
+      CALL HALPHAP(IJS, IJL, UDIR, F, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(IJS, IJL, HALP, USTAR, XMSS, FRGC)

@@ -71,7 +71,7 @@
       ENDIF
 
       DO I = NS, NWAV_GC
-!       GROWTHRATE BY WIND WITHOUT the multiplicative representing the ratio of air density to water density (eps)
+!       GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
 !       and BETAMAXOXKAPPA2
         X       = USTAR*CM_GC(I)
         XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP) 
