@@ -220,7 +220,7 @@
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
         DO IJ=IJS,IJL
-          IF(DP(IJ).GT.0._JWRB) THEN
+          IF(DP(IJ).GT.0.0_JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=DP(IJ)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
