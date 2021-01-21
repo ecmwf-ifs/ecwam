@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT_ARD (NGST,F,FL,IJS,IJL,THWNEW,USNEW,Z0NEW,&
-     &                       ROAIRN,WSTAR,SL,SPOS,XLLWS)
+     &                       ROAIRN,WSTAR,RNFAC,SL,SPOS,XLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_ARD* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -28,8 +28,8 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_ARD (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
-!    &                   ROAIRN,WSTAR, SL, SPOS, XLLWS)
+!     *CALL* *SINPUT_ARD (NGST, F, FL, IJS, IJL, U10NEW, THWNEW, USNEW, Z0NEW,
+!    &                   ROAIRN,WSTAR, RNFAC, SL, SPOS, XLLWS)
 !            *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                   - IF = 2 THEN GUSTINESS PARAMETERISATION
 !            *F* - SPECTRUM.
@@ -43,6 +43,7 @@
 !        *Z0NEW* - ROUGHNESS LENGTH IN M.
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
+!        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - POSITIVE SOURCE FUNCTION ARRAY.
 !         *XLLWS*- 1 WHERE SINPUT IS POSITIVE
@@ -66,13 +67,14 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : LLNORMAGAM
+      USE YOWCOUP  , ONLY : LLCAPCHNK,LLNORMAGAM
       USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
-     &                      BMAXOKAPDTH, RN1_RN  , RNU      ,RNUM, &
+     &                      RN1_RN, &
+     &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
@@ -89,7 +91,8 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -150,21 +153,22 @@
         LTAUWSHELTER = .TRUE.
       ENDIF
 
-      XNGAMCONST(:,:) = 0.0_JWRB
       IF(LLNORMAGAM) THEN
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = BMAXOKAPDTH*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = BMAXOKAPDTH*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
             ENDDO
           ENDDO
         ENDIF
+      ELSE
+        XNGAMCONST(:,:) = 0.0_JWRB
       ENDIF
 
 
