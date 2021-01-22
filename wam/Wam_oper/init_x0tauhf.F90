@@ -33,7 +33,8 @@
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWFRED  , ONLY : DELTH
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA, ALPHAMIN, XKAPPA, &
-     &                      BETAMAXOXKAPPA2, BMAXOKAPDTH, GAMNCONST,     &
+     &                      BETAMAXOXKAPPA2,                             &
+     &                      BMAXOKAP, BMAXOKAPDTH, GAMNCONST,            &
      &                      DELTA_THETA_RN
       USE YOWPCONS , ONLY : GM1      ,ZPI 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
