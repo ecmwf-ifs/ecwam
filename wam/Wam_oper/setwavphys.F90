@@ -12,8 +12,7 @@ USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
-     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
-     &                ANG_GC_F, ANG_GC_G, ANG_GC_H
+     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -81,11 +80,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.40_JWRB
           ANG_GC_D = 11.5_JWRB
           ANG_GC_E = 0.1_JWRB
-
-          ! for high winds if LLCAPCHNK
-            ANG_GC_F = 0.5_JWRB
-            ANG_GC_G = 0.25_JWRB
-            ANG_GC_H = 35.0_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.44_JWRB

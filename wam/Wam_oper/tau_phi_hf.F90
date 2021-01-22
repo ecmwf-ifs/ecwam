@@ -1,5 +1,5 @@
       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
-     &                      F, THWNEW, ROAIRN,                         &
+     &                      F, THWNEW, ROAIRN, RNFAC,                  &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -19,7 +19,7 @@
 !     ---------
 
 !       *CALL* *TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, UST, Z0,
-!                          F, THWNEW, ROAIRN, &
+!                          F, THWNEW, ROAIRN, RNFAC, &
 !                          UST, TAUHF, PHIHF, LLPHIHF)
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
@@ -27,6 +27,7 @@
 !          *F*           - WAVE SPECTRUM.
 !          *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !          *ROAIRN*      - AIR DENSITY IN KG/M**3.
+!          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *USTAR* FRICTION VELOCITY
 !          *UST*   REDUCED FRICTION VELOCITY DUE TO SHELTERING
 !          *Z0*    ROUGHNESS LENGTH 
@@ -73,7 +74,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: UST
@@ -90,7 +91,7 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB) :: ZN
+      REAL(KIND=JWRB) :: ZN, GAMCFR5
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
@@ -145,8 +146,9 @@
       ENDDO
 
       IF(LLNORMAGAM) THEN
+        GAMCFR5 = GAMNCONST*FR5(NFRE)
         DO IJ=IJS,IJL
-          CONST(IJ) = GAMNCONST*FR5(NFRE)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
         CONST(:) = 0.0_JWRB

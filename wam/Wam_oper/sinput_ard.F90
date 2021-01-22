@@ -73,7 +73,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
       USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
-     &                      RN1_RN, &
+     &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
      &                      SWELLF   ,SWELLF2  ,SWELLF3  , SWELLF4  , SWELLF5, &
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
@@ -121,6 +121,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN, SUMF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
@@ -154,16 +155,17 @@
       ENDIF
 
       IF(LLNORMAGAM) THEN
+        BMAXFAC(:) = BMAXOKAPDTH * RNFAC(:)
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = RNFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+              XNGAMCONST(IJ,M) = BMAXFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = RNFAC(IJ)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+              XNGAMCONST(IJ,M) = BMAXFAC(IJ)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
             ENDDO
           ENDDO
         ENDIF

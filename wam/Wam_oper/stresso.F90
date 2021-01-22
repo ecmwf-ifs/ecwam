@@ -1,5 +1,5 @@
       SUBROUTINE STRESSO (F, SL, SPOS, IJS, IJL,                        &
-     &                    THWNEW, USNEW, Z0NEW, ROAIRN,                 &
+     &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,          &
      &                    TAUW, TAUWDIR, PHIWA, LLPHIWA)
 
 ! ----------------------------------------------------------------------
@@ -22,7 +22,7 @@
 !     ----------
 
 !        *CALL* *STRESSO (F, SPOS, IJS, IJL,
-!    &                    THWNEW, USNEW, Z0NEW, ROAIRN,
+!    &                    THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC,
 !    &                    TAUW, TAUWDIR, PHIWA)*
 !         *F*           - WAVE SPECTRUM.
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
@@ -35,6 +35,7 @@
 !         *USNEW*       - NEW FRICTION VELOCITY IN M/S.
 !         *Z0NEW*       - ROUGHNESS LENGTH IN M.
 !         *ROAIRN*      - AIR DENSITY IN KG/M**3.
+!         *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !         *TAUW*        - KINEMATIC WAVE STRESS IN (M/S)**2
 !         *TAUWDIR*     - KINEMATIC WAVE STRESS DIRECTION
 !         *PHIWA*       - ENERGY FLUX FROM WIND INTO WAVES INTEGRATED
@@ -82,7 +83,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, SL, SPOS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, USNEW, Z0NEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: TAUW, TAUWDIR, PHIWA
       LOGICAL, INTENT(IN) :: LLPHIWA
 
@@ -196,7 +197,7 @@
       ENDIF
 
       CALL TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USNEW, Z0NEW,         &
-     &                F, THWNEW, ROAIRN,                            &
+     &                F, THWNEW, ROAIRN, RNFAC,                     &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=IJS,IJL

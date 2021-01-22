@@ -105,7 +105,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
-     &            DELTA_THETA_RN,                                       &
+     &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
      &            SWELLF7  ,SSDSC2
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
@@ -662,6 +662,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                ALPHAPMAX = ', ALPHAPMAX
       WRITE(IU06,*) '                TAUWSHELTER = ', TAUWSHELTER
       WRITE(IU06,*) '                DELTA_THETA_RN = ', DELTA_THETA_RN 
+      WRITE(IU06,*) '                DTHRN_A = ', DTHRN_A
+      WRITE(IU06,*) '                DTHRN_U = ', DTHRN_U
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
       WRITE(IU06,*) '                SWELLF7 = ', SWELLF7
