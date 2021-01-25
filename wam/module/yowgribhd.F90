@@ -6,8 +6,8 @@
 
 !*    ** *GRIB HEADERS:  COMMON (DEFAULT) GRIB HEADERS.
 
-      INTEGER(KIND=JWIM) :: IMDLGRBID_G=116 !! see below the rule on how to select IMDLGRBID_G
-      INTEGER(KIND=JWIM) :: IMDLGRBID_M=216
+      INTEGER(KIND=JWIM) :: IMDLGRBID_G=117 !! see below the rule on how to select IMDLGRBID_G
+      INTEGER(KIND=JWIM) :: IMDLGRBID_M=217
       INTEGER(KIND=JWIM) :: DATE_TIME_WINDOW_END
       INTEGER(KIND=JWIM) :: NWINOFF
 
@@ -32,9 +32,9 @@
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     IMDLGRBID_G INTEGER   GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN ALSO BE MODIFIED IN THE IMPUT NAMELIST.
+!                           IT CAN ALSO BE MODIFIED IN THE INPUT NAMELIST.
 !     IMDLGRBID_M INTEGER   LAW MODEL IDENTIFICATION FOR GRIB CODING
-!                           IT CAN ALSO BE MODIFIED IN THE IMPUT NAMELIST.
+!                           IT CAN ALSO BE MODIFIED IN THE INPUT NAMELIST.
 ! 
 ! The generating process identification numbers (model numbers) for GRIB
 ! headers are allocated in pre-defined ranges for ECMWF GRIB coded
