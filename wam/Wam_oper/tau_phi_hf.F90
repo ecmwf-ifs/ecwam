@@ -1,5 +1,5 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
-     &                      F, THWNEW, ROAIRN, RNFAC,                  &
+       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
+     &                      F, THWNEW, ROAIRN, RNFAC,                   &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -75,7 +75,6 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
@@ -194,7 +193,7 @@
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
 !!debile debug
        eps = ROAIRN(IJ)/1025._JWRB
-       gam = ZN*EPS*XKAPPA*UST(IJ)*0.5*ZPIFR(NFRE)**5*F1DCOS2(IJ)/(G*ZPI)
+       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(RNFAC*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
        write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
 
             UST(IJ)   = SQRT(TAUL(IJ))
