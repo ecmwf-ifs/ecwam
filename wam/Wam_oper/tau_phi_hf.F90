@@ -194,7 +194,7 @@
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
 !!debile debug
        eps = ROAIRN(IJ)/1025._JWRB
-       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(RNFAC*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
+       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(RNFAC(IJ)*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
        write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
 
             UST(IJ)   = SQRT(TAUL(IJ))

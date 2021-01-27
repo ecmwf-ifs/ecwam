@@ -97,7 +97,7 @@
       USE YOWFRED  , ONLY : ZPIFR    ,TH
       USE YOWFRED  , ONLY : FR       ,TH       , ZPIFR
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,GM1     ,ROWATER   ,YEPS
+      USE YOWPCONS , ONLY : G        ,GM1     ,ROWATER   ,YEPS,  EPSUS
       USE YOWPHYS  , ONLY : ZALP     ,XKAPPA, BETAMAXOXKAPPA2, BMAXOKAPDTH, RN1_RN
       USE YOWSHAL  , ONLY : TFAK     ,INDEP   , TCGOND
       USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
@@ -125,6 +125,7 @@
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
       REAL(KIND=JWRB) :: RWINV
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
+      REAL(KIND=JWRB) :: UFAC0, ZN
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
@@ -132,13 +133,16 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SH, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV,US,Z0,UCN,ZCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USTPM1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMP1, UFAC1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COSD, UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
 
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
@@ -160,10 +164,10 @@
 
       DO K=1,NANG
         DO IJ=IJS,IJL
-          TEMP1(IJ,K) = COS(TH(K)-THWNEW(IJ))
-          IF(TEMP1(IJ,K) .GT. 0.01_JWRB) THEN
+          COSD(IJ,K) = COS(TH(K)-THWNEW(IJ))
+          IF(COSD(IJ,K) .GT. 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
-            TEMPD(IJ,K) = XKAPPA/TEMP1(IJ,K)
+            TEMPD(IJ,K) = XKAPPA/COSD(IJ,K)
           ELSE
             LZ(IJ,K) = .FALSE.
             TEMPD(IJ,K) = XKAPPA 
@@ -237,6 +241,12 @@
         ENDDO
       ENDIF
 
+      DO IGST=1,NGST
+        DO IJ=IJS,IJL
+          USTPM1(IJ,IGST) = 1.0_JWRB/MAX(US(IJ,IGST),EPSUS)
+        ENDDO
+      ENDDO
+
       DO IJ=IJS,IJL
         EPSIL(IJ) = ROAIRN(IJ)*RWINV
       ENDDO
@@ -288,44 +298,84 @@
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
+
+!       WIND INPUT:
         DO K=1,NANG
 
-!         WIND INPUT:
           DO IJ=IJS,IJL
             XLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
-          DO IJ=IJS,IJL
-            UFAC1(IJ,K) = 0.0_JWRB
-          ENDDO
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
                 IF (ZLOG.LT.0.0_JWRB) THEN
-                  X=TEMP1(IJ,K)*UCN(IJ,IGST)
+                  X=COSD(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC1(IJ,K) = UFAC1(IJ,K)+WSIN(IGST)*EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  UFAC(IJ,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG)
                   XLLWS(IJ,K,M)= 1.0_JWRB
+                ELSE
+                  UFAC(IJ,IGST) = 0.0_JWRB
                 ENDIF
+              ELSE
+                UFAC(IJ,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
 
-!         SWELL DAMPING:
+        ENDDO
+
+
+        IF(LLNORMAGAM) THEN
+
+!         windsea part of the spectrum
+          SUMF(:) = 0.0_JWRB
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)*MAX(COSD(IJ,K),0.0_JWRB)**2
+            ENDDO
+          ENDDO
+
+!         Computes the growth rate in the wind direction
+          DO IGST=1,NGST
+            DO IJ=IJS,IJL
+              X    = UCN(IJ,IGST)
+              ZLOG = ZCN(IJ,IGST) + XKAPPA*UCND(IJ,IGST)
+              ZLOG = MIN(ZLOG,0.0_JWRB)
+              ZLOG2X = ZLOG*ZLOG*X
+              UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
+              ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            ENDDO
+          ENDDO
+        ELSE
+          GAMNORMA(:,:) = 1.0_JWRB
+        ENDIF
+
+        DO IJ=IJS,IJL
+          UFAC1(IJ,K) = WSIN(1)*UFAC(IJ,1)*GAMNORMA(IJ,1)
+        ENDDO
+        DO IGST=2,NGST
+          DO IJ=IJS,IJL
+            UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*UFAC(IJ,IGST)*GAMNORMA(IJ,IGST)
+          ENDDO
+        ENDDO
+
+!       SWELL DAMPING:
+        DO K=1,NANG
           DO IGST=1,1
             DO IJ=IJS,IJL
-              ZBETA = CONST3_UCN2(IJ,IGST)*(TEMP1(IJ,K)-XVD(IJ,IGST))
+              ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
               UFAC2(IJ,K) = WSIN(IGST)*ZBETA
             ENDDO
           ENDDO
           DO IGST=2,NGST
             DO IJ=IJS,IJL
-              ZBETA = CONST3_UCN2(IJ,IGST)*(TEMP1(IJ,K)-XVD(IJ,IGST))
+              ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
               UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
             ENDDO
           ENDDO
-
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
