@@ -12,6 +12,7 @@ USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
+     &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
@@ -34,15 +35,31 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAPMAX = 0.03_JWRB
         TAUWSHELTER = 0.0_JWRB
         TAILFACTOR = 2.5_JWRB
-          IF(LLNORMAGAM) THEN
-           write(*,*) ' not yet tested !!!!!'
-           write(iu06,*) ' not yet tested !!!!!'
-           CALL ABORT1
-          ENDIF
+
+!       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
+        DELTA_THETA_RN = 0.75_JWRB
+        RN1_RN = 0.25_JWRB
+        DTHRN_A = 0.0_JWRB
+        DTHRN_U = 33.0_JWRB
+
         IF(LLGCBZ0) THEN
           ALPHAMIN = 0.0005_JWRB
-          ALPHA   = 0.001_JWRB
-          BETAMAX = 1.22_JWRB
+          ALPHA   = 0.0065_JWRB
+
+          IF(LLNORMAGAM) THEN
+            BETAMAX = 1.3_JWRB
+          ELSE
+            BETAMAX = 1.22_JWRB
+          ENDIF
+
+          ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+          ANG_GC_A = 0.62_JWRB
+           !!! currently no adjustment
+          ANG_GC_B = 0.00_JWRB
+          ANG_GC_C = 0.40_JWRB
+          ANG_GC_D = 11.5_JWRB
+          ANG_GC_E = 0.1_JWRB
+
         ELSE 
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
@@ -66,6 +83,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
         TAILFACTOR = 2.5_JWRB
+
+!       directionality correction factors in the gowth rate renormalisation 
+        DELTA_THETA_RN = 0.25_JWRB
+        RN1_RN = 0.25_JWRB
+        DTHRN_A = 1.0_JWRB
+        DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
           ALPHAMIN = 0.0005_JWRB
@@ -93,9 +116,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 0.031_JWRB
           TAILFACTOR_PM = 3.0_JWRB
           IF(LLNORMAGAM) THEN
-           write(*,*) ' not yet tested !!!!!'
-           write(iu06,*) ' not yet tested !!!!!'
-           CALL ABORT1
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
