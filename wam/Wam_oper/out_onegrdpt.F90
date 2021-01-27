@@ -41,7 +41,7 @@
       USE YOWINTP  , ONLY : GOUT
       USE YOWPARAM , ONLY : NGX      ,NGY
       USE YOWPCONS , ONLY : G        ,DEG      ,ZMISS    ,EPSUS    ,    &
-     &            EPSU10
+     &            EPSU10   ,ZPI
       USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

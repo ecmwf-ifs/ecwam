@@ -74,7 +74,7 @@
       SELECT CASE (IPHYS)
       CASE(0)
         CALL SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &                   ROAIRN, WSTAR, SL, SPOS, XLLWS)
+     &                   ROAIRN, WSTAR, RNFAC, SL, SPOS, XLLWS)
       CASE(1) 
         CALL SINPUT_ARD (NGST, F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, RNFAC, SL, SPOS, XLLWS)
