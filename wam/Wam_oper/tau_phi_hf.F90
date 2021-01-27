@@ -1,4 +1,4 @@
-      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
+       TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
      &                      F, THWNEW, ROAIRN, RNFAC,                  &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
@@ -63,6 +63,8 @@
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST, RN1_RN
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
+!debile debug
+      USE YOWSTAT  , ONLY : cdtpro 
 
       USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
@@ -94,6 +96,9 @@
       REAL(KIND=JWRB) :: ZN, GAMCFR5
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+!debile debug
+      REAL(KIND=JWRB) :: gam, eps
+
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
@@ -184,9 +189,15 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
+          !!! CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
             GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
+!!debile debug
+       eps = ROAIRN(IJ)/1025._JWRB
+       gam = ZN*EPS*XKAPPA*UST(IJ)*0.5*ZPIFR(NFRE)**5*F1DCOS2(IJ)/(G*ZPI)
+       write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
+
             UST(IJ)   = SQRT(TAUL(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
           ENDDO
