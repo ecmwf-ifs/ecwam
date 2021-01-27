@@ -1,5 +1,5 @@
-       TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
-     &                      F, THWNEW, ROAIRN, RNFAC,                  &
+       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
+     &                      F, THWNEW, ROAIRN, RNFAC,                   &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -75,7 +75,6 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
@@ -189,7 +188,6 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-          !!! CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
             GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
