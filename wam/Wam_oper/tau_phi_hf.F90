@@ -1,5 +1,5 @@
-       SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
-     &                      F, THWNEW, ROAIRN, RNFAC,                   &
+      SUBROUTINE TAU_PHI_HF(IJS, IJL, LTAUWSHELTER, USTAR, Z0,         &
+     &                      F, THWNEW, ROAIRN, RNFAC,                  &
      &                      UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -75,6 +75,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR, Z0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, RNFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 

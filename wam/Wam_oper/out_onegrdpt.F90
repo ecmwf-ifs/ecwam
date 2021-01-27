@@ -57,7 +57,7 @@
       INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC
       INTEGER(KIND=JWIM) :: IPHSWS, IPT1WS, IPBATHY
 
-      REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR
+      REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR, WAGEP
       REAL(KIND=JWRB) :: E, ESTAR, FMSTAR, TSTAR_0, XP, BETA_K, ALPHA_K
       REAL(KIND=JWRB) :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
       REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
@@ -213,6 +213,8 @@
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
+            WAGEP = G / (ZPI*FP*USTAR)
+
             CDSQRTINV = MIN(1./SQRT(CD),50.0_JWRB)
             Z0        = XNLEV/(EXP(XKAPPA*CDSQRTINV)-1.0_JWRB)
             Z0VIS     = RNUM/USTAR 
@@ -257,14 +259,16 @@
      &                       LOG10(XNUSTAR),LOG10(XNU_OBS),U10,         &
      &                       USTAR,CD,BETA,T10,FETCH10,E10,             &
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,               &
-     &                       PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
+     &                       PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,  &
+     &                       WAGEP 
 
             WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,             &
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,                 &
      &                     E_STAR_OBS,XNUSTAR,XNU_OBS,U10,              &
      &                     USTAR,CD,BETA,T10,FETCH10,E10,               &
      &                     TSTAR, FMSTAR, DSTAR, ESTAR,                 &
-     &                     PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS 
+     &                     PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,    &
+     &                     WAGEP 
 
           ENDIF
         ENDDO
@@ -280,9 +284,9 @@
         CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
-     &       2F12.5,2E10.3,14(1x,F15.5))
+     &       2F12.5,2E10.3,15(1x,F15.5))
    61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,          &
-     &       2F12.5,2E10.3,14(1x,F15.5))
+     &       2F12.5,2E10.3,15(1x,F15.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 
