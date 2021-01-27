@@ -666,8 +666,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                DTHRN_U = ', DTHRN_U
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
+      IF (IPHYS.EQ.1) THEN
       WRITE(IU06,*) '                SWELLF7 = ', SWELLF7
       WRITE(IU06,*) '                SSDSC2 = ', SSDSC2 
+      ENDIF
       WRITE(IU06,*) '' 
       IF (ISHALLO.EQ.1) THEN
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '

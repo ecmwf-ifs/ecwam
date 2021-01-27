@@ -136,7 +136,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
@@ -144,6 +143,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XVD, UCND, CONST3_UCN2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COSD, UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: UFAC
 
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
 
@@ -313,13 +313,13 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   X=COSD(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC(IJ,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG)
+                  UFAC(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG)
                   XLLWS(IJ,K,M)= 1.0_JWRB
                 ELSE
-                  UFAC(IJ,IGST) = 0.0_JWRB
+                  UFAC(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                UFAC(IJ,IGST) = 0.0_JWRB
+                UFAC(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -353,12 +353,14 @@
           GAMNORMA(:,:) = 1.0_JWRB
         ENDIF
 
-        DO IJ=IJS,IJL
-          UFAC1(IJ,K) = WSIN(1)*UFAC(IJ,1)*GAMNORMA(IJ,1)
-        ENDDO
-        DO IGST=2,NGST
+        DO K=1,NANG
           DO IJ=IJS,IJL
-            UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*UFAC(IJ,IGST)*GAMNORMA(IJ,IGST)
+            UFAC1(IJ,K) = WSIN(1)*UFAC(IJ,K,1)*GAMNORMA(IJ,1)
+          ENDDO
+          DO IGST=2,NGST
+            DO IJ=IJS,IJL
+              UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*UFAC(IJ,K,IGST)*GAMNORMA(IJ,IGST)
+            ENDDO
           ENDDO
         ENDDO
 
