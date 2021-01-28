@@ -37,9 +37,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAILFACTOR = 2.5_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
-        DELTA_THETA_RN = 0.75_JWRB
+        DELTA_THETA_RN = 0.25_JWRB
         RN1_RN = 0.25_JWRB
-        DTHRN_A = 0.0_JWRB
+        DTHRN_A = 1.0_JWRB
         DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
@@ -53,9 +53,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ENDIF
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.62_JWRB
-           !!! currently no adjustment
-          ANG_GC_B = 0.00_JWRB
+          ANG_GC_A = 0.50_JWRB
+          ANG_GC_B = 0.20_JWRB
           ANG_GC_C = 0.40_JWRB
           ANG_GC_D = 11.5_JWRB
           ANG_GC_E = 0.1_JWRB
@@ -114,13 +113,13 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
+          TAUWSHELTER = 0.25_JWRB
           TAILFACTOR_PM = 3.0_JWRB
+
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
-            TAUWSHELTER = 0.0_JWRB
           ELSE
             BETAMAX = 1.40_JWRB
-            TAUWSHELTER = 0.25_JWRB
           ENDIF
         ENDIF
 

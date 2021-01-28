@@ -156,7 +156,12 @@
           CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
-        CONST(:) = 0.0_JWRB
+!!!!        CONST(:) = 0.0_JWRB
+!!debile debug
+        DO IJ=IJS,IJL
+          CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+        ENDDO
+
       ENDIF
 
 
@@ -189,13 +194,18 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
-            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
+
 !!debile debug
        eps = ROAIRN(IJ)/1025._JWRB
        gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(RNFAC(IJ)*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
        write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
+      IF(.not. LLNORMAGAM) zn=0.0_JWRB
+
+
+
+            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
+            TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
 
             UST(IJ)   = SQRT(TAUL(IJ))
             TAUHF(IJ) = TAUHF(IJ) + FNC2
