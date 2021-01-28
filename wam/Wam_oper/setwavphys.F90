@@ -93,7 +93,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAMIN = 0.0005_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.030_JWRB
-          TAUWSHELTER = 0.25_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
@@ -104,22 +103,25 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_E = 0.1_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.44_JWRB
+            BETAMAX = 1.32_JWRB
+            TAUWSHELTER = 0.0_JWRB
           ELSE
             BETAMAX = 1.44_JWRB
+            TAUWSHELTER = 0.25_JWRB
           ENDIF
 
         ELSE 
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
-          TAUWSHELTER = 0.25_JWRB
           TAILFACTOR_PM = 3.0_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.40_JWRB
+            BETAMAX = 1.30_JWRB
+            TAUWSHELTER = 0.0_JWRB
           ELSE
             BETAMAX = 1.40_JWRB
+            TAUWSHELTER = 0.25_JWRB
           ENDIF
         ENDIF
 
