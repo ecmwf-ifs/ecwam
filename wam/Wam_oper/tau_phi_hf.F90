@@ -62,6 +62,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST, RN1_RN
+      USE YOWPHYS  , ONLY : DELTA_THETA_RN
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
 !debile debug
       USE YOWSTAT  , ONLY : cdtpro 
@@ -158,6 +159,7 @@
       ELSE
 !!!!        CONST(:) = 0.0_JWRB
 !!debile debug
+        GAMCFR5 = GAMNCONST*FR5(NFRE)
         DO IJ=IJS,IJL
           CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
@@ -197,7 +199,7 @@
 
 !!debile debug
        eps = ROAIRN(IJ)/1025._JWRB
-       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(RNFAC(IJ)*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
+       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(DELTA_THETA_RN*RNFAC(IJ)*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
        write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
       IF(.not. LLNORMAGAM) zn=0.0_JWRB
 
