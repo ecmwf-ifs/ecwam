@@ -79,9 +79,6 @@
      &                      SWELLF6  ,SWELLF7  ,Z0RAT    , Z0TUBMAX , ABMIN  ,ABMAX
       USE YOWSHAL  , ONLY : TFAK     ,CINV     ,INDEP    ,TCGOND
       USE YOWSTAT  , ONLY : ISHALLO
-!debile debug
-      USE YOWSTAT  , ONLY : cdtpro 
-
       USE YOWTEST  , ONLY : IU06
       USE YOWTABL  , ONLY : IAB      ,SWELLFT
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -472,11 +469,6 @@
 
           DO IGST=1,NGST
             DO IJ=IJS,IJL
-!!debile debug
-       if (IGST == 1 .and. K == 1 ) then
-       write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_lf',cdtpro,TFAK(INDEP(IJ),M),SLP(IJ,IGST)/ZPIFR(M)
-       endif
-
               SLP(IJ,IGST) = SLP(IJ,IGST)*F(IJ,K,M)
             ENDDO
           ENDDO

@@ -62,11 +62,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST, RN1_RN
-      USE YOWPHYS  , ONLY : DELTA_THETA_RN
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
-!debile debug
-      USE YOWSTAT  , ONLY : cdtpro 
-
       USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
 
@@ -97,9 +93,6 @@
       REAL(KIND=JWRB) :: ZN, GAMCFR5
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-!debile debug
-      REAL(KIND=JWRB) :: gam, eps
-
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
@@ -157,13 +150,7 @@
           CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
-!!!!        CONST(:) = 0.0_JWRB
-!!debile debug
-        GAMCFR5 = GAMNCONST*FR5(NFRE)
-        DO IJ=IJS,IJL
-          CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
-        ENDDO
-
+        CONST(:) = 0.0_JWRB
       ENDIF
 
 
@@ -196,15 +183,6 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-
-!!debile debug
-       eps = ROAIRN(IJ)/1025._JWRB
-       gam = ZN*EPS*XKAPPA*UST(IJ)*2._JWRB*ZPI*G*OMEGA**2/(DELTA_THETA_RN*RNFAC(IJ)*F1DCOS2(IJ)*ZPIFR(NFRE)**5)
-       write(iu06,'(a9,1x,a12,1x,2(f14.8,1x))') 'debile_hf',cdtpro,OMEGA**2/G, gam/OMEGA
-      IF(.not. LLNORMAGAM) zn=0.0_JWRB
-
-
-
             GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
