@@ -85,12 +85,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
-        RN1_RN = 0.25_JWRB
+        RN1_RN = 1.0_JWRB/6.0_JWRB
         DTHRN_A = 0.0_JWRB
         DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
-          ALPHAMIN = 0.0005_JWRB
+          ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.030_JWRB
           TAILFACTOR_PM = 0.0_JWRB
