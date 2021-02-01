@@ -106,7 +106,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF7  ,SSDSC2
+     &            SWELLF5, Z0RAT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -667,8 +667,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
       IF (IPHYS.EQ.1) THEN
-      WRITE(IU06,*) '                SWELLF7 = ', SWELLF7
-      WRITE(IU06,*) '                SSDSC2 = ', SSDSC2 
+      WRITE(IU06,*) '                SWELLF5 = ', SWELLF5
+      WRITE(IU06,*) '                Z0RAT = ', Z0RAT
       ENDIF
       WRITE(IU06,*) '' 
       IF (ISHALLO.EQ.1) THEN

@@ -13,7 +13,8 @@ USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
-     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E
+     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
+     &                SWELLF5, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -47,8 +48,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0065_JWRB
 
           IF(LLNORMAGAM) THEN
+           !!! not yet fully tested !!!
             BETAMAX = 1.22_JWRB
           ELSE
+           !!! not yet fully tested !!!
             BETAMAX = 1.22_JWRB
           ENDIF
 
@@ -95,9 +98,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 0.030_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
+          SWELLF5 = 0.6_JWRB
+          Z0RAT = 0.02_JWRB
+
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-!!!          ANG_GC_A = 0.50_JWRB
-!!!          ANG_GC_B = 0.20_JWRB
           ANG_GC_A = 0.65_JWRB
           ANG_GC_B = 0.25_JWRB
           ANG_GC_C = 0.40_JWRB
@@ -108,6 +112,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
+           !!! not yet fully tested !!!
             BETAMAX = 1.44_JWRB
             TAUWSHELTER = 0.25_JWRB
           ENDIF
@@ -118,16 +123,18 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHAPMAX = 0.031_JWRB
           TAILFACTOR_PM = 3.0_JWRB
 
+          SWELLF5 = 1.2_JWRB
+          Z0RAT = 0.04_JWRB
+
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.30_JWRB
+            !!! not yet tested !!!
+            BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.25_JWRB
           ENDIF
         ENDIF
-
-
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB

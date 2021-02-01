@@ -72,12 +72,10 @@
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF4 = 1.5E05_JWRB
-!debile test2      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 1.2_JWRB  ! controls the viscous swell dissipation
-      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 0.6_JWRB  ! controls the viscous swell dissipation
+      REAL(KIND=JWRB) :: SWELLF5  ! controls the viscous swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF7 = 3.6E05_JWRB
-!debile test2      REAL(KIND=JWRB), PARAMETER :: Z0RAT = 0.04_JWRB
-      REAL(KIND=JWRB), PARAMETER :: Z0RAT = 0.02_JWRB
+      REAL(KIND=JWRB) :: Z0RAT
       REAL(KIND=JWRB), PARAMETER :: Z0TUBMAX = 0.0005_JWRB
 
       REAL(KIND=JWRB), PARAMETER :: ABMIN = 0.3_JWRB
