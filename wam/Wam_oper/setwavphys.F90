@@ -12,8 +12,9 @@ USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
+     &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
-     &                ANG_GC_F, ANG_GC_G, ANG_GC_H
+     &                SWELLF5, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
@@ -35,15 +36,32 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAPMAX = 0.03_JWRB
         TAUWSHELTER = 0.0_JWRB
         TAILFACTOR = 2.5_JWRB
-          IF(LLNORMAGAM) THEN
-           write(*,*) ' not yet tested !!!!!'
-           write(iu06,*) ' not yet tested !!!!!'
-           CALL ABORT1
-          ENDIF
+
+!       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
+        DELTA_THETA_RN = 0.25_JWRB
+        RN1_RN = 0.25_JWRB
+        DTHRN_A = 1.0_JWRB
+        DTHRN_U = 33.0_JWRB
+
         IF(LLGCBZ0) THEN
           ALPHAMIN = 0.0005_JWRB
-          ALPHA   = 0.001_JWRB
-          BETAMAX = 1.22_JWRB
+          ALPHA   = 0.0065_JWRB
+
+          IF(LLNORMAGAM) THEN
+           !!! not yet fully tested !!!
+            BETAMAX = 1.22_JWRB
+          ELSE
+           !!! not yet fully tested !!!
+            BETAMAX = 1.22_JWRB
+          ENDIF
+
+          ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+          ANG_GC_A = 0.50_JWRB
+          ANG_GC_B = 0.20_JWRB
+          ANG_GC_C = 0.40_JWRB
+          ANG_GC_D = 11.5_JWRB
+          ANG_GC_E = 0.1_JWRB
+
         ELSE 
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
@@ -68,29 +86,35 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ZALP    = 0.008_JWRB
         TAILFACTOR = 2.5_JWRB
 
+!       directionality correction factors in the gowth rate renormalisation 
+        DELTA_THETA_RN = 0.75_JWRB
+        RN1_RN = 1.0_JWRB/6.0_JWRB
+        DTHRN_A = 0.25_JWRB
+        DTHRN_U = 33.0_JWRB
+
         IF(LLGCBZ0) THEN
-          ALPHAMIN = 0.0005_JWRB
+          ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.030_JWRB
-          TAUWSHELTER = 0.25_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
+          SWELLF5 = 0.6_JWRB
+          Z0RAT = 0.02_JWRB
+
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.50_JWRB
-          ANG_GC_B = 0.20_JWRB
+          ANG_GC_A = 0.67_JWRB
+          ANG_GC_B = 0.23_JWRB
           ANG_GC_C = 0.40_JWRB
           ANG_GC_D = 11.5_JWRB
           ANG_GC_E = 0.1_JWRB
 
-          ! for high winds if LLCAPCHNK
-            ANG_GC_F = 0.3_JWRB
-            ANG_GC_G = 0.35_JWRB
-            ANG_GC_H = 35.0_JWRB
-
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.44_JWRB
+            BETAMAX = 1.40_JWRB
+            TAUWSHELTER = 0.0_JWRB
           ELSE
+           !!! not yet fully tested !!!
             BETAMAX = 1.44_JWRB
+            TAUWSHELTER = 0.25_JWRB
           ENDIF
 
         ELSE 
@@ -98,10 +122,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
           TAILFACTOR_PM = 3.0_JWRB
+
+          SWELLF5 = 1.2_JWRB
+          Z0RAT = 0.04_JWRB
+
           IF(LLNORMAGAM) THEN
-           write(*,*) ' not yet tested !!!!!'
-           write(iu06,*) ' not yet tested !!!!!'
-           CALL ABORT1
+            !!! not yet tested !!!
             BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
@@ -109,8 +135,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
             TAUWSHELTER = 0.25_JWRB
           ENDIF
         ENDIF
-
-
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB

@@ -1,4 +1,4 @@
-      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, ZBREDUC, TAUWCG)
+      SUBROUTINE STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC, TAUWCG)
 
 !***  DETERMINE WAVE INDUCED STRESS FOR GRAV-CAP WAVES
 
@@ -20,7 +20,7 @@
      &                      OMXKM3_GC, CM_GC, C2OSQRTVG_GC, XKMSQRTVGOC2_GC, &
      &                      OM3GMKM_GC, DELKCC_GC, DELKCC_GC_NS
       USE YOWPCONS , ONLY : G, EPSUS, SURFT
-      USE YOWPHYS  , ONLY : XKAPPA, ZALP,   BETAMAXOXKAPPA2, DELTA_THETA_RN, RN1_RN
+      USE YOWPHYS  , ONLY : XKAPPA, ZALP, BETAMAXOXKAPPA2, BMAXOKAP, RN1_RN
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -35,7 +35,7 @@
       REAL(KIND=JWRB), INTENT(IN) :: Z0 !  surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: Z0MIN ! minimum surface roughness
       REAL(KIND=JWRB), INTENT(IN) :: HALP  ! 1/2 Phillips parameter
-      REAL(KIND=JWRB), INTENT(IN) :: ZBREDUC  ! reduction factor for the gravity-capillary stress
+      REAL(KIND=JWRB), INTENT(IN) :: RNFAC  ! wind dependent factor used in the growth renormalisation
       REAL(KIND=JWRB), INTENT(OUT) :: TAUWCG ! wave induced kinematic stress for gravity-capillary waves
 
       INTEGER(KIND=JWIM) :: NS
@@ -64,15 +64,15 @@
 
       TAUWCG_MIN = (USTAR*(Z0MIN/Z0))**2
 
-      ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS)
+      ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * C2OSQRTVG_GC(NS)
       IF(LLNORMAGAM) THEN
-        CONST = DELTA_THETA_RN * BETAMAXOXKAPPA2 * HALP * ZBREDUC * C2OSQRTVG_GC(NS) /(XKAPPA*MAX(USTAR,EPSUS))
+        CONST = RNFAC * BMAXOKAP * HALP * C2OSQRTVG_GC(NS) /MAX(USTAR,EPSUS)
       ELSE
         CONST = 0.0_JWRB
       ENDIF
 
       DO I = NS, NWAV_GC
-!       GROWTHRATE BY WIND WITHOUT the multiplicative representing the ratio of air density to water density (eps)
+!       GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
 !       and BETAMAXOXKAPPA2
         X       = USTAR*CM_GC(I)
         XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP) 

@@ -93,7 +93,6 @@
 #include "mwp1.intfb.h"
 #include "mwp2.intfb.h"
 #include "outsetwmask.intfb.h"
-#include "peak_freq.intfb.h"
 #include "dominant_period.intfb.h"
 #include "se10mean.intfb.h"
 #include "sebtmean.intfb.h"
@@ -118,7 +117,7 @@
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, FP, DP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, DP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: C3, C4, BF, QP, HMAX, TMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ETA_M, R, XNSLC, SIG_TH, EPS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLD1, FLD2
@@ -163,7 +162,6 @@
 !     COMPUTE MEAN PARAMETERS
       CALL FEMEAN (FL2ND, IJS, IJL, EM, FM)
 
-!!1      CALL PEAK_FREQ (FL1, IJS, IJL, FP)
       CALL DOMINANT_PERIOD (FL1, IJS, IJL, DP)
 
       CALL KURTOSIS(FL1, DPTH, IJS, IJL,                                &
@@ -222,9 +220,7 @@
       IF(IPFGTBL(IR).NE.0) THEN
 !       CONVERSION TO PERIOD
         DO IJ=IJS,IJL
-!!          IF(FP(IJ).GT.0._JWRB) THEN
-!!            BOUT(IJ,ITOBOUT(IR))=1._JWRB/FP(IJ)
-          IF(DP(IJ).GT.0._JWRB) THEN
+          IF(DP(IJ).GT.0.0_JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=DP(IJ)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
@@ -247,7 +243,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MEANSQS (IJS, IJL, FL1, USNEW(IJS), BOUT(IJS,ITOBOUT(IR)))
+        CALL MEANSQS (IJS, IJL, FL1, USNEW(IJS), THWNEW(IJS), BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1

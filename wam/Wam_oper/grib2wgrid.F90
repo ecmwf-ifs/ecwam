@@ -701,6 +701,11 @@ SUBROUTINE GRIB2WGRID (IU06, ITEST, KPROMA_WAM,                   &
       CALL IGRIB_SET_VALUE(KGRIB_HANDLE,'missingValue',PMISS)
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,                                &
      &                    'numberOfEffectiveValues',NUMBEROFVALUES)
+!! for reason I do not understand, I had a user who could not read grib2 wind data with
+!! numberOfEffectiveValues
+!! Instead, it worked with the following:
+!!     &                    'getNumberOfValues',NUMBEROFVALUES)
+
       ALLOCATE(VALUES(NUMBEROFVALUES))
       CALL IGRIB_GET_VALUE(KGRIB_HANDLE,'values',VALUES)
 
