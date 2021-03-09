@@ -55,16 +55,19 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
-      USE YOWFRED  , ONLY : COSTH    ,SINTH
+      USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    ,FRIC
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE  , LWAMRSETCI, CITHRSH
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWNEMOP , ONLY : NEMODP
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX, EPSUS
+      USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
+     &               EPSUS ,EPSU10   ,G        ,ZPI
       USE YOWSHAL  , ONLY : CINV     ,INDEP
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
@@ -86,13 +89,33 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
+!     FICTITIOUS VALUE OF THE NORMALISED WAVE ENERGY FLUX UNDER THE SEA ICE 
+!     (negative because it is defined as leaving the waves)
+      REAL(KIND=JWRB), PARAMETER :: PHIOC_ICE=-3.75_JWRB
+
+!     USE HERSBACH 2011 FOR CD(U10) (SEE ALSO EDSON et al. 2013)
+      REAL(KIND=JWRB), PARAMETER :: C1 = 1.03E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2 = 0.04E-3_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P1 = 1.48_JWRB
+      REAL(KIND=JWRB), PARAMETER :: P2 = -0.21_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CDMAX = 0.003_JWRB
+
+      REAL(KIND=JWRB), PARAMETER :: EFD_MIN = 0.0625_JWRB  ! corresponds to min Hs=1m under sea ice
+      REAL(KIND=JWRB), PARAMETER :: EFD_MAX = 6.25_JWRB    ! corresponds to max Hs=10m under sea ice
+
       REAL(KIND=JWRB) :: TAU, XN, TAUO
+      REAL(KIND=JWRB) :: U10P, CD_BULK, CD_WAVE, CD_ICE 
       REAL(KIND=JWRB) :: CNST
       REAL(KIND=JWRB) :: EPSUS3 
+      REAL(KIND=JWRB) :: CITHRSH_INV
+      REAL(KIND=JWRB) :: EFD, FFD, EFD_FAC, FFD_FAC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XSTRESS, YSTRESS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHILF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: OOVAL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM_OC, F1_OC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CMRHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMT, SUMX, SUMY
 
@@ -100,8 +123,12 @@
 
       IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
-
       EPSUS3 =  EPSUS*SQRT(EPSUS)
+
+      CITHRSH_INV=1._JWRB/MAX(CITHRSH,0.01_JWRB)
+
+      EFD_FAC = 4.0_JWRB*EGRCRV/G**2 
+      FFD_FAC = (EGRCRV/AFCRV)**(1.0_JWRB/BFCRV) * G
 
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
@@ -137,26 +164,59 @@
         ENDDO
       ENDDO
 
+      IF (LICERUN .AND. LMASKICE .AND. LWAMRSETCI) THEN
+        DO IJ=IJS,IJL
+          IF(CICVR(IJ) .GT. 0.0_JWRB) THEN
+            OOVAL(IJ)=EXP(-MIN((CICVR(IJ)*CITHRSH_INV)**4,10._JWRB))
+!           ADJUST USTAR FOR THE PRESENCE OF SEA ICE
+            U10P = MAX(U10(IJ),EPSU10)
+            CD_BULK = MIN((C1 + C2*U10P**P1)*U10P**P2, CDMAX)
+            CD_WAVE = (USNEW(IJ)/U10P)**2
+            CD_ICE = OOVAL(IJ)*CD_WAVE + (1.0_JWRB-OOVAL(IJ))*CD_BULK
+            USTAR(IJ) = MAX(SQRT(CD_ICE)*U10P,EPSUS)
+
+            ! EM_OC and F1_OC with fully developed model ENERGY 
+            ! The significant wave height derived from EM_OC will be used
+            ! by NEMO as a scaling factor as if it was open ocean
+            EFD = MIN(EFD_FAC*USTAR(IJ)**4, EFD_MAX)
+            EM_OC(IJ) = MAX(OOVAL(IJ)*EM(IJ)+(1.0_JWRB-OOVAL(IJ))*EFD, EFD_MIN)
+            FFD = FFD_FAC/USTAR(IJ)
+            F1_OC(IJ) = OOVAL(IJ)*F1(IJ) + (1.0_JWRB-OOVAL(IJ))*FFD
+            F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
+          ELSE
+            OOVAL(IJ) = 1.0_JWRB
+            USTAR(IJ) = USNEW(IJ)
+            EM_OC(IJ) = EM(IJ)
+            F1_OC(IJ) = F1(IJ)
+          ENDIF
+        ENDDO
+      ELSE
+        OOVAL(:) = 1.0_JWRB
+        USTAR(:) = USNEW(:)
+        EM_OC(:) = EM(:)
+        F1_OC(:) = F1(:)
+      ENDIF
+
       IF(LWFLUX) THEN
         DO IJ=IJS,IJL
-          EMEAN(IJ)  = EM(IJ) 
-          FMEAN(IJ)  = F1(IJ) 
+          EMEAN(IJ)  = EM_OC(IJ) 
+          FMEAN(IJ)  = F1_OC(IJ) 
         ENDDO
       ENDIF
 
       DO IJ=IJS,IJL
 
-        TAU        = ROAIRN(IJ)*MAX(USNEW(IJ)**2,EPSUS)
+        TAU        = ROAIRN(IJ)*MAX(USTAR(IJ)**2,EPSUS)
         TAUXD(IJ)  = TAU*SIN(THW(IJ))
         TAUYD(IJ)  = TAU*COS(THW(IJ))
 
-        TAUOCXD(IJ)= TAUXD(IJ)-XSTRESS(IJ)
-        TAUOCYD(IJ)= TAUYD(IJ)-YSTRESS(IJ)
+        TAUOCXD(IJ)= TAUXD(IJ)-OOVAL(IJ)*XSTRESS(IJ)
+        TAUOCYD(IJ)= TAUYD(IJ)-OOVAL(IJ)*YSTRESS(IJ)
         TAUO       = SQRT(TAUOCXD(IJ)**2+TAUOCYD(IJ)**2)
         TAUOC(IJ)  = MIN(MAX(TAUO/TAU,TAUOCMIN),TAUOCMAX)
 
-        XN        = ROAIRN(IJ)*MAX(USNEW(IJ)**3,EPSUS3)
-        PHIOCD(IJ)= PHILF(IJ)-PHIWA(IJ)
+        XN        = ROAIRN(IJ)*MAX(USTAR(IJ)**3,EPSUS3)
+        PHIOCD(IJ)= OOVAL(IJ)*(PHILF(IJ)-PHIWA(IJ))+(1.0_JWRB-OOVAL(IJ))*PHIOC_ICE*XN
 
         PHIEPS(IJ)= PHIOCD(IJ)/XN 
         PHIEPS(IJ)= MIN(MAX(PHIEPS(IJ),PHIEPSMIN),PHIEPSMAX)
@@ -168,13 +228,13 @@
         IF (LWNEMOCOU.AND.LNUPD) THEN
           NPHIEPS(IJ) = PHIEPS(IJ)
           NTAUOC(IJ)  = TAUOC(IJ)
-          IF (EM(IJ)/=0.0_JWRB) THEN
-             NSWH(IJ) = 4.0_NEMODP*SQRT(EM(IJ))
+          IF (EM_OC(IJ)/=0.0_JWRB) THEN
+             NSWH(IJ) = 4.0_NEMODP*SQRT(EM_OC(IJ))
           ELSE
              NSWH(IJ) = 0.0_NEMODP
           ENDIF
-          IF (F1(IJ)/=0.0_JWRB) THEN
-             NMWP(IJ) = 1.0_NEMODP/F1(IJ)
+          IF (F1_OC(IJ)/=0.0_JWRB) THEN
+             NMWP(IJ) = 1.0_NEMODP/F1_OC(IJ)
           ELSE
              NMWP(IJ) = 0.0_NEMODP
           ENDIF
