@@ -81,6 +81,8 @@
 
       IF (LLGCBZ0) THEN
         ZN = RNUM
+!!debile
+        ZN = 0.0_JWRB
       ELSE
         ZN = 0.0_JWRB
       ENDIF
