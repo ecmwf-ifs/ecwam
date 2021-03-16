@@ -66,6 +66,7 @@
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
+      USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
@@ -148,6 +149,7 @@
      &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
+     &   XKMSS_CUTOFF,                                                  &
      &   LLOUTERS,                                                      &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
@@ -254,6 +256,9 @@
 !     GFLAG: OUTPUT FLAG FOR OUTPUT TO GRIB OF EACH OUTPUT TYPE.
 !     NFLAG: OUTPUT FLAG FOR USER OUTPUT DISPLAY OF FIELD NORM FOR
 !            EACH OUTPUT TYPE.
+!     XKMSS_CUTOFF: IF DIFFERENT FROM 0., SETS THE MAXIMUM WAVE NUMBER TO BE USED IN
+!                   THE CALCULATION OF THE MEAN SQUARE SLOPE.
+!                   OTHERWISE, USE XK_GC(NWAV_GC)
 !     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
 !     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
@@ -573,6 +578,8 @@
       NFLAG(IRWDIR)= .TRUE. 
       NFLAG(IRCD)  = .TRUE. 
       NFLAG(IRU10) = .TRUE. 
+
+      XKMSS_CUTOFF = 0.0_JWRB
 
       LLOUTERS = .FALSE.
 

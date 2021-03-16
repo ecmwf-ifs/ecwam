@@ -1,6 +1,6 @@
-      SUBROUTINE MEANSQS_GC(IJS, IJL, HALPHAP, USTAR, XMSSCG, FRGC)
+      SUBROUTINE MEANSQS_GC(XKMSS, IJS, IJL, HALPHAP, USTAR, XMSSCG, FRGC)
 
-!***  DETERMINE MSS FOR GRAV-CAP WAVES
+!***  DETERMINE MSS FOR GRAV-CAP WAVES UP TO WAVE NUMBER XKMSS
 
 !     AUTHOR: PETER JANSSEN
 !     ------
@@ -28,12 +28,14 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
+      REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
 
-      INTEGER(KIND=JWIM) :: IJ, I, NS
+      INTEGER(KIND=JWIM) :: IJ, I, NE
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NS
       REAL(KIND=JWRB) :: XKS, OMS, COEF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -44,17 +46,27 @@
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS_GC',0,ZHOOK_HANDLE)
 
+      NE = MIN(MAX(NINT(LOG(XKMSS/XK_GC(1))/(LOG(KRATIO_GC))),1),NWAV_GC)
+
       DO IJ = IJS, IJL
-        CALL OMEGAGC(USTAR(IJ), NS, XKS, OMS)
+        CALL OMEGAGC(USTAR(IJ), NS(IJ), XKS, OMS)
         FRGC(IJ) = OMS/ZPI
-        COEF = C2OSQRTVG_GC(NS)*HALPHAP(IJ)
-        XMSSCG(IJ) = DELKCC_GC_NS(NS) * XKM_GC(NS) 
-        DO I = NS+1, NWAV_GC
+        IF(XKS > XKMSS) THEN
+          NS(IJ) = NE
+          XMSSCG(IJ) = 0.0_JWRB
+        ELSE
+          XMSSCG(IJ) = DELKCC_GC_NS(NS(IJ)) * XKM_GC(NS(IJ)) 
+        ENDIF
+      ENDDO
+
+      DO IJ = IJS, IJL
+        DO I = NS(IJ)+1, NE 
 !         ANALYTICAL FORM INERTIAL SUB RANGE F(k) = k**(-4)*BB
 !         BB = COEF*SQRT(VG_GC(I))/C_GC(I)**2
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
+        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
         XMSSCG(IJ) = XMSSCG(IJ)*COEF
       ENDDO
 

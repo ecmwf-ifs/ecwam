@@ -1,14 +1,8 @@
-      SUBROUTINE MEANSQS(IJS, IJL, F, USTAR, UDIR, XMSS)
+      SUBROUTINE MEANSQS(XKMSS, IJS, IJL, F, USTAR, UDIR, XMSS)
 
 ! ----------------------------------------------------------------------
 
-!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE.
-
-!     P.A.E.M. JANSSEN
-!     J. BIDLOT  ECMWF  FEBRUARY 1996  MESSAGE PASSING
-
-!     July 2020, add gravity capillary contribution
-
+!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE UP TO WAVE NUMBER XKMSS.
 
 !*    PURPOSE.
 !     --------
@@ -18,7 +12,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (IJS, IJL, F, USTAR, UDIR, XMSS)*
+!       *CALL* *MEANSQS (XKMSS, IJS, IJL, F, USTAR, UDIR, XMSS)*
+!              *XKMSS* - WAVE NUMBER CUT OFF
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
 !              *F*   - SPECTRUM.
@@ -45,8 +40,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : GM1      ,ZPI4GM2
-      USE YOWFRED  , ONLY : FR       ,FR5      ,ZPIFR    ,DFIM ,   DELTH
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI   , ZPI4GM2
+      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM  , DELTH, FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
@@ -59,14 +54,15 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
+      REAL(KIND=JWRB), INTENT(IN) :: XKMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      INTEGER(KIND=JWIM) :: IJ, M, K
+      INTEGER(KIND=JWIM) :: IJ, M, K, NFRE_MSS, NFRE_EFF
 
-      REAL(KIND=JWRB) :: XLOGFS
+      REAL(KIND=JWRB) :: XLOGFS, FCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
@@ -83,7 +79,11 @@
       CALL HALPHAP(IJS, IJL, UDIR, F, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
-      CALL MEANSQS_GC(IJS, IJL, HALP, USTAR, XMSS, FRGC)
+      CALL MEANSQS_GC(XKMSS, IJS, IJL, HALP, USTAR, XMSS, FRGC)
+
+      FCUT = SQRT(G*XKMSS)/ZPI
+      NFRE_MSS = INT(LOG(FCUT/FR(1))/LOG(FRATIO))+1 
+      NFRE_EFF = MIN(NFRE,NFRE_MSS)
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
@@ -93,11 +93,11 @@
 !*    2.1 DEEP WATER INTEGRATION.
 !         -----------------------
 
-        DO M=1,NFRE
+        DO M=1,NFRE_EFF
           FD(M) = DFIM(M)*(ZPIFR(M))**4*GM1**2
         ENDDO
 
-        DO M=1,NFRE
+        DO M=1,NFRE_EFF
           DO IJ=IJS,IJL
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
@@ -116,7 +116,7 @@
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
-        DO M=1,NFRE
+        DO M=1,NFRE_EFF
           DO IJ=IJS,IJL
             TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
             TEMP2(IJ) = 0.0_JWRB
@@ -133,12 +133,12 @@
       ENDIF
 !SHALLOW
 
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE) and FRGC).
+!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).
 !        ------------------------------------------
 
-      XLOGFS = LOG(FR(NFRE))
+      XLOGFS = LOG(FR(NFRE_EFF))
       DO IJ=IJS,IJL
-        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*(LOG(FRGC(IJ)) - XLOGFS)
+        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*MAX((LOG(MIN(FRGC(IJ),FCUT)) - XLOGFS),0.0_JWRB)
         XMSS(IJ) = XMSS(IJ) + XMSS_TAIL(IJ)
       ENDDO
 

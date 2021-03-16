@@ -63,7 +63,7 @@
      &            NIPRMOUT, ITOBOUT
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWCURR  , ONLY : U, V
-      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH
+      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
      &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
@@ -243,7 +243,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        CALL MEANSQS (IJS, IJL, FL1, USNEW(IJS), THWNEW(IJS), BOUT(IJS,ITOBOUT(IR)))
+        CALL MEANSQS (XKMSS_CUTOFF, IJS, IJL, FL1, USNEW(IJS), THWNEW(IJS), BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
