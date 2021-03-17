@@ -145,6 +145,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
+#include "initgc.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "outxt.intfb.h"
 #include "readsta.intfb.h"
@@ -1042,6 +1043,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       WRITE(IU06,*) ''
 
+      ! INITIALISATION FOR GRAVITY-CAPILLARY
+      CALL INITGC
       IF(XKMSS_CUTOFF <= 0.0_JWRB) THEN
         XKMSS_CUTOFF = XK_GC(NWAV_GC)
       ENDIF

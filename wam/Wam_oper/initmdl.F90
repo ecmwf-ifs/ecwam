@@ -324,7 +324,6 @@
 #include "incdate.intfb.h"
 #include "inisnonlin.intfb.h"
 #include "init_sdiss_ardh.intfb.h"
-#include "initgc.intfb.h"
 #include "init_x0tauhf.intfb.h"
 #include "initnemocpl.intfb.h"
 #include "iniwcst.intfb.h"
@@ -565,9 +564,6 @@
         DFIMFR2_SIM(M) = DFIM_SIM(M)*FR(M)**2
       ENDDO
 
-
-      ! INITIALISATION FOR GRAVITY-CAPILLARY
-      CALL INITGC
 
       CALL TABU_SWELLFT
 
