@@ -133,7 +133,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
      &            NSTART ,NEND     ,FL1      ,FL3
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
-      USE YOWNEMOP , ONLY : NEMODP
+      USE PARKIND1 , ONLY : JPRO
       USE GRIB_API_INTERFACE
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL,ONLY : LLUNSTR
@@ -434,8 +434,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
+     &                  CICOVER(KIJS,IG),                               &
      &                  BETAOLD(KIJS)) 
         ENDDO
 !$OMP   END PARALLEL DO
@@ -701,8 +702,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FLABEL(1)=' Charnock'
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
-                         !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
-                         ! BUT WELL OVER LAND POINTS.
 
           IFLDOFFSET=1
 
@@ -758,8 +757,9 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
+     &                  CICOVER(KIJS,IG),                               &
      &                  WVBLOCK(KIJS,1))
 
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
@@ -810,8 +810,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
               NEMOUSTOKES(KIJS:KIJL)=USTOKES(KIJS:KIJL)
               NEMOVSTOKES(KIJS:KIJL)=VSTOKES(KIJS:KIJL)
             ELSE
-              NEMOUSTOKES(KIJS:KIJL)=0.0_NEMODP
-              NEMOVSTOKES(KIJS:KIJL)=0.0_NEMODP
+              NEMOUSTOKES(KIJS:KIJL)=0.0_JPRO
+              NEMOVSTOKES(KIJS:KIJL)=0.0_JPRO
             ENDIF
 
             IF(LWNEMOCOUSTRN) THEN

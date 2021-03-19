@@ -27,6 +27,7 @@
       LOGICAL :: LICERUN 
       LOGICAL :: LICETH
       LOGICAL :: LMASKICE
+      LOGICAL :: LWAMRSETCI
       LOGICAL :: LCIWABR
 
 !--------------------------------------------------------------------
@@ -64,6 +65,8 @@
 !                            NOTE THAT THE MASK IS ALWAYS APPLIED FOR SATELLITE
 !                            DATA PROCESSING AS WELL AS FOR CHARNOCK THAT
 !                            IS RETURNED TO THE IFS.
+!     LWAMRSETCI   LOGICAL   SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
+!                            ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
 !     LCIWABR      LOGICAL   SET TO TRUE IF SEA ICE BOTTOM FRICTION ATTENUATION IS USED.
 !--------------------------------------------------------------------
       END MODULE YOWICE
