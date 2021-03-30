@@ -347,9 +347,6 @@
               UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
               ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
               GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-!!!debile
-              GAMNORMA(IJ,IGST) = MAX(GAMNORMA(IJ,IGST),0.5_JWRB)
-!!
             ENDDO
           ENDDO
         ELSE
