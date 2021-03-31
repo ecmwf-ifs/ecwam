@@ -128,7 +128,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: CM, XK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: WSMASK
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
 
@@ -390,8 +389,6 @@
           ENDDO
         ENDDO
 
-        WSMASK(:,:,:)=0.0_JWRB
-
         DO IGST=1,NGST
           DO K=1,NANG
             DO IJ=IJS,IJL
@@ -402,7 +399,6 @@
                   ZLOG2X=ZLOG*ZLOG*X
                   UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
                   XLLWS(IJ,K,M) = 1.0_JWRB
-                  WSMASK(IJ,K,IGST) = 1.0_JWRB
                 ELSE
                   UFAC(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
@@ -415,25 +411,25 @@
 
       IF(LLNORMAGAM) THEN
 
+!       windsea part of the spectrum
+        SUMF(:) = 0.0_JWRB
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)*MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
+          ENDDO
+        ENDDO
+
 !       Computes the growth rate in the wind direction
         DO IGST=1,NGST
-!         windsea part of the spectrum
-          SUMF(:) = 0.0_JWRB
-          DO K=1,NANG
             DO IJ=IJS,IJL
-              SUMF(IJ) = SUMF(IJ) + WSMASK(IJ,K,IGST)*F(IJ,K,M)*MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
+              X    = UCN(IJ,IGST)
+              ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
+              ZLOG = MIN(ZLOG,0.0_JWRB)
+              ZLOG2X = ZLOG*ZLOG*X
+              UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
+              ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
             ENDDO
-          ENDDO
-
-          DO IJ=IJS,IJL
-            X    = UCN(IJ,IGST)
-            ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
-            ZLOG = MIN(ZLOG,0.0_JWRB)
-            ZLOG2X = ZLOG*ZLOG*X
-            UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
-            ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
-            GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-          ENDDO
         ENDDO
       ELSE
         GAMNORMA(:,:) = 1.0_JWRB
