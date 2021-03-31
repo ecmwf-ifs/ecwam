@@ -68,10 +68,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LLCAPCHNK,LLNORMAGAM
-      USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR
+      USE YOWFRED  , ONLY : FR       ,TH       ,DFIM     ,COSTH  ,SINTH, ZPIFR, DELTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO
-      USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS
+      USE YOWPCONS , ONLY : G        ,GM1      ,ROWATER  ,EPSMIN, EPSUS, ZPI
       USE YOWPHYS  , ONLY : ZALP     ,TAUWSHELTER, XKAPPA, BETAMAXOXKAPPA2,    &
      &                      BMAXOKAPDTH, RN1_RN, &
      &                      RNU      ,RNUM, &
@@ -101,9 +101,10 @@
       INTEGER(KIND=JWIM) :: IJ,K,M,IND,IGST
 
       REAL(KIND=JWRB) :: ROG
+      REAL(KIND=JWRB) :: CONSTN 
       REAL(KIND=JWRB) :: AVG_GST, ABS_TAUWSHELTER 
       REAL(KIND=JWRB) :: CONST1
-      REAL(KIND=JWRB) :: UFAC0, ZN 
+      REAL(KIND=JWRB) :: UFAC0, ZN, ZN1, ZN2 
       REAL(KIND=JWRB) :: X1,X2,ZLOG,ZLOG1,ZLOG2,ZLOG2X,XV1,XV2,ZBETA1,ZBETA2
       REAL(KIND=JWRB) :: XI,X,DELI1,DELI2
       REAL(KIND=JWRB) :: FU,FUD,NU_AIR,SMOOTH, HFTSWELLF6,Z0TUB
@@ -118,10 +119,9 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PVISC, PTURB
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ZCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N, UORBT, AORB, TEMP, RE, RE_C, ZORB
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN, SUMF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLP_AVG, SLP_AVG
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: GZ0, ROGOROAIR, ROAIRN_PVISC, ROAIRNM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XSTRESS, YSTRESS, FLP, SLP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USG2, TAUX, TAUY, USTP, USTPM1, USDIRP, UCN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: UCNZALPD
@@ -129,7 +129,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DSTAB1, TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, UFAC, DSTAB
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: COSLP, GAM0, DSTAB
 
       LOGICAL :: LTAUWSHELTER
 ! ----------------------------------------------------------------------
@@ -142,6 +142,7 @@
       NU_AIR = RNU
       FAC_NU_AIR= RNUM
       FACM1_NU_AIR=4.0_JWRB/NU_AIR
+      CONSTN = DELTH*ROWATER/(XKAPPA*ZPI) 
 
       FU=ABS(SWELLF3)
       FUD=SWELLF2
@@ -154,18 +155,21 @@
         LTAUWSHELTER = .TRUE.
       ENDIF
 
+      DO IJ=IJS,IJL
+        ROAIRNM(IJ) = 1.0_JWRB/MAX(ROAIRN(IJ),1.0_JWRB)
+      ENDDO
+
       IF(LLNORMAGAM) THEN
-        BMAXFAC(:) = BMAXOKAPDTH * RNFAC(:)
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = BMAXFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*FR(M)*GM1
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTM*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = BMAXFAC(IJ)*FR(M)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTM*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ENDIF
@@ -312,7 +316,7 @@
         GZ0(IJ) = G*Z0NEW(IJ)
       ENDDO
       DO IJ=IJS,IJL
-        ROGOROAIR(IJ) = ROG/MAX(ROAIRN(IJ),1.0_JWRB)
+        ROGOROAIR(IJ) = ROG*ROAIRNM(IJ)
       ENDDO
 
       DO IJ=IJS,IJL
@@ -397,13 +401,13 @@
                 ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)/COSLP(IJ,K,IGST)
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X
+                  GAM0(IJ,K,IGST) = EXP(ZLOG)*ZLOG2X*ZLOG2X * CNSN(IJ)
                   XLLWS(IJ,K,M) = 1.0_JWRB
                 ELSE
-                  UFAC(IJ,K,IGST) = 0.0_JWRB
+                  GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                UFAC(IJ,K,IGST) = 0.0_JWRB
+                GAM0(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -411,24 +415,20 @@
 
       IF(LLNORMAGAM) THEN
 
-!       windsea part of the spectrum
-        SUMF(:) = 0.0_JWRB
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)*MAX(COS(TH(K)-THWNEW(IJ)),0.0_JWRB)**2
-          ENDDO
-        ENDDO
-
-!       Computes the growth rate in the wind direction
         DO IGST=1,NGST
+          SUMF(:) = 0.0_JWRB
+          SUMFSIN2(:) = 0.0_JWRB
+          DO K=1,NANG
             DO IJ=IJS,IJL
-              X    = UCN(IJ,IGST)
-              ZLOG = ZCN(IJ) + UCNZALPD(IJ,IGST)
-              ZLOG = MIN(ZLOG,0.0_JWRB)
-              ZLOG2X = ZLOG*ZLOG*X
-              UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
-              ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
-              GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+              SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)
+              SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)*SIN(TH(K)-THWNEW(IJ))**2
+            ENDDO
+          ENDDO
+
+          DO IJ=IJS,IJL
+              ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
+              ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
             ENDDO
         ENDDO
       ELSE
@@ -462,7 +462,7 @@
           DO IGST=1,NGST
             DO IJ=IJS,IJL
               ! SLP: only the positive contributions
-              SLP(IJ,IGST) =  UFAC(IJ,K,IGST)*CNSN(IJ) * GAMNORMA(IJ,IGST)
+              SLP(IJ,IGST) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
               FLP(IJ,IGST) = SLP(IJ,IGST)+DSTAB(IJ,K,IGST)
             ENDDO
           ENDDO
