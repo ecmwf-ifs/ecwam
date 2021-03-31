@@ -163,13 +163,13 @@
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTM*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTN*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
             DO IJ=IJS,IJL
-              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTM*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
+              XNGAMCONST(IJ,M) = RNFAC(IJ)*CONSTN*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ENDIF
