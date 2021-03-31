@@ -429,6 +429,9 @@
               ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
               ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
               GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+!!!debile
+           write(*,*) 'debile GAMNORMA ',GAMNORMA(IJ,IGST),ZN1,ZN2
+!!!!
             ENDDO
         ENDDO
       ELSE
