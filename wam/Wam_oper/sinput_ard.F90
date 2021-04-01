@@ -177,7 +177,7 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            SIN2(IJ) = SIN(TH(K)-THWNEW(IJ))**2
+            SIN2(IJ,K) = SIN(TH(K)-THWNEW(IJ))**2
           ENDDO
         ENDDO
 
