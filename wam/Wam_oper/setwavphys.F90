@@ -105,6 +105,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
           ANG_GC_A = 0.65_JWRB
           ANG_GC_B = 0.25_JWRB
+!!debile
+          ANG_GC_A = 0.67_JWRB
+          ANG_GC_B = 0.23_JWRB
+
           ANG_GC_C = 0.40_JWRB
           ANG_GC_D = 11.5_JWRB
           ANG_GC_E = 0.1_JWRB
