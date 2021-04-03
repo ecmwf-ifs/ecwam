@@ -18,7 +18,8 @@
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,              &
      &                      USTOKES  ,VSTOKES  ,STRNMS   ,              &
      &                      PHIAW    ,TAUOC    ,TAUXD    ,TAUYD    ,    &
-     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
+     &                      TAUOCXD  ,TAUOCYD  ,PHIOCD   ,              &
+     &                      WSEMEAN  ,WSFMEAN
       USE YOWSPEC  , ONLY : U10NEW   ,THWNEW   ,USNEW    ,Z0NEW    ,    &
      &            ROAIRN   ,ZIDLNEW
       USE YOWWIND  , ONLY : CDTNEXT  ,FF_NEXT
@@ -62,6 +63,8 @@
       IF(ALLOCATED(TAUOCXD)) DEALLOCATE(TAUOCXD)
       IF(ALLOCATED(TAUOCYD)) DEALLOCATE(TAUOCYD)
       IF(ALLOCATED(PHIOCD)) DEALLOCATE(PHIOCD)
+      IF(ALLOCATED(WSEMEAN)) DEALLOCATE(WSEMEAN)
+      IF(ALLOCATED(WSFMEAN)) DEALLOCATE(WSFMEAN)
 
       IF (LHOOK) CALL DR_HOOK('WVDEALLOC',1,ZHOOK_HANDLE)
 

@@ -4,6 +4,7 @@
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
      &                     Z0NEW, ROAIRN, WSTAR,                        &
+     &                     WSEMEAN, WSFMEAN,                            &
      &                     USTOKES, VSTOKES, STRNMS )
 
 ! ----------------------------------------------------------------------
@@ -23,6 +24,7 @@
 !       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR,
+!    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
 !          *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
@@ -34,6 +36,8 @@
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
 !          *ROAIRN* - AIR DENSITY IN KG/M3.
 !          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
+!          *WSEMEAN*   WINDSEA VARIANCE.
+!          *WSFMEAN*   WINDSEA MEAN FREQUENCY.
 !          *USTOKES*   U-COMP SURFACE STOKES DRIFT.
 !          *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
 !          *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
@@ -51,9 +55,10 @@
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOWFRED  , ONLY : TH
+      USE YOWFRED  , ONLY : FR       ,TH
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : WSEMEAN_MIN
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
@@ -61,6 +66,7 @@
 
       IMPLICIT NONE
 #include "cimsstrn.intfb.h"
+#include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sdissip.intfb.h"
 #include "sinflx.intfb.h"
@@ -74,6 +80,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
@@ -88,7 +95,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMEANWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
@@ -171,7 +178,18 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+      IF(LWFLUX) THEN
+       CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+        DO IJ=IJS,IJL
+          IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+            WSEMEAN(IJ) = WSEMEAN_MIN 
+            WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
+          ELSE
+            WSEMEAN(IJ) = EMEANWS(IJ)
+            WSFMEAN(IJ) = FMEANWS(IJ) 
+          ENDIF
+        ENDDO
+      ENDIF
 
         IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 

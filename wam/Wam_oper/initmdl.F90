@@ -254,7 +254,7 @@
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
-     &                      TAUXD    ,TAUYD    ,                        &
+     &                      TAUXD    ,TAUYD    ,WSEMEAN  ,WSFMEAN  ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
@@ -505,6 +505,8 @@
 
         IF(.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS(1):IJL(1)))
+        IF(.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS(1):IJL(1)))
+        IF(.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS(1):IJL(1)))

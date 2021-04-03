@@ -297,7 +297,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
      &            CIWA
-      USE YOWMEAN  , ONLY : USTOKES  ,VSTOKES  ,STRNMS
+      USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
@@ -501,6 +501,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                     CICOVER(KIJS,IG),                            &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),    &
+     &                     WSEMEAN(KIJS), WSFMEAN(KIJS),                &
      &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
 !$OMP     END PARALLEL DO
@@ -750,6 +751,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS), &
+     &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))
 

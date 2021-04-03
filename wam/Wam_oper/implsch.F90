@@ -5,6 +5,7 @@
      &                    CICVR, CIWA,                                  &
      &                    U10NEW, THWNEW, USNEW,                        &
      &                    Z0NEW, ROAIRN, WSTARNEW,                      &
+     &                    WSEMEAN, WSFMEAN,                             &
      &                    USTOKES, VSTOKES, STRNMS,                     &
      &                    MIJ, XLLWS)
 
@@ -73,6 +74,8 @@
 !      *WSTAROLD*   INTERMEDIATE STORAGE OF WSTAR
 !      *CICVR*     SEA ICE COVER.
 !      *CIWA*      SEA ICE WAVE ATTENUATION.
+!      *WSEMEAN*   WINDSEA VARIANCE.
+!      *WSFMEAN*   WINDSEA MEAN FREQUENCY.
 !      *USTOKES*   U-COMP SURFACE STOKES DRIFT.
 !      *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
 !      *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
@@ -132,6 +135,7 @@
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4      ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LCIWABR  ,LICERUN     ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : WSEMEAN_MIN 
       USE YOWSHAL  , ONLY : DEPTH    ,INDEP    ,                        &
      &            IODP     ,IOBND    ,CINV     ,EMAXDPT
       USE YOWSTAT  , ONLY : IDELT    ,ISHALLO  ,CDTPRO   ,LBIWBK
@@ -169,6 +173,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(IN) :: CIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
@@ -404,6 +409,23 @@
      &                MIJ, RHOWGDFTH)
 
       CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
+
+
+
+
+!     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
+!     ------------------------------------------------------------------
+      IF(LWFLUX) THEN
+        DO IJ=IJS,IJL
+          IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+            WSEMEAN(IJ) = WSEMEAN_MIN 
+            WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
+          ELSE
+            WSEMEAN(IJ) = EMEANWS(IJ)
+            WSFMEAN(IJ) = FMEANWS(IJ) 
+          ENDIF
+        ENDDO
+      ENDIF
 
 
 !*    2.6 SET FL1 ON ICE POINTS TO ZERO
