@@ -178,18 +178,21 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-      IF(LWFLUX) THEN
-       CALL FEMEANWS(FL1,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-        DO IJ=IJS,IJL
-          IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
-            WSEMEAN(IJ) = WSEMEAN_MIN 
-            WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
-          ELSE
-            WSEMEAN(IJ) = EMEANWS(IJ)
-            WSFMEAN(IJ) = FMEANWS(IJ) 
-          ENDIF
-        ENDDO
-      ENDIF
+        IF(LWFLUX) THEN
+         CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
+
+          DO IJ=IJS,IJL
+            IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+              WSEMEAN(IJ) = WSEMEAN_MIN 
+              WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
+            ELSE
+              WSEMEAN(IJ) = EMEANWS(IJ)
+              WSFMEAN(IJ) = FMEANWS(IJ) 
+            ENDIF
+          ENDDO
+        ENDIF
+
+        CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
 
         IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
