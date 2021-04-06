@@ -4,7 +4,7 @@
      &                    ROAIRO, WSTAROLD,                             &
      &                    CICVR, CIWA,                                  &
      &                    U10NEW, THWNEW, USNEW,                        &
-     &                    Z0NEW, ROAIRN, WSTARNEW,                      &
+     &                    Z0NEW, Z0B, ROAIRN, WSTARNEW,                 &
      &                    WSEMEAN, WSFMEAN,                             &
      &                    USTOKES, VSTOKES, STRNMS,                     &
      &                    MIJ, XLLWS)
@@ -64,6 +64,7 @@
 !      *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
 !                  VELOCITY.
 !      *Z0NEW*     ROUGHNESS LENGTH IN M.
+!      *Z0B*       BACKGROUND ROUGHNESS LENGTH.
 !      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
 !                  M.
 !      *TAUW*      WAVE STRESS IN (M/S)**2
@@ -172,6 +173,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0B
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTARNEW
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
@@ -280,7 +282,7 @@
      &               CICVR, &
      &               FMEANALL, FMEANWS, &
      &               FLM, FL1, &
-     &               USNEW, TAUW, TAUWDIR, Z0NEW, PHIWA, &
+     &               USNEW, TAUW, TAUWDIR, Z0NEW, Z0B, PHIWA, &
      &               FL, SL, SPOS, &
      &               MIJ, RHOWGDFTH, XLLWS)
 

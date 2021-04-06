@@ -272,7 +272,7 @@
      &            CINV     ,TFAK     ,GAM_B_J  ,EMAXDPT
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
-     &            TAUWDIR,  ROAIRO   ,ZIDLOLD  ,                        &
+     &            Z0B      ,TAUWDIR,  ROAIRO   ,ZIDLOLD  ,              &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -893,6 +893,7 @@
         IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
       ENDIF
 
+      Z0B(:) = 0.0_JWRB
 
       CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,            &
      &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,                    &

@@ -24,6 +24,7 @@
       USE YOWSPEC, ONLY : NSTART   ,NEND     ,                          &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,TAUWDIR  ,    &
+     &            Z0B      ,                                            &
      &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,    &
      &            FL1
       USE YOWSTAT  , ONLY : IPROPAGS ,LSUBGRID ,IREFRA   ,IDELPRO
@@ -59,6 +60,7 @@
       IF(.NOT.ALLOCATED(THWNEW)) ALLOCATE(THWNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(USNEW)) ALLOCATE(USNEW(NINF:NSUP))
       IF(.NOT.ALLOCATED(Z0NEW)) ALLOCATE(Z0NEW(NINF:NSUP))
+      IF(.NOT.ALLOCATED(Z0B)) ALLOCATE(Z0B(NINF:NSUP))
       IF(.NOT.ALLOCATED(BETAOLD)) ALLOCATE(BETAOLD(NINF:NSUP))
 
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV

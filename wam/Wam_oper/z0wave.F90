@@ -1,4 +1,4 @@
-      SUBROUTINE Z0WAVE (IJS, IJL, US, TAUW, UTOP, Z0)
+      SUBROUTINE Z0WAVE (IJS, IJL, US, TAUW, UTOP, Z0, Z0B)
 
 ! ----------------------------------------------------------------------
 
@@ -18,7 +18,8 @@
 !          *US*   - OUTPUT BLOCK OF SURFACE STRESSES.
 !          *TAUW* - INPUT BLOCK OF WAVE STRESSES.
 !          *UTOP* - WIND SPEED.
-!          *ZO*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
 
 !     METHOD.
 !     -------
@@ -49,7 +50,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(IN)  ::  US, TAUW, UTOP
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL),INTENT(OUT) ::  Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB) :: CHNKMIN
@@ -76,6 +77,7 @@
         UST3 = US(IJ)**3
         ARG = MAX(UST2-TAUW(IJ),EPS1)
         Z0(IJ) = ALPHAOG(IJ)*UST3/SQRT(ARG)
+        Z0B(IJ) = ALPHAOG(IJ)*UST2
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('Z0WAVE',1,ZHOOK_HANDLE)

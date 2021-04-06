@@ -3,7 +3,7 @@
      &                     FL1, XLLWS,                                  &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
-     &                     Z0NEW, ROAIRN, WSTAR,                        &
+     &                     Z0NEW, Z0B, ROAIRN, WSTAR,                   &
      &                     WSEMEAN, WSFMEAN,                            &
      &                     USTOKES, VSTOKES, STRNMS )
 
@@ -23,7 +23,7 @@
 
 !       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
 !    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR,
+!    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
 !          *FL1*    - FREQUENCY SPECTRUM(INPUT).
@@ -34,6 +34,7 @@
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
+!          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
 !          *ROAIRN* - AIR DENSITY IN KG/M3.
 !          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
 !          *WSEMEAN*   WINDSEA VARIANCE.
@@ -79,7 +80,7 @@
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW, Z0B
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
@@ -135,7 +136,7 @@
      &             CICVR, &
      &             FMEANALL, FMEANWS, &
      &             FLM, FL1, &
-     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, PHIWA, &
+     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
      &             FL, SL, SPOS, &
      &             MIJ, RHOWGDFTH, XLLWS)
 

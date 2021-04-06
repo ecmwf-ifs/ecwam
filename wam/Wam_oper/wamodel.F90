@@ -316,7 +316,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWSPEC, ONLY   : NBLKS    ,NBLKE    ,                        &
      &            U10NEW   ,U10OLD   ,THWNEW   ,THWOLD   ,USNEW    ,    &
      &            USOLD    ,Z0NEW    ,Z0OLD    ,TAUW     ,TAUWDIR  ,    &
-     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,   &
+     &            Z0B      ,                                            &
+     &            BETAOLD  ,ROAIRN   ,ROAIRO   ,ZIDLNEW  ,ZIDLOLD  ,    &
      &            FL1
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI      ,LRESTARTED
@@ -500,7 +501,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
      &                     CICOVER(KIJS,IG),                            &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
-     &                     Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS),    &
+     &                     Z0NEW(KIJS), Z0B(KIJS),                      &
+     &                     ROAIRN(KIJS), ZIDLNEW(KIJS),                 &
      &                     WSEMEAN(KIJS), WSFMEAN(KIJS),                &
      &                     USTOKES(KIJS), VSTOKES(KIJS), STRNMS(KIJS) )
           ENDDO
@@ -750,7 +752,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),        &
      &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
      &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
-     &                        Z0NEW(KIJS), ROAIRN(KIJS), ZIDLNEW(KIJS), &
+     &                        Z0NEW(KIJS), Z0B(KIJS),                   &
+     &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
      &                        USTOKES(KIJS), VSTOKES(KIJS),STRNMS(KIJS),&
      &                        MIJ(KIJS), XLLWS(KIJS:KIJL,:,:))

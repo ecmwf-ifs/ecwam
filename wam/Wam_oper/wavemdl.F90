@@ -132,7 +132,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
-     &            BETAOLD   ,ROAIRO   ,ZIDLOLD  ,                       &
+     &            Z0B    ,BETAOLD  ,ROAIRO   ,ZIDLOLD  ,                &
      &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
@@ -253,6 +253,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP) :: BETAB
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
 
@@ -436,8 +437,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  CICOVER(KIJS,IG),                               &
-     &                  BETAOLD(KIJS)) 
+     &                  Z0B(KIJS),                                      &
+     &                  BETAOLD(KIJS), BETAB(KIJS) ) 
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -695,8 +696,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FLABEL(1)=' Charnock'
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
+        FLABEL(2)=' Eqv Chnk'
+        DEFVAL(2)=0.0_JWRB
 
-          IFLDOFFSET=1
+        IFLDOFFSET=2
 
         IF(LWSTOKES) THEN
 !         2. U-STOKESDRIFT
@@ -752,15 +755,15 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
           CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  CICOVER(KIJS,IG),                               &
-     &                  WVBLOCK(KIJS,1))
+     &                  Z0B(KIJS),                                      &
+     &                  WVBLOCK(KIJS,1), WVBLOCK(KIJS,2) )
 
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
 
-          IFLDOFFSET=1
+          IFLDOFFSET=2
           IF(LWSTOKES) THEN
             IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)

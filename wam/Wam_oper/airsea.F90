@@ -1,5 +1,5 @@
       SUBROUTINE AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
-&                        US, Z0, IJS, IJL, ICODE_WND, IUSFG)
+&                        US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -20,7 +20,7 @@
 !     ----------
 
 !       *CALL* *AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
-!                       US, Z0, IJS, IJL, ICODE_WND, IUSFG)*
+!                       US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)*
 !          *FL1*  - SPECTRA
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
 !          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
@@ -29,7 +29,8 @@
 !          *TAUWDIR* - INPUT BLOCK OF WAVE STRESS DIRECTION.
 !          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *US*   - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
-!          *ZO*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
 !          *IJS*  - INDEX OF FIRST GRIDPOINT.
 !          *IJL*  - INDEX OF LAST GRIDPOINT.
 !          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
@@ -76,7 +77,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -92,14 +93,14 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        CALL TAUT_Z0 (IJS, IJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0)
+        CALL TAUT_Z0 (IJS, IJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0)
+        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0, Z0B)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
