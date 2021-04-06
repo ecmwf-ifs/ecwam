@@ -123,7 +123,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
       USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
-      USE YOWPHYS  , ONLY : RNU      ,RNUM
+      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
@@ -697,7 +697,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
         FLABEL(2)=' Eqv Chnk'
-        DEFVAL(2)=0.0_JWRB
+        DEFVAL(2)=PRCHAR-ALPHA
 
         IFLDOFFSET=2
 
