@@ -48,7 +48,7 @@
      &            LWNEMOCOUDEBUG, LWNEMOCOUCIC, LWNEMOCOUCIT,           &
      &            LWNEMOCOUCUR,                                         &
      &            LWNEMOCOUSTK,  LWNEMOCOUSTRN, LWNEMOTAUOC, NEMOFRCO,  &
-     &            LLCAPCHNK
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,GFLAG    ,                                  &
      &            GFLAG20  ,NFLAG    ,                                  &
@@ -66,21 +66,25 @@
       USE YOWCPBO  , ONLY : GBOUNC_MAX, IBOUNC ,CBCPREF
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
+      USE YOWFRED  , ONLY : XKMSS_CUTOFF 
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G, IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
-     &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
-     &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI, LCIWABR  ,  &
+     &            LICETH
       USE YOWMESPAS, ONLY : LMESSPASS,                                  &
      &            LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
      &            IDELBC   ,                                            &
      &            IDELINS  ,IDELSPT  ,IDELSPS  ,ICASE    ,ISHALLO  ,    &
+     &            IPHYS    ,                                            &
      &            ISNONLIN ,                                            &
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
@@ -145,6 +149,7 @@
      &   LLCFLCUROFF,                                                   &
      &   CLOTSU, CDATER, CDATES,                                        &
      &   FFLAG,  GFLAG, NFLAG,                                          &
+     &   XKMSS_CUTOFF,                                                  &
      &   LLOUTERS,                                                      &
      &   LFDB, LGRIBIN, LGRIBOUT, LFDBIOOUT,                            &
      &   LRSTPARALW, LRSTPARALR, LRSTINFDAT,                            &
@@ -154,10 +159,12 @@
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
      &   IREFRA,                                                        &
+     &   IPHYS,                                                         &
      &   ISNONLIN,                                                      &
      &   IDAMPING,                                                      &
      &   LBIWBK  ,                                                      &
      &   LMASKICE,                                                      &
+     &   LWAMRSETCI,                                                    &
      &   IBOUNC, IBOUNF,                                                &
      &   IDELBC, CBCPREF,                                               &
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
@@ -194,7 +201,7 @@
      &   LWNEMOCOURECV,                                                 &
      &   LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUCUR,                      &
      &   LWNEMOCOUDEBUG,                                                &
-     &   LLCAPCHNK,                                                     &
+     &   LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                                &
      &   LWAM_USE_IO_SERV
 
 
@@ -249,6 +256,9 @@
 !     GFLAG: OUTPUT FLAG FOR OUTPUT TO GRIB OF EACH OUTPUT TYPE.
 !     NFLAG: OUTPUT FLAG FOR USER OUTPUT DISPLAY OF FIELD NORM FOR
 !            EACH OUTPUT TYPE.
+!     XKMSS_CUTOFF: IF DIFFERENT FROM 0., SETS THE MAXIMUM WAVE NUMBER TO BE USED IN
+!                   THE CALCULATION OF THE MEAN SQUARE SLOPE.
+!                   OTHERWISE, USE XK_GC(NWAV_GC)
 !     LLOUTERS : IF TRUE CALL OUTERS: OUTPUT OF SATELLITE COLOCATION SPECTRA
 !     TYPE OF INTEGRATED PARAMETERS IN FFLAG GFLAG (see OUTINT) :
 !     1  : WAVE HEIGHT (M)
@@ -357,6 +367,7 @@
 !     ITESTB: MAX BLOCK NUMBER FOR OUTPUT IN BLOCK LOOPS.
 !     IREST: 1 FOR THE PRODUCTION OF RESTART FILE(S).
 !     IASSI: 1 ASSIMILATION IS DONE IF ANALYSIS RUN.
+!     IPHYS:  WAVE PHYSICS PACKAGE (0 or 1)
 !     ISNONLIN : 0 FOR OLD SNONLIN, 1 FOR NEW SNONLIN.
 !     IDAMPING : 0 NO WAVE DAMPING, 1 WAVE DAMPING ON.
 !                ONLY MEANINGFUl FOR IPHYS=0
@@ -403,6 +414,8 @@
 !     LWNEMOCOUDEBUG: FALSE IF NO DEBUGGING OUTPUT IN WAM<->NEMO COUPLING
 !
 !     LLCAPCHNK : CAP CHARNOCK FOR HIGH WINDS.
+!     LLGCBZ0 : USE MODEL FOR BACKGROUND ROUGHNESS.
+!     LLNORMAGAM : USE THE RENORMALISTION OF THE GROWTH RATE.
 !     LWAM_USE_IO_SERV: TRUE IF SPECTRAL AND INTEGRATED PARAMETER OUTPUT SHOULD BE
 !              DONE USING IFS IO SERVER
 !
@@ -487,6 +500,10 @@
 !               FIEDS ARE PROVIDED WITH THE WIND FIELDS TO GENERATE THE
 !               SEA ICE MASK (TRUE BY DEFAULT). 
 !     LCIWABR : FLAG CONTROLLING THE USE OF SEA ICE BOTTOM FRICTION ATTENUATION  
+!     LMASKICE  SET TO TRUE IF ICE MASK IS APPLIED
+!     LWAMRSETCI SET TO TRUE IF FIELDS THAT ARE EXCHANGED WITH THE ATMOSPHERE AND THE OCEAN
+!                ARE RESET TO WHAT WOULD BE USED IF THERE WERE NO WAVE MODELS.
+
 !     LICETH  : FLAG CONTROLLING WHETHER OR NOT SEA ICE THICKNESS FILEDS
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
@@ -562,6 +579,8 @@
       NFLAG(IRCD)  = .TRUE. 
       NFLAG(IRU10) = .TRUE. 
 
+      XKMSS_CUTOFF = 0.0_JWRB
+
       LLOUTERS = .FALSE.
 
       LSECONDORDER = .TRUE.
@@ -577,6 +596,7 @@
       LODBRALT  = .FALSE.
       ICASE     = 1 
       ISHALLO   = 0 
+      IPHYS     = 1
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
@@ -703,6 +723,8 @@
       LWNEMOCOUDEBUG = .FALSE.
 
       LLCAPCHNK = .FALSE.
+      LLGCBZ0 = .TRUE.
+      LLNORMAGAM = .TRUE.
 
       LWAM_USE_IO_SERV = .FALSE.
 
@@ -720,9 +742,11 @@
 
       LICERUN = .TRUE.
 
-      LCIWABR = .TRUE.
+      LCIWABR = .FALSE.
 
       LMASKICE = .FALSE.
+
+      LWAMRSETCI = .TRUE.
 
       LICETH = .FALSE.
 

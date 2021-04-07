@@ -1,6 +1,6 @@
       SUBROUTINE MPGATHERERSFILE(IRECV, ITAG, NSTART, NEND, NSPFLD,     &
      &                           NSCFLD,                                &
-     &                           IJS, IJL, FL3, FLPTS,                  &
+     &                           IJS, IJL, FL1, FLPTS,                  &
      &                           EM, FM, THQ,                           &
      &                           U10, THW, US,                          &
      &                           EMPTS, FMPTS, THQPTS,                  &
@@ -39,7 +39,7 @@
 !     *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *NSPFLD*    NUMBER OF SPECTRUM FIELDS
 !     *NSCFLD*    NUMBER OF SCALAR FIELDS
-!     *FL3*       BLOCK OF SPECTRA.
+!     *FL1*       BLOCK OF SPECTRA.
 !     *FLPTS*     SPECTRA AT THE SELECTED GRID POINTS (OUTPUT) 
 !     *U10*       WIND SPEED IN M/S.
 !     *THW*       WIND DIRECTION IN RADIANS
@@ -90,7 +90,7 @@
       INTEGER(KIND=JWIM), INTENT(IN) ::  ITAG
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) ::  FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) ::  FL1
       REAL(KIND=JWRB), DIMENSION(NSPFLD,IERS,NANG,NFRE), INTENT(OUT) :: FLPTS
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10,THW,US
@@ -122,7 +122,7 @@
           USPTS(NGOU) = US(IJ)
           DO  M = 1, NFRE
             DO K = 1, NANG
-              FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
+              FLPTS(1,NGOU,K,M)=FL1(IJ,K,M)
             ENDDO
           ENDDO
         ENDDO
@@ -153,7 +153,7 @@
             DO  M = 1, NFRE
               DO K = 1, NANG
                 KCOUNT=KCOUNT+1
-                ZCOMBUF(KCOUNT)=FL3(IJ,K,M)
+                ZCOMBUF(KCOUNT)=FL1(IJ,K,M)
               ENDDO
             ENDDO
 
@@ -226,7 +226,7 @@
             USPTS(NGOU) = US(IJ)
             DO  M = 1, NFRE
               DO K = 1, NANG
-                FLPTS(1,NGOU,K,M)=FL3(IJ,K,M)
+                FLPTS(1,NGOU,K,M)=FL1(IJ,K,M)
               ENDDO
             ENDDO
           ENDIF

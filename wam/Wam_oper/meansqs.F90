@@ -1,12 +1,8 @@
-      SUBROUTINE MEANSQS(F, IJS, IJL, USNEW, FM, SM)
+      SUBROUTINE MEANSQS(XKMSS, IJS, IJL, F, USTAR, UDIR, XMSS)
 
 ! ----------------------------------------------------------------------
 
-!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE.
-
-!     P.A.E.M. JANSSEN
-!     J. BIDLOT  ECMWF  FEBRUARY 1996  MESSAGE PASSING
-
+!**** *MEANSQS* - COMPUTATION OF MEAN SQUARE SLOPE UP TO WAVE NUMBER XKMSS.
 
 !*    PURPOSE.
 !     --------
@@ -16,13 +12,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MEANSQS (F, IJS, IJL, USNEW, FM, SM)*
-!              *F*   - SPECTRUM.
+!       *CALL* *MEANSQS (XKMSS, IJS, IJL, F, USTAR, UDIR, XMSS)*
+!              *XKMSS* - WAVE NUMBER CUT OFF
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
-!              *USNEW*     NEW FRICTION VELOCITY IN M/S (INPUT).
-!              *FM*  - MEAN WAVE FREQUENCY (INPUT).
-!              *SM*  - MEAN SQUARE SLOPE (OUTPUT).
+!              *F*   - SPECTRUM.
+!              *USTAR* - NEW FRICTION VELOCITY IN M/S (INPUT).
+!              *UDIR* - WIND SPEED DIRECTION
+!              *XMSS* - MEAN SQUARE SLOPE (OUTPUT).
 
 !     METHOD.
 !     -------
@@ -43,43 +40,50 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
-      USE YOWFRED  , ONLY : FR       ,DFIM_SIM ,DELTH
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI   , ZPI4GM2
+      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM  , DELTH, FRATIO
+      USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSHAL  , ONLY : TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-
-      REAL(KIND=JWRB), PARAMETER :: XLAMBDAC=0.0628_JWRB
-      REAL(KIND=JWRB), PARAMETER :: SURFT=0.000075_JWRB
+#include "halphap.intfb.h"
+#include "meansqs_gc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, M, K
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, FM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) ::  SM
+      REAL(KIND=JWRB), INTENT(IN) :: XKMSS 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: UDIR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      REAL(KIND=JWRB) :: FS, XKC, FC, CONST1, CONST2, CP, XI, ALPHAP, CONST3 
+      INTEGER(KIND=JWIM) :: IJ, M, K, NFRE_MSS, NFRE_EFF
+
+      REAL(KIND=JWRB) :: XLOGFS, FCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE_ODD) :: FD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) ::  TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS_TAIL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
+!*    1. COMPUTE THE GRAVITY-CAPILLARY CONTRIBUTION TO MSS 
+!        -------------------------------------------------
 
-!*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
-!        ------------------------------------------------
+!     COMPUTE THE PHILLIPS PARAMETER
+      CALL HALPHAP(IJS, IJL, UDIR, F, HALP)
 
-      DO IJ=IJS,IJL
-        SM(IJ) = EPSMIN
-      ENDDO
+!     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
+      CALL MEANSQS_GC(XKMSS, IJS, IJL, HALP, USTAR, XMSS, FRGC)
 
-! ----------------------------------------------------------------------
+      FCUT = SQRT(G*XKMSS)/ZPI
+      NFRE_MSS = INT(LOG(FCUT/FR(1))/LOG(FRATIO))+1 
+      NFRE_EFF = MIN(NFRE,NFRE_MSS)
 
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
 !        ------------------------------------------
@@ -89,11 +93,11 @@
 !*    2.1 DEEP WATER INTEGRATION.
 !         -----------------------
 
-        DO M=1,NFRE_ODD
-          FD(M) = DFIM_SIM(M)*(ZPI*FR(M))**4/G**2
+        DO M=1,NFRE_EFF
+          FD(M) = DFIM(M)*(ZPIFR(M))**4*GM1**2
         ENDDO
 
-        DO M=1,NFRE_ODD
+        DO M=1,NFRE_EFF
           DO IJ=IJS,IJL
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
@@ -103,7 +107,7 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+FD(M)*TEMP2(IJ)
+            XMSS(IJ) = XMSS(IJ)+FD(M)*TEMP2(IJ)
           ENDDO
         ENDDO
 !SHALLOW
@@ -112,9 +116,9 @@
 !*    2.2 SHALLOW WATER INTEGRATION.
 !         --------------------------
 
-        DO M=1,NFRE_ODD
+        DO M=1,NFRE_EFF
           DO IJ=IJS,IJL
-            TEMP1(IJ) = DFIM_SIM(M)*TFAK(INDEP(IJ),M)**2
+            TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
             TEMP2(IJ) = 0.0_JWRB
           ENDDO
           DO K=1,NANG
@@ -123,28 +127,20 @@
             ENDDO
           ENDDO
           DO IJ=IJS,IJL
-            SM(IJ) = SM(IJ)+TEMP1(IJ)*TEMP2(IJ)
+            XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
           ENDDO
         ENDDO
       ENDIF
 !SHALLOW
 
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE.
+!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).
 !        ------------------------------------------
 
-!! not applied !!
-!!      FS     = FR(NFRE_ODD)      
-!!      XKC    = ZPI/XLAMBDAC
-!!      FC     = SQRT(G*XKC+SURFT*XKC**3)/ZPI
-!!      CONST2 = ZPI**4*FS**5/G**2
-!!      DO IJ=IJS,IJL      
-!!        CONST1    = 0.0_JWRB*LOG(FC/FS)  
-!!        CP        = G/(ZPI*FM(IJ))
-!!        XI        = CP/USNEW(IJ)
-!!        ALPHAP    = MAX(0.21_JWRB/XI,0.0040_JWRB)
-!!        CONST3    = CONST2*DELTH*TEMP2(IJ)
-!!        SM(IJ) = SM(IJ)+CONST1*CONST3
-!!      ENDDO
+      XLOGFS = LOG(FR(NFRE_EFF))
+      DO IJ=IJS,IJL
+        XMSS_TAIL(IJ) = 2.0_JWRB*HALP(IJ)*MAX((LOG(MIN(FRGC(IJ),FCUT)) - XLOGFS),0.0_JWRB)
+        XMSS(IJ) = XMSS(IJ) + XMSS_TAIL(IJ)
+      ENDDO
 
       IF (LHOOK) CALL DR_HOOK('MEANSQS',1,ZHOOK_HANDLE)
 

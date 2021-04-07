@@ -1,4 +1,4 @@
-      SUBROUTINE SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,          &
+      SUBROUTINE SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD, &
      &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,           &
      &                     NBLKS, NBLKE, CDTPRO, CDATEF)
 ! ----------------------------------------------------------------------
@@ -11,13 +11,14 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,
+!     *CALL* *SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,
 !                       ROAIRO, ZIDLOLD, CICOVER, CITHICK,
 !                       NBLKS, NBLKE, CDTPRO, CDATEF)
 !     *U10OLD*    INTERMEDIATE STORAGE OF WIND SPEED.
 !     *THWOLD*    INTERMEDIATE STORAGE OF WIND DIRECTION. 
 !     *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION VELOCITY.
 !     *TAUW*      WAVE STRESS IN (M/S)**2.
+!     *TAUWDIR*   WAVE STRESS DIRECTION. 
 !     *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR/WATER DENSITY RATIO.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
@@ -69,7 +70,7 @@
 #include "writestress.intfb.h"
 
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO),INTENT(IN) ::           &
-     &                                  U10OLD,THWOLD,USOLD,TAUW,Z0OLD, &
+     &                          U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD, &
      &                                  ROAIRO,ZIDLOLD,CICOVER,CITHICK
       INTEGER(KIND=JWIM), DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO, CDATEF
@@ -124,20 +125,21 @@
           RFIELD(IJ,2) = THWOLD(IJ,IG)
           RFIELD(IJ,3) = USOLD(IJ,IG)
           RFIELD(IJ,4) = TAUW(IJ,IG)
-          RFIELD(IJ,5) = Z0OLD(IJ,IG)
-          RFIELD(IJ,6) = ROAIRO(IJ,IG)
-          RFIELD(IJ,7) = ZIDLOLD(IJ,IG)
-          RFIELD(IJ,8) = CICOVER(IJ,IG)
-          RFIELD(IJ,9) = CITHICK(IJ,IG)
+          RFIELD(IJ,5) = TAUWDIR(IJ,IG)
+          RFIELD(IJ,6) = Z0OLD(IJ,IG)
+          RFIELD(IJ,7) = ROAIRO(IJ,IG)
+          RFIELD(IJ,8) = ZIDLOLD(IJ,IG)
+          RFIELD(IJ,9) = CICOVER(IJ,IG)
+          RFIELD(IJ,10) = CITHICK(IJ,IG)
           IF(LUAL) THEN
-            RFIELD(IJ,10) = U(IJ,IG) 
-          ELSE
-            RFIELD(IJ,10) = 0.0_JWRB
-          ENDIF
-          IF(LVAL) THEN
-            RFIELD(IJ,11) = V(IJ,IG) 
+            RFIELD(IJ,11) = U(IJ,IG) 
           ELSE
             RFIELD(IJ,11) = 0.0_JWRB
+          ENDIF
+          IF(LVAL) THEN
+            RFIELD(IJ,12) = V(IJ,IG) 
+          ELSE
+            RFIELD(IJ,12) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDDO

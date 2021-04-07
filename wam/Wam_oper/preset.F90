@@ -119,7 +119,7 @@
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,NPROMA_WAM,   &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
       USE YOWSPEC  , ONLY : NSTART   ,NEND     ,U10OLD   ,THWOLD   ,    &
-     &            USOLD    ,Z0OLD    ,TAUW     ,FL1      ,              &
+     &            USOLD    ,Z0OLD    ,TAUW     ,TAUWDIR  ,FL1      ,    &
      &            ROAIRO   ,ZIDLOLD  ,NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH     ,   &
@@ -133,7 +133,7 @@
       USE YOWUNIT  , ONLY : IU12     ,IU14     ,IU15     ,              &
      &            IUSCR
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,CDATEWO  ,CDATEFL  ,    &
-     &            LLNEWCURR,NXFF     ,NYFF    
+     &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN    
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
@@ -343,10 +343,6 @@
 
       IF (LLUNSTR) THEN
 
-#if !defined NETCDF_OUTPUT_WAM
-        WRITE (IU06,'(''LLUNSTR=T needs to be compiled with NETCDF_OUTPUT_WAM '')')
-        CALL ABORT1
-#endif
         IJS(1) = 1
         IJL(1) = NIBLO
         IJLT(1)= NIBLO
@@ -502,15 +498,17 @@
       IF(.NOT.ALLOCATED(USOLD)) ALLOCATE(USOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(Z0OLD)) ALLOCATE(Z0OLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(TAUW)) ALLOCATE(TAUW(NIBLO,NBLO))
+      IF(.NOT.ALLOCATED(TAUWDIR)) ALLOCATE(TAUWDIR(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(ROAIRO)) ALLOCATE(ROAIRO(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(ZIDLOLD)) ALLOCATE(ZIDLOLD(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CICOVER)) ALLOCATE(CICOVER(NIBLO,NBLO))
       IF(.NOT.ALLOCATED(CITHICK)) ALLOCATE(CITHICK(NIBLO,NBLO))
-      U10OLD(:,:) = 0.0_JWRB
+      U10OLD(:,:) = WSPMIN
       THWOLD(:,:) = 0.0_JWRB
-      USOLD(:,:) = 0.0_JWRB
-      TAUW(:,:) = 0.0_JWRB
-      Z0OLD(:,:) = 0.0_JWRB
+      USOLD(:,:) =  U10OLD(:,:)*0.035847_JWRB
+      TAUW(:,:) = 0.1_JWRB*USOLD(:,:)
+      TAUWDIR(:,:) = THWOLD(:,:)
+      Z0OLD(:,:) = 0.00001_JWRB
       ROAIRO(:,:) = ROAIR      
       ZIDLOLD(:,:) = 0.0_JWRB
       CICOVER(:,:) = 0.0_JWRB
@@ -526,7 +524,7 @@
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=.FALSE.
 
-        CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                   &
+        CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                        &
      &                ROAIRO, ZIDLOLD,                                  &
      &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
@@ -534,10 +532,12 @@
      &                NFIELDS, NGPTOTG, NC, NR,                         &
      &                FIELDS, LWCUR, MASK_IN)
 
+      TAUW(:,:) = 0.1_JWRB * USOLD(:,:)**2
+
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. PREWIND DONE'
 
       ELSE
-        IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO ZERO'
+        IF (ITEST.GT.0) WRITE (IU06,*) ' WIND SET TO LOW DEFAULTS'
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -588,7 +588,7 @@
       WRITE(IU06,*) 'MINVAL OF U10OLD = ',MINVAL(U10OLD)
       WRITE(IU06,*) 'MAXVAL OF U10OLD = ',MAXVAL(U10OLD)
       IF (.NOT.LGRIBOUT) THEN
-        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,              &
+        CALL SAVSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD,     &
      &                 ROAIRO, ZIDLOLD, CICOVER, CITHICK,               &
      &                 NBLKS, NBLKE, CDATEA, CDATEA)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. SAVSTRESS DONE'
@@ -599,6 +599,7 @@
       IF(ALLOCATED(USOLD)) DEALLOCATE(USOLD)
       IF(ALLOCATED(Z0OLD)) DEALLOCATE(Z0OLD)
       IF(ALLOCATED(TAUW)) DEALLOCATE(TAUW)
+      IF(ALLOCATED(TAUWDIR)) DEALLOCATE(TAUWDIR)
       IF(ALLOCATED(ROAIRO)) DEALLOCATE(ROAIRO)
       IF(ALLOCATED(ZIDLOLD)) DEALLOCATE(ZIDLOLD)
       IF(ALLOCATED(CICOVER)) DEALLOCATE(CICOVER)

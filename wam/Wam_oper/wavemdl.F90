@@ -103,7 +103,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
-     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS, RNU, RNUM,           &
+     &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,                      &
      &         KCOUSTEP, LMASK_OUT_NOT_SET, LMASK_TASK_STR,             &
      &         I_MASK_OUT, J_MASK_OUT, N_MASK_OUT, LWNEMOCOU,           &
      &         LWNEMOCOUSEND, LWNEMOCOURECV, LWNEMOCOUSTK,              &
@@ -113,15 +113,17 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWGRIBHD, ONLY : DATE_TIME_WINDOW_END
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
+      USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
-      USE YOWICE   , ONLY : CICOVER  ,CITHICK
+      USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,FLMIN
       USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
-      USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,     &
-     &            TAUOC    ,USTOKES  ,VSTOKES  ,STRNMS
+      USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,TAUOCXD  ,TAUOCYD ,     &
+     &            PHIOCD   ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE    ,     &
      &                      NBLO     ,LL1D
-      USE YOWPCONS , ONLY : ZMISS    ,G
+      USE YOWPCONS , ONLY : ZMISS    ,G        ,GM1
+      USE YOWPHYS  , ONLY : RNU      ,RNUM     ,ALPHA
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,LSARINV  ,NPROMA_WAM,   &
@@ -130,8 +132,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWWNDG  , ONLY : ICODE_CPL
       USE YOWTEXT  , ONLY : LRESTARTED
       USE YOWSPEC, ONLY : U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,      &
-     &            TAUW   ,BETAOLD   ,ROAIRO   ,ZIDLOLD  ,               &
-     &            NSTART ,NEND     ,FL1      ,FL3
+     &            Z0B    ,BETAOLD  ,ROAIRO   ,ZIDLOLD  ,                &
+     &            NSTART ,NEND     ,FL1
       USE YOWWIND  , ONLY : CDAWIFL  ,IUNITW ,CDATEWO  ,CDATEFL
       USE YOWNEMOP , ONLY : NEMODP
       USE GRIB_API_INTERFACE
@@ -251,6 +253,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: FAVG,FMIN,FMAX
       REAL(KIND=JWRB), DIMENSION(NWVFIELDS) :: DEFVAL
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP) :: BETAB
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:), ZCOMBUFR(:)
       REAL(KIND=JWRB), ALLOCATABLE :: WVBLOCK(:,:)
 
@@ -269,7 +272,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       LOGICAL, SAVE :: LFRST
       LOGICAL, SAVE :: LLGRAPI
-      LOGICAL :: L1STCALL
       LOGICAL :: LLGLOBAL_WVFLDG
       LOGICAL :: LLINIT
       LOGICAL :: LLALLOC_FIELDG_ONLY
@@ -290,6 +292,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LIFS_IO_SERV_ENABLED = LDIFS_IO_SERV_ENABLED
       ZMISS=RMISS
       G=G*PRPLRG ! modified for small planet
+      GM1 = 1.0_JWRB/G
 
       RNU=RNU_ATM
       RNUM=RNUM_ATM
@@ -346,8 +349,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       IREAD=1
       IF(NPROC.EQ.1) IREAD=1
-
-      IF(ALLOCATED(FL3)) DEALLOCATE(FL3)
 
 
       IF (FRSTIME) THEN
@@ -434,9 +435,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  BETAOLD(KIJS)) 
+     &                  Z0B(KIJS),                                      &
+     &                  BETAOLD(KIJS), BETAB(KIJS) ) 
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1443,1)
@@ -450,7 +452,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         KQGAUSS=IQGAUSS
 
         FRSTIME = .FALSE.                                              
-        L1STCALL = .TRUE.
 
         IF (ITEST.GE.1) THEN
           WRITE(IU06,*) ' SUB. WAVEMDL: INITMDL DONE'                 
@@ -554,14 +555,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
         KQGAUSS=IQGAUSS
 
-        L1STCALL = .FALSE.
-
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
 !       ---------------------------------------------------
         LLINIT=.FALSE.
         LLALLOC_FIELDG_ONLY=LWCOU
 !       !!!! PREWIND IS CALLED THE FIRST TIME IN INITMDL !!!!
-        CALL PREWIND (U10OLD, THWOLD, USOLD, TAUW, Z0OLD,               &
+        CALL PREWIND (U10OLD, THWOLD, USOLD, Z0OLD,                     &
      &                ROAIRO, ZIDLOLD,                                  &
      &                CICOVER, CITHICK,                                 &
      &                LLINIT, LLALLOC_FIELDG_ONLY,                      &
@@ -576,10 +575,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       ENDIF
 
-!!test: reallocating the memory that was freed
-
-      IF(.NOT.ALLOCATED(FL3)) ALLOCATE(FL3(NINF-1:NSUP,NANG,NFRE))
-
 
 ! --------------------------------------------------------------------  
 
@@ -588,7 +583,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       CALL SETMARSTYPE
 
-      CALL WAMODEL (NADV, LDSTOP, LDWRRE, L1STCALL)
+      CALL WAMODEL (NADV, LDSTOP, LDWRRE)
 
       IF (ITEST.GE.1) THEN
         WRITE(IU06,*) ' SUB. WAVEMDL: WAMODEL DONE'
@@ -701,10 +696,10 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         FLABEL(1)=' Charnock'
         DEFVAL(1)=PRCHAR ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                          ! THE WAVE MODEL ICE FREE SEA POINTS.
-                         !  !!! NO LONGER USED OVER SEA ICE SEE *BETADEF*
-                         ! BUT WELL OVER LAND POINTS.
+        FLABEL(2)=' Eqv Chnk'
+        DEFVAL(2)=PRCHAR-ALPHA
 
-          IFLDOFFSET=1
+        IFLDOFFSET=2
 
         IF(LWSTOKES) THEN
 !         2. U-STOKESDRIFT
@@ -721,34 +716,34 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         ENDIF
 
         IF(LWFLUX) THEN
-!         4. ENERGY FLUX TO OCEAN
+!         4. ENERGY FLUX TO OCEAN (dimensional)
           IFLDOFFSET=IFLDOFFSET+1
-          FLABEL(IFLDOFFSET)=' Phi_oc'
+          FLABEL(IFLDOFFSET)=' Phi_ocd'
           DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!         5. ENERGY FLUX TO WAVES
+!         5. X-COMPONENT OF THE MOMENTUM FLUX TO OCEAN (dimensional)
           IFLDOFFSET=IFLDOFFSET+1
-          FLABEL(IFLDOFFSET)=' Phi_aw'
+          FLABEL(IFLDOFFSET)=' Tau_ocx'
           DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!         6. MOMENTUM FLUX TO OCEAN
+!         6. X-COMPONENT OF THE MOMENTUM FLUX TO OCEAN (dimensional)
           IFLDOFFSET=IFLDOFFSET+1
-          FLABEL(IFLDOFFSET)=' Tau_oc'
+          FLABEL(IFLDOFFSET)=' Tau_ocy'
           DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
 
-!         7. WAVE VARIANCE
+!         7. WINDSEA VARIANCE
           IFLDOFFSET=IFLDOFFSET+1
-          FLABEL(IFLDOFFSET)=' Emean'
-          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
-                                       ! THE WAVE MODEL ICE FREE SEA POINTS.
+          FLABEL(IFLDOFFSET)=' WSEmean'
+          DEFVAL(IFLDOFFSET)=FLMIN  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+                                    ! THE WAVE MODEL ICE FREE SEA POINTS.
   
-!         8. MEAN FREQUENCY
+!         8. WINDSEA MEAN FREQUENCY
           IFLDOFFSET=IFLDOFFSET+1
-          FLABEL(IFLDOFFSET)=' Fmean'
-          DEFVAL(IFLDOFFSET)=0.0_JWRB  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
+          FLABEL(IFLDOFFSET)=' WSFmean'
+          DEFVAL(IFLDOFFSET)=FR(NFRE)  ! DEFAULT VALUE FOR GRID POINTS NOT COVERED BY
                                        ! THE WAVE MODEL ICE FREE SEA POINTS.
         ENDIF
 
@@ -758,16 +753,17 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL OUTBETA (KIJS, KIJL, U10OLD(KIJS,IG),                    &
+          CALL OUTBETA (KIJS, KIJL, PRCHAR, U10OLD(KIJS,IG),            &
      &                  USOLD(KIJS,IG), Z0OLD(KIJS,IG),                 &
-     &                  WVBLOCK(KIJS,1))
+     &                  Z0B(KIJS),                                      &
+     &                  WVBLOCK(KIJS,1), WVBLOCK(KIJS,2) )
 
           BETAOLD(KIJS:KIJL)=WVBLOCK(KIJS:KIJL,1)
 
 !         SURFACE STOKES DRIFT NEEDED FOR THE IFS
 !         IT MIGHT ALSO BE USED FOR NEMO !!!!!!!!!! 
 
-          IFLDOFFSET=1
+          IFLDOFFSET=2
           IF(LWSTOKES) THEN
             IFLDOFFSET=IFLDOFFSET+1
             WVBLOCK(KIJS:KIJL,IFLDOFFSET)=USTOKES(KIJS:KIJL)
@@ -777,15 +773,15 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
           IF(LWFLUX) THEN
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIEPS(KIJS:KIJL)
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIOCD(KIJS:KIJL)
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=PHIAW(KIJS:KIJL)
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOCXD(KIJS:KIJL)
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOC(KIJS:KIJL)
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=TAUOCYD(KIJS:KIJL)
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=EMEAN(KIJS:KIJL)
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=WSEMEAN(KIJS:KIJL)
             IFLDOFFSET=IFLDOFFSET+1
-            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=FMEAN(KIJS:KIJL)
+            WVBLOCK(KIJS:KIJL,IFLDOFFSET)=WSFMEAN(KIJS:KIJL)
           ENDIF
 
           DO IFLD=IFLDOFFSET+1,NWVFIELDS

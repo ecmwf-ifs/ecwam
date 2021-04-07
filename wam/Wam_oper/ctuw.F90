@@ -1,4 +1,4 @@
-SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
+SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 ! ----------------------------------------------------------------------
 
 !**** *CTUW* - COMPUTATION OF THE CONER TRANSPORT SCHEME WEIGHTS.
@@ -13,10 +13,9 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CTUW(MIJS, MIJL, IG, LCFLFAIL, ICALL)*
+!       *CALL* *CTUW(MIJS, MIJL, LCFLFAIL, ICALL)*
 !          *MIJS*     - INDEX OF FIRST POINT.
 !          *MIJL*     - INDEX OF LAST POINT.
-!          *IG*       - BLOCK NUMBER.
 !          *LCFLFAIL* - TRUE IF CFL CRITERION WAS VIOLATED.
 !          *ICALL*    - INDICATES IF IT IS THE FIRST OR SECOND CALL
 !                       THE SECOND CALL WILL TRY TO TEST WHETHER OR NOT
@@ -69,11 +68,11 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
 
       INTEGER(KIND=JWIM),INTENT(IN) :: MIJS
       INTEGER(KIND=JWIM),INTENT(IN) :: MIJL
-      INTEGER(KIND=JWIM),INTENT(IN) :: IG
       INTEGER(KIND=JWIM),INTENT(IN) :: ICALL
       LOGICAL,DIMENSION(MIJS:MIJL),INTENT(INOUT) :: LCFLFAIL
 
 
+      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IP,IJP
       INTEGER(KIND=JWIM) :: K,M,IJ,IC,IX,KY,KK,KKM
       INTEGER(KIND=JWIM) :: KP1,KM1,JH
@@ -113,6 +112,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
 
       IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
+      IG=1
       DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
 
@@ -335,15 +335,18 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                     LCFLFAIL(IJ)=.TRUE.
                   ENDIF
                   IF(ADYP(IC).GT.XDELLA)THEN
+                    XLON=AMOWEP+(IX-1)*ZDELLO(KY)
+                    XLAT=AMOSOP+(KY-1)*XDELLA
+                    DTNEW=XDELLA*DELPRO/ADYP(IC)
                     WRITE (IU06,*) '********************************'
                     WRITE (IU06,*) '* CTUW:                        *'
                     WRITE (IU06,*) '* CFL VIOLATED IN Y DIRECTION. *'
                     WRITE (IU06,*) '* ADYP SHOULD BE < XDELLA, BUT *'
                     WRITE (IU06,*) '* ADYP = ',ADYP(IC),IC
                     WRITE (IU06,*) '* XDELLA = ',XDELLA
-                    DTNEW=XDELLA*DELPRO/ADYP(IC)
-                    WRITE (IU06,*) '* TIME STEP SHOULD BEREDUCED TO',   &
-     &                              DTNEW
+                    WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
+                    WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+                    WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO', DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
                     LCFLFAIL(IJ)=.TRUE.
@@ -603,6 +606,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                 WRITE(IU06,*) '*                                 *'
                 WRITE(IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
               ENDDO
             ENDDO
@@ -619,6 +623,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
             ENDDO
 
@@ -635,6 +640,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
               ENDDO
             ENDDO
@@ -651,6 +657,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                 WRITE (IU06,*) '*                                 *'
                 WRITE (IU06,*) '***********************************'
                 LCFLFAIL(IJ)=.TRUE.
+                CALl FLUSH(IU06)
               ENDIF
             ENDDO
 
@@ -675,6 +682,7 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
                   WRITE(0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ,IG),V(IJ,IG)
 
                   LCFLFAIL(IJ)=.TRUE.
+                  CALl FLUSH(IU06)
                 ENDIF
               ENDDO
 
@@ -727,6 +735,8 @@ SUBROUTINE CTUW (MIJS, MIJL, IG, LCFLFAIL, ICALL)
               WRITE(IU06,*) '*                                 *'
               WRITE(IU06,*) '***********************************'
               LCFLFAIL(IJ)=.TRUE.
+
+              CALl FLUSH(IU06)
             ENDIF
 
           ENDDO  ! END LOOP OVER GRID POINTS

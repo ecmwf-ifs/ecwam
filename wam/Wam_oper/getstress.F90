@@ -1,4 +1,4 @@
-      SUBROUTINE GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, Z0OLD,          &
+      SUBROUTINE GETSTRESS(U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD, &
      &                     ROAIRO, ZIDLOLD, CICOVER, CITHICK,           &
      &                     NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
@@ -13,11 +13,12 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL**GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,NBLKS,NBLKE,IREAD)
+!     *CALL**GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,NBLKS,NBLKE,IREAD)
 !     *U10OLD*    WIND SPEED.
 !     *THWOLD*    WIND DIRECTION (RADIANS).
 !     *USOLD*     FRICTION VELOCITY.
 !     *TAUW*      WAVE STRESS.
+!     *TAUWDIR*   WAVE STRESS DIRECTION.
 !     *Z0OLD*     ROUGHNESS LENGTH IN M.
 !     *ROAIRO*    AIR DENSITY IN KG/M3.
 !     *ZIDLOLD*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
@@ -80,7 +81,7 @@
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::       &
-     &                    U10OLD, THWOLD, USOLD, Z0OLD, TAUW,           &
+     &                    U10OLD, THWOLD, USOLD, Z0OLD, TAUW, TAUWDIR,  &
      &                    ROAIRO, ZIDLOLD, CICOVER, CITHICK 
 
       INTEGER(KIND=JWIM) :: IBUFLENGTH
@@ -125,11 +126,12 @@
       IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
-        CALL BUILDSTRESS(MIJS, MIJL,                                    &
-     &                   U10OLD(MIJS,IG), THWOLD(MIJS,IG),              &
-     &                   USOLD(MIJS,IG), TAUW(MIJS,IG), Z0OLD(MIJS,IG), &
-     &                   ROAIRO(MIJS,IG), ZIDLOLD(MIJS,IG),             &
-     &                   CICOVER(MIJS,IG), CITHICK(MIJS,IG),            &
+        CALL BUILDSTRESS(MIJS, MIJL,                                      &
+     &                   U10OLD(MIJS,IG), THWOLD(MIJS,IG),                &
+     &                   USOLD(MIJS,IG), TAUW(MIJS,IG), TAUWDIR(MIJS,IG), &
+     &                   Z0OLD(MIJS,IG),                                  &
+     &                   ROAIRO(MIJS,IG), ZIDLOLD(MIJS,IG),               &
+     &                   CICOVER(MIJS,IG), CITHICK(MIJS,IG),              &
      &                   IREAD)
         IF(ITEST.GE.1) WRITE(IU06,*)'SUB. GETSTRESS: BUILDSTRESS CALLED'
       ELSE
@@ -181,11 +183,12 @@
             THWOLD(IJ,IG)=RFIELD(IJ,2)
             USOLD(IJ,IG)=RFIELD(IJ,3)
             TAUW(IJ,IG)=RFIELD(IJ,4)
-            Z0OLD(IJ,IG)=RFIELD(IJ,5)
-            ROAIRO(IJ,IG)=RFIELD(IJ,6)
-            ZIDLOLD(IJ,IG)=RFIELD(IJ,7)
-            CICOVER(IJ,IG)=RFIELD(IJ,8)
-            CITHICK(IJ,IG)=RFIELD(IJ,9)
+            TAUWDIR(IJ,IG)=RFIELD(IJ,5)
+            Z0OLD(IJ,IG)=RFIELD(IJ,6)
+            ROAIRO(IJ,IG)=RFIELD(IJ,7)
+            ZIDLOLD(IJ,IG)=RFIELD(IJ,8)
+            CICOVER(IJ,IG)=RFIELD(IJ,9)
+            CITHICK(IJ,IG)=RFIELD(IJ,10)
 !           for U and V see below
           ENDDO
         ENDDO
@@ -197,8 +200,8 @@
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
             DO IJ=KIJS,KIJL
-              U(IJ,IG)=RFIELD(IJ,10)
-              V(IJ,IG)=RFIELD(IJ,11)
+              U(IJ,IG)=RFIELD(IJ,11)
+              V(IJ,IG)=RFIELD(IJ,12)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
@@ -334,7 +337,7 @@
 
 
       IF(LNSESTART .AND. .NOT.LRESTARTED) THEN
-!       WHEn INITAL SPECTRA SET TO NOISE LEVEL,
+!       WHEN INITAL SPECTRA SET TO NOISE LEVEL,
 !       RESET WAVE INDUCED STRESS TO ZERO 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
         DO JKGLO=IJS(IG),IJL(IG),NPROMA

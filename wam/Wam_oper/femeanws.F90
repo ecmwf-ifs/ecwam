@@ -4,16 +4,13 @@
 
 !**** *FEMEANWS* - COMPUTATION OF MEAN ENERGY, MEAN FREQUENCY 
 !                  FOR WINDSEA PART OF THE SPECTRUM AS DETERMINED
-!                  BY THE EMPIRICAL LAW BASED ON WAVE AGE AND
-!                  THE DIRECTIOn WITH RESPECT TO THE WIND DIRECTION
-!                  (SEE LLWS)
+!                  BY XLLWS
 
 !*    PURPOSE.
 !     --------
 
 !       COMPUTE MEAN FREQUENCY AT EACH GRID POINT FOR PART OF THE
-!       SPECTRUM WHERE LLWS IS TRUE OR THE WINDSEA PARAMETRIC LAW
-!       APPLIES.
+!       SPECTRUM WHERE XLLWS IS NON ZERO.
 
 !**   INTERFACE.
 !     ----------
@@ -45,10 +42,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMOFR  ,DELTH    ,    &
-     &                WETAIL    ,FRTAIL     ,TH    ,C     ,FRIC    
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+     &                WETAIL    ,FRTAIL
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : EPSMIN
 
 ! ----------------------------------------------------------------------
 
@@ -60,7 +57,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EM, FM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F, XLLWS
 
-      REAL(KIND=JWRB) :: DELT25, DELT2, CM, CHECKTA
+      REAL(KIND=JWRB) :: DELT25, DELT2
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP2
 

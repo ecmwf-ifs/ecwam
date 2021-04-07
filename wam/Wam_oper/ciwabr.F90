@@ -42,7 +42,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     , DELTH     ,GOM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE , CDICWA
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2    ,EPSMIN
       USE YOWSHAL  , ONLY : TCGOND  ,TFAK      ,INDEP
       USE YOWSTAT  , ONLY : IDELT   ,ISHALLO 
       USE YOWTEST  , ONLY : IU06    ,ITEST
@@ -58,7 +58,6 @@
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: CIWAB
 
       INTEGER(KIND=JWIM) :: K, M, IJ
-      REAL(KIND=JWRB) :: ZPI4G2 
       REAL(KIND=JWRB) :: EWH 
       REAL(KIND=JWRB) :: X, ALP
       REAL(KIND=JWRB),DIMENSION(NFRE) :: XK2 
@@ -93,9 +92,8 @@
             ENDDO
           ENDDO
         ELSE
-          ZPI4G2=ZPI**4/G**2
           DO M=1,NFRE
-            XK2(M)=ZPI4G2*FR(M)**4
+            XK2(M)=ZPI4GM2*FR(M)**4
           ENDDO
           DO M=1,NFRE
             DO K=1,NANG

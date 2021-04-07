@@ -76,7 +76,7 @@ PUBLIC :: PROPAG_UNWAM, &
      &    SET_UNWAM_HANDLES, &
      &    SPHERICAL_COORDINATE_DISTANCE, &
      &    UNWAM_OUT, &
-     &    EXCHANGE_FOR_FL1_FL3_SL
+     &    EXCHANGE_FOR_FL1
 
 !     THE FOLLOWING FLAG ARE PART OF THE INPUT NAMELIST
 !     SEE *MPUSERIN*
@@ -116,15 +116,15 @@ INTERFACE UNWAM_OUT
   MODULE PROCEDURE UNWAM_OUT
 END INTERFACE
 
-INTERFACE EXCHANGE_FOR_FL1_FL3_SL
-  MODULE PROCEDURE EXCHANGE_FOR_FL1_FL3_SL
+INTERFACE EXCHANGE_FOR_FL1
+  MODULE PROCEDURE EXCHANGE_FOR_FL1
 END INTERFACE
 
       CONTAINS
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE PROPAG_UNWAM(FL1, FL3)
+      SUBROUTINE PROPAG_UNWAM(FL1, FLNEW)
 
 !     Purpose.: Advects the spectra using non-vectorized RD-schemes
 !     --------
@@ -171,7 +171,7 @@ END INTERFACE
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(INOUT)  :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT)    :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(OUT)    :: FLNEW(NINF-1:NSUP,NANG,NFRE)
  
       INTEGER(KIND=JWIM) :: IS, ID, IP
       REAL(KIND=JWRU) :: FLsing(NANG,NFRE)
@@ -192,24 +192,24 @@ END INTERFACE
         CALL APPLY_BOUNDARY_CONDITION(FL1)
       END IF
       IF (LIMPLICIT) THEN
-        CALL IMPLICIT_N_SCHEME_BLOCK(FL1, FL3)
+        CALL IMPLICIT_N_SCHEME_BLOCK(FL1, FLNEW)
       ELSE
         IF (LVECTOR) THEN 
-          CALL EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
+          CALL EXPLICIT_N_SCHEME_VECTOR(FL1,FLNEW)
         ELSE
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ID,IS)
           DO ID = 1, NANG
             DO IS = 1, NFRE
-              CALL EXPLICIT_N_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
-             !CALL EXPLICIT_PSI_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
-             !CALL EXPLICIT_LF_SCHEME(IS,ID,FL1(:,ID,IS),FL3(:,ID,IS))
+              CALL EXPLICIT_N_SCHEME(IS,ID,FL1(:,ID,IS),FLNEW(:,ID,IS))
+             !CALL EXPLICIT_PSI_SCHEME(IS,ID,FL1(:,ID,IS),FLNEW(:,ID,IS))
+             !CALL EXPLICIT_LF_SCHEME(IS,ID,FL1(:,ID,IS),FLNEW(:,ID,IS))
             END DO
           END DO
 !$OMP     END PARALLEL DO
           DO IP=1,MNP
-            FLsing=REAL(FL3(IP,:,:), JWRU)
+            FLsing=REAL(FLNEW(IP,:,:), JWRU)
             CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(FLsing, IP)
-            FL3(IP,:,:)=REAL(FLsing,JWRB)
+            FLNEW(IP,:,:)=REAL(FLsing,JWRB)
           END DO
         ENDIF
       ENDIF
@@ -944,7 +944,7 @@ END INTERFACE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EXCHANGE_FOR_FL1_FL3_SL (AC)
+      SUBROUTINE EXCHANGE_FOR_FL1 (AC)
       USE YOWMPP   , ONLY : NINF, NSUP
       IMPLICIT NONE
       REAL(KIND=JWRB), intent(inout) :: AC(NINF-1:NSUP,NANG,NFRE)
@@ -963,7 +963,7 @@ END INTERFACE
         ENDDO
       ENDDO
 
-      END SUBROUTINE EXCHANGE_FOR_FL1_FL3_SL
+      END SUBROUTINE EXCHANGE_FOR_FL1
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -2422,7 +2422,7 @@ END INTERFACE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR(FL1,FL3)
+      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR(FL1,FLNEW)
       USE MPL_MPIF
       USE YOWUNPOOL
       USE yowpd, only: comm
@@ -2456,7 +2456,7 @@ END INTERFACE
       IMPLICIT NONE
 
       REAL(KIND=JWRB), INTENT(IN) :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT) :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(NINF-1:NSUP,NANG,NFRE)
 !
 ! local INTEGER
 !
@@ -2864,7 +2864,7 @@ END INTERFACE
 
       
       DO ip = 1 , mnp
-         FL3(ip,:,:) = REAL(u(:,:,ip),JWRB)
+         FLNEW(ip,:,:) = REAL(u(:,:,ip),JWRB)
       ENDDO
 
       END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
@@ -3192,7 +3192,7 @@ END INTERFACE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE IMPLICIT_N_SCHEME_BLOCK(FL1, FL3)
+      SUBROUTINE IMPLICIT_N_SCHEME_BLOCK(FL1, FLNEW)
       USE MPL_MPIF
       USE yowpd, only : comm
       USE yowpd, only : np_global
@@ -3208,7 +3208,7 @@ END INTERFACE
       INTEGER(KIND=JWIM) :: ierr
 
       REAL(KIND=JWRB), INTENT(IN)  :: FL1(NINF-1:NSUP,NANG,NFRE)
-      REAL(KIND=JWRB), INTENT(OUT) :: FL3(NINF-1:NSUP,NANG,NFRE)
+      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(NINF-1:NSUP,NANG,NFRE)
 
       REAL(KIND=JWRU) MaxNorm, SumNorm, p_is_converged
       REAL(KIND=JWRU) eSum(NANG,NFRE)
@@ -3560,18 +3560,18 @@ END INTERFACE
        END IF
       END DO
 #ifdef DEBUG
-      WRITE(740+MyRankGlobal,*) 'Leaving SOLVER sum(FL3)=', sum(FL3(1:MNP,:,:))
+      WRITE(740+MyRankGlobal,*) 'Leaving SOLVER sum(FLNEW)=', sum(FLNEW(1:MNP,:,:))
 #endif
       DO ip = 1,mnp
         FLsing=MAX(ZERO,AC2(:,:,IP))
         CALL REFRACTION_FREQSHIFT_EXPLICIT_SINGLE(FLsing, ip)
-        FL3(IP,:,:) = REAL(FLsing,JWRB)
+        FLNEW(IP,:,:) = REAL(FLsing,JWRB)
       END DO
       END SUBROUTINE IMPLICIT_N_SCHEME_BLOCK
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF(FL1,FL3)
+      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF(FL1,FLNEW)
       USE MPL_MPIF
       USE YOWUNPOOL
       USE yowpd, ONLY : comm
@@ -3609,7 +3609,7 @@ END INTERFACE
 ! local double
 !
       REAL(KIND=JWRB), INTENT(IN) :: FL1(:,:,:)
-      REAL(KIND=JWRB), INTENT(OUT) :: FL3(:,:,:)
+      REAL(KIND=JWRB), INTENT(OUT) :: FLNEW(:,:,:)
       REAL(KIND=JWRU)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
       REAL(KIND=JWRU)  :: DTMAX_GLOBAL_EXP_LOC
       REAL(KIND=JWRU)  :: REST, CFLXY, DT4AI
@@ -3780,27 +3780,9 @@ END INTERFACE
       ENDDO
  
       DO ip = 1 , mnp
-         fl3(ip,:,:) = REAL(u(:,:,ip),JWRB)
+         flnew(ip,:,:) = REAL(u(:,:,ip),JWRB)
       ENDDO
       END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE CHECKS_GROWTH
-      USE YOWMPP   , ONLY : NINF, NSUP
-      USE YOWSPEC, ONLY   : FL1, FL3
-      IMPLICIT NONE
-      IF (allocated(FL1) .and. allocated(FL3)) THEN
-        WRITE(740+MyRankGlobal,*) 'sum(FL1/FL3)=', sum(FL1), sum(FL3)
-      END IF
-      IF (.NOT.(allocated(FL1)) .and. allocated(FL3)) THEN
-        WRITE(740+MyRankGlobal,*) 'sum(FL3)=', sum(FL3)
-      END IF
-      IF (allocated(FL1) .and. .NOT.(allocated(FL3))) THEN
-        WRITE(740+MyRankGlobal,*) 'sum(FL1)=', sum(FL1)
-      END IF
-      FLUSH(740+MyRankGlobal)
-      END SUBROUTINE CHECKS_GROWTH
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

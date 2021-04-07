@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 
-      SUBROUTINE SETICE (FL3, IJS, IJL, CICVR, U10NEW, THWNEW)
+      SUBROUTINE SETICE (FL1, IJS, IJL, CICVR, U10NEW, THWNEW)
 
 !-----------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 !     PURPOSE.
 !     -------
 
-!          *SETICE* SET ICE SPECTRA (FL3) TO NOISE LEVEL 
+!          *SETICE* SET ICE SPECTRA (FL1) TO NOISE LEVEL 
 
 !**   INTERFACE.
 !     ----------
@@ -50,7 +50,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
@@ -86,7 +86,7 @@
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS,IJL
-            FL3(IJ,K,M)=FL3(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
+            FL1(IJ,K,M)=FL1(IJ,K,M)*ICEFREE(IJ)+TEMP(IJ)*SPRD(IJ,K)
           ENDDO
         ENDDO
       ENDDO

@@ -9,14 +9,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ)
+!       *CALL* *FRCUTINDEX (IJS, IJL, FM, FMWS, CICVR, MIJ, RHOWGDFTH)
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *USNEW*  - FRICTION VELOCITY IN M/S
 !          *CICVR*  - CICVR 
-!          *MIJ*    - LAST FREQUENCY INDEX
+!          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
@@ -51,12 +51,13 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
+     &                ZPIFR,                                            &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,EPSMIN
+      USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -85,7 +86,7 @@
 !     ------------------------------------------------------------
 
       FPMH = TAILFACTOR/FR(1)
-      FPPM = TAILFACTOR_PM*G/(FRIC*ZPI*FR(1))
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
 
       DO IJ=IJS,IJL
         IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN

@@ -1,7 +1,7 @@
       SUBROUTINE FNDPRT (IJS, IJL, NPMAX,                               &
      &                   NPEAK, MIJ, NTHP, NFRP,                        &
      &                   FLLOW, LLCOSDIFF, FLNOISE,                     &
-     &                   FL3, SWM,                                      &
+     &                   FL1, SWM,                                      &
      &                   ENE, DIR, PER)
 
 ! ----------------------------------------------------------------------
@@ -25,7 +25,7 @@
 !       *CALL* *FNDPRT (IJS, IJL, NPMAX,
 !     &                 NPEAK, MIJ, NTHP, NFRP,
 !     &                 FLLOW, LLCOSDIFF, FLNOISE,
-!     &                 FL3, SWM,
+!     &                 FL1, SWM,
 !     &                 ENE, DIR, PER)
 
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
@@ -38,7 +38,7 @@
 !          *FLLOW*  - MINIMUM ENERGY LEVEL
 !          *LLCOSDIFF* LOGICAL (COSDIFF.LT.-0.4)
 !          *FLNOISE* - SPECTRAL NOISE LEVEL
-!          *FL3*    - BLOCK OF SPECTRA
+!          *FL1*    - BLOCK OF SPECTRA
 !          *SWM*    - ORIGINAL SWELL MASK
 !                     IT MIGHT NEED TO BE ADJUSTED
 !                     THIS IS POSSIBLE BECAUSE WE SUPPLY SWELL SPECTRA
@@ -78,7 +78,7 @@
       INTEGER(KIND=JWIM), INTENT(IN), DIMENSION(IJS:IJL,NPMAX) :: NTHP, NFRP
 
       REAL(KIND=JWRB), INTENT(IN), DIMENSION(IJS:IJL) :: FLNOISE
-      REAL(KIND=JWRB), INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL3
+      REAL(KIND=JWRB), INTENT(IN), DIMENSION(IJS:IJL,NANG,NFRE) :: FLLOW, FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: SWM
       REAL(KIND=JWRB), INTENT(OUT), DIMENSION(IJS:IJL,0:NPMAX) :: DIR, PER, ENE
 
@@ -121,7 +121,7 @@
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=IJS,IJL
-            IF(FL3(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
+            IF(FL1(IJ,K,M).LE.FLLOW(IJ,K,M)) THEN
               W1(IJ,K,M) = 1._JWRB
               LLW3(IJ,K,M) = .FALSE.
             ELSE
@@ -204,7 +204,7 @@
                     ITHL = 1 + MOD(NANG+ITHR-1,NANG)
                     DO IFRL=MAX(1,M-1), MIN(NFRE,M+1)
                       IF (W2 (ITHL,IFRL).EQ.0.0_JWRB .AND.             &
-     &                    FL3(IJ,ITHL,IFRL).GT.FL3(IJ,K,M)) THEN
+     &                    FL1(IJ,ITHL,IFRL).GT.FL1(IJ,K,M)) THEN
                         LLADD = .FALSE.
                         EXIT OUT1
                       ENDIF
@@ -259,7 +259,7 @@
 
           DO M=1,NFRE
             DO K=1,NANG
-              SPEC(K,M,IP,IJ) = FL3(IJ,K,M)*W2(K,M)
+              SPEC(K,M,IP,IJ) = FL1(IJ,K,M)*W2(K,M)
             ENDDO
           ENDDO
 
@@ -272,7 +272,7 @@
           DO K=1,NANG
             DO M=1,NFRE
               IF(LLCOSDIFF(IJ,K) .AND. W1(IJ,K,M).LE.0.0_JWRB .AND.     &
-     &           FL3(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
+     &           FL1(IJ,K,M) .GT. FLNOISE(IJ) ) THEN
                 W2(K,M) = 1.0_JWRB
                 W1(IJ,K,M) = 1.0_JWRB
                 LLADDPART = .TRUE.
@@ -288,7 +288,7 @@
           IP=NPEAK(IJ)
           DO M=1,NFRE
             DO K=1,NANG
-              SPEC(K,M,IP,IJ) = FL3(IJ,K,M)*W2(K,M)
+              SPEC(K,M,IP,IJ) = FL1(IJ,K,M)*W2(K,M)
             ENDDO
           ENDDO
         ENDIF

@@ -47,7 +47,7 @@
 
       USE YOWFRED  , ONLY : FR
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI      ,G2ZPI4
+      USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -64,7 +64,7 @@
 
       DO M=1,NFRE
         FRH = FR(M)
-        G2ZPI4FRH5M=G2ZPI4/FRH**5
+        G2ZPI4FRH5M=1.0_JWRB/(FRH**5*ZPI4GM2)
         DO IJ=IJS,IJL
           IF (ALPHAJ(IJ).NE.0.0_JWRB .AND. FP(IJ).NE.0.0_JWRB) THEN
             IF (FRH.GT.FP(IJ)) THEN

@@ -110,7 +110,7 @@ PROGRAM CREATE_BATHY
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
       REAL(KIND=JWRB) :: PLANDTRHS, PSHALLOWTRHS 
-      REAL(KIND=JWRB) :: PLONS, XLO, XLA, XI, YJ 
+      REAL(KIND=JWRB) :: XLO, XLA, XI, YJ 
       REAL(KIND=JWRB) :: SEA, XLAND, SEASH 
       REAL(KIND=JWRB) :: OMEGA, XKDEEP, XKDMAX, XX, DEPTH
       REAL(KIND=JWRB) :: STEPT, STEPB, XLATT, XLATB, XLONL, XLONR  
@@ -175,18 +175,19 @@ PROGRAM CREATE_BATHY
 !     IF IT IS THERE IT WILL SUPERSEDE THE OTHER INPUT
 
       FILENAME='grid_description'
+!!!!!!!!!! grid_description is alsoread in uiprep  !!!!!!!!!!
       INQUIRE(FILE=FILENAME,EXIST=LLGRID)
       IF(LLGRID) THEN
         IU=IWAM_GET_UNIT(IU06,FILENAME,'S','F',0)
         OPEN(IU,FILE=FILENAME,STATUS='OLD', FORM='FORMATTED')
-        READ (IU,'(I4)') ISPECTRUNC
-        READ (IU,'(F8.3)') AMONOP
-        READ (IU,'(F8.3)') AMOSOP
-        READ (IU,'(F8.3)') AMOWEP
-        READ (IU,'(F8.3)') AMOEAP
-        READ (IU,'(I4)') IPER
-        READ (IU,'(I4)') IRGG
-        READ (IU,'(I4)') NY
+        READ (IU,*) ISPECTRUNC
+        READ (IU,*) AMONOP
+        READ (IU,*) AMOSOP
+        READ (IU,*) AMOWEP
+        READ (IU,*) AMOEAP
+        READ (IU,*) IPER
+        READ (IU,*) IRGG
+        READ (IU,*) NY
       ENDIF
 
 
@@ -197,11 +198,16 @@ PROGRAM CREATE_BATHY
         NX = 0
         DO K=1,NY
           KSN=NY-K+1
-          READ(IU,'(I4)') NLONRGG(KSN)
+          READ(IU,*) NLONRGG(KSN)
           NX = MAX(NX,NLONRGG(KSN))
         ENDDO
 
-        XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        IF(IPER.EQ.1) THEN
+          XDELLO  = 360._JWRB/REAL(NX)
+          AMOEAP = AMOWEP + 360._JWRB - XDELLO
+        ELSE
+          XDELLO = (AMOEAP-AMOWEP)/(NX-1)
+        ENDIF
 
         CLOSE(IU)
 
@@ -254,11 +260,10 @@ PROGRAM CREATE_BATHY
           WRITE(IU06,*) 'POINTS PER LATITUDES: ',K, XLAT(K), NLONRGG(K)
         ENDIF
 
-        PLONS=(AMOEAP-AMOWEP) + IPER*XDELLO
         IF(IPER.EQ.1) THEN
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K))
+          ZDELLO(K)  = 360._JWRB/REAL(NLONRGG(K))
         ELSE
-          ZDELLO(K)  = PLONS/REAL(NLONRGG(K)-1)
+          ZDELLO(K)  = (AMOEAP-AMOWEP)/REAL(NLONRGG(K)-1)
         ENDIF
       ENDDO
 
@@ -609,7 +614,7 @@ PROGRAM CREATE_BATHY
       OPEN(1,FILE=FILENAME,FORM='FORMATTED')
       WRITE(1,'(6F10.5)')XDELLA,XDELLO,AMOSOP,AMONOP,AMOWEP,AMOEAP
       DO K=1,NY
-         WRITE(1,'(I4.4)') NLONRGG(K) 
+         WRITE(1,*) NLONRGG(K) 
       ENDDO
       DO K=1,NY
          WRITE(CX,'(I4.4)') NLONRGG(K) 

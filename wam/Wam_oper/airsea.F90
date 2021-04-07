@@ -1,4 +1,5 @@
-      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)
+      SUBROUTINE AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, &
+&                        US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
 
@@ -18,17 +19,25 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV, ICODE_WND)*
+!       *CALL* *AIRSEA (FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC,
+!                       US, Z0, Z0B, IJS, IJL, ICODE_WND, IUSFG)*
+!          *FL1*  - SPECTRA
 !          *U10*  - INPUT OR OUTPUT BLOCK OF WINDSPEED U10.
-!          *TAUW* - INPUT BLOCK OF WAVE STRES.
+!          *U10DIR*  - INPUT OR OUTPUT BLOCK OF WINDSPEED DIRECTION.
+!          *ROAIRN* - AIR DENSITY IN KG/M3
+!          *TAUW* - INPUT BLOCK OF WAVE STRESS.
+!          *TAUWDIR* - INPUT BLOCK OF WAVE STRESS DIRECTION.
+!          *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !          *US*   - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
-!          *ZO*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
+!          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
 !          *IJS*  - INDEX OF FIRST GRIDPOINT.
 !          *IJL*  - INDEX OF LAST GRIDPOINT.
-!          *KLEV* - LEVEL HEIGHT INDEX
-!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN UPDATED:
+!          *ICODE_WND* SPECIFIES WHICH OF U10 OR US HAS BEEN FILED UPDATED:
 !                     U10: ICODE_WND=3 --> US will be updated
 !                     US:  ICODE_WND=1 OR 2 --> U10 will be updated
+!          *IUSFG* - IF = 1 THEN USE THE FRICTION VELOCITY (US) AS FIRST GUESS in TAUT_Z0
+!                         0 DO NOT USE THE FIELD US 
 
 
 
@@ -51,10 +60,11 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUP, ONLY: XKAPPA, XNLEV
-      USE YOWTEST, ONLY: IU06
-      USE YOMHOOK, ONLY: LHOOK, DR_HOOK
-      USE YOWWIND, ONLY: WSPMIN
+      USE YOWPARAM, ONLY : NANG     ,NFRE
+      USE YOWPHYS,  ONLY : XKAPPA, XNLEV
+      USE YOWTEST,  ONLY : IU06
+      USE YOWWIND,  ONLY : WSPMIN
+      USE YOMHOOK,  ONLY : LHOOK, DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -62,11 +72,12 @@
 #include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, KLEV, ICODE_WND
+      INTEGER(KIND=JWIM), INTENT (IN) :: IJS, IJL, ICODE_WND, IUSFG
 
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: TAUW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (IN) :: U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC
       REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (INOUT) :: U10, US
-      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0
+      REAL(KIND=JWRB), DIMENSION (IJS:IJL), INTENT (OUT) :: Z0, Z0B
 
       INTEGER(KIND=JWIM) :: IJ, I, J
 
@@ -82,21 +93,20 @@
 !        ----------------------------------
 
       IF (ICODE_WND == 3) THEN
-        XLEV = XNLEV (KLEV)
-        CALL TAUT_Z0 (IJS, IJL, XLEV, U10, TAUW, US, Z0)
+        CALL TAUT_Z0 (IJS, IJL, IUSFG, FL1, U10, U10DIR, ROAIRN, TAUW, TAUWDIR, RNFAC, US, Z0, Z0B)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
-        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0)
+        CALL Z0WAVE (IJS, IJL, US, TAUW, U10, Z0, Z0B)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------
 
         XKAPPAD = 1.0_JWRB / XKAPPA
-        XLOGLEV = LOG (XNLEV (KLEV))
+        XLOGLEV = LOG (XNLEV)
 
         DO IJ = IJS, IJL
           U10 (IJ) = XKAPPAD * US (IJ) * (XLOGLEV - LOG (Z0 (IJ)))

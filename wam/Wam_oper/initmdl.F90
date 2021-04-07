@@ -240,6 +240,7 @@
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWFRED  , ONLY : FR       ,TH       ,DELTH   ,FR5      ,     &
+     &            ZPIFR    ,                                            &
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,    &
      &            COSTH    ,SINTH    ,FLMAX    ,RHOWG_DFIM,             &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
@@ -253,7 +254,7 @@
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            KMNOP    ,KMSOP    ,IPER
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC    ,              &
-     &                      TAUXD    ,TAUYD    ,                        &
+     &                      TAUXD    ,TAUYD    ,WSEMEAN  ,WSFMEAN  ,    &
      &                      TAUOCXD  ,TAUOCYD  ,PHIOCD
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
@@ -263,7 +264,7 @@
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
-     &            RAD      ,ROWATER
+     &            RAD      ,ROWATER  ,ZPI4GM2
       USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
@@ -271,7 +272,7 @@
      &            CINV     ,TFAK     ,GAM_B_J  ,EMAXDPT
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT  ,    &
      &            U10OLD   ,THWOLD   ,USOLD    ,Z0OLD    ,TAUW     ,    &
-     &            ROAIRO   ,ZIDLOLD  ,                                  &
+     &            Z0B      ,TAUWDIR,  ROAIRO   ,ZIDLOLD  ,              &
      &            FL1
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
@@ -504,6 +505,8 @@
 
         IF(.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS(1):IJL(1)))
+        IF(.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS(1):IJL(1)))
+        IF(.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS(1):IJL(1)))
         IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS(1):IJL(1)))
@@ -512,6 +515,7 @@
 
 !     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
 
+      IF (.NOT.ALLOCATED(ZPIFR)) ALLOCATE(ZPIFR(NFRE))
       IF (.NOT.ALLOCATED(FR5)) ALLOCATE(FR5(NFRE))
       IF (.NOT.ALLOCATED(FRM5)) ALLOCATE(FRM5(NFRE))
       IF (.NOT.ALLOCATED(COFRM4)) ALLOCATE(COFRM4(NFRE))
@@ -523,10 +527,11 @@
       SCDF_U = 0.5_JWRB*DELTH*(1.0_JWRB-1.0_JWRB/FRATIO)
 
       DO M=1,NFRE
+        ZPIFR(M) = ZPI*FR(M)
         FR5(M) = FR(M)**5
         FRM5(M) = 1.0_JWRB/FR5(M)
         COFRM4(M) = COEF4*G/FR(M)**4
-        FLMAX(M) = (ALPHAPMAX/PI)*(G**2/ZPI**4)/FR5(M)
+        FLMAX(M) = (ALPHAPMAX/PI)/(ZPI4GM2*FR5(M))
         DFIM_END_L(M) = SCDF_L*FR(M)
         DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO
@@ -560,6 +565,7 @@
         DFIMFR_SIM(M)  = DFIM_SIM(M)*FR(M)
         DFIMFR2_SIM(M) = DFIM_SIM(M)*FR(M)**2
       ENDDO
+
 
       CALL TABU_SWELLFT
 
@@ -887,8 +893,9 @@
         IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
       ENDIF
 
+      Z0B(:) = 0.0_JWRB
 
-      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                    &
+      CALL GETSTRESS(U10OLD,THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,            &
      &               ROAIRO,ZIDLOLD,CICOVER,CITHICK,                    &
      &               NBLKS,NBLKE,IREAD)
 
@@ -1148,7 +1155,7 @@
       LLINIT=.NOT.LRESTARTED
       LLALLOC_FIELDG_ONLY=.FALSE.
 
-      CALL PREWIND (U10OLD,THWOLD,USOLD,TAUW,Z0OLD,                     &
+      CALL PREWIND (U10OLD,THWOLD,USOLD,Z0OLD,                          &
      &              ROAIRO, ZIDLOLD,                                    &
      &              CICOVER, CITHICK,                                   &
      &              LLINIT, LLALLOC_FIELDG_ONLY,                        &

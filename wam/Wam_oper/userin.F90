@@ -68,14 +68,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX, LWVFLX_SNL,    &
-     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV, LLCAPCHNK
+     &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
+     &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM
       USE YOWCOUT  , ONLY : COUTT    ,COUTS    ,CASS     ,FFLAG    ,    &
      &            FFLAG20  ,                                            &
      &            GFLAG    ,                                            &
      &            GFLAG20  ,NFLAG    ,                                  &
      &            IPRMINFO ,                                            &
-     &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
-     &            IRHS     ,IRTP     ,IRT1     ,IRPHIOC  ,IRTAUOC   ,   &
+     &            IRWDIR, IRCD ,IRALTHS ,IRALTHSC ,IRALTRC ,            &
+     &            IRHS     ,IRTP     ,IRT1     ,                        &
      &            IRBATHY  ,                                            &
      &            NFLAGALL ,UFLAG    ,LFDB     ,NOUTT    ,NOUTS    ,    &
      &            IRCD     ,IRU10    ,                                  &
@@ -92,9 +93,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWCPBO  , ONLY : IBOUNC
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
+      USE YOWFRED  , ONLY : XKMSS_CUTOFF, NWAV_GC, XK_GC
       USE YOWGRIBHD, ONLY : LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M 
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LCIWABR  ,              &
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,LCIWABR  ,  &
      &            CITHRSH  ,CIBLOCK  ,LICETH   ,                        &
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA
       USE YOWMESPAS, ONLY : LMESSPASS,                                  &
@@ -102,7 +104,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWMPP   , ONLY : NPROC
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
-      USE YOWPHYS  , ONLY : ALPHAPMAX
+      USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
+     &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
+     &            SWELLF5, Z0TUBMAX, Z0RAT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IDELPRO  ,IDELT    ,IDELWI   ,                        &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -140,6 +145,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IMPLICIT NONE
 #include "abort1.intfb.h"
 #include "difdate.intfb.h"
+#include "initgc.intfb.h"
 #include "mpcrtbl.intfb.h"
 #include "outxt.intfb.h"
 #include "readsta.intfb.h"
@@ -652,6 +658,22 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' 2D DECOMPOSITION OF THE DOMAIN ' 
       ENDIF
       WRITE(IU06,*) ' MODEL PHYSICS: IPHYS = ', IPHYS
+      WRITE(IU06,*) '                BETAMAX = ', BETAMAX
+      WRITE(IU06,*) '                ZALP = ', ZALP
+      WRITE(IU06,*) '                ALPHA = ', ALPHA
+      WRITE(IU06,*) '                ALPHAPMAX = ', ALPHAPMAX
+      WRITE(IU06,*) '                TAUWSHELTER = ', TAUWSHELTER
+      WRITE(IU06,*) '                DELTA_THETA_RN = ', DELTA_THETA_RN 
+      WRITE(IU06,*) '                DTHRN_A = ', DTHRN_A
+      WRITE(IU06,*) '                DTHRN_U = ', DTHRN_U
+      WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
+      WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
+      IF (IPHYS.EQ.1) THEN
+      WRITE(IU06,*) '                SWELLF5 = ', SWELLF5
+      WRITE(IU06,*) '                Z0TUBMAX = ', Z0TUBMAX
+      WRITE(IU06,*) '                Z0RAT = ', Z0RAT
+      ENDIF
+      WRITE(IU06,*) '' 
       IF (ISHALLO.EQ.1) THEN
         WRITE(IU06,*) ' THIS IS A DEEP WATER RUN '
       ELSE
@@ -668,8 +690,19 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           CALL ABORT1
         ENDIF
       ENDIF
-      IF(LLCAPCHNK) WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS'
-      WRITE(IU06,*) ' MAXIMUM PHILLIPS PARAMETER ALLOWED: ',ALPHAPMAX
+      IF(LLNORMAGAM) THEN
+        WRITE(IU06,*) ' RE-NORMALISATION OF WIND INPUT GROWTH RATE'
+      ENDIF
+      IF(LLGCBZ0) THEN
+        WRITE(IU06,*) ' USE GRAVITY-CAPILLARY MODEL FOR THE BACKGROUND ROUGHNESS'
+        IF(LLCAPCHNK) THEN
+          WRITE(IU06,*) ' REDUCED COUPLING FOR STRONG WINDS'
+        ENDIF
+      ELSE
+        IF(LLCAPCHNK) THEN
+          WRITE(IU06,*) ' CAP CHARNOCK FOR HIGH WINDS (REDUCE COUPLING)'
+        ENDIF
+      ENDIF
       IF (IDAMPING.EQ.1 .AND. IPHYS.EQ.0) THEN
         WRITE(IU06,*) ' SWELL DAMPING FORMULATION IS USED'
       ENDIF
@@ -787,20 +820,24 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF(LMASKICE) THEN
         CITHRSH=0.3_JWRB
         CITHRSH_SAT=CITHRSH
-        CIBLOCK=1.0_JWRB
+        CIBLOCK=0.0_JWRB
         CITHRSH_TAIL=CITHRSH
-        CDICWA=0.0_JWRb
+        CDICWA=0.0_JWRB
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
         CITHRSH=0.70_JWRB
 !     EXCEPT FOR DATA ASSIMILATION
-        CITHRSH_SAT=0.01_JWRB
+        CITHRSH_SAT=0.1_JWRB
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
         CIBLOCK=0.70_JWRB
-!     HIGH FREQUENCY SPECTRAL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
+!     HIGH FREQUENCY SPECTRAL TAIL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
         CITHRSH_TAIL=0.01_JWRB
 !     ICE WATER DRAG COEFFICIENT
-        CDICWA=0.01_JWRB
+        IF(LCIWABR) THEN
+          CDICWA=0.01_JWRB
+        ELSE
+          CDICWA=0.0_JWRB
+        ENDIF
       ENDIF
 
       IF (LICERUN) THEN
@@ -822,6 +859,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           IF(LCIWABR) THEN
           WRITE(IU06,*) ' WITH AN ICE-WATER DRAG COEFFICENT OF ',CDICWA
           ENDIF
+        ENDIF
+        IF(LWAMRSETCI) THEN
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' COUPLED WAVE FIELDS RESET UNDER SEA ICE'
+          WRITE(IU06,*) ''
         ENDIF
       ENDIF
 
@@ -1000,6 +1042,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' OCEAN FLUXES WILL NOT INCLUDE SNL CONTRIBUTION'
       ENDIF
       WRITE(IU06,*) ''
+
+      ! INITIALISATION FOR GRAVITY-CAPILLARY
+      CALL INITGC
+      IF(XKMSS_CUTOFF <= 0.0_JWRB) THEN
+        XKMSS_CUTOFF = XK_GC(NWAV_GC)
+      ENDIF
+      WRITE(IU06,*) ' THE MAXIMUM WAVE NUMBER FOR MSS CALCULATION IS ',XKMSS_CUTOFF
 
       WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE: '                  &
      & ,'    F = DISABLED   T = ENABLED    ', LFDB

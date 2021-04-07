@@ -1,9 +1,10 @@
       SUBROUTINE WDFLUXES (IJS, IJL, IG,                                &
      &                     MIJ,                                         &
-     &                     FL3, XLLWS,                                  &
+     &                     FL1, XLLWS,                                  &
      &                     CICVR,                                       &
      &                     U10NEW, THWNEW, USNEW,                       &
-     &                     Z0NEW, ROAIRN, WSTAR,                        &
+     &                     Z0NEW, Z0B, ROAIRN, WSTAR,                   &
+     &                     WSEMEAN, WSFMEAN,                            &
      &                     USTOKES, VSTOKES, STRNMS )
 
 ! ----------------------------------------------------------------------
@@ -20,11 +21,12 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (FL3, IJS, IJL, IG,
+!       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
 !    &                    CICVR,
-!    &                    THWNEW,USNEW,Z0NEW,ROAIRN,WSTAR,
+!    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
+!    &                    WSEMEAN, WSFMEAN,
 !    &                    USTOKES, VSTOKES, STRNMS)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT).
+!          *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
 !          *IG*     - BLOCK NUMBER.
@@ -32,32 +34,18 @@
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
 !          *Z0NEW*  - ROUGHNESS LENGTH IN M.
+!          *Z0B*    - BACKGROUND ROUGHNESS LENGTH.
 !          *ROAIRN* - AIR DENSITY IN KG/M3.
 !          *WSTAR*  - FREE CONVECTION VELOCITY SCALE (M/S).
+!          *WSEMEAN*   WINDSEA VARIANCE.
+!          *WSFMEAN*   WINDSEA MEAN FREQUENCY.
 !          *USTOKES*   U-COMP SURFACE STOKES DRIFT.
 !          *VSTOKES*   V-COMP SURFACE STOKES DRIFT.
 !          *STRNMS*    MEAN SQUARE STRAIN INTO THE SEA ICE (only if LWNEMOCOUSTRN).
 
 
-
 !     METHOD.
 !     -------
-
-!     EXTERNALS.
-!     ---------
-
-!       *FEMEAN*    - COMPUTATION OF MEAN FREQUENCY AT EACH GRID POINT.
-!       *SDISSIP*   - COMPUTATION OF DISSIPATION SOURCE FUNCTION
-!                     AND LINEAR CONTRIBUTION OF DISSIPATION TO
-!                     FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *SEMEAN*    - COMPUTATION OF TOTAL ENERGY AT EACH GRID POINT.
-!       *SINPUT*    - COMPUTATION OF INPUT SOURCE FUNCTION, AND
-!                     LINEAR CONTRIBUTION OF INPUT SOURCE FUNCTION
-!                     TO FUNCTIONAL MATRIX IN IMPLICIT SCHEME.
-!       *STRESSO*   - COMPUTATION NORMALISED WAVE STRESS.
-!           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
-!           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
-!       *FRCUTINDEX*
 
 !     REFERENCE.
 !     ----------
@@ -68,10 +56,12 @@
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : LWFLUXOUT 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE YOWFRED  , ONLY : FR       ,TH
       USE YOWMEAN  , ONLY : PHIEPS   ,PHIAW    ,TAUOC
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : WSEMEAN_MIN
       USE YOWTEST  , ONLY : IU06     ,ITEST
+      USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -79,41 +69,42 @@
 #include "cimsstrn.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
-#include "frcutindex.intfb.h"
 #include "sdissip.intfb.h"
-#include "sinput.intfb.h"
+#include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokesdrift.intfb.h"
-#include "stresso.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10NEW, THWNEW, ROAIRN, WSTAR
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, ROAIRN, WSTAR
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: U10NEW, USNEW, Z0NEW, Z0B
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: WSEMEAN, WSFMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: USTOKES, VSTOKES, STRNMS
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL3
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: XLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM) :: ICALL, NCALL
 
       REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWDIR_LOC  ! TAUW should not be updated do use a local array
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANALL, FMEANALL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL, SL, SPOS
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: SSOURCE 
-
       LOGICAL :: LCFLX
+      LOGICAL :: LUPDTUS
 
 ! ----------------------------------------------------------------------
 
@@ -128,46 +119,35 @@
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
 !         -----------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,             &
-     &             ROAIRN, WSTAR, SL, SPOS, XLLWS)
+      CALL FKMEAN(FL1, IJS, IJL, EMEANALL, FMEANALL,                    &
+     &            F1MEAN, AKMEAN, XKMEAN)
+
+      TAUW_LOC(:) = 0.0_JWRB
+      TAUWDIR_LOC(:) = THWNEW(:)
+
+      LUPDTUS = .FALSE.
+      FMEANWS(:) = FMEANALL(:)
+      FLM(:,:) = 0.0_JWRB
+      NCALL = 1
+      ICALL = 1
+      CALL SINFLX (ICALL, NCALL, IJS, IJL, &
+     &             LUPDTUS, &
+     &             U10NEW, THWNEW, ROAIRN, WSTAR, &
+     &             CICVR, &
+     &             FMEANALL, FMEANWS, &
+     &             FLM, FL1, &
+     &             USNEW, TAUW_LOC, TAUWDIR_LOC, Z0NEW, Z0B, PHIWA, &
+     &             FL, SL, SPOS, &
+     &             MIJ, RHOWGDFTH, XLLWS)
+
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. WDFLUXES: SINPUT CALLED'
+        WRITE(IU06,*) '   SUB. WDFLUXES: SINFLX CALLED ', ICALL
         CALL FLUSH (IU06)
       ENDIF
 
-!     MEAN FREQUENCY OF THE TOTAL SEA
-      CALL FKMEAN(FL3, IJS, IJL, EMEANALL, FMEANALL,                    &
-     &            F1MEAN, AKMEAN, XKMEAN)
-
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
-
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS,USNEW, CICVR,         &
-     &                MIJ, RHOWGDFTH)
-
-
       IF(LCFLX) THEN
 
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SSOURCE(IJ,K,M) = SL(IJ,K,M)
-            ENDDO
-          ENDDO
-        ENDDO
-
-        CALL STRESSO (FL3, SL, SPOS, IJS, IJL,                          &
-     &                MIJ, RHOWGDFTH,                                   &
-     &                THWNEW, USNEW, Z0NEW, ROAIRN,                     &
-     &                TAUW_LOC, PHIWA)
-
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. WDFLUXES: STRESSO CALLED'
-          CALL FLUSH (IU06)
-        ENDIF
-
-        CALL SDISSIP (FL3 ,FL, SL, IJS, IJL,                            &
+        CALL SDISSIP (FL1 ,FL, SL, IJS, IJL,                            &
      &                EMEANALL, F1MEAN, XKMEAN,                         &
      &                USNEW, THWNEW, ROAIRN)
         IF (ITEST.GE.2) THEN
@@ -184,7 +164,7 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN)
+        CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
           CALL FLUSH (IU06)
@@ -199,10 +179,23 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-      CALL STOKESDRIFT(FL3, IJS, IJL, USTOKES, VSTOKES)
+        IF(LWFLUX) THEN
+         CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
-      IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL3, IJS, IJL, STRNMS)
+          DO IJ=IJS,IJL
+            IF(EMEANWS(IJ) < WSEMEAN_MIN) THEN
+              WSEMEAN(IJ) = WSEMEAN_MIN 
+              WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
+            ELSE
+              WSEMEAN(IJ) = EMEANWS(IJ)
+              WSFMEAN(IJ) = FMEANWS(IJ) 
+            ENDIF
+          ENDDO
+        ENDIF
 
+        CALL STOKESDRIFT(FL1, IJS, IJL, U10NEW, THWNEW, CICVR, USTOKES, VSTOKES)
+
+        IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
       ENDIF
 ! ----------------------------------------------------------------------
