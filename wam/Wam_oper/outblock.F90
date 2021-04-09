@@ -287,7 +287,7 @@
           IF(FSEA(IJ).GT.0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
 ! for testing: estimate of wave age based on wind mean frequency
-            WAVEAGESEA(IJ)=GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJS:IJL)**2,EPSUS))
+            WAVEAGESEA(IJ)=GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJ)**2,EPSUS))
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
 ! for testing: estimate of wave age based on wind mean frequency
