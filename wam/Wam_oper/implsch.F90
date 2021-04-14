@@ -149,6 +149,7 @@
 #include "ciwabr.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
+#include "flmintail.intfb.h"
 #include "frcutindex.intfb.h"
 #include "sbottom.intfb.h"
 #include "sdissip.intfb.h"
@@ -403,7 +404,8 @@
       CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
      &                MIJ, RHOWGDFTH)
 
-      CALL IMPHFTAIL (IJS, IJL, MIJ, FLM, FL1)
+      CALL IMPHFTAIL(IJS, IJL, MIJ, FLM, FL1)
+      CALL FLMINTAIL(IJS, IJL, THWNEW, USNEW, FMEANWS, FL1)
 
 
 !*    2.6 SET FL1 ON ICE POINTS TO ZERO

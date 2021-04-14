@@ -264,8 +264,8 @@
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
-     &            RAD      ,ROWATER  ,ZPI4GM2
-      USE YOWPHYS  , ONLY : ALPHAPMAX
+     &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
+      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            INDEP    ,TCGOND   ,IODP     ,IOBND    ,TOOSHALLOW,   &
@@ -533,6 +533,8 @@
         DFIM_END_L(M) = SCDF_L*FR(M)
         DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO
+
+      FLMINFAC = ALPHAPMINFAC*FM2FP*G/(PI*ZPI**3*FR(NFRE)**5)
 
       FLOGSPRDM1=1.0_JWRB/LOG10(FRATIO)
 
