@@ -90,14 +90,15 @@
       REAL(KIND=JWRB) :: YC, Y, CM1, ZX, ZARG, ZLOG, ZBETA
       REAL(KIND=JWRB) :: FNC, FNC2
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB) :: ZN, GAMCFR5
+      REAL(KIND=JWRB) :: ZN1, ZN2, GAMCFR5
       REAL(KIND=JWRB) :: COSW, FCOSW2 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SQRTZ0OG, ZSUP, ZINF, DELZ
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUL, XLOGGZ0, SQRTGZ0
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: USTPH
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST, CONSTTAU, CONSTPHI
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST1, CONST2, CONSTTAU, CONSTPHI
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1D, F1DSIN2 
 
 ! ----------------------------------------------------------------------
 
@@ -130,6 +131,8 @@
         FCOSW2   = F(IJ,K,NFRE)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
+        F1DSIN2(IJ) = F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+        F1D(IJ) = F(IJ,K,NFRE)
       ENDDO
       DO K=2,NANG
         DO IJ=IJS,IJL
@@ -137,20 +140,26 @@
           FCOSW2   = F(IJ,K,NFRE)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
+          F1DSIN2(IJ) = F1DSIN2(IJ) + F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
+          F1D(IJ) = F1D(IJ) + F(IJ,K,NFRE)
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
         F1DCOS3(IJ) = DELTH*F1DCOS3(IJ)
         F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
+        F1DSIN2(IJ) = DELTH*F1DSIN2(IJ)
+        F1D(IJ) = DELTH*F1D(IJ)
       ENDDO
 
       IF(LLNORMAGAM) THEN
         GAMCFR5 = GAMNCONST*FR5(NFRE)
         DO IJ=IJS,IJL
-          CONST(IJ) = GAMCFR5*RNFAC(IJ)*F1DCOS2(IJ)*SQRTGZ0(IJ)
+          CONST1(IJ) = GAMCFR5*RNFAC(IJ)*F1DSIN2(IJ)*SQRTGZ0(IJ)
+          CONST2(IJ) = GAMCFR5*RNFAC(IJ)*F1D(IJ)*SQRTGZ0(IJ)
         ENDDO
       ELSE
-        CONST(:) = 0.0_JWRB
+        CONST1(:) = 0.0_JWRB
+        CONST2(:) = 0.0_JWRB
       ENDIF
 
 
@@ -182,8 +191,9 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
+            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
             FNC2      = F1DCOS3(IJ)*CONSTTAU(IJ)* ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*FNC2,0.0_JWRB)
 
@@ -203,8 +213,9 @@
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
             FNC2      = ZBETA*WTAUHF(J)
-            ZN        = CONST(IJ)*ZBETA*UST(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
+            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
             TAUHF(IJ) = TAUHF(IJ) + FNC2 * GAMNORMA
           ENDDO
           TAUHF(IJ) = F1DCOS3(IJ)*CONSTTAU(IJ) * TAUL(IJ)*TAUHF(IJ)*DELZ(IJ)
@@ -239,8 +250,9 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            ZN        = CONST(IJ)*ZBETA*USTPH(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
+            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
             FNC2      = ZBETA*TAUL(IJ)*WTAUHF(J)*DELZ(IJ) * GAMNORMA
             TAUL(IJ)  = MAX(TAUL(IJ)-TAUWSHELTER*F1DCOS3(IJ)*CONSTTAU(IJ)*FNC2,0.0_JWRB)
             USTPH(IJ)   = SQRT(TAUL(IJ))
@@ -259,8 +271,9 @@
             ZLOG      = XLOGGZ0(IJ)+2.0_JWRB*LOG(CM1)+ZARG 
             ZLOG      = MIN(ZLOG,0.0_JWRB)
             ZBETA     = EXP(ZLOG)*ZLOG**4
-            ZN        = CONST(IJ)*ZBETA*USTPH(IJ)*Y
-            GAMNORMA  = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
+            ZN1       = CONST1(IJ)*ZBETA*UST(IJ)*Y
+            ZN2       = CONST2(IJ)*ZBETA*UST(IJ)*Y
+            GAMNORMA  = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
             FNC2      = ZBETA*WTAUHF(J) * GAMNORMA
             PHIHF(IJ) = PHIHF(IJ) + FNC2/Y
           ENDDO

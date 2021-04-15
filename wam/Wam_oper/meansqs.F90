@@ -69,8 +69,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS_TAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
-      LOGICAL :: LLBND
-
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('MEANSQS',0,ZHOOK_HANDLE)
 
@@ -78,8 +76,7 @@
 !        -------------------------------------------------
 
 !     COMPUTE THE PHILLIPS PARAMETER
-      LLBND = .TRUE.
-      CALL HALPHAP(IJS, IJL, UDIR, F, HALP, LLBND)
+      CALL HALPHAP(IJS, IJL, UDIR, F, HALP)
 
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(XKMSS, IJS, IJL, HALP, USTAR, XMSS, FRGC)
