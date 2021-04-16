@@ -99,6 +99,8 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CONST1, CONST2, CONSTTAU, CONSTPHI
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS2, F1DCOS3 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1D, F1DSIN2 
+!!!debile
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DCOS5
 
 ! ----------------------------------------------------------------------
 
@@ -133,6 +135,8 @@
         F1DCOS2(IJ) = FCOSW2
         F1DSIN2(IJ) = F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
         F1D(IJ) = F(IJ,K,NFRE)
+!!!debile
+        F1DCOS5(IJ) = F(IJ,K,NFRE)*COSW**5
       ENDDO
       DO K=2,NANG
         DO IJ=IJS,IJL
@@ -142,6 +146,8 @@
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
           F1DSIN2(IJ) = F1DSIN2(IJ) + F(IJ,K,NFRE)*SIN(TH(K)-THWNEW(IJ))**2
           F1D(IJ) = F1D(IJ) + F(IJ,K,NFRE)
+!!!debile
+        F1DCOS5(IJ) = F1DCOS5(IJ) + F(IJ,K,NFRE)*COSW**5
         ENDDO
       ENDDO
       DO IJ=IJS,IJL
@@ -149,6 +155,10 @@
         F1DCOS2(IJ) = DELTH*F1DCOS2(IJ)
         F1DSIN2(IJ) = DELTH*F1DSIN2(IJ)
         F1D(IJ) = DELTH*F1D(IJ)
+!!!debile
+        F1DCOS5(IJ) = DELTH*F1DCOS5(IJ)
+        write(*,*) 'debile delta_phi ',F1DCOS5(IJ)/F1D(IJ)
+
       ENDDO
 
       IF(LLNORMAGAM) THEN
