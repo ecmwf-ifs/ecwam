@@ -54,6 +54,8 @@
 
       REAL(KIND=JWRB), PARAMETER :: CDMAX=0.0025_JWRB
 
+      REAL(KIND=JWRB), PARAMETER :: FM2FP=0.9_JWRB
+
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
 !     *G*         REAL      ACCELLERATION OF GRAVITY.
@@ -103,6 +105,9 @@
 !     C_D = (C1CD + C2CD*U10**P1CD)*U10**P2CD
 
 !     *CDMAX*    REAL      MAXIMUM CD ALLOWED FOR ALL CD(U10) RELATIONS
+
+!     *FM2FP*    REAL      EMPIRICAL FACTOR FOR THE CONVERSION OF WINDSEA MEAN FREQUENCY
+!                          TO WINDSEA PEAK FREQUENCY.
 !----------------------------------------------------------------------
 
       END MODULE YOWPCONS

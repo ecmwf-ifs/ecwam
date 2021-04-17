@@ -75,7 +75,7 @@
       USE YOWSPEC  , ONLY : TAUW     ,U10NEW   ,THWNEW   ,USNEW    ,    &
      &            ROAIRN   ,ZIDLNEW
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10
+      USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
       USE YOWSHAL,   ONLY : IODP
       USE YOWSTAT  , ONLY : IREFRA
 
@@ -100,6 +100,7 @@
 #include "sthq.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
+#include "halphap.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
@@ -115,6 +116,7 @@
       INTEGER(KIND=JWIM) :: IRA
       
       REAL(KIND=JWRB) :: SIG
+      REAL(KIND=JWRB) :: GOZPI 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, DP
@@ -123,6 +125,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA   ,FSEA   ,THWISEA, P1SEA  , P2SEA  , SPRDSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, WAVEAGESEA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: EMTRAIN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NTRAIN) :: THTRAIN, PMTRAIN
 
@@ -150,6 +153,8 @@
 
       IRA=1
       SIG = 1._JWRB
+      WAVEAGESEA(:)=ZMISS
+      GOZPI=G/ZPI
 
       IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
         CALL INTPOL (FL1, FL2ND, IJS, IJL, IG, IRA)
@@ -281,8 +286,12 @@
         DO IJ=IJS,IJL
           IF(FSEA(IJ).GT.0._JWRB) THEN
             BOUT(IJ,ITOBOUT(IR))=1._JWRB/FSEA(IJ)
+! for testing: estimate of wave age based on wind mean frequency
+            WAVEAGESEA(IJ)=MIN(GOZPI/(0.9_JWRB*FSEA(IJ)*MAX(USNEW(IJ),EPSUS)),40.0_JWRB)
           ELSE
             BOUT(IJ,ITOBOUT(IR))=ZMISS
+! for testing: estimate of wave age based on wind mean frequency
+            WAVEAGESEA(IJ)=ZMISS
           ENDIF
         ENDDO
       ENDIF
@@ -622,12 +631,16 @@
 !     add necessary code to compute the extra output fields
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=1.0_JWRB
+
+!!!for testing
+        CALL HALPHAP(IJS, IJL, THWNEW(IJS), FL1, HALP)
+        BOUT(IJS:IJL,ITOBOUT(IR))=2.0_JWRB*HALP(IJS:IJL)
+
       ENDIF
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=2.0_JWRB
+        BOUT(IJS:IJL,ITOBOUT(IR))=WAVEAGESEA(IJS:IJL)
       ENDIF
 
       IR=IR+1
