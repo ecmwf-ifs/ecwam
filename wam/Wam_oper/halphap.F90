@@ -25,6 +25,7 @@ SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
       USE YOWFRED  , ONLY : TH       , FR5      ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        , ZPI      ,ZPI4GM2
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
@@ -40,20 +41,23 @@ SUBROUTINE HALPHAP(IJS, IJL, UDIR, FL1, HALP)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
-!     COMPUTE 1/2 THE PHILLIPS PARAMETER
-      CONST = 0.5_JWRB*DELTH*ZPI4GM2*FR5(NFRE)
-      HALP(:) = 0.0_JWRB
+!     COMPUTE THE PHILLIPS PARAMETER
+      CONST = DELTH*ZPI4GM2*FR5(NFRE)
+      ALPHAP(:) = 0.0_JWRB
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          HALP(IJ) = HALP(IJ) + CONST*FL1(IJ,K,NFRE)
+          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
         ENDDO
       ENDDO
-      
+
+      HALP(:) = 0.5_JWRB*MIN(ALPHAP(:), ALPHAPMAX)
+
 IF (LHOOK) CALL DR_HOOK('HALPHAP',1,ZHOOK_HANDLE)
 
 END SUBROUTINE HALPHAP
