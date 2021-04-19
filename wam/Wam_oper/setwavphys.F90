@@ -89,7 +89,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
         RN1_RN = 1.0_JWRB/6.0_JWRB
-        DTHRN_A = 0.40_JWRB
+        DTHRN_A = 0.50_JWRB
         DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
