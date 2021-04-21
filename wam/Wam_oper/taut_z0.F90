@@ -153,8 +153,7 @@ IF (LLGCBZ0) THEN
         Z0MIN = 0.0_JWRB
 
         DO ITER=1,NITER
-!!debie          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
-          X = MIN(TAUW(IJ)/TAUOLD,0.99_JWRB)
+!!debile          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
           USTAR(IJ) = SQRT(TAUOLD)
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -163,6 +162,7 @@ IF (LLGCBZ0) THEN
           CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+          X = MIN((TAUW(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
  
           Z0VIS = RNUM*USTM1
           HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
@@ -180,12 +180,12 @@ IF (LLGCBZ0) THEN
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
 !!!debile
-         write(*,*) 'debile ',iter,del,ustar(ij),TAUWACT(IJ),X,G*Z0B(IJ)/USTAR(IJ)**2
+         write(*,*) 'debile ',iusfg,iter,del,ustar(ij),TAUW(IJ),TAUUNR(IJ),X,G*Z0B(IJ)/USTAR(IJ)**2
 
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           USTOLD = USTAR(IJ)
 !!debile          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-          TAUOLD = MAX(USTOLD**2,TAUW(IJ))
+          TAUOLD = MAX(USTOLD**2,TAUW(IJ)+TAUUNR(IJ))
 
 !!debile          Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
