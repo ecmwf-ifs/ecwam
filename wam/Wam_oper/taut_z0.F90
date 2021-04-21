@@ -161,8 +161,6 @@ IF (LLGCBZ0) THEN
           CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
-!!!!debile
-          Z0B(IJ) = 0.0065_JWRB*USTAR(IJ)**2/G
  
           Z0VIS = RNUM*USTM1
           HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
@@ -175,13 +173,13 @@ IF (LLGCBZ0) THEN
 
           DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
 
-!!!debile
-         write(*,*) 'debile ',iter,delf,ustar(ij),TAUWACT(IJ),X,G*Z0B(IJ)/USTAR(IJ)**2
-
           IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTAR(IJ)-F/DELF
 
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
+!!!debile
+         write(*,*) 'debile ',iter,del,ustar(ij),TAUWACT(IJ),X,G*Z0B(IJ)/USTAR(IJ)**2
+
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
