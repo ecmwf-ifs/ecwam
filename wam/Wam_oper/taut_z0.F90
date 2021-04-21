@@ -190,7 +190,7 @@ IF (LLGCBZ0) THEN
           Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
 !!!debile
-         write(*,*) 'debile ',
+         write(*,*) 'debile '
 
       ENDDO
 
