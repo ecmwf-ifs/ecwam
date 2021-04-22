@@ -151,7 +151,7 @@ IF (LLGCBZ0) THEN
         Z0MIN = ALPHAOG(IJ)*TAUOLD 
 
         DO ITER=1,NITER
-          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
+          X = MIN(TAUWACT(IJ)/TAUOLD,0.999_JWRB)
 !!debile test
           TAUOLD = TAUWACT(IJ)/X
 
