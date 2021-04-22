@@ -163,8 +163,6 @@ IF (LLGCBZ0) THEN
           X = MIN((TAUW(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
  
           Z0VIS = RNUM*USTM1
-!!debile
-          Z0VIS = 0.0_JWRB
 
           HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
           Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
