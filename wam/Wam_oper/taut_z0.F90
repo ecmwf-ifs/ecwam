@@ -80,7 +80,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       INTEGER(KIND=JWIM) :: IJ, ITER
       INTEGER(KIND=JWIM) :: IFRPH
 
-      REAL(KIND=JWRB), PARAMETER :: PCE_GC = 0.001_JWRB
+      REAL(KIND=JWRB), PARAMETER :: PCE_GC = 0.00001_JWRB
       REAL(KIND=JWRB) :: Z0MIN
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
@@ -110,7 +110,7 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
         TAUWACT(IJ) = MAX(TAUW(IJ)*COS(UDIR(IJ)-TAUWDIR(IJ)), EPSMIN )
       ENDDO
 
-      LLSOLVLOG = .TRUE.
+      LLSOLVLOG = .FALSE.
 
 !  USING THE CG MODEL:
 IF (LLGCBZ0) THEN
@@ -163,41 +163,26 @@ IF (LLGCBZ0) THEN
           CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
-!!!debile test
-!          Z0VIS = RNUM*USTM1
-!          HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
-!          Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
-
-!          XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
-!          F = USTAR(IJ)-XKUTOP*XOLOGZ0
-!          ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
-!&              / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
-
-
-          Z0CH = Z0B(IJ)/SQRT(1.0_JWRB-X)
           Z0VIS = RNUM*USTM1
-          Z0(IJ) = Z0CH+Z0VIS
+          HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
+          Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
 
           XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
           F = USTAR(IJ)-XKUTOP*XOLOGZ0
-          ZZ = USTM1*(Z0CH*(2.0_JWRB-TWOXMP1*X)/(1.0_JWRB-X)-Z0VIS)/Z0(IJ)
-!!!
+          ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
+&              / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
 
           DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
           IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTAR(IJ)-F/DELF
 
 !         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
-!!!debile
-         write(*,*) 'debile ',iusfg,iter,del,ustar(ij),TAUW(IJ),TAUUNR(IJ),X,G*Z0B(IJ)/USTAR(IJ)**2
 
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
           Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
-!!!debile
-         write(*,*) 'debile '
 
       ENDDO
 
@@ -239,6 +224,9 @@ IF (LLGCBZ0) THEN
       ENDDO
 
       ENDIF ! LLSOLVLOG
+
+!!!debile
+         write(*,*) 'debile ',iusfg,iter
 
 ELSE
 
