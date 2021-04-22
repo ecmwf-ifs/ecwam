@@ -151,7 +151,7 @@ IF (LLGCBZ0) THEN
         Z0MIN = ALPHAOG(IJ)*TAUOLD 
 
         DO ITER=1,NITER
-          X = MIN(TAUWACT(IJ)/TAUOLD,0.999_JWRB)
+          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
 !!debile test
           TAUOLD = TAUWACT(IJ)/X
 
@@ -163,14 +163,25 @@ IF (LLGCBZ0) THEN
           CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+!!!debile test
+!          Z0VIS = RNUM*USTM1
+!          HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
+!          Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
+
+!          XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
+!          F = USTAR(IJ)-XKUTOP*XOLOGZ0
+!          ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
+!&              / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
+
+
+          Z0CH = Z0B(IJ)/SQRT(1.0_JWRB-X)
           Z0VIS = RNUM*USTM1
-          HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
-          Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
+          Z0(IJ) = Z0CH+Z0VIS
 
           XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
           F = USTAR(IJ)-XKUTOP*XOLOGZ0
-          ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
-&              / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
+          ZZ = USTM1*(Z0CH*(2.0_JWRB-TWOXMP1*X)/(1.0_JWRB-X)-Z0VIS)/Z0(IJ)
+!!!
 
           DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
           IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTAR(IJ)-F/DELF
