@@ -147,13 +147,11 @@ IF (LLGCBZ0) THEN
       DO IJ = IJS, IJL
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
-!!debile        TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-        TAUOLD = MAX(USTOLD**2,TAUW(IJ))
-!!debile        Z0MIN = ALPHAOG(IJ)*TAUOLD 
-        Z0MIN = 0.0_JWRB
+        TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+        Z0MIN = ALPHAOG(IJ)*TAUOLD 
 
         DO ITER=1,NITER
-!!debile          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
+          X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
           USTAR(IJ) = SQRT(TAUOLD)
           USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -165,6 +163,9 @@ IF (LLGCBZ0) THEN
           X = MIN((TAUW(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
  
           Z0VIS = RNUM*USTM1
+!!debile
+          Z0VIS = 0.0_JWRB
+
           HZ0VISO1MX = 0.5_JWRB*Z0VIS/(1.0_JWRB-X)
           Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
 
@@ -184,10 +185,8 @@ IF (LLGCBZ0) THEN
 
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           USTOLD = USTAR(IJ)
-!!debile          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-          TAUOLD = MAX(USTOLD**2,TAUW(IJ)+TAUUNR(IJ))
-
-!!debile          Z0MIN = ALPHAOG(IJ)*TAUOLD 
+          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+          Z0MIN = ALPHAOG(IJ)*TAUOLD 
         ENDDO
 !!!debile
          write(*,*) 'debile '

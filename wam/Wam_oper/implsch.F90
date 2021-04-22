@@ -275,7 +275,7 @@
 !           -------------------------------------------------------
 
       LUPDTUS = .TRUE.
-      NCALL = 3
+      NCALL = 2
       DO ICALL = 1, NCALL 
         CALL SINFLX (ICALL, NCALL, IJS, IJL, &
      &               LUPDTUS, &
