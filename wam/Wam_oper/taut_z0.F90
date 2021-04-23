@@ -197,8 +197,6 @@ IF (LLGCBZ0) THEN
 
       ENDDO
 
-      write(*,*) 'debile ',iusfg,iter
-
 
       ELSE
 
@@ -237,6 +235,9 @@ IF (LLGCBZ0) THEN
       ENDDO
 
       ENDIF ! LLSOLVLOG
+
+      write(*,*) 'debile ',iusfg,iter
+
 
 ELSE
 
