@@ -28,6 +28,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
+      USE YOWFRED  , ONLY : FR5      ,FRM5
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
@@ -51,13 +52,15 @@
 
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
 
+      INTEGER(KIND=JWIM), PARAMETER :: NFRE_PRO=29
+ 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, K, M, J
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS(1):IJL(1),NANG,NFRE) :: FLNEW
+      REAL(KIND=JWRB), DIMENSION(IJS(1):IJL(1),NANG,NFRE_PRO) :: FLNEW
 
       LOGICAL :: L1STCALL
 
@@ -119,7 +122,7 @@
              DO JKGLO=IJS(IG),IJL(IG),NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-               CALL PROPAGS2(FL1,FLNEW,IJS(1),IJL(1),KIJS,KIJL)
+               CALL PROPAGS2(FL1,FLNEW,NFRE_PRO,IJS(1),IJL(1),KIJS,KIJL)
              ENDDO
 !$OMP        END PARALLEL DO
              IF (ITEST.GE.2) THEN
@@ -153,10 +156,17 @@
         DO JKGLO=IJS(IG),IJL(IG),NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          DO M=1,NFRE
+          DO M=1,NFRE_PRO
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 FL1(IJ,K,M) = FLNEW(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+          DO M=NFRE_PRO+1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                FL1(IJ,K,M) = FL1(IJ,K,NFRE_PRO)*FR5(NFRE_PRO)*FRM5(M)
               ENDDO
             ENDDO
           ENDDO

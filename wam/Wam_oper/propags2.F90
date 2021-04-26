@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS2 (F1, F3, IJS, IJL, MIJS, MIJL)
+      SUBROUTINE PROPAGS2 (F1, F3, NFRE_PRO, IJS, IJL, MIJS, MIJL)
 
 ! ----------------------------------------------------------------------
 
@@ -60,10 +60,10 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE_PRO, MIJS, MIJL, IJS, IJL
 
       REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT)  :: F3
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE_PRO), INTENT(INOUT)  :: F3
 
       INTEGER(KIND=JWIM) :: K, M, IJ
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
@@ -93,7 +93,7 @@
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-            DO M=1,NFRE
+            DO M=1,NFRE_PRO
               DO IJ=MIJS,MIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
@@ -140,7 +140,7 @@
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
 
-          DO M=1,NFRE
+          DO M=1,NFRE_PRO
             DO K=1,NANG
 
               DO IJ=MIJS,MIJL
