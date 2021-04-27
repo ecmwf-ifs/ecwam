@@ -28,7 +28,6 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWFRED  , ONLY : FR5      ,FRM5
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
@@ -160,13 +159,6 @@
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 FL1(IJ,K,M) = FLNEW(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
-          DO M=NFRE_PRO+1,NFRE
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL1(IJ,K,M) = FL1(IJ,K,NFRE_PRO)*FR5(NFRE_PRO)*FRM5(M)
               ENDDO
             ENDDO
           ENDDO
