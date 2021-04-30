@@ -452,7 +452,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !     -------------------------------------
       IF (IREFRA.NE.0 .AND. ISHALLO.NE.1 ) THEN
         ALLOCATE(SIGSI(MIJS:MIJL,NFRE_RED))
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
             SIGSI(IJ,M) = TSIHKD(INDEP(IJ),M)
           ENDDO
