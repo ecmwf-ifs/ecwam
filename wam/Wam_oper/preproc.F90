@@ -156,7 +156,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,    &
-     &            NIBLC    ,NBLC
+     &            NIBLC    ,NBLC     ,NANG     ,NFRE     ,NFRE_RED
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
@@ -196,7 +196,7 @@
 
       INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU09, IU10, IU17,IU19,IU20
       INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, ML, KL, LNAME,IINPC,LFILE
+      INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
       REAL(KIND=JWRB) :: PRPLRADI
@@ -228,7 +228,7 @@
 !*    2. USER INPUT AND LINEPRINTER PROTOCOL.
 !        ------------------------------------
 
-      CALL UIPREP (IFORM, ML, KL, LLGRID)
+      CALL UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -237,13 +237,13 @@
 
       ALLOCATE(BATHY(NX, NY))
 
-!     FR(KL) IS ALLOCATED IN UIPREP 
-      ALLOCATE(DFIM(ML)) 
-      ALLOCATE(GOM(ML)) 
-      ALLOCATE(C(ML)) 
-      ALLOCATE(TH(KL)) 
-      ALLOCATE(COSTH(KL)) 
-      ALLOCATE(SINTH(KL)) 
+!     FR IS ALLOCATED IN UIPREP 
+      ALLOCATE(DFIM(NFRE)) 
+      ALLOCATE(GOM(NFRE)) 
+      ALLOCATE(C(NFRE)) 
+      ALLOCATE(TH(NANG)) 
+      ALLOCATE(COSTH(NANG)) 
+      ALLOCATE(SINTH(NANG)) 
 
       ALLOCATE(DELLAM(NY)) 
       ALLOCATE(SINPH(NY)) 
@@ -378,7 +378,7 @@
 !*    4.1 MODULE FREDIR (FREQUENCY/DIRECTION CONST).
 !         ------------------------------------------
 
-      CALL MFREDIR (ML, KL)
+      CALL MFREDIR
 
 !*    4.2 MODULE INDNL (WEIGHT OF NON-LINEAR INTERACTION).
 !         ------------------------------------------------
@@ -388,7 +388,7 @@
 !*    4.3 MODULE SHALLOW (SHALLOW WATER TABLES).
 !         --------------------------------------
 
-      CALL MTABS (ML, KL)
+      CALL MTABS
 
 !*    4.5 HIGHER HARMONICS TABLES
 !         -----------------------
@@ -463,7 +463,6 @@
 
 !*    6.1 COMPUTE FINE GRID NEST INFORMATION (MODULE YOWFPBO).
 !         ---------------------------------------------------
-!AR: We just omit the nest informations in this module since it is anyway broken ...
       IF (.NOT. LLUNSTR) THEN
 
         IF (IBOUNF.EQ.1) THEN
@@ -497,7 +496,7 @@
 !        -------------------------------
 
         DO IG=1,IGL
-          CALL MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
+          CALL MUBUF (IU01, BATHY, IG, IU08, NPROPAGS)
           IF (ITEST.GT.0) THEN
             WRITE (IU06,*) ' SUB MUBUF DONE FOR BLOCK ',IG
           ENDIF
@@ -520,6 +519,6 @@
 !*        OUTPUT OF NECESSARY DIMENSIONS.
 !         --------------------------------------------------
 
-      CALL CHECK (ML, KL, IINPC)
+      CALL CHECK (IINPC)
   
       END PROGRAM

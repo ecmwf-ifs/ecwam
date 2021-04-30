@@ -1,4 +1,4 @@
-      SUBROUTINE UIPREP (IFORM, ML, KL, LLGRID)
+      SUBROUTINE UIPREP (IFORM, LLGRID)
 
 ! ----------------------------------------------------------------------
 
@@ -14,12 +14,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *UIPREP (IFORM, ML, KL, LLGRID)*
+!       *CALL* *UIPREP (IFORM, LLGRID)*
 !          *IFORM*   - OUTPUT FORMAT OPTION = 1 UNFORMATED
 !                                           = 2 FORMATED
 !                                           OTHERWISE BOTH
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
 !          *LLGRID*  - TRUE IF THE GRID DEFINITION HAS BEEN SPECIFIED
 !                      IN INPUT FILE grid_description
 
@@ -48,8 +46,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,NBLO     ,NIBLO    ,CLDOMAIN
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
@@ -72,7 +70,7 @@
 #include "abort1.intfb.h"
 #include "adjust.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM, ML, KL
+      INTEGER(KIND=JWIM), INTENT(OUT) :: IFORM
       LOGICAL, INTENT(OUT) :: LLGRID
 
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
@@ -94,13 +92,14 @@
 
 ! ----------------------------------------------------------------------
 
-      NAMELIST /NALINE/ CLINE, ML, KL, FR1, IRGG, XDELLA, XDELLO,       &
+      NAMELIST /NALINE/ CLINE, NFRE, NFRE_RED, FR1, IFRE1, NANG,        &
+     &                  IRGG, XDELLA, XDELLO,                           &
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
      &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,                &
      &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
-     &                  IFRE1, LAQUA, LLUNSTR, LPREPROC
+     &                  LAQUA, LLUNSTR, LPREPROC
 
       NAMELIST /NACORR/ ZOUTS, ZOUTN, ZOUTW, ZOUTE, IOUTD
       NAMELIST /NAOUTP/ ZOUTLAT, ZOUTLONG 
@@ -117,9 +116,11 @@
       LPREPROC = .FALSE. 
       LVECTOR   =.FALSE.
       IVECTOR   = 1
-      ML     =   0
-      KL     =   0
+      NFRE     =   0
+      NFRE_RED =   0
       FR1    =   0.0_JWRB
+      IFRE1 = 1
+      NANG   =   0
       IRGG   =  -1
       XDELLA =   0.0_JWRB
       XDELLO =   0.0_JWRB
@@ -140,7 +141,6 @@
       NDEPTH = 74
       DEPTHA = 1.0_JWRB
       DEPTHD = 1.1_JWRB
-      IFRE1 = 1
       LAQUA =.FALSE. ! to force an aqua planet on irregular grid with xdella
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
@@ -159,7 +159,36 @@
 
       READ (IU05, NALINE)
 
-      ALLOCATE(FR(ML))
+      IF(NFRE_RED > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
+
+      IF(LLUNSTR .AND. NFRE_RED .NE. NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_RED *'
+        WRITE (IU06,*) '* IS DIFFERENT THAN THE TOTAL NUMNBER NFRE   *'
+        WRITE (IU06,*) '* NFRE_RED = ', NFRE_RED
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '* LLUNSTR  = ', LLUNSTR
+        WRITE (IU06,*) '* The software has not yet been adapted     *'
+        WRITE (IU06,*) '* Use NFRE_RED = NFRE = ',NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL ABORT1 
+      ENDIF
+
+      ALLOCATE(FR(NFRE))
 
       FR(IFRE1) = FR1
       DO M=IFRE1-1,1,-1
@@ -197,18 +226,16 @@
 !*    2.1 FREQUENCY AND DIRECTION GRID DEFINITIONS.
 
       WRITE (IU06,'("   FREQUENCY / DIRECTION GRID"/)')
-      WRITE (IU06,'("   NUMBER OF FREQUENCIES IS ML = ",I6)') ML
+      WRITE (IU06,'("   NUMBER OF FREQUENCIES IS NFRE = ",I6)') NFRE
+      WRITE (IU06,'("   REDUCED NUMBER OF FREQ IS NFRE_RED = ",I6)') NFRE_RED
       IF(IFRE1.NE.1) THEN
         WRITE (IU06,'("!!MINIMUM FREQUENCY WAS RESET TO",F10.6)') FR(1)
       ELSE
         WRITE (IU06,'("  MINIMUM FREQUENCY IS  FR(1) = ",F10.6)') FR(1)
       ENDIF
-      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS KL = ",I6)') KL
+      WRITE (IU06,'("   NUMBER OF DIRECTIONS  IS NANG = ",I6)') NANG
 
 !     SET DIMENSIONS.
-
-      NFRE = ML
-      NANG = KL
 
       GBOUNC = 0
       DO II=1,GBOUNC_MAX

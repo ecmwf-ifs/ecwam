@@ -1,4 +1,4 @@
-      SUBROUTINE MTABS (ML, KL)
+      SUBROUTINE MTABS
 
 ! ----------------------------------------------------------------------
 
@@ -14,9 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MTABS (ML, KL)*
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
+!       *CALL* *MTABS*
 
 !     METHOD.
 !     -------
@@ -51,8 +49,6 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL
-
       INTEGER(KIND=JWIM) :: M, JD, NAN, NSTP
 
       REAL(KIND=JWRB) :: AKI
@@ -75,7 +71,7 @@
 !         ----------------------
 
       GH = G/(4.0_JWRB*PI)
-      DO M=1,ML
+      DO M=1,NFRE
         OM=ZPI*FR(M)
 
 !*    1.1.1 LOOP OVER DEPTH.
@@ -120,13 +116,13 @@
         AD=DEPTHA*DEPTHD**(JD-1)
         WRITE (IU06,'(1X,''DEPTH = '',F7.1,'' METRES '')') AD
         WRITE (IU06,'(1X,''GROUP VELOCITY IN METRES/SECOND'')')
-        WRITE (IU06,'(1x,13F10.5)') (TCGOND(JD,M),M=1,ML)
+        WRITE (IU06,'(1x,13F10.5)') (TCGOND(JD,M),M=1,NFRE)
         WRITE (IU06,'(1X,''WAVE NUMBER IN 1./METRES'')')
-        WRITE (IU06,'(1x,13F10.5)') (TFAK(JD,M),M=1,ML)
+        WRITE (IU06,'(1x,13F10.5)') (TFAK(JD,M),M=1,NFRE)
         WRITE (IU06,'(1X,''OMEGA/SINH(2KD) IN 1./SECOND'')')
-        WRITE (IU06,'(1x,13F10.5)') (TSIHKD(JD,M),M=1,ML)
+        WRITE (IU06,'(1x,13F10.5)') (TSIHKD(JD,M),M=1,NFRE)
         WRITE (IU06,'(1X,''2G K**2/(OMEGA*TANH(2KD)) IN 1./(M S)'')')
-        WRITE (IU06,'(1x,13F10.5)') (TFAC_ST(JD,M),M=1,ML)
+        WRITE (IU06,'(1x,13F10.5)') (TFAC_ST(JD,M),M=1,NFRE)
       ENDDO
 
       END SUBROUTINE MTABS

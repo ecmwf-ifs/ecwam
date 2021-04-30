@@ -109,8 +109,7 @@
 
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,DFIM      ,DFIMOFR  ,             &
-     &             DFIMFR  ,DFIMFR2  ,COSTH     ,SINTH
+      USE YOWFRED  , ONLY : FR       ,COSTH     ,SINTH
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,    &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,    &
@@ -119,10 +118,9 @@
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,LLBOUND  ,    &
      &            KMNOP    ,KMSOP    ,IFROMIJ  ,JFROMIJ
-      USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,NIBLO    ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NBLO     ,NIBLO    ,    &
      &            NGX      ,NGY      ,LL1D     ,KWAMVER
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : DEPTH
@@ -229,20 +227,6 @@
       WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'
       CALL FLUSH (IU06)
 
-!     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
-      IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
-      ALLOCATE(DFIMOFR(NFRE))
-      IF(ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
-      ALLOCATE(DFIMFR(NFRE))
-      IF(ALLOCATED(DFIMFR2)) DEALLOCATE(DFIMFR2)
-      ALLOCATE(DFIMFR2(NFRE))
-
-      DO M=1,NFRE
-        DFIMOFR(M) = DFIM(M)/FR(M)
-        DFIMFR(M)  = DFIM(M)*FR(M)
-        DFIMFR2(M) = DFIM(M)*FR(M)**2
-      ENDDO
-
       IF (LLUNSTR) THEN
 
 !AR: augmented domain ...
@@ -332,8 +316,6 @@
         IF (ALLOCATED(KRLON)) DEALLOCATE(KRLON)
         ALLOCATE(KRLON(NIBLO,2,2))  ! THE SIZE IS READJUSTED SEE BELOW
       ENDIF
-
-      IF (LMESSPASS) THEN
 
 !       READ FIRST PART OF IOU8 ON PE IREAD
         IF (IRANK.EQ.IREAD) THEN
@@ -453,18 +435,6 @@
           DEALLOCATE(ICOMBUF)
 
         ENDIF
-
-      ELSEIF (.NOT.LMESSPASS) THEN
-        READ (IU08(IPROPAGS)) KLAT
-        READ (IU08(IPROPAGS)) KLON
-        IF (IPROPAGS.EQ.1) THEN
-          READ (IU08(IPROPAGS)) KRLAT
-          READ (IU08(IPROPAGS)) KRLON
-        ENDIF
-        IF (IPROPAGS.EQ.2) THEN
-        READ (IU08(IPROPAGS)) KCOR
-        ENDIF
-      ENDIF
 
       WRITE(IU06,*) ' PREPROC UBUF INFORMATION READ IN  (first part)'
       CALL FLUSH (IU06)
@@ -1209,7 +1179,7 @@
       DO IP=1,NPR
         NTOPE(IP)=0
       ENDDO
-      IF (LMESSPASS .OR. LLIRANK) THEN
+
         DO IP=1,NPR
           DO IH=1,NLENHALO(IP)
             IF (IPROCFROM(IH,IP).EQ.IRANK) THEN
@@ -1223,14 +1193,13 @@
           NTOPEMAX=MAX(NTOPEMAX,NTOPE(IP))
         ENDDO
 
-      ENDIF
 
 
 !     FIND THE LOCAL NFROMPE
       DO IP=1,NPR
         NFROMPE(IP)=0
       ENDDO
-      IF (LMESSPASS .OR. LLIRANK) THEN
+
         DO IH=1,NLENHALO(IRANK)
           NFROMPE(IPROCFROM(IH,IRANK))=NFROMPE(IPROCFROM(IH,IRANK))+1
         ENDDO
@@ -1239,8 +1208,6 @@
         DO IP=1,NPR
           NFROMPEMAX=MAX(NFROMPEMAX,NFROMPE(IP))
         ENDDO
-
-      ENDIF
 
 
 !     FIND NGBTOPE AND CREATE NTOPELST
@@ -1279,7 +1246,6 @@
 
 
 !     DETERMINE WHICH IJ's NEED TO BE SEND TO THE OTHER PE'S
-      IF (LMESSPASS .OR. LLIRANK) THEN
         IF (ALLOCATED(IJTOPE)) DEALLOCATE(IJTOPE)
         ALLOCATE(IJTOPE(NTOPEMAX,NPR))
         DO IP=1,NPR
@@ -1296,7 +1262,6 @@
             ENDIF
           ENDDO
         ENDDO
-      ENDIF
 
       ALLOCATE(IJHALO(MAX(1,NLENHALO(IRANK))))
 
@@ -1313,7 +1278,7 @@
 !     KRLON DEPTH FOR POINTS IN THE HALO
 !     NOTE THAT THIS IMPLIES THAT THESE ARRAYS ARE LOCAL BECAUSE THEY
 !     ARE DIFFERENT IN THE HALO REGIONS
-      IF ((LMESSPASS.AND.NPR.GT.1).OR. LLIRANK) THEN
+      IF ((NPR.GT.1).OR. LLIRANK) THEN
 
         DO IC=1,2
           DO IJ=NSTART(IRANK),NEND(IRANK)
@@ -1395,7 +1360,7 @@
       DO IP=1,NPR
         NIJSTART(IP)=NINF-1
       ENDDO
-      IF ((LMESSPASS.AND.NPR.GT.1) .OR. LLIRANK) THEN
+      IF ((NPR.GT.1) .OR. LLIRANK) THEN
         IF (IPROCFROM(1,IRANK).LT.IRANK) THEN
           NIJSTART(IPROCFROM(1,IRANK))=NINF
         ELSEIF (IPROCFROM(1,IRANK).GT.IRANK) THEN
@@ -1436,7 +1401,7 @@
 
       DO IG=1,IGL
         DELLAM1(NINF-1,IG) = 0.0_JWRB
-        IF ((LMESSPASS.AND.NPR.GT.1)) THEN
+        IF ( NPR.GT.1 ) THEN
           DO IJ=NSTART(IRANK),NEND(IRANK)
             JH = KXLT(IJ,IG)
             DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
@@ -1464,7 +1429,7 @@
             CDR(NINF-1,K,IG) = 0.0_JWRB
             SDR(NINF-1,K,IG) = 0.0_JWRB
           ENDDO
-          IF ((LMESSPASS.AND.NPR.GT.1)) THEN
+          IF ( NPR.GT.1 ) THEN
             DO IJ=NSTART(IRANK),NEND(IRANK)
               JH = KXLT(IJ,IG)
               DO K=1,NANG
@@ -1538,7 +1503,7 @@
 
       IG=1
 
-      IF ((LMESSPASS.AND.NPR.GT.1)) THEN
+      IF ( NPR.GT.1 ) THEN
 !       LOCAL POINTS
         DO IJ=NSTART(IRANK),NEND(IRANK)
           IFROMIJ(IJ,IG)=IXLG(IJ,IG)
@@ -1629,7 +1594,7 @@
 !        ----------------------------------------------------------
 
 
-      IF (LMESSPASS.AND.NPR.GT.1) THEN
+      IF ( NPR.GT.1 ) THEN
 
         ALLOCATE(KDUM3(NSTART(IRANK):NEND(IRANK),2,2))
 
@@ -1758,10 +1723,6 @@
 !        NINF-1.
 !        ---------------------------------------------------------
 
-
-      IF (.NOT.LMESSPASS) NSUP=NIBLO
-
-      IF (LMESSPASS) THEN
         DO ICL=1,2
           DO IC=1,2
             DO IJ = NSTART(IRANK),NEND(IRANK)
@@ -1792,7 +1753,6 @@
             ENDDO
           ENDDO
         ENDIF
-      ENDIF
 
 
 
@@ -1805,8 +1765,6 @@
       IF (ALLOCATED(WRLON)) DEALLOCATE(WRLON)
 
       ALLOCATE(ISENDREQ(MAX(1,NPR-1)))
-
-      IF (LMESSPASS) THEN
 
 !       READ SECOND PART OF IU08 ON PE IREAD
 
@@ -2065,17 +2023,17 @@
 
         ALLOCATE(IDUM(NIBLO))
 
-        ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
-        ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        ALLOCATE(KOBSLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
+        ALLOCATE(KOBSLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
         IF (IPROPAGS.EQ.1) THEN
-          ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
-          ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+          ALLOCATE(KOBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
+          ALLOCATE(KOBSRLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
         ENDIF
         IF (IPROPAGS.EQ.2) THEN
-          ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
+          ALLOCATE(KOBSCOR(NSTART(IRANK):NEND(IRANK),NFRE_RED,4))
         ENDIF
 
-        DO M=1,NFRE ! loop over frequencies
+        DO M=1,NFRE_RED ! loop over frequencies
 
 !       READING KOBSLAT
 !       ---------------
@@ -2376,80 +2334,6 @@
 
         IF (.NOT.LL1D.AND.NPR.GT.1) DEALLOCATE(KDUM)
 
-      ELSEIF (.NOT.LMESSPASS) THEN
-        CALL GSTATS(1771,0)
-        IF (LLR8TOR4) THEN ! Legacy input R8 conv. to R4
-           ALLOCATE(R8_WLAT(NIBLO,2))
-           ALLOCATE(WLAT(NIBLO,2))
-           READ (IU08(IPROPAGS)) R8_WLAT
-           WLAT = R8_WLAT
-           DEALLOCATE(R8_WLAT)
-           IF (IPROPAGS.EQ.1) THEN
-              ALLOCATE(R8_WRLAT(NIBLO,2))
-              ALLOCATE(R8_WRLON(NIBLO,2))
-              ALLOCATE(WRLAT(NIBLO,2))
-              ALLOCATE(WRLON(NIBLO,2))
-              READ (IU08(IPROPAGS)) R8_WRLAT
-              READ (IU08(IPROPAGS)) R8_WRLON
-              WRLAT = R8_WRLAT
-              WRLON = R8_WRLON
-              DEALLOCATE(R8_WRLAT)
-              DEALLOCATE(R8_WRLON)
-           ENDIF
-           IF (IPROPAGS.EQ.2) THEN
-              ALLOCATE(R8_WCOR(NIBLO,4))
-              ALLOCATE(WCOR(NIBLO,4))
-              READ (IU08(IPROPAGS)) R8_WCOR
-              WCOR = R8_WCOR
-              DEALLOCATE(R8_WCOR)
-           ENDIF
-        ELSE ! Normal situation
-           ALLOCATE(WLAT(NIBLO,2))
-           READ (IU08(IPROPAGS)) WLAT
-           IF (IPROPAGS.EQ.1) THEN
-              ALLOCATE(WRLAT(NIBLO,2))
-              ALLOCATE(WRLON(NIBLO,2))
-              READ (IU08(IPROPAGS)) WRLAT
-              READ (IU08(IPROPAGS)) WRLON
-           ENDIF
-           IF (IPROPAGS.EQ.2) THEN
-              ALLOCATE(WCOR(NIBLO,4))
-              READ (IU08(IPROPAGS)) WCOR
-           ENDIF
-        ENDIF
-
-        ALLOCATE(KOBSLAT(NIBLO,NFRE,2))
-        ALLOCATE(KOBSLON(NIBLO,NFRE,2))
-        IF (IPROPAGS.EQ.1) THEN
-          ALLOCATE(KOBSRLAT(NIBLO,NFRE,2))
-          ALLOCATE(KOBSRLON(NIBLO,NFRE,2))
-        ELSEIF (IPROPAGS.EQ.2) THEN
-          ALLOCATE(KOBSCOR(NIBLO,NFRE,4))
-        ENDIF
-
-        DO M=1,NFRE ! loop over frequencies
-          DO IC=1,2
-            READ (IU08(IPROPAGS)) KOBSLAT(:,M,IC)
-          ENDDO
-          DO IC=1,2
-            READ (IU08(IPROPAGS)) KOBSLON(:,M,IC)
-          ENDDO
-          IF (IPROPAGS.EQ.1) THEN
-            DO IC=1,2
-              READ (IU08(IPROPAGS)) KOBSRLAT(:,M,IC)
-            ENDDO
-            DO IC=1,2
-              READ (IU08(IPROPAGS)) KOBSRLON(:,M,IC)
-            ENDDO
-          ELSEIF (IPROPAGS.EQ.2) THEN
-            DO IC=1,4
-              READ (IU08(IPROPAGS)) KOBSCOR(:,M,IC)
-            ENDDO
-          ENDIF
-        ENDDO
-        CALL GSTATS(1771,1)
-      ENDIF
-
       WRITE(IU06,*) ' PREPROC UBUF INFORMATION READ IN  (second part)'
       CALL FLUSH (IU06)
 
@@ -2464,18 +2348,18 @@
 !     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
 !     VELOCITY At THE INTERFACE !!!!!!!!
       IF (ALLOCATED(OBSLON)) DEALLOCATE(OBSLON)
-      ALLOCATE(OBSLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+      ALLOCATE(OBSLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
 !     NOTE: THE VALUE OF OBSLAT WILL BE RESET IN THE FIRST
 !     CALL TO PROPAGS TO CONTAIN THE OBSTRUCTION TIME THE GROUP
 !     VELOCITY At THE INTERFACE !!!!!!!!
       IF (ALLOCATED(OBSLAT)) DEALLOCATE(OBSLAT)
-      ALLOCATE(OBSLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+      ALLOCATE(OBSLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
 
       CALL GSTATS(1497,0)
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
       DO ICC=1,2
         IC=ICC
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=NSTART(IRANK),NEND(IRANK)
             IF (.NOT. LSUBGRID) THEN
               OBSLON(IJ,M,IC)=1.0_JWRB
@@ -2489,7 +2373,7 @@
           ENDDO
         ENDDO
 
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=NSTART(IRANK),NEND(IRANK)
             IF (.NOT. LSUBGRID) THEN
               OBSLAT(IJ,M,IC)=1.0_JWRB
@@ -2512,15 +2396,15 @@
       IF (IPROPAGS.EQ.1) THEN
 !       NOTE: THE VALUE OF OBSRLON WILL NOT BE RESET IN THE FIRST
         IF (ALLOCATED(OBSRLON)) DEALLOCATE(OBSRLON)
-        ALLOCATE(OBSRLON(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        ALLOCATE(OBSRLON(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
 !       NOTE: THE VALUE OF OBSRLAT WILL NOT BE RESET IN THE FIRST
         IF (ALLOCATED(OBSRLAT)) DEALLOCATE(OBSRLAT)
-        ALLOCATE(OBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE,2))
+        ALLOCATE(OBSRLAT(NSTART(IRANK):NEND(IRANK),NFRE_RED,2))
         CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
         DO ICC=1,2
           IC=ICC
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=NSTART(IRANK),NEND(IRANK)
               IF (.NOT. LSUBGRID) THEN
                 OBSRLON(IJ,M,IC)=1.0_JWRB
@@ -2534,7 +2418,7 @@
             ENDDO
           ENDDO
 
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=NSTART(IRANK),NEND(IRANK)
               IF (.NOT. LSUBGRID) THEN
                 OBSRLAT(IJ,M,IC)=1.0_JWRB
@@ -2557,12 +2441,12 @@
 
       IF (IPROPAGS.EQ.2) THEN
         IF (ALLOCATED(OBSCOR)) DEALLOCATE(OBSCOR)
-        ALLOCATE(OBSCOR(NSTART(IRANK):NEND(IRANK),NFRE,4))
+        ALLOCATE(OBSCOR(NSTART(IRANK):NEND(IRANK),NFRE_RED,4))
         CALL GSTATS(1497,0)
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICC,IC,M,IJ)
         DO ICC=1,4
           IC=ICC
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=NSTART(IRANK),NEND(IRANK)
               IF (.NOT. LSUBGRID) THEN
                 OBSCOR(IJ,M,IC)=1.0_JWRB
@@ -2600,7 +2484,6 @@
 !     8. TEST AND RESET
 !        -------------- 
 
-      IF (LMESSPASS) THEN
         IF (IGL.GT.1) THEN
           WRITE (IU06,*) '******************************************'
           WRITE (IU06,*) '*                                        *'
@@ -2631,7 +2514,6 @@
           ALLOCATE (NBLKE(NPR))
           NBLKE(:)=NEND(:)
         ENDIF
-      ENDIF
 
       KTAG=KTAG+1
 

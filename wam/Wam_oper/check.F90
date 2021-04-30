@@ -1,4 +1,4 @@
-      SUBROUTINE CHECK (ML, KL, IINPC)
+      SUBROUTINE CHECK (IINPC)
 
 ! ----------------------------------------------------------------------
 
@@ -14,9 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CHECK (ML, KL, IINPC)*
-!          *ML*      - NUMBER OF FREQUENCIES.
-!          *KL*      - NUMBER OF DIRECTIONS.
+!       *CALL* *CHECK (IINPC)*
 !          *IINPC*   - NUMBER INPUT POINTS FROM A PREVIOUS COARSE GRID.
 
 !     METHOD.
@@ -37,7 +35,8 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,
+     &            NGX      ,NGY      ,                                  &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
      &            NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : DEG
@@ -58,7 +57,7 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL, IINPC
+      INTEGER(KIND=JWIM), INTENT(IN) :: IINPC
 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IU1, IU2, IO, IO1, IO2
@@ -350,9 +349,11 @@
       WRITE (IU06,'(''                                     DEFINED'',   &
      &           ''      USED'',''  REQUIRED'')')
       WRITE (IU06,'('' NUMBER OF DIRECTIONS        NANG '', 3I10)')     &
-     &           NANG, KL, KL
+     &           NANG, NANG, NANG 
       WRITE (IU06,'('' NUMBER OF FREQUENCIES       NFRE '', 3I10)')     &
-     &           NFRE, ML, ML
+     &           NFRE, NFRE, NFRE 
+      WRITE (IU06,'('' NUMBER OF FREQUENCIES   NFRE_RED '', 3I10)')     &
+     &           NFRE_RED, NFRE_RED, NFRE_RED 
       WRITE (IU06,'('' NUMBER LONGITUDE GRID POINTS NGX '', 3I10)')     &
      &           NGX, NX, NX
       WRITE (IU06,'('' NUMBER LATITUDE GRID POINTS  NGY '', 3I10)')     &

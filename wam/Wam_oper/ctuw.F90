@@ -47,7 +47,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       USE YOWMAP   , ONLY : IXLG     , KXLT     ,IRGG    ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,AMOWEP   ,AMOSOP 
       USE YOWMPP   , ONLY : NINF
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NGX      ,NGY
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH   ,     &
@@ -104,7 +104,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,2) :: DP 
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,2) :: WLATM1 
       REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,4) :: WCORM1 
-      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,NFRE) :: CGR
+      REAL(KIND=JWRB), DIMENSION(MIJS:MIJL,NFRE_RED) :: CGR
       REAL(KIND=JWRB), ALLOCATABLE :: SIGSI(:,:) 
 
 
@@ -133,13 +133,13 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       ENDIF
 
       IF (ISHALLO.NE.1) THEN
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
             CGR(IJ,M)=TCGOND(INDEP(IJ),M)
           ENDDO
         ENDDO
       ELSE
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
             CGR(IJ,M)=GOM(M)
           ENDDO
@@ -188,7 +188,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
       DO ICL=1,2
         DO IC=1,2
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO K=1,NANG
               DO IJ=MIJS,MIJL
                 WLATN(IJ,K,M,IC,ICL)=0.0_JWRB
@@ -199,7 +199,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       ENDDO
 
       DO IC=1,2
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO K=1,NANG
             DO IJ=MIJS,MIJL
               WLONN(IJ,K,M,IC)=0.0_JWRB
@@ -210,7 +210,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
       DO ICL=1,2
         DO ICR=1,4
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO K=1,NANG
               DO IJ=MIJS,MIJL
                 WCORN(IJ,K,M,ICR,ICL)=0.0_JWRB
@@ -251,7 +251,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !*          LOOP OVER FREQUENCIES.
 !           ----------------------
-            DO M=1,NFRE
+            DO M=1,NFRE_RED
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
@@ -451,7 +451,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*    GET SCATTER SIGMA/ SINH (2*K*D) TABLE 
 !     -------------------------------------
       IF (IREFRA.NE.0 .AND. ISHALLO.NE.1 ) THEN
-        ALLOCATE(SIGSI(MIJS:MIJL,NFRE))
+        ALLOCATE(SIGSI(MIJS:MIJL,NFRE_RED))
         DO M=1,NFRE
           DO IJ=MIJS,MIJL
             SIGSI(IJ,M) = TSIHKD(INDEP(IJ),M)
@@ -517,7 +517,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*      SHALLOW WATER (NO DEPTH REFRACTION).
 !       ------------------------------------
         IF (ISHALLO.EQ.1 .OR. IREFRA.EQ.0) THEN
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               DTHP = DRGP(IJ)*CGR(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGR(IJ,M) + DRCM(IJ)
@@ -529,7 +529,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
         ELSE
 !*      SHALLOW WATER AND DEPTH REFRACTION.
 !       -----------------------------------
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               DTHP = DRGP(IJ)*CGR(IJ,M)+SIGSI(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGR(IJ,M)+SIGSI(IJ,M)*DRDM(IJ)+DRCM(IJ)
@@ -550,10 +550,10 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !*        DEEP WATER 
 !         ----------
           IF (ISHALLO.EQ.1) THEN
-            DO M=1,NFRE
+            DO M=1,NFRE_RED
               DFP = PI*(1.+FRATIO)*DELFR0
               DO IJ=MIJS,MIJL
-                DTHP = CURMASK(IJ) * SDOT(IJ,K,NFRE) * DFP
+                DTHP = CURMASK(IJ) * SDOT(IJ,K,NFRE_RED) * DFP
                 WMPMN(IJ,K,M,0) =2.0_JWRB* ABS(DTHP)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=( DTHP+ABS(DTHP))*FRATIO
@@ -562,8 +562,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
           ELSE
 !*        SHALLOW WATER
 !         -------------
-            DO M=1,NFRE
-              MP1 = MIN(NFRE,M+1)
+            DO M=1,NFRE_RED
+              MP1 = MIN(NFRE_RED,M+1)
               MM1 = MAX(1,M-1)
               DFP = DELFR0/FR(M)
               DFM = DELFR0/FR(MM1)
@@ -590,7 +590,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       DO K=1,NANG
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
             DO IC=1,2
               DO ICL=1,2
@@ -751,11 +751,11 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       ENDDO
 
 
-!!!!!!INCLUDE THE BLOCKING COEFFCIENTS INTO THE WEIGHTS OF THE
+!!!!!!INCLUDE THE BLOCKING COEFFICIENTS INTO THE WEIGHTS OF THE
 !     SURROUNDING POINTS.
 
       DO K=1,NANG
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           DO IJ=MIJS,MIJL
 
 !           POINTS ON SURROUNDING LATITUDES 

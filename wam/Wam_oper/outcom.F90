@@ -41,7 +41,7 @@
 !       MODULES YOWPARAM, YOWCOUPL, YOWCURR, YOWFRED, YOWINDNL, YOWGRID,
 !       YOWMAP, YOWCOUT, YOWTABL, AND YOWSHAL ARE WRITTEN TO UNIT.
 !       ALL FREQUENCY AND DIRECTION DEPENDENT ARRAYS
-!       ARE WRITTEN FROM 1 TO THE USED NUMBER OF FREQUENCIES (NFRE),
+!       ARE WRITTEN FROM 1 TO THE USED NUMBER OF FREQUENCIES (NFRE, NFRE_RED),
 !       AND THE USED NUMBER OF DIRECTIONS (NANG). OTHER ARRAYS ARE
 !       WRITTEN ACCORDING TO THEIR DIMENSIONS.
 
@@ -60,7 +60,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
+     &            NGX      ,NGY      ,                                  &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
      &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
       USE YOWCPBO  , ONLY : NBOUNC
@@ -105,7 +106,7 @@
 
   995 FORMAT(5I8)
   996 FORMAT(I8,1X,2E16.7)
-  997 FORMAT(16I8,1X,A1)
+  997 FORMAT(17I8,1X,A1)
   998 FORMAT(10I8)
   999 FORMAT(5E16.7)
 
@@ -128,12 +129,12 @@
       IDUM=0
 
       IF (IFORM.NE.2) THEN
-        WRITE(IU07) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,           &
+        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER, &
      &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE(IU17,997) NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,       &
+        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER, &
      &              KFRH, MFRSTLW, MLSTHG,                              &
      &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
       ENDIF
@@ -298,7 +299,8 @@
       
  
       CALL OUTNAM                                                       &
-     & (NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,         &
+     & (NANG, NFRE,                                                     &
+     &  NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,                     &
      &  KFRH, MFRSTLW, MLSTHG,                                          &
      &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC ,        &
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)

@@ -1,4 +1,4 @@
-      SUBROUTINE MFREDIR (ML, KL)
+      SUBROUTINE MFREDIR
 
 ! ----------------------------------------------------------------------
 
@@ -16,9 +16,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MFREDIR (ML, KL)*
-!          *ML*  - NUMBER OF FREQUENCIES
-!          *KL*  - NUMBER OF DIRECTIONS
+!       *CALL* *MFREDIR*
 
 !     METHOD.
 !     -------
@@ -41,7 +39,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH    ,    &
      &            FRATIO
@@ -53,8 +51,6 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: ML, KL
-
       INTEGER(KIND=JWIM) :: M, K
 
       REAL(KIND=JWRB) :: CO1
@@ -65,21 +61,21 @@
 !*    1.1 COMPUTE FREQUENCIES.
 !         --------------------
 
-      DO M=2,ML
+      DO M=2,NFRE
         FR(M) = FRATIO*FR(M-1)
       ENDDO
 
 !*    1.2 COMPUTE DEEP WATER GROUP VELOCITIES.
 !        ------------------------------------
 
-      DO M=1,ML
+      DO M=1,NFRE
         GOM(M) = G/(4.0_JWRB*PI*FR(M))
       ENDDO
 
 !*    1.3 COMPUTE PHASE VELOCITY IN DEEP WATER.
 !         -------------------------------------
 
-      DO M = 1,ML
+      DO M = 1,NFRE
         C(M) = G/(ZPI*FR(M))
       ENDDO
 
@@ -88,9 +84,9 @@
 !*    2. COMPUTATION OF DIRECTIONS, BANDWIDTH, SIN AND COS.
 !        --------------------------------------------------
 
-      DELTH = ZPI/REAL(KL,JWRB)
+      DELTH = ZPI/REAL(NANG,JWRB)
       DELTR = DELTH*R
-      DO K=1,KL
+      DO K=1,NANG
 !CCC        TH(K) = REAL(K-1,JWRB)*DELTH
 !CCC the previous line should be used if spectra should not be rotated.
 !CCC the next line should be used if rotated spectra are used
@@ -106,10 +102,10 @@
 
       CO1 = 0.5_JWRB*(FRATIO-1.0_JWRB)*DELTH
       DFIM(1)= CO1*FR(1)
-      DO M=2,ML-1
+      DO M=2,NFRE-1
         DFIM(M)=CO1 * (FR(M)+FR(M-1))
       ENDDO
-      DFIM(ML)=CO1*FR(ML-1)
+      DFIM(NFRE)=CO1*FR(NFRE-1)
 
 ! ----------------------------------------------------------------------
 
@@ -117,19 +113,20 @@
 !         ---------------
 
       WRITE (IU06,'(''1FREQUENCY AND DIRECTION GRID'')')
-      WRITE (IU06,'(''0NUMBER OF FREQUENCIES IS  ML = '',I3)') ML
-      WRITE (IU06,'('' NUMBER OF DIRECTIONS  IS  KL = '',I3)') KL
+      WRITE (IU06,'(''0NUMBER OF FREQUENCIES IS  NFRE = '',I3)') NFRE
+      WRITE (IU06,'(''0REDUCED NUMBER OF FREQUENCIES IS  NFRE_RED = '',I3)') NFRE_RED
+      WRITE (IU06,'('' NUMBER OF DIRECTIONS  IS  NANG = '',I3)') NANG
       WRITE (IU06,'(''0MODEL FREQUENCIES IN HERTZ:'')')
-      WRITE (IU06,'(1X,13F10.5)') (FR(M),M=1,ML)
+      WRITE (IU06,'(1X,13F10.5)') (FR(M),M=1,NFRE)
       WRITE (IU06,'(''0MODEL FREQUENCY INTERVALLS TIMES DIRECTION'',    &
      &              '' INTERVALL IN HERTZ*RADIENS'')')
-      WRITE (IU06,'(1X,13F10.5)') (DFIM(M),M=1,ML)
+      WRITE (IU06,'(1X,13F10.5)') (DFIM(M),M=1,NFRE)
       WRITE (IU06,'(''0MODEL DEEP WATER GROUPVELOCITY IN M/S:'')')
-      WRITE (IU06,'(1X,13F10.5)') (GOM(M),M=1,ML)
+      WRITE (IU06,'(1X,13F10.5)') (GOM(M),M=1,NFRE)
       WRITE (IU06,'(''0MODEL DEEP WATER PHASEVELOCITY IN M/S:'')')
-      WRITE (IU06,'(1X,13F10.5)') (C(M),M=1,ML)
+      WRITE (IU06,'(1X,13F10.5)') (C(M),M=1,NFRE)
       WRITE (IU06,'(''0MODEL DIRECTIONS IN DEGREE'',                    &
      &              '' (CLOCKWISE FROM NORTH):'')')
-      WRITE (IU06,'(1X,13F10.5)') (TH(K)*DEG,K=1,KL)
+      WRITE (IU06,'(1X,13F10.5)') (TH(K)*DEG,K=1,NANG)
 
       END SUBROUTINE MFREDIR

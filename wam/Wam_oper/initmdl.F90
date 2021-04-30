@@ -243,6 +243,7 @@
      &            ZPIFR    ,                                            &
      &            FRM5     ,COFRM4   ,COEF4    ,FRATIO  ,FLOGSPRDM1,    &
      &            COSTH    ,SINTH    ,FLMAX    ,RHOWG_DFIM,             &
+     &            DFIM     ,DFIMOFR  ,DFIMFR  ,DFIMFR2   ,              &
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
@@ -512,6 +513,20 @@
         IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS(1):IJL(1)))
 
       ENDIF
+
+!     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
+      IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
+      ALLOCATE(DFIMOFR(NFRE))
+      IF(ALLOCATED(DFIMFR)) DEALLOCATE(DFIMFR)
+      ALLOCATE(DFIMFR(NFRE))
+      IF(ALLOCATED(DFIMFR2)) DEALLOCATE(DFIMFR2)
+      ALLOCATE(DFIMFR2(NFRE))
+
+      DO M=1,NFRE
+        DFIMOFR(M) = DFIM(M)/FR(M)
+        DFIMFR(M)  = DFIM(M)*FR(M)
+        DFIMFR2(M) = DFIM(M)*FR(M)**2
+      ENDDO
 
 !     DEFINE A FEW CONSTANTS FOR USE IN IMPLSCH
 

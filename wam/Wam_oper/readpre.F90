@@ -63,7 +63,8 @@
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,                                  &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
      &            IMDLGRDID 
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
@@ -310,7 +311,6 @@
       IMPLICIT NONE
       INTEGER(KIND=JWIM), INTENT(IN) :: KREC
       INTEGER(KIND=JWIM) :: ISTAT
-      !REAL(KIND=8) ::                     &
       REAL(KIND=JWRU) ::                                                &
      & R8_ACL1,R8_ACL2,                                                 &
      & R8_AMOEAP,R8_AMONOP,R8_AMOSOP,R8_AMOWEP,                         &
@@ -334,7 +334,6 @@
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
      &     R8_FAK                
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
      &     R8_DEPTH,                                                    &
      &     R8_TCGOND,                                                   &
@@ -342,7 +341,6 @@
      &     R8_TSIHKD,                                                   &
      &     R8_TFAC_ST,                                                  &
      &     R8_TFAKH
-      !REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:,:,:) ::
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:,:,:) ::               &
      &     R8_FAC0,                                                     &
      &     R8_FAC1,                                                     &
@@ -374,7 +372,7 @@
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NGX, NGY, NBLO, NIBLO, NOVER,                 &
+     &        NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER,       &
      &        KFRH, MFRSTLW, MLSTHG,                                    &
      &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000

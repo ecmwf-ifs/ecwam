@@ -1,4 +1,4 @@
-      SUBROUTINE MUBUF (IU01, BATHY, IG, ML, IU08, NPROPAGS)
+      SUBROUTINE MUBUF (IU01, BATHY, IG, IU08, NPROPAGS)
 ! ----------------------------------------------------------------------
 
 !**** *MUBUF* - ROUTINE TO ARRANGE YOWMON UBUF FOR ONE BLOCK.
@@ -22,11 +22,10 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MUBUF (BATHY,IG,ML,IU08)*
+!       *CALL* *MUBUF (BATHY,IG,IU08)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
 !          *BATHY*     -  BATHYMETRY DATA.
 !          *IG*      - BLOCK NUMBER.
-!          *ML*      - NUMBER OF FREQUENCIES.
 !          *IU08*    - LOGICAL UNITS FOR OUTPUT OF GRID BLOCKING
 !                      COMMON UBUF (UNFORMATED)
 
@@ -51,7 +50,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NFRE_RED
       USE YOWGRID  , ONLY : NLONRGG  ,IJLT
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,IRGG     ,LLOBSTRCT
@@ -68,15 +67,12 @@
       INTEGER(KIND=JWIM) :: IU01
       INTEGER(KIND=JWIM) :: NPROPAGS
       INTEGER(KIND=JWIM) :: NFREMAX, IX
-      INTEGER(KIND=JWIM) :: IG, IJ, IJP, I, K, IP, IH, IS, ML, M
+      INTEGER(KIND=JWIM) :: IG, IJ, IJP, I, K, IP, IH, IS, M
       INTEGER(KIND=JWIM) :: IMIN, IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER(KIND=JWIM) :: IC, ICP, ICL, ICR
       INTEGER(KIND=JWIM) :: IU08(0:NPROPAGS)
       INTEGER(KIND=JWIM), DIMENSION(NGX, NGY) :: IDUM
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KDUM
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSLON, KOBSLAT
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSCOR
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: KOBSRLON, KOBSRLAT
 
       REAL(KIND=JWRB) :: XMIN, XPLUS, D0, D1, D2, D3, D4, D5, D6
       REAL(KIND=JWRB) :: XLON, XL, XP, TWOXDELLA
@@ -1031,13 +1027,13 @@
 !     CHECK INOUT IS CONSISTENT WITH CURRENT SETUP
       IF (LLOBSTRCT) THEN
         READ (IU01,'(I4)') NFREMAX
-        IF (NFREMAX.NE.ML ) THEN
+        IF (NFREMAX.NE.NFRE_RED ) THEN
           WRITE (IU06,*) ' *******************************************'
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' *      FATAL  ERROR IN SUB. MUBUF         *'
-          WRITE (IU06,*) ' * NFREMAX MUST BE = ML                    *'
+          WRITE (IU06,*) ' * NFREMAX MUST BE = NFRE_RED              *'
           WRITE (IU06,*) ' * NFREMAX = ',NFREMAX
-          WRITE (IU06,*) ' * ML      = ',ML 
+          WRITE (IU06,*) ' * NFRE_RED = ',NFRE_RED 
           WRITE (IU06,*) ' *                                         *'
           WRITE (IU06,*) ' * PROGRAM WILL BE ABORTED                 *'
           WRITE (IU06,*) ' *                                         *'
@@ -1048,7 +1044,7 @@
 
       ALLOCATE(KDUM(NIBLO))
 
-      DO M=1,ML  ! loop over frequencies
+      DO M=1,NFRE_RED  ! loop over frequencies used for the propagation
 
 !     KOBSLAT
         DO IS=1,2

@@ -55,7 +55,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IQGAUSS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NGX      ,NGY      ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+     &            NGX      ,NGY      ,                                  &
      &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
@@ -107,6 +108,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NANG
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NFRE
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=NFRE_RED
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NGX
           IKCOUNT=IKCOUNT+1
@@ -162,6 +165,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           NFRE=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
+          NFRE_RED=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
           NGX=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NGY=ICOMBUF(IKCOUNT)
@@ -207,7 +212,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
+        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &

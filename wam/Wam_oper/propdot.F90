@@ -43,7 +43,7 @@
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWGRID  , ONLY : COSPHM1
       USE YOWMESPAS, ONLY : LMESSPASS
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWSHAL  , ONLY : TCGOND   ,TFAK     ,TSIHKD   ,INDEP 
       USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
@@ -57,7 +57,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG), INTENT(OUT) :: THDC, THDD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(OUT) :: SDOT
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
 
 
       INTEGER(KIND=JWIM) :: IG
@@ -139,7 +139,7 @@
             SC  = SD*CD
             CC  = CD**2
             DO IJ = IJS,IJL
-              SDOT(IJ,K,NFRE) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)            &
+              SDOT(IJ,K,NFRE_RED) = -SC*DUPHI(IJ) - CC*DVPHI(IJ)            &
      &                        - (SS*DULAM(IJ) + SC*DVLAM(IJ))*DCO(IJ)
               THDC(IJ,K) =  SS*DUPHI(IJ) + SC*DVPHI(IJ)                 &
      &                    - (SC*DULAM(IJ) + CC*DVLAM(IJ))*DCO(IJ)
@@ -149,9 +149,9 @@
 !           ----------------------
 
             IF (ISHALLO.NE.1) THEN
-              DO M=1,NFRE
+              DO M=1,NFRE_RED
                 DO IJ=IJS,IJL
-                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE)*TCGOND(INDEP(IJ),M)   &
+                  SDOT(IJ,K,M) = (SDOT(IJ,K,NFRE_RED)*TCGOND(INDEP(IJ),M)   &
      &             + OMDD(IJ)*TSIHKD(INDEP(IJ),M))                      &
      &             * TFAK(INDEP(IJ),M)
                 ENDDO
