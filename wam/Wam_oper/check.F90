@@ -43,7 +43,7 @@
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,IJARC    ,IGARC
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF   ,IJARF    ,IGARF
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWCURR  , ONLY : U        ,V              &
+      USE YOWCURR  , ONLY : U        ,V
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJLS     ,    &
      &            IJL      ,IJLT
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
