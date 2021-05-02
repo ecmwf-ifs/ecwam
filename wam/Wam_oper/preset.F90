@@ -561,10 +561,10 @@
       IF(IOPTI.NE.3) THEN
         THETAQ = THETA * RAD
         CALL MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,             &
-     &              FL1,U10OLD,THWOLD)
+     &              IJS(1), IJL(1), FL1, U10OLD, THWOLD)
         IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. MSTART DONE'
       ELSE
-        CALL MSWELL (FL1)
+        CALL MSWELL (IJS(1), IJL(1), FL1)
 
         IF (LLUNSTR) THEN
 !         reset points with no flux out of the boundary to 0

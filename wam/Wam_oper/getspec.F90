@@ -1,4 +1,4 @@
-SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
+SUBROUTINE GETSPEC(FL, IJS, IJL, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -48,11 +48,11 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5      ,FRM5
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,NLONRGG
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,IRGG     ,              &
      &            XDELLA   ,ZDELLO
       USE YOWMESPAS, ONLY : LGRIBIN
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NBLO     ,NIBLO    ,CLDOMAIN
@@ -83,9 +83,9 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 #include "mpdistribfl.intfb.h"
 #include "readfl.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IREAD
       INTEGER(KIND=JWIM), DIMENSION(NPROC),INTENT(IN) :: NBLKS, NBLKE
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL
     
 
       INTEGER(KIND=JWIM) :: NBIT
@@ -94,7 +94,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICC, JSN, IDUM, IX, IY, ID, MR, KR, IP
       INTEGER(KIND=JWIM) :: KLOOP, MLOOP, KINF, KSUP, MINF, MSUP
       INTEGER(KIND=JWIM) :: IERR, KRCOUNT, KFROM, KRTAG
-      INTEGER(KIND=JWIM) :: IRA, IG
+      INTEGER(KIND=JWIM) :: IRA
       INTEGER(KIND=JWIM) :: IUNIT
       INTEGER(KIND=JWIM) :: LNAME
       INTEGER(KIND=JWIM) :: IBREAD, NBREAD, NBREAD_AGAIN 
@@ -157,11 +157,10 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 !     BY-PASSED INPUT BY STARTING WITH SPECTRA AT NOISE LEVEL
 !     =======================================================
 
-        IG=1
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO M=1,NFRE
             DO K=1,NANG
               DO IJ=KIJS,KIJL
@@ -171,12 +170,6 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-
-         DO K=1,NANG
-           DO M=1,NFRE
-             FL(NINF-1,K,M) = 0.0_JWRB
-           ENDDO
-         ENDDO
 
       ELSEIF (LGRIBIN .AND. .NOT.LRESTARTED) THEN
 !     INPUT SPECTRA ARE IN GRIB FORMAT
@@ -554,7 +547,6 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 
             ENDIF
 
-            FL(NINF-1,K,M)=0.0_JWRB
           ENDDO
           DEALLOCATE(ZRECVBUF)
 
@@ -586,11 +578,10 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
 !       FILL MISSING PART (if any) AND
 !       CHECK THAT INPUT SPECTRA ARE CONSISTENT WITH MODEL DEPTH
 !       RESCALE IF NOT
-        IG=1
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
 
           DO M=NFRE_RED+1,NFRE
             DO K=1,NANG
@@ -628,7 +619,7 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
            LNAME = LEN_TRIM(FILENAME)
            FILENAME=FILENAME(1:LNAME)//'.%p_%n'
            CALL EXPAND_STRING(IRANK,NPROC,0,0,FILENAME,1)
-           CALL READFL(FL, NINF-1, NSUP, 1, NANG, 1, NFRE,              &
+           CALL READFL(FL, IJS, IJL, 1, NANG, 1, NFRE,              &
      &                 FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
 
          ELSE
@@ -659,11 +650,10 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
      &          WRITE(IU06,*)'SUB. GETSPEC: RESTART SPECTRUM COLLECTED, PART:',MLOOP
 
 !              KEEP CORRESPONDING CONTRIBUTION TO FL
-               IG=1
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)
-               DO JKGLO=IJS(IG),IJL(IG),NPROMA
+               DO JKGLO=IJS,IJL,NPROMA
                  KIJS=JKGLO
-                 KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                 KIJL=MIN(KIJS+NPROMA-1,IJL)
                  DO K=KINF,KSUP
                    DO M=MINF,MSUP
                      DO IJ=KIJS,KIJL
@@ -673,12 +663,6 @@ SUBROUTINE GETSPEC(FL, NBLKS, NBLKE, IREAD)
                  ENDDO
                ENDDO
 !$OMP       END PARALLEL DO
-
-               DO M=MINF,MSUP
-                 DO K=KINF,KSUP
-                   FL(NINF-1,K,M) = 0.0_JWRB
-                 ENDDO
-               ENDDO
 
                DEALLOCATE(RFL)
              ENDDO

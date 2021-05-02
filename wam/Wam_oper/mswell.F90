@@ -1,4 +1,4 @@
-      SUBROUTINE MSWELL (FL1)
+      SUBROUTINE MSWELL (IJS, IJL, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -13,7 +13,7 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (FL1)
+!   *CALL* *MSWELL (IJS, IJL, FL1)
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
 !     METHOD.
@@ -108,9 +108,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : IGL
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
-      USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -121,6 +119,9 @@
 
       IMPLICIT NONE
 #include "init_fieldg.intfb.h"
+
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(OUT) :: FL1
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
       INTEGER(KIND=JWIM) :: IG
@@ -134,7 +135,6 @@
       REAL(KIND=JWRB), DIMENSION(NLOC) :: H0, OMEGAP, XL
       REAL(KIND=JWRB), DIMENSION(NLOC) :: THETA0, COSLAT2
       REAL(KIND=JWRB), DIMENSION(NANG) :: Q0
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(OUT) :: FL1
       REAL(KIND=JWRB), DIMENSION(NLOC,NANG,NFRE):: FL0
 
       REAL(KIND=JWRU) :: XLO, YLA, DIST
@@ -148,7 +148,7 @@
 
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=NINF-1,NSUP
+            DO IJ = IJS, IJL
               FL1(IJ,K,M)=0.0_JWRB
             ENDDO
           ENDDO
@@ -241,8 +241,9 @@
           ENDDO
         ENDDO
 
-        IG=IGL
-        DO IJ=NINF,NSUP
+        IG=1
+
+        DO IJ = IJS, IJL
           IX = IFROMIJ(IJ,IG)
           JY = JFROMIJ(IJ,IG)
           XLO=FIELDG(IX,JY)%XLON

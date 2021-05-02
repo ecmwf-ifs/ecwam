@@ -1,5 +1,5 @@
       SUBROUTINE MSTART (IU12, IU14, IU15, IOPTI, FETCH, FRMAX,         &
-     &                   FL1, U10OLD, THWOLD)
+     &                   IJS, IJL, FL1, U10OLD, THWOLD)
 ! ----------------------------------------------------------------------
 
 !**** *MSTART* - MAKES START FIELDS FOR WAMODEL.
@@ -64,7 +64,6 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
       USE YOWPCONS , ONLY : DEG
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL2     ,IJL
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
      &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
       USE YOWMPP   , ONLY : NINF     ,NSUP
@@ -79,10 +78,11 @@
 #include "spectra.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU12, IU14, IU15, IOPTI
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
@@ -94,6 +94,8 @@
 !     0. ALLOCATE ARRAYS
 !        ---------------
 
+      IG = 1
+
       ALLOCATE(FP(NIBLO))
       ALLOCATE(ALPHJ(NIBLO))
       ALLOCATE(THES(NIBLO))
@@ -101,22 +103,11 @@
 !*    1. DEFINE SPECTRUM FOR LAND POINTS AND WRITE OUTPUT.
 !        -------------------------------------------------
 
-      DO M=1,NFRE
-        DO K=1,NANG
-          FL1(NINF-1,K,M) = 0.0_JWRB
-        ENDDO
-      ENDDO
-
       WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
       WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',          &
      &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
 
 ! ----------------------------------------------------------------------
-
-!*    2. LOOP FOR BLOCKS.
-!        ----------------
-
-      DO IG=1,IGL
 
 !*    2.1 COMPUTE PEAK FREQUENCIES AND ALPHAJONS PARAMETERS.
 !         ----------------------------------------------
@@ -126,19 +117,19 @@
 !           -----------------------------
 
         IF (IOPTI.EQ.1) THEN
-          DO IJ = IJS(IG), IJL(IG)
+          DO IJ = IJS, IJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
             THES(IJ) = THWOLD(IJ,IG)
           ENDDO
         ELSE IF (IOPTI.EQ.0) THEN
-          DO IJ = IJS(IG), IJL(IG)
+          DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
             THES(IJ) = THETAQ
           ENDDO
         ELSE
-          DO IJ = IJS(IG), IJL(IG)
+          DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
             IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
@@ -153,7 +144,7 @@
 !           --------------------------------------------
 
         IF (IOPTI.NE.0) THEN
-          CALL PEAK (IJS(IG), IJL(IG), IG, FETCH, FRMAX, U10OLD)
+          CALL PEAK (IJS, IJL, IG, FETCH, FRMAX, U10OLD)
         ENDIF
         IF (ITEST.GT.1) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. PEAK DONE'
@@ -174,14 +165,11 @@
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
 !         --------------------------------
 
-        CALL SPECTRA (IJS(IG), IJL(IG), IG, FL1)
+        CALL SPECTRA (IJS, IJL, FL1)
         IF (ITEST.GT.1) THEN
           IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. SPECTRA DONE'
         ENDIF
 
-!*    BRANCHING BACK TO 2. FOR NEXT BLOCK.
-
-      ENDDO
 
 ! ----------------------------------------------------------------------
 

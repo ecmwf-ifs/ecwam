@@ -1,4 +1,4 @@
-      SUBROUTINE BOUINPT (FL1, IU02, NSTART, NEND)
+      SUBROUTINE BOUINPT (IU02, NSTART, NEND)
 
 ! ----------------------------------------------------------------------
 
@@ -14,8 +14,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *BOUINPT (FL1, IU02)*
-!          *FL1*     REAL         BLOCK OF SPECTRA.
+!       *CALL* *BOUINPT (IU02)*
 !          *IU02*    INTEGER      UNIT FOR INPUT OF BOUNDARY VALUES.
 !          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !          *NEND*      INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
@@ -53,6 +52,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWSPEC  , oNLY ; FL1
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -77,7 +77,6 @@
       INTEGER(KIND=JWIM) :: NIJB
       INTEGER(KIND=JWIM), DIMENSION(NBOUNF) :: IJB, IBND
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
       REAL(KIND=JWRB) :: XANG, XFRE, TH0, FR1, CO, XNBO, XDELIN  
       REAL(KIND=JWRB) :: XLON, XLAT
       REAL(KIND=JWRB) :: DEL12, DEL1L

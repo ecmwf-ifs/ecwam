@@ -41,7 +41,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NFRE
+      USE YOWPARAM , ONLY : NFRE_RED
       USE YOWSHAL  , ONLY : TSIHKD   ,INDEP
 
 ! ----------------------------------------------------------------------
@@ -49,7 +49,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, ISHALLO
       INTEGER(KIND=JWIM) :: IJ, M
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE), INTENT(OUT):: SHLFAC
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NFRE_RED), INTENT(OUT):: SHLFAC
 
 ! ----------------------------------------------------------------------
 
@@ -61,7 +61,7 @@
 !*    3. GATHER SIGMA /SINH(2KD) FROM TABLE.
 !        -----------------------------------
 
-      DO M=1,NFRE
+      DO M=1,NFRE_RED
         DO IJ=IJS,IJL
           SHLFAC(IJ,M) = TSIHKD(INDEP(IJ),M)
         ENDDO

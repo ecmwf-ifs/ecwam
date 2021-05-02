@@ -1,8 +1,8 @@
-      SUBROUTINE PROPAG_WAM (FL1)
+      SUBROUTINE PROPAG_WAM (IJS, IJL, FL1)
 
 ! ----------------------------------------------------------------------
 
-!**** *PROPAG_WAM* - PROPGATION ON STRUCTURED GRID. 
+!**** *PROPAG_WAM* - WAVE PROPGATION
 
 !*    PURPOSE.
 !     --------
@@ -12,8 +12,11 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *PROPAG_WAM (FL1)*
+!     *CALL* *PROPAG_WAM (IJS, IJL, FL1)*
+!          *IJS* - INDEX OF FIRST GRIDPOINT.
+!          *IJL* - INDEX OF LAST GRIDPOINT.
 !          *FL1*  - SPECTRUM
+
 
 
 !     METHOD.
@@ -28,9 +31,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCURR  , ONLY : LLCHKCFL ,LLCHKCFLA
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NIBLO
       USE YOWSTAT  , ONLY : IPROPAGS ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
       USE YOWUBUF  , ONLY : LUPDTWGHT
@@ -49,17 +51,17 @@
 #include "propags1.intfb.h"
 #include "propags2.intfb.h"
 
-      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(INOUT) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
-      INTEGER(KIND=JWIM), PARAMETER :: NFRE_PRO=29
- 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, K, M, J
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS(1):IJL(1),NANG,NFRE_PRO) :: FLNEW
+!     Spectra extended with the hallo exchange for the propagation
+!     But limited to NFRE_RED frequencies
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE_RED) :: FLEXT
 
       LOGICAL :: L1STCALL
 
@@ -69,21 +71,36 @@
 
       IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
-      IG=1
 
       IF(NIBLO.GT.1) THEN
 
+        NPROMA=NPROMA_WAM
+!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
+        DO JKGLO=IJS,IJL,NPROMA
+          KIJS=JKGLO
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          DO M=1,NFRE_RED
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                FLEXT(IJ,K,M) = FL1(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+!$OMP   END PARALLEL DO
+
+
         IF (LLUNSTR) THEN 
 
-           CALL PROPAG_UNWAM(FL1, FLNEW)
+           CALL PROPAG_UNWAM(FLEXT, FL1)
 
         ELSE
 
 !          SET THE DUMMY LAND POINTS TO 0.
-           FL1(NINF-1,:,:) = 0.0_JWRB 
+           FLEXT(NINF-1,:,:) = 0.0_JWRB 
 
-!          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS
-           CALL MPEXCHNG(FL1,NANG,NFRE)
+!          OBTAIN INFORMATION AT NEIGHBORING GRID POINTS (HALLO)
+           CALL MPEXCHNG(FLEXT,NANG,NFRE_RED)
            IF (ITEST.GE.2) THEN
              WRITE(IU06,*) '   SUB. PROPAG_WAM: MPEXCHNG CALLED' 
              CALL FLUSH (IU06)
@@ -92,14 +109,38 @@
 
            CALL GSTATS(1430,0)
 
-           IF(IPROPAGS.EQ.1) THEN
+!          IPROPAGS is the default option (the other options are kept but usually not used)
+           IF(IPROPAGS.EQ.2) THEN
+
+             IF(LUPDTWGHT) THEN
+               CALL CTUWUPDT(IJS, IJL)
+               LUPDTWGHT=.FALSE.
+             ENDIF
+
+             MTHREADS=1
+!$           MTHREADS=OMP_GET_MAX_THREADS()
+             NPROMA=(IJL-IJS+1)/MTHREADS + 1
+!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL)
+             DO JKGLO=IJS,IJL,NPROMA
+               KIJS=JKGLO
+               KIJL=MIN(KIJS+NPROMA-1,IJL)
+               CALL PROPAGS2(FLEXT, FL1, IJS, IJL, KIJS, KIJL)
+             ENDDO
+!$OMP        END PARALLEL DO
+
+             IF (ITEST.GE.2) THEN
+               WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS2 CALLED'
+               CALL FLUSH (IU06)
+             ENDIF
+
+           ELSE IF(IPROPAGS.EQ.1) THEN
              IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS(IG),IJL(IG),NPROMA
+             DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-               CALL PROPAGS1(FL1,FLNEW(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+               KIJL=MIN(KIJS+NPROMA-1,IJL)
+               CALL PROPAGS1(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
              ENDDO
 !$OMP       END PARALLEL DO
              IF (ITEST.GE.2) THEN
@@ -107,35 +148,14 @@
                CALL FLUSH (IU06)
              ENDIF
 
-           ELSEIF(IPROPAGS.EQ.2) THEN
-
-             IF(LUPDTWGHT) THEN
-               CALL CTUWUPDT(IJS(IG), IJL(IG))
-               LUPDTWGHT=.FALSE.
-             ENDIF
-
-             MTHREADS=1
-!$           MTHREADS=OMP_GET_MAX_THREADS()
-             NPROMA=(IJL(IG)-IJS(IG)+1)/MTHREADS + 1
-!$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS(IG),IJL(IG),NPROMA
-               KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-               CALL PROPAGS2(FL1,FLNEW,NFRE_PRO,IJS(1),IJL(1),KIJS,KIJL)
-             ENDDO
-!$OMP        END PARALLEL DO
-             IF (ITEST.GE.2) THEN
-               WRITE(IU06,*) '   SUB. PROPAG_WAM: PROPAGS2 CALLED'
-               CALL FLUSH (IU06)
-             ENDIF
            ELSE
              IF(L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
              NPROMA=NPROMA_WAM
 !$OMP        PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-             DO JKGLO=IJS(IG),IJL(IG),NPROMA
+             DO JKGLO=IJS,IJL,NPROMA
                KIJS=JKGLO
-               KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-               CALL PROPAGS(FL1,FLNEW(KIJS:KIJL,:,:),KIJS,KIJL,L1STCALL)
+               KIJL=MIN(KIJS+NPROMA-1,IJL)
+               CALL PROPAGS(FLEXT, FL1, IJS, IJL, KIJS, KIJL, L1STCALL)
              ENDDO
 !$OMP        END PARALLEL DO
              IF (ITEST.GE.2) THEN
@@ -143,28 +163,10 @@
                CALL FLUSH (IU06)
              ENDIF
            ENDIF
+
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation
-
-
-
-!       UPDATING SPECTRA
-
-!$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,K,M,IJ) 
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
-          KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          DO M=1,NFRE_PRO
-            DO K=1,NANG
-              DO IJ=KIJS,KIJL
-                FL1(IJ,K,M) = FLNEW(IJ,K,M)
-              ENDDO
-            ENDDO
-          ENDDO
-        ENDDO
-!$OMP   END PARALLEL DO
-
 
       ENDIF ! more than one grid point
 

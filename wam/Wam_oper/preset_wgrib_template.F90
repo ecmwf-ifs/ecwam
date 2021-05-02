@@ -46,7 +46,7 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,IQGAUSS  ,AMOWEP   ,AMOSOP   ,    &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE     ,    &
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NANG     ,NFRE_RED ,    &
      &                      CLDOMAIN
       USE YOWPCONS , ONLY : ZMISS    ,DEG
       USE YOWSTAT  , ONLY : NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,    &
@@ -74,13 +74,13 @@
       INTEGER(KIND=JWIM) :: KSYSNB, KMETNB, KREFDATE
       INTEGER(KIND=JWIM) :: IDUM, IRET 
       INTEGER(KIND=JWIM) :: ITHETA(NANG)
-      INTEGER(KIND=JWIM) :: IFREQ(NFRE)
+      INTEGER(KIND=JWIM) :: IFREQ(NFRE_RED)
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: PL
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMOEAP
       REAL(KIND=JWRB) :: ZTHETA(NANG)
-      REAL(KIND=JWRB) :: ZFREQ(NFRE)
+      REAL(KIND=JWRB) :: ZFREQ(NFRE_RED)
       REAL(KIND=JWRB), ALLOCATABLE :: SCFR(:), SCTH(:)
 
 ! The following must NOT be changed from a 4 byte real
@@ -377,12 +377,12 @@
         DEALLOCATE(SCTH)
 
 
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfFrequencies',NFRE)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'numberOfFrequencies',NFRE_RED)
         IFRESCALING = 1000000
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyScalingFactor',      &
      &                       IFRESCALING)
-        ALLOCATE(SCFR(NFRE))
-        DO MM=1,NFRE
+        ALLOCATE(SCFR(NFRE_RED))
+        DO MM=1,NFRE_RED
           SCFR(MM)=NINT(FR(MM)*IFRESCALING)
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledFrequencies',SCFR)
@@ -395,7 +395,7 @@
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NR',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC1',NANG)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'NC2',NFRE_RED)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag1',1)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'physicalFlag2',2)
         DO IC=1,NANG
@@ -404,7 +404,7 @@
           ZTHETA(IC)=REAL4
         ENDDO
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'coefsFirst',ZTHETA)
-        DO IC=1,NFRE
+        DO IC=1,NFRE_RED
           REAL4 = FR(IC)
 !!!          ZFREQ(IC)=TRANSFER (REAL4, 1)
           ZFREQ(IC)=REAL4

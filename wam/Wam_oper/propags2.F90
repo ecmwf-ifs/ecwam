@@ -1,13 +1,8 @@
-      SUBROUTINE PROPAGS2 (F1, F3, NFRE_PRO, IJS, IJL, MIJS, MIJL)
-
-! ----------------------------------------------------------------------
-
-!**** *PROPAGS2* - COMPUTATION OF A PROPAGATION TIME STEP.
+      SUBROUTINE PROPAGS2 (F1, F3, IJS, IJL, MIJS, MIJL)
 
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS2* -  ADVECTION USING THE CORNER TRANSPORT SCHEME IN SPACE
-
 
 !*    PURPOSE.
 !     --------
@@ -18,17 +13,17 @@
 !     ----------
 
 !       *CALL* *PROPAGS2(F1, F3, IJS, IJL, MIJS, MIJL)*
-!          *F1*   - BLOCK SPECTRUM AT TIME T.
-!          *F3(IJS:IJL,:,:)*   - SPECTRUM AT TIME T+DELT.
-!          *MIJS* - INDEX OF FIRST POINT
-!          *MIJL* - INDEX OF LAST POINT
-
+!          *F1*   - BLOCK SPECTRUM AT TIME T (with exchange hallo).
+!          *F3*   - SPECTRUM AT TIME T+DELT.
+!          *IJS*  - INDEX OF FIRST POINT
+!          *IJL*  - INDEX OF LAST POINT
+!          *MIJS* - ACTIVE INDEX OF FIRST POINT
+!          *MIJL* - ACTIVE INDEX OF LAST POINT
 
 !     METHOD.
 !     -------
 
 !!  need text !!!!!!!!
-
 
 !     EXTERNALS.
 !     ----------
@@ -37,7 +32,7 @@
 !     REFERENCE.
 !     ----------
 
-!       NONE.
+!      See IFS Documentation, part VII 
 
 ! ----------------------------------------------------------------------
 
@@ -45,7 +40,7 @@
 
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWSTAT  , ONLY : ICASE    ,ISHALLO  ,IREFRA
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,KCOR      ,             &
@@ -60,10 +55,10 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: NFRE_PRO, MIJS, MIJL, IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL, IJS, IJL
 
-      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE_PRO), INTENT(OUT) :: F3
+      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE_RED), INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: F3
 
       INTEGER(KIND=JWIM) :: K, M, IJ
       INTEGER(KIND=JWIM) :: IC, ICR, ICL 
@@ -93,7 +88,7 @@
             JJY=JYO(K,1)
             JJY=JYO(K,1)
             JJK=KCR(K,1)
-            DO M=1,NFRE_PRO
+            DO M=1,NFRE_RED
               DO IJ=MIJS,MIJL
                 FJ1(IJ)= F1(KLON(IJ,JJX)  ,K  ,M)
                 FJ2(IJ)= F1(KLAT(IJ,JJY,1),K  ,M)
@@ -140,7 +135,7 @@
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
 
-          DO M=1,NFRE_PRO
+          DO M=1,NFRE_RED
             DO K=1,NANG
 
               DO IJ=MIJS,MIJL

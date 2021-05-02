@@ -1,4 +1,4 @@
-      SUBROUTINE PROPAGS (F1, F3, MIJS, MIJL, L1STCALL)
+      SUBROUTINE PROPAGS (F1, F3, IJS, IJL, MIJS, MIJL, L1STCALL)
 ! ----------------------------------------------------------------------
 
 !**** *PROPAGS* - COMPUTATION OF A PROPAGATION TIME STEP.
@@ -26,11 +26,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PROPAGS(F1, F3, MIJS, MIJL, L1STCALL)*
+!       *CALL* *PROPAGS(F1, F3, IJS, IJL, MIJS, MIJL, L1STCALL)*
 !          *F1*   - BLOCK SPECTRUM AT TIME T.
 !          *F3*   - CHUNCK SPECTRUM AT TIME T+DELT.
-!          *MIJS* - INDEX OF FIRST POINT
-!          *MIJL* - INDEX OF LAST POINT
+!          *IJS*  - INDEX OF FIRST POINT
+!          *IJL*  - INDEX OF LAST POINT
+!          *MIJS* - ACTIVE INDEX OF FIRST POINT
+!          *MIJL* - ACTIVE INDEX OF LAST POINT
 !          *L1STCALL* - LOGICAL SHOULD BE FALSE AFTER THE FIRST CALL.
 
 !     METHOD.
@@ -59,7 +61,7 @@
      &            COSPHM1  ,IGL      ,IJLT
       USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
       USE YOWPCONS , ONLY : PI       ,ZPI      ,R
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSHAL  , ONLY : NDEPTH   ,TCGOND   ,INDEP    ,DEPTH
@@ -75,8 +77,11 @@
 #include "checkcfl.intfb.h"
 #include "dotdc.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, MIJS, MIJL
+      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE_RED),INTENT(IN) :: F1
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE),INTENT(INOUT) :: F3
+
       INTEGER(KIND=JWIM), PARAMETER :: IG=1
-      INTEGER(KIND=JWIM), INTENT(IN) :: MIJS, MIJL
       INTEGER(KIND=JWIM) :: K, M, IJ, JH
       INTEGER(KIND=JWIM) :: IC, IJLA, IJPH, KP1, KM1, MP1, MM1
 
@@ -88,10 +93,8 @@
       REAL(KIND=JWRB) :: CGS, CGC, DLWE, DLEA, DPSO, DPNO, SDA2, SP,    &
      &                   SM, TANPH  
       REAL(KIND=JWRB) :: DPNO2, DPSO2, XX, YY
-      REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE),INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL,NANG,NFRE),INTENT(OUT) :: F3
 
-      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL,NFRE):: SHLFAC
+      REAL(KIND=JWRB),DIMENSION(MIJS:MIJL,NFRE_RED):: SHLFAC
 
       REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: DELLA0,DCO,DP1,DP2
       REAL(KIND=JWRB),ALLOCATABLE,DIMENSION(:) :: DPN,DPN2,DPS,DPS2
@@ -126,8 +129,8 @@
 !*    0.0 GROUP VELOCITIES. (if shallow water on)
 !         -----------------
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(CGOND(NINF-1:IJLT(IG),NFRE))
-        DO M=1,NFRE
+        ALLOCATE(CGOND(NINF-1:IJLT(IG),NFRE_RED))
+        DO M=1,NFRE_RED
           CGOND(NINF-1,M) = TCGOND(NDEPTH,M)
           DO IJ=NINF,IJLT(IG)
             CGOND(IJ,M) = TCGOND(INDEP(IJ),M)
@@ -261,7 +264,7 @@
 !*    1.1.2.1 LOOP OVER FREQUENCIES.
 !             ----------------------
 
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
 
 !*    1.1.2.1.1 LOOP OVER GRIDPOINTS.
 !               ---------------------
@@ -306,7 +309,7 @@
 !*    1.1.3.2 LOOP OVER FREQUENCIES.
 !             ----------------------
 
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
 
 !*    1.1.3.2.2 WEIGHTS IN INTEGRATION SCHEME.
 !               ------------------------------
@@ -450,13 +453,13 @@
 !*    2.1.3 LOOP OVER FREQUENCIES.
 !           ----------------------
 
-        DO M=1,NFRE
+        DO M=1,NFRE_RED
           IF (ISHALLO.EQ.1) THEN
 
 !*    2.1.3.1 DEEP WATER.
 !             -----------
 
-            MP1 = MIN(NFRE,M+1)
+            MP1 = MIN(NFRE_RED,M+1)
             MM1 = MAX(1,M-1)
             DFP = PI*(1.0_JWRB+FRATIO)*DELFR0
 
@@ -494,7 +497,7 @@
               DTM(IJ) =  DTHM+ABS(DTHM)
               DTC(IJ) =  DTC(IJ) + DTHP+ABS(DTHP)-DTHM+ABS(DTHM)
 
-              DTHP    = SDOT(IJ,K,NFRE) * DFP
+              DTHP    = SDOT(IJ,K,NFRE_RED) * DFP
               DTC(IJ) = DTC(IJ) + 2.0_JWRB* ABS(DTHP)
               DOP(IJ) = (-DTHP+ABS(DTHP))/FRATIO
               DOM(IJ) = ( DTHP+ABS(DTHP))*FRATIO
@@ -505,7 +508,7 @@
 !*    2.1.3.2 SHALLOW WATER.
 !             --------------
 
-            MP1 = MIN(NFRE,M+1)
+            MP1 = MIN(NFRE_RED,M+1)
             MM1 = MAX(1,M-1)
             DFP = DELFR0/FR(M)
             DFM = DELFR0/FR(MM1)
@@ -626,11 +629,11 @@
 
 
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(CGKLON(MIJS:MIJL,NFRE,2))
-        ALLOCATE(CGKLAT(MIJS:MIJL,NFRE,2))
+        ALLOCATE(CGKLON(MIJS:MIJL,NFRE_RED,2))
+        ALLOCATE(CGKLAT(MIJS:MIJL,NFRE_RED,2))
 
         DO IC=1,2
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               IF(LSAMEDEPTH(IJ)) THEN
                 CGKLON(IJ,M,IC) = 2*CGOND(IJ,M)
@@ -641,7 +644,7 @@
           ENDDO
         ENDDO
         IC=1
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               IF(LSAMEDEPTH(IJ)) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP1(IJ)+1.0_JWRB)
@@ -653,7 +656,7 @@
             ENDDO
           ENDDO
         IC=2
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
             DO IJ=MIJS,MIJL
               IF(LSAMEDEPTH(IJ)) THEN
                 CGKLAT(IJ,M,IC) = CGOND(IJ,M)*(DP2(IJ)+1.0_JWRB)
@@ -671,7 +674,7 @@
 !         THE OBSTRUCTION COEFFICIENTS ARE RESET TO BE THE PRODUCT
 !         OF THE OBSTRUCTION BY THE GROUP VELOCITY AT MIDPOINT
           DO IC=1,2
-            DO M=1,NFRE
+            DO M=1,NFRE_RED
               DO IJ=MIJS,MIJL
                 OBSLON(IJ,M,IC) = OBSLON(IJ,M,IC) * CGKLON(IJ,M,IC)
                 OBSLAT(IJ,M,IC) = OBSLAT(IJ,M,IC) * CGKLAT(IJ,M,IC)
@@ -768,7 +771,7 @@
 !*    3.1.3.3 LOOP OVER FREQUENCIES.
 !             ----------------------
 
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
 
 !*    3.1.3.3.1 LOOP OVER GRIDPOINTS.
 !               ---------------------
@@ -842,7 +845,7 @@
 !*    3.1.4.2 LOOP OVER FREQUENCIES.
 !             ----------------------
 
-          DO M=1,NFRE
+          DO M=1,NFRE_RED
 
 
 !*    3.1.4.3.2 LAT / LONG WEIGHTS IN INTEGRATION SCHEME.
@@ -1064,8 +1067,8 @@
 !*    4.1.4 LOOP OVER FREQUENCIES.
 !           ----------------------
 
-        DO M=1,NFRE
-          MP1 = MIN(NFRE,M+1)
+        DO M=1,NFRE_RED
+          MP1 = MIN(NFRE_RED,M+1)
           MM1 = MAX(1,M-1)
 
           IF (ISHALLO.EQ.1) THEN
@@ -1137,7 +1140,7 @@
 
               DTP(IJ) = -DTHP+ABS(DTHP)
               DTM(IJ) =  DTHM+ABS(DTHM)
-              DTHP =  SDOT(IJ,K,NFRE) * DFP
+              DTHP =  SDOT(IJ,K,NFRE_RED) * DFP
               CFLOP(IJ) = DTHP+ABS(DTHP)
               CFLOM(IJ) = -DTHP+ABS(DTHP) 
               DTC(IJ) =  DTC(IJ) + CFLOP(IJ) + CFLOM(IJ)
