@@ -52,7 +52,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSPEC  , oNLY ; FL1
+      USE YOWSPEC  , ONLY ; FL1
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
