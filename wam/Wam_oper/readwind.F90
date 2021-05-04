@@ -100,7 +100,6 @@
      &            IWPER    ,ICOORD
       USE YOWWIND  , ONLY : NXFF     ,NYFF     ,FIELDG   ,IUNITW   ,    &
      &            NBITW    ,CWDFILE  ,LLWSWAVE ,LLWDWAVE
-      USE YOWWIND  , ONLY : FIELDG_coupl
       USE YOWPCONS , ONLY : RAD      ,ZMISS    ,ROAIR    ,WSTAR0
       USE YOWPD, ONLY : MNP => npa
       USE YOWUNPOOL ,ONLY : LLUNSTR
@@ -638,26 +637,12 @@
 
         IPARAMCI=31
 
-#ifdef MODEL_COUPLING_ATM_WAV
-        DO J=1,NYFF
-          DO I=1,NXFF
-            FIELDG(I,J)%UWND=FIELDG_coupl(I,J)%UWND
-            FIELDG(I,J)%VWND=FIELDG_coupl(I,J)%VWND
-            FIELDG(I,J)%CITH=FIELDG_coupl(I,J)%CITH
-            FIELDG(I,J)%AIRD=FIELDG_coupl(I,J)%AIRD
-            FIELDG(I,J)%ZIDL=FIELDG_coupl(I,J)%ZIDL
-            FIELDG(I,J)%UCUR=FIELDG_coupl(I,J)%UCUR
-            FIELDG(I,J)%VCUR=FIELDG_coupl(I,J)%VCUR
-          ENDDO
-        ENDDO
-#else
         DO J=1,NYFF
           DO I=1,NXFF
             FIELDG(I,J)%UWND=UWIND
             FIELDG(I,J)%VWND=VWIND
           ENDDO
         ENDDO
-#endif
 
 !!!! impose the northern part of the swamp domain to be covered with
 !!!! a sea ice cover=SWAMPCIFR
@@ -673,20 +658,6 @@
         ENDDO
 
       ENDIF
-
-#if !defined MODEL_COUPLING_ATM_WAV && defined NETCDF_OUTPUT_WAM
-        DO J=1,NYFF
-          DO I=1,NXFF
-            FIELDG_coupl(I,J)%UWND=FIELDG(I,J)%UWND
-            FIELDG_coupl(I,J)%VWND=FIELDG(I,J)%VWND
-            FIELDG_coupl(I,J)%CITH=FIELDG(I,J)%CITH
-            FIELDG_coupl(I,J)%AIRD=FIELDG(I,J)%AIRD
-            FIELDG_coupl(I,J)%ZIDL=FIELDG(I,J)%ZIDL
-            FIELDG_coupl(I,J)%UCUR=FIELDG(I,J)%UCUR
-            FIELDG_coupl(I,J)%VCUR=FIELDG(I,J)%VCUR
-          ENDDO
-        ENDDO
-#endif
 
       IF (LHOOK) CALL DR_HOOK('READWIND',1,ZHOOK_HANDLE)
 

@@ -39,11 +39,6 @@
         LWFLUX=LDWFLUX
       ENDIF
 
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-        MyRankGlobal=IRANK-1
-        MyRankLocal =IRANK-1
-#endif
-
       NPREVIOUS=IRANK-1
       IF(IRANK.EQ.NPROC) THEN
         NNEXT=0

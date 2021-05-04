@@ -19,11 +19,6 @@
 
       CHARACTER(LEN=33) :: COUTNAME(JPPFLAG)
 
-#ifdef MODEL_COUPLING_ATM_WAV
-      LOGICAL COUPLFLAG(JPPFLAG) 
-!        COUPLFLAG is for the statistics that we should compute 
-!        and that are related to the coupling.
-#endif
       LOGICAL :: FFLAG(JPPFLAG) 
       LOGICAL :: FFLAG20 
       LOGICAL :: GFLAG(JPPFLAG) 

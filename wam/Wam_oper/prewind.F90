@@ -138,11 +138,6 @@
       USE YOWWIND  , ONLY : CDA      ,CDAWIFL  ,FIELDG
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-!      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
-!      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
-#ifdef MODEL_COUPLING_ATM_WAV
-      USE pgmcl_lib_WAM, only : WAV_coupl_prewind
-#endif
 
 ! ----------------------------------------------------------------------
 

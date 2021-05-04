@@ -2,9 +2,6 @@ MODULE WAV_netcdf_var
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 #ifdef NETCDF_OUTPUT_WAM
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal, MyRankLocal
-# if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE coupling_var, only : WAV_COMM_WORLD
-# endif
       implicit none
       INTEGER(KIND=JWIM) :: idxOutput = 0
       INTEGER(KIND=JWIM) :: idxFile = 1

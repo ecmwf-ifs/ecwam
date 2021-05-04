@@ -308,10 +308,6 @@
       USE UNSTRUCT_BOUND , ONLY : IOBP
       USE OUTPUT_STRUCT, ONLY : INITIAL_OUTPUT_INITS
 
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE pgmcl_lib_WAM, ONLY : WAV_initialize_all_coupling
-#endif
-
 ! -------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -1150,11 +1146,6 @@
 
 !     INITIALIZE THE NEMO COUPLING
       IF (LWNEMOCOU) CALL INITNEMOCPL(LWNEMOCOURECV)
-
-
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      CALL WAV_initialize_all_coupling
-#endif
 
 
       IF (LLUNSTR) THEN

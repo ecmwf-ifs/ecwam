@@ -98,9 +98,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-#ifdef MODEL_COUPLING_ATM_WAV
-      USE pgmcl_lib_WAM, ONLY : US_coupl, Z0_coupl
-#endif
       USE YOWCOUT  , ONLY : CASS     ,NASS
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWFLUX   ,LWCOUNORMS,   &
      &         LLNORMWAMOUT_GLOBAL, LLNORMWAM2IFS,                      &
@@ -993,12 +990,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !       TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
         LDWCOUNORMS=LWCOUNORMS
       ENDIF ! end lwcou
-
-#ifdef MODEL_COUPLING_ATM_WAV
-      Z0_coupl=Z0OLD
-      US_coupl=USOLD
-#endif
-
 
 !     4. END OF RUN ?
 !        -----------

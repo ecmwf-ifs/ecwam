@@ -336,11 +336,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWNODEPOOL, ONLY : NP, IPLG, IPGL
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE pgmcl_lib_WAM, ONLY : WAV_all_import_export
-      USE pgmcl_lib_WAM, ONLY : HAVE_NEW_COUPLING_FIELDS
-#endif
-#if defined NETCDF_OUTPUT_WAM || defined MODEL_COUPLING_ATM_WAV
+#if defined NETCDF_OUTPUT_WAM
       USE WAV_netcdf, ONLY : WAV_netcdf_output
 #endif
 ! ----------------------------------------------------------------------
@@ -457,7 +453,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !     TIME FOR WIND INPUT UPDATE (SEE NEWWIND)
       CDTIMP=CDTPRO
 
-!#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF(CDTPRO.EQ.CDATEA .OR. CDTPRO.EQ.CDATEF) THEN
 !       
         DO_UPDATE_WIND_FLUX=.TRUE.

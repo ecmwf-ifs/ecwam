@@ -96,9 +96,6 @@
       USE YOWALTAS , ONLY : LODBRALT
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE coupling_var, only : WAV_COMM_WORLD
-#endif
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
 
 ! ----------------------------------------------------------------------
@@ -169,25 +166,16 @@
 
       IF (LHOOK) CALL DR_HOOK('RUNWAM',0,ZHOOK_HANDLE)
 
-#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      LMPLUSERCOMM = .TRUE.
-      MPLUSERCOMM = WAV_COMM_WORLD
-#else
       IF (.NOT.LNEMOIO) THEN
          LMPLUSERCOMM = .TRUE.
          MPLUSERCOMM = MPI_COMM_WORLD
       ENDIF
-#endif
 
       time0=-wam_user_clock()
       IU06=6
 
 !     0.1 INITIALISE MESSAGE PASSING PROTOCOL 
 !         -----------------------------------
-
-#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
-      MyRankGlobal=0
-#endif
 
       CALL MPL_INIT(KERROR=KERROR)
       IF(KERROR.LT.0) THEN 
