@@ -13,7 +13,7 @@
 !     ----------
 
 !       *CALL* *PROPAGS2(F1, F3, IJS, IJL, MIJS, MIJL)*
-!          *F1*   - BLOCK SPECTRUM AT TIME T (with exchange hallo).
+!          *F1*   - BLOCK SPECTRUM AT TIME T (with exchange halo).
 !          *F3*   - SPECTRUM AT TIME T+DELT.
 !          *IJS*  - INDEX OF FIRST POINT
 !          *IJL*  - INDEX OF LAST POINT

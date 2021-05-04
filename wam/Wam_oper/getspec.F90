@@ -631,7 +631,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, NBLKS, NBLKE, IREAD)
                KINF=KLOOP
                KSUP=MIN(KLOOP+KDEL-1,NANG)
 
-               ALLOCATE(RFL(0:NIBLO,KINF:KSUP,MINF:MSUP))
+               ALLOCATE(RFL(1:NIBLO,KINF:KSUP,MINF:MSUP))
 !              READ RESTART SPECTRA FROM PE ISEND (IREAD) 
                IF (IRANK.EQ.ISEND) THEN
                  LOUNIT = .FALSE.
@@ -639,7 +639,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, NBLKS, NBLKE, IREAD)
                  IF(MINF.EQ.1 .AND. KINF.EQ.1) LOUNIT = .TRUE.
                  IF(MSUP.EQ.NFRE .AND. KSUP.EQ.NANG) LCUNIT = .TRUE.
 
-                 CALL READFL(RFL, 0, NIBLO, KINF, KSUP, MINF, MSUP,     &
+                 CALL READFL(RFL, 1, NIBLO, KINF, KSUP, MINF, MSUP,     &
      &                     FILENAME, IUNIT, LOUNIT, LCUNIT, LRSTPARALR)
                ENDIF
 

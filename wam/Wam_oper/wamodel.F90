@@ -589,7 +589,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           IF( .NOT. LRESTARTED ) THEN
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
-              CALL OUTSPEC(FL1, CICOVER)
+              CALL OUTSPEC(IJS(1), IJL(1), FL1, CICOVER)
               LLFLUSH = .TRUE.
             ENDIF
 
@@ -977,7 +977,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(FL1, CICOVER)
+              CALL OUTSPEC(IJS(1), IJL(1), FL1, CICOVER)
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
@@ -997,7 +997,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-              CALL SAVSPEC(FL1,NBLKS,NBLKE,CDTPRO,CDATEF,CDATER)
+              CALL SAVSPEC(IJS(1), IJL(1), FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........', &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '

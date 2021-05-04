@@ -59,7 +59,7 @@
 !$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-!     Spectra extended with the hallo exchange for the propagation
+!     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
       REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP,NANG,NFRE_RED) :: FLEXT
 

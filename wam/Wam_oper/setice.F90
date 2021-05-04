@@ -50,13 +50,13 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR, U10NEW, THWNEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM) :: IJ, M, K
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CIREDUC, TEMP, ICEFREE 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG) :: SPRD
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SETICE',0,ZHOOK_HANDLE)
@@ -65,7 +65,7 @@
 !     ----------------------------------------------
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
+        DO IJ = IJS, IJL
           SPRD(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWNEW(IJ)))**2
         ENDDO
       ENDDO
