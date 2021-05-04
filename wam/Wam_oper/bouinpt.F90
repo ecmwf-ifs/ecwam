@@ -1,4 +1,4 @@
-      SUBROUTINE BOUINPT (IU02, NSTART, NEND)
+      SUBROUTINE BOUINPT (IU02, FL1, IJS, IJL, NSTART, NEND)
 
 ! ----------------------------------------------------------------------
 
@@ -52,7 +52,6 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSPEC  , ONLY ; FL1
       USE YOWSTAT  , ONLY : CDATEF   ,CDTPRO   ,CDTBC   ,IDELBC    ,    &
      &            IDELPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -66,6 +65,8 @@
 #include "intspec.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(INOUT) :: IU02
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE), INTENT(IN) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART, NEND
       INTEGER(KIND=JWIM) :: I, M, K, IP, IJ, IJF, IC, KL, ML, IDELINP
       INTEGER(KIND=JWIM), SAVE :: NBOINP
