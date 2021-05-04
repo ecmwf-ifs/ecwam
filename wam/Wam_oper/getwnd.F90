@@ -92,8 +92,6 @@
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWUNPOOL, ONLY : LLUNSTR
-      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
-      USE UNSTRUCT_WIND, ONLY : SET_WIND_UNSTRUCTURED
       USE GRIB_API_INTERFACE
 
 ! ----------------------------------------------------------------------
@@ -125,7 +123,6 @@
 
       LOGICAL :: LLNOTOPENED
       LOGICAL, SAVE :: LONLYONCE
-      LOGICAL :: IsAssigned
 
       CHARACTER(LEN=14) :: CDTWIR
       CHARACTER(LEN=24) :: FILNM
@@ -154,14 +151,8 @@
 
 !     GET FORCING FIELDS FROM INPUT FILES (if needed)
 !     -----------------------------------
-      IsAssigned=.FALSE.
-      IF (LLUNSTR .and. USE_DIRECT_WIND_FILE) THEN
-        IsAssigned=.TRUE.
-        CALL SET_WIND_UNSTRUCTURED
-      END IF
 
-
-      IF(LWNDFILE .AND. (IsAssigned .EQV. .FALSE.)) THEN
+      IF(LWNDFILE) THEN
         CALL READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD)
 
         ICODE_WND = ICODE

@@ -107,7 +107,6 @@
      &            IU37     ,IU38
       USE YOWUNPOOL, ONLY : LLUNSTR  ,LPREPROC, LVECTOR, IVECTOR
       USE UNSTRUCT_BOUND , ONLY : LBCWA
-      USE UNWAM    , ONLY : USE_DIRECT_WIND_FILE
       USE UNWAM    , ONLY : LIMPLICIT, JGS_DIFF_SOLVERTHR,              &
      &            SOURCE_IMPL, WAE_SOLVERTHR,                           &
      &            LNONL, BLOCK_GAUSS_SEIDEL,                            &
@@ -183,7 +182,6 @@
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
-     &   USE_DIRECT_WIND_FILE,                                          &
      &   LIMPLICIT,                                                     &
      &   SOURCE_IMPL,                                                   &
      &   LNONL, BLOCK_GAUSS_SEIDEL,                                     &
@@ -768,7 +766,6 @@
       LVECTOR=.FALSE.
       IVECTOR=1
       LPREPROC=.FALSE.
-      USE_DIRECT_WIND_FILE=.FALSE.
       JGS_DIFF_SOLVERTHR = 1.E-5_JWRU
       WAE_SOLVERTHR = 1.E-10_JWRU
       LIMPLICIT = .FALSE.

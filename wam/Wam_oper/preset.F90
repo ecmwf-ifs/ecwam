@@ -136,7 +136,6 @@
      &            LLNEWCURR,NXFF     ,NYFF     ,WSPMIN    
       USE MPL_MODULE,ONLY : MPL_INIT, MPL_END
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE UNWAM, ONLY : USE_DIRECT_WIND_FILE
       USE UNSTRUCT_BOUND, ONLY : IOBPD
 
 ! -------------------------------------------------------------------
@@ -189,7 +188,6 @@
      &          IOPTI, ITEST, ITESTB,                                   &
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
-     &          USE_DIRECT_WIND_FILE,                                   &
      &          CDATEA, IDELWI, CLTUNIT,                                &
      &          LLUNSTR, LPREPROC,                                      &
      &          LGRIBOUT,                                               &

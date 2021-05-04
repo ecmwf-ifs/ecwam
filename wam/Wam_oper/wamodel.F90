@@ -336,9 +336,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWNODEPOOL, ONLY : NP, IPLG, IPGL
       USE YOW_RANK_GLOLOC, ONLY : MyRankGlobal
       
-#if defined NETCDF_OUTPUT_WAM
-      USE WAV_netcdf, ONLY : WAV_netcdf_output
-#endif
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -917,9 +914,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
         ENDDO BLOCK
 
-#ifdef NETCDF_OUTPUT_WAM
-        CALL WAV_netcdf_output
-#endif
 
 !*    1.6 IF ONE BLOCK VERSION COPY RESULTS.
 !         ----------------------------------
