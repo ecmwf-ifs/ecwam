@@ -25,7 +25,6 @@ MODULE UNSTRUCT_BOUND
       REAL(KIND=JWRU), ALLOCATABLE :: WWM_WD1(:), WWM_WD2(:)
       INTEGER(KIND=JWIM) :: recTime1, recTime2
       INTEGER(KIND=JWIM), ALLOCATABLE :: Indexes_boundary(:)
-      TYPE(TIMEPERIOD) RecTimeBnd
       REAL(KIND=JWRU) :: WAV_BoucTime = 0._JWRU
       CHARACTER(LEN=*), PARAMETER :: eFileBnd = 'wwm_bouc_format.nc'
       INTEGER(KIND=JWIM)                :: IWBMNP ! number of wave boundary points

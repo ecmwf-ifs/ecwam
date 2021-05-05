@@ -77,7 +77,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=19
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=20
       INTEGER(KIND=JWIM) :: IG 
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,      &
      &                      KDEPTH, NGOU
@@ -212,7 +212,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=7+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
+        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &
