@@ -227,6 +227,12 @@ IF (LLGCBZ0) THEN
             USTOLD = USTAR(IJ)
             Z0MIN = ALPHAOG(IJ)*TAUOLD 
           ENDDO
+!!!debile
+      if(iter > 20 ) then
+        write(*,*) 'debile NITER is > 20 ',ITER,UTOP(IJ),USTAR(IJ),(USTAR(IJ)/UTOP(IJ))**2
+      endif
+
+
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
 
