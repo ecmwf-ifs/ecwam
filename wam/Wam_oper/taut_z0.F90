@@ -226,6 +226,7 @@ IF (LLGCBZ0) THEN
 !           CONVERGENCE ?
             DEL = USTAR(IJ)-USTOLD
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
+            IF (ITER == 24) USTAR(IJ)=0.036_JWRB * UTOP(IJ)
             TAUOLD = USTAR(IJ)**2
             USTOLD = USTAR(IJ)
             Z0MIN = ALPHAOG(IJ)*TAUOLD 
