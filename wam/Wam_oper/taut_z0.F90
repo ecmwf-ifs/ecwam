@@ -61,6 +61,9 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
+!!!!debile
+      USE YOWSTAT  , ONLY : CDTPRO
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -229,7 +232,7 @@ IF (LLGCBZ0) THEN
           ENDDO
 !!!debile
       if(iter > 20 ) then
-        write(*,*) 'debile NITER is > 20 ',ITER,UTOP(IJ),USTAR(IJ),(USTAR(IJ)/UTOP(IJ))**2
+        write(*,*) 'debile NITER is > 20 ',IUSFG, ITER, UTOP(IJ),USTAR(IJ),(USTAR(IJ)/UTOP(IJ))**2,CDTPRO
       endif
 
 
