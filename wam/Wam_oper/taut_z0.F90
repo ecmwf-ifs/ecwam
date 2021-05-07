@@ -209,7 +209,9 @@ IF (LLGCBZ0) THEN
           XKUTOP = XKAPPA*UTOP(IJ)
           USTOLD = USTAR(IJ)
           TAUOLD = USTOLD**2
-          Z0MIN = ALPHAOG(IJ)*TAUOLD 
+!!debile
+!!          Z0MIN = ALPHAOG(IJ)*TAUOLD 
+          Z0MIN = 0.000001_JWRB
 
           DO ITER=1,NITER
 !           Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -226,10 +228,10 @@ IF (LLGCBZ0) THEN
 !           CONVERGENCE ?
             DEL = USTAR(IJ)-USTOLD
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
-            IF (ITER == 24) USTAR(IJ)=0.036_JWRB * UTOP(IJ)
             TAUOLD = USTAR(IJ)**2
             USTOLD = USTAR(IJ)
-            Z0MIN = ALPHAOG(IJ)*TAUOLD 
+!!!debile
+!!            Z0MIN = ALPHAOG(IJ)*TAUOLD 
           ENDDO
 !!!debile
       if(iter > 20 ) then
