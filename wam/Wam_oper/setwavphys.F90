@@ -83,7 +83,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
       ELSE IF (IPHYS.EQ.1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
-        ZALP    = 0.008_JWRB
         TAILFACTOR = 2.5_JWRB
 
 !       directionality correction factors in the gowth rate renormalisation 
@@ -93,6 +92,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
+          ZALP    = 0.009_JWRB
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
@@ -119,6 +119,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ENDIF
 
         ELSE 
+          ZALP    = 0.008_JWRB
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
