@@ -61,9 +61,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       USE YOWTABL  , ONLY : EPS1 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
-!!!!debile
-      USE YOWSTAT  , ONLY : CDTPRO
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -106,9 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWACT, TAUWEFF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ANG_GC, ALPHAP, HALP, TAUUNR
-!!debile
-!!      LOGICAL, PARAMETER :: LLSOLVLOG = .FALSE.  ! if true, solve the log profile
-      LOGICAL, PARAMETER :: LLSOLVLOG = .TRUE.  ! if true, solve the log profile
+      LOGICAL, PARAMETER :: LLSOLVLOG = .FALSE.  ! if true, solve the log profile
 
 ! ----------------------------------------------------------------------
 
