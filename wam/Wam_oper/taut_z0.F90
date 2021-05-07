@@ -194,7 +194,6 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-            Z0MIN = ALPHAOG(IJ)*TAUOLD 
           ENDDO
 
         ENDDO
