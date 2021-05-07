@@ -260,7 +260,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NBLO     ,              &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NBLO     ,    &
      &            NFRE_ODD ,                                            &
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
@@ -775,10 +775,9 @@
      & NIBLO
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' SPECTRAL RESOLUTION:'
-      WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ',   &
-     & NANG 
-      WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES ............: ',   &
-     & NFRE 
+      WRITE(IU06,3003) ' TOTAL NUMBER OF DIRECTIONS .............: ', NANG 
+      WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES I/O & PROPAG: ', NFRE_RED
+      WRITE(IU06,3003) ' TOTAL NUMBER OF FREQUENCIES FOR  PHYSICS: ', NFRE
 
       WRITE(IU06,*) '  '
       WRITE(IU06,*) ' PARALLEL ORGANISATION : '
