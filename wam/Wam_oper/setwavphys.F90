@@ -94,14 +94,14 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         DTHRN_U = 33.0_JWRB
 
         IF(LLGCBZ0) THEN
-          ZALP    = 0.009_JWRB
+          ZALP    = 0.008_JWRB
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
           ALPHAPMAX = 0.031_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
 !!!          SWELLF5 = 0.3_JWRB
-          SWELLF5 = 1.2_JWRB
+          SWELLF5 = 0.6_JWRB
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
 
