@@ -89,6 +89,14 @@
 !     WHITECAP DISSIPATION ::
 !     ====================
 
+
+!     Whitecap dissipation WAM cycle 4:
+
+      REAL(KIND=JWRB) :: CDIS
+      REAL(KIND=JWRB) :: DELTA_SDIS
+      REAL(KIND=JWRB) :: CDISVIS
+
+
 !     Whitecap dissipation, ARDHUIN et al. 2010:
 !     TEST 473:
 !     Br:
