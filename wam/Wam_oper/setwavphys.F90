@@ -15,7 +15,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                RNU      ,                                        &
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
-     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, &
+     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
      &                SWELLF5, Z0TUBMAX, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
@@ -61,13 +61,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ENDIF
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.50_JWRB
-!!test
-          ANG_GC_B = 0.0_JWRB
-!!
-          ANG_GC_C = 0.40_JWRB
-          ANG_GC_D = 11.5_JWRB
-          ANG_GC_E = 0.1_JWRB
+          ANG_GC_A = 0.6_JWRB
+          ANG_GC_B = 0.3_JWRB
+          ANG_GC_C = 0.33_JWRB
+          ANG_GC_D = 11.7_JWRB
 
           CDIS = -1.0_JWRB
           DELTA_SDIS = 0.6_JWRB
@@ -113,7 +110,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         RN1_RN = 1.0_JWRB/6.0_JWRB
 
         IF(LLGCBZ0) THEN
-          TAILFACTOR_PM = 0.0_JWRB
+!!          TAILFACTOR_PM = 0.0_JWRB
           TAILFACTOR_PM = 3.0_JWRB
 
           SWELLF5 = 0.4_JWRB
@@ -121,11 +118,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           Z0RAT = 0.02_JWRB
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.62_JWRB
-          ANG_GC_B = 0.28_JWRB
-          ANG_GC_C = 0.40_JWRB
-          ANG_GC_D = 12.0_JWRB
-          ANG_GC_E = 0.1_JWRB
+          ANG_GC_A = 0.6_JWRB
+          ANG_GC_B = 0.3_JWRB
+          ANG_GC_C = 0.33_JWRB
+          ANG_GC_D = 11.7_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
