@@ -106,7 +106,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
-        DTHRN_A = 0.50_JWRB
+        DTHRN_A = 0.40_JWRB
         DTHRN_U = 33.0_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
@@ -115,7 +115,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         IF(LLGCBZ0) THEN
           TAILFACTOR_PM = 0.0_JWRB
 
-          SWELLF5 = 0.4_JWRB
+          SWELLF5 = 0.3_JWRB
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
 
