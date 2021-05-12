@@ -66,7 +66,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.33_JWRB
           ANG_GC_D = 11.7_JWRB
 
-          CDIS = -1.0_JWRB
+          CDIS = -1.15_JWRB
           DELTA_SDIS = 0.6_JWRB
           CDISVIS = -4.0_JWRB*RNU
 
