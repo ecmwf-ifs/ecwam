@@ -55,7 +55,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0065_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.35_JWRB
+            BETAMAX = 1.30_JWRB
           ELSE
             BETAMAX = 1.35_JWRB
           ENDIF
