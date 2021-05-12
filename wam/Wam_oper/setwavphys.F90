@@ -50,7 +50,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           !!! not yet fully tested !!!
-          ZALP    = 0.009_JWRB
+          ZALP    = 0.0085_JWRB
           ALPHAMIN = 0.0005_JWRB
           ALPHA   = 0.0065_JWRB
 
