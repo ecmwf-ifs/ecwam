@@ -152,8 +152,7 @@ IF (LLGCBZ0) THEN
         ALPHAOG(IJ) = ALPHAMIN*GM1
       ENDDO
 
-!!!debile      IF(LLSOLVLOG) THEN
-      IF (IUSFG > 0 ) THEN
+      IF(LLSOLVLOG) THEN
 
         DO IJ = IJS, IJL
           XKUTOP = XKAPPA*UTOP(IJ)
