@@ -55,7 +55,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ALPHA   = 0.0065_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.30_JWRB
+            BETAMAX = 1.35_JWRB
           ELSE
             BETAMAX = 1.35_JWRB
           ENDIF
@@ -66,7 +66,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.33_JWRB
           ANG_GC_D = 11.7_JWRB
 
-          CDIS = -1.33_JWRB
+          CDIS = -1.5_JWRB
           DELTA_SDIS = 0.6_JWRB
           CDISVIS = -4.0_JWRB*RNU
 
