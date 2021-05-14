@@ -164,7 +164,7 @@ IF (LLGCBZ0) THEN
           DO ITER=1,NITER
 
             X = MIN(TAUWACT(IJ)/TAUOLD,0.999_JWRB)
-
+            TAUOLD = TAUWACT(IJ)/X
             USTAR(IJ) = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 
