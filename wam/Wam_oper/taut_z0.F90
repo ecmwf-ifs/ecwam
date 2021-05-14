@@ -158,10 +158,12 @@ IF (LLGCBZ0) THEN
           XKUTOP = XKAPPA*UTOP(IJ)
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+          TAUUNR(IJ) = 0.0_JWRB
 
           DO ITER=1,NITER
-            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
-!!            TAUOLD = TAUWACT(IJ)/X
+!!!            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
+            X = MIN((TAUWACT(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
+            TAUOLD = (TAUWACT(IJ)+TAUUNR(IJ))/X
 
             USTAR(IJ) = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
@@ -169,6 +171,7 @@ IF (LLGCBZ0) THEN
             Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
 
             CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+
 
             Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
             Z0VIS = RNUM*USTM1
@@ -228,10 +231,6 @@ IF (LLGCBZ0) THEN
         ENDDO
 
       ENDIF ! LLSOLVLOG
-
-!!!debile
-     write(*,*) 'debile ITER : ',ITER, LLSOLVLOG
-
 
 ELSE
 
