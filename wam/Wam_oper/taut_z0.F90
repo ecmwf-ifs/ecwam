@@ -163,7 +163,7 @@ IF (LLGCBZ0) THEN
 
           DO ITER=1,NITER
 
-            X = MIN(TAUWACT(IJ)/TAUOLD,0.999_JWRB)
+            X = MIN(TAUWACT(IJ)/TAUOLD,0.995_JWRB)
             TAUOLD = TAUWACT(IJ)/X
             USTAR(IJ) = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
@@ -191,6 +191,9 @@ IF (LLGCBZ0) THEN
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
             Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           ENDDO
+
+!!debile
+          write(*,*) 'debile taut_z0 ',iter,del
 
         ENDDO
 
