@@ -103,7 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWACT, TAUWEFF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ANG_GC, ALPHAP, HALP, TAUUNR
-      LOGICAL, PARAMETER :: LLSOLVLOG = .FALSE.  ! if true, solve the log profile
+      LOGICAL, PARAMETER :: LLSOLVLOG = .TRUE.  ! if true, solve the log profile
 
 ! ----------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ IF (LLGCBZ0) THEN
 
           DO ITER=1,NITER
             X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
-            TAUOLD = TAUWACT(IJ)/X
+!!            TAUOLD = TAUWACT(IJ)/X
 
             USTAR(IJ) = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
