@@ -12,7 +12,6 @@ USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
-     &                RNU      ,                                        &
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
@@ -66,9 +65,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.33_JWRB
           ANG_GC_D = 11.7_JWRB
 
-          CDIS = -2.1_JWRB
+          CDIS = -4.0_JWRB
           DELTA_SDIS = 0.6_JWRB
-          CDISVIS = -4.0_JWRB*RNU
+          CDISVIS = -4.0_JWRB
 
         ELSE
           ZALP    = 0.008_JWRB
