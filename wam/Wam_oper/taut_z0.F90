@@ -163,13 +163,12 @@ IF (LLGCBZ0) THEN
 
           DO ITER=1,NITER
 
+            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
+
             USTAR(IJ) = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
 
             CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
-
-!!!            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
-            X = MIN((TAUWACT(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
 
             Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
             Z0VIS = RNUM*USTM1
@@ -190,6 +189,7 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           ENDDO
 
         ENDDO
