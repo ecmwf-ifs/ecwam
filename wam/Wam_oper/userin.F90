@@ -105,6 +105,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,CLDOMAIN
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
+     &                CDIS ,DELTA_SDIS, CDISVIS,                        &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
      &            SWELLF5, Z0TUBMAX, Z0RAT
@@ -668,7 +669,11 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                DTHRN_U = ', DTHRN_U
       WRITE(IU06,*) '                TAILFACTOR = ', TAILFACTOR
       WRITE(IU06,*) '                TAILFACTOR_PM = ', TAILFACTOR_PM
-      IF (IPHYS.EQ.1) THEN
+      IF (IPHYS.EQ.0) THEN
+      WRITE(IU06,*) '                CDIS = ', CDIS
+      WRITE(IU06,*) '                DELTA_SDIS = ', DELTA_SDIS
+      WRITE(IU06,*) '                CDISVIS = ', CDISVIS
+      ELSE IF (IPHYS.EQ.1) THEN
       WRITE(IU06,*) '                SWELLF5 = ', SWELLF5
       WRITE(IU06,*) '                Z0TUBMAX = ', Z0TUBMAX
       WRITE(IU06,*) '                Z0RAT = ', Z0RAT

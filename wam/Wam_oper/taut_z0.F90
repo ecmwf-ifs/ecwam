@@ -229,6 +229,10 @@ IF (LLGCBZ0) THEN
 
       ENDIF ! LLSOLVLOG
 
+!!!debile
+     write(*,*) 'debile ITER : ',ITER, LLSOLVLOG
+
+
 ELSE
 
       DO IJ = IJS, IJL
