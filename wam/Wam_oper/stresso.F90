@@ -207,13 +207,13 @@
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
-
-      IF ( .NOT. LLGCBZ0) THEN
+!!debile
+!!      IF ( .NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=IJS,IJL
           TAUW(IJ) = MIN(TAUW(IJ),US2(IJ)*TAUTOUS2)
         ENDDO
-     ENDIF
+!!     ENDIF
 
       IF ( LLPHIWA ) THEN
         DO IJ=IJS,IJL
