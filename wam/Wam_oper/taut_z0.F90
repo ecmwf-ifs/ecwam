@@ -155,6 +155,10 @@ IF (LLGCBZ0) THEN
       IF(LLSOLVLOG) THEN
 
         DO IJ = IJS, IJL
+          W1(IJ) = 0.40_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-18.0_JWRB)) + 1.0_JWRB )
+        ENDDO
+
+        DO IJ = IJS, IJL
           XKUTOP = XKAPPA*UTOP(IJ)
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
@@ -165,10 +169,10 @@ IF (LLGCBZ0) THEN
 
             X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
             TAUOLD = TAUWACT(IJ)/X
-            USTAR(IJ) = SQRT(TAUOLD)
-            USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
+            USTOLD = SQRT(TAUOLD)
+            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
 
-            CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+            CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
             Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
             Z0VIS = RNUM*USTM1
@@ -176,13 +180,14 @@ IF (LLGCBZ0) THEN
             Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
 
             XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
-            F = USTAR(IJ)-XKUTOP*XOLOGZ0
+            F = USTOLD-XKUTOP*XOLOGZ0
             ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
 &                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
 
             DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-            IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTAR(IJ)-F/DELF
+            IF(DELF /= 0.0_JWRB) USTNEW = USTOLD-F/DELF
 
+            USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 !           CONVERGENCE ?
             DEL = USTAR(IJ)-USTOLD
 
