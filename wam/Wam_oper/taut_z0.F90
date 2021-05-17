@@ -186,7 +186,11 @@ IF (LLGCBZ0) THEN
           write(*,*) 'debile taut_z0 new  ',iter,del
 
 !     Refine solution
-        IF(LLSOLVLOG) THEN
+        X = (TAUWACT(IJ)+TAUUNR(IJ))/TAUOLD
+!!debile
+          write(*,*) 'debile taut_z0 X  ',X
+
+        IF(LLSOLVLOG .and. X < 0.95_JWRB) THEN
 
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
