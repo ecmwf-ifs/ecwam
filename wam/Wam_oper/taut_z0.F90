@@ -193,11 +193,11 @@ IF (LLGCBZ0) THEN
         IF(LLSOLVLOG .and. X < 0.99_JWRB) THEN
 
           USTOLD = USTAR(IJ)
-          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ)+TAUUNR(IJ))
 
           DO ITER=1,NITER
 
-            X = MIN(TAUWEFF(IJ)/TAUOLD,0.999_JWRB)
+            X = MIN((TAUWEFF(IJ)+TAUUNR(IJ))/TAUOLD,0.99_JWRB)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
 
             CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
@@ -220,9 +220,8 @@ IF (LLGCBZ0) THEN
 
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
-            TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-!!!            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
+            TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ)+TAUUNR(IJ))
+            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           ENDDO
 !!debile
           write(*,*) 'debile taut_z0 old ',iter,del
