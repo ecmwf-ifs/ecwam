@@ -152,22 +152,45 @@ IF (LLGCBZ0) THEN
         ALPHAOG(IJ) = ALPHAMIN*GM1
       ENDDO
 
-      IF(LLSOLVLOG) THEN
+      DO IJ = IJS, IJL
+        W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
+      ENDDO
 
-        DO IJ = IJS, IJL
-          W1(IJ) = 0.40_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-18.0_JWRB)) + 1.0_JWRB )
-        ENDDO
+      DO IJ = IJS, IJL
+        XKUTOP = XKAPPA*UTOP(IJ)
+        USTOLD = USTAR(IJ)
+        TAUOLD = USTOLD**2
 
-        DO IJ = IJS, IJL
-          XKUTOP = XKAPPA*UTOP(IJ)
+        DO ITER=1,NITER
+!         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
+          ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
+          TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
+
+          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+!         TOTAL kinematic STRESS:
+          TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
+          USTNEW = SQRT(TAUNEW)
+          USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
+
+          CONVERGENCE ?
+          DEL = USTAR(IJ)-USTOLD
+          IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
+          TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
-          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-!         FIRST GUESS Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+        ENDDO
+        Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+        Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+
+!!debile
+          write(*,*) 'debile taut_z0 new  ',iter,del
+
+!     Refine solution
+        IF(LLSOLVLOG) THEN
 
           DO ITER=1,NITER
 
-            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
+            X = MIN(TAUWACT(IJ)/TAUOLD,0.999_JWRB)
             TAUOLD = TAUWACT(IJ)/X
             USTOLD = SQRT(TAUOLD)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
@@ -185,9 +208,8 @@ IF (LLGCBZ0) THEN
 &                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
 
             DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-            IF(DELF /= 0.0_JWRB) USTNEW = USTOLD-F/DELF
+            IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
 
-            USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 !           CONVERGENCE ?
             DEL = USTAR(IJ)-USTOLD
 
@@ -196,47 +218,13 @@ IF (LLGCBZ0) THEN
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
             Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           ENDDO
-
 !!debile
-          write(*,*) 'debile taut_z0 ',iter,del
+          write(*,*) 'debile taut_z0 old ',iter,del
 
-        ENDDO
+        ENDIF
 
-      ELSE
+      ENDDO
 
-        DO IJ = IJS, IJL
-          W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
-        ENDDO
-
-        DO IJ = IJS, IJL
-          XKUTOP = XKAPPA*UTOP(IJ)
-          USTOLD = USTAR(IJ)
-          TAUOLD = USTOLD**2
-
-          DO ITER=1,NITER
-!           Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
-            ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-            TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
-
-            CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
-!           TOTAL kinematic STRESS:
-            TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
-            USTNEW = SQRT(TAUNEW)
-            USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
-
-!           CONVERGENCE ?
-            DEL = USTAR(IJ)-USTOLD
-            IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
-            TAUOLD = USTAR(IJ)**2
-            USTOLD = USTAR(IJ)
-          ENDDO
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-          Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
-
-        ENDDO
-
-      ENDIF ! LLSOLVLOG
 
 ELSE
 
