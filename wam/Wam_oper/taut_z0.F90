@@ -182,15 +182,9 @@ IF (LLGCBZ0) THEN
         Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
         Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
 
-!!debile
-          write(*,*) 'debile taut_z0 new  ',iter,del
-
 !     Refine solution
         X = TAUWEFF(IJ)/TAUOLD
-!!debile
-          write(*,*) 'debile taut_z0 X  ',X
-
-        IF(LLSOLVLOG .and. X < 0.99_JWRB) THEN
+        IF(LLSOLVLOG .AND. X < 0.99_JWRB) THEN
 
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
@@ -223,8 +217,6 @@ IF (LLGCBZ0) THEN
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
             Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           ENDDO
-!!debile
-          write(*,*) 'debile taut_z0 old ',iter,del
 
         ENDIF
 
