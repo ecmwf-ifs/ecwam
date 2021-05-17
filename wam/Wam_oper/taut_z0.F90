@@ -173,7 +173,7 @@ IF (LLGCBZ0) THEN
           USTNEW = SQRT(TAUNEW)
           USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
 
-          CONVERGENCE ?
+!         CONVERGENCE ?
           DEL = USTAR(IJ)-USTOLD
           IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
           TAUOLD = USTAR(IJ)**2
