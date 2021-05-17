@@ -188,6 +188,9 @@ IF (LLGCBZ0) THEN
 !     Refine solution
         IF(LLSOLVLOG) THEN
 
+          USTOLD = USTAR(IJ)
+          TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+
           DO ITER=1,NITER
 
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
@@ -213,7 +216,8 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+!!!            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
 !!debile
           write(*,*) 'debile taut_z0 old ',iter,del
