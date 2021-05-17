@@ -186,18 +186,18 @@ IF (LLGCBZ0) THEN
           write(*,*) 'debile taut_z0 new  ',iter,del
 
 !     Refine solution
-        X = (TAUWACT(IJ)+TAUUNR(IJ))/TAUOLD
+        X = TAUWEFF(IJ)/TAUOLD
 !!debile
           write(*,*) 'debile taut_z0 X  ',X
 
-        IF(LLSOLVLOG .and. X < 0.95_JWRB) THEN
+        IF(LLSOLVLOG .and. X < 0.99_JWRB) THEN
 
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
 
           DO ITER=1,NITER
 
-            X = MIN((TAUWACT(IJ)+TAUUNR(IJ))/TAUOLD,0.999_JWRB)
+            X = MIN(TAUWEFF(IJ)/TAUOLD,0.999_JWRB)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
 
             CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
