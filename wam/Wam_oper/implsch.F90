@@ -118,7 +118,6 @@
 !       *STRESSO*   - COMPUTATION NORMALISED WAVE STRESS.
 !           !!!!!!! MAKE SURE THAT SINPUT IS CALLED FIRST, STRESSO
 !           !!!!!!! NEXT, AND THEN THE REST OF THE SOURCE FUNCTIONS.
-!       *FRCUTINDEX*
 !       *IMPHFTAIL*
 
 !     REFERENCE.
@@ -155,7 +154,6 @@
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "flmintail.intfb.h"
-#include "frcutindex.intfb.h"
 #include "sbottom.intfb.h"
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
@@ -415,15 +413,8 @@
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL1, IJS, IJL, EMEANWS, FMEANWS, XLLWS)
 
-!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!!!debile
-!!!      CALL FRCUTINDEX(IJS, IJL, FMEANALL, FMEANWS, USNEW, CICVR,        &
-!!!     &                MIJ, RHOWGDFTH)
-
       CALL IMPHFTAIL(IJS, IJL, MIJ, FLM, FL1)
       CALL FLMINTAIL(IJS, IJL, U10NEW, THWNEW, USNEW, FMEANWS, FL1)
-
-
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
