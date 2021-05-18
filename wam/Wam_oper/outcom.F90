@@ -62,15 +62,14 @@
       USE YOWGRIBHD, ONLY : IMDLGRBID_G,IMDLGRBID_M 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED  ,             &
      &            NGX      ,NGY      ,                                  &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,    &
-     &            NBLD     ,NIBLC    ,NBLC     ,CLDOMAIN ,IMDLGRDID
+     &            NIBLO    ,NOVER    ,NIBL1    ,NIBLD    ,              &
+     &            NIBLC    ,CLDOMAIN ,IMDLGRDID
       USE YOWCPBO  , ONLY : NBOUNC
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWFPBO  , ONLY : NBOUNF
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
+     &            NLONRGG  ,IJS      ,IJL
       USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
@@ -129,14 +128,14 @@
       IDUM=0
 
       IF (IFORM.NE.2) THEN
-        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER, &
+        WRITE(IU07) NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,       &
      &              KFRH, MFRSTLW, MLSTHG,                              &
-     &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
+     &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
       IF (IFORM.NE.1) THEN
-        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER, &
+        WRITE(IU17,997) NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,   &
      &              KFRH, MFRSTLW, MLSTHG,                              &
-     &              NIBL1, IDUM, NIBLD, NBLD, NIBLC, NBLC, CLDOMAIN
+     &              NIBL1, IDUM, NIBLD, NIBLC, CLDOMAIN
       ENDIF
 
 
@@ -164,12 +163,12 @@
       IF (IFORM.NE.2) THEN
         WRITE (IU07) DELPHI, (DELLAM(L),L=1,NY), (NLONRGG(L),L=1,NY),   &
      &   (SINPH(L),L=1,NY), (COSPH(L),L=1,NY),                          &
-     &   IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &   IJS, IJL
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE (IU17,999) DELPHI,(DELLAM(L),L=1,NY),(NLONRGG(L),L=1,NY), &
      &   (SINPH(L),L=1,NY), (COSPH(L),L=1,NY)
-        WRITE (IU17,998) IGL, IJS, IJL2, IJLS, IJL, IJLT
+        WRITE (IU17,998) IJS, IJL
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -300,9 +299,9 @@
  
       CALL OUTNAM                                                       &
      & (NANG, NFRE,                                                     &
-     &  NGX, NGY, NBLO, NIBLO, NOVER, NGOUT, NOUTT,                     &
+     &  NGX, NGY, NIBLO, NOVER, NGOUT, NOUTT,                           &
      &  KFRH, MFRSTLW, MLSTHG,                                          &
-     &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NBLD, NIBLC, NBLC ,        &
+     &  NBOUNC, NBOUNF, NBINP, NIBL1, NIBLD, NIBLC,                     &
      &  ITAUMAX, JUMAX, IUSTAR, IALPHA, NDEPTH, IDUM, IPER)
 
       IF (LLUNSTR .AND. LPREPROC) THEN

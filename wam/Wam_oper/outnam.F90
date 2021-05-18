@@ -1,9 +1,9 @@
 
       SUBROUTINE OUTNAM (                                                &
      &  KNANG, KNFRE,                                                    &
-     &  KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,               &
+     &  KNGX, KNGY, KNIBLO, KNOVER, KNGOUT, KNOUTT,                      &
      &  KFRH, MFRSTLW, MLSTHG,                                           &
-     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,   &
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNIBLC,                  &
      &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper)
 
 ! ----------------------------------------------------------------------
@@ -18,16 +18,16 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) ::                                  &
      &  KNANG, KNFRE,                                                    &
-     &  KNGX, KNGY, KNBLO, KNIBLO, KNOVER, KNGOUT, KNOUTT,               &
+     &  KNGX, KNGY, KNIBLO, KNOVER, KNGOUT, KNOUTT,                      &
      &  KFRH, MFRSTLW, MLSTHG,                                           &
-     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNBLD, KNIBLC, KNBLC ,   &
+     &  KNMAXC, KNMAXF, KNBINP, KNIBL1, KNIBLD, KNIBLC,                  &
      &  KITAUMAX, KJUMAX, KIUSTAR, KIALPHA, KNDEPTH, KIREFRA, iper
 
       INTEGER(KIND=JWIM) ::                                              &
      &  iang, ifre,                                                      &
-     &  igx, igy, iblo, iiblo, iover, ioutp, ioutt,                      &
+     &  igx, igy, iiblo, iover, ioutp, ioutt,                            &
      &  ifrh, ifrstlw, ilsthg,                                           &
-     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,           &
+     &  imaxc, imaxf, ibinp, iibl1, iibld, iiblc,                        &
      &  itaumax, iumax, iustar, ialpha, idepth, irefra
 
       INTEGER(KIND=JWIM) :: IU06
@@ -36,9 +36,9 @@
 
       NAMELIST /PARWAM/                                                 &
      &  iang, ifre,                                                     &
-     &  igx, igy, iblo, iiblo, iover, ioutp, ioutt,                     &
+     &  igx, igy, iiblo, iover, ioutp, ioutt,                           &
      &  ifrh, ifrstlw, ilsthg,                                          &
-     &  imaxc, imaxf, ibinp, iibl1, iibld, ibld, iiblc, iblc ,          &
+     &  imaxc, imaxf, ibinp, iibl1, iibld, iiblc,                       &
      &  itaumax, iumax, iustar, ialpha, idepth, irefra, llper
 
       IU06=6
@@ -71,7 +71,6 @@
       ifre    = KNFRE
       igx     = KNGX
       igy     = KNGY
-      iblo    = KNBLO
       iiblo   = KNIBLO
       iover   = KNOVER
       ioutp   = KNGOUT
@@ -84,9 +83,7 @@
       ibinp   = KNBINP
       iibl1   = KNIBL1
       iibld   = KNIBLD
-      ibld    = KNBLD
       iiblc   = KNIBLC
-      iblc    = KNBLC 
       itaumax = KITAUMAX
       iumax   = KJUMAX
       iustar  = KIUSTAR

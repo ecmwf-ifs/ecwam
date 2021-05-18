@@ -52,8 +52,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
+     &            NLONRGG  ,IJS      ,IJL
       USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
      &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
@@ -65,8 +64,7 @@
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,    &
-     &            IMDLGRDID 
+     &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN ,IMDLGRDID
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST  ,TOOSHALLOW
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
@@ -88,7 +86,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU07
       INTEGER(KIND=JWIM) :: IREAD
-      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KBLD, KIBLC, KBLC
+      INTEGER(KIND=JWIM) :: IDUM, KIBLD, KIBLC
       INTEGER(KIND=JWIM) :: KMDLGRDID, KMDLGRBID_G, KMDLGRBID_M
       INTEGER(KIND=JWIM) :: NKIND !Precision of file when reading
 
@@ -163,11 +161,6 @@
         IF(.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
         IF(.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
         IF(.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-        IF(.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-        IF(.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-        IF(.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-        IF(.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-        IF(.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
 
         CALL READREC(4)
 
@@ -175,9 +168,9 @@
 !        --------------------------------------------------------
 
         IF(ALLOCATED(IXLG)) DEALLOCATE(IXLG)
-        ALLOCATE(IXLG(NIBLO,NBLO))
+        ALLOCATE(IXLG(NIBLO))
         IF(ALLOCATED(KXLT)) DEALLOCATE(KXLT)
-        ALLOCATE(KXLT(NIBLO,NBLO))
+        ALLOCATE(KXLT(NIBLO))
         IF(.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
 
         CALL READREC(5)
@@ -229,7 +222,7 @@
         CALL READREC(14)
 !!!   note that the size of DEPTH will be readjusted in mpdecomp !!!
         IF(ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NIBLO,NBLO))
+        ALLOCATE(DEPTH(NIBLO))
         IF(.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
         IF(.NOT.ALLOCATED(TSIHKD)) ALLOCATE(TSIHKD(NDEPTH,NFRE))
@@ -372,9 +365,9 @@
  1002    FORMAT(2X,A,I0,A,I0,A,L1)
       CASE(2)
          READ(IU07,IOSTAT=ISTAT)                                        &
-     &        NANG, NFRE, NFRE_RED, NGX, NGY, NBLO, NIBLO, NOVER,       &
+     &        NANG, NFRE, NFRE_RED, NGX, NGY, NIBLO, NOVER,             &
      &        KFRH, MFRSTLW, MLSTHG,                                    &
-     &        NIBL1, IDUM, KIBLD, KBLD, KIBLC, KBLC, CLDOMAIN
+     &        NIBL1, IDUM, KIBLD, KIBLC, CLDOMAIN
          IF (ISTAT /= 0) GOTO 1000
       CASE(3)
          IF (LLR8TOR4) THEN
@@ -407,7 +400,7 @@
 
             READ(IU07,IOSTAT=ISTAT) R8_DELPHI, R8_DELLAM, NLONRGG,      &
      &           R8_SINPH, R8_COSPH,                                    &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
 
             DELPHI = R8_DELPHI
@@ -418,7 +411,7 @@
          ELSE
             READ(IU07,IOSTAT=ISTAT) DELPHI, DELLAM, NLONRGG,            &
      &           SINPH, COSPH,                                          &
-     &           IGL, IJS, IJL2, IJLS, IJL, IJLT
+     &           IJS, IJL
             IF (ISTAT /= 0) GOTO 1000
          ENDIF
       CASE(5)
@@ -508,7 +501,7 @@
          ENDIF
       CASE(15)
          IF (LLR8TOR4) THEN
-            ALLOCATE(R8_DEPTH(NIBLO,NBLO))
+            ALLOCATE(R8_DEPTH(NIBLO))
             ALLOCATE(R8_TCGOND(NDEPTH,NFRE))
             ALLOCATE(R8_TFAK(NDEPTH,NFRE))
             ALLOCATE(R8_TSIHKD(NDEPTH,NFRE))

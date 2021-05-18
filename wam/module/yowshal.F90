@@ -18,7 +18,7 @@
       REAL(KIND=JWRB)              :: DEPTHA
       REAL(KIND=JWRB)              :: DEPTHD
       REAL(KIND=JWRB)              :: TOOSHALLOW
-      REAL(KIND=JWRB), ALLOCATABLE :: DEPTH(:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: DEPTH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: TCGOND(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: CINV(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TFAK(:,:)

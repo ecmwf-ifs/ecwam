@@ -122,7 +122,6 @@
 !                      (ANALYSED).
 !                      THIS FILE IS DYNAMICALLY ASSIGNED FILEID = 'ASW'
 !ASSI
-!           *IUSCR*  - SCRATCH UNITS FOR WIND PROCESSING.
 !           *IUVELO* - OUTPUT UNIT OF BLOCKED WINDFILEDS.
 !                      FILES ARE DYNAMICALLY ASSIGNED IN SUB
 !                      NOTIM OR TIMIN.
@@ -297,7 +296,7 @@
      &            IU13     ,IU14     ,IU15     ,IU16     ,IU17     ,    &
      &            IU18     ,IU19     ,IU20     ,IU22     ,              &
      &            IU23     ,IU27     ,IU28     ,                        &
-     &            IUVELO   ,IUSCR    ,IU30     ,IU31     ,              &
+     &            IUVELO   ,IU30     ,IU31     ,                        &
      &            IU32     ,IU33     ,IU35     ,IU36     ,IU37     ,    &
      &            IU38
       USE YOWWAMI  , ONLY : CBPLTDT
@@ -638,15 +637,6 @@
 !     THE ACTUAL READING HAS BEEN MOVED TO MPDECOMP.
 
       ITESTB = MIN(ITESTB,IGL)
-
-!NEST
-
-      IF (.NOT.ALLOCATED(IUSCR)) THEN
-        ALLOCATE(IUSCR(NBLO))
-      ENDIF
-      DO IG=1,NBLO
-        IUSCR(IG) = 39+IG
-      ENDDO
 
 !*    2.1 READ MODULE YOWCPBO AND YOWFPBO.
 !     ------------------------------------

@@ -44,8 +44,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL      ,IJS      ,IJL2     ,IJLS     ,    &
-     &            IJL      ,IJLT
+     &            NLONRGG  ,IJS      ,IJL
       USE YOWINDN  , ONLY : KFRH     ,IKP      ,IKP1     ,IKM      ,    &
      &            IKM1     ,K1W      ,K2W      ,K11W     ,K21W     ,    &
      &            AF11     ,FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,    &
@@ -57,7 +56,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
      &            NGX      ,NGY      ,                                  &
-     &            NBLO     ,NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
+     &            NIBLO    ,NOVER    ,NIBL1    ,CLDOMAIN
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
@@ -77,8 +76,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IU06, ISEND
       INTEGER(KIND=JWIM), INTENT(INOUT) :: ITAG
-      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=20
-      INTEGER(KIND=JWIM) :: IG 
+      INTEGER(KIND=JWIM), PARAMETER :: MFIRST=19
       INTEGER(KIND=JWIM) :: I, J, IJ, K, K1, K2, M, M1, M2, IC, L,      &
      &                      KDEPTH, NGOU
       INTEGER(KIND=JWIM) :: IKCOUNT, KCOUNT
@@ -114,8 +112,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ICOMBUF(IKCOUNT)=NGX
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NGY
-          IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=NBLO
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NIBLO
           IKCOUNT=IKCOUNT+1
@@ -171,8 +167,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IKCOUNT=IKCOUNT+1
           NGY=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
-          NBLO=ICOMBUF(IKCOUNT)
-          IKCOUNT=IKCOUNT+1
           NIBLO=ICOMBUF(IKCOUNT)
           IKCOUNT=IKCOUNT+1
           NOVER=ICOMBUF(IKCOUNT)
@@ -212,11 +206,11 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=6+5*NBLO+NGY+2*NBLO*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
+        MIC=6+NGY+2*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+2*NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &
-     &      NBLO*NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
+     &      NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
      &      2+2*NFREH+NANGH+NFREH*NDEPTH+5*NANGH*NDEPTH*NFREH*NFREH
 
 !       ENCODE MAIN MESSAGE BUFFERS (ON PE=ISEND) AND
@@ -238,13 +232,8 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IF (.NOT.ALLOCATED(NLONRGG)) ALLOCATE(NLONRGG(NGY))
           IF (.NOT.ALLOCATED(SINPH)) ALLOCATE(SINPH(NGY))
           IF (.NOT.ALLOCATED(COSPH)) ALLOCATE(COSPH(NGY))
-          IF (.NOT.ALLOCATED(IJS)) ALLOCATE(IJS(NBLO))
-          IF (.NOT.ALLOCATED(IJL2)) ALLOCATE(IJL2(NBLO))
-          IF (.NOT.ALLOCATED(IJLS)) ALLOCATE(IJLS(NBLO))
-          IF (.NOT.ALLOCATED(IJL)) ALLOCATE(IJL(NBLO))
-          IF (.NOT.ALLOCATED(IJLT)) ALLOCATE(IJLT(NBLO))
-          IF (.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO,NBLO))
-          IF (.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO,NBLO))
+          IF (.NOT.ALLOCATED(IXLG)) ALLOCATE(IXLG(NIBLO))
+          IF (.NOT.ALLOCATED(KXLT)) ALLOCATE(KXLT(NIBLO))
           IF (.NOT.ALLOCATED(ZDELLO)) ALLOCATE(ZDELLO(NGY))
           IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
           IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
@@ -267,7 +256,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           ENDIF
 
           IF (ALLOCATED(DEPTH)) DEALLOCATE(DEPTH)
-          ALLOCATE(DEPTH(NIBLO,NBLO))
+          ALLOCATE(DEPTH(NIBLO))
 
           IF (.NOT.ALLOCATED(TCGOND)) ALLOCATE(TCGOND(NDEPTH,NFRE))
           IF (.NOT.ALLOCATED(TFAK)) ALLOCATE(TFAK(NDEPTH,NFRE))
@@ -358,31 +347,17 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ZCOMBUF(KCOUNT)=COSPH(J)
           ENDDO
           IKCOUNT=IKCOUNT+1
-          ICOMBUF(IKCOUNT)=IGL
-          DO IG=1,NBLO
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IJS(IG)
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IJL2(IG)
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IJLS(IG)
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IJL(IG)
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IJLT(IG)
-          ENDDO
+          ICOMBUF(IKCOUNT)=IJS
+          IKCOUNT=IKCOUNT+1
+          ICOMBUF(IKCOUNT)=IJL
 
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=IXLG(IJ,IG)
-            ENDDO
+          DO IJ=1,NIBLO
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=IXLG(IJ)
           ENDDO
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              IKCOUNT=IKCOUNT+1
-              ICOMBUF(IKCOUNT)=KXLT(IJ,IG)
-            ENDDO
+          DO IJ=1,NIBLO
+            IKCOUNT=IKCOUNT+1
+            ICOMBUF(IKCOUNT)=KXLT(IJ)
           ENDDO
           IKCOUNT=IKCOUNT+1
           ICOMBUF(IKCOUNT)=NX
@@ -497,11 +472,9 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ICOMBUF(IKCOUNT)=IJAR(NGOU)
           ENDDO
 
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              KCOUNT=KCOUNT+1
-              ZCOMBUF(KCOUNT)=DEPTH(IJ,IG)
-            ENDDO
+          DO IJ=1,NIBLO
+            KCOUNT=KCOUNT+1
+            ZCOMBUF(KCOUNT)=DEPTH(IJ)
           ENDDO
           KCOUNT=KCOUNT+1
           ZCOMBUF(KCOUNT)=DEPTHA
@@ -731,31 +704,17 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             COSPH(J)=ZCOMBUF(KCOUNT)
           ENDDO
           IKCOUNT=IKCOUNT+1
-          IGL=ICOMBUF(IKCOUNT)
-          DO IG=1,NBLO
-            IKCOUNT=IKCOUNT+1
-            IJS(IG)=ICOMBUF(IKCOUNT)
-            IKCOUNT=IKCOUNT+1
-            IJL2(IG)=ICOMBUF(IKCOUNT)
-            IKCOUNT=IKCOUNT+1
-            IJLS(IG)=ICOMBUF(IKCOUNT)
-            IKCOUNT=IKCOUNT+1
-            IJL(IG)=ICOMBUF(IKCOUNT)
-            IKCOUNT=IKCOUNT+1
-            IJLT(IG)=ICOMBUF(IKCOUNT)
-          ENDDO
+          IJS=ICOMBUF(IKCOUNT)
+          IKCOUNT=IKCOUNT+1
+          IJL=ICOMBUF(IKCOUNT)
 
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              IKCOUNT=IKCOUNT+1
-              IXLG(IJ,IG)=ICOMBUF(IKCOUNT)
-            ENDDO
+          DO IJ=1,NIBLO
+            IKCOUNT=IKCOUNT+1
+            IXLG(IJ)=ICOMBUF(IKCOUNT)
           ENDDO
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              IKCOUNT=IKCOUNT+1
-              KXLT(IJ,IG)=ICOMBUF(IKCOUNT)
-            ENDDO
+          DO IJ=1,NIBLO
+            IKCOUNT=IKCOUNT+1
+            KXLT(IJ)=ICOMBUF(IKCOUNT)
           ENDDO
           IKCOUNT=IKCOUNT+1
           NX=ICOMBUF(IKCOUNT)
@@ -871,11 +830,9 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             IJAR(NGOU)=ICOMBUF(IKCOUNT)
           ENDDO
 
-          DO IG=1,NBLO
-            DO IJ=1,NIBLO
-              KCOUNT=KCOUNT+1
-              DEPTH(IJ,IG)=ZCOMBUF(KCOUNT)
-            ENDDO
+          DO IJ=1,NIBLO
+            KCOUNT=KCOUNT+1
+            DEPTH(IJ)=ZCOMBUF(KCOUNT)
           ENDDO
           KCOUNT=KCOUNT+1
           DEPTHA=ZCOMBUF(KCOUNT)

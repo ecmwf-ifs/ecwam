@@ -15,14 +15,11 @@
       INTEGER(KIND=JWIM) :: NFRE_ODD
       INTEGER(KIND=JWIM) :: NGX
       INTEGER(KIND=JWIM) :: NGY
-      INTEGER(KIND=JWIM) :: NBLO
       INTEGER(KIND=JWIM) :: NIBLO
       INTEGER(KIND=JWIM) :: NOVER 
       INTEGER(KIND=JWIM) :: NIBL1 
       INTEGER(KIND=JWIM) :: NIBLD 
-      INTEGER(KIND=JWIM) :: NBLD 
       INTEGER(KIND=JWIM) :: NIBLC 
-      INTEGER(KIND=JWIM) :: NBLC
 
       REAL(KIND=JWRB) :: SWAMPWIND 
       REAL(KIND=JWRB) :: SWAMPWIND2 
@@ -49,7 +46,6 @@
 !      *NFRE_ODD*  INTEGER   NFRE-1 IF NFRE EVEN, BUT NFRE IS NFRE ODD 
 !      *NGX*       INTEGER   NUMBER OF LONGITUDES IN GRID.
 !      *NGY*       INTEGER   NUMBER OF LATITUDES IN GRID.
-!      *NBLO*      INTEGER   NUMBER OF BLOCKS.
 !      *NIBLO*     INTEGER   NUMBER OF SEA POINTS IN BLOCK.
 !      *NOVER*     INTEGER   MAXIMUM NUMBER POINTS IN FIRST LATITUDE
 !                            OF BLOCKS.
@@ -57,11 +53,7 @@
 !                            =     1 IF ONE BLOCK VERSION.
 !      *NIBLD*     INTEGER   = NIBLO IF DEPTH OR CURRENT REFRACTION.
 !                            = 1     ELSE.
-!      *NBLD*      INTEGER   = NBLO  IF DEPTH OR CURRENT REFRACTION.
-!                            = 1     ELSE.
 !      *NIBLC*     INTEGER   = NIBLO IF CURRENT REFRACTION.
-!                            = 1     ELSE.
-!      *NBLC*      INTEGER   = NBLO  IF CURRENT REFRACTION.
 !                            = 1     ELSE.
 !      *SWAMPWIND* REAL      CONSTANT WIND SPEED USED TO RUN SWAMP CASE.
 !                            FIRST VALUE

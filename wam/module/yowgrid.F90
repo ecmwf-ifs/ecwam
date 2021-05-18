@@ -17,13 +17,9 @@
       REAL(KIND=JWRB), ALLOCATABLE :: PRQRT(:,:)
 
       INTEGER(KIND=JWIM), ALLOCATABLE :: NLONRGG(:) 
-      INTEGER(KIND=JWIM)              :: IGL 
       INTEGER(KIND=JWIM)              :: IJSLOC, IJLLOC, IJGLOBAL_OFFSET
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJS(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJL2(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJLS(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJL(:) 
-      INTEGER(KIND=JWIM), ALLOCATABLE :: IJLT(:) 
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IJS
+      INTEGER(KIND=JWIM), ALLOCATABLE :: IJL
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -54,13 +50,6 @@
 !      *IJGLOBAL_OFFSET INTEGER OFFSET TO PLACE FIRST LOCAL POINT IN GLOBAL ARRAY
 
 !!!!! if not unstructured then IJSLOC = IJS and IJLLOC = IJL
-
-
-!!! obsolete:
-!      *IGL*       INTEGER   NO OF BLOCKS.
-!      *IJL2*      INTEGER   INDEX OF LAST POINT OF SECOND LAT.
-!      *IJLS*      INTEGER   INDEX OF FIRST POINT OF LAT BEFORE LAST.
-!      *IJLT*      INTEGER   TOTAL NUMBER OF GRIDPOINTS IN A BLOCK.
 
 ! ----------------------------------------------------------------------
       END MODULE YOWGRID
