@@ -207,7 +207,6 @@
         TAUW(IJ) = MAX(TAUW(IJ),0.0_JWRB)
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
-
       IF ( .NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=IJS,IJL

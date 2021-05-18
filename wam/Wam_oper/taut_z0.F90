@@ -91,7 +91,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
-      REAL(KIND=JWRB) :: COSDIFF
       REAL(KIND=JWRB) :: ZCHAR
       REAL(KIND=JWRB) :: US2TOTAUW, USMAX
       REAL(KIND=JWRB) :: XLOGXL, XKUTOP, XOLOGZ0
@@ -104,7 +103,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: W1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TAUWACT, TAUWEFF 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ANG_GC, ALPHAP, HALP, TAUUNR
-      LOGICAL, PARAMETER :: LLSOLVLOG = .FALSE.  ! if true, solve the log profile
+
       LOGICAL,  DIMENSION(IJS:IJL) :: LLCOSDIFF
 
 ! ----------------------------------------------------------------------
@@ -159,23 +158,47 @@ IF (LLGCBZ0) THEN
         ALPHAOG(IJ) = ALPHAMIN*GM1
       ENDDO
 
-      IF(LLSOLVLOG) THEN
+      DO IJ = IJS, IJL
+        W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
+      ENDDO
 
-        DO IJ = IJS, IJL
-          XKUTOP = XKAPPA*UTOP(IJ)
+      DO IJ = IJS, IJL
+        XKUTOP = XKAPPA*UTOP(IJ)
+        USTOLD = USTAR(IJ)
+        TAUOLD = USTOLD**2
+
+        DO ITER=1,NITER
+!         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
+          ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
+          TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
+
+          CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+!         TOTAL kinematic STRESS:
+          TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
+          USTNEW = SQRT(TAUNEW)
+          USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
+
+!         CONVERGENCE ?
+          DEL = USTAR(IJ)-USTOLD
+          IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
+          TAUOLD = USTAR(IJ)**2
+          USTOLD = USTAR(IJ)
+        ENDDO
+        Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+        Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+
+!       Refine solution
+        X = TAUWEFF(IJ)/TAUOLD
+        IF (X < 0.99_JWRB) THEN
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
 
           DO ITER=1,NITER
-            X = MIN(TAUWACT(IJ)/TAUOLD,0.99_JWRB)
-            TAUOLD = TAUWACT(IJ)/X
+            X = MIN(TAUWEFF(IJ)/TAUOLD,0.99_JWRB)
+            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
 
-            USTAR(IJ) = SQRT(TAUOLD)
-            USTM1 = 1.0_JWRB/MAX(USTAR(IJ),EPSUS) 
-!           Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-
-            CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
+            CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
             Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
             Z0VIS = RNUM*USTM1
@@ -183,12 +206,12 @@ IF (LLGCBZ0) THEN
             Z0(IJ) = HZ0VISO1MX+SQRT(HZ0VISO1MX**2+Z0B(IJ)**2/(1.0_JWRB-X))
 
             XOLOGZ0= 1.0_JWRB/(XLOGXL-LOG(Z0(IJ)))
-            F = USTAR(IJ)-XKUTOP*XOLOGZ0
+            F = USTOLD-XKUTOP*XOLOGZ0
             ZZ = 2.0_JWRB*USTM1*(3.0_JWRB*Z0B(IJ)**2+0.5_JWRB*Z0VIS*Z0(IJ)-Z0(IJ)**2) &
 &                / (2.0_JWRB*Z0(IJ)**2*(1.0_JWRB-X)-Z0VIS*Z0(IJ))
 
             DELF= 1.0_JWRB-XKUTOP*XOLOGZ0**2*ZZ
-            IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTAR(IJ)-F/DELF
+            IF(DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
 
 !           CONVERGENCE ?
             DEL = USTAR(IJ)-USTOLD
@@ -196,45 +219,13 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
 
-        ENDDO
+        ENDIF
 
-      ELSE
+      ENDDO
 
-        DO IJ = IJS, IJL
-          W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
-        ENDDO
-
-        DO IJ = IJS, IJL
-          XKUTOP = XKAPPA*UTOP(IJ)
-          USTOLD = USTAR(IJ)
-          TAUOLD = USTOLD**2
-
-          DO ITER=1,NITER
-!           Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
-            ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-            TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
-
-            CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
-!           TOTAL kinematic STRESS:
-            TAUNEW = TAUWEFF(IJ) + TAUV + TAUUNR(IJ)
-            USTNEW = SQRT(TAUNEW)
-            USTAR(IJ) = W1(IJ)*USTOLD+(1.0_JWRB-W1(IJ))*USTNEW
-
-!           CONVERGENCE ?
-            DEL = USTAR(IJ)-USTOLD
-            IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
-            TAUOLD = USTAR(IJ)**2
-            USTOLD = USTAR(IJ)
-          ENDDO
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-          Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
-
-        ENDDO
-
-      ENDIF ! LLSOLVLOG
 
 ELSE
 
