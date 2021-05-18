@@ -185,7 +185,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
 
-      REAL(KIND=JWRB) :: DELT, XIMP, DELT5
+      REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5
       REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
@@ -215,6 +215,7 @@
 !        ---------------
 
       DELT = IDELT
+      DELTM = 1.0_JWRB/DELT
       XIMP = 1.0_JWRB
       DELT5 = XIMP*DELT
 
@@ -304,13 +305,15 @@
         CALL FLUSH (IU06)
       ENDIF
 
+!     Save source term contributions relevant for the calculation of ocean fluxes
       IF(LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-        CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
-     &                 SL, CICVR,                                       &
-     &                 PHIWA,                                           &
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
-     &                 USNEW, ROAIRN, .TRUE.)
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SSOURCE(IJ,K,M) = SL(IJ,K,M)
+            ENDDO
+          ENDDO
+        ENDDO
       ENDIF
 
       CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
@@ -320,6 +323,7 @@
       ENDIF
 
       IF(LCFLX .AND. LWVFLX_SNL) THEN
+!     Save source term contributions relevant for the calculation of ocean fluxes
 !!!!!!  SL must only contain contributions contributed to fluxes into the oceans
 !       MODULATE SL BY IMPLICIT FACTOR
         DO M=1,NFRE
@@ -330,12 +334,6 @@
             ENDDO
           ENDDO
         ENDDO
-        CALL WNFLUXES (IJS, IJL,                                        &
-     &                 MIJ, RHOWGDFTH,                                  &
-     &                 SSOURCE, CICVR,                                  &
-     &                 PHIWA,                                           &
-     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
-     &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 
 
@@ -377,6 +375,7 @@
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL1(IJ,K,M) = FL1(IJ,K,M) + IOBND(IJ)*SIGN(FLHAB,GTEMP2)
             FL1(IJ,K,M) = MAX(IODP(IJ)*CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
             FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
@@ -391,12 +390,21 @@
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
             FL1(IJ,K,M) = FL1(IJ,K,M) + SIGN(FLHAB,GTEMP2)
             FL1(IJ,K,M) = MAX(CIREDUC(IJ,K,M)*FL1(IJ,K,M),FLM(IJ,K))
+            SSOURCE(IJ,K,M) = SSOURCE(IJ,K,M) + DELTM * MIN(FLMAX(M)-FL1(IJ,K,M),0.0_JWRB)
             FL1(IJ,K,M) = MIN(FL1(IJ,K,M),FLMAX(M))
           ENDDO
         ENDDO
       ENDDO
       ENDIF
 
+      IF(LCFLX) THEN
+        CALL WNFLUXES (IJS, IJL,                                        &
+     &                 MIJ, RHOWGDFTH,                                  &
+     &                 SSOURCE, CICVR,                                  &
+     &                 PHIWA,                                           &
+     &                 EMEANALL, F1MEAN, U10NEW, THWNEW,                &
+     &                 USNEW, ROAIRN, .TRUE.)
+      ENDIF
 ! ----------------------------------------------------------------------
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
