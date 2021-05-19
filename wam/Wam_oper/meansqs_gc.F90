@@ -1,4 +1,4 @@
-      SUBROUTINE MEANSQS_GC(XKMSS, IJS, IJL, HALPHAP, USTAR, XMSSCG, FRGC)
+      SUBROUTINE MEANSQS_GC(XKMSS, IJS, IJL, HALPHAP, U10, USTAR, XMSSCG, FRGC)
 
 !***  DETERMINE MSS FOR GRAV-CAP WAVES UP TO WAVE NUMBER XKMSS
 
@@ -17,6 +17,7 @@
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, XKM_GC, &
      &                      VG_GC, C2OSQRTVG_GC, DELKCC_GC, DELKCC_GC_NS
       USE YOWPCONS , ONLY : G, ZPI,  SURFT
+      USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -30,12 +31,14 @@
 
       REAL(KIND=JWRB), INTENT(IN) :: XKMSS ! WAVE NUMBER CUT-OFF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: HALPHAP  ! 1/2 Phillips parameter
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10 ! 10m wind speed
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR ! friction velocity
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSSCG  ! mean square slope for gravity-capillary waves
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: FRGC  ! Frequency from which the gravity-capillary spectrum is approximated
 
       INTEGER(KIND=JWIM) :: IJ, I, NE
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NS
+      REAL(KIND=JWRB) :: ANG_GC
       REAL(KIND=JWRB) :: XKS, OMS, COEF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -66,7 +69,10 @@
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
-        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
+!!!debile
+        ANG_GC = ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(U10(IJ)-ANG_GC_D))
+        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*ANG_GC
+!!!        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
         XMSSCG(IJ) = XMSSCG(IJ)*COEF
       ENDDO
 
