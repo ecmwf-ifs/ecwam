@@ -116,10 +116,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           Z0RAT = 0.02_JWRB
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.6_JWRB
-          ANG_GC_B = 0.3_JWRB
-          ANG_GC_C = 0.33_JWRB
-          ANG_GC_D = 11.7_JWRB
+          ANG_GC_A = 0.55_JWRB
+          ANG_GC_B = 0.35_JWRB
+          ANG_GC_C = 0.30_JWRB
+          ANG_GC_D = 11.2_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
