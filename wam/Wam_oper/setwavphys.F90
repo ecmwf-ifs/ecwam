@@ -15,6 +15,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
+     &                ANG_GC_E, ANG_GC_N,                               &
      &                SWELLF5, Z0TUBMAX, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
@@ -60,10 +61,12 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ENDIF
 
           ! ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-          ANG_GC_A = 0.6_JWRB
-          ANG_GC_B = 0.3_JWRB
-          ANG_GC_C = 0.33_JWRB
-          ANG_GC_D = 11.7_JWRB
+          ANG_GC_A = 0.55_JWRB
+          ANG_GC_B = 0.35_JWRB
+          ANG_GC_C = 0.30_JWRB
+          ANG_GC_D = 11.2_JWRB
+          ANG_GC_E = 0.1_JWRB
+          ANG_GC_N = 1.25_JWRB
 
           CDIS = -1.6_JWRB
           DELTA_SDIS = 0.6_JWRB
@@ -120,6 +123,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_B = 0.35_JWRB
           ANG_GC_C = 0.30_JWRB
           ANG_GC_D = 11.2_JWRB
+          ANG_GC_E = 0.1_JWRB
+          ANG_GC_N = 1.25_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB

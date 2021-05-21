@@ -17,7 +17,6 @@
       USE YOWFRED  , ONLY : NWAV_GC, KRATIO_GC, OMEGA_GC, XK_GC, XKM_GC, &
      &                      VG_GC, C2OSQRTVG_GC, DELKCC_GC, DELKCC_GC_NS
       USE YOWPCONS , ONLY : G, ZPI,  SURFT
-      USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D
 
       USE YOMHOOK  ,ONLY : LHOOK,   DR_HOOK
 
@@ -38,7 +37,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, I, NE
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: NS
-      REAL(KIND=JWRB) :: ANG_GC
+      REAL(KIND=JWRB) :: DIRSPRD_GC
       REAL(KIND=JWRB) :: XKS, OMS, COEF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
    
@@ -69,10 +68,7 @@
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
-!!!debile
-        ANG_GC = ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(U10(IJ)-ANG_GC_D))
-        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*ANG_GC
-!!!        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)
+        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*DIRSPRD_GC(U10(IJ))
         XMSSCG(IJ) = XMSSCG(IJ)*COEF
       ENDDO
 
