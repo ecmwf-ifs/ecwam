@@ -15,7 +15,7 @@ FUNCTION DIRSPRD_GC (U10)
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, ANG_GC_N
+USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, ANG_GC_N, ANG_GC_U
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
@@ -25,19 +25,27 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
       REAL(KIND=JWRB), INTENT(IN) :: U10
 
-      REAL(KIND=JWRB) :: ANG_GC_10, C10 
+      REAL(KIND=JWRB) :: CC 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
+
+! ----------------------------------------------------------------------
+
+!     INLINE FUNCTION.
+!     ----------------
+
+      REAL(KIND=JWRB) :: ANG_GC, X 
+
+      ANG_GC(X)= ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(X-ANG_GC_D))
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',0,ZHOOK_HANDLE)
 
-IF(U10 > 10.0_JWRB) THEN
-  DIRSPRD_GC= ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(U10-ANG_GC_D))
+IF(U10 > ANG_GC_U) THEN
+  DIRSPRD_GC= ANG_GC(U10)
 ELSE
-  ANG_GC_10= ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(10.0_JWRB-ANG_GC_D))
-  C10=ANG_GC_10*0.1_JWRB**ANG_GC_N
-  DIRSPRD_GC= MAX(C10*U10**ANG_GC_N,ANG_GC_E)
+  CC = ANG_GC(ANG_GC_U)/ANG_GC_U**ANG_GC_N
+  DIRSPRD_GC= MAX(CC*U10**ANG_GC_N,ANG_GC_E)
 ENDIF
 
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',1,ZHOOK_HANDLE)

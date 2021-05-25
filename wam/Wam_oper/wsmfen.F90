@@ -45,6 +45,7 @@
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,EPSMIN
       USE YOWSTAT  , ONLY : ISHALLO
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
@@ -58,6 +59,7 @@
       REAL(KIND=JWRB) :: EN, YNU, EMAX, X
       REAL(KIND=JWRB) :: DELT25, COEF1, XTEMP, TEMP, SPFB
       REAL(KIND=JWRB) :: ESTAR, DSTAR, SPINTDI, FREQDI 
+      REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
@@ -77,6 +79,8 @@
       EMAX(X) = ESH*TANH(ASH*X**BSH)
 
 ! ----------------------------------------------------------------------
+
+      IF (LHOOK) CALL DR_HOOK('WSMFEN',0,ZHOOK_HANDLE)
 
 !*    1. INTEGRATING THE WINDSEA PART OF THE SPECTRUM.                  
 !*       (UNDERESTIMATE IS IMPLIED)                                     
@@ -146,4 +150,6 @@
 
       FM = (FM+FREQDI)*0.5_JWRB
  
+      IF (LHOOK) CALL DR_HOOK('WSMFEN',1,ZHOOK_HANDLE)
+
       END SUBROUTINE WSMFEN
