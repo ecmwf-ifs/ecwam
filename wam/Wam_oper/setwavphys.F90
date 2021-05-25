@@ -15,7 +15,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
-     &                ANG_GC_E, ANG_GC_N,                               &
+     &                ANG_GC_E, ANG_GC_N, ANG_GC_U,                     &
      &                SWELLF5, Z0TUBMAX, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
@@ -66,7 +66,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.30_JWRB
           ANG_GC_D = 11.2_JWRB
           ANG_GC_E = 0.1_JWRB
-          ANG_GC_N = 1.25_JWRB
+          ANG_GC_N = 1.5_JWRB
+          ANG_GC_U = 10.5_JWRB
 
           CDIS = -1.6_JWRB
           DELTA_SDIS = 0.6_JWRB
@@ -124,7 +125,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ANG_GC_C = 0.30_JWRB
           ANG_GC_D = 11.2_JWRB
           ANG_GC_E = 0.1_JWRB
-          ANG_GC_N = 1.25_JWRB
+          ANG_GC_N = 1.5_JWRB
+          ANG_GC_U = 10.5_JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
