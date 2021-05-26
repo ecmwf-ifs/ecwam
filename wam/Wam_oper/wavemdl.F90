@@ -301,21 +301,23 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IG=1
 
       IF(LWCOU) THEN
-
-        IF ( AMONOP < 90._JWRB ) THEN
-            WRITE (IU06,*) ' *********************************'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
-            WRITE (IU06,*) ' *   *'
-            WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90     *'
-            WRITE (IU06,*) ' * ============================= *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' * AMONOP=', AMONOP
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *                               *'
-            WRITE (IU06,*) ' *********************************'
-            CALL FLUSH(IU06)
-            CALL ABORT1
+        IF ( IQGAUSS /= 1 ) THEN
+          IF ( AMONOP < 90._JWRB ) THEN
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
+              WRITE (IU06,*) ' *   *'
+              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
+              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
+              WRITE (IU06,*) ' * ============================= *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * AMONOP=', AMONOP
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
+          ENDIF
         ENDIF
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
