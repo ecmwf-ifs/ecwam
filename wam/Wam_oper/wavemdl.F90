@@ -115,7 +115,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWCURR  , ONLY : IDELCUR  ,LLCHKCFL
       USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
-      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
+      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW   ,     &
      &            TAUOC    ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -301,6 +301,22 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       IG=1
 
       IF(LWCOU) THEN
+
+        IF ( AMONOP < 90._JWRB ) THEN
+            WRITE (IU06,*) ' *********************************'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
+            WRITE (IU06,*) ' *   *'
+            WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90     *'
+            WRITE (IU06,*) ' * ============================= *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' * AMONOP=', AMONOP
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *                               *'
+            WRITE (IU06,*) ' *********************************'
+            CALL FLUSH(IU06)
+            CALL ABORT1
+        ENDIF
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
 
