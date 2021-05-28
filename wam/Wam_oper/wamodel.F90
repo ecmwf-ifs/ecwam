@@ -293,14 +293,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWFPBO  , ONLY : IBOUNF
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRIBHD, ONLY : LGRHDIFS 
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL       ,             &
+      USE YOWGRID  , ONLY : IJS      ,IJL       ,                       &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,CICOVER  ,CITHICK  ,    &
      &            CIWA
       USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT ,LNOCDIN  ,LWAVEWIND 
-      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
-     &            KTAG
+      USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
@@ -369,16 +368,15 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 #include "writsta.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NADV
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, K, M, J, IRA, KADV, ICH, ICALL
       INTEGER(KIND=JWIM) :: IFIL, IC, ICL, ICR, II
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: JSTPNEMO, IDATE, ITIME
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
-      INTEGER(KIND=JWIM), DIMENSION(IJS(1):IJL(1)) :: MIJ
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MIJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS(1):IJL(1),NANG,NFRE) :: XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       CHARACTER(LEN= 2) :: MARSTYPEBAK
       CHARACTER(LEN=14) :: CDATEWH, CZERO
@@ -415,8 +413,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       ENDIF
       LLFLUSH = .FALSE.
 
-      IG=1
-
       NPROMA=NPROMA_WAM
 
       IF(CDTPRO.EQ.CDATEA .AND. LLSOURCE ) THEN
@@ -431,10 +427,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !       WHEN GETTING THE DATA FROM GRIB.
         CALL GSTATS(1236,0)
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,U10OLD(KIJS,1), THWOLD(KIJS,1))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
+          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,U10OLD(KIJS), THWOLD(KIJS))
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -469,29 +465,29 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         CDTINTT=CDTPRO
 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ=KIJS,KIJL
-            U10NEW(IJ) = U10OLD(IJ,IG)
-            THWNEW(IJ) = THWOLD(IJ,IG)
-            USNEW(IJ) = USOLD(IJ,IG)
-            Z0NEW(IJ) = Z0OLD(IJ,IG)
-            ROAIRN(IJ) = ROAIRO(IJ,IG)
-            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+            U10NEW(IJ) = U10OLD(IJ)
+            THWNEW(IJ) = THWOLD(IJ)
+            USNEW(IJ) = USOLD(IJ)
+            Z0NEW(IJ) = Z0OLD(IJ)
+            ROAIRN(IJ) = ROAIRO(IJ)
+            ZIDLNEW(IJ) = ZIDLOLD(IJ)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
 
         IF(LLSOURCE) THEN
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
-            CALL WDFLUXES (KIJS, KIJL, IG,                              &
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
+            CALL WDFLUXES (KIJS, KIJL,                                  &
      &                     MIJ(KIJS),                                   &
      &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
-     &                     CICOVER(KIJS,IG),                            &
+     &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), Z0B(KIJS),                      &
      &                     ROAIRN(KIJS), ZIDLNEW(KIJS),                 &
@@ -519,11 +515,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 ! Mod for OPENMP
           CALL GSTATS(1439,0)
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL SETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,                 &
-     &                  CICOVER(KIJS,IG), U10NEW(KIJS), THWNEW(KIJS))
+     &                  CICOVER(KIJS), U10NEW(KIJS), THWNEW(KIJS))
           ENDDO
 !$OMP     END PARALLEL DO
           CALL GSTATS(1439,1)
@@ -572,7 +568,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !         COMPUTE OUTPUT PARAMETERS
           IF(NIPRMOUT.GT.0) THEN
-            CALL OUTBS (IJS(1), IJL(1), MIJ, FL1, XLLWS)
+            CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 !           PRINT OUT NORMS
 !!!1 to do: decide if there are cases where we might want LDREPROD false
             LDREPROD=.TRUE.
@@ -581,7 +577,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           IF( .NOT. LRESTARTED ) THEN
             IF(IREST.EQ.1 .AND. MARSTYPE.NE.'an' .AND. LGRIBOUT) THEN
-              CALL OUTSPEC(IJS(1), IJL(1), FL1, CICOVER)
+              CALL OUTSPEC(IJS, IJL, FL1, CICOVER)
               LLFLUSH = .TRUE.
             ENDIF
 
@@ -678,14 +674,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
      &  CALL INCDATE(CDTBC,IDELBC)
 
 
-!*    1.2 RESET FILES.
-!         ------------
-
-!*    1.5  LOOP FOR BLOCKS OF LATITUDES.
-!          -----------------------------
-
-        BLOCK : DO IG=1,IGL
-
 !*    1.5.5 SET TIME COUNTER.
 !           -----------------
           CDATE   = CDTPRA
@@ -702,7 +690,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 ! IF CDATE CORRESPONDS TO A PROPAGATION TIME
           IF (CDATE.EQ.CDTPRA) THEN
 
-            CALL PROPAG_WAM(IJS(1), IJL(1), FL1)
+            CALL PROPAG_WAM(IJS, IJL, FL1)
 
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*) '   SUB. WAMODEL: PROPAGATION DONE'
@@ -714,7 +702,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !*        RETRIEVING NEW FORCING FIELDS FROM TEMPORARY STORAGE IF NEEDED.
 !         ---------------------------------------------------------------
-          CALL NEWWIND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,           &
+          CALL NEWWIND(IJS,IJL,CDTIMP,CDATEWH,                          &
      &                 NEWREAD,NEWFILE,U10OLD,THWOLD,U10NEW,THWNEW,     &
      &                 USOLD, USNEW,                                    &
      &                 ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW,                &
@@ -733,17 +721,17 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             CALL GSTATS(1431,0)
             IF(LLSOURCE) THEN
 !$OMP         PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-              DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
-                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                KIJL=MIN(KIJS+NPROMA-1,IJL)
                 CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
-     &                        KIJS, KIJL, IG,                           &
-     &                        THWOLD(KIJS,IG), USOLD(KIJS,IG),          &
-     &                        TAUW(KIJS,IG), TAUWDIR(KIJS,IG),          &
-     &                        Z0OLD(KIJS,IG),                           &
-     &                        ROAIRO(KIJS,IG), ZIDLOLD(KIJS,IG),        &
-     &                        CICOVER(KIJS,IG), CIWA(KIJS:KIJL,:,IG),   &
-     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
+     &                        KIJS, KIJL, nnn                           &
+     &                        THWOLD(KIJS), USOLD(KIJS),                &
+     &                        TAUW(KIJS), TAUWDIR(KIJS),                &
+     &                        Z0OLD(KIJS),                              &
+     &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
+     &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),         &
+     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS)      ,  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &
@@ -765,9 +753,9 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             ELSE
 !             NO SOURCE TERM CONTRIBUTION
 !$OMP         PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ,K,M)  
-              DO JKGLO=IJS(IG),IJL(IG),NPROMA
+              DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
-                KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                KIJL=MIN(KIJS+NPROMA-1,IJL)
                 DO IJ=KIJS,KIJL
                   MIJ(IJ) = NFRE
                   DO K=1,NANG
@@ -786,24 +774,20 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !*          COPY AND CLOSE FILES IF NEEDED.
 !           -------------------------------
 
-            CALL CLOSEND(IJS(IG),IJL(IG),IG,IGL,CDTIMP,CDATEWH,         &
+            CALL CLOSEND(IJS,IJL,CDTIMP,CDATEWH,                        &
      &                   NEWREAD,NEWFILE,U10OLD,THWOLD,ROAIRO,ZIDLOLD,  &
      &                   U10NEW,THWNEW,ROAIRN,ZIDLNEW)
             IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: CLOSEND CALLED' 
-                CALL FLUSH (IU06)
-              ENDIF
+              WRITE(IU06,*) '   SUB. WAMODEL: CLOSEND CALLED' 
+              CALL FLUSH (IU06)
             ENDIF
 
             CDTIMP=CDTIMPNEXT
             CALL INCDATE(CDTIMPNEXT,IDELT)   
 
             IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) THEN
-                WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS INTEGRATED:'
-                 CALL FLUSH(IU06)
-              ENDIF
+              WRITE(IU06,*) '   SUB. WAMODEL: SOURCE FUNCTIONS INTEGRATED:'
+              CALL FLUSH(IU06)
             ENDIF
           ENDIF
 
@@ -820,10 +804,8 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !        END OF TIME LOOP ALL TIME STEPS DONE
 
           IF (ITEST.GE.2) THEN
-            IF (ITESTB.GE.IG) THEN
-              WRITE(IU06,*) '   SUB. WAMODEL: TIME STEPS DONE.'
-               CALL FLUSH(IU06)
-            ENDIF
+            WRITE(IU06,*) '   SUB. WAMODEL: TIME STEPS DONE.'
+            CALL FLUSH(IU06)
           ENDIF
 
 !NEST
@@ -832,11 +814,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           CALL GSTATS(1909,0)
           IF (IBOUNF.EQ.1) THEN
-            CALL BOUINPT (IU02, FL1, IJS(IG), IJL(IG), NBLKS, NBLKE)
-            IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY VALUES INSERTED'
-               CALL FLUSH(IU06)
-            ENDIF
+            CALL BOUINPT (IU02, FL1, IJS, IJL, NBLKS, NBLKE)
           ENDIF
 !NEST
 
@@ -845,12 +823,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 !           --------------------------
 
           IF (IBOUNC.EQ.1) THEN
-            CALL OUTBC (FL1, IJS(IG), IJL(IG), IG, IU19)
-            IF (ITEST.GE.2) THEN
-              IF (ITESTB.GE.IG) WRITE(IU06,*) '   SUB. WAMODEL: BOUNDARY OUTPUT', &
-     &         '  (COARSE GRID) DONE IN SUB OUTBC'
-               CALL FLUSH(IU06)
-            ENDIF
+            CALL OUTBC (FL1, IJS, IJL, IU19)
           ENDIF
 !NEST
 
@@ -895,7 +868,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
 !           COMPUTE OUTPUT PARAMETERS
             IF(NIPRMOUT.GT.0) THEN
-              CALL OUTBS (IJS(1), IJL(1), MIJ, FL1, XLLWS)
+              CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 
 !!!1 to do: decide if there are cased where we might want LDREPROD false
               LDREPROD=.TRUE.
@@ -910,13 +883,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
 
           ENDIF
 
-!*    BRANCHING BACK TO 1.5 FOR NEXT BLOCK OF LATITUDES
 
-        ENDDO BLOCK
-
-
-!*    1.6 IF ONE BLOCK VERSION COPY RESULTS.
-!         ----------------------------------
 
 !*    1.7 ONE PROPAGATION TIMESTEP DONE FOR ALL BLOCKS.
 !         ---------------------------------------------
@@ -966,7 +933,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 MARSTYPE='an'
               ENDIF
 
-              CALL OUTSPEC(IJS(1), IJL(1), FL1, CICOVER)
+              CALL OUTSPEC(IJS, IJL, FL1, CICOVER)
               LLFLUSH = .TRUE.
 
               MARSTYPE=MARSTYPEBAK
@@ -986,7 +953,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               WRITE(IU06,*) '  BINARY STRESS FILE DISPOSED AT........',  &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
-              CALL SAVSPEC(IJS(1), IJL(1), FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
+              CALL SAVSPEC(IJS, IJL, FL1, NBLKS, NBLKE, CDTPRO, CDATEF, CDATER)
               WRITE(IU06,*) '  BINARY WAVE SPECTRA DISPOSED AT........', &
      &         ' CDTPRO  = ', CDTPRO
               WRITE(IU06,*) ' '
@@ -1124,12 +1091,11 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           NEMOWSTEP=NEMOWSTEP+1
 
           IF (MOD(NEMOWSTEP,NEMOFRCO)==0) THEN
-            IG=1
             CALL GSTATS(1432,0)
 !$OMP       PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ) 
-            DO JKGLO=IJS(IG),IJL(IG),NPROMA
+            DO JKGLO=IJS,IJL,NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               IF(LWNEMOCOUSTK) THEN
                 NEMOUSTOKES(KIJS:KIJL) = USTOKES(KIJS:KIJL)
                 NEMOVSTOKES(KIJS:KIJL) = VSTOKES(KIJS:KIJL)

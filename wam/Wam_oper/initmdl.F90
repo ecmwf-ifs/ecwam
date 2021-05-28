@@ -246,8 +246,7 @@
      &            DFIM_SIM ,DFIMOFR_SIM ,DFIMFR_SIM ,DFIMFR2_SIM ,      &
      &            DFIM_END_L, DFIM_END_U
       USE YOWGRIBHD, ONLY : LGRHDIFS
-      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IGL      ,IJLT     ,    &
-     &             IJS     ,IJL      ,COSPH
+      USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,IJS     ,IJL      ,COSPH
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,CIWA
       USE YOWINDN  , ONLY : MLSTHG   ,ENH
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
@@ -259,8 +258,7 @@
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
      &            KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NBLO     ,    &
-     &            NFRE_ODD ,                                            &
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
      &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
@@ -344,7 +342,6 @@
 
 
       INTEGER(KIND=JWIM) :: IFORCA
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, I, II, K, M, IP, LFILE, IX, IY, KX, ID
       INTEGER(KIND=JWIM) :: IC, ICR
       INTEGER(KIND=JWIM) :: KM1, KP1
@@ -385,7 +382,7 @@
       CALL INIWCST(PRPLRADI)
 
 !     ADJUST NPROMA_WAM
-      NTOT=IJL(1)-IJS(1)+1
+      NTOT=IJL-IJS+1
       MTHREADS=1
 !$    MTHREADS=OMP_GET_MAX_THREADS()
       NPROMA=NPROMA_WAM
@@ -487,25 +484,25 @@
 
       IF (LWFLUXOUT) THEN
         IF (.NOT.ALLOCATED(PHIEPS)) THEN 
-          ALLOCATE(PHIEPS(IJS(1):IJL(1)))
+          ALLOCATE(PHIEPS(IJS:IJL))
           PHIEPS(:) = 0.0_JWRB
         ENDIF
         IF (.NOT.ALLOCATED(PHIAW)) THEN 
-          ALLOCATE(PHIAW(IJS(1):IJL(1)))
+          ALLOCATE(PHIAW(IJS:IJL))
           PHIAW(:) = 0.0_JWRB
         ENDIF
         IF (.NOT.ALLOCATED(TAUOC)) THEN
-          ALLOCATE(TAUOC(IJS(1):IJL(1)))
+          ALLOCATE(TAUOC(IJS:IJL))
           TAUOC(:) = 0.0_JWRB
         ENDIF
 
-        IF(.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS(1):IJL(1)))
-        IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS(1):IJL(1)))
+        IF(.NOT.ALLOCATED(TAUXD)) ALLOCATE(TAUXD(IJS:IJL))
+        IF(.NOT.ALLOCATED(TAUYD)) ALLOCATE(TAUYD(IJS:IJL))
+        IF(.NOT.ALLOCATED(WSEMEAN)) ALLOCATE(WSEMEAN(IJS:IJL))
+        IF(.NOT.ALLOCATED(WSFMEAN)) ALLOCATE(WSFMEAN(IJS:IJL))
+        IF(.NOT.ALLOCATED(TAUOCXD)) ALLOCATE(TAUOCXD(IJS:IJL))
+        IF(.NOT.ALLOCATED(TAUOCYD)) ALLOCATE(TAUOCYD(IJS:IJL))
+        IF(.NOT.ALLOCATED(PHIOCD)) ALLOCATE(PHIOCD(IJS:IJL))
 
       ENDIF
 
@@ -636,8 +633,6 @@
 
 !     THE ACTUAL READING HAS BEEN MOVED TO MPDECOMP.
 
-      ITESTB = MIN(ITESTB,IGL)
-
 !*    2.1 READ MODULE YOWCPBO AND YOWFPBO.
 !     ------------------------------------
 
@@ -759,8 +754,6 @@
       WRITE(IU06,3002) ' LONGITUDE INCREMENT IS .................: ',   &
      & XDELLO, ' DEGREE'
       WRITE(IU06,*) '  '
-      WRITE(IU06,3003) ' TOTAL NUMBER OF BLOCKS IS...............: ',   &
-     & IGL
       WRITE(IU06,3003) ' TOTAL LENGTH OF EACH BLOCK .............: ',   &
      & NIBLO
       WRITE(IU06,*) '  '
@@ -789,8 +782,8 @@
           WRITE(IU06,'(/,4X,''BLOCK NO'',6X,''INDEX NO'',               &
      &     8X,''LONGITUDE'',6X,''LATITUDE'')')
           DO I=1,NBOUNC
-            IX  = IXLG(IJARC(I),IGARC(I))
-            KX  = KXLT(IJARC(I),IGARC(I))
+            IX  = IXLG(IJARC(I))
+            KX  = KXLT(IJARC(I))
             XLO = AMOWEP+REAL(IX-1,JWRB)*ZDELLO(KX)
             XLA = AMOSOP+REAL(KX-1,JWRB)*XDELLA
 
@@ -805,20 +798,20 @@
 !         ------------------------------------
 
 !     BUILD DEPTH POINTER AND RESET DEPTH TO ALL POSITIVE
-      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS(1):IJL(1)))
-      DO IJ=IJS(1),IJL(1)
-        IF(DEPTH(IJ,1).LE.TOOSHALLOW) THEN
+      IF(.NOT.ALLOCATED(IODP)) ALLOCATE(IODP(IJS:IJL))
+      DO IJ=IJS,IJL
+        IF(DEPTH(IJ).LE.TOOSHALLOW) THEN
           IODP(IJ) = 0
         ELSE
           IODP(IJ) = 1
         ENDIF
       ENDDO
 
-      IF (.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(IJS(1):IJL(1)))
+      IF (.NOT.ALLOCATED(IOBND)) ALLOCATE(IOBND(IJS:IJL))
       IF (.NOT. LLUNSTR) THEN
          IOBND(:)=1
       ELSE
-        DO IJ = IJS(1), IJL(1)
+        DO IJ = IJS, IJL
           IF (IOBP(IJ) .NE. 0) THEN
             IOBND(IJ)=0
           ELSE
@@ -828,20 +821,20 @@
       ENDIF
 
       DO IJ=NINF,NSUP
-        DEPTH(IJ,1) = MAX(DEPTH(IJ,1),DEPTHA)
+        DEPTH(IJ) = MAX(DEPTH(IJ),DEPTHA)
       ENDDO
 
 !     COMPUTE THE MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
-      IF(.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS(1):IJL(1)))
-      DO IJ = IJS(1), IJL(1)
+      IF(.NOT.ALLOCATED(EMAXDPT)) ALLOCATE(EMAXDPT(IJS:IJL))
+      DO IJ = IJS, IJL
 !       REDUCE GAMMA FOR SMALL DEPTH ( < 4m)
 !       (might need to be revisted when grid is fine resolution)
-        IF (DEPTH(IJ,1).LT.4.0_JWRB) THEN
-          GAM=GAM_B_J*DEPTH(IJ,1)/4.0_JWRB
+        IF (DEPTH(IJ).LT.4.0_JWRB) THEN
+          GAM=GAM_B_J*DEPTH(IJ)/4.0_JWRB
         ELSE
           GAM=GAM_B_J
         ENDIF
-        EMAXDPT(IJ)=0.0625_JWRB*(GAM*DEPTH(IJ,1))**2
+        EMAXDPT(IJ)=0.0625_JWRB*(GAM*DEPTH(IJ))**2
       ENDDO
 
 
@@ -852,7 +845,7 @@
       INDEP(NINF-1)=NDEPTH
       IF (ISHALLO.NE.1) THEN
         DO IJ=NINF,NSUP
-          XD = LOG(DEPTH(IJ,1)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
+          XD = LOG(DEPTH(IJ)/DEPTHA)/LOG(DEPTHD)+1.0_JWRB
           ID = NINT(XD)
           ID = MAX(ID,1)
           INDEP(IJ) = MIN(ID,NDEPTH)
@@ -891,8 +884,8 @@
 
       IF ( (LWCOU .AND. LWCUR ) .OR.                                    &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
-        IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP,NBLO))
-        IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP,NBLO))
+        IF (.NOT.ALLOCATED(U)) ALLOCATE(U(NINF-1:NSUP))
+        IF (.NOT.ALLOCATED(V)) ALLOCATE(V(NINF-1:NSUP))
       ENDIF
 
       Z0B(:) = 0.0_JWRB
@@ -1089,9 +1082,9 @@
 !          -----------------------------------
       IF (IREFRA.NE.0) THEN
         NIBLD=NIBLO
-        NBLD=NBLO
+        NBLD=1
         NIBLC=NIBLO
-        NBLC=NBLO
+        NBLC=1
       ELSE
         NIBLD=0
         NBLD=0
@@ -1112,15 +1105,15 @@
         IF (.NOT. LLUNSTR) THEN
 !         ARRAY TO KEEP DEPTH AND CURRENT REFRACTION FOR THETA DOT
 !         AND SIGMA DOT
-          IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(1):IJL(1),NANG))
-          IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(1):IJL(1),NANG))
-          IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(1):IJL(1),NANG,NFRE))
+          IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
+          IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
+          IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE))
 
           NPROMA=NPROMA_WAM
 !$OMP     PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-          DO JKGLO = IJS(1), IJL(1), NPROMA
+          DO JKGLO = IJS, IJL, NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(1))
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
           ENDDO
 !$OMP     END PARALLEL DO
@@ -1184,7 +1177,7 @@
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1,IJS(1),IJL(1),NBLKS,NBLKE,IREAD)
+      CALL GETSPEC(FL1,IJS,IJL,NBLKS,NBLKE,IREAD)
 
       WRITE(IU06,*) '    SUB. INITMDL: SPECTRA READ IN'
       CALL FLUSH (IU06)
@@ -1201,37 +1194,33 @@
 !         VALID FOR THE NEW FORMULATION AND OTHER STUFFS
 !         ------------------------------------------------------------ 
 
-      IF (.NOT.ALLOCATED(ENH))                                          &
-     &   ALLOCATE(ENH(IJS(1):IJL(1),MLSTHG,IGL))
+      IF (.NOT.ALLOCATED(ENH)) ALLOCATE(ENH(IJS:IJL,MLSTHG))
 
       IF (ISNONLIN.EQ.1) THEN
         IF (ISHALLO.NE.1) THEN
-          IG=1
             DO M=1,NFRE
-               DO IJ = IJS(1), IJL(1) 
-                 D = DEPTH(IJ,IG)
+               DO IJ = IJS, IJL 
+                 D = DEPTH(IJ)
                  OM = ZPI*FR(M)
                  XK = AKI(OM,D)
-                 ENH(IJ,M,IG) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
+                 ENH(IJ,M) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
                ENDDO
             ENDDO
             DO M=NFRE+1,MLSTHG
-               DO IJ = IJS(1), IJL(1) 
-                 D = DEPTH(IJ,IG)
+               DO IJ = IJS, IJL 
+                 D = DEPTH(IJ)
                  OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
 !                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
 !                HENCE THE USE OF FUNCTIOn AKI.
                  XK = AKI(OM,D)
-                 ENH(IJ,M,IG) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
+                 ENH(IJ,M) = MAX(MIN(ENH_MAX,TRANSF(XK,D)),ENH_MIN)
                ENDDO
             ENDDO
         ELSE
-          DO IG=1,IGL
-            DO M=1,MLSTHG
-               DO IJ = IJS(1), IJL(1) 
-                 ENH(IJ,M,IG) = 1.0_JWRB
-               ENDDO
-            ENDDO
+          DO M=1,MLSTHG
+             DO IJ = IJS, IJL 
+               ENH(IJ,M) = 1.0_JWRB
+             ENDDO
           ENDDO
         ENDIF
       ENDIF
@@ -1242,10 +1231,10 @@
       IF (.NOT. LLUNSTR) THEN
 
       IF (.NOT.ALLOCATED(LSAMEDEPTH))                                   &
-     &    ALLOCATE(LSAMEDEPTH(IJS(1):IJL(1)))
+     &    ALLOCATE(LSAMEDEPTH(IJS:IJL))
 
       IF (IPROPAGS.EQ.2) THEN
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS, IJL 
            IF (INDEP(IJ).EQ.INDEP(KLON(IJ,1))   .AND.                   &
      &         INDEP(IJ).EQ.INDEP(KLON(IJ,2))   .AND.                   &
      &         INDEP(IJ).EQ.INDEP(KLAT(IJ,1,1)) .AND.                   &
@@ -1269,7 +1258,7 @@
 
          ENDDO
       ELSEIF (IPROPAGS.EQ.1) THEN
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS, IJL 
            IF (INDEP(IJ) .EQ. INDEP(KLON (IJ,1))   .AND.                &
      &         INDEP(IJ) .EQ. INDEP(KLON (IJ,2))   .AND.                &
      &         INDEP(IJ) .EQ. INDEP(KLAT (IJ,1,1)) .AND.                &
@@ -1290,7 +1279,7 @@
            ENDIF
          ENDDO
       ELSE
-         DO IJ = IJS(1), IJL(1) 
+         DO IJ = IJS, IJL 
            IF (INDEP(IJ) .EQ. INDEP(KLON(IJ,1))   .AND.                 &
      &         INDEP(IJ) .EQ. INDEP(KLON(IJ,2))   .AND.                 &
      &         INDEP(IJ) .EQ. INDEP(KLAT(IJ,1,1)) .AND.                 &

@@ -1,4 +1,4 @@
-      SUBROUTINE IMPLSCH (FL1, IJS, IJL, IG,                            &
+      SUBROUTINE IMPLSCH (FL1, IJS, IJL,                                &
      &                    THWOLD, USOLD,                                &
      &                    TAUW, TAUWDIR, Z0OLD,                         &
      &                    ROAIRO, WSTAROLD,                             &
@@ -43,7 +43,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPLSCH (FL1, FL, IJS, IJL, IG,
+!       *CALL* *IMPLSCH (FL1, FL, IJS, IJL,
 !    1                    THWOLD,USOLD,TAUW,TAUWDIR,Z0OLD,
 !    &                    ROAIRO, WSTAROLD, 
 !    &                    CICVR, CIWA,
@@ -53,7 +53,6 @@
 !          *FL1*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
-!          *IG*     - BLOCK NUMBER
 !      *U10NEW*    NEW WIND SPEED IN M/S.
 !      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
@@ -164,7 +163,7 @@
 #include "stokesdrift.intfb.h"
 #include "wnfluxes.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: THWOLD, USOLD, Z0OLD
@@ -312,7 +311,7 @@
      &                 USNEW, ROAIRN, .TRUE.)
       ENDIF
 
-      CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
+      CALL SNONLIN (FL1, FL, IJS, IJL, SL, AKMEAN)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)

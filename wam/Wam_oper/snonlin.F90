@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN)
+      SUBROUTINE SNONLIN (F, FL, IJS, IJL, SL, AKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -31,12 +31,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN)*
+!       *CALL* *SNONLIN (F, FL, IJS, IJL, SL, AKMEAN)*
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
 !          *IJL* - INDEX OF LAST GRIDPOINT
-!          *IG*  - BLOCK NUMBER.
 !          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
 !          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
 
@@ -72,7 +71,7 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM) :: IJ, K, M, MC, KH, K1, K2, K11, K21
       INTEGER(KIND=JWIM) :: MP, MP1, MM, MM1, IC, IP, IP1, IM, IM1
       INTEGER(KIND=JWIM) :: MFR1STFR, MFRLSTFR
@@ -101,7 +100,7 @@
       IF (ISHALLO.NE.1) THEN
         IF (ISNONLIN.EQ.0) THEN
           DO IJ=IJS,IJL
-            ENHFR(IJ) = 0.75_JWRB*DEPTH(IJ,IG)*AKMEAN(IJ)
+            ENHFR(IJ) = 0.75_JWRB*DEPTH(IJ)*AKMEAN(IJ)
             ENHFR(IJ) = MAX(ENHFR(IJ),0.5_JWRB)
             ENHFR(IJ) = 1.0_JWRB+(5.5_JWRB/ENHFR(IJ)) *                 &
      &                  (1.0_JWRB-.833_JWRB*ENHFR(IJ)) *                &
@@ -109,7 +108,7 @@
           ENDDO
           DO MC=1,MLSTHG
             DO IJ=IJS,IJL
-              ENH(IJ,MC,IG) = ENHFR(IJ) 
+              ENH(IJ,MC) = ENHFR(IJ) 
             ENDDO
           ENDDO
         ENDIF
@@ -171,7 +170,7 @@
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            FTEMP(IJ) = AF11(MC)*ENH(IJ,MC,IG)
+            FTEMP(IJ) = AF11(MC)*ENH(IJ,MC)
           ENDDO
         ENDIF
 

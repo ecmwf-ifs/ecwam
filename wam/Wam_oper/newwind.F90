@@ -1,4 +1,4 @@
-      SUBROUTINE NEWWIND (IJS, IJL, IG, IGL, CDATE, CDATEWH,            &
+      SUBROUTINE NEWWIND (IJS, IJL, CDATE, CDATEWH,                     &
      &                    NEWREAD, NEWFILE,                             &
      &                    U10OLD, THWOLD, U10NEW, THWNEW,               &
      &                    USOLD, USNEW,                                 &
@@ -23,7 +23,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *NEWWIND (IJS, IJL, IG, IGL, CDATE, NEWREAD, NEWFILE,
+!       *CALL* *NEWWIND (IJS, IJL, CDATE, NEWREAD, NEWFILE,
 !                        U10OLD,THWOLD,U10NEW,THWNEW, 
 !                        USOLD, USNEW,
 !                        ROAIRO, ROAIRN, ZIDLOLD,ZIDLNEW,
@@ -31,8 +31,6 @@
 !                        TAUW, BETAOLD)
 !      *IJS*     - INDEX OF FIRST GRIDPOINT
 !      *IJL*     - INDEX OF LAST GRIDPOINT
-!      *IG*      - BLOCK NUMBER
-!      *IGL*     - NUMBER OF BLOCKS
 !      *CDATE*   - START DATE OF SOURCE FUNCTION INTEGRATION
 !      *NEWREAD* - TRUE IF NEW WINDS HAVE BEEN READ
 !      *NEWFILE* - TRUE IF NEW WIND FILE HAS BEEN OPENED
@@ -79,7 +77,7 @@
 
       USE YOWPCONS , ONLY : ACD      ,BCD      ,EPSMIN
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWPARAM , ONLY : NFRE     ,NBLO
+      USE YOWPARAM , ONLY : NFRE
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPHYS  , ONLY : ALPHA
       USE YOWSTAT  , ONLY : IDELWO   ,NPROMA_WAM
@@ -98,18 +96,17 @@
 #include "incdate.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IGL
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: ROAIRO, ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: TAUW
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: USOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: ROAIRO, ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: TAUW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN)    :: BETAOLD 
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10NEW, THWNEW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USNEW
       REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRN, ZIDLNEW
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER, CITHICK 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE,NBLO), INTENT(INOUT) :: CIWA
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CICOVER, CITHICK 
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NFRE), INTENT(INOUT) :: CIWA
 
       CHARACTER(LEN=14), INTENT(IN) :: CDATE
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATEWH
@@ -147,11 +144,11 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ = KIJS, KIJL
-            U10NEW(IJ) = U10OLD(IJ,IG)
-            USNEW(IJ) = USOLD(IJ,IG)
-            THWNEW(IJ) = THWOLD(IJ,IG)
-            ROAIRN(IJ) = ROAIRO(IJ,IG)
-            ZIDLNEW(IJ) = ZIDLOLD(IJ,IG)
+            U10NEW(IJ) = U10OLD(IJ)
+            USNEW(IJ) = USOLD(IJ)
+            THWNEW(IJ) = THWOLD(IJ)
+            ROAIRN(IJ) = ROAIRO(IJ)
+            ZIDLNEW(IJ) = ZIDLOLD(IJ)
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
@@ -160,14 +157,12 @@
 !*    2. NEW WIND INPUT.
 !        ---------------
         IF (CDATE.GE.CDATEFL) THEN
-          IF (IG.EQ.1) THEN
             NEWFILE = .TRUE.
             ISTORE=1
             IF (ITEST.GE.2) THEN
               WRITE(IU06,*) '      SUB. NEWWIND: NEW WIND ',            &
      &         ' AT CDATE = ', CDATE
             ENDIF
-          ENDIF
         ENDIF
 
 !*    2.2 NEW WINDS ARE READ IN.
@@ -197,24 +192,24 @@
 ! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
               IF(U10NEW(IJ).LT.WSPMIN_RESET_TAUW) THEN
                 TLWMAX=WGHT*(ACD+BCD*U10NEW(IJ))*U10NEW(IJ)**3
-                TAUW(IJ,IG)=MIN(TAUW(IJ,IG),TLWMAX)
+                TAUW(IJ)=MIN(TAUW(IJ),TLWMAX)
               ENDIF
             ENDDO
           ELSE
             DO IJ = KIJS, KIJL
               USNEW(IJ)=FF_NEXT(IJ,ISTORE)%USTAR
 ! update the estimate of TAUW
-              TAUW(IJ,IG)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
+              TAUW(IJ)=USNEW(IJ)**2*(1.0_JWRB-(ALPHA/BETAOLD(IJ))**2)
 ! adapt first estimate of wave induced stress for low winds
-              IF (USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ,IG)=0.0_JWRB
+              IF (USNEW(IJ).LT.USTMIN_RESET_TAUW) TAUW(IJ)=0.0_JWRB
             ENDDO
           ENDIF
           DO IJ = KIJS, KIJL
             THWNEW(IJ)=FF_NEXT(IJ,ISTORE)%WDWAVE
             ROAIRN(IJ)=FF_NEXT(IJ,ISTORE)%AIRD
             ZIDLNEW(IJ)=FF_NEXT(IJ,ISTORE)%ZIDL
-            CICOVER(IJ,IG)=FF_NEXT(IJ,ISTORE)%CIFR
-            CITHICK(IJ,IG)=FF_NEXT(IJ,ISTORE)%CITH
+            CICOVER(IJ)=FF_NEXT(IJ,ISTORE)%CIFR
+            CITHICK(IJ)=FF_NEXT(IJ,ISTORE)%CITH
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

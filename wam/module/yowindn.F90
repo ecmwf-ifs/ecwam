@@ -37,7 +37,7 @@
       REAL(KIND=JWRB), ALLOCATABLE :: FRH(:)
       REAL(KIND=JWRB), ALLOCATABLE :: FTRF(:)
       REAL(KIND=JWRB), ALLOCATABLE :: RNLCOEF(:,:)
-      REAL(KIND=JWRB), ALLOCATABLE :: ENH(:,:,:)
+      REAL(KIND=JWRB), ALLOCATABLE :: ENH(:,:)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   -------

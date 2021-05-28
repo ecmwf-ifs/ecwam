@@ -1,4 +1,4 @@
-      SUBROUTINE WDFLUXES (IJS, IJL, IG,                                &
+      SUBROUTINE WDFLUXES (IJS, IJL,                                    &
      &                     MIJ,                                         &
      &                     FL1, XLLWS,                                  &
      &                     CICVR,                                       &
@@ -21,7 +21,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *WDFLUXES (FL1, IJS, IJL, IG,
+!       *CALL* *WDFLUXES (FL1, IJS, IJL,
 !    &                    CICVR,
 !    &                    THWNEW,USNEW,Z0NEW,Z0B,ROAIRN,WSTAR,
 !    &                    WSEMEAN, WSFMEAN,
@@ -29,7 +29,6 @@
 !          *FL1*    - FREQUENCY SPECTRUM(INPUT).
 !          *IJS*    - INDEX OF FIRST GRIDPOINT.
 !          *IJL*    - INDEX OF LAST GRIDPOINT.
-!          *IG*     - BLOCK NUMBER.
 !          *U10NEW* - WIND SPEED.
 !          *THWNEW* - WIND DIRECTION IN RADIANS.
 !          *USNEW*  - NEW FRICTION VELOCITY IN M/S.
@@ -75,7 +74,7 @@
 #include "stokesdrift.intfb.h"
 #include "wnfluxes.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS,IJL,IG
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: CICVR
@@ -164,7 +163,7 @@
      &                   USNEW, ROAIRN, .FALSE.)
         ENDIF
 
-        CALL SNONLIN (FL1, FL, IJS, IJL, IG, SL, AKMEAN)
+        CALL SNONLIN (FL1, FL, IJS, IJL, SL, AKMEAN)
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. WDFLUXES: SNONLIN CALLED'
           CALL FLUSH (IU06)

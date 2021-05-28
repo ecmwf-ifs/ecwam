@@ -38,7 +38,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NBLO     ,    &
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,              &
      &            NOVER    ,NIBL1
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : NY
@@ -73,7 +73,6 @@
         DO K=1,NY
           NIBLO=NIBLO+IPP(K)
         ENDDO
-        IF (NBLO.GT.1)  NIBLO=NIBLO/NBLO+1
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -94,15 +93,7 @@
       ENDDO
       CALL MBLOCK (BATHY, KA, NY, IPP)
 
-      IF (NBLO.GT.1) THEN
-        NOVER=1
-        DO K=1,NY
-          NOVER=MAX(NOVER,IPP(K)) 
-        ENDDO
-        NIBL1=NIBLO
-      ELSE
         NOVER=1
         NIBL1=1
-      ENDIF
 
       END SUBROUTINE MGRID

@@ -1,4 +1,4 @@
-      SUBROUTINE OUTBC (FL1, IJS, IJL, IG, IU19)
+      SUBROUTINE OUTBC (FL1, IJS, IJL, IU19)
 
 ! ----------------------------------------------------------------------
 
@@ -15,11 +15,10 @@
 !**   INTERFACE.
 !     ----------
 
-!    *CALL* *OUTBC (FL1, IJS, IJL, IG, IU19)*
+!    *CALL* *OUTBC (FL1, IJS, IJL, IU19)*
 !      *FL1*     - BLOCK OF SPECTRA.
 !      *IJS*     - INDEX OF FIRST GRIDPOINT.
 !      *IJL*     - INDEX OF LAST GRIDPOINT.
-!      *IG*      - BLOCK NUMBER.
 !      *IU19*    - OUTPUT UNIT OF BOUNDARY VALUES.
 
 
@@ -46,8 +45,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D
-      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,IGARC    ,GBOUNC   ,    &
-     &            IPOGBO
+      USE YOWCPBO  , ONLY : NBOUNC   ,IJARC    ,GBOUNC   ,IPOGBO
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,AMOWEP   ,AMOSOP   ,    &
      &            XDELLA   ,ZDELLO
@@ -62,7 +60,7 @@
 #include "mpgatherbc.intfb.h"
 #include "sthq.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM),DIMENSION(GBOUNC), INTENT(IN) :: IU19
 
       REAL(KIND=JWRB), INTENT(IN) :: FL1(IJS:IJL, NANG, NFRE)
@@ -121,8 +119,8 @@
             ELSE
               IJ = IJ2NEWIJ(IJARC(NGOU))
             ENDIF
-            IX = IXLG(IJ,IG)
-            KX = KXLT(IJ,IG)
+            IX = IXLG(IJ)
+            KX = KXLT(IJ)
             XLON = AMOWEP + REAL(IX-1)*ZDELLO(KX)
             XLAT = AMOSOP + REAL(KX-1)*XDELLA
 
