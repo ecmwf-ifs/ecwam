@@ -69,7 +69,7 @@
       USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO
       USE YOWPCONS , ONLY : ZMISS
       USE YOWSTAT  , ONLY : NPROMA_WAM 
 
@@ -102,8 +102,7 @@
       REAL(KIND=JWRB) :: WORK(NGX,NGY)
 
       CHARACTER(LEN=14) :: CCDDATE
-      CHARACTER(LEN=40) MSG
-
+      CHARACTER(LEN=40) :: MSG
 
 !-----------------------------------------------------------------------
 
@@ -112,7 +111,7 @@
 
       IF (LHOOK) CALL DR_HOOK('READWGRIB',0,ZHOOK_HANDLE)
 
-      CALL INWGRIB  (FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
+      CALL INWGRIB(FILNM, IREAD, CCDDATE, KPARAM, KZLEV, WORK)
 
 !*    SIMPLE CHECKS ON THE RETRIEVED DATA 
 !     -----------------------------------
@@ -158,8 +157,8 @@
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,MIJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,1)
-                JY = JFROMIJ(IJ,1)
+                IX = IFROMIJ(IJ)
+                JY = JFROMIJ(IJ)
                 IF(WORK(IX,JY).NE.ZMISS .AND. WORK(IX,JY).GT.0.0_JWRB) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
@@ -173,8 +172,8 @@
               KIJS=JKGLO
               KIJL=MIN(KIJS+NPROMA-1,MIJL)
               DO IJ = KIJS, KIJL
-                IX = IFROMIJ(IJ,1)
-                JY = JFROMIJ(IJ,1)
+                IX = IFROMIJ(IJ)
+                JY = JFROMIJ(IJ)
                 IF(WORK(IX,JY).NE.ZMISS) FIELD(IJ)=WORK(IX,JY)
               ENDDO
             ENDDO
