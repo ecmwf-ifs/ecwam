@@ -5,7 +5,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              LWCUR, LWSTOKES,                              &
      &              NWVFIELDS, WVFLDG,                            &
      &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
-     &              LDRESTARTED, ZDELATM, KQGAUSS,                &
+     &              LDRESTARTED, ZDELATM,                         &
      &              LDWCOUNORMS, LDNORMWAMOUT_GLOBAL,             &
      &              MASK_IN, MASK_OUT,                            &
      &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
@@ -202,8 +202,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, INTENT(OUT) :: LDRESTARTED
 !     WAVE MODEL GRID SPACING FOR EACH LATITUDE
       REAL(KIND=JWRB), INTENT(OUT) :: ZDELATM(NLATW)
-!     WAVE MODEL GRID IS GAUSSIAN
-      INTEGER(KIND=JWIM), INTENT(OUT) :: KQGAUSS
 !     TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
       LOGICAL, INTENT(INOUT) :: LDWCOUNORMS
 !     TELL WAM TO PROCUCE REPRODUCIBLE GLOBAL NORMS
@@ -468,8 +466,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         LLCHKCFL=.FALSE.
 
-        KQGAUSS=IQGAUSS
-
         FRSTIME = .FALSE.                                              
 
         IF (ITEST.GE.1) THEN
@@ -571,8 +567,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         ENDIF
 
-!       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
-        KQGAUSS=IQGAUSS
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
 !       ---------------------------------------------------
