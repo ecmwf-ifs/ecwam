@@ -52,7 +52,9 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ALPHAP(:) = 0.0_JWRB
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
+!         only in the wind sector
+          COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
+          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FL1(IJ,K,NFRE)
         ENDDO
       ENDDO
 
