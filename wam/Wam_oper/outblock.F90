@@ -63,7 +63,7 @@
      &            NIPRMOUT, ITOBOUT
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
       USE YOWCURR  , ONLY : U, V
-      USE YOWFRED  , ONLY : DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
+      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,SINTH, XKMSS_CUTOFF
       USE YOWICE   , ONLY : CICOVER  ,CITHICK
       USE YOWMEAN  , ONLY : ALTWH    ,CALTWH   ,RALTCOR  ,              &
      &            USTOKES  ,VSTOKES  ,STRNMS   ,                        &
@@ -117,6 +117,7 @@
       
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
+      REAL(KIND=JWRB) :: XMODEL_CUTOFF
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(0:NTEWH) :: TEWH
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EM, FM, DP
@@ -645,7 +646,9 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=3.0_JWRB
+!!!for testing
+        XMODEL_CUTOFF = (ZPI*FR(NFRE))**2/G
+        CALL MEANSQS (XMODEL_CUTOFF, IJS, IJL, FL1, U10NEW(IJS), USNEW(IJS), THWNEW(IJS), BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
