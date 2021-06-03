@@ -45,7 +45,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_D = 11.2_JWRB
         ANG_GC_E = 0.1_JWRB
         ANG_GC_N = 1.5_JWRB
-        ANG_GC_U = 10.5_JWRB
+        ANG_GC_U = 0.407_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
@@ -112,7 +112,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_D = 11.2_JWRB
         ANG_GC_E = 0.1_JWRB
         ANG_GC_N = 1.5_JWRB
-        ANG_GC_U = 10.5_JWRB
+        ANG_GC_U = 0.407_JWRB
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
