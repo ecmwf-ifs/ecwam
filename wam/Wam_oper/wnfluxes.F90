@@ -59,7 +59,7 @@
       USE YOWCOUP  , ONLY : LWNEMOCOU, LWNEMOTAUOC, NEMOTAUX, NEMOTAUY, &
      &                      NEMONEW10, NEMOPHIF   , LWFLUX,             &
      &                      NPHIEPS  ,NTAUOC      ,NSWH     ,NMWP
-      USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    ,FRIC
+      USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK
       USE YOWMEAN  , ONLY : EMEAN    ,FMEAN    ,PHIEPS   ,PHIAW    ,    &
      &                      TAUOC    ,TAUXD    ,TAUYD    ,              &
