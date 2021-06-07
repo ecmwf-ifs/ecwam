@@ -56,6 +56,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWS
 !!debile
+      REAL(KIND=JWRB) :: wage 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP_direct
 
 ! ----------------------------------------------------------------------
@@ -121,7 +122,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
            ALPHAP(IJ) = 0.0065_JWRB
          ENDIF
 !!debile
-      write(*,*) 'debile halphap ', ustar(ij), alphap_direct(ij), ALPHAP(IJ)
+      wage = ustar(ij) /(g/(ZPI*0.85_JWRB*FSEA(IJ)))
+      write(*,*) 'debile halphap ', wage, alphap_direct(ij), ALPHAP(IJ), FSEA(IJ),ustar(ij) 
 
 !!!!!!!
       ENDDO
