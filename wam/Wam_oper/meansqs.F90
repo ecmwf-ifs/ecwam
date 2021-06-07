@@ -41,17 +41,16 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI   , ZPI4GM2
-      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,DFIM  , DELTH, FRATIO
+      USE YOWPCONS , ONLY : G        ,GM1      ,ZPI
+      USE YOWFRED  , ONLY : FR       ,ZPIFR    ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWSHAL  , ONLY : TFAK     ,INDEP
-      USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 #include "halphap.intfb.h"
 #include "meansqs_gc.intfb.h"
+#include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
@@ -62,13 +61,13 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XMSS 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
 
-      INTEGER(KIND=JWIM) :: IJ, M, K, NFRE_MSS, NFRE_EFF
+      INTEGER(KIND=JWIM) :: IJ, NFRE_MSS, NFRE_EFF
 
       REAL(KIND=JWRB) :: XLOGFS, FCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FD
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP1, TEMP2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS_TAIL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSSLF, XMSS_TAIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP, FRGC
 
 ! ----------------------------------------------------------------------
@@ -83,60 +82,15 @@
 !     GRAVITY-CAPILLARY CONTRIBUTION TO MSS
       CALL MEANSQS_GC(XKMSS, IJS, IJL, HALP, U10, USTAR, XMSS, FRGC)
 
+!     MODEL SPECTRUM PART
       FCUT = SQRT(G*XKMSS)/ZPI
       NFRE_MSS = INT(LOG(FCUT/FR(1))/LOG(FRATIO))+1 
       NFRE_EFF = MIN(NFRE,NFRE_MSS)
 
-!*    2. INTEGRATE OVER FREQUENCIES AND DIRECTIONS.
-!        ------------------------------------------
+      CALL MEANSQS_LF (NFRE_EFF, IJS, IJL, F, XMSSLF)
+      XMSS(:) = XMSS(:) + XMSSLF(:)
 
-      IF (ISHALLO.EQ.1) THEN
-
-!*    2.1 DEEP WATER INTEGRATION.
-!         -----------------------
-
-        DO M=1,NFRE_EFF
-          FD(M) = DFIM(M)*(ZPIFR(M))**4*GM1**2
-        ENDDO
-
-        DO M=1,NFRE_EFF
-          DO IJ=IJS,IJL
-            TEMP2(IJ) = 0.0_JWRB
-          ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            XMSS(IJ) = XMSS(IJ)+FD(M)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-!SHALLOW
-      ELSE
-
-!*    2.2 SHALLOW WATER INTEGRATION.
-!         --------------------------
-
-        DO M=1,NFRE_EFF
-          DO IJ=IJS,IJL
-            TEMP1(IJ) = DFIM(M)*TFAK(INDEP(IJ),M)**2
-            TEMP2(IJ) = 0.0_JWRB
-          ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,M)
-            ENDDO
-          ENDDO
-          DO IJ=IJS,IJL
-            XMSS(IJ) = XMSS(IJ)+TEMP1(IJ)*TEMP2(IJ)
-          ENDDO
-        ENDDO
-      ENDIF
-!SHALLOW
-
-!*    3. ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).
-!        ------------------------------------------
+!     ADD TAIL CORRECTION TO MEAN SQUARE SLOPE (between FR(NFRE_EFF) and FRGC).
 
       XLOGFS = LOG(FR(NFRE_EFF))
       DO IJ=IJS,IJL

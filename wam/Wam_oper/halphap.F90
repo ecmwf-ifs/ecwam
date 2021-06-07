@@ -34,7 +34,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       IMPLICIT NONE
 #include "femean.intfb.h"
-#include "meansqs.intfb.h"
+#include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
@@ -48,13 +48,15 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.85_JWRB)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
-      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XMODEL_CUTOFF, XLOG 
+      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA, U10DUMMY
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWS
+!!debile
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP_direct
 
 ! ----------------------------------------------------------------------
 
@@ -62,22 +64,25 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 !     COMPUTE THE PHILLIPS PARAMETER
 
-      ALPHAP(:) = 0.0_JWRB
 
 !! Direct method:
-!!      CONST = DELTH*ZPI4GM2*FR5(NFRE)
-!!      DO K = 1, NANG
-!!        DO IJ = IJS, IJL
+      ALPHAP(:) = 0.0_JWRB
+      CONST = DELTH*ZPI4GM2*FR5(NFRE)
+      DO K = 1, NANG
+        DO IJ = IJS, IJL
 !         only in the wind sector
-!!          COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
-!!          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FL1(IJ,K,NFRE)
-!!          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
-!!        ENDDO
-!!      ENDDO
-
+          COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
+          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FL1(IJ,K,NFRE)
+          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
+        ENDDO
+      ENDDO
+!!debile
+    alphap_direct(:) = alphap(:)
+      
 
 !! Via the mean square slope and mean frequency of the windsea:
 
+      ALPHAP(:) = 0.0_JWRB
       COEF = OLDWSFC*FRIC
 
       DO M = 1, NFRE
@@ -106,9 +111,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
-      XMODEL_CUTOFF = GM1*(ZPI*FR(NFRE))**2
-      U10DUMMY(:) = 0.0_JWRB
-      CALL MEANSQS (XMODEL_CUTOFF, IJS, IJL, FLWS, U10DUMMY, USTAR, UDIR, XMSSSEA)
+      CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
 
       XLOG = LOG(FR(NFRE)) - XLOGMTP
       DO IJ = IJS, IJL
@@ -119,6 +122,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
          ENDIF
       ENDDO
 
+!!debile
+      write(*,*) 'debile halphap ', ustar(ij), alphap_direct(ij), ALPHAP(IJ)
 
 !!!!!!!
 
