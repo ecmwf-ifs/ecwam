@@ -70,10 +70,10 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       CONST = DELTH*ZPI4GM2*FR5(NFRE)
       DO K = 1, NANG
         DO IJ = IJS, IJL
+!!!          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
 !         only in the wind sector
           COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
           ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FL1(IJ,K,NFRE)
-          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
         ENDDO
       ENDDO
 !!debile
@@ -120,12 +120,12 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
          ELSE
            ALPHAP(IJ) = 0.0065_JWRB
          ENDIF
-      ENDDO
-
 !!debile
       write(*,*) 'debile halphap ', ustar(ij), alphap_direct(ij), ALPHAP(IJ)
 
 !!!!!!!
+      ENDDO
+
 
 !    1/2 ALPHAP:
       HALP(:) = 0.5_JWRB*MIN(ALPHAP(:), ALPHAPMAX)
