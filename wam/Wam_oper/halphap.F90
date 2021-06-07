@@ -1,4 +1,4 @@
-65SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
+SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
 ! ----------------------------------------------------------------------
 
@@ -23,7 +23,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : TH       , FR5      ,DELTH  ,FRIC     ,OLDWSFC
+      USE YOWFRED  , ONLY : TH       , FR       , FR5      ,DELTH  ,FRIC     ,OLDWSFC
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : GM1      ,ZPI       ,ZPI4GM2,EPSMIN
       USE YOWPHYS  , ONLY : ALPHAPMAX
