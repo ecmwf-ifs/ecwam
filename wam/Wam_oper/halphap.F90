@@ -45,12 +45,12 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       ! log of the conversion factor from windsea mean frequency to windsea peak frequency
-      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.85_JWRB)
+      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.84_JWRB)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
-      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG 
+      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA, FMAX, FPSEA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
@@ -99,12 +99,18 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ENDDO
 
 !     Find windsea spectrum
+      FMAX(:) = 0.0_JWRB
+      FPSEA(:) = FR(NFRE-1)
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS, IJL
             CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
             WS = 0.5_JWRB + SIGN(0.5_JWRB, (CHECKTA-1.0_JWRB) )
             FLWS(IJ,K,M) = WS*FL1(IJ,K,M)
+            IF(FLWS(IJ,K,M) > FMAX(IJ)) THEN
+              FMAX(IJ) = FLWS(IJ,K,M)
+              FPSEA(IJ) = FR(M)
+            ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -112,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
-      CALL MEANSQS_LF (NFRE, IJS, IJL, FL1, XMSSSEA)
+      CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
 
       XLOG = LOG(FR(NFRE)) - XLOGMTP
       DO IJ = IJS, IJL
@@ -123,7 +129,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
          ENDIF
 !!debile
       wage = (g/(ZPI*0.85_JWRB*FSEA(IJ)))/ustar(IJ)
-      write(*,*) 'debile halphap ', wage, alphap_direct(ij), ALPHAP(IJ), FSEA(IJ),ustar(ij) 
+      write(*,*) 'debile halphap ', wage, alphap_direct(ij), ALPHAP(IJ), FSEA(IJ),FPSEA(IJ),ustar(ij)
 
 !!!!!!!
       ENDDO
