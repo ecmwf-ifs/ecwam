@@ -116,15 +116,14 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 !!! totally crazy
 !! Direct method:
-      ALPHAP(:) = 0.0_JWRB
+      ALPHAP_direct(:) = 0.0_JWRB
       CONST = DELTH*ZPI4GM2*FR5(NFRE)
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FLWS(IJ,K,NFRE)
+          ALPHAP_direct(IJ) = ALPHAP_direct(IJ) + CONST*FLWS(IJ,K,NFRE)
         ENDDO
       ENDDO
 !!debile
-    alphap_direct(:) = alphap(:)
       
 
 
