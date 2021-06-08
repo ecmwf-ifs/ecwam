@@ -112,7 +112,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
-      CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
+      CALL MEANSQS_LF (NFRE, IJS, IJL, FL1, XMSSSEA)
 
       XLOG = LOG(FR(NFRE)) - XLOGMTP
       DO IJ = IJS, IJL
@@ -122,7 +122,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
            ALPHAP(IJ) = 0.0065_JWRB
          ENDIF
 !!debile
-      wage = ustar(ij) /(g/(ZPI*0.85_JWRB*FSEA(IJ)))
+      wage = (g/(ZPI*0.85_JWRB*FSEA(IJ)))/ustar(IJ)
       write(*,*) 'debile halphap ', wage, alphap_direct(ij), ALPHAP(IJ), FSEA(IJ),ustar(ij) 
 
 !!!!!!!
