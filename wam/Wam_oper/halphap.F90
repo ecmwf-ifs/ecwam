@@ -45,7 +45,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       ! log of the conversion factor from windsea mean frequency to windsea peak frequency
-      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.84_JWRB)
+      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.85_JWRB)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG
