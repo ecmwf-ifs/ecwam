@@ -83,7 +83,6 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 !! Via the mean square slope and mean frequency of the windsea:
 
-      ALPHAP(:) = 0.0_JWRB
       COEF = OLDWSFC*FRIC
 
       DO M = 1, NFRE
@@ -115,11 +114,25 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+!!! totally crazy
+!! Direct method:
+      ALPHAP(:) = 0.0_JWRB
+      CONST = DELTH*ZPI4GM2*FR5(NFRE)
+      DO K = 1, NANG
+        DO IJ = IJS, IJL
+          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FLWS(IJ,K,NFRE)
+        ENDDO
+      ENDDO
+!!debile
+    alphap_direct(:) = alphap(:)
+      
+
 
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
       CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
 
+      ALPHAP(:) = 0.0_JWRB
       XLOG = LOG(FR(NFRE)) - XLOGMTP
       DO IJ = IJS, IJL
          IF(ESEA(IJ) > 0.0_JWRB ) THEN
