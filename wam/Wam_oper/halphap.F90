@@ -76,6 +76,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 !! Via the mean square slope and mean frequency of the windsea:
 
       COEF = OLDWSFC*FRIC
+!!debile
+      COEF = FRIC
 
       DO M = 1, NFRE
         DO IJ = IJS, IJL
@@ -119,9 +121,6 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
       CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
-
-      DO IJ=IJS,IJL
-      ENDDO
 
 
       ALPHAP(:) = 0.0_JWRB
