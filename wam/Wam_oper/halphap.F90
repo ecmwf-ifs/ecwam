@@ -48,7 +48,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), PARAMETER :: XMTP = 0.85_JWRB
       REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(XMTP)
       ! Maximum value for the mss calculation: XMTPCUT* windsea mean frequency
-      REAL(KIND=JWRB), PARAMETER :: XMTPCUT = 3.0_JWRB*XMTP
+      REAL(KIND=JWRB), PARAMETER :: XMTPCUT = 2.0_JWRB*XMTP
       REAL(KIND=JWRB), PARAMETER :: XLOGMTPCUT = LOG(XMTPCUT)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
@@ -76,8 +76,6 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 !! Via the mean square slope and mean frequency of the windsea:
 
       COEF = OLDWSFC*FRIC
-!!debile
-      COEF = FRIC
 
       DO M = 1, NFRE
         DO IJ = IJS, IJL
