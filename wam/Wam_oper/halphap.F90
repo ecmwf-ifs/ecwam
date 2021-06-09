@@ -44,20 +44,26 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      ! log of the conversion factor from windsea mean frequency to windsea peak frequency
-      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(0.85_JWRB)
+      ! conversion factor from windsea mean frequency to windsea peak frequency
+      REAL(KIND=JWRB), PARAMETER :: XMTP = 0.85_JWRB
+      REAL(KIND=JWRB), PARAMETER :: XLOGMTP = LOG(XMTP)
+      ! Maximum value for the mss calculation: XMTPCUT* windsea mean frequency
+      REAL(KIND=JWRB), PARAMETER :: XMTPCUT = 4.0_JWRB*XMTP
+      REAL(KIND=JWRB), PARAMETER :: XLOGMTPCUT = LOG(XMTPCUT)
 
       REAL(KIND=JWRB) :: CONST, COSPOS
-      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG
+      REAL(KIND=JWRB) :: XLOGFS, FCUT, XMSS_TAIL
+      REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG, XLOGCUT
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA, FMAX, FPSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ESEA, FSEA, XMSSSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FMAX, FPSEA
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP_NFRE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWS
 !!debile
       REAL(KIND=JWRB) :: wage 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP_direct
 
 ! ----------------------------------------------------------------------
 
@@ -65,21 +71,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 !     COMPUTE THE PHILLIPS PARAMETER
 
-
-!! Direct method:
-      ALPHAP(:) = 0.0_JWRB
-      CONST = DELTH*ZPI4GM2*FR5(NFRE)
-      DO K = 1, NANG
-        DO IJ = IJS, IJL
-!!!          ALPHAP(IJ) = ALPHAP(IJ) + CONST*FL1(IJ,K,NFRE)
-!         only in the wind sector
-          COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
-          ALPHAP(IJ) = ALPHAP(IJ) + COSPOS*CONST*FL1(IJ,K,NFRE)
-        ENDDO
-      ENDDO
-!!debile
-    alphap_direct(:) = alphap(:)
-      
+      XLOGFS = LOG(FR(NFRE))
 
 !! Via the mean square slope and mean frequency of the windsea:
 
@@ -114,34 +106,37 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-!!! totally crazy
-!! Direct method:
-      ALPHAP_direct(:) = 0.0_JWRB
+!! Direct method based on last discretised spectral value
+      ALPHAP_NFRE(:) = 0.0_JWRB
       CONST = DELTH*ZPI4GM2*FR5(NFRE)
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          ALPHAP_direct(IJ) = ALPHAP_direct(IJ) + CONST*FLWS(IJ,K,NFRE)
+          ALPHAP_NFRE(IJ) = ALPHAP_NFRE(IJ) + CONST*FLWS(IJ,K,NFRE)
         ENDDO
       ENDDO
-!!debile
-      
 
 
       CALL FEMEAN(FLWS, IJS, IJL, ESEA, FSEA)
 
       CALL MEANSQS_LF (NFRE, IJS, IJL, FLWS, XMSSSEA)
 
+      DO IJ=IJS,IJL
+      ENDDO
+
+
       ALPHAP(:) = 0.0_JWRB
-      XLOG = LOG(FR(NFRE)) - XLOGMTP
+      XLOG = XLOGFS - XLOGMTP
+      XLOGCUT = XLOGMTPCUT - XLOGFS
       DO IJ = IJS, IJL
          IF(ESEA(IJ) > 0.0_JWRB ) THEN
-           ALPHAP(IJ) = XMSSSEA(IJ) / ( XLOG - LOG(MIN(FSEA(IJ),FR(NFRE))) )
+           XMSS_TAIL = ALPHAP_NFRE(IJ) * MAX((LOG(FSEA(IJ)) + XLOGCUT), 0.0_JWRB)
+           ALPHAP(IJ) = XMSS_TAIL + XMSSSEA(IJ) / ( XLOG - LOG(MIN(FSEA(IJ),FR(NFRE))) )
          ELSE
            ALPHAP(IJ) = 0.0065_JWRB
          ENDIF
 !!debile
-      wage = (g/(ZPI*0.85_JWRB*FSEA(IJ)))/ustar(IJ)
-      write(*,*) 'debile halphap ', wage, alphap_direct(ij), ALPHAP(IJ), FSEA(IJ),FPSEA(IJ),ustar(ij)
+      wage = (g/(ZPI*XMTP*FSEA(IJ)))/ustar(IJ)
+      write(*,*) 'debile halphap ', wage, ALPHAP_NFRE(ij), ALPHAP(IJ), FSEA(IJ),FPSEA(IJ),ustar(ij)
 
 !!!!!!!
       ENDDO
