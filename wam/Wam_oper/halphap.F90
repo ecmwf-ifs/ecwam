@@ -109,6 +109,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
       ENDDO
+!!!debile
+    MMAX(:) = MIN(NFRE,MMAX(:)+8) 
 
 !! Direct method based on last discretised spectral value
       ALPHAP_NFRE(:) = 0.0_JWRB
@@ -136,8 +138,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
            ALPHAP(IJ) = 0.0065_JWRB
          ENDIF
 !!debile
-      wage = (g/(ZPI*XMTP*FSEA(IJ)))/ustar(IJ)
-      write(*,*) 'debile halphap ', wage, ALPHAP_NFRE(ij), ALPHAP(IJ), FSEA(IJ),FPSEA(IJ),ustar(ij)
+wage = (g/(ZPI*XMTP*FSEA(IJ)))/ustar(IJ)
+write(*,*) 'debile halphap ', wage, ALPHAP_NFRE(ij), ALPHAP(IJ), FSEA(IJ),FPSEA(IJ),ustar(ij),mmax(ij)
 
 !!!!!!!
       ENDDO
