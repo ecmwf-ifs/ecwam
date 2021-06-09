@@ -51,6 +51,8 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), PARAMETER :: XMTPCUT = 2.0_JWRB*XMTP
       REAL(KIND=JWRB), PARAMETER :: XLOGMTPCUT = LOG(XMTPCUT)
 
+      INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
+
       REAL(KIND=JWRB) :: CONST, COSPOS
       REAL(KIND=JWRB) :: XLOGFS, FCUT, XMSS_TAIL
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA, XLOG, XLOGCUT
@@ -92,6 +94,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 !     Find windsea spectrum
       FMAX(:) = 0.0_JWRB
       FPSEA(:) = FR(NFRE-1)
+      MMAX(:) = NFRE
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = IJS, IJL
@@ -101,6 +104,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
             IF(FLWS(IJ,K,M) > FMAX(IJ)) THEN
               FMAX(IJ) = FLWS(IJ,K,M)
               FPSEA(IJ) = FR(M)
+              MMAX(IJ) = M
             ENDIF
           ENDDO
         ENDDO
@@ -108,10 +112,10 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 !! Direct method based on last discretised spectral value
       ALPHAP_NFRE(:) = 0.0_JWRB
-      CONST = DELTH*ZPI4GM2*FR5(NFRE)
       DO K = 1, NANG
         DO IJ = IJS, IJL
-          ALPHAP_NFRE(IJ) = ALPHAP_NFRE(IJ) + CONST*FLWS(IJ,K,NFRE)
+          CONST = DELTH*ZPI4GM2*FR5(MMAX(IJ))
+          ALPHAP_NFRE(IJ) = ALPHAP_NFRE(IJ) + CONST*FLWS(IJ,K,MMAX(IJ))
         ENDDO
       ENDDO
 
