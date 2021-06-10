@@ -111,13 +111,12 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
 
 !!debile
-!!      FPSEA(:) = FR(MMAX(:))
-!!      DO IJ = IJS, IJL
-!!wage = (g/(ZPI*FPSEA(IJ)))/ustar(IJ)
-!!write(*,*) 'debile halphap ', wage, 2*HALP(ij),FPSEA(IJ),ustar(ij),mmax(ij)
-
+      FPSEA(:) = FR(MMAX(:))
+      DO IJ = IJS, IJL
+wage = (g/(ZPI*FPSEA(IJ)))/ustar(IJ)
+write(*,*) 'debile halphap ', wage, 2*HALP(ij),FPSEA(IJ),ustar(ij),mmax(ij)
+      ENDDO
 !!!!!!!
-!!      ENDDO
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',1,ZHOOK_HANDLE)
 
