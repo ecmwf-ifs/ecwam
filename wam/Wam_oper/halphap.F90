@@ -98,11 +98,15 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       DO IJ = IJS, IJL
         ALPHAP(IJ) = 0.0_JWRB
         MS = MIN(MMAX(IJ) + IPHS, NFRE)
+!        ME = MIN(MMAX(IJ) + IPHE, NFRE) 
         ME = MIN(MMAX(IJ) + IPHE, NFRE) 
-        DO M = MS, ME
+        DO M = MS, MIN(ME,NFRE)
           ALPHAP(IJ) = ALPHAP(IJ) + FR5(M)*F1DWS(IJ,M)
         ENDDO
-        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / REAL(ME-MS+1,JWRB)
+        DO M = NFRE+1, ME
+          ALPHAP(IJ) = ALPHAP(IJ) + FR5(NFRE)*F1DWS(IJ,NFRE)
+        ENDDO
+        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / REAL(ME-MS+1+MAX(ME-NFRE,0),JWRB)
       ENDDO
 
 
