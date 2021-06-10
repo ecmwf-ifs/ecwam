@@ -66,6 +66,7 @@
       REAL(KIND=JWRB) :: COEF_FR, ONE
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1D 
 
 ! ----------------------------------------------------------------------
 
@@ -83,7 +84,7 @@
 
       IF(LLPEAKF) THEN
 !     COMPUTATION IS BASED ON THE PEAK FREQUENCY
-        CALL PEAKFRI (F, IJS, IJL, IFRINDEX, TEMP)
+        CALL PEAKFRI (F, IJS, IJL, IFRINDEX, TEMP, F1D)
         CALL SCOSFL (F, IJS, IJL, IFRINDEX, WDIRSPRD)
         DO IJ = IJS,IJL
           IF(TEMP(IJ).GT.0.0_JWRB) THEN
