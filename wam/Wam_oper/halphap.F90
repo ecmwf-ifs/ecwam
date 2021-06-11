@@ -50,10 +50,10 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: MS, MM, ME
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
 
-      REAL(KIND=JWRB) :: RF
+      REAL(KIND=JWRB) :: RF, WFR
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: F5DFRE 
+      REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
@@ -70,10 +70,12 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
 
       RF = 0.5_JWRB*(FRATIO - 1.0_JWRB/FRATIO)
       DO M = 1, NFRE
-         F5DFRE(M) = FR5(M)*FR(M)*RF
+         DFRE(M) = FR(M)*RF
+         F5DFRE(M) = FR5(M)*DFRE(M)
       ENDDO
       DO M = NFRE+1, NFRE+IPHE
-         F5DFRE(M) = FR5(NFRE)*FR(NFRE)*FRATIO**(M-NFRE)*RF
+         DFRE(M) = FR(NFRE)*FRATIO**(M-NFRE)*RF
+         F5DFRE(M) = FR5(NFRE)*DFRE(M)
       ENDDO
 
 !     Find windsea spectrum
@@ -104,19 +106,22 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ! Find peak of windsea 1d spectrum
       CALL PEAKFRI (FLWS, IJS, IJL, MMAX, F1DMAX, F1DWS)
 
-!! find the Phillips parameter by averaging its value over the Phillips range (see above)
+!! find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = IJS, IJL
         ALPHAP(IJ) = 0.0_JWRB
         MS = MIN(MMAX(IJ) + IPHS, NFRE)
         MM = MIN(MMAX(IJ) + IPHE, NFRE) 
         ME = MMAX(IJ) + IPHE 
+        WFR = 0.0_JWRB
         DO M = MS, MM 
+          WFR = WFR + DFRE(M)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
         ENDDO
         DO M = NFRE+1, ME
+          WFR = WFR + DFRE(M)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,NFRE)
         ENDDO
-        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / REAL(MM-MS+1+MAX(ME-NFRE,0),JWRB)
+        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
       ENDDO
 
 
