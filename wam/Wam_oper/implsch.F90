@@ -162,8 +162,6 @@
 #include "snonlin.intfb.h"
 #include "stokesdrift.intfb.h"
 #include "wnfluxes.intfb.h"
-!!debile
-#include "halphap.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(IJS:IJL)
@@ -194,8 +192,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: PHIWA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: DPTHREDUC
-!!!debileee
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HALP 
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: FLM 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: TEMP
@@ -456,9 +452,6 @@
 
       IF(LWNEMOCOUSTRN) CALL CIMSSTRN(FL1, IJS, IJL, STRNMS)
 
-!!!debile
-     call HALPHAP(IJS, IJL, USNEW, THWNEW, FL1, HALP)
-!!!debile
 
 !*    2.8 SAVE WINDS INTO INTERMEDIATE STORAGE.
 !         -------------------------------------

@@ -60,9 +60,6 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1DWS
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FLWS
-!!debile
-      REAL(KIND=JWRB) :: wage 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FPSEA
 
 ! ----------------------------------------------------------------------
 
@@ -106,7 +103,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ! Find peak of windsea 1d spectrum
       CALL PEAKFRI (FLWS, IJS, IJL, MMAX, F1DMAX, F1DWS)
 
-!! find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
+      ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = IJS, IJL
         ALPHAP(IJ) = 0.0_JWRB
         MS = MIN(MMAX(IJ) + IPHS, NFRE)
@@ -117,6 +114,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           WFR = WFR + DFRE(M)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
         ENDDO
+        ! extension above FR(NFRE) with f**-5 tail
         DO M = NFRE+1, ME
           WFR = WFR + DFRE(M)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,NFRE)
@@ -124,18 +122,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
       ENDDO
 
-
-!    1/2 ALPHAP:
+!     1/2 ALPHAP:
       HALP(:) = 0.5_JWRB*MIN(ALPHAP(:), ALPHAPMAX)
-
-
-!!debile
-      FPSEA(:) = FR(MMAX(:))
-      DO IJ = IJS, IJL
-wage = (g/(ZPI*FPSEA(IJ)))/ustar(IJ)
-write(*,*) 'debile halphap ', wage, 2*HALP(ij),FPSEA(IJ),ustar(ij),mmax(ij)
-      ENDDO
-!!!!!!!
 
 IF (LHOOK) CALL DR_HOOK('HALPHAP',1,ZHOOK_HANDLE)
 
