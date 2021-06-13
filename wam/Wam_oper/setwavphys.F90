@@ -115,7 +115,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_U = 0.407_JWRB
 
 !!1debile
-        ANG_GC_A = 0.9_JWRB
+        ANG_GC_A = 0.7_JWRB
         ANG_GC_B = 0.0_JWRB
         ANG_GC_U = 0.0_JWRB
 
