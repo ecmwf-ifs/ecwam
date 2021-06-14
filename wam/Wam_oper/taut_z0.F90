@@ -170,7 +170,7 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          ANG_GC(IJ) = DIRSPRD_GC(USTAR(IJ))
+          ANG_GC(IJ) = DIRSPRD_GC(UTOP(IJ))
 
           CALL STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 !         TOTAL kinematic STRESS:

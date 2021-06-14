@@ -1,4 +1,4 @@
-FUNCTION DIRSPRD_GC (USTAR)
+FUNCTION DIRSPRD_GC (U10)
 
 ! ----------------------------------------------------------------------
 
@@ -8,8 +8,8 @@ FUNCTION DIRSPRD_GC (USTAR)
 !**   INTERFACE.
 !     ----------
 
-!       *FUNCTION* *DIRSPRD_GC (USTAR)*
-!          *USTAR*     - 10m WIND SPEED
+!       *FUNCTION* *DIRSPRD_GC (U10)*
+!          *U10*     - 10m WIND SPEED
 
 ! ----------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
       REAL(KIND=JWRB) :: DIRSPRD_GC
 
-      REAL(KIND=JWRB), INTENT(IN) :: USTAR
+      REAL(KIND=JWRB), INTENT(IN) :: U10
 
       REAL(KIND=JWRB) :: CC 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -41,11 +41,11 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',0,ZHOOK_HANDLE)
 
-IF(USTAR > ANG_GC_U) THEN
-  DIRSPRD_GC= ANG_GC(USTAR)
+IF(U10 > ANG_GC_U) THEN
+  DIRSPRD_GC= ANG_GC(U10)
 ELSE
   CC = ANG_GC(ANG_GC_U)/ANG_GC_U**ANG_GC_N
-  DIRSPRD_GC= MAX(CC*USTAR**ANG_GC_N,ANG_GC_E)
+  DIRSPRD_GC= MAX(CC*U10**ANG_GC_N,ANG_GC_E)
 ENDIF
 
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',1,ZHOOK_HANDLE)
