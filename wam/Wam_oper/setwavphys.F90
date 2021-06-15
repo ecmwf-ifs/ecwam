@@ -39,13 +39,15 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAILFACTOR = 2.5_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.55_JWRB
-        ANG_GC_B = 0.35_JWRB
-        ANG_GC_C = 7.746_JWRB
-        ANG_GC_D = 0.434_JWRB
+        ANG_GC_A = 0.75_JWRB
+        ANG_GC_B = 0.5_JWRB
+        ANG_GC_C = 5.164_JWRB
+        ANG_GC_D = 0.426_JWRB
         ANG_GC_E = 0.1_JWRB
+        ! not currently used:
+        ANG_GC_U = 0.0_JWRB
         ANG_GC_N = 1.5_JWRB
-        ANG_GC_U = 0.407_JWRB
+
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
@@ -111,9 +113,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_C = 5.164_JWRB
         ANG_GC_D = 0.426_JWRB
         ANG_GC_E = 0.1_JWRB
-
-        ANG_GC_N = 1.5_JWRB
+        ! not currently used:
         ANG_GC_U = 0.0_JWRB
+        ANG_GC_N = 1.5_JWRB
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
