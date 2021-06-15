@@ -68,7 +68,7 @@
 !         mss :  integral of k**2 F(k)  k dk
           XMSSCG(IJ) = XMSSCG(IJ) + DELKCC_GC(I) * XKM_GC(I) 
         ENDDO
-        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*DIRSPRD_GC(U10(IJ))
+        COEF = C2OSQRTVG_GC(NS(IJ))*HALPHAP(IJ)*DIRSPRD_GC(USTAR(IJ))
         XMSSCG(IJ) = XMSSCG(IJ)*COEF
       ENDDO
 
