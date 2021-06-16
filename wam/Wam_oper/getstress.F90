@@ -51,10 +51,10 @@
 
       USE YOWCOUT  , ONLY : NREAL    ,LRSTPARALR
       USE YOWCURR  , ONLY : U        ,V
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMESPAS, ONLY : LGRIBIN  ,LWAVEWIND
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,KTAG
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEF   ,CDTPRO   ,IREFRA   ,    &
      &            NPROMA_WAM,LNSESTART
@@ -80,13 +80,10 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       INTEGER(KIND=JWIM),DIMENSION(NPROC), INTENT(IN) :: NBLKS, NBLKE
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) ::       &
-     &                    U10OLD, THWOLD, USOLD, Z0OLD, TAUW, TAUWDIR,  &
-     &                    ROAIRO, ZIDLOLD, CICOVER, CITHICK 
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10OLD, THWOLD, USOLD, TAUW, TAUWDIR, Z0OLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRO, ZIDLOLD, CICOVER, CITHICK
 
       INTEGER(KIND=JWIM) :: IBUFLENGTH
-      INTEGER(KIND=JWIM) :: IG
-      INTEGER(KIND=JWIM) :: MIJS, MIJL 
       INTEGER(KIND=JWIM) :: IFLD, IJ, KCOUNT, IC
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
       INTEGER(KIND=JWIM) :: IJINF, IJSUP
@@ -106,11 +103,6 @@
       ZERO = ' '
       NPROMA=NPROMA_WAM
 
-      IG=1
-
-      MIJS=IJS(IG)
-      MIJL=IJL(IG)
-
       IF (ITEST > 3) THEN
         WRITE(IU06,*) ' SUB: GETSTRESS. '
         WRITE(IU06,*) ' ABOUT TO READ WIND AND STRESS FILE '
@@ -126,12 +118,12 @@
       IF(LGRIBIN.AND..NOT.LRESTARTED) THEN
 !       GRIB RESTART
 !       CREATES WIND AND STRESS FIELDS FROM GRIB WINDS AND DRAG COEFFICIENT.
-        CALL BUILDSTRESS(MIJS, MIJL,                                      &
-     &                   U10OLD(MIJS,IG), THWOLD(MIJS,IG),                &
-     &                   USOLD(MIJS,IG), TAUW(MIJS,IG), TAUWDIR(MIJS,IG), &
-     &                   Z0OLD(MIJS,IG),                                  &
-     &                   ROAIRO(MIJS,IG), ZIDLOLD(MIJS,IG),               &
-     &                   CICOVER(MIJS,IG), CITHICK(MIJS,IG),              &
+        CALL BUILDSTRESS(IJS, IJL,                                      &
+     &                   U10OLD(IJS), THWOLD(IJS),                      &
+     &                   USOLD(IJS), TAUW(IJS), TAUWDIR(IJS),           &
+     &                   Z0OLD(IJS),                                    &
+     &                   ROAIRO(IJS), ZIDLOLD(IJS),                     &
+     &                   CICOVER(IJS), CITHICK(IJS),                    &
      &                   IREAD)
         IF(ITEST.GE.1) WRITE(IU06,*)'SUB. GETSTRESS: BUILDSTRESS CALLED'
       ELSE
@@ -175,20 +167,20 @@
 
 !       KEEP CORRESPONDING CONTRIBUTION 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ=KIJS,KIJL
-            U10OLD(IJ,IG)=RFIELD(IJ,1)
-            THWOLD(IJ,IG)=RFIELD(IJ,2)
-            USOLD(IJ,IG)=RFIELD(IJ,3)
-            TAUW(IJ,IG)=RFIELD(IJ,4)
-            TAUWDIR(IJ,IG)=RFIELD(IJ,5)
-            Z0OLD(IJ,IG)=RFIELD(IJ,6)
-            ROAIRO(IJ,IG)=RFIELD(IJ,7)
-            ZIDLOLD(IJ,IG)=RFIELD(IJ,8)
-            CICOVER(IJ,IG)=RFIELD(IJ,9)
-            CITHICK(IJ,IG)=RFIELD(IJ,10)
+            U10OLD(IJ)=RFIELD(IJ,1)
+            THWOLD(IJ)=RFIELD(IJ,2)
+            USOLD(IJ)=RFIELD(IJ,3)
+            TAUW(IJ)=RFIELD(IJ,4)
+            TAUWDIR(IJ)=RFIELD(IJ,5)
+            Z0OLD(IJ)=RFIELD(IJ,6)
+            ROAIRO(IJ)=RFIELD(IJ,7)
+            ZIDLOLD(IJ)=RFIELD(IJ,8)
+            CICOVER(IJ)=RFIELD(IJ,9)
+            CITHICK(IJ)=RFIELD(IJ,10)
 !           for U and V see below
           ENDDO
         ENDDO
@@ -196,33 +188,33 @@
 
         IF (ALLOCATED(U) .AND. ALLOCATED(V)) THEN
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-          DO JKGLO=IJS(IG),IJL(IG),NPROMA
+          DO JKGLO=IJS),IJL,NPROMA
             KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+            KIJL=MIN(KIJS+NPROMA-1,IJL)
             DO IJ=KIJS,KIJL
-              U(IJ,IG)=RFIELD(IJ,11)
-              V(IJ,IG)=RFIELD(IJ,12)
+              U(IJ)=RFIELD(IJ,11)
+              V(IJ)=RFIELD(IJ,12)
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
-          U(NINF-1,IG)=0.0_JWRB
-          V(NINF-1,IG)=0.0_JWRB
+          U(NINF-1)=0.0_JWRB
+          V(NINF-1)=0.0_JWRB
 
 !!!       U AND V MUST ALSO BE DEFINED OVER THE HALO
-          CALL MPEXCHNG(U(:,IG), 1, 1)
-          CALL MPEXCHNG(V(:,IG), 1, 1)
+          CALL MPEXCHNG(U, 1, 1)
+          CALL MPEXCHNG(V, 1, 1)
 
           IF (IREFRA .NE. 0) THEN
 !         RE-COMPUTE REFRACTION TERMS
-            IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(IG):IJL(IG),NANG))
-            IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(IG):IJL(IG),NANG))
-            IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(IG):IJL(IG),NANG,NFRE_RED))
+            IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
+            IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
+            IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
 
             NPROMA=NPROMA_WAM
 !$OMP       PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-            DO JKGLO = IJS(IG), IJL(IG), NPROMA
+            DO JKGLO = IJS, IJL, NPROMA
               KIJS=JKGLO
-              KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+              KIJL=MIN(KIJS+NPROMA-1,IJL)
               CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
             ENDDO
 !$OMP       END PARALLEL DO
@@ -340,11 +332,11 @@
 !       WHEN INITAL SPECTRA SET TO NOISE LEVEL,
 !       RESET WAVE INDUCED STRESS TO ZERO 
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO,KIJS,KIJL,IJ)
-        DO JKGLO=IJS(IG),IJL(IG),NPROMA
+        DO JKGLO=IJS, IJL, NPROMA
           KIJS=JKGLO
-          KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+          KIJL=MIN(KIJS+NPROMA-1,IJL)
           DO IJ=KIJS,KIJL
-            TAUW(IJ,IG)=0.0_JWRB
+            TAUW(IJ)=0.0_JWRB
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO

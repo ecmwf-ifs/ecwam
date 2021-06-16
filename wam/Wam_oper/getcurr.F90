@@ -52,11 +52,11 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
       USE YOWNEMOFLDS,ONLY: NEMOUCUR, NEMOVCUR
       USE YOWCURR  , ONLY : U        ,V        ,CDTCUR   ,IDELCUR  ,    &
      &             LLCHKCFLA, CURRENT_MAX
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL
+      USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMAP   , ONLY : IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
       USE YOWSTAT  , ONLY : CDTPRO   ,IREFRA   ,NPROMA_WAM
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -77,12 +77,11 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
       LOGICAL, INTENT(IN) :: LWCUR
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: LIU
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, IJ, IX, IY
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: OLDU, OLDV
+      REAL(KIND=JWRB), DIMENSION(NINF-1:NSUP) :: OLDU, OLDV
 
       CHARACTER(LEN=14) :: CDATEIN, CDTNEWCUR
       CHARACTER(LEN=24) :: FILNM
@@ -99,20 +98,19 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
       CALL GSTATS(1984,0)
 
-      IG=1
 
       IF (LLNEWCURR) THEN
         IF ( (LWCOU .AND. LWCUR ) .OR. LWNEMOCOUCUR .OR.                &
      &        IREFRA.EQ.2 .OR. IREFRA.EQ.3) THEN
 
           IF(.NOT.ALLOCATED(U)) THEN 
-            ALLOCATE(U(NINF-1:NSUP,NBLO))
-            U(:,:)=0.0_JWRB
+            ALLOCATE(U(NINF-1:NSUP))
+            U(:)=0.0_JWRB
           ENDIF
 
           IF(.NOT.ALLOCATED(V)) THEN
-            ALLOCATE(V(NINF-1:NSUP,NBLO))
-            V(:,:)=0.0_JWRB
+            ALLOCATE(V(NINF-1:NSUP))
+            V(:)=0.0_JWRB
           ENDIF
 
           CDTNEWCUR=CDTCUR
@@ -121,10 +119,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
           IF(CDTPRO.GE.CDTNEWCUR) THEN
 
-            ALLOCATE(OLDU(NINF-1:NSUP,NBLO))
-            OLDU(:,:)=U(:,:)
-            ALLOCATE(OLDV(NINF-1:NSUP,NBLO))
-            OLDV(:,:)=V(:,:)
+            OLDU(:)=U(:)
+            OLDV(:)=V(:)
 
             LLCURRENT=.FALSE.
 
@@ -139,15 +135,15 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                   CALL GSTATS(1444,0)
                   NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                  DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                  DO JKGLO = IJS, IJL, NPROMA
                     KIJS=JKGLO
-                    KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                    KIJL=MIN(KIJS+NPROMA-1,IJL)
                     CALL WAMCUR (U(KIJS,1), V(KIJS,1), KIJS, KIJL)
                   ENDDO
 !$OMP           END PARALLEL DO
                   CALL GSTATS(1444,1)
-                  U(NINF-1,IG)=0.0_JWRB
-                  V(NINF-1,IG)=0.0_JWRB
+                  U(NINF-1)=0.0_JWRB
+                  V(NINF-1)=0.0_JWRB
 
 !!!               The halo has to be included for the calculation of the gradients !!!
                   CALL MPEXCHNG(U,1,1)
@@ -166,35 +162,35 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 CALL GSTATS(1444,0)
                 NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL,IX,IY)
-                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                DO JKGLO = IJS, IJL, NPROMA
                   KIJS=JKGLO
-                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  KIJL=MIN(KIJS+NPROMA-1,IJL)
                   DO IJ=KIJS,KIJL
-                    IX = IFROMIJ(IJ,IG)
-                    IY = JFROMIJ(IJ,IG)
+                    IX = IFROMIJ(IJ)
+                    IY = JFROMIJ(IJ)
                     IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
 !                     if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                      U(IJ,IG) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
-                      V(IJ,IG) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
+                      U(IJ) = SIGN(MIN(ABS(NEMOUCUR(IJ)),CURRENT_MAX),NEMOUCUR(IJ))
+                      V(IJ) = SIGN(MIN(ABS(NEMOVCUR(IJ)),CURRENT_MAX),NEMOVCUR(IJ))
                     ELSE
 !                     no currents over lakes and land
-                      U(IJ,IG) = 0.0_JWRB
-                      V(IJ,IG) = 0.0_JWRB
+                      U(IJ) = 0.0_JWRB
+                      V(IJ) = 0.0_JWRB
                     ENDIF
                   ENDDO
                 ENDDO
 !$OMP           END PARALLEL DO
                 CALL GSTATS(1444,1)
 
-                U(NINF-1,IG)=0.0_JWRB
-                V(NINF-1,IG)=0.0_JWRB
+                U(NINF-1)=0.0_JWRB
+                V(NINF-1)=0.0_JWRB
 
 !!!             The halo has to be included for the calculation of the gradients !!!
                 CALL MPEXCHNG(U,1,1)
                 CALL MPEXCHNG(V,1,1)
               ELSE
-                U=0.0_JWRB
-                V=0.0_JWRB
+                U(:)=0.0_JWRB
+                V(:)=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     IREFRA = ',IREFRA
@@ -235,8 +231,8 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
                 CALL ABORT1
                 ENDIF
               ELSE
-                U=0.0_JWRB
-                V=0.0_JWRB
+                U(:)=0.0_JWRB
+                V(:)=0.0_JWRB
                 WRITE(IU06,*)' '
                 WRITE(IU06,*)'    ****************************'
                 WRITE(IU06,*)'     FILE ',FILNM,' NOT FOUND '
@@ -253,7 +249,7 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 !           CHECK IF UPDATE IS NEEDED
             LLUPDATE=.FALSE.
             DO IJ = NINF, NSUP
-              IF( U(IJ,IG)/=OLDU(IJ,IG) .OR. V(IJ,IG)/=OLDV(IJ,IG) ) THEN
+              IF( U(IJ) /= OLDU(IJ) .OR. V(IJ) /= OLDV(IJ) ) THEN
                 LLUPDATE=.TRUE.
                 EXIT
               ENDIF 
@@ -261,16 +257,16 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
 
             IF(LLUPDATE) THEN
               IF (IREFRA .NE. 0) THEN
-                IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS(IG):IJL(IG),NANG))
-                IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS(IG):IJL(IG),NANG))
-                IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS(IG):IJL(IG),NANG,NFRE_RED))
+                IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJS:IJL,NANG))
+                IF (.NOT.ALLOCATED(THDD)) ALLOCATE(THDD(IJS:IJL,NANG))
+                IF (.NOT.ALLOCATED(SDOT)) ALLOCATE(SDOT(IJS:IJL,NANG,NFRE_RED))
 
                 CALL GSTATS(1444,0)
                 NPROMA=NPROMA_WAM
 !$OMP           PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO,KIJS,KIJL)
-                DO JKGLO = IJS(IG), IJL(IG), NPROMA
+                DO JKGLO = IJS, IJL, NPROMA
                   KIJS=JKGLO
-                  KIJL=MIN(KIJS+NPROMA-1,IJL(IG))
+                  KIJL=MIN(KIJS+NPROMA-1,IJL)
                   CALL PROPDOT(KIJS, KIJL, THDC(KIJS:KIJL,:), THDD(KIJS:KIJL,:), SDOT(KIJS:KIJL,:,:))
                 ENDDO
 !$OMP           END PARALLEL DO
@@ -288,9 +284,6 @@ SUBROUTINE GETCURR(LWCUR, IREAD)
             ELSE
               LLCHKCFLA=.FALSE.
             ENDIF
-
-            DEALLOCATE(OLDU)
-            DEALLOCATE(OLDV)
 
           ELSE
             LLCHKCFLA=.FALSE.
