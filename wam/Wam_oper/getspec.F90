@@ -55,7 +55,7 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, NBLKS, NBLKE, IREAD)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,                        &
      &            KTAG     ,NPRECR   ,NPRECI
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NBLO     ,NIBLO    ,CLDOMAIN
+     &            NIBLO    ,CLDOMAIN
       USE YOWPCONS , ONLY : G        ,DEG      ,R        ,ZMISS    ,    &
      &            EPSMIN
       USE YOWSHAL  , ONLY : EMAXDPT

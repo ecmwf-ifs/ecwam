@@ -1,4 +1,4 @@
-      SUBROUTINE MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,             &
+      SUBROUTINE MPFLDTOIFS(IJS, IJL, NWVFIELDS, BLOCK,             &
      &                      GRID, DEFVAL, MASK_OUT, LLGLOBAL)
 
 !****  *MPFLDTOIFS* - TRANSFORMS BLOCK DATA TO GRID DATA FOR
@@ -14,9 +14,8 @@
 !*    INTERFACE.
 !     ----------
 
-!     CALL *MPFLDTOIFS(IG, IJS, IJL, NWVFIELDS, BLOCK,
+!     CALL *MPFLDTOIFS(IJS, IJL, NWVFIELDS, BLOCK,
 !    &                 GRID, DEFVAL, MASK_OUT )*
-!         *IG*         - BLOCK NUMBER.
 !         *IJS*        - BLOCK INDEX OF FIRST GRIDPOINT.
 !         *IJL*        - BLOCK INDEX OF LAST GRIDPOINT.
 !         *NWVFIELDS*  - TOTAl NUMBER OF FIELDS RETURNED TO IFS
@@ -62,7 +61,7 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG, IJS, IJL, NWVFIELDS
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, NWVFIELDS
       INTEGER(KIND=JWIM), INTENT(IN) :: MASK_OUT(NGX,NGY)
 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NWVFIELDS), INTENT(IN) :: BLOCK
@@ -133,8 +132,8 @@
 !           TRANSFORM FROM BLOCK TO GRID
             DO IP=1,NPROC
               DO IJ = NSTART(IP), NEND(IP)
-               IX = IXLG(IJ,IG)
-               IY = NGY- KXLT(IJ,IG) +1
+               IX = IXLG(IJ)
+               IY = NGY- KXLT(IJ) +1
                GRID(IX,IY,IFLD) = ZBUFR(IJ)
               ENDDO
             ENDDO
@@ -159,8 +158,8 @@
               DO IP=1,NPROC
                 LFROMTASK(IP)=0
                 DO IJ = NSTART(IP), NEND(IP)
-                  IX = IXLG(IJ,IG)
-                  IY = NGY- KXLT(IJ,IG) +1
+                  IX = IXLG(IJ)
+                  IY = NGY- KXLT(IJ) +1
                   IF (MASK_OUT(IX,IY).EQ.1) LFROMTASK(IP)=LFROMTASK(IP)+1
                 ENDDO
               ENDDO
@@ -180,8 +179,8 @@
                 IF (LFROMTASK(IP).GT.0) THEN
                   ISTFROMTASK(IP)=ICOUNT+1
                   DO IJ = NSTART(IP), NEND(IP)
-                    IX = IXLG(IJ,IG)
-                    IY = NGY- KXLT(IJ,IG) +1
+                    IX = IXLG(IJ)
+                    IY = NGY- KXLT(IJ) +1
                     IF (MASK_OUT(IX,IY).EQ.1) THEN
                       ICOUNT=ICOUNT+1
                       IJFROMTASK(ICOUNT)=IJ
@@ -344,8 +343,8 @@
 !               TRANSFORM FROM BLOCK TO GRID
                 DO IC = IST,IEND
                   IJ=IJFROMTASK(IC)
-                  IX = IXLG(IJ,IG)
-                  IY = NGY- KXLT(IJ,IG) +1
+                  IX = IXLG(IJ)
+                  IY = NGY- KXLT(IJ) +1
                   GRID(IX,IY,IFLD) = ZRECVBUF(IC)
                 ENDDO
               ENDIF
@@ -361,8 +360,8 @@
 !         TRANSFORM FROM BLOCK TO GRID
           DO IP=1,NPROC
             DO IJ = NSTART(IP), NEND(IP)
-             IX = IXLG(IJ,IG)
-             IY = NGY- KXLT(IJ,IG) +1
+             IX = IXLG(IJ)
+             IY = NGY- KXLT(IJ) +1
              GRID(IX,IY,IFLD) = BLOCK(IJ,IFLD)
             ENDDO
           ENDDO
