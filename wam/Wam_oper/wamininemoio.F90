@@ -56,7 +56,7 @@
 
 !     Get the enviroment variables
 
-      CALL GETENV('NEMOIOSERVER',CLNEMOIO)
+      CALL GET_ENVIRONMENT_VARIABLE('NEMOIOSERVER',CLNEMOIO)
 
 ! Set NEMOIO settings depending of the NEMOIO environment variables
       SELECT CASE (TRIM(CLNEMOIO))
