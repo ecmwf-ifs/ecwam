@@ -42,9 +42,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_A = 0.75_JWRB
         ANG_GC_B = 0.5_JWRB
         ANG_GC_C = 5.164_JWRB
-        ANG_GC_D = 0.426_JWRB
+        ANG_GC_D = 0.41_JWRB
         ANG_GC_E = 0.1_JWRB
-        ANG_GC_U = 0.426_JWRB
+        ANG_GC_U = 0.0_JWRB
         ANG_GC_N = 1.2_JWRB
 
 
