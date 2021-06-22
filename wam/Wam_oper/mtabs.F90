@@ -39,9 +39,9 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR
-      USE YOWPARAM , ONLY : NFRE     ,NBLO     ,NIBLO
+      USE YOWPARAM , ONLY : NFRE     ,NIBLO
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
-      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,   &
+      USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,   &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTEST  , ONLY : IU06
 
