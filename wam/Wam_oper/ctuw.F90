@@ -72,7 +72,6 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
       LOGICAL,DIMENSION(MIJS:MIJL),INTENT(INOUT) :: LCFLFAIL
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IP,IJP
       INTEGER(KIND=JWIM) :: K,M,IJ,IC,IX,KY,KK,KKM
       INTEGER(KIND=JWIM) :: KP1,KM1,JH
@@ -112,7 +111,6 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
       IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
-      IG=1
       DELPRO = REAL(IDELPRO,JWRB)   
       CMTODEG = 360.0_JWRB/CIRC
 
@@ -235,10 +233,10 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !         (for all grid points)
           DO IC=1,2
             DO IJ = MIJS,MIJL
-              KY=KXLT(IJ,IG)
+              KY=KXLT(IJ)
               KK=KY+2*IC-3
               KKM=MAX(1,MIN(KK,NGY))
-              DP(IJ,IC) = COSPH(KKM)*COSPHM1(IJ,IG)
+              DP(IJ,IC) = COSPH(KKM)*COSPHM1(IJ)
             ENDDO
           ENDDO
 
@@ -260,12 +258,12 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                 DO IC=1,2
                   DO IJ=MIJS,MIJL
                     IF(LSAMEDEPTH(IJ)) THEN
-                      CGX(IJ,IC)=CGR(IJ,M)*SINTH(K)*COSPHM1(IJ,IG)
+                      CGX(IJ,IC)=CGR(IJ,M)*SINTH(K)*COSPHM1(IJ)
                       CGY(IJ,IC)=0.5_JWRB*CGR(IJ,M)*COSTH(K)*(1.+DP(IJ,IC))
                     ELSE
                       CGX(IJ,IC)=                                          &
      &                   0.5_JWRB*(CGR(IJ,M)+TCGOND(INDEP(KLON(IJ,IC)),M)) &
-     &                      *SINTH(K)*COSPHM1(IJ,IG)
+     &                      *SINTH(K)*COSPHM1(IJ)
 !                     IRREGULAR GRID
                       IF(IRGG.EQ.1) THEN
                         CGYP=WLAT(IJ,IC)*TCGOND(INDEP(KLAT(IJ,IC,1)),M)+       &
@@ -282,7 +280,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !             DEEP WATER
                 DO IC=1,2
                   DO IJ=MIJS,MIJL
-                    CGX(IJ,IC)=GOM(M)*SINTH(K)*COSPHM1(IJ,IG)
+                    CGX(IJ,IC)=GOM(M)*SINTH(K)*COSPHM1(IJ)
                     CGY(IJ,IC)=0.5_JWRB*GOM(M)*COSTH(K)*(1.0_JWRB+DP(IJ,IC))
                   ENDDO
                 ENDDO
@@ -292,18 +290,18 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 !             LOOP OVER GRID POINTS
 !             ---------------------
               DO IJ=MIJS,MIJL
-                IX=IXLG(IJ,IG)
-                KY=KXLT(IJ,IG)
+                IX=IXLG(IJ)
+                KY=KXLT(IJ)
 
 !               FLUX VELOCITUES AT THE GRID BOX INTERFACE 
 
                 DO IC=1,2
 
                   IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
-                    UU=U(IJ,IG)*COSPHM1(IJ,IG)
+                    UU=U(IJ)*COSPHM1(IJ)
                     UREL=CGX(IJ,IC)+UU
                     ISSU(IC)=ISAMESIGN(UREL,CGX(IJ,IC))
-                    VV=V(IJ,IG)*0.5_JWRB*(1.0_JWRB+DP(IJ,IC))
+                    VV=V(IJ)*0.5_JWRB*(1.0_JWRB+DP(IJ,IC))
                     VREL=CGY(IJ,IC)+VV
                     ISSV(IC)=ISAMESIGN(VREL,CGY(IJ,IC))
                   ELSE
@@ -345,7 +343,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                     WRITE (IU06,*) '* ADYP = ',ADYP(IC),IC
                     WRITE (IU06,*) '* XDELLA = ',XDELLA
                     WRITE (IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
-                    WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+                    WRITE (IU06,*) '* DEPTH= ',DEPTH(IJ)
                     WRITE (IU06,*) '* TIME STEP SHOULD BE REDUCED TO', DTNEW
                     WRITE (IU06,*) '*                              *'
                     WRITE (IU06,*) '********************************'
@@ -474,7 +472,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
 
         DO IJ = MIJS,MIJL
-          JH=KXLT(IJ,IG)
+          JH=KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -679,7 +677,7 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
                   WRITE(IU06,*) '*                                 *'
                   WRITE(IU06,*) '***********************************'
 
-                  WRITE(0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ,IG),V(IJ,IG)
+                  WRITE(0,*) '* CTUW: CFL VIOLATED IN FREQUENCY*',ICALL,IJ,K,M,IC,WMPMN(IJ,K,M,IC),U(IJ),V(IJ)
 
                   LCFLFAIL(IJ)=.TRUE.
                   CALl FLUSH(IU06)
@@ -691,8 +689,8 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
 
 !           SUM < 1  ?
             IF(SUMWN(IJ,K,M).GT.1.0_JWRB .OR. SUMWN(IJ,K,M).LT.0.0_JWRB) THEN
-              IX=IXLG(IJ,IG)
-              KY=KXLT(IJ,IG)
+              IX=IXLG(IJ)
+              KY=KXLT(IJ)
               XLON=AMOWEP+(IX-1)*ZDELLO(KY)
               XLAT=AMOSOP+(KY-1)*XDELLA
               WRITE(IU06,*) '***********************************'
@@ -702,17 +700,17 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
               WRITE(IU06,*) '* SUMW SHOULD BE < 1 AND > 0, BUT*'
               WRITE(IU06,*) '* IJ, SUMWN(IJ) = ',IJ,SUMWN(IJ,K,M)
               WRITE(IU06,*) '* XLAT= ',XLAT,' XLON= ',XLON 
-              WRITE(IU06,*) '* DEPTH= ',DEPTH(IJ,IG)
+              WRITE(IU06,*) '* DEPTH= ',DEPTH(IJ)
               IF (.NOT. LLCFLCUROFF .OR. ICALL > 1 ) THEN 
-                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ,IG),U(IJ,IG),V(IJ,IG)
+                WRITE(0,*) '* CTUW: SUMW IS NOT <1 AND >0, BUT*',ICALL,IJ,K,M,SUMWN(IJ,K,M),XLAT,XLON,DEPTH(IJ),U(IJ),V(IJ)
               ENDIF
               DO IP=1,2
               DO IC=1,2
                 IJP = KLAT(IJ,IC,IP)
                 IF(IJP.NE.NINF-1) THEN
-                  WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP,IG)
-                  WRITE(IU06,*) '*     U= ',U(IJP,IG)
-                  WRITE(IU06,*) '*     V= ',V(IJP,IG)
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,DEPTH(IJP)
+                  WRITE(IU06,*) '*     U= ',U(IJP)
+                  WRITE(IU06,*) '*     V= ',V(IJP)
                 ELSE
                   WRITE(IU06,*) '* DEPTH= ',IJP,IP,IC,'LAND'
                 ENDIF
@@ -721,16 +719,16 @@ SUBROUTINE CTUW (MIJS, MIJL, LCFLFAIL, ICALL)
               DO IC=1,2
                 IJP = KLON(IJ,IC)
                 IF(IJP.NE.NINF-1) THEN
-                  WRITE(IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP,IG)
-                  WRITE(IU06,*) '*     U= ',U(IJP,IG)
-                  WRITE(IU06,*) '*     V= ',V(IJP,IG)
+                  WRITE(IU06,*) '* DEPTH= ',IJP,IC,DEPTH(IJP)
+                  WRITE(IU06,*) '*     U= ',U(IJP)
+                  WRITE(IU06,*) '*     V= ',V(IJP)
                 ELSE
                   WRITE(IU06,*) '* DEPTH= ',IJP,IC,'LAND'
                 ENDIF
               ENDDO
 
               IF (IREFRA.EQ.2 .OR. IREFRA.EQ.3 ) THEN
-              WRITE(IU06,*) '* U = ',U(IJ,IG),' V = ',V(IJ,IG)
+              WRITE(IU06,*) '* U = ',U(IJ),' V = ',V(IJ)
               ENDIF
               WRITE(IU06,*) '*                                 *'
               WRITE(IU06,*) '***********************************'

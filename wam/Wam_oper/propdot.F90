@@ -60,7 +60,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL, NANG, NFRE_RED), INTENT(OUT) :: SDOT
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: CD, SD, SS, SC, CC
@@ -73,7 +72,6 @@
 
       IF (LHOOK) CALL DR_HOOK('PROPDOT',0,ZHOOK_HANDLE)
 
-      IG = 1
 
 !*    2.2 DEPTH AND CURRENT GRADIENTS.
 !         ----------------------------
@@ -86,7 +84,7 @@
 
         IF (ICASE.EQ.1) THEN
           DO IJ = IJS,IJL
-            DCO(IJ) = COSPHM1(IJ,IG)
+            DCO(IJ) = COSPHM1(IJ)
           ENDDO
         ELSE
           DO IJ = IJS,IJL
@@ -100,7 +98,7 @@
         IF (ISHALLO.NE.1 ) THEN
           IF (IREFRA.EQ.3) THEN
             DO IJ = IJS,IJL
-              OMDD(IJ) = V(IJ,IG)*DDPHI(IJ) + U(IJ,IG)*DDLAM(IJ)*DCO(IJ)
+              OMDD(IJ) = V(IJ)*DDPHI(IJ) + U(IJ)*DDLAM(IJ)*DCO(IJ)
             ENDDO
           ELSEIF (IREFRA.EQ.2) THEN
             DO IJ = IJS,IJL

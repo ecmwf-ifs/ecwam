@@ -69,8 +69,7 @@
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,DELLAM1  ,SINPH    ,    &
-     &            COSPH    ,COSPHM1  ,IGL      ,IJLT     ,CDR      ,    &
-     &            SDR      ,PRQRT
+     &            COSPH    ,COSPHM1  ,CDR      ,SDR      ,PRQRT
       USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
@@ -95,7 +94,6 @@
       REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE_RED), INTENT(IN) :: F1
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: F3
 
-      INTEGER(KIND=JWIM), PARAMETER :: IG=1
       INTEGER(KIND=JWIM) :: K, M, IJ, JH
       INTEGER(KIND=JWIM) :: NLAND
       INTEGER(KIND=JWIM) :: IC, IJLA, IJPH, KP1, KM1, MP1, MM1, KRLA,   &
@@ -147,9 +145,9 @@
 
 ! ----------------------------------------------------------------------
 
-      ALLOCATE(DELLA0(NINF-1:IJLT(IG)))
-      ALLOCATE(DPH(NINF-1:IJLT(IG)))
-      ALLOCATE(DLA(NINF-1:IJLT(IG)))
+      ALLOCATE(DELLA0(NINF-1:NSUP))
+      ALLOCATE(DPH(NINF-1:NSUP))
+      ALLOCATE(DLA(NINF-1:NSUP))
       ALLOCATE(DTP(MIJS:MIJL))
       ALLOCATE(DTM(MIJS:MIJL))
       ALLOCATE(DTC(MIJS:MIJL))
@@ -161,10 +159,10 @@
 !*    0.0 GROUP VELOCITIES. (if shallow water on)
 !         -----------------
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(CGOND(NINF-1:IJLT(IG),NFRE_RED))
+        ALLOCATE(CGOND(NINF-1:NSUP,NFRE_RED))
         DO M=1,NFRE_RED
           CGOND(NINF-1,M) = TCGOND(NDEPTH,M)
-          DO IJ=NINF,IJLT(IG)
+          DO IJ=NINF,NSUP
             CGOND(IJ,M) = TCGOND(INDEP(IJ),M)
           ENDDO
         ENDDO
@@ -184,8 +182,8 @@
 
 !*    0.2.1 SPHERICAL GRID.
 !           ---------------
-        ALLOCATE(DCO(NINF-1:IJLT(IG)))
-        ALLOCATE(DCOM1(NINF-1:IJLT(IG)))
+        ALLOCATE(DCO(NINF-1:NSUP))
+        ALLOCATE(DCOM1(NINF-1:NSUP))
         ALLOCATE(DP1(MIJS:MIJL))
         ALLOCATE(DP2(MIJS:MIJL))
 
@@ -193,12 +191,12 @@
 !             -------------------
 
         DELLA0(NINF-1) = 0.0_JWRB
-        DO IJ = NINF,IJLT(IG)
-          DCO(IJ) = COSPHM1(IJ,IG)
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
+        DO IJ = NINF,NSUP
+          DCO(IJ) = COSPHM1(IJ)
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
         ENDDO
-        DO IJ = NINF,IJLT(IG)
-          DCOM1(IJ) = 1.0_JWRB/COSPHM1(IJ,IG)
+        DO IJ = NINF,NSUP
+          DCOM1(IJ) = 1.0_JWRB/COSPHM1(IJ)
         ENDDO
 
 !*    0.2.1.2 COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
@@ -238,8 +236,8 @@
 !           ---------------
 
         DELLA0(NINF-1) = 0.0_JWRB
-        DO IJ = NINF,IJLT(IG)
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
+        DO IJ = NINF,NSUP
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
         ENDDO
 
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.
@@ -512,9 +510,9 @@
 
             DLA(NINF-1) = CGS*DELLA0(NINF)
             DPH(NINF-1) = CGC*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + CGS)*DELLA0(IJ)
-              DPH(IJ) = (V(IJ,IG) + CGC)*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + CGS)*DELLA0(IJ)
+              DPH(IJ) = (V(IJ) + CGC)*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = DLA(IJ) + DLA(KLON(IJ,1))
@@ -557,9 +555,9 @@
 
             DLA(NINF-1) = SD*CGOND(NINF-1,M)*DELLA0(NINF)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + SD*CGOND(IJ,M))*DELLA0(IJ)
-              DPH(IJ) = (V(IJ,IG) + CD*CGOND(IJ,M))*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + SD*CGOND(IJ,M))*DELLA0(IJ)
+              DPH(IJ) = (V(IJ) + CD*CGOND(IJ,M))*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = DLA(IJ) + DLA(KLON(IJ,1))
@@ -675,13 +673,13 @@
       COFDELPH0R = 0.5_JWRB*DELPRO/(SQRT2*DELPHI)
 
       DO IJ=MIJS,MIJL
-        DELPH0R(IJ) = PRQRT(IJ,IG)*COFDELPH0R
+        DELPH0R(IJ) = PRQRT(IJ)*COFDELPH0R
 !       by construct DELLA0R=DELPH0R
         DELLA0R(IJ)=DELPH0R(IJ)
       ENDDO
 
       DO IJ=MIJS,MIJL
-        DLADCO(IJ) = (1.0_JWRB-PRQRT(IJ,IG))*(DCO(IJ)*DELLA0(IJ))
+        DLADCO(IJ) = (1.0_JWRB-PRQRT(IJ))*(DCO(IJ)*DELLA0(IJ))
       ENDDO
 
       ALLOCATE(WLATM1(MIJS:MIJL,2))
@@ -812,17 +810,17 @@
         CDA = ABS(CD)
 
         DO IJ=MIJS,MIJL
-          DELPH0_CDA(IJ) = (1.0_JWRB-PRQRT(IJ,IG))*DELPH0*CDA
+          DELPH0_CDA(IJ) = (1.0_JWRB-PRQRT(IJ))*DELPH0*CDA
           SDDL(IJ)=SDA2*DLADCO(IJ)
         ENDDO
 
         DO IJ = MIJS,MIJL
-          IF (SDR(IJ,K,IG).LT.0) THEN
+          IF (SDR(IJ,K).LT.0) THEN
             IJRLA(IJ) = 2
           ELSE
             IJRLA(IJ) = 1
           ENDIF
-          IF (CDR(IJ,K,IG).LT.0) THEN
+          IF (CDR(IJ,K).LT.0) THEN
             IJRPH(IJ) = 2
           ELSE
             IJRPH(IJ) = 1
@@ -835,7 +833,7 @@
         SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
-          JH = KXLT(IJ,IG)
+          JH = KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -881,9 +879,9 @@
               ELSE
                 KRLA2=IJ
               ENDIF
-              ACGKRLAT(IJ,IC) = CDR(IJ,K,IG) +                           &
-     &                       (WRLAT(IJ,IC)*CDR(KRLA,K,IG) +              &
-     &                        WRLATM1(IJ,IC)*CDR(KRLA2,K,IG))
+              ACGKRLAT(IJ,IC) = CDR(IJ,K) +                              &
+     &                       (WRLAT(IJ,IC)*CDR(KRLA,K) +                 &
+     &                        WRLATM1(IJ,IC)*CDR(KRLA2,K))
               ACGKRLAT(IJ,IC) = ABS(ACGKRLAT(IJ,IC)) 
 
               IF(KRLON(IJ,IC,1).NE.NLAND) THEN
@@ -896,9 +894,9 @@
               ELSE
                 KRLO2=IJ
               ENDIF
-              ACGKRLON(IJ,IC) = SDR(IJ,K,IG) +                           &
-     &                       (WRLON(IJ,IC)*SDR(KRLO,K,IG) +              &
-     &                        WRLONM1(IJ,IC)*SDR(KRLO2,K,IG))
+              ACGKRLON(IJ,IC) = SDR(IJ,K) +                              &
+     &                       (WRLON(IJ,IC)*SDR(KRLO,K) +                 &
+     &                        WRLONM1(IJ,IC)*SDR(KRLO2,K))
               ACGKRLON(IJ,IC) = ABS(ACGKRLON(IJ,IC))
             ENDDO
           ENDDO
@@ -996,7 +994,7 @@
             M=1
 !           the non rotated quadrant has the strictest CFL criteria
             DO IJ = MIJS,MIJL
-              CGOMFULL=GOM(M)/(1.0_JWRB-PRQRT(IJ,IG))
+              CGOMFULL=GOM(M)/(1.0_JWRB-PRQRT(IJ))
               CFLEA(IJ) = DLE(IJ)*CGOMFULL
               CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
               DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
@@ -1074,22 +1072,22 @@
                   KRLO2=IJ
                 ENDIF
                 IF(LSAMEDEPTH(IJ)) THEN
-                  ACGKRLAT(IJ,IC) = CDR(IJ,K,IG) +                      &
-     &                         (WRLAT(IJ,IC)*CDR(KRLA,K,IG) +           &
-     &                          WRLATM1(IJ,IC)*CDR(KRLA2,K,IG))
+                  ACGKRLAT(IJ,IC) = CDR(IJ,K) +                         &
+     &                         (WRLAT(IJ,IC)*CDR(KRLA,K) +              &
+     &                          WRLATM1(IJ,IC)*CDR(KRLA2,K))
                   ACGKRLAT(IJ,IC) = CGOND(IJ,M)*ACGKRLAT(IJ,IC) 
 
-                  ACGKRLON(IJ,IC) = SDR(IJ,K,IG) +                      &
-     &                         (WRLON(IJ,IC)*SDR(KRLO,K,IG) +           &
-     &                          WRLONM1(IJ,IC)*SDR(KRLO2,K,IG))
+                  ACGKRLON(IJ,IC) = SDR(IJ,K) +                         &
+     &                         (WRLON(IJ,IC)*SDR(KRLO,K) +              &
+     &                          WRLONM1(IJ,IC)*SDR(KRLO2,K))
                   ACGKRLON(IJ,IC) = CGOND(IJ,M)*ACGKRLON(IJ,IC) 
                 ELSE
-                  ACGKRLAT(IJ,IC) = CGOND(IJ,M)*CDR(IJ,K,IG) +          &
-     &               WRLAT(IJ,IC)*CGOND(KRLA,M)*CDR(KRLA,K,IG) +        &
-     &               WRLATM1(IJ,IC)*CGOND(KRLA2,M)*CDR(KRLA2,K,IG)
-                  ACGKRLON(IJ,IC) =  CGOND(IJ,M)*SDR(IJ,K,IG) +         &
-     &               WRLON(IJ,IC)*CGOND(KRLO,M)*SDR(KRLO,K,IG) +        &
-     &               WRLONM1(IJ,IC)*CGOND(KRLO2,M)*SDR(KRLO2,K,IG)
+                  ACGKRLAT(IJ,IC) = CGOND(IJ,M)*CDR(IJ,K) +             &
+     &               WRLAT(IJ,IC)*CGOND(KRLA,M)*CDR(KRLA,K) +           &
+     &               WRLATM1(IJ,IC)*CGOND(KRLA2,M)*CDR(KRLA2,K)
+                  ACGKRLON(IJ,IC) =  CGOND(IJ,M)*SDR(IJ,K) +            &
+     &               WRLON(IJ,IC)*CGOND(KRLO,M)*SDR(KRLO,K) +           &
+     &               WRLONM1(IJ,IC)*CGOND(KRLO2,M)*SDR(KRLO2,K)
                 ENDIF
                 ACGKRLAT(IJ,IC) = ABS(ACGKRLAT(IJ,IC)) 
                 ACGKRLON(IJ,IC) = ABS(ACGKRLON(IJ,IC))
@@ -1169,7 +1167,7 @@
             IF(LLCHKCFL .AND. M.EQ.1) THEN
 !             the non rotated quadrant has the strictest CFL criteria
               DO IJ = MIJS,MIJL
-                CGOMFULL=1.0_JWRB/(1.0_JWRB-PRQRT(IJ,IG))
+                CGOMFULL=1.0_JWRB/(1.0_JWRB-PRQRT(IJ))
                 CFLEA(IJ) = CFLEA(IJ)*CGOMFULL
                 CFLNO(IJ) = CFLNO(IJ)*CGOMFULL
                 DTC(IJ) = CFLEA(IJ)+CFLNO(IJ)+CFLTP(IJ)+CFLTM(IJ)
@@ -1218,10 +1216,6 @@
       IF (ISHALLO.NE.1 .AND. IREFRA.EQ.1) THEN
         DEALLOCATE(DRDP)
         DEALLOCATE(DRDM)
-      ENDIF
-      IF (IGL.NE.1) THEN
-        IF(ALLOCATED(THDC))DEALLOCATE(THDC)
-        IF(ALLOCATED(THDD))DEALLOCATE(THDD)
       ENDIF
 
   
@@ -1306,7 +1300,7 @@
         SP = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
-          JH = KXLT(IJ,IG)
+          JH = KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -1354,9 +1348,9 @@
 
             DLA(NINF-1) = CGS
             DPH(NINF-1) = CGC*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + CGS)
-              DPH(IJ) = (V(IJ,IG) + CGC)*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + CGS)
+              DPH(IJ) = (V(IJ) + CGC)*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLEA = (DLA(IJ) + DLA(KLON(IJ,2)))*DELLA0(IJ)*DCO(IJ)
@@ -1428,9 +1422,9 @@
 
             DLA(NINF-1) = SD*CGOND(NINF-1,M)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = U(IJ,IG)+SD*CGOND(IJ,M)
-              DPH(IJ) =(V(IJ,IG)+CD*CGOND(IJ,M))*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = U(IJ)+SD*CGOND(IJ,M)
+              DPH(IJ) =(V(IJ)+CD*CGOND(IJ,M))*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = (DLA(IJ) + DLA(KLON(IJ,1)))*DELLA0(IJ)*DCO(IJ)

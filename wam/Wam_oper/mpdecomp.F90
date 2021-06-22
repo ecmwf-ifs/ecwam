@@ -109,8 +109,8 @@
 
       USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWFRED  , ONLY : FR       ,COSTH     ,SINTH
-      USE YOWGRID  , ONLY : IGL      ,IJS      ,IJL      ,IJLT     ,    &
+      USE YOWFRED  , ONLY : FR       ,COSTH    ,SINTH
+      USE YOWGRID  , ONLY : IJS      ,IJL      ,                        &
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET,                  &
      &            DELLAM   ,DELLAM1  ,COSPH    ,COSPHM1  ,DELPHI   ,    &
      &            CDR      ,SDR      ,PRQRT    ,NLONRGG
@@ -120,7 +120,7 @@
      &            KMNOP    ,KMSOP    ,IFROMIJ  ,JFROMIJ
       USE YOWMPP   , ONLY : IRANK    ,NINF     ,NSUP     ,KTAG     ,    &
      &                      NPRECR   ,NPRECI
-      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NBLO     ,NIBLO    ,    &
+      USE YOWPARAM , ONLY : NANG     ,NFRE_RED ,NIBLO    ,              &
      &            NGX      ,NGY      ,LL1D     ,KWAMVER
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWSHAL  , ONLY : DEPTH
@@ -152,7 +152,6 @@
 #include "wam_sorti.intfb.h"
 
       INTEGER(KIND=JWIM) :: NPR, MAXLEN 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, IP, IPR, IAR, IX, JSN, IH
       INTEGER(KIND=JWIM) :: IC, ICC, JC, JCS, JCM, IIL, NGOU, NH, JH, INBNGH 
       INTEGER(KIND=JWIM) :: ITAG, IREAD 
@@ -195,7 +194,7 @@
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_S(:)
       REAL(KIND=JWRB),ALLOCATABLE :: RCOMBUF_R(:)
-      REAL(KIND=JWRB),ALLOCATABLE :: RDUM(:), RDUM2(:,:)
+      REAL(KIND=JWRB),ALLOCATABLE :: RDUM(:)
 
       CHARACTER(LEN=80) :: LOGFILENAME
 
@@ -268,12 +267,12 @@
         NXFF=MNP
         NYFF=1
         IF (ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
-        ALLOCATE(IFROMIJ(NINF-1:NSUP,IGL))
+        ALLOCATE(IFROMIJ(NINF-1:NSUP))
         IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
-        ALLOCATE(JFROMIJ(NINF-1:NSUP,IGL))
+        ALLOCATE(JFROMIJ(NINF-1:NSUP))
 
-        IFROMIJ(NINF-1,:)=0
-        JFROMIJ(NINF-1,:)=0
+        IFROMIJ(NINF-1)=0
+        JFROMIJ(NINF-1)=0
         DO IJ = 1,NSUP
           IFROMIJ(IJ,:)=IJ
           JFROMIJ(IJ,:)=1
@@ -290,11 +289,9 @@
 !     FIND KNMOP AND KMSOP
       KMNOP=1
       KMSOP=NGY
-      DO IG=1,IGL
-        DO IJ = IJS(IG),IJL(IG)
-          KMNOP=MAX(KXLT(IJ,IG),KMNOP)
-          KMSOP=MIN(KXLT(IJ,IG),KMSOP)
-        ENDDO
+      DO IJ = IJS,IJL
+        KMNOP=MAX(KXLT(IJ),KMNOP)
+        KMSOP=MIN(KXLT(IJ),KMSOP)
       ENDDO
 
       IF (ALLOCATED(KLAT)) DEALLOCATE(KLAT)
@@ -529,8 +526,8 @@
 !       if the number of subareas per latitunal bands is the same
 !       in all bands then the number of sea points in each band will
 !       be determined to be as even as possible
-        NMEAN=IJL(NBLO)/NYDECOMP
-        NREST=IJL(NBLO)-NMEAN*NYDECOMP
+        NMEAN=IJL/NYDECOMP
+        NREST=IJL-NMEAN*NYDECOMP
 
      
         NSTART1D(1)=1
@@ -560,7 +557,7 @@
 !       roughly scale like (nxdecomp-1)/nxdecomp the number of points
 !       in the remaining bottom nycut bands
 
-        NMEAN=NXDECOMP*IJL(NBLO)/((NXDECOMP-1)*NYDECOMP+NYCUT)
+        NMEAN=NXDECOMP*IJL/((NXDECOMP-1)*NYDECOMP+NYCUT)
       
         NSTART1D(1)=1
         NPTS=NMEAN
@@ -572,8 +569,8 @@
           NEND1D(IP)=NSTART1D(IP)+NPTS-1
         ENDDO
 
-        NMEAN=(IJL(NBLO)-NEND1D(NYCUT))/(NYDECOMP-NYCUT)
-        NREST=(IJL(NBLO)-NEND1D(NYCUT))-NMEAN*(NYDECOMP-NYCUT)
+        NMEAN=(IJL-NEND1D(NYCUT))/(NYDECOMP-NYCUT)
+        NREST=(IJL-NEND1D(NYCUT))-NMEAN*(NYDECOMP-NYCUT)
 
         DO IP=NYCUT+1,NYDECOMP
           NSTART1D(IP)=NSTART1D(IP-1)+NPTS
@@ -612,7 +609,6 @@
         STAGGER=FLOAT(NINT(100*STAGGER))/100.0_JWRB
         ISTAGGER=NINT(STAGGER*XDELLOINV)
 
-        IG=1
         IPROC=0
         NIJ=0
         DO IPR=1,NYDECOMP
@@ -646,8 +642,8 @@
 !         by determining the array IJNDEX which contain the IJ's with
 !         increasing longitude and latitude.
 
-          KLATBOT=KXLT(NSTART1D(IPR),IG)
-          KLATTOP=KXLT(NEND1D(IPR),IG)
+          KLATBOT=KXLT(NSTART1D(IPR))
+          KLATTOP=KXLT(NEND1D(IPR))
           ALLOCATE(KSTART1(KLATBOT:KLATTOP))
           KSTART1(:)=0
           ALLOCATE(KEND1(KLATBOT:KLATTOP))
@@ -656,8 +652,8 @@
           KXLAT=KLATBOT
           KSTART1(KXLAT) = NSTART1D(IPR)
           DO IJ=NSTART1D(IPR)+1,NEND1D(IPR)
-            IF (KXLAT.LT.KXLT(IJ,IG)) THEN
-              KXLAT = KXLT(IJ,IG)
+            IF (KXLAT.LT.KXLT(IJ)) THEN
+              KXLAT = KXLT(IJ)
               KSTART1(KXLAT) = IJ 
               KEND1(KXLAT-1) = IJ-1
             ENDIF
@@ -677,12 +673,12 @@
           ENDDO
           KXLAT=KLATBOT
           DO IJ=NSTART1D(IPR),NEND1D(IPR)
-            IF (KXLAT.LT.KXLT(IJ,IG)) THEN
-              KXLAT = KXLT(IJ,IG)
+            IF (KXLAT.LT.KXLT(IJ)) THEN
+              KXLAT = KXLT(IJ)
             ENDIF
             NLON(KXLAT)=NLON(KXLAT)+1
-            IX = IXLG(IJ,IG)
-            JSN= KXLT(IJ,IG)
+            IX = IXLG(IJ)
+            JSN= KXLT(IJ)
             XLON=AMOWEP+(IX-1)*ZDELLO(JSN)
             XLON=FLOAT(NINT(100*XLON))/100.0_JWRB
             IXLON(NLON(KXLAT),KXLAT)=NINT(XLON*XDELLOINV)
@@ -879,30 +875,26 @@
         ENDIF
 
         ALLOCATE(KDUM(NIBLO))
-        DO IG=1,IGL
-          DO NIJ=NSTART(1),NEND(NPR)
-            KDUM(NIJ)=IXLG(NEWIJ2IJ(NIJ),IG)
-          ENDDO
-          DO NIJ=NSTART(1),NEND(NPR)
-            IXLG(NIJ,IG)=KDUM(NIJ)
-          ENDDO
-          DO NIJ=NSTART(1),NEND(NPR)
-            KDUM(NIJ)=KXLT(NEWIJ2IJ(NIJ),IG)
-          ENDDO
-          DO NIJ=NSTART(1),NEND(NPR)
-            KXLT(NIJ,IG)=KDUM(NIJ)
-          ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          KDUM(NIJ)=IXLG(NEWIJ2IJ(NIJ))
+        ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          IXLG(NIJ)=KDUM(NIJ)
+        ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          KDUM(NIJ)=KXLT(NEWIJ2IJ(NIJ))
+        ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          KXLT(NIJ)=KDUM(NIJ)
         ENDDO
         DEALLOCATE(KDUM)
 
         ALLOCATE(RDUM(NIBLO))
-        DO IG=1,IGL
-          DO NIJ=NSTART(1),NEND(NPR)
-            RDUM(NIJ)=DEPTH(NEWIJ2IJ(NIJ),IG)
-          ENDDO
-          DO NIJ=NSTART(1),NEND(NPR)
-            DEPTH(NIJ,IG)=RDUM(NIJ)
-          ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          RDUM(NIJ)=DEPTH(NEWIJ2IJ(NIJ))
+        ENDDO
+        DO NIJ=NSTART(1),NEND(NPR)
+          DEPTH(NIJ)=RDUM(NIJ)
         ENDDO
         DEALLOCATE(RDUM)
 
@@ -1341,15 +1333,13 @@
         ENDIF
 
         ALLOCATE(RDUM(MAX(1,NLENHALO(IRANK))))
-        DO IG=1,IGL
-          DO IH=1,NLENHALO(IRANK)
-            IJ=IJFROMPE(IH,IRANK)
-            RDUM(IH)=DEPTH(IJ,IG)
-          ENDDO
-          DO IH=1,NLENHALO(IRANK)
-            IJ=IJHALO(IH)
-            DEPTH(IJ,IG)=RDUM(IH)
-          ENDDO
+        DO IH=1,NLENHALO(IRANK)
+          IJ=IJFROMPE(IH,IRANK)
+          RDUM(IH)=DEPTH(IJ)
+        ENDDO
+        DO IH=1,NLENHALO(IRANK)
+          IJ=IJHALO(IH)
+          DEPTH(IJ)=RDUM(IH)
         ENDDO
         DEALLOCATE(RDUM)
 
@@ -1383,142 +1373,137 @@
 !     Note that they all will be defined locally for the halo points !!!
 
       IF (ALLOCATED(DELLAM1)) DEALLOCATE(DELLAM1)
-      ALLOCATE(DELLAM1(NINF-1:NSUP,IGL))
+      ALLOCATE(DELLAM1(NINF-1:NSUP))
       IF (ALLOCATED(COSPHM1)) DEALLOCATE(COSPHM1)
-      ALLOCATE(COSPHM1(NINF-1:NSUP,IGL))
+      ALLOCATE(COSPHM1(NINF-1:NSUP))
 
       IF (IPROPAGS.EQ.1) THEN
         IF (ALLOCATED(CDR)) DEALLOCATE(CDR)
-        ALLOCATE(CDR(NINF-1:NSUP,NANG,IGL))
+        ALLOCATE(CDR(NINF-1:NSUP,NANG))
         IF (ALLOCATED(SDR)) DEALLOCATE(SDR)
-        ALLOCATE(SDR(NINF-1:NSUP,NANG,IGL))
+        ALLOCATE(SDR(NINF-1:NSUP,NANG))
 !       PRQRT IS NOT DEFINED IN THE HALO !!!!
         IF (ALLOCATED(PRQRT)) DEALLOCATE(PRQRT)
-        ALLOCATE(PRQRT(NSTART(IRANK):NEND(IRANK),IGL))
+        ALLOCATE(PRQRT(NSTART(IRANK):NEND(IRANK)))
       ENDIF
 
       SQRT2O2=SIN(0.25_JWRB*PI)
 
-      DO IG=1,IGL
-        DELLAM1(NINF-1,IG) = 0.0_JWRB
+      DELLAM1(NINF-1) = 0.0_JWRB
+      IF ( NPR.GT.1 ) THEN
+        DO IJ=NSTART(IRANK),NEND(IRANK)
+          JH = KXLT(IJ)
+          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
+          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
+        ENDDO 
+        DO IH=1,NLENHALO(IRANK)
+          IJ=IJFROMPE(IH,IRANK)
+          JH = KXLT(IJ)
+          IJ=IJHALO(IH)
+          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
+          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
+        ENDDO
+      ELSE
+        DO IJ=NINF,NSUP
+          JH = KXLT(IJ)
+          DELLAM1(IJ)=1.0_JWRB/DELLAM(JH)
+          COSPHM1(IJ)=1.0_JWRB/COSPH(JH)
+        ENDDO 
+      ENDIF
+
+      IF (IPROPAGS.EQ.1) THEN
+        DO K=1,NANG
+          CDR(NINF-1,K) = 0.0_JWRB
+          SDR(NINF-1,K) = 0.0_JWRB
+        ENDDO
         IF ( NPR.GT.1 ) THEN
           DO IJ=NSTART(IRANK),NEND(IRANK)
-            JH = KXLT(IJ,IG)
-            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
-            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
+            JH = KXLT(IJ)
+            DO K=1,NANG
+              A=SQRT2O2*COSTH(K)*COSPH(JH)
+              B=SQRT2O2*SINTH(K) 
+              CDR(IJ,K)=A-B
+              SDR(IJ,K)=A+B
+            ENDDO
           ENDDO 
+          IF (IRGG.EQ.1) THEN
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              JH = KXLT(IJ)
+              THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
+              SINTHMAX=SIN(THETAMAX)
+              DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
+              PRQRT(IJ)=MIN(0.5_JWRB,DELTA)
+            ENDDO
+          ELSE
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              PRQRT(IJ)=0.5_JWRB
+            ENDDO
+          ENDIF
           DO IH=1,NLENHALO(IRANK)
             IJ=IJFROMPE(IH,IRANK)
-            JH = KXLT(IJ,IG)
+            JH = KXLT(IJ)
             IJ=IJHALO(IH)
-            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
-            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
+            DO K=1,NANG
+              A=SQRT2O2*COSTH(K)*COSPH(JH)
+              B=SQRT2O2*SINTH(K) 
+              CDR(IJ,K)=A-B
+              SDR(IJ,K)=A+B
+            ENDDO
           ENDDO
         ELSE
           DO IJ=NINF,NSUP
-            JH = KXLT(IJ,IG)
-            DELLAM1(IJ,IG)=1.0_JWRB/DELLAM(JH)
-            COSPHM1(IJ,IG)=1.0_JWRB/COSPH(JH)
+            JH = KXLT(IJ)
+            DO K=1,NANG
+              A=SQRT2O2*COSTH(K)*COSPH(JH)
+              B=SQRT2O2*SINTH(K) 
+              CDR(IJ,K)=A-B
+              SDR(IJ,K)=A+B
+            ENDDO
           ENDDO 
-        ENDIF
-      ENDDO
-
-      IF (IPROPAGS.EQ.1) THEN
-        DO IG=1,IGL
-          DO K=1,NANG
-            CDR(NINF-1,K,IG) = 0.0_JWRB
-            SDR(NINF-1,K,IG) = 0.0_JWRB
-          ENDDO
-          IF ( NPR.GT.1 ) THEN
+          IF (IRGG.EQ.1) THEN
             DO IJ=NSTART(IRANK),NEND(IRANK)
-              JH = KXLT(IJ,IG)
-              DO K=1,NANG
-                A=SQRT2O2*COSTH(K)*COSPH(JH)
-                B=SQRT2O2*SINTH(K) 
-                CDR(IJ,K,IG)=A-B
-                SDR(IJ,K,IG)=A+B
-              ENDDO
-            ENDDO 
-            IF (IRGG.EQ.1) THEN
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                JH = KXLT(IJ,IG)
-                THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
-                SINTHMAX=SIN(THETAMAX)
-                DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
-                PRQRT(IJ,IG)=MIN(0.5_JWRB,DELTA)
-              ENDDO
-            ELSE
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                PRQRT(IJ,IG)=0.5_JWRB
-              ENDDO
-            ENDIF
-            DO IH=1,NLENHALO(IRANK)
-              IJ=IJFROMPE(IH,IRANK)
-              JH = KXLT(IJ,IG)
-              IJ=IJHALO(IH)
-              DO K=1,NANG
-                A=SQRT2O2*COSTH(K)*COSPH(JH)
-                B=SQRT2O2*SINTH(K) 
-                CDR(IJ,K,IG)=A-B
-                SDR(IJ,K,IG)=A+B
-              ENDDO
+              JH = KXLT(IJ)
+              THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
+              SINTHMAX=SIN(THETAMAX)
+              DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
+              PRQRT(IJ)=MIN(0.5_JWRB,DELTA)
             ENDDO
           ELSE
-            DO IJ=NINF,NSUP
-              JH = KXLT(IJ,IG)
-              DO K=1,NANG
-                A=SQRT2O2*COSTH(K)*COSPH(JH)
-                B=SQRT2O2*SINTH(K) 
-                CDR(IJ,K,IG)=A-B
-                SDR(IJ,K,IG)=A+B
-              ENDDO
-            ENDDO 
-            IF (IRGG.EQ.1) THEN
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                JH = KXLT(IJ,IG)
-                THETAMAX=ATAN2(1.0_JWRB,COSPH(JH))
-                SINTHMAX=SIN(THETAMAX)
-                DELTA=COSPH(JH)/(SINTHMAX*(1.0_JWRB+COSPH(JH)**2))
-                PRQRT(IJ,IG)=MIN(0.5_JWRB,DELTA)
-              ENDDO
-            ELSE
-              DO IJ=NSTART(IRANK),NEND(IRANK)
-                PRQRT(IJ,IG)=0.5_JWRB
-              ENDDO
-            ENDIF
+            DO IJ=NSTART(IRANK),NEND(IRANK)
+              PRQRT(IJ)=0.5_JWRB
+            ENDDO
           ENDIF
-        ENDDO
+        ENDIF
       ENDIF
 
 !     CREATE IFROMIJ, JFROMIJ
 !     !!!! IT IS ONLY DEFINED FOR GRID POINTS ON A GIVEN PE AND THEIR HALO !!!!
 
       IF (ALLOCATED(IFROMIJ)) DEALLOCATE(IFROMIJ)
-      ALLOCATE(IFROMIJ(NINF-1:NSUP,IGL))
+      ALLOCATE(IFROMIJ(NINF-1:NSUP))
       IF (ALLOCATED(JFROMIJ)) DEALLOCATE(JFROMIJ)
-      ALLOCATE(JFROMIJ(NINF-1:NSUP,IGL))
+      ALLOCATE(JFROMIJ(NINF-1:NSUP))
 
-      IFROMIJ(NINF-1,:)=0
-      JFROMIJ(NINF-1,:)=0
+      IFROMIJ(NINF-1)=0
+      JFROMIJ(NINF-1)=0
 
-      IG=1
 
       IF ( NPR.GT.1 ) THEN
 !       LOCAL POINTS
         DO IJ=NSTART(IRANK),NEND(IRANK)
-          IFROMIJ(IJ,IG)=IXLG(IJ,IG)
-          JFROMIJ(IJ,IG)=NGY-KXLT(IJ,IG)+1
+          IFROMIJ(IJ)=IXLG(IJ)
+          JFROMIJ(IJ)=NGY-KXLT(IJ)+1
         ENDDO
 !       LOCAL HALO
         DO IH=1,NLENHALO(IRANK)
           IJ=IJFROMPE(IH,IRANK)
-          IFROMIJ(IJHALO(IH),IG)=IXLG(IJ,IG)
-          JFROMIJ(IJHALO(IH),IG)=NGY-KXLT(IJ,IG)+1
+          IFROMIJ(IJHALO(IH))=IXLG(IJ)
+          JFROMIJ(IJHALO(IH))=NGY-KXLT(IJ)+1
         ENDDO
       ELSE
         DO IJ=NINF,NSUP
-          IFROMIJ(IJ,IG)=IXLG(IJ,IG)
-          JFROMIJ(IJ,IG)=NGY-KXLT(IJ,IG)+1
+          IFROMIJ(IJ)=IXLG(IJ)
+          JFROMIJ(IJ)=NGY-KXLT(IJ)+1
         ENDDO
       ENDIF
 
@@ -1701,20 +1686,16 @@
           DEALLOCATE(KDUM3)
         ENDIF
 
-        ALLOCATE(RDUM2(NINF:NSUP,IGL))
-        DO IG=1,IGL
-          DO IJ=NINF,NSUP
-            RDUM2(IJ,IG)=DEPTH(IJ,IG)
-          ENDDO
+        ALLOCATE(RDUM(NINF:NSUP))
+        DO IJ=NINF,NSUP
+          RDUM(IJ)=DEPTH(IJ)
         ENDDO
         DEALLOCATE(DEPTH)
-        ALLOCATE(DEPTH(NINF:NSUP,IGL))
-        DO IG=1,IGL
-          DO IJ=NINF,NSUP
-            DEPTH(IJ,IG)=RDUM2(IJ,IG)
-          ENDDO
+        ALLOCATE(DEPTH(NINF:NSUP))
+        DO IJ=NINF,NSUP
+          DEPTH(IJ)=RDUM(IJ)
         ENDDO
-        DEALLOCATE(RDUM2)
+        DEALLOCATE(RDUM)
 
       ENDIF
 
@@ -2484,36 +2465,20 @@
 !     8. TEST AND RESET
 !        -------------- 
 
-        IF (IGL.GT.1) THEN
-          WRITE (IU06,*) '******************************************'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '*    FATAL ERROR                         *'
-          WRITE (IU06,*) '*    ===========                         *'
-          WRITE (IU06,*) '* A MULTI BLOCK VERSION RUN WAS REQUESTED*'
-          WRITE (IU06,*) '* THIS OPTION IS NOT IMPLEMENTED FOR     *'
-          WRITE (IU06,*) '* MESSAGE PASSING PROTOCOL               *'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '******************************************'
-          CALL ABORT1
-        ELSE
 ! SPECIFY THE LIMITS OF THE SEGMENT OVER WHICH THE PE HAS DIRECT ACCESS
-          IJS(1)=NSTART(IRANK)
-          IJL(1)=NEND(IRANK)
-          IJLT(1)=NSUP
+        IJS=NSTART(IRANK)
+        IJL=NEND(IRANK)
 
-          IJSLOC=NSTART(IRANK)
-          IJLLOC=NEND(IRANK)
-          IJGLOBAL_OFFSET=0
+        IJSLOC=NSTART(IRANK)
+        IJLLOC=NEND(IRANK)
+        IJGLOBAL_OFFSET=0
 
-          IF (ALLOCATED(NBLKS)) DEALLOCATE(NBLKS)
-          ALLOCATE (NBLKS(NPR))
-          NBLKS(:)=NSTART(:)
-          IF (ALLOCATED(NBLKE)) DEALLOCATE(NBLKE)
-          ALLOCATE (NBLKE(NPR))
-          NBLKE(:)=NEND(:)
-        ENDIF
+        IF (ALLOCATED(NBLKS)) DEALLOCATE(NBLKS)
+        ALLOCATE (NBLKS(NPR))
+        NBLKS(:)=NSTART(:)
+        IF (ALLOCATED(NBLKE)) DEALLOCATE(NBLKE)
+        ALLOCATE (NBLKE(NPR))
+        NBLKE(:)=NEND(:)
 
       KTAG=KTAG+1
 

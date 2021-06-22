@@ -58,7 +58,7 @@
       USE YOWFRED  , ONLY : FR       ,GOM      ,DELTH    ,FRATIO   ,    &
      &            COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM1  ,SINPH    ,COSPH    ,    &
-     &            COSPHM1  ,IGL      ,IJLT
+     &            COSPHM1
       USE YOWMAP   , ONLY : KXLT     ,IRGG
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED
@@ -81,7 +81,6 @@
       REAL(KIND=JWRB),DIMENSION(NINF-1:NSUP,NANG,NFRE_RED),INTENT(IN) :: F1
       REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE),INTENT(INOUT) :: F3
 
-      INTEGER(KIND=JWIM), PARAMETER :: IG=1
       INTEGER(KIND=JWIM) :: K, M, IJ, JH
       INTEGER(KIND=JWIM) :: IC, IJLA, IJPH, KP1, KM1, MP1, MM1
 
@@ -117,9 +116,9 @@
 
       IF (LHOOK) CALL DR_HOOK('PROPAGS',0,ZHOOK_HANDLE)
 
-      ALLOCATE(DELLA0(NINF-1:IJLT(IG)))
-      ALLOCATE(DPH(NINF-1:IJLT(IG)))
-      ALLOCATE(DLA(NINF-1:IJLT(IG)))
+      ALLOCATE(DELLA0(NINF-1:NSUP))
+      ALLOCATE(DPH(NINF-1:NSUP))
+      ALLOCATE(DLA(NINF-1:NSUP))
       ALLOCATE(DTP(MIJS:MIJL))
       ALLOCATE(DTM(MIJS:MIJL))
       ALLOCATE(DTC(MIJS:MIJL))
@@ -129,10 +128,10 @@
 !*    0.0 GROUP VELOCITIES. (if shallow water on)
 !         -----------------
       IF (ISHALLO.NE.1) THEN
-        ALLOCATE(CGOND(NINF-1:IJLT(IG),NFRE_RED))
+        ALLOCATE(CGOND(NINF-1:NSUP,NFRE_RED))
         DO M=1,NFRE_RED
           CGOND(NINF-1,M) = TCGOND(NDEPTH,M)
-          DO IJ=NINF,IJLT(IG)
+          DO IJ=NINF,NSUP
             CGOND(IJ,M) = TCGOND(INDEP(IJ),M)
           ENDDO
         ENDDO
@@ -154,7 +153,7 @@
 
 !*    0.2.1 SPHERICAL GRID.
 !           ---------------
-        ALLOCATE(DCO(NINF-1:IJLT(IG)))
+        ALLOCATE(DCO(NINF-1:NSUP))
         ALLOCATE(DP1(MIJS:MIJL))
         ALLOCATE(DP2(MIJS:MIJL))
 
@@ -162,9 +161,9 @@
 !             -------------------
 
         DELLA0(NINF-1) = 0.0_JWRB
-        DO IJ = NINF,IJLT(IG)
-          DCO(IJ) = COSPHM1(IJ,IG)
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
+        DO IJ = NINF,NSUP
+          DCO(IJ) = COSPHM1(IJ)
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
         ENDDO
 
 !*    0.2.1.2 COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
@@ -204,8 +203,8 @@
 !           ---------------
 
         DELLA0(NINF-1) = 0.0_JWRB
-        DO IJ = NINF,IJLT(IG)
-          DELLA0(IJ) = DELPRO*DELLAM1(IJ,IG)
+        DO IJ = NINF,NSUP
+          DELLA0(IJ) = DELPRO*DELLAM1(IJ)
         ENDDO
 
 !*    0.2.2.1 BRANCH TO 2. IF DEPTH AND CURRENT REFRACTION.
@@ -474,9 +473,9 @@
 
             DLA(NINF-1) = CGS*DELLA0(NINF)
             DPH(NINF-1) = CGC*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + CGS)*DELLA0(IJ)
-              DPH(IJ) = (V(IJ,IG) + CGC)*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + CGS)*DELLA0(IJ)
+              DPH(IJ) = (V(IJ) + CGC)*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = DLA(IJ) + DLA(KLON(IJ,1))
@@ -519,9 +518,9 @@
 
             DLA(NINF-1) = SD*CGOND(NINF-1,M)*DELLA0(NINF)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + SD*CGOND(IJ,M))*DELLA0(IJ)
-              DPH(IJ) = (V(IJ,IG) + CD*CGOND(IJ,M))*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + SD*CGOND(IJ,M))*DELLA0(IJ)
+              DPH(IJ) = (V(IJ) + CD*CGOND(IJ,M))*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = DLA(IJ) + DLA(KLON(IJ,1))
@@ -710,7 +709,7 @@
         SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
-          JH = KXLT(IJ,IG)
+          JH = KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -1040,7 +1039,7 @@
         SP = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM = DELTH0*(SINTH(K)+SINTH(KM1))/R
         DO IJ = MIJS,MIJL
-          JH = KXLT(IJ,IG)
+          JH = KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
           DRGP(IJ) = TANPH*SP
           DRGM(IJ) = TANPH*SM
@@ -1088,9 +1087,9 @@
 
             DLA(NINF-1) = CGS
             DPH(NINF-1) = CGC*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = (U(IJ,IG) + CGS)
-              DPH(IJ) = (V(IJ,IG) + CGC)*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = (U(IJ) + CGS)
+              DPH(IJ) = (V(IJ) + CGC)*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLEA = (DLA(IJ) + DLA(KLON(IJ,2)))*DELLA0(IJ)*DCO(IJ)
@@ -1162,9 +1161,9 @@
 
             DLA(NINF-1) = SD*CGOND(NINF-1,M)
             DPH(NINF-1) = CD*CGOND(NINF-1,M)*DELPH0
-            DO IJ=NINF,IJLT(IG)
-              DLA(IJ) = U(IJ,IG)+SD*CGOND(IJ,M)
-              DPH(IJ) =(V(IJ,IG)+CD*CGOND(IJ,M))*DELPH0
+            DO IJ=NINF,NSUP
+              DLA(IJ) = U(IJ)+SD*CGOND(IJ,M)
+              DPH(IJ) =(V(IJ)+CD*CGOND(IJ,M))*DELPH0
             ENDDO
             DO IJ=MIJS,MIJL
               DLWE = (DLA(IJ) + DLA(KLON(IJ,1)))*DELLA0(IJ)*DCO(IJ)
