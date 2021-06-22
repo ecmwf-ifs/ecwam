@@ -88,7 +88,8 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB) :: DIRSPRD_GC
 
 
-      REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
+!!!      REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
+      REAL(KIND=JWRB) :: Z0MIN
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: COSDIFF 
@@ -151,9 +152,18 @@ IF (LLGCBZ0) THEN
         ENDDO
       ENDIF
 
-      DO IJ=IJS,IJL
-        ALPHAOG(IJ) = ALPHAMIN*GM1
-      ENDDO
+      IF(LLCAPCHNK) THEN
+        DO IJ=IJS,IJL
+          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
+          XMIN(IJ) = 0.15_JWRB*(ALPHA-CHARNOCK_MIN)
+          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
+        ENDDO
+      ELSE
+        DO IJ=IJS,IJL
+          XMIN(IJ)= 0.0_JWRB
+          ALPHAOG(IJ)= ALPHA*GM1
+        ENDDO
+      ENDIF
 
       DO IJ = IJS, IJL
         W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
@@ -165,6 +175,7 @@ IF (LLGCBZ0) THEN
         TAUOLD = USTOLD**2
 
         DO ITER=1,NITER
+          Z0MIN = TAUOLD * ALPHAOG(IJ)
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
@@ -184,6 +195,7 @@ IF (LLGCBZ0) THEN
           TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
         ENDDO
+        Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
         Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
         Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
 
@@ -195,7 +207,8 @@ IF (LLGCBZ0) THEN
 
           DO ITER=1,NITER
             X = MIN(TAUWEFF(IJ)/TAUOLD,0.99_JWRB)
-            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS) 
+            USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
+            Z0MIN = TAUOLD * ALPHAOG(IJ)
 
             CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
@@ -218,6 +231,7 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
+            Z0MIN = TAUOLD * ALPHAOG(IJ)
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
 
