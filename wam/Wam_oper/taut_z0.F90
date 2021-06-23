@@ -110,6 +110,18 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
 
 ! ----------------------------------------------------------------------
 
+!     INLINE FUNCTION.
+!     ----------------
+
+!     Simple empirical fit to model drag coefficient
+      REAL(KIND=JWRB) :: CDM, U10 
+
+      CDM(U10) = MAX(MIN(0.0006_JWRB+0.00008_JWRB*U10, 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(U10-33._JWRB))),0.001_JWRB)
+
+! ----------------------------------------------------------------------
+
+
+
 IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
 
       XLOGXL=LOG(XNLEV)
@@ -146,7 +158,7 @@ IF (LLGCBZ0) THEN
             ZCHAR = MIN(ZCHAR,ALPHAMAX)
             CDFG = ACDLIN + BCDLIN*SQRT(ZCHAR) * UTOP(IJ)
           ELSE
-            CDFG = MAX(MIN(0.0006_JWRB+0.00008_JWRB*UTOP(IJ), 0.001_JWRB+0.0018_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-33._JWRB))),0.001_JWRB)
+            CDFG = CDM(UTOP(IJ))
           ENDIF
           USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
         ENDDO
@@ -195,14 +207,21 @@ IF (LLGCBZ0) THEN
           TAUOLD = USTAR(IJ)**2
           USTOLD = USTAR(IJ)
         ENDDO
-        Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
-        Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-        Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+        ! protection just in case there is no convergence
+        IF(ITER > NITER ) THEN
+          CDFG = CDM(UTOP(IJ))
+          USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
+          Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+          Z0B(IJ) = Z0MIN
+        ELSE
+          Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+          Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
+        ENDIF
 
 !       Refine solution
         X = TAUWEFF(IJ)/TAUOLD
-!!1debile
-       write(*,*) 'debile 1st iter ',iter, Z0MIN, USTAR(IJ), X
 
         IF (X < 0.99_JWRB) THEN
           USTOLD = USTAR(IJ)
@@ -237,9 +256,15 @@ IF (LLGCBZ0) THEN
             Z0MIN = TAUOLD * ALPHAOG(IJ)
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
+          ! protection just in case there is no convergence
+          IF(ITER > NITER ) THEN
+            CDFG = CDM(UTOP(IJ))
+            USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
+            Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
+            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
+            Z0B(IJ) = Z0MIN
+          ENDIF
 
-!!1debile
-       write(*,*) 'debile 2nd iter ',iter, Z0MIN, USTOLD
 
         ENDIF
 
