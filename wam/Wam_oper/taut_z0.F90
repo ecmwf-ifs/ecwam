@@ -201,6 +201,9 @@ IF (LLGCBZ0) THEN
 
 !       Refine solution
         X = TAUWEFF(IJ)/TAUOLD
+!!1debile
+       write(*,*) 'debile 1st iter ',iter, Z0MIN, USTAR(IJ), X
+
         IF (X < 0.99_JWRB) THEN
           USTOLD = USTAR(IJ)
           TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
@@ -234,6 +237,9 @@ IF (LLGCBZ0) THEN
             Z0MIN = TAUOLD * ALPHAOG(IJ)
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
+
+!!1debile
+       write(*,*) 'debile 2nd iter ',iter, Z0MIN, USTOLD
 
         ENDIF
 
