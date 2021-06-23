@@ -72,7 +72,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0, Z0B
 
-      INTEGER(KIND=JWIM), PARAMETER :: NITER=25
+      INTEGER(KIND=JWIM), PARAMETER :: NITER=20
 
       REAL(KIND=JWRB), PARAMETER :: TWOXMP1=3.0_JWRB
 
@@ -167,12 +167,10 @@ IF (LLGCBZ0) THEN
       IF(LLCAPCHNK) THEN
         DO IJ=IJS,IJL
           CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
-          XMIN(IJ) = 0.15_JWRB*(ALPHA-CHARNOCK_MIN)
           ALPHAOG(IJ) = CHARNOCK_MIN*GM1
         ENDDO
       ELSE
         DO IJ=IJS,IJL
-          XMIN(IJ)= 0.0_JWRB
           ALPHAOG(IJ)= ALPHA*GM1
         ENDDO
       ENDIF
@@ -185,9 +183,9 @@ IF (LLGCBZ0) THEN
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
+        Z0MIN = 0.000001_JWRB
 
         DO ITER=1,NITER
-          Z0MIN = TAUOLD * ALPHAOG(IJ)
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTOLD)-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
@@ -215,7 +213,6 @@ IF (LLGCBZ0) THEN
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           Z0B(IJ) = Z0MIN
         ELSE
-          Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
         ENDIF
@@ -231,6 +228,7 @@ IF (LLGCBZ0) THEN
             X = MIN(TAUWEFF(IJ)/TAUOLD,0.99_JWRB)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
             Z0MIN = TAUOLD * ALPHAOG(IJ)
+            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USOLD), Z0MIN)
 
             CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
 
@@ -253,8 +251,6 @@ IF (LLGCBZ0) THEN
             IF (ABS(DEL).LT.PCE_GC*USTAR(IJ)) EXIT 
             USTOLD = USTAR(IJ)
             TAUOLD = MAX(USTOLD**2,TAUWEFF(IJ))
-            Z0MIN = TAUOLD * ALPHAOG(IJ)
-            Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTAR(IJ)), Z0MIN)
           ENDDO
           ! protection just in case there is no convergence
           IF(ITER > NITER ) THEN
