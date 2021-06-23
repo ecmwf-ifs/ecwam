@@ -124,7 +124,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         RN1_RN = 1.0_JWRB/6.0_JWRB
 
         IF(LLGCBZ0) THEN
-          ALPHA   = 0.005_JWRB
+          ALPHA   = 0.0055_JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
           SWELLF5 = 0.3_JWRB
