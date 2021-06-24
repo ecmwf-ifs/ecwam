@@ -56,7 +56,6 @@
 #include "abort1.intfb.h"
 #include "makegrid.intfb.h"
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ, ITT, ICT, ITG, IFLD, IR, IPR, ICOUNT
       INTEGER(KIND=JWIM) :: NFLDTOT, NFLDPPEMAX
       INTEGER(KIND=JWIM), DIMENSION(NPROC) :: ICNT, NFLDPPE
@@ -71,8 +70,6 @@
       LOGICAL, SAVE :: HaveMPI_arrays = .FALSE.
 !----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('OUTGRID',0,ZHOOK_HANDLE)
-
-      IG=1
 
 !     FIND THE NUMBER OF FIELDS EACH PE HAS TO DEAL WITH
       NFLDPPE(:)=0
@@ -201,7 +198,7 @@
             GTEMP=ARR_OUT_RECV(LocalPosICT(ICT),:)
           END IF
 
-          CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),IG,ZMISS)
+          CALL MAKEGRID (GTEMP,GOUT(IFLD,:,:),ZMISS)
           IFLD=IFLD+1
 
         ENDIF ! (IPFGTBL) 

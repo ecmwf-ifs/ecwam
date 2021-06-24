@@ -1,4 +1,4 @@
-      SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB,        &
+      SUBROUTINE FINDB (NDIM, NBOUN, BLATB, BLNGB, IJARB,        &
      &                  NPROC, NSTART,NEND, IRANK)
 
 ! ----------------------------------------------------------------------
@@ -19,12 +19,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *FINDB (NDIM, NBOUN, BLATB, BLNGB, IGARB, IJARB)*
+!       *CALL* *FINDB (NDIM, NBOUN, BLATB, BLNGB, IJARB)*
 !          *NDIM*    - DIMENSION OF ARRAYS.
 !          *NBOUN*   - NUMBER OF POINTS IN ARRAYS.
 !          *BLATB*   - INPUT LATITUDES.
 !          *BLNGB*   - INPUT LONGITUDES.
-!          *IGARB*   - OUTPUT BLOCK NUMBERS.
 !          *IJARB*   - OUTPUT SEA POINT NUMBERS.
 !          *NPROC*     DIMENSION OF NSTART AND NEND
 !          *NSTART*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
@@ -51,7 +50,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGRID  , ONLY : NLONRGG  ,IGL      ,IJS      ,IJL
+      USE YOWGRID  , ONLY : NLONRGG  ,IJS      ,IJL
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,KXLTMIN  ,KXLTMAX   ,   &
      &            IPER     ,AMOWEP   ,                                  &
      &            AMOSOP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
@@ -66,12 +65,11 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: NDIM, NBOUN, NPROC, IRANK
 
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN) :: NSTART,NEND
-      INTEGER(KIND=JWIM), DIMENSION(NDIM), INTENT(INOUT) :: IGARB, IJARB
+      INTEGER(KIND=JWIM), DIMENSION(NDIM), INTENT(INOUT) :: IJARB
 
       REAL(KIND=JWRB), DIMENSION(NDIM),INTENT(IN) :: BLATB, BLNGB
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: IJ
       INTEGER(KIND=JWIM) :: ILATS, ILATN, IO, IOLT, IOLG
 
@@ -106,33 +104,26 @@
 
         IF(IOLG.LT.1     .OR. IOLG.GT.NLONRGG(IOLT).OR.                 &
      &     IOLT.LT.ILATS .OR. IOLT.GT.ILATN             ) THEN
-          IGARB(IO) = 0
           IJARB(IO) = 0
         ELSE
 !*    1.2 SEARCH BLOCK NUMBER AND SEA POINT NUMBER.
 !         -----------------------------------------
           IF(LMESSPASS) THEN
-            IGARB(IO) = 0
             IJARB(IO) = 0
             DO IJ = NSTART(IRANK),NEND(IRANK)
               IF (IXLG(IJ,1).EQ.IOLG .AND. KXLT(IJ,1).EQ.IOLT) THEN
-                IGARB(IO) = 1
                 IJARB(IO) = IJ
                 EXIT
               ENDIF
             ENDDO
           ELSE
-            IGARB(IO) = 0
             IJARB(IO) = 0
-            DO IG=1,IGL
-              DO IJ = IJS(IG),IJL(IG)
-                IF (IXLG(IJ,IG).EQ.IOLG .AND. KXLT(IJ,IG).EQ.IOLT) THEN
-                  IGARB(IO) = IG
+              DO IJ = IJS,IJL
+                IF (IXLG(IJ).EQ.IOLG .AND. KXLT(IJ).EQ.IOLT) THEN
                   IJARB(IO) = IJ
                   EXIT 
                 ENDIF
               ENDDO
-            ENDDO
           ENDIF
         ENDIF
       ENDDO

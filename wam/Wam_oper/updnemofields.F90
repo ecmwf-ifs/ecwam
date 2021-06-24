@@ -61,8 +61,6 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: IG
-
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 ! -------------------------------------------------------------------   
 
@@ -70,15 +68,13 @@
 
       IF (LWNEMOCOU) THEN
 
-        IG=1
-
 #ifdef WITH_NEMO
         CALL NEMOGCMCOUP_WAM_UPDATE( IRANK-1, NPROC, MPL_COMM,          &
-     &       IJL(IG)-IJS(IG)+1,                                         &
-     &       NSWH(IJS(IG):IJL(IG)), NMWP(IJS(IG):IJL(IG)),              &
-     &       NPHIEPS(IJS(IG):IJL(IG)), NTAUOC(IJS(IG):IJL(IG)),         &
-     &       NEMOSTRN(IJS(IG):IJL(IG)),                                 &
-     &       NEMOUSTOKES(IJS(IG):IJL(IG)), NEMOVSTOKES(IJS(IG):IJL(IG)),&
+     &       IJL-IJS+1,                                                 &
+     &       NSWH(IJS:IJL), NMWP(IJS:IJL),                              &
+     &       NPHIEPS(IJS:IJL), NTAUOC(IJS:IJL),                         &
+     &       NEMOSTRN(IJS:IJL),                                         &
+     &       NEMOUSTOKES(IJS:IJL), NEMOVSTOKES(IJS:IJL),                &
      &       CDTPRO, LWNEMOCOUDEBUG )
 #endif
 

@@ -61,7 +61,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO    ,NBLO
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG
       USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
@@ -81,10 +81,9 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FRMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD, THWOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD, THWOLD
       REAL(KIND=JWRB),DIMENSION(IJS:IJL, NANG, NFRE), INTENT(INOUT) :: FL1
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: M, K, IJ, NGOU
 
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
@@ -94,8 +93,6 @@
 !     0. ALLOCATE ARRAYS
 !        ---------------
 
-      IG = 1
-
       ALLOCATE(FP(NIBLO))
       ALLOCATE(ALPHJ(NIBLO))
       ALLOCATE(THES(NIBLO))
@@ -104,7 +101,7 @@
 !        -------------------------------------------------
 
       WRITE (IU06,'(1X,/,1X,''  PARAMETER AT OUTPUT SITES:'')')
-      WRITE (IU06,'(1X,''  NGOU    IG    IJ     U10    UDIR'',          &
+      WRITE (IU06,'(1X,''  NGOU    IJ     U10    UDIR'',          &
      &            ''      FP   ALPHAJONS   GAMMA      SA      SB'')')
 
 ! ----------------------------------------------------------------------
@@ -120,7 +117,7 @@
           DO IJ = IJS, IJL
             FP(IJ) = 0.0_JWRB
             ALPHJ(IJ) = 0.0_JWRB
-            THES(IJ) = THWOLD(IJ,IG)
+            THES(IJ) = THWOLD(IJ)
           ENDDO
         ELSE IF (IOPTI.EQ.0) THEN
           DO IJ = IJS, IJL
@@ -132,8 +129,8 @@
           DO IJ = IJS, IJL
             FP(IJ) = FM
             ALPHJ(IJ) = ALFA
-            IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
-              THES(IJ) = THWOLD(IJ,IG)
+            IF (U10OLD(IJ) .GT. 0.1E-08_JWRB) THEN
+              THES(IJ) = THWOLD(IJ)
             ELSE
               THES(IJ) = 0.0_JWRB
             ENDIF
@@ -144,22 +141,17 @@
 !           --------------------------------------------
 
         IF (IOPTI.NE.0) THEN
-          CALL PEAK (IJS, IJL, IG, FETCH, FRMAX, U10OLD)
-        ENDIF
-        IF (ITEST.GT.1) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. PEAK DONE'
+          CALL PEAK (IJS, IJL, FETCH, FRMAX, U10OLD)
         ENDIF
 
 !*    2.1.3 PRINT PARAMETERS AT OUTPUT POINTS.
 !           ----------------------------------
 
         DO NGOU = 1, NGOUT
-          IF (IG.EQ.IGAR(NGOU)) THEN
             IJ = IJAR(NGOU)
-            WRITE (IU06,'(1X,3I6,F8.2,F8.2,5F8.4)')  NGOU, IG, IJ,      &
-     &       U10OLD(IJ,IG), THWOLD(IJ,IG)*DEG, FP(IJ), ALPHJ(IJ),       &
+            WRITE (IU06,'(1X,2I6,F8.2,F8.2,5F8.4)')  NGOU, IJ,          &
+     &       U10OLD(IJ), THWOLD(IJ)*DEG, FP(IJ), ALPHJ(IJ),             &
      &       GAMMA, SA, SB
-          ENDIF
         ENDDO
 
 !*    2.2 COMPUTE SPECTRA FROM PARAMETERS.
@@ -167,7 +159,7 @@
 
         CALL SPECTRA (IJS, IJL, FL1)
         IF (ITEST.GT.1) THEN
-          IF (IG.LE.ITESTB) WRITE (IU06,*) '    SUB. SPECTRA DONE'
+           WRITE (IU06,*) '    SUB. SPECTRA DONE'
         ENDIF
 
 

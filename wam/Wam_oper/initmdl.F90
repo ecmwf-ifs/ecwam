@@ -260,7 +260,7 @@
      &            KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &            NGX      ,NGY      ,                                  &
-     &            NIBLO    ,NIBLD    ,NBLD     ,NIBLC    ,NBLC
+     &            NIBLO    ,NIBLD    ,NIBLC
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &            RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
       USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
@@ -1082,14 +1082,10 @@
 !          -----------------------------------
       IF (IREFRA.NE.0) THEN
         NIBLD=NIBLO
-        NBLD=1
         NIBLC=NIBLO
-        NBLC=1
       ELSE
         NIBLD=0
-        NBLD=0
         NIBLC=0
-        NBLC=0
       ENDIF
 
 !     INITIALISE CDTCUR

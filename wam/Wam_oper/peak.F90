@@ -1,4 +1,4 @@
-      SUBROUTINE PEAK (IJS, IJL, IG, FETCH, FPMAX, U10OLD)
+      SUBROUTINE PEAK (IJS, IJL, FETCH, FPMAX, U10OLD)
 
 ! ----------------------------------------------------------------------
 
@@ -18,10 +18,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAK (IJL, IJS, IG, FETCH, FPMAX,U10OLD)*
+!       *CALL* *PEAK (IJL, IJS, FETCH, FPMAX,U10OLD)*
 !          *IJS*     INTEGER  FIRST POINT IN BLOCK.
 !          *IJL*     INTEGER  LAST  POINT IN BLOCK.
-!          *IG*      INTEGER  BLOCK NUMBER.
 !          *FETCH*   REAL     FETCH TO BE USED (METRES).
 !          *FPMAX*   REAL     MAXIMUM PEAK FREQUENCY (HERTZ).
 !          *U10OLD*  INTERMEDIATE STORAGE OF MODULUS OF WIND
@@ -56,18 +55,16 @@
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS    ,    &
      &            FP       ,ALPHJ
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NBLO
       USE YOWPCONS , ONLY : G
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
 
       REAL(KIND=JWRB), INTENT(IN) :: FETCH, FPMAX
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(IN) :: U10OLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(IN) :: U10OLD
 
       INTEGER(KIND=JWIM) :: IJ
       REAL(KIND=JWRB) :: GX, U10, GXU, UG
@@ -79,8 +76,8 @@
 
       GX = G * FETCH
       DO IJ = IJS, IJL
-        IF (U10OLD(IJ,IG) .GT. 0.1E-08_JWRB) THEN
-          U10 = U10OLD(IJ,IG)
+        IF (U10OLD(IJ) .GT. 0.1E-08_JWRB) THEN
+          U10 = U10OLD(IJ)
           GXU = GX/(U10*U10)
           UG = G/U10
           FP(IJ) = AJONS * GXU ** DJONS

@@ -71,7 +71,6 @@
       REAL(KIND=JWRB),DIMENSION(MIJS:MIJL), INTENT(OUT) :: DVLAM
 
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: NLAND, IJ, IPP, IPM, IPP2, IPM2, ILP, ILM, KX
       REAL(KIND=JWRB) :: DPTP, DPTM, UP, UM, VP, VM 
       REAL(KIND=JWRB) :: CGMAX
@@ -85,7 +84,6 @@
 !*    1. INITIALISE.
 !        -----------
 
-      IG = 1
       NLAND=NINF-1
       ONEO2DELPHI = 0.5_JWRB/DELPHI
 
@@ -102,25 +100,25 @@
           IPM2 = KLAT(IJ,1,2)
           IF (IPP.NE.NLAND  .AND. IPM.NE.NLAND .AND.                    &
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND      ) THEN
-            DPTP=WLAT(IJ,2)*DEPTH(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*DEPTH(IPP2,IG)
-            DPTM=WLAT(IJ,1)*DEPTH(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*DEPTH(IPM2,IG)
+            DPTP=WLAT(IJ,2)*DEPTH(IPP)+(1.0_JWRB-WLAT(IJ,2))*DEPTH(IPP2)
+            DPTM=WLAT(IJ,1)*DEPTH(IPM)+(1.0_JWRB-WLAT(IJ,1))*DEPTH(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
           ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
-            DPTP=DEPTH(IPP,IG)
-            DPTM=DEPTH(IPM,IG)
+            DPTP=DEPTH(IPP)
+            DPTM=DEPTH(IPM)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
           ELSEIF (IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
-            DPTP=DEPTH(IPP2,IG)
-            DPTM=DEPTH(IPM2,IG)
+            DPTP=DEPTH(IPP2)
+            DPTM=DEPTH(IPM2)
             DDPHI(IJ) = (DPTP-DPTM)*ONEO2DELPHI
           ELSE
             DDPHI(IJ) = 0.0_JWRB
           ENDIF
           ILP = KLON(IJ,2)
           ILM = KLON(IJ,1)
-          KX  = KXLT(IJ,IG)
+          KX  = KXLT(IJ)
           IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DDLAM(IJ)=(DEPTH(ILP,IG)-DEPTH(ILM,IG))/(2._JWRB*DELLAM(KX))
+            DDLAM(IJ)=(DEPTH(ILP)-DEPTH(ILM))/(2._JWRB*DELLAM(KX))
           ELSE
             DDLAM(IJ) = 0.0_JWRB 
           ENDIF
@@ -142,27 +140,27 @@
           IPP = KLAT(IJ,2,1)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(IPP,IG).EQ.0.0_JWRB .AND. V(IPP,IG).EQ.0.0_JWRB) IPP = NLAND
+          IF (U(IPP).EQ.0.0_JWRB .AND. V(IPP).EQ.0.0_JWRB) IPP = NLAND
           IPM = KLAT(IJ,1,1)
-          IF (U(IPM,IG).EQ.0.0_JWRB .AND. V(IPM,IG).EQ.0.0_JWRB) IPM = NLAND
+          IF (U(IPM).EQ.0.0_JWRB .AND. V(IPM).EQ.0.0_JWRB) IPM = NLAND
           IPP2 = KLAT(IJ,2,2)
-          IF (U(IPP2,IG).EQ.0.0_JWRB .AND. V(IPP2,IG).EQ.0.0_JWRB) IPP2 = NLAND
+          IF (U(IPP2).EQ.0.0_JWRB .AND. V(IPP2).EQ.0.0_JWRB) IPP2 = NLAND
           IPM2 = KLAT(IJ,1,2)
-          IF (U(IPM2,IG).EQ.0.0_JWRB .AND. V(IPM2,IG).EQ.0.0_JWRB) IPM2 = NLAND
+          IF (U(IPM2).EQ.0.0_JWRB .AND. V(IPM2).EQ.0.0_JWRB) IPM2 = NLAND
 
           IF (IPP.NE.NLAND .AND. IPM.NE.NLAND .AND.                     &
      &        IPP2.NE.NLAND .AND. IPM2.NE.NLAND) THEN
-            UP = WLAT(IJ,2)*U(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*U(IPP2,IG)
-            VP = WLAT(IJ,2)*V(IPP,IG)+(1.0_JWRB-WLAT(IJ,2))*V(IPP2,IG)
-            UM = WLAT(IJ,1)*U(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*U(IPM2,IG)
-            VM = WLAT(IJ,1)*V(IPM,IG)+(1.0_JWRB-WLAT(IJ,1))*V(IPM2,IG)
+            UP = WLAT(IJ,2)*U(IPP)+(1.0_JWRB-WLAT(IJ,2))*U(IPP2)
+            VP = WLAT(IJ,2)*V(IPP)+(1.0_JWRB-WLAT(IJ,2))*V(IPP2)
+            UM = WLAT(IJ,1)*U(IPM)+(1.0_JWRB-WLAT(IJ,1))*U(IPM2)
+            VM = WLAT(IJ,1)*V(IPM)+(1.0_JWRB-WLAT(IJ,1))*V(IPM2)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
           ELSEIF (IPP.NE.NLAND .AND. IPM.NE.NLAND) THEN
-            UP = U(IPP,IG)
-            VP = V(IPP,IG)
-            UM = U(IPM,IG)
-            VM = V(IPM,IG)
+            UP = U(IPP)
+            VP = V(IPP)
+            UM = U(IPM)
+            VM = V(IPM)
             DUPHI(IJ) = (UP-UM)*ONEO2DELPHI
             DVPHI(IJ) = (VP-VM)*ONEO2DELPHI
           ELSE
@@ -173,13 +171,13 @@
           ILP = KLON(IJ,2)
 !         exact 0 means that the current field was not defined, hence
 !         no gradient should be extrapolated
-          IF (U(ILP,IG).EQ.0.0_JWRB .AND. V(ILP,IG).EQ.0.0_JWRB) ILP=NLAND
+          IF (U(ILP).EQ.0.0_JWRB .AND. V(ILP).EQ.0.0_JWRB) ILP=NLAND
           ILM = KLON(IJ,1)
-          IF (U(ILM,IG).EQ.0.0_JWRB .AND. V(ILM,IG).EQ.0.0_JWRB) ILM=NLAND
-          KX  = KXLT(IJ,IG)
+          IF (U(ILM).EQ.0.0_JWRB .AND. V(ILM).EQ.0.0_JWRB) ILM=NLAND
+          KX  = KXLT(IJ)
           IF (ILP.NE.NLAND .AND. ILM.NE.NLAND) THEN
-            DULAM(IJ) = (U(ILP,IG)-U(ILM,IG))/(2.0_JWRB*DELLAM(KX))
-            DVLAM(IJ) = (V(ILP,IG)-V(ILM,IG))/(2.0_JWRB*DELLAM(KX))
+            DULAM(IJ) = (U(ILP)-U(ILM))/(2.0_JWRB*DELLAM(KX))
+            DVLAM(IJ) = (V(ILP)-V(ILM))/(2.0_JWRB*DELLAM(KX))
           ELSE
             DULAM(IJ) = 0.0_JWRB
             DVLAM(IJ) = 0.0_JWRB
@@ -187,7 +185,7 @@
         ENDDO
 
         DO IJ=MIJS,MIJL
-          KX  = KXLT(IJ,IG)
+          KX  = KXLT(IJ)
           CGMAX = CURRENT_GRADIENT_MAX*COSPH(KX)
           DUPHI(IJ) = SIGN(MIN(ABS(DUPHI(IJ)),CGMAX),DUPHI(IJ))
           DVPHI(IJ) = SIGN(MIN(ABS(DVPHI(IJ)),CGMAX),DVPHI(IJ))

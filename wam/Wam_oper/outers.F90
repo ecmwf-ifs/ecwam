@@ -57,7 +57,6 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL1
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
 
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: NGOU, KCOUNT, IJ, K, M 
       INTEGER(KIND=JWIM) :: IU91, IU92, ITAG
       INTEGER(KIND=JWIM) :: KBUFRLENGTH
@@ -74,8 +73,6 @@
 
       IU91 = 91                                                         
       IU92 = 92                                                         
-
-      IG = 1
 
         CALL ERSFILE (IU91, IU92, .false.)
 
@@ -173,8 +170,8 @@
           XFRE = REAL(NFRE)
           DO NGOU=1,IERS
               IJ = IJERS(NGOU)                                         
-              XLON = AMOWEP + REAL(IXLG(IJ,IG)-1)*ZDELLO(KXLT(IJ,IG))
-              XLAT = AMOSOP + REAL(KXLT(IJ,IG)-1)*XDELLA               
+              XLON = AMOWEP + REAL(IXLG(IJ)-1)*ZDELLO(KXLT(IJ))
+              XLAT = AMOSOP + REAL(KXLT(IJ)-1)*XDELLA               
 
 !*    1.1 WRITE INFORMATION TO FILE IU92.                               
 !         -------------------------------                               

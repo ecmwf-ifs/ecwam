@@ -127,7 +127,7 @@
       USE YOWCOUP  , ONLY : LWNEMOCOU,LWNEMOCOURECV
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWMPP   , ONLY : NINF     ,NSUP
-      USE YOWPARAM , ONLY : NGX      ,NGY      ,NBLO     ,NFRE
+      USE YOWPARAM , ONLY : NGX      ,NGY      ,NFRE
       USE YOWSTAT  , ONLY : CDATEA   ,CDATEE   ,IDELPRO  ,IDELWI   ,    &
      &            IDELWO   ,LANAONLY, IDELT
       USE YOWTEST  , ONLY : IU06     ,ITEST
@@ -159,18 +159,18 @@
       LOGICAL, INTENT(IN) :: LLALLOC_FIELDG_ONLY
       INTEGER(KIND=JWIM),DIMENSION(NGPTOTG), INTENT(INOUT)  :: MASK_IN
       REAL(KIND=JWRB),DIMENSION(NGPTOTG,NFIELDS), INTENT(IN) :: FIELDS
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: U10OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: THWOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: USOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: Z0OLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ROAIRO
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: ZIDLOLD
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP,NBLO), INTENT(INOUT) :: CITHICK
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: U10OLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: THWOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: USOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: Z0OLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ROAIRO
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: ZIDLOLD
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(NINF:NSUP), INTENT(INOUT) :: CITHICK
 
 
       INTEGER(KIND=JWIM) :: IDELWH
-      INTEGER(KIND=JWIM) :: ISTORE, IJ, IG, IIG
+      INTEGER(KIND=JWIM) :: ISTORE, IJ
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
 
@@ -263,11 +263,11 @@
           FLUSH (IU06)
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,                                     &
-     &              IJS(1), IJL(1),                                     &
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
+     &              IJS, IJL,                                           &
+     &              U10OLD(IJS, THWOLD(IJS),                            &
+     &              USOLD(IJS), Z0OLD(IJS),                             &
+     &              ROAIRO(IJS), ZIDLOLD(IJS),                          &
+     &              CICOVER(IJS), CITHICK(IJS),                         &
      &              IREAD, LWCUR)
 
       ELSE
@@ -285,11 +285,11 @@
           FLUSH (IU06)
         ENDIF
         CALL TIMIN (CDTWIS, CDTWIE,                                     &
-     &              IJS(1), IJL(1),                                     &
-     &              U10OLD(IJS(1),1), THWOLD(IJS(1),1),                 &
-     &              USOLD(IJS(1),1), Z0OLD(IJS(1),1),                   &
-     &              ROAIRO(IJS(1),1), ZIDLOLD(IJS(1),1),                &
-     &              CICOVER(IJS(1),1), CITHICK(IJS(1),1),               &
+     &              IJS, IJL,                                           &
+     &              U10OLD(IJS), THWOLD(IJS),                           &
+     &              USOLD(IJS), Z0OLD(IJS),                             &
+     &              ROAIRO(IJS), ZIDLOLD(IJS),                          &
+     &              CICOVER(IJS), CITHICK(IJS),                         &
      &              IREAD, LWCUR)
 
       ENDIF

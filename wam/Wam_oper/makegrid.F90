@@ -1,4 +1,4 @@
-      SUBROUTINE MAKEGRID (BLOCK, GRID, IG, PMISS)
+      SUBROUTINE MAKEGRID (BLOCK, GRID, PMISS)
 
 ! ----------------------------------------------------------------------
 
@@ -17,7 +17,6 @@
 !        *CALL MAKEGRID*
 !           *BLOCK*   REAL   DATA IN BLOCKED FORMAT
 !           *GRID*    REAL   DATA IN GRID FORMAT
-!           *IG*      INTEGER BLOCK NUMBER
 !           *PMISS*   REAL  VALUE GIVEN FOR ALL NON SEA POINTS. 
 
 !     METHOD.
@@ -56,7 +55,6 @@
       IMPLICIT NONE
 #include "unblkrord.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IG
       REAL(KIND=JWRB), DIMENSION(NIBLO_OUT), INTENT(INOUT) :: BLOCK
       REAL(KIND=JWRB), INTENT(IN) :: PMISS
       REAL(KIND=JWRB), INTENT(OUT) :: GRID(NGX,NGY)
@@ -133,8 +131,8 @@
         ENDIF
       ELSE
         DO IJ = 1, NIBLO 
-          IX = IXLG(IJ,IG)
-          IY = NGY-KXLT(IJ,IG)+1
+          IX = IXLG(IJ)
+          IY = NGY-KXLT(IJ)+1
           GRID(IX,IY) = BLOCK(IJ)
         ENDDO
       ENDIF ! LLUNSTR

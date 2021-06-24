@@ -47,7 +47,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
-     &            NGX      ,NGY      ,NBLO     ,NIBLO    ,CLDOMAIN
+     &            NGX      ,NGY      ,NIBLO    ,CLDOMAIN
       USE YOWCPBO  , ONLY : IBOUNC   ,GBOUNC_MAX, GBOUNC ,              &
      &            AMOSOC   ,AMONOC   ,AMOEAC   ,AMOWEC
       USE YOWCINP  , ONLY : NOUT     ,XOUTW    ,XOUTS    ,XOUTE    ,    &
@@ -97,7 +97,7 @@
      &                  AMOSOP, AMONOP, AMOWEP, AMOEAP,                 &
      &                  IFORM, ITEST, ITESTB,                           &
      &                  IBOUNC, IBOUNF, AMOSOC, AMONOC, AMOWEC, AMOEAC, &
-     &                  NBLO, NIBLO, CLDOMAIN,LLOBSTRCT,                &
+     &                  NIBLO, CLDOMAIN,LLOBSTRCT,                      &
      &                  NDEPTH   ,DEPTHA   ,DEPTHD,                     &
      &                  LAQUA, LLUNSTR, LPREPROC
 
@@ -145,7 +145,6 @@
 
 !     THE FOLLOWING DEFAULT VALUES INDICATES THAT THEY ARE DETERMINED
 !     INTERNALLY BY PREPROC EXCEPT IF PROVIDED IN THE NAMELIST
-      NBLO   = -1
       NIBLO  = -1 ! 
       CLDOMAIN= '-'
 

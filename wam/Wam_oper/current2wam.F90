@@ -35,7 +35,7 @@
 
       USE YOWCURR  , ONLY : U        ,V        ,CURRENT_MAX
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
-      USE YOWGRID  , ONLY : IGL      ,NLONRGG
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IRGG     ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            IFROMIJ  ,JFROMIJ
       USE YOWMESPAS, ONLY : LMESSPASS
@@ -71,7 +71,7 @@
       INTEGER(KIND=JWIM) :: KRET, IVAR, KPLENG, KLEN, KLENG, IDM, KDM, MDM
       INTEGER(KIND=JWIM) :: IRET, ISIZE
       INTEGER(KIND=JWIM) :: KK, MM
-      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IG, IJ, IC, IX, JY
+      INTEGER(KIND=JWIM) :: IFORP, IPARAM, KZLEV, IJ, IC, IX, JY
       INTEGER(KIND=JWIM) :: IBUF(2)
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:)
       INTEGER(KIND=JWIM) :: NLONRGG_LOC(NYFF)
@@ -211,39 +211,35 @@
 
 
         IF(IPARAM.EQ.131) THEN
-           DO IG = 1,IGL
              DO IJ =  NINF, NSUP
 !!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
 !!!            HENCE NINF TO NSUP.
-               IX = IFROMIJ(IJ,IG)
-               JY = JFROMIJ(IJ,IG)
-               U(IJ,IG) = FIELD(IX,JY)
+               IX = IFROMIJ(IJ)
+               JY = JFROMIJ(IJ)
+               U(IJ) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(U(IJ,IG)).LE.WLOWEST) U(IJ,IG)=0.0_JWRB
-               IF(U(IJ,IG).LE.ZMISS) U(IJ,IG)=0.0_JWRB
-               U(IJ,IG)=SIGN(MIN(ABS(U(IJ,IG)),CURRENT_MAX),U(IJ,IG))
+               IF(ABS(U(IJ)).LE.WLOWEST) U(IJ)=0.0_JWRB
+               IF(U(IJ).LE.ZMISS) U(IJ)=0.0_JWRB
+               U(IJ)=SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
              ENDDO
-             U(NINF-1,IG)=0.0_JWRB
-           ENDDO
+             U(NINF-1)=0.0_JWRB
         ELSEIF(IPARAM.EQ.132) THEN
-           DO IG = 1,IGL
              DO IJ =  NINF, NSUP
 !!!            VALUES FOR THE HALO ARE ALSO NEEDED !!!
 !!!            HENCE NINF TO NSUP.
-               IX = IFROMIJ(IJ,IG)
-               JY = JFROMIJ(IJ,IG)
-               V(IJ,IG) = FIELD(IX,JY)
+               IX = IFROMIJ(IJ)
+               JY = JFROMIJ(IJ)
+               V(IJ) = FIELD(IX,JY)
 !              SOME WAM MODEL GRID POINTS MAY HAVE A MISSING DATA FROM
 !              OCEAN MODEL. THEY ARE SET TO 0.
 !              0. WILL BE USED TO DETECT THE INABILITY TO COMPUTE THE GRADIANT
-               IF(ABS(V(IJ,IG)).LE.WLOWEST) V(IJ,IG)=0.0_JWRB
-               IF(V(IJ,IG).LE.ZMISS) V(IJ,IG)=0.0_JWRB
-               V(IJ,IG)=SIGN(MIN(ABS(V(IJ,IG)),CURRENT_MAX),V(IJ,IG))
+               IF(ABS(V(IJ)).LE.WLOWEST) V(IJ)=0.0_JWRB
+               IF(V(IJ).LE.ZMISS) V(IJ)=0.0_JWRB
+               V(IJ)=SIGN(MIN(ABS(V(IJ)),CURRENT_MAX),V(IJ))
              ENDDO
-             V(NINF-1,IG)=0.0_JWRB
-           ENDDO
+             V(NINF-1)=0.0_JWRB
         ELSE
           WRITE(IU06,*) ' *****************************************'
           WRITE(IU06,*) ' *                                       *'

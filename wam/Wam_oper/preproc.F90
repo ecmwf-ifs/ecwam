@@ -155,15 +155,15 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NIBLO    ,NBLO     ,NIBLD    ,NBLD     ,    &
-     &            NIBLC    ,NBLC     ,NANG     ,NFRE     ,NFRE_RED
+      USE YOWPARAM , ONLY : NIBLO    ,NIBLD    ,NIBLC    ,              &
+     &            NANG     ,NFRE     ,NFRE_RED
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC
       USE YOWMESPAS, ONLY : LMESSPASS
       USE YOWFPBO  , ONLY : IBOUNF   ,NBOUNF
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
-     &            NLONRGG  ,IGL
+     &            NLONRGG
       USE YOWMAP   , ONLY : NX       ,NY       ,IPER     ,IRGG     ,    &
      &            AMOWEP   ,AMOSOP   ,AMOEAP   ,AMONOP   ,XDELLA   ,    &
      &            XDELLO   ,ZDELLO   ,LAQUA
@@ -195,7 +195,6 @@
 #include "uiprep.intfb.h"
 
       INTEGER(KIND=JWIM) :: IU01, IU02, IU03, IU09, IU10, IU17,IU19,IU20
-      INTEGER(KIND=JWIM) :: IG
       INTEGER(KIND=JWIM) :: K, IX, ICL, IFORM, LNAME,IINPC,LFILE
       INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
 
@@ -315,7 +314,6 @@
 !*       AND GRID INCREMENTS IN RADIANS AND METRES.
 !        ------------------------------------------
 
-      IGL=0
       DELPHI = XDELLA*CIRC/360.0_JWRB
       OLDRAD=OLDPI/180.0_JWRB
       DO K=1,NY
@@ -445,9 +443,7 @@
       END IF ! LLUNSTR
 
       NIBLD=0
-      NBLD=0
       NIBLC=0
-      NBLC=0
 
 !*    5.3 COMPUTE OUTPUT POINT INDICES (MODULE YOWCOUT).
 !         ----------------------------------------------
@@ -495,12 +491,10 @@
 !*    8. GENERATE AND WRITE MODULE UBUF.
 !        -------------------------------
 
-        DO IG=1,IGL
-          CALL MUBUF (IU01, BATHY, IG, IU08, NPROPAGS)
+          CALL MUBUF (IU01, BATHY, IU08, NPROPAGS)
           IF (ITEST.GT.0) THEN
-            WRITE (IU06,*) ' SUB MUBUF DONE FOR BLOCK ',IG
+            WRITE (IU06,*) ' SUB MUBUF DONE '
           ENDIF
-        ENDDO
 !
       END IF ! .NOT. LLUNSTR
 

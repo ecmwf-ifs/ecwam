@@ -1,4 +1,4 @@
-      SUBROUTINE INTPOL (F3, F1, IJS, IJL, IG, IRA)
+      SUBROUTINE INTPOL (F3, F1, IJS, IJL, IRA)
 
 ! ----------------------------------------------------------------------
 
@@ -16,12 +16,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *INTPOL (F3, F1, IJS, IJL, IG, IRA)*
+!       *CALL* *INTPOL (F3, F1, IJS, IJL, IRA)*
 !         *F3*   - SPECTRA (INPUT).
 !         *F1*   - SPECTRA (OUTPUT).
 !         *IJS*  - INDEX OF FIRST GRIDPOINT.
 !         *IJL*  - INDEX OF LAST GRIDPOINT.
-!         *IG*   - BLOCK NUMBER.
 !         *IRA*  - = 1 TRANSFORMATION FROM MOVING TO ABSOLUTE COORD.
 !                  =-1 TRANSFORMATION FROM ABSOLUTE TO MOVING COORD.
 
@@ -59,7 +58,7 @@
       IMPLICIT NONE
 #include "abort1.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IG, IRA
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, IRA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F3
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: F1
 
@@ -151,7 +150,7 @@
 !           ----------------------------------------------
 
           DO IJ = IJS, IJL
-            FNEF(IJ) = FR(M) + IRA*WAVN(IJ)*(COSTH(K)*V(IJ,IG) + SINTH(K)*U(IJ,IG))
+            FNEF(IJ) = FR(M) + IRA*WAVN(IJ)*(COSTH(K)*V(IJ) + SINTH(K)*U(IJ))
             IF (FNEF(IJ).GT.0.0_JWRB) THEN
               KNEW(IJ) = K
             ELSE

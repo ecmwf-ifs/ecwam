@@ -1,4 +1,4 @@
-      SUBROUTINE MUBUF (IU01, BATHY, IG, IU08, NPROPAGS)
+      SUBROUTINE MUBUF (IU01, BATHY, IU08, NPROPAGS)
 ! ----------------------------------------------------------------------
 
 !**** *MUBUF* - ROUTINE TO ARRANGE YOWMON UBUF FOR ONE BLOCK.
@@ -22,10 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *MUBUF (BATHY,IG,IU08)*
+!       *CALL* *MUBUF (BATHY,IU08)*
 !          *IU01*  -  LOGICAL INPUT UNIT OF TOPOGRAPHIC DATA.
 !          *BATHY*     -  BATHYMETRY DATA.
-!          *IG*      - BLOCK NUMBER.
 !          *IU08*    - LOGICAL UNITS FOR OUTPUT OF GRID BLOCKING
 !                      COMMON UBUF (UNFORMATED)
 
@@ -51,7 +50,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWPARAM , ONLY : NGX      ,NGY      ,NIBLO    ,NFRE_RED
-      USE YOWGRID  , ONLY : NLONRGG  ,IJLT
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NY       ,IPER     ,    &
      &            XDELLA   ,ZDELLO   ,IRGG     ,LLOBSTRCT
       USE YOWTEST  , ONLY : IU06
@@ -67,7 +66,7 @@
       INTEGER(KIND=JWIM) :: IU01
       INTEGER(KIND=JWIM) :: NPROPAGS
       INTEGER(KIND=JWIM) :: NFREMAX, IX
-      INTEGER(KIND=JWIM) :: IG, IJ, IJP, I, K, IP, IH, IS, M
+      INTEGER(KIND=JWIM) :: IJ, IJP, I, K, IP, IH, IS, M
       INTEGER(KIND=JWIM) :: IMIN, IPLUS, IMIN2, IPLUS2, IMIN3, IPLUS3
       INTEGER(KIND=JWIM) :: IC, ICP, ICL, ICR
       INTEGER(KIND=JWIM) :: IU08(0:NPROPAGS)
@@ -103,9 +102,9 @@
         ENDDO
       ENDDO
 
-      DO IP = 1,IJLT(IG)
-        I = IXLG(IP,IG)
-        K = KXLT(IP,IG)
+      DO IP = 1,NIBLO
+        I = IXLG(IP)
+        K = KXLT(IP)
         IF (K.GT.1) THEN
           XMIN = REAL(I-1)*ZDELLO(K)/ZDELLO(K-1)
           IMIN = NINT(XMIN) + 1
@@ -113,7 +112,7 @@
 !         CLOSEST GRID POINT
           IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
             DO IH = IP,1,-1
-              IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT 
+              IF (IXLG(IH).EQ.IMIN .AND. KXLT(IH).EQ.K-1) EXIT 
             ENDDO
             KLAT(IP,1,1) = IH
           ENDIF
@@ -136,7 +135,7 @@
 
             IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT 
+                IF (IXLG(IH).EQ.IMIN2 .AND. KXLT(IH).EQ.K-1) EXIT 
               ENDDO
               KLAT(IP,1,2) = IH
             ENDIF
@@ -150,8 +149,8 @@
           XPLUS = REAL(I-1)*ZDELLO(K)/ZDELLO(K+1)
           IPLUS = NINT(XPLUS) + 1
           IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
-            DO IH = IP,IJLT(IG)
-              IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT 
+            DO IH = IP,NIBLO
+              IF (IXLG(IH).EQ.IPLUS .AND. KXLT(IH).EQ.K+1) EXIT 
             ENDDO
             KLAT(IP,2,1) = IH
           ENDIF
@@ -172,10 +171,10 @@
             ENDIF
 
             IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND.  KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS2 .AND.  KXLT(IH).EQ.K+1) EXIT
               ENDDO
-              KLAT(IP,2,2) = MIN(IH,IJLT(IG))
+              KLAT(IP,2,2) = MIN(IH,NIBLO)
             ENDIF
           ELSE
             KLAT(IP,2,2) = KLAT(IP,2,1)
@@ -200,9 +199,9 @@
         ENDDO
       ENDDO
 
-      DO IP = 1,IJLT(IG)
-        I = IXLG(IP,IG)
-        K = KXLT(IP,IG)
+      DO IP = 1,NIBLO
+        I = IXLG(IP)
+        K = KXLT(IP)
         IF (I.GT.1) THEN
           IF (BATHY(I-1,K).GT.-990.0_JWRB) KLON(IP,1) = IP-1
         ELSE
@@ -245,9 +244,9 @@
         ENDDO
       ENDDO
 
-      DO IP = 1,IJLT(IG)
-        I = IXLG(IP,IG)
-        K = KXLT(IP,IG)
+      DO IP = 1,NIBLO
+        I = IXLG(IP)
+        K = KXLT(IP)
         XLON = REAL(I-1)*ZDELLO(K)
 
         IF (K.GT.1) THEN
@@ -264,7 +263,7 @@
           IF (IMIN .GE. 1)  THEN
             IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
              KCOR(IP,3,1) = IH
             END IF
@@ -292,7 +291,7 @@
 
             IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN2 .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
               KCOR(IP,3,2) = IH
             ENDIF
@@ -311,7 +310,7 @@
           IF (IMIN .LE. NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
              KCOR(IP,2,1) = IH
             END IF
@@ -339,7 +338,7 @@
 
             IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN2 .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
               KCOR(IP,2,2) = IH
             ENDIF
@@ -361,8 +360,8 @@
 
           IF (IPLUS .GE. 1)  THEN
             IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,4,1) = IH
             ENDIF
@@ -389,10 +388,10 @@
             ENDIF
  
             IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS2 .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
-              KCOR(IP,4,2) = MIN(IH,IJLT(IG))
+              KCOR(IP,4,2) = MIN(IH,NIBLO)
             ENDIF
           ENDIF
 
@@ -408,8 +407,8 @@
 
           IF (IPLUS .LE. NLONRGG(K+1))  THEN
             IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
               KCOR(IP,1,1) = IH
             ENDIF
@@ -436,10 +435,10 @@
             ENDIF
 
             IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS2 .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
-              KCOR(IP,1,2) = MIN(IH,IJLT(IG))
+              KCOR(IP,1,2) = MIN(IH,NIBLO)
             ENDIF
           ENDIF
 
@@ -468,9 +467,9 @@
         ENDDO
       ENDDO
 
-      DO IP = 1,IJLT(IG)
-        I = IXLG(IP,IG)
-        K = KXLT(IP,IG)
+      DO IP = 1,NIBLO
+        I = IXLG(IP)
+        K = KXLT(IP)
         XLON = REAL(I-1)*ZDELLO(K)
 
         IF (K.GT.1) THEN
@@ -485,7 +484,7 @@
           IF (IMIN .GE. 1)  THEN
             IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
              KRLON(IP,1,1) = IH
             END IF
@@ -510,7 +509,7 @@
 
               IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                  IF (IXLG(IH).EQ.IMIN2 .AND. KXLT(IH).EQ.K-1) EXIT
                 ENDDO
                 KRLON(IP,1,2) = IH
               ENDIF
@@ -530,7 +529,7 @@
           IF (IMIN .LE. NLONRGG(K-1))  THEN
             IF (BATHY(IMIN,K-1).GT.-990.0_JWRB) THEN
               DO IH = IP,1,-1
-                IF (IXLG(IH,IG).EQ.IMIN .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                IF (IXLG(IH).EQ.IMIN .AND. KXLT(IH).EQ.K-1) EXIT
               ENDDO
              KRLAT(IP,1,1) = IH
             END IF
@@ -555,7 +554,7 @@
 
               IF (BATHY(IMIN2,K-1).GT.-990.0_JWRB) THEN
                 DO IH = IP,1,-1
-                  IF (IXLG(IH,IG).EQ.IMIN2 .AND. KXLT(IH,IG).EQ.K-1) EXIT
+                  IF (IXLG(IH).EQ.IMIN2 .AND. KXLT(IH).EQ.K-1) EXIT
                 ENDDO
                 KRLAT(IP,1,2) = IH
               ENDIF
@@ -578,8 +577,8 @@
 
           IF (IPLUS .GE. 1)  THEN
             IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
               KRLAT(IP,2,1) = IH
             ENDIF
@@ -603,10 +602,10 @@
               ENDIF
  
               IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
-                DO IH = IP,IJLT(IG)
-                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
+                DO IH = IP,NIBLO
+                  IF (IXLG(IH).EQ.IPLUS2 .AND. KXLT(IH).EQ.K+1) EXIT
                 ENDDO
-                KRLAT(IP,2,2) = MIN(IH,IJLT(IG))
+                KRLAT(IP,2,2) = MIN(IH,NIBLO)
               ENDIF
             ENDIF
           ELSE
@@ -624,8 +623,8 @@
 
           IF (IPLUS .LE. NLONRGG(K+1))  THEN
             IF (BATHY(IPLUS,K+1).GT.-990.0_JWRB) THEN
-              DO IH = IP,IJLT(IG)
-                IF (IXLG(IH,IG).EQ.IPLUS .AND. KXLT(IH,IG).EQ.K+1) EXIT
+              DO IH = IP,NIBLO
+                IF (IXLG(IH).EQ.IPLUS .AND. KXLT(IH).EQ.K+1) EXIT
               ENDDO
               KRLON(IP,2,1) = IH
             ENDIF
@@ -649,10 +648,10 @@
               ENDIF
 
               IF (BATHY(IPLUS2,K+1).GT.-990.0_JWRB) THEN
-                DO IH = IP,IJLT(IG)
-                  IF (IXLG(IH,IG).EQ.IPLUS2 .AND. KXLT(IH,IG).EQ.K+1) EXIT
+                DO IH = IP,NIBLO
+                  IF (IXLG(IH).EQ.IPLUS2 .AND. KXLT(IH).EQ.K+1) EXIT
                 ENDDO
-                KRLON(IP,2,2) = MIN(IH,IJLT(IG))
+                KRLON(IP,2,2) = MIN(IH,NIBLO)
               ENDIF
             ENDIF
           ELSE
@@ -692,9 +691,9 @@
       ENDDO
 
       IF (IRGG.EQ.1) THEN
-        DO IP = 1,IJLT(IG)
-          I = IXLG(IP,IG)
-          K = KXLT(IP,IG)
+        DO IP = 1,NIBLO
+          I = IXLG(IP)
+          K = KXLT(IP)
           D0 = FLOAT(I-1)*ZDELLO(K)
           D3=D0-0.5_JWRB*ZDELLO(K)
           D5=D0+0.5_JWRB*ZDELLO(K)
@@ -972,7 +971,7 @@
       IF (IRGG.EQ.1) THEN
         LLABORT=.FALSE.
         DO IS=1,2
-          DO IP = 1,IJLT(IG)
+          DO IP = 1,NIBLO
             IF (WLAT(IP,IS).LT.0.0_JWRB .OR.                            &
      &          WLAT(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WLAT < 0 or > 1 !!!! ',IP,IS,WLAT(IP,IS)
@@ -991,7 +990,7 @@
           ENDDO
         ENDDO
         DO IS=1,4
-          DO IP = 1,IJLT(IG)
+          DO IP = 1,NIBLO
             IF (WCOR(IP,IS).LT.0.0_JWRB .OR.                            &
      &          WCOR(IP,IS).GT.1.0_JWRB     ) THEN
               WRITE(IU06,*) ' WCOR < 0 or > 1 !!!! ',IP,IS,WCOR(IP,IS)
@@ -1057,9 +1056,9 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
+            DO IP = 1,NIBLO
+              I = IXLG(IP)
+              K = KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1079,9 +1078,9 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
+            DO IP = 1,NIBLO
+              I = IXLG(IP)
+              K = KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1101,9 +1100,9 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
+            DO IP = 1,NIBLO
+              I = IXLG(IP)
+              K = KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1121,9 +1120,9 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT)(IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
+            DO IP = 1,NIBLO
+              I = IXLG(IP)
+              K = KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF
@@ -1141,9 +1140,9 @@
               FORMAT='('//CX//'I4)'
               READ (IU01,FORMAT) (IDUM(IX,K),IX=1,NLONRGG(K))
             ENDDO
-            DO IP = 1,IJLT(IG)
-              I = IXLG(IP,IG)
-              K = KXLT(IP,IG)
+            DO IP = 1,NIBLO
+              I = IXLG(IP)
+              K = KXLT(IP)
               KDUM(IP)=IDUM(I,K)
             ENDDO
           ENDIF

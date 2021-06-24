@@ -50,7 +50,7 @@
       LOGICAL, INTENT(IN) :: LLALLOC_ONLY, LLINIALL, LLOCAL
 
 
-      INTEGER(KIND=JWIM) :: IG, IJ, IX, JY, JSN
+      INTEGER(KIND=JWIM) :: IJ, IX, JY, JSN
       INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
@@ -59,8 +59,6 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('INIT_FIELDG',0,ZHOOK_HANDLE)
-
-      IG=1
 
       IF(ALLOCATED(FIELDG)) DEALLOCATE(FIELDG)
       ALLOCATE(FIELDG(NXFF,NYFF))
@@ -110,8 +108,8 @@
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,NEND(IRANK))
           DO IJ=KIJS,KIJL
-            IX = IFROMIJ(IJ,IG)
-            JY = JFROMIJ(IJ,IG)
+            IX = IFROMIJ(IJ)
+            JY = JFROMIJ(IJ)
             JSN=NYFF-JY+1
             IF(LLUNSTR) THEN
               FIELDG(IX,JY)%XLON = XP(IJ)
