@@ -72,7 +72,7 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(INOUT) :: USTAR
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: Z0, Z0B
 
-      INTEGER(KIND=JWIM), PARAMETER :: NITER=20
+      INTEGER(KIND=JWIM), PARAMETER :: NITER=17
 
       REAL(KIND=JWRB), PARAMETER :: TWOXMP1=3.0_JWRB
 
@@ -88,7 +88,6 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB) :: DIRSPRD_GC
 
 
-!!!      REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
       REAL(KIND=JWRB) :: Z0MIN
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
@@ -227,6 +226,9 @@ IF (LLGCBZ0) THEN
           DO ITER=1,NITER
             X = MIN(TAUWEFF(IJ)/TAUOLD,0.99_JWRB)
             USTM1 = 1.0_JWRB/MAX(USTOLD,EPSUS)
+            !!!! Limit how small z0 could become
+            !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
+            !!!! It is not ideal !!!
             Z0MIN = TAUOLD * ALPHAOG(IJ)
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTOLD), Z0MIN)
 

@@ -11,7 +11,7 @@ USE YOWALTAS , ONLY : EGRCRV   ,AGRCRV   ,BGRCRV   ,AFCRV    ,BFCRV,    &
      &                ESH      ,ASH      ,BSH      ,ASWKM    ,BSWKM
 USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
-     &                TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,           &
+     &                CHNKMIN_U, TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
@@ -42,11 +42,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_A = 0.75_JWRB
         ANG_GC_B = 0.5_JWRB
         ANG_GC_C = 5.164_JWRB
-        ANG_GC_D = 0.41_JWRB
+        ANG_GC_D = 0.426_JWRB
         ANG_GC_E = 0.1_JWRB
-        ANG_GC_U = 0.0_JWRB
+        ANG_GC_U = 0.426_JWRB
         ANG_GC_N = 1.2_JWRB
-
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
@@ -63,6 +62,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ZALP    = 0.008_JWRB
           ALPHAMIN = 0.0005_JWRB
           ALPHA   = 0.0065_JWRB
+          CHNKMIN_U = 28._JWRB
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.40_JWRB
@@ -78,6 +78,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           ZALP    = 0.008_JWRB
           ALPHAMIN = 0.0001_JWRB
           ALPHA   = 0.0065_JWRB
+          CHNKMIN_U = 33._JWRB
           BETAMAX = 1.20_JWRB
 
           CDIS = -1.33_JWRB
@@ -109,11 +110,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ANG_GC_A = 0.75_JWRB
         ANG_GC_B = 0.5_JWRB
         ANG_GC_C = 5.164_JWRB
-        ANG_GC_D = 0.41_JWRB
+        ANG_GC_D = 0.426_JWRB
         ANG_GC_E = 0.1_JWRB
-        ANG_GC_U = 0.0_JWRB
+        ANG_GC_U = 0.426_JWRB
         ANG_GC_N = 1.2_JWRB
-
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
@@ -125,6 +125,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           ALPHA   = 0.0055_JWRB
+          CHNKMIN_U = 28._JWRB
           TAILFACTOR_PM = 0.0_JWRB
 
           SWELLF5 = 0.3_JWRB
@@ -142,6 +143,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         ELSE 
           ALPHA   = 0.0065_JWRB
+          CHNKMIN_U = 33._JWRB
           TAILFACTOR_PM = 3.0_JWRB
 
           SWELLF5 = 1.2_JWRB
