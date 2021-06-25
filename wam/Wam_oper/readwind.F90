@@ -82,7 +82,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU
-      USE YOWGRID  , ONLY : IGL      ,NLONRGG
+      USE YOWGRID  , ONLY : NLONRGG
       USE YOWICE   , ONLY : LICERUN  ,IPARAMCI ,LICETH
       USE YOWMAP   , ONLY : IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,IXLG     ,    &

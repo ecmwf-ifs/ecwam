@@ -233,9 +233,8 @@
         NSUP = MNP 
         MAXLEN = MAXVAL(RANK(:)%NP) 
 ! NEW MAPPINGS BASED ON THE DECOMPOSITION ...
-        IJS(:) = 1
-        IJL(:) = MNP
-        IJLT(:)= MNP
+        IJS = 1
+        IJL = MNP
 
         IF (ALLOCATED(NSTART)) DEALLOCATE(NSTART)
         ALLOCATE (NSTART(NPR))

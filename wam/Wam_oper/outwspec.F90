@@ -194,8 +194,8 @@ DO IC=1,NN,ISTEP
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,NEND(NPROC))
           DO IJ=KIJS,KIJL
-            IX = IXLG(IJ,1)
-            IY = NGY- KXLT(IJ,1) +1
+            IX = IXLG(IJ)
+            IY = NGY- KXLT(IJ) +1
             FIELD(IX,IY) = ZRECVBUF(IJ)
           ENDDO
         ENDDO

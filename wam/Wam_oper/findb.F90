@@ -111,7 +111,7 @@
           IF(LMESSPASS) THEN
             IJARB(IO) = 0
             DO IJ = NSTART(IRANK),NEND(IRANK)
-              IF (IXLG(IJ,1).EQ.IOLG .AND. KXLT(IJ,1).EQ.IOLT) THEN
+              IF (IXLG(IJ).EQ.IOLG .AND. KXLT(IJ).EQ.IOLT) THEN
                 IJARB(IO) = IJ
                 EXIT
               ENDIF
