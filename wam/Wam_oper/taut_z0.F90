@@ -88,7 +88,8 @@ SUBROUTINE TAUT_Z0(IJS, IJL, IUSFG, FL1, UTOP, UDIR, ROAIRN, TAUW, TAUWDIR, RNFA
       REAL(KIND=JWRB) :: DIRSPRD_GC
 
 
-      REAL(KIND=JWRB) :: Z0MIN
+      REAL(KIND=JWRB), PARAMETER :: Z0MIN = 0.000001_JWRB
+      REAL(KIND=JWRB) :: Z0MINRST
       REAL(KIND=JWRB) :: CHNKMIN
       REAL(KIND=JWRB) :: CHARNOCK_MIN
       REAL(KIND=JWRB) :: COSDIFF 
@@ -163,17 +164,6 @@ IF (LLGCBZ0) THEN
         ENDDO
       ENDIF
 
-      IF(LLCAPCHNK) THEN
-        DO IJ=IJS,IJL
-          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
-          ALPHAOG(IJ) = CHARNOCK_MIN*GM1
-        ENDDO
-      ELSE
-        DO IJ=IJS,IJL
-          ALPHAOG(IJ)= ALPHA*GM1
-        ENDDO
-      ENDIF
-
       DO IJ = IJS, IJL
         W1(IJ) = 0.85_JWRB - 0.05_JWRB*( TANH(10.0_JWRB*(UTOP(IJ)-5.0_JWRB)) + 1.0_JWRB )
       ENDDO
@@ -182,7 +172,6 @@ IF (LLGCBZ0) THEN
         XKUTOP = XKAPPA*UTOP(IJ)
         USTOLD = USTAR(IJ)
         TAUOLD = USTOLD**2
-        Z0MIN = 0.000001_JWRB
 
         DO ITER=1,NITER
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
@@ -208,9 +197,9 @@ IF (LLGCBZ0) THEN
         IF(ITER > NITER ) THEN
           CDFG = CDM(UTOP(IJ))
           USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
-          Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
-          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-          Z0B(IJ) = Z0MIN
+          Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
+          Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
+          Z0B(IJ) = Z0MINRST
         ELSE
           Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
           Z0B(IJ) = Z0(IJ)*SQRT(TAUUNR(IJ)/TAUOLD)
@@ -229,7 +218,6 @@ IF (LLGCBZ0) THEN
             !!!! Limit how small z0 could become
             !!!! This is a bit of a compromise to limit very low Charnock for intermediate high winds (15 -25 m/s)
             !!!! It is not ideal !!!
-            Z0MIN = TAUOLD * ALPHAOG(IJ)
             Z0(IJ) = MAX(XNLEV/EXP(XKUTOP/USTOLD), Z0MIN)
 
             CALL STRESS_GC(ANG_GC(IJ), USTOLD, Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ), TAUUNR(IJ))
@@ -258,9 +246,9 @@ IF (LLGCBZ0) THEN
           IF(ITER > NITER ) THEN
             CDFG = CDM(UTOP(IJ))
             USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
-            Z0MIN = USTAR(IJ)**2 * ALPHAOG(IJ)
-            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MIN)
-            Z0B(IJ) = Z0MIN
+            Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
+            Z0(IJ) = MAX(XNLEV/(EXP(XKUTOP/USTAR(IJ))-1.0_JWRB), Z0MINRST)
+            Z0B(IJ) = Z0MINRST
           ENDIF
 
 
