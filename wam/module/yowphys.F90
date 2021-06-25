@@ -41,7 +41,7 @@
       REAL(KIND=JWRB) :: ALPHA
       REAL(KIND=JWRB) :: ALPHAMIN
 !     MAXIMUM CHARNOCK
-      REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.11_JWRB
+      REAL(KIND=JWRB), PARAMETER :: ALPHAMAX=0.1_JWRB
 
 !     *CHNKMIN_U* WIND THRESHOLD USED TO REDUCED MIN CHARNOCK (see *CHNKMIN*)
       REAL(KIND=JWRB) :: CHNKMIN_U
@@ -60,6 +60,8 @@
       REAL(KIND=JWRB) :: DELTA_THETA_RN
       REAL(KIND=JWRB) :: RN1_RN
 !     if LLCAPCHNK, DELTA_THETA_RN is enhanced by factor 1+DTHRN_A*(1+TANH(U10-DTHRN_U))
+!     This is intended to model the impact of unrepresented effects on the drag for very high winds
+!     (i.e. spray, foam, etc...)
       REAL(KIND=JWRB) :: DTHRN_A
       REAL(KIND=JWRB) :: DTHRN_U
 
