@@ -123,9 +123,9 @@
       INTEGER(KIND=JWIM) :: IGST
 
       REAL(KIND=JWRB) :: CONST1, CONST3, XKAPPAD
+      REAL(KIND=JWRB) :: ZN1, ZN2
       REAL(KIND=JWRB) :: RWINV
       REAL(KIND=JWRB) :: X, ZLOG, ZLOG2X, ZBETA
-      REAL(KIND=JWRB) :: UFAC0, ZN
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
@@ -134,7 +134,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF, SUMFSIN2 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
@@ -143,7 +143,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XVD, UCND, CONST3_UCN2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COSD, UFAC1, UFAC2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: UFAC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: GAM0
 
       LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
 
@@ -313,13 +313,13 @@
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   X=COSD(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
-                  UFAC(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG)
+                  GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
                   XLLWS(IJ,K,M)= 1.0_JWRB
                 ELSE
-                  UFAC(IJ,K,IGST) = 0.0_JWRB
+                  GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
               ELSE
-                UFAC(IJ,K,IGST) = 0.0_JWRB
+                GAM0(IJ,K,IGST) = 0.0_JWRB
               ENDIF
             ENDDO
           ENDDO
@@ -329,37 +329,36 @@
 
         IF(LLNORMAGAM) THEN
 
-!         windsea part of the spectrum
-          SUMF(:) = 0.0_JWRB
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SUMF(IJ) = SUMF(IJ) + XLLWS(IJ,K,M)*F(IJ,K,M)*MAX(COSD(IJ,K),0.0_JWRB)**2
+          DO IGST=1,NGST
+
+            SUMF(:) = 0.0_JWRB
+            SUMFSIN2(:) = 0.0_JWRB
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)*SIN2(IJ,K)
+              ENDDO
             ENDDO
+
+            DO IJ=IJS,IJL
+              ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
+              ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
+              GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
+            ENDDO
+
           ENDDO
 
-!         Computes the growth rate in the wind direction
-          DO IGST=1,NGST
-            DO IJ=IJS,IJL
-              X    = UCN(IJ,IGST)
-              ZLOG = ZCN(IJ,IGST) + XKAPPA*UCND(IJ,IGST)
-              ZLOG = MIN(ZLOG,0.0_JWRB)
-              ZLOG2X = ZLOG*ZLOG*X
-              UFAC0 = ZLOG2X*ZLOG2X*EXP(ZLOG)
-              ZN = XNGAMCONST(IJ,M)*UFAC0*USTPM1(IJ,IGST)*SUMF(IJ)
-              GAMNORMA(IJ,IGST) = (1.0_JWRB + RN1_RN*ZN)/(1.0_JWRB + ZN)
-            ENDDO
-          ENDDO
         ELSE
           GAMNORMA(:,:) = 1.0_JWRB
         ENDIF
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            UFAC1(IJ,K) = WSIN(1)*UFAC(IJ,K,1)*GAMNORMA(IJ,1)
+            UFAC1(IJ,K) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
           ENDDO
           DO IGST=2,NGST
             DO IJ=IJS,IJL
-              UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*UFAC(IJ,K,IGST)*GAMNORMA(IJ,IGST)
+              UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
             ENDDO
           ENDDO
         ENDDO
@@ -385,9 +384,8 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            SPOS(IJ,K,M) = CNSN(IJ)*UFAC1(IJ,K)
-            FL(IJ,K,M) = SPOS(IJ,K,M)+CNSN(IJ)*UFAC2(IJ,K)
-            SPOS(IJ,K,M) = SPOS(IJ,K,M)*F(IJ,K,M)
+            FL(IJ,K,M) = UFAC1(IJ,K,M) + CNSN(IJ)*UFAC2(IJ,K)
+            SPOS(IJ,K,M) = UFAC1(IJ,K,M)*F(IJ,K,M)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO
