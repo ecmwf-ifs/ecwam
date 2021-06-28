@@ -53,7 +53,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         DTHRN_U = 33.0_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
-        RN1_RN = 1.0_JWRB/6.0_JWRB
+        RN1_RN = 0.25_JWRB
 
         TAILFACTOR_PM = 0.0_JWRB   ! i.e. not used
 
@@ -61,16 +61,16 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           !!! not yet fully tested !!!
           ZALP    = 0.008_JWRB
           ALPHAMIN = 0.0005_JWRB
-          ALPHA   = 0.0065_JWRB
+          ALPHA   = 0.0055_JWRB
           CHNKMIN_U = 28._JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.40_JWRB
+            BETAMAX = 1.35_JWRB
           ELSE
             BETAMAX = 1.35_JWRB
           ENDIF
 
-          CDIS = -1.6_JWRB
+          CDIS = -1.3_JWRB
           DELTA_SDIS = 0.6_JWRB
           CDISVIS = -4.0_JWRB
 
@@ -121,8 +121,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         DTHRN_U = 33.0_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
-        RN1_RN = 1.0_JWRB/6.0_JWRB
-!debile
         RN1_RN = 0.25_JWRB
 
         IF(LLGCBZ0) THEN
