@@ -136,6 +136,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF, SUMFSIN2 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: BMAXFAC
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SIN2
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
@@ -190,6 +191,13 @@
             ENDDO
           ENDDO
         ENDIF
+
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            SIN2(IJ,K) = SIN(TH(K)-THWNEW(IJ))**2
+          ENDDO
+        ENDDO
+
       ELSE
         XNGAMCONST(:,:) = 0.0_JWRB
       ENDIF
@@ -384,8 +392,8 @@
 
         DO K=1,NANG
           DO IJ=IJS,IJL
-            FL(IJ,K,M) = UFAC1(IJ,K,M) + CNSN(IJ)*UFAC2(IJ,K)
-            SPOS(IJ,K,M) = UFAC1(IJ,K,M)*F(IJ,K,M)
+            FL(IJ,K,M) = UFAC1(IJ,K) + CNSN(IJ)*UFAC2(IJ,K)
+            SPOS(IJ,K,M) = UFAC1(IJ,K)*F(IJ,K,M)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
           ENDDO
         ENDDO
