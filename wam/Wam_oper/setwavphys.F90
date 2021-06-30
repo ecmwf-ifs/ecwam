@@ -14,8 +14,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CHNKMIN_U, TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
-     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D,           &
-     &                ANG_GC_E, ANG_GC_N, ANG_GC_U,                     &
+     &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
      &                SWELLF5, Z0TUBMAX, Z0RAT
 USE YOWSTAT  , ONLY : IPHYS
 USE YOWTEST  , ONLY : IU06
@@ -41,13 +40,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAUWSHELTER = 0.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.75_JWRB
-        ANG_GC_B = 0.5_JWRB
-        ANG_GC_C = 5.164_JWRB
-        ANG_GC_D = 0.426_JWRB
-        ANG_GC_E = 0.1_JWRB
-        ANG_GC_U = 0.426_JWRB
-        ANG_GC_N = 1.2_JWRB
+        ANG_GC_A = 0.15_JWRB
+        ANG_GC_B = 1.1_JWRB
+        ANG_GC_C = 3.5_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
@@ -106,13 +101,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAPMAX = 0.031_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.75_JWRB
-        ANG_GC_B = 0.5_JWRB
-        ANG_GC_C = 5.164_JWRB
-        ANG_GC_D = 0.426_JWRB
-        ANG_GC_E = 0.1_JWRB
-        ANG_GC_U = 0.426_JWRB
-        ANG_GC_N = 1.2_JWRB
+        ANG_GC_A = 0.15_JWRB
+        ANG_GC_B = 1.1_JWRB
+        ANG_GC_C = 3.5_JWRB
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB

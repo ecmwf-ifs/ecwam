@@ -15,7 +15,7 @@ FUNCTION DIRSPRD_GC (USTAR)
 
 USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_D, ANG_GC_E, ANG_GC_N, ANG_GC_U
+USE YOWPHYS  , ONLY : ANG_GC_A, ANG_GC_B, ANG_GC_C
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
 
@@ -30,26 +30,9 @@ USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK
 
 ! ----------------------------------------------------------------------
 
-!     INLINE FUNCTION.
-!     ----------------
-
-      REAL(KIND=JWRB) :: ANG_GC, X 
-
-      ANG_GC(X)= ANG_GC_A+ANG_GC_B*TANH(ANG_GC_C*(X-ANG_GC_D))
-
-! ----------------------------------------------------------------------
-
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',0,ZHOOK_HANDLE)
 
-!IF(USTAR > ANG_GC_U) THEN
-!  DIRSPRD_GC= ANG_GC(USTAR)
-!ELSE
-!  CC = ANG_GC(ANG_GC_U)/ANG_GC_U**ANG_GC_N
-!  DIRSPRD_GC= MAX(CC*USTAR**ANG_GC_N,ANG_GC_E)
-!ENDIF
-
-!!!1debile
-DIRSPRD_GC = 0.15_JWRB + 1.1_JWRB * TANH(3.5_JWRB * USTAR**2)
+DIRSPRD_GC = ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * USTAR**2)
 
 IF (LHOOK) CALL DR_HOOK('DIRSPRD_GC',1,ZHOOK_HANDLE)
 
