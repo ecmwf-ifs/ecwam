@@ -91,6 +91,18 @@
         ENDIF
         KSTREAM = 1035
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1123) THEN
+!       WAVE EXTENDED ENSEMBLE  FORECAST
+        CSTREAM = 'weef'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1122
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1082) THEN
 !       WAVE SEASONAL FORECAST
         CSTREAM = 'wasf'
@@ -127,6 +139,19 @@
           MARSFCTYPE = 'pf'
         ENDIF
         KSTREAM = 1039
+        LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1124) THEN
+!       WAVE EXTENDED ENSEMBLE HINDCAST
+        CSTREAM = 'weeh'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1120
         LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1024) THEN
 !       WAVE HINDCAST
