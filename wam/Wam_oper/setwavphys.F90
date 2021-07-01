@@ -119,6 +119,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           TAILFACTOR_PM = 0.0_JWRB
 
           SWELLF5 = 0.3_JWRB
+!!1debile
+          SWELLF5 = 1.2_JWRB
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
 
