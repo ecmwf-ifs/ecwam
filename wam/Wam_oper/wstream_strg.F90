@@ -60,6 +60,19 @@
         ENDIF
         KSTREAM = 1040
         LASTREAM=.FALSE.
+      ELSE IF(ISTREAM.EQ.1125) THEN
+!       WAVE ENSEMBLE forecast HINDCAST STATISTICS
+        CSTREAM = 'wehs'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1121
+        LASTREAM=.FALSE.
       ELSE IF(ISTREAM.EQ.1079) THEN
 !       ENSEMBLE FORECAST WAVE HINDCAST
         CSTREAM = 'enwh'
@@ -357,6 +370,18 @@
         ENDIF
         KSTREAM = 1081
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1122) THEN
+!       WAVE EXTENDED ENSEMBLE FORECAST
+        CSTREAM = 'weef'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1123
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1090) THEN
 !       WAVE SEASONAL FORECAST
         CSTREAM = 'seas'
@@ -395,6 +420,19 @@
         ENDIF
         KSTREAM = 1077
         LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1121) THEN
+!       Extended ENSEMBLE forecast HINDCAST STATISTICS
+        CSTREAM = 'eehs'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1125
+        LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1037) THEN
 !       WAVE MULTI ANALYSIS
         CSTREAM = 'maed'
@@ -419,6 +457,19 @@
           MARSFCTYPE = 'pf'
         ENDIF
         KSTREAM = 1084
+        LASTREAM=.TRUE.
+      ELSE IF(ISTREAM.EQ.1120) THEN
+!        WAVE ENSEMBLE FORECAST HINDCAST
+        CSTREAM = 'eefh'
+        MARSFCTYPE = 'fc'
+        IF(NTOTENS.EQ.0) THEN
+          MARSFCTYPE = 'fc'
+        ELSEIF(NENSFNB.EQ.0) THEN
+          MARSFCTYPE = 'cf'
+        ELSE
+          MARSFCTYPE = 'pf'
+        ENDIF
+        KSTREAM = 1124
         LASTREAM=.TRUE.
       ELSE IF(ISTREAM.EQ.1085) THEN
 !       WAVE HINDCAST
