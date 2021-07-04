@@ -101,6 +101,7 @@
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
 #include "halphap.intfb.h"
+#include "alphap_tail.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL), INTENT(IN) :: MIJ
@@ -653,7 +654,7 @@
 
       IR=IR+1
       IF(IPFGTBL(IR).NE.0) THEN
-        BOUT(IJS:IJL,ITOBOUT(IR))=4.0_JWRB
+        CALL ALPHAP_TAIL(IJS, IJL, FL1, BOUT(IJS,ITOBOUT(IR)))
       ENDIF
 
       IR=IR+1
