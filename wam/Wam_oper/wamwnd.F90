@@ -108,8 +108,8 @@
 !        ----------------------------------------
 
       DO IJ = IJS,IJL
-        IX = IFROMIJ(IJ,1)
-        JY = JFROMIJ(IJ,1)
+        IX = IFROMIJ(IJ)
+        JY = JFROMIJ(IJ)
         UU(IJ) = FIELDG(IX,JY)%UWND
         VV(IJ) = FIELDG(IX,JY)%VWND
         ADS(IJ) = FIELDG(IX,JY)%AIRD
@@ -126,8 +126,8 @@
 !       USE NEUTRAL WIND SPEED AND DIRECTION FROM A PREVIOUS WAM RUN.
         IF(LLWSWAVE .AND. LLWDWAVE) THEN
           DO IJ = IJS,IJL
-            IX = IFROMIJ(IJ,1)
-            JY = JFROMIJ(IJ,1)
+            IX = IFROMIJ(IJ)
+            JY = JFROMIJ(IJ)
             U10(IJ) = FIELDG(IX,JY)%WSWAVE
             THW(IJ) = FIELDG(IX,JY)%WDWAVE 
           ENDDO
@@ -152,8 +152,8 @@
             DO IJ = IJS,IJL
               UU(IJ) = U10(IJ)*SIN(THW(IJ))
               VV(IJ) = U10(IJ)*COS(THW(IJ))
-              UU(IJ) = UU(IJ) - RWFAC*U(IJ,1)
-              VV(IJ) = VV(IJ) - RWFAC*V(IJ,1)
+              UU(IJ) = UU(IJ) - RWFAC*U(IJ)
+              VV(IJ) = VV(IJ) - RWFAC*V(IJ)
               WSPEED(IJ) = SQRT(UU(IJ)**2 + VV(IJ)**2)
               IF(WSPEED(IJ).GT.0.0_JWRB) THEN
                 U10(IJ) = WSPEED(IJ)
@@ -170,8 +170,8 @@
         ELSE IF(LLWSWAVE) THEN
 
           DO IJ = IJS,IJL
-            IX = IFROMIJ(IJ,1)
-            JY = JFROMIJ(IJ,1)
+            IX = IFROMIJ(IJ)
+            JY = JFROMIJ(IJ)
 
             IF(FIELDG(IX,JY)%WSWAVE.NE.ZMISS .AND.                      &
      &         FIELDG(IX,JY)%WSWAVE.GT.0.0_JWRB ) THEN
@@ -186,8 +186,8 @@
 
           IF(LCORREL) THEN
             DO IJ = IJS,IJL
-              UU(IJ) = UU(IJ) + RWFAC*U(IJ,1)
-              VV(IJ) = VV(IJ) + RWFAC*V(IJ,1)
+              UU(IJ) = UU(IJ) + RWFAC*U(IJ)
+              VV(IJ) = VV(IJ) + RWFAC*V(IJ)
             ENDDO
           ENDIF
 
@@ -205,8 +205,8 @@
 
           IF(LCORREL) THEN
             DO IJ = IJS,IJL
-              UU(IJ) = UU(IJ) + RWFAC*U(IJ,1)
-              VV(IJ) = VV(IJ) + RWFAC*V(IJ,1)
+              UU(IJ) = UU(IJ) + RWFAC*U(IJ)
+              VV(IJ) = VV(IJ) + RWFAC*V(IJ)
             ENDDO
           ENDIF
 

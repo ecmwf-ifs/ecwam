@@ -232,7 +232,7 @@
      &                      LWNEMOCOU,LWNEMOCOURECV
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,                        &
      &            FFLAG20  ,GFLAG20  ,                                  &
-     &            NGOUT    ,IGAR     ,IJAR     ,NOUTT    ,LOUTINT  ,    &
+     &            NGOUT    ,IJAR     ,NOUTT    ,LOUTINT  ,              &
      &            LWFLUXOUT
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA,U        ,    &
      &            V

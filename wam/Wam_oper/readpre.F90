@@ -48,7 +48,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
@@ -211,7 +211,6 @@
 
         CALL READREC(12)
         IF(NGOUT.GT.0) THEN
-          IF(.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
           IF(.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           CALL READREC(13)
         ENDIF
@@ -326,9 +325,9 @@
      &     R8_OMEGA,                                                    &
      &     R8_THH,                                                      &
      &     R8_DFDTH,                                                    &
+     &     R8_DEPTH,                                                    &
      &     R8_FAK                
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) ::                   &
-     &     R8_DEPTH,                                                    &
      &     R8_TCGOND,                                                   &
      &     R8_TFAK,                                                     &
      &     R8_TSIHKD,                                                   &
@@ -487,7 +486,7 @@
          READ(IU07,IOSTAT=ISTAT) NGOUT
          IF (ISTAT /= 0) GOTO 1000
       CASE(13)
-         READ(IU07,IOSTAT=ISTAT) IGAR, IJAR
+         READ(IU07,IOSTAT=ISTAT) IJAR
          IF (ISTAT /= 0) GOTO 1000
       CASE(14)
          IF (LLR8TOR4) THEN

@@ -725,13 +725,13 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
                 CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
-     &                        KIJS, KIJL, nnn                           &
+     &                        KIJS, KIJL,                               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
      &                        ROAIRO(KIJS), ZIDLOLD(KIJS),              &
      &                        CICOVER(KIJS), CIWA(KIJS:KIJL,:),         &
-     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS)      ,  &
+     &                        U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),  &
      &                        Z0NEW(KIJS), Z0B(KIJS),                   &
      &                        ROAIRN(KIJS), ZIDLNEW(KIJS),              &
      &                        WSEMEAN(KIJS), WSFMEAN(KIJS),             &

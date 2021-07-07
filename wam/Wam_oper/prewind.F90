@@ -264,7 +264,7 @@
         ENDIF
         CALL NOTIM (CDTWIS, CDTWIE,                                     &
      &              IJS, IJL,                                           &
-     &              U10OLD(IJS, THWOLD(IJS),                            &
+     &              U10OLD(IJS), THWOLD(IJS),                           &
      &              USOLD(IJS), Z0OLD(IJS),                             &
      &              ROAIRO(IJS), ZIDLOLD(IJS),                          &
      &              CICOVER(IJS), CITHICK(IJS),                         &

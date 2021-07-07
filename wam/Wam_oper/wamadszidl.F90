@@ -53,6 +53,7 @@
             ENDDO
           ENDDO
 !$OMP     END PARALLEL DO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('WAMADSZIDL',1,ZHOOK_HANDLE)
  

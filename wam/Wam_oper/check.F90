@@ -85,8 +85,7 @@
 
       IERR = 0
       DO IJ=IJS,IJL
-        IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0)                     &
-     &   LST(IXLG(IJ),KXLT(IJ)) = 'S'
+        IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0) LST(IXLG(IJ),KXLT(IJ)) = 'S'
       ENDDO
 
 !*    2.1 INCLUDE OUTPUT POINTS.
@@ -112,8 +111,7 @@
             WRITE (IU06,*) ' ***************************************'
             IF (IERR.GT.20) CALL ABORT1
           ENDIF
-          IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0) 
-     &     LST(IXLG(IJ),KXLT(IJ)) = '+'
+       IF (IXLG(IJ).NE.0.OR.KXLT(IJ).NE.0) LST(IXLG(IJ),KXLT(IJ)) = '+' 
         ENDDO
       ENDIF
 

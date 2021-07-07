@@ -78,7 +78,7 @@
       USE YOWMAP   , ONLY : IXLG     ,KXLT     ,NX       ,NY       ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
      &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTH    ,DEPTHA   ,DEPTHD   ,    &
      &            TCGOND   ,TFAK     ,TSIHKD   ,TFAC_ST
       USE YOWTABL  , ONLY : ITAUMAX  ,JUMAX    ,IUSTAR   ,IALPHA   ,    &
@@ -227,11 +227,11 @@
 
       IF (IFORM.NE.2) THEN
         WRITE (IU07)  NGOUT
-        IF(NGOUT.GT.0) WRITE (IU07)  IGAR, IJAR
+        IF(NGOUT.GT.0) WRITE (IU07)  IJAR
       ENDIF
       IF (IFORM.NE.1) THEN
         WRITE (IU17,998)  NGOUT
-        IF(NGOUT.GT.0) WRITE (IU17,998)  IGAR, IJAR
+        IF(NGOUT.GT.0) WRITE (IU17,998)  IJAR
       ENDIF
 
 ! ----------------------------------------------------------------------

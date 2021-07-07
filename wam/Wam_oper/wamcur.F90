@@ -58,8 +58,8 @@
       IF (LHOOK) CALL DR_HOOK('WAMCUR',0,ZHOOK_HANDLE)
 
       DO IJ = IJS,IJL
-        IX = IFROMIJ(IJ,1)
-        JY = JFROMIJ(IJ,1)
+        IX = IFROMIJ(IJ)
+        JY = JFROMIJ(IJ)
         U(IJ) = FIELDG(IX,JY)%UCUR
         U(IJ) = SIGN(MIN(ABS(U(IJ)),CURRENT_MAX),U(IJ))
         V(IJ) = FIELDG(IX,JY)%VCUR

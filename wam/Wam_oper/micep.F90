@@ -92,8 +92,8 @@
       IF(LWNEMOCOUCIC) THEN
         IF(LWCOU) THEN
           DO IJ=IJS,IJL
-            IX = IFROMIJ(IJ,1)
-            IY = JFROMIJ(IJ,1)
+            IX = IFROMIJ(IJ)
+            IY = JFROMIJ(IJ)
             IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
 !            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
               CICVR(IJ) = NEMOCICOVER(IJ)
@@ -112,15 +112,15 @@
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            IX = IFROMIJ(IJ,1)
-            IY = JFROMIJ(IJ,1)
+            IX = IFROMIJ(IJ)
+            IY = JFROMIJ(IJ)
             CICVR(IJ) = NEMOCICOVER(IJ)
           ENDDO
         ENDIF
       ELSEIF (IPARAM.EQ.31) THEN
         DO IJ=IJS,IJL
-          IX = IFROMIJ(IJ,1)
-          IY = JFROMIJ(IJ,1)
+          IX = IFROMIJ(IJ)
+          IY = JFROMIJ(IJ)
           IF (FIELDG(IX,IY)%CIFR .EQ. ZMISS .OR.                        &
      &        FIELDG(IX,IY)%CIFR .LT. 0.01_JWRB .OR.                    &
      &        FIELDG(IX,IY)%CIFR .GT. 1.01_JWRB ) THEN 
@@ -133,8 +133,8 @@
         ENDDO
       ELSEIF (IPARAM.EQ.139) THEN
         DO IJ=IJS,IJL
-          IX = IFROMIJ(IJ,1)
-          IY = JFROMIJ(IJ,1)
+          IX = IFROMIJ(IJ)
+          IY = JFROMIJ(IJ)
           IF (FIELDG(IX,IY)%CIFR .LT. 271.5_JWRB) THEN
             CICVR(IJ) = 1.0_JWRB
           ELSE
@@ -170,8 +170,8 @@
       ELSEIF (LWNEMOCOUCIT) THEN
         IF(LWCOU) THEN
           DO IJ=IJS,IJL
-            IX = IFROMIJ(IJ,1)
-            IY = JFROMIJ(IJ,1)
+            IX = IFROMIJ(IJ)
+            IY = JFROMIJ(IJ)
             IF (FIELDG(IX,IY)%LKFR .LE. 0.0_JWRB ) THEN
 !             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
               IF (LNEMOICEREST) THEN

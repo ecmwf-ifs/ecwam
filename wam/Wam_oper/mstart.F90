@@ -63,7 +63,7 @@
 
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NIBLO
       USE YOWPCONS , ONLY : DEG
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWJONS  , ONLY : FP       ,ALPHJ    ,THES     ,FM       ,    &
      &            ALFA     ,GAMMA    ,SA       ,SB       ,THETAQ
       USE YOWMPP   , ONLY : NINF     ,NSUP

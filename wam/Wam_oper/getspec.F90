@@ -440,8 +440,8 @@ SUBROUTINE GETSPEC(FL, IJS, IJL, NBLKS, NBLKE, IREAD)
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,NIBLO)
                 DO IJ=KIJS,KIJL
-                  IX = IXLG(IJ,1)
-                  IY = NYFF- KXLT(IJ,1) +1
+                  IX = IXLG(IJ)
+                  IY = NYFF- KXLT(IJ) +1
                   IF (FIELD(IX,IY) .NE. ZMISS) THEN
                       WORK(IJ) = FIELD(IX,IY)
                   ELSE

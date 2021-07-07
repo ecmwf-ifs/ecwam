@@ -40,7 +40,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWCOUT  , ONLY : NGOUT    ,IGAR     ,IJAR
+      USE YOWCOUT  , ONLY : NGOUT    ,IJAR
       USE YOWFRED  , ONLY : FR       ,DFIM     ,GOM      ,C        ,    &
      &            DELTH    ,DELTR    ,TH       ,COSTH    ,SINTH
       USE YOWGRID  , ONLY : DELPHI   ,DELLAM   ,SINPH    ,COSPH    ,    &
@@ -207,7 +207,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         DEALLOCATE(ICOMBUF)
 
         MIC=6+NGY+2*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
-     &      8*NANG+2*NGOUT+2*NFREH*NFREH
+     &      8*NANG+NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &
      &      NIBLO+4*NANG*NANG*NFREHF*NFREHF+3*NFREHF+              &
@@ -251,7 +251,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
           IF (.NOT.ALLOCATED(FRH)) ALLOCATE(FRH(KFRH))
 
           IF (NGOUT.GT.0) THEN
-            IF (.NOT.ALLOCATED(IGAR)) ALLOCATE(IGAR(NGOUT))
             IF (.NOT.ALLOCATED(IJAR)) ALLOCATE(IJAR(NGOUT))
           ENDIF
 
@@ -463,10 +462,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             ZCOMBUF(KCOUNT)=FRH(IC)
           ENDDO
 
-          DO NGOU=1,NGOUT
-            IKCOUNT=IKCOUNT+1
-            ICOMBUF(IKCOUNT)=IGAR(NGOU)
-          ENDDO
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
             ICOMBUF(IKCOUNT)=IJAR(NGOU)
@@ -821,10 +816,6 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
             FRH(IC)=ZCOMBUF(KCOUNT)
           ENDDO
 
-          DO NGOU=1,NGOUT
-            IKCOUNT=IKCOUNT+1
-            IGAR(NGOU)=ICOMBUF(IKCOUNT)
-          ENDDO
           DO NGOU=1,NGOUT
             IKCOUNT=IKCOUNT+1
             IJAR(NGOU)=ICOMBUF(IKCOUNT)

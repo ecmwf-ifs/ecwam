@@ -273,8 +273,8 @@
         IFROMIJ(NINF-1)=0
         JFROMIJ(NINF-1)=0
         DO IJ = 1,NSUP
-          IFROMIJ(IJ,:)=IJ
-          JFROMIJ(IJ,:)=1
+          IFROMIJ(IJ)=IJ
+          JFROMIJ(IJ)=1
         ENDDO
 
       ELSE
@@ -2456,8 +2456,8 @@
         KXLTMIN(IP)=NGY
         KXLTMAX(IP)=1
         DO IJ=NSTART(IP),NEND(IP)
-           KXLTMIN(IP)=MIN(KXLTMIN(IP),KXLT(IJ,1))
-           KXLTMAX(IP)=MAX(KXLTMAX(IP),KXLT(IJ,1))
+           KXLTMIN(IP)=MIN(KXLTMIN(IP),KXLT(IJ))
+           KXLTMAX(IP)=MAX(KXLTMAX(IP),KXLT(IJ))
         ENDDO
       ENDDO
 

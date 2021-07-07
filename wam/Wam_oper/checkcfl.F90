@@ -147,18 +147,18 @@
           WRITE(IU06,*) ' * FOR POSITIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTP = ',CFLTP(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ,1)
+          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
               IF(ICP.NE.NINF-1)                                         &
-     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
+     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
             IF(ICP.NE.NINF-1)                                           &
-     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP,1)
+     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'
@@ -173,18 +173,18 @@
           WRITE(IU06,*) ' * FOR NEGATIVE DIRECTIONS      *'
           WRITE(IU06,*) ' * CFLTM = ',CFLTM(IJ)
           WRITE(IU06,*) ' * REDUCE IDELPRO ACCORDINGLY   *'
-          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ,1)
+          WRITE(IU06,*) ' * IJ = ',IJ, INDEP(IJ),DEPTH(IJ)
           DO ICL=1,2
             DO IC=1,2
               ICP=KLAT(IJ,IC,ICL)
               IF(ICP.NE.NINF-1)                                         &
-     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP,1)
+     &        WRITE(IU06,*)' * KLAT_',IC,ICL, INDEP(ICP),DEPTH(ICP)
             ENDDO
           ENDDO
           DO IC=1,2
             ICP=KLON(IJ,IC)
             IF(ICP.NE.NINF-1)                                           &
-     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP,1)
+     &      WRITE(IU06,*)' * KLON_',IC, INDEP(ICP),DEPTH(ICP)
           ENDDO
           WRITE(IU06,*) ' *                              *'
           WRITE(IU06,*) ' ********************************'
