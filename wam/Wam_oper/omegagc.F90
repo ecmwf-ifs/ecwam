@@ -39,8 +39,9 @@
 
       IF (LHOOK) CALL DR_HOOK('OMEGAGC',0,ZHOOK_HANDLE)
 
-!!!      Y = 1.0_JWRB/(1.48_JWRB+2.05_JWRB*UST)
-      Y = (1.0_JWRB + UST**2)/(1.0_JWRB+10.0_JWRB*UST**2)
+      Y = 1.0_JWRB/(1.48_JWRB+2.05_JWRB*UST)
+!!!      Y = (1.0_JWRB + UST**2)/(1.0_JWRB+10.0_JWRB*UST**2)
+
       XKS = Y*SQRT(G/SURFT)
       NS = MIN(INT(LOG(XKS/XK_GC(1))/LOG(KRATIO_GC))+1,NWAV_GC-1)
       XKS = XK_GC(NS)

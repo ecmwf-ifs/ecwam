@@ -1,4 +1,4 @@
-      SUBROUTINE PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF)
+      SUBROUTINE PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF, F1D)
 
 ! ----------------------------------------------------------------------
 
@@ -18,12 +18,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF)*
+!       *CALL* *PEAKFRI (F, IJS, IJL, IPEAKF, EPEAKF, F1D)*
 !          *F*     - SPECTRUM.
 !          *IJS*   - INDEX OF FIRST GRIDPOINT
 !          *IJL*   - INDEX OF LAST GRIDPOINT
 !          *IPEAKF - INDEX OF PEAK FREQUENCY 
 !          *EPEAKF* - 1-D SPECTRUM AT PEAK FREQUENCY
+!          *F1D*   - 1D FREQUENCY SPECTRUM
 
 !     METHOD.
 !     -------
@@ -56,10 +57,10 @@
       INTEGER(KIND=JWIM), INTENT(OUT) :: IPEAKF(IJS:IJL) 
       REAL(KIND=JWRB), INTENT(IN) :: F(IJS:IJL,NANG,NFRE)
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: EPEAKF
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE), INTENT(OUT) :: F1D
 
       INTEGER(KIND=JWIM) :: IJ, K, M
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: TEMP
 
 ! ----------------------------------------------------------------------
 
@@ -76,17 +77,17 @@
 !*    2. LOOP OVER FREQUENCIES
 !        ---------------------
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
 
-!*    2.1 COMPUTE 1-D SPECTRUM (WITHOUT DELTA THETA)
-!        -------------------------------------------
+!*    2.1 COMPUTE 1-D SPECTRUM
+!        ---------------------
 
         DO IJ = IJS,IJL
-          TEMP(IJ) = 0.0_JWRB
+          F1D(IJ,M) = 0.0_JWRB
         ENDDO
         DO K = 1,NANG
           DO IJ = IJS,IJL
-            TEMP(IJ) = TEMP(IJ) + F(IJ,K,M)
+            F1D(IJ,M) = F1D(IJ,M) + F(IJ,K,M)*DELTH
           ENDDO
         ENDDO
 
@@ -94,18 +95,12 @@
 !         ---------------------
 
         DO IJ = IJS,IJL
-          IF (EPEAKF(IJ).LT.TEMP(IJ)) THEN
-            EPEAKF(IJ) = TEMP(IJ)
+          IF (EPEAKF(IJ).LT.F1D(IJ,M)) THEN
+            EPEAKF(IJ) = F1D(IJ,M)
             IPEAKF(IJ) = M 
           ENDIF
         ENDDO
 
-      ENDDO
-
-!     RESCALE EPEAKF TO 1-D SPECTRUM OF WAVE ENERGY
-
-      DO IJ = IJS,IJL
-        EPEAKF(IJ) = EPEAKF(IJ)*DELTH 
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('PEAKFRI',1,ZHOOK_HANDLE)

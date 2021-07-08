@@ -34,7 +34,7 @@
 
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DFIMFR  ,DFIMOFR ,      &
      &               DFIMFR2  ,DELTH ,TH       ,SINTH    ,COSTH  ,      &
-     &               WETAIL   ,WP1TAIL         ,WP2TAIL
+     &               WETAIL   ,WP1TAIL         ,WP2TAIL  ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
  
@@ -45,7 +45,7 @@
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F1
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(OUT) :: XNU, SIG_TH
 
-      INTEGER(KIND=JWIM), PARAMETER :: NSH = 5 
+      INTEGER(KIND=JWIM) :: NSH
       INTEGER(KIND=JWIM) :: IJ, M, K
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL)::MMAX, MMSTART, MMSTOP
       REAL(KIND=JWRB), PARAMETER :: CONST_SIG = 1.0_JWRB
@@ -64,6 +64,8 @@
 !     ---------------------------------------------------
 
       ZEPSILON=10._JWRB*EPSILON(ZEPSILON)
+
+      NSH = 1 + INT(LOG(1.5_JWRB)/LOG(FRATIO)) 
 
       DO IJ=IJS,IJL
         SUM0(IJ)= ZEPSILON

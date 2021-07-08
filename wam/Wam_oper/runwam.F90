@@ -122,12 +122,11 @@
       INTEGER(KIND=JWIM), PARAMETER :: NFIELDS=7
 
       INTEGER(KIND=JWIM) :: NATMFLX
-      INTEGER(KIND=JWIM) :: NLON, NLAT
+      INTEGER(KIND=JWIM) :: NGAUSSW, NLON, NLAT
       INTEGER(KIND=JWIM) :: IGRIB_HANDLE_DUM
       INTEGER(KIND=JWIM) :: NADV
       INTEGER(KIND=JWIM) :: KSTOP, KSTPW
       INTEGER(KIND=JWIM) :: IDUM
-      INTEGER(KIND=JWIM) :: KQGAUSS
       INTEGER(KIND=JWIM) :: NPR
       INTEGER(KIND=JWIM) :: MAXLEN, IU06
       INTEGER(KIND=JWIM) :: KERROR
@@ -212,7 +211,7 @@
       RNU_ATM=1.5E-5
       RNUM_ATM=0.11_JWRB*RNU_ATM
 
-      CALL WVWAMINIT (LWCOU,IU06,LLRNL,NLON,NLAT,RSOUTW,RNORTW)
+      CALL WVWAMINIT (LWCOU,IU06,LLRNL,NGAUSSW,NLON,NLAT,RSOUTW,RNORTW)
 
       CALL WVWAMINIT1 (LWCOU,LDWCOU2W,LWFLUX,LWCUR,LFDBIFS)
 
@@ -327,7 +326,7 @@
      &             LWCUR, LWSTOKES,                                     &
      &             NWVFIELDS, WVFLDG,                                   &
      &             NLONW, NLATW, LLSTOP, LLWRRE,                        &
-     &             LLRESTARTED, ZDELATM, KQGAUSS,                       &
+     &             LLRESTARTED, ZDELATM,                                &
      &             LDWCOUNORMS, LLNORMWAMOUT_GLOBAL,                    &
      &             MASK_IN, MASK_OUT,                                   &
      &             FRSTIME, NADV, PRPLRADI, PRPLRG,                     &

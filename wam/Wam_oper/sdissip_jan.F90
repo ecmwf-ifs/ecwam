@@ -55,7 +55,7 @@
       USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
-      USE YOWPHYS  , ONLY : RNU
+      USE YOWPHYS  , ONLY : CDIS     ,DELTA_SDIS, RNU    ,CDISVIS
       USE YOWSHAL  , ONLY : DEPTH    ,CINV     ,TFAK     ,INDEP
       USE YOWSTAT  , ONLY : ISHALLO
       USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
@@ -73,15 +73,10 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTAM1
-      REAL(KIND=JWRB) :: CDISVIS
+      REAL(KIND=JWRB) :: SCDFM, CONSD, CONSS, DELTA_SDISM1, CVIS
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: CM, TEMP1, SDS, X
       REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: XK2
-
-
-      REAL(KIND=JWRB), PARAMETER :: CDIS = 1.35_JWRB
-      REAL(KIND=JWRB), PARAMETER :: DELTA = 0.5_JWRB
 
 ! ----------------------------------------------------------------------
 
@@ -91,9 +86,7 @@
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
 
-      DELTAM1=1.0_JWRB-DELTA
-
-      CDISVIS = -4.0_JWRB * RNU
+      DELTA_SDISM1=1.0_JWRB-DELTA_SDIS
 
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. SDISSIP_JAN: START DO-LOOP (ISHALLO=0)'
@@ -102,13 +95,13 @@
 
       IF (ISHALLO.EQ.1) THEN
 !       DEEP
-        CONSD = -CDIS*ZPI**9/G**4
+        CONSD = CDIS*ZPI**9/G**4
         DO IJ=IJS,IJL
           SDS(IJ)=CONSD*F1MEAN(IJ)*EMEAN(IJ)**2*F1MEAN(IJ)**8
         ENDDO
       ELSE
 !       SHALLOW
-        CONSS = -CDIS*ZPI
+        CONSS = CDIS*ZPI
        DO IJ=IJS,IJL
           SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
         ENDDO
@@ -129,8 +122,9 @@
           ENDDO
         ENDIF
 
+        CVIS=RNU*CDISVIS
         DO IJ=IJS,IJL
-          TEMP1(IJ) = SDS(IJ)*X(IJ)*(DELTAM1 + DELTA*X(IJ)) + CDISVIS*XK2(IJ)
+          TEMP1(IJ) = SDS(IJ)*X(IJ)*(DELTA_SDISM1 + DELTA_SDIS*X(IJ)) + CVIS*XK2(IJ)
         ENDDO
 
         DO K=1,NANG

@@ -5,7 +5,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
      &              LWCUR, LWSTOKES,                              &
      &              NWVFIELDS, WVFLDG,                            &
      &              NLONW, NLATW, LDSTOP, LDWRRE,                 &
-     &              LDRESTARTED, ZDELATM, KQGAUSS,                &
+     &              LDRESTARTED, ZDELATM,                         &
      &              LDWCOUNORMS, LDNORMWAMOUT_GLOBAL,             &
      &              MASK_IN, MASK_OUT,                            &
      &              FRSTIME, NADV, PRPLRADI, PRPLRG,              &
@@ -113,7 +113,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       USE YOWFRED  , ONLY : FR
       USE YOWGRID  , ONLY : IJS      ,IJL
       USE YOWICE   , ONLY : CICOVER  ,CITHICK  ,FLMIN
-      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS
+      USE YOWMAP   , ONLY : ZDELLO   ,IQGAUSS,   AMONOP
       USE YOWMEAN  , ONLY : WSEMEAN  ,WSFMEAN  ,TAUOCXD  ,TAUOCYD ,     &
      &            PHIOCD   ,USTOKES  ,VSTOKES  ,STRNMS
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP
@@ -186,7 +186,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 !     NUMBER OF FIELDS RETURNED TO ATMOSPHERIC MODEL
       INTEGER(KIND=JWIM), INTENT(IN) :: NWVFIELDS
 !     FIELDS RETURNED TO ATMOSPHERIC MODEL
-      REAL(KIND=JWRB), INTENT(OUT) :: WVFLDG(NLONW,NLATW,NWVFIELDS)
+      REAL(KIND=JWRB), INTENT(INOUT) :: WVFLDG(:,:,:)
 !     FIRST DIMENSION OF WVFLDG
       INTEGER(KIND=JWIM), INTENT(IN) :: NLONW
 !     SECOND DIMENSION OF WVFLDG
@@ -199,8 +199,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       LOGICAL, INTENT(OUT) :: LDRESTARTED
 !     WAVE MODEL GRID SPACING FOR EACH LATITUDE
       REAL(KIND=JWRB), INTENT(OUT) :: ZDELATM(NLATW)
-!     WAVE MODEL GRID IS GAUSSIAN
-      INTEGER(KIND=JWIM), INTENT(OUT) :: KQGAUSS
 !     TELL ATMOS MODEL THE WAM REQUIREMENT FOR GLOBAL NORMS
       LOGICAL, INTENT(INOUT) :: LDWCOUNORMS
 !     TELL WAM TO PROCUCE REPRODUCIBLE GLOBAL NORMS
@@ -298,6 +296,24 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
       ICODE_CPL=NATMFLX
 
       IF(LWCOU) THEN
+        IF ( IQGAUSS /= 1 ) THEN
+          IF ( AMONOP < 90._JWRB ) THEN
+              WRITE (IU06,*) ' *********************************'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * PROBLEM IN WAVEMDL..........  *'
+              WRITE (IU06,*) ' *   *'
+              WRITE (IU06,*) ' * AMONOP SHOULD NOT BE < 90 IF  *'
+              WRITE (IU06,*) ' * COUPLED AND ON LAT LON GRID   *'
+              WRITE (IU06,*) ' * ============================= *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' * AMONOP=', AMONOP
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *                               *'
+              WRITE (IU06,*) ' *********************************'
+              CALL FLUSH(IU06)
+              CALL ABORT1
+          ENDIF
+        ENDIF
 
         NGRIB_HANDLE_IFS=IGRIB_HANDLE
 
@@ -354,6 +370,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
           WRITE (IU06,*) ' FRSTIME', FRSTIME
         ENDIF
         CALL FLUSH(IU06)
+
 
         LMASK_OUT_NOT_SET=.TRUE.
         LMASK_TASK_STR=.TRUE.
@@ -442,8 +459,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 #endif
 
         LLCHKCFL=.FALSE.
-
-        KQGAUSS=IQGAUSS
 
         FRSTIME = .FALSE.                                              
 
@@ -546,8 +561,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW,                 &
 
         ENDIF
 
-!       KEEP ATMOSPHERIC MODEL INFORMED ABOUT OUR GRID
-        KQGAUSS=IQGAUSS
 
 !*      REFORMAT FORCING FIELDS FROM INPUT GRID TO BLOCKED.                     
 !       ---------------------------------------------------

@@ -159,7 +159,7 @@
       INTEGER(KIND=JWIM) :: NLENHALO_MAX
       INTEGER(KIND=JWIM) :: ICOUNTS(NPR)
       INTEGER(KIND=JWIM) :: NPLEN(NPR)
-      INTEGER(KIND=JWIM) :: NLON_sekf, NLAT_sekf
+      INTEGER(KIND=JWIM) :: NGAUSSW_sekf, NLON_sekf, NLAT_sekf
       INTEGER(KIND=JWIM) :: MPLENGTH, KCOUNT, ICL, ICR, ICOUNT, IPROC
       INTEGER(KIND=JWIM) :: NXDECOMP, NYDECOMP, NYCUT
       INTEGER(KIND=JWIM) :: ISTAGGER, NIJ, NTOT, NAREA
@@ -220,7 +220,7 @@
         LL_sekf = .True.
         LLRNL=.TRUE.
         CALL WVWAMINIT(LL_sekf,IU06,LLRNL,                              &
-     &                 NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
+     &                 NGAUSSW_sekf, NLON_sekf,NLAT_sekf,RS_sekf,RN_sekf)
       ENDIF
 
       WRITE(IU06,*) ' PREPROC GRID INFORMATION AVAILABLE'

@@ -42,6 +42,7 @@
       INTEGER(KIND=JWIM) :: I
 
       REAL(KIND=JWRB) :: TAUWCG_MIN
+      REAL(KIND=JWRB) :: XLAMBDA
       REAL(KIND=JWRB) :: XKS, OMS, ZABHRC
       REAL(KIND=JWRB) :: X, XLOG, ZLOG, ZLOG2X
       REAL(KIND=JWRB) :: CONST, ZN 
@@ -64,6 +65,8 @@
 
       TAUWCG_MIN = (USTAR*(Z0MIN/Z0))**2
 
+      XLAMBDA = 1.0_JWRB + 0.25_JWRB*TANH(4.0_JWRB*USTAR**4)
+
       ZABHRC = ANG_GC * BETAMAXOXKAPPA2 * HALP * C2OSQRTVG_GC(NS)
       IF(LLNORMAGAM) THEN
         CONST = RNFAC * BMAXOKAP * HALP * C2OSQRTVG_GC(NS) /MAX(USTAR,EPSUS)
@@ -75,7 +78,7 @@
 !       GROWTHRATE BY WIND WITHOUT the multiplicative factor representing the ratio of air density to water density (eps)
 !       and BETAMAXOXKAPPA2
         X       = USTAR*CM_GC(I)
-        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP) 
+        XLOG    = LOG(XK_GC(I)*Z0) + XKAPPA/(X + ZALP) - LOG(XLAMBDA) 
         ZLOG    = MIN(XLOG,0.0_JWRB)
         ZLOG2X  = ZLOG*ZLOG*X
         GAM_W(I)= ZLOG2X*EXP(ZLOG)*ZLOG2X*OM3GMKM_GC(I)

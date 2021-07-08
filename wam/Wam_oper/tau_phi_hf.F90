@@ -61,7 +61,7 @@
       USE YOWFRED  , ONLY : ZPIFR  , FR5,   TH    ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
-      USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST, RN1_RN
+      USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST
       USE YOMHOOK  , ONLY : LHOOK  , DR_HOOK
       USE YOWTEST  , ONLY : IU06
 ! ----------------------------------------------------------------------
