@@ -206,7 +206,7 @@ SUBROUTINE MPBCASTGRID(IU06, ISEND, ITAG)
         ENDIF
         DEALLOCATE(ICOMBUF)
 
-        MIC=6+NGY+2*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
+        MIC=7+NGY+2*NIBLO+4*(MLSTHG-MFRSTLW+1)+             &
      &      8*NANG+NGOUT+2*NFREH*NFREH
         MZC=17+(4+4*NDEPTH)*NFRE+5*(MLSTHG-MFRSTLW+1)+3*NANG+4*NGY+     &
      &      KFRH+                                                       &
