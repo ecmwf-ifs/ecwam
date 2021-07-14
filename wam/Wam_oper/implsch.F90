@@ -207,7 +207,8 @@
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE) :: SSOURCE 
 
 
-      REAL(KIND=JWRB), POINTER, DIMENSION(:,:,:) :: FL1P
+!!!      REAL(KIND=JWRB), POINTER, DIMENSION(:,:,:) :: FL1P
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE) :: FL1P
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -216,7 +217,8 @@
 
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-ASSOCIATE(FL1P => FL1(KIJS:KIJL,:,:) )
+!!ASSOCIATE(FL1P => FL1(KIJS:KIJL,:,:) )
+FL1P(:,:,:)= FL1(KIJS:KIJL,:,:) )
 
 !*    1. INITIALISATION.
 !        ---------------
@@ -472,7 +474,7 @@ ASSOCIATE(FL1P => FL1(KIJS:KIJL,:,:) )
       ENDDO
 
 ! ----------------------------------------------------------------------
-END ASSOCIATE
+!!END ASSOCIATE
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
       END SUBROUTINE IMPLSCH
