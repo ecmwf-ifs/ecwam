@@ -452,13 +452,6 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       ELSE
         DO_UPDATE_WIND_FLUX=.FALSE.
       END IF
-!#else
-!      IF (HAVE_NEW_COUPLING_FIELDS .eqv. .TRUE.) THEN
-!        DO_UPDATE_WIND_FLUX=.TRUE.
-!      ELSE
-!        DO_UPDATE_WIND_FLUX=.FALSE.
-!      END IF
-!#endif
 
       IF (DO_UPDATE_WIND_FLUX) THEN
         CDTINTTBAK=CDTINTT
@@ -724,8 +717,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
               DO JKGLO=IJS,IJL,NPROMA
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
-                CALL IMPLSCH (FL1(KIJS:KIJL,:,:),                       &
-     &                        KIJS, KIJL,                               &
+                CALL IMPLSCH (FL1, IJS, IJL, KIJS, KIJL,                &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &
@@ -870,7 +862,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
             IF(NIPRMOUT.GT.0) THEN
               CALL OUTBS (IJS, IJL, MIJ, FL1, XLLWS)
 
-!!!1 to do: decide if there are cased where we might want LDREPROD false
+!!!1 to do: decide if there are cases where we might want LDREPROD false
               LDREPROD=.TRUE.
               IF(LLNORMWAMOUT) CALL OUTWNORM(LDREPROD)
 
