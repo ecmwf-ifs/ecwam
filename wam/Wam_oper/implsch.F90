@@ -215,7 +215,7 @@
 
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-ASSOCIATE(FL1P => FL1(IJS:IJL,:,:) )
+ASSOCIATE(FL1P => FL1(KIJS:KIJL,:,:) )
 
 !*    1. INITIALISATION.
 !        ---------------
