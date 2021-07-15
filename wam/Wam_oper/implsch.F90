@@ -215,7 +215,7 @@
 
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
-FL1P(KIJS:,1:,1:)= FL1(KIJS:KIJL,:,:)
+FL1P(KIJS:,1:,1:) => FL1(KIJS:KIJL,:,:)
 
 !*    1. INITIALISATION.
 !        ---------------
