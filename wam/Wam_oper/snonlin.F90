@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (F, FL, IJS, IJL, SL, AKMEAN)
+      SUBROUTINE SNONLIN (F, FL, IJS, IJL, SL, DEPTH, AKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +64,7 @@
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,FTRF     ,ENH      ,MFRSTLW  ,MLSTHG   ,    &
      &            KFRH     ,INLCOEF  ,RNLCOEF
-      USE YOWSHAL  , ONLY : DEPTH    ,TFAK,    INDEP 
+      USE YOWSHAL  , ONLY : TFAK,    INDEP 
       USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 ! ----------------------------------------------------------------------
@@ -72,13 +72,14 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH, AKMEAN
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: FL, SL
+
       INTEGER(KIND=JWIM) :: IJ, K, M, MC, KH, K1, K2, K11, K21
       INTEGER(KIND=JWIM) :: MP, MP1, MM, MM1, IC, IP, IP1, IM, IM1
       INTEGER(KIND=JWIM) :: MFR1STFR, MFRLSTFR
-
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: AKMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: FL, SL
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: FTAIL, FKLAMP, GW1, GW2, GW3, GW4

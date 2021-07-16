@@ -1,4 +1,7 @@
-      SUBROUTINE UNSETICE(FL,IJS,IJL,U10OLD,THWOLD)
+      SUBROUTINE UNSETICE(IJS, IJL, KIJS, KIJL,    &
+     &                    DEPTH, EMAXDPT,          &
+     &                    CICOVER, U10OLD, THWOLD, &
+     &                    FL)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      AUGUST 2006 
 
@@ -10,13 +13,21 @@
 
 !**   INTERFACE.
 !     ----------
-!     *CALL* *UNSETICE(FL,IJS,IJL,U10OLD,THWOLD)
-!     *FL*        ARRAY CONTAINING THE SPECTRA CONTRIBUTION ON EACH PE
-!     *IJS*       INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
-!     *IJL*       INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
+!     *CALL* *UNSETICE(IJS, IJL, KIJS, KIJL,    &
+!    &                 DEPTH, EMAXDPT,          &
+!    &                 CICOVER, U10OLD, THWOLD, &
+!    &                 FL)
+!     *IJS*     - GLOBAL INDEX OF FIRST GRIDPOINT
+!     *IJL*     - GLOBAL INDEX OF LAST GRIDPOINT
+!     *KIJS*    - LOCAL INDEX OF FIRST GRIDPOINT
+!     *KIJL*    - LOCAL  INDEX OF LAST GRIDPOINT
+!     *DEPTH*     WATER DEPTH
+!     *EMAXDPT*   MAXIMUM WAVE VARIANCE ALLOWED FOR A GIVEN DEPTH
+!     *CICOVER*   SEA ICE COVER
 !     *U10OLD*    WIND SPEED. (used with fetch law to fill empty 
 !                 sea points)
 !     *THWOLD*    WIND DIRECTION (RADIANS).
+!     *FL*        SPECTRA
 
 
 !     METHOD.
@@ -37,10 +48,9 @@
       USE YOWGRID  , ONLY : DELPHI
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE YOWJONS  , ONLY : AJONS    ,BJONS    ,DJONS    ,EJONS
-      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE ,CICOVER  ,CITHRSH
+      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE ,CITHRSH
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,CLDOMAIN
       USE YOWPCONS , ONLY : PI       ,G        ,R        ,EPSMIN
-      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT
       USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
       USE YOWTEST  , ONLY : IU06     ,ITEST
       USE YOWTEXT  , ONLY : LRESTARTED
@@ -52,23 +62,25 @@
 #include "sdepthlim.intfb.h"
 #include "jonswap.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
-      INTEGER(KIND=JWIM) :: IJ, K, M
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: U10OLD,THWOLD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, EMAXDPT 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER, U10OLD, THWOLD 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL
 
+
+      INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: CILIMIT
       REAL(KIND=JWRB) :: GAMMA, SA, SB, FETCH, GX, FPMAX, ZDP
       REAL(KIND=JWRB) :: U10, GXU, UG, FLLOWEST 
       REAL(KIND=JWRB) :: STK(NANG)
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: FPK, ALPHAV
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: ET
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SPRD, COS2NOISE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: FPK, ALPHAV
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: ET
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SPRD, COS2NOISE
 
-      LOGICAL :: LICE2SEA(IJS:IJL)
+      LOGICAL :: LICE2SEA(KIJS:KIJL)
 
 ! ----------------------------------------------------------------------
 
@@ -78,7 +90,7 @@
 
         ZDP=2.0_JWRB/PI
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             COS2NOISE(IJ,K)=MAX(0.0_JWRB,COS(TH(K)-THWOLD(IJ)))**2
             SPRD(IJ,K)=ZDP*COS2NOISE(IJ,K)
           ENDDO
@@ -96,12 +108,12 @@
 !       PREVIOUS RUN AND WHICH ARE NOW OPEN SEA.
 !       THEY ARE CHARCTERISED BY HAVING NO WAVE ENERGY BESIDE NOISE
 !       AND HAVE AN CICOVER > CITHRSH .
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           LICE2SEA(IJ)=.TRUE.
         ENDDO
         DO K=1,NANG
           DO M=1,NFRE
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
                IF(FL(IJ,K,M) .GT. EPSMIN) LICE2SEA(IJ) = .FALSE. 
             ENDDO
           ENDDO
@@ -112,7 +124,7 @@
         SB=9.0E-02_JWRB
         FPMAX=FR(NFRE-1)
 
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           IF(LICE2SEA(IJ) .AND. CICOVER(IJ).LE.CILIMIT) THEN
             IF(DEPTH(IJ).LE.10.0_JWRB) THEN
               FETCH=MIN(0.5_JWRB*DELPHI,10000.0_JWRB)
@@ -149,11 +161,11 @@
           ENDIF
         ENDDO
 
-        CALL JONSWAP(ALPHAV, GAMMA, SA, SB, FPK, IJS, IJL, ET)
+        CALL JONSWAP(ALPHAV, GAMMA, SA, SB, FPK, KIJS, KIJL, ET)
 
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               FL(IJ,K,M) = MAX(FL(IJ,K,M),ET(IJ,M)*SPRD(IJ,K))
               FLLOWEST = FLMIN*COS2NOISE(IJ,K)
               FL(IJ,K,M) = MAX(FL(IJ,K,M),FLLOWEST)
@@ -162,7 +174,7 @@
         ENDDO
 
         IF(ISHALLO.NE.1 .AND. LBIWBK) THEN
-          CALL SDEPTHLIM(IJS,IJL,EMAXDPT(IJS),FL)
+          CALL SDEPTHLIM(IJS, IJL, KIJS, KIJL, EMAXDPT, FL)
         ENDIF
 
         IF (ITEST.GE.2) THEN

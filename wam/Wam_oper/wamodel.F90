@@ -302,6 +302,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG 
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSMIN
+      USE YOWSHAl  , ONLY : DEPTH    ,EMAXDPT
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDATER   ,CDATES   ,CDTINTT  ,IDELPRO  ,IDELT    ,    &
      &            IDELWI   ,IREST    ,IDELRES  ,IDELINT  ,              &
@@ -430,7 +431,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
         DO JKGLO=IJS,IJL,NPROMA
           KIJS=JKGLO
           KIJL=MIN(KIJS+NPROMA-1,IJL)
-          CALL UNSETICE(FL1(KIJS:KIJL,:,:), KIJS, KIJL,U10OLD(KIJS), THWOLD(KIJS))
+          CALL UNSETICE(IJS, IJL, KIJS, KIJL,                      &
+     &                  DEPTH(KIJS), EMAXDPT(KIJS),                &
+     &                  CICOVER(KIJS), U10OLD(KIJS), THWOLD(KIJS), &
+     &                  FL1)
         ENDDO
 !$OMP   END PARALLEL DO
         CALL GSTATS(1236,1)
@@ -718,6 +722,7 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
                 KIJS=JKGLO
                 KIJL=MIN(KIJS+NPROMA-1,IJL)
                 CALL IMPLSCH (FL1, IJS, IJL, KIJS, KIJL,                &
+     &                        DEPTH(KIJS), EMAXDPT(KIJS),               &
      &                        THWOLD(KIJS), USOLD(KIJS),                &
      &                        TAUW(KIJS), TAUWDIR(KIJS),                &
      &                        Z0OLD(KIJS),                              &

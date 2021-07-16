@@ -6,7 +6,6 @@
 !                AND MEAN WAVE NUMBER (based in  sqrt(k)*F moment) .
 !                COMPUTATION OF THE MEAN WAVE ENERGY WAS ALSO
 !                ADDED SUCH THAT A CALL TO FKMEAN DOES NOT NEED
-!                TO BE PRECEDED BY A CALL TO SEMEAN.
 
 
 !*    PURPOSE.
