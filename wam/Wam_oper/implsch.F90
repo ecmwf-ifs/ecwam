@@ -163,8 +163,7 @@
 #include "stokesdrift.intfb.h"
 #include "wnfluxes.intfb.h"
 
-!!!      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), TARGET, INTENT(INOUT) :: FL1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), TARGET, INTENT(INOUT) :: FL1
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -471,7 +470,7 @@ FL1P(KIJS:,1:,1:) => FL1(KIJS:KIJL,:,:)
         WSTAROLD(IJ) = WSTARNEW(IJ)
       ENDDO
 
-NULLIFY(FL1P)
+!!NULLIFY(FL1P)
 
 ! ----------------------------------------------------------------------
       IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
