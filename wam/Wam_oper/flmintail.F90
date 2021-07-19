@@ -54,7 +54,8 @@ IF (LHOOK) CALL DR_HOOK('FLMINTAIL',0,ZHOOK_HANDLE)
         IF(U10(IJ) > 5.0_JWRB) THEN
           FMIN(IJ) = FLMINFAC * FMEANWS(IJ) * USTAR(IJ)
         ELSE
-          FMIN(IJ) = 0.0_JWRB 
+!          FMIN(IJ) = 0.0_JWRB 
+          FMIN(IJ) = 2.4_JWRB*FLMINFAC * FMEANWS(IJ) * USTAR(IJ)
         ENDIF
       ENDDO
 
