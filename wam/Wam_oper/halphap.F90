@@ -50,7 +50,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: MS, MM, ME
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
 
-      REAL(KIND=JWRB) :: RF, WFR
+      REAL(KIND=JWRB) :: RF, WFR, CFM4
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
@@ -106,7 +106,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
       DO IJ = IJS, IJL
         ALPHAP(IJ) = 0.0_JWRB
-        MS = MIN(MMAX(IJ) + IPHS, NFRE)
+        MS = MMAX(IJ) + IPHS
         MM = MIN(MMAX(IJ) + IPHE, NFRE) 
         ME = MMAX(IJ) + IPHE 
         WFR = 0.0_JWRB
@@ -115,9 +115,11 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
         ENDDO
         ! extension above FR(NFRE) with f**-5 tail
-        DO M = NFRE+1, ME
+!!!debile f**-4 until 1.3 fp then f**-5
+        CFM4=MIN(1.0_JWRB,(FR(NFRE)/(1.3_JWRB*FR(MMAX(IJ))))**4)
+        DO M = MAX(NFRE+1,MS), ME
           WFR = WFR + DFRE(M)
-          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,NFRE)
+          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*CFM4*F1DWS(IJ,NFRE)
         ENDDO
         ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
       ENDDO
