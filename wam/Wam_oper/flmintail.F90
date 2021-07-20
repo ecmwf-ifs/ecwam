@@ -51,17 +51,15 @@ SUBROUTINE FLMINTAIL(IJS, IJL, U10, UDIR, USTAR, FMEANWS, FL1)
 IF (LHOOK) CALL DR_HOOK('FLMINTAIL',0,ZHOOK_HANDLE)
 
       DO IJ = IJS, IJL
-!        IF(U10(IJ) > 5.0_JWRB) THEN
+        IF(U10(IJ) > 5.0_JWRB) THEN
           FMIN(IJ) = FLMINFAC * FMEANWS(IJ) * USTAR(IJ)
-!        ELSE
-!          FMIN(IJ) = 0.0_JWRB 
-!        ENDIF
+        ELSE
+          FMIN(IJ) = 0.0_JWRB 
+        ENDIF
       ENDDO
 
       DO K = 1, NANG
         DO IJ = IJS, IJL
-!!          COSPOS = 0.5_JWRB + SIGN(0.5_JWRB, COS(TH(K)-UDIR(IJ)) )
-!!          FL1(IJ,K,NFRE) = MAX(FL1(IJ,K,NFRE),FMIN(IJ)*COSPOS) 
           COS2 = MAX(0.0_JWRB,COS(TH(K)-UDIR(IJ)))**2
           FL1(IJ,K,NFRE) = MAX(FL1(IJ,K,NFRE),FMIN(IJ)*COS2) 
         ENDDO
