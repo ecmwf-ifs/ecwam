@@ -14,7 +14,7 @@
 !     ----------
 
 !       *CALL* *MEANSQS_LF (NFRE_EFF, IJS, IJL, F, XMSS)*
-!              *XKMSS* - WAVE NUMBER CUT OFF
+!              *NFRE_EFT* - FREQUENCY CUT OFF INDEX
 !              *IJS* - INDEX OF FIRST GRIDPOINT
 !              *IJL* - INDEX OF LAST GRIDPOINT
 !              *F*   - SPECTRUM.

@@ -34,6 +34,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 
       IMPLICIT NONE
 #include "peakfri.intfb.h"
+#include "meansqs_lf.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
@@ -44,14 +45,14 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       ! FREQUENCY INDEXES FOR THE PHILLIPS RANGE 
-      REAL(KIND=JWRB), PARAMETER :: RLOW = 1.3_JWRB 
-      INTEGER(KIND=JWIM), PARAMETER :: IPHS = 1 + INT(LOG(RLOW)/LOG(FRATIO))
+      INTEGER(KIND=JWIM), PARAMETER :: IPHS = 1 + INT(LOG(1.3_JWRB)/LOG(FRATIO))
       INTEGER(KIND=JWIM), PARAMETER :: IPHE = 1 + INT(LOG(3.0_JWRB)/LOG(FRATIO))
 
       INTEGER(KIND=JWIM) :: MS, MM, ME
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
 
-      REAL(KIND=JWRB) :: RF, WFR, CFM4
+      REAL(KIND=JWRB) :: RF, WFR
+      REAL(KIND=JWRB) :: XMSS 
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
@@ -105,24 +106,26 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
       CALL PEAKFRI (FLWS, IJS, IJL, MMAX, F1DMAX, F1DWS)
 
       ! Find the Phillips parameter by weighting averaging its value over the Phillips range (see above)
+      ! if it is inside the discretised frequency range, otherwise use its relation to the mean square slope
       DO IJ = IJS, IJL
         ALPHAP(IJ) = 0.0_JWRB
-        MS = MMAX(IJ) + IPHS
+        MS = MIN(MMAX(IJ) + IPHS, NFRE)
         MM = MIN(MMAX(IJ) + IPHE, NFRE) 
         ME = MMAX(IJ) + IPHE 
-        WFR = 0.0_JWRB
-        DO M = MS, MM 
-          WFR = WFR + DFRE(M)
-          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
-        ENDDO
-        ! extension above FR(NFRE) with f**-5 tail
-        ! but f**-4 until RLOW fp then f**-5
-        DO M = MAX(NFRE+1,MS), ME
-          CFM4=MIN(1.0_JWRB,(FR(NFRE)/(RLOW*FR(MMAX(IJ))))**4)
-          WFR = WFR + DFRE(M)
-          ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*CFM4*F1DWS(IJ,NFRE)
-        ENDDO
-        ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
+
+        IF ( ME <= NFRE ) THEN
+          WFR = 0.0_JWRB
+          DO M = MS, MM 
+            WFR = WFR + DFRE(M)
+            ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
+          ENDDO
+          ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
+        ELSE IF (MMAX(IJ) < NFRE ) THEN
+          CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS)
+          ALPHAP(IJ) = XMSS /LOG(FR(NFRE)/FR(MMAX(IJ)))
+        ELSE
+          ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+        ENDIF
       ENDDO
 
 !     1/2 ALPHAP:
