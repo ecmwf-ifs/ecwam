@@ -117,8 +117,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ENDDO
         ! extension above FR(NFRE) with f**-5 tail
         ! but f**-4 until RLOW fp then f**-5
-        CFM4=MIN(1.0_JWRB,(FR(NFRE)/(RLOW*FR(MMAX(IJ))))**4)
         DO M = MAX(NFRE+1,MS), ME
+          CFM4=MIN(1.0_JWRB,(FR(NFRE)/(RLOW*FR(MMAX(IJ))))**4)
           WFR = WFR + DFRE(M)
           ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*CFM4*F1DWS(IJ,NFRE)
         ENDDO
