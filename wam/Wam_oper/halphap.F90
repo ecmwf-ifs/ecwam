@@ -33,8 +33,9 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "peakfri.intfb.h"
+#include "femean.intfb.h"
 #include "meansqs_lf.intfb.h"
+#include "peakfri.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: USTAR
@@ -57,7 +58,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: F1DMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ALPHAP
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS 
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: XMSS, EM, FM 
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XINVWVAGE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: DIRCOEF
       REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: F1DWS
@@ -120,11 +121,14 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
             ALPHAP(IJ) = ALPHAP(IJ) + F5DFRE(M)*F1DWS(IJ,M)
           ENDDO
           ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
-        ELSE IF (MMAX(IJ) < NFRE ) THEN
-          CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
-          ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FR(MMAX(IJ)))
         ELSE
-          ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+          CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
+          CALL FEMEAN (FL1(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
+          IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-1) ) THEN
+            ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
+          ELSE
+            ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+          ENDIF
         ENDIF
       ENDDO
 
