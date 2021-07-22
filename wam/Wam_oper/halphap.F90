@@ -115,6 +115,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ME = MMAX(IJ) + IPHE 
 
         IF ( ME <= NFRE ) THEN
+          ! the Phillips range is fully resolved
           WFR = 0.0_JWRB
           DO M = MS, MM 
             WFR = WFR + DFRE(M)
@@ -122,10 +123,15 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           ENDDO
           ALPHAP(IJ) = ZPI4GM2*ALPHAP(IJ) / WFR
         ELSE
-          CALL MEANSQS_LF(NFRE, IJ, IJ, FLWS(IJ:IJ,:,:), XMSS(IJ))
-          CALL FEMEAN (FLWS(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
-          IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-1) ) THEN
+          ! use the mss and the mean frequency instead
+          CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
+          CALL FEMEAN (FL1(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
+          IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
             ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
+            IF ( ALPHAP(IJ) > 0.025_JWRB ) THEN
+              ! some odd cases, revert to tail value
+              ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+            ENDIF
           ELSE
             ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
           ENDIF
