@@ -481,9 +481,10 @@ SUBROUTINE WAMODEL (NADV, LDSTOP, LDWRRE)
           DO JKGLO=IJS,IJL,NPROMA
             KIJS=JKGLO
             KIJL=MIN(KIJS+NPROMA-1,IJL)
-            CALL WDFLUXES (KIJS, KIJL,                                  &
+            CALL WDFLUXES (IJS, IJL, KIJS, KIJL,                        &
      &                     MIJ(KIJS),                                   &
-     &                     FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),    &
+     &                     FL1, XLLWS(KIJS:KIJL,:,:),    &
+     &                     DEPTH(KIJS),                                 &
      &                     CICOVER(KIJS),                               &
      &                     U10NEW(KIJS), THWNEW(KIJS), USNEW(KIJS),     &
      &                     Z0NEW(KIJS), Z0B(KIJS),                      &

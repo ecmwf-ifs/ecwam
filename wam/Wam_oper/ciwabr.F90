@@ -1,4 +1,4 @@
-      SUBROUTINE CIWABR (IJS,IJL,CICOVER,FL,CIWAB)
+      SUBROUTINE CIWABR (IJS, IJL, KIJS, KIJL, CICOVER, GFL, CIWAB)
 
 ! ----------------------------------------------------------------------
 
@@ -14,13 +14,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *CIWABR (IJS,IJL,CICOVER,FL,CIWAB)
+!       *CALL* *CIWABR (IJS, IJL, KIJS,KIJL,CICOVER,GFL,CIWAB)
 
 !
-!          *IJS*     - INDEX OF FIRST POINT.
-!          *IJL*     - INDEX OF LAST POINT.
+!          *IJS:IJL   - 1st DIMENSION OF GFL
+!          *KIJS*     - INDEX OF FIRST POINT.
+!          *KIJL*     - INDEX OF LAST POINT.
 !          *CICOVER*  -SEA ICE COVER.
-!          *FL*       -ENERGY SPECTRUM. 
+!          *GFL*      -ENERGY SPECTRUM. 
 !          *CIWAB*    -SEA ICE WAVE ATTENUATION FACTOR DUE TO ICE FLOE BOTTOM FRICTION 
 
 !     METHOD.
@@ -52,10 +53,10 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL 
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL), INTENT(IN) :: CICOVER
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: FL
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: CIWAB
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL 
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL), INTENT(IN) :: CICOVER
+      REAL(KIND=JWRB),DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: CIWAB
 
       INTEGER(KIND=JWIM) :: K, M, IJ
       REAL(KIND=JWRB) :: EWH 
@@ -71,7 +72,7 @@
 
         DO M=1,NFRE
           DO K=1,NANG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               CIWAB(IJ,K,M)=1.0_JWRB
             ENDDO
           ENDDO
@@ -82,8 +83,8 @@
         IF (ISHALLO.NE.1) THEN
           DO M=1,NFRE
             DO K=1,NANG
-              DO IJ=IJS,IJL
-                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
+              DO IJ=KIJS,KIJL
+                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,GFL(IJ,K,M)*DFIM(M)))
                 XK2(M)=TFAK(INDEP(IJ),M)**2
                 ALP=CDICWA*XK2(M)*EWH
                 X=ALP*TCGOND(INDEP(IJ),M)*IDELT
@@ -97,8 +98,8 @@
           ENDDO
           DO M=1,NFRE
             DO K=1,NANG
-              DO IJ=IJS,IJL
-                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,FL(IJ,K,M)*DFIM(M)))
+              DO IJ=KIJS,KIJL
+                EWH=4.0_JWRB*SQRT(MAX(EPSMIN,GFL(IJ,K,M)*DFIM(M)))
                 ALP=CDICWA*XK2(M)*EWH
                 X=ALP*GOM(M)*IDELT
                 CIWAB(IJ,K,M)=1.0_JWRB-CICOVER(IJ)*(1.0_JWRB-EXP(-MIN(X,50.0_JWRB)))

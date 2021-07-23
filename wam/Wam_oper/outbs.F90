@@ -84,7 +84,7 @@
         KIJL=MIN(KIJS+NPROMA-1,IJLLOC)
         CALL OUTBLOCK(KIJS, KIJL, MIJ(KIJS),                            &
      &                FL1(KIJS:KIJL,:,:), XLLWS(KIJS:KIJL,:,:),         &
-     &                DEPTH(KIJS:KIJL), CGROUP(KIJS:KIJL,:),            &
+     &                DEPTH(KIJS), CGROUP(KIJS:KIJL,:),                 &
      &                BOUT(KIJS:KIJL,:))
       ENDDO
 !$OMP END PARALLEL DO
