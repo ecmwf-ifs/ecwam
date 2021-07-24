@@ -52,7 +52,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM) :: MS, MM, ME
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
 
-      REAL(KIND=JWRB) :: RF, WFR
+      REAL(KIND=JWRB) :: RF, WFR, ALPHAPT
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
@@ -126,14 +126,15 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
           ! use the mss and the mean frequency instead
           CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
           CALL FEMEAN (FL1(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
+          ALPHAPT = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
           IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
-            ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
+            ALPHAP(IJ) = MAX(XMSS(IJ) /LOG(FR(NFRE)/FM(IJ)),ALPHAPT)
             IF ( ALPHAP(IJ) > 0.025_JWRB ) THEN
               ! some odd cases, revert to tail value
-              ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+              ALPHAP(IJ) = ALPHAPT 
             ENDIF
           ELSE
-            ALPHAP(IJ) = ZPI4GM2*FR5(NFRE)*F1DWS(IJ,NFRE)
+            ALPHAP(IJ) = ALPHAPT
           ENDIF
         ENDIF
       ENDDO
