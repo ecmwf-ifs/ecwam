@@ -126,7 +126,7 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ELSE
           ! use the mss and the mean frequency instead
           CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
-          CALL FEMEAN (FLWS(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
+          CALL FEMEAN (FL1(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
           FM(IJ)= MIN(FM(IJ),FR(MMAX(IJ)))
           IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
             ALPHAP(IJ) = XMSS(IJ) /LOG(FR(NFRE)/FM(IJ))
