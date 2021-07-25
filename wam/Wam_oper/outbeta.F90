@@ -82,10 +82,11 @@
 
       IF (LLGCBZ0) THEN
         ZN = RNUM
+        ALPHAMAXU10(:)=ALPHAMAX
       ELSE
         ZN = 0.0_JWRB
+        ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*U10(:))
       ENDIF
-      ALPHAMAXU10(:)=MIN(ALPHAMAX,AMAX+BMAX*U10(:))
 
       DO IJ = IJS,IJL
         USM = 1.0_JWRB/MAX(US(IJ),EPSUS)
