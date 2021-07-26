@@ -53,7 +53,7 @@ SUBROUTINE HALPHAP(IJS, IJL, USTAR, UDIR, FL1, HALP)
       INTEGER(KIND=JWIM), DIMENSION(IJS:IJL) :: MMAX
 
       REAL(KIND=JWRB), PARAMETER :: ALPHAPMAX_LW = 0.025_JWRB
-      REAL(KIND=JWRB) :: RF, WFR
+      REAL(KIND=JWRB) :: RF, WFR, CMSSHF
       REAL(KIND=JWRB) :: COEF, WS, CHECKTA
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE+IPHE) :: DFRE, F5DFRE 
@@ -78,6 +78,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
          DFRE(M) = FR(NFRE)*FRATIO**(M-NFRE)*RF
          F5DFRE(M) = FR5(NFRE)*DFRE(M)
       ENDDO
+
+      CMSSHF = ZPI4GM2 * FR5(NFRE) 
 
 !     Find windsea spectrum
       COEF = OLDWSFC*FRIC
@@ -126,6 +128,8 @@ IF (LHOOK) CALL DR_HOOK('HALPHAP',0,ZHOOK_HANDLE)
         ELSE
           ! use the mss and the mean frequency instead
           CALL MEANSQS_LF(NFRE, IJ, IJ, FL1(IJ:IJ,:,:), XMSS(IJ))
+          ! add contribution to MSS from FR(NFRE) to FR(ME) assuming a f**-4 spectrum
+          XMSS(IJ) = XMSS(IJ) + CMSSHF * F1DWS(IJ,NFRE) * (FRATIO**MAX(ME-NFRE,0) -1.0_JWRB) 
           CALL FEMEAN (FL1(IJ:IJ,:,:), IJ, IJ, EM(IJ), FM(IJ))
           FM(IJ)= MIN(FM(IJ),FR(MMAX(IJ)))
           IF(EM(IJ) > 0.0_JWRB .AND. FM(IJ) < FR(NFRE-2) ) THEN
