@@ -94,9 +94,6 @@
           FPM = FPPM/MAX(USNEW(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
           MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-!!!debile
-     write(*,*) 'debile frcutindex MIJ > NFRE ', MIJ(IJ), FPM4*FR(1)
-
           MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
         ELSE
           MIJ(IJ) = NFRE
