@@ -101,12 +101,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ALPHAPMAX = 0.031_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_A = 0.15_JWRB
-        ANG_GC_B = 1.1_JWRB
-        ANG_GC_C = 3.5_JWRB
-!!!debile
-        ANG_GC_A = 0.62_JWRB
-        ANG_GC_B = 0.0_JWRB
+        ANG_GC_A = 0.2_JWRB
+        ANG_GC_B = 0.8_JWRB
+        ANG_GC_C = 3.6_JWRB
 
 !       directionality correction factors in the gowth rate renormalisation 
         DELTA_THETA_RN = 0.75_JWRB
