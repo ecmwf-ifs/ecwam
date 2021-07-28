@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (F, FL, IJS, IJL, SL, DEPTH, AKMEAN)
+      SUBROUTINE SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)
 
 ! ----------------------------------------------------------------------
 
@@ -31,12 +31,14 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SNONLIN (F, FL, IJS, IJL, SL, AKMEAN)*
-!          *F*   - SPECTRUM.
-!          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *IJS* - INDEX OF FIRST GRIDPOINT
-!          *IJL* - INDEX OF LAST GRIDPOINT
-!          *SL*  - TOTAL SOURCE FUNCTION ARRAY.
+!       *CALL* *SNONLIN (GFL, FLD, SL, IJS, IJL, KIJS, KIJL, DEPTH, AKMEAN)*
+!          *GFL*    - SPECTRUM.
+!          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *SL*     - TOTAL SOURCE FUNCTION ARRAY.
+!          *IJS:IJL*- !1st DIMENSION OF GFL.
+!          *KIJS*   - INDEX OF FIRST GRIDPOINT
+!          *KIJL*   - INDEX OF LAST GRIDPOINT
+!          *DEPTH*  - WATER DEPTH
 !          *AKMEAN* - MEAN WAVE NUMBER  BASED ON sqrt(1/k)*F INTGRATION
 
 !     METHOD.
@@ -71,11 +73,13 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DEPTH, AKMEAN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(INOUT):: FL, SL
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(INOUT):: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: DEPTH, AKMEAN
+
 
       INTEGER(KIND=JWIM) :: IJ, K, M, MC, KH, K1, K2, K11, K21
       INTEGER(KIND=JWIM) :: MP, MP1, MM, MM1, IC, IP, IP1, IM, IM1
@@ -88,7 +92,7 @@
       REAL(KIND=JWRB) :: GW5, GW6, GW7, GW8, FKLAMMA, FKLAMMB, FKLAMM2
       REAL(KIND=JWRB) :: FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(KIND=JWRB) :: SAP, SAM, FIJ, FAD1, FAD2, FCEN
-      REAL(KIND=JWRB),DIMENSION(IJS:IJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
+      REAL(KIND=JWRB),DIMENSION(KIJS:KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
 
 ! ----------------------------------------------------------------------
 
@@ -100,7 +104,7 @@
 
       IF (ISHALLO.NE.1) THEN
         IF (ISNONLIN.EQ.0) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             ENHFR(IJ) = 0.75_JWRB*DEPTH(IJ)*AKMEAN(IJ)
             ENHFR(IJ) = MAX(ENHFR(IJ),0.5_JWRB)
             ENHFR(IJ) = 1.0_JWRB+(5.5_JWRB/ENHFR(IJ)) *                 &
@@ -108,7 +112,7 @@
      &                      EXP(-1.25_JWRB*ENHFR(IJ))
           ENDDO
           DO MC=1,MLSTHG
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               ENH(IJ,MC) = ENHFR(IJ) 
             ENDDO
           ENDDO
@@ -166,11 +170,11 @@
         FKLAM22 = RNLCOEF(25,MC) 
 
         IF (ISHALLO.EQ.1) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             FTEMP(IJ) = AF11(MC)
           ENDDO
         ELSE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             FTEMP(IJ) = AF11(MC)*ENH(IJ,MC)
           ENDDO
         ENDIF
@@ -189,13 +193,13 @@
 !*    2.1.1.1 LOOP OVER GRIDPOINTS.. NONLINEAR TRANSFER AND
 !*            DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !             ----------------------------------------------
-              DO IJ=IJS,IJL
-                SAP = GW1*F(IJ,K1 ,IP ) + GW2*F(IJ,K11,IP )             &
-     &              + GW3*F(IJ,K1 ,IP1) + GW4*F(IJ,K11,IP1)
-                SAM = GW5*F(IJ,K2 ,IM ) + GW6*F(IJ,K21,IM )             &
-     &              + GW7*F(IJ,K2 ,IM1) + GW8*F(IJ,K21,IM1)
-!!!! not needed ftail always=1.                FIJ = F(IJ,K  ,IC )*FTAIL
-                FIJ = F(IJ,K  ,IC )
+              DO IJ=KIJS,KIJL
+                SAP = GW1*GFL(IJ,K1 ,IP ) + GW2*GFL(IJ,K11,IP )             &
+     &              + GW3*GFL(IJ,K1 ,IP1) + GW4*GFL(IJ,K11,IP1)
+                SAM = GW5*GFL(IJ,K2 ,IM ) + GW6*GFL(IJ,K21,IM )             &
+     &              + GW7*GFL(IJ,K2 ,IM1) + GW8*GFL(IJ,K21,IM1)
+!!!! not needed ftail always=1.                FIJ = GFL(IJ,K  ,IC )*FTAIL
+                FIJ = GFL(IJ,K  ,IC )
                 FAD1 = FIJ*(SAP+SAM)
                 FAD2 = FAD1-2.0_JWRB*SAP*SAM
                 FAD1 = FAD1+FAD2
@@ -206,59 +210,59 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.0_JWRB*AD(IJ)
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K  ,MC ) = FL(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K  ,MC ) = FLD(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K2 ,MM ) = SL(IJ,K2 ,MM ) + AD(IJ)*FKLAMM1
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K2 ,MM ) = FL(IJ,K2 ,MM ) + DELAM(IJ)*FKLAM12
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K2 ,MM ) = FLD(IJ,K2 ,MM ) + DELAM(IJ)*FKLAM12
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K21,MM ) = SL(IJ,K21,MM ) + AD(IJ)*FKLAMM2
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K21,MM ) = FL(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K21,MM ) = FLD(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K2 ,MM1) = FL(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K2 ,MM1) = FLD(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K21,MM1) = SL(IJ,K21,MM1) + AD(IJ)*FKLAMMB
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K21,MM1) = FL(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K21,MM1) = FLD(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP ) + DELAP(IJ)*FKLAP12
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K1 ,MP ) = FLD(IJ,K1 ,MP ) + DELAP(IJ)*FKLAP12
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K11,MP ) = FL(IJ,K11,MP ) + DELAP(IJ)*FKLAP22
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K11,MP ) = FLD(IJ,K11,MP ) + DELAP(IJ)*FKLAP22
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1) + AD(IJ)*FKLAMPA
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K1 ,MP1) = FLD(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K11,MP1) = SL(IJ,K11,MP1) + AD(IJ)*FKLAMPB
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K11,MP1) = FL(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
               ENDDO
             ENDDO
           ENDDO
@@ -271,12 +275,12 @@
               K11 = K11W(K,KH)
               K21 = K21W(K,KH)
 
-              DO IJ=IJS,IJL
-                SAP = GW1*F(IJ,K1 ,IP ) + GW2*F(IJ,K11,IP )             &
-     &              + GW3*F(IJ,K1 ,IP1) + GW4*F(IJ,K11,IP1)
-                SAM = GW5*F(IJ,K2 ,IM ) + GW6*F(IJ,K21,IM )             &
-     &              + GW7*F(IJ,K2 ,IM1) + GW8*F(IJ,K21,IM1)
-                FIJ = F(IJ,K  ,IC )*FTAIL
+              DO IJ=KIJS,KIJL
+                SAP = GW1*GFL(IJ,K1 ,IP ) + GW2*GFL(IJ,K11,IP )             &
+     &              + GW3*GFL(IJ,K1 ,IP1) + GW4*GFL(IJ,K11,IP1)
+                SAM = GW5*GFL(IJ,K2 ,IM ) + GW6*GFL(IJ,K21,IM )             &
+     &              + GW7*GFL(IJ,K2 ,IM1) + GW8*GFL(IJ,K21,IM1)
+                FIJ = GFL(IJ,K  ,IC )*FTAIL
                 FAD1 = FIJ*(SAP+SAM)
                 FAD2 = FAD1-2.0_JWRB*SAP*SAM
                 FAD1 = FAD1+FAD2
@@ -287,72 +291,72 @@
                 DELAM(IJ) = (FIJ-2.0_JWRB*SAP)*DAL2*FCEN
               ENDDO
 
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K2 ,MM ) = SL(IJ,K2 ,MM ) + AD(IJ)*FKLAMM1
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K2 ,MM ) = FL(IJ,K2 ,MM ) + DELAM(IJ)*FKLAM12
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K2 ,MM ) = FLD(IJ,K2 ,MM ) + DELAM(IJ)*FKLAM12
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K21,MM ) = SL(IJ,K21,MM ) + AD(IJ)*FKLAMM2
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K21,MM ) = FL(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K21,MM ) = FLD(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
               ENDDO
 
               IF (MM1.LE.NFRE) THEN
-                DO IJ=IJS,IJL
+                DO IJ=KIJS,KIJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
-                DO IJ=IJS,IJL
-                  FL(IJ,K2 ,MM1) = FL(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
+                DO IJ=KIJS,KIJL
+                  FLD(IJ,K2 ,MM1) = FLD(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
                 ENDDO
-                DO IJ=IJS,IJL
+                DO IJ=KIJS,KIJL
                   SL(IJ,K21,MM1) = SL(IJ,K21,MM1) + AD(IJ)*FKLAMMB
                 ENDDO
-                DO IJ=IJS,IJL
-                  FL(IJ,K21,MM1) = FL(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
+                DO IJ=KIJS,KIJL
+                  FLD(IJ,K21,MM1) = FLD(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
                 ENDDO
 
                 IF (MC .LE.NFRE) THEN
-                  DO IJ=IJS,IJL
+                  DO IJ=KIJS,KIJL
                     SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.0_JWRB*AD(IJ)
                   ENDDO
-                  DO IJ=IJS,IJL
-                    FL(IJ,K  ,MC ) = FL(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
+                  DO IJ=KIJS,KIJL
+                    FLD(IJ,K  ,MC ) = FLD(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
                   ENDDO
 
                   IF (MP .LE.NFRE) THEN
-                    DO IJ=IJS,IJL
+                    DO IJ=KIJS,KIJL
                       SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
                     ENDDO
-                    DO IJ=IJS,IJL
-                      FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP )                   &
+                    DO IJ=KIJS,KIJL
+                      FLD(IJ,K1 ,MP ) = FLD(IJ,K1 ,MP )                   &
      &                               + DELAP(IJ)*FKLAP12
                     ENDDO
-                    DO IJ=IJS,IJL
+                    DO IJ=KIJS,KIJL
                       SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
                     ENDDO
-                    DO IJ=IJS,IJL
-                      FL(IJ,K11,MP ) = FL(IJ,K11,MP )                   &
+                    DO IJ=KIJS,KIJL
+                      FLD(IJ,K11,MP ) = FLD(IJ,K11,MP )                   &
      &                               + DELAP(IJ)*FKLAP22
                     ENDDO
 
                     IF (MP1.LE.NFRE) THEN
-                      DO IJ=IJS,IJL
+                      DO IJ=KIJS,KIJL
                         SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1)                 &
      &                                 + AD(IJ)*FKLAMPA
                       ENDDO
-                      DO IJ=IJS,IJL
-                        FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1)                 &
+                      DO IJ=KIJS,KIJL
+                        FLD(IJ,K1 ,MP1) = FLD(IJ,K1 ,MP1)                 &
      &                                 + DELAP(IJ)*FKLAPA2
                       ENDDO
-                      DO IJ=IJS,IJL
+                      DO IJ=KIJS,KIJL
                         SL(IJ,K11,MP1) = SL(IJ,K11,MP1)                 &
      &                                 + AD(IJ)*FKLAMPB
                       ENDDO
-                      DO IJ=IJS,IJL
-                        FL(IJ,K11,MP1) = FL(IJ,K11,MP1)                 &
+                      DO IJ=KIJS,KIJL
+                        FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1)                 &
      &                                 + DELAP(IJ)*FKLAPB2
                       ENDDO
                     ENDIF
@@ -371,12 +375,12 @@
               K11 = K11W(K,KH)
               K21 = K21W(K,KH)
 
-              DO IJ=IJS,IJL
-                SAP = GW1*F(IJ,K1 ,IP ) + GW2*F(IJ,K11,IP )             &
-     &              + GW3*F(IJ,K1 ,IP1) + GW4*F(IJ,K11,IP1)
-                SAM = GW5*F(IJ,K2 ,IM ) + GW6*F(IJ,K21,IM )             &
-     &              + GW7*F(IJ,K2 ,IM1) + GW8*F(IJ,K21,IM1)
-                FIJ = F(IJ,K  ,IC )*FTAIL
+              DO IJ=KIJS,KIJL
+                SAP = GW1*GFL(IJ,K1 ,IP ) + GW2*GFL(IJ,K11,IP )             &
+     &              + GW3*GFL(IJ,K1 ,IP1) + GW4*GFL(IJ,K11,IP1)
+                SAM = GW5*GFL(IJ,K2 ,IM ) + GW6*GFL(IJ,K21,IM )             &
+     &              + GW7*GFL(IJ,K2 ,IM1) + GW8*GFL(IJ,K21,IM1)
+                FIJ = GFL(IJ,K  ,IC )*FTAIL
                 FAD1 = FIJ*(SAP+SAM)
                 FAD2 = FAD1-2.0_JWRB*SAP*SAM
                 FAD1 = FAD1+FAD2
@@ -388,49 +392,49 @@
               ENDDO
 
               IF (MM1.GE.1) THEN
-                DO IJ=IJS,IJL
+                DO IJ=KIJS,KIJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
-                DO IJ=IJS,IJL
-                  FL(IJ,K2 ,MM1) = FL(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
+                DO IJ=KIJS,KIJL
+                  FLD(IJ,K2 ,MM1) = FLD(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
                 ENDDO
-                DO IJ=IJS,IJL
+                DO IJ=KIJS,KIJL
                   SL(IJ,K21,MM1) = SL(IJ,K21,MM1) + AD(IJ)*FKLAMMB
                 ENDDO
-                DO IJ=IJS,IJL
-                  FL(IJ,K21,MM1) = FL(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
+                DO IJ=KIJS,KIJL
+                  FLD(IJ,K21,MM1) = FLD(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
                 ENDDO
               ENDIF
 
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.0_JWRB*AD(IJ)
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K  ,MC ) = FL(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K  ,MC ) = FLD(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP ) + DELAP(IJ)*FKLAP12
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K1 ,MP ) = FLD(IJ,K1 ,MP ) + DELAP(IJ)*FKLAP12
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K11,MP ) = FL(IJ,K11,MP ) + DELAP(IJ)*FKLAP22
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K11,MP ) = FLD(IJ,K11,MP ) + DELAP(IJ)*FKLAP22
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1) + AD(IJ)*FKLAMPA
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K1 ,MP1) = FLD(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
               ENDDO
-              DO IJ=IJS,IJL
+              DO IJ=KIJS,KIJL
                 SL(IJ,K11,MP1) = SL(IJ,K11,MP1) + AD(IJ)*FKLAMPB
               ENDDO
-              DO IJ=IJS,IJL
-                FL(IJ,K11,MP1) = FL(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
+              DO IJ=KIJS,KIJL
+                FLD(IJ,K11,MP1) = FLD(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
               ENDDO
             ENDDO
           ENDDO

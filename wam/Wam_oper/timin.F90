@@ -56,7 +56,6 @@
 !     ----------
 
 !       *ABORT1*     - TERMINATES PROCESSING.
-!       *AIRSEA*    - TOTAL STRESS IN SURFACE LAYER.
 !       *GETWND*    - READ A WINDFIELD AND COMPUTE WIND
 !                     FOR ALL BLOCKS (US,DS).
 !       *INCDATE*   - INCREMENT DATE.

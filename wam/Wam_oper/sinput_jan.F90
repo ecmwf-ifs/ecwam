@@ -1,5 +1,7 @@
-      SUBROUTINE SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, U10NEW, USNEW, Z0NEW, &
-     &                       ROAIRN, WSTAR, RNFAC, SL, SPOS, XLLWS)
+      SUBROUTINE SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL , &
+     &                       THWNEW, U10NEW, USNEW, Z0NEW,     &
+     &                       ROAIRN, WSTAR, RNFAC,             &
+                             FLD, SL, SPOS, GXLLWS)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT_JAN* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -43,14 +45,15 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT_JAN (NGST, F, FL, IJS, IJL, THWNEW, U10NEW, USNEW, Z0NEW,
-!    &                   ROAIRN, WSTAR, RNFAC, SL, SPOS, XLLWS)
+!     *CALL* *SINPUT_JAN (NGST, IJS, IJL, KIJS, KIJL, GFL,
+!    &                   THWNEW, U10NEW, USNEW, Z0NEW,
+!    &                   ROAIRN, WSTAR, RNFAC,
+!    &                   FLD, SL, SPOS, GXLLWS)
 !         *NGST* - IF = 1 THEN NO GUSTINESS PARAMETERISATION
 !                - IF = 2 THEN GUSTINESS PARAMETERISATION
-!            *F* - SPECTRUM.
-!           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
-!          *IJS* - INDEX OF FIRST GRIDPOINT.
-!          *IJL* - INDEX OF LAST GRIDPOINT.
+!         *KIJS* - INDEX OF FIRST GRIDPOINT.
+!         *KIJL* - INDEX OF LAST GRIDPOINT.
+!          *GFL* - SPECTRUM.
 !       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
@@ -59,9 +62,10 @@
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *RNFAC* - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
+!          *FLD* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
 !           *SL* - TOTAL SOURCE FUNCTION ARRAY.
 !         *SPOS* - ONLY POSITIVE PART OF INPUT SOURCE FUNCTION ARRAY.
-!        *XLLWS* - 1 WHERE SINPUT IS POSITIVE.
+!        *GXLLWS* - 1 WHERE SINPUT IS POSITIVE.
 
 
 !     METHOD.
@@ -111,12 +115,15 @@
 #include "wsigstar.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: NGST 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, KIJS, KIJL
 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: F
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: FL, SL, SPOS, XLLWS
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(IN) :: GFL
+
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: THWNEW, U10NEW, USNEW, Z0NEW
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: ROAIRN, WSTAR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
+
+      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NFRE), INTENT(OUT) :: GXLLWS
 
 
       INTEGER(KIND=JWIM) :: IJ, IG, K, M
@@ -130,25 +137,25 @@
       REAL(KIND=JWRB) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NGST) :: WSIN
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FAC, CONST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SH, XK
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SIG_N
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CNSN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: EPSIL
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: ROAIRNM
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: SUMF, SUMFSIN2 
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: CSTRNFAC
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: SIN2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NFRE) :: XNGAMCONST
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: USTPM1
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NGST) :: XVD, UCND, CONST3_UCN2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: COSD, UFAC1, UFAC2
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG) :: TEMPD
-      REAL(KIND=JWRB), DIMENSION(IJS:IJL,NANG,NGST) :: GAM0
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SH, XK
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SIG_N
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CNSN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: EPSIL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: ROAIRNM
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: SUMF, SUMFSIN2 
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CSTRNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: SIN2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NFRE) :: XNGAMCONST
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: GAMNORMA ! ! RENORMALISATION FACTOR OF THE GROWTH RATE
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: SIGDEV ,US, Z0, UCN, ZCN
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: USTPM1
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NGST) :: XVD, UCND, CONST3_UCN2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: COSD, UFAC1, UFAC2
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG) :: TEMPD
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,NANG,NGST) :: GAM0
 
-      LOGICAL, DIMENSION(IJS:IJL,NANG) :: LZ
+      LOGICAL, DIMENSION(KIJS:KIJL,NANG) :: LZ
 
 ! ----------------------------------------------------------------------
 
@@ -163,7 +170,7 @@
 
       CONSTN = DELTH*ROWATER/(XKAPPA*ZPI)
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         ROAIRNM(IJ) = 1.0_JWRB/MAX(ROAIRN(IJ),1.0_JWRB)
       ENDDO
 
@@ -171,7 +178,7 @@
 !        ---------------------------------
 
       DO K=1,NANG
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           COSD(IJ,K) = COS(TH(K)-THWNEW(IJ))
           IF(COSD(IJ,K) .GT. 0.01_JWRB) THEN
             LZ(IJ,K) = .TRUE.
@@ -187,20 +194,20 @@
         CSTRNFAC(:) = CONSTN * RNFAC(:)
         IF (ISHALLO.EQ.1) THEN
           DO M=1,NFRE
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*0.5_JWRB*ZPIFR(M)**3*GM1*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ELSE
           DO M=1,NFRE
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               XNGAMCONST(IJ,M) = CSTRNFAC(IJ)*TFAK(INDEP(IJ),M)**2*TCGOND(INDEP(IJ),M)*ROAIRNM(IJ)
             ENDDO
           ENDDO
         ENDIF
 
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             SIN2(IJ,K) = SIN(TH(K)-THWNEW(IJ))**2
           ENDDO
         ENDDO
@@ -211,7 +218,7 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      IF(NGST.GT.1) CALL WSIGSTAR (IJS, IJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
+      IF(NGST.GT.1) CALL WSIGSTAR (KIJS, KIJL, U10NEW, USNEW, Z0NEW, WSTAR, SIG_N)
 
 
 !     DEFINE WHERE SINPUT WILL BE EVALUATED IN RELATIVE TERM WRT USTAR
@@ -219,13 +226,13 @@
 
       IF(NGST.EQ.1) THEN
         WSIN(1) = 1.0_JWRB 
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB
         ENDDO
       ELSE IF (NGST.EQ.2) THEN
         WSIN(1) = 0.5_JWRB 
         WSIN(2) = 0.5_JWRB 
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           SIGDEV(IJ,1) = 1.0_JWRB-SIG_N(IJ)
           SIGDEV(IJ,2) = 1.0_JWRB+SIG_N(IJ)
         ENDDO
@@ -243,13 +250,13 @@
 
 
       IF(NGST.EQ.1) THEN
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           US(IJ,1) = USNEW(IJ)
           Z0(IJ,1) = Z0NEW(IJ)
         ENDDO
       ELSE
         DO IGST=1,NGST
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             US(IJ,IGST) = USNEW(IJ)*SIGDEV(IJ,IGST)
             Z0(IJ,IGST) = Z0NEW(IJ)
           ENDDO
@@ -257,12 +264,12 @@
       ENDIF
 
       DO IGST=1,NGST
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           USTPM1(IJ,IGST) = 1.0_JWRB/MAX(US(IJ,IGST),EPSUS)
         ENDDO
       ENDDO
 
-      DO IJ=IJS,IJL
+      DO IJ=KIJS,KIJL
         EPSIL(IJ) = ROAIRN(IJ)*RWINV
       ENDDO
 ! ----------------------------------------------------------------------
@@ -280,13 +287,13 @@
 !       ----------------------------
 
         IF (ISHALLO.EQ.1) THEN
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             XK(IJ) = FAC(M)**2/G
             CM(IJ) = FAC(M)/G
             SH(IJ) = 1.0_JWRB
           ENDDO
         ELSE
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             XK(IJ) = TFAK(INDEP(IJ),M)
             CM(IJ) = XK(IJ)/FAC(M)
             SH(IJ) = FAC(M)**2/(G*XK(IJ)) 
@@ -296,12 +303,12 @@
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
-        DO IJ=IJS,IJL
+        DO IJ=KIJS,KIJL
           CNSN(IJ) = CONST(M)*SH(IJ)*EPSIL(IJ)
         ENDDO
 
         DO IGST=1,NGST
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             UCN(IJ,IGST) = US(IJ,IGST)*CM(IJ) + ZALP
             CONST3_UCN2(IJ,IGST) = CONST3*UCN(IJ,IGST)**2
             UCND(IJ,IGST) = 1.0_JWRB/ UCN(IJ,IGST)
@@ -317,19 +324,19 @@
 !       WIND INPUT:
         DO K=1,NANG
 
-          DO IJ=IJS,IJL
-            XLLWS(IJ,K,M)= 0.0_JWRB
+          DO IJ=KIJS,KIJL
+            GXLLWS(IJ,K,M)= 0.0_JWRB
           ENDDO
 
           DO IGST=1,NGST
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               IF (LZ(IJ,K)) THEN
                 ZLOG = ZCN(IJ,IGST) + TEMPD(IJ,K)*UCND(IJ,IGST)
                 IF (ZLOG.LT.0.0_JWRB) THEN
                   X=COSD(IJ,K)*UCN(IJ,IGST)
                   ZLOG2X=ZLOG*ZLOG*X
                   GAM0(IJ,K,IGST) = ZLOG2X*ZLOG2X*EXP(ZLOG) * CNSN(IJ)
-                  XLLWS(IJ,K,M)= 1.0_JWRB
+                  GXLLWS(IJ,K,M)= 1.0_JWRB
                 ELSE
                   GAM0(IJ,K,IGST) = 0.0_JWRB
                 ENDIF
@@ -349,13 +356,13 @@
             SUMF(:) = 0.0_JWRB
             SUMFSIN2(:) = 0.0_JWRB
             DO K=1,NANG
-              DO IJ=IJS,IJL
-                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)
-                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*F(IJ,K,M)*SIN2(IJ,K)
+              DO IJ=KIJS,KIJL
+                SUMF(IJ) = SUMF(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)
+                SUMFSIN2(IJ) = SUMFSIN2(IJ) + GAM0(IJ,K,IGST)*GFL(IJ,K,M)*SIN2(IJ,K)
               ENDDO
             ENDDO
 
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               ZN2 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMF(IJ)
               ZN1 = XNGAMCONST(IJ,M)*USTPM1(IJ,IGST)*SUMFSIN2(IJ)
               GAMNORMA(IJ,IGST) = (1.0_JWRB + ZN1)/(1.0_JWRB + ZN2)
@@ -368,11 +375,11 @@
         ENDIF
 
         DO K=1,NANG
-          DO IJ=IJS,IJL
+          DO IJ=KIJS,KIJL
             UFAC1(IJ,K) = WSIN(1)*GAM0(IJ,K,1)*GAMNORMA(IJ,1)
           ENDDO
           DO IGST=2,NGST
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               UFAC1(IJ,K) = UFAC1(IJ,K) + WSIN(IGST)*GAM0(IJ,K,IGST)*GAMNORMA(IJ,IGST)
             ENDDO
           ENDDO
@@ -381,13 +388,13 @@
 !       SWELL DAMPING:
         DO K=1,NANG
           DO IGST=1,1
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
               UFAC2(IJ,K) = WSIN(IGST)*ZBETA
             ENDDO
           ENDDO
           DO IGST=2,NGST
-            DO IJ=IJS,IJL
+            DO IJ=KIJS,KIJL
               ZBETA = CONST3_UCN2(IJ,IGST)*(COSD(IJ,K)-XVD(IJ,IGST))
               UFAC2(IJ,K) = UFAC2(IJ,K)+WSIN(IGST)*ZBETA
             ENDDO
@@ -398,10 +405,10 @@
 !         ------------------------------------------------
 
         DO K=1,NANG
-          DO IJ=IJS,IJL
-            FL(IJ,K,M) = UFAC1(IJ,K) + CNSN(IJ)*UFAC2(IJ,K)
-            SPOS(IJ,K,M) = UFAC1(IJ,K)*F(IJ,K,M)
-            SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
+          DO IJ=KIJS,KIJL
+            FLD(IJ,K,M) = UFAC1(IJ,K) + CNSN(IJ)*UFAC2(IJ,K)
+            SPOS(IJ,K,M) = UFAC1(IJ,K)*GFL(IJ,K,M)
+            SL(IJ,K,M) = FLD(IJ,K,M)*GFL(IJ,K,M)
           ENDDO
         ENDDO
 

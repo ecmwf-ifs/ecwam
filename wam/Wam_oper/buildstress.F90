@@ -44,7 +44,6 @@
 !     EXTERNALS.
 !     ----------
 !     *ABORT1*
-!     *AIRSEA*
 !     *GETWND*
 !     *READWGRIB*
 
@@ -262,7 +261,7 @@
       ENDDO
 !$OMP END PARALLEL DO
       CALL GSTATS(1444,1)
-      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. AIRSEA DONE AT 1'
+      IF (ITEST.GT.0) WRITE (IU06,*) ' SUB. BUILDSTRESS DONE AT 1'
 
 !     1.4  GET DRAG COEFFICIENT
 !          --------------------
